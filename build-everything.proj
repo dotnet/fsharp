@@ -1,4 +1,4 @@
-<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
 
   <!-- +++++++++++++++++++++++ Project selection for building +++++++++++++++++++++++++++++++ -->
@@ -37,6 +37,10 @@
 
   <ItemGroup Condition="'$(BUILD_FCS)'=='1'">
     <ProjectsWithNet40 Include="fcs/FSharp.Compiler.Service/FSharp.Compiler.Service.fsproj" />
+    <ProjectsWithNet40 Include="fcs/FSharp.Compiler.Service.MSBuild.v12/FSharp.Compiler.Service.MSBuild.v12.fsproj" />
+    <ProjectsWithNet40 Include="fcs/FSharp.Compiler.Service.ProjectCracker/FSharp.Compiler.Service.ProjectCracker.fsproj" />
+    <ProjectsWithNet40 Include="fcs/FSharp.Compiler.Service.ProjectCrackerTool/FSharp.Compiler.Service.ProjectCrackerTool.fsproj" />
+    <ProjectsWithNet40 Include="fcs/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(BUILD_SETUP)'=='1'">
@@ -51,10 +55,12 @@
 
   <ItemGroup Condition="'$(TEST_NET40_COREUNIT_SUITE)'=='1'" >
     <ProjectsWithNet40 Include="src/fsharp/FSharp.Core.Unittests/FSharp.Core.Unittests.fsproj"/>
+    <ProjectsWithNet40 Include="src/fsharp/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj"/>
   </ItemGroup>
 
   <ItemGroup Condition="'$(TEST_CORECLR_COREUNIT_SUITE)'=='1'">
     <ProjectsWithCoreClr Include="src/fsharp/FSharp.Core.Unittests/FSharp.Core.Unittests.fsproj"/>
+    <ProjectsWithCoreClr Include="src/fsharp/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj"/>
   </ItemGroup>
 
   <ItemGroup Condition="'$(TEST_NET40_COMPILERUNIT_SUITE)'=='1'" >

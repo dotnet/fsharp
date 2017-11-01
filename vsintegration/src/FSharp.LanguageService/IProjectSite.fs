@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 
 namespace Microsoft.VisualStudio.FSharp.LanguageService
@@ -17,25 +17,32 @@ type internal IProvideProjectSite =
 and internal IProjectSite = 
 
     /// List of files in the project. In the correct order.
-    abstract SourceFilesOnDisk : unit -> string[]
+    abstract CompilationSourceFiles : string[]
 
-    /// Flags that the compiler would need to understand how to compile.
-    abstract CompilerFlags : unit -> string[]
+    /// Flags that the compiler would need to understand how to compile. Includes '-r'
+    /// options but not source files
+    abstract CompilationOptions : string[]
 
-    /// Register for notifications for when the above change
-    abstract AdviseProjectSiteChanges : (*callbackOwnerKey*)string * AdviseProjectSiteChanges -> unit
+    /// The normalized '-r:' assembly references, without the '-r:'
+    abstract CompilationReferences : string []
 
-    /// Register for notifications when project is cleaned/rebuilt (and thus any live TypeProviders should be refreshed)
-    abstract AdviseProjectSiteCleaned : (*callbackOwnerKey*)string * AdviseProjectSiteChanges -> unit
-    
-    // Register for notifications when project is closed.
-    abstract AdviseProjectSiteClosed : (*callbackOwnerKey*)string * AdviseProjectSiteChanges -> unit
- 
-    /// A user-friendly description of the project. Used only for developer/DEBUG tooltips and such.
-    abstract DescriptionOfProject : unit -> string
+    /// The '-o:' output bin path, without the '-o:'
+    abstract CompilationBinOutputPath : string option
 
     /// The name of the project file.
-    abstract ProjectFileName : unit -> string
+    abstract ProjectFileName : string
+
+    /// Register for notifications for when the above change
+    abstract AdviseProjectSiteChanges : callbackOwnerKey: string * AdviseProjectSiteChanges -> unit
+
+    /// Register for notifications when project is cleaned/rebuilt (and thus any live TypeProviders should be refreshed)
+    abstract AdviseProjectSiteCleaned : callbackOwnerKey: string * AdviseProjectSiteChanges -> unit
+    
+    // Register for notifications when project is closed.
+    abstract AdviseProjectSiteClosed : callbackOwnerKey: string * AdviseProjectSiteChanges -> unit
+ 
+    /// A user-friendly description of the project. Used only for developer/DEBUG tooltips and such.
+    abstract Description : string
 
     /// The error list task reporter
     abstract BuildErrorReporter : Microsoft.VisualStudio.Shell.Interop.IVsLanguageServiceBuildErrorReporter2 option with get, set
@@ -55,4 +62,4 @@ and internal IProjectSite =
 
     abstract ProjectProvider : IProvideProjectSite option
 
-    abstract AssemblyReferences : unit -> string []
+

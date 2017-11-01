@@ -1,5 +1,4 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -113,23 +112,23 @@
     <value>2.0</value>
   </resheader>
   <resheader name="reader">
-    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <resheader name="writer">
-    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="StartActionLabel.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Left</value>
   </data>
-  <assembly alias="mscorlib" name="mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <assembly alias="mscorlib" name="mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="StartActionLabel.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
   <data name="StartActionLabel.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
     <value>NoControl</value>
   </data>
-  <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="StartActionLabel.Location" type="System.Drawing.Point, System.Drawing">
     <value>0, 0</value>
   </data>
@@ -137,7 +136,7 @@
     <value>0, 0, 3, 0</value>
   </data>
   <data name="StartActionLabel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>62, 13</value>
+    <value>123, 25</value>
   </data>
   <data name="StartActionLabel.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
@@ -149,7 +148,7 @@
     <value>StartActionLabel</value>
   </data>
   <data name="&gt;&gt;StartActionLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;StartActionLabel.Parent" xml:space="preserve">
     <value>startActionTableLayoutPanel</value>
@@ -164,13 +163,13 @@
     <value>NoControl</value>
   </data>
   <data name="StartActionLabelLine.Location" type="System.Drawing.Point, System.Drawing">
-    <value>68, 6</value>
+    <value>129, 12</value>
   </data>
   <data name="StartActionLabelLine.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>3, 0, 0, 0</value>
   </data>
   <data name="StartActionLabelLine.Size" type="System.Drawing.Size, System.Drawing">
-    <value>382, 1</value>
+    <value>399, 1</value>
   </data>
   <data name="StartActionLabelLine.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -179,7 +178,7 @@
     <value>StartActionLabelLine</value>
   </data>
   <data name="&gt;&gt;StartActionLabelLine.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;StartActionLabelLine.Parent" xml:space="preserve">
     <value>startActionTableLayoutPanel</value>
@@ -197,13 +196,13 @@
     <value>NoControl</value>
   </data>
   <data name="rbStartProject.Location" type="System.Drawing.Point, System.Drawing">
-    <value>23, 25</value>
+    <value>23, 37</value>
   </data>
   <data name="rbStartProject.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>23, 12, 3, 3</value>
   </data>
   <data name="rbStartProject.Size" type="System.Drawing.Size, System.Drawing">
-    <value>82, 17</value>
+    <value>159, 29</value>
   </data>
   <data name="rbStartProject.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -215,7 +214,7 @@
     <value>rbStartProject</value>
   </data>
   <data name="&gt;&gt;rbStartProject.Type" xml:space="preserve">
-    <value>System.Windows.Forms.RadioButton, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.RadioButton, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;rbStartProject.Parent" xml:space="preserve">
     <value>overarchingTableLayoutPanel</value>
@@ -233,13 +232,13 @@
     <value>NoControl</value>
   </data>
   <data name="rbStartProgram.Location" type="System.Drawing.Point, System.Drawing">
-    <value>23, 51</value>
+    <value>23, 75</value>
   </data>
   <data name="rbStartProgram.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>23, 3, 3, 3</value>
   </data>
   <data name="rbStartProgram.Size" type="System.Drawing.Size, System.Drawing">
-    <value>131, 17</value>
+    <value>262, 29</value>
   </data>
   <data name="rbStartProgram.TabIndex" type="System.Int32, mscorlib">
     <value>2</value>
@@ -251,7 +250,7 @@
     <value>rbStartProgram</value>
   </data>
   <data name="&gt;&gt;rbStartProgram.Type" xml:space="preserve">
-    <value>System.Windows.Forms.RadioButton, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.RadioButton, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;rbStartProgram.Parent" xml:space="preserve">
     <value>overarchingTableLayoutPanel</value>
@@ -266,10 +265,10 @@
     <value>Left, Right</value>
   </data>
   <data name="StartProgram.Location" type="System.Drawing.Point, System.Drawing">
-    <value>160, 49</value>
+    <value>291, 74</value>
   </data>
   <data name="StartProgram.Size" type="System.Drawing.Size, System.Drawing">
-    <value>258, 20</value>
+    <value>191, 31</value>
   </data>
   <data name="StartProgram.TabIndex" type="System.Int32, mscorlib">
     <value>4</value>
@@ -278,7 +277,7 @@
     <value>StartProgram</value>
   </data>
   <data name="&gt;&gt;StartProgram.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;StartProgram.Parent" xml:space="preserve">
     <value>overarchingTableLayoutPanel</value>
@@ -302,13 +301,13 @@
     <value>NoControl</value>
   </data>
   <data name="StartProgramBrowse.Location" type="System.Drawing.Point, System.Drawing">
-    <value>424, 48</value>
+    <value>488, 72</value>
   </data>
   <data name="StartProgramBrowse.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>3, 3, 0, 3</value>
   </data>
   <data name="StartProgramBrowse.Size" type="System.Drawing.Size, System.Drawing">
-    <value>26, 23</value>
+    <value>40, 35</value>
   </data>
   <data name="StartProgramBrowse.TabIndex" type="System.Int32, mscorlib">
     <value>5</value>
@@ -320,7 +319,7 @@
     <value>StartProgramBrowse</value>
   </data>
   <data name="&gt;&gt;StartProgramBrowse.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;StartProgramBrowse.Parent" xml:space="preserve">
     <value>overarchingTableLayoutPanel</value>
@@ -335,13 +334,13 @@
     <value>NoControl</value>
   </data>
   <data name="StartOptionsLabelLine.Location" type="System.Drawing.Point, System.Drawing">
-    <value>74, 6</value>
+    <value>143, 12</value>
   </data>
   <data name="StartOptionsLabelLine.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>3, 0, 0, 0</value>
   </data>
   <data name="StartOptionsLabelLine.Size" type="System.Drawing.Size, System.Drawing">
-    <value>376, 1</value>
+    <value>385, 1</value>
   </data>
   <data name="StartOptionsLabelLine.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -350,7 +349,7 @@
     <value>StartOptionsLabelLine</value>
   </data>
   <data name="&gt;&gt;StartOptionsLabelLine.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;StartOptionsLabelLine.Parent" xml:space="preserve">
     <value>startOptionsTableLayoutPanel</value>
@@ -374,7 +373,7 @@
     <value>0, 0, 3, 0</value>
   </data>
   <data name="StartOptionsLabel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>68, 13</value>
+    <value>137, 25</value>
   </data>
   <data name="StartOptionsLabel.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
@@ -386,7 +385,7 @@
     <value>StartOptionsLabel</value>
   </data>
   <data name="&gt;&gt;StartOptionsLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;StartOptionsLabel.Parent" xml:space="preserve">
     <value>startOptionsTableLayoutPanel</value>
@@ -401,13 +400,13 @@
     <value>NoControl</value>
   </data>
   <data name="CommandLineArgsLabel.Location" type="System.Drawing.Point, System.Drawing">
-    <value>23, 99</value>
+    <value>23, 147</value>
   </data>
   <data name="CommandLineArgsLabel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>23, 12, 3, 3</value>
   </data>
   <data name="CommandLineArgsLabel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>128, 13</value>
+    <value>262, 25</value>
   </data>
   <data name="CommandLineArgsLabel.TabIndex" type="System.Int32, mscorlib">
     <value>8</value>
@@ -419,7 +418,7 @@
     <value>CommandLineArgsLabel</value>
   </data>
   <data name="&gt;&gt;CommandLineArgsLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;CommandLineArgsLabel.Parent" xml:space="preserve">
     <value>overarchingTableLayoutPanel</value>
@@ -437,13 +436,13 @@
     <value>NoControl</value>
   </data>
   <data name="WorkingDirLabel.Location" type="System.Drawing.Point, System.Drawing">
-    <value>23, 130</value>
+    <value>23, 183</value>
   </data>
   <data name="WorkingDirLabel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>23, 3, 3, 3</value>
   </data>
   <data name="WorkingDirLabel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>93, 13</value>
+    <value>186, 25</value>
   </data>
   <data name="WorkingDirLabel.TabIndex" type="System.Int32, mscorlib">
     <value>10</value>
@@ -455,7 +454,7 @@
     <value>WorkingDirLabel</value>
   </data>
   <data name="&gt;&gt;WorkingDirLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;WorkingDirLabel.Parent" xml:space="preserve">
     <value>overarchingTableLayoutPanel</value>
@@ -473,13 +472,13 @@
     <value>NoControl</value>
   </data>
   <data name="RemoteDebugEnabled.Location" type="System.Drawing.Point, System.Drawing">
-    <value>23, 155</value>
+    <value>23, 220</value>
   </data>
   <data name="RemoteDebugEnabled.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>23, 3, 3, 12</value>
   </data>
   <data name="RemoteDebugEnabled.Size" type="System.Drawing.Size, System.Drawing">
-    <value>123, 17</value>
+    <value>241, 29</value>
   </data>
   <data name="RemoteDebugEnabled.TabIndex" type="System.Int32, mscorlib">
     <value>13</value>
@@ -491,7 +490,7 @@
     <value>RemoteDebugEnabled</value>
   </data>
   <data name="&gt;&gt;RemoteDebugEnabled.Type" xml:space="preserve">
-    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;RemoteDebugEnabled.Parent" xml:space="preserve">
     <value>overarchingTableLayoutPanel</value>
@@ -503,7 +502,7 @@
     <value>Left, Right</value>
   </data>
   <data name="StartArguments.Location" type="System.Drawing.Point, System.Drawing">
-    <value>160, 99</value>
+    <value>291, 149</value>
   </data>
   <data name="StartArguments.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>3, 12, 3, 3</value>
@@ -515,7 +514,7 @@
     <value>Vertical</value>
   </data>
   <data name="StartArguments.Size" type="System.Drawing.Size, System.Drawing">
-    <value>258, 20</value>
+    <value>191, 20</value>
   </data>
   <data name="StartArguments.TabIndex" type="System.Int32, mscorlib">
     <value>9</value>
@@ -524,7 +523,7 @@
     <value>StartArguments</value>
   </data>
   <data name="&gt;&gt;StartArguments.Type" xml:space="preserve">
-    <value>Microsoft.VisualStudio.Editors.PropertyPages.DebugPropPage+MultilineTextBoxRejectsEnter, Microsoft.VisualStudio.Editors, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>Microsoft.VisualStudio.Editors.PropertyPages.DebugPropPage+MultilineTextBoxRejectsEnter, FSharp.ProjectSystem.PropertyPages, Version=15.4.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
   <data name="&gt;&gt;StartArguments.Parent" xml:space="preserve">
     <value>overarchingTableLayoutPanel</value>
@@ -536,10 +535,10 @@
     <value>Left, Right</value>
   </data>
   <data name="StartWorkingDirectory.Location" type="System.Drawing.Point, System.Drawing">
-    <value>160, 126</value>
+    <value>291, 180</value>
   </data>
   <data name="StartWorkingDirectory.Size" type="System.Drawing.Size, System.Drawing">
-    <value>258, 20</value>
+    <value>191, 31</value>
   </data>
   <data name="StartWorkingDirectory.TabIndex" type="System.Int32, mscorlib">
     <value>11</value>
@@ -548,7 +547,7 @@
     <value>StartWorkingDirectory</value>
   </data>
   <data name="&gt;&gt;StartWorkingDirectory.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;StartWorkingDirectory.Parent" xml:space="preserve">
     <value>overarchingTableLayoutPanel</value>
@@ -563,13 +562,13 @@
     <value>Left, Right</value>
   </data>
   <data name="RemoteDebugMachine.Location" type="System.Drawing.Point, System.Drawing">
-    <value>160, 154</value>
+    <value>291, 219</value>
   </data>
   <data name="RemoteDebugMachine.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>3, 3, 3, 12</value>
   </data>
   <data name="RemoteDebugMachine.Size" type="System.Drawing.Size, System.Drawing">
-    <value>258, 20</value>
+    <value>191, 31</value>
   </data>
   <data name="RemoteDebugMachine.TabIndex" type="System.Int32, mscorlib">
     <value>14</value>
@@ -578,7 +577,7 @@
     <value>RemoteDebugMachine</value>
   </data>
   <data name="&gt;&gt;RemoteDebugMachine.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;RemoteDebugMachine.Parent" xml:space="preserve">
     <value>overarchingTableLayoutPanel</value>
@@ -602,13 +601,13 @@
     <value>NoControl</value>
   </data>
   <data name="StartWorkingDirectoryBrowse.Location" type="System.Drawing.Point, System.Drawing">
-    <value>424, 125</value>
+    <value>488, 178</value>
   </data>
   <data name="StartWorkingDirectoryBrowse.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>3, 3, 0, 3</value>
   </data>
   <data name="StartWorkingDirectoryBrowse.Size" type="System.Drawing.Size, System.Drawing">
-    <value>26, 23</value>
+    <value>40, 35</value>
   </data>
   <data name="StartWorkingDirectoryBrowse.TabIndex" type="System.Int32, mscorlib">
     <value>12</value>
@@ -620,7 +619,7 @@
     <value>StartWorkingDirectoryBrowse</value>
   </data>
   <data name="&gt;&gt;StartWorkingDirectoryBrowse.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;StartWorkingDirectoryBrowse.Parent" xml:space="preserve">
     <value>overarchingTableLayoutPanel</value>
@@ -635,13 +634,13 @@
     <value>NoControl</value>
   </data>
   <data name="EnableDebuggerLabelLine.Location" type="System.Drawing.Point, System.Drawing">
-    <value>101, 6</value>
+    <value>196, 12</value>
   </data>
   <data name="EnableDebuggerLabelLine.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>3, 0, 0, 0</value>
   </data>
   <data name="EnableDebuggerLabelLine.Size" type="System.Drawing.Size, System.Drawing">
-    <value>349, 1</value>
+    <value>332, 1</value>
   </data>
   <data name="EnableDebuggerLabelLine.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -650,7 +649,7 @@
     <value>EnableDebuggerLabelLine</value>
   </data>
   <data name="&gt;&gt;EnableDebuggerLabelLine.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;EnableDebuggerLabelLine.Parent" xml:space="preserve">
     <value>enableDebuggersTableLayoutPanel</value>
@@ -674,7 +673,7 @@
     <value>0, 0, 3, 0</value>
   </data>
   <data name="EnableDebuggerLabel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>95, 13</value>
+    <value>190, 25</value>
   </data>
   <data name="EnableDebuggerLabel.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
@@ -686,7 +685,7 @@
     <value>EnableDebuggerLabel</value>
   </data>
   <data name="&gt;&gt;EnableDebuggerLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;EnableDebuggerLabel.Parent" xml:space="preserve">
     <value>enableDebuggersTableLayoutPanel</value>
@@ -728,7 +727,7 @@
     <value>1</value>
   </data>
   <data name="startActionTableLayoutPanel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>450, 13</value>
+    <value>528, 25</value>
   </data>
   <data name="startActionTableLayoutPanel.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
@@ -737,7 +736,7 @@
     <value>startActionTableLayoutPanel</value>
   </data>
   <data name="&gt;&gt;startActionTableLayoutPanel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;startActionTableLayoutPanel.Parent" xml:space="preserve">
     <value>overarchingTableLayoutPanel</value>
@@ -758,7 +757,7 @@
     <value>2</value>
   </data>
   <data name="startOptionsTableLayoutPanel.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 74</value>
+    <value>0, 110</value>
   </data>
   <data name="startOptionsTableLayoutPanel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>0, 0, 0, 0</value>
@@ -767,7 +766,7 @@
     <value>1</value>
   </data>
   <data name="startOptionsTableLayoutPanel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>450, 13</value>
+    <value>528, 25</value>
   </data>
   <data name="startOptionsTableLayoutPanel.TabIndex" type="System.Int32, mscorlib">
     <value>7</value>
@@ -776,7 +775,7 @@
     <value>startOptionsTableLayoutPanel</value>
   </data>
   <data name="&gt;&gt;startOptionsTableLayoutPanel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;startOptionsTableLayoutPanel.Parent" xml:space="preserve">
     <value>overarchingTableLayoutPanel</value>
@@ -797,7 +796,7 @@
     <value>2</value>
   </data>
   <data name="enableDebuggersTableLayoutPanel.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 186</value>
+    <value>0, 262</value>
   </data>
   <data name="enableDebuggersTableLayoutPanel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>0, 0, 0, 0</value>
@@ -806,7 +805,7 @@
     <value>1</value>
   </data>
   <data name="enableDebuggersTableLayoutPanel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>450, 13</value>
+    <value>528, 25</value>
   </data>
   <data name="enableDebuggersTableLayoutPanel.TabIndex" type="System.Int32, mscorlib">
     <value>15</value>
@@ -815,7 +814,7 @@
     <value>enableDebuggersTableLayoutPanel</value>
   </data>
   <data name="&gt;&gt;enableDebuggersTableLayoutPanel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;enableDebuggersTableLayoutPanel.Parent" xml:space="preserve">
     <value>overarchingTableLayoutPanel</value>
@@ -833,13 +832,13 @@
     <value>NoControl</value>
   </data>
   <data name="EnableSQLServerDebugging.Location" type="System.Drawing.Point, System.Drawing">
-    <value>23, 234</value>
+    <value>23, 334</value>
   </data>
   <data name="EnableSQLServerDebugging.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>23, 3, 0, 1</value>
   </data>
   <data name="EnableSQLServerDebugging.Size" type="System.Drawing.Size, System.Drawing">
-    <value>170, 17</value>
+    <value>335, 29</value>
   </data>
   <data name="EnableSQLServerDebugging.TabIndex" type="System.Int32, mscorlib">
     <value>17</value>
@@ -851,7 +850,7 @@
     <value>EnableSQLServerDebugging</value>
   </data>
   <data name="&gt;&gt;EnableSQLServerDebugging.Type" xml:space="preserve">
-    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;EnableSQLServerDebugging.Parent" xml:space="preserve">
     <value>overarchingTableLayoutPanel</value>
@@ -866,13 +865,13 @@
     <value>NoControl</value>
   </data>
   <data name="UseVSHostingProcess.Location" type="System.Drawing.Point, System.Drawing">
-    <value>23, 255</value>
+    <value>23, 367</value>
   </data>
   <data name="UseVSHostingProcess.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>23, 3, 0, 1</value>
   </data>
   <data name="UseVSHostingProcess.Size" type="System.Drawing.Size, System.Drawing">
-    <value>218, 17</value>
+    <value>437, 29</value>
   </data>
   <data name="UseVSHostingProcess.TabIndex" type="System.Int32, mscorlib">
     <value>17</value>
@@ -884,7 +883,7 @@
     <value>UseVSHostingProcess</value>
   </data>
   <data name="&gt;&gt;UseVSHostingProcess.Type" xml:space="preserve">
-    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;UseVSHostingProcess.Parent" xml:space="preserve">
     <value>overarchingTableLayoutPanel</value>
@@ -905,7 +904,7 @@
     <value>11</value>
   </data>
   <data name="overarchingTableLayoutPanel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>450, 273</value>
+    <value>528, 397</value>
   </data>
   <data name="overarchingTableLayoutPanel.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
@@ -914,7 +913,7 @@
     <value>overarchingTableLayoutPanel</value>
   </data>
   <data name="&gt;&gt;overarchingTableLayoutPanel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;overarchingTableLayoutPanel.Parent" xml:space="preserve">
     <value>$this</value>
@@ -929,13 +928,13 @@
     <value>NoControl</value>
   </data>
   <data name="EnableUnmanagedDebugging.Location" type="System.Drawing.Point, System.Drawing">
-    <value>23, 211</value>
+    <value>23, 299</value>
   </data>
   <data name="EnableUnmanagedDebugging.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>23, 12, 0, 3</value>
   </data>
   <data name="EnableUnmanagedDebugging.Size" type="System.Drawing.Size, System.Drawing">
-    <value>198, 17</value>
+    <value>390, 29</value>
   </data>
   <data name="EnableUnmanagedDebugging.TabIndex" type="System.Int32, mscorlib">
     <value>16</value>
@@ -947,7 +946,7 @@
     <value>EnableUnmanagedDebugging</value>
   </data>
   <data name="&gt;&gt;EnableUnmanagedDebugging.Type" xml:space="preserve">
-    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;EnableUnmanagedDebugging.Parent" xml:space="preserve">
     <value>overarchingTableLayoutPanel</value>
@@ -955,7 +954,7 @@
   <data name="&gt;&gt;EnableUnmanagedDebugging.ZOrder" xml:space="preserve">
     <value>14</value>
   </data>
-  <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+  <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
   </metadata>
   <data name="$this.AutoSize" type="System.Boolean, mscorlib">
@@ -970,16 +969,19 @@
   <data name="$this.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>0, 0, 0, 0</value>
   </data>
+  <data name="$this.MaximumSize" type="System.Drawing.Size, System.Drawing">
+    <value>540, 0</value>
+  </data>
   <data name="$this.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>0, 0, 12, 0</value>
   </data>
   <data name="$this.Size" type="System.Drawing.Size, System.Drawing">
-    <value>462, 273</value>
+    <value>540, 397</value>
   </data>
   <data name="&gt;&gt;$this.Name" xml:space="preserve">
     <value>DebugPropPage</value>
   </data>
   <data name="&gt;&gt;$this.Type" xml:space="preserve">
-    <value>Microsoft.VisualStudio.Editors.PropertyPages.PropPageUserControlBase, Microsoft.VisualStudio.Editors, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>Microsoft.VisualStudio.Editors.PropertyPages.PropPageUserControlBase, FSharp.ProjectSystem.PropertyPages, Version=15.4.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>

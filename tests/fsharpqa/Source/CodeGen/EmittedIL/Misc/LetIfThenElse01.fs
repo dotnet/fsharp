@@ -1,4 +1,4 @@
-// #Regression #NoMono #NoMT #CodeGen #EmittedIL #NETFX20Only #NETFX40Only 
+// #Regression #NoMono #NoMT #CodeGen #EmittedIL   
 // Regression test for FSHARP1.0:5155
 // Stepping through if/then/else which is then stored into a local mistakenly steps into "else" branch
 

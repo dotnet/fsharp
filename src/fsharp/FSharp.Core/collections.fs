@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Collections
 
@@ -27,10 +27,10 @@ namespace Microsoft.FSharp.Collections
                   member __.GetHashCode(x) = NonStructuralComparison.hash x 
                   member __.Equals(x, y) = NonStructuralComparison.(=) x y  }
 
-        let inline FromFunctions hash eq : IEqualityComparer<'T> = 
-            let eq = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(eq)
+        let inline FromFunctions hasher equality : IEqualityComparer<'T> = 
+            let eq = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(equality)
             { new IEqualityComparer<'T> with 
-                member __.GetHashCode(x) = hash x
+                member __.GetHashCode(x) = hasher x
                 member __.Equals(x,y) = eq.Invoke(x,y)  }
 
 

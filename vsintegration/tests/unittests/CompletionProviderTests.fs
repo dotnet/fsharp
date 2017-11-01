@@ -18,7 +18,7 @@
 // 
 //    Use F# Interactive.  This only works for FSharp.Compiler.Service.dll which has a public API
 
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 module Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn.CompletionProviderTests
 
 open System
@@ -35,7 +35,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open UnitTests.TestLib.LanguageService
 
 let filePath = "C:\\test.fs"
-let internal options = { 
+let internal projectOptions = { 
     ProjectFileName = "C:\\test.fsproj"
     SourceFiles =  [| filePath |]
     ReferencedProjects = [| |]
@@ -52,7 +52,7 @@ let internal options = {
 let VerifyCompletionList(fileContents: string, marker: string, expected: string list, unexpected: string list) =
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     let results = 
-        FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, SourceText.From(fileContents), caretPosition, options, filePath, 0, fun _ -> []) 
+        FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, SourceText.From(fileContents), caretPosition, projectOptions, filePath, 0, fun _ -> []) 
         |> Async.RunSynchronously 
         |> Option.defaultValue (ResizeArray())
         |> Seq.map(fun result -> result.DisplayText)
@@ -67,7 +67,7 @@ let VerifyCompletionListExactly(fileContents: string, marker: string, expected: 
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     
     let actual = 
-        FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, SourceText.From(fileContents), caretPosition, options, filePath, 0, fun _ -> []) 
+        FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, SourceText.From(fileContents), caretPosition, projectOptions, filePath, 0, fun _ -> []) 
         |> Async.RunSynchronously 
         |> Option.defaultValue (ResizeArray())
         |> Seq.toList

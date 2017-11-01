@@ -1,13 +1,4 @@
-﻿//----------------------------------------------------------------------------
-// Copyright (c) 2002-2012 Microsoft Corporation. 
-//
-// This source code is subject to terms and conditions of the Apache License, Version 2.0. A 
-// copy of the license can be found in the License.html file at the root of this distribution. 
-// By using this source code in any fashion, you are agreeing to be bound 
-// by the terms of the Apache License, Version 2.0.
-//
-// You must not remove this notice, or any other, from this software.
-//----------------------------------------------------------------------------
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
@@ -16,6 +7,7 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AccessibilityLogic
 open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.NameResolution
@@ -337,6 +329,9 @@ and [<Class>] internal FSharpEntity =
 
     /// Get all compilation paths, taking `Module` suffixes into account.
     member AllCompilationPaths : string list
+
+    /// Get all active pattern cases defined in all active patterns in the module.
+    member ActivePatternCases : FSharpActivePatternCase list
 
 /// Represents a delegate signature in an F# symbol
 #if COMPILER_PUBLIC_API
@@ -1074,7 +1069,26 @@ and [<Class>] internal FSharpAttribute =
     /// Format the attribute using the rules of the given display context
     member Format : context: FSharpDisplayContext -> string
 
+/// Represents open declaration in F# code.
+#if COMPILER_PUBLIC_API
+type FSharpOpenDeclaration =
+#else
+type internal FSharpOpenDeclaration =
+#endif
+    { /// Idents.
+      LongId: Ident list 
+      
+      /// Range of the open declaration.
+      Range: range option
 
+      /// Modules or namespaces which is opened with this declaration.
+      Modules: FSharpEntity list 
+      
+      /// Scope in which open declaration is visible.
+      AppliedScope: range 
+      
+      /// If it's `namespace Xxx.Yyy` declaration.
+      IsOwnNamespace: bool }
 
 /// Represents the use of an F# symbol from F# source code
 [<Sealed>]

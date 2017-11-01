@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
 
 open System
@@ -17,7 +17,7 @@ open UnitTests.TestLib.LanguageService
 [<TestFixture>][<Category "Roslyn Services">]
 type BraceMatchingServiceTests()  =
     let fileName = "C:\\test.fs"
-    let options: FSharpProjectOptions = { 
+    let projectOptions: FSharpProjectOptions = { 
         ProjectFileName = "C:\\test.fsproj"
         SourceFiles =  [| fileName |]
         ReferencedProjects = [| |]
@@ -36,7 +36,8 @@ type BraceMatchingServiceTests()  =
         let position = fileContents.IndexOf(marker)
         Assert.IsTrue(position >= 0, "Cannot find marker '{0}' in file contents", marker)
 
-        match FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, options, position) |> Async.RunSynchronously with
+        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
+        match FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, parsingOptions, position, "UnitTest") |> Async.RunSynchronously with
         | None -> ()
         | Some(left, right) -> Assert.Fail("Found match for brace '{0}'", marker)
         
@@ -48,7 +49,8 @@ type BraceMatchingServiceTests()  =
         Assert.IsTrue(startMarkerPosition >= 0, "Cannot find start marker '{0}' in file contents", startMarkerPosition)
         Assert.IsTrue(endMarkerPosition >= 0, "Cannot find end marker '{0}' in file contents", endMarkerPosition)
         
-        match FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, options, startMarkerPosition) |> Async.RunSynchronously with
+        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
+        match FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, parsingOptions, startMarkerPosition, "UnitTest") |> Async.RunSynchronously with
         | None -> Assert.Fail("Didn't find a match for start brace at position '{0}", startMarkerPosition)
         | Some(left, right) ->
             let endPositionInRange(range) = 
@@ -157,3 +159,27 @@ let main argv =
     (printfn "%A '%A' '%A'" (arg1) (arg2) (arg3))endBrace
     0 // return an integer exit code"""
         this.VerifyBraceMatch(code, "(printfn", ")endBrace")
+        
+    [<TestCase ("let a1 = [ 0 .. 100 ]", [|9;10;20;21|])>]
+    [<TestCase ("let a2 = [| 0 .. 100 |]", [|9;10;11;21;22;23|])>]
+    [<TestCase ("let a3 = <@ 0 @>", [|9;10;11;14;15;16|])>]
+    [<TestCase ("let a4 = <@@ 0 @@>", [|9;10;11;12;15;15;16;17|])>]
+    [<TestCase ("let a6 = (  ()  )", [|9;10;16;17|])>]
+    [<TestCase ("[<ReflectedDefinition>]\nlet a7 = 70", [|0;1;2;21;22;23|])>]
+    [<TestCase ("let a8 = seq { yield() }", [|13;14;23;24|])>]
+    member this.BraceMatchingBothSides_Bug2092(fileContents: string, matchingPositions: int[]) =
+        // https://github.com/Microsoft/visualfsharp/issues/2092
+        let sourceText = SourceText.From(fileContents)
+
+        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
+        matchingPositions
+        |> Array.iter (fun position ->
+            match FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, parsingOptions, position, "UnitTest") |> Async.RunSynchronously with
+            | Some _ -> ()
+            | None ->
+                match position with
+                | 0 -> ""
+                | _ -> fileContents.[position - 1] |> sprintf " (previous character '%c')"
+                |> sprintf "Didn't find a matching brace at position '%d', character '%c'%s" position fileContents.[position]
+                |> Assert.Fail
+            )

@@ -1,0 +1,2 @@
+# Old-style error strings getting moved over
+undefinedNameNamespace,"The namespace '%s' is not defined"

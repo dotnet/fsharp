@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
@@ -49,6 +49,26 @@
     </ItemGroup>
   </Target>
   <ItemGroup>
+    <InternalsVisibleTo Include="fsc" />
+    <InternalsVisibleTo Include="FSharp.Build" />
+    <InternalsVisibleTo Include="fsi" />
+    <InternalsVisibleTo Include="fsiAnyCpu" />
+    <InternalsVisibleTo Include="FSharp.LanguageService" />
+    <InternalsVisibleTo Include="FSharp.LanguageService.Base" />
+    <InternalsVisibleTo Include="FSharp.ProjectSystem.Base" />
+    <InternalsVisibleTo Include="FSharp.ProjectSystem.FSharp" />
+    <InternalsVisibleTo Include="FSharp.ProjectSystem.PropertyPages" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Interactive.Settings" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Server.Shared" />
+    <InternalsVisibleTo Include="VisualFSharp.Salsa" />
+    <InternalsVisibleTo Include="VisualFSharp.Unittests" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Unittests" />
+    <InternalsVisibleTo Include="FSharp.Editor" />
+    <InternalsVisibleTo Include="HostedCompilerServer" />
+    <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
+    <InternalsVisibleTo Include="LanguageServiceProfiling" />
+  </ItemGroup>
+  <ItemGroup>
     <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
       <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
       <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(AssemblyName).dll.lci</LciCommentFile>
@@ -58,9 +78,9 @@
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Private.dll.fs">
       <Link>assemblyinfo.FSharp.Compiler.Private.dll.fs</Link>
     </Compile>
-    <FsSrGen Include="..\FSComp.txt">
+    <EmbeddedText Include="..\FSComp.txt">
       <Link>FSComp.txt</Link>
-    </FsSrGen>
+    </EmbeddedText>
     <EmbeddedResource Include="..\FSStrings.resx">
       <Link>FSStrings.resx</Link>
     </EmbeddedResource>
@@ -526,6 +546,12 @@
     <Compile Include="..\symbols\Exprs.fs">
       <Link>Symbols/Exprs.fs</Link>
     </Compile>
+    <Compile Include="..\symbols\SymbolPatterns.fsi">
+      <Link>Symbols/SymbolPatterns.fsi</Link>
+    </Compile>
+    <Compile Include="..\symbols\SymbolPatterns.fs">
+      <Link>Symbols/SymbolPatterns.fs</Link>
+    </Compile>
 
     <!-- the incremental builder and service . -->
     <Compile Include="..\vs\IncrementalBuild.fsi">
@@ -594,6 +620,18 @@
     <Compile Include="..\SimulatedMSBuildReferenceResolver.fs">
       <Link>Service/SimulatedMSBuildReferenceResolver.fs</Link>
     </Compile>
+    <Compile Include="..\vs\ExternalSymbol.fsi">
+      <Link>Service/ExternalSymbol.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ExternalSymbol.fs">
+      <Link>Service/ExternalSymbol.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\QuickParse.fsi">
+      <Link>Service/QuickParse.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\QuickParse.fs">
+      <Link>Service/QuickParse.fs</Link>
+    </Compile>
     <Compile Include="..\vs\service.fsi">
       <Link>Service/service.fsi</Link>
     </Compile>
@@ -612,11 +650,17 @@
     <Compile Include="..\vs\ServiceStructure.fs">
       <Link>Service/ServiceStructure.fs</Link>
     </Compile>
-
+    <Compile Include="..\vs\ServiceAnalysis.fsi">
+      <Link>Service/ServiceAnalysis.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceAnalysis.fs">
+      <Link>Service/ServiceAnalysis.fs</Link>
+    </Compile>
+    
     <!-- the core of the F# Interactive fsi.exe implementation -->
-    <FsSrGen Include="..\fsi\FSIstrings.txt">
+    <EmbeddedText Include="..\fsi\FSIstrings.txt">
       <Link>FSIstrings.txt</Link>
-    </FsSrGen>
+    </EmbeddedText>
     <Compile Include="..\fsi\fsi.fsi">
       <Link>InteractiveSession\fsi.fsi</Link>
     </Compile>
@@ -624,9 +668,6 @@
       <Link>InteractiveSession\fsi.fs</Link>
     </Compile>
 
-    <Compile Include="InternalsVisibleTo.fs" Condition="'$(TargetDotnetProfile)' != 'coreclr'">
-      <Link>Misc/InternalsVisibleTo.fs</Link>
-    </Compile>
     <Compile Include="..\MSBuildReferenceResolver.fs">
       <Link>Misc/MSBuildReferenceResolver.fs</Link>
     </Compile>
@@ -657,7 +698,7 @@
       <HintPath>..\..\..\packages\System.Reflection.Metadata.1.4.2\lib\portable-net45+win8\System.Reflection.Metadata.dll</HintPath>
     </Reference>
     <Reference Include="System.Collections.Immutable">
-      <HintPath>..\..\..\packages\System.Collections.Immutable.1.2.0\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
+      <HintPath>..\..\..\packages\System.Collections.Immutable.$(SystemCollectionsImmutableVersion)\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
     </Reference>
     <Reference Include="System.ValueTuple">
       <HintPath>..\..\..\packages\System.ValueTuple.4.3.1\lib\netstandard1.0\System.ValueTuple.dll</HintPath>

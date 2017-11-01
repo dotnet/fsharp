@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Collections
 
@@ -15,7 +15,7 @@ namespace Microsoft.FSharp.Collections
 
     [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
     [<NoEquality; NoComparison>]
-    type SetTree<'T> when 'T : comparison = 
+    type SetTree<'T> when 'T: comparison = 
         | SetEmpty                                          // height = 0   
         | SetNode of 'T * SetTree<'T> *  SetTree<'T> * int    // height = int 
         | SetOne  of 'T                                     // height = 1   
@@ -171,7 +171,7 @@ namespace Microsoft.FSharp.Collections
                     // case: a, h1 and h2 meet balance requirement 
                     mk t1 k t2
 
-        let rec split (comparer : IComparer<'T>) pivot t =
+        let rec split (comparer: IComparer<'T>) pivot t =
             // Given a pivot and a set t
             // Return { x in t s.t. x < pivot }, pivot in t? , { x in t s.t. x > pivot } 
             match t with
@@ -386,9 +386,9 @@ namespace Microsoft.FSharp.Collections
         //--------------------------------------------------------------------------
 
         [<NoEquality; NoComparison>]
-        type SetIterator<'T> when 'T : comparison  = 
+        type SetIterator<'T> when 'T: comparison  = 
             { mutable stack: SetTree<'T> list;  // invariant: always collapseLHS result 
-              mutable started : bool           // true when MoveNext has been called   
+              mutable started: bool           // true when MoveNext has been called   
             }
 
         // collapseLHS:
@@ -498,12 +498,12 @@ namespace Microsoft.FSharp.Collections
 
 
 
-        let rec mkFromEnumerator comparer acc (e : IEnumerator<_>) = 
+        let rec mkFromEnumerator comparer acc (e: IEnumerator<_>) = 
           if e.MoveNext() then 
             mkFromEnumerator comparer (add comparer e.Current acc) e
           else acc
           
-        let ofSeq comparer (c : IEnumerable<_>) =
+        let ofSeq comparer (c: IEnumerable<_>) =
           use ie = c.GetEnumerator()
           mkFromEnumerator comparer SetEmpty ie 
 
@@ -512,14 +512,10 @@ namespace Microsoft.FSharp.Collections
 
     [<Sealed>]
     [<CompiledName("FSharpSet`1")>]
-#if !FX_NO_DEBUG_PROXIES
     [<DebuggerTypeProxy(typedefof<SetDebugView<_>>)>]
-#endif
-#if !FX_NO_DEBUG_DISPLAYS
     [<DebuggerDisplay("Count = {Count}")>]
-#endif
     [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")>]
-    type Set<[<EqualityConditionalOn>]'T when 'T : comparison >(comparer:IComparer<'T>, tree: SetTree<'T>) = 
+    type Set<[<EqualityConditionalOn>]'T when 'T: comparison >(comparer:IComparer<'T>, tree: SetTree<'T>) = 
 
 #if !FX_NO_BINARY_SERIALIZATION
         [<System.NonSerialized>]
@@ -540,9 +536,9 @@ namespace Microsoft.FSharp.Collections
         // We use .NET generics per-instantiation static fields to avoid allocating a new object for each empty
         // set (it is just a lookup into a .NET table of type-instantiation-indexed static fields).
 
-        static let empty : Set<'T> = 
+        static let empty: Set<'T> = 
             let comparer = LanguagePrimitives.FastGenericComparer<'T> 
-            new Set<'T>(comparer, SetEmpty)
+            Set<'T>(comparer, SetEmpty)
 
 #if !FX_NO_BINARY_SERIALIZATION
         [<System.Runtime.Serialization.OnSerializingAttribute>]
@@ -563,91 +559,87 @@ namespace Microsoft.FSharp.Collections
             serializedData <- null
 #endif
 
-#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
         member internal set.Comparer = comparer
-        //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-        member internal set.Tree : SetTree<'T> = tree
 
-#if !FX_NO_DEBUG_DISPLAYS
+        member internal set.Tree: SetTree<'T> = tree
+
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
-        static member Empty : Set<'T> = empty
+        static member Empty: Set<'T> = empty
 
-        member s.Add(x) : Set<'T> = 
+        member s.Add(value): Set<'T> = 
 #if TRACE_SETS_AND_MAPS
             SetTree.report()
             SetTree.numAdds <- SetTree.numAdds + 1
             SetTree.totalSizeOnSetAdd <- SetTree.totalSizeOnSetAdd + float (SetTree.count s.Tree)
 #endif
-            new Set<'T>(s.Comparer,SetTree.add s.Comparer x s.Tree )
+            Set<'T>(s.Comparer,SetTree.add s.Comparer value s.Tree )
 
-        member s.Remove(x) : Set<'T> = 
+        member s.Remove(value): Set<'T> = 
 #if TRACE_SETS_AND_MAPS
             SetTree.report()
             SetTree.numRemoves <- SetTree.numRemoves + 1
 #endif
-            new Set<'T>(s.Comparer,SetTree.remove s.Comparer x s.Tree)
+            Set<'T>(s.Comparer,SetTree.remove s.Comparer value s.Tree)
 
         member s.Count = SetTree.count s.Tree
 
-        member s.Contains(x) = 
+        member s.Contains(value) = 
 #if TRACE_SETS_AND_MAPS
             SetTree.report()
             SetTree.numLookups <- SetTree.numLookups + 1
             SetTree.totalSizeOnSetLookup <- SetTree.totalSizeOnSetLookup + float (SetTree.count s.Tree)
 #endif
-            SetTree.mem s.Comparer  x s.Tree
+            SetTree.mem s.Comparer  value s.Tree
+
         member s.Iterate(x) = SetTree.iter  x s.Tree
+
         member s.Fold f z  = 
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             SetTree.fold (fun x z -> f.Invoke(z, x)) z s.Tree 
 
-#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
         member s.IsEmpty  = SetTree.isEmpty s.Tree
 
-        member s.Partition f  : Set<'T> *  Set<'T> = 
+        member s.Partition f : Set<'T> *  Set<'T> = 
             match s.Tree with 
             | SetEmpty -> s,s
-            | _ -> let t1,t2 = SetTree.partition s.Comparer f s.Tree in new Set<_>(s.Comparer,t1), new Set<_>(s.Comparer,t2)
+            | _ -> let t1,t2 = SetTree.partition s.Comparer f s.Tree in Set(s.Comparer,t1), Set(s.Comparer,t2)
 
-        member s.Filter f  : Set<'T> = 
+        member s.Filter f : Set<'T> = 
             match s.Tree with 
             | SetEmpty -> s
-            | _ -> new Set<_>(s.Comparer,SetTree.filter s.Comparer f s.Tree)
+            | _ -> Set(s.Comparer,SetTree.filter s.Comparer f s.Tree)
 
-        member s.Map f  : Set<'U> = 
+        member s.Map f : Set<'U> = 
             let comparer = LanguagePrimitives.FastGenericComparer<'U>
-            new Set<_>(comparer,SetTree.fold (fun acc k -> SetTree.add comparer (f k) acc) (SetTree<_>.SetEmpty) s.Tree)
+            Set(comparer,SetTree.fold (fun acc k -> SetTree.add comparer (f k) acc) (SetTree<_>.SetEmpty) s.Tree)
 
         member s.Exists f = SetTree.exists f s.Tree
 
         member s.ForAll f = SetTree.forall f s.Tree
 
         [<System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
-        static member (-) (a: Set<'T>, b: Set<'T>) = 
-            match a.Tree with 
-            | SetEmpty -> a (* 0 - B = 0 *)
+        static member (-) (set1: Set<'T>, set2: Set<'T>) = 
+            match set1.Tree with 
+            | SetEmpty -> set1 (* 0 - B = 0 *)
             | _ -> 
-            match b.Tree with 
-            | SetEmpty -> a (* A - 0 = A *)
-            | _ -> new Set<_>(a.Comparer,SetTree.diff a.Comparer  a.Tree b.Tree)
+            match set2.Tree with 
+            | SetEmpty -> set1 (* A - 0 = A *)
+            | _ -> Set(set1.Comparer,SetTree.diff set1.Comparer  set1.Tree set2.Tree)
 
         [<System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
-        static member (+) (a: Set<'T>, b: Set<'T>) = 
+        static member (+) (set1: Set<'T>, set2: Set<'T>) = 
 #if TRACE_SETS_AND_MAPS
             SetTree.report()
             SetTree.numUnions <- SetTree.numUnions + 1
 #endif
-            match b.Tree with 
-            | SetEmpty -> a  (* A U 0 = A *)
+            match set2.Tree with 
+            | SetEmpty -> set1  (* A U 0 = A *)
             | _ -> 
-            match a.Tree with 
-            | SetEmpty -> b  (* 0 U B = B *)
-            | _ -> new Set<_>(a.Comparer,SetTree.union a.Comparer  a.Tree b.Tree)
+            match set1.Tree with 
+            | SetEmpty -> set2  (* 0 U B = B *)
+            | _ -> Set(set1.Comparer,SetTree.union set1.Comparer  set1.Tree set2.Tree)
 
         static member Intersection(a: Set<'T>, b: Set<'T>) : Set<'T>  = 
             match b.Tree with 
@@ -655,38 +647,37 @@ namespace Microsoft.FSharp.Collections
             | _ -> 
             match a.Tree with 
             | SetEmpty -> a (* 0 INTER B = 0 *)
-            | _ -> new Set<_>(a.Comparer,SetTree.intersection a.Comparer a.Tree b.Tree)
+            | _ -> Set(a.Comparer,SetTree.intersection a.Comparer a.Tree b.Tree)
            
         static member Union(sets:seq<Set<'T>>) : Set<'T>  = 
             Seq.fold (fun s1 s2 -> s1 + s2) Set<'T>.Empty sets
 
         static member Intersection(sets:seq<Set<'T>>) : Set<'T>  = 
-            Seq.reduce (fun s1 s2 -> Set<_>.Intersection(s1,s2)) sets
+            Seq.reduce (fun s1 s2 -> Set.Intersection(s1,s2)) sets
 
         static member Equality(a: Set<'T>, b: Set<'T>) = (SetTree.compare a.Comparer  a.Tree b.Tree = 0)
 
         static member Compare(a: Set<'T>, b: Set<'T>) = SetTree.compare a.Comparer  a.Tree b.Tree
 
-#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
         member x.Choose = SetTree.choose x.Tree
 
-#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
         member x.MinimumElement = SetTree.minimumElement x.Tree
 
-#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
         member x.MaximumElement = SetTree.maximumElement x.Tree
 
-        member x.IsSubsetOf(y: Set<'T>) = SetTree.subset x.Comparer x.Tree y.Tree 
-        member x.IsSupersetOf(y: Set<'T>) = SetTree.subset x.Comparer y.Tree x.Tree
-        member x.IsProperSubsetOf(y: Set<'T>) = SetTree.psubset x.Comparer x.Tree y.Tree 
-        member x.IsProperSupersetOf(y: Set<'T>) = SetTree.psubset x.Comparer y.Tree x.Tree
+        member x.IsSubsetOf(otherSet: Set<'T>) = SetTree.subset x.Comparer x.Tree otherSet.Tree 
+
+        member x.IsSupersetOf(otherSet: Set<'T>) = SetTree.subset x.Comparer otherSet.Tree x.Tree
+
+        member x.IsProperSubsetOf(otherSet: Set<'T>) = SetTree.psubset x.Comparer x.Tree otherSet.Tree 
+
+        member x.IsProperSupersetOf(otherSet: Set<'T>) = SetTree.psubset x.Comparer otherSet.Tree x.Tree
+
         member x.ToList () = SetTree.toList x.Tree
+
         member x.ToArray () = SetTree.toArray x.Tree
 
         member this.ComputeHashCode() = 
@@ -732,13 +723,13 @@ namespace Microsoft.FSharp.Collections
 
         new (elements : seq<'T>) = 
             let comparer = LanguagePrimitives.FastGenericComparer<'T>
-            new Set<_>(comparer,SetTree.ofSeq comparer elements)
+            Set(comparer,SetTree.ofSeq comparer elements)
           
-        static member Create(elements : seq<'T>) =  new Set<'T>(elements)
+        static member Create(elements : seq<'T>) =  Set<'T>(elements)
           
         static member FromArray(arr : 'T array) : Set<'T> = 
             let comparer = LanguagePrimitives.FastGenericComparer<'T>
-            new Set<_>(comparer,SetTree.ofArray comparer arr)
+            Set(comparer,SetTree.ofArray comparer arr)
 
         override x.ToString() = 
            match List.ofSeq (Seq.truncate 4 x) with 
@@ -752,9 +743,7 @@ namespace Microsoft.FSharp.Collections
         [<Sealed>]
         SetDebugView<'T when 'T : comparison>(v: Set<'T>)  =  
 
-#if !FX_NO_DEBUG_DISPLAYS
              [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
-#endif
              member x.Items = v |> Seq.truncate 1000 |> Seq.toArray 
 
 namespace Microsoft.FSharp.Collections
@@ -768,108 +757,106 @@ namespace Microsoft.FSharp.Collections
     module Set = 
 
         [<CompiledName("IsEmpty")>]
-        let isEmpty (s : Set<'T>) = s.IsEmpty
+        let isEmpty (set: Set<'T>) = set.IsEmpty
 
         [<CompiledName("Contains")>]
-        let contains x (s : Set<'T>) = s.Contains(x)
+        let contains element (set: Set<'T>) = set.Contains(element)
 
         [<CompiledName("Add")>]
-        let add x (s : Set<'T>) = s.Add(x)
+        let add value (set: Set<'T>) = set.Add(value)
 
         [<CompiledName("Singleton")>]
-        let singleton x = Set<'T>.Singleton(x)
+        let singleton value = Set<'T>.Singleton(value)
 
         [<CompiledName("Remove")>]
-        let remove x (s : Set<'T>) = s.Remove(x)
+        let remove value (set: Set<'T>) = set.Remove(value)
 
         [<CompiledName("Union")>]
-        let union (s1 : Set<'T>)  (s2 : Set<'T>)  = s1 + s2
+        let union (set1: Set<'T>) (set2: Set<'T>)  = set1 + set2
 
         [<CompiledName("UnionMany")>]
-        let unionMany sets  = Set<_>.Union(sets)
+        let unionMany sets = Set.Union(sets)
 
         [<CompiledName("Intersect")>]
-        let intersect (s1 : Set<'T>)  (s2 : Set<'T>)  = Set<'T>.Intersection(s1,s2)
+        let intersect (set1: Set<'T>) (set2: Set<'T>)  = Set<'T>.Intersection(set1,set2)
 
         [<CompiledName("IntersectMany")>]
-        let intersectMany sets  = Set<_>.Intersection(sets)
-
+        let intersectMany sets  = Set.Intersection(sets)
 
         [<CompiledName("Iterate")>]
-        let iter f (s : Set<'T>)  = s.Iterate(f)
+        let iter action (set: Set<'T>)  = set.Iterate(action)
 
         [<CompiledName("Empty")>]
         let empty<'T when 'T : comparison> : Set<'T> = Set<'T>.Empty
 
         [<CompiledName("ForAll")>]
-        let forall f (s : Set<'T>) = s.ForAll f
+        let forall predicate (set: Set<'T>) = set.ForAll predicate
 
         [<CompiledName("Exists")>]
-        let exists f (s : Set<'T>) = s.Exists f
+        let exists predicate (set: Set<'T>) = set.Exists predicate
 
         [<CompiledName("Filter")>]
-        let filter f (s : Set<'T>) = s.Filter f
+        let filter predicate (set: Set<'T>) = set.Filter predicate
 
         [<CompiledName("Partition")>]
-        let partition f (s : Set<'T>) = s.Partition f 
+        let partition predicate (set: Set<'T>) = set.Partition predicate 
 
         [<CompiledName("Fold")>]
-        let fold<'T,'State  when 'T : comparison> f (z:'State) (s : Set<'T>) = SetTree.fold f z s.Tree
+        let fold<'T,'State  when 'T : comparison> folder (state:'State) (set: Set<'T>) = SetTree.fold folder state set.Tree
 
         [<CompiledName("FoldBack")>]
-        let foldBack<'T,'State when 'T : comparison> f (s : Set<'T>) (z:'State) = SetTree.foldBack f s.Tree z
+        let foldBack<'T,'State when 'T : comparison> folder (set: Set<'T>) (state:'State) = SetTree.foldBack folder set.Tree state
 
         [<CompiledName("Map")>]
-        let map f (s : Set<'T>) = s.Map f
+        let map mapping (set: Set<'T>) = set.Map mapping
 
         [<CompiledName("Count")>]
-        let count (s : Set<'T>) = s.Count
+        let count (set: Set<'T>) = set.Count
 
         [<CompiledName("MinumumElement")>]
-        let minimumElement (s : Set<'T>) = s.MinimumElement
+        let minimumElement (set: Set<'T>) = set.MinimumElement
 
         [<CompiledName("MaximumElement")>]
-        let maximumElement (s : Set<'T>) = s.MaximumElement
+        let maximumElement (set: Set<'T>) = set.MaximumElement
 
         [<CompiledName("OfList")>]
-        let ofList l = new Set<_>(List.toSeq l)
+        let ofList elements = Set(List.toSeq elements)
 
         [<CompiledName("OfArray")>]
-        let ofArray (l : 'T array) = Set<'T>.FromArray(l)
+        let ofArray (array: 'T array) = Set<'T>.FromArray(array)
 
         [<CompiledName("ToList")>]
-        let toList (s : Set<'T>) = s.ToList()
+        let toList (set: Set<'T>) = set.ToList()
  
         [<CompiledName("ToArray")>]
-        let toArray (s : Set<'T>) = s.ToArray()
+        let toArray (set: Set<'T>) = set.ToArray()
 
         [<CompiledName("ToSeq")>]
-        let toSeq (s : Set<'T>) = (s :> seq<'T>)
+        let toSeq (set: Set<'T>) = (set:> seq<'T>)
 
         [<CompiledName("OfSeq")>]
-        let ofSeq (c : seq<_>) = new Set<_>(c)
-
+        let ofSeq (elements: seq<_>) = Set(elements)
 
         [<CompiledName("Difference")>]
-        let difference (s1: Set<'T>) (s2: Set<'T>) = s1 - s2
+        let difference (set1: Set<'T>) (set2: Set<'T>) = set1 - set2
 
         [<CompiledName("IsSubset")>]
-        let isSubset (x:Set<'T>) (y: Set<'T>) = SetTree.subset x.Comparer x.Tree y.Tree 
+        let isSubset (set1:Set<'T>) (set2: Set<'T>) = SetTree.subset set1.Comparer set1.Tree set2.Tree 
 
         [<CompiledName("IsSuperset")>]
-        let isSuperset (x:Set<'T>) (y: Set<'T>) = SetTree.subset x.Comparer y.Tree x.Tree
+        let isSuperset (set1:Set<'T>) (set2: Set<'T>) = SetTree.subset set1.Comparer set2.Tree set1.Tree
 
         [<CompiledName("IsProperSubset")>]
-        let isProperSubset (x:Set<'T>) (y: Set<'T>) = SetTree.psubset x.Comparer x.Tree y.Tree 
+        let isProperSubset (set1:Set<'T>) (set2: Set<'T>) = SetTree.psubset set1.Comparer set1.Tree set2.Tree 
 
         [<CompiledName("IsProperSuperset")>]
-        let isProperSuperset (x:Set<'T>) (y: Set<'T>) = SetTree.psubset x.Comparer y.Tree x.Tree
+        let isProperSuperset (set1:Set<'T>) (set2: Set<'T>) = SetTree.psubset set1.Comparer set2.Tree set1.Tree
 
         [<CompiledName("MinElement")>]
-        let minElement (s : Set<'T>) = s.MinimumElement
+        let minElement (set: Set<'T>) = set.MinimumElement
 
         [<CompiledName("MaxElement")>]
-        let maxElement (s : Set<'T>) = s.MaximumElement
+        let maxElement (set: Set<'T>) = set.MaximumElement
 
 
 

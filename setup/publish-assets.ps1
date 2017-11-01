@@ -30,7 +30,7 @@ try {
         "microbuild" {
             $requestUrl = "https://dotnet.myget.org/F/fsharp/vsix/upload"
         }
-        "microbuild-dev15-rtm" {
+        "microbuild-dev15.5" {
             $requestUrl = "https://dotnet.myget.org/F/fsharp-preview/vsix/upload"
         }
         default {

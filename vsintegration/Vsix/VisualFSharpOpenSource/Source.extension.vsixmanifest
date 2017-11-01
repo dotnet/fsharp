@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
     <Identity Id="VisualFSharp" Version="42.42.42.42" Language="en-US" Publisher="Microsoft.VisualFSharpTools" />
     <DisplayName>Visual F# Tools</DisplayName>
-    <Description xml:space="preserve">Deploy Visual F# Tools templates to Visual Studio</Description>
+    <Description xml:space="preserve">Deploy Visual F# Tools Binaries and Templates to Visual Studio</Description>
     <PackageId>Microsoft.FSharp.VSIX.OpenSource.Core</PackageId>
     <MoreInfo>https://docs.microsoft.com/en-us/dotnet/articles/fsharp/</MoreInfo>
   </Metadata>
@@ -28,7 +28,6 @@
       <Action Type="Ngen" Path="FSharp.ProjectSystem.PropertyPages.dll" />
       <Action Type="Ngen" Path="FSharp.VS.FSI.dll" />
     </Actions>
-    -
   </Installer>
   <Dependencies>
     <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.6,)" />

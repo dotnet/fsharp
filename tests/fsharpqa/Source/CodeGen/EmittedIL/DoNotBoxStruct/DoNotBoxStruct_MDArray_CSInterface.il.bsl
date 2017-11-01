@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.1
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:4:1:0
 }
 .assembly DoNotBoxStruct_MDArray_CSInterface
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.DoNotBoxStruct_MDArray_CSInterface
 {
-  // Offset: 0x00000000 Length: 0x00000271
+  // Offset: 0x00000000 Length: 0x0000025C
 }
 .mresource public FSharpOptimizationData.DoNotBoxStruct_MDArray_CSInterface
 {
-  // Offset: 0x00000278 Length: 0x0000009C
+  // Offset: 0x00000260 Length: 0x0000009C
 }
 .module DoNotBoxStruct_MDArray_CSInterface.exe
-// MVID: {4BEB2810-24A8-8796-A745-03831028EB4B}
+// MVID: {59B1920A-24A8-8796-A745-03830A92B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00380000
+// Image base: 0x00DD0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -53,20 +53,19 @@
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .method public static void  F<([mscorlib]System.IDisposable) T>(!!T[0...,0...] x) cil managed
   {
-    // Code size       23 (0x17)
-    .maxstack  5
+    // Code size       22 (0x16)
+    .maxstack  8
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 5,5 : 54,71 
-    IL_0000:  nop
-    IL_0001:  ldarg.0
+    .line 5,5 : 54,71 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\DoNotBoxStruct\\DoNotBoxStruct_MDArray_CSInterface.fs'
+    IL_0000:  ldarg.0
+    IL_0001:  ldc.i4.0
     IL_0002:  ldc.i4.0
-    IL_0003:  ldc.i4.0
-    IL_0004:  readonly.
-    IL_0006:  call       instance !!T& !!T[,]::Address(int32,
-                                                       int32)
-    IL_000b:  constrained. !!T
-    IL_0011:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
-    IL_0016:  ret
+    IL_0003:  readonly.
+    IL_0005:  call       instance !!T& !!T[0...,0...]::Address(int32,
+                                                               int32)
+    IL_000a:  constrained. !!T
+    IL_0010:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
+    IL_0015:  ret
   } // end of method DoNotBoxStruct_MDArray_CSInterface::F
 
 } // end of class DoNotBoxStruct_MDArray_CSInterface
@@ -77,10 +76,9 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       2 (0x2)
-    .maxstack  2
-    IL_0000:  nop
-    IL_0001:  ret
+    // Code size       1 (0x1)
+    .maxstack  8
+    IL_0000:  ret
   } // end of method $DoNotBoxStruct_MDArray_CSInterface::main@
 
 } // end of class '<StartupCode$DoNotBoxStruct_MDArray_CSInterface>'.$DoNotBoxStruct_MDArray_CSInterface

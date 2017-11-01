@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
 
 open System
@@ -12,11 +12,14 @@ open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.CodeAnalysis.Formatting
+
+open UnitTests.TestLib.LanguageService
 
 [<TestFixture>][<Category "Roslyn Services">]
 type IndentationServiceTests()  =
-    static let filePath = "C:\\test.fs"
-    static let options: FSharpProjectOptions = { 
+    let filePath = "C:\\test.fs"
+    let projectOptions: FSharpProjectOptions = { 
         ProjectFileName = "C:\\test.fsproj"
         SourceFiles =  [| filePath |]
         ReferencedProjects = [| |]
@@ -29,13 +32,14 @@ type IndentationServiceTests()  =
         ExtraProjectInfo = None
         Stamp = None
     }
-    static let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
 
-    static let indentComment = System.Text.RegularExpressions.Regex(@"\$\s*Indent:\s*(\d+)\s*\$")
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    let tabSize = 4
+    let indentStyle = FormattingOptions.IndentStyle.Smart
+    
+    let indentComment = System.Text.RegularExpressions.Regex(@"\$\s*Indent:\s*(\d+)\s*\$")
 
-    static let tabSize = 4
-
-    static let consoleProjectTemplate = "
+    let consoleProjectTemplate = "
 // Learn more about F# at http://fsharp.org
 // See the 'F# Tutorial' project for more help.
 
@@ -44,20 +48,20 @@ let main argv =
     printfn \"%A\" argv
     0 // return an integer exit code"
 
-    static let libraryProjectTemplate = "
+    let libraryProjectTemplate = "
 namespace ProjectNamespace
 
 type Class1() = 
     member this.X = \"F#\""
 
-    static let nestedTypesTemplate = "
+    let nestedTypesTemplate = "
 namespace testspace
     type testtype
         static member testmember = 1
 
 "
 
-    static let autoIndentTemplate = "
+    let autoIndentTemplate = "
 let plus x y =
     x + y // $Indent: 4$
 
@@ -104,7 +108,8 @@ let t = seq { // $Indent: 0$
     yield 1 // $Indent: 4$
 }
 
-let g = function
+let g =
+    function
     | None -> 1 // $Indent: 4$
     | Some _ -> 0
 
@@ -127,33 +132,33 @@ while true do
 // The follwing line should inherit that indentation too $Indent: 4$
 "
     
-    static member private testCases: Object[][] = [|
-        [| None;     0; consoleProjectTemplate |]
-        [| None;     1; consoleProjectTemplate |]
-        [| Some(0);  2; consoleProjectTemplate |]
-        [| Some(0);  3; consoleProjectTemplate |]
-        [| Some(0);  4; consoleProjectTemplate |]
-        [| Some(0);  5; consoleProjectTemplate |]
-        [| Some(4);  6; consoleProjectTemplate |]
-        [| Some(4);  7; consoleProjectTemplate |]
-        [| Some(4);  8; consoleProjectTemplate |]
+    let testCases = [|
+        ( None,     0, consoleProjectTemplate )
+        ( None,     1, consoleProjectTemplate )
+        ( Some(0),  2, consoleProjectTemplate )
+        ( Some(0),  3, consoleProjectTemplate )
+        ( Some(0),  4, consoleProjectTemplate )
+        ( Some(0),  5, consoleProjectTemplate )
+        ( Some(4),  6, consoleProjectTemplate )
+        ( Some(4),  7, consoleProjectTemplate )
+        ( Some(4),  8, consoleProjectTemplate )
         
-        [| None;     0; libraryProjectTemplate |]
-        [| None;     1; libraryProjectTemplate |]
-        [| Some(0);  2; libraryProjectTemplate |]
-        [| Some(0);  3; libraryProjectTemplate |]
-        [| Some(4);  4; libraryProjectTemplate |]
-        [| Some(4);  5; libraryProjectTemplate |]
+        ( None,     0, libraryProjectTemplate )
+        ( None,     1, libraryProjectTemplate )
+        ( Some(0),  2, libraryProjectTemplate )
+        ( Some(0),  3, libraryProjectTemplate )
+        ( Some(4),  4, libraryProjectTemplate )
+        ( Some(4),  5, libraryProjectTemplate )
         
-        [| None;     0; nestedTypesTemplate |]
-        [| None;     1; nestedTypesTemplate |]
-        [| Some(0);  2; nestedTypesTemplate |]
-        [| Some(4);  3; nestedTypesTemplate |]
-        [| Some(8);  4; nestedTypesTemplate |]
-        [| Some(8);  5; nestedTypesTemplate |]
+        ( None,     0, nestedTypesTemplate )
+        ( None,     1, nestedTypesTemplate )
+        ( Some(0),  2, nestedTypesTemplate )
+        ( Some(4),  3, nestedTypesTemplate )
+        ( Some(8),  4, nestedTypesTemplate )
+        ( Some(8),  5, nestedTypesTemplate )
     |]
 
-    static member private autoIndentTestCases =
+    let autoIndentTestCases =
         autoIndentTemplate.Split [|'\n'|]
         |> Array.map (fun s -> s.Trim())
         |> Array.indexed
@@ -162,18 +167,26 @@ while true do
             if m.Success then Some (line, System.Convert.ToInt32 m.Groups.[1].Value)
             else None )
         |> Array.map (fun (lineNumber, expectedIndentation) ->
-            [| Some(expectedIndentation); lineNumber; autoIndentTemplate |]: Object[] )
+            ( Some(expectedIndentation), lineNumber, autoIndentTemplate ))
 
-    [<TestCaseSource("testCases")>]
-    member this.TestIndentation(expectedIndentation: Option<int>, lineNumber: int, template: string) = 
-        let actualIndentation = FSharpIndentationService.GetDesiredIndentation(documentId, SourceText.From(template), filePath, lineNumber, tabSize, (Some options))
-        match expectedIndentation with
-        | None -> Assert.IsTrue(actualIndentation.IsNone, "No indentation was expected at line {0}", lineNumber)
-        | Some(indentation) -> Assert.AreEqual(expectedIndentation.Value, actualIndentation.Value, "Indentation on line {0} doesn't match", lineNumber)
+    member this.TestIndentation() = 
+        for (expectedIndentation, lineNumber, template) in testCases do 
+            let sourceText = SourceText.From(template)
+
+            let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
+            let actualIndentation = FSharpIndentationService.GetDesiredIndentation(documentId, sourceText, filePath, lineNumber, tabSize, indentStyle, Some (parsingOptions, projectOptions))
+            match expectedIndentation with
+            | None -> Assert.IsTrue(actualIndentation.IsNone, "No indentation was expected at line {0}", lineNumber)
+            | Some indentation -> Assert.AreEqual(expectedIndentation.Value, actualIndentation.Value, "Indentation on line {0} doesn't match", lineNumber)
     
-    [<TestCaseSource("autoIndentTestCases")>]
-    member this.TestAutoIndentation(expectedIndentation: Option<int>, lineNumber: int, template: string) = 
-        let actualIndentation = FSharpIndentationService.GetDesiredIndentation(documentId, SourceText.From(template), filePath, lineNumber, tabSize, (Some options))
-        match expectedIndentation with
-        | None -> Assert.IsTrue(actualIndentation.IsNone, "No indentation was expected at line {0}", lineNumber)
-        | Some(indentation) -> Assert.AreEqual(expectedIndentation.Value, actualIndentation.Value, "Indentation on line {0} doesn't match", lineNumber)
+    member this.TestAutoIndentation() = 
+        for (expectedIndentation, lineNumber, template) in autoIndentTestCases do 
+
+          
+            let sourceText = SourceText.From(template)
+        
+            let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
+            let actualIndentation = FSharpIndentationService.GetDesiredIndentation(documentId, sourceText, filePath, lineNumber, tabSize, indentStyle, Some (parsingOptions, projectOptions))
+            match expectedIndentation with
+            | None -> Assert.IsTrue(actualIndentation.IsNone, "No indentation was expected at line {0}", lineNumber)
+            | Some indentation -> Assert.AreEqual(expectedIndentation.Value, actualIndentation.Value, "Indentation on line {0} doesn't match", lineNumber)

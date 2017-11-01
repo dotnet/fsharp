@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver 
 
@@ -287,11 +287,12 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
 
             let registry = sprintf "{Registry:%s,%s,%s%s}" frameworkRegistryBase targetFrameworkVersion assemblyFoldersSuffix assemblyFoldersConditions
 
-            [|  // When compiling scripts, for some reason we have always historically put TargetFrameworkDirectory first
-                // It is unclear why.
+            [|  // When compiling scripts using fsc.exe, for some reason we have always historically put TargetFrameworkDirectory first
+                // It is unclear why.  This is the only place we look at the 'isdifference between ResolutionEnvironment.EditingOrCompilation and ResolutionEnvironment.EditingTime.
                 match resolutionEnvironment with
-                | CompileTimeLike -> yield "{TargetFrameworkDirectory}"
-                | DesignTimeLike | RuntimeLike -> ()
+                | ResolutionEnvironment.EditingOrCompilation false -> yield "{TargetFrameworkDirectory}"
+                | ResolutionEnvironment.EditingOrCompilation true
+                | ResolutionEnvironment.CompilationAndEvaluation -> ()
 
                 // Quick-resolve straight to filename first 
                 if allowRawFileName then 
@@ -301,8 +302,9 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
                 yield implicitIncludeDir   // Usually the project directory
 
                 match resolutionEnvironment with
-                | DesignTimeLike | RuntimeLike -> yield "{TargetFrameworkDirectory}"
-                | CompileTimeLike -> ()
+                | ResolutionEnvironment.EditingOrCompilation true
+                | ResolutionEnvironment.CompilationAndEvaluation -> yield "{TargetFrameworkDirectory}"
+                | ResolutionEnvironment.EditingOrCompilation false -> ()
 
                 yield registry
                 yield "{AssemblyFolders}"

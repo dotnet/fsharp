@@ -9,6 +9,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>$safeprojectname$</RootNamespace>
     <AssemblyName>$safeprojectname$</AssemblyName>
+    <UseStandardResourceNames>true</UseStandardResourceNames>
     <TargetFrameworkVersion>v$targetframeworkversion$</TargetFrameworkVersion>
     $if$ ($targetframeworkversion$ >= 4.0)
     <TargetFSharpCoreVersion>4.4.1.0</TargetFSharpCoreVersion>

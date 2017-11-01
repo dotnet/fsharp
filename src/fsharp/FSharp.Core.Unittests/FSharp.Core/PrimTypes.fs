@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // Various tests for the:
 // Microsoft.FSharp.Core.LanguagePrimitives module
@@ -89,11 +89,7 @@ type LanguagePrimitivesModule() =
     member this.GuidToString() =
         let s = "F99D95E0-2A5E-47c4-9B92-6661D65AE6B3"
         let guid = new Guid(s)
-#if FX_NO_TO_LOWER_INVARIANT
-        Assert.AreEqual((string guid).ToLower(), s.ToLower())
-#else        
         Assert.AreEqual((string guid).ToLowerInvariant(), s.ToLowerInvariant())
-#endif
 
     [<Test>]
     member this.GenericComparison() =
@@ -466,10 +462,7 @@ type LanguagePrimitivesModule() =
         CheckThrowsArgumentNullException2 "float32" (fun () -> float32 s |> ignore)
         CheckThrowsArgumentNullException2 "float" (fun () -> float s |> ignore)
         CheckThrowsArgumentNullException2 "decimal" (fun () -> decimal s |> ignore)
-        // SL and Portable Runtimes are compiled with FX_NO_CHAR_PARSE
-#if !FX_NO_CHAR_PARSE
         CheckThrowsArgumentNullException2 "char" (fun () -> char s |> ignore)
-#endif        
 
     [<Test>]
     member this.PhysicalEquality() =

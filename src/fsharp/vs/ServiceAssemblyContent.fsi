@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
@@ -256,9 +256,3 @@ module internal Extensions =
     type FSharpAssemblySignature with
         /// Safe version of `Entities`.
         member TryGetEntities : unit -> seq<FSharpEntity>
-
-/// Operations over `FSharpAttribute`.
-[<AutoOpen>]
-module internal Utils =
-    /// Returns `true` if a collection of attributes contains one of given type.
-    val hasAttribute<'T> : attributes: seq<FSharpAttribute> -> bool

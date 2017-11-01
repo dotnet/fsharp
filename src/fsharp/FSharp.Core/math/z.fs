@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 #nowarn "44" // This construct is deprecated. This function is for use by compiled F# code and should not be used directly
 namespace System.Numerics
@@ -366,13 +366,13 @@ namespace Microsoft.FSharp.Core
             let tab64 = new System.Collections.Generic.Dictionary<int64,obj>()
             let tabParse = new System.Collections.Generic.Dictionary<string,obj>()
             
-            let FromInt64Dynamic (x64:int64) : obj = 
+            let FromInt64Dynamic (value:int64) : obj = 
                 lock tab64 (fun () -> 
                     let mutable res = Unchecked.defaultof<_> 
-                    let ok = tab64.TryGetValue(x64,&res)
+                    let ok = tab64.TryGetValue(value,&res)
                     if ok then res else 
-                    res <- BigInteger(x64)
-                    tab64.[x64] <- res
+                    res <- BigInteger(value)
+                    tab64.[value] <- res
                     res)                 
 
             let inline get32 (x32:int32) =  FromInt64Dynamic (int64 x32)
@@ -387,13 +387,13 @@ namespace Microsoft.FSharp.Core
                 (get32 1 :?> 'T)
                 when 'T : BigInteger = BigInteger.One
 
-            let FromInt32 (i:int32): 'T = 
-                (get32 i :?> 'T)
-                when 'T : BigInteger = new BigInteger(i)
+            let FromInt32 (value:int32): 'T = 
+                (get32 value :?> 'T)
+                when 'T : BigInteger = new BigInteger(value)
             
-            let FromInt64 (i:int64): 'T = 
-                (FromInt64Dynamic i :?> 'T)
-                when 'T : BigInteger = new BigInteger(i)
+            let FromInt64 (value:int64): 'T = 
+                (FromInt64Dynamic value :?> 'T)
+                when 'T : BigInteger = new BigInteger(value)
                 
             let getParse s = 
                 lock tabParse (fun () -> 
@@ -459,12 +459,12 @@ namespace Microsoft.FSharp.Core
                     tabParse.[s] <- res
                     res)
 
-            let FromStringDynamic (s:string) : obj = 
-                getParse s
+            let FromStringDynamic (text:string) : obj = 
+                getParse text
                 
-            let FromString (s:string) : 'T = 
-                (FromStringDynamic s :?> 'T)
-                when 'T : BigInteger = getParse s
+            let FromString (text:string) : 'T = 
+                (FromStringDynamic text :?> 'T)
+                when 'T : BigInteger = getParse text
 
   
 

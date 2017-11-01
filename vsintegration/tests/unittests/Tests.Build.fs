@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Tests
 
@@ -40,11 +40,7 @@ type MyLogger(f : string -> unit) =
 type FauxHostObject() =
     let mutable myFlags : string[] = null
     let mutable mySources : string[] = null
-#if FX_NO_CONVERTER
-    member x.Compile(compile:Func<int>, flags:string[], sources:string[]) = 
-#else
     member x.Compile(compile:System.Converter<int,int>, flags:string[], sources:string[]) = 
-#endif
         myFlags <- flags        
         mySources <- sources
         0
