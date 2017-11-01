@@ -350,6 +350,18 @@ if [ $_autoselect_tests -eq 1 ]; then
     fi
 fi
 
+# If the `PB_SKIPTESTS` variable is set to 'true' then no tests should be built or run, even if explicitly specified
+if [ $PB_SKIPTESTS -eq "true" ]; then
+    export TEST_NET40_COMPILERUNIT_SUITE=0
+    export TEST_NET40_COREUNIT_SUITE=0
+    export TEST_NET40_FSHARP_SUITE=0
+    export TEST_NET40_FSHARPQA_SUITE=0
+    export TEST_CORECLR_COREUNIT_SUITE=0
+    export TEST_CORECLR_FSHARP_SUITE=0
+    export TEST_PORTABLE_COREUNIT_SUITE=0
+    export TEST_VS_IDEUNIT_SUITE=0
+fi
+
 #
 # Report config
 #
@@ -367,6 +379,7 @@ printf "BUILD_SETUP=%s\n" "$BUILD_SETUP"
 printf "BUILD_CONFIG=%s\n" "$BUILD_CONFIG"
 printf "BUILD_PUBLICSIGN=%s\n" "$BUILD_PUBLICSIGN"
 printf "\n"
+printf "PB_SKIPTESTS=%s\n" "$PB_SKIPTESTS"
 printf "TEST_NET40_COMPILERUNIT_SUITE=%s\n" "$TEST_NET40_COMPILERUNIT_SUITE"
 printf "TEST_NET40_COREUNIT_SUITE=%s\n" "$TEST_NET40_COREUNIT_SUITE"
 printf "TEST_NET40_FSHARP_SUITE=%s\n" "$TEST_NET40_FSHARP_SUITE"
