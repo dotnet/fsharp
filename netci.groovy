@@ -104,7 +104,7 @@ ${buildPath}build.cmd ${buildFlavor} ${build_args}""")
             Utilities.standardJobSetup(newJob, project, isPullRequest, "*/${branch}")
 
 
-						if (build_args == "none") {
+						if (build_args != "none") {
 		            Utilities.addArchival(newJob, "tests/TestResults/*.*", "", skipIfNoTestFiles, false)
 		            if (configuration == "Release_fcs") {
 		                Utilities.addArchival(newJob, "Release/fcs/**")
