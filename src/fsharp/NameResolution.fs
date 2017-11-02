@@ -27,7 +27,7 @@ open Microsoft.FSharp.Compiler.InfoReader
 open Microsoft.FSharp.Compiler.PrettyNaming
 open System.Collections.Generic
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -1066,7 +1066,7 @@ type PermitDirectReferenceToGeneratedType =
     | No
     
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 
 /// Check for direct references to generated provided types.
 let CheckForDirectReferenceToGeneratedType (tcref: TyconRef, genOk, m) =
@@ -1141,7 +1141,7 @@ let LookupTypeNameInEntityMaybeHaveArity (amap, m, ad, nm, staticResInfo:TypeNam
             match LookupTypeNameInEntityHaveArity nm staticResInfo mtyp with
             | Some tycon -> [modref.NestedTyconRef tycon] 
             | None -> []
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     let tcrefs =
         match tcrefs with 
         | [] -> ResolveProvidedTypeNameInEntity (amap, m, nm, modref)
@@ -1171,7 +1171,7 @@ let GetNestedTypesOfType (ad, ncenv:NameResolver, optFilter, staticResInfo, chec
             let tycon = tcref.Deref
             let mty = tycon.ModuleOrNamespaceType
             // No dotting through type generators to get to a nested type!
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
             if checkForGenerated then 
                 CheckForDirectReferenceToGeneratedType (tcref, PermitDirectReferenceToGeneratedType.No, m)
 #else
@@ -1183,7 +1183,7 @@ let GetNestedTypesOfType (ad, ncenv:NameResolver, optFilter, staticResInfo, chec
                 let tcrefs = LookupTypeNameInEntityMaybeHaveArity (ncenv.amap, m, ad, nm, staticResInfo, tcref)
                 tcrefs |> List.map (MakeNestedType ncenv tinst m) 
             | None -> 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
                 match tycon.TypeReprInfo with 
                 | TProvidedTypeExtensionPoint info ->
                     [ for nestedType in info.ProvidedType.PApplyArray((fun sty -> sty.GetNestedTypes()), "GetNestedTypes", m) do 
@@ -1727,7 +1727,7 @@ let CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities
         | _ -> 
             tcrefs
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     for (_,tcref) in tcrefs do 
         // Type generators can't be returned by name resolution, unless PermitDirectReferenceToGeneratedType.Yes
         CheckForDirectReferenceToGeneratedType (tcref, genOk, m)
@@ -1931,7 +1931,7 @@ let SelectMethInfosFromExtMembers (infoReader:InfoReader) optFilter apparentTy m
                     // F#-defined IL-style extension methods are not seen as extension methods in F# code
                     | FSMeth(g,_,vref,_) -> 
                          yield (FSMeth(g, apparentTy, vref, Some pri))
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
                     // // Provided extension methods are not yet supported
                     | ProvidedMeth(amap,providedMeth,_,m) -> 
                          yield (ProvidedMeth(amap, providedMeth, Some pri,m))
@@ -1989,7 +1989,7 @@ let CoreDisplayName(pinfo:PropInfo) =
     | FSProp(_,_,Some get,_) -> get.CoreDisplayName
     | FSProp _ -> failwith "unexpected (property must have either getter or setter)"
     | ILProp(_,ILPropInfo(_,def))  -> def.Name
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     | ProvidedProp(_,pi,m) -> pi.PUntaint((fun pi -> pi.Name), m)
 #endif
 
@@ -2164,7 +2164,7 @@ let ResolveLongIdentInType sink ncenv nenv lookupKind m ad lid findFlag typeName
     item,rest
 
 let private ResolveLongIdentInTyconRef (ncenv:NameResolver) nenv lookupKind resInfo depth m ad lid typeNameResInfo tcref =
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     // No dotting through type generators to get to a member!
     CheckForDirectReferenceToGeneratedType (tcref, PermitDirectReferenceToGeneratedType.No, m)
 #endif
@@ -2732,7 +2732,7 @@ let rec ResolveTypeLongIdentInTyconRefPrim (ncenv:NameResolver) (typeNameResInfo
     match lid with 
     | [] -> error(Error(FSComp.SR.nrUnexpectedEmptyLongId(),m))
     | [id] -> 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         // No dotting through type generators to get to a nested type!
         CheckForDirectReferenceToGeneratedType (tcref, PermitDirectReferenceToGeneratedType.No, m)
 #endif
@@ -2750,7 +2750,7 @@ let rec ResolveTypeLongIdentInTyconRefPrim (ncenv:NameResolver) (typeNameResInfo
 
             raze (UndefinedName(depth,FSComp.SR.undefinedNameType,id,suggestTypes))
     | id::rest ->
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         // No dotting through type generators to get to a nested type!
         CheckForDirectReferenceToGeneratedType (tcref, PermitDirectReferenceToGeneratedType.No, m)
 #endif
@@ -3575,7 +3575,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
                 if addersAndRemovers.IsEmpty then minfos
                 else minfos |> List.filter (fun minfo -> not (addersAndRemovers.Contains minfo.LogicalName))
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
             // Filter out the ones with mangled names from applying static parameters
             let minfos = 
                 let methsWithStaticParams = 
@@ -4201,7 +4201,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics typ 
                         if addersAndRemovers.IsEmpty then minfos
                         else minfos |> List.filter (fun minfo -> not (addersAndRemovers.Contains minfo.LogicalName))
         
-        #if EXTENSIONTYPING
+        #if !NO_EXTENSIONTYPING
                     // Filter out the ones with mangled names from applying static parameters
                     let minfos = 
                         let methsWithStaticParams = 

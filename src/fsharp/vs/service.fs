@@ -1183,7 +1183,7 @@ type TypeCheckInfo
               | None ->
                   let fail defaultReason = 
                       match item.Item with 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
                       | SymbolHelpers.ItemIsProvidedType g (tcref) -> FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.ProvidedType(tcref.DisplayName))
                       | Item.CtorGroup(name, ProvidedMeth(_)::_)
                       | Item.MethodGroup(name, ProvidedMeth(_)::_, _)
@@ -1448,7 +1448,7 @@ module internal Parser =
                             errorCount <- errorCount + 1
 
                 match exn with
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
                 | { Exception = (:? TypeProviderError as tpe) } -> tpe.Iter(fun e -> report { exn with Exception = e })
 #endif
                 | e -> report e

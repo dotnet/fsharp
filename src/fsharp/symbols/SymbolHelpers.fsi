@@ -212,7 +212,7 @@ module internal SymbolHelpers =
     val IsAttribute : InfoReader -> Item -> bool
     val IsExplicitlySuppressed : TcGlobals -> Item -> bool
     val FlattenItems : TcGlobals -> range -> Item -> Item list
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     val (|ItemIsProvidedType|_|) : TcGlobals -> Item -> TyconRef option
     val (|ItemIsWithStaticArguments|_|): range -> TcGlobals -> Item -> Tainted<ExtensionTyping.ProvidedParameterInfo>[] option
     val (|ItemIsProvidedTypeWithStaticArguments|_|): range -> TcGlobals -> Item -> Tainted<ExtensionTyping.ProvidedParameterInfo>[] option
