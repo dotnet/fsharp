@@ -38,7 +38,7 @@ def static getBuildJobName(def configuration, def os) {
             def buildCommand = '';
             def buildFlavor= '';
 
-            if (configuration == "Release_fcs") {
+            if (configuration == "Release_fcs" && branch != "dev15.5") {
                 // Build and test FCS NuGet package
                 buildPath = "./fcs/"
                 buildFlavor = ""
