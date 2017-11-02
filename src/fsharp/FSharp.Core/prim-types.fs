@@ -3172,7 +3172,7 @@ namespace Microsoft.FSharp.Collections
                 match lst with
                 | _ when i = 0 -> lst
                 | _::t -> loop (i-1) t
-                | [] -> []
+                | [] -> outOfRange()
             loop n l
 
     type List<'T> with
