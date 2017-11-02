@@ -56,7 +56,7 @@ module internal ExtensionTyping =
     // When significant new processor types appear add a new moniker here. Note that use of this qualifier will be very rare
     // and we don't expect different design-time assemblies will be needed for different architectures very often.  Some
     // exceptions may be design-time components for type providers for systems such as Python or R.
-    let toolingCompatibleArch = if Environment.Is64BitProcess then "x64" else "x86" 
+    let toolingCompatibleArch = if sizeof<nativeint> = 8 then "x64" else "x86" 
 
     let toolingCompatiblePaths = 
         [ for protocol in toolingCompatibleTypeProviderProtocolMonikers do
