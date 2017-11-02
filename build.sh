@@ -64,10 +64,6 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ] || [ "$1" = "-?" ]; then
     show_usage_and_exit
 fi
 
-if [ "$1" = "none" ]; then
-    exit 0
-fi
-
 # Save directory of the current script -- this is used below to fix up relative paths (if needed).
 # The directory should have a trailing slash like it does on Windows, to minimize differences between scripts.
 _scriptdir="$( cd -P -- "$(dirname -- "$(command -v -- "$0")")" && pwd -P )/"
@@ -141,6 +137,11 @@ do
             ;;
         "nobuild")
             export BUILD_PHASE=0
+            ;;
+        "none")
+            _autoselect=0
+            export _buildexit=1
+            export _buildexitVALUE=0
             ;;
         "all")
             _autoselect=0
@@ -323,6 +324,10 @@ do
             ;;
     esac
 done
+
+if [ $_buildexit -eq 1 ]; then
+    exit $_buildexitvalue
+fi
 
 # Apply defaults, if necessary.
 if [ $_autoselect -eq 1 ]; then
