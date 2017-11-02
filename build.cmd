@@ -4,12 +4,12 @@ rem Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt 
 setlocal enableDelayedExpansion
 
 :ARGUMENTS_VALIDATION
-
-if /I "%1" == "--help"   (goto :USAGE)
+if /I "%1" == "--help"  (goto :USAGE)
 if /I "%1" == "/help"   (goto :USAGE)
 if /I "%1" == "/h"      (goto :USAGE)
 if /I "%1" == "/?"      (goto :USAGE)
 goto :ARGUMENTS_OK
+
 
 :USAGE
 
@@ -48,6 +48,9 @@ echo.
 goto :success
 
 :ARGUMENTS_OK
+
+rem Do no work
+if /I "%1" == "none"    (goto :success)
 
 rem disable setup build by setting FSC_BUILD_SETUP=0
 if /i "%FSC_BUILD_SETUP%" == "" (set FSC_BUILD_SETUP=1) 
