@@ -15,17 +15,16 @@ open System.Linq
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open System.Threading
-
-open Microsoft.FSharp.Compiler.CompileOps
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.VisualStudio.FSharp.LanguageService.SiteProvider
-
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Diagnostics
 open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Options
+open Microsoft.FSharp.Compiler.CompileOps
+open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Editor
+open Microsoft.VisualStudio.FSharp.LanguageService
+open Microsoft.VisualStudio.FSharp.LanguageService.SiteProvider
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.LanguageServices.Implementation.LanguageService
@@ -34,10 +33,9 @@ open Microsoft.VisualStudio.LanguageServices.Implementation.TaskList
 open Microsoft.VisualStudio.LanguageServices.ProjectSystem
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.ComponentModelHost
 
-// Exposes FSharpChecker as MEF export
+/// Exposes FSharpChecker as MEF export
 [<Export(typeof<FSharpCheckerProvider>); Composition.Shared>]
 type internal FSharpCheckerProvider 
     [<ImportingConstructor>]
@@ -84,12 +82,12 @@ type internal FSharpCheckerProvider
 
 
 /// Exposes FCS FSharpProjectOptions information management as MEF component.
-//
-// This service allows analyzers to get an appropriate FSharpProjectOptions value for a project or single file.
-// It also allows a 'cheaper' route to get the project options relevant to parsing (e.g. the #define values).
-// The main entrypoints are TryGetOptionsForDocumentOrProject and TryGetOptionsForEditingDocumentOrProject.
+///
+/// This service allows analyzers to get an appropriate FSharpProjectOptions value for a project or single file.
+/// It also allows a 'cheaper' route to get the project options relevant to parsing (e.g. the #define values).
+/// The main entrypoints are TryGetOptionsForDocumentOrProject and TryGetOptionsForEditingDocumentOrProject.
 [<Export(typeof<FSharpProjectOptionsManager>); Composition.Shared>]
-type internal FSharpProjectOptionsManager 
+type internal FSharpProjectOptionsManager
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
@@ -114,33 +112,36 @@ type internal FSharpProjectOptionsManager
     /// Clear a project from the project table
     member this.ClearInfoForProject(projectId:ProjectId) = projectOptionsTable.ClearInfoForProject(projectId)
 
+    /// Clear a project from the single file project table
     member this.ClearInfoForSingleFileProject(projectId) =
         singleFileProjectTable.TryRemove(projectId) |> ignore
 
+    /// Update a project in the single file project table
     member this.AddOrUpdateSingleFileProject(projectId, data) = singleFileProjectTable.[projectId] <- data
 
     /// Get the exact options for a single-file script
-    member this.ComputeSingleFileOptions (tryGetOrCreateProjectId, fileName, loadTime, fileContents, workspace: Workspace) = async {
-        let extraProjectInfo = Some(box workspace)
-        let tryGetOptionsForReferencedProject f = f |> tryGetOrCreateProjectId |> Option.bind this.TryGetOptionsForProject |> Option.map(fun (_, _, projectOptions) -> projectOptions)
-        if SourceFile.MustBeSingleFileProject(fileName) then 
-            // NOTE: we don't use a unique stamp for single files, instead comparing options structurally.
-            // This is because we repeatedly recompute the options.
-            let optionsStamp = None 
-            let! options, _diagnostics = checkerProvider.Checker.GetProjectOptionsFromScript(fileName, fileContents, loadTime, [| |], ?extraProjectInfo=extraProjectInfo, ?optionsStamp=optionsStamp) 
-            // NOTE: we don't use FCS cross-project references from scripts to projects.  THe projects must have been
-            // compiled and #r will refer to files on disk
-            let referencedProjectFileNames = [| |] 
-            let site = ProjectSitesAndFiles.CreateProjectSiteForScript(fileName, referencedProjectFileNames, options)
-            let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, options.ExtraProjectInfo, Some projectOptionsTable, true)
-            let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
-            return (deps, parsingOptions, projectOptions)
-        else
-            let site = ProjectSitesAndFiles.ProjectSiteOfSingleFile(fileName)
-            let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, extraProjectInfo, Some projectOptionsTable, true)
-            let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
-            return (deps, parsingOptions, projectOptions)
-      }
+    member this.ComputeSingleFileOptions (tryGetOrCreateProjectId, fileName, loadTime, fileContents) =
+        async {
+            let extraProjectInfo = Some(box workspace)
+            let tryGetOptionsForReferencedProject f = f |> tryGetOrCreateProjectId |> Option.bind this.TryGetOptionsForProject |> Option.map(fun (_, _, projectOptions) -> projectOptions)
+            if SourceFile.MustBeSingleFileProject(fileName) then 
+                // NOTE: we don't use a unique stamp for single files, instead comparing options structurally.
+                // This is because we repeatedly recompute the options.
+                let optionsStamp = None 
+                let! options, _diagnostics = checkerProvider.Checker.GetProjectOptionsFromScript(fileName, fileContents, loadTime, [| |], ?extraProjectInfo=extraProjectInfo, ?optionsStamp=optionsStamp) 
+                // NOTE: we don't use FCS cross-project references from scripts to projects.  THe projects must have been
+                // compiled and #r will refer to files on disk
+                let referencedProjectFileNames = [| |] 
+                let site = ProjectSitesAndFiles.CreateProjectSiteForScript(fileName, referencedProjectFileNames, options)
+                let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, options.ExtraProjectInfo, Some projectOptionsTable, true)
+                let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
+                return (deps, parsingOptions, projectOptions)
+            else
+                let site = ProjectSitesAndFiles.ProjectSiteOfSingleFile(fileName)
+                let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, extraProjectInfo, Some projectOptionsTable, true)
+                let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
+                return (deps, parsingOptions, projectOptions)
+        }
 
     /// Update the info for a project in the project table
     member this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId, site, userOpName) =
@@ -164,32 +165,34 @@ type internal FSharpProjectOptionsManager
             | _ -> FSharpParsingOptions.Default
         CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, parsingOptions)
 
+    /// Try and get the Options for a project 
     member this.TryGetOptionsForProject(projectId:ProjectId) = projectOptionsTable.TryGetOptionsForProject(projectId)
 
     /// Get the exact options for a document or project
-    member this.TryGetOptionsForDocumentOrProject(document: Document) = async { 
-        let projectId = document.Project.Id
+    member this.TryGetOptionsForDocumentOrProject(document: Document) =
+        async { 
+            let projectId = document.Project.Id
 
-        // The options for a single-file script project are re-requested each time the file is analyzed.  This is because the
-        // single-file project may contain #load and #r references which are changing as the user edits, and we may need to re-analyze
-        // to determine the latest settings.  FCS keeps a cache to help ensure these are up-to-date.
-        match singleFileProjectTable.TryGetValue(projectId) with
-        | true, (loadTime, _, _) ->
-          try
-            let fileName = document.FilePath
-            let! cancellationToken = Async.CancellationToken
-            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-            // NOTE: we don't use FCS cross-project references from scripts to projects.  The projects must have been
-            // compiled and #r will refer to files on disk.
-            let tryGetOrCreateProjectId _ = None 
-            let! _referencedProjectFileNames, parsingOptions, projectOptions = this.ComputeSingleFileOptions (tryGetOrCreateProjectId, fileName, loadTime, sourceText.ToString(), document.Project.Solution.Workspace)
-            this.AddOrUpdateSingleFileProject(projectId, (loadTime, parsingOptions, projectOptions))
-            return Some (parsingOptions, None, projectOptions)
-          with ex -> 
-            Assert.Exception(ex)
-            return None
-        | _ -> return this.TryGetOptionsForProject(projectId)
-     }
+            // The options for a single-file script project are re-requested each time the file is analyzed.  This is because the
+            // single-file project may contain #load and #r references which are changing as the user edits, and we may need to re-analyze
+            // to determine the latest settings.  FCS keeps a cache to help ensure these are up-to-date.
+            match singleFileProjectTable.TryGetValue(projectId) with
+            | true, (loadTime, _, _) ->
+                try
+                let fileName = document.FilePath
+                let! cancellationToken = Async.CancellationToken
+                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                // NOTE: we don't use FCS cross-project references from scripts to projects.  The projects must have been
+                // compiled and #r will refer to files on disk.
+                let tryGetOrCreateProjectId _ = None 
+                let! _referencedProjectFileNames, parsingOptions, projectOptions = this.ComputeSingleFileOptions (tryGetOrCreateProjectId, fileName, loadTime, sourceText.ToString())
+                this.AddOrUpdateSingleFileProject(projectId, (loadTime, parsingOptions, projectOptions))
+                return Some (parsingOptions, None, projectOptions)
+                with ex -> 
+                Assert.Exception(ex)
+                return None
+            | _ -> return this.TryGetOptionsForProject(projectId)
+        }
 
     /// Get the options for a document or project relevant for syntax processing.
     /// Quicker then TryGetOptionsForDocumentOrProject as it doesn't need to recompute the exact project options for a script.
@@ -540,7 +543,7 @@ type
         let projectDisplayName = projectDisplayNameOf projectFileName
 
         let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
-        let _referencedProjectFileNames, parsingOptions, projectOptions = projectInfoManager.ComputeSingleFileOptions (tryGetOrCreateProjectId workspace, fileName, loadTime, fileContents, workspace) |> Async.RunSynchronously
+        let _referencedProjectFileNames, parsingOptions, projectOptions = projectInfoManager.ComputeSingleFileOptions (tryGetOrCreateProjectId workspace, fileName, loadTime, fileContents) |> Async.RunSynchronously
         projectInfoManager.AddOrUpdateSingleFileProject(projectId, (loadTime, parsingOptions, projectOptions))
 
         if isNull (workspace.ProjectTracker.GetProject projectId) then
