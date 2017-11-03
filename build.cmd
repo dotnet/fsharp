@@ -78,9 +78,6 @@ set TEST_VS_IDEUNIT_SUITE=0
 set INCLUDE_TEST_SPEC_NUNIT=
 set INCLUDE_TEST_TAGS=
 
-set PUBLISH_VSIX=0
-set MYGET_APIKEY=
-
 REM ------------------ Parse all arguments -----------------------
 
 set _autoselect=1
@@ -206,7 +203,6 @@ if /i "%ARG%" == "microbuild" (
     set TEST_CORECLR_FSHARP_SUITE=0
     set TEST_VS_IDEUNIT_SUITE=1
     set CI=1
-    set PUBLISH_VSIX=1
 
     REM redirecting TEMP directories
     set TEMP=%~dp0%BUILD_CONFIG%\TEMP
@@ -375,10 +371,6 @@ if /i "%ARG%" == "init" (
     set BUILD_PROTO_WITH_CORECLR_LKG=1
 )
 
-if /i [%ARG:~0,13%] == [MYGET_APIKEY:] (
-    set MYGET_APIKEY=%ARG:~13%
-)
-
 goto :EOF
 :: Note: "goto :EOF" returns from an in-batchfile "call" command
 :: in preference to returning from the entire batch file.
@@ -388,6 +380,19 @@ REM ------------------ Report config -----------------------
 :MAIN
 
 REM after this point, ARG variable should not be used, use only BUILD_* or TEST_*
+
+REM all PB_* variables override any settings
+
+REM if the `PB_SKIPTESTS` variable is set to 'true' then no tests should be built or run, even if explicitly specified
+if /i "%PB_SKIPTESTS%" == "true" (
+    set TEST_NET40_COMPILERUNIT_SUITE=0
+    set TEST_NET40_COREUNIT_SUITE=0
+    set TEST_NET40_FSHARP_SUITE=0
+    set TEST_NET40_FSHARPQA_SUITE=0
+    set TEST_CORECLR_COREUNIT_SUITE=0
+    set TEST_CORECLR_FSHARP_SUITE=0
+    set TEST_VS_IDEUNIT_SUITE=0
+)
 
 echo Build/Tests configuration:
 echo.
@@ -404,6 +409,8 @@ echo BUILD_NUGET=%BUILD_NUGET%
 echo BUILD_CONFIG=%BUILD_CONFIG%
 echo BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
 echo.
+echo PB_SKIPTESTS=%PB_SKIPTESTS%
+echo.
 echo TEST_NET40_COMPILERUNIT_SUITE=%TEST_NET40_COMPILERUNIT_SUITE%
 echo TEST_NET40_COREUNIT_SUITE=%TEST_NET40_COREUNIT_SUITE%
 echo TEST_NET40_FSHARP_SUITE=%TEST_NET40_FSHARP_SUITE%
@@ -413,8 +420,6 @@ echo TEST_CORECLR_FSHARP_SUITE=%TEST_CORECLR_FSHARP_SUITE%
 echo TEST_VS_IDEUNIT_SUITE=%TEST_VS_IDEUNIT_SUITE%
 echo INCLUDE_TEST_SPEC_NUNIT=%INCLUDE_TEST_SPEC_NUNIT%
 echo INCLUDE_TEST_TAGS=%INCLUDE_TEST_TAGS%
-echo PUBLISH_VSIX=%PUBLISH_VSIX%
-echo MYGET_APIKEY=%MYGET_APIKEY%
 echo TEMP=%TEMP%
 
 :: load Visual Studio 2017 developer command prompt if VS150COMNTOOLS is not set
@@ -478,43 +483,7 @@ if "%RestorePackages%"=="" (
 
 @call src\update.cmd signonly
 
-:: Check prerequisites
-if not "%VisualStudioVersion%" == "" goto vsversionset
-if exist "%VS150COMNTOOLS%\..\ide\devenv.exe" set VisualStudioVersion=15.0
-if not "%VisualStudioVersion%" == "" goto vsversionset
-
-if not "%VisualStudioVersion%" == "" goto vsversionset
-if exist "%VS150COMNTOOLS%\..\..\ide\devenv.exe" set VisualStudioVersion=15.0
-if not "%VisualStudioVersion%" == "" goto vsversionset
-
-if exist "%VS140COMNTOOLS%\..\ide\devenv.exe" set VisualStudioVersion=14.0
-if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
-if exist "%ProgramFiles%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
-if not "%VisualStudioVersion%" == "" goto vsversionset
-
-if exist "%VS120COMNTOOLS%\..\ide\devenv.exe" set VisualStudioVersion=12.0
-if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" set VisualStudioVersion=12.0
-if exist "%ProgramFiles%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" set VisualStudioVersion=12.0
-
-:vsversionset
-if "%VisualStudioVersion%" == "" echo Error: Could not find an installation of Visual Studio && goto :failure
-
-if exist "%VS150COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe" (
-    set _msbuildexe="%VS150COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe"
-    goto :havemsbuild
-)
-if exist "%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe" (
-    set _msbuildexe="%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
-    goto :havemsbuild
-)
-if exist "%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe" (
-    set _msbuildexe="%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
-    goto :havemsbuild
-)
-echo Error: Could not find MSBuild.exe. && goto :failure
-goto :eof
-
-:havemsbuild
+set _msbuildexe=%~dp0packages\RoslynTools.MSBuild.0.4.0-alpha\tools\msbuild\MSBuild.exe
 set _nrswitch=/nr:false
 
 :: See <http://www.appveyor.com/docs/environment-variables>
@@ -928,17 +897,6 @@ if "%TEST_VS_IDEUNIT_SUITE%" == "1" (
         echo Error: Running tests vs-ideunit failed, see logs above, search for "Errors and Failures"  -- FAILED
         echo ----------------------------------------------------------------------------------------------------
         goto :failure
-    )
-)
-
-REM ---------------- publish-vsix -----------------------
-
-if "%PUBLISH_VSIX%" == "1" (
-    if not "%MYGET_APIKEY%" == "" (
-        powershell -noprofile -executionPolicy ByPass -file "%~dp0setup\publish-assets.ps1" -binariesPath "%~dp0%BUILD_CONFIG%" -branchName "%BUILD_SOURCEBRANCH%" -apiKey "%MYGET_APIKEY%"
-        if errorlevel 1 goto :failure
-    ) else (
-        echo No MyGet API key specified, skipping package publish.
     )
 )
 
