@@ -274,7 +274,7 @@ type internal ProjectSitesAndFiles() =
                         if not (isNull project) then
                             for reference in project.ProjectReferences do
                                 let project = workspace.CurrentSolution.GetProject(reference.ProjectId)
-                                if not (isNull project) && (project.Language = LanguageServiceConstants.FSharpLanguageName) then
+                                if not (isNull project) then
                                     let siteProvider = provideProjectSiteProvider (workspace, project, serviceProvider, projectOptionsTable)
                                     let referenceProject = workspace.ProjectTracker.GetProject(reference.ProjectId)
                                     let outputPath = referenceProject.BinOutputPath
