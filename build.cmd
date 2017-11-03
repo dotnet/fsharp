@@ -4,12 +4,12 @@ rem Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt 
 setlocal enableDelayedExpansion
 
 :ARGUMENTS_VALIDATION
-
-if /I "%1" == "--help"   (goto :USAGE)
+if /I "%1" == "--help"  (goto :USAGE)
 if /I "%1" == "/help"   (goto :USAGE)
 if /I "%1" == "/h"      (goto :USAGE)
 if /I "%1" == "/?"      (goto :USAGE)
 goto :ARGUMENTS_OK
+
 
 :USAGE
 
@@ -92,6 +92,10 @@ for %%i in (%BUILD_FSC_DEFAULT%) do ( call :PROCESS_ARG %%i )
 
 REM apply defaults
 
+if /i "%_buildexit%" == "1" (
+		exit /B %_buildexitvalue%
+)
+
 if /i "%_autoselect%" == "1" (
     set BUILD_NET40_FSHARP_CORE=1
     set BUILD_NET40=1
@@ -128,6 +132,12 @@ set ARG=%~1
 set ARG2=%~2
 if "%ARG%" == "1" if "%2" == "" (set ARG=default)
 if "%2" == "" if not "%ARG%" == "default" goto :EOF
+
+rem Do no work
+if /i "%ARG%" == "none" (
+    set _buildexit=1
+    set _buildexitvalue=0
+)
 
 if /i "%ARG%" == "net40-lib" (
     set _autoselect=0
