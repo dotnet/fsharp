@@ -441,11 +441,18 @@ let AddLocalTyconsAndReport tcSink scopem g amap m tycons env =
 // Open a structure or an IL namespace 
 //------------------------------------------------------------------------- 
 
-let OpenModulesOrNamespaces tcSink g amap scopem root env mvvs =
+let OpenModulesOrNamespaces tcSink g amap scopem root env mvvs openDeclaration =
     let env =
         if isNil mvvs then env else
         ModifyNameResEnv (fun nenv -> AddModulesAndNamespacesContentsToNameEnv g amap env.eAccessRights scopem root nenv mvvs) env
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
+    CallOpenDeclarationSink tcSink openDeclaration
+    match openDeclaration.Range with
+    | None -> ()
+    | Some range ->
+        for modul in mvvs do
+             let item = Item.ModuleOrNamespaces [modul]
+             CallNameResolutionSink tcSink (range, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights)
     env
 
 let AddRootModuleOrNamespaceRefs g amap m env modrefs =
@@ -691,7 +698,10 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath env =
 
         let ad = env.eAccessRights
         match ResolveLongIndentAsModuleOrNamespace ResultCollectionSettings.AllResults amap scopem OpenQualified env.eNameResEnv ad enclosingNamespacePathToOpen with 
-        | Result modrefs -> OpenModulesOrNamespaces tcSink g amap scopem false env (List.map p23 modrefs)
+        | Result modrefs -> 
+            let modrefs = List.map p23 modrefs
+            let openDecl = OpenDeclaration.Create (enclosingNamespacePathToOpen, modrefs, scopem, true)
+            OpenModulesOrNamespaces tcSink g amap scopem false env modrefs openDecl
         | Exception _ ->  env
 
 
@@ -699,6 +709,36 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath env =
 // Helpers for unification
 //------------------------------------------------------------------------- 
 
+/// When the context is matching the oldRange then this function shrinks it to newRange.
+/// This can be used to change context over no-op expressions like parens.
+let ShrinkContext env oldRange newRange =
+    match env.eContextInfo with
+    | ContextInfo.NoContext
+    | ContextInfo.RecordFields
+    | ContextInfo.TupleInRecordFields
+    | ContextInfo.ReturnInComputationExpression
+    | ContextInfo.YieldInComputationExpression
+    | ContextInfo.RuntimeTypeTest _
+    | ContextInfo.DowncastUsedInsteadOfUpcast _ ->
+        env
+    | ContextInfo.CollectionElement (b,m) ->
+        if m <> oldRange then env else
+        { env with eContextInfo = ContextInfo.CollectionElement(b,newRange) }
+    | ContextInfo.FollowingPatternMatchClause m -> 
+        if m <> oldRange then env else
+        { env with eContextInfo = ContextInfo.FollowingPatternMatchClause newRange }
+    | ContextInfo.PatternMatchGuard m -> 
+        if m <> oldRange then env else
+        { env with eContextInfo = ContextInfo.PatternMatchGuard newRange }
+    | ContextInfo.IfExpression m -> 
+        if m <> oldRange then env else
+        { env with eContextInfo = ContextInfo.IfExpression newRange }
+    | ContextInfo.OmittedElseBranch m -> 
+        if m <> oldRange then env else
+        { env with eContextInfo = ContextInfo.OmittedElseBranch newRange }
+    | ContextInfo.ElseBranchResult m -> 
+        if m <> oldRange then env else
+        { env with eContextInfo = ContextInfo.ElseBranchResult newRange }
 
 /// Optimized unification routine that avoids creating new inference 
 /// variables unnecessarily
@@ -1837,6 +1877,7 @@ let MakeAndPublishSimpleVals cenv env m names mergeNamesInOneNameresEnv =
                                 nameResolutions.Add(pos, item, itemGroup, itemTyparInst, occurence, denv, nenv, ad, m, replacing)
                         member this.NotifyExprHasType(_, _, _, _, _, _) = assert false // no expr typings in MakeSimpleVals
                         member this.NotifyFormatSpecifierLocation(_, _) = ()
+                        member this.NotifyOpenDeclaration(_) = ()
                         member this.CurrentSource = None } 
 
                 use _h = WithNewTypecheckResultsSink(sink, cenv.tcSink)
@@ -5610,6 +5651,7 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
         // We invoke CallExprHasTypeSink for every construct which is atomic in the syntax, i.e. where a '.' immediately following the 
         // construct is a dot-lookup for the result of the construct. 
         CallExprHasTypeSink cenv.tcSink (mWholeExprIncludingParentheses, env.NameEnv, overallTy, env.DisplayEnv, env.eAccessRights)
+        let env = ShrinkContext env mWholeExprIncludingParentheses expr2.Range
         TcExpr cenv overallTy env tpenv expr2
 
     | SynExpr.DotIndexedGet _ | SynExpr.DotIndexedSet _
@@ -10077,11 +10119,11 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr expr cont =
     | SynExpr.Sequential (sp, true, e1, e2, m) when not isCompExpr ->
         let e1', _ = TcStmtThatCantBeCtorBody cenv env tpenv e1
         // tailcall
+        let env = ShrinkContext env m e2.Range
         TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr e2 (fun (e2', tpenv) -> 
             cont (Expr.Sequential(e1', e2', NormalSeq, sp, m), tpenv))
 
     | SynExpr.LetOrUse (isRec, isUse, binds, body, m) when not (isUse && isCompExpr) ->
-                
         if isRec then 
             // TcLinearExprs processes at most one recursive binding, this is not tailcalling
             CheckRecursiveBindingIds binds
@@ -10094,6 +10136,7 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr expr cont =
         else 
             // TcLinearExprs processes multiple 'let' bindings in a tail recursive way
             let mkf, envinner, tpenv = TcLetBinding cenv isUse env ExprContainerInfo ExpressionBinding tpenv (binds, m, body.Range)
+            let envinner = ShrinkContext envinner m body.Range
             TcLinearExprs bodyChecker cenv envinner overallTy tpenv isCompExpr body (fun (x, tpenv) -> 
                 cont (fst (mkf (x, overallTy)), tpenv))
     | _ -> 
@@ -12067,9 +12110,11 @@ let TcOpenDecl tcSink (g:TcGlobals) amap m scopem env (longId : Ident list)  =
             if IsPartiallyQualifiedNamespace modref  then 
                  errorR(Error(FSComp.SR.tcOpenUsedWithPartiallyQualifiedPath(fullDisplayTextOfModRef modref), m)))
         
-    modrefs |> List.iter (fun (_, modref, _) -> CheckEntityAttributes g modref m |> CommitOperationResult)        
+    let modrefs = List.map p23 modrefs
+    modrefs |> List.iter (fun modref -> CheckEntityAttributes g modref m |> CommitOperationResult)        
 
-    let env = OpenModulesOrNamespaces tcSink g amap scopem false env (List.map p23 modrefs)
+    let openDecl = OpenDeclaration.Create (longId, modrefs, scopem, false)
+    let env = OpenModulesOrNamespaces tcSink g amap scopem false env modrefs openDecl
     env    
 
 
@@ -16834,7 +16879,9 @@ let ApplyAssemblyLevelAutoOpenAttributeToTcEnv g amap (ccu: CcuThunk) scopem env
     let modref = mkNonLocalTyconRef (mkNonLocalEntityRef ccu (Array.ofList h))  t
     match modref.TryDeref with 
     | VNone ->  warn()
-    | VSome _ -> OpenModulesOrNamespaces TcResultsSink.NoSink g amap scopem root env [modref]
+    | VSome _ -> 
+        let openDecl = OpenDeclaration.Create ([], [modref], scopem, false)
+        OpenModulesOrNamespaces TcResultsSink.NoSink g amap scopem root env [modref] openDecl
 
 // Add the CCU and apply the "AutoOpen" attributes
 let AddCcuToTcEnv(g, amap, scopem, env, assemblyName, ccu, autoOpens, internalsVisible) = 

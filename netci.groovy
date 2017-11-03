@@ -103,7 +103,6 @@ ${buildPath}build.cmd ${buildFlavor} ${build_args}""")
             Utilities.setMachineAffinity(newJob, os, affinity)
             Utilities.standardJobSetup(newJob, project, isPullRequest, "*/${branch}")
 
-
 						if (build_args != "none") {
 		            Utilities.addArchival(newJob, "tests/TestResults/*.*", "", skipIfNoTestFiles, false)
 		            if (configuration == "Release_fcs") {

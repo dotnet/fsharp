@@ -121,3 +121,6 @@ tests/fsharpqa/testenv/bin/System.ValueTuple.dll
 */.fake
 /fcs/packages/
 */paket-files/
+/fcs/TestResult.xml
+/tests/fcs/
+/fcs/.paket/Paket.Restore.targets
