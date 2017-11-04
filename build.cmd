@@ -517,18 +517,24 @@ if "%RestorePackages%" == "true" (
     cd..
     @if ERRORLEVEL 1 echo Error: Paket restore failed  && goto :failure
 
-    %_ngenexe% install %_nugetexe%  /nologo 
+    %_ngenexe% install %_nugetexe%  /nologo
+    set _nugetoptions=-PackagesDirectory packages -ConfigFile %_nugetconfig%
+    if not "%PB_RESTORESOURCE%" == "" (
+        set _nugetoptions=!_nugetoptions! -Source %PB_RESTORESOURCE%
+    )
 
-    %_nugetexe% restore packages.config -PackagesDirectory packages -ConfigFile %_nugetconfig%
+    echo _nugetoptions=!_nugetoptions!
+
+    %_nugetexe% restore packages.config !_nugetoptions!
     @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
 
     if "%BUILD_VS%" == "1" (
-        %_nugetexe% restore vsintegration\packages.config -PackagesDirectory packages -ConfigFile %_nugetconfig%
+        %_nugetexe% restore vsintegration\packages.config !_nugetoptions!
         @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
     )
 
     if "%BUILD_SETUP%" == "1" (
-        %_nugetexe% restore setup\packages.config -PackagesDirectory packages -ConfigFile %_nugetconfig%
+        %_nugetexe% restore setup\packages.config !_nugetoptions!
         @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
     )
 )
