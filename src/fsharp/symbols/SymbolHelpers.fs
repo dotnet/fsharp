@@ -62,16 +62,15 @@ type FSharpErrorInfo(fileName, s: pos, e: pos, severity: FSharpErrorSeverity, me
     override __.ToString()= sprintf "%s (%d,%d)-(%d,%d) %s %s %s" fileName (int s.Line) (s.Column + 1) (int e.Line) (e.Column + 1) subcategory (if severity=FSharpErrorSeverity.Warning then "warning" else "error")  message
             
     /// Decompose a warning or error into parts: position, severity, message, error number
-    static member CreateFromException(exn, isError, trim:bool, fallbackRange:range) = 
+    static member CreateFromException(exn, isError, fallbackRange:range) =
         let m = match GetRangeOfDiagnostic exn with Some m -> m | None -> fallbackRange 
-        let e = if trim then m.Start else m.End
         let msg = bufs (fun buf -> OutputPhasedDiagnostic buf exn false)
         let errorNum = GetDiagnosticNumber exn
-        FSharpErrorInfo(m.FileName, m.Start, e, (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning), msg, exn.Subcategory(), errorNum)
+        FSharpErrorInfo(m.FileName, m.Start, m.End, (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning), msg, exn.Subcategory(), errorNum)
         
     /// Decompose a warning or error into parts: position, severity, message, error number
-    static member CreateFromExceptionAndAdjustEof(exn, isError, trim:bool, fallbackRange:range, (linesCount:int, lastLength:int)) = 
-        let r = FSharpErrorInfo.CreateFromException(exn, isError, trim, fallbackRange)
+    static member CreateFromExceptionAndAdjustEof(exn, isError, fallbackRange:range, (linesCount:int, lastLength:int)) =
+        let r = FSharpErrorInfo.CreateFromException(exn, isError, fallbackRange)
                 
         // Adjust to make sure that errors reported at Eof are shown at the linesCount        
         let startline, schange = min (r.StartLineAlternate, false) (linesCount, true)
@@ -93,7 +92,7 @@ type ErrorScope()  =
         PushErrorLoggerPhaseUntilUnwind (fun _oldLogger -> 
             { new ErrorLogger("ErrorScope") with 
                 member x.DiagnosticSink(exn, isError) = 
-                      let err = FSharpErrorInfo.CreateFromException(exn, isError, false, range.Zero)
+                      let err = FSharpErrorInfo.CreateFromException(exn, isError, range.Zero)
                       errors <- err :: errors
                       if isError && firstError.IsNone then 
                           firstError <- Some err.Message
@@ -180,18 +179,18 @@ module ErrorHelpers =
     let ReportError (options, allErrors, mainInputFileName, fileInfo, (exn, sev)) = 
         [ let isError = (sev = FSharpErrorSeverity.Error) || ReportWarningAsError options exn                
           if (isError || ReportWarning options exn) then 
-            let oneError trim exn = 
+            let oneError exn =
                 [ // We use the first line of the file as a fallbackRange for reporting unexpected errors.
                   // Not ideal, but it's hard to see what else to do.
                   let fallbackRange = rangeN mainInputFileName 1
-                  let ei = FSharpErrorInfo.CreateFromExceptionAndAdjustEof (exn, isError, trim, fallbackRange, fileInfo)
+                  let ei = FSharpErrorInfo.CreateFromExceptionAndAdjustEof (exn, isError, fallbackRange, fileInfo)
                   if allErrors || (ei.FileName = mainInputFileName) || (ei.FileName = TcGlobals.DummyFileNameForRangesWithoutASpecificLocation) then
                       yield ei ]
 
             let mainError, relatedErrors = SplitRelatedDiagnostics exn 
-            yield! oneError false mainError
+            yield! oneError mainError
             for e in relatedErrors do 
-                yield! oneError true e ]
+                yield! oneError e ]
 
     let CreateErrorInfos (options, allErrors, mainInputFileName, errors) = 
         let fileInfo = (Int32.MaxValue, Int32.MaxValue)
