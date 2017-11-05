@@ -484,7 +484,43 @@ if "%RestorePackages%"=="" (
 
 @call src\update.cmd signonly
 
-set _msbuildexe=%~dp0packages\RoslynTools.MSBuild.0.4.0-alpha\tools\msbuild\MSBuild.exe
+:: Check prerequisites
+if not "%VisualStudioVersion%" == "" goto vsversionset
+if exist "%VS150COMNTOOLS%\..\ide\devenv.exe" set VisualStudioVersion=15.0
+if not "%VisualStudioVersion%" == "" goto vsversionset
+
+if not "%VisualStudioVersion%" == "" goto vsversionset
+if exist "%VS150COMNTOOLS%\..\..\ide\devenv.exe" set VisualStudioVersion=15.0
+if not "%VisualStudioVersion%" == "" goto vsversionset
+
+if exist "%VS140COMNTOOLS%\..\ide\devenv.exe" set VisualStudioVersion=14.0
+if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
+if exist "%ProgramFiles%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
+if not "%VisualStudioVersion%" == "" goto vsversionset
+
+if exist "%VS120COMNTOOLS%\..\ide\devenv.exe" set VisualStudioVersion=12.0
+if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" set VisualStudioVersion=12.0
+if exist "%ProgramFiles%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" set VisualStudioVersion=12.0
+
+:vsversionset
+if "%VisualStudioVersion%" == "" echo Error: Could not find an installation of Visual Studio && goto :failure
+
+if exist "%VS150COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe" (
+    set _msbuildexe="%VS150COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe"
+    goto :havemsbuild
+)
+if exist "%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe" (
+    set _msbuildexe="%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
+    goto :havemsbuild
+)
+if exist "%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe" (
+    set _msbuildexe="%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
+    goto :havemsbuild
+)
+echo Error: Could not find MSBuild.exe. && goto :failure
+goto :eof
+
+:havemsbuild
 set _nrswitch=/nr:false
 
 :: See <http://www.appveyor.com/docs/environment-variables>
