@@ -4,6 +4,7 @@
 module internal Internal.Utilities.EditDistance
 
 open System
+open System.Collections.Generic
 
 /// Given an offset and a radius from that offset, does mChar exist in that part of str?
 let inline existsInWin (mChar: char) (str: string) (offset: int) (rad: int) =
@@ -26,25 +27,24 @@ let jaro (s1: string) (s2: string) =
     // An inner function which recursively finds the number  
     // of matched characters within the radius.
     let commonChars (chars1: string) (chars2: string) =
-        let result = ResizeArray(chars1.Length)
+        let result = Stack(chars1.Length)
         for i = chars1.Length - 1 downto 0 do
             let c = chars1.[i]
             if existsInWin c chars2 i matchRadius then 
-                result.Add c
-        result.Reverse()
-        result.ToArray()
+                result.Push c
+        result
     
     // The sets of common characters and their lengths as floats 
     let c1 = commonChars s1 s2
     let c2 = commonChars s2 s1
-    let c1length = float c1.Length
-    let c2length = float c2.Length
+    let c1length = float c1.Count
+    let c2length = float c2.Count
         
     // The number of transpositions within the sets of common characters.
     let transpositions =
         let mutable mismatches = 0.0
-        for i = 0 to (Math.Min(c1.Length, c2.Length)) - 1 do
-            if c1.[i] <> c2.[i] then 
+        for i = 0 to (Math.Min(c1.Count, c2.Count)) - 1 do
+            if c1.Pop() <> c2.Pop() then 
                 mismatches <- mismatches + 1.0
                         
         // If one common string is longer than the other
