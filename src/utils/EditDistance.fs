@@ -26,7 +26,7 @@ let jaro (s1: string) (s2: string) =
     // An inner function which recursively finds the number  
     // of matched characters within the radius.
     let commonChars (chars1: string) (chars2: string) =
-        let result = ResizeArray()
+        let result = ResizeArray(chars1.Length)
         for i = chars1.Length - 1 downto 0 do
             let c = chars1.[i]
             if existsInWin c chars2 i matchRadius then 
