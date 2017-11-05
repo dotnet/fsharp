@@ -410,6 +410,7 @@ echo BUILD_CONFIG=%BUILD_CONFIG%
 echo BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
 echo.
 echo PB_SKIPTESTS=%PB_SKIPTESTS%
+echo PB_RESTORESOURCE=%PB_RESTORESOURCE%
 echo.
 echo TEST_NET40_COMPILERUNIT_SUITE=%TEST_NET40_COMPILERUNIT_SUITE%
 echo TEST_NET40_COREUNIT_SUITE=%TEST_NET40_COREUNIT_SUITE%
@@ -553,18 +554,24 @@ if "%RestorePackages%" == "true" (
     cd..
     @if ERRORLEVEL 1 echo Error: Paket restore failed  && goto :failure
 
-    %_ngenexe% install %_nugetexe%  /nologo 
+    %_ngenexe% install %_nugetexe%  /nologo
+    set _nugetoptions=-PackagesDirectory packages -ConfigFile %_nugetconfig%
+    if not "%PB_RESTORESOURCE%" == "" (
+        set _nugetoptions=!_nugetoptions! -Source %PB_RESTORESOURCE%
+    )
 
-    %_nugetexe% restore packages.config -PackagesDirectory packages -ConfigFile %_nugetconfig%
+    echo _nugetoptions=!_nugetoptions!
+
+    %_nugetexe% restore packages.config !_nugetoptions!
     @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
 
     if "%BUILD_VS%" == "1" (
-        %_nugetexe% restore vsintegration\packages.config -PackagesDirectory packages -ConfigFile %_nugetconfig%
+        %_nugetexe% restore vsintegration\packages.config !_nugetoptions!
         @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
     )
 
     if "%BUILD_SETUP%" == "1" (
-        %_nugetexe% restore setup\packages.config -PackagesDirectory packages -ConfigFile %_nugetconfig%
+        %_nugetexe% restore setup\packages.config !_nugetoptions!
         @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
     )
 )
