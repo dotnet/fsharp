@@ -27,11 +27,11 @@ let jaro (s1: string) (s2: string) =
     // An inner function which recursively finds the number  
     // of matched characters within the radius.
     let commonChars (chars1: string) (chars2: string) =
-        let result = Stack(chars1.Length)
-        for i = chars1.Length - 1 downto 0 do
+        let result = ResizeArray(chars1.Length)
+        for i = 0 to chars1.Length - 1 do
             let c = chars1.[i]
             if existsInWin c chars2 i matchRadius then 
-                result.Push c
+                result.Add c
         result
     
     // The sets of common characters and their lengths as floats 
@@ -44,7 +44,7 @@ let jaro (s1: string) (s2: string) =
     let transpositions =
         let mutable mismatches = 0.0
         for i = 0 to (Math.Min(c1.Count, c2.Count)) - 1 do
-            if c1.Pop() <> c2.Pop() then 
+            if c1.[i] <> c2.[i] then 
                 mismatches <- mismatches + 1.0
                         
         // If one common string is longer than the other
