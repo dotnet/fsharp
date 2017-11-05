@@ -31,6 +31,7 @@ let jaro (s1: string) (s2: string) =
             let c = chars1.[i]
             if existsInWin c chars2 i matchRadius then 
                 result.Add c
+        result.Reverse()
         result.ToArray()
     
     // The sets of common characters and their lengths as floats 
