@@ -2016,17 +2016,12 @@ let DecodeFSharpEvent (pinfos:PropInfo list) ad g (ncenv:NameResolver) m =
 
 /// Returns all record label names for the given type.
 let GetRecordLabelsForType g nenv typ =
-    (if isRecdTy g typ then
-         let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv typ
-         nenv.eFieldLabels
-         |> Seq.filter (fun kv -> 
-             kv.Value 
-             |> List.exists (fun r -> r.TyconRef.DisplayName = typeName))
-         |> Seq.map (fun kv -> kv.Key)
-     else
-         Seq.empty
-    )
-    |> HashSet
+    seq { if isRecdTy g typ then
+            let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv typ
+            for KeyValue(k, v) in nenv.eFieldLabels do
+              if v |> List.exists (fun r -> r.TyconRef.DisplayName = typeName) then
+                yield k
+    } |> HashSet
 
 // REVIEW: this shows up on performance logs. Consider for example endless resolutions of "List.map" to 
 // the empty set of results, or "x.Length" for a list or array type. This indicates it could be worth adding a cache here.
