@@ -240,7 +240,7 @@ module internal Salsa =
         let mutable prevConfig = ""
         let mutable prevPlatform = ""
         let GetFlags() = 
-            let newtimestamp = File.GetLastWriteTime(projectfile)
+            let newtimestamp = File.GetLastWriteTimeUtc(projectfile)
             let curConfig = configurationFunc()
             let curPlatform = platformFunc()
             if timestamp <> newtimestamp 
