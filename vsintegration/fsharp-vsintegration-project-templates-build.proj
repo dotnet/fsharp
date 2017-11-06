@@ -7,10 +7,6 @@
   <ItemGroup>
     <ProjectFiles Include="ProjectTemplates\ConsoleProject\ConsoleProject.csproj" />
     <ProjectFiles Include="ProjectTemplates\LibraryProject\LibraryProject.csproj" />
-    <ProjectFiles Include="ProjectTemplates\NetCore259Project\NetCore259Project.csproj" />
-    <ProjectFiles Include="ProjectTemplates\NetCore78Project\NetCore78Project.csproj" />
-    <ProjectFiles Include="ProjectTemplates\NetCoreProject\NetCoreProject.csproj" />
-    <ProjectFiles Include="ProjectTemplates\PortableLibraryProject\PortableLibraryProject.csproj" />
     <ProjectFiles Include="ProjectTemplates\TutorialProject\TutorialProject.csproj" />
   </ItemGroup>
 
