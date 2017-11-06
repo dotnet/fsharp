@@ -1431,7 +1431,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
             // Returns an IProjectSite that references "this" to get its information
             member private x.CreateRunningProjectSite() =
-                let creationTime = System.DateTime.Now 
+                let creationTime = System.DateTime.UtcNow
                 { new Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite with
 
                     member __.CompilationSourceFiles = x.CompilationSourceFiles
@@ -1473,7 +1473,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 let mutable staticBuildErrorReporter = buildErrorReporter
                 let projFileName = MSBuildProject.GetFullPath(x.BuildProject)
                 let targetFrameworkMoniker = x.GetTargetFrameworkMoniker()
-                let creationTime = DateTime.Now 
+                let creationTime = DateTime.UtcNow
 
                 // This object is thread-safe
                 { new Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite with
