@@ -162,7 +162,7 @@ type AsyncModule() =
             let tickstamps = ref [] // like timestamps but for ticks :)
             
             for i = 1 to 10 do
-                tickstamps := DateTime.Now.Ticks :: !tickstamps
+                tickstamps := DateTime.UtcNow.Ticks :: !tickstamps
                 do! Async.Sleep(20)
                 
             return !tickstamps
@@ -233,7 +233,7 @@ type AsyncModule() =
     [<Test>]
     member this.``AwaitWaitHandle.Timeout``() = 
         use waitHandle = new System.Threading.ManualResetEvent(false)
-        let startTime = DateTime.Now
+        let startTime = DateTime.UtcNow
 
         let r = 
             Async.AwaitWaitHandle(waitHandle, 500)
@@ -241,7 +241,7 @@ type AsyncModule() =
 
         Assert.IsFalse(r, "Timeout expected")
 
-        let endTime = DateTime.Now
+        let endTime = DateTime.UtcNow
         let delta = endTime - startTime
         Assert.IsTrue(delta.TotalMilliseconds < 1100.0, sprintf "Expected faster timeout than %.0f ms" delta.TotalMilliseconds)
 

@@ -4163,7 +4163,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             this.isDirty = value;
             if (this.isDirty)
             {
-                this.lastModifiedTime = DateTime.Now;
+                this.lastModifiedTime = DateTime.UtcNow;
                 this.buildIsPrepared = false;
             }
         }

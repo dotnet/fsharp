@@ -3656,7 +3656,7 @@ let computeILRefs modul =
     { AssemblyReferences = Seq.fold (fun acc x -> x::acc) [] s.refsA
       ModuleReferences =  Seq.fold (fun acc x -> x::acc) [] s.refsM }
 
-let tspan = System.TimeSpan(System.DateTime.Now.Ticks - System.DateTime(2000,1,1).Ticks)
+let tspan = System.TimeSpan(System.DateTime.UtcNow.Ticks - System.DateTime(2000,1,1).Ticks)
 
 let parseILVersion (vstr : string) = 
     // matches "v1.2.3.4" or "1.2.3.4". Note, if numbers are missing, returns -1 (not 0).
@@ -3667,7 +3667,7 @@ let parseILVersion (vstr : string) =
     // account for wildcards
     if versionComponents.Length > 2 then
       let defaultBuild = (uint16)tspan.Days % System.UInt16.MaxValue - 1us
-      let defaultRevision = (uint16)(System.DateTime.Now.TimeOfDay.TotalSeconds / 2.0) % System.UInt16.MaxValue - 1us
+      let defaultRevision = (uint16)(System.DateTime.UtcNow.TimeOfDay.TotalSeconds / 2.0) % System.UInt16.MaxValue - 1us
       if versionComponents.[2] = "*" then
         if versionComponents.Length > 3 then
           failwith "Invalid version format"

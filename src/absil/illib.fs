@@ -1257,6 +1257,7 @@ module Shim =
         abstract FileStreamReadShim: fileName:string -> System.IO.Stream
         abstract FileStreamCreateShim: fileName:string -> System.IO.Stream
         abstract FileStreamWriteExistingShim: fileName:string -> System.IO.Stream
+
         /// Take in a filename with an absolute path, and return the same filename
         /// but canonicalized with respect to extra path separators (e.g. C:\\\\foo.txt) 
         /// and '..' portions
@@ -1264,6 +1265,8 @@ module Shim =
         abstract IsPathRootedShim: path:string -> bool
         abstract IsInvalidPathShim: filename:string -> bool
         abstract GetTempPathShim : unit -> string
+
+        /// Utc time of the last modification
         abstract GetLastWriteTimeShim: fileName:string -> System.DateTime
         abstract SafeExists: fileName:string -> bool
         abstract FileDelete: fileName:string -> unit
@@ -1303,7 +1306,7 @@ module Shim =
 
             member __.GetTempPathShim() = System.IO.Path.GetTempPath()
 
-            member __.GetLastWriteTimeShim (fileName:string) = File.GetLastWriteTime fileName
+            member __.GetLastWriteTimeShim (fileName:string) = File.GetLastWriteTimeUtc fileName
             member __.SafeExists (fileName:string) = System.IO.File.Exists fileName 
             member __.FileDelete (fileName:string) = System.IO.File.Delete fileName
 

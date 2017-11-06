@@ -42,7 +42,7 @@ module internal {1} =
 
             // simple up-to-date check
             if File.Exists(resx) && File.Exists(sourcePath) &&
-                File.GetLastWriteTime(resx) <= File.GetLastWriteTime(sourcePath) then
+                File.GetLastWriteTimeUtc(resx) <= File.GetLastWriteTimeUtc(sourcePath) then
                 printMessage (sprintf "Skipping generation: '%s' since it is up-to-date." sourcePath)
                 Some(sourcePath)
             else
