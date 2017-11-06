@@ -138,6 +138,11 @@ do
         "nobuild")
             export BUILD_PHASE=0
             ;;
+        "none")
+            _autoselect=0
+            export _buildexit=1
+            export _buildexitVALUE=0
+            ;;
         "all")
             _autoselect=0
             export BUILD_PROTO=1
@@ -319,6 +324,10 @@ do
             ;;
     esac
 done
+
+if [ $_buildexit -eq 1 ]; then
+    exit $_buildexitvalue
+fi
 
 # Apply defaults, if necessary.
 if [ $_autoselect -eq 1 ]; then
