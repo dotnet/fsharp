@@ -4,9 +4,9 @@
 // want to verify we do not crash!
 //<Expects status="warning" id="FS0064">This construct causes code to be less generic than indicated by the type annotations\. The type variable 'S has been constrained to be type 'int'</Expects>
 //<Expects status="error" id="FS0670">This code is not sufficiently generic\. The type variable  \^T when  \^T : \(static member \( \+ \) :  \^T \*  \^T ->  \^a\) could not be generalized because it would escape its scope</Expects>
-//<Expects status="error" id="FS0043">No overloads match for method 'op_PlusPlusPlus'\. The available overloads are shown below \(or in the Error List window\)\.</Expects>
-//<Expects status="error" id="FS0041">No overloads match for method 'op_PlusPlusPlus'\. The available overloads are shown below \(or in the Error List window\)\.</Expects>
-//<Expects status="error" id="FS0041">No overloads match for method 'op_PlusPlusPlus'\. The available overloads are shown below \(or in the Error List window\)\.</Expects>
+//<Expects status="error" id="FS0043">No overloads match for method 'op_PlusPlusPlus'\. The available overloads are shown below\.</Expects>
+//<Expects status="error" id="FS0041">No overloads match for method 'op_PlusPlusPlus'\. The available overloads are shown below\.</Expects>
+//<Expects status="error" id="FS0041">No overloads match for method 'op_PlusPlusPlus'\. The available overloads are shown below\.</Expects>
  
 type public TestType<'T,'S>() =
     

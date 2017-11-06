@@ -46,8 +46,8 @@ type internal FSharpErrorInfo =
     member Message:string
     member Subcategory:string
     member ErrorNumber:int
-    static member internal CreateFromExceptionAndAdjustEof : PhasedDiagnostic * isError: bool * trim: bool * range * lastPosInFile:(int*int) -> FSharpErrorInfo
-    static member internal CreateFromException : PhasedDiagnostic * isError: bool * trim: bool * range -> FSharpErrorInfo
+    static member internal CreateFromExceptionAndAdjustEof : PhasedDiagnostic * isError: bool * range * lastPosInFile:(int*int) -> FSharpErrorInfo
+    static member internal CreateFromException : PhasedDiagnostic * isError: bool * range -> FSharpErrorInfo
 
 //----------------------------------------------------------------------------
 // Object model for quick info
