@@ -2104,10 +2104,10 @@ module CompileHelpers =
         let errors = ResizeArray<_>()
 
         let errorSink isError exn = 
-            let mainError,relatedErrors = SplitRelatedDiagnostics exn 
-            let oneError trim e = errors.Add(FSharpErrorInfo.CreateFromException (e, isError, trim, Range.range0))
-            oneError false mainError
-            List.iter (oneError true) relatedErrors
+            let mainError, relatedErrors = SplitRelatedDiagnostics exn
+            let oneError e = errors.Add(FSharpErrorInfo.CreateFromException (e, isError, Range.range0))
+            oneError mainError
+            List.iter oneError relatedErrors
 
         let errorLogger = 
             { new ErrorLogger("CompileAPI") with 

@@ -163,7 +163,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
             this.lastOnIdleRequestDuration = 0;
 
-            this.openedTime = System.DateTime.Now;
+            this.openedTime = System.DateTime.UtcNow;
         }
 
         ~FSharpSourceBase_DEPRECATED()
