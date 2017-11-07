@@ -54,9 +54,9 @@ let rec findOriginalException err =
     | WrappedError(err, _)  -> findOriginalException err
     | _ -> err
 
-type Suggestions = unit -> Set<string>
+type Suggestions = unit -> Collections.Generic.HashSet<string>
 
-let NoSuggestions : Suggestions = fun () -> Set.empty
+let NoSuggestions : Suggestions = fun () -> Collections.Generic.HashSet()
 
 /// Thrown when we stop processing the F# Interactive entry or #load.
 exception StopProcessingExn of exn option with
