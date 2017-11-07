@@ -351,8 +351,8 @@ open Printf
           if File.Exists(outFilename) && 
                File.Exists(outXmlFilename) && 
                File.Exists(filename) && 
-               File.GetLastWriteTime(filename) <= File.GetLastWriteTime(outFilename) &&
-               File.GetLastWriteTime(filename) <= File.GetLastWriteTime(outXmlFilename) then 
+               File.GetLastWriteTimeUtc(filename) <= File.GetLastWriteTimeUtc(outFilename) &&
+               File.GetLastWriteTimeUtc(filename) <= File.GetLastWriteTimeUtc(outXmlFilename) then
             printMessage (sprintf "Skipping generation of %s and %s since up-to-date" outFilename outXmlFilename)
             Some (outFilename, outXmlFilename)
           else

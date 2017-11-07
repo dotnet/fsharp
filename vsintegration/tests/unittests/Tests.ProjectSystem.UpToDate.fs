@@ -50,7 +50,7 @@ type UpToDate() =
             let nonePath = Path.Combine(project.ProjectFolder, "none.txt")
             let embedPath = Path.Combine(project.ProjectFolder, "embedresource.txt")
 
-            let startTime = DateTime.Now
+            let startTime = DateTime.UtcNow
 
             File.AppendAllText(sourcePath, "printfn \"hello\"")
             File.AppendAllText(contentPath, "some content")
@@ -64,14 +64,14 @@ type UpToDate() =
             Assert.IsTrue(config.IsUpToDate(logger, true))
 
             // None items should not affect up-to-date (unless captured by well-known items, e.g. App.config)
-            File.SetLastWriteTime(nonePath, DateTime.Now.AddMinutes(5.))
+            File.SetLastWriteTime(nonePath, DateTime.UtcNow.AddMinutes(5.))
             Assert.IsTrue(config.IsUpToDate(logger, true))
 
             for path in [sourcePath; contentPath; resourcePath; embedPath; configPath] do
                 printfn "Testing path %s" path
 
                 // touch file
-                File.SetLastWriteTime(path, DateTime.Now.AddMinutes(5.))
+                File.SetLastWriteTime(path, DateTime.UtcNow.AddMinutes(5.))
                 Assert.IsFalse(config.IsUpToDate(logger, true))
 
                 File.SetLastWriteTime(path, startTime)
@@ -104,7 +104,7 @@ type UpToDate() =
             let verPath = Path.Combine(project.ProjectFolder, "ver.txt")
             let keyPath = Path.Combine(project.ProjectFolder, "key.txt")
 
-            let startTime = DateTime.Now
+            let startTime = DateTime.UtcNow
 
             File.AppendAllText(sourcePath, "printfn \"hello\"")
             File.AppendAllText(verPath, "1.2.3.4")
@@ -119,7 +119,7 @@ type UpToDate() =
                 printfn "Testing path %s" path
 
                 // touch file
-                File.SetLastWriteTime(path, DateTime.Now.AddMinutes(5.))
+                File.SetLastWriteTime(path, DateTime.UtcNow.AddMinutes(5.))
                 Assert.IsFalse(config.IsUpToDate(logger, true))
 
                 File.SetLastWriteTime(path, startTime)
@@ -143,7 +143,7 @@ type UpToDate() =
             let output = VsMocks.vsOutputWindowPane(ref [])
             let logger = OutputWindowLogger.CreateUpToDateCheckLogger(output)
             let absFilePath = Path.Combine(project.ProjectFolder, "file1.fs")
-            let startTime = DateTime.Now
+            let startTime = DateTime.UtcNow
             File.AppendAllText(absFilePath, "printfn \"hello\"")
 
             Assert.IsFalse(config.IsUpToDate(logger, true))
@@ -151,7 +151,7 @@ type UpToDate() =
             Assert.IsTrue(config.IsUpToDate(logger, true))
 
             // touch proj file
-            File.SetLastWriteTime(projFileName, DateTime.Now.AddMinutes(5.))
+            File.SetLastWriteTime(projFileName, DateTime.UtcNow.AddMinutes(5.))
             Assert.IsFalse(config.IsUpToDate(logger, true))
 
             File.SetLastWriteTime(projFileName, startTime)
@@ -194,14 +194,14 @@ type UpToDate() =
                 File.AppendAllText(sourcePath2, "let x = Test.X")
 
                 let config2 = project2.ConfigProvider.GetProjectConfiguration(configNameDebug)
-                let startTime = DateTime.Now
+                let startTime = DateTime.UtcNow
 
                 Assert.IsFalse(config2.IsUpToDate(logger, true))
                 project2.Build(configNameDebug, output, "Build") |> AssertBuildSuccessful
                 Assert.IsTrue(config2.IsUpToDate(logger, true))
 
                 // reference is updated
-                File.SetLastWriteTime(output1, DateTime.Now.AddMinutes(5.))
+                File.SetLastWriteTime(output1, DateTime.UtcNow.AddMinutes(5.))
                 Assert.IsFalse(config2.IsUpToDate(logger, true))
                 File.SetLastWriteTime(output1, startTime)
                 Assert.IsTrue(config2.IsUpToDate(logger, true))
@@ -244,13 +244,13 @@ type UpToDate() =
             project.Build(configNameDebug, output, "Build") |> AssertBuildSuccessful
             Assert.IsTrue(config.IsUpToDate(logger, true))
 
-            let startTime = DateTime.Now
+            let startTime = DateTime.UtcNow
 
             for path in [exeObjPath; exeBinpath; pdbObjPath; pdbBinPath; xmlDocPath; exeConfigPath] do
                 printfn "Testing output %s" path
 
                 // touch file
-                File.SetLastWriteTime(path, DateTime.Now.AddMinutes(-5.))
+                File.SetLastWriteTime(path, DateTime.UtcNow.AddMinutes(-5.))
                 Assert.IsFalse(config.IsUpToDate(logger, true))
 
                 File.SetLastWriteTime(path, startTime)
@@ -401,7 +401,7 @@ type ``UpToDate PreserveNewest`` () =
             let u = ProjectConfig.IsUpToDatePreserveNewest(logger, (Func<_,_,_>(tryTimestamp)), input, output)
             u, !logs
             
-        let now = System.DateTime.Now
+        let now = System.DateTime.UtcNow
         let before = now.AddHours(-1.0)
 
         let ``no input -> not up-to-date and log`` =

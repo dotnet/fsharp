@@ -463,7 +463,7 @@ module internal IncrementalBuild =
         
     /// Bind a set of build rules to a set of input values.
     let ToBound(buildRules:BuildRules, inputs: BuildInput list) = 
-        let now = DateTime.Now
+        let now = DateTime.UtcNow
         let rec applyScalarExpr(se, results) =
             match se with
             | ScalarInput(id, n) -> 
@@ -1191,7 +1191,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         let flags, isExe = tcConfig.ComputeCanContainEntryPoint(sourceFiles |> List.map snd)
         ((sourceFiles, flags) ||> List.map2 (fun (m, nm) flag -> (m, nm, (flag, isExe))))
 
-    let defaultTimeStamp = DateTime.Now
+    let defaultTimeStamp = DateTime.UtcNow
 
     let basicDependencies = 
         [ for (UnresolvedAssemblyReference(referenceText, _))  in unresolvedReferences do

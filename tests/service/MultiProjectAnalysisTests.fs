@@ -499,14 +499,14 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 
     //---------------- Change the file by adding a line, then re-check everything --------------------
     
-    let wt0 = System.DateTime.Now
-    let wt1 = File.GetLastWriteTime MultiProjectDirty1.fileName1
+    let wt0 = System.DateTime.UtcNow
+    let wt1 = File.GetLastWriteTimeUtc MultiProjectDirty1.fileName1
     printfn "Writing new content to file '%s'" MultiProjectDirty1.fileName1
 
     System.Threading.Thread.Sleep(1000)
     File.WriteAllText(MultiProjectDirty1.fileName1, System.Environment.NewLine + MultiProjectDirty1.content)
     printfn "Wrote new content to file '%s'"  MultiProjectDirty1.fileName1
-    let wt2 = File.GetLastWriteTime MultiProjectDirty1.fileName1
+    let wt2 = File.GetLastWriteTimeUtc MultiProjectDirty1.fileName1
     printfn "Current time: '%A', ticks = %d"  wt0 wt0.Ticks
     printfn "Old write time: '%A', ticks = %d"  wt1 wt1.Ticks
     printfn "New write time: '%A', ticks = %d"  wt2 wt2.Ticks
@@ -550,13 +550,13 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 
     //---------------- Revert the change to the file --------------------
 
-    let wt0b = System.DateTime.Now
-    let wt1b = File.GetLastWriteTime MultiProjectDirty1.fileName1
+    let wt0b = System.DateTime.UtcNow
+    let wt1b = File.GetLastWriteTimeUtc MultiProjectDirty1.fileName1
     printfn "Writing old content to file '%s'" MultiProjectDirty1.fileName1
     System.Threading.Thread.Sleep(1000)
     File.WriteAllText(MultiProjectDirty1.fileName1, MultiProjectDirty1.content)
     printfn "Wrote old content to file '%s'"  MultiProjectDirty1.fileName1
-    let wt2b = File.GetLastWriteTime MultiProjectDirty1.fileName1
+    let wt2b = File.GetLastWriteTimeUtc MultiProjectDirty1.fileName1
     printfn "Current time: '%A', ticks = %d"  wt0b wt0b.Ticks
     printfn "Old write time: '%A', ticks = %d"  wt1b wt1b.Ticks
     printfn "New write time: '%A', ticks = %d"  wt2b wt2b.Ticks
