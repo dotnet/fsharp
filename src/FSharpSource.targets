@@ -156,7 +156,7 @@
       <PropertyGroup >
         <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(ProtoFlavour)\bin</OutputPath>
         <!-- When using coreclr to bootstrap to proto. We acquire the FSharp.Core LKG, targets LKG, the FSharp.Build LKG from the .NET Framework compiler tools LKG package. -->
-        <FSharpNetCoreLkgPath>$(FSharpSourcesRoot)\..\Tools\dotnet20\sdk\2.0.0-preview2-006502\FSharp</FSharpNetCoreLkgPath>
+        <FSharpNetCoreLkgPath>$(FSharpSourcesRoot)\..\Tools\dotnet20\sdk\2.0.3-servicing-007056\FSharp</FSharpNetCoreLkgPath>
         <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
 
         <!-- When using coreclr to bootstrap, the compiler binary comes from the coreclr LKG, invoked using corehost.exe -->
