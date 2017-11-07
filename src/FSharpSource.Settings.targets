@@ -35,7 +35,7 @@
     <RoslynVersion>2.3.0-beta2-61719-01</RoslynVersion>
     <RoslynVSBinariesVersion>15.0</RoslynVSBinariesVersion>
     <RoslynVSPackagesVersion>15.0.26201</RoslynVSPackagesVersion>
-    <SystemCollectionsImmutableVersion>1.3.1</SystemCollectionsImmutableVersion>
+    <SystemCollectionsImmutableVersion>1.4.0</SystemCollectionsImmutableVersion>
     <VSSDK_BUILDTOOLS_VERSION>Microsoft.VSSDK.BuildTools.15.0.26201</VSSDK_BUILDTOOLS_VERSION>
 
     <MicrosoftVisualStudioThreadingVersion>15.3.23</MicrosoftVisualStudioThreadingVersion>
