@@ -1776,19 +1776,6 @@ let GetFSharpCoreLibraryName () = "FSharp.Core"
 // If necessary assume a reference to the latest .NET Framework FSharp.Core with which those tools are built.
 let GetDefaultFSharpCoreReference() = typeof<list<int>>.Assembly.Location
 
-// If necessary assume a reference to the latest System.ValueTuple with which those tools are built.
-let GetDefaultSystemValueTupleReference() = 
-#if COMPILER_SERVICE_AS_DLL
-    None // TODO, right now FCS doesn't add this reference automatically
-#else
-    try 
-       let asm = typeof<System.ValueTuple<int, int>>.Assembly
-       if asm.FullName.StartsWith "System.ValueTuple" then 
-           Some asm.Location 
-       else None
-    with _ -> None
-#endif
-
 let GetFsiLibraryName () = "FSharp.Compiler.Interactive.Settings"  
 
 // This list is the default set of references for "non-project" files. 
@@ -1821,10 +1808,10 @@ let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) =
           yield "System.Collections" // System.Collections.Generic.List<T>
           yield "System.Runtime.Numerics" // BigInteger
           yield "System.Threading"  // OperationCanceledException
-          // always include a default reference to System.ValueTuple.dll in scripts and out-of-project sources
-          match GetDefaultSystemValueTupleReference() with 
-          | None -> ()
-          | Some v -> yield v
+#if !COMPILER_SERVICE_AS_DLL
+          // TODO, right now FCS doesn't add this reference automatically
+          yield "System.ValueTuple"
+#endif
 
           yield "System.Web"
           yield "System.Web.Services"
