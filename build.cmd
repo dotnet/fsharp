@@ -4,12 +4,12 @@ rem Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt 
 setlocal enableDelayedExpansion
 
 :ARGUMENTS_VALIDATION
-
-if /I "%1" == "--help"   (goto :USAGE)
+if /I "%1" == "--help"  (goto :USAGE)
 if /I "%1" == "/help"   (goto :USAGE)
 if /I "%1" == "/h"      (goto :USAGE)
 if /I "%1" == "/?"      (goto :USAGE)
 goto :ARGUMENTS_OK
+
 
 :USAGE
 
@@ -78,9 +78,6 @@ set TEST_VS_IDEUNIT_SUITE=0
 set INCLUDE_TEST_SPEC_NUNIT=
 set INCLUDE_TEST_TAGS=
 
-set PUBLISH_VSIX=0
-set MYGET_APIKEY=
-
 REM ------------------ Parse all arguments -----------------------
 
 set _autoselect=1
@@ -94,6 +91,10 @@ for /l %%x in (1 1 9) do (
 for %%i in (%BUILD_FSC_DEFAULT%) do ( call :PROCESS_ARG %%i )
 
 REM apply defaults
+
+if /i "%_buildexit%" == "1" (
+		exit /B %_buildexitvalue%
+)
 
 if /i "%_autoselect%" == "1" (
     set BUILD_NET40_FSHARP_CORE=1
@@ -131,6 +132,12 @@ set ARG=%~1
 set ARG2=%~2
 if "%ARG%" == "1" if "%2" == "" (set ARG=default)
 if "%2" == "" if not "%ARG%" == "default" goto :EOF
+
+rem Do no work
+if /i "%ARG%" == "none" (
+    set _buildexit=1
+    set _buildexitvalue=0
+)
 
 if /i "%ARG%" == "net40-lib" (
     set _autoselect=0
@@ -206,7 +213,6 @@ if /i "%ARG%" == "microbuild" (
     set TEST_CORECLR_FSHARP_SUITE=0
     set TEST_VS_IDEUNIT_SUITE=1
     set CI=1
-    set PUBLISH_VSIX=1
 
     REM redirecting TEMP directories
     set TEMP=%~dp0%BUILD_CONFIG%\TEMP
@@ -375,10 +381,6 @@ if /i "%ARG%" == "init" (
     set BUILD_PROTO_WITH_CORECLR_LKG=1
 )
 
-if /i [%ARG:~0,13%] == [MYGET_APIKEY:] (
-    set MYGET_APIKEY=%ARG:~13%
-)
-
 goto :EOF
 :: Note: "goto :EOF" returns from an in-batchfile "call" command
 :: in preference to returning from the entire batch file.
@@ -402,12 +404,6 @@ if /i "%PB_SKIPTESTS%" == "true" (
     set TEST_VS_IDEUNIT_SUITE=0
 )
 
-REM MyGet packages published as part of the build are only for nightly dogfooding, so any other value means publishing should be skipped
-REM   The official build definition sets PB_PUBLISHTYPE to "myget" by default.
-if /i not "%PB_PUBLISHTYPE%" == "myget" (
-    set PUBLISH_VSIX=0
-)
-
 echo Build/Tests configuration:
 echo.
 echo BUILD_PROTO=%BUILD_PROTO%
@@ -424,7 +420,7 @@ echo BUILD_CONFIG=%BUILD_CONFIG%
 echo BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
 echo.
 echo PB_SKIPTESTS=%PB_SKIPTESTS%
-echo PB_PUBLISHTYPE=%PB_PUBLISHTYPE%
+echo PB_RESTORESOURCE=%PB_RESTORESOURCE%
 echo.
 echo TEST_NET40_COMPILERUNIT_SUITE=%TEST_NET40_COMPILERUNIT_SUITE%
 echo TEST_NET40_COREUNIT_SUITE=%TEST_NET40_COREUNIT_SUITE%
@@ -435,8 +431,6 @@ echo TEST_CORECLR_FSHARP_SUITE=%TEST_CORECLR_FSHARP_SUITE%
 echo TEST_VS_IDEUNIT_SUITE=%TEST_VS_IDEUNIT_SUITE%
 echo INCLUDE_TEST_SPEC_NUNIT=%INCLUDE_TEST_SPEC_NUNIT%
 echo INCLUDE_TEST_TAGS=%INCLUDE_TEST_TAGS%
-echo PUBLISH_VSIX=%PUBLISH_VSIX%
-echo MYGET_APIKEY=%MYGET_APIKEY%
 echo TEMP=%TEMP%
 
 :: load Visual Studio 2017 developer command prompt if VS150COMNTOOLS is not set
@@ -570,18 +564,24 @@ if "%RestorePackages%" == "true" (
     cd..
     @if ERRORLEVEL 1 echo Error: Paket restore failed  && goto :failure
 
-    %_ngenexe% install %_nugetexe%  /nologo 
+    %_ngenexe% install %_nugetexe%  /nologo
+    set _nugetoptions=-PackagesDirectory packages -ConfigFile %_nugetconfig%
+    if not "%PB_RESTORESOURCE%" == "" (
+        set _nugetoptions=!_nugetoptions! -Source %PB_RESTORESOURCE%
+    )
 
-    %_nugetexe% restore packages.config -PackagesDirectory packages -ConfigFile %_nugetconfig%
+    echo _nugetoptions=!_nugetoptions!
+
+    %_nugetexe% restore packages.config !_nugetoptions!
     @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
 
     if "%BUILD_VS%" == "1" (
-        %_nugetexe% restore vsintegration\packages.config -PackagesDirectory packages -ConfigFile %_nugetconfig%
+        %_nugetexe% restore vsintegration\packages.config !_nugetoptions!
         @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
     )
 
     if "%BUILD_SETUP%" == "1" (
-        %_nugetexe% restore setup\packages.config -PackagesDirectory packages -ConfigFile %_nugetconfig%
+        %_nugetexe% restore setup\packages.config !_nugetoptions!
         @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
     )
 )
@@ -950,17 +950,6 @@ if "%TEST_VS_IDEUNIT_SUITE%" == "1" (
         echo Error: Running tests vs-ideunit failed, see logs above, search for "Errors and Failures"  -- FAILED
         echo ----------------------------------------------------------------------------------------------------
         goto :failure
-    )
-)
-
-REM ---------------- publish-vsix -----------------------
-
-if "%PUBLISH_VSIX%" == "1" (
-    if not "%MYGET_APIKEY%" == "" (
-        powershell -noprofile -executionPolicy ByPass -file "%~dp0setup\publish-assets.ps1" -binariesPath "%~dp0%BUILD_CONFIG%" -branchName "%BUILD_SOURCEBRANCH%" -apiKey "%MYGET_APIKEY%"
-        if errorlevel 1 goto :failure
-    ) else (
-        echo No MyGet API key specified, skipping package publish.
     )
 )
 

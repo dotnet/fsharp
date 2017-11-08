@@ -4458,16 +4458,16 @@ and TcTyparOrMeasurePar optKind cenv (env:TcEnv) newOk tpenv (Typar(id, _, _) as
                 let predictions1 =
                     env.eNameResEnv.eTypars
                     |> Seq.map (fun p -> "'" + p.Key)
-                    |> Set.ofSeq
 
                 let predictions2 =
                     match tpenv with
                     | UnscopedTyparEnv elements ->
                         elements
                         |> Seq.map (fun p -> "'" + p.Key)
-                        |> Set.ofSeq
 
-                Set.union predictions1 predictions2
+                [ yield! predictions1 
+                  yield! predictions2 ]
+                |> HashSet
             
             let reportedId = Ident("'" + id.idText, id.idRange)
             error (UndefinedName(0, FSComp.SR.undefinedNameTypeParameter, reportedId, predictTypeParameters))
@@ -6440,7 +6440,7 @@ and FreshenObjExprAbstractSlot cenv (env: TcEnv) (implty:TType) virtNameAndArity
             let suggestVirtualMembers() =
                 virtNameAndArityPairs
                 |> List.map (fst >> fst)
-                |> Set.ofList
+                |> HashSet
 
             if containsNonAbstractMemberWithSameName then
                 errorR(ErrorWithSuggestions(FSComp.SR.tcMemberFoundIsNotAbstractOrVirtual(tcref.DisplayName, bindName), mBinding, bindName, suggestVirtualMembers))

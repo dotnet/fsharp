@@ -899,7 +899,9 @@ let AddResults res1 res2 =
     | Result x,Exception _ -> Result x
     // If we have error messages for the same symbol, then we can merge suggestions.
     | Exception (UndefinedName(n1,f,id1,suggestions1)),Exception (UndefinedName(n2,_,id2,suggestions2)) when n1 = n2 && id1.idText = id2.idText && id1.idRange = id2.idRange ->
-        Exception(UndefinedName(n1,f,id1,fun () -> Set.union (suggestions1()) (suggestions2())))
+        let suggestions = HashSet(suggestions1())
+        suggestions.UnionWith(suggestions2())
+        Exception(UndefinedName(n1,f,id1,fun () -> suggestions))
     // This prefers error messages coming from deeper failing long identifier paths 
     | Exception (UndefinedName(n1,_,_,_) as e1),Exception (UndefinedName(n2,_,_,_) as e2) ->
         if n1 < n2 then Exception e2 else Exception e1
@@ -1761,7 +1763,7 @@ let rec ResolveLongIndentAsModuleOrNamespace atMostOne amap m fullyQualified (ne
                 |> Seq.collect (fun kv -> kv.Value)
                 |> Seq.filter (fun modref -> IsEntityAccessible amap m ad modref)
                 |> Seq.collect (fun e -> [e.DisplayName; e.DemangledModuleOrNamespaceName])
-                |> Set.ofSeq
+                |> HashSet
 
             UndefinedName(0,FSComp.SR.undefinedNameNamespaceOrModule,id,suggestModulesAndNamespaces))
         
@@ -1774,7 +1776,7 @@ let rec ResolveLongIndentAsModuleOrNamespace atMostOne amap m fullyQualified (ne
                     mty.ModulesAndNamespacesByDemangledName
                     |> Seq.filter (fun kv -> IsEntityAccessible amap m ad (modref.NestedTyconRef kv.Value))
                     |> Seq.collect (fun e -> [e.Value.DisplayName; e.Value.DemangledModuleOrNamespaceName])
-                    |> Set.ofSeq
+                    |> HashSet
                 
                 let error = raze (UndefinedName(depth,FSComp.SR.undefinedNameNamespace,id,suggestNames))
                 moduleNotFoundErrorCache := Some error
@@ -2014,16 +2016,13 @@ let DecodeFSharpEvent (pinfos:PropInfo list) ad g (ncenv:NameResolver) m =
 
 /// Returns all record label names for the given type.
 let GetRecordLabelsForType g nenv typ =
+    let result = HashSet()
     if isRecdTy g typ then
-        let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv typ
-        nenv.eFieldLabels
-        |> Seq.filter (fun kv -> 
-            kv.Value 
-            |> List.exists (fun r -> r.TyconRef.DisplayName = typeName))
-        |> Seq.map (fun kv -> kv.Key)
-        |> Set.ofSeq
-    else
-        Set.empty
+      let typeName = NicePrint.minimalStringOfType nenv.eDisplayEnv typ
+      for KeyValue(k, v) in nenv.eFieldLabels do
+        if v |> List.exists (fun r -> r.TyconRef.DisplayName = typeName) then
+          result.Add k |> ignore
+    result
 
 // REVIEW: this shows up on performance logs. Consider for example endless resolutions of "List.map" to 
 // the empty set of results, or "x.Length" for a list or array type. This indicates it could be worth adding a cache here.
@@ -2112,21 +2111,22 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
                 let suggestions1 =
                     ExtensionPropInfosOfTypeInScope ncenv.InfoReader nenv (None, ad) m typ 
                     |> List.map (fun p -> p.PropertyName)
-                    |> Set.ofList
+                
                 let suggestions2 =
                     ExtensionMethInfosOfTypeInScope ncenv.InfoReader nenv None m typ
                     |> List.map (fun m -> m.DisplayName)
-                    |> Set.ofList
+
                 let suggestions3 =
                     GetIntrinsicPropInfosOfType ncenv.InfoReader (None, ad, AllowMultiIntfInstantiations.No) findFlag m typ
                     |> List.map (fun p -> p.PropertyName)
-                    |> Set.ofList
+
                 let suggestions4 =
                     GetIntrinsicMethInfosOfType ncenv.InfoReader (None, ad, AllowMultiIntfInstantiations.No) findFlag m typ
                     |> List.filter (fun m -> not m.IsClassConstructor && not m.IsConstructor)
                     |> List.map (fun m -> m.DisplayName)
-                    |> Set.ofList
+
                 let suggestions5 = GetRecordLabelsForType g nenv typ
+
                 let suggestions6 =
                     match lookupKind with 
                     | LookupKind.Expr | LookupKind.Pattern ->
@@ -2134,17 +2134,17 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
                             let tcref,_ = destAppTy g typ
                             tcref.UnionCasesArray
                             |> Array.map (fun uc -> uc.DisplayName)
-                            |> Set.ofArray
                         else 
-                            Set.empty
-                    | _ -> Set.empty
+                            [||]
+                    | _ -> [||]
                         
-                suggestions1 
-                |> Set.union suggestions2
-                |> Set.union suggestions3
-                |> Set.union suggestions4
-                |> Set.union suggestions5
-                |> Set.union suggestions6
+                [ yield! suggestions1 
+                  yield! suggestions2
+                  yield! suggestions3
+                  yield! suggestions4
+                  yield! suggestions5
+                  yield! suggestions6 ]
+                |> HashSet
 
             raze (UndefinedName (depth,FSComp.SR.undefinedNameFieldConstructorOrMember, id, suggestMembers))
         
@@ -2259,13 +2259,11 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv (typeN
                         modref.ModuleOrNamespaceType.AllEntities
                         |> Seq.filter (fun e -> IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef e))
                         |> Seq.map (fun e -> e.DisplayName)
-                        |> Set.ofSeq
 
                     let submodules =
                         mty.ModulesAndNamespacesByDemangledName
                         |> Seq.filter (fun kv -> IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef kv.Value))
                         |> Seq.map (fun e -> e.Value.DisplayName)
-                        |> Set.ofSeq
                         
                     let unions =
                         modref.ModuleOrNamespaceType.AllEntities
@@ -2276,25 +2274,23 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv (typeN
                             else
                                 tycon.UnionCasesArray)
                         |> Seq.map (fun uc -> uc.DisplayName)
-                        |> Set.ofSeq
 
                     let vals = 
                         modref.ModuleOrNamespaceType.AllValsByLogicalName
                         |> Seq.filter (fun e -> IsValAccessible ad (mkNestedValRef modref e.Value))
                         |> Seq.map (fun e -> e.Value.DisplayName)
-                        |> Set.ofSeq
                          
                     let exns =
                         modref.ModuleOrNamespaceType.ExceptionDefinitionsByDemangledName
                         |> Seq.filter (fun e -> IsTyconReprAccessible ncenv.amap m ad (modref.NestedTyconRef e.Value))
                         |> Seq.map (fun e -> e.Value.DisplayName)
-                        |> Set.ofSeq
                             
-                    types
-                    |> Set.union submodules
-                    |> Set.union unions
-                    |> Set.union vals
-                    |> Set.union exns
+                    [ yield! types
+                      yield! submodules
+                      yield! unions
+                      yield! vals
+                      yield! exns ]
+                    |> HashSet
 
                 raze (UndefinedName(depth,FSComp.SR.undefinedNameValueConstructorNamespaceOrType,id,suggestPossibleTypesAndNames))
             | results -> AtMostOneResult id.idRange results
@@ -2393,20 +2389,17 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
                                   let suggestedNames =
                                       nenv.eUnqualifiedItems
                                       |> Seq.map (fun e -> e.Value.DisplayName)
-                                      |> Set.ofSeq
 
                                   let suggestedTypes =
                                       nenv.TyconsByDemangledNameAndArity fullyQualified
                                       |> Seq.filter (fun e -> IsEntityAccessible ncenv.amap m ad e.Value)
                                       |> Seq.map (fun e -> e.Value.DisplayName)
-                                      |> Set.ofSeq
 
                                   let suggestedModulesAndNamespaces =
                                       nenv.ModulesAndNamespaces fullyQualified
                                       |> Seq.collect (fun kv -> kv.Value)
                                       |> Seq.filter (fun modref -> IsEntityAccessible ncenv.amap m ad modref)
                                       |> Seq.collect (fun e -> [e.DisplayName; e.DemangledModuleOrNamespaceName])
-                                      |> Set.ofSeq
 
                                   let unions =
                                       // check if the user forgot to use qualified access
@@ -2421,12 +2414,12 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
                                               else
                                                   None)
                                       |> Seq.map (fun t -> t.DisplayName + "." + id.idText)
-                                      |> Set.ofSeq
                                 
-                                  suggestedNames
-                                  |> Set.union suggestedTypes
-                                  |> Set.union suggestedModulesAndNamespaces
-                                  |> Set.union unions
+                                  [ yield! suggestedNames
+                                    yield! suggestedTypes
+                                    yield! suggestedModulesAndNamespaces
+                                    yield! unions ]
+                                  |> HashSet
 
                               raze (UndefinedName(0,FSComp.SR.undefinedNameValueOfConstructor,id,suggestNamesAndTypes))
                       ForceRaise failingCase
@@ -2514,33 +2507,28 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
                       search +++ moduleSearch +++ tyconSearch
 
                   let suggestEverythingInScope() =
-                      let suggestedModulesAndNamespaces =
-                          nenv.ModulesAndNamespaces fullyQualified
-                          |> Seq.collect (fun kv -> kv.Value)
-                          |> Seq.filter (fun modref -> IsEntityAccessible ncenv.amap m ad modref)
-                          |> Seq.collect (fun e -> [e.DisplayName; e.DemangledModuleOrNamespaceName])
-                          |> Set.ofSeq
+                      seq { yield! 
+                                nenv.ModulesAndNamespaces fullyQualified
+                                |> Seq.collect (fun kv -> kv.Value)
+                                |> Seq.filter (fun modref -> IsEntityAccessible ncenv.amap m ad modref)
+                                |> Seq.collect (fun e -> [e.DisplayName; e.DemangledModuleOrNamespaceName])
                       
-                      let suggestedTypes =
-                          nenv.TyconsByDemangledNameAndArity fullyQualified
-                          |> Seq.filter (fun e -> IsEntityAccessible ncenv.amap m ad e.Value)
-                          |> Seq.map (fun e -> e.Value.DisplayName)
-                          |> Set.ofSeq
+                            yield!
+                                nenv.TyconsByDemangledNameAndArity fullyQualified
+                                |> Seq.filter (fun e -> IsEntityAccessible ncenv.amap m ad e.Value)
+                                |> Seq.map (fun e -> e.Value.DisplayName)
 
-                      let suggestedNames =
-                          nenv.eUnqualifiedItems
-                          |> Seq.map (fun e -> e.Value.DisplayName)
-                          |> Set.ofSeq
-                      
-                      suggestedNames
-                      |> Set.union suggestedTypes
-                      |> Set.union suggestedModulesAndNamespaces
+                            yield! 
+                                nenv.eUnqualifiedItems
+                                |> Seq.map (fun e -> e.Value.DisplayName)
+                      } |> HashSet
 
                   match innerSearch with
                   | Exception (UndefinedName(0,_,id1,suggestionsF)) when id.idRange = id1.idRange ->
                         let mergeSuggestions() =
-                            suggestEverythingInScope()
-                            |> Set.union (suggestionsF())
+                            let res = suggestEverythingInScope()
+                            res.UnionWith(suggestionsF())
+                            res
 
                         let failingCase = raze (UndefinedName(0,FSComp.SR.undefinedNameValueNamespaceTypeOrModule,id,mergeSuggestions))
                         ForceRaise failingCase
@@ -2635,15 +2623,15 @@ let rec ResolvePatternLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv num
                     mty.ModulesAndNamespacesByDemangledName
                     |> Seq.filter (fun kv -> IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef kv.Value))
                     |> Seq.collect (fun e -> [e.Value.DisplayName; e.Value.DemangledModuleOrNamespaceName])
-                    |> Set.ofSeq
                     
                 let suggestedTypes =
                     nenv.TyconsByDemangledNameAndArity FullyQualifiedFlag.OpenQualified
                     |> Seq.filter (fun e -> IsEntityAccessible ncenv.amap m ad e.Value)
                     |> Seq.map (fun e -> e.Value.DisplayName)
-                    |> Set.ofSeq
 
-                Set.union submodules suggestedTypes
+                [ yield! submodules
+                  yield! suggestedTypes ]
+                |> HashSet
 
             raze (UndefinedName(depth,FSComp.SR.undefinedNameConstructorModuleOrNamespace,id,suggestPossibleTypes))
         | results -> AtMostOneResult id.idRange results
@@ -2746,7 +2734,7 @@ let rec ResolveTypeLongIdentInTyconRefPrim (ncenv:NameResolver) (typeNameResInfo
             let suggestTypes() =
                 tcref.ModuleOrNamespaceType.TypesByDemangledNameAndArity id.idRange
                 |> Seq.map (fun e -> e.Value.DisplayName)
-                |> Set.ofSeq
+                |> HashSet
 
             raze (UndefinedName(depth,FSComp.SR.undefinedNameType,id,suggestTypes))
     | id::rest ->
@@ -2767,7 +2755,7 @@ let rec ResolveTypeLongIdentInTyconRefPrim (ncenv:NameResolver) (typeNameResInfo
                 let suggestTypes() =
                     tcref.ModuleOrNamespaceType.TypesByDemangledNameAndArity id.idRange
                     |> Seq.map (fun e -> e.Value.DisplayName)
-                    |> Set.ofSeq
+                    |> HashSet
 
                 raze (UndefinedName(depth,FSComp.SR.undefinedNameType,id,suggestTypes))
             
@@ -2787,7 +2775,7 @@ let SuggestTypeLongIdentInModuleOrNamespace depth (modref:ModuleOrNamespaceRef) 
         modref.ModuleOrNamespaceType.AllEntities
         |> Seq.filter (fun e -> IsEntityAccessible amap m ad (modref.NestedTyconRef e))
         |> Seq.collect (fun e -> [e.DisplayName; e.DemangledModuleOrNamespaceName])
-        |> Set.ofSeq
+        |> HashSet
 
     let errorTextF s = FSComp.SR.undefinedNameTypeIn(s,fullDisplayTextOfModRef modref)    
     UndefinedName(depth,errorTextF,id,suggestPossibleTypes)
@@ -2814,7 +2802,7 @@ let rec private ResolveTypeLongIdentInModuleOrNamespace (ncenv:NameResolver) (ty
                     modref.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName
                     |> Seq.filter (fun kv -> IsEntityAccessible ncenv.amap m ad (modref.NestedTyconRef kv.Value))
                     |> Seq.collect (fun e -> [e.Value.DisplayName; e.Value.DemangledModuleOrNamespaceName])
-                    |> Set.ofSeq
+                    |> HashSet
                 raze (UndefinedName(depth,FSComp.SR.undefinedNameNamespaceOrModule,id,suggestPossibleModules))
 
         let tyconSearch = 
@@ -2825,7 +2813,7 @@ let rec private ResolveTypeLongIdentInModuleOrNamespace (ncenv:NameResolver) (ty
                 let suggestTypes() =
                     modref.ModuleOrNamespaceType.TypesByDemangledNameAndArity id.idRange
                     |> Seq.map (fun e -> e.Value.DisplayName)
-                    |> Set.ofSeq
+                    |> HashSet
 
                 raze (UndefinedName(depth,FSComp.SR.undefinedNameType,id,suggestTypes))
         tyconSearch +++ modulSearch
@@ -2868,7 +2856,7 @@ let rec ResolveTypeLongIdentPrim (ncenv:NameResolver) occurence fullyQualified m
                              if e.Value.DisplayName.EndsWith "Attribute" then
                                  yield e.Value.DisplayName.Replace("Attribute","")]
                         | _ -> [e.Value.DisplayName; e.Value.DemangledModuleOrNamespaceName])
-                    |> Set.ofSeq
+                    |> HashSet
 
                 raze (UndefinedName(0,FSComp.SR.undefinedNameType,id,suggestPossibleTypes))
 
@@ -2991,18 +2979,19 @@ let SuggestOtherLabelsOfSameRecordType g (nenv:NameResolutionEnv) typ (id:Ident)
         allFields 
         |> List.map (fun fld -> fld.idText) 
         |> List.filter ((<>) id.idText)
-        |> Set.ofList
 
-    Set.difference labelsOfPossibleRecord givenFields
-    
+    labelsOfPossibleRecord.ExceptWith givenFields
+    labelsOfPossibleRecord
       
 let SuggestLabelsOfRelatedRecords g (nenv:NameResolutionEnv) (id:Ident) (allFields:Ident list) =
     let suggestLabels() =
-        let givenFields = allFields |> List.map (fun fld -> fld.idText) |> List.filter ((<>) id.idText) |> Set.ofList
+        let givenFields = allFields |> List.map (fun fld -> fld.idText) |> List.filter ((<>) id.idText) |> HashSet
         let fullyQualfied =
-            if Set.isEmpty givenFields then 
+            if givenFields.Count = 0 then 
                 // return labels from all records
-                NameMap.domainL nenv.eFieldLabels |> Set.ofList |> Set.remove "contents"
+                let result = NameMap.domainL nenv.eFieldLabels |> HashSet 
+                result.Remove "contents" |> ignore
+                result
             else
                 let possibleRecords =
                     [for fld in givenFields do
@@ -3010,10 +2999,10 @@ let SuggestLabelsOfRelatedRecords g (nenv:NameResolutionEnv) (id:Ident) (allFiel
                         | None -> ()
                         | Some recordTypes -> yield! (recordTypes |> List.map (fun r -> r.TyconRef.DisplayName, fld)) ]
                     |> List.groupBy fst
-                    |> List.map (fun (r,fields) -> r, fields |> List.map snd |> Set.ofList)
-                    |> List.filter (fun (_,fields) -> Set.isSubset givenFields fields)
+                    |> List.map (fun (r,fields) -> r, fields |> List.map snd)
+                    |> List.filter (fun (_,fields) -> givenFields.IsSubsetOf fields)
                     |> List.map fst
-                    |> Set.ofList
+                    |> HashSet
 
                 let labelsOfPossibleRecords =
                     nenv.eFieldLabels
@@ -3022,11 +3011,12 @@ let SuggestLabelsOfRelatedRecords g (nenv:NameResolutionEnv) (id:Ident) (allFiel
                         |> List.map (fun r -> r.TyconRef.DisplayName)
                         |> List.exists possibleRecords.Contains)
                     |> Seq.map (fun kv -> kv.Key)
-                    |> Set.ofSeq
+                    |> HashSet
 
-                Set.difference labelsOfPossibleRecords givenFields
+                labelsOfPossibleRecords.ExceptWith givenFields
+                labelsOfPossibleRecords
         
-        if not (Set.isEmpty fullyQualfied) then fullyQualfied else
+        if fullyQualfied.Count > 0 then fullyQualfied else
 
         // check if the user forgot to use qualified access
         nenv.eTyconsByDemangledNameAndArity
@@ -3040,7 +3030,7 @@ let SuggestLabelsOfRelatedRecords g (nenv:NameResolutionEnv) (id:Ident) (allFiel
                 else
                     None)
         |> Seq.map (fun t -> t.DisplayName + "." + id.idText)
-        |> Set.ofSeq
+        |> HashSet
 
     UndefinedName(0,FSComp.SR.undefinedNameRecordLabel, id, suggestLabels)
 

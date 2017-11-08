@@ -138,6 +138,11 @@ do
         "nobuild")
             export BUILD_PHASE=0
             ;;
+        "none")
+            _autoselect=0
+            export _buildexit=1
+            export _buildexitVALUE=0
+            ;;
         "all")
             _autoselect=0
             export BUILD_PROTO=1
@@ -320,6 +325,10 @@ do
     esac
 done
 
+if [ $_buildexit -eq 1 ]; then
+    exit $_buildexitvalue
+fi
+
 # Apply defaults, if necessary.
 if [ $_autoselect -eq 1 ]; then
     export BUILD_NET40=1
@@ -380,6 +389,8 @@ printf "BUILD_CONFIG=%s\n" "$BUILD_CONFIG"
 printf "BUILD_PUBLICSIGN=%s\n" "$BUILD_PUBLICSIGN"
 printf "\n"
 printf "PB_SKIPTESTS=%s\n" "$PB_SKIPTESTS"
+printf "PB_RESTORESOURCE=%s\n" "$PB_RESTORESOURCE"
+printf "\n"
 printf "TEST_NET40_COMPILERUNIT_SUITE=%s\n" "$TEST_NET40_COMPILERUNIT_SUITE"
 printf "TEST_NET40_COREUNIT_SUITE=%s\n" "$TEST_NET40_COREUNIT_SUITE"
 printf "TEST_NET40_FSHARP_SUITE=%s\n" "$TEST_NET40_FSHARP_SUITE"
@@ -432,21 +443,26 @@ if [ "${RestorePackages:-true}" = 'true' ]; then
     if [ $exit_code -ne 0 ]; then
         exit $exit_code
     fi
-    
-    eval "$_nugetexe restore packages.config -PackagesDirectory packages -ConfigFile $_nugetconfig"
+
+    _nugetoptions="-PackagesDirectory packages -ConfigFile $_nugetconfig"
+    if [ "$PB_RESTORESOURCE" != "" ]; then
+        _nugetoptions="$_nugetoptions -Source $PB_RESTORESOURCE"
+    fi
+
+    eval "$_nugetexe restore packages.config $_nugetoptions"
     if [ $? -ne 0 ]; then
         failwith "Nuget restore failed"
     fi
 
     if [ "$BUILD_VS" = '1' ]; then
-        eval "$_nugetexe restore vsintegration/packages.config -PackagesDirectory packages -ConfigFile $_nugetconfig"
+        eval "$_nugetexe restore vsintegration/packages.config $_nugetoptions"
         if [ $? -ne 0 ]; then
             failwith "Nuget restore failed"
         fi
     fi
 
     if [ "$BUILD_SETUP" = '1' ]; then
-        eval "$_nugetexe restore setup/packages.config -PackagesDirectory packages -ConfigFile $_nugetconfig"
+        eval "$_nugetexe restore setup/packages.config $_nugetoptions"
         if [ $? -ne 0 ]; then
             failwith "Nuget restore failed"
         fi

@@ -14,7 +14,10 @@
 
   <Import Project="..\BuildFromSource.targets" />
   <ItemGroup>
-    <FsSrGen Include="$(FSharpSourcesRoot)\fsharp\FSInteractiveSettings.txt" />
+    <EmbeddedResource Include="FSInteractiveSettings.resx">
+      <Link>FSInteractiveSettings.resx</Link>
+    </EmbeddedResource>
+    <Compile Include="FSInteractiveSettings.fs" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Interactive.Settings\InternalsVisibleTo.fs" />
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Interactive.Settings.dll.fs" />
     <Compile Include="InternalsVisibleTo.fs" />
