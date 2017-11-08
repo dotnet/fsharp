@@ -82,7 +82,6 @@ module ProductVersionTest =
           "0.0.0.0", (0us,0us,0us,0us) 
           "3213.57843.32382.59493", (3213us,57843us,32382us,59493us)
           (sprintf "%d.%d.%d.%d" max max max max), (max,max,max,max) ]
-        |> List.map (fun (s,e) -> TestCaseData(s, e))
 
     [<Test>]
     let ``should use values if valid major.minor.revision.build version format`` () =
@@ -101,11 +100,10 @@ module ProductVersionTest =
           "", (0us,0us,0us,0us)
           "70000.80000.90000.100000", (0us,0us,0us,0us)
           (sprintf "%d.70000.80000.90000" System.UInt16.MaxValue), (System.UInt16.MaxValue,0us,0us,0us) ]
-        |> List.map (fun (s,e) -> TestCaseData(s, e))
 
     [<Test>]
     let ``should zero starting from first invalid version part`` () = 
-        for (v, expcted) in  invalidValues() do
+        for (v, expected) in  invalidValues() do
             v |> productVersionToILVersionInfo |> Assert.areEqual expected
 
 module TypeProviderDesignTimeComponentLoading =
@@ -113,9 +111,8 @@ module TypeProviderDesignTimeComponentLoading =
 
     [<Test>]
     let ``check tooling paths for type provider design time component loading`` () =
-        let paths = Microsoft.FSharp.Compiler.ExtensionTyping.toolingCompatiblePaths()
         let arch = if sizeof<nativeint> = 8 then "x64" else "x86" 
-        let expectedPaths = 
+        let expected = 
           [ @"typeproviders\fsharp41\net461\" + arch
             @"typeproviders\fsharp41\net461"
             @"typeproviders\fsharp41\net452\" + arch
@@ -127,4 +124,5 @@ module TypeProviderDesignTimeComponentLoading =
             @"typeproviders\fsharp41\netstandard2.0\" + arch 
             @"typeproviders\fsharp41\netstandard2.0"
           ]        
-        Asset.areEqual expected actual
+        let actual = Microsoft.FSharp.Compiler.ExtensionTyping.toolingCompatiblePaths()
+        Assert.areEqual expected actual
