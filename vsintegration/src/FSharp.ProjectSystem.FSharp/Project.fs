@@ -45,8 +45,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
     [<assembly:ProvideCodeBase(AssemblyName = "FSharp.Compiler.Private", CodeBase = @"$PackageFolder$\FSharp.Compiler.Private.dll")>]
     [<assembly:ProvideCodeBase(AssemblyName = "FSharp.Compiler.Server.Shared", CodeBase = @"$PackageFolder$\FSharp.Compiler.Server.Shared.dll")>]
     [<assembly:ProvideCodeBase(AssemblyName = "FSharp.UIResources", CodeBase = @"$PackageFolder$\FSharp.UIResources.dll")>]
-    [<assembly:ProvideBindingRedirection(AssemblyName = "FSharp.Core", OldVersionLowerBound = "2.0.0.0", OldVersionUpperBound = "4.4.0.0", NewVersion = "4.4.1.0", CodeBase = @"$PackageFolder$\System.Collections.Immutable.dll")>]
-    [<assembly:ProvideBindingRedirection(AssemblyName = "System.Collections.Immutable", OldVersionLowerBound = "1.2.1.0", OldVersionUpperBound = "1.2.1.0", NewVersion = "1.2.2.0", CodeBase = @"$PackageFolder$\System.Collections.Immutable.dll")>]
+    [<assembly:ProvideBindingRedirection(AssemblyName = "FSharp.Core", OldVersionLowerBound = "2.0.0.0", OldVersionUpperBound = "4.4.0.0", NewVersion = "4.4.1.0", CodeBase = @"$PackageFolder$\FSharp.Core.dll")>]
     do ()
 
     module internal VSHiveUtilities =
