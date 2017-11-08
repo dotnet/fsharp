@@ -24,12 +24,14 @@
       <Link>assemblyinfo.FSharp.Compiler.Private.dll.fs</Link>
     </Compile>
     <Compile Include="InternalsVisibleTo.fs" />
-    <FsSrGen Include="$(FSharpSourcesRoot)\fsharp\FSComp.txt">
-      <Link>FSComp.txt</Link>
-    </FsSrGen>
+    <EmbeddedResource Include="FSComp.resx">
+      <Link>FSComp.resx</Link>
+    </EmbeddedResource>
     <EmbeddedResource Include="$(FSharpSourcesRoot)\fsharp\FSStrings.resx">
       <Link>FSStrings.resx</Link>
     </EmbeddedResource>
+    <Compile Include="FSComp.fs" />
+    <Compile Include="FSIstrings.fs" />
     <Compile Include="..\..\utils\reshapedreflection.fs">
       <Link>Reflection\reshapedreflection.fs</Link>
     </Compile>
@@ -604,9 +606,9 @@
     </Compile>
 
     <!-- the core of the F# Interactive fsi.exe implementation -->
-    <FsSrGen Include="$(FSharpSourcesRoot)\fsharp\fsi\FSIstrings.txt">
-      <Link>FSIstrings.txt</Link>
-    </FsSrGen>
+    <EmbeddedResource Include="FSIstrings.resx">
+      <Link>FSIstrings.resx</Link>
+    </EmbeddedResource>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\fsi\fsi.fsi">
       <Link>InteractiveSession\fsi.fsi</Link>
     </Compile>
