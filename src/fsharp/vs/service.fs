@@ -915,8 +915,8 @@ type TypeCheckInfo
                     let displayContext = FSharpDisplayContext(fun _ -> denv)
                     let getAdditionalInfo item =
                         try getAdditionalInfo(FSharpSymbol.Create(g, thisCcu, tcImports, item), displayContext)
-                        with _ ->
-                            Trace.TraceInformation(sprintf "FCS: could not get additional info for %A" item)
+                        with e ->
+                            Trace.TraceInformation(sprintf "FCS: could not get additional info for %A: %O" item e)
                             None
                     let items = if isInterfaceFile then items |> List.filter (fun x -> IsValidSignatureFileItem x.Item) else items
                     let currentNamespaceOrModule =
