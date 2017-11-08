@@ -76,6 +76,7 @@ type PEVerifier () =
 #endif
 
     static let execute (fileName : string, arguments : string) =
+        let longtime = 30000
         printfn "executing '%s' with arguments %s" fileName arguments
         let psi = new ProcessStartInfo(fileName, arguments)
         psi.UseShellExecute <- false
@@ -87,7 +88,7 @@ type PEVerifier () =
         use proc = Process.Start(psi)
         let stdOut = proc.StandardOutput.ReadToEnd()
         let stdErr = proc.StandardError.ReadToEnd()
-        while not proc.HasExited do ()
+        proc.WaitForExit(longtime)
         proc.ExitCode, stdOut, stdErr
 
     member __.Verify(assemblyPath : string) =
