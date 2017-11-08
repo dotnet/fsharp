@@ -20,7 +20,7 @@
     <TargetProfile Condition=" '$(TargetDotnetProfile)' == 'coreclr' ">netcore</TargetProfile>
   </PropertyGroup>
   <PropertyGroup>
-    <DefineConstants>$(DefineConstants);EXTENSIONTYPING;$(TargetDotnetProfile.ToLower())</DefineConstants>
+    <DefineConstants>$(DefineConstants);$(TargetDotnetProfile.ToLower())</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>

@@ -400,7 +400,7 @@ and GenNamedTyAppAux (amap:ImportMap) m tyenv ptrsOK tcref tinst =
     if ptrsOK = PtrTypesOK && tyconRefEq g tcref g.nativeptr_tcr && (freeInTypes CollectTypars tinst).FreeTypars.IsEmpty then 
         GenNamedTyAppAux amap m tyenv ptrsOK g.ilsigptr_tcr tinst
     else
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         match tcref.TypeReprInfo with 
         // Generate the base type, because that is always the representation of the erased type, unless the assembly is being injected
         | TProvidedTypeExtensionPoint info when info.IsErased -> 
@@ -6179,7 +6179,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
     let tcref = mkLocalTyconRef tycon
     if tycon.IsTypeAbbrev then () else
     match tycon.TypeReprInfo with 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     | TProvidedNamespaceExtensionPoint _ -> ()
     | TProvidedTypeExtensionPoint _ -> ()
 #endif

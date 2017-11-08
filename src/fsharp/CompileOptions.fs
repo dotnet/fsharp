@@ -903,7 +903,7 @@ let internalFlags (tcConfigB:TcConfigBuilder) =
     CompilerOption("splitting", tagNone, OptionSwitch(splittingSwitch tcConfigB),Some(InternalCommandLineOption("splitting", rangeCmdArgs)), None)
     CompilerOption("versionfile", tagString, OptionString (fun s -> tcConfigB.version <- VersionFile s), Some(InternalCommandLineOption("versionfile", rangeCmdArgs)), None)
     CompilerOption("times" , tagNone, OptionUnit  (fun () -> tcConfigB.showTimes <- true), Some(InternalCommandLineOption("times", rangeCmdArgs)), None) // "Display timing profiles for compilation")
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     CompilerOption("showextensionresolution" , tagNone, OptionUnit  (fun () -> tcConfigB.showExtensionTypeMessages <- true), Some(InternalCommandLineOption("showextensionresolution", rangeCmdArgs)), None) // "Display information about extension type resolution")
 #endif
     (* BEGIN: Consider as public Retail option? *)

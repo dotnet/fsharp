@@ -18,7 +18,6 @@
     <NoWarn>$(NoWarn);62</NoWarn>
     <AssemblyName>fsi</AssemblyName>
     <BaseAddress>0x0A000000</BaseAddress>
-    <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
     <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition="'$(TargetDotnetProfile)'=='net40'">FSI_SHADOW_COPY_REFERENCES;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition="'$(TargetDotnetProfile)'=='net40'">FSI_SERVER;$(DefineConstants)</DefineConstants>

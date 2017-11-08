@@ -24,7 +24,6 @@
     <!-- We target .NET 4.5 for FSharp.Compiler.Service.dll to allow broader use of this DLL -->
     <TargetFrameworkVersion Condition=" '$(TargetFrameworkVersion)' == '' ">v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile />
-    <DefineConstants>$(DefineConstants);EXTENSIONTYPING</DefineConstants>
     <DefineConstants>$(DefineConstants);CROSS_PLATFORM_COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
