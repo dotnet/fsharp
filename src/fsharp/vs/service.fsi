@@ -142,6 +142,14 @@ type internal FSharpCheckFileResults =
     /// <param name="getAllSymbols">
     ///    Function that returns all symbols from current and referenced assemblies.
     /// </param>
+    /// </param>
+    /// <param name="getAdditionalInfo">
+    ///    Function that returns additional info about a symbol in completion context.
+    /// </param>
+    /// </param>
+    /// <param name="shortTypeNames">
+    ///    Hide non-opened namespaces in type names in item descriptions and additional info.
+    /// </param>
     /// <param name="hasTextChangedSinceLastTypecheck">
     ///    If text has been used from a captured name resolution from the typecheck, then 
     ///    callback to the client to check if the text has changed. If it has, then give up
