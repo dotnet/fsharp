@@ -34,7 +34,7 @@ type internal FSharpCompletionProvider
     inherit CompletionProvider()
 
     static let userOpName = "CompletionProvider"
-    static let declarationItemsCache = ConditionalWeakTable<string, FSharpDeclarationListItem>()
+    static let declarationItemsCache = ConditionalWeakTable<string, FSharpDeclarationListItem<_>>()
     static let [<Literal>] NameInCodePropName = "NameInCode"
     static let [<Literal>] FullNamePropName = "FullName"
     static let [<Literal>] IsExtensionMemberPropName = "IsExtensionMember"
@@ -147,7 +147,7 @@ type internal FSharpCompletionProvider
             let maxHints = if mruItems.Values.Count = 0 then 0 else Seq.max mruItems.Values
 
             sortedDeclItems |> Array.iteri (fun number declItem ->
-                let glyph = Tokenizer.FSharpGlyphToRoslynGlyph (declItem.Glyph, declItem.Accessibility)
+                let glyph = Tokenizer.FSharpGlyphToRoslynGlyph (declItem.Glyph, declItem.AdditionalInfo)
                 let name =
                     match declItem.NamespaceToOpen with
                     | Some namespaceToOpen -> sprintf "%s (open %s)" declItem.Name namespaceToOpen
