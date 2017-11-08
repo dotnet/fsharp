@@ -13,7 +13,10 @@
 
   <Import Project="..\BuildFromSource.targets" />
   <ItemGroup>
-    <FsSrGen Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSBuild.txt" />
+    <EmbeddedResource Include="FSBuild.resx">
+      <Link>FSBuild.resx</Link>
+    </EmbeddedResource>
+    <Compile Include="FSBuild.fs" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\InternalsVisibleTo.fs" />
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Build.dll.fs" />
     <Compile Include="..\..\utils\CompilerLocationUtils.fs" />

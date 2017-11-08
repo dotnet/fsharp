@@ -3,11 +3,6 @@
 set __scriptpath=%~dp0
 
 rem build tools
-dotnet restore %__scriptpath%buildtools\fssrgen\fssrgen.fsproj
-if ERRORLEVEL 1 echo Error: failed  && goto :failure
-dotnet publish %__scriptpath%buildtools\fssrgen\fssrgen.fsproj -o %__scriptpath%..\Tools\fssrgen
-if ERRORLEVEL 1 echo Error: failed  && goto :failure
-
 dotnet restore %__scriptpath%buildtools\fslex\fslex.fsproj
 if ERRORLEVEL 1 echo Error: failed  && goto :failure
 dotnet  publish %__scriptpath%buildtools\fslex\fslex.fsproj -o %__scriptpath%..\Tools\fslex
@@ -20,7 +15,7 @@ if ERRORLEVEL 1 echo Error: failed  && goto :failure
 rem build and pack tools
 dotnet restore %__scriptpath%buildfromsource\FSharp.Compiler.nuget\FSharp.Compiler.nuget.fsproj
 if ERRORLEVEL 1 echo Error: failed  && goto :failure
-dotnet pack %__scriptpath%buildfromsource\FSharp.Compiler.nuget\FSharp.Compiler.nuget.fsproj -c debug
+dotnet pack %__scriptpath%buildfromsource\FSharp.Compiler.nuget\FSharp.Compiler.nuget.fsproj -c Release
 if ERRORLEVEL 1 echo Error: failed  && goto :failure
 
 goto :success
