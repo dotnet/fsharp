@@ -42,28 +42,30 @@ module internal ExtensionTyping =
 
     // Represents the FF#-compiler <-> type provider protocol.
     // When the API or protocol updates, add a new version moniker to the front of the list here.
-    let toolingCompatibleTypeProviderProtocolMonikers = 
+    let toolingCompatibleTypeProviderProtocolMonikers() = 
         [ "fsharp41" ] 
 
-    // When the F#-compiler can dynamically load more components in a signficant way, add a new moniker here
-    let toolingCompatibleVersions = 
-#if NETCOREAPP2_0
-        [ "netcoreapp2.0"; "netstandard2.0"]
-#else
-        [ "net461"; "netstandard2.0"]
-#endif
+    // Detect the host tooling context
+    let toolingCompatibleVersions() = 
+        if typeof<obj>.Assembly.GetName().Name = "mscorlib" then 
+            [ "net461"; "net452"; "net451"; "net45"; "netstandard2.0"]
+        elif typeof<obj>.Assembly.GetName().Name = "System.Private.CoreLib" then 
+            [ "netcoreapp2.0"; "netstandard2.0"]
+        else
+            System.Diagnostics.Debug.Assert(false, "Couldn't determine runtime tooling context, assuming it supports at least .NET Standard 2.0")
+            [  "netstandard2.0"]
 
     // When significant new processor types appear add a new moniker here. Note that use of this qualifier will be very rare
     // and we don't expect different design-time assemblies will be needed for different architectures very often.  Some
     // exceptions may be design-time components for type providers for systems such as Python or R.
-    let toolingCompatibleArch = if sizeof<nativeint> = 8 then "x64" else "x86" 
-
-    let toolingCompatiblePaths = 
-        [ for protocol in toolingCompatibleTypeProviderProtocolMonikers do
-                for netRuntime in toolingCompatibleVersions do
+    let toolingCompatibleArch() = if sizeof<nativeint> = 8 then "x64" else "x86" 
+    let toolingCompatiblePaths() = 
+        [ for protocol in toolingCompatibleTypeProviderProtocolMonikers() do
+                for netRuntime in toolingCompatibleVersions() do
                     let dir = Path.Combine("typeproviders", protocol, netRuntime) 
+                    yield Path.Combine(dir, toolingCompatibleArch())
                     yield dir
-                    yield Path.Combine(dir, toolingCompatibleArch)]
+        ]
 
     /// Load a the design-time part of a type-provider into the host process, and look for types
     /// marked with the TypeProviderAttribute attribute.
@@ -85,7 +87,7 @@ module internal ExtensionTyping =
 
         let rec searchParentDirChain dir designTimeAssemblyName = 
             seq { 
-                for subdir in toolingCompatiblePaths do
+                for subdir in toolingCompatiblePaths() do
                     let designTimeAssemblyPath  = Path.Combine (dir, subdir, designTimeAssemblyName)
                     if FileSystem.SafeExists designTimeAssemblyPath then 
                         yield loadFromLocation designTimeAssemblyPath

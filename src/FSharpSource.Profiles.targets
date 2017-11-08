@@ -10,10 +10,12 @@
     <DefineConstants>$(DefineConstants);FX_LCIDFROMCODEPAGE</DefineConstants>
   </PropertyGroup>
 
+  <!-- Note: The TargetDotnetProfile value 'coreclr' currently covers all of netstandard1.6, netstandard2.0 and netcoreapp2.0 in a confused way -->
+  <!-- These should be distinguished in the future -->
+
   <PropertyGroup Condition="'$(TargetDotnetProfile)'=='coreclr'">
     <DefineConstants>$(DefineConstants);FX_PORTABLE_OR_NETSTANDARD</DefineConstants>
     <DefineConstants>$(DefineConstants);NETSTANDARD1_6</DefineConstants>
-    <DefineConstants>$(DefineConstants);NETCOREAPP2_0</DefineConstants>
     <DefineConstants>$(DefineConstants);PREFERRED_UI_LANG</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_APP_DOMAINS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_ARRAY_LONG_LENGTH</DefineConstants>
