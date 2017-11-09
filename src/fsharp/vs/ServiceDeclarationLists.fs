@@ -484,8 +484,8 @@ module internal DescriptionListsImpl =
 
 /// An intellisense declaration
 [<Sealed>]
-type FSharpDeclarationListItem<'T>(name: string, nameInCode: string, fullName: string, glyph: FSharpGlyph, info, additionalInfo: 'T option,
-                                   kind: CompletionItemKind, isOwnMember: bool, priority: int, isResolved: bool, namespaceToOpen: string option) =
+type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: string, glyph: FSharpGlyph, info, symbol: FSharpSymbol,
+                               kind: CompletionItemKind, isOwnMember: bool, priority: int, isResolved: bool, namespaceToOpen: string option) =
 
     let mutable descriptionTextHolder: FSharpToolTipText<_> option = None
     let mutable task = null
@@ -544,8 +544,8 @@ type FSharpDeclarationListItem<'T>(name: string, nameInCode: string, fullName: s
        )
        (fun err -> FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError err])
     member decl.DescriptionText = decl.StructuredDescriptionText |> Tooltips.ToFSharpToolTipText
-    member __.Glyph = glyph 
-    member __.AdditionalInfo = additionalInfo
+    member __.Glyph = glyph
+    member __.Symbol = symbol
     member __.Kind = kind
     member __.IsOwnMember = isOwnMember
     member __.MinorPriority = priority
@@ -554,18 +554,18 @@ type FSharpDeclarationListItem<'T>(name: string, nameInCode: string, fullName: s
     member __.NamespaceToOpen = namespaceToOpen
 
 /// A table of declarations for Intellisense completion 
-[<Sealed>]
-type FSharpDeclarationListInfo<'T>(declarations: FSharpDeclarationListItem<'T>[], isForType: bool, isError: bool) =
-    member __.Items = declarations
-    member __.IsForType = isForType
-    member __.IsError = isError
+type FSharpDeclarationListInfo =
+    | Empty
+    | Info of Items: FSharpDeclarationListItem[] * IsForType: bool * DisplayContext: FSharpDisplayContext
+    | Error of FSharpToolTipText<Layout>
 
     // Make a 'Declarations' object for a set of selected items
-    static member Create(infoReader:InfoReader, m, denv, getAccessibility, items: CompletionItem list, reactor, currentNamespaceOrModule: string[] option, isAttributeApplicationContext: bool, checkAlive) = 
+    static member Create(infoReader:InfoReader, m, denv, createSymbol: (Item -> FSharpSymbol), items: CompletionItem list, reactor, currentNamespaceOrModule: string[] option, isAttributeApplicationContext: bool, checkAlive) =
         let g = infoReader.g
         let isForType = items |> List.exists (fun x -> x.Type.IsSome)
         let items = items |> SymbolHelpers.RemoveExplicitlySuppressedCompletionItems g
-        
+        let displayContext = FSharpDisplayContext(fun _ -> denv)
+
         let tyconRefOptEq tref1 tref2 =
             match tref1 with
             | Some tref1 -> tyconRefEq g tref1 tref2
@@ -687,18 +687,10 @@ type FSharpDeclarationListInfo<'T>(declarations: FSharpDeclarationListItem<'T>[]
                             | ns -> Some (ns |> String.concat "."))
 
                     FSharpDeclarationListItem(
-                        name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), getAccessibility item.Item, 
+                        name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), createSymbol item.Item,
                         item.Kind, item.IsOwnMember, item.MinorPriority, item.Unresolved.IsNone, namespaceToOpen))
 
-        new FSharpDeclarationListInfo<'T>(Array.ofList decls, isForType, false)
-    
-    static member Error msg = 
-        new FSharpDeclarationListInfo<'T>(
-                [| FSharpDeclarationListItem("<Note>", "<Note>", "<Note>", FSharpGlyph.Error, Choice2Of2 (FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError msg]), 
-                                             None, CompletionItemKind.Other, false, 0, false, None) |], false, true)
-    
-    static member Empty = FSharpDeclarationListInfo<'T>([| |], false, false)
-
+        FSharpDeclarationListInfo.Info(Array.ofList decls, isForType, displayContext)
 
 
 /// Represents one method (or other item) in a method group. The item may represent either a method or 

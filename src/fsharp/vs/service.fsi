@@ -156,7 +156,7 @@ type internal FSharpCheckFileResults =
     ///    and assume that we're going to repeat the operation later on.
     /// </param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member GetDeclarationListInfo : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * lineText:string * partialName: PartialLongName * ?getAllSymbols: (unit -> AssemblySymbol list) * ?getAdditionalInfo: (FSharpSymbol * FSharpDisplayContext -> 'T option) * ?shortTypeNames: bool * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) * ?userOpName: string -> Async<FSharpDeclarationListInfo<'T>>
+    member GetDeclarationListInfo : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * lineText:string * partialName: PartialLongName * ?getAllSymbols: (unit -> AssemblySymbol list) * ?shortTypeNames: bool * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) * ?userOpName: string -> Async<FSharpDeclarationListInfo>
 
     /// <summary>Get the items for a declaration list in FSharpSymbol format</summary>
     ///
@@ -264,6 +264,8 @@ type internal FSharpCheckFileResults =
 
     /// Get all textual usages of all symbols throughout the file
     member GetAllUsesOfAllSymbolsInFile :  unit -> Async<FSharpSymbolUse[]>
+
+    member GetAllResolvedSymbols: unit -> Async<(range * FSharpSymbol)[]>
 
     /// Get the textual usages that resolved to the given symbol throughout the file
     member GetUsesOfSymbolInFile : symbol:FSharpSymbol -> Async<FSharpSymbolUse[]>

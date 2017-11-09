@@ -41,8 +41,9 @@ let partialName = GetPartialLongNameEx(inputLines.[4], 23)
 
 // Get declarations (autocomplete) for a location
 let decls =
-    parsed.GetDeclarationListInfo<obj>(Some untyped, 5, inputLines.[4], partialName)
+    parsed.GetDeclarationListInfo(Some untyped, 5, inputLines.[4], partialName)
     |> Async.RunSynchronously
 
-for item in decls.Items do
-    printfn " - %s" item.Name
+match decls with
+| FSharpDeclarationListInfo.Info (items, _, _) -> items |> Array.iter (fun item -> printfn " - %s" item.Name)
+| _ -> ()

@@ -21,9 +21,9 @@ open Microsoft.FSharp.Compiler.Tastops
 //
 // Note: this type holds a weak reference to compiler resources. 
 #if COMPILER_PUBLIC_API
-type FSharpDeclarationListItem<'T> =
+type FSharpDeclarationListItem =
 #else
-type internal FSharpDeclarationListItem<'T> =
+type internal FSharpDeclarationListItem =
 #endif
     /// Get the display name for the declaration.
     member Name : string
@@ -46,7 +46,7 @@ type internal FSharpDeclarationListItem<'T> =
 
     member Glyph : FSharpGlyph
 
-    member AdditionalInfo : 'T option
+    member Symbol : FSharpSymbol
 
     member Kind : CompletionItemKind
 
@@ -60,30 +60,21 @@ type internal FSharpDeclarationListItem<'T> =
 
     member NamespaceToOpen : string option
 
-
-[<Sealed>]
+[<RequireQualifiedAccess>]
 /// Represents a set of declarations in F# source code, with information attached ready for display by an editor.
 /// Returned by GetDeclarations.
 //
 // Note: this type holds a weak reference to compiler resources. 
 #if COMPILER_PUBLIC_API
-type FSharpDeclarationListInfo<'T> =
+type FSharpDeclarationListInfo =
 #else
-type internal FSharpDeclarationListInfo<'T> =
+type internal FSharpDeclarationListInfo =
 #endif
-
-    member Items : FSharpDeclarationListItem<'T>[]
-
-    member IsForType : bool
-
-    member IsError : bool
-
-    // Implementation details used by other code in the compiler    
-    static member internal Create : infoReader:InfoReader * m:range * denv:DisplayEnv * getAdditionalInfo:(Item -> 'T option) * items:CompletionItem list * reactor:IReactorOperations * currentNamespace:string[] option * isAttributeApplicationContex:bool * checkAlive:(unit -> bool) -> FSharpDeclarationListInfo<'T>
-
-    static member internal Error : message:string -> FSharpDeclarationListInfo<'T>
-
-    static member Empty : FSharpDeclarationListInfo<'T>
+    | Empty
+    | Info of Items: FSharpDeclarationListItem[] * IsForType: bool * DisplayContext: FSharpDisplayContext
+    | Error of FSharpToolTipText<Layout>
+    // Implementation details used by other code in the compiler
+    static member internal Create: infoReader:InfoReader * m:range * denv:DisplayEnv * createSymbol: (Item -> FSharpSymbol) * items:CompletionItem list * reactor:IReactorOperations * currentNamespace:string[] option * isAttributeApplicationContex:bool * checkAlive:(unit -> bool) -> FSharpDeclarationListInfo
 
 /// Represents one parameter for one method (or other item) in a group. 
 [<Sealed>]
