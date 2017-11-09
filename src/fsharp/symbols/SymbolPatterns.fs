@@ -89,7 +89,7 @@ module Symbol =
         if e.IsEnum || e.IsValueType || hasAttribute<MeasureAnnotatedAbbreviationAttribute> e.Attributes then Some()
         else None
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     let (|Class|_|) (original: FSharpEntity, abbreviated: FSharpEntity, _) = 
         if abbreviated.IsClass 
            && (not abbreviated.IsStaticInstantiation || original.IsFSharpAbbreviation) then Some()
@@ -114,7 +114,7 @@ module Symbol =
             || (e.IsFSharp && e.IsOpaque && not e.IsFSharpModule && not e.IsNamespace) then Some() 
         else None
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     let (|ProvidedType|_|) (e: FSharpEntity) =
         if (e.IsProvided || e.IsProvidedAndErased || e.IsProvidedAndGenerated) && e.CompiledName = e.DisplayName then
             Some()
@@ -126,7 +126,7 @@ module Symbol =
     let (|FSharpModule|_|) (entity: FSharpEntity) = if entity.IsFSharpModule then Some() else None
 
     let (|Namespace|_|) (entity: FSharpEntity) = if entity.IsNamespace then Some() else None
-#if EXTENSIONTYPING    
+#if !NO_EXTENSIONTYPING    
     let (|ProvidedAndErasedType|_|) (entity: FSharpEntity) = if entity.IsProvidedAndErased then Some() else None
 #endif
     let (|Enum|_|) (entity: FSharpEntity) = if entity.IsEnum then Some() else None

@@ -287,7 +287,7 @@ type ILTypeRef =
 
     member QualifiedName: string
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     member QualifiedNameWithNoShortPrimaryAssembly: string
 #endif
 
