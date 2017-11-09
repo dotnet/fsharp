@@ -77,7 +77,7 @@ type PEVerifier () =
 
     static let execute (fileName : string, arguments : string) =
         // Peverify may run quite a while some assemblies are pretty big.  Make the timeout 3 minutes just in case.
-        let longtime = TimeSpan.FromMinutes(3).Milliseconds
+        let longtime = int (TimeSpan.FromMinutes(3.0).TotalMilliseconds)
         printfn "executing '%s' with arguments %s" fileName arguments
         let psi = new ProcessStartInfo(fileName, arguments)
         psi.UseShellExecute <- false
