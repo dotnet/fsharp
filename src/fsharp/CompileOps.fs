@@ -1774,7 +1774,25 @@ let OutputDiagnosticContext prefix fileLineFn os err =
 let GetFSharpCoreLibraryName () = "FSharp.Core"
 
 // If necessary assume a reference to the latest .NET Framework FSharp.Core with which those tools are built.
-let GetDefaultFSharpCoreReference() = typeof<list<int>>.Assembly.Location
+let GetDefaultFSharpCoreReference () = typeof<list<int>>.Assembly.Location
+
+type private TypeInThisAssembly = class end
+
+// Use the ValueTuple that is executing with the compiler if it is from System.ValueTuple
+// or the System.ValueTuple.dll that sits alongside the compiler.  (Note we always ship one with the compiler)
+let GetDefaultSystemValueTupleReference () =
+    try
+        let asm = typeof<System.ValueTuple<int, int>>.Assembly 
+        if asm.FullName.StartsWith "System.ValueTuple" then  
+            Some asm.Location
+        else
+            let location = Path.GetDirectoryName(typeof<TypeInThisAssembly>.Assembly.Location)
+            let valueTuplePath = Path.Combine(location, "System.ValueTuple.dll")
+            if File.Exists(valueTuplePath) then
+                Some valueTuplePath
+            else
+                None
+    with _ -> None
 
 let GetFsiLibraryName () = "FSharp.Compiler.Interactive.Settings"  
 
@@ -1808,10 +1826,11 @@ let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) =
           yield "System.Collections" // System.Collections.Generic.List<T>
           yield "System.Runtime.Numerics" // BigInteger
           yield "System.Threading"  // OperationCanceledException
-#if !COMPILER_SERVICE_AS_DLL
-          // TODO, right now FCS doesn't add this reference automatically
-          yield "System.ValueTuple"
-#endif
+
+          // always include a default reference to System.ValueTuple.dll in scripts and out-of-project sources 
+          match GetDefaultSystemValueTupleReference() with  
+          | None -> () 
+          | Some v -> yield v 
 
           yield "System.Web"
           yield "System.Web.Services"
