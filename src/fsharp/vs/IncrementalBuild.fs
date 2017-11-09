@@ -1292,7 +1292,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 disposeCleanupItem()
 
                 let! tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences)  
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
                 tcImports.GetCcusExcludingBase() |> Seq.iter (fun ccu -> 
                     // When a CCU reports an invalidation, merge them together and just report a 
                     // general "imports invalidated". This triggers a rebuild.
@@ -1555,7 +1555,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     member __.ImportedCcusInvalidated = importsInvalidated.Publish
     member __.AllDependenciesDeprecated = allDependencies
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     member __.ThereAreLiveTypeProviders = 
         let liveTPs =
             match cleanupItem with 

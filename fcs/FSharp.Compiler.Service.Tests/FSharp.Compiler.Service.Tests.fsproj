@@ -17,7 +17,6 @@
     <TargetType>LIBRARY</TargetType>
     <NoWarn>58;75</NoWarn>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
-    <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
     <ResolveNuGetPackages>false</ResolveNuGetPackages>
     <OutputPath>..\..\$(Configuration)\fcs\net45\</OutputPath>
     <Tailcalls>true</Tailcalls>

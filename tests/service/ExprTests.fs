@@ -528,7 +528,7 @@ let bool2 = false
     let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
 //<@ let x = Some(3) in x.IsSome @>
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 [<Test>]
 let ``Test Declarations project1`` () =
     let wholeProjectResults = exprChecker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously

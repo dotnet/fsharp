@@ -341,14 +341,14 @@ module internal SymbolHelpers =
    
     let rangeOfPropInfo preferFlag (pinfo:PropInfo) =
         match pinfo with
-#if EXTENSIONTYPING 
+#if !NO_EXTENSIONTYPING 
         |   ProvidedProp(_, pi, _) -> ComputeDefinitionLocationOfProvidedItem pi
 #endif
         |   _ -> pinfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
 
     let rangeOfMethInfo (g:TcGlobals) preferFlag (minfo:MethInfo) = 
         match minfo with
-#if EXTENSIONTYPING 
+#if !NO_EXTENSIONTYPING 
         |   ProvidedMeth(_, mi, _, _) -> ComputeDefinitionLocationOfProvidedItem mi
 #endif
         |   DefaultStructCtor(_, AppTy g (tcref, _)) -> Some(rangeOfEntityRef preferFlag tcref)
@@ -356,7 +356,7 @@ module internal SymbolHelpers =
 
     let rangeOfEventInfo preferFlag (einfo:EventInfo) = 
         match einfo with
-#if EXTENSIONTYPING 
+#if !NO_EXTENSIONTYPING 
         | ProvidedEvent (_, ei, _) -> ComputeDefinitionLocationOfProvidedItem ei
 #endif
         | _ -> einfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
@@ -402,7 +402,7 @@ module internal SymbolHelpers =
 
     // Provided type definitions do not have a useful F# CCU for the purposes of goto-definition.
     let computeCcuOfTyconRef (tcref:TyconRef) = 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         if tcref.IsProvided then None else 
 #endif
         ccuOfTyconRef tcref
@@ -561,7 +561,7 @@ module internal SymbolHelpers =
 
                 Some (ccuFileName, "M:"+actualTypeName+"."+normalizedName+genArity+XmlDocArgsEnc g (formalTypars, fmtps) args)
         | DefaultStructCtor _ -> None
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth _ -> None
 #endif
 
@@ -577,7 +577,7 @@ module internal SymbolHelpers =
 
     let GetXmlDocSigOfProp infoReader m pinfo =
         match pinfo with 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedProp _ -> None // No signature is possible. If an xml comment existed it would have been returned by PropInfo.XmlDoc in infos.fs
 #endif
         | FSProp (g, typ, _, _) as fspinfo -> 
@@ -1230,7 +1230,7 @@ module internal SymbolHelpers =
         |  _ -> 
             FSharpStructuredToolTipElement.None
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 
     /// Determine if an item is a provided type 
     let (|ItemIsProvidedType|_|) g item =
@@ -1306,7 +1306,7 @@ module internal SymbolHelpers =
                 sprintf "%s.%s%s" typeString minfo.RawMetadata.Name paramString |> Some
 
             | DefaultStructCtor _  -> None
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
             | ProvidedMeth _ -> None
 #endif
              
@@ -1337,7 +1337,7 @@ module internal SymbolHelpers =
              match finfo with 
              | ILFieldInfo(tinfo, fdef) -> 
                  (tinfo.TyconRef |> ticksAndArgCountTextOfTyconRef)+"."+fdef.Name |> Some
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
              | ProvidedField _ -> None
 #endif
         | Item.Types(_, ((AppTy g (tcref, _)) :: _)) 
@@ -1363,7 +1363,7 @@ module internal SymbolHelpers =
                 // namespaces from type providers need to be handled separately because they don't have compiled representation
                 // otherwise we'll fail at tast.fs
                 match modref.Deref.TypeReprInfo with
-#if EXTENSIONTYPING                
+#if !NO_EXTENSIONTYPING                
                 | TProvidedNamespaceExtensionPoint _ -> 
                     modref.CompilationPathOpt
                     |> Option.bind (fun path ->
@@ -1391,7 +1391,7 @@ module internal SymbolHelpers =
                 let tcref = tinfo.TyconRef
                 (tcref |> ticksAndArgCountTextOfTyconRef)+"."+pdef.Name |> Some
             | FSProp _ -> None
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
             | ProvidedProp _ -> None
 #endif
         | Item.Property(_, []) -> None // Pathological case of the above
@@ -1410,7 +1410,7 @@ module internal SymbolHelpers =
                    | Parent tcref -> (tcref |> ticksAndArgCountTextOfTyconRef)+"."+vref.PropertyName|> Some                     
                    | ParentNone -> None
                 | None -> None
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
             | ProvidedEvent _ -> None 
 #endif
         | Item.CtorGroup(_, minfos) ->
@@ -1426,7 +1426,7 @@ module internal SymbolHelpers =
             | (DefaultStructCtor (g, typ) :: _) ->  
                 let tcref = tcrefOfAppTy g typ
                 (ticksAndArgCountTextOfTyconRef tcref) + ".#ctor" |> Some
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
             | ProvidedMeth _::_ -> None
 #endif
         | Item.CustomOperation (_, _, Some minfo) -> getKeywordForMethInfo minfo
@@ -1466,7 +1466,7 @@ module internal SymbolHelpers =
         | Item.Property(_, pinfos) -> 
             let pinfo = List.head pinfos 
             if pinfo.IsIndexer then [item] else []
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ItemIsWithStaticArguments m g _ -> [item] // we pretend that provided-types-with-static-args are method-like in order to get ParamInfo for them
 #endif
         | Item.CustomOperation(_name, _helpText, _minfo) -> [item]
