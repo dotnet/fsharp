@@ -4,7 +4,7 @@ open System
 open System.Diagnostics
 open System.IO
 
-let longtime = TimeSpan.FromSeconds(30).TotalMilliseconds               // longtime is 30 seconds
+let longtime = TimeSpan.FromSeconds(30).Milliseconds               // longtime is 30 seconds
 
 let programFiles = 
     let pf86 = Environment.GetEnvironmentVariable("ProgramFiles(x86)")
