@@ -485,13 +485,12 @@ let ``Test OtherOptions order for GetProjectOptionsFromScript`` () =
         let scriptPath = __SOURCE_DIRECTORY__ + @"/data/ScriptProject/" + scriptName + ".fsx"
         let scriptSource = File.ReadAllText scriptPath
         let projOpts, _diagnostics = checker.GetProjectOptionsFromScript(scriptPath, scriptSource) |> Async.RunSynchronously
-
         projOpts.OtherOptions
         |> Array.map (fun s -> if s.StartsWith "--" then s else Path.GetFileNameWithoutExtension s)
         |> Array.forall (fun s -> Set.contains s expected2)
         |> shouldEqual true
 
-    let otherArgs = [|"--noframework"; "--warn:3"; "System.Numerics"; "mscorlib"; "FSharp.Core"; "System"; "System.Xml"; "System.Runtime.Remoting"; "System.Runtime.Serialization.Formatters.Soap"; "System.Data"; "System.Drawing"; "System.Core"; "System.Runtime"; "System.Linq"; "System.Reflection"; "System.Linq.Expressions"; "System.Threading.Tasks"; "System.IO"; "System.Net.Requests"; "System.Collections"; "System.Runtime.Numerics"; "System.Threading"; "System.Web"; "System.Web.Services"; "System.Windows.Forms"; "FSharp.Compiler.Interactive.Settings"|] |> Set.ofArray
+    let otherArgs = [|"--noframework"; "--warn:3"; "System.Numerics"; "System.ValueTuple"; "mscorlib"; "FSharp.Core"; "System"; "System.Xml"; "System.Runtime.Remoting"; "System.Runtime.Serialization.Formatters.Soap"; "System.Data"; "System.Drawing"; "System.Core"; "System.Runtime"; "System.Linq"; "System.Reflection"; "System.Linq.Expressions"; "System.Threading.Tasks"; "System.IO"; "System.Net.Requests"; "System.Collections"; "System.Runtime.Numerics"; "System.Threading"; "System.Web"; "System.Web.Services"; "System.Windows.Forms"; "FSharp.Compiler.Interactive.Settings"|] |> Set.ofArray
 
     test "Main1" otherArgs
     test "Main2" otherArgs
