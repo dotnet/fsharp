@@ -3174,13 +3174,13 @@ let private ResolveExprDotLongIdent (ncenv:NameResolver) m ad nenv typ lid findF
         ForceRaise adhoctDotSearchAccessible
 
 let ComputeItemRange wholem (lid: Ident list) rest =
-    match rest with
-    | [] -> wholem
-    | _ -> 
+    match rest, lid with
+    | [], [] -> wholem
+    | _ ->
         let ids = List.take (max 0 (lid.Length - rest.Length)) lid
         match ids with 
         | [] -> wholem
-        | _ -> rangeOfLid ids
+        | _ -> (List.last ids).idRange
 
 /// Filters method groups that will be sent to Visual Studio IntelliSense
 /// to include only static/instance members
