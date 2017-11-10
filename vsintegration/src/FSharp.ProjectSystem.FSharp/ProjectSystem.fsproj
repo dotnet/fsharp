@@ -84,9 +84,7 @@
       <Link>FSharp.ProjectSystem.FSharp.dll</Link>
       <Parser>210</Parser>
     </FilesToLocalize>
-    <VSCTCompile Include="MenusAndCommands.vsct">
-      <XlfInput>false</XlfInput>
-    </VSCTCompile>
+    <VSCTCompile Include="MenusAndCommands.vsct" />
     <EmbeddedResource Include="VSPackage.resx">
       <GenerateSource>true</GenerateSource>
       <GeneratedModuleName>Microsoft.VisualStudio.FSharp.ProjectSystem.FSharpSR</GeneratedModuleName>
