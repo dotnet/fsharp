@@ -75,7 +75,6 @@
       <ManifestResourceName>Properties</ManifestResourceName>
       <Link>Properties.resx</Link>
     </EmbeddedResource>
-    <None Include="fsiCommands.vsct" />
     <EmbeddedResource Include="VSPackage.resx" />
   </ItemGroup>
   
