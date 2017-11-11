@@ -782,7 +782,7 @@ module internal SymbolHelpers =
             protectAssemblyExploration 1027 (fun () -> 
               match item with 
               | ItemWhereTypIsPreferred ty -> 
-                  if isAppTy g ty then hash (tcrefOfAppTy g ty).Stamp
+                  if isAppTy g ty then hash (tcrefOfAppTy g ty).LogicalName
                   else 1010
               | Item.ILField(ILFieldInfo(_, fld)) -> 
                   System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode fld // hash on the object identity of the AbstractIL metadata blob for the field
@@ -795,12 +795,12 @@ module internal SymbolHelpers =
               | Item.CtorGroup(name, meths) -> name.GetHashCode() + (meths |> List.fold (fun st a -> st + a.ComputeHashCode()) 0)
               | (Item.Value vref | Item.CustomBuilder (_, vref)) -> hash vref.LogicalName
               | Item.ActivePatternCase(APElemRef(_apinfo, vref, idx)) -> hash (vref.LogicalName, idx)
-              | Item.ExnCase(tcref) -> hash tcref.Stamp
+              | Item.ExnCase(tcref) -> hash tcref.LogicalName
               | Item.UnionCase(UnionCaseInfo(_, UCRef(tcref, n)), _) -> hash(tcref.Stamp, n)
               | Item.RecdField(RecdFieldInfo(_, RFRef(tcref, n))) -> hash(tcref.Stamp, n)
               | Item.Event evt -> evt.ComputeHashCode()
               | Item.Property(_name, pis) -> hash (pis |> List.map (fun pi -> pi.ComputeHashCode()))
-              | Item.UnqualifiedType(tcref :: _) -> hash tcref.Stamp
+              | Item.UnqualifiedType(tcref :: _) -> hash tcref.LogicalName
               | _ -> failwith "unreachable") }
 
     let CompletionItemDisplayPartialEquality g = 
