@@ -450,10 +450,11 @@ let OpenModulesOrNamespaces tcSink g amap scopem root env mvvs openDeclaration =
     match openDeclaration.Range with
     | None -> ()
     | Some _ ->
-        let rec loop = function
-            | (_ :: rest) as idents ->
+        let rec loop (idents: Ident list) =
+            match idents with
+            | id :: rest ->
                 let idents = List.rev idents
-                let range = rangeOfLid idents
+                let range = id.idRange
                 match ResolveLongIndentAsModuleOrNamespace ResultCollectionSettings.AtMostOneResult amap range OpenQualified env.NameEnv env.eAccessRights idents with
                 | Result modrefs ->
                     for _, modref, _ in modrefs do
