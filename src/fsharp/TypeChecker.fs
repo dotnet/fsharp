@@ -455,7 +455,7 @@ let OpenModulesOrNamespaces tcSink g amap scopem root env mvvs openDeclaration =
             | id :: rest ->
                 let idents = List.rev idents
                 let range = id.idRange
-                match ResolveLongIndentAsModuleOrNamespace ResultCollectionSettings.AtMostOneResult amap range OpenQualified env.NameEnv env.eAccessRights idents with
+                match ResolveLongIndentAsModuleOrNamespace ResultCollectionSettings.AllResults amap range OpenQualified env.NameEnv env.eAccessRights idents with
                 | Result modrefs ->
                     for _, modref, _ in modrefs do
                         let item = Item.ModuleOrNamespaces [modref] 
