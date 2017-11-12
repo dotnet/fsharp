@@ -449,10 +449,21 @@ let OpenModulesOrNamespaces tcSink g amap scopem root env mvvs openDeclaration =
     CallOpenDeclarationSink tcSink openDeclaration
     match openDeclaration.Range with
     | None -> ()
-    | Some range ->
-        for modul in mvvs do
-             let item = Item.ModuleOrNamespaces [modul]
-             CallNameResolutionSink tcSink (range, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights)
+    | Some _ ->
+        let rec loop = function
+            | (_ :: rest) as idents ->
+                let idents = List.rev idents
+                let range = rangeOfLid idents
+                match ResolveLongIndentAsModuleOrNamespace ResultCollectionSettings.AtMostOneResult amap range OpenQualified env.NameEnv env.eAccessRights idents with
+                | Result modrefs ->
+                    for _, modref, _ in modrefs do
+                        let item = Item.ModuleOrNamespaces [modref] 
+                        CallNameResolutionSink tcSink (range, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights)
+                | _ -> ()
+                loop rest
+            | _ -> ()
+        
+        loop (List.rev openDeclaration.LongId)
     env
 
 let AddRootModuleOrNamespaceRefs g amap m env modrefs =
