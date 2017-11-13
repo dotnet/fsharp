@@ -4,62 +4,62 @@
     <body>
       <trans-unit id="lblPreBuildEventCommandLine.Text">
         <source>P&amp;re-build event command line:</source>
-        <target state="new">P&amp;re-build event command line:</target>
+        <target state="translated">&amp;Derleme öncesi olay komut satırı:</target>
         <note />
       </trans-unit>
       <trans-unit id="txtPreBuildEventCommandLine.AccessibleName">
         <source>Pre-build event command line</source>
-        <target state="new">Pre-build event command line</target>
+        <target state="translated">Oluşturma öncesi olay komut satırı</target>
         <note />
       </trans-unit>
       <trans-unit id="btnPreBuildBuilder.AccessibleName">
         <source>Edit Pre-build ...</source>
-        <target state="new">Edit Pre-build ...</target>
+        <target state="translated">Oluşturma Öncesi Düzenle ...</target>
         <note />
       </trans-unit>
       <trans-unit id="btnPreBuildBuilder.Text">
         <source>Ed&amp;it Pre-build ...</source>
-        <target state="new">Ed&amp;it Pre-build ...</target>
+        <target state="translated">Oluşturma Öncesi Dü&amp;zenle ...</target>
         <note />
       </trans-unit>
       <trans-unit id="lblPostBuildEventCommandLine.Text">
         <source>P&amp;ost-build event command line:</source>
-        <target state="new">P&amp;ost-build event command line:</target>
+        <target state="translated">&amp;Oluşturma sonrası olay komut satırı:</target>
         <note />
       </trans-unit>
       <trans-unit id="txtPostBuildEventCommandLine.AccessibleName">
         <source>Post-build event command line</source>
-        <target state="new">Post-build event command line</target>
+        <target state="translated">Oluşturma sonrası olay komut satırı</target>
         <note />
       </trans-unit>
       <trans-unit id="btnPostBuildBuilder.AccessibleName">
         <source>Edit Post-build ...</source>
-        <target state="new">Edit Post-build ...</target>
+        <target state="translated">Oluşturma Sonrası Düzenle ...</target>
         <note />
       </trans-unit>
       <trans-unit id="btnPostBuildBuilder.Text">
         <source>Edit Post-b&amp;uild ...</source>
-        <target state="new">Edit Post-b&amp;uild ...</target>
+        <target state="translated">Oluşturma Sonrası D&amp;üzenle ...</target>
         <note />
       </trans-unit>
       <trans-unit id="lblRunPostBuildEvent.Text">
         <source>Ru&amp;n the post-build event:</source>
-        <target state="new">Ru&amp;n the post-build event:</target>
+        <target state="translated">Derleme sonrası olayını çalıştır:</target>
         <note />
       </trans-unit>
       <trans-unit id="cboRunPostBuildEvent.Items">
         <source>Always</source>
-        <target state="new">Always</target>
+        <target state="translated">Her Zaman</target>
         <note />
       </trans-unit>
       <trans-unit id="cboRunPostBuildEvent.Items1">
         <source>On successful build</source>
-        <target state="new">On successful build</target>
+        <target state="translated">Derleme başarılı olduğunda</target>
         <note />
       </trans-unit>
       <trans-unit id="cboRunPostBuildEvent.Items2">
         <source>When the build updates the project output</source>
-        <target state="new">When the build updates the project output</target>
+        <target state="translated">Oluşturma proje çıkışını güncelleştirdiğinde</target>
         <note />
       </trans-unit>
     </body>
