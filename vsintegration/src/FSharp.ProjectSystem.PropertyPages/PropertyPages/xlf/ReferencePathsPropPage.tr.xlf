@@ -4,47 +4,47 @@
     <body>
       <trans-unit id="AddFolder.Text">
         <source>&amp;Add Folder</source>
-        <target state="new">&amp;Add Folder</target>
+        <target state="translated">&amp;Klasör Ekle</target>
         <note />
       </trans-unit>
       <trans-unit id="UpdateFolder.Text">
         <source>&amp;Update</source>
-        <target state="new">&amp;Update</target>
+        <target state="translated">&amp;Güncelleştir</target>
         <note />
       </trans-unit>
       <trans-unit id="ReferencePathLabel.Text">
         <source>Reference &amp;paths:</source>
-        <target state="new">Reference &amp;paths:</target>
+        <target state="translated">Başvuru &amp;yolları:</target>
         <note />
       </trans-unit>
       <trans-unit id="FolderBrowse.AccessibleName">
         <source>Browse</source>
-        <target state="new">Browse</target>
+        <target state="translated">Gözat</target>
         <note />
       </trans-unit>
       <trans-unit id="FolderBrowse.Text">
         <source>...</source>
-        <target state="new">...</target>
+        <target state="translated">...</target>
         <note />
       </trans-unit>
       <trans-unit id="MoveUp.AccessibleName">
         <source>Move up</source>
-        <target state="new">Move up</target>
+        <target state="translated">Yukarı taşı</target>
         <note />
       </trans-unit>
       <trans-unit id="MoveDown.AccessibleName">
         <source>Move down</source>
-        <target state="new">Move down</target>
+        <target state="translated">Aşağı taşı</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveFolder.AccessibleName">
         <source>Delete</source>
-        <target state="new">Delete</target>
+        <target state="translated">Sil</target>
         <note />
       </trans-unit>
       <trans-unit id="FolderLabel.Text">
         <source>&amp;Folder:</source>
-        <target state="new">&amp;Folder:</target>
+        <target state="translated">&amp;Klasör:</target>
         <note />
       </trans-unit>
     </body>

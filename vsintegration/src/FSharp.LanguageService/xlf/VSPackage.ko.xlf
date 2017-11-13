@@ -4,67 +4,67 @@
     <body>
       <trans-unit id="100">
         <source>F#</source>
-        <target state="new">F#</target>
+        <target state="translated">F#</target>
         <note>lock</note>
       </trans-unit>
       <trans-unit id="ExcludedCode">
         <source>Excluded Code</source>
-        <target state="new">Excluded Code</target>
+        <target state="translated">제외 코드</target>
         <note />
       </trans-unit>
       <trans-unit id="PreprocessorKeyword">
         <source>Preprocessor Keyword</source>
-        <target state="new">Preprocessor Keyword</target>
+        <target state="translated">전처리기 키워드</target>
         <note />
       </trans-unit>
       <trans-unit id="Operator">
         <source>Operator</source>
-        <target state="new">Operator</target>
+        <target state="translated">연산자</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpFile">
         <source>F# File (*.fs)</source>
-        <target state="new">F# File (*.fs)</target>
+        <target state="translated">F# 파일(*.fs)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInterfaceFile">
         <source>F# Interface File (*.fsi)</source>
-        <target state="new">F# Interface File (*.fsi)</target>
+        <target state="translated">F# 인터페이스 파일(*.fsi)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSXFile">
         <source>F# Script File (*.fsx)</source>
-        <target state="new">F# Script File (*.fsx)</target>
+        <target state="translated">F# 스크립트 파일(*.fsx)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpScriptFile">
         <source>F# Script File (*.fsscript)</source>
-        <target state="new">F# Script File (*.fsscript)</target>
+        <target state="translated">F# 스크립트 파일(*.fsscript)</target>
         <note />
       </trans-unit>
       <trans-unit id="Comment">
         <source>Comment</source>
-        <target state="new">Comment</target>
+        <target state="translated">설명</target>
         <note />
       </trans-unit>
       <trans-unit id="Identifier">
         <source>Identifier</source>
-        <target state="new">Identifier</target>
+        <target state="translated">식별자</target>
         <note />
       </trans-unit>
       <trans-unit id="Keyword">
         <source>Keyword</source>
-        <target state="new">Keyword</target>
+        <target state="translated">키워드</target>
         <note />
       </trans-unit>
       <trans-unit id="Number">
         <source>Number</source>
-        <target state="new">Number</target>
+        <target state="translated">숫자</target>
         <note />
       </trans-unit>
       <trans-unit id="String">
         <source>String</source>
-        <target state="new">String</target>
+        <target state="translated">문자열</target>
         <note />
       </trans-unit>
     </body>

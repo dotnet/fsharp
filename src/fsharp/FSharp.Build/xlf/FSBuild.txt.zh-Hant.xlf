@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="toolpathUnknown">
         <source>ToolPath is unknown; specify the path to fsc.exe as the ToolPath property.</source>
-        <target state="new">ToolPath is unknown; specify the path to fsc.exe as the ToolPath property.</target>
+        <target state="translated">未知的 ToolPath，請指定 fsc.exe 的路徑做為 ToolPath 屬性。</target>
         <note />
       </trans-unit>
     </body>
