@@ -4,47 +4,47 @@
     <body>
       <trans-unit id="AddFolder.Text">
         <source>&amp;Add Folder</source>
-        <target state="new">&amp;Add Folder</target>
+        <target state="translated">&amp;Adicionar Pasta</target>
         <note />
       </trans-unit>
       <trans-unit id="UpdateFolder.Text">
         <source>&amp;Update</source>
-        <target state="new">&amp;Update</target>
+        <target state="translated">&amp;Atualizar</target>
         <note />
       </trans-unit>
       <trans-unit id="ReferencePathLabel.Text">
         <source>Reference &amp;paths:</source>
-        <target state="new">Reference &amp;paths:</target>
+        <target state="translated">Caminho&amp;s de referência:</target>
         <note />
       </trans-unit>
       <trans-unit id="FolderBrowse.AccessibleName">
         <source>Browse</source>
-        <target state="new">Browse</target>
+        <target state="translated">Procurar</target>
         <note />
       </trans-unit>
       <trans-unit id="FolderBrowse.Text">
         <source>...</source>
-        <target state="new">...</target>
+        <target state="translated">...</target>
         <note />
       </trans-unit>
       <trans-unit id="MoveUp.AccessibleName">
         <source>Move up</source>
-        <target state="new">Move up</target>
+        <target state="translated">Mover para cima</target>
         <note />
       </trans-unit>
       <trans-unit id="MoveDown.AccessibleName">
         <source>Move down</source>
-        <target state="new">Move down</target>
+        <target state="translated">Mover para baixo</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveFolder.AccessibleName">
         <source>Delete</source>
-        <target state="new">Delete</target>
+        <target state="translated">Excluir</target>
         <note />
       </trans-unit>
       <trans-unit id="FolderLabel.Text">
         <source>&amp;Folder:</source>
-        <target state="new">&amp;Folder:</target>
+        <target state="translated">&amp;Pasta:</target>
         <note />
       </trans-unit>
     </body>

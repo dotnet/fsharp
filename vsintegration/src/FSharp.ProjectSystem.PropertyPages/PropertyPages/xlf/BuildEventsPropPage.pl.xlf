@@ -4,62 +4,62 @@
     <body>
       <trans-unit id="lblPreBuildEventCommandLine.Text">
         <source>P&amp;re-build event command line:</source>
-        <target state="new">P&amp;re-build event command line:</target>
+        <target state="translated">Wiersz polecenia zdarzenia p&amp;rzed kompilacją:</target>
         <note />
       </trans-unit>
       <trans-unit id="txtPreBuildEventCommandLine.AccessibleName">
         <source>Pre-build event command line</source>
-        <target state="new">Pre-build event command line</target>
+        <target state="translated">Wiersz polecenia zdarzenia przed kompilowaniem</target>
         <note />
       </trans-unit>
       <trans-unit id="btnPreBuildBuilder.AccessibleName">
         <source>Edit Pre-build ...</source>
-        <target state="new">Edit Pre-build ...</target>
+        <target state="translated">Edytuj zdarzenie przed kompilacją...</target>
         <note />
       </trans-unit>
       <trans-unit id="btnPreBuildBuilder.Text">
         <source>Ed&amp;it Pre-build ...</source>
-        <target state="new">Ed&amp;it Pre-build ...</target>
+        <target state="translated">Ed&amp;ytuj zdarzenie przed kompilacją...</target>
         <note />
       </trans-unit>
       <trans-unit id="lblPostBuildEventCommandLine.Text">
         <source>P&amp;ost-build event command line:</source>
-        <target state="new">P&amp;ost-build event command line:</target>
+        <target state="translated">Wiersz polecenia zdarzenia p&amp;o kompilacji:</target>
         <note />
       </trans-unit>
       <trans-unit id="txtPostBuildEventCommandLine.AccessibleName">
         <source>Post-build event command line</source>
-        <target state="new">Post-build event command line</target>
+        <target state="translated">Wiersz polecenia zdarzenia po kompilacji</target>
         <note />
       </trans-unit>
       <trans-unit id="btnPostBuildBuilder.AccessibleName">
         <source>Edit Post-build ...</source>
-        <target state="new">Edit Post-build ...</target>
+        <target state="translated">Edytuj zdarzenie po kompilacji...</target>
         <note />
       </trans-unit>
       <trans-unit id="btnPostBuildBuilder.Text">
         <source>Edit Post-b&amp;uild ...</source>
-        <target state="new">Edit Post-b&amp;uild ...</target>
+        <target state="translated">Edytuj zdarzenie &amp;po kompilacji...</target>
         <note />
       </trans-unit>
       <trans-unit id="lblRunPostBuildEvent.Text">
         <source>Ru&amp;n the post-build event:</source>
-        <target state="new">Ru&amp;n the post-build event:</target>
+        <target state="translated">Ur&amp;uchom zdarzenie po kompilacji:</target>
         <note />
       </trans-unit>
       <trans-unit id="cboRunPostBuildEvent.Items">
         <source>Always</source>
-        <target state="new">Always</target>
+        <target state="translated">Zawsze</target>
         <note />
       </trans-unit>
       <trans-unit id="cboRunPostBuildEvent.Items1">
         <source>On successful build</source>
-        <target state="new">On successful build</target>
+        <target state="translated">Podczas pomyślnej kompilacji</target>
         <note />
       </trans-unit>
       <trans-unit id="cboRunPostBuildEvent.Items2">
         <source>When the build updates the project output</source>
-        <target state="new">When the build updates the project output</target>
+        <target state="translated">Gdy kompilacja aktualizuje wyjście projektu</target>
         <note />
       </trans-unit>
     </body>
