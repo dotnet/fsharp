@@ -4,47 +4,47 @@
     <body>
       <trans-unit id="AddFolder.Text">
         <source>&amp;Add Folder</source>
-        <target state="new">&amp;Add Folder</target>
+        <target state="translated">添加文件夹(&amp;A)</target>
         <note />
       </trans-unit>
       <trans-unit id="UpdateFolder.Text">
         <source>&amp;Update</source>
-        <target state="new">&amp;Update</target>
+        <target state="translated">更新(&amp;U)</target>
         <note />
       </trans-unit>
       <trans-unit id="ReferencePathLabel.Text">
         <source>Reference &amp;paths:</source>
-        <target state="new">Reference &amp;paths:</target>
+        <target state="translated">引用路径(&amp;P): </target>
         <note />
       </trans-unit>
       <trans-unit id="FolderBrowse.AccessibleName">
         <source>Browse</source>
-        <target state="new">Browse</target>
+        <target state="translated">浏览</target>
         <note />
       </trans-unit>
       <trans-unit id="FolderBrowse.Text">
         <source>...</source>
-        <target state="new">...</target>
+        <target state="translated">...</target>
         <note />
       </trans-unit>
       <trans-unit id="MoveUp.AccessibleName">
         <source>Move up</source>
-        <target state="new">Move up</target>
+        <target state="translated">上移</target>
         <note />
       </trans-unit>
       <trans-unit id="MoveDown.AccessibleName">
         <source>Move down</source>
-        <target state="new">Move down</target>
+        <target state="translated">下移</target>
         <note />
       </trans-unit>
       <trans-unit id="RemoveFolder.AccessibleName">
         <source>Delete</source>
-        <target state="new">Delete</target>
+        <target state="translated">删除</target>
         <note />
       </trans-unit>
       <trans-unit id="FolderLabel.Text">
         <source>&amp;Folder:</source>
-        <target state="new">&amp;Folder:</target>
+        <target state="translated">文件夹(&amp;F):</target>
         <note />
       </trans-unit>
     </body>

@@ -4,52 +4,52 @@
     <body>
       <trans-unit id="FSharpInteractive64Bit">
         <source>64-bit F# Interactive</source>
-        <target state="new">64-bit F# Interactive</target>
+        <target state="translated">F# Interactive, 64-разрядная версия</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractive64BitDescr">
         <source>If set to true, and the current machine is 64-bit, then run F# Interactive as a 64-bit process.  (Otherwise, F# Interactive is a 32-bit process.)</source>
-        <target state="new">If set to true, and the current machine is 64-bit, then run F# Interactive as a 64-bit process.  (Otherwise, F# Interactive is a 32-bit process.)</target>
+        <target state="translated">Если задано значение true и текущий компьютер является 64-разрядным, F# Interactive запускается как 64-разрядный процесс.  (В остальных случая F# Interactive является 32-разрядным процессом.)</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveOptions">
         <source>F# Interactive options</source>
-        <target state="new">F# Interactive options</target>
+        <target state="translated">Параметры F# Interactive</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveOptionsDescr">
         <source>Additional command line arguments passed to the F# Interactive executable by Visual Studio. (optimization and debug flags are ignored if script debugging is enabled)</source>
-        <target state="new">Additional command line arguments passed to the F# Interactive executable by Visual Studio. (optimization and debug flags are ignored if script debugging is enabled)</target>
+        <target state="translated">Дополнительные аргументы командной строки, передаваемые исполняемому файлу F# Interactive из Visual Studio. Оптимизация и флаги отладки игнорируются, если включена отладка скриптов.</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveMisc">
         <source>Misc</source>
-        <target state="new">Misc</target>
+        <target state="translated">Прочее</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveShadowCopy">
         <source>Shadow copy assemblies</source>
-        <target state="new">Shadow copy assemblies</target>
+        <target state="translated">Теневое копирование сборок</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveShadowCopyDescr">
         <source>Prevents referenced assemblies from being locked by the F# Interactive process.</source>
-        <target state="new">Prevents referenced assemblies from being locked by the F# Interactive process.</target>
+        <target state="translated">Предотвращает блокировку сборок, на которые указаны ссылки, интерактивным процессом F#.</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugMode">
         <source>Enable script debugging</source>
-        <target state="new">Enable script debugging</target>
+        <target state="translated">Включить отладку скриптов</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugModeDescr">
         <source>Enable debugging of F# scripts (may impact script performance, requires reset of F# Interactive)</source>
-        <target state="new">Enable debugging of F# scripts (may impact script performance, requires reset of F# Interactive)</target>
+        <target state="translated">Включение отладки скриптов F# (может повлиять на их производительность, необходим сброс F# Interactive).</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveDebugging">
         <source>Debugging</source>
-        <target state="new">Debugging</target>
+        <target state="translated">Отладка</target>
         <note />
       </trans-unit>
     </body>
