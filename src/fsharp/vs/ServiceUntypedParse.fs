@@ -79,6 +79,8 @@ type CompletionContext =
     | ParameterList of pos * HashSet<string>
     | AttributeApplication
     | OpenDeclaration
+    /// completing pattern type (e.g. foo (x: |))
+    | PatternType
 
 //----------------------------------------------------------------------------
 // FSharpParseFileResults
@@ -1272,6 +1274,12 @@ module UntypedParseImpl =
                             else
                                 None
                         | _ -> defaultTraverse decl
+
+                    member __.VisitPat(defaultTraverse, pat) =
+                        match pat with
+                        | SynPat.Typed (_, ty, _) when rangeContainsPos ty.Range pos ->
+                            Some CompletionContext.PatternType
+                        | _ -> defaultTraverse pat
             }
 
         AstTraversal.Traverse(pos, pt, walker)

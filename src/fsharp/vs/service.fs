@@ -870,6 +870,18 @@ type TypeCheckInfo
                 |> Option.map (fun (items, denv, m) ->
                     items |> List.filter (fun x -> match x.Item with Item.ModuleOrNamespaces _ -> true | _ -> false), denv, m)
             
+            // Completion at '(x: ...)"
+            | Some (CompletionContext.PatternType) ->
+                GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck, false, getAllSymbols)
+                |> Option.map (fun (items, denv, m) ->
+                     items 
+                     |> List.filter (fun cItem ->
+                         match cItem.Item with
+                         | Item.ModuleOrNamespaces _
+                         | Item.Types _
+                         | Item.UnqualifiedType _ -> true
+                         | _ -> false), denv, m)
+
             // Other completions
             | cc ->
                 match residueOpt |> Option.bind Seq.tryHead with

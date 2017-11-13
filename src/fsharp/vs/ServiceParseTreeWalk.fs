@@ -94,6 +94,9 @@ module internal AstTraversal =
         abstract VisitSimplePats : SynSimplePat list -> 'T option
         default this.VisitSimplePats (_) = None
 
+        abstract VisitPat : (SynPat -> 'T option) * SynPat -> 'T option
+        default this.VisitPat (defaultTraverse, pat) = defaultTraverse pat
+
     let dive node range project =
         range,(fun() -> project node)
 
@@ -448,6 +451,24 @@ module internal AstTraversal =
 
             visitor.VisitExpr(path, traverseSynExpr path, defaultTraverse, expr)
 
+        and traversePat (pat: SynPat) =
+            let defaultTraverse p =
+                match p with
+                | SynPat.Paren (p, _) -> traversePat p
+                | SynPat.Or (p1, p2, _) -> [ p1; p2] |> List.tryPick traversePat
+                | SynPat.Ands (ps, _)
+                | SynPat.Tuple (ps, _)
+                | SynPat.ArrayOrList (_, ps, _) -> ps |> List.tryPick traversePat
+                | SynPat.Attrib (p, _, _) -> traversePat p
+                | SynPat.LongIdent(_, _, _, args, _, _) ->
+                    match args with
+                    | SynConstructorArgs.Pats ps -> ps |> List.tryPick traversePat
+                    | SynConstructorArgs.NamePatPairs (ps, _) ->
+                        ps |> List.map snd |> List.tryPick traversePat
+                | _ -> None
+                
+            visitor.VisitPat (defaultTraverse, pat)
+
         and normalizeMembersToDealWithPeculiaritiesOfGettersAndSetters path traverseInherit (synMemberDefns:SynMemberDefns) =
             synMemberDefns 
                     // property getters are setters are two members that can have the same range, so do some somersaults to deal with this
@@ -566,8 +587,10 @@ module internal AstTraversal =
             let defaultTraverse b =
                 let path = TraverseStep.Binding b :: path
                 match b with
-                | (SynBinding.Binding(_synAccessOption, _synBindingKind, _, _, _synAttributes, _preXmlDoc, _synValData, _synPat, _synBindingReturnInfoOption, synExpr, _range, _sequencePointInfoForBinding)) ->
-                    traverseSynExpr path synExpr
+                | (SynBinding.Binding(_synAccessOption, _synBindingKind, _, _, _synAttributes, _preXmlDoc, _synValData, synPat, _synBindingReturnInfoOption, synExpr, _range, _sequencePointInfoForBinding)) ->
+                    [ traversePat synPat
+                      traverseSynExpr path synExpr ]
+                    |> List.tryPick id
             visitor.VisitBinding(defaultTraverse,b)
 
         match parseTree with
