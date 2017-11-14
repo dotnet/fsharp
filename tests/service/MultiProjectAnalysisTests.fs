@@ -495,7 +495,7 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
     usesOfXSymbolInProject2 
     |> shouldEqual 
         [|("val x", "Project2", ((5, 8), (5, 9)));
-          ("val x", "Project2", ((6, 8), (6, 18)))|]
+          ("val x", "Project2", ((6, 17), (6, 18)))|]
 
     //---------------- Change the file by adding a line, then re-check everything --------------------
     
@@ -546,7 +546,7 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
     usesOfXSymbolInProject2AfterChange1 
     |> shouldEqual 
         [|("val x", "Project2", ((5, 8), (5, 9)));
-          ("val x", "Project2", ((6, 8), (6, 18)))|]
+          ("val x", "Project2", ((6, 17), (6, 18)))|]
 
     //---------------- Revert the change to the file --------------------
 
@@ -600,7 +600,7 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
     usesOfXSymbolInProject2AfterChange2
     |> shouldEqual 
         [|("val x", "Project2", ((5, 8), (5, 9)));
-          ("val x", "Project2", ((6, 8), (6, 18)))|]
+          ("val x", "Project2", ((6, 17), (6, 18)))|]
 
 
 //------------------------------------------------------------------

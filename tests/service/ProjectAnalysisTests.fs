@@ -318,11 +318,11 @@ let ``Test project1 xxx symbols`` () =
               yield Project1.cleanFileName su.FileName , tups su.RangeAlternate, attribsOfSymbol su.Symbol ]
 
     usesOfXSymbol |> shouldEqual
-       [("file1", ((7, 4), (7, 7)), ["val"]);
+       [("file1", ((7, 4), (7, 7)), ["val"]); 
         ("file1", ((8, 13), (8, 16)), ["val"]);
-        ("file1", ((8, 19), (8, 22)), ["val"]);
-        ("file2", ((7, 28), (7, 33)), ["val"]);
-        ("file2", ((13, 27), (13, 32)), ["val"])]
+        ("file1", ((8, 19), (8, 22)), ["val"]); 
+        ("file2", ((7, 30), (7, 33)), ["val"]);
+        ("file2", ((13, 29), (13, 32)), ["val"])]
 
 [<Test>]
 let ``Test project1 all uses of all signature symbols`` () = 
@@ -348,8 +348,7 @@ let ``Test project1 all uses of all signature symbols`` () =
            ("val mmmm1", [("file2", ((38, 4), (38, 9)))]);
            ("val mmmm2", [("file2", ((39, 4), (39, 9)))]);
            ("D1", [("file2", ((5, 5), (5, 7))); ("file2", ((9, 38), (9, 40)))]);
-           ("member .ctor",
-            [("file2", ((5, 5), (5, 7))); ("file2", ((9, 38), (9, 40)))]);
+           ("member .ctor", [("file2", ((5, 5), (5, 7))); ("file2", ((9, 38), (9, 40)))]);
            ("member get_SomeProperty", [("file2", ((6, 13), (6, 25)))]);
            ("property SomeProperty", [("file2", ((6, 13), (6, 25)))]);
            ("D2", [("file2", ((8, 5), (8, 7)))]);
@@ -359,25 +358,24 @@ let ``Test project1 all uses of all signature symbols`` () =
            ("D3", [("file2", ((15, 5), (15, 7)))]);
            ("member .ctor", [("file2", ((15, 5), (15, 7)))]);
            ("member get_SomeProperty", [("file2", ((21, 13), (21, 25)))]);
-           ("property SomeProperty", [("file2", ((21, 13), (21, 25)))]);
-           ("field a", []); ("field b", []);
-           ("field x", [("file2", ((19, 16), (19, 17)))]);
+           ("property SomeProperty", [("file2", ((21, 13), (21, 25)))]); ("field a", []);
+           ("field b", []); ("field x", [("file2", ((19, 16), (19, 17)))]);
            ("SaveOptions",
             [("file2", ((26, 5), (26, 16))); ("file2", ((30, 16), (30, 27)))]);
            ("field value__", []); ("field None", [("file2", ((27, 4), (27, 8)))]);
            ("field DisableFormatting",
-            [("file2", ((28, 4), (28, 21))); ("file2", ((30, 16), (30, 45)))]);
+            [("file2", ((28, 4), (28, 21))); ("file2", ((30, 28), (30, 45)))]);
            ("M",
             [("file1", ((1, 7), (1, 8))); ("file2", ((3, 5), (3, 6)));
-            ("file2", ((6, 28), (6, 29))); ("file2", ((9, 28), (9, 29)));
-            ("file2", ((12, 27), (12, 28))); ("file2", ((38, 12), (38, 13)));
-            ("file2", ((38, 22), (38, 23))); ("file2", ((39, 12), (39, 13)));
-            ("file2", ((39, 28), (39, 29)))])
+             ("file2", ((6, 28), (6, 29))); ("file2", ((9, 28), (9, 29)));
+             ("file2", ((12, 27), (12, 28))); ("file2", ((38, 12), (38, 13)));
+             ("file2", ((38, 22), (38, 23))); ("file2", ((39, 12), (39, 13)));
+             ("file2", ((39, 28), (39, 29)))]);
            ("val xxx",
             [("file1", ((6, 4), (6, 7))); ("file1", ((7, 13), (7, 16)));
-             ("file1", ((7, 19), (7, 22))); ("file2", ((6, 28), (6, 33)));
-             ("file2", ((12, 27), (12, 32)))]);
-           ("val fff", [("file1", ((7, 4), (7, 7))); ("file2", ((9, 28), (9, 33)))]);
+             ("file1", ((7, 19), (7, 22))); ("file2", ((6, 30), (6, 33)));
+             ("file2", ((12, 29), (12, 32)))]);
+           ("val fff", [("file1", ((7, 4), (7, 7))); ("file2", ((9, 30), (9, 33)))]);
            ("C",
             [("file1", ((3, 5), (3, 6))); ("file1", ((9, 15), (9, 16)));
              ("file2", ((38, 12), (38, 15))); ("file2", ((38, 22), (38, 25)))]);
@@ -390,6 +388,7 @@ let ``Test project1 all uses of all signature symbols`` () =
             [("file1", ((9, 5), (9, 12))); ("file2", ((39, 12), (39, 21)));
              ("file2", ((39, 28), (39, 37)))]);
            ("property P", [("file1", ((4, 13), (4, 14)))])]
+
     set allUsesOfAllSymbols - set expected |> shouldEqual Set.empty
     set expected - set allUsesOfAllSymbols |> shouldEqual Set.empty
     (set expected = set allUsesOfAllSymbols) |> shouldEqual true
@@ -402,130 +401,117 @@ let ``Test project1 all uses of all symbols`` () =
         [ for s in wholeProjectResults.GetAllUsesOfAllSymbols() |> Async.RunSynchronously -> 
               s.Symbol.DisplayName, s.Symbol.FullName, Project1.cleanFileName s.FileName, tupsZ s.RangeAlternate, attribsOfSymbol s.Symbol ]
     let expected =      
-              [("C", "M.C", "file1", ((3, 5), (3, 6)), ["class"]);
-               ("( .ctor )", "M.C.( .ctor )", "file1", ((3, 5), (3, 6)),
-                ["member"; "ctor"]);
-               ("P", "M.C.P", "file1", ((4, 13), (4, 14)), ["member"; "getter"]);
-               ("x", "x", "file1", ((4, 11), (4, 12)), []);
-               ("( + )", "Microsoft.FSharp.Core.Operators.( + )", "file1",
-                ((6, 12), (6, 13)), ["val"]);
-               ("xxx", "M.xxx", "file1", ((6, 4), (6, 7)), ["val"]);
-               ("( + )", "Microsoft.FSharp.Core.Operators.( + )", "file1",
-                ((7, 17), (7, 18)), ["val"]);
-               ("xxx", "M.xxx", "file1", ((7, 13), (7, 16)), ["val"]);
-               ("xxx", "M.xxx", "file1", ((7, 19), (7, 22)), ["val"]);
-               ("fff", "M.fff", "file1", ((7, 4), (7, 7)), ["val"]);
-               ("C", "M.C", "file1", ((9, 15), (9, 16)), ["class"]);
-               ("C", "M.C", "file1", ((9, 15), (9, 16)), ["class"]);
-               ("C", "M.C", "file1", ((9, 15), (9, 16)), ["class"]);
-               ("C", "M.C", "file1", ((9, 15), (9, 16)), ["class"]);
-               ("CAbbrev", "M.CAbbrev", "file1", ((9, 5), (9, 12)), ["abbrev"]);
-               ("M", "M", "file1", ((1, 7), (1, 8)), ["module"]);
-               ("M", "M", "file2", ((3, 5), (3, 6)), ["module"]);
-               ("D1", "N.D1", "file2", ((5, 5), (5, 7)), ["class"]);
-               ("( .ctor )", "N.D1.( .ctor )", "file2", ((5, 5), (5, 7)),
-                ["member"; "ctor"]);
-               ("SomeProperty", "N.D1.SomeProperty", "file2", ((6, 13), (6, 25)),
-                ["member"; "getter"]); ("x", "x", "file2", ((6, 11), (6, 12)), []);
-               ("M", "M", "file2", ((6, 28), (6, 29)), ["module"]);
-               ("xxx", "M.xxx", "file2", ((6, 28), (6, 33)), ["val"]);
-               ("D2", "N.D2", "file2", ((8, 5), (8, 7)), ["class"]);
-               ("( .ctor )", "N.D2.( .ctor )", "file2", ((8, 5), (8, 7)),
-                ["member"; "ctor"]);
-               ("SomeProperty", "N.D2.SomeProperty", "file2", ((9, 13), (9, 25)),
-                ["member"; "getter"]); ("x", "x", "file2", ((9, 11), (9, 12)), []);
-               ("( + )", "Microsoft.FSharp.Core.Operators.( + )", "file2",
-                ((9, 36), (9, 37)), ["val"]);
-               ("M", "M", "file2", ((9, 28), (9, 29)), ["module"]);
-               ("fff", "M.fff", "file2", ((9, 28), (9, 33)), ["val"]);
-               ("D1", "N.D1", "file2", ((9, 38), (9, 40)), ["member"; "ctor"]);
-               ("M", "M", "file2", ((12, 27), (12, 28)), ["module"]);
-               ("xxx", "M.xxx", "file2", ((12, 27), (12, 32)), ["val"]);
-               ("y2", "N.y2", "file2", ((12, 4), (12, 6)), ["val"]);
-               ("DefaultValueAttribute", "Microsoft.FSharp.Core.DefaultValueAttribute",
-                "file2", ((18, 6), (18, 18)), ["class"]);
-               ("DefaultValueAttribute", "Microsoft.FSharp.Core.DefaultValueAttribute",
-                "file2", ((18, 6), (18, 18)), ["class"]);
-               ("DefaultValueAttribute", "Microsoft.FSharp.Core.DefaultValueAttribute",
-                "file2", ((18, 6), (18, 18)), ["member"]);
-               ("int", "Microsoft.FSharp.Core.int", "file2", ((19, 20), (19, 23)),
-                ["abbrev"]);
-               ("DefaultValueAttribute", "Microsoft.FSharp.Core.DefaultValueAttribute",
-                "file2", ((18, 6), (18, 18)), ["class"]);
-               ("DefaultValueAttribute", "Microsoft.FSharp.Core.DefaultValueAttribute",
-                "file2", ((18, 6), (18, 18)), ["class"]);
-               ("DefaultValueAttribute", "Microsoft.FSharp.Core.DefaultValueAttribute",
-                "file2", ((18, 6), (18, 18)), ["member"]);
-               ("x", "N.D3.x", "file2", ((19, 16), (19, 17)),
-                ["field"; "default"; "mutable"]);
-               ("D3", "N.D3", "file2", ((15, 5), (15, 7)), ["class"]);
-               ("int", "Microsoft.FSharp.Core.int", "file2", ((15, 10), (15, 13)),
-                ["abbrev"]); ("a", "a", "file2", ((15, 8), (15, 9)), []);
-               ("( .ctor )", "N.D3.( .ctor )", "file2", ((15, 5), (15, 7)),
-                ["member"; "ctor"]);
-               ("SomeProperty", "N.D3.SomeProperty", "file2", ((21, 13), (21, 25)),
-                ["member"; "getter"]);
-               ("( + )", "Microsoft.FSharp.Core.Operators.( + )", "file2",
-                ((16, 14), (16, 15)), ["val"]);
-               ("a", "a", "file2", ((16, 12), (16, 13)), []);
-               ("b", "b", "file2", ((16, 8), (16, 9)), []);
-               ("x", "x", "file2", ((21, 11), (21, 12)), []);
-               ("( + )", "Microsoft.FSharp.Core.Operators.( + )", "file2",
-                ((21, 30), (21, 31)), ["val"]);
-               ("a", "a", "file2", ((21, 28), (21, 29)), []);
-               ("b", "b", "file2", ((21, 32), (21, 33)), []);
-               ("( + )", "Microsoft.FSharp.Core.Operators.( + )", "file2",
-                ((23, 25), (23, 26)), ["val"]);
-               ("( + )", "Microsoft.FSharp.Core.Operators.( + )", "file2",
-                ((23, 21), (23, 22)), ["val"]);
-               ("int32", "Microsoft.FSharp.Core.Operators.int32", "file2",
-                ((23, 27), (23, 32)), ["val"]);
-               ("DateTime", "System.DateTime", "file2", ((23, 40), (23, 48)),
-                ["valuetype"]);
-               ("System", "System", "file2", ((23, 33), (23, 39)), ["namespace"]);
-               ("Now", "System.DateTime.Now", "file2", ((23, 33), (23, 52)),
-                ["member"; "prop"]);
-               ("Ticks", "System.DateTime.Ticks", "file2", ((23, 33), (23, 58)),
-                ["member"; "prop"]);
-               ("( + )", "Microsoft.FSharp.Core.Operators.( + )", "file2",
-                ((23, 62), (23, 63)), ["val"]);
-               ("pair2", "N.pair2", "file2", ((23, 10), (23, 15)), ["val"]);
-               ("pair1", "N.pair1", "file2", ((23, 4), (23, 9)), ["val"]);
-               ("None", "N.SaveOptions.None", "file2", ((27, 4), (27, 8)),
-                ["field"; "static"; "0"]);
-               ("DisableFormatting", "N.SaveOptions.DisableFormatting", "file2",
-                ((28, 4), (28, 21)), ["field"; "static"; "1"]);
-               ("SaveOptions", "N.SaveOptions", "file2", ((26, 5), (26, 16)),
-                ["enum"; "valuetype"]);
-               ("SaveOptions", "N.SaveOptions", "file2", ((30, 16), (30, 27)),
-                ["enum"; "valuetype"]);
-               ("DisableFormatting", "N.SaveOptions.DisableFormatting", "file2",
-                ((30, 16), (30, 45)), ["field"; "static"; "1"]);
-               ("enumValue", "N.enumValue", "file2", ((30, 4), (30, 13)), ["val"]);
-               ("x", "x", "file2", ((32, 9), (32, 10)), []);
-               ("y", "y", "file2", ((32, 11), (32, 12)), []);
-               ("( + )", "Microsoft.FSharp.Core.Operators.( + )", "file2",
-                ((32, 17), (32, 18)), ["val"]);
-               ("x", "x", "file2", ((32, 15), (32, 16)), []);
-               ("y", "y", "file2", ((32, 19), (32, 20)), []);
-               ("( ++ )", "N.( ++ )", "file2", ((32, 5), (32, 7)), ["val"]);
-               ("( ++ )", "N.( ++ )", "file2", ((34, 11), (34, 13)), ["val"]);
-               ("c1", "N.c1", "file2", ((34, 4), (34, 6)), ["val"]);
-               ("( ++ )", "N.( ++ )", "file2", ((36, 11), (36, 13)), ["val"]);
-               ("c2", "N.c2", "file2", ((36, 4), (36, 6)), ["val"]);
-               ("M", "M", "file2", ((38, 12), (38, 13)), ["module"]);
-               ("C", "M.C", "file2", ((38, 12), (38, 15)), ["class"]);
-               ("M", "M", "file2", ((38, 22), (38, 23)), ["module"]);
-               ("C", "M.C", "file2", ((38, 22), (38, 25)), ["class"]);
-               ("C", "M.C", "file2", ((38, 22), (38, 25)), ["member"; "ctor"]);
-               ("mmmm1", "N.mmmm1", "file2", ((38, 4), (38, 9)), ["val"]);
-               ("M", "M", "file2", ((39, 12), (39, 13)), ["module"]);
-               ("CAbbrev", "M.CAbbrev", "file2", ((39, 12), (39, 21)), ["abbrev"]);
-               ("M", "M", "file2", ((39, 28), (39, 29)), ["module"]);
-               ("CAbbrev", "M.CAbbrev", "file2", ((39, 28), (39, 37)), ["abbrev"]);
-               ("C", "M.C", "file2", ((39, 28), (39, 37)), ["member"; "ctor"]);
-               ("mmmm2", "N.mmmm2", "file2", ((39, 4), (39, 9)), ["val"]);
-               ("N", "N", "file2", ((1, 7), (1, 8)), ["module"])]
+        [("C", "M.C", "file1", ((3, 5), (3, 6)), ["class"]);
+         ("( .ctor )", "M.C.( .ctor )", "file1", ((3, 5), (3, 6)), ["member"; "ctor"]);
+         ("P", "M.C.P", "file1", ((4, 13), (4, 14)), ["member"; "getter"]);
+         ("x", "x", "file1", ((4, 11), (4, 12)), []);
+         ("( + )", "Microsoft.FSharp.Core.Operators.( + )", "file1", ((6, 12), (6, 13)),
+          ["val"]); ("xxx", "M.xxx", "file1", ((6, 4), (6, 7)), ["val"]);
+         ("( + )", "Microsoft.FSharp.Core.Operators.( + )", "file1", ((7, 17), (7, 18)),
+          ["val"]); ("xxx", "M.xxx", "file1", ((7, 13), (7, 16)), ["val"]);
+         ("xxx", "M.xxx", "file1", ((7, 19), (7, 22)), ["val"]);
+         ("fff", "M.fff", "file1", ((7, 4), (7, 7)), ["val"]);
+         ("C", "M.C", "file1", ((9, 15), (9, 16)), ["class"]);
+         ("C", "M.C", "file1", ((9, 15), (9, 16)), ["class"]);
+         ("C", "M.C", "file1", ((9, 15), (9, 16)), ["class"]);
+         ("C", "M.C", "file1", ((9, 15), (9, 16)), ["class"]);
+         ("CAbbrev", "M.CAbbrev", "file1", ((9, 5), (9, 12)), ["abbrev"]);
+         ("M", "M", "file1", ((1, 7), (1, 8)), ["module"]);
+         ("M", "M", "file2", ((3, 5), (3, 6)), ["module"]);
+         ("D1", "N.D1", "file2", ((5, 5), (5, 7)), ["class"]);
+         ("( .ctor )", "N.D1.( .ctor )", "file2", ((5, 5), (5, 7)), ["member"; "ctor"]);
+         ("SomeProperty", "N.D1.SomeProperty", "file2", ((6, 13), (6, 25)),
+          ["member"; "getter"]); ("x", "x", "file2", ((6, 11), (6, 12)), []);
+         ("M", "M", "file2", ((6, 28), (6, 29)), ["module"]);
+         ("xxx", "M.xxx", "file2", ((6, 30), (6, 33)), ["val"]);
+         ("D2", "N.D2", "file2", ((8, 5), (8, 7)), ["class"]);
+         ("( .ctor )", "N.D2.( .ctor )", "file2", ((8, 5), (8, 7)), ["member"; "ctor"]);
+         ("SomeProperty", "N.D2.SomeProperty", "file2", ((9, 13), (9, 25)),
+          ["member"; "getter"]); ("x", "x", "file2", ((9, 11), (9, 12)), []);
+         ("( + )", "Microsoft.FSharp.Core.Operators.( + )", "file2", ((9, 36), (9, 37)),
+          ["val"]); ("M", "M", "file2", ((9, 28), (9, 29)), ["module"]);
+         ("fff", "M.fff", "file2", ((9, 30), (9, 33)), ["val"]);
+         ("D1", "N.D1", "file2", ((9, 38), (9, 40)), ["member"; "ctor"]);
+         ("M", "M", "file2", ((12, 27), (12, 28)), ["module"]);
+         ("xxx", "M.xxx", "file2", ((12, 29), (12, 32)), ["val"]);
+         ("y2", "N.y2", "file2", ((12, 4), (12, 6)), ["val"]);
+         ("DefaultValueAttribute", "Microsoft.FSharp.Core.DefaultValueAttribute",
+          "file2", ((18, 6), (18, 18)), ["class"]);
+         ("DefaultValueAttribute", "Microsoft.FSharp.Core.DefaultValueAttribute",
+          "file2", ((18, 6), (18, 18)), ["class"]);
+         ("DefaultValueAttribute", "Microsoft.FSharp.Core.DefaultValueAttribute",
+          "file2", ((18, 6), (18, 18)), ["member"]);
+         ("int", "Microsoft.FSharp.Core.int", "file2", ((19, 20), (19, 23)), ["abbrev"]);
+         ("DefaultValueAttribute", "Microsoft.FSharp.Core.DefaultValueAttribute",
+          "file2", ((18, 6), (18, 18)), ["class"]);
+         ("DefaultValueAttribute", "Microsoft.FSharp.Core.DefaultValueAttribute",
+          "file2", ((18, 6), (18, 18)), ["class"]);
+         ("DefaultValueAttribute", "Microsoft.FSharp.Core.DefaultValueAttribute",
+          "file2", ((18, 6), (18, 18)), ["member"]);
+         ("x", "N.D3.x", "file2", ((19, 16), (19, 17)), ["field"; "default"; "mutable"]);
+         ("D3", "N.D3", "file2", ((15, 5), (15, 7)), ["class"]);
+         ("int", "Microsoft.FSharp.Core.int", "file2", ((15, 10), (15, 13)), ["abbrev"]);
+         ("a", "a", "file2", ((15, 8), (15, 9)), []);
+         ("( .ctor )", "N.D3.( .ctor )", "file2", ((15, 5), (15, 7)), ["member"; "ctor"]);
+         ("SomeProperty", "N.D3.SomeProperty", "file2", ((21, 13), (21, 25)),
+          ["member"; "getter"]);
+         ("( + )", "Microsoft.FSharp.Core.Operators.( + )", "file2",
+          ((16, 14), (16, 15)), ["val"]); ("a", "a", "file2", ((16, 12), (16, 13)), []);
+         ("b", "b", "file2", ((16, 8), (16, 9)), []);
+         ("x", "x", "file2", ((21, 11), (21, 12)), []);
+         ("( + )", "Microsoft.FSharp.Core.Operators.( + )", "file2",
+          ((21, 30), (21, 31)), ["val"]); ("a", "a", "file2", ((21, 28), (21, 29)), []);
+         ("b", "b", "file2", ((21, 32), (21, 33)), []);
+         ("( + )", "Microsoft.FSharp.Core.Operators.( + )", "file2",
+          ((23, 25), (23, 26)), ["val"]);
+         ("( + )", "Microsoft.FSharp.Core.Operators.( + )", "file2",
+          ((23, 21), (23, 22)), ["val"]);
+         ("int32", "Microsoft.FSharp.Core.Operators.int32", "file2",
+          ((23, 27), (23, 32)), ["val"]);
+         ("DateTime", "System.DateTime", "file2", ((23, 40), (23, 48)), ["valuetype"]);
+         ("System", "System", "file2", ((23, 33), (23, 39)), ["namespace"]);
+         ("Now", "System.DateTime.Now", "file2", ((23, 49), (23, 52)),
+          ["member"; "prop"]);
+         ("Ticks", "System.DateTime.Ticks", "file2", ((23, 53), (23, 58)),
+          ["member"; "prop"]);
+         ("( + )", "Microsoft.FSharp.Core.Operators.( + )", "file2",
+          ((23, 62), (23, 63)), ["val"]);
+         ("pair2", "N.pair2", "file2", ((23, 10), (23, 15)), ["val"]);
+         ("pair1", "N.pair1", "file2", ((23, 4), (23, 9)), ["val"]);
+         ("None", "N.SaveOptions.None", "file2", ((27, 4), (27, 8)),
+          ["field"; "static"; "0"]);
+         ("DisableFormatting", "N.SaveOptions.DisableFormatting", "file2",
+          ((28, 4), (28, 21)), ["field"; "static"; "1"]);
+         ("SaveOptions", "N.SaveOptions", "file2", ((26, 5), (26, 16)),
+          ["enum"; "valuetype"]);
+         ("SaveOptions", "N.SaveOptions", "file2", ((30, 16), (30, 27)),
+          ["enum"; "valuetype"]);
+         ("DisableFormatting", "N.SaveOptions.DisableFormatting", "file2",
+          ((30, 28), (30, 45)), ["field"; "static"; "1"]);
+         ("enumValue", "N.enumValue", "file2", ((30, 4), (30, 13)), ["val"]);
+         ("x", "x", "file2", ((32, 9), (32, 10)), []);
+         ("y", "y", "file2", ((32, 11), (32, 12)), []);
+         ("( + )", "Microsoft.FSharp.Core.Operators.( + )", "file2",
+          ((32, 17), (32, 18)), ["val"]); ("x", "x", "file2", ((32, 15), (32, 16)), []);
+         ("y", "y", "file2", ((32, 19), (32, 20)), []);
+         ("( ++ )", "N.( ++ )", "file2", ((32, 5), (32, 7)), ["val"]);
+         ("( ++ )", "N.( ++ )", "file2", ((34, 11), (34, 13)), ["val"]);
+         ("c1", "N.c1", "file2", ((34, 4), (34, 6)), ["val"]);
+         ("( ++ )", "N.( ++ )", "file2", ((36, 11), (36, 13)), ["val"]);
+         ("c2", "N.c2", "file2", ((36, 4), (36, 6)), ["val"]);
+         ("M", "M", "file2", ((38, 12), (38, 13)), ["module"]);
+         ("C", "M.C", "file2", ((38, 12), (38, 15)), ["class"]);
+         ("M", "M", "file2", ((38, 22), (38, 23)), ["module"]);
+         ("C", "M.C", "file2", ((38, 22), (38, 25)), ["class"]);
+         ("C", "M.C", "file2", ((38, 22), (38, 25)), ["member"; "ctor"]);
+         ("mmmm1", "N.mmmm1", "file2", ((38, 4), (38, 9)), ["val"]);
+         ("M", "M", "file2", ((39, 12), (39, 13)), ["module"]);
+         ("CAbbrev", "M.CAbbrev", "file2", ((39, 12), (39, 21)), ["abbrev"]);
+         ("M", "M", "file2", ((39, 28), (39, 29)), ["module"]);
+         ("CAbbrev", "M.CAbbrev", "file2", ((39, 28), (39, 37)), ["abbrev"]);
+         ("C", "M.C", "file2", ((39, 28), (39, 37)), ["member"; "ctor"]);
+         ("mmmm2", "N.mmmm2", "file2", ((39, 4), (39, 9)), ["val"]);
+         ("N", "N", "file2", ((1, 7), (1, 8)), ["module"])]
 
     set allUsesOfAllSymbols - set expected |> shouldEqual Set.empty
     set expected - set allUsesOfAllSymbols |> shouldEqual Set.empty
@@ -562,11 +548,11 @@ let ``Test file explicit parse symbols`` () =
         [| for s in checkResults2.GetUsesOfSymbolInFile(xSymbol2) |> Async.RunSynchronously -> (Project1.cleanFileName s.FileName, tupsZ s.RangeAlternate) |] 
 
     usesOfXSymbol2
-         |> shouldEqual [|("file1", ((6, 4), (6, 7)));
+         |> shouldEqual [|("file1", ((6, 4), (6, 7))); 
                           ("file1", ((7, 13), (7, 16)));
-                          ("file1", ((7, 19), (7, 22)));
-                          ("file2", ((6, 28), (6, 33)));
-                          ("file2", ((12, 27), (12, 32)))|]
+                          ("file1", ((7, 19), (7, 22))); 
+                          ("file2", ((6, 30), (6, 33)));
+                          ("file2", ((12, 29), (12, 32)))|]
 
     usesOfXSymbol21
          |> shouldEqual [|("file1", ((6, 4), (6, 7)));
@@ -574,8 +560,8 @@ let ``Test file explicit parse symbols`` () =
                           ("file1", ((7, 19), (7, 22)))|]
 
     usesOfXSymbol22
-         |> shouldEqual [|("file2", ((6, 28), (6, 33)));
-                          ("file2", ((12, 27), (12, 32)))|]
+         |> shouldEqual [|("file2", ((6, 30), (6, 33))); 
+                          ("file2", ((12, 29), (12, 32)))|]
 
 
 [<Test>]
@@ -722,16 +708,12 @@ let ``Test project2 all uses of all signature symbols`` () =
                ("field Item1", [("file1", ((5, 6), (5, 9))); ("file1", ((9, 8), (9, 11)))]);
                ("field Item2", [("file1", ((5, 6), (5, 9))); ("file1", ((9, 8), (9, 11)))]);
                ("D", [("file1", ((6, 6), (6, 7))); ("file1", ((10, 8), (10, 9)))]);
-               ("field Item1",
-                [("file1", ((6, 6), (6, 7))); ("file1", ((10, 8), (10, 9)))]);
-               ("field Item2",
-                [("file1", ((6, 6), (6, 7))); ("file1", ((10, 8), (10, 9)))]);
+               ("field Item1", [("file1", ((6, 6), (6, 7))); ("file1", ((10, 8), (10, 9)))]);
+               ("field Item2", [("file1", ((6, 6), (6, 7))); ("file1", ((10, 8), (10, 9)))]);
                ("DUWithNamedFields", [("file1", ((12, 5), (12, 22)))]);
                ("DU", [("file1", ((12, 25), (12, 27))); ("file1", ((14, 8), (14, 10)))]);
-               ("field x",
-                [("file1", ((12, 25), (12, 27))); ("file1", ((14, 8), (14, 10)))]);
-               ("field y",
-                [("file1", ((12, 25), (12, 27))); ("file1", ((14, 8), (14, 10)))]);
+               ("field x", [("file1", ((12, 25), (12, 27))); ("file1", ((14, 8), (14, 10)))]);
+               ("field y", [("file1", ((12, 25), (12, 27))); ("file1", ((14, 8), (14, 10)))]);
                ("GenericClass`1",
                 [("file1", ((16, 5), (16, 17))); ("file1", ((19, 8), (19, 20)))]);
                ("generic parameter T",
@@ -739,9 +721,10 @@ let ``Test project2 all uses of all signature symbols`` () =
                ("member .ctor",
                 [("file1", ((16, 5), (16, 17))); ("file1", ((19, 8), (19, 20)))]);
                ("member GenericMethod",
-                [("file1", ((17, 13), (17, 26))); ("file1", ((20, 8), (20, 23)))]);
+                [("file1", ((17, 13), (17, 26))); ("file1", ((20, 10), (20, 23)))]);
                ("generic parameter U",
                 [("file1", ((17, 27), (17, 29))); ("file1", ((17, 41), (17, 43)))])]
+    
     set allUsesOfAllSymbols - set expected |> shouldEqual Set.empty
     set expected - set allUsesOfAllSymbols |> shouldEqual Set.empty
     (set expected = set allUsesOfAllSymbols) |> shouldEqual true
@@ -766,13 +749,11 @@ let ``Test project2 all uses of all symbols`` () =
            ("int", "file1", ((5, 19), (5, 22)), ["abbrev"]);
            ("int", "file1", ((6, 11), (6, 14)), ["abbrev"]);
            ("int", "file1", ((6, 17), (6, 20)), ["abbrev"]);
-           ("DU1", "file1", ((4, 6), (4, 9)), []);
-           ("DU2", "file1", ((5, 6), (5, 9)), []);
+           ("DU1", "file1", ((4, 6), (4, 9)), []); ("DU2", "file1", ((5, 6), (5, 9)), []);
            ("D", "file1", ((6, 6), (6, 7)), []);
            ("DUWithNormalFields", "file1", ((3, 5), (3, 23)), ["union"]);
            ("DU1", "file1", ((8, 8), (8, 11)), []);
-           ("DU2", "file1", ((9, 8), (9, 11)), []);
-           ("D", "file1", ((10, 8), (10, 9)), []);
+           ("DU2", "file1", ((9, 8), (9, 11)), []); ("D", "file1", ((10, 8), (10, 9)), []);
            ("int", "file1", ((12, 35), (12, 38)), ["abbrev"]);
            ("int", "file1", ((12, 45), (12, 48)), ["abbrev"]);
            ("int", "file1", ((12, 35), (12, 38)), ["abbrev"]);
@@ -800,8 +781,8 @@ let ``Test project2 all uses of all symbols`` () =
            ("int", "file1", ((19, 21), (19, 24)), ["abbrev"]);
            ("c", "file1", ((19, 4), (19, 5)), ["val"]);
            ("c", "file1", ((20, 8), (20, 9)), ["val"]);
-           ("GenericMethod", "file1", ((20, 8), (20, 23)), ["member"]);
            ("int", "file1", ((20, 24), (20, 27)), ["abbrev"]);
+           ("GenericMethod", "file1", ((20, 10), (20, 23)), ["member"]);
            ("T", "file1", ((22, 23), (22, 25)), []);
            ("T", "file1", ((22, 30), (22, 32)), []);
            ("y", "file1", ((22, 27), (22, 28)), []);
@@ -1051,12 +1032,12 @@ let ``Test project3 all uses of all signature symbols`` () =
          ("member InterfaceMethod",
           [("file1", ((6, 13), (6, 28)), ["defn"], ["slot"; "member"]);
            ("file1", ((63, 20), (63, 35)), ["override"], ["slot"; "member"]);
-           ("file1", ((79, 23), (79, 42)), [], ["slot"; "member"]);
+           ("file1", ((79, 27), (79, 42)), [], ["slot"; "member"]);
            ("file1", ((36, 20), (36, 35)), ["override"], ["slot"; "member"])]);
          ("member add_InterfaceEvent",
           [("file1", ((8, 13), (8, 27)), ["defn"], ["slot"; "member"; "add"]);
            ("file1", ((65, 20), (65, 34)), ["override"], ["slot"; "member"; "add"]);
-           ("file1", ((78, 23), (78, 41)), [], ["slot"; "member"; "add"]);
+           ("file1", ((78, 27), (78, 41)), [], ["slot"; "member"; "add"]);
            ("file1", ((38, 20), (38, 34)), ["override"], ["slot"; "member"; "add"])]);
          ("member get_InterfaceEvent",
           [("file1", ((8, 13), (8, 27)), ["defn"], ["slot"; "member"; "getter"]);
@@ -1065,7 +1046,7 @@ let ``Test project3 all uses of all signature symbols`` () =
          ("member get_InterfaceProperty",
           [("file1", ((4, 13), (4, 30)), ["defn"], ["slot"; "member"; "getter"]);
            ("file1", ((61, 20), (61, 37)), ["override"], ["slot"; "member"; "getter"]);
-           ("file1", ((76, 23), (76, 44)), [], ["slot"; "member"; "getter"]);
+           ("file1", ((76, 27), (76, 44)), [], ["slot"; "member"; "getter"]);
            ("file1", ((34, 20), (34, 37)), ["override"], ["slot"; "member"; "getter"])]);
          ("member remove_InterfaceEvent",
           [("file1", ((8, 13), (8, 27)), ["defn"], ["slot"; "member"; "remove"]);
@@ -1074,22 +1055,25 @@ let ``Test project3 all uses of all signature symbols`` () =
          ("member set_InterfacePropertySet",
           [("file1", ((5, 13), (5, 33)), ["defn"], ["slot"; "member"; "setter"]);
            ("file1", ((62, 20), (62, 40)), ["override"], ["slot"; "member"; "setter"]);
-           ("file1", ((77, 25), (77, 49)), [], ["slot"; "member"; "setter"]);
+           ("file1", ((77, 29), (77, 49)), [], ["slot"; "member"; "setter"]);
            ("file1", ((35, 20), (35, 40)), ["override"], ["slot"; "member"; "setter"])]);
          ("property InterfacePropertySet",
           [("file1", ((5, 13), (5, 33)), ["defn"], ["slot"; "member"; "prop"]);
            ("file1", ((62, 20), (62, 40)), ["override"], ["slot"; "member"; "prop"]);
-           ("file1", ((77, 25), (77, 49)), [], ["slot"; "member"; "prop"]);
+           ("file1", ((77, 29), (77, 49)), [], ["slot"; "member"; "prop"]);
            ("file1", ((35, 20), (35, 40)), ["override"], ["slot"; "member"; "prop"])]);
          ("property InterfaceProperty",
           [("file1", ((4, 13), (4, 30)), ["defn"], ["slot"; "member"; "prop"]);
            ("file1", ((61, 20), (61, 37)), ["override"], ["slot"; "member"; "prop"]);
-           ("file1", ((76, 23), (76, 44)), [], ["slot"; "member"; "prop"]);
+           ("file1", ((76, 27), (76, 44)), [], ["slot"; "member"; "prop"]);
            ("file1", ((34, 20), (34, 37)), ["override"], ["slot"; "member"; "prop"])]);
          ("property InterfaceEvent",
-          [("file1", ((8, 13), (8, 27)), ["defn"], ["slot"; "member"; "prop"; "clievent"]);
-           ("file1", ((65, 20), (65, 34)), ["override"], ["slot"; "member"; "prop"; "clievent"]);
-           ("file1", ((38, 20), (38, 34)), ["override"], ["slot"; "member"; "prop"; "clievent"])]);
+          [("file1", ((8, 13), (8, 27)), ["defn"],
+            ["slot"; "member"; "prop"; "clievent"]);
+           ("file1", ((65, 20), (65, 34)), ["override"],
+            ["slot"; "member"; "prop"; "clievent"]);
+           ("file1", ((38, 20), (38, 34)), ["override"],
+            ["slot"; "member"; "prop"; "clievent"])]);
          ("CFoo",
           [("file1", ((11, 5), (11, 9)), ["defn"], ["class"]);
            ("file1", ((41, 12), (41, 16)), ["type"], ["class"]);
@@ -1135,9 +1119,12 @@ let ``Test project3 all uses of all signature symbols`` () =
            ("file1", ((70, 22), (70, 43)), ["override"], ["slot"; "member"; "prop"]);
            ("file1", ((43, 18), (43, 39)), ["override"], ["slot"; "member"; "prop"])]);
          ("property AbstractClassEvent",
-          [("file1", ((16, 13), (16, 31)), ["defn"], ["slot"; "member"; "prop"; "clievent"]);
-           ("file1", ((74, 22), (74, 40)), ["override"], ["slot"; "member"; "prop"; "clievent"]);
-           ("file1", ((47, 18), (47, 36)), ["override"], ["slot"; "member"; "prop"; "clievent"])]);
+          [("file1", ((16, 13), (16, 31)), ["defn"],
+            ["slot"; "member"; "prop"; "clievent"]);
+           ("file1", ((74, 22), (74, 40)), ["override"],
+            ["slot"; "member"; "prop"; "clievent"]);
+           ("file1", ((47, 18), (47, 36)), ["override"],
+            ["slot"; "member"; "prop"; "clievent"])]);
          ("CBaseFoo",
           [("file1", ((18, 5), (18, 13)), ["defn"], ["class"]);
            ("file1", ((50, 12), (50, 20)), ["type"], ["class"]);
@@ -1203,17 +1190,23 @@ let ``Test project3 all uses of all signature symbols`` () =
          ("IFooImpl", [("file1", ((31, 5), (31, 13)), ["defn"], ["class"])]);
          ("member .ctor", [("file1", ((31, 5), (31, 13)), ["defn"], ["member"; "ctor"])]);
          ("member InterfaceMethod",
-          [("file1", ((36, 20), (36, 35)), ["defn"], ["member"; "overridemem"; "intfmem"])]);
+          [("file1", ((36, 20), (36, 35)), ["defn"],
+            ["member"; "overridemem"; "intfmem"])]);
          ("member add_InterfaceEvent",
-          [("file1", ((38, 20), (38, 34)), ["defn"], ["member"; "overridemem"; "intfmem"])]);
+          [("file1", ((38, 20), (38, 34)), ["defn"],
+            ["member"; "overridemem"; "intfmem"])]);
          ("member get_InterfaceEvent",
-          [("file1", ((38, 20), (38, 34)), ["defn"], ["member"; "overridemem"; "intfmem"])]);
+          [("file1", ((38, 20), (38, 34)), ["defn"],
+            ["member"; "overridemem"; "intfmem"])]);
          ("member get_InterfaceProperty",
-          [("file1", ((34, 20), (34, 37)), ["defn"], ["member"; "overridemem"; "intfmem"])]);
+          [("file1", ((34, 20), (34, 37)), ["defn"],
+            ["member"; "overridemem"; "intfmem"])]);
          ("member remove_InterfaceEvent",
-          [("file1", ((38, 20), (38, 34)), ["defn"], ["member"; "overridemem"; "intfmem"])]);
+          [("file1", ((38, 20), (38, 34)), ["defn"],
+            ["member"; "overridemem"; "intfmem"])]);
          ("member set_InterfacePropertySet",
-          [("file1", ((35, 20), (35, 40)), ["defn"], ["member"; "overridemem"; "intfmem"])]);
+          [("file1", ((35, 20), (35, 40)), ["defn"],
+            ["member"; "overridemem"; "intfmem"])]);
          ("CFooImpl", [("file1", ((40, 5), (40, 13)), ["defn"], ["class"])]);
          ("member .ctor", [("file1", ((40, 5), (40, 13)), ["defn"], ["member"; "ctor"])]);
          ("member AbstractClassMethod",
@@ -1233,7 +1226,8 @@ let ``Test project3 all uses of all signature symbols`` () =
          ("property AbstractClassProperty",
           [("file1", ((43, 18), (43, 39)), ["defn"], ["member"; "prop"; "overridemem"])]);
          ("property AbstractClassEvent",
-          [("file1", ((47, 18), (47, 36)), ["defn"], ["member"; "prop"; "clievent"; "overridemem"])]);
+          [("file1", ((47, 18), (47, 36)), ["defn"],
+            ["member"; "prop"; "clievent"; "overridemem"])]);
          ("CBaseFooImpl", [("file1", ((49, 5), (49, 17)), ["defn"], ["class"])]);
          ("member .ctor", [("file1", ((49, 5), (49, 17)), ["defn"], ["member"; "ctor"])]);
          ("member BaseClassMethod",
@@ -1253,7 +1247,8 @@ let ``Test project3 all uses of all signature symbols`` () =
          ("property BaseClassProperty",
           [("file1", ((52, 18), (52, 35)), ["defn"], ["member"; "prop"; "overridemem"])]);
          ("property BaseClassEvent",
-          [("file1", ((56, 18), (56, 32)), ["defn"], ["member"; "prop"; "clievent"; "overridemem"])])]
+          [("file1", ((56, 18), (56, 32)), ["defn"],
+            ["member"; "prop"; "clievent"; "overridemem"])])]
     set allUsesOfAllSymbols - set expected |> shouldEqual Set.empty
     set expected - set allUsesOfAllSymbols |> shouldEqual Set.empty
     (set expected = set allUsesOfAllSymbols) |> shouldEqual true
@@ -1476,65 +1471,62 @@ let ``Test project 5 all symbols`` () =
         |> Array.map (fun su -> su.Symbol.ToString(), su.Symbol.FullName, Project5.cleanFileName su.FileName, tupsZ su.RangeAlternate, attribsOfSymbolUse su)
 
     allUsesOfAllSymbols |> shouldEqual
-          [|("symbol ", "Even", "file1", ((4, 6), (4, 10)), ["defn"]);
-            ("symbol ", "Odd", "file1", ((4, 11), (4, 14)), ["defn"]);
-            ("val input", "input", "file1", ((4, 17), (4, 22)), ["defn"]);
-            ("val op_Equality", "Microsoft.FSharp.Core.Operators.( = )", "file1",
-             ((4, 38), (4, 39)), []);
-            ("val op_Modulus", "Microsoft.FSharp.Core.Operators.( % )", "file1",
-             ((4, 34), (4, 35)), []);
-            ("val input", "input", "file1", ((4, 28), (4, 33)), []);
-            ("symbol ", "Even", "file1", ((4, 47), (4, 51)), ["defn"]);
-            ("symbol ", "Odd", "file1", ((4, 57), (4, 60)), ["defn"]);
-            ("val |Even|Odd|", "ActivePatterns.( |Even|Odd| )", "file1",
-             ((4, 5), (4, 15)), ["defn"]);
-            ("val input", "input", "file1", ((7, 15), (7, 20)), ["defn"]);
-            ("val input", "input", "file1", ((8, 9), (8, 14)), []);
-            ("symbol Even", "ActivePatterns.( |Even|Odd| ).Even", "file1",
-             ((9, 5), (9, 9)), ["pattern"]);
-            ("val printfn", "Microsoft.FSharp.Core.ExtraTopLevelOperators.printfn",
-             "file1", ((9, 13), (9, 20)), []);
-            ("val input", "input", "file1", ((9, 34), (9, 39)), []);
-            ("symbol Odd", "ActivePatterns.( |Even|Odd| ).Odd", "file1",
-             ((10, 5), (10, 8)), ["pattern"]);
-            ("val printfn", "Microsoft.FSharp.Core.ExtraTopLevelOperators.printfn",
-             "file1", ((10, 12), (10, 19)), []);
-            ("val input", "input", "file1", ((10, 32), (10, 37)), []);
-            ("val TestNumber", "ActivePatterns.TestNumber", "file1", ((7, 4), (7, 14)),
-             ["defn"]); ("symbol ", "Float", "file1", ((13, 6), (13, 11)), ["defn"]);
-            ("string", "Microsoft.FSharp.Core.string", "file1", ((13, 22), (13, 28)),
-             ["type"]); ("val str", "str", "file1", ((13, 17), (13, 20)), ["defn"]);
-            ("val floatvalue", "floatvalue", "file1", ((14, 15), (14, 25)), ["defn"]);
-            ("Double", "System.Double", "file1", ((15, 13), (15, 19)), []);
-            ("System", "System", "file1", ((15, 6), (15, 12)), []);
-            ("val str", "str", "file1", ((15, 29), (15, 32)), []);
-            ("val op_AddressOf",
-             "Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators.( ~& )",
-             "file1", ((15, 34), (15, 35)), []);
-            ("val floatvalue", "floatvalue", "file1", ((15, 35), (15, 45)), []);
-            ("member TryParse", "System.Double.TryParse", "file1", ((15, 6), (15, 28)),
-             []);
-            ("Some", "Microsoft.FSharp.Core.Option<_>.Some", "file1",
-             ((15, 52), (15, 56)), []);
-            ("val floatvalue", "floatvalue", "file1", ((15, 57), (15, 67)), []);
-            ("None", "Microsoft.FSharp.Core.Option<_>.None", "file1",
-             ((16, 8), (16, 12)), []);
-            ("val |Float|_|", "ActivePatterns.( |Float|_| )", "file1",
-             ((13, 5), (13, 14)), ["defn"]);
-            ("val str", "str", "file1", ((19, 17), (19, 20)), ["defn"]);
-            ("val str", "str", "file1", ((20, 9), (20, 12)), []);
-            ("val f", "f", "file1", ((21, 11), (21, 12)), ["defn"]);
-            ("symbol Float", "ActivePatterns.( |Float|_| ).Float", "file1",
-             ((21, 5), (21, 10)), ["pattern"]);
-            ("val printfn", "Microsoft.FSharp.Core.ExtraTopLevelOperators.printfn",
-             "file1", ((21, 16), (21, 23)), []);
-            ("val f", "f", "file1", ((21, 46), (21, 47)), []);
-            ("val printfn", "Microsoft.FSharp.Core.ExtraTopLevelOperators.printfn",
-             "file1", ((22, 10), (22, 17)), []);
-            ("val str", "str", "file1", ((22, 38), (22, 41)), []);
-            ("val parseNumeric", "ActivePatterns.parseNumeric", "file1",
-             ((19, 4), (19, 16)), ["defn"]);
-            ("ActivePatterns", "ActivePatterns", "file1", ((1, 7), (1, 21)), ["defn"])|]
+           [|("symbol ", "Even", "file1", ((4, 6), (4, 10)), ["defn"]);
+             ("symbol ", "Odd", "file1", ((4, 11), (4, 14)), ["defn"]);
+             ("val input", "input", "file1", ((4, 17), (4, 22)), ["defn"]);
+             ("val op_Equality", "Microsoft.FSharp.Core.Operators.( = )", "file1",
+              ((4, 38), (4, 39)), []);
+             ("val op_Modulus", "Microsoft.FSharp.Core.Operators.( % )", "file1",
+              ((4, 34), (4, 35)), []);
+             ("val input", "input", "file1", ((4, 28), (4, 33)), []);
+             ("symbol ", "Even", "file1", ((4, 47), (4, 51)), ["defn"]);
+             ("symbol ", "Odd", "file1", ((4, 57), (4, 60)), ["defn"]);
+             ("val |Even|Odd|", "ActivePatterns.( |Even|Odd| )", "file1", ((4, 5), (4, 15)),
+              ["defn"]); ("val input", "input", "file1", ((7, 15), (7, 20)), ["defn"]);
+             ("val input", "input", "file1", ((8, 9), (8, 14)), []);
+             ("symbol Even", "ActivePatterns.( |Even|Odd| ).Even", "file1",
+              ((9, 5), (9, 9)), ["pattern"]);
+             ("val printfn", "Microsoft.FSharp.Core.ExtraTopLevelOperators.printfn",
+              "file1", ((9, 13), (9, 20)), []);
+             ("val input", "input", "file1", ((9, 34), (9, 39)), []);
+             ("symbol Odd", "ActivePatterns.( |Even|Odd| ).Odd", "file1",
+              ((10, 5), (10, 8)), ["pattern"]);
+             ("val printfn", "Microsoft.FSharp.Core.ExtraTopLevelOperators.printfn",
+              "file1", ((10, 12), (10, 19)), []);
+             ("val input", "input", "file1", ((10, 32), (10, 37)), []);
+             ("val TestNumber", "ActivePatterns.TestNumber", "file1", ((7, 4), (7, 14)),
+              ["defn"]); ("symbol ", "Float", "file1", ((13, 6), (13, 11)), ["defn"]);
+             ("string", "Microsoft.FSharp.Core.string", "file1", ((13, 22), (13, 28)),
+              ["type"]); ("val str", "str", "file1", ((13, 17), (13, 20)), ["defn"]);
+             ("val floatvalue", "floatvalue", "file1", ((14, 15), (14, 25)), ["defn"]);
+             ("Double", "System.Double", "file1", ((15, 13), (15, 19)), []);
+             ("System", "System", "file1", ((15, 6), (15, 12)), []);
+             ("val str", "str", "file1", ((15, 29), (15, 32)), []);
+             ("val op_AddressOf",
+              "Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators.( ~& )", "file1",
+              ((15, 34), (15, 35)), []);
+             ("val floatvalue", "floatvalue", "file1", ((15, 35), (15, 45)), []);
+             ("member TryParse", "System.Double.TryParse", "file1", ((15, 20), (15, 28)),
+              []);
+             ("Some", "Microsoft.FSharp.Core.Option<_>.Some", "file1", ((15, 52), (15, 56)),
+              []); ("val floatvalue", "floatvalue", "file1", ((15, 57), (15, 67)), []);
+             ("None", "Microsoft.FSharp.Core.Option<_>.None", "file1", ((16, 8), (16, 12)),
+              []);
+             ("val |Float|_|", "ActivePatterns.( |Float|_| )", "file1", ((13, 5), (13, 14)),
+              ["defn"]); ("val str", "str", "file1", ((19, 17), (19, 20)), ["defn"]);
+             ("val str", "str", "file1", ((20, 9), (20, 12)), []);
+             ("val f", "f", "file1", ((21, 11), (21, 12)), ["defn"]);
+             ("symbol Float", "ActivePatterns.( |Float|_| ).Float", "file1",
+              ((21, 5), (21, 10)), ["pattern"]);
+             ("val printfn", "Microsoft.FSharp.Core.ExtraTopLevelOperators.printfn",
+              "file1", ((21, 16), (21, 23)), []);
+             ("val f", "f", "file1", ((21, 46), (21, 47)), []);
+             ("val printfn", "Microsoft.FSharp.Core.ExtraTopLevelOperators.printfn",
+              "file1", ((22, 10), (22, 17)), []);
+             ("val str", "str", "file1", ((22, 38), (22, 41)), []);
+             ("val parseNumeric", "ActivePatterns.parseNumeric", "file1",
+              ((19, 4), (19, 16)), ["defn"]);
+             ("ActivePatterns", "ActivePatterns", "file1", ((1, 7), (1, 21)), ["defn"])|]
 
 [<Test>]
 let ``Test complete active patterns' exact ranges from uses of symbols`` () =
@@ -1960,8 +1952,7 @@ let ``Test Project10 all symbols`` () =
 
     allUsesOfAllSymbols |> shouldEqual
           [|("C", "C", "file1", ((4, 5), (4, 6)), ["class"]);
-            ("member .ctor", "( .ctor )", "file1", ((4, 5), (4, 6)),
-             ["member"; "ctor"]);
+            ("member .ctor", "( .ctor )", "file1", ((4, 5), (4, 6)), ["member"; "ctor"]);
             ("string", "string", "file1", ((5, 25), (5, 31)), ["abbrev"]);
             ("int", "int", "file1", ((5, 40), (5, 43)), ["abbrev"]);
             ("member M", "M", "file1", ((5, 18), (5, 19)), ["member"]);
@@ -1970,7 +1961,7 @@ let ``Test Project10 all symbols`` () =
             ("val url", "url", "file1", ((5, 20), (5, 23)), []);
             ("val query", "query", "file1", ((5, 33), (5, 38)), []);
             ("C", "C", "file1", ((7, 0), (7, 1)), ["class"]);
-            ("member M", "M", "file1", ((7, 0), (7, 3)), ["member"]);
+            ("member M", "M", "file1", ((7, 2), (7, 3)), ["member"]);
             ("parameter query", "query", "file1", ((7, 18), (7, 23)), []);
             ("NamedArgs", "NamedArgs", "file1", ((2, 7), (2, 16)), ["module"])|]
 
@@ -2741,17 +2732,15 @@ let ``Test Project17 all symbols`` () =
 
     allUsesOfAllSymbols 
       |> shouldEqual
-              [|("Collections", "Collections", "file1", ((4, 25), (4, 36)), [],
-                 ["namespace"]);
+              [|("Collections", "Collections", "file1", ((4, 25), (4, 36)), [], ["namespace"]);
                 ("FSharp", "FSharp", "file1", ((4, 18), (4, 24)), [], ["namespace"]);
                 ("Microsoft", "Microsoft", "file1", ((4, 8), (4, 17)), [], ["namespace"]);
-                ("FSharpList`1", "List", "file1", ((4, 8), (4, 41)), [], ["union"]);
+                ("FSharpList`1", "List", "file1", ((4, 37), (4, 41)), [], ["union"]);
                 ("int", "int", "file1", ((4, 42), (4, 45)), ["type"], ["abbrev"]);
                 ("FSharpList`1", "List", "file1", ((4, 8), (4, 46)), [], ["union"]);
-                ("property Empty", "Empty", "file1", ((4, 8), (4, 52)), [],
+                ("property Empty", "Empty", "file1", ((4, 47), (4, 52)), [],
                  ["member"; "prop"]);
-                ("Generic", "Generic", "file1", ((6, 30), (6, 37)), ["type"],
-                 ["namespace"]);
+                ("Generic", "Generic", "file1", ((6, 30), (6, 37)), ["type"], ["namespace"]);
                 ("Collections", "Collections", "file1", ((6, 18), (6, 29)), ["type"],
                  ["namespace"]);
                 ("System", "System", "file1", ((6, 11), (6, 17)), ["type"], ["namespace"]);
@@ -2759,17 +2748,16 @@ let ``Test Project17 all symbols`` () =
                 ("generic parameter T", "T", "file1", ((6, 44), (6, 46)), ["type"], []);
                 ("val x", "x", "file1", ((6, 8), (6, 9)), ["defn"], []);
                 ("val x", "x", "file1", ((6, 51), (6, 52)), [], []);
-                ("property Item", "Item", "file1", ((6, 51), (6, 57)), [],
+                ("property Item", "Item", "file1", ((6, 53), (6, 57)), [],
                  ["slot"; "member"; "prop"]);
                 ("val x", "x", "file1", ((6, 62), (6, 63)), [], []);
                 ("property Item", "Item", "file1", ((6, 62), (6, 67)), [],
                  ["slot"; "member"; "prop"]);
                 ("val x", "x", "file1", ((6, 69), (6, 70)), [], []);
-                ("property Count", "Count", "file1", ((6, 69), (6, 76)), [],
+                ("property Count", "Count", "file1", ((6, 71), (6, 76)), [],
                  ["slot"; "member"; "prop"]);
                 ("val f1", "f1", "file1", ((6, 4), (6, 6)), ["defn"], ["val"]);
-                ("Generic", "Generic", "file1", ((8, 30), (8, 37)), ["type"],
-                 ["namespace"]);
+                ("Generic", "Generic", "file1", ((8, 30), (8, 37)), ["type"], ["namespace"]);
                 ("Collections", "Collections", "file1", ((8, 18), (8, 29)), ["type"],
                  ["namespace"]);
                 ("System", "System", "file1", ((8, 11), (8, 17)), ["type"], ["namespace"]);
@@ -2780,12 +2768,11 @@ let ``Test Project17 all symbols`` () =
                 ("property Item", "Item", "file1", ((8, 52), (8, 57)), [],
                  ["slot"; "member"; "prop"]);
                 ("val f2", "f2", "file1", ((8, 4), (8, 6)), ["defn"], ["val"]);
-                ("System", "System", "file1", ((10, 11), (10, 17)), ["type"],
-                 ["namespace"]);
-                ("Exception", "Exception", "file1", ((10, 11), (10, 27)), ["type"],
-                 ["class"]); ("val x", "x", "file1", ((10, 8), (10, 9)), ["defn"], []);
+                ("System", "System", "file1", ((10, 11), (10, 17)), ["type"], ["namespace"]);
+                ("Exception", "Exception", "file1", ((10, 11), (10, 27)), ["type"], ["class"]);
+                ("val x", "x", "file1", ((10, 8), (10, 9)), ["defn"], []);
                 ("val x", "x", "file1", ((10, 31), (10, 32)), [], []);
-                ("property HelpLink", "HelpLink", "file1", ((10, 31), (10, 41)), [],
+                ("property HelpLink", "HelpLink", "file1", ((10, 33), (10, 41)), [],
                  ["slot"; "member"; "prop"]);
                 ("val f3", "f3", "file1", ((10, 4), (10, 6)), ["defn"], ["val"]);
                 ("Impl", "Impl", "file1", ((2, 7), (2, 11)), ["defn"], ["module"])|]
@@ -2837,7 +2824,7 @@ let ``Test Project18 all symbols`` () =
     allUsesOfAllSymbols |> shouldEqual
       [|("list`1", "list", "file1", ((4, 8), (4, 12)), [], false);
         ("list`1", "list", "file1", ((4, 8), (4, 15)), [], false);
-        ("property Empty", "Empty", "file1", ((4, 8), (4, 21)), [], false);
+        ("property Empty", "Empty", "file1", ((4, 16), (4, 21)), [], false);
         ("Impl", "Impl", "file1", ((2, 7), (2, 11)), ["defn"], false)|]
 
 
@@ -2892,16 +2879,15 @@ let ``Test Project19 all symbols`` () =
 
     allUsesOfAllSymbols |> shouldEqual
           [|("field EnumCase1", "EnumCase1", "file1", ((4, 14), (4, 23)), ["defn"],
-             ["field"; "static"; "1"]);
+            ["field"; "static"; "1"]);
             ("field EnumCase2", "EnumCase2", "file1", ((4, 30), (4, 39)), ["defn"],
              ["field"; "static"; "2"]);
-            ("Enum", "Enum", "file1", ((4, 5), (4, 9)), ["defn"],
-             ["enum"; "valuetype"]);
+            ("Enum", "Enum", "file1", ((4, 5), (4, 9)), ["defn"], ["enum"; "valuetype"]);
             ("Enum", "Enum", "file1", ((6, 8), (6, 12)), [], ["enum"; "valuetype"]);
-            ("field EnumCase1", "EnumCase1", "file1", ((6, 8), (6, 22)), [],
+            ("field EnumCase1", "EnumCase1", "file1", ((6, 13), (6, 22)), [],
              ["field"; "static"; "1"]);
             ("Enum", "Enum", "file1", ((7, 8), (7, 12)), [], ["enum"; "valuetype"]);
-            ("field EnumCase2", "EnumCase2", "file1", ((7, 8), (7, 22)), [],
+            ("field EnumCase2", "EnumCase2", "file1", ((7, 13), (7, 22)), [],
              ["field"; "static"; "2"]);
             ("val x", "x", "file1", ((8, 6), (8, 7)), ["defn"], []);
             ("val x", "x", "file1", ((8, 16), (8, 17)), [], []);
@@ -2915,7 +2901,8 @@ let ``Test Project19 all symbols`` () =
             ("DayOfWeek", "DayOfWeek", "file1", ((10, 15), (10, 24)), [],
              ["enum"; "valuetype"]);
             ("System", "System", "file1", ((10, 8), (10, 14)), [], ["namespace"]);
-            ("field Monday", "Monday", "file1", ((10, 8), (10, 31)), [], ["field"; "static"; "1"]);
+            ("field Monday", "Monday", "file1", ((10, 25), (10, 31)), [],
+             ["field"; "static"; "1"]);
             ("val s", "s", "file1", ((10, 4), (10, 5)), ["defn"], ["val"]);
             ("Impl", "Impl", "file1", ((2, 7), (2, 11)), ["defn"], ["module"])|]
 
@@ -3050,7 +3037,7 @@ let ``Test Project21 all symbols`` () =
             ("unit", "unit", "file1", ((12, 43), (12, 47)), ["type"], ["abbrev"]);
             ("val raise", "raise", "file1", ((13, 18), (13, 23)), [], ["val"]);
             ("System", "System", "file1", ((13, 25), (13, 31)), [], ["namespace"]);
-            ("member .ctor", ".ctor", "file1", ((13, 25), (13, 55)), [], ["member"]);
+            ("member .ctor", ".ctor", "file1", ((13, 32), (13, 55)), [], ["member"]);
             ("Impl", "Impl", "file1", ((2, 7), (2, 11)), ["defn"], ["module"])|]
 
 //-----------------------------------------------------------------------------------------
@@ -3437,8 +3424,7 @@ let ``Test Project24 all symbols`` () =
             ("int", "file1", ((25, 21), (25, 24)), ["type"], ["abbrev"]);
             ("StaticNameSet", "file1", ((24, 18), (24, 31)), ["defn"],
              ["member"; "setter"]);
-            ("AutoPropGet", "file1", ((27, 15), (27, 26)), ["defn"],
-             ["member"; "getter"]);
+            ("AutoPropGet", "file1", ((27, 15), (27, 26)), ["defn"], ["member"; "getter"]);
             ("AutoPropGetSet", "file1", ((28, 15), (28, 29)), ["defn"],
              ["member"; "getter"]);
             ("StaticAutoPropGet", "file1", ((30, 22), (30, 39)), ["defn"],
@@ -3446,8 +3432,7 @@ let ``Test Project24 all symbols`` () =
             ("StaticAutoPropGetSet", "file1", ((31, 22), (31, 42)), ["defn"],
              ["member"; "getter"]);
             ("( AutoPropGet@ )", "file1", ((27, 29), (27, 30)), ["defn"], []);
-            ("( AutoPropGetSet@ )", "file1", ((28, 32), (28, 33)), ["defn"],
-             ["mutable"]);
+            ("( AutoPropGetSet@ )", "file1", ((28, 32), (28, 33)), ["defn"], ["mutable"]);
             ("( StaticAutoPropGet@ )", "file1", ((30, 42), (30, 43)), ["defn"], []);
             ("( StaticAutoPropGetSet@ )", "file1", ((31, 45), (31, 46)), ["defn"],
              ["mutable"]); ("x", "file1", ((5, 11), (5, 12)), ["defn"], []);
@@ -3469,54 +3454,45 @@ let ``Test Project24 all symbols`` () =
             ("( AutoPropGetSet@ )", "file1", ((28, 15), (28, 29)), [], ["mutable"]);
             ("v", "file1", ((28, 15), (28, 29)), ["defn"], []);
             ("( StaticAutoPropGet@ )", "file1", ((30, 22), (30, 39)), [], []);
-            ("( StaticAutoPropGetSet@ )", "file1", ((31, 22), (31, 42)), [],
-             ["mutable"]); ("v", "file1", ((31, 22), (31, 42)), ["defn"], []);
+            ("( StaticAutoPropGetSet@ )", "file1", ((31, 22), (31, 42)), [], ["mutable"]);
+            ("v", "file1", ((31, 22), (31, 42)), ["defn"], []);
             ("( .cctor )", "file1", ((4, 5), (4, 23)), ["defn"], ["member"]);
-            ("TypeWithProperties", "file1", ((33, 9), (33, 27)), [],
-             ["member"; "ctor"]);
-            ("NameGetSet", "file1", ((33, 9), (33, 40)), [], ["member"; "prop"]);
+            ("TypeWithProperties", "file1", ((33, 9), (33, 27)), [], ["member"; "ctor"]);
+            ("NameGetSet", "file1", ((33, 30), (33, 40)), [], ["member"; "prop"]);
             ("v1", "file1", ((33, 4), (33, 6)), ["defn"], ["val"]);
-            ("TypeWithProperties", "file1", ((34, 0), (34, 18)), [],
-             ["member"; "ctor"]);
-            ("NameGetSet", "file1", ((34, 0), (34, 31)), [], ["member"; "prop"]);
-            ("TypeWithProperties", "file1", ((36, 9), (36, 27)), [],
-             ["member"; "ctor"]);
-            ("NameGet", "file1", ((36, 9), (36, 37)), [], ["member"; "prop"]);
+            ("TypeWithProperties", "file1", ((34, 0), (34, 18)), [], ["member"; "ctor"]);
+            ("NameGetSet", "file1", ((34, 21), (34, 31)), [], ["member"; "prop"]);
+            ("TypeWithProperties", "file1", ((36, 9), (36, 27)), [], ["member"; "ctor"]);
+            ("NameGet", "file1", ((36, 30), (36, 37)), [], ["member"; "prop"]);
             ("v2", "file1", ((36, 4), (36, 6)), ["defn"], ["val"]);
-            ("TypeWithProperties", "file1", ((38, 0), (38, 18)), [],
-             ["member"; "ctor"]);
-            ("NameSet", "file1", ((38, 0), (38, 28)), [], ["member"; "prop"]);
+            ("TypeWithProperties", "file1", ((38, 0), (38, 18)), [], ["member"; "ctor"]);
+            ("NameSet", "file1", ((38, 21), (38, 28)), [], ["member"; "prop"]);
             ("TypeWithProperties", "file1", ((40, 9), (40, 27)), [], ["class"]);
-            ("StaticNameGetSet", "file1", ((40, 9), (40, 44)), [], ["member"; "prop"]);
+            ("StaticNameGetSet", "file1", ((40, 28), (40, 44)), [], ["member"; "prop"]);
             ("v3", "file1", ((40, 4), (40, 6)), ["defn"], ["val"]);
             ("TypeWithProperties", "file1", ((41, 0), (41, 18)), [], ["class"]);
-            ("StaticNameGetSet", "file1", ((41, 0), (41, 35)), [], ["member"; "prop"]);
+            ("StaticNameGetSet", "file1", ((41, 19), (41, 35)), [], ["member"; "prop"]);
             ("TypeWithProperties", "file1", ((43, 9), (43, 27)), [], ["class"]);
-            ("StaticNameGet", "file1", ((43, 9), (43, 41)), [], ["member"; "prop"]);
+            ("StaticNameGet", "file1", ((43, 28), (43, 41)), [], ["member"; "prop"]);
             ("v4", "file1", ((43, 4), (43, 6)), ["defn"], ["val"]);
             ("TypeWithProperties", "file1", ((45, 0), (45, 18)), [], ["class"]);
-            ("StaticNameSet", "file1", ((45, 0), (45, 32)), [], ["member"; "prop"]);
-            ("TypeWithProperties", "file1", ((47, 9), (47, 27)), [],
-             ["member"; "ctor"]);
-            ("AutoPropGet", "file1", ((47, 9), (47, 41)), [], ["member"; "prop"]);
+            ("StaticNameSet", "file1", ((45, 19), (45, 32)), [], ["member"; "prop"]);
+            ("TypeWithProperties", "file1", ((47, 9), (47, 27)), [], ["member"; "ctor"]);
+            ("AutoPropGet", "file1", ((47, 30), (47, 41)), [], ["member"; "prop"]);
             ("v5", "file1", ((47, 4), (47, 6)), ["defn"], ["val"]);
-            ("TypeWithProperties", "file1", ((49, 9), (49, 27)), [],
-             ["member"; "ctor"]);
-            ("AutoPropGetSet", "file1", ((49, 9), (49, 44)), [], ["member"; "prop"]);
+            ("TypeWithProperties", "file1", ((49, 9), (49, 27)), [], ["member"; "ctor"]);
+            ("AutoPropGetSet", "file1", ((49, 30), (49, 44)), [], ["member"; "prop"]);
             ("v6", "file1", ((49, 4), (49, 6)), ["defn"], ["val"]);
-            ("TypeWithProperties", "file1", ((50, 0), (50, 18)), [],
-             ["member"; "ctor"]);
-            ("AutoPropGetSet", "file1", ((50, 0), (50, 35)), [], ["member"; "prop"]);
+            ("TypeWithProperties", "file1", ((50, 0), (50, 18)), [], ["member"; "ctor"]);
+            ("AutoPropGetSet", "file1", ((50, 21), (50, 35)), [], ["member"; "prop"]);
             ("TypeWithProperties", "file1", ((52, 9), (52, 27)), [], ["class"]);
-            ("StaticAutoPropGet", "file1", ((52, 9), (52, 45)), [], ["member"; "prop"]);
+            ("StaticAutoPropGet", "file1", ((52, 28), (52, 45)), [], ["member"; "prop"]);
             ("v7", "file1", ((52, 4), (52, 6)), ["defn"], ["val"]);
             ("TypeWithProperties", "file1", ((54, 9), (54, 27)), [], ["class"]);
-            ("StaticAutoPropGetSet", "file1", ((54, 9), (54, 48)), [],
-             ["member"; "prop"]);
+            ("StaticAutoPropGetSet", "file1", ((54, 28), (54, 48)), [], ["member"; "prop"]);
             ("v8", "file1", ((54, 4), (54, 6)), ["defn"], ["val"]);
             ("TypeWithProperties", "file1", ((55, 0), (55, 18)), [], ["class"]);
-            ("StaticAutoPropGetSet", "file1", ((55, 0), (55, 39)), [],
-             ["member"; "prop"]);
+            ("StaticAutoPropGetSet", "file1", ((55, 19), (55, 39)), [], ["member"; "prop"]);
             ("PropertyTest", "file1", ((2, 7), (2, 19)), ["defn"], ["module"])|]
 
 [<Test>]
@@ -3549,16 +3525,14 @@ let ``Test symbol uses of properties with both getters and setters`` () =
             ("AutoPropGet", "file1", ((27, 15), (27, 26)), ["member"; "getter"]);
             ("AutoPropGetSet", "file1", ((28, 15), (28, 29)), ["member"; "getter"]);
             ("StaticAutoPropGet", "file1", ((30, 22), (30, 39)), ["member"; "getter"]);
-            ("StaticAutoPropGetSet", "file1", ((31, 22), (31, 42)),
-             ["member"; "getter"]);
+            ("StaticAutoPropGetSet", "file1", ((31, 22), (31, 42)), ["member"; "getter"]);
             ("( AutoPropGet@ )", "file1", ((27, 29), (27, 30)), []);
             ("( AutoPropGetSet@ )", "file1", ((28, 32), (28, 33)), ["mutable"]);
             ("( StaticAutoPropGet@ )", "file1", ((30, 42), (30, 43)), []);
             ("( StaticAutoPropGetSet@ )", "file1", ((31, 45), (31, 46)), ["mutable"]);
             ("x", "file1", ((5, 11), (5, 12)), []);
             ("int", "file1", ((7, 20), (7, 23)), ["abbrev"]);
-            ("v", "file1", ((7, 17), (7, 18)), []);
-            ("x", "file1", ((9, 11), (9, 12)), []);
+            ("v", "file1", ((7, 17), (7, 18)), []); ("x", "file1", ((9, 11), (9, 12)), []);
             ("int", "file1", ((11, 20), (11, 23)), ["abbrev"]);
             ("v", "file1", ((11, 17), (11, 18)), []);
             ("x", "file1", ((13, 11), (13, 12)), []);
@@ -3578,41 +3552,41 @@ let ``Test symbol uses of properties with both getters and setters`` () =
             ("v", "file1", ((31, 22), (31, 42)), []);
             ("( .cctor )", "file1", ((4, 5), (4, 23)), ["member"]);
             ("TypeWithProperties", "file1", ((33, 9), (33, 27)), ["member"; "ctor"]);
-            ("NameGetSet", "file1", ((33, 9), (33, 40)), ["member"; "prop"]);
+            ("NameGetSet", "file1", ((33, 30), (33, 40)), ["member"; "prop"]);
             ("v1", "file1", ((33, 4), (33, 6)), ["val"]);
             ("TypeWithProperties", "file1", ((34, 0), (34, 18)), ["member"; "ctor"]);
-            ("NameGetSet", "file1", ((34, 0), (34, 31)), ["member"; "prop"]);
+            ("NameGetSet", "file1", ((34, 21), (34, 31)), ["member"; "prop"]);
             ("TypeWithProperties", "file1", ((36, 9), (36, 27)), ["member"; "ctor"]);
-            ("NameGet", "file1", ((36, 9), (36, 37)), ["member"; "prop"]);
+            ("NameGet", "file1", ((36, 30), (36, 37)), ["member"; "prop"]);
             ("v2", "file1", ((36, 4), (36, 6)), ["val"]);
             ("TypeWithProperties", "file1", ((38, 0), (38, 18)), ["member"; "ctor"]);
-            ("NameSet", "file1", ((38, 0), (38, 28)), ["member"; "prop"]);
+            ("NameSet", "file1", ((38, 21), (38, 28)), ["member"; "prop"]);
             ("TypeWithProperties", "file1", ((40, 9), (40, 27)), ["class"]);
-            ("StaticNameGetSet", "file1", ((40, 9), (40, 44)), ["member"; "prop"]);
+            ("StaticNameGetSet", "file1", ((40, 28), (40, 44)), ["member"; "prop"]);
             ("v3", "file1", ((40, 4), (40, 6)), ["val"]);
             ("TypeWithProperties", "file1", ((41, 0), (41, 18)), ["class"]);
-            ("StaticNameGetSet", "file1", ((41, 0), (41, 35)), ["member"; "prop"]);
+            ("StaticNameGetSet", "file1", ((41, 19), (41, 35)), ["member"; "prop"]);
             ("TypeWithProperties", "file1", ((43, 9), (43, 27)), ["class"]);
-            ("StaticNameGet", "file1", ((43, 9), (43, 41)), ["member"; "prop"]);
+            ("StaticNameGet", "file1", ((43, 28), (43, 41)), ["member"; "prop"]);
             ("v4", "file1", ((43, 4), (43, 6)), ["val"]);
             ("TypeWithProperties", "file1", ((45, 0), (45, 18)), ["class"]);
-            ("StaticNameSet", "file1", ((45, 0), (45, 32)), ["member"; "prop"]);
+            ("StaticNameSet", "file1", ((45, 19), (45, 32)), ["member"; "prop"]);
             ("TypeWithProperties", "file1", ((47, 9), (47, 27)), ["member"; "ctor"]);
-            ("AutoPropGet", "file1", ((47, 9), (47, 41)), ["member"; "prop"]);
+            ("AutoPropGet", "file1", ((47, 30), (47, 41)), ["member"; "prop"]);
             ("v5", "file1", ((47, 4), (47, 6)), ["val"]);
             ("TypeWithProperties", "file1", ((49, 9), (49, 27)), ["member"; "ctor"]);
-            ("AutoPropGetSet", "file1", ((49, 9), (49, 44)), ["member"; "prop"]);
+            ("AutoPropGetSet", "file1", ((49, 30), (49, 44)), ["member"; "prop"]);
             ("v6", "file1", ((49, 4), (49, 6)), ["val"]);
             ("TypeWithProperties", "file1", ((50, 0), (50, 18)), ["member"; "ctor"]);
-            ("AutoPropGetSet", "file1", ((50, 0), (50, 35)), ["member"; "prop"]);
+            ("AutoPropGetSet", "file1", ((50, 21), (50, 35)), ["member"; "prop"]);
             ("TypeWithProperties", "file1", ((52, 9), (52, 27)), ["class"]);
-            ("StaticAutoPropGet", "file1", ((52, 9), (52, 45)), ["member"; "prop"]);
+            ("StaticAutoPropGet", "file1", ((52, 28), (52, 45)), ["member"; "prop"]);
             ("v7", "file1", ((52, 4), (52, 6)), ["val"]);
             ("TypeWithProperties", "file1", ((54, 9), (54, 27)), ["class"]);
-            ("StaticAutoPropGetSet", "file1", ((54, 9), (54, 48)), ["member"; "prop"]);
+            ("StaticAutoPropGetSet", "file1", ((54, 28), (54, 48)), ["member"; "prop"]);
             ("v8", "file1", ((54, 4), (54, 6)), ["val"]);
             ("TypeWithProperties", "file1", ((55, 0), (55, 18)), ["class"]);
-            ("StaticAutoPropGetSet", "file1", ((55, 0), (55, 39)), ["member"; "prop"]);
+            ("StaticAutoPropGetSet", "file1", ((55, 19), (55, 39)), ["member"; "prop"]);
             ("PropertyTest", "file1", ((2, 7), (2, 19)), ["module"])|]
 
     let getSampleSymbolUseOpt = 
@@ -3626,7 +3600,7 @@ let ``Test symbol uses of properties with both getters and setters`` () =
         |> Async.RunSynchronously
         |> Array.map (fun s -> (Project24.cleanFileName s.FileName, tups s.RangeAlternate))
 
-    usesOfGetSampleSymbol |> shouldEqual [|("file1", ((9, 13), (9, 20))); ("file1", ((36, 9), (36, 37)))|]
+    usesOfGetSampleSymbol |> shouldEqual [|("file1", ((9, 13), (9, 20))); ("file1", ((36, 30), (36, 37)))|]
 
 #if NO_CHECK_USE_OF_FSHARP_DATA_DLL
 #endif
@@ -3687,7 +3661,6 @@ let ``Test Project25 symbol uses of type-provided members`` () =
         |> Array.map (fun s -> (s.Symbol.FullName, Project25.cleanFileName s.FileName, tups s.RangeAlternate, attribsOfSymbol s.Symbol))
 
     allUses |> shouldEqual 
-
          [|("FSharp.Data", "file1", ((3, 5), (3, 16)), ["namespace"; "provided"]);
            ("Microsoft.FSharp.Data", "file1", ((3, 5), (3, 16)), ["namespace"]);
            ("FSharp.Data.XmlProvider", "file1", ((4, 15), (4, 26)),
@@ -3700,7 +3673,7 @@ let ``Test Project25 symbol uses of type-provided members`` () =
             ["class"; "provided"; "erased"]);
            ("TypeProviderTests.Project", "file1", ((4, 5), (4, 12)), ["abbrev"]);
            ("TypeProviderTests.Project", "file1", ((5, 8), (5, 15)), ["abbrev"]);
-           ("FSharp.Data.XmlProvider<...>.GetSample", "file1", ((5, 8), (5, 25)),
+           ("FSharp.Data.XmlProvider<...>.GetSample", "file1", ((5, 16), (5, 25)),
             ["member"]);
            ("Microsoft.FSharp.Core.int", "file1", ((7, 23), (7, 26)), ["abbrev"]);
            ("Microsoft.FSharp.Core.int", "file1", ((7, 23), (7, 26)), ["abbrev"]);
@@ -3713,7 +3686,7 @@ let ``Test Project25 symbol uses of type-provided members`` () =
             ["class"; "provided"; "erased"]);
            ("FSharp.Data.XmlProvider<...>", "file1", ((10, 8), (10, 68)),
             ["class"; "provided"; "staticinst"; "erased"]);
-           ("FSharp.Data.XmlProvider<...>.GetSample", "file1", ((10, 8), (10, 78)),
+           ("FSharp.Data.XmlProvider<...>.GetSample", "file1", ((10, 69), (10, 78)),
             ["member"]); ("TypeProviderTests", "file1", ((2, 7), (2, 24)), ["module"])|]
     let getSampleSymbolUseOpt = 
         backgroundTypedParse1.GetSymbolUseAtLocation(5,25,"",["GetSample"]) 
@@ -3726,7 +3699,7 @@ let ``Test Project25 symbol uses of type-provided members`` () =
         |> Async.RunSynchronously
         |> Array.map (fun s -> (Project25.cleanFileName s.FileName, tups s.RangeAlternate))
 
-    usesOfGetSampleSymbol |> shouldEqual [|("file1", ((5, 8), (5, 25))); ("file1", ((10, 8), (10, 78)))|]
+    usesOfGetSampleSymbol |> shouldEqual [|("file1", ((5, 16), (5, 25))); ("file1", ((10, 69), (10, 78)))|]
 
 #if DOTNETCORE
 [<Test; Ignore "Disabled until FSharp.Data.dll is build for dotnet core.">]
@@ -4907,34 +4880,26 @@ let ``Test project39 all symbols`` () =
                       ("return", mem.ReturnParameter |> FSharpType.Prettify |> fun p -> p.Type.Format(s.DisplayContext)) 
             | _ -> () ]
     typeTextOfAllSymbolUses |> shouldEqual
-              [("functionWithIncompleteSignature", ((4, 4), (4, 35)),
-                ("full", "'a -> 'b"), ("params", [["'a"]]), ("return", "'b"));
+              [("functionWithIncompleteSignature", ((4, 4), (4, 35)), ("full", "'a -> 'b"),
+                ("params", [["'a"]]), ("return", "'b"));
                ("curriedFunctionWithIncompleteSignature", ((5, 4), (5, 42)),
                 ("full", "'a -> 'a0 -> 'a * 'a0 -> 'b"),
-                ("params",
-                 [["'a"]; ["'a0"]; ["'a"; "'a0"]]),
-                ("return", "'b"));
+                ("params", [["'a"]; ["'a0"]; ["'a"; "'a0"]]), ("return", "'b"));
                ("MemberWithIncompleteSignature", ((10, 13), (10, 42)),
                 ("full", "C -> 'c -> 'd"), ("params", [["'c"]]), ("return", "'d"));
                ("CurriedMemberWithIncompleteSignature", ((11, 13), (11, 49)),
                 ("full", "C -> 'a -> 'a0 -> 'a * 'a0 -> 'b"),
-                ("params",
-                 [["'a"]; ["'a0"]; ["'a"; "'a0"]]),
-                ("return", "'b"));
-               ("functionWithIncompleteSignature", ((16, 3), (16, 34)),
-                ("full", "'a -> 'b"), ("params", [["'a"]]), ("return", "'b"));
+                ("params", [["'a"]; ["'a0"]; ["'a"; "'a0"]]), ("return", "'b"));
+               ("functionWithIncompleteSignature", ((16, 3), (16, 34)), ("full", "'a -> 'b"),
+                ("params", [["'a"]]), ("return", "'b"));
                ("curriedFunctionWithIncompleteSignature", ((17, 3), (17, 41)),
                 ("full", "'a -> 'a0 -> 'a * 'a0 -> 'b"),
-                ("params",
-                 [["'a"]; ["'a0"]; ["'a"; "'a0"]]),
-                ("return", "'b"));
-               ("MemberWithIncompleteSignature", ((18, 3), (18, 36)),
-                ("full", "'c -> 'd"), ("params", [["'c"]]), ("return", "'d"));
-               ("CurriedMemberWithIncompleteSignature", ((19, 3), (19, 43)),
+                ("params", [["'a"]; ["'a0"]; ["'a"; "'a0"]]), ("return", "'b"));
+               ("MemberWithIncompleteSignature", ((18, 7), (18, 36)), ("full", "'c -> 'd"),
+                ("params", [["'c"]]), ("return", "'d"));
+               ("CurriedMemberWithIncompleteSignature", ((19, 7), (19, 43)),
                 ("full", "'a -> 'a0 -> 'a * 'a0 -> 'b"),
-                ("params",
-                 [["'a"]; ["'a0"]; ["'a"; "'a0"]]),
-                ("return", "'b"))]
+                ("params", [["'a"]; ["'a0"]; ["'a"; "'a0"]]), ("return", "'b"))]
 
 
 //--------------------------------------------
@@ -4976,16 +4941,15 @@ let ``Test Project40 all symbols`` () =
     allSymbolUsesInfo |> shouldEqual
           [("option", ((4, 10), (4, 16)), ["abbrev"]); ("x", ((4, 7), (4, 8)), []);
            ("x", ((4, 23), (4, 24)), []);
-           ("IsSome", ((4, 23), (4, 31)), ["member"; "prop"; "funky"]);
+           ("IsSome", ((4, 25), (4, 31)), ["member"; "prop"; "funky"]);
            ("x", ((4, 33), (4, 34)), []);
-           ("IsNone", ((4, 33), (4, 41)), ["member"; "prop"; "funky"]);
+           ("IsNone", ((4, 35), (4, 41)), ["member"; "prop"; "funky"]);
            ("f", ((4, 4), (4, 5)), ["val"]);
            ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["class"]);
            ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["class"]);
            ("CompilationRepresentationAttribute", ((6, 2), (6, 27)), ["member"]);
-           ("CompilationRepresentationFlags", ((6, 28), (6, 58)),
-            ["enum"; "valuetype"]);
-           ("UseNullAsTrueValue", ((6, 28), (6, 77)), ["field"; "static"; "8"]);
+           ("CompilationRepresentationFlags", ((6, 28), (6, 58)), ["enum"; "valuetype"]);
+           ("UseNullAsTrueValue", ((6, 59), (6, 77)), ["field"; "static"; "8"]);
            ("string", ((9, 11), (9, 17)), ["abbrev"]);
            ("string", ((9, 11), (9, 17)), ["abbrev"]); ("A", ((8, 6), (8, 7)), []);
            ("B", ((9, 6), (9, 7)), []); ("C", ((7, 5), (7, 6)), ["union"]);
@@ -4997,9 +4961,9 @@ let ``Test Project40 all symbols`` () =
            ("A", ((11, 44), (11, 45)), []); ("B", ((11, 56), (11, 57)), []);
            ("C", ((13, 10), (13, 11)), ["union"]); ("x", ((13, 7), (13, 8)), []);
            ("x", ((13, 15), (13, 16)), []);
-           ("IsItAnA", ((13, 15), (13, 24)), ["member"; "prop"; "funky"]);
+           ("IsItAnA", ((13, 17), (13, 24)), ["member"; "prop"; "funky"]);
            ("x", ((13, 25), (13, 26)), []);
-           ("IsItAnAMethod", ((13, 25), (13, 40)), ["member"; "funky"]);
+           ("IsItAnAMethod", ((13, 27), (13, 40)), ["member"; "funky"]);
            ("g", ((13, 4), (13, 5)), ["val"]); ("M", ((2, 7), (2, 8)), ["module"])]
 
 
