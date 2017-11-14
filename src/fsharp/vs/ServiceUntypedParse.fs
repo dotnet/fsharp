@@ -1275,11 +1275,11 @@ module UntypedParseImpl =
                                 None
                         | _ -> defaultTraverse decl
 
-                    member __.VisitPat(defaultTraverse, pat) =
-                        match pat with
-                        | SynPat.Typed (_, ty, _) when rangeContainsPos ty.Range pos ->
+                    member __.VisitType(defaultTraverse, ty) =
+                        match ty with
+                        | SynType.LongIdent _ when rangeContainsPos ty.Range pos ->
                             Some CompletionContext.PatternType
-                        | _ -> defaultTraverse pat
+                        | _ -> defaultTraverse ty
             }
 
         AstTraversal.Traverse(pos, pt, walker)
