@@ -453,7 +453,7 @@ type TypeCheckInfo
                             let qual = 
                                 quals |> Array.tryFind (fun (_,_,_,_,_,r) -> 
                                                             ignore(r)  // for breakpoint
-                                                            posEq exprRange.Start r.Start)
+                                                            posEq exprRange.End r.End)
                             qual, false
                     | None -> 
                         // TODO In theory I think we should never get to this code path; it would be nice to add an assert.
