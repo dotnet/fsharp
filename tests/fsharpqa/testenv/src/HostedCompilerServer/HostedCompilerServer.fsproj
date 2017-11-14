@@ -49,6 +49,10 @@
       <Project>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</Project>
       <Name>FSharp.Compiler.Private</Name>
     </ProjectReference>
+    <Reference Include="System.ValueTuple">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\System.ValueTuple.4.3.1\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
   </ItemGroup>
 
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
