@@ -260,6 +260,37 @@ x.
     VerifyCompletionListExactly(fileContents, "x.", expected)
 
 [<Test>]
+let ``Constructing a new class with object initializer syntax``() =
+    let fileContents = """
+type A() =
+    member val SettableProperty = 1 with get, set
+    member val AnotherSettableProperty = 1 with get, set
+    member val NonSettableProperty = 1
+    
+let _ = new A(Setta
+"""
+
+    let expected = ["SettableProperty"; "AnotherSettableProperty"]
+    let notExpected = ["NonSettableProperty"]
+    VerifyCompletionList(fileContents, "(Setta", expected, notExpected)
+
+[<Test>]
+let ``Constructing a new fully qualified class with object initializer syntax``() =
+    let fileContents = """
+module M =
+    type A() =
+        member val SettableProperty = 1 with get, set
+        member val AnotherSettableProperty = 1 with get, set
+        member val NonSettableProperty = 1
+    
+let _ = new M.A(Setta
+"""
+
+    let expected = ["SettableProperty"; "AnotherSettableProperty"]
+    let notExpected = ["NonSettableProperty"]
+    VerifyCompletionList(fileContents, "(Setta", expected, notExpected)
+
+[<Test>]
 let ``Extension methods go after everything else, extension properties are treated as normal ones``() =
     let fileContents = """
 open System.Collections.Generic
