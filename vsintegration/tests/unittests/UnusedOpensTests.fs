@@ -723,3 +723,17 @@ module Test =
     let xs = []
 """ 
     => [ 2, (5, 16) ]      
+
+[<Test>]
+let ``a type from an auto open module is taken into account``() =
+    """
+module M1 =
+    [<AutoOpen>]
+    module AutoOpened =
+        type T() = class end
+
+module M2 =
+    open M1
+    let _ = T()
+"""
+    => []
