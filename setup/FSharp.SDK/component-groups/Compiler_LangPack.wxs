@@ -7,9 +7,6 @@
       <ComponentRef Id="Compiler_LangPack_FSharp.Core.dll_$(var.LocaleCode)" />
       <ComponentRef Id="Compiler_LangPack_FSharp.Build.dll_$(var.LocaleCode)" />
       <ComponentRef Id="Compiler_LangPack_FSharp.Compiler.Private.dll_$(var.LocaleCode)" />
-      <ComponentRef Id="Compiler_LangPack_fsc.exe_$(var.LocaleCode)" />
-      <ComponentRef Id="Compiler_LangPack_fsi.exe_$(var.LocaleCode)" />
-      <ComponentRef Id="Compiler_LangPack_fsiAnyCPU.exe_$(var.LocaleCode)" />
     </ComponentGroup>
 
     <DirectoryRef Id="MicrosoftSDKs_FS_4.1_Framework_v4.0_$(var.LocaleId)">
@@ -23,18 +20,6 @@
 
       <Component Id="Compiler_LangPack_FSharp.Compiler.Private.dll_$(var.LocaleCode)" Guid="$(fsharp.guid(Compiler_LangPack_FSharp.Compiler.Private.dll_$(var.LocaleCode), $(var.LocaleCode)))">
         <File Id="Compiler_LangPack_FSharp.Compiler.Private.dll_$(var.LocaleCode)" Source="$(var.BinariesDir)\net40\bin\$(var.LocaleParentCulture)\FSharp.Compiler.Private.resources.dll" KeyPath="yes" />
-      </Component>
-
-      <Component Id="Compiler_LangPack_fsc.exe_$(var.LocaleCode)" Guid="$(fsharp.guid(Compiler_LangPack_fsc.exe_$(var.LocaleCode), $(var.LocaleCode)))">
-        <File Id="Compiler_LangPack_fsc.exe_$(var.LocaleCode)" Source="$(var.BinariesDir)\net40\bin\$(var.LocaleParentCulture)\fsc.resources.dll" KeyPath="yes" />
-      </Component>
-
-      <Component Id="Compiler_LangPack_fsi.exe_$(var.LocaleCode)" Guid="$(fsharp.guid(Compiler_LangPack_fsi.exe_$(var.LocaleCode), $(var.LocaleCode)))">
-        <File Id="Compiler_LangPack_fsi.exe_$(var.LocaleCode)" Source="$(var.BinariesDir)\net40\bin\$(var.LocaleParentCulture)\fsi.resources.dll" KeyPath="yes"/>
-      </Component>
-
-      <Component Id="Compiler_LangPack_fsiAnyCPU.exe_$(var.LocaleCode)" Guid="$(fsharp.guid(Compiler_LangPack_fsiAnyCPU.exe_$(var.LocaleCode), $(var.LocaleCode)))">
-        <File Id="Compiler_LangPack_fsiAnyCPU.exe_$(var.LocaleCode)" Source="$(var.BinariesDir)\net40\bin\$(var.LocaleParentCulture)\fsiAnyCPU.resources.dll" KeyPath="yes" />
       </Component>
     </DirectoryRef>
   </Fragment>
