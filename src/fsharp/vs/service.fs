@@ -879,7 +879,9 @@ type TypeCheckInfo
                          match cItem.Item with
                          | Item.ModuleOrNamespaces _
                          | Item.Types _
-                         | Item.UnqualifiedType _ -> true
+                         | Item.UnqualifiedType _
+                         | Item.ExnCase _
+                         | Item.UnionCase _ -> true
                          | _ -> false), denv, m)
 
             // Other completions
