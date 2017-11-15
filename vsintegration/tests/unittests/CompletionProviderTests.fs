@@ -49,6 +49,9 @@ let internal projectOptions = {
     Stamp = None
 }
 
+let formatCompletions(completions : string seq) =
+    "\n\t" + String.Join("\n\t", completions)
+
 let VerifyCompletionList(fileContents: string, marker: string, expected: string list, unexpected: string list) =
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     let results = 
@@ -57,11 +60,44 @@ let VerifyCompletionList(fileContents: string, marker: string, expected: string 
         |> Option.defaultValue (ResizeArray())
         |> Seq.map(fun result -> result.DisplayText)
 
-    for item in expected do
-        Assert.IsTrue(results.Contains(item), sprintf "Completions should contain '%s'. Got '%s'." item (String.Join(", ", results)))
+    let expectedFound =
+        expected
+        |> Seq.filter results.Contains
 
-    for item in unexpected do
-        Assert.IsFalse(results.Contains(item), sprintf "Completions should not contain '%s'. Got '{%s}'" item (String.Join(", ", results)))
+    let expectedNotFound =
+        expected
+        |> Seq.filter (expectedFound.Contains >> not)
+
+    let unexpectedNotFound =
+        unexpected
+        |> Seq.filter (results.Contains >> not)
+
+    let unexpectedFound =
+        unexpected
+        |> Seq.filter (unexpectedNotFound.Contains >> not)
+
+    // If either of these are true, then the test fails.
+    let hasExpectedNotFound = expectedNotFound.Count() > 0
+    let hasUnexpectedFound = unexpectedFound.Count() > 0
+
+    if hasExpectedNotFound || hasUnexpectedFound then
+        let expectedNotFoundMsg = 
+            if hasExpectedNotFound then
+                sprintf "Expected completions not found:%s" (formatCompletions expectedNotFound)
+            else
+                String.Empty
+
+        let unexpectedFoundMsg = 
+            if hasUnexpectedFound then
+                sprintf "Unexpected completions found:%s" (formatCompletions unexpectedFound)
+            else
+                String.Empty
+
+        let completionsMsg = sprintf "Completions:%s" (formatCompletions results)
+
+        let msg = sprintf "\n%s\n%s\n in %s" expectedNotFoundMsg unexpectedFoundMsg completionsMsg
+
+        Assert.Fail(msg)
 
 let VerifyCompletionListExactly(fileContents: string, marker: string, expected: string list) =
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
