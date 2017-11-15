@@ -880,8 +880,7 @@ type TypeCheckInfo
                          | Item.ModuleOrNamespaces _
                          | Item.Types _
                          | Item.UnqualifiedType _
-                         | Item.ExnCase _
-                         | Item.UnionCase _ -> true
+                         | Item.ExnCase _ -> true
                          | _ -> false), denv, m)
 
             // Other completions
