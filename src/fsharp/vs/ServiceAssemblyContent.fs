@@ -210,6 +210,7 @@ module AssemblyContentProvider =
 
     let private traverseMemberFunctionAndValues ns (parent: Parent) (membersFunctionsAndValues: seq<FSharpMemberOrFunctionOrValue>) =
         membersFunctionsAndValues
+        |> Seq.filter (fun x -> not x.IsInstanceMember)
         |> Seq.collect (fun func ->
             let processIdents fullName idents = 
                 { FullName = fullName
@@ -254,7 +255,7 @@ module AssemblyContentProvider =
                     | None -> ()
 
                     let thisRequiresQualifierAccess =
-                        if entity.IsFSharp && Symbol.hasAttribute<RequireQualifiedAccessAttribute> entity.Attributes then 
+                        if (entity.IsFSharp && Symbol.hasAttribute<RequireQualifiedAccessAttribute> entity.Attributes) || entity.IsClass then 
                             parent.FormatEntityFullName entity |> Option.map snd
                         else None
 
@@ -277,11 +278,10 @@ module AssemblyContentProvider =
                             else parent.WithModuleSuffix
                           Namespace = ns }
 
-                    if entity.IsFSharpModule then
-                        match entity.TryGetMembersFunctionsAndValues with
-                        | xs when xs.Count > 0 ->
-                            yield! traverseMemberFunctionAndValues ns currentParent xs
-                        | _ -> ()
+                    match entity.TryGetMembersFunctionsAndValues with
+                    | xs when xs.Count > 0 ->
+                        yield! traverseMemberFunctionAndValues ns currentParent xs
+                    | _ -> ()
 
                     for e in (try entity.NestedEntities :> _ seq with _ -> Seq.empty) do
                         yield! traverseEntity contentType currentParent e 
