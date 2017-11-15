@@ -453,10 +453,11 @@ let OpenModulesOrNamespaces tcSink g amap scopem root env mvvs openDeclaration =
         let rec loop (acc: (Item * range) list) (idents: Ident list) =
             match idents with
             | [] -> acc
+            | [id] when id.idText = MangledGlobalName -> acc
             | id :: rest ->
                 let idents = List.rev idents
                 let range = id.idRange
-                let acc = 
+                let acc =
                     match ResolveLongIndentAsModuleOrNamespace ResultCollectionSettings.AllResults amap range OpenQualified env.NameEnv env.eAccessRights idents with
                     | Result modrefs ->
                         (acc, modrefs) ||> List.fold (fun acc (_, modref, _) ->
