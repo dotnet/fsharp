@@ -83,19 +83,19 @@ let VerifyCompletionList(fileContents: string, marker: string, expected: string 
     if hasExpectedNotFound || hasUnexpectedFound then
         let expectedNotFoundMsg = 
             if hasExpectedNotFound then
-                sprintf "Expected completions not found:%s" (formatCompletions expectedNotFound)
+                sprintf "\nExpected completions not found:%s\n" (formatCompletions expectedNotFound)
             else
                 String.Empty
 
         let unexpectedFoundMsg = 
             if hasUnexpectedFound then
-                sprintf "Unexpected completions found:%s" (formatCompletions unexpectedFound)
+                sprintf "\nUnexpected completions found:%s\n" (formatCompletions unexpectedFound)
             else
                 String.Empty
 
-        let completionsMsg = sprintf "Completions:%s" (formatCompletions results)
+        let completionsMsg = sprintf "\nin Completions:%s" (formatCompletions results)
 
-        let msg = sprintf "\n%s\n%s\n in %s" expectedNotFoundMsg unexpectedFoundMsg completionsMsg
+        let msg = sprintf "%s%s%s" expectedNotFoundMsg unexpectedFoundMsg completionsMsg
 
         Assert.Fail(msg)
 
@@ -295,7 +295,7 @@ x.
                     "ToArray"; "ToString"; "TrimExcess"; "TrueForAll"]
     VerifyCompletionListExactly(fileContents, "x.", expected)
 
-[<Test>]
+[<Test;Ignore("Before this test can pass, the test below needs to pass. Related to: https://github.com/Microsoft/visualfsharp/issues/2973")>]
 let ``Constructing a new class with object initializer syntax``() =
     let fileContents = """
 type A() =
@@ -310,7 +310,22 @@ let _ = new A(Setta
     let notExpected = ["NonSettableProperty"]
     VerifyCompletionList(fileContents, "(Setta", expected, notExpected)
 
-[<Test>]
+[<Test;Ignore("https://github.com/Microsoft/visualfsharp/issues/2973")>]
+let ``Constructing a new class with object initializer syntax and verifying 'at' character doesn't exist.``() =
+    let fileContents = """
+type A() =
+    member val SettableProperty = 1 with get, set
+    member val AnotherSettableProperty = 1 with get, set
+    member val NonSettableProperty = 1
+    
+let _ = new A(Setta
+"""
+
+    let expected = []
+    let notExpected = ["SettableProperty@"; "AnotherSettableProperty@"; "NonSettableProperty@"]
+    VerifyCompletionList(fileContents, "(Setta", expected, notExpected)
+
+[<Test;Ignore("https://github.com/Microsoft/visualfsharp/issues/3954")>]
 let ``Constructing a new fully qualified class with object initializer syntax``() =
     let fileContents = """
 module M =
