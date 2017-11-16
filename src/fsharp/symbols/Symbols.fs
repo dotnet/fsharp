@@ -230,7 +230,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
     inherit FSharpSymbol(cenv, 
                          (fun () -> 
                               checkEntityIsResolved(entity); 
-                              if entity.IsModule then Item.ModuleOrNamespaces [entity] 
+                              if entity.IsModuleOrNamespace then Item.ModuleOrNamespaces [entity] 
                               else Item.UnqualifiedType [entity]), 
                          (fun _this thisCcu2 ad -> 
                              checkForCrossProjectAccessibility (thisCcu2, ad) (cenv.thisCcu, getApproxFSharpAccessibilityOfEntity entity)) 
