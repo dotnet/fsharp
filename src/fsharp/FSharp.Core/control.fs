@@ -619,6 +619,12 @@ namespace Microsoft.FSharp.Control
         member b.Return(value)              = resultA(value)
         member b.ReturnFrom(computation:Async<_>) = computation
         member b.Bind(computation, binder)           = bindA computation binder
+
+        // task overload bind
+        member inline __.Bind(work : 'a System.Threading.Tasks.Task, binder : 'a -> 'b Step) : 'b Step =
+            let computation = Async.AwaitTask work 
+            bindA computation binder
+
         member b.Using(resource, binder)            = usingA resource binder
         member b.While(guard, computation)        = whileA guard computation
         member b.For(sequence, body)           = forA sequence body
