@@ -77,8 +77,8 @@ let VerifyCompletionList(fileContents: string, marker: string, expected: string 
         |> Seq.filter (unexpectedNotFound.Contains >> not)
 
     // If either of these are true, then the test fails.
-    let hasExpectedNotFound = expectedNotFound.Count() > 0
-    let hasUnexpectedFound = unexpectedFound.Count() > 0
+    let hasExpectedNotFound = not (Seq.isEmpty expectedNotFound)
+    let hasUnexpectedFound = not (Seq.isEmpty unexpectedFound)
 
     if hasExpectedNotFound || hasUnexpectedFound then
         let expectedNotFoundMsg = 
