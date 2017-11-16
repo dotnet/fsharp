@@ -372,6 +372,21 @@ let _ = func()
     => []
 
 [<Test>]
+let ``auto open module with namespace``() =
+    """
+namespace Module1Namespace
+[<AutoOpen>]
+module Module1 =
+    module Module2 =
+        let x = 1
+namespace ConsumerNamespace
+open Module1Namespace
+module Module3 =
+            let y = Module2.x
+"""
+    => []
+
+[<Test>]
 let ``auto open module in the middle of hierarchy``() =
     """
 namespace Ns
