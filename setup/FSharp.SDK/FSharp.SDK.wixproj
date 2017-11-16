@@ -24,6 +24,7 @@
   <PropertyGroup>
     <DefineConstants>$(DefineConstants);LocaleCode=$(LocaleCode)</DefineConstants>
     <DefineConstants>$(DefineConstants);LocaleId=$(LocaleId)</DefineConstants>
+    <DefineConstants>$(DefineConstants);LocaleParentId=$(LocaleParentId)</DefineConstants>
     <DefineConstants>$(DefineConstants);LocaleParentCulture=$(LocaleParentCulture)</DefineConstants>
     <DefineConstants>$(DefineConstants);LocaleSpecificCulture=$(LocaleSpecificCulture)</DefineConstants>
     <DefineConstants>$(DefineConstants);IsLangPack=$(IsLangPack)</DefineConstants>

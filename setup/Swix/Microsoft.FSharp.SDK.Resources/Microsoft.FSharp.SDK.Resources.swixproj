@@ -21,7 +21,8 @@
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);BinariesFolder=$(BinariesFolder)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);FSharpPackageVersion=$(FSharpPackageVersion)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleCode=$(LocaleCode)</PackagePreprocessorDefinitions>
-    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleId=$(LocaleId)</PackagePreprocessorDefinitions>    
+    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleId=$(LocaleId)</PackagePreprocessorDefinitions>
+    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleParentId=$(LocaleParentId)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleParentCulture=$(LocaleParentCulture)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleSpecificCulture=$(LocaleSpecificCulture)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);IsLangPack=$(IsLangPack)</PackagePreprocessorDefinitions>
