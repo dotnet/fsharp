@@ -596,7 +596,6 @@ a.
         AssertCtrlSpaceCompleteContains (typeDef3 @ ["new M.A((**))"]) "A((**)" ["SettableProperty"; "AnotherSettableProperty"] ["NonSettableProperty"] 
         AssertCtrlSpaceCompleteContains (typeDef3 @ ["new M.A(S = 1)"]) "A(S" ["SettableProperty"] ["NonSettableProperty"] 
         AssertCtrlSpaceCompleteContains (typeDef3 @ ["new M.A(S = 1)"]) "A(S = 1" [] ["NonSettableProperty"; "SettableProperty"] // neg test 
-        AssertCtrlSpaceCompleteContains (typeDef3 @ ["new M.A(S = 1,)"]) "A(S = 1," ["AnotherSettableProperty"] ["NonSettableProperty"] 
 
         let typeDef4 = 
             [
