@@ -613,7 +613,14 @@ type
             | _ ->
                 let sources = sources|>Array.map(fun i->i.ItemSpec)
 
+#if FX_NO_CONVERTER
                 let baseCallDelegate = new Func<int>(fun () -> fsc.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands) )
+#else
+                let baseCall = fun (dummy : int) -> fsc.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
+                // We are using a Converter<int,int> rather than a "unit->int" because it is too hard to
+                // figure out how to pass an F# function object via reflection.  
+                let baseCallDelegate = new System.Converter<int,int>(baseCall)
+#endif
                 try
                     let ret = 
                         (host.GetType()).InvokeMember("Compile", BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.InvokeMethod ||| BindingFlags.Instance, null, host, 
