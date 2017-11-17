@@ -253,7 +253,6 @@ type
                 | "ANYCPU",  _, _  -> "anycpu"
                 | "X86"   ,  _, _  -> "x86"
                 | "X64"   ,  _, _  -> "x64"
-                | "ITANIUM", _, _  -> "Itanium"
                 | _ -> null)
         // Resources
         if resources <> null then 
@@ -456,7 +455,6 @@ type
     // --platform <string>: Limit which platforms this code can run on:
     //            x86
     //            x64
-    //            Itanium
     //            anycpu
     //            anycpu32bitpreferred
     member fsc.Platform
