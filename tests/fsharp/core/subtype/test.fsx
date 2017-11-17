@@ -1744,6 +1744,40 @@ module GenericPropertyConstraintSolvedByRecord =
 
     let v = print_foo_memb { foo=1 } 
 
+
+/// In this case, the presence of the Method(obj) overload meant overload resolution was being applied and resolving to that
+/// overload, even before the full signature of the trait constraint was known.
+module MethodOverloadingForTraitConstraintsIsNotDeterminedUntilSignatureIsKnnown =
+    type X =
+        static member Method (a: obj) = 1
+        static member Method (a: int) = 2
+        static member Method (a: int64) = 3
+
+
+    let inline Test< ^t, ^a when ^t: (static member Method: ^a -> int)> (value: ^a) =
+        ( ^t: (static member Method: ^a -> int)(value))
+
+    let inline Test2< ^t> a = Test<X, ^t> a
+
+    check "slvde0vver90u" (Test2<int> 0) 2
+
+/// In this case, the presence of the "Equals" method on System.Object was causing method overloading to be resolved too
+/// early, when ^t was not yet known.  The underlying problem was that we were proceeding with weak resolution
+/// even for a single-support-type trait constraint.
+module MethodOverloadingForTraitConstraintsWhereSomeMethodsComeFromObjectTypeIsNotDeterminedTooEarly =
+    type Test() =
+         member __.Equals (_: Test) = true
+
+    let inline Equals(a: obj) (b: ^t) =
+        match a with
+        | :? ^t as x -> (^t: (member Equals: ^t -> bool) (b, x))
+        | _-> false
+
+    let a  = Test()
+    let b  = Test()
+
+    check "cewjewcwec09ew" (Equals a b) true
+
 module SRTPFix = 
 
     open System

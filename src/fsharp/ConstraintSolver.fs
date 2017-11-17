@@ -938,10 +938,22 @@ and SolveDimensionlessNumericType (csenv:ConstraintSolverEnv) ndeep m2 trace ty 
     | None ->
         CompleteD
 
-/// We do a bunch of fakery to pretend that primitive types have certain members. 
-/// We pretend int and other types support a number of operators.  In the actual IL for mscorlib they 
-/// don't, however the type-directed static optimization rules in the library code that makes use of this 
-/// will deal with the problem. 
+/// Attempt to solve a statically resolved member constraint.
+///
+/// 1. We do a bunch of fakery to pretend that primitive types have certain members. 
+///    We pretend int and other types support a number of operators.  In the actual IL for mscorlib they 
+///    don't. The type-directed static optimization rules in the library code that makes use of this 
+///    will deal with the problem. 
+///
+/// 2. Some additional solutions are forced prior to generalization (permitWeakResolution=true).  These are, roughly speaking, rules
+///    for binary-operand constraints arising from constructs such as "1.0 + x" where "x" is an unknown type. THe constraint here
+///    involves two type parameters - one for the left, and one for the right.  The left is already known to be Double.
+///    In this situation (and in the absence of other evidence prior to generalization), constraint solving forces an assumption that 
+///    the right is also Double - this is "weak" because there is only weak evidence for it.
+///
+///    permitWeakResolution also applies to resolutions of multi-type-variable constraints via method overloads.  Method overloading gets applied even if
+///    only one of the two type variables is known
+///    
 and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload permitWeakResolution ndeep m2 trace (TTrait(tys, nm, memFlags, argtys, rty, sln)): OperationResult<bool> =
     // Do not re-solve if already solved
     if sln.Value.IsSome then ResultD true else
@@ -999,7 +1011,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
                // The rule is triggered by these sorts of inputs when permitWeakResolution=true
                //    float * 'a 
                //    'a * float 
-               //    decimal<'u> * 'a <---
+               //    decimal<'u> * 'a
                   (let checkRuleAppliesInPreferenceToMethods argty1 argty2 = 
                      // Check that at least one of the argument types is numeric
                      (IsNumericOrIntegralEnumType g argty1) && 
@@ -1231,7 +1243,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
 
           // Now check if there are no feasible solutions at all
           match minfos, recdPropSearch with 
-          | [], None when not (tys |> List.exists (isAnyParTy g)) ->
+          | [], None when MemberConstraintIsReadyForStrongResolution csenv traitInfo ->
               if tys |> List.exists (isFunTy g) then 
                   ErrorD (ConstraintSolverError(FSComp.SR.csExpectTypeWithOperatorButGivenFunction(DecompileOpName nm), m, m2)) 
               elif tys |> List.exists (isAnyTupleTy g) then 
@@ -1298,8 +1310,10 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
                   let support = GetSupportOfMemberConstraint csenv traitInfo
                   let frees = GetFreeTyparsOfMemberConstraint csenv traitInfo
 
-                  // If there's nothing left to learn then raise the errors 
-                  (if (permitWeakResolution && isNil support) || isNil frees then errors  
+                  // If there's nothing left to learn then raise the errors.
+                  // Note: we should likely call MemberConstraintIsReadyForResolution here when permitWeakResolution=false but for stability
+                  // reasons we use the more restrictive isNil frees.
+                  (if (permitWeakResolution && MemberConstraintIsReadyForWeakResolution csenv traitInfo) || isNil frees then errors  
                    // Otherwise re-record the trait waiting for canonicalization 
                    else AddMemberConstraint csenv ndeep m2 trace traitInfo support frees) ++ (fun () -> 
                        match errors with
@@ -1384,7 +1398,7 @@ and TransactMemberConstraintSolution traitInfo (trace:OptionalTrace) sln  =
 /// That is, don't perform resolution if more nominal information may influence the set of available overloads 
 and GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution nm (TTrait(tys, _, memFlags, argtys, rty, soln) as traitInfo): MethInfo list =
     let results = 
-        if permitWeakResolution || isNil (GetSupportOfMemberConstraint csenv traitInfo) then
+        if MemberConstraintSupportIsReadyForDeterminingOverloads permitWeakResolution csenv traitInfo then
             let m = csenv.m
             let minfos = 
                 match memFlags.MemberKind with
@@ -1392,20 +1406,19 @@ and GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution 
                     tys |> List.map (GetIntrinsicConstructorInfosOfType csenv.SolverState.InfoReader m)
                 | _ ->
                     tys |> List.map (GetIntrinsicMethInfosOfType csenv.SolverState.InfoReader (Some nm, AccessibleFromSomeFSharpCode, AllowMultiIntfInstantiations.Yes) IgnoreOverrides m) 
-            /// Merge the sets so we don't get the same minfo from each side 
-            /// We merge based on whether minfos use identical metadata or not. 
 
-            /// REVIEW: Consider the pathological cases where this may cause a loss of distinction 
-            /// between potential overloads because a generic instantiation derived from the left hand type differs 
-            /// to a generic instantiation for an operator based on the right hand type. 
-            
+            // Merge the sets so we don't get the same minfo from each side 
+            // We merge based on whether minfos use identical metadata or not. 
             let minfos = List.reduce (ListSet.unionFavourLeft MethInfo.MethInfosUseIdenticalDefinitions) minfos
-            minfos
+            if minfos.Length <= 1 || MemberConstraintSignatureIsReadyForResolution csenv traitInfo then 
+                minfos
+            else 
+                [] // nothing available yet, there are overloads and the signature has not been fully determined
         else 
             []
     // The trait name "op_Explicit" also covers "op_Implicit", so look for that one too.
     if nm = "op_Explicit" then 
-        results @ GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution "op_Implicit" (TTrait(tys, "op_Implicit", memFlags, argtys, rty, soln))
+        results @ GetRelevantMethodsForTrait csenv permitWeakResolution "op_Implicit" (TTrait(tys, "op_Implicit", memFlags, argtys, rty, soln))
     else
         results
 
@@ -1414,9 +1427,35 @@ and GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution 
 and GetSupportOfMemberConstraint (csenv:ConstraintSolverEnv) (TTrait(tys, _, _, _, _, _)) =
     tys |> List.choose (tryAnyParTy csenv.g)
     
-/// All the typars relevant to the member constraint *)
+/// Check if the support is fully solved.  
+and SupportOfMemberConstraintIsFullySolved (csenv:ConstraintSolverEnv) (TTrait(tys, _, _, _, _, _)) =
+    tys |> List.forall (isAnyParTy csenv.g >> not)
+
+/// Check if some part of the support is solved.  
+and SupportOfMemberConstraintIsPartiallySolved (csenv:ConstraintSolverEnv) (TTrait(tys, _, _, _, _, _)) =
+    tys |> List.exists (isAnyParTy csenv.g >> not)
+    
+/// All the typars relevant to the member constraint
 and GetFreeTyparsOfMemberConstraint (csenv:ConstraintSolverEnv) (TTrait(tys, _, _, argtys, rty, _)) =
     freeInTypesLeftToRightSkippingConstraints csenv.g (tys@argtys@ Option.toList rty)
+
+/// Check all the statically-resolved type parameters in the trait method signature are solved.
+/// This is necessary to prevent overload resolution being applied to statically resolved members
+// constraints before all argument and return types are known.
+and MemberConstraintSignatureIsReadyForResolution csenv traitInfo =
+    GetFreeTyparsOfMemberConstraint csenv traitInfo |> List.forall (fun tp -> match tp.StaticReq with HeadTypeStaticReq -> false | _ -> true)
+
+and MemberConstraintIsReadyForWeakResolution csenv traitInfo =
+   SupportOfMemberConstraintIsPartiallySolved csenv traitInfo && 
+   MemberConstraintSignatureIsReadyForResolution csenv traitInfo
+
+and MemberConstraintIsReadyForStrongResolution csenv traitInfo =
+   SupportOfMemberConstraintIsFullySolved csenv traitInfo && 
+   MemberConstraintSignatureIsReadyForResolution csenv traitInfo
+
+and MemberConstraintSupportIsReadyForDeterminingOverloads permitWeakResolution csenv traitInfo =
+   (permitWeakResolution && SupportOfMemberConstraintIsPartiallySolved csenv traitInfo) 
+   || SupportOfMemberConstraintIsFullySolved csenv traitInfo
 
 /// Re-solve the global constraints involving any of the given type variables. 
 /// Trait constraints can't always be solved using the pessimistic rules. We only canonicalize 
