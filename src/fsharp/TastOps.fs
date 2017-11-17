@@ -5170,24 +5170,24 @@ and remarkBind m (TBind(v, repr, _)) =
 // Reference semantics?
 //--------------------------------------------------------------------------
 
-let isRecdOrStructFieldAllocObservable (f:RecdField) = not f.IsStatic && f.IsMutable
-let isUnionCaseAllocObservable (uc:UnionCase) = uc.FieldTable.FieldsByIndex |> Array.exists isRecdOrStructFieldAllocObservable
-let isUnionCaseRefAllocObservable (uc:UnionCaseRef) = uc.UnionCase |> isUnionCaseAllocObservable
+let isRecdOrStructFieldMutable (f:RecdField) = not f.IsStatic && f.IsMutable
+let isUnionCaseMutable (uc:UnionCase) = uc.FieldTable.FieldsByIndex |> Array.exists isRecdOrStructFieldMutable
+let isUnionCaseRefMutable (uc:UnionCaseRef) = uc.UnionCase |> isUnionCaseMutable
   
-let isRecdOrUnionOrStructTyconAllocObservable (_g:TcGlobals) (tycon:Tycon) =
+let isRecdOrUnionOrFSharpStructTyconRefMutable (_g: TcGlobals) (tcref : TyconRef) = 
+    let tycon = tcref.Deref
     if tycon.IsUnionTycon then 
-        tycon.UnionCasesArray |> Array.exists isUnionCaseAllocObservable
-    elif tycon.IsRecordTycon || tycon.IsStructOrEnumTycon then 
-        tycon.AllFieldsArray |> Array.exists isRecdOrStructFieldAllocObservable
+        tycon.UnionCasesArray |> Array.exists isUnionCaseMutable
+    elif tycon.IsRecordTycon || tycon.IsFSharpStructOrEnumTycon then 
+        tycon.AllFieldsArray |> Array.exists isRecdOrStructFieldMutable
     else
         false
 
-let isRecdOrUnionOrStructTyconRefAllocObservable g (tcr : TyconRef) = isRecdOrUnionOrStructTyconAllocObservable g tcr.Deref
   
 // Although from the pure F# perspective exception values cannot be changed, the .NET 
 // implementation of exception objects attaches a whole bunch of stack information to 
 // each raised object.  Hence we treat exception objects as if they have identity 
-let isExnAllocObservable (_ecref:TyconRef) = true 
+let isExnMutable (_ecref:TyconRef) = true 
 
 // Some of the implementations of library functions on lists use mutation on the tail 
 // of the cons cell. These cells are always private, i.e. not accessible by any other 
@@ -5503,16 +5503,31 @@ let mkAndSimplifyMatch spBind exprm matchm ty tree targets  =
 // mkExprAddrOfExprAux
 //------------------------------------------------------------------------- 
 
-type Mutates = DefinitelyMutates | PossiblyMutates | NeverMutates
+type Mutates = 
+    | DefinitelyMutates 
+    | LikelyMutates
+    | PossiblyMutates
+    | NeverMutates
+
 exception DefensiveCopyWarning of string * range 
 
-let isRecdOrStructTyImmutable g ty =
+// This is an approximation used to determine if we can take the address of an immutable value in some
+// situations, or avoid a defensive copy in a PossiblyMutates operation.  It is not, however, correct 
+// for .NET struct types, which may be mutable, but we are not aware if they
+// are.  Thus, all .NET struct types are effectively assumed to be immutable.
+let isPossibleMutationAssumedImmutable g ty =
+    match tryDestAppTy g ty with 
+    | None -> false
+    | Some tcref -> not (isRecdOrUnionOrFSharpStructTyconRefMutable g tcref)
+
+// This is a precise predicate: here, .NET struct types are assumed to be mutable, apart from two which are hardwired.  
+// In these cases we give an optional warning when there is a discrepancy between this and the above.
+let isPossibleMutationDefinitelyImmutable g ty =
     match tryDestAppTy g ty with 
     | None -> false
     | Some tcref -> 
-      not (isRecdOrUnionOrStructTyconRefAllocObservable g tcref) ||
-      tyconRefEq g tcref g.decimal_tcr ||
-      tyconRefEq g tcref g.date_tcr
+        not (isRecdOrUnionOrFSharpStructTyconRefMutable g tcref) && 
+        (not tcref.Deref.IsILStructTycon || tyconRefEq g tcref g.decimal_tcr || tyconRefEq g tcref g.date_tcr)
 
 // We can take the address of values of struct type even if the value is immutable
 // under certain conditions
@@ -5525,18 +5540,23 @@ let isRecdOrStructTyImmutable g ty =
 //        let g1 = A.G(1)
 //        (fun () -> g1.x1)
 //
-// Note: isRecdOrStructTyImmutable implies PossiblyMutates or NeverMutates
-//
 // We only do this for true local or closure fields because we can't take addresses of immutable static 
 // fields across assemblies.
-let CanTakeAddressOfImmutableVal g (v:ValRef) mut =
+let CanTakeAddressOfImmutableVal g (v:ValRef) mut m =
     // We can take the address of values of struct type if the operation doesn't mutate 
     // and the value is a true local or closure field. 
     not v.IsMutable &&
     not v.IsMemberOrModuleBinding &&
     (match mut with 
      | NeverMutates -> true 
-     | PossiblyMutates -> isRecdOrStructTyImmutable g v.Type 
+     | LikelyMutates
+     | PossiblyMutates -> 
+         let res = isPossibleMutationAssumedImmutable g v.Type
+         if res && not (isPossibleMutationDefinitelyImmutable g v.Type) then 
+             if mut = LikelyMutates then 
+                 warning(Error(FSComp.SR.tastLikelyMutationOfConstant(), m))
+             warning(Error(FSComp.SR.tcStructTypeAssumedImmutable((tcrefOfAppTy g v.Type).DisplayName), m))
+         res
      | DefinitelyMutates -> false)
 
 let MustTakeAddressOfVal (g:TcGlobals) (v:ValRef) = 
@@ -5555,13 +5575,13 @@ let CanTakeAddressOfRecdFieldRef (g:TcGlobals) (rfref: RecdFieldRef) mut tinst =
     mut <> DefinitelyMutates && 
     // We only do this if the field is defined in this assembly because we can't take addresses across assemblies for immutable fields
     entityRefInThisAssembly g.compilingFslib rfref.TyconRef &&
-    isRecdOrStructTyImmutable g (actualTyOfRecdFieldRef rfref tinst)
+    isPossibleMutationAssumedImmutable g (actualTyOfRecdFieldRef rfref tinst)
 
 let CanTakeAddressOfUnionFieldRef (g:TcGlobals) (uref: UnionCaseRef) mut tinst cidx =
     mut <> DefinitelyMutates && 
     // We only do this if the field is defined in this assembly because we can't take addresses across assemblies for immutable fields
     entityRefInThisAssembly g.compilingFslib uref.TyconRef &&
-    isRecdOrStructTyImmutable g (actualTyOfUnionFieldRef uref cidx tinst)
+    isPossibleMutationAssumedImmutable g (actualTyOfUnionFieldRef uref cidx tinst)
 
 
 let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress mut e addrExprVal m =
@@ -5572,7 +5592,7 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
         None, exprForValRef m v
     // LVALUE: "x" where "x" is mutable local, mutable intra-assembly module/static binding, or operation doesn't mutate 
     // Note: we can always take the address of mutable values
-    | Expr.Val(v, _, m) when MustTakeAddressOfVal g v || CanTakeAddressOfImmutableVal g v mut ->
+    | Expr.Val(v, _, m) when MustTakeAddressOfVal g v || CanTakeAddressOfImmutableVal g v mut m ->
         None, mkValAddr m v
     // LVALUE: "x" where "e.x" is record field. 
     | Expr.Op (TOp.ValFieldGet rfref, tinst, [e], m) when MustTakeAddressOfRecdFieldRef rfref || CanTakeAddressOfRecdFieldRef g rfref mut tinst ->
@@ -5628,11 +5648,11 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
     // Give a nice error message for DefinitelyMutates on immutable values, or mutable values in other assemblies
     | Expr.Val(v, _, m) when mut = DefinitelyMutates
        -> 
-        if isByrefTy g v.Type then error(Error(FSComp.SR.tastUnexpectedByRef(), m));
+        if isByrefTy g v.Type then error(Error(FSComp.SR.tastUnexpectedByRef(), m))
         if v.IsMutable then 
-            error(Error(FSComp.SR.tastInvalidAddressOfMutableAcrossAssemblyBoundary(), m));
+            error(Error(FSComp.SR.tastInvalidAddressOfMutableAcrossAssemblyBoundary(), m))
         else 
-            error(Error(FSComp.SR.tastValueMustBeLocalAndMutable(), m));
+            error(Error(FSComp.SR.tastValueMustBeLocalAndMutable(), m))
          
     | _ -> 
         let ty = tyOfExpr g e
@@ -5640,9 +5660,12 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
             match mut with 
             | NeverMutates -> ()
             | DefinitelyMutates -> 
-                errorR(Error(FSComp.SR.tastInvalidMutationOfConstant(), m));
+                errorR(Error(FSComp.SR.tastInvalidMutationOfConstant(), m))
+            | LikelyMutates ->
+                warning(Error(FSComp.SR.tastLikelyMutationOfConstant(), m))
+                warning(DefensiveCopyWarning(FSComp.SR.tastValueHasBeenCopied(), m))
             | PossiblyMutates -> 
-                warning(DefensiveCopyWarning(FSComp.SR.tastValueHasBeenCopied(), m));
+                warning(DefensiveCopyWarning(FSComp.SR.tastValueHasBeenCopied(), m))
         let tmp, _ = 
             match mut with 
             | NeverMutates -> mkCompGenLocal m "copyOfStruct" ty 

@@ -402,6 +402,7 @@ let warningOn err level specificWarnOn =
     | 1182 -> false // chkUnusedValue - off by default
     | 3218 -> false // ArgumentsInSigAndImplMismatch - off by default
     | 3180 -> false // abImplicitHeapAllocation - off by default
+    | 3220 -> false // tcStructTypeAssumedImmutable - off by default
     | _ -> level >= GetWarningLevel err 
 
 let SplitRelatedDiagnostics(err:PhasedDiagnostic) = 

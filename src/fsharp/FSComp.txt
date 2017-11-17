@@ -1422,3 +1422,5 @@ notAFunctionButMaybeIndexer,"This expression is not a function and cannot be app
 notAFunctionButMaybeDeclaration,"This value is not a function and cannot be applied. Did you forget to terminate a declaration?"
 3218,ArgumentsInSigAndImplMismatch,"The argument names in the signature '%s' and implementation '%s' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling."
 3219,pickleUnexpectedNonZero,"An error occurred while reading the F# metadata of assembly '%s'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct."
+3220,tcStructTypeAssumedImmutable,"The struct type '%s' has been assumed to be immutable."
+3221,tastLikelyMutationOfConstant,"Likely mutation of a constant expression. Consider using a mutable local, e.g. 'let mutable x = ...'."

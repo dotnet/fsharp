@@ -242,7 +242,7 @@ val evalTupInfoIsStruct : TupInfo -> bool
 //------------------------------------------------------------------------- 
 
 exception DefensiveCopyWarning of string * range 
-type Mutates = DefinitelyMutates | PossiblyMutates | NeverMutates
+type Mutates = DefinitelyMutates | LikelyMutates | PossiblyMutates | NeverMutates
 val mkExprAddrOfExprAux : TcGlobals -> bool -> bool -> Mutates -> Expr -> ValRef option -> range -> (Val * Expr) option * Expr
 val mkExprAddrOfExpr : TcGlobals -> bool -> bool -> Mutates -> Expr -> ValRef option -> range -> (Expr -> Expr) * Expr
 
@@ -1070,9 +1070,9 @@ val TypeHasDefaultValue : TcGlobals -> range -> TType -> bool
 
 val isAbstractTycon : Tycon -> bool
 
-val isUnionCaseRefAllocObservable : UnionCaseRef -> bool
-val isRecdOrUnionOrStructTyconRefAllocObservable : TcGlobals -> TyconRef -> bool
-val isExnAllocObservable : TyconRef -> bool 
+val isUnionCaseRefMutable : UnionCaseRef -> bool
+val isRecdOrUnionOrFSharpStructTyconRefMutable : TcGlobals -> TyconRef -> bool
+val isExnMutable : TyconRef -> bool 
 val isUnionCaseFieldMutable : TcGlobals -> UnionCaseRef -> int -> bool
 val isExnFieldMutable : TyconRef -> int -> bool
 

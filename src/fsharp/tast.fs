@@ -984,6 +984,13 @@ type Entity =
         | ILTypeDefKind.ValueType | ILTypeDefKind.Enum -> true
         | _ -> false
 
+    /// Indicates if this is a .NET-defined struct type definition , i.e. a value type definition
+    member x.IsILStructTycon =
+        x.IsILTycon && 
+        match x.ILTyconRawMetadata.tdKind with
+        | ILTypeDefKind.ValueType -> true
+        | _ -> false
+
     /// Indicates if this is a struct or enum type definition , i.e. a value type definition
     member x.IsStructOrEnumTycon = 
 #if !NO_EXTENSIONTYPING
@@ -3144,9 +3151,6 @@ and
 
     /// Indicates if this is an F#-defined struct or enum type definition , i.e. a value type definition
     member x.IsFSharpStructOrEnumTycon      = x.Deref.IsFSharpStructOrEnumTycon
-
-    /// Indicates if this is a .NET-defined struct or enum type definition , i.e. a value type definition
-    member x.IsILStructOrEnumTycon          = x.Deref.IsILStructOrEnumTycon
 
     /// Indicates if we have pre-determined that a type definition has a default constructor.
     member x.PreEstablishedHasDefaultConstructor = x.Deref.PreEstablishedHasDefaultConstructor

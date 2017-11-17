@@ -2161,13 +2161,13 @@ module GeneralizationHelpers =
         | Expr.Op(op, _, args, _) ->
             match op with 
             | TOp.Tuple _ -> true
-            | TOp.UnionCase uc -> not (isUnionCaseRefAllocObservable uc)
+            | TOp.UnionCase uc -> not (isUnionCaseRefMutable uc)
             | TOp.Recd(ctorInfo, tcref) -> 
                 match ctorInfo with 
-                | RecdExpr -> not (isRecdOrUnionOrStructTyconRefAllocObservable g tcref)
+                | RecdExpr -> not (isRecdOrUnionOrFSharpStructTyconRefMutable g tcref)
                 | RecdExprIsObjInit -> false
             | TOp.Array -> isNil args
-            | TOp.ExnConstr ec -> not (isExnAllocObservable ec)
+            | TOp.ExnConstr ec -> not (isExnMutable ec)
 
             | TOp.ILAsm([], _) -> true
 
@@ -9049,9 +9049,17 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
     match item with
     | Item.MethodGroup (methodName, minfos, _) -> 
         let atomicFlag, tyargsOpt, args, delayed, tpenv = GetSynMemberApplicationArgs delayed tpenv 
-        // We pass PossiblyMutates here because these may actually mutate a value type object 
-        // To get better warnings we special case some of the few known mutate-a-struct method names 
-        let mutates = (if methodName = "MoveNext" || methodName = "GetNextArg" then DefinitelyMutates else PossiblyMutates)
+
+        // Work out whether the operation is a mutating one. 
+        // In very early F# design we also decided to special case two method names as DefinitelyMutates.
+        let mutates = 
+            if methodName = "MoveNext" || methodName = "GetNextArg" then 
+                DefinitelyMutates
+            // If the method has 'void' or 'unit' return type then we pass LikelyMutates
+            elif minfos |> List.forall (fun minfo -> minfo.GetCompiledReturnTy(cenv.amap, mItem, minfo.FormalMethodInst) |> Option.isNone) then 
+                LikelyMutates
+            else 
+                PossiblyMutates
 
 #if !NO_EXTENSIONTYPING
         match TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos, tyargsOpt, mExprAndItem, mItem) with 

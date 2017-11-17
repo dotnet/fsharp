@@ -1262,9 +1262,9 @@ and OpHasEffect g op =
     | TOp.Recd (ctor, tcref) -> 
         match ctor with 
         | RecdExprIsObjInit -> true
-        | RecdExpr -> isRecdOrUnionOrStructTyconRefAllocObservable g tcref
-    | TOp.UnionCase ucref -> isRecdOrUnionOrStructTyconRefAllocObservable g ucref.TyconRef
-    | TOp.ExnConstr ecref -> isExnAllocObservable ecref
+        | RecdExpr -> isRecdOrUnionOrFSharpStructTyconRefMutable g tcref
+    | TOp.UnionCase ucref -> isRecdOrUnionOrFSharpStructTyconRefMutable g ucref.TyconRef
+    | TOp.ExnConstr ecref -> isExnMutable ecref
     | TOp.Bytes _ | TOp.UInt16s _ | TOp.Array -> true (* alloc observable *)
     | TOp.UnionCaseTagGet _ -> false
     | TOp.UnionCaseProof _ -> false
@@ -2977,7 +2977,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                     match cenv.g.system_MarshalByRefObject_tcref with
                     | None -> false
                     | Some mbrTyconRef ->
-                    // Check we can deref system_MarshalByRefObject_tcref. When compiling against the Silverlight mscorlib we can't
+                    // Check we can deref system_MarshalByRefObject_tcref
                     if mbrTyconRef.TryDeref.IsSome then
                         // Check if this is a subtype of MarshalByRefObject
                         assert (cenv.g.system_MarshalByRefObject_typ.IsSome)
