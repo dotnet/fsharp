@@ -3,17 +3,17 @@
 namespace Microsoft.FSharp.Build
 
 open System
-open System.Text
 open System.Diagnostics.CodeAnalysis
+open System.Globalization
 open System.IO
 open System.Reflection
+open System.Text
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 open Internal.Utilities
 
 [<assembly: System.Runtime.InteropServices.ComVisible(false)>]
 [<assembly: System.CLSCompliant(true)>]
-
 [<assembly: SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", Scope="type", Target="Microsoft.FSharp.Build.Fsc", MessageId="Fsc")>]
 do()
 
@@ -32,15 +32,15 @@ type FscCommandLineBuilder () =
     let builder = new CommandLineBuilder()
     let mutable args = []  // in reverse order
     let mutable srcs = []  // in reverse order
+
     /// Return a list of the arguments (with no quoting for the cmd.exe shell)
-    member x.CapturedArguments() =
-        List.rev args
+    member x.CapturedArguments() = List.rev args
+
     /// Return a list of the sources (with no quoting for the cmd.exe shell)
-    member x.CapturedFilenames() =
-        List.rev srcs
+    member x.CapturedFilenames() = List.rev srcs
+
     /// Return a full command line (with quoting for the cmd.exe shell)
-    override x.ToString() =
-        builder.ToString()
+    override x.ToString() = builder.ToString()
 
     member x.AppendFileNamesIfNotNull(filenames:ITaskItem array, sep:string) =
         builder.AppendFileNamesIfNotNull(filenames, sep)
@@ -120,8 +120,12 @@ type FscCommandLineBuilder () =
 //The goal is to have the most common/important flags available via the Fsc class, and the
 //rest can be "backdoored" through the .OtherFlags property.
 
-type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly")>] Fsc() as this = 
-    inherit ToolTask()
+type
+    [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly")>]
+    Fsc () as this = 
+
+    inherit ToolTask ()
+
     let mutable baseAddress : string = null
     let mutable capturedArguments : string list = []  // list of individual args, to pass to HostObject Compile()
     let mutable capturedFilenames : string list = []  // list of individual source filenames, to pass to HostObject Compile()
@@ -178,15 +182,18 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     let mutable vslcid : string = null
     let mutable utf8output : bool = false
 
-#if ENABLE_MONO_SUPPORT
+    // See bug 6483; this makes parallel build faster, and is fine to set unconditionally
     // The property YieldDuringToolExecution is not available on Mono.
-    // So we only set it if available (to avoid a compile-time dependency). 
-    let runningOnMono = try System.Type.GetType("Mono.Runtime") <> null with e-> false         
-    do if not runningOnMono then  
-        typeof<ToolTask>.InvokeMember("YieldDuringToolExecution",(BindingFlags.Instance ||| BindingFlags.SetProperty ||| BindingFlags.Public),null,this,[| box true |])  |> ignore 
-#else
-    do this.YieldDuringToolExecution <- true  // See bug 6483; this makes parallel build faster, and is fine to set unconditionally
-#endif
+    // So we only set it if available (to avoid a compile-time dependency).
+    do
+        let runningOnMono = try System.Type.GetType("Mono.Runtime") <> null with e -> false
+        if not runningOnMono then  
+            typeof<ToolTask>.InvokeMember("YieldDuringToolExecution",
+                                          (BindingFlags.Instance ||| BindingFlags.SetProperty ||| BindingFlags.Public),
+                                          null,
+                                          this,
+                                          [| box true |],
+                                          CultureInfo.CurrentCulture) |> ignore
 
     let generateCommandLineBuilder () =
         let builder = new FscCommandLineBuilder()
@@ -247,14 +254,14 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
                 | "X86"   ,  _, _  -> "x86"
                 | "X64"   ,  _, _  -> "x64"
                 | "ITANIUM", _, _  -> "Itanium"
-                | _         -> null)
+                | _ -> null)
         // Resources
         if resources <> null then 
             for item in resources do
                 match useStandardResourceNames with
                 | true -> builder.AppendSwitchIfNotNull("--resource:", item.ItemSpec, [|item.GetMetadata("LogicalName"); item.GetMetadata("Access")|])
                 | false -> builder.AppendSwitchIfNotNull("--resource:", item.ItemSpec)
-                
+
         // VersionFile
         builder.AppendSwitchIfNotNull("--versionfile:", versionFile)
         // References
@@ -266,7 +273,7 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
             match referencePath with
             | null -> null
             | _ -> referencePath.Split([|';'; ','|], StringSplitOptions.RemoveEmptyEntries)
-                  
+
         builder.AppendSwitchIfNotNull("--lib:", referencePathArray, ",")   
         // TargetType
         builder.AppendSwitchIfNotNull("--target:", 
@@ -315,7 +322,7 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
 
         if utf8output then
             builder.AppendSwitch("--utf8output")
-            
+
         // When building using the fsc task, always emit the "fullpaths" flag to make the output easier
         // for the user to parse
         builder.AppendSwitch("--fullpaths")
@@ -345,7 +352,7 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     // --baseaddress
     member fsc.BaseAddress
         with get() = baseAddress 
-        and set(s) = baseAddress <- s        
+        and set(s) = baseAddress <- s
 
     // --codepage <int>: Specify the codepage to use when opening source files
     member fsc.CodePage
@@ -369,7 +376,7 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     // --nowarn <string>: Do not report the given specific warning.
     member fsc.DisabledWarnings
         with get() = disabledWarnings
-        and set(a) = disabledWarnings <- a        
+        and set(a) = disabledWarnings <- a
 
     // --define <string>: Define the given conditional compilation symbol.
     member fsc.DefineConstants
@@ -478,7 +485,7 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
         with get() = references 
         and set(a) = references <- a
 
-    // --lib    
+    // --lib
     member fsc.ReferencePath
         with get() = referencePath
         and set(s) = referencePath <- s
@@ -529,6 +536,7 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     member fsc.UseStandardResourceNames
         with get() = useStandardResourceNames
         and set(s) = useStandardResourceNames <- s
+
     // --version-file <string>: 
     member fsc.VersionFile
         with get() = versionFile
@@ -604,15 +612,9 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
             | null -> base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
             | _ ->
                 let sources = sources|>Array.map(fun i->i.ItemSpec)
-#if FX_NO_CONVERTER
+
                 let baseCallDelegate = new Func<int>(fun () -> fsc.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands) )
-#else
-                let baseCall = fun (dummy : int) -> fsc.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
-                // We are using a Converter<int,int> rather than a "unit->int" because it is too hard to
-                // figure out how to pass an F# function object via reflection.  
-                let baseCallDelegate = new System.Converter<int,int>(baseCall)
-#endif
-                try 
+                try
                     let ret = 
                         (host.GetType()).InvokeMember("Compile", BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.InvokeMethod ||| BindingFlags.Instance, null, host, 
                                                     [| baseCallDelegate; box (capturedArguments |> List.toArray); box (capturedFilenames |> List.toArray) |],
@@ -651,7 +653,3 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
             yield! capturedArguments
             yield! capturedFilenames
         |]
-
-module Attributes =
-    //[<assembly: System.Security.SecurityTransparent>]
-    do()
