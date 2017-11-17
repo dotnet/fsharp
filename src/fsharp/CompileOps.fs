@@ -5071,13 +5071,7 @@ module private ScriptPreprocessClosure =
             match codeContext with 
             | CodeContext.Editing -> ResolutionEnvironment.EditingOrCompilation true
             | CodeContext.Compilation -> ResolutionEnvironment.EditingOrCompilation false
-            | CodeContext.CompilationAndEvaluation -> 
-#if FSI_TODO_NETCORE
-                // "CompilationAndEvaluation" assembly resolution for F# Interactive is not yet properly figured out on .NET Core
-                ResolutionEnvironment.EditingOrCompilation false
-#else
-                ResolutionEnvironment.CompilationAndEvaluation
-#endif
+            | CodeContext.CompilationAndEvaluation -> ResolutionEnvironment.CompilationAndEvaluation
         tcConfigB.framework <- false 
         tcConfigB.useSimpleResolution <- useSimpleResolution
         // Indicates that there are some references not in BasicReferencesForScriptLoadClosure which should
