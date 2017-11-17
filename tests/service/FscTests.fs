@@ -76,6 +76,8 @@ type PEVerifier () =
 #endif
 
     static let execute (fileName : string, arguments : string) =
+        // Peverify may run quite a while some assemblies are pretty big.  Make the timeout 3 minutes just in case.
+        let longtime = int (TimeSpan.FromMinutes(3.0).TotalMilliseconds)
         printfn "executing '%s' with arguments %s" fileName arguments
         let psi = new ProcessStartInfo(fileName, arguments)
         psi.UseShellExecute <- false
@@ -87,7 +89,7 @@ type PEVerifier () =
         use proc = Process.Start(psi)
         let stdOut = proc.StandardOutput.ReadToEnd()
         let stdErr = proc.StandardError.ReadToEnd()
-        while not proc.HasExited do ()
+        proc.WaitForExit(longtime)
         proc.ExitCode, stdOut, stdErr
 
     member __.Verify(assemblyPath : string) =

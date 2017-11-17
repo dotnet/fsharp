@@ -49,7 +49,7 @@ open Microsoft.FSharp.Compiler.PrettyNaming
 open Microsoft.FSharp.Compiler.Import
 
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
 open Microsoft.FSharp.Core.CompilerServices
 #endif
@@ -101,7 +101,7 @@ exception HashLoadedScriptConsideredSource of range
 let GetRangeOfDiagnostic(err:PhasedDiagnostic) = 
   let rec RangeFromException = function
       | ErrorFromAddingConstraint(_, err2, _) -> RangeFromException err2 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
       | ExtensionTyping.ProvidedTypeResolutionNoRange(e) -> RangeFromException e
       | ExtensionTyping.ProvidedTypeResolution(m, _)
 #endif
@@ -233,7 +233,7 @@ let GetRangeOfDiagnostic(err:PhasedDiagnostic) =
       // Strip TargetInvocationException wrappers
       | :? System.Reflection.TargetInvocationException as e -> 
           RangeFromException e.InnerException
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
       | :? TypeProviderError as e -> e.Range |> Some
 #endif
       
@@ -352,7 +352,7 @@ let GetDiagnosticNumber(err:PhasedDiagnostic) =
       | UnresolvedConversionOperator _ -> 93
       // avoid 94-100 for safety
       | ObsoleteError _ -> 101
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
       | ExtensionTyping.ProvidedTypeResolutionNoRange _
       | ExtensionTyping.ProvidedTypeResolution _ -> 103
 #endif
@@ -369,7 +369,7 @@ let GetDiagnosticNumber(err:PhasedDiagnostic) =
       | Failure _ -> 192
       | NumberedError((n, _), _) -> n
       | IllegalFileNameChar(fileName, invalidChar) -> fst (FSComp.SR.buildUnexpectedFileNameCharacter(fileName, string invalidChar))
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
       | :? TypeProviderError as e -> e.Number
 #endif
       | ErrorsFromAddingSubsumptionConstraint (_, _, _, _, _, ContextInfo.DowncastUsedInsteadOfUpcast _, _) -> fst (FSComp.SR.considerUpcast("", ""))
@@ -747,7 +747,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
       | ErrorFromAddingConstraint(_, e, _) ->  
           OutputExceptionR os e
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
       | ExtensionTyping.ProvidedTypeResolutionNoRange(e)
 
       | ExtensionTyping.ProvidedTypeResolution(_, e) -> 
@@ -1726,7 +1726,7 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
             relatedErrors |> List.iter OutputRelatedError
 
         match err with
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | {Exception = (:? TypeProviderError as tpe)} ->
             tpe.Iter (fun e ->
                 let newErr = {err with Exception = e}
@@ -1774,20 +1774,25 @@ let OutputDiagnosticContext prefix fileLineFn os err =
 let GetFSharpCoreLibraryName () = "FSharp.Core"
 
 // If necessary assume a reference to the latest .NET Framework FSharp.Core with which those tools are built.
-let GetDefaultFSharpCoreReference() = typeof<list<int>>.Assembly.Location
+let GetDefaultFSharpCoreReference () = typeof<list<int>>.Assembly.Location
 
-// If necessary assume a reference to the latest System.ValueTuple with which those tools are built.
-let GetDefaultSystemValueTupleReference() = 
-#if COMPILER_SERVICE_AS_DLL
-    None // TODO, right now FCS doesn't add this reference automatically
-#else
-    try 
-       let asm = typeof<System.ValueTuple<int, int>>.Assembly
-       if asm.FullName.StartsWith "System.ValueTuple" then 
-           Some asm.Location 
-       else None
+type private TypeInThisAssembly = class end
+
+// Use the ValueTuple that is executing with the compiler if it is from System.ValueTuple
+// or the System.ValueTuple.dll that sits alongside the compiler.  (Note we always ship one with the compiler)
+let GetDefaultSystemValueTupleReference () =
+    try
+        let asm = typeof<System.ValueTuple<int, int>>.Assembly 
+        if asm.FullName.StartsWith "System.ValueTuple" then  
+            Some asm.Location
+        else
+            let location = Path.GetDirectoryName(typeof<TypeInThisAssembly>.Assembly.Location)
+            let valueTuplePath = Path.Combine(location, "System.ValueTuple.dll")
+            if File.Exists(valueTuplePath) then
+                Some valueTuplePath
+            else
+                None
     with _ -> None
-#endif
 
 let GetFsiLibraryName () = "FSharp.Compiler.Interactive.Settings"  
 
@@ -1821,10 +1826,11 @@ let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) =
           yield "System.Collections" // System.Collections.Generic.List<T>
           yield "System.Runtime.Numerics" // BigInteger
           yield "System.Threading"  // OperationCanceledException
-          // always include a default reference to System.ValueTuple.dll in scripts and out-of-project sources
-          match GetDefaultSystemValueTupleReference() with 
-          | None -> ()
-          | Some v -> yield v
+
+          // always include a default reference to System.ValueTuple.dll in scripts and out-of-project sources 
+          match GetDefaultSystemValueTupleReference() with  
+          | None -> () 
+          | Some v -> yield v 
 
           yield "System.Web"
           yield "System.Web.Services"
@@ -2137,14 +2143,14 @@ type AssemblyReference =
     override x.ToString() = sprintf "AssemblyReference(%s)" x.Text
 
 type UnresolvedAssemblyReference = UnresolvedAssemblyReference of string * AssemblyReference list
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 type ResolvedExtensionReference = ResolvedExtensionReference of string * AssemblyReference list * Tainted<ITypeProvider> list
 #endif
 
 type ImportedBinary = 
     { FileName: string
       RawMetadata: IRawFSharpAssemblyData 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
       ProviderGeneratedAssembly: System.Reflection.Assembly option
       IsProviderGenerated: bool
       ProviderGeneratedStaticLinkMap : ProvidedAssemblyStaticLinkingMap option
@@ -2157,7 +2163,7 @@ type ImportedAssembly =
       FSharpViewOfMetadata: CcuThunk
       AssemblyAutoOpenAttributes: string list
       AssemblyInternalsVisibleToAttributes: string list
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
       IsProviderGenerated: bool
       mutable TypeProviders: Tainted<Microsoft.FSharp.Core.CompilerServices.ITypeProvider> list
 #endif
@@ -2291,7 +2297,7 @@ type TcConfigBuilder =
       mutable showTimes : bool
       mutable showLoadedAssemblies : bool
       mutable continueAfterParseFailure : bool
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
       /// show messages about extension type resolution?
       mutable showExtensionTypeMessages : bool
 #endif
@@ -2450,7 +2456,7 @@ type TcConfigBuilder =
           showTimes = false
           showLoadedAssemblies = false
           continueAfterParseFailure = false
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
           showExtensionTypeMessages = false
 #endif
           pause = false 
@@ -2916,7 +2922,7 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
     member x.showTimes  = data.showTimes
     member x.showLoadedAssemblies = data.showLoadedAssemblies
     member x.continueAfterParseFailure = data.continueAfterParseFailure
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     member x.showExtensionTypeMessages  = data.showExtensionTypeMessages    
 #endif
     member x.pause  = data.pause
@@ -3913,7 +3919,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
     let mutable disposed = false
     let mutable ilGlobalsOpt = ilGlobalsOpt
     let mutable tcGlobals = None
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     let mutable generatedTypeRoots = new System.Collections.Generic.Dictionary<ILTypeRef, int * ProviderGeneratedType>()
 #endif
     
@@ -4032,7 +4038,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         | UnresolvedImportedAssembly _ -> UnresolvedCcu(assref.QualifiedName)
 
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     member tcImports.GetProvidedAssemblyInfo(ctok, m, assembly: Tainted<ProvidedAssembly>) = 
         let anameOpt = assembly.PUntaint((fun assembly -> match assembly with null -> None | a -> Some (a.GetName())), m)
         match anameOpt with 
@@ -4183,7 +4189,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             { new Import.AssemblyLoader with 
                  member x.FindCcuFromAssemblyRef (ctok, m, ilAssemblyRef) = 
                      tcImports.FindCcuFromAssemblyRef (ctok, m, ilAssemblyRef)
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
                  member x.GetProvidedAssemblyInfo (ctok, m, assembly) = tcImports.GetProvidedAssemblyInfo (ctok, m, assembly)
                  member x.RecordGeneratedTypeRoot root = tcImports.RecordGeneratedTypeRoot root
 #endif
@@ -4215,7 +4221,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         CheckDisposed()
         tcGlobals <- Some g
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     member private tcImports.InjectProvidedNamespaceOrTypeIntoEntity 
             (typeProviderEnvironment, 
              tcConfig:TcConfig, 
@@ -4413,14 +4419,14 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
               ILScopeRef = ilScopeRef 
               AssemblyAutoOpenAttributes = GetAutoOpenAttributes ilg ilModule
               AssemblyInternalsVisibleToAttributes = GetInternalsVisibleToAttributes ilg ilModule
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
               IsProviderGenerated = false 
               TypeProviders = []
 #endif
               FSharpOptimizationData = notlazy None }
         tcImports.RegisterCcu(ccuinfo)
         let phase2 () = 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
             ccuinfo.TypeProviders <- tcImports.ImportTypeProviderExtensions (ctok, tcConfig, filename, ilScopeRef, ilModule.ManifestOfAssembly.CustomAttrs.AsList, ccu.Contents, invalidateCcu, m)
 #endif
             [ResolvedImportedAssembly(ccuinfo)]
@@ -4428,7 +4434,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 
     member tcImports.PrepareToImportReferencedFSharpAssembly (ctok, m, filename, dllinfo:ImportedBinary) =
         CheckDisposed()
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         let tcConfig = tcConfigP.Get(ctok)
 #endif
         let ilModule = dllinfo.RawMetadata 
@@ -4448,7 +4454,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                 let minfo : PickledCcuInfo = data.RawData 
                 let mspec = minfo.mspec 
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
                 let invalidateCcu = new Event<_>()
 #endif
 
@@ -4461,7 +4467,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                       SourceCodeDirectory = codeDir  (* note: in some cases we fix up this information later *)
                       IsFSharp=true
                       Contents = mspec 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
                       InvalidateEvent=invalidateCcu.Publish
                       IsProviderGenerated = false
                       ImportProvidedType = (fun ty -> Import.ImportProvidedType (tcImports.GetImportMap()) m ty)
@@ -4489,13 +4495,13 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                       AssemblyAutoOpenAttributes = ilModule.GetAutoOpenAttributes(ilg)
                       AssemblyInternalsVisibleToAttributes = ilModule.GetInternalsVisibleToAttributes(ilg)
                       FSharpOptimizationData=optdata 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
                       IsProviderGenerated = false
                       TypeProviders = []
 #endif
                       ILScopeRef = ilScopeRef }  
                 let phase2() = 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
                      match ilModule.TryGetRawILModule() with 
                      | None -> () // no type providers can be used without a real IL Module present
                      | Some ilModule ->
@@ -4511,7 +4517,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             (* Relink *)
             (* dprintf "Phase2: %s\n" filename; REMOVE DIAGNOSTICS *)
             ccuRawDataAndInfos |> List.iter (fun (data, _, _) -> data.OptionalFixup(fun nm -> availableToOptionalCcu(tcImports.FindCcu(ctok, m, nm, lookupOnly=false))) |> ignore)
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
             ccuRawDataAndInfos |> List.iter (fun (_, _, phase2) -> phase2())
 #endif
             ccuRawDataAndInfos |> List.map p23 |> List.map ResolvedImportedAssembly  
@@ -4549,7 +4555,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             let dllinfo = 
                 { RawMetadata=assemblyData 
                   FileName=filename
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
                   ProviderGeneratedAssembly=None
                   IsProviderGenerated=false
                   ProviderGeneratedStaticLinkMap = None
@@ -4616,7 +4622,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             if tryFile (assemblyName + ".dll") then ()
             else tryFile (assemblyName + ".exe")  |> ignore
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     member tcImports.TryFindProviderGeneratedAssemblyByName(ctok, assemblyName:string) :  System.Reflection.Assembly option = 
         // The assembly may not be in the resolutions, but may be in the load set including EST injected assemblies
         match tcImports.TryFindDllInfo (ctok, range0, assemblyName, lookupOnly=true) with 
@@ -5353,7 +5359,7 @@ let GetInitialTcState(m, ccuName, tcConfig:TcConfig, tcGlobals, tcImports:TcImpo
     let ccuData : CcuData = 
         { IsFSharp=true
           UsesFSharp20PlusQuotations=false
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
           InvalidateEvent=(new Event<_>()).Publish
           IsProviderGenerated = false
           ImportProvidedType = (fun ty -> Import.ImportProvidedType (tcImports.GetImportMap()) m ty)

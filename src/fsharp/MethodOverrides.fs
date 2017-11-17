@@ -650,7 +650,7 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader:InfoReader, nenv,
   
     // Note you only have to explicitly implement 'System.IComparable' to customize structural comparison AND equality on F# types 
     if isImplementation &&
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
        not tycon.IsProvidedGeneratedTycon &&
 #endif
        Option.isNone tycon.GeneratedCompareToValues &&
@@ -667,7 +667,7 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader:InfoReader, nenv,
     AugmentWithHashCompare.CheckAugmentationAttribs isImplementation g amap tycon
     // Check some conditions about generic comparison and hashing. We can only check this condition after we've done the augmentation 
     if isImplementation 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
        && not tycon.IsProvidedGeneratedTycon  
 #endif
        then

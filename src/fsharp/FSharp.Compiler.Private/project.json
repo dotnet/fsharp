@@ -17,7 +17,7 @@
     "System.Threading.Tasks.Parallel": "4.3.0",
     "System.Threading.Thread": "4.3.0",
     "System.Threading.ThreadPool": "4.3.0",
-    "Microsoft.DiaSymReader.PortablePdb": "1.1.0",
+    "Microsoft.DiaSymReader.PortablePdb": "1.2.0",
     "Microsoft.DiaSymReader": "1.1.0",
     "System.ValueTuple": "4.3.1"
   },

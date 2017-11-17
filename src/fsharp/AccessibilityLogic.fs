@@ -14,7 +14,7 @@ open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.TcGlobals
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -228,7 +228,7 @@ let ComputeILAccess isPublic isFamily isFamilyOrAssembly isFamilyAndAssembly =
 let IsILFieldInfoAccessible g amap m ad x = 
     match x with 
     | ILFieldInfo (tinfo,fd) -> IsILTypeAndMemberAccessible g amap m ad ad tinfo fd.Access
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     | ProvidedField (amap, tpfi, m) as pfi -> 
         let access = tpfi.PUntaint((fun fi -> ComputeILAccess fi.IsPublic fi.IsFamily fi.IsFamilyOrAssembly fi.IsFamilyAndAssembly), m)
         IsProvidedMemberAccessible amap m ad pfi.EnclosingType access
@@ -314,7 +314,7 @@ let IsTypeAndMethInfoAccessible amap m adTyp ad = function
     | ILMeth (g,x,_) -> IsILMethInfoAccessible g amap m adTyp ad x 
     | FSMeth (_,_,vref,_) -> IsValAccessible ad vref
     | DefaultStructCtor(g,typ) -> IsTypeAccessible g amap m ad typ
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     | ProvidedMeth(amap,tpmb,_,m) as etmi -> 
         let access = tpmb.PUntaint((fun mi -> ComputeILAccess mi.IsPublic mi.IsFamily mi.IsFamilyOrAssembly mi.IsFamilyAndAssembly), m)        
         IsProvidedMemberAccessible amap m ad etmi.EnclosingType access
@@ -325,7 +325,7 @@ let IsPropInfoAccessible g amap m ad = function
     | ILProp (_,x) -> IsILPropInfoAccessible g amap m ad x
     | FSProp (_,_,Some vref,_) 
     | FSProp (_,_,_,Some vref) -> IsValAccessible ad vref
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     | ProvidedProp (amap, tppi, m) as pp-> 
         let access = 
             let a = tppi.PUntaint((fun ppi -> 
