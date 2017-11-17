@@ -7,6 +7,8 @@
     <ProjectLanguage>FSharp</ProjectLanguage>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
+  <Import Project="$(FSharpSourcesRoot)\..\packages\$(VSSDK_BUILDTOOLS_VERSION)\build\Microsoft.VsSDK.BuildTools.props" />
+
   <PropertyGroup>
     <VsSDKTools>$(VsSDKTools)</VsSDKTools>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -105,7 +107,7 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Microsoft.VisualStudio.DebuggerVisualizers">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.DebuggerVisualizers.12.0.4\lib\net20\Microsoft.VisualStudio.DebuggerVisualizers.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\VSSDK.DebuggerVisualizers.12.0.4\lib\net20\Microsoft.VisualStudio.DebuggerVisualizers.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="EnvDTE">
@@ -113,7 +115,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="EnvDTE80">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\EnvDTE80.8.0.1\lib\net10\EnvDTE.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\EnvDTE80.8.0.1\lib\net10\EnvDTE80.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="VSLangProj">
@@ -125,7 +127,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.OLE.Interop">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.OLE.Interop.7.10.6070\lib\Microsoft.VisualStudio.OLE.Interops.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.OLE.Interop.7.10.6070\lib\Microsoft.VisualStudio.OLE.Interop.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0">
@@ -251,4 +253,6 @@
       <Name>FSharp.Core</Name>
     </ProjectReference>
   </ItemGroup>
+  <Import Project="$(FSharpSourcesRoot)\..\packages\$(VSSDK_BUILDTOOLS_VERSION)\build\Microsoft.VsSDK.BuildTools.targets" Condition="'$(VSToolsPath)' != ''" />
+  <Import Project="$(VSSDKInstall)\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />
 </Project>
