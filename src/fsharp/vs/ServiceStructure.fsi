@@ -7,7 +7,11 @@ open System.Collections.Generic
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 
+#if COMPILER_PUBLIC_API
+module Structure =
+#else
 module internal Structure =
+#endif
     /// Collapse indicates the way a range/snapshot should be collapsed. `Same` is for a scope inside
     /// some kind of scope delimiter, e.g. `[| ... |]`, `[ ... ]`, `{ ... }`, etc.  `Below` is for expressions
     /// following a binding or the right hand side of a pattern, e.g. `let x = ...`

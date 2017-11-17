@@ -473,7 +473,7 @@ echo.
 
 echo ---------------- Done with arguments, starting preparation -----------------
 
-set BuildToolsPackage=Microsoft.VSSDK.BuildTools.15.0.26201
+set BuildToolsPackage=Microsoft.VSSDK.BuildTools.15.1.192
 if "%VSSDKInstall%"=="" (
      set VSSDKInstall=%~dp0packages\%BuildToolsPackage%\tools\vssdk
 )

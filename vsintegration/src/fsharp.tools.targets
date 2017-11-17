@@ -6,6 +6,8 @@
   <Import Project="..\..\src\FSharpSource.Settings.targets"  Condition="Exists('..\..\src\FSharpSource.Settings.targets')  And '$(DevDivBuild)' != 'true' " />
 
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" Condition="'$(DevDivBuild)' == ''" />
+  
+  <Import Project="$(FSharpSourcesRoot)\..\packages\$(VSSDK_BUILDTOOLS_VERSION)\build\Microsoft.VsSDK.BuildTools.targets" Condition="'$(VSToolsPath)' != ''" />
   <Import Project="$(VSSDKInstall)\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />
 
 </Project>
