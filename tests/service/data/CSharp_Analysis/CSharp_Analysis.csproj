@@ -48,7 +48,7 @@
     <When Condition="($(TargetFrameworkIdentifier) == '.NETStandard' And $(TargetFrameworkVersion) == 'v1.6') Or ($(TargetFrameworkIdentifier) == '.NETCoreApp' And $(TargetFrameworkVersion) == 'v1.0') Or ($(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.5')">
       <ItemGroup>
         <Reference Include="nunit.framework">
-          <HintPath>..\..\..\..\packages\NUnit\lib\nunit.framework.dll</HintPath>
+          <HintPath>..\..\..\..\packages\NUnit.3.5.0\lib\net45\nunit.framework.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>
