@@ -22,7 +22,7 @@ echo           ^<proto^|protofx^>
 echo           ^<ci^|ci_part1^|ci_part2^|ci_part3^|microbuild^|nuget^>
 echo           ^<debug^|release^>
 echo           ^<diag^|publicsign^>
-echo           ^<test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-net40-ideunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^>
+echo           ^<test^|no-test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-net40-ideunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^>
 echo           ^<include tag^>
 echo           ^<init^>
 echo.
@@ -82,6 +82,7 @@ REM ------------------ Parse all arguments -----------------------
 
 set _autoselect=1
 set _autoselect_tests=0
+set no_test=0
 set /a counter=0
 for /l %%x in (1 1 9) do (
     set /a counter=!counter!+1
@@ -294,6 +295,10 @@ if /i "%ARG%" == "release" (
 
 if /i "%ARG%" == "test" (
     set _autoselect_tests=1
+)
+
+if /i "%ARG%" == "no-test" (
+    set no_test=1
 )
 
 if /i "%ARG%" == "include" (
@@ -713,6 +718,8 @@ echo ILDASM:            %ILDASM%
 echo
 
 if "%TEST_NET40_COMPILERUNIT_SUITE%" == "0" if "%TEST_NET40_COREUNIT_SUITE%" == "0" if "%TEST_CORECLR_COREUNIT_SUITE%" == "0" if "%TEST_VS_IDEUNIT_SUITE%" == "0" if "%TEST_NET40_FSHARP_SUITE%" == "0" if "%TEST_NET40_FSHARPQA_SUITE%" == "0" goto :success
+
+if "%no_test%" == "1" goto :success
 
 echo ---------------- Done with update, starting tests -----------------------
 
