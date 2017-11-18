@@ -751,7 +751,7 @@ ECHO NUNITPATH=%NUNITPATH%
 
 REM ---------------- net40-fsharp  -----------------------
 
-if "%TEST_NET40_FSHARP_SUITE%" == "1" && no_test == 0 (
+if "%TEST_NET40_FSHARP_SUITE%" == "1" if "%no_test%" == "0" (
 
     set OUTPUTARG=
     set ERRORARG=
@@ -786,7 +786,7 @@ rem    This only has an effect when running the FSHARPQA tests, but can
 rem    greatly speed up execution since fsc.exe does not need to be spawned thousands of times
 set HOSTED_COMPILER=1
 
-if "%TEST_NET40_FSHARPQA_SUITE%" == "1" && no_test == 0 (
+if "%TEST_NET40_FSHARPQA_SUITE%" == "1" if "%no_test%" == "0" (
 
     set FSC=!FSCBINPATH!\fsc.exe
     set FSCOREDLLPATH=!FSCBinPath!\FSharp.Core.dll
@@ -816,7 +816,7 @@ if "%TEST_NET40_FSHARPQA_SUITE%" == "1" && no_test == 0 (
 
 REM ---------------- net40-compilerunit  -----------------------
 
-if "%TEST_NET40_COMPILERUNIT_SUITE%" == "1" && no_test == 0 (
+if "%TEST_NET40_COMPILERUNIT_SUITE%" == "1" if "%no_test%" == "0" (
 
     set OUTPUTARG=
     set ERRORARG=
@@ -847,7 +847,7 @@ if "%TEST_NET40_COMPILERUNIT_SUITE%" == "1" && no_test == 0 (
 
 REM ---------------- net40-coreunit  -----------------------
 
-if "%TEST_NET40_COREUNIT_SUITE%" == "1" && no_test == 0 (
+if "%TEST_NET40_COREUNIT_SUITE%" == "1" if "%no_test%" == "0" (
 
     set OUTPUTARG=
     set ERRORARG=
@@ -881,7 +881,7 @@ if "%TEST_NET40_COREUNIT_SUITE%" == "1" && no_test == 0 (
 
 REM  ---------------- coreclr-coreunit  -----------------------
 
-if "%TEST_CORECLR_COREUNIT_SUITE%" == "1" && no_test == 0 (
+if "%TEST_CORECLR_COREUNIT_SUITE%" == "1" if "%no_test%" == "0" (
 
     set XMLFILE=!RESULTSDIR!\test-coreclr-coreunit-results.xml
     set OUTPUTFILE=!RESULTSDIR!\test-coreclr-coreunit-output.log
@@ -903,7 +903,7 @@ if "%TEST_CORECLR_COREUNIT_SUITE%" == "1" && no_test == 0 (
 
 REM ---------------- coreclr-fsharp  -----------------------
 
-if "%TEST_CORECLR_FSHARP_SUITE%" == "1" && no_test == 0 (
+if "%TEST_CORECLR_FSHARP_SUITE%" == "1" if "%no_test%" == "0" (
 
     set single_threaded=true
     set permutations=FSC_CORECLR
@@ -926,7 +926,7 @@ if "%TEST_CORECLR_FSHARP_SUITE%" == "1" && no_test == 0 (
 
 REM ---------------- vs-ideunit  -----------------------
 
-if "%TEST_VS_IDEUNIT_SUITE%" == "1" && no_test == 0 (
+if "%TEST_VS_IDEUNIT_SUITE%" == "1" if "%no_test%" == "0" (
 
     set OUTPUTARG=
     set ERRORARG=
