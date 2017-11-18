@@ -9051,13 +9051,25 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
         let atomicFlag, tyargsOpt, args, delayed, tpenv = GetSynMemberApplicationArgs delayed tpenv 
 
         // Work out whether the operation is a mutating one. 
-        // In very early F# design we also decided to special case two method names as DefinitelyMutates.
+        // See https://github.com/Microsoft/visualfsharp/issues/3923#issuecomment-345318094 for more details.
         let mutates = 
+
+            // Diagnostic heuristic: In very early F# design we also decided to special case two method names as DefinitelyMutates.
+            // These occur on mutable structs used for iterators.
             if methodName = "MoveNext" || methodName = "GetNextArg" then 
                 DefinitelyMutates
-            // If the method has 'void' or 'unit' return type then we pass LikelyMutates
-            elif minfos |> List.forall (fun minfo -> minfo.GetCompiledReturnTy(cenv.amap, mItem, minfo.FormalMethodInst) |> Option.isNone) then 
+
+            // Diagnostic heuristic: If the method has 'void' or 'unit' return type then we pass LikelyMutates,
+            // which will cause a strong (on-by-default) warning  to be reported if the method is not used on a mutable struct value.
+            // However we don't apply this for "Dispose" methods because of its common use for types 
+            // such as "CancellationTokenRegistration".
+            elif minfos |> List.forall (fun minfo -> minfo.GetCompiledReturnTy(cenv.amap, mItem, minfo.FormalMethodInst) |> Option.isNone) && methodName <> "Dispose" then 
                 LikelyMutates
+
+            // All other operations are "PossiblyMutates" which generate 
+            //    - a strong (on-by-default) diagnostic for mutable F# structs.
+            //    - a weak (off-by-default) diagnostic for .NET IL structs. 
+            // See https://github.com/Microsoft/visualfsharp/issues/3923#issuecomment-345318094.
             else 
                 PossiblyMutates
 
