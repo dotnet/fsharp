@@ -563,6 +563,11 @@ if [ "$TEST_NET40_COMPILERUNIT_SUITE" = '0' ] && [ "$TEST_PORTABLE_COREUNIT_SUIT
     exit 0
 fi
 
+if [ $no_test -eq 1 ]; then
+    # Successful build; not running tests so exit now.
+    exit 0
+fi
+
 build_status "Done with update, starting tests"
 
 if [ -n "$INCLUDE_TEST_SPEC_NUNIT" ]; then
@@ -598,7 +603,7 @@ printf "NUNITPATH=%s\n" "$NUNITPATH"
 
 # ---------------- net40-fsharp  -----------------------
 
-if [ "$TEST_NET40_FSHARP_SUITE" = '1' ] && [ $no_test -eq 0 ]; then
+if [ "$TEST_NET40_FSHARP_SUITE" = '1' ]; then
     OUTPUTARG=""
     ERRORARG=""
     OUTPUTFILE=""
@@ -625,7 +630,7 @@ fi
 
 # ---------------- net40-compilerunit  -----------------------
 
-if [ "$TEST_NET40_COMPILERUNIT_SUITE" = '1' ] && [ $no_test -eq 0 ]; then
+if [ "$TEST_NET40_COMPILERUNIT_SUITE" = '1' ]; then
 
     OUTPUTARG=""
     ERRORARG=""
@@ -656,7 +661,7 @@ fi
 
 # ---------------- net40-coreunit  -----------------------
 
-if [ "$TEST_NET40_COREUNIT_SUITE" = '1' ] && [ $no_test -eq 0 ]; then
+if [ "$TEST_NET40_COREUNIT_SUITE" = '1' ]; then
 
     OUTPUTARG=""
     ERRORARG=""
@@ -688,7 +693,7 @@ fi
 
 #  ---------------- portable-coreunit  -----------------------
 
-if [ "$TEST_PORTABLE_COREUNIT_SUITE" = '1' ] && [ $no_test -eq 0 ]; then
+if [ "$TEST_PORTABLE_COREUNIT_SUITE" = '1' ]; then
 
     OUTPUTARG=""
     ERRORARG=""
@@ -721,7 +726,7 @@ fi
 
 #  ---------------- coreclr-coreunit  -----------------------
 
-if [ "$TEST_CORECLR_COREUNIT_SUITE" = '1' ] && [ $no_test -eq 0 ]; then
+if [ "$TEST_CORECLR_COREUNIT_SUITE" = '1' ]; then
 
     XMLFILE="$RESULTSDIR/test-coreclr-coreunit-results.xml"
     OUTPUTFILE="$RESULTSDIR/test-coreclr-coreunit-output.log"
@@ -737,7 +742,7 @@ fi
 
 # ---------------- coreclr-fsharp  -----------------------
 
-if [ "$TEST_CORECLR_FSHARP_SUITE" = '1' ] && [ $no_test -eq 0 ]; then
+if [ "$TEST_CORECLR_FSHARP_SUITE" = '1' ]; then
 
     export single_threaded=true
     export permutations=FSC_CORECLR
@@ -764,7 +769,7 @@ OSARCH="${PROCESSOR_ARCHITECTURE:-x64}"
 #    greatly speed up execution since fsc.exe does not need to be spawned thousands of times
 HOSTED_COMPILER=1
 
-if [ "$TEST_NET40_FSHARPQA_SUITE" = '1' ] && [ $no_test -eq 0 ]; then
+if [ "$TEST_NET40_FSHARPQA_SUITE" = '1' ]; then
 
 	export FSC="$FSCBINPATH/fsc.exe"
 	export FSCOREDLLPATH="$FSCBINPATH/FSharp.Core.dll"
