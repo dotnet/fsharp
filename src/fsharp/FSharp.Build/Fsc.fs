@@ -3,126 +3,24 @@
 namespace Microsoft.FSharp.Build
 
 open System
-open System.Diagnostics.CodeAnalysis
 open System.Globalization
 open System.IO
 open System.Reflection
-open System.Text
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 open Internal.Utilities
 
-[<assembly: System.Runtime.InteropServices.ComVisible(false)>]
-[<assembly: System.CLSCompliant(true)>]
-[<assembly: SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", Scope="type", Target="Microsoft.FSharp.Build.Fsc", MessageId="Fsc")>]
-do()
-
-
 #if FX_RESHAPED_REFLECTION
 open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
-
-type FscCommandLineBuilder () =
-
-    // In addition to generating a command-line that will be handed to cmd.exe, we also generate
-    // an array of individual arguments.  The former needs to be quoted (and cmd.exe will strip the
-    // quotes while parsing), whereas the latter is not.  See bug 4357 for background; this helper
-    // class gets us out of the business of unparsing-then-reparsing arguments.
-
-    let builder = new CommandLineBuilder()
-    let mutable args = []  // in reverse order
-    let mutable srcs = []  // in reverse order
-
-    /// Return a list of the arguments (with no quoting for the cmd.exe shell)
-    member x.CapturedArguments() = List.rev args
-
-    /// Return a list of the sources (with no quoting for the cmd.exe shell)
-    member x.CapturedFilenames() = List.rev srcs
-
-    /// Return a full command line (with quoting for the cmd.exe shell)
-    override x.ToString() = builder.ToString()
-
-    member x.AppendFileNamesIfNotNull(filenames:ITaskItem array, sep:string) =
-        builder.AppendFileNamesIfNotNull(filenames, sep)
-        // do not update "args", not used
-        for item in filenames do
-            let tmp = new CommandLineBuilder()
-            tmp.AppendSwitchUnquotedIfNotNull("", item.ItemSpec)  // we don't want to quote the filename, this is a way to get that
-            let s = tmp.ToString()
-            if s <> String.Empty then
-                srcs <- tmp.ToString() :: srcs
-
-    member x.AppendSwitchIfNotNull(switch:string, values:string array, sep:string) =
-        builder.AppendSwitchIfNotNull(switch, values, sep)
-        let tmp = new CommandLineBuilder()
-        tmp.AppendSwitchUnquotedIfNotNull(switch, values, sep)
-        let s = tmp.ToString()
-        if s <> String.Empty then
-            args <- s :: args
-
-    member x.AppendSwitchIfNotNull(switch:string, value:string, ?metadataNames:string array) =
-        let metadataNames = defaultArg metadataNames [||]
-        builder.AppendSwitchIfNotNull(switch, value)
-        let tmp = new CommandLineBuilder()
-        tmp.AppendSwitchUnquotedIfNotNull(switch, value)
-        let providedMetaData =
-            metadataNames
-            |> Array.filter (String.IsNullOrWhiteSpace >> not)
-        if providedMetaData.Length > 0 then
-            tmp.AppendTextUnquoted ","
-            tmp.AppendTextUnquoted (providedMetaData|> String.concat ",")
-        let s = tmp.ToString()
-        if s <> String.Empty then
-            args <- s :: args
-
-    member x.AppendSwitchUnquotedIfNotNull(switch:string, value:string) =
-        assert(switch = "")  // we only call this method for "OtherFlags"
-        // Unfortunately we still need to mimic what cmd.exe does, but only for "OtherFlags".
-        let ParseCommandLineArgs(commandLine:string) = // returns list in reverse order
-            let mutable args = []
-            let mutable i = 0 // index into commandLine
-            let len = commandLine.Length
-            while i < len do
-                // skip whitespace
-                while i < len && System.Char.IsWhiteSpace(commandLine, i) do
-                    i <- i + 1
-                if i < len then
-                    // parse an argument
-                    let sb = new StringBuilder()
-                    let mutable finished = false
-                    let mutable insideQuote = false
-                    while i < len && not finished do
-                        match commandLine.[i] with
-                        | '"' -> insideQuote <- not insideQuote; i <- i + 1
-                        | c when not insideQuote && System.Char.IsWhiteSpace(c) -> finished <- true
-                        | c -> sb.Append(c) |> ignore; i <- i + 1
-                    args <- sb.ToString() :: args
-            args
-        builder.AppendSwitchUnquotedIfNotNull(switch, value)
-        let tmp = new CommandLineBuilder()
-        tmp.AppendSwitchUnquotedIfNotNull(switch, value)
-        let s = tmp.ToString()
-        if s <> String.Empty then
-            args <- ParseCommandLineArgs(s) @ args
-
-    member x.AppendSwitch(switch:string) =
-        builder.AppendSwitch(switch)
-        args <- switch :: args
-
-    member internal x.GetCapturedArguments() = 
-        [|
-            yield! x.CapturedArguments()
-            yield! x.CapturedFilenames()
-        |]
 
 //There are a lot of flags on fsc.exe.
 //For now, not all of them are represented in the "Fsc class" object model.
 //The goal is to have the most common/important flags available via the Fsc class, and the
 //rest can be "backdoored" through the .OtherFlags property.
 
-type
-    [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly")>]
-    Fsc () as this = 
+[<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly")>]
+type public Fsc () as this = 
 
     inherit ToolTask ()
 
@@ -164,9 +62,9 @@ type
     let mutable targetProfile : string = null
     let mutable targetType : string = null
     let mutable toolExe : string = "fsc.exe"
-    let mutable toolPath : string = 
-        let locationOfThisDll = 
-            try Some(System.IO.Path.GetDirectoryName(typeof<FscCommandLineBuilder>.Assembly.Location))
+    let mutable toolPath : string =
+        let locationOfThisDll =
+            try Some(Path.GetDirectoryName(typeof<Fsc>.Assembly.Location))
             with _ -> None
         match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(locationOfThisDll) with
         | Some s -> s
@@ -183,20 +81,10 @@ type
     let mutable utf8output : bool = false
 
     // See bug 6483; this makes parallel build faster, and is fine to set unconditionally
-    // The property YieldDuringToolExecution is not available on Mono.
-    // So we only set it if available (to avoid a compile-time dependency).
-    do
-        let runningOnMono = try System.Type.GetType("Mono.Runtime") <> null with e -> false
-        if not runningOnMono then  
-            typeof<ToolTask>.InvokeMember("YieldDuringToolExecution",
-                                          (BindingFlags.Instance ||| BindingFlags.SetProperty ||| BindingFlags.Public),
-                                          null,
-                                          this,
-                                          [| box true |],
-                                          CultureInfo.CurrentCulture) |> ignore
+    do this.YieldDuringToolExecution <- true
 
     let generateCommandLineBuilder () =
-        let builder = new FscCommandLineBuilder()
+        let builder = new FSharpCommandLineBuilder()
         // OutputAssembly
         builder.AppendSwitchIfNotNull("-o:", outputAssembly)
         // CodePage
@@ -205,7 +93,7 @@ type
         if debugSymbols then
             builder.AppendSwitch("-g")
         // DebugType
-        builder.AppendSwitchIfNotNull("--debug:", 
+        builder.AppendSwitchIfNotNull("--debug:",
             if debugType = null then null else
                 match debugType.ToUpperInvariant() with
                 | "NONE"     -> null
@@ -226,7 +114,7 @@ type
         // DefineConstants
         if defineConstants <> null then 
             for item in defineConstants do
-                builder.AppendSwitchIfNotNull("--define:", item.ItemSpec)          
+                builder.AppendSwitchIfNotNull("--define:", item.ItemSpec)
         // DocumentationFile
         builder.AppendSwitchIfNotNull("--doc:", documentationFile)
         // GenerateInterfaceFile
@@ -245,7 +133,7 @@ type
         // PdbFile
         builder.AppendSwitchIfNotNull("--pdb:", pdbFile)
         // Platform
-        builder.AppendSwitchIfNotNull("--platform:", 
+        builder.AppendSwitchIfNotNull("--platform:",
             let ToUpperInvariant (s:string) = if s = null then null else s.ToUpperInvariant()
             match ToUpperInvariant(platform), prefer32bit, ToUpperInvariant(targetType) with
                 | "ANYCPU", true, "EXE"
@@ -302,9 +190,9 @@ type
         let warningsAsErrorsArray =
             match warningsAsErrors with
             | null -> [|"76"|]
-            | _ -> (warningsAsErrors + " 76 ").Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries)                        
+            | _ -> (warningsAsErrors + " 76 ").Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries)
 
-        builder.AppendSwitchIfNotNull("--warnaserror:", warningsAsErrorsArray, ",")            
+        builder.AppendSwitchIfNotNull("--warnaserror:", warningsAsErrorsArray, ",")
 
         // Win32ResourceFile
         builder.AppendSwitchIfNotNull("--win32res:", win32res)
@@ -312,9 +200,9 @@ type
         // Win32ManifestFile
         builder.AppendSwitchIfNotNull("--win32manifest:", win32manifest)
 
-        // VisualStudioStyleErrors 
+        // VisualStudioStyleErrors
         if vserrors then
-            builder.AppendSwitch("--vserrors")      
+            builder.AppendSwitch("--vserrors")
 
         builder.AppendSwitchIfNotNull("--LCID:", vslcid)
         builder.AppendSwitchIfNotNull("--preferreduilang:", preferredUILang)
@@ -405,7 +293,7 @@ type
 
     member fsc.GenerateInterfaceFile
         with get() = generateInterfaceFile
-        and set(s) = generateInterfaceFile <- s  
+        and set(s) = generateInterfaceFile <- s
 
     // --keyfile <string>: 
     //     Sign the assembly the given keypair file, as produced
@@ -441,13 +329,13 @@ type
         with get() = otherFlags
         and set(s) = otherFlags <- s
 
-    // -o <string>: Name the output file.
+    // -o <string>: Name the output file
     member fsc.OutputAssembly
         with get() = outputAssembly
         and set(s) = outputAssembly <- s
 
     // --pdb <string>: 
-    //     Name the debug output file.
+    //     Name the debug output file
     member fsc.PdbFile
         with get() = pdbFile
         and set(s) = pdbFile <- s
@@ -459,28 +347,28 @@ type
     //            anycpu32bitpreferred
     member fsc.Platform
         with get() = platform 
-        and set(s) = platform <- s 
+        and set(s) = platform <- s
 
     // indicator whether anycpu32bitpreferred is applicable or not
     member fsc.Prefer32Bit
         with get() = prefer32bit 
-        and set(s) = prefer32bit <- s 
+        and set(s) = prefer32bit <- s
 
     member fsc.PreferredUILang
         with get() = preferredUILang 
-        and set(s) = preferredUILang <- s 
+        and set(s) = preferredUILang <- s
 
-    member fsc.ProvideCommandLineArgs  
+    member fsc.ProvideCommandLineArgs
         with get() = provideCommandLineArgs
         and set(p) = provideCommandLineArgs <- p
 
     member fsc.PublicSign
         with get() = publicSign 
-        and set(s) = publicSign <- s 
+        and set(s) = publicSign <- s
 
     // -r <string>: Reference an F# or .NET assembly.
-    member fsc.References 
-        with get() = references 
+    member fsc.References
+        with get() = references
         and set(a) = references <- a
 
     // --lib
@@ -494,7 +382,7 @@ type
         with get() = resources
         and set(a) = resources <- a
 
-    member fsc.SkipCompilerExecution  
+    member fsc.SkipCompilerExecution
         with get() = skipCompilerExecution
         and set(p) = skipCompilerExecution <- p
 
@@ -504,8 +392,8 @@ type
         and set(s) = sourceLink <- s
 
     // source files 
-    member fsc.Sources  
-        with get() = sources 
+    member fsc.Sources
+        with get() = sources
         and set(a) = sources <- a
 
     member fsc.TargetProfile
@@ -540,17 +428,17 @@ type
         with get() = versionFile
         and set(s) = versionFile <- s
 
-    // For specifying a win32 native resource file (.res)     
+    // For specifying a win32 native resource file (.res)
     member fsc.Win32ResourceFile
         with get() = win32res
         and set(s) = win32res <- s
-        
+
     // For specifying a win32 manifest file
     member fsc.Win32ManifestFile
         with get() = win32manifest
         and set(m) = win32manifest <- m
 
-    // For specifying the warning level (0-4)    
+    // For specifying the warning level (0-4)
     member fsc.WarningLevel
         with get() = warningLevel
         and set(s) = warningLevel <- s
@@ -597,7 +485,7 @@ type
     /// Intercept the call to ExecuteTool to handle the host compile case.
     override fsc.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands) =
         if provideCommandLineArgs then
-            commandLineArgs <- 
+            commandLineArgs <-
                 fsc.GetCapturedArguments()
                 |> Array.map (fun (arg: string) -> TaskItem(arg) :> ITaskItem)
                 |> Array.toList
@@ -620,12 +508,12 @@ type
                 let baseCallDelegate = new System.Converter<int,int>(baseCall)
 #endif
                 try
-                    let ret = 
-                        (host.GetType()).InvokeMember("Compile", BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.InvokeMethod ||| BindingFlags.Instance, null, host, 
+                    let ret =
+                        (host.GetType()).InvokeMember("Compile", BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.InvokeMethod ||| BindingFlags.Instance, null, host,
                                                     [| baseCallDelegate; box (capturedArguments |> List.toArray); box (capturedFilenames |> List.toArray) |],
-                                                    System.Globalization.CultureInfo.InvariantCulture)
+                                                    CultureInfo.InvariantCulture)
                     unbox ret
-                with 
+                with
                 | :? System.Reflection.TargetInvocationException as tie when (match tie.InnerException with | :? Microsoft.Build.Exceptions.BuildAbortedException -> true | _ -> false) ->
                     fsc.Log.LogError(tie.InnerException.Message, [| |])
                     -1  // ok, this is what happens when VS IDE cancels the build, no need to assert, just log the build-canceled error and return -1 to denote task failed
@@ -634,7 +522,7 @@ type
                     reraise()
 
     override fsc.GenerateCommandLineCommands() =
-        let builder = new FscCommandLineBuilder()
+        let builder = new FSharpCommandLineBuilder()
         if not (String.IsNullOrEmpty(dotnetFscCompilerPath)) then builder.AppendSwitch(dotnetFscCompilerPath)
         builder.ToString()
 
@@ -647,13 +535,13 @@ type
         fsc.GenerateCommandLineCommands()
 
     // expose this to internal components (for nunit testing)
-    member internal fsc.InternalGenerateResponseFileCommands() = 
+    member internal fsc.InternalGenerateResponseFileCommands() =
         fsc.GenerateResponseFileCommands()
 
     member internal fsc.InternalExecuteTool(pathToTool, responseFileCommands, commandLineCommands) =
         fsc.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
 
-    member internal fsc.GetCapturedArguments() = 
+    member internal fsc.GetCapturedArguments() =
         [|
             yield! capturedArguments
             yield! capturedFilenames

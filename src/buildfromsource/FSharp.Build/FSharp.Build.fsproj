@@ -21,6 +21,7 @@
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Build.dll.fs" />
     <Compile Include="..\..\utils\CompilerLocationUtils.fs" />
     <Compile Include="..\..\utils\reshapedreflection.fs" />
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharpCommandLineBuilder.fs" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\Fsc.fs" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharpEmbedResourceText.fs" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharpEmbedResXSource.fs" />
