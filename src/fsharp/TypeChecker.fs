@@ -449,10 +449,24 @@ let OpenModulesOrNamespaces tcSink g amap scopem root env mvvs openDeclaration =
     CallOpenDeclarationSink tcSink openDeclaration
     match openDeclaration.Range with
     | None -> ()
-    | Some range ->
-        for modul in mvvs do
-             let item = Item.ModuleOrNamespaces [modul]
-             CallNameResolutionSink tcSink (range, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights)
+    | Some _ ->
+        let rec loop (acc: (Item * range) list) (idents: Ident list) =
+            match idents with
+            | [] -> acc
+            | [id] when id.idText = MangledGlobalName -> acc
+            | id :: rest ->
+                let idents = List.rev idents
+                let range = id.idRange
+                let acc =
+                    match ResolveLongIndentAsModuleOrNamespace ResultCollectionSettings.AllResults amap range OpenQualified env.NameEnv env.eAccessRights idents with
+                    | Result modrefs ->
+                        (acc, modrefs) ||> List.fold (fun acc (_, modref, _) ->
+                            (Item.ModuleOrNamespaces [modref], range) :: acc)
+                    | _ -> acc
+                loop acc rest
+        
+        for item, range in loop [] (List.rev openDeclaration.LongId) do
+            CallNameResolutionSink tcSink (range, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights)
     env
 
 let AddRootModuleOrNamespaceRefs g amap m env modrefs =
@@ -665,11 +679,11 @@ let LocateEnv ccu env enclosingNamespacePath =
     env
 
 let BuildRootModuleType enclosingNamespacePath (cpath:CompilationPath) mtyp = 
-    (enclosingNamespacePath, (cpath, (mtyp, None))) 
-        ||> List.foldBack (fun id (cpath, (mtyp, mspec)) ->
+    (enclosingNamespacePath, (cpath, (mtyp, []))) 
+        ||> List.foldBack (fun id (cpath, (mtyp, mspecs)) ->
             let a, b = wrapModuleOrNamespaceTypeInNamespace  id cpath.ParentCompPath mtyp 
-            cpath.ParentCompPath, (a, match mspec with Some _ -> mspec | None -> Some b))
-        |> snd
+            cpath.ParentCompPath, (a, b :: mspecs))
+        |> fun (_, (mtyp, mspecs)) -> mtyp, List.rev mspecs
         
 let BuildRootModuleExpr enclosingNamespacePath (cpath:CompilationPath) mexpr = 
     (enclosingNamespacePath, (cpath, mexpr)) 
@@ -16383,7 +16397,13 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
 
             // For 'namespace rec' and 'module rec' we add the thing being defined 
             let mtypNS = !(envNS.eModuleOrNamespaceTypeAccumulator)
-            let mtypRoot, mspecNSOpt = BuildRootModuleType enclosingNamespacePath envNS.eCompPath mtypNS
+            let mtypRoot, mspecNSs = BuildRootModuleType enclosingNamespacePath envNS.eCompPath mtypNS
+            let mspecNSOpt = List.tryHead mspecNSs
+
+            mspecNSs |> List.iter (fun mspec ->
+                let modref = mkLocalModRef mspec
+                let item = Item.ModuleOrNamespaces [modref]
+                CallNameResolutionSink cenv.tcSink (mspec.Range, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Binding, env.DisplayEnv, env.eAccessRights))
 
             // For 'namespace rec' and 'module rec' we add the thing being defined 
             let envNS = if isRec then AddLocalRootModuleOrNamespace cenv.tcSink cenv.g cenv.amap m envNS mtypRoot else envNS
@@ -16688,7 +16708,13 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv:cenv) parent typeNames scopem 
           let envNS = ImplicitlyOpenOwnNamespace cenv.tcSink cenv.g cenv.amap m enclosingNamespacePath envNS
 
           let mtypNS = !(envNS.eModuleOrNamespaceTypeAccumulator)
-          let mtypRoot, mspecNSOpt = BuildRootModuleType enclosingNamespacePath envNS.eCompPath mtypNS
+          let mtypRoot, mspecNSs = BuildRootModuleType enclosingNamespacePath envNS.eCompPath mtypNS
+          let mspecNSOpt = List.tryHead mspecNSs
+
+          mspecNSs |> List.iter (fun mspec ->
+            let modref = mkLocalModRef mspec
+            let item = Item.ModuleOrNamespaces [modref]
+            CallNameResolutionSink cenv.tcSink (mspec.Range, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Binding, env.DisplayEnv, env.eAccessRights))
 
           // For 'namespace rec' and 'module rec' we add the thing being defined 
           let envNS = if isRec then AddLocalRootModuleOrNamespace cenv.tcSink cenv.g cenv.amap m envNS mtypRoot else envNS
