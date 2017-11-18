@@ -1435,15 +1435,16 @@ and SupportOfMemberConstraintIsFullySolved (csenv:ConstraintSolverEnv) (TTrait(t
 and SupportOfMemberConstraintIsPartiallySolved (csenv:ConstraintSolverEnv) (TTrait(tys, _, _, _, _, _)) =
     tys |> List.exists (isAnyParTy csenv.g >> not)
     
-/// All the typars relevant to the member constraint
+/// Get all the unsolved typars (statically resolved or not) relevant to the member constraint
 and GetFreeTyparsOfMemberConstraint (csenv:ConstraintSolverEnv) (TTrait(tys, _, _, argtys, rty, _)) =
     freeInTypesLeftToRightSkippingConstraints csenv.g (tys@argtys@ Option.toList rty)
 
-/// Check all the statically-resolved type parameters in the trait method signature are solved.
+/// Check there are no unsolved statically-resolved type parameters in the argument types of the trait method signature.
 /// This is necessary to prevent overload resolution being applied to statically resolved members
-// constraints before all argument and return types are known.
-and MemberConstraintSignatureIsReadyForResolution csenv traitInfo =
-    GetFreeTyparsOfMemberConstraint csenv traitInfo |> List.forall (fun tp -> match tp.StaticReq with HeadTypeStaticReq -> false | _ -> true)
+// constraints before all argument types are known.  The return type is not taken into account.
+and MemberConstraintSignatureIsReadyForResolution csenv (TTrait(tys, _, _, argtys, _, _)) =
+    let typarsRelevantToOverloadResultion = freeInTypesLeftToRightSkippingConstraints csenv.g (tys@argtys)
+    typarsRelevantToOverloadResultion |> List.forall (fun tp -> match tp.StaticReq with HeadTypeStaticReq -> false | _ -> true)
 
 and MemberConstraintIsReadyForWeakResolution csenv traitInfo =
    SupportOfMemberConstraintIsPartiallySolved csenv traitInfo && 

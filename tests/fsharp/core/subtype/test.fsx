@@ -232,8 +232,31 @@ module SomeRandomOperatorConstraints = begin
 
     let f2 x : float = x * x 
     let f3 x (y:float) = x * y
+
     //let neg4 x (y:System.DateTime) = x + y
+
+    // This example resolves the type of "y" to "TimeSpam". It checks that a single "+" overload between 
+    // two different types DateTime andd TimeSpan gets resolved via 
+    // vis weak SRTP resolution using a DateTime constraint alone.
     let f5 (x:DateTime) y = x + y
+
+    // This example checks a use of TimeSpan/DateTime overloads
+    let f5b (x:DateTime) (y:DateTime) = (x - y) 
+
+
+    // This example checks a use of TimeSpan/DateTime overloads
+    let f5b2 (x:DateTime) (y:TimeSpan) = (x - y) 
+
+    // This example coincidentally checks that the return type is not taken into account before th list of method overloads
+    // is prepared in SRTP resolution.  That is the type of (a - b) is immediately known (and we can use it for
+    // dot-notation name resolution of .TotalSeconds) _immediately_ that the types of a and b are
+    // known and _prior_ to generalization.
+    let f5c (x: DateTime) (y:DateTime) = 
+        (x  - y).TotalSeconds |> int
+
+    let f5c2 (x: DateTime) (y:TimeSpan) = 
+        (x  - y).Second |> int
+
     let f6 (x:int64) y = x + y
     let f7 x y : int64 = x + y
     let f8 x = Seq.reduce (+) x
