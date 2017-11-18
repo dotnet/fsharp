@@ -29,7 +29,7 @@ build.sh ^<all^|net40^|coreclr^|pcls^|vs^>
          ^<ci^|ci_part1^|ci_part2^|ci_part3^|microbuild^>
          ^<debug^|release^>
          ^<diag^|publicsign^>
-         ^<test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-pcl-coreunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^>
+         ^<test^|no-test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-pcl-coreunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^>
          ^<include tag^>
          ^<init^>
 
@@ -251,7 +251,7 @@ do
         "test")
             _autoselect_tests=1
             ;;
-        "notest")
+        "no-test")
             no_test=1
             ;;
         "include")

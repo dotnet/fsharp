@@ -22,7 +22,7 @@ echo           ^<proto^|protofx^>
 echo           ^<ci^|ci_part1^|ci_part2^|ci_part3^|microbuild^|nuget^>
 echo           ^<debug^|release^>
 echo           ^<diag^|publicsign^>
-echo           ^<test^|notest^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-net40-ideunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^>
+echo           ^<test^|no-test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-net40-ideunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^>
 echo           ^<include tag^>
 echo           ^<init^>
 echo.
@@ -297,7 +297,7 @@ if /i "%ARG%" == "test" (
     set _autoselect_tests=1
 )
 
-if /i "%ARG%" == "notest" (
+if /i "%ARG%" == "no-test" (
     set no_test=1
 )
 
