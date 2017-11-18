@@ -598,7 +598,7 @@ printf "NUNITPATH=%s\n" "$NUNITPATH"
 
 # ---------------- net40-fsharp  -----------------------
 
-if [ "$TEST_NET40_FSHARP_SUITE" = '1' & no_test = 0 ]; then
+if [ "$TEST_NET40_FSHARP_SUITE" = '1' && no_test = 0 ]; then
     OUTPUTARG=""
     ERRORARG=""
     OUTPUTFILE=""
