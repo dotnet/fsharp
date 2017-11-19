@@ -3,6 +3,7 @@
 namespace Microsoft.FSharp.Build
 
 open System
+open System.Diagnostics
 open System.Globalization
 open System.IO
 open System.Reflection
@@ -498,28 +499,39 @@ type public Fsc () as this =
             | null -> base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
             | _ ->
                 let sources = sources|>Array.map(fun i->i.ItemSpec)
+                let invokeCompiler baseCallDelegate =
+                    try
+                        let ret =
+                            (host.GetType()).InvokeMember("Compile", BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.InvokeMethod ||| BindingFlags.Instance, null, host,
+                                                        [| baseCallDelegate; box (capturedArguments |> List.toArray); box (capturedFilenames |> List.toArray) |],
+                                                        CultureInfo.InvariantCulture)
+                        unbox ret
+                    with
+                    | :? TargetInvocationException as tie when (match tie.InnerException with | :? Microsoft.Build.Exceptions.BuildAbortedException -> true | _ -> false) ->
+                        fsc.Log.LogError(tie.InnerException.Message, [| |])
+                        -1  // ok, this is what happens when VS IDE cancels the build, no need to assert, just log the build-canceled error and return -1 to denote task failed
+                    | e -> reraise()
 
-#if FX_NO_CONVERTER
-                let baseCallDelegate = new Func<int>(fun () -> fsc.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands) )
-#else
-                let baseCall = fun (dummy : int) -> fsc.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
-                // We are using a Converter<int,int> rather than a "unit->int" because it is too hard to
-                // figure out how to pass an F# function object via reflection.  
-                let baseCallDelegate = new System.Converter<int,int>(baseCall)
-#endif
+                // Todo: Remove !FX_NO_CONVERTER code path for VS2017.7
+                // Earlier buildtasks usesd System.Converter<int,int> for cross platform we are moving to Func<int>
+                // This is so that during the interim, earlier VS's will still load the OSS project
+                let baseCallDelegate = Func<int>(fun () -> fsc.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands) )
                 try
-                    let ret =
-                        (host.GetType()).InvokeMember("Compile", BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.InvokeMethod ||| BindingFlags.Instance, null, host,
-                                                    [| baseCallDelegate; box (capturedArguments |> List.toArray); box (capturedFilenames |> List.toArray) |],
-                                                    CultureInfo.InvariantCulture)
-                    unbox ret
+                    invokeCompiler baseCallDelegate
                 with
-                | :? System.Reflection.TargetInvocationException as tie when (match tie.InnerException with | :? Microsoft.Build.Exceptions.BuildAbortedException -> true | _ -> false) ->
-                    fsc.Log.LogError(tie.InnerException.Message, [| |])
-                    -1  // ok, this is what happens when VS IDE cancels the build, no need to assert, just log the build-canceled error and return -1 to denote task failed
                 | e ->
-                    System.Diagnostics.Debug.Assert(false, "HostObject received by Fsc task did not have a Compile method or the compile method threw an exception. "+(e.ToString()))
-                    reraise()
+#if !FX_NO_CONVERTER
+                    try
+                        let baseCall = fun (dummy : int) -> fsc.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
+                        // We are using a Converter<int,int> rather than a "unit->int" because it is too hard to
+                        // figure out how to pass an F# function object via reflection.  
+                        let baseCallDelegate = new System.Converter<int,int>(baseCall)
+                        invokeCompiler baseCallDelegate
+                    with
+                    | e ->
+#endif
+                        Debug.Assert(false, "HostObject received by Fsc task did not have a Compile method or the compile method threw an exception. "+(e.ToString()))
+                        reraise()
 
     override fsc.GenerateCommandLineCommands() =
         let builder = new FSharpCommandLineBuilder()

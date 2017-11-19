@@ -12,10 +12,6 @@ open Internal.Utilities
 [<assembly: System.CLSCompliant(true)>]
 do()
 
-//#if FX_RESHAPED_REFLECTION
-//open Microsoft.FSharp.Core.ReflectionAdapters
-//#endif
-
 type FSharpCommandLineBuilder () =
 
     // In addition to generating a command-line that will be handed to cmd.exe, we also generate
