@@ -22,16 +22,13 @@
     <Compile Include="..\..\utils\CompilerLocationUtils.fs">
       <Link>CompilerLocationUtils.fs</Link>
     </Compile>
-    <Compile Include="..\FSharp.Build\CreateFSharpManifestResourceName.fsi">
-       <Link>CreateFSharpManifestResourceName.fsi</Link>
-    </Compile>
     <Compile Include="..\FSharp.Build\CreateFSharpManifestResourceName.fs" >
        <Link>CreateFSharpManifestResourceName.fs</Link>
     </Compile>
-    <Compile Include="..\FSharp.Build\Fsc.fsi">
-      <Link>Fsc.fsi</Link>
-    </Compile>
-    <Compile Include="..\FSharp.Build\Fsc.fs">
+    <Compile Include="..\FSharp.Build\FSharpCommandLineBuilder.fs">
+      <Link>FSharpCommandLineBuilder.fs</Link>
+      </Compile>
+      <Compile Include="..\FSharp.Build\Fsc.fs">
       <Link>Fsc.fs</Link>
     </Compile>
     <Compile Include="..\FSharp.Build\FSharpEmbedResourceText.fs">
