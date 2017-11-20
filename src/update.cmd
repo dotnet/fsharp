@@ -6,9 +6,8 @@
 
 if /i "%1" == "debug" goto :ok
 if /i "%1" == "release" goto :ok
-if /i "%1" == "signonly" goto :ok
 
-echo adding required strong name verification skipping, and NGening built binaries
+echo NGening built binaries
 echo Usage:
 echo    update.cmd debug   [-ngen]
 echo    update.cmd release [-ngen]
@@ -38,20 +37,9 @@ if "%WINSDKNETFXTOOLS_x86%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32B
 set WINSDKNETFXTOOLS_x64=%WINSDKNETFXTOOLS_x86%x64\
 
 :havesdk
-set SN32="%WINSDKNETFXTOOLS_x86%sn.exe"
-set SN64="%WINSDKNETFXTOOLS_x64%sn.exe"
-
 set NGEN32=%windir%\Microsoft.NET\Framework\v4.0.30319\ngen.exe
 set NGEN64=%windir%\Microsoft.NET\Framework64\v4.0.30319\ngen.exe
 
-rem Disable strong-name validation for binaries that are delay-signed with the microsoft key
-%SN32% -q -Vr *,b03f5f7f11d50a3a
-
-if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
-    %SN64% -q -Vr *,b03f5f7f11d50a3a
-)
-
-if /i "%1" == "signonly" goto :eof
 if /i "%1" == "debug" set NGEN_FLAGS=/Debug
 
 rem NGen fsc, fsi, fsiAnyCpu, and FSharp.Build.dll
