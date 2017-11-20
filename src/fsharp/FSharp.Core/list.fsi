@@ -102,7 +102,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="source">The input list.</param>
         /// <returns>True if the input list contains the specified element; false otherwise.</returns>
         [<CompiledName("Contains")>]
-        val contains: value:'T -> source:'T list -> bool when 'T : equality
+        val inline contains: value:'T -> source:'T list -> bool when 'T : equality
 
         /// <summary>Returns a list that contains no duplicate entries according to generic hash and
         /// equality comparisons on the entries.
