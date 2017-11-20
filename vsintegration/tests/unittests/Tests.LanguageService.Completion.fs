@@ -596,7 +596,6 @@ a.
         AssertCtrlSpaceCompleteContains (typeDef3 @ ["new M.A((**))"]) "A((**)" ["SettableProperty"; "AnotherSettableProperty"] ["NonSettableProperty"] 
         AssertCtrlSpaceCompleteContains (typeDef3 @ ["new M.A(S = 1)"]) "A(S" ["SettableProperty"] ["NonSettableProperty"] 
         AssertCtrlSpaceCompleteContains (typeDef3 @ ["new M.A(S = 1)"]) "A(S = 1" [] ["NonSettableProperty"; "SettableProperty"] // neg test 
-        AssertCtrlSpaceCompleteContains (typeDef3 @ ["new M.A(S = 1,)"]) "A(S = 1," ["AnotherSettableProperty"] ["NonSettableProperty"] 
 
         let typeDef4 = 
             [
@@ -6064,7 +6063,7 @@ let rec f l =
                     let f (x:MyNamespace1.MyModule(*Maftervariable4*)) = 10
                     let y = int System.IO(*Maftervariable5*)""",
             marker = "(*Maftervariable4*)",
-            list = ["DuType";"Tag"])  
+            list = ["DuType"])  
 
     [<Test>]
     member this.``VariableIdentifier.SystemNamespace``() = 
@@ -7773,6 +7772,15 @@ let rec f l =
                 let foo x = x
                 let bar = 1""",
             marker = "(*Marker*)")
+
+    [<Test;Category("Repro")>]
+    member public this.``ExpressionDotting.Regression.Bug3709``() = 
+        this.VerifyCtrlSpaceListContainAllAtStartOfMarker(
+            fileContents = """
+                let foo = ""
+                let foo = foo.E(*marker*)n "a" """,
+            marker = "(*marker*)",
+            list = ["EndsWith"])  
 
 // Context project system
 [<TestFixture>] 

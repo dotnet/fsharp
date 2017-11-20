@@ -132,13 +132,15 @@ type internal FSharpCheckFileResults =
     ///    'record field' locations and r.h.s. of 'range' operator a..b
     /// </param>
     /// <param name="line">The line number where the completion is happening</param>
-    /// <param name="colAtEndOfNamesAndResidue">The column number at the end of the 'names' text </param>
-    /// <param name="qualifyingNames">The long identifier to the left of the '.'</param>
-    /// <param name="partialName">The residue of a partial long identifier to the right of the '.'</param>
-    /// <param name="lineStr">The residue of a partial long identifier to the right of the '.'</param>
+    /// <param name="partialName">
+    ///    Partial long name. QuickParse.GetPartialLongNameEx can be used to get it.
+    /// </param>
     /// <param name="lineText">
     ///    The text of the line where the completion is happening. This is only used to make a couple
     ///    of adhoc corrections to completion accuracy (e.g. checking for "..")
+    /// </param>
+    /// <param name="getAllSymbols">
+    ///    Function that returns all symbols from current and referenced assemblies.
     /// </param>
     /// <param name="hasTextChangedSinceLastTypecheck">
     ///    If text has been used from a captured name resolution from the typecheck, then 
@@ -146,7 +148,7 @@ type internal FSharpCheckFileResults =
     ///    and assume that we're going to repeat the operation later on.
     /// </param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member GetDeclarationListInfo : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * colAtEndOfPartialName: int * lineText:string * qualifyingNames: string list * partialName: string * getAllSymbols: (unit -> AssemblySymbol list) * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) * ?userOpName: string -> Async<FSharpDeclarationListInfo>
+    member GetDeclarationListInfo : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * lineText:string * partialName: PartialLongName * getAllSymbols: (unit -> AssemblySymbol list) * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) * ?userOpName: string -> Async<FSharpDeclarationListInfo>
 
     /// <summary>Get the items for a declaration list in FSharpSymbol format</summary>
     ///
@@ -156,13 +158,15 @@ type internal FSharpCheckFileResults =
     ///    'record field' locations and r.h.s. of 'range' operator a..b
     /// </param>
     /// <param name="line">The line number where the completion is happening</param>
-    /// <param name="colAtEndOfNamesAndResidue">The column number at the end of the 'names' text </param>
-    /// <param name="qualifyingNames">The long identifier to the left of the '.'</param>
-    /// <param name="partialName">The residue of a partial long identifier to the right of the '.'</param>
-    /// <param name="lineStr">The residue of a partial long identifier to the right of the '.'</param>
+    /// <param name="partialName">
+    ///    Partial long name. QuickParse.GetPartialLongNameEx can be used to get it.
+    /// </param>
     /// <param name="lineText">
     ///    The text of the line where the completion is happening. This is only used to make a couple
     ///    of adhoc corrections to completion accuracy (e.g. checking for "..")
+    /// </param>
+    /// <param name="getAllSymbols">
+    ///    Function that returns all symbols from current and referenced assemblies.
     /// </param>
     /// <param name="hasTextChangedSinceLastTypecheck">
     ///    If text has been used from a captured name resolution from the typecheck, then 
@@ -170,7 +174,7 @@ type internal FSharpCheckFileResults =
     ///    and assume that we're going to repeat the operation later on.
     /// </param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member GetDeclarationListSymbols : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * colAtEndOfPartialName: int * lineText:string * qualifyingNames: string list * partialName: string * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) * ?userOpName: string -> Async<FSharpSymbolUse list list>
+    member GetDeclarationListSymbols : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * lineText:string * partialName: PartialLongName * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) * ?userOpName: string -> Async<FSharpSymbolUse list list>
 
 
     /// <summary>Compute a formatted tooltip for the given location</summary>
@@ -200,7 +204,7 @@ type internal FSharpCheckFileResults =
     /// <param name="lineText">The text of the line where the information is being requested.</param>
     /// <param name="names">The identifiers at the location where the information is being requested.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member GetF1Keyword                   : line:int * colAtEndOfNames:int * lineText:string * names:string list * ?userOpName: string -> Async<string option>
+    member GetF1Keyword : line:int * colAtEndOfNames:int * lineText:string * names:string list * ?userOpName: string -> Async<string option>
 
 
     /// <summary>Compute a set of method overloads to show in a dialog relevant to the given code location.</summary>
@@ -210,7 +214,7 @@ type internal FSharpCheckFileResults =
     /// <param name="lineText">The text of the line where the information is being requested.</param>
     /// <param name="names">The identifiers at the location where the information is being requested.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member GetMethods              : line:int * colAtEndOfNames:int * lineText:string * names:string list option * ?userOpName: string -> Async<FSharpMethodGroup>
+    member GetMethods : line:int * colAtEndOfNames:int * lineText:string * names:string list option * ?userOpName: string -> Async<FSharpMethodGroup>
 
     /// <summary>Compute a set of method overloads to show in a dialog relevant to the given code location.  The resulting method overloads are returned as symbols.</summary>
     /// <param name="line">The line number where the information is being requested.</param>
@@ -262,8 +266,15 @@ type internal FSharpCheckFileResults =
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member internal IsRelativeNameResolvable: cursorPos : pos * plid : string list * item: Item * ?userOpName: string -> Async<bool>
 
+    /// Determines if a long ident is resolvable at a specific point.
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member IsRelativeNameResolvableFromSymbol: cursorPos : pos * plid : string list * symbol: FSharpSymbol * ?userOpName: string -> Async<bool>
+
     /// Represents complete typechecked implementation files, including thier typechecked signatures if any.
     member ImplementationFiles: FSharpImplementationFileContents list option
+
+    /// Open declarations in the file, including auto open modules.
+    member OpenDeclarations: FSharpOpenDeclaration list
 
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]

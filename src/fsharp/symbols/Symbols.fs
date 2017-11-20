@@ -128,7 +128,7 @@ module Impl =
     /// Convert an IL type definition accessibility into an F# accessibility
     let getApproxFSharpAccessibilityOfEntity (entity: EntityRef) = 
         match metadataOfTycon entity.Deref with 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedTypeMetadata _info -> 
             // This is an approximation - for generative type providers some type definitions can be private.
             taccessPublic
@@ -230,7 +230,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
     inherit FSharpSymbol(cenv, 
                          (fun () -> 
                               checkEntityIsResolved(entity); 
-                              if entity.IsModule then Item.ModuleOrNamespaces [entity] 
+                              if entity.IsModuleOrNamespace then Item.ModuleOrNamespaces [entity] 
                               else Item.UnqualifiedType [entity]), 
                          (fun _this thisCcu2 ad -> 
                              checkForCrossProjectAccessibility (thisCcu2, ad) (cenv.thisCcu, getApproxFSharpAccessibilityOfEntity entity)) 
@@ -288,7 +288,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
     member x.QualifiedName = 
         checkIsResolved()
         let fail() = invalidOp (sprintf "the type '%s' does not have a qualified name" x.LogicalName)
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         if entity.IsTypeAbbrev || entity.IsProvidedErasedTycon || entity.IsNamespace then fail()
         #else
         if entity.IsTypeAbbrev || entity.IsNamespace then fail()
@@ -305,12 +305,12 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
     
     member x.TryFullName = 
         if isUnresolved() then None
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         elif entity.IsTypeAbbrev || entity.IsProvidedErasedTycon then None
         #else
         elif entity.IsTypeAbbrev then None
 #endif
-        elif entity.IsNamespace  then Some entity.DemangledModuleOrNamespaceName 
+        elif entity.IsNamespace  then Some entity.DemangledModuleOrNamespaceName
         else
             match entity.CompiledRepresentation with 
             | CompiledTypeRepr.ILAsmNamed(tref, _, _) -> Some tref.FullName
@@ -346,7 +346,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
     member __.ArrayRank  = 
         checkIsResolved()
         rankOfArrayTyconRef cenv.g entity
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     member __.IsProvided  = 
         isResolved() &&
         entity.IsProvided
@@ -366,7 +366,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
     member __.IsClass = 
         isResolved() &&
         match metadataOfTycon entity.Deref with
-#if EXTENSIONTYPING 
+#if !NO_EXTENSIONTYPING 
         | ProvidedTypeMetadata info -> info.IsClass
 #endif
         | ILTypeMetadata (TILObjectReprData(_, _, td)) -> (td.tdKind = ILTypeDefKind.Class)
@@ -387,7 +387,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
     member __.IsDelegate = 
         isResolved() &&
         match metadataOfTycon entity.Deref with 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedTypeMetadata info -> info.IsDelegate ()
 #endif
         | ILTypeMetadata (TILObjectReprData(_, _, td)) -> (td.tdKind = ILTypeDefKind.Delegate)
@@ -530,7 +530,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
 
     member x.StaticParameters = 
         match entity.TypeReprInfo with 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | TProvidedTypeExtensionPoint info -> 
             let m = x.DeclarationLocation
             let typeBeforeArguments = info.ProvidedType 
@@ -618,6 +618,14 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
             [ for parts in partsList do
                 yield! walkParts parts ]
         res
+
+    member x.ActivePatternCases =
+        protect <| fun () -> 
+            ActivePatternElemsOfModuleOrNamespace x.Entity
+            |> Map.toList
+            |> List.map (fun (_, apref) ->
+                let item = Item.ActivePatternCase apref
+                FSharpActivePatternCase(cenv, apref.ActivePatternInfo, apref.ActivePatternVal.Type, apref.CaseIndex, Some apref.ActivePatternVal, item))
 
     override x.Equals(other: obj) =
         box x === other ||
@@ -1788,6 +1796,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member x.IsConstructor =
         match d with
         | C _ -> true
+        | V v -> v.IsConstructor
         | _ -> false
 
     member x.Data = d
@@ -2047,7 +2056,7 @@ and FSharpAttribute(cenv: cenv, attrib: AttribInfo) =
 
     override __.ToString() = 
         if entityIsUnresolved attrib.TyconRef then "attribute ???" else "attribute " + attrib.TyconRef.CompiledName + "(...)" 
-#if EXTENSIONTYPING    
+#if !NO_EXTENSIONTYPING    
 and FSharpStaticParameter(cenv, sp: Tainted< ExtensionTyping.ProvidedParameterInfo >, m) = 
     inherit FSharpSymbol(cenv, 
                          (fun () -> 
@@ -2170,7 +2179,7 @@ and FSharpAssembly internal (cenv, ccu: CcuThunk) =
     member __.CodeLocation = ccu.SourceCodeDirectory
     member __.FileName = ccu.FileName
     member __.SimpleName = ccu.AssemblyName 
-    #if EXTENSIONTYPING
+    #if !NO_EXTENSIONTYPING
     member __.IsProviderGenerated = ccu.IsProviderGenerated
     #endif
     member __.Contents = FSharpAssemblySignature(cenv, ccu)
@@ -2258,6 +2267,14 @@ type FSharpSymbol with
         | :? FSharpUnionCase as x -> Some x.Accessibility
         | :? FSharpMemberFunctionOrValue as x -> Some x.Accessibility
         | _ -> None
+
+/// Represents open declaration in F# code.
+type FSharpOpenDeclaration =
+    { LongId: Ident list 
+      Range: range option
+      Modules: FSharpEntity list 
+      AppliedScope: range 
+      IsOwnNamespace: bool }
 
 [<Sealed>]
 type FSharpSymbolUse(g:TcGlobals, denv: DisplayEnv, symbol:FSharpSymbol, itemOcc, range: range) = 

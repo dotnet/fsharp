@@ -3,8 +3,6 @@
 __scriptpath=$(cd "$(dirname "$0")"; pwd -P)
 
 # build tools
-dotnet restore $__scriptpath/buildtools/fssrgen/fssrgen.fsproj
-dotnet publish $__scriptpath/buildtools/fssrgen/fssrgen.fsproj -o $__scriptpath/../Tools/fssrgen
 dotnet restore $__scriptpath/buildtools/fslex/fslex.fsproj
 dotnet publish $__scriptpath/buildtools/fslex/fslex.fsproj -o $__scriptpath/../Tools/fslex
 dotnet restore $__scriptpath/buildtools/fsyacc/fsyacc.fsproj
@@ -22,4 +20,4 @@ dotnet publish $__scriptpath/buildfromsource/Fsc/Fsc.fsproj
 
 # build and pack tools
 dotnet restore $__scriptpath/buildfromsource/FSharp.Compiler.nuget/FSharp.Compiler.nuget.fsproj
-dotnet pack $__scriptpath/buildfromsource/FSharp.Compiler.nuget/FSharp.Compiler.nuget.fsproj -c release
+dotnet pack $__scriptpath/buildfromsource/FSharp.Compiler.nuget/FSharp.Compiler.nuget.fsproj -c Release

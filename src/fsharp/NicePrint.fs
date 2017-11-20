@@ -27,7 +27,7 @@ open Microsoft.FSharp.Compiler.PrettyNaming
 
 open Microsoft.FSharp.Core.Printf
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
 open Microsoft.FSharp.Core.CompilerServices
 #endif
@@ -1299,7 +1299,7 @@ module InfoMemberPrinting =
     //          Container(argName1:argType1, ..., argNameN:argTypeN) : retType
     //          Container.Method(argName1:argType1, ..., argNameN:argTypeN) : retType
     let private layoutMethInfoCSharpStyle amap m denv (minfo:MethInfo) minst =
-        let retTy = minfo.GetFSharpReturnTy(amap, m, minst)
+        let retTy = if minfo.IsConstructor then minfo.EnclosingType else minfo.GetFSharpReturnTy(amap, m, minst) 
         let layout = 
             if minfo.IsExtensionMember then
                 LeftL.leftParen ^^ wordL (tagKeyword (FSComp.SR.typeInfoExtension())) ^^ RightL.rightParen
@@ -1370,7 +1370,7 @@ module InfoMemberPrinting =
             let prettyTyparInst, prettyMethInfo, minst = prettifyILMethInfo amap m methInfo typarInst ilminfo
             let resL = layoutMethInfoCSharpStyle amap m denv prettyMethInfo minst
             prettyTyparInst, resL
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth _  -> 
             let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst 
             prettyTyparInst, layoutMethInfoCSharpStyle amap m denv methInfo methInfo.FormalMethodInst
@@ -1469,7 +1469,7 @@ module private TastDefinitionPrinting =
         | TAsmRepr _ 
         | TILObjectRepr _  
         | TMeasureableRepr _ 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | TProvidedTypeExtensionPoint _
         | TProvidedNamespaceExtensionPoint _
 #endif
@@ -1477,7 +1477,7 @@ module private TastDefinitionPrinting =
 
 
               
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     let private layoutILFieldInfo denv amap m (e: ILFieldInfo) =
         let staticL = if e.IsStatic then WordL.keywordStatic else emptyL
         let nameL = wordL (tagField (adjustILName e.FieldName))
@@ -1642,7 +1642,7 @@ module private TastDefinitionPrinting =
           let tpsL = layoutTyparDecls denv nameL tycon.IsPrefixDisplay tps
           typewordL ^^ tpsL
       let start = Option.map tagKeyword start
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
       match tycon.IsProvided with 
       | true -> 
           layoutProvidedTycon denv infoReader ad m start lhsL ty 

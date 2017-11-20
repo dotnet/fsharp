@@ -10,7 +10,6 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
     <AssemblyName>FSharp.Compiler.Private</AssemblyName>
-    <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
     <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
     <NoWarn>$(NoWarn);62;9</NoWarn>
     <ProjectGuid>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</ProjectGuid>
@@ -48,6 +47,26 @@
       </FilesToSign>
     </ItemGroup>
   </Target>
+  <ItemGroup>
+    <InternalsVisibleTo Include="fsc" />
+    <InternalsVisibleTo Include="FSharp.Build" />
+    <InternalsVisibleTo Include="fsi" />
+    <InternalsVisibleTo Include="fsiAnyCpu" />
+    <InternalsVisibleTo Include="FSharp.LanguageService" />
+    <InternalsVisibleTo Include="FSharp.LanguageService.Base" />
+    <InternalsVisibleTo Include="FSharp.ProjectSystem.Base" />
+    <InternalsVisibleTo Include="FSharp.ProjectSystem.FSharp" />
+    <InternalsVisibleTo Include="FSharp.ProjectSystem.PropertyPages" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Interactive.Settings" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Server.Shared" />
+    <InternalsVisibleTo Include="VisualFSharp.Salsa" />
+    <InternalsVisibleTo Include="VisualFSharp.Unittests" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Unittests" />
+    <InternalsVisibleTo Include="FSharp.Editor" />
+    <InternalsVisibleTo Include="HostedCompilerServer" />
+    <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
+    <InternalsVisibleTo Include="LanguageServiceProfiling" />
+  </ItemGroup>
   <ItemGroup>
     <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
       <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
@@ -526,6 +545,12 @@
     <Compile Include="..\symbols\Exprs.fs">
       <Link>Symbols/Exprs.fs</Link>
     </Compile>
+    <Compile Include="..\symbols\SymbolPatterns.fsi">
+      <Link>Symbols/SymbolPatterns.fsi</Link>
+    </Compile>
+    <Compile Include="..\symbols\SymbolPatterns.fs">
+      <Link>Symbols/SymbolPatterns.fs</Link>
+    </Compile>
 
     <!-- the incremental builder and service . -->
     <Compile Include="..\vs\IncrementalBuild.fsi">
@@ -600,6 +625,12 @@
     <Compile Include="..\vs\ExternalSymbol.fs">
       <Link>Service/ExternalSymbol.fs</Link>
     </Compile>
+    <Compile Include="..\vs\QuickParse.fsi">
+      <Link>Service/QuickParse.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\QuickParse.fs">
+      <Link>Service/QuickParse.fs</Link>
+    </Compile>
     <Compile Include="..\vs\service.fsi">
       <Link>Service/service.fsi</Link>
     </Compile>
@@ -618,7 +649,13 @@
     <Compile Include="..\vs\ServiceStructure.fs">
       <Link>Service/ServiceStructure.fs</Link>
     </Compile>
-
+    <Compile Include="..\vs\ServiceAnalysis.fsi">
+      <Link>Service/ServiceAnalysis.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceAnalysis.fs">
+      <Link>Service/ServiceAnalysis.fs</Link>
+    </Compile>
+    
     <!-- the core of the F# Interactive fsi.exe implementation -->
     <EmbeddedText Include="..\fsi\FSIstrings.txt">
       <Link>FSIstrings.txt</Link>
@@ -630,9 +667,6 @@
       <Link>InteractiveSession\fsi.fs</Link>
     </Compile>
 
-    <Compile Include="InternalsVisibleTo.fs" Condition="'$(TargetDotnetProfile)' != 'coreclr'">
-      <Link>Misc/InternalsVisibleTo.fs</Link>
-    </Compile>
     <Compile Include="..\MSBuildReferenceResolver.fs">
       <Link>Misc/MSBuildReferenceResolver.fs</Link>
     </Compile>
@@ -654,7 +688,7 @@
     <Reference Include="System.Numerics" />
     <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.DiaSymReader.PortablePdb">
-      <HintPath>..\..\..\packages\Microsoft.DiaSymReader.PortablePdb.1.1.0\lib\portable-net45+win8\Microsoft.DiaSymReader.PortablePdb.dll</HintPath>
+      <HintPath>..\..\..\packages\Microsoft.DiaSymReader.PortablePdb.1.2.0\lib\portable-net45+win8\Microsoft.DiaSymReader.PortablePdb.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.DiaSymReader">
       <HintPath>..\..\..\packages\Microsoft.DiaSymReader.1.1.0\lib\portable-net45+win8\Microsoft.DiaSymReader.dll</HintPath>

@@ -57,6 +57,8 @@
     <MicroBuildAssemblyFileLanguage>cs</MicroBuildAssemblyFileLanguage>
     <DeployExtension>false</DeployExtension>
   </PropertyGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
+  <Import Project="$(FSharpSourcesRoot)\..\packages\$(VSSDK_BUILDTOOLS_VERSION)\build\Microsoft.VsSDK.BuildTools.props" />
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <StartAction>Program</StartAction>
     <StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
@@ -259,62 +261,6 @@
       <Project>{1fb1dd07-06aa-45b4-b5ac-20ff5bee98b6}</Project>
       <Name>XMLFile</Name>
       <VSIXSubPath>ItemTemplates</VSIXSubPath>
-      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\ProjectTemplates\ConsoleProject\ConsoleProject.csproj">
-      <Project>{604f0daa-2d33-48dd-b162-edf0b672803d}</Project>
-      <Name>ConsoleProject</Name>
-      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
-      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\ProjectTemplates\LibraryProject\LibraryProject.csproj">
-      <Project>{01678cda-a11f-4dee-9344-2edf91cf1ae7}</Project>
-      <Name>LibraryProject</Name>
-      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
-      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\ProjectTemplates\NetCore259Project\NetCore259Project.csproj">
-      <Project>{d9d95330-3626-4199-b7af-17b8e4af6d87}</Project>
-      <Name>NetCore259Project</Name>
-      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
-      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\ProjectTemplates\NetCore78Project\NetCore78Project.csproj">
-      <Project>{1a8dbf70-4178-4ae3-af5f-39ddd5692210}</Project>
-      <Name>NetCore78Project</Name>
-      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
-      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\ProjectTemplates\NetCoreProject\NetCoreProject.csproj">
-      <Project>{5b739cf3-1116-4eb4-b598-6c16bea81ce5}</Project>
-      <Name>NetCoreProject</Name>
-      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
-      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\ProjectTemplates\PortableLibraryProject\PortableLibraryProject.csproj">
-      <Project>{db374a0c-7560-479f-9b21-d37c81f7624f}</Project>
-      <Name>PortableLibraryProject</Name>
-      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
-      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\ProjectTemplates\TutorialProject\TutorialProject.csproj">
-      <Project>{2facee44-48bd-40b5-a2ee-b54a0c9bb7c4}</Project>
-      <Name>TutorialProject</Name>
-      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
       <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <Private>True</Private>

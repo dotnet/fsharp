@@ -17,6 +17,7 @@ open Microsoft.VisualStudio.OLE.Interop
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.LanguageService
+open Microsoft.VisualStudio.FSharp.LanguageService.SiteProvider
 open Microsoft.VisualStudio.FSharp.Editor
 
 type internal FSharpLanguageServiceTestable() as this =
@@ -115,8 +116,8 @@ type internal FSharpLanguageServiceTestable() as this =
     member this.OnProjectSettingsChanged(site:IProjectSite) = 
         // The project may have changed its references.  These would be represented as 'dependency files' of each source file.  Each source file will eventually start listening
         // for changes to those dependencies, at which point we'll get OnDependencyFileCreateOrDelete notifications.  Until then, though, we just 'make a note' that this project is out of date.
-        bgRequests.AddOutOfDateProjectFileName(site.ProjectFileName()) 
-        for filename in site.SourceFilesOnDisk() do
+        bgRequests.AddOutOfDateProjectFileName(site.ProjectFileName) 
+        for filename in site.CompilationSourceFiles do
             let rdt = this.ServiceProvider.RunningDocumentTable
             match this.ProjectSitesAndFiles.TryGetSourceOfFile_DEPRECATED(rdt,filename) with
             | Some source -> 
@@ -127,7 +128,7 @@ type internal FSharpLanguageServiceTestable() as this =
     /// Respond to project being cleaned/rebuilt (any live type providers in the project should be refreshed)
     member this.OnProjectCleaned(projectSite:IProjectSite) = 
         let enableInMemoryCrossProjectReferences = true
-        let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, "" ,None, serviceProvider.Value, false)
+        let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, serviceProvider.Value, None(*projectId*), "" ,None, None, false)
         this.FSharpChecker.NotifyProjectCleaned(checkOptions) |> Async.RunSynchronously
 
     member this.OnActiveViewChanged(textView) =
@@ -170,7 +171,7 @@ type internal FSharpLanguageServiceTestable() as this =
         member this.DependencyFileCreated projectSite = 
             let enableInMemoryCrossProjectReferences = true
             // Invalidate the configuration if we notice any add for any DependencyFiles 
-            let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, "", None, this.ServiceProvider, false)
+            let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, serviceProvider.Value, None(*projectId*),"" ,None, None, false)
             this.FSharpChecker.InvalidateConfiguration(checkOptions)
 
         member this.DependencyFileChanged (filename) = 

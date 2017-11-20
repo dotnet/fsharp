@@ -6,18 +6,21 @@
     <OutputType>Library</OutputType>
     <TargetFramework>netstandard1.6</TargetFramework>
     <AssemblyName>FSharp.Compiler.Interactive.Settings</AssemblyName>
-    <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
+    <NoWarn>$(NoWarn);45;55;62;75;1182;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <FX_NO_LOADER>true</FX_NO_LOADER>
-    <DefineConstants>EXTENSIONTYPING;$(DefineConstants);BUILD_FROM_SOURCE</DefineConstants>
-    <OtherFlags>$(OtherFlags) --warnon:1182 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
+    <OtherFlags>$(OtherFlags) --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
   </PropertyGroup>
 
   <Import Project="..\BuildFromSource.targets" />
   <ItemGroup>
-    <FsSrGen Include="$(FSharpSourcesRoot)\fsharp\FSInteractiveSettings.txt" />
+    <EmbeddedResource Include="FSInteractiveSettings.resx">
+      <Link>FSInteractiveSettings.resx</Link>
+    </EmbeddedResource>
+    <Compile Include="FSInteractiveSettings.fs" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Interactive.Settings\InternalsVisibleTo.fs" />
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Interactive.Settings.dll.fs" />
+    <Compile Include="InternalsVisibleTo.fs" />
     <Compile Include="..\..\utils\reshapedreflection.fs" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\fsiattrs.fs" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\fsiaux.fsi" />

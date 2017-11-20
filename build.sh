@@ -29,7 +29,7 @@ build.sh ^<all^|net40^|coreclr^|pcls^|vs^>
          ^<ci^|ci_part1^|ci_part2^|ci_part3^|microbuild^>
          ^<debug^|release^>
          ^<diag^|publicsign^>
-         ^<test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-pcl-coreunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^>
+         ^<test^|no-test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-pcl-coreunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^>
          ^<include tag^>
          ^<init^>
 
@@ -104,6 +104,7 @@ export INCLUDE_TEST_TAGS=
 
 # Set up variables used to determine whether we'll automatically select which
 # targets to build/run/test. NOTE: These aren't exported, they're only used by this script.
+no_test=0
 _autoselect=1
 _autoselect_tests=0
 
@@ -137,6 +138,11 @@ do
             ;;
         "nobuild")
             export BUILD_PHASE=0
+            ;;
+        "none")
+            _autoselect=0
+            export _buildexit=1
+            export _buildexitVALUE=0
             ;;
         "all")
             _autoselect=0
@@ -245,6 +251,9 @@ do
         "test")
             _autoselect_tests=1
             ;;
+        "no-test")
+            no_test=1
+            ;;
         "include")
             failwith "The 'include' option is not (yet) supported by this script."
             #export /a counter=!counter!+1
@@ -320,6 +329,10 @@ do
     esac
 done
 
+if [ $_buildexit -eq 1 ]; then
+    exit $_buildexitvalue
+fi
+
 # Apply defaults, if necessary.
 if [ $_autoselect -eq 1 ]; then
     export BUILD_NET40=1
@@ -350,6 +363,18 @@ if [ $_autoselect_tests -eq 1 ]; then
     fi
 fi
 
+# If the `PB_SKIPTESTS` variable is set to 'true' then no tests should be built or run, even if explicitly specified
+if [ $PB_SKIPTESTS -eq "true" ]; then
+    export TEST_NET40_COMPILERUNIT_SUITE=0
+    export TEST_NET40_COREUNIT_SUITE=0
+    export TEST_NET40_FSHARP_SUITE=0
+    export TEST_NET40_FSHARPQA_SUITE=0
+    export TEST_CORECLR_COREUNIT_SUITE=0
+    export TEST_CORECLR_FSHARP_SUITE=0
+    export TEST_PORTABLE_COREUNIT_SUITE=0
+    export TEST_VS_IDEUNIT_SUITE=0
+fi
+
 #
 # Report config
 #
@@ -366,6 +391,9 @@ printf "BUILD_VS=%s\n" "$BUILD_VS"
 printf "BUILD_SETUP=%s\n" "$BUILD_SETUP"
 printf "BUILD_CONFIG=%s\n" "$BUILD_CONFIG"
 printf "BUILD_PUBLICSIGN=%s\n" "$BUILD_PUBLICSIGN"
+printf "\n"
+printf "PB_SKIPTESTS=%s\n" "$PB_SKIPTESTS"
+printf "PB_RESTORESOURCE=%s\n" "$PB_RESTORESOURCE"
 printf "\n"
 printf "TEST_NET40_COMPILERUNIT_SUITE=%s\n" "$TEST_NET40_COMPILERUNIT_SUITE"
 printf "TEST_NET40_COREUNIT_SUITE=%s\n" "$TEST_NET40_COREUNIT_SUITE"
@@ -388,7 +416,7 @@ printf "\n"
 
 build_status "Done with arguments, starting preparation"
 
-_msbuildexe="xbuild"
+_msbuildexe="msbuild"
 msbuildflags=""
 
 # Perform any necessary setup and system configuration prior to running builds.
@@ -412,20 +440,33 @@ _nugetconfig=".nuget/NuGet.Config"
 
 # Restore packages (default to restoring packages if otherwise unspecified).
 if [ "${RestorePackages:-true}" = 'true' ]; then
-    eval "$_nugetexe restore packages.config -PackagesDirectory packages -ConfigFile $_nugetconfig"
+    cd fcs
+    mono .paket/paket.exe restore
+    cd ..
+    exit_code=$?
+    if [ $exit_code -ne 0 ]; then
+        exit $exit_code
+    fi
+
+    _nugetoptions="-PackagesDirectory packages -ConfigFile $_nugetconfig"
+    if [ "$PB_RESTORESOURCE" != "" ]; then
+        _nugetoptions="$_nugetoptions -Source $PB_RESTORESOURCE"
+    fi
+
+    eval "$_nugetexe restore packages.config $_nugetoptions"
     if [ $? -ne 0 ]; then
         failwith "Nuget restore failed"
     fi
 
     if [ "$BUILD_VS" = '1' ]; then
-        eval "$_nugetexe restore vsintegration/packages.config -PackagesDirectory packages -ConfigFile $_nugetconfig"
+        eval "$_nugetexe restore vsintegration/packages.config $_nugetoptions"
         if [ $? -ne 0 ]; then
             failwith "Nuget restore failed"
         fi
     fi
 
     if [ "$BUILD_SETUP" = '1' ]; then
-        eval "$_nugetexe restore setup/packages.config -PackagesDirectory packages -ConfigFile $_nugetconfig"
+        eval "$_nugetexe restore setup/packages.config $_nugetoptions"
         if [ $? -ne 0 ]; then
             failwith "Nuget restore failed"
         fi
@@ -466,7 +507,7 @@ if [ "$BUILD_PROTO" = '1' ]; then
         { pushd ./lkg/fsc && eval "$_dotnetexe publish project.json --no-build -o ${_scriptdir}Tools/lkg -r $_architecture" && popd; } || failwith "dotnet publish failed"
         { pushd ./lkg/fsi && eval "$_dotnetexe publish project.json --no-build -o ${_scriptdir}Tools/lkg -r $_architecture" && popd; } || failwith "dotnet publish failed"
 
-        { printeval "$_msbuildexe $msbuildflags src/fsharp-proto-build.proj"; } || failwith "compiler proto build failed"
+        { printeval "$_msbuildexe $msbuildflags src/fsharp-proto-build.proj /p:Configuration=Proto"; } || failwith "compiler proto build failed"
 
 #        { printeval "$_ngenexe install Proto/net40/bin/fsc-proto.exe /nologo"; } || failwith "NGen of proto failed"
     else
@@ -518,6 +559,11 @@ fi
 # TODO: Define location of ildasm/monodis and sn
 
 if [ "$TEST_NET40_COMPILERUNIT_SUITE" = '0' ] && [ "$TEST_PORTABLE_COREUNIT_SUITE" = '0' ] && [ "$TEST_CORECLR_COREUNIT_SUITE" = '0' ] && [ "$TEST_VS_IDEUNIT_SUITE" = '0' ] && [ "$TEST_NET40_FSHARP_SUITE" = '0' ] && [ "$TEST_NET40_FSHARPQA_SUITE" = '0' ]; then
+    # Successful build; not running tests so exit now.
+    exit 0
+fi
+
+if [ $no_test -eq 1 ]; then
     # Successful build; not running tests so exit now.
     exit 0
 fi

@@ -15,6 +15,11 @@
     <TargetFrameworkVersion Condition="'$(TargetDotnetProfile)' != 'coreclr'">v4.6</TargetFrameworkVersion>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="fsi" />
+    <InternalsVisibleTo Include="fsiAnyCpu" />
+    <InternalsVisibleTo Include="FSharp.VS.FSI" />
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="FSharpInteractiveServer.fs" />
   </ItemGroup>
