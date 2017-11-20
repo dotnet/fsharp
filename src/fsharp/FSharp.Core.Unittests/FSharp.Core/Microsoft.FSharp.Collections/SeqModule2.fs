@@ -1522,7 +1522,32 @@ type SeqModule2() =
         // null Seq
         CheckThrowsArgumentNullException(fun() -> Seq.toList null |> ignore)
         ()
-        
+
+    [<Test>]
+    member this.Transpose() =
+        // integer seq
+        VerifySeqsEqual [seq [1; 4]; seq [2; 5]; seq [3; 6]] <| Seq.transpose (seq [seq {1..3}; seq {4..6}])
+        VerifySeqsEqual [seq [1]; seq [2]; seq [3]] <| Seq.transpose (seq [seq {1..3}])
+        VerifySeqsEqual [seq {1..2}] <| Seq.transpose (seq [seq [1]; seq [2]])
+
+        // string seq
+        VerifySeqsEqual [seq ["a";"d"]; seq ["b";"e"]; seq ["c";"f"]] <| Seq.transpose (seq [seq ["a";"b";"c"]; seq ["d";"e";"f"]])
+
+        // empty seq
+        VerifySeqsEqual [seq []] <| Seq.transpose (seq [])
+
+        // seq of empty seqs - m x 0 seq transposes to 0 x m (i.e. empty)
+        VerifySeqsEqual [seq []] <| Seq.transpose (seq [seq []])
+        VerifySeqsEqual [seq []] <| Seq.transpose (seq [seq []; seq []])
+
+        // null seq
+        let nullSeq = null : seq<seq<string>>
+        CheckThrowsArgumentNullException (fun () -> Seq.transpose nullSeq |> ignore)
+
+        // infinite seq
+        let infiniteSeq = Seq.initInfinite (fun i -> Seq.initInfinite (fun j -> i + j))
+        VerifySeqsEqual (Seq.init 100 id) <| (Seq.transpose infiniteSeq |> Seq.head |> Seq.take 100)
+
     [<Test>]
     member this.Truncate() =
         // integer Seq

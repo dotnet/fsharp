@@ -666,6 +666,9 @@ namespace Microsoft.FSharp.Collections
             | []  -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString            
             | _   -> invalidArg "source" (SR.GetString(SR.inputSequenceTooLong))
 
+        [<CompiledName("Transpose")>]
+        let transpose (list : 'T list list) = Microsoft.FSharp.Primitives.Basics.List.transpose list
+
         [<CompiledName("Truncate")>]
         let truncate count list = Microsoft.FSharp.Primitives.Basics.List.truncate count list
 

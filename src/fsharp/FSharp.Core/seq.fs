@@ -854,6 +854,27 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Singleton")>]
         let singleton value = mkSeq (fun () -> IEnumerator.Singleton value)
 
+        [<CompiledName("Transpose")>]
+        let transpose (source: seq<seq<'T>>) =
+            checkNonNull "source" source
+            seq { use ie = source.GetEnumerator()
+                  let ra = ResizeArray<_>()
+                  try
+                      yield seq { while ie.MoveNext() do
+                                    let inner = ie.Current.GetEnumerator()
+                                    if inner.MoveNext() then
+                                        yield inner.Current
+                                        ra.Add inner }
+                      if ra.Count > 0 then
+                          while ra.[0].MoveNext() do
+                              yield seq { yield ra.[0].Current
+                                          let mutable i = 1
+                                          while i < ra.Count && ra.[i].MoveNext() do
+                                            yield ra.[i].Current
+                                            i <- i + 1 }
+                  finally
+                    for ie in ra do
+                        ie.Dispose() }
 
         [<CompiledName("Truncate")>]
         let truncate count (source: seq<'T>) =
