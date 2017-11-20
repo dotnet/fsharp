@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // Various tests for the:
 // Microsoft.FSharp.Collections.Array3D module
@@ -19,7 +19,7 @@ Make sure each method works on:
 *)
 
 
-[<TestFixture>]
+[<TestFixture>][<Category "Collections.Array">][<Category "FSharp.Core.Collections">]
 type Array3Module() =
 
     let VerifyDimensions arr x y z =

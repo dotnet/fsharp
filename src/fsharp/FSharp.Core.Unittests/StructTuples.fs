@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // Various tests for Microsoft.FSharp.Core type forwarding
 
@@ -141,3 +141,4 @@ type StructTuplesCSharpInterop() =
         Assert.IsTrue( (one=1) && (two=2) && (three=3) && (four=4) && (five = 5) && (six=6) && (seven=7) && (eight=8) && (nine=9) && (ten=10) && (eleven=11) && (twelve=12) && (thirteen=13) && (fourteen=14) && (fifteen=15) && (sixteen=16) )
         ()
 #endif
+

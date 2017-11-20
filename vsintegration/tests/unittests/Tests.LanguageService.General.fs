@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Tests.LanguageService.General
 
@@ -18,8 +18,8 @@ open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
 
-[<TestFixture>] 
-module IFSharpSource = 
+[<TestFixture>][<Category "LanguageService">] 
+module IFSharpSource_DEPRECATED = 
 
     [<Test>]
     let MultipleSourceIsDirtyCallsChangeTimestamps() = 
@@ -27,10 +27,10 @@ module IFSharpSource =
         let recolorizeLine (_line:int) = ()
         let isClosed() = false
         let depFileChangeNotify = 
-            { new IDependencyFileChangeNotify with
+            { new IDependencyFileChangeNotify_DEPRECATED with
                 member this.DependencyFileCreated _projectSite = ()
                 member this.DependencyFileChanged _filename = () }
-        let source = Source.CreateSourceTestable(recolorizeWholeFile, recolorizeLine, (fun () -> "dummy.fs"), isClosed, VsMocks.VsFileChangeEx(),depFileChangeNotify)
+        let source = Source.CreateSourceTestable_DEPRECATED(recolorizeWholeFile, recolorizeLine, (fun () -> "dummy.fs"), isClosed, VsMocks.VsFileChangeEx(),depFileChangeNotify)
         let originalChangeCount = source.ChangeCount
         let originalDirtyTime = source.DirtyTime
 
@@ -55,7 +55,7 @@ module IFSharpSource =
 
 
 
-[<TestFixture>] 
+[<TestFixture>][<Category "LanguageService">]  
 type UsingMSBuild() =
     inherit LanguageServiceBaseTests()
 
@@ -101,60 +101,6 @@ type UsingMSBuild() =
                             n
                    ) 0
 
-    [<Test>]
-    member public this.``PendingRequests``() =
-        let makeRequest (reason : BackgroundRequestReason) = new BackgroundRequest(false, Reason = reason)
-
-        let requests = Microsoft.VisualStudio.FSharp.LanguageService.PendingRequests()
-        
-        let verify r = 
-            let dequeued = requests.Dequeue()
-            Assert.AreEqual(r, dequeued.Reason)
-
-        // Ui1 + Ui2 = Ui2
-        // should have only last
-        requests.Enqueue(makeRequest BackgroundRequestReason.MemberSelect)
-        requests.Enqueue(makeRequest BackgroundRequestReason.Goto)
-        verify BackgroundRequestReason.Goto
-        Assert.AreEqual(0, requests.Count)
-
-        // n-Ui1 + Ui2 = Ui2
-        // should have only last
-        requests.Enqueue(makeRequest BackgroundRequestReason.FullTypeCheck)
-        requests.Enqueue(makeRequest BackgroundRequestReason.MemberSelect)
-        verify BackgroundRequestReason.MemberSelect
-        Assert.AreEqual(0, requests.Count)
-
-        // n-Ui1 + n-Ui2 = n-Ui2
-        requests.Enqueue(makeRequest BackgroundRequestReason.FullTypeCheck)
-        requests.Enqueue(makeRequest BackgroundRequestReason.ParseFile)
-        verify BackgroundRequestReason.ParseFile
-        Assert.AreEqual(0, requests.Count)
-
-        // Ui1 + n-Ui2 = Ui1 + n-Ui2
-        requests.Enqueue(makeRequest BackgroundRequestReason.MemberSelect)
-        requests.Enqueue(makeRequest BackgroundRequestReason.ParseFile)
-        verify BackgroundRequestReason.MemberSelect
-        Assert.AreEqual(1, requests.Count)
-        verify BackgroundRequestReason.ParseFile
-        Assert.AreEqual(0, requests.Count)
-
-        // (Ui1 + n-Ui2) + Ui3 = Ui3
-        requests.Enqueue(makeRequest BackgroundRequestReason.MemberSelect)
-        requests.Enqueue(makeRequest BackgroundRequestReason.ParseFile)
-        requests.Enqueue(makeRequest BackgroundRequestReason.MemberSelect)
-        verify BackgroundRequestReason.MemberSelect
-        Assert.AreEqual(0, requests.Count)
-
-        // (Ui1 + n-Ui2) + n-Ui3 = Ui1 + n-Ui3
-        requests.Enqueue(makeRequest BackgroundRequestReason.MemberSelect)
-        requests.Enqueue(makeRequest BackgroundRequestReason.ParseFile)
-        requests.Enqueue(makeRequest BackgroundRequestReason.FullTypeCheck)
-        verify BackgroundRequestReason.MemberSelect
-        Assert.AreEqual(1, requests.Count)
-        verify BackgroundRequestReason.FullTypeCheck
-        Assert.AreEqual(0, requests.Count)
-        
 
     [<Test>]
     member public this.``PublicSurfaceArea.DotNetReflection``() =
@@ -162,8 +108,6 @@ type UsingMSBuild() =
         Assert.AreEqual(1, ps)  // BuildPropertyDescriptor
         let ls = publicTypesInAsm @"FSharp.LanguageService.dll"
         Assert.AreEqual(0, ls)
-        let comp = publicTypesInAsm @"FSharp.Compiler.dll"
-        Assert.AreEqual(0, comp)
         let compis = publicTypesInAsm @"FSharp.Compiler.Interactive.Settings.dll"
         Assert.AreEqual(4, compis)
         let compserver = publicTypesInAsm @"FSharp.Compiler.Server.Shared.dll"
@@ -201,7 +145,7 @@ type UsingMSBuild() =
                                   
     [<Test>]
     member public this.``Lexer.CommentsLexing.Bug1548``() =
-        let scan = new FSharpScanner(fun source -> 
+        let scan = new FSharpScanner_DEPRECATED(fun source -> 
                         let filename = "test.fs"
                         let defines = [ "COMPILED"; "EDITING" ]
             
@@ -251,7 +195,7 @@ type UsingMSBuild() =
             let currentTokenInfo = new Microsoft.VisualStudio.FSharp.LanguageService.TokenInfo()
             let lastColorState = 0 // First line of code, so no previous state
             currentTokenInfo.EndIndex <- -1
-            let refState = ref (ColorStateLookup.LexStateOfColorState lastColorState)
+            let refState = ref (ColorStateLookup_DEPRECATED.LexStateOfColorState lastColorState)
             
             // Lex the line and add all lexed tokens to a dictionary
             let lexed = new System.Collections.Generic.Dictionary<_, _>()
@@ -398,16 +342,16 @@ type UsingMSBuild() =
     member public this.``TokenInfo.TriggerClasses``() =      
       let important = 
         [ // Member select for dot completions
-          Parser.DOT, (FSharpTokenColorKind.Operator,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.MemberSelect)
+          Parser.DOT, (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.MemberSelect)
           // for parameter info
-          Parser.LPAREN, (FSharpTokenColorKind.Text,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamStart ||| FSharpTokenTriggerClass.MatchBraces)
-          Parser.COMMA,  (FSharpTokenColorKind.Text,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamNext)
-          Parser.RPAREN, (FSharpTokenColorKind.Text,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamEnd ||| FSharpTokenTriggerClass.MatchBraces) ]
+          Parser.LPAREN, (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamStart ||| FSharpTokenTriggerClass.MatchBraces)
+          Parser.COMMA,  (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamNext)
+          Parser.RPAREN, (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamEnd ||| FSharpTokenTriggerClass.MatchBraces) ]
       let matching =           
         [ // Other cases where we expect MatchBraces
           Parser.LQUOTE("", false); Parser.LBRACK; Parser.LBRACE; Parser.LBRACK_BAR;
           Parser.RQUOTE("", false); Parser.RBRACK; Parser.RBRACE; Parser.BAR_RBRACK ]
-        |> List.map (fun n -> n, (FSharpTokenColorKind.Text,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.MatchBraces))
+        |> List.map (fun n -> n, (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.MatchBraces))
       for tok, expected in List.concat [ important; matching ] do
         let info = TestExpose.TokenInfo tok
         AssertEqual(expected, info)

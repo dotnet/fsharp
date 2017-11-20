@@ -1,9 +1,8 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.PatternMatchCompilation
 
 open System.Collections.Generic
-open Internal.Utilities
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
@@ -14,7 +13,6 @@ open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.Tastops.DebugPrint
 open Microsoft.FSharp.Compiler.PrettyNaming
 open Microsoft.FSharp.Compiler.TypeRelations
@@ -919,7 +917,7 @@ let CompilePatternBasic
              
              if not (isNil topgtvs) then error(InternalError("Unexpected generalized type variables when compiling an active pattern",m))
              let rty = apinfo.ResultType g m resTys
-             let v,vexp = mkCompGenLocal m "activePatternResult" rty
+             let v,vexp = mkCompGenLocal m ("activePatternResult"^string (newUnique())) rty
              if topv.IsMemberOrModuleBinding then 
                  AdjustValToTopVal v topv.ActualParent ValReprInfo.emptyValData
              let argexp = GetSubExprOfInput subexpr

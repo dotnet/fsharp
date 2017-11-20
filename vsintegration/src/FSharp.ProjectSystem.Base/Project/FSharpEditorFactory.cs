@@ -118,7 +118,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             pbstrPhysicalView = null; 
 
-            if(rguidLogicalView.Equals(VSConstants.LOGVIEWID.Designer_guid) || rguidLogicalView.Equals(VSConstants.LOGVIEWID.Primary_guid))
+            if(rguidLogicalView == VSConstants.LOGVIEWID.Primary_guid ||
+                rguidLogicalView == VSConstants.LOGVIEWID.Debugging_guid ||
+                rguidLogicalView == VSConstants.LOGVIEWID.Code_guid ||
+                rguidLogicalView == VSConstants.LOGVIEWID.TextView_guid)
             {
                 return VSConstants.S_OK;
             }

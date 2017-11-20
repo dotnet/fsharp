@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Interactive
 
@@ -11,6 +11,7 @@ open System.Runtime.InteropServices
 open System.ComponentModel.Design
 open Microsoft.Win32
 open Microsoft.VisualStudio
+open Microsoft.VisualStudio.FSharp.Interactive
 open Microsoft.VisualStudio.OLE.Interop
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
@@ -22,9 +23,6 @@ open Microsoft.VisualStudio.Utilities
 open Util
 open System.ComponentModel
 open Microsoft.VisualStudio.FSharp.Interactive.Session
-
-module SP = Microsoft.VisualStudio.FSharp.Interactive.Session.SessionsProperties
-
 
 module internal ContentType = 
     [<Export>]
@@ -40,25 +38,25 @@ module internal ContentType =
 type FsiPropertyPage() = 
     inherit DialogPage()    
        
-    [<SRProperties.Category(SRProperties.FSharpInteractiveMisc)>]
-    [<SRProperties.DisplayName(SRProperties.FSharpInteractive64Bit)>] 
-    [<SRProperties.Description(SRProperties.FSharpInteractive64BitDescr)>] 
-    member this.FsiPreferAnyCPUVersion with get() = SP.useAnyCpuVersion and set (x:bool) = SP.useAnyCpuVersion <- x
+    [<ResourceCategory(SRProperties.FSharpInteractiveMisc)>]
+    [<ResourceDisplayName(SRProperties.FSharpInteractive64Bit)>] 
+    [<ResourceDescription(SRProperties.FSharpInteractive64BitDescr)>] 
+    member this.FsiPreferAnyCPUVersion with get() = SessionsProperties.useAnyCpuVersion and set (x:bool) = SessionsProperties.useAnyCpuVersion <- x
 
-    [<SRProperties.Category(SRProperties.FSharpInteractiveMisc)>]
-    [<SRProperties.DisplayName(SRProperties.FSharpInteractiveOptions)>]
-    [<SRProperties.Description(SRProperties.FSharpInteractiveOptionsDescr)>] 
-    member this.FsiCommandLineArgs with get() = SP.fsiArgs and set (x:string) = SP.fsiArgs <- x
+    [<ResourceCategory(SRProperties.FSharpInteractiveMisc)>]
+    [<ResourceDisplayName(SRProperties.FSharpInteractiveOptions)>]
+    [<ResourceDescription(SRProperties.FSharpInteractiveOptionsDescr)>] 
+    member this.FsiCommandLineArgs with get() = SessionsProperties.fsiArgs and set (x:string) = SessionsProperties.fsiArgs <- x
 
-    [<SRProperties.Category(SRProperties.FSharpInteractiveMisc)>]
-    [<SRProperties.DisplayName(SRProperties.FSharpInteractiveShadowCopy)>]
-    [<SRProperties.Description(SRProperties.FSharpInteractiveShadowCopyDescr)>] 
-    member this.FsiShadowCopy with get() = SP.fsiShadowCopy and set (x:bool) = SP.fsiShadowCopy <- x
+    [<ResourceCategory(SRProperties.FSharpInteractiveMisc)>]
+    [<ResourceDisplayName(SRProperties.FSharpInteractiveShadowCopy)>]
+    [<ResourceDescription(SRProperties.FSharpInteractiveShadowCopyDescr)>] 
+    member this.FsiShadowCopy with get() = SessionsProperties.fsiShadowCopy and set (x:bool) = SessionsProperties.fsiShadowCopy <- x
 
-    [<SRProperties.Category(SRProperties.FSharpInteractiveDebugging)>]
-    [<SRProperties.DisplayName(SRProperties.FSharpInteractiveDebugMode)>]
-    [<SRProperties.Description(SRProperties.FSharpInteractiveDebugModeDescr)>] 
-    member this.FsiDebugMode with get() = SP.fsiDebugMode and set (x:bool) = SP.fsiDebugMode <- x
+    [<ResourceCategory(SRProperties.FSharpInteractiveDebugging)>]
+    [<ResourceDisplayName(SRProperties.FSharpInteractiveDebugMode)>]
+    [<ResourceDescription(SRProperties.FSharpInteractiveDebugModeDescr)>] 
+    member this.FsiDebugMode with get() = SessionsProperties.fsiDebugMode and set (x:bool) = SessionsProperties.fsiDebugMode <- x
 
 // CompletionSet
 type internal FsiCompletionSet(imageList,source:Source) = 
@@ -109,7 +107,7 @@ type internal FsiScanner(buffer:IVsTextLines) =
         override this.ScanTokenAndProvideInfoAboutIt(tokenInfo:TokenInfo,state:byref<int>) = false
             // Implementing a scanner with TokenTriggers could start intellisense calls, e.g. on DOT.
 
-type internal FsiAuthoringScope(sessions:Microsoft.VisualStudio.FSharp.Interactive.Session.Sessions option,readOnlySpanGetter:unit -> TextSpan) = 
+type internal FsiAuthoringScope(sessions:FsiSessions option,readOnlySpanGetter:unit -> TextSpan) = 
     inherit AuthoringScope()
     override this.GetDataTipText(line:int,col:int,span:byref<TextSpan>) =
         span <- new TextSpan()
@@ -131,7 +129,7 @@ type internal FsiAuthoringScope(sessions:Microsoft.VisualStudio.FSharp.Interacti
             // Multiline input is available to a limited degree (and could be improved).
             let span = readOnlySpanGetter()
             let str   = lines.GetLineText(span.iEndLine,span.iEndIndex,line,col) |> throwOnFailure1           
-            let declInfos = getDeclarationInfos (sessions:Sessions) (str:string)
+            let declInfos = sessions.GetDeclarationInfos (str:string)
             new FsiDeclarations(declInfos) :> Declarations
           else
 #endif
@@ -201,7 +199,7 @@ type internal FsiLanguageService() =
     do  assert("35A5E6B8-4012-41fc-A652-2CDC56D74E9F" = Guids.guidFsiLanguageService)
     let mutable preferences        = null : LanguagePreferences     
     let mutable scanner            = null : IScanner
-    let mutable sessions           = None : Session.Sessions option
+    let mutable sessions           = None : Session.FsiSessions option
     let mutable readOnlySpanGetter = (fun () -> new TextSpan())
 
     let readOnlySpan() = readOnlySpanGetter() // do not eta-contract, readOnlySpanGetter is mutable.

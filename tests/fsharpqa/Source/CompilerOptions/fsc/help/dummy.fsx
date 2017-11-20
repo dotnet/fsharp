@@ -1,3 +1,3 @@
-// #NoMT #CompilerOptions #RequiresENU #NETFX20Only #NETFX40Only 
+// #NoMT #CompilerOptions #RequiresENU   
 #light
 exit 0

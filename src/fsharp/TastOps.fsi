@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Defines derived expression manipulation and construction functions.
 module internal Microsoft.FSharp.Compiler.Tastops 
@@ -19,7 +19,7 @@ open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.Lib
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -147,7 +147,7 @@ val mkLetRecBinds : range -> Bindings -> Expr -> Expr
 // Generalization/inference helpers
 //------------------------------------------------------------------------- 
  
-/// TypeSchme (generalizedTypars, tauTy)
+/// TypeScheme (generalizedTypars, tauTy)
 ///
 ///    generalizedTypars -- the truly generalized type parameters 
 ///    tauTy  --  the body of the generalized type. A 'tau' type is one with its type parameters stripped off.
@@ -227,7 +227,7 @@ val mkArrayElemAddress : TcGlobals -> ILReadonly * bool * ILArrayShape * TType *
 val maxTuple : int
 val goodTupleFields : int
 val isCompiledTupleTyconRef : TcGlobals -> TyconRef -> bool
-val mkCompiledTupleTyconRef : TcGlobals -> bool -> 'a list -> TyconRef
+val mkCompiledTupleTyconRef : TcGlobals -> bool -> int -> TyconRef
 val mkCompiledTupleTy : TcGlobals -> bool -> TTypes -> TType
 val mkCompiledTuple : TcGlobals -> bool -> TTypes * Exprs * range -> TyconRef * TTypes * Exprs * range
 val mkGetTupleItemN : TcGlobals -> range -> int -> ILType -> bool -> Expr -> TType -> Expr
@@ -414,6 +414,8 @@ val isUnionTy          : TcGlobals -> TType -> bool
 val isReprHiddenTy     : TcGlobals -> TType -> bool
 val isFSharpObjModelTy : TcGlobals -> TType -> bool
 val isRecdTy           : TcGlobals -> TType -> bool
+val isFSharpStructOrEnumTy : TcGlobals -> TType -> bool
+val isFSharpEnumTy     : TcGlobals -> TType -> bool
 val isTyparTy          : TcGlobals -> TType -> bool
 val isAnyParTy         : TcGlobals -> TType -> bool
 val tryAnyParTy        : TcGlobals -> TType -> Typar option
@@ -427,7 +429,6 @@ val isProvenUnionCaseTy : TType -> bool
 val isAppTy        : TcGlobals -> TType -> bool
 val destAppTy      : TcGlobals -> TType -> TyconRef * TypeInst
 val tcrefOfAppTy   : TcGlobals -> TType -> TyconRef
-val tyconOfAppTy   : TcGlobals -> TType -> Tycon
 val tryDestAppTy   : TcGlobals -> TType -> TyconRef option
 val tryDestTyparTy : TcGlobals -> TType -> Typar option
 val tryDestFunTy : TcGlobals -> TType -> (TType * TType) option
@@ -613,13 +614,18 @@ module PrettyTypes =
     val NeedsPrettyTyparName : Typar -> bool
     val NewPrettyTypars : TyparInst -> Typars -> string list -> Typars * TyparInst
     val PrettyTyparNames : (Typar -> bool) -> string list -> Typars -> string list
-    val PrettifyTypes1 : TcGlobals -> TType -> TyparInst * TType * TyparConstraintsWithTypars
-    val PrettifyTypes2 : TcGlobals -> TType * TType -> TyparInst * (TType * TType) * TyparConstraintsWithTypars
-    val PrettifyTypesN : TcGlobals -> TType list -> TyparInst * TType list * TyparConstraintsWithTypars
-    val PrettifyTypesNN : TcGlobals -> TType list list -> TyparInst * TType list list * TyparConstraintsWithTypars
-    val PrettifyTypesNN1 : TcGlobals -> TType list list * TType -> TyparInst * (TType list list * TType) * TyparConstraintsWithTypars
-    val PrettifyTypesN1 : TcGlobals -> UncurriedArgInfos * TType -> TyparInst * (UncurriedArgInfos * TType) * TyparConstraintsWithTypars
-    val PrettifyTypesNM1 : TcGlobals -> TType list * CurriedArgInfos * TType -> TyparInst * (TType list * CurriedArgInfos * TType) * TyparConstraintsWithTypars
+    val PrettifyType : TcGlobals -> TType -> TType * TyparConstraintsWithTypars
+    val PrettifyInstAndTyparsAndType : TcGlobals -> TyparInst * Typars * TType -> (TyparInst * Typars * TType) * TyparConstraintsWithTypars
+    val PrettifyTypePair : TcGlobals -> TType * TType -> (TType * TType) * TyparConstraintsWithTypars
+    val PrettifyTypes : TcGlobals -> TTypes -> TTypes * TyparConstraintsWithTypars
+    val PrettifyInst : TcGlobals -> TyparInst -> TyparInst * TyparConstraintsWithTypars
+    val PrettifyInstAndType : TcGlobals -> TyparInst * TType -> (TyparInst * TType) * TyparConstraintsWithTypars
+    val PrettifyInstAndTypes : TcGlobals -> TyparInst * TTypes -> (TyparInst * TTypes) * TyparConstraintsWithTypars
+    val PrettifyInstAndSig : TcGlobals -> TyparInst * TTypes * TType -> (TyparInst * TTypes * TType) * TyparConstraintsWithTypars
+    val PrettifyCurriedTypes : TcGlobals -> TType list list -> TType list list * TyparConstraintsWithTypars
+    val PrettifyCurriedSigTypes : TcGlobals -> TType list list * TType -> (TType list list * TType) * TyparConstraintsWithTypars
+    val PrettifyInstAndUncurriedSig : TcGlobals -> TyparInst * UncurriedArgInfos * TType -> (TyparInst * UncurriedArgInfos * TType) * TyparConstraintsWithTypars
+    val PrettifyInstAndCurriedSig : TcGlobals -> TyparInst * TTypes * CurriedArgInfos * TType -> (TyparInst * TTypes * CurriedArgInfos * TType) * TyparConstraintsWithTypars
 
 [<NoEquality; NoComparison>]
 type DisplayEnv = 
@@ -734,9 +740,12 @@ val tyOfExpr : TcGlobals -> Expr -> TType
 // Top expressions to implement top types
 //------------------------------------------------------------------------- 
 
+[<RequireQualifiedAccess>]
+type AllowTypeDirectedDetupling = Yes | No
+
 val stripTopLambda : Expr * TType -> Typars * Val list list * Expr * TType
-val InferArityOfExpr : TcGlobals -> TType -> Attribs list list -> Attribs -> Expr -> ValReprInfo
-val InferArityOfExprBinding : TcGlobals -> Val -> Expr -> ValReprInfo
+val InferArityOfExpr : TcGlobals -> AllowTypeDirectedDetupling -> TType -> Attribs list list -> Attribs -> Expr -> ValReprInfo
+val InferArityOfExprBinding : TcGlobals -> AllowTypeDirectedDetupling -> Val -> Expr -> ValReprInfo
 
 //-------------------------------------------------------------------------
 //  Copy expressions and types
@@ -982,9 +991,9 @@ val mkPrintfFormatTy : TcGlobals -> TType -> TType -> TType -> TType -> TType ->
 //------------------------------------------------------------------------- 
 
 type TypeDefMetadata = 
-     | ILTypeMetadata of ILScopeRef * ILTypeDef
+     | ILTypeMetadata of TILObjectReprData
      | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
      | ProvidedTypeMetadata of  TProvidedTypeInfo
 #endif
 
@@ -1014,17 +1023,18 @@ val rankOfArrayTy : TcGlobals -> TType -> int
 
 val isInterfaceTyconRef                 : TyconRef -> bool
 
-val isDelegateTy           : TcGlobals -> TType -> bool
-val isInterfaceTy          : TcGlobals -> TType -> bool
-val isRefTy                : TcGlobals -> TType -> bool
-val isSealedTy             : TcGlobals -> TType -> bool
-val isComInteropTy         : TcGlobals -> TType -> bool
-val underlyingTypeOfEnumTy : TcGlobals -> TType -> TType
-val normalizeEnumTy        : TcGlobals -> TType -> TType
-val isStructTy             : TcGlobals -> TType -> bool
-val isUnmanagedTy          : TcGlobals -> TType -> bool
-val isClassTy              : TcGlobals -> TType -> bool
-val isEnumTy               : TcGlobals -> TType -> bool
+val isDelegateTy                 : TcGlobals -> TType -> bool
+val isInterfaceTy                : TcGlobals -> TType -> bool
+val isRefTy                      : TcGlobals -> TType -> bool
+val isSealedTy                   : TcGlobals -> TType -> bool
+val isComInteropTy               : TcGlobals -> TType -> bool
+val underlyingTypeOfEnumTy       : TcGlobals -> TType -> TType
+val normalizeEnumTy              : TcGlobals -> TType -> TType
+val isStructTy                   : TcGlobals -> TType -> bool
+val isUnmanagedTy                : TcGlobals -> TType -> bool
+val isClassTy                    : TcGlobals -> TType -> bool
+val isEnumTy                     : TcGlobals -> TType -> bool
+val isStructRecordOrUnionTyconTy : TcGlobals -> TType -> bool
 
 /// For "type Class as self", 'self' is fixed up after initialization. To support this,
 /// it is converted behind the scenes to a ref. This function strips off the ref and
@@ -1276,7 +1286,7 @@ val TyconRefHasAttribute : TcGlobals -> range -> BuiltinAttribInfo -> TyconRef -
 /// Try to find the AttributeUsage attribute, looking for the value of the AllowMultiple named parameter
 val TryFindAttributeUsageAttribute : TcGlobals -> range -> TyconRef -> bool option
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 /// returns Some(assemblyName) for success
 val TryDecodeTypeProviderAssemblyAttr : ILGlobals -> ILAttribute -> string option
 #endif

@@ -27,7 +27,7 @@ let FCS (repositoryDir: string) : Options =
     let files =
           [| @"src\fsharp\FSharp.Compiler.Service\obj\Release\FSComp.fs"
              @"src\fsharp\FSharp.Compiler.Service\obj\Release\FSIstrings.fs"
-             @"src\assemblyinfo\assemblyinfo.FSharp.Compiler.Service.dll.fs"
+             @"src\assemblyinfo\assemblyinfo.FSharp.Compiler.Private.dll.fs"
              @"src\assemblyinfo\assemblyinfo.shared.fs"
              @"src\utils\reshapedreflection.fs"
              @"src\utils\sformat.fsi"
@@ -170,12 +170,12 @@ let FCS (repositoryDir: string) : Options =
              @"src\fsharp\vs\Reactor.fsi"
              @"src\fsharp\vs\Reactor.fs"
              @"src\fsharp\vs\ServiceConstants.fs"
-             @"src\fsharp\vs\ServiceDeclarations.fsi"
-             @"src\fsharp\vs\ServiceDeclarations.fs"
-             @"src\fsharp\vs\Symbols.fsi"
-             @"src\fsharp\vs\Symbols.fs"
-             @"src\fsharp\vs\Exprs.fsi"
-             @"src\fsharp\vs\Exprs.fs"
+             @"src\fsharp\symbols\SymbolHelpers.fsi"
+             @"src\fsharp\symbols\SymbolHelpers.fs"
+             @"src\fsharp\symbols\Symbols.fsi"
+             @"src\fsharp\symbols\Symbols.fs"
+             @"src\fsharp\symbols\Exprs.fsi"
+             @"src\fsharp\symbols\Exprs.fs"
              @"src\fsharp\vs\ServiceLexing.fsi"
              @"src\fsharp\vs\ServiceLexing.fs"
              @"src\fsharp\vs\ServiceParseTreeWalk.fs"
@@ -195,10 +195,10 @@ let FCS (repositoryDir: string) : Options =
              @"src\fsharp\fsi\fsi.fs" |]
 
     { Options =
-        {ProjectFileName = repositoryDir </> @"src\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj"
-         ProjectFileNames = files |> Array.map (fun x -> repositoryDir </> x)
+        {ProjectFileName = repositoryDir </> @"src\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj"
+         SourceFiles = files |> Array.map (fun x -> repositoryDir </> x)
          OtherOptions =
-          [|@"-o:obj\Release\FSharp.Compiler.Service.dll"; "-g"; "--noframework";
+          [|@"-o:obj\Release\FSharp.Compiler.Private.dll"; "-g"; "--noframework";
             @"--baseaddress:0x06800000"; "--define:DEBUG";
             @"--define:CROSS_PLATFORM_COMPILER"; "--define:FX_ATLEAST_45";
             @"--define:FX_ATLEAST_40"; "--define:BE_SECURITY_TRANSPARENT";
@@ -208,8 +208,8 @@ let FCS (repositoryDir: string) : Options =
             @"--define:FX_LCIDFROMCODEPAGE"; "--define:FX_RESX_RESOURCE_READER";
             @"--define:FX_RESIDENT_COMPILER"; "--define:SHADOW_COPY_REFERENCES";
             @"--define:EXTENSIONTYPING";
-            @"--define:COMPILER_SERVICE_ASSUMES_FSHARP_CORE_4_4_0_0";
-            @"--define:COMPILER_SERVICE"; "--define:NO_STRONG_NAMES"; "--define:TRACE";
+            @"--define:COMPILER_SERVICE_DLL_ASSUMES_FSHARP_CORE_4_4_0_0";
+            @"--define:COMPILER_SERVICE_DLL"; "--define:NO_STRONG_NAMES"; "--define:TRACE";
             @"--doc:..\..\..\bin\v4.5\FSharp.Compiler.Service.xml"; "--optimize-";
             @"--platform:anycpu";
             @"-r:" + (repositoryDir </> @"packages\Microsoft.DiaSymReader\lib\net20\Microsoft.DiaSymReader.dll");
@@ -283,7 +283,8 @@ let FCS (repositoryDir: string) : Options =
          LoadTime = DateTime.Now
          UnresolvedReferences = None;
          OriginalLoadReferences = []
-         ExtraProjectInfo = None }
+         ExtraProjectInfo = None 
+         Stamp = None }
       FilesToCheck = 
           files 
           |> Array.filter (fun s -> s.Contains "TypeChecker.fs" || 
@@ -303,7 +304,7 @@ let FCS (repositoryDir: string) : Options =
 let VFPT (repositoryDir: string) : Options =
     { Options =
         {ProjectFileName = repositoryDir </> @"src\FSharp.Editing\FSharp.Editing.fsproj"
-         ProjectFileNames =
+         SourceFiles =
           [|@"src\FSharp.Editing\AssemblyInfo.fs";
             @"src\FSharp.Editing\Common\Utils.fs";
             @"src\FSharp.Editing\Common\CompilerLocationUtils.fs";
@@ -334,7 +335,7 @@ let VFPT (repositoryDir: string) : Options =
          OtherOptions =
           [|@"-o:obj\Release\FSharp.Editing.dll"; "--debug:pdbonly"; "--noframework";
             @"--define:TRACE"; "--doc:bin\Release\FSharp.Editing.XML"; "--optimize+";
-            @"-r:" + (repositoryDir </> @"packages\FSharp.Compiler.Service\lib\net45\FSharp.Compiler.Service.dll");
+            @"-r:" + (repositoryDir </> @"packages\FSharp.Compiler.Service\lib\net45\FSharp.Compiler.Private.dll");
             @"-r:" + (repositoryDir </> @"packages\FSharp.Compiler.Service\lib\net45\FSharp.Compiler.Service.MSBuild.v12.dll");
             @"-r:" + (repositoryDir </> @"packages\FSharp.Core\lib\net40\FSharp.Core.dll");
             @"-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\mscorlib.dll";
@@ -403,7 +404,8 @@ let VFPT (repositoryDir: string) : Options =
          LoadTime = DateTime.Now
          UnresolvedReferences = None
          OriginalLoadReferences = []
-         ExtraProjectInfo = None }
+         ExtraProjectInfo = None 
+         Stamp = None }
       FilesToCheck = []
       FileToCheck = repositoryDir </> @"src\FSharp.Editing\CodeGeneration\RecordStubGenerator.fs"
       SymbolText = "option"

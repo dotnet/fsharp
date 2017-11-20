@@ -1,6 +1,6 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace rec Microsoft.VisualStudio.FSharp.Editor
+namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
 open System.Collections.Immutable
@@ -11,7 +11,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 
-[<ExportCodeFixProvider(FSharpCommonConstants.FSharpLanguageName, Name = "AddNewKeyword"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "AddNewKeyword"); Shared>]
 type internal FSharpAddNewKeywordCodeFixProvider() =
     inherit CodeFixProvider()
 
@@ -19,15 +19,16 @@ type internal FSharpAddNewKeywordCodeFixProvider() =
 
     override this.RegisterCodeFixesAsync context : Task =
         async {
-            let title = SR.AddNewKeyword.Value
+            let title = SR.AddNewKeyword()
             context.RegisterCodeFix(
                 CodeAction.Create(
                     title,
                     (fun (cancellationToken: CancellationToken) ->
                         async {
-                            let! sourceText = context.Document.GetTextAsync()
+                            let! cancellationToken = Async.CancellationToken
+                            let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                             return context.Document.WithText(sourceText.WithChanges(TextChange(TextSpan(context.Span.Start, 0), "new ")))
-                        } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)),
+                        } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
                     title), context.Diagnostics |> Seq.filter (fun x -> this.FixableDiagnosticIds.Contains x.Id) |> Seq.toImmutableArray)
-        } |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+        } |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
  

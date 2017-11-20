@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Salsa
 
@@ -82,7 +82,7 @@ module internal VsOpsUtils =
     val GetQuickInfoAndSpanAtCursor       : OpenFile -> string*TextSpan
     val GetNameOfOpenFile                 : OpenFile -> string
     val GetProjectOptionsOfScript           : OpenFile -> FSharpProjectOptions
-    val GetParameterInfoAtCursor          : OpenFile -> MethodListForAMethodTip option
+    val GetParameterInfoAtCursor          : OpenFile -> MethodListForAMethodTip_DEPRECATED option
     val GetTokenTypeAtCursor              : OpenFile -> Salsa.Salsa.TokenType
     val GetIdentifierAtCursor             : OpenFile -> (string * int) option
     val GetF1KeywordAtCursor              : OpenFile -> string option

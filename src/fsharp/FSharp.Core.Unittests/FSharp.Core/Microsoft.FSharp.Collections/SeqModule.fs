@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Collections
 
@@ -19,7 +19,7 @@ Make sure each method works on:
 * Null Seq    (null)
 *)
 
-[<TestFixture>]
+[<TestFixture>][<Category "Collections.Seq">][<Category "FSharp.Core.Collections">]
 type SeqModule() =
 
     [<Test>]

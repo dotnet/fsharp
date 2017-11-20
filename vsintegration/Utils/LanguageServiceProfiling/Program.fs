@@ -53,9 +53,7 @@ let normalizeLineEnds (s: string) = s.Replace("\r\n", "\n").Replace("\n\n", "\n"
 let internal getQuickInfoText (FSharpToolTipText.FSharpToolTipText elements) : string =
     let rec parseElement = function
         | FSharpToolTipElement.None -> ""
-        | FSharpToolTipElement.Single(text, _) -> text
-        | FSharpToolTipElement.SingleParameter(text, _, _) -> text
-        | FSharpToolTipElement.Group(xs) -> xs |> List.map fst |> String.concat "\n"
+        | FSharpToolTipElement.Group(xs) -> xs |> List.map (fun item -> item.MainDescription) |> String.concat "\n"
         | FSharpToolTipElement.CompositionError(error) -> error
     elements |> List.map (parseElement) |> String.concat "\n" |> normalizeLineEnds
 
@@ -72,7 +70,7 @@ let main argv =
 
     eprintfn "Found options for %s." options.Options.ProjectFileName
     let checker = FSharpChecker.Create(projectCacheSize = 200, keepAllBackgroundResolutions = false)
-    let waste = new ResizeArray<int array>()
+    let waste = new ResizeArray<int[]>()
     
     let checkProject() : Async<FSharpCheckProjectResults option> =
         async {
@@ -132,12 +130,7 @@ let main argv =
                 let! fileResults = checkFile fileVersion
                 match fileResults with
                 | Some fileResults ->
-                    let! symbolUse =
-                        fileResults.GetSymbolUseAtLocation(
-                            options.SymbolPos.Line, 
-                            options.SymbolPos.Column, 
-                            getLine(options.SymbolPos.Line),
-                            [options.SymbolText])
+                    let! symbolUse = fileResults.GetSymbolUseAtLocation(options.SymbolPos.Line, options.SymbolPos.Column, getLine(options.SymbolPos.Line),[options.SymbolText])
                     match symbolUse with
                     | Some symbolUse ->
                         eprintfn "Found symbol %s" symbolUse.Symbol.FullName
@@ -163,17 +156,20 @@ let main argv =
                 let! fileResults = checkFile fileVersion
                 match fileResults with
                 | Some fileResults ->
-                    let! parseResult = checker.ParseFileInProject(options.FileToCheck, getFileText(), options.Options) 
+                    let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions(options.Options)
+                    let! parseResult = checker.ParseFile(options.FileToCheck, getFileText(), parsingOptions) 
                     for completion in options.CompletionPositions do
                         eprintfn "querying %A %s" completion.QualifyingNames completion.PartialName
                         let! listInfo =
                             fileResults.GetDeclarationListInfo(
-                                Some parseResult
-                                , completion.Position.Line
-                                , completion.Position.Column
-                                , getLine (completion.Position.Line)
-                                , completion.QualifyingNames
-                                , completion.PartialName)
+                                Some parseResult,
+                                completion.Position.Line,
+                                getLine (completion.Position.Line),
+                                { QualifyingIdents = completion.QualifyingNames
+                                  PartialIdent = completion.PartialName
+                                  EndColumn = completion.Position.Column - 1
+                                  LastDotPos = None },
+                                fun() -> [])
                            
                         for i in listInfo.Items do
                             eprintfn "%s" (getQuickInfoText i.DescriptionText)

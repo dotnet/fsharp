@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 using System;
 using System.Runtime.InteropServices;
@@ -158,6 +158,19 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public override int MenuCommandId
         {
             get { return VsMenus.IDM_VS_CTXT_ITEMNODE; }
-        } 
+        }
+
+        public override string RelativeFilePath
+        {
+            get
+            {
+                string link = this.ItemNode.GetMetadata(ProjectFileConstants.Link);
+                if (string.IsNullOrEmpty(link))
+                {
+                    return base.RelativeFilePath;
+                }
+                return link;
+            }
+        }
     }
 }

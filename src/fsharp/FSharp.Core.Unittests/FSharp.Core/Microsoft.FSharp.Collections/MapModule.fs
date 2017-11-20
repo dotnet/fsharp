@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // Various tests for the:
 // Microsoft.FSharp.Collections.Map module
@@ -20,7 +20,7 @@ Make sure each method works on:
 *)
 
 
-[<TestFixture>]
+[<TestFixture>][<Category "Collections.Map">][<Category "FSharp.Core.Collections">]
 type MapModule() =
     [<Test>]
     member this.Empty() =

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Tests.ProjectSystem
 
@@ -10,7 +10,7 @@ open UnitTests.TestLib.ProjectSystem
 open Microsoft.VisualStudio.FSharp.ProjectSystem
 
 
-[<TestFixture>]
+[<TestFixture>][<Category "ProjectSystem">]
 type ProjectItems() = 
     inherit TheTests()
     
@@ -24,8 +24,8 @@ type ProjectItems() =
             project.ComputeSourcesAndFlags()
 
             let containsSystemNumerics () = 
-                project.GetCompileFlags()
-                |> Seq.exists (fun f -> f.IndexOf("System.Numerics") <> -1)
+                project.CompilationOptions
+                |> Array.exists (fun f -> f.IndexOf("System.Numerics") <> -1)
 
             let wasCalled = ref false
             Assert.IsTrue(containsSystemNumerics (), "Project should contains reference to System.Numerics")
@@ -71,26 +71,6 @@ type ProjectItems() =
                     project.AddNewFileNodeToHierarchy(project.FindChild("Folder"),absFilePath) |> ignore)
                 let msbuildInfo = TheTests.MsBuildCompileItems(project.BuildProject)
                 AssertEqual ["orig.fs"; "Folder\\f1.fs"; "Folder\\f2.fs"; "Folder\\a.fs"; "final.fs"] msbuildInfo
-            finally
-                File.Delete(absFilePath)
-            ))
-    
-    [<Test>]
-    member public this.``AddNewItem.ItemAppearsAtBottomOfFsprojFileEvenIfUnknownItemWithSameName``() =
-        this.MakeProjectAndDo([], [], @"
-                <ItemGroup>
-                    <Unknown Include=""a.fs"" />
-                    <Compile Include=""orig.fs"" />
-                </ItemGroup>
-            ", (fun project ->
-            let absFilePath = Path.Combine(project.ProjectFolder, "a.fs")
-            try
-                File.AppendAllText(absFilePath, "#light")
-                // Note: this is not the same code path as the UI, but it is close
-                project.MoveNewlyAddedFileToBottomOfGroup (fun () ->
-                    project.AddNewFileNodeToHierarchy(project,absFilePath) |> ignore)
-                let msbuildInfo = TheTests.MsBuildCompileItems(project.BuildProject)
-                AssertEqual ["orig.fs"; "a.fs"] msbuildInfo
             finally
                 File.Delete(absFilePath)
             ))

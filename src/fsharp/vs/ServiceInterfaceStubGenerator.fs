@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
@@ -9,11 +9,14 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
         
+#if !FX_NO_INDENTED_TEXT_WRITER
 [<AutoOpen>]
 module internal CodeGenerationUtils =
     open System.IO
     open System.CodeDom.Compiler
+
 
     type ColumnIndentedTextWriter() =
         let stringWriter = new StringWriter()
@@ -217,7 +220,7 @@ module internal InterfaceStubGenerator =
         let nm, namesWithIndices = normalizeArgName namesWithIndices nm
         
         // Detect an optional argument
-        let isOptionalArg = hasAttribute<OptionalArgumentAttribute> arg.Attributes
+        let isOptionalArg = Symbol.hasAttribute<OptionalArgumentAttribute> arg.Attributes
         let argName = if isOptionalArg then "?" + nm else nm
         (if hasTypeAnnotation && argName <> "()" then 
             argName + ": " + formatType ctx arg.Type
@@ -292,7 +295,7 @@ module internal InterfaceStubGenerator =
         else displayName
 
     let internal isEventMember (m: FSharpMemberOrFunctionOrValue) =
-        m.IsEvent || hasAttribute<CLIEventAttribute> m.Attributes
+        m.IsEvent || Symbol.hasAttribute<CLIEventAttribute> m.Attributes
     
     let internal formatMember (ctx: Context) m verboseMode = 
         let getParamArgs (argInfos: FSharpParameter list list) (ctx: Context) (v: FSharpMemberOrFunctionOrValue) = 
@@ -322,7 +325,7 @@ module internal InterfaceStubGenerator =
                 | _, true, _, name -> name + parArgs
                 // Ordinary functions or values
                 | false, _, _, name when
-                    not (hasAttribute<RequireQualifiedAccessAttribute> v.LogicalEnclosingEntity.Attributes) -> 
+                    not (Symbol.hasAttribute<RequireQualifiedAccessAttribute> v.LogicalEnclosingEntity.Attributes) -> 
                     name + " " + parArgs
                 // Ordinary static members or things (?) that require fully qualified access
                 | _, _, _, name -> name + parArgs
@@ -445,7 +448,7 @@ module internal InterfaceStubGenerator =
 
     let internal (|TypeOfMember|_|) (m: FSharpMemberOrFunctionOrValue) =
         match m.FullTypeSafe with
-        | Some (MemberFunctionType typ) when m.IsProperty && m.EnclosingEntity.IsFSharp ->
+        | Some (MemberFunctionType typ) when m.IsProperty && m.EnclosingEntity.IsSome && m.EnclosingEntity.Value.IsFSharp ->
             Some typ
         | Some typ -> Some typ
         | None -> None
@@ -907,3 +910,4 @@ module internal InterfaceStubGenerator =
             None
         | ParsedInput.ImplFile input -> 
             walkImplFileInput input
+#endif

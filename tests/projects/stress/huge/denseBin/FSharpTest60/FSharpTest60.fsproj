@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>66daa973-5eb6-4de9-b337-29959d8881cc</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>FSharpTest60</RootNamespace>
+    <AssemblyName>FSharpTest60</AssemblyName>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Name>FSharpTest60</Name>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <Tailcalls>false</Tailcalls>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <WarningLevel>3</WarningLevel>
+    <DocumentationFile>bin\Debug\FSharpTest60.XML</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <Tailcalls>true</Tailcalls>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <WarningLevel>3</WarningLevel>
+    <DocumentationFile>bin\Release\FSharpTest60.XML</DocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="mscorlib" />
+    <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="FSharpTest1">
+      <HintPath>..\FSharpTest1\bin\Debug\FSharpTest1.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest2">
+      <HintPath>..\FSharpTest2\bin\Debug\FSharpTest2.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest3">
+      <HintPath>..\FSharpTest3\bin\Debug\FSharpTest3.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest4">
+      <HintPath>..\FSharpTest4\bin\Debug\FSharpTest4.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest5">
+      <HintPath>..\FSharpTest5\bin\Debug\FSharpTest5.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest6">
+      <HintPath>..\FSharpTest6\bin\Debug\FSharpTest6.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest7">
+      <HintPath>..\FSharpTest7\bin\Debug\FSharpTest7.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest8">
+      <HintPath>..\FSharpTest8\bin\Debug\FSharpTest8.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest9">
+      <HintPath>..\FSharpTest9\bin\Debug\FSharpTest9.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest10">
+      <HintPath>..\FSharpTest10\bin\Debug\FSharpTest10.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest11">
+      <HintPath>..\FSharpTest11\bin\Debug\FSharpTest11.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest12">
+      <HintPath>..\FSharpTest12\bin\Debug\FSharpTest12.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest13">
+      <HintPath>..\FSharpTest13\bin\Debug\FSharpTest13.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest14">
+      <HintPath>..\FSharpTest14\bin\Debug\FSharpTest14.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest15">
+      <HintPath>..\FSharpTest15\bin\Debug\FSharpTest15.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest16">
+      <HintPath>..\FSharpTest16\bin\Debug\FSharpTest16.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest17">
+      <HintPath>..\FSharpTest17\bin\Debug\FSharpTest17.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest18">
+      <HintPath>..\FSharpTest18\bin\Debug\FSharpTest18.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest19">
+      <HintPath>..\FSharpTest19\bin\Debug\FSharpTest19.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest20">
+      <HintPath>..\FSharpTest20\bin\Debug\FSharpTest20.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest21">
+      <HintPath>..\FSharpTest21\bin\Debug\FSharpTest21.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest22">
+      <HintPath>..\FSharpTest22\bin\Debug\FSharpTest22.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest23">
+      <HintPath>..\FSharpTest23\bin\Debug\FSharpTest23.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest24">
+      <HintPath>..\FSharpTest24\bin\Debug\FSharpTest24.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest25">
+      <HintPath>..\FSharpTest25\bin\Debug\FSharpTest25.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest26">
+      <HintPath>..\FSharpTest26\bin\Debug\FSharpTest26.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest27">
+      <HintPath>..\FSharpTest27\bin\Debug\FSharpTest27.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest28">
+      <HintPath>..\FSharpTest28\bin\Debug\FSharpTest28.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest29">
+      <HintPath>..\FSharpTest29\bin\Debug\FSharpTest29.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest30">
+      <HintPath>..\FSharpTest30\bin\Debug\FSharpTest30.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest31">
+      <HintPath>..\FSharpTest31\bin\Debug\FSharpTest31.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest32">
+      <HintPath>..\FSharpTest32\bin\Debug\FSharpTest32.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest33">
+      <HintPath>..\FSharpTest33\bin\Debug\FSharpTest33.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest34">
+      <HintPath>..\FSharpTest34\bin\Debug\FSharpTest34.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest35">
+      <HintPath>..\FSharpTest35\bin\Debug\FSharpTest35.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest36">
+      <HintPath>..\FSharpTest36\bin\Debug\FSharpTest36.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest37">
+      <HintPath>..\FSharpTest37\bin\Debug\FSharpTest37.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest38">
+      <HintPath>..\FSharpTest38\bin\Debug\FSharpTest38.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest39">
+      <HintPath>..\FSharpTest39\bin\Debug\FSharpTest39.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest40">
+      <HintPath>..\FSharpTest40\bin\Debug\FSharpTest40.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest41">
+      <HintPath>..\FSharpTest41\bin\Debug\FSharpTest41.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest42">
+      <HintPath>..\FSharpTest42\bin\Debug\FSharpTest42.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest43">
+      <HintPath>..\FSharpTest43\bin\Debug\FSharpTest43.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest44">
+      <HintPath>..\FSharpTest44\bin\Debug\FSharpTest44.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest45">
+      <HintPath>..\FSharpTest45\bin\Debug\FSharpTest45.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest46">
+      <HintPath>..\FSharpTest46\bin\Debug\FSharpTest46.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest47">
+      <HintPath>..\FSharpTest47\bin\Debug\FSharpTest47.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest48">
+      <HintPath>..\FSharpTest48\bin\Debug\FSharpTest48.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest49">
+      <HintPath>..\FSharpTest49\bin\Debug\FSharpTest49.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest50">
+      <HintPath>..\FSharpTest50\bin\Debug\FSharpTest50.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest51">
+      <HintPath>..\FSharpTest51\bin\Debug\FSharpTest51.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest52">
+      <HintPath>..\FSharpTest52\bin\Debug\FSharpTest52.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest53">
+      <HintPath>..\FSharpTest53\bin\Debug\FSharpTest53.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest54">
+      <HintPath>..\FSharpTest54\bin\Debug\FSharpTest54.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest55">
+      <HintPath>..\FSharpTest55\bin\Debug\FSharpTest55.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest56">
+      <HintPath>..\FSharpTest56\bin\Debug\FSharpTest56.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest57">
+      <HintPath>..\FSharpTest57\bin\Debug\FSharpTest57.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest58">
+      <HintPath>..\FSharpTest58\bin\Debug\FSharpTest58.dll</HintPath>
+    </Reference>
+    <Reference Include="FSharpTest59">
+      <HintPath>..\FSharpTest59\bin\Debug\FSharpTest59.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+
+  </ItemGroup>
+  <ItemGroup>
+
+  </ItemGroup>
+  <PropertyGroup>
+    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
+  </PropertyGroup>
+  <Choose>
+    <When Condition="'$(VisualStudioVersion)' == '11.0'">
+      <PropertyGroup Condition="Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets')">
+        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup Condition="Exists('$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets')">
+        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets</FSharpTargetsPath>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+  <Import Project="$(FSharpTargetsPath)" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

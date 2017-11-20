@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -8,6 +8,7 @@ open System.Collections.Immutable
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.DocumentHighlighting
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
@@ -21,8 +22,10 @@ type internal FSharpHighlightSpan =
     override this.ToString() = sprintf "%+A" this
 
 [<Shared>]
-[<ExportLanguageService(typeof<IDocumentHighlightsService>, FSharpCommonConstants.FSharpLanguageName)>]
-type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerProvider: FSharpCheckerProvider, projectInfoManager: ProjectInfoManager) =
+[<ExportLanguageService(typeof<IDocumentHighlightsService>, FSharpConstants.FSharpLanguageName)>]
+type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerProvider: FSharpCheckerProvider, projectInfoManager: FSharpProjectOptionsManager) =
+
+    static let userOpName = "DocumentHighlights"
 
     /// Fix invalid spans if they appear to have redundant suffix and prefix.
     static let fixInvalidSymbolSpans (sourceText: SourceText) (lastIdent: string) (spans: FSharpHighlightSpan []) =
@@ -56,26 +59,29 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let! symbol = CommonHelpers.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Greedy)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true)
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland)
+            let! symbol = Tokenizer.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Greedy, false)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true, userOpName = userOpName)
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, userOpName=userOpName)
             let! symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol) |> liftAsync
             return 
                 [| for symbolUse in symbolUses do
-                     yield { IsDefinition = symbolUse.IsFromDefinition
-                             TextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate) } |]
+                     match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate) with 
+                     | None -> ()
+                     | Some span -> 
+                         yield { IsDefinition = symbolUse.IsFromDefinition
+                                 TextSpan = span } |]
                 |> fixInvalidSymbolSpans sourceText symbol.Ident.idText
         }
 
     interface IDocumentHighlightsService with
         member __.GetDocumentHighlightsAsync(document, position, _documentsToSearch, cancellationToken) : Task<ImmutableArray<DocumentHighlights>> =
             asyncMaybe {
-                let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) 
-                let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
+                let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, parsingOptions)
                 let! spans = FSharpDocumentHighlightsService.GetDocumentHighlights(checkerProvider.Checker, document.Id, sourceText, document.FilePath, 
-                                                                                   position, defines, options, textVersion.GetHashCode())
+                                                                                   position, defines, projectOptions, textVersion.GetHashCode())
                 let highlightSpans = 
                     spans 
                     |> Array.map (fun span ->
@@ -86,4 +92,4 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
                 return ImmutableArray.Create(DocumentHighlights(document, highlightSpans))
             }   
             |> Async.map (Option.defaultValue ImmutableArray<DocumentHighlights>.Empty)
-            |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
+            |> RoslynHelpers.StartAsyncAsTask(cancellationToken)

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.Lexhelp
 
@@ -28,11 +28,12 @@ type LexResourceManager =
     new : unit -> LexResourceManager
 
 type lexargs =
-  { defines: string list;
-    ifdefStack: LexerIfdefStack;
-    resourceManager: LexResourceManager;
-    lightSyntaxStatus: LightSyntaxStatus;
-    errorLogger: ErrorLogger}
+    { defines: string list
+      ifdefStack: LexerIfdefStack
+      resourceManager: LexResourceManager
+      lightSyntaxStatus : LightSyntaxStatus
+      errorLogger: ErrorLogger
+      applyLineDirectives: bool }
 
 type LongUnicodeLexResult =
     | SurrogatePair of uint16 * uint16
@@ -70,6 +71,5 @@ module Keywords =
     val QuoteIdentifierIfNeeded : string -> string
     val NormalizeIdentifierBackticks : string -> string
     val keywordNames : string list
-    val keywordTypes : Set<string>
     /// Keywords paired with their descriptions. Used in completion and quick info.
     val keywordsWithDescription : (string * string) list

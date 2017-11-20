@@ -439,6 +439,28 @@ module TypedTest = begin
         test "check Mutate 1"   (<@ let mutable x = 0 in x <- 1 @> |> (function Let(v,Int32 0, VarSet(v2,Int32 1)) when v = v2 -> true | _ -> false))
 
         let q = <@ let mutable x = 0 in x <- 1 @>
+        
+        let rec getMethod (e : Expr) =
+            match e with
+            | Call(None, mi, _) -> mi
+            | Let(_,_,m) -> getMethod m
+            | Lambdas(_, e) -> getMethod e
+            | _ -> failwithf "not a lambda: %A" e
+
+        let increment (r : byref<int>) = r <- r + 1
+        let incrementMeth = getMethod <@ let mutable a = 10 in increment(&a) @>
+
+        let rec rebuild (e : Expr) =
+            match e with
+            | ExprShape.ShapeLambda(v,b) -> Expr.Lambda(v, rebuild b)
+            | ExprShape.ShapeVar(v) -> Expr.Var v
+            | ExprShape.ShapeCombination(o, args) -> ExprShape.RebuildShapeCombination(o, args |> List.map rebuild)
+
+        test "check AddressOf in call"      (try let v = Var("a", typeof<int>, true) in Expr.Let(v, Expr.Value 10, Expr.Call(incrementMeth, [Expr.AddressOf(Expr.Var v)])) |> ignore; true with _ -> false)
+        test "check AddressOf rebuild"      (try rebuild <@ let mutable a = 10 in increment(&a) @> |> ignore; true with _ -> false)
+        test "check AddressOf argument"     (<@ let mutable a = 10 in increment(&a) @> |> function Let(_, _, Call(None, _, [AddressOf(_)])) -> true | _ -> false)
+        test "check AddressOf type"         (<@ let mutable a = 10 in increment(&a) @> |> function Let(_, _, Call(None, _, [AddressOf(_) as e])) -> (try e.Type = typeof<int>.MakeByRefType() with _ -> false) | _ -> false)
+
 
     // Test basic expression splicing
     let f8383 (x:int) (y:string) = 0
@@ -1679,12 +1701,15 @@ module QuotationConstructionTests =
     check "vcknwwe0ii" (try let _ = Expr.TupleGet(<@@ (1,2) @@>, -1) in false with :? ArgumentException -> true) true
     for i = 0 to 7 do 
         check "vcknwwe0oo" (match Expr.TupleGet(<@@ (1,2,3,4,5,6,7,8) @@>, i) with TupleGet(b,n) -> b = <@@ (1,2,3,4,5,6,7,8) @@> && n = i | _ -> false) true 
+
     check "vcknwwe0pp" (match Expr.TypeTest(<@@ new obj() @@>, typeof<string>) with TypeTest(e,ty) -> e = <@@ new obj() @@> && ty = typeof<string> | _ -> false) true
     check "vcknwwe0aa" (match Expr.UnionCaseTest(<@@ [] : int list @@>, ucaseof <@@ [] : int list @@> ) with UnionCaseTest(e,uc) -> e = <@@ [] : int list @@> && uc = ucaseof <@@ [] : int list @@>  | _ -> false) true
     check "vcknwwe0ss" (Expr.Value(3)) <@@ 3 @@>
     check "vcknwwe0dd" (match Expr.Var(Var.Global("i",typeof<int>)) with Var(v) -> v = Var.Global("i",typeof<int>) | _ -> false) true
     check "vcknwwe0ff" (match Expr.VarSet(Var.Global("i",typeof<int>), <@@ 4 @@>) with VarSet(v,q) -> v = Var.Global("i",typeof<int>) && q = <@@ 4 @@>  | _ -> false) true
     check "vcknwwe0gg" (match Expr.WhileLoop(<@@ true @@>, <@@ () @@>) with WhileLoop(g,b) -> g = <@@ true @@> && b = <@@ () @@>  | _ -> false) true
+
+
 
 module QuotationStructUnionTests = 
 
@@ -3059,6 +3084,75 @@ module ReflectionOverTypeInstantiations =
     checkType "test cvweler8" t1 false
     checkType "test cvweler9" t2 true
 
+module QuotationStructTupleTests = 
+    let actual = struct (0,0)
+    let code = 
+        <@ match actual with
+           | struct (0,0) -> true
+           | _ -> false @>
+
+    printfn "code = %A" code
+    check "wcelwec" (match code with 
+                     | IfThenElse (Call (None, _, [TupleGet (PropertyGet (None, _, []), 0); _]), IfThenElse (Call (None, _, [TupleGet (PropertyGet (None, _, []), 1); _]), Value _, Value _), Value _) -> true
+                     | _ -> false)
+         true
+
+    for i = 0 to 7 do 
+        check "vcknwwe0oo" (match Expr.TupleGet(<@@ struct (1,2,3,4,5,6,7,8) @@>, i) with TupleGet(b,n) -> b = <@@ struct (1,2,3,4,5,6,7,8) @@> && n = i | _ -> false) true 
+
+    let actual2 : Result<string, string> = Ok "foo"
+    let code2 = 
+        <@ match actual2 with
+           | Ok _ -> true
+           | Error _ -> false @>
+
+    printfn "code2 = %A" code2
+    check "cewcewwer" 
+         (match code2 with 
+            | IfThenElse (UnionCaseTest (PropertyGet (None, actual2, []), _), Value _, Value _) -> true
+            | _ -> false)
+         true
+
+
+module TestStaticCtor = 
+    [<ReflectedDefinition>]
+    type T() =
+        static do printfn "Hello" // removing this makes the RD lookup work
+        static member Ident (x:int) = x
+
+    let testStaticCtor() = 
+        // bug: threw error with message "Could not bind to method" 
+        check "cvwenklwevpo1" (Expr.TryGetReflectedDefinition(typeof<T>.GetMethod("Ident"))).IsSome true
+        check "cvwenklwevpo2" (Expr.TryGetReflectedDefinition(typeof<T>.GetConstructors(BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic).[0])).IsSome true
+
+    testStaticCtor()
+
+
+module TestFuncNoArgs = 
+    type SomeType() = class end
+    type Test =
+        static member ParseThis (f : System.Linq.Expressions.Expression<System.Func<SomeType>>) = f
+
+    
+    type D = delegate of unit -> int
+    type D2<'T> = delegate of unit -> 'T
+
+    let testFunc() = 
+        check "cvwenklwevpo1" (match <@ new System.Func<int>(fun () -> 3) @> with Quotations.Patterns.NewDelegate(_,[],Value _) -> true | _ -> false) true
+        check "cvwenklwevpo2" (match <@ new System.Func<int,int>(fun n -> 3) @> with Quotations.Patterns.NewDelegate(_,[_],Value _) -> true | _ -> false) true
+        check "cvwenklwevpo1d" (match <@ new D(fun () -> 3) @> with Quotations.Patterns.NewDelegate(_,[],Value _) -> true | _ -> false) true
+        check "cvwenklwevpo2d" (match <@ new D2<int>(fun () -> 3) @> with Quotations.Patterns.NewDelegate(_,[],Value _) -> true | _ -> false) true
+
+    testFunc()
+
+
+    let testFunc2() = 
+        // was raising exception
+        let foo = Test.ParseThis (fun () -> SomeType())
+        check "clew0mmlvew" (foo.ToString()) "() => new SomeType()"
+
+    testFunc2()
+    
 
 #if !FX_RESHAPED_REFLECTION
 module TestAssemblyAttributes = 

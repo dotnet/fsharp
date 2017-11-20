@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // Various tests for the:
 // Microsoft.FSharp.Collections.Set module
@@ -17,7 +17,7 @@ Make sure each method works on:
 * Sets with 4 more more elements
 *)
 
-[<TestFixture>]
+[<TestFixture>][<Category "Collections.Set">][<Category "FSharp.Core.Collections">]
 type SetModule() =
 
     [<Test>]
@@ -607,7 +607,7 @@ type SetModule() =
     [<Test>]
     member this.GeneralTest1() =
         
-        // Retruns a random permutation of integers between the two bounds.
+        // Returns a random permutation of integers between the two bounds.
         let randomPermutation lowerBound upperBound = 
             let items = System.Collections.Generic.List<_>([lowerBound .. upperBound])
             let rng = new Random()

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 #nowarn "44" // This construct is deprecated. please use Seq.item
 namespace FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Collections
@@ -8,7 +8,7 @@ open NUnit.Framework
 
 open FSharp.Core.Unittests.LibraryTestFx
 
-[<TestFixture>]
+[<TestFixture>][<Category "Collections.Seq">][<Category "FSharp.Core.Collections">]
 type ObsoleteSeqFunctions() =
 
     [<Test>]

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Functions to format error message details
 module internal Microsoft.FSharp.Compiler.ErrorResolutionHints
@@ -11,9 +11,9 @@ let highConfidenceThreshold = 0.85
 let minStringLengthForThreshold = 3
 
 /// We report a candidate if its edit distance is <= the threshold.
-/// The threshhold is set to about a quarter of the number of characters.
+/// The threshold is set to about a quarter of the number of characters.
 let IsInEditDistanceProximity idText suggestion =
-    let editDistance = EditDistance.CalcEditDistance(idText,suggestion)
+    let editDistance = EditDistance.CalcEditDistance(idText, suggestion)
     let threshold =
         match idText.Length with
         | x when x < 5 -> 1
@@ -43,40 +43,37 @@ let FilterPredictions (idText:string) (suggestionF:ErrorLogger.Suggestions) =
     if allSuggestions.Contains idText then [] else // some other parsing error occurred
     allSuggestions
     |> Seq.choose (fun suggestion ->
-        if IsOperatorName suggestion then None else
+        // Because beginning a name with _ is used both to indicate an unused
+        // value as well as to formally squelch the associated compiler
+        // error/warning (FS1182), we remove such names from the suggestions,
+        // both to prevent accidental usages as well as to encourage good taste
+        if IsOperatorName suggestion || suggestion.StartsWith "_" then None else
         let suggestion:string = demangle suggestion
         let suggestedText = suggestion.ToUpperInvariant()
         let similarity = EditDistance.JaroWinklerDistance uppercaseText suggestedText
         if similarity >= highConfidenceThreshold || suggestion.EndsWith ("." + idText) then
-            Some(similarity,suggestion)
+            Some(similarity, suggestion)
         elif similarity < minThresholdForSuggestions && suggestedText.Length > minStringLengthForThreshold then
             None
         elif IsInEditDistanceProximity uppercaseText suggestedText then
-            Some(similarity,suggestion)
+            Some(similarity, suggestion)
         else
             None)
     |> Seq.sortByDescending fst
-    |> Seq.mapi (fun i x -> i,x) 
-    |> Seq.takeWhile (fun (i,_) -> i < maxSuggestions) 
+    |> Seq.mapi (fun i x -> i, x) 
+    |> Seq.takeWhile (fun (i, _) -> i < maxSuggestions) 
     |> Seq.map snd 
     |> Seq.toList
 
 /// Formats the given predictions according to the error style.
-let FormatPredictions errorStyle normalizeF (predictions: (float * string) list) =
+let FormatPredictions normalizeF (predictions: (float * string) list) =
     match predictions with
     | [] -> System.String.Empty
     | _ ->
-        " " + FSComp.SR.undefinedNameSuggestionsIntro() + 
-        match errorStyle with
-        | ErrorLogger.ErrorStyle.VSErrors ->
-            let predictionText =
-                predictions 
-                |> List.map (snd >> normalizeF)
-                |> String.concat ", "
-
-            " " + predictionText
-        | _ ->
+        let suggestions =
             predictions
             |> List.map (snd >> normalizeF) 
             |> List.map (sprintf "%s   %s" System.Environment.NewLine)
             |> String.concat ""
+
+        " " + FSComp.SR.undefinedNameSuggestionsIntro() + suggestions

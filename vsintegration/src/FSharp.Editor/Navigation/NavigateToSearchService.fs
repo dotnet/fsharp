@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -177,41 +177,45 @@ module private Utils =
             | _ -> container.Name
         typeAsString + name
 
-[<ExportLanguageService(typeof<INavigateToSearchService>, FSharpCommonConstants.FSharpLanguageName); Shared>]
+[<ExportLanguageService(typeof<INavigateToSearchService>, FSharpConstants.FSharpLanguageName); Shared>]
 type internal FSharpNavigateToSearchService 
     [<ImportingConstructor>] 
     (
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: FSharpProjectOptionsManager
     ) =
 
     let itemsByDocumentId = ConditionalWeakTable<DocumentId, (int * Index.IIndexedNavigableItems)>()
 
-    let getNavigableItems(document: Document, options: FSharpProjectOptions, cancellationToken: CancellationToken) =
+    let getNavigableItems(document: Document, parsingOptions: FSharpParsingOptions) =
         async {
-            let! sourceText = document.GetTextAsync(cancellationToken)
-            let! parseResults = checkerProvider.Checker.ParseFileInProject(document.FilePath, sourceText.ToString(), options)
+            let! cancellationToken = Async.CancellationToken
+            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+            let! parseResults = checkerProvider.Checker.ParseFile(document.FilePath, sourceText.ToString(), parsingOptions)
             return 
                 match parseResults.ParseTree |> Option.map NavigateTo.getNavigableItems with
                 | Some items ->
                     [| for item in items do
-                         let sourceSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, item.Range)
-                         let glyph = Utils.navigateToItemKindToGlyph item.Kind
-                         let kind = Utils.navigateToItemKindToRoslynKind item.Kind
-                         let additionalInfo = Utils.containerToString item.Container document.Project
-                         yield NavigableItem(document, sourceSpan, glyph, item.Name, kind, additionalInfo) |]
+                         match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, item.Range) with 
+                         | None -> ()
+                         | Some sourceSpan ->
+                             let glyph = Utils.navigateToItemKindToGlyph item.Kind
+                             let kind = Utils.navigateToItemKindToRoslynKind item.Kind
+                             let additionalInfo = Utils.containerToString item.Container document.Project
+                             yield NavigableItem(document, sourceSpan, glyph, item.Name, kind, additionalInfo) |]
                 | None -> [||]
         }
 
-    let getCachedIndexedNavigableItems(document: Document, options: FSharpProjectOptions, cancellationToken: CancellationToken) =
+    let getCachedIndexedNavigableItems(document: Document, parsingOptions: FSharpParsingOptions) =
         async {
-            let! textVersion = document.GetTextVersionAsync(cancellationToken)
+            let! cancellationToken = Async.CancellationToken
+            let! textVersion = document.GetTextVersionAsync(cancellationToken)  |> Async.AwaitTask
             let textVersionHash = hash textVersion
             match itemsByDocumentId.TryGetValue document.Id with
             | true, (oldTextVersionHash, items) when oldTextVersionHash = textVersionHash ->
                 return items
             | _ ->
-                let! items = getNavigableItems(document, options, cancellationToken)
+                let! items = getNavigableItems(document, parsingOptions)
                 let indexedItems = Index.build items
                 itemsByDocumentId.Remove(document.Id) |> ignore
                 itemsByDocumentId.Add(document.Id, (textVersionHash, indexedItems))
@@ -229,35 +233,42 @@ type internal FSharpNavigateToSearchService
     interface INavigateToSearchService with
         member __.SearchProjectAsync(project, searchPattern, cancellationToken) : Task<ImmutableArray<INavigateToSearchResult>> =
             asyncMaybe {
-                let! options = projectInfoManager.TryGetOptionsForProject(project.Id)
+                let! parsingOptions, _site, _options = projectInfoManager.TryGetOptionsForProject(project.Id)
                 let! items =
                     project.Documents
-                    |> Seq.map (fun document -> getCachedIndexedNavigableItems(document, options, cancellationToken))
+                    |> Seq.map (fun document -> getCachedIndexedNavigableItems(document, parsingOptions))
                     |> Async.Parallel
                     |> liftAsync
-                return 
-                    [| yield! items |> Array.map (fun items -> items.Find(searchPattern)) |> Array.concat
-                       use patternMatcher = new PatternMatcher(searchPattern, allowFuzzyMatching = true)
-                       yield! items
-                              |> Array.collect (fun item -> item.AllItems)
-                              |> Array.Parallel.collect (fun x -> 
-                                  patternMatcher.GetMatches(x.Name)
-                                  |> Seq.map (fun pm ->
-                                      NavigateToSearchResult(x, patternMatchKindToNavigateToMatchKind pm.Kind) :> INavigateToSearchResult)
-                                  |> Seq.toArray) |]
-                    |> Array.distinctBy (fun x -> x.NavigableItem.Document.Id, x.NavigableItem.SourceSpan)
+                
+                let items =
+                    if searchPattern.Length = 1 then
+                        items 
+                        |> Array.map (fun items -> items.Find(searchPattern)) 
+                        |> Array.concat
+                        |> Array.filter (fun x -> x.Name.Length = 1 && String.Equals(x.Name, searchPattern, StringComparison.InvariantCultureIgnoreCase))
+                    else
+                        [| yield! items |> Array.map (fun items -> items.Find(searchPattern)) |> Array.concat
+                           use patternMatcher = new PatternMatcher(searchPattern, allowFuzzyMatching = true)
+                           yield! items
+                                  |> Array.collect (fun item -> item.AllItems)
+                                  |> Array.Parallel.collect (fun x -> 
+                                      patternMatcher.GetMatches(x.Name)
+                                      |> Seq.map (fun pm ->
+                                          NavigateToSearchResult(x, patternMatchKindToNavigateToMatchKind pm.Kind) :> INavigateToSearchResult)
+                                      |> Seq.toArray) |]
+
+                return items |> Array.distinctBy (fun x -> x.NavigableItem.Document.Id, x.NavigableItem.SourceSpan)
             } 
             |> Async.map (Option.defaultValue [||])
             |> Async.map Seq.toImmutableArray
-            |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
-
+            |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
 
         member __.SearchDocumentAsync(document, searchPattern, cancellationToken) : Task<ImmutableArray<INavigateToSearchResult>> =
             asyncMaybe {
-                let! options = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
-                let! items = getCachedIndexedNavigableItems(document, options, cancellationToken) |> liftAsync
+                let! parsingOptions, _, _ = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
+                let! items = getCachedIndexedNavigableItems(document, parsingOptions) |> liftAsync
                 return items.Find(searchPattern)
             }
             |> Async.map (Option.defaultValue [||])
             |> Async.map Seq.toImmutableArray
-            |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
+            |> RoslynHelpers.StartAsyncAsTask(cancellationToken)

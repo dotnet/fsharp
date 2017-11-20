@@ -9,6 +9,7 @@
 //<Expects status="success">section='NoSection                ' ! option=script.fsx arg1 arg2 ...       kind=OptionGeneral</Expects>
 //<Expects status="success">section='NoSection                ' ! option=probeconsole                   kind=OptionSwitch</Expects>
 //<Expects status="success">section='NoSection                ' ! option=peekahead                      kind=OptionSwitch</Expects>
+//<Expects status="success">section='NoSection                ' ! option=noninteractive                 kind=OptionUnit</Expects>
 //<Expects status="success">section='- INPUT FILES -          ' ! option=reference                      kind=OptionString</Expects>
 //<Expects status="success">section='- CODE GENERATION -      ' ! option=debug                          kind=OptionSwitch</Expects>
 //<Expects status="success">section='- CODE GENERATION -      ' ! option=debug                          kind=OptionString</Expects>
@@ -16,7 +17,7 @@
 //<Expects status="success">section='- CODE GENERATION -      ' ! option=tailcalls                      kind=OptionSwitch</Expects>
 //<Expects status="success">section='- CODE GENERATION -      ' ! option=crossoptimize                  kind=OptionSwitch</Expects>
 //<Expects status="success">section='- ERRORS AND WARNINGS -  ' ! option=warnaserror                    kind=OptionSwitch</Expects>
-//<Expects status="success">section='- ERRORS AND WARNINGS -  ' ! option=warnaserror                    kind=OptionIntListSwitch</Expects>
+//<Expects status="success">section='- ERRORS AND WARNINGS -  ' ! option=warnaserror                    kind=OptionStringListSwitch</Expects>
 //<Expects status="success">section='- ERRORS AND WARNINGS -  ' ! option=warn                           kind=OptionInt</Expects>
 //<Expects status="success">section='- ERRORS AND WARNINGS -  ' ! option=nowarn                         kind=OptionStringList</Expects>
 //<Expects status="success">section='- ERRORS AND WARNINGS -  ' ! option=warnon                         kind=OptionStringList</Expects>
@@ -94,6 +95,7 @@
 //<Expects status="success">section='- ADVANCED -             ' ! option=readline                       kind=OptionSwitch</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=quotations-debug               kind=OptionSwitch</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=shadowcopyreferences           kind=OptionSwitch</Expects>
+//<Expects status="success">section='- ADVANCED -             ' ! option=simpleresolution               kind=OptionUnit</Expects>
 
 // These are for FSC.EXE ONLY:
 
@@ -120,7 +122,6 @@
 //<Expects status="notin">section='- ADVANCED -             ' ! option=standalone                     kind=OptionUnit</Expects>
 //<Expects status="notin">section='- ADVANCED -             ' ! option=staticlink                     kind=OptionString</Expects>
 //<Expects status="notin">section='- ADVANCED -             ' ! option=pdb                            kind=OptionString</Expects>
-//<Expects status="notin">section='- ADVANCED -             ' ! option=simpleresolution               kind=OptionUnit</Expects>
 //<Expects status="notin">section='NoSection                ' ! option=generatehtml                   kind=OptionUnit</Expects>
 //<Expects status="notin">section='NoSection                ' ! option=htmloutputdir                  kind=OptionString</Expects>
 //<Expects status="notin">section='NoSection                ' ! option=htmlcss                        kind=OptionString</Expects>

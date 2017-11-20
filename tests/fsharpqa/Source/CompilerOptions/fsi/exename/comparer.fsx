@@ -1,4 +1,4 @@
-// #NoMT #CompilerOptions #RequiresENU #NETFX20Only #NETFX40Only 
+// #NoMT #CompilerOptions #RequiresENU   
 let fn1 = fsi.CommandLineArgs.[1]
 let fn2 = fsi.CommandLineArgs.[2]
 let File2List(filename : string) = System.IO.File.ReadAllLines filename |> Array.toList

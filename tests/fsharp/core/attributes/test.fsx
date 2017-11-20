@@ -1323,6 +1323,25 @@ module TestFsiLoadOfNonExistentAssembly =
 
     do test()
 
+// See https://github.com/Microsoft/visualfsharp/issues/681
+module BugWithOverloadedAttributes = 
+
+    type FooAttribute(value : int) =
+        inherit System.Attribute()
+        new () = new FooAttribute(-1)
+
+    [<FooAttribute(value = 42)>]
+    type Bar = class end
+
+#if !TESTS_AS_APP && !FX_PORTABLE_OR_NETSTANDARD
+module Bug719b = 
+
+    open TestLibModule.Bug719
+    
+    type Bar =
+        interface IFoo with
+            member __.Test (?value:int) = value.ToString()
+#endif
 
 (*-------------------------------------------------------------------------
 !* Test passed?

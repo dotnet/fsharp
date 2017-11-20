@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Tests.LanguageService.ErrorList
 
@@ -12,7 +12,8 @@ open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
 
-[<TestFixture>] 
+[<TestFixture>]
+[<Category "LanguageService">] 
 type UsingMSBuild() as this = 
     inherit LanguageServiceBaseTests()
 
@@ -183,7 +184,7 @@ let g (t : T) = t.Count()
         CheckErrorList content <|
             fun errors ->
                 Assert.AreEqual(3, List.length errors)
-                assertContains errors "No overloads match for method 'X'. The available overloads are shown below (or in the Error List window)."
+                assertContains errors "No overloads match for method 'X'. The available overloads are shown below."
                 for expected in expectedMessages do
                    errors
                    |> List.exists (fun e -> e.Message.StartsWith expected)
@@ -364,7 +365,7 @@ type staticInInterface =
     [<Category("TypeProvider")>]
     [<Category("TypeProvider.MultipleErrors")>]
     member public this.``TypeProvider.MultipleErrors`` () =
-        let tpRef = PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")
+        let tpRef = PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")
         let checkList n = 
             printfn "===TypeProvider.MultipleErrors: %d===" n
             let content = sprintf "type Err = TPErrors.TP<%d>" n
@@ -436,7 +437,7 @@ type staticInInterface =
 but here has type
     'int'    """
         this.VerifyErrorListContainedExpectedString(fileContent,expectedStr,
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -450,7 +451,7 @@ but here has type
         let expectedStr = "An error occurred applying the static arguments to a provided type"
        
         this.VerifyErrorListContainedExpectedString(fileContent,expectedStr,
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
    
     [<Test>]
     [<Category("TypeProvider")>]
@@ -464,7 +465,7 @@ but here has type
         let expectedStr = "The static parameter 'ParamIgnored' of the provided type or method 'T' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. 'T<ParamIgnored=...>'."
        
         this.VerifyErrorListContainedExpectedString(fileContent,expectedStr,
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
     [<Test>]
     [<Category("TypeProvider")>]
     member public this.``TypeProvider.ProhibitedMethods`` () =
@@ -479,7 +480,7 @@ but here has type
                 (
                     code,
                     sprintf "Array method '%s' is supplied by the runtime and cannot be directly used in code." str,
-                    addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
+                    addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
                 )    
     
     [<Test>]
@@ -504,7 +505,7 @@ but here has type
                             type foo = N1.T< 
                                 const "Hello World",2>""",
             expectedNum = 1,
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]) 
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]) 
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -515,7 +516,7 @@ but here has type
          this.VerifyNoErrorListAtOpenProject(
             fileContents = """
                             type foo = N1.T< const "Hello World",2>""",
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]) 
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]) 
     
 
     [<Test>]

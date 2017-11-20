@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.1
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:4:1:0
 }
 .assembly extern cas
 {
@@ -36,20 +36,20 @@
 }
 .mresource public FSharpSignatureData.cas
 {
-  // Offset: 0x00000000 Length: 0x000005F3
+  // Offset: 0x00000000 Length: 0x000005DF
 }
 .mresource public FSharpOptimizationData.cas
 {
-  // Offset: 0x000005F8 Length: 0x000000F3
+  // Offset: 0x000005E8 Length: 0x000000F3
 }
 .module cas.exe
-// MVID: {4BEB2887-35EA-18E3-A745-03838728EB4B}
+// MVID: {59B19213-35EA-18E3-A745-03831392B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00360000
+// Image base: 0x006A0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -67,36 +67,36 @@
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
       .permissionset linkcheck
-                 = {class 'System.Security.Permissions.SecurityPermissionAttribute, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089' = {property enum class 'System.Security.Permissions.SecurityPermissionFlag, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089' 'Flags' = int32(2)}}
+                 = {class 'System.Security.Permissions.SecurityPermissionAttribute, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089' = {property enum class 'System.Security.Permissions.SecurityPermissionFlag, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089' 'Flags' = int32(2)}}
       .permissionset demand
                  = {class 'System.Security.Permissions.PrincipalPermissionAttribute, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089' = {property string 'Role' = string('test')}}
       .method public specialname rtspecialname 
               instance void  .ctor() cil managed
       {
-        // Code size       10 (0xa)
-        .maxstack  3
+        // Code size       9 (0x9)
+        .maxstack  8
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-        .line 11,11 : 10,13 
+        .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Misc\\cas.fs'
         IL_0000:  ldarg.0
-        IL_0001:  call       instance void [mscorlib]System.Object::.ctor()
+        IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
         IL_0006:  ldarg.0
         IL_0007:  pop
-        IL_0008:  nop
-        IL_0009:  ret
+        .line 11,11 : 10,13 ''
+        IL_0008:  ret
       } // end of method Foo::.ctor
 
-      .method public instance int32  someMethod() cil managed
+      .method public hidebysig instance int32 
+              someMethod() cil managed
       {
         .permissionset demand
                    = {class 'System.Security.Permissions.PrincipalPermissionAttribute, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089' = {property string 'Role' = string('test')}}
         .permissionset assert
-                   = {[cas]CustomSecAttr.CustomPermission2Attribute = {property enum class 'CustomSecAttr.SecurityArgType, cas, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null, cas, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null' 'SecurityArg' = int32(2)}}
-        // Code size       7 (0x7)
-        .maxstack  3
-        .line 14,14 : 33,37 
-        IL_0000:  nop
-        IL_0001:  ldc.i4     0x18c0
-        IL_0006:  ret
+                   = {[cas]CustomSecAttr.CustomPermission2Attribute = {property enum class 'CustomSecAttr.SecurityArgType, cas, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null' 'SecurityArg' = int32(2)}}
+        // Code size       6 (0x6)
+        .maxstack  8
+        .line 14,14 : 33,37 ''
+        IL_0000:  ldc.i4     0x18c0
+        IL_0005:  ret
       } // end of method Foo::someMethod
 
     } // end of class Foo
@@ -111,10 +111,10 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       2 (0x2)
-    .maxstack  2
-    IL_0000:  nop
-    IL_0001:  ret
+    // Code size       1 (0x1)
+    .maxstack  8
+    .line 18,18 : 7,9 ''
+    IL_0000:  ret
   } // end of method $Cas::main@
 
 } // end of class '<StartupCode$cas>'.$Cas

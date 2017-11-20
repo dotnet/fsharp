@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.1
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:4:1:0
 }
 .assembly PreserveSig
 {
@@ -29,22 +29,20 @@
 }
 .mresource public FSharpSignatureData.PreserveSig
 {
-  // Offset: 0x00000000 Length: 0x000002F7
-  // WARNING: managed resource file FSharpSignatureData.PreserveSig created
+  // Offset: 0x00000000 Length: 0x000002F5
 }
 .mresource public FSharpOptimizationData.PreserveSig
 {
   // Offset: 0x00000300 Length: 0x0000004A
-  // WARNING: managed resource file FSharpOptimizationData.PreserveSig created
 }
 .module PreserveSig.dll
-// MVID: {4D6C3991-E8CC-64FE-A745-038391396C4D}
+// MVID: {59B19213-E8CC-64FE-A745-03831392B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x002F0000
+// Image base: 0x01660000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -68,4 +66,3 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file PreserveSig.il.res

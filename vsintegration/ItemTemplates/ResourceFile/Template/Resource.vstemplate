@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<VSTemplate Version="3.0.0" Type="Item" xmlns="http://schemas.microsoft.com/developer/vstemplate/2005">
+  <TemplateData>
+    <Name Package="{91A04A73-4F2C-4E7C-AD38-C1A68E7DA05C}" ID="5053" />
+    <Description Package="{91A04A73-4F2C-4E7C-AD38-C1A68E7DA05C}" ID="5054" />
+    <Icon Package="{91A04A73-4F2C-4E7C-AD38-C1A68E7DA05C}" ID="4017" />
+    <TemplateID>Microsoft.FSharp.Resource</TemplateID>
+    <ProjectType>FSharp</ProjectType>
+    <SortOrder>40</SortOrder>
+    <NumberOfParentCategoriesToRollUp>1</NumberOfParentCategoriesToRollUp>
+    <DefaultName>Resource.resx</DefaultName>
+  </TemplateData>
+  <TemplateContent>
+    <ProjectItem OpenInEditor="false">Resource.resx</ProjectItem>
+    <CustomParameters>
+      <CustomParameter Name="$itemproperties$" Value="CustomTool" />
+      <CustomParameter Name="$CustomTool$" Value="ResXFileCodeGenerator" />
+    </CustomParameters>
+  </TemplateContent>
+  <WizardExtension>
+    <Assembly>Microsoft.VisualStudio.Editors, Version=15.0.0.0, Culture=Neutral, PublicKeyToken=b03f5f7f11d50a3a</Assembly>
+    <FullClassName>Microsoft.VisualStudio.Editors.ResourceEditor.ResxItemWizard</FullClassName>
+  </WizardExtension>
+</VSTemplate>

@@ -1,4 +1,4 @@
-// #Regression #NoMono #NoMT #CodeGen #EmittedIL #Attributes #NETFX20Only #NETFX40Only 
+// #Regression #NoMono #NoMT #CodeGen #EmittedIL #Attributes   
 // Regression test for FSharp1.0:4740
 // Title: Expose currying information in F# compiled form
 
