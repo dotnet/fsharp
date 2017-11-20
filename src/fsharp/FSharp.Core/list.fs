@@ -212,11 +212,15 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Fold")>]
         let fold<'T,'State> folder (state:'State) (list: 'T list) = 
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(folder)
-            let mutable acc = state
-            for x in list do
-                acc <- f.Invoke(acc, x)
-            acc
+            match list with 
+            | [] -> state
+            | _ -> 
+                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(folder)
+                let rec loop s xs = 
+                    match xs with 
+                    | [] -> s
+                    | h::t -> loop (f.Invoke(s,h)) t
+                loop state list
 
         [<CompiledName("Pairwise")>]
         let pairwise (list: 'T list) =
@@ -352,10 +356,12 @@ namespace Microsoft.FSharp.Collections
         let exists predicate list = Microsoft.FSharp.Primitives.Basics.List.exists predicate list
         
         [<CompiledName("Contains")>]
-        let rec contains value source =
-            match source with
-            | [] -> false
-            | h::t -> if h = value then true else contains value t
+        let inline contains value source =
+            let rec contains e xs1 =
+                match xs1 with
+                | [] -> false
+                | h1::t1 -> e = h1 || contains e t1
+            contains value source
 
         let rec exists2aux (f:OptimizedClosures.FSharpFunc<_,_,_>) list1 list2 = 
             match list1,list2 with 
