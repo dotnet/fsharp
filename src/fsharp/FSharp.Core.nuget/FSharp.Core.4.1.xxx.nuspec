@@ -71,56 +71,56 @@
         </dependencies>
     </metadata>
     <files>
-        <file src="profiles/net20/FSharp.Core.dll"     target="lib/net20/" />
-        <file src="profiles/net20/FSharp.Core.sigdata" target="lib/net20/" />
-        <file src="profiles/net20/FSharp.Core.optdata" target="lib/net20/" />
-        <file src="profiles/net20/FSharp.Core.xml"     target="lib/net20/" />
+        <file src="profiles\net20\FSharp.Core.dll"     target="lib\net20\" />
+        <file src="profiles\net20\FSharp.Core.sigdata" target="lib\net20\" />
+        <file src="profiles\net20\FSharp.Core.optdata" target="lib\net20\" />
+        <file src="profiles\net20\FSharp.Core.xml"     target="lib\net20\" />
 
-        <file src="profiles/net40/FSharp.Core.dll"     target="lib/net40/" />
-        <file src="profiles/net40/FSharp.Core.sigdata" target="lib/net40/" />
-        <file src="profiles/net40/FSharp.Core.optdata" target="lib/net40/" />
-        <file src="profiles/net40/FSharp.Core.xml"     target="lib/net40/" />
+        <file src="profiles\net40\FSharp.Core.dll"     target="lib\net40\" />
+        <file src="profiles\net40\FSharp.Core.sigdata" target="lib\net40\" />
+        <file src="profiles\net40\FSharp.Core.optdata" target="lib\net40\" />
+        <file src="profiles\net40\FSharp.Core.xml"     target="lib\net40\" />
 
-        <file src="net40/bin/FSharp.Core.dll"     target="lib/net45/" />
-        <file src="net40/bin/FSharp.Core.sigdata" target="lib/net45/" />
-        <file src="net40/bin/FSharp.Core.optdata" target="lib/net45/" />
-        <file src="net40/bin/FSharp.Core.xml"     target="lib/net45/" />
+        <file src="net40\bin\FSharp.Core.dll"     target="lib\net45" />
+        <file src="net40\bin\FSharp.Core.sigdata" target="lib\net45" />
+        <file src="net40\bin\FSharp.Core.optdata" target="lib\net45" />
+        <file src="net40\bin\FSharp.Core.xml"     target="lib\net45" />
 
-        <file src="coreclr/bin/FSharp.Core.dll"     target="lib/netstandard1.6/" />
-        <file src="coreclr/bin/FSharp.Core.sigdata" target="lib/netstandard1.6/" />
-        <file src="coreclr/bin/FSharp.Core.optdata" target="lib/netstandard1.6/" />
-        <file src="coreclr/bin/FSharp.Core.xml"     target="lib/netstandard1.6/" />
-        <file src="coreclr/bin/FSharp.Core.sigdata" target="runtimes/any/native/" />
-        <file src="coreclr/bin/FSharp.Core.optdata" target="runtimes/any/native/" />
+        <file src="coreclr\bin\FSharp.Core.dll"     target="lib\netstandard1.6" />
+        <file src="coreclr\bin\FSharp.Core.sigdata" target="lib\netstandard1.6" />
+        <file src="coreclr\bin\FSharp.Core.optdata" target="lib\netstandard1.6" />
+        <file src="coreclr\bin\FSharp.Core.xml"     target="lib\netstandard1.6" />
+        <file src="coreclr\bin\FSharp.Core.sigdata" target="runtimes\any\native" />
+        <file src="coreclr\bin\FSharp.Core.optdata" target="runtimes\any\native" />
 
-        <file src="profiles/portable-net45+monoandroid10+monotouch10+xamarinios10/FSharp.Core.dll"     target="lib/portable-net45+monoandroid10+monotouch10+xamarinios10/" />
-        <file src="profiles/portable-net45+monoandroid10+monotouch10+xamarinios10/FSharp.Core.sigdata" target="lib/portable-net45+monoandroid10+monotouch10+xamarinios10/" />
-        <file src="profiles/portable-net45+monoandroid10+monotouch10+xamarinios10/FSharp.Core.optdata" target="lib/portable-net45+monoandroid10+monotouch10+xamarinios10/" />
-        <file src="profiles/portable-net45+monoandroid10+monotouch10+xamarinios10/FSharp.Core.xml"     target="lib/portable-net45+monoandroid10+monotouch10+xamarinios10/" />
+        <file src="profiles\portable-net45+monoandroid10+monotouch10+xamarinios10\FSharp.Core.dll"     target="lib\portable-net45+monoandroid10+monotouch10+xamarinios10" />
+        <file src="profiles\portable-net45+monoandroid10+monotouch10+xamarinios10\FSharp.Core.sigdata" target="lib\portable-net45+monoandroid10+monotouch10+xamarinios10" />
+        <file src="profiles\portable-net45+monoandroid10+monotouch10+xamarinios10\FSharp.Core.optdata" target="lib\portable-net45+monoandroid10+monotouch10+xamarinios10" />
+        <file src="profiles\portable-net45+monoandroid10+monotouch10+xamarinios10\FSharp.Core.xml"     target="lib\portable-net45+monoandroid10+monotouch10+xamarinios10" />
 
-        <file src="profiles/portable-net45+netcore45/FSharp.Core.dll"     target="lib/portable-net45+netcore45/" />
-        <file src="profiles/portable-net45+netcore45/FSharp.Core.sigdata" target="lib/portable-net45+netcore45/" />
-        <file src="profiles/portable-net45+netcore45/FSharp.Core.optdata" target="lib/portable-net45+netcore45/" />
-        <file src="profiles/portable-net45+netcore45/FSharp.Core.xml"     target="lib/portable-net45+netcore45/" />
+        <file src="profiles\portable-net45+netcore45\FSharp.Core.dll"     target="lib\portable-net45+netcore45" />
+        <file src="profiles\portable-net45+netcore45\FSharp.Core.sigdata" target="lib\portable-net45+netcore45" />
+        <file src="profiles\portable-net45+netcore45\FSharp.Core.optdata" target="lib\portable-net45+netcore45" />
+        <file src="profiles\portable-net45+netcore45\FSharp.Core.xml"     target="lib\portable-net45+netcore45" />
 
-        <file src="profiles/portable-net45+netcore45+wp8/FSharp.Core.dll"     target="lib/portable-net45+netcore45+wp8/" />
-        <file src="profiles/portable-net45+netcore45+wp8/FSharp.Core.sigdata" target="lib/portable-net45+netcore45+wp8/" />
-        <file src="profiles/portable-net45+netcore45+wp8/FSharp.Core.optdata" target="lib/portable-net45+netcore45+wp8/" />
-        <file src="profiles/portable-net45+netcore45+wp8/FSharp.Core.xml"     target="lib/portable-net45+netcore45+wp8/" />
+        <file src="profiles\portable-net45+netcore45+wp8\FSharp.Core.dll"     target="lib\portable-net45+netcore45+wp8" />
+        <file src="profiles\portable-net45+netcore45+wp8\FSharp.Core.sigdata" target="lib\portable-net45+netcore45+wp8" />
+        <file src="profiles\portable-net45+netcore45+wp8\FSharp.Core.optdata" target="lib\portable-net45+netcore45+wp8" />
+        <file src="profiles\portable-net45+netcore45+wp8\FSharp.Core.xml"     target="lib\portable-net45+netcore45+wp8" />
 
-        <file src="profiles/portable-net45+netcore45+wpa81+wp8/FSharp.Core.dll"     target="lib/portable-net45+netcore45+wpa81+wp8/" />
-        <file src="profiles/portable-net45+netcore45+wpa81+wp8/FSharp.Core.sigdata" target="lib/portable-net45+netcore45+wpa81+wp8/" />
-        <file src="profiles/portable-net45+netcore45+wpa81+wp8/FSharp.Core.optdata" target="lib/portable-net45+netcore45+wpa81+wp8/" />
-        <file src="profiles/portable-net45+netcore45+wpa81+wp8/FSharp.Core.xml"     target="lib/portable-net45+netcore45+wpa81+wp8/" />
+        <file src="profiles\portable-net45+netcore45+wpa81+wp8\FSharp.Core.dll"     target="lib\portable-net45+netcore45+wpa81+wp8" />
+        <file src="profiles\portable-net45+netcore45+wpa81+wp8\FSharp.Core.sigdata" target="lib\portable-net45+netcore45+wpa81+wp8" />
+        <file src="profiles\portable-net45+netcore45+wpa81+wp8\FSharp.Core.optdata" target="lib\portable-net45+netcore45+wpa81+wp8" />
+        <file src="profiles\portable-net45+netcore45+wpa81+wp8\FSharp.Core.xml"     target="lib\portable-net45+netcore45+wpa81+wp8" />
 
-        <file src="profiles/portable-net45+sl5+netcore45/FSharp.Core.dll"     target="lib/portable-net45+sl5+netcore45/" />
-        <file src="profiles/portable-net45+sl5+netcore45/FSharp.Core.sigdata" target="lib/portable-net45+sl5+netcore45/" />
-        <file src="profiles/portable-net45+sl5+netcore45/FSharp.Core.optdata" target="lib/portable-net45+sl5+netcore45/" />
-        <file src="profiles/portable-net45+sl5+netcore45/FSharp.Core.xml"     target="lib/portable-net45+sl5+netcore45/" />
+        <file src="profiles\portable-net45+sl5+netcore45\FSharp.Core.dll"     target="lib\portable-net45+sl5+netcore45" />
+        <file src="profiles\portable-net45+sl5+netcore45\FSharp.Core.sigdata" target="lib\portable-net45+sl5+netcore45" />
+        <file src="profiles\portable-net45+sl5+netcore45\FSharp.Core.optdata" target="lib\portable-net45+sl5+netcore45" />
+        <file src="profiles\portable-net45+sl5+netcore45\FSharp.Core.xml"     target="lib\portable-net45+sl5+netcore45" />
 
-        <file src="profiles/xamarinmac20/FSharp.Core.dll"     target="lib/xamarinmac20/" />
-        <file src="profiles/xamarinmac20/FSharp.Core.sigdata" target="lib/xamarinmac20/" />
-        <file src="profiles/xamarinmac20/FSharp.Core.optdata" target="lib/xamarinmac20/" />
-        <file src="profiles/xamarinmac20/FSharp.Core.xml"     target="lib/xamarinmac20/" />
+        <file src="profiles\xamarinmac20\FSharp.Core.dll"     target="lib\xamarinmac20" />
+        <file src="profiles\xamarinmac20\FSharp.Core.sigdata" target="lib\xamarinmac20" />
+        <file src="profiles\xamarinmac20\FSharp.Core.optdata" target="lib\xamarinmac20" />
+        <file src="profiles\xamarinmac20\FSharp.Core.xml"     target="lib\xamarinmac20" />
     </files>
 </package>
