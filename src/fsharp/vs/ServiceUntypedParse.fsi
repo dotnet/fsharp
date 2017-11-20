@@ -104,6 +104,8 @@ type internal CompletionContext =
     | ParameterList of pos * HashSet<string>
     | AttributeApplication
     | OpenDeclaration
+    /// completing pattern type (e.g. foo (x: |))
+    | PatternType
 
 #if COMPILER_PUBLIC_API
 type ModuleKind = { IsAutoOpen: bool; HasModuleSuffix: bool }
