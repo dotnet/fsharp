@@ -118,7 +118,6 @@ type TestConfig =
       FSI_FOR_SCRIPTS : string
       fsi_flags : string
       ILDASM : string
-      SN : string
       NGEN : string
       PEVERIFY : string
       Directory: string 
@@ -179,7 +178,6 @@ let config configurationName envVars =
     let CSC = requireFile (CORDIR ++ "csc.exe")
     let NGEN = requireFile (CORDIR ++ "ngen.exe")
     let ILDASM = requireFile (CORSDK ++ "ildasm.exe")
-    let SN = requireFile (CORSDK ++ "sn.exe") 
     let PEVERIFY = requireFile (CORSDK ++ "peverify.exe")
     let FSI_FOR_SCRIPTS =
         match envVars |> Map.tryFind "_fsiexe" with
@@ -217,7 +215,6 @@ let config configurationName envVars =
       FSCBinPath = FSCBinPath |> Commands.pathAddBackslash
       FSCOREDLLPATH = FSCOREDLLPATH
       ILDASM = ILDASM
-      SN = SN
       NGEN = NGEN 
       PEVERIFY = PEVERIFY
       CSC = CSC 
@@ -452,7 +449,6 @@ let fscAppendErrExpectFail cfg errPath arg = Printf.ksprintf (Commands.fsc cfg.D
 let csc cfg arg = Printf.ksprintf (Commands.csc (exec cfg) cfg.CSC) arg
 let ildasm cfg arg = Printf.ksprintf (Commands.ildasm (exec cfg) cfg.ILDASM) arg
 let peverify cfg = Commands.peverify (exec cfg) cfg.PEVERIFY "/nologo"
-let sn cfg outfile arg = execAppendOutIgnoreExitCode cfg cfg.Directory outfile cfg.SN arg
 let peverifyWithArgs cfg args = Commands.peverify (exec cfg) cfg.PEVERIFY args
 let fsi cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI)
 let fsi_script cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI_FOR_SCRIPTS)
