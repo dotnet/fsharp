@@ -118,7 +118,6 @@ type TestConfig =
       FSI_FOR_SCRIPTS : string
       fsi_flags : string
       ILDASM : string
-      NGEN : string
       PEVERIFY : string
       Directory: string 
       DotNetExe: string
@@ -176,7 +175,6 @@ let config configurationName envVars =
     let CORDIR, CORSDK = WindowsPlatform.clrPaths envVars
     let Is64BitOperatingSystem = WindowsPlatform.Is64BitOperatingSystem envVars
     let CSC = requireFile (CORDIR ++ "csc.exe")
-    let NGEN = requireFile (CORDIR ++ "ngen.exe")
     let ILDASM = requireFile (CORSDK ++ "ildasm.exe")
     let PEVERIFY = requireFile (CORSDK ++ "peverify.exe")
     let FSI_FOR_SCRIPTS =
@@ -215,7 +213,6 @@ let config configurationName envVars =
       FSCBinPath = FSCBinPath |> Commands.pathAddBackslash
       FSCOREDLLPATH = FSCOREDLLPATH
       ILDASM = ILDASM
-      NGEN = NGEN 
       PEVERIFY = PEVERIFY
       CSC = CSC 
       BUILD_CONFIG = configurationName
@@ -245,7 +242,6 @@ let logConfig (cfg: TestConfig) =
     log "FSI                 =%s" cfg.FSI
     log "fsi_flags           =%s" cfg.fsi_flags
     log "ILDASM              =%s" cfg.ILDASM
-    log "NGEN                =%s" cfg.NGEN
     log "PEVERIFY            =%s" cfg.PEVERIFY
     log "---------------------------------------------------------------"
 
