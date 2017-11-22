@@ -497,6 +497,8 @@ if "%RestorePackages%"=="" (
 @echo VSSDKToolsPath: %VSSDKToolsPath%
 @echo VSSDKIncludes:  %VSSDKIncludes%
 
+@call src\update.cmd signonly
+
 :: Check prerequisites
 if not "%VisualStudioVersion%" == "" goto vsversionset
 if exist "%VS150COMNTOOLS%\..\ide\devenv.exe" set VisualStudioVersion=15.0
@@ -702,12 +704,16 @@ set PATH=%PATH%;%CORDIR%
 
 set REGEXE32BIT=reg.exe
 
+IF NOT DEFINED SNEXE32  IF EXIST "%WINSDKNETFXTOOLS%\sn.exe"                set SNEXE32=%WINSDKNETFXTOOLS%sn.exe
+IF NOT DEFINED SNEXE64  IF EXIST "%WINSDKNETFXTOOLS%x64\sn.exe"             set SNEXE64=%WINSDKNETFXTOOLS%x64\sn.exe
 IF NOT DEFINED ildasm   IF EXIST "%WINSDKNETFXTOOLS%\ildasm.exe"            set ildasm=%WINSDKNETFXTOOLS%ildasm.exe
 
 echo.
 echo SDK environment vars
 echo =======================
 echo WINSDKNETFXTOOLS:  %WINSDKNETFXTOOLS%
+echo SNEXE32:           %SNEXE32%
+echo SNEXE64:           %SNEXE64%
 echo ILDASM:            %ILDASM%
 echo
 
