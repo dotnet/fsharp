@@ -22,7 +22,7 @@ echo           ^<proto^|protofx^>
 echo           ^<ci^|ci_part1^|ci_part2^|ci_part3^|microbuild^|nuget^>
 echo           ^<debug^|release^>
 echo           ^<diag^|publicsign^>
-echo           ^<test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-net40-ideunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^>
+echo           ^<test^|no-test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-net40-ideunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^>
 echo           ^<include tag^>
 echo           ^<init^>
 echo.
@@ -82,6 +82,7 @@ REM ------------------ Parse all arguments -----------------------
 
 set _autoselect=1
 set _autoselect_tests=0
+set no_test=0
 set /a counter=0
 for /l %%x in (1 1 9) do (
     set /a counter=!counter!+1
@@ -296,6 +297,10 @@ if /i "%ARG%" == "test" (
     set _autoselect_tests=1
 )
 
+if /i "%ARG%" == "no-test" (
+    set no_test=1
+)
+
 if /i "%ARG%" == "include" (
     set /a counter=!counter!+1
     if "!INCLUDE_TEST_SPEC_NUNIT!" == "" ( set INCLUDE_TEST_SPEC_NUNIT=cat == %ARG2% ) else (set INCLUDE_TEST_SPEC_NUNIT=cat == %ARG2% or !INCLUDE_TEST_SPEC_NUNIT! )
@@ -491,8 +496,6 @@ if "%RestorePackages%"=="" (
 @echo VSSDKInstall:   %VSSDKInstall%
 @echo VSSDKToolsPath: %VSSDKToolsPath%
 @echo VSSDKIncludes:  %VSSDKIncludes%
-
-@call src\update.cmd signonly
 
 :: Check prerequisites
 if not "%VisualStudioVersion%" == "" goto vsversionset
@@ -699,20 +702,18 @@ set PATH=%PATH%;%CORDIR%
 
 set REGEXE32BIT=reg.exe
 
-IF NOT DEFINED SNEXE32  IF EXIST "%WINSDKNETFXTOOLS%\sn.exe"                set SNEXE32=%WINSDKNETFXTOOLS%sn.exe
-IF NOT DEFINED SNEXE64  IF EXIST "%WINSDKNETFXTOOLS%x64\sn.exe"             set SNEXE64=%WINSDKNETFXTOOLS%x64\sn.exe
 IF NOT DEFINED ildasm   IF EXIST "%WINSDKNETFXTOOLS%\ildasm.exe"            set ildasm=%WINSDKNETFXTOOLS%ildasm.exe
 
 echo.
 echo SDK environment vars
 echo =======================
 echo WINSDKNETFXTOOLS:  %WINSDKNETFXTOOLS%
-echo SNEXE32:           %SNEXE32%
-echo SNEXE64:           %SNEXE64%
 echo ILDASM:            %ILDASM%
 echo
 
 if "%TEST_NET40_COMPILERUNIT_SUITE%" == "0" if "%TEST_NET40_COREUNIT_SUITE%" == "0" if "%TEST_CORECLR_COREUNIT_SUITE%" == "0" if "%TEST_VS_IDEUNIT_SUITE%" == "0" if "%TEST_NET40_FSHARP_SUITE%" == "0" if "%TEST_NET40_FSHARPQA_SUITE%" == "0" goto :success
+
+if "%no_test%" == "1" goto :success
 
 echo ---------------- Done with update, starting tests -----------------------
 
