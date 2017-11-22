@@ -4,7 +4,7 @@
     <DefineConstants>$(DefineConstants);DOTNETCORE;FX_ATLEAST_45;FX_ATLEAST_PORTABLE;FX_NO_RUNTIMEENVIRONMENT;FX_RESHAPED_REFLECTION;TODO_REWORK_ASSEMBLY_LOAD;</DefineConstants>
     <NoWarn>$(NoWarn);44;</NoWarn>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <DelaySign>true</DelaySign>
+    <PublicSign>true</PublicSign>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>

@@ -42,8 +42,8 @@
         </dependencies>
     </metadata>
     <files>
-        <file src="FSharp.Core.dll"     target="lib/netstandard1.6" />
-        <file src="FSharp.Core.xml"     target="lib/netstandard1.6" />
-        <file src="FSharp.Core.runtimeconfig.json" target="lib/netstandard1.6" />
+        <file src="FSharp.Core.dll"     target="lib\netstandard1.6" />
+        <file src="FSharp.Core.xml"     target="lib\netstandard1.6" />
+        <file src="FSharp.Core.runtimeconfig.json" target="lib\netstandard1.6" />
     </files>
 </package>
