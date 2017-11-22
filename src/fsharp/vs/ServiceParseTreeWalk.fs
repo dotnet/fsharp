@@ -90,9 +90,15 @@ module internal AstTraversal =
         /// VisitLetOrUse allows overriding behavior when visiting module or local let or use bindings
         abstract VisitLetOrUse : SynBinding list * range -> 'T option
         default this.VisitLetOrUse (_, _) = None
-
+        /// VisitType allows overriding behavior when visiting simple pats
         abstract VisitSimplePats : SynSimplePat list -> 'T option
         default this.VisitSimplePats (_) = None
+        /// VisitPat allows overriding behavior when visiting patterns
+        abstract VisitPat : (SynPat -> 'T option) * SynPat -> 'T option
+        default this.VisitPat (defaultTraverse, pat) = defaultTraverse pat
+        /// VisitType allows overriding behavior when visiting type hints (x: ..., etc.)
+        abstract VisitType : (SynType -> 'T option) * SynType -> 'T option
+        default this.VisitType (defaultTraverse, ty) = defaultTraverse ty
 
     let dive node range project =
         range,(fun() -> project node)
@@ -189,12 +195,12 @@ module internal AstTraversal =
                      dive synExpr2 synExpr2.Range traverseSynExpr]
                     |> pick expr
                 | SynExpr.Const(_synConst, _range) -> None
-                | SynExpr.Typed(synExpr, _synType, _range) -> traverseSynExpr synExpr
+                | SynExpr.Typed(synExpr, synType, _range) -> [ traverseSynExpr synExpr; traverseSynType synType ] |> List.tryPick id
                 | SynExpr.Tuple(synExprList, _, _range) 
                 | SynExpr.StructTuple(synExprList, _, _range) -> synExprList |> List.map (fun x -> dive x x.Range traverseSynExpr) |> pick expr
                 | SynExpr.ArrayOrList(_, synExprList, _range) -> synExprList |> List.map (fun x -> dive x x.Range traverseSynExpr) |> pick expr
                 | SynExpr.Record(inheritOpt,copyOpt,fields, _range) -> 
-                    [
+                    [ 
                         let diveIntoSeparator offsideColumn scPosOpt copyOpt  = 
                             match scPosOpt with
                             | Some scPos -> 
@@ -448,6 +454,50 @@ module internal AstTraversal =
 
             visitor.VisitExpr(path, traverseSynExpr path, defaultTraverse, expr)
 
+        and traversePat (pat: SynPat) =
+            let defaultTraverse p =
+                match p with
+                | SynPat.Paren (p, _) -> traversePat p
+                | SynPat.Or (p1, p2, _) -> [ p1; p2] |> List.tryPick traversePat
+                | SynPat.Ands (ps, _)
+                | SynPat.Tuple (ps, _)
+                | SynPat.StructTuple (ps, _)
+                | SynPat.ArrayOrList (_, ps, _) -> ps |> List.tryPick traversePat
+                | SynPat.Attrib (p, _, _) -> traversePat p
+                | SynPat.LongIdent(_, _, _, args, _, _) ->
+                    match args with
+                    | SynConstructorArgs.Pats ps -> ps |> List.tryPick traversePat
+                    | SynConstructorArgs.NamePatPairs (ps, _) ->
+                        ps |> List.map snd |> List.tryPick traversePat
+                | SynPat.Typed (p, ty, _) ->
+                    [ traversePat p; traverseSynType ty ] |> List.tryPick id
+                | _ -> None
+                
+            visitor.VisitPat (defaultTraverse, pat)
+
+        and traverseSynType (ty: SynType) =
+            let defaultTraverse ty =
+                match ty with
+                | SynType.App (typeName, _, typeArgs, _, _, _, _)
+                | SynType.LongIdentApp (typeName, _, _, typeArgs, _, _, _) ->
+                    [ yield typeName
+                      yield! typeArgs ]
+                    |> List.tryPick traverseSynType
+                | SynType.Fun (ty1, ty2, _) -> [ty1; ty2] |> List.tryPick traverseSynType
+                | SynType.MeasurePower (ty, _, _) 
+                | SynType.HashConstraint (ty, _)
+                | SynType.WithGlobalConstraints (ty, _, _)
+                | SynType.Array (_, ty, _) -> traverseSynType ty
+                | SynType.StaticConstantNamed (ty1, ty2, _)
+                | SynType.MeasureDivide (ty1, ty2, _) -> [ty1; ty2] |> List.tryPick traverseSynType
+                | SynType.Tuple (tys, _)
+                | SynType.StructTuple (tys, _) -> tys |> List.map snd |> List.tryPick traverseSynType
+                | SynType.StaticConstantExpr (expr, _) -> traverseSynExpr [] expr
+                | SynType.Anon _ -> None
+                | _ -> None
+
+            visitor.VisitType (defaultTraverse, ty)
+
         and normalizeMembersToDealWithPeculiaritiesOfGettersAndSetters path traverseInherit (synMemberDefns:SynMemberDefns) =
             synMemberDefns 
                     // property getters are setters are two members that can have the same range, so do some somersaults to deal with this
@@ -566,8 +616,10 @@ module internal AstTraversal =
             let defaultTraverse b =
                 let path = TraverseStep.Binding b :: path
                 match b with
-                | (SynBinding.Binding(_synAccessOption, _synBindingKind, _, _, _synAttributes, _preXmlDoc, _synValData, _synPat, _synBindingReturnInfoOption, synExpr, _range, _sequencePointInfoForBinding)) ->
-                    traverseSynExpr path synExpr
+                | (SynBinding.Binding(_synAccessOption, _synBindingKind, _, _, _synAttributes, _preXmlDoc, _synValData, synPat, _synBindingReturnInfoOption, synExpr, _range, _sequencePointInfoForBinding)) ->
+                    [ traversePat synPat
+                      traverseSynExpr path synExpr ]
+                    |> List.tryPick id
             visitor.VisitBinding(defaultTraverse,b)
 
         match parseTree with
