@@ -337,21 +337,6 @@ type Build() =
                     cmd
 
     [<Test>]
-    member public this.TestPlatform2() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
-        tool.Platform <- "itanium"
-        AssertEqual "itanium" tool.Platform 
-        let cmd = tool.InternalGenerateResponseFileCommands()
-        printfn "cmd=\"%s\"" cmd
-        AssertEqual ("--optimize+" + Environment.NewLine +
-                     "--platform:Itanium" + Environment.NewLine +
-                     "--warnaserror:76" + Environment.NewLine +
-                     "--fullpaths" + Environment.NewLine +
-                     "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
-                    cmd
-
-    [<Test>]
     member public this.TestPlatform3() =
         let tool = new Microsoft.FSharp.Build.Fsc()
         tool.Platform <- "x86"

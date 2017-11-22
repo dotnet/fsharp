@@ -1767,11 +1767,11 @@ let rec ResolveLongIndentAsModuleOrNamespace atMostOne amap m fullyQualified (ne
 
             UndefinedName(0,FSComp.SR.undefinedNameNamespaceOrModule,id,suggestModulesAndNamespaces))
         
-        let moduleNotFoundErrorCache = ref None
-        let moduleNotFound (modref: ModuleOrNamespaceRef) (mty:ModuleOrNamespaceType) id depth =
-            match !moduleNotFoundErrorCache with
-            | Some error -> error
-            | None ->
+        let mutable moduleNotFoundErrorCache = None
+        let moduleNotFound (modref: ModuleOrNamespaceRef) (mty:ModuleOrNamespaceType) (id:Ident) depth =
+            match moduleNotFoundErrorCache with
+            | Some (oldId, error) when oldId = id.idRange -> error
+            | _ ->
                 let suggestNames() =
                     mty.ModulesAndNamespacesByDemangledName
                     |> Seq.filter (fun kv -> IsEntityAccessible amap m ad (modref.NestedTyconRef kv.Value))
@@ -1779,7 +1779,7 @@ let rec ResolveLongIndentAsModuleOrNamespace atMostOne amap m fullyQualified (ne
                     |> HashSet
                 
                 let error = raze (UndefinedName(depth,FSComp.SR.undefinedNameNamespace,id,suggestNames))
-                moduleNotFoundErrorCache := Some error
+                moduleNotFoundErrorCache <- Some(id.idRange, error)
                 error
 
         match moduleOrNamespaces.TryFind id.idText with

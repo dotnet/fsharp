@@ -545,7 +545,9 @@ module Structure =
                     | [], [] -> List.rev res
                     | [], _ -> List.rev (currentBulk::res)
                     | r :: rest, [] -> loop rest res [r]
-                    | r :: rest, last :: _ when r.StartLine = last.EndLine + 1 ->
+                    | r :: rest, last :: _ 
+                        when r.StartLine = last.EndLine + 1 || 
+                             sourceLines.[last.EndLine..r.StartLine - 2] |> Array.forall System.String.IsNullOrWhiteSpace ->
                         loop rest res (r::currentBulk)
                     | r :: rest, _ -> loop rest (currentBulk::res) [r]
                 loop input [] []

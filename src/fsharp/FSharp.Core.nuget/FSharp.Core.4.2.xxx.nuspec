@@ -52,15 +52,15 @@
         </dependencies>
     </metadata>
     <files>
-        <file src="coreclr/bin/FSharp.Core.dll"          target="lib/netstandard1.6/" />
-        <file src="coreclr/bin/FSharp.Core.sigdata"      target="lib/netstandard1.6/" />
-        <file src="coreclr/bin/FSharp.Core.optdata"      target="lib/netstandard1.6/" />
-        <file src="coreclr/bin/FSharp.Core.xml"          target="lib/netstandard1.6/" />
+        <file src="coreclr\bin\FSharp.Core.dll"          target="lib\netstandard1.6" />
+        <file src="coreclr\bin\FSharp.Core.sigdata"      target="lib\netstandard1.6" />
+        <file src="coreclr\bin\FSharp.Core.optdata"      target="lib\netstandard1.6" />
+        <file src="coreclr\bin\FSharp.Core.xml"          target="lib\netstandard1.6" />
 
-        <file src="net40/bin/FSharp.Core.dll"            target="lib/net45/" />
-        <file src="net40/bin/FSharp.Core.sigdata"        target="lib/net45/" />
-        <file src="net40/bin/FSharp.Core.optdata"        target="lib/net45/" />
-        <file src="net40/bin/FSharp.Core.xml"            target="lib/net45/" />
+        <file src="net40\bin\FSharp.Core.dll"            target="lib\net45" />
+        <file src="net40\bin\FSharp.Core.sigdata"        target="lib\net45" />
+        <file src="net40\bin\FSharp.Core.optdata"        target="lib\net45" />
+        <file src="net40\bin\FSharp.Core.xml"            target="lib\net45" />
 
     </files>
 </package>

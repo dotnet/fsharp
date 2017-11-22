@@ -1796,6 +1796,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member x.IsConstructor =
         match d with
         | C _ -> true
+        | V v -> v.IsConstructor
         | _ -> false
 
     member x.Data = d
