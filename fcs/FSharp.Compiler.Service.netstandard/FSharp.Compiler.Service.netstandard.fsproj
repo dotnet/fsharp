@@ -67,7 +67,7 @@
     <DefineConstants>$(DefineConstants);TODO_REWORK_SERVER</DefineConstants>
     <NoWarn>$(NoWarn);44;69;65;54;61;75;62;9;2003;</NoWarn>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <PublicSign>true</PublicSign>
+    <DelaySign>true</DelaySign>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
