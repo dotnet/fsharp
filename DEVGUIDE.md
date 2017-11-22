@@ -192,7 +192,7 @@ For **Release**:
 
 #### Notes on the Windows .NET Framework build
 
-1. The `update.cmd` script NGens the compiler and libraries. This requires admin privileges.
+1. The `update.cmd` script adds required strong name validation skips and NGens the compiler and libraries. This requires admin privileges.
 1. The compiler binaries produced are "private" and strong-named signed with a test key.
 1. Some additional tools are required to build the compiler, notably `fslex.exe`, `fsyacc.exe`, `FSharp.PowerPack.Build.Tasks.dll`, `FsSrGen.exe`, `FSharp.SRGen.Build.Tasks.dll`, and the other tools found in the `lkg` directory.
 1. The overall bootstrapping process executes as follows
