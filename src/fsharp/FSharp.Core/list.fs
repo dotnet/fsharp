@@ -216,11 +216,10 @@ namespace Microsoft.FSharp.Collections
             | [] -> state
             | _ -> 
                 let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(folder)
-                let rec loop s xs = 
-                    match xs with 
-                    | [] -> s
-                    | h::t -> loop (f.Invoke(s,h)) t
-                loop state list
+                let mutable acc = state
+                for x in list do
+                    acc <- f.Invoke(acc, x)
+                acc
 
         [<CompiledName("Pairwise")>]
         let pairwise (list: 'T list) =
