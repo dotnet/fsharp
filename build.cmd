@@ -553,8 +553,6 @@ if defined TF_BUILD (
 
 set msbuildflags=%_nrswitch% /nologo
 REM set msbuildflags=%_nrswitch% /nologo
-set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
-if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 
 echo ---------------- Done with prepare, starting package restore ----------------
 
@@ -567,7 +565,6 @@ if "%RestorePackages%" == "true" (
     cd..
     @if ERRORLEVEL 1 echo Error: Paket restore failed  && goto :failure
 
-    %_ngenexe% install %_nugetexe%  /nologo
     set _nugetoptions=-PackagesDirectory packages -ConfigFile %_nugetconfig%
     if not "%PB_RESTORESOURCE%" == "" (
         set _nugetoptions=!_nugetoptions! -Source %PB_RESTORESOURCE%
@@ -601,10 +598,8 @@ set path=%~dp0Tools\dotnet20\;%path%
 
 set _fsiexe="packages\FSharp.Compiler.Tools.4.1.27\tools\fsi.exe"
 if not exist %_fsiexe% echo Error: Could not find %_fsiexe% && goto :failure
-%_ngenexe% install %_fsiexe% /nologo 
 
 if not exist %_nugetexe% echo Error: Could not find %_nugetexe% && goto :failure
-%_ngenexe% install %_nugetexe% /nologo 
 
 echo ---------------- Done with package restore, verify buildfrom source ---------------
 if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
@@ -637,17 +632,10 @@ if "%BUILD_PROTO%" == "1" (
 
   if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "0" (
 
-    echo %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.27\tools\fsc.exe /nologo 
-         %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.27\tools\fsc.exe /nologo 
-
     echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto
          %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto
     @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
   )
-
-  echo %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
-       %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
-  @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
 )
 
 echo ---------------- Done with proto, starting build ------------------------
@@ -660,11 +648,6 @@ if "%BUILD_PHASE%" == "1" (
 )
 
 echo ---------------- Done with build, starting pack/update/prepare ---------------
-
-if "%BUILD_NET40_FSHARP_CORE%" == "1" (
-  echo ----------------  start update.cmd ---------------
-  call src\update.cmd %BUILD_CONFIG% -ngen
-)
 
 @echo set NUNITPATH=packages\NUnit.Console.3.0.0\tools\
 set NUNITPATH=packages\NUnit.Console.3.0.0\tools\

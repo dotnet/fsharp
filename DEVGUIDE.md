@@ -161,19 +161,6 @@ For the brave, you can rapidly deploy incrementally updated versions of Visual F
 
 This gives a much tighter inner development loop than uninstalling/reinstalling the VSIX, as you do not have to restart VIsual Studio. Caveat emptor.
 
-#### [Optional] Clobber the F# SDK on the machine
-
-**Note:** The step below will try to clobber the machine-wide installed F# SDK on your machine. This replaces the ``fsc.exe`` used by the standard install location or ``Microsoft.FSharp.Targets``.  **Repairing Visual Studio 15 is currently the only way to revert this step.**
-
-For **Debug**:
-
-    vsintegration\update-vsintegration.cmd debug
-
-For **Release**:
-
-    vsintegration\update-vsintegration.cmd release
-
-
 # Notes
 
 #### Windows: Links to  Additional frameworks
@@ -192,7 +179,6 @@ For **Release**:
 
 #### Notes on the Windows .NET Framework build
 
-1. The `update.cmd` script NGens the compiler and libraries. This requires admin privileges.
 1. The compiler binaries produced are "private" and strong-named signed with a test key.
 1. Some additional tools are required to build the compiler, notably `fslex.exe`, `fsyacc.exe`, `FSharp.PowerPack.Build.Tasks.dll`, `FsSrGen.exe`, `FSharp.SRGen.Build.Tasks.dll`, and the other tools found in the `lkg` directory.
 1. The overall bootstrapping process executes as follows
