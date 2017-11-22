@@ -8,7 +8,6 @@
     <NoWarn>3001,3002,3003,3005,3008,3009,3021,3024</NoWarn>
     <MicroBuildAssemblyVersion>15.4.1.0</MicroBuildAssemblyVersion>
     <MicroBuildAssemblyFileLanguage>cs</MicroBuildAssemblyFileLanguage>
-    <VsSDKTools>$(VsSDKTools)</VsSDKTools>
   </PropertyGroup>
   <PropertyGroup>
     <OutputType>Library</OutputType>
@@ -300,7 +299,6 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
-  <Import Project="$(VsSDKTargets)" />
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
     <ItemGroup>
       <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />

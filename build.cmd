@@ -68,6 +68,8 @@ set BUILD_CONFIG_LOWERCASE=release
 set BUILD_DIAG=
 set BUILD_PUBLICSIGN=0
 
+set USE_LOCAL_MSBUILD=0
+
 set TEST_NET40_COMPILERUNIT_SUITE=0
 set TEST_NET40_COREUNIT_SUITE=0
 set TEST_NET40_FSHARP_SUITE=0
@@ -168,6 +170,7 @@ if /i "%ARG%" == "vs" (
     set _autoselect=0
     set BUILD_NET40=1
     set BUILD_VS=1
+    set USE_LOCAL_MSBUILD=1
 )
 
 if /i "%ARG%" == "fcs" (
@@ -424,6 +427,8 @@ echo BUILD_NUGET=%BUILD_NUGET%
 echo BUILD_CONFIG=%BUILD_CONFIG%
 echo BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
 echo.
+echo USE_LOCAL_MSBUILD=%USE_LOCAL_MSBUILD%
+echo.
 echo PB_SKIPTESTS=%PB_SKIPTESTS%
 echo PB_RESTORESOURCE=%PB_RESTORESOURCE%
 echo.
@@ -438,38 +443,6 @@ echo INCLUDE_TEST_SPEC_NUNIT=%INCLUDE_TEST_SPEC_NUNIT%
 echo INCLUDE_TEST_TAGS=%INCLUDE_TEST_TAGS%
 echo TEMP=%TEMP%
 
-:: load Visual Studio 2017 developer command prompt if VS150COMNTOOLS is not set
-
-:: If this is not set, VsDevCmd.bat will change %cd% to [USERPROFILE]\source, causing the build to fail.
-SET VSCMD_START_DIR=%cd%
-
-:: try to find an RC or RTM edition of VS2017
-if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat" (
-    call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"
-)
-if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsDevCmd.bat" (
-    call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsDevCmd.bat"
-)
-if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat" (
-    call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
-)
-
-:: Allow build from Preview editions
-if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Enterprise\Common7\Tools\VsDevCmd.bat" (
-    call "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Enterprise\Common7\Tools\VsDevCmd.bat"
-)
-if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Professional\Common7\Tools\VsDevCmd.bat" (
-    call "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Enterprise\Common7\Tools\VsDevCmd.bat"
-)
-if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Community\Common7\Tools\VsDevCmd.bat" (
-    call "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Enterprise\Common7\Tools\VsDevCmd.bat"
-)
-
-:: If there's no installation of VS2017 or VS2017 Preview, use the build tools
-if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat" (
-    call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat"
-)
-
 echo.
 echo Environment
 set
@@ -478,64 +451,17 @@ echo.
 
 echo ---------------- Done with arguments, starting preparation -----------------
 
-set BuildToolsPackage=Microsoft.VSSDK.BuildTools.15.1.192
-if "%VSSDKInstall%"=="" (
-     set VSSDKInstall=%~dp0packages\%BuildToolsPackage%\tools\vssdk
-)
-if "%VSSDKToolsPath%"=="" (
-     set VSSDKToolsPath=%~dp0packages\%BuildToolsPackage%\tools\vssdk\bin
-)
-if "%VSSDKIncludes%"=="" (
-     set VSSDKIncludes=%~dp0packages\%BuildToolsPackage%\tools\vssdk\inc
-)
-
 if "%RestorePackages%"=="" (
     set RestorePackages=true
 )
 
-@echo VSSDKInstall:   %VSSDKInstall%
-@echo VSSDKToolsPath: %VSSDKToolsPath%
-@echo VSSDKIncludes:  %VSSDKIncludes%
-
 @call src\update.cmd signonly
 
-:: Check prerequisites
-if not "%VisualStudioVersion%" == "" goto vsversionset
-if exist "%VS150COMNTOOLS%\..\ide\devenv.exe" set VisualStudioVersion=15.0
-if not "%VisualStudioVersion%" == "" goto vsversionset
-
-if not "%VisualStudioVersion%" == "" goto vsversionset
-if exist "%VS150COMNTOOLS%\..\..\ide\devenv.exe" set VisualStudioVersion=15.0
-if not "%VisualStudioVersion%" == "" goto vsversionset
-
-if exist "%VS140COMNTOOLS%\..\ide\devenv.exe" set VisualStudioVersion=14.0
-if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
-if exist "%ProgramFiles%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
-if not "%VisualStudioVersion%" == "" goto vsversionset
-
-if exist "%VS120COMNTOOLS%\..\ide\devenv.exe" set VisualStudioVersion=12.0
-if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" set VisualStudioVersion=12.0
-if exist "%ProgramFiles%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" set VisualStudioVersion=12.0
-
-:vsversionset
-if "%VisualStudioVersion%" == "" echo Error: Could not find an installation of Visual Studio && goto :failure
-
-if exist "%VS150COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe" (
+set _msbuildexe="%~dp0packages\RoslynTools.MSBuild.0.4.0-alpha\tools\msbuild\MSBuild.exe"
+if "%USE_LOCAL_MSBUILD%" == "1" (
     set _msbuildexe="%VS150COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe"
-    goto :havemsbuild
 )
-if exist "%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe" (
-    set _msbuildexe="%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
-    goto :havemsbuild
-)
-if exist "%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe" (
-    set _msbuildexe="%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
-    goto :havemsbuild
-)
-echo Error: Could not find MSBuild.exe. && goto :failure
-goto :eof
 
-:havemsbuild
 set _nrswitch=/nr:false
 
 :: See <http://www.appveyor.com/docs/environment-variables>

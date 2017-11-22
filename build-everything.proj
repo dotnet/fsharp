@@ -91,7 +91,7 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <CustomProps>AssemblySearchPaths={HintPathFromItem};{TargetFrameworkDirectory};{RawFileName}</CustomProps>
+    <CustomProps>TargetFrameworkRootPath=$(MSBuildThisFileDirectory)packages\RoslynTools.ReferenceAssemblies.0.1.2\tools\framework;AssemblySearchPaths={HintPathFromItem};{TargetFrameworkDirectory};{RawFileName}</CustomProps>
   </PropertyGroup>
 
   <!-- +++++++++++++++++++++++ Targets +++++++++++++++++++++++++++++++ -->

@@ -43,8 +43,6 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <VSRootSuffix>RoslynDev</VSRootSuffix>
     <UseCodebase>true</UseCodebase>
-    <DeployExtension Condition=" '$(DeployExtension)' == '' and ('$(AppVeyor)' != '' or '$(HUDSON_COOKIE)' != '' or '$(UsingMicrobuild)' != '') ">False</DeployExtension>
-    <DeployExtension Condition=" '$(DeployExtension)' == '' and '$(AppVeyor)' == '' and '$(HUDSON_COOKIE)' == '' and '$(UsingMicrobuild)' == '' ">True</DeployExtension>
     <ProjectGuid>{385035C1-9171-408A-8EAA-67DDC14E2CF3}</ProjectGuid>
     <IsPackage>true</IsPackage>
     <RootNamespace>VisualFSharpTemplate</RootNamespace>

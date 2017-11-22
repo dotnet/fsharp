@@ -32,7 +32,6 @@
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <Import Project="$(FSharpSourcesRoot)\..\vsintegration\vsintegration.targets" />
-  <Import Project="$(VSSDKTargets)" />
   <PropertyGroup>
     <BuildingProject>true</BuildingProject>
     <BuildDependsOn>VSCTCompile;CopyCtoFile;CopyLocalizationResources;$(BuildDependsOn)</BuildDependsOn>

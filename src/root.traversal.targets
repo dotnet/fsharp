@@ -2,7 +2,7 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
 
   <PropertyGroup>
-    <CustomProps>AssemblySearchPaths={HintPathFromItem};{TargetFrameworkDirectory};{RawFileName}</CustomProps>
+    <CustomProps>TargetFrameworkRootPath=$(MSBuildThisFileDirectory)..\packages\RoslynTools.ReferenceAssemblies.0.1.2\tools\framework;AssemblySearchPaths={HintPathFromItem};{TargetFrameworkDirectory};{RawFileName}</CustomProps>
   </PropertyGroup>
 
   <Target Name="Build">
