@@ -4,11 +4,12 @@
 module internal Microsoft.FSharp.Compiler.CompileOps
 
 open System
-open System.Diagnostics
-open System.Text
-open System.IO
+open System.Collections.Concurrent
 open System.Collections.Generic
+open System.Diagnostics
+open System.IO
 open System.Runtime.CompilerServices
+open System.Text
 
 open Internal.Utilities
 open Internal.Utilities.Text
@@ -3509,14 +3510,14 @@ let PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, ParsedSig
     ParsedInput.SigFile(ParsedSigFileInput(filename, qualName, scopedPragmas, hashDirectives, specs))
 
 /// Checks if a module name is already given and deduplicates the name if needed.
-let DeduplicateModuleName (moduleNamesDict:Dictionary<string, Set<string>>) (paths: Set<string>) path (qualifiedNameOfFile: QualifiedNameOfFile) =
+let DeduplicateModuleName (moduleNamesDict:IDictionary<string, Set<string>>) (paths: Set<string>) path (qualifiedNameOfFile: QualifiedNameOfFile) =
     let count = if paths.Contains path then paths.Count else paths.Count + 1
     moduleNamesDict.[qualifiedNameOfFile.Text] <- Set.add path paths
     let id = qualifiedNameOfFile.Id
     if count = 1 then qualifiedNameOfFile else QualifiedNameOfFile(Ident(id.idText + "___" + count.ToString(), id.idRange))
 
 /// Checks if a ParsedInput is using a module name that was already given and deduplicates the name if needed.
-let DeduplicateParsedInputModuleName (moduleNamesDict:Dictionary<string, Set<string>>) input =
+let DeduplicateParsedInputModuleName (moduleNamesDict:IDictionary<string, Set<string>>) input =
     match input with
     | ParsedInput.ImplFile (ParsedImplFileInput.ParsedImplFileInput(fileName, isScript, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules, (isLastCompiland, isExe))) ->
         let path = Path.GetDirectoryName fileName
@@ -3525,7 +3526,7 @@ let DeduplicateParsedInputModuleName (moduleNamesDict:Dictionary<string, Set<str
             let qualifiedNameOfFile = DeduplicateModuleName moduleNamesDict paths path qualifiedNameOfFile
             ParsedInput.ImplFile(ParsedImplFileInput.ParsedImplFileInput(fileName, isScript, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules, (isLastCompiland, isExe)))
         | _ ->
-            moduleNamesDict.Add(qualifiedNameOfFile.Text, Set.singleton path)
+            moduleNamesDict.[qualifiedNameOfFile.Text] <- Set.singleton path
             input
     | ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules)) ->
         let path = Path.GetDirectoryName fileName
@@ -3534,7 +3535,7 @@ let DeduplicateParsedInputModuleName (moduleNamesDict:Dictionary<string, Set<str
             let qualifiedNameOfFile = DeduplicateModuleName moduleNamesDict paths path qualifiedNameOfFile
             ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules))
         | _ ->
-            moduleNamesDict.Add(qualifiedNameOfFile.Text, Set.singleton path)
+            moduleNamesDict.[qualifiedNameOfFile.Text] <- Set.singleton path
             input
 
 let ParseInput (lexer, errorLogger:ErrorLogger, lexbuf:UnicodeLexing.Lexbuf, defaultNamespace, filename, isLastCompiland) = 
