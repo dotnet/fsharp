@@ -13,6 +13,7 @@
 module internal Microsoft.FSharp.Compiler.Driver 
 
 open System
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Diagnostics
 open System.Globalization
@@ -1758,7 +1759,7 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, openBinarie
     
     let inputs =
         // Deduplicate module names
-        let moduleNamesDict = Dictionary<string,Set<string>>()
+        let moduleNamesDict = ConcurrentDictionary<string,Set<string>>()
         inputs
         |> List.map (fun (input,x) -> DeduplicateParsedInputModuleName moduleNamesDict input,x)
 
