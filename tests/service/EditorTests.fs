@@ -746,6 +746,38 @@ let x: T()
           ("val x", (4, 4, 4, 5), false)
           ("Test", (1, 0, 1, 0), false)|]
 
+[<Test>]
+let ``Partially valid namespaces should be reported`` () = 
+    let input = 
+      """
+open System.Threading.Foo
+open System
+
+let _: System.Threading.Tasks.Bar = null
+let _ = Threading.Buzz = null
+"""
+
+    let file = "/home/user/Test.fsx"
+    let _, typeCheckResults = parseAndCheckScript(file, input) 
+    typeCheckResults.GetAllUsesOfAllSymbolsInFile()
+    |> Async.RunSynchronously
+    |> Array.map (fun su -> 
+        let r = su.RangeAlternate 
+        su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
+    |> Array.distinct
+    |> shouldEqual 
+        // note: these "System" sysbol uses are not duplications because each of them corresponts to different namespaces
+        [|("System", (2, 5, 2, 11))
+          ("Threading", (2, 12, 2, 21))
+          ("System", (3, 5, 3, 11))
+          ("System", (5, 7, 5, 13))
+          ("Threading", (5, 14, 5, 23))
+          ("Tasks", (5, 24, 5, 29))
+          ("val op_Equality", (6, 23, 6, 24))
+          ("Threading", (6, 8, 6, 17))
+          ("Test", (1, 0, 1, 0))|]
+
+
 //-------------------------------------------------------------------------------
 
 

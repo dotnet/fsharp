@@ -2788,7 +2788,7 @@ let SuggestTypeLongIdentInModuleOrNamespace depth (modref:ModuleOrNamespaceRef) 
     UndefinedName(depth,errorTextF,id,suggestPossibleTypes)
 
 /// Resolve a long identifier representing a type in a module or namespace
-let rec private ResolveTypeLongIdentInModuleOrNamespace (ncenv:NameResolver) (typeNameResInfo: TypeNameResolutionInfo) ad genOk (resInfo:ResolutionInfo) depth m modref _mty (lid: Ident list) =
+let rec private ResolveTypeLongIdentInModuleOrNamespace sink nenv (ncenv:NameResolver) (typeNameResInfo: TypeNameResolutionInfo) ad genOk (resInfo:ResolutionInfo) depth m modref _mty (lid: Ident list) =
     match lid with 
     | [] -> error(Error(FSComp.SR.nrUnexpectedEmptyLongId(),m))
     | [id] -> 
@@ -2802,8 +2802,10 @@ let rec private ResolveTypeLongIdentInModuleOrNamespace (ncenv:NameResolver) (ty
         let modulSearch = 
             match modref.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName.TryFind(id.idText) with
             | Some(AccessibleEntityRef ncenv.amap m ad modref submodref) -> 
+                let item = Item.ModuleOrNamespaces [submodref]
+                CallNameResolutionSink sink (id.idRange, nenv, item, item, emptyTyparInst, ItemOccurence.Use, nenv.DisplayEnv, ad)                
                 let resInfo = resInfo.AddEntity(id.idRange,submodref)
-                ResolveTypeLongIdentInModuleOrNamespace ncenv typeNameResInfo ad genOk resInfo (depth+1) m submodref submodref.ModuleOrNamespaceType rest
+                ResolveTypeLongIdentInModuleOrNamespace sink nenv ncenv typeNameResInfo ad genOk resInfo (depth+1) m submodref submodref.ModuleOrNamespaceType rest
             | _ ->
                 let suggestPossibleModules() =
                     modref.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName
@@ -2882,12 +2884,12 @@ let rec ResolveTypeLongIdentPrim sink (ncenv:NameResolver) occurence fullyQualif
 
         let modulSearch = 
             ResolveLongIndentAsModuleOrNamespaceThen sink ResultCollectionSettings.AllResults ncenv.amap m fullyQualified nenv ad lid 
-                (ResolveTypeLongIdentInModuleOrNamespace ncenv typeNameResInfo ad genOk)
+                (ResolveTypeLongIdentInModuleOrNamespace sink nenv ncenv typeNameResInfo ad genOk)
             |?> List.concat 
 
         let modulSearchFailed() = 
             ResolveLongIndentAsModuleOrNamespaceThen sink ResultCollectionSettings.AllResults ncenv.amap m fullyQualified nenv AccessibleFromSomeFSharpCode lid 
-                (ResolveTypeLongIdentInModuleOrNamespace ncenv typeNameResInfo.DropStaticArgsInfo AccessibleFromSomeFSharpCode genOk)
+                (ResolveTypeLongIdentInModuleOrNamespace sink nenv ncenv typeNameResInfo.DropStaticArgsInfo AccessibleFromSomeFSharpCode genOk)
             |?> List.concat 
 
         let searchSoFar = tyconSearch +++ modulSearch
