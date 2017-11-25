@@ -58,7 +58,7 @@ module ExtraTopLevelOperators =
                       member s.Clear() = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)));
                       member s.Remove(x) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)));
                       member s.Contains(x) = t.ContainsKey (makeSafeKey x)
-                      member s.CopyTo(arr,i) = 
+                      member s.CopyTo(arr,i) =
                           let mutable n = 0 
                           for k in keys do 
                               arr.[i+n] <- getKey k
@@ -78,6 +78,13 @@ module ExtraTopLevelOperators =
                 if t.ContainsKey(safeKey) then (r <- t.[safeKey]; true) else false
             member s.Remove(_ : 'Key) = (raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated))) : bool) 
 
+        interface IReadOnlyDictionary<'Key, 'T> with
+            member __.Item with get key = t.[makeSafeKey key]
+            member __.Keys = t.Keys |> Seq.map getKey
+            member __.TryGetValue(key, value) = t.TryGetValue(makeSafeKey key, ref value)
+            member __.Values = (t :> IReadOnlyDictionary<_,_>).Values
+            member __.ContainsKey k = t.ContainsKey (makeSafeKey k)
+
         interface ICollection<KeyValuePair<'Key, 'T>> with 
             member s.Add(_) = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)));
             member s.Clear() = raise (NotSupportedException(SR.GetString(SR.thisValueCannotBeMutated)));
@@ -90,9 +97,14 @@ module ExtraTopLevelOperators =
                     n <- n + 1
             member s.IsReadOnly = true
             member s.Count = t.Count
+
+        interface IReadOnlyCollection<KeyValuePair<'Key, 'T>> with
+            member __.Count = t.Count
+
         interface IEnumerable<KeyValuePair<'Key, 'T>> with
             member s.GetEnumerator() = 
                 (t |> Seq.map (fun (KeyValue(k,v)) -> KeyValuePair<_,_>(getKey k,v))).GetEnumerator()
+
         interface System.Collections.IEnumerable with
             member s.GetEnumerator() = 
                 ((t |> Seq.map (fun (KeyValue(k,v)) -> KeyValuePair<_,_>(getKey k,v))) :> System.Collections.IEnumerable).GetEnumerator()
@@ -101,7 +113,7 @@ module ExtraTopLevelOperators =
         [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
         member x.Items = Array.ofSeq d
 
-    let dictImpl (comparer:IEqualityComparer<'SafeKey>) (makeSafeKey : 'Key->'SafeKey) (getKey : 'SafeKey->'Key) (l:seq<'Key*'T>) : IDictionary<'Key,'T> =
+    let inline dictImpl (comparer:IEqualityComparer<'SafeKey>) (makeSafeKey : 'Key->'SafeKey) (getKey : 'SafeKey->'Key) (l:seq<'Key*'T>) : IDictionary<'Key,'T> =
         let t = Dictionary comparer
         for (k,v) in l do
             t.[makeSafeKey k] <- v
