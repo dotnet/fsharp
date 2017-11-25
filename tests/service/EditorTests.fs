@@ -547,25 +547,40 @@ let _ = arr.[..number2]
         let r = su.RangeAlternate 
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
     |> shouldEqual 
-        [|("val arr", (2, 4, 2, 7)); 
-          ("val number2", (3, 13, 3, 20));
-          ("val number1", (3, 4, 3, 11)); 
-          ("val arr", (4, 8, 4, 11));
-          ("OperatorIntrinsics", (4, 11, 4, 12)); 
-          ("Operators", (4, 11, 4, 12));
-          ("Core", (4, 11, 4, 12)); 
-          ("FSharp", (4, 11, 4, 12));
-          ("Microsoft", (4, 11, 4, 12)); 
-          ("val number1", (4, 16, 4, 23));
-          ("val arr", (5, 8, 5, 11)); 
-          ("OperatorIntrinsics", (5, 11, 5, 12));
-          ("Operators", (5, 11, 5, 12)); 
-          ("Core", (5, 11, 5, 12));
-          ("FSharp", (5, 11, 5, 12)); 
-          ("Microsoft", (5, 11, 5, 12));
-          ("val number2", (5, 15, 5, 22)); 
+        [|("val arr", (2, 4, 2, 7))
+          ("val number2", (3, 13, 3, 20))
+          ("val number1", (3, 4, 3, 11))
+          ("val arr", (4, 8, 4, 11))
+          ("Microsoft", (4, 11, 4, 12))
+          ("Microsoft", (4, 11, 4, 12))
+          ("Microsoft", (4, 11, 4, 12))
+          ("Microsoft", (4, 11, 4, 12))
+          ("Microsoft", (4, 11, 4, 12))
+          ("Microsoft", (4, 11, 4, 12))
+          ("Microsoft", (4, 11, 4, 12))
+          ("Microsoft", (4, 11, 4, 12))
+          ("OperatorIntrinsics", (4, 11, 4, 12))
+          ("Operators", (4, 11, 4, 12))
+          ("Core", (4, 11, 4, 12))
+          ("FSharp", (4, 11, 4, 12))
+          ("Microsoft", (4, 11, 4, 12))
+          ("val number1", (4, 16, 4, 23))
+          ("val arr", (5, 8, 5, 11))
+          ("Microsoft", (5, 11, 5, 12))
+          ("Microsoft", (5, 11, 5, 12))
+          ("Microsoft", (5, 11, 5, 12))
+          ("Microsoft", (5, 11, 5, 12))
+          ("Microsoft", (5, 11, 5, 12))
+          ("Microsoft", (5, 11, 5, 12))
+          ("Microsoft", (5, 11, 5, 12))
+          ("Microsoft", (5, 11, 5, 12))
+          ("OperatorIntrinsics", (5, 11, 5, 12))
+          ("Operators", (5, 11, 5, 12))
+          ("Core", (5, 11, 5, 12))
+          ("FSharp", (5, 11, 5, 12)) 
+          ("Microsoft", (5, 11, 5, 12))
+          ("val number2", (5, 15, 5, 22))
           ("Test", (1, 0, 1, 0))|]
-
 
 [<Test>]
 let ``Enums should have fields`` () =
