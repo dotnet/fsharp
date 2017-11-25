@@ -9,7 +9,7 @@ open System
 open System.Threading
 open FSharp.Core.Unittests.LibraryTestFx
 open NUnit.Framework
-#if !(FSCORE_PORTABLE_OLD || FSCORE_PORTABLE_NEW)
+#if !FSCORE_PORTABLE_NEW
 open FsCheck
 #endif
 
@@ -25,7 +25,7 @@ type [<Struct>] Dummy (x: int) =
     member this.Dispose () = ()
 
 
-#if !(FSCORE_PORTABLE_OLD || FSCORE_PORTABLE_NEW)
+#if !FSCORE_PORTABLE_NEW
 [<AutoOpen>]
 module ChoiceUtils =
 
@@ -417,7 +417,7 @@ type AsyncModule() =
                 Assert.Fail("TimeoutException expected")
             with
                 :? System.TimeoutException -> ()
-#if !FSCORE_PORTABLE_OLD
+
     [<Test>]
     member this.``RunSynchronously.NoThreadJumpsAndTimeout.DifferentSyncContexts``() = 
         let run syncContext =
@@ -434,7 +434,6 @@ type AsyncModule() =
             if !failed then Assert.Fail("TimeoutException expected")
         run null
         run (System.Threading.SynchronizationContext())
-#endif
 
     [<Test>]
     member this.``RaceBetweenCancellationAndError.AwaitWaitHandle``() = 
@@ -447,7 +446,7 @@ type AsyncModule() =
     member this.``RaceBetweenCancellationAndError.Sleep``() =
         testErrorAndCancelRace (Async.Sleep (-5))
 
-#if !(FSCORE_PORTABLE_OLD || FSCORE_PORTABLE_NEW || coreclr)
+#if !(FSCORE_PORTABLE_NEW || coreclr)
     [<Test; Category("Expensive"); Explicit>] // takes 3 minutes!
     member this.``Async.Choice specification test``() =
         ThreadPool.SetMinThreads(100,100) |> ignore
@@ -573,7 +572,7 @@ type AsyncModule() =
         Assert.AreEqual("boom", !r)
 
 
-#if !FSCORE_PORTABLE_OLD && !FSCORE_PORTABLE_NEW
+#if !FSCORE_PORTABLE_NEW
     [<Test>]
     member this.``SleepContinuations``() = 
         let okCount = ref 0
