@@ -826,9 +826,9 @@ type ListModule02() =
         // empty list
         Assert.AreEqual([], List.transpose [])
 
-        // list of empty list
+        // list of empty lists - m x 0 list transposes to 0 x m (i.e. empty)
         Assert.AreEqual([], List.transpose [[]])
-        Assert.AreEqual([[]], List.transpose [[]; []])
+        Assert.AreEqual([], List.transpose [[]; []])
 
         // jagged lists
         CheckThrowsArgumentException (fun () -> List.transpose [[1; 2]; [3]] |> ignore)

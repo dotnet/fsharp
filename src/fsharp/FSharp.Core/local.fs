@@ -745,6 +745,7 @@ module internal List =
         | [[]] -> []
         | _ ->
             let heads, tails, headCount = transposeGetHeads list
+            if headCount = 0 then [] else
             let cons = freshConsNoTail heads
             transposeToFreshConsTail cons tails headCount
             cons
