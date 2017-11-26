@@ -197,6 +197,62 @@ module FSharpExprConvert =
         | Expr.Op(TOp.ValFieldSet rfref, _, _, _)  when IsStaticInitializationField rfref -> Some ()
         | _ -> None
 
+    let (|ILUnaryOp|_|) e = 
+        match e with 
+        | AI_neg -> Some mkCallUnaryNegOperator
+        | AI_not -> Some mkCallUnaryNotOperator
+        | _ -> None
+
+    let (|ILBinaryOp|_|) e = 
+        match e with 
+        | AI_add
+        | AI_add_ovf
+        | AI_add_ovf_un -> Some mkCallAdditionOperator
+        | AI_sub
+        | AI_sub_ovf
+        | AI_sub_ovf_un -> Some mkCallSubtractionOperator
+        | AI_mul
+        | AI_mul_ovf
+        | AI_mul_ovf_un -> Some mkCallMultiplyOperator
+        | AI_div
+        | AI_div_un     -> Some mkCallDivisionOperator
+        | AI_rem
+        | AI_rem_un     -> Some mkCallModulusOperator
+        | AI_ceq        -> Some mkCallEqualsOperator
+        | AI_clt
+        | AI_clt_un     -> Some mkCallLessThanOperator
+        | AI_cgt
+        | AI_cgt_un     -> Some mkCallGreaterThanOperator
+        | AI_and        -> Some mkCallBitwiseAndOperator
+        | AI_or         -> Some mkCallBitwiseOrOperator
+        | AI_xor        -> Some mkCallBitwiseXorOperator
+        | AI_shl        -> Some mkCallShiftLeftOperator
+        | AI_shr
+        | AI_shr_un     -> Some mkCallShiftRightOperator
+        | _ -> None
+
+    let (|ILConvertOp|_|) e = 
+        match e with 
+        | AI_conv basicTy
+        | AI_conv_ovf basicTy
+        | AI_conv_ovf_un basicTy ->
+            match basicTy with
+            | DT_R  -> None
+            | DT_I1 -> Some mkCallToSByteOperator
+            | DT_U1 -> Some mkCallToByteOperator
+            | DT_I2 -> Some mkCallToInt16Operator
+            | DT_U2 -> Some mkCallToUInt16Operator
+            | DT_I4 -> Some mkCallToInt32Operator
+            | DT_U4 -> Some mkCallToUInt32Operator 
+            | DT_I8 -> Some mkCallToInt64Operator
+            | DT_U8 -> Some mkCallToUInt64Operator
+            | DT_R4 -> Some mkCallToSingleOperator
+            | DT_R8 -> Some mkCallToDoubleOperator
+            | DT_I  -> Some mkCallToIntPtrOperator
+            | DT_U  -> Some mkCallToUIntPtrOperator
+            | DT_REF -> None
+        | _ -> None
+
     let ConvType cenv typ = FSharpType(cenv, typ)
     let ConvTypes cenv typs = List.map (ConvType cenv) typs
     let ConvILTypeRefApp (cenv:Impl.cenv) m tref tyargs = 
@@ -530,11 +586,43 @@ module FSharpExprConvert =
                 let argR = ConvExpr cenv env arg
                 E.ILFieldSet(None, typR, fspec.Name, argR) 
 
+            | TOp.ILAsm([ AI_ldnull; AI_cgt_un ], _), _, [arg] -> 
+                let elemTy = tyOfExpr cenv.g arg
+                let nullVal = mkNull m elemTy
+                let op = mkCallNotEqualsOperator cenv.g m elemTy arg nullVal
+                ConvExprPrim cenv env op
 
-            | TOp.ILAsm([ AI_ceq ], _), _, [arg1;arg2]  -> 
+            | TOp.ILAsm([ I_ldlen; AI_conv DT_I4 ], _), _, [arr] -> 
+                let arrayTy = tyOfExpr cenv.g arr
+                let elemTy = destArrayTy cenv.g arrayTy
+                let op = mkCallArrayLength cenv.g m elemTy arr
+                ConvExprPrim cenv env op
+
+            | TOp.ILAsm([ I_newarr (ILArrayShape [(Some 0, None)], _)], _), [elemTy], xa ->
+                E.NewArray(ConvType cenv elemTy, ConvExprs cenv env xa)
+
+            | TOp.ILAsm([ I_ldelem_any (ILArrayShape [(Some 0, None)], _)], _), [elemTy], [arr; idx1]  -> 
+                let op = mkCallArrayGet cenv.g m elemTy arr idx1
+                ConvExprPrim cenv env op
+
+            | TOp.ILAsm([ I_stelem_any (ILArrayShape [(Some 0, None)], _)], _), [elemTy], [arr; idx1; v]  -> 
+                let op = mkCallArraySet cenv.g m elemTy arr idx1 v
+                ConvExprPrim cenv env op
+
+            | TOp.ILAsm([ ILUnaryOp unaryOp ], _), _, [arg] -> 
+                let ty = tyOfExpr cenv.g arg
+                let op = unaryOp cenv.g m ty arg
+                ConvExprPrim cenv env op
+
+            | TOp.ILAsm([ ILBinaryOp binaryOp ], _), _, [arg1;arg2] -> 
                 let ty = tyOfExpr cenv.g arg1
-                let eq = mkCallEqualsOperator cenv.g m ty arg1 arg2
-                ConvExprPrim cenv env eq
+                let op = binaryOp cenv.g m ty arg1 arg2
+                ConvExprPrim cenv env op
+
+            | TOp.ILAsm([ ILConvertOp convertOp ], _), _, [arg] -> 
+                let ty = tyOfExpr cenv.g arg
+                let op = convertOp cenv.g m ty arg
+                ConvExprPrim cenv env op
 
             | TOp.ILAsm([ I_throw ], _), _, [arg1]  -> 
                 let raiseExpr = mkCallRaise cenv.g m (tyOfExpr cenv.g expr) arg1 
@@ -603,17 +691,18 @@ module FSharpExprConvert =
             | TOp.While _, [], [Expr.Lambda(_, _, _, [_], test, _, _);Expr.Lambda(_, _, _, [_], body, _, _)]  -> 
                     E.WhileLoop(ConvExpr cenv env test, ConvExpr cenv env body) 
         
-            | TOp.For(_, (FSharpForLoopUp |FSharpForLoopDown as dir) ), [], [Expr.Lambda(_, _, _, [_], lim0, _, _); Expr.Lambda(_, _, _, [_], SimpleArrayLoopUpperBound, lm, _); SimpleArrayLoopBody cenv.g (arr, elemTy, body)] ->
+            | TOp.For(_, dir), [], [Expr.Lambda(_, _, _, [_], lim0, _, _); Expr.Lambda(_, _, _, [_], SimpleArrayLoopUpperBound, lm, _); SimpleArrayLoopBody cenv.g (arr, elemTy, body)] ->
                 let lim1 = 
                     let len = mkCallArrayLength cenv.g lm elemTy arr // Array.length arr
-                    mkCallSubtractionOperator cenv.g lm cenv.g.int32_ty len (Expr.Const(Const.Int32 1, m, cenv.g.int32_ty)) // len - 1
-                E.FastIntegerForLoop(ConvExpr cenv env lim0, ConvExpr cenv env lim1, ConvExpr cenv env body, (dir = FSharpForLoopUp)) 
+                    mkCallSubtractionOperator cenv.g lm cenv.g.int32_ty len (mkOne cenv.g lm) // len - 1
+                E.FastIntegerForLoop(ConvExpr cenv env lim0, ConvExpr cenv env lim1, ConvExpr cenv env body, dir <> FSharpForLoopDown) 
 
-            | TOp.For(_, dir), [], [Expr.Lambda(_, _, _, [_], lim0, _, _);Expr.Lambda(_, _, _, [_], lim1, _, _);body]  -> 
-                match dir with 
-                | FSharpForLoopUp -> E.FastIntegerForLoop(ConvExpr cenv env lim0, ConvExpr cenv env lim1, ConvExpr cenv env body, true) 
-                | FSharpForLoopDown -> E.FastIntegerForLoop(ConvExpr cenv env lim0, ConvExpr cenv env lim1, ConvExpr cenv env body, false) 
-                | _ -> failwith "unexpected for-loop form"
+            | TOp.For(_, dir), [], [Expr.Lambda(_, _, _, [_], lim0, _, _); Expr.Lambda(_, _, _, [_], lim1, lm, _); body]  -> 
+                let lim1 =
+                    if dir = CSharpForLoopUp then
+                        mkCallSubtractionOperator cenv.g lm cenv.g.int32_ty lim1 (mkOne cenv.g lm) // len - 1
+                    else lim1
+                E.FastIntegerForLoop(ConvExpr cenv env lim0, ConvExpr cenv env lim1, ConvExpr cenv env body, dir <> FSharpForLoopDown) 
 
             | TOp.ILCall(_, _, _, isNewObj, valUseFlags, _isProp, _, ilMethRef, enclTypeArgs, methTypeArgs, _tys), [], callArgs -> 
                 ConvILCall cenv env (isNewObj, valUseFlags, ilMethRef, enclTypeArgs, methTypeArgs, callArgs, m)
