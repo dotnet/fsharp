@@ -11,15 +11,18 @@ namespace PEVerify
         static int Main(string[] args)
         {
             string assemblyPath = null;
+            bool metadataOnly = false;
             foreach (var arg in args)
             {
                 switch (arg.ToUpperInvariant())
                 {
                     case "/IL":
-                    case "/MD":
                     case "/NOLOGO":
                     case "/UNIQUE":
                         // ignore these options
+                        break;
+                    case "/MD":
+                        metadataOnly = true;
                         break;
                     default:
                         if (assemblyPath != null)
@@ -39,7 +42,7 @@ namespace PEVerify
                 assemblyPath = Path.Combine(workingDir, assemblyPath);
             }
 
-            var errors = CLRHelpers.PeVerify(assemblyPath);
+            var errors = CLRHelpers.PeVerify(assemblyPath, metadataOnly);
             foreach (var error in errors)
             {
                 Console.WriteLine(error);

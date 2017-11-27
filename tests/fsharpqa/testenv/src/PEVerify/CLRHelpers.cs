@@ -59,23 +59,23 @@ namespace Roslyn.Test.Utilities.Desktop
         /// <summary>
         /// Verifies the specified image. Subscribe to <see cref="ReflectionOnlyAssemblyResolve"/> to provide a loader for dependent assemblies.
         /// </summary>
-        public static string[] PeVerify(byte[] peImage)
+        public static string[] PeVerify(byte[] peImage, bool metadataOnly)
         {
             // fileName must be null, otherwise AssemblyResolve events won't fire
-            return PeVerify(peImage, AppDomain.CurrentDomain.Id, assemblyPath: null);
+            return PeVerify(peImage, AppDomain.CurrentDomain.Id, assemblyPath: null, metadataOnly: metadataOnly);
         }
 
         /// <summary>
         /// Verifies the specified file. All dependencies must be on disk next to the file.
         /// </summary>
-        public static string[] PeVerify(string filePath)
+        public static string[] PeVerify(string filePath, bool metadataOnly)
         {
-            return PeVerify(File.ReadAllBytes(filePath), AppDomain.CurrentDomain.Id, filePath);
+            return PeVerify(File.ReadAllBytes(filePath), AppDomain.CurrentDomain.Id, filePath, metadataOnly: metadataOnly);
         }
 
         private static readonly object s_guard = new object();
 
-        private static string[] PeVerify(byte[] peImage, int domainId, string assemblyPath)
+        private static string[] PeVerify(byte[] peImage, int domainId, string assemblyPath, bool metadataOnly)
         {
             if (MonoHelpers.IsRunningOnMono())
             {
@@ -112,8 +112,11 @@ namespace Roslyn.Test.Utilities.Desktop
                     metaDataValidate.ValidatorInit(CorValidatorModuleType.ValidatorModuleTypePE, errorHandler);
                     metaDataValidate.ValidateMetaData();
 
-                    validator.Validate(errorHandler, (uint)domainId, ValidatorFlags.VALIDATOR_EXTRA_VERBOSE,
-                        ulMaxError: 10, token: 0, fileName: assemblyPath, pe: buffer, ulSize: (uint)peImage.Length);
+                    if (!metadataOnly)
+                    {
+                        validator.Validate(errorHandler, (uint)domainId, ValidatorFlags.VALIDATOR_EXTRA_VERBOSE,
+                            ulMaxError: 10, token: 0, fileName: assemblyPath, pe: buffer, ulSize: (uint)peImage.Length);
+                    }
 
                     return errorHandler.GetOutput();
                 }
