@@ -60,7 +60,7 @@
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\fsharp\msft.pubkey</AssemblyOriginatorKeyFile>
     <StrongNames>true</StrongNames>
-    <PublicSign>true</PublicSign>
+    <DelaySign>true</DelaySign>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(OS)' != 'Unix'">

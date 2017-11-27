@@ -1621,9 +1621,9 @@ module OptimizationTests =
 
         fsc cfg "%s --optimize -o:test--optimize.exe -g -r:lib--optimize.dll  -r:lib3--optimize.dll" cfg.fsc_flags ["test.fs "]
 
-        ildasm cfg "/nobar /out=test.il" "test.exe"
+        ildasm cfg "/out=test.il" "test.exe"
 
-        ildasm cfg "/nobar /out=test--optimize.il" "test--optimize.exe"
+        ildasm cfg "/out=test--optimize.il" "test--optimize.exe"
 
         let ``test--optimize.il`` = 
             File.ReadLines (getfullpath cfg "test--optimize.il")
@@ -1646,7 +1646,7 @@ module OptimizationTests =
     let stats () = 
         let cfg = testConfig "optimize/stats"
 
-        ildasm cfg "/nobar /out=FSharp.Core.il" cfg.FSCOREDLLPATH
+        ildasm cfg "/out=FSharp.Core.il" cfg.FSCOREDLLPATH
 
         let fscore = File.ReadLines(getfullpath cfg "FSharp.Core.il") |> Seq.toList
 

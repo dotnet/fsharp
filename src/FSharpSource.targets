@@ -29,9 +29,8 @@
             <!-- We have to do unit test DLLs well because they can see the internals of other strong-named DLLs -->
             <Otherwise>
               <PropertyGroup>
-                <OtherFlags>$(OtherFlags) --publicsign+</OtherFlags>
+                <DelaySign>true</DelaySign>
                 <StrongNames>true</StrongNames>
-                <ExcludeSigningImport>true</ExcludeSigningImport>
                 <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
                 <!-- certain delivered F# VS assemblies use a specific MicroBuildAssemblyVersion, otherwise use FSCoreVersion -->
                 <MicroBuildAssemblyVersion Condition="'$(UseVsMicroBuildAssemblyVersion)' == 'true'">15.4.1.0</MicroBuildAssemblyVersion>
@@ -46,8 +45,7 @@
             <SignAssembly>true</SignAssembly>
             <AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\fsharp\msft.pubkey</AssemblyOriginatorKeyFile>
             <StrongNames>true</StrongNames>
-            <ExcludeSigningImport>true</ExcludeSigningImport>
-            <PublicSign>true</PublicSign>
+            <DelaySign>true</DelaySign>
             <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
             <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
           </PropertyGroup>
