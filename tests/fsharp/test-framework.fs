@@ -106,7 +106,6 @@ module Commands =
 type TestConfig = 
     { EnvironmentVariables : Map<string, string>
       CORDIR : string
-      CORSDK : string
       CSC : string
       csc_flags : string
       BUILD_CONFIG : string
@@ -132,7 +131,7 @@ module WindowsPlatform =
             [| "PROCESSOR_ARCHITECTURE" |] |> Seq.tryPick (fun s -> find s) |> function None -> "" | Some x -> x
         value = "AMD64"
 
-    let clrPaths envVars =
+    let clrPath envVars =
 
         let windir = 
             match envVars |> Map.tryFind "windir" with
@@ -149,15 +148,7 @@ module WindowsPlatform =
         if Is64BitOperatingSystem envVars then 
             CORDIR <- CORDIR.Replace("Framework", "Framework64")
 
-        let CORSDK =
-            let find s = envVars |> Map.tryFind s
-            [| "WINSDKNETFXTOOLS"; "WindowsSDK_ExecutablePath_x64"; "WindowsSDK_ExecutablePath_x86" |] 
-            |> Seq.tryPick find 
-            |> function 
-                 | None -> @"C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.6.1 Tools\x64\"
-                 | Some x -> x
-
-        CORDIR, CORSDK
+        CORDIR
 
 type FSLibPaths = 
     { FSCOREDLLPATH : string }
@@ -173,13 +164,13 @@ let config configurationName envVars =
     let csc_flags = "/nologo" 
     let fsc_flags = "-r:System.Core.dll --nowarn:20 --define:COMPILED"
     let fsi_flags = "-r:System.Core.dll --nowarn:20 --define:INTERACTIVE --maxerrors:1 --abortonerror"
-    let CORDIR, CORSDK = WindowsPlatform.clrPaths envVars
+    let CORDIR = WindowsPlatform.clrPath envVars
     let Is64BitOperatingSystem = WindowsPlatform.Is64BitOperatingSystem envVars
     let architectureMoniker = if Is64BitOperatingSystem then "x64" else "x86"
     let CSC = requireFile (CORDIR ++ "csc.exe")
     let ILDASM = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm.2.0.3") ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "ildasm.exe")
     let coreclrdll = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.Runtime.CoreCLR.2.0.3") ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "coreclr.dll")
-    let PEVERIFY = requireFile (CORSDK ++ "peverify.exe")
+    let PEVERIFY = requireFile (SCRIPT_ROOT ++ ".." ++ "fsharpqa" ++ "testenv" ++ "src" ++ "PEVerify" ++ "bin" ++ configurationName ++ "net46" ++ "PEVerify.exe")
     let FSI_FOR_SCRIPTS =
         match envVars |> Map.tryFind "_fsiexe" with
         | Some fsiexe when (not (String.IsNullOrWhiteSpace fsiexe)) -> requireFile (SCRIPT_ROOT ++ ".." ++ ".." ++ (fsiexe.Trim([| '\"' |])))
@@ -214,7 +205,6 @@ let config configurationName envVars =
 
     { EnvironmentVariables = envVars
       CORDIR = CORDIR |> Commands.pathAddBackslash
-      CORSDK = CORSDK |> Commands.pathAddBackslash
       FSCBinPath = FSCBinPath |> Commands.pathAddBackslash
       FSCOREDLLPATH = FSCOREDLLPATH
       ILDASM = ILDASM
@@ -236,7 +226,6 @@ let logConfig (cfg: TestConfig) =
     log "Executables"
     log ""
     log "CORDIR              =%s" cfg.CORDIR
-    log "CORSDK              =%s" cfg.CORSDK
     log "CSC                 =%s" cfg.CSC
     log "BUILD_CONFIG        =%s" cfg.BUILD_CONFIG
     log "csc_flags           =%s" cfg.csc_flags
