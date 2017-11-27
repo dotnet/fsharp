@@ -816,12 +816,12 @@ type ListModule02() =
     [<Test>]
     member this.Transpose() =
         // integer list
-        Assert.AreEqual([[1; 4]; [2; 5]; [3; 6]], List.transpose [[1..3]; [4..6]])
+        Assert.AreEqual([[1; 4]; [2; 5]; [3; 6]], List.transpose (seq [[1..3]; [4..6]]))
         Assert.AreEqual([[1]; [2]; [3]], List.transpose [[1..3]])
         Assert.AreEqual([[1..2]], List.transpose [[1]; [2]])
 
         // string list
-        Assert.AreEqual([["a";"d"]; ["b";"e"]; ["c";"f"]], List.transpose [["a";"b";"c"]; ["d";"e";"f"]])
+        Assert.AreEqual([["a";"d"]; ["b";"e"]; ["c";"f"]], List.transpose (seq [["a";"b";"c"]; ["d";"e";"f"]]))
 
         // empty list
         Assert.AreEqual([], List.transpose [])

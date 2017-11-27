@@ -17,6 +17,11 @@ namespace Microsoft.FSharp.Collections
     [<RequireQualifiedAccess>]
     module List = 
 
+        let inline checkNonNull argName arg =
+            match box arg with
+            | null -> nullArg argName
+            | _ -> ()
+
         let inline indexNotFound() = raise (KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
 
         [<CompiledName("Length")>]
@@ -412,10 +417,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Except")>]
         let except itemsToExclude list =
-            match box itemsToExclude with
-            | null -> nullArg "itemsToExclude"
-            | _ -> ()
-
+            checkNonNull "itemsToExclude" itemsToExclude
             match list with
             | [] -> list
             | _ ->
@@ -667,7 +669,9 @@ namespace Microsoft.FSharp.Collections
             | _   -> invalidArg "source" (SR.GetString(SR.inputSequenceTooLong))
 
         [<CompiledName("Transpose")>]
-        let transpose (list : 'T list list) = Microsoft.FSharp.Primitives.Basics.List.transpose list
+        let transpose (lists : seq<'T list>) =
+            checkNonNull "lists" lists
+            Microsoft.FSharp.Primitives.Basics.List.transpose (ofSeq lists)
 
         [<CompiledName("Truncate")>]
         let truncate count list = Microsoft.FSharp.Primitives.Basics.List.truncate count list

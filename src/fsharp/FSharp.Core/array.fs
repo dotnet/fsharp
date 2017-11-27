@@ -1239,8 +1239,9 @@ namespace Microsoft.FSharp.Collections
             else invalidArg "array" (SR.GetString(SR.inputSequenceTooLong))
 
         [<CompiledName("Transpose")>]
-        let transpose (array:'T[][]) =
-            checkNonNull "array" array
+        let transpose (arrays:seq<'T[]>) =
+            checkNonNull "array" arrays
+            let array = ofSeq arrays
             let len = array.Length
             if len = 0 then Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked 0 else
             let lenInner = array.[0].Length
