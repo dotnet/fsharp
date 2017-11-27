@@ -178,6 +178,7 @@ let config configurationName envVars =
     let architectureMoniker = if Is64BitOperatingSystem then "x64" else "x86"
     let CSC = requireFile (CORDIR ++ "csc.exe")
     let ILDASM = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm.2.0.3") ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "ildasm.exe")
+    let coreclrdll = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.Runtime.CoreCLR.2.0.3") ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "coreclr.dll")
     let PEVERIFY = requireFile (CORSDK ++ "peverify.exe")
     let FSI_FOR_SCRIPTS =
         match envVars |> Map.tryFind "_fsiexe" with
@@ -191,9 +192,8 @@ let config configurationName envVars =
             | _ -> failwithf "Found more than one 'FSharp.Compiler.Tools' inside '%s', please clean up." packagesDir
     let toolsDir = SCRIPT_ROOT ++ ".." ++ ".." ++ "Tools"
     let dotNetExe = toolsDir ++ "dotnetcli" ++ "dotnet.exe"
-    // ildasm requires coreclr.dll to run which has already been restored to the tools directory
-    let coreclrSource = toolsDir ++ "dotnet20" ++ "shared" ++ "Microsoft.NETCore.App" ++ "2.0.0" ++ "coreclr.dll"
-    File.Copy(coreclrSource, Path.GetDirectoryName(ILDASM) ++ "coreclr.dll", overwrite=true)
+    // ildasm requires coreclr.dll to run which has already been restored to the packages directory
+    File.Copy(coreclrdll, Path.GetDirectoryName(ILDASM) ++ "coreclr.dll", overwrite=true)
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     let FSI = requireFile (FSCBinPath ++ "fsi.exe")
