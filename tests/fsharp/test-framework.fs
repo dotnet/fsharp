@@ -118,7 +118,6 @@ type TestConfig =
       FSI_FOR_SCRIPTS : string
       fsi_flags : string
       ILDASM : string
-      NGEN : string
       PEVERIFY : string
       Directory: string 
       DotNetExe: string
@@ -168,29 +167,33 @@ let requireFile nm =
 
 let config configurationName envVars =
 
-    let SCRIPT_ROOT = __SOURCE_DIRECTORY__ 
+    let SCRIPT_ROOT = __SOURCE_DIRECTORY__
+    let packagesDir = SCRIPT_ROOT ++ ".." ++ ".." ++ "packages"
     let FSCBinPath = SCRIPT_ROOT ++ ".." ++ ".." ++ configurationName ++ "net40" ++ "bin"
     let csc_flags = "/nologo" 
     let fsc_flags = "-r:System.Core.dll --nowarn:20 --define:COMPILED"
     let fsi_flags = "-r:System.Core.dll --nowarn:20 --define:INTERACTIVE --maxerrors:1 --abortonerror"
     let CORDIR, CORSDK = WindowsPlatform.clrPaths envVars
     let Is64BitOperatingSystem = WindowsPlatform.Is64BitOperatingSystem envVars
+    let architectureMoniker = if Is64BitOperatingSystem then "x64" else "x86"
     let CSC = requireFile (CORDIR ++ "csc.exe")
-    let NGEN = requireFile (CORDIR ++ "ngen.exe")
-    let ILDASM = requireFile (CORSDK ++ "ildasm.exe")
+    let ILDASM = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm.2.0.3") ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "ildasm.exe")
     let PEVERIFY = requireFile (CORSDK ++ "peverify.exe")
     let FSI_FOR_SCRIPTS =
         match envVars |> Map.tryFind "_fsiexe" with
         | Some fsiexe when (not (String.IsNullOrWhiteSpace fsiexe)) -> requireFile (SCRIPT_ROOT ++ ".." ++ ".." ++ (fsiexe.Trim([| '\"' |])))
         | _ ->
             // build.cmd sets that var, if it is not set, we are probably called directly from visual studio or the nunit console runner.
-            let packagesDir = SCRIPT_ROOT ++ ".." ++ ".." ++ @"packages"
             let fsharpCompilerTools = Directory.GetDirectories(packagesDir, "FSharp.Compiler.Tools.*")
             match fsharpCompilerTools with
             | [||] -> failwithf "Could not find any 'FSharp.Compiler.Tools' inside '%s'" packagesDir
             | [| dir |] -> Path.Combine(dir, "tools", "fsi.exe")
             | _ -> failwithf "Found more than one 'FSharp.Compiler.Tools' inside '%s', please clean up." packagesDir
-    let dotNetExe = SCRIPT_ROOT ++ ".." ++ ".." ++ "Tools" ++ "dotnetcli" ++ "dotnet.exe"
+    let toolsDir = SCRIPT_ROOT ++ ".." ++ ".." ++ "Tools"
+    let dotNetExe = toolsDir ++ "dotnetcli" ++ "dotnet.exe"
+    // ildasm requires coreclr.dll to run which has already been restored to the tools directory
+    let coreclrSource = toolsDir ++ "dotnet20" ++ "shared" ++ "Microsoft.NETCore.App" ++ "2.0.0" ++ "coreclr.dll"
+    File.Copy(coreclrSource, Path.GetDirectoryName(ILDASM) ++ "coreclr.dll", overwrite=true)
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     let FSI = requireFile (FSCBinPath ++ "fsi.exe")
@@ -215,7 +218,6 @@ let config configurationName envVars =
       FSCBinPath = FSCBinPath |> Commands.pathAddBackslash
       FSCOREDLLPATH = FSCOREDLLPATH
       ILDASM = ILDASM
-      NGEN = NGEN 
       PEVERIFY = PEVERIFY
       CSC = CSC 
       BUILD_CONFIG = configurationName
@@ -245,7 +247,6 @@ let logConfig (cfg: TestConfig) =
     log "FSI                 =%s" cfg.FSI
     log "fsi_flags           =%s" cfg.fsi_flags
     log "ILDASM              =%s" cfg.ILDASM
-    log "NGEN                =%s" cfg.NGEN
     log "PEVERIFY            =%s" cfg.PEVERIFY
     log "---------------------------------------------------------------"
 
