@@ -1238,10 +1238,7 @@ namespace Microsoft.FSharp.Collections
             elif array.Length = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             else invalidArg "array" (SR.GetString(SR.inputSequenceTooLong))
 
-        [<CompiledName("Transpose")>]
-        let transpose (arrays:seq<'T[]>) =
-            checkNonNull "array" arrays
-            let array = ofSeq arrays
+        let transposeArrays (array:'T[][]) =
             let len = array.Length
             if len = 0 then Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked 0 else
             let lenInner = array.[0].Length
@@ -1256,6 +1253,13 @@ namespace Microsoft.FSharp.Collections
                 for j in 0..len-1 do
                     result.[i].[j] <- array.[j].[i]
             result
+
+        [<CompiledName("Transpose")>]
+        let transpose (arrays:seq<'T[]>) =
+            checkNonNull "arrays" arrays
+            match arrays with
+            | :? ('T[][]) as ts -> ts |> transposeArrays // avoid a clone, since we only read the array
+            | _ -> arrays |> Seq.toArray |> transposeArrays
 
         [<CompiledName("Truncate")>]
         let truncate count (array:'T[]) =
