@@ -212,7 +212,7 @@ module AssemblyContentProvider =
 
     let private traverseMemberFunctionAndValues ns (parent: Parent) (membersFunctionsAndValues: seq<FSharpMemberOrFunctionOrValue>) =
         membersFunctionsAndValues
-        |> Seq.filter (fun x -> not x.IsInstanceMember)
+        |> Seq.filter (fun x -> not x.IsInstanceMember && not x.IsPropertyGetterMethod && not x.IsPropertySetterMethod)
         |> Seq.collect (fun func ->
             let processIdents fullName idents = 
                 { FullName = fullName
