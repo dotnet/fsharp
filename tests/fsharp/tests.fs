@@ -1679,14 +1679,6 @@ module TypecheckTests =
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
-    let ``sigs pos27`` () = 
-        let cfg = testConfig "typecheck/sigs"
-        fsc cfg "%s --target:exe -o:pos27.exe" cfg.fsc_flags ["pos27.fs"]
-        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
-
-        peverify cfg "pos27.exe"
-
-    [<Test>]
     let ``sigs pos28`` () = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos28.exe" cfg.fsc_flags ["pos28.fs"]
