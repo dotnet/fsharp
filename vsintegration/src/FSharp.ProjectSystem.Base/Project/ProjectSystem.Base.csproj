@@ -301,7 +301,7 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
   <Import Project="$(VsSDKTargets)" />
-  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
+  <Target Name="GatherBinariesToBeSigned" AfterTargets="CopyFilesToOutputDirectory">
     <ItemGroup>
       <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
       <BinariesToBeSigned Include="$(OutDir)**\$(AssemblyName).resources.dll" />
