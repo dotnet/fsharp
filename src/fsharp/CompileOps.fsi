@@ -258,9 +258,11 @@ type TcConfigBuilder =
       mutable light: bool option
       mutable conditionalCompilationDefines: string list
       /// Sources added into the build with #load
-      mutable loadedSources: (range * string) list
+      mutable loadedSources: (range * string * string) list
       
       mutable referencedDLLs: AssemblyReference  list
+      mutable packageManagerLines: Map<string,(string*range) list>
+
       mutable projectReferences: IProjectReference list
       mutable knownUnresolvedReferences: UnresolvedAssemblyReference list
       optimizeForMemory: bool
@@ -659,8 +661,8 @@ val WriteOptimizationData: TcGlobals * filename: string * inMem: bool * CcuThunk
 val RequireDLL: CompilationThreadToken * TcImports * TcEnv * thisAssemblyName: string * referenceRange: range * file: string -> TcEnv * (ImportedBinary list * ImportedAssembly list)
 
 /// Processing # commands
-val ProcessMetaCommandsFromInput: 
-    (('T -> range * string -> 'T) * ('T -> range * string -> 'T) * ('T -> range * string -> unit)) 
+val ProcessMetaCommandsFromInput : 
+    (('T -> range * string -> 'T) * ('T -> range * string -> 'T) * ('T -> DependencyManagerIntegration.IDependencyManagerProvider * range * string -> 'T) * ('T -> range * string -> unit)) 
     -> TcConfigBuilder * Ast.ParsedInput * string * 'T 
     -> 'T
 
