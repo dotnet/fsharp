@@ -318,7 +318,8 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
           PrintLength : int
           PrintSize : int  
           ShowProperties : bool
-          ShowIEnumerable: bool  }
+          ShowIEnumerable : bool
+          EscapeStrings : bool }
         static member Default : FormatOptions
 
 #if COMPILER_PUBLIC_API

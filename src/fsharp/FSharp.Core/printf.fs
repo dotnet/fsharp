@@ -59,12 +59,14 @@ module internal PrintfImpl =
         | PadWithZeros = 2
         | PlusForPositives = 4
         | SpaceForPositives = 8
+        | EscapeStrings = 16
 
     let inline hasFlag flags (expected : FormatFlags) = (flags &&& expected) = expected
     let inline isLeftJustify flags = hasFlag flags FormatFlags.LeftJustify
     let inline isPadWithZeros flags = hasFlag flags FormatFlags.PadWithZeros
     let inline isPlusForPositives flags = hasFlag flags FormatFlags.PlusForPositives
     let inline isSpaceForPositives flags = hasFlag flags FormatFlags.SpaceForPositives
+    let inline isEscapeStrings flags = hasFlag flags FormatFlags.EscapeStrings
 
     /// Used for width and precision to denote that user has specified '*' flag
     [<Literal>]
@@ -116,6 +118,7 @@ module internal PrintfImpl =
                 | '+' -> go (flags ||| FormatFlags.PlusForPositives) (i + 1)
                 | ' ' -> go (flags ||| FormatFlags.SpaceForPositives) (i + 1)
                 | '-' -> go (flags ||| FormatFlags.LeftJustify) (i + 1)
+                | '@' -> go (flags ||| FormatFlags.EscapeStrings) (i + 1)
                 | _ -> flags, i
             go FormatFlags.None i
 
@@ -1083,7 +1086,10 @@ module internal PrintfImpl =
                     if useZeroWidth then { o with PrintWidth = 0} 
                     elif spec.IsWidthSpecified then { o with PrintWidth = spec.Width}
                     else o
-                if spec.IsPrecisionSpecified then { o with PrintSize = spec.Precision}
+                let o =
+                    if spec.IsPrecisionSpecified then { o with PrintSize = spec.Precision}
+                    else o
+                if isEscapeStrings spec.Flags then { o with EscapeStrings = true }
                 else o
             match spec.IsStarWidth, spec.IsStarPrecision with
             | true, true ->

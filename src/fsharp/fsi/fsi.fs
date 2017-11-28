@@ -250,6 +250,8 @@ type FsiEvaluationSessionHostConfig () =
     abstract PrintWidth : int
     /// Called by the evaluation session to ask the host for parameters to format text for output
     abstract PrintLength : int
+    /// Called by the evaluation session to ask the host for parameters to format text for output
+    abstract EscapeStrings : bool
 
     /// The evaluation session calls this to report the preferred view of the command line arguments after 
     /// stripping things like "/use:file.fsx", "-r:Foo.dll" etc.
@@ -370,7 +372,8 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, g: TcGlobals,
               PrintLength = fsi.PrintLength;
               PrintSize = fsi.PrintSize;
               ShowProperties = fsi.ShowProperties;
-              ShowIEnumerable = fsi.ShowIEnumerable; }
+              ShowIEnumerable = fsi.ShowIEnumerable;
+              EscapeStrings = fsi.EscapeStrings; }
 
     /// Get the evaluation context used when inverting the storage mapping of the ILRuntimeWriter.
     member __.GetEvaluationContext emEnv = 
@@ -2861,6 +2864,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
               member __.PrintDepth = getInstanceProperty fsiObj "PrintDepth"
               member __.PrintWidth = getInstanceProperty fsiObj "PrintWidth"
               member __.PrintLength = getInstanceProperty fsiObj "PrintLength"
+              member __.EscapeStrings = getInstanceProperty fsiObj "EscapeStrings"
               member __.ReportUserCommandLineArgs args = setInstanceProperty fsiObj "CommandLineArgs" args
               member __.StartServer(fsiServerName) =  failwith "--fsi-server not implemented in the default configuration"
               member __.EventLoopRun() = callInstanceMethod0 (getInstanceProperty fsiObj "EventLoop") [||] "Run"   

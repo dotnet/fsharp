@@ -329,7 +329,8 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
           PrintLength : int;
           PrintSize : int;        
           ShowProperties : bool;
-          ShowIEnumerable: bool; }
+          ShowIEnumerable : bool;
+          EscapeStrings : bool; }
         static member Default =
             { FormatProvider = (System.Globalization.CultureInfo.InvariantCulture :> System.IFormatProvider);
 #if COMPILER    // This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
@@ -348,7 +349,8 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
               PrintLength = 100;
               PrintSize = 10000;
               ShowProperties = false;
-              ShowIEnumerable = true; }
+              ShowIEnumerable = true;
+              EscapeStrings = false; }
 
 
 
@@ -827,28 +829,46 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
         let formatChar isChar c = 
             match c with 
-            | '\'' when isChar -> "\\\'"
-            | '\"' when not isChar -> "\\\""
-            //| '\n' -> "\\n"
-            //| '\r' -> "\\r"
-            //| '\t' -> "\\t"
-            | '\\' -> "\\\\"
-            | '\b' -> "\\b"
+            | '\'' when isChar -> true, "\\\'"
+            | '\"' when not isChar -> true, "\\\""
+            | '\n' -> true, "\\n"
+            | '\r' -> true, "\\r"
+            | '\t' -> true, "\\t"
+            | '\\' -> true, "\\\\"
+            | '\b' -> true, "\\b"
             | _ when System.Char.IsControl(c) -> 
-                 let d1 = (int c / 100) % 10 
-                 let d2 = (int c / 10) % 10 
-                 let d3 = int c % 10 
-                 "\\" + d1.ToString() + d2.ToString() + d3.ToString()
-            | _ -> c.ToString()
-            
-        let formatString (s:string) =
-            let rec check i = i < s.Length && not (System.Char.IsControl(s,i)) && s.[i] <> '\"' && check (i+1) 
-            let rec conv i acc = if i = s.Length then combine (List.rev acc) else conv (i+1) (formatChar false s.[i] :: acc)  
-            "\"" + s + "\""
-            // REVIEW: should we check for the common case of no control characters? Reinstate the following?
-            //"\"" + (if check 0 then s else conv 0 []) + "\""
+                let d1 = (int c / 100) % 10 
+                let d2 = (int c / 10) % 10 
+                let d3 = int c % 10 
+                true, "\\" + d1.ToString() + d2.ToString() + d3.ToString()
+            | _ -> false, c.ToString()
 
-        let formatStringInWidth (width:int) (str:string) =
+        let formatString (escape:bool) (s:string) =
+            if escape then
+                let escapedBuilder = System.Text.StringBuilder(s.Length * 2 + 2)
+                let mutable onlyEscapedBackslashes = None
+
+                escapedBuilder.Append "\"" |> ignore
+                for c in s.ToCharArray() do
+                    let didEscapeChar, escapedChar = formatChar false c
+
+                    onlyEscapedBackslashes <-
+                        match onlyEscapedBackslashes, didEscapeChar with
+                        | _, true when c <> '\\' -> Some false
+                        | None, true -> Some true
+                        | _ -> onlyEscapedBackslashes
+
+                    escapedBuilder.Append escapedChar |> ignore
+                escapedBuilder.Append "\"" |> ignore
+
+                match onlyEscapedBackslashes with
+                | Some true -> "@\"" + s + "\""
+                | _ -> escapedBuilder.ToString()
+            else
+                // maintain compatibility with older versions of F#
+                "\"" + s + "\""
+
+        let formatStringInWidth (escape:bool) (width:int) (str:string) =
             // Return a truncated version of the string, e.g.
             //   "This is the initial text, which has been truncated"+[12 chars]
             //
@@ -861,7 +881,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
             let suffixLength    = 11 // turning point suffix length
             let prefixMinLength = 12 // arbitrary. If print width is reduced, want to print a minimum of information on strings...
             let prefixLength = max (width - 2 (*quotes*) - suffixLength) prefixMinLength
-            "\"" + (str.Substring(0,prefixLength)) + "\"" + "+[" + (str.Length - prefixLength).ToString() + " chars]"
+            (formatString escape (str.Substring (0, prefixLength))) + "+[" + (str.Length - prefixLength).ToString() + " chars]"
 
         // --------------------------------------------------------------------
         // pprinter: anyL
@@ -1099,15 +1119,15 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 #if COMPILER  
                         if s.Length + 2(*quotes*) <= opts.StringLimit then
                            // With the quotes, it fits within the limit.
-                           wordL (tagStringLiteral(formatString s))
+                           wordL (tagStringLiteral(formatString opts.EscapeStrings s))
                         else
                            // When a string is considered too long to print, there is a choice: what to print?
                            // a) <string>            -- follows <fun:typename>
                            // b) <string:length>     -- follows <fun:typename> and gives just the length
                            // c) "abcdefg"+[n chars] -- gives a prefix and the remaining chars
-                           wordL (tagStringLiteral(formatStringInWidth opts.StringLimit s))
+                           wordL (tagStringLiteral(formatStringInWidth opts.EscapeStrings opts.StringLimit s))
 #else
-                        wordL (tagStringLiteral (formatString s))  
+                        wordL (tagStringLiteral (formatString opts.EscapeStrings s))  
 #endif                        
                     | :? Array as arr -> 
                         let ty = arr.GetType().GetElementType()
@@ -1271,7 +1291,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
             | :? nativeint as d -> d.ToString() + "n" |> tagNumericLiteral
             | :? unativeint  as d -> d.ToString() + "un" |> tagNumericLiteral
             | :? bool   as b -> (if b then "true" else "false") |> tagKeyword
-            | :? char   as c -> "\'" + formatChar true c + "\'" |> tagStringLiteral
+            | :? char   as c -> "\'" + (formatChar true c |> snd) + "\'" |> tagStringLiteral
             | _ -> 
                 let t = 
                     try 
