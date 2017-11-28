@@ -4,11 +4,12 @@
 module internal Microsoft.FSharp.Compiler.CompileOps
 
 open System
-open System.Diagnostics
-open System.Text
-open System.IO
+open System.Collections.Concurrent
 open System.Collections.Generic
+open System.Diagnostics
+open System.IO
 open System.Runtime.CompilerServices
+open System.Text
 
 open Internal.Utilities
 open Internal.Utilities.Text
@@ -1773,20 +1774,25 @@ let OutputDiagnosticContext prefix fileLineFn os err =
 let GetFSharpCoreLibraryName () = "FSharp.Core"
 
 // If necessary assume a reference to the latest .NET Framework FSharp.Core with which those tools are built.
-let GetDefaultFSharpCoreReference() = typeof<list<int>>.Assembly.Location
+let GetDefaultFSharpCoreReference () = typeof<list<int>>.Assembly.Location
 
-// If necessary assume a reference to the latest System.ValueTuple with which those tools are built.
-let GetDefaultSystemValueTupleReference() = 
-#if COMPILER_SERVICE_AS_DLL
-    None // TODO, right now FCS doesn't add this reference automatically
-#else
-    try 
-       let asm = typeof<System.ValueTuple<int, int>>.Assembly
-       if asm.FullName.StartsWith "System.ValueTuple" then 
-           Some asm.Location 
-       else None
+type private TypeInThisAssembly = class end
+
+// Use the ValueTuple that is executing with the compiler if it is from System.ValueTuple
+// or the System.ValueTuple.dll that sits alongside the compiler.  (Note we always ship one with the compiler)
+let GetDefaultSystemValueTupleReference () =
+    try
+        let asm = typeof<System.ValueTuple<int, int>>.Assembly 
+        if asm.FullName.StartsWith "System.ValueTuple" then  
+            Some asm.Location
+        else
+            let location = Path.GetDirectoryName(typeof<TypeInThisAssembly>.Assembly.Location)
+            let valueTuplePath = Path.Combine(location, "System.ValueTuple.dll")
+            if File.Exists(valueTuplePath) then
+                Some valueTuplePath
+            else
+                None
     with _ -> None
-#endif
 
 let GetFsiLibraryName () = "FSharp.Compiler.Interactive.Settings"  
 
@@ -1820,10 +1826,11 @@ let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) =
           yield "System.Collections" // System.Collections.Generic.List<T>
           yield "System.Runtime.Numerics" // BigInteger
           yield "System.Threading"  // OperationCanceledException
-          // always include a default reference to System.ValueTuple.dll in scripts and out-of-project sources
-          match GetDefaultSystemValueTupleReference() with 
-          | None -> ()
-          | Some v -> yield v
+
+          // always include a default reference to System.ValueTuple.dll in scripts and out-of-project sources 
+          match GetDefaultSystemValueTupleReference() with  
+          | None -> () 
+          | Some v -> yield v 
 
           yield "System.Web"
           yield "System.Web.Services"
@@ -3523,14 +3530,14 @@ let PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, ParsedSig
     ParsedInput.SigFile(ParsedSigFileInput(filename, qualName, scopedPragmas, hashDirectives, specs))
 
 /// Checks if a module name is already given and deduplicates the name if needed.
-let DeduplicateModuleName (moduleNamesDict:Dictionary<string, Set<string>>) (paths: Set<string>) path (qualifiedNameOfFile: QualifiedNameOfFile) =
+let DeduplicateModuleName (moduleNamesDict:IDictionary<string, Set<string>>) (paths: Set<string>) path (qualifiedNameOfFile: QualifiedNameOfFile) =
     let count = if paths.Contains path then paths.Count else paths.Count + 1
     moduleNamesDict.[qualifiedNameOfFile.Text] <- Set.add path paths
     let id = qualifiedNameOfFile.Id
     if count = 1 then qualifiedNameOfFile else QualifiedNameOfFile(Ident(id.idText + "___" + count.ToString(), id.idRange))
 
 /// Checks if a ParsedInput is using a module name that was already given and deduplicates the name if needed.
-let DeduplicateParsedInputModuleName (moduleNamesDict:Dictionary<string, Set<string>>) input =
+let DeduplicateParsedInputModuleName (moduleNamesDict:IDictionary<string, Set<string>>) input =
     match input with
     | ParsedInput.ImplFile (ParsedImplFileInput.ParsedImplFileInput(fileName, isScript, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules, (isLastCompiland, isExe))) ->
         let path = Path.GetDirectoryName fileName
@@ -3539,7 +3546,7 @@ let DeduplicateParsedInputModuleName (moduleNamesDict:Dictionary<string, Set<str
             let qualifiedNameOfFile = DeduplicateModuleName moduleNamesDict paths path qualifiedNameOfFile
             ParsedInput.ImplFile(ParsedImplFileInput.ParsedImplFileInput(fileName, isScript, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules, (isLastCompiland, isExe)))
         | _ ->
-            moduleNamesDict.Add(qualifiedNameOfFile.Text, Set.singleton path)
+            moduleNamesDict.[qualifiedNameOfFile.Text] <- Set.singleton path
             input
     | ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules)) ->
         let path = Path.GetDirectoryName fileName
@@ -3548,7 +3555,7 @@ let DeduplicateParsedInputModuleName (moduleNamesDict:Dictionary<string, Set<str
             let qualifiedNameOfFile = DeduplicateModuleName moduleNamesDict paths path qualifiedNameOfFile
             ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules))
         | _ ->
-            moduleNamesDict.Add(qualifiedNameOfFile.Text, Set.singleton path)
+            moduleNamesDict.[qualifiedNameOfFile.Text] <- Set.singleton path
             input
 
 let ParseInput (lexer, errorLogger:ErrorLogger, lexbuf:UnicodeLexing.Lexbuf, defaultNamespace, filename, isLastCompiland) = 
@@ -5093,13 +5100,7 @@ module ScriptPreprocessClosure =
             match codeContext with 
             | CodeContext.Editing -> ResolutionEnvironment.EditingOrCompilation true
             | CodeContext.Compilation -> ResolutionEnvironment.EditingOrCompilation false
-            | CodeContext.CompilationAndEvaluation -> 
-#if FSI_TODO_NETCORE
-                // "CompilationAndEvaluation" assembly resolution for F# Interactive is not yet properly figured out on .NET Core
-                ResolutionEnvironment.EditingOrCompilation false
-#else
-                ResolutionEnvironment.CompilationAndEvaluation
-#endif
+            | CodeContext.CompilationAndEvaluation -> ResolutionEnvironment.CompilationAndEvaluation
         tcConfigB.framework <- false 
         tcConfigB.useSimpleResolution <- useSimpleResolution
         // Indicates that there are some references not in BasicReferencesForScriptLoadClosure which should

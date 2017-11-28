@@ -119,16 +119,18 @@ type AssemblyContentType = Public | Full
 
 type Parent = 
     { Namespace: Idents option
-      ThisRequiresQualifiedAccess: Idents option
-      TopRequiresQualifiedAccess: Idents option
+      ThisRequiresQualifiedAccess: (* isForMemberOrValue *) bool -> Idents option
+      TopRequiresQualifiedAccess: (* isForMemberOrValue *) bool -> Idents option
       AutoOpen: Idents option
-      WithModuleSuffix: Idents option }
+      WithModuleSuffix: Idents option 
+      IsModule: bool }
     static member Empty = 
         { Namespace = None
-          ThisRequiresQualifiedAccess = None
-          TopRequiresQualifiedAccess = None
+          ThisRequiresQualifiedAccess = fun _ -> None
+          TopRequiresQualifiedAccess = fun _ -> None
           AutoOpen = None
-          WithModuleSuffix = None }
+          WithModuleSuffix = None 
+          IsModule = true }
     static member RewriteParentIdents (parentIdents: Idents option) (idents: Idents) =
         match parentIdents with
         | Some p when p.Length <= idents.Length -> 
@@ -190,8 +192,8 @@ module AssemblyContentProvider =
             { FullName = fullName
               CleanedIdents = cleanIdents
               Namespace = ns
-              NearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess |> Option.map parent.FixParentModuleSuffix
-              TopRequireQualifiedAccessParent = parent.TopRequiresQualifiedAccess |> Option.map parent.FixParentModuleSuffix
+              NearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess false |> Option.map parent.FixParentModuleSuffix
+              TopRequireQualifiedAccessParent = parent.TopRequiresQualifiedAccess false |> Option.map parent.FixParentModuleSuffix
               AutoOpenParent = parent.AutoOpen |> Option.map parent.FixParentModuleSuffix
               Symbol = entity
               Kind = fun lookupType ->
@@ -210,13 +212,14 @@ module AssemblyContentProvider =
 
     let private traverseMemberFunctionAndValues ns (parent: Parent) (membersFunctionsAndValues: seq<FSharpMemberOrFunctionOrValue>) =
         membersFunctionsAndValues
+        |> Seq.filter (fun x -> not x.IsInstanceMember && not x.IsPropertyGetterMethod && not x.IsPropertySetterMethod)
         |> Seq.collect (fun func ->
             let processIdents fullName idents = 
                 { FullName = fullName
                   CleanedIdents = parent.FixParentModuleSuffix idents
                   Namespace = ns
-                  NearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess |> Option.map parent.FixParentModuleSuffix
-                  TopRequireQualifiedAccessParent = parent.TopRequiresQualifiedAccess |> Option.map parent.FixParentModuleSuffix
+                  NearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess true |> Option.map parent.FixParentModuleSuffix
+                  TopRequireQualifiedAccessParent = parent.TopRequiresQualifiedAccess true |> Option.map parent.FixParentModuleSuffix
                   AutoOpenParent = parent.AutoOpen |> Option.map parent.FixParentModuleSuffix
                   Symbol = func
                   Kind = fun _ -> EntityKind.FunctionOrValue func.IsActivePattern }
@@ -253,14 +256,14 @@ module AssemblyContentProvider =
                     | Some x -> yield x
                     | None -> ()
 
-                    let thisRequiresQualifierAccess =
-                        if entity.IsFSharp && Symbol.hasAttribute<RequireQualifiedAccessAttribute> entity.Attributes then 
-                            parent.FormatEntityFullName entity |> Option.map snd
-                        else None
+                    let rqa = parent.FormatEntityFullName entity |> Option.map snd
+                    let rqaForType = if entity.IsFSharp && Symbol.hasAttribute<RequireQualifiedAccessAttribute> entity.Attributes then rqa else None
+                    let thisRequiresQualifierAccess (isForMethodOrValue: bool) = if isForMethodOrValue then rqa else rqaForType
 
                     let currentParent =
-                        { ThisRequiresQualifiedAccess = thisRequiresQualifierAccess |> Option.orElse parent.ThisRequiresQualifiedAccess
-                          TopRequiresQualifiedAccess = parent.TopRequiresQualifiedAccess |> Option.orElse thisRequiresQualifierAccess
+                        { ThisRequiresQualifiedAccess = thisRequiresQualifierAccess >> Option.orElse (parent.ThisRequiresQualifiedAccess false)
+                          TopRequiresQualifiedAccess = fun forMV -> (parent.TopRequiresQualifiedAccess false) |> Option.orElse (thisRequiresQualifierAccess forMV)
+                          
                           AutoOpen =
                             let isAutoOpen = entity.IsFSharpModule && Symbol.hasAttribute<AutoOpenAttribute> entity.Attributes
                             match isAutoOpen, parent.AutoOpen with
@@ -275,13 +278,14 @@ module AssemblyContentProvider =
                             if entity.IsFSharpModule && Symbol.hasModuleSuffixAttribute entity then 
                                 currentEntity |> Option.map (fun e -> e.CleanedIdents) 
                             else parent.WithModuleSuffix
-                          Namespace = ns }
 
-                    if entity.IsFSharpModule then
-                        match entity.TryGetMembersFunctionsAndValues with
-                        | xs when xs.Count > 0 ->
-                            yield! traverseMemberFunctionAndValues ns currentParent xs
-                        | _ -> ()
+                          Namespace = ns
+                          IsModule = entity.IsFSharpModule }
+
+                    match entity.TryGetMembersFunctionsAndValues with
+                    | xs when xs.Count > 0 ->
+                        yield! traverseMemberFunctionAndValues ns currentParent xs
+                    | _ -> ()
 
                     for e in (try entity.NestedEntities :> _ seq with _ -> Seq.empty) do
                         yield! traverseEntity contentType currentParent e 

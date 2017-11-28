@@ -3688,8 +3688,10 @@ let ``Test Project25 symbol uses of type-provided members`` () =
 
     allUses |> shouldEqual 
 
-         [|("FSharp.Data", "file1", ((3, 5), (3, 16)), ["namespace"; "provided"]);
-           ("Microsoft.FSharp.Data", "file1", ((3, 5), (3, 16)), ["namespace"]);
+         [|("Microsoft.FSharp", "file1", ((3, 5), (3, 11)), ["namespace"]);
+           ("FSharp", "file1", ((3, 5), (3, 11)), ["namespace"]);
+           ("Microsoft.FSharp.Data", "file1", ((3, 12), (3, 16)), ["namespace"]);
+           ("FSharp.Data", "file1", ((3, 12), (3, 16)), ["namespace"; "provided"]);
            ("FSharp.Data.XmlProvider", "file1", ((4, 15), (4, 26)),
             ["class"; "provided"; "erased"]);
            ("FSharp.Data.XmlProvider", "file1", ((4, 15), (4, 26)),

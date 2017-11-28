@@ -40,13 +40,6 @@
       <InProject>false</InProject>
     </FilesToLocalize>
   </ItemGroup>
-  <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\fsharp\msft.pubkey</AssemblyOriginatorKeyFile>
-    <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
-    <StrongNames>true</StrongNames>
-    <DelaySign>true</DelaySign>
-  </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
   <ItemGroup>
     <ProjectReference Include="..\FSharp.VS.FSI\FSharp.VS.FSI.fsproj">
@@ -56,7 +49,9 @@
     <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Framework.dll</HintPath>
     </Reference>
-    <Reference Include="microsoft.msxml" />
+    <Reference Include="microsoft.msxml">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.MSXML.8.0.0-alpha\lib\net46\microsoft.msxml.dll</HintPath>
+    </Reference>
     <Reference Include="System.Drawing" />
     <Reference Include="System" />
     <Reference Include="System.Core" />

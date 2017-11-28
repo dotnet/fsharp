@@ -306,7 +306,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         IReferenceContainerProvider,
         IVsProjectSpecialFiles, 
         IVsDesignTimeAssemblyResolution, 
-        IVsProjectUpgrade
+        IVsProjectUpgrade,
+        IVsSupportItemHandoff
     {
         /// <summary>
         /// This class stores mapping from ids -> objects. Uses as a replacement of EventSinkCollection (ESC)
@@ -5398,10 +5399,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             if (oldMkDoc == null || newMkDoc == null)
                 return VSConstants.E_INVALIDARG;
 
-            // Fail if the document names passed are equal.
-            if (oldMkDoc == newMkDoc)
-                return VSConstants.E_INVALIDARG;
-
             int hr = VSConstants.S_OK;
             VSDOCUMENTPRIORITY[] priority = new VSDOCUMENTPRIORITY[1];
             uint itemid = VSConstants.VSITEMID_NIL;
@@ -6613,6 +6610,16 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
             }
             return hierarchy;
+        }
+
+        public int HandoffItem(uint itemid, IVsProject3 pProjDest, string pszMkDocumentOld, string pszMkDocumentNew, IVsWindowFrame punkWindowFrame)
+        {
+            if (pProjDest == null)
+            {
+                return VSConstants.E_POINTER;
+            }
+
+            return pProjDest.TransferItem(pszMkDocumentOld, pszMkDocumentNew, punkWindowFrame);
         }
     }
     internal enum AddItemContext
