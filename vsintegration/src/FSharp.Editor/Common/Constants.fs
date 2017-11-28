@@ -19,10 +19,6 @@ module internal FSharpConstants =
     let languageServiceGuidString = "BC6DD5A5-D4D6-4dab-A00D-A51242DBAF1B"
     
     [<Literal>]
-    /// "4EB7CCB7-4336-4FFD-B12B-396E9FD079A9"
-    let editorFactoryGuidString = "4EB7CCB7-4336-4FFD-B12B-396E9FD079A9"
-    
-    [<Literal>]
     /// "F#"
     let FSharpLanguageName = "F#"
     

@@ -249,7 +249,6 @@
     <!-- GuidSymbol name="guidFsiPkg" value="{eeeeeeee-9342-42f1-8ea9-42f0e8a6be55}" /-->  <!-- fsi package guid    -->
     <GuidSymbol name="guidFsiPkg" value="{91A04A73-4F2C-4E7C-AD38-C1A68E7DA05C}" />        <!-- project system guid -->
 
-    <GuidSymbol name="guidEditorFactory"      value="{4EB7CCB7-4336-4FFD-B12B-396E9FD079A9}" /> <!-- Linked to constants in project system -->
     <GuidSymbol name="guidFSharpEditorFactory" value="{8a5aa6cf-46e3-4520-a70a-7393d15233e9}" /> <!-- FSharpEditorFactory Guid --> 
     <GuidSymbol name="GUID_CMDSETID_StandardCommandSet2K" value="{1496A755-94DE-11D0-8C3F-00C04FC2AAE2}" /> <!-- See stdidcmd.h -->
     <GuidSymbol name="guidFsiToolWindow"      value="{dee22b65-9761-4a26-8fb2-759b971d6dfc}" />
