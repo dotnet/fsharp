@@ -505,6 +505,12 @@
     <Compile Include="..\IlxGen.fs">
       <Link>CodeGen\IlxGen.fs</Link>
     </Compile>
+    <Compile Include="..\DependencyManager.Integration.fsi">
+      <Link>Driver\DependencyManager.Integration.fsi</Link>
+    </Compile>
+    <Compile Include="..\DependencyManager.Integration.fs">
+      <Link>Driver\DependencyManager.Integration.fs</Link>
+    </Compile>
 
     <!-- includes the core of the F# Compiler fsc.exe implementation -->
     <Compile Include="..\CompileOps.fsi">
@@ -680,6 +686,13 @@
   </ItemGroup>
   <ItemGroup Condition="'$(TargetDotnetProfile)' == 'coreclr'">
     <None Include="project.json" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' != 'coreclr'">
+    <ProjectReference Include="..\FSharp.DependencyManager.Paket\FSharp.DependencyManager.Paket.fsproj">
+      <Name>FSharp.DependencyManager.Paket</Name>
+      <Project>{25555554-522d-4cf7-97e4-ba940f0b18f3}</Project>
+      <Private>True</Private>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup Condition="'$(TargetDotnetProfile)' != 'coreclr'">
     <Reference Include="mscorlib" />

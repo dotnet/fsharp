@@ -1,0 +1,7 @@
+FRAMEWORK: NET461
+
+GROUP Test
+FRAMEWORK: NET461
+NUGET
+  remote: https://www.nuget.org/api/v2
+    NUnit (3.6.1)
