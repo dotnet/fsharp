@@ -228,8 +228,7 @@ module Structure =
             | SynExpr.DotIndexedGet (e,_,_,_)
             | SynExpr.DotIndexedSet (e,_,_,_,_,_) -> parseExpr e
             | SynExpr.New (_,_,expr,r) ->
-                let collapse = Range.endToEnd expr.Range r
-                rcheck Scope.New Collapse.Below r collapse
+                rcheck Scope.New Collapse.Below r expr.Range
                 parseExpr expr
             | SynExpr.YieldOrReturn (_,e,r) ->
                 rcheck Scope.YieldOrReturn Collapse.Below r r
