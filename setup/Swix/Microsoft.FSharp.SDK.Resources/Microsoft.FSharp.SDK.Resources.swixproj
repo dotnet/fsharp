@@ -36,7 +36,7 @@
     <Package Include="Files.swr" />
   </ItemGroup>
   
-  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize">
+  <Target Name="GatherBinariesToBeSigned" AfterTargets="CopyFilesToOutputDirectory">
     <!-- MSI is already signed before wrapping it here -->
   </Target>
   
