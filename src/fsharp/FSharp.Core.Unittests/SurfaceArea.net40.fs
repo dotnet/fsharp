@@ -435,7 +435,7 @@ Microsoft.FSharp.Collections.SeqModule: Microsoft.FSharp.Core.FSharpOption`1[T] 
 Microsoft.FSharp.Collections.SeqModule: Microsoft.FSharp.Core.FSharpOption`1[T] TryHead[T](System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SeqModule: Microsoft.FSharp.Core.FSharpOption`1[T] TryItem[T](Int32, System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SeqModule: Microsoft.FSharp.Core.FSharpOption`1[T] TryLast[T](System.Collections.Generic.IEnumerable`1[T])
-Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[System.Collections.Generic.IEnumerable`1[T]] Transpose[T](System.Collections.Generic.IEnumerable`1[System.Collections.Generic.IEnumerable`1[T]])
+Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[System.Collections.Generic.IEnumerable`1[T]] Transpose[TCollection,T](System.Collections.Generic.IEnumerable`1[TCollection])
 Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[System.Tuple`2[System.Int32,T]] Indexed[T](System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[System.Tuple`2[T,T]] Pairwise[T](System.Collections.Generic.IEnumerable`1[T])
 Microsoft.FSharp.Collections.SeqModule: System.Collections.Generic.IEnumerable`1[System.Tuple`2[T1,T2]] AllPairs[T1,T2](System.Collections.Generic.IEnumerable`1[T1], System.Collections.Generic.IEnumerable`1[T2])

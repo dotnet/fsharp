@@ -1534,19 +1534,19 @@ type SeqModule2() =
         VerifySeqsEqual [seq ["a";"d"]; seq ["b";"e"]; seq ["c";"f"]] <| Seq.transpose (seq [seq ["a";"b";"c"]; seq ["d";"e";"f"]])
 
         // empty seq
-        VerifySeqsEqual [seq []] <| Seq.transpose (seq [])
+        VerifySeqsEqual Seq.empty <| Seq.transpose Seq.empty
 
         // seq of empty seqs - m x 0 seq transposes to 0 x m (i.e. empty)
-        VerifySeqsEqual [seq []] <| Seq.transpose (seq [seq []])
-        VerifySeqsEqual [seq []] <| Seq.transpose (seq [seq []; seq []])
+        VerifySeqsEqual Seq.empty <| Seq.transpose (seq [Seq.empty])
+        VerifySeqsEqual Seq.empty <| Seq.transpose (seq [Seq.empty; Seq.empty])
 
         // null seq
         let nullSeq = null : seq<seq<string>>
         CheckThrowsArgumentNullException (fun () -> Seq.transpose nullSeq |> ignore)
 
-        // infinite seq
-        let infiniteSeq = Seq.initInfinite (fun i -> Seq.initInfinite (fun j -> i + j))
-        VerifySeqsEqual (Seq.init 100 id) <| (Seq.transpose infiniteSeq |> Seq.head |> Seq.take 100)
+        // sequences of lists
+        VerifySeqsEqual [seq ["a";"c"]; seq ["b";"d"]] <| Seq.transpose [["a";"b"]; ["c";"d"]]
+        VerifySeqsEqual [seq ["a";"c"]; seq ["b";"d"]] <| Seq.transpose (seq { yield ["a";"b"]; yield ["c";"d"] })
 
     [<Test>]
     member this.Truncate() =
