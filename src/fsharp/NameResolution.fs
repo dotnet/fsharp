@@ -3848,7 +3848,10 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
            | FullyQualified -> []
            | OpenQualified ->
                nenv.eUnqualifiedItems.Values
-               |> List.filter (function Item.UnqualifiedType _ -> false | _ -> true)
+               |> List.filter (function 
+                   | Item.UnqualifiedType _ -> false 
+                   | Item.Value v -> v.MemberInfo.IsNone // exclude members
+                   | _ -> true)
                |> List.filter (ItemIsUnseen ad g ncenv.amap m >> not)
 
        let activePatternItems = 
