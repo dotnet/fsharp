@@ -6164,10 +6164,14 @@ let mkCallArray2DSet (g:TcGlobals) m ty e1 idx1 idx2 v         = mkApps g (typed
 let mkCallArray3DSet (g:TcGlobals) m ty e1 idx1 idx2 idx3 v    = mkApps g (typedExprForIntrinsic g m g.array3D_set_info, [[ty]], [ e1 ; idx1; idx2; idx3; v ], m)
 let mkCallArray4DSet (g:TcGlobals) m ty e1 idx1 idx2 idx3 idx4 v = mkApps g (typedExprForIntrinsic g m g.array4D_set_info, [[ty]], [ e1 ; idx1; idx2; idx3; idx4; v ], m)
 
+let mkCallBox        (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.box_info,       [[ty]], [ e1 ], m)
+let mkCallIsNull     (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.isnull_info,    [[ty]], [ e1 ], m)
+let mkCallIsNotNull  (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.isnotnull_info, [[ty]], [ e1 ], m)
+let mkCallRaise      (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.raise_info,     [[ty]], [ e1 ], m)
+
 let mkCallNewDecimal (g:TcGlobals) m (e1, e2, e3, e4, e5)          = mkApps g (typedExprForIntrinsic g m g.new_decimal_info, [], [ e1;e2;e3;e4;e5 ], m)
 
 let mkCallNewFormat (g:TcGlobals) m aty bty cty dty ety e1    = mkApps g (typedExprForIntrinsic g m g.new_format_info, [[aty;bty;cty;dty;ety]], [ e1 ], m)
-let mkCallRaise     (g:TcGlobals) m aty e1    = mkApps g (typedExprForIntrinsic g m g.raise_info, [[aty]], [ e1 ], m)
 
 let TryEliminateDesugaredConstants g m c = 
     match c with 

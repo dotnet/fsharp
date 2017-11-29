@@ -270,7 +270,7 @@ type public FSharpCheckProjectResults =
     member AssemblyContents: FSharpAssemblyContents
 
     /// Get an optimized view of the overall contents of the assembly. Only valid to use if HasCriticalErrors is false.
-    member OptimizedAssemblyContents: FSharpAssemblyContents
+    member GetOptimizedAssemblyContents: unit -> FSharpAssemblyContents
 
     /// Get the resolution of the ProjectOptions 
     member ProjectContext: FSharpProjectContext

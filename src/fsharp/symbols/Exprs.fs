@@ -237,7 +237,7 @@ module FSharpExprConvert =
         | AI_conv_ovf basicTy
         | AI_conv_ovf_un basicTy ->
             match basicTy with
-            | DT_R  -> None
+            | DT_R  -> Some mkCallToDoubleOperator
             | DT_I1 -> Some mkCallToSByteOperator
             | DT_U1 -> Some mkCallToByteOperator
             | DT_I2 -> Some mkCallToInt16Operator
@@ -586,8 +586,31 @@ module FSharpExprConvert =
                 let argR = ConvExpr cenv env arg
                 E.ILFieldSet(None, typR, fspec.Name, argR) 
 
+            | TOp.ILAsm([ ], _), _, [arg] -> 
+                ConvExprPrim cenv env arg
+
+            | TOp.ILAsm([ I_box _ ], _), [ty], [arg] -> 
+                let op = mkCallBox cenv.g m ty arg
+                ConvExprPrim cenv env op
+
+            | TOp.ILAsm([ I_unbox_any _ ], _), [ty], [arg] -> 
+                let op = mkCallUnbox cenv.g m ty arg
+                ConvExprPrim cenv env op
+
+            | TOp.ILAsm([ I_isinst _ ], _), [ty], [arg] -> 
+                let op = mkCallTypeTest cenv.g m ty arg
+                ConvExprPrim cenv env op
+
+            | TOp.ILAsm([ I_ldtoken _ ], _), [ty], _ -> 
+                let op = mkCallTypeOf cenv.g m ty
+                ConvExprPrim cenv env op
+
+            | TOp.ILAsm([ EI_ilzero _ ], _), [ty], _ -> 
+                E.DefaultValue (ConvType cenv ty)
+
             | TOp.ILAsm([ AI_ldnull; AI_cgt_un ], _), _, [arg] -> 
                 let elemTy = tyOfExpr cenv.g arg
+                // let op = mkCallIsNotNull cenv.g m elemTy arg
                 let nullVal = mkNull m elemTy
                 let op = mkCallNotEqualsOperator cenv.g m elemTy arg nullVal
                 ConvExprPrim cenv env op
@@ -619,6 +642,7 @@ module FSharpExprConvert =
                 let op = binaryOp cenv.g m ty arg1 arg2
                 ConvExprPrim cenv env op
 
+            | TOp.ILAsm([ ILConvertOp _ ; ILConvertOp convertOp ], _), _, [arg]
             | TOp.ILAsm([ ILConvertOp convertOp ], _), _, [arg] -> 
                 let ty = tyOfExpr cenv.g arg
                 let op = convertOp cenv.g m ty arg

@@ -588,6 +588,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_nativeint_operator_info    = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "nativeint"                            , None                 , Some "ToIntPtr",  [vara],   ([[varaTy]], v_nativeint_ty)) 
   let v_unativeint_operator_info   = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "unativeint"                           , None                 , Some "ToUIntPtr", [vara],   ([[varaTy]], v_unativeint_ty))
 
+  let v_box_info                   = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "box"                                  , None                 , Some "Box"    , [vara],     ([[varaTy]], v_obj_ty))
+  let v_isnull_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "isNull"                               , None                 , Some "IsNull" , [vara],     ([[varaTy]], v_bool_ty))
+  let v_isnotnull_info             = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "isNotNull"                            , None              , Some "IsNotNull" , [vara],     ([[varaTy]], v_bool_ty))
   let v_raise_info                 = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "raise"                                , None                 , Some "Raise"  , [vara],     ([[mkSysNonGenericTy sys "Exception"]], varaTy))  
   let v_failwith_info              = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "failwith"                             , None               , Some "FailWith" , [vara],     ([[v_string_ty]], varaTy))  
   let v_invalid_arg_info           = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "invalidArg"                           , None             , Some "InvalidArg" , [vara],     ([[v_string_ty]; [v_string_ty]], varaTy))  
@@ -1183,6 +1186,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.greater_than_operator       = v_greater_than_operator_info
   member __.greater_than_or_equals_operator = v_greater_than_or_equals_operator_info
 
+  member __.box_info                   = v_box_info
+  member __.isnull_info                = v_isnull_info
+  member __.isnotnull_info             = v_isnotnull_info
   member __.raise_info                 = v_raise_info
   member __.failwith_info              = v_failwith_info
   member __.invalid_arg_info           = v_invalid_arg_info

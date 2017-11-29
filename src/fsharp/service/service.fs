@@ -1821,9 +1821,9 @@ type FSharpCheckProjectResults(projectFileName:string, tcConfigOption, keepAssem
 
     member info.AssemblyContents = FSharpAssemblyContents(info.TypedImplementionFiles)
 
-    member info.OptimizedAssemblyContents =  
+    member info.GetOptimizedAssemblyContents() =  
         let tcGlobals, thisCcu, tcImports, mimpls = info.TypedImplementionFiles
-        let outfile = null
+        let outfile = "" // only used if tcConfig.writeTermsToFiles is true
         let importMap = tcImports.GetImportMap()
         let optEnv0 = GetInitialOptimizationEnv (tcImports, tcGlobals)
         let tcConfig = getTcConfig()
