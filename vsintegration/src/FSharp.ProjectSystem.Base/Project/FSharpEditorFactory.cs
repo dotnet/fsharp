@@ -16,12 +16,15 @@ using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
+    // 64 represents a hex number. It needs to be greater than 37 so the TextMate editor will not be chosen as higher priority.
     [Guid(Constants.FSharpEditorFactoryIdString)]
     [ProvideEditorFactory(typeof(FSharpEditorFactory), 101, CommonPhysicalViewAttributes = (int)__VSPHYSICALVIEWATTRIBUTES.PVA_SupportsPreview)]
-    [ProvideEditorExtension(typeof(FSharpEditorFactory), ".fs", 32)]
-    [ProvideEditorExtension(typeof(FSharpEditorFactory), ".fsi", 32)]
-    [ProvideEditorExtension(typeof(FSharpEditorFactory), ".fsscript", 32)]
-    [ProvideEditorExtension(typeof(FSharpEditorFactory), ".fsx", 32)]
+    [ProvideEditorExtension(typeof(FSharpEditorFactory), ".fs", 64)]
+    [ProvideEditorExtension(typeof(FSharpEditorFactory), ".fsi", 64)]
+    [ProvideEditorExtension(typeof(FSharpEditorFactory), ".fsscript", 64)]
+    [ProvideEditorExtension(typeof(FSharpEditorFactory), ".fsx", 64)]
+    [ProvideEditorExtension(typeof(FSharpEditorFactory), ".ml", 64)]
+    [ProvideEditorExtension(typeof(FSharpEditorFactory), ".mli", 64)]
     public class FSharpEditorFactory : IVsEditorFactory
     {
         private Package _parentPackage;
