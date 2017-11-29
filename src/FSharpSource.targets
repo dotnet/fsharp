@@ -28,7 +28,7 @@
             <!-- In the open source "Mono" build we always fully sign the binaries with the public test.snk, apart from FSharp.Core, which gets the MSFT key -->
             <When Condition="'$(MonoPackaging)' == 'true' AND '$(AssemblyName)'!='FSharp.Core'" >
               <PropertyGroup>
-                <OtherFlags>$(OtherFlags) --keyfile:"$(FSharpSourcesRoot)\fsharp\test.snk"</OtherFlags>
+                <KeyOriginatorFile>$(FSharpSourcesRoot)\fsharp\test.snk</KeyOriginatorFile>
                 <DefineConstants>STRONG_NAME_FSHARP_COMPILER_WITH_TEST_KEY;$(DefineConstants)</DefineConstants>
                 <StrongNames>true</StrongNames>
                 <MicroBuildAssemblyVersion Condition="'$(MicroBuildAssemblyVersion)' == ''">$(FSCoreVersion)</MicroBuildAssemblyVersion>
@@ -39,9 +39,9 @@
             <!-- We have to do unit test DLLs well because they can see the internals of other strong-named DLLs -->
             <Otherwise>
               <PropertyGroup>
-                <OtherFlags Condition="'$(TargetDotnetProfile)' == 'coreclr' or $(BUILD_PUBLICSIGN) != '1'">$(OtherFlags) --delaysign+</OtherFlags>
-                <OtherFlags Condition="'$(TargetDotnetProfile)' != 'coreclr' and $(BUILD_PUBLICSIGN) == '1'">$(OtherFlags)  --publicsign+</OtherFlags>
-                <OtherFlags>$(OtherFlags) --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
+                <SignAssembly>true</SignAssembly>
+                <DelaySign>true</DelaySign>
+                <AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\fsharp\msft.pubkey</AssemblyOriginatorKeyFile>
                 <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
                 <StrongNames>true</StrongNames>
                 <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
