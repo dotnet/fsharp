@@ -1174,14 +1174,14 @@ type TypeCheckInfo
                           | _ -> None
                       | None -> None
                   
-                  | Item.ILField (ILFieldInfo (ILTypeInfo (tr, _, _, _) & typeInfo, fieldDef)) when not tr.IsLocalRef ->
+                  | Item.ILField (ILFieldInfo (typeInfo, fieldDef)) when not typeInfo.TyconRefOfRawMetadata.IsLocalRef ->
                       match typeInfo.ILScopeRef with
                       | ILScopeRef.Assembly assref ->
                           let externalSym = ExternalSymbol.Field (typeInfo.ILTypeRef.FullName, fieldDef.Name)
                           Some (FSharpFindDeclResult.ExternalDecl (assref.Name, externalSym))
                       | _ -> None
                   
-                  | Item.Event (ILEvent (_, ILEventInfo (ILTypeInfo (tr, _, _, _) & typeInfo, eventDef))) when not tr.IsLocalRef ->
+                  | Item.Event (ILEvent (_, ILEventInfo (typeInfo, eventDef))) when not typeInfo.TyconRefOfRawMetadata.IsLocalRef ->
                       match typeInfo.ILScopeRef with
                       | ILScopeRef.Assembly assref ->
                           let externalSym = ExternalSymbol.Event (typeInfo.ILTypeRef.FullName, eventDef.Name)

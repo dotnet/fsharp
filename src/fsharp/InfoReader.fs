@@ -47,9 +47,7 @@ let TrySelectMemberVal g optFilter typ pri _membInfo (vref:ValRef) =
     else 
         None
 
-/// Query the immediate methods of an F# type, not taking into account inherited methods. The optFilter
-/// parameter is an optional name to restrict the set of properties returned.
-let GetImmediateIntrinsicMethInfosOfType (optFilter,ad) g amap m typ =
+let rec GetImmediateIntrinsicMethInfosOfTypeAux (optFilter,ad) g amap m origTyp typ =
     let minfos =
 
         match metadataOfTy g typ with 
@@ -65,14 +63,26 @@ let GetImmediateIntrinsicMethInfosOfType (optFilter,ad) g amap m typ =
         | ILTypeMetadata (TILObjectReprData(_,_,tdef)) -> 
             let mdefs = tdef.Methods
             let mdefs = (match optFilter with None -> mdefs.AsList | Some nm -> mdefs.FindByName nm)
-            mdefs |> List.map (fun mdef -> MethInfo.CreateILMeth(amap, m, typ, mdef)) 
+            mdefs |> List.map (fun mdef -> MethInfo.CreateILMeth(amap, m, origTyp, mdef)) 
+
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
-            match tryDestAppTy g typ with
-            | None -> []
-            | Some tcref ->
-                SelectImmediateMemberVals g optFilter (TrySelectMemberVal g optFilter typ None) tcref
+            // Tuple types also support the properties Item1-8, Rest from the compiled tuple type
+            if isAnyTupleTy g typ then 
+                let (tupInfo, args) = destAnyTupleTy g typ 
+                let compiledTy = mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) args
+                GetImmediateIntrinsicMethInfosOfTypeAux (optFilter,ad) g amap m origTyp compiledTy
+            else
+                match tryDestAppTy g typ with
+                | None -> []
+                | Some tcref ->
+                    SelectImmediateMemberVals g optFilter (TrySelectMemberVal g optFilter typ None) tcref
     let minfos = minfos |> List.filter (IsMethInfoAccessible amap m ad)
     minfos
+
+/// Query the immediate methods of an F# type, not taking into account inherited methods. The optFilter
+/// parameter is an optional name to restrict the set of properties returned.
+let GetImmediateIntrinsicMethInfosOfType (optFilter,ad) g amap m typ = 
+    GetImmediateIntrinsicMethInfosOfTypeAux (optFilter,ad) g amap m typ typ
 
 /// A helper type to help collect properties.
 ///
@@ -86,7 +96,9 @@ type PropertyCollector(g,amap,m,typ,optFilter,ad) =
                 pinfo1.IsStatic = pinfo2.IsStatic &&
                 PropInfosEquivByNameAndPartialSig EraseNone g amap m pinfo1 pinfo2 &&
                 pinfo1.IsDefiniteFSharpOverride = pinfo2.IsDefiniteFSharpOverride )
+
     let props = new System.Collections.Generic.Dictionary<PropInfo,PropInfo>(hashIdentity)
+
     let add pinfo =
         if props.ContainsKey(pinfo) then 
             match props.[pinfo], pinfo with 
@@ -116,11 +128,9 @@ type PropertyCollector(g,amap,m,typ,optFilter,ad) =
 
     member x.Close() = [ for KeyValue(_,pinfo) in props -> pinfo ]
 
-/// Query the immediate properties of an F# type, not taking into account inherited properties. The optFilter
-/// parameter is an optional name to restrict the set of properties returned.
-let GetImmediateIntrinsicPropInfosOfType (optFilter,ad) g amap m typ =
-    let pinfos =
+let rec GetImmediateIntrinsicPropInfosOfTypeAux (optFilter,ad) g amap m origTyp typ =
 
+    let pinfos =
         match metadataOfTy g typ with 
 #if !NO_EXTENSIONTYPING
         | ProvidedTypeMetadata info -> 
@@ -137,14 +147,23 @@ let GetImmediateIntrinsicPropInfosOfType (optFilter,ad) g amap m typ =
             |> Seq.map(fun pi -> ProvidedProp(amap,pi,m)) 
             |> List.ofSeq
 #endif
+
         | ILTypeMetadata (TILObjectReprData(_,_,tdef)) -> 
-            let tinfo = ILTypeInfo.FromType g typ
+            let tinfo = ILTypeInfo.FromType g origTyp
             let pdefs = tdef.Properties
             let pdefs = match optFilter with None -> pdefs.AsList | Some nm -> pdefs.LookupByName nm
             pdefs |> List.map (fun pd -> ILProp(g,ILPropInfo(tinfo,pd))) 
+
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
+
             match tryDestAppTy g typ with
-            | None -> []
+            | None -> 
+                // Tuple types also support the properties Item1-8, Rest from the compiled tuple type
+                if isAnyTupleTy g typ then 
+                    let (tupInfo, args) = destAnyTupleTy g typ 
+                    GetImmediateIntrinsicPropInfosOfTypeAux (optFilter,ad) g amap m typ (mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) args)
+                else
+                    []
             | Some tcref ->
                 let propCollector = new PropertyCollector(g,amap,m,typ,optFilter,ad)
                 SelectImmediateMemberVals g None
@@ -155,6 +174,11 @@ let GetImmediateIntrinsicPropInfosOfType (optFilter,ad) g amap m typ =
     let pinfos = pinfos |> List.filter (IsPropInfoAccessible g amap m ad)
     pinfos
 
+/// Query the immediate properties of an F# type, not taking into account inherited properties. The optFilter
+/// parameter is an optional name to restrict the set of properties returned.
+let rec GetImmediateIntrinsicPropInfosOfType (optFilter,ad) g amap m typ =
+    GetImmediateIntrinsicPropInfosOfTypeAux (optFilter,ad) g amap m typ typ
+
 // Checks whether the given type has an indexer property.
 let IsIndexerType g amap typ = 
     isArray1DTy g typ ||
@@ -162,7 +186,7 @@ let IsIndexerType g amap typ =
     match tryDestAppTy g typ with
     | Some tcref ->
         let _, entityTy = generalizeTyconRef tcref
-        let props = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomeFSharpCode) g amap range0 entityTy 
+        let props = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomeFSharpCode) g amap range0 entityTy
         props |> List.exists (fun x -> x.PropertyName = "Item")
     | _ -> false
 
@@ -284,7 +308,7 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
         let optFilter = Some nm
         FoldPrimaryHierarchyOfType (fun typ acc -> 
              let minfos = GetImmediateIntrinsicMethInfosOfType (optFilter,ad) g amap m typ
-             let pinfos = GetImmediateIntrinsicPropInfosOfType (optFilter,ad) g amap m typ 
+             let pinfos = GetImmediateIntrinsicPropInfosOfType (optFilter,ad) g amap m typ
              let finfos = GetImmediateIntrinsicILFieldsOfType (optFilter,ad) m typ 
              let einfos = ComputeImmediateIntrinsicEventsOfType (optFilter,ad) m typ 
              let rfinfos = GetImmediateIntrinsicRecdOrClassFieldsOfType (optFilter,ad) m typ 

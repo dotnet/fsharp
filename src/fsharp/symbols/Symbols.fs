@@ -492,7 +492,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
            else
                for minfo in GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 entityTy do
                     yield createMember minfo
-           let props = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 entityTy 
+           let props = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 entityTy
            let events = cenv.infoReader.GetImmediateIntrinsicEventsOfType (None, AccessibleFromSomeFSharpCode, range0, entityTy)
            for pinfo in props do
                 yield FSharpMemberOrFunctionOrValue(cenv, P pinfo, Item.Property (pinfo.PropertyName, [pinfo]))
@@ -1432,7 +1432,8 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             let eventName = m.LogicalName.[4..]
             let entityTy = generalizedTyconRef m.DeclaringEntityRef
             not (isNil (cenv.infoReader.GetImmediateIntrinsicEventsOfType (Some eventName, AccessibleFromSomeFSharpCode, range0, entityTy))) ||
-            match GetImmediateIntrinsicPropInfosOfType(Some eventName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 (generalizedTyconRef m.DeclaringEntityRef) with 
+            let declaringTy = generalizedTyconRef m.DeclaringEntityRef
+            match GetImmediateIntrinsicPropInfosOfType (Some eventName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 declaringTy with 
             | pinfo :: _  -> pinfo.IsFSharpEventProperty
             | _ -> false
 
@@ -1445,7 +1446,8 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             let eventName = m.LogicalName.[7..]
             let entityTy = generalizedTyconRef m.DeclaringEntityRef
             not (isNil (cenv.infoReader.GetImmediateIntrinsicEventsOfType (Some eventName, AccessibleFromSomeFSharpCode, range0, entityTy))) ||
-            match GetImmediateIntrinsicPropInfosOfType(Some eventName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 (generalizedTyconRef m.DeclaringEntityRef) with 
+            let declaringTy = generalizedTyconRef m.DeclaringEntityRef
+            match GetImmediateIntrinsicPropInfosOfType (Some eventName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 declaringTy with 
             | pinfo :: _ -> pinfo.IsFSharpEventProperty
             | _ -> false
         | _ -> false
@@ -1469,7 +1471,8 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match d with 
         | M m when m.LogicalName.StartsWith("get_") -> 
             let propName = PrettyNaming.ChopPropertyName(m.LogicalName) 
-            not (isNil (GetImmediateIntrinsicPropInfosOfType(Some propName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 (generalizedTyconRef m.DeclaringEntityRef)))
+            let declaringTy = generalizedTyconRef m.DeclaringEntityRef
+            not (isNil (GetImmediateIntrinsicPropInfosOfType (Some propName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 declaringTy))
         | V v -> v.IsPropertyGetterMethod
         | _ -> false
 
@@ -1479,7 +1482,8 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         // Look for a matching property with the right name. 
         | M m when m.LogicalName.StartsWith("set_") -> 
             let propName = PrettyNaming.ChopPropertyName(m.LogicalName) 
-            not (isNil (GetImmediateIntrinsicPropInfosOfType(Some propName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 (generalizedTyconRef m.DeclaringEntityRef)))
+            let declaringTy = generalizedTyconRef m.DeclaringEntityRef
+            not (isNil (GetImmediateIntrinsicPropInfosOfType (Some propName, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 declaringTy))
         | V v -> v.IsPropertySetterMethod
         | _ -> false
 

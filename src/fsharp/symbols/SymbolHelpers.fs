@@ -586,7 +586,7 @@ module internal SymbolHelpers =
             | None -> None
             | Some vref -> GetXmlDocSigOfScopedValRef g tcref vref
         | ILProp(g, (ILPropInfo(tinfo, pdef))) -> 
-            let tcref = tinfo.TyconRef
+            let tcref = tinfo.TyconRefOfRawMetadata
             match metaInfoOfEntityRef infoReader m tcref  with
             | Some (ccuFileName, formalTypars, formalTypeInfo) ->
                 let filpinfo = ILPropInfo(formalTypeInfo, pdef)
@@ -597,7 +597,7 @@ module internal SymbolHelpers =
         match einfo with
         | ILEvent(_, ilEventInfo) ->
             let tinfo = ilEventInfo.ILTypeInfo 
-            let tcref = tinfo.TyconRef 
+            let tcref = tinfo.TyconRefOfRawMetadata 
             match metaInfoOfEntityRef infoReader m tcref  with 
             | Some (ccuFileName, _, formalTypeInfo) -> 
                 Some(ccuFileName, "E:"+formalTypeInfo.ILTypeRef.FullName+"."+einfo.EventName)
@@ -1336,7 +1336,7 @@ module internal SymbolHelpers =
         | Item.ILField finfo ->   
              match finfo with 
              | ILFieldInfo(tinfo, fdef) -> 
-                 (tinfo.TyconRef |> ticksAndArgCountTextOfTyconRef)+"."+fdef.Name |> Some
+                 (tinfo.TyconRefOfRawMetadata |> ticksAndArgCountTextOfTyconRef)+"."+fdef.Name |> Some
 #if !NO_EXTENSIONTYPING
              | ProvidedField _ -> None
 #endif
@@ -1388,7 +1388,7 @@ module internal SymbolHelpers =
                 | ParentNone -> None
 
             | ILProp(_, (ILPropInfo(tinfo, pdef))) -> 
-                let tcref = tinfo.TyconRef
+                let tcref = tinfo.TyconRefOfRawMetadata
                 (tcref |> ticksAndArgCountTextOfTyconRef)+"."+pdef.Name |> Some
             | FSProp _ -> None
 #if !NO_EXTENSIONTYPING
@@ -1400,7 +1400,7 @@ module internal SymbolHelpers =
             match einfo with 
             | ILEvent(_, ilEventInfo)  ->
                 let tinfo = ilEventInfo.ILTypeInfo
-                let tcref = tinfo.TyconRef 
+                let tcref = tinfo.TyconRefOfRawMetadata 
                 (tcref |> ticksAndArgCountTextOfTyconRef)+"."+einfo.EventName |> Some
             | FSEvent(_, pinfo, _, _) ->
                 match pinfo.ArbitraryValRef with 

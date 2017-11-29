@@ -165,8 +165,8 @@ let private IsILTypeInfoAccessible amap m ad (tcrefOfViewedItem : TyconRef) =
     check None (enc @ [tdef])
                        
 /// Indicates if an IL member associated with the given ILType is accessible
-let private IsILTypeAndMemberAccessible g amap m adType ad (ILTypeInfo(tcrefOfViewedItem, _, _, _)) access = 
-    IsILTypeInfoAccessible amap m adType tcrefOfViewedItem && IsILMemberAccessible g amap m tcrefOfViewedItem ad access
+let private IsILTypeAndMemberAccessible g amap m adType ad (typ: ILTypeInfo) access = 
+    IsILTypeInfoAccessible amap m adType typ.TyconRefOfRawMetadata && IsILMemberAccessible g amap m typ.TyconRefOfRawMetadata ad access
 
 /// Indicates if an entity is accessible
 let IsEntityAccessible amap m ad (tcref:TyconRef) = 

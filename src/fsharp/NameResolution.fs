@@ -3461,6 +3461,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
             not x.IsSpecialName &&
             x.IsStatic = statics && 
             IsILFieldInfoAccessible g amap m ad x)
+
     let pinfosIncludingUnseen = 
         AllPropInfosOfTypeInScope ncenv.InfoReader nenv (None,ad) PreferOverrides m typ
         |> List.filter (fun x -> 
@@ -3499,6 +3500,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
             match completionTargets with
             | ResolveCompletionTargets.All x -> x
             | _ -> failwith "internal error: expected completionTargets = ResolveCompletionTargets.All"
+
         // Only show the Finalize, MemberwiseClose etc. methods on System.Object for values whose static type really is 
         // System.Object. Few of these are typically used from F#.  
         //
@@ -3523,6 +3525,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
             | _ -> 
                 // filter out self methods of obj type
                 isObjTy g minfo.EnclosingType
+
         let result = 
             not isUnseenDueToBasicObjRules &&
             not minfo.IsInstance = statics &&
@@ -3534,6 +3537,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
             not (minfo.LogicalName = ".ctor") &&
             isApplicableMeth minfo typ &&
             not (suppressedMethNames.Contains minfo.LogicalName)
+
         result
 
     let pinfoItems = 

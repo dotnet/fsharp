@@ -663,30 +663,49 @@ let ArbitraryMethodInfoOfPropertyInfo (pi:Tainted<ProvidedPropertyInfo>) m =
 [<NoComparison; NoEquality>]
 type ILTypeInfo = 
     /// ILTypeInfo (tyconRef, ilTypeRef, typeArgs, ilTypeDef).
-    | ILTypeInfo of TyconRef * ILTypeRef * TypeInst * ILTypeDef
+    | ILTypeInfo of TcGlobals * TType * ILTypeRef * ILTypeDef
 
-    member x.TyconRef    = let (ILTypeInfo(tcref,_,_,_)) = x in tcref
-    member x.ILTypeRef   = let (ILTypeInfo(_,tref,_,_))  = x in tref
-    member x.TypeInst    = let (ILTypeInfo(_,_,tinst,_)) = x in tinst
+    member x.TcGlobals = let (ILTypeInfo(g,_,_,_)) = x in g
+    member x.ILTypeRef   = let (ILTypeInfo(_,_,tref,_))  = x in tref
+
+    member x.RawType = 
+        let (ILTypeInfo(g,ty,_,_)) = x 
+        if isAnyTupleTy g ty then 
+            let (tupInfo, args) = destAnyTupleTy g ty
+            mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) args
+        else ty
+
+    member x.TyconRefOfRawMetadata = tcrefOfAppTy x.TcGlobals x.RawType
+    member x.TypeInstOfRawMetadata = argsOfAppTy x.TcGlobals x.RawType
+
     member x.RawMetadata = let (ILTypeInfo(_,_,_,tdef))  = x in tdef
-    member x.ToType   = TType_app(x.TyconRef,x.TypeInst)
+    member x.ToType   = let (ILTypeInfo(_,ty,_,_)) = x in ty
     member x.ILScopeRef = x.ILTypeRef.Scope
     member x.Name     = x.ILTypeRef.Name
     member x.IsValueType = x.RawMetadata.IsStructOrEnum
     member x.Instantiate inst = 
-        let (ILTypeInfo(tcref,tref,tinst,tdef)) = x 
-        ILTypeInfo(tcref,tref,instTypes inst tinst,tdef)
+        let (ILTypeInfo(g,ty,tref,tdef)) = x 
+        ILTypeInfo(g,instType inst ty,tref,tdef)
 
-    member x.FormalTypars m = x.TyconRef.Typars m
+    //member x.FormalTypars m = x.TyconRef.Typars m
 
     static member FromType g ty = 
-        if isILAppTy g ty then 
-            let tcref,tinst = destAppTy g ty
+        if isAnyTupleTy g ty then 
+            let (tupInfo, args) = destAnyTupleTy g ty
+            let compiledTy = mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) args
+            assert (isILAppTy g compiledTy)
+            let compiledTyconRef = tcrefOfAppTy g compiledTy
+            let (TILObjectReprData(scoref,enc,tdef)) = compiledTyconRef.ILTyconInfo
+            let compiledILTypeRef = mkRefForNestedILTypeDef scoref (enc,tdef)
+            ILTypeInfo(g,ty,compiledILTypeRef,tdef)
+            
+        elif isILAppTy g ty then 
+            let tcref = tcrefOfAppTy g ty
             let (TILObjectReprData(scoref,enc,tdef)) = tcref.ILTyconInfo
             let tref = mkRefForNestedILTypeDef scoref (enc,tdef)
-            ILTypeInfo(tcref,tref,tinst,tdef)
+            ILTypeInfo(g,ty,tref,tdef)
         else 
-            failwith "ILTypeInfo.FromType"
+            failwith "ILTypeInfo.FromType - no IL metadata for type"
 
 //-------------------------------------------------------------------------
 // ILMethInfo
@@ -706,9 +725,18 @@ type ILMethInfo =
     member x.TcGlobals = match x with ILMethInfo(g,_,_,_,_) -> g
 
     /// Get the apparent declaring type of the method as an F# type. 
-    /// If this is an C#-style extension method then this is the type which the method 
+    /// If this is a C#-style extension method then this is the type which the method 
     /// appears to extend. This may be a variable type.
     member x.ApparentEnclosingType = match x with ILMethInfo(_,ty,_,_,_) -> ty
+
+    /// Like ApparentEnclosingType but use the compiled nominal type if this is a method on a tuple type
+    member x.ApparentEnclosingAppType =
+        let g = x.TcGlobals 
+        let enclTy = x.ApparentEnclosingType
+        if isAnyTupleTy g enclTy then 
+            let (tupInfo, args) = destAnyTupleTy g enclTy
+            mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) args
+        else enclTy
 
     /// Get the declaring type associated with an extension member, if any.
     member x.DeclaringTyconRefOption = match x with ILMethInfo(_,_,tcrefOpt,_,_) -> tcrefOpt
@@ -730,13 +758,14 @@ type ILMethInfo =
     member x.DeclaringTyconRef   = 
         match x.DeclaringTyconRefOption with 
         | Some tcref -> tcref 
-        | None -> tcrefOfAppTy x.TcGlobals x.ApparentEnclosingType
+        | None -> tcrefOfAppTy x.TcGlobals  x.ApparentEnclosingAppType
 
     /// Get the instantiation of the declaring type of the method. 
     /// If this is an C#-style extension method then this is empty because extension members
     /// are never in generic classes.
     member x.DeclaringTypeInst   = 
-        if x.IsILExtensionMethod then [] else argsOfAppTy x.TcGlobals x.ApparentEnclosingType
+        if x.IsILExtensionMethod then [] 
+        else argsOfAppTy x.TcGlobals x.ApparentEnclosingAppType
 
     /// Get the Abstract IL scope information associated with interpreting the Abstract IL metadata that backs this method.
     member x.MetadataScope   = x.DeclaringTyconRef.CompiledRepresentationForNamedType.Scope
@@ -873,13 +902,19 @@ type MethInfo =
     /// This may be a variable type.
     member x.EnclosingType = 
         match x with
-        | ILMeth(_g,ilminfo,_) -> ilminfo.ApparentEnclosingType
-        | FSMeth(_g,typ,_,_) -> typ
-        | DefaultStructCtor(_g,typ) -> typ
+        | ILMeth(_,ilminfo,_) -> ilminfo.ApparentEnclosingType
+        | FSMeth(_,typ,_,_) -> typ
+        | DefaultStructCtor(_,typ) -> typ
 #if !NO_EXTENSIONTYPING
         | ProvidedMeth(amap,mi,_,m) -> 
               Import.ImportProvidedType amap m (mi.PApply((fun mi -> mi.DeclaringType),m))
 #endif
+
+    /// Get the enclosing type of the method info, using a nominal type for tuple types
+    member x.EnclosingAppType = 
+        match x with
+        | ILMeth(_,ilminfo,_) -> ilminfo.ApparentEnclosingAppType
+        | _ -> x.EnclosingType
 
     /// Get the declaring type or module holding the method. If this is an C#-style extension method then this is the type
     /// holding the static member that is the extension method. If this is an F#-style extension method it is the logical module
@@ -888,7 +923,7 @@ type MethInfo =
         match x with 
         | ILMeth(_,ilminfo,_) when x.IsExtensionMember  -> ilminfo.DeclaringTyconRef
         | FSMeth(_,_,vref,_) when x.IsExtensionMember && vref.HasTopValActualParent -> vref.TopValActualParent
-        | _ -> tcrefOfAppTy x.TcGlobals x.EnclosingType 
+        | _ -> tcrefOfAppTy x.TcGlobals x.EnclosingAppType 
 
     /// Get the information about provided static parameters, if any 
     member x.ProvidedStaticParameterInfo = 
@@ -964,7 +999,7 @@ type MethInfo =
     /// 
     /// For extension members this is empty (the instantiation of the declaring type). 
     member x.DeclaringTypeInst = 
-        if x.IsExtensionMember then [] else argsOfAppTy x.TcGlobals x.EnclosingType
+        if x.IsExtensionMember then [] else argsOfAppTy x.TcGlobals x.EnclosingAppType
 
     /// Get the TcGlobals value that governs the method declaration
     member x.TcGlobals = 
@@ -1177,7 +1212,7 @@ type MethInfo =
     // but is compiled as a generic methods with two type arguments
     //     Map<'T,'U>(this: List<'T>, f : 'T -> 'U)
     member x.AdjustUserTypeInstForFSharpStyleIndexedExtensionMembers(tyargs) =  
-        (if x.IsFSharpStyleExtensionMember then argsOfAppTy x.TcGlobals x.EnclosingType else []) @ tyargs 
+        (if x.IsFSharpStyleExtensionMember then argsOfAppTy x.TcGlobals x.EnclosingAppType else []) @ tyargs 
 
     /// Indicates if this method is a generated method associated with an F# CLIEvent property compiled as a .NET event
     member x.IsFSharpEventPropertyMethod = 
@@ -1200,8 +1235,8 @@ type MethInfo =
     /// Build IL method infos.  
     static member CreateILMeth (amap:Import.ImportMap, m, typ:TType, md: ILMethodDef) =     
         let tinfo = ILTypeInfo.FromType amap.g typ
-        let mtps = Import.ImportILGenericParameters (fun () -> amap) m tinfo.ILScopeRef tinfo.TypeInst md.GenericParams
-        ILMeth (amap.g,ILMethInfo(amap.g,tinfo.ToType,None,md,mtps),None)
+        let mtps = Import.ImportILGenericParameters (fun () -> amap) m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata md.GenericParams
+        ILMeth (amap.g,ILMethInfo(amap.g, typ, None, md, mtps),None)
 
     /// Build IL method infos for a C#-style extension method
     static member CreateILExtensionMeth (amap, m, apparentTy:TType, declaringTyconRef:TyconRef, extMethPri, md: ILMethodDef) =     
@@ -1452,7 +1487,7 @@ type MethInfo =
             // happens to make the return type 'unit' (i.e. it was originally a variable type 
             // then that does not correspond to a slotsig compiled as a 'void' return type. 
             // REVIEW: should we copy down attributes to slot params? 
-            let tcref =  tcrefOfAppTy g x.EnclosingType
+            let tcref =  tcrefOfAppTy g x.EnclosingAppType
             let formalEnclosingTyparsOrig = tcref.Typars(m)
             let formalEnclosingTypars = copyTypars formalEnclosingTyparsOrig
             let _,formalEnclosingTyparTys = FixupNewTypars m [] [] formalEnclosingTyparsOrig formalEnclosingTypars
@@ -1462,10 +1497,10 @@ type MethInfo =
                 match x with
                 | ILMeth(_,ilminfo,_) -> 
                     let ftinfo = ILTypeInfo.FromType g (TType_app(tcref,formalEnclosingTyparTys))
-                    let formalRetTy = ImportReturnTypeFromMetaData amap m ilminfo.RawMetadata.Return.Type ftinfo.ILScopeRef ftinfo.TypeInst formalMethTyparTys
+                    let formalRetTy = ImportReturnTypeFromMetaData amap m ilminfo.RawMetadata.Return.Type ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys
                     let formalParams = 
                         [ [ for p in ilminfo.RawMetadata.Parameters do 
-                                let paramType = ImportILTypeFromMetadata amap m ftinfo.ILScopeRef ftinfo.TypeInst formalMethTyparTys p.Type
+                                let paramType = ImportILTypeFromMetadata amap m ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys p.Type
                                 yield TSlotParam(p.Name, paramType, p.IsIn, p.IsOut, p.IsOptional, []) ] ]
                     formalRetTy, formalParams
 #if !NO_EXTENSIONTYPING
@@ -1540,7 +1575,7 @@ type MethInfo =
                 (tcrefOfAppTy g typ).Typars(m)
 #if !NO_EXTENSIONTYPING
             | ProvidedMeth (amap,_,_,_) -> 
-                (tcrefOfAppTy amap.g x.EnclosingType).Typars(m)
+                (tcrefOfAppTy amap.g x.EnclosingAppType).Typars(m)
 #endif
 
 //-------------------------------------------------------------------------
@@ -1576,10 +1611,10 @@ type ILFieldInfo =
      /// Get the scope used to interpret IL metadata
     member x.ScopeRef = x.ILTypeRef.Scope
 
-     /// Get the type instantiation of the declaring type of the field 
+    /// Get the type instantiation of the declaring type of the field 
     member x.TypeInst = 
         match x with 
-        | ILFieldInfo(tinfo,_) -> tinfo.TypeInst
+        | ILFieldInfo(tinfo,_) -> tinfo.TypeInstOfRawMetadata
 #if !NO_EXTENSIONTYPING
         | ProvidedField _ -> [] /// GENERIC TYPE PROVIDERS
 #endif
@@ -1647,7 +1682,7 @@ type ILFieldInfo =
      /// Get the type of the field as an F# type
     member x.FieldType(amap,m) = 
         match x with 
-        | ILFieldInfo (tinfo,fdef) -> ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInst [] fdef.Type
+        | ILFieldInfo (tinfo,fdef) -> ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] fdef.Type
 #if !NO_EXTENSIONTYPING
         | ProvidedField(amap,fi,m) -> Import.ImportProvidedType amap m (fi.PApply((fun fi -> fi.FieldType),m))
 #endif
@@ -1780,21 +1815,21 @@ type ILPropInfo =
     /// Any type parameters of the enclosing type are instantiated in the type returned.
     member x.GetParamNamesAndTypes(amap,m) = 
         let (ILPropInfo (tinfo,pdef)) = x
-        pdef.Args |> List.map (fun ty -> ParamNameAndType(None, ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInst [] ty) )
+        pdef.Args |> List.map (fun ty -> ParamNameAndType(None, ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] ty) )
 
     /// Get the types of the indexer arguments associated with the IL property.
     ///
     /// Any type parameters of the enclosing type are instantiated in the type returned.
     member x.GetParamTypes(amap,m) = 
         let (ILPropInfo (tinfo,pdef)) = x
-        pdef.Args |> List.map (fun ty -> ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInst [] ty) 
+        pdef.Args |> List.map (fun ty -> ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] ty) 
 
     /// Get the return type of the IL property.
     ///
     /// Any type parameters of the enclosing type are instantiated in the type returned.
     member x.GetPropertyType (amap,m) = 
         let (ILPropInfo (tinfo,pdef)) = x
-        ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInst [] pdef.Type
+        ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] pdef.Type
 
     override x.ToString() = x.ILTypeInfo.ToString() + "::" + x.PropertyName
 
@@ -2295,7 +2330,7 @@ type EventInfo =
             // Get the delegate type associated with an IL event, taking into account the instantiation of the
             // declaring type.
             if Option.isNone edef.Type then error (nonStandardEventError x.EventName m)
-            ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInst [] edef.Type.Value
+            ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] edef.Type.Value
 
         | FSEvent(g,p,_,_) -> 
             FindDelegateTypeOfPropertyEvent g amap x.EventName m (p.GetPropertyType(amap,m))
@@ -2345,7 +2380,7 @@ let CompiledSigOfMeth g amap m (minfo:MethInfo) =
     // of the enclosing type. For example, they may have constraints involving the _formal_ type parameters 
     // of the enclosing type. This instantiations can be used to interpret those type parameters 
     let fmtpinst = 
-        let parentTyArgs = argsOfAppTy g minfo.EnclosingType
+        let parentTyArgs = argsOfAppTy g minfo.EnclosingAppType
         let memberParentTypars  = minfo.GetFormalTyparsOfDeclaringType m 
         mkTyparInst memberParentTypars parentTyArgs
             
