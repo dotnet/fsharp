@@ -33,20 +33,20 @@
 }
 .mresource public FSharpSignatureData.Linq101SetOperators01
 {
-  // Offset: 0x00000000 Length: 0x00000390
+  // Offset: 0x00000000 Length: 0x00000376
 }
 .mresource public FSharpOptimizationData.Linq101SetOperators01
 {
-  // Offset: 0x00000398 Length: 0x0000011E
+  // Offset: 0x00000380 Length: 0x0000011E
 }
 .module Linq101SetOperators01.exe
-// MVID: {59B19240-4EE5-349F-A745-03834092B159}
+// MVID: {5A1F62A6-4EE5-349F-A745-0383A6621F5A}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02C00000
+// Image base: 0x00DB0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -111,7 +111,7 @@
       // Code size       191 (0xbf)
       .maxstack  6
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101SetOperators01.fs'
+      .line 100001,100001 : 0,0 'C:\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101SetOperators01.fs'
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Linq101SetOperators01/'uniqueFactors@13-1'::pc
       IL_0006:  ldc.i4.1
@@ -1689,7 +1689,7 @@
              [4] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> customers,
              [5] class [mscorlib]System.Collections.Generic.IEnumerable`1<char> productFirstChars,
              [6] class [mscorlib]System.Collections.Generic.IEnumerable`1<char> customerFirstChars,
-             [7] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@,
+             [7] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_7,
              [8] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_8,
              [9] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_9,
              [10] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_10)
@@ -1715,8 +1715,8 @@
     IL_0029:  stloc.0
     .line 11,15 : 1,20 ''
     IL_002a:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
-    IL_002f:  stloc.s    builder@
-    IL_0031:  ldloc.s    builder@
+    IL_002f:  stloc.s    V_7
+    IL_0031:  ldloc.s    V_7
     IL_0033:  ldc.i4.0
     IL_0034:  ldc.i4.0
     IL_0035:  ldnull
