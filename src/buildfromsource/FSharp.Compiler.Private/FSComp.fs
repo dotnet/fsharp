@@ -4300,6 +4300,12 @@ type internal SR private() =
     /// An error occurred while reading the F# metadata of assembly '%s'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.
     /// (Originally from ..\FSComp.txt:1424)
     static member pickleUnexpectedNonZero(a0 : System.String) = (3219, GetStringFunc("pickleUnexpectedNonZero",",,,%s,,,") a0)
+    /// The struct type '%s' has been assumed to be immutable.
+    /// (Originally from ..\FSComp.txt:1425)
+    static member tcStructTypeAssumedImmutable(a0 : System.String) = (3220, GetStringFunc("tcStructTypeAssumedImmutable",",,,%s,,,") a0)
+    /// Likely mutation of a constant expression. Consider using a mutable local, e.g. 'let mutable x = ...'.
+    /// (Originally from ..\FSComp.txt:1426)
+    static member tastLikelyMutationOfConstant() = (3221, GetStringFunc("tastLikelyMutationOfConstant",",,,") )
 
     /// Call this method once to validate that all known resources are valid; throws if not
     static member RunStartupValidation() =
@@ -5698,4 +5704,6 @@ type internal SR private() =
         ignore(GetString("notAFunctionButMaybeDeclaration"))
         ignore(GetString("ArgumentsInSigAndImplMismatch"))
         ignore(GetString("pickleUnexpectedNonZero"))
+        ignore(GetString("tcStructTypeAssumedImmutable"))
+        ignore(GetString("tastLikelyMutationOfConstant"))
         ()
