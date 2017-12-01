@@ -4,8 +4,9 @@ namespace Microsoft.FSharp.Compiler
 
 
 open System
-open System.IO
+open System.Collections.Concurrent
 open System.Collections.Generic
+open System.IO
 open System.Threading
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.NameResolution
@@ -1239,7 +1240,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         cache.GetFileTimeStamp filename
 
     // Deduplicate module names
-    let moduleNamesDict = Dictionary<string, Set<string>>()
+    let moduleNamesDict = ConcurrentDictionary<string, Set<string>>()
                             
     /// This is a build task function that gets placed into the build rules as the computation for a VectorMap
     ///
@@ -1292,7 +1293,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 disposeCleanupItem()
 
                 let! tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences)  
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
                 tcImports.GetCcusExcludingBase() |> Seq.iter (fun ccu -> 
                     // When a CCU reports an invalidation, merge them together and just report a 
                     // general "imports invalidated". This triggers a rebuild.
@@ -1555,7 +1556,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     member __.ImportedCcusInvalidated = importsInvalidated.Publish
     member __.AllDependenciesDeprecated = allDependencies
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     member __.ThereAreLiveTypeProviders = 
         let liveTPs =
             match cleanupItem with 

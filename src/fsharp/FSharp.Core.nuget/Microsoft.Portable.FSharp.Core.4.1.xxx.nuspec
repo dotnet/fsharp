@@ -14,14 +14,14 @@
         <dependencies></dependencies>
     </metadata>
     <files>
-        <file src="profiles/net20/**/**" target="lib/" />
-        <file src="profiles/net40/**/**" target="lib/" />
-        <file src="profiles/portable-net45+monoandroid10+monotouch10+xamarinios10/**/**" target="lib/" />
-        <file src="profiles/portable-net45+netcore45/**/**"                              target="lib/" />
-        <file src="profiles/portable-net45+netcore45+wp8/**/**"                          target="lib/" />
-        <file src="profiles/portable-net45+netcore45+wpa81+wp8/**/**"                    target="lib/" />
-        <file src="profiles/portable-net45+sl5+netcore45/**/**"                          target="lib/" />
-        <file src="profiles/xamarinmac20/**/**"                                          target="lib/" />
+        <file src="profiles\net20\**\**" target="lib" />
+        <file src="profiles\net40\**\**" target="lib" />
+        <file src="profiles\portable-net45+monoandroid10+monotouch10+xamarinios10\**\**" target="lib" />
+        <file src="profiles\portable-net45+netcore45\**\**"                              target="lib" />
+        <file src="profiles\portable-net45+netcore45+wp8\**\**"                          target="lib" />
+        <file src="profiles\portable-net45+netcore45+wpa81+wp8\**\**"                    target="lib" />
+        <file src="profiles\portable-net45+sl5+netcore45\**\**"                          target="lib" />
+        <file src="profiles\xamarinmac20\**\**"                                          target="lib" />
 
     </files>
 </package>

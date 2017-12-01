@@ -176,7 +176,7 @@ module internal DescriptionListsImpl =
         prettyTyparInst, parameters, prettyRetTyL, prettyConstraintsL
                           
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 
     /// Get the set of static parameters associated with an item
     let StaticParamsOfItem (infoReader:InfoReader) m denv item = 
@@ -382,7 +382,7 @@ module internal DescriptionListsImpl =
                 | ILTypeDefKind.Delegate -> FSharpGlyph.Delegate
             | TAsmRepr _ -> FSharpGlyph.Typedef
             | TMeasureableRepr _-> FSharpGlyph.Typedef 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
             | TProvidedTypeExtensionPoint _-> FSharpGlyph.Typedef 
             | TProvidedNamespaceExtensionPoint  _-> FSharpGlyph.Typedef  
 #endif
@@ -470,7 +470,7 @@ module internal DescriptionListsImpl =
         | Item.Property(_,pinfos) -> 
             let pinfo = List.head pinfos 
             if pinfo.IsIndexer then [item] else []
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | SymbolHelpers.ItemIsWithStaticArguments m g _ -> 
             // we pretend that provided-types-with-static-args are method-like in order to get ParamInfo for them
             [item] 
@@ -796,7 +796,7 @@ type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] )
 
                         let hasStaticParameters = 
                             match flatItem with 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
                             | SymbolHelpers.ItemIsProvidedTypeWithStaticArguments m g _ -> false 
 #endif
                             | _ -> true
@@ -808,7 +808,7 @@ type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] )
                           parameters = (prettyParams |> Array.ofList),
                           hasParameters = hasStaticParameters,
                           hasParamArrayArg = hasParamArrayArg,
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
                           staticParameters = StaticParamsOfItem infoReader m denv flatItem
 #else
                           staticParameters = [| |]

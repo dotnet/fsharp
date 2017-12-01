@@ -870,10 +870,32 @@ type TypeCheckInfo
                 |> Option.map (fun (items, denv, m) ->
                     items |> List.filter (fun x -> match x.Item with Item.ModuleOrNamespaces _ -> true | _ -> false), denv, m)
             
+            // Completion at '(x: ...)"
+            | Some (CompletionContext.PatternType) ->
+                GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck, false, getAllSymbols)
+                |> Option.map (fun (items, denv, m) ->
+                     items 
+                     |> List.filter (fun cItem ->
+                         match cItem.Item with
+                         | Item.ModuleOrNamespaces _
+                         | Item.Types _
+                         | Item.UnqualifiedType _
+                         | Item.ExnCase _ -> true
+                         | _ -> false), denv, m)
+
             // Other completions
             | cc ->
-                let isInRangeOperator = (match cc with Some (CompletionContext.RangeOperator) -> true | _ -> false)
-                GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors,resolveOverloads, hasTextChangedSinceLastTypecheck, isInRangeOperator, getAllSymbols)
+                match residueOpt |> Option.bind Seq.tryHead with
+                | Some ''' ->
+                    // The last token in 
+                    //    let x = 'E
+                    // is Ident with text "'E", however it's either unfinished char literal or generic parameter. 
+                    // We should not provide any completion in the former case, and we don't provide it for the latter one for now
+                    // because providing generic parameters list is context aware, which we don't have here (yet).
+                    None
+                | _ ->
+                    let isInRangeOperator = (match cc with Some (CompletionContext.RangeOperator) -> true | _ -> false)
+                    GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors,resolveOverloads, hasTextChangedSinceLastTypecheck, isInRangeOperator, getAllSymbols)
         
         res |> Option.map (fun (items, denv, m) -> items, denv, completionContext, m)
 
@@ -1183,7 +1205,7 @@ type TypeCheckInfo
               | None ->
                   let fail defaultReason = 
                       match item.Item with 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
                       | SymbolHelpers.ItemIsProvidedType g (tcref) -> FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.ProvidedType(tcref.DisplayName))
                       | Item.CtorGroup(name, ProvidedMeth(_)::_)
                       | Item.MethodGroup(name, ProvidedMeth(_)::_, _)
@@ -1448,7 +1470,7 @@ module internal Parser =
                             errorCount <- errorCount + 1
 
                 match exn with
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
                 | { Exception = (:? TypeProviderError as tpe) } -> tpe.Iter(fun e -> report { exn with Exception = e })
 #endif
                 | e -> report e

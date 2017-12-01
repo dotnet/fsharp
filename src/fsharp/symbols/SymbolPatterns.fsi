@@ -31,14 +31,14 @@ module internal Symbol =
     val (|Interface|_|) : FSharpEntity -> unit option
     val (|AbstractClass|_|) : FSharpEntity -> unit option
     val (|FSharpType|_|) : FSharpEntity -> unit option
-#if EXTENSIONTYPING    
+#if !NO_EXTENSIONTYPING    
     val (|ProvidedType|_|) : FSharpEntity -> unit option
 #endif    
     val (|ByRef|_|) : FSharpEntity -> unit option
     val (|Array|_|) : FSharpEntity -> unit option
     val (|FSharpModule|_|) : FSharpEntity -> unit option
     val (|Namespace|_|) : FSharpEntity -> unit option
-#if EXTENSIONTYPING    
+#if !NO_EXTENSIONTYPING    
     val (|ProvidedAndErasedType|_|) : FSharpEntity -> unit option
 #endif
     val (|Enum|_|) : FSharpEntity -> unit option
