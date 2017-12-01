@@ -53,7 +53,7 @@ let GetImmediateIntrinsicMethInfosOfType (optFilter,ad) g amap m typ =
     let minfos =
 
         match metadataOfTy g typ with 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedTypeMetadata info -> 
             let st = info.ProvidedType
             let meths = 
@@ -122,7 +122,7 @@ let GetImmediateIntrinsicPropInfosOfType (optFilter,ad) g amap m typ =
     let pinfos =
 
         match metadataOfTy g typ with 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedTypeMetadata info -> 
             let st = info.ProvidedType
             let matchingProps =
@@ -185,7 +185,7 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
     let GetImmediateIntrinsicILFieldsOfType (optFilter,ad) m typ =
         let infos =
             match metadataOfTy g typ with 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
             | ProvidedTypeMetadata info -> 
                 let st = info.ProvidedType
                 match optFilter with
@@ -210,7 +210,7 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
     let ComputeImmediateIntrinsicEventsOfType (optFilter,ad) m typ =
         let infos =
             match metadataOfTy g typ with 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
             | ProvidedTypeMetadata info -> 
                 let st = info.ProvidedType
                 match optFilter with
@@ -426,7 +426,7 @@ let GetIntrinsicConstructorInfosOfType (infoReader:InfoReader) m ty =
     let amap = infoReader.amap 
     if isAppTy g ty then
         match metadataOfTy g ty with 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedTypeMetadata info -> 
             let st = info.ProvidedType
             [ for ci in st.PApplyArray((fun st -> st.GetConstructors()), "GetConstructors", m) do

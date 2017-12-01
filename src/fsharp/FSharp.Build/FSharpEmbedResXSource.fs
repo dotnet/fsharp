@@ -42,7 +42,7 @@ module internal {1} =
 
             // simple up-to-date check
             if File.Exists(resx) && File.Exists(sourcePath) &&
-                File.GetLastWriteTime(resx) <= File.GetLastWriteTime(sourcePath) then
+                File.GetLastWriteTimeUtc(resx) <= File.GetLastWriteTimeUtc(sourcePath) then
                 printMessage (sprintf "Skipping generation: '%s' since it is up-to-date." sourcePath)
                 Some(sourcePath)
             else
@@ -77,9 +77,7 @@ module internal {1} =
                             | (true, true) -> sprintf "    [<Literal>]\n    let %s = \"%s\"" identifier name
                             | (true, false) -> sprintf "    let %s = \"%s\"" identifier name // the [<Literal>] attribute can't be used for FSharp.Core
                             | (false, _) ->
-                                let isStringResource = match node.Attribute(xname "type") with
-                                                       | null -> true
-                                                       | _ -> false
+                                let isStringResource = node.Attribute(xname "type") |> isNull
                                 match (isStringResource, generateGetObject) with
                                 | (true, _) -> sprintf "    let %s() = GetString(\"%s\")" identifier name
                                 | (false, true) -> sprintf "    let %s() = GetObject(\"%s\")" identifier name
@@ -134,7 +132,7 @@ module internal {1} =
                     if getBooleanMetadata "GenerateSource" false item then
                         let moduleName =
                             match item.GetMetadata("GeneratedModuleName") with
-                            | null -> Path.GetFileNameWithoutExtension(item.ItemSpec)
+                            | null | "" -> Path.GetFileNameWithoutExtension(item.ItemSpec)
                             | value -> value
                         let generateLegacy = getBooleanMetadata "GenerateLegacyCode" false item
                         let generateLiteral = getBooleanMetadata "GenerateLiterals" true item

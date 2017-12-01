@@ -8,7 +8,7 @@
     <AssemblyName>FSharp.Compiler.Private</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
-    <DefineConstants>$(DefineConstants);EXTENSIONTYPING;COMPILER;BUILD_FROM_SOURCE</DefineConstants>
+    <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <OtherFlags>$(OtherFlags) --warnon:1182 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
   </PropertyGroup>
 
@@ -23,12 +23,15 @@
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Private.dll.fs">
       <Link>assemblyinfo.FSharp.Compiler.Private.dll.fs</Link>
     </Compile>
-    <FsSrGen Include="$(FSharpSourcesRoot)\fsharp\FSComp.txt">
-      <Link>FSComp.txt</Link>
-    </FsSrGen>
+    <Compile Include="InternalsVisibleTo.fs" />
+    <EmbeddedResource Include="FSComp.resx">
+      <Link>FSComp.resx</Link>
+    </EmbeddedResource>
     <EmbeddedResource Include="$(FSharpSourcesRoot)\fsharp\FSStrings.resx">
       <Link>FSStrings.resx</Link>
     </EmbeddedResource>
+    <Compile Include="FSComp.fs" />
+    <Compile Include="FSIstrings.fs" />
     <Compile Include="..\..\utils\reshapedreflection.fs">
       <Link>Reflection\reshapedreflection.fs</Link>
     </Compile>
@@ -491,6 +494,12 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\symbols\Exprs.fs">
       <Link>Symbols/Exprs.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\symbols\SymbolPatterns.fsi">
+      <Link>Symbols/SymbolPatterns.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\symbols\SymbolPatterns.fs">
+      <Link>Symbols/SymbolPatterns.fs</Link>
+    </Compile>
 
     <!-- the incremental builder and service . -->
     <Compile Include="$(FSharpSourcesRoot)\fsharp\vs\IncrementalBuild.fsi">
@@ -565,6 +574,12 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\vs\ExternalSymbol.fs">
       <Link>Service/ExternalSymbol.fs</Link>
     </Compile>
+	<Compile Include="$(FSharpSourcesRoot)\fsharp\vs\QuickParse.fsi">
+      <Link>Service/QuickParse.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\vs\QuickParse.fs">
+      <Link>Service/QuickParse.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\vs\service.fsi">
       <Link>Service/service.fsi</Link>
     </Compile>
@@ -583,11 +598,17 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\vs\ServiceStructure.fs">
       <Link>Service/ServiceStructure.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\vs\ServiceAnalysis.fsi">
+      <Link>Service/ServiceAnalysis.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\vs\ServiceAnalysis.fs">
+      <Link>Service/ServiceAnalysis.fs</Link>
+    </Compile>
 
     <!-- the core of the F# Interactive fsi.exe implementation -->
-    <FsSrGen Include="$(FSharpSourcesRoot)\fsharp\fsi\FSIstrings.txt">
-      <Link>FSIstrings.txt</Link>
-    </FsSrGen>
+    <EmbeddedResource Include="FSIstrings.resx">
+      <Link>FSIstrings.resx</Link>
+    </EmbeddedResource>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\fsi\fsi.fsi">
       <Link>InteractiveSession\fsi.fsi</Link>
     </Compile>
@@ -608,27 +629,6 @@
   </ItemGroup>
   <Import Project = "..\BuildFromSource.targets" />
 
-<!--
-    "System.Collections.Immutable":"1.3.1",
-    "System.Diagnostics.Process": "4.3.0",
-    "System.Diagnostics.TraceSource": "4.3.0",
-    "System.Linq.Expressions": "4.3.0",
-    "System.Linq.Queryable": "4.3.0",
-    "System.Net.Requests": "4.3.0",
-    "System.Reflection.Emit": "4.3.0",
-    "System.Reflection.Metadata": "1.4.2",
-    "System.Reflection.TypeExtensions": "4.3.0",
-    "System.Runtime": "4.3.0",
-    "System.Runtime.InteropServices": "4.3.0",
-    "System.Runtime.Loader": "4.3.0",
-    "System.Security.Cryptography.Algorithms": "4.3.0",
-    "System.Threading.Tasks.Parallel": "4.3.0",
-    "System.Threading.Thread": "4.3.0",
-    "System.Threading.ThreadPool": "4.3.0",
-    "Microsoft.DiaSymReader.PortablePdb": "1.1.0",
-    "Microsoft.DiaSymReader": "1.1.0",
-    "System.ValueTuple": "4.3.1"
--->
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
     <PackageReference Include="System.Collections.Immutable" Version="1.3.1"></PackageReference>
@@ -647,7 +647,7 @@
     <PackageReference Include="System.Threading.Tasks.Parallel" Version="4.3.0"></PackageReference>
     <PackageReference Include="System.Threading.Thread" Version="4.3.0"></PackageReference>
     <PackageReference Include="System.Threading.ThreadPool" Version="4.3.0"></PackageReference>
-    <PackageReference Include="Microsoft.DiaSymReader.PortablePdb" Version="1.1.0"></PackageReference>
+    <PackageReference Include="Microsoft.DiaSymReader.PortablePdb" Version="1.2.0"></PackageReference>
     <PackageReference Include="Microsoft.DiaSymReader" Version="1.1.0"></PackageReference>
     <PackageReference Include="System.ValueTuple" Version="4.3.1"></PackageReference>
   </ItemGroup>

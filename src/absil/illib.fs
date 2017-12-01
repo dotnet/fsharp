@@ -115,16 +115,6 @@ module Array =
         Array.length l1 = Array.length l2 &&
         Array.forall2 p l1 l2
 
-    let mapFold f s l = 
-        let mutable acc = s
-        let n = Array.length l
-        let mutable res = Array.zeroCreate n
-        for i = 0 to n - 1 do
-            let h',s' = f acc l.[i]
-            res.[i] <- h';
-            acc <- s'
-        res, acc
-
     let order (eltOrder: IComparer<'T>) = 
         { new IComparer<array<'T>> with 
               member __.Compare(xs,ys) = 
@@ -449,15 +439,6 @@ module List =
         match l with 
         | [] -> false 
         | h::t -> LanguagePrimitives.PhysicalEquality x h || memq x t
-        
-    // Not tail recursive 
-    let rec mapFoldBack f l s = 
-        match l with 
-        | [] -> ([],s)
-        | h::t -> 
-           let t',s = mapFoldBack f t s
-           let h',s = f h s
-           (h'::t', s)
 
     let mapNth n f xs =
         let rec mn i = function
@@ -1257,6 +1238,7 @@ module Shim =
         abstract FileStreamReadShim: fileName:string -> System.IO.Stream
         abstract FileStreamCreateShim: fileName:string -> System.IO.Stream
         abstract FileStreamWriteExistingShim: fileName:string -> System.IO.Stream
+
         /// Take in a filename with an absolute path, and return the same filename
         /// but canonicalized with respect to extra path separators (e.g. C:\\\\foo.txt) 
         /// and '..' portions
@@ -1264,6 +1246,8 @@ module Shim =
         abstract IsPathRootedShim: path:string -> bool
         abstract IsInvalidPathShim: filename:string -> bool
         abstract GetTempPathShim : unit -> string
+
+        /// Utc time of the last modification
         abstract GetLastWriteTimeShim: fileName:string -> System.DateTime
         abstract SafeExists: fileName:string -> bool
         abstract FileDelete: fileName:string -> unit
@@ -1303,7 +1287,7 @@ module Shim =
 
             member __.GetTempPathShim() = System.IO.Path.GetTempPath()
 
-            member __.GetLastWriteTimeShim (fileName:string) = File.GetLastWriteTime fileName
+            member __.GetLastWriteTimeShim (fileName:string) = File.GetLastWriteTimeUtc fileName
             member __.SafeExists (fileName:string) = System.IO.File.Exists fileName 
             member __.FileDelete (fileName:string) = System.IO.File.Delete fileName
 

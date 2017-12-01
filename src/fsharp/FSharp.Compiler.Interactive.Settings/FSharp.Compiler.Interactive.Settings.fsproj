@@ -10,14 +10,18 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{649FA588-F02E-457C-9FCF-87E46407481E}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
     <AssemblyName>FSharp.Compiler.Interactive.Settings</AssemblyName>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="fsi" />
+    <InternalsVisibleTo Include="fsiAnyCpu" />
+    <InternalsVisibleTo Include="FSharp.Compiler" />
+  </ItemGroup>
+
+  <ItemGroup>
     <EmbeddedText Include="..\FSInteractiveSettings.txt" />
-    <Compile Include="InternalsVisibleTo.fs" />
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Interactive.Settings.dll.fs" />
     <Compile Include="..\..\utils\reshapedreflection.fs" />
     <Compile Include="..\fsiattrs.fs" />

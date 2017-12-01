@@ -4,8 +4,9 @@ namespace Microsoft.FSharp.Compiler
 
 
 open System
-open System.IO
+open System.Collections.Concurrent
 open System.Collections.Generic
+open System.IO
 open System.Threading
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.NameResolution
@@ -463,7 +464,7 @@ module internal IncrementalBuild =
         
     /// Bind a set of build rules to a set of input values.
     let ToBound(buildRules:BuildRules, inputs: BuildInput list) = 
-        let now = DateTime.Now
+        let now = DateTime.UtcNow
         let rec applyScalarExpr(se, results) =
             match se with
             | ScalarInput(id, n) -> 
@@ -1028,6 +1029,7 @@ type TypeCheckAccumulator =
       tcEnvAtEndOfFile: TcEnv
       tcResolutions: TcResolutions list
       tcSymbolUses: TcSymbolUses list
+      tcOpenDeclarations: OpenDeclaration list
       topAttribs:TopAttribs option
       typedImplFiles:TypedImplFile list
       tcDependencyFiles: string list
@@ -1102,6 +1104,7 @@ type PartialCheckResults =
       Errors: (PhasedDiagnostic * FSharpErrorSeverity) list 
       TcResolutions: TcResolutions list 
       TcSymbolUses: TcSymbolUses list 
+      TcOpenDeclarations: OpenDeclaration list
       TcDependencyFiles: string list 
       TopAttribs: TopAttribs option
       TimeStamp: System.DateTime
@@ -1116,6 +1119,7 @@ type PartialCheckResults =
           Errors = tcAcc.tcErrors
           TcResolutions = tcAcc.tcResolutions
           TcSymbolUses = tcAcc.tcSymbolUses
+          TcOpenDeclarations = tcAcc.tcOpenDeclarations
           TcDependencyFiles = tcAcc.tcDependencyFiles
           TopAttribs = tcAcc.topAttribs
           TimeStamp = timestamp 
@@ -1188,7 +1192,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         let flags, isExe = tcConfig.ComputeCanContainEntryPoint(sourceFiles |> List.map snd)
         ((sourceFiles, flags) ||> List.map2 (fun (m, nm) flag -> (m, nm, (flag, isExe))))
 
-    let defaultTimeStamp = DateTime.Now
+    let defaultTimeStamp = DateTime.UtcNow
 
     let basicDependencies = 
         [ for (UnresolvedAssemblyReference(referenceText, _))  in unresolvedReferences do
@@ -1236,7 +1240,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         cache.GetFileTimeStamp filename
 
     // Deduplicate module names
-    let moduleNamesDict = Dictionary<string, Set<string>>()
+    let moduleNamesDict = ConcurrentDictionary<string, Set<string>>()
                             
     /// This is a build task function that gets placed into the build rules as the computation for a VectorMap
     ///
@@ -1289,7 +1293,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 disposeCleanupItem()
 
                 let! tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences)  
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
                 tcImports.GetCcusExcludingBase() |> Seq.iter (fun ccu -> 
                     // When a CCU reports an invalidation, merge them together and just report a 
                     // general "imports invalidated". This triggers a rebuild.
@@ -1327,6 +1331,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
               tcEnvAtEndOfFile=tcInitial
               tcResolutions=[]
               tcSymbolUses=[]
+              tcOpenDeclarations=[]
               topAttribs=None
               typedImplFiles=[]
               tcDependencyFiles=basicDependencies
@@ -1375,6 +1380,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                                        typedImplFiles=typedImplFiles
                                        tcResolutions=tcAcc.tcResolutions @ [tcResolutions]
                                        tcSymbolUses=tcAcc.tcSymbolUses @ [tcSymbolUses]
+                                       tcOpenDeclarations=tcAcc.tcOpenDeclarations @ sink.OpenDeclarations
                                        tcErrors = tcAcc.tcErrors @ parseErrors @ capturingErrorLogger.GetErrors() 
                                        tcDependencyFiles = filename :: tcAcc.tcDependencyFiles } 
                 }
@@ -1550,7 +1556,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     member __.ImportedCcusInvalidated = importsInvalidated.Publish
     member __.AllDependenciesDeprecated = allDependencies
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     member __.ThereAreLiveTypeProviders = 
         let liveTPs =
             match cleanupItem with 
@@ -1621,6 +1627,9 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 
     member builder.GetCheckResultsAfterLastFileInProject (ctok: CompilationThreadToken) = 
         builder.GetCheckResultsBeforeSlotInProject(ctok, builder.GetSlotsCount()) 
+
+    member builder.DeduplicateParsedInputModuleNameInProject (input) = 
+        DeduplicateParsedInputModuleName moduleNamesDict input
 
     member __.GetCheckResultsAndImplementationsForProject(ctok: CompilationThreadToken) = 
       cancellable {

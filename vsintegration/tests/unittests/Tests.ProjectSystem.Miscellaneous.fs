@@ -501,7 +501,7 @@ type Miscellaneous() =
             let ipps = project :> Microsoft.VisualStudio.FSharp.LanguageService.IProvideProjectSite
             let ips = ipps.GetProjectSite()
             let expected = [| |] // Ideal behavior is [|"foo.fs";"bar.fs"|], and we could choose to improve this in the future.  For now we are just happy to now throw/crash.
-            let actual = ips.SourceFilesOnDisk()
+            let actual = ips.CompilationSourceFiles
             Assert.AreEqual(expected, actual, "project site did not report expected set of source files")
         )
 
@@ -619,7 +619,7 @@ type Miscellaneous() =
             let project = TheTests.CreateProject(file, "false", cnn, sp) 
             try
                 project.ComputeSourcesAndFlags()
-                let items = project.GetCompileItems() |> Array.toList
+                let items = project.CompilationSourceFiles |> Array.toList
                 match items with
                 | [ _; fn ] -> // first file is AssemblyAttributes.fs
                     AssertEqual fileName fn
@@ -629,41 +629,6 @@ type Miscellaneous() =
             finally
                 project.Close() |> ignore
         )
-
-
-module Regression5312 = 
-    // Regression testing ICONS in project system dll
-    open System
-    open System.Drawing
-    open System.Runtime.InteropServices
-    [<DllImport("shell32.dll", CharSet=CharSet.Auto)>]
-    extern int32 ExtractIconEx(string szFileName, int nIconIndex,IntPtr[] phiconLarge, IntPtr[] phiconSmall,uint32 nIcons)
-
-    [<DllImport("user32.dll", EntryPoint="DestroyIcon", SetLastError=true)>]
-    extern int DestroyIcon(IntPtr hIcon)
-
-    let extractIcon (path:string) (large:bool) =
-        let n = 10 
-        let hIconLarge = Array.create n IntPtr.Zero
-        let hIconSmall = Array.create n IntPtr.Zero
-        try
-            let readIconCount = ExtractIconEx(path,0,hIconLarge,hIconSmall,uint32 n)
-            if readIconCount > 0 then
-                if large then
-                    Array.init readIconCount (fun i -> Icon.FromHandle(hIconLarge.[0]).Clone() :?> Icon)
-                else
-                    Array.init readIconCount (fun i -> Icon.FromHandle(hIconSmall.[0]).Clone() :?> Icon)
-            else
-                [| |]           
-        finally
-            hIconLarge |> Array.iter (fun ptr -> if ptr <> IntPtr.Zero then DestroyIcon ptr |> ignore<int>)
-            hIconSmall |> Array.iter (fun ptr -> if ptr <> IntPtr.Zero then DestroyIcon ptr |> ignore<int>)
-
-    /// Given path to FSharp.Project.FSharpProject.dll, check the icons are present.
-    /// Throws of failure.
-    let checkIcons nExpected (path:string) =
-        let icons = extractIcon path true
-        if icons.Length<>nExpected then failwithf "Expected %d icons in %s" nExpected path // "
 
 [<TestFixture>]
 type Utilities() = 
@@ -744,13 +709,6 @@ type Utilities() =
 
     [<Test>]
     member public this.``PublicKeyToken.0a00000000000001``() = CheckPublicKeyToString([|0xauy;0uy;0uy;0uy;0uy;0uy;0uy;1uy|], "0a00000000000001")
-
-    [<Test>]      
-    member public this.``CheckIconsInProjectSystemDLL_Regression5312``() = 
-        let path = typeof<Microsoft.VisualStudio.FSharp.ProjectSystem.FSharpProjectPackage>.Assembly.Location
-        Regression5312.checkIcons 4 path
-        ()
-
 
     [<Test>]
     member public this.``Parse MSBuild property of type Int64`` () = 

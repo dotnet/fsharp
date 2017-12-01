@@ -8,22 +8,24 @@
     <AssemblyName>FSharp.Build</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
-    <DefineConstants>$(DefineConstants);BUILD_FROM_SOURCE</DefineConstants>
     <OtherFlags>$(OtherFlags) --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
   </PropertyGroup>
 
   <Import Project="..\BuildFromSource.targets" />
   <ItemGroup>
-    <FsSrGen Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSBuild.txt" />
+    <EmbeddedResource Include="FSBuild.resx">
+      <Link>FSBuild.resx</Link>
+    </EmbeddedResource>
+    <Compile Include="FSBuild.fs" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\InternalsVisibleTo.fs" />
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Build.dll.fs" />
     <Compile Include="..\..\utils\CompilerLocationUtils.fs" />
     <Compile Include="..\..\utils\reshapedreflection.fs" />
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\Fsc.fsi" />
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharpCommandLineBuilder.fs" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\Fsc.fs" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharpEmbedResourceText.fs" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharpEmbedResXSource.fs" />
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\CreateFSharpManifestResourceName.fsi" />
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\WriteCodeFragment.fs" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\CreateFSharpManifestResourceName.fs" />
     <CopyAndSubstituteText Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\Microsoft.FSharp.Targets">
         <TargetFilename>Microsoft.FSharp.Targets</TargetFilename>

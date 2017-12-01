@@ -17,7 +17,6 @@
     <TargetType>LIBRARY</TargetType>
     <NoWarn>58;75</NoWarn>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
-    <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
     <ResolveNuGetPackages>false</ResolveNuGetPackages>
     <OutputPath>..\..\$(Configuration)\fcs\net45\</OutputPath>
     <Tailcalls>true</Tailcalls>
@@ -71,17 +70,20 @@
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\ProjectOptionsTests.fs">
       <Link>ProjectOptionsTests.fs</Link>
     </Compile>
-    <None Include="$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.23\tools\FSharp.Core.optdata">
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\StructureTests.fs">
+      <Link>StructureTests.fs</Link>
+    </Compile>
+    <None Include="$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.27\tools\FSharp.Core.optdata">
       <Link>FSharp.Core.optdata</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.23\tools\FSharp.Core.sigdata">
+    <None Include="$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.27\tools\FSharp.Core.sigdata">
       <Link>FSharp.Core.sigdata</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="App.config" />
+    <None Include="paket.references" />
   </ItemGroup>
-
   <ItemGroup>
     <Reference Include="mscorlib" />
     <Reference Include="System" />
@@ -97,7 +99,6 @@
     <Reference Include="WindowsBase" />
     <Reference Include="UIAutomationTypes" />
   </ItemGroup>
-  
   <ItemGroup>
     <Reference Include="System.Collections.Immutable">
       <HintPath>$(FSharpSourcesRoot)\..\packages\System.Collections.Immutable.$(SystemCollectionsImmutableVersion)\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
@@ -109,10 +110,9 @@
     </Reference>
     <!-- we test against FSharp.Core 4.4.1.0 -->
     <Reference Include="FSharp.Core">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.23\tools\FSharp.Core.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.27\tools\FSharp.Core.dll</HintPath>
       <Private>true</Private>
     </Reference>
-
     <ProjectReference Include="$(FSharpSourcesRoot)\..\tests\service\data\CSharp_Analysis\CSharp_Analysis.csproj">
       <Name>CSharp_Analysis</Name>
       <Project>{887630A3-4B1D-40EA-B8B3-2D842E9C40DB}</Project>
@@ -129,5 +129,67 @@
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
-  <Import Project="$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.23\tools\Microsoft.FSharp.Targets" />
+  <Import Project="$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets" />
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.6')">
+      <ItemGroup>
+        <Reference Include="Microsoft.Build">
+          <HintPath>..\packages\Microsoft.Build\lib\net45\Microsoft.Build.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.6')">
+      <ItemGroup>
+        <Reference Include="Microsoft.Build.Engine">
+          <HintPath>..\packages\Microsoft.Build.Engine\lib\net45\Microsoft.Build.Engine.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.6')">
+      <ItemGroup>
+        <Reference Include="Microsoft.Build.Framework">
+          <HintPath>..\packages\Microsoft.Build.Framework\lib\net45\Microsoft.Build.Framework.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.6')">
+      <ItemGroup>
+        <Reference Include="Microsoft.Build.Utilities.Core">
+          <HintPath>..\packages\Microsoft.Build.Utilities.Core\lib\net45\Microsoft.Build.Utilities.Core.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6'">
+      <ItemGroup>
+        <Reference Include="System.Core">
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6'">
+      <ItemGroup>
+        <Reference Include="System.ComponentModel.Composition">
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
 </Project>

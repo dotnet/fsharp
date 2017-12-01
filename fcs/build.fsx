@@ -13,7 +13,21 @@ open Fake.ReleaseNotesHelper
 #if MONO
 // prevent incorrect output encoding (e.g. https://github.com/fsharp/FAKE/issues/1196)
 System.Console.OutputEncoding <- System.Text.Encoding.UTF8
+
+CleanDir (__SOURCE_DIRECTORY__ + "/../tests/TestResults") 
+File.WriteAllText(__SOURCE_DIRECTORY__ + "/../tests/TestResults/notestsyet.txt","No tests yet")
 #endif
+
+let dotnetExePath = DotNetCli.InstallDotNetSDK "2.0.2"
+
+let runDotnet workingDir args =
+    let result =
+        ExecProcess (fun info ->
+            info.FileName <- dotnetExePath
+            info.WorkingDirectory <- workingDir
+            info.Arguments <- args) TimeSpan.MaxValue
+
+    if result <> 0 then failwithf "dotnet %s failed" args
 
 // --------------------------------------------------------------------------------------
 // Utilities
@@ -69,6 +83,22 @@ let buildVersion =
     else if isAppVeyorBuild then sprintf "%s-b%s" assemblyVersion AppVeyorEnvironment.BuildNumber
     else assemblyVersion
 
+Target "Clean" (fun _ ->
+    CleanDir releaseDir
+)
+
+Target "Restore" (fun _ ->
+    for p in (!! "./../**/packages.config") do
+        let result =
+            ExecProcess (fun info ->
+                info.FileName <- FullName @"./../.nuget/NuGet.exe"
+                info.WorkingDirectory <- FullName @"./.."
+                info.Arguments <- sprintf "restore %s -PackagesDirectory \"%s\" -ConfigFile \"%s\""   (FullName p) (FullName "./../packages") (FullName "./../.nuget/NuGet.Config")) TimeSpan.MaxValue
+        if result <> 0 then failwithf "nuget restore %s failed" p
+
+    runDotnet __SOURCE_DIRECTORY__ "restore tools.fsproj"
+)
+
 Target "BuildVersion" (fun _ ->
     Shell.Exec("appveyor", sprintf "UpdateBuild -Version \"%s\"" buildVersion) |> ignore
 )
@@ -88,11 +118,24 @@ Target "Build.NetFx" (fun _ ->
 // Run the unit tests using test runner
 
 Target "Test.NetFx" (fun _ ->
-    !! (releaseDir + "/fcs/net45/FSharp.Compiler.Service.Tests.dll")
+    let testDir = __SOURCE_DIRECTORY__ + "/../tests/fcs"
+    CleanDir testDir
+
+    let outDir = releaseDir + "/fcs"
+
+    !! (outDir + "/**/*.*")
+    |> CopyFiles testDir
+
+    let toolPath = __SOURCE_DIRECTORY__ + "/../packages/NUnit.Console.3.0.0/tools"
+    !! (toolPath + "/*.*")
+    |> CopyFiles testDir
+
+    !! (testDir + "/**/FSharp.Compiler.Service.Tests.dll")
     |>  Fake.Testing.NUnit3.NUnit3 (fun p ->
         { p with
-            ToolPath = @"..\packages\NUnit.Console.3.0.0\tools\nunit3-console.exe"
+            ToolPath = testDir + "/nunit3-console.exe"
             ShadowCopy = false
+            WorkingDir = FullName testDir
             TimeOut = TimeSpan.FromMinutes 20. })
 )
 
@@ -109,26 +152,14 @@ Target "NuGet.NetFx" (fun _ ->
 // --------------------------------------------------------------------------------------
 // .NET Core and .NET Core SDK
 
-let isDotnetSDKInstalled =
-    match Fake.EnvironmentHelper.environVarOrNone "FCS_DNC" with
-    | Some flag ->
-        match bool.TryParse flag with
-        | true, result -> result
-        | _ -> false
-    | None ->
-        try
-            Shell.Exec("dotnet", "--info") = 0
-        with
-        _ -> false
-
 
 Target "Build.NetStd" (fun _ ->
-    runCmdIn __SOURCE_DIRECTORY__  "dotnet" "pack %s -v n -c Release" "FSharp.Compiler.Service.netstandard.sln"
+    runDotnet __SOURCE_DIRECTORY__ (sprintf "pack %s -v n -c Release" "FSharp.Compiler.Service.netstandard.sln")
 )
 
 
 Target "Test.NetStd" (fun _ ->
-    runCmdIn __SOURCE_DIRECTORY__  "dotnet" "run -p FSharp.Compiler.Service.Tests.netcore/FSharp.Compiler.Service.Tests.netcore.fsproj -c Release -- --result:TestResults.NetStd.xml;format=nunit3"
+    runDotnet __SOURCE_DIRECTORY__ (sprintf "run -p FSharp.Compiler.Service.Tests.netcore/FSharp.Compiler.Service.Tests.netcore.fsproj -c Release -- --result:TestResults.NetStd.xml;format=nunit3")
 )
 
 
@@ -136,7 +167,7 @@ Target "Test.NetStd" (fun _ ->
 Target "Nuget.AddNetStd" (fun _ ->
     let nupkg = sprintf "%s/FSharp.Compiler.Service.%s.nupkg" releaseDir release.AssemblyVersion
     let netcoreNupkg = sprintf "FSharp.Compiler.Service.netstandard/bin/Release/FSharp.Compiler.Service.%s.nupkg" release.AssemblyVersion
-    runCmdIn __SOURCE_DIRECTORY__ "dotnet" "mergenupkg --source %s --other %s --framework netstandard1.6" nupkg netcoreNupkg
+    runDotnet __SOURCE_DIRECTORY__ (sprintf "mergenupkg --source %s --other %s --framework netstandard1.6" nupkg netcoreNupkg)
 )
 
 
@@ -144,11 +175,11 @@ Target "Nuget.AddNetStd" (fun _ ->
 // Generate the documentation
 
 Target "GenerateDocsEn" (fun _ ->
-    executeFSIWithArgs "docsrc/tools" "generate.fsx" ["--define:RELEASE"] [] |> ignore
+    executeFSIWithArgs "docsrc/tools" "generate.fsx" [] [] |> ignore
 )
 
 Target "GenerateDocsJa" (fun _ ->
-    executeFSIWithArgs "docsrc/tools" "generate.ja.fsx" ["--define:RELEASE"] [] |> ignore
+    executeFSIWithArgs "docsrc/tools" "generate.ja.fsx" [] [] |> ignore
 )
 
 // --------------------------------------------------------------------------------------
@@ -168,7 +199,6 @@ Target "PublishNuGet" (fun _ ->
 // --------------------------------------------------------------------------------------
 // Run all targets by default. Invoke 'build <Target>' to override
 
-Target "Clean" DoNothing
 Target "Release" DoNothing
 Target "NuGet" DoNothing
 Target "Build" DoNothing
@@ -177,10 +207,12 @@ Target "TestAndNuGet" DoNothing
 
 "Clean"
   =?> ("BuildVersion", isAppVeyorBuild)
+  ==> "Restore"
   ==> "Build.NetStd"
 
 "Clean"
   =?> ("BuildVersion", isAppVeyorBuild)
+  ==> "Restore"
   ==> "Build.NetFx"
 
 "Build.NetFx"
@@ -190,15 +222,15 @@ Target "TestAndNuGet" DoNothing
   ==> "Test.NetStd"
 
 "Build.NetFx"
-  =?> ("Build.NetStd", isDotnetSDKInstalled)
+  ==> "Build.NetStd"
   ==> "Build"
 
 "Build.NetStd"
-  =?> ("Nuget.AddNetStd", isDotnetSDKInstalled)
+  ==> "Nuget.AddNetStd"
 
 "Build.NetFx"
   ==> "NuGet.NetFx"
-  =?> ("Nuget.AddNetStd", isDotnetSDKInstalled)
+  ==> "Nuget.AddNetStd"
   ==> "NuGet"
 
 "Test.NetFx"
@@ -206,9 +238,7 @@ Target "TestAndNuGet" DoNothing
 
 "NuGet"
   ==> "TestAndNuGet"
-
-//"Test.NetStd"
-//  ==> "TestAndNuGet"
+  
 
 "Build"
   ==> "NuGet"

@@ -2,7 +2,7 @@
 
 namespace Microsoft.FSharp.Compiler
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 
 
 open System

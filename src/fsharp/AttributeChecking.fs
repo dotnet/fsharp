@@ -19,7 +19,7 @@ open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.TcGlobals
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
 open Microsoft.FSharp.Core.CompilerServices
 #endif
@@ -130,7 +130,7 @@ let AttribInfosOfFS g attribs =
 
 let GetAttribInfosOfEntity g amap m (tcref:TyconRef) = 
     match metadataOfTycon tcref.Deref with 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     // TODO: provided attributes
     | ProvidedTypeMetadata _info -> []
         //let provAttribs = info.ProvidedType.PApply((fun a -> (a :> IProvidedCustomAttributeProvider)),m)
@@ -149,7 +149,7 @@ let GetAttribInfosOfMethod amap m minfo =
     | ILMeth (g,ilminfo,_) -> ilminfo.RawMetadata.CustomAttrs  |> AttribInfosOfIL g amap ilminfo.MetadataScope m
     | FSMeth (g,_,vref,_) -> vref.Attribs |> AttribInfosOfFS g 
     | DefaultStructCtor _ -> []
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     // TODO: provided attributes
     | ProvidedMeth (_,_mi,_,_m) -> 
             []
@@ -162,7 +162,7 @@ let GetAttribInfosOfProp amap m pinfo =
     | FSProp(g,_,Some vref,_) 
     | FSProp(g,_,_,Some vref) -> vref.Attribs |> AttribInfosOfFS g 
     | FSProp _ -> failwith "GetAttribInfosOfProp: unreachable"
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     // TODO: provided attributes
     | ProvidedProp _ ->  []
 #endif
@@ -171,7 +171,7 @@ let GetAttribInfosOfEvent amap m einfo =
     match einfo with 
     | ILEvent(g, x) -> x.RawMetadata.CustomAttrs  |> AttribInfosOfIL g amap x.ILTypeInfo.ILScopeRef m
     | FSEvent(_, pi, _vref1, _vref2) -> GetAttribInfosOfProp amap m pi
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     // TODO: provided attributes
     | ProvidedEvent _ -> []
 #endif
@@ -183,7 +183,7 @@ let GetAttribInfosOfEvent amap m einfo =
 let TryBindTyconRefAttribute g m (AttribInfo (atref,_) as args) (tcref:TyconRef) f1 f2 f3 = 
     ignore m; ignore f3
     match metadataOfTycon tcref.Deref with 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     | ProvidedTypeMetadata info -> 
         let provAttribs = info.ProvidedType.PApply((fun a -> (a :> IProvidedCustomAttributeProvider)),m)
         match provAttribs.PUntaint((fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure(id), atref.FullName)),m) with
@@ -207,14 +207,14 @@ let BindMethInfoAttributes m minfo f1 f2 f3 =
     | ILMeth (_,x,_) -> f1 x.RawMetadata.CustomAttrs 
     | FSMeth (_,_,vref,_) -> f2 vref.Attribs
     | DefaultStructCtor _ -> f2 []
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     | ProvidedMeth (_,mi,_,_) -> f3 (mi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)),m))
 #endif
 
 /// Analyze three cases for attributes declared on methods: IL-declared attributes, F#-declared attributes and
 /// provided attributes.
 let TryBindMethInfoAttribute g m (AttribInfo(atref,_) as attribSpec) minfo f1 f2 f3 = 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 #else
     // to prevent unused parameter warning
     ignore f3
@@ -222,7 +222,7 @@ let TryBindMethInfoAttribute g m (AttribInfo(atref,_) as attribSpec) minfo f1 f2
     BindMethInfoAttributes m minfo 
         (fun ilAttribs -> TryDecodeILAttribute g atref ilAttribs |> Option.bind f1)
         (fun fsAttribs -> TryFindFSharpAttribute g attribSpec fsAttribs |> Option.bind f2)
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         (fun provAttribs -> 
             match provAttribs.PUntaint((fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure(id), atref.FullName)),m) with
             | Some args -> f3 args
@@ -316,7 +316,7 @@ let CheckFSharpAttributes g attribs m =
             CompleteD
         )
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 /// Check a list of provided attributes for 'ObsoleteAttribute', returning errors and warnings as data
 let private CheckProvidedAttributes (g: TcGlobals) m (provAttribs: Tainted<IProvidedCustomAttributeProvider>)  = 
     let (AttribInfo(tref,_)) = g.attrib_SystemObsolete
@@ -368,7 +368,7 @@ let CheckFSharpAttributesForUnseen g attribs _m =
     (CheckFSharpAttributesForObsolete g attribs ||
         CheckFSharpAttributesForHidden g attribs)
       
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 /// Indicate if a list of provided attributes contains 'ObsoleteAttribute'. Used to suppress the item in intellisense.
 let CheckProvidedAttributesForUnseen (provAttribs: Tainted<IProvidedCustomAttributeProvider>) m = 
     provAttribs.PUntaint((fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure(id), typeof<System.ObsoleteAttribute>.FullName).IsSome),m)
@@ -381,7 +381,7 @@ let CheckPropInfoAttributes pinfo m =
     | FSProp(g,_,Some vref,_) 
     | FSProp(g,_,_,Some vref) -> CheckFSharpAttributes g vref.Attribs m
     | FSProp _ -> failwith "CheckPropInfoAttributes: unreachable"
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     | ProvidedProp (amap,pi,m) ->  
         CheckProvidedAttributes amap.g m (pi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)),m))
          
@@ -393,7 +393,7 @@ let CheckILFieldAttributes g (finfo:ILFieldInfo) m =
     match finfo with 
     | ILFieldInfo(_,pd) -> 
         CheckILAttributes g pd.CustomAttrs m |> CommitOperationResult
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     | ProvidedField (amap,fi,m) -> 
         CheckProvidedAttributes amap.g m (fi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)),m)) |> CommitOperationResult
 #endif
@@ -411,7 +411,7 @@ let CheckMethInfoAttributes g m tyargsOpt minfo =
                         else
                             CompleteD)
                 Some res) 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
             (fun provAttribs -> Some (CheckProvidedAttributes g m provAttribs)) 
 #else
             (fun _provAttribs -> None)
@@ -427,7 +427,7 @@ let MethInfoIsUnseen g m typ minfo =
         match BindMethInfoAttributes m minfo 
                 (fun ilAttribs -> Some(CheckILAttributesForUnseen g ilAttribs m)) 
                 (fun fsAttribs -> Some(CheckFSharpAttributesForUnseen g fsAttribs m))
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
                 (fun provAttribs -> Some(CheckProvidedAttributesForUnseen provAttribs m))
 #else
                 (fun _provAttribs -> None)
@@ -437,7 +437,7 @@ let MethInfoIsUnseen g m typ minfo =
         | None -> false
 
     let isUnseenByHidingAttribute = 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         not (isObjTy g typ) &&
         isAppTy g typ &&
         isObjTy g minfo.EnclosingType &&
@@ -470,7 +470,7 @@ let PropInfoIsUnseen m pinfo =
     | FSProp (g,_,Some vref,_) 
     | FSProp (g,_,_,Some vref) -> CheckFSharpAttributesForUnseen g vref.Attribs m
     | FSProp _ -> failwith "CheckPropInfoAttributes: unreachable"
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     | ProvidedProp (_amap,pi,m) -> 
         CheckProvidedAttributesForUnseen (pi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)),m)) m
 #endif

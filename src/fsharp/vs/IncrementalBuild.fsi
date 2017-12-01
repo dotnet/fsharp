@@ -54,6 +54,9 @@ type internal PartialCheckResults =
       /// Represents the collected uses of symbols from type checking
       TcSymbolUses: TcSymbolUses list 
 
+      /// Represents open declarations
+      TcOpenDeclarations: OpenDeclaration list
+
       TcDependencyFiles: string list
 
       /// Represents the collected attributes to apply to the module of assuembly generates
@@ -97,7 +100,7 @@ type internal IncrementalBuilder =
 
       /// The list of files the build depends on
       member AllDependenciesDeprecated : string[]
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
       /// Whether there are any 'live' type providers that may need a refresh when a project is Cleaned
       member ThereAreLiveTypeProviders : bool
 #endif
@@ -141,6 +144,8 @@ type internal IncrementalBuilder =
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
       member GetCheckResultsAndImplementationsForProject : CompilationThreadToken -> Cancellable<PartialCheckResults * IL.ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option>
+
+      member DeduplicateParsedInputModuleNameInProject: Ast.ParsedInput -> Ast.ParsedInput
 
       /// Get the logical time stamp that is associated with the output of the project if it were gully built immediately
       member GetLogicalTimeStampForProject: TimeStampCache * CompilationThreadToken -> DateTime

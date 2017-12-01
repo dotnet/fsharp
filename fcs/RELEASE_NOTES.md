@@ -1,3 +1,11 @@
+#### 16.0.3
+  * [File name deduplication not working with ParseAndCheckFileInProject](https://github.com/fsharp/FSharp.Compiler.Service/issues/819)
+  
+#### 16.0.2
+  * [ProjectCracker returns *.fsi files in FSharpProjectOptions.SourceFiles array](https://github.com/fsharp/FSharp.Compiler.Service/pull/812)
+  
+  * [Fix line endings in the Nuget packages descriptions](https://github.com/fsharp/FSharp.Compiler.Service/pull/811)
+
 #### 16.0.1
   * FSharpChecker provides non-reactor ParseFile instead of ParseFileInProject
   * Add FSharpParsingOptions, GetParsingOptionsFromProjectOptions, GetParsingOptionsFromCommandLine

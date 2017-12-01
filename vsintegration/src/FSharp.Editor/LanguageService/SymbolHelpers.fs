@@ -59,7 +59,7 @@ module internal SymbolHelpers =
                     |> Seq.map (fun project ->
                         async {
                             match projectInfoManager.TryGetOptionsForProject(project.Id) with
-                            | Some (_parsingOptions, projectOptions) ->
+                            | Some (_parsingOptions, _site, projectOptions) ->
                                 let! projectCheckResults = checker.ParseAndCheckProject(projectOptions, userOpName = userOpName)
                                 return! projectCheckResults.GetUsesOfSymbol(symbol)
                             | None -> return [||]
@@ -67,16 +67,8 @@ module internal SymbolHelpers =
                     |> Async.Parallel
                     |> Async.map Array.concat
             
-            let declarationLength = 
-                symbol.DeclarationLocation
-                |> Option.map (fun m -> m.EndColumn - m.StartColumn)
-
             return
                 (symbolUses
-                 |> Seq.filter (fun su -> 
-                     match declarationLength with
-                     | Some declLength -> su.RangeAlternate.EndColumn - su.RangeAlternate.StartColumn = declLength
-                     | None -> true)
                  |> Seq.collect (fun symbolUse -> 
                       solution.GetDocumentIdsWithFilePath(symbolUse.FileName) |> Seq.map (fun id -> id, symbolUse))
                  |> Seq.groupBy fst

@@ -1374,7 +1374,7 @@ and RecordMemberConstraintSolution css m trace traitInfo res =
 
 /// Convert a MethInfo into the data we save in the TAST
 and MemberConstraintSolutionOfMethInfo css m minfo minst = 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 #else
     // to prevent unused parameter warning
     ignore css
@@ -1391,7 +1391,7 @@ and MemberConstraintSolutionOfMethInfo css m minfo minst =
     | MethInfo.DefaultStructCtor _ -> 
        error(InternalError("the default struct constructor was the unexpected solution to a trait constraint", m))
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     | ProvidedMeth(amap, mi, _, m) -> 
         let g = amap.g
         let minst = []   // GENERIC TYPE PROVIDERS: for generics, we would have an minst here
@@ -2121,7 +2121,7 @@ and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs, nNa
                 let predictFields() =
                     minfo.DeclaringEntityRef.AllInstanceFieldsAsList
                     |> List.map (fun p -> p.Name.Replace("@", ""))
-                    |> Set.ofList
+                    |> System.Collections.Generic.HashSet
 
                 ErrorWithSuggestions((msgNum, FSComp.SR.csCtorHasNoArgumentOrReturnProperty(methodName, id.idText, msgText)), id.idRange, id.idText, predictFields)
             else

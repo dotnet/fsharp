@@ -45,8 +45,8 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <VSRootSuffix>RoslynDev</VSRootSuffix>
     <UseCodebase>true</UseCodebase>
-    <DeployExtension Condition=" '$(DeployExtension)' == '' and ('$(AppVeyor)' != '' or '$(HUDSON_COOKIE)' != '' or '$(UsingMicrobuild)' != '') ">False</DeployExtension>
-    <DeployExtension Condition=" '$(DeployExtension)' == '' and '$(AppVeyor)' == '' and '$(HUDSON_COOKIE)' == '' and '$(UsingMicrobuild)' == '' ">True</DeployExtension>
+    <DeployExtension Condition=" '$(DeployExtension)' == '' and '$(CI)' != '1'">True</DeployExtension>
+    <DeployExtension Condition=" '$(DeployExtension)' == '' and '$(CI)' == '1'">False</DeployExtension>
     <ProjectGuid>{E6A45CDF-B408-420F-B475-74611BEFC52B}</ProjectGuid>
     <IsPackage>true</IsPackage>
     <RootNamespace>VisualFSharpOpenSource</RootNamespace>
@@ -56,6 +56,8 @@
     <MicroBuildAssemblyVersion>15.4.1.0</MicroBuildAssemblyVersion>
     <MicroBuildAssemblyFileLanguage>cs</MicroBuildAssemblyFileLanguage>
   </PropertyGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
+  <Import Project="$(FSharpSourcesRoot)\..\packages\$(VSSDK_BUILDTOOLS_VERSION)\build\Microsoft.VsSDK.BuildTools.props" />
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <StartAction>Program</StartAction>
     <StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
@@ -278,38 +280,6 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\ProjectTemplates\NetCore259Project\NetCore259Project.csproj">
-      <Project>{d9d95330-3626-4199-b7af-17b8e4af6d87}</Project>
-      <Name>NetCore259Project</Name>
-      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
-      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\ProjectTemplates\NetCore78Project\NetCore78Project.csproj">
-      <Project>{1a8dbf70-4178-4ae3-af5f-39ddd5692210}</Project>
-      <Name>NetCore78Project</Name>
-      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
-      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\ProjectTemplates\NetCoreProject\NetCoreProject.csproj">
-      <Project>{5b739cf3-1116-4eb4-b598-6c16bea81ce5}</Project>
-      <Name>NetCoreProject</Name>
-      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
-      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\ProjectTemplates\PortableLibraryProject\PortableLibraryProject.csproj">
-      <Project>{db374a0c-7560-479f-9b21-d37c81f7624f}</Project>
-      <Name>PortableLibraryProject</Name>
-      <VSIXSubPath>ProjectTemplates</VSIXSubPath>
-      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-      <Private>True</Private>
-    </ProjectReference>
     <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\ProjectTemplates\TutorialProject\TutorialProject.csproj">
       <Project>{2facee44-48bd-40b5-a2ee-b54a0c9bb7c4}</Project>
       <Name>TutorialProject</Name>
@@ -324,8 +294,8 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>$(FSharpSourcesRoot)\..\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="System.Collections.Immutable, Version=1.2.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\System.Collections.Immutable.1.3.1\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
+    <Reference Include="System.Collections.Immutable">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\System.Collections.Immutable.$(SystemCollectionsImmutableVersion)\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
     </Reference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.tools.targets" />

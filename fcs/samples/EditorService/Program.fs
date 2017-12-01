@@ -2,6 +2,7 @@
 open System
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.FSharp.Compiler.QuickParse
 
 // Create an interactive checker instance (ignore notifications)
 let checker = FSharpChecker.Create()
@@ -36,9 +37,11 @@ let tip = parsed.GetToolTipText(2, 7, inputLines.[1], [ "foo" ], identTokenTag)
 
 printfn "%A" tip
 
+let partialName = GetPartialLongNameEx(inputLines.[4], 23)
+
 // Get declarations (autocomplete) for a location
 let decls = 
-    parsed.GetDeclarationListInfo(Some untyped, 5, 23, inputLines.[4], [], "msg", (fun () -> [])) 
+    parsed.GetDeclarationListInfo(Some untyped, 5, inputLines.[4], partialName, (fun () -> [])) 
     |> Async.RunSynchronously
 
 for item in decls.Items do

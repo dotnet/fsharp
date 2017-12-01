@@ -55,10 +55,12 @@
 
   <ItemGroup Condition="'$(TEST_NET40_COREUNIT_SUITE)'=='1'" >
     <ProjectsWithNet40 Include="src/fsharp/FSharp.Core.Unittests/FSharp.Core.Unittests.fsproj"/>
+    <ProjectsWithNet40 Include="src/fsharp/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj"/>
   </ItemGroup>
 
   <ItemGroup Condition="'$(TEST_CORECLR_COREUNIT_SUITE)'=='1'">
     <ProjectsWithCoreClr Include="src/fsharp/FSharp.Core.Unittests/FSharp.Core.Unittests.fsproj"/>
+    <ProjectsWithCoreClr Include="src/fsharp/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj"/>
   </ItemGroup>
 
   <ItemGroup Condition="'$(TEST_NET40_COMPILERUNIT_SUITE)'=='1'" >
@@ -71,39 +73,54 @@
 
   <ItemGroup Condition="'$(TEST_CORECLR_FSHARP_SUITE)'=='1'" >
     <ProjectsWithCoreClr Include="tests/fsharp/FSharp.Tests.FSharpSuite.DrivingCoreCLR/FSharp.Tests.FSharpSuite.DrivingCoreCLR.fsproj" />
+    <ProjectsWithCoreClr Include="tests/fsharpqa/testenv/src/PEVerify/PEVerify.csproj" />
+
+    <ProjectsToRestore Include="tests/fsharpqa/testenv/src/PEVerify/PEVerify.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TEST_NET40_FSHARPQA_SUITE)'=='1' OR '$(TEST_NET40_FSHARP_SUITE)'=='1'" >
     <ProjectsWithNet40 Include="tests/fsharpqa/testenv/src/ILComparer/ILComparer.fsproj" />
     <ProjectsWithNet40 Include="tests/fsharpqa/testenv/src/HostedCompilerServer/HostedCompilerServer.fsproj" />
+    <ProjectsWithNet40 Include="tests/fsharpqa/testenv/src/PEVerify/PEVerify.csproj" />
+
+    <ProjectsToRestore Include="tests/fsharpqa/testenv/src/PEVerify/PEVerify.csproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TEST_VS_IDEUNIT_SUITE)'=='1'" >
     <ProjectsWithNet40 Include="vsintegration/fsharp-vsintegration-unittests-build.proj"/>
   </ItemGroup>
 
+  <PropertyGroup>
+    <CustomProps>AssemblySearchPaths={HintPathFromItem};{TargetFrameworkDirectory};{RawFileName}</CustomProps>
+  </PropertyGroup>
+
   <!-- +++++++++++++++++++++++ Targets +++++++++++++++++++++++++++++++ -->
 
   <Target Name="Build">
-    <MSBuild Projects="@(ProjectsWithNet40)"              Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
-    <MSBuild Projects="@(ProjectsWithCoreClr)"            Targets="Build" BuildInParallel="false" Properties="Configuration=$(Configuration);TargetDotnetProfile=coreclr;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
-    <MSBuild Projects="@(NugetProjects)"                  Targets="Build" BuildInParallel="false" Properties="Configuration=$(Configuration);" />
-    <MSBuild Projects="@(SetupProjects)"                  Targets="Build" BuildInParallel="false" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
+    <MSBuild Projects="@(ProjectsWithNet40)"              Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(ProjectsWithCoreClr)"            Targets="Build" BuildInParallel="false" Properties="Configuration=$(Configuration);TargetDotnetProfile=coreclr;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(NugetProjects)"                  Targets="Build" BuildInParallel="false" Properties="Configuration=$(Configuration);$(CustomProps)" />
+    <MSBuild Projects="@(SetupProjects)"                  Targets="Build" BuildInParallel="false" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
   </Target>
 
   <Target Name="Rebuild">
-    <MSBuild Projects="@(ProjectsWithNet40)"              Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
-    <MSBuild Projects="@(ProjectsWithNet40PlusDefine)"    Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);FSHARP_SUITE_DRIVES_CORECLR_TESTS=true" />
-    <MSBuild Projects="@(ProjectsWithCoreClr)"            Targets="Rebuild" BuildInParallel="false" Properties="Configuration=$(Configuration);TargetDotnetProfile=coreclr;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
-    <MSBuild Projects="@(NugetProjects)"                  Targets="Rebuild" BuildInParallel="false" Properties="Configuration=$(Configuration);" />
-    <MSBuild Projects="@(SetupProjects)"                  Targets="Rebuild" BuildInParallel="false" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
+    <MSBuild Projects="@(ProjectsWithNet40)"              Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(ProjectsWithNet40PlusDefine)"    Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);FSHARP_SUITE_DRIVES_CORECLR_TESTS=true;$(CustomProps)" />
+    <MSBuild Projects="@(ProjectsWithCoreClr)"            Targets="Rebuild" BuildInParallel="false" Properties="Configuration=$(Configuration);TargetDotnetProfile=coreclr;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(NugetProjects)"                  Targets="Rebuild" BuildInParallel="false" Properties="Configuration=$(Configuration);$(CustomProps)" />
+    <MSBuild Projects="@(SetupProjects)"                  Targets="Rebuild" BuildInParallel="false" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
   </Target>
 
   <Target Name="Clean">
-    <MSBuild Projects="@(ProjectsWithNet40)"              Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
-    <MSBuild Projects="@(ProjectsWithNet40PlusDefine)"    Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);FSHARP_SUITE_DRIVES_CORECLR_TESTS=true" />
-    <MSBuild Projects="@(ProjectsWithCoreClr)"            Targets="Clean" BuildInParallel="false" Properties="Configuration=$(Configuration);TargetDotnetProfile=coreclr;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
-    <MSBuild Projects="@(NugetProjects)"                  Targets="Clean" BuildInParallel="false" Properties="Configuration=$(Configuration);" />
-    <MSBuild Projects="@(SetupProjects)"                  Targets="Clean" BuildInParallel="false" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
+    <MSBuild Projects="@(ProjectsWithNet40)"              Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(ProjectsWithNet40PlusDefine)"    Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);FSHARP_SUITE_DRIVES_CORECLR_TESTS=true;$(CustomProps)" />
+    <MSBuild Projects="@(ProjectsWithCoreClr)"            Targets="Clean" BuildInParallel="false" Properties="Configuration=$(Configuration);TargetDotnetProfile=coreclr;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(NugetProjects)"                  Targets="Clean" BuildInParallel="false" Properties="Configuration=$(Configuration);$(CustomProps)" />
+    <MSBuild Projects="@(SetupProjects)"                  Targets="Clean" BuildInParallel="false" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
   </Target>
+
+  <Target Name="Restore">
+    <MSBuild Projects="@(ProjectsToRestore)"              Targets="Restore" />
+  </Target>
+
 </Project>

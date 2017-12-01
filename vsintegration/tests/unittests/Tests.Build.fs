@@ -40,11 +40,7 @@ type MyLogger(f : string -> unit) =
 type FauxHostObject() =
     let mutable myFlags : string[] = null
     let mutable mySources : string[] = null
-#if FX_NO_CONVERTER
-    member x.Compile(compile:Func<int>, flags:string[], sources:string[]) = 
-#else
     member x.Compile(compile:System.Converter<int,int>, flags:string[], sources:string[]) = 
-#endif
         myFlags <- flags        
         mySources <- sources
         0
@@ -334,21 +330,6 @@ type Build() =
         printfn "cmd=\"%s\"" cmd
         AssertEqual ("--optimize+" + Environment.NewLine +
                      "--platform:x64" + Environment.NewLine +
-                     "--warnaserror:76" + Environment.NewLine +
-                     "--fullpaths" + Environment.NewLine +
-                     "--flaterrors" + Environment.NewLine +
-                     "--highentropyva-" + Environment.NewLine)
-                    cmd
-
-    [<Test>]
-    member public this.TestPlatform2() =
-        let tool = new Microsoft.FSharp.Build.Fsc()
-        tool.Platform <- "itanium"
-        AssertEqual "itanium" tool.Platform 
-        let cmd = tool.InternalGenerateResponseFileCommands()
-        printfn "cmd=\"%s\"" cmd
-        AssertEqual ("--optimize+" + Environment.NewLine +
-                     "--platform:Itanium" + Environment.NewLine +
                      "--warnaserror:76" + Environment.NewLine +
                      "--fullpaths" + Environment.NewLine +
                      "--flaterrors" + Environment.NewLine +

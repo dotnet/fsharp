@@ -23,7 +23,7 @@ open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Core.Printf
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
 open Microsoft.FSharp.Core.CompilerServices
 #endif
@@ -55,14 +55,14 @@ let isExnDeclTy g typ =
 /// Get the base type of a type, taking into account type instantiations. Return None if the
 /// type has no base type.
 let GetSuperTypeOfType g amap m typ = 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     let typ = (if isAppTy g typ && (tcrefOfAppTy g typ).IsProvided then stripTyEqns g typ else stripTyEqnsAndMeasureEqns g typ)
 #else
     let typ = stripTyEqnsAndMeasureEqns g typ 
 #endif
 
     match metadataOfTy g typ with 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     | ProvidedTypeMetadata info -> 
         let st = info.ProvidedType
         let superOpt = st.PApplyOption((fun st -> match st.BaseType with null -> None | t -> Some t),m)
@@ -125,7 +125,7 @@ let rec GetImmediateInterfacesOfType skipUnref g amap m typ =
                   yield mkAppTy g.system_GenericIEquatable_tcref [typ]]
             else
                 match metadataOfTy g typ with 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
                 | ProvidedTypeMetadata info -> 
                     [ for ity in info.ProvidedType.PApplyArray((fun st -> st.GetInterfaces()), "GetInterfaces", m) do
                           yield Import.ImportProvidedType amap m ity ]
@@ -416,7 +416,7 @@ type ValRef with
 // as backing data for MethInfo, PropInfo etc.
 
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 /// Get the return type of a provided method, where 'void' is returned as 'None'
 let GetCompiledReturnTyOfProvidedMethodInfo amap m (mi:Tainted<ProvidedMethodBase>) =
     let returnType = 
@@ -601,7 +601,7 @@ type ParamData =
 //-------------------------------------------------------------------------
 // Helper methods associated with type providers
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 
 type ILFieldInit with 
     /// Compute the ILFieldInit for the given provided constant value for a provided enum type.
@@ -878,7 +878,7 @@ type MethInfo =
     /// Describes a use of a pseudo-method corresponding to the default constructor for a .NET struct type
     | DefaultStructCtor of TcGlobals * TType
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     /// Describes a use of a method backed by provided metadata
     | ProvidedMeth of Import.ImportMap * Tainted<ProvidedMethodBase> * ExtensionMethodPriority option  * range
 #endif
@@ -892,7 +892,7 @@ type MethInfo =
         | ILMeth(_g,ilminfo,_) -> ilminfo.ApparentEnclosingType
         | FSMeth(_g,typ,_,_) -> typ
         | DefaultStructCtor(_g,typ) -> typ
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth(amap,mi,_,m) -> 
               Import.ImportProvidedType amap m (mi.PApply((fun mi -> mi.DeclaringType),m))
 #endif
@@ -911,7 +911,7 @@ type MethInfo =
         match x with
         | ILMeth _ -> None
         | FSMeth _  -> None
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth (_, mb, _, m) -> 
             let staticParams = mb.PApplyWithProvider((fun (mb,provider) -> mb.GetStaticParametersForMethod(provider)), range=m) 
             let staticParams = staticParams.PApplyArray(id, "GetStaticParametersForMethod", m)
@@ -927,7 +927,7 @@ type MethInfo =
         match x with
         | ILMeth(_,_,pri) -> pri
         | FSMeth(_,_,_,pri) -> pri
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth(_,_,pri,_) -> pri
 #endif
         | DefaultStructCtor _ -> None
@@ -942,7 +942,7 @@ type MethInfo =
         match x with 
         | ILMeth(_,y,_) -> "ILMeth: " + y.ILName
         | FSMeth(_,_,vref,_) -> "FSMeth: " + vref.LogicalName
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth(_,mi,_,m) -> "ProvidedMeth: " + mi.PUntaint((fun mi -> mi.Name),m)
 #endif
         | DefaultStructCtor _ -> ".ctor"
@@ -952,7 +952,7 @@ type MethInfo =
         match x with 
         | ILMeth(_,y,_) -> y.ILName
         | FSMeth(_,_,vref,_) -> vref.LogicalName
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth(_,mi,_,m) -> mi.PUntaint((fun mi -> mi.Name),m)
 #endif
         | DefaultStructCtor _ -> ".ctor"
@@ -967,7 +967,7 @@ type MethInfo =
     member x.HasDirectXmlComment =
         match x with
         | FSMeth(g,_,vref,_) -> valRefInThisAssembly g.compilingFslib vref
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth _ -> true
 #endif
         | _ -> false
@@ -986,7 +986,7 @@ type MethInfo =
         | ILMeth(g,_,_) -> g
         | FSMeth(g,_,_,_) -> g
         | DefaultStructCtor (g,_) -> g
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth(amap,_,_,_) -> amap.g
 #endif
 
@@ -1000,7 +1000,7 @@ type MethInfo =
             let _,memberMethodTypars,_,_ = AnalyzeTypeOfMemberVal x.IsCSharpStyleExtensionMember g (typ,vref)
             memberMethodTypars
         | DefaultStructCtor _ -> []
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth _ -> [] // There will already have been an error if there are generic parameters here.
 #endif
            
@@ -1015,7 +1015,7 @@ type MethInfo =
         | ILMeth(_,_,_) -> XmlDoc.Empty
         | FSMeth(_,_,vref,_) -> vref.XmlDoc
         | DefaultStructCtor _ -> XmlDoc.Empty
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth(_,mi,_,m)-> 
             XmlDoc (mi.PUntaint((fun mix -> (mix :> IProvidedCustomAttributeProvider).GetXmlDocAttributes(mi.TypeProvider.PUntaintNoFailure(id))),m))
 #endif
@@ -1034,7 +1034,7 @@ type MethInfo =
         | ILMeth(_,ilminfo,_) -> [ilminfo.NumParams]
         | FSMeth(g,_,vref,_) -> GetArgInfosOfMember x.IsCSharpStyleExtensionMember g vref |> List.map List.length 
         | DefaultStructCtor _ -> [0]
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth(_,mi,_,m) -> [mi.PUntaint((fun mi -> mi.GetParameters().Length),m)] // Why is this a list? Answer: because the method might be curried
 #endif
 
@@ -1046,7 +1046,7 @@ type MethInfo =
         | ILMeth(_,ilmeth,_) -> ilmeth.IsInstance
         | FSMeth(_,_,vref,_) -> vref.IsInstanceMember || x.IsCSharpStyleExtensionMember
         | DefaultStructCtor _ -> false
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth(_,mi,_,m) -> mi.PUntaint((fun mi -> not mi.IsConstructor && not mi.IsStatic),m)
 #endif
 
@@ -1060,7 +1060,7 @@ type MethInfo =
         | ILMeth(_,ilmeth,_) -> ilmeth.IsProtectedAccessibility
         | FSMeth _ -> false
         | DefaultStructCtor _ -> false
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth(_,mi,_,m) -> mi.PUntaint((fun mi -> mi.IsFamily), m)
 #endif
 
@@ -1069,7 +1069,7 @@ type MethInfo =
         | ILMeth(_,ilmeth,_) -> ilmeth.IsVirtual
         | FSMeth(_,_,vref,_) -> vref.IsVirtualMember
         | DefaultStructCtor _ -> false
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth(_,mi,_,m) -> mi.PUntaint((fun mi -> mi.IsVirtual), m)
 #endif
 
@@ -1078,7 +1078,7 @@ type MethInfo =
         | ILMeth(_,ilmeth,_) -> ilmeth.IsConstructor
         | FSMeth(_g,_,vref,_) -> (vref.MemberInfo.Value.MemberFlags.MemberKind = MemberKind.Constructor)
         | DefaultStructCtor _ -> true
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth(_,mi,_,m) -> mi.PUntaint((fun mi -> mi.IsConstructor), m)
 #endif
 
@@ -1090,7 +1090,7 @@ type MethInfo =
              | VSome x -> x.IsClassConstructor
              | _ -> false
         | DefaultStructCtor _ -> false
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth(_,mi,_,m) -> mi.PUntaint((fun mi -> mi.IsConstructor && mi.IsStatic), m) // Note: these are never public anyway
 #endif
 
@@ -1101,7 +1101,7 @@ type MethInfo =
             isInterfaceTy g x.EnclosingType  || 
             vref.MemberInfo.Value.MemberFlags.IsDispatchSlot
         | DefaultStructCtor _ -> false
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth _ -> x.IsVirtual // Note: follow same implementation as ILMeth
 #endif
 
@@ -1112,7 +1112,7 @@ type MethInfo =
         | ILMeth(_,ilmeth,_) -> ilmeth.IsFinal
         | FSMeth(_g,_,_vref,_) -> false
         | DefaultStructCtor _ -> true
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth(_,mi,_,m) -> mi.PUntaint((fun mi -> mi.IsFinal), m)
 #endif
 
@@ -1127,7 +1127,7 @@ type MethInfo =
         | ILMeth(_,ilmeth,_) -> ilmeth.IsAbstract
         | FSMeth(g,_,vref,_)  -> isInterfaceTy g minfo.EnclosingType  || vref.IsDispatchSlotMember
         | DefaultStructCtor _ -> false
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth(_,mi,_,m) -> mi.PUntaint((fun mi -> mi.IsAbstract), m)
 #endif
 
@@ -1137,7 +1137,7 @@ type MethInfo =
           (match x with 
            | ILMeth(_,x,_) -> x.IsNewSlot
            | FSMeth(_,_,vref,_) -> vref.IsDispatchSlotMember
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
            | ProvidedMeth(_,mi,_,m) -> mi.PUntaint((fun mi -> mi.IsHideBySig), m) // REVIEW: Check this is correct
 #endif
            | DefaultStructCtor _ -> false))
@@ -1148,7 +1148,7 @@ type MethInfo =
         | ILMeth _ -> false
         | FSMeth(g,_,vref,_) -> vref.IsFSharpExplicitInterfaceImplementation g
         | DefaultStructCtor _ -> false
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth _ -> false 
 #endif
 
@@ -1158,7 +1158,7 @@ type MethInfo =
         | ILMeth _ -> false
         | FSMeth(_,_,vref,_) -> vref.IsDefiniteFSharpOverrideMember
         | DefaultStructCtor _ -> false
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth _ -> false 
 #endif
 
@@ -1197,7 +1197,7 @@ type MethInfo =
     member x.IsFSharpEventPropertyMethod = 
         match x with 
         | FSMeth(g,_,vref,_)  -> vref.IsFSharpEventProperty(g)
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth _ -> false 
 #endif
         | _ -> false
@@ -1230,7 +1230,7 @@ type MethInfo =
         | ILMeth(_,x1,_), ILMeth(_,x2,_) -> (x1.RawMetadata ===  x2.RawMetadata)
         | FSMeth(g,_,vref1,_), FSMeth(_,_,vref2,_)  -> valRefEq g vref1 vref2 
         | DefaultStructCtor(g,ty1), DefaultStructCtor(_,ty2) -> tyconRefEq g (tcrefOfAppTy g ty1) (tcrefOfAppTy g ty2) 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth(_,mi1,_,_),ProvidedMeth(_,mi2,_,_)  -> ProvidedMethodBase.TaintedEquals (mi1, mi2)
 #endif
         | _ -> false
@@ -1243,7 +1243,7 @@ type MethInfo =
         | FSMeth(_,_,vref,_) -> hash vref.LogicalName
         | DefaultStructCtor(_,_ty) -> 34892 // "ty" doesn't support hashing. We could use "hash (tcrefOfAppTy g ty).CompiledName" or 
                                            // something but we don't have a "g" parameter here yet. But this hash need only be very approximate anyway
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth(_,mi,_,_) -> ProvidedMethodInfo.TaintedGetHashCode(mi)
 #endif
 
@@ -1256,7 +1256,7 @@ type MethInfo =
             | ILMethInfo(_,typ,Some declaringTyconRef,md,_) -> MethInfo.CreateILExtensionMeth(amap, m, instType inst typ, declaringTyconRef, pri, md) 
         | FSMeth(g,typ,vref,pri) -> FSMeth(g,instType inst typ,vref,pri)
         | DefaultStructCtor(g,typ) -> DefaultStructCtor(g,instType inst typ)
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth _ -> 
             match inst with 
             | [] -> x
@@ -1273,7 +1273,7 @@ type MethInfo =
             let _,_,retTy,_ = AnalyzeTypeOfMemberVal x.IsCSharpStyleExtensionMember g (typ,vref)
             retTy |> Option.map (instType inst)
         | DefaultStructCtor _ -> None
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth(amap,mi,_,m) -> 
             GetCompiledReturnTyOfProvidedMethodInfo amap m mi
 #endif
@@ -1293,7 +1293,7 @@ type MethInfo =
             let inst = GetInstantiationForMemberVal g x.IsCSharpStyleExtensionMember (typ,vref,minst)
             paramTypes |> List.mapSquared (fun (ParamNameAndType(_,ty)) -> instType inst ty) 
         | DefaultStructCtor _ -> []
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth(amap,mi,_,m) -> 
             // A single group of tupled arguments
             [ [ for p in mi.PApplyArray((fun mi -> mi.GetParameters()), "GetParameters",m) do
@@ -1316,7 +1316,7 @@ type MethInfo =
                     [ typ ]
             else []
         | DefaultStructCtor _ -> []
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth(amap,mi,_,m) -> 
             if x.IsInstance then [ Import.ImportProvidedType amap m (mi.PApply((fun mi -> mi.DeclaringType),m)) ] // find the type of the 'this' argument
             else []
@@ -1419,7 +1419,7 @@ type MethInfo =
         | DefaultStructCtor _ -> 
             [[]]
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth(amap,mi,_,_) -> 
             // A single group of tupled arguments
             [ [for p in mi.PApplyArray((fun mi -> mi.GetParameters()), "GetParameters", m) do
@@ -1482,7 +1482,7 @@ type MethInfo =
                                 let paramType = ImportILTypeFromMetadata amap m ftinfo.ILScopeRef ftinfo.TypeInst formalMethTyparTys p.Type
                                 yield TSlotParam(p.Name, paramType, p.IsIn, p.IsOut, p.IsOptional, []) ] ]
                     formalRetTy, formalParams
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
                 | ProvidedMeth (_,mi,_,_) -> 
                     // GENERIC TYPE PROVIDERS: for generics, formal types should be  generated here, not the actual types
                     // For non-generic type providers there is no difference
@@ -1512,7 +1512,7 @@ type MethInfo =
                 items |> ParamNameAndType.InstantiateCurried inst 
             | DefaultStructCtor _ -> 
                 [[]]
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
             | ProvidedMeth(amap,mi,_,_) -> 
                 // A single set of tupled parameters
                 [ [for p in mi.PApplyArray((fun mi -> mi.GetParameters()), "GetParameters", m) do 
@@ -1552,7 +1552,7 @@ type MethInfo =
                 memberParentTypars
             | DefaultStructCtor(g,typ) -> 
                 (tcrefOfAppTy g typ).Typars(m)
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
             | ProvidedMeth (amap,_,_,_) -> 
                 (tcrefOfAppTy amap.g x.EnclosingType).Typars(m)
 #endif
@@ -1566,7 +1566,7 @@ type MethInfo =
 type ILFieldInfo = 
      /// Represents a single use of a field backed by Abstract IL metadata
     | ILFieldInfo of ILTypeInfo * ILFieldDef // .NET IL fields 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
      /// Represents a single use of a field backed by provided metadata
     | ProvidedField of Import.ImportMap * Tainted<ProvidedFieldInfo> * range
 #endif
@@ -1575,7 +1575,7 @@ type ILFieldInfo =
     member x.EnclosingType = 
         match x with 
         | ILFieldInfo(tinfo,_) -> tinfo.ToType
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedField(amap,fi,m) -> (Import.ImportProvidedType amap m (fi.PApply((fun fi -> fi.DeclaringType),m)))
 #endif
 
@@ -1583,7 +1583,7 @@ type ILFieldInfo =
     member x.ILTypeRef = 
         match x with 
         | ILFieldInfo(tinfo,_) -> tinfo.ILTypeRef
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedField(amap,fi,m) -> (Import.ImportProvidedTypeAsILType amap m (fi.PApply((fun fi -> fi.DeclaringType),m))).TypeRef
 #endif
     
@@ -1594,7 +1594,7 @@ type ILFieldInfo =
     member x.TypeInst = 
         match x with 
         | ILFieldInfo(tinfo,_) -> tinfo.TypeInst
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedField _ -> [] /// GENERIC TYPE PROVIDERS
 #endif
 
@@ -1602,7 +1602,7 @@ type ILFieldInfo =
     member x.FieldName = 
         match x with 
         | ILFieldInfo(_,pd) -> pd.Name
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedField(_,fi,m) -> fi.PUntaint((fun fi -> fi.Name),m)
 #endif
 
@@ -1610,7 +1610,7 @@ type ILFieldInfo =
     member x.IsInitOnly = 
         match x with 
         | ILFieldInfo(_,pd) -> pd.IsInitOnly
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedField(_,fi,m) -> fi.PUntaint((fun fi -> fi.IsInitOnly),m)
 #endif
 
@@ -1618,7 +1618,7 @@ type ILFieldInfo =
     member x.IsValueType = 
         match x with 
         | ILFieldInfo(tinfo,_) -> tinfo.IsValueType
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedField(amap,_,_) -> isStructTy amap.g x.EnclosingType
 #endif
 
@@ -1626,7 +1626,7 @@ type ILFieldInfo =
     member x.IsStatic = 
         match x with 
         | ILFieldInfo(_,pd) -> pd.IsStatic
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedField(_,fi,m) -> fi.PUntaint((fun fi -> fi.IsStatic),m)
 #endif
 
@@ -1634,7 +1634,7 @@ type ILFieldInfo =
     member x.IsSpecialName = 
         match x with 
         | ILFieldInfo(_,pd) -> pd.IsSpecialName
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedField(_,fi,m) -> fi.PUntaint((fun fi -> fi.IsSpecialName),m)
 #endif
     
@@ -1642,7 +1642,7 @@ type ILFieldInfo =
     member x.LiteralValue = 
         match x with 
         | ILFieldInfo(_,pd) -> if pd.IsLiteral then pd.LiteralValue else None
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedField(_,fi,m) -> 
             if fi.PUntaint((fun fi -> fi.IsLiteral),m) then 
                 Some (ILFieldInit.FromProvidedObj m (fi.PUntaint((fun fi -> fi.GetRawConstantValue()),m)))
@@ -1654,7 +1654,7 @@ type ILFieldInfo =
     member x.ILFieldType = 
         match x with 
         | ILFieldInfo (_,fdef) -> fdef.Type
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedField(amap,fi,m) -> Import.ImportProvidedTypeAsILType amap m (fi.PApply((fun fi -> fi.FieldType),m))
 #endif
 
@@ -1662,14 +1662,14 @@ type ILFieldInfo =
     member x.FieldType(amap,m) = 
         match x with 
         | ILFieldInfo (tinfo,fdef) -> ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInst [] fdef.Type
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedField(amap,fi,m) -> Import.ImportProvidedType amap m (fi.PApply((fun fi -> fi.FieldType),m))
 #endif
 
     static member ILFieldInfosUseIdenticalDefinitions x1 x2 = 
         match x1,x2 with 
         | ILFieldInfo(_, x1), ILFieldInfo(_, x2) -> (x1 === x2)
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedField(_,fi1,_), ProvidedField(_,fi2,_)-> ProvidedFieldInfo.TaintedEquals (fi1, fi2) 
         | _ -> false
 #endif
@@ -1821,7 +1821,7 @@ type PropInfo =
     | FSProp of TcGlobals * TType * ValRef option * ValRef option
     /// An F# use of a property backed by Abstract IL metadata
     | ILProp of TcGlobals * ILPropInfo
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     /// An F# use of a property backed by provided metadata
     | ProvidedProp of Import.ImportMap * Tainted<ProvidedPropertyInfo> * range
 #endif
@@ -1839,7 +1839,7 @@ type PropInfo =
         match x with
         | FSProp(g,_,Some vref,_)
         | FSProp(g,_,_,Some vref) -> valRefInThisAssembly g.compilingFslib vref
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedProp _ -> true
 #endif
         | _ -> false
@@ -1850,7 +1850,7 @@ type PropInfo =
         | ILProp(_,x) -> x.PropertyName
         | FSProp(_,_,Some vref,_) 
         | FSProp(_,_,_, Some vref) -> vref.PropertyName
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedProp(_,pi,m) -> pi.PUntaint((fun pi -> pi.Name),m)
 #endif
         | FSProp _ -> failwith "unreachable"
@@ -1860,7 +1860,7 @@ type PropInfo =
         match x with
         | ILProp(_,x) -> x.HasGetter
         | FSProp(_,_,x,_) -> Option.isSome x 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedProp(_,pi,m) -> pi.PUntaint((fun pi -> pi.CanRead),m)
 #endif
 
@@ -1869,7 +1869,7 @@ type PropInfo =
         match x with
         | ILProp(_,x) -> x.HasSetter
         | FSProp(_,_,_,x) -> Option.isSome x 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedProp(_,pi,m) -> pi.PUntaint((fun pi -> pi.CanWrite),m)
 #endif
 
@@ -1880,7 +1880,7 @@ type PropInfo =
         match x with 
         | ILProp(_,x) -> x.ILTypeInfo.ToType
         | FSProp(_,typ,_,_) -> typ
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedProp(amap,pi,m) -> 
             Import.ImportProvidedType amap m (pi.PApply((fun pi -> pi.DeclaringType),m)) 
 #endif
@@ -1897,7 +1897,7 @@ type PropInfo =
         | FSProp(_,_,Some vref,_) 
         | FSProp(_,_,_, Some vref) -> vref.IsVirtualMember
         | FSProp _-> failwith "unreachable"
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedProp(_,pi,m) -> 
             let mi = ArbitraryMethodInfoOfPropertyInfo pi m
             mi.PUntaint((fun mi -> mi.IsVirtual), m)
@@ -1910,7 +1910,7 @@ type PropInfo =
         | FSProp(_,_,Some vref,_) 
         | FSProp(_,_,_, Some vref) -> vref.IsDispatchSlotMember
         | FSProp(_,_,None,None) -> failwith "unreachable"
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedProp(_,pi,m) -> 
             let mi = ArbitraryMethodInfoOfPropertyInfo pi m
             mi.PUntaint((fun mi -> mi.IsHideBySig), m)
@@ -1926,7 +1926,7 @@ type PropInfo =
         | FSProp(g,typ,_, Some vref) ->
             isInterfaceTy g typ  || (vref.MemberInfo.Value.MemberFlags.IsDispatchSlot)
         | FSProp _ -> failwith "unreachable"
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedProp(_,pi,m) -> 
             let mi = ArbitraryMethodInfoOfPropertyInfo pi m
             mi.PUntaint((fun mi -> mi.IsVirtual), m)
@@ -1939,7 +1939,7 @@ type PropInfo =
         | FSProp(_,_,Some vref,_) 
         | FSProp(_,_,_, Some vref) -> not vref.IsInstanceMember
         | FSProp(_,_,None,None) -> failwith "unreachable"
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedProp(_,pi,m) -> 
             (ArbitraryMethodInfoOfPropertyInfo pi m).PUntaint((fun mi -> mi.IsStatic), m)
 #endif
@@ -1975,7 +1975,7 @@ type PropInfo =
             arginfos.Length = 1 && arginfos.Head.Length >= 2
         | FSProp(_,_,None,None) -> 
             failwith "unreachable"
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedProp(_,pi,m) -> 
             pi.PUntaint((fun pi -> pi.GetIndexParameters().Length), m)>0
 #endif
@@ -1984,7 +1984,7 @@ type PropInfo =
     member x.IsFSharpEventProperty = 
         match x with 
         | FSProp(g,_,Some vref,None)  -> vref.IsFSharpEventProperty(g)
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedProp _ -> false
 #endif
         | _ -> false
@@ -2012,7 +2012,7 @@ type PropInfo =
         | FSProp(_,_,Some vref,_) 
         | FSProp(_,_,_, Some vref) -> vref.XmlDoc
         | FSProp(_,_,None,None) -> failwith "unreachable"
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedProp(_,pi,m) -> 
             XmlDoc (pi.PUntaint((fun pix -> (pix :> IProvidedCustomAttributeProvider).GetXmlDocAttributes(pi.TypeProvider.PUntaintNoFailure(id))), m))
 #endif
@@ -2022,7 +2022,7 @@ type PropInfo =
         match x with 
         | ILProp(g,_) -> g 
         | FSProp(g,_,_,_) -> g 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedProp(amap,_,_) -> amap.g
 #endif
 
@@ -2042,7 +2042,7 @@ type PropInfo =
             ReturnTypeOfPropertyVal g vref.Deref |> instType inst
             
         | FSProp _ -> failwith "unreachable"
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedProp(_,pi,m) -> 
             Import.ImportProvidedType amap m (pi.PApply((fun pi -> pi.PropertyType),m))
 #endif
@@ -2059,7 +2059,7 @@ type PropInfo =
             let inst = GetInstantiationForPropertyVal g (typ,vref)
             ArgInfosOfPropertyVal g vref.Deref |> List.map (ParamNameAndType.FromArgInfo >> ParamNameAndType.Instantiate inst)
         | FSProp _ -> failwith "unreachable"
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedProp (_,pi,m) -> 
             [ for p in pi.PApplyArray((fun pi -> pi.GetIndexParameters()), "GetIndexParameters", m) do
                 let paramName = p.PUntaint((fun p -> match p.Name with null -> None | s -> Some (mkSynId m s)), m)
@@ -2081,7 +2081,7 @@ type PropInfo =
         match x with
         | ILProp(g,x) -> ILMeth(g,x.GetterMethod(g),None)
         | FSProp(g,typ,Some vref,_) -> FSMeth(g,typ,vref,None) 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedProp(amap,pi,m) -> 
             let meth = GetAndSanityCheckProviderMethod m pi (fun pi -> pi.GetGetMethod()) FSComp.SR.etPropertyCanReadButHasNoGetter
             ProvidedMeth(amap, meth, None, m)
@@ -2094,7 +2094,7 @@ type PropInfo =
         match x with
         | ILProp(g,x) -> ILMeth(g,x.SetterMethod(g),None)
         | FSProp(g,typ,_,Some vref) -> FSMeth(g,typ,vref,None)
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedProp(amap,pi,m) -> 
             let meth = GetAndSanityCheckProviderMethod m pi (fun pi -> pi.GetSetMethod()) FSComp.SR.etPropertyCanWriteButHasNoSetter
             ProvidedMeth(amap, meth, None, m)
@@ -2113,7 +2113,7 @@ type PropInfo =
         | ILProp(_, x1), ILProp(_, x2) -> (x1.RawMetadata === x2.RawMetadata)
         | FSProp(g, _, vrefa1, vrefb1), FSProp(_, _, vrefa2, vrefb2) ->
             (optVrefEq g (vrefa1, vrefa2)) && (optVrefEq g (vrefb1, vrefb2))
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedProp(_,pi1,_), ProvidedProp(_,pi2,_) -> ProvidedPropertyInfo.TaintedEquals (pi1, pi2) 
 #endif
         | _ -> false
@@ -2126,7 +2126,7 @@ type PropInfo =
             // Hash on option<string>*option<string>
             let vth = (vrefOpt1 |> Option.map (fun vr -> vr.LogicalName), (vrefOpt2 |> Option.map (fun vr -> vr.LogicalName)))
             hash vth
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedProp(_,pi,_) -> ProvidedPropertyInfo.TaintedGetHashCode(pi)
 #endif
 
@@ -2207,7 +2207,7 @@ type EventInfo =
     | FSEvent of TcGlobals * PropInfo * ValRef * ValRef
     /// An F# use of an event backed by .NET metadata
     | ILEvent of TcGlobals * ILEventInfo
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     /// An F# use of an event backed by provided metadata
     | ProvidedEvent of Import.ImportMap * Tainted<ProvidedEventInfo> * range
 #endif
@@ -2219,7 +2219,7 @@ type EventInfo =
         match x with 
         | ILEvent(_,e) -> e.ILTypeInfo.ToType 
         | FSEvent (_,p,_,_) -> p.EnclosingType
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedEvent (amap,ei,m) -> Import.ImportProvidedType amap m (ei.PApply((fun ei -> ei.DeclaringType),m)) 
 #endif
 
@@ -2227,7 +2227,7 @@ type EventInfo =
     member x.HasDirectXmlComment =
         match x with
         | FSEvent (_,p,_,_) -> p.HasDirectXmlComment 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedEvent _ -> true
 #endif
         | _ -> false
@@ -2237,7 +2237,7 @@ type EventInfo =
         match x with 
         | ILEvent _ -> XmlDoc.Empty
         | FSEvent (_,p,_,_) -> p.XmlDoc
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedEvent (_,ei,m) -> 
             XmlDoc (ei.PUntaint((fun eix -> (eix :> IProvidedCustomAttributeProvider).GetXmlDocAttributes(ei.TypeProvider.PUntaintNoFailure(id))), m))
 #endif
@@ -2247,7 +2247,7 @@ type EventInfo =
         match x with 
         | ILEvent(_,e) -> e.Name 
         | FSEvent (_,p,_,_) -> p.PropertyName
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedEvent (_,ei,m) -> ei.PUntaint((fun ei -> ei.Name), m)
 #endif
 
@@ -2256,7 +2256,7 @@ type EventInfo =
         match x with 
         | ILEvent(g,e) -> e.IsStatic(g)
         | FSEvent (_,p,_,_) -> p.IsStatic
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedEvent (_,ei,m) -> 
             let meth = GetAndSanityCheckProviderMethod m ei (fun ei -> ei.GetAddMethod()) FSComp.SR.etEventNoAdd
             meth.PUntaint((fun mi -> mi.IsStatic), m)
@@ -2267,7 +2267,7 @@ type EventInfo =
         match x with 
         | ILEvent(g,_) -> g
         | FSEvent(g,_,_,_) -> g
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedEvent (amap,_,_) -> amap.g
 #endif
 
@@ -2281,7 +2281,7 @@ type EventInfo =
         match x with 
         | ILEvent(g,e) -> ILMeth(g,e.AddMethod(g),None)
         | FSEvent(g,p,addValRef,_) -> FSMeth(g,p.EnclosingType,addValRef,None)
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedEvent (amap,ei,m) -> 
             let meth = GetAndSanityCheckProviderMethod m ei (fun ei -> ei.GetAddMethod()) FSComp.SR.etEventNoAdd
             ProvidedMeth(amap, meth, None, m)
@@ -2292,7 +2292,7 @@ type EventInfo =
         match x with 
         | ILEvent(g,e) -> ILMeth(g,e.RemoveMethod(g),None)
         | FSEvent(g,p,_,removeValRef) -> FSMeth(g,p.EnclosingType,removeValRef,None)
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedEvent (amap,ei,m) -> 
             let meth = GetAndSanityCheckProviderMethod m ei (fun ei -> ei.GetRemoveMethod()) FSComp.SR.etEventNoRemove
             ProvidedMeth(amap, meth, None, m)
@@ -2315,7 +2315,7 @@ type EventInfo =
 
         | FSEvent(g,p,_,_) -> 
             FindDelegateTypeOfPropertyEvent g amap x.EventName m (p.GetPropertyType(amap,m))
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedEvent (_,ei,_) -> 
             Import.ImportProvidedType amap m (ei.PApply((fun ei -> ei.EventHandlerType), m))
 #endif
@@ -2327,7 +2327,7 @@ type EventInfo =
         | FSEvent(g, pi1, vrefa1, vrefb1), FSEvent(_, pi2, vrefa2, vrefb2) ->
             PropInfo.PropInfosUseIdenticalDefinitions pi1 pi2 && valRefEq g vrefa1 vrefa2 && valRefEq g vrefb1 vrefb2
         | ILEvent(_, x1), ILEvent(_, x2) -> (x1.RawMetadata === x2.RawMetadata)
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedEvent (_,ei1,_), ProvidedEvent (_,ei2,_) -> ProvidedEventInfo.TaintedEquals (ei1, ei2)  
 #endif
         | _ -> false
@@ -2337,7 +2337,7 @@ type EventInfo =
         match ei with 
         | ILEvent(_, x1) -> hash x1.RawMetadata.Name
         | FSEvent(_, pi, vref1, vref2) -> hash ( pi.ComputeHashCode(), vref1.LogicalName, vref2.LogicalName)
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedEvent (_,ei,_) -> ProvidedEventInfo.TaintedGetHashCode(ei)
 #endif
     override x.ToString() = "event " + x.EventName
