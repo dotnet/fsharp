@@ -1621,9 +1621,9 @@ module MultipleOverloadedOperatorTests = begin
 
     let f1 (x:DateTime) (y:TimeSpan) : DateTime = x - y
     let g1 (x:DateTime) (y:DateTime) : TimeSpan = x - y
-    // Return type is also sufficient:
-    let f2 (x:DateTime) y : DateTime = x - y
-    let g2 (x:DateTime) y : TimeSpan = x - y
+    // // Return type is not sufficient:
+    // let f2 (x:DateTime) y : DateTime = x - y
+    // let g2 (x:DateTime) y : TimeSpan = x - y
     // Just argument types are also sufficient:
     let f3 (x:DateTime) (y:TimeSpan)  = x - y
     let g3 (x:DateTime) (y:DateTime)  = x - y
@@ -5584,7 +5584,7 @@ module Devdiv2_Bug_5385 =
                     g "1" |> ignore; // note, use of non-generic 'g' within a generic, generalized memoized function
                     2
 
-        and g : string -> int = memoize f // note, computed function value using generic “f” at an instance
+        and g : string -> int = memoize f // note, computed function value using generic ï¿½fï¿½ at an instance
         g "1"                                        
 
     let res = test3e()
