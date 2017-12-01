@@ -232,8 +232,31 @@ module SomeRandomOperatorConstraints = begin
 
     let f2 x : float = x * x 
     let f3 x (y:float) = x * y
+
     //let neg4 x (y:System.DateTime) = x + y
+
+    // This example resolves the type of "y" to "TimeSpam". It checks that a single "+" overload between 
+    // two different types DateTime andd TimeSpan gets resolved via 
+    // vis weak SRTP resolution using a DateTime constraint alone.
     let f5 (x:DateTime) y = x + y
+
+    // This example checks a use of TimeSpan/DateTime overloads
+    let f5b (x:DateTime) (y:DateTime) = (x - y) 
+
+
+    // This example checks a use of TimeSpan/DateTime overloads
+    let f5b2 (x:DateTime) (y:TimeSpan) = (x - y) 
+
+    // This example coincidentally checks that the return type is not taken into account before th list of method overloads
+    // is prepared in SRTP resolution.  That is the type of (a - b) is immediately known (and we can use it for
+    // dot-notation name resolution of .TotalSeconds) _immediately_ that the types of a and b are
+    // known and _prior_ to generalization.
+    let f5c (x: DateTime) (y:DateTime) = 
+        (x  - y).TotalSeconds |> int
+
+    let f5c2 (x: DateTime) (y:TimeSpan) = 
+        (x  - y).Second |> int
+
     let f6 (x:int64) y = x + y
     let f7 x y : int64 = x + y
     let f8 x = Seq.reduce (+) x
@@ -1743,6 +1766,40 @@ module GenericPropertyConstraintSolvedByRecord =
     let inline print_foo_memb x = box (^a : (member foo : 'b) x)
 
     let v = print_foo_memb { foo=1 } 
+
+
+/// In this case, the presence of the Method(obj) overload meant overload resolution was being applied and resolving to that
+/// overload, even before the full signature of the trait constraint was known.
+module MethodOverloadingForTraitConstraintsIsNotDeterminedUntilSignatureIsKnnown =
+    type X =
+        static member Method (a: obj) = 1
+        static member Method (a: int) = 2
+        static member Method (a: int64) = 3
+
+
+    let inline Test< ^t, ^a when ^t: (static member Method: ^a -> int)> (value: ^a) =
+        ( ^t: (static member Method: ^a -> int)(value))
+
+    let inline Test2< ^t> a = Test<X, ^t> a
+
+    check "slvde0vver90u" (Test2<int> 0) 2
+
+/// In this case, the presence of the "Equals" method on System.Object was causing method overloading to be resolved too
+/// early, when ^t was not yet known.  The underlying problem was that we were proceeding with weak resolution
+/// even for a single-support-type trait constraint.
+module MethodOverloadingForTraitConstraintsWhereSomeMethodsComeFromObjectTypeIsNotDeterminedTooEarly =
+    type Test() =
+         member __.Equals (_: Test) = true
+
+    let inline Equals(a: obj) (b: ^t) =
+        match a with
+        | :? ^t as x -> (^t: (member Equals: ^t -> bool) (b, x))
+        | _-> false
+
+    let a  = Test()
+    let b  = Test()
+
+    check "cewjewcwec09ew" (Equals a b) true
 
 module SRTPFix = 
 
