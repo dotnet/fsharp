@@ -3384,10 +3384,10 @@ let decodeILAttribData (ilg: ILGlobals) (ca: ILAttribute) =
           let n,sigptr = sigptr_get_i32 bytes sigptr
           if n = 0xFFFFFFFF then ILAttribElem.Null,sigptr else
           let rec parseElems acc n sigptr = 
-            if n = 0 then List.rev acc else
+            if n = 0 then List.rev acc, sigptr else
             let v,sigptr = parseVal elemTy sigptr
             parseElems (v ::acc) (n-1) sigptr
-          let elems = parseElems [] n sigptr
+          let elems, sigptr = parseElems [] n sigptr 
           ILAttribElem.Array(elemTy,elems), sigptr
       | ILType.Value _ ->  (* assume it is an enumeration *)
           let n,sigptr = sigptr_get_i32 bytes sigptr
@@ -3409,7 +3409,7 @@ let decodeILAttribData (ilg: ILGlobals) (ca: ILAttribute) =
       let et,sigptr = sigptr_get_u8 bytes sigptr
       // We have a named value 
       let ty,sigptr = 
-        if (0x50 = (int et) || 0x55 = (int et)) then
+        if ( (* 0x50 = (int et) || *) 0x55 = (int et)) then
             let qualified_tname,sigptr = sigptr_get_serstring bytes sigptr
             let unqualified_tname, rest = 
                 let pieces = qualified_tname.Split(',')
