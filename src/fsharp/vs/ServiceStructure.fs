@@ -228,8 +228,7 @@ module Structure =
             | SynExpr.DotIndexedGet (e,_,_,_)
             | SynExpr.DotIndexedSet (e,_,_,_,_,_) -> parseExpr e
             | SynExpr.New (_,_,expr,r) ->
-                let collapse = Range.endToEnd expr.Range r
-                rcheck Scope.New Collapse.Below r collapse
+                rcheck Scope.New Collapse.Below r expr.Range
                 parseExpr expr
             | SynExpr.YieldOrReturn (_,e,r) ->
                 rcheck Scope.YieldOrReturn Collapse.Below r r
@@ -545,7 +544,9 @@ module Structure =
                     | [], [] -> List.rev res
                     | [], _ -> List.rev (currentBulk::res)
                     | r :: rest, [] -> loop rest res [r]
-                    | r :: rest, last :: _ when r.StartLine = last.EndLine + 1 ->
+                    | r :: rest, last :: _ 
+                        when r.StartLine = last.EndLine + 1 || 
+                             sourceLines.[last.EndLine..r.StartLine - 2] |> Array.forall System.String.IsNullOrWhiteSpace ->
                         loop rest res (r::currentBulk)
                     | r :: rest, _ -> loop rest (currentBulk::res) [r]
                 loop input [] []

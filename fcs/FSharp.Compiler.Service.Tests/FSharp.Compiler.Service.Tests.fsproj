@@ -17,7 +17,6 @@
     <TargetType>LIBRARY</TargetType>
     <NoWarn>58;75</NoWarn>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
-    <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
     <ResolveNuGetPackages>false</ResolveNuGetPackages>
     <OutputPath>..\..\$(Configuration)\fcs\net45\</OutputPath>
     <Tailcalls>true</Tailcalls>
@@ -70,6 +69,9 @@
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\ProjectOptionsTests.fs">
       <Link>ProjectOptionsTests.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\StructureTests.fs">
+      <Link>StructureTests.fs</Link>
     </Compile>
     <None Include="$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.27\tools\FSharp.Core.optdata">
       <Link>FSharp.Core.optdata</Link>

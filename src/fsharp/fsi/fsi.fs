@@ -1671,7 +1671,7 @@ module internal MagicAssemblyResolution =
                    | Some (OkResult (warns,[r])) -> OkResult (warns, Choice1Of2 r.resolvedPath)
                    | _ -> 
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
                    match tcImports.TryFindProviderGeneratedAssemblyByName(ctok, simpleAssemName) with
                    | Some(assembly) -> OkResult([],Choice2Of2 assembly)
                    | None -> 
@@ -2464,8 +2464,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     do tcConfigB.useFsiAuxLib <- fsi.UseFsiAuxLib
 
 #if FSI_TODO_NETCORE
-    // "CompilationAndEvaluation" assembly resolution for F# Interactive is not yet properly figured out on .NET Core
-    do tcConfigB.resolutionEnvironment <- ResolutionEnvironment.EditingOrCompilation false
     do tcConfigB.useSimpleResolution <- true
     do SetTargetProfile tcConfigB "netcore" // always assume System.Runtime codegen
 #endif
@@ -2564,7 +2562,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         // Explanation: This callback is invoked during compilation to resolve assembly references
         // We don't yet propagate the ctok through these calls (though it looks plausible to do so).
         let ctok = AssumeCompilationThreadWithoutEvidence ()
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         match tcImports.TryFindProviderGeneratedAssemblyByName (ctok, aref.Name) with
         | Some assembly -> Some (Choice2Of2 assembly)
         | None -> 

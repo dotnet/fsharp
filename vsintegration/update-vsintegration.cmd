@@ -327,7 +327,7 @@ if "%DEPLOY%" == "yes" if "!ISADMIN!" == "yes" (
     )
     REG ADD "HKLM\SOFTWARE\Microsoft\.NETFramework\v4.0.30319\AssemblyFoldersEx\F# !FSHARPVERSION! Core Assemblies (Open Source)" /ve /t REG_SZ /f /d "!X86_PROGRAMFILES!\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.!FSHARPVERSION!.0\
     REG ADD "HKLM\SOFTWARE\Microsoft\.NETFramework\v4.0.50709\AssemblyFoldersEx\F# !FSHARPVERSION! Core Assemblies (Open Source)" /ve /t REG_SZ /f /d "!X86_PROGRAMFILES!\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.!FSHARPVERSION!.0\
-    
+
     rem Disable strong-name validation for F# binaries built from open source that are signed with the microsoft key
     echo.
     CALL :colorEcho 02 "[!ACTION!] Removing strong-name validation of F# binaries" & echo.
@@ -347,7 +347,7 @@ if "%DEPLOY%" == "yes" if "!ISADMIN!" == "yes" (
     !SN32! -Vr FSharp.VS.FSI,b03f5f7f11d50a3a 1>NUL 2>NUL
     !SN32! -Vr VisualFSharp.Unittests,b03f5f7f11d50a3a 1>NUL 2>NUL
     !SN32! -Vr VisualFSharp.Salsa,b03f5f7f11d50a3a 1>NUL 2>NUL
-    
+
     REM Do this *in addition* to the above for x64 systems
     if /i "!PROCESSOR_ARCHITECTURE!"=="AMD64" (
         !SN64! -Vr FSharp.Core,b03f5f7f11d50a3a 1>NUL 2>NUL
@@ -367,7 +367,7 @@ if "%DEPLOY%" == "yes" if "!ISADMIN!" == "yes" (
         !SN64! -Vr VisualFSharp.Unittests,b03f5f7f11d50a3a 1>NUL 2>NUL
         !SN64! -Vr VisualFSharp.Salsa,b03f5f7f11d50a3a 1>NUL 2>NUL
     )
-    
+
     rem NGen fsc, fsi, fsiAnyCpu, and FSharp.Build.dll
     
     echo.
@@ -399,7 +399,7 @@ if "%DEPLOY%" == "yes" if "!ISADMIN!" == "no" (
 
 rem Re-enable certain settings when restoring, NGEN the original files again, requires admin rights
 if "%ACTION%" == "restore" if "!ISADMIN!" == "yes" (
-    
+
     rem Re-enable strong-name validation for F# binaries that were previously installed
     echo.
     CALL :colorEcho 02 "[!ACTION!] Re-enabling strong-name validation of original F# binaries" & echo.
@@ -419,7 +419,7 @@ if "%ACTION%" == "restore" if "!ISADMIN!" == "yes" (
     !SN32! -Vu FSharp.VS.FSI,b03f5f7f11d50a3a 2>NUL 1>NUL
     !SN32! -Vu VisualFSharp.Unittests,b03f5f7f11d50a3a 2>NUL 1>NUL
     !SN32! -Vu VisualFSharp.Salsa,b03f5f7f11d50a3a 2>NUL 1>NUL
-    
+
     REM Do this *in addition* to the above for x64 systems
     if /i "!PROCESSOR_ARCHITECTURE!"=="AMD64" (
         !SN64! -Vu FSharp.Core,b03f5f7f11d50a3a 2>NUL 1>NUL
@@ -439,7 +439,7 @@ if "%ACTION%" == "restore" if "!ISADMIN!" == "yes" (
         !SN64! -Vu VisualFSharp.Unittests,b03f5f7f11d50a3a 2>NUL 1>NUL
         !SN64! -Vu VisualFSharp.Salsa,b03f5f7f11d50a3a 2>NUL 1>NUL
     )
-    
+
     rem NGen fsc, fsi, fsiAnyCpu, and FSharp.Build.dll
     
     echo.

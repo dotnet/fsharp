@@ -24,7 +24,7 @@
                 <dependency id="System.Linq.Queryable" version="4.0.1" />
                 <dependency id="System.Net.Requests" version="4.0.11" />
                 <dependency id="System.Reflection.Emit" version="4.0.1" />
-                <dependency id="System.Reflection.Metadata" version="1.4.1-beta-24227-04" />
+                <dependency id="System.Reflection.Metadata" version="1.4.2" />
                 <dependency id="System.Runtime.InteropServices" version="4.1.0" />
                 <dependency id="System.Runtime.Loader" version="4.0.0" />
                 <dependency id="System.Security.Cryptography.Algorithms" version="4.2.0" />
@@ -32,8 +32,8 @@
                 <dependency id="System.Threading.Thread" version="4.0.0" />
                 <dependency id="System.Threading.ThreadPool" version="4.0.10" />
                 <dependency id="System.ValueTuple" version="4.3.1" />
-                <dependency id="Microsoft.DiaSymReader.PortablePdb" version="1.1.0" />
-                <dependency id="Microsoft.DiaSymReader" version="1.0.8" />
+                <dependency id="Microsoft.DiaSymReader.PortablePdb" version="1.2.0" />
+                <dependency id="Microsoft.DiaSymReader" version="1.1.0" />
             </group>
         </dependencies>
     </metadata>
@@ -46,16 +46,16 @@
             tools, build and runtime/native make unnecessary copies.
             this approach gives a very small deployment. Which is kind of necessary.
         -->
-        <file src="fsc.exe"                                     target="lib/netstandard1.6" />
-        <file src="fsi.exe"                                     target="lib/netstandard1.6" />
-        <file src="FSharp.Core.dll"                             target="lib/netstandard1.6" />
-        <file src="FSharp.Compiler.Private.dll"                 target="lib/netstandard1.6" />
-        <file src="FSharp.Build.dll"                            target="lib/netstandard1.6" />
-        <file src="FSharp.Compiler.Interactive.Settings.dll"    target="lib/netstandard1.6" />
-        <file src="default.win32manifest"                       target="runtimes/any/native"  />
-        <file src="Microsoft.FSharp.Targets"                    target="runtimes/any/native"  />
-        <file src="Microsoft.Portable.FSharp.Targets"           target="runtimes/any/native"  />
-        <file src="Microsoft.FSharp.NetSdk.targets"             target="runtimes/any/native"  />
-        <file src="Microsoft.FSharp.NetSdk.props"               target="runtimes/any/native"  />
+        <file src="fsc.exe"                                     target="lib\netstandard1.6" />
+        <file src="fsi.exe"                                     target="lib\netstandard1.6" />
+        <file src="FSharp.Core.dll"                             target="lib\netstandard1.6" />
+        <file src="FSharp.Compiler.Private.dll"                 target="lib\netstandard1.6" />
+        <file src="FSharp.Build.dll"                            target="lib\netstandard1.6" />
+        <file src="FSharp.Compiler.Interactive.Settings.dll"    target="lib\netstandard1.6" />
+        <file src="default.win32manifest"                       target="runtimes\any\native"  />
+        <file src="Microsoft.FSharp.Targets"                    target="runtimes\any\native"  />
+        <file src="Microsoft.Portable.FSharp.Targets"           target="runtimes\any\native"  />
+        <file src="Microsoft.FSharp.NetSdk.targets"             target="runtimes\any\native"  />
+        <file src="Microsoft.FSharp.NetSdk.props"               target="runtimes\any\native"  />
     </files>
 </package>

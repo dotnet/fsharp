@@ -13,6 +13,7 @@
 module internal Microsoft.FSharp.Compiler.Driver 
 
 open System
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Diagnostics
 open System.Globalization
@@ -53,7 +54,7 @@ open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.TcGlobals
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -1103,7 +1104,7 @@ module StaticLinker =
                 // Don't save interface, optimization or resource definitions for provider-generated assemblies.
                 // These are "fake".
                 let isProvided (ccu: CcuThunk option) = 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
                     match ccu with 
                     | Some c -> c.IsProviderGenerated 
                     | None -> false
@@ -1333,7 +1334,7 @@ module StaticLinker =
     // prior to this point.
     let StaticLink (ctok, tcConfig:TcConfig, tcImports:TcImports, ilGlobals:ILGlobals) = 
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         let providerGeneratedAssemblies = 
 
             [ // Add all EST-generated assemblies into the static linking set
@@ -1347,7 +1348,7 @@ module StaticLinker =
             (fun ilxMainModule -> LegacyFindAndAddMscorlibTypesForStaticLinkingIntoFSharpCoreLibraryForNet20 (tcConfig, ilGlobals, ilxMainModule))
           
         elif not tcConfig.standalone && tcConfig.extraStaticLinkRoots.IsEmpty 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
              && providerGeneratedAssemblies.IsEmpty 
 #endif
              then 
@@ -1360,7 +1361,7 @@ module StaticLinker =
 
               ReportTime tcConfig "Static link"
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
               Morphs.enableMorphCustomAttributeData()
               let providerGeneratedILModules =  FindProviderGeneratedILModules (ctok, tcImports, providerGeneratedAssemblies) 
 
@@ -1758,7 +1759,7 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, openBinarie
     
     let inputs =
         // Deduplicate module names
-        let moduleNamesDict = Dictionary<string,Set<string>>()
+        let moduleNamesDict = ConcurrentDictionary<string,Set<string>>()
         inputs
         |> List.map (fun (input,x) -> DeduplicateParsedInputModuleName moduleNamesDict input,x)
 

@@ -7,6 +7,8 @@
     <ProjectLanguage>FSharp</ProjectLanguage>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
+  <Import Project="$(FSharpSourcesRoot)\..\packages\$(VSSDK_BUILDTOOLS_VERSION)\build\Microsoft.VsSDK.BuildTools.props" />
+
   <PropertyGroup>
     <VsSDKTools>$(VsSDKTools)</VsSDKTools>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -21,7 +23,6 @@
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <OtherFlags>$(OtherFlags) --warnon:1182 --subsystemversion:6.00</OtherFlags>
     <Tailcalls Condition="'$(CodeCoverage)' != ''">false</Tailcalls>
-    <RCResourceFile>ProjectResources.rc</RCResourceFile>
     <ImportVSSDKTargets>true</ImportVSSDKTargets>
     <CreateVsixContainer>false</CreateVsixContainer>
     <DeployExtension>false</DeployExtension>
@@ -38,15 +39,6 @@
   </PropertyGroup>
   <Target Name="CopyCtoFile">
     <Copy SourceFiles="@(VSCTCompile->'$(IntermediateOutputPath)%(FileName).cto')" DestinationFiles="@(VSCTCompile->'ctofiles\%(FileName).cto')" />
-  </Target>
-  <PropertyGroup>
-    <Win32Resource>$(IntermediateOutputPath)\ProjectResources.rc.res</Win32Resource>
-  </PropertyGroup>
-  <Target Name="BeforeBuild" Condition="!Exists('$(IntermediateOutputPath)$(RCResourceFile).res')">
-    <Exec Command="&quot;$(ProgramFiles)\Windows Kits\10\bin\$(UCRTVersion)\x86\rc.exe&quot; /fo $(IntermediateOutputPath)$(RCResourceFile).res $(RCResourceFile)" Condition="Exists('$(ProgramFiles)\Windows Kits\10\bin\$(UCRTVersion)\x86\rc.exe')" />
-    <Exec Command="&quot;$(ProgramFiles)\Windows Kits\8.1\bin\x86\rc.exe&quot; /fo $(IntermediateOutputPath)$(RCResourceFile).res $(RCResourceFile)" Condition="Exists('$(ProgramFiles)\Windows Kits\8.1\bin\x86\rc.exe')" />
-    <Exec Command="&quot;$(ProgramFiles)\Windows Kits\10\bin\x86\rc.exe&quot; /fo $(IntermediateOutputPath)$(RCResourceFile).res $(RCResourceFile)" Condition="Exists('$(ProgramFiles)\Windows Kits\10\bin\x86\rc.exe')" />
-    <Exec Command="&quot;$(ProgramFiles)\Windows Kits\10\bin\10.0.15063.0\x86\rc.exe&quot; /fo $(IntermediateOutputPath)$(RCResourceFile).res $(RCResourceFile)" Condition="Exists('$(ProgramFiles)\Windows Kits\10\bin\10.0.15063.0\x86\rc.exe')" />
   </Target>
   <Target Name="GatherBinariesToBeSigned" AfterTargets="CopyFilesToOutputDirectory">
     <ItemGroup>
@@ -104,7 +96,7 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Microsoft.VisualStudio.DebuggerVisualizers">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.DebuggerVisualizers.12.0.4\lib\net20\Microsoft.VisualStudio.DebuggerVisualizers.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\VSSDK.DebuggerVisualizers.12.0.4\lib\net20\Microsoft.VisualStudio.DebuggerVisualizers.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="EnvDTE">
@@ -112,7 +104,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="EnvDTE80">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\EnvDTE80.8.0.1\lib\net10\EnvDTE.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\EnvDTE80.8.0.1\lib\net10\EnvDTE80.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="VSLangProj">
@@ -124,7 +116,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.OLE.Interop">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.OLE.Interop.7.10.6070\lib\Microsoft.VisualStudio.OLE.Interops.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.OLE.Interop.7.10.6070\lib\Microsoft.VisualStudio.OLE.Interop.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0">
@@ -207,7 +199,7 @@
     <Reference Include="Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion), Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion).$(RoslynVSPackagesVersion)\lib\Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion).dll</HintPath>
     </Reference>
-    <Reference Include="System.Collections.Immutable, Version=1.2.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+    <Reference Include="System.Collections.Immutable">
       <HintPath>$(FSharpSourcesRoot)\..\packages\System.Collections.Immutable.$(SystemCollectionsImmutableVersion)\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
     </Reference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj">
@@ -250,4 +242,6 @@
       <Name>FSharp.Core</Name>
     </ProjectReference>
   </ItemGroup>
+  <Import Project="$(FSharpSourcesRoot)\..\packages\$(VSSDK_BUILDTOOLS_VERSION)\build\Microsoft.VsSDK.BuildTools.targets" Condition="'$(VSToolsPath)' != ''" />
+  <Import Project="$(VSSDKInstall)\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />
 </Project>

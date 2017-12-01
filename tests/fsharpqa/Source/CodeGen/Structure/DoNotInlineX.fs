@@ -4,6 +4,8 @@ open System
 open System.Diagnostics
 open System.IO
 
+let longtime = int(System.TimeSpan.FromSeconds(30.0).TotalMilliseconds)               // longtime is 30 seconds
+
 let programFiles = 
     let pf86 = Environment.GetEnvironmentVariable("ProgramFiles(x86)")
     if String.IsNullOrEmpty(pf86) then Environment.GetEnvironmentVariable("ProgramFiles") else pf86
@@ -26,7 +28,7 @@ let start (p1 : string) = Process.Start(p1)
 
 let CompileFile file args = 
     let p = Process.Start(fsc, file + " " + args)
-    while not (p.HasExited) do ()
+    p.WaitForExit()
 
 [<EntryPoint>]
 let main (args : string[]) =
@@ -40,13 +42,13 @@ let main (args : string[]) =
                 printfn "Compiled DerivedType with %A" derivedFlag
 
                 let r1 = start "DerivedType.exe"
-                while not r1.HasExited do ()
+                r1.WaitForExit(longtime)
                 printfn "Ran DerivedType.exe with result: %A" r1.ExitCode
 
                 CompileFile "BaseType.fs" "-a"
                 printfn "Compiled BaseType without %A" baseFlag
                 let r2 = start "DerivedType.exe"
-                while not r2.HasExited do ()
+                r2.WaitForExit(longtime)
                 printfn "Ran DerivedType.exe with result: %A" r2.ExitCode
 
                 if r1.ExitCode = expectedResult1 && r2.ExitCode = expectedResult2 then 0 else 1

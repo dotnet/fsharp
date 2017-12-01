@@ -27,7 +27,7 @@ open Microsoft.FSharp.Compiler.Tastops.DebugPrint
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.TypeRelations
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -654,7 +654,7 @@ let MakeMethInfoCall amap m minfo minst args =
         BuildFSharpMethodCall g m (typ,vref) valUseFlags minst args |> fst
     | DefaultStructCtor(_,typ) -> 
        mkDefault (m,typ)
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     | ProvidedMeth(amap,mi,_,m) -> 
         let isProp = false // not necessarily correct, but this is only used post-creflect where this flag is irrelevant 
         let ilMethodRef = Import.ImportProvidedMethodBaseAsILMethodRef amap m mi
@@ -668,7 +668,7 @@ let MakeMethInfoCall amap m minfo minst args =
 
 #endif
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 // This imports a provided method, and checks if it is a known compiler intrinsic like "1 + 2"
 let TryImportProvidedMethodBaseAsLibraryIntrinsic (amap:Import.ImportMap, m:range, mbase: Tainted<ProvidedMethodBase>) = 
     let methodName = mbase.PUntaint((fun x -> x.Name),m)
@@ -718,7 +718,7 @@ let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objA
                     valUseFlags
 
         match minfo with 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         // By this time this is an erased method info, e.g. one returned from an expression
         // REVIEW: copied from tastops, which doesn't allow protected methods
         | ProvidedMeth (amap,providedMeth,_,_) -> 
@@ -835,7 +835,7 @@ let CoerceFromFSharpFuncToDelegate g amap infoReader ad callerArgTy m callerArgE
 //------------------------------------------------------------------------- 
 
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 // This file is not a great place for this functionality to sit, it's here because of BuildMethodCall
 module ProvidedMethodCalls =
 

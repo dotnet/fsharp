@@ -22,7 +22,7 @@ echo           ^<proto^|protofx^>
 echo           ^<ci^|ci_part1^|ci_part2^|ci_part3^|microbuild^|nuget^>
 echo           ^<debug^|release^>
 echo           ^<diag^|publicsign^>
-echo           ^<test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-net40-ideunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^>
+echo           ^<test^|no-test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-net40-ideunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^>
 echo           ^<include tag^>
 echo           ^<init^>
 echo.
@@ -82,6 +82,7 @@ REM ------------------ Parse all arguments -----------------------
 
 set _autoselect=1
 set _autoselect_tests=0
+set no_test=0
 set /a counter=0
 for /l %%x in (1 1 9) do (
     set /a counter=!counter!+1
@@ -296,6 +297,10 @@ if /i "%ARG%" == "test" (
     set _autoselect_tests=1
 )
 
+if /i "%ARG%" == "no-test" (
+    set no_test=1
+)
+
 if /i "%ARG%" == "include" (
     set /a counter=!counter!+1
     if "!INCLUDE_TEST_SPEC_NUNIT!" == "" ( set INCLUDE_TEST_SPEC_NUNIT=cat == %ARG2% ) else (set INCLUDE_TEST_SPEC_NUNIT=cat == %ARG2% or !INCLUDE_TEST_SPEC_NUNIT! )
@@ -473,7 +478,7 @@ echo.
 
 echo ---------------- Done with arguments, starting preparation -----------------
 
-set BuildToolsPackage=Microsoft.VSSDK.BuildTools.15.0.26201
+set BuildToolsPackage=Microsoft.VSSDK.BuildTools.15.1.192
 if "%VSSDKInstall%"=="" (
      set VSSDKInstall=%~dp0packages\%BuildToolsPackage%\tools\vssdk
 )
@@ -584,6 +589,15 @@ if "%RestorePackages%" == "true" (
         %_nugetexe% restore setup\packages.config !_nugetoptions!
         @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
     )
+
+    set restore_fsharp_suite=0
+    if "%TEST_NET40_FSHARP_SUITE%" == "1" set restore_fsharp_suite=1
+    if "%TEST_CORECLR_FSHARP_SUITE%" == "1" set restore_fsharp_suite=1
+
+    if "!restore_fsharp_suite!" == "1" (
+        %_nugetexe% restore tests\fsharp\packages.config !_nugetoptions!
+        @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
+    )
 )
 
 if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
@@ -650,8 +664,11 @@ if "%BUILD_PROTO%" == "1" (
 echo ---------------- Done with proto, starting build ------------------------
 
 if "%BUILD_PHASE%" == "1" (
-   echo %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
-        %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
+    echo %_msbuildexe% %msbuildflags% build-everything.proj /t:Restore
+         %_msbuildexe% %msbuildflags% build-everything.proj /t:Restore
+
+    echo %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
+         %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
 
    @if ERRORLEVEL 1 echo Error build failed && goto :failure
 )
@@ -684,16 +701,6 @@ if not "%OSARCH%"=="x86" set REGEXE32BIT=%WINDIR%\syswow64\reg.exe
 echo SDK environment vars from Registry
 echo ==================================
 
-::See https://stackoverflow.com/a/17113667/111575 on 2^>NUL for suppressing the error "ERROR: The system was unable to find the specified registry key or value." from reg.exe, this fixes #3619
-                            FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\WOW6432Node\Microsoft\Microsoft SDKs\NETFXSDK\4.6.2\WinSDK-NetFx40Tools" /v InstallationFolder 2^>NUL') DO SET WINSDKNETFXTOOLS=%%B
-if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\WOW6432Node\Microsoft\Microsoft SDKs\NETFXSDK\4.6.1\WinSDK-NetFx40Tools" /v InstallationFolder 2^>NUL') DO SET WINSDKNETFXTOOLS=%%B
-if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" /v InstallationFolder 2^>NUL') DO SET WINSDKNETFXTOOLS=%%B
-if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools" /v InstallationFolder 2^>NUL') DO SET WINSDKNETFXTOOLS=%%B
-if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.0A\WinSDK-NetFx40Tools" /v InstallationFolder 2^>NUL') DO SET WINSDKNETFXTOOLS=%%B
-if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.1\WinSDK-NetFx40Tools" /v InstallationFolder 2^>NUL') DO SET WINSDKNETFXTOOLS=%%B
-if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.0A\WinSDK-NetFx40Tools" /v InstallationFolder 2^>NUL') DO SET WINSDKNETFXTOOLS=%%B
-
-set PATH=%PATH%;%WINSDKNETFXTOOLS%
 for /d %%i in (%WINDIR%\Microsoft.NET\Framework\v4.0.?????) do set CORDIR=%%i
 set PATH=%PATH%;%CORDIR%
 
@@ -701,7 +708,6 @@ set REGEXE32BIT=reg.exe
 
 IF NOT DEFINED SNEXE32  IF EXIST "%WINSDKNETFXTOOLS%\sn.exe"                set SNEXE32=%WINSDKNETFXTOOLS%sn.exe
 IF NOT DEFINED SNEXE64  IF EXIST "%WINSDKNETFXTOOLS%x64\sn.exe"             set SNEXE64=%WINSDKNETFXTOOLS%x64\sn.exe
-IF NOT DEFINED ildasm   IF EXIST "%WINSDKNETFXTOOLS%\ildasm.exe"            set ildasm=%WINSDKNETFXTOOLS%ildasm.exe
 
 echo.
 echo SDK environment vars
@@ -709,10 +715,11 @@ echo =======================
 echo WINSDKNETFXTOOLS:  %WINSDKNETFXTOOLS%
 echo SNEXE32:           %SNEXE32%
 echo SNEXE64:           %SNEXE64%
-echo ILDASM:            %ILDASM%
 echo
 
 if "%TEST_NET40_COMPILERUNIT_SUITE%" == "0" if "%TEST_NET40_COREUNIT_SUITE%" == "0" if "%TEST_CORECLR_COREUNIT_SUITE%" == "0" if "%TEST_VS_IDEUNIT_SUITE%" == "0" if "%TEST_NET40_FSHARP_SUITE%" == "0" if "%TEST_NET40_FSHARPQA_SUITE%" == "0" goto :success
+
+if "%no_test%" == "1" goto :success
 
 echo ---------------- Done with update, starting tests -----------------------
 
@@ -908,7 +915,7 @@ if "%TEST_CORECLR_FSHARP_SUITE%" == "1" (
     set OUTPUTFILE=
     set ERRORFILE=
     set XMLFILE=!RESULTSDIR!\test-coreclr-fsharp-results.xml
-    echo "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
+    echo "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Tests.FSharpSuite.DrivingCoreCLR\FSharp.Tests.FSharpSuite.DrivingCoreCLR.dll" !WHERE_ARG_NUNIT!
          "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Tests.FSharpSuite.DrivingCoreCLR\FSharp.Tests.FSharpSuite.DrivingCoreCLR.dll" !WHERE_ARG_NUNIT!
 
     if errorlevel 1 (

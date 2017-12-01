@@ -31,13 +31,13 @@
                 <dependency id="System.Threading.Tasks.Parallel" version="4.0.1" />
                 <dependency id="System.Threading.Thread" version="4.0.0" />
                 <dependency id="System.Threading.ThreadPool" version="4.0.10" />
-                <dependency id="Microsoft.DiaSymReader.PortablePdb" version="1.1.0" />
+                <dependency id="Microsoft.DiaSymReader.PortablePdb" version="1.2.0" />
                 <dependency id="Microsoft.DiaSymReader" version="1.1.0" />
                 <dependency id="System.ValueTuple" version="4.3.1" />
             </group>
         </dependencies>
     </metadata>
     <files>
-        <file src="FSharp.Compiler.Private.dll"     target="lib/netstandard1.6" />
+        <file src="FSharp.Compiler.Private.dll"     target="lib\netstandard1.6" />
     </files>
 </package>
