@@ -47,14 +47,15 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
   <ItemGroup Condition="'$(TargetDotnetProfile)' == 'coreclr'">
       <None Include="project.json" />
   </ItemGroup>
   <ItemGroup  Condition="'$(TargetDotnetProfile)' != 'coreclr'">
-   <Reference Include="mscorlib" />
-   <Reference Include="System" />
+    <Reference Include="mscorlib" />
+    <Reference Include="System" />
   </ItemGroup>
- 
+
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 
   <ItemGroup>
@@ -79,4 +80,4 @@
     </ItemGroup>
   </Target>
 
- </Project>
+</Project>
