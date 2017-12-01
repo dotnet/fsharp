@@ -3700,7 +3700,7 @@ let rec private EntityRefContainsSomethingAccessible (ncenv: NameResolver) m ad 
                  let vref = mkNestedValRef modref v
                  not vref.IsCompilerGenerated && 
                  not (IsValUnseen ad g m vref) &&
-                 (vref.IsExtensionMember || (not vref.IsMember))))) ||
+                 (vref.IsExtensionMember || not vref.IsMember)))) ||
 
     // Search the types in the namespace/module for an accessible tycon 
     (mty.AllEntities
