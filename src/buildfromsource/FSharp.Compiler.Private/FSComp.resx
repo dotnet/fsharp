@@ -1434,6 +1434,9 @@
   <data name="parsUnmatchedBrace" xml:space="preserve">
     <value>Unmatched '{{'</value>
   </data>
+  <data name="parsUnmatchedBraceBar" xml:space="preserve">
+    <value>Unmatched '{{|'</value>
+  </data>
   <data name="parsFieldBinding" xml:space="preserve">
     <value>Field bindings must have the form 'id = expr;'</value>
   </data>
@@ -2850,6 +2853,9 @@
   <data name="typeInfoArgument" xml:space="preserve">
     <value>argument</value>
   </data>
+  <data name="typeInfoAnonRecdField" xml:space="preserve">
+    <value>anonymous record field</value>
+  </data>
   <data name="typeInfoPatternVariable" xml:space="preserve">
     <value>patvar</value>
   </data>
@@ -4053,6 +4059,15 @@
   <data name="parsUnexpectedSymbolEqualsInsteadOfIn" xml:space="preserve">
     <value>Unexpected symbol '=' in expression. Did you intend to use 'for x in y .. z do' instead?</value>
   </data>
+  <data name="tcAnonRecdCcuMismatch" xml:space="preserve">
+    <value>Two anonymous record types are from different assemblies '{0}' and '{1}'</value>
+  </data>
+  <data name="tcAnonRecdCcuMismatch2" xml:space="preserve">
+    <value>One anonymous record type is assembly-bound to '{0}' (syntax 'new {{| ... |}}'), the other is assembly-neutral (syntax '{{| ... |}}')</value>
+  </data>
+  <data name="tcAnonRecdFieldNameMismatch" xml:space="preserve">
+    <value>Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</value>
+  </data>
   <data name="keywordDescriptionAbstract" xml:space="preserve">
     <value>Indicates a method that either has no implementation in the type in which it is declared or that is virtual and has a default implementation.</value>
   </data>
@@ -4302,5 +4317,11 @@
   </data>
   <data name="pickleUnexpectedNonZero" xml:space="preserve">
     <value>An error occurred while reading the F# metadata of assembly '{0}'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.</value>
+  </data>
+  <data name="parsInvalidAnonRecdExpr" xml:space="preserve">
+    <value>Invalid anonymous record expression</value>
+  </data>
+  <data name="parsInvalidAnonRecdType" xml:space="preserve">
+    <value>Invalid anonymous record type</value>
   </data>
 </root>
