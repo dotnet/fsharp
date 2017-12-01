@@ -560,7 +560,7 @@ let AddValRefToNameEnv nenv (vref:ValRef) =
     let pri = NextExtensionMethodPriority()
     { nenv with 
         eUnqualifiedItems = 
-            if not v.IsMember then 
+            if not vref.IsMember then 
                 nenv.eUnqualifiedItems.Add (vref.LogicalName, Item.Value vref) 
             else
                 nenv.eUnqualifiedItems
