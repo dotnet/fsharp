@@ -295,7 +295,7 @@ x.
                     "ToArray"; "ToString"; "TrimExcess"; "TrueForAll"]
     VerifyCompletionListExactly(fileContents, "x.", expected)
 
-[<Test;Ignore("Before this test can pass, the test below needs to pass. Related to: https://github.com/Microsoft/visualfsharp/issues/2973")>]
+[<Test>]
 let ``Constructing a new class with object initializer syntax``() =
     let fileContents = """
 type A() =
@@ -303,14 +303,14 @@ type A() =
     member val AnotherSettableProperty = 1 with get, set
     member val NonSettableProperty = 1
     
-let _ = new A(Setta
+let _ = new A(Setta)
 """
 
     let expected = ["SettableProperty"; "AnotherSettableProperty"]
     let notExpected = ["NonSettableProperty"]
     VerifyCompletionList(fileContents, "(Setta", expected, notExpected)
 
-[<Test;Ignore("https://github.com/Microsoft/visualfsharp/issues/2973")>]
+[<Test>]
 let ``Constructing a new class with object initializer syntax and verifying 'at' character doesn't exist.``() =
     let fileContents = """
 type A() =
@@ -318,7 +318,7 @@ type A() =
     member val AnotherSettableProperty = 1 with get, set
     member val NonSettableProperty = 1
     
-let _ = new A(Setta
+let _ = new A(Setta)
 """
 
     let expected = []
@@ -326,7 +326,7 @@ let _ = new A(Setta
     VerifyCompletionList(fileContents, "(Setta", expected, notExpected)
 
 [<Test;Ignore("https://github.com/Microsoft/visualfsharp/issues/3954")>]
-let ``Constructing a new fully qualified class with object initializer syntax``() =
+let ``Constructing a new fully qualified class with object initializer syntax without ending paren``() =
     let fileContents = """
 module M =
     type A() =
@@ -475,6 +475,18 @@ let ``Provide completion on lambda argument type hint``() =
 let _ = fun (p:i) -> ()
 """
     VerifyCompletionList(fileContents, "let _ = fun (p:i", ["int"], [])
+
+[<Test>]
+let ``Extensions.Bug5162``() =
+    let fileContents = """
+module Extensions =
+    type System.Object with
+        member x.P = 1
+module M2 =
+    let x = 1
+    Ext
+"""
+    VerifyCompletionList(fileContents, "    Ext", ["Extensions"; "ExtraTopLevelOperators"], [])
 
 #if EXE
 ShouldDisplaySystemNamespace()

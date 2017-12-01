@@ -33,20 +33,20 @@
 }
 .mresource public FSharpSignatureData.Linq101Ordering01
 {
-  // Offset: 0x00000000 Length: 0x000003B2
+  // Offset: 0x00000000 Length: 0x00000398
 }
 .mresource public FSharpOptimizationData.Linq101Ordering01
 {
-  // Offset: 0x000003B8 Length: 0x00000134
+  // Offset: 0x000003A0 Length: 0x00000134
 }
 .module Linq101Ordering01.exe
-// MVID: {59B19240-649A-6956-A745-03834092B159}
+// MVID: {5A1F62A6-649A-6956-A745-0383A6621F5A}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x015E0000
+// Image base: 0x03640000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -111,7 +111,7 @@
       // Code size       191 (0xbf)
       .maxstack  6
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Ordering01.fs'
+      .line 100001,100001 : 0,0 'C:\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Ordering01.fs'
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 Linq101Ordering01/sortedWords@11::pc
       IL_0006:  ldc.i4.1
@@ -831,6 +831,9 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,object>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
+    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
     {
@@ -1726,6 +1729,9 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,object>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
+    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@) cil managed
     {
@@ -2019,7 +2025,7 @@
              [6] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> digits,
              [7] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> sortedDigits,
              [8] class [Utils]Utils/Product[] sortedProducts3,
-             [9] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@,
+             [9] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_9,
              [10] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_10,
              [11] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_11,
              [12] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_12,
@@ -2041,8 +2047,8 @@
     IL_0029:  stloc.0
     .line 9,13 : 1,20 ''
     IL_002a:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
-    IL_002f:  stloc.s    builder@
-    IL_0031:  ldloc.s    builder@
+    IL_002f:  stloc.s    V_9
+    IL_0031:  ldloc.s    V_9
     IL_0033:  ldnull
     IL_0034:  ldnull
     IL_0035:  ldnull
