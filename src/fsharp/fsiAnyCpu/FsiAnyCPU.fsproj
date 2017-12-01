@@ -13,7 +13,6 @@
     <NoWarn>$(NoWarn);62</NoWarn>
     <AssemblyName>fsiAnyCpu</AssemblyName>
     <BaseAddress>0x0A000000</BaseAddress>
-    <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
     <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition="'$(TargetDotnetProfile)'=='net40'">FSI_SHADOW_COPY_REFERENCES;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition="'$(TargetDotnetProfile)'=='net40'">FSI_SERVER;$(DefineConstants)</DefineConstants>
@@ -40,10 +39,7 @@
     <Compile Include="..\fsi\fsimain.fs">
       <Link>fsimain.fs</Link>
     </Compile>
-    <None Include="..\fsi\fsiAnyCpu.exe.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>fsiAnyCpu.exe.config</Link>
-    </None>
+    <None Include="app.config" />
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <ItemGroup>

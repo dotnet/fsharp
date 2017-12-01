@@ -24,8 +24,8 @@ type internal UnusedDeclarationsAnalyzer() =
     let Descriptor = 
         DiagnosticDescriptor(
             id = DescriptorId,
-            title = SR.TheValueIsUnused.Value,
-            messageFormat = SR.TheValueIsUnused.Value,
+            title = SR.TheValueIsUnused(),
+            messageFormat = SR.TheValueIsUnused(),
             category = DiagnosticCategory.Style,
             defaultSeverity = DiagnosticSeverity.Hidden,
             isEnabledByDefault = true,
@@ -35,7 +35,7 @@ type internal UnusedDeclarationsAnalyzer() =
         match symbol with
         // Determining that a record, DU or module is used anywhere requires inspecting all their enclosed entities (fields, cases and func / vals)
         // for usages, which is too expensive to do. Hence we never gray them out.
-        | :? FSharpEntity as e when e.IsFSharpRecord || e.IsFSharpUnion || e.IsInterface || e.IsFSharpModule || e.IsClass -> false
+        | :? FSharpEntity as e when e.IsFSharpRecord || e.IsFSharpUnion || e.IsInterface || e.IsFSharpModule || e.IsClass || e.IsNamespace -> false
         // FCS returns inconsistent results for override members; we're skipping these symbols.
         | :? FSharpMemberOrFunctionOrValue as f when 
                 f.IsOverrideOrExplicitInterfaceImplementation ||
@@ -103,10 +103,10 @@ type internal UnusedDeclarationsAnalyzer() =
             do Trace.TraceInformation("{0:n3} (start) UnusedDeclarationsAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
             do! Async.Sleep DefaultTuning.UnusedDeclarationsAnalyzerInitialDelay |> liftAsync // be less intrusive, give other work priority most of the time
             match getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document) with
-            | Some options ->
+            | Some (_parsingOptions, projectOptions) ->
                 let! sourceText = document.GetTextAsync()
                 let checker = getChecker document
-                let! _, _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true, userOpName = userOpName)
+                let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, allowStaleResults = true, userOpName = userOpName)
                 let! allSymbolUsesInFile = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
                 let unusedRanges = getUnusedDeclarationRanges allSymbolUsesInFile (isScriptFile document.FilePath)
                 return

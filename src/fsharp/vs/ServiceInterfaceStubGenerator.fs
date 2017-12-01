@@ -220,7 +220,7 @@ module internal InterfaceStubGenerator =
         let nm, namesWithIndices = normalizeArgName namesWithIndices nm
         
         // Detect an optional argument
-        let isOptionalArg = hasAttribute<OptionalArgumentAttribute> arg.Attributes
+        let isOptionalArg = Symbol.hasAttribute<OptionalArgumentAttribute> arg.Attributes
         let argName = if isOptionalArg then "?" + nm else nm
         (if hasTypeAnnotation && argName <> "()" then 
             argName + ": " + formatType ctx arg.Type
@@ -295,7 +295,7 @@ module internal InterfaceStubGenerator =
         else displayName
 
     let internal isEventMember (m: FSharpMemberOrFunctionOrValue) =
-        m.IsEvent || hasAttribute<CLIEventAttribute> m.Attributes
+        m.IsEvent || Symbol.hasAttribute<CLIEventAttribute> m.Attributes
     
     let internal formatMember (ctx: Context) m verboseMode = 
         let getParamArgs (argInfos: FSharpParameter list list) (ctx: Context) (v: FSharpMemberOrFunctionOrValue) = 
@@ -325,7 +325,7 @@ module internal InterfaceStubGenerator =
                 | _, true, _, name -> name + parArgs
                 // Ordinary functions or values
                 | false, _, _, name when
-                    not (hasAttribute<RequireQualifiedAccessAttribute> v.LogicalEnclosingEntity.Attributes) -> 
+                    not (Symbol.hasAttribute<RequireQualifiedAccessAttribute> v.LogicalEnclosingEntity.Attributes) -> 
                     name + " " + parArgs
                 // Ordinary static members or things (?) that require fully qualified access
                 | _, _, _, name -> name + parArgs

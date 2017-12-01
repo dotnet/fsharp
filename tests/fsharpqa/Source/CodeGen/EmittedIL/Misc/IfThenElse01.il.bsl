@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.81.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -22,7 +22,7 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 00 01 00 00 00 00 ) 
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
@@ -36,7 +36,7 @@
   // Offset: 0x00000208 Length: 0x00000092
 }
 .module IfThenElse01.dll
-// MVID: {5775B6FF-2D6C-0B5D-A745-0383FFB67557}
+// MVID: {59B19213-2D6C-0B5D-A745-03831392B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
@@ -115,7 +115,7 @@
                      !a z,
                      !a w) cil managed
       {
-        // Code size       21 (0x15)
+        // Code size       20 (0x14)
         .maxstack  7
         .locals init ([0] class IfThenElse01/M/f5@5 V_0)
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
@@ -123,62 +123,60 @@
         IL_0000:  ldarg.0
         IL_0001:  ldfld      class IfThenElse01/M/f5@5 class IfThenElse01/M/f5@5T<!a>::self0@
         IL_0006:  stloc.0
-        IL_0007:  nop
-        IL_0008:  ldarg.1
-        IL_0009:  ldarg.2
-        IL_000a:  ble.s      IL_000e
+        IL_0007:  ldarg.1
+        IL_0008:  ldarg.2
+        IL_0009:  ble.s      IL_000d
 
-        IL_000c:  br.s       IL_0010
+        IL_000b:  br.s       IL_000f
 
-        IL_000e:  br.s       IL_0012
+        IL_000d:  br.s       IL_0011
 
-        .line 5,5 : 64,65
-        IL_0010:  ldarg.3
-        IL_0011:  ret
+        .line 5,5 : 64,65 ''
+        IL_000f:  ldarg.3
+        IL_0010:  ret
 
-        .line 5,5 : 71,72
-        IL_0012:  ldarg.s    w
-        IL_0014:  ret
+        .line 5,5 : 71,72 ''
+        IL_0011:  ldarg.s    w
+        IL_0013:  ret
       } // end of method f5@5T::Invoke
 
     } // end of class f5@5T
 
     .method public static char  m() cil managed
     {
-      // Code size       44 (0x2c)
+      // Code size       43 (0x2b)
       .maxstack  7
       .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpTypeFunc f5,
                [1] char V_1,
                [2] char V_2,
                [3] int32 V_3,
                [4] int32 V_4)
-      .line 6,6 : 9,25
-      IL_0000:  nop
-      IL_0001:  newobj     instance void IfThenElse01/M/f5@5::.ctor()
-      IL_0006:  stloc.0
-      .line 6,6 : 9,25
-      IL_0007:  ldloc.0
-      IL_0008:  ldc.i4.s   10
-      IL_000a:  ldc.i4.s   10
-      IL_000c:  ldc.i4.s   97
-      IL_000e:  ldc.i4.s   98
-      IL_0010:  stloc.1
-      IL_0011:  stloc.2
-      IL_0012:  stloc.3
-      IL_0013:  stloc.s    V_4
-      IL_0015:  callvirt   instance object [FSharp.Core]Microsoft.FSharp.Core.FSharpTypeFunc::Specialize<char>()
-      IL_001a:  unbox.any  class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,char>>>>
-      IL_001f:  ldloc.s    V_4
-      IL_0021:  ldloc.3
-      IL_0022:  ldloc.2
-      IL_0023:  ldloc.1
-      IL_0024:  tail.
-      IL_0026:  call       !!2 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::InvokeFast<char,char,char>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!0,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!1,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!1,!!2>>>>,
+      .line 100001,100001 : 0,0 ''
+      IL_0000:  newobj     instance void IfThenElse01/M/f5@5::.ctor()
+      IL_0005:  stloc.0
+      .line 6,6 : 9,25 ''
+      IL_0006:  ldloc.0
+      IL_0007:  ldc.i4.s   10
+      IL_0009:  ldc.i4.s   10
+      IL_000b:  ldc.i4.s   97
+      IL_000d:  ldc.i4.s   98
+      IL_000f:  stloc.1
+      IL_0010:  stloc.2
+      IL_0011:  stloc.3
+      IL_0012:  stloc.s    V_4
+      IL_0014:  callvirt   instance object [FSharp.Core]Microsoft.FSharp.Core.FSharpTypeFunc::Specialize<char>()
+      IL_0019:  unbox.any  class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<char,char>>>>
+      IL_001e:  ldloc.s    V_4
+      IL_0020:  ldloc.3
+      IL_0021:  ldloc.2
+      IL_0022:  ldloc.1
+      IL_0023:  tail.
+      IL_0025:  call       !!2 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::InvokeFast<char,char,char>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!0,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!1,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!1,!!2>>>>,
                                                                                                                               !0,
                                                                                                                               !1,
                                                                                                                               !!0,
                                                                                                                               !!1)
-      IL_002b:  ret
+      IL_002a:  ret
     } // end of method M::m
 
   } // end of class M
@@ -195,13 +193,12 @@
   .method private specialname rtspecialname static 
           void  .cctor() cil managed
   {
-    // Code size       8 (0x8)
+    // Code size       7 (0x7)
     .maxstack  8
-    .line 7,7 : 4,7
-    IL_0000:  nop
-    IL_0001:  call       char IfThenElse01/M::m()
-    IL_0006:  pop
-    IL_0007:  ret
+    .line 7,7 : 4,7 ''
+    IL_0000:  call       char IfThenElse01/M::m()
+    IL_0005:  pop
+    IL_0006:  ret
   } // end of method $IfThenElse01::.cctor
 
 } // end of class '<StartupCode$IfThenElse01>'.$IfThenElse01

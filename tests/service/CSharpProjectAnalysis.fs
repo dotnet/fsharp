@@ -1,6 +1,6 @@
 ﻿
 #if INTERACTIVE
-#r "../../Debug/net40/bin/FSharp.Compiler.Service.dll" // note, run 'build fcs' to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../Debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
 #r "../../bin/v4.5/CSharp_Analysis.dll"
 #r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "FsUnit.fs"
@@ -111,8 +111,9 @@ let _ = CSharpOuterClass.InnerClass.StaticMember()
     |> Async.RunSynchronously
     |> Array.map (fun su -> su.Symbol.ToString())
     |> shouldEqual 
-          [|"InnerEnum"; "CSharpOuterClass"; "field Case1"; "InnerClass";
-            "CSharpOuterClass"; "member StaticMember"; "NestedEnumClass"|]
+          [|"FSharp"; "FSharp"; "Compiler"; "Service"; "Tests"; "InnerEnum";
+            "CSharpOuterClass"; "field Case1"; "InnerClass"; "CSharpOuterClass";
+            "member StaticMember"; "NestedEnumClass"|]
 
 [<Test>]
 let ``Ctor test`` () =

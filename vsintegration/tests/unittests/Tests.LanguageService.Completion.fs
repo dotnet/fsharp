@@ -596,7 +596,6 @@ a.
         AssertCtrlSpaceCompleteContains (typeDef3 @ ["new M.A((**))"]) "A((**)" ["SettableProperty"; "AnotherSettableProperty"] ["NonSettableProperty"] 
         AssertCtrlSpaceCompleteContains (typeDef3 @ ["new M.A(S = 1)"]) "A(S" ["SettableProperty"] ["NonSettableProperty"] 
         AssertCtrlSpaceCompleteContains (typeDef3 @ ["new M.A(S = 1)"]) "A(S = 1" [] ["NonSettableProperty"; "SettableProperty"] // neg test 
-        AssertCtrlSpaceCompleteContains (typeDef3 @ ["new M.A(S = 1,)"]) "A(S = 1," ["AnotherSettableProperty"] ["NonSettableProperty"] 
 
         let typeDef4 = 
             [
@@ -4337,7 +4336,8 @@ let x = query { for bbbb in abbbbc(*D0*) do
         let completions = AutoCompleteAtCursor(file)
         Assert.AreNotEqual(0, completions.Length, "Expected some items in the list after updating platform.") 
 
-    /// FEATURE: The filename on disk and the filename in the project can differ in case.
+(*
+/// FEATURE: The filename on disk and the filename in the project can differ in case.
     [<Test>]
     member this.``Filenames.MayBeDifferentlyCased``() =
         use _guard = this.UsingNewVS() 
@@ -4357,7 +4357,8 @@ let x = query { for bbbb in abbbbc(*D0*) do
         this.AddAssemblyReference(project,"System.Deployment")
         let completions = AutoCompleteAtCursor(file)
         Assert.AreNotEqual(0, completions.Length, "Expected some items in the list after adding a reference.") 
-        
+*)
+
     /// In this bug, a bogus flag caused the rest of flag parsing to be ignored.
     [<Test>]
     member public this.``FlagsAndSettings.Bug1969``() = 
@@ -6062,7 +6063,7 @@ let rec f l =
                     let f (x:MyNamespace1.MyModule(*Maftervariable4*)) = 10
                     let y = int System.IO(*Maftervariable5*)""",
             marker = "(*Maftervariable4*)",
-            list = ["DuType";"Tag"])  
+            list = ["DuType"])  
 
     [<Test>]
     member this.``VariableIdentifier.SystemNamespace``() = 
@@ -7771,6 +7772,15 @@ let rec f l =
                 let foo x = x
                 let bar = 1""",
             marker = "(*Marker*)")
+
+    [<Test;Category("Repro")>]
+    member public this.``ExpressionDotting.Regression.Bug3709``() = 
+        this.VerifyCtrlSpaceListContainAllAtStartOfMarker(
+            fileContents = """
+                let foo = ""
+                let foo = foo.E(*marker*)n "a" """,
+            marker = "(*marker*)",
+            list = ["EndsWith"])  
 
 // Context project system
 [<TestFixture>] 

@@ -1,4 +1,4 @@
-// #Regression #Conformance #DeclarationElements #MemberDefinitions #OptionalArguments #NETFX40Only 
+// #Regression #Conformance #DeclarationElements #MemberDefinitions #OptionalArguments  
 // Dev10: 811195. Internal parse error when calling C#/VB methods with optional args whose default value is null
 // Should be no errors here
 module M

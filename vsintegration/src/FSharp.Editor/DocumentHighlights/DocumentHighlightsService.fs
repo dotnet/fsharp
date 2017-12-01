@@ -76,12 +76,12 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
     interface IDocumentHighlightsService with
         member __.GetDocumentHighlightsAsync(document, position, _documentsToSearch, cancellationToken) : Task<ImmutableArray<DocumentHighlights>> =
             asyncMaybe {
-                let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) 
-                let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
+                let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, parsingOptions)
                 let! spans = FSharpDocumentHighlightsService.GetDocumentHighlights(checkerProvider.Checker, document.Id, sourceText, document.FilePath, 
-                                                                                   position, defines, options, textVersion.GetHashCode())
+                                                                                   position, defines, projectOptions, textVersion.GetHashCode())
                 let highlightSpans = 
                     spans 
                     |> Array.map (fun span ->

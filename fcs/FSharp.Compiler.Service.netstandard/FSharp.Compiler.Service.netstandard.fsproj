@@ -13,6 +13,7 @@
     <DefineConstants>$(DefineConstants);COMPILER_SERVICE</DefineConstants>
     <DefineConstants>$(DefineConstants);COMPILER_SERVICE_ASSUMES_FSHARP_CORE_4_4_0_0</DefineConstants>
     <DefineConstants>$(DefineConstants);EXTENSIBLE_DUMPER</DefineConstants>
+    <DefineConstants>$(DefineConstants);NO_EXTENSIONTYPING</DefineConstants>
     <DefineConstants>$(DefineConstants);FSHARP_CORE_4_5</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_PORTABLE_OR_NETSTANDARD</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_PORTABLE</DefineConstants>
@@ -62,7 +63,6 @@
     <DefineConstants>$(DefineConstants);NO_LOGGING_GUI</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESHAPED_MSBUILD</DefineConstants>
     <DefineConstants>$(DefineConstants);SIGNED</DefineConstants>
-    <DefineConstants>$(DefineConstants);STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY</DefineConstants>
     <DefineConstants>$(DefineConstants);TODO_REWORK_ASSEMBLY_LOAD</DefineConstants>
     <DefineConstants>$(DefineConstants);TODO_REWORK_SERVER</DefineConstants>
     <NoWarn>$(NoWarn);44;69;65;54;61;75;62;9;2003;</NoWarn>
@@ -536,6 +536,12 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\symbols\Exprs.fs">
       <Link>Symbols/Exprs.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\symbols\SymbolPatterns.fsi">
+      <Link>Symbols/SymbolPatterns.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\symbols\SymbolPatterns.fs">
+      <Link>Symbols/SymbolPatterns.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\vs\IncrementalBuild.fsi">
       <Link>Service/IncrementalBuild.fsi</Link>
     </Compile>
@@ -608,6 +614,12 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\vs\ExternalSymbol.fs">
       <Link>Service/ExternalSymbol.fs</Link>
     </Compile>
+	<Compile Include="$(FSharpSourcesRoot)\fsharp\vs\QuickParse.fsi">
+      <Link>Service/QuickParse.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\vs\QuickParse.fs">
+      <Link>Service/QuickParse.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\vs\service.fsi">
       <Link>Service/service.fsi</Link>
     </Compile>
@@ -626,6 +638,12 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\vs\ServiceStructure.fs">
       <Link>Service/ServiceStructure.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\vs\ServiceAnalysis.fsi">
+      <Link>Service/ServiceAnalysis.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\vs\ServiceAnalysis.fs">
+      <Link>Service/ServiceAnalysis.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\fsi\fsi.fsi">
       <Link>Service/fsi.fsi</Link>
     </Compile>
@@ -634,7 +652,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="System.Collections.Immutable" Version="1.3.0" />
+    <PackageReference Include="System.Collections.Immutable" Version="1.3.1" />
     <PackageReference Include="System.Diagnostics.Process" Version="4.1.0" />
     <PackageReference Include="System.Diagnostics.TraceSource" Version="4.0.0" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />

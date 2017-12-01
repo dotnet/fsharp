@@ -306,7 +306,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         IReferenceContainerProvider,
         IVsProjectSpecialFiles, 
         IVsDesignTimeAssemblyResolution, 
-        IVsProjectUpgrade
+        IVsProjectUpgrade,
+        IVsSupportItemHandoff
     {
         /// <summary>
         /// This class stores mapping from ids -> objects. Uses as a replacement of EventSinkCollection (ESC)
@@ -1643,7 +1644,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     result |= QueryStatusResult.SUPPORTED;
                     if (options == null)
                     {
-                        var currentConfigName = FetchCurrentConfigurationName();
+                        var currentConfigName = GetCurrentConfigurationName();
                         if (currentConfigName != null)
                         {
                             GetProjectOptions(currentConfigName.Value);
@@ -1705,7 +1706,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 {
                     if (options == null)
                     {
-                        var currentConfigName = FetchCurrentConfigurationName();
+                        var currentConfigName = GetCurrentConfigurationName();
                         if (currentConfigName != null)
                         {
                             GetProjectOptions(currentConfigName.Value);
@@ -4070,7 +4071,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         private void TellMSBuildCurrentSolutionConfiguration()
         {
-            var canonicalCfgNameOpt = FetchCurrentConfigurationName();
+            var canonicalCfgNameOpt = GetCurrentConfigurationName();
             if (canonicalCfgNameOpt == null)
                 return;
             var canonicalCfgName = canonicalCfgNameOpt.Value;
@@ -4087,7 +4088,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             this.UpdateMSBuildState();
         }
 
-        private ConfigCanonicalName? FetchCurrentConfigurationName()
+        private ConfigCanonicalName? GetCurrentConfigurationName()
         {
             if (Site == null)
                 return null;
@@ -4102,6 +4103,18 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             cfgs[0].get_CanonicalName(out cfgName);
             // cfgName conventionally has form "Configuration|Platform"
             return new ConfigCanonicalName(cfgName);            
+        }
+
+        internal string GetCurrentOutputAssembly()
+        {
+            var currentConfigName = GetCurrentConfigurationName();
+            if (currentConfigName != null)
+            {
+                GetProjectOptions(currentConfigName.Value);
+                if (options != null)
+                    return options.OutputAssembly;
+            }
+            return null;
         }
 
         /// <summary>
@@ -4151,7 +4164,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             this.isDirty = value;
             if (this.isDirty)
             {
-                this.lastModifiedTime = DateTime.Now;
+                this.lastModifiedTime = DateTime.UtcNow;
                 this.buildIsPrepared = false;
             }
         }
@@ -5386,10 +5399,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             if (oldMkDoc == null || newMkDoc == null)
                 return VSConstants.E_INVALIDARG;
 
-            // Fail if the document names passed are equal.
-            if (oldMkDoc == newMkDoc)
-                return VSConstants.E_INVALIDARG;
-
             int hr = VSConstants.S_OK;
             VSDOCUMENTPRIORITY[] priority = new VSDOCUMENTPRIORITY[1];
             uint itemid = VSConstants.VSITEMID_NIL;
@@ -6601,6 +6610,16 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
             }
             return hierarchy;
+        }
+
+        public int HandoffItem(uint itemid, IVsProject3 pProjDest, string pszMkDocumentOld, string pszMkDocumentNew, IVsWindowFrame punkWindowFrame)
+        {
+            if (pProjDest == null)
+            {
+                return VSConstants.E_POINTER;
+            }
+
+            return pProjDest.TransferItem(pszMkDocumentOld, pszMkDocumentNew, punkWindowFrame);
         }
     }
     internal enum AddItemContext

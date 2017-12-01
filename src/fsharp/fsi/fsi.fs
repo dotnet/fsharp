@@ -558,7 +558,7 @@ type internal ErrorLoggerThatStopsOnFirstError(tcConfigB:TcConfigBuilder, fsiStd
     member x.ResetErrorCount() = (errorCount <- 0)
     
     override x.DiagnosticSink(err, isError) = 
-        if isError || ReportWarningAsError (tcConfigB.globalWarnLevel, tcConfigB.specificWarnOff, tcConfigB.specificWarnOn, tcConfigB.specificWarnAsError, tcConfigB.specificWarnAsWarn, tcConfigB.globalWarnAsError) err  then 
+        if isError || ReportWarningAsError tcConfigB.errorSeverityOptions err  then 
             fsiStdinSyphon.PrintError(tcConfigB,err)
             errorCount <- errorCount + 1
             if tcConfigB.abortOnError then exit 1 (* non-zero exit code *)
@@ -566,7 +566,7 @@ type internal ErrorLoggerThatStopsOnFirstError(tcConfigB:TcConfigBuilder, fsiStd
             raise StopProcessing
         else 
           DoWithErrorColor isError (fun () -> 
-            if ReportWarning (tcConfigB.globalWarnLevel, tcConfigB.specificWarnOff, tcConfigB.specificWarnOn) err then 
+            if ReportWarning tcConfigB.errorSeverityOptions err then 
                 fsiConsoleOutput.Error.WriteLine()
                 writeViaBufferWithEnvironmentNewLines fsiConsoleOutput.Error (OutputDiagnosticContext "  " fsiStdinSyphon.GetLine) err
                 writeViaBufferWithEnvironmentNewLines fsiConsoleOutput.Error (OutputDiagnostic (tcConfigB.implicitIncludeDir,tcConfigB.showFullPaths,tcConfigB.flatErrors,tcConfigB.errorStyle,isError)) err
@@ -1671,7 +1671,7 @@ module internal MagicAssemblyResolution =
                    | Some (OkResult (warns,[r])) -> OkResult (warns, Choice1Of2 r.resolvedPath)
                    | _ -> 
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
                    match tcImports.TryFindProviderGeneratedAssemblyByName(ctok, simpleAssemName) with
                    | Some(assembly) -> OkResult([],Choice2Of2 assembly)
                    | None -> 
@@ -2464,11 +2464,8 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     do tcConfigB.useFsiAuxLib <- fsi.UseFsiAuxLib
 
 #if FSI_TODO_NETCORE
-    // "CompilationAndEvaluation" assembly resolution for F# Interactive is not yet properly figured out on .NET Core
-    do tcConfigB.resolutionEnvironment <- ResolutionEnvironment.EditingOrCompilation false
     do tcConfigB.useSimpleResolution <- true
     do SetTargetProfile tcConfigB "netcore" // always assume System.Runtime codegen
-    //do SetTargetProfile tcConfigB "privatecorelib" // always assume System.Private.CoreLib codegen
 #endif
 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
@@ -2565,7 +2562,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         // Explanation: This callback is invoked during compilation to resolve assembly references
         // We don't yet propagate the ctok through these calls (though it looks plausible to do so).
         let ctok = AssumeCompilationThreadWithoutEvidence ()
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         match tcImports.TryFindProviderGeneratedAssemblyByName (ctok, aref.Name) with
         | Some assembly -> Some (Choice2Of2 assembly)
         | None -> 
@@ -2593,7 +2590,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         | Choice2Of2 None -> failwith "Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing"
         | Choice2Of2 (Some userExn) -> raise userExn
 
-    let commitResultNonThrowing tcConfig scriptFile (errorLogger: CompilationErrorLogger) res = 
+    let commitResultNonThrowing errorOptions scriptFile (errorLogger: CompilationErrorLogger) res = 
         let errs = errorLogger.GetErrors()
         let userRes = 
             match res with 
@@ -2601,7 +2598,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
             | Choice2Of2 None -> Choice2Of2 (System.Exception "Operation could not be completed due to earlier error")
             | Choice2Of2 (Some userExn) -> Choice2Of2 userExn
 
-        userRes, ErrorHelpers.CreateErrorInfos (tcConfig, true, scriptFile, errs)
+        userRes, ErrorHelpers.CreateErrorInfos (errorOptions, true, scriptFile, errs)
 
     let dummyScriptFileName = "input.fsx"
 
@@ -2726,10 +2723,10 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         // is not safe to call concurrently.
         let ctok = AssumeCompilationThreadWithoutEvidence()
 
-        let tcConfig = TcConfig.Create(tcConfigB,validate=false)
-        let errorLogger = CompilationErrorLogger("EvalInteraction",tcConfig)
+        let errorOptions = TcConfig.Create(tcConfigB,validate = false).errorSeverityOptions
+        let errorLogger = CompilationErrorLogger("EvalInteraction", errorOptions)
         fsiInteractionProcessor.EvalExpression(ctok, sourceText, dummyScriptFileName, errorLogger)
-        |> commitResultNonThrowing tcConfig dummyScriptFileName errorLogger
+        |> commitResultNonThrowing errorOptions dummyScriptFileName errorLogger
 
     member x.EvalInteraction(sourceText) : unit =
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the 
@@ -2747,11 +2744,11 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         // is not safe to call concurrently.
         let ctok = AssumeCompilationThreadWithoutEvidence()
 
-        let tcConfig = TcConfig.Create(tcConfigB,validate=false)
-        let errorLogger = CompilationErrorLogger("EvalInteraction",tcConfig)
+        let errorOptions = TcConfig.Create(tcConfigB,validate = false).errorSeverityOptions
+        let errorLogger = CompilationErrorLogger("EvalInteraction", errorOptions)
         fsiInteractionProcessor.EvalInteraction(ctok, sourceText, dummyScriptFileName, errorLogger) 
-        |> commitResultNonThrowing tcConfig "input.fsx" errorLogger
-        |> function Choice1Of2(_), errs -> Choice1Of2 (), errs | Choice2Of2 exn, errs -> Choice2Of2 exn, errs
+        |> commitResultNonThrowing errorOptions "input.fsx" errorLogger
+        |> function Choice1Of2 (_), errs -> Choice1Of2 (), errs | Choice2Of2 exn, errs -> Choice2Of2 exn, errs
 
     member x.EvalScript(scriptPath) : unit =
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the 
@@ -2769,11 +2766,11 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         // is not safe to call concurrently.
         let ctok = AssumeCompilationThreadWithoutEvidence()
 
-        let tcConfig = TcConfig.Create(tcConfigB,validate=false)
-        let errorLogger = CompilationErrorLogger("EvalInteraction",tcConfig)
+        let errorOptions = TcConfig.Create(tcConfigB, validate = false).errorSeverityOptions
+        let errorLogger = CompilationErrorLogger("EvalInteraction", errorOptions)
         fsiInteractionProcessor.EvalScript(ctok, scriptPath, errorLogger)
-        |> commitResultNonThrowing tcConfig scriptPath errorLogger
-        |> function Choice1Of2(_), errs -> Choice1Of2 (), errs | Choice2Of2 exn, errs -> Choice2Of2 exn, errs
+        |> commitResultNonThrowing errorOptions scriptPath errorLogger
+        |> function Choice1Of2 (_), errs -> Choice1Of2 (), errs | Choice2Of2 exn, errs -> Choice2Of2 exn, errs
  
     /// Performs these steps:
     ///    - Load the dummy interaction, if any

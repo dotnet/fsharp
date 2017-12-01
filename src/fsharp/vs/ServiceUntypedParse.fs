@@ -79,13 +79,15 @@ type CompletionContext =
     | ParameterList of pos * HashSet<string>
     | AttributeApplication
     | OpenDeclaration
+    /// completing pattern type (e.g. foo (x: |))
+    | PatternType
 
 //----------------------------------------------------------------------------
 // FSharpParseFileResults
 //----------------------------------------------------------------------------
 
 [<Sealed>]
-type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput option, parseHadErrors : bool, dependencyFiles : string list) = 
+type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput option, parseHadErrors: bool, dependencyFiles: string[]) = 
 
     member scope.Errors = errors
 
@@ -384,7 +386,7 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
             
     /// When these files appear or disappear the configuration for the current project is invalidated.
     member scope.DependencyFiles = dependencyFiles
-                    
+
     member scope.FileName =
       match input with
       | Some(ParsedInput.ImplFile(ParsedImplFileInput(fileName = modname))) 
@@ -1274,6 +1276,12 @@ module UntypedParseImpl =
                             else
                                 None
                         | _ -> defaultTraverse decl
+
+                    member __.VisitType(defaultTraverse, ty) =
+                        match ty with
+                        | SynType.LongIdent _ when rangeContainsPos ty.Range pos ->
+                            Some CompletionContext.PatternType
+                        | _ -> defaultTraverse ty
             }
 
         AstTraversal.Traverse(pos, pt, walker)

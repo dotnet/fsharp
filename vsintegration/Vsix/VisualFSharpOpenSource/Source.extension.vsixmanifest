@@ -4,7 +4,7 @@
   <Metadata>
     <Identity Id="VisualFSharp" Version="42.42.42.42" Language="en-US" Publisher="Microsoft.VisualFSharpTools" />
     <DisplayName>Visual F# Tools</DisplayName>
-    <Description xml:space="preserve">Deploy Visual F# Tools templates to Visual Studio</Description>
+    <Description xml:space="preserve">Deploy Visual F# Tools Binaries and Templates to Visual Studio</Description>
     <PackageId>Microsoft.FSharp.VSIX.OpenSource.Core</PackageId>
     <MoreInfo>https://docs.microsoft.com/en-us/dotnet/articles/fsharp/</MoreInfo>
   </Metadata>
@@ -28,7 +28,6 @@
       <Action Type="Ngen" Path="FSharp.ProjectSystem.PropertyPages.dll" />
       <Action Type="Ngen" Path="FSharp.VS.FSI.dll" />
     </Actions>
-    -
   </Installer>
   <Dependencies>
     <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.6,)" />
@@ -44,10 +43,6 @@
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.ProjectSystem.PropertyPages.pkgdef" />
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.Compiler.Server.Shared.pkgdef" />
 
-    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" Path="ProjectTemplates" d:TargetPath="|NetCoreProject;TemplateProjectOutputGroup|" d:ProjectName="NetCoreProject" d:VsixSubPath="ProjectTemplates" />
-    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" Path="ProjectTemplates" d:TargetPath="|NetCore78Project;TemplateProjectOutputGroup|" d:ProjectName="NetCore78Project" d:VsixSubPath="ProjectTemplates" />
-    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" Path="ProjectTemplates" d:TargetPath="|NetCore259Project;TemplateProjectOutputGroup|" d:ProjectName="NetCore259Project" d:VsixSubPath="ProjectTemplates" />
-    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" Path="ProjectTemplates" d:TargetPath="|PortableLibraryProject;TemplateProjectOutputGroup|" d:ProjectName="PortableLibraryProject" d:VsixSubPath="ProjectTemplates" />
     <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" Path="ProjectTemplates" d:TargetPath="|TutorialProject;TemplateProjectOutputGroup|" d:ProjectName="TutorialProject" d:VsixSubPath="ProjectTemplates" />
     <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" Path="ProjectTemplates" d:TargetPath="|ConsoleProject;TemplateProjectOutputGroup|" d:ProjectName="ConsoleProject" d:VsixSubPath="ProjectTemplates" />
     <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" Path="ProjectTemplates" d:TargetPath="|LibraryProject;TemplateProjectOutputGroup|" d:ProjectName="LibraryProject" d:VsixSubPath="ProjectTemplates" />
