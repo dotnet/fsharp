@@ -9059,11 +9059,10 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
             if methodName = "MoveNext" || methodName = "GetNextArg" then 
                 DefinitelyMutates
 
-            // Diagnostic heuristic: If the method has 'void' or 'unit' return type then we pass LikelyMutates,
+            // Diagnostic heuristic: If the method name starts with "Set" or "set_" and has 'void' or 'unit' return type then we pass LikelyMutates,
             // which will cause a strong (on-by-default) warning  to be reported if the method is not used on a mutable struct value.
-            // However we don't apply this for "Dispose" or "Free" methods because of its common use for types 
-            // such as "CancellationTokenRegistration" and "GCHandle"
-            elif minfos |> List.forall (fun minfo -> minfo.GetCompiledReturnTy(cenv.amap, mItem, minfo.FormalMethodInst) |> Option.isNone) && methodName <> "Dispose" && methodName <> "Free" then 
+            elif (methodName.StartsWith("Set") || methodName.StartsWith("set_")) &&
+                 minfos |> List.forall (fun minfo -> minfo.GetCompiledReturnTy(cenv.amap, mItem, minfo.FormalMethodInst) |> Option.isNone) then 
                 LikelyMutates
 
             // All other operations are "PossiblyMutates" which generate 
