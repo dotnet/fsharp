@@ -17,7 +17,7 @@
         </dependencies>
     </metadata>
     <files>
-        <file src="lib/netstandard1.1/TupleSample.dll"     target="lib/netstandard1.1" />
-        <file src="lib/portable-net40+sl4+win8+wp8/TupleSample.dll"     target="lib/portable-net40+sl4+win8+wp8" />
+        <file src="lib\netstandard1.1\TupleSample.dll"     target="lib\netstandard1.1" />
+        <file src="lib\portable-net40+sl4+win8+wp8\TupleSample.dll"     target="lib\portable-net40+sl4+win8+wp8" />
     </files>
 </package>

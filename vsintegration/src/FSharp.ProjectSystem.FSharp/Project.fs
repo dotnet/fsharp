@@ -1290,8 +1290,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 let result = base.InvokeMsBuild(target, extraProperties)
                 result
 
-            // Fulfill HostObject contract with Fsc task, and enable 'capture' of compiler flags for the project.
-            member x.Compile(compile:System.Converter<int,int>, flags:string[], sources:string[]) = 
+            member x.CoreCompile(flags:string[], sources:string[]) =
                 // Note: This method may be called from non-UI thread!  The Fsc task in FSharp.Build.dll invokes this method via reflection, and
                 // the Fsc task is typically created by MSBuild on a background thread.  So be careful.
 #if DEBUG
@@ -1306,8 +1305,23 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 if projectSite.State = ProjectSiteOptionLifetimeState.Opening then
                     // This is the first time, so set up interface for language service to talk to us
                     projectSite.Open(x.CreateRunningProjectSite())
+
+            // =====================================================================================================
+            // Todo: x.Compile(compile:System.Converter<int,int>, flags:string[], sources:string[]) for VS2017.7
+            // Earlier buildtasks usesd System.Converter<int,int> for cross platform we are moving to Func<int>
+            // This is so that during the interim, earlier VS's will still load the OSS project
+            // =====================================================================================================
+            member x.Compile(compile:System.Converter<int,int>, flags:string[], sources:string[]) =
+                x.CoreCompile(flags, sources)
                 if actuallyBuild then
                     compile.Invoke(0)
+                else
+                    0
+
+            member x.Compile(compile:Func<int>, flags:string[], sources:string[]) =
+                x.CoreCompile(flags, sources)
+                if actuallyBuild then
+                    compile.Invoke()
                 else
                     0
 
@@ -1579,7 +1593,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     // in the registry hive so that more editors can be added without changing this part of the
                     // code. FSharp only makes usage of one Editor Factory and therefore we will return 
                     // that guid
-                    guidEditorType <- new Guid(FSharpConstants.editorFactoryGuidString)
+                    guidEditorType <- new Guid(Constants.FSharpEditorFactoryIdString)
                     VSConstants.S_OK
 
             interface IVsProjectSpecificEditorMap2 with 
@@ -1593,7 +1607,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     // in the registry hive so that more editors can be added without changing this part of the
                     // code. FSharp only makes usage of one Editor Factory and therefore we will return 
                     // that guid
-                    guidEditorType <- new Guid(FSharpConstants.editorFactoryGuidString)
+                    guidEditorType <- new Guid(Constants.FSharpEditorFactoryIdString)
                     VSConstants.S_OK
 
                 member x.GetSpecificLanguageService(_mkDocument:string, guidLanguageService:byref<Guid> ) =

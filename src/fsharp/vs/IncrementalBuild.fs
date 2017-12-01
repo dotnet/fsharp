@@ -4,8 +4,9 @@ namespace Microsoft.FSharp.Compiler
 
 
 open System
-open System.IO
+open System.Collections.Concurrent
 open System.Collections.Generic
+open System.IO
 open System.Threading
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.NameResolution
@@ -1239,7 +1240,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         cache.GetFileTimeStamp filename
 
     // Deduplicate module names
-    let moduleNamesDict = Dictionary<string, Set<string>>()
+    let moduleNamesDict = ConcurrentDictionary<string, Set<string>>()
                             
     /// This is a build task function that gets placed into the build rules as the computation for a VectorMap
     ///

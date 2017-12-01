@@ -103,14 +103,14 @@ ${buildPath}build.cmd ${buildFlavor} ${build_args}""")
             Utilities.setMachineAffinity(newJob, os, affinity)
             Utilities.standardJobSetup(newJob, project, isPullRequest, "*/${branch}")
 
-						if (build_args != "none") {
-		            Utilities.addArchival(newJob, "tests/TestResults/*.*", "", skipIfNoTestFiles, false)
-		            if (configuration == "Release_fcs") {
-		                Utilities.addArchival(newJob, "Release/fcs/**")
-		            }
-		            else {
-		                Utilities.addArchival(newJob, "${buildFlavor}/**")
-		            }
+            if (build_args != "none") {
+                Utilities.addArchival(newJob, "tests/TestResults/*.*", "", skipIfNoTestFiles, false)
+                if (configuration == "Release_fcs") {
+                    Utilities.addArchival(newJob, "Release/**")
+                }
+                else {
+                    Utilities.addArchival(newJob, "${buildFlavor}/**")
+                }
             }
             if (isPullRequest) {
                 Utilities.addGithubPRTriggerForBranch(newJob, branch, "${os} ${configuration} Build")

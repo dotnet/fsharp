@@ -29,7 +29,7 @@ build.sh ^<all^|net40^|coreclr^|pcls^|vs^>
          ^<ci^|ci_part1^|ci_part2^|ci_part3^|microbuild^>
          ^<debug^|release^>
          ^<diag^|publicsign^>
-         ^<test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-pcl-coreunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^>
+         ^<test^|no-test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-pcl-coreunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^>
          ^<include tag^>
          ^<init^>
 
@@ -104,6 +104,7 @@ export INCLUDE_TEST_TAGS=
 
 # Set up variables used to determine whether we'll automatically select which
 # targets to build/run/test. NOTE: These aren't exported, they're only used by this script.
+no_test=0
 _autoselect=1
 _autoselect_tests=0
 
@@ -249,6 +250,9 @@ do
             ;;
         "test")
             _autoselect_tests=1
+            ;;
+        "no-test")
+            no_test=1
             ;;
         "include")
             failwith "The 'include' option is not (yet) supported by this script."
@@ -555,6 +559,11 @@ fi
 # TODO: Define location of ildasm/monodis and sn
 
 if [ "$TEST_NET40_COMPILERUNIT_SUITE" = '0' ] && [ "$TEST_PORTABLE_COREUNIT_SUITE" = '0' ] && [ "$TEST_CORECLR_COREUNIT_SUITE" = '0' ] && [ "$TEST_VS_IDEUNIT_SUITE" = '0' ] && [ "$TEST_NET40_FSHARP_SUITE" = '0' ] && [ "$TEST_NET40_FSHARPQA_SUITE" = '0' ]; then
+    # Successful build; not running tests so exit now.
+    exit 0
+fi
+
+if [ $no_test -eq 1 ]; then
     # Successful build; not running tests so exit now.
     exit 0
 fi
