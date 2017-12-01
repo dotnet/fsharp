@@ -51,7 +51,6 @@
        <None Include="project.json" />
    </ItemGroup>
    <ItemGroup  Condition="'$(TargetDotnetProfile)' != 'coreclr'">
-   <ItemGroup>
     <Reference Include="mscorlib" />
     <Reference Include="System" />
    </ItemGroup>
