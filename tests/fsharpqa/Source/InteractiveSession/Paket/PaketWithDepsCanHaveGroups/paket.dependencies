@@ -1,7 +1,0 @@
-framework: net461
-source https://nuget.org/api/v2
-
-group Test
-    framework: net461
-    source https://nuget.org/api/v2
-    nuget NUnit

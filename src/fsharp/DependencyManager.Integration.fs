@@ -8,11 +8,6 @@ open System.Reflection
 open System.IO
 open Microsoft.FSharp.Compiler.ErrorLogger
 
-#if FX_RESHAPED_REFLECTION
-    open PrimReflectionAdapters
-    open ReflectionAdapters    
-#endif
-
 // NOTE: this contains mostly members whose intents are :
 // * to keep ReferenceLoading.PaketHandler usable outside of F# (so it can be used in scriptcs & others)
 // * to minimize footprint of integration in fsi/CompileOps
@@ -30,11 +25,7 @@ module ReflectionHelper =
 
     let getAttributeNamed (theType: Type) attributeName =
         try
-#if FX_RESHAPED_REFLECTION
             theType.GetTypeInfo().GetCustomAttributes false
-#else
-            theType.GetCustomAttributes false
-#endif
             |> Seq.tryFind (fun a -> a.GetType().Name = attributeName)
         with | _ -> None
 
@@ -115,18 +106,10 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
 
 let assemblySearchPaths = lazy(
     [ let assemblyLocation =
-#if FX_RESHAPED_REFLECTION
           typeof<IDependencyManagerProvider>.GetTypeInfo().Assembly.Location
-#else
-          typeof<IDependencyManagerProvider>.Assembly.Location
-#endif  
       yield Path.GetDirectoryName assemblyLocation
       let executingAssembly = 
-#if FX_RESHAPED_REFLECTION
           typeof<IDependencyManagerProvider>.GetTypeInfo().Assembly
-#else
-          Assembly.GetExecutingAssembly()
-#endif
       yield Path.GetDirectoryName(executingAssembly.Location)
 #if FX_NO_APP_DOMAINS
 #else

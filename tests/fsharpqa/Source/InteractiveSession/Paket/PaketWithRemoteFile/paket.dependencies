@@ -1,3 +1,0 @@
-source https://nuget.org/api/v2
-nuget NUnit
-github fsharp/FAKE src/app/FakeLib/Globbing/Globbing.fs
