@@ -31,6 +31,7 @@ open Microsoft.VisualStudio.Text.Editor
 open System.Diagnostics
 open System.Runtime.InteropServices
 open System.Composition
+open System.ComponentModel.Composition
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.VisualStudio.Utilities
 
@@ -129,6 +130,8 @@ type internal FSharpBraceCompletionSession
 
                     snapshot <-
                         use edit = subjectBuffer.CreateEdit()
+
+                        edit.Insert(closingSnapshotPoint.Position, closingBrace.ToString()) |> ignore
                     
                         if edit.HasFailedChanges then
                             Debug.Fail("Unable to insert closing brace")
@@ -343,10 +346,8 @@ type internal ParenthesisCompletionSession () =
             // TODO: Implement this for F#
             true 
 
-[<Shared>]
 [<ExportLanguageService(typeof<IEditorBraceCompletionSessionFactory>, FSharpConstants.FSharpLanguageName)>]
-type internal FSharpEditorBraceCompletionSessionFactory 
-        [<ImportingConstructor>] (_smartIndetationService: ISmartIndentationService, _undoManager: ITextBufferUndoManagerProvider) =
+type internal FSharpEditorBraceCompletionSessionFactory () =
     inherit ForegroundThreadAffinitizedObject ()
 
     member __.IsSupportedOpeningBrace openingBrace =
@@ -394,7 +395,7 @@ type internal FSharpBraceCompletionSessionProvider
 
             let textSnapshot = openingPoint.Snapshot
 
-            session <-
+            let newSession =
                 match textSnapshot.GetOpenDocumentInCurrentContextWithChanges() with
                 | null -> null
                 | document ->
@@ -417,6 +418,8 @@ type internal FSharpBraceCompletionSessionProvider
                                 undoHistory, 
                                 editorOperationsFactoryService, 
                                 editorSession) :> IBraceCompletionSession
+
+            session <- newSession
 
             match session with
             | null -> false
