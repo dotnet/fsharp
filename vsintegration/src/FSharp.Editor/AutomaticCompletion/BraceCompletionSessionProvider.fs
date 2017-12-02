@@ -3,36 +3,20 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Collections.Generic
-open System.Collections.Immutable
+open System.Diagnostics
 open System.Threading
-open System.Threading.Tasks
-open System.Runtime.CompilerServices
+open System.ComponentModel.Composition
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Completion
-open Microsoft.CodeAnalysis.Options
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Editor.Shared.Utilities
-open Microsoft.CodeAnalysis.Shared.Extensions
 open Microsoft.CodeAnalysis.Host
+open Microsoft.CodeAnalysis.Host.Mef
 
-open Microsoft.VisualStudio.FSharp.LanguageService
-open Microsoft.VisualStudio.Shell
-open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Text.BraceCompletion
-
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.Text.Operations
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Editor
-open System.Diagnostics
-open System.Runtime.InteropServices
-open System.Composition
-open System.ComponentModel.Composition
-open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.VisualStudio.Utilities
 
 [<AutoOpen>]
