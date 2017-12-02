@@ -30,10 +30,12 @@ open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Editor
 open System.Diagnostics
 open System.Runtime.InteropServices
+open System.Composition
+open Microsoft.CodeAnalysis.Host.Mef
+open Microsoft.VisualStudio.Utilities
 
 [<AutoOpen>]
 module private FSharpBraceCompletionSessionProviderHelpers =
-    open System.Runtime.InteropServices
 
     let getLanguageService<'T when 'T :> ILanguageService and 'T : null> (document: Document) =
         match document.Project with
@@ -71,7 +73,7 @@ type internal IEditorBraceCompletionSessionFactory =
 
     abstract TryCreateSession : Document * openingPosition: int * openingBrace: char * CancellationToken -> IEditorBraceCompletionSession
 
-type internal BraceCompletionSession 
+type internal FSharpBraceCompletionSession 
     (
         textView: ITextView,
         subjectBuffer: ITextBuffer,
@@ -192,7 +194,6 @@ type internal BraceCompletionSession
 
         if afterBrace.HasValue then
             textView.Caret.MoveTo(afterBrace.Value) |> ignore
-        
 
     interface IBraceCompletionSession with
 
@@ -316,17 +317,79 @@ type internal BraceCompletionSession
 
         member __.TextView = textView
 
-type internal BraceCompletionSessionProvider
+module private Parenthesis =
+
+    [<Literal>]
+    let OpenCharacter = '('
+
+    [<Literal>]
+    let CloseCharacter = ')'
+
+type internal ParenthesisCompletionSession () =
+    
+    interface IEditorBraceCompletionSession with
+
+        member this.AfterReturn(_session, _cancellationToken) = 
+            ()
+
+        member this.AfterStart(_session, _cancellationToken) = 
+            ()
+
+        member this.AllowOverType(_session, _cancellationToken) = 
+            // TODO: Implement this for F#
+            true
+
+        member this.CheckOpeningPoint(_session, _cancellationToken) = 
+            // TODO: Implement this for F#
+            true 
+
+[<Shared>]
+[<ExportLanguageService(typeof<IEditorBraceCompletionSessionFactory>, FSharpConstants.FSharpLanguageName)>]
+type internal FSharpEditorBraceCompletionSessionFactory 
+        [<ImportingConstructor>] (_smartIndetationService: ISmartIndentationService, _undoManager: ITextBufferUndoManagerProvider) =
+    inherit ForegroundThreadAffinitizedObject ()
+
+    member __.IsSupportedOpeningBrace openingBrace =
+        match openingBrace with
+        | Parenthesis.OpenCharacter -> true
+        | _ -> false
+
+    member this.CheckCodeContext(_document, _position, _openingBrace, _cancellationToken) =
+        this.AssertIsForeground();
+
+        // TODO: We need to know if we are inside a F# comment. If we are, then don't do automatic completion.
+        true
+
+    member this.CreateEditorSession(_document: Document, _openingPosition: int, openingBrace: char, _cancellationToken: CancellationToken) =
+        match openingBrace with
+        | Parenthesis.OpenCharacter -> ParenthesisCompletionSession() :> IEditorBraceCompletionSession
+        | _ -> null
+
+    interface IEditorBraceCompletionSessionFactory with
+
+        member this.TryCreateSession(document, openingPosition, openingBrace, cancellationToken) : IEditorBraceCompletionSession = 
+            this.AssertIsForeground()
+
+            if this.IsSupportedOpeningBrace(openingBrace) && this.CheckCodeContext(document, openingPosition, openingBrace, cancellationToken) then
+                this.CreateEditorSession(document, openingPosition, openingBrace, cancellationToken)
+            else
+                null
+
+[<Export(typeof<IBraceCompletionSessionProvider>)>]
+[<ContentType(FSharpConstants.FSharpContentTypeName)>]
+[<BracePair(Parenthesis.OpenCharacter, Parenthesis.CloseCharacter)>]
+type internal FSharpBraceCompletionSessionProvider
+    [<ImportingConstructor>] 
     (
         undoManager: ITextBufferUndoManagerProvider,
-        _editorOperationsFactoryService: IEditorOperationsFactoryService
+        editorOperationsFactoryService: IEditorOperationsFactoryService
     ) =
 
     inherit ForegroundThreadAffinitizedObject ()
 
     interface IBraceCompletionSessionProvider with
 
-        member this.TryCreateSession(textView, openingPoint, openingBrace, _closingBrace, session) =
+        member this.TryCreateSession(textView, openingPoint, openingBrace, closingBrace, session) =
             this.AssertIsForeground();
 
             let textSnapshot = openingPoint.Snapshot
@@ -343,9 +406,17 @@ type internal BraceCompletionSessionProvider
                         
                         match editorSessionFactory.TryCreateSession(document, openingPoint.Position, openingBrace, cancellationToken) with
                         | null -> null
-                        | _editorSession ->
-                            let _undoHistory = undoManager.GetTextBufferUndoManager(textView.TextBuffer).TextBufferUndoHistory
-                            null
+                        | editorSession ->
+                            let undoHistory = undoManager.GetTextBufferUndoManager(textView.TextBuffer).TextBufferUndoHistory
+                            FSharpBraceCompletionSession(
+                                textView,
+                                openingPoint.Snapshot.TextBuffer,
+                                openingPoint, 
+                                openingBrace, 
+                                closingBrace, 
+                                undoHistory, 
+                                editorOperationsFactoryService, 
+                                editorSession) :> IBraceCompletionSession
 
             match session with
             | null -> false
