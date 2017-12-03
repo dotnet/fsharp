@@ -363,3 +363,25 @@ let hello() = "hello world"
 let hello() = "hello world"
 (* This is a comment. *)
 """
+
+[<Test>]
+let ``should keep comments inside unit``() =
+    formatSourceString false """
+let x =
+    ((*comment*))
+    printf "a"
+    // another comment 1
+    printf "b"
+    // another comment 2
+    printf "c"
+"""  config
+    |> prepend newline
+    |> should equal """
+let x =
+    ((*comment*))
+    printf "a"
+    // another comment 1
+    printf "b"
+    // another comment 2
+    printf "c"
+""" 

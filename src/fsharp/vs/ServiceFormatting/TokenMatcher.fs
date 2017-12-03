@@ -76,6 +76,11 @@ let (|RawDelimiter|_|) = function
         Some origTokText
     | _ -> None
 
+let (|RawComment|_|) = function
+     | (Token origTok, origTokText) when origTok.CharClass = FSharpTokenCharKind.Comment -> 
+         Some origTokText
+     | _ -> None
+
 let (|RawAttribute|_|) = function
     | RawDelimiter "[<" :: moreOrigTokens -> 
         let rec loop ts acc = 
@@ -572,6 +577,11 @@ let integrateComments (originalText : string) (newText : string) =
                 maintainIndent (fun () -> 
                     for x in commentTokensText do addText x)
                 loop moreOrigTokens moreNewTokens 
+        
+        | (_ :: moreOrigTokens), (RawComment newTokText :: moreNewTokens) ->
+            addText newTokText 
+            loop moreOrigTokens moreNewTokens
+
 
         // Emit end-of-line from new tokens
         | _,  (NewLine newTokText :: moreNewTokens) ->
