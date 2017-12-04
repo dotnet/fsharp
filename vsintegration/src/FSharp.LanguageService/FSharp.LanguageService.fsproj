@@ -31,7 +31,6 @@
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <Import Project="$(FSharpSourcesRoot)\..\vsintegration\vsintegration.targets" />
-  <Import Project="$(VsSDKTargets)" />
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
     <ItemGroup>
       <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />

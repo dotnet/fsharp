@@ -45,7 +45,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <VSRootSuffix>RoslynDev</VSRootSuffix>
     <UseCodebase>true</UseCodebase>
-    <DeployExtension Condition=" '$(DeployExtension)' == '' and '$(CI)' != '1'">True</DeployExtension>
+    <DeployExtension Condition=" '$(DeployExtension)' == '' and '$(CI)' != '1' and '$(USE_LOCAL_MSBUILD)' == '1'">True</DeployExtension>
     <DeployExtension Condition=" '$(DeployExtension)' == '' and '$(CI)' == '1'">False</DeployExtension>
     <ProjectGuid>{E6A45CDF-B408-420F-B475-74611BEFC52B}</ProjectGuid>
     <IsPackage>true</IsPackage>
@@ -56,8 +56,6 @@
     <MicroBuildAssemblyVersion>15.4.1.0</MicroBuildAssemblyVersion>
     <MicroBuildAssemblyFileLanguage>cs</MicroBuildAssemblyFileLanguage>
   </PropertyGroup>
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
-  <Import Project="$(FSharpSourcesRoot)\..\packages\$(VSSDK_BUILDTOOLS_VERSION)\build\Microsoft.VsSDK.BuildTools.props" />
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <StartAction>Program</StartAction>
     <StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
