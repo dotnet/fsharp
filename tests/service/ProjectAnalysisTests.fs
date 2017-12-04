@@ -3504,12 +3504,7 @@ let ``Test Project24 all symbols`` () =
              ["member"; "getter"]);
             ("StaticAutoPropGetSet", "file1", ((31, 22), (31, 42)), ["defn"],
              ["member"; "getter"]);
-            ("( AutoPropGet@ )", "file1", ((27, 29), (27, 30)), ["defn"], []);
-            ("( AutoPropGetSet@ )", "file1", ((28, 32), (28, 33)), ["defn"],
-             ["mutable"]);
-            ("( StaticAutoPropGet@ )", "file1", ((30, 42), (30, 43)), ["defn"], []);
-            ("( StaticAutoPropGetSet@ )", "file1", ((31, 45), (31, 46)), ["defn"],
-             ["mutable"]); ("x", "file1", ((5, 11), (5, 12)), ["defn"], []);
+            ("x", "file1", ((5, 11), (5, 12)), ["defn"], []);
             ("int", "file1", ((7, 20), (7, 23)), ["type"], ["abbrev"]);
             ("v", "file1", ((7, 17), (7, 18)), ["defn"], []);
             ("x", "file1", ((9, 11), (9, 12)), ["defn"], []);
@@ -3524,12 +3519,12 @@ let ``Test Project24 all symbols`` () =
             ("v", "file1", ((22, 17), (22, 18)), ["defn"], []);
             ("int", "file1", ((25, 21), (25, 24)), ["type"], ["abbrev"]);
             ("v", "file1", ((25, 18), (25, 19)), ["defn"], []);
-            ("( AutoPropGet@ )", "file1", ((27, 15), (27, 26)), [], []);
-            ("( AutoPropGetSet@ )", "file1", ((28, 15), (28, 29)), [], ["mutable"]);
+            ("( AutoPropGet@ )", "file1", ((27, 15), (27, 26)), [], ["compgen"]);
+            ("( AutoPropGetSet@ )", "file1", ((28, 15), (28, 29)), [], ["compgen";"mutable"]);
             ("v", "file1", ((28, 15), (28, 29)), ["defn"], []);
-            ("( StaticAutoPropGet@ )", "file1", ((30, 22), (30, 39)), [], []);
+            ("( StaticAutoPropGet@ )", "file1", ((30, 22), (30, 39)), [], ["compgen"]);
             ("( StaticAutoPropGetSet@ )", "file1", ((31, 22), (31, 42)), [],
-             ["mutable"]); ("v", "file1", ((31, 22), (31, 42)), ["defn"], []);
+             ["compgen";"mutable"]); ("v", "file1", ((31, 22), (31, 42)), ["defn"], []);
             ("( .cctor )", "file1", ((4, 5), (4, 23)), ["defn"], ["member"]);
             ("TypeWithProperties", "file1", ((33, 9), (33, 27)), [],
              ["member"; "ctor"]);
@@ -3610,10 +3605,6 @@ let ``Test symbol uses of properties with both getters and setters`` () =
             ("StaticAutoPropGet", "file1", ((30, 22), (30, 39)), ["member"; "getter"]);
             ("StaticAutoPropGetSet", "file1", ((31, 22), (31, 42)),
              ["member"; "getter"]);
-            ("( AutoPropGet@ )", "file1", ((27, 29), (27, 30)), []);
-            ("( AutoPropGetSet@ )", "file1", ((28, 32), (28, 33)), ["mutable"]);
-            ("( StaticAutoPropGet@ )", "file1", ((30, 42), (30, 43)), []);
-            ("( StaticAutoPropGetSet@ )", "file1", ((31, 45), (31, 46)), ["mutable"]);
             ("x", "file1", ((5, 11), (5, 12)), []);
             ("int", "file1", ((7, 20), (7, 23)), ["abbrev"]);
             ("v", "file1", ((7, 17), (7, 18)), []);
@@ -3629,11 +3620,11 @@ let ``Test symbol uses of properties with both getters and setters`` () =
             ("v", "file1", ((22, 17), (22, 18)), []);
             ("int", "file1", ((25, 21), (25, 24)), ["abbrev"]);
             ("v", "file1", ((25, 18), (25, 19)), []);
-            ("( AutoPropGet@ )", "file1", ((27, 15), (27, 26)), []);
-            ("( AutoPropGetSet@ )", "file1", ((28, 15), (28, 29)), ["mutable"]);
+            ("( AutoPropGet@ )", "file1", ((27, 15), (27, 26)), ["compgen"]);
+            ("( AutoPropGetSet@ )", "file1", ((28, 15), (28, 29)), ["compgen";"mutable"]);
             ("v", "file1", ((28, 15), (28, 29)), []);
-            ("( StaticAutoPropGet@ )", "file1", ((30, 22), (30, 39)), []);
-            ("( StaticAutoPropGetSet@ )", "file1", ((31, 22), (31, 42)), ["mutable"]);
+            ("( StaticAutoPropGet@ )", "file1", ((30, 22), (30, 39)), ["compgen"]);
+            ("( StaticAutoPropGetSet@ )", "file1", ((31, 22), (31, 42)), ["compgen";"mutable"]);
             ("v", "file1", ((31, 22), (31, 42)), []);
             ("( .cctor )", "file1", ((4, 5), (4, 23)), ["member"]);
             ("TypeWithProperties", "file1", ((33, 9), (33, 27)), ["member"; "ctor"]);

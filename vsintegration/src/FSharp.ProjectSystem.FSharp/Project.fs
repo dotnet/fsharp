@@ -1593,7 +1593,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     // in the registry hive so that more editors can be added without changing this part of the
                     // code. FSharp only makes usage of one Editor Factory and therefore we will return 
                     // that guid
-                    guidEditorType <- new Guid(FSharpConstants.editorFactoryGuidString)
+                    guidEditorType <- new Guid(Constants.FSharpEditorFactoryIdString)
                     VSConstants.S_OK
 
             interface IVsProjectSpecificEditorMap2 with 
@@ -1607,7 +1607,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     // in the registry hive so that more editors can be added without changing this part of the
                     // code. FSharp only makes usage of one Editor Factory and therefore we will return 
                     // that guid
-                    guidEditorType <- new Guid(FSharpConstants.editorFactoryGuidString)
+                    guidEditorType <- new Guid(Constants.FSharpEditorFactoryIdString)
                     VSConstants.S_OK
 
                 member x.GetSpecificLanguageService(_mkDocument:string, guidLanguageService:byref<Guid> ) =
