@@ -1484,10 +1484,10 @@ type TcResultsSinkImpl(g, ?source: string) =
                     member __.Equals((p1,i1),(p2,i2)) = posEq p1 p2 && i1 =  i2 } )
 
     let capturedModulesAndNamespaces = 
-        new System.Collections.Generic.HashSet<pos * Item>
-            ( { new IEqualityComparer<pos * Item> with 
-                    member __.GetHashCode ((p, _)) = hash p
-                    member __.Equals ((p1, item1), (p2, item2)) = p1 = p2 && ItemsAreEffectivelyEqual g item1 item2 } )
+        new System.Collections.Generic.HashSet<range * Item>
+            ( { new IEqualityComparer<range * Item> with 
+                    member __.GetHashCode ((m, _)) = hash m
+                    member __.Equals ((m1, item1), (m2, item2)) = m1 = m2 && ItemsAreEffectivelyEqual g item1 item2 } )
 
     let capturedMethodGroupResolutions = ResizeArray<_>()
     let capturedOpenDeclarations = ResizeArray<_>()
@@ -1522,7 +1522,7 @@ type TcResultsSinkImpl(g, ?source: string) =
                     let alreadyDone =
                         match item with
                         | Item.ModuleOrNamespaces _ ->
-                            not (capturedModulesAndNamespaces.Add (endPos, item))
+                            not (capturedModulesAndNamespaces.Add (m, item))
                         | _ ->
                             let keyOpt = 
                                 match item with
