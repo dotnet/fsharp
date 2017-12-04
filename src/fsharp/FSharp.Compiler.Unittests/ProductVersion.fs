@@ -82,11 +82,11 @@ module ProductVersionTest =
           "0.0.0.0", (0us,0us,0us,0us) 
           "3213.57843.32382.59493", (3213us,57843us,32382us,59493us)
           (sprintf "%d.%d.%d.%d" max max max max), (max,max,max,max) ]
-        |> List.map (fun (s,e) -> TestCaseData(s, e))
 
-    [<TestCaseSource("validValues")>] 
-    let ``should use values if valid major.minor.revision.build version format`` (v, expected) =
-        v |> productVersionToILVersionInfo |> Assert.areEqual expected
+    [<Test>]
+    let ``should use values if valid major.minor.revision.build version format`` () =
+        for (v, expected) in validValues() do 
+            v |> productVersionToILVersionInfo |> Assert.areEqual expected
 
     let invalidValues () =
         [ "1.2.3.4", (1us,2us,3us,4us)
@@ -100,8 +100,29 @@ module ProductVersionTest =
           "", (0us,0us,0us,0us)
           "70000.80000.90000.100000", (0us,0us,0us,0us)
           (sprintf "%d.70000.80000.90000" System.UInt16.MaxValue), (System.UInt16.MaxValue,0us,0us,0us) ]
-        |> List.map (fun (s,e) -> TestCaseData(s, e))
 
-    [<TestCaseSource("invalidValues")>]
-    let ``should zero starting from first invalid version part`` (v, expected) = 
-        v |> productVersionToILVersionInfo |> Assert.areEqual expected
+    [<Test>]
+    let ``should zero starting from first invalid version part`` () = 
+        for (v, expected) in  invalidValues() do
+            v |> productVersionToILVersionInfo |> Assert.areEqual expected
+
+module TypeProviderDesignTimeComponentLoading =
+
+
+    [<Test>]
+    let ``check tooling paths for type provider design time component loading`` () =
+        let arch = if sizeof<nativeint> = 8 then "x64" else "x86" 
+        let expected = 
+          [ @"typeproviders\fsharp41\net461\" + arch
+            @"typeproviders\fsharp41\net461"
+            @"typeproviders\fsharp41\net452\" + arch
+            @"typeproviders\fsharp41\net452"
+            @"typeproviders\fsharp41\net451\" + arch
+            @"typeproviders\fsharp41\net451"
+            @"typeproviders\fsharp41\net45\" + arch
+            @"typeproviders\fsharp41\net45"
+            @"typeproviders\fsharp41\netstandard2.0\" + arch 
+            @"typeproviders\fsharp41\netstandard2.0"
+          ]        
+        let actual = Microsoft.FSharp.Compiler.ExtensionTyping.toolingCompatiblePaths()
+        Assert.areEqual expected actual
