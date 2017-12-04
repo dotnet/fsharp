@@ -19,8 +19,7 @@ module ReflectionHelper =
     let assemblyHasAttribute (theAssembly: Assembly) attributeName =
         try
             CustomAttributeExtensions.GetCustomAttributes(theAssembly)
-            |> Seq.tryFind (fun a -> a.GetType().Name = attributeName)
-            |> function | Some _ -> true | _ -> false
+            |> Seq.exists (fun a -> a.GetType().Name = attributeName)
         with | _ -> false
 
     let getAttributeNamed (theType: Type) attributeName =
@@ -29,13 +28,13 @@ module ReflectionHelper =
             |> Seq.tryFind (fun a -> a.GetType().Name = attributeName)
         with | _ -> None
 
-    let getInstanceProperty<'treturn> (theType: Type) indexParameterTypes propertyName =
+    let getInstanceProperty<'treturn> (theType: Type) propertyName =
         try
             let property = theType.GetProperty(propertyName, typeof<'treturn>)
             if isNull property then
                 None
             elif not (property.GetGetMethod().IsStatic)
-                 && property.GetIndexParameters() = indexParameterTypes
+                 && property.GetIndexParameters() = Array.empty
             then
                 Some property
             else
@@ -79,13 +78,13 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
         match ReflectionHelper.getAttributeNamed theType "FSharpDependencyManagerAttribute" with
         | None -> None
         | Some _ ->
-        match ReflectionHelper.getInstanceProperty<string> theType Array.empty "Name" with
+        match ReflectionHelper.getInstanceProperty<string> theType "Name" with
         | None -> None
         | Some nameProperty ->
-        match ReflectionHelper.getInstanceProperty<string> theType Array.empty "ToolName" with
+        match ReflectionHelper.getInstanceProperty<string> theType "ToolName" with
         | None -> None
         | Some toolNameProperty ->
-        match ReflectionHelper.getInstanceProperty<string> theType Array.empty "Key" with
+        match ReflectionHelper.getInstanceProperty<string> theType "Key" with
         | None -> None
         | Some keyProperty ->
         match ReflectionHelper.getInstanceMethod<string * string list> theType [|typeof<string>;typeof<string>;typeof<string>;typeof<string>;typeof<string seq>;|] "ResolveDependencies" with
@@ -104,17 +103,17 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
         member __.Dispose () = instance.Dispose()
             
 
-let assemblySearchPaths = lazy(
-    [ let assemblyLocation =
-          typeof<IDependencyManagerProvider>.GetTypeInfo().Assembly.Location
-      yield Path.GetDirectoryName assemblyLocation
-      let executingAssembly = 
-          typeof<IDependencyManagerProvider>.GetTypeInfo().Assembly
-      yield Path.GetDirectoryName(executingAssembly.Location)
-#if FX_NO_APP_DOMAINS
+let assemblySearchPaths = lazy (
+    [
+        let assemblyLocation =
+            typeof<IDependencyManagerProvider>.GetTypeInfo().Assembly.Location
+        yield Path.GetDirectoryName assemblyLocation
+        let executingAssembly = 
+            typeof<IDependencyManagerProvider>.GetTypeInfo().Assembly
+        yield Path.GetDirectoryName(executingAssembly.Location)
+#if !FX_NO_APP_DOMAINS
+        yield AppDomain.CurrentDomain.BaseDirectory
 #else
-      let baseDir = AppDomain.CurrentDomain.BaseDirectory
-      yield baseDir 
 #endif
     ]
     |> List.distinct)
@@ -164,6 +163,8 @@ type ImplDependencyManager() =
     interface System.IDisposable with
         member __.Dispose() = ()
 
+
+// TBD:   Need to do something about this
 let registeredDependencyManagers = ref None
 
 let RegisteredDependencyManagers m =

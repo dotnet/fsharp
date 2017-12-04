@@ -4300,7 +4300,7 @@ type internal SR private() =
     /// An error occurred while reading the F# metadata of assembly '%s'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.
     /// (Originally from ..\FSComp.txt:1424)
     static member pickleUnexpectedNonZero(a0 : System.String) = (3219, GetStringFunc("pickleUnexpectedNonZero",",,,%s,,,") a0)
-    /// The dependency manager extension %s could not be loaded. Message: %s
+    /// The dependency manager extension '%s' could not be loaded. Message: %s
     /// (Originally from ..\FSComp.txt:1425)
     static member couldNotLoadDependencyManagerExtenstion(a0 : System.String, a1 : System.String) = (3220, GetStringFunc("couldNotLoadDependencyManagerExtenstion",",,,%s,,,%s,,,") a0 a1)
     /// Package manager key '%s' was not registered in %s. Currently registered: %s

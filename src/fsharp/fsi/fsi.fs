@@ -1288,29 +1288,26 @@ type internal FsiDynamicCompiler
     member fsiDynamicCompiler.CommitDependencyManagerText (ctok, istate: FsiDynamicCompilerState, lexResourceManager, errorLogger) = 
         if not needsPackageResolution then istate else
         needsPackageResolution <- false
-        
-        let istate = ref istate
-        for kv in tcConfigB.packageManagerLines do
-            let packageManagerKey,packageManagerLines = kv.Key,kv.Value
+ 
+        tcConfigB.packageManagerLines |> Seq.fold(fun istate kv ->
+            let packageManagerKey,packageManagerLines = kv.Key, kv.Value
             match packageManagerLines with
-            | [] -> ()
-            | (_,m)::_ ->
+            | [] -> istate
+            | (_, m)::_ ->
                 let packageManagerTextLines = packageManagerLines |> List.map fst
                 match DependencyManagerIntegration.tryFindDependencyManagerByKey m packageManagerKey with
                 | None ->
                     errorR(DependencyManagerIntegration.createPackageManagerUnknownError packageManagerKey m)
+                    istate
                 | Some packageManager ->
                     match DependencyManagerIntegration.resolve packageManager tcConfigB.implicitIncludeDir "stdin.fsx" "stdin.fsx" m packageManagerTextLines with
-                    | None -> () // error already reported
-                    | Some (loadScript,additionalIncludeFolders) -> 
+                    | None -> istate // error already reported
+                    | Some (loadScript, additionalIncludeFolders) -> 
                         for folder in additionalIncludeFolders do 
-                            tcConfigB.AddIncludePath(m,folder,"")
-
+                            tcConfigB.AddIncludePath(m, folder, "")
                         match loadScript with
-                        | Some loadScript -> istate := fsiDynamicCompiler.EvalSourceFiles (ctok, !istate, m, [loadScript], lexResourceManager, errorLogger)
-                        | None -> ()
-
-        !istate
+                        | Some loadScript -> fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, [loadScript], lexResourceManager, errorLogger)
+                        | None -> istate) istate
 
     member fsiDynamicCompiler.ProcessMetaCommandsFromInputAsInteractiveCommands(ctok, istate, sourceFile, inp) =
         WithImplicitHome
@@ -2132,10 +2129,6 @@ type internal FsiInteractionProcessor
     let parseExpression (tokenizer:LexFilter.LexFilter) =
         reusingLexbufForParsing tokenizer.LexBuffer (fun () ->
             Parser.typedSeqExprEOF tokenizer.Lexer tokenizer.LexBuffer)
-  
-//    let parseType (tokenizer:LexFilter.LexFilter) =
-//        reusingLexbufForParsing tokenizer.LexBuffer (fun () ->
-//            Parser.typEOF tokenizer.Lexer tokenizer.LexBuffer)
   
     let mainThreadProcessParsedExpression ctok errorLogger (expr, istate) = 
       istate |> InteractiveCatch errorLogger (fun istate ->
