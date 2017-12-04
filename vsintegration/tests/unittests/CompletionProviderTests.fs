@@ -197,6 +197,19 @@ System.Console.WriteLine()
     Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
 
 [<Test>]
+let ShouldNotTriggerCompletionInOperator() =
+    // Simulate mistyping '|>'
+    let fileContents = """
+let f() =
+    12.0 |. sqrt
+"""
+    let caretPosition = fileContents.IndexOf("|.")
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    let getInfo() = documentId, filePath, []
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger on operators")
+
+[<Test>]
 let ShouldDisplayTypeMembers() =
     let fileContents = """
 type T1() =

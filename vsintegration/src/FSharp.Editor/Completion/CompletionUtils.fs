@@ -12,6 +12,23 @@ open System.Globalization
 
 module internal CompletionUtils =
 
+    let private isPotentialOperatorChar (ch: char) =
+        match ch with
+        | '<'
+        | '>'
+        | '/'
+        | '?'
+        | '@'
+        | '!'
+        | '%'
+        | '^'
+        | '&'
+        | '*'
+        | '|'
+        | '~'
+        | '.' -> true
+        | _ -> false
+
     let private isLetterChar (cat: UnicodeCategory) =
         // letter-character:
         //   A Unicode character of classes Lu, Ll, Lt, Lm, Lo, or Nl 
@@ -82,13 +99,13 @@ module internal CompletionUtils =
     let isStartingNewWord (sourceText, position) =
         CommonCompletionUtilities.IsStartingNewWord(sourceText, position, (fun ch -> isIdentifierStartCharacter ch), (fun ch -> isIdentifierPartCharacter ch))
 
-    let shouldProvideCompletion (documentId: DocumentId, filePath: string, defines: string list, text: SourceText, position: int) : bool =
-        let textLines = text.Lines
-        let triggerLine = textLines.GetLineFromPosition position
-        let colorizationData = Tokenizer.getColorizationData(documentId, text, triggerLine.Span, Some filePath, defines, CancellationToken.None)
+    let shouldProvideCompletion (documentId: DocumentId, filePath: string, defines: string list, sourceText: SourceText, triggerPosition: int, triggerChar: char, prevChar: char) : bool =
+        let textLines = sourceText.Lines
+        let triggerLine = textLines.GetLineFromPosition triggerPosition
+        let colorizationData = Tokenizer.getColorizationData(documentId, sourceText, triggerLine.Span, Some filePath, defines, CancellationToken.None)
         colorizationData.Count = 0 || // we should provide completion at the start of empty line, where there are no tokens at all
         colorizationData.Exists (fun classifiedSpan -> 
-            classifiedSpan.TextSpan.IntersectsWith position &&
+            classifiedSpan.TextSpan.IntersectsWith triggerPosition &&
             (
                 match classifiedSpan.ClassificationType with
                 | ClassificationTypeNames.Comment
@@ -97,3 +114,7 @@ module internal CompletionUtils =
                 | ClassificationTypeNames.NumericLiteral -> false
                 | _ -> true // anything else is a valid classification type
             ))
+        &&
+        (triggerChar = '.' || (Settings.IntelliSense.ShowAfterCharIsTyped && isStartingNewWord(sourceText, triggerPosition)))
+        && 
+        not (isPotentialOperatorChar prevChar)
