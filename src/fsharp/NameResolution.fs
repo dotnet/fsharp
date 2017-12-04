@@ -504,7 +504,7 @@ type BulkAdd = Yes | No
 /// or module, when we collapse the value table down to a dictionary.
 let AddValRefsToItems (bulkAddMode: BulkAdd) (eUnqualifiedItems: LayeredMap<_,_>) (vrefs:ValRef[]) =
     // Object model members are not added to the unqualified name resolution environment 
-    let vrefs = vrefs |> Array.filter (fun vref -> vref.MemberInfo.IsNone)
+    let vrefs = vrefs |> Array.filter (fun vref -> not vref.IsMember)
 
     if vrefs.Length = 0 then eUnqualifiedItems else
 
@@ -560,7 +560,7 @@ let AddValRefToNameEnv nenv (vref:ValRef) =
     let pri = NextExtensionMethodPriority()
     { nenv with 
         eUnqualifiedItems = 
-            if vref.MemberInfo.IsNone then 
+            if not vref.IsMember then 
                 nenv.eUnqualifiedItems.Add (vref.LogicalName, Item.Value vref) 
             else
                 nenv.eUnqualifiedItems
@@ -3700,7 +3700,7 @@ let rec private EntityRefContainsSomethingAccessible (ncenv: NameResolver) m ad 
                  let vref = mkNestedValRef modref v
                  not vref.IsCompilerGenerated && 
                  not (IsValUnseen ad g m vref) &&
-                 (vref.IsExtensionMember || vref.MemberInfo.IsNone)))) ||
+                 (vref.IsExtensionMember || not vref.IsMember)))) ||
 
     // Search the types in the namespace/module for an accessible tycon 
     (mty.AllEntities
@@ -3734,7 +3734,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv is
          (mty.AllValsAndMembers
           |> Seq.toList
           |> List.choose (TryMkValRefInModRef modref) // if the assembly load set is incomplete and we get a None value here, then ignore the value
-          |> List.filter (fun v -> v.MemberInfo.IsNone)
+          |> List.filter (fun v -> not v.IsMember)
           |> List.filter (IsValUnseen ad g m >> not) 
           |> List.map Item.Value)
 
@@ -3848,7 +3848,10 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
            | FullyQualified -> []
            | OpenQualified ->
                nenv.eUnqualifiedItems.Values
-               |> List.filter (function Item.UnqualifiedType _ -> false | _ -> true)
+               |> List.filter (function 
+                   | Item.UnqualifiedType _ -> false 
+                   | Item.Value v -> not v.IsMember
+                   | _ -> true)
                |> List.filter (ItemIsUnseen ad g ncenv.amap m >> not)
 
        let activePatternItems = 
@@ -4287,7 +4290,7 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) 
                       mty.AllValsAndMembers
                       |> Seq.toList
                       |> List.choose (TryMkValRefInModRef modref) // if the assembly load set is incomplete and we get a None value here, then ignore the value
-                      |> List.filter (fun v -> v.MemberInfo.IsNone)
+                      |> List.filter (fun v -> not v.IsMember)
                       |> List.filter (IsValUnseen ad g m >> not) 
                       |> List.map Item.Value
              | Item.UnionCase _ ->   
