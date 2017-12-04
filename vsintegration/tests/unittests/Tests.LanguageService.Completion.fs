@@ -3996,18 +3996,6 @@ let x = query { for bbbb in abbbbc(*D0*) do
                       "    if x" ]
           "if x"     // move to marker
           ["xyz"] [] // should contain 'xyz'
-
-    [<Test>]
-    member public this.``Extensions.Bug5162``() =        
-        AssertCtrlSpaceCompleteContains 
-          [ "module Extensions ="
-            "    type System.Object with"
-            "        member x.P = 1"
-            "module M2 ="
-            "    let x = 1"
-            "    (*loc*)Ext" ]
-          "(*loc*)Ext"        // marker
-          [ "Extensions" ] [] // should contain
           
     (* Tests for various uses of ObsoleteAttribute ----------------------------------------- *)
     (* Members marked with obsolete shouldn't be visible, but we should support              *)

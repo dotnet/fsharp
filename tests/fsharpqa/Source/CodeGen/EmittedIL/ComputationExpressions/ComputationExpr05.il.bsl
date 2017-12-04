@@ -33,20 +33,20 @@
 }
 .mresource public FSharpSignatureData.ComputationExpr05
 {
-  // Offset: 0x00000000 Length: 0x00000212
+  // Offset: 0x00000000 Length: 0x000001F8
 }
 .mresource public FSharpOptimizationData.ComputationExpr05
 {
-  // Offset: 0x00000218 Length: 0x0000007D
+  // Offset: 0x00000200 Length: 0x0000007D
 }
 .module ComputationExpr05.exe
-// MVID: {59B1920A-3687-E566-A745-03830A92B159}
+// MVID: {5A1F62A7-3687-E566-A745-0383A7621F5A}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x013E0000
+// Image base: 0x039D0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -79,7 +79,7 @@
       // Code size       1 (0x1)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 9,9 : 68,70 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\ComputationExpressions\\ComputationExpr05.fs'
+      .line 9,9 : 68,70 'C:\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\ComputationExpressions\\ComputationExpr05.fs'
       IL_0000:  ret
     } // end of method 'res5@9-1'::'System-IDisposable-Dispose'
 
@@ -89,6 +89,9 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.IDisposable,class [ComputationExprLibrary]Library.Eventually`1<int32>>
   {
     .field public class [ComputationExprLibrary]Library.EventuallyBuilder builder@
+    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [ComputationExprLibrary]Library.EventuallyBuilder builder@) cil managed
     {
@@ -140,6 +143,9 @@
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [ComputationExprLibrary]Library.Eventually`1<int32>>
   {
     .field public class [ComputationExprLibrary]Library.EventuallyBuilder builder@
+    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
     .method assembly specialname rtspecialname 
             instance void  .ctor(class [ComputationExprLibrary]Library.EventuallyBuilder builder@) cil managed
     {
@@ -217,7 +223,7 @@
     // Code size       37 (0x25)
     .maxstack  4
     .locals init ([0] class [ComputationExprLibrary]Library.Eventually`1<int32> res5,
-             [1] class [ComputationExprLibrary]Library.EventuallyBuilder builder@)
+             [1] class [ComputationExprLibrary]Library.EventuallyBuilder V_1)
     .line 100001,100001 : 0,0 ''
     IL_0000:  call       class [ComputationExprLibrary]Library.EventuallyBuilder [ComputationExprLibrary]Library.TheEventuallyBuilder::get_eventually()
     IL_0005:  stloc.1
