@@ -369,9 +369,7 @@ let ``Test project1 all uses of all signature symbols`` () =
           [("file1", ((1, 7), (1, 8))); ("file2", ((3, 5), (3, 6)));
            ("file2", ((6, 28), (6, 29))); ("file2", ((9, 28), (9, 29)));
            ("file2", ((12, 27), (12, 28))); ("file2", ((38, 12), (38, 13)));
-           ("file2", ((38, 12), (38, 13))); ("file2", ((38, 22), (38, 23)));
            ("file2", ((38, 22), (38, 23))); ("file2", ((39, 12), (39, 13)));
-           ("file2", ((39, 12), (39, 13))); ("file2", ((39, 28), (39, 29)));
            ("file2", ((39, 28), (39, 29)))]);
          ("val xxx",
           [("file1", ((6, 4), (6, 7))); ("file1", ((7, 13), (7, 16)));
@@ -1505,11 +1503,7 @@ let ``Test project 5 all symbols`` () =
              ["type"]); ("val str", "str", "file1", ((13, 17), (13, 20)), ["defn"]);
             ("val floatvalue", "floatvalue", "file1", ((14, 15), (14, 25)), ["defn"]);
             ("System", "System", "file1", ((15, 6), (15, 12)), []);
-            ("System", "System", "file1", ((15, 6), (15, 12)), []);
-            ("System", "System", "file1", ((15, 6), (15, 12)), []);
-            ("System", "System", "file1", ((15, 6), (15, 12)), []);
             ("Double", "System.Double", "file1", ((15, 13), (15, 19)), []);
-            ("System", "System", "file1", ((15, 6), (15, 12)), []);
             ("val str", "str", "file1", ((15, 29), (15, 32)), []);
             ("val op_AddressOf",
              "Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators.( ~& )", "file1",
@@ -2041,19 +2035,8 @@ let ``Test Project11 all symbols`` () =
 
     allUsesOfAllSymbols |> shouldEqual
           [|("System", "System", "file1", ((4, 15), (4, 21)), [], ["namespace"]);
-            ("System", "System", "file1", ((4, 15), (4, 21)), [], ["namespace"]);
-            ("System", "System", "file1", ((4, 15), (4, 21)), [], ["namespace"]);
-            ("System", "System", "file1", ((4, 15), (4, 21)), [], ["namespace"]);
             ("Collections", "Collections", "file1", ((4, 22), (4, 33)), [], ["namespace"]);
             ("Generic", "Generic", "file1", ((4, 34), (4, 41)), [], ["namespace"]);
-            ("Collections", "Collections", "file1", ((4, 22), (4, 33)), [], ["namespace"]);
-            ("Generic", "Generic", "file1", ((4, 34), (4, 41)), [], ["namespace"]);
-            ("Collections", "Collections", "file1", ((4, 22), (4, 33)), [], ["namespace"]);
-            ("Generic", "Generic", "file1", ((4, 34), (4, 41)), [], ["namespace"]);
-            ("Generic", "Generic", "file1", ((4, 34), (4, 41)), ["type"], ["namespace"]);
-            ("Collections", "Collections", "file1", ((4, 22), (4, 33)), ["type"],
-             ["namespace"]);
-            ("System", "System", "file1", ((4, 15), (4, 21)), ["type"], ["namespace"]);
             ("Dictionary`2", "Dictionary", "file1", ((4, 15), (4, 52)), ["type"],
              ["class"]); ("int", "int", "file1", ((4, 53), (4, 56)), [], ["abbrev"]);
             ("int", "int", "file1", ((4, 57), (4, 60)), [], ["abbrev"]);
@@ -2062,19 +2045,8 @@ let ``Test Project11 all symbols`` () =
             ("member .ctor", "Enumerator", "file1", ((4, 15), (4, 72)), [], ["member"]);
             ("val enum", "enum", "file1", ((4, 4), (4, 8)), ["defn"], ["val"]);
             ("System", "System", "file1", ((5, 11), (5, 17)), [], ["namespace"]);
-            ("System", "System", "file1", ((5, 11), (5, 17)), [], ["namespace"]);
-            ("System", "System", "file1", ((5, 11), (5, 17)), [], ["namespace"]);
-            ("System", "System", "file1", ((5, 11), (5, 17)), [], ["namespace"]);
             ("Collections", "Collections", "file1", ((5, 18), (5, 29)), [], ["namespace"]);
             ("Generic", "Generic", "file1", ((5, 30), (5, 37)), [], ["namespace"]);
-            ("Collections", "Collections", "file1", ((5, 18), (5, 29)), [], ["namespace"]);
-            ("Generic", "Generic", "file1", ((5, 30), (5, 37)), [], ["namespace"]);
-            ("Collections", "Collections", "file1", ((5, 18), (5, 29)), [], ["namespace"]);
-            ("Generic", "Generic", "file1", ((5, 30), (5, 37)), [], ["namespace"]);
-            ("Generic", "Generic", "file1", ((5, 30), (5, 37)), ["type"], ["namespace"]);
-            ("Collections", "Collections", "file1", ((5, 18), (5, 29)), ["type"],
-             ["namespace"]);
-            ("System", "System", "file1", ((5, 11), (5, 17)), ["type"], ["namespace"]);
             ("Dictionary`2", "Dictionary", "file1", ((5, 11), (5, 48)), ["type"],
              ["class"]); ("int", "int", "file1", ((5, 49), (5, 52)), ["type"], ["abbrev"]);
             ("int", "int", "file1", ((5, 53), (5, 56)), ["type"], ["abbrev"]);
@@ -2201,26 +2173,14 @@ let ``Test Project13 all symbols`` () =
 
     allUsesOfAllSymbols |> shouldEqual
           [|("System", "System", "file1", ((4, 14), (4, 20)), [], ["namespace"]);
-            ("System", "System", "file1", ((4, 14), (4, 20)), [], ["namespace"]);
-            ("System", "System", "file1", ((4, 14), (4, 20)), [], ["namespace"]);
-            ("System", "System", "file1", ((4, 14), (4, 20)), [], ["namespace"]);
-            ("System", "System", "file1", ((4, 14), (4, 20)), ["type"], ["namespace"]);
             ("Object", "Object", "file1", ((4, 14), (4, 27)), [], ["class"]);
             ("member .ctor", "Object", "file1", ((4, 14), (4, 27)), [], ["member"]);
             ("val x1", "x1", "file1", ((4, 4), (4, 6)), ["defn"], ["val"]);
             ("System", "System", "file1", ((5, 14), (5, 20)), [], ["namespace"]);
-            ("System", "System", "file1", ((5, 14), (5, 20)), [], ["namespace"]);
-            ("System", "System", "file1", ((5, 14), (5, 20)), [], ["namespace"]);
-            ("System", "System", "file1", ((5, 14), (5, 20)), [], ["namespace"]);
-            ("System", "System", "file1", ((5, 14), (5, 20)), ["type"], ["namespace"]);
             ("DateTime", "DateTime", "file1", ((5, 14), (5, 29)), [], ["valuetype"]);
             ("member .ctor", "DateTime", "file1", ((5, 14), (5, 29)), [], ["member"]);
             ("val x2", "x2", "file1", ((5, 4), (5, 6)), ["defn"], ["val"]);
             ("System", "System", "file1", ((6, 13), (6, 19)), [], ["namespace"]);
-            ("System", "System", "file1", ((6, 13), (6, 19)), [], ["namespace"]);
-            ("System", "System", "file1", ((6, 13), (6, 19)), [], ["namespace"]);
-            ("System", "System", "file1", ((6, 13), (6, 19)), [], ["namespace"]);
-            ("System", "System", "file1", ((6, 13), (6, 19)), ["type"], ["namespace"]);
             ("DateTime", "DateTime", "file1", ((6, 13), (6, 28)), [], ["valuetype"]);
             ("member .ctor", "DateTime", "file1", ((6, 13), (6, 28)), [], ["member"]);
             ("val x3", "x3", "file1", ((6, 4), (6, 6)), ["defn"], ["val"]);
@@ -2770,30 +2730,15 @@ let ``Test Project17 all symbols`` () =
     allUsesOfAllSymbols 
       |> shouldEqual
           [|("Microsoft", "Microsoft", "file1", ((4, 8), (4, 17)), [], ["namespace"]);
-            ("Microsoft", "Microsoft", "file1", ((4, 8), (4, 17)), [], ["namespace"]);
-            ("Microsoft", "Microsoft", "file1", ((4, 8), (4, 17)), [], ["namespace"]);
-            ("Microsoft", "Microsoft", "file1", ((4, 8), (4, 17)), [], ["namespace"]);
             ("Collections", "Collections", "file1", ((4, 25), (4, 36)), [], ["namespace"]);
             ("FSharp", "FSharp", "file1", ((4, 18), (4, 24)), [], ["namespace"]);
-            ("Microsoft", "Microsoft", "file1", ((4, 8), (4, 17)), [], ["namespace"]);
             ("FSharpList`1", "List", "file1", ((4, 8), (4, 41)), [], ["union"]);
             ("int", "int", "file1", ((4, 42), (4, 45)), ["type"], ["abbrev"]);
             ("FSharpList`1", "List", "file1", ((4, 8), (4, 46)), [], ["union"]);
             ("property Empty", "Empty", "file1", ((4, 8), (4, 52)), [], ["member"; "prop"]);
             ("System", "System", "file1", ((6, 11), (6, 17)), [], ["namespace"]);
-            ("System", "System", "file1", ((6, 11), (6, 17)), [], ["namespace"]);
-            ("System", "System", "file1", ((6, 11), (6, 17)), [], ["namespace"]);
-            ("System", "System", "file1", ((6, 11), (6, 17)), [], ["namespace"]);
             ("Collections", "Collections", "file1", ((6, 18), (6, 29)), [], ["namespace"]);
             ("Generic", "Generic", "file1", ((6, 30), (6, 37)), [], ["namespace"]);
-            ("Collections", "Collections", "file1", ((6, 18), (6, 29)), [], ["namespace"]);
-            ("Generic", "Generic", "file1", ((6, 30), (6, 37)), [], ["namespace"]);
-            ("Collections", "Collections", "file1", ((6, 18), (6, 29)), [], ["namespace"]);
-            ("Generic", "Generic", "file1", ((6, 30), (6, 37)), [], ["namespace"]);
-            ("Generic", "Generic", "file1", ((6, 30), (6, 37)), ["type"], ["namespace"]);
-            ("Collections", "Collections", "file1", ((6, 18), (6, 29)), ["type"],
-             ["namespace"]);
-            ("System", "System", "file1", ((6, 11), (6, 17)), ["type"], ["namespace"]);
             ("IList`1", "IList", "file1", ((6, 11), (6, 43)), ["type"], ["interface"]);
             ("generic parameter T", "T", "file1", ((6, 44), (6, 46)), ["type"], []);
             ("val x", "x", "file1", ((6, 8), (6, 9)), ["defn"], []);
@@ -2808,19 +2753,8 @@ let ``Test Project17 all symbols`` () =
              ["slot"; "member"; "prop"]);
             ("val f1", "f1", "file1", ((6, 4), (6, 6)), ["defn"], ["val"]);
             ("System", "System", "file1", ((8, 11), (8, 17)), [], ["namespace"]);
-            ("System", "System", "file1", ((8, 11), (8, 17)), [], ["namespace"]);
-            ("System", "System", "file1", ((8, 11), (8, 17)), [], ["namespace"]);
-            ("System", "System", "file1", ((8, 11), (8, 17)), [], ["namespace"]);
             ("Collections", "Collections", "file1", ((8, 18), (8, 29)), [], ["namespace"]);
             ("Generic", "Generic", "file1", ((8, 30), (8, 37)), [], ["namespace"]);
-            ("Collections", "Collections", "file1", ((8, 18), (8, 29)), [], ["namespace"]);
-            ("Generic", "Generic", "file1", ((8, 30), (8, 37)), [], ["namespace"]);
-            ("Collections", "Collections", "file1", ((8, 18), (8, 29)), [], ["namespace"]);
-            ("Generic", "Generic", "file1", ((8, 30), (8, 37)), [], ["namespace"]);
-            ("Generic", "Generic", "file1", ((8, 30), (8, 37)), ["type"], ["namespace"]);
-            ("Collections", "Collections", "file1", ((8, 18), (8, 29)), ["type"],
-             ["namespace"]);
-            ("System", "System", "file1", ((8, 11), (8, 17)), ["type"], ["namespace"]);
             ("IList`1", "IList", "file1", ((8, 11), (8, 43)), ["type"], ["interface"]);
             ("int", "int", "file1", ((8, 44), (8, 47)), ["type"], ["abbrev"]);
             ("val x", "x", "file1", ((8, 8), (8, 9)), ["defn"], []);
@@ -2829,10 +2763,6 @@ let ``Test Project17 all symbols`` () =
              ["slot"; "member"; "prop"]);
             ("val f2", "f2", "file1", ((8, 4), (8, 6)), ["defn"], ["val"]);
             ("System", "System", "file1", ((10, 11), (10, 17)), [], ["namespace"]);
-            ("System", "System", "file1", ((10, 11), (10, 17)), [], ["namespace"]);
-            ("System", "System", "file1", ((10, 11), (10, 17)), [], ["namespace"]);
-            ("System", "System", "file1", ((10, 11), (10, 17)), [], ["namespace"]);
-            ("System", "System", "file1", ((10, 11), (10, 17)), ["type"], ["namespace"]);
             ("Exception", "Exception", "file1", ((10, 11), (10, 27)), ["type"], ["class"]);
             ("val x", "x", "file1", ((10, 8), (10, 9)), ["defn"], []);
             ("val x", "x", "file1", ((10, 31), (10, 32)), [], []);
@@ -2963,12 +2893,8 @@ let ``Test Project19 all symbols`` () =
              ["field"; "static"; "2"]);
             ("val f", "f", "file1", ((8, 4), (8, 5)), ["defn"], ["val"]);
             ("System", "System", "file1", ((10, 8), (10, 14)), [], ["namespace"]);
-            ("System", "System", "file1", ((10, 8), (10, 14)), [], ["namespace"]);
-            ("System", "System", "file1", ((10, 8), (10, 14)), [], ["namespace"]);
-            ("System", "System", "file1", ((10, 8), (10, 14)), [], ["namespace"]);
             ("DayOfWeek", "DayOfWeek", "file1", ((10, 15), (10, 24)), [],
              ["enum"; "valuetype"]);
-            ("System", "System", "file1", ((10, 8), (10, 14)), [], ["namespace"]);
             ("field Monday", "Monday", "file1", ((10, 8), (10, 31)), [],
              ["field"; "static"; "1"]);
             ("val s", "s", "file1", ((10, 4), (10, 5)), ["defn"], ["val"]);
@@ -3104,10 +3030,6 @@ let ``Test Project21 all symbols`` () =
             ("val arg1", "arg1", "file1", ((12, 31), (12, 35)), ["defn"], []);
             ("unit", "unit", "file1", ((12, 43), (12, 47)), ["type"], ["abbrev"]);
             ("val raise", "raise", "file1", ((13, 18), (13, 23)), [], ["val"]);
-            ("System", "System", "file1", ((13, 25), (13, 31)), [], ["namespace"]);
-            ("System", "System", "file1", ((13, 25), (13, 31)), [], ["namespace"]);
-            ("System", "System", "file1", ((13, 25), (13, 31)), [], ["namespace"]);
-            ("System", "System", "file1", ((13, 25), (13, 31)), [], ["namespace"]);
             ("System", "System", "file1", ((13, 25), (13, 31)), [], ["namespace"]);
             ("member .ctor", ".ctor", "file1", ((13, 25), (13, 55)), [], ["member"]);
             ("Impl", "Impl", "file1", ((2, 7), (2, 11)), ["defn"], ["module"])|]

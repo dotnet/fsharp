@@ -546,7 +546,6 @@ let _ = arr.[..number2]
     |> Array.map (fun su -> 
         let r = su.RangeAlternate 
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
-    |> Array.distinct
     |> shouldEqual 
         [|("val arr", (2, 4, 2, 7))
           ("val number2", (3, 13, 3, 20))

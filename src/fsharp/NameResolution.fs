@@ -1476,11 +1476,19 @@ type TcResultsSinkImpl(g, ?source: string) =
     let capturedExprTypings = ResizeArray<_>()
     let capturedNameResolutions = ResizeArray<_>()
     let capturedFormatSpecifierLocations = ResizeArray<_>()
+    
     let capturedNameResolutionIdentifiers = 
         new System.Collections.Generic.HashSet<pos * string>
             ( { new IEqualityComparer<_> with 
                     member __.GetHashCode((p:pos,i)) = p.Line + 101 * p.Column + hash i
                     member __.Equals((p1,i1),(p2,i2)) = posEq p1 p2 && i1 =  i2 } )
+
+    let capturedModulesAndNamespaces = 
+        new System.Collections.Generic.HashSet<pos * Item>
+            ( { new IEqualityComparer<pos * Item> with 
+                    member __.GetHashCode ((p, _)) = hash p
+                    member __.Equals ((p1, item1), (p2, item2)) = p1 = p2 && ItemsAreEffectivelyEqual g item1 item2 } )
+
     let capturedMethodGroupResolutions = ResizeArray<_>()
     let capturedOpenDeclarations = ResizeArray<_>()
     let allowedRange (m:range) = not m.IsSynthetic       
@@ -1506,25 +1514,29 @@ type TcResultsSinkImpl(g, ?source: string) =
             // Desugaring some F# constructs (notably computation expressions with custom operators)
             // results in duplication of textual variables. So we ensure we never record two name resolutions 
             // for the same identifier at the same location.
-            if allowedRange m then 
-                let keyOpt = 
-                    match item with
-                    | Item.Value vref -> Some (endPos, vref.DisplayName)
-                    | Item.ArgName (id, _, _) -> Some (endPos, id.idText)
-                    | _ -> None
-
-                let alreadyDone = 
-                    match keyOpt with
-                    | Some key -> not (capturedNameResolutionIdentifiers.Add key)
-                    | _ -> false
-                
+            if allowedRange m then
                 if replace then 
                     capturedNameResolutions.RemoveAll(fun cnr -> cnr.Range = m) |> ignore
                     capturedMethodGroupResolutions.RemoveAll(fun cnr -> cnr.Range = m) |> ignore
+                else
+                    let alreadyDone =
+                        match item with
+                        | Item.ModuleOrNamespaces _ ->
+                            not (capturedModulesAndNamespaces.Add (endPos, item))
+                        | _ ->
+                            let keyOpt = 
+                                match item with
+                                | Item.Value vref -> Some (endPos, vref.DisplayName)
+                                | Item.ArgName (id, _, _) -> Some (endPos, id.idText)
+                                | _ -> None
 
-                if not alreadyDone then 
-                    capturedNameResolutions.Add(CapturedNameResolution(endPos,item,tpinst,occurenceType,denv,nenv,ad,m)) 
-                    capturedMethodGroupResolutions.Add(CapturedNameResolution(endPos,itemMethodGroup,[],occurenceType,denv,nenv,ad,m)) 
+                            match keyOpt with
+                            | Some key -> not (capturedNameResolutionIdentifiers.Add key)
+                            | _ -> false
+
+                    if not alreadyDone then 
+                        capturedNameResolutions.Add(CapturedNameResolution(endPos,item,tpinst,occurenceType,denv,nenv,ad,m)) 
+                        capturedMethodGroupResolutions.Add(CapturedNameResolution(endPos,itemMethodGroup,[],occurenceType,denv,nenv,ad,m)) 
 
         member sink.NotifyFormatSpecifierLocation(m, numArgs) = 
             capturedFormatSpecifierLocations.Add((m, numArgs))
