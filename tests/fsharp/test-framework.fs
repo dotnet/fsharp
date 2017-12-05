@@ -40,6 +40,14 @@ module Commands =
         else
             (log "not found: %s p") |> ignore
 
+    let rmdir dir path =
+        let p = path |> getfullpath dir
+        if Directory.Exists(p) then 
+            (log "rmdir /sy %s" p) |> ignore
+            Directory.Delete(p, true)
+        else
+            (log "not found: %s p") |> ignore
+
     let pathAddBackslash (p: FilePath) = 
         if String.IsNullOrWhiteSpace (p) then p
         else
@@ -113,6 +121,7 @@ type TestConfig =
       FSCBinPath : string
       FSCOREDLLPATH : string
       FSI : string
+      FSIANYCPU : string
       FSI_FOR_SCRIPTS : string
       fsi_flags : string
       ILDASM : string
@@ -167,10 +176,12 @@ let config configurationName envVars =
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     let FSI = requireFile (FSCBinPath ++ "fsi.exe")
+    let FSIANYCPU = requireFile (FSCBinPath ++ "fsiAnyCpu.exe")
     let FSC = requireFile (FSCBinPath ++ "fsc.exe")
     let FSCOREDLLPATH = requireFile (FSCBinPath ++ "FSharp.Core.dll") 
 #else
     let FSI = SCRIPT_ROOT ++ ".." ++ ".." ++ "tests" ++ "testbin" ++ configurationName ++ "coreclr" ++ "FSC" ++ "fsi.exe"
+    let FSIANYCPU = SCRIPT_ROOT ++ ".." ++ ".." ++ "tests" ++ "testbin" ++ configurationName ++ "coreclr" ++ "FSC" ++ "fsiAnyCpu.exe"
     let FSC = SCRIPT_ROOT ++ ".." ++ ".." ++ "tests" ++ "testbin" ++ configurationName ++ "coreclr" ++ "FSC" ++ "fsc.exe"
     let FSCOREDLLPATH = "" 
 #endif
@@ -191,6 +202,7 @@ let config configurationName envVars =
       BUILD_CONFIG = configurationName
       FSC = FSC
       FSI = FSI
+      FSIANYCPU = FSIANYCPU
       FSI_FOR_SCRIPTS = FSI_FOR_SCRIPTS
       csc_flags = csc_flags
       fsc_flags = fsc_flags 
@@ -211,6 +223,7 @@ let logConfig (cfg: TestConfig) =
     log "FSCBINPATH          =%s" cfg.FSCBinPath
     log "FSCOREDLLPATH       =%s" cfg.FSCOREDLLPATH
     log "FSI                 =%s" cfg.FSI
+    log "FSIANYCPU                 =%s" cfg.FSIANYCPU
     log "fsi_flags           =%s" cfg.fsi_flags
     log "ILDASM              =%s" cfg.ILDASM
     log "PEVERIFY            =%s" cfg.PEVERIFY
@@ -418,6 +431,7 @@ let ildasm cfg arg = Printf.ksprintf (Commands.ildasm (exec cfg) cfg.ILDASM) arg
 let peverify cfg = Commands.peverify (exec cfg) cfg.PEVERIFY "/nologo"
 let peverifyWithArgs cfg args = Commands.peverify (exec cfg) cfg.PEVERIFY args
 let fsi cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI)
+let fsiAnyCpu cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSIANYCPU)
 let fsi_script cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI_FOR_SCRIPTS)
 let fsiExpectFail cfg = Printf.ksprintf (Commands.fsi (execExpectFail cfg) cfg.FSI)
 let fsiAppendIgnoreExitCode cfg stdoutPath stderrPath = Printf.ksprintf (Commands.fsi (execAppendIgnoreExitCode cfg stdoutPath stderrPath) cfg.FSI)
@@ -427,6 +441,7 @@ let fileExists cfg = Commands.fileExists cfg.Directory >> Option.isSome
 let fsiStdin cfg stdinPath = Printf.ksprintf (Commands.fsi (execStdin cfg stdinPath) cfg.FSI)
 let fsiStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath = Printf.ksprintf (Commands.fsi (execStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath) cfg.FSI)
 let rm cfg x = Commands.rm cfg.Directory x
+let rmdir cfg x = Commands.rmdir cfg.Directory x
 let mkdir cfg = Commands.mkdir_p cfg.Directory
 let copy_y cfg f = Commands.copy_y cfg.Directory f >> checkResult
 
