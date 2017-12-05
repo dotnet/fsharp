@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="tr" original="../ReferencePathsPropPage.resx">
+    <body>
+      <trans-unit id="AddFolder.Text">
+        <source>&amp;Add Folder</source>
+        <target state="translated">&amp;Klasör Ekle</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UpdateFolder.Text">
+        <source>&amp;Update</source>
+        <target state="translated">&amp;Güncelleştir</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferencePathLabel.Text">
+        <source>Reference &amp;paths:</source>
+        <target state="translated">Başvuru &amp;yolları:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FolderBrowse.AccessibleName">
+        <source>Browse</source>
+        <target state="translated">Gözat</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FolderBrowse.Text">
+        <source>...</source>
+        <target state="translated">...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="MoveUp.AccessibleName">
+        <source>Move up</source>
+        <target state="translated">Yukarı taşı</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="MoveDown.AccessibleName">
+        <source>Move down</source>
+        <target state="translated">Aşağı taşı</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoveFolder.AccessibleName">
+        <source>Delete</source>
+        <target state="translated">Sil</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FolderLabel.Text">
+        <source>&amp;Folder:</source>
+        <target state="translated">&amp;Klasör:</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>
