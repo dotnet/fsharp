@@ -94,7 +94,7 @@ type internal FSharpCompletionProvider
             // Trigger completion depending on some conditions, including if we are on a valid classification type
             else
                 let documentId, filePath, defines = getInfo()
-                CompletionUtils.shouldProvideCompletion(documentId, filePath, defines, sourceText, triggerPosition, triggerChar, prevChar)
+                CompletionUtils.shouldProvideCompletion(documentId, filePath, defines, sourceText, triggerPosition, triggerChar)
                 
 
     static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, 
@@ -219,7 +219,6 @@ type internal FSharpCompletionProvider
         asyncMaybe {
             let document = context.Document
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-            //let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
             do! Option.guard (this.ShouldTriggerCompletion(sourceText, context.Position, context.Trigger, null))
             let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
             let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken)

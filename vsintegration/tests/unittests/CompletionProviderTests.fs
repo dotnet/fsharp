@@ -197,8 +197,8 @@ System.Console.WriteLine()
     Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
 
 [<Test>]
-let ShouldNotTriggerCompletionInOperator() =
-    // Simulate mistyping '|>'
+let ShouldNotTriggerCompletionInOperatorWithDot() =
+    // Simulate mistyping '|>' as '|.'
     let fileContents = """
 let f() =
     12.0 |. sqrt
@@ -208,6 +208,67 @@ let f() =
     let getInfo() = documentId, filePath, []
     let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
     Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger on operators")
+
+[<Test>]
+let ShouldTriggerCompletionInAttribute() =
+    let fileContents = """
+[<A
+module Foo = module end
+"""
+    let caretPosition = fileContents.IndexOf("A")
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    let getInfo() = documentId, filePath, []
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    Assert.IsTrue(triggered, "Completion should trigger on Attributes.")
+
+[<Test>]
+let ShouldTriggerCompletionAfterDerefOperator() =
+    let fileContents = """
+let foo = ref 12
+printfn "%d" !f
+"""
+    let caretPosition = fileContents.IndexOf("!f")
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    let getInfo() = documentId, filePath, []
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    Assert.IsTrue(triggered, "Completion should trigger after typing an identifier that follows a dereference operator (!).")
+
+[<Test>]
+let ShouldTriggerCompletionAfterAddressOfOperator() =
+    let fileContents = """
+type Point = { mutable X: int; mutable Y: int }
+let pnt = { X = 1; Y = 2 }
+use ptr = fixed &p
+"""
+    let caretPosition = fileContents.IndexOf("&p")
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    let getInfo() = documentId, filePath, []
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    Assert.IsTrue(triggered, "Completion should trigger after typing an identifier that follows an addressOf operator (&).")
+
+[<Test>]
+let ShouldTriggerCompletionAfterArithmeticOperation() =
+    let fileContents = """
+let xVal = 1.0
+let yVal = 2.0
+let zVal
+
+xVal+y
+xVal-y
+xVal*y
+xVal/y
+xVal%y
+xVal**y
+"""
+
+    let markers = [ "+y"; "-y"; "*y"; "/y"; "%y";  "**y"]
+
+    for marker in markers do 
+        let caretPosition = fileContents.IndexOf(marker)
+        let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+        let getInfo() = documentId, filePath, []
+        let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+        Assert.IsTrue(triggered, "Completion should trigger after typing an identifier that follows a mathematical operation")
 
 [<Test>]
 let ShouldDisplayTypeMembers() =

@@ -12,23 +12,6 @@ open System.Globalization
 
 module internal CompletionUtils =
 
-    let private isPotentialOperatorChar (ch: char) =
-        match ch with
-        | '<'
-        | '>'
-        | '/'
-        | '?'
-        | '@'
-        | '!'
-        | '%'
-        | '^'
-        | '&'
-        | '*'
-        | '|'
-        | '~'
-        | '.' -> true
-        | _ -> false
-
     let private isLetterChar (cat: UnicodeCategory) =
         // letter-character:
         //   A Unicode character of classes Lu, Ll, Lt, Lm, Lo, or Nl 
@@ -99,7 +82,7 @@ module internal CompletionUtils =
     let isStartingNewWord (sourceText, position) =
         CommonCompletionUtilities.IsStartingNewWord(sourceText, position, (fun ch -> isIdentifierStartCharacter ch), (fun ch -> isIdentifierPartCharacter ch))
 
-    let shouldProvideCompletion (documentId: DocumentId, filePath: string, defines: string list, sourceText: SourceText, triggerPosition: int, triggerChar: char, prevChar: char) : bool =
+    let shouldProvideCompletion (documentId: DocumentId, filePath: string, defines: string list, sourceText: SourceText, triggerPosition: int, triggerChar: char) : bool =
         let textLines = sourceText.Lines
         let triggerLine = textLines.GetLineFromPosition triggerPosition
         let colorizationData = Tokenizer.getColorizationData(documentId, sourceText, triggerLine.Span, Some filePath, defines, CancellationToken.None)
@@ -111,10 +94,9 @@ module internal CompletionUtils =
                 | ClassificationTypeNames.Comment
                 | ClassificationTypeNames.StringLiteral
                 | ClassificationTypeNames.ExcludedCode
+                | ClassificationTypeNames.Operator
                 | ClassificationTypeNames.NumericLiteral -> false
                 | _ -> true // anything else is a valid classification type
             ))
         &&
         (triggerChar = '.' || (Settings.IntelliSense.ShowAfterCharIsTyped && isStartingNewWord(sourceText, triggerPosition)))
-        && 
-        not (isPotentialOperatorChar prevChar)
