@@ -1,0 +1,82 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="it" original="../Microsoft.VisualStudio.Package.LanguageService.resx">
+    <body>
+      <trans-unit id="BraceMatchStatus">
+        <source>Matches: {0}</source>
+        <target state="translated">Corrispondenze: {0}</target>
+        <note>This is shown in status bar when ctrl-] brace matching is done.</note>
+      </trans-unit>
+      <trans-unit id="BufferChanged">
+        <source>The buffer has changed since the EditArray was created, so edits cannot be applied.</source>
+        <target state="translated">Il buffer è stato modificato in seguito alla creazione di EditArray, di conseguenza non è possibile applicare le modifiche.</target>
+        <note>InvalidOperationException</note>
+      </trans-unit>
+      <trans-unit id="ComboMembersTip">
+        <source>Members</source>
+        <target state="translated">Membri</target>
+        <note>Tooltip for the drop down combo at top of document window showing list of known members.</note>
+      </trans-unit>
+      <trans-unit id="ComboTypesTip">
+        <source>Types</source>
+        <target state="translated">Tipi</target>
+        <note>Tooltip for the drop down combo at top of document window showing list of known types.</note>
+      </trans-unit>
+      <trans-unit id="CommentSelection">
+        <source>Comment Selection</source>
+        <target state="translated">Commenta selezione</target>
+        <note>IVsCompoundAction::OpenCompoundAction description</note>
+      </trans-unit>
+      <trans-unit id="EditIntersects">
+        <source>Existing edit number {0} intersects 'editSpan' argument.</source>
+        <target state="translated">Il numero di modifiche esistente {0} interseca l'argomento 'editSpan'.</target>
+        <note>ArgumentException.</note>
+      </trans-unit>
+      <trans-unit id="FormatSpan">
+        <source>Format Span</source>
+        <target state="translated">Formatta span</target>
+        <note>IVsCompoundAction::OpenCompoundAction description.</note>
+      </trans-unit>
+      <trans-unit id="MaxErrorsReached">
+        <source>The maximum number of errors or warnings has been reached.</source>
+        <target state="translated">È stato raggiunto il numero massimo di errori o avvisi.</target>
+        <note>Shown in Error List window</note>
+      </trans-unit>
+      <trans-unit id="NoExpansionSession">
+        <source>There is no active expansion session.</source>
+        <target state="translated">Nessuna sessione di espansione attiva.</target>
+        <note>InvalidOperationException</note>
+      </trans-unit>
+      <trans-unit id="Truncated">
+        <source>{0}...</source>
+        <target state="translated">{0}...</target>
+        <note>Adds an ellipsis for text that is truncated before displaying to the user.</note>
+      </trans-unit>
+      <trans-unit id="UncommentSelection">
+        <source>Uncomment Selection</source>
+        <target state="translated">Rimuovi commento selezione</target>
+        <note>IVsCompoundAction::OpenCompoundAction description</note>
+      </trans-unit>
+      <trans-unit id="UnsupportedFormat">
+        <source>The file cannot be opened with the selected editor. Please choose another editor.</source>
+        <target state="translated">Non è possibile aprire il file con l'editor selezionato. Scegliere un altro editor.</target>
+        <note>Message returned when Open With... is used, and editor does not support the specified file type.</note>
+      </trans-unit>
+      <trans-unit id="TemplateNotPrepared">
+        <source>PrepareTemplate has not been called.</source>
+        <target state="translated">PrepareTemplate non è stato chiamato.</target>
+        <note>InvalidOperationException</note>
+      </trans-unit>
+      <trans-unit id="UnknownBuffer">
+        <source>IVsTextLines buffer does not match the expected buffer</source>
+        <target state="translated">Il buffer IVsTextLines non corrisponde al buffer previsto</target>
+        <note>ArgumentException</note>
+      </trans-unit>
+      <trans-unit id="UnrecognizedFilterFormat">
+        <source>Unrecognized filter format: {0}</source>
+        <target state="translated">Formato filtro non riconosciuto: {0}</target>
+        <note>ArgumentException</note>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>
