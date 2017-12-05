@@ -34,7 +34,7 @@ type internal FSharpCompletionProvider
     inherit CompletionProvider()
 
     static let userOpName = "CompletionProvider"
-    static let declarationItemsCache = ConditionalWeakTable<string, FSharpDeclarationListItem>()
+    static let declarationItemsCache = ConditionalWeakTable<string, FSharpDeclarationListItem<_>>()
     static let [<Literal>] NameInCodePropName = "NameInCode"
     static let [<Literal>] FullNamePropName = "FullName"
     static let [<Literal>] IsExtensionMemberPropName = "IsExtensionMember"
@@ -111,13 +111,15 @@ type internal FSharpCompletionProvider
             let fcsCaretLineNumber = Line.fromZ caretLinePos.Line  // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
             let caretLineColumn = caretLinePos.Character
             let partialName = QuickParse.GetPartialLongNameEx(caretLine.ToString(), caretLineColumn - 1) 
-            
+
             let getAllSymbols() = 
                 getAllSymbols() 
                 |> List.filter (fun entity -> entity.FullName.Contains "." && not (PrettyNaming.IsOperatorName entity.Symbol.DisplayName))
 
+            let getAdditionalInfo = fun (symbol, _) -> FSharpSymbol.GetAccessibility symbol
+
             let! declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLine.ToString(), 
-                                                                        partialName, getAllSymbols, userOpName=userOpName) |> liftAsync
+                                                                        partialName, getAllSymbols, getAdditionalInfo, userOpName=userOpName) |> liftAsync
             let results = List<Completion.CompletionItem>()
             
             let getKindPriority = function
@@ -145,7 +147,7 @@ type internal FSharpCompletionProvider
             let maxHints = if mruItems.Values.Count = 0 then 0 else Seq.max mruItems.Values
 
             sortedDeclItems |> Array.iteri (fun number declItem ->
-                let glyph = Tokenizer.FSharpGlyphToRoslynGlyph (declItem.Glyph, declItem.Accessibility)
+                let glyph = Tokenizer.FSharpGlyphToRoslynGlyph (declItem.Glyph, declItem.AdditionalInfo)
                 let name =
                     match declItem.NamespaceToOpen with
                     | Some namespaceToOpen -> sprintf "%s (open %s)" declItem.Name namespaceToOpen

@@ -21,9 +21,9 @@ open Microsoft.FSharp.Compiler.Tastops
 //
 // Note: this type holds a weak reference to compiler resources. 
 #if COMPILER_PUBLIC_API
-type FSharpDeclarationListItem =
+type FSharpDeclarationListItem<'T> =
 #else
-type internal FSharpDeclarationListItem =
+type internal FSharpDeclarationListItem<'T> =
 #endif
     /// Get the display name for the declaration.
     member Name : string
@@ -46,7 +46,7 @@ type internal FSharpDeclarationListItem =
 
     member Glyph : FSharpGlyph
 
-    member Accessibility : FSharpAccessibility option
+    member AdditionalInfo : 'T option
 
     member Kind : CompletionItemKind
 
@@ -67,23 +67,23 @@ type internal FSharpDeclarationListItem =
 //
 // Note: this type holds a weak reference to compiler resources. 
 #if COMPILER_PUBLIC_API
-type FSharpDeclarationListInfo =
+type FSharpDeclarationListInfo<'T> =
 #else
-type internal FSharpDeclarationListInfo =
+type internal FSharpDeclarationListInfo<'T> =
 #endif
 
-    member Items : FSharpDeclarationListItem[]
+    member Items : FSharpDeclarationListItem<'T>[]
 
     member IsForType : bool
 
     member IsError : bool
 
     // Implementation details used by other code in the compiler    
-    static member internal Create : infoReader:InfoReader * m:range * denv:DisplayEnv * getAccessibility:(Item -> FSharpAccessibility option) * items:CompletionItem list * reactor:IReactorOperations * currentNamespace:string[] option * isAttributeApplicationContex:bool * checkAlive:(unit -> bool) -> FSharpDeclarationListInfo
+    static member internal Create : infoReader:InfoReader * m:range * denv:DisplayEnv * getAdditionalInfo:(Item -> 'T option) * items:CompletionItem list * reactor:IReactorOperations * currentNamespace:string[] option * isAttributeApplicationContex:bool * checkAlive:(unit -> bool) -> FSharpDeclarationListInfo<'T>
 
-    static member internal Error : message:string -> FSharpDeclarationListInfo
+    static member internal Error : message:string -> FSharpDeclarationListInfo<'T>
 
-    static member Empty : FSharpDeclarationListInfo
+    static member Empty : FSharpDeclarationListInfo<'T>
 
 /// Represents one parameter for one method (or other item) in a group. 
 [<Sealed>]

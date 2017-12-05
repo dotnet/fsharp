@@ -142,13 +142,21 @@ type internal FSharpCheckFileResults =
     /// <param name="getAllSymbols">
     ///    Function that returns all symbols from current and referenced assemblies.
     /// </param>
+    /// </param>
+    /// <param name="getAdditionalInfo">
+    ///    Function that returns additional info about a symbol in completion context.
+    /// </param>
+    /// </param>
+    /// <param name="shortTypeNames">
+    ///    Hide non-opened namespaces in type names in item descriptions and additional info.
+    /// </param>
     /// <param name="hasTextChangedSinceLastTypecheck">
     ///    If text has been used from a captured name resolution from the typecheck, then 
     ///    callback to the client to check if the text has changed. If it has, then give up
     ///    and assume that we're going to repeat the operation later on.
     /// </param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member GetDeclarationListInfo : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * lineText:string * partialName: PartialLongName * getAllSymbols: (unit -> AssemblySymbol list) * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) * ?userOpName: string -> Async<FSharpDeclarationListInfo>
+    member GetDeclarationListInfo : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * lineText:string * partialName: PartialLongName * ?getAllSymbols: (unit -> AssemblySymbol list) * ?getAdditionalInfo: (FSharpSymbol * FSharpDisplayContext -> 'T option) * ?shortTypeNames: bool * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) * ?userOpName: string -> Async<FSharpDeclarationListInfo<'T>>
 
     /// <summary>Get the items for a declaration list in FSharpSymbol format</summary>
     ///

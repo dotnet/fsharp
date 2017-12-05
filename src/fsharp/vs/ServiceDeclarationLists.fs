@@ -484,8 +484,8 @@ module internal DescriptionListsImpl =
 
 /// An intellisense declaration
 [<Sealed>]
-type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: string, glyph: FSharpGlyph, info, accessibility: FSharpAccessibility option,
-                               kind: CompletionItemKind, isOwnMember: bool, priority: int, isResolved: bool, namespaceToOpen: string option) =
+type FSharpDeclarationListItem<'T>(name: string, nameInCode: string, fullName: string, glyph: FSharpGlyph, info, additionalInfo: 'T option,
+                                   kind: CompletionItemKind, isOwnMember: bool, priority: int, isResolved: bool, namespaceToOpen: string option) =
 
     let mutable descriptionTextHolder: FSharpToolTipText<_> option = None
     let mutable task = null
@@ -545,7 +545,7 @@ type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: strin
        (fun err -> FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError err])
     member decl.DescriptionText = decl.StructuredDescriptionText |> Tooltips.ToFSharpToolTipText
     member __.Glyph = glyph 
-    member __.Accessibility = accessibility
+    member __.AdditionalInfo = additionalInfo
     member __.Kind = kind
     member __.IsOwnMember = isOwnMember
     member __.MinorPriority = priority
@@ -555,7 +555,7 @@ type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: strin
 
 /// A table of declarations for Intellisense completion 
 [<Sealed>]
-type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForType: bool, isError: bool) = 
+type FSharpDeclarationListInfo<'T>(declarations: FSharpDeclarationListItem<'T>[], isForType: bool, isError: bool) =
     member __.Items = declarations
     member __.IsForType = isForType
     member __.IsError = isError
@@ -690,14 +690,14 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
                         name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), getAccessibility item.Item, 
                         item.Kind, item.IsOwnMember, item.MinorPriority, item.Unresolved.IsNone, namespaceToOpen))
 
-        new FSharpDeclarationListInfo(Array.ofList decls, isForType, false)
+        new FSharpDeclarationListInfo<'T>(Array.ofList decls, isForType, false)
     
     static member Error msg = 
-        new FSharpDeclarationListInfo(
+        new FSharpDeclarationListInfo<'T>(
                 [| FSharpDeclarationListItem("<Note>", "<Note>", "<Note>", FSharpGlyph.Error, Choice2Of2 (FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError msg]), 
                                              None, CompletionItemKind.Other, false, 0, false, None) |], false, true)
     
-    static member Empty = FSharpDeclarationListInfo([| |], false, false)
+    static member Empty = FSharpDeclarationListInfo<'T>([| |], false, false)
 
 
 

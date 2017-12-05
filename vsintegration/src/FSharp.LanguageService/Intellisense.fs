@@ -116,7 +116,7 @@ type internal ObsoleteGlyph =
 // functionality and thus have considerable value, they should ony be deleted if we are sure this 
 // is not the case.
 //
-type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: FSharpDeclarationListItem[], reason: BackgroundRequestReason) = 
+type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: FSharpDeclarationListItem<_>[], reason: BackgroundRequestReason) =
         
     inherit Declarations_DEPRECATED()  
 
@@ -125,7 +125,7 @@ type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: 
     let mutable lastBestMatch = ""
     let isEmpty = (declarations.Length = 0)
 
-    let tab = Dictionary<string,FSharpDeclarationListItem[]>()
+    let tab = Dictionary<string,FSharpDeclarationListItem<_>[]>()
 
     // Given a prefix, narrow the items to the include the ones containing that prefix, and store in a lookaside table
     // attached to this declaration set.
@@ -535,7 +535,7 @@ type internal FSharpIntellisenseInfo_DEPRECATED
                                 let oldTextSnapshot = oldTextSnapshotInfo :?> ITextSnapshot
                                 hasTextChangedSinceLastTypecheck (textSnapshot, oldTextSnapshot, Range.Range.toZ range)
 
-                            let! decls = typedResults.GetDeclarationListInfo(untypedParseInfoOpt, Range.Line.fromZ line, lineText, pname, (fun() -> []), detectTextChange) 
+                            let! decls = typedResults.GetDeclarationListInfo(untypedParseInfoOpt, Range.Line.fromZ line, lineText, pname, hasTextChangedSinceLastTypecheck = detectTextChange)
                             return (new FSharpDeclarations_DEPRECATED(documentationBuilder, decls.Items, reason) :> Declarations_DEPRECATED) 
                     else
                         // no TypeCheckInfo in ParseResult.

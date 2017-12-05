@@ -40,8 +40,8 @@ printfn "%A" tip
 let partialName = GetPartialLongNameEx(inputLines.[4], 23)
 
 // Get declarations (autocomplete) for a location
-let decls = 
-    parsed.GetDeclarationListInfo(Some untyped, 5, inputLines.[4], partialName, (fun () -> [])) 
+let decls =
+    parsed.GetDeclarationListInfo<obj>(Some untyped, 5, inputLines.[4], partialName)
     |> Async.RunSynchronously
 
 for item in decls.Items do
