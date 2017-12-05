@@ -215,7 +215,8 @@ let ShouldTriggerCompletionInAttribute() =
 [<A
 module Foo = module end
 """
-    let caretPosition = fileContents.IndexOf("A")
+    let marker = "A"
+    let caretPosition = fileContents.IndexOf(marker) + marker.Length
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     let getInfo() = documentId, filePath, []
     let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
@@ -227,7 +228,8 @@ let ShouldTriggerCompletionAfterDerefOperator() =
 let foo = ref 12
 printfn "%d" !f
 """
-    let caretPosition = fileContents.IndexOf("!f")
+    let marker = "!f"
+    let caretPosition = fileContents.IndexOf(marker) + marker.Length
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     let getInfo() = documentId, filePath, []
     let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
@@ -240,7 +242,8 @@ type Point = { mutable X: int; mutable Y: int }
 let pnt = { X = 1; Y = 2 }
 use ptr = fixed &p
 """
-    let caretPosition = fileContents.IndexOf("&p")
+    let marker = "&p"
+    let caretPosition = fileContents.IndexOf(marker) + marker.Length
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
     let getInfo() = documentId, filePath, []
     let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
@@ -264,7 +267,7 @@ xVal**y
     let markers = [ "+y"; "-y"; "*y"; "/y"; "%y";  "**y"]
 
     for marker in markers do 
-        let caretPosition = fileContents.IndexOf(marker)
+        let caretPosition = fileContents.IndexOf(marker) + marker.Length
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
         let getInfo() = documentId, filePath, []
         let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
