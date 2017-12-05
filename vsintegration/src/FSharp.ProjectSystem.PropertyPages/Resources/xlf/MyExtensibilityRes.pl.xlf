@@ -1,0 +1,107 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="pl" original="../MyExtensibilityRes.resx">
+    <body>
+      <trans-unit id="AssemblyOptionDialog_Add_Question">
+        <source>The following My Namespace extensions are associated with assembly '{0}'. Do you want to add them to your project?</source>
+        <target state="translated">Następujące rozszerzenia typu My Namespace są skojarzone z zestawem „{0}”. Czy chcesz je dodać do projektu?</target>
+        <note>Label of the add My extensions dialog.</note>
+      </trans-unit>
+      <trans-unit id="AssemblyOptionDialog_Add_Text">
+        <source>Add My Namespace Extensions</source>
+        <target state="translated">Dodaj rozszerzenia typu My Namespace</target>
+        <note>Text (caption) of the add My extensions dialog.</note>
+      </trans-unit>
+      <trans-unit id="AssemblyOptionDialog_Option">
+        <source>&amp;Remember my decision for '{0}'.</source>
+        <target state="translated">&amp;Zapamiętaj mój wybór dla „{0}”.</target>
+        <note>Text for the option on add / remove My extensions dialog.</note>
+      </trans-unit>
+      <trans-unit id="AssemblyOptionDialog_Remove_Question">
+        <source>Removing the reference to '{0}' will make the following My Namespace extensions stop functioning. Do you want to remove them as well?</source>
+        <target state="translated">Usunięcie odwołania do elementu „{0}” spowoduje, że następujące rozszerzenia typu My Namespace przestaną działać. Czy chcesz je również usunąć?</target>
+        <note>Label of the remove My extensions dialog.</note>
+      </trans-unit>
+      <trans-unit id="AssemblyOptionDialog_Remove_Text">
+        <source>Remove My Namespace Extensions</source>
+        <target state="translated">Usuń rozszerzenia typu My Namespace</target>
+        <note>Text (caption) of the remove My extensions dialog.</note>
+      </trans-unit>
+      <trans-unit id="CouldNotAddProjectItemTemplate_Message">
+        <source>No project items were added to the current project from My Namespace extension '{0}'. The extension will not be added to the project.</source>
+        <target state="translated">Nie dodano żadnych elementów z rozszerzenia typu My Namespace „{0}” do bieżącego projektu. Rozszerzenie nie zostanie dodane do projektu.</target>
+        <note>Error message when there is no project items being added to the project from the My Namespace extension template.</note>
+      </trans-unit>
+      <trans-unit id="CouldNotAddProjectItemTemplate_Title">
+        <source>Failed to Add Project Item</source>
+        <target state="translated">Dodanie elementu projektu nie powiodło się</target>
+        <note>Text (caption)for the error message when there is no project items being added to the project from the My Namespace extension template.</note>
+      </trans-unit>
+      <trans-unit id="CouldNotSetExtensionAttributes_AllItems">
+        <source>No project items could be associated with My Namespace extension '{0}'. The extension will not be added to the project.</source>
+        <target state="translated">Nie można powiązać żadnych elementów projektu z rozszerzeniem typu My Namespace „{0}”. Rozszerzenie nie zostanie dodane do projektu.</target>
+        <note>Error message when we could not set build attributes on any of the project items in My Namespace extension template.</note>
+      </trans-unit>
+      <trans-unit id="CouldNotSetExtensionAttributes_Message">
+        <source>Project item '{0}' was added to the current project but could not be associated with My Namespace extension '{1}'. It will not be removed with the extension.</source>
+        <target state="translated">Dodano element „{0}” do bieżącego projektu, ale nie można go powiązać z rozszerzeniem typu My Namespace „{1}”. Element ten nie zostanie usunięty z tym rozszerzeniem.</target>
+        <note>Error message when we could not set build attributes on one of the project items in My Namespace extension template.</note>
+      </trans-unit>
+      <trans-unit id="CouldNotSetExtensionAttributes_Title">
+        <source>Failed to Set Extension Attributes</source>
+        <target state="translated">Ustawienie atrybutów rozszerzenia nie powiodło się</target>
+        <note>Text (caption) of the error message when we could not set build attributes on one of or any of the project items in My Namespace extension template.</note>
+      </trans-unit>
+      <trans-unit id="ExtensionExists_Message">
+        <source>Version '{0}' of My Namespace extension '{1}' already exists in the current project. Do you want to overwrite it with version '{2}'?</source>
+        <target state="translated">W bieżącym projekcie istnieje już wersja „{0}” rozszerzenia typu My Namespace „{1}”. Czy chcesz ją zastąpić wersją „{2}”?</target>
+        <note>Question to replace an existing My extension in the project.</note>
+      </trans-unit>
+      <trans-unit id="ExtensionExists_Title">
+        <source>Extension File Already Exists</source>
+        <target state="translated">Plik rozszerzenia już istnieje</target>
+        <note>Title (caption) for the question to replace an existing My extension in the project.</note>
+      </trans-unit>
+      <trans-unit id="PropertyPageTab">
+        <source>My Extensions</source>
+        <target state="translated">Moje rozszerzenia</target>
+        <note>Caption for "My Extensions" property page.</note>
+      </trans-unit>
+      <trans-unit id="StatusBar_Add_Finish">
+        <source>My Namespace extensions added: '{0}'.</source>
+        <target state="translated">Dodane rozszerzenia typu My Namespace: „{0}”.</target>
+        <note>Status bar text listing all My extension templates added.</note>
+      </trans-unit>
+      <trans-unit id="StatusBar_Add_Progress">
+        <source>My Namespace extension added: '{0}'.</source>
+        <target state="translated">Dodane rozszerzenie typu My Namespace: „{0}”.</target>
+        <note>Status bar text for each My extension template added.</note>
+      </trans-unit>
+      <trans-unit id="StatusBar_Add_Remove_Finish">
+        <source>My Namespace extensions added: '{0}'. My Namespace extensions removed: '{1}'.</source>
+        <target state="translated">Dodane rozszerzenia typu My Namespace: „{0}”. Usunięte rozszerzenia typu My Namespace: „{1}”.</target>
+        <note>Status bar text listing all My extensions added and removed to a project. This is a rare case but may happen if user adds / removes assemblies real fast.</note>
+      </trans-unit>
+      <trans-unit id="StatusBar_Add_Start">
+        <source>Adding My Namespace extensions...</source>
+        <target state="translated">Dodawanie rozszerzeń typu My Namespace...</target>
+        <note>Status bar text when starting to add My extension templates.</note>
+      </trans-unit>
+      <trans-unit id="StatusBar_Remove_Finish">
+        <source>My Namespace extensions removed: '{0}'.</source>
+        <target state="translated">Usunięte rozszerzenia typu My Namespace: „{0}”.</target>
+        <note>Status bar text listing all My extension code files removed.</note>
+      </trans-unit>
+      <trans-unit id="StatusBar_Remove_Progress">
+        <source>My Namespace extension removed: '{0}'.</source>
+        <target state="translated">Usunięte rozszerzenie typu My Namespace: „{0}”.</target>
+        <note>Status bar text for each My extension code file removed.</note>
+      </trans-unit>
+      <trans-unit id="StatusBar_Remove_Start">
+        <source>Removing My Namespace extensions...</source>
+        <target state="translated">Usuwanie rozszerzeń typu My Namespace...</target>
+        <note>Status bar text when starting to remove My extensions.</note>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

@@ -1,0 +1,107 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="zh-Hans" original="../MyExtensibilityRes.resx">
+    <body>
+      <trans-unit id="AssemblyOptionDialog_Add_Question">
+        <source>The following My Namespace extensions are associated with assembly '{0}'. Do you want to add them to your project?</source>
+        <target state="translated">下面的 My 命名空间扩展与程序集“{0}”关联。是否将它们添加到项目中?</target>
+        <note>Label of the add My extensions dialog.</note>
+      </trans-unit>
+      <trans-unit id="AssemblyOptionDialog_Add_Text">
+        <source>Add My Namespace Extensions</source>
+        <target state="translated">添加 My 命名空间扩展</target>
+        <note>Text (caption) of the add My extensions dialog.</note>
+      </trans-unit>
+      <trans-unit id="AssemblyOptionDialog_Option">
+        <source>&amp;Remember my decision for '{0}'.</source>
+        <target state="translated">记住我对“{0}”的决定(&amp;R)。</target>
+        <note>Text for the option on add / remove My extensions dialog.</note>
+      </trans-unit>
+      <trans-unit id="AssemblyOptionDialog_Remove_Question">
+        <source>Removing the reference to '{0}' will make the following My Namespace extensions stop functioning. Do you want to remove them as well?</source>
+        <target state="translated">删除对“{0}”的引用会导致以下 My 命名空间扩展停止工作。是否仍要删除它们?</target>
+        <note>Label of the remove My extensions dialog.</note>
+      </trans-unit>
+      <trans-unit id="AssemblyOptionDialog_Remove_Text">
+        <source>Remove My Namespace Extensions</source>
+        <target state="translated">删除 My 命名空间扩展</target>
+        <note>Text (caption) of the remove My extensions dialog.</note>
+      </trans-unit>
+      <trans-unit id="CouldNotAddProjectItemTemplate_Message">
+        <source>No project items were added to the current project from My Namespace extension '{0}'. The extension will not be added to the project.</source>
+        <target state="translated">未从 My 命名空间扩展“{0}”向当前项目添加任何项目项。该扩展不会添加到项目中。</target>
+        <note>Error message when there is no project items being added to the project from the My Namespace extension template.</note>
+      </trans-unit>
+      <trans-unit id="CouldNotAddProjectItemTemplate_Title">
+        <source>Failed to Add Project Item</source>
+        <target state="translated">未能添加项目项</target>
+        <note>Text (caption)for the error message when there is no project items being added to the project from the My Namespace extension template.</note>
+      </trans-unit>
+      <trans-unit id="CouldNotSetExtensionAttributes_AllItems">
+        <source>No project items could be associated with My Namespace extension '{0}'. The extension will not be added to the project.</source>
+        <target state="translated">没有任何项目项能够与 My 命名空间扩展“{0}”关联。该扩展不会添加到项目中。</target>
+        <note>Error message when we could not set build attributes on any of the project items in My Namespace extension template.</note>
+      </trans-unit>
+      <trans-unit id="CouldNotSetExtensionAttributes_Message">
+        <source>Project item '{0}' was added to the current project but could not be associated with My Namespace extension '{1}'. It will not be removed with the extension.</source>
+        <target state="translated">项目项“{0}”已添加到当前项目，但未能与 My 命名空间扩展“{1}”关联。它不会与此扩展一起被删除。</target>
+        <note>Error message when we could not set build attributes on one of the project items in My Namespace extension template.</note>
+      </trans-unit>
+      <trans-unit id="CouldNotSetExtensionAttributes_Title">
+        <source>Failed to Set Extension Attributes</source>
+        <target state="translated">未能设置扩展特性</target>
+        <note>Text (caption) of the error message when we could not set build attributes on one of or any of the project items in My Namespace extension template.</note>
+      </trans-unit>
+      <trans-unit id="ExtensionExists_Message">
+        <source>Version '{0}' of My Namespace extension '{1}' already exists in the current project. Do you want to overwrite it with version '{2}'?</source>
+        <target state="translated">当前项目中已经存在 My 命名空间扩展“{1}”的版本“{0}”。是否用版本“{2}”覆盖它?</target>
+        <note>Question to replace an existing My extension in the project.</note>
+      </trans-unit>
+      <trans-unit id="ExtensionExists_Title">
+        <source>Extension File Already Exists</source>
+        <target state="translated">扩展文件已存在</target>
+        <note>Title (caption) for the question to replace an existing My extension in the project.</note>
+      </trans-unit>
+      <trans-unit id="PropertyPageTab">
+        <source>My Extensions</source>
+        <target state="translated">我的扩展</target>
+        <note>Caption for "My Extensions" property page.</note>
+      </trans-unit>
+      <trans-unit id="StatusBar_Add_Finish">
+        <source>My Namespace extensions added: '{0}'.</source>
+        <target state="translated">已添加 My 命名空间扩展“{0}”。</target>
+        <note>Status bar text listing all My extension templates added.</note>
+      </trans-unit>
+      <trans-unit id="StatusBar_Add_Progress">
+        <source>My Namespace extension added: '{0}'.</source>
+        <target state="translated">已添加 My 命名空间扩展“{0}”。</target>
+        <note>Status bar text for each My extension template added.</note>
+      </trans-unit>
+      <trans-unit id="StatusBar_Add_Remove_Finish">
+        <source>My Namespace extensions added: '{0}'. My Namespace extensions removed: '{1}'.</source>
+        <target state="translated">已添加 My 命名空间扩展“{0}”。已删除 My 命名空间扩展“{1}”。</target>
+        <note>Status bar text listing all My extensions added and removed to a project. This is a rare case but may happen if user adds / removes assemblies real fast.</note>
+      </trans-unit>
+      <trans-unit id="StatusBar_Add_Start">
+        <source>Adding My Namespace extensions...</source>
+        <target state="translated">正在添加 My 命名空间扩展...</target>
+        <note>Status bar text when starting to add My extension templates.</note>
+      </trans-unit>
+      <trans-unit id="StatusBar_Remove_Finish">
+        <source>My Namespace extensions removed: '{0}'.</source>
+        <target state="translated">已删除 My 命名空间扩展“{0}”。</target>
+        <note>Status bar text listing all My extension code files removed.</note>
+      </trans-unit>
+      <trans-unit id="StatusBar_Remove_Progress">
+        <source>My Namespace extension removed: '{0}'.</source>
+        <target state="translated">已删除 My 命名空间扩展“{0}”。</target>
+        <note>Status bar text for each My extension code file removed.</note>
+      </trans-unit>
+      <trans-unit id="StatusBar_Remove_Start">
+        <source>Removing My Namespace extensions...</source>
+        <target state="translated">正在删除 My 命名空间扩展...</target>
+        <note>Status bar text when starting to remove My extensions.</note>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

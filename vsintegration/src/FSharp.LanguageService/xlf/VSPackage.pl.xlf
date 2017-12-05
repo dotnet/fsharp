@@ -1,0 +1,72 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="pl" original="../VSPackage.resx">
+    <body>
+      <trans-unit id="100">
+        <source>F#</source>
+        <target state="translated">F#</target>
+        <note>lock</note>
+      </trans-unit>
+      <trans-unit id="ExcludedCode">
+        <source>Excluded Code</source>
+        <target state="translated">Wykluczony kod</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PreprocessorKeyword">
+        <source>Preprocessor Keyword</source>
+        <target state="translated">Słowo kluczowe preprocesora</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Operator">
+        <source>Operator</source>
+        <target state="translated">Operator</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpFile">
+        <source>F# File (*.fs)</source>
+        <target state="translated">Plik języka F# (*.fs)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpInterfaceFile">
+        <source>F# Interface File (*.fsi)</source>
+        <target state="translated">Plik interfejsu języka F# (*.fsi)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSXFile">
+        <source>F# Script File (*.fsx)</source>
+        <target state="translated">Plik skryptu języka F# (*.fsx)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FSharpScriptFile">
+        <source>F# Script File (*.fsscript)</source>
+        <target state="translated">Plik skryptu języka F# (*.fsscript)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Comment">
+        <source>Comment</source>
+        <target state="translated">Komentarz</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Identifier">
+        <source>Identifier</source>
+        <target state="translated">Identyfikator</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Keyword">
+        <source>Keyword</source>
+        <target state="translated">Słowo kluczowe</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Number">
+        <source>Number</source>
+        <target state="translated">Liczba</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="String">
+        <source>String</source>
+        <target state="translated">Ciąg</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

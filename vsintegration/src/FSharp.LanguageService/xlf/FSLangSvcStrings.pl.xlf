@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="pl" original="../FSLangSvcStrings.resx">
+    <body>
+      <trans-unit id="StillBuildingContentCache">
+        <source>(The documentation cache is still being constructed. Please try again in a few seconds.)</source>
+        <target state="translated">(Pamięć podręczna dokumentacji jest wciąż tworzona. Spróbuj ponownie za kilka sekund).</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ExceptionsHeader">
+        <source>Exceptions:</source>
+        <target state="translated">Wyjątki:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IntelliSenseLoading">
+        <source>Loading...</source>
+        <target state="translated">Trwa ładowanie...</target>
+        <note>displayed when waiting for IntelliSense to load</note>
+      </trans-unit>
+      <trans-unit id="GotoDefinitionFailed_Generic">
+        <source>Cannot navigate to definition.</source>
+        <target state="translated">Nie można przejść do definicji.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="GotoDefinitionFailed_NotIdentifier">
+        <source>Cannot navigate to definition. Cursor is not on identifier.</source>
+        <target state="translated">Nie można przejść do definicji. Kursor znajduje się poza identyfikatorem.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="GotoDefinitionFailed_ProvidedMember">
+        <source>Cannot navigate to the provided member '{0}'.</source>
+        <target state="translated">Nie można przejść do podanego elementu członkowskiego „{0}”.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="GotoDefinitionFailed_ProvidedType">
+        <source>Cannot navigate to the provided type '{0}'.</source>
+        <target state="translated">Nie można przejść do udostępnionego typu „{0}”.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="GotoDefinitionFailed_NoTypecheckInfo">
+        <source>Cannot navigate to definition. Type check information is not available, please try later.</source>
+        <target state="translated">Nie można przejść do definicji. Informacje dotyczące sprawdzenia typu są niedostępne. Spróbuj później.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="GotoDefinitionFailed_NotSourceCode">
+        <source>Cannot navigate to definition. Source code is not available.</source>
+        <target state="translated">Nie można przejść do definicji. Kod źródłowy jest niedostępny.</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>
