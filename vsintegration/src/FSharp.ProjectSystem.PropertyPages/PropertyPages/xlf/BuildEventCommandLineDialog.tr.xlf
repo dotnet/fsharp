@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="tr" original="../BuildEventCommandLineDialog.resx">
+    <body>
+      <trans-unit id="InsertButton.Text">
+        <source>I&amp;nsert</source>
+        <target state="translated">E&amp;kle</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OKButton.Text">
+        <source>OK</source>
+        <target state="translated">Tamam</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Cancel_Button.Text">
+        <source>Cancel</source>
+        <target state="translated">İptal</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CommandLine.AccessibleName">
+        <source>Build Command Line</source>
+        <target state="translated">Derleme Komut Satırı</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ShowMacrosButton.Text">
+        <source>&amp;Macros &gt;&gt;</source>
+        <target state="translated">&amp;Makrolar &gt;&gt;</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HideMacrosButton.Text">
+        <source>&lt;&lt; &amp;Macros</source>
+        <target state="translated">&lt;&lt; &amp;Makrolar</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TokenList.AccessibleName">
+        <source>Macro List</source>
+        <target state="translated">Makro Listesi</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Macro.Text">
+        <source>Macro</source>
+        <target state="translated">Makro</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Value.Text">
+        <source>Value</source>
+        <target state="translated">Değer</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

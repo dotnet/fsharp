@@ -1,0 +1,92 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="ko" original="../DebugPropPage.resx">
+    <body>
+      <trans-unit id="StartActionLabel.Text">
+        <source>Start Action</source>
+        <target state="translated">시작 작업</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="rbStartProject.Text">
+        <source>&amp;Start project</source>
+        <target state="translated">시작 프로젝트(&amp;S)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="rbStartProgram.Text">
+        <source>Start e&amp;xternal program:</source>
+        <target state="translated">시작 외부 프로그램(&amp;X):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StartProgram.AccessibleName">
+        <source>Program to start</source>
+        <target state="translated">시작할 프로그램</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StartProgramBrowse.AccessibleName">
+        <source>Browse for external program</source>
+        <target state="translated">외부 프로그램 찾아보기</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StartProgramBrowse.Text">
+        <source>...</source>
+        <target state="translated">...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StartOptionsLabel.Text">
+        <source>Start Options</source>
+        <target state="translated">시작 옵션</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CommandLineArgsLabel.Text">
+        <source>Comma&amp;nd line arguments:</source>
+        <target state="translated">명령줄 인수(&amp;N):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="WorkingDirLabel.Text">
+        <source>Wor&amp;king directory:</source>
+        <target state="translated">작업 디렉터리(&amp;K):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoteDebugEnabled.Text">
+        <source>Use remote m&amp;achine</source>
+        <target state="translated">원격 컴퓨터 사용(&amp;A)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoteDebugMachine.AccessibleName">
+        <source>Remote Machine Name:</source>
+        <target state="translated">원격 컴퓨터 이름:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StartWorkingDirectoryBrowse.AccessibleName">
+        <source>Browse for working directory</source>
+        <target state="translated">작업 디렉터리 찾아보기</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StartWorkingDirectoryBrowse.Text">
+        <source>...</source>
+        <target state="translated">...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="EnableDebuggerLabel.Text">
+        <source>Enable Debuggers</source>
+        <target state="translated">디버거 사용</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="EnableSQLServerDebugging.Text">
+        <source>Enable SQ&amp;L Server debugging</source>
+        <target state="translated">SQL Server 디버깅 사용(&amp;L)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseVSHostingProcess.Text">
+        <source>Enable the Visual Studio h&amp;osting process</source>
+        <target state="translated">Visual Studio 호스팅 프로세스 사용(&amp;O)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="EnableUnmanagedDebugging.Text">
+        <source>Enable &amp;unmanaged code debugging</source>
+        <target state="translated">비관리 코드 디버깅 사용(&amp;U)</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

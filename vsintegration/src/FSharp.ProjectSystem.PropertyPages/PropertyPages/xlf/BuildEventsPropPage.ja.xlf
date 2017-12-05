@@ -1,0 +1,67 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="ja" original="../BuildEventsPropPage.resx">
+    <body>
+      <trans-unit id="lblPreBuildEventCommandLine.Text">
+        <source>P&amp;re-build event command line:</source>
+        <target state="translated">ビルド前イベントのコマンド ライン(&amp;R):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="txtPreBuildEventCommandLine.AccessibleName">
+        <source>Pre-build event command line</source>
+        <target state="translated">ビルド前に実行するコマンド ライン</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="btnPreBuildBuilder.AccessibleName">
+        <source>Edit Pre-build ...</source>
+        <target state="translated">ビルド前の編集...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="btnPreBuildBuilder.Text">
+        <source>Ed&amp;it Pre-build ...</source>
+        <target state="translated">ビルド前の編集(&amp;I)...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lblPostBuildEventCommandLine.Text">
+        <source>P&amp;ost-build event command line:</source>
+        <target state="translated">ビルド後イベントのコマンド ライン(&amp;O):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="txtPostBuildEventCommandLine.AccessibleName">
+        <source>Post-build event command line</source>
+        <target state="translated">ビルド後に実行するコマンド ライン</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="btnPostBuildBuilder.AccessibleName">
+        <source>Edit Post-build ...</source>
+        <target state="translated">ビルド後の編集...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="btnPostBuildBuilder.Text">
+        <source>Edit Post-b&amp;uild ...</source>
+        <target state="translated">ビルド後の編集(&amp;U)...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lblRunPostBuildEvent.Text">
+        <source>Ru&amp;n the post-build event:</source>
+        <target state="translated">ビルド後イベントの実行(&amp;N):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboRunPostBuildEvent.Items">
+        <source>Always</source>
+        <target state="translated">常時</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboRunPostBuildEvent.Items1">
+        <source>On successful build</source>
+        <target state="translated">ビルドが成功したとき</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboRunPostBuildEvent.Items2">
+        <source>When the build updates the project output</source>
+        <target state="translated">ビルドがプロジェクト出力を更新したとき</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

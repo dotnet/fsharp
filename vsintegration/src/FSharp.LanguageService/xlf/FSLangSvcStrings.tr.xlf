@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="tr" original="../FSLangSvcStrings.resx">
+    <body>
+      <trans-unit id="StillBuildingContentCache">
+        <source>(The documentation cache is still being constructed. Please try again in a few seconds.)</source>
+        <target state="translated">(Belgeler önbelleği hala oluşturuluyor. Lütfen birkaç saniye içinde yeniden deneyin.)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ExceptionsHeader">
+        <source>Exceptions:</source>
+        <target state="translated">Özel Durumlar:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IntelliSenseLoading">
+        <source>Loading...</source>
+        <target state="translated">Yükleniyor...</target>
+        <note>displayed when waiting for IntelliSense to load</note>
+      </trans-unit>
+      <trans-unit id="GotoDefinitionFailed_Generic">
+        <source>Cannot navigate to definition.</source>
+        <target state="translated">Tanıma gidilemiyor.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="GotoDefinitionFailed_NotIdentifier">
+        <source>Cannot navigate to definition. Cursor is not on identifier.</source>
+        <target state="translated">Tanıma geçilemiyor. İmleç tanımlayıcı üzerinde değil.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="GotoDefinitionFailed_ProvidedMember">
+        <source>Cannot navigate to the provided member '{0}'.</source>
+        <target state="translated">'{0}' sağlanan üyesine geçilemiyor.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="GotoDefinitionFailed_ProvidedType">
+        <source>Cannot navigate to the provided type '{0}'.</source>
+        <target state="translated">'{0}' sağlanan türüne geçilemiyor.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="GotoDefinitionFailed_NoTypecheckInfo">
+        <source>Cannot navigate to definition. Type check information is not available, please try later.</source>
+        <target state="translated">Tanıma geçilemiyor. Tür denetimi bilgileri kullanılamıyor, lütfen daha sonra deneyin.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="GotoDefinitionFailed_NotSourceCode">
+        <source>Cannot navigate to definition. Source code is not available.</source>
+        <target state="translated">Tanıma geçilemiyor. Kaynak kodu kullanılamıyor.</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

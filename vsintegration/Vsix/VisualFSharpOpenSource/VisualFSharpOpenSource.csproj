@@ -300,7 +300,7 @@
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.tools.targets" />
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
-  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
+  <Target Name="GatherBinariesToBeSigned" AfterTargets="CopyFilesToOutputDirectory">
     <ItemGroup>
       <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).vsix" />
       <FilesToSign Include="@(BinariesToBeSigned)">
