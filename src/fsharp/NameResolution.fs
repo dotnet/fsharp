@@ -1223,6 +1223,8 @@ type ItemOccurence =
     | Implemented
     /// Result gets suppressed over this text range
     | RelatedText
+    /// This is a usage of a module or namespace name in open statement
+    | Open
   
 type OpenDeclaration =
     { LongId: Ident list
