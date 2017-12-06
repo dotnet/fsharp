@@ -246,6 +246,7 @@ type internal ItemOccurence =
     | Pattern 
     | Implemented 
     | RelatedText
+    | Open
   
 /// Check for equality, up to signature matching
 val ItemsAreEffectivelyEqual : TcGlobals -> Item -> Item -> bool

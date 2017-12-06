@@ -466,7 +466,7 @@ let OpenModulesOrNamespaces tcSink g amap scopem root env mvvs openDeclaration =
                 loop acc rest
         
         for item, range in loop [] (List.rev openDeclaration.LongId) do
-            CallNameResolutionSink tcSink (range, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights)
+            CallNameResolutionSink tcSink (range, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Open, env.DisplayEnv, env.eAccessRights)
     env
 
 let AddRootModuleOrNamespaceRefs g amap m env modrefs =
