@@ -90,11 +90,10 @@ type internal FSharpCompletionProvider
             // do not trigger completion if it's not single dot, i.e. range expression
             if not Settings.IntelliSense.ShowAfterCharIsTyped && prevChar = '.' then
                 false
-            
-            // Trigger completion depending on some conditions, including if we are on a valid classification type
             else
                 let documentId, filePath, defines = getInfo()
-                CompletionUtils.shouldProvideCompletion(documentId, filePath, defines, sourceText, triggerPosition, triggerChar)
+                CompletionUtils.shouldProvideCompletion(documentId, filePath, defines, sourceText, triggerPosition) &&
+                (triggerChar = '.' || (Settings.IntelliSense.ShowAfterCharIsTyped && CompletionUtils.isStartingNewWord(sourceText, triggerPosition)))
                 
 
     static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, 
@@ -219,7 +218,8 @@ type internal FSharpCompletionProvider
         asyncMaybe {
             let document = context.Document
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-            do! Option.guard (this.ShouldTriggerCompletion(sourceText, context.Position, context.Trigger, null))
+            let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
+            do! Option.guard (CompletionUtils.shouldProvideCompletion(document.Id, document.FilePath, defines, sourceText, context.Position))
             let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
             let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken)
             let! _, _, fileCheckResults = checker.ParseAndCheckDocument(document, projectOptions, true, userOpName=userOpName)
