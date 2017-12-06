@@ -145,22 +145,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             get { return this.referencedProjectName; }
         }
 
-        // This method throws FileNotFoundException if VC is not installed
-        private static void CheckVCProjectMatchesPath(object prjObj, string goalPath, out bool isVCProject, out bool matches)
-        {
-            matches = false;
-            var vcProject = prjObj as Microsoft.VisualStudio.VCProjectEngine.VCProject;
-            isVCProject = vcProject != null;
-            if (isVCProject)
-            {
-                var projectFilePath = vcProject.ProjectFile;
-                if (NativeMethods.IsSamePath(projectFilePath, goalPath))
-                {
-                    matches = true;
-                }
-            }
-        }
-
         private void InitReferencedProject(IVsSolution solution)
         {
             IVsHierarchy hier;
@@ -181,27 +165,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             if (prj.Properties == null)
             {
                 return;
-            }
-
-            // do things differently for C++
-            try
-            {
-                bool isVCProject;
-                bool itMatches;
-                CheckVCProjectMatchesPath(prj.Object, this.referencedProjectFullPath, out isVCProject, out itMatches);
-                if (itMatches)
-                {
-                    this.referencedProject = prj;
-                    return;
-                }
-                if (isVCProject)
-                {
-                    return;
-                }
-            }
-            catch (System.IO.FileNotFoundException)
-            {
-                // ignore it - VC might not be installed
             }
 
             // Get the full path of the current project.

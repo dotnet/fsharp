@@ -3,6 +3,7 @@ module internal Microsoft.VisualStudio.FSharp.Editor.CodeAnalysisExtensions
 
 open Microsoft.CodeAnalysis
 open Microsoft.FSharp.Compiler.Range
+open System.IO
 
 type Project with
 
@@ -41,7 +42,9 @@ type Solution with
 
      /// Try to find the documentId corresponding to the provided filepath within this solution  
     member self.TryGetDocumentFromPath filePath =
-        self.GetDocumentIdsWithFilePath filePath
+        // It's crucial to normalize file path here (specificaly, remove relative parts),
+        // otherwise Roslyn does not find documents.
+        self.GetDocumentIdsWithFilePath (Path.GetFullPath filePath)
         |> Seq.tryHead |> Option.map (fun docId -> self.GetDocument docId)
 
 

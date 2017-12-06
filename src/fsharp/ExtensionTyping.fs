@@ -4,7 +4,7 @@
 
 namespace Microsoft.FSharp.Compiler
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 
 module internal ExtensionTyping =
     open System
@@ -36,6 +36,37 @@ module internal ExtensionTyping =
           temporaryFolder           : string } 
 
 
+    // Specify the tooling-compatible fragments of a path such as:
+    //     typeproviders/fsharp41/net461/MyProvider.DesignTime.dll
+    // See https://github.com/Microsoft/visualfsharp/issues/3736
+
+    // Represents the FF#-compiler <-> type provider protocol.
+    // When the API or protocol updates, add a new version moniker to the front of the list here.
+    let toolingCompatibleTypeProviderProtocolMonikers() = 
+        [ "fsharp41" ] 
+
+    // Detect the host tooling context
+    let toolingCompatibleVersions() = 
+        if typeof<obj>.Assembly.GetName().Name = "mscorlib" then 
+            [ "net461"; "net452"; "net451"; "net45"; "netstandard2.0"]
+        elif typeof<obj>.Assembly.GetName().Name = "System.Private.CoreLib" then 
+            [ "netcoreapp2.0"; "netstandard2.0"]
+        else
+            System.Diagnostics.Debug.Assert(false, "Couldn't determine runtime tooling context, assuming it supports at least .NET Standard 2.0")
+            [  "netstandard2.0"]
+
+    // When significant new processor types appear add a new moniker here. Note that use of this qualifier will be very rare
+    // and we don't expect different design-time assemblies will be needed for different architectures very often.  Some
+    // exceptions may be design-time components for type providers for systems such as Python or R.
+    let toolingCompatibleArch() = if sizeof<nativeint> = 8 then "x64" else "x86" 
+    let toolingCompatiblePaths() = 
+        [ for protocol in toolingCompatibleTypeProviderProtocolMonikers() do
+                for netRuntime in toolingCompatibleVersions() do
+                    let dir = Path.Combine("typeproviders", protocol, netRuntime) 
+                    yield Path.Combine(dir, toolingCompatibleArch())
+                    yield dir
+        ]
+
     /// Load a the design-time part of a type-provider into the host process, and look for types
     /// marked with the TypeProviderAttribute attribute.
     let GetTypeProviderImplementationTypes (runTimeAssemblyFileName, designTimeAssemblyNameString, m:range) =
@@ -46,32 +77,58 @@ module internal ExtensionTyping =
 
         // Find and load the designer assembly for the type provider component.
         //
-        // If the assembly name ends with .dll, or is just a simple name, we look in the directory next to runtime assembly.
-        // Else we only look in the GAC.
-        let designTimeAssemblyOpt = 
-            let loadFromDir fileName =
+        // We look in the directories stepping up from the location of the runtime assembly.
+
+        let loadFromLocation designTimeAssemblyPath =
+            try
+                Some (FileSystem.AssemblyLoadFrom designTimeAssemblyPath)
+            with e ->
+                raiseError e
+
+        let rec searchParentDirChain dir designTimeAssemblyName = 
+            seq { 
+                for subdir in toolingCompatiblePaths() do
+                    let designTimeAssemblyPath  = Path.Combine (dir, subdir, designTimeAssemblyName)
+                    if FileSystem.SafeExists designTimeAssemblyPath then 
+                        yield loadFromLocation designTimeAssemblyPath
+                match Path.GetDirectoryName(dir) with
+                | s when s = "" || s = null || Path.GetFileName(dir) = "packages" || s = dir -> ()
+                | parentDir -> yield! searchParentDirChain parentDir designTimeAssemblyName 
+            } 
+
+        let loadFromParentDirRelativeToRuntimeAssemblyLocation designTimeAssemblyName = 
+            let runTimeAssemblyPath = Path.GetDirectoryName runTimeAssemblyFileName
+            searchParentDirChain runTimeAssemblyPath  designTimeAssemblyName
+            |> Seq.tryHead
+            |> function 
+               | Some res -> res 
+               | None -> 
+                // The search failed, just load from the first location and report an error
                 let runTimeAssemblyPath = Path.GetDirectoryName runTimeAssemblyFileName
-                let designTimeAssemblyPath = Path.Combine (runTimeAssemblyPath, fileName)
-                try
-                    Some (FileSystem.AssemblyLoadFrom designTimeAssemblyPath)
-                with e ->
-                    raiseError e
-            let loadFromGac() =
-                try
-                    let asmName = System.Reflection.AssemblyName designTimeAssemblyNameString
-                    Some (FileSystem.AssemblyLoad (asmName))
-                with e ->
-                    raiseError e
+                loadFromLocation (Path.Combine (runTimeAssemblyPath, designTimeAssemblyName))
+
+        let designTimeAssemblyOpt = 
 
             if designTimeAssemblyNameString.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then
-                loadFromDir designTimeAssemblyNameString
+                loadFromParentDirRelativeToRuntimeAssemblyLocation designTimeAssemblyNameString
             else
-                let name = System.Reflection.AssemblyName designTimeAssemblyNameString
+                // Cover the case where the ".dll" extension has been left off and no version etc. has been used in the assembly
+                // string specification.  The Name=FullName comparison is particularly strange, and was there to support
+                // design-time DLLs specified using "x.DesignTIme, Version= ..." long assembly names and GAC loads.
+                // These kind of design-time assembly specifications are no longer used to our knowledge so that comparison is basically legacy
+                // and will always succeed.  
+                let name = System.Reflection.AssemblyName (Path.GetFileNameWithoutExtension designTimeAssemblyNameString)
                 if name.Name.Equals(name.FullName, StringComparison.OrdinalIgnoreCase) then
-                    let fileName = designTimeAssemblyNameString+".dll"
-                    loadFromDir fileName
+                    let designTimeAssemblyName = designTimeAssemblyNameString+".dll"
+                    loadFromParentDirRelativeToRuntimeAssemblyLocation designTimeAssemblyName
                 else
-                    loadFromGac()
+                    // Load from the GAC using Assembly.Load.  This is legacy since type provider design-time components are
+                    // never in the GAC these days and  "x.DesignTIme, Version= ..." specifications are never used.
+                    try
+                        let asmName = System.Reflection.AssemblyName designTimeAssemblyNameString
+                        Some (FileSystem.AssemblyLoad (asmName))
+                    with e ->
+                        raiseError e
 
         // If we've find a design-time assembly, look for the public types with TypeProviderAttribute
         match designTimeAssemblyOpt with
@@ -152,12 +209,17 @@ module internal ExtensionTyping =
                 try
                     let designTimeAssemblyName = 
                         try
-                            Some (System.Reflection.AssemblyName designTimeAssemblyNameString)
+                            if designTimeAssemblyNameString.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) then
+                                Some (System.Reflection.AssemblyName (Path.GetFileNameWithoutExtension designTimeAssemblyNameString))
+                            else
+                                Some (System.Reflection.AssemblyName designTimeAssemblyNameString)
                         with :? ArgumentException ->
                             errorR(Error(FSComp.SR.etInvalidTypeProviderAssemblyName(runTimeAssemblyFileName, designTimeAssemblyNameString), m))
                             None
 
                     [ match designTimeAssemblyName, resolutionEnvironment.outputFile with
+                      // Check if the attribute is pointing to the file being compiled, in which case ignore it
+                      // This checks seems like legacy but is included for compat.
                       | Some designTimeAssemblyName, Some path when String.Compare(designTimeAssemblyName.Name, Path.GetFileNameWithoutExtension path, StringComparison.OrdinalIgnoreCase) = 0 ->
                           ()
                       | Some _, _ ->

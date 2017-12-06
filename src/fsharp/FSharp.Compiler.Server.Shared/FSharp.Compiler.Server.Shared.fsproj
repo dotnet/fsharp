@@ -15,6 +15,11 @@
     <TargetFrameworkVersion Condition="'$(TargetDotnetProfile)' != 'coreclr'">v4.6</TargetFrameworkVersion>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="fsi" />
+    <InternalsVisibleTo Include="fsiAnyCpu" />
+    <InternalsVisibleTo Include="FSharp.VS.FSI" />
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="FSharpInteractiveServer.fs" />
   </ItemGroup>
@@ -34,7 +39,7 @@
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   
-  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
+  <Target Name="GatherBinariesToBeSigned" AfterTargets="CopyFilesToOutputDirectory">
     <ItemGroup>
       <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
       <FilesToSign Include="@(BinariesToBeSigned)">

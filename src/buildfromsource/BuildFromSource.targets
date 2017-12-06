@@ -10,9 +10,9 @@
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <DefineConstants>$(DefineConstants);BUILD_FROM_SOURCE</DefineConstants>
 
     <!-- Signing flags currently done using OtherFlags.  Can migrate to properties once build target updated -->
-    <DefineConstants>$(DefineConstants);STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY</DefineConstants>
     <KeyFile>$(MSBuildThisFileDirectory)../buildtools/keys/MSFT.snk</KeyFile>
     <PublicSign>true</PublicSign>
     <OtherFlags>$(OtherFlags) --publicsign --keyfile:$(KeyFile)</OtherFlags>
@@ -43,55 +43,12 @@
           Condition="'$(DesignTimeBuild)' != 'true'">
 
     <ItemGroup>
-        <Results Include="@(CopyAndSubstituteText->'$(OutDir)%(TargetFilename)')">
-            <Lines>
-                $([System.Text.RegularExpressions.Regex]::Replace($([System.IO.File]::ReadAllText("%(CopyAndSubstituteText.FullPath)")), "%(CopyAndSubstituteText.Pattern1)", "%(CopyAndSubstituteText.Replacement1)"))
-            </Lines>
-            <Lines  Condition = "'%(CopyAndSubstituteText.Pattern2)' != ''">
-                $([System.Text.RegularExpressions.Regex]::Replace($(FileText), "%(CopyAndSubstituteText.Pattern2)", "%(CopyAndSubstituteText.Replacement2)"))
-            </Lines>
-        </Results>
+      <FileTextMap Include="%(CopyAndSubstituteText.TargetFilename)">
+        <FileText>$([System.Text.RegularExpressions.Regex]::Replace($([System.IO.File]::ReadAllText("%(CopyAndSubstituteText.FullPath)")), "%(CopyAndSubstituteText.Pattern1)", "%(CopyAndSubstituteText.Replacement1)"))</FileText>
+        <FileText Condition = "'$(CurrentPattern2)' != ''">$([System.Text.RegularExpressions.Regex]::Replace($(FileText), "%(CopyAndSubstituteText.Pattern2)", "%(CopyAndSubstituteText.Replacement2)"))</FileText>
+      </FileTextMap>
     </ItemGroup>
-    
-    <WriteLinesToFile File="$(OutDir)%(Results.Filename)%(Results.Extension)" Lines="%(Results.Lines)" Overwrite="true" />
-  </Target>
-
-  <!--
-  =========================================================================
-    Build FsSrGen files.
-  =========================================================================
-  -->
-  <Target Name="CallFsSrGen"
-          Inputs="@(FsSrGen)"
-          Outputs="@(FsSrGen->'$(IntermediateOutputPath)%(Filename).fs');@(FsSrGen->'$(IntermediateOutputPath)%(Filename).resx')"
-          Condition="'@(FsSrGen)' != ''">
-
-    <PropertyGroup>
-      <FsSrGenPath>$(MSBuildThisFileDirectory)../../Tools/fssrgen/fssrgen.dll</FsSrGenPath>
-    </PropertyGroup>
-
-    <!-- Create the output directory in case it doesn't exist yet -->
-    <MakeDir Directories="$(IntermediateOutputPath)" />
-
-    <!-- Run the tool -->
-    <Exec Command="&quot;$(DotNetExePath)&quot; &quot;$(FsSrGenPath)&quot; &quot;%(FsSrGen.FullPath)&quot; &quot;$(IntermediateOutputPath)%(FsSrGen.Filename).fs&quot;  &quot;$(IntermediateOutputPath)%(FsSrGen.Filename).resx&quot; $(FsSrGenProjectName)" />
-  </Target>
-
-  <Target Name="ProcessFsSrGen"
-          DependsOnTargets="CallFsSrGen"
-          Condition="'@(FsSrGen)'!=''"
-          BeforeTargets="CoreResGen">
-
-    <ItemGroup>
-      <CompileBefore Include="$(IntermediateOutputPath)%(FsSrGen.Filename).fs" />
-      <FileWrites Include="$(IntermediateOutputPath)%(FsSrGen.Filename).fs" />
-      <FileWrites Include="$(IntermediateOutputPath)%(FsSrGen.Filename).resx" />
-      <EmbeddedResource Include="$(IntermediateOutputPath)%(FsSrGen.Filename).resx">
-        <ManifestResourceName>%(FsSrGen.Filename)</ManifestResourceName>
-        <Type>Resx</Type>
-        <WithCulture>false</WithCulture>
-      </EmbeddedResource>
-    </ItemGroup>
+    <WriteLinesToFile File="$(OutDir)%(FileTextMap.Identity)" Lines="%(FileTextMap.FileText)" Overwrite="true" />
   </Target>
 
   <ItemGroup>

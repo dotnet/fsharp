@@ -12,11 +12,16 @@ def static getBuildJobName(def configuration, def os) {
 
 [true, false].each { isPullRequest ->
     osList.each { os ->
-        def configurations = ['Debug', 'Release_ci_part1', 'Release_ci_part2', 'Release_ci_part3', 'Release_net40_no_vs' ];
-        if (os != 'Windows_NT') {
-            // Only build one configuration on Linux/... so far
-            configurations = ['Release'];
+        def configurations = [];
+        if (os == 'Windows_NT') {
+            configurations = ['Debug', 'Release_ci_part1', 'Release_ci_part2', 'Release_ci_part3', 'Release_net40_no_vs', 'Release_fcs' ];
         }
+        else
+        {
+            // Linux
+            configurations = ['Release', 'Release_fcs' ];
+        }
+        
         configurations.each { configuration ->
 
             def lowerConfiguration = configuration.toLowerCase()
@@ -24,10 +29,28 @@ def static getBuildJobName(def configuration, def os) {
             // Calculate job name
             def jobName = getBuildJobName(configuration, os)
 
+            def buildPath = '';
+            if (os == 'Windows_NT') {
+                buildPath = ".\\"
+            }
+            else {
+                buildPath = "./"
+            }
             def buildCommand = '';
-
             def buildFlavor= '';
-            if (configuration == "Debug") {
+
+            if (configuration == "Release_fcs" && branch != "dev15.5") {
+                // Build and test FCS NuGet package
+                buildPath = "./fcs/"
+                buildFlavor = ""
+                if (os == 'Windows_NT') {
+                    build_args = "TestAndNuget"
+                }
+                else {
+                    build_args = "Build"
+                }
+            }
+            else if (configuration == "Debug") {
                 buildFlavor = "debug"
                 build_args = ""
             }
@@ -46,15 +69,15 @@ def static getBuildJobName(def configuration, def os) {
                     build_args = "net40"
                 }
                 else {
-                    build_args = "ci"
+                    build_args = "none"
                 }
             }
 
             if (os == 'Windows_NT') {
-                buildCommand = ".\\build.cmd ${buildFlavor} ${build_args}"
+                buildCommand = "${buildPath}build.cmd ${buildFlavor} ${build_args}"
             }
             else {
-                buildCommand = "./build.sh ${buildFlavor} ${build_args}"
+                buildCommand = "${buildPath}build.sh ${buildFlavor} ${build_args}"
             }
 
             def newJobName = Utilities.getFullJobName(project, jobName, isPullRequest)
@@ -64,7 +87,7 @@ def static getBuildJobName(def configuration, def os) {
                         batchFile("""
 echo *** Build Visual F# Tools ***
 
-.\\build.cmd ${buildFlavor} ${build_args}""")
+${buildPath}build.cmd ${buildFlavor} ${build_args}""")
                     }
                     else {
                         // Shell
@@ -79,9 +102,16 @@ echo *** Build Visual F# Tools ***
             def affinity = configuration == 'Release_net40_no_vs' ? 'latest-or-auto' : (os == 'Windows_NT' ? 'latest-or-auto-dev15-0' : 'latest-or-auto')
             Utilities.setMachineAffinity(newJob, os, affinity)
             Utilities.standardJobSetup(newJob, project, isPullRequest, "*/${branch}")
-            Utilities.addArchival(newJob, "tests/TestResults/*.*", "", skipIfNoTestFiles, false)
-            Utilities.addArchival(newJob, "${buildFlavor}/**")
 
+            if (build_args != "none") {
+                Utilities.addArchival(newJob, "tests/TestResults/*.*", "", skipIfNoTestFiles, false)
+                if (configuration == "Release_fcs") {
+                    Utilities.addArchival(newJob, "Release/**")
+                }
+                else {
+                    Utilities.addArchival(newJob, "${buildFlavor}/**")
+                }
+            }
             if (isPullRequest) {
                 Utilities.addGithubPRTriggerForBranch(newJob, branch, "${os} ${configuration} Build")
             }

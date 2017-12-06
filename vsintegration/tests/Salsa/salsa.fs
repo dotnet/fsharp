@@ -93,9 +93,10 @@ module internal Salsa =
                     | null ->
                         let project = GlobalEngine().LoadProject(projectFileName)
                         // Set global properties.
-                        SetGlobalProperty(project,"BuildingInsideVisualStudio", "true")
-                        SetGlobalProperty(project,"Configuration", configuration)
-                        SetGlobalProperty(project,"Platform", platform)
+                        SetGlobalProperty(project, "AssemblySearchPaths", "{HintPathFromItem};{TargetFrameworkDirectory};{RawFileName}")
+                        SetGlobalProperty(project, "BuildingInsideVisualStudio", "true")
+                        SetGlobalProperty(project, "Configuration", configuration)
+                        SetGlobalProperty(project, "Platform", platform)
                         let prjColl = project.ProjectCollection
                         let hostSvc = prjColl.HostServices
                         let theHostObject = HostCompile()   
@@ -109,7 +110,7 @@ module internal Salsa =
                         | false, _ ->
                             project, false, Unchecked.defaultof<_>  // this code path is hit when unit-testing the project system, which uses its own HostObject
                 with e->
-                    printfn "Failed in MSBuild GetProject getting '%s'.\n" projectFileName 
+                    printfn "Failed in MSBuild GetProject getting '%s'.\n" projectFileName
                     raise e
             project, justCreated, theHostObject
 
@@ -240,7 +241,7 @@ module internal Salsa =
         let mutable prevConfig = ""
         let mutable prevPlatform = ""
         let GetFlags() = 
-            let newtimestamp = File.GetLastWriteTime(projectfile)
+            let newtimestamp = File.GetLastWriteTimeUtc(projectfile)
             let curConfig = configurationFunc()
             let curPlatform = platformFunc()
             if timestamp <> newtimestamp 

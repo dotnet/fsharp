@@ -8,19 +8,18 @@
     <AssemblyName>Microsoft.FSharp.Compiler</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
-    <DefineConstants>$(DefineConstants);BUILD_FROM_SOURCE</DefineConstants>
     <OtherFlags>$(OtherFlags) --warnon:1182 --maxerrors:20</OtherFlags>
   </PropertyGroup>
 
   <Import Project="..\BuildFromSource.targets" />
 
   <PropertyGroup>
-    <BuildRevision>$([System.DateTime]::Now.ToString(`yyMMdd`))</BuildRevision>
+    <BuildRevision Condition="'$(BuildRevision)' == ''">$([System.DateTime]::Now.ToString(`yyMMdd`))</BuildRevision>
     <PackageLicenceUrl Condition="'$(PackageLicenceUrl)' == ''">https://github.com/Microsoft/visualfsharp/blob/master/License.txt</PackageLicenceUrl>
     <PackageProjectUrl Condition="'$(PackageProjectUrl)' == ''">https://github.com/Microsoft/visualfsharp</PackageProjectUrl>
     <PackageAuthors    Condition="'$(PackageAuthors)' == ''"   >Microsoft and F# Software Foundation</PackageAuthors> 
     <PackageTags       Condition="'$(PackageTags)' == ''"      >Visual F# Compiler FSharp functional programming</PackageTags> 
-    <PreReleaseSuffix  Condition="'$(PreRelease)' != 'false'">-$(BuildRevision.Trim())-0</PreReleaseSuffix>
+    <PreReleaseSuffix  Condition="'$(PreRelease)' != 'false'">-rc-$(BuildRevision.Trim())-0</PreReleaseSuffix>
     <PackageVersion>4.2.0$(PreReleaseSuffix)</PackageVersion>
     <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
   </PropertyGroup>

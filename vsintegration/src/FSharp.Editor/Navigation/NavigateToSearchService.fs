@@ -233,7 +233,7 @@ type internal FSharpNavigateToSearchService
     interface INavigateToSearchService with
         member __.SearchProjectAsync(project, searchPattern, cancellationToken) : Task<ImmutableArray<INavigateToSearchResult>> =
             asyncMaybe {
-                let! parsingOptions, _options = projectInfoManager.TryGetOptionsForProject(project.Id)
+                let! parsingOptions, _site, _options = projectInfoManager.TryGetOptionsForProject(project.Id)
                 let! items =
                     project.Documents
                     |> Seq.map (fun document -> getCachedIndexedNavigableItems(document, parsingOptions))
@@ -265,7 +265,7 @@ type internal FSharpNavigateToSearchService
 
         member __.SearchDocumentAsync(document, searchPattern, cancellationToken) : Task<ImmutableArray<INavigateToSearchResult>> =
             asyncMaybe {
-                let! parsingOptions, _options = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
+                let! parsingOptions, _, _ = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
                 let! items = getCachedIndexedNavigableItems(document, parsingOptions) |> liftAsync
                 return items.Find(searchPattern)
             }

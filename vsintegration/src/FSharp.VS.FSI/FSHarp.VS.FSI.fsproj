@@ -29,23 +29,25 @@
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <Import Project="$(FSharpSourcesRoot)\..\vsintegration\vsintegration.targets" />
   <Import Project="$(VsSDKInstall)\Microsoft.VsSDK.targets" />
-  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
+  <Target Name="GatherBinariesToBeSigned" AfterTargets="CopyFilesToOutputDirectory">
     <ItemGroup>
       <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
-      <BinariesToBeSigned Include="$(OutDir)localize\**\$(AssemblyName).resources.dll" />
+      <BinariesToBeSigned Include="$(OutDir)**\$(AssemblyName).resources.dll" />
       <FilesToSign Include="@(BinariesToBeSigned)">
         <Authenticode>Microsoft</Authenticode>
         <StrongName>StrongName</StrongName>
       </FilesToSign>
     </ItemGroup>
   </Target>
+
   <ItemGroup>
-    <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
-      <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
-      <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(AssemblyName).dll.lci</LciCommentFile>
-      <HasLceComments>false</HasLceComments>
-      <InProject>false</InProject>
-    </FilesToLocalize>
+    <InternalsVisibleTo Include="FSharp.Editor" />
+    <InternalsVisibleTo Include="FSharp.LanguageService" />
+    <InternalsVisibleTo Include="FSharp.LanguageService.Base" />
+    <InternalsVisibleTo Include="FSharp.ProjectSystem.FSharp" />
+  </ItemGroup>
+
+  <ItemGroup>
     <EmbeddedText Include="VFSIstrings.txt" />
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="FSharp.VS.FSI.Attributes.fs" />
@@ -60,13 +62,13 @@
     <Compile Include="fsiSessionToolWindow.fs" />
     <Compile Include="fsiPackageHooks.fs" />
     <Compile Include="fsiPackage.fs" />
-    <EmbeddedResource Include="Properties.resx" GenerateSource="true">
+    <EmbeddedResource Include="Properties.resx">
+      <GenerateSource>true</GenerateSource>
       <GeneratedModuleName>Microsoft.VisualStudio.FSharp.Interactive.SRProperties</GeneratedModuleName>
       <GenerateLegacyCode>true</GenerateLegacyCode>
       <ManifestResourceName>Properties</ManifestResourceName>
       <Link>Properties.resx</Link>
     </EmbeddedResource>
-    <None Include="fsiCommands.vsct" />
     <EmbeddedResource Include="VSPackage.resx" />
   </ItemGroup>
   
@@ -93,7 +95,7 @@
  
   <ItemGroup>
     <Reference Include="EnvDTE.dll">
-      <HintPath>$(FSharpSourcesRoot)\..\EnvDTE.8.0.1\lib\net10\EnvDTE.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\EnvDTE.8.0.1\lib\net10\EnvDTE.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="EnvDTE80.dll">
@@ -109,7 +111,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.OLE.Interop">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.OLE.Interop.7.10.6070\lib\Microsoft.VisualStudio.OLE.Interops.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.OLE.Interop.7.10.6070\lib\Microsoft.VisualStudio.OLE.Interop.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0">
@@ -164,7 +166,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.10.0">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.TextManager.Interop.10.0.30319\lib\Microsoft.VisualStudio.TextManager.Interop.10.0.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.TextManager.Interop.10.0.10.0.30319\lib\Microsoft.VisualStudio.TextManager.Interop.10.0.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Designer.Interfaces">

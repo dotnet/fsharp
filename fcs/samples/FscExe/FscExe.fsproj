@@ -15,7 +15,6 @@
     <NoWarn>$(NoWarn);62;44</NoWarn>
     <AssemblyName>FscExe</AssemblyName>
     <Name>FscExe</Name>
-    <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
     <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
     <DefineConstants>FX_RESIDENT_COMPILER;$(DefineConstants)</DefineConstants>
     <AllowCrossTargeting>true</AllowCrossTargeting>

@@ -633,15 +633,18 @@ let _ =
     |> Array.map (fun su -> 
         let r = su.RangeAlternate 
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
+    |> Array.distinct
     |> shouldEqual 
-        [|("ConsoleKey", (5, 10, 5, 20))
-          ("field Tab", (5, 10, 5, 24))
-          ("ConsoleKey", (6, 6, 6, 16))
-          ("field OemClear", (6, 6, 6, 25))
-          ("ConsoleKey", (6, 29, 6, 39))
-          ("field A", (6, 29, 6, 41))
-          ("ConsoleKey", (7, 11, 7, 21))
-          ("field B", (7, 11, 7, 23))
+        // note: these "System" sysbol uses are not duplications because each of them corresponts to different namespaces
+        [|("System", (2, 5, 2, 11))
+          ("ConsoleKey", (5, 10, 5, 20));
+          ("field Tab", (5, 10, 5, 24)); 
+          ("ConsoleKey", (6, 6, 6, 16));
+          ("field OemClear", (6, 6, 6, 25)); 
+          ("ConsoleKey", (6, 29, 6, 39));
+          ("field A", (6, 29, 6, 41)); 
+          ("ConsoleKey", (7, 11, 7, 21));
+          ("field B", (7, 11, 7, 23)); 
           ("Test", (1, 0, 1, 0))|]
 
 [<Test>]
@@ -711,6 +714,37 @@ type Class1() =
           ("val StaticClassValue", (20, 30, 20, 46))
           ("member .cctor", (10, 5, 10, 11))
           ("Test", (1, 0, 1, 0))|]
+
+[<Test>]
+let ``IsConstructor property should return true for constructors`` () = 
+    let input = 
+      """
+type T(x: int) =
+    new() = T(0)
+let x: T()
+"""
+    let file = "/home/user/Test.fsx"
+    let _, typeCheckResults = parseAndCheckScript(file, input) 
+    typeCheckResults.GetAllUsesOfAllSymbolsInFile()
+    |> Async.RunSynchronously
+    |> Array.map (fun su -> 
+        let r = su.RangeAlternate
+        let isConstructor =
+            match su.Symbol with
+            | :? FSharpMemberOrFunctionOrValue as f -> f.IsConstructor
+            | _ -> false
+        su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn), isConstructor)
+    |> Array.distinct
+    |> shouldEqual 
+        [|("T", (2, 5, 2, 6), false)
+          ("int", (2, 10, 2, 13), false)
+          ("val x", (2, 7, 2, 8), false)
+          ("member .ctor", (2, 5, 2, 6), true)
+          ("member .ctor", (3, 4, 3, 7), true)
+          ("member .ctor", (3, 12, 3, 13), true)
+          ("T", (4, 7, 4, 8), false)
+          ("val x", (4, 4, 4, 5), false)
+          ("Test", (1, 0, 1, 0), false)|]
 
 //-------------------------------------------------------------------------------
 

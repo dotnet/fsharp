@@ -1,0 +1,35 @@
+<Project>
+
+  <!--
+
+  This is for the internal orchestrated build scenarios and will likely never be run on a
+  developer's machine.  The official build definition builds this file directly.
+
+  -->
+
+  <PropertyGroup>
+    <FeedTasksPackage>Microsoft.DotNet.Build.Tasks.Feed</FeedTasksPackage>
+    <!-- This version should be kept in sync with `packages.config` -->
+    <FeedTasksPackageVersion>1.0.0-prerelease-02219-01</FeedTasksPackageVersion>
+  </PropertyGroup>
+
+  <Import Project="$(MSBuildThisFileDirectory)packages\$(FeedTasksPackage).$(FeedTasksPackageVersion)\build\$(FeedTasksPackage).targets" />
+
+  <ItemGroup>
+    <NuGetPackages Include="$(MSBuildThisFileDirectory)artifacts\**\*.nupkg" />
+    <OtherAssets Include="$(MSBuildThisFileDirectory)insertion\**" />
+  </ItemGroup>
+
+  <Target Name="Build">
+    <PushToBlobFeed ExpectedFeedUrl="$(ExpectedFeedUrl)"
+                    AccountKey="$(AccountKey)"
+                    ItemsToPush="@(NuGetPackages)"
+                    Overwrite="$(PublishOverwrite)" />
+    <PushToBlobFeed ExpectedFeedUrl="$(ExpectedFeedUrl)"
+                    AccountKey="$(AccountKey)"
+                    ItemsToPush="@(OtherAssets)"
+                    PublishFlatContainer="true"
+                    Overwrite="$(PublishOverwrite)" />
+  </Target>
+
+</Project>

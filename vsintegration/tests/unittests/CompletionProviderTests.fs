@@ -49,6 +49,9 @@ let internal projectOptions = {
     Stamp = None
 }
 
+let formatCompletions(completions : string seq) =
+    "\n\t" + String.Join("\n\t", completions)
+
 let VerifyCompletionList(fileContents: string, marker: string, expected: string list, unexpected: string list) =
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     let results = 
@@ -57,11 +60,44 @@ let VerifyCompletionList(fileContents: string, marker: string, expected: string 
         |> Option.defaultValue (ResizeArray())
         |> Seq.map(fun result -> result.DisplayText)
 
-    for item in expected do
-        Assert.IsTrue(results.Contains(item), sprintf "Completions should contain '%s'. Got '%s'." item (String.Join(", ", results)))
+    let expectedFound =
+        expected
+        |> Seq.filter results.Contains
 
-    for item in unexpected do
-        Assert.IsFalse(results.Contains(item), sprintf "Completions should not contain '%s'. Got '{%s}'" item (String.Join(", ", results)))
+    let expectedNotFound =
+        expected
+        |> Seq.filter (expectedFound.Contains >> not)
+
+    let unexpectedNotFound =
+        unexpected
+        |> Seq.filter (results.Contains >> not)
+
+    let unexpectedFound =
+        unexpected
+        |> Seq.filter (unexpectedNotFound.Contains >> not)
+
+    // If either of these are true, then the test fails.
+    let hasExpectedNotFound = not (Seq.isEmpty expectedNotFound)
+    let hasUnexpectedFound = not (Seq.isEmpty unexpectedFound)
+
+    if hasExpectedNotFound || hasUnexpectedFound then
+        let expectedNotFoundMsg = 
+            if hasExpectedNotFound then
+                sprintf "\nExpected completions not found:%s\n" (formatCompletions expectedNotFound)
+            else
+                String.Empty
+
+        let unexpectedFoundMsg = 
+            if hasUnexpectedFound then
+                sprintf "\nUnexpected completions found:%s\n" (formatCompletions unexpectedFound)
+            else
+                String.Empty
+
+        let completionsMsg = sprintf "\nin Completions:%s" (formatCompletions results)
+
+        let msg = sprintf "%s%s%s" expectedNotFoundMsg unexpectedFoundMsg completionsMsg
+
+        Assert.Fail(msg)
 
 let VerifyCompletionListExactly(fileContents: string, marker: string, expected: string list) =
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
@@ -260,6 +296,52 @@ x.
     VerifyCompletionListExactly(fileContents, "x.", expected)
 
 [<Test>]
+let ``Constructing a new class with object initializer syntax``() =
+    let fileContents = """
+type A() =
+    member val SettableProperty = 1 with get, set
+    member val AnotherSettableProperty = 1 with get, set
+    member val NonSettableProperty = 1
+    
+let _ = new A(Setta)
+"""
+
+    let expected = ["SettableProperty"; "AnotherSettableProperty"]
+    let notExpected = ["NonSettableProperty"]
+    VerifyCompletionList(fileContents, "(Setta", expected, notExpected)
+
+[<Test>]
+let ``Constructing a new class with object initializer syntax and verifying 'at' character doesn't exist.``() =
+    let fileContents = """
+type A() =
+    member val SettableProperty = 1 with get, set
+    member val AnotherSettableProperty = 1 with get, set
+    member val NonSettableProperty = 1
+    
+let _ = new A(Setta)
+"""
+
+    let expected = []
+    let notExpected = ["SettableProperty@"; "AnotherSettableProperty@"; "NonSettableProperty@"]
+    VerifyCompletionList(fileContents, "(Setta", expected, notExpected)
+
+[<Test;Ignore("https://github.com/Microsoft/visualfsharp/issues/3954")>]
+let ``Constructing a new fully qualified class with object initializer syntax without ending paren``() =
+    let fileContents = """
+module M =
+    type A() =
+        member val SettableProperty = 1 with get, set
+        member val AnotherSettableProperty = 1 with get, set
+        member val NonSettableProperty = 1
+    
+let _ = new M.A(Setta
+"""
+
+    let expected = ["SettableProperty"; "AnotherSettableProperty"]
+    let notExpected = ["NonSettableProperty"]
+    VerifyCompletionList(fileContents, "(Setta", expected, notExpected)
+
+[<Test>]
 let ``Extension methods go after everything else, extension properties are treated as normal ones``() =
     let fileContents = """
 open System.Collections.Generic
@@ -393,6 +475,18 @@ let ``Provide completion on lambda argument type hint``() =
 let _ = fun (p:i) -> ()
 """
     VerifyCompletionList(fileContents, "let _ = fun (p:i", ["int"], [])
+
+[<Test>]
+let ``Extensions.Bug5162``() =
+    let fileContents = """
+module Extensions =
+    type System.Object with
+        member x.P = 1
+module M2 =
+    let x = 1
+    Ext
+"""
+    VerifyCompletionList(fileContents, "    Ext", ["Extensions"; "ExtraTopLevelOperators"], [])
 
 #if EXE
 ShouldDisplaySystemNamespace()

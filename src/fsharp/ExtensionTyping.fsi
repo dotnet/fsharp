@@ -4,7 +4,7 @@
 
 namespace Microsoft.FSharp.Compiler
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 
 module internal ExtensionTyping =
 
@@ -23,6 +23,9 @@ module internal ExtensionTyping =
 
     /// Raised when an type provider has thrown an exception.    
     exception ProvidedTypeResolutionNoRange of exn
+
+    /// Get the list of relative paths searched for type provider design-time components
+    val toolingCompatiblePaths: unit -> string list
 
     /// Carries information about the type provider resolution environment.
     type ResolutionEnvironment =

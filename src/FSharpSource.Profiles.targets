@@ -3,12 +3,14 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup Condition="'$(TargetDotnetProfile)'=='net40'">
-    <DefineConstants Condition="'$(MonoPackaging)' == 'true'">$(DefineConstants);CROSS_PLATFORM_COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);PREFERRED_UI_LANG</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
     <DefineConstants>$(DefineConstants);BE_SECURITY_TRANSPARENT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_LCIDFROMCODEPAGE</DefineConstants>
   </PropertyGroup>
+
+  <!-- Note: The TargetDotnetProfile value 'coreclr' currently covers all of netstandard1.6, netstandard2.0 and netcoreapp2.0 in a confused way -->
+  <!-- These should be distinguished in the future -->
 
   <PropertyGroup Condition="'$(TargetDotnetProfile)'=='coreclr'">
     <DefineConstants>$(DefineConstants);FX_PORTABLE_OR_NETSTANDARD</DefineConstants>
