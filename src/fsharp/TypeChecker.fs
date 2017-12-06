@@ -691,7 +691,7 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath env =
             | None -> enclosingNamespacePath
 
         let ad = env.eAccessRights
-        match ResolveLongIndentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap scopem OpenQualified env.eNameResEnv ad enclosingNamespacePathToOpen with 
+        match ResolveLongIndentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap scopem OpenQualified env.eNameResEnv ad enclosingNamespacePathToOpen true with 
         | Result modrefs -> 
             let modrefs = List.map p23 modrefs
             let openDecl = OpenDeclaration.Create (enclosingNamespacePathToOpen, modrefs, scopem, true)
@@ -6783,7 +6783,7 @@ and TcConstExpr cenv overallTy env m tpenv c  =
         let expr = 
             let modName = "NumericLiteral" + suffix
             let ad = env.eAccessRights
-            match ResolveLongIndentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AtMostOneResult cenv.amap m OpenQualified env.eNameResEnv ad [ident (modName, m)] with 
+            match ResolveLongIndentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AtMostOneResult cenv.amap m OpenQualified env.eNameResEnv ad [ident (modName, m)] false with 
             | Result []
             | Exception _ -> error(Error(FSComp.SR.tcNumericLiteralRequiresModule(modName), m))
             | Result ((_, mref, _) :: _) -> 
@@ -12054,7 +12054,7 @@ let TcTyconMemberSpecs cenv env containerInfo declKind tpenv (augSpfn: SynMember
 let TcModuleOrNamespaceLidAndPermitAutoResolve tcSink env amap (longId : Ident list) =
     let ad = env.eAccessRights
     let m = longId |> List.map (fun id -> id.idRange) |> List.reduce unionRanges
-    match ResolveLongIndentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap m OpenQualified env.eNameResEnv ad longId  with 
+    match ResolveLongIndentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap m OpenQualified env.eNameResEnv ad longId true with 
     | Result res -> Result res
     | Exception err ->  raze err
 
@@ -13551,7 +13551,7 @@ module MutRecBindingChecking =
     /// Check a "module X = A.B.C" module abbreviation declaration
     let TcModuleAbbrevDecl (cenv:cenv) scopem env (id, p, m) = 
         let ad = env.eAccessRights
-        let mvvs = ForceRaise (ResolveLongIndentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m OpenQualified env.eNameResEnv ad p)
+        let mvvs = ForceRaise (ResolveLongIndentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m OpenQualified env.eNameResEnv ad p false)
         let modrefs = mvvs |> List.map p23 
         if modrefs.Length > 0 && modrefs |> List.forall (fun modref -> modref.IsNamespace) then 
             errorR(Error(FSComp.SR.tcModuleAbbreviationForNamespace(fullDisplayTextOfModRef (List.head modrefs)), m))
@@ -16334,7 +16334,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
             
         | SynModuleSigDecl.ModuleAbbrev (id, p, m) -> 
             let ad = env.eAccessRights
-            let mvvs = ForceRaise (ResolveLongIndentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m OpenQualified env.eNameResEnv ad p)
+            let mvvs = ForceRaise (ResolveLongIndentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m OpenQualified env.eNameResEnv ad p false)
             let scopem = unionRanges m endm
             let unfilteredModrefs = mvvs |> List.map p23
             
