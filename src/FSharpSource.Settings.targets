@@ -57,6 +57,10 @@
     <NUnitFullVersion>3.5.0.0</NUnitFullVersion>
     <NUnitLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.$(NUnitVersion)\lib\net45</NUnitLibDir>
     <NUnitToolsLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.ConsoleRunner\$(NUnitVersion)\tools\</NUnitToolsLibDir>
+
+    <!-- Localization -->
+    <UpdateXlfOnBuild Condition="'$(CI)' != '1'">true</UpdateXlfOnBuild>
+    <XliffTasksVersion>0.2.0-beta-000076</XliffTasksVersion>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -154,6 +158,14 @@
     <FsiToolPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.27\tools</FsiToolPath>
   </PropertyGroup>
 
+  <Import Project="$(MSBuildThisFileDirectory)..\packages\XliffTasks.$(XliffTasksVersion)\build\XliffTasks.props" Condition="'$(DisableLocalization)' != 'true'" />
+
+  <PropertyGroup>
+    <!-- in addition to the standard xlf languages, also provide a baseline en->en file -->
+    <XlfLanguages>en;$(XlfLanguages)</XlfLanguages>
+  </PropertyGroup>
+
+  <Import Project="$(RestorePackagesPath)\XliffTasks.$(XliffTasksVersion)\build\XliffTasks.targets" Condition="'$(DisableLocalization)' != 'true'" />
   <Import Project="../Tools/Build.Common.props" Condition="'$(TargetDotnetProfile)'=='coreclr'"/>
   <Import Project="$(BuildVersionFilePath)"     Condition="Exists('$(BuildVersionFilePath)')" />
 

@@ -57,7 +57,7 @@
 
       <DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETFramework_4.0_4.4.1.0_$(var.LocaleId)">
         <Component Id="Runtime_LangPack_4.4.1.0_FSharp.Core_LangPack" Transitive="yes" Guid="$(fsharp.guid(Runtime_LangPack_4.4.1.0_FSharp.Core_LangPack, $(var.LocaleCode)))">
-        <File Id="Runtime_LangPack_4.4.1.0_FSharp.Core.resources.dll" Source="$(var.BinariesDir)\net40\bin\localize\$(var.LocaleCode)\FSharp.Core.resources.dll" KeyPath="yes" />
+        <File Id="Runtime_LangPack_4.4.1.0_FSharp.Core.resources.dll" Source="$(var.BinariesDir)\net40\bin\$(var.LocaleParentCulture)\FSharp.Core.resources.dll" KeyPath="yes" />
         </Component>
       </DirectoryRef>
       <DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETPortable_3.47.41.0_$(var.LocaleId)">
