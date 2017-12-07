@@ -19,7 +19,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class Strings {
@@ -192,6 +192,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Solid_underline {
             get {
                 return ResourceManager.GetString("Solid_underline", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Show code fixes for unused values.
+        /// </summary>
+        public static string Unused_declaration_code_fix {
+            get {
+                return ResourceManager.GetString("Unused_declaration_code_fix", resourceCulture);
             }
         }
         

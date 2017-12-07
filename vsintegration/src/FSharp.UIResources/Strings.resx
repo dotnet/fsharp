@@ -165,4 +165,7 @@
   <data name="Unused_opens_code_fix" xml:space="preserve">
     <value>Remove unused open statements</value>
   </data>
+  <data name="Unused_declaration_code_fix" xml:space="preserve">
+    <value>Show code fixes for unused values</value>
+  </data>
 </root>
