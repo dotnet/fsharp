@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.CompileOptions
 
@@ -7,6 +7,7 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Ast
@@ -58,7 +59,6 @@ val FilterCompilerOptionBlock : (CompilerOption -> bool) -> CompilerOptionBlock 
 /// Parse and process a set of compiler options
 val ParseCompilerOptions : (string -> unit) * CompilerOptionBlock list * string list -> unit
 
-
 //----------------------------------------------------------------------------
 // Compiler Options
 //--------------------------------------------------------------------------
@@ -68,6 +68,9 @@ val DisplayBannerText : TcConfigBuilder -> unit
 val GetCoreFscCompilerOptions     : TcConfigBuilder -> CompilerOptionBlock list
 val GetCoreFsiCompilerOptions     : TcConfigBuilder -> CompilerOptionBlock list
 val GetCoreServiceCompilerOptions : TcConfigBuilder -> CompilerOptionBlock list
+
+/// Apply args to TcConfigBuilder and return new list of source files
+val ApplyCommandLineArgs: tcConfigB: TcConfigBuilder * sourceFiles: string list * argv: string list -> string list
 
 // Expose the "setters" for some user switches, to enable setting of defaults
 val SetOptimizeSwitch : TcConfigBuilder -> OptionSwitch -> unit
@@ -87,7 +90,7 @@ val CreateIlxAssemblyGenerator : TcConfig * TcImports * TcGlobals * ConstraintSo
 val GenerateIlxCode : IlxGen.IlxGenBackend * isInteractiveItExpr:bool * isInteractiveOnMono:bool * TcConfig * TypeChecker.TopAttribs * TypedAssemblyAfterOptimization * fragName:string * IlxGen.IlxAssemblyGenerator -> IlxGen.IlxGenResults
 
 // Used during static linking
-val NormalizeAssemblyRefs : TcImports -> (AbstractIL.IL.ILScopeRef -> AbstractIL.IL.ILScopeRef)
+val NormalizeAssemblyRefs : CompilationThreadToken * TcImports -> (AbstractIL.IL.ILScopeRef -> AbstractIL.IL.ILScopeRef)
 
 // Miscellany
 val ignoreFailureOnMono1_1_16 : (unit -> unit) -> unit
@@ -97,4 +100,3 @@ val DoWithErrorColor : bool -> (unit -> 'a) -> 'a
 val ReportTime : TcConfig -> string -> unit
 val GetAbbrevFlagSet : TcConfigBuilder -> bool -> Set<string>
 val PostProcessCompilerArgs : string Set -> string [] -> string list
-val ParseCompilerOptions : (string -> unit) * CompilerOptionBlock list * string list -> unit

@@ -1,4 +1,4 @@
-// #Regression #NoMono #NoMT #CodeGen #EmittedIL #NETFX20Only #NETFX40Only 
+// #Regression #NoMono #NoMT #CodeGen #EmittedIL   
 // Regression test for FSHARP1.0:1206
 // A long long time ago (before the fix, e.g. in release 1.9.2.9 Sept 2007)
 // we used to emit IL like this:

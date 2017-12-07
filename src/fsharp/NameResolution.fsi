@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.NameResolution
 
@@ -22,6 +22,9 @@ type NameResolver =
     member amap : ImportMap
     member g : TcGlobals
 
+/// Get the active pattern elements defined in a module, if any. Cache in the slot in the module type.
+val ActivePatternElemsOfModuleOrNamespace : ModuleOrNamespaceRef -> NameMap<ActivePatternElemRef>
+
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 /// Represents the item with which a named argument is associated.
 type ArgumentContainer =
@@ -43,37 +46,91 @@ val (|AbbrevOrAppTy|_|) : TType -> TyconRef option
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 /// Represents an item that results from name resolution
 type Item = 
-  // These exist in the "eUnqualifiedItems" List.map in the type environment. 
-  | Value of  ValRef
-  // UnionCaseInfo and temporary flag which is used to show a "use case is deprecated" message
-  | UnionCase of UnionCaseInfo * bool 
-  | ActivePatternResult of ActivePatternInfo * TType * int  * range
-  | ActivePatternCase of ActivePatternElemRef 
-  | ExnCase of TyconRef 
-  | RecdField of RecdFieldInfo
-  | NewDef of Ident
-  | ILField of ILFieldInfo
-  | Event of EventInfo
-  | Property of string * PropInfo list
-  | MethodGroup of displayName: string * methods: MethInfo list * uninstantiatedMethodOpt: MethInfo option
-  | CtorGroup of string * MethInfo list
-  | FakeInterfaceCtor of TType
-  | DelegateCtor of TType
-  | Types of string * TType list
-  /// CustomOperation(operationName, operationHelpText, operationImplementation).
-  /// 
-  /// Used to indicate the availability or resolution of a custom query operation such as 'sortBy' or 'where' in computation expression syntax
-  | CustomOperation of string * (unit -> string option) * MethInfo option
-  | CustomBuilder of string * ValRef
-  | TypeVar of string * Typar
-  | ModuleOrNamespaces of Tast.ModuleOrNamespaceRef list
-  /// Represents the resolution of a source identifier to an implicit use of an infix operator (+solution if such available)
-  | ImplicitOp of Ident * TraitConstraintSln option ref
-  /// Represents the resolution of a source identifier to a named argument
-  | ArgName of Ident * TType * ArgumentContainer option
-  | SetterArg of Ident * Item 
-  | UnqualifiedType of TyconRef list
-  member DisplayName : string
+    /// Represents the resolution of a name to an F# value or function.
+    | Value of  ValRef
+
+    /// Represents the resolution of a name to an F# union case.
+    | UnionCase of UnionCaseInfo * bool
+
+    /// Represents the resolution of a name to an F# active pattern result.
+    | ActivePatternResult of ActivePatternInfo * TType * int  * range
+
+    /// Represents the resolution of a name to an F# active pattern case within the body of an active pattern.
+    | ActivePatternCase of ActivePatternElemRef 
+
+    /// Represents the resolution of a name to an F# exception definition.
+    | ExnCase of TyconRef 
+
+    /// Represents the resolution of a name to an F# record field.
+    | RecdField of RecdFieldInfo
+
+    // The following are never in the items table but are valid results of binding 
+    // an identifier in different circumstances. 
+
+    /// Represents the resolution of a name at the point of its own definition.
+    | NewDef of Ident
+
+    /// Represents the resolution of a name to a .NET field 
+    | ILField of ILFieldInfo
+
+    /// Represents the resolution of a name to an event
+    | Event of EventInfo
+
+    /// Represents the resolution of a name to a property
+    | Property of string * PropInfo list
+
+    /// Represents the resolution of a name to a group of methods. 
+    | MethodGroup of displayName: string * methods: MethInfo list * uninstantiatedMethodOpt: MethInfo option
+
+    /// Represents the resolution of a name to a constructor
+    | CtorGroup of string * MethInfo list
+
+    /// Represents the resolution of a name to the fake constructor simulated for an interface type.
+    | FakeInterfaceCtor of TType
+
+    /// Represents the resolution of a name to a delegate
+    | DelegateCtor of TType
+
+    /// Represents the resolution of a name to a group of types
+    | Types of string * TType list
+
+    /// CustomOperation(nm, helpText, methInfo)
+    /// 
+    /// Used to indicate the availability or resolution of a custom query operation such as 'sortBy' or 'where' in computation expression syntax
+    | CustomOperation of string * (unit -> string option) * MethInfo option
+
+    /// Represents the resolution of a name to a custom builder in the F# computation expression syntax
+    | CustomBuilder of string * ValRef
+
+    /// Represents the resolution of a name to a type variable
+    | TypeVar of string * Typar
+
+    /// Represents the resolution of a name to a module or namespace
+    | ModuleOrNamespaces of Tast.ModuleOrNamespaceRef list
+
+    /// Represents the resolution of a name to an operator
+    | ImplicitOp of Ident * TraitConstraintSln option ref
+
+    /// Represents the resolution of a name to a named argument
+    | ArgName of Ident * TType * ArgumentContainer option
+
+    /// Represents the resolution of a name to a named property setter
+    | SetterArg of Ident * Item 
+
+    /// Represents the potential resolution of an unqualified name to a type.
+    | UnqualifiedType of TyconRef list
+
+    member DisplayName : string
+
+[<RequireQualifiedAccess>]
+/// Pairs an Item with a TyparInst showing how generic type variables of the item are instantiated at 
+/// a particular usage point.
+type ItemWithInst = 
+    { Item : Item
+      TyparInst: TyparInst }
+
+val (|ItemWithInst|) : ItemWithInst -> Item * TyparInst
+val ItemWithNoInst : Item -> ItemWithInst
 
 /// Represents a record field resolution and the information if the usage is deprecated.
 type FieldResolution = FieldResolution of RecdFieldRef * bool
@@ -189,6 +246,7 @@ type internal ItemOccurence =
     | Pattern 
     | Implemented 
     | RelatedText
+    | Open
   
 /// Check for equality, up to signature matching
 val ItemsAreEffectivelyEqual : TcGlobals -> Item -> Item -> bool
@@ -201,7 +259,10 @@ type internal CapturedNameResolution =
     /// Named item
     member Item : Item
 
-    /// Information about the occurence of the symbol
+    /// The active instantiation for any generic type parameters
+    member ItemWithInst: ItemWithInst
+
+    /// Information about the occurrence of the symbol
     member ItemOccurence : ItemOccurence
 
     /// Information about printing. For example, should redundant keywords be hidden?
@@ -248,9 +309,28 @@ type internal TcSymbolUses =
     member GetAllUsesOfSymbols : unit -> (Item * ItemOccurence * DisplayEnv * range)[]
 
     /// Get the locations of all the printf format specifiers in the file
-    member GetFormatSpecifierLocations : unit -> range[]
+    member GetFormatSpecifierLocationsAndArity : unit -> (range * int)[]
 
+/// Represents open declaration statement.
+type internal OpenDeclaration =
+    { /// Long identifier as it's presented in soruce code.
+      LongId: Ident list
+      
+      /// Full range of the open declaration.
+      Range : range option
 
+      /// Modules or namespaces which is opened with this declaration.
+      Modules: ModuleOrNamespaceRef list 
+      
+      /// Scope in which open declaration is visible.
+      AppliedScope: range 
+      
+      /// If it's `namespace Xxx.Yyy` declaration.
+      IsOwnNamespace: bool }
+    
+    /// Create a new instance of OpenDeclaration.
+    static member Create : longId: Ident list * modules: ModuleOrNamespaceRef list * appliedScope: range * isOwnNamespace: bool -> OpenDeclaration
+    
 /// An abstract type for reporting the results of name resolution and type checking
 type ITypecheckResultsSink =
 
@@ -261,10 +341,13 @@ type ITypecheckResultsSink =
     abstract NotifyExprHasType    : pos * TType * DisplayEnv * NameResolutionEnv * AccessorDomain * range -> unit
 
     /// Record that a name resolution occurred at a specific location in the source
-    abstract NotifyNameResolution : pos * Item * Item * ItemOccurence * DisplayEnv * NameResolutionEnv * AccessorDomain * range * bool -> unit
+    abstract NotifyNameResolution : pos * Item * Item * TyparInst * ItemOccurence * DisplayEnv * NameResolutionEnv * AccessorDomain * range * bool -> unit
 
     /// Record that a printf format specifier occurred at a specific location in the source
-    abstract NotifyFormatSpecifierLocation : range -> unit
+    abstract NotifyFormatSpecifierLocation : range * int -> unit
+
+    /// Record that an open declaration occured in a given scope range
+    abstract NotifyOpenDeclaration : OpenDeclaration -> unit
 
     /// Get the current source
     abstract CurrentSource : string option
@@ -278,8 +361,12 @@ type internal TcResultsSinkImpl =
     /// Get all the resolutions reported to the sink
     member GetResolutions : unit -> TcResolutions
 
-    /// Get all the uses of all symbols remorted to the sink
+    /// Get all the uses of all symbols reported to the sink
     member GetSymbolUses : unit -> TcSymbolUses
+
+    /// Get all open declarations reported to the sink
+    member OpenDeclarations : OpenDeclaration list
+
     interface ITypecheckResultsSink
 
 /// An abstract type for reporting the results of name resolution and type checking, and which allows
@@ -299,13 +386,16 @@ val internal TemporarilySuspendReportingTypecheckResultsToSink : TcResultsSink -
 val internal CallEnvSink                : TcResultsSink -> range * NameResolutionEnv * AccessorDomain -> unit
 
 /// Report a specific name resolution at a source range
-val internal CallNameResolutionSink     : TcResultsSink -> range * NameResolutionEnv * Item * Item * ItemOccurence * DisplayEnv * AccessorDomain -> unit
+val internal CallNameResolutionSink     : TcResultsSink -> range * NameResolutionEnv * Item * Item * TyparInst * ItemOccurence * DisplayEnv * AccessorDomain -> unit
 
 /// Report a specific name resolution at a source range, replacing any previous resolutions
-val internal CallNameResolutionSinkReplacing     : TcResultsSink -> range * NameResolutionEnv * Item * Item * ItemOccurence * DisplayEnv * AccessorDomain -> unit
+val internal CallNameResolutionSinkReplacing     : TcResultsSink -> range * NameResolutionEnv * Item * Item * TyparInst * ItemOccurence * DisplayEnv * AccessorDomain -> unit
 
 /// Report a specific name resolution at a source range
 val internal CallExprHasTypeSink        : TcResultsSink -> range * NameResolutionEnv * TType * DisplayEnv * AccessorDomain -> unit
+
+/// Report an open declaration
+val internal CallOpenDeclarationSink    : TcResultsSink -> OpenDeclaration -> unit
 
 /// Get all the available properties of a type (both intrinsic and extension)
 val internal AllPropInfosOfTypeInScope : InfoReader -> NameResolutionEnv -> string option * AccessorDomain -> FindMemberFlag -> range -> TType -> PropInfo list
@@ -383,29 +473,34 @@ val internal ResolvePartialLongIdentToClassOrRecdFields : NameResolver -> NameRe
 /// Return the fields for the given class or record
 val internal ResolveRecordOrClassFieldsOfType       : NameResolver -> range -> AccessorDomain -> TType -> bool -> Item list
 
-/// An adjustment to perform to the name resolution results if overload resolution fails.
-/// If overload resolution succeeds, the specific overload resolution is reported. If it fails, the 
-/// set of possible overloads is reported via this adjustment.
-type IfOverloadResolutionFails = IfOverloadResolutionFails of (unit -> unit)
-
-/// Specifies if overload resolution needs to notify Language Service of overload resolution
+/// Specifies extra work to do after overload resolution 
 [<RequireQualifiedAccess>]
-type AfterOverloadResolution =
+type AfterResolution =
     /// Notification is not needed
-    |   DoNothing
-    /// Notify the sink
-    |   SendToSink of (Item -> unit) * IfOverloadResolutionFails // overload resolution failure fallback
-    /// Find override among given overrides and notify the sink. The 'Item' contains the candidate overrides.
-    |   ReplaceWithOverrideAndSendToSink of Item * (Item -> unit) * IfOverloadResolutionFails // overload resolution failure fallback
+    | DoNothing
+
+    /// Notify the sink of the information needed to complete recording a use of a symbol
+    /// for the purposes of the language service.  One of the callbacks should be called by 
+    /// the checker.
+    ///
+    /// The first callback represents a case where we have learned the type 
+    /// instantiation of a generic method or value.
+    ///
+    /// The second represents the case where we have resolved overloading and/or 
+    /// a specific override. The 'Item option' contains the candidate overrides.
+    | RecordResolution of Item option * (TyparInst -> unit) * (MethInfo * PropInfo option * TyparInst -> unit) * (unit -> unit)
 
 /// Resolve a long identifier occurring in an expression position.
-val internal ResolveLongIdentAsExprAndComputeRange  : TcResultsSink -> NameResolver -> range -> AccessorDomain -> NameResolutionEnv -> TypeNameResolutionInfo -> Ident list -> Item * range * Ident list * AfterOverloadResolution
+val internal ResolveLongIdentAsExprAndComputeRange  : TcResultsSink -> NameResolver -> range -> AccessorDomain -> NameResolutionEnv -> TypeNameResolutionInfo -> Ident list -> Item * range * Ident list * AfterResolution
 
 /// Resolve a long identifier occurring in an expression position, qualified by a type.
-val internal ResolveExprDotLongIdentAndComputeRange : TcResultsSink -> NameResolver -> range -> AccessorDomain -> NameResolutionEnv -> TType -> Ident list -> FindMemberFlag -> bool -> Item * range * Ident list * AfterOverloadResolution
+val internal ResolveExprDotLongIdentAndComputeRange : TcResultsSink -> NameResolver -> range -> AccessorDomain -> NameResolutionEnv -> TType -> Ident list -> FindMemberFlag -> bool -> Item * range * Ident list * AfterResolution
 
 /// A generator of type instantiations used when no more specific type instantiation is known.
 val FakeInstantiationGenerator : range -> Typar list -> TType list
+
+/// Try to resolve a long identifier as type.
+val TryToResolveLongIdentAsType : NameResolver -> NameResolutionEnv -> range -> string list -> TType option
 
 /// Resolve a (possibly incomplete) long identifier to a set of possible resolutions.
 val ResolvePartialLongIdent : NameResolver -> NameResolutionEnv -> (MethInfo -> TType -> bool) -> range -> AccessorDomain -> string list -> bool -> Item list
@@ -419,3 +514,5 @@ type ResolveCompletionTargets =
 val ResolveCompletionsInType       : NameResolver -> NameResolutionEnv -> ResolveCompletionTargets -> Range.range -> AccessorDomain -> bool -> TType -> Item list
 
 val GetVisibleNamespacesAndModulesAtPoint : NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> ModuleOrNamespaceRef list
+
+val IsItemResolvable : NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> Item -> bool

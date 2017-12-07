@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Internal.Utilities
 open System
@@ -137,9 +137,15 @@ module internal FSharpEnvironment =
                 null)
 
     let is32Bit = IntPtr.Size = 4
+    
+    let runningOnMono = try System.Type.GetType("Mono.Runtime") <> null with e-> false
 
     let tryRegKey(subKey:string) = 
 
+        //if we are runing on mono simply return None
+        // GetDefaultRegistryStringValueViaDotNet will result in an access denied by default, 
+        // and Get32BitRegistryStringValueViaPInvoke will fail due to Advapi32.dll not existing
+        if runningOnMono then None else
         if is32Bit then
             let s = GetDefaultRegistryStringValueViaDotNet(subKey)
             // If we got here AND we're on a 32-bit OS then we can validate that Get32BitRegistryStringValueViaPInvoke(...) works
@@ -154,15 +160,16 @@ module internal FSharpEnvironment =
 #endif
 
     let internal tryCurrentDomain() =
+        let pathFromCurrentDomain = 
 #if FX_NO_APP_DOMAINS
-        None
+            System.AppContext.BaseDirectory
 #else
-        let pathFromCurrentDomain = System.AppDomain.CurrentDomain.BaseDirectory
+            System.AppDomain.CurrentDomain.BaseDirectory
+#endif
         if not(String.IsNullOrEmpty(pathFromCurrentDomain)) then 
             Some pathFromCurrentDomain
         else
             None
-#endif
 
 #if FX_NO_SYSTEM_CONFIGURATION
     let internal tryAppConfig (_appConfigKey:string) = None
@@ -183,20 +190,19 @@ module internal FSharpEnvironment =
     // The default location of FSharp.Core.dll and fsc.exe based on the version of fsc.exe that is running
     // Used for
     //     - location of design-time copies of FSharp.Core.dll and FSharp.Compiler.Interactive.Settings.dll for the default assumed environment for scripts
-    //     - default ToolPath in tasks in FSharp.Build.dll (for Fsc tasks)
+    //     - default ToolPath in tasks in FSharp.Build.dll (for Fsc tasks, but note a probe location is given)
     //     - default F# binaries directory in service.fs (REVIEW: check this)
-    //     - default location of fsi.exe in FSharp.VS.FSI.dll
-    //     - default location of fsc.exe in FSharp.Compiler.CodeDom.dll
+    //     - default location of fsi.exe in FSharp.VS.FSI.dll (REVIEW: check this)
     //     - default F# binaries directory in (project system) Project.fs
+    let BinFolderOfDefaultFSharpCompiler(probePoint:string option) = 
 #if FX_NO_WIN_REGISTRY
-    let BinFolderOfDefaultFSharpCompiler = 
+        ignore probePoint
 #if FX_NO_APP_DOMAINS
         Some System.AppContext.BaseDirectory
 #else
-    Some System.AppDomain.CurrentDomain.BaseDirectory
+        Some System.AppDomain.CurrentDomain.BaseDirectory
 #endif
 #else
-    let BinFolderOfDefaultFSharpCompiler = 
         // Check for an app.config setting to redirect the default compiler location
         // Like fsharp-compiler-location
         try 
@@ -205,37 +211,40 @@ module internal FSharpEnvironment =
             match result with 
             | Some _ ->  result 
             | None -> 
-
-                // On windows the location of the compiler is via a registry key
-
-                // Note: If the keys below change, be sure to update code in:
-                // Property pages (ApplicationPropPage.vb)
-
-                let key20 = @"Software\Microsoft\.NETFramework\AssemblyFolders\Microsoft.FSharp-" + FSharpTeamVersionNumber 
-#if VS_VERSION_DEV12
-                let key40 = @"Software\Microsoft\FSharp\3.1\Runtime\v4.0"
-#endif
-#if VS_VERSION_DEV14
-                let key40 = @"Software\Microsoft\FSharp\4.0\Runtime\v4.0"
-#endif
-#if VS_VERSION_DEV15
-                let key40 = @"Software\Microsoft\FSharp\4.1\Runtime\v4.0"
-#endif
-                let key1,key2 = 
-                    match FSharpCoreLibRunningVersion with 
-                    | None -> key20,key40 
-                    | Some v -> if v.Length > 1 && v.[0] <= '3' then key20,key40 else key40,key20
+            
+            let safeExists f = (try File.Exists(f) with _ -> false)
+            // Look in the probePoint if given, e.g. look for a compiler alongside of FSharp.Build.dll
+            match probePoint with 
+            | Some p when safeExists (Path.Combine(p,"FSharp.Core.dll")) -> Some p 
+            | _ -> 
                 
-                let result = tryRegKey key1
-                match result with 
-                | Some _ ->  result 
-                | None -> 
-                    let result =  tryRegKey key2
-                    match result with 
-                    | Some _ ->  result 
-                    | None ->
-                        // For the prototype compiler, we can just use the current domain
-                        tryCurrentDomain()
+            // On windows the location of the compiler is via a registry key
+
+            // Note: If the keys below change, be sure to update code in:
+            // Property pages (ApplicationPropPage.vb)
+
+            let key1 = @"Software\Microsoft\FSharp\4.1\Runtime\v4.0"
+            let key2 = @"Software\Microsoft\FSharp\4.0\Runtime\v4.0"
+
+            let result = tryRegKey key1
+            match result with 
+            | Some _ ->  result 
+            | None -> 
+            let result =  tryRegKey key2
+            match result with 
+            | Some _ ->  result 
+            | None ->
+
+            // On Unix we let you set FSHARP_COMPILER_BIN. I've rarely seen this used and its not documented in the install instructions.
+            let result = 
+                let var = System.Environment.GetEnvironmentVariable("FSHARP_COMPILER_BIN")
+                if String.IsNullOrEmpty(var) then None
+                else Some(var)
+            match result with 
+            | Some _ -> result
+            | None -> 
+            // For the prototype compiler, we can just use the current domain
+            tryCurrentDomain()
         with e -> 
             System.Diagnostics.Debug.Assert(false, "Error while determining default location of F# compiler")
             None
@@ -253,15 +262,18 @@ module internal FSharpEnvironment =
 
     // Check if the framework version 4.5 or above is installed at the given key entry 
     let IsNetFx45OrAboveInstalledAt subkey =
+      try
         useKey subkey (fun regkey ->
             match regkey with
             | null -> false
             | _ -> regkey.GetValue("Release", 0) :?> int |> (fun s -> s >= 0x50000)) // 0x50000 implies 4.5.0
-
+      with _ -> false
+ 
     // Check if the framework version 4.5 or above is installed
     let IsNetFx45OrAboveInstalled =
         IsNetFx45OrAboveInstalledAt @"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Client" ||
-        IsNetFx45OrAboveInstalledAt @"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full" 
+        IsNetFx45OrAboveInstalledAt @"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full" ||
+        runningOnMono
 
     // Check if the running framework version is 4.5 or above.
     // Use the presence of v4.5.x in the registry to distinguish between 4.0 and 4.5

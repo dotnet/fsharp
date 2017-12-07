@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 using System;
 using System.Reflection;
@@ -28,4 +28,4 @@ using Microsoft.VisualStudio.Shell;
 
 [assembly: CLSCompliant(true)]
 
-[assembly: ProvideCodeBase(CodeBase = @"$PackageFolder$\FSharp.LanguageService.Base.dll")]
+[assembly: Microsoft.VisualStudio.Shell.ProvideCodeBase (CodeBase = @"$PackageFolder$\FSharp.LanguageService.Base.dll")]

@@ -69,35 +69,17 @@ neg20.fs(53,38,53,39): typecheck error FS0001: This expression was expected to h
 but here has type
     'int'    
 
-neg20.fs(60,26,60,33): typecheck error FS0001: This expression was expected to have type
-    'B'    
-but here has type
-    'A'    
+neg20.fs(60,26,60,33): typecheck error FS0001: All elements of a list constructor expression must have the same type. This expression was expected to have type 'B', but here has type 'A'.
 
-neg20.fs(61,27,61,35): typecheck error FS0001: This expression was expected to have type
-    'B1'    
-but here has type
-    'B2'    
+neg20.fs(61,27,61,35): typecheck error FS0001: All elements of a list constructor expression must have the same type. This expression was expected to have type 'B1', but here has type 'B2'.
 
-neg20.fs(62,26,62,33): typecheck error FS0001: This expression was expected to have type
-    'C'    
-but here has type
-    'B'    
+neg20.fs(62,26,62,33): typecheck error FS0001: All elements of a list constructor expression must have the same type. This expression was expected to have type 'C', but here has type 'B'.
 
-neg20.fs(66,25,66,32): typecheck error FS0001: This expression was expected to have type
-    'A'    
-but here has type
-    'B'    
+neg20.fs(66,25,66,32): typecheck error FS0001: All elements of a list constructor expression must have the same type. This expression was expected to have type 'A', but here has type 'B'.
 
-neg20.fs(67,27,67,34): typecheck error FS0001: This expression was expected to have type
-    'B'    
-but here has type
-    'C'    
+neg20.fs(67,27,67,34): typecheck error FS0001: All elements of a list constructor expression must have the same type. This expression was expected to have type 'B', but here has type 'C'.
 
-neg20.fs(70,31,70,38): typecheck error FS0001: This expression was expected to have type
-    'B'    
-but here has type
-    'C'    
+neg20.fs(70,31,70,38): typecheck error FS0001: All elements of a list constructor expression must have the same type. This expression was expected to have type 'B', but here has type 'C'.
 
 neg20.fs(71,34,71,42): typecheck error FS0001: Type mismatch. Expecting a
     'A list'    
@@ -128,12 +110,9 @@ but given a
     'B list'    
 The type 'A' does not match the type 'B'
 
-neg20.fs(83,47,83,54): typecheck error FS0001: All branches of an 'if' expression must return the same type. This expression was expected to have type 'B' but here has type 'C'.
+neg20.fs(83,47,83,54): typecheck error FS0001: All branches of an 'if' expression must have the same type. This expression was expected to have type 'B', but here has type 'C'.
 
-neg20.fs(87,54,87,61): typecheck error FS0001: This expression was expected to have type
-    'B'    
-but here has type
-    'C'    
+neg20.fs(87,54,87,61): typecheck error FS0001: All branches of a pattern match expression must have the same type. This expression was expected to have type 'B', but here has type 'C'.
 
 neg20.fs(92,19,92,26): typecheck error FS0001: This expression was expected to have type
     'A'    
@@ -150,10 +129,7 @@ neg20.fs(97,26,97,33): typecheck error FS0001: This expression was expected to h
 but here has type
     'B'    
 
-neg20.fs(99,26,99,33): typecheck error FS0001: This expression was expected to have type
-    'B'    
-but here has type
-    'A'    
+neg20.fs(99,26,99,33): typecheck error FS0001: All elements of a list constructor expression must have the same type. This expression was expected to have type 'B', but here has type 'A'.
 
 neg20.fs(128,19,128,22): typecheck error FS0001: This expression was expected to have type
     'string'    
@@ -165,7 +141,7 @@ neg20.fs(129,19,129,22): typecheck error FS0001: This expression was expected to
 but here has type
     'string'    
 
-neg20.fs(131,5,131,24): typecheck error FS0041: No overloads match for method 'OM3'. The available overloads are shown below (or in the Error List window).
+neg20.fs(131,5,131,24): typecheck error FS0041: No overloads match for method 'OM3'. The available overloads are shown below.
 neg20.fs(131,5,131,24): typecheck error FS0041: Possible overload: 'static member C.OM3 : x:'b * y:int -> int'. Type constraint mismatch. The type 
     'obj'    
 is not compatible with type
@@ -205,7 +181,7 @@ neg20.fs(166,13,166,35): typecheck error FS0502: The member or object constructo
 
 neg20.fs(167,13,167,31): typecheck error FS0502: The member or object constructor 'M5' takes 2 type argument(s) but is here given 1. The required signature is 'member C.M5 : y:'a * z:'b -> int'.
 
-neg20.fs(182,14,182,31): typecheck error FS0041: No overloads match for method 'M'. The available overloads are shown below (or in the Error List window).
+neg20.fs(182,14,182,31): typecheck error FS0041: No overloads match for method 'M'. The available overloads are shown below.
 neg20.fs(182,14,182,31): typecheck error FS0041: Possible overload: 'static member C2.M : fmt:string * [<System.ParamArray>] args:int [] -> string'. Type constraint mismatch. The type 
     'obj'    
 is not compatible with type
@@ -242,7 +218,7 @@ neg20.fs(184,34,184,39): typecheck error FS0001: This expression was expected to
 but here has type
     'obj'    
 
-neg20.fs(188,14,188,31): typecheck error FS0041: No overloads match for method 'M'. The available overloads are shown below (or in the Error List window).
+neg20.fs(188,14,188,31): typecheck error FS0041: No overloads match for method 'M'. The available overloads are shown below.
 neg20.fs(188,14,188,31): typecheck error FS0041: Possible overload: 'static member C3.M : fmt:string * [<System.ParamArray>] args:string [] -> string'. Type constraint mismatch. The type 
     'obj'    
 is not compatible with type
@@ -355,9 +331,9 @@ neg20.fs(319,8,319,17): typecheck error FS3132: This type definition may not hav
 
 neg20.fs(322,8,322,18): typecheck error FS3132: This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.
 
-neg20.fs(335,11,335,24): typecheck error FS0041: A unique overload for method 'String' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: System.String(value: char []) : unit, System.String(value: nativeptr<char>) : unit, System.String(value: nativeptr<sbyte>) : unit
+neg20.fs(335,11,335,24): typecheck error FS0041: A unique overload for method 'String' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: System.String(value: char []) : System.String, System.String(value: nativeptr<char>) : System.String, System.String(value: nativeptr<sbyte>) : System.String
 
-neg20.fs(336,11,336,22): typecheck error FS0041: A unique overload for method 'Guid' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: System.Guid(b: byte []) : unit, System.Guid(g: string) : unit
+neg20.fs(336,11,336,22): typecheck error FS0041: A unique overload for method 'Guid' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: System.Guid(b: byte []) : System.Guid, System.Guid(g: string) : System.Guid
 
 neg20.fs(355,19,355,38): typecheck error FS1124: Multiple types exist called 'OverloadedClassName', taking different numbers of generic parameters. Provide a type instantiation to disambiguate the type resolution, e.g. 'OverloadedClassName<_>'.
 
@@ -373,10 +349,14 @@ neg20.fs(373,22,373,41): typecheck error FS1124: Multiple types exist called 'Ov
 
 neg20.fs(382,19,382,40): typecheck error FS1124: Multiple types exist called 'OverloadedClassName', taking different numbers of generic parameters. Provide a type instantiation to disambiguate the type resolution, e.g. 'OverloadedClassName<_>'.
 
-neg20.fs(383,39,383,41): typecheck error FS0039: The field, constructor or member 'S2' is not defined. Maybe you want one of the following: S
+neg20.fs(383,39,383,41): typecheck error FS0039: The field, constructor or member 'S2' is not defined. Maybe you want one of the following:
+
+   S
 
 neg20.fs(428,19,428,38): typecheck error FS1133: No constructors are available for the type 'OverloadedClassName<'a,'b>'
 
 neg20.fs(430,22,430,41): typecheck error FS1133: No constructors are available for the type 'OverloadedClassName<'a,'b>'
 
-neg20.fs(444,39,444,41): typecheck error FS0039: The field, constructor or member 'S2' is not defined. Maybe you want one of the following: S
+neg20.fs(444,39,444,41): typecheck error FS0039: The field, constructor or member 'S2' is not defined. Maybe you want one of the following:
+
+   S

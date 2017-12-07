@@ -638,10 +638,18 @@ do
  }>"""
     test "test17" baseLine q
     
-if !failures > 0 then 
-    printfn "Test Failed" 
-    exit 1
-else 
-    printfn "Test Passed"; 
-    System.IO.File.WriteAllText("test.ok","ok"); 
-    exit 0
+
+#if TESTS_AS_APP
+let RUN() = !failures
+#else
+let aa =
+  match !failures with 
+  | 0 -> 
+      stdout.WriteLine "Test Passed"
+      System.IO.File.WriteAllText("test.ok","ok")
+      exit 0
+  | _ -> 
+      stdout.WriteLine "Test Failed"
+      exit 1
+#endif
+

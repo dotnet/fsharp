@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 #nowarn "44" // This construct is deprecated. please use List.item
 namespace FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Collections
@@ -7,7 +7,7 @@ open System
 open FSharp.Core.Unittests.LibraryTestFx
 open NUnit.Framework
 
-[<TestFixture>]
+[<TestFixture>][<Category "Collections.List">][<Category "FSharp.Core.Collections">]
 type ObsoleteListFunctions() =        
     [<Test>]
     member this.Nth() = 

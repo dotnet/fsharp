@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // Various tests for Microsoft.FSharp.Quotations
 
@@ -10,6 +10,9 @@ open NUnit.Framework
 open Microsoft.FSharp.Quotations
 
 type E = Microsoft.FSharp.Quotations.Expr;;
+
+type StaticIndexedPropertyTest() =
+    static member IdxProp with get (n : int) = n + 1
 
 module Check =
     let argumentException f =
@@ -66,6 +69,17 @@ type FSharpQuotationsTests() =
         |   ExprShape.ShapeCombination(shape, [value;lambda]) ->
                 let wrongValue = <@ "!" @>
                 Check.argumentException(fun () -> ExprShape.RebuildShapeCombination(shape, [wrongValue;lambda]))
+        |   _ -> Assert.Fail()
+
+    [<Test>]
+    member x.ReShapeStaticIndexedProperties() = 
+        let q0 = <@ StaticIndexedPropertyTest.IdxProp 5 @>
+        match q0 with
+        |   ExprShape.ShapeCombination(shape, args) ->
+                try
+                    ExprShape.RebuildShapeCombination(shape, args) |> ignore
+                with
+                | _ -> Assert.Fail()
         |   _ -> Assert.Fail()
 
     [<Test>]

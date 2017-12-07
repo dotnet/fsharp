@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
@@ -7,7 +7,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Security;
-using System.Windows; 
+using System.Windows;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using System.Drawing;
@@ -36,7 +36,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return this.node;
             }
         }
-        
+
         public DocumentManager(HierarchyNode node)
         {
             this.node = node;
@@ -184,7 +184,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return (pvar as string);
         }
-        
+
         public void CloseWindowFrame(ref IVsWindowFrame windowFrame)
         {
             if (windowFrame != null)

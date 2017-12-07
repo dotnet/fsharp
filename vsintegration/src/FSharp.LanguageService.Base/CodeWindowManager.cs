@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 using System;
 using System.Collections;
@@ -35,7 +35,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         TypeAndMemberDropdownBars dropDownHelper;
         IVsCodeWindow codeWindow;
         ArrayList viewFilters;
-        LanguageService service;
+        LanguageService_DEPRECATED service;
         ISource source;
 #if DOCUMENT_PROPERTIES
         DocumentProperties properties;
@@ -46,7 +46,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         /// the IVsLanguageInfo.GetCodeWindowManager method.  You can override CreateCodeWindowManager
         /// on your LanguageService if you want to plug in a different CodeWindowManager.
         /// </summary>
-        internal CodeWindowManager(LanguageService service, IVsCodeWindow codeWindow, ISource source) {
+        internal CodeWindowManager(LanguageService_DEPRECATED service, IVsCodeWindow codeWindow, ISource source) {
             this.service = service;
             this.codeWindow = codeWindow;
             this.viewFilters = new ArrayList();
@@ -90,7 +90,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         }
 
         /// <summary>Returns the LanguageService object that created this code window manager</summary>
-        internal LanguageService LanguageService {
+        internal LanguageService_DEPRECATED LanguageService {
             get { return this.service; }
         }
         /// <summary>returns the Source object associated with the IVsTextLines buffer for this code window</summary>
@@ -223,7 +223,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
     /// </summary>
     internal abstract class TypeAndMemberDropdownBars : IVsDropdownBarClient {
         /// <summary>The language service object that created this object and calls its SynchronizeDropdowns method</summary>
-        private LanguageService languageService;
+        private LanguageService_DEPRECATED languageService;
 
         /// <summary>The correspoding VS object that represents the two drop down bars. The VS object uses call backs to pull information from
         /// this object and makes itself known to this object by calling SetDropdownBar</summary>
@@ -247,7 +247,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         const int DropClasses = 0;
         const int DropMethods = 1;
 
-        protected TypeAndMemberDropdownBars(LanguageService languageService) {
+        protected TypeAndMemberDropdownBars(LanguageService_DEPRECATED languageService) {
             this.languageService = languageService;
             this.dropDownTypes = new ArrayList();
             this.dropDownMembers = new ArrayList();
@@ -286,7 +286,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         /// <param name="selectedType">The selected type (you can update this)</param>
         /// <param name="selectedMember">The selected member (you can update this)</param>
         /// <returns>true if something was updated</returns>
-        public abstract bool OnSynchronizeDropdowns(LanguageService languageService, IVsTextView textView, int line, int col, ArrayList dropDownTypes, ArrayList dropDownMembers, ref int selectedType, ref int selectedMember);
+        public abstract bool OnSynchronizeDropdowns(LanguageService_DEPRECATED languageService, IVsTextView textView, int line, int col, ArrayList dropDownTypes, ArrayList dropDownMembers, ref int selectedType, ref int selectedMember);
 
 
         // IVsDropdownBarClient methods

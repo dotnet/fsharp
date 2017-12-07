@@ -1,52 +1,43 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Text.RegularExpressions
 open System.Composition
 open System.Collections.Generic
-open System.Threading
-open System.Threading.Tasks
-open System.Runtime.CompilerServices
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Classification
-open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.SignatureHelp
 open Microsoft.CodeAnalysis.Text
 
-open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.Text
-open Microsoft.VisualStudio.Text.Tagging
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 
 open Microsoft.FSharp.Compiler.Layout
-open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 
 [<Shared>]
-[<ExportSignatureHelpProvider("FSharpSignatureHelpProvider", FSharpCommonConstants.FSharpLanguageName)>]
+[<ExportSignatureHelpProvider("FSharpSignatureHelpProvider", FSharpConstants.FSharpLanguageName)>]
 type internal FSharpSignatureHelpProvider 
     [<ImportingConstructor>]
     (
         serviceProvider: SVsServiceProvider,
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: FSharpProjectOptionsManager
     ) =
 
+    static let userOpName = "SignatureHelpProvider"
     let xmlMemberIndexService = serviceProvider.GetService(typeof<IVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
 
     static let oneColAfter (lp: LinePosition) = LinePosition(lp.Line,lp.Character+1)
     static let oneColBefore (lp: LinePosition) = LinePosition(lp.Line,max 0 (lp.Character-1))
 
-    // Unit-testable core rutine
+    // Unit-testable core routine
     static member internal ProvideMethodsAsyncAux(checker: FSharpChecker, documentationBuilder: IDocumentationBuilder, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, triggerIsTypedChar: char option, filePath: string, textVersionHash: int) = async {
-        let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
+        let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options, userOpName = userOpName)
         match checkFileAnswer with
         | FSharpCheckFileAnswer.Aborted -> return None
         | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
@@ -65,7 +56,7 @@ type internal FSharpSignatureHelpProvider
         let lidEnd = nwpl.LongIdEndLocation
 
         // Get the methods
-        let! methodGroup = checkFileResults.GetMethodsAlternate(lidEnd.Line, lidEnd.Column, "", Some names)
+        let! methodGroup = checkFileResults.GetMethods(lidEnd.Line, lidEnd.Column, "", Some names)
 
         let methods = methodGroup.Methods
 
@@ -139,7 +130,7 @@ type internal FSharpSignatureHelpProvider
                 
             match (computedTextSpans|> Array.tryFindIndex (fun t -> t.Contains(caretPosition))) with 
             | None -> 
-                // Because 'TextSpan.Contains' only succeeeds if 'TextSpan.Start <= caretPosition < TextSpan.End' is true,
+                // Because 'TextSpan.Contains' only succeeds if 'TextSpan.Start <= caretPosition < TextSpan.End' is true,
                 // we need to check if the caret is at the very last position in the TextSpan.
                 //
                 // We default to 0, which is the first argument, if the caret position was nowhere to be found.
@@ -162,22 +153,22 @@ type internal FSharpSignatureHelpProvider
                 None  // not a named argument
 
         // Prepare the results
-        let results = List<_>()
+        let results = ResizeArray()
 
         for method in methods do
             // Create the documentation. Note, do this on the background thread, since doing it in the documentationBuild fails to build the XML index
-            let mainDescription = List()
-            let documentation = List()
-            XmlDocumentation.BuildMethodOverloadTipText(documentationBuilder, CommonRoslynHelpers.CollectTaggedText mainDescription, CommonRoslynHelpers.CollectTaggedText documentation, method.StructuredDescription, false)
+            let mainDescription = ResizeArray()
+            let documentation = ResizeArray()
+            XmlDocumentation.BuildMethodOverloadTipText(documentationBuilder, RoslynHelpers.CollectTaggedText mainDescription, RoslynHelpers.CollectTaggedText documentation, method.StructuredDescription, false)
 
             let parameters = 
                 let parameters = if isStaticArgTip then method.StaticParameters else method.Parameters
                 [| for p in parameters do 
                       let doc = List()
                       // FSROSLYNTODO: compute the proper help text for parameters, c.f. AppendParameter in XmlDocumentation.fs
-                      XmlDocumentation.BuildMethodParamText(documentationBuilder, CommonRoslynHelpers.CollectTaggedText doc, method.XmlDoc, p.ParameterName) 
+                      XmlDocumentation.BuildMethodParamText(documentationBuilder, RoslynHelpers.CollectTaggedText doc, method.XmlDoc, p.ParameterName) 
                       let parts = List()
-                      renderL (taggedTextListR (CommonRoslynHelpers.CollectTaggedText parts)) p.StructuredDisplay |> ignore
+                      renderL (taggedTextListR (RoslynHelpers.CollectTaggedText parts)) p.StructuredDisplay |> ignore
                       yield (p.ParameterName, p.IsOptional, doc, parts) 
                 |]
 
@@ -205,7 +196,7 @@ type internal FSharpSignatureHelpProvider
         member this.GetItemsAsync(document, position, triggerInfo, cancellationToken) = 
             asyncMaybe {
               try
-                let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! textVersion = document.GetTextVersionAsync(cancellationToken)
 
@@ -215,7 +206,7 @@ type internal FSharpSignatureHelpProvider
                     else None
 
                 let! (results,applicableSpan,argumentIndex,argumentCount,argumentName) = 
-                    FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(checkerProvider.Checker, documentationBuilder, sourceText, position, options, triggerTypedChar, document.FilePath, textVersion.GetHashCode())
+                    FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(checkerProvider.Checker, documentationBuilder, sourceText, position, projectOptions, triggerTypedChar, document.FilePath, textVersion.GetHashCode())
                 let items = 
                     results 
                     |> Array.map (fun (hasParamArrayArg, doc, prefixParts, separatorParts, suffixParts, parameters, descriptionParts) ->
@@ -230,18 +221,17 @@ type internal FSharpSignatureHelpProvider
                 return! None
             } 
             |> Async.map Option.toObj
-            |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+            |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
 open System.ComponentModel.Composition
 open Microsoft.VisualStudio.Utilities
-open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Classification
 open Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.SignatureHelp.Presentation
 
 // Enable colorized signature help for F# buffers
 
 [<Export(typeof<IClassifierProvider>)>]
-[<ContentType(FSharpCommonConstants.FSharpSignatureHelpContentTypeName)>]
+[<ContentType(FSharpConstants.FSharpSignatureHelpContentTypeName)>]
 type internal FSharpSignatureHelpClassifierProvider [<ImportingConstructor>] (typeMap) =
     interface IClassifierProvider with
         override __.GetClassifier (buffer: ITextBuffer) =

@@ -1,19 +1,19 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open Microsoft.VisualStudio.Text.Editor
-open Microsoft.VisualStudio.OLE.Interop
 open System.ComponentModel.Composition
+
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Editor
+open Microsoft.VisualStudio.OLE.Interop
+open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.Utilities
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp.Interactive
-open EnvDTE
 
 type internal FsiCommandFilter(serviceProvider: System.IServiceProvider) =
 
@@ -37,15 +37,14 @@ type internal FsiCommandFilter(serviceProvider: System.IServiceProvider) =
 
     interface IOleCommandTarget with
         member x.Exec (pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut) =
-            if pguidCmdGroup = VSConstants.VsStd11 then
-                if nCmdId = uint32 VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive then
-                    Hooks.OnMLSend projectSystemPackage.Value FsiEditorSendAction.ExecuteSelection null null
-                elif nCmdId = uint32 VSConstants.VSStd11CmdID.ExecuteLineInInteractive then
-                    Hooks.OnMLSend projectSystemPackage.Value FsiEditorSendAction.ExecuteLine null null
+            if pguidCmdGroup = VSConstants.VsStd11 && nCmdId = uint32 VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive then
+                Hooks.OnMLSend projectSystemPackage.Value FsiEditorSendAction.ExecuteSelection null null
                 VSConstants.S_OK
-            elif pguidCmdGroup = Guids.guidInteractive then
-                if nCmdId = uint32 Guids.cmdIDDebugSelection then
-                    Hooks.OnMLSend projectSystemPackage.Value FsiEditorSendAction.DebugSelection null null
+            elif pguidCmdGroup = VSConstants.VsStd11 && nCmdId = uint32 VSConstants.VSStd11CmdID.ExecuteLineInInteractive then
+                Hooks.OnMLSend projectSystemPackage.Value FsiEditorSendAction.ExecuteLine null null
+                VSConstants.S_OK
+            elif pguidCmdGroup = Guids.guidInteractive && nCmdId = uint32 Guids.cmdIDDebugSelection then
+                Hooks.OnMLSend projectSystemPackage.Value FsiEditorSendAction.DebugSelection null null
                 VSConstants.S_OK
             elif not (isNull nextTarget) then
                 nextTarget.Exec(&pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut)
@@ -75,7 +74,7 @@ type internal FsiCommandFilter(serviceProvider: System.IServiceProvider) =
                 VSConstants.E_FAIL
 
 [<Export(typeof<IWpfTextViewCreationListener>)>]
-[<ContentType(FSharpCommonConstants.FSharpContentTypeName)>]
+[<ContentType(FSharpConstants.FSharpContentTypeName)>]
 [<TextViewRole(PredefinedTextViewRoles.PrimaryDocument)>]
 type internal FsiCommandFilterProvider [<ImportingConstructor>] 
     ([<Import(typeof<SVsServiceProvider>)>] serviceProvider: System.IServiceProvider,

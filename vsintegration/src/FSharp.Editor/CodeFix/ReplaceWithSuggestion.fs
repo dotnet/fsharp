@@ -1,35 +1,25 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace rec Microsoft.VisualStudio.FSharp.Editor
+namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
 open System.Collections.Immutable
-open System.Threading
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
-open Microsoft.CodeAnalysis.CodeActions
+open SymbolHelpers
+open Microsoft.FSharp.Compiler.SourceCodeServices.Keywords
 
-[<ExportCodeFixProvider(FSharpCommonConstants.FSharpLanguageName, Name = "ReplaceWithSuggestion"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ReplaceWithSuggestion"); Shared>]
 type internal FSharpReplaceWithSuggestionCodeFixProvider() =
     inherit CodeFixProvider()
-    let fixableDiagnosticIds = ["FS0039"; "FS1129"; "FS0495"] |> Set.ofList
+    let fixableDiagnosticIds = set ["FS0039"; "FS1129"; "FS0495"]
     let maybeString = FSComp.SR.undefinedNameSuggestionsIntro()
         
-    let createCodeFix (title: string, context: CodeFixContext, textChange: TextChange) =
-        CodeAction.Create(
-            title,
-            (fun (cancellationToken: CancellationToken) ->
-                async {
-                    let! sourceText = context.Document.GetTextAsync()
-                    return context.Document.WithText(sourceText.WithChanges(textChange))
-                } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)),
-            title)
-
-    override __.FixableDiagnosticIds = fixableDiagnosticIds.ToImmutableArray()
+    override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
     override __.RegisterCodeFixesAsync context : Task =
         async { 
@@ -43,14 +33,14 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider() =
                         parts.[1].Split([| '\r'; '\n' |], StringSplitOptions.RemoveEmptyEntries) 
                         |> Array.map (fun s -> s.Trim())
                     
-                    let diagnostics = [| diagnostic |].ToImmutableArray()
+                    let diagnostics = ImmutableArray.Create diagnostic
 
                     for suggestion in suggestions do
-                        let replacement = if suggestion.Contains " " then "``" + suggestion + "``" else suggestion
+                        let replacement = QuoteIdentifierIfNeeded suggestion
                         let codefix = 
-                            createCodeFix(
+                            createTextChangeCodeFix(
                                 FSComp.SR.replaceWithSuggestion suggestion, 
                                 context,
-                                TextChange(context.Span, replacement))
+                                (fun () -> asyncMaybe.Return [| TextChange(context.Span, replacement) |]))
                         context.RegisterCodeFix(codefix, diagnostics))
-        } |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+        } |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

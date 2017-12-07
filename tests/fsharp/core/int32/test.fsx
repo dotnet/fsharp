@@ -5,17 +5,28 @@ module Core_int32
 
 #light
 
-let failures = ref false
-let report_failure (s) = 
-  stderr.WriteLine ("NO: " + s); failures := true; failwith ""
-let test s b = if b then () else report_failure(s) 
+let failures = ref []
+
+let report_failure (s : string) = 
+    stderr.Write" NO: "
+    stderr.WriteLine s
+    failures := !failures @ [s]
+
+let test (s : string) b = 
+    stderr.Write(s)
+    if b then stderr.WriteLine " OK"
+    else report_failure (s)
+
 
 (* TEST SUITE FOR Int32 *)
 
 
 
 do stdout.WriteLine "checking unchecked conversions"; 
+#if MONO // https://github.com/fsharp/fsharp/issues/186
+#else
 do test "testb3" (try nativeint 0.0 = 0n with _ -> false)
+#endif
 do test "testnr6" (try int64 0.0 = 0L with _ -> false)
 do test "testn46" (try int32 0.0 = 0 with _ -> false)
 do test "testqb3" (try int16 0.0 = 0s with _ -> false)
@@ -407,8 +418,17 @@ module MinMaxAbsNative = begin
            
 end
 
+#if TESTS_AS_APP
+let RUN() = !failures
+#else
 let aa =
-  if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
-  else (stdout.WriteLine "Test Passed"; 
-        System.IO.File.WriteAllText("test.ok","ok"); 
-        exit 0)
+  match !failures with 
+  | [] -> 
+      stdout.WriteLine "Test Passed"
+      System.IO.File.WriteAllText("test.ok","ok")
+      exit 0
+  | _ -> 
+      stdout.WriteLine "Test Failed"
+      exit 1
+#endif
+

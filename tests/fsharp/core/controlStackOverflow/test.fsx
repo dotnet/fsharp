@@ -262,7 +262,6 @@ module StackDiveTests =
           (so8 10000 |> Async.RunSynchronously)
           8
 
-  test()
 
 module ReturnStackoverflow =
     let test () =
@@ -400,22 +399,22 @@ module ReturnStackoverflow =
              |  :? System.OperationCanceledException -> "success")
             "success"
 
-    test()
 (*******************************************************************************)
+let RunAll() = 
+    StackDiveTests.test()
+    ReturnStackoverflow.test()
+
 #if TESTS_AS_APP
-let aa = 
-    if not failures.IsEmpty then exit 1
-    else stdout.WriteLine "Test Passed"; exit 0
+let RUN() = RunAll(); failures
 #else
-let _ = 
-  if not failures.IsEmpty then (stdout.WriteLine("Test Failed, failures = {0}", failures); exit 1) 
-  else (stdout.WriteLine "Test Passed"; 
-        log "ALL OK, HAPPY HOLIDAYS, MERRY CHRISTMAS!"
-        System.IO.File.WriteAllText("test.ok","ok"); 
-// debug: why is the fsi test failing?  is it because test.ok does not exist?
-        if System.IO.File.Exists("test.ok") then
-            stdout.WriteLine ("test.ok found at {0}", System.IO.FileInfo("test.ok").FullName)
-        else
-            stdout.WriteLine ("test.ok not found")
-        exit 0)
+RunAll()
+let aa =
+  if not failures.IsEmpty then 
+      stdout.WriteLine "Test Failed"
+      exit 1
+  else   
+      stdout.WriteLine "Test Passed"
+      log "ALL OK, HAPPY HOLIDAYS, MERRY CHRISTMAS!"
+      System.IO.File.WriteAllText("test.ok","ok")
+      exit 0
 #endif

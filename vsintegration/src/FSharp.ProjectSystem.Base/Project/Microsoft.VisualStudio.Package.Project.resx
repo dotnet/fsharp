@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -406,6 +406,9 @@
   </data>
   <data name="FileOrFolderAlreadyExists" xml:space="preserve">
     <value>A file or folder with the name '{0}' already exists on disk at this location. Please choose another name.</value>
+  </data>
+  <data name="FolderCannotBeRenamed" xml:space="preserve">
+    <value>This folder cannot be renamed to '{0}' as it already exists on disk.\n\nOnly empty folders can be renamed to existing folders. This folder contains files within it on disk.</value>
   </data>
   <data name="BuildCaption" xml:space="preserve">
     <value>Build</value>

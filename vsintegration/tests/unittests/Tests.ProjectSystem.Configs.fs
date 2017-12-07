@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Tests.ProjectSystem
 
@@ -22,7 +22,7 @@ open UnitTests.TestLib.Utils.FilesystemHelpers
 open UnitTests.TestLib.ProjectSystem
 
 
-[<TestFixture>]
+[<TestFixture>][<Category "ProjectSystem">]
 type Config() = 
     inherit TheTests()
 
@@ -38,7 +38,7 @@ type Config() =
             (fun project ccn projFileName ->
                 ccn((project :> IVsHierarchy), "Debug|x86")
                 project.ComputeSourcesAndFlags()
-                let flags = project.GetCompileFlags() |> List.ofArray
+                let flags = project.CompilationOptions |> List.ofArray
                 Assert.IsTrue(List.exists (fun s -> s = "--platform:x86") flags)
                 ()
         ))

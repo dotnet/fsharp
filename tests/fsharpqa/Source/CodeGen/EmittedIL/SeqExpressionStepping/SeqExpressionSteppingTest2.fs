@@ -1,4 +1,4 @@
-// #NoMono #NoMT #CodeGen #EmittedIL #Sequences #NETFX20Only #NETFX40Only 
+// #NoMono #NoMT #CodeGen #EmittedIL #Sequences   
 module SeqExpressionSteppingTest2 // Regression test for FSHARP1.0:4058
 module SeqExpressionSteppingTest2 = 
     let f1 () = 

@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.16774
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:4:1:0
 }
 .assembly ModuleWithExpression01
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.ModuleWithExpression01
 {
-  // Offset: 0x00000000 Length: 0x00000232
+  // Offset: 0x00000000 Length: 0x0000020E
 }
 .mresource public FSharpOptimizationData.ModuleWithExpression01
 {
-  // Offset: 0x00000238 Length: 0x000000A6
+  // Offset: 0x00000218 Length: 0x000000A6
 }
 .module ModuleWithExpression01.exe
-// MVID: {4DAC0DE7-CD1E-A8B4-A745-0383E70DAC4D}
+// MVID: {59B19213-CD1E-A8B4-A745-03831392B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x0000000000700000
+// Image base: 0x030A0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -60,11 +60,10 @@
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       3 (0x3)
+      // Code size       2 (0x2)
       .maxstack  8
-      IL_0000:  nop
-      IL_0001:  ldc.i4.1
-      IL_0002:  ret
+      IL_0000:  ldc.i4.1
+      IL_0001:  ret
     } // end of method M::get_x
 
     .property int32 x()
@@ -85,20 +84,19 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       24 (0x18)
+    // Code size       23 (0x17)
     .maxstack  3
     .locals init ([0] int32 x)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 8,8 : 5,20 
-    IL_0000:  nop
-    IL_0001:  ldstr      "hello"
-    IL_0006:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-    IL_000b:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_0010:  pop
-    .line 9,9 : 5,14 
-    IL_0011:  call       int32 ModuleWithExpression01/M::get_x()
-    IL_0016:  stloc.0
-    IL_0017:  ret
+    .line 8,8 : 5,20 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Misc\\ModuleWithExpression01.fs'
+    IL_0000:  ldstr      "hello"
+    IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+    IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+    IL_000f:  pop
+    .line 9,9 : 5,14 ''
+    IL_0010:  call       int32 ModuleWithExpression01/M::get_x()
+    IL_0015:  stloc.0
+    IL_0016:  ret
   } // end of method $ModuleWithExpression01::main@
 
 } // end of class '<StartupCode$ModuleWithExpression01>'.$ModuleWithExpression01

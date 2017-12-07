@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// <summary>This namespace contains constructs for reflecting on the representation of
 /// F# values and types. It augments the design of System.Reflection.</summary>
@@ -70,8 +70,8 @@ type FSharpValue =
     /// <returns>A function to read the specified field from the record.</returns>
     static member PreComputeRecordFieldReader : info:PropertyInfo -> (obj -> obj)
 
-#if FX_RESHAPED_REFLECTION
-#else
+// These APIs are only internal for portable profile, 7,78 and 259 of FSHarp.Core.dll --- those profiles System.Reflection.BindingFlags
+#if !FX_NO_SYSTEM_BINDINGFLAGS
     /// <summary>Creates an instance of a record type.</summary>
     ///
     /// <remarks>Assumes the given input is a record type.</remarks>
@@ -263,8 +263,7 @@ type FSharpValue =
 /// <summary>Contains operations associated with constructing and analyzing F# types such as records, unions and tuples</summary>
 type FSharpType =
 
-#if FX_RESHAPED_REFLECTION
-#else
+#if !FX_NO_SYSTEM_BINDINGFLAGS
     /// <summary>Reads all the fields from a record value, in declaration order</summary>
     ///
     /// <remarks>Assumes the given input is a record value. If not, ArgumentException is raised.</remarks>
@@ -530,8 +529,8 @@ namespace Microsoft.FSharp.Reflection
 open Microsoft.FSharp.Core
 
 module internal ReflectionUtils = 
-#if FX_RESHAPED_REFLECTION
-    type internal BindingFlags = ReflectionAdapters.BindingFlags
+#if FX_NO_SYSTEM_BINDINGFLAGS
+    type BindingFlags = ReflectionAdapters.BindingFlags
 #else
     type BindingFlags = System.Reflection.BindingFlags
 #endif

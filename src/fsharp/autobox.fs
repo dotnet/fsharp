@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.AutoBox 
 
@@ -187,7 +187,7 @@ let TransformImplFile g amap implFile =
         implFile |> 
           RewriteImplFile { PreIntercept = Some(TransformExpr g nvs)
                             PreInterceptBinding = Some(TransformBinding g nvs)
-                            PostTransform= (fun _ -> None)
-                            IsUnderQuotations=false } 
+                            PostTransform = (fun _ -> None)
+                            IsUnderQuotations = false } 
 
 

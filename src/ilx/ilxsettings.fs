@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.IlxSettings 
 
@@ -11,10 +11,10 @@ open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX
 type IlxCallImplementation = 
   | VirtEntriesVirtCode
 
-//++GLOBAL MUTABLE STATE
+//++GLOBAL MUTABLE STATE (concurrency-safe because assigned only during F# library compilation)
 let ilxCompilingFSharpCoreLib = ref false
 
-//++GLOBAL MUTABLE STATE
+//++GLOBAL MUTABLE STATE (concurrency-safe because assigned only during F# library compilation)
 let ilxFsharpCoreLibAssemRef = ref (None : ILAssemblyRef option)
 
 /// Scope references for FSharp.Core.dll

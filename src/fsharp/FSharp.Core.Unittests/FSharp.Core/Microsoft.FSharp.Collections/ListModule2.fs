@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // Various tests for the:
 // Microsoft.FSharp.Collections.List module
@@ -25,7 +25,7 @@ type ListWindowedTestInput<'t> =
         Exception : Type option
     }
 
-[<TestFixture>]
+[<TestFixture>][<Category "Collections.List">][<Category "FSharp.Core.Collections">]
 type ListModule02() =
     [<Test>]
     member this.Length() =
@@ -234,8 +234,8 @@ type ListModule02() =
         Assert.AreEqual("BBC", resultStrAcc)
 
         // empty List
-        let resultEpt,resultEptAcc = List.mapFold funcInt 100 []
-        Assert.AreEqual(([] : int list), resultEpt)
+        let (resultEpt: int list),resultEptAcc = List.mapFold funcInt 100 []
+        Assert.AreEqual(([]: int list), resultEpt)
         Assert.AreEqual(100, resultEptAcc)
 
         ()
@@ -260,8 +260,8 @@ type ListModule02() =
         Assert.AreEqual("CBB", resultStrAcc)
 
         // empty List
-        let resultEpt,resultEptAcc = List.mapFoldBack funcInt [] 100
-        Assert.AreEqual(([] : int list),  resultEpt)
+        let (resultEpt: int list),resultEptAcc = List.mapFoldBack funcInt [] 100
+        Assert.AreEqual(([]: int list), resultEpt)
         Assert.AreEqual(100, resultEptAcc)
 
         ()

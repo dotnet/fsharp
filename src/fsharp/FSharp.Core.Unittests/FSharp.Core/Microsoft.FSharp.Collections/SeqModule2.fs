@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Collections
 
@@ -15,7 +15,7 @@ type SeqWindowedTestInput<'t> =
         Exception : Type option
     }
 
-[<TestFixture>]
+[<TestFixture>][<Category "Collections.Seq">][<Category "FSharp.Core.Collections">]
 type SeqModule2() =
 
     [<Test>]
@@ -63,17 +63,17 @@ type SeqModule2() =
         
     [<Test>]
     member this.Tl() =
-        // integer seq
-        let resultInt = Seq.tail <| seq { 1..10 }
-        VerifySeqsEqual (seq { 2..10 }) resultInt
+        // integer seq  
+        let resultInt = Seq.tail <| seq { 1..10 }        
+        Assert.AreEqual(Array.ofSeq (seq { 2..10 }), Array.ofSeq resultInt)
         
         // string seq
         let resultStr = Seq.tail <| seq { yield "a"; yield "b"; yield "c"; yield "d" }      
-        VerifySeqsEqual (seq { yield "b";  yield "c" ; yield "d" }) resultStr
+        Assert.AreEqual(Array.ofSeq (seq { yield "b";  yield "c" ; yield "d" }), Array.ofSeq resultStr)
         
         // 1-element seq
         let resultStr2 = Seq.tail <| seq { yield "a" }      
-        VerifySeqsEqual Seq.empty resultStr2
+        Assert.AreEqual(Array.ofSeq (Seq.empty : seq<string>), Array.ofSeq resultStr2)
 
         CheckThrowsArgumentNullException(fun () -> Seq.tail null |> ignore)
         CheckThrowsArgumentException(fun () -> Seq.tail Seq.empty |> Seq.iter (fun _ -> failwith "Should not be reached"))
@@ -573,7 +573,6 @@ type SeqModule2() =
     member this.SingletonCollectWithException () =
         this.MapWithExceptionTester (fun f-> Seq.collect (f >> Seq.singleton))
 
-#if !FX_NO_LINQ
     [<Test>]
     member this.SystemLinqSelectWithSideEffects () =
         this.MapWithSideEffectsTester (fun f s -> System.Linq.Enumerable.Select(s, Func<_,_>(f))) false
@@ -581,7 +580,6 @@ type SeqModule2() =
     [<Test>]
     member this.SystemLinqSelectWithException () =
         this.MapWithExceptionTester (fun f s -> System.Linq.Enumerable.Select(s, Func<_,_>(f)))
-#endif
         
     [<Test>]
     member this.MapiWithSideEffects () =
@@ -695,28 +693,26 @@ type SeqModule2() =
         
         VerifySeqsEqual expectedint resultInt
 
-#if !FX_NO_CHAR_PARSE
         // string Seq
         let funcStr (y:string) = y+"ist"
-       
+
         let resultStr = Seq.collect funcStr (seq ["L"])
-        
-        
+
         let expectedSeq = seq ['L';'i';'s';'t']
-        
+
         VerifySeqsEqual expectedSeq resultStr
-#endif        
+
         // empty Seq
         let resultEpt = Seq.collect funcInt Seq.empty
         VerifySeqsEqual Seq.empty resultEpt
 
         // null Seq
         let nullSeq:seq<'a> = null 
-       
+
         CheckThrowsArgumentNullException (fun () -> Seq.collect funcInt nullSeq |> ignore)
-        
+
         ()
-        
+
     [<Test>]
     member this.Mapi() =
 

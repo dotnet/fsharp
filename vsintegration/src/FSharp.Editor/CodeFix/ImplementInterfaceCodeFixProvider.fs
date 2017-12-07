@@ -1,10 +1,9 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace rec Microsoft.VisualStudio.FSharp.Editor
+namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
-open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
 
@@ -15,7 +14,6 @@ open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 
 open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
@@ -26,16 +24,17 @@ type internal InterfaceState =
       AppendBracketAt: int option
       Tokens: FSharpTokenInfo list }
 
-[<ExportCodeFixProvider(FSharpCommonConstants.FSharpLanguageName, Name = "ImplementInterface"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ImplementInterface"); Shared>]
 type internal FSharpImplementInterfaceCodeFixProvider
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider, 
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: FSharpProjectOptionsManager
     ) =
     inherit CodeFixProvider()
     let fixableDiagnosticIds = ["FS0366"]
     let checker = checkerProvider.Checker
+    static let userOpName = "ImplementInterfaceCodeFixProvider"
 
     let queryInterfaceState appendBracketAt (pos: pos) tokens (ast: Ast.ParsedInput) =
         asyncMaybe {
@@ -112,43 +111,43 @@ type internal FSharpImplementInterfaceCodeFixProvider
             let hasTypeCheckError = results.Errors |> Array.exists (fun e -> e.Severity = FSharpErrorSeverity.Error)                
             // This comparison is a bit expensive
             if hasTypeCheckError && List.length membersAndRanges <> Seq.length interfaceMembers then    
-                let diagnostics = (context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id)).ToImmutableArray()            
+                let diagnostics = context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id) |> Seq.toImmutableArray
                 let registerCodeFix title verboseMode =
                     let codeAction =
                         CodeAction.Create(
                             title,
                             (fun (cancellationToken: CancellationToken) ->
                                 async {
-                                    let! sourceText = context.Document.GetTextAsync() |> Async.AwaitTask
+                                    let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                                     let getMemberByLocation(name, range: range) =
                                         let lineStr = sourceText.Lines.[range.EndLine-1].ToString()
-                                        results.GetSymbolUseAtLocation(range.EndLine, range.EndColumn, lineStr, [name])
+                                        results.GetSymbolUseAtLocation(range.EndLine, range.EndColumn, lineStr, [name], userOpName=userOpName)
                                     let! implementedMemberSignatures =
                                         InterfaceStubGenerator.getImplementedMemberSignatures getMemberByLocation displayContext state.InterfaceData    
                                     let newSourceText = applyImplementInterface sourceText state displayContext implementedMemberSignatures entity indentSize verboseMode
                                     return context.Document.WithText(newSourceText)
-                                } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)),
+                                } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
                             title)                
                     context.RegisterCodeFix(codeAction, diagnostics)
 
-                registerCodeFix SR.ImplementInterface.Value true
-                registerCodeFix SR.ImplementInterfaceWithoutTypeAnnotation.Value false
+                registerCodeFix (SR.ImplementInterface()) true
+                registerCodeFix (SR.ImplementInterfaceWithoutTypeAnnotation()) false
             else 
                 ()
             
-    override __.FixableDiagnosticIds = fixableDiagnosticIds.ToImmutableArray()
+    override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
     override __.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
-            let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject context.Document
+            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject context.Document
             let cancellationToken = context.CancellationToken
             let! sourceText = context.Document.GetTextAsync(cancellationToken)
-            let! _, parsedInput, checkFileResults = checker.ParseAndCheckDocument(context.Document, options, sourceText = sourceText, allowStaleResults = true)
+            let! _, parsedInput, checkFileResults = checker.ParseAndCheckDocument(context.Document, projectOptions, sourceText = sourceText, allowStaleResults = true, userOpName = userOpName)
             let textLine = sourceText.Lines.GetLineFromPosition context.Span.Start
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(context.Document.FilePath, options.OtherOptions |> Seq.toList)
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(context.Document.FilePath, parsingOptions)
             // Notice that context.Span doesn't return reliable ranges to find tokens at exact positions.
             // That's why we tokenize the line and try to find the last successive identifier token
-            let tokens = CommonHelpers.tokenizeLine(context.Document.Id, sourceText, context.Span.Start, context.Document.FilePath, defines)
+            let tokens = Tokenizer.tokenizeLine(context.Document.Id, sourceText, context.Span.Start, context.Document.FilePath, defines)
             let startLeftColumn = context.Span.Start - textLine.Start
             let rec tryFindIdentifierToken acc tokens =
                match tokens with
@@ -171,12 +170,12 @@ type internal FSharpImplementInterfaceCodeFixProvider
                 | _ -> 
                     Some context.Span.End
             let! interfaceState = queryInterfaceState appendBracketAt interfacePos tokens parsedInput                        
-            let! symbol = CommonHelpers.getSymbolAtPosition(context.Document.Id, sourceText, fixupPosition, context.Document.FilePath, defines, SymbolLookupKind.Greedy)
+            let! symbol = Tokenizer.getSymbolAtPosition(context.Document.Id, sourceText, fixupPosition, context.Document.FilePath, defines, SymbolLookupKind.Greedy, false)
             let fcsTextLineNumber = textLine.LineNumber + 1
             let lineContents = textLine.ToString()                            
             let! options = context.Document.GetOptionsAsync(cancellationToken)
-            let tabSize = options.GetOption(FormattingOptions.TabSize, FSharpCommonConstants.FSharpLanguageName)
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, lineContents, symbol.FullIsland)
+            let tabSize = options.GetOption(FormattingOptions.TabSize, FSharpConstants.FSharpLanguageName)
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, lineContents, symbol.FullIsland, userOpName=userOpName)
             let! entity, displayContext = 
                 match symbolUse.Symbol with
                 | :? FSharpEntity as entity -> 
@@ -187,4 +186,4 @@ type internal FSharpImplementInterfaceCodeFixProvider
             registerSuggestions (context, checkFileResults, interfaceState, displayContext, entity, tabSize)
         } 
         |> Async.Ignore
-        |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

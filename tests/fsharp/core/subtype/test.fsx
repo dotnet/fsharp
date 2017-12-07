@@ -5,10 +5,18 @@ module Core_subtype
 
 #light
 
-let mutable failures = []
-let report_failure s = 
-  stderr.WriteLine " NO"; failures <- s :: failures
-let test s b = stderr.Write(s:string);  if b then stderr.WriteLine " OK" else report_failure s
+let failures = ref []
+
+let report_failure (s : string) = 
+    stderr.Write" NO: "
+    stderr.WriteLine s
+    failures := !failures @ [s]
+
+let test (s : string) b = 
+    stderr.Write(s)
+    if b then stderr.WriteLine " OK"
+    else report_failure (s)
+
 let check s v1 v2 = test s (v1 = v2)
 
 (* TEST SUITE FOR SUBTYPE CONSTRAINTS *)
@@ -16,7 +24,7 @@ let check s v1 v2 = test s (v1 = v2)
 
 open System
 open System.IO
-
+open System.Reflection
 open System.Collections.Generic
 
 (* 'a[] :> ICollection<'a> *)
@@ -98,13 +106,13 @@ let testUpcastToEnum1 (x: System.AttributeTargets) = (x :> System.Enum)
 let testUpcastToEnum6 (x: System.Enum) = (x :> System.Enum) 
 
 // these delegates don't exist in portable
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !UNIX && !FX_PORTABLE_OR_NETSTANDARD
 let testUpcastToDelegate1 (x: System.Threading.ThreadStart) = (x :> System.Delegate) 
 
 let testUpcastToMulticastDelegate1 (x: System.Threading.ThreadStart) = (x :> System.MulticastDelegate) 
-#endif
 
 do for name in Directory.GetFiles("c:\\") do stdout.WriteLine name done
+#endif
 
 let f (x : #System.IComparable<'a>) = 1
 
@@ -236,7 +244,9 @@ module SomeRandomOperatorConstraints = begin
 
     let sum64 seq : int64 = Seq.reduce (+) seq
     let sum32 seq : int64 = Seq.reduce (+) seq
+#if !FX_PORTABLE_OR_NETSTANDARD
     let sumBigInt seq : BigInteger = Seq.reduce (+) seq
+#endif
     let sumDateTime (dt : DateTime) (seq : #seq<TimeSpan>) : DateTime = Seq.fold (+) dt seq
 end
 
@@ -1695,6 +1705,35 @@ module InliningOnSubTypes1 =
     do check "clkewlijwlkw" (f()) (13, 17) 
 
 
+#if !FX_RESHAPED_REFLECTION
+module StructUnionSingleCase = 
+    [<Struct>]
+    type S = S
+
+    do check "wekew0ewek1" (typeof<S>.IsValueType) true
+    do check "wekew0ewek1b" (typeof<S>.BaseType) typeof<System.ValueType>
+
+    type SAbbrev = S
+
+    do check "wekew0ewek2" (typeof<SAbbrev>.IsValueType) true
+    do check "wekew0ewek2b" (typeof<SAbbrev>.BaseType) typeof<System.ValueType>
+
+    type S0 = S0
+    do check "wekew0ewek3" (typeof<S0>.IsValueType) false
+    do check "wekew0ewek3b" (typeof<S0>.BaseType) typeof<obj>
+
+    [<Struct>]
+    type S2 = | S2
+
+    do check "wekew0ewek4" (typeof<S2>.IsValueType) true
+    do check "wekew0ewek4b" (typeof<S2>.BaseType) typeof<System.ValueType>
+
+    [<Struct>]
+    type S3 = | S2a | S3a
+
+    do check "wekew0ewek5" (typeof<S3>.IsValueType) true
+    do check "wekew0ewek5b" (typeof<S3>.BaseType) typeof<System.ValueType>
+#endif
 
 // See https://github.com/Microsoft/visualfsharp/issues/238
 module GenericPropertyConstraintSolvedByRecord = 
@@ -1704,7 +1743,6 @@ module GenericPropertyConstraintSolvedByRecord =
     let inline print_foo_memb x = box (^a : (member foo : 'b) x)
 
     let v = print_foo_memb { foo=1 } 
-
 
 module SRTPFix = 
 
@@ -1752,9 +1790,18 @@ module SRTPFix =
       printfn "%A" <| fmap ((+) 1) (Some 2);
       printfn "%A" <| replace 'q' (test("HI"))
      *)
-let aa =
-  if not failures.IsEmpty then (printfn "Test Failed, failures = %A" failures; exit 1) 
 
-do (stdout.WriteLine "Test Passed"; 
-    System.IO.File.WriteAllText("test.ok","ok"); 
-    exit 0)
+#if TESTS_AS_APP
+let RUN() = !failures
+#else
+let aa =
+  match !failures with 
+  | [] -> 
+      stdout.WriteLine "Test Passed"
+      System.IO.File.WriteAllText("test.ok","ok")
+      exit 0
+  | _ -> 
+      stdout.WriteLine "Test Failed"
+      exit 1
+#endif
+

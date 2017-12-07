@@ -129,3 +129,13 @@ module UnionTypeTest: begin
     end
 
 end
+
+module ToStringOnUnionTest: begin
+   type MyUnion = A of string | B
+ 
+end
+
+module ToStringOnUnionTestOverride: begin
+   type MyUnion = A of string | B
+ 
+end

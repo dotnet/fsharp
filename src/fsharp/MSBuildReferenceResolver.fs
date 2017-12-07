@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver 
 
@@ -67,14 +67,19 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
     [<Literal>]    
     let private Net451 = "v4.5.1"
 
+    /// The list of supported .NET Framework version numbers, using the monikers of the Reference Assemblies folder.
+    let SupportedNetFrameworkVersions = set [ Net20; Net30; Net35; Net40; Net45; Net451; (*SL only*) "v5.0" ]
+    
     //[<Literal>]    
     //let private Net452 = "v4.5.2" // not available in Dev15 MSBuild version
 
+#if MSBUILD_AT_LEAST_14
     [<Literal>]    
     let private Net46 = "v4.6"
 
     [<Literal>]    
     let private Net461 = "v4.6.1"
+#endif
 
     /// Get the path to the .NET Framework implementation assemblies by using ToolLocationHelper.GetPathToDotNetFramework.
     /// This is only used to specify the "last resort" path for assembly resolution.
@@ -88,9 +93,11 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
             | Net40 ->  Some TargetDotNetFrameworkVersion.Version40
             | Net45 ->  Some TargetDotNetFrameworkVersion.Version45
             | Net451 -> Some TargetDotNetFrameworkVersion.Version451
+#if MSBUILD_AT_LEAST_14
             //| Net452 -> Some TargetDotNetFrameworkVersion.Version452 // not available in Dev15 MSBuild version
             | Net46 -> Some TargetDotNetFrameworkVersion.Version46
             | Net461 -> Some TargetDotNetFrameworkVersion.Version461
+#endif
             | _ -> assert false; None
         match v with
         | Some v -> 
@@ -99,42 +106,33 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
             | x -> [x]
         | _ -> []
 
-    let GetPathToDotNetFrameworkReferenceAssembliesFor40Plus(version) = 
-#if ENABLE_MONO_SUPPORT // || !FX_RESHAPED_MSBUILD
-      match ToolLocationHelper.GetPathToStandardLibraries(".NETFramework",version,"") with
-      | null | "" -> []
-      | x -> [x]
+
+    let GetPathToDotNetFrameworkReferenceAssemblies(version) = 
+#if NETSTANDARD1_6
+        ignore version
+        let r : string list = []
+        r
 #else
-// FUTURE CLEANUP: This is the old implementation, equivalent to calling GetPathToStandardLibraries
-// FUTURE CLEANUP: on .NET Framework.  But reshapedmsbuild.fs doesn't have an implementation of GetPathToStandardLibraries
-// FUTURE CLEANUP: When we remove reshapedmsbuild.fs we can just call GetPathToStandardLibraries directly.
-       // starting with .Net 4.0, the runtime dirs (WindowsFramework) are never used by MSBuild RAR
-       let v =
-           match version with
-           | Net40 -> Some TargetDotNetFrameworkVersion.Version40
-           | Net45 -> Some TargetDotNetFrameworkVersion.Version45
-           | Net451 -> Some TargetDotNetFrameworkVersion.Version451
-           //| Net452 -> Some TargetDotNetFrameworkVersion.Version452 // not available in Dev15 MSBuild version
-           | Net46 -> Some TargetDotNetFrameworkVersion.Version46
-           | Net461 -> Some TargetDotNetFrameworkVersion.Version461
-           | _ -> assert false; None // unknown version - some parts in the code are not synced
-       match v with
-       | Some v -> 
-           match ToolLocationHelper.GetPathToDotNetFrameworkReferenceAssemblies v with
-           | null -> []
-           | x -> [x]
-       | None -> []
+        match Microsoft.Build.Utilities.ToolLocationHelper.GetPathToStandardLibraries(".NETFramework",version,"") with
+        | null | "" -> []
+        | x -> [x]
 #endif
 
     /// Use MSBuild to determine the version of the highest installed framework.
     let HighestInstalledNetFrameworkVersion() =
+      try
+#if MSBUILD_AT_LEAST_14
         if box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version461)) <> null then Net461
         elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version46)) <> null then Net46
         // 4.5.2 enumeration is not available in Dev15 MSBuild version
         //elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version452)) <> null then Net452 
         elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version451)) <> null then Net451 
+#else
+        if box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version451)) <> null then Net451 
+#endif
         elif box (ToolLocationHelper.GetPathToDotNetFramework(TargetDotNetFrameworkVersion.Version45)) <> null then Net45 
-        else Net40 // version is 4.0 assumed since this code is running. 
+        else Net45 // version is 4.5 assumed since this code is running. 
+      with _ -> Net45
 
     /// Derive the target framework directories.        
     let DeriveTargetFrameworkDirectories (targetFrameworkVersion:string, logMessage) =
@@ -149,7 +147,7 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
             elif targetFrameworkVersion.StartsWith(Net20, StringComparison.Ordinal) then ReplaceVariablesForLegacyFxOnWindows([@"{WindowsFramework}\v2.0.50727"])
             elif targetFrameworkVersion.StartsWith(Net30, StringComparison.Ordinal) then ReplaceVariablesForLegacyFxOnWindows([@"{ReferenceAssemblies}\v3.0"; @"{WindowsFramework}\v3.0"; @"{WindowsFramework}\v2.0.50727"])
             elif targetFrameworkVersion.StartsWith(Net35, StringComparison.Ordinal) then ReplaceVariablesForLegacyFxOnWindows([@"{ReferenceAssemblies}\v3.5"; @"{WindowsFramework}\v3.5"; @"{ReferenceAssemblies}\v3.0"; @"{WindowsFramework}\v3.0"; @"{WindowsFramework}\v2.0.50727"])
-            else GetPathToDotNetFrameworkReferenceAssembliesFor40Plus(targetFrameworkVersion)
+            else GetPathToDotNetFrameworkReferenceAssemblies(targetFrameworkVersion)
 
         let result = result |> Array.ofList                
         logMessage (sprintf "Derived target framework directories for version %s are: %s" targetFrameworkVersion (String.Join(",", result)))                
@@ -191,15 +189,27 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
         | AssemblyFolders ->
             lineIfExists resolvedPath
             + lineIfExists fusionName
+#if CROSS_PLATFORM_COMPILER
+            + "Found by AssemblyFolders registry key"
+#else
             + FSComp.SR.assemblyResolutionFoundByAssemblyFoldersKey()
+#endif
         | AssemblyFoldersEx -> 
             lineIfExists resolvedPath
             + lineIfExists fusionName
+#if CROSS_PLATFORM_COMPILER
+            + "Found by AssemblyFoldersEx registry key"
+#else
             + FSComp.SR.assemblyResolutionFoundByAssemblyFoldersExKey()
+#endif
         | TargetFrameworkDirectory -> 
             lineIfExists resolvedPath
             + lineIfExists fusionName
+#if CROSS_PLATFORM_COMPILER
+            + ".NET Framework"
+#else
             + FSComp.SR.assemblyResolutionNetFramework()
+#endif
         | Unknown ->
             // Unknown when resolved by plain directory search without help from MSBuild resolver.
             lineIfExists resolvedPath
@@ -208,13 +218,17 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
             lineIfExists fusionName
         | GlobalAssemblyCache -> 
             lineIfExists fusionName
+#if CROSS_PLATFORM_COMPILER
+            + "Global Assembly Cache"
+#else
             + lineIfExists (FSComp.SR.assemblyResolutionGAC())
+#endif
             + lineIfExists redist
         | Path _ ->
             lineIfExists resolvedPath
             + lineIfExists fusionName  
 
-    /// Perform assembly resolution by instantiating the ResolveAssemblyReference task directly from the MSBuild SDK.
+    /// Perform assembly resolution by instantiating the ResolveAssembly task directly from the MSBuild SDK.
     let ResolveCore(resolutionEnvironment: ResolutionEnvironment,
                     references:(string*(*baggage*)string)[], 
                     targetFrameworkVersion: string, 
@@ -273,11 +287,12 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
 
             let registry = sprintf "{Registry:%s,%s,%s%s}" frameworkRegistryBase targetFrameworkVersion assemblyFoldersSuffix assemblyFoldersConditions
 
-            [|  // When compiling scripts, for some reason we have always historically put TargetFrameworkDirectory first
-                // It is unclear why.
+            [|  // When compiling scripts using fsc.exe, for some reason we have always historically put TargetFrameworkDirectory first
+                // It is unclear why.  This is the only place we look at the 'isdifference between ResolutionEnvironment.EditingOrCompilation and ResolutionEnvironment.EditingTime.
                 match resolutionEnvironment with
-                | CompileTimeLike -> yield "{TargetFrameworkDirectory}"
-                | DesignTimeLike | RuntimeLike -> ()
+                | ResolutionEnvironment.EditingOrCompilation false -> yield "{TargetFrameworkDirectory}"
+                | ResolutionEnvironment.EditingOrCompilation true
+                | ResolutionEnvironment.CompilationAndEvaluation -> ()
 
                 // Quick-resolve straight to filename first 
                 if allowRawFileName then 
@@ -287,8 +302,9 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
                 yield implicitIncludeDir   // Usually the project directory
 
                 match resolutionEnvironment with
-                | DesignTimeLike | RuntimeLike -> yield "{TargetFrameworkDirectory}"
-                | CompileTimeLike -> ()
+                | ResolutionEnvironment.EditingOrCompilation true
+                | ResolutionEnvironment.CompilationAndEvaluation -> yield "{TargetFrameworkDirectory}"
+                | ResolutionEnvironment.EditingOrCompilation false -> ()
 
                 yield registry
                 yield "{AssemblyFolders}"

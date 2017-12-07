@@ -1,4 +1,4 @@
-// #NoMono #NoMT #CodeGen #EmittedIL #NETFX20Only #NETFX40Only 
+// #NoMono #NoMT #CodeGen #EmittedIL   
 // 
 module StaticInit_ClassS01
 type C(s:System.DateTime) = 

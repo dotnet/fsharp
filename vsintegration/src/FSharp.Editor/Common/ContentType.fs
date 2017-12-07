@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -7,23 +7,21 @@ open System.ComponentModel.Composition
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.VisualStudio.Utilities
 
-open Microsoft.VisualStudio.FSharp.LanguageService
-
 module FSharpStaticTypeDefinitions = 
     [<Export>]
-    [<Name(FSharpCommonConstants.FSharpContentTypeName)>]
+    [<Name(FSharpConstants.FSharpContentTypeName)>]
     [<BaseDefinition(ContentTypeNames.RoslynContentType)>]
     let FSharpContentTypeDefinition = ContentTypeDefinition()
 
     [<Export>]
-    [<Name(FSharpCommonConstants.FSharpSignatureHelpContentTypeName)>]
+    [<Name(FSharpConstants.FSharpSignatureHelpContentTypeName)>]
     [<BaseDefinition("sighelp")>]
     let FSharpSignatureHelpContentTypeDefinition = ContentTypeDefinition()
 
-[<ExportContentTypeLanguageService(FSharpCommonConstants.FSharpContentTypeName, FSharpCommonConstants.FSharpLanguageName)>]
+[<ExportContentTypeLanguageService(FSharpConstants.FSharpContentTypeName, FSharpConstants.FSharpLanguageName)>]
 type FSharpContentType [<System.Composition.ImportingConstructor>](contentTypeRegistry : IContentTypeRegistryService) =  
     member this.contentTypeRegistryService = contentTypeRegistry
  
     interface IContentTypeLanguageService with
         member this.GetDefaultContentType() = 
-            this.contentTypeRegistryService.GetContentType(FSharpCommonConstants.FSharpContentTypeName)
+            this.contentTypeRegistryService.GetContentType(FSharpConstants.FSharpContentTypeName)

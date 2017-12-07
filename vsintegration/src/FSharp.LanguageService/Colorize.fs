@@ -1,4 +1,8 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+
+//------- DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS ---------------
+
+//------- DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS ---------------
 
 namespace Microsoft.VisualStudio.FSharp.LanguageService
 
@@ -18,7 +22,15 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 
 /// Maintain a two-way lookup of lexstate to colorstate
 /// In practice this table will be quite small. All of F# only uses 38 distinct LexStates.
-module internal ColorStateLookup =
+//
+// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS 
+//
+// Note: Tests using this code should either be adjusted to test the corresponding feature in
+// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler 
+// functionality and thus have considerable value, they should ony be deleted if we are sure this 
+// is not the case.
+//
+module internal ColorStateLookup_DEPRECATED =
     type ColorStateTable() =
         let mutable nextInt = 0
         let toInt = Dictionary<FSharpTokenizerLexState,int>()
@@ -63,8 +75,16 @@ module internal ColorStateLookup =
 //
 //    Notes:
 //      - SetLineText() is called one line at a time.
-//      - An instance of FSharpScanner is associated with exactly one buffer (IVsTextLines).
-type internal FSharpScanner(makeLineTokenizer : string -> FSharpLineTokenizer) =
+//      - An instance of FSharpScanner_DEPRECATED is associated with exactly one buffer (IVsTextLines).
+//
+// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
+//
+// Note: Tests using this code should either be adjusted to test the corresponding feature in
+// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler 
+// functionality and thus have considerable value, they should ony be deleted if we are sure this 
+// is not the case.
+//
+type internal FSharpScanner_DEPRECATED(makeLineTokenizer : string -> FSharpLineTokenizer) =
     let mutable lineTokenizer = makeLineTokenizer ""
 
     let mutable extraColorizations : IDictionary<Line0, (range * SemanticClassificationType)[] > option = None
@@ -79,9 +99,9 @@ type internal FSharpScanner(makeLineTokenizer : string -> FSharpLineTokenizer) =
         | FSharpTokenColorKind.Text -> TokenColor.Text
         | FSharpTokenColorKind.UpperIdentifier -> TokenColor.Identifier
         | FSharpTokenColorKind.Number -> TokenColor.Number
-        | FSharpTokenColorKind.InactiveCode -> enum 6          // Custom index into colorable item array, 1-based index, see array of FSharpColorableItem in servicem.fs
-        | FSharpTokenColorKind.PreprocessorKeyword -> enum 7   // Custom index into colorable item array, 1-based index, see array of FSharpColorableItem in servicem.fs
-        | FSharpTokenColorKind.Operator -> enum 8              // Custom index into colorable item array, 1-based index, see array of FSharpColorableItem in servicem.fs
+        | FSharpTokenColorKind.InactiveCode -> enum 6          // Custom index into colorable item array, 1-based index, see array of FSharpColorableItem_DEPRECATED in servicem.fs
+        | FSharpTokenColorKind.PreprocessorKeyword -> enum 7   // Custom index into colorable item array, 1-based index, see array of FSharpColorableItem_DEPRECATED in servicem.fs
+        | FSharpTokenColorKind.Operator -> enum 8              // Custom index into colorable item array, 1-based index, see array of FSharpColorableItem_DEPRECATED in servicem.fs
         | FSharpTokenColorKind.Default | _ -> TokenColor.Text
 
     /// Decode compiler FSharpTokenColorKind into VS TokenType.
@@ -152,9 +172,18 @@ type internal FSharpScanner(makeLineTokenizer : string -> FSharpLineTokenizer) =
 
 /// Implement the MPF Colorizer functionality.
 ///   onClose is a method to call when shutting down the colorizer.
-type internal FSharpColorizer(onClose:FSharpColorizer->unit,
+//
+// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
+//
+// Note: Tests using this code should either be adjusted to test the corresponding feature in
+// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler 
+// functionality and thus have considerable value, they should ony be deleted if we are sure this 
+// is not the case.
+//
+type internal FSharpColorizer_DEPRECATED
+                             (onClose:FSharpColorizer_DEPRECATED->unit,
                               buffer:IVsTextLines,
-                              scanner:FSharpScanner) =
+                              scanner:FSharpScanner_DEPRECATED) =
 
 
     inherit Colorizer()
@@ -169,7 +198,7 @@ type internal FSharpColorizer(onClose:FSharpColorizer->unit,
 
     /// Start state at the beginning of parsing a file.
     override c.GetStartState(state) =
-        state <- ColorStateLookup.ColorStateOfLexState(0L)
+        state <- ColorStateLookup_DEPRECATED.ColorStateOfLexState(0L)
         VSConstants.S_OK
 
     /// Colorize a line of text. Resulting per-character attributes are stored into attrs
@@ -178,13 +207,13 @@ type internal FSharpColorizer(onClose:FSharpColorizer->unit,
     /// This is the core entry-point to all our colorization: VS calls this when it wants color information.
     override c.ColorizeLine(line, _length, _ptrLineText, lastColorState, attrs) =
 
-        let refState = ref (ColorStateLookup.LexStateOfColorState lastColorState)
+        let refState = ref (ColorStateLookup_DEPRECATED.LexStateOfColorState lastColorState)
 
         let lineText = VsTextLines.LineText buffer line
 
         let length = lineText.Length
         let mutable linepos = 0
-        //let newSnapshot = lazy (FSharpSourceBase.GetWpfTextViewFromVsTextView(scanner.TextView).TextSnapshot)
+        //let newSnapshot = lazy (FSharpSourceBase_DEPRECATED.GetWpfTextViewFromVsTextView(scanner.TextView).TextSnapshot)
         try
             scanner.SetLineText lineText
             currentTokenInfo.EndIndex <- -1
@@ -218,14 +247,14 @@ type internal FSharpColorizer(onClose:FSharpColorizer->unit,
             for i in linepos..(length-1) do
                 attrs.[i] <- uint32 TokenColor.Text
 
-        ColorStateLookup.ColorStateOfLexState !refState
+        ColorStateLookup_DEPRECATED.ColorStateOfLexState !refState
 
 
     ///Get the state at the end of the given line.
     override c.GetStateAtEndOfLine(line,length,ptr,state) = (c :> IVsColorizer).ColorizeLine(line, length, ptr, state, null)
 
     member c.GetFullLineInfo(lineText,lastColorState) =
-        let refState = ref (ColorStateLookup.LexStateOfColorState lastColorState)
+        let refState = ref (ColorStateLookup_DEPRECATED.LexStateOfColorState lastColorState)
         scanner.SetLineText lineText
         let rec tokens() =
             seq { match scanner.ScanTokenWithDetails(refState) with
@@ -237,13 +266,13 @@ type internal FSharpColorizer(onClose:FSharpColorizer->unit,
 
     [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2233:OperationsShouldNotOverflow", MessageId="length-1")>] // exceeds EndIndex
     member private c.GetColorInfo(line,lineText,length,lastColorState) =
-        let refState = ref (ColorStateLookup.LexStateOfColorState lastColorState)
+        let refState = ref (ColorStateLookup_DEPRECATED.LexStateOfColorState lastColorState)
         scanner.SetLineText lineText
 
         let cache = new ResizeArray<TokenInfo>()
         let mutable tokenInfo = new TokenInfo(EndIndex = -1)
         let mutable firstTime = true
-        //let newSnapshot = lazy (FSharpSourceBase.GetWpfTextViewFromVsTextView(textView).TextSnapshot)
+        //let newSnapshot = lazy (FSharpSourceBase_DEPRECATED.GetWpfTextViewFromVsTextView(textView).TextSnapshot)
         while scanner.ScanTokenAndProvideInfoAboutIt(line, tokenInfo, refState) do
             if firstTime && tokenInfo.StartIndex > 1 then
                 cache.Add(new TokenInfo(0, tokenInfo.StartIndex - 1, TokenType.WhiteSpace))
@@ -257,7 +286,7 @@ type internal FSharpColorizer(onClose:FSharpColorizer->unit,
             cache.Add (new TokenInfo(tokenInfo.EndIndex + 1, length - 1, TokenType.WhiteSpace))
 
         cachedLineInfo <- cache.ToArray()
-        ColorStateLookup.ColorStateOfLexState !refState
+        ColorStateLookup_DEPRECATED.ColorStateOfLexState !refState
 
     /// Ultimately called by GetWordExtent in Source.cs in the C# code.
     override c.GetLineInfo(buffer, line, colorState:IVsTextColorState) =
@@ -280,7 +309,7 @@ type internal FSharpColorizer(onClose:FSharpColorizer->unit,
     /// Provide token information for the token at the given line and column
     member c.GetTokenInfoAt(colorState,line,col) =
         let state = VsTextColorState.GetColorStateAtStartOfLine colorState line
-        let lexState = ref (ColorStateLookup.LexStateOfColorState state)
+        let lexState = ref (ColorStateLookup_DEPRECATED.LexStateOfColorState state)
 
         let lineText = VsTextLines.LineText buffer line
         let tokenInfo = new TokenInfo()
@@ -293,7 +322,7 @@ type internal FSharpColorizer(onClose:FSharpColorizer->unit,
     /// Provide token information for the token at the given line and column (2nd variation - allows caller to get token info if an additional string were to be inserted)
     member c.GetTokenInfoAt(colorState,line,col,trialString,trialStringInsertionCol) =
         let state = VsTextColorState.GetColorStateAtStartOfLine colorState line
-        let lexState = ref (ColorStateLookup.LexStateOfColorState state)
+        let lexState = ref (ColorStateLookup_DEPRECATED.LexStateOfColorState state)
 
         let lineText = (VsTextLines.LineText buffer line).Insert(trialStringInsertionCol, trialString)
         let tokenInfo = new TokenInfo()
@@ -306,7 +335,7 @@ type internal FSharpColorizer(onClose:FSharpColorizer->unit,
     /// Provide token information for the token at the given line and column (3rd variation)
     member c.GetTokenInformationAt(colorState,line,col) =
         let state = VsTextColorState.GetColorStateAtStartOfLine colorState line
-        let lexState = ref (ColorStateLookup.LexStateOfColorState state)
+        let lexState = ref (ColorStateLookup_DEPRECATED.LexStateOfColorState state)
 
         let lineText = VsTextLines.LineText buffer line
         scanner.SetLineText lineText
@@ -327,7 +356,15 @@ type internal FSharpColorizer(onClose:FSharpColorizer->unit,
 
 
 /// Implements IVsColorableItem and IVsMergeableUIItem, for colored text items
-type internal FSharpColorableItem(canonicalName: string, displayName : Lazy<string>, foreground, background) =
+//
+// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
+//
+// Note: Tests using this code should either be adjusted to test the corresponding feature in
+// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler 
+// functionality and thus have considerable value, they should ony be deleted if we are sure this 
+// is not the case.
+//
+type internal FSharpColorableItem_DEPRECATED(canonicalName: string, displayName : Lazy<string>, foreground, background) =
 
     interface IVsColorableItem with
 

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
@@ -10,52 +10,44 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{649FA588-F02E-457C-9FCF-87E46407481E}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
     <AssemblyName>FSharp.Compiler.Interactive.Settings</AssemblyName>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
+
   <ItemGroup>
-    <PackageNuspec Include="FSharp.Compiler.Interactive.Settings.netcore.nuspec" Condition="'$(TargetFramework)' == 'coreclr'" />
+    <InternalsVisibleTo Include="fsi" />
+    <InternalsVisibleTo Include="fsiAnyCpu" />
+    <InternalsVisibleTo Include="FSharp.Compiler" />
   </ItemGroup>
+
   <ItemGroup>
-    <FsSrGen Include="..\FSInteractiveSettings.txt">
-      <Link>FSInteractiveSettings.txt</Link>
-    </FsSrGen>
-    <Compile Include="InternalsVisibleTo.fs"/>
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Interactive.Settings.dll.fs">
-      <Link>assemblyinfo.FSharp.Compiler.Interactive.Settings.dll.fs</Link>
-    </Compile>
-    <Compile Include="..\..\utils\reshapedreflection.fs">
-      <Link>Reflection/reshapedreflection.fs</Link>
-    </Compile>
-    <Compile Include="..\fsiattrs.fs">
-      <Link>Utilities/fsiattrs.fs</Link>
-    </Compile>
-    <Compile Include="..\fsiaux.fsi">
-      <Link>InteractiveSettings/fsiaux.fsi</Link>
-    </Compile>
-    <Compile Include="..\fsiaux.fs">
-      <Link>InteractiveSettings/fsiaux.fs</Link>
-    </Compile>
+    <EmbeddedText Include="..\FSInteractiveSettings.txt" />
+    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Interactive.Settings.dll.fs" />
+    <Compile Include="..\..\utils\reshapedreflection.fs" />
+    <Compile Include="..\fsiattrs.fs" />
+    <Compile Include="..\fsiaux.fsi" />
+    <Compile Include="..\fsiaux.fs" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
+
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+
+  <ItemGroup Condition="'$(TargetDotnetProfile)' == 'coreclr'">
       <None Include="project.json" />
   </ItemGroup>
-  <ItemGroup  Condition="'$(TargetFramework)' != 'coreclr'">
+  <ItemGroup  Condition="'$(TargetDotnetProfile)' != 'coreclr'">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" >
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
-        <Name>FSharp.Core</Name>
-      </ProjectReference>
-    </ItemGroup>
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  
-  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
+      <Name>FSharp.Core</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Target Name="GatherBinariesToBeSigned" AfterTargets="CopyFilesToOutputDirectory">
     <ItemGroup>
       <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
+      <BinariesToBeSigned Include="$(OutDir)**\$(AssemblyName).resources.dll" />
       <FilesToSign Include="@(BinariesToBeSigned)">
          <Authenticode>Microsoft</Authenticode>
          <StrongName>StrongName</StrongName>

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiConstants 
 
@@ -149,9 +149,9 @@ let wordsOfNoArgInstr, isNoArgInstr =
     let t = 
       lazy 
         (let t = HashMultiMap(300, HashIdentity.Structural)
-         noArgInstrs |> Lazy.force |> List.iter (fun (x,mk) -> t.Add(mk,x)) ;
+         noArgInstrs |> Lazy.force |> List.iter (fun (x, mk) -> t.Add(mk, x)) ;
          t) 
-    (fun s -> (Lazy.force t).[s]),
+    (fun s -> (Lazy.force t).[s]), 
     (fun s -> (Lazy.force t).ContainsKey s)
 #endif
 
@@ -159,8 +159,8 @@ let wordsOfNoArgInstr, isNoArgInstr =
 // Instructions are preceded by prefixes, e.g. ".tail" etc.
 // -------------------------------------------------------------------- 
 
-let mk_stind (nm,dt) =  (nm, (fun () -> I_stind(Aligned,Nonvolatile,dt)))
-let mk_ldind (nm,dt) =  (nm, (fun () -> I_ldind(Aligned,Nonvolatile,dt)))
+let mk_stind (nm, dt) =  (nm, (fun () -> I_stind(Aligned, Nonvolatile, dt)))
+let mk_ldind (nm, dt) =  (nm, (fun () -> I_ldind(Aligned, Nonvolatile, dt)))
 
 // -------------------------------------------------------------------- 
 // Parsing only...  Tables of different types of instructions.
@@ -192,7 +192,7 @@ type LazyInstrTable<'T> = Lazy<InstrTable<'T>>
 // -------------------------------------------------------------------- 
 
 let NoArgInstrs =  
-    lazy (((noArgInstrs |> Lazy.force |> List.map (fun (nm,i) ->  (nm,(fun () -> i))))  @
+    lazy (((noArgInstrs |> Lazy.force |> List.map (fun (nm, i) ->  (nm, (fun () -> i))))  @
                     [  (mk_stind (["stind";"u"],            DT_I));
                        (mk_stind (["stind";"i"],            DT_I));
                        (mk_stind (["stind";"u1"],           DT_I1));(* ILX EQUIVALENT *)
@@ -218,8 +218,8 @@ let NoArgInstrs =
                        (mk_ldind (["ldind";"r4"],           DT_R4));
                        (mk_ldind (["ldind";"r8"],           DT_R8));
                        (mk_ldind (["ldind";"ref"],          DT_REF));
-                        (["cpblk"], (fun () -> I_cpblk(Aligned,Nonvolatile)));
-                        (["initblk"], (fun () -> I_initblk(Aligned,Nonvolatile)));
+                        (["cpblk"], (fun () -> I_cpblk(Aligned, Nonvolatile)));
+                        (["initblk"], (fun () -> I_initblk(Aligned, Nonvolatile)));
                      ]                   
                    ) : NoArgInstr InstrTable);;
 
@@ -231,14 +231,14 @@ let Int32Instrs =
           (["ldc";"i4";"s"], (fun x -> ((mkLdcInt32 x)))); ] : Int32Instr InstrTable)
 
 let Int32Int32Instrs = 
- lazy ([  (["ldlen";"multi"],     (fun (x,y) -> EI_ldlen_multi (x, y))); ] : Int32Int32Instr InstrTable)
+ lazy ([  (["ldlen";"multi"],     (fun (x, y) -> EI_ldlen_multi (x, y))); ] : Int32Int32Instr InstrTable)
 
 let DoubleInstrs = 
  lazy ([  (["ldc";"r4"],     (fun x -> (AI_ldc (DT_R4, x))));
           (["ldc";"r8"],     (fun x -> (AI_ldc (DT_R8, x)))); ]  : DoubleInstr InstrTable)
 
 let MethodSpecInstrs = 
- lazy ([ ( (["call"],      (fun (mspec,y) -> I_call (Normalcall,mspec,y)))) ]  : InstrTable<MethodSpecInstr>)
+ lazy ([ ( (["call"],      (fun (mspec, y) -> I_call (Normalcall, mspec, y)))) ]  : InstrTable<MethodSpecInstr>)
 
 let StringInstrs = 
  lazy ([  (["ldstr"],    (fun x -> I_ldstr x)); ]  : InstrTable<StringInstr>)
@@ -248,10 +248,10 @@ let TokenInstrs =
 
 
 let TypeInstrs = 
- lazy ([  (["ldelema"],   (fun x -> I_ldelema (NormalAddress,false,ILArrayShape.SingleDimensional,x)));
-          (["ldelem";"any"], (fun x -> I_ldelem_any (ILArrayShape.SingleDimensional,x)));
+ lazy ([  (["ldelema"],   (fun x -> I_ldelema (NormalAddress, false, ILArrayShape.SingleDimensional, x)));
+          (["ldelem";"any"], (fun x -> I_ldelem_any (ILArrayShape.SingleDimensional, x)));
           (["stelem";"any"], (fun x -> I_stelem_any (ILArrayShape.SingleDimensional, x)));
-          (["newarr"],    (fun x -> I_newarr (ILArrayShape.SingleDimensional,x)));  
+          (["newarr"],    (fun x -> I_newarr (ILArrayShape.SingleDimensional, x)));  
           (["castclass"], (fun x -> I_castclass x));
           (["ilzero"], (fun x -> EI_ilzero x));
           (["isinst"],    (fun x -> I_isinst x));
@@ -259,16 +259,16 @@ let TypeInstrs =
           (["unbox";"any"],    (fun x -> I_unbox_any x)); ]  :  InstrTable<TypeInstr>)
 
 let IntTypeInstrs = 
- lazy ([  (["ldelem";"multi"], (fun (x,y) -> (I_ldelem_any (ILArrayShape.FromRank x,y))));
-          (["stelem";"multi"], (fun (x,y) -> (I_stelem_any (ILArrayShape.FromRank x,y))));
-          (["newarr";"multi"], (fun (x,y) -> (I_newarr (ILArrayShape.FromRank x,y))));  
-          (["ldelema";"multi"], (fun (x,y) -> (I_ldelema (NormalAddress,false,ILArrayShape.FromRank x,y))));  ]  :  InstrTable<IntTypeInstr>)
+ lazy ([  (["ldelem";"multi"], (fun (x, y) -> (I_ldelem_any (ILArrayShape.FromRank x, y))));
+          (["stelem";"multi"], (fun (x, y) -> (I_stelem_any (ILArrayShape.FromRank x, y))));
+          (["newarr";"multi"], (fun (x, y) -> (I_newarr (ILArrayShape.FromRank x, y))));  
+          (["ldelema";"multi"], (fun (x, y) -> (I_ldelema (NormalAddress, false, ILArrayShape.FromRank x, y))));  ]  :  InstrTable<IntTypeInstr>)
 
 let ValueTypeInstrs = 
  lazy ([  (["cpobj"],     (fun x -> I_cpobj x));
           (["initobj"],   (fun x -> I_initobj x));
-          (["ldobj"], (fun z -> I_ldobj (Aligned,Nonvolatile,z)));
-          (["stobj"], (fun z -> I_stobj (Aligned,Nonvolatile,z)));
+          (["ldobj"], (fun z -> I_ldobj (Aligned, Nonvolatile, z)));
+          (["stobj"], (fun z -> I_stobj (Aligned, Nonvolatile, z)));
           (["sizeof"],    (fun x -> I_sizeof x));
           (["box"],       (fun x -> I_box x));
           (["unbox"],     (fun x -> I_unbox x)); ]  : InstrTable<ValueTypeInstr>)

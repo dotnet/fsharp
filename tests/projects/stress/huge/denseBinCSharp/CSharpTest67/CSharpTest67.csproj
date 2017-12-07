@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{D4D94426-8021-46F0-9374-310F6B72267F}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>CSharpTest67</RootNamespace>
+    <AssemblyName>CSharpTest67</AssemblyName>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+    <Reference Include="CSharpTest1">
+      <HintPath>..\CSharpTest1\bin\Debug\CSharpTest1.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest2">
+      <HintPath>..\CSharpTest2\bin\Debug\CSharpTest2.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest3">
+      <HintPath>..\CSharpTest3\bin\Debug\CSharpTest3.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest4">
+      <HintPath>..\CSharpTest4\bin\Debug\CSharpTest4.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest5">
+      <HintPath>..\CSharpTest5\bin\Debug\CSharpTest5.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest6">
+      <HintPath>..\CSharpTest6\bin\Debug\CSharpTest6.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest7">
+      <HintPath>..\CSharpTest7\bin\Debug\CSharpTest7.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest8">
+      <HintPath>..\CSharpTest8\bin\Debug\CSharpTest8.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest9">
+      <HintPath>..\CSharpTest9\bin\Debug\CSharpTest9.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest10">
+      <HintPath>..\CSharpTest10\bin\Debug\CSharpTest10.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest11">
+      <HintPath>..\CSharpTest11\bin\Debug\CSharpTest11.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest12">
+      <HintPath>..\CSharpTest12\bin\Debug\CSharpTest12.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest13">
+      <HintPath>..\CSharpTest13\bin\Debug\CSharpTest13.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest14">
+      <HintPath>..\CSharpTest14\bin\Debug\CSharpTest14.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest15">
+      <HintPath>..\CSharpTest15\bin\Debug\CSharpTest15.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest16">
+      <HintPath>..\CSharpTest16\bin\Debug\CSharpTest16.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest17">
+      <HintPath>..\CSharpTest17\bin\Debug\CSharpTest17.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest18">
+      <HintPath>..\CSharpTest18\bin\Debug\CSharpTest18.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest19">
+      <HintPath>..\CSharpTest19\bin\Debug\CSharpTest19.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest20">
+      <HintPath>..\CSharpTest20\bin\Debug\CSharpTest20.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest21">
+      <HintPath>..\CSharpTest21\bin\Debug\CSharpTest21.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest22">
+      <HintPath>..\CSharpTest22\bin\Debug\CSharpTest22.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest23">
+      <HintPath>..\CSharpTest23\bin\Debug\CSharpTest23.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest24">
+      <HintPath>..\CSharpTest24\bin\Debug\CSharpTest24.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest25">
+      <HintPath>..\CSharpTest25\bin\Debug\CSharpTest25.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest26">
+      <HintPath>..\CSharpTest26\bin\Debug\CSharpTest26.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest27">
+      <HintPath>..\CSharpTest27\bin\Debug\CSharpTest27.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest28">
+      <HintPath>..\CSharpTest28\bin\Debug\CSharpTest28.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest29">
+      <HintPath>..\CSharpTest29\bin\Debug\CSharpTest29.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest30">
+      <HintPath>..\CSharpTest30\bin\Debug\CSharpTest30.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest31">
+      <HintPath>..\CSharpTest31\bin\Debug\CSharpTest31.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest32">
+      <HintPath>..\CSharpTest32\bin\Debug\CSharpTest32.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest33">
+      <HintPath>..\CSharpTest33\bin\Debug\CSharpTest33.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest34">
+      <HintPath>..\CSharpTest34\bin\Debug\CSharpTest34.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest35">
+      <HintPath>..\CSharpTest35\bin\Debug\CSharpTest35.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest36">
+      <HintPath>..\CSharpTest36\bin\Debug\CSharpTest36.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest37">
+      <HintPath>..\CSharpTest37\bin\Debug\CSharpTest37.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest38">
+      <HintPath>..\CSharpTest38\bin\Debug\CSharpTest38.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest39">
+      <HintPath>..\CSharpTest39\bin\Debug\CSharpTest39.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest40">
+      <HintPath>..\CSharpTest40\bin\Debug\CSharpTest40.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest41">
+      <HintPath>..\CSharpTest41\bin\Debug\CSharpTest41.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest42">
+      <HintPath>..\CSharpTest42\bin\Debug\CSharpTest42.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest43">
+      <HintPath>..\CSharpTest43\bin\Debug\CSharpTest43.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest44">
+      <HintPath>..\CSharpTest44\bin\Debug\CSharpTest44.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest45">
+      <HintPath>..\CSharpTest45\bin\Debug\CSharpTest45.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest46">
+      <HintPath>..\CSharpTest46\bin\Debug\CSharpTest46.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest47">
+      <HintPath>..\CSharpTest47\bin\Debug\CSharpTest47.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest48">
+      <HintPath>..\CSharpTest48\bin\Debug\CSharpTest48.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest49">
+      <HintPath>..\CSharpTest49\bin\Debug\CSharpTest49.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest50">
+      <HintPath>..\CSharpTest50\bin\Debug\CSharpTest50.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest51">
+      <HintPath>..\CSharpTest51\bin\Debug\CSharpTest51.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest52">
+      <HintPath>..\CSharpTest52\bin\Debug\CSharpTest52.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest53">
+      <HintPath>..\CSharpTest53\bin\Debug\CSharpTest53.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest54">
+      <HintPath>..\CSharpTest54\bin\Debug\CSharpTest54.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest55">
+      <HintPath>..\CSharpTest55\bin\Debug\CSharpTest55.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest56">
+      <HintPath>..\CSharpTest56\bin\Debug\CSharpTest56.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest57">
+      <HintPath>..\CSharpTest57\bin\Debug\CSharpTest57.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest58">
+      <HintPath>..\CSharpTest58\bin\Debug\CSharpTest58.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest59">
+      <HintPath>..\CSharpTest59\bin\Debug\CSharpTest59.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest60">
+      <HintPath>..\CSharpTest60\bin\Debug\CSharpTest60.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest61">
+      <HintPath>..\CSharpTest61\bin\Debug\CSharpTest61.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest62">
+      <HintPath>..\CSharpTest62\bin\Debug\CSharpTest62.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest63">
+      <HintPath>..\CSharpTest63\bin\Debug\CSharpTest63.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest64">
+      <HintPath>..\CSharpTest64\bin\Debug\CSharpTest64.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest65">
+      <HintPath>..\CSharpTest65\bin\Debug\CSharpTest65.dll</HintPath>
+    </Reference>
+    <Reference Include="CSharpTest66">
+      <HintPath>..\CSharpTest66\bin\Debug\CSharpTest66.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+
+  </ItemGroup>
+  <ItemGroup>
+
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

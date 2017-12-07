@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -33,13 +33,15 @@ type internal FSharpProjectDiagnosticAnalyzer() =
     static member GetDiagnostics(options: FSharpProjectOptions) = async {
         let! checkProjectResults = FSharpLanguageService.Checker.ParseAndCheckProject(options) 
         let results = 
-          (checkProjectResults.Errors |> Seq.choose(fun (error) ->
+          checkProjectResults.Errors 
+          |> Seq.choose(fun (error) ->
             if error.StartLineAlternate = 0 || error.EndLineAlternate = 0 then
                 Some(CommonRoslynHelpers.ConvertError(error, Location.None))
             else
                 // F# error line numbers are one-based. Errors that have a valid line number are reported by DocumentDiagnosticAnalyzer
                 None
-          )).ToImmutableArray()
+             )
+          |> Seq.toImmutableArray
         return results
       }
         
