@@ -66,6 +66,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
                     let mutable result = ResizeArray()
                     let symbolUses =
                         symbolUses
+                        |> Array.filter (fun symbolUse -> not symbolUse.IsFromOpenStatement)
                         |> Array.Parallel.map (fun symbolUse ->
                             let lineStr = sourceText.Lines.[Line.toZ symbolUse.RangeAlternate.StartLine].ToString()
                             // for `System.DateTime.Now` it returns ([|"System"; "DateTime"|], "Now")
