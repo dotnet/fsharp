@@ -1125,6 +1125,9 @@ type internal FSharpSymbolUse =
     /// Indicates if the reference is either a builder or a custom operation in a computation expression
     member IsFromComputationExpression : bool
 
+    /// Indicates if the reference is in open statement
+    member IsFromOpenStatement : bool
+
     /// The file name the reference occurs in 
     member FileName: string 
 
