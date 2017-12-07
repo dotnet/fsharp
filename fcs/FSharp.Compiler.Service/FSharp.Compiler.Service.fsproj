@@ -651,7 +651,7 @@
 
     <!-- we build the nuget against FSHarp.Core 4.4.0.0 instead of our latest to allow use in wider range of F# tools -->
     <Reference Include="FSharp.Core">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Portable.FSharp.Core.4.1.20\lib\profiles\net40\FSharp.Core.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Portable.FSharp.Core.$(FSharpCoreFrozenPortablePackageVersion)\lib\profiles\net40\FSharp.Core.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>

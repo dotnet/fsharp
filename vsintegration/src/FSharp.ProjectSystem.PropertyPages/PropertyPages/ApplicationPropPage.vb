@@ -80,8 +80,8 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             Dim v40FSharpRedistKey As String = "HKEY_LOCAL_MACHINE\Software\Microsoft\FSharp\4.0\Runtime\v4.0"
 #End If
 #If VS_VERSION_DEV15 Then
-            Dim v20FSharpRedistKey As String = "HKEY_LOCAL_MACHINE\Software\Microsoft\FSharp\4.1\Runtime\v2.0"
-            Dim v40FSharpRedistKey As String = "HKEY_LOCAL_MACHINE\Software\Microsoft\FSharp\4.1\Runtime\v4.0"
+            Dim v20FSharpRedistKey As String = "HKEY_LOCAL_MACHINE\Software\Microsoft\FSharp\4.3\Runtime\v2.0"
+            Dim v40FSharpRedistKey As String = "HKEY_LOCAL_MACHINE\Software\Microsoft\FSharp\4.3\Runtime\v4.0"
 #End If
 
             m_v20FSharpRedistInstalled = Not (IsNothing(Microsoft.Win32.Registry.GetValue(v20FSharpRedistKey, Nothing, Nothing)))
