@@ -56,12 +56,23 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The mapped value, or None if the key is not in the map.</returns>
         member TryFind: key:'Key -> 'Value option
 
-        interface IDictionary<'Key, 'Value>         
-        interface ICollection<KeyValuePair<'Key, 'Value>> 
-        interface IEnumerable<KeyValuePair<'Key, 'Value>>         
         interface System.IComparable
-        interface System.Collections.IEnumerable 
+        interface System.IComparable<Map<'Key,'Value>>
+        interface System.IEquatable<Map<'Key,'Value>>
+        interface System.Collections.IDictionary
+        interface IDictionary<'Key, 'Value>
+        interface System.Collections.ICollection
+        interface ICollection<KeyValuePair<'Key, 'Value>>
+        interface System.Collections.IEnumerable
+        interface IEnumerable<KeyValuePair<'Key, 'Value>>
+
+#if FX_ATLEAST_45
+        interface IReadOnlyCollection<KeyValuePair<'Key, 'Value>>
+        interface IReadOnlyDictionary<'Key, 'Value>
+#endif
+
         override Equals : obj -> bool
+        override GetHashCode : unit -> int
 
     /// <summary>Functional programming operators related to the <c>Map&lt;_,_&gt;</c> type.</summary>
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]

@@ -88,7 +88,7 @@ namespace Microsoft.FSharp.Collections
                 (-2 <= (h1 - h2) && (h1 - h2) <= 2) && checkInvariant t1 && checkInvariant t2
     #endif
 
-        let tolerance = 2
+        let [<Literal>] private tolerance = 2
 
         let mk l k r = 
             match l,r with 
@@ -514,6 +514,7 @@ namespace Microsoft.FSharp.Collections
     [<CompiledName("FSharpSet`1")>]
     [<DebuggerTypeProxy(typedefof<SetDebugView<_>>)>]
     [<DebuggerDisplay("Count = {Count}")>]
+    [<StructuredFormatDisplay("{StructuredFormat}")>]
     [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")>]
     type Set<[<EqualityConditionalOn>]'T when 'T: comparison >(comparer:IComparer<'T>, tree: SetTree<'T>) = 
 
@@ -689,20 +690,40 @@ namespace Microsoft.FSharp.Collections
 
         override this.GetHashCode() = this.ComputeHashCode()
 
+        member private this.EqualsImpl (that : Set<'T>) =
+            use e1 = (this :> seq<_>).GetEnumerator() 
+            use e2 = (that :> seq<_>).GetEnumerator() 
+            let rec loop () = 
+                let m1 = e1.MoveNext() 
+                let m2 = e2.MoveNext()
+                (m1 = m2) && (not m1 || ((e1.Current = e2.Current) && loop()))
+            loop()
+
         override this.Equals(that) = 
             match that with 
             | :? Set<'T> as that -> 
-                use e1 = (this :> seq<_>).GetEnumerator() 
-                use e2 = (that :> seq<_>).GetEnumerator() 
-                let rec loop () = 
-                    let m1 = e1.MoveNext() 
-                    let m2 = e2.MoveNext()
-                    (m1 = m2) && (not m1 || ((e1.Current = e2.Current) && loop()))
-                loop()
+                this.EqualsImpl that
             | _ -> false
 
         interface System.IComparable with 
-            member this.CompareTo(that: obj) = SetTree.compare this.Comparer this.Tree ((that :?> Set<'T>).Tree)
+            member this.CompareTo(that: obj) =
+                match that with
+                | :? Set<'T> as other ->
+                    SetTree.compare this.Comparer this.Tree other.Tree
+                | _ ->
+                    invalidArg "that" (SR.GetString(SR.notComparable))
+
+        interface System.IComparable<Set<'T>> with
+            member this.CompareTo other =
+                // According to the MSDN docs for IComparable<T>, implementations of this
+                // method shouldn't raise exceptions when passed a null 'other' instance.
+                if Object.ReferenceEquals (null, other) then 1  // 'this' > 'other'
+                else SetTree.compare this.Comparer this.Tree other.Tree
+
+        interface System.IEquatable<Set<'T>> with
+            member this.Equals other =
+                // Not equal when the other instance is null.
+                not (Object.ReferenceEquals (null, other)) && this.EqualsImpl other
           
         interface ICollection<'T> with 
             member s.Add(x)      = ignore(x); raise (new System.NotSupportedException("ReadOnlyCollection"))
@@ -711,13 +732,35 @@ namespace Microsoft.FSharp.Collections
             member s.Contains(x) = SetTree.mem s.Comparer x s.Tree
             member s.CopyTo(arr,i) = SetTree.copyToArray s.Tree arr i
             member s.IsReadOnly = true
-            member s.Count = SetTree.count s.Tree  
+            member s.Count = SetTree.count s.Tree
+
+        interface System.Collections.ICollection with
+            member s.Count = SetTree.count s.Tree
+            member s.IsSynchronized = true
+            member s.SyncRoot = upcast s
+            member s.CopyTo(arr,i) =
+                // Check arguments in accordance with what's specified by the docs for ICollection.
+                if Object.ReferenceEquals (null, arr) then nullArg "arr"
+                elif i < 0 then raise (IndexOutOfRangeException ())
+
+                // Raise an ArgumentException if 'arr' is multidimensional,
+                // or has the wrong element type.
+                match arr with
+                | :? ('T[]) as arr ->
+                    SetTree.copyToArray s.Tree arr i
+                | _ ->
+                    raise (ArgumentException("arr"))
 
         interface IEnumerable<'T> with
             member s.GetEnumerator() = SetTree.mkIEnumerator s.Tree
 
         interface IEnumerable with
             override s.GetEnumerator() = (SetTree.mkIEnumerator s.Tree :> IEnumerator)
+
+#if FX_ATLEAST_45
+        interface IReadOnlyCollection<'T> with
+            member s.Count = SetTree.count s.Tree
+#endif
 
         static member Singleton(x:'T) : Set<'T> = Set<'T>.Empty.Add(x)
 
@@ -731,7 +774,10 @@ namespace Microsoft.FSharp.Collections
             let comparer = LanguagePrimitives.FastGenericComparer<'T>
             Set(comparer,SetTree.ofArray comparer arr)
 
-        override x.ToString() = 
+        #if !FX_NO_DEBUG_DISPLAYS
+        [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+        #endif
+        member x.StructuredFormat =
            match List.ofSeq (Seq.truncate 4 x) with 
            | [] -> "set []"
            | [h1] -> System.Text.StringBuilder().Append("set [").Append(LanguagePrimitives.anyToStringShowingNull h1).Append("]").ToString()
@@ -739,6 +785,9 @@ namespace Microsoft.FSharp.Collections
            | [h1;h2;h3] -> System.Text.StringBuilder().Append("set [").Append(LanguagePrimitives.anyToStringShowingNull h1).Append("; ").Append(LanguagePrimitives.anyToStringShowingNull h2).Append("; ").Append(LanguagePrimitives.anyToStringShowingNull h3).Append("]").ToString()
            | h1 :: h2 :: h3 :: _ -> System.Text.StringBuilder().Append("set [").Append(LanguagePrimitives.anyToStringShowingNull h1).Append("; ").Append(LanguagePrimitives.anyToStringShowingNull h2).Append("; ").Append(LanguagePrimitives.anyToStringShowingNull h3).Append("; ... ]").ToString() 
 
+        override x.ToString() = 
+            x.StructuredFormat
+           
     and 
         [<Sealed>]
         SetDebugView<'T when 'T : comparison>(v: Set<'T>)  =  
