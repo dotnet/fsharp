@@ -12,7 +12,7 @@ open System.Runtime.InteropServices
 module internal FSharpEnvironment =
 
     /// The F# version reported in the banner
-    let FSharpBannerVersion = "4.1"
+    let FSharpBannerVersion = "4.3"
 
     let versionOf<'t> =
 #if FX_RESHAPED_REFLECTION

@@ -45,10 +45,13 @@
     <IntermediateOutputPath>obj\$(Configuration)\$(TargetDotnetProfile)\</IntermediateOutputPath>
     <IntermediateOutputPath Condition="'$(PortableProfileBeingReferenced)' != ''">obj\$(Configuration)\$(TargetDotnetProfile)\$(PortableProfileBeingReferenced)\</IntermediateOutputPath>
 
-    <FSharpCore41TargetVersion>4.1.19</FSharpCore41TargetVersion>
-    <FSharpCore41FrozenPortableVersion>4.1.20</FSharpCore41FrozenPortableVersion>
-    <FSharpCore41FrozenPortableTargetVersion>4.1.21</FSharpCore41FrozenPortableTargetVersion>
-    <FSharpCore42TargetVersion>4.2.4</FSharpCore42TargetVersion>
+    <FSharpCore41TargetPackageVersion>4.1.19</FSharpCore41TargetPackageVersion>
+    <FSharpCore41TargetMajorVersion>4.1</FSharpCore41TargetMajorVersion>
+
+    <FSharpCoreFrozenPortablePackageVersion>4.3.0</FSharpCoreFrozenPortablePackageVersion>
+
+    <FSharpCoreFrozenPortableTargetPackageVersion>4.3.1</FSharpCoreFrozenPortableTargetPackageVersion>
+    <FSharpCoreFrozenPortableTargetMajorVersion>4.3</FSharpCoreFrozenPortableTargetMajorVersion>
 
     <NUnitVersion>3.5.0</NUnitVersion>
     <NUnitFullVersion>3.5.0.0</NUnitFullVersion>
