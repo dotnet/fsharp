@@ -31,8 +31,8 @@
   <Target Name="CheckPropertiesArePassed">
     <Error Condition="'$(FSharpPackageVersion)' == ''" Text="A 'FSharpPackageVersion' property must be passed to the project." />
   </Target>
-  
-  <Target Name="GatherBinariesToBeSigned" AfterTargets="CopyFilesToOutputDirectory">
-    <!-- SWIX plugin adds the built vsix to signing automatically -->
+
+  <Target Name="SignFiles">
+    <!-- Signing is handled by the RoslynSignTool -->
   </Target>
 </Project>

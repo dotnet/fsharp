@@ -5,6 +5,7 @@
         <SchemaVersion>2.0</SchemaVersion>
         <ProductVersion>3.10</ProductVersion>
         <WiXToolset2015Version>3.10.0.1503</WiXToolset2015Version>
+        <SetupRootFolder>$(MSBuildThisFileDirectory)</SetupRootFolder>
         <WixInstallPath>$(SetupRootFolder)\..\packages\WiX.Toolset.2015.$(WiXToolset2015Version)\tools\wix</WixInstallPath>
         <NugetPackagesDir>$(SetupRootFolder)\..\packages</NugetPackagesDir>
     </PropertyGroup>
@@ -26,7 +27,7 @@
 
     <PropertyGroup>
         <BinariesDir>$(SetupRootFolder)\..\$(Configuration)</BinariesDir>
-        <VsixBuildLocation>$(BinariesDir)\$(TargetDotnetProfile)\bin</VsixBuildLocation>
+        <VsixBuildLocation>$(BinariesDir)\$(TargetDotnetProfile)\bin\</VsixBuildLocation>
         <InsertionDir>$(BinariesDir)\insertion</InsertionDir>
         <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
         <OutputPath Condition="'$(Lang)' == ''">$(BinariesDir)\setup</OutputPath>

@@ -78,6 +78,8 @@ set TEST_VS_IDEUNIT_SUITE=0
 set INCLUDE_TEST_SPEC_NUNIT=
 set INCLUDE_TEST_TAGS=
 
+set SIGN_TYPE=%PB_SIGNTYPE%
+
 REM ------------------ Parse all arguments -----------------------
 
 set _autoselect=1
@@ -293,6 +295,14 @@ if /i "%ARG%" == "release" (
     set BUILD_CONFIG=release
 )
 
+if /i "%ARG%" == "test-sign" (
+    set SIGN_TYPE=test
+)
+
+if /i "%ARG%" == "real-sign" (
+    set SIGN_TYPE=real
+)
+
 if /i "%ARG%" == "test" (
     set _autoselect_tests=1
 )
@@ -427,6 +437,7 @@ echo.
 echo PB_SKIPTESTS=%PB_SKIPTESTS%
 echo PB_RESTORESOURCE=%PB_RESTORESOURCE%
 echo.
+echo SIGN_TYPE=%SIGN_TYPE%
 echo TEST_NET40_COMPILERUNIT_SUITE=%TEST_NET40_COMPILERUNIT_SUITE%
 echo TEST_NET40_COREUNIT_SUITE=%TEST_NET40_COREUNIT_SUITE%
 echo TEST_NET40_FSHARP_SUITE=%TEST_NET40_FSHARP_SUITE%
@@ -537,15 +548,6 @@ goto :eof
 
 :havemsbuild
 set _nrswitch=/nr:false
-
-:: See <http://www.appveyor.com/docs/environment-variables>
-if defined APPVEYOR (
-   rem See <http://www.appveyor.com/docs/build-phase>
-   if exist "C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" (
-    rem HACK HACK HACK
-   set _msbuildexe=%_msbuildexe% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-   )
-)
 
 if defined TF_BUILD (
     echo Adding remote 'visualfsharptools' for internal build.
@@ -673,7 +675,23 @@ if "%BUILD_PHASE%" == "1" (
    @if ERRORLEVEL 1 echo Error build failed && goto :failure
 )
 
-echo ---------------- Done with build, starting pack/update/prepare ---------------
+echo ---------------- Done with build, starting signing ---------------
+
+if not "%SIGN_TYPE%" == "" (
+    echo build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE%
+    call build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE%
+    if ERRORLEVEL 1 echo Error running sign tool && goto :failure
+)
+
+echo ---------------- Done with signing, building insertion files ---------------
+
+if "%BUILD_SETUP%" == "1" (
+    echo %_msbuildexe% %msbuildflags% setup\Swix\Microsoft.FSharp.vsmanproj /p:Configuration=%BUILD_CONFIG%
+         %_msbuildexe% %msbuildflags% setup\Swix\Microsoft.FSharp.vsmanproj /p:Configuration=%BUILD_CONFIG%
+    if ERRORLEVEL 1 echo Error building .vsmanproj && goto :failure
+)
+
+echo ---------------- Done building insertion files, starting pack/update/prepare ---------------
 
 if "%BUILD_NET40_FSHARP_CORE%" == "1" (
   echo ----------------  start update.cmd ---------------
