@@ -2919,13 +2919,13 @@ namespace Microsoft.FSharp.Core
 
         static member ToFunc( f : ('T -> 'Res) ) =  new System.Func<'T,'Res>(f)
 
+#if !FX_NO_CONVERTER
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
         static member op_Implicit (converter : System.Converter<_,_>) : ('T -> 'Res) =  (fun t -> converter.Invoke(t))
 
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
         static member op_Implicit (func : ('T -> 'Res) ) =  new System.Converter<'T,'Res>(func)
 
-#if !FX_NO_CONVERTER
         static member FromConverter(f : System.Converter<_,_>) : ('T -> 'Res) =  (fun t -> f.Invoke(t))
 
         static member ToConverter( f : ('T -> 'Res) ) =  new System.Converter<'T,'Res>(f)
