@@ -1474,37 +1474,42 @@ namespace Microsoft.FSharp.Core
 #endif
 
         /// <summary>Convert the given Func delegate object to an F# function value</summary>
-        /// <param name="converter">The input Func delegate.</param>
+        /// <param name="func">The input Func delegate.</param>
+        /// <returns>The F# function.</returns>
+        static member  inline ToFSharpFunc       : func:Func<'T>          -> (unit -> 'T)
+
+        /// <summary>Convert the given Func delegate object to an F# function value</summary>
+        /// <param name="func">The input Func delegate.</param>
         /// <returns>The F# function.</returns>
         static member  inline ToFSharpFunc       : func:Func<'T,'U>          -> ('T -> 'U)
 
         /// <summary>Convert the given Func delegate object to an F# function value</summary>
-        /// <param name="converter">The input Func delegate.</param>
-        /// <returns>The F# function.</returns>
+        /// <param name="func">The input Func delegate.</param>
+        /// <returns>The F#funcfunction.</returns>
         static member  inline ToFSharpFunc       : func:Func<'T1,'T2,'U>          -> ('T1 * 'T2 -> 'U)
 
         /// <summary>Convert the given Func delegate object to an F# function value</summary>
-        /// <param name="converter">The input Func delegate.</param>
+        /// <param name="func">The input Func delegate.</param>
         /// <returns>The F# function.</returns>
         static member  inline ToFSharpFunc       : func:Func<'T1,'T2,'T3,'U>          -> ('T1 * 'T2 * 'T3 -> 'U)
 
         /// <summary>Convert the given Func delegate object to an F# function value</summary>
-        /// <param name="converter">The input Func delegate.</param>
+        /// <param name="func">The input Func delegate.</param>
         /// <returns>The F# function.</returns>
         static member  inline ToFSharpFunc       : func:Func<'T1,'T2,'T3,'T4,'U>          -> ('T1 * 'T2 * 'T3 * 'T4 -> 'U)
 
         /// <summary>Convert the given Func delegate object to an F# function value</summary>
-        /// <param name="converter">The input Func delegate.</param>
+        /// <param name="func">The input Func delegate.</param>
         /// <returns>The F# function.</returns>
         static member  inline ToFSharpFunc       : func:Func<'T1,'T2,'T3,'T4,'T5,'U>          -> ('T1 * 'T2 * 'T3 * 'T4 * 'T5 -> 'U)
 
         /// <summary>Convert the given Func delegate object to an F# function value</summary>
-        /// <param name="converter">The input Func delegate.</param>
+        /// <param name="func">The input Func delegate.</param>
         /// <returns>The F# function.</returns>
         static member  inline ToFSharpFunc       : func:Func<'T1,'T2,'T3,'T4,'T5,'T6,'U>          -> ('T1 * 'T2 * 'T3 * 'T4 * 'T5 * 'T6 -> 'U)
 
         /// <summary>Convert the given Func delegate object to an F# function value</summary>
-        /// <param name="converter">The input Func delegate.</param>
+        /// <param name="func">The input Func delegate.</param>
         /// <returns>The F# function.</returns>
         static member  inline ToFSharpFunc       : func:Func<'T1,'T2,'T3,'T4,'T5,'T6,'T7,'U>          -> ('T1 * 'T2 * 'T3 * 'T4 * 'T5 * 'T6 * 'T7 -> 'U)
 

@@ -2947,6 +2947,8 @@ namespace Microsoft.FSharp.Core
 
         static member  inline ToFSharpFunc (action: Action<_>) = (fun t -> action.Invoke(t))
 
+        static member  inline ToFSharpFunc (func: System.Func<_>) = (fun () -> func.Invoke())
+
         static member  inline ToFSharpFunc (func: System.Func<_, _>) = (fun t -> func.Invoke(t))
 
         static member  inline ToFSharpFunc (func: System.Func<_, _, _>) = (fun (t1,t2) -> func.Invoke(t1,t2))

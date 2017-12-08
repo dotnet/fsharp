@@ -81,6 +81,19 @@ class Maine
                                         { Console.WriteLine("i after duplication (2nd technique) = {0}", s);}),
                myList2);
 
+          myList2 = 
+            ListModule.Map<int,string>
+              (FuncConvert.ToFSharpFunc((Func<int,string>) delegate(int i) { return i.ToString() + i.ToString(); }),
+               myList);
+
+          // This call is ambiguous
+          // ListModule.Iterate<string>(FuncConvert.ToFSharpFunc<string>(s => { Console.WriteLine("s = {0}", s);}),myList2);
+
+          myList2 = ListModule.Map<int,string>(FuncConvert.ToFSharpFunc<int,string>(i => i.ToString() + i.ToString()),myList2);
+
+          ListModule.Iterate<string>(FuncConvert.ToFSharpFunc<string>(s => { Console.WriteLine("i after duplication (2nd technique) = {0}", s);}),myList2);
+
+
       }
 
        // Construct a value of each type from the library
