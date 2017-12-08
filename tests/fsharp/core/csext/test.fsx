@@ -146,11 +146,11 @@ module TestsExplicitUseOfTupleProperties =
     check "vwhnwrvep01" x1 [1; 2; 1; 2; 3; 1; 2; 3; 4; 1; 2; 3; 4; 5; 1; 2; 3; 4; 5; 6; 1; 2; 3; 4; 5; 6; 7; 1; 2; 3; 4; 5; 6; 7; 1; 2; 3; 4; 5; 6; 7;
                             1; 2; 1; 2; 3; 1; 2; 3; 4; 1; 2; 3; 4; 5; 1; 2; 3; 4; 5; 6; 1; 2; 3; 4; 5; 6; 7; 1; 2; 3; 4; 5; 6; 7; 1; 2; 3; 4; 5; 6; 7]
 
-    let x2 = (1,2,3,4,5,6,7,8).Rest // gives a warning, suppressed in this file
+    let x2 : System.Tuple<int> = (1,2,3,4,5,6,7,8).Rest // gives a warning, suppressed in this file
     printfn "x2 = %A" x2
     check "vwhnwrvep02" x2 (System.Tuple(8))
 
-    let x3 = (1,2,3,4,5,6,7,8,9).Rest // gives a warning, suppressed in this file
+    let x3 : (int * int) = (1,2,3,4,5,6,7,8,9).Rest // gives a warning, suppressed in this file
     printfn "x3 = %A" x3
     check "vwhnwrvep03" x3 (unbox (box (8,9)))
     
@@ -271,7 +271,6 @@ module TestsExplicitUseOfStructTupleProperties =
     check "vewjwervwver" text "PropertyGet (Some (PropertyGet (None, tup, [])), Item1, [])"
 *)
 
-(*
 module TupleCtors = 
     let t1 x = new System.Tuple<_>(x)
     let t2 (x1,x2) = new System.Tuple<_,_>(x1,x2)
@@ -302,7 +301,17 @@ module TupleSRTP =
         static member        ($) (T, t:System.Tuple<_,_,_,_,_>)          = fun x -> t6 (x,t.Item1, t.Item2,t.Item3,t.Item4,t.Item5)
         static member        ($) (T, t:System.Tuple<_,_,_,_,_,_>)        = fun x -> t7 (x,t.Item1, t.Item2,t.Item3,t.Item4,t.Item5,t.Item6)
         static member        ($) (T, t:System.Tuple<_,_,_,_,_,_,_>)      = fun x -> cp (x,t.Item1, t.Item2,t.Item3,t.Item4,t.Item5,t.Item6) (t1(t.Item7))
-*)
+
+
+    let v1 =  (^T : (member get_Item1 : unit -> _ ) (new System.Tuple<int,int>(1,3)))
+    let v2 =  (^T : (member get_Item1 : unit -> _ ) (System.Tuple<int,int>(1,3)))
+    let v3 =  (^T : (member get_Item1 : unit -> _ ) ((1,3)))
+
+
+
+    let v1b =  (^T : (member get_Item2 : unit -> _ ) (new System.Tuple<int,int>(1,3)))
+    let v2b =  (^T : (member get_Item2 : unit -> _ ) (System.Tuple<int,int>(1,3)))
+    let v3b =  (^T : (member get_Item2 : unit -> _ ) ((1,3)))
 
 (*--------------------*)  
 

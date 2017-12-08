@@ -855,7 +855,8 @@ let AddDeclaredTyparsToNameEnv check nenv typars =
 /// a fresh set of inference type variables for the type parameters of the union type.
 let FreshenTycon (ncenv: NameResolver) m (tcref:TyconRef) = 
     let tinst = ncenv.InstantiationGenerator m (tcref.Typars m)
-    TType_app(tcref,tinst)
+    let improvedTy = ncenv.g.decompileType tcref tinst
+    improvedTy
 
 /// Convert a reference to a union case into a UnionCaseInfo that includes
 /// a fresh set of inference type variables for the type parameters of the union type.
@@ -2229,7 +2230,7 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv (typeN
                     match typeNameResInfo.ResolutionFlag with 
                     | ResolveTypeNamesToTypeRefs -> 
                         success [ for (resInfo,tcref) in tcrefs do 
-                                      let typ = FreshenTycon ncenv m tcref
+                                      let typ = FreshenTycon ncenv m tcref 
                                       let item = (resInfo,Item.Types(id.idText,[typ]),[])
                                       yield item ]
                     | ResolveTypeNamesToCtors -> 

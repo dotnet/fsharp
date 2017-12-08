@@ -4303,4 +4303,7 @@
   <data name="pickleUnexpectedNonZero" xml:space="preserve">
     <value>An error occurred while reading the F# metadata of assembly '{0}'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.</value>
   </data>
+  <data name="tcTupleMemberNotNormallyUsed" xml:space="preserve">
+    <value>This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead</value>
+  </data>
 </root>

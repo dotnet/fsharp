@@ -444,38 +444,36 @@ let rec GetIntrinsicConstructorInfosOfTypeAux (infoReader:InfoReader) m origTy m
   protectAssemblyExploration [] (fun () -> 
     let g = infoReader.g
     let amap = infoReader.amap 
-    if isAppTy g metadataTy then
-        match metadataOfTy g metadataTy with 
+    match metadataOfTy g metadataTy with 
 #if !NO_EXTENSIONTYPING
-        | ProvidedTypeMetadata info -> 
-            let st = info.ProvidedType
-            [ for ci in st.PApplyArray((fun st -> st.GetConstructors()), "GetConstructors", m) do
-                 yield ProvidedMeth(amap,ci.Coerce(m),None,m) ]
+    | ProvidedTypeMetadata info -> 
+        let st = info.ProvidedType
+        [ for ci in st.PApplyArray((fun st -> st.GetConstructors()), "GetConstructors", m) do
+                yield ProvidedMeth(amap,ci.Coerce(m),None,m) ]
 #endif
-        | ILTypeMetadata _ -> 
-            let tinfo = ILTypeInfo.FromType g origTy
-            tinfo.RawMetadata.Methods.FindByName ".ctor" 
-            |> List.filter (fun md -> match md.mdKind with MethodKind.Ctor -> true | _ -> false) 
-            |> List.map (fun mdef -> MethInfo.CreateILMeth (amap, m, origTy, mdef)) 
+    | ILTypeMetadata _ -> 
+        let tinfo = ILTypeInfo.FromType g origTy
+        tinfo.RawMetadata.Methods.FindByName ".ctor" 
+        |> List.filter (fun md -> match md.mdKind with MethodKind.Ctor -> true | _ -> false) 
+        |> List.map (fun mdef -> MethInfo.CreateILMeth (amap, m, origTy, mdef)) 
 
-        | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
-            // Tuple types also support the properties Item1-8, Rest from the compiled tuple type
-            // In this case convert to the .NET Tuple type that carries metadata and try again
-            if isAnyTupleTy g metadataTy then 
-                let betterMetadataTy = helpEnsureTypeHasMetadata g metadataTy
-                GetIntrinsicConstructorInfosOfTypeAux infoReader m origTy betterMetadataTy
-            else
-                match tryDestAppTy g metadataTy with
-                | None -> []
-                | Some tcref -> 
-                    tcref.MembersOfFSharpTyconByName 
-                    |> NameMultiMap.find ".ctor"
-                    |> List.choose(fun vref -> 
-                        match vref.MemberInfo with 
-                        | Some membInfo when (membInfo.MemberFlags.MemberKind = MemberKind.Constructor) -> Some vref 
-                        | _ -> None) 
-                    |> List.map (fun x -> FSMeth(g, origTy, x, None)) 
-    else []
+    | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
+        // Tuple types also support the properties Item1-8, Rest from the compiled tuple type
+        // In this case convert to the .NET Tuple type that carries metadata and try again
+        if isAnyTupleTy g metadataTy then 
+            let betterMetadataTy = helpEnsureTypeHasMetadata g metadataTy
+            GetIntrinsicConstructorInfosOfTypeAux infoReader m origTy betterMetadataTy
+        else
+            match tryDestAppTy g metadataTy with
+            | None -> []
+            | Some tcref -> 
+                tcref.MembersOfFSharpTyconByName 
+                |> NameMultiMap.find ".ctor"
+                |> List.choose(fun vref -> 
+                    match vref.MemberInfo with 
+                    | Some membInfo when (membInfo.MemberFlags.MemberKind = MemberKind.Constructor) -> Some vref 
+                    | _ -> None) 
+                |> List.map (fun x -> FSMeth(g, origTy, x, None)) 
   )    
 
 let GetIntrinsicConstructorInfosOfType infoReader m typ = 

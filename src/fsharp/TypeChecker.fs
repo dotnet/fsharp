@@ -4953,11 +4953,7 @@ and TcTypeApp cenv newOk checkCxs occ env tpenv m tcref pathTypeArgs (synArgTys:
         List.iter2 (UnifyTypes cenv env m) tinst actualArgTys
 
     // Try to decode System.Tuple --> F~ tuple types etc.
-    let ty = 
-        let decode = if cenv.g.compilingFslib then None else cenv.g.decodeTyconRefMap tcref actualArgTys
-        match decode with 
-        | Some res -> res
-        | None -> mkAppTy tcref actualArgTys
+    let ty = cenv.g.decompileType tcref actualArgTys
 
     ty, tpenv
 
@@ -4978,6 +4974,7 @@ and TcTypeAndRecover cenv newOk checkCxs occ env tpenv ty   =
     TcTypeOrMeasureAndRecover (Some TyparKind.Type) cenv newOk checkCxs occ env tpenv ty
 
 and TcNestedTypeApplication cenv newOk checkCxs occ env tpenv mWholeTypeApp typ tyargs =
+    let typ = helpEnsureTypeHasMetadata cenv.g typ
     if not (isAppTy cenv.g typ) then error(Error(FSComp.SR.tcTypeHasNoNestedTypes(), mWholeTypeApp))
     match typ with 
     | TType_app(tcref, tinst) -> 

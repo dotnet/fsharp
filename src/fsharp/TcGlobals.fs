@@ -1066,6 +1066,13 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   member __.betterTyconRefMap = betterTyconRefMapper
   member __.decodeTyconRefMap = decodeTyconRefMapper
+
+  member g.decompileType tcref argtys = 
+    let decode = if g.compilingFslib then None else g.decodeTyconRefMap tcref argtys
+    match decode with 
+    | Some res -> res
+    | None -> TType_app (tcref, argtys)
+
   member __.new_decimal_info = v_new_decimal_info
   member __.seq_info    = v_seq_info
   member val seq_vref    = (ValRefForIntrinsic v_seq_info) 

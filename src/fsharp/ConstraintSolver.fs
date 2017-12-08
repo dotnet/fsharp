@@ -2606,15 +2606,16 @@ let CodegenWitnessThatTypSupportsTraitConstraint tcVal g amap m (traitInfo:Trait
               | None -> Choice4Of4()
               | Some sln ->
                   match sln with 
-                  | ILMethSln(typ, extOpt, mref, minst) ->
-                       let tcref, _tinst = destAppTy g typ
+                  | ILMethSln(origTy, extOpt, mref, minst) ->
+                       let metadataTy = helpEnsureTypeHasMetadata g origTy
+                       let tcref, _tinst = destAppTy g metadataTy
                        let mdef = IL.resolveILMethodRef tcref.ILTyconRawMetadata mref
                        let ilMethInfo =
                            match extOpt with 
-                           | None -> MethInfo.CreateILMeth(amap, m, typ, mdef)
+                           | None -> MethInfo.CreateILMeth(amap, m, origTy, mdef)
                            | Some ilActualTypeRef -> 
                                let actualTyconRef = Import.ImportILTypeRef amap m ilActualTypeRef 
-                               MethInfo.CreateILExtensionMeth(amap, m, typ, actualTyconRef, None, mdef)
+                               MethInfo.CreateILExtensionMeth(amap, m, origTy, actualTyconRef, None, mdef)
                        Choice1Of4 (ilMethInfo, minst)
                   | FSMethSln(typ, vref, minst) ->
                        Choice1Of4  (FSMeth(g, typ, vref, None), minst)
