@@ -1791,6 +1791,51 @@ module SRTPFix =
       printfn "%A" <| replace 'q' (test("HI"))
      *)
 
+// See https://github.com/Microsoft/visualfsharp/issues/4040
+module InferenceRegression4040 = 
+    type Foo() =
+        static let test (t : 'T) : 'T list = 
+            let b : Bar<'T> = new Bar<'T>(t)
+            [b.Value]
+
+        static member Test(t : int) = test t
+
+    and Bar<'U>(value : 'U) =
+        member __.Value = value
+
+    printfn "%A" (Foo.Test 42)
+
+
+// See https://github.com/Microsoft/visualfsharp/issues/4040
+module InferenceRegression4040b = 
+    type Foo() =
+        static let test (t : 'T) : 'T list = 
+            let b : Bar<'T> = new Bar<'T>(t)
+            [b.Value]
+
+        static member Test(t : int) = test t
+
+    and Bar<'T>(value : 'T) =
+        member __.Value = value
+
+    printfn "%A" (Foo.Test 42)
+
+// See https://github.com/Microsoft/visualfsharp/issues/4040
+module InferenceRegression4040C = 
+    type Foo() =
+        static let test (t : 'T) : 'T list = 
+            let b : Bar<'T> = new Bar<'T>(t)
+            [b.Value]
+
+        static member Test(t : int) = test t
+
+    and Bar<'U>(value : 'U) =
+        member __.Value : 'U = value
+
+    printfn "%A" (Foo.Test 42)
+
+
+
 #if TESTS_AS_APP
 let RUN() = !failures
 #else
