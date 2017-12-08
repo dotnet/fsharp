@@ -197,6 +197,83 @@ System.Console.WriteLine()
     Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
 
 [<Test>]
+let ShouldNotTriggerCompletionInOperatorWithDot() =
+    // Simulate mistyping '|>' as '|.'
+    let fileContents = """
+let f() =
+    12.0 |. sqrt
+"""
+    let caretPosition = fileContents.IndexOf("|.")
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    let getInfo() = documentId, filePath, []
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger on operators")
+
+[<Test>]
+let ShouldTriggerCompletionInAttribute() =
+    let fileContents = """
+[<A
+module Foo = module end
+"""
+    let marker = "A"
+    let caretPosition = fileContents.IndexOf(marker) + marker.Length
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    let getInfo() = documentId, filePath, []
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    Assert.IsTrue(triggered, "Completion should trigger on Attributes.")
+
+[<Test>]
+let ShouldTriggerCompletionAfterDerefOperator() =
+    let fileContents = """
+let foo = ref 12
+printfn "%d" !f
+"""
+    let marker = "!f"
+    let caretPosition = fileContents.IndexOf(marker) + marker.Length
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    let getInfo() = documentId, filePath, []
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    Assert.IsTrue(triggered, "Completion should trigger after typing an identifier that follows a dereference operator (!).")
+
+[<Test>]
+let ShouldTriggerCompletionAfterAddressOfOperator() =
+    let fileContents = """
+type Point = { mutable X: int; mutable Y: int }
+let pnt = { X = 1; Y = 2 }
+use ptr = fixed &p
+"""
+    let marker = "&p"
+    let caretPosition = fileContents.IndexOf(marker) + marker.Length
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    let getInfo() = documentId, filePath, []
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    Assert.IsTrue(triggered, "Completion should trigger after typing an identifier that follows an addressOf operator (&).")
+
+[<Test>]
+let ShouldTriggerCompletionAfterArithmeticOperation() =
+    let fileContents = """
+let xVal = 1.0
+let yVal = 2.0
+let zVal
+
+xVal+y
+xVal-y
+xVal*y
+xVal/y
+xVal%y
+xVal**y
+"""
+
+    let markers = [ "+y"; "-y"; "*y"; "/y"; "%y";  "**y"]
+
+    for marker in markers do 
+        let caretPosition = fileContents.IndexOf(marker) + marker.Length
+        let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+        let getInfo() = documentId, filePath, []
+        let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+        Assert.IsTrue(triggered, "Completion should trigger after typing an identifier that follows a mathematical operation")
+
+[<Test>]
 let ShouldDisplayTypeMembers() =
     let fileContents = """
 type T1() =
@@ -295,7 +372,7 @@ x.
                     "ToArray"; "ToString"; "TrimExcess"; "TrueForAll"]
     VerifyCompletionListExactly(fileContents, "x.", expected)
 
-[<Test;Ignore("Before this test can pass, the test below needs to pass. Related to: https://github.com/Microsoft/visualfsharp/issues/2973")>]
+[<Test>]
 let ``Constructing a new class with object initializer syntax``() =
     let fileContents = """
 type A() =
@@ -303,14 +380,14 @@ type A() =
     member val AnotherSettableProperty = 1 with get, set
     member val NonSettableProperty = 1
     
-let _ = new A(Setta
+let _ = new A(Setta)
 """
 
     let expected = ["SettableProperty"; "AnotherSettableProperty"]
     let notExpected = ["NonSettableProperty"]
     VerifyCompletionList(fileContents, "(Setta", expected, notExpected)
 
-[<Test;Ignore("https://github.com/Microsoft/visualfsharp/issues/2973")>]
+[<Test>]
 let ``Constructing a new class with object initializer syntax and verifying 'at' character doesn't exist.``() =
     let fileContents = """
 type A() =
@@ -318,7 +395,7 @@ type A() =
     member val AnotherSettableProperty = 1 with get, set
     member val NonSettableProperty = 1
     
-let _ = new A(Setta
+let _ = new A(Setta)
 """
 
     let expected = []
@@ -326,7 +403,7 @@ let _ = new A(Setta
     VerifyCompletionList(fileContents, "(Setta", expected, notExpected)
 
 [<Test;Ignore("https://github.com/Microsoft/visualfsharp/issues/3954")>]
-let ``Constructing a new fully qualified class with object initializer syntax``() =
+let ``Constructing a new fully qualified class with object initializer syntax without ending paren``() =
     let fileContents = """
 module M =
     type A() =
@@ -475,6 +552,18 @@ let ``Provide completion on lambda argument type hint``() =
 let _ = fun (p:i) -> ()
 """
     VerifyCompletionList(fileContents, "let _ = fun (p:i", ["int"], [])
+
+[<Test>]
+let ``Extensions.Bug5162``() =
+    let fileContents = """
+module Extensions =
+    type System.Object with
+        member x.P = 1
+module M2 =
+    let x = 1
+    Ext
+"""
+    VerifyCompletionList(fileContents, "    Ext", ["Extensions"; "ExtraTopLevelOperators"], [])
 
 #if EXE
 ShouldDisplaySystemNamespace()

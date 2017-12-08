@@ -4281,14 +4281,16 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 
         // Find assembly level TypeProviderAssemblyAttributes. These will point to the assemblies that 
         // have class which implement ITypeProvider and which have TypeProviderAttribute on them.
-        let providerAssemblies = 
+        let designTimeAssemblyNames = 
             runtimeAssemblyAttributes 
             |> List.choose (TryDecodeTypeProviderAssemblyAttr (defaultArg ilGlobalsOpt EcmaMscorlibILGlobals))
             // If no design-time assembly is specified, use the runtime assembly
-            |> List.map (function null -> Path.GetFileNameWithoutExtension fileNameOfRuntimeAssembly | s -> s)
-            |> Set.ofList
+            |> List.map (function null -> fileNameOfRuntimeAssembly | s -> s)
+            // For each simple name of a design-time assembly, we take the first matching one in the order they are 
+            // specified in the attributes
+            |> List.distinctBy (fun s -> try Path.GetFileNameWithoutExtension(s) with _ -> s)
 
-        if providerAssemblies.Count > 0 then
+        if designTimeAssemblyNames.Length > 0 then
 
             // Find the SystemRuntimeAssemblyVersion value to report in the TypeProviderConfig.
             let primaryAssemblyVersion = 
@@ -4316,10 +4318,9 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                 fun arg -> systemRuntimeContainsTypeRef.Value arg  
 
             let providers = 
-                [ for assemblyName in providerAssemblies do
-                      yield ExtensionTyping.GetTypeProvidersOfAssembly(fileNameOfRuntimeAssembly, ilScopeRefOfRuntimeAssembly, assemblyName, typeProviderEnvironment, 
-                                                                       tcConfig.isInvalidationSupported, tcConfig.isInteractive, systemRuntimeContainsType, primaryAssemblyVersion, m) ]
-            let providers = providers |> List.concat
+                [ for designTimeAssemblyName in designTimeAssemblyNames do
+                      yield! ExtensionTyping.GetTypeProvidersOfAssembly(fileNameOfRuntimeAssembly, ilScopeRefOfRuntimeAssembly, designTimeAssemblyName, typeProviderEnvironment, 
+                                                                        tcConfig.isInvalidationSupported, tcConfig.isInteractive, systemRuntimeContainsType, primaryAssemblyVersion, m) ]
 
             // Note, type providers are disposable objects. The TcImports owns the provider objects - when/if it is disposed, the providers are disposed.
             // We ignore all exceptions from provider disposal.

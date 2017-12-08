@@ -82,18 +82,19 @@ module internal CompletionUtils =
     let isStartingNewWord (sourceText, position) =
         CommonCompletionUtilities.IsStartingNewWord(sourceText, position, (fun ch -> isIdentifierStartCharacter ch), (fun ch -> isIdentifierPartCharacter ch))
 
-    let shouldProvideCompletion (documentId: DocumentId, filePath: string, defines: string list, text: SourceText, position: int) : bool =
-        let textLines = text.Lines
-        let triggerLine = textLines.GetLineFromPosition position
-        let colorizationData = Tokenizer.getColorizationData(documentId, text, triggerLine.Span, Some filePath, defines, CancellationToken.None)
+    let shouldProvideCompletion (documentId: DocumentId, filePath: string, defines: string list, sourceText: SourceText, triggerPosition: int) : bool =
+        let textLines = sourceText.Lines
+        let triggerLine = textLines.GetLineFromPosition triggerPosition
+        let colorizationData = Tokenizer.getColorizationData(documentId, sourceText, triggerLine.Span, Some filePath, defines, CancellationToken.None)
         colorizationData.Count = 0 || // we should provide completion at the start of empty line, where there are no tokens at all
         colorizationData.Exists (fun classifiedSpan -> 
-            classifiedSpan.TextSpan.IntersectsWith position &&
+            classifiedSpan.TextSpan.IntersectsWith triggerPosition &&
             (
                 match classifiedSpan.ClassificationType with
                 | ClassificationTypeNames.Comment
                 | ClassificationTypeNames.StringLiteral
                 | ClassificationTypeNames.ExcludedCode
+                | ClassificationTypeNames.Operator
                 | ClassificationTypeNames.NumericLiteral -> false
                 | _ -> true // anything else is a valid classification type
             ))
