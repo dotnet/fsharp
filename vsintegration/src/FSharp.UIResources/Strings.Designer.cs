@@ -196,7 +196,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Show code fixes for unused values.
+        ///   Looks up a localized string similar to Analyze and suggest fixes for unused values.
         /// </summary>
         public static string Unused_declaration_code_fix {
             get {

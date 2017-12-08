@@ -83,8 +83,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Unused_declaration_code_fix">
-        <source>Show code fixes for unused values</source>
-        <target state="new">Show code fixes for unused values</target>
+        <source>Analyze and suggest fixes for unused values</source>
+        <target state="new">Analyze and suggest fixes for unused values</target>
         <note />
       </trans-unit>
     </body>
