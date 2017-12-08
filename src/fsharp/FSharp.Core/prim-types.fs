@@ -2911,9 +2911,13 @@ namespace Microsoft.FSharp.Core
 
     type FSharpFunc<'T,'Res> with
 
+        // Note: this is not made public in the signature, presumably because of conflicts with the Converter overload
+        // The method should really be removed but remains in case someone is calling it via reflection.
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
         static member op_Implicit (func : System.Func<_,_>) : ('T -> 'Res) =  (fun t -> func.Invoke(t))
 
+        // Note: this is not made public in the signature, presumably because of conflicts with the Converter overload.
+        // The method should really be removed but remains in case someone is calling it via reflection.
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
         static member op_Implicit (func : ('T -> 'Res) ) =  new System.Func<'T,'Res>(func)
 
@@ -2924,35 +2928,50 @@ namespace Microsoft.FSharp.Core
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
         static member op_Implicit (func : ('T -> 'Res) ) =  new System.Converter<'T,'Res>(func)
 
-        static member FromConverter(f : System.Converter<_,_>) : ('T -> 'Res) =  (fun t -> f.Invoke(t))
+        static member FromConverter (converter: System.Converter<_,_>) : ('T -> 'Res) =  (fun t -> converter.Invoke(t))
 
-        static member ToConverter( f : ('T -> 'Res) ) =  new System.Converter<'T,'Res>(f)
+        static member ToConverter (func: ('T -> 'Res) ) =  new System.Converter<'T,'Res>(func)
 #endif
 
-        static member InvokeFast (func:FSharpFunc<_,_>, arg1:'T, arg2:'Res)                   = OptimizedClosures.invokeFast2(func, arg1, arg2) 
-        static member InvokeFast (func:FSharpFunc<_,_>, arg1:'T, arg2:'Res, arg3)             = OptimizedClosures.invokeFast3(func, arg1, arg2, arg3)
-        static member InvokeFast (func:FSharpFunc<_,_>, arg1:'T, arg2:'Res, arg3, arg4)       = OptimizedClosures.invokeFast4(func, arg1, arg2, arg3, arg4)
-        static member InvokeFast (func:FSharpFunc<_,_>, arg1:'T, arg2:'Res, arg3, arg4, arg5) = OptimizedClosures.invokeFast5(func, arg1, arg2, arg3, arg4, arg5)
+        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res)                   = OptimizedClosures.invokeFast2(func, arg1, arg2) 
+
+        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res, arg3)             = OptimizedClosures.invokeFast3(func, arg1, arg2, arg3)
+
+        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res, arg3, arg4)       = OptimizedClosures.invokeFast4(func, arg1, arg2, arg3, arg4)
+
+        static member InvokeFast (func:FSharpFunc<_,_>, arg1: 'T, arg2: 'Res, arg3, arg4, arg5) = OptimizedClosures.invokeFast5(func, arg1, arg2, arg3, arg4, arg5)
 
     [<AbstractClass>]
     [<Sealed>]
     type FuncConvert = 
-        static member  inline ToFSharpFunc( f : Action<_>) = (fun t -> f.Invoke(t))
-        static member  inline ToFSharpFunc( f : System.Func<_, _>) = (fun t -> f.Invoke(t))
-        static member  inline ToFSharpFunc( f : System.Func<_, _, _>) = (fun (t1,t2) -> f.Invoke(t1,t2))
-        static member  inline ToFSharpFunc( f : System.Func<_, _, _, _>) = (fun (t1,t2,t3) -> f.Invoke(t1,t2,t3))
-        static member  inline ToFSharpFunc( f : System.Func<_, _, _, _, _>) = (fun (t1,t2,t3,t4) -> f.Invoke(t1,t2,t3,t4))
-        static member  inline ToFSharpFunc( f : System.Func<_, _, _, _, _, _>) = (fun (t1,t2,t3,t4,t5) -> f.Invoke(t1,t2,t3,t4,t5))
-        static member  inline ToFSharpFunc( f : System.Func<_, _, _, _, _, _, _>) = (fun (t1,t2,t3,t4,t5,t6) -> f.Invoke(t1,t2,t3,t4,t5,t6))
-        static member  inline ToFSharpFunc( f : System.Func<_, _, _, _, _, _, _, _>) = (fun (t1,t2,t3,t4,t5,t6,t7) -> f.Invoke(t1,t2,t3,t4,t5,t6,t7))
+
+        static member  inline ToFSharpFunc (action: Action<_>) = (fun t -> action.Invoke(t))
+
+        static member  inline ToFSharpFunc (func: System.Func<_, _>) = (fun t -> func.Invoke(t))
+
+        static member  inline ToFSharpFunc (func: System.Func<_, _, _>) = (fun (t1,t2) -> func.Invoke(t1,t2))
+
+        static member  inline ToFSharpFunc (func: System.Func<_, _, _, _>) = (fun (t1,t2,t3) -> func.Invoke(t1,t2,t3))
+
+        static member  inline ToFSharpFunc (func: System.Func<_, _, _, _, _>) = (fun (t1,t2,t3,t4) -> func.Invoke(t1,t2,t3,t4))
+
+        static member  inline ToFSharpFunc (func: System.Func<_, _, _, _, _, _>) = (fun (t1,t2,t3,t4,t5) -> func.Invoke(t1,t2,t3,t4,t5))
+
+        static member  inline ToFSharpFunc (func: System.Func<_, _, _, _, _, _, _>) = (fun (t1,t2,t3,t4,t5,t6) -> func.Invoke(t1,t2,t3,t4,t5,t6))
+
+        static member  inline ToFSharpFunc (func: System.Func<_, _, _, _, _, _, _, _>) = (fun (t1,t2,t3,t4,t5,t6,t7) -> func.Invoke(t1,t2,t3,t4,t5,t6,t7))
 
 #if !FX_NO_CONVERTER
-        static member  inline ToFSharpFunc( f : Converter<_,_>) = (fun t -> f.Invoke(t))
+        static member  inline ToFSharpFunc (converter : Converter<_,_>) = (fun t -> converter.Invoke(t))
 #endif        
-        static member inline FuncFromTupled (f:'T1 * 'T2 -> 'Res) = (fun a b -> f (a, b))
-        static member inline FuncFromTupled (f:'T1 * 'T2 * 'T3 -> 'Res) = (fun a b c -> f (a, b, c))
-        static member inline FuncFromTupled (f:'T1 * 'T2 * 'T3 * 'T4 -> 'Res) = (fun a b c d -> f (a, b, c, d))
-        static member inline FuncFromTupled (f:'T1 * 'T2 * 'T3 * 'T4 * 'T5 -> 'Res) = (fun a b c d e-> f (a, b, c, d, e))
+
+        static member inline FuncFromTupled (func: 'T1 * 'T2 -> 'Res) = (fun a b -> func (a, b))
+
+        static member inline FuncFromTupled (func: 'T1 * 'T2 * 'T3 -> 'Res) = (fun a b c -> func (a, b, c))
+
+        static member inline FuncFromTupled (func: 'T1 * 'T2 * 'T3 * 'T4 -> 'Res) = (fun a b c d -> func (a, b, c, d))
+
+        static member inline FuncFromTupled (func: 'T1 * 'T2 * 'T3 * 'T4 * 'T5 -> 'Res) = (fun a b c d e -> func (a, b, c, d, e))
 
     //-------------------------------------------------------------------------
     // Refs
