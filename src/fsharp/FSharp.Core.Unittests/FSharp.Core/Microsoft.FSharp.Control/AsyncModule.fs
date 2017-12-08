@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // Various tests for the:
 // Microsoft.FSharp.Control.Async module
@@ -9,7 +9,7 @@ open System
 open System.Threading
 open FSharp.Core.Unittests.LibraryTestFx
 open NUnit.Framework
-#if !(FSCORE_PORTABLE_OLD || FSCORE_PORTABLE_NEW)
+#if !FSCORE_PORTABLE_NEW
 open FsCheck
 #endif
 
@@ -25,7 +25,7 @@ type [<Struct>] Dummy (x: int) =
     member this.Dispose () = ()
 
 
-#if !(FSCORE_PORTABLE_OLD || FSCORE_PORTABLE_NEW)
+#if !FSCORE_PORTABLE_NEW
 [<AutoOpen>]
 module ChoiceUtils =
 
@@ -162,7 +162,7 @@ type AsyncModule() =
             let tickstamps = ref [] // like timestamps but for ticks :)
             
             for i = 1 to 10 do
-                tickstamps := DateTime.Now.Ticks :: !tickstamps
+                tickstamps := DateTime.UtcNow.Ticks :: !tickstamps
                 do! Async.Sleep(20)
                 
             return !tickstamps
@@ -233,7 +233,7 @@ type AsyncModule() =
     [<Test>]
     member this.``AwaitWaitHandle.Timeout``() = 
         use waitHandle = new System.Threading.ManualResetEvent(false)
-        let startTime = DateTime.Now
+        let startTime = DateTime.UtcNow
 
         let r = 
             Async.AwaitWaitHandle(waitHandle, 500)
@@ -241,7 +241,7 @@ type AsyncModule() =
 
         Assert.IsFalse(r, "Timeout expected")
 
-        let endTime = DateTime.Now
+        let endTime = DateTime.UtcNow
         let delta = endTime - startTime
         Assert.IsTrue(delta.TotalMilliseconds < 1100.0, sprintf "Expected faster timeout than %.0f ms" delta.TotalMilliseconds)
 
@@ -325,11 +325,7 @@ type AsyncModule() =
         try
             Async.RunSynchronously (go, cancellationToken = cts.Token)
         with
-#if FX_NO_OPERATION_CANCELLED
-            _ -> ()
-#else
             :? System.OperationCanceledException -> ()
-#endif
         Assert.AreEqual(1, !flag)
 
     [<Test>]
@@ -421,7 +417,7 @@ type AsyncModule() =
                 Assert.Fail("TimeoutException expected")
             with
                 :? System.TimeoutException -> ()
-#if !FSCORE_PORTABLE_OLD
+
     [<Test>]
     member this.``RunSynchronously.NoThreadJumpsAndTimeout.DifferentSyncContexts``() = 
         let run syncContext =
@@ -438,7 +434,6 @@ type AsyncModule() =
             if !failed then Assert.Fail("TimeoutException expected")
         run null
         run (System.Threading.SynchronizationContext())
-#endif
 
     [<Test>]
     member this.``RaceBetweenCancellationAndError.AwaitWaitHandle``() = 
@@ -451,7 +446,7 @@ type AsyncModule() =
     member this.``RaceBetweenCancellationAndError.Sleep``() =
         testErrorAndCancelRace (Async.Sleep (-5))
 
-#if !(FSCORE_PORTABLE_OLD || FSCORE_PORTABLE_NEW || coreclr)
+#if !(FSCORE_PORTABLE_NEW || coreclr)
     [<Test; Category("Expensive"); Explicit>] // takes 3 minutes!
     member this.``Async.Choice specification test``() =
         ThreadPool.SetMinThreads(100,100) |> ignore
@@ -548,11 +543,7 @@ type AsyncModule() =
                   |> fun c -> Async.RunSynchronously(c, cancellationToken = cts.Token)
                   |> ignore
             with
-#if FX_NO_OPERATION_CANCELLED
-                _ -> ()
-#else
                 :? System.OperationCanceledException -> () // OK
-#endif
         for _ in 1..1000 do test()
 
     [<Test>]
@@ -581,7 +572,7 @@ type AsyncModule() =
         Assert.AreEqual("boom", !r)
 
 
-#if !FSCORE_PORTABLE_OLD && !FSCORE_PORTABLE_NEW
+#if !FSCORE_PORTABLE_NEW
     [<Test>]
     member this.``SleepContinuations``() = 
         let okCount = ref 0

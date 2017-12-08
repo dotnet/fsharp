@@ -159,7 +159,7 @@ neg20.fs(129,19,129,22): typecheck error FS0001: This expression was expected to
 but here has type
     'string'    
 
-neg20.fs(131,5,131,24): typecheck error FS0041: No overloads match for method 'OM3'. The available overloads are shown below (or in the Error List window).
+neg20.fs(131,5,131,24): typecheck error FS0041: No overloads match for method 'OM3'. The available overloads are shown below.
 neg20.fs(131,5,131,24): typecheck error FS0041: Possible overload: 'static member C.OM3 : x:'b * y:int -> int'. Type constraint mismatch. The type 
     'obj'    
 is not compatible with type
@@ -199,7 +199,7 @@ neg20.fs(166,13,166,35): typecheck error FS0502: The member or object constructo
 
 neg20.fs(167,13,167,31): typecheck error FS0502: The member or object constructor 'M5' takes 2 type argument(s) but is here given 1. The required signature is 'member C.M5 : y:'a * z:'b -> int'.
 
-neg20.fs(182,14,182,31): typecheck error FS0041: No overloads match for method 'M'. The available overloads are shown below (or in the Error List window).
+neg20.fs(182,14,182,31): typecheck error FS0041: No overloads match for method 'M'. The available overloads are shown below.
 neg20.fs(182,14,182,31): typecheck error FS0041: Possible overload: 'static member C2.M : fmt:string * [<System.ParamArray>] args:int [] -> string'. Type constraint mismatch. The type 
     'obj'    
 is not compatible with type
@@ -236,7 +236,7 @@ neg20.fs(184,34,184,39): typecheck error FS0001: This expression was expected to
 but here has type
     'obj'    
 
-neg20.fs(188,14,188,31): typecheck error FS0041: No overloads match for method 'M'. The available overloads are shown below (or in the Error List window).
+neg20.fs(188,14,188,31): typecheck error FS0041: No overloads match for method 'M'. The available overloads are shown below.
 neg20.fs(188,14,188,31): typecheck error FS0041: Possible overload: 'static member C3.M : fmt:string * [<System.ParamArray>] args:string [] -> string'. Type constraint mismatch. The type 
     'obj'    
 is not compatible with type
@@ -349,9 +349,9 @@ neg20.fs(319,8,319,17): typecheck error FS3132: This type definition may not hav
 
 neg20.fs(322,8,322,18): typecheck error FS3132: This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.
 
-neg20.fs(335,11,335,24): typecheck error FS0041: A unique overload for method 'String' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: System.String(value: char []) : unit, System.String(value: nativeptr<char>) : unit, System.String(value: nativeptr<sbyte>) : unit
+neg20.fs(335,11,335,24): typecheck error FS0041: A unique overload for method 'String' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: System.String(value: char []) : System.String, System.String(value: nativeptr<char>) : System.String, System.String(value: nativeptr<sbyte>) : System.String
 
-neg20.fs(336,11,336,22): typecheck error FS0041: A unique overload for method 'Guid' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: System.Guid(b: byte []) : unit, System.Guid(g: string) : unit
+neg20.fs(336,11,336,22): typecheck error FS0041: A unique overload for method 'Guid' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: System.Guid(b: byte []) : System.Guid, System.Guid(g: string) : System.Guid
 
 neg20.fs(355,19,355,38): typecheck error FS1124: Multiple types exist called 'OverloadedClassName', taking different numbers of generic parameters. Provide a type instantiation to disambiguate the type resolution, e.g. 'OverloadedClassName<_>'.
 

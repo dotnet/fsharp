@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // Various tests for the:
 // System.Numerics.BigInteger struct
@@ -198,7 +198,7 @@ type BigIntType() =
         Assert.AreEqual(BigInteger.One,1I)
         
         ()
-#if !FSCORE_PORTABLE_OLD
+
     [<Test>]
     member this.Parse() = 
         Assert.AreEqual(BigInteger.Parse("12345678901234567890"),
@@ -220,7 +220,6 @@ type BigIntType() =
         CheckThrowsArgumentNullException(fun() -> BigInteger.Parse(null) |> ignore)
         
         ()
-#endif
         
     [<Test>]
     member this.Pow() = 

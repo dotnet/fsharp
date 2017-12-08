@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -2024,12 +2024,6 @@ Do you want to update the value in the .settings file?</value>
   </data>
   <data name="PPG_Services_connectionStringValueDefaultDisplayValue" xml:space="preserve">
     <value>Specify a connection string to a SQL Server database, or use the special connection string "Data Source = |SQL/CE|", which causes SQL Server Compact to generate local database files for offline storage.</value>
-  </data>
-  <data name="SD_ComboBoxItem_WebApplicationScope" xml:space="preserve">
-    <value>Application (Web)</value>
-  </data>
-  <data name="SD_ComboBoxItem_WebUserScope" xml:space="preserve">
-    <value>User (Web)</value>
   </data>
   <data name="SD_ERR_UnreferencedTypeNameList_1Arg" xml:space="preserve">
     <value>The following type names were not understood: '{0}'.  Make sure you have references to these types.</value>

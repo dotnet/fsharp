@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 #if COMPILER_PUBLIC_API
 module public Microsoft.FSharp.Compiler.Ast
@@ -7,7 +7,6 @@ module internal Microsoft.FSharp.Compiler.Ast
 #endif
 
 open System.Collections.Generic
-open Internal.Utilities
 open Internal.Utilities.Text.Lexing
 open Internal.Utilities.Text.Parsing
 open Microsoft.FSharp.Compiler.AbstractIL
@@ -18,8 +17,6 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.UnicodeLexing
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.PrettyNaming
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
-open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Range
 
 /// The prefix of the names used for the fake namespace path added to all dynamic code entries in FSI.EXE
@@ -79,14 +76,25 @@ type XmlDocCollector() =
                 let prevGrabPointPos = grabPoints.[grabPointIndex-1]
                 Array.findFirstIndexWhereTrue lines (fun (_,pos) -> posGeq pos prevGrabPointPos)
         //printfn "#lines = %d, firstLineIndexAfterPrevGrabPoint = %d, firstLineIndexAfterGrabPoint = %d" lines.Length firstLineIndexAfterPrevGrabPoint  firstLineIndexAfterGrabPoint
-        lines.[firstLineIndexAfterPrevGrabPoint..firstLineIndexAfterGrabPoint-1] |> Array.map fst
+
+        let lines = lines.[firstLineIndexAfterPrevGrabPoint..firstLineIndexAfterGrabPoint-1] |> Array.rev
+        if lines.Length = 0 then 
+            [| |]
+        else
+            let firstLineNumber = (snd lines.[0]).Line
+            lines 
+            |> Array.mapi (fun i x -> firstLineNumber - i, x)
+            |> Array.takeWhile (fun (sequencedLineNumber, (_, pos)) -> sequencedLineNumber = pos.Line)
+            |> Array.map (fun (_, (lineStr, _)) -> lineStr)
+            |> Array.rev
       with e -> 
-          //printfn "unexpected error in LinesBefore:\n%s" (e.ToString())
-          [| |]
+        //printfn "unexpected error in LinesBefore:\n%s" (e.ToString())
+        [| |]
 
 type XmlDoc =
     | XmlDoc of string[]
     static member Empty = XmlDocStatics.Empty
+    member x.NonEmpty = (let (XmlDoc lines) = x in lines.Length <> 0)
     static member Merge (XmlDoc lines) (XmlDoc lines') = XmlDoc (Array.append lines lines')
     static member Process (XmlDoc lines) =
         // This code runs for .XML generation and thus influences cross-project xmldoc tooltips; for within-project tooltips, see XmlDocumentation.fs in the language service

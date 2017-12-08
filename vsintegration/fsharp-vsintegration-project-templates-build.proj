@@ -1,4 +1,4 @@
-<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <PropertyGroup>
     <TargetDotnetProfile Condition="'$(TargetDotnetProfile)'==''">net40</TargetDotnetProfile>
@@ -7,10 +7,6 @@
   <ItemGroup>
     <ProjectFiles Include="ProjectTemplates\ConsoleProject\ConsoleProject.csproj" />
     <ProjectFiles Include="ProjectTemplates\LibraryProject\LibraryProject.csproj" />
-    <ProjectFiles Include="ProjectTemplates\NetCore259Project\NetCore259Project.csproj" />
-    <ProjectFiles Include="ProjectTemplates\NetCore78Project\NetCore78Project.csproj" />
-    <ProjectFiles Include="ProjectTemplates\NetCoreProject\NetCoreProject.csproj" />
-    <ProjectFiles Include="ProjectTemplates\PortableLibraryProject\PortableLibraryProject.csproj" />
     <ProjectFiles Include="ProjectTemplates\TutorialProject\TutorialProject.csproj" />
   </ItemGroup>
 

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 //----------------------------------------------------------------------------
 // Helpers for quick info and information about items
@@ -46,8 +46,8 @@ type internal FSharpErrorInfo =
     member Message:string
     member Subcategory:string
     member ErrorNumber:int
-    static member internal CreateFromExceptionAndAdjustEof : PhasedDiagnostic * isError: bool * trim: bool * range * lastPosInFile:(int*int) -> FSharpErrorInfo
-    static member internal CreateFromException : PhasedDiagnostic * isError: bool * trim: bool * range -> FSharpErrorInfo
+    static member internal CreateFromExceptionAndAdjustEof : PhasedDiagnostic * isError: bool * range * lastPosInFile:(int*int) -> FSharpErrorInfo
+    static member internal CreateFromException : PhasedDiagnostic * isError: bool * range -> FSharpErrorInfo
 
 //----------------------------------------------------------------------------
 // Object model for quick info
@@ -212,7 +212,7 @@ module internal SymbolHelpers =
     val IsAttribute : InfoReader -> Item -> bool
     val IsExplicitlySuppressed : TcGlobals -> Item -> bool
     val FlattenItems : TcGlobals -> range -> Item -> Item list
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     val (|ItemIsProvidedType|_|) : TcGlobals -> Item -> TyconRef option
     val (|ItemIsWithStaticArguments|_|): range -> TcGlobals -> Item -> Tainted<ExtensionTyping.ProvidedParameterInfo>[] option
     val (|ItemIsProvidedTypeWithStaticArguments|_|): range -> TcGlobals -> Item -> Tainted<ExtensionTyping.ProvidedParameterInfo>[] option
@@ -235,10 +235,10 @@ type internal CompilationErrorLogger =
     inherit ErrorLogger
 
     /// Create the error logger
-    new : debugName:string * tcConfig:TcConfig ->  CompilationErrorLogger
+    new: debugName:string * options: FSharpErrorSeverityOptions -> CompilationErrorLogger
             
     /// Get the captured errors
-    member GetErrors : unit -> (PhasedDiagnostic * FSharpErrorSeverity) list
+    member GetErrors: unit -> (PhasedDiagnostic * FSharpErrorSeverity) list
 
 /// This represents the global state established as each task function runs as part of the build.
 ///
@@ -248,5 +248,5 @@ type internal CompilationGlobalsScope =
     interface IDisposable
 
 module internal ErrorHelpers = 
-    val ReportError: TcConfig * allErrors: bool * mainInputFileName: string * fileInfo: (int * int) * (PhasedDiagnostic * FSharpErrorSeverity) -> FSharpErrorInfo list
-    val CreateErrorInfos: TcConfig * allErrors: bool * mainInputFileName: string * seq<(PhasedDiagnostic * FSharpErrorSeverity)> -> FSharpErrorInfo[]
+    val ReportError: FSharpErrorSeverityOptions * allErrors: bool * mainInputFileName: string * fileInfo: (int * int) * (PhasedDiagnostic * FSharpErrorSeverity) -> FSharpErrorInfo list
+    val CreateErrorInfos: FSharpErrorSeverityOptions * allErrors: bool * mainInputFileName: string * seq<(PhasedDiagnostic * FSharpErrorSeverity)> -> FSharpErrorInfo[]

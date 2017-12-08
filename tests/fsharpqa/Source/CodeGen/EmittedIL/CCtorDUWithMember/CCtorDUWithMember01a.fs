@@ -1,4 +1,4 @@
-// #NoMono #NoMT #CodeGen #EmittedIL #Unions #NETFX20Only #NETFX40Only 
+// #NoMono #NoMT #CodeGen #EmittedIL #Unions   
 module CCtorDUWithMember01a
 type C = 
     | A 

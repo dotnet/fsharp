@@ -1,6 +1,6 @@
-# The F# Language, Library Repository (also Visual F# Tools Repository)
+# The F# Language, Library, and  Visual F# Tools Repository
 
-You are invited to help producing future releases of the F# language compiler, library, and tools. This repository enables development on Linux, macOS and Windows, along with some automated CI testing for these.
+You are invited to help produce future releases of the F# language compiler, library, and tools. This repository enables development on Linux, macOS and Windows, along with some automated CI testing for these.
 
 * [About F#](http://fsharp.org)
 * [Testimonials](http://fsharp.org/testimonials)
@@ -19,7 +19,14 @@ For historical reasons this repository is called "visualfsharp" and currently al
 |            | Ubuntu (Build) | Windows (Debug Build) | Windows (Release Tests 1) | Windows (Release Tests 2) | Windows  (Release Tests 3) |
 |:----------:|:----------------:|:----------------:|:------------------:|:-----------------------:|:---------------------:|
 |**master**  |[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ubuntu14.04)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ubuntu14.04/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/debug_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/debug_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part1_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part1_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part2_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part2_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part3_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part3_windows_nt/)|
-|**vs2017-rtm**  |[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/vs2017-rtm/release_ubuntu14.04)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/vs2017-rtm/job/release_ubuntu14.04/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/vs2017-rtm/debug_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/vs2017-rtm/job/debug_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/vs2017-rtm/release_ci_part1_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/vs2017-rtm/job/release_ci_part1_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/vs2017-rtm/release_ci_part2_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/vs2017-rtm/job/release_ci_part2_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/vs2017-rtm/release_ci_part3_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/vs2017-rtm/job/release_ci_part3_windows_nt/)|
+|**dev15.5**  |[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/dev15.5/release_ubuntu14.04)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/dev15.5/job/release_ubuntu14.04/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/dev15.5/debug_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/dev15.5/job/debug_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/dev15.5/release_ci_part1_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/dev15.5/job/release_ci_part1_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/dev15.5/release_ci_part2_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/dev15.5/job/release_ci_part2_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/dev15.5/release_ci_part3_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/dev15.5/job/release_ci_part3_windows_nt/)|
+|**dev15.6**  |[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/dev15.6/release_ubuntu14.04)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/dev15.6/job/release_ubuntu14.04/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/dev15.6/debug_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/dev15.6/job/debug_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/dev15.6/release_ci_part1_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/dev15.6/job/release_ci_part1_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/dev15.6/release_ci_part2_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/dev15.6/job/release_ci_part2_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/dev15.6/release_ci_part3_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/dev15.6/job/release_ci_part3_windows_nt/)|
+
+
+## Help improve the Quality of the Tools by Using the Nightly Releases of Visual F# Tools
+To setup Visual Studio to use the latest nightly releases of the Visual F# Tools:
+https://blogs.msdn.microsoft.com/dotnet/2017/03/14/announcing-nightly-releases-for-the-visual-f-tools/
+
 
 ## Contributing
 
@@ -42,7 +49,7 @@ To contribute to the F# ecosystem more generally see the F# Software Foundation'
 
 ### License
 
-This project is subject to the Apache Licence, Version 2.0. A copy of the license can be found in [License.txt](License.txt) at the root of this repo.
+This project is subject to the MIT License. A copy of this license can be found in [License.txt](License.txt) at the root of this repo.
 
 
 ## Using
@@ -51,7 +58,9 @@ For typical installs of  F#, see http://fsharp.org.
 
 ### Using Nightly Releases of Visual F# Tools
 
-To setup Visual Studio to use the latest nightly releases of the Visual F# Tools, follow the [Using CI Builds](https://github.com/Microsoft/visualfsharp/wiki/Using-CI-Builds) instructions.
+To setup Visual Studio to use the latest nightly releases of the Visual F# Tools:
+
+https://blogs.msdn.microsoft.com/dotnet/2017/03/14/announcing-nightly-releases-for-the-visual-f-tools/
 
 ### Using CI Builds
 

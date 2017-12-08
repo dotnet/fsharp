@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corpration, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
@@ -28,6 +28,7 @@ and [<Class>] FSharpImplementationFileContents =
 #else
 and [<Class>] internal FSharpImplementationFileContents = 
 #endif
+    internal new : cenv: Impl.cenv * mimpl: TypedImplFile -> FSharpImplementationFileContents
 
     /// The qualified name acts to fully-qualify module specifications and implementations
     member QualifiedName: string

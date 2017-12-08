@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.NameResolution
 
@@ -21,6 +21,9 @@ type NameResolver =
     member InfoReader : InfoReader
     member amap : ImportMap
     member g : TcGlobals
+
+/// Get the active pattern elements defined in a module, if any. Cache in the slot in the module type.
+val ActivePatternElemsOfModuleOrNamespace : ModuleOrNamespaceRef -> NameMap<ActivePatternElemRef>
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 /// Represents the item with which a named argument is associated.
@@ -243,6 +246,7 @@ type internal ItemOccurence =
     | Pattern 
     | Implemented 
     | RelatedText
+    | Open
   
 /// Check for equality, up to signature matching
 val ItemsAreEffectivelyEqual : TcGlobals -> Item -> Item -> bool
@@ -307,7 +311,26 @@ type internal TcSymbolUses =
     /// Get the locations of all the printf format specifiers in the file
     member GetFormatSpecifierLocationsAndArity : unit -> (range * int)[]
 
+/// Represents open declaration statement.
+type internal OpenDeclaration =
+    { /// Long identifier as it's presented in soruce code.
+      LongId: Ident list
+      
+      /// Full range of the open declaration.
+      Range : range option
 
+      /// Modules or namespaces which is opened with this declaration.
+      Modules: ModuleOrNamespaceRef list 
+      
+      /// Scope in which open declaration is visible.
+      AppliedScope: range 
+      
+      /// If it's `namespace Xxx.Yyy` declaration.
+      IsOwnNamespace: bool }
+    
+    /// Create a new instance of OpenDeclaration.
+    static member Create : longId: Ident list * modules: ModuleOrNamespaceRef list * appliedScope: range * isOwnNamespace: bool -> OpenDeclaration
+    
 /// An abstract type for reporting the results of name resolution and type checking
 type ITypecheckResultsSink =
 
@@ -323,6 +346,9 @@ type ITypecheckResultsSink =
     /// Record that a printf format specifier occurred at a specific location in the source
     abstract NotifyFormatSpecifierLocation : range * int -> unit
 
+    /// Record that an open declaration occured in a given scope range
+    abstract NotifyOpenDeclaration : OpenDeclaration -> unit
+
     /// Get the current source
     abstract CurrentSource : string option
 
@@ -337,6 +363,10 @@ type internal TcResultsSinkImpl =
 
     /// Get all the uses of all symbols reported to the sink
     member GetSymbolUses : unit -> TcSymbolUses
+
+    /// Get all open declarations reported to the sink
+    member OpenDeclarations : OpenDeclaration list
+
     interface ITypecheckResultsSink
 
 /// An abstract type for reporting the results of name resolution and type checking, and which allows
@@ -363,6 +393,9 @@ val internal CallNameResolutionSinkReplacing     : TcResultsSink -> range * Name
 
 /// Report a specific name resolution at a source range
 val internal CallExprHasTypeSink        : TcResultsSink -> range * NameResolutionEnv * TType * DisplayEnv * AccessorDomain -> unit
+
+/// Report an open declaration
+val internal CallOpenDeclarationSink    : TcResultsSink -> OpenDeclaration -> unit
 
 /// Get all the available properties of a type (both intrinsic and extension)
 val internal AllPropInfosOfTypeInScope : InfoReader -> NameResolutionEnv -> string option * AccessorDomain -> FindMemberFlag -> range -> TType -> PropInfo list

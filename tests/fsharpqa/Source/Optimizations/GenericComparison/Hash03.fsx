@@ -1,4 +1,4 @@
-// #Regression #NoMono #CodeGen #Optimizations #ReqNOMT #NETFX20Only #NETFX40Only 
+// #Regression #NoMono #CodeGen #Optimizations #ReqNOMT   
 // Regression test for FSHARP1.0:3990
 module HashMicroPerfAndCodeGenerationTests = 
     let f4_tuple4() = 

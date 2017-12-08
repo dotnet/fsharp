@@ -1,4 +1,4 @@
-// #Regression #Conformance #LexicalAnalysis #Constants #NETFX20Only 
+// #Regression #Conformance #LexicalAnalysis #Constants  
 // Verify errors when trying to use non bigint big numbers
 
 //<Expects id="FS0784" status="error" span="(10,9)">This numeric literal requires that a module 'NumericLiteralN'</Expects>

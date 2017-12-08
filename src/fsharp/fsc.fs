@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // Driver for F# compiler. 
 // 
@@ -13,6 +13,7 @@
 module internal Microsoft.FSharp.Compiler.Driver 
 
 open System
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Diagnostics
 open System.Globalization
@@ -53,7 +54,7 @@ open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.TcGlobals
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -77,7 +78,7 @@ type ErrorLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, nameFo
 
     override x.ErrorCount = errors
     override x.DiagnosticSink(err, isError) = 
-      if isError || ReportWarningAsError (tcConfigB.globalWarnLevel, tcConfigB.specificWarnOff, tcConfigB.specificWarnOn, tcConfigB.specificWarnAsError, tcConfigB.specificWarnAsWarn, tcConfigB.globalWarnAsError) err then 
+      if isError || ReportWarningAsError tcConfigB.errorSeverityOptions err then 
         if errors >= tcConfigB.maxErrors then 
             x.HandleTooManyErrors(FSComp.SR.fscTooManyErrors())
             exiter.Exit 1
@@ -92,7 +93,7 @@ type ErrorLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, nameFo
         | :? KeyNotFoundException, None -> Debug.Assert(false, sprintf "Lookup exception in compiler: %s" (err.Exception.ToString()))
         | _ ->  ()
 
-      elif ReportWarning (tcConfigB.globalWarnLevel, tcConfigB.specificWarnOff, tcConfigB.specificWarnOn) err then
+      elif ReportWarning tcConfigB.errorSeverityOptions err then
           x.HandleIssue(tcConfigB, err, isError)
     
 
@@ -435,7 +436,7 @@ let GenerateInterfaceData(tcConfig:TcConfig) =
 
 let EncodeInterfaceData(tcConfig: TcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild) = 
     if GenerateInterfaceData(tcConfig) then 
-        let resource = WriteSignatureData (tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile)
+        let resource = WriteSignatureData (tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild)
         // The resource gets written to a file for FSharp.Core
         let useDataFiles = (tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib) && not isIncrementalBuild
         if useDataFiles then 
@@ -463,7 +464,7 @@ let EncodeOptimizationData(tcGlobals, tcConfig: TcConfig, outfile, exportRemappi
         let useDataFiles = (tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib) && not isIncrementalBuild
         if useDataFiles then 
             let ccu, modulInfo = data
-            let bytes = TastPickle.pickleObjWithDanglingCcus outfile tcGlobals ccu Optimizer.p_CcuOptimizationInfo modulInfo
+            let bytes = TastPickle.pickleObjWithDanglingCcus isIncrementalBuild outfile tcGlobals ccu Optimizer.p_CcuOptimizationInfo modulInfo
             let optDataFileName = (Filename.chopExtension outfile)+".optdata"
             File.WriteAllBytes(optDataFileName, bytes)
         let (ccu, optData) = 
@@ -471,7 +472,7 @@ let EncodeOptimizationData(tcGlobals, tcConfig: TcConfig, outfile, exportRemappi
                 map2Of2 Optimizer.AbstractOptimizationInfoToEssentials data 
             else 
                 data
-        [ WriteOptimizationData (tcGlobals, outfile, ccu, optData) ]
+        [ WriteOptimizationData (tcGlobals, outfile, isIncrementalBuild, ccu, optData) ]
     else
         [ ]
 
@@ -1103,7 +1104,7 @@ module StaticLinker =
                 // Don't save interface, optimization or resource definitions for provider-generated assemblies.
                 // These are "fake".
                 let isProvided (ccu: CcuThunk option) = 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
                     match ccu with 
                     | Some c -> c.IsProviderGenerated 
                     | None -> false
@@ -1333,7 +1334,7 @@ module StaticLinker =
     // prior to this point.
     let StaticLink (ctok, tcConfig:TcConfig, tcImports:TcImports, ilGlobals:ILGlobals) = 
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         let providerGeneratedAssemblies = 
 
             [ // Add all EST-generated assemblies into the static linking set
@@ -1347,7 +1348,7 @@ module StaticLinker =
             (fun ilxMainModule -> LegacyFindAndAddMscorlibTypesForStaticLinkingIntoFSharpCoreLibraryForNet20 (tcConfig, ilGlobals, ilxMainModule))
           
         elif not tcConfig.standalone && tcConfig.extraStaticLinkRoots.IsEmpty 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
              && providerGeneratedAssemblies.IsEmpty 
 #endif
              then 
@@ -1360,7 +1361,7 @@ module StaticLinker =
 
               ReportTime tcConfig "Static link"
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
               Morphs.enableMorphCustomAttributeData()
               let providerGeneratedILModules =  FindProviderGeneratedILModules (ctok, tcImports, providerGeneratedAssemblies) 
 
@@ -1758,7 +1759,7 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, openBinarie
     
     let inputs =
         // Deduplicate module names
-        let moduleNamesDict = Dictionary<string,Set<string>>()
+        let moduleNamesDict = ConcurrentDictionary<string,Set<string>>()
         inputs
         |> List.map (fun (input,x) -> DeduplicateParsedInputModuleName moduleNamesDict input,x)
 

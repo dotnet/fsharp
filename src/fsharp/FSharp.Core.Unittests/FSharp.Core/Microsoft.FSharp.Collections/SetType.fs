@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // Various tests for the:
 // Microsoft.FSharp.Collections.Set type
@@ -99,6 +99,16 @@ type SetType() =
         Assert.IsFalse(ic.Contains("A") )     
         let newArr = Array.create 5 "a"
         ic.CopyTo(newArr,0) 
+
+    [<Test>]
+    member this.IReadOnlyCollection() =        
+        // Legit IROC
+        let iroc = (new Set<int>([1;2;3;4])) :> IReadOnlyCollection<int>
+        Assert.AreEqual(iroc.Count, 4)       
+            
+        // Empty IROC
+        let iroc = (new Set<string>([])) :> IReadOnlyCollection<string>
+        Assert.AreEqual(iroc.Count, 0)
     
     [<Test>]
     member this.IComparable() =        

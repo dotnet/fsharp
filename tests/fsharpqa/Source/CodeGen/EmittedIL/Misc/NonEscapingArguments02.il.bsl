@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.17376
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:3:0:0
+  .ver 4:4:1:0
 }
 .assembly NonEscapingArguments02
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.NonEscapingArguments02
 {
-  // Offset: 0x00000000 Length: 0x0000037D
+  // Offset: 0x00000000 Length: 0x00000359
 }
 .mresource public FSharpOptimizationData.NonEscapingArguments02
 {
-  // Offset: 0x00000388 Length: 0x000001B6
+  // Offset: 0x00000360 Length: 0x000001A4
 }
 .module NonEscapingArguments02.dll
-// MVID: {4F20DEF8-BB56-6582-A745-0383F8DE204F}
+// MVID: {59B19213-BB56-6582-A745-03831392B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x000000D3335E0000
+// Image base: 0x01730000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -59,33 +59,32 @@
     .method public specialname rtspecialname 
             instance void  .ctor(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!t> somelist) cil managed
     {
-      // Code size       22 (0x16)
+      // Code size       21 (0x15)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 6,6 : 5,36 
+      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Misc\\NonEscapingArguments02.fs'
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  pop
-      IL_0008:  nop
-      IL_0009:  ldarg.0
-      IL_000a:  ldarg.1
-      IL_000b:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Length<!t>(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0>)
-      IL_0010:  stfld      int32 class NonEscapingArguments02/ListSizeCounter`1<!t>::size
-      .line 5,5 : 6,21 
-      IL_0015:  ret
+      .line 6,6 : 5,36 ''
+      IL_0008:  ldarg.0
+      IL_0009:  ldarg.1
+      IL_000a:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.ListModule::Length<!t>(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0>)
+      IL_000f:  stfld      int32 class NonEscapingArguments02/ListSizeCounter`1<!t>::size
+      .line 5,5 : 6,21 ''
+      IL_0014:  ret
     } // end of method ListSizeCounter`1::.ctor
 
     .method public hidebysig specialname 
             instance int32  get_Size() cil managed
     {
-      // Code size       8 (0x8)
+      // Code size       7 (0x7)
       .maxstack  8
-      .line 7,7 : 24,28 
-      IL_0000:  nop
-      IL_0001:  ldarg.0
-      IL_0002:  ldfld      int32 class NonEscapingArguments02/ListSizeCounter`1<!t>::size
-      IL_0007:  ret
+      .line 7,7 : 24,28 ''
+      IL_0000:  ldarg.0
+      IL_0001:  ldfld      int32 class NonEscapingArguments02/ListSizeCounter`1<!t>::size
+      IL_0006:  ret
     } // end of method ListSizeCounter`1::get_Size
 
     .property instance int32 Size()

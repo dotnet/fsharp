@@ -1,22 +1,19 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // Reflection on F# values. Analyze an object to see if it the representation
 // of an F# value.
 
-
-namespace Microsoft.FSharp.Core
+namespace Microsoft.FSharp.Reflection
 
 open System
 open System.Reflection
-open System.Threading
+open Microsoft.FSharp.Core
+open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Collections
-
-namespace Microsoft.FSharp.Reflection
+open Microsoft.FSharp.Primitives.Basics
 
 module internal ReflectionUtils = 
-
-    open Microsoft.FSharp.Core.Operators
 
 #if FX_NO_SYSTEM_BINDINGFLAGS
     type BindingFlags = Microsoft.FSharp.Core.ReflectionAdapters.BindingFlags
@@ -30,14 +27,6 @@ module internal ReflectionUtils =
         else
             BindingFlags.Public
 
-open System
-open System.Globalization
-open System.Reflection
-open Microsoft.FSharp.Core
-open Microsoft.FSharp.Core.Operators
-open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-open Microsoft.FSharp.Collections
-open Microsoft.FSharp.Primitives.Basics
 
 module internal Impl =
 
@@ -343,7 +332,7 @@ module internal Impl =
             else "New" + constrname
 
         match typ.GetMethod(methname, BindingFlags.Static  ||| bindingFlags) with
-        | null -> raise <| System.InvalidOperationException (SR.GetString1(SR.constructorForUnionCaseNotFound, methname))
+        | null -> raise <| System.InvalidOperationException (String.Format(SR.GetString(SR.constructorForUnionCaseNotFound), methname))
         | meth -> meth
 
     let getUnionCaseConstructor (typ:Type,tag:int,bindingFlags) = 
@@ -358,9 +347,9 @@ module internal Impl =
         checkNonNull "unionType" unionType;
         if not (isUnionType (unionType,bindingFlags)) then 
             if isUnionType (unionType,bindingFlags ||| BindingFlags.NonPublic) then 
-                invalidArg "unionType" (SR.GetString1(SR.privateUnionType, unionType.FullName))
+                invalidArg "unionType" (String.Format(SR.GetString(SR.privateUnionType), unionType.FullName))
             else
-                invalidArg "unionType" (SR.GetString1(SR.notAUnionType, unionType.FullName))
+                invalidArg "unionType" (String.Format(SR.GetString(SR.notAUnionType), unionType.FullName))
 
     //-----------------------------------------------------------------
     // TUPLE DECOMPILATION
@@ -446,7 +435,7 @@ module internal Impl =
         | _ -> invalidArg "tys" (SR.GetString(SR.invalidTupleTypes))
 
     let rec getTupleTypeInfo (typ:Type) = 
-      if not (isTupleType (typ) ) then invalidArg "typ" (SR.GetString1(SR.notATupleType, typ.FullName));
+      if not (isTupleType (typ) ) then invalidArg "typ" (String.Format(SR.GetString(SR.notATupleType), typ.FullName));
       let tyargs = typ.GetGenericArguments()
       if tyargs.Length = maxTuple then
           let tysA = tyargs.[0..tupleEncField-1]
@@ -462,13 +451,11 @@ module internal Impl =
         //   Item1, Item2, ..., Item<maxTuple-1>
         //   Item1, Item2, ..., Item<maxTuple-1>, Rest
         // The PropertyInfo may not come back in order, so ensure ordering here.
-#if FX_PORTABLE_OR_NETSTANDARD
-#else
+#if !FX_PORTABLE_OR_NETSTANDARD
         assert(maxTuple < 10) // Alphasort will only works for upto 9 items: Item1, Item10, Item2, Item3, ..., Item9, Rest
 #endif
         let props = props |> Array.sortBy (fun p -> p.Name) // they are not always in alphabetic order
-#if FX_PORTABLE_OR_NETSTANDARD  
-#else
+#if !FX_PORTABLE_OR_NETSTANDARD  
         assert(props.Length <= maxTuple)
         assert(let haveNames   = props |> Array.map (fun p -> p.Name)
                let expectNames = Array.init props.Length (fun i -> let j = i+1 // index j = 1,2,..,props.Length <= maxTuple
@@ -520,7 +507,7 @@ module internal Impl =
                 typ.GetConstructor(BindingFlags.Instance ||| bindingFlags,null,props |> Array.map (fun p -> p.PropertyType),null)
 #endif
         match ctor with
-        | null -> raise <| ArgumentException(SR.GetString1(SR.invalidTupleTypeConstructorNotDefined, typ.FullName))
+        | null -> raise <| ArgumentException(String.Format(SR.GetString(SR.invalidTupleTypeConstructorNotDefined), typ.FullName))
         | _ -> ()
         ctor
 
@@ -574,16 +561,16 @@ module internal Impl =
             maker1,Some(etys.[tupleEncField])
 
     let getTupleReaderInfo (typ:Type,index:int) =
-        if index < 0 then invalidArg "index" (SR.GetString2(SR.tupleIndexOutOfRange, typ.FullName, index.ToString()))
+        if index < 0 then invalidArg "index" (String.Format(SR.GetString(SR.tupleIndexOutOfRange), typ.FullName, index.ToString()))
 
         let get index =
             if typ.IsValueType then
                 let props = typ.GetProperties(instancePropertyFlags ||| BindingFlags.Public) |> orderTupleProperties
-                if index >= props.Length then invalidArg "index" (SR.GetString2(SR.tupleIndexOutOfRange, typ.FullName, index.ToString()))
+                if index >= props.Length then invalidArg "index" (String.Format(SR.GetString(SR.tupleIndexOutOfRange), typ.FullName, index.ToString()))
                 props.[index]
             else
                 let props = typ.GetProperties(instancePropertyFlags ||| BindingFlags.Public) |> orderTupleProperties
-                if index >= props.Length then invalidArg "index" (SR.GetString2(SR.tupleIndexOutOfRange, typ.FullName, index.ToString()))
+                if index >= props.Length then invalidArg "index" (String.Format(SR.GetString(SR.tupleIndexOutOfRange), typ.FullName, index.ToString()))
                 props.[index]
 
         if index < tupleEncField then
@@ -597,7 +584,7 @@ module internal Impl =
     
       
     let getFunctionTypeInfo (typ:Type) =
-      if not (isFunctionType typ) then invalidArg "typ" (SR.GetString1(SR.notAFunctionType, typ.FullName))
+      if not (isFunctionType typ) then invalidArg "typ" (String.Format(SR.GetString(SR.notAFunctionType), typ.FullName))
       let tyargs = typ.GetGenericArguments()
       tyargs.[0], tyargs.[1]
 
@@ -645,7 +632,7 @@ module internal Impl =
         let ctor = typ.GetConstructor(BindingFlags.Instance ||| bindingFlags,null,props |> Array.map (fun p -> p.PropertyType),null)
 #endif        
         match ctor with
-        | null -> raise <| ArgumentException(SR.GetString1(SR.invalidRecordTypeConstructorNotDefined, typ.FullName))
+        | null -> raise <| ArgumentException(String.Format(SR.GetString(SR.invalidRecordTypeConstructorNotDefined), typ.FullName))
         | _ -> ()
         ctor
 
@@ -675,7 +662,6 @@ module internal Impl =
            else 
               true)
 
-
     let getTypeOfReprType (typ:Type,bindingFlags) = 
         if isExceptionRepr(typ,bindingFlags) then typ.BaseType
         elif isConstructorRepr(typ,bindingFlags) then unionTypeOfUnionCaseType(typ,bindingFlags)
@@ -684,28 +670,27 @@ module internal Impl =
           get typ 
         else typ
 
-
     //-----------------------------------------------------------------
     // CHECKING ROUTINES
 
     let checkExnType (exceptionType, bindingFlags) =
         if not (isExceptionRepr (exceptionType,bindingFlags)) then 
             if isExceptionRepr (exceptionType,bindingFlags ||| BindingFlags.NonPublic) then 
-                invalidArg "exceptionType" (SR.GetString1(SR.privateExceptionType, exceptionType.FullName))
+                invalidArg "exceptionType" (String.Format(SR.GetString(SR.privateExceptionType), exceptionType.FullName))
             else
-                invalidArg "exceptionType" (SR.GetString1(SR.notAnExceptionType, exceptionType.FullName))
+                invalidArg "exceptionType" (String.Format(SR.GetString(SR.notAnExceptionType), exceptionType.FullName))
            
     let checkRecordType(argName,recordType,bindingFlags) =
         checkNonNull argName recordType;
         if not (isRecordType (recordType,bindingFlags) ) then 
             if isRecordType (recordType,bindingFlags ||| BindingFlags.NonPublic) then 
-                invalidArg argName (SR.GetString1(SR.privateRecordType, recordType.FullName))
+                invalidArg argName (String.Format(SR.GetString(SR.privateRecordType), recordType.FullName))
             else
-                invalidArg argName (SR.GetString1(SR.notARecordType, recordType.FullName))
+                invalidArg argName (String.Format(SR.GetString(SR.notARecordType), recordType.FullName))
         
     let checkTupleType(argName,(tupleType:Type)) =
         checkNonNull argName tupleType;
-        if not (isTupleType tupleType) then invalidArg argName (SR.GetString1(SR.notATupleType, tupleType.FullName))
+        if not (isTupleType tupleType) then invalidArg argName (String.Format(SR.GetString(SR.notATupleType), tupleType.FullName))
 
 #if FX_RESHAPED_REFLECTION
 open ReflectionAdapters
@@ -837,10 +822,10 @@ type DynamicFunction<'T1,'T2>() =
 [<AbstractClass; Sealed>]
 type FSharpValue = 
 
-    static member MakeRecord(recordType:Type,args,?bindingFlags) = 
+    static member MakeRecord(recordType:Type,values,?bindingFlags) = 
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public
         Impl.checkRecordType("recordType",recordType,bindingFlags)
-        Impl.getRecordConstructor (recordType,bindingFlags) args
+        Impl.getRecordConstructor (recordType,bindingFlags) values
 
     static member GetRecordField(record:obj,info:PropertyInfo) =
         Impl.checkNonNull "info" info;
@@ -877,7 +862,7 @@ type FSharpValue =
 
     static member MakeFunction(functionType:Type,implementation:(obj->obj)) = 
         Impl.checkNonNull "functionType" functionType
-        if not (Impl.isFunctionType functionType) then invalidArg "functionType" (SR.GetString1(SR.notAFunctionType, functionType.FullName));
+        if not (Impl.isFunctionType functionType) then invalidArg "functionType" (String.Format(SR.GetString(SR.notAFunctionType), functionType.FullName));
         Impl.checkNonNull "implementation" implementation
         let domain,range = Impl.getFunctionTypeInfo functionType
         let dynCloMakerTy = typedefof<DynamicFunction<obj,obj>>
@@ -894,15 +879,15 @@ type FSharpValue =
     static member GetTupleFields(tuple:obj) = // argument name(s) used in error message
         Impl.checkNonNull "tuple" tuple
         let typ = tuple.GetType() 
-        if not (Impl.isTupleType typ ) then invalidArg "tuple" (SR.GetString1(SR.notATupleType, tuple.GetType().FullName));
+        if not (Impl.isTupleType typ ) then invalidArg "tuple" (String.Format(SR.GetString(SR.notATupleType), tuple.GetType().FullName));
         Impl.getTupleReader typ tuple
 
     static member GetTupleField(tuple:obj,index:int) = // argument name(s) used in error message
         Impl.checkNonNull "tuple" tuple
         let typ = tuple.GetType() 
-        if not (Impl.isTupleType typ ) then invalidArg "tuple" (SR.GetString1(SR.notATupleType, tuple.GetType().FullName));
+        if not (Impl.isTupleType typ ) then invalidArg "tuple" (String.Format(SR.GetString(SR.notATupleType), tuple.GetType().FullName));
         let fields = Impl.getTupleReader typ tuple
-        if index < 0 || index >= fields.Length then invalidArg "index" (SR.GetString2(SR.tupleIndexOutOfRange, tuple.GetType().FullName, index.ToString()));
+        if index < 0 || index >= fields.Length then invalidArg "index" (String.Format(SR.GetString(SR.tupleIndexOutOfRange), tuple.GetType().FullName, index.ToString()));
         fields.[index]
     
     static member PreComputeTupleReader(tupleType:Type) : (obj -> obj[])  =
@@ -936,7 +921,7 @@ type FSharpValue =
         Impl.checkNonNull "unionCase" unionCase;
         Impl.getUnionCaseConstructorMethod (unionCase.DeclaringType,unionCase.Tag,bindingFlags)
 
-    static member GetUnionFields(obj:obj,unionType:Type,?bindingFlags) = 
+    static member GetUnionFields(value:obj,unionType:Type,?bindingFlags) = 
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
         let ensureType (typ:Type,obj:obj) = 
                 match typ with 
@@ -945,15 +930,15 @@ type FSharpValue =
                     | null -> invalidArg "obj" (SR.GetString(SR.objIsNullAndNoType))
                     | _ -> obj.GetType()
                 | _ -> typ 
-        //System.Console.WriteLine("typ1 = {0}",box unionType)
-        let unionType = ensureType(unionType,obj) 
-        //System.Console.WriteLine("typ2 = {0}",box unionType)
+
+        let unionType = ensureType(unionType,value) 
+
         Impl.checkNonNull "unionType" unionType
         let unionType = Impl.getTypeOfReprType (unionType ,bindingFlags)
-        //System.Console.WriteLine("typ3 = {0}",box unionType)
+
         Impl.checkUnionType(unionType,bindingFlags)
-        let tag = Impl.getUnionTagReader (unionType,bindingFlags) obj
-        let flds = Impl.getUnionCaseRecordReader (unionType,tag,bindingFlags) obj 
+        let tag = Impl.getUnionTagReader (unionType,bindingFlags) value
+        let flds = Impl.getUnionCaseRecordReader (unionType,tag,bindingFlags) value 
         UnionCaseInfo(unionType,tag), flds
         
     static member PreComputeUnionTagReader(unionType: Type,?bindingFlags) : (obj -> int) = 
@@ -962,7 +947,6 @@ type FSharpValue =
         let unionType = Impl.getTypeOfReprType (unionType ,bindingFlags)
         Impl.checkUnionType(unionType,bindingFlags)
         Impl.getUnionTagReader (unionType ,bindingFlags)
-
 
     static member PreComputeUnionTagMemberInfo(unionType: Type,?bindingFlags) = 
         let bindingFlags = defaultArg bindingFlags BindingFlags.Public 
@@ -1013,9 +997,9 @@ module FSharpReflectionExtensions =
             FSharpType.IsRecord(typ, bindingFlags)
 
     type FSharpValue with
-        static member MakeRecord(recordType:Type,args,?allowAccessToPrivateRepresentation) = 
+        static member MakeRecord(recordType:Type,values,?allowAccessToPrivateRepresentation) = 
             let bindingFlags = Impl.getBindingFlags allowAccessToPrivateRepresentation
-            FSharpValue.MakeRecord(recordType, args, bindingFlags)
+            FSharpValue.MakeRecord(recordType, values, bindingFlags)
 
         static member GetRecordFields(record:obj,?allowAccessToPrivateRepresentation) =
             let bindingFlags = Impl.getBindingFlags allowAccessToPrivateRepresentation
@@ -1049,9 +1033,9 @@ module FSharpReflectionExtensions =
             let bindingFlags = Impl.getBindingFlags allowAccessToPrivateRepresentation
             FSharpValue.PreComputeUnionTagMemberInfo(unionType, bindingFlags)
 
-        static member GetUnionFields(obj:obj,unionType:Type,?allowAccessToPrivateRepresentation) = 
+        static member GetUnionFields(value:obj,unionType:Type,?allowAccessToPrivateRepresentation) = 
             let bindingFlags = Impl.getBindingFlags allowAccessToPrivateRepresentation 
-            FSharpValue.GetUnionFields(obj, unionType, bindingFlags)
+            FSharpValue.GetUnionFields(value, unionType, bindingFlags)
 
         static member PreComputeUnionTagReader(unionType: Type,?allowAccessToPrivateRepresentation) : (obj -> int) = 
             let bindingFlags = Impl.getBindingFlags allowAccessToPrivateRepresentation

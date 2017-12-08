@@ -1,0 +1,67 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="ko" original="../BuildEventsPropPage.resx">
+    <body>
+      <trans-unit id="lblPreBuildEventCommandLine.Text">
+        <source>P&amp;re-build event command line:</source>
+        <target state="translated">빌드 전 이벤트 명령줄(&amp;R):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="txtPreBuildEventCommandLine.AccessibleName">
+        <source>Pre-build event command line</source>
+        <target state="translated">빌드 전 이벤트 명령줄</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="btnPreBuildBuilder.AccessibleName">
+        <source>Edit Pre-build ...</source>
+        <target state="translated">빌드 전 편집...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="btnPreBuildBuilder.Text">
+        <source>Ed&amp;it Pre-build ...</source>
+        <target state="translated">빌드 전 편집(&amp;I)...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lblPostBuildEventCommandLine.Text">
+        <source>P&amp;ost-build event command line:</source>
+        <target state="translated">빌드 후 이벤트 명령줄(&amp;O):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="txtPostBuildEventCommandLine.AccessibleName">
+        <source>Post-build event command line</source>
+        <target state="translated">빌드 후 이벤트 명령줄</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="btnPostBuildBuilder.AccessibleName">
+        <source>Edit Post-build ...</source>
+        <target state="translated">빌드 후 편집...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="btnPostBuildBuilder.Text">
+        <source>Edit Post-b&amp;uild ...</source>
+        <target state="translated">빌드 후 편집(&amp;U)...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lblRunPostBuildEvent.Text">
+        <source>Ru&amp;n the post-build event:</source>
+        <target state="translated">빌드 후 이벤트 실행(&amp;N):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboRunPostBuildEvent.Items">
+        <source>Always</source>
+        <target state="translated">항상</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboRunPostBuildEvent.Items1">
+        <source>On successful build</source>
+        <target state="translated">빌드가 성공한 경우</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboRunPostBuildEvent.Items2">
+        <source>When the build updates the project output</source>
+        <target state="translated">빌드에서 프로젝트 출력을 업데이트한 경우</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

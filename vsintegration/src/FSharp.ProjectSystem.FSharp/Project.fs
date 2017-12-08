@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 #nowarn "40"
 
@@ -45,7 +45,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
     [<assembly:ProvideCodeBase(AssemblyName = "FSharp.Compiler.Private", CodeBase = @"$PackageFolder$\FSharp.Compiler.Private.dll")>]
     [<assembly:ProvideCodeBase(AssemblyName = "FSharp.Compiler.Server.Shared", CodeBase = @"$PackageFolder$\FSharp.Compiler.Server.Shared.dll")>]
     [<assembly:ProvideCodeBase(AssemblyName = "FSharp.UIResources", CodeBase = @"$PackageFolder$\FSharp.UIResources.dll")>]
-    [<assembly:ProvideBindingRedirection(AssemblyName = "FSharp.Core", OldVersionLowerBound = "2.0.0.0", OldVersionUpperBound = "4.4.0.0", NewVersion = "4.4.1.0", CodeBase = @"$PackageFolder$\FSharp.Core.dll")>]
+    [<assembly:ProvideBindingRedirection(AssemblyName = "FSharp.Core", OldVersionLowerBound = "2.0.0.0", OldVersionUpperBound = "4.4.3.0", NewVersion = "4.4.3.0", CodeBase = @"$PackageFolder$\FSharp.Core.dll")>]
     do ()
 
     module internal VSHiveUtilities =
@@ -88,26 +88,30 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
     // An IProjectSite object with hot-swappable inner implementation
     type internal DynamicProjectSite(origInnerImpl : Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite) =
+
         let mutable inner = origInnerImpl
+
         member x.SetImplementation newInner =
             inner <- newInner
+
         // This interface is thread-safe, assuming "inner" is thread-safe
         interface Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite with
-            member ips.SourceFilesOnDisk() = inner.SourceFilesOnDisk()
-            member ips.DescriptionOfProject() = inner.DescriptionOfProject()
-            member ips.CompilerFlags() = inner.CompilerFlags()
-            member ips.ProjectFileName() = inner.ProjectFileName()
-            member ips.AdviseProjectSiteChanges(callbackOwnerKey,callback) = inner.AdviseProjectSiteChanges(callbackOwnerKey, callback)
-            member ips.AdviseProjectSiteCleaned(callbackOwnerKey,callback) = inner.AdviseProjectSiteCleaned(callbackOwnerKey, callback)
-            member ips.AdviseProjectSiteClosed(callbackOwnerKey,callback) = inner.AdviseProjectSiteClosed(callbackOwnerKey, callback)
-            member ips.BuildErrorReporter with get() = inner.BuildErrorReporter and set v = inner.BuildErrorReporter <- v
-            member ips.TargetFrameworkMoniker = inner.TargetFrameworkMoniker
-            member ips.ProjectGuid = inner.ProjectGuid
-            member ips.IsIncompleteTypeCheckEnvironment = false
-            member ips.LoadTime = inner.LoadTime 
-            member ips.ProjectProvider = inner.ProjectProvider
-            member ips.AssemblyReferences() = inner.AssemblyReferences()
-        override x.ToString() = inner.ProjectFileName()
+            member __.Description = inner.Description
+            member __.CompilationSourceFiles = inner.CompilationSourceFiles
+            member __.CompilationOptions = inner.CompilationOptions
+            member __.CompilationReferences = inner.CompilationReferences
+            member __.CompilationBinOutputPath = inner.CompilationBinOutputPath
+            member __.ProjectFileName = inner.ProjectFileName
+            member __.AdviseProjectSiteChanges(callbackOwnerKey,callback) = inner.AdviseProjectSiteChanges(callbackOwnerKey, callback)
+            member __.AdviseProjectSiteCleaned(callbackOwnerKey,callback) = inner.AdviseProjectSiteCleaned(callbackOwnerKey, callback)
+            member __.AdviseProjectSiteClosed(callbackOwnerKey,callback) = inner.AdviseProjectSiteClosed(callbackOwnerKey, callback)
+            member __.BuildErrorReporter with get() = inner.BuildErrorReporter and set v = inner.BuildErrorReporter <- v
+            member __.TargetFrameworkMoniker = inner.TargetFrameworkMoniker
+            member __.ProjectGuid = inner.ProjectGuid
+            member __.IsIncompleteTypeCheckEnvironment = false
+            member __.LoadTime = inner.LoadTime 
+            member __.ProjectProvider = inner.ProjectProvider
+        override x.ToString() = inner.ProjectFileName
 
     type internal ProjectSiteOptionLifetimeState =
         | Opening=1  // The project has been opened, but has not yet called Compile() to compute sources/flags
@@ -408,11 +412,12 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             
             let mutable inMidstOfReloading = false
             
-            // WARNING: Please avoid renaming this field or the containing type. The Visual F# Power Tools currently
-            // use reflection to access this field to extract project sources and flags accurately from F# projects.  
-            // See https://github.com/fsprojects/VisualFSharpPowerTools/blob/58b8e409ee6836a39b22284740706d2cf488aabe/src/FSharpVSPowerTools.Logic/ProjectProvider.fs#L42
-            // for example. If necessary, this can be changed - but please just try to avoid doing a gratuitous rename.
-            let mutable sourcesAndFlags : option<(array<string> * array<string>)> = None
+            let mutable sourcesAndFlags : option<(string[] * string[])> = None
+
+            let mutable normalizedRefs : string[] option = None
+
+            let mutable binOutputPath : string option = None
+
 #if DEBUG
             let logger = new Microsoft.Build.Logging.ConsoleLogger(Microsoft.Build.Framework.LoggerVerbosity.Diagnostic,
                                 (fun s -> Trace.WriteLine("MSBuild: " + s)),
@@ -504,7 +509,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                                  "3.259.3.1"; "3.259.4.0"]        // portable 259
                                 |> List.map (fun s -> System.Version(s))
                             let latestOnlyVersions = 
-                                ["4.4.1.0"                        // .NET 4 desktop
+                                ["4.4.3.0"                        // .NET 4 desktop
                                  "3.47.41.0"                       // portable 47
                                  "3.7.41.0"                        // portable 7
                                  "3.78.41.0"                       // portable 78
@@ -519,7 +524,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                                 VsShellUtilities.ShowMessageBox
                                     (
                                         serviceProvider = this.Site,
-                                        message = FSharpSR.GetString(FSharpSR.FSharpCoreVersionIsNotLegacyCompatible),
+                                        message = FSharpSR.FSharpCoreVersionIsNotLegacyCompatible(),
                                         title = null,
                                         icon = OLEMSGICON.OLEMSGICON_QUERY, 
                                         msgButton = OLEMSGBUTTON.OLEMSGBUTTON_YESNO, 
@@ -530,7 +535,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
                         this.SetProjectProperty(ProjectFileConstants.TargetFSharpCoreVersion, v)
 
-                        let buildResult = this.Build(MsBuildTarget.ResolveAssemblyReferences);
+                        let buildResult = this.Build(MsBuildTarget.ResolveAssemblyReferences)
 
                         for asmNode in System.Linq.Enumerable.OfType<AssemblyReferenceNode>(this.GetReferenceContainer().EnumReferences()) do
                             if (AssemblyReferenceNode.IsFSharpCoreReference asmNode) then
@@ -835,7 +840,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             /// <param name="target">Full path to destination file</param>
             override x.AddFileFromTemplate(source:string, target:string ) =
                 if not (Microsoft.FSharp.Compiler.AbstractIL.Internal.Library.Shim.FileSystem.SafeExists(source)) then
-                    raise <| new FileNotFoundException(String.Format(FSharpSR.GetString(FSharpSR.TemplateNotFound), source))
+                    raise <| new FileNotFoundException(String.Format(FSharpSR.TemplateNotFound(), source))
 
                 // We assume that there is no token inside the file because the only
                 // way to add a new element should be through the template wizard that
@@ -940,7 +945,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             /// <param name="formatlist">The formatlist to return</param>
             override x.GetFormatList(formatlist:byref<string> ) =
                 // see docs for IPersistFileFormat.GetFormatList for correct format of this string
-                formatlist <- sprintf "%s\n*.fsproj\n" (FSharpSR.GetString(FSharpSR.ProjectFileExtensionFilter))
+                formatlist <- sprintf "%s\n*.fsproj\n" (FSharpSR.ProjectFileExtensionFilter())
                 VSConstants.S_OK
 
             member this.IsCurrentProjectDotNetPortable() = this.CheckProjectFrameworkIdentifier(".NETPortable")
@@ -986,7 +991,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     stripEndingSemicolon paths
 
                 let dialogTitle = 
-                    let text = FSharpSR.GetString(FSharpSR.AddReferenceDialogTitleDev11)
+                    let text = FSharpSR.AddReferenceDialogTitle_Dev11()
                     String.Format(text, self.VSProject.Project.Name)
 
                 let referenceContainerNode = this.GetReferenceContainer() :?> ReferenceContainerNode
@@ -1022,9 +1027,9 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                             // MSDN: Gets or sets whether the assembly is referenced implicitly
                             assemblyReferenceProviderContext.IsImplicitlyReferenced <- false
                             // MSDN: Gets or sets the message to display during retargeting.
-                            assemblyReferenceProviderContext.RetargetingMessage <- FSharpSR.GetString(FSharpSR.AddReferenceAssemblyPageDialogRetargetingText)
+                            assemblyReferenceProviderContext.RetargetingMessage <- FSharpSR.AddReferenceAssemblyPageDialogRetargetingText()
                             // MSDN: Sets the custom no items message for the specified tab.
-                            assemblyReferenceProviderContext.SetNoItemsMessageForTab(uint32 __VSASSEMBLYPROVIDERTAB.TAB_ASSEMBLY_FRAMEWORK, FSharpSR.GetString(FSharpSR.AddReferenceAssemblyPageDialogNoItemsText))
+                            assemblyReferenceProviderContext.SetNoItemsMessageForTab(uint32 __VSASSEMBLYPROVIDERTAB.TAB_ASSEMBLY_FRAMEWORK, FSharpSR.AddReferenceAssemblyPageDialogNoItemsText())
                             // we support only fixed set of portable profiles thus retargeting is prohibited
                             assemblyReferenceProviderContext.SupportsRetargeting <- false
 
@@ -1079,7 +1084,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     let c = 
                         let c = componentDialog.CreateProviderContext(VSConstants.FileReferenceProvider_Guid)
                         let fileReferenceProviderContext = c :?> IVsFileReferenceProviderContext 
-                        fileReferenceProviderContext.BrowseFilter <- sprintf "%s|*.dll;*.exe;" (FSharpSR.GetString FSharpSR.ComponentFileExtensionFilter)
+                        fileReferenceProviderContext.BrowseFilter <- sprintf "%s|*.dll;*.exe;" (FSharpSR.ComponentFileExtensionFilter())
                         c
                     yield c
                     // TODO, eventually, win8 stuff
@@ -1285,43 +1290,45 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 let result = base.InvokeMsBuild(target, extraProperties)
                 result
 
-            // Fulfill HostObject contract with Fsc task, and enable 'capture' of compiler flags for the project.
-#if FX_NO_CONVERTER
-            member x.Compile(compile:Func<int>, flags:string[], sources:string[]) = 
-#else
-            member x.Compile(compile:System.Converter<int,int>, flags:string[], sources:string[]) = 
-#endif
+            member x.CoreCompile(flags:string[], sources:string[]) =
                 // Note: This method may be called from non-UI thread!  The Fsc task in FSharp.Build.dll invokes this method via reflection, and
                 // the Fsc task is typically created by MSBuild on a background thread.  So be careful.
 #if DEBUG
                 compileWasActuallyCalled <- true
 #endif                    
-                let normalizedSources = sources |> Array.map (fun fn -> System.IO.Path.GetFullPath(System.IO.Path.Combine(x.ProjectFolder, fn)))
-                let r = (normalizedSources, flags)
-                sourcesAndFlags <- Some(r)
+                let updatedNormalizedSources = sources |> Array.map (fun fn -> System.IO.Path.GetFullPath(System.IO.Path.Combine(x.ProjectFolder, fn)))
+                let updatedNormalizedRefs = flags |> Array.choose (fun flag -> if flag.StartsWith("-r:") then Some flag.[3..] else None) |> Array.map (fun fn -> Path.GetFullPath(Path.Combine(x.ProjectFolder, fn)))
+                sourcesAndFlags <- Some (updatedNormalizedSources, flags)
+                normalizedRefs <- Some updatedNormalizedRefs
+                binOutputPath <- x.GetCurrentOutputAssembly() |> Option.ofObj
+
                 if projectSite.State = ProjectSiteOptionLifetimeState.Opening then
                     // This is the first time, so set up interface for language service to talk to us
                     projectSite.Open(x.CreateRunningProjectSite())
+
+            // =====================================================================================================
+            // Todo: x.Compile(compile:System.Converter<int,int>, flags:string[], sources:string[]) for VS2017.7
+            // Earlier buildtasks usesd System.Converter<int,int> for cross platform we are moving to Func<int>
+            // This is so that during the interim, earlier VS's will still load the OSS project
+            // =====================================================================================================
+            member x.Compile(compile:System.Converter<int,int>, flags:string[], sources:string[]) =
+                x.CoreCompile(flags, sources)
                 if actuallyBuild then
-#if FX_NO_CONVERTER
-                    compile.Invoke()
-#else
                     compile.Invoke(0)
-#endif
                 else
                     0
 
-            // returns an array of all "foo"s of form: <Compile Include="foo"/>
-            member private x.ComputeCompileItems() =
-                FSharpProjectNode.ComputeCompileItems(x.BuildProject, x.ProjectFolder)
-            static member ComputeCompileItems(buildProject, projectFolder) =
-                [|
-                for i in buildProject.Items do
-                    if i.ItemType = "Compile" then
-                        yield System.IO.Path.GetFullPath(System.IO.Path.Combine(projectFolder, i.EvaluatedInclude))
-                |]
-            member x.GetCompileItems() = let sources,_ = sourcesAndFlags.Value in sources
-            member x.GetCompileFlags() = let _,flags = sourcesAndFlags.Value in flags
+            member x.Compile(compile:Func<int>, flags:string[], sources:string[]) =
+                x.CoreCompile(flags, sources)
+                if actuallyBuild then
+                    compile.Invoke()
+                else
+                    0
+
+            member __.CompilationSourceFiles = match sourcesAndFlags with None -> [| |] | Some (sources,_) -> sources
+            member __.CompilationOptions = match sourcesAndFlags with None -> [| |] | Some (_,flags) -> flags
+            member __.CompilationReferences = match normalizedRefs with None -> [| |] | Some refs -> refs
+            member __.CompilationBinOutputPath = binOutputPath
 
             override x.ComputeSourcesAndFlags() =
 
@@ -1329,8 +1336,8 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
                     use sourcesAndFlagsWaitDialog =
                         {
-                            WaitCaption = FSharpSR.GetString FSharpSR.ProductName
-                            WaitMessage = FSharpSR.GetString FSharpSR.ComputingSourcesAndFlags
+                            WaitCaption = FSharpSR.ProductName()
+                            WaitMessage = FSharpSR.ComputingSourcesAndFlags()
                             ProgressText = Some x.ProjectFile
                             StatusBmpAnim = null
                             StatusBarText = None
@@ -1340,7 +1347,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                         }
                         |> WaitDialog.start x.Site
                 
-                    // REVIEW CompilerFlags will be stale since last 'save' of MSBuild .fsproj file - can we do better?
+                    // REVIEW CompilationOptions will be stale since last 'save' of MSBuild .fsproj file - can we do better?
                     try
                         actuallyBuild <- false 
                         x.SetCurrentConfiguration()
@@ -1438,75 +1445,69 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
             // Returns an IProjectSite that references "this" to get its information
             member private x.CreateRunningProjectSite() =
-                let creationTime = System.DateTime.Now 
+                let creationTime = System.DateTime.UtcNow
                 { new Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite with
-                    // Note: these methods get called by language service from an arbitrary thread, but the things they
-                    // access (x.GetCompileItems, x.Caption, sourcesAndFlags) are all thread-safe.
-                    member ips.SourceFilesOnDisk() = x.GetCompileItems()
-                    member ips.DescriptionOfProject() = 
-                        let sources,flags = sourcesAndFlags.Value
-                        sprintf "Project System: flags(%A) sources:\n%A" flags sources
-                    member ips.CompilerFlags() = x.GetCompileFlags()
-                    member ips.ProjectFileName() = MSBuildProject.GetFullPath(x.BuildProject)
-                    member ips.BuildErrorReporter with get() = buildErrorReporter and set v = buildErrorReporter <- v
-                    member this.AdviseProjectSiteChanges(callbackOwnerKey,callback) =
-                        sourcesAndFlagsNotifier.Advise(callbackOwnerKey,callback)
-                    member this.AdviseProjectSiteCleaned(callbackOwnerKey,callback) =
-                        cleanNotifier.Advise(callbackOwnerKey,callback)
-                    member this.AdviseProjectSiteClosed(callbackOwnerKey,callback) =
-                        closeNotifier.Advise(callbackOwnerKey,callback)
-                    member this.IsIncompleteTypeCheckEnvironment = false
-                    member this.TargetFrameworkMoniker = x.GetTargetFrameworkMoniker()
-                    member this.ProjectGuid = x.GetProjectGuid()
-                    member this.LoadTime = creationTime
-                    member this.ProjectProvider = Some (x :> IProvideProjectSite)
-                    member this.AssemblyReferences() =
-                        x.GetReferenceContainer().EnumReferences()
-                        |> Seq.choose (
-                            function
-                            | :? AssemblyReferenceNode as arn -> Some arn.Url
-                            | _ -> None
-                            )
-                        |> Array.ofSeq
+
+                    member __.CompilationSourceFiles = x.CompilationSourceFiles
+                    member __.CompilationOptions = x.CompilationOptions
+                    member __.CompilationReferences = x.CompilationReferences
+                    member __.CompilationBinOutputPath = x.CompilationBinOutputPath
+
+                    member __.Description = 
+                        match sourcesAndFlags with
+                        | Some (sources,flags) -> sprintf "Project System: flags(%A) sources:\n%A" flags sources
+                        | None -> sprintf "Project System, no flags available" 
+
+                    member __.ProjectFileName = MSBuildProject.GetFullPath(x.BuildProject)
+
+                    member __.BuildErrorReporter 
+                        with get() = buildErrorReporter 
+                        and set v = buildErrorReporter <- v
+
+                    member __.AdviseProjectSiteChanges(callbackOwnerKey,callback) = sourcesAndFlagsNotifier.Advise(callbackOwnerKey,callback)
+                    member __.AdviseProjectSiteCleaned(callbackOwnerKey,callback) = cleanNotifier.Advise(callbackOwnerKey,callback)
+                    member __.AdviseProjectSiteClosed(callbackOwnerKey,callback) = closeNotifier.Advise(callbackOwnerKey,callback)
+                    member __.IsIncompleteTypeCheckEnvironment = false
+                    member __.TargetFrameworkMoniker = x.GetTargetFrameworkMoniker()
+                    member __.ProjectGuid = x.GetProjectGuid()
+                    member __.LoadTime = creationTime
+                    member __.ProjectProvider = Some (x :> IProvideProjectSite)
+
                 }
 
             // Snapshot-capture relevent values from "this", and returns an IProjectSite 
             // that does _not_ reference "this" to get its information.
+            // CreateStaticProjectSite can be called on a project that failed to load (as in Close)
             member private x.CreateStaticProjectSite() =
-                // CreateStaticProjectSite can be called on a project that failed to load (as in Close)
-                let compileItems,flags =                                     
-                    match sourcesAndFlags with
-                    |   None -> Array.create 0 "", Array.create 0 ""
-                    |   Some(sources,flags) -> sources, flags
-                let caption = x.Caption
+                let outputPath = x.CompilationBinOutputPath
+                let sourceFiles = x.CompilationSourceFiles
+                let options = x.CompilationOptions
+                let refs = x.CompilationReferences
+                let description = x.Caption
                 let mutable staticBuildErrorReporter = buildErrorReporter
                 let projFileName = MSBuildProject.GetFullPath(x.BuildProject)
                 let targetFrameworkMoniker = x.GetTargetFrameworkMoniker()
-                let creationTime = System.DateTime.Now 
-                let assemblyReferences =
-                    x.GetReferenceContainer().EnumReferences()
-                    |> Seq.choose (
-                        function
-                        | :? AssemblyReferenceNode as arn -> Some arn.Url
-                        | _ -> None
-                        )
-                    |> Array.ofSeq
+                let creationTime = DateTime.UtcNow
+
                 // This object is thread-safe
                 { new Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite with
-                    member ips.SourceFilesOnDisk() = compileItems
-                    member ips.DescriptionOfProject() = caption
-                    member ips.CompilerFlags() = flags
-                    member ips.ProjectFileName() = projFileName
-                    member ips.BuildErrorReporter with get() = staticBuildErrorReporter and set v = staticBuildErrorReporter <- v
-                    member this.AdviseProjectSiteChanges(_,_) = ()
-                    member this.AdviseProjectSiteCleaned(_,_) = ()
-                    member this.AdviseProjectSiteClosed(_,_) = ()
-                    member this.IsIncompleteTypeCheckEnvironment = false
-                    member this.TargetFrameworkMoniker = targetFrameworkMoniker
-                    member this.ProjectGuid = x.GetProjectGuid()
-                    member this.LoadTime = creationTime
-                    member this.ProjectProvider = Some (x :> IProvideProjectSite)
-                    member this.AssemblyReferences() = assemblyReferences
+                    member __.Description = description
+                    member __.CompilationSourceFiles = sourceFiles
+                    member __.CompilationOptions = options
+                    member __.CompilationReferences = refs
+                    member __.CompilationBinOutputPath = outputPath
+                    member __.ProjectFileName = projFileName
+                    member __.BuildErrorReporter 
+                        with get() = staticBuildErrorReporter
+                        and set v = staticBuildErrorReporter <- v
+                    member __.AdviseProjectSiteChanges(_,_) = ()
+                    member __.AdviseProjectSiteCleaned(_,_) = ()
+                    member __.AdviseProjectSiteClosed(_,_) = ()
+                    member __.IsIncompleteTypeCheckEnvironment = false
+                    member __.TargetFrameworkMoniker = targetFrameworkMoniker
+                    member __.ProjectGuid = x.GetProjectGuid()
+                    member __.LoadTime = creationTime
+                    member __.ProjectProvider = Some (x :> IProvideProjectSite)
                 }
 
             // let the language service ask us questions
@@ -1592,7 +1593,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     // in the registry hive so that more editors can be added without changing this part of the
                     // code. FSharp only makes usage of one Editor Factory and therefore we will return 
                     // that guid
-                    guidEditorType <- new Guid(FSharpConstants.editorFactoryGuidString)
+                    guidEditorType <- new Guid(Constants.FSharpEditorFactoryIdString)
                     VSConstants.S_OK
 
             interface IVsProjectSpecificEditorMap2 with 
@@ -1606,7 +1607,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     // in the registry hive so that more editors can be added without changing this part of the
                     // code. FSharp only makes usage of one Editor Factory and therefore we will return 
                     // that guid
-                    guidEditorType <- new Guid(FSharpConstants.editorFactoryGuidString)
+                    guidEditorType <- new Guid(Constants.FSharpEditorFactoryIdString)
                     VSConstants.S_OK
 
                 member x.GetSpecificLanguageService(_mkDocument:string, guidLanguageService:byref<Guid> ) =
@@ -1769,8 +1770,8 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     if waitCount = 0 then 
                         waitDialog <-
                             {
-                                WaitCaption = FSharpSR.GetString FSharpSR.ProductName
-                                WaitMessage = FSharpSR.GetString FSharpSR.UpdatingSolutionConfiguration
+                                WaitCaption = FSharpSR.ProductName()
+                                WaitMessage = FSharpSR.UpdatingSolutionConfiguration()
                                 ProgressText = None
                                 StatusBmpAnim = null
                                 StatusBarText = None
@@ -1932,13 +1933,13 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                             VsShellUtilities.ShowMessageBox
                                 (
                                     node.Site, 
-                                    FSharpSR.GetString(FSharpSR.Dev11SupportsOnlySilverlight5), 
+                                    FSharpSR.Dev11SupportsOnlySilverlight5(),
                                     null,
                                     OLEMSGICON.OLEMSGICON_INFO, OLEMSGBUTTON.OLEMSGBUTTON_OK, OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST
                                 ) |> ignore
                             Marshal.ThrowExceptionForHR(VSConstants.OLE_E_PROMPTSAVECANCELLED)
                         let result =
-                            VsShellUtilities.ShowMessageBox(node.Site, FSharpSR.GetStringWithCR(FSharpSR.NeedReloadToChangeTargetFx), 
+                            VsShellUtilities.ShowMessageBox(node.Site, FSharpSR.NeedReloadToChangeTargetFx().Replace(@"\n", Environment.NewLine),
                                                         null,
                                                         OLEMSGICON.OLEMSGICON_QUERY, OLEMSGBUTTON.OLEMSGBUTTON_YESNO, OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST) 
                         if result <> NativeMethods.IDYES then
@@ -1980,9 +1981,14 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     | OutputType.WinExe -> "WinExe"
                     | OutputType.Exe -> "Exe"
                     | OutputType.Library -> "Library"
-                    | _ -> raise <| ArgumentException(FSharpSR.GetString(FSharpSR.InvalidOutputType), "value")
+                    | _ -> raise <| ArgumentException(FSharpSR.InvalidOutputType(), "value")
                 this.Node.ProjectMgr.SetProjectProperty(ProjectFileConstants.OutputType, outputTypeInteger)
-        
+
+        [<Browsable(false)>]
+        member this.UseStandardResourceNames 
+            with get() = this.Node.ProjectMgr.GetProjectProperty(ProjectFileConstants.UseStandardResourceNames)
+            and set(value) = this.Node.ProjectMgr.SetProjectProperty(ProjectFileConstants.UseStandardResourceNames, value)
+
         // Build Events Page Properties
         [<Browsable(false)>]
         member this.PreBuildEvent
@@ -2008,7 +2014,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     | 0 -> "Always"
                     | 1 -> "OnBuildSuccess"
                     | 2 -> "OnOutputUpdated"
-                    | _ -> raise <| ArgumentException(FSharpSR.GetString(FSharpSR.InvalidRunPostBuildEvent), "value")
+                    | _ -> raise <| ArgumentException(FSharpSR.InvalidRunPostBuildEvent(), "value")
                 this.Node.ProjectMgr.SetProjectProperty(ProjectFileConstants.RunPostBuildEvent, runPostBuildEventInteger)
         
     type internal FSharpFolderNode(root : FSharpProjectNode, relativePath : string, projectElement : ProjectElement) =
@@ -2420,11 +2426,11 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     if fileChildren = [nodeToBeMoved] then
                         Ok siblingNode
                     else
-                        Error <| String.Format(FSharpSR.GetString(FSharpSR.FileCannotBePlacedMultipleFiles), siblingNode.VirtualNodeName)
+                        Error <| String.Format(FSharpSR.FileCannotBePlacedMultipleFiles(), siblingNode.VirtualNodeName)
                 | Some siblingNode ->
                     Ok siblingNode
                 | None ->
-                    Error <| FSharpSR.GetString(FSharpSR.FileCannotBePlacedDifferentSubtree)
+                    Error <| FSharpSR.FileCannotBePlacedDifferentSubtree()
                 |> function
                 | Ok node ->
                     unlinkFromSiblings node
@@ -2459,9 +2465,9 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
                         let bodyString =
                             match location with
-                            | Above -> FSharpSR.FileCannotBePlacedBodyAbove
-                            | Below -> FSharpSR.FileCannotBePlacedBodyBelow
-                            |> FSharpSR.GetStringWithCR
+                            | Above -> FSharpSR.FileCannotBePlacedBodyAbove()
+                            | Below -> FSharpSR.FileCannotBePlacedBodyBelow()
+                            |> (fun s -> s.Replace(@"\n", Environment.NewLine))
 
                         let entireMessage = String.Format(bodyString, relPath, relTargetPath, message)
                         VsShellUtilities.ShowMessageBox(root.Site, title, entireMessage, icon, buttons, defaultButton) |> ignore

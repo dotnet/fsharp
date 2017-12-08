@@ -7,4 +7,5 @@ type ProjectOptions =
     Options: string[]
     ReferencedProjectOptions: (string * ProjectOptions)[]
     LogOutput: string
+    Error: string
   }

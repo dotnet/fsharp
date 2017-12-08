@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 #nowarn "1204"
 
@@ -78,75 +78,71 @@ module Nullable =
         open System
 
         [<CompiledName("ToUInt8")>]
-        let inline uint8 (x:Nullable<_>) = if x.HasValue then Nullable(Operators.byte x.Value) else Nullable()
+        let inline uint8 (value:Nullable<_>) = if value.HasValue then Nullable(Operators.byte value.Value) else Nullable()
         
         [<CompiledName("ToInt8")>]
-        let inline int8 (x:Nullable<_>) = if x.HasValue then Nullable(Operators.sbyte x.Value) else Nullable()
+        let inline int8 (value:Nullable<_>) = if value.HasValue then Nullable(Operators.sbyte value.Value) else Nullable()
         
         [<CompiledName("ToByte")>]
-        let inline byte (x:Nullable<_>) = if x.HasValue then Nullable(Operators.byte x.Value) else Nullable()
+        let inline byte (value:Nullable<_>) = if value.HasValue then Nullable(Operators.byte value.Value) else Nullable()
         
         [<CompiledName("ToSByte")>]
-        let inline sbyte (x:Nullable<_>) = if x.HasValue then Nullable(Operators.sbyte x.Value) else Nullable()
+        let inline sbyte (value:Nullable<_>) = if value.HasValue then Nullable(Operators.sbyte value.Value) else Nullable()
         
         [<CompiledName("ToInt16")>]
-        let inline int16 (x:Nullable<_>) = if x.HasValue then Nullable(Operators.int16 x.Value) else Nullable()
+        let inline int16 (value:Nullable<_>) = if value.HasValue then Nullable(Operators.int16 value.Value) else Nullable()
         
         [<CompiledName("ToUInt16")>]
-        let inline uint16 (x:Nullable<_>) = if x.HasValue then Nullable(Operators.uint16 x.Value) else Nullable()
+        let inline uint16 (value:Nullable<_>) = if value.HasValue then Nullable(Operators.uint16 value.Value) else Nullable()
         
         [<CompiledName("ToInt")>]
-        let inline int (x:Nullable<_>) = if x.HasValue then Nullable(Operators.int x.Value) else Nullable()
+        let inline int (value:Nullable<_>) = if value.HasValue then Nullable(Operators.int value.Value) else Nullable()
         
         [<CompiledName("ToEnum")>]
-        let inline enum (x:Nullable< int32 >) = if x.HasValue then Nullable(Operators.enum x.Value) else Nullable()
+        let inline enum (value:Nullable< int32 >) = if value.HasValue then Nullable(Operators.enum value.Value) else Nullable()
 
         [<CompiledName("ToInt32")>]
-        let inline int32 (x:Nullable<_>) = if x.HasValue then Nullable(Operators.int32 x.Value) else Nullable()
+        let inline int32 (value:Nullable<_>) = if value.HasValue then Nullable(Operators.int32 value.Value) else Nullable()
 
         [<CompiledName("ToUInt32")>]
-        let inline uint32 (x:Nullable<_>) = if x.HasValue then Nullable(Operators.uint32 x.Value) else Nullable()
+        let inline uint32 (value:Nullable<_>) = if value.HasValue then Nullable(Operators.uint32 value.Value) else Nullable()
 
         [<CompiledName("ToInt64")>]
-        let inline int64 (x:Nullable<_>) = if x.HasValue then Nullable(Operators.int64 x.Value) else Nullable()
+        let inline int64 (value:Nullable<_>) = if value.HasValue then Nullable(Operators.int64 value.Value) else Nullable()
 
         [<CompiledName("ToUInt64")>]
-        let inline uint64 (x:Nullable<_>) = if x.HasValue then Nullable(Operators.uint64 x.Value) else Nullable()
+        let inline uint64 (value:Nullable<_>) = if value.HasValue then Nullable(Operators.uint64 value.Value) else Nullable()
 
         [<CompiledName("ToFloat32")>]
-        let inline float32 (x:Nullable<_>) = if x.HasValue then Nullable(Operators.float32 x.Value) else Nullable()
+        let inline float32 (value:Nullable<_>) = if value.HasValue then Nullable(Operators.float32 value.Value) else Nullable()
 
         [<CompiledName("ToFloat")>]
-        let inline float (x:Nullable<_>) = if x.HasValue then Nullable(Operators.float x.Value) else Nullable()
+        let inline float (value:Nullable<_>) = if value.HasValue then Nullable(Operators.float value.Value) else Nullable()
 
         [<CompiledName("ToSingle")>]
-        let inline single (x:Nullable<_>) = if x.HasValue then Nullable(Operators.float32 x.Value) else Nullable()
+        let inline single (value:Nullable<_>) = if value.HasValue then Nullable(Operators.float32 value.Value) else Nullable()
 
         [<CompiledName("ToDouble")>]
-        let inline double (x:Nullable<_>) = if x.HasValue then Nullable(Operators.float x.Value) else Nullable()
+        let inline double (value:Nullable<_>) = if value.HasValue then Nullable(Operators.float value.Value) else Nullable()
 
         [<CompiledName("ToIntPtr")>]
-        let inline nativeint (x:Nullable<_>) = if x.HasValue then Nullable(Operators.nativeint x.Value) else Nullable()
+        let inline nativeint (value:Nullable<_>) = if value.HasValue then Nullable(Operators.nativeint value.Value) else Nullable()
 
         [<CompiledName("ToUIntPtr")>]
-        let inline unativeint (x:Nullable<_>) = if x.HasValue then Nullable(Operators.unativeint x.Value) else Nullable()
+        let inline unativeint (value:Nullable<_>) = if value.HasValue then Nullable(Operators.unativeint value.Value) else Nullable()
         
         [<CompiledName("ToDecimal")>]
-        let inline decimal (x:Nullable<_>) = if x.HasValue then Nullable(Operators.decimal x.Value) else Nullable()
+        let inline decimal (value:Nullable<_>) = if value.HasValue then Nullable(Operators.decimal value.Value) else Nullable()
 
         [<CompiledName("ToChar")>]
-        let inline char (x:Nullable<_>) = if x.HasValue then Nullable(Operators.char x.Value) else Nullable()
+        let inline char (value:Nullable<_>) = if value.HasValue then Nullable(Operators.char value.Value) else Nullable()
 
 namespace Microsoft.FSharp.Linq.RuntimeHelpers
 
 open System
-open System.Linq
 open System.Collections.Generic
 open System.Linq.Expressions
 open System.Reflection
-#if !FX_NO_REFLECTION_EMIT
-open System.Reflection.Emit
-#endif
 open Microsoft.FSharp
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Core
@@ -168,7 +164,6 @@ module LeafExpressionConverter =
     // The following is recognized as a LINQ 'member initialization pattern' in a quotation.
     let MemberInitializationHelper (_x:'T)  : 'T =  raise (NotSupportedException "This function should not be called directly")
 
-
     // The following is recognized as a LINQ 'member initialization pattern' in a quotation.
     let NewAnonymousObjectHelper (_x:'T)  : 'T =  raise (NotSupportedException "This function should not be called directly")
 
@@ -183,7 +178,9 @@ module LeafExpressionConverter =
 
     let bindingFlags = BindingFlags.Public ||| BindingFlags.NonPublic
     let instanceBindingFlags = BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.DeclaredOnly
+
     let isNamedType(typ:Type) = not (typ.IsArray || typ.IsByRef || typ.IsPointer)
+
     let equivHeadTypes (ty1:Type) (ty2:Type) = 
         isNamedType(ty1) &&
         if ty1.IsGenericType then 
@@ -192,6 +189,7 @@ module LeafExpressionConverter =
             ty1.Equals(ty2)
 
     let isFunctionType typ = equivHeadTypes typ (typeof<(int -> int)>)
+
     let getFunctionType typ = 
         if not (isFunctionType typ) then invalidArg "typ" "cannot convert recursion except for function types"
         let tyargs = typ.GetGenericArguments()
@@ -425,24 +423,6 @@ module LeafExpressionConverter =
                 with
                 |   :? KeyNotFoundException -> invalidOp ("The variable '"+ v.Name + "' was not found in the translation context'")
                 
-
-#if WORKAROUND_FSHARP_2_0_BUG
-                |   :? KeyNotFoundException when v.Name = "this" ->
-                        let message = 
-                            "Encountered unxpected variable named 'this'. This might happen because " +
-                            "quotations used in queries can’t contain references to let-bound values in classes unless the quotation literal occurs in an instance member. " +
-                            "If this is the case, workaround by replacing references to implicit fields with references to " +
-                            "local variables, e.g. rewrite\r\n" +
-                            "   type Foo() =\r\n" +
-                            "       let x = 1\r\n" +
-                            "       let bar() = (methodhandleof (fun -> x))\r\n" +
-                            "as: \r\n" +
-                            "   type Foo() =\r\n" +
-                            "       let x = 1\r\n" +
-                            "       let bar() = let x = x in (methodhandleof (fun -> x))\r\n";
-
-                        NotSupportedException(message) |> raise    
-#endif
         | DerivedPatterns.AndAlso(x1, x2)      -> Expression.AndAlso(ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2) |> asExpr
         | DerivedPatterns.OrElse(x1, x2)       -> Expression.OrElse(ConvExprToLinqInContext env x1, ConvExprToLinqInContext env x2)  |> asExpr
         | Patterns.Value(x, ty)                -> Expression.Constant(x, ty)              |> asExpr
@@ -662,8 +642,7 @@ module LeafExpressionConverter =
                 let argsP = ConvExprsToLinq env args 
                 Expression.Call(ConvObjArg env objOpt None, minfo, argsP) |> asExpr  
 
-#if NO_CURRIED_FUNCTION_OPTIMIZATIONS
-#else
+#if !NO_CURRIED_FUNCTION_OPTIMIZATIONS
         // f x1 x2 x3 x4 --> InvokeFast4
         | Patterns.Application(Patterns.Application(Patterns.Application(Patterns.Application(f, arg1), arg2), arg3), arg4) -> 
             // TODO: amortize this computation based on f.Type
@@ -725,8 +704,7 @@ module LeafExpressionConverter =
             let argsR = ConvExprsToLinq env args 
             Expression.Call((null:Expression), methInfo, argsR) |> asExpr
 
-#if NO_PATTERN_MATCHING_IN_INPUT_LANGUAGE
-#else
+#if !NO_PATTERN_MATCHING_IN_INPUT_LANGUAGE
         | Patterns.UnionCaseTest(e, unionCaseInfo) -> 
             let methInfo = Reflection.FSharpValue.PreComputeUnionTagMemberInfo(unionCaseInfo.DeclaringType, showAll)
             let obj = ConvExprToLinqInContext env e 

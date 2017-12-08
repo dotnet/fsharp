@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Tests.LanguageService.ErrorList
 
@@ -184,7 +184,7 @@ let g (t : T) = t.Count()
         CheckErrorList content <|
             fun errors ->
                 Assert.AreEqual(3, List.length errors)
-                assertContains errors "No overloads match for method 'X'. The available overloads are shown below (or in the Error List window)."
+                assertContains errors "No overloads match for method 'X'. The available overloads are shown below."
                 for expected in expectedMessages do
                    errors
                    |> List.exists (fun e -> e.Message.StartsWith expected)

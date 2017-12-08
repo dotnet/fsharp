@@ -1,9 +1,9 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.LanguageService {
     internal static class ExternDll {
 
-#if FEATURE_PAL && !SILVERLIGHT
+#if FEATURE_PAL
 
  #if !PLATFORM_UNIX
         internal const String DLLPREFIX = "";
@@ -27,12 +27,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         public const string Kernel32 = DLLPREFIX + "rotor_pal" + DLLSUFFIX;
         public const string User32 = DLLPREFIX + "rotor_pal" + DLLSUFFIX;
         public const string Mscoree  = DLLPREFIX + "sscoree" + DLLSUFFIX;
-
-#elif FEATURE_PAL && SILVERLIGHT
-
-        public const string Kernel32 = "coreclr";
-        public const string User32 = "coreclr";
-
 
 #else
         public const string Activeds = "activeds.dll";

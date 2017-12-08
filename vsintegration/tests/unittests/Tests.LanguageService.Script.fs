@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Tests.LanguageService.Script
 
@@ -1343,7 +1343,7 @@ type UsingMSBuild() as this =
             "4.4.0.0"
 #endif
 #if VS_VERSION_DEV15
-            "4.4.1.0"
+            "4.4.3.0"
 #endif
         let binariesFolder = match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None) with
                              | Some(x) -> x

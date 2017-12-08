@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Collections
 
@@ -61,6 +61,8 @@ namespace Microsoft.FSharp.Collections
         interface IEnumerable<KeyValuePair<'Key, 'Value>>         
         interface System.IComparable
         interface System.Collections.IEnumerable 
+        interface IReadOnlyCollection<KeyValuePair<'Key,'Value>>
+        interface IReadOnlyDictionary<'Key,'Value>
         override Equals : obj -> bool
 
     /// <summary>Functional programming operators related to the <c>Map&lt;_,_&gt;</c> type.</summary>

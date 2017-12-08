@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.16774
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:4:1:0
 }
 .assembly CCtorDUWithMember03
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.CCtorDUWithMember03
 {
-  // Offset: 0x00000000 Length: 0x000002D4
+  // Offset: 0x00000000 Length: 0x0000029D
 }
 .mresource public FSharpOptimizationData.CCtorDUWithMember03
 {
-  // Offset: 0x000002D8 Length: 0x000000B2
+  // Offset: 0x000002A8 Length: 0x000000B2
 }
 .module CCtorDUWithMember03.exe
-// MVID: {4DAC02D0-C97B-D207-A745-0383D002AC4D}
+// MVID: {59B1923F-C97B-D207-A745-03833F92B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x0000000000600000
+// Image base: 0x030C0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -63,24 +63,23 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       32 (0x20)
+    // Code size       31 (0x1f)
     .maxstack  4
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_0,
              [1] int32 V_1)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 2,2 : 1,46 
+    .line 2,2 : 1,23 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\CCtorDUWithMember\\CCtorDUWithMember03.fs'
     IL_0000:  ldstr      "File1.x = %A"
     IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::.ctor(string)
     IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
     IL_000f:  stloc.0
-    IL_0010:  nop
-    IL_0011:  call       int32 CCtorDUWithMember03a::get_x()
-    IL_0016:  stloc.1
-    IL_0017:  ldloc.0
-    IL_0018:  ldloc.1
-    IL_0019:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
-    IL_001e:  pop
-    IL_001f:  ret
+    IL_0010:  call       int32 CCtorDUWithMember03a::get_x()
+    IL_0015:  stloc.1
+    IL_0016:  ldloc.0
+    IL_0017:  ldloc.1
+    IL_0018:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_001d:  pop
+    IL_001e:  ret
   } // end of method $CCtorDUWithMember03::main@
 
 } // end of class '<StartupCode$CCtorDUWithMember03>'.$CCtorDUWithMember03
@@ -94,7 +93,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     int32 '<StartupCode$CCtorDUWithMember03>'.$CCtorDUWithMember03a::x@3
+    IL_0000:  ldsfld     int32 '<StartupCode$CCtorDUWithMember03>'.$CCtorDUWithMember03a::'x@3-1'
     IL_0005:  ret
   } // end of method CCtorDUWithMember03a::get_x
 
@@ -104,7 +103,7 @@
     // Code size       7 (0x7)
     .maxstack  8
     IL_0000:  ldarg.0
-    IL_0001:  stsfld     int32 '<StartupCode$CCtorDUWithMember03>'.$CCtorDUWithMember03a::x@3
+    IL_0001:  stsfld     int32 '<StartupCode$CCtorDUWithMember03>'.$CCtorDUWithMember03a::'x@3-1'
     IL_0006:  ret
   } // end of method CCtorDUWithMember03a::set_x
 
@@ -119,7 +118,7 @@
 .class private abstract auto ansi sealed '<StartupCode$CCtorDUWithMember03>'.$CCtorDUWithMember03a
        extends [mscorlib]System.Object
 {
-  .field static assembly int32 x@3
+  .field static assembly int32 'x@3-1'
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly int32 init@
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -128,13 +127,12 @@
   .method private specialname rtspecialname static 
           void  .cctor() cil managed
   {
-    // Code size       8 (0x8)
+    // Code size       7 (0x7)
     .maxstack  8
-    .line 3,3 : 1,18 
-    IL_0000:  nop
-    IL_0001:  ldc.i4.1
-    IL_0002:  stsfld     int32 '<StartupCode$CCtorDUWithMember03>'.$CCtorDUWithMember03a::x@3
-    IL_0007:  ret
+    .line 3,3 : 1,18 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\CCtorDUWithMember\\CCtorDUWithMember03a.fs'
+    IL_0000:  ldc.i4.1
+    IL_0001:  stsfld     int32 '<StartupCode$CCtorDUWithMember03>'.$CCtorDUWithMember03a::'x@3-1'
+    IL_0006:  ret
   } // end of method $CCtorDUWithMember03a::.cctor
 
 } // end of class '<StartupCode$CCtorDUWithMember03>'.$CCtorDUWithMember03a

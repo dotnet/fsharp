@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 open System
@@ -35,7 +35,7 @@ type Reactor() =
     static let theReactor = Reactor()
     let mutable pauseBeforeBackgroundWork = pauseBeforeBackgroundWorkDefault
 
-    // We need to store the culture for the VS thread that is executing now,
+    // We need to store the culture for the VS thread that is executing now, 
     // so that when the reactor picks up a thread from the threadpool we can set the culture
     let culture = new CultureInfo(CultureInfo.CurrentUICulture.Name)
 
@@ -134,7 +134,7 @@ type Reactor() =
                 try 
                     do! loop (None, None, false)
                 with e -> 
-                    Debug.Assert(false,String.Format("unexpected failure in reactor loop {0}, restarting", e))
+                    Debug.Assert(false, String.Format("unexpected failure in reactor loop {0}, restarting", e))
         }
 
     // [Foreground Mailbox Accessors] -----------------------------------------------------------                
@@ -172,7 +172,7 @@ type Reactor() =
         async { 
             let! ct = Async.CancellationToken
             let resultCell = AsyncUtil.AsyncResultCell<_>()
-            r.EnqueueOpPrim(userOpName, opName, opArg, ct,
+            r.EnqueueOpPrim(userOpName, opName, opArg, ct, 
                 op=(fun ctok ->
                     let result =
                         try 
@@ -181,7 +181,7 @@ type Reactor() =
                           | ValueOrCancelled.Cancelled e -> AsyncUtil.AsyncCanceled e
                         with e -> e |> AsyncUtil.AsyncException
 
-                    resultCell.RegisterResult(result)),
+                    resultCell.RegisterResult(result)), 
                     ccont=(fun () -> resultCell.RegisterResult (AsyncUtil.AsyncCanceled(OperationCanceledException(ct))) )
 
             )

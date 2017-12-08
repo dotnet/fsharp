@@ -1,4 +1,4 @@
-// #Regression #Conformance #LexicalAnalysis #Constants #NETFX20Only 
+// #Regression #Conformance #LexicalAnalysis #Constants  
 // Verify BigInt uses op_Implicit conversions
 // Regression test for FSHARP1.0:4498
 // Supported conversions

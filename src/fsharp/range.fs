@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Anything to do with special names of identifiers and other lexical rules 
 module Microsoft.FSharp.Compiler.Range
@@ -30,7 +30,7 @@ let inline (lsr)  (x:int) (y:int)  = int32 (uint32 x >>> y)
 [<Struct; CustomEquality; NoComparison>]
 [<System.Diagnostics.DebuggerDisplay("{Line},{Column}")>]
 type pos(code:int32) =
-    new (l,c) = 
+    new (l, c) = 
         let l = max 0 l 
         let c = max 0 c 
         let p = ( c &&& posColumnMask)
@@ -106,15 +106,15 @@ let _ = assert (isSyntheticMask = mask64 isSyntheticShift isSyntheticBitCount)
 // This is just a standard unique-index table
 type FileIndexTable() = 
     let indexToFileTable = new ResizeArray<_>(11)
-    let fileToIndexTable = new Dictionary<string,int>(11)
+    let fileToIndexTable = new Dictionary<string, int>(11)
     member t.FileToIndex f = 
         let mutable res = 0 
-        let ok = fileToIndexTable.TryGetValue(f,&res) 
+        let ok = fileToIndexTable.TryGetValue(f, &res) 
         if ok then res 
         else
             lock fileToIndexTable (fun () -> 
                 let mutable res = 0 in
-                let ok = fileToIndexTable.TryGetValue(f,&res) in
+                let ok = fileToIndexTable.TryGetValue(f, &res) in
                 if ok then res 
                 else
                     let n = indexToFileTable.Count in
@@ -137,20 +137,20 @@ let fileIndexTable = new FileIndexTable()
 let fileIndexOfFile f = fileIndexTable.FileToIndex(f) % maxFileIndex 
 let fileOfFileIndex n = fileIndexTable.IndexToFile(n)
 
-let mkPos l c = pos (l,c)
+let mkPos l c = pos (l, c)
 
 [<Struct; CustomEquality; NoComparison>]
 [<System.Diagnostics.DebuggerDisplay("({StartLine},{StartColumn}-{EndLine},{EndColumn}) {FileName} IsSynthetic={IsSynthetic}")>]
 type range(code:int64) =
     static member Zero = range(0L)
-    new (fidx,bl,bc,el,ec) = 
+    new (fidx, bl, bc, el, ec) = 
         range(  int64 fidx
                 ||| (int64 bl        <<< startLineShift) 
                 ||| (int64 bc        <<< startColumnShift)
                 ||| (int64 (el-bl)   <<< heightShift)
                 ||| (int64 ec        <<< endColumnShift) )
 
-    new (fidx, b:pos, e:pos) = range(fidx,b.Line,b.Column,e.Line,e.Column)
+    new (fidx, b:pos, e:pos) = range(fidx, b.Line, b.Column, e.Line, e.Column)
 
     member r.StartLine   = int32((code &&& startLineMask)   >>> startLineShift)
     member r.StartColumn = int32((code &&& startColumnMask) >>> startColumnShift) 
@@ -170,14 +170,18 @@ type range(code:int64) =
     override r.Equals(obj) = match obj with :? range as r2 -> code = r2.Code | _ -> false
     override r.GetHashCode() = hash code
 
-let mkRange f b e = range (fileIndexOfFile f, b, e)
+let mkRange f b e =
+    // remove relative parts from full path
+    let normalizedFilePath = if Path.IsPathRooted f then try Path.GetFullPath f with _ -> f else f
+    range (fileIndexOfFile normalizedFilePath, b, e)
+
 let mkFileIndexRange fi b e = range (fi, b, e)
 
 (* end representation, start derived ops *)
                  
-let posOrder   = Order.orderOn (fun (p:pos) -> p.Line, p.Column) (Pair.order (Int32.order,Int32.order))
+let posOrder   = Order.orderOn (fun (p:pos) -> p.Line, p.Column) (Pair.order (Int32.order, Int32.order))
 (* rangeOrder: not a total order, but enough to sort on ranges *)      
-let rangeOrder = Order.orderOn (fun (r:range) -> r.FileName, r.Start) (Pair.order (String.order,posOrder))
+let rangeOrder = Order.orderOn (fun (r:range) -> r.FileName, r.Start) (Pair.order (String.order, posOrder))
 
 let outputPos   (os:TextWriter) (m:pos)   = fprintf os "(%d,%d)" m.Line m.Column
 let outputRange (os:TextWriter) (m:range) = fprintf os "%s%a-%a" m.FileName outputPos m.Start outputPos m.End
@@ -219,12 +223,12 @@ let rangeStartup = rangeN "startup" 1
 let rangeCmdArgs = rangeN "commandLineArgs" 0
 
 let trimRangeToLine (r:range) =
-    let startL,startC = r.StartLine,r.StartColumn
-    let endL ,_endC   = r.EndLine,r.EndColumn
+    let startL, startC = r.StartLine, r.StartColumn
+    let endL , _endC   = r.EndLine, r.EndColumn
     if endL <= startL then
       r
     else
-      let endL,endC = startL+1,0   (* Trim to the start of the next line (we do not know the end of the current line) *)
+      let endL, endC = startL+1, 0   (* Trim to the start of the next line (we do not know the end of the current line) *)
       range (r.FileIndex, startL, startC, endL, endC)
 
 (* For Diagnostics *)

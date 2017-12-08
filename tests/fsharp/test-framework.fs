@@ -40,6 +40,14 @@ module Commands =
         else
             (log "not found: %s p") |> ignore
 
+    let rmdir dir path =
+        let p = path |> getfullpath dir
+        if Directory.Exists(p) then 
+            (log "rmdir /sy %s" p) |> ignore
+            Directory.Delete(p, true)
+        else
+            (log "not found: %s p") |> ignore
+
     let pathAddBackslash (p: FilePath) = 
         if String.IsNullOrWhiteSpace (p) then p
         else
@@ -105,8 +113,6 @@ module Commands =
 
 type TestConfig = 
     { EnvironmentVariables : Map<string, string>
-      CORDIR : string
-      CORSDK : string
       CSC : string
       csc_flags : string
       BUILD_CONFIG : string
@@ -115,11 +121,10 @@ type TestConfig =
       FSCBinPath : string
       FSCOREDLLPATH : string
       FSI : string
+      FSIANYCPU : string
       FSI_FOR_SCRIPTS : string
       fsi_flags : string
       ILDASM : string
-      SN : string
-      NGEN : string
       PEVERIFY : string
       Directory: string 
       DotNetExe: string
@@ -134,33 +139,6 @@ module WindowsPlatform =
             [| "PROCESSOR_ARCHITECTURE" |] |> Seq.tryPick (fun s -> find s) |> function None -> "" | Some x -> x
         value = "AMD64"
 
-    let clrPaths envVars =
-
-        let windir = 
-            match envVars |> Map.tryFind "windir" with
-            | Some x -> x 
-            | None -> failwithf "environment variable '%s' required " "WINDIR"
-
-        let mutable CORDIR =
-            match Directory.EnumerateDirectories (windir ++ "Microsoft.NET" ++ "Framework", "v4.0.?????") |> List.ofSeq |> List.rev with
-            | x :: _ -> x
-            | [] -> failwith "couldn't determine CORDIR"
-
-        // == Use the same runtime as our architecture
-        // == ASSUMPTION: This could be a good or bad thing.
-        if Is64BitOperatingSystem envVars then 
-            CORDIR <- CORDIR.Replace("Framework", "Framework64")
-
-        let CORSDK =
-            let find s = envVars |> Map.tryFind s
-            [| "WINSDKNETFXTOOLS"; "WindowsSDK_ExecutablePath_x64"; "WindowsSDK_ExecutablePath_x86" |] 
-            |> Seq.tryPick find 
-            |> function 
-                 | None -> @"C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.6.1 Tools\x64\"
-                 | Some x -> x
-
-        CORDIR, CORSDK
-
 type FSLibPaths = 
     { FSCOREDLLPATH : string }
 
@@ -169,37 +147,41 @@ let requireFile nm =
 
 let config configurationName envVars =
 
-    let SCRIPT_ROOT = __SOURCE_DIRECTORY__ 
+    let SCRIPT_ROOT = __SOURCE_DIRECTORY__
+    let packagesDir = SCRIPT_ROOT ++ ".." ++ ".." ++ "packages"
     let FSCBinPath = SCRIPT_ROOT ++ ".." ++ ".." ++ configurationName ++ "net40" ++ "bin"
     let csc_flags = "/nologo" 
-    let fsc_flags = "-r:System.Core.dll --nowarn:20 --define:COMPILED" 
-    let fsi_flags = "-r:System.Core.dll --nowarn:20  --define:INTERACTIVE --maxerrors:1 --abortonerror" 
-    let CORDIR, CORSDK = WindowsPlatform.clrPaths envVars
+    let fsc_flags = "-r:System.Core.dll --nowarn:20 --define:COMPILED"
+    let fsi_flags = "-r:System.Core.dll --nowarn:20 --define:INTERACTIVE --maxerrors:1 --abortonerror"
     let Is64BitOperatingSystem = WindowsPlatform.Is64BitOperatingSystem envVars
-    let CSC = requireFile (CORDIR ++ "csc.exe")
-    let NGEN = requireFile (CORDIR ++ "ngen.exe")
-    let ILDASM = requireFile (CORSDK ++ "ildasm.exe")
-    let SN = requireFile (CORSDK ++ "sn.exe") 
-    let PEVERIFY = requireFile (CORSDK ++ "peverify.exe")
+    let architectureMoniker = if Is64BitOperatingSystem then "x64" else "x86"
+    let CSC = requireFile (packagesDir ++ "Microsoft.Net.Compilers.2.4.0" ++ "tools" ++ "csc.exe")
+    let ILDASM = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm.2.0.3") ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "ildasm.exe")
+    let coreclrdll = requireFile (packagesDir ++ ("runtime.win-" + architectureMoniker + ".Microsoft.NETCore.Runtime.CoreCLR.2.0.3") ++ "runtimes" ++ ("win-" + architectureMoniker) ++ "native" ++ "coreclr.dll")
+    let PEVERIFY = requireFile (SCRIPT_ROOT ++ ".." ++ "fsharpqa" ++ "testenv" ++ "src" ++ "PEVerify" ++ "bin" ++ configurationName ++ "net46" ++ "PEVerify.exe")
     let FSI_FOR_SCRIPTS =
         match envVars |> Map.tryFind "_fsiexe" with
         | Some fsiexe when (not (String.IsNullOrWhiteSpace fsiexe)) -> requireFile (SCRIPT_ROOT ++ ".." ++ ".." ++ (fsiexe.Trim([| '\"' |])))
         | _ ->
             // build.cmd sets that var, if it is not set, we are probably called directly from visual studio or the nunit console runner.
-            let packagesDir = SCRIPT_ROOT ++ ".." ++ ".." ++ @"packages"
             let fsharpCompilerTools = Directory.GetDirectories(packagesDir, "FSharp.Compiler.Tools.*")
             match fsharpCompilerTools with
             | [||] -> failwithf "Could not find any 'FSharp.Compiler.Tools' inside '%s'" packagesDir
             | [| dir |] -> Path.Combine(dir, "tools", "fsi.exe")
             | _ -> failwithf "Found more than one 'FSharp.Compiler.Tools' inside '%s', please clean up." packagesDir
-    let dotNetExe = SCRIPT_ROOT ++ ".." ++ ".." ++ "Tools" ++ "dotnetcli" ++ "dotnet.exe"
+    let toolsDir = SCRIPT_ROOT ++ ".." ++ ".." ++ "Tools"
+    let dotNetExe = toolsDir ++ "dotnetcli" ++ "dotnet.exe"
+    // ildasm requires coreclr.dll to run which has already been restored to the packages directory
+    File.Copy(coreclrdll, Path.GetDirectoryName(ILDASM) ++ "coreclr.dll", overwrite=true)
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     let FSI = requireFile (FSCBinPath ++ "fsi.exe")
+    let FSIANYCPU = requireFile (FSCBinPath ++ "fsiAnyCpu.exe")
     let FSC = requireFile (FSCBinPath ++ "fsc.exe")
     let FSCOREDLLPATH = requireFile (FSCBinPath ++ "FSharp.Core.dll") 
 #else
     let FSI = SCRIPT_ROOT ++ ".." ++ ".." ++ "tests" ++ "testbin" ++ configurationName ++ "coreclr" ++ "FSC" ++ "fsi.exe"
+    let FSIANYCPU = SCRIPT_ROOT ++ ".." ++ ".." ++ "tests" ++ "testbin" ++ configurationName ++ "coreclr" ++ "FSC" ++ "fsiAnyCpu.exe"
     let FSC = SCRIPT_ROOT ++ ".." ++ ".." ++ "tests" ++ "testbin" ++ configurationName ++ "coreclr" ++ "FSC" ++ "fsc.exe"
     let FSCOREDLLPATH = "" 
 #endif
@@ -212,18 +194,15 @@ let config configurationName envVars =
         | false -> "win7-x86"
 
     { EnvironmentVariables = envVars
-      CORDIR = CORDIR |> Commands.pathAddBackslash
-      CORSDK = CORSDK |> Commands.pathAddBackslash
       FSCBinPath = FSCBinPath |> Commands.pathAddBackslash
       FSCOREDLLPATH = FSCOREDLLPATH
       ILDASM = ILDASM
-      SN = SN
-      NGEN = NGEN 
       PEVERIFY = PEVERIFY
       CSC = CSC 
       BUILD_CONFIG = configurationName
       FSC = FSC
       FSI = FSI
+      FSIANYCPU = FSIANYCPU
       FSI_FOR_SCRIPTS = FSI_FOR_SCRIPTS
       csc_flags = csc_flags
       fsc_flags = fsc_flags 
@@ -236,8 +215,6 @@ let logConfig (cfg: TestConfig) =
     log "---------------------------------------------------------------"
     log "Executables"
     log ""
-    log "CORDIR              =%s" cfg.CORDIR
-    log "CORSDK              =%s" cfg.CORSDK
     log "CSC                 =%s" cfg.CSC
     log "BUILD_CONFIG        =%s" cfg.BUILD_CONFIG
     log "csc_flags           =%s" cfg.csc_flags
@@ -246,9 +223,9 @@ let logConfig (cfg: TestConfig) =
     log "FSCBINPATH          =%s" cfg.FSCBinPath
     log "FSCOREDLLPATH       =%s" cfg.FSCOREDLLPATH
     log "FSI                 =%s" cfg.FSI
+    log "FSIANYCPU                 =%s" cfg.FSIANYCPU
     log "fsi_flags           =%s" cfg.fsi_flags
     log "ILDASM              =%s" cfg.ILDASM
-    log "NGEN                =%s" cfg.NGEN
     log "PEVERIFY            =%s" cfg.PEVERIFY
     log "---------------------------------------------------------------"
 
@@ -452,9 +429,9 @@ let fscAppendErrExpectFail cfg errPath arg = Printf.ksprintf (Commands.fsc cfg.D
 let csc cfg arg = Printf.ksprintf (Commands.csc (exec cfg) cfg.CSC) arg
 let ildasm cfg arg = Printf.ksprintf (Commands.ildasm (exec cfg) cfg.ILDASM) arg
 let peverify cfg = Commands.peverify (exec cfg) cfg.PEVERIFY "/nologo"
-let sn cfg outfile arg = execAppendOutIgnoreExitCode cfg cfg.Directory outfile cfg.SN arg
 let peverifyWithArgs cfg args = Commands.peverify (exec cfg) cfg.PEVERIFY args
 let fsi cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI)
+let fsiAnyCpu cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSIANYCPU)
 let fsi_script cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI_FOR_SCRIPTS)
 let fsiExpectFail cfg = Printf.ksprintf (Commands.fsi (execExpectFail cfg) cfg.FSI)
 let fsiAppendIgnoreExitCode cfg stdoutPath stderrPath = Printf.ksprintf (Commands.fsi (execAppendIgnoreExitCode cfg stdoutPath stderrPath) cfg.FSI)
@@ -464,6 +441,7 @@ let fileExists cfg = Commands.fileExists cfg.Directory >> Option.isSome
 let fsiStdin cfg stdinPath = Printf.ksprintf (Commands.fsi (execStdin cfg stdinPath) cfg.FSI)
 let fsiStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath = Printf.ksprintf (Commands.fsi (execStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath) cfg.FSI)
 let rm cfg x = Commands.rm cfg.Directory x
+let rmdir cfg x = Commands.rmdir cfg.Directory x
 let mkdir cfg = Commands.mkdir_p cfg.Directory
 let copy_y cfg f = Commands.copy_y cfg.Directory f >> checkResult
 

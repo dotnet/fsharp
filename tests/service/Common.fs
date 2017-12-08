@@ -171,6 +171,7 @@ let parseAndCheckScript (file, input) =
 
 #else    
     let projectOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, input) |> Async.RunSynchronously
+    printfn "projectOptions = %A" projectOptions
 #endif
 
     let parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, input, projectOptions) |> Async.RunSynchronously
@@ -191,8 +192,8 @@ let parseSourceCode (name: string, code: string) =
     let filePath = Path.Combine(location, name + ".fs")
     let dllPath = Path.Combine(location, name + ".dll")
     let args = mkProjectCommandLineArgs(dllPath, [filePath])
-    let options = checker.GetProjectOptionsFromCommandLineArgs(projPath, args)
-    let parseResults = checker.ParseFileInProject(filePath, code, options) |> Async.RunSynchronously
+    let options, errors = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
+    let parseResults = checker.ParseFile(filePath, code, options) |> Async.RunSynchronously
     parseResults.ParseTree
 
 /// Extract range info 
@@ -235,7 +236,7 @@ let attribsOfSymbol (s:FSharpSymbol) =
             if v.IsFSharpUnion then yield "union"
             if v.IsInterface then yield "interface"
             if v.IsMeasure then yield "measure"
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
             if v.IsProvided then yield "provided"
             if v.IsStaticInstantiation then yield "staticinst"
             if v.IsProvidedAndErased then yield "erased"

@@ -264,11 +264,14 @@ if($ENV{REDUCED_RUNTIME} ne "1"){
      # check/set PEVerify
      my $PEVERIFY = $ENV{PEVERIFY}; 
      unless(defined($PEVERIFY)) {
-       # Only use peverify if it is in the path
-       foreach $_ (split /;/, $ENV{PATH}) {
-         $PEVERIFY = "peverify.exe" if(-e "$_\\peverify.exe");
+       my $scriptPath = dirname(__FILE__);
+       $PEVERIFY = "$scriptPath\\..\\testenv\\src\\PEVerify\\bin\\Release\\net46\\PEVerify.exe";
+       if (-e $PEVERIFY) {
+         $ENV{PEVERIFY} = $PEVERIFY;
        }
-       $ENV{PEVERIFY} = $PEVERIFY;
+       else {
+         $ENV{PEVERIFY} = "$scriptPath\\..\\testenv\\src\\PEVerify\\bin\\Debug\\net46\\PEVerify.exe";
+       }
      }
 
      # Use $ENV{PEVER} if it is defined
@@ -646,7 +649,7 @@ sub GetExpectedResults(){
       push @dontmatch, $2 if $2;
     }
     # test full xml form
-    elsif (m@//\s*<Expect\w*\s*Status\s*=\s*(notin)\s*>\s*(.*?)\s*<(/Expect|/)\w*>@i) {
+    elsif (m@//\s*<Expect\w*\s*Status\s*=\s*\"?(notin)\"?\s*>\s*(.*?)\s*<(/Expect|/)\w*>@i) {
       push @dontmatch, $2 if $2;
     } else {
       next;

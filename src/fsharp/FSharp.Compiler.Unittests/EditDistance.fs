@@ -1,7 +1,8 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 namespace FSharp.Compiler.Unittests
 
 open System
+open System.Globalization
 open System.Text
 open NUnit.Framework
 open Microsoft.FSharp.Compiler
@@ -16,7 +17,7 @@ module EditDistance =
     [<TestCase("DWAYNE", "DUANE", ExpectedResult = "0.840")>]
     [<TestCase("DIXON", "DICKSONX", ExpectedResult = "0.813")>]
     let JaroWinklerTest (str1 : string, str2 : string) : string =
-        String.Format("{0:0.000}", JaroWinklerDistance str1 str2)
+        String.Format(CultureInfo.InvariantCulture, "{0:0.000}", JaroWinklerDistance str1 str2)
 
     [<Test>]
     [<TestCase("RICK", "RICK", ExpectedResult = 0)>]

@@ -1,107 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <MicroBuildCoreVersion>0.2.0</MicroBuildCoreVersion>
   </PropertyGroup>
-  
+
   <Import Project="..\packages\MicroBuild.Core.$(MicroBuildCoreVersion)\build\MicroBuild.Core.props" />
-  
-  <UsingTask TaskName="LocalizeTemplateProjectsTask" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
-    <ParameterGroup>
-      <OutDir ParameterType="System.String" Required="true" />
-      <TemplateCategory ParameterType="System.String" Required="true" />
-      <AssemblyName ParameterType="System.String" Required="true" />
-      <TemplateFiles ParameterType="System.String[]" Required="true" />
-      <LocalizedFiles ParameterType="System.String[]" Required="true" />
-      <LocLanguages ParameterType="System.String" Required="true" />
-    </ParameterGroup>
-    
-    <Task>
-      <Reference Include="System.IO.Compression.FileSystem"/>
-      
-      <Using Namespace="System"/>
-      <Using Namespace="System.IO"/>
-      <Using Namespace="System.IO.Compression"/>
-      
-      <Code Type="Fragment" Language="cs">
-        <![CDATA[
-        Log.LogMessage("Localizing template: " + AssemblyName, MessageImportance.High);
-        Log.LogMessage(String.Empty, MessageImportance.High);
-        var absoluteOutDir = Path.GetFullPath(OutDir);    
-    
-        foreach (var lang in LocLanguages.Split(','))
-        {
-            var isDefaultLocale = lang.ToUpper() == "ENU";
-    
-            Log.LogMessage("---------------------------------------------------", MessageImportance.High);
-            Log.LogMessage("Localizing template for language: " + lang, MessageImportance.High);
-            Log.LogMessage(String.Empty, MessageImportance.High);
-    
-            var tempZipFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-            Log.LogMessage("Copying template files to: " + tempZipFolder, MessageImportance.High);
-            Directory.CreateDirectory(tempZipFolder);
-    
-            foreach (var sourceFile in TemplateFiles)
-            {
-                var destinationFile = Path.Combine(tempZipFolder, new FileInfo(sourceFile).Name);
-                File.Copy(sourceFile, destinationFile);
-                Log.LogMessage("  > Copied: " + destinationFile, MessageImportance.High);
-            }
-    
-            if (isDefaultLocale)
-            {
-                Log.LogMessage("Skipping localized files (default locale)", MessageImportance.High);
-            }
-            else
-            {
-                Log.LogMessage("Copying localized files", MessageImportance.High);
-    
-                foreach (var localizedFileItem in LocalizedFiles)
-                {
-                    var fileName = new FileInfo(localizedFileItem).Name;
-                    var sourceFile = Path.Combine(absoluteOutDir, "localize", lang, TemplateCategory, AssemblyName, fileName);
-                    var destinationFile = Path.Combine(tempZipFolder, fileName);
-    
-                    if (File.Exists(sourceFile) == false)
-                    {
-                        throw new FileNotFoundException("Localized file not found: " + sourceFile, sourceFile);
-                    }
-    
-                    File.Delete(destinationFile);
-                    File.Copy(sourceFile, destinationFile);
-                    Log.LogMessage("  > Copied: " + destinationFile, MessageImportance.High);
-                }
-            }
-    
-            var templateOutputPath = isDefaultLocale
-                ? Path.Combine(absoluteOutDir, TemplateCategory, AssemblyName)
-                : Path.Combine(absoluteOutDir, "localize", lang, TemplateCategory, AssemblyName);
-    
-            if (Directory.Exists(templateOutputPath) == false)
-            {
-                Directory.CreateDirectory(templateOutputPath);
-            }
-            
-            var templateOutputFile = Path.Combine(templateOutputPath, AssemblyName + ".zip");
-    
-            if (File.Exists(templateOutputFile))
-            {
-                File.Delete(templateOutputFile);
-            }
-    
-            Log.LogMessage("Zipping template to: " + templateOutputFile, MessageImportance.High);
-            ZipFile.CreateFromDirectory(tempZipFolder, templateOutputFile);
-            Directory.Delete(tempZipFolder, true);
-    
-            Log.LogMessage("---------------------------------------------------", MessageImportance.High);
-            Log.LogMessage(string.Empty, MessageImportance.High);
-        }
-        ]]>
-      </Code>
-    </Task>
-  </UsingTask>
-  
+
   <UsingTask TaskName="GenerateAssemblyFileVersionTask" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
     <ParameterGroup>
       <Language ParameterType="System.String" Required="true" />
@@ -172,33 +77,7 @@
       </Code>
     </Task>
   </UsingTask>
-  
-  <!-- In case of a microbuild, depend on 'Localize' target to use the localized resources -->
-  <Target Name="LocalizeTemplateProjectsInMicrobuild" AfterTargets="Localize" Condition="'$(GenerateLocalizedTemplates)' == 'true' and '$(Languages)' != '' and '@(FilesToLocalize)' != ''">
-    <LocalizeTemplateProjectsTask
-      OutDir="$(OutputPath)"
-      TemplateCategory="$(TemplateCategory)"
-      AssemblyName="$(AssemblyName)"
-      TemplateFiles="@(TemplateFiles)"
-      LocalizedFiles="@(FilesToLocalize)"
-      LocLanguages="$(Languages)" />
-  </Target>
-  
-  <!-- In case of a local build, depend on the build target to use the native resources -->
-  <Target Name="LocalizeTemplateProjectsLocally" AfterTargets="Build" Condition="'$(GenerateLocalizedTemplates)' == 'true' and ('$(Languages)' == '' or '@(FilesToLocalize)' == '')">
-    <PropertyGroup>
-        <Languages Condition="'$(Languages)' == ''">ENU</Languages>
-    </PropertyGroup>
-    
-    <LocalizeTemplateProjectsTask
-      OutDir="$(OutputPath)"
-      TemplateCategory="$(TemplateCategory)"
-      AssemblyName="$(AssemblyName)"
-      TemplateFiles="@(TemplateFiles)"
-      LocalizedFiles="@(FilesToLocalize)"
-      LocLanguages="$(Languages)" />
-  </Target>
-  
+
   <Target Name="GenerateAssemblyFileVersion" BeforeTargets="CoreCompile">
     <!-- Put build number 0 and today's date if this was a local build -->
     <PropertyGroup>

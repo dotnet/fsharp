@@ -1,4 +1,4 @@
-// #Regression #Conformance #LexicalAnalysis #Constants #NoMono #NETFX40Only #ReqNOMT 
+// #Regression #Conformance #LexicalAnalysis #Constants #NoMono  #ReqNOMT 
 // Verify errors when trying to use non bigint big numbers
 
 //No deprecation on NetFx4.0/Dev10 (see FSHARP1.0:4599)

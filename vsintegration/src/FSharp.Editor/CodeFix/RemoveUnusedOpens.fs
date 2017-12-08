@@ -1,6 +1,6 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace rec Microsoft.VisualStudio.FSharp.Editor
+namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
 open System.Threading
@@ -32,8 +32,8 @@ type internal FSharpRemoveUnusedOpensCodeFixProvider
                     let document = context.Document
                     let! sourceText = document.GetTextAsync()
                     let checker = checkerProvider.Checker
-                    let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
-                    let! unusedOpens = UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges(document, options, checker)
+                    let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                    let! unusedOpens = UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges(document, projectOptions, checker)
                     let changes =
                         unusedOpens
                         |> List.map (fun m ->
@@ -52,7 +52,7 @@ type internal FSharpRemoveUnusedOpensCodeFixProvider
     override __.RegisterCodeFixesAsync context : Task =
         async {
             let diagnostics = context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id) |> Seq.toImmutableArray
-            context.RegisterCodeFix(createCodeFix(SR.RemoveUnusedOpens.Value, context), diagnostics)
+            context.RegisterCodeFix(createCodeFix(SR.RemoveUnusedOpens(), context), diagnostics)
         } |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
 
     override __.GetFixAllProvider() = WellKnownFixAllProviders.BatchFixer

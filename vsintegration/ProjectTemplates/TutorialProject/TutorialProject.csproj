@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\..\src</FSharpSourcesRoot>
@@ -29,31 +29,15 @@
   <Import Project="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.Common.props" />
 
   <ItemGroup>
-    <FilesToLocalize Include="$(OutDir)$(TemplateCategory)\$(AssemblyName)\Tutorial.fsx">
-      <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(TemplateCategory)\$(AssemblyName)\Tutorial.fsx.lcl</TranslationFile>
-      <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(TemplateCategory)\$(AssemblyName)\Tutorial.fsx.lci</LciCommentFile>
-      <HasLceComments>false</HasLceComments>
-      <InProject>false</InProject>
-    </FilesToLocalize>
-  </ItemGroup>
-
-  <ItemGroup>
-    <VSTemplate Include="Template\Tutorial.vstemplate" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <TemplateFiles Include="Template\Tutorial.fsproj" />
-    <TemplateFiles Include="Template\Tutorial.fsx" />
-
-    <TemplateFiles Include="Template\Tutorial.vstemplate" />
+    <VSTemplate Include="Template\Tutorial.vstemplate">
+      <TranslatableResources>
+        Template\Tutorial.fsx
+      </TranslatableResources>
+    </VSTemplate>
   </ItemGroup>
 
   <Import Project="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.tools.targets" />
-  <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
 
   <Target Name="CoreCompile" />
 
-  <Target Name="CopyFilesToOutputDirectory" AfterTargets="CoreCompile">
-    <Copy SourceFiles="@(TemplateFiles)" DestinationFiles="@(TemplateFiles->'$(OutDir)$(TemplateCategory)\$(AssemblyName)\%(Filename)%(Extension)')" />
-  </Target>
 </Project>

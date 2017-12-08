@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Primary logic related to method overrides.
 module internal Microsoft.FSharp.Compiler.MethodOverrides
@@ -650,7 +650,7 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader:InfoReader, nenv,
   
     // Note you only have to explicitly implement 'System.IComparable' to customize structural comparison AND equality on F# types 
     if isImplementation &&
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
        not tycon.IsProvidedGeneratedTycon &&
 #endif
        Option.isNone tycon.GeneratedCompareToValues &&
@@ -667,7 +667,7 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader:InfoReader, nenv,
     AugmentWithHashCompare.CheckAugmentationAttribs isImplementation g amap tycon
     // Check some conditions about generic comparison and hashing. We can only check this condition after we've done the augmentation 
     if isImplementation 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
        && not tycon.IsProvidedGeneratedTycon  
 #endif
        then
