@@ -6972,6 +6972,11 @@
         <target state="translated">'{0}' 어셈블리의 F# 메타데이터를 읽는 동안 오류가 발생했습니다. 예약 구문이 활용되었습니다. F# 컴파일러를 업그레이드하거나 특정 구문을 사용하지 않는 이전 버전의 어셈블리를 사용해야 할 수 있습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcTupleMemberNotNormallyUsed">
+        <source>This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead</source>
+        <target state="new">This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

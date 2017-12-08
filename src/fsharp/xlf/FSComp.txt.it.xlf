@@ -6972,6 +6972,11 @@
         <target state="translated">Si è verificato un errore durante la lettura dei metadati F# dell'assembly '{0}'. È stato utilizzato un costrutto riservato. Potrebbe essere necessario aggiornare il compilatore F# o usare una versione precedente dell'assembly che non usa un costrutto specifico.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcTupleMemberNotNormallyUsed">
+        <source>This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead</source>
+        <target state="new">This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

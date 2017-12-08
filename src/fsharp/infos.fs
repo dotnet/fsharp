@@ -668,12 +668,10 @@ type ILTypeInfo =
     member x.TcGlobals = let (ILTypeInfo(g,_,_,_)) = x in g
     member x.ILTypeRef   = let (ILTypeInfo(_,_,tref,_))  = x in tref
 
+    /// Get the compiled nominal type. In the case of tuple types, this is a .NET tuple type
     member x.RawType = 
-        let (ILTypeInfo(g,ty,_,_)) = x 
-        if isAnyTupleTy g ty then 
-            let (tupInfo, args) = destAnyTupleTy g ty
-            mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) args
-        else ty
+        let (ILTypeInfo(g, ty, _, _)) = x 
+        helpEnsureTypeHasMetadata g ty
 
     member x.TyconRefOfRawMetadata = tcrefOfAppTy x.TcGlobals x.RawType
     member x.TypeInstOfRawMetadata = argsOfAppTy x.TcGlobals x.RawType
@@ -687,23 +685,21 @@ type ILTypeInfo =
         let (ILTypeInfo(g,ty,tref,tdef)) = x 
         ILTypeInfo(g,instType inst ty,tref,tdef)
 
-    //member x.FormalTypars m = x.TyconRef.Typars m
-
     static member FromType g ty = 
         if isAnyTupleTy g ty then 
-            let (tupInfo, args) = destAnyTupleTy g ty
-            let compiledTy = mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) args
-            assert (isILAppTy g compiledTy)
-            let compiledTyconRef = tcrefOfAppTy g compiledTy
-            let (TILObjectReprData(scoref,enc,tdef)) = compiledTyconRef.ILTyconInfo
-            let compiledILTypeRef = mkRefForNestedILTypeDef scoref (enc,tdef)
-            ILTypeInfo(g,ty,compiledILTypeRef,tdef)
-            
+            // When getting .NET metadata for the properties and methods
+            // of an F# tuple type, use the compiled nominal type, which is a .NET tuple type
+            let metadataTy = helpEnsureTypeHasMetadata g ty
+            assert (isILAppTy g metadataTy)
+            let metadataTyconRef = tcrefOfAppTy g metadataTy
+            let (TILObjectReprData(scoref, enc, tdef)) = metadataTyconRef.ILTyconInfo
+            let metadataILTypeRef = mkRefForNestedILTypeDef scoref (enc,tdef)
+            ILTypeInfo(g, ty, metadataILTypeRef, tdef)
         elif isILAppTy g ty then 
             let tcref = tcrefOfAppTy g ty
-            let (TILObjectReprData(scoref,enc,tdef)) = tcref.ILTyconInfo
+            let (TILObjectReprData(scoref, enc, tdef)) = tcref.ILTyconInfo
             let tref = mkRefForNestedILTypeDef scoref (enc,tdef)
-            ILTypeInfo(g,ty,tref,tdef)
+            ILTypeInfo(g, ty, tref, tdef)
         else 
             failwith "ILTypeInfo.FromType - no IL metadata for type"
 
@@ -731,12 +727,8 @@ type ILMethInfo =
 
     /// Like ApparentEnclosingType but use the compiled nominal type if this is a method on a tuple type
     member x.ApparentEnclosingAppType =
-        let g = x.TcGlobals 
         let enclTy = x.ApparentEnclosingType
-        if isAnyTupleTy g enclTy then 
-            let (tupInfo, args) = destAnyTupleTy g enclTy
-            mkCompiledTupleTy g (evalTupInfoIsStruct tupInfo) args
-        else enclTy
+        helpEnsureTypeHasMetadata x.TcGlobals enclTy
 
     /// Get the declaring type associated with an extension member, if any.
     member x.DeclaringTyconRefOption = match x with ILMethInfo(_,_,tcrefOpt,_,_) -> tcrefOpt

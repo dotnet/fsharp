@@ -463,16 +463,28 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
                     yield nleref.LastItemMangledName, ERefNonLocal nleref  ]
                                                
-  let decodeTupleTy tupInfo l = 
+  let tryDecodeTupleTy tupInfo l = 
       match l with 
       | [t1;t2;t3;t4;t5;t6;t7;marker] -> 
           match marker with 
-          | TType_app(tcref, [t8]) when tyconRefEq tcref v_ref_tuple1_tcr -> mkRawRefTupleTy [t1;t2;t3;t4;t5;t6;t7;t8]
-          | TType_app(tcref, [t8]) when tyconRefEq tcref v_struct_tuple1_tcr -> mkRawStructTupleTy [t1;t2;t3;t4;t5;t6;t7;t8]
-          | TType_tuple (_structness2, t8plus) -> TType_tuple (tupInfo, [t1;t2;t3;t4;t5;t6;t7] @ t8plus)
-          | _ -> TType_tuple (tupInfo, l)
-      | _ -> TType_tuple (tupInfo, l) 
+          | TType_app(tcref, [t8]) when tyconRefEq tcref v_ref_tuple1_tcr -> mkRawRefTupleTy [t1;t2;t3;t4;t5;t6;t7;t8] |> Some
+          | TType_app(tcref, [t8]) when tyconRefEq tcref v_struct_tuple1_tcr -> mkRawStructTupleTy [t1;t2;t3;t4;t5;t6;t7;t8] |> Some
+          | TType_tuple (_structness2, t8plus) -> TType_tuple (tupInfo, [t1;t2;t3;t4;t5;t6;t7] @ t8plus) |> Some
+          | _ -> None
+      | [] -> None
+      | [_] -> None
+      | _ -> TType_tuple (tupInfo, l)  |> Some
       
+
+  let decodeTupleTy tupInfo l = 
+      match tryDecodeTupleTy tupInfo l with 
+      | Some ty -> ty
+      | None -> failwith "couldn't decode tuple ty"
+
+  let decodeTupleTyIfPossible tcref tupInfo l = 
+      match tryDecodeTupleTy tupInfo l with 
+      | Some ty -> ty
+      | None -> TType_app(tcref, l)
 
   let mk_MFCore_attrib nm : BuiltinAttribInfo = 
       AttribInfo(mkILTyRef(IlxSettings.ilxFsharpCoreLibScopeRef (), FSharpLib.Core + "." + nm), mk_MFCore_tcref fslibCcu nm) 
@@ -705,14 +717,14 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
             "Tuple`5"      ,       v_ref_tuple5_tcr    , decodeTupleTy tupInfoRef
             "Tuple`6"      ,       v_ref_tuple6_tcr    , decodeTupleTy tupInfoRef
             "Tuple`7"      ,       v_ref_tuple7_tcr    , decodeTupleTy tupInfoRef
-            "Tuple`8"      ,       v_ref_tuple8_tcr    , decodeTupleTy tupInfoRef
+            "Tuple`8"      ,       v_ref_tuple8_tcr    , decodeTupleTyIfPossible v_ref_tuple8_tcr tupInfoRef
             "ValueTuple`2" ,       v_struct_tuple2_tcr , decodeTupleTy tupInfoStruct
             "ValueTuple`3" ,       v_struct_tuple3_tcr , decodeTupleTy tupInfoStruct
             "ValueTuple`4" ,       v_struct_tuple4_tcr , decodeTupleTy tupInfoStruct
             "ValueTuple`5" ,       v_struct_tuple5_tcr , decodeTupleTy tupInfoStruct
             "ValueTuple`6" ,       v_struct_tuple6_tcr , decodeTupleTy tupInfoStruct
             "ValueTuple`7" ,       v_struct_tuple7_tcr , decodeTupleTy tupInfoStruct
-            "ValueTuple`8" ,       v_struct_tuple8_tcr , decodeTupleTy tupInfoStruct |] 
+            "ValueTuple`8" ,       v_struct_tuple8_tcr , decodeTupleTyIfPossible v_struct_tuple8_tcr tupInfoStruct |] 
 
     // Build a map that uses the "canonical" F# type names and TyconRef's for these
     // in preference to the .NET type names. Doing this normalization is a fairly performance critical

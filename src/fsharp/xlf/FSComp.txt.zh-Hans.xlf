@@ -6972,6 +6972,11 @@
         <target state="translated">读取程序集“{0}”的 F# 元数据时出错。使用了保留的构造。可能需要升级 F# 编译器或使用不用特定构造的较早版本的程序集。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcTupleMemberNotNormallyUsed">
+        <source>This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead</source>
+        <target state="new">This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

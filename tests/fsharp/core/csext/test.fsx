@@ -271,6 +271,39 @@ module TestsExplicitUseOfStructTupleProperties =
     check "vewjwervwver" text "PropertyGet (Some (PropertyGet (None, tup, [])), Item1, [])"
 *)
 
+(*
+module TupleCtors = 
+    let t1 x = new System.Tuple<_>(x)
+    let t2 (x1,x2) = new System.Tuple<_,_>(x1,x2)
+    let t3 (x1,x2,x3) = new System.Tuple<_,_,_>(x1,x2,x3)
+    let t4 (x1,x2,x3,x4) = new System.Tuple<_,_,_,_>(x1,x2,x3,x4)
+    let t5 (x1,x2,x3,x4,x5) = new System.Tuple<_,_,_,_,_>(x1,x2,x3,x4,x5)
+    let t6 (x1,x2,x3,x4,x5,x6) = new System.Tuple<_,_,_,_,_,_>(x1,x2,x3,x4,x5,x6)
+    let t7 (x1,x2,x3,x4,x5,x6,x7) = new System.Tuple<_,_,_,_,_,_,_>(x1,x2,x3,x4,x5,x6,x7)
+    let cp (x1,x2,x3,x4,x5,x6,x7) t = new System.Tuple<_,_,_,_,_,_,_,_>(x1,x2,x3,x4,x5,x6,x7, t)
+
+module TupleSRTP = 
+    let t1 x = new System.Tuple<_>(x)
+    let t2 (x1,x2) = new System.Tuple<_,_>(x1,x2)
+    let t3 (x1,x2,x3) = new System.Tuple<_,_,_>(x1,x2,x3)
+    let t4 (x1,x2,x3,x4) = new System.Tuple<_,_,_,_>(x1,x2,x3,x4)
+    let t5 (x1,x2,x3,x4,x5) = new System.Tuple<_,_,_,_,_>(x1,x2,x3,x4,x5)
+    let t6 (x1,x2,x3,x4,x5,x6) = new System.Tuple<_,_,_,_,_,_>(x1,x2,x3,x4,x5,x6)
+    let t7 (x1,x2,x3,x4,x5,x6,x7) = new System.Tuple<_,_,_,_,_,_,_>(x1,x2,x3,x4,x5,x6,x7)
+    let cp (x1,x2,x3,x4,x5,x6,x7) t = new System.Tuple<_,_,_,_,_,_,_,_>(x1,x2,x3,x4,x5,x6,x7, t)
+
+    type T = T with
+        static member inline ($) (T, t:System.Tuple<_,_,_,_,_,_,_,'rst>) = fun x -> cp (x,t.Item1, t.Item2,t.Item3,t.Item4,t.Item5,t.Item6) ((T $ t.Rest) t.Item7)
+        static member        ($) (T, ())                          = fun x -> t1 (x)
+        static member        ($) (T, t:System.Tuple<_>)                  = fun x -> t2 (x,t.Item1)
+        static member        ($) (T, t:System.Tuple<_,_>)                = fun x -> t3 (x,t.Item1, t.Item2)
+        static member        ($) (T, t:System.Tuple<_,_,_>)              = fun x -> t4 (x,t.Item1, t.Item2,t.Item3)
+        static member        ($) (T, t:System.Tuple<_,_,_,_>)            = fun x -> t5 (x,t.Item1, t.Item2,t.Item3,t.Item4)
+        static member        ($) (T, t:System.Tuple<_,_,_,_,_>)          = fun x -> t6 (x,t.Item1, t.Item2,t.Item3,t.Item4,t.Item5)
+        static member        ($) (T, t:System.Tuple<_,_,_,_,_,_>)        = fun x -> t7 (x,t.Item1, t.Item2,t.Item3,t.Item4,t.Item5,t.Item6)
+        static member        ($) (T, t:System.Tuple<_,_,_,_,_,_,_>)      = fun x -> cp (x,t.Item1, t.Item2,t.Item3,t.Item4,t.Item5,t.Item6) (t1(t.Item7))
+*)
+
 (*--------------------*)  
 
 #if TESTS_AS_APP

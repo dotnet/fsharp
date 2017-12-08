@@ -601,12 +601,31 @@ let mkCompiledTupleTyconRef (g:TcGlobals) isStruct n =
     elif n = 8 then (if isStruct then g.struct_tuple8_tcr else g.ref_tuple8_tcr)
     else failwithf "mkCompiledTupleTyconRef, n = %d" n
 
-let rec mkCompiledTupleTy g isStruct tys = 
-    let n = List.length tys 
-    if n < maxTuple then TType_app (mkCompiledTupleTyconRef g isStruct n, tys)
+/// Convert from F# tuple types to .NET tuple types
+let rec mkCompiledTupleTy g isStruct tupElemTys = 
+    let n = List.length tupElemTys 
+    if n < maxTuple then
+        TType_app (mkCompiledTupleTyconRef g isStruct n, tupElemTys)
     else 
-        let tysA, tysB = List.splitAfter goodTupleFields tys
+        let tysA, tysB = List.splitAfter goodTupleFields tupElemTys
         TType_app ((if isStruct then g.struct_tuple8_tcr else g.ref_tuple8_tcr), tysA@[mkCompiledTupleTy g isStruct tysB])
+
+/// Convert from F# tuple types to .NET tuple types, but only the outermost level
+let mkOuterCompiledTupleTy g isStruct tupElemTys = 
+    let n = List.length tupElemTys 
+    if n < maxTuple then 
+        TType_app (mkCompiledTupleTyconRef g isStruct n, tupElemTys)
+    else 
+        let tysA, tysB = List.splitAfter goodTupleFields tupElemTys
+        let tcref = (if isStruct then g.struct_tuple8_tcr else g.ref_tuple8_tcr)
+        // In the case of an 8-tuple we add the Tuple<_> marker. For other sizes we keep the type 
+        // as a regular F# tuple type.
+        match tysB with 
+        | [ tyB ] -> 
+            let marker = TType_app (mkCompiledTupleTyconRef g isStruct 1, [tyB])
+            TType_app (tcref, tysA@[marker])
+        | _ ->
+            TType_app (tcref, tysA@[TType_tuple (TupInfo.Const isStruct, tysB)])
 
 //---------------------------------------------------------------------------
 // Remove inference equations and abbreviations from types 
@@ -768,8 +787,15 @@ let mkInstForAppTy g typ =
     | AppTy g (tcref, tinst) -> mkTyconRefInst tcref tinst
     | _ -> []
 
-let domainOfFunTy g ty = fst(destFunTy g ty)
-let rangeOfFunTy  g ty = snd(destFunTy g ty)
+let domainOfFunTy g ty = fst (destFunTy g ty)
+let rangeOfFunTy  g ty = snd (destFunTy g ty)
+
+let helpEnsureTypeHasMetadata g ty = 
+    if isAnyTupleTy g ty then 
+        let (tupInfo, tupElemTys) = destAnyTupleTy g ty
+        mkOuterCompiledTupleTy g (evalTupInfoIsStruct tupInfo) tupElemTys
+    else ty
+
 
 //---------------------------------------------------------------------------
 // Equivalence of types up to alpha-equivalence 
