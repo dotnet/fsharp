@@ -2917,8 +2917,6 @@ namespace Microsoft.FSharp.Core
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
         static member op_Implicit (func : ('T -> 'Res) ) =  new System.Func<'T,'Res>(func)
 
-        static member ToFunc( f : ('T -> 'Res) ) =  new System.Func<'T,'Res>(f)
-
 #if !FX_NO_CONVERTER
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
         static member op_Implicit (converter : System.Converter<_,_>) : ('T -> 'Res) =  (fun t -> converter.Invoke(t))

@@ -1390,11 +1390,6 @@ namespace Microsoft.FSharp.Core
         /// <returns>'U</returns>
         abstract member Invoke : func:'T -> 'U
 
-        /// <summary>Convert an F# first class function value to a value of type <c>System.Func</c></summary>
-        /// <param name="func">The input function.</param>
-        /// <returns>A System.Func of the appropriate type.</returns>
-        static member ToFunc : func:('T -> 'U) -> System.Func<'T,'U>
-
 #if !FX_NO_CONVERTER
 
         /// <summary>Convert an F# first class function value to a value of type <c>System.Converter</c></summary>
