@@ -988,6 +988,11 @@ module UntypedParseImpl =
                 | {TypeName = LongIdentWithDots([x], _)} when x.idText = name -> Some ()
                 | _ -> None
             
+            // This might look confusing but what's done here is quite simple
+            // We're traversing the list and extract the kind of it.
+            // The kind is always invalid if a synAttributes list contains multiple cases (e.g. class and interface).
+            // In such cases we have an early exit.
+            // Otherwise we get a valid kind or an unknown kind if none of the cases can be found.
             let rec getKind isClass isInterface isStruct = 
                 function
                 | [] -> 
@@ -998,13 +1003,13 @@ module UntypedParseImpl =
                 | (SynAttr "Class")::xs
                 | (SynAttr "AbstractClass")::xs -> 
                     if isInterface || isStruct then Invalid
-                    else getKind true isInterface isStruct xs
+                    else getKind true false false xs
                 | (SynAttr "Interface")::xs ->
                     if isStruct || isClass then Invalid
-                    else getKind isClass true isStruct xs
+                    else getKind false true false xs
                 | (SynAttr "Struct")::xs -> 
                     if isClass || isInterface then Invalid
-                    else getKind isClass isInterface true xs
+                    else getKind false false true xs
                 | _::xs -> getKind isClass isInterface isStruct xs
 
             getKind false false false synAttributes
