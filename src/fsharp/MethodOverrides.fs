@@ -84,7 +84,7 @@ module DispatchSlotChecking =
         let (CompiledSig (argTys,retTy,fmtps,ttpinst)) = CompiledSigOfMeth g amap m minfo
 
         let isFakeEventProperty = minfo.IsFSharpEventPropertyMethod
-        Override(parentType,tcrefOfAppTy g minfo.EnclosingType,mkSynId m nm, (fmtps,ttpinst),argTys,retTy,isFakeEventProperty,false)
+        Override(parentType,tcrefOfAppTy g minfo.EnclosingAppType,mkSynId m nm, (fmtps,ttpinst),argTys,retTy,isFakeEventProperty,false)
 
     /// Get the override info for a value being used to implement a dispatch slot.
     let GetTypeMemberOverrideInfo g reqdTy (overrideBy:ValRef) = 
