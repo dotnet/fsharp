@@ -988,21 +988,30 @@ module UntypedParseImpl =
                 | {TypeName = LongIdentWithDots([x], _)} when x.idText = name -> Some ()
                 | _ -> None
             
+            // We're traversing the list and extract the kind of it.
+            // The kind is always invalid if a synAttributes list contains multiple cases (e.g. class and interface).
+            // In such cases we have an early exit.
+            // Otherwise we get a valid kind or an unknown kind if none of the cases can be found.
             let rec getKind isClass isInterface isStruct = 
                 function
-                | [] -> isClass, isInterface, isStruct
-                | (SynAttr "Class")::xs -> getKind true isInterface isStruct xs
-                | (SynAttr "AbstractClass")::xs -> getKind true isInterface isStruct xs
-                | (SynAttr "Interface")::xs -> getKind isClass true isStruct xs
-                | (SynAttr "Struct")::xs -> getKind isClass isInterface true xs
-                | _::xs -> getKind isClass isInterface isInterface xs
+                | [] -> 
+                    if isClass then Class
+                    elif isStruct then Struct
+                    elif isInterface then Interface
+                    else Unknown
+                | (SynAttr "Class")::xs
+                | (SynAttr "AbstractClass")::xs -> 
+                    if isInterface || isStruct then Invalid
+                    else getKind true false false xs
+                | (SynAttr "Interface")::xs ->
+                    if isStruct || isClass then Invalid
+                    else getKind false true false xs
+                | (SynAttr "Struct")::xs -> 
+                    if isClass || isInterface then Invalid
+                    else getKind false false true xs
+                | _::xs -> getKind isClass isInterface isStruct xs
 
-            match getKind false false false synAttributes with
-            | false, false, false -> Unknown
-            | true, false, false -> Class
-            | false, true, false -> Interface
-            | false, false, true -> Struct
-            | _ -> Invalid
+            getKind false false false synAttributes
 
         let GetCompletionContextForInheritSynMember ((ComponentInfo(synAttributes, _, _, _,_, _, _, _)), typeDefnKind : SynTypeDefnKind, completionPath) = 
             
