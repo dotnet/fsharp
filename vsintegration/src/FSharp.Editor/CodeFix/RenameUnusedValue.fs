@@ -64,7 +64,7 @@ type internal FSharpRenameUnusedValueCodeFixProvider
                 let symbolName = symbolUse.Symbol.DisplayName
 
                 match symbolUse.Symbol with
-                | :? FSharpMemberOrFunctionOrValue as func ->
+                | :? FSharpMemberOrFunctionOrValue as func when not func.IsFunctionOrMethod ->
                     createCodeFix(context, symbolName, SR.PrefixValueNameWithUnderscore(), TextChange(TextSpan(context.Span.Start, 0), "_"))
 
                     if func.IsMemberThisValue then
