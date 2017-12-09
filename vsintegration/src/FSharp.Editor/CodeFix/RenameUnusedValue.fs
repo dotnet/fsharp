@@ -64,12 +64,12 @@ type internal FSharpRenameUnusedValueCodeFixProvider
                 let symbolName = symbolUse.Symbol.DisplayName
 
                 match symbolUse.Symbol with
-                | :? FSharpMemberOrFunctionOrValue as func when not func.IsFunctionOrMethod ->
+                | :? FSharpMemberOrFunctionOrValue as func ->
                     createCodeFix(context, symbolName, SR.PrefixValueNameWithUnderscore(), TextChange(TextSpan(context.Span.Start, 0), "_"))
 
                     if func.IsMemberThisValue then
                         createCodeFix(context, symbolName, SR.RenameValueToDoubleUnderscore(), TextChange(context.Span, "__"))
-                    elif not func.IsMember then
+                    elif func.IsValue then
                         createCodeFix(context, symbolName, SR.RenameValueToUnderscore(), TextChange(context.Span, "_"))
                 | _ -> ()
         } 

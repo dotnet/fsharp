@@ -1806,10 +1806,9 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | V valRef -> IlxGen.IsValCompiledAsMethod cenv.g valRef.Deref
         | _ -> false
 
-    member x.IsFunctionOrMethod =
+    member x.IsValue =
         match d with
-        | V valRef -> SymbolHelpers.isFunction cenv.g valRef.Type
-        | C _ | M _ -> true
+        | V valRef -> not (SymbolHelpers.isFunction cenv.g valRef.Type)
         | _ -> false
 
     override x.Equals(other: obj) =
