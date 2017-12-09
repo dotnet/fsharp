@@ -988,20 +988,12 @@ module UntypedParseImpl =
                 | {TypeName = LongIdentWithDots([x], _)} when x.idText = name -> Some ()
                 | _ -> None
             
-            let rec getKind isClass isInterface isStruct = 
-                function
-                | [] -> isClass, isInterface, isStruct
-                | (SynAttr "Class")::xs -> getKind true isInterface isStruct xs
-                | (SynAttr "AbstractClass")::xs -> getKind true isInterface isStruct xs
-                | (SynAttr "Interface")::xs -> getKind isClass true isStruct xs
-                | (SynAttr "Struct")::xs -> getKind isClass isInterface true xs
-                | _::xs -> getKind isClass isInterface isInterface xs
-
-            match getKind false false false synAttributes with
-            | false, false, false -> Unknown
-            | true, false, false -> Class
-            | false, true, false -> Interface
-            | false, false, true -> Struct
+            match synAttributes with
+            | [ (SynAttr "Class") ]
+            | [ (SynAttr "AbstractClass") ] -> Class
+            | [ (SynAttr "Interface") ] -> Interface
+            | [ (SynAttr "Struct") ] -> Struct
+            | [] -> Unknown
             | _ -> Invalid
 
         let GetCompletionContextForInheritSynMember ((ComponentInfo(synAttributes, _, _, _,_, _, _, _)), typeDefnKind : SynTypeDefnKind, completionPath) = 
