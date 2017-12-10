@@ -69,7 +69,7 @@ type internal FSharpRenameUnusedValueCodeFixProvider
 
                     if func.IsMemberThisValue then
                         createCodeFix(context, symbolName, SR.RenameValueToDoubleUnderscore(), TextChange(context.Span, "__"))
-                    elif not func.IsMember then
+                    elif func.IsValue then
                         createCodeFix(context, symbolName, SR.RenameValueToUnderscore(), TextChange(context.Span, "_"))
                 | _ -> ()
         } 
