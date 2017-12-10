@@ -111,7 +111,7 @@ let _ = CSharpOuterClass.InnerClass.StaticMember()
     |> Async.RunSynchronously
     |> Array.map (fun su -> su.Symbol.ToString())
     |> shouldEqual 
-          [|"FSharp"; "FSharp"; "Compiler"; "Service"; "Tests"; "InnerEnum";
+          [|"FSharp"; "Compiler"; "Service"; "Tests"; "FSharp"; "InnerEnum";
             "CSharpOuterClass"; "field Case1"; "InnerClass"; "CSharpOuterClass";
             "member StaticMember"; "NestedEnumClass"|]
 
