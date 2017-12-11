@@ -71,7 +71,7 @@
     <ItemGroup>
         <MsiPath Include="$(OutDir)$(OutputName).msi" />
     </ItemGroup>
-  
+
     <Copy SourceFiles="@(MsiPath)" DestinationFiles="@(MsiPath->'$(SetupRootFolder)\..\$(Configuration)\msi\%(Filename)%(Extension)')" />
   </Target>
 </Project>

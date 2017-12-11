@@ -592,6 +592,13 @@ if "%RestorePackages%" == "true" (
         @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
     )
 
+    if not "%SIGN_TYPE%" == "" (
+        set signtoolnugetoptions=-PackagesDirectory %USERPROFILE%\.nuget\packages -ConfigFile %_nugetconfig%
+        if not "%PB_RESTORESOURCE%" == "" set signtoolnugetoptions=!signtoolnugetoptions! -FallbackSource %PB_RESTORESOURCE%
+        %_nugetexe% restore build\config\packages.config !signtoolnugetoptions!
+        @if ERRORLEVEL 1 echo Error: Nuget restore failed && goto :failure
+    )
+
     set restore_fsharp_suite=0
     if "%TEST_NET40_FSHARP_SUITE%" == "1" set restore_fsharp_suite=1
     if "%TEST_CORECLR_FSHARP_SUITE%" == "1" set restore_fsharp_suite=1
@@ -675,11 +682,35 @@ if "%BUILD_PHASE%" == "1" (
    @if ERRORLEVEL 1 echo Error build failed && goto :failure
 )
 
-echo ---------------- Done with build, starting signing ---------------
+echo ---------------- Done with build, starting assembly signing ---------------
 
 if not "%SIGN_TYPE%" == "" (
-    echo build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE%
-    call build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE%
+    echo build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -ConfigFile build\config\AssemblySignToolData.json
+    call build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -ConfigFile build\config\AssemblySignToolData.json
+    if ERRORLEVEL 1 echo Error running sign tool && goto :failure
+)
+
+if "%BUILD_SETUP%" == "1" (
+    echo %_msbuildexe% %msbuildflags% setup\build-msi.proj /p:Configuration=%BUILD_CONFIG%
+         %_msbuildexe% %msbuildflags% setup\build-msi.proj /p:Configuration=%BUILD_CONFIG%
+    if ERRORLEVEL 1 echo Error building MSI && goto :failure
+)
+
+if not "%SIGN_TYPE%" == "" (
+    echo build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -ConfigFile build\config\MsiSignToolData.json
+    call build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -ConfigFile build\config\MsiSignToolData.json
+    if ERRORLEVEL 1 echo Error running sign tool && goto :failure
+)
+
+if "%BUILD_SETUP%" == "1" (
+    echo %_msbuildexe% %msbuildflags% setup\build-insertion.proj /p:Configuration=%BUILD_CONFIG%
+         %_msbuildexe% %msbuildflags% setup\build-insertion.proj /p:Configuration=%BUILD_CONFIG%
+    if ERRORLEVEL 1 echo Error building insertion packages && goto :failure
+)
+
+if not "%SIGN_TYPE%" == "" (
+    echo build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -ConfigFile build\config\InsertionSignToolData.json
+    call build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -ConfigFile build\config\InsertionSignToolData.json
     if ERRORLEVEL 1 echo Error running sign tool && goto :failure
 )
 

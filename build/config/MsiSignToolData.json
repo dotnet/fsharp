@@ -1,0 +1,15 @@
+{
+    "sign": [
+      {
+        "certificate": "Microsoft400",
+        "strongName": null,
+        "values": [
+          "msi\\Microsoft.FSharp.SDK.Core.msi",
+          "msi\\Microsoft.FSharp.SDK.Resources.*.msi"
+        ]
+      }
+    ],
+    "exclude": [
+    ]
+  }
+  
