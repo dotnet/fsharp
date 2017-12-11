@@ -565,6 +565,44 @@ module M2 =
 """
     VerifyCompletionList(fileContents, "    Ext", ["Extensions"; "ExtraTopLevelOperators"], [])
 
+[<Test>]
+let ``Provide namespace/module completions on an empty identifier for an open delcaration`` =
+    let fileContents = """
+open 
+"""
+    VerifyCompletionList(fileContents, "open ", ["System"], ["abs"])
+
+[<Test>]
+let ``Don't provide namespace/module completions on an empty identifier for an open delcaration, but position is at the end position of the open token`` =
+    let fileContents = """
+open 
+"""
+    VerifyCompletionList(fileContents, "open", ["abs"], [])
+
+[<Test>]
+let ``Don't provide namespace/module completions on an empty identifier for an open delcaration on the next line, but at the same column as the start position of the open token`` =
+    let fileContents = """
+open 
+ 
+"""
+    VerifyCompletionList(fileContents, "open \r\n", ["abs"], [])
+
+[<Test>]
+let ``Provide namespace/module completions on an empty identifier for an open delcaration on the next line`` =
+    let fileContents = """
+open 
+ 
+"""
+    VerifyCompletionList(fileContents, "open \r\n ", ["System"], ["abs"])
+
+[<Test>]
+let ``Provide namespace/module completions on an identifier for an open delcaration`` =
+    let fileContents = """
+open S
+"""
+    VerifyCompletionList(fileContents, "open S", ["System"], ["abs"])
+
+
 #if EXE
 ShouldDisplaySystemNamespace()
 #endif

@@ -12052,11 +12052,14 @@ let TcTyconMemberSpecs cenv env containerInfo declKind tpenv (augSpfn: SynMember
 //------------------------------------------------------------------------- 
 
 let TcModuleOrNamespaceLidAndPermitAutoResolve tcSink env amap (longId : Ident list) =
-    let ad = env.eAccessRights
-    let m = longId |> List.map (fun id -> id.idRange) |> List.reduce unionRanges
-    match ResolveLongIndentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap m OpenQualified env.eNameResEnv ad longId true with 
-    | Result res -> Result res
-    | Exception err ->  raze err
+    if longId.IsEmpty then
+        Result []
+    else
+        let ad = env.eAccessRights
+        let m = longId |> List.map (fun id -> id.idRange) |> List.reduce unionRanges
+        match ResolveLongIndentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap m OpenQualified env.eNameResEnv ad longId true with 
+        | Result res -> Result res
+        | Exception err ->  raze err
 
 let TcOpenDecl tcSink (g:TcGlobals) amap m scopem env (longId : Ident list)  = 
     let modrefs = ForceRaise (TcModuleOrNamespaceLidAndPermitAutoResolve tcSink env amap longId)
