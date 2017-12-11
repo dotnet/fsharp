@@ -9,9 +9,7 @@ open System.Runtime.InteropServices
 [<assembly:AssemblyTitle("FSharp.Core.dll")>]
 [<assembly:AssemblyCopyright("\169 Microsoft Corporation.  All Rights Reserved.")>]
 [<assembly:AssemblyProduct("Microsoft\174 F#")>]
-#if !FSCORE_PORTABLE_OLD
 [<assembly:ComVisible(false)>]
-#endif
 
 #if PORTABLE
 [<assembly:AssemblyProduct("Microsoft\174 F#")>]

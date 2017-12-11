@@ -11,7 +11,7 @@
   <PropertyGroup>
     <ProjectLanguage>CSharp</ProjectLanguage>
     <MinimumVisualStudioVersion>15.0</MinimumVisualStudioVersion>
-    <MicroBuildAssemblyVersion>4.4.1.0</MicroBuildAssemblyVersion>
+    <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
     <MicroBuildAssemblyFileLanguage>cs</MicroBuildAssemblyFileLanguage>
   </PropertyGroup>
   
