@@ -950,11 +950,11 @@ type TypeCheckInfo
                 FSharpDeclarationListInfo.Error msg)
 
     /// Get the symbols for auto-complete items at a location
-    member __.GetDeclarationListSymbols (ctok, parseResultsOpt, line, lineStr, partialName, hasTextChangedSinceLastTypecheck) =
+    member __.GetDeclarationListSymbols (ctok, parseResultsOpt, line, lineStr, partialName, getAllSymbols, hasTextChangedSinceLastTypecheck) =
         let isInterfaceFile = SourceFileImpl.IsInterfaceFile mainInputFileName
         ErrorScope.Protect Range.range0 
             (fun () -> 
-                match GetDeclItemsForNamesAtPosition(ctok, parseResultsOpt, Some partialName.QualifyingIdents, Some partialName.PartialIdent, partialName.LastDotPos, line, lineStr, partialName.EndColumn + 1, ResolveTypeNamesToCtors, ResolveOverloads.Yes, (fun () -> []), hasTextChangedSinceLastTypecheck) with
+                match GetDeclItemsForNamesAtPosition(ctok, parseResultsOpt, Some partialName.QualifyingIdents, Some partialName.PartialIdent, partialName.LastDotPos, line, lineStr, partialName.EndColumn + 1, ResolveTypeNamesToCtors, ResolveOverloads.Yes, getAllSymbols, hasTextChangedSinceLastTypecheck) with
                 | None -> List.Empty  
                 | Some (items, denv, _, m) -> 
                     let items = if isInterfaceFile then items |> List.filter (fun x -> IsValidSignatureFileItem x.Item) else items
@@ -966,7 +966,7 @@ type TypeCheckInfo
                     //     - show types with fewer generic parameters first
                     //     - show types before over other related items - they usually have very useful XmlDocs 
                     let items = 
-                        items |> List.sortBy (fun d -> 
+                        items |> List.sortBy (fun d ->
                             let n = 
                                 match d.Item with  
                                 | Item.Types (_,(TType_app(tcref,_) :: _)) -> 1 + tcref.TyparsNoRange.Length
@@ -982,7 +982,8 @@ type TypeCheckInfo
                     let items = items |> RemoveDuplicateCompletionItems g
 
                     // Group by display name
-                    let items = items |> List.groupBy (fun d -> d.Item.DisplayName) 
+                    let items =
+                        items |> List.groupBy (fun d -> d.Item.DisplayName) 
 
                     // Filter out operators (and list)
                     let items = 
@@ -1925,10 +1926,10 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
         reactorOp userOpName "GetDeclarations" FSharpDeclarationListInfo.Empty (fun ctok scope -> 
             scope.GetDeclarations(ctok, parseResultsOpt, line, lineStr, partialName, getAllEntities, hasTextChangedSinceLastTypecheck))
 
-    member info.GetDeclarationListSymbols(parseResultsOpt, line, lineStr, partialName, ?hasTextChangedSinceLastTypecheck, ?userOpName: string) = 
+    member info.GetDeclarationListSymbols(parseResultsOpt, line, lineStr, partialName, getAllEntities, ?hasTextChangedSinceLastTypecheck, ?userOpName: string) = 
         let userOpName = defaultArg userOpName "Unknown"
         let hasTextChangedSinceLastTypecheck = defaultArg hasTextChangedSinceLastTypecheck (fun _ -> false)
-        reactorOp userOpName "GetDeclarationListSymbols" List.empty (fun ctok scope -> scope.GetDeclarationListSymbols(ctok, parseResultsOpt, line, lineStr, partialName, hasTextChangedSinceLastTypecheck))
+        reactorOp userOpName "GetDeclarationListSymbols" List.empty (fun ctok scope -> scope.GetDeclarationListSymbols(ctok, parseResultsOpt, line, lineStr, partialName, getAllEntities, hasTextChangedSinceLastTypecheck))
 
     /// Resolve the names at the given location to give a data tip 
     member info.GetStructuredToolTipText(line, colAtEndOfNames, lineStr, names, tokenTag, ?userOpName: string) = 

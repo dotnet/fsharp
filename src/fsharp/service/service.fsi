@@ -154,7 +154,7 @@ type public FSharpCheckFileResults =
     ///    and assume that we're going to repeat the operation later on.
     /// </param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member GetDeclarationListSymbols : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * lineText:string * partialName: PartialLongName * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) * ?userOpName: string -> Async<FSharpSymbolUse list list>
+    member GetDeclarationListSymbols : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * lineText:string * partialName: PartialLongName * getAllSymbols: (unit -> AssemblySymbol list) * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) * ?userOpName: string -> Async<FSharpSymbolUse list list>
 
 
     /// <summary>Compute a formatted tooltip for the given location</summary>
