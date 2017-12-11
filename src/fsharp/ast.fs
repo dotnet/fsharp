@@ -1389,7 +1389,7 @@ and
     | DoExpr of SequencePointInfoForBinding * SynExpr * range:range
     | Types of SynTypeDefn list * range:range
     | Exception of SynExceptionDefn * range:range
-    | Open of longDotId:LongIdentWithDots * range:range
+    | Open of openTokenRange:range * longDotId:LongIdentWithDots * range:range
     | Attributes of SynAttributes * range:range
     | HashDirective of ParsedHashDirective * range:range
     | NamespaceFragment of SynModuleOrNamespace

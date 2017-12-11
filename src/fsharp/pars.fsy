@@ -1257,17 +1257,17 @@ moduleDefn:
 
   /* 'open' declarations */
   | openDecl
-      { match $1 with
-        | Some longDotId -> [ SynModuleDecl.Open(longDotId, longDotId.Range) ]
+      { let rhsm = rhs parseState 1
+        match $1 with
+        | Some longDotId -> [ SynModuleDecl.Open(rhsm, longDotId, unionRanges rhsm longDotId.Range) ]
         | _ -> 
-            let rhsm = rhs parseState 1
             let startPos = rhsm.End
             let endPos = mkPos rhsm.EndLine (rhsm.EndColumn + 1)
 
             let m = mkFileIndexRange rhsm.FileIndex startPos endPos
             reportParseErrorAt m (FSComp.SR.parsIdentifierExpected())
 
-            [ SynModuleDecl.Open(Ast.LongIdentWithDots([], []), rhsm) ] }
+            [ SynModuleDecl.Open(rhsm, LongIdentWithDots([], []), rhsm) ] }
 
 
 /* The right-hand-side of a module abbreviation definition */ 

@@ -1262,12 +1262,12 @@ module UntypedParseImpl =
                     member __.VisitModuleDecl(defaultTraverse, decl) =
                         match decl with
                         // this path is when there are no identifiers
-                        | SynModuleDecl.Open(LongIdentWithDots([], _), m) ->
-                            if pos.Column > m.StartColumn && (pos.Column > m.EndColumn || pos.Line <> m.EndLine) then
+                        | SynModuleDecl.Open(openTokenM, LongIdentWithDots([], _), _) ->
+                            if pos.Column > openTokenM.StartColumn && (pos.Column > openTokenM.EndColumn || pos.Line <> openTokenM.EndLine) then
                                 Some CompletionContext.OpenDeclaration
                             else
                                 None
-                        | SynModuleDecl.Open(_, m) -> 
+                        | SynModuleDecl.Open(_, _, m) -> 
                             // in theory, this means we're "in an open"
                             // in practice, because the parse tree/walkers do not handle attributes well yet, need extra check below to ensure not e.g. $here$
                             //     open System

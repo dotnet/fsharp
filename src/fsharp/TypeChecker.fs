@@ -16584,7 +16584,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv:cenv) parent typeNames scopem 
 
           return (exprfWithEscapeCheck, []), envAfter, envAfter
 
-      | SynModuleDecl.Open (LongIdentWithDots(mp, _), m) -> 
+      | SynModuleDecl.Open (_, LongIdentWithDots(mp, _), m) -> 
           let scopem = unionRanges m.EndRange scopem
           let env = TcOpenDecl cenv.tcSink cenv.g cenv.amap m scopem env mp
           return ((fun e -> e), []), env, env
@@ -16785,7 +16785,7 @@ and TcModuleOrNamespaceElementsMutRec cenv parent typeNames endm envInitial mutR
                   let decls = [MutRecShape.Module (compInfo, mutRecDefs)]
                   decls, (false, false, attrs)
 
-              | SynModuleDecl.Open (LongIdentWithDots(lid, _), m) ->  
+              | SynModuleDecl.Open (_, LongIdentWithDots(lid, _), m) ->  
                   if not openOk then errorR(Error(FSComp.SR.tcOpenFirstInMutRec(), m))
                   let decls = [ MutRecShape.Open (MutRecDataForOpen(lid, m)) ]
                   decls, (openOk, moduleAbbrevOk, attrs)
