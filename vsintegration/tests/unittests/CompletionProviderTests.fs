@@ -573,14 +573,14 @@ open
     VerifyCompletionList(fileContents, "open ", ["System"], ["abs"])
 
 [<Test>]
-let ``Don't provide namespace/module completions on an empty identifier for an open delcaration, but position is at the end position of the open token`` =
+let ``Don't provide namespace/module completions on an empty identifier for an open delcaration; position is at the end position of the OPEN token`` =
     let fileContents = """
 open 
 """
     VerifyCompletionList(fileContents, "open", ["abs"], [])
 
 [<Test>]
-let ``Don't provide namespace/module completions on an empty identifier for an open delcaration on the next line, but at the same column as the start position of the open token`` =
+let ``Don't provide namespace/module completions on an empty identifier for an open delcaration on the next line; position is at the start column of the OPEN token`` =
     let fileContents = """
 open 
  
