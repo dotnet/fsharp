@@ -447,26 +447,6 @@ let OpenModulesOrNamespaces tcSink g amap scopem root env mvvs openDeclaration =
         ModifyNameResEnv (fun nenv -> AddModulesAndNamespacesContentsToNameEnv g amap env.eAccessRights scopem root nenv mvvs) env
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     CallOpenDeclarationSink tcSink openDeclaration
-    match openDeclaration.Range with
-    | None -> ()
-    | Some _ ->
-        let rec loop (acc: (Item * range) list) (idents: Ident list) =
-            match idents with
-            | [] -> acc
-            | [id] when id.idText = MangledGlobalName -> acc
-            | id :: rest ->
-                let idents = List.rev idents
-                let range = id.idRange
-                let acc =
-                    match ResolveLongIndentAsModuleOrNamespace ResultCollectionSettings.AllResults amap range OpenQualified env.NameEnv env.eAccessRights idents with
-                    | Result modrefs ->
-                        (acc, modrefs) ||> List.fold (fun acc (_, modref, _) ->
-                            (Item.ModuleOrNamespaces [modref], range) :: acc)
-                    | _ -> acc
-                loop acc rest
-        
-        for item, range in loop [] (List.rev openDeclaration.LongId) do
-            CallNameResolutionSink tcSink (range, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Open, env.DisplayEnv, env.eAccessRights)
     env
 
 let AddRootModuleOrNamespaceRefs g amap m env modrefs =
