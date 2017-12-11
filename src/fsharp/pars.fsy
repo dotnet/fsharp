@@ -1258,7 +1258,7 @@ moduleDefn:
   /* 'open' declarations */
   | openDecl
       { match $1 with
-        | Some lid -> [ SynModuleDecl.Open(lid, lid.Range) ]
+        | Some longDotId -> [ SynModuleDecl.Open(longDotId, longDotId.Range) ]
         | _ -> 
             let rhsm = rhs parseState 1
             let startPos = rhsm.End
