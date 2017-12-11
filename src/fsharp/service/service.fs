@@ -981,9 +981,16 @@ type TypeCheckInfo
                     // Remove all duplicates. We've put the types first, so this removes the DelegateCtor and DefaultStructCtor's.
                     let items = items |> RemoveDuplicateCompletionItems g
 
-                    // Group by display name
+                    // Group by compiled name for types, display name for functions
+                    // (We don't want types with the same display name to be grouped as overloads)
                     let items =
-                        items |> List.groupBy (fun d -> d.Item.DisplayName) 
+                        items |> List.groupBy (fun d ->
+                            match d.Item with  
+                            | Item.Types (_,(TType_app(tcref,_) :: _))
+                            | Item.FakeInterfaceCtor (TType_app(tcref,_)) 
+                            | Item.DelegateCtor (TType_app(tcref,_)) -> tcref.CompiledName
+                            | Item.CtorGroup (_, (cinfo :: _)) -> (tcrefOfAppTy g cinfo.EnclosingType).CompiledName
+                            | _ -> d.Item.DisplayName)
 
                     // Filter out operators (and list)
                     let items = 
