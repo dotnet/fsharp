@@ -56,12 +56,6 @@
     <Compile Condition="'$(IsLangPack)' == 'true'" Include="component-groups\Runtime_LangPack.wxs" />
   </ItemGroup>
 
-  <ItemGroup>
-      <FilesToSign Include="$(OutDir)$(OutputName).msi">
-         <Authenticode>Microsoft400</Authenticode>
-      </FilesToSign>
-  </ItemGroup>
-
   <Import Project="$(WixInstallPath)\wix.targets" />
   <Import Project="$(FSharpTreeRoot)\src\Microbuild.Settings.targets" />
 
@@ -77,7 +71,7 @@
     <ItemGroup>
         <MsiPath Include="$(OutDir)$(OutputName).msi" />
     </ItemGroup>
-  
+
     <Copy SourceFiles="@(MsiPath)" DestinationFiles="@(MsiPath->'$(SetupRootFolder)\..\$(Configuration)\msi\%(Filename)%(Extension)')" />
   </Target>
 </Project>

@@ -1,0 +1,14 @@
+{
+    "sign": [
+      {
+        "certificate": "VsixSHA2",
+        "strongName": null,
+        "values": [
+          "insertion\\Microsoft.FSharp.SDK.Resources.ENU.vsix"
+        ]
+      }
+    ],
+    "exclude": [
+    ]
+  }
+  
