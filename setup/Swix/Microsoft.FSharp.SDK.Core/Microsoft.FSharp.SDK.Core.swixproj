@@ -28,8 +28,8 @@
   <Target Name="CheckPropertiesArePassed">
     <Error Condition="'$(FSharpPackageVersion)' == ''" Text="A 'FSharpPackageVersion' property must be passed to the project." />
   </Target>
-  
-  <Target Name="GatherBinariesToBeSigned" AfterTargets="CopyFilesToOutputDirectory">
-    <!-- MSI is already signed before wrapping it here -->
+
+  <Target Name="SignFiles">
+    <!-- Signing is handled by the RoslynSignTool -->
   </Target>
 </Project>

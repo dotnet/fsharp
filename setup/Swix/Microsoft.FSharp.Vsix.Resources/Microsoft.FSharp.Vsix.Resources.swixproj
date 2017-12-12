@@ -35,11 +35,6 @@
     <Package Include="Files.swr" />
     <Package Include="Templates.swr" />
   </ItemGroup>
-  
-  <Target Name="GatherBinariesToBeSigned" AfterTargets="CopyFilesToOutputDirectory">
-    <!-- SWIX plugin adds the built vsix to signing automatically -->
-  </Target>
-  
   <Target Name="CheckPropertiesArePassed">
     <Error Condition="'$(LocaleCode)' == ''" Text="A 'LocaleCode' property must be passed to the project." />
     <Error Condition="'$(LocaleId)' == ''" Text="A 'LocaleId' property must be passed to the project." />
@@ -48,5 +43,9 @@
     <Error Condition="'$(LocaleSpecificCulture)' == ''" Text="A 'LocaleSpecificCulture' property must be passed to the project." />
     <Error Condition="'$(IsLangPack)' == ''" Text="A 'IsLangPack' property must be passed to the project." />
     <Error Condition="'$(FSharpPackageVersion)' == ''" Text="A 'FSharpPackageVersion' property must be passed to the project." />
+  </Target>
+
+  <Target Name="SignFiles">
+    <!-- Signing is handled by the RoslynSignTool -->
   </Target>
 </Project>

@@ -18,6 +18,6 @@ neg67.fsx(42,35,42,36): parse error FS0010: Unexpected symbol '}' in definition.
 neg67.fsx(41,9,41,14): typecheck error FS0001: This expression was expected to have type
     'unit'    
 but here has type
-    'Async<'a>'    
+    'Async<unit>'    
 
 neg67.fsx(30,1,41,37): typecheck error FS0003: This value is not a function and cannot be applied.
