@@ -13,36 +13,21 @@
 
     <Target Name="CollectSetupProjects">
         <ItemGroup>
-            <VsixProjects Include="VisualFSharpFull.csproj">
-                <ProjectPath>..\vsintegration\Vsix\VisualFSharpFull\VisualFSharpFull.csproj</ProjectPath>
-            </VsixProjects>
-            <VsixProjects Include="VisualFSharpOpenSource.csproj">
-                <ProjectPath>..\vsintegration\Vsix\VisualFSharpOpenSource\VisualFSharpOpenSource.csproj</ProjectPath>
-            </VsixProjects>
-            <VsixProjects Include="VisualFSharpTemplates.csproj">
-                <ProjectPath>..\vsintegration\Vsix\VisualFSharpTemplates\VisualFSharpTemplates.csproj</ProjectPath>
-            </VsixProjects>
+            <SwixSetupProjects Include="Microsoft.FSharp.SDK.Core.swixproj">
+                <ProjectPath>Swix\Microsoft.FSharp.SDK.Core\Microsoft.FSharp.SDK.Core.swixproj</ProjectPath>
+            </SwixSetupProjects>
         </ItemGroup>
 
         <CreateItem Include="@(SetupLanguages)"
-                    AdditionalMetadata="ProjectPath=Swix\Microsoft.FSharp.Vsix.Resources\Microsoft.FSharp.Vsix.Resources.swixproj">
+                    AdditionalMetadata="ProjectPath=Swix\Microsoft.FSharp.SDK.Resources\Microsoft.FSharp.SDK.Resources.swixproj">
             <Output ItemName="SwixSetupProjects" TaskParameter="Include"/>
         </CreateItem>
-
-        <ItemGroup>
-            <SwixSetupProjects Include="Microsoft.FSharp.Dependencies.swixproj">
-                <ProjectPath>Swix\Microsoft.FSharp.Dependencies\Microsoft.FSharp.Dependencies.swixproj</ProjectPath>
-            </SwixSetupProjects>
-        </ItemGroup>
     </Target>
 
     <Target Name="Build" DependsOnTargets="CollectSetupProjects">
         <PropertyGroup>
           <CustomProps>AssemblySearchPaths={HintPathFromItem};{TargetFrameworkDirectory};{RawFileName}</CustomProps>
         </PropertyGroup>
-        <MSBuild Projects="%(VsixProjects.ProjectPath)"
-                 Targets="Build"
-                 Properties="Configuration=$(Configuration);IsLangPack=%(VsixProjects.IsLangPack);FSharpPackageVersion=$(FSharpPackageVersion);OutputPath=$(VsixBuildLocation);$(CustomProps)" />
         <MSBuild Projects="%(SwixSetupProjects.ProjectPath)"
                  Targets="Build"
                  Properties="LocaleCode=%(SwixSetupProjects.LocaleCode);LocaleId=%(SwixSetupProjects.LocaleId);LocaleParentId=%(SwixSetupProjects.LocaleParentId);LocaleParentCulture=%(SwixSetupProjects.LocaleParentCulture);LocaleSpecificCulture=%(SwixSetupProjects.LocaleSpecificCulture);IsLangPack=%(SwixSetupProjects.IsLangPack);FSharpPackageVersion=$(FSharpPackageVersion);$(CustomProps)"/>
