@@ -3308,6 +3308,7 @@ module DebugPrint = begin
                 else s
             | Const.Char c        -> "'" + c.ToString() + "'" 
             | Const.String bs     -> "\"" + bs + "\"" 
+            | Const.InterpolatedString bs     -> "\"" + bs + "\"" 
             | Const.Unit          -> "()" 
             | Const.Decimal bs    -> string bs + "M" 
             | Const.Zero       -> "default"
@@ -7853,6 +7854,8 @@ let rec EvalAttribArgExpr g x =
         | Const.Char _
         | Const.Zero _
         | Const.String _  -> 
+            x
+        | Const.InterpolatedString _  -> 
             x
         | Const.Decimal _ | Const.IntPtr _ | Const.UIntPtr _ | Const.Unit _ ->
             errorR (Error ( FSComp.SR.tastNotAConstantExpression(), m))

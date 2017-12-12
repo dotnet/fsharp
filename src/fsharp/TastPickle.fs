@@ -2170,7 +2170,7 @@ and p_const x st =
     | Const.Single x  -> p_byte 11 st; p_single x st
     | Const.Double x  -> p_byte 12 st; p_int64 (bits_of_float x) st
     | Const.Char c    -> p_byte 13 st; p_char c st
-    | Const.String s  -> p_byte 14 st; p_string s st
+    | Const.String s  | Const.InterpolatedString s -> p_byte 14 st; p_string s st
     | Const.Unit      -> p_byte 15 st
     | Const.Zero      -> p_byte 16 st
     | Const.Decimal s -> p_byte 17 st; p_array p_int32 (System.Decimal.GetBits(s)) st

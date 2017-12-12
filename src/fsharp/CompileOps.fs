@@ -3375,6 +3375,18 @@ let QualFileNameOfFilename m filename = QualifiedNameOfFile(mkSynId m (Canonical
 // Interactive fragments
 let ComputeQualifiedNameOfFileFromUniquePath (m, p: string list) = QualifiedNameOfFile(mkSynId m (String.concat "_" p))
 
+let GetExpressionParser (tcConfig: TcConfig, lexResourceManager) =
+    let parseText s = 
+        let errorLogger = CompileThreadStatic.ErrorLogger // TODO
+        let lexbuf = UnicodeLexing.StringAsLexbuf s
+        let lightSyntaxStatus = LightSyntaxStatus(true, true)
+        let lexargs = mkLexargs (null, tcConfig.conditionalCompilationDefines,lightSyntaxStatus,lexResourceManager, ref [], errorLogger)
+        Lexhelp.reusingLexbufForParsing lexbuf (fun () ->
+            let tokenizer = LexFilter.LexFilter(lightSyntaxStatus, tcConfig.compilingFslib, Lexer.token lexargs true, lexbuf)
+            Parser.declExpr tokenizer.Lexer lexbuf
+        )
+    parseText
+
 let QualFileNameOfSpecs filename specs = 
     match specs with 
     | [SynModuleOrNamespaceSig(modname, _, true, _, _, _, _, m)] -> QualFileNameOfModuleName m filename modname
@@ -5422,7 +5434,7 @@ let TypeCheckOneInputEventually
 
                 // Typecheck the signature file 
                 let! (tcEnv, sigFileType, createsGeneratedProvidedTypes) = 
-                    TypeCheckOneSigFile (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, tcConfig.conditionalCompilationDefines, tcSink) tcState.tcsTcSigEnv file
+                    TypeCheckOneSigFile (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, tcConfig.conditionalCompilationDefines, tcSink) tcState.tcsTcSigEnv (GetExpressionParser(tcConfig, new Lexhelp.LexResourceManager())) file
 
                 let rootSigs = Zmap.add qualNameOfFile  sigFileType rootSigs
 
@@ -5452,7 +5464,7 @@ let TypeCheckOneInputEventually
 
                 // Typecheck the implementation file 
                 let! topAttrs, implFile, tcEnvAtEnd, createsGeneratedProvidedTypes = 
-                    TypeCheckOneImplFile  (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, tcConfig.conditionalCompilationDefines, tcSink) tcImplEnv rootSigOpt file
+                    TypeCheckOneImplFile  (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, tcConfig.conditionalCompilationDefines, tcSink) tcImplEnv (GetExpressionParser(tcConfig, new Lexhelp.LexResourceManager())) rootSigOpt file
 
                 let hadSig = Option.isSome rootSigOpt
                 let implFileSigType = SigTypeOfImplFile implFile

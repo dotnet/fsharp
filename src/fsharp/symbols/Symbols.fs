@@ -162,6 +162,7 @@ module Impl =
             | Const.Double  v -> Some(box v)
             | Const.Char    v -> Some(box v)
             | Const.String  v -> Some(box v)
+            | Const.InterpolatedString  v -> Some(box v)
             | Const.Decimal v -> Some(box v)
             | Const.Unit
             | Const.Zero      -> None

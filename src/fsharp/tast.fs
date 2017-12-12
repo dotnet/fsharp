@@ -3823,6 +3823,7 @@ and [<RequireQualifiedAccess>]
     | Double   of double
     | Char     of char
     | String   of string // in unicode 
+    | InterpolatedString   of string // in unicode 
     | Decimal  of Decimal 
     | Unit
     | Zero // null/zero-bit-pattern 

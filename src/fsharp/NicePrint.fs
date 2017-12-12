@@ -571,6 +571,7 @@ module private PrintTypes =
                 else s) |> tagNumericLiteral
             | Const.Char c        -> "'" + c.ToString() + "'" |> tagStringLiteral
             | Const.String bs     -> "\"" + bs + "\"" |> tagNumericLiteral
+            | Const.InterpolatedString bs     -> "\"" + bs + "\"" |> tagNumericLiteral
             | Const.Unit          -> "()" |> tagPunctuation
             | Const.Decimal bs    -> string bs + "M" |> tagNumericLiteral
             // either "null" or "the defaut value for a struct"
