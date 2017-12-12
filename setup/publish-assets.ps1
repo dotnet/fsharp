@@ -30,7 +30,7 @@ try {
         "master" {
             $requestUrl = "https://dotnet.myget.org/F/fsharp/vsix/upload"
         }
-        "dev15.5" {
+        "dev15.6" {
             $requestUrl = "https://dotnet.myget.org/F/fsharp-preview/vsix/upload"
         }
         default {
