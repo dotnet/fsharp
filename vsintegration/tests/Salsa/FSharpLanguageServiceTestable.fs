@@ -113,7 +113,7 @@ type internal FSharpLanguageServiceTestable() as this =
             serviceProvider <- None
     
     /// Respond to project settings changes
-    member this.OnProjectSettingsChanged(site:IProjectSite) = 
+    member this.OnProjectSettingsChanged(site: Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite) = 
         // The project may have changed its references.  These would be represented as 'dependency files' of each source file.  Each source file will eventually start listening
         // for changes to those dependencies, at which point we'll get OnDependencyFileCreateOrDelete notifications.  Until then, though, we just 'make a note' that this project is out of date.
         bgRequests.AddOutOfDateProjectFileName(site.ProjectFileName) 
