@@ -883,6 +883,9 @@ and [<Class>] internal FSharpMemberOrFunctionOrValue =
 
     /// Indicated if this is a value compiled to a method
     member IsValCompiledAsMethod : bool
+    
+    /// Indicated if this is a value
+    member IsValue : bool
 
     /// Indicates if this is a constructor.
     member IsConstructor : bool

@@ -450,7 +450,7 @@ if [ "${RestorePackages:-true}" = 'true' ]; then
 
     _nugetoptions="-PackagesDirectory packages -ConfigFile $_nugetconfig"
     if [ "$PB_RESTORESOURCE" != "" ]; then
-        _nugetoptions="$_nugetoptions -Source $PB_RESTORESOURCE"
+        _nugetoptions="$_nugetoptions -FallbackSource $PB_RESTORESOURCE"
     fi
 
     eval "$_nugetexe restore packages.config $_nugetoptions"
