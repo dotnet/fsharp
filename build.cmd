@@ -572,7 +572,7 @@ if "%RestorePackages%" == "true" (
     %_ngenexe% install %_nugetexe%  /nologo
     set _nugetoptions=-PackagesDirectory packages -ConfigFile %_nugetconfig%
     if not "%PB_RESTORESOURCE%" == "" (
-        set _nugetoptions=!_nugetoptions! -Source %PB_RESTORESOURCE%
+        set _nugetoptions=!_nugetoptions! -FallbackSource %PB_RESTORESOURCE%
     )
 
     echo _nugetoptions=!_nugetoptions!

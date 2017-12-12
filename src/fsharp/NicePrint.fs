@@ -321,9 +321,11 @@ module private PrintIL =
                     then Some Literals.keywordTrue
                     else Some Literals.keywordFalse
                 | ILFieldInit.Char c   -> ("'" + (char c).ToString () + "'") |> (tagStringLiteral >> Some)
+                | ILFieldInit.Int8 x  -> ((x |> int32 |> string) + "y") |> (tagNumericLiteral >> Some)
                 | ILFieldInit.Int16 x  -> ((x |> int32 |> string) + "s") |> (tagNumericLiteral >> Some)
                 | ILFieldInit.Int32 x  -> x |> (string >> tagNumericLiteral >> Some)
                 | ILFieldInit.Int64 x  -> ((x |> string) + "L") |> (tagNumericLiteral >> Some)
+                | ILFieldInit.UInt8 x  -> ((x |> int32 |> string) + "uy") |> (tagNumericLiteral >> Some)
                 | ILFieldInit.UInt16 x -> ((x |> int32 |> string) + "us")  |> (tagNumericLiteral >> Some)
                 | ILFieldInit.UInt32 x -> (x |> int64 |> string) + "u" |> (tagNumericLiteral >> Some)
                 | ILFieldInit.UInt64 x -> ((x |> int64 |> string) + "UL")  |> (tagNumericLiteral >> Some)

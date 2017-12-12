@@ -1478,11 +1478,19 @@ type TcResultsSinkImpl(g, ?source: string) =
     let capturedExprTypings = ResizeArray<_>()
     let capturedNameResolutions = ResizeArray<_>()
     let capturedFormatSpecifierLocations = ResizeArray<_>()
+    
     let capturedNameResolutionIdentifiers = 
         new System.Collections.Generic.HashSet<pos * string>
             ( { new IEqualityComparer<_> with 
                     member __.GetHashCode((p:pos,i)) = p.Line + 101 * p.Column + hash i
                     member __.Equals((p1,i1),(p2,i2)) = posEq p1 p2 && i1 =  i2 } )
+
+    let capturedModulesAndNamespaces = 
+        new System.Collections.Generic.HashSet<range * Item>
+            ( { new IEqualityComparer<range * Item> with 
+                    member __.GetHashCode ((m, _)) = hash m
+                    member __.Equals ((m1, item1), (m2, item2)) = m1 = m2 && ItemsAreEffectivelyEqual g item1 item2 } )
+
     let capturedMethodGroupResolutions = ResizeArray<_>()
     let capturedOpenDeclarations = ResizeArray<_>()
     let allowedRange (m:range) = not m.IsSynthetic       
@@ -1508,25 +1516,29 @@ type TcResultsSinkImpl(g, ?source: string) =
             // Desugaring some F# constructs (notably computation expressions with custom operators)
             // results in duplication of textual variables. So we ensure we never record two name resolutions 
             // for the same identifier at the same location.
-            if allowedRange m then 
-                let keyOpt = 
-                    match item with
-                    | Item.Value vref -> Some (endPos, vref.DisplayName)
-                    | Item.ArgName (id, _, _) -> Some (endPos, id.idText)
-                    | _ -> None
-
-                let alreadyDone = 
-                    match keyOpt with
-                    | Some key -> not (capturedNameResolutionIdentifiers.Add key)
-                    | _ -> false
-                
+            if allowedRange m then
                 if replace then 
                     capturedNameResolutions.RemoveAll(fun cnr -> cnr.Range = m) |> ignore
                     capturedMethodGroupResolutions.RemoveAll(fun cnr -> cnr.Range = m) |> ignore
+                else
+                    let alreadyDone =
+                        match item with
+                        | Item.ModuleOrNamespaces _ ->
+                            not (capturedModulesAndNamespaces.Add (m, item))
+                        | _ ->
+                            let keyOpt = 
+                                match item with
+                                | Item.Value vref -> Some (endPos, vref.DisplayName)
+                                | Item.ArgName (id, _, _) -> Some (endPos, id.idText)
+                                | _ -> None
 
-                if not alreadyDone then 
-                    capturedNameResolutions.Add(CapturedNameResolution(endPos,item,tpinst,occurenceType,denv,nenv,ad,m)) 
-                    capturedMethodGroupResolutions.Add(CapturedNameResolution(endPos,itemMethodGroup,[],occurenceType,denv,nenv,ad,m)) 
+                            match keyOpt with
+                            | Some key -> not (capturedNameResolutionIdentifiers.Add key)
+                            | _ -> false
+
+                    if not alreadyDone then 
+                        capturedNameResolutions.Add(CapturedNameResolution(endPos,item,tpinst,occurenceType,denv,nenv,ad,m)) 
+                        capturedMethodGroupResolutions.Add(CapturedNameResolution(endPos,itemMethodGroup,[],occurenceType,denv,nenv,ad,m)) 
 
         member sink.NotifyFormatSpecifierLocation(m, numArgs) = 
             capturedFormatSpecifierLocations.Add((m, numArgs))
@@ -1747,7 +1759,7 @@ let CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities
 //------------------------------------------------------------------------- 
 
 /// Perform name resolution for an identifier which must resolve to be a namespace or module.
-let rec ResolveLongIndentAsModuleOrNamespace atMostOne amap m fullyQualified (nenv:NameResolutionEnv) ad (lid:Ident list) =
+let rec ResolveLongIndentAsModuleOrNamespace sink atMostOne amap m fullyQualified (nenv:NameResolutionEnv) ad (lid:Ident list) isOpenDecl =
     match lid with 
     | [] -> NoResultsOrUsefulErrors
 
@@ -1755,7 +1767,7 @@ let rec ResolveLongIndentAsModuleOrNamespace atMostOne amap m fullyQualified (ne
         if isNil rest then
             error (Error(FSComp.SR.nrGlobalUsedOnlyAsFirstName(), id.idRange))
         else
-            ResolveLongIndentAsModuleOrNamespace atMostOne amap m FullyQualified nenv ad rest
+            ResolveLongIndentAsModuleOrNamespace sink atMostOne amap m FullyQualified nenv ad rest isOpenDecl
 
     | id :: rest -> 
         let moduleOrNamespaces = nenv.ModulesAndNamespaces fullyQualified
@@ -1784,6 +1796,11 @@ let rec ResolveLongIndentAsModuleOrNamespace atMostOne amap m fullyQualified (ne
                 moduleNotFoundErrorCache <- Some(id.idRange, error)
                 error
 
+        let notifyNameResolution (modref: ModuleOrNamespaceRef) m =
+            let item = Item.ModuleOrNamespaces [modref]
+            let occurence = if isOpenDecl then ItemOccurence.Open else ItemOccurence.Use
+            CallNameResolutionSink sink (m, nenv, item, item, emptyTyparInst, occurence, nenv.DisplayEnv, ad)
+
         match moduleOrNamespaces.TryFind id.idText with
         | Some modrefs ->
             /// Look through the sub-namespaces and/or modules
@@ -1795,24 +1812,27 @@ let rec ResolveLongIndentAsModuleOrNamespace atMostOne amap m fullyQualified (ne
                     | Some mspec -> 
                         let subref = modref.NestedTyconRef mspec
                         if IsEntityAccessible amap m ad subref then
+                            notifyNameResolution subref id.idRange
                             look (depth+1) subref mspec.ModuleOrNamespaceType rest
                         else
                             moduleNotFound modref mty id depth
                     | _ -> moduleNotFound modref mty id depth
 
+            
             modrefs |> CollectResults2 atMostOne (fun modref -> 
-                if IsEntityAccessible amap m ad modref then 
+                if IsEntityAccessible amap m ad modref then
+                    notifyNameResolution modref id.idRange            
                     look 1 modref modref.ModuleOrNamespaceType rest
                 else
                     raze (namespaceNotFound.Force())) 
         | None -> raze (namespaceNotFound.Force())
 
 
-let ResolveLongIndentAsModuleOrNamespaceThen atMostOne amap m fullyQualified (nenv:NameResolutionEnv) ad lid f =
+let ResolveLongIndentAsModuleOrNamespaceThen sink atMostOne amap m fullyQualified (nenv:NameResolutionEnv) ad lid isOpenDecl f =
     match lid with 
     | [] -> NoResultsOrUsefulErrors
     | id :: rest -> 
-        match ResolveLongIndentAsModuleOrNamespace ResultCollectionSettings.AllResults amap m fullyQualified nenv ad [id] with
+        match ResolveLongIndentAsModuleOrNamespace sink ResultCollectionSettings.AllResults amap m fullyQualified nenv ad [id] isOpenDecl with
         | Result modrefs -> 
             modrefs |> CollectResults2 atMostOne (fun (depth,modref,mty) ->  
                 let resInfo = ResolutionInfo.Empty.AddEntity(id.idRange,modref) 
@@ -2315,7 +2335,7 @@ let ChooseTyconRefInExpr (ncenv:NameResolver, m, ad, nenv, id:Ident, typeNameRes
 /// Resolve F# "A.B.C" syntax in expressions
 /// Not all of the sequence will necessarily be swallowed, i.e. we return some identifiers 
 /// that may represent further actions, e.g. further lookups.
-let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad nenv (typeNameResInfo:TypeNameResolutionInfo) lid =
+let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad nenv (typeNameResInfo:TypeNameResolutionInfo) lid isOpenDecl =
     let resInfo = ResolutionInfo.Empty
     match lid with 
     | [] -> error (Error(FSComp.SR.nrInvalidExpression(textOfLid lid), m))
@@ -2324,10 +2344,10 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
          error (Error(FSComp.SR.nrGlobalUsedOnlyAsFirstName(), id.idRange))
          
     | [id;next] when id.idText = MangledGlobalName ->
-          ResolveExprLongIdentPrim sink ncenv fullyQualified m ad nenv typeNameResInfo [next]
+          ResolveExprLongIdentPrim sink ncenv fullyQualified m ad nenv typeNameResInfo [next] isOpenDecl
 
     | id :: lid when id.idText = MangledGlobalName ->
-          ResolveExprLongIdentPrim sink ncenv FullyQualified m ad nenv typeNameResInfo lid
+          ResolveExprLongIdentPrim sink ncenv FullyQualified m ad nenv typeNameResInfo lid isOpenDecl
 
     | [id] when fullyQualified <> FullyQualified ->
           let typeError = ref None
@@ -2452,7 +2472,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
           // Otherwise modules are searched first. REVIEW: modules and types should be searched together. 
           // For each module referenced by 'id', search the module as if it were an F# module and/or a .NET namespace. 
           let moduleSearch ad = 
-               ResolveLongIndentAsModuleOrNamespaceThen ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad lid 
+               ResolveLongIndentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad lid isOpenDecl
                    (ResolveExprLongIdentInModuleOrNamespace ncenv nenv typeNameResInfo ad)
 
           // REVIEW: somewhat surprisingly, this shows up on performance traces, with tcrefs non-nil.
@@ -2544,7 +2564,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
           item,rest
 
 let ResolveExprLongIdent sink (ncenv:NameResolver) m ad nenv typeNameResInfo lid =
-    ResolveExprLongIdentPrim sink ncenv OpenQualified m ad nenv typeNameResInfo lid 
+    ResolveExprLongIdentPrim sink ncenv OpenQualified m ad nenv typeNameResInfo lid false
 
 //-------------------------------------------------------------------------
 // Resolve F#/IL "." syntax in patterns
@@ -2673,7 +2693,7 @@ let rec ResolvePatternLongIdentPrim sink (ncenv:NameResolver) fullyQualified war
     // Long identifiers in patterns 
     | _ -> 
         let moduleSearch ad = 
-            ResolveLongIndentAsModuleOrNamespaceThen ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad lid 
+            ResolveLongIndentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad lid false
                 (ResolvePatternLongIdentInModuleOrNamespace ncenv nenv numTyArgsOpt ad)
         let tyconSearch ad = 
             match lid with 
@@ -2783,7 +2803,7 @@ let SuggestTypeLongIdentInModuleOrNamespace depth (modref:ModuleOrNamespaceRef) 
     UndefinedName(depth,errorTextF,id,suggestPossibleTypes)
 
 /// Resolve a long identifier representing a type in a module or namespace
-let rec private ResolveTypeLongIdentInModuleOrNamespace (ncenv:NameResolver) (typeNameResInfo: TypeNameResolutionInfo) ad genOk (resInfo:ResolutionInfo) depth m modref _mty (lid: Ident list) =
+let rec private ResolveTypeLongIdentInModuleOrNamespace sink nenv (ncenv:NameResolver) (typeNameResInfo: TypeNameResolutionInfo) ad genOk (resInfo:ResolutionInfo) depth m modref _mty (lid: Ident list) =
     match lid with 
     | [] -> error(Error(FSComp.SR.nrUnexpectedEmptyLongId(),m))
     | [id] -> 
@@ -2797,8 +2817,10 @@ let rec private ResolveTypeLongIdentInModuleOrNamespace (ncenv:NameResolver) (ty
         let modulSearch = 
             match modref.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName.TryFind(id.idText) with
             | Some(AccessibleEntityRef ncenv.amap m ad modref submodref) -> 
+                let item = Item.ModuleOrNamespaces [submodref]
+                CallNameResolutionSink sink (id.idRange, nenv, item, item, emptyTyparInst, ItemOccurence.Use, nenv.DisplayEnv, ad)                
                 let resInfo = resInfo.AddEntity(id.idRange,submodref)
-                ResolveTypeLongIdentInModuleOrNamespace ncenv typeNameResInfo ad genOk resInfo (depth+1) m submodref submodref.ModuleOrNamespaceType rest
+                ResolveTypeLongIdentInModuleOrNamespace sink nenv ncenv typeNameResInfo ad genOk resInfo (depth+1) m submodref submodref.ModuleOrNamespaceType rest
             | _ ->
                 let suggestPossibleModules() =
                     modref.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName
@@ -2821,7 +2843,7 @@ let rec private ResolveTypeLongIdentInModuleOrNamespace (ncenv:NameResolver) (ty
         tyconSearch +++ modulSearch
 
 /// Resolve a long identifier representing a type 
-let rec ResolveTypeLongIdentPrim (ncenv:NameResolver) occurence fullyQualified m nenv ad (lid: Ident list) (staticResInfo: TypeNameResolutionStaticArgsInfo) genOk =
+let rec ResolveTypeLongIdentPrim sink (ncenv:NameResolver) occurence fullyQualified m nenv ad (lid: Ident list) (staticResInfo: TypeNameResolutionStaticArgsInfo) genOk =
     let typeNameResInfo = TypeNameResolutionInfo.ResolveToTypeRefs staticResInfo
     match lid with 
     | [] -> error(Error(FSComp.SR.nrUnexpectedEmptyLongId(),m))
@@ -2830,7 +2852,7 @@ let rec ResolveTypeLongIdentPrim (ncenv:NameResolver) occurence fullyQualified m
          error (Error(FSComp.SR.nrGlobalUsedOnlyAsFirstName(), id.idRange))
          
     | id :: lid when id.idText = MangledGlobalName ->
-        ResolveTypeLongIdentPrim ncenv occurence FullyQualified m nenv ad lid staticResInfo genOk
+        ResolveTypeLongIdentPrim sink ncenv occurence FullyQualified m nenv ad lid staticResInfo genOk
 
     | [id]  ->  
         match LookupTypeNameInEnvHaveArity fullyQualified id.idText staticResInfo.NumStaticArgs nenv with
@@ -2876,13 +2898,13 @@ let rec ResolveTypeLongIdentPrim (ncenv:NameResolver) occurence fullyQualified m
                     NoResultsOrUsefulErrors
 
         let modulSearch = 
-            ResolveLongIndentAsModuleOrNamespaceThen ResultCollectionSettings.AllResults ncenv.amap m fullyQualified nenv ad lid 
-                (ResolveTypeLongIdentInModuleOrNamespace ncenv typeNameResInfo ad genOk)
+            ResolveLongIndentAsModuleOrNamespaceThen sink ResultCollectionSettings.AllResults ncenv.amap m fullyQualified nenv ad lid false
+                (ResolveTypeLongIdentInModuleOrNamespace sink nenv ncenv typeNameResInfo ad genOk)
             |?> List.concat 
 
         let modulSearchFailed() = 
-            ResolveLongIndentAsModuleOrNamespaceThen ResultCollectionSettings.AllResults ncenv.amap m fullyQualified nenv AccessibleFromSomeFSharpCode lid 
-                (ResolveTypeLongIdentInModuleOrNamespace ncenv typeNameResInfo.DropStaticArgsInfo AccessibleFromSomeFSharpCode genOk)
+            ResolveLongIndentAsModuleOrNamespaceThen sink ResultCollectionSettings.AllResults ncenv.amap m fullyQualified nenv AccessibleFromSomeFSharpCode lid false
+                (ResolveTypeLongIdentInModuleOrNamespace sink nenv ncenv typeNameResInfo.DropStaticArgsInfo AccessibleFromSomeFSharpCode genOk)
             |?> List.concat 
 
         let searchSoFar = tyconSearch +++ modulSearch
@@ -2908,7 +2930,7 @@ let rec ResolveTypeLongIdentPrim (ncenv:NameResolver) occurence fullyQualified m
 /// Resolve a long identifier representing a type and report it
 let ResolveTypeLongIdent sink (ncenv:NameResolver) occurence fullyQualified nenv ad (lid: Ident list) staticResInfo genOk =
     let m = rangeOfLid lid
-    let res = ResolveTypeLongIdentPrim ncenv occurence fullyQualified m nenv ad lid staticResInfo genOk 
+    let res = ResolveTypeLongIdentPrim sink ncenv occurence fullyQualified m nenv ad lid staticResInfo genOk 
     // Register the result as a name resolution
     match res with 
     | Result (resInfo,tcref) -> 
@@ -3037,7 +3059,7 @@ let SuggestLabelsOfRelatedRecords g (nenv:NameResolutionEnv) (id:Ident) (allFiel
     UndefinedName(0,FSComp.SR.undefinedNameRecordLabel, id, suggestLabels)
 
 /// Resolve a long identifier representing a record field 
-let ResolveFieldPrim (ncenv:NameResolver) nenv ad typ (mp,id:Ident) allFields =
+let ResolveFieldPrim sink (ncenv:NameResolver) nenv ad typ (mp,id:Ident) allFields =
     let typeNameResInfo = TypeNameResolutionInfo.Default
     let g = ncenv.g
     let m = id.idRange
@@ -3085,7 +3107,7 @@ let ResolveFieldPrim (ncenv:NameResolver) nenv ad typ (mp,id:Ident) allFields =
             | _ -> NoResultsOrUsefulErrors
 
         let modulSearch ad = 
-            ResolveLongIndentAsModuleOrNamespaceThen ResultCollectionSettings.AtMostOneResult ncenv.amap m OpenQualified nenv ad lid 
+            ResolveLongIndentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m OpenQualified nenv ad lid false
                 (ResolveFieldInModuleOrNamespace ncenv nenv ad)
 
         let search =
@@ -3118,7 +3140,7 @@ let ResolveFieldPrim (ncenv:NameResolver) nenv ad typ (mp,id:Ident) allFields =
         [(resInfo,item)]
 
 let ResolveField sink ncenv nenv ad typ (mp,id) allFields =
-    let res = ResolveFieldPrim ncenv nenv ad typ (mp,id) allFields
+    let res = ResolveFieldPrim sink ncenv nenv ad typ (mp,id) allFields
     // Register the results of any field paths "Module.Type" in "Module.Type.field" as a name resolution. (Note, the path resolution
     // info is only non-empty if there was a unique resolution of the field)
     let checker = ResultTyparChecker(fun () -> true)
