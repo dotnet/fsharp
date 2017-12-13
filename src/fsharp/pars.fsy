@@ -286,7 +286,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %type <Ast.SynExceptionDefn> exconDefn
 %type <Ast.SynExceptionDefnRepr> exconCore
 %type <Ast.SynModuleDecl list> moduleDefnsOrExprPossiblyEmptyOrBlock
-%type <Ast.LongIdentWithDots> openDecl
+%type <Ast.LongIdentWithDots option> openDecl
 %type <Ast.LongIdentWithDots> path
 %type <Ast.LongIdentWithDots> pathOp
 /*     LESS    GREATER        parsedOk   typeArgs           m for each   mWhole  */
@@ -1256,8 +1256,18 @@ moduleDefn:
         [] }
 
   /* 'open' declarations */
-  | openDecl 
-      { [SynModuleDecl.Open($1, $1.Range)] }
+  | openDecl
+      { let rhsm = rhs parseState 1
+        match $1 with
+        | Some longDotId -> [ SynModuleDecl.Open(rhsm, longDotId, unionRanges rhsm longDotId.Range) ]
+        | _ -> 
+            let startPos = rhsm.End
+            let endPos = mkPos rhsm.EndLine (rhsm.EndColumn + 1)
+
+            let m = mkFileIndexRange rhsm.FileIndex startPos endPos
+            reportParseErrorAt m (FSComp.SR.parsIdentifierExpected())
+
+            [ SynModuleDecl.Open(rhsm, LongIdentWithDots([], []), rhsm) ] }
 
 
 /* The right-hand-side of a module abbreviation definition */ 
@@ -2354,8 +2364,9 @@ exconRepr:
   |             { None }
   | EQUALS path { Some ($2.Lid) }
 
-openDecl:  
-  | OPEN path { $2 }
+openDecl:
+  | OPEN      { None }
+  | OPEN path { Some $2 }
 
 
 /*-------------------------------------------------------------------------*/

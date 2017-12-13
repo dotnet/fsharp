@@ -569,7 +569,7 @@ module Structure =
             |> List.choose selectRanges
             |> acc.AddRange
 
-        let collectOpens = getConsecutiveModuleDecls (function SynModuleDecl.Open (_, r) -> Some r | _ -> None) Scope.Open
+        let collectOpens = getConsecutiveModuleDecls (function SynModuleDecl.Open (_, _, r) -> Some r | _ -> None) Scope.Open
 
         let collectHashDirectives =
              getConsecutiveModuleDecls(

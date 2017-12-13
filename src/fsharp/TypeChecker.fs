@@ -12053,11 +12053,14 @@ let TcTyconMemberSpecs cenv env containerInfo declKind tpenv (augSpfn: SynMember
 //------------------------------------------------------------------------- 
 
 let TcModuleOrNamespaceLidAndPermitAutoResolve tcSink env amap (longId : Ident list) =
-    let ad = env.eAccessRights
-    let m = longId |> List.map (fun id -> id.idRange) |> List.reduce unionRanges
-    match ResolveLongIndentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap m OpenQualified env.eNameResEnv ad longId true with 
-    | Result res -> Result res
-    | Exception err ->  raze err
+    if longId.IsEmpty then
+        Result []
+    else
+        let ad = env.eAccessRights
+        let m = longId |> List.map (fun id -> id.idRange) |> List.reduce unionRanges
+        match ResolveLongIndentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap m OpenQualified env.eNameResEnv ad longId true with 
+        | Result res -> Result res
+        | Exception err ->  raze err
 
 let TcOpenDecl tcSink (g:TcGlobals) amap m scopem env (longId : Ident list)  = 
     let modrefs = ForceRaise (TcModuleOrNamespaceLidAndPermitAutoResolve tcSink env amap longId)
@@ -16582,7 +16585,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv:cenv) parent typeNames scopem 
 
           return (exprfWithEscapeCheck, []), envAfter, envAfter
 
-      | SynModuleDecl.Open (LongIdentWithDots(mp, _), m) -> 
+      | SynModuleDecl.Open (_, LongIdentWithDots(mp, _), m) -> 
           let scopem = unionRanges m.EndRange scopem
           let env = TcOpenDecl cenv.tcSink cenv.g cenv.amap m scopem env mp
           return ((fun e -> e), []), env, env
@@ -16783,7 +16786,7 @@ and TcModuleOrNamespaceElementsMutRec cenv parent typeNames endm envInitial mutR
                   let decls = [MutRecShape.Module (compInfo, mutRecDefs)]
                   decls, (false, false, attrs)
 
-              | SynModuleDecl.Open (LongIdentWithDots(lid, _), m) ->  
+              | SynModuleDecl.Open (_, LongIdentWithDots(lid, _), m) ->  
                   if not openOk then errorR(Error(FSComp.SR.tcOpenFirstInMutRec(), m))
                   let decls = [ MutRecShape.Open (MutRecDataForOpen(lid, m)) ]
                   decls, (openOk, moduleAbbrevOk, attrs)

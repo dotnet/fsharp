@@ -877,7 +877,7 @@ module ParsedInput =
                 | SynModuleDecl.DoExpr (_, _, r)
                 | SynModuleDecl.Types (_, r)
                 | SynModuleDecl.Exception (_, r)
-                | SynModuleDecl.Open (_, r)
+                | SynModuleDecl.Open (_, _, r)
                 | SynModuleDecl.HashDirective (_, r) -> Some r
                 | _ -> None
                 |> Option.map (fun r -> r.StartColumn)
@@ -922,7 +922,7 @@ module ParsedInput =
                     let moduleBodyIdentation = getMinColumn decls |> Option.defaultValue (range.StartColumn + 4)
                     doRange NestedModule fullIdent range.StartLine moduleBodyIdentation
                     List.iter (walkSynModuleDecl fullIdent) decls
-            | SynModuleDecl.Open (_, range) -> doRange OpenDeclaration [] range.EndLine (range.StartColumn - 5)
+            | SynModuleDecl.Open (_, _, range) -> doRange OpenDeclaration [] range.EndLine (range.StartColumn - 5)
             | SynModuleDecl.HashDirective (_, range) -> doRange HashDirective [] range.EndLine range.StartColumn
             | _ -> ()
 
