@@ -28,19 +28,6 @@
     <GeneratePkgDefFile>true</GeneratePkgDefFile>
     <IncludePkgdefInVSIXContainer>true</IncludePkgdefInVSIXContainer>
   </PropertyGroup>
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  <Import Project="$(VsSDKTargets)" />
-  <Import Project="$(FSharpSourcesRoot)\..\vsintegration\vsintegration.targets" />
-  <Target Name="GatherBinariesToBeSigned" AfterTargets="CopyFilesToOutputDirectory">
-    <ItemGroup>
-      <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
-      <BinariesToBeSigned Include="$(OutDir)**\$(AssemblyName).resources.dll" />
-      <FilesToSign Include="@(BinariesToBeSigned)">
-        <Authenticode>Microsoft</Authenticode>
-        <StrongName>StrongName</StrongName>
-      </FilesToSign>
-    </ItemGroup>
-  </Target>
   <ItemGroup>
     <InternalsVisibleTo Include="FSharp.ProjectSystem.FSharp" />
     <InternalsVisibleTo Include="VisualFSharp.Unittests" />
@@ -153,7 +140,6 @@
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="UIAutomationTypes" />
-    <Reference Include="VSLangProj, Version=7.0.3300.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="WindowsBase" />
     <Reference Include="System" />
     <Reference Include="PresentationCore" />
@@ -164,6 +150,10 @@
     </Reference>
     <Reference Include="EnvDTE80">
       <HintPath>$(FSharpSourcesRoot)\..\packages\EnvDTE80.8.0.1\lib\net10\EnvDTE80.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="VSLangProj">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\VSSDK.VSLangProj.7.0.4\lib\net20\VSLangProj.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Threading">
