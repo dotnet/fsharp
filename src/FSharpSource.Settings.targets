@@ -48,10 +48,9 @@
     <FSharpCore41TargetPackageVersion>4.1.19</FSharpCore41TargetPackageVersion>
     <FSharpCore41TargetMajorVersion>4.1</FSharpCore41TargetMajorVersion>
 
-    <FSharpCoreFrozenPortablePackageVersion>4.3.0</FSharpCoreFrozenPortablePackageVersion>
-
-    <FSharpCoreFrozenPortableTargetPackageVersion>4.3.1</FSharpCoreFrozenPortableTargetPackageVersion>
-    <FSharpCoreFrozenPortableTargetMajorVersion>4.3</FSharpCoreFrozenPortableTargetMajorVersion>
+    <FSharpCoreFrozenPortablePackageVersion>10.1.0</FSharpCoreFrozenPortablePackageVersion>
+    <FSharpCoreFrozenPortableTargetPackageVersion>10.1.1</FSharpCoreFrozenPortableTargetPackageVersion>
+    <FSharpCoreFrozenPortableTargetMajorVersion>10.1</FSharpCoreFrozenPortableTargetMajorVersion>
 
     <NUnitVersion>3.5.0</NUnitVersion>
     <NUnitFullVersion>3.5.0.0</NUnitFullVersion>
