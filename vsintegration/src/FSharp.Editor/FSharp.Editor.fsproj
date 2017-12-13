@@ -112,6 +112,11 @@
       <Project>{ee85aab7-cda0-4c4e-bda0-a64ccc413e3f}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <!-- <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.LanguageService\FSharp.LanguageService.fsproj">
+      <Name>FSharp.LanguageService</Name>
+      <Project>{ee85aab7-cda0-4c4e-bda0-a64ccc413e3f}</Project>
+      <Private>True</Private>
+    </ProjectReference> -->
     <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj">
       <Name>FSharp.LanguageService.Base</Name>
       <Project>{1c5c163c-37ea-4a3c-8ccc-0d34b74bf8ef}</Project>
