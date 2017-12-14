@@ -59,7 +59,7 @@ val RemapOptimizationInfo : TcGlobals -> Tastops.Remap -> (CcuOptimizationInfo -
 val AbstractOptimizationInfoToEssentials : (CcuOptimizationInfo -> CcuOptimizationInfo)
 
 /// Combine optimization infos
-val UnionOptimizationInfos: seq<ImplFileOptimizationInfo> -> CcuOptimizationInfo
+val UnionOptimizationInfos: ImplFileOptimizationInfo list -> CcuOptimizationInfo  //seq<ImplFileOptimizationInfo> -> CcuOptimizationInfo
 
 /// Check if an expression has an effect
 val ExprHasEffect: TcGlobals -> Expr -> bool

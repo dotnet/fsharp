@@ -483,7 +483,7 @@ let CheckNoReraise cenv freesOpt (body:Expr) =
 let isSpliceOperator g v = valRefEq g v g.splice_expr_vref || valRefEq g v g.splice_raw_expr_vref 
 
 /// Check conditions associated with implementing multiple instantiations of a generic interface
-let CheckMultipleInterfaceInstantiations cenv interfaces m = 
+let CheckMultipleInterfaceInstantiations cenv (interfaces:TType list) m = 
     let keyf ty = assert isAppTy cenv.g ty; (tcrefOfAppTy cenv.g ty).Stamp
     let table = interfaces |> MultiMap.initBy keyf
     let firstInterfaceWithMultipleGenericInstantiations = 
@@ -1703,7 +1703,7 @@ let CheckTopImpl (g,amap,reportErrors,infoReader,internalsVisibleToPaths,viewCcu
         { g =g  
           reportErrors=reportErrors 
           boundVals= new Dictionary<_,_>(100, HashIdentity.Structural) 
-          potentialUnboundUsesOfVals=Map.empty 
+          potentialUnboundUsesOfVals= StampMap() 
           usesQuotations=false 
           infoReader=infoReader 
           internalsVisibleToPaths=internalsVisibleToPaths

@@ -1415,7 +1415,7 @@ type ILMethodDef =
 
 
 /// Index table by name and arity. 
-type MethodDefMap = Map<string, ILMethodDef list>
+type MethodDefMap = NameMap<ILMethodDef list>
 
 [<Sealed>]
 type ILMethodDefs(f : (unit -> ILMethodDef[])) = 
@@ -1513,9 +1513,9 @@ type ILMethodImplDef =
 // Index table by name and arity. 
 type ILMethodImplDefs = 
     | MethodImpls of Lazy<MethodImplsMap>
-    member x.AsList = let (MethodImpls ltab) = x in Map.foldBack (fun _x y r -> y@r) (ltab.Force()) []
+    member x.AsList = let (MethodImpls ltab) = x in (ltab.Force()).FoldBack (fun _x y r -> y@r) [] //Map.foldBack (fun _x y r -> y@r) (ltab.Force()) []
 
-and MethodImplsMap = Map<string * int, ILMethodImplDef list>
+and MethodImplsMap = Collections.ShardMap<string * int, ILMethodImplDef list>
 
 [<RequireQualifiedAccess>]
 type ILTypeDefLayout =
@@ -1622,8 +1622,8 @@ type ILNestedExportedType =
       CustomAttrs: ILAttributes } 
 
 and ILNestedExportedTypes = 
-    | ILNestedExportedTypes of Lazy<Map<string,ILNestedExportedType>>
-    member x.AsList = let (ILNestedExportedTypes ltab) = x in Map.foldBack (fun _x y r -> y::r) (ltab.Force()) []
+    | ILNestedExportedTypes of Lazy<NameMap<ILNestedExportedType>>
+    member x.AsList = let (ILNestedExportedTypes ltab) = x in NameMap.foldBack (fun _x y r -> y::r) (ltab.Force()) []
 
 and [<NoComparison; NoEquality>]
     ILExportedTypeOrForwarder =
@@ -1635,8 +1635,8 @@ and [<NoComparison; NoEquality>]
       CustomAttrs: ILAttributes } 
 
 and ILExportedTypesAndForwarders = 
-    | ILExportedTypesAndForwarders of Lazy<Map<string,ILExportedTypeOrForwarder>>
-    member x.AsList = let (ILExportedTypesAndForwarders ltab) = x in Map.foldBack (fun _x y r -> y::r) (ltab.Force()) []
+    | ILExportedTypesAndForwarders of Lazy<NameMap<ILExportedTypeOrForwarder>>
+    member x.AsList = let (ILExportedTypesAndForwarders ltab) = x in NameMap.foldBack (fun _x y r -> y::r) (ltab.Force()) []
 
 [<RequireQualifiedAccess>]
 type ILResourceAccess = 
@@ -2604,28 +2604,31 @@ let mkILProperties l =  mkILPropertiesLazy (notlazy l)
 let emptyILProperties =  mkILProperties []
 
 let addExportedTypeToTable (y: ILExportedTypeOrForwarder) tab = Map.add y.Name y tab
-let mkILExportedTypes l =  ILExportedTypesAndForwarders (notlazy (List.foldBack addExportedTypeToTable l Map.empty))
-let mkILExportedTypesLazy (l:Lazy<_>) =   ILExportedTypesAndForwarders (lazy (List.foldBack addExportedTypeToTable (l.Force()) Map.empty))
+let mkILExportedTypes l =  ILExportedTypesAndForwarders (notlazy (NameMap.ofKeyedList (fun y -> y.Name) l)) //List.foldBack addExportedTypeToTable l Map.empty))
+let mkILExportedTypesLazy (l:Lazy<_>) =   ILExportedTypesAndForwarders (lazy (NameMap.ofKeyedList (fun y -> y.Name) (l.Force()) ))//List.foldBack addExportedTypeToTable (l.Force()) Map.empty))
 
 let addNestedExportedTypeToTable (y: ILNestedExportedType) tab =
-    Map.add y.Name y tab
+    NameMap.add y.Name y tab
 
 let mkILNestedExportedTypes l =  
-    ILNestedExportedTypes (notlazy (List.foldBack addNestedExportedTypeToTable l Map.empty))
+    //ILNestedExportedTypes (notlazy (List.foldBack addNestedExportedTypeToTable l Map.empty))
+    ILNestedExportedTypes (notlazy (NameMap.ofKeyedList (fun (y:ILNestedExportedType) -> y.Name) l ))
 
 let mkILNestedExportedTypesLazy (l:Lazy<_>) =  
-    ILNestedExportedTypes (lazy (List.foldBack addNestedExportedTypeToTable (l.Force()) Map.empty))
+    ILNestedExportedTypes (lazy (NameMap.ofKeyedList (fun (y:ILNestedExportedType) -> y.Name) (l.Force())))
 
 let mkILResources l =  ILResources (notlazy l)
 let mkILResourcesLazy l =  ILResources l
 
-let addMethodImplToTable y tab =
-    let key = (y.Overrides.MethodRef.Name,y.Overrides.MethodRef.ArgTypes.Length)
-    let prev = Map.tryFindMulti key tab
-    Map.add key (y::prev) tab
+//let addMethodImplToTable y tab =
+//    let key = (y.Overrides.MethodRef.Name,y.Overrides.MethodRef.ArgTypes.Length)
+//    let prev = Map.tryFindMulti key tab
+//    Map.add key (y::prev) tab
 
-let mkILMethodImpls l =  MethodImpls (notlazy (List.foldBack addMethodImplToTable l Map.empty))
-let mkILMethodImplsLazy l =  MethodImpls (lazy (List.foldBack addMethodImplToTable (Lazy.force l) Map.empty))
+let addMethodImplKey y = (y.Overrides.MethodRef.Name,y.Overrides.MethodRef.ArgTypes.Length)
+    
+let mkILMethodImpls l =  MethodImpls (notlazy (Collections.ShardMap.LayerList addMethodImplKey l))
+let mkILMethodImplsLazy l =  MethodImpls (lazy (Collections.ShardMap.LayerList addMethodImplKey (Lazy.force l)))
 let emptyILMethodImpls =  mkILMethodImpls []
 
 

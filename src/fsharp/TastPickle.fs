@@ -1213,11 +1213,11 @@ let u_ILInstr st =
 // Pickle/unpickle for F# types and module signatures
 //---------------------------------------------------------------------------
 
-let p_Map pk pv = p_wrap Map.toList (p_list (p_tup2 pk pv))
+let p_Map pk pv = p_wrap NameMap.toList (p_list (p_tup2 pk pv))
 let p_qlist pv = p_wrap QueueList.toList (p_list pv)
 let p_namemap p = p_Map p_string p
 
-let u_Map uk uv = u_wrap Map.ofList (u_list (u_tup2 uk uv))
+let u_Map uk uv = u_wrap NameMap.ofList (u_list (u_tup2 uk uv))
 let u_qlist uv = u_wrap QueueList.ofList (u_list uv)
 let u_namemap u = u_Map u_string u
 

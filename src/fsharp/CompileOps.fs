@@ -3906,9 +3906,9 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
     let mutable resolutions = initialResolutions
     let mutable importsBase : TcImports option = importsBase
     let mutable dllInfos: ImportedBinary list = []
-    let mutable dllTable: NameMap<ImportedBinary> = NameMap.empty
+    let mutable dllTable: NameMap<ImportedBinary> = NameMap.Empty
     let mutable ccuInfos: ImportedAssembly list = []
-    let mutable ccuTable: NameMap<ImportedAssembly> = NameMap.empty
+    let mutable ccuTable: NameMap<ImportedAssembly> = NameMap.Empty
     let mutable disposeActions = []
     let mutable disposed = false
     let mutable ilGlobalsOpt = ilGlobalsOpt
@@ -3923,7 +3923,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
     static let ccuHasType (ccu : CcuThunk) (nsname : string list) (tname : string) =
         match (Some ccu.Contents, nsname) ||> List.fold (fun entityOpt n -> match entityOpt with None -> None | Some entity -> entity.ModuleOrNamespaceType.AllEntitiesByCompiledAndLogicalMangledNames.TryFind n) with
         | Some ns ->
-                match Map.tryFind tname ns.ModuleOrNamespaceType.TypesByMangledName with
+                match ns.ModuleOrNamespaceType.TypesByMangledName.TryFind tname with
                 | Some _ -> true
                 | None -> false
         | None -> false

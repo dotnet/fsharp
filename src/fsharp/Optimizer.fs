@@ -378,14 +378,14 @@ let check (vref: ValRef) (res:ValInfo)  =
 // Bind information about values 
 //------------------------------------------------------------------------- 
 
-let EmptyModuleInfo = notlazy { ValInfos = ValInfos([]); ModuleOrNamespaceInfos = Map.empty }
+let EmptyModuleInfo = notlazy { ValInfos = ValInfos([]); ModuleOrNamespaceInfos = NameMap.Empty }
 
-let rec UnionOptimizationInfos (minfos : seq<LazyModuleInfo>) = 
+let rec UnionOptimizationInfos (minfos : LazyModuleInfo list) = 
     notlazy
        { ValInfos =  ValInfos(seq { for minfo in minfos do yield! minfo.Force().ValInfos.Entries })
-         ModuleOrNamespaceInfos = minfos |> Seq.map (fun m -> m.Force().ModuleOrNamespaceInfos) |> NameMap.union UnionOptimizationInfos  }
+         ModuleOrNamespaceInfos = minfos |> List.map (fun m -> m.Force().ModuleOrNamespaceInfos) |> NameMap.union UnionOptimizationInfos  }
 
-let FindOrCreateModuleInfo n (ss: Map<_, _>) = 
+let FindOrCreateModuleInfo n (ss: NameMap<_>) = 
     match ss.TryFind n with 
     | Some res -> res
     | None -> EmptyModuleInfo
@@ -404,7 +404,7 @@ let rec BindValueInSubModuleFSharpCore (mp:string[]) i (v:Val) vval ss =
 
 and BindValueInModuleForFslib n mp i v vval (ss: NameMap<_>) =
     let old =  FindOrCreateModuleInfo n ss
-    Map.add n (notlazy (BindValueInSubModuleFSharpCore mp i v vval (old.Force()))) ss
+    NameMap.add n (notlazy (BindValueInSubModuleFSharpCore mp i v vval (old.Force()))) ss
 
 and BindValueInGlobalModuleForFslib n mp i v vval (ss: LayeredMap<_, _>) =
     let old =  FindOrCreateGlobalModuleInfo n ss
@@ -3125,7 +3125,7 @@ and OptimizeModuleDef cenv (env, bindInfosColl) x =
           (* REVIEW: Eliminate unused let bindings from modules *)
         (TMDefLet(bind', m), 
          notlazy { ValInfos=ValInfos [mkValBind bind (mkValInfo binfo bind.Var)] 
-                   ModuleOrNamespaceInfos = NameMap.empty }), 
+                   ModuleOrNamespaceInfos = NameMap.Empty }), 
         (env , ([bindInfo]::bindInfosColl))
 
     | TMDefDo(e, m)  ->

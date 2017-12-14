@@ -1122,97 +1122,165 @@ module IPartialEqualityComparer =
 // Library: Name maps
 //------------------------------------------------------------------------
 
-type NameMap<'T> = Map<string,'T>
+type NameMap<'T> = Internal.Utilities.Collections.ShardMap<string,'T>
 type NameMultiMap<'T> = NameMap<'T list>
-type MultiMap<'T,'U when 'T : comparison> = Map<'T,'U list>
+type MultiMap<'T,'U when 'T : comparison> = Internal.Utilities.Collections.ShardMap<'T,'U list>
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module NameMap = 
 
-    let empty = Map.empty
-    let range m = List.rev (Map.foldBack (fun _ x sofar -> x :: sofar) m [])
-    let foldBack f (m:NameMap<'T>) z = Map.foldBack f m z
-    let forall f m = Map.foldBack (fun x y sofar -> sofar && f x y) m true
-    let exists f m = Map.foldBack (fun x y sofar -> sofar || f x y) m false
-    let ofKeyedList f l = List.foldBack (fun x acc -> Map.add (f x) x acc) l Map.empty
-    let ofList l : NameMap<'T> = Map.ofList l
-    let ofSeq l : NameMap<'T> = Map.ofSeq l
-    let toList (l: NameMap<'T>) = Map.toList l
-    let layer (m1 : NameMap<'T>) m2 = Map.foldBack Map.add m1 m2
+    //let empty = Map.empty
+    //let range m = List.rev (Map.foldBack (fun _ x sofar -> x :: sofar) m [])
+    //let foldBack f (m:NameMap<'T>) z = Map.foldBack f m z
+    //let forall f m = Map.foldBack (fun x y sofar -> sofar && f x y) m true
+    //let exists f m = Map.foldBack (fun x y sofar -> sofar || f x y) m false
+    //let ofKeyedList f l = List.foldBack (fun x acc -> Map.add (f x) x acc) l Map.empty
+    //let ofList l : NameMap<'T> = Map.ofList l
+    //let ofSeq l : NameMap<'T> = Map.ofSeq l
+    //let toList (l: NameMap<'T>) = Map.toList l
+    //let layer (m1 : NameMap<'T>) m2 = Map.foldBack Map.add m1 m2
+
+    ///// Not a very useful function - only called in one place - should be changed 
+    //let layerAdditive addf m1 m2 = 
+    //  Map.foldBack (fun x y sofar -> Map.add x (addf (Map.tryFindMulti x sofar) y) sofar) m1 m2
+
+    ///// Union entries by identical key, using the provided function to union sets of values
+    //let union unionf (ms: seq<NameMap<_>>) = 
+    //    seq { for m in ms do yield! m } 
+    //       |> Seq.groupBy (fun (KeyValue(k,_v)) -> k) 
+    //       |> Seq.map (fun (k,es) -> (k,unionf (Seq.map (fun (KeyValue(_k,v)) -> v) es))) 
+    //       |> Map.ofSeq
+
+    ///// For every entry in m2 find an entry in m1 and fold 
+    //let subfold2 errf f m1 m2 acc =
+    //    Map.foldBack (fun n x2 acc -> try f n (Map.find n m1) x2 acc with :? KeyNotFoundException -> errf n x2) m2 acc
+
+    //let suball2 errf p m1 m2 = subfold2 errf (fun _ x1 x2 acc -> p x1 x2 && acc) m1 m2 true
+
+    //let mapFold f s (l: NameMap<'T>) = 
+    //    Map.foldBack (fun x y (l',s') -> let y',s'' = f s' x y in Map.add x y' l',s'') l (Map.empty,s)
+
+    //let foldBackRange f (l: NameMap<'T>) acc = Map.foldBack (fun _ y acc -> f y acc) l acc
+
+    //let filterRange f (l: NameMap<'T>) = Map.foldBack (fun x y acc -> if f y then Map.add x y acc else acc) l Map.empty
+
+    //let mapFilter f (l: NameMap<'T>) = Map.foldBack (fun x y acc -> match f y with None -> acc | Some y' -> Map.add x y' acc) l Map.empty
+
+    //let map f (l : NameMap<'T>) = Map.map (fun _ x -> f x) l
+
+    //let iter f (l : NameMap<'T>) = Map.iter (fun _k v -> f v) l
+
+    //let partition f (l : NameMap<'T>) = Map.filter (fun _ x-> f x) l, Map.filter (fun _ x -> not (f x)) l
+
+    //let mem v (m: NameMap<'T>) = Map.containsKey v m
+
+    //let find v (m: NameMap<'T>) = Map.find v m
+
+    //let tryFind v (m: NameMap<'T>) = Map.tryFind v m 
+
+    //let add v x (m: NameMap<'T>) = Map.add v x m
+
+    //let isEmpty (m: NameMap<'T>) = (Map.isEmpty  m)
+
+    //let existsInRange p m =  Map.foldBack (fun _ y acc -> acc || p y) m false 
+
+    //let tryFindInRange p m = 
+    //    Map.foldBack (fun _ y acc -> 
+    //         match acc with 
+    //         | None -> if p y then Some y else None 
+    //         | _ -> acc) m None 
+
+    //let inline empty = Internal.Utilities.Collections.ShardMap<string,'T>(size)
+    let range (m:NameMap<'T>) = List.rev (m.FoldBack (fun _ x acc -> x :: acc) [])
+    let fold f (m:NameMap<'T>) z = m.Fold f z
+    let foldBack f (m:NameMap<'T>) z = m.FoldBack f z
+    let forall f (m:NameMap<'T>) = m.FoldBack (fun x y acc -> acc && f x y)  true
+    let exists f (m:NameMap<'T>) = m.Exists f
+    let ofKeyedList f l = NameMap<'T>.OfKeyedList f l
+    let ofList (l:(string * 'T) list) = NameMap<'T>(l)
+    let ofSeq (l:(string * 'T) seq) = NameMap<'T>(l)
+    let toList (l: NameMap<'T>) = l.Fold (fun acc k v -> (k,v) :: acc ) []
+    let layer (m1 : NameMap<'T>) m2 = m1.Merge m2
 
     /// Not a very useful function - only called in one place - should be changed 
-    let layerAdditive addf m1 m2 = 
-      Map.foldBack (fun x y sofar -> Map.add x (addf (Map.tryFindMulti x sofar) y) sofar) m1 m2
+    let layerAdditive (addf:'T list -> 'U -> 'T list) (m1:NameMap<'U>) (m2:NameMap<'T list>)  =
+        //HACK: this should be done by speacialised parallel imlimentation 
+        //m2.FoldBack (fun x y (acc:NameMap<'T list>) -> acc.Add(x, (addf (match acc.TryFind x with Some v -> v | None -> [] ) y)) ) m1
+        NameMap<_>.LayerAdditive addf m1 m2
+
+    //Map.foldBack (fun x y sofar -> Map.add x (addf (Map.tryFindMulti x sofar) y) sofar) m1 m2
 
     /// Union entries by identical key, using the provided function to union sets of values
-    let union unionf (ms: NameMap<_> seq) = 
-        seq { for m in ms do yield! m } 
-           |> Seq.groupBy (fun (KeyValue(k,_v)) -> k) 
-           |> Seq.map (fun (k,es) -> (k,unionf (Seq.map (fun (KeyValue(_k,v)) -> v) es))) 
-           |> Map.ofSeq
-
+    let union unionf (ms: NameMap<_> list) = NameMap.UnionParallel unionf ms
+        
     /// For every entry in m2 find an entry in m1 and fold 
-    let subfold2 errf f m1 m2 acc =
-        Map.foldBack (fun n x2 acc -> try f n (Map.find n m1) x2 acc with :? KeyNotFoundException -> errf n x2) m2 acc
-
+    let subfold2 errf f (m1:NameMap<_>) (m2:NameMap<_>) acc =
+        m2.FoldBack (fun n x2 acc -> match m1.TryFind n with | Some v1 -> f n v1 x2 acc | None -> errf n x2 ) acc
+        
     let suball2 errf p m1 m2 = subfold2 errf (fun _ x1 x2 acc -> p x1 x2 && acc) m1 m2 true
 
     let mapFold f s (l: NameMap<'T>) = 
-        Map.foldBack (fun x y (l',s') -> let y',s'' = f s' x y in Map.add x y' l',s'') l (Map.empty,s)
+        l.FoldBack (fun x y (l':NameMap<'T>,s') -> let y',s'' = f s' x y in l'.Add(x,y'),s'') (NameMap.Empty,s)
 
-    let foldBackRange f (l: NameMap<'T>) acc = Map.foldBack (fun _ y acc -> f y acc) l acc
+    let foldBackRange f (l: NameMap<'T>) acc = l.FoldBack (fun _ y acc -> f y acc) acc
 
-    let filterRange f (l: NameMap<'T>) = Map.foldBack (fun x y acc -> if f y then Map.add x y acc else acc) l Map.empty
+    let filterRange f (l: NameMap<'T>) = l.FoldBack (fun x y (acc:NameMap<'T>) -> if f y then acc.Add(x,y) else acc) NameMap.Empty
 
-    let mapFilter f (l: NameMap<'T>) = Map.foldBack (fun x y acc -> match f y with None -> acc | Some y' -> Map.add x y' acc) l Map.empty
+    let mapFilter f (l: NameMap<'T>) = l.FoldBack (fun x y (acc:NameMap<'T>) -> match f y with None -> acc | Some y' -> acc.Add(x, y')) NameMap.Empty
 
-    let map f (l : NameMap<'T>) = Map.map (fun _ x -> f x) l
+    let map f (l : NameMap<'T>) = l.Map f
+        
+    let mapi f (l : NameMap<'T>) = l.Mapi f
 
-    let iter f (l : NameMap<'T>) = Map.iter (fun _k v -> f v) l
+    let iter f (l : NameMap<'T>) = l.Iter f
 
-    let partition f (l : NameMap<'T>) = Map.filter (fun _ x-> f x) l, Map.filter (fun _ x -> not (f x)) l
+    let partition f (l : NameMap<'T>) = l.Partition f
 
-    let mem v (m: NameMap<'T>) = Map.containsKey v m
+    let mem v (m: NameMap<'T>) = m.ContainsKey v
 
-    let find v (m: NameMap<'T>) = Map.find v m
+    let containsKey v (m: NameMap<'T>) = m.ContainsKey v
 
-    let tryFind v (m: NameMap<'T>) = Map.tryFind v m 
+    let find v (m: NameMap<'T>) = m.[v]
 
-    let add v x (m: NameMap<'T>) = Map.add v x m
+    let tryFind v (m: NameMap<'T>) = m.TryFind v  
 
-    let isEmpty (m: NameMap<'T>) = (Map.isEmpty  m)
+    let add v x (m: NameMap<'T>) = m.Add(v,x)
 
-    let existsInRange p m =  Map.foldBack (fun _ y acc -> acc || p y) m false 
+    let addList ls (m: NameMap<'T>) = m.AddList(ls)
 
-    let tryFindInRange p m = 
-        Map.foldBack (fun _ y acc -> 
-             match acc with 
-             | None -> if p y then Some y else None 
-             | _ -> acc) m None 
+    let remove v (m: NameMap<'T>) = m.Remove(v)
+
+    let removeList ls (m: NameMap<'T>) = m.RemoveList(ls)
+
+    let isEmpty (m: NameMap<'T>) = (m.Count = 0)
+
+    let existsInRange p (m: NameMap<'T>) = m.Exists (fun _ v -> p v)
+
+    let tryFindInRange p (m: NameMap<'T>) = m.TryFindInRange p
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module NameMultiMap = 
     let existsInRange f (m: NameMultiMap<'T>) = NameMap.exists (fun _ l -> List.exists f l) m
-    let find v (m: NameMultiMap<'T>) = match Map.tryFind v m with None -> [] | Some r -> r
+    let find v (m: NameMultiMap<'T>) = match m.TryFind v with None -> [] | Some r -> r
     let add v x (m: NameMultiMap<'T>) = NameMap.add v (x :: find v m) m
-    let range (m: NameMultiMap<'T>) = Map.foldBack (fun _ x sofar -> x @ sofar) m []
-    let rangeReversingEachBucket (m: NameMultiMap<'T>) = Map.foldBack (fun _ x sofar -> List.rev x @ sofar) m []
+    let range (m: NameMultiMap<'T>) = m.FoldBack (fun _ x sofar -> x @ sofar) []
+    let rangeReversingEachBucket (m: NameMultiMap<'T>) = m.FoldBack (fun _ x sofar -> List.rev x @ sofar) []
     
-    let chooseRange f (m: NameMultiMap<'T>) = Map.foldBack (fun _ x sofar -> List.choose f x @ sofar) m []
+    let chooseRange f (m: NameMultiMap<'T>) = m.FoldBack (fun _ x sofar -> List.choose f x @ sofar) []
     let map f (m: NameMultiMap<'T>) = NameMap.map (List.map f) m 
-    let empty : NameMultiMap<'T> = Map.empty
-    let initBy f xs : NameMultiMap<'T> = xs |> Seq.groupBy f |> Seq.map (fun (k,v) -> (k,List.ofSeq v)) |> Map.ofSeq 
-    let ofList (xs: (string * 'T) list) : NameMultiMap<'T> = xs |> Seq.groupBy fst |> Seq.map (fun (k,v) -> (k,List.ofSeq (Seq.map snd v))) |> Map.ofSeq 
+    let inline empty (size:int) : NameMultiMap<'T> = NameMap<'T list>(size)
+    let initBy f xs : NameMultiMap<'T> = xs |> Seq.groupBy f |> Seq.map (fun (k,v) -> (k,List.ofSeq v)) |> NameMap.ofSeq 
+    let ofList (xs: (string * 'T) list) : NameMultiMap<'T> = xs |> Seq.groupBy fst |> Seq.map (fun (k,v) -> (k,List.ofSeq (Seq.map snd v))) |> NameMap.ofSeq 
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module MultiMap = 
-    let existsInRange f (m: MultiMap<_,_>) = Map.exists (fun _ l -> List.exists f l) m
-    let find v (m: MultiMap<_,_>) = match Map.tryFind v m with None -> [] | Some r -> r
-    let add v x (m: MultiMap<_,_>) = Map.add v (x :: find v m) m
-    let range (m: MultiMap<_,_>) = Map.foldBack (fun _ x sofar -> x @ sofar) m []
-    //let chooseRange f (m: MultiMap<_,_>) = Map.foldBack (fun _ x sofar -> List.choose f x @ sofar) m []
-    let empty : MultiMap<_,_> = Map.empty
-    let initBy f xs : MultiMap<_,_> = xs |> Seq.groupBy f |> Seq.map (fun (k,v) -> (k,List.ofSeq v)) |> Map.ofSeq 
+    let existsInRange f (m: MultiMap<_,_>) = m.ExistsPar f // Map.exists (fun _ l -> List.exists f l) m
+    let find v (m: MultiMap<_,_>) = match m.TryFind v with None -> [] | Some r -> r
+    let add v x (m: MultiMap<_,_>) = m.Add (v, x :: find v m)
+    let range (m: MultiMap<_,_>) = m.FoldBack (fun _ x sofar -> x @ sofar) []
+    let chooseRange f (m: MultiMap<_,_>) = m.FoldBack (fun _ x sofar -> List.choose f x @ sofar) []
+    let inline empty (size:int) = MultiMap<_,_>(size)
+    let initBy f xs = Collections.ShardMap.LayerList f xs   // xs |> Seq.groupBy f |> Seq.map (fun (k,v) -> (k,List.ofSeq v)) |> Map.ofSeq 
 
 type LayeredMap<'Key,'Value  when 'Key : comparison> = Map<'Key,'Value>
 

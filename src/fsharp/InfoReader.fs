@@ -478,7 +478,7 @@ type private IndexedList<'T>(itemLists: 'T list list, itemsByName: NameMultiMap<
     member x.AddItems(items,nmf) = IndexedList<'T>(items::itemLists,List.foldBack (fun x acc -> NameMultiMap.add (nmf x) x acc) items itemsByName )
 
     /// Get an empty set of items
-    static member Empty = IndexedList<'T>([],NameMultiMap.empty)
+    static member Empty = IndexedList<'T>([], NameMultiMap.Empty)
 
     /// Filter a set of new items to add according to the content of the list.  Only keep an item
     /// if it passes 'keepTest' for all matching items already in the list.

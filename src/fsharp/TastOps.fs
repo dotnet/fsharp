@@ -47,7 +47,7 @@ type TyparMap<'T> =
         let (TPMap m) = tm
         TPMap (m.Add(v.Stamp, x))
 
-    static member Empty : TyparMap<'T> = TPMap Map.empty
+    static member Empty : TyparMap<'T> = TPMap StampMap.Empty
 
 [<NoEquality; NoComparison; Sealed>]
 type TyconRefMap<'T>(imap: StampMap<'T>) =
@@ -56,9 +56,9 @@ type TyconRefMap<'T>(imap: StampMap<'T>) =
     member m.ContainsKey (v: TyconRef) =  imap.ContainsKey v.Stamp 
     member m.Add (v: TyconRef) x = TyconRefMap (imap.Add (v.Stamp, x))
     member m.Remove (v: TyconRef) = TyconRefMap (imap.Remove v.Stamp)
-    member m.IsEmpty = imap.IsEmpty
+    member m.IsEmpty = imap.Count = 0
 
-    static member Empty : TyconRefMap<'T> = TyconRefMap Map.empty
+    static member Empty : TyconRefMap<'T> = TyconRefMap StampMap.Empty
     static member OfList vs = (vs, TyconRefMap<'T>.Empty) ||> List.foldBack (fun (x, y) acc -> acc.Add x y) 
 
 [<Struct>]
@@ -71,9 +71,9 @@ type ValMap<'T>(imap: StampMap<'T>) =
     member m.ContainsVal (v: Val) = imap.ContainsKey v.Stamp 
     member m.Add (v: Val) x = ValMap (imap.Add(v.Stamp, x))
     member m.Remove (v: Val) = ValMap (imap.Remove(v.Stamp))
-    static member Empty = ValMap<'T> Map.empty
-    member m.IsEmpty = imap.IsEmpty
-    static member OfList vs = (vs, ValMap<'T>.Empty) ||> List.foldBack (fun (x, y) acc -> acc.Add x y) 
+    static member Empty = ValMap<'T> StampMap.Empty
+    member m.IsEmpty = imap.Count = 0
+    static member OfList (vs: (Val*'T) list) = ValMap<'T>(StampMap.OfListMapped (fun (k:Val,v) -> KeyValuePair<_,_>(k.Stamp,v)) vs) // (vs, ValMap<'T>.Empty) ||> List.foldBack (fun (x, y) acc -> acc.Add x y) 
 
 //--------------------------------------------------------------------------
 // renamings
@@ -995,10 +995,10 @@ let ensureCcuHasModuleOrNamespaceAtPath (ccu:CcuThunk) path (CompPath(_, cpath))
         match path, cpath with 
         | (hpath::tpath), ((_, mkind)::tcpath)  -> 
             let modName = hpath.idText 
-            if not (Map.containsKey modName mtype.AllEntitiesByCompiledAndLogicalMangledNames) then 
+            if not (NameMap.containsKey modName mtype.AllEntitiesByCompiledAndLogicalMangledNames) then 
                 let smodul = NewModuleOrNamespace (Some(CompPath(scoref, prior_cpath))) taccessPublic hpath xml [] (MaybeLazy.Strict (NewEmptyModuleOrNamespaceType mkind))
                 mtype.AddModuleOrNamespaceByMutation(smodul);
-            let modul = Map.find modName mtype.AllEntitiesByCompiledAndLogicalMangledNames 
+            let modul = NameMap.find modName mtype.AllEntitiesByCompiledAndLogicalMangledNames 
             loop (prior_cpath@[(modName, Namespace)]) tpath tcpath modul 
 
         | _ -> () 
@@ -1281,14 +1281,15 @@ type ValHash<'T> =
 [<Struct; NoEquality; NoComparison>]
 type ValMultiMap<'T>(contents: StampMap<'T list>) =
     member m.Find (v: Val) =
-        match contents |> Map.tryFind v.Stamp with
+        match contents.TryFind v.Stamp with
         | Some vals -> vals
         | _ -> []
 
     member m.Add (v:Val, x) = ValMultiMap<'T>(contents.Add (v.Stamp, x :: m.Find v))
     member m.Remove (v: Val) = ValMultiMap<'T>(contents.Remove v.Stamp)
     member m.Contents = contents
-    static member Empty = ValMultiMap<'T>(Map.empty)
+    member m.ContainsKey (v:Val) = contents.ContainsKey v.Stamp 
+    static member Empty = ValMultiMap<'T>(StampMap())
 
 [<Struct; NoEquality; NoComparison>]
 type TyconRefMultiMap<'T>(contents: TyconRefMap<'T list>) =

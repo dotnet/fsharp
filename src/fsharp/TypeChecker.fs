@@ -393,7 +393,7 @@ let AddLocalValPrimitive (v:Val) env =
 
 let AddLocalValMap tcSink scopem (vals:Val NameMap) env =
     let env = 
-        if vals.IsEmpty then 
+        if NameMap.isEmpty vals then 
             env
         else
             let env = ModifyNameResEnv (AddValMapToNameEnv vals) env
@@ -1505,11 +1505,12 @@ let MakeAndPublishVal cenv env (altActualParent, inSig, declKind, vrec, (ValSche
     vspec
 
 let MakeAndPublishVals cenv env (altActualParent, inSig, declKind, vrec, valSchemes, attrs, doc, konst) =
-    Map.foldBack
-        (fun name (valscheme:ValScheme) values -> 
-          Map.add name (MakeAndPublishVal cenv env (altActualParent, inSig, declKind, vrec, valscheme, attrs, doc, konst, false), valscheme.TypeScheme) values)
-        valSchemes
-        Map.empty
+    NameMap.map (fun (valscheme:ValScheme) -> (MakeAndPublishVal cenv env (altActualParent, inSig, declKind, vrec, valscheme, attrs, doc, konst, false), valscheme.TypeScheme)) valSchemes
+    //NameMap.foldBack
+    //    (fun name (valscheme:ValScheme) values -> 
+    //      NameMap.add name (MakeAndPublishVal cenv env (altActualParent, inSig, declKind, vrec, valscheme, attrs, doc, konst, false), valscheme.TypeScheme) values)
+    //    valSchemes
+    //    NameMap.Empty
 
 let MakeAndPublishBaseVal cenv env baseIdOpt ty = 
     baseIdOpt
@@ -1847,7 +1848,7 @@ let MakeAndPublishSimpleVals cenv env m names mergeNamesInOneNameresEnv =
                 // mergedNameEnv - name resolution env that contains all names
                 // mergedRange - union of ranges of names
                 let mergedNameEnv, mergedRange = 
-                    ((env.NameEnv, m1), nameResolutions) ||> Seq.fold (fun (nenv, merged) (_, item, _, _, _, _, _, _, m, _) ->
+                    ((env.NameEnv, m1), nameResolutions) ||> Seq.fold (fun (nenv, merged) (_, item, _, _, _, _, _, _, m, _) -> //HACK: item is coming up null
                         // MakeAndPublishVal creates only Item.Value
                         let item = match item with Item.Value(item) -> item | _ -> failwith "impossible"
                         (AddFakeNamedValRefToNameEnv item.DisplayName nenv item), (unionRanges m merged)
@@ -1963,7 +1964,7 @@ let BuildFieldMap cenv env isPartial ty flds m =
                 fref1.TyconRef
     
     let fldsmap, rfldsList = 
-        ((Map.empty, []), frefSets) ||> List.fold (fun (fs, rfldsList) (fld, frefs, fldExpr) -> 
+        ((NameMap.Empty, []), frefSets) ||> List.fold (fun (fs, rfldsList) (fld, frefs, fldExpr) -> 
                 match frefs |> List.filter (fun (FieldResolution(fref2, _)) -> tyconRefEq cenv.g tcref fref2.TyconRef) with
                 | [FieldResolution(fref2, showDeprecated)] -> 
 
@@ -1973,7 +1974,7 @@ let BuildFieldMap cenv env isPartial ty flds m =
 
                     CheckRecdFieldAccessible cenv.amap m env.eAccessRights fref2 |> ignore
                     CheckFSharpAttributes cenv.g fref2.PropertyAttribs m |> CommitOperationResult
-                    if Map.containsKey fref2.FieldName fs then 
+                    if NameMap.containsKey fref2.FieldName fs then 
                         errorR (Error(FSComp.SR.tcFieldAppearsTwiceInRecord(fref2.FieldName), m))
                     if showDeprecated then
                         warning(Deprecated(FSComp.SR.nrRecordTypeNeedsQualifiedAccess(fref2.FieldName, fref2.Tycon.DisplayName) |> snd, m))
@@ -1984,7 +1985,7 @@ let BuildFieldMap cenv env isPartial ty flds m =
                         errorR (FieldsFromDifferentTypes(env.DisplayEnv, fref1, fref2, m))
                         fs, rfldsList
                     else
-                        Map.add fref2.FieldName fldExpr fs, (fref2.FieldName, fldExpr)::rfldsList
+                        NameMap.add fref2.FieldName fldExpr fs, (fref2.FieldName, fldExpr)::rfldsList
 
                 | _ -> error(Error(FSComp.SR.tcRecordFieldInconsistentTypes(), m)))
     tcref, fldsmap, List.rev rfldsList
@@ -2043,14 +2044,14 @@ let TcUnionCaseOrExnField cenv (env: TcEnv) ty1 m c n funcs =
 
 type SyntacticUnscopedTyparEnv = UnscopedTyparEnv of NameMap<Typar>
 
-let emptyUnscopedTyparEnv : SyntacticUnscopedTyparEnv = UnscopedTyparEnv Map.empty
+let emptyUnscopedTyparEnv : SyntacticUnscopedTyparEnv = UnscopedTyparEnv NameMap.Empty
 
-let AddUnscopedTypar n p (UnscopedTyparEnv tab) = UnscopedTyparEnv (Map.add n p tab)
+let AddUnscopedTypar n p (UnscopedTyparEnv tab) = UnscopedTyparEnv (NameMap.add n p tab)
 
-let TryFindUnscopedTypar n (UnscopedTyparEnv tab) = Map.tryFind n tab
+let TryFindUnscopedTypar n (UnscopedTyparEnv tab) = NameMap.tryFind n tab
 
 let HideUnscopedTypars typars (UnscopedTyparEnv tab) = 
-    UnscopedTyparEnv (List.fold (fun acc (tp:Typar) -> Map.remove tp.Name acc) tab typars)
+    UnscopedTyparEnv ( typars |> List.map (fun (tp:Typar) -> tp.Name) |> tab.RemoveList ) //(List.fold (fun acc (tp:Typar) -> NameMap.remove tp.Name acc) tab typars)
 
 //-------------------------------------------------------------------------
 // Helpers for generalizing type variables
@@ -5030,13 +5031,13 @@ and TcSimplePats cenv optArgsOK  checkCxs ty env (tpenv, names, takenNames:Set<_
 
 and TcSimplePatsOfUnknownType cenv optArgsOK checkCxs env tpenv spats =
     let argty = NewInferenceType ()
-    TcSimplePats cenv optArgsOK checkCxs argty env (tpenv, NameMap.empty, Set.empty) spats
+    TcSimplePats cenv optArgsOK checkCxs argty env (tpenv, NameMap.Empty, Set.empty) spats
 
 and TcPatBindingName cenv env id ty isMemberThis vis1 topValData (inlineFlag, declaredTypars, argAttribs, isMutable, vis2, compgen) (names, takenNames:Set<string>) = 
     let vis = if Option.isSome vis1 then vis1 else vis2
     if takenNames.Contains id.idText then errorR (VarBoundTwice id)
     let baseOrThis = if isMemberThis then MemberThisVal else NormalVal
-    let names = Map.add id.idText (PrelimValScheme1(id, declaredTypars, ty, topValData, None, isMutable, inlineFlag, baseOrThis, argAttribs, vis, compgen)) names
+    let names = NameMap.add id.idText (PrelimValScheme1(id, declaredTypars, ty, topValData, None, isMutable, inlineFlag, baseOrThis, argAttribs, vis, compgen)) names
     let takenNames = Set.add id.idText takenNames
     (fun (TcPatPhase2Input (values, isLeftMost)) -> 
         let (vspec, typeScheme) = 
@@ -5135,8 +5136,8 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
           // We don't try to recover from this error since we get later bad internal errors during pattern
           // matching 
           error (UnionPatternsBindDifferentNames m)
-        names1 |> Map.iter (fun _ (PrelimValScheme1(id1, _, ty1, _, _, _, _, _, _, _, _)) -> 
-          match Map.tryFind id1.idText names2 with 
+        names1 |> NameMap.iter (fun _ (PrelimValScheme1(id1, _, ty1, _, _, _, _, _, _, _, _)) -> 
+          match NameMap.tryFind id1.idText names2 with 
           | None -> () 
           | Some (PrelimValScheme1(_, _, ty2, _, _, _, _, _, _, _, _)) -> 
               UnifyTypes cenv env m ty1 ty2)
@@ -5380,7 +5381,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
         let ftys = fields |> List.map (fun fsp -> actualTyOfRecdField inst fsp, fsp) 
         let fldsmap', acc = 
           ((tpenv, names, takenNames), ftys) ||> List.mapFold (fun s (ty, fsp) -> 
-              match Map.tryFind fsp.rfield_id.idText fldsmap with
+              match NameMap.tryFind fsp.rfield_id.idText fldsmap with
               | Some v -> TcPat warnOnUpper cenv env None vFlags s ty v
               | None -> (fun _ -> TPat_wild m), s)
         (fun values -> TPat_recd (tcref, tinst, List.map (fun f -> f values) fldsmap', m)), 
@@ -6050,13 +6051,13 @@ and TcIteratedLambdas cenv isFirst (env: TcEnv) overallTy takenNames tpenv e =
     match e with 
     | SynExpr.Lambda (isMember, isSubsequent, spats, bodyExpr, m) when isMember || isFirst || isSubsequent ->
         let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m overallTy
-        let vs, (tpenv, names, takenNames) = TcSimplePats cenv isMember CheckCxs domainTy env (tpenv, Map.empty, takenNames) spats
+        let vs, (tpenv, names, takenNames) = TcSimplePats cenv isMember CheckCxs domainTy env (tpenv, NameMap.Empty, takenNames) spats
         let envinner, _, vspecMap = MakeAndPublishSimpleVals cenv env m names true
-        let byrefs = vspecMap |> Map.map (fun _ v -> isByrefTy cenv.g v.Type, v)
+        let byrefs = vspecMap |> NameMap.map (fun v -> isByrefTy cenv.g v.Type, v)
         let envinner = if isMember then envinner else ExitFamilyRegion envinner
         let bodyExpr, tpenv = TcIteratedLambdas cenv false envinner resultTy takenNames tpenv bodyExpr
         // See bug 5758: Non-monotonicity in inference: need to ensure that parameters are never inferred to have byref type, instead it is always declared
-        byrefs  |> Map.iter (fun _ (orig, v) -> 
+        byrefs  |> NameMap.iter (fun _ (orig, v) -> 
             if not orig && isByrefTy cenv.g v.Type then errorR(Error(FSComp.SR.tcParameterInferredByref v.DisplayName, v.Range)))
         mkMultiLambda m (List.map (fun nm -> NameMap.find nm vspecMap) vs) (bodyExpr, resultTy), tpenv 
     | e -> 
@@ -10107,7 +10108,7 @@ and TcAndPatternCompileMatchClauses mExpr matchm actionOnFailure cenv inputTy re
 
 and TcMatchPattern cenv inputTy env tpenv (pat:SynPat, optWhenExpr) =
     let m = pat.Range
-    let patf', (tpenv, names, _) = TcPat WarnOnUpperCase cenv env None (ValInline.Optional, permitInferTypars, noArgOrRetAttribs, false, None, false) (tpenv, Map.empty, Set.empty) inputTy pat
+    let patf', (tpenv, names, _) = TcPat WarnOnUpperCase cenv env None (ValInline.Optional, permitInferTypars, noArgOrRetAttribs, false, None, false) (tpenv, NameMap.Empty, Set.empty) inputTy pat
     let envinner, values, vspecMap = MakeAndPublishSimpleVals cenv env m names false
     let optWhenExpr', tpenv = 
         match optWhenExpr with
@@ -10329,7 +10330,7 @@ and TcNormalizedBinding declKind (cenv:cenv) env tpenv overallTy safeThisValOpt 
 
         // Check the pattern of the l.h.s. of the binding 
         let tcPatPhase2, (tpenv, nameToPrelimValSchemeMap, _) = 
-            TcPat AllIdsOK cenv envinner (Some(partialValReprInfo)) (inlineFlag, flex, argAndRetAttribs, isMutable, vis, compgen) (tpenv, NameMap.empty, Set.empty) overallPatTy pat
+            TcPat AllIdsOK cenv envinner (Some(partialValReprInfo)) (inlineFlag, flex, argAndRetAttribs, isMutable, vis, compgen) (tpenv, NameMap.Empty, Set.empty) overallPatTy pat
         
 
         // Add active pattern result names to the environment 
@@ -10805,7 +10806,7 @@ and ApplyTypesFromArgumentPatterns (cenv, env, optArgsOK, ty, m, tpenv, Normaliz
         let domainTy, resultTy = UnifyFunctionType None cenv env.DisplayEnv m ty
         // We apply the type information from the patterns by type checking the
         // "simple" patterns against 'domainTy'. They get re-typechecked later. 
-        ignore (TcSimplePats cenv optArgsOK CheckCxs domainTy env (tpenv, Map.empty, Set.empty) pushedPat)
+        ignore (TcSimplePats cenv optArgsOK CheckCxs domainTy env (tpenv, NameMap.Empty, Set.empty) pushedPat)
         ApplyTypesFromArgumentPatterns (cenv, env, optArgsOK, resultTy, m, tpenv, NormalizedBindingRhs (morePushedPats, retInfoOpt, e), memberFlagsOpt)
 
 
@@ -11262,7 +11263,7 @@ and TcLetrecBinding
           generalizedRecBinds : PostGeneralizationRecursiveBinding list, 
           preGeneralizationRecBinds: PreGeneralizationRecursiveBinding list, 
           tpenv, 
-          uncheckedRecBindsTable : Map<Stamp, PreCheckingRecursiveBinding>) 
+          uncheckedRecBindsTable : ShardMap<Stamp, PreCheckingRecursiveBinding>) 
          
          // This is the actual binding to check
          (rbind : PreCheckingRecursiveBinding) = 
@@ -11345,7 +11346,7 @@ and TcIncrementalLetRecGeneralization cenv scopem
           generalizedRecBinds : PostGeneralizationRecursiveBinding list, 
           preGeneralizationRecBinds: PreGeneralizationRecursiveBinding list, 
           tpenv, 
-          uncheckedRecBindsTable : Map<Stamp, PreCheckingRecursiveBinding>) =
+          uncheckedRecBindsTable : ShardMap<Stamp, PreCheckingRecursiveBinding>) =
 
     let denv = envNonRec.DisplayEnv
     // recompute the free-in-environment in case any type variables have been instantiated
@@ -11380,7 +11381,7 @@ and TcIncrementalLetRecGeneralization cenv scopem
         // The forward uses table will always be smaller than the number of potential forward bindings except in extremely
         // pathological situations
         let freeInUncheckedRecBinds = 
-            lazy ((emptyFreeTyvars, cenv.recUses.Contents) ||> Map.fold (fun acc vStamp _ -> 
+            lazy ((emptyFreeTyvars, cenv.recUses.Contents) ||> ShardMap<_,_>.fold (fun acc vStamp _ -> 
                        if uncheckedRecBindsTable.ContainsKey vStamp then 
                            let fwdBind = uncheckedRecBindsTable.[vStamp]  
                            accFreeInType CollectAllNoCaching  fwdBind.RecBindingInfo.Val.Type acc
@@ -11703,7 +11704,7 @@ and TcLetrec  overridesOK cenv env tpenv (binds, bindsm, scopem) =
     let envRec = AddLocalVals cenv.tcSink scopem prelimRecValues env 
     
     // Typecheck bindings 
-    let uncheckedRecBindsTable = uncheckedRecBinds  |> List.map (fun rbind  ->  rbind.RecBindingInfo.Val.Stamp, rbind) |> Map.ofList 
+    let uncheckedRecBindsTable = uncheckedRecBinds  |> List.map (fun rbind  ->  rbind.RecBindingInfo.Val.Stamp, rbind) |> ShardMap.OfList 
 
     let (_, generalizedRecBinds, preGeneralizationRecBinds, tpenv, _) = 
         ((env, [], [], tpenv, uncheckedRecBindsTable), uncheckedRecBinds) ||> List.fold (TcLetrecBinding (cenv, envRec, scopem, [], None)) 
@@ -13118,7 +13119,7 @@ module MutRecBindingChecking =
 
         let (defnsBs: MutRecDefnsPhase2BData), (tpenv, generalizedRecBinds, preGeneralizationRecBinds, _, _) = 
 
-            let uncheckedRecBindsTable = uncheckedRecBinds  |> List.map (fun rbind  ->  rbind.RecBindingInfo.Val.Stamp, rbind) |> Map.ofList 
+            let uncheckedRecBindsTable = uncheckedRecBinds  |> List.map (fun rbind  ->  rbind.RecBindingInfo.Val.Stamp, rbind) |> ShardMap.OfList 
 
             // Loop through the types being defined...
             //
@@ -13324,7 +13325,7 @@ module MutRecBindingChecking =
     // Fixup recursive references to members.
     let TcMutRecBindings_Phase2C_FixupRecursiveReferences cenv (denv, defnsBs: MutRecDefnsPhase2BData, generalizedTyparsForRecursiveBlock: Typar list, generalizedRecBinds: PostGeneralizationRecursiveBinding list, scopem) =
         // Build an index ---> binding map
-        let generalizedBindingsMap = generalizedRecBinds |> List.map (fun pgrbind -> (pgrbind.RecBindingInfo.Index, pgrbind)) |> Map.ofList
+        let generalizedBindingsMap = generalizedRecBinds |> List.map (fun pgrbind -> (pgrbind.RecBindingInfo.Index, pgrbind)) |> ShardMap.OfList
 
         defnsBs |> MutRecShapes.mapTyconsAndLets 
 
@@ -13953,7 +13954,7 @@ module TyconConstraintInference =
     let InferSetOfTyconsSupportingComparable cenv (denv: DisplayEnv) tyconsWithStructuralTypes =
 
         let g = cenv.g 
-        let tab = tyconsWithStructuralTypes |> List.map (fun (tycon:Tycon, structuralTypes) -> tycon.Stamp, (tycon, structuralTypes)) |> Map.ofList 
+        let tab = tyconsWithStructuralTypes |> List.map (fun (tycon:Tycon, structuralTypes) -> tycon.Stamp, (tycon, structuralTypes)) |> ShardMap.OfList 
 
         // Initially, assume the equality relation is available for all structural type definitions 
         let initialAssumedTycons = 
@@ -14080,7 +14081,7 @@ module TyconConstraintInference =
     let InferSetOfTyconsSupportingEquatable cenv (denv: DisplayEnv)  (tyconsWithStructuralTypes:(Tycon * _) list) =
 
         let g = cenv.g 
-        let tab = tyconsWithStructuralTypes |> List.map (fun (tycon, c) -> tycon.Stamp, (tycon, c)) |> Map.ofList 
+        let tab = tyconsWithStructuralTypes |> List.map (fun (tycon, c) -> tycon.Stamp, (tycon, c)) |> ShardMap.OfList 
 
         // Initially, assume the equality relation is available for all structural type definitions 
         let initialAssumedTycons = 
@@ -14211,7 +14212,7 @@ let ComputeModuleName (longPath: Ident list) =
 
 let CheckForDuplicateConcreteType env nm m  = 
     let curr = GetCurrAccumulatedModuleOrNamespaceType env
-    if Map.containsKey nm curr.AllEntitiesByCompiledAndLogicalMangledNames then 
+    if NameMap.containsKey nm curr.AllEntitiesByCompiledAndLogicalMangledNames then 
         // Use 'error' instead of 'errorR' here to avoid cascading errors - see bug 1177 in FSharp 1.0 
         error (Duplicate(FSComp.SR.tcTypeExceptionOrModule(), nm, m))
 

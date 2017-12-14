@@ -34,7 +34,7 @@ module ExprTranslationImpl =
 
         static member Empty = 
             { vs=ValMap<_>.Empty; 
-              tyvs = Map.empty ;
+              tyvs = StampMap.Empty ;
               isinstVals = ValMap<_>.Empty 
               substVals = ValMap<_>.Empty }
 
