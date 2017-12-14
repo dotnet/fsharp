@@ -6,7 +6,7 @@
     <ProjectLanguage>CSharp</ProjectLanguage>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
     <NoWarn>3001,3002,3003,3005,3008,3009,3021,3024</NoWarn>
-    <MicroBuildAssemblyVersion>15.6.0.0</MicroBuildAssemblyVersion>
+    <UseVsMicroBuildAssemblyVersion>true</UseVsMicroBuildAssemblyVersion>
     <MicroBuildAssemblyFileLanguage>cs</MicroBuildAssemblyFileLanguage>
     <VsSDKTools>$(VsSDKTools)</VsSDKTools>
   </PropertyGroup>

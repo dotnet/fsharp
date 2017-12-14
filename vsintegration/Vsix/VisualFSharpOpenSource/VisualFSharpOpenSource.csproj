@@ -53,7 +53,7 @@
     <RootBinPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetDotnetProfile)\bin</RootBinPath>
     <AssemblyName>VisualFSharpOpenSource</AssemblyName>
     <OutputPath>$(RootBinPath)</OutputPath>
-    <MicroBuildAssemblyVersion>15.6.0.0</MicroBuildAssemblyVersion>
+    <UseVsMicroBuildAssemblyVersion>true</UseVsMicroBuildAssemblyVersion>
     <MicroBuildAssemblyFileLanguage>cs</MicroBuildAssemblyFileLanguage>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />

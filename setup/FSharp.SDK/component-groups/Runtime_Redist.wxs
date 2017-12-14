@@ -36,9 +36,10 @@
     </ComponentGroup>
 
     <!-- F# 4.3 -->
-    <DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETFramework_4.0_4.10.1.0">
+    <DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETFramework_4.0_4.4.3.0">
       <Component Id="Runtime_Redist_4.4.3.0_FSharp.Core" Transitive="yes" Guid="$(fsharp.guid(Runtime_Redist_4.4.3.0_FSharp.Core, $(var.LocaleCode)))">
         <File Id="Runtime_Redist_4.4.3.0_FSharp.Core.dll" Source="$(var.BinariesDir)\net40\bin\FSharp.Core.dll" KeyPath="yes" />
+        <File Id="Runtime_Redist_4.4.3.0_FSharp.Core.xml" Source="$(var.BinariesDir)\net40\bin\FSharp.Core.xml" />
         <!-- NOTE: The optdata and sigdata files are now integrated as resources for more recent FSharp.Core.dll's. -->
         <!-- However old versions of FSharp.Core still need these files. For consistency we also continue to produce the files -->
         <!-- for FSharp.Core 4.4.1.0, and include them in the redist. -->
