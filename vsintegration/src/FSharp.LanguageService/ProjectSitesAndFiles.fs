@@ -75,7 +75,7 @@ type private ProjectSiteOfScriptFile(filename:string, referencedProjectFileNames
              |> Array.choose (fun flag -> if flag.StartsWith("-r:") then Some flag.[3..] else None) 
         override this.CompilationBinOutputPath = None
         override this.ProjectFileName = checkOptions.ProjectFileName
-        override this.BuildErrorReporter with get() = None and set _v = ()
+        override this.BuildErrorReporter with get() = None and set _ = ()
         override this.AdviseProjectSiteChanges(_,_) = ()
         override this.AdviseProjectSiteCleaned(_,_) = ()
         override this.AdviseProjectSiteClosed(_,_) = ()
@@ -128,11 +128,12 @@ type private ProjectSiteOfSingleFile(sourceFile) =
 
 /// Manage Storage of FSharpProjectOptions the options for a project
 type internal FSharpProjectOptionsTable () =
+
     // A table of information about projects, excluding single-file projects.
     let projectTable = ConcurrentDictionary<ProjectId, Refreshable<ProjectId[] * FSharpParsingOptions * IProjectSite option * FSharpProjectOptions>>()
     let commandLineOptions = new ConcurrentDictionary<ProjectId, string[]*string[]*string[]>()
 
-    /// Go and re-get all of the options for everything that references projectId
+    /// Re-fetch all of the options for everything that references projectId
     let refreshInfoForProjectsThatReferenceThisProject (projectId:ProjectId) =
         for KeyValue(otherProjectId, ((referencedProjectIds, _parsingOptions, _site, _options), refresh)) in projectTable.ToArray() do
            for referencedProjectId in referencedProjectIds do
@@ -161,8 +162,10 @@ type internal FSharpProjectOptionsTable () =
         | true, (sources, references, options) -> sources, references, options
         | _ -> [||], [||], [||]
 
+    /// Store the command line options for a projectId
     member this.SetOptionsWithProjectId(projectId:ProjectId, sourcePaths:string[], referencePaths:string[], options:string[]) =
         commandLineOptions.[projectId] <- (sourcePaths, referencePaths, options)
+
 
 let internal provideProjectSiteProvider(workspace:VisualStudioWorkspaceImpl, project:Project, serviceProvider:System.IServiceProvider, projectOptionsTable:FSharpProjectOptionsTable option) =
     let hier = workspace.GetHierarchy(project.Id)
@@ -170,60 +173,63 @@ let internal provideProjectSiteProvider(workspace:VisualStudioWorkspaceImpl, pro
         match projectOptionsTable with
         | Some (options) -> options.GetCommandLineOptionsWithProjectId(projectId) 
         | None -> [||], [||], [||]
-    {new IProvideProjectSite with
-        member x.GetProjectSite() =
-            let fst (a, _, _) = a
-            let snd (_, b, _) = b
-            let mutable errorReporter = 
-                let reporter = ProjectExternalErrorReporter(project.Id, "FS", serviceProvider)
-                Some(reporter:> IVsLanguageServiceBuildErrorReporter2)
+    {
+        new IProvideProjectSite with
+            member x.GetProjectSite() =
+                let fst (a, _, _) = a
+                let snd (_, b, _) = b
+                let mutable errorReporter = 
+                    let reporter = ProjectExternalErrorReporter(project.Id, "FS", serviceProvider)
+                    Some(reporter:> IVsLanguageServiceBuildErrorReporter2)
 
-            { new IProjectSite with
-                member __.Description = project.Name
-                member __.CompilationSourceFiles = getCommandLineOptionsWithProjectId(project.Id) |> fst
-                member __.CompilationOptions =
-                    let _,references,options = getCommandLineOptionsWithProjectId(project.Id)
-                    Array.concat [options; references |> Array.map(fun r -> "-r:" + r)]
-                member __.CompilationReferences = getCommandLineOptionsWithProjectId(project.Id) |> snd
-                member site.CompilationBinOutputPath = site.CompilationOptions |> Array.tryPick (fun s -> if s.StartsWith("-o:") then Some s.[3..] else None)
-                member __.ProjectFileName = project.FilePath
-                member __.AdviseProjectSiteChanges(_,_) = ()
-                member __.AdviseProjectSiteCleaned(_,_) = ()
-                member __.AdviseProjectSiteClosed(_,_) = ()
-                member __.IsIncompleteTypeCheckEnvironment = false
-                member __.TargetFrameworkMoniker = ""
-                member __.ProjectGuid =  project.Id.Id.ToString()
-                member __.LoadTime = System.DateTime.Now
-                member __.ProjectProvider = Some (x)
-                member __.BuildErrorReporter with get () = errorReporter and 
-                                                  set (v) = errorReporter <- v
-            }
-
-     interface IVsHierarchy with
-        member __.SetSite(psp)                                    = hier.SetSite(psp)
-        member __.GetSite(psp)                                    = hier.GetSite(ref psp)
-        member __.QueryClose(pfCanClose)                          = hier.QueryClose(ref pfCanClose)
-        member __.Close()                                         = hier.Close()
-        member __.GetGuidProperty(itemid, propid, pguid)          = hier.GetGuidProperty(itemid, propid, ref pguid)
-        member __.SetGuidProperty(itemid, propid, rguid)          = hier.SetGuidProperty(itemid, propid, ref rguid)
-        member __.GetProperty(itemid, propid, pvar)               = hier.GetProperty(itemid, propid, ref pvar) 
-        member __.SetProperty(itemid, propid, var)                = hier.SetProperty(itemid, propid, var)
-        member __.GetNestedHierarchy(itemid, iidHierarchyNested, ppHierarchyNested, pitemidNested) = hier.GetNestedHierarchy(itemid, ref iidHierarchyNested, ref ppHierarchyNested, ref pitemidNested)
-        member __.GetCanonicalName(itemid, pbstrName)             = hier.GetCanonicalName(itemid, ref pbstrName)
-        member __.ParseCanonicalName(pszName, pitemid)            = hier.ParseCanonicalName(pszName, ref pitemid)
-        member __.Unused0()                                       = hier.Unused0()
-        member __.AdviseHierarchyEvents(pEventSink, pdwCookie)    = hier.AdviseHierarchyEvents(pEventSink, ref pdwCookie)
-        member __.UnadviseHierarchyEvents(dwCookie)               = hier.UnadviseHierarchyEvents(dwCookie)
-        member __.Unused1()                                       = hier.Unused1()
-        member __.Unused2()                                       = hier.Unused2()
-        member __.Unused3()                                       = hier.Unused3()
-        member __.Unused4()                                       = hier.Unused4()
+                {
+                    new IProjectSite with
+                        member __.Description = project.Name
+                        member __.CompilationSourceFiles = getCommandLineOptionsWithProjectId(project.Id) |> fst
+                        member __.CompilationOptions =
+                            let _,references,options = getCommandLineOptionsWithProjectId(project.Id)
+                            Array.concat [options; references |> Array.map(fun r -> "-r:" + r)]
+                        member __.CompilationReferences = getCommandLineOptionsWithProjectId(project.Id) |> snd
+                        member site.CompilationBinOutputPath = site.CompilationOptions |> Array.tryPick (fun s -> if s.StartsWith("-o:") then Some s.[3..] else None)
+                        member __.ProjectFileName = project.FilePath
+                        member __.AdviseProjectSiteChanges(_,_) = ()
+                        member __.AdviseProjectSiteCleaned(_,_) = ()
+                        member __.AdviseProjectSiteClosed(_,_) = ()
+                        member __.IsIncompleteTypeCheckEnvironment = false
+                        member __.TargetFrameworkMoniker = ""
+                        member __.ProjectGuid =  project.Id.Id.ToString()
+                        member __.LoadTime = System.DateTime.Now
+                        member __.ProjectProvider = Some (x)
+                        member __.BuildErrorReporter with get () = errorReporter and set (v) = errorReporter <- v
+                }
+        interface IVsHierarchy with
+            member __.SetSite(psp)                                    = hier.SetSite(psp)
+            member __.GetSite(psp)                                    = hier.GetSite(ref psp)
+            member __.QueryClose(pfCanClose)                          = hier.QueryClose(ref pfCanClose)
+            member __.Close()                                         = hier.Close()
+            member __.GetGuidProperty(itemid, propid, pguid)          = hier.GetGuidProperty(itemid, propid, ref pguid)
+            member __.SetGuidProperty(itemid, propid, rguid)          = hier.SetGuidProperty(itemid, propid, ref rguid)
+            member __.GetProperty(itemid, propid, pvar)               = hier.GetProperty(itemid, propid, ref pvar) 
+            member __.SetProperty(itemid, propid, var)                = hier.SetProperty(itemid, propid, var)
+            member __.GetNestedHierarchy(itemid, iidHierarchyNested, ppHierarchyNested, pitemidNested) = 
+                                                                        hier.GetNestedHierarchy(itemid, ref iidHierarchyNested, 
+                                                                                                ref ppHierarchyNested, ref pitemidNested)
+            member __.GetCanonicalName(itemid, pbstrName)             = hier.GetCanonicalName(itemid, ref pbstrName)
+            member __.ParseCanonicalName(pszName, pitemid)            = hier.ParseCanonicalName(pszName, ref pitemid)
+            member __.Unused0()                                       = hier.Unused0()
+            member __.AdviseHierarchyEvents(pEventSink, pdwCookie)    = hier.AdviseHierarchyEvents(pEventSink, ref pdwCookie)
+            member __.UnadviseHierarchyEvents(dwCookie)               = hier.UnadviseHierarchyEvents(dwCookie)
+            member __.Unused1()                                       = hier.Unused1()
+            member __.Unused2()                                       = hier.Unused2()
+            member __.Unused3()                                       = hier.Unused3()
+            member __.Unused4()                                       = hier.Unused4()
     }
 
 /// Information about projects, open files and other active artifacts in visual studio.
 /// Keeps track of the relationship between IVsTextLines buffers, IFSharpSource_DEPRECATED objects, IProjectSite objects and FSharpProjectOptions
 [<Sealed>]
 type internal ProjectSitesAndFiles() =
+
     static let sourceUserDataGuid = new Guid("{55F834FD-B950-4C61-BBAA-0511ABAF4AE2}") // Guid for source user data on text buffer
     static let mutable stamp = 0L
     static let tryGetProjectSite(hierarchy:IVsHierarchy) =
@@ -268,7 +274,7 @@ type internal ProjectSitesAndFiles() =
                         if not (isNull project) then
                             for reference in project.ProjectReferences do
                                 let project = workspace.CurrentSolution.GetProject(reference.ProjectId)
-                                if not (isNull project) then
+                                if not (isNull project) && project.Language = LanguageServiceConstants.FSharpLanguageName then
                                     let siteProvider = provideProjectSiteProvider (workspace, project, serviceProvider, projectOptionsTable)
                                     let referenceProject = workspace.ProjectTracker.GetProject(reference.ProjectId)
                                     let outputPath = referenceProject.BinOutputPath
@@ -285,7 +291,8 @@ type internal ProjectSitesAndFiles() =
         let solutionService = try Some (serviceProvider.GetService(typeof<SVsSolution>) :?> IVsSolution) with _ -> None
         seq { match solutionService with
               | Some solutionService ->
-                  for reference in getReferencesForSolutionService solutionService do yield reference
+                  for reference in getReferencesForSolutionService solutionService do
+                    yield reference
               | None -> ()
             }
 

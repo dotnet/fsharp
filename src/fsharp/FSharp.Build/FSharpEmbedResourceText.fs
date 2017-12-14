@@ -351,10 +351,10 @@ open Printf
           if File.Exists(outFilename) && 
                File.Exists(outXmlFilename) && 
                File.Exists(filename) && 
-               File.GetLastWriteTime(filename) <= File.GetLastWriteTime(outFilename) &&
-               File.GetLastWriteTime(filename) <= File.GetLastWriteTime(outXmlFilename) then 
+               File.GetLastWriteTimeUtc(filename) <= File.GetLastWriteTimeUtc(outFilename) &&
+               File.GetLastWriteTimeUtc(filename) <= File.GetLastWriteTimeUtc(outXmlFilename) then
             printMessage (sprintf "Skipping generation of %s and %s since up-to-date" outFilename outXmlFilename)
-            Some (outFilename, outXmlFilename)
+            Some (filename, outFilename, outXmlFilename)
           else
 
             printMessage (sprintf "Reading %s" filename)
@@ -450,7 +450,7 @@ open Printf
             use outXmlStream = File.Create outXmlFilename
             xd.Save outXmlStream
             printMessage (sprintf "Done %s" outFilename)
-            Some (outFilename, outXmlFilename)
+            Some (filename, outFilename, outXmlFilename)
         with e -> 
             PrintErr(filename, 0, sprintf "An exception occurred when processing '%s'\n%s" filename (e.ToString()))
             None
@@ -487,7 +487,7 @@ open Printf
                 |> Array.choose (fun item -> generateResxAndSource item.ItemSpec)
 
             let generatedSource, generatedResx =
-                [| for (source, resx) in generatedFiles do
+                [| for (textFile, source, resx) in generatedFiles do
                     let sourceItem =
                         let item = TaskItem(source)
                         item.SetMetadata("AutoGen", "true")
@@ -497,6 +497,7 @@ open Printf
                     let resxItem =
                         let item = TaskItem(resx)
                         item.SetMetadata("ManifestResourceName", Path.GetFileNameWithoutExtension(resx))
+                        item.SetMetadata("SourceDocumentPath", textFile)
                         item :> ITaskItem
                     yield (sourceItem, resxItem) |]
                  |> Array.unzip

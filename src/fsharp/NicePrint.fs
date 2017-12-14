@@ -27,7 +27,7 @@ open Microsoft.FSharp.Compiler.PrettyNaming
 
 open Microsoft.FSharp.Core.Printf
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
 open Microsoft.FSharp.Core.CompilerServices
 #endif
@@ -321,9 +321,11 @@ module private PrintIL =
                     then Some Literals.keywordTrue
                     else Some Literals.keywordFalse
                 | ILFieldInit.Char c   -> ("'" + (char c).ToString () + "'") |> (tagStringLiteral >> Some)
+                | ILFieldInit.Int8 x  -> ((x |> int32 |> string) + "y") |> (tagNumericLiteral >> Some)
                 | ILFieldInit.Int16 x  -> ((x |> int32 |> string) + "s") |> (tagNumericLiteral >> Some)
                 | ILFieldInit.Int32 x  -> x |> (string >> tagNumericLiteral >> Some)
                 | ILFieldInit.Int64 x  -> ((x |> string) + "L") |> (tagNumericLiteral >> Some)
+                | ILFieldInit.UInt8 x  -> ((x |> int32 |> string) + "uy") |> (tagNumericLiteral >> Some)
                 | ILFieldInit.UInt16 x -> ((x |> int32 |> string) + "us")  |> (tagNumericLiteral >> Some)
                 | ILFieldInit.UInt32 x -> (x |> int64 |> string) + "u" |> (tagNumericLiteral >> Some)
                 | ILFieldInit.UInt64 x -> ((x |> int64 |> string) + "UL")  |> (tagNumericLiteral >> Some)
@@ -1370,7 +1372,7 @@ module InfoMemberPrinting =
             let prettyTyparInst, prettyMethInfo, minst = prettifyILMethInfo amap m methInfo typarInst ilminfo
             let resL = layoutMethInfoCSharpStyle amap m denv prettyMethInfo minst
             prettyTyparInst, resL
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth _  -> 
             let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst 
             prettyTyparInst, layoutMethInfoCSharpStyle amap m denv methInfo methInfo.FormalMethodInst
@@ -1469,7 +1471,7 @@ module private TastDefinitionPrinting =
         | TAsmRepr _ 
         | TILObjectRepr _  
         | TMeasureableRepr _ 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | TProvidedTypeExtensionPoint _
         | TProvidedNamespaceExtensionPoint _
 #endif
@@ -1477,7 +1479,7 @@ module private TastDefinitionPrinting =
 
 
               
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     let private layoutILFieldInfo denv amap m (e: ILFieldInfo) =
         let staticL = if e.IsStatic then WordL.keywordStatic else emptyL
         let nameL = wordL (tagField (adjustILName e.FieldName))
@@ -1642,7 +1644,7 @@ module private TastDefinitionPrinting =
           let tpsL = layoutTyparDecls denv nameL tycon.IsPrefixDisplay tps
           typewordL ^^ tpsL
       let start = Option.map tagKeyword start
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
       match tycon.IsProvided with 
       | true -> 
           layoutProvidedTycon denv infoReader ad m start lhsL ty 

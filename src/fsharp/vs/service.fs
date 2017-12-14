@@ -165,7 +165,8 @@ type TypeCheckInfo
            reactorOps : IReactorOperations,
            checkAlive : (unit -> bool),
            textSnapshotInfo:obj option,
-           implementationFiles: TypedImplFile list) = 
+           implementationFiles: TypedImplFile list,
+           openDeclarations: OpenDeclaration list) = 
 
     let textSnapshotInfo = defaultArg textSnapshotInfo null
     let (|CNR|) (cnr:CapturedNameResolution) =
@@ -869,10 +870,32 @@ type TypeCheckInfo
                 |> Option.map (fun (items, denv, m) ->
                     items |> List.filter (fun x -> match x.Item with Item.ModuleOrNamespaces _ -> true | _ -> false), denv, m)
             
+            // Completion at '(x: ...)"
+            | Some (CompletionContext.PatternType) ->
+                GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck, false, getAllSymbols)
+                |> Option.map (fun (items, denv, m) ->
+                     items 
+                     |> List.filter (fun cItem ->
+                         match cItem.Item with
+                         | Item.ModuleOrNamespaces _
+                         | Item.Types _
+                         | Item.UnqualifiedType _
+                         | Item.ExnCase _ -> true
+                         | _ -> false), denv, m)
+
             // Other completions
             | cc ->
-                let isInRangeOperator = (match cc with Some (CompletionContext.RangeOperator) -> true | _ -> false)
-                GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors,resolveOverloads, hasTextChangedSinceLastTypecheck, isInRangeOperator, getAllSymbols)
+                match residueOpt |> Option.bind Seq.tryHead with
+                | Some ''' ->
+                    // The last token in 
+                    //    let x = 'E
+                    // is Ident with text "'E", however it's either unfinished char literal or generic parameter. 
+                    // We should not provide any completion in the former case, and we don't provide it for the latter one for now
+                    // because providing generic parameters list is context aware, which we don't have here (yet).
+                    None
+                | _ ->
+                    let isInRangeOperator = (match cc with Some (CompletionContext.RangeOperator) -> true | _ -> false)
+                    GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors,resolveOverloads, hasTextChangedSinceLastTypecheck, isInRangeOperator, getAllSymbols)
         
         res |> Option.map (fun (items, denv, m) -> items, denv, completionContext, m)
 
@@ -1182,7 +1205,7 @@ type TypeCheckInfo
               | None ->
                   let fail defaultReason = 
                       match item.Item with 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
                       | SymbolHelpers.ItemIsProvidedType g (tcref) -> FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.ProvidedType(tcref.DisplayName))
                       | Item.CtorGroup(name, ProvidedMeth(_)::_)
                       | Item.MethodGroup(name, ProvidedMeth(_)::_, _)
@@ -1361,6 +1384,9 @@ type TypeCheckInfo
 
     member __.ImplementationFiles = implementationFiles
 
+    /// All open declarations in the file, including auto open modules
+    member __.OpenDeclarations = openDeclarations
+
     override __.ToString() = "TypeCheckInfo(" + mainInputFileName + ")"
 
 type FSharpParsingOptions =
@@ -1444,7 +1470,7 @@ module internal Parser =
                             errorCount <- errorCount + 1
 
                 match exn with
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
                 | { Exception = (:? TypeProviderError as tpe) } -> tpe.Iter(fun e -> report { exn with Exception = e })
 #endif
                 | e -> report e
@@ -1693,13 +1719,14 @@ module internal Parser =
                                     projectFileName, 
                                     mainInputFileName, 
                                     sink.GetResolutions(), 
-                                    sink.GetSymbolUses(), 
+                                    sink.GetSymbolUses(),
                                     tcEnvAtEnd.NameEnv,
                                     loadClosure,
                                     reactorOps,
                                     checkAlive,
                                     textSnapshotInfo,
-                                    typedImplFiles)     
+                                    typedImplFiles,
+                                    sink.OpenDeclarations)     
                     return errors, TypeCheckAborted.No scope
                 | None -> 
                     return errors, TypeCheckAborted.Yes
@@ -1990,9 +2017,9 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
             (fun () -> [| |]) 
             (fun scope -> 
                  [| for (item,itemOcc,denv,m) in scope.ScopeSymbolUses.GetAllUsesOfSymbols() do
-                     if itemOcc <> ItemOccurence.RelatedText then
-                      let symbol = FSharpSymbol.Create(scope.TcGlobals, scope.ThisCcu, scope.TcImports, item)
-                      yield FSharpSymbolUse(scope.TcGlobals, denv, symbol, itemOcc, m) |])
+                      if itemOcc <> ItemOccurence.RelatedText then
+                        let symbol = FSharpSymbol.Create(scope.TcGlobals, scope.ThisCcu, scope.TcImports, item)
+                        yield FSharpSymbolUse(scope.TcGlobals, denv, symbol, itemOcc, m) |])
          |> async.Return 
 
     member info.GetUsesOfSymbolInFile(symbol:FSharpSymbol) = 
@@ -2028,6 +2055,19 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
         |> Option.map (fun scope -> 
             let cenv = Impl.cenv(scope.TcGlobals, scope.ThisCcu, scope.TcImports)
             [ for mimpl in scope.ImplementationFiles -> FSharpImplementationFileContents(cenv, mimpl)])
+
+    member info.OpenDeclarations =
+        scopeOptX 
+        |> Option.map (fun scope -> 
+            let cenv = Impl.cenv(scope.TcGlobals, scope.ThisCcu, scope.TcImports)
+            scope.OpenDeclarations |> List.map (fun x ->
+                { LongId = x.LongId
+                  Range = x.Range
+                  Modules = x.Modules |> List.map (fun x -> FSharpEntity(cenv, x))
+                  AppliedScope = x.AppliedScope 
+                  IsOwnNamespace = x.IsOwnNamespace } 
+                : FSharpOpenDeclaration ))
+        |> Option.defaultValue []
 
     override info.ToString() = "FSharpCheckFileResults(" + filename + ")"
 
@@ -2086,10 +2126,10 @@ module CompileHelpers =
         let errors = ResizeArray<_>()
 
         let errorSink isError exn = 
-            let mainError,relatedErrors = SplitRelatedDiagnostics exn 
-            let oneError trim e = errors.Add(FSharpErrorInfo.CreateFromException (e, isError, trim, Range.range0))
-            oneError false mainError
-            List.iter (oneError true) relatedErrors
+            let mainError, relatedErrors = SplitRelatedDiagnostics exn
+            let oneError e = errors.Add(FSharpErrorInfo.CreateFromException (e, isError, Range.range0))
+            oneError mainError
+            List.iter oneError relatedErrors
 
         let errorLogger = 
             { new ErrorLogger("CompileAPI") with 
@@ -2620,7 +2660,8 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                                   List.last tcProj.TcSymbolUses,
                                   tcProj.TcEnvAtEnd.NameEnv,
                                   loadClosure, reactorOps, (fun () -> builder.IsAlive), None, 
-                                  tcProj.ImplementationFiles)     
+                                  tcProj.ImplementationFiles,
+                                  tcProj.TcOpenDeclarations)     
                 let typedResults = MakeCheckFileResults(filename, options, builder, scope, Array.ofList tcProj.TcDependencyFiles, creationErrors, parseResults.Errors, tcErrors)
                 return (parseResults, typedResults)
            })

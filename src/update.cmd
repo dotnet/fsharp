@@ -8,7 +8,7 @@ if /i "%1" == "debug" goto :ok
 if /i "%1" == "release" goto :ok
 if /i "%1" == "signonly" goto :ok
 
-echo adding required strong name verification skipping, and NGening built binaries
+echo adding required strong name verification skipping and NGening built binaries
 echo Usage:
 echo    update.cmd debug   [-ngen]
 echo    update.cmd release [-ngen]

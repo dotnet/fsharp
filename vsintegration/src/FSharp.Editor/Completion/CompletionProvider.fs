@@ -34,7 +34,6 @@ type internal FSharpCompletionProvider
     inherit CompletionProvider()
 
     static let userOpName = "CompletionProvider"
-    static let completionTriggers = [| '.' |]
     static let declarationItemsCache = ConditionalWeakTable<string, FSharpDeclarationListItem>()
     static let [<Literal>] NameInCodePropName = "NameInCode"
     static let [<Literal>] FullNamePropName = "FullName"
@@ -85,20 +84,17 @@ type internal FSharpCompletionProvider
         // Skip if we are not on a completion trigger
         else
             let triggerPosition = caretPosition - 1
-            let c = sourceText.[triggerPosition]
-            
-            if completionTriggers |> Array.contains c then
-                true
+            let triggerChar = sourceText.[triggerPosition]
+            let prevChar = sourceText.[triggerPosition - 1]
             
             // do not trigger completion if it's not single dot, i.e. range expression
-            elif triggerPosition > 0 && sourceText.[triggerPosition - 1] = '.' then
+            if not Settings.IntelliSense.ShowAfterCharIsTyped && prevChar = '.' then
                 false
-            
-            // Trigger completion if we are on a valid classification type
             else
                 let documentId, filePath, defines = getInfo()
                 CompletionUtils.shouldProvideCompletion(documentId, filePath, defines, sourceText, triggerPosition) &&
-                (Settings.IntelliSense.ShowAfterCharIsTyped && CompletionUtils.isStartingNewWord(sourceText, triggerPosition))
+                (triggerChar = '.' || (Settings.IntelliSense.ShowAfterCharIsTyped && CompletionUtils.isStartingNewWord(sourceText, triggerPosition)))
+                
 
     static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, 
                                              textVersionHash: int, getAllSymbols: unit -> AssemblySymbol list) = 

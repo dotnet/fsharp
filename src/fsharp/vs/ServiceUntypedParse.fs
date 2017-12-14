@@ -79,6 +79,8 @@ type CompletionContext =
     | ParameterList of pos * HashSet<string>
     | AttributeApplication
     | OpenDeclaration
+    /// completing pattern type (e.g. foo (x: |))
+    | PatternType
 
 //----------------------------------------------------------------------------
 // FSharpParseFileResults
@@ -993,7 +995,7 @@ module UntypedParseImpl =
                 | (SynAttr "AbstractClass")::xs -> getKind true isInterface isStruct xs
                 | (SynAttr "Interface")::xs -> getKind isClass true isStruct xs
                 | (SynAttr "Struct")::xs -> getKind isClass isInterface true xs
-                | _::xs -> getKind isClass isInterface isInterface xs
+                | _::xs -> getKind isClass isInterface isStruct xs
 
             match getKind false false false synAttributes with
             | false, false, false -> Unknown
@@ -1272,6 +1274,12 @@ module UntypedParseImpl =
                             else
                                 None
                         | _ -> defaultTraverse decl
+
+                    member __.VisitType(defaultTraverse, ty) =
+                        match ty with
+                        | SynType.LongIdent _ when rangeContainsPos ty.Range pos ->
+                            Some CompletionContext.PatternType
+                        | _ -> defaultTraverse ty
             }
 
         AstTraversal.Traverse(pos, pt, walker)

@@ -1379,7 +1379,7 @@ let CheckRecdField isUnion cenv env (tycon:Tycon) (rfield:RecdField) =
         CheckForByrefLikeType cenv env rfield.FormalType (fun () -> errorR(Error(FSComp.SR.chkCantStoreByrefValue(), tycon.Range)))
 
 let CheckEntityDefn cenv env (tycon:Entity) =
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
   if not tycon.IsProvidedGeneratedTycon then
 #endif
     let env = { env with reflect = env.reflect || HasFSharpAttribute cenv.g cenv.g.attrib_ReflectedDefinitionAttribute tycon.Attribs }

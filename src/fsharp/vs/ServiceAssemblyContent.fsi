@@ -256,9 +256,3 @@ module internal Extensions =
     type FSharpAssemblySignature with
         /// Safe version of `Entities`.
         member TryGetEntities : unit -> seq<FSharpEntity>
-
-/// Operations over `FSharpAttribute`.
-[<AutoOpen>]
-module internal Utils =
-    /// Returns `true` if a collection of attributes contains one of given type.
-    val hasAttribute<'T> : attributes: seq<FSharpAttribute> -> bool

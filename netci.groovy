@@ -21,6 +21,7 @@ def static getBuildJobName(def configuration, def os) {
             // Linux
             configurations = ['Release', 'Release_fcs' ];
         }
+        
         configurations.each { configuration ->
 
             def lowerConfiguration = configuration.toLowerCase()
@@ -38,7 +39,7 @@ def static getBuildJobName(def configuration, def os) {
             def buildCommand = '';
             def buildFlavor= '';
 
-            if (configuration == "Release_fcs") {
+            if (configuration == "Release_fcs" && branch != "dev15.5") {
                 // Build and test FCS NuGet package
                 buildPath = "./fcs/"
                 buildFlavor = ""
@@ -68,7 +69,7 @@ def static getBuildJobName(def configuration, def os) {
                     build_args = "net40"
                 }
                 else {
-                    build_args = "ci"
+                    build_args = "none"
                 }
             }
 
@@ -102,13 +103,14 @@ ${buildPath}build.cmd ${buildFlavor} ${build_args}""")
             Utilities.setMachineAffinity(newJob, os, affinity)
             Utilities.standardJobSetup(newJob, project, isPullRequest, "*/${branch}")
 
-            
-            Utilities.addArchival(newJob, "tests/TestResults/*.*", "", skipIfNoTestFiles, false)
-            if (configuration == "Release_fcs") {
-                Utilities.addArchival(newJob, "Release/**")
-            }
-            else {
-                Utilities.addArchival(newJob, "${buildFlavor}/**")
+            if (build_args != "none") {
+                Utilities.addArchival(newJob, "tests/TestResults/*.*", "", skipIfNoTestFiles, false)
+                if (configuration == "Release_fcs") {
+                    Utilities.addArchival(newJob, "Release/**")
+                }
+                else {
+                    Utilities.addArchival(newJob, "${buildFlavor}/**")
+                }
             }
             if (isPullRequest) {
                 Utilities.addGithubPRTriggerForBranch(newJob, branch, "${os} ${configuration} Build")

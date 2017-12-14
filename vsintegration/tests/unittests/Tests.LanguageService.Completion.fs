@@ -596,7 +596,6 @@ a.
         AssertCtrlSpaceCompleteContains (typeDef3 @ ["new M.A((**))"]) "A((**)" ["SettableProperty"; "AnotherSettableProperty"] ["NonSettableProperty"] 
         AssertCtrlSpaceCompleteContains (typeDef3 @ ["new M.A(S = 1)"]) "A(S" ["SettableProperty"] ["NonSettableProperty"] 
         AssertCtrlSpaceCompleteContains (typeDef3 @ ["new M.A(S = 1)"]) "A(S = 1" [] ["NonSettableProperty"; "SettableProperty"] // neg test 
-        AssertCtrlSpaceCompleteContains (typeDef3 @ ["new M.A(S = 1,)"]) "A(S = 1," ["AnotherSettableProperty"] ["NonSettableProperty"] 
 
         let typeDef4 = 
             [
@@ -1030,7 +1029,35 @@ for i in 0..a."]
         for (code, marker) in useCases do
             let code = prologue @ [code]
             AssertCtrlSpaceCompleteContains code marker [] ["field1"; "field2"]
+            
+    [<Test>]
+    [<Category("Records")>]
+    member public this.``Records.InferByFieldsInPriorMethodArguments``() =
+        
+        let prologue = 
+            [
+                "type T() ="
+                "    new (left: float32, top: float32) = T()"
+                "    new (left: float32, top: float32, width: float32, height: float32) = T()"
+                ""
+                "type Rect ="
+                "    { Left: float32"
+                "      Top: float32"
+                "      Width: float32"
+                "      Height: float32 }"
+            ]
 
+        let useCases = 
+            [ 
+              "let toT(original) = T(original.Left, (* MARKER*)original.)", "(* MARKER*)original.", ["Left"; "Top"; "Width"; "Height"]
+              "let toT(original) = T(original.Left, original.Height, (* MARKER*)original.)", "(* MARKER*)original.", ["Left"; "Top"; "Width"; "Height"]
+              "let toT(original) = T(original.Left, original.Height, original.Width, (* MARKER*)original.)", "(* MARKER*)original.", ["Left"; "Top"; "Width"; "Height"]
+              "let toT(original) = T(original.Left, original.Height, (* MARKER*)original., original.Width)", "(* MARKER*)original.", ["Left"; "Top"; "Width"; "Height"]
+            ]
+            
+        for (code, marker, should) in useCases do
+            let code = prologue @ [code]
+            AssertCtrlSpaceCompleteContains code marker should []
 
     [<Test>]
     member this.``Completion.DetectInterfaces``() = 
@@ -3997,18 +4024,6 @@ let x = query { for bbbb in abbbbc(*D0*) do
                       "    if x" ]
           "if x"     // move to marker
           ["xyz"] [] // should contain 'xyz'
-
-    [<Test>]
-    member public this.``Extensions.Bug5162``() =        
-        AssertCtrlSpaceCompleteContains 
-          [ "module Extensions ="
-            "    type System.Object with"
-            "        member x.P = 1"
-            "module M2 ="
-            "    let x = 1"
-            "    (*loc*)Ext" ]
-          "(*loc*)Ext"        // marker
-          [ "Extensions" ] [] // should contain
           
     (* Tests for various uses of ObsoleteAttribute ----------------------------------------- *)
     (* Members marked with obsolete shouldn't be visible, but we should support              *)
@@ -6064,7 +6079,7 @@ let rec f l =
                     let f (x:MyNamespace1.MyModule(*Maftervariable4*)) = 10
                     let y = int System.IO(*Maftervariable5*)""",
             marker = "(*Maftervariable4*)",
-            list = ["DuType";"Tag"])  
+            list = ["DuType"])  
 
     [<Test>]
     member this.``VariableIdentifier.SystemNamespace``() = 

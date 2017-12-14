@@ -361,7 +361,7 @@ csCtorHasNoArgumentOrReturnProperty,"The object constructor '%s' has no argument
 csNoOverloadsFound,"No overloads match for method '%s'."
 csMethodIsOverloaded,"A unique overload for method '%s' could not be determined based on type information prior to this program point. A type annotation may be needed."
 csCandidates,"Candidates: %s"
-csSeeAvailableOverloads,"The available overloads are shown below (or in the Error List window)."
+csSeeAvailableOverloads,"The available overloads are shown below."
 512,parsDoCannotHaveVisibilityDeclarations,"Accessibility modifiers are not permitted on 'do' bindings, but '%s' was given."
 513,parsEofInHashIf,"End of file in #if section begun at or after here"
 514,parsEofInString,"End of file in string begun at or before here"
