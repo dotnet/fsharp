@@ -95,7 +95,7 @@ module NameSet =
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module NameMap = 
-    let domain m = Map.foldBack (fun x _ acc -> Zset.add x acc) m (Zset.empty String.order)
+    let domain m = NameMap.foldBack (fun x _ acc -> Zset.add x acc) m (Zset.empty String.order)
     let domainL m = Zset.elements (domain m)
 
 

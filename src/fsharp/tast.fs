@@ -51,7 +51,7 @@ let globalNng = NiceNameGenerator()
 // ++GLOBAL MUTABLE STATE (concurrency safe by locking inside StableNiceNameGenerator)
 let globalStableNameGenerator = StableNiceNameGenerator ()
 
-type StampMap<'T> = Map<Stamp,'T>
+type StampMap<'T> = Collections.ShardMap<Stamp,'T>
 
 //-------------------------------------------------------------------------
 // Flags
@@ -792,7 +792,7 @@ type Entity =
         | TExnFresh x -> x
         | _ -> 
         { FieldsByIndex = [| |] 
-          FieldsByName = NameMap.empty }
+          FieldsByName = NameMap.Empty }
 
     /// Get an array of fields for all the F#-defined record, struct and class fields in this type definition, including
     /// static fields, 'val' declarations and hidden fields from the compilation of implicit class constructions.
@@ -1191,7 +1191,7 @@ and
           tcaug_equals=None 
           tcaug_hash_and_equals_withc=None 
           tcaug_hasObjectGetHashCode=false 
-          tcaug_adhoc=NameMultiMap.empty 
+          tcaug_adhoc=NameMap()  //<<NEWMAP
           tcaug_adhoc_list=new ResizeArray<_>() 
           tcaug_super=None
           tcaug_interfaces=[] 
@@ -1646,7 +1646,7 @@ and
       member mtyp.TypesByMangledName = 
           let addTyconByMangledName (x:Tycon) tab = NameMap.add x.LogicalName x tab 
           cacheOptRef tyconsByMangledNameCache (fun () -> 
-             List.foldBack addTyconByMangledName mtyp.TypeAndExceptionDefinitions  Map.empty)
+             List.foldBack addTyconByMangledName mtyp.TypeAndExceptionDefinitions   (NameMap()))  //<<NEWMAP
 
       /// Get a table of entities indexed by both logical and compiled names
       member mtyp.AllEntitiesByCompiledAndLogicalMangledNames : NameMap<Entity> = 
@@ -1658,12 +1658,12 @@ and
               else NameMap.add name2 x tab 
           
           cacheOptRef allEntitiesByMangledNameCache (fun () -> 
-             QueueList.foldBack addEntityByMangledName entities  Map.empty)
+             QueueList.foldBack addEntityByMangledName entities  (NameMap.Empty))  //<<NEWMAP
 
       /// Get a table of entities indexed by both logical name
       member mtyp.AllEntitiesByLogicalMangledName : NameMap<Entity> = 
           let addEntityByMangledName (x:Entity) tab = NameMap.add x.LogicalName x tab 
-          QueueList.foldBack addEntityByMangledName entities  Map.empty
+          QueueList.foldBack addEntityByMangledName entities (NameMap.Empty)   //<<NEWMAP
 
       /// Get a table of values and members indexed by partial linkage key, which includes name, the mangled name of the parent type (if any), 
       /// and the method argument count (if any).
@@ -1674,7 +1674,7 @@ and
              else
                  tab
           cacheOptRef allValsAndMembersByPartialLinkageKeyCache (fun () -> 
-             QueueList.foldBack addValByMangledName vals MultiMap.empty)
+             QueueList.foldBack addValByMangledName vals (MultiMap.empty 0))
 
       /// Try to find the member with the given linkage key in the given module.
       member mtyp.TryLinkVal(ccu:CcuThunk,key:ValLinkageFullKey) = 
@@ -1695,7 +1695,7 @@ and
              else
                  tab
           cacheOptRef allValsByLogicalNameCache (fun () -> 
-             QueueList.foldBack addValByName vals Map.empty)
+             QueueList.foldBack addValByName vals  (NameMap()))  //<<NEWMAP
 
       /// Compute a table of values and members indexed by logical name.
       member mtyp.AllValsAndMembersByLogicalNameUncached = 
@@ -1704,13 +1704,13 @@ and
                  MultiMap.add x.LogicalName x tab 
              else
                  tab
-          QueueList.foldBack addValByName vals MultiMap.empty
+          QueueList.foldBack addValByName vals (MultiMap.empty 0)
 
       /// Get a table of F# exception definitions indexed by demangled name, so 'FailureException' is indexed by 'Failure'
       member mtyp.ExceptionDefinitionsByDemangledName = 
           let add (tycon:Tycon) acc = NameMap.add tycon.LogicalName tycon acc
           cacheOptRef exconsByDemangledNameCache (fun () -> 
-             List.foldBack add mtyp.ExceptionDefinitions  Map.empty)
+             List.foldBack add mtyp.ExceptionDefinitions   (NameMap()))  //<<NEWMAP
 
       /// Get a table of nested module and namespace fragments indexed by demangled name (so 'ListModule' becomes 'List')
       member mtyp.ModulesAndNamespacesByDemangledName = 
@@ -1719,7 +1719,7 @@ and
                   NameMap.add entity.DemangledModuleOrNamespaceName entity acc
               else acc
           cacheOptRef modulesByDemangledNameCache (fun () -> 
-             QueueList.foldBack add entities  Map.empty)
+             QueueList.foldBack add entities   (NameMap()))  //<<NEWMAP
 
 and ModuleOrNamespace = Entity 
 and Tycon = Entity 

@@ -92,7 +92,7 @@ type QuotationTranslationEnv =
     static member Empty = 
         { vs = ValMap<_>.Empty 
           nvs = 0
-          tyvs = Map.empty 
+          tyvs = StampMap()
           isinstVals = ValMap<_>.Empty 
           substVals = ValMap<_>.Empty }
 
@@ -104,7 +104,7 @@ type QuotationTranslationEnv =
         (env, vs) ||> List.fold (fun env v -> env.BindTypar v) // fold left-to-right because indexes are left-to-right 
 
 let BindFormalTypars (env:QuotationTranslationEnv) vs = 
-    { env with tyvs = Map.empty }.BindTypars vs 
+    { env with tyvs = StampMap() }.BindTypars vs 
 
 let BindVal env v =
     { env with 

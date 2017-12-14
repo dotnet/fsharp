@@ -29,6 +29,8 @@ open System.Collections.Generic
 
 #if !NO_EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
+open Internal.Utilities.Collections
+
 #endif
 
 /// An object that captures the logical context for name resolution.
@@ -105,9 +107,10 @@ let ActivePatternElemsOfVal modref vspec =
 let ActivePatternElemsOfModuleOrNamespace (modref:ModuleOrNamespaceRef) : NameMap<ActivePatternElemRef> = 
     let mtyp = modref.ModuleOrNamespaceType
     cacheOptRef mtyp.ActivePatternElemRefLookupTable (fun () ->
-        mtyp.AllValsAndMembers 
-        |> Seq.collect (ActivePatternElemsOfVal modref) 
-        |> Seq.fold (fun acc apref -> NameMap.add apref.Name apref acc) Map.empty)
+        mtyp.AllValsAndMembers
+        |> ShardMap.Collect (ActivePatternElemsOfVal modref) (fun apref -> apref.Name))
+        //|> Seq.collect (ActivePatternElemsOfVal modref) 
+        //|> Seq.fold (fun acc apref -> NameMap.add apref.Name apref acc) Map.empty)
 
 //---------------------------------------------------------------------------
 // Name Resolution Items
@@ -375,18 +378,18 @@ type NameResolutionEnv =
     /// The initial, empty name resolution environment. The mother of all things.
     static member Empty g =
         { eDisplayEnv = DisplayEnv.Empty g
-          eModulesAndNamespaces = Map.empty
-          eFullyQualifiedModulesAndNamespaces = Map.empty
-          eFieldLabels = Map.empty
+          eModulesAndNamespaces = NameMultiMap<_>()
+          eFullyQualifiedModulesAndNamespaces = NameMultiMap<_>()
+          eFieldLabels = NameMultiMap<_>()
           eUnqualifiedItems = LayeredMap.Empty
-          ePatItems = Map.empty
+          ePatItems = NameMap<_>()
           eTyconsByAccessNames = LayeredMultiMap.Empty
           eTyconsByDemangledNameAndArity = LayeredMap.Empty
           eFullyQualifiedTyconsByAccessNames = LayeredMultiMap.Empty
           eFullyQualifiedTyconsByDemangledNameAndArity = LayeredMap.Empty
           eIndexedExtensionMembers = TyconRefMultiMap<_>.Empty
           eUnindexedExtensionMembers = []
-          eTypars = Map.empty }
+          eTypars = NameMap<_>() }
 
     member nenv.DisplayEnv = nenv.eDisplayEnv
 
@@ -608,10 +611,11 @@ let AddTyconByAccessNames bulkAddMode (tcrefs:TyconRef[]) (tab: LayeredMultiMap<
 let AddRecdField (rfref:RecdFieldRef) tab = NameMultiMap.add rfref.FieldName rfref tab
 
 /// Add a set of union cases to the corresponding sub-table of the environment 
-let AddUnionCases1 (tab:Map<_,_>) (ucrefs:UnionCaseRef list) = 
-    (tab, ucrefs) ||> List.fold (fun acc ucref -> 
-        let item = Item.UnionCase(GeneralizeUnionCaseRef ucref,false)
-        acc.Add (ucref.CaseName, item))
+let AddUnionCases1 (tab:NameMap<_>) (ucrefs:UnionCaseRef list) = 
+    ucrefs |> tab.AddMappedList (fun ucref -> ucref.CaseName , Item.UnionCase(GeneralizeUnionCaseRef ucref,false)) 
+    //(tab, ucrefs) ||> List.fold (fun acc ucref -> 
+    //    let item = Item.UnionCase(GeneralizeUnionCaseRef ucref,false)
+    //    acc.Add (ucref.CaseName, item))
 
 /// Add a set of union cases to the corresponding sub-table of the environment 
 let AddUnionCases2 bulkAddMode (eUnqualifiedItems: LayeredMap<_,_>) (ucrefs :UnionCaseRef list) = 
@@ -739,7 +743,7 @@ let AddModuleAbbrevToNameEnv (id:Ident) nenv modrefs =
     {nenv with
        eModulesAndNamespaces =
          let add old nw = nw @ old
-         NameMap.layerAdditive add (Map.add id.idText modrefs Map.empty) nenv.eModulesAndNamespaces }
+         NameMap.layerAdditive add (NameMap([(id.idText,modrefs)])) nenv.eModulesAndNamespaces }
 
 
 //-------------------------------------------------------------------------
@@ -839,11 +843,11 @@ let AddDeclaredTyparsToNameEnv check nenv typars =
         (fun (tp:Typar) sofar -> 
           match check with
           | CheckForDuplicateTypars -> 
-              if Map.containsKey tp.Name sofar then 
+              if NameMap.containsKey tp.Name sofar then 
                 errorR (Duplicate("type parameter",tp.DisplayName,tp.Range))
           | NoCheckForDuplicateTypars -> ()
 
-          Map.add tp.Name tp sofar) typars Map.empty 
+          NameMap.add tp.Name tp sofar) typars NameMap.Empty
     {nenv with eTypars = NameMap.layer typarmap nenv.eTypars }
 
 
@@ -3019,7 +3023,7 @@ let SuggestLabelsOfRelatedRecords g (nenv:NameResolutionEnv) (id:Ident) (allFiel
             else
                 let possibleRecords =
                     [for fld in givenFields do
-                        match Map.tryFind fld nenv.eFieldLabels with
+                        match NameMap.tryFind fld nenv.eFieldLabels with
                         | None -> ()
                         | Some recordTypes -> yield! (recordTypes |> List.map (fun r -> r.TyconRef.DisplayName, fld)) ]
                     |> List.groupBy fst
@@ -3067,7 +3071,7 @@ let ResolveFieldPrim sink (ncenv:NameResolver) nenv ad typ (mp,id:Ident) allFiel
     | [] -> 
         let lookup() =
             let frefs = 
-                try Map.find id.idText nenv.eFieldLabels 
+                try NameMap.find id.idText nenv.eFieldLabels 
                 with :? KeyNotFoundException ->
                     // record label is unknown -> suggest related labels and give a hint to the user
                     error(SuggestLabelsOfRelatedRecords g nenv id allFields)
@@ -3424,7 +3428,7 @@ let rec PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThen f plid (m
 let PartialResolveLongIndentAsModuleOrNamespaceThen (nenv:NameResolutionEnv) plid f =
     match plid with 
     | id:: rest -> 
-        match Map.tryFind id nenv.eModulesAndNamespaces with
+        match NameMap.tryFind id nenv.eModulesAndNamespaces with
         | Some modrefs -> 
             List.collect (PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThen f rest) modrefs
         | None ->
@@ -3624,7 +3628,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
     List.map Item.ILField finfos @
     List.map Item.Event einfos @
     List.map (ItemOfTy g) nestedTypes @
-    List.map Item.MakeMethGroup (NameMap.toList (partitionl minfos Map.empty))
+    List.map Item.MakeMethGroup (NameMap.toList (partitionl minfos NameMap.Empty ))
       
 
 let rec ResolvePartialLongIdentInType (ncenv: NameResolver) nenv isApplicableMeth m ad statics plid typ =
@@ -4245,7 +4249,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics typ 
                         let nm = h.LogicalName
                         partitionl t (NameMultiMap.add nm h acc)
             
-                yield! List.map Item.MakeMethGroup (NameMap.toList (partitionl minfos Map.empty))
+                yield! List.map Item.MakeMethGroup (NameMap.toList (partitionl minfos NameMap.Empty ))
             | _ -> ()
     }
 
@@ -4393,7 +4397,7 @@ let PartialResolveLongIndentAsModuleOrNamespaceThenLazy (nenv:NameResolutionEnv)
     seq {
         match plid with 
         | id :: rest -> 
-            match Map.tryFind id nenv.eModulesAndNamespaces with
+            match NameMap.tryFind id nenv.eModulesAndNamespaces with
             | Some modrefs -> 
                 for modref in modrefs do
                     yield! PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f rest modref
