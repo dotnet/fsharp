@@ -12679,7 +12679,8 @@ module IncrClassChecking =
                     | Expr.TyLambda (_, tps, b, m, returnTy) -> tps, [], b, returnTy, m 
                     | e -> [], [], e, (tyOfExpr cenv.g e), e.Range
                     
-                let chooseTps = chooseTps @ freeChoiceTypars
+                let chooseTps = chooseTps @ (ListSet.subtract typarEq freeChoiceTypars methodVal.Typars)
+
                 // Add the 'this' variable as an argument
                 let tauExpr, tauTy = 
                     if isStatic then 
@@ -12687,6 +12688,7 @@ module IncrClassChecking =
                     else
                         let e = mkLambda m thisVal (tauExpr, tauTy)
                         e, tyOfExpr cenv.g e
+
                 // Replace the type parameters that used to be on the rhs with 
                 // the full set of type parameters including the type parameters of the enclosing class
                 let rhsExpr = mkTypeLambda m methodVal.Typars (mkTypeChoose m chooseTps tauExpr, tauTy)
