@@ -37,16 +37,6 @@
   <Import Project="$(FSharpSourcesRoot)\.nuget\NuGet.targets" Condition="Exists('$(FSharpSourcesRoot)\.nuget\NuGet.targets')" />
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <Import Project="$(FsLexToolPath)\FsLexYacc.targets" />
-  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
-    <ItemGroup>
-      <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
-      <BinariesToBeSigned Include="$(OutDir)localize\**\$(AssemblyName).resources.dll" />
-      <FilesToSign Include="@(BinariesToBeSigned)">
-        <Authenticode>Microsoft</Authenticode>
-        <StrongName>StrongName</StrongName>
-      </FilesToSign>
-    </ItemGroup>
-  </Target>
   <ItemGroup>
     <InternalsVisibleTo Include="fsc" />
     <InternalsVisibleTo Include="FSharp.Build" />
@@ -68,12 +58,6 @@
     <InternalsVisibleTo Include="LanguageServiceProfiling" />
   </ItemGroup>
   <ItemGroup>
-    <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
-      <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
-      <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(AssemblyName).dll.lci</LciCommentFile>
-      <HasLceComments>false</HasLceComments>
-      <InProject>false</InProject>
-    </FilesToLocalize>
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Private.dll.fs">
       <Link>assemblyinfo.FSharp.Compiler.Private.dll.fs</Link>
     </Compile>

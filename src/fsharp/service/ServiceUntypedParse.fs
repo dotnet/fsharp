@@ -995,7 +995,7 @@ module UntypedParseImpl =
                 | (SynAttr "AbstractClass")::xs -> getKind true isInterface isStruct xs
                 | (SynAttr "Interface")::xs -> getKind isClass true isStruct xs
                 | (SynAttr "Struct")::xs -> getKind isClass isInterface true xs
-                | _::xs -> getKind isClass isInterface isInterface xs
+                | _::xs -> getKind isClass isInterface isStruct xs
 
             match getKind false false false synAttributes with
             | false, false, false -> Unknown

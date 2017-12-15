@@ -883,6 +883,9 @@ and [<Class>] internal FSharpMemberOrFunctionOrValue =
 
     /// Indicated if this is a value compiled to a method
     member IsValCompiledAsMethod : bool
+    
+    /// Indicated if this is a value
+    member IsValue : bool
 
     /// Indicates if this is a constructor.
     member IsConstructor : bool
@@ -1124,6 +1127,9 @@ type internal FSharpSymbolUse =
 
     /// Indicates if the reference is either a builder or a custom operation in a computation expression
     member IsFromComputationExpression : bool
+
+    /// Indicates if the reference is in open statement
+    member IsFromOpenStatement : bool
 
     /// The file name the reference occurs in 
     member FileName: string 

@@ -78,6 +78,8 @@ set TEST_VS_IDEUNIT_SUITE=0
 set INCLUDE_TEST_SPEC_NUNIT=
 set INCLUDE_TEST_TAGS=
 
+set SIGN_TYPE=%PB_SIGNTYPE%
+
 REM ------------------ Parse all arguments -----------------------
 
 set _autoselect=1
@@ -293,6 +295,14 @@ if /i "%ARG%" == "release" (
     set BUILD_CONFIG=release
 )
 
+if /i "%ARG%" == "test-sign" (
+    set SIGN_TYPE=test
+)
+
+if /i "%ARG%" == "real-sign" (
+    set SIGN_TYPE=real
+)
+
 if /i "%ARG%" == "test" (
     set _autoselect_tests=1
 )
@@ -427,6 +437,7 @@ echo.
 echo PB_SKIPTESTS=%PB_SKIPTESTS%
 echo PB_RESTORESOURCE=%PB_RESTORESOURCE%
 echo.
+echo SIGN_TYPE=%SIGN_TYPE%
 echo TEST_NET40_COMPILERUNIT_SUITE=%TEST_NET40_COMPILERUNIT_SUITE%
 echo TEST_NET40_COREUNIT_SUITE=%TEST_NET40_COREUNIT_SUITE%
 echo TEST_NET40_FSHARP_SUITE=%TEST_NET40_FSHARP_SUITE%
@@ -538,15 +549,6 @@ goto :eof
 :havemsbuild
 set _nrswitch=/nr:false
 
-:: See <http://www.appveyor.com/docs/environment-variables>
-if defined APPVEYOR (
-   rem See <http://www.appveyor.com/docs/build-phase>
-   if exist "C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll" (
-    rem HACK HACK HACK
-   set _msbuildexe=%_msbuildexe% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-   )
-)
-
 if defined TF_BUILD (
     echo Adding remote 'visualfsharptools' for internal build.
     git remote add visualfsharptools https://github.com/Microsoft/visualfsharp.git
@@ -572,7 +574,7 @@ if "%RestorePackages%" == "true" (
     %_ngenexe% install %_nugetexe%  /nologo
     set _nugetoptions=-PackagesDirectory packages -ConfigFile %_nugetconfig%
     if not "%PB_RESTORESOURCE%" == "" (
-        set _nugetoptions=!_nugetoptions! -Source %PB_RESTORESOURCE%
+        set _nugetoptions=!_nugetoptions! -FallbackSource %PB_RESTORESOURCE%
     )
 
     echo _nugetoptions=!_nugetoptions!
@@ -588,6 +590,13 @@ if "%RestorePackages%" == "true" (
     if "%BUILD_SETUP%" == "1" (
         %_nugetexe% restore setup\packages.config !_nugetoptions!
         @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
+    )
+
+    if not "%SIGN_TYPE%" == "" (
+        set signtoolnugetoptions=-PackagesDirectory %USERPROFILE%\.nuget\packages -ConfigFile %_nugetconfig%
+        if not "%PB_RESTORESOURCE%" == "" set signtoolnugetoptions=!signtoolnugetoptions! -FallbackSource %PB_RESTORESOURCE%
+        %_nugetexe% restore build\config\packages.config !signtoolnugetoptions!
+        @if ERRORLEVEL 1 echo Error: Nuget restore failed && goto :failure
     )
 
     set restore_fsharp_suite=0
@@ -641,8 +650,8 @@ if "%BUILD_PROTO%" == "1" (
 
   if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
 
-    echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto
-         %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto
+    echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true
+         %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true
     @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
   )
 
@@ -651,8 +660,8 @@ if "%BUILD_PROTO%" == "1" (
     echo %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.27\tools\fsc.exe /nologo 
          %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.27\tools\fsc.exe /nologo 
 
-    echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto
-         %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto
+    echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true
+         %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true
     @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
   )
 
@@ -673,7 +682,47 @@ if "%BUILD_PHASE%" == "1" (
    @if ERRORLEVEL 1 echo Error build failed && goto :failure
 )
 
-echo ---------------- Done with build, starting pack/update/prepare ---------------
+echo ---------------- Done with build, starting assembly signing ---------------
+
+if not "%SIGN_TYPE%" == "" (
+    echo build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -ConfigFile build\config\AssemblySignToolData.json
+    call build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -ConfigFile build\config\AssemblySignToolData.json
+    if ERRORLEVEL 1 echo Error running sign tool && goto :failure
+)
+
+if "%BUILD_SETUP%" == "1" (
+    echo %_msbuildexe% %msbuildflags% setup\build-msi.proj /p:Configuration=%BUILD_CONFIG%
+         %_msbuildexe% %msbuildflags% setup\build-msi.proj /p:Configuration=%BUILD_CONFIG%
+    if ERRORLEVEL 1 echo Error building MSI && goto :failure
+)
+
+if not "%SIGN_TYPE%" == "" (
+    echo build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -ConfigFile build\config\MsiSignToolData.json
+    call build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -ConfigFile build\config\MsiSignToolData.json
+    if ERRORLEVEL 1 echo Error running sign tool && goto :failure
+)
+
+if "%BUILD_SETUP%" == "1" (
+    echo %_msbuildexe% %msbuildflags% setup\build-insertion.proj /p:Configuration=%BUILD_CONFIG%
+         %_msbuildexe% %msbuildflags% setup\build-insertion.proj /p:Configuration=%BUILD_CONFIG%
+    if ERRORLEVEL 1 echo Error building insertion packages && goto :failure
+)
+
+if not "%SIGN_TYPE%" == "" (
+    echo build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -ConfigFile build\config\InsertionSignToolData.json
+    call build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -ConfigFile build\config\InsertionSignToolData.json
+    if ERRORLEVEL 1 echo Error running sign tool && goto :failure
+)
+
+echo ---------------- Done with signing, building insertion files ---------------
+
+if "%BUILD_SETUP%" == "1" (
+    echo %_msbuildexe% %msbuildflags% setup\Swix\Microsoft.FSharp.vsmanproj /p:Configuration=%BUILD_CONFIG%
+         %_msbuildexe% %msbuildflags% setup\Swix\Microsoft.FSharp.vsmanproj /p:Configuration=%BUILD_CONFIG%
+    if ERRORLEVEL 1 echo Error building .vsmanproj && goto :failure
+)
+
+echo ---------------- Done building insertion files, starting pack/update/prepare ---------------
 
 if "%BUILD_NET40_FSHARP_CORE%" == "1" (
   echo ----------------  start update.cmd ---------------

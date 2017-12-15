@@ -246,6 +246,7 @@ type internal ItemOccurence =
     | Pattern 
     | Implemented 
     | RelatedText
+    | Open
   
 /// Check for equality, up to signature matching
 val ItemsAreEffectivelyEqual : TcGlobals -> Item -> Item -> bool
@@ -443,7 +444,7 @@ type ResultCollectionSettings =
 | AtMostOneResult
 
 /// Resolve a long identifier to a namespace or module.
-val internal ResolveLongIndentAsModuleOrNamespace   : ResultCollectionSettings -> Import.ImportMap -> range -> FullyQualifiedFlag -> NameResolutionEnv -> AccessorDomain -> Ident list -> ResultOrException<(int * ModuleOrNamespaceRef * ModuleOrNamespaceType) list >
+val internal ResolveLongIndentAsModuleOrNamespace   : TcResultsSink -> ResultCollectionSettings -> Import.ImportMap -> range -> FullyQualifiedFlag -> NameResolutionEnv -> AccessorDomain -> Ident list -> isOpenDecl: bool -> ResultOrException<(int * ModuleOrNamespaceRef * ModuleOrNamespaceType) list >
 
 /// Resolve a long identifier to an object constructor.
 val internal ResolveObjectConstructor               : NameResolver -> DisplayEnv -> range -> AccessorDomain -> TType -> ResultOrException<Item>

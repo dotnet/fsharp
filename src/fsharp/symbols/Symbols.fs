@@ -1806,6 +1806,11 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | V valRef -> IlxGen.IsValCompiledAsMethod cenv.g valRef.Deref
         | _ -> false
 
+    member x.IsValue =
+        match d with
+        | V valRef -> not (SymbolHelpers.isFunction cenv.g valRef.Type)
+        | _ -> false
+
     override x.Equals(other: obj) =
         box x === other ||
         match other with
@@ -2281,11 +2286,11 @@ type FSharpSymbolUse(g:TcGlobals, denv: DisplayEnv, symbol:FSharpSymbol, itemOcc
     member __.Symbol  = symbol
     member __.DisplayContext  = FSharpDisplayContext(fun _ -> denv)
     member x.IsDefinition = x.IsFromDefinition
-    member __.IsFromDefinition = (match itemOcc with ItemOccurence.Binding -> true | _ -> false)
-    member __.IsFromPattern = (match itemOcc with ItemOccurence.Pattern -> true | _ -> false)
-    member __.IsFromType = (match itemOcc with ItemOccurence.UseInType -> true | _ -> false)
-    member __.IsFromAttribute = (match itemOcc with ItemOccurence.UseInAttribute -> true | _ -> false)
-    member __.IsFromDispatchSlotImplementation = (match itemOcc with ItemOccurence.Implemented -> true | _ -> false)
+    member __.IsFromDefinition = itemOcc = ItemOccurence.Binding
+    member __.IsFromPattern = itemOcc = ItemOccurence.Pattern
+    member __.IsFromType = itemOcc = ItemOccurence.UseInType
+    member __.IsFromAttribute = itemOcc = ItemOccurence.UseInAttribute
+    member __.IsFromDispatchSlotImplementation = itemOcc = ItemOccurence.Implemented
     member __.IsFromComputationExpression = 
         match symbol.Item, itemOcc with 
         // 'seq' in 'seq { ... }' gets colored as keywords
@@ -2293,7 +2298,7 @@ type FSharpSymbolUse(g:TcGlobals, denv: DisplayEnv, symbol:FSharpSymbol, itemOcc
         // custom builders, custom operations get colored as keywords
         | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use ->  true
         | _ -> false
-
+    member __.IsFromOpenStatement = itemOcc = ItemOccurence.Open
     member __.FileName = range.FileName
     member __.Range = Range.toZ range
     member __.RangeAlternate = range
