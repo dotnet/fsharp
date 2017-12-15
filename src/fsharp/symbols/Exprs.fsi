@@ -10,11 +10,7 @@ open Microsoft.FSharp.Compiler.CompileOps
 
 
 /// Represents the definitional contents of an assembly, as seen by the F# language
-#if COMPILER_PUBLIC_API
 type public FSharpAssemblyContents = 
-#else
-type internal FSharpAssemblyContents = 
-#endif
 
     internal new : tcGlobals: TcGlobals * thisCcu: CcuThunk * tcImports: TcImports * mimpls: TypedImplFile list -> FSharpAssemblyContents
 
@@ -22,11 +18,7 @@ type internal FSharpAssemblyContents =
     member ImplementationFiles:  FSharpImplementationFileContents list
 
 /// Represents the definitional contents of a single file or fragment in an assembly, as seen by the F# language
-#if COMPILER_PUBLIC_API
-and [<Class>] FSharpImplementationFileContents = 
-#else
-and [<Class>] internal FSharpImplementationFileContents = 
-#endif
+and public [<Class>] FSharpImplementationFileContents = 
     internal new : cenv: Impl.cenv * mimpl: TypedImplFile -> FSharpImplementationFileContents
 
     /// The qualified name acts to fully-qualify module specifications and implementations

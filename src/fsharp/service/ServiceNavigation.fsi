@@ -10,11 +10,7 @@ namespace Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler 
 
 /// Indicates a kind of item to show in an F# navigation bar
-#if COMPILER_PUBLIC_API
-type FSharpNavigationDeclarationItemKind =
-#else
-type internal FSharpNavigationDeclarationItemKind =
-#endif
+type public FSharpNavigationDeclarationItemKind =
     | NamespaceDecl
     | ModuleFileDecl
     | ExnDecl
@@ -26,11 +22,7 @@ type internal FSharpNavigationDeclarationItemKind =
     | OtherDecl
 
 [<RequireQualifiedAccess>]
-#if COMPILER_PUBLIC_API
-type FSharpEnclosingEntityKind =
-#else
-type internal FSharpEnclosingEntityKind =
-#endif
+type public FSharpEnclosingEntityKind =
     | Namespace
     | Module
     | Class
@@ -42,11 +34,7 @@ type internal FSharpEnclosingEntityKind =
 
 /// Represents an item to be displayed in the navigation bar
 [<Sealed>]
-#if COMPILER_PUBLIC_API
-type FSharpNavigationDeclarationItem = 
-#else
-type internal FSharpNavigationDeclarationItem = 
-#endif
+type public FSharpNavigationDeclarationItem = 
     member Name : string
     member UniqueName : string
     member Glyph : FSharpGlyph
@@ -61,11 +49,7 @@ type internal FSharpNavigationDeclarationItem =
 /// Represents top-level declarations (that should be in the type drop-down)
 /// with nested declarations (that can be shown in the member drop-down)
 [<NoEquality; NoComparison>]
-#if COMPILER_PUBLIC_API
-type FSharpNavigationTopLevelDeclaration = 
-#else
-type internal FSharpNavigationTopLevelDeclaration = 
-#endif
+type public FSharpNavigationTopLevelDeclaration = 
     { Declaration : FSharpNavigationDeclarationItem
       Nested : FSharpNavigationDeclarationItem[] }
       
@@ -73,11 +57,7 @@ type internal FSharpNavigationTopLevelDeclaration =
 /// all the members and currently selected indices. First level correspond to
 /// types & modules and second level are methods etc.
 [<Sealed>]
-#if COMPILER_PUBLIC_API
-type FSharpNavigationItems =
-#else
-type internal FSharpNavigationItems =
-#endif
+type public FSharpNavigationItems =
     member Declarations : FSharpNavigationTopLevelDeclaration[]
 
 // implementation details used by other code in the compiler    
@@ -87,11 +67,7 @@ module internal NavigationImpl =
     val internal getNavigation : Ast.ParsedInput -> FSharpNavigationItems
     val internal empty : FSharpNavigationItems
 
-#if COMPILER_PUBLIC_API
-module NavigateTo =
-#else
-module internal NavigateTo =
-#endif
+module public NavigateTo =
     [<RequireQualifiedAccess>]
     type NavigableItemKind =
         | Module
