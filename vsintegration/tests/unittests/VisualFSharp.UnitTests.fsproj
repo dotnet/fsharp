@@ -94,6 +94,9 @@
     <Compile Include="..\..\..\tests\service\StructureTests.fs">
       <Link>StructureTests.fs</Link>
     </Compile>
+    <Compile Include="..\..\..\tests\service\AssemblyContentProviderTests.fs">
+      <Link>AssemblyContentProviderTests.fs</Link>
+    </Compile>
     <Compile Include="UnusedOpensTests.fs">
       <Link>ServiceAnalysis\UnusedOpensTests.fs</Link>
     </Compile>
