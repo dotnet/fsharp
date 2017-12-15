@@ -3,8 +3,6 @@
 namespace Microsoft.FSharp.Compiler
 
 open System
-open System.Threading
-open System.Threading.Tasks
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.ErrorLogger

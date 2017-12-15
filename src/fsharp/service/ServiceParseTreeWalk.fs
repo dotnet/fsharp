@@ -7,17 +7,12 @@
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
-open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
  
 
 /// A range of utility functions to assist with traversing an AST
-#if COMPILER_PUBLIC_API
-module AstTraversal =
-#else
-module internal AstTraversal =
-#endif
+module public AstTraversal =
     // treat ranges as though they are half-open: [,)
     let rangeContainsPosLeftEdgeInclusive (m1:range) p =
         if posEq m1.Start m1.End then

@@ -1,10 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-#if COMPILER_PUBLIC_API
 module public Microsoft.FSharp.Compiler.Ast
-#else
-module internal Microsoft.FSharp.Compiler.Ast
-#endif
 
 open System.Collections.Generic
 open Internal.Utilities.Text.Lexing

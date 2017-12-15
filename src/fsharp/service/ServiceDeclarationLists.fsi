@@ -5,13 +5,9 @@
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
-open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.TcGlobals 
-open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.InfoReader
-open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 
 
@@ -20,11 +16,7 @@ open Microsoft.FSharp.Compiler.Tastops
 /// Returned by GetDeclarations.
 //
 // Note: this type holds a weak reference to compiler resources. 
-#if COMPILER_PUBLIC_API
-type FSharpDeclarationListItem =
-#else
-type internal FSharpDeclarationListItem =
-#endif
+type public FSharpDeclarationListItem =
     /// Get the display name for the declaration.
     member Name : string
 
@@ -66,11 +58,7 @@ type internal FSharpDeclarationListItem =
 /// Returned by GetDeclarations.
 //
 // Note: this type holds a weak reference to compiler resources. 
-#if COMPILER_PUBLIC_API
-type FSharpDeclarationListInfo =
-#else
-type internal FSharpDeclarationListInfo =
-#endif
+type public FSharpDeclarationListInfo =
 
     member Items : FSharpDeclarationListItem[]
 
@@ -87,11 +75,7 @@ type internal FSharpDeclarationListInfo =
 
 /// Represents one parameter for one method (or other item) in a group. 
 [<Sealed>]
-#if COMPILER_PUBLIC_API
-type FSharpMethodGroupItemParameter = 
-#else
-type internal FSharpMethodGroupItemParameter = 
-#endif
+type public FSharpMethodGroupItemParameter = 
 
     /// The name of the parameter.
     member ParameterName: string
@@ -113,11 +97,7 @@ type internal FSharpMethodGroupItemParameter =
 /// Represents one method (or other item) in a method group. The item may represent either a method or 
 /// a single, non-overloaded item such as union case or a named function value.
 [<Sealed>]
-#if COMPILER_PUBLIC_API
-type FSharpMethodGroupItem = 
-#else
-type internal FSharpMethodGroupItem = 
-#endif
+type public FSharpMethodGroupItem = 
 
     /// The documentation for the item
     member XmlDoc : FSharpXmlDoc
@@ -148,11 +128,7 @@ type internal FSharpMethodGroupItem =
 
 /// Represents a group of methods (or other items) returned by GetMethods.  
 [<Sealed>]
-#if COMPILER_PUBLIC_API
-type FSharpMethodGroup = 
-#else
-type internal FSharpMethodGroup = 
-#endif
+type public FSharpMethodGroup = 
 
     internal new : string * FSharpMethodGroupItem[] -> FSharpMethodGroup
 

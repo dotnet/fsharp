@@ -5,11 +5,7 @@
 //--------------------------------------------------------------------------
 
 /// Anything to do with special names of identifiers and other lexical rules 
-#if COMPILER_PUBLIC_API
 module public Microsoft.FSharp.Compiler.PrettyNaming
-#else
-module internal Microsoft.FSharp.Compiler.PrettyNaming
-#endif
     open System
     open System.Collections.Generic
     open System.Collections.Concurrent
