@@ -49,12 +49,14 @@ let (=>) (source: string) (expected: string list) =
         | FSharpCheckFileAnswer.Aborted -> failwithf "ParseAndCheckFileInProject aborted"
         | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> checkFileResults
 
-    let actual = AssemblyContentProvider.getAssemblySignatureContent AssemblyContentType.Full checkFileResults.PartialAssemblySignature
+    let actual = 
+        AssemblyContentProvider.getAssemblySignatureContent AssemblyContentType.Full checkFileResults.PartialAssemblySignature
+        |> List.map (fun x -> x.CleanedIdents |> String.concat ".") 
+        |> List.sort
 
-    for expectedName in expected do
-        let expectedIdents = expectedName.Split '.'
-        if not (actual |> List.exists (fun x -> x.CleanedIdents = expectedIdents)) then
-            failwithf "Missing %s. All names: %A" expectedName (actual |> List.map (fun x -> x.CleanedIdents |> String.concat "."))
+    let expected = List.sort expected
+
+    if actual <> expected then failwithf "\n\nExpected\n\n%A\n\nbut was\n\n%A" expected actual
 
 [<Test>]
 let ``implicitly added Module suffix is removed``() =
@@ -64,8 +66,11 @@ type MyType = { F: int }
 module MyType =
     let func123 x = x
 """
-    => [ "Test.MyType.func123" ]
-
+    => ["Test"
+        "Test.MyType"
+        "Test.MyType"
+        "Test.MyType.func123"]
+        
 [<Test>]
 let ``Module suffix added by an xplicitly applied MuduleSuffix attribute is removed``() =
     """
@@ -73,5 +78,8 @@ let ``Module suffix added by an xplicitly applied MuduleSuffix attribute is remo
 module MyType =
     let func123 x = x
 """
-    => [ "Test.MyType.func123" ]
+    => [ "Test"
+         "Test.MyType"
+         "Test.MyType.func123" ]
+
 
