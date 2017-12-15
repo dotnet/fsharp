@@ -69,7 +69,7 @@ module MyType =
 [<Test>]
 let ``Module suffix added by an xplicitly applied MuduleSuffix attribute is removed``() =
     """
-[<RequireQualifiedAccess>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module MyType =
     let func123 x = x
 """
