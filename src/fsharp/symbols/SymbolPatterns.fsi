@@ -4,11 +4,7 @@ namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
 [<RequireQualifiedAccess>]
 /// Patterns over FSharpSymbol and derivatives.
-#if COMPILER_PUBLIC_API
-module Symbol =
-#else
-module internal Symbol =
-#endif
+module public Symbol =
 
     val isAttribute<'T> : FSharpAttribute -> bool
     val tryGetAttribute<'T> : seq<FSharpAttribute> -> FSharpAttribute option
