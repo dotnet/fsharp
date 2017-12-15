@@ -7,7 +7,6 @@
     <TargetFramework>netstandard1.6</TargetFramework>
     <AssemblyName>FSharp.Compiler.Service</AssemblyName>
     <DefineConstants>$(DefineConstants);BUILDING_WITH_LKG</DefineConstants>
-    <DefineConstants>$(DefineConstants);COMPILER_PUBLIC_API</DefineConstants>
     <DefineConstants>$(DefineConstants);COMPILER_SERVICE_AS_DLL</DefineConstants>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);COMPILER_SERVICE</DefineConstants>

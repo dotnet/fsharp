@@ -6,13 +6,9 @@
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
-open System
-open System.IO
 open System.Collections.Generic
 open Microsoft.FSharp.Compiler.AbstractIL.Internal  
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library  
 open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
 open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast

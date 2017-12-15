@@ -3,13 +3,8 @@
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
 [<RequireQualifiedAccess>]
-#if COMPILER_PUBLIC_API
-module Symbol =
-#else
-module internal Symbol =
-#endif
-    open System.Text.RegularExpressions
-    open System
+/// Patterns over FSharpSymbol and derivatives.
+module public Symbol =
 
     val isAttribute<'T> : FSharpAttribute -> bool
     val tryGetAttribute<'T> : seq<FSharpAttribute> -> FSharpAttribute option

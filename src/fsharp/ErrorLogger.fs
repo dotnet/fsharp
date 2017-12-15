@@ -1,10 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-#if COMPILER_PUBLIC_API
 module public Microsoft.FSharp.Compiler.ErrorLogger
-#else
-module internal Microsoft.FSharp.Compiler.ErrorLogger
-#endif
 
 open Internal.Utilities
 open Microsoft.FSharp.Compiler 
@@ -640,11 +636,7 @@ let NormalizeErrorString (text : string) =
         i <- i + delta
     buf.ToString()
 
-#if COMPILER_PUBLIC_API
-type FSharpErrorSeverityOptions =
-#else
-type internal FSharpErrorSeverityOptions =
-#endif
+type public FSharpErrorSeverityOptions =
     {
       WarnLevel: int
       GlobalWarnAsError: bool

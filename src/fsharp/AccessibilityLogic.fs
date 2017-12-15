@@ -3,11 +3,8 @@
 /// The basic logic of private/internal/protected/InternalsVisibleTo/public accessibility
 module internal Microsoft.FSharp.Compiler.AccessibilityLogic
 
-open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.Tast

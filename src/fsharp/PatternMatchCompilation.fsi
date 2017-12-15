@@ -2,10 +2,7 @@
 
 module internal Microsoft.FSharp.Compiler.PatternMatchCompilation
 
-open Internal.Utilities
 open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.AbstractIL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.TcGlobals

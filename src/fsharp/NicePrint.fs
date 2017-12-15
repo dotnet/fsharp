@@ -27,11 +27,6 @@ open Microsoft.FSharp.Compiler.PrettyNaming
 
 open Microsoft.FSharp.Core.Printf
 
-#if !NO_EXTENSIONTYPING
-open Microsoft.FSharp.Compiler.ExtensionTyping
-open Microsoft.FSharp.Core.CompilerServices
-#endif
-
 [<AutoOpen>]
 module internal PrintUtilities = 
     let bracketIfL x lyt = if x then bracketL lyt else lyt

@@ -12,11 +12,7 @@ open Microsoft.FSharp.Compiler.Range
 
 /// Represents the locations relevant to activating parameter info in an IDE
 [<Sealed>]
-#if COMPILER_PUBLIC_API
-type FSharpNoteworthyParamInfoLocations =
-#else
-type internal FSharpNoteworthyParamInfoLocations =
-#endif
+type public FSharpNoteworthyParamInfoLocations =
 
     /// The text of the long identifier prior to the open-parentheses
     member LongId : string list

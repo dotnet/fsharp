@@ -9,8 +9,6 @@ open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.TypeChecker
 
 [<AbstractClass>]
 type ErrorLoggerProvider =

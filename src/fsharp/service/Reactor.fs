@@ -6,9 +6,7 @@ open System.Diagnostics
 open System.Globalization
 open System.Threading
 open Microsoft.FSharp.Control
-open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 
 /// Represents the capability to schedule work in the compiler service operations queue for the compilation thread

@@ -6,7 +6,6 @@ open System
 open System.IO
 open System.Reflection
 open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.TcGlobals
@@ -31,8 +30,8 @@ type internal IlxGenOptions =
       /// Indicates the code is being generated in FSI.EXE and is executed immediately after code generation
       /// This includes all interactively compiled code, including #load, definitions, and expressions
       isInteractive                          : bool 
-      // Indicates the code generated is an interactive 'it' expression. We generate a setter to allow clearing of the underlying
-      // storage, even though 'it' is not logically mutable
+      /// Indicates the code generated is an interactive 'it' expression. We generate a setter to allow clearing of the underlying
+      /// storage, even though 'it' is not logically mutable
       isInteractiveItExpr                    : bool
       /// Indicates that, whenever possible, use callvirt instead of call
       alwaysCallVirt                         : bool }

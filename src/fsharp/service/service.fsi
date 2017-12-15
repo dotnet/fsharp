@@ -31,11 +31,7 @@ open Microsoft.FSharp.Compiler.Tastops
 
 /// Represents the reason why the GetDeclarationLocation operation failed.
 [<RequireQualifiedAccess>]
-#if COMPILER_PUBLIC_API
-type FSharpFindDeclFailureReason = 
-#else
-type internal FSharpFindDeclFailureReason = 
-#endif
+type public FSharpFindDeclFailureReason = 
 
     /// Generic reason: no particular information about error apart from a message
     | Unknown of message: string
@@ -51,11 +47,7 @@ type internal FSharpFindDeclFailureReason =
 
 /// Represents the result of the GetDeclarationLocation operation.
 [<RequireQualifiedAccess>]
-#if COMPILER_PUBLIC_API
-type FSharpFindDeclResult = 
-#else
-type internal FSharpFindDeclResult = 
-#endif
+type public FSharpFindDeclResult = 
     /// Indicates a declaration location was not found, with an additional reason
     | DeclNotFound of FSharpFindDeclFailureReason
     /// Indicates a declaration location was found
@@ -65,11 +57,7 @@ type internal FSharpFindDeclResult =
      
 /// Represents the checking context implied by the ProjectOptions 
 [<Sealed>]
-#if COMPILER_PUBLIC_API
-type FSharpProjectContext =
-#else
-type internal FSharpProjectContext =
-#endif
+type public FSharpProjectContext =
     /// Get the resolution and full contents of the assemblies referenced by the project options
     member GetReferencedAssemblies : unit -> FSharpAssembly list
 
@@ -78,11 +66,7 @@ type internal FSharpProjectContext =
 
 
 [<RequireQualifiedAccess>]
-#if COMPILER_PUBLIC_API
-type SemanticClassificationType =
-#else
-type internal SemanticClassificationType =
-#endif
+type public SemanticClassificationType =
     | ReferenceType
     | ValueType
     | UnionCase
@@ -101,11 +85,7 @@ type internal SemanticClassificationType =
 
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
-#if COMPILER_PUBLIC_API
-type FSharpCheckFileResults =
-#else
-type internal FSharpCheckFileResults =
-#endif
+type public FSharpCheckFileResults =
     /// The errors returned by parsing a source file.
     member Errors : FSharpErrorInfo[]
 
@@ -278,11 +258,7 @@ type internal FSharpCheckFileResults =
 
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
-#if COMPILER_PUBLIC_API
-type FSharpCheckProjectResults =
-#else
-type internal FSharpCheckProjectResults =
-#endif
+type public FSharpCheckProjectResults =
 
     /// The errors returned by processing the project
     member Errors: FSharpErrorInfo[]
@@ -311,18 +287,10 @@ type internal FSharpCheckProjectResults =
     member DependencyFiles: string[]
 
 /// <summary>Unused in this API</summary>
-#if COMPILER_PUBLIC_API
-type UnresolvedReferencesSet 
-#else
-type internal UnresolvedReferencesSet 
-#endif
+type public UnresolvedReferencesSet 
 
 /// Options used to determine active --define conditionals and other options relevant to parsing files in a project
-#if COMPILER_PUBLIC_API
-type FSharpParsingOptions =
-#else
-type internal FSharpParsingOptions =
-#endif
+type public FSharpParsingOptions =
     { 
       SourceFiles: string[]
       ConditionalCompilationDefines: string list
@@ -334,11 +302,7 @@ type internal FSharpParsingOptions =
     static member Default: FSharpParsingOptions
 
 /// <summary>A set of information describing a project or script build configuration.</summary>
-#if COMPILER_PUBLIC_API
-type FSharpProjectOptions = 
-#else
-type internal FSharpProjectOptions = 
-#endif
+type public FSharpProjectOptions = 
     { 
       // Note that this may not reduce to just the project directory, because there may be two projects in the same directory.
       ProjectFileName: string
@@ -383,21 +347,13 @@ type internal FSharpProjectOptions =
          
 /// The result of calling TypeCheckResult including the possibility of abort and background compiler not caught up.
 [<RequireQualifiedAccess>]
-#if COMPILER_PUBLIC_API
-type FSharpCheckFileAnswer =
-#else
-type internal FSharpCheckFileAnswer =
-#endif
+type public FSharpCheckFileAnswer =
     | Aborted // because cancellation caused an abandonment of the operation
     | Succeeded of FSharpCheckFileResults    
 
 [<Sealed; AutoSerializable(false)>]      
 /// Used to parse and check F# source code.
-#if COMPILER_PUBLIC_API
-type FSharpChecker =
-#else
-type internal FSharpChecker =
-#endif
+type public FSharpChecker =
     /// <summary>
     /// Create an instance of an FSharpChecker.  
     /// </summary>
@@ -761,21 +717,14 @@ type internal FsiInteractiveChecker =
     member internal ParseAndCheckInteraction : CompilationThreadToken * source:string * ?userOpName: string -> Async<FSharpParseFileResults * FSharpCheckFileResults * FSharpCheckProjectResults>
 
 /// Information about the compilation environment
-#if COMPILER_PUBLIC_API
-type [<Class>] CompilerEnvironment =
-#else
-type [<Class>] internal CompilerEnvironment =
-#endif
+[<Class>]
+type public CompilerEnvironment =
     /// The default location of FSharp.Core.dll and fsc.exe based on the version of fsc.exe that is running
     static member BinFolderOfDefaultFSharpCompiler : ?probePoint: string -> string option
 
 /// Information about the compilation environment 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]   
-#if COMPILER_PUBLIC_API
-module CompilerEnvironment =
-#else
-module internal CompilerEnvironment =
-#endif
+module public CompilerEnvironment =
     /// These are the names of assemblies that should be referenced for .fs or .fsi files that
     /// are not associated with a project.
     val DefaultReferencesForOrphanSources : assumeDotNetFramework: bool -> string list
@@ -785,22 +734,14 @@ module internal CompilerEnvironment =
     val IsCheckerSupportedSubcategory : string -> bool
 
 /// Information about the debugging environment
-#if COMPILER_PUBLIC_API
-module DebuggerEnvironment =
-#else
-module internal DebuggerEnvironment =
-#endif
+module public DebuggerEnvironment =
     /// Return the language ID, which is the expression evaluator id that the
     /// debugger will use.
     val GetLanguageID : unit -> Guid
     
 
 /// A set of helpers related to naming of identifiers
-#if COMPILER_PUBLIC_API
-module PrettyNaming =
-#else
-module internal PrettyNaming =
-#endif
+module public PrettyNaming =
 
     val IsIdentifierPartCharacter     : char -> bool
     val IsLongIdentifierPartCharacter : char -> bool

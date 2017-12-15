@@ -2,11 +2,7 @@
 
 namespace Microsoft.FSharp.Compiler
 
-#if COMPILER_PUBLIC_API
 module public ReferenceResolver = 
-#else
-module internal ReferenceResolver = 
-#endif
 
     exception internal ResolutionFailure
 
