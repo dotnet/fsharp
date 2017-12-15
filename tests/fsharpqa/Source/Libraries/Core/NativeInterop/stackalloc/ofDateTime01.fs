@@ -15,4 +15,13 @@ module M3 =
         if not (NativeInterop.NativePtr.get data i = now) then 
             noerr <- false
             
+   let later = now.AddDays 1.
+   for i = 0 to 99 do
+        let datai = NativeInterop.NativePtr.toByRef (NativeInterop.NativePtr.add data i)
+        datai <- later
+   for i = 0 to 99 do
+        let datai = NativeInterop.NativePtr.toByRef (NativeInterop.NativePtr.add data i)
+        if not (datai = later) then 
+            noerr <- false
+
    (if noerr then 0 else 1) |> exit
