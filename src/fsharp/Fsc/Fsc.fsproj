@@ -24,7 +24,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="VisualFSharp.Unittests" />
+    <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
   </ItemGroup>
 
   <ItemGroup>

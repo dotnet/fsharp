@@ -49,7 +49,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="FSharp.Build" />
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />
-    <InternalsVisibleTo Include="VisualFSharp.Unittests" />
+    <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
   </ItemGroup>
   <ItemGroup>
     <VSCTCompile Include="MenusAndCommands.vsct" />
