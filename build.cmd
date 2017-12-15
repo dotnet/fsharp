@@ -881,8 +881,8 @@ if "%TEST_NET40_COMPILERUNIT_SUITE%" == "1" (
         set OUTPUTARG=--output:"!OUTPUTFILE!" 
     )
     set ERRORFILE=!RESULTSDIR!\test-net40-compilerunit-errors.log
-    echo "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG!  !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\..\..\net40\bin\FSharp.Compiler.Unittests.dll" !WHERE_ARG_NUNIT!
-         "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG!  !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\..\..\net40\bin\FSharp.Compiler.Unittests.dll" !WHERE_ARG_NUNIT!
+    echo "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG!  !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\..\..\net40\bin\FSharp.Compiler.UnitTests.dll" !WHERE_ARG_NUNIT!
+         "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG!  !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\..\..\net40\bin\FSharp.Compiler.UnitTests.dll" !WHERE_ARG_NUNIT!
 
     if errorlevel 1 (
         echo -----------------------------------------------------------------
@@ -912,11 +912,11 @@ if "%TEST_NET40_COREUNIT_SUITE%" == "1" (
         set OUTPUTARG=--output:"!OUTPUTFILE!" 
     )
 
-    echo "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Build.Unittests.dll" !WHERE_ARG_NUNIT!
-         "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Build.Unittests.dll" !WHERE_ARG_NUNIT!
+    echo "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Build.UnitTests.dll" !WHERE_ARG_NUNIT!
+         "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Build.UnitTests.dll" !WHERE_ARG_NUNIT!
 
-    echo "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
-         "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
+    echo "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Core.UnitTests.dll" !WHERE_ARG_NUNIT!
+         "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Core.UnitTests.dll" !WHERE_ARG_NUNIT!
 
     if errorlevel 1 (
         echo -----------------------------------------------------------------
@@ -938,11 +938,11 @@ if "%TEST_CORECLR_COREUNIT_SUITE%" == "1" (
     set OUTPUTFILE=!RESULTSDIR!\test-coreclr-coreunit-output.log
     set ERRORFILE=!RESULTSDIR!\test-coreclr-coreunit-errors.log
 
-    echo "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Build.Unittests\FSharp.Build.Unittests.dll" !WHERE_ARG_NUNIT!
-         "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Build.Unittests\FSharp.Build.Unittests.dll" !WHERE_ARG_NUNIT!
+    echo "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Build.UnitTests\FSharp.Build.UnitTests.dll" !WHERE_ARG_NUNIT!
+         "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Build.UnitTests\FSharp.Build.UnitTests.dll" !WHERE_ARG_NUNIT!
 
-    echo "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
-         "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
+    echo "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.UnitTests\FSharp.Core.UnitTests.dll" !WHERE_ARG_NUNIT!
+         "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.UnitTests\FSharp.Core.UnitTests.dll" !WHERE_ARG_NUNIT!
 
     if ERRORLEVEL 1 (
         echo -----------------------------------------------------------------
@@ -992,8 +992,8 @@ if "%TEST_VS_IDEUNIT_SUITE%" == "1" (
     )
 
     pushd !FSCBINPATH!
-    echo "!NUNIT3_CONSOLE!" --verbose --x86 --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!"  --workers=1 --agents=1 --full "!FSCBINPATH!\VisualFSharp.Unittests.dll" !WHERE_ARG_NUNIT!
-         "!NUNIT3_CONSOLE!" --verbose --x86 --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!"  --workers=1 --agents=1 --full "!FSCBINPATH!\VisualFSharp.Unittests.dll" !WHERE_ARG_NUNIT!
+    echo "!NUNIT3_CONSOLE!" --verbose --x86 --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!"  --workers=1 --agents=1 --full "!FSCBINPATH!\VisualFSharp.UnitTests.dll" !WHERE_ARG_NUNIT!
+         "!NUNIT3_CONSOLE!" --verbose --x86 --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!"  --workers=1 --agents=1 --full "!FSCBINPATH!\VisualFSharp.UnitTests.dll" !WHERE_ARG_NUNIT!
     popd
 
     if errorlevel 1 (
