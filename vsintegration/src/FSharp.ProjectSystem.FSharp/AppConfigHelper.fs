@@ -392,7 +392,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     el
 
                 let createRedirect p (oldVersion, newVersion) =
-                    create p (xnameAsmV1 BindingRedirect) [xname OldVersion, oldVersion; xname NewVersion, newVersion] |> ignore
+                    if oldVersion < newVersion then create p (xnameAsmV1 BindingRedirect) [xname OldVersion, oldVersion; xname NewVersion, newVersion] |> ignore
 
                 let getOrCreate(p : System.Xml.Linq.XElement) name =
                     match p.Element(name) with
