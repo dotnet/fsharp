@@ -5,13 +5,9 @@
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
-open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.TcGlobals 
-open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.InfoReader
-open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 
 

@@ -14,7 +14,6 @@ open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.InfoReader
 open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.ErrorLogger
 

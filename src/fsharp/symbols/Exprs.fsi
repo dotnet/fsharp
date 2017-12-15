@@ -2,7 +2,6 @@
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
-open System.Collections.Generic
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Tast

@@ -9,11 +9,9 @@ open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.QuotationTranslator
 open Microsoft.FSharp.Compiler.TypeRelations
-open Internal.Utilities
 
 [<AutoOpen>]
 module ExprTranslationImpl = 
