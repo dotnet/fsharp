@@ -4922,8 +4922,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                             
                             if (context == AddItemContext.Paste && FindChild(file) != null)
                             {
-                                // if we are doing 'Paste' and source file belongs to current project - generate fresh unique name
-                                newFileName = GenerateCopyOfFileName(baseDir, fileName);
+                                newFileName = Path.Combine(baseDir, fileName);
+                                if (FindChild(newFileName) != null)
+                                {
+                                    // if we are doing 'Paste' and source file belongs to current project - generate fresh unique name
+                                    newFileName = GenerateCopyOfFileName(baseDir, fileName);
+                                }
                             }
                             else if (!IsContainedWithinProjectDirectory(file))
                             {
