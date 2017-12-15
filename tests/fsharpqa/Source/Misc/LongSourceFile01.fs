@@ -3,7 +3,7 @@
 // Regression for Dev10:841369
 // Intra assembly tail calls weren't being taken which caused a stackoverflow exception in the compiler (also taking down the IDE)
 
-namespace FSharp.Core.Unittests.SurfaceArea
+namespace FSharp.Core.UnitTests.SurfaceArea
 
 //open NUnit.Framework
 
