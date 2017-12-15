@@ -9454,16 +9454,7 @@ and TcMethodApplication
 
         let uniquelyResolved = 
             let csenv = MakeConstraintSolverEnv ContextInfo.NoContext cenv.css mMethExpr denv
-            let res = UnifyUniqueOverloading csenv callerArgCounts methodName ad preArgumentTypeCheckingCalledMethGroup returnTy
-
-            match res with
-            |   ErrorResult _ -> 
-                match afterResolution with
-                | AfterResolution.DoNothing -> ()
-                | AfterResolution.RecordResolution(_, _, _, onFailure) -> onFailure()
-            |   _ -> ()
-
-            res |> CommitOperationResult
+            UnifyUniqueOverloading csenv callerArgCounts methodName ad preArgumentTypeCheckingCalledMethGroup returnTy
 
         uniquelyResolved, preArgumentTypeCheckingCalledMethGroup
 
@@ -9496,7 +9487,7 @@ and TcMethodApplication
                         else
                             [domainTy]
                     [argTys], returnTy
-                        
+                         
             let lambdaVarsAndExprs = curriedArgTys |> List.mapiSquared (fun i j ty -> mkCompGenLocal mMethExpr ("arg"+string i+string j) ty)
             let unnamedCurriedCallerArgs = lambdaVarsAndExprs |> List.mapSquared (fun (_, e) -> CallerArg(tyOfExpr cenv.g e, e.Range, false, e))
             let namedCurriedCallerArgs = lambdaVarsAndExprs |> List.map (fun _ -> [])
@@ -9529,6 +9520,16 @@ and TcMethodApplication
 
     let preArgumentTypeCheckingCalledMethGroup = 
        preArgumentTypeCheckingCalledMethGroup |> List.map (fun cmeth -> (cmeth.Method, cmeth.CalledTyArgs, cmeth.AssociatedPropertyInfo, cmeth.UsesParamArrayConversion))
+    
+    let uniquelyResolved =
+        match uniquelyResolved with
+        | ErrorResult _ -> 
+            match afterResolution with
+            | AfterResolution.DoNothing -> ()
+            | AfterResolution.RecordResolution(_, _, _, onFailure) -> onFailure()
+        | _ -> ()
+
+        uniquelyResolved |> CommitOperationResult
     
     // STEP 3. Resolve overloading 
     /// Select the called method that's the result of overload resolution
@@ -12678,7 +12679,8 @@ module IncrClassChecking =
                     | Expr.TyLambda (_, tps, b, m, returnTy) -> tps, [], b, returnTy, m 
                     | e -> [], [], e, (tyOfExpr cenv.g e), e.Range
                     
-                let chooseTps = chooseTps @ freeChoiceTypars
+                let chooseTps = chooseTps @ (ListSet.subtract typarEq freeChoiceTypars methodVal.Typars)
+
                 // Add the 'this' variable as an argument
                 let tauExpr, tauTy = 
                     if isStatic then 
@@ -12686,6 +12688,7 @@ module IncrClassChecking =
                     else
                         let e = mkLambda m thisVal (tauExpr, tauTy)
                         e, tyOfExpr cenv.g e
+
                 // Replace the type parameters that used to be on the rhs with 
                 // the full set of type parameters including the type parameters of the enclosing class
                 let rhsExpr = mkTypeLambda m methodVal.Typars (mkTypeChoose m chooseTps tauExpr, tauTy)
