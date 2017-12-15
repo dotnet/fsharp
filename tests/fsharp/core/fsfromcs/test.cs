@@ -90,7 +90,7 @@ class Maine
           ListModule.Iterate<string>(FuncConvert.ToFSharpFunc<string>(s => { Console.WriteLine("s = {0}", s);}),myList2);
 
           //Note: This call becomes ambiguous if Func overloads of FuncConvert.ToFSharpFunc are added
-          myList2 = ListModule.Map<int,string>(FuncConvert.ToFSharpFunc<int,string>(i => i.ToString() + i.ToString()),myList2);
+          myList2 = ListModule.Map<string,string>(FuncConvert.ToFSharpFunc<string,string>(i => i.ToString() + i.ToString()),myList2);
 
       }
 
