@@ -938,13 +938,9 @@ module UntypedParseImpl =
     let insideAttributeApplicationRegex = Regex(@"(?<=\[\<)(?<attribute>(.*?))(?=\>\])", RegexOptions.Compiled ||| RegexOptions.ExplicitCapture)
 
     /// Try to determine completion context for the given pair (row, columns)
-    let TryGetCompletionContext (pos, parsedInputOpt: ParsedInput option, lineStr: string) : CompletionContext option = 
+    let TryGetCompletionContext (pos, parsedInput: ParsedInput, lineStr: string) : CompletionContext option = 
 
-        match parsedInputOpt with
-        | None -> None
-        | Some pt ->
-        
-        match GetEntityKind(pos, pt) with
+        match GetEntityKind(pos, parsedInput) with
         | Some EntityKind.Attribute -> Some CompletionContext.AttributeApplication
         | _ ->
         
@@ -1281,7 +1277,7 @@ module UntypedParseImpl =
                         | _ -> defaultTraverse ty
             }
 
-        AstTraversal.Traverse(pos, pt, walker)
+        AstTraversal.Traverse(pos, parsedInput, walker)
         // Uncompleted attribute applications are not presented in the AST in any way. So, we have to parse source string.
         |> Option.orElseWith (fun _ ->
              let cutLeadingAttributes (str: string) =

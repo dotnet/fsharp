@@ -43,7 +43,7 @@ let (=>) (source: string) (expected: CompletionContext option) =
         match parseSourceCode("C:\\test.fs", source) with
         | None -> failwith "No parse tree"
         | Some parseTree ->
-            let actual = UntypedParseImpl.TryGetCompletionContext(markerPos, Some parseTree, lines.[Line.toZ markerPos.Line])
+            let actual = UntypedParseImpl.TryGetCompletionContext(markerPos, parseTree, lines.[Line.toZ markerPos.Line])
             try Assert.AreEqual(expected, actual)
             with e ->
                 printfn "ParseTree: %A" parseTree
