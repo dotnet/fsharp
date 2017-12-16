@@ -1291,7 +1291,7 @@ module UntypedParseImpl =
                  | idx when idx < str.Length -> str.[idx + 1..].TrimStart()
                  | _ -> ""   
 
-             let isLongIdent = Seq.forall (fun c -> IsIdentifierPartCharacter c || c = '.')
+             let isLongIdent = Seq.forall (fun c -> IsIdentifierPartCharacter c || c = '.' || c = ':') // ':' may occur in "[<type:AnAttribute>]"
 
              // match the most nested paired [< and >] first
              let matches = 

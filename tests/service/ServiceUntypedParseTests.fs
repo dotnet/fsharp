@@ -61,6 +61,33 @@ type T =
     => Some CompletionContext.AttributeApplication
 
 [<Test>]
+let ``AttributeApplication completion context at [<AnAttr|``() =
+    """
+[<AnAttr(* marker *)
+type T =
+    { F: int }
+"""
+    => Some CompletionContext.AttributeApplication
+
+[<Test>]
+let ``AttributeApplication completion context at [<type:|``() =
+    """
+[<type:(* marker *)
+type T =
+    { F: int }
+"""
+    => Some CompletionContext.AttributeApplication
+
+[<Test>]
+let ``AttributeApplication completion context at [<type:AnAttr|``() =
+    """
+[<type:AnAttr(* marker *)
+type T =
+    { F: int }
+"""
+    => Some CompletionContext.AttributeApplication
+
+[<Test>]
 let ``AttributeApplication completion context at [< |``() =
     """
 [< (* marker *)
@@ -160,6 +187,34 @@ type T =
     { F: int }
 """
     => Some CompletionContext.AttributeApplication
+
+[<Test>]
+let ``AttributeApplication completion context at [<AnAttr|>]``() =
+    """
+[<AnAttr(* marker *)>]
+type T =
+    { F: int }
+"""
+    => Some CompletionContext.AttributeApplication
+
+[<Test>]
+let ``AttributeApplication completion context at [<type:|>]``() =
+    """
+[<type:(* marker *)>]
+type T =
+    { F: int }
+"""
+    => Some CompletionContext.AttributeApplication
+
+[<Test>]
+let ``AttributeApplication completion context at [<type:AnAttr|>]``() =
+    """
+[<type:AnAttr(* marker *)>]
+type T =
+    { F: int }
+"""
+    => Some CompletionContext.AttributeApplication
+
 
 [<Test>]
 let ``AttributeApplication completion context at [< |>]``() =
