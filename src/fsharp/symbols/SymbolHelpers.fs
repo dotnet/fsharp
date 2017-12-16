@@ -150,15 +150,15 @@ type internal CompilationErrorLogger (debugName: string, options: FSharpErrorSev
 
     override x.DiagnosticSink(exn, isError) = 
         if isError || ReportWarningAsError options exn then
-            diagnostics.Add(exn, isError)
+            diagnostics.Add(exn, FSharpErrorSeverity.Error)
             errorCount <- errorCount + 1
         else if ReportWarning options exn then
-            diagnostics.Add(exn, isError)
+            diagnostics.Add(exn, FSharpErrorSeverity.Warning)
 
     override x.ErrorCount = errorCount
 
     member x.GetErrors() = 
-        [ for (e, isError) in diagnostics -> e, (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning) ]
+        [ for (e, severity) in diagnostics -> e, severity ]
 
 
 /// This represents the global state established as each task function runs as part of the build.
