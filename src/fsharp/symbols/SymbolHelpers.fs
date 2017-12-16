@@ -157,8 +157,7 @@ type internal CompilationErrorLogger (debugName: string, options: FSharpErrorSev
 
     override x.ErrorCount = errorCount
 
-    member x.GetErrors() = 
-        [ for (e, severity) in diagnostics -> e, severity ]
+    member x.GetErrors() = List.ofSeq diagnostics
 
 
 /// This represents the global state established as each task function runs as part of the build.
