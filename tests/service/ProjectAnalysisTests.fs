@@ -5195,3 +5195,25 @@ type A(i:int) =
 
     | Some decl -> failwithf "unexpected declaration %A" decl
     | None -> failwith "declaration list is empty"
+
+[<Test>]
+let ``NoWarn internal options warnings`` () = // visualfsharp#4030
+
+    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
+    let base2 = Path.GetTempFileName()
+    let dllName = Path.ChangeExtension(base2, ".dll")
+    let projFileName = Path.ChangeExtension(base2, ".fsproj")
+    let fileSource1 = "module M"
+
+    File.WriteAllText(fileName1, fileSource1)
+
+    let args = Array.append (mkProjectCommandLineArgs (dllName, [fileName1])) [| "--times"; "--nowarn:75" |]
+    let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    
+    let fileCheckResults = 
+        checker.ParseAndCheckFileInProject(fileName1, 0, fileSource1, options) |> Async.RunSynchronously
+        |> function 
+            | _, FSharpCheckFileAnswer.Succeeded(res) -> res
+            | _ -> failwithf "Parsing aborted unexpectedly..."
+
+    fileCheckResults.Errors |> shouldEqual Array.empty
