@@ -5197,23 +5197,21 @@ type A(i:int) =
     | None -> failwith "declaration list is empty"
 
 [<Test>]
-let ``NoWarn internal options warnings`` () = // visualfsharp#4030
+let ``#4030, Incremental builder creation errors, NoWarn`` () =
+    let source = "module M"
+    let fileName, options = mkTestFileAndOptions source [| "--times"; "--nowarn:75" |]
 
-    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
-    let base2 = Path.GetTempFileName()
-    let dllName = Path.ChangeExtension(base2, ".dll")
-    let projFileName = Path.ChangeExtension(base2, ".fsproj")
-    let fileSource1 = "module M"
+    match checker.ParseAndCheckFileInProject(fileName, 0, source, options) |> Async.RunSynchronously with
+    | _, FSharpCheckFileAnswer.Succeeded(results) -> results.Errors |> shouldEqual Array.empty 
+    | _ -> failwithf "Parsing aborted unexpectedly..."
 
-    File.WriteAllText(fileName1, fileSource1)
+[<Test>]
+let ``#4030, Incremental builder creation errors, WarnAsError`` () =
+    let source = "module M"
+    let fileName, options = mkTestFileAndOptions source [| "--times"; "--warnaserror:75" |]
 
-    let args = Array.append (mkProjectCommandLineArgs (dllName, [fileName1])) [| "--times"; "--nowarn:75" |]
-    let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
-    
-    let fileCheckResults = 
-        checker.ParseAndCheckFileInProject(fileName1, 0, fileSource1, options) |> Async.RunSynchronously
-        |> function 
-            | _, FSharpCheckFileAnswer.Succeeded(res) -> res
-            | _ -> failwithf "Parsing aborted unexpectedly..."
-
-    fileCheckResults.Errors |> shouldEqual Array.empty
+    match checker.ParseAndCheckFileInProject(fileName, 0, source, options) |> Async.RunSynchronously with
+    | _, FSharpCheckFileAnswer.Succeeded(results) ->
+        results.Errors.Length |> shouldEqual 1
+        results.Errors.[0].Severity = FSharpErrorSeverity.Error |> should be True 
+    | _ -> failwithf "Parsing aborted unexpectedly..."

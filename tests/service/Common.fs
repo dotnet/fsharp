@@ -160,6 +160,18 @@ let mkProjectCommandLineArgsForScript (dllName, fileNames) =
      |]
 #endif
 
+let mkTestFileAndOptions source additionalArgs =
+    let fileName = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
+    let project = Path.GetTempFileName()
+    let dllName = Path.ChangeExtension(project, ".dll")
+    let projFileName = Path.ChangeExtension(project, ".fsproj")
+    let fileSource1 = "module M"
+    File.WriteAllText(fileName, fileSource1)
+
+    let args = Array.append (mkProjectCommandLineArgs (dllName, [fileName])) additionalArgs
+    let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    fileName, options
+
 let parseAndCheckScript (file, input) = 
 
 #if DOTNETCORE
