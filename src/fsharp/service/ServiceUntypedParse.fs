@@ -1306,7 +1306,7 @@ module UntypedParseImpl =
                       let g = m.Groups.["attribute"]
                       let col = pos.Column - g.Index
                       if col >= 0 && col < g.Length then
-                          let str = g.Value.Substring(0, col) // cut other rhs attributes
+                          let str = g.Value.Substring(0, col).TrimStart() // cut other rhs attributes
                           let str = cutLeadingAttributes str
                           if isLongIdent str then
                               Some CompletionContext.AttributeApplication
@@ -1317,11 +1317,11 @@ module UntypedParseImpl =
                 match lineStr.LastIndexOf "[<" with
                 | -1 -> None
                 | openParenIndex when pos.Column >= openParenIndex + 2 -> 
-                    let str = lineStr.[openParenIndex + 2..pos.Column - 1]
+                    let str = lineStr.[openParenIndex + 2..pos.Column - 1].TrimStart()
                     let str = cutLeadingAttributes str
                     if isLongIdent str then
                         Some CompletionContext.AttributeApplication
-                    else None 
+                    else None
                 | _ -> None)
 
     /// Check if we are at an "open" declaration
