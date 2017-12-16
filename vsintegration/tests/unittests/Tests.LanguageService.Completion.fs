@@ -5051,7 +5051,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                     [<
              """]
             "[<"
-            ["AttributeUsageAttribute"]
+            ["AttributeUsage"]
             []
       
     [<Test>]
@@ -5062,7 +5062,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                     [<
              """]
             "[<"
-            ["AttributeUsageAttribute"]
+            ["AttributeUsage"]
             []
 
     [<Test>]
