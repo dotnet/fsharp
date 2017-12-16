@@ -411,6 +411,8 @@ type EntityKind =
     override x.ToString() = sprintf "%A" x
 
 module UntypedParseImpl =
+    open System.Text.RegularExpressions
+    open Microsoft.FSharp.Compiler.PrettyNaming
     
     let emptyStringSet = HashSet<string>()
 
@@ -932,18 +934,15 @@ module UntypedParseImpl =
         | ParsedInput.ImplFile input -> walkImplFileInput input
 
     type internal TS = AstTraversal.TraverseStep
+    /// Matches the most nested [< and >] pair.
+    let insideAttributeApplicationRegex = Regex(@"(?<=\[\<)(?<attribute>(.*?))(?=\>\])", RegexOptions.Compiled ||| RegexOptions.ExplicitCapture)
 
     /// Try to determine completion context for the given pair (row, columns)
-    let TryGetCompletionContext (pos, untypedParseOpt: FSharpParseFileResults option, lineStr: string) : CompletionContext option = 
-        let parsedInputOpt =
-            match untypedParseOpt with
-            | Some upi -> upi.ParseTree
-            | None -> None
+    let TryGetCompletionContext (pos, parsedInputOpt: ParsedInput option, lineStr: string) : CompletionContext option = 
 
         match parsedInputOpt with
         | None -> None
         | Some pt ->
-
         
         match GetEntityKind(pos, pt) with
         | Some EntityKind.Attribute -> Some CompletionContext.AttributeApplication
@@ -1283,6 +1282,47 @@ module UntypedParseImpl =
             }
 
         AstTraversal.Traverse(pos, pt, walker)
+        // Uncompleted attribute applications are not presented in the AST in any way. So, we have to parse source string.
+        |> Option.orElseWith (fun _ ->
+             let cutLeadingAttributes (str: string) =
+                 // cut off leading attributes, i.e. we cut "[<A1; A2; >]" to " >]"
+                 match str.LastIndexOf ';' with
+                 | -1 -> str
+                 | idx when idx < str.Length -> str.[idx + 1..].TrimStart()
+                 | _ -> ""   
+
+             let isLongIdent = Seq.forall (fun c -> IsIdentifierPartCharacter c || c = '.')
+
+             // match the most nested paired [< and >] first
+             let matches = 
+                insideAttributeApplicationRegex.Matches(lineStr)
+                |> Seq.cast<Match>
+                |> Seq.filter (fun m -> m.Index <= pos.Column && m.Index + m.Length >= pos.Column)
+                |> Seq.toArray
+
+             if not (Array.isEmpty matches) then
+                 matches
+                 |> Seq.tryPick (fun m ->
+                      let g = m.Groups.["attribute"]
+                      let col = pos.Column - g.Index
+                      if col >= 0 && col < g.Length then
+                          let str = g.Value.Substring(0, col) // cut other rhs attributes
+                          let str = cutLeadingAttributes str
+                          if isLongIdent str then
+                              Some CompletionContext.AttributeApplication
+                          else None 
+                      else None)
+             else
+                // Paired [< and >] were not found, try to determine that we are after [< without closing >]
+                match lineStr.LastIndexOf "[<" with
+                | -1 -> None
+                | openParenIndex when pos.Column >= openParenIndex + 2 -> 
+                    let str = lineStr.[openParenIndex + 2..pos.Column - 1]
+                    let str = cutLeadingAttributes str
+                    if isLongIdent str then
+                        Some CompletionContext.AttributeApplication
+                    else None 
+                | _ -> None)
 
     /// Check if we are at an "open" declaration
     let GetFullNameOfSmallestModuleOrNamespaceAtPoint (parsedInput: ParsedInput, pos: pos) = 
