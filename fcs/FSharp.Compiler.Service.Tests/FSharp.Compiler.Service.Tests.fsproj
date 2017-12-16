@@ -73,6 +73,9 @@
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\StructureTests.fs">
       <Link>StructureTests.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\HashDirectiveInfoTests.fs">
+      <Link>HashDirectiveInfoTests.fs</Link>
+    </Compile>
     <None Include="$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.27\tools\FSharp.Core.optdata">
       <Link>FSharp.Core.optdata</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

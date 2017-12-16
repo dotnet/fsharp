@@ -619,6 +619,12 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\service\ServiceAnalysis.fs">
       <Link>Service/ServiceAnalysis.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\HashDirectiveInfo.fsi">
+      <Link>Service/HashDirectiveInfo.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\service\HashDirectiveInfo.fs">
+      <Link>Service/HashDirectiveInfo.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\fsi\fsi.fsi">
       <Link>Service/fsi.fsi</Link>
     </Compile>
