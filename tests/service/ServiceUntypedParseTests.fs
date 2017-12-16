@@ -124,6 +124,15 @@ type T =
     => None
 
 [<Test>]
+let ``No AttributeApplication completion context at [<AnAttribute |``() =
+    """
+[<AnAttribute (* marker *)
+type T =
+    { F: int }
+"""
+    => None
+
+[<Test>]
 let ``No AttributeApplication completion context at [<AnAttribute>][<AnAttribute(|``() =
     """
 [<AnAttribute>][<AnAttribute((* marker *)
@@ -207,9 +216,18 @@ type T =
     => Some CompletionContext.AttributeApplication
 
 [<Test>]
-let ``No AttributeApplication completion context at [<AnAttribute( | >]``() =
+let ``No AttributeApplication completion context at [<AnAttribute(|>]``() =
     """
 [<AnAttribute((* marker *)>]
+type T =
+    { F: int }
+"""
+    => None
+
+[<Test>]
+let ``No AttributeApplication completion context at [<AnAttribute | >]``() =
+    """
+[<AnAttribute (* marker *) >]
 type T =
     { F: int }
 """
