@@ -143,12 +143,12 @@ type internal FSharpProjectOptionsManager
         }
 
     /// Update the info for a project in the project table
-    member this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId, site, userOpName) =
+    member this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId, site, userOpName, invalidateConfig) =
         projectOptionsTable.AddOrUpdateProject(projectId, (fun isRefresh ->
             let extraProjectInfo = Some(box workspace)
             let tryGetOptionsForReferencedProject f = f |> tryGetOrCreateProjectId |> Option.bind this.TryGetOptionsForProject |> Option.map(fun (_, _, projectOptions) -> projectOptions)
             let referencedProjects, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, site, serviceProvider, (tryGetOrCreateProjectId (site.ProjectFileName)), site.ProjectFileName, extraProjectInfo,  Some projectOptionsTable, true)
-            checkerProvider.Checker.InvalidateConfiguration(projectOptions, startBackgroundCompileIfAlreadySeen = not isRefresh, userOpName = userOpName + ".UpdateProjectInfo")
+            if invalidateConfig then checkerProvider.Checker.InvalidateConfiguration(projectOptions, startBackgroundCompileIfAlreadySeen = not isRefresh, userOpName = userOpName + ".UpdateProjectInfo")
             let referencedProjectIds = referencedProjects |> Array.choose tryGetOrCreateProjectId
             let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
             referencedProjectIds, parsingOptions, Some site, projectOptions))
@@ -205,7 +205,7 @@ type internal FSharpProjectOptionsManager
     member this.ProvideProjectSiteProvider(project:Project) = provideProjectSiteProvider(workspace, project, serviceProvider, Some projectOptionsTable)
 
     /// Tell the checker to update the project info for the specified project id
-    member this.UpdateProjectInfoWithProjectId(projectId:ProjectId, userOpName) =
+    member this.UpdateProjectInfoWithProjectId(projectId:ProjectId, userOpName, invalidateConfig) =
         let hier = workspace.GetHierarchy(projectId)
         match hier with
         | null -> ()
@@ -215,13 +215,13 @@ type internal FSharpProjectOptionsManager
                 let siteProvider = this.ProvideProjectSiteProvider(project)
                 let projectSite = siteProvider.GetProjectSite()
                 if projectSite.CompilationSourceFiles.Length <> 0 then
-                    this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId, projectSite, userOpName)
+                    this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId, projectSite, userOpName, invalidateConfig)
         | _ -> ()
 
     /// Tell the checker to update the project info for the specified project id
-    member this.UpdateDocumenttInfoWithProjectId(projectId:ProjectId, documentId:DocumentId, userOpName) =
+    member this.UpdateDocumentInfoWithProjectId(projectId:ProjectId, documentId:DocumentId, userOpName, invalidateConfig) =
         if workspace.IsDocumentOpen(documentId) then
-            this.UpdateProjectInfoWithProjectId(projectId, userOpName)
+            this.UpdateProjectInfoWithProjectId(projectId, userOpName, invalidateConfig)
 
     [<Export>]
     /// This handles commandline change notifications from the Dotnet Project-system
@@ -233,7 +233,7 @@ type internal FSharpProjectOptionsManager
         let referencePaths = references |> Seq.map(fun r -> fullPath r.Reference) |> Seq.toArray
         let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(path, projectDisplayNameOf path)
         projectOptionsTable.SetOptionsWithProjectId(projectId, sourcePaths, referencePaths, options.ToArray())
-        this.UpdateProjectInfoWithProjectId(projectId, "HandleCommandLineChanges")
+        this.UpdateProjectInfoWithProjectId(projectId, "HandleCommandLineChanges", invalidateConfig=true)
 
     member __.Checker = checkerProvider.Checker
 
@@ -341,11 +341,11 @@ type
 
     let optionsAssociation = ConditionalWeakTable<IWorkspaceProjectContext, string[]>()
 
-    member private this.OnProjectAdded(projectId:ProjectId) = projectInfoManager.UpdateProjectInfoWithProjectId(projectId, "OnProjectAdded")
-    member private this.OnProjectReloaded(projectId:ProjectId) = projectInfoManager.UpdateProjectInfoWithProjectId(projectId, "OnProjectReloaded")
-    member private this.OnDocumentAdded(projectId:ProjectId, documentId:DocumentId) = projectInfoManager.UpdateDocumenttInfoWithProjectId(projectId, documentId, "OnDocumentAdded")
-    member private this.OnDocumentChanged(projectId:ProjectId, documentId:DocumentId) = projectInfoManager.UpdateDocumenttInfoWithProjectId(projectId, documentId, "OnDocumentChanged")
-    member private this.OnDocumentReloaded(projectId:ProjectId, documentId:DocumentId) = projectInfoManager.UpdateDocumenttInfoWithProjectId(projectId, documentId, "OnDocumentReloaded")
+    member private this.OnProjectAdded(projectId:ProjectId) = projectInfoManager.UpdateProjectInfoWithProjectId(projectId, "OnProjectAdded", invalidateConfig=true)
+    member private this.OnProjectReloaded(projectId:ProjectId) = projectInfoManager.UpdateProjectInfoWithProjectId(projectId, "OnProjectReloaded", invalidateConfig=true)
+    member private this.OnDocumentAdded(projectId:ProjectId, documentId:DocumentId) = projectInfoManager.UpdateDocumentInfoWithProjectId(projectId, documentId, "OnDocumentAdded", invalidateConfig=true)
+    member private this.OnDocumentChanged(projectId:ProjectId, documentId:DocumentId) = projectInfoManager.UpdateDocumentInfoWithProjectId(projectId, documentId, "OnDocumentChanged", invalidateConfig=false)
+    member private this.OnDocumentReloaded(projectId:ProjectId, documentId:DocumentId) = projectInfoManager.UpdateDocumentInfoWithProjectId(projectId, documentId, "OnDocumentReloaded", invalidateConfig=true)
 
     override this.Initialize() = 
         base.Initialize()
@@ -473,7 +473,7 @@ type
 
         // update the cached options
         if updated then
-            projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId workspace, project.Id, site, userOpName + ".SyncProject")
+            projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId workspace, project.Id, site, userOpName + ".SyncProject", invalidateConfig=true)
 
     member this.SetupProjectFile(siteProvider: IProvideProjectSite, workspace: VisualStudioWorkspaceImpl, userOpName) =
         let userOpName = userOpName + ".SetupProjectFile"
@@ -583,7 +583,7 @@ type
                         let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
                         this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
                     | id ->
-                        projectInfoManager.UpdateProjectInfoWithProjectId(id.ProjectId, "SetupNewTextView")
+                        projectInfoManager.UpdateProjectInfoWithProjectId(id.ProjectId, "SetupNewTextView", invalidateConfig=true)
                 | _ ->
                     let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
                     this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
