@@ -194,7 +194,13 @@ type internal FSharpCompletionProvider
 
             if results.Count > 0 && not declarations.IsForType && not declarations.IsError && List.isEmpty partialName.QualifyingIdents then
                 let lineStr = textLines.[caretLinePos.Line].ToString()
-                match UntypedParseImpl.TryGetCompletionContext(Pos.fromZ caretLinePos.Line caretLinePos.Character, Some parseResults, lineStr) with
+                
+                let completionContext =
+                    parseResults.ParseTree 
+                    |> Option.bind (fun parseTree ->
+                         UntypedParseImpl.TryGetCompletionContext(Pos.fromZ caretLinePos.Line caretLinePos.Character, parseTree, lineStr))
+                
+                match completionContext with
                 | None -> results.AddRange(keywordCompletionItems)
                 | _ -> ()
             

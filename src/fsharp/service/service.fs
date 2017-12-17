@@ -780,7 +780,11 @@ type TypeCheckInfo
             | otherwise -> otherwise - 1
 
         // Look for a "special" completion context
-        let completionContext = UntypedParseImpl.TryGetCompletionContext(mkPos line colAtEndOfNamesAndResidue, parseResultsOpt, lineStr)
+        let completionContext = 
+            parseResultsOpt 
+            |> Option.bind (fun x -> x.ParseTree)
+            |> Option.bind (fun parseTree -> UntypedParseImpl.TryGetCompletionContext(mkPos line colAtEndOfNamesAndResidue, parseTree, lineStr))
+        
         let res =
             match completionContext with
             // Invalid completion locations
