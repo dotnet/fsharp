@@ -84,8 +84,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             let getConfigExtendedPropertyPages() = match lazyPropertyPages.Force() with (_,config,_) -> config
             let getPriorityExtendedPropertyPages() = match lazyPropertyPages.Force() with (_,_,priority) -> priority
 
-//////////////////////
-
     // An IProjectSite object with hot-swappable inner implementation
     type internal DynamicProjectSite(origInnerImpl : Microsoft.VisualStudio.FSharp.Editor.IProjectSite) =
 
