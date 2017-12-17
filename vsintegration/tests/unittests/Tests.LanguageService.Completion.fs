@@ -182,9 +182,8 @@ type UsingMSBuild() as this  =
           shouldContain // should contain
           shouldNotContain
 
-    member public this.AutoCompleteBug70080Helper(programText:string, ?withSuffix: bool) =
-        let expected = if defaultArg withSuffix false then "AttributeUsageAttribute" else "AttributeUsage"
-        this.AutoCompleteBug70080HelperHelper(programText, [expected], [])
+    member public this.AutoCompleteBug70080Helper(programText: string) =
+        this.AutoCompleteBug70080HelperHelper(programText, ["AttributeUsage"], [])
 
     member private this.testAutoCompleteAdjacentToDot op =
         let text = sprintf "System.Console%s" op
@@ -3546,22 +3545,22 @@ let x = query { for bbbb in abbbbc(*D0*) do
     member public this.``Attribute.WhenAttachedToType.Bug70080``() =        
         this.AutoCompleteBug70080Helper(@"
                     open System
-                    [<Attr     // expect AttributeUsageAttribute from System namespace
-                    type MyAttr() = inherit Attribute()", true)
+                    [<Attr     // expect AttributeUsage from System namespace
+                    type MyAttr() = inherit Attribute()")
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToNothing.Bug70080``() =        
         this.AutoCompleteBug70080Helper(@"
                     open System
-                    [<Attr     // expect AttributeUsageAttribute from System namespace
-                    // nothing here", true)
+                    [<Attr     // expect AttributeUsage
+                    // nothing here")
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToLetInNamespace.Bug70080``() =        
         this.AutoCompleteBug70080Helper @"
                     namespace Foo
                     open System
-                    [<Attr     // expect AttributeUsageAttribute from System namespace
+                    [<Attr     // expect AttributeUsage from System namespace
                     let f() = 4"
 
     [<Test>]
@@ -3569,33 +3568,33 @@ let x = query { for bbbb in abbbbc(*D0*) do
         this.AutoCompleteBug70080Helper(@"
                     namespace Foo
                     open System
-                    [<Attr     // expect AttributeUsageAttribute from System namespace
-                    type MyAttr() = inherit Attribute()", true)
+                    [<Attr     // expect AttributeUsage from System namespace
+                    type MyAttr() = inherit Attribute()")
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToNothingInNamespace.Bug70080``() =        
         this.AutoCompleteBug70080Helper(@"
                     namespace Foo
                     open System
-                    [<Attr     // expect AttributeUsageAttribute from System namespace
-                    // nothing here", true)
+                    [<Attr     // expect AttributeUsage from System namespace
+                    // nothing here")
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToModuleInNamespace.Bug70080``() =        
         this.AutoCompleteBug70080Helper(@"
                     namespace Foo
                     open System
-                    [<Attr     // expect AttributeUsageAttribute from System namespace
+                    [<Attr     // expect AttributeUsage from System namespace
                     module Foo = 
-                        let x = 42", true)
+                        let x = 42")
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToModule.Bug70080``() =        
         this.AutoCompleteBug70080Helper(@"
                     open System
-                    [<Attr     // expect AttributeUsageAttribute from System namespace
+                    [<Attr     // expect AttributeUsage from System namespace
                     module Foo = 
-                        let x = 42", true)
+                        let x = 42")
 
     [<Test>]
     member public this.``Identifer.InMatchStatemente.Bug72595``() =        
@@ -5052,7 +5051,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                     [<
              """]
             "[<"
-            ["AttributeUsageAttribute"]
+            ["AttributeUsage"]
             []
       
     [<Test>]
@@ -5063,7 +5062,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                     [<
              """]
             "[<"
-            ["AttributeUsageAttribute"]
+            ["AttributeUsage"]
             []
 
     [<Test>]
