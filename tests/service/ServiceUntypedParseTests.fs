@@ -18,7 +18,7 @@ open Tests.Service
 
 let [<Literal>] private Marker = "(* marker *)"
 
-let (=>) (source: string) (expected: CompletionContext option) =
+let private (=>) (source: string) (expected: CompletionContext option) =
 
     let lines =
         use reader = new StringReader(source)
@@ -49,277 +49,54 @@ let (=>) (source: string) (expected: CompletionContext option) =
                 printfn "ParseTree: %A" parseTree
                 reraise()
 
-(*** open ended attribute ***)
-
-[<Test>]
-let ``AttributeApplication completion context at [<|``() =
-    """
+module AttributeCompletion =
+    [<Test>]
+    let ``at [<|, applied to nothing``() =
+        """
 [<(* marker *)
+"""  
+     => Some CompletionContext.AttributeApplication
+
+    [<TestCase ("[<(* marker *)", true)>]
+    [<TestCase ("[<AnAttr(* marker *)", true)>]
+    [<TestCase ("[<type:(* marker *)", true)>]
+    [<TestCase ("[<type:AnAttr(* marker *)", true)>]
+    [<TestCase ("[< (* marker *)", true)>]
+    [<TestCase ("[<AnAttribute;(* marker *)", true)>]
+    [<TestCase ("[<AnAttribute; (* marker *)", true)>]
+    [<TestCase ("[<AnAttribute>][<(* marker *)", true)>]
+    [<TestCase ("[<AnAttribute>][< (* marker *)", true)>]
+    [<TestCase ("[<AnAttribute((* marker *)", false)>]
+    [<TestCase ("[<AnAttribute( (* marker *)", false)>]
+    [<TestCase ("[<AnAttribute (* marker *)", false)>]
+    [<TestCase ("[<AnAttribute>][<AnAttribute((* marker *)", false)>]
+    [<TestCase ("[<AnAttribute; AnAttribute((* marker *)", false)>]
+    let ``incomplete``(lineStr: string, expectAttributeApplicationContext: bool) =
+        (sprintf """
+%s
 type T =
     { F: int }
-"""
-    => Some CompletionContext.AttributeApplication
+""" lineStr)  => (if expectAttributeApplicationContext then Some CompletionContext.AttributeApplication else None)
 
-[<Test>]
-let ``AttributeApplication completion context at [<AnAttr|``() =
-    """
-[<AnAttr(* marker *)
+    [<TestCase ("[<(* marker *)>]", true)>]
+    [<TestCase ("[<AnAttr(* marker *)>]", true)>]
+    [<TestCase ("[<type:(* marker *)>]", true)>]
+    [<TestCase ("[<type:AnAttr(* marker *)>]", true)>]
+    [<TestCase ("[< (* marker *)>]", true)>]
+    [<TestCase ("[<AnAttribute>][<(* marker *)>]", true)>]
+    [<TestCase ("[<AnAttribute>][< (* marker *)>]", true)>]
+    [<TestCase ("[<AnAttribute;(* marker *)>]", true)>]
+    [<TestCase ("[<AnAttribute; (* marker *) >]", true)>]
+    [<TestCase ("[<AnAttribute>][<AnAttribute;(* marker *)>]", true)>]
+    [<TestCase ("[<AnAttribute((* marker *)>]", false)>]
+    [<TestCase ("[<AnAttribute (* marker *) >]", false)>]
+    [<TestCase ("[<AnAttribute>][<AnAttribute((* marker *)>]", false)>]
+    [<TestCase ("[<AnAttribute; AnAttribute((* marker *)>]", false)>]
+    [<TestCase ("[<AnAttribute; AnAttribute( (* marker *)>]", false)>]
+    [<TestCase ("[<AnAttribute>][<AnAttribute; AnAttribute((* marker *)>]", false)>]
+    let ``complete``(lineStr: string, expectAttributeApplicationContext: bool) =
+        (sprintf """
+%s
 type T =
     { F: int }
-"""
-    => Some CompletionContext.AttributeApplication
-
-[<Test>]
-let ``AttributeApplication completion context at [<type:|``() =
-    """
-[<type:(* marker *)
-type T =
-    { F: int }
-"""
-    => Some CompletionContext.AttributeApplication
-
-[<Test>]
-let ``AttributeApplication completion context at [<type:AnAttr|``() =
-    """
-[<type:AnAttr(* marker *)
-type T =
-    { F: int }
-"""
-    => Some CompletionContext.AttributeApplication
-
-[<Test>]
-let ``AttributeApplication completion context at [< |``() =
-    """
-[< (* marker *)
-type T =
-    { F: int }
-"""
-    => Some CompletionContext.AttributeApplication
-
-[<Test>]
-let ``AttributeApplication completion context at [<AnAttribute;|``() =
-    """
-[<AnAttribute;(* marker *)
-type T =
-    { F: int }
-"""
-    => Some CompletionContext.AttributeApplication
-
-[<Test>]
-let ``AttributeApplication completion context at [<AnAttribute; |``() =
-    """
-[<AnAttribute; (* marker *)
-type T =
-    { F: int }
-"""
-    => Some CompletionContext.AttributeApplication
-
-[<Test>]
-let ``AttributeApplication completion context at [<AnAttribute>][<|``() =
-    """
-[<AnAttribute>][<(* marker *)
-type T =
-    { F: int }
-"""
-    => Some CompletionContext.AttributeApplication
-
-[<Test>]
-let ``AttributeApplication completion context at [<AnAttribute>][< |``() =
-    """
-[<AnAttribute>][< (* marker *)
-type T =
-    { F: int }
-"""
-    => Some CompletionContext.AttributeApplication
-
-[<Test>]
-let ``No AttributeApplication completion context at [<AnAttribute(|``() =
-    """
-[<AnAttribute((* marker *)
-type T =
-    { F: int }
-"""
-    => None
-
-[<Test>]
-let ``No AttributeApplication completion context at [<AnAttribute( |``() =
-    """
-[<AnAttribute( (* marker *)
-type T =
-    { F: int }
-"""
-    => None
-
-[<Test>]
-let ``No AttributeApplication completion context at [<AnAttribute |``() =
-    """
-[<AnAttribute (* marker *)
-type T =
-    { F: int }
-"""
-    => None
-
-[<Test>]
-let ``No AttributeApplication completion context at [<AnAttribute>][<AnAttribute(|``() =
-    """
-[<AnAttribute>][<AnAttribute((* marker *)
-type T =
-    { F: int }
-"""
-    => None
-
-[<Test>]
-let ``No AttributeApplication completion context at [<AnAttribute; AnAttribute(|``() =
-    """
-[<AnAttribute; AnAttribute((* marker *)
-type T =
-    { F: int }
-"""
-    => None
-
-(*** closed attribute ***)
-
-[<Test>]
-let ``AttributeApplication completion context at [<|>]``() =
-    """
-[<(* marker *)>]
-type T =
-    { F: int }
-"""
-    => Some CompletionContext.AttributeApplication
-
-[<Test>]
-let ``AttributeApplication completion context at [<AnAttr|>]``() =
-    """
-[<AnAttr(* marker *)>]
-type T =
-    { F: int }
-"""
-    => Some CompletionContext.AttributeApplication
-
-[<Test>]
-let ``AttributeApplication completion context at [<type:|>]``() =
-    """
-[<type:(* marker *)>]
-type T =
-    { F: int }
-"""
-    => Some CompletionContext.AttributeApplication
-
-[<Test>]
-let ``AttributeApplication completion context at [<type:AnAttr|>]``() =
-    """
-[<type:AnAttr(* marker *)>]
-type T =
-    { F: int }
-"""
-    => Some CompletionContext.AttributeApplication
-
-
-[<Test>]
-let ``AttributeApplication completion context at [< |>]``() =
-    """
-[< (* marker *)>]
-type T =
-    { F: int }
-"""
-    => Some CompletionContext.AttributeApplication
-
-[<Test>]
-let ``AttributeApplication completion context at [<AnAttribute>][<|>]``() =
-    """
-[<AnAttribute>][<(* marker *)>]
-type T =
-    { F: int }
-"""
-    => Some CompletionContext.AttributeApplication
-
-[<Test>]
-let ``AttributeApplication completion context at [<AnAttribute>][< |>]``() =
-    """
-[<AnAttribute>][< (* marker *)>]
-type T =
-    { F: int }
-"""
-    => Some CompletionContext.AttributeApplication
-
-[<Test>]
-let ``AttributeApplication completion context at [<AnAttribute;|>]``() =
-    """
-[<AnAttribute;(* marker *)>]
-type T =
-    { F: int }
-"""
-    => Some CompletionContext.AttributeApplication
-
-[<Test>]
-let ``AttributeApplication completion context at [<AnAttribute; | >]``() =
-    """
-[<AnAttribute; (* marker *) >]
-type T =
-    { F: int }
-"""
-    => Some CompletionContext.AttributeApplication
-
-[<Test>]
-let ``AttributeApplication completion context at [<AnAttribute>][<AnAttribute; | >]``() =
-    """
-[<AnAttribute>][<AnAttribute;(* marker *)>]
-type T =
-    { F: int }
-"""
-    => Some CompletionContext.AttributeApplication
-
-[<Test>]
-let ``No AttributeApplication completion context at [<AnAttribute(|>]``() =
-    """
-[<AnAttribute((* marker *)>]
-type T =
-    { F: int }
-"""
-    => None
-
-[<Test>]
-let ``No AttributeApplication completion context at [<AnAttribute | >]``() =
-    """
-[<AnAttribute (* marker *) >]
-type T =
-    { F: int }
-"""
-    => None
-
-[<Test>]
-let ``No AttributeApplication completion context at [<AnAttribute>][<AnAttribute( | >]``() =
-    """
-[<AnAttribute>][<AnAttribute((* marker *)>]
-type T =
-    { F: int }
-"""
-    => None
-
-[<Test>]
-let ``No AttributeApplication completion context at [<AnAttribute; AnAttribute(| >]``() =
-    """
-[<AnAttribute; AnAttribute((* marker *)>]
-type T =
-    { F: int }
-"""
-    => None
-
-[<Test>]
-let ``No AttributeApplication completion context at [<AnAttribute; AnAttribute( | >]``() =
-    """
-[<AnAttribute; AnAttribute( (* marker *)>]
-type T =
-    { F: int }
-"""
-    => None
-
-[<Test>]
-let ``No AttributeApplication completion context at [<AnAttribute>][<AnAttribute; AnAttribute(| >]``() =
-    """
-[<AnAttribute>][<AnAttribute; AnAttribute((* marker *)>]
-type T =
-    { F: int }
-"""
-    => None
+""" lineStr)  => (if expectAttributeApplicationContext then Some CompletionContext.AttributeApplication else None)
