@@ -149,9 +149,9 @@ type internal FSharpLanguageServiceTestable() as this =
             | :? IProvideProjectSite as siteProvider ->
                 let site = siteProvider.GetProjectSite()
                 site.AdviseProjectSiteChanges(LanguageServiceConstants.FSharpLanguageServiceCallbackName, 
-                                              new Microsoft.VisualStudio.FSharp.LanguageService.AdviseProjectSiteChanges(fun () -> this.OnProjectSettingsChanged(site))) 
+                                              new AdviseProjectSiteChanges(fun () -> this.OnProjectSettingsChanged(site))) 
                 site.AdviseProjectSiteCleaned(LanguageServiceConstants.FSharpLanguageServiceCallbackName, 
-                                              new Microsoft.VisualStudio.FSharp.LanguageService.AdviseProjectSiteChanges(fun () -> this.OnProjectCleaned(site))) 
+                                              new AdviseProjectSiteChanges(fun () -> this.OnProjectCleaned(site))) 
             | _ -> 
                 // This can happen when the file is in a solution folder or in, say, a C# project.
                 ()

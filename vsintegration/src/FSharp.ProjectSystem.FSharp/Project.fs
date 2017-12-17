@@ -1504,11 +1504,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member __.TargetFrameworkMoniker = targetFrameworkMoniker
                     member __.ProjectGuid = x.GetProjectGuid()
                     member __.LoadTime = creationTime
-<<<<<<< HEAD
-                    member __.ProjectProvider = Some (x :> IProvideProjectSite)
-=======
                     member __.ProjectProvider = Some (x :> Microsoft.VisualStudio.FSharp.Editor.IProvideProjectSite)
->>>>>>> Whoopsie on that legacy project system
                 }
 
             // let the language service ask us questions

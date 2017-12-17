@@ -8,7 +8,3 @@ type internal Assert() =
     /// Display a good exception for this error message and then rethrow.
     static member Exception(e:Exception) =  
         System.Diagnostics.Debug.Assert(false, "Unexpected exception seen in language service", e.ToString())
-    
-        
-    
-
