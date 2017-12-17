@@ -15,6 +15,7 @@ open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp.ProjectSystem
+open Microsoft.VisualStudio.FSharp.Editor
 
 // Internal unittest namespaces
 open NUnit.Framework
@@ -498,7 +499,7 @@ type Miscellaneous() =
             // Now the project system is in a state where ComputeSourcesAndFlags will fail.
             // Our goal is to at least be able to open individual source files and treat them like 'files outside a project' with regards to intellisense, etc.
             // Also, if the user does 'Build', he will get an error which will help diagnose the problem.
-            let ipps = project :> Microsoft.VisualStudio.FSharp.LanguageService.IProvideProjectSite
+            let ipps = project :> IProvideProjectSite
             let ips = ipps.GetProjectSite()
             let expected = [| |] // Ideal behavior is [|"foo.fs";"bar.fs"|], and we could choose to improve this in the future.  For now we are just happy to now throw/crash.
             let actual = ips.CompilationSourceFiles
