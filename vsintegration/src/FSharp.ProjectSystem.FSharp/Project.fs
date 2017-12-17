@@ -1471,7 +1471,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member __.TargetFrameworkMoniker = x.GetTargetFrameworkMoniker()
                     member __.ProjectGuid = x.GetProjectGuid()
                     member __.LoadTime = creationTime
-                    member __.ProjectProvider = Some (x :> IProvideProjectSite)
+                    member __.ProjectProvider = Some (x :> Microsoft.VisualStudio.FSharp.LanguageService.IProvideProjectSite)
 
                 }
 
@@ -1507,7 +1507,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member __.TargetFrameworkMoniker = targetFrameworkMoniker
                     member __.ProjectGuid = x.GetProjectGuid()
                     member __.LoadTime = creationTime
-                    member __.ProjectProvider = Some (x :> IProvideProjectSite)
+                    member __.ProjectProvider = Some (x :> Microsoft.VisualStudio.FSharp.LanguageService.IProvideProjectSite)
                 }
 
             // let the language service ask us questions
