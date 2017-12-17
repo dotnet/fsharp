@@ -5196,36 +5196,14 @@ type A(i:int) =
     | Some decl -> failwithf "unexpected declaration %A" decl
     | None -> failwith "declaration list is empty"
 
-[<Test>]
-let ``#4030, Incremental builder creation errors, no warns`` () =
+
+[<TestCase(([||]: string[]), ([||]: bool[]))>]
+[<TestCase([| "--times"; "--nowarn:75" |], ([||]: bool[]))>]
+[<TestCase([| "--times"; "--warnaserror:75" |], [| true |])>]
+[<TestCase([| "--times"; "--warnaserror-:75"; "--warnaserror" |], [| false |])>]
+let ``#4030, Incremental builder creation warnings`` (args, errorSeverities) =
     let source = "module M"
-    let fileName, options = mkTestFileAndOptions source [||]
+    let fileName, options = mkTestFileAndOptions source args
 
     let _, checkResults = parseAndCheckFile fileName source options
-    checkResults.Errors |> shouldEqual Array.empty
-
-[<Test>]
-let ``#4030, Incremental builder creation errors, NoWarn`` () =
-    let source = "module M"
-    let fileName, options = mkTestFileAndOptions source [| "--times"; "--nowarn:75" |]
-
-    let _, checkResults = parseAndCheckFile fileName source options
-    checkResults.Errors |> shouldEqual Array.empty 
-
-[<Test>]
-let ``#4030, Incremental builder creation errors, WarnAsError`` () =
-    let source = "module M"
-    let fileName, options = mkTestFileAndOptions source [| "--times"; "--warnaserror:75" |]
-
-    let _, checkResults = parseAndCheckFile fileName source options
-    checkResults.Errors.Length |> shouldEqual 1
-    checkResults.Errors.[0].Severity = FSharpErrorSeverity.Error |> should be True 
-
-[<Test>]
-let ``#4030, Incremental builder creation errors, WarnAsWarn`` () =
-    let source = "module M"
-    let fileName, options = mkTestFileAndOptions source [| "--times"; "--warnaserror-:75"; "--warnaserror" |]
-
-    let _, checkResults = parseAndCheckFile fileName source options
-    checkResults.Errors.Length |> shouldEqual 1
-    checkResults.Errors.[0].Severity = FSharpErrorSeverity.Warning |> should be True 
+    checkResults.Errors |> Array.map (fun e -> e.Severity = FSharpErrorSeverity.Error) |> shouldEqual errorSeverities 
