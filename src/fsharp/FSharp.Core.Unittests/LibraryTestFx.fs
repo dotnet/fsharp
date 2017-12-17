@@ -13,17 +13,12 @@ open NUnit.Framework
 /// Check that the lambda throws an exception of the given type. Otherwise
 /// calls Assert.Fail()
 let CheckThrowsExn<'a when 'a :> exn> (f : unit -> unit) =
-    let funcThrowsAsExpected =
-        try
-            let _ = f ()
-            false // Did not throw!
-        with
-        | :? 'a
-            -> true   // Thew null ref, OK
-        | _ -> false  // Did now throw a null ref exception!
-    if funcThrowsAsExpected
-    then ()
-    else Assert.Fail()
+    try
+        let _ = f ()
+        sprintf "Expected %O exception, got no exception" typeof<'a> |> Assert.Fail 
+    with
+    | :? 'a -> ()
+    | e -> sprintf "Expected %O exception, got: %O" typeof<'a> e |> Assert.Fail
 
 let private CheckThrowsExn2<'a when 'a :> exn> s (f : unit -> unit) =
     let funcThrowsAsExpected =

@@ -102,22 +102,28 @@ module ExtraTopLevelOperators =
             member __.Count = t.Count
 
         interface IEnumerable<KeyValuePair<'Key, 'T>> with
-            member s.GetEnumerator() = 
-                (t |> Seq.map (fun (KeyValue(k,v)) -> KeyValuePair<_,_>(getKey k,v))).GetEnumerator()
+            member s.GetEnumerator() =
+                // We use an array comprehension here instead of seq {} as otherwise we get incorrect
+                // IEnumerator.Reset() and IEnumerator.Current semantics. 
+                let kvps = [| for (KeyValue (k,v)) in t -> KeyValuePair (getKey k, v) |] :> seq<_>
+                kvps.GetEnumerator()
 
         interface System.Collections.IEnumerable with
-            member s.GetEnumerator() = 
-                ((t |> Seq.map (fun (KeyValue(k,v)) -> KeyValuePair<_,_>(getKey k,v))) :> System.Collections.IEnumerable).GetEnumerator()
+            member s.GetEnumerator() =
+                // We use an array comprehension here instead of seq {} as otherwise we get incorrect
+                // IEnumerator.Reset() and IEnumerator.Current semantics. 
+                let kvps = [| for (KeyValue (k,v)) in t -> KeyValuePair (getKey k, v) |] :> System.Collections.IEnumerable
+                kvps.GetEnumerator()
 
     and DictDebugView<'SafeKey,'Key,'T>(d:DictImpl<'SafeKey,'Key,'T>) =
         [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
         member x.Items = Array.ofSeq d
 
-    let inline dictImpl (comparer:IEqualityComparer<'SafeKey>) (makeSafeKey : 'Key->'SafeKey) (getKey : 'SafeKey->'Key) (l:seq<'Key*'T>) : IDictionary<'Key,'T> =
+    let inline dictImpl (comparer:IEqualityComparer<'SafeKey>) (makeSafeKey : 'Key->'SafeKey) (getKey : 'SafeKey->'Key) (l:seq<'Key*'T>) =
         let t = Dictionary comparer
         for (k,v) in l do
             t.[makeSafeKey k] <- v
-        DictImpl(t, makeSafeKey, getKey) :> _
+        DictImpl(t, makeSafeKey, getKey)
 
     // We avoid wrapping a StructBox, because under 64 JIT we get some "hard" tailcalls which affect performance
     let dictValueType (l:seq<'Key*'T>) = dictImpl HashIdentity.Structural<'Key> id id l
@@ -126,14 +132,24 @@ module ExtraTopLevelOperators =
     let dictRefType   (l:seq<'Key*'T>) = dictImpl RuntimeHelpers.StructBox<'Key>.Comparer (fun k -> RuntimeHelpers.StructBox k) (fun sb -> sb.Value) l
 
     [<CompiledName("CreateDictionary")>]
-    let dict (keyValuePairs:seq<'Key*'T>) =
+    let dict (keyValuePairs:seq<'Key*'T>) : IDictionary<'Key,'T> =
 #if FX_RESHAPED_REFLECTION
         if (typeof<'Key>).GetTypeInfo().IsValueType
 #else
         if typeof<'Key>.IsValueType
 #endif
-            then dictValueType keyValuePairs
-            else dictRefType   keyValuePairs
+            then dictValueType keyValuePairs :> _
+            else dictRefType   keyValuePairs :> _
+
+    [<CompiledName("CreateReadOnlyDictionary")>]
+    let readOnlyDict (keyValuePairs:seq<'Key*'T>) : IReadOnlyDictionary<'Key,'T> =
+#if FX_RESHAPED_REFLECTION
+        if (typeof<'Key>).GetTypeInfo().IsValueType
+#else
+        if typeof<'Key>.IsValueType
+#endif
+            then dictValueType keyValuePairs :> _
+            else dictRefType   keyValuePairs :> _
 
     let getArray (vals : seq<'T>) = 
         match vals with
