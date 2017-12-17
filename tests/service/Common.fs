@@ -172,6 +172,11 @@ let mkTestFileAndOptions source additionalArgs =
     let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
     fileName, options
 
+let parseAndCheckFile fileName source options =
+    match checker.ParseAndCheckFileInProject(fileName, 0, source, options) |> Async.RunSynchronously with
+    | parseResults, FSharpCheckFileAnswer.Succeeded(checkResults) -> parseResults, checkResults
+    | _ -> failwithf "Parsing aborted unexpectedly..."
+
 let parseAndCheckScript (file, input) = 
 
 #if DOTNETCORE

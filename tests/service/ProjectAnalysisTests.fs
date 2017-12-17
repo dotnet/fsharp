@@ -5197,21 +5197,35 @@ type A(i:int) =
     | None -> failwith "declaration list is empty"
 
 [<Test>]
+let ``#4030, Incremental builder creation errors, no warns`` () =
+    let source = "module M"
+    let fileName, options = mkTestFileAndOptions source [||]
+
+    let _, checkResults = parseAndCheckFile fileName source options
+    checkResults.Errors |> shouldEqual Array.empty
+
+[<Test>]
 let ``#4030, Incremental builder creation errors, NoWarn`` () =
     let source = "module M"
     let fileName, options = mkTestFileAndOptions source [| "--times"; "--nowarn:75" |]
 
-    match checker.ParseAndCheckFileInProject(fileName, 0, source, options) |> Async.RunSynchronously with
-    | _, FSharpCheckFileAnswer.Succeeded(results) -> results.Errors |> shouldEqual Array.empty 
-    | _ -> failwithf "Parsing aborted unexpectedly..."
+    let _, checkResults = parseAndCheckFile fileName source options
+    checkResults.Errors |> shouldEqual Array.empty 
 
 [<Test>]
 let ``#4030, Incremental builder creation errors, WarnAsError`` () =
     let source = "module M"
     let fileName, options = mkTestFileAndOptions source [| "--times"; "--warnaserror:75" |]
 
-    match checker.ParseAndCheckFileInProject(fileName, 0, source, options) |> Async.RunSynchronously with
-    | _, FSharpCheckFileAnswer.Succeeded(results) ->
-        results.Errors.Length |> shouldEqual 1
-        results.Errors.[0].Severity = FSharpErrorSeverity.Error |> should be True 
-    | _ -> failwithf "Parsing aborted unexpectedly..."
+    let _, checkResults = parseAndCheckFile fileName source options
+    checkResults.Errors.Length |> shouldEqual 1
+    checkResults.Errors.[0].Severity = FSharpErrorSeverity.Error |> should be True 
+
+[<Test>]
+let ``#4030, Incremental builder creation errors, WarnAsWarn`` () =
+    let source = "module M"
+    let fileName, options = mkTestFileAndOptions source [| "--times"; "--warnaserror-:75"; "--warnaserror" |]
+
+    let _, checkResults = parseAndCheckFile fileName source options
+    checkResults.Errors.Length |> shouldEqual 1
+    checkResults.Errors.[0].Severity = FSharpErrorSeverity.Warning |> should be True 
