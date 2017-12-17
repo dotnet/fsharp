@@ -5198,6 +5198,7 @@ type A(i:int) =
 
 
 [<TestCase(([||]: string[]), ([||]: bool[]))>]
+[<TestCase([| "--times" |], [| false |])>]
 [<TestCase([| "--times"; "--nowarn:75" |], ([||]: bool[]))>]
 [<TestCase([| "--times"; "--warnaserror:75" |], [| true |])>]
 [<TestCase([| "--times"; "--warnaserror-:75"; "--warnaserror" |], [| false |])>]
