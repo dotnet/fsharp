@@ -87,7 +87,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 //////////////////////
 
     // An IProjectSite object with hot-swappable inner implementation
-    type internal DynamicProjectSite(origInnerImpl : Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite) =
+    type internal DynamicProjectSite(origInnerImpl : Microsoft.VisualStudio.FSharp.Editor.IProjectSite) =
 
         let mutable inner = origInnerImpl
 
@@ -95,7 +95,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             inner <- newInner
 
         // This interface is thread-safe, assuming "inner" is thread-safe
-        interface Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite with
+        interface Microsoft.VisualStudio.FSharp.Editor.IProjectSite with
             member __.Description = inner.Description
             member __.CompilationSourceFiles = inner.CompilationSourceFiles
             member __.CompilationOptions = inner.CompilationOptions
@@ -128,7 +128,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
         // This member is thread-safe
         member x.GetProjectSite() =
             Debug.Assert(state <> ProjectSiteOptionLifetimeState.Opening, "ProjectSite is not available")
-            projectSite.Value :> Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite
+            projectSite.Value :> Microsoft.VisualStudio.FSharp.Editor.IProjectSite
 
         // This member is thread-safe
         member x.TryGetProjectSite() =
@@ -136,7 +136,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             | ProjectSiteOptionLifetimeState.Opening, _ 
             | ProjectSiteOptionLifetimeState.Closed, _ -> None
             | _, None ->  None
-            | _, Some x ->  Some(x :> Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite)
+            | _, Some x ->  Some(x :> Microsoft.VisualStudio.FSharp.Editor.IProjectSite)
 
         member x.Open(site) =
             Debug.Assert((state = ProjectSiteOptionLifetimeState.Opening), "Called Open, but not in Opening state")
@@ -159,7 +159,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
         static member ExploreFolderInWindows = 1635u
 
     type internal Notifier() =
-        let notificationsDict = new System.Collections.Generic.Dictionary<string,Microsoft.VisualStudio.FSharp.LanguageService.AdviseProjectSiteChanges>()
+        let notificationsDict = new System.Collections.Generic.Dictionary<string,Microsoft.VisualStudio.FSharp.Editor.AdviseProjectSiteChanges>()
         member this.Notify() =
             for kvp in notificationsDict do
                 kvp.Value.Invoke()
@@ -1446,7 +1446,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             // Returns an IProjectSite that references "this" to get its information
             member private x.CreateRunningProjectSite() =
                 let creationTime = System.DateTime.UtcNow
-                { new Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite with
+                { new Microsoft.VisualStudio.FSharp.Editor.IProjectSite with
 
                     member __.CompilationSourceFiles = x.CompilationSourceFiles
                     member __.CompilationOptions = x.CompilationOptions
@@ -1471,8 +1471,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member __.TargetFrameworkMoniker = x.GetTargetFrameworkMoniker()
                     member __.ProjectGuid = x.GetProjectGuid()
                     member __.LoadTime = creationTime
-                    member __.ProjectProvider = Some (x :> IProvideProjectSite)
-
+                    member __.ProjectProvider = Some (x :> Microsoft.VisualStudio.FSharp.Editor.IProvideProjectSite)
                 }
 
             // Snapshot-capture relevent values from "this", and returns an IProjectSite 
@@ -1490,7 +1489,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 let creationTime = DateTime.UtcNow
 
                 // This object is thread-safe
-                { new Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite with
+                { new Microsoft.VisualStudio.FSharp.Editor.IProjectSite with
                     member __.Description = description
                     member __.CompilationSourceFiles = sourceFiles
                     member __.CompilationOptions = options
@@ -1507,11 +1506,15 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member __.TargetFrameworkMoniker = targetFrameworkMoniker
                     member __.ProjectGuid = x.GetProjectGuid()
                     member __.LoadTime = creationTime
+<<<<<<< HEAD
                     member __.ProjectProvider = Some (x :> IProvideProjectSite)
+=======
+                    member __.ProjectProvider = Some (x :> Microsoft.VisualStudio.FSharp.Editor.IProvideProjectSite)
+>>>>>>> Whoopsie on that legacy project system
                 }
 
             // let the language service ask us questions
-            interface Microsoft.VisualStudio.FSharp.LanguageService.IProvideProjectSite with
+            interface Microsoft.VisualStudio.FSharp.Editor.IProvideProjectSite with
                 member x.GetProjectSite() = 
                     match projectSite.State with
                     | ProjectSiteOptionLifetimeState.Opening ->
