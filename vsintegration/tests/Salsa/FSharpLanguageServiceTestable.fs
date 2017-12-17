@@ -113,7 +113,7 @@ type internal FSharpLanguageServiceTestable() as this =
             serviceProvider <- None
     
     /// Respond to project settings changes
-    member this.OnProjectSettingsChanged(site:IProjectSite) = 
+    member this.OnProjectSettingsChanged(site: Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite) = 
         // The project may have changed its references.  These would be represented as 'dependency files' of each source file.  Each source file will eventually start listening
         // for changes to those dependencies, at which point we'll get OnDependencyFileCreateOrDelete notifications.  Until then, though, we just 'make a note' that this project is out of date.
         bgRequests.AddOutOfDateProjectFileName(site.ProjectFileName) 
@@ -126,7 +126,7 @@ type internal FSharpLanguageServiceTestable() as this =
             | None -> ()
 
     /// Respond to project being cleaned/rebuilt (any live type providers in the project should be refreshed)
-    member this.OnProjectCleaned(projectSite:IProjectSite) = 
+    member this.OnProjectCleaned(projectSite:Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite) = 
         let enableInMemoryCrossProjectReferences = true
         let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, serviceProvider.Value, None(*projectId*), "" ,None, None, false)
         this.FSharpChecker.NotifyProjectCleaned(checkOptions) |> Async.RunSynchronously
@@ -147,12 +147,12 @@ type internal FSharpLanguageServiceTestable() as this =
         match result with 
         | Some(hier,_) -> 
             match hier with 
-            | :? IProvideProjectSite as siteProvider ->
+            | :? Microsoft.VisualStudio.FSharp.LanguageService.IProvideProjectSite as siteProvider ->
                 let site = siteProvider.GetProjectSite()
                 site.AdviseProjectSiteChanges(FSharpConstants.FSharpLanguageServiceCallbackName, 
-                                              new AdviseProjectSiteChanges(fun () -> this.OnProjectSettingsChanged(site))) 
+                                              new Microsoft.VisualStudio.FSharp.LanguageService.AdviseProjectSiteChanges(fun () -> this.OnProjectSettingsChanged(site))) 
                 site.AdviseProjectSiteCleaned(FSharpConstants.FSharpLanguageServiceCallbackName, 
-                                              new AdviseProjectSiteChanges(fun () -> this.OnProjectCleaned(site))) 
+                                              new Microsoft.VisualStudio.FSharp.LanguageService.AdviseProjectSiteChanges(fun () -> this.OnProjectCleaned(site))) 
             | _ -> 
                 // This can happen when the file is in a solution folder or in, say, a C# project.
                 ()
