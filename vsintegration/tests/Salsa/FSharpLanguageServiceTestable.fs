@@ -18,7 +18,6 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.FSharp.LanguageService.SiteProvider
-open Microsoft.VisualStudio.FSharp.Editor
 
 type internal FSharpLanguageServiceTestable() as this =
     static let colorizerGuid = new Guid("{A2976312-7D71-4BB4-A5F8-66A08EBF46C8}") // Guid for colorized user data on IVsTextBuffer
@@ -149,10 +148,10 @@ type internal FSharpLanguageServiceTestable() as this =
             match hier with 
             | :? IProvideProjectSite as siteProvider ->
                 let site = siteProvider.GetProjectSite()
-                site.AdviseProjectSiteChanges(FSharpConstants.FSharpLanguageServiceCallbackName, 
-                                              new AdviseProjectSiteChanges(fun () -> this.OnProjectSettingsChanged(site))) 
-                site.AdviseProjectSiteCleaned(FSharpConstants.FSharpLanguageServiceCallbackName, 
-                                              new AdviseProjectSiteChanges(fun () -> this.OnProjectCleaned(site))) 
+                site.AdviseProjectSiteChanges(LanguageServiceConstants.FSharpLanguageServiceCallbackName, 
+                                              new Microsoft.VisualStudio.FSharp.LanguageService.AdviseProjectSiteChanges(fun () -> this.OnProjectSettingsChanged(site))) 
+                site.AdviseProjectSiteCleaned(LanguageServiceConstants.FSharpLanguageServiceCallbackName, 
+                                              new Microsoft.VisualStudio.FSharp.LanguageService.AdviseProjectSiteChanges(fun () -> this.OnProjectCleaned(site))) 
             | _ -> 
                 // This can happen when the file is in a solution folder or in, say, a C# project.
                 ()

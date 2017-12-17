@@ -8,3 +8,7 @@ module internal LanguageServiceConstants =
     /// "F#"
     [<Literal>]
     let FSharpLanguageName = "F#"
+        
+    [<Literal>]
+    /// "F# Language Service"
+    let FSharpLanguageServiceCallbackName = "F# Language Service"
