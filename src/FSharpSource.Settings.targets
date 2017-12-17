@@ -54,9 +54,20 @@
     <NUnitFullVersion>3.5.0.0</NUnitFullVersion>
     <NUnitLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.$(NUnitVersion)\lib\net45</NUnitLibDir>
     <NUnitToolsLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.ConsoleRunner\$(NUnitVersion)\tools\</NUnitToolsLibDir>
+
+    <!-- Localization -->
+    <UpdateXlfOnBuild Condition="'$(CI)' != '1'">true</UpdateXlfOnBuild>
+    <XliffTasksVersion>0.2.0-beta-000076</XliffTasksVersion>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(MonoPackaging)' != 'true' AND '$(OS)' != 'Unix'">
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\fsharp\msft.pubkey</AssemblyOriginatorKeyFile>
+    <StrongNames>true</StrongNames>
+    <DelaySign>true</DelaySign>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(OS)' != 'Unix'">
     <UseMicroBuild>true</UseMicroBuild> 
     <UseSourceLink Condition = " '$(UseSourceLink)' == '' AND '$(Configuration)'=='Release' ">false</UseSourceLink>
     <UseGatherBinaries>true</UseGatherBinaries>
@@ -139,16 +150,19 @@
     <FsLexToolExe>fslex.exe</FsLexToolExe>
     <FsYaccToolExe>fsyacc.exe</FsYaccToolExe>
 
-
-    <!-- The version of MSBuild assumed byt the F# compiler in the Mono packaging of F# -->
-    <MonoPackagingMSBuildVersionSuffix>v12.0</MonoPackagingMSBuildVersionSuffix>
-    <MonoPackagingMSBuildVersionFull>12.0.0.0</MonoPackagingMSBuildVersionFull>	  
-
     <!-- FSharp.Compiler.Tools is currently only used to get a working FSI.EXE to execute some scripts during the build -->
     <!-- The LKG FSI.EXE requires MSBuild 15 to be installed, which is painful -->
     <FsiToolPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.27\tools</FsiToolPath>
   </PropertyGroup>
 
+  <Import Project="$(MSBuildThisFileDirectory)..\packages\XliffTasks.$(XliffTasksVersion)\build\XliffTasks.props" Condition="'$(DisableLocalization)' != 'true'" />
+
+  <PropertyGroup>
+    <!-- in addition to the standard xlf languages, also provide a baseline en->en file -->
+    <XlfLanguages>en;$(XlfLanguages)</XlfLanguages>
+  </PropertyGroup>
+
+  <Import Project="$(RestorePackagesPath)\XliffTasks.$(XliffTasksVersion)\build\XliffTasks.targets" Condition="'$(DisableLocalization)' != 'true'" />
   <Import Project="../Tools/Build.Common.props" Condition="'$(TargetDotnetProfile)'=='coreclr'"/>
   <Import Project="$(BuildVersionFilePath)"     Condition="Exists('$(BuildVersionFilePath)')" />
 

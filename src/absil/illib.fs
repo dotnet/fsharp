@@ -1,10 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-#if COMPILER_PUBLIC_API
 module public Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-#else
-module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-#endif
 #nowarn "1178" // The struct, record or union type 'internal_instr_extension' is not structurally comparable because the type
 
 
@@ -114,16 +110,6 @@ module Array =
     let lengthsEqAndForall2 p l1 l2 = 
         Array.length l1 = Array.length l2 &&
         Array.forall2 p l1 l2
-
-    let mapFold f s l = 
-        let mutable acc = s
-        let n = Array.length l
-        let mutable res = Array.zeroCreate n
-        for i = 0 to n - 1 do
-            let h',s' = f acc l.[i]
-            res.[i] <- h';
-            acc <- s'
-        res, acc
 
     let order (eltOrder: IComparer<'T>) = 
         { new IComparer<array<'T>> with 
@@ -449,15 +435,6 @@ module List =
         match l with 
         | [] -> false 
         | h::t -> LanguagePrimitives.PhysicalEquality x h || memq x t
-        
-    // Not tail recursive 
-    let rec mapFoldBack f l s = 
-        match l with 
-        | [] -> ([],s)
-        | h::t -> 
-           let t',s = mapFoldBack f t s
-           let h',s = f h s
-           (h'::t', s)
 
     let mapNth n f xs =
         let rec mn i = function

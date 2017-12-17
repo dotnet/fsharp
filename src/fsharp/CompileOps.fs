@@ -4,11 +4,12 @@
 module internal Microsoft.FSharp.Compiler.CompileOps
 
 open System
-open System.Diagnostics
-open System.Text
-open System.IO
+open System.Collections.Concurrent
 open System.Collections.Generic
+open System.Diagnostics
+open System.IO
 open System.Runtime.CompilerServices
+open System.Text
 
 open Internal.Utilities
 open Internal.Utilities.Text
@@ -26,9 +27,7 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.TastPickle
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.TypeChecker
-open Microsoft.FSharp.Compiler.SR
 open Microsoft.FSharp.Compiler.DiagnosticMessage
-open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.AttributeChecking
 open Microsoft.FSharp.Compiler.ErrorLogger
@@ -41,7 +40,6 @@ open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.ConstraintSolver
 open Microsoft.FSharp.Compiler.ReferenceResolver
-open Microsoft.FSharp.Compiler.TypeRelations
 open Microsoft.FSharp.Compiler.SignatureConformance
 open Microsoft.FSharp.Compiler.MethodOverrides
 open Microsoft.FSharp.Compiler.NameResolution
@@ -3509,14 +3507,14 @@ let PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, ParsedSig
     ParsedInput.SigFile(ParsedSigFileInput(filename, qualName, scopedPragmas, hashDirectives, specs))
 
 /// Checks if a module name is already given and deduplicates the name if needed.
-let DeduplicateModuleName (moduleNamesDict:Dictionary<string, Set<string>>) (paths: Set<string>) path (qualifiedNameOfFile: QualifiedNameOfFile) =
+let DeduplicateModuleName (moduleNamesDict:IDictionary<string, Set<string>>) (paths: Set<string>) path (qualifiedNameOfFile: QualifiedNameOfFile) =
     let count = if paths.Contains path then paths.Count else paths.Count + 1
     moduleNamesDict.[qualifiedNameOfFile.Text] <- Set.add path paths
     let id = qualifiedNameOfFile.Id
     if count = 1 then qualifiedNameOfFile else QualifiedNameOfFile(Ident(id.idText + "___" + count.ToString(), id.idRange))
 
 /// Checks if a ParsedInput is using a module name that was already given and deduplicates the name if needed.
-let DeduplicateParsedInputModuleName (moduleNamesDict:Dictionary<string, Set<string>>) input =
+let DeduplicateParsedInputModuleName (moduleNamesDict:IDictionary<string, Set<string>>) input =
     match input with
     | ParsedInput.ImplFile (ParsedImplFileInput.ParsedImplFileInput(fileName, isScript, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules, (isLastCompiland, isExe))) ->
         let path = Path.GetDirectoryName fileName
@@ -3525,7 +3523,7 @@ let DeduplicateParsedInputModuleName (moduleNamesDict:Dictionary<string, Set<str
             let qualifiedNameOfFile = DeduplicateModuleName moduleNamesDict paths path qualifiedNameOfFile
             ParsedInput.ImplFile(ParsedImplFileInput.ParsedImplFileInput(fileName, isScript, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules, (isLastCompiland, isExe)))
         | _ ->
-            moduleNamesDict.Add(qualifiedNameOfFile.Text, Set.singleton path)
+            moduleNamesDict.[qualifiedNameOfFile.Text] <- Set.singleton path
             input
     | ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules)) ->
         let path = Path.GetDirectoryName fileName
@@ -3534,7 +3532,7 @@ let DeduplicateParsedInputModuleName (moduleNamesDict:Dictionary<string, Set<str
             let qualifiedNameOfFile = DeduplicateModuleName moduleNamesDict paths path qualifiedNameOfFile
             ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules))
         | _ ->
-            moduleNamesDict.Add(qualifiedNameOfFile.Text, Set.singleton path)
+            moduleNamesDict.[qualifiedNameOfFile.Text] <- Set.singleton path
             input
 
 let ParseInput (lexer, errorLogger:ErrorLogger, lexbuf:UnicodeLexing.Lexbuf, defaultNamespace, filename, isLastCompiland) = 
@@ -4280,14 +4278,16 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 
         // Find assembly level TypeProviderAssemblyAttributes. These will point to the assemblies that 
         // have class which implement ITypeProvider and which have TypeProviderAttribute on them.
-        let providerAssemblies = 
+        let designTimeAssemblyNames = 
             runtimeAssemblyAttributes 
             |> List.choose (TryDecodeTypeProviderAssemblyAttr (defaultArg ilGlobalsOpt EcmaMscorlibILGlobals))
             // If no design-time assembly is specified, use the runtime assembly
-            |> List.map (function null -> Path.GetFileNameWithoutExtension fileNameOfRuntimeAssembly | s -> s)
-            |> Set.ofList
+            |> List.map (function null -> fileNameOfRuntimeAssembly | s -> s)
+            // For each simple name of a design-time assembly, we take the first matching one in the order they are 
+            // specified in the attributes
+            |> List.distinctBy (fun s -> try Path.GetFileNameWithoutExtension(s) with _ -> s)
 
-        if providerAssemblies.Count > 0 then
+        if designTimeAssemblyNames.Length > 0 then
 
             // Find the SystemRuntimeAssemblyVersion value to report in the TypeProviderConfig.
             let primaryAssemblyVersion = 
@@ -4315,10 +4315,9 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                 fun arg -> systemRuntimeContainsTypeRef.Value arg  
 
             let providers = 
-                [ for assemblyName in providerAssemblies do
-                      yield ExtensionTyping.GetTypeProvidersOfAssembly(fileNameOfRuntimeAssembly, ilScopeRefOfRuntimeAssembly, assemblyName, typeProviderEnvironment, 
-                                                                       tcConfig.isInvalidationSupported, tcConfig.isInteractive, systemRuntimeContainsType, primaryAssemblyVersion, m) ]
-            let providers = providers |> List.concat
+                [ for designTimeAssemblyName in designTimeAssemblyNames do
+                      yield! ExtensionTyping.GetTypeProvidersOfAssembly(fileNameOfRuntimeAssembly, ilScopeRefOfRuntimeAssembly, designTimeAssemblyName, typeProviderEnvironment, 
+                                                                        tcConfig.isInvalidationSupported, tcConfig.isInteractive, systemRuntimeContainsType, primaryAssemblyVersion, m) ]
 
             // Note, type providers are disposable objects. The TcImports owns the provider objects - when/if it is disposed, the providers are disposed.
             // We ignore all exceptions from provider disposal.

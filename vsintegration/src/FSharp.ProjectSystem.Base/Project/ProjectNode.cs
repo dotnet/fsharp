@@ -306,7 +306,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         IReferenceContainerProvider,
         IVsProjectSpecialFiles, 
         IVsDesignTimeAssemblyResolution, 
-        IVsProjectUpgrade
+        IVsProjectUpgrade,
+        IVsSupportItemHandoff
     {
         /// <summary>
         /// This class stores mapping from ids -> objects. Uses as a replacement of EventSinkCollection (ESC)
@@ -4921,8 +4922,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                             
                             if (context == AddItemContext.Paste && FindChild(file) != null)
                             {
-                                // if we are doing 'Paste' and source file belongs to current project - generate fresh unique name
-                                newFileName = GenerateCopyOfFileName(baseDir, fileName);
+                                newFileName = Path.Combine(baseDir, fileName);
+                                if (FindChild(newFileName) != null)
+                                {
+                                    // if we are doing 'Paste' and source file belongs to current project - generate fresh unique name
+                                    newFileName = GenerateCopyOfFileName(baseDir, fileName);
+                                }
                             }
                             else if (!IsContainedWithinProjectDirectory(file))
                             {
@@ -5396,10 +5401,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             
             // Fail if the document names passed are null.
             if (oldMkDoc == null || newMkDoc == null)
-                return VSConstants.E_INVALIDARG;
-
-            // Fail if the document names passed are equal.
-            if (oldMkDoc == newMkDoc)
                 return VSConstants.E_INVALIDARG;
 
             int hr = VSConstants.S_OK;
@@ -6613,6 +6614,16 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
             }
             return hierarchy;
+        }
+
+        public int HandoffItem(uint itemid, IVsProject3 pProjDest, string pszMkDocumentOld, string pszMkDocumentNew, IVsWindowFrame punkWindowFrame)
+        {
+            if (pProjDest == null)
+            {
+                return VSConstants.E_POINTER;
+            }
+
+            return pProjDest.TransferItem(pszMkDocumentOld, pszMkDocumentNew, punkWindowFrame);
         }
     }
     internal enum AddItemContext

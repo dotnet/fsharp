@@ -97,7 +97,7 @@ Install Xamarin Studio, then
 To build and test Visual F# IDE Tools, install these requirements:
 - [Visual Studio 2017](https://www.visualstudio.com/downloads/)
   - Under the "Windows" workloads, select ".NET desktop development"
-    - Select "F# language support" under the optional components
+    - Select "F# desktop language support" under the optional components
   - Under the "Other Toolsets" workloads, select "Visual Studio extension development"
 
 Steps to build:
@@ -107,7 +107,6 @@ Steps to build:
     build.cmd vs test         -- build Visual F# IDE Tools, run all tests (see below)
 
 Use ``VisualFSharp.sln`` if you're building the Visual F# IDE Tools.
-
 
 Note on Debug vs Release: ``Release`` Configuration has a degraded debugging experience, so if you want to test a change locally, it is recommended to do it in the ``Debug`` configuration. For more information see https://github.com/Microsoft/visualfsharp/issues/2771 and https://github.com/Microsoft/visualfsharp/pull/2773.
 
@@ -122,7 +121,6 @@ Or hard crash on launch ("Unknown Error"), delete these folders:
 
 #### [Optional] Install the Visual F# IDE Tools  (Windows Only)
 
-At time of writing, the Visual F# IDE Tools can only be installed into the latest Visual Studio 2017 RC releases.
 The new builds of the Visual F# IDE Tools can no longer be installed into Visual Studio 2015.
 
 You can install Visual Studio 2017 from https://www.visualstudio.com/downloads/.
@@ -152,7 +150,6 @@ changes, but the root (default) hive will remain untouched. You can also start t
 
 Because this uses the "RoslynDev" hive you can simultaneously test changes to an appropriate build of Roslyn binaries.
 
-
 #### [Optional] Rapid deployment of incremental changes to Visual F# IDE Tools components
 
 For the brave, you can rapidly deploy incrementally updated versions of Visual F# IDE Tool components such as ``FSHarp.Editor.dll`` by copying them directly into the extension directory in your user AppData folder:
@@ -173,7 +170,6 @@ For **Release**:
 
     vsintegration\update-vsintegration.cmd release
 
-
 # Notes
 
 #### Windows: Links to  Additional frameworks
@@ -189,10 +185,9 @@ For **Release**:
 - [Windows 8.1 SDK](http://msdn.microsoft.com/en-us/library/windows/desktop/bg162891.aspx)
 - [Windows 10 SDK](https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk)
 
-
 #### Notes on the Windows .NET Framework build
 
-1. The `update.cmd` script adds required strong name validation skips, and NGens the compiler and libraries. This requires admin privileges.
+1. The `update.cmd` script adds required strong name validation skips and NGens the compiler and libraries. This requires admin privileges.
 1. The compiler binaries produced are "private" and strong-named signed with a test key.
 1. Some additional tools are required to build the compiler, notably `fslex.exe`, `fsyacc.exe`, `FSharp.PowerPack.Build.Tasks.dll`, `FsSrGen.exe`, `FSharp.SRGen.Build.Tasks.dll`, and the other tools found in the `lkg` directory.
 1. The overall bootstrapping process executes as follows
@@ -214,4 +209,3 @@ Where you should set proper proxy address, user name and password.
 #### Resources
 
 The primary technical guide to the core compiler code is [The F# Compiler Technical Guide](http://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html).  Please read and contribute to that guide.
-

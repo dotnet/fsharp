@@ -307,7 +307,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                             // We can't throw or exit here because we need to call Dispose on the
                             // other members that need to be disposed.
                             this.hiddenTextSession.UnadviseClient();
-                            // This is causing a debug assert in vs\env\msenv\textmgr\vrlist.cpp
+                            // This is causing a debug assert in service\env\msenv\textmgr\vrlist.cpp
                             // at line 1997 in CVisibleRegionList::Terminate
                             //this.hiddenTextSession.Terminate();
                             this.hiddenTextSession = null;

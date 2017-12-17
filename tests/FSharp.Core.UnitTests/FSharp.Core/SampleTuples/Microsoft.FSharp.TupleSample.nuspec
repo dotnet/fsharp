@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+    <metadata>
+        <id>Microsoft.FSharp.TupleSample</id>
+        <description>Sample CSharpTuple code for tuple interop testing</description>
+        <language>en-US</language>
+        <requireLicenseAcceptance>true</requireLicenseAcceptance>
+        <version>$version$</version>
+        <authors>$authors$</authors>
+        <licenseUrl>$licenseUrl$</licenseUrl>
+        <projectUrl>$projectUrl$</projectUrl>
+        <tags>$tags$</tags>
+        <dependencies>
+            <group>
+                <dependency id="System.ValueTuple" version="4.0.0-rc3-24212-01" />
+            </group>
+        </dependencies>
+    </metadata>
+    <files>
+        <file src="lib\netstandard1.1\TupleSample.dll"     target="lib\netstandard1.1" />
+        <file src="lib\portable-net40+sl4+win8+wp8\TupleSample.dll"     target="lib\portable-net40+sl4+win8+wp8" />
+    </files>
+</package>
