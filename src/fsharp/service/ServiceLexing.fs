@@ -261,7 +261,7 @@ module internal TokenClassifications =
         | IF | THEN  | ELSE | DO | DONE | LET(_) | IN (*| NAMESPACE*) | CONST
         | HIGH_PRECEDENCE_PAREN_APP | FIXED
         | HIGH_PRECEDENCE_BRACK_APP
-        | TYPE_COMING_SOON | TYPE_IS_HERE | MODULE_COMING_SOON | MODULE_IS_HERE
+        | TYPE_COMING_SOON | TYPE_IS_HERE | MODULE_COMING_SOON | MODULE_IS_HERE | MODULE_ATTRIBUTE_TARGET_COMING_SOON | MODULE_ATTRIBUTE_TARGET_IS_HERE
           -> (FSharpTokenColorKind.Keyword,FSharpTokenCharKind.Keyword,FSharpTokenTriggerClass.None)
               
         | BEGIN  

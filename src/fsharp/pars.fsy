@@ -206,6 +206,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 
 /* for parser 'escape hatch' out of expression context without consuming the 'recover' token */
 %token TYPE_COMING_SOON TYPE_IS_HERE MODULE_COMING_SOON MODULE_IS_HERE
+%token MODULE_ATTRIBUTE_TARGET_COMING_SOON MODULE_ATTRIBUTE_TARGET_IS_HERE
 
 /* for high-precedence tyapps and apps */
 %token HIGH_PRECEDENCE_BRACK_APP   /* inserted for f[x], but not f [x] */
@@ -1368,8 +1369,8 @@ attributeList:
       { if not $4 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedLBrackLess())
         $2 }
 
-  | LBRACK_LESS  ends_coming_soon_or_recover 
-      { if not $2 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedLBrackLess())
+  | LBRACK_LESS  opt_OBLOCKSEP ends_coming_soon_or_recover 
+      { if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedLBrackLess())
         [] }
 
 
@@ -1402,7 +1403,7 @@ attribute:
 
 /* The target of a custom attribute */
 attributeTarget: 
-  | moduleKeyword COLON 
+  | MODULE_ATTRIBUTE_TARGET_COMING_SOON moduleKeyword COLON 
       { Some(ident("module",(rhs parseState 1))) } 
 
   | typeKeyword COLON 
@@ -4918,6 +4919,8 @@ typeKeyword:
 
 /* A 'module' keyword */
 moduleKeyword:
+  | MODULE_ATTRIBUTE_TARGET_COMING_SOON moduleKeyword { }
+  | MODULE_ATTRIBUTE_TARGET_IS_HERE { }
   | MODULE_COMING_SOON moduleKeyword { }
   | MODULE_IS_HERE { }
   | MODULE { }
