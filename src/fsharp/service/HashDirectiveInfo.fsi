@@ -2,11 +2,7 @@
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
-#if COMPILER_PUBLIC_API
 module PathUtils =
-#else
-module internal PathUtils =
-#endif
     [<Sealed>]
     type Path =
         static member GetFullPathSafe : string -> string
@@ -14,11 +10,7 @@ module internal PathUtils =
 
     val (</>) : string -> string -> string
 
-#if COMPILER_PUBLIC_API
 module HashDirectiveInfo =
-#else
-module internal HashDirectiveInfo =
-#endif
 
     open Microsoft.FSharp.Compiler.Range
     open Microsoft.FSharp.Compiler.Ast
