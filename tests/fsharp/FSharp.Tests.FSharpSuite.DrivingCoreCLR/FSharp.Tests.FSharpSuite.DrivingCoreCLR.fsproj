@@ -29,7 +29,7 @@
       <Link>scriptlib.fsx</Link>
     </Compile>
     <Compile Include="..\test-framework.fs" />
-    <Compile Include="..\..\..\src\fsharp\FSharp.Compiler.Unittests\NunitHelpers.fs">
+    <Compile Include="..\..\FSharp.Compiler.UnitTests\NunitHelpers.fs">
       <Link>NunitHelpers.fs</Link>
     </Compile>
     <Compile Include="..\single-test.fs" />

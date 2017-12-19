@@ -19,10 +19,7 @@
     <Win32Resource>$(FsiDir)\fsi.res</Win32Resource>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.fsi.exe.fs">
-      <Link>assemblyinfo.fsi.exe.fs</Link>
-    </Compile>
-
+    <Compile Include="AssemblyInfo.fs" />
     <Compile Include="$(FsiDir)\console.fs">
       <Link>console.fs</Link>
     </Compile>

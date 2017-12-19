@@ -2,10 +2,8 @@
 
 module internal Microsoft.FSharp.Compiler.AutoBox 
 
-open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops

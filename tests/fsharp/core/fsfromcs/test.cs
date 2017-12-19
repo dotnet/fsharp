@@ -81,6 +81,17 @@ class Maine
                                         { Console.WriteLine("i after duplication (2nd technique) = {0}", s);}),
                myList2);
 
+          // No Func overloads are available for FuncConvert.ToFSharpFunc
+         // myList2 = 
+         //   ListModule.Map<int,string>
+         //     (FuncConvert.ToFSharpFunc((Func<int,string>) delegate(int i) { return i.ToString() + i.ToString(); }),
+         //      myList);
+
+          ListModule.Iterate<string>(FuncConvert.ToFSharpFunc<string>(s => { Console.WriteLine("s = {0}", s);}),myList2);
+
+          //Note: This call becomes ambiguous if Func overloads of FuncConvert.ToFSharpFunc are added
+          myList2 = ListModule.Map<string,string>(FuncConvert.ToFSharpFunc<string,string>(i => i.ToString() + i.ToString()),myList2);
+
       }
 
        // Construct a value of each type from the library
