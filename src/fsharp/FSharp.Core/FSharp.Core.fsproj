@@ -225,9 +225,6 @@
     <Compile Include="fslib-extra-pervasives.fs">
       <Link>Extras/fslib-extra-pervasives.fs</Link>
     </Compile>
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Core.dll.fs">
-      <Link>assemblyinfo.FSharp.Core.dll.fs</Link>
-    </Compile>
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetDotnetProfile)' != 'coreclr'">

@@ -549,12 +549,6 @@ goto :eof
 :havemsbuild
 set _nrswitch=/nr:false
 
-if defined TF_BUILD (
-    echo Adding remote 'visualfsharptools' for internal build.
-    git remote add visualfsharptools https://github.com/Microsoft/visualfsharp.git
-    git fetch --all
-)
-
 set msbuildflags=%_nrswitch% /nologo
 REM set msbuildflags=%_nrswitch% /nologo
 set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"

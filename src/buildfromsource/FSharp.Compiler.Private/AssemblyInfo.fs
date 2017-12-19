@@ -10,12 +10,7 @@ open System.Runtime.InteropServices
 [<assembly:AssemblyCopyright("\169 Microsoft Corporation.  All Rights Reserved.")>]
 [<assembly:AssemblyProduct("Microsoft\174 F#")>]
 [<assembly:ComVisible(false)>]
-
-// Until dotnet sdk can version assemblies, use this
-#if BUILD_FROM_SOURCE
-[<assembly: System.Reflection.AssemblyInformationalVersion("4.4.1.0")>]
-[<assembly: System.Reflection.AssemblyVersion("4.4.1.0")>]
-[<assembly: System.Reflection.AssemblyFileVersion("2017.06.27.0")>]
-#endif
-
+[<assembly:AssemblyInformationalVersion("4.4.1.0")>]
+[<assembly:AssemblyVersion("4.4.1.0")>]
+[<assembly:AssemblyFileVersion("2017.06.27.0")>]
 do()
