@@ -70,8 +70,8 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(FSharpSourcesRoot)/assemblyinfo/assemblyinfo.FSharp.Compiler.Service.dll.fs">
-      <Link>AssemblyInfo/assemblyinfo.FSharp.Compiler.Service.dll.fs</Link>
+    <Compile Include="..\FSharp.Compiler.Service\AssemblyInfo.fs">
+      <Link>AssemblyInfo/AssemblyInfo.fs</Link>
     </Compile>
     <FsSrGen Include="$(FSharpSourcesRoot)\fsharp\FSComp.txt">
       <Link>FSComp.txt</Link>
