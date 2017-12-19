@@ -345,7 +345,7 @@ if "%DEPLOY%" == "yes" if "!ISADMIN!" == "yes" (
     !SN32! -Vr FSharp.ProjectSystem.FSharp,b03f5f7f11d50a3a 1>NUL 2>NUL
     !SN32! -Vr FSharp.ProjectSystem.PropertyPages,b03f5f7f11d50a3a 1>NUL 2>NUL
     !SN32! -Vr FSharp.VS.FSI,b03f5f7f11d50a3a 1>NUL 2>NUL
-    !SN32! -Vr VisualFSharp.Unittests,b03f5f7f11d50a3a 1>NUL 2>NUL
+    !SN32! -Vr VisualFSharp.UnitTests,b03f5f7f11d50a3a 1>NUL 2>NUL
     !SN32! -Vr VisualFSharp.Salsa,b03f5f7f11d50a3a 1>NUL 2>NUL
 
     REM Do this *in addition* to the above for x64 systems
@@ -364,7 +364,7 @@ if "%DEPLOY%" == "yes" if "!ISADMIN!" == "yes" (
         !SN64! -Vr FSharp.ProjectSystem.FSharp,b03f5f7f11d50a3a 1>NUL 2>NUL
         !SN64! -Vr FSharp.ProjectSystem.PropertyPages,b03f5f7f11d50a3a 1>NUL 2>NUL
         !SN64! -Vr FSharp.VS.FSI,b03f5f7f11d50a3a 1>NUL 2>NUL
-        !SN64! -Vr VisualFSharp.Unittests,b03f5f7f11d50a3a 1>NUL 2>NUL
+        !SN64! -Vr VisualFSharp.UnitTests,b03f5f7f11d50a3a 1>NUL 2>NUL
         !SN64! -Vr VisualFSharp.Salsa,b03f5f7f11d50a3a 1>NUL 2>NUL
     )
 
@@ -417,7 +417,7 @@ if "%ACTION%" == "restore" if "!ISADMIN!" == "yes" (
     !SN32! -Vu FSharp.ProjectSystem.FSharp,b03f5f7f11d50a3a 2>NUL 1>NUL
     !SN32! -Vu FSharp.ProjectSystem.PropertyPages,b03f5f7f11d50a3a 2>NUL 1>NUL
     !SN32! -Vu FSharp.VS.FSI,b03f5f7f11d50a3a 2>NUL 1>NUL
-    !SN32! -Vu VisualFSharp.Unittests,b03f5f7f11d50a3a 2>NUL 1>NUL
+    !SN32! -Vu VisualFSharp.UnitTests,b03f5f7f11d50a3a 2>NUL 1>NUL
     !SN32! -Vu VisualFSharp.Salsa,b03f5f7f11d50a3a 2>NUL 1>NUL
 
     REM Do this *in addition* to the above for x64 systems
@@ -436,7 +436,7 @@ if "%ACTION%" == "restore" if "!ISADMIN!" == "yes" (
         !SN64! -Vu FSharp.ProjectSystem.FSharp,b03f5f7f11d50a3a 2>NUL 1>NUL
         !SN64! -Vu FSharp.ProjectSystem.PropertyPages,b03f5f7f11d50a3a 2>NUL 1>NUL
         !SN64! -Vu FSharp.VS.FSI,b03f5f7f11d50a3a 2>NUL 1>NUL
-        !SN64! -Vu VisualFSharp.Unittests,b03f5f7f11d50a3a 2>NUL 1>NUL
+        !SN64! -Vu VisualFSharp.UnitTests,b03f5f7f11d50a3a 2>NUL 1>NUL
         !SN64! -Vu VisualFSharp.Salsa,b03f5f7f11d50a3a 2>NUL 1>NUL
     )
 

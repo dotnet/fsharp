@@ -40,16 +40,6 @@
   <Target Name="CopyCtoFile">
     <Copy SourceFiles="@(VSCTCompile->'$(IntermediateOutputPath)%(FileName).cto')" DestinationFiles="@(VSCTCompile->'ctofiles\%(FileName).cto')" />
   </Target>
-  <Target Name="GatherBinariesToBeSigned" AfterTargets="CopyFilesToOutputDirectory">
-    <ItemGroup>
-      <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
-      <BinariesToBeSigned Include="$(OutDir)**\$(AssemblyName).resources.dll" />
-      <FilesToSign Include="@(BinariesToBeSigned)">
-        <Authenticode>Microsoft</Authenticode>
-        <StrongName>StrongName</StrongName>
-      </FilesToSign>
-    </ItemGroup>
-  </Target>
   <Target Name="CopyLocalizationResources">
     <ItemGroup>
       <LocalizationResources Include="MenusAndCommands.vsct" />
@@ -59,7 +49,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="FSharp.Build" />
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />
-    <InternalsVisibleTo Include="VisualFSharp.Unittests" />
+    <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
   </ItemGroup>
   <ItemGroup>
     <VSCTCompile Include="MenusAndCommands.vsct" />

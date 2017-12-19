@@ -18,7 +18,6 @@ open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.PrettyNaming
 open Internal.Utilities
 
 type FSharpAccessibility(a:Accessibility, ?isProtected) = 
@@ -1808,6 +1807,11 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member x.IsValCompiledAsMethod =
         match d with
         | V valRef -> IlxGen.IsValCompiledAsMethod cenv.g valRef.Deref
+        | _ -> false
+
+    member x.IsValue =
+        match d with
+        | V valRef -> not (SymbolHelpers.isFunction cenv.g valRef.Type)
         | _ -> false
 
     override x.Equals(other: obj) =

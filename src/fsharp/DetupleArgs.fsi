@@ -2,16 +2,10 @@
 
 module internal Microsoft.FSharp.Compiler.Detuple 
 
-open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.TcGlobals
 
-
-
-(* detuple pass: *)  
 val DetupleImplFile : CcuThunk -> TcGlobals -> TypedImplFile -> TypedImplFile
 
 module GlobalUsageAnalysis = 
