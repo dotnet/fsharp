@@ -643,7 +643,7 @@ if [ "$TEST_NET40_COMPILERUNIT_SUITE" = '1' ]; then
 	    OUTPUTARG="--output:\"$OUTPUTFILE\""
     fi
     
-    if ! printeval "mono $NUNIT3_CONSOLE --verbose --framework:V4.0 --result:\"$XMLFILE;format=nunit3\" $OUTPUTARG  $ERRORARG --work:\"$FSCBINPATH\" \"$FSCBINPATH/../../net40/bin/FSharp.Compiler.Unittests.dll\" $WHERE_ARG_NUNIT"; then
+    if ! printeval "mono $NUNIT3_CONSOLE --verbose --framework:V4.0 --result:\"$XMLFILE;format=nunit3\" $OUTPUTARG  $ERRORARG --work:\"$FSCBINPATH\" \"$FSCBINPATH/../../net40/bin/FSharp.Compiler.UnitTests.dll\" $WHERE_ARG_NUNIT"; then
         if [ -f "$OUTPUTFILE" ]; then
             echo -----------------------------------------------------------------
             cat "$OUTPUTFILE"
@@ -675,7 +675,7 @@ if [ "$TEST_NET40_COREUNIT_SUITE" = '1' ]; then
 	    OUTPUTARG="--output:\"$OUTPUTFILE\""
     fi
 
-    if ! printeval "mono $NUNIT3_CONSOLE --verbose --framework:V4.0 --result:\"$XMLFILE;format=nunit3\" $OUTPUTARG $ERRORARG --work:\"$FSCBINPATH\" \"$FSCBINPATH/FSharp.Core.Unittests.dll\" $WHERE_ARG_NUNIT"; then
+    if ! printeval "mono $NUNIT3_CONSOLE --verbose --framework:V4.0 --result:\"$XMLFILE;format=nunit3\" $OUTPUTARG $ERRORARG --work:\"$FSCBINPATH\" \"$FSCBINPATH/FSharp.Core.UnitTests.dll\" $WHERE_ARG_NUNIT"; then
         if [ -f "$OUTPUTFILE" ]; then
             echo -----------------------------------------------------------------
             cat "$OUTPUTFILE"
@@ -708,7 +708,7 @@ if [ "$TEST_PORTABLE_COREUNIT_SUITE" = '1' ]; then
         OUTPUTARG="--output:\"$OUTPUTFILE\""
 	fi
 
-    if ! printeval "mono $NUNIT3_CONSOLE /framework:V4.0 /result=\"$XMLFILE;format=nunit3\" $OUTPUTARG $ERRORARG /work=\"$FSCBINPATH\" \"$FSCBINPATH/../../portable7/bin/FSharp.Core.Unittests.dll\" \"$FSCBINPATH/../../portable47/bin/FSharp.Core.Unittests.dll\" \"$FSCBINPATH/../../portable78/bin/FSharp.Core.Unittests.dll\" \"$FSCBINPATH/../../portable259/bin/FSharp.Core.Unittests.dll\" $WHERE_ARG_NUNIT"; then
+    if ! printeval "mono $NUNIT3_CONSOLE /framework:V4.0 /result=\"$XMLFILE;format=nunit3\" $OUTPUTARG $ERRORARG /work=\"$FSCBINPATH\" \"$FSCBINPATH/../../portable7/bin/FSharp.Core.UnitTests.dll\" \"$FSCBINPATH/../../portable47/bin/FSharp.Core.UnitTests.dll\" \"$FSCBINPATH/../../portable78/bin/FSharp.Core.UnitTests.dll\" \"$FSCBINPATH/../../portable259/bin/FSharp.Core.UnitTests.dll\" $WHERE_ARG_NUNIT"; then
         if [ -f "$OUTPUTFILE" ]; then
             echo -----------------------------------------------------------------
             cat "$OUTPUTFILE"
@@ -732,7 +732,7 @@ if [ "$TEST_CORECLR_COREUNIT_SUITE" = '1' ]; then
     OUTPUTFILE="$RESULTSDIR/test-coreclr-coreunit-output.log"
     ERRORFILE="$RESULTSDIR/test-coreclr-coreunit-errors.log"
 
-    if ! printeval "$_dotnetexe \"${_scriptdir}tests/testbin/$BUILD_CONFIG/coreclr/FSharp.Core.Unittests/FSharp.Core.Unittests.dll\" $WHERE_ARG_NUNIT"; then
+    if ! printeval "$_dotnetexe \"${_scriptdir}tests/testbin/$BUILD_CONFIG/coreclr/FSharp.Core.UnitTests/FSharp.Core.UnitTests.dll\" $WHERE_ARG_NUNIT"; then
         echo -----------------------------------------------------------------
         echo Error: Running tests coreclr-coreunit failed, see logs above-- FAILED
         echo -----------------------------------------------------------------
