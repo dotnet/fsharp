@@ -6,8 +6,6 @@
 
 module internal Microsoft.FSharp.Compiler.FindUnsolved
 
-open Internal.Utilities
-
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library

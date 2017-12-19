@@ -6,7 +6,7 @@
 
   <ItemGroup>
     <ProjectFiles Include="tests\Salsa\VisualFSharp.Salsa.fsproj"/>
-    <ProjectFiles Include="tests\unittests\VisualFSharp.Unittests.fsproj"/>
+    <ProjectFiles Include="tests\unittests\VisualFSharp.UnitTests.fsproj"/>
     <ProjectFiles Include="..\tests\service\data\TestTP\TestTP.fsproj" />
     <ProjectFiles Include="..\tests\service\data\CSharp_Analysis\CSharp_Analysis.csproj" />
     <ProjectFiles Include="tests\unittests\MockTypeProviders\DefinitionLocationAttribute\DefinitionLocationAttribute.csproj" />

@@ -2,19 +2,14 @@
 
 module internal Microsoft.FSharp.Compiler.TypeChecker
 
-open Internal.Utilities
 open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.AccessibilityLogic
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.Import
 open Microsoft.FSharp.Compiler.TcGlobals
@@ -30,7 +25,7 @@ type TcEnv =
 val CreateInitialTcEnv : TcGlobals * ImportMap * range * assemblyName: string * (CcuThunk * string list * string list) list -> TcEnv 
 val AddCcuToTcEnv      : TcGlobals * ImportMap * range * TcEnv * assemblyName: string * ccu: CcuThunk * autoOpens: string list * internalsVisibleToAttributes: string list -> TcEnv 
 val AddLocalRootModuleOrNamespace : NameResolution.TcResultsSink -> TcGlobals -> ImportMap -> range -> TcEnv -> ModuleOrNamespaceType -> TcEnv
-val TcOpenDecl         : NameResolution.TcResultsSink  -> TcGlobals -> ImportMap -> range -> range -> TcEnv -> Ast.LongIdent -> TcEnv 
+val TcOpenDecl         : NameResolution.TcResultsSink  -> TcGlobals -> ImportMap -> range -> range -> TcEnv -> LongIdent -> TcEnv 
 
 type TopAttribs =
     { mainMethodAttrs : Attribs;

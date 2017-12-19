@@ -18,7 +18,6 @@ open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.PrettyNaming
 open Internal.Utilities
 
 type FSharpAccessibility(a:Accessibility, ?isProtected) = 

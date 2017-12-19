@@ -5,7 +5,6 @@
 module internal Microsoft.FSharp.Compiler.InfoReader
 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 
 open Microsoft.FSharp.Compiler 

@@ -10,7 +10,6 @@
 module internal Microsoft.FSharp.Compiler.Optimizer
 
 open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal

@@ -7,7 +7,6 @@ module internal Microsoft.FSharp.Compiler.PostTypeCheckSemanticChecks
 open System.Collections.Generic
 
 open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library

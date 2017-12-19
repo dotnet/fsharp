@@ -1,10 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-#if COMPILER_PUBLIC_API
 module public Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-#else
-module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-#endif
 #nowarn "1178" // The struct, record or union type 'internal_instr_extension' is not structurally comparable because the type
 
 

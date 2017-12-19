@@ -2,12 +2,9 @@
 
 module internal Microsoft.FSharp.Compiler.InnerLambdasToTopLevelFuncs 
 
-open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL 
+open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-
-open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
@@ -19,21 +16,7 @@ open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.Detuple.GlobalUsageAnalysis
 open Microsoft.FSharp.Compiler.Lib
 
-
 let verboseTLR = false
-
-#if TLR_LIFT
-/// Turns on explicit lifting of TLR constants to toplevel
-/// e.g. use true if want the TLR constants to be initialised once.
-///
-/// NOTE: liftTLR is incomplete and disabled
-///       Approach is to filter Top* let binds whilst "under lambdas",
-///       and wrap them around that expr ASAP (when get to TopLevel position).
-///       However, for arity assigned public vals (not TLR at moment),
-///       assumptions that their RHS are lambdas get broken since the
-///       lambda can be wrapped with bindings...
-let liftTLR    = ref false
-#endif
 
 //-------------------------------------------------------------------------
 // library helpers
@@ -937,25 +920,8 @@ module Pass4_RewriteAssembly =
     let SetPreDecs z pdt = {z with rws_preDecs=pdt}
 
     /// collect Top* repr bindings - if needed... 
-#if TLR_LIFT
-    let LiftTopBinds isRec _penv z binds =
-        let isTopBind (bind: Binding) = Option.isSome bind.Var.ValReprInfo
-        let topBinds,otherBinds = List.partition isTopBind binds
-        let liftTheseBindings =
-            !liftTLR &&             // lifting enabled 
-            not z.rws_mustinline &&   // can't lift bindings in a mustinline context - they would become private an not inlined 
-            z.rws_innerLevel>0 &&   // only collect Top* bindings when at inner levels (else will drop them!) 
-            not (isNil topBinds) // only collect topBinds if there are some! 
-        if liftTheseBindings then
-            let LiftedDeclaration = isRec,topBinds                                           // LiftedDeclaration Top* decs 
-            let z = {z with rws_preDecs = TreeNode [z.rws_preDecs;LeafNode LiftedDeclaration]}   // logged at end 
-            z,otherBinds
-        else
-            z,binds (* not "topBinds @ otherBinds" since that has changed order... *)
-#else
     let LiftTopBinds _isRec _penv z binds =
         z,binds 
-#endif
        
     /// Wrap preDecs (in order) over an expr - use letrec/let as approp 
     let MakePreDec  m (isRec,binds: Bindings) expr = 

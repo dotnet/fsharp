@@ -2,7 +2,6 @@
 
 module internal Microsoft.FSharp.Compiler.CheckFormatStrings
 
-open Internal.Utilities
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open Microsoft.FSharp.Compiler.Ast

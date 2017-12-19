@@ -2,13 +2,10 @@
 
 module internal Microsoft.FSharp.Compiler.Optimizer
 
-open Internal.Utilities
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.TcGlobals 
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 
 type OptimizationSettings = 
     { abstractBigTargets : bool
