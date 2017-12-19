@@ -6,11 +6,8 @@
 
 module internal Microsoft.FSharp.Compiler.Infos
 
-open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.Range
@@ -25,7 +22,6 @@ open Microsoft.FSharp.Core.Printf
 
 #if !NO_EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
-open Microsoft.FSharp.Core.CompilerServices
 #endif
 
 #if FX_RESHAPED_REFLECTION
