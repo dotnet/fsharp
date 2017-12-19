@@ -1554,8 +1554,6 @@ module internal Parser =
     let parseFile(source, fileName, options: FSharpParsingOptions, userOpName: string) =
         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "parseFile", fileName)
         let errHandler = new ErrorHandler(true, fileName, options.ErrorSeverityOptions, source)
-        use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _oldLogger -> errHandler.ErrorLogger)
-        use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
         let parseResult =
             Lexhelp.usingLexbufForParsing(UnicodeLexing.StringAsLexbuf(addNewLine source), fileName) (fun lexbuf ->
