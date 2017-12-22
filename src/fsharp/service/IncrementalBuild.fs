@@ -1703,8 +1703,11 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
       cancellable {
 
         // Trap and report warnings and errors from creation.
-        use errorScope = new ErrorScope()
-        let! builderOpt = 
+        let delayedLogger = CapturingErrorLogger("IncrementalBuilderCreation")
+        use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayedLogger)
+        use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+
+        let! builderOpt =
          cancellable {
           try
 
@@ -1814,7 +1817,18 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             return None
          }
 
-        return builderOpt, errorScope.Diagnostics
+        let diagnostics =
+            match builderOpt with
+            | Some builder ->
+                let errorSeverityOptions = builder.TcConfig.errorSeverityOptions
+                let errorLogger = CompilationErrorLogger("IncrementalBuilderCreation", errorSeverityOptions)
+                delayedLogger.CommitDelayedDiagnostics(errorLogger)
+                errorLogger.GetErrors() |> List.map (fun (d, severity) -> d, severity = FSharpErrorSeverity.Error)
+            | _ ->
+                delayedLogger.Diagnostics
+            |> List.map (fun (d, isError) -> FSharpErrorInfo.CreateFromException(d, isError, range.Zero))
+
+        return builderOpt, diagnostics
       }
     static member KeepBuilderAlive (builderOpt: IncrementalBuilder option) = 
         match builderOpt with 

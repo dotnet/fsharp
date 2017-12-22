@@ -5195,3 +5195,16 @@ type A(i:int) =
 
     | Some decl -> failwithf "unexpected declaration %A" decl
     | None -> failwith "declaration list is empty"
+
+
+[<TestCase(([||]: string[]), ([||]: bool[]))>]
+[<TestCase([| "--times" |], [| false |])>]
+[<TestCase([| "--times"; "--nowarn:75" |], ([||]: bool[]))>]
+[<TestCase([| "--times"; "--warnaserror:75" |], [| true |])>]
+[<TestCase([| "--times"; "--warnaserror-:75"; "--warnaserror" |], [| false |])>]
+let ``#4030, Incremental builder creation warnings`` (args, errorSeverities) =
+    let source = "module M"
+    let fileName, options = mkTestFileAndOptions source args
+
+    let _, checkResults = parseAndCheckFile fileName source options
+    checkResults.Errors |> Array.map (fun e -> e.Severity = FSharpErrorSeverity.Error) |> shouldEqual errorSeverities 
