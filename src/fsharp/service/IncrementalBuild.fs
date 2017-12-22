@@ -1698,7 +1698,6 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     /// CreateIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
     static member TryCreateBackgroundBuilderForProjectOptions (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, frameworkTcImportsCache: FrameworkImportsCache, loadClosureOpt:LoadClosure option, sourceFiles:string list, commandLineArgs:string list, projectReferences, projectDirectory, useScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions, maxTimeShareMilliseconds) =
-      let targetProfileSwitch = "--targetprofile:"
       let useSimpleResolutionSwitch = "--simpleresolution"
 
       cancellable {
@@ -1741,22 +1740,12 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 #else
                 tcConfigB.useSimpleResolution <- (getSwitchValue useSimpleResolutionSwitch) |> Option.isSome
 #endif
-                match (getSwitchValue targetProfileSwitch) with
-                | Some v ->
-                    let _s = v
-                    CompileOptions.SetTargetProfile tcConfigB v
-                | None -> ()
-
                 // Apply command-line arguments and collect more source files if they are in the arguments
                 let sourceFilesNew = ApplyCommandLineArgs(tcConfigB, sourceFiles, commandLineArgs)
 
                 // Never open PDB files for the language service, even if --standalone is specified
                 tcConfigB.openDebugInformationForLaterStaticLinking <- false
-                match commandLineArgs |> Seq.tryFind(fun s -> s.StartsWith(targetProfileSwitch)) with
-                | Some arg ->
-                    let profile = arg.Substring(targetProfileSwitch.Length)
-                    CompileOptions.SetTargetProfile tcConfigB profile
-                | _ -> ()
+
                 tcConfigB, sourceFilesNew
 
             match loadClosureOpt with
