@@ -53,7 +53,7 @@
     <RootBinPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetDotnetProfile)\bin</RootBinPath>
     <AssemblyName>VisualFSharpFull</AssemblyName>
     <OutputPath>$(RootBinPath)</OutputPath>
-    <MicroBuildAssemblyVersion>15.4.3.0</MicroBuildAssemblyVersion>
+    <UseVsMicroBuildAssemblyVersion>true</UseVsMicroBuildAssemblyVersion>
     <MicroBuildAssemblyFileLanguage>cs</MicroBuildAssemblyFileLanguage>
     <DeployExtension>false</DeployExtension>
   </PropertyGroup>
