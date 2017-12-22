@@ -394,7 +394,7 @@
       </trans-unit>
       <trans-unit id="resetNotSupported">
         <source>Reset is not supported on this enumerator.</source>
-        <target state="translated">この列挙子ではリセットがサポートされていません。</target>
+        <target state="translated">この列挙型ではリセットがサポートされていません。</target>
         <note />
       </trans-unit>
       <trans-unit id="startCannotBeNaN">

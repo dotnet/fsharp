@@ -9,12 +9,12 @@
       </trans-unit>
       <trans-unit id="rbStartProject.Text">
         <source>&amp;Start project</source>
-        <target state="translated">Urucho&amp;m projekt</target>
+        <target state="translated">&amp;Uruchom projekt</target>
         <note />
       </trans-unit>
       <trans-unit id="rbStartProgram.Text">
         <source>Start e&amp;xternal program:</source>
-        <target state="translated">Uruchom z&amp;ewnętrzny program:</target>
+        <target state="translated">Uruchom program z&amp;ewnętrzny:</target>
         <note />
       </trans-unit>
       <trans-unit id="StartProgram.AccessibleName">
@@ -39,7 +39,7 @@
       </trans-unit>
       <trans-unit id="CommandLineArgsLabel.Text">
         <source>Comma&amp;nd line arguments:</source>
-        <target state="translated">Argume&amp;nty wiersza polecenia:</target>
+        <target state="translated">Argumenty wiersza pole&amp;cenia:</target>
         <note />
       </trans-unit>
       <trans-unit id="WorkingDirLabel.Text">
@@ -74,7 +74,7 @@
       </trans-unit>
       <trans-unit id="EnableSQLServerDebugging.Text">
         <source>Enable SQ&amp;L Server debugging</source>
-        <target state="translated">Włącz debugowanie serwera SQ&amp;L Server</target>
+        <target state="translated">Włącz debugowanie programu SQ&amp;L Server</target>
         <note />
       </trans-unit>
       <trans-unit id="UseVSHostingProcess.Text">

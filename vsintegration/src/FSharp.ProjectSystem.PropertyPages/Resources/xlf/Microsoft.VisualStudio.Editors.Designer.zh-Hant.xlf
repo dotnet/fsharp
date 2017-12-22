@@ -320,7 +320,7 @@ Please select a valid folder path.</source>
       </trans-unit>
       <trans-unit id="PPG_Application_AppEventsCommentLine1">
         <source>The following events are available for MyApplication:</source>
-        <target state="translated">MyApplication 可以使用下列事件: </target>
+        <target state="translated">MyApplication 可以使用下列事件:</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_AppEventsCommentLine3">
@@ -345,7 +345,7 @@ Please select a valid folder path.</source>
       </trans-unit>
       <trans-unit id="PPG_Application_AppEventsCommentLine7">
         <source>NetworkAvailabilityChanged: Raised when the network connection is connected or disconnected.</source>
-        <target state="translated">NetworkAvailabilityChanged:在連接或中斷網路連線時引發。</target>
+        <target state="translated">NetworkAvailabilityChanged:在建立或中斷網路連線時引發。</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_AdvancedBuildSettings_InvalidBaseAddress">
@@ -1607,7 +1607,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="PermissionSet_Requires">
         <source>Requires:</source>
-        <target state="translated">需要: </target>
+        <target state="translated">需要:</target>
         <note />
       </trans-unit>
       <trans-unit id="RSE_ResourceNameColumn">
@@ -2547,7 +2547,7 @@ app.config 檔的新值是 '{1}'
       </trans-unit>
       <trans-unit id="SD_CODEGENCMT_COMMON1">
         <source>This class allows you to handle specific events on the settings class:</source>
-        <target state="translated">這個類別可以讓您處理設定類別上的特定事件: </target>
+        <target state="translated">這個類別可以讓您處理設定類別上的特定事件:</target>
         <note>Comments for user part of extending generated settings class</note>
       </trans-unit>
       <trans-unit id="SD_CODEGENCMT_COMMON2">
@@ -2572,7 +2572,7 @@ app.config 檔的新值是 '{1}'
       </trans-unit>
       <trans-unit id="SD_CODEGENCMT_HOWTO_ATTACHEVTS">
         <source>To add event handlers for saving and changing settings, uncomment the lines below:</source>
-        <target state="translated">若要加入用於儲存與變更設定的事件處理常式，請取消註解下列程式行: </target>
+        <target state="translated">若要加入用於儲存與變更設定的事件處理常式，請取消註解下列程式行:</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_CODEGENCMT_HANDLE_CHANGING">
@@ -2805,7 +2805,7 @@ app.config 檔的新值是 '{1}'
       </trans-unit>
       <trans-unit id="PPG_Services_HelpLabelText">
         <source>Client application services enable your Windows-based applications to use the ASP.NET login (authentication), roles, and profile (settings) services.  </source>
-        <target state="translated">用戶端應用程式服務可以讓您的 Windows 應用程式使用 ASP.NET 登入 (驗證)、角色和設定檔 (設定) 服務。</target>
+        <target state="translated">用戶端應用程式服務可以讓您的 Windows 應用程式使用 ASP.NET 登入 (驗證)、角色和設定檔 (設定) 服務。  </target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Services_HelpLabelLink">

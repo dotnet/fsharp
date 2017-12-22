@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="CommentSelection">
         <source>Comment Selection</source>
-        <target state="translated">Dodaj komentarz do zaznaczenia</target>
+        <target state="translated">Zakomentuj zaznaczenie</target>
         <note>IVsCompoundAction::OpenCompoundAction description</note>
       </trans-unit>
       <trans-unit id="EditIntersects">
@@ -54,7 +54,7 @@
       </trans-unit>
       <trans-unit id="UncommentSelection">
         <source>Uncomment Selection</source>
-        <target state="translated">Usuń komentarz z zaznaczenia</target>
+        <target state="translated">Odkomentuj zaznaczenie</target>
         <note>IVsCompoundAction::OpenCompoundAction description</note>
       </trans-unit>
       <trans-unit id="UnsupportedFormat">

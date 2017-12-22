@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="lblPreBuildEventCommandLine.Text">
         <source>P&amp;re-build event command line:</source>
-        <target state="translated">Wiersz polecenia zdarzenia p&amp;rzed kompilacją:</target>
+        <target state="translated">Wie&amp;rsz polecenia zdarzenia sprzed kompilacji:</target>
         <note />
       </trans-unit>
       <trans-unit id="txtPreBuildEventCommandLine.AccessibleName">
@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="lblPostBuildEventCommandLine.Text">
         <source>P&amp;ost-build event command line:</source>
-        <target state="translated">Wiersz polecenia zdarzenia p&amp;o kompilacji:</target>
+        <target state="translated">Wiersz p&amp;olecenia zdarzenia po kompilacji:</target>
         <note />
       </trans-unit>
       <trans-unit id="txtPostBuildEventCommandLine.AccessibleName">

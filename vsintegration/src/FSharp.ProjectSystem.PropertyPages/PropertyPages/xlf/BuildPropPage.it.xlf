@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="lblOutputPath.Text">
         <source>&amp;Output path:</source>
-        <target state="translated">Perc&amp;orso output:</target>
+        <target state="translated">Perc&amp;orso di output:</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningAll.Text">

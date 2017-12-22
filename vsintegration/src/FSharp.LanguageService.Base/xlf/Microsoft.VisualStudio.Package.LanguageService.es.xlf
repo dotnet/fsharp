@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="CommentSelection">
         <source>Comment Selection</source>
-        <target state="translated">Poner marcas de comentario a la selección</target>
+        <target state="translated">Selección con comentarios</target>
         <note>IVsCompoundAction::OpenCompoundAction description</note>
       </trans-unit>
       <trans-unit id="EditIntersects">
@@ -54,7 +54,7 @@
       </trans-unit>
       <trans-unit id="UncommentSelection">
         <source>Uncomment Selection</source>
-        <target state="translated">Quitar marcas de comentario a la selección</target>
+        <target state="translated">Selección sin comentarios</target>
         <note>IVsCompoundAction::OpenCompoundAction description</note>
       </trans-unit>
       <trans-unit id="UnsupportedFormat">

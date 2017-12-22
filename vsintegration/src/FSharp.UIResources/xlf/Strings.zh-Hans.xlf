@@ -44,12 +44,12 @@
       </trans-unit>
       <trans-unit id="Show_completion_list_after_a_character_is_deleted">
         <source>Show completion list after a character is _deleted</source>
-        <target state="translated">删除字符后显示完成列表(_D)</target>
+        <target state="translated">删除字符后显示完成列表</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_completion_list_after_a_character_is_typed">
         <source>_Show completion list after a character is typed</source>
-        <target state="translated">键入字符后显示完成列表(_S)</target>
+        <target state="translated">键入字符后显示完成列表</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_in_memory_cross_project_references">

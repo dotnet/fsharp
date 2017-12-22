@@ -1584,7 +1584,7 @@
       </trans-unit>
       <trans-unit id="csTypeIsNotEnumType">
         <source>The type '{0}' is not a CLI enum type</source>
-        <target state="translated">El tipo '{0}' no es un tipo enum CLI.</target>
+        <target state="translated">“{0}” no es un tipo de enumeración CLI.</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeHasNonStandardDelegateType">
@@ -3874,7 +3874,7 @@
       </trans-unit>
       <trans-unit id="tcInterfaceTypesCannotBeSealed">
         <source>Interface types cannot be sealed</source>
-        <target state="translated">Los tipos de interfaz no se pueden sellar.</target>
+        <target state="translated">Los tipos de interfaz no pueden estar sellados.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidDelegateSpecification">
@@ -5819,7 +5819,7 @@
       </trans-unit>
       <trans-unit id="tcCannotOverrideSealedMethod">
         <source>Cannot override inherited member '{0}' because it is sealed</source>
-        <target state="translated">No se puede invalidar el miembro heredado '{0}' porque es sealed.</target>
+        <target state="translated">No se puede invalidar el miembro heredado “{0}” porque está sellado.</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderErrorWithContext">
@@ -6819,7 +6819,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionStatic">
         <source>Used to indicate a method or property that can be called without an instance of a type, or a value member that is shared among all instances of a type.</source>
-        <target state="translated">Se usa para indicar un método o una propiedad que se puede invocar sin ninguna instancia de un tipo, o un miembro de valor que comparten todas las instancias de un tipo.</target>
+        <target state="translated">Se usa para indicar un método o una propiedad que se puede llamar sin ninguna instancia de un tipo, o un miembro de valor que comparten todas las instancias de un tipo.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionStruct">

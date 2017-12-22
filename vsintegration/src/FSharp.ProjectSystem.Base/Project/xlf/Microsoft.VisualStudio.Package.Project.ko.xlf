@@ -69,7 +69,7 @@
       </trans-unit>
       <trans-unit id="CannotAddFileThatIsOpenInEditor">
         <source>A file with name '{0}' already exists and is open in an editor. Please give a unique name to the item you are adding, or delete the existing item first.</source>
-        <target state="translated">이름이 '{0}'인 파일이 이미 있으며 편집기에 열려 있습니다. 추가할 항목에 고유한 이름을 지정하거나 먼저 기존 항목을 삭제하십시오.</target>
+        <target state="translated">이름이 '{0}'인 파일이 이미 있으며 편집기에 열려 있습니다. 추가할 항목에 고유한 이름을 지정하거나 먼저 기존 항목을 삭제하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="CanNotSaveFileNotOpeneInEditor">
@@ -192,7 +192,7 @@
       </trans-unit>
       <trans-unit id="FileCannotBeRenamedToAnExistingFile">
         <source>A file or folder with the name '{0}' already exists on disk at this location. Please choose another name.</source>
-        <target state="translated">이름이 '{0}'인 파일 또는 폴더가 이 위치의 디스크에 이미 있습니다. 다른 이름을 선택하십시오.</target>
+        <target state="translated">이름이 '{0}'인 파일 또는 폴더가 이 위치의 디스크에 이미 있습니다. 다른 이름을 선택하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="FileCopyError">
@@ -452,7 +452,7 @@
       </trans-unit>
       <trans-unit id="FileOrFolderAlreadyExists">
         <source>A file or folder with the name '{0}' already exists on disk at this location. Please choose another name.</source>
-        <target state="translated">이름이 '{0}'인 파일 또는 폴더가 이 위치의 디스크에 이미 있습니다. 다른 이름을 선택하십시오.</target>
+        <target state="translated">이름이 '{0}'인 파일 또는 폴더가 이 위치의 디스크에 이미 있습니다. 다른 이름을 선택하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="FolderCannotBeRenamed">
@@ -587,7 +587,7 @@
       </trans-unit>
       <trans-unit id="ErrorReferenceCouldNotBeAdded">
         <source>A reference to {0} could not be added. Please make sure that the file is accessible, and that it is a valid assembly or COM component.</source>
-        <target state="translated">{0}에 대한 참조를 추가할 수 없습니다. 파일에 액세스할 수 있는지, 올바른 어셈블리 또는 COM 구성 요소인지 확인하십시오.</target>
+        <target state="translated">{0}에 대한 참조를 추가할 수 없습니다. 파일에 액세스할 수 있는지, 올바른 어셈블리 또는 COM 구성 요소인지 확인하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="DetailsImport">
@@ -627,7 +627,7 @@
       </trans-unit>
       <trans-unit id="ProjectLocationNotTrusted">
         <source>The project location is not trusted:{0}{0}{1}{0}{0}Running the application may result in security exceptions when it attempts to perform actions which require full trust.{0}{0}Click OK to ignore and continue.</source>
-        <target state="translated">프로젝트 위치를 신뢰할 수 없습니다.{0}{0}{1}{0}{0}응용 프로그램을 실행하면 완전 신뢰가 필요한 작업을 수행할 때 보안 예외가 발생할 수 있습니다.{0}{0}무시하고 계속하려면 [확인]5D;을 클릭하십시오.</target>
+        <target state="translated">프로젝트 위치를 신뢰할 수 없습니다.{0}{0}{1}{0}{0}응용 프로그램을 실행하면 완전 신뢰가 필요한 작업을 수행할 때 보안 예외가 발생할 수 있습니다.{0}{0}무시하고 계속하려면 [확인]5D;을 클릭하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="BuildEventError">
@@ -672,7 +672,7 @@
       </trans-unit>
       <trans-unit id="NoZeroImpactProjects">
         <source>Microsoft Visual F# does not support zero-impact projects. To create an F# project from this project template, either go to the Visual Studio menu 'Tools, Options..., Projects and Solutions, General' and check the box marked 'Save new projects when created', or specify &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; in the &lt;TemplateData&gt; section of this project template's .vstemplate file, and then retry this operation.</source>
-        <target state="translated">Microsoft Visual F#은 영향 값이 0인 프로젝트를 지원하지 않습니다. 이 프로젝트 템플릿에서 F# 프로젝트를 만들려면 Visual Studio 메뉴 '도구, 옵션..., 프로젝트 및 솔루션, 일반'으로 이동하여 '만들어질 때 새 프로젝트 저장' 확인란을 선택하거나, 이 프로젝트 템플릿의 .vstemplate 파일에서 &lt;TemplateData&gt; 섹션에 &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt;를 지정한 다음 이 작업을 다시 시도하십시오.</target>
+        <target state="translated">Microsoft Visual F#은 영향 값이 0인 프로젝트를 지원하지 않습니다. 이 프로젝트 템플릿에서 F# 프로젝트를 만들려면 Visual Studio 메뉴 '도구, 옵션..., 프로젝트 및 솔루션, 일반'으로 이동하여 '만들어질 때 새 프로젝트 저장' 확인란을 선택하거나, 이 프로젝트 템플릿의 .vstemplate 파일에서 &lt;TemplateData&gt; 섹션에 &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt;를 지정한 다음 이 작업을 다시 시도하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="NoWildcardsInProject">
@@ -697,7 +697,7 @@
       </trans-unit>
       <trans-unit id="CannotStartLibraries">
         <source>A project with an Output Type of Class Library cannot be started directly.\n\nIn order to debug this project, add an executable project to this solution which references the library project. Set the executable project as the startup project.</source>
-        <target state="translated">출력 형식이 클래스 라이브러리인 프로젝트는 직접 시작할 수 없습니다.\n\n이 프로젝트를 디버깅하려면 라이브러리 프로젝트를 참조하는 실행 가능 프로젝트를 이 솔루션에 추가하고 해당 실행 가능 프로젝트를 시작 프로젝트로 설정하십시오.</target>
+        <target state="translated">출력 형식이 클래스 라이브러리인 프로젝트는 직접 시작할 수 없습니다.\n\n이 프로젝트를 디버깅하려면 라이브러리 프로젝트를 참조하는 실행 가능 프로젝트를 이 솔루션에 추가하고 해당 실행 가능 프로젝트를 시작 프로젝트로 설정하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="InvalidOutputPath">

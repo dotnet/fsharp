@@ -344,7 +344,7 @@
       </trans-unit>
       <trans-unit id="buildUnrecognizedOption">
         <source>Unrecognized option: '{0}'</source>
-        <target state="translated">Unbekannte Option: '{0}'</target>
+        <target state="translated">Unbekannte Option: "{0}"</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidModuleOrNamespaceName">
@@ -4579,7 +4579,7 @@
       </trans-unit>
       <trans-unit id="typeInfoFromFirst">
         <source>from {0}</source>
-        <target state="translated">von {0}</target>
+        <target state="translated">aus {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typeInfoFromNext">
@@ -5184,7 +5184,7 @@
       </trans-unit>
       <trans-unit id="tcCannotCallAbstractBaseMember">
         <source>Cannot call an abstract base member: '{0}'</source>
-        <target state="translated">Ein abstrakter Basismember kann nicht aufgerufen werden: '{0}'</target>
+        <target state="translated">Ein abstrakter Basismember kann nicht aufgerufen werden: "{0}"</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelCannotResolveAmbiguityInUnmanaged">
@@ -6514,7 +6514,7 @@
       </trans-unit>
       <trans-unit id="CallerMemberNameIsOverriden">
         <source>The CallerMemberNameAttribute applied to parameter '{0}' will have no effect. It is overridden by the CallerFilePathAttribute.</source>
-        <target state="translated">Das auf den Parameter "{0}" angewendete CallerMemberNameAttribute besitzt keine Auswirkung. Es wird durch das CallerFilePathAttribute überschrieben.</target>
+        <target state="translated">Das auf Parameter "{0}" angewendete CallerMemberNameAttribute hat keine Auswirkung. Es wird vom CallerFilePathAttribute überschrieben.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">

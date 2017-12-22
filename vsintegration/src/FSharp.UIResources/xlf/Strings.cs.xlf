@@ -44,12 +44,12 @@
       </trans-unit>
       <trans-unit id="Show_completion_list_after_a_character_is_deleted">
         <source>Show completion list after a character is _deleted</source>
-        <target state="translated">Zobrazovat sezna_m dokončení po odstranění znaku</target>
+        <target state="translated">Zobrazovat seznam dokončení po _odstranění znaku</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_completion_list_after_a_character_is_typed">
         <source>_Show completion list after a character is typed</source>
-        <target state="translated">Zobrazovat seznam do_končení po zadání znaku</target>
+        <target state="translated">_Zobrazovat seznam dokončení po zadání znaku</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_in_memory_cross_project_references">

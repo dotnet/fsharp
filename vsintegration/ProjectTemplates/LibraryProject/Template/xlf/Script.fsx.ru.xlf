@@ -4,17 +4,17 @@
     <body>
       <trans-unit id="LearnMore">
         <source>Learn more about F# at http://fsharp.org</source>
-        <target state="new">Learn more about F# at http://fsharp.org</target>
+        <target state="translated">Дополнительные сведения о F# см. на http://fsharp.org</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeTutorial">
         <source>See the 'F# Tutorial' project for more help.</source>
-        <target state="new">See the 'F# Tutorial' project for more help.</target>
+        <target state="translated">Дополнительную справку см. в проекте "Учебник по F#".</target>
         <note />
       </trans-unit>
       <trans-unit id="Define">
         <source>Define your library scripting code here</source>
-        <target state="new">Define your library scripting code here</target>
+        <target state="translated">Определите здесь код скрипта библиотеки</target>
         <note />
       </trans-unit>
     </body>
