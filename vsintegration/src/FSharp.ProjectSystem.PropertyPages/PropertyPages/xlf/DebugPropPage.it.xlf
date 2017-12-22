@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="StartProgramBrowse.AccessibleName">
         <source>Browse for external program</source>
-        <target state="translated">Seleziona programma esterno</target>
+        <target state="translated">Cerca programma esterno</target>
         <note />
       </trans-unit>
       <trans-unit id="StartProgramBrowse.Text">
@@ -59,7 +59,7 @@
       </trans-unit>
       <trans-unit id="StartWorkingDirectoryBrowse.AccessibleName">
         <source>Browse for working directory</source>
-        <target state="translated">Seleziona directory di lavoro</target>
+        <target state="translated">Cerca directory di lavoro</target>
         <note />
       </trans-unit>
       <trans-unit id="StartWorkingDirectoryBrowse.Text">

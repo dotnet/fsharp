@@ -69,7 +69,7 @@
       </trans-unit>
       <trans-unit id="enumerationNotStarted">
         <source>Enumeration has not started. Call MoveNext.</source>
-        <target state="translated">열거가 시작되지 않았습니다. MoveNext를 호출하십시오.</target>
+        <target state="translated">열거가 시작되지 않았습니다. MoveNext를 호출하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="setContainsNoElements">
@@ -249,7 +249,7 @@
       </trans-unit>
       <trans-unit id="objIsNullAndNoType">
         <source>The object is null and no type was given.  Either pass a non-null object or a non-null type parameter.</source>
-        <target state="translated">개체가 null이며 형식이 지정되지 않았습니다. null이 아닌 개체 또는 null이 아닌 형식 매개 변수를 전달하십시오.</target>
+        <target state="translated">개체가 null이며 형식이 지정되지 않았습니다. null이 아닌 개체 또는 null이 아닌 형식 매개 변수를 전달하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="outOfRange">
@@ -499,7 +499,7 @@
       </trans-unit>
       <trans-unit id="QtmmRaw">
         <source>Type mismatch when splicing expression into quotation literal. The type of the expression tree being inserted doesn't match the type expected by the splicing operation. Expected '{0}', but received type '{1}'. Consider type-annotating with the expected expression type, e.g., (%% x : {0}) or (%x : {0}).</source>
-        <target state="translated">식을 따옴표로 묶인 리터럴로 스플라이스하는 동안 형식 불일치 문제가 발생했습니다. 삽입 중인 식 트리의 형식이 스플라이스 작업에 필요한 형식과 일치하지 않습니다. '{0}'이(가) 필요한데 '{1}'을(를) 수신했습니다. (%% x : {0}) 또는 (%x : {0})과 같이 필요한 식 형식으로 형식 주석 처리하십시오.</target>
+        <target state="translated">식을 따옴표로 묶인 리터럴로 스플라이스하는 동안 형식 불일치 문제가 발생했습니다. 삽입 중인 식 트리의 형식이 스플라이스 작업에 필요한 형식과 일치하지 않습니다. '{0}'이(가) 필요한데 '{1}'을(를) 수신했습니다. (%% x : {0}) 또는 (%x : {0})과 같이 필요한 식 형식으로 형식 주석 처리하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="QtupleAccessOutOfRange">
@@ -689,22 +689,22 @@
       </trans-unit>
       <trans-unit id="unsupportedQueryConstruct">
         <source>This is not a valid query expression. The following construct was used in a query but is not recognized by the F#-to-LINQ query translator:\n{0}\nCheck the specification of permitted queries and consider moving some of the operations out of the query expression.</source>
-        <target state="translated">올바른 쿼리 식이 아닙니다. 다음 생성자가 쿼리에 사용되었지만 F#-to-LINQ 쿼리 변환기에서 인식할 수 없습니다.\n{0}\n허용되는 쿼리의 사양을 확인하고 일부 연산을 쿼리 식 외부로 이동하십시오.</target>
+        <target state="translated">올바른 쿼리 식이 아닙니다. 다음 생성자가 쿼리에 사용되었지만 F#-to-LINQ 쿼리 변환기에서 인식할 수 없습니다.\n{0}\n허용되는 쿼리의 사양을 확인하고 일부 연산을 쿼리 식 외부로 이동하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="unsupportedQueryCall">
         <source>This is not a valid query expression. The method '{0}' was used in a query but is not recognized by the F#-to-LINQ query translator. Check the specification of permitted queries and consider moving some of the operations out of the query expression</source>
-        <target state="translated">올바른 쿼리 식이 아닙니다. '{0}' 메서드가 쿼리에 사용되었지만 F#-to-LINQ 쿼리 변환기에서 인식할 수 없습니다. 허용되는 쿼리의 사양을 확인하고 일부 연산을 쿼리 식 외부로 이동하십시오.</target>
+        <target state="translated">올바른 쿼리 식이 아닙니다. '{0}' 메서드가 쿼리에 사용되었지만 F#-to-LINQ 쿼리 변환기에서 인식할 수 없습니다. 허용되는 쿼리의 사양을 확인하고 일부 연산을 쿼리 식 외부로 이동하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="unsupportedQueryProperty">
         <source>This is not a valid query expression. The property '{0}' was used in a query but is not recognized by the F#-to-LINQ query translator. Check the specification of permitted queries and consider moving some of the operations out of the query expression.</source>
-        <target state="translated">올바른 쿼리 식이 아닙니다. '{0}' 속성이 쿼리에 사용되었지만 F#-to-LINQ 쿼리 변환기에서 인식할 수 없습니다. 허용되는 쿼리의 사양을 확인하고 일부 연산을 쿼리 식 외부로 이동하십시오.</target>
+        <target state="translated">올바른 쿼리 식이 아닙니다. '{0}' 속성이 쿼리에 사용되었지만 F#-to-LINQ 쿼리 변환기에서 인식할 수 없습니다. 허용되는 쿼리의 사양을 확인하고 일부 연산을 쿼리 식 외부로 이동하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="unsupportedQueryConstructKind">
         <source>This is not a valid query expression. The construct '{0}' was used in a query but is not recognized by the F#-to-LINQ query translator. Check the specification of permitted queries and consider moving some of the operations out of the query expression.</source>
-        <target state="translated">올바른 쿼리 식이 아닙니다. '{0}' 구문이 쿼리에 사용되었지만 F#-to-LINQ 쿼리 변환기에서 인식할 수 없습니다. 허용되는 쿼리의 사양을 확인하고 일부 연산을 쿼리 식 외부로 이동하십시오.</target>
+        <target state="translated">올바른 쿼리 식이 아닙니다. '{0}' 구문이 쿼리에 사용되었지만 F#-to-LINQ 쿼리 변환기에서 인식할 수 없습니다. 허용되는 쿼리의 사양을 확인하고 일부 연산을 쿼리 식 외부로 이동하세요.</target>
         <note />
       </trans-unit>
     </body>

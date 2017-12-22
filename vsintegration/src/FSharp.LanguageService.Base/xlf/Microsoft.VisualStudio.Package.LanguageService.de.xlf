@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="CommentSelection">
         <source>Comment Selection</source>
-        <target state="translated">Auswahl kommentieren</target>
+        <target state="translated">Kommentar für Auswahl</target>
         <note>IVsCompoundAction::OpenCompoundAction description</note>
       </trans-unit>
       <trans-unit id="EditIntersects">
@@ -54,7 +54,7 @@
       </trans-unit>
       <trans-unit id="UncommentSelection">
         <source>Uncomment Selection</source>
-        <target state="translated">Auskommentierung der Auswahl aufheben</target>
+        <target state="translated">Kommentar aus Auswahl entfernen</target>
         <note>IVsCompoundAction::OpenCompoundAction description</note>
       </trans-unit>
       <trans-unit id="UnsupportedFormat">
