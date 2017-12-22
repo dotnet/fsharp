@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="ErrorFromApplyingDefault1">
         <source>Type constraint mismatch when applying the default type '{0}' for a type inference variable. </source>
-        <target state="translated">套用類型推斷變數的預設類型 '{0}' 時，發生類型條件約束不符。</target>
+        <target state="translated">套用類型推斷變數的預設類型 '{0}' 時，發生類型條件約束不符。 </target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorFromApplyingDefault2">
@@ -364,7 +364,7 @@
       </trans-unit>
       <trans-unit id="Parser.TOKEN.HIGH.PRECEDENCE.TYAPP">
         <source>type application </source>
-        <target state="translated">類型應用程式</target>
+        <target state="translated">類型應用程式 </target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.COLON">
@@ -1169,12 +1169,12 @@
       </trans-unit>
       <trans-unit id="FixKeyword">
         <source>keyword </source>
-        <target state="translated">關鍵字</target>
+        <target state="translated">關鍵字 </target>
         <note />
       </trans-unit>
       <trans-unit id="FixSymbol">
         <source>symbol </source>
-        <target state="translated">符號</target>
+        <target state="translated">符號 </target>
         <note />
       </trans-unit>
       <trans-unit id="FixReplace">

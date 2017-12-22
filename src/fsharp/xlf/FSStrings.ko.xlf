@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="SeeAlso">
         <source>. See also {0}.</source>
-        <target state="translated">{0}도 참조하십시오.</target>
+        <target state="translated">{0}도 참조하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="ConstraintSolverTupleDiffLengths">
@@ -54,7 +54,7 @@
       </trans-unit>
       <trans-unit id="ErrorFromApplyingDefault2">
         <source> Consider adding further type constraints</source>
-        <target state="translated"> 형식 제약 조건을 더 추가하십시오.</target>
+        <target state="translated"> 형식 제약 조건을 더 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="ErrorsFromAddingSubsumptionConstraint">
@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="Recursion">
         <source>A use of the function '{0}' does not match a type inferred elsewhere. The inferred type of the function is\n    {1}.    \nThe type of the function required at this point of use is\n    {2}    {3}\nThis error may be due to limitations associated with generic recursion within a 'let rec' collection or within a group of classes. Consider giving a full type signature for the targets of recursive calls including type annotations for both argument and return types.</source>
-        <target state="translated">{0}' 함수의 사용이 다른 위치에서 유추된 형식과 일치하지 않습니다. 함수의 유추 형식은\n    {1}입니다.    \n여기서 필요한 함수의 형식은\n    {2}입니다.    {3}\n이 오류는 'let rec' 컬렉션 또는 클래스 그룹 내에서 제네릭 재귀와 관련된 제한으로 인해 발생할 수 있습니다. 인수 및 반환 형식 모두에 대한 형식 주석을 비롯하여 재귀적 호출의 대상에 전체 형식 시그니처를 지정하십시오.</target>
+        <target state="translated">{0}' 함수의 사용이 다른 위치에서 유추된 형식과 일치하지 않습니다. 함수의 유추 형식은\n    {1}입니다.    \n여기서 필요한 함수의 형식은\n    {2}입니다.    {3}\n이 오류는 'let rec' 컬렉션 또는 클래스 그룹 내에서 제네릭 재귀와 관련된 제한으로 인해 발생할 수 있습니다. 인수 및 반환 형식 모두에 대한 형식 주석을 비롯하여 재귀적 호출의 대상에 전체 형식 시그니처를 지정하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="InvalidRuntimeCoercion">
@@ -179,7 +179,7 @@
       </trans-unit>
       <trans-unit id="StaticCoercionShouldUseBox">
         <source>A coercion from the value type \n    {0}    \nto the type \n    {1}    \nwill involve boxing. Consider using 'box' instead</source>
-        <target state="translated">값 형식 \n    {0}을(를)    \n{1} 형식으로 \n    강제 변환하려면    \nboxing이 필요합니다. 대신 'box'를 사용하십시오.</target>
+        <target state="translated">값 형식 \n    {0}을(를)    \n{1} 형식으로 \n    강제 변환하려면    \nboxing이 필요합니다. 대신 'box'를 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="TypeIsImplicitlyAbstract">
@@ -1274,7 +1274,7 @@
       </trans-unit>
       <trans-unit id="DeprecatedThreadStaticBindingWarning">
         <source>Thread static and context static 'let' bindings are deprecated. Instead use a declaration of the form 'static val mutable &lt;ident&gt; : &lt;type&gt;' in a class. Add the 'DefaultValue' attribute to this declaration to indicate that the value is initialized to the default value on each new thread.</source>
-        <target state="translated">Thread 정적 및 Context 정적 'let' 바인딩은 사용되지 않습니다. 대신 클래스에 'static val mutable &lt;ident&gt; : &lt;type&gt;' 형식의 선언을 사용하십시오. 값이 각 새 스레드에서 기본값으로 초기화됨을 나타내려면 'DefaultValue' 특성을 추가하십시오.</target>
+        <target state="translated">Thread 정적 및 Context 정적 'let' 바인딩은 사용되지 않습니다. 대신 클래스에 'static val mutable &lt;ident&gt; : &lt;type&gt;' 형식의 선언을 사용하세요. 값이 각 새 스레드에서 기본값으로 초기화됨을 나타내려면 'DefaultValue' 특성을 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="FunctionValueUnexpected">
@@ -1339,17 +1339,17 @@
       </trans-unit>
       <trans-unit id="SelfRefObjCtor1">
         <source>Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references in members or within a trailing expression of the form '&lt;ctor-expr&gt; then &lt;expr&gt;'.</source>
-        <target state="translated">정의 대상 개체에 대한 재귀 참조는 런타임에 지연된 참조를 사용하여 초기화 적합성이 확인됩니다. 멤버 또는 '&lt;ctor-expr&gt; then &lt;expr&gt;' 형식의 후행 식 내에 자기 참조를 배치하십시오.</target>
+        <target state="translated">정의 대상 개체에 대한 재귀 참조는 런타임에 지연된 참조를 사용하여 초기화 적합성이 확인됩니다. 멤버 또는 '&lt;ctor-expr&gt; then &lt;expr&gt;' 형식의 후행 식 내에 자기 참조를 배치하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="SelfRefObjCtor2">
         <source>Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references within 'do' statements after the last 'let' binding in the construction sequence.</source>
-        <target state="translated">정의 대상 개체에 대한 재귀 참조는 런타임에 지연된 참조를 사용하여 초기화 적합성이 확인됩니다. 생성 시퀀스의 'do' 문 내에서 마지막 'let' 바인딩 다음에 자기 참조를 배치하십시오.</target>
+        <target state="translated">정의 대상 개체에 대한 재귀 참조는 런타임에 지연된 참조를 사용하여 초기화 적합성이 확인됩니다. 생성 시퀀스의 'do' 문 내에서 마지막 'let' 바인딩 다음에 자기 참조를 배치하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="VirtualAugmentationOnNullValuedType">
         <source>The containing type can use 'null' as a representation value for its nullary union case. Invoking an abstract or virtual member or an interface implementation on a null value will lead to an exception. If necessary add a dummy data value to the nullary constructor to avoid 'null' being used as a representation for this type.</source>
-        <target state="translated">포함하는 형식은 'null'을 해당 nullary 공용 구조체 케이스에 대한 표현 값으로 사용할 수 있습니다. null 값에 대해 추상 또는 가상 멤버나 인터페이스 구현을 호출하면 예외가 발생합니다. 필요한 경우 nullary 생성자에 더미 데이터 값을 추가하여 'null'이 이 형식의 표현으로 사용되지 않게 하십시오.</target>
+        <target state="translated">포함하는 형식은 'null'을 해당 nullary 공용 구조체 케이스에 대한 표현 값으로 사용할 수 있습니다. null 값에 대해 추상 또는 가상 멤버나 인터페이스 구현을 호출하면 예외가 발생합니다. 필요한 경우 nullary 생성자에 더미 데이터 값을 추가하여 'null'이 이 형식의 표현으로 사용되지 않게 하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="NonVirtualAugmentationOnNullValuedType">
@@ -1369,7 +1369,7 @@
       </trans-unit>
       <trans-unit id="NonUniqueInferredAbstractSlot3">
         <source>. Consider implementing interfaces '{0}' and '{1}' explicitly.</source>
-        <target state="translated">'{0}' 및 '{1}' 인터페이스를 명시적으로 구현하십시오.</target>
+        <target state="translated">'{0}' 및 '{1}' 인터페이스를 명시적으로 구현하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="NonUniqueInferredAbstractSlot4">
@@ -1474,27 +1474,27 @@
       </trans-unit>
       <trans-unit id="ValueRestriction1">
         <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">값 제한이 있습니다. 값 '{0}'에 제네릭 형식\n    {1}이(가) 있습니다.    \n'{2}'에 대한 인수를 명시적으로 만들거나, 제네릭 요소로 만들지 않으려는 경우 형식 주석을 추가하십시오.</target>
+        <target state="translated">값 제한이 있습니다. 값 '{0}'에 제네릭 형식\n    {1}이(가) 있습니다.    \n'{2}'에 대한 인수를 명시적으로 만들거나, 제네릭 요소로 만들지 않으려는 경우 형식 주석을 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction2">
         <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make '{2}' into a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">값 제한이 있습니다. 값 '{0}'에 제네릭 형식\n    {1}이(가) 있습니다.    \n'{2}'을(를) 명시적 인수가 포함된 함수로 만들거나, 제네릭 요소로 만들지 않으려는 경우 형식 주석을 추가하십시오.</target>
+        <target state="translated">값 제한이 있습니다. 값 '{0}'에 제네릭 형식\n    {1}이(가) 있습니다.    \n'{2}'을(를) 명시적 인수가 포함된 함수로 만들거나, 제네릭 요소로 만들지 않으려는 경우 형식 주석을 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction3">
         <source>Value restriction. This member has been inferred to have generic type\n    {0}    \nConstructors and property getters/setters cannot be more generic than the enclosing type.  Add a type annotation to indicate the exact types involved.</source>
-        <target state="translated">값 제한이 있습니다. 이 멤버는 제네릭 형식\n    {0}을(를) 가지는 것으로 유추되었습니다.    \n생성자 및 속성 getter/setter는 바깥쪽 형식보다 일반적일 수 없습니다. 형식 주석을 추가하여 관련 형식을 정확히 나타내십시오.</target>
+        <target state="translated">값 제한이 있습니다. 이 멤버는 제네릭 형식\n    {0}을(를) 가지는 것으로 유추되었습니다.    \n생성자 및 속성 getter/setter는 바깥쪽 형식보다 일반적일 수 없습니다. 형식 주석을 추가하여 관련 형식을 정확히 나타내세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction4">
         <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">값 제한이 있습니다. 값 '{0}'은(는) 제네릭 형식\n    {1}을(를) 가지는 것으로 유추되었습니다.    \n'{2}'에 대한 인수를 명시적으로 만들거나, 제네릭 요소로 만들지 않으려는 경우 형식 주석을 추가하십시오.</target>
+        <target state="translated">값 제한이 있습니다. 값 '{0}'은(는) 제네릭 형식\n    {1}을(를) 가지는 것으로 유추되었습니다.    \n'{2}'에 대한 인수를 명시적으로 만들거나, 제네릭 요소로 만들지 않으려는 경우 형식 주석을 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueRestriction5">
         <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither define '{2}' as a simple data term, make it a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">값 제한이 있습니다. 값 '{0}'은(는) 제네릭 형식\n    {1}을(를) 가지는 것으로 유추되었습니다.    \n'{2}'을(를) 단순 데이터 용어로 정의하거나, 명시적 인수가 포함된 함수로 만들거나, 제네릭 요소로 만들지 않으려는 경우 형식 주석을 추가하십시오.</target>
+        <target state="translated">값 제한이 있습니다. 값 '{0}'은(는) 제네릭 형식\n    {1}을(를) 가지는 것으로 유추되었습니다.    \n'{2}'을(를) 단순 데이터 용어로 정의하거나, 명시적 인수가 포함된 함수로 만들거나, 제네릭 요소로 만들지 않으려는 경우 형식 주석을 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="RecoverableParseError">
@@ -1554,7 +1554,7 @@
       </trans-unit>
       <trans-unit id="HashDirectiveNotAllowedInNonScript">
         <source>This directive may only be used in F# script files (extensions .fsx or .fsscript). Either remove the directive, move this code to a script file or delimit the directive with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">이 지시문은 F# 스크립트 파일(확장명 .fsx 또는 .fsscript)에서만 사용할 수 있습니다. 지시문을 제거하거나, 이 코드를 스크립트 파일로 이동하거나, 지시문을 '#if INTERACTIVE'/'#endif'로 구분하십시오.</target>
+        <target state="translated">이 지시문은 F# 스크립트 파일(확장명 .fsx 또는 .fsscript)에서만 사용할 수 있습니다. 지시문을 제거하거나, 이 코드를 스크립트 파일로 이동하거나, 지시문을 '#if INTERACTIVE'/'#endif'로 구분하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="FileNameNotResolved">

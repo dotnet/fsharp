@@ -4,17 +4,17 @@
     <body>
       <trans-unit id="LearnMore">
         <source>Learn more about F# at http://fsharp.org</source>
-        <target state="new">Learn more about F# at http://fsharp.org</target>
+        <target state="translated">Altre informazioni su F# all'indirizzo http://fsharp.org</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeTutorial">
         <source>See the 'F# Tutorial' project for more help.</source>
-        <target state="new">See the 'F# Tutorial' project for more help.</target>
+        <target state="translated">Per altre informazioni, vedere il progetto 'Esercitazione su F#'.</target>
         <note />
       </trans-unit>
       <trans-unit id="Return">
         <source>return an integer exit code</source>
-        <target state="new">return an integer exit code</target>
+        <target state="translated">restituisce un intero come codice di uscita</target>
         <note />
       </trans-unit>
     </body>
