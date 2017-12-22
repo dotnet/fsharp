@@ -85,10 +85,9 @@ type internal FSharpCompletionProvider
         else
             let triggerPosition = caretPosition - 1
             let triggerChar = sourceText.[triggerPosition]
-            let prevChar = sourceText.[triggerPosition - 1]
-            
+
             // do not trigger completion if it's not single dot, i.e. range expression
-            if not Settings.IntelliSense.ShowAfterCharIsTyped && prevChar = '.' then
+            if not Settings.IntelliSense.ShowAfterCharIsTyped && triggerPosition > 0 && sourceText.[triggerPosition - 1] = '.' then
                 false
             else
                 let documentId, filePath, defines = getInfo()
