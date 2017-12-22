@@ -274,6 +274,18 @@ xVal**y
         Assert.IsTrue(triggered, "Completion should trigger after typing an identifier that follows a mathematical operation")
 
 [<Test>]
+let ShouldTriggerCompletionAtStartOfFileWithInsertion =
+    let fileContents = """
+l"""
+
+    let marker = "l"
+    let caretPosition = fileContents.IndexOf(marker) + marker.Length
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    let getInfo() = documentId, filePath, []
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    Assert.IsTrue(triggered, "Completion should trigger after typing an Insertion character at the top of the file, e.g. a function definition in a new script file.")
+
+[<Test>]
 let ShouldDisplayTypeMembers() =
     let fileContents = """
 type T1() =
