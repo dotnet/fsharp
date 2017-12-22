@@ -82,7 +82,6 @@
     <EmbeddedResource Include="$(FSharpSourcesRoot)/fsharp/FSStrings.resx">
       <Link>FSStrings.resx</Link>
       <LogicalName>FSStrings.resources</LogicalName>
-      <LogicalName>fsstrings.resources</LogicalName>
     </EmbeddedResource>
     <FsYacc Include="$(FSharpSourcesRoot)\absil\ilpars.fsy">
       <OtherFlags>--module Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiParser --open Microsoft.FSharp.Compiler.AbstractIL --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
