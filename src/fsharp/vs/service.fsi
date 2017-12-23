@@ -263,7 +263,7 @@ type internal FSharpCheckFileResults =
     member internal GetVisibleNamespacesAndModulesAtPoint : pos -> Async<Tast.ModuleOrNamespaceRef[]>
 
     /// Find the most precise display environment for the given line and column.
-    member GetDisplayEnvForPos : pos : pos -> Async<DisplayEnv option>
+    member internal GetDisplayEnvForPos : pos : pos -> Async<DisplayEnv option>
 
     /// Determines if a long ident is resolvable at a specific point.
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
