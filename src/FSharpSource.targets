@@ -2,6 +2,12 @@
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
+  <PropertyGroup>
+    <RepoRoot>$(MSBuildThisFileDirectory)..\</RepoRoot>
+  </PropertyGroup>
+
+  <Import Project="..\build\targets\GitHash.props" />
+
   <Choose>
     <When Condition="'$(Configuration)' == 'Debug' or '$(Configuration)' == 'Release' ">
       <PropertyGroup>
@@ -26,6 +32,7 @@
               <PropertyGroup>
                 <DelaySign>true</DelaySign>
                 <StrongNames>true</StrongNames>
+                <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
               </PropertyGroup>
             </Otherwise>
           </Choose>
@@ -273,15 +280,7 @@
     </Exec>
 
     <!-- https://raw.githubusercontent.com/KevinRansom/visualfsharp/98e8c9a2ca09a36ebd024eb424fc050a831053cd/build.cmd  -->
-    <Exec Command="git rev-parse HEAD" ConsoleToMsBuild="true" Condition = " '$(TF_BUILD)' != 'True' ">
-      <Output TaskParameter="ConsoleOutput" PropertyName="LatestCommit" />
-    </Exec>
-
-    <Exec Command="git merge-base --fork-point refs/remotes/visualfsharptools/master HEAD" ConsoleToMsBuild="true" Condition = " '$(TF_BUILD)' == 'True' ">
-      <Output TaskParameter="ConsoleOutput" PropertyName="LatestCommit" />
-    </Exec>
-
-    <WriteLinesToFile File="$(IntermediateOutputPath)source_link.json" Overwrite="true" Lines='{"documents": { "$(SourceLinkRoot)\\*" : "$(RemoteUri.Replace(".git", "").Replace("github.com", "raw.githubusercontent.com"))/$(LatestCommit)/*" }}' />
+    <WriteLinesToFile File="$(IntermediateOutputPath)source_link.json" Overwrite="true" Lines='{"documents": { "$(SourceLinkRoot)\\*" : "$(RemoteUri.Replace(".git", "").Replace("github.com", "raw.githubusercontent.com"))/$(GitHeadSha)/*" }}' />
   </Target>
 
     <!-- If BuildVersionFilePath not specified then do nothing  -->
@@ -402,6 +401,53 @@
                        Language="$(Language)"
                        OutputFile="$(GeneratedFSharpInternalsVisibleToFile)">
       <Output TaskParameter="OutputFile" ItemName="CompileBefore" />
+      <Output TaskParameter="OutputFile" ItemName="FileWrites" />
+    </WriteCodeFragment>
+  </Target>
+
+  <Target Name="GenerateAssemblyFileVersion"
+          BeforeTargets="CoreCompile"
+          Condition="'$(Configuration)' != 'Proto'">
+    <PropertyGroup>
+      <GeneratedFSharpAssemblyVersionFile>$(IntermediateOutputPath)$(MSBuildProjectName).AssemblyVersion$(DefaultLanguageSourceExtension)</GeneratedFSharpAssemblyVersionFile>
+      <!-- AssemblyInformationalVersionAttribute issues a by-design warning if the value passed isn't of the form #.#.#.#, but we specifically want to suppress this to allow the commit hash to be embedded. -->
+      <NoWarn Condition="'$(Language)' == 'F#'">2003;$(NoWarn)</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <_AssemblyVersionAttributes Include="System.Reflection.AssemblyCompanyAttribute">
+        <_Parameter1>Microsoft Corporation</_Parameter1>
+      </_AssemblyVersionAttributes>
+      <_AssemblyVersionAttributes Include="System.Reflection.AssemblyCopyrightAttribute">
+        <_Parameter1>&#169; Microsoft Corporation.  All Rights Reserved.</_Parameter1>
+      </_AssemblyVersionAttributes>
+      <_AssemblyVersionAttributes Include="System.Reflection.AssemblyDescriptionAttribute">
+        <_Parameter1>$(AssemblyName).dll</_Parameter1>
+      </_AssemblyVersionAttributes>
+      <_AssemblyVersionAttributes Include="System.Reflection.AssemblyFileVersionAttribute">
+        <_Parameter1>$(Build_FileVersion)</_Parameter1>
+      </_AssemblyVersionAttributes>
+      <_AssemblyVersionAttributes Include="System.Reflection.AssemblyInformationalVersionAttribute">
+        <_Parameter1>$(MicroBuildAssemblyVersion).  Commit Hash: $(GitHeadSha).</_Parameter1>
+      </_AssemblyVersionAttributes>
+      <_AssemblyVersionAttributes Include="System.Reflection.AssemblyProductAttribute">
+        <_Parameter1>Microsoft&#174; F#</_Parameter1>
+      </_AssemblyVersionAttributes>
+      <_AssemblyVersionAttributes Include="System.Reflection.AssemblyTitleAttribute">
+        <_Parameter1>$(AssemblyName).dll</_Parameter1>
+      </_AssemblyVersionAttributes>
+      <_AssemblyVersionAttributes Include="System.Reflection.AssemblyVersionAttribute">
+        <_Parameter1>$(MicroBuildAssemblyVersion)</_Parameter1>
+      </_AssemblyVersionAttributes>
+    </ItemGroup>
+
+    <WriteCodeFragment AssemblyAttributes="@(_AssemblyVersionAttributes)"
+                       Language="$(Language)"
+                       OutputFile="$(GeneratedFSharpAssemblyVersionFile)">
+      <!-- For FSharp.Core, assembly version must be inserted after all Core files, as it defines F# basic types (strings) -->
+      <Output TaskParameter="OutputFile" ItemName="Compile" Condition="'$(AssemblyName)' == 'FSharp.Core'" />
+      <!-- For other assemblies, this must be inserted before all source files, to keep exe's EntryPoints (if any) as the last source file -->
+      <Output TaskParameter="OutputFile" ItemName="CompileBefore" Condition="'$(AssemblyName)' != 'FSharp.Core'" />
       <Output TaskParameter="OutputFile" ItemName="FileWrites" />
     </WriteCodeFragment>
   </Target>

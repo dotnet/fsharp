@@ -1174,7 +1174,7 @@
       </trans-unit>
       <trans-unit id="chkBaseUsedInInvalidWay">
         <source>The 'base' keyword is used in an invalid way. Base calls cannot be used in closures. Consider using a private member to make base calls.</source>
-        <target state="translated">Parola chiave 'base' utilizzata in modo non valido. Le chiamate di base non possono essere utilizzate nelle chiusure. Provare a utilizzare un membro privato per effettuare le chiamate di base.</target>
+        <target state="translated">La parola chiave 'base' è usata in modo non valido. Le chiamate di base non possono essere usate nelle chiusure. Provare a usare un membro privato per effettuare le chiamate di base.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkVariableUsedInInvalidWay">
@@ -1584,7 +1584,7 @@
       </trans-unit>
       <trans-unit id="csTypeIsNotEnumType">
         <source>The type '{0}' is not a CLI enum type</source>
-        <target state="translated">Il tipo '{0}' non è un tipo di enumerazione CLI</target>
+        <target state="translated">Il tipo '{0}' non è un tipo enumerazione CLI</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeHasNonStandardDelegateType">
@@ -1974,7 +1974,7 @@
       </trans-unit>
       <trans-unit id="parsEmptyTypeDefinition">
         <source>A type definition requires one or more members or other declarations. If you intend to define an empty class, struct or interface, then use 'type ... = class end', 'interface end' or 'struct end'.</source>
-        <target state="translated">In una definizione di tipo sono necessari uno o più membri oppure altre dichiarazioni. Se si desidera definire una classe, un'interfaccia o uno struct vuoto, utilizzare 'type ... = class end', 'interface end' o 'struct end'.</target>
+        <target state="translated">In una definizione di tipo sono necessari uno o più membri oppure altre dichiarazioni. Se si vuole definire una classe, un'interfaccia o uno struct vuoto, usare 'type ... = class end', 'interface end' o 'struct end'.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnmatchedWith">
@@ -2064,7 +2064,7 @@
       </trans-unit>
       <trans-unit id="parsEnumTypesCannotHaveVisibilityDeclarations">
         <source>Accessibility modifiers are not permitted in this position for enum types</source>
-        <target state="translated">Modificatori di accessibilità non consentiti in questa posizione per tipi di enumerazione</target>
+        <target state="translated">I modificatori di accessibilità non sono consentiti in questa posizione per i tipi enumerazione</target>
         <note />
       </trans-unit>
       <trans-unit id="parsAllEnumFieldsRequireValues">
@@ -2634,7 +2634,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidConstraintTypeSealed">
         <source>Invalid constraint: the type used for the constraint is sealed, which means the constraint could only be satisfied by at most one solution</source>
-        <target state="translated">Vincolo non valido: il tipo utilizzato per il vincolo è Sealed, il che significa che il vincolo può essere soddisfatto al massimo da una soluzione</target>
+        <target state="translated">Vincolo non valido: il tipo usato per il vincolo è sealed, il che significa che il vincolo può essere soddisfatto al massimo da una soluzione</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidEnumConstraint">
@@ -3004,7 +3004,7 @@
       </trans-unit>
       <trans-unit id="tcPredefinedTypeCannotBeUsedAsSuperType">
         <source>The types System.ValueType, System.Enum, System.Delegate, System.MulticastDelegate and System.Array cannot be used as super types in an object expression or class</source>
-        <target state="translated">I tipi System.ValueType, System.Enum, System.Delegate, System.MulticastDelegate e System.Array non possono essere utilizzati come tipi super in una classe o un'espressione di oggetto</target>
+        <target state="translated">I tipi System.ValueType, System.Enum, System.Delegate, System.MulticastDelegate e System.Array non possono essere usati come tipi super in una classe o un'espressione di oggetto</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNewMustBeUsedWithNamedType">
@@ -3844,7 +3844,7 @@
       </trans-unit>
       <trans-unit id="tcTypesAreAlwaysSealedEnum">
         <source>Enum types are always sealed</source>
-        <target state="translated">I tipi di enumerazione sono sempre Sealed</target>
+        <target state="translated">I tipi enumerazione sono sempre sealed</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInterfaceTypesAndDelegatesCannotContainFields">
@@ -3909,7 +3909,7 @@
       </trans-unit>
       <trans-unit id="tcMembersThatExtendInterfaceMustBePlacedInSeparateModule">
         <source>Members that extend interface, delegate or enum types must be placed in a module separate to the definition of the type. This module must either have the AutoOpen attribute or be opened explicitly by client code to bring the extension members into scope.</source>
-        <target state="translated">I membri che estendono tipi delegati, di interfaccia o di enumerazione devono trovarsi in un modulo separato rispetto alla definizione del tipo. Il modulo deve avere l'attributo AutoOpen oppure essere aperto in modo esplicito dal codice client in modo da portare i membri di estensione nell'ambito.</target>
+        <target state="translated">I membri che estendono tipi delegati, interfaccia o enumerazione devono trovarsi in un modulo separato rispetto alla definizione del tipo. Il modulo deve avere l'attributo AutoOpen oppure essere aperto in modo esplicito dal codice client in modo da portare i membri di estensione nell'ambito.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcDeclaredTypeParametersForExtensionDoNotMatchOriginal">
@@ -4079,7 +4079,7 @@
       </trans-unit>
       <trans-unit id="optsCopyright">
         <source>Copyright (c) Microsoft Corporation. All Rights Reserved.</source>
-        <target state="translated">Copyright (c) Microsoft Corporation. Tutti i diritti riservati.</target>
+        <target state="translated">Copyright (c) Microsoft Corporation. Tutti i diritti sono riservati.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsCopyrightCommunity">
@@ -5349,7 +5349,7 @@
       </trans-unit>
       <trans-unit id="parsUnexpectedQuotationOperatorInTypeAliasDidYouMeanVerbatimString">
         <source>Unexpected quotation operator '&lt;@' in type definition. If you intend to pass a verbatim string as a static argument to a type provider, put a space between the '&lt;' and '@' characters.</source>
-        <target state="translated">Operatore di quotation '&lt;@' imprevisto nella definizione di tipo. Se si desidera passare una stringa verbatim come argomento statico a un provider di tipi, mettere uno spazio tra i caratteri '&lt;' e '@'.</target>
+        <target state="translated">Operatore di quotation '&lt;@' imprevisto nella definizione di tipo. Se si vuole passare una stringa verbatim come argomento statico a un provider di tipi, inserire uno spazio tra i caratteri '&lt;' e '@'.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsErrorParsingAsOperatorName">

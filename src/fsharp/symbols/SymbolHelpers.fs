@@ -13,7 +13,6 @@ open System.IO
 
 open Microsoft.FSharp.Core.Printf
 open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library  
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
 
@@ -31,7 +30,6 @@ open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.InfoReader
-open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.CompileOps
 
 module EnvMisc2 =
@@ -152,15 +150,14 @@ type internal CompilationErrorLogger (debugName: string, options: FSharpErrorSev
 
     override x.DiagnosticSink(exn, isError) = 
         if isError || ReportWarningAsError options exn then
-            diagnostics.Add(exn, isError)
+            diagnostics.Add(exn, FSharpErrorSeverity.Error)
             errorCount <- errorCount + 1
         else if ReportWarning options exn then
-            diagnostics.Add(exn, isError)
+            diagnostics.Add(exn, FSharpErrorSeverity.Warning)
 
     override x.ErrorCount = errorCount
 
-    member x.GetErrors() = 
-        [ for (e, isError) in diagnostics -> e, (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning) ]
+    member x.GetErrors() = List.ofSeq diagnostics
 
 
 /// This represents the global state established as each task function runs as part of the build.
@@ -201,11 +198,7 @@ module ErrorHelpers =
 //----------------------------------------------------------------------------
 // Object model for tooltips and helpers for their generation from items
 
-#if COMPILER_PUBLIC_API
-type Layout = Internal.Utilities.StructuredFormat.Layout
-#else
-type internal Layout = Internal.Utilities.StructuredFormat.Layout
-#endif
+type public Layout = Internal.Utilities.StructuredFormat.Layout
 
 /// Describe a comment as either a block of text or a file+signature reference into an intellidoc file.
 [<RequireQualifiedAccess>]
@@ -241,32 +234,19 @@ type FSharpToolTipElement<'T> =
         Group [ FSharpToolTipElementData<'T>.Create(layout, xml, ?typeMapping=typeMapping, ?paramName=paramName, ?remarks=remarks) ]
 
 /// A single data tip display element with where text is expressed as string
-#if COMPILER_PUBLIC_API
-type FSharpToolTipElement = FSharpToolTipElement<string>
-#else
-type internal FSharpToolTipElement = FSharpToolTipElement<string>
-#endif
+type public FSharpToolTipElement = FSharpToolTipElement<string>
 
 
 /// A single data tip display element with where text is expressed as <see cref="Layout"/>
-#if COMPILER_PUBLIC_API
-type FSharpStructuredToolTipElement = FSharpToolTipElement<Layout>
-#else
-type internal FSharpStructuredToolTipElement = FSharpToolTipElement<Layout>
-#endif
+type public FSharpStructuredToolTipElement = FSharpToolTipElement<Layout>
 
 /// Information for building a data tip box.
 type FSharpToolTipText<'T> = 
     /// A list of data tip elements to display.
     | FSharpToolTipText of FSharpToolTipElement<'T> list  
 
-#if COMPILER_PUBLIC_API
-type FSharpToolTipText = FSharpToolTipText<string>
-type FSharpStructuredToolTipText = FSharpToolTipText<Layout>
-#else
-type internal FSharpToolTipText = FSharpToolTipText<string>
-type internal FSharpStructuredToolTipText = FSharpToolTipText<Layout>
-#endif
+type public FSharpToolTipText = FSharpToolTipText<string>
+type public FSharpStructuredToolTipText = FSharpToolTipText<Layout>
 
 module Tooltips =
     let ToFSharpToolTipElement tooltip = 

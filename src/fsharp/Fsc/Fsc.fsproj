@@ -26,13 +26,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="VisualFSharp.Unittests" />
+    <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.fsc.exe.fs">
-      <Link>Resources/assemblyinfo.fsc.exe.fs</Link>
-    </Compile>
     <Compile Include="..\fscmain.fs">
       <Link>fscmain.fs</Link>
     </Compile>

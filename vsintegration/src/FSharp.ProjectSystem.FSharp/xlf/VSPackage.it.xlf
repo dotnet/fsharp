@@ -19,7 +19,7 @@
       </trans-unit>
       <trans-unit id="AssemblyName">
         <source>Assembly Name</source>
-        <target state="translated">Nome assembly</target>
+        <target state="translated">Nome dell'assembly</target>
         <note />
       </trans-unit>
       <trans-unit id="AssemblyNameDescription">
