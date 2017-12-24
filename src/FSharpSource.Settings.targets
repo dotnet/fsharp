@@ -38,9 +38,9 @@
     <_Build_Number>$(BUILD_BUILDNUMBER.Substring(9))</_Build_Number>
     <Build_FileVersion>$(_Build_Year).$(_Build_Month).$(_Build_Day).$(_Build_Number)</Build_FileVersion>
 
-    <FSCoreVersion>4.4.1.0</FSCoreVersion>
+    <FSCoreVersion>4.4.3.0</FSCoreVersion>
     <MicroBuildAssemblyVersion Condition="'$(MicroBuildAssemblyVersion)' == ''">$(FSCoreVersion)</MicroBuildAssemblyVersion>
-    <MicroBuildAssemblyVersion Condition="'$(UseVsMicroBuildAssemblyVersion)' == 'true'">15.4.1.0</MicroBuildAssemblyVersion>
+    <MicroBuildAssemblyVersion Condition="'$(UseVsMicroBuildAssemblyVersion)' == 'true'">15.4.3.0</MicroBuildAssemblyVersion>
 
     <!--
 
