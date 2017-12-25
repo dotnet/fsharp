@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="Show_completion_list_after_a_character_is_typed">
         <source>_Show completion list after a character is typed</source>
-        <target state="translated">_Mostrar lista de conclusão depois que um caractere for digitado</target>
+        <target state="translated">_Mostrar lista de conclusão depois que um caractere é digitado</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_in_memory_cross_project_references">

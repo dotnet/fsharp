@@ -484,7 +484,7 @@
       </trans-unit>
       <trans-unit id="ProjectRenderFolderMultiple">
         <source>The project '{0}' could not be opened because opening it would cause a folder to be rendered multiple times in the solution explorer. One such problematic item is '{1}'. To open this project in Visual Studio, first edit the project file and fix the problem.</source>
-        <target state="translated">{0}' 프로젝트를 열면 솔루션 탐색기에서 폴더가 여러 번 렌더링될 수 있기 때문에 이 프로젝트를 열 수 없습니다. 문제가 있는 항목 중 하나가 '{1}'입니다. Visual Studio에서 이 프로젝트를 열려면 먼저 프로젝트 파일을 편집하여 문제를 해결하십시오.</target>
+        <target state="translated">{0}' 프로젝트를 열면 솔루션 탐색기에서 폴더가 여러 번 렌더링될 수 있기 때문에 이 프로젝트를 열 수 없습니다. 문제가 있는 항목 중 하나가 '{1}'입니다. Visual Studio에서 이 프로젝트를 열려면 먼저 프로젝트 파일을 편집하여 문제를 해결하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="PropertyDefaultNamespace">
@@ -539,7 +539,7 @@
       </trans-unit>
       <trans-unit id="AddReferenceAssemblyPageDialogNoItemsText">
         <source>All of the Framework assemblies are already referenced. Please use the Object Browser to explore the references in the Framework.</source>
-        <target state="translated">모든 Framework 어셈블리가 이미 참조되었습니다. [개체 브라우저]5D;를 사용하여 Framework에서 참조를 탐색하십시오.</target>
+        <target state="translated">모든 Framework 어셈블리가 이미 참조되었습니다. [개체 브라우저]5D;를 사용하여 Framework에서 참조를 탐색하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpCoreVersionIsNotLegacyCompatible">

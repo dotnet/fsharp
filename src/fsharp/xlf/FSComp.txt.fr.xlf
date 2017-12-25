@@ -6514,7 +6514,7 @@
       </trans-unit>
       <trans-unit id="CallerMemberNameIsOverriden">
         <source>The CallerMemberNameAttribute applied to parameter '{0}' will have no effect. It is overridden by the CallerFilePathAttribute.</source>
-        <target state="translated">L'attribut CallerMemberNameAttribute appliqué au paramètre '{0}' n'a aucun effet. Il est remplacé par CallerFilePathAttribute.</target>
+        <target state="translated">CallerMemberNameAttribute, qui est appliqué au paramètre '{0}', n'aura aucun effet. Il est remplacé par CallerFilePathAttribute.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">

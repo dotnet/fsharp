@@ -4,17 +4,17 @@
     <body>
       <trans-unit id="LearnMore">
         <source>Learn more about F# at http://fsharp.org</source>
-        <target state="new">Learn more about F# at http://fsharp.org</target>
+        <target state="translated">請參閱 http://fsharp.org，進一步了解 F#</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeTutorial">
         <source>See the 'F# Tutorial' project for more help.</source>
-        <target state="new">See the 'F# Tutorial' project for more help.</target>
+        <target state="translated">請參閱「F# 教學課程」專案，取得更多說明。</target>
         <note />
       </trans-unit>
       <trans-unit id="Define">
         <source>Define your library scripting code here</source>
-        <target state="new">Define your library scripting code here</target>
+        <target state="translated">在這裡定義程式庫指令碼程式碼</target>
         <note />
       </trans-unit>
     </body>

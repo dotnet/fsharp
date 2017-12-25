@@ -287,7 +287,7 @@
       </trans-unit>
       <trans-unit id="ProjectContainsCircularReferences">
         <source>A reference to library '{0}' cannot be added. Adding this project as a reference would cause a circular dependency. </source>
-        <target state="translated">無法加入程式庫 '{0}' 的參考。以參考方式加入此專案將導致循環相依性。</target>
+        <target state="translated">無法加入程式庫 '{0}' 的參考。以參考方式加入此專案將導致循環相依性。 </target>
         <note />
       </trans-unit>
       <trans-unit id="ProjectFile">

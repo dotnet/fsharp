@@ -400,7 +400,7 @@ Wählen Sie einen gültigen Ordnerpfad aus.</target>
       </trans-unit>
       <trans-unit id="PPG_Compile_42024">
         <source>Unused local variable</source>
-        <target state="translated">Nicht verwendete lokale Variable.</target>
+        <target state="translated">Nicht verwendete lokale Variable</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_42025">

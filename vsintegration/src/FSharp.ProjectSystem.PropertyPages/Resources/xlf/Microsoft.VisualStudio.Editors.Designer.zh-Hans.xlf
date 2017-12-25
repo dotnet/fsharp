@@ -74,12 +74,12 @@
       </trans-unit>
       <trans-unit id="PPG_PreBuildCommandLineTitle">
         <source>Pre-build Event Command Line</source>
-        <target state="translated">预先生成事件命令行</target>
+        <target state="translated">生成前事件命令行</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_PostBuildCommandLineTitle">
         <source>Post-build Event Command Line</source>
-        <target state="translated">后期生成事件命令行</target>
+        <target state="translated">生成后事件命令行</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_OutputPathNotSecure">

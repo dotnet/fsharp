@@ -9,12 +9,12 @@
       </trans-unit>
       <trans-unit id="chkPrefer32Bit.Text">
         <source>&amp;Prefer 32-bit</source>
-        <target state="translated">&amp;Preferuj 32-bitowe</target>
+        <target state="translated">&amp;Preferuj wersję 32-bitową</target>
         <note />
       </trans-unit>
       <trans-unit id="outputLabel.Text">
         <source>Output</source>
-        <target state="translated">Dane wyjściowe</target>
+        <target state="translated">Wyjściowe</target>
         <note />
       </trans-unit>
       <trans-unit id="generalLabel.Text">
@@ -44,17 +44,17 @@
       </trans-unit>
       <trans-unit id="lblOutputPath.Text">
         <source>&amp;Output path:</source>
-        <target state="translated">Ścieżka wyjści&amp;owa:</target>
+        <target state="translated">Ścieżka &amp;wyjściowa:</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningAll.Text">
         <source>A&amp;ll</source>
-        <target state="translated">&amp;Wszystkie</target>
+        <target state="translated">W&amp;szystkie</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningSpecific.Text">
         <source>Specif&amp;ic warnings:</source>
-        <target state="translated">Określone ostrzeżen&amp;ia:</target>
+        <target state="translated">Specy&amp;ficzne ostrzeżenia:</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningNone.Text">

@@ -2497,7 +2497,7 @@ Voulez-vous mettre à jour la valeur dans le fichier .settings ?</target>
       </trans-unit>
       <trans-unit id="SD_ERR_AbstractTypesNotSupported_1Arg">
         <source>Abstract types are not supported.</source>
-        <target state="translated">Les types abstraits ne sont pas pris en charge.</target>
+        <target state="translated">Les types abstract ne sont pas pris en charge.</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_ERR_RenameNotSupported">

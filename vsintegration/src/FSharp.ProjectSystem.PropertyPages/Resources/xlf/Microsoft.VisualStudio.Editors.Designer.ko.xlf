@@ -295,7 +295,7 @@ Please select a valid folder path.</source>
       </trans-unit>
       <trans-unit id="PPG_Application_MyAppCommentLine4">
         <source> Solution Explorer), and make changes on the Application tab.</source>
-        <target state="translated"> 두 번 클릭)한 다음 [응용 프로그램] 탭에서 변경하십시오.</target>
+        <target state="translated"> 두 번 클릭)한 다음 [응용 프로그램] 탭에서 변경하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Application_InvalidIdentifierStartupForm_1Arg">
@@ -2143,7 +2143,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_DlgTitle_AddNew">
         <source>Please specify where to save the new file</source>
-        <target state="translated">새 파일을 저장할 위치를 지정하십시오.</target>
+        <target state="translated">새 파일을 저장할 위치를 지정하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="RSE_Dlg_ReplaceExistingFile">
@@ -2158,7 +2158,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Dlg_ExportMultiple">
         <source>Select a folder in which to export the resources.</source>
-        <target state="translated">리소스를 내보낼 대상 폴더를 선택하십시오.</target>
+        <target state="translated">리소스를 내보낼 대상 폴더를 선택하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="RSE_Dlg_ContinueAnyway">
@@ -2193,7 +2193,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_Task_WarningCustomToolNotSet">
         <source>Double-click here to enable strongly-typed resources for this file.</source>
-        <target state="translated">이 파일에 대해 강력한 형식의 리소스를 사용하려면 여기를 두 번 클릭하십시오.</target>
+        <target state="translated">이 파일에 대해 강력한 형식의 리소스를 사용하려면 여기를 두 번 클릭하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="RSE_Task_InvalidName_1Arg">
@@ -2572,7 +2572,7 @@ app.config 파일의 새 값은 '{1}'입니다.
       </trans-unit>
       <trans-unit id="SD_CODEGENCMT_HOWTO_ATTACHEVTS">
         <source>To add event handlers for saving and changing settings, uncomment the lines below:</source>
-        <target state="translated">설정을 저장 및 변경하기 위한 이벤트 처리기를 추가하려면 아래 줄에서 주석 처리를 제거하십시오.</target>
+        <target state="translated">설정을 저장 및 변경하기 위한 이벤트 처리기를 추가하려면 아래 줄에서 주석 처리를 제거하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_CODEGENCMT_HANDLE_CHANGING">
@@ -2582,7 +2582,7 @@ app.config 파일의 새 값은 '{1}'입니다.
       </trans-unit>
       <trans-unit id="SD_CODEGENCMT_HANDLE_SAVING">
         <source>Add code to handle the SettingsSaving event here.</source>
-        <target state="translated">SettingsSaving 이벤트를 처리하는 코드를 여기에 추가하십시오.</target>
+        <target state="translated">SettingsSaving 이벤트를 처리하는 코드를 여기에 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_CODEGEN_FAILEDOPENCREATEEXTENDINGFILE">
@@ -2875,7 +2875,7 @@ app.config 파일의 새 값은 '{1}'입니다.
       </trans-unit>
       <trans-unit id="PPG_Services_connectionStringValueDefaultDisplayValue">
         <source>Specify a connection string to a SQL Server database, or use the special connection string "Data Source = |SQL/CE|", which causes SQL Server Compact to generate local database files for offline storage.</source>
-        <target state="translated">SQL Server 데이터베이스에 대한 연결 문자열을 지정하거나 "Data Source = |SQL/CE|"라는 특정 연결 문자열을 사용하십시오. 이 특정 연결 문자열을 사용하면 SQL Server Compact에서 오프라인 저장소에 로컬 데이터베이스 파일을 생성합니다.</target>
+        <target state="translated">SQL Server 데이터베이스에 대한 연결 문자열을 지정하거나 "Data Source = |SQL/CE|"라는 특정 연결 문자열을 사용하세요. 이 특정 연결 문자열을 사용하면 SQL Server Compact에서 오프라인 저장소에 로컬 데이터베이스 파일을 생성합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="SD_ERR_UnreferencedTypeNameList_1Arg">
@@ -2940,7 +2940,7 @@ app.config 파일의 새 값은 '{1}'입니다.
       </trans-unit>
       <trans-unit id="PPG_SecurityPage_XBAPOutOfTrustZoneToolTip">
         <source>The application will fail to run in the selected zone because of this requested elevated permission. Click the help link above for more info.</source>
-        <target state="translated">고급 권한이 없으므로 응용 프로그램을 선택한 영역에서 실행할 수 없습니다. 자세한 내용을 보려면 위에 있는 도움말 링크를 클릭하십시오.</target>
+        <target state="translated">고급 권한이 없으므로 응용 프로그램을 선택한 영역에서 실행할 수 없습니다. 자세한 내용을 보려면 위에 있는 도움말 링크를 클릭하세요.</target>
         <note />
       </trans-unit>
     </body>

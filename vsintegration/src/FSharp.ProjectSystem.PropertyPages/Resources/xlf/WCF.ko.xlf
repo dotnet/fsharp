@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="Configuration_CantSaveTemporaryConfigurations">
         <source>Configuration could not be saved. Make sure the configuration file exists and can be edited.</source>
-        <target state="translated">구성을 저장할 수 없습니다. 구성 파일이 있는지, 그리고 편집할 수 있는지 확인하십시오.</target>
+        <target state="translated">구성을 저장할 수 없습니다. 구성 파일이 있는지, 그리고 편집할 수 있는지 확인하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="Configuration_IVsProjectSpecialFilesNotSupported">
@@ -29,7 +29,7 @@
       </trans-unit>
       <trans-unit id="AddSvcRefDlg_ErrorOnOK">
         <source>There was an error downloading metadata from the address. Please verify that you have entered a valid address.</source>
-        <target state="translated">주소에서 메타데이터를 다운로드하는 동안 오류가 발생했습니다. 올바른 주소를 입력했는지 확인하십시오.</target>
+        <target state="translated">주소에서 메타데이터를 다운로드하는 동안 오류가 발생했습니다. 올바른 주소를 입력했는지 확인하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="AddSvcRefDlg_ServicesFoundAtUrl_2Args">
@@ -59,7 +59,7 @@
       </trans-unit>
       <trans-unit id="ReferenceGroup_AddMultipleReference">
         <source>Unable to add a new reference. One or more references already exists or the 'Metadata' section is not empty in the .svcmap file. Edit the .svcmap file and clear all the entries from the 'Metadata' section.</source>
-        <target state="translated">새 참조를 추가할 수 없습니다. .svcmap 파일에 이미 하나 이상의 참조가 있거나 'Metadata' 섹션이 비어 있지 않습니다. .svcmap 파일을 편집하여 'Metadata' 섹션의 모든 항목을 지우십시오.</target>
+        <target state="translated">새 참조를 추가할 수 없습니다. .svcmap 파일에 이미 하나 이상의 참조가 있거나 'Metadata' 섹션이 비어 있지 않습니다. .svcmap 파일을 편집하여 'Metadata' 섹션의 모든 항목을 지우세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="ReferenceGroup_NamespaceCantBeEmpty">
@@ -89,12 +89,12 @@
       </trans-unit>
       <trans-unit id="ReferenceGroup_NotFoundThroughPath">
         <source>The .svcmap file cannot be found. It may have been moved or deleted.  To generate a new .svcmap file, delete the service reference and add it again.</source>
-        <target state="translated">.svcmap 파일을 찾을 수 없습니다. 이동되었거나 삭제되었을 수 있습니다.  새 .svcmap 파일을 생성하려면 서비스 참조를 삭제하고 다시 추가하십시오.</target>
+        <target state="translated">.svcmap 파일을 찾을 수 없습니다. 이동되었거나 삭제되었을 수 있습니다.  새 .svcmap 파일을 생성하려면 서비스 참조를 삭제하고 다시 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="ReferenceGroup_NotSupportedInCurrentProject">
         <source>The current project does not support service references. To enable Windows Communication Foundation support, change the target version of the Microsoft .NET Framework.</source>
-        <target state="translated">현재 프로젝트에서는 서비스 참조를 지원하지 않습니다. Windows Communication Foundation이 지원되도록 하려면 Microsoft .NET Framework의 대상 버전을 변경하십시오.</target>
+        <target state="translated">현재 프로젝트에서는 서비스 참조를 지원하지 않습니다. Windows Communication Foundation이 지원되도록 하려면 Microsoft .NET Framework의 대상 버전을 변경하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="ReferenceGroup_DeleteFailedConfigurationError">
@@ -114,7 +114,7 @@
       </trans-unit>
       <trans-unit id="AddSvcRefDlg_NothingSelectedOnGo">
         <source>Please enter the address for a service.</source>
-        <target state="translated">서비스의 주소를 입력하십시오.</target>
+        <target state="translated">서비스의 주소를 입력하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="AddSvcRefDlg_Error_DiscoverUrl_1Arg">
@@ -134,7 +134,7 @@
       </trans-unit>
       <trans-unit id="AddSvcRefDlg_PleaseWait">
         <source>Please wait for service information to be downloaded or click Stop.</source>
-        <target state="translated">서비스 정보가 다운로드될 때까지 기다리거나 [중지]5D;를 클릭하십시오.</target>
+        <target state="translated">서비스 정보가 다운로드될 때까지 기다리거나 [중지]5D;를 클릭하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="ReferenceGroup_FailedToGetReferencedAssembliesFromProject">
@@ -144,7 +144,7 @@
       </trans-unit>
       <trans-unit id="ReferenceGroup_SvcMapFileIsMissing">
         <source>The service reference is invalid, because the .svcmap file ('{0}') cannot be found. It may have been moved, deleted or excluded from the project.  To generate a new .svcmap file, delete the service reference and add it again.</source>
-        <target state="translated">.svcmap 파일('{0}')을 찾을 수 없으므로 서비스 참조가 유효하지 않습니다. 이 파일은 이동 또는 삭제되었거나 프로젝트에서 제외되었을 수 있습니다.  새 .svcmap 파일을 생성하려면 서비스 참조를 삭제하고 다시 추가하십시오.</target>
+        <target state="translated">.svcmap 파일('{0}')을 찾을 수 없으므로 서비스 참조가 유효하지 않습니다. 이 파일은 이동 또는 삭제되었거나 프로젝트에서 제외되었을 수 있습니다.  새 .svcmap 파일을 생성하려면 서비스 참조를 삭제하고 다시 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="ReferenceGroup_SvcMapFileBadFormat">
@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="AddSvcRefDlg_OPSelectContract">
         <source>Select a service contract to view its operations.</source>
-        <target state="translated">서비스 계약을 선택하여 해당 작업을 확인하십시오.</target>
+        <target state="translated">서비스 계약을 선택하여 해당 작업을 확인하세요.</target>
         <note>This is the message displayed when user selects non-cotract nodes.</note>
       </trans-unit>
       <trans-unit id="CSRDlg_Title">
@@ -294,7 +294,7 @@
       </trans-unit>
       <trans-unit id="Discovery_ErrorBuildSolution">
         <source>If the service is defined in the current solution, try building the solution and adding the service reference again.</source>
-        <target state="translated">서비스가 현재 솔루션에 정의되어 있으면 다시 솔루션을 빌드하고 서비스 참조를 추가해 보십시오.</target>
+        <target state="translated">서비스가 현재 솔루션에 정의되어 있으면 다시 솔루션을 빌드하고 서비스 참조를 추가해 보세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="ReferenceGroup_MismatchBeginEndBatch">

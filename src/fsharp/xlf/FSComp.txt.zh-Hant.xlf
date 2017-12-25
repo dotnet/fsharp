@@ -939,7 +939,7 @@
       </trans-unit>
       <trans-unit id="typrelMethodIsSealed">
         <source>The method '{0}' is sealed and cannot be overridden</source>
-        <target state="translated">方法 '{0}' 是封閉的，無法覆寫</target>
+        <target state="translated">方法 '{0}' 是密封的，無法覆寫</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelOverrideImplementsMoreThenOneSlot">
@@ -2634,7 +2634,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidConstraintTypeSealed">
         <source>Invalid constraint: the type used for the constraint is sealed, which means the constraint could only be satisfied by at most one solution</source>
-        <target state="translated">無效的條件約束: 用於條件約束的類型是封閉的，表示條件約束最多只能由一個方案滿足</target>
+        <target state="translated">無效的條件約束: 用於條件約束的類型是密封的，表示條件約束最多只能由一個方案滿足</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidEnumConstraint">
@@ -3014,7 +3014,7 @@
       </trans-unit>
       <trans-unit id="tcCannotCreateExtensionOfSealedType">
         <source>Cannot create an extension of a sealed type</source>
-        <target state="translated">無法建立封閉類型的擴充</target>
+        <target state="translated">無法建立密封類型的擴充</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNoArgumentsForRecordValue">
@@ -3214,7 +3214,7 @@
       </trans-unit>
       <trans-unit id="tcOverloadsCannotHaveCurriedArguments">
         <source>One or more of the overloads of this method has curried arguments. Consider redesigning these members to take arguments in tupled form.</source>
-        <target state="translated">這個方法的一個或多個覆寫有局部調用引數。請考慮重新設計這些成員，以接受 Tuple 形式的引數。</target>
+        <target state="translated">這個方法的一個或多個多載有局部調用引數。請考慮重新設計這些成員，以接受 Tuple 形式的引數。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnnamedArgumentsDoNotFormPrefix">
@@ -3819,32 +3819,32 @@
       </trans-unit>
       <trans-unit id="tcTypesAreAlwaysSealedDU">
         <source>Discriminated union types are always sealed</source>
-        <target state="translated">差別等位類型永遠是封閉的</target>
+        <target state="translated">差別等位類型永遠是密封的</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypesAreAlwaysSealedRecord">
         <source>Record types are always sealed</source>
-        <target state="translated">記錄類型永遠是封閉的</target>
+        <target state="translated">記錄類型永遠是密封的</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypesAreAlwaysSealedAssemblyCode">
         <source>Assembly code types are always sealed</source>
-        <target state="translated">組譯程式碼類型永遠是封閉的</target>
+        <target state="translated">組譯程式碼類型永遠是密封的</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypesAreAlwaysSealedStruct">
         <source>Struct types are always sealed</source>
-        <target state="translated">結構類型永遠是封閉的</target>
+        <target state="translated">結構類型永遠是密封的</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypesAreAlwaysSealedDelegate">
         <source>Delegate types are always sealed</source>
-        <target state="translated">委派類型永遠是封閉的</target>
+        <target state="translated">委派類型永遠是密封的</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypesAreAlwaysSealedEnum">
         <source>Enum types are always sealed</source>
-        <target state="translated">列舉類型永遠是封閉的</target>
+        <target state="translated">列舉類型永遠是密封的</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInterfaceTypesAndDelegatesCannotContainFields">
@@ -3859,7 +3859,7 @@
       </trans-unit>
       <trans-unit id="tcCannotInheritFromSealedType">
         <source>Cannot inherit a sealed type</source>
-        <target state="translated">無法繼承封閉類型</target>
+        <target state="translated">無法繼承密封類型</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotInheritFromInterfaceType">
@@ -3874,7 +3874,7 @@
       </trans-unit>
       <trans-unit id="tcInterfaceTypesCannotBeSealed">
         <source>Interface types cannot be sealed</source>
-        <target state="translated">介面類型不可以是封閉的</target>
+        <target state="translated">介面類型不可以是密封的</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidDelegateSpecification">

@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="ReferencePathLabel.Text">
         <source>Reference &amp;paths:</source>
-        <target state="translated">參考路徑(&amp;P): </target>
+        <target state="translated">參考路徑(&amp;P):</target>
         <note />
       </trans-unit>
       <trans-unit id="FolderBrowse.AccessibleName">

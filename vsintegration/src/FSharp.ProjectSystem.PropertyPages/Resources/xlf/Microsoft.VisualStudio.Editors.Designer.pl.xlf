@@ -405,7 +405,7 @@ Wybierz prawidłową ścieżkę folderu.</target>
       </trans-unit>
       <trans-unit id="PPG_Compile_42025">
         <source>Instance variable accesses shared member</source>
-        <target state="translated">Zmienna wystąpienia uzyskała dostęp do udostępnionego elementu członkowskiego</target>
+        <target state="translated">Zmienna wystąpienia uzyskała dostęp do udostępnionej składowej</target>
         <note />
       </trans-unit>
       <trans-unit id="PPG_Compile_42004">
