@@ -629,12 +629,12 @@
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationSealed">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is sealed but the signature implies it is not. Consider adding the [&lt;Sealed&gt;] attribute to the signature.</source>
-        <target state="translated">As definições {0} para o tipo '{1}' na assinatura e implementação não são compatíveis, pois o tipo de implementação é lacrado, mas a assinatura implica que ele não é. Considere adicionar o atributo [&lt;Sealed&gt;] à assinatura.</target>
+        <target state="translated">As definições {0} para o tipo '{1}' na assinatura e implementação não são compatíveis, pois o tipo de implementação é selado, mas a assinatura implica que ele não é. Considere adicionar o atributo [&lt;Sealed&gt;] à assinatura.</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsNotSealed">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is not sealed but signature implies it is. Consider adding the [&lt;Sealed&gt;] attribute to the implementation.</source>
-        <target state="translated">As definições {0} para o tipo '{1}' na assinatura e implementação não são compatíveis, pois o tipo de implementação não é lacrado, mas a assinatura implica que ele é. Considere adicionar o atributo [&lt;Sealed&gt;] à implementação.</target>
+        <target state="translated">As definições {0} para o tipo '{1}' na assinatura e implementação não são compatíveis, pois o tipo de implementação não é selado, mas a assinatura implica que ele é. Considere adicionar o atributo [&lt;Sealed&gt;] à implementação.</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsAbstract">
@@ -939,7 +939,7 @@
       </trans-unit>
       <trans-unit id="typrelMethodIsSealed">
         <source>The method '{0}' is sealed and cannot be overridden</source>
-        <target state="translated">O método '{0}' está lacrado e não pode ser substituído</target>
+        <target state="translated">O método '{0}' está selado não pode ser substituído</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelOverrideImplementsMoreThenOneSlot">
@@ -2634,7 +2634,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidConstraintTypeSealed">
         <source>Invalid constraint: the type used for the constraint is sealed, which means the constraint could only be satisfied by at most one solution</source>
-        <target state="translated">Restrição inválida: o tipo usado para restrição está lacrado, o que significa que a restrição só pode ser satisfeita por no máximo uma solução</target>
+        <target state="translated">Restrição inválida: o tipo usado para restrição está selado, o que significa que a restrição só pode ser satisfeita por no máximo uma solução</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidEnumConstraint">
@@ -3014,7 +3014,7 @@
       </trans-unit>
       <trans-unit id="tcCannotCreateExtensionOfSealedType">
         <source>Cannot create an extension of a sealed type</source>
-        <target state="translated">Não é possível criar uma extensão de um tipo lacrado</target>
+        <target state="translated">Não é possível criar uma extensão de um tipo selado</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNoArgumentsForRecordValue">
@@ -3819,32 +3819,32 @@
       </trans-unit>
       <trans-unit id="tcTypesAreAlwaysSealedDU">
         <source>Discriminated union types are always sealed</source>
-        <target state="translated">Tipos de união discriminados são sempre lacrados</target>
+        <target state="translated">Tipos de união discriminados são sempre selados</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypesAreAlwaysSealedRecord">
         <source>Record types are always sealed</source>
-        <target state="translated">Tipos de registros são sempre lacrados</target>
+        <target state="translated">Tipos de registros são sempre selados</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypesAreAlwaysSealedAssemblyCode">
         <source>Assembly code types are always sealed</source>
-        <target state="translated">Tipos de código de assembly são sempre lacrados</target>
+        <target state="translated">Tipos de código de assembly são sempre selados</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypesAreAlwaysSealedStruct">
         <source>Struct types are always sealed</source>
-        <target state="translated">Tipos struct são sempre lacrados</target>
+        <target state="translated">Tipos struct são sempre selados</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypesAreAlwaysSealedDelegate">
         <source>Delegate types are always sealed</source>
-        <target state="translated">Tipos delegados são sempre lacrados</target>
+        <target state="translated">Tipos delegados são sempre selados</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypesAreAlwaysSealedEnum">
         <source>Enum types are always sealed</source>
-        <target state="translated">Tipos enum são sempre lacrados</target>
+        <target state="translated">Tipos enum são sempre selados</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInterfaceTypesAndDelegatesCannotContainFields">
@@ -3859,7 +3859,7 @@
       </trans-unit>
       <trans-unit id="tcCannotInheritFromSealedType">
         <source>Cannot inherit a sealed type</source>
-        <target state="translated">Não é possível herdar um tipo lacrado</target>
+        <target state="translated">Não é possível herdar um tipo selado</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotInheritFromInterfaceType">
@@ -3874,7 +3874,7 @@
       </trans-unit>
       <trans-unit id="tcInterfaceTypesCannotBeSealed">
         <source>Interface types cannot be sealed</source>
-        <target state="translated">Tipos de interface não podem ser lacrados</target>
+        <target state="translated">Tipos de interface não podem ser selados</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidDelegateSpecification">

@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="lblPreBuildEventCommandLine.Text">
         <source>P&amp;re-build event command line:</source>
-        <target state="translated">&amp;Riga di comando eventi pre-compilazione:</target>
+        <target state="translated">&amp;Riga di comando eventi di pre-compilazione:</target>
         <note />
       </trans-unit>
       <trans-unit id="txtPreBuildEventCommandLine.AccessibleName">
         <source>Pre-build event command line</source>
-        <target state="translated">Riga di comando eventi pre-compilazione</target>
+        <target state="translated">Riga di comando eventi di pre-compilazione</target>
         <note />
       </trans-unit>
       <trans-unit id="btnPreBuildBuilder.AccessibleName">
@@ -24,12 +24,12 @@
       </trans-unit>
       <trans-unit id="lblPostBuildEventCommandLine.Text">
         <source>P&amp;ost-build event command line:</source>
-        <target state="translated">Riga di c&amp;omando eventi post-compilazione:</target>
+        <target state="translated">Riga di c&amp;omando eventi di post-compilazione:</target>
         <note />
       </trans-unit>
       <trans-unit id="txtPostBuildEventCommandLine.AccessibleName">
         <source>Post-build event command line</source>
-        <target state="translated">Riga di comando eventi post-compilazione</target>
+        <target state="translated">Riga di comando eventi di post-compilazione</target>
         <note />
       </trans-unit>
       <trans-unit id="btnPostBuildBuilder.AccessibleName">

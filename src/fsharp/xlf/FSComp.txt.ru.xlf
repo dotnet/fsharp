@@ -264,7 +264,7 @@
       </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtension">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx, .fsscript, .ml or .mli.</source>
-        <target state="translated">Нераспознанное расширение файла "{0}". Исходные файлы должны иметь расширения .fs, .fsi, .fsx, .fsscript, .ml или .mli..</target>
+        <target state="translated">Нераспознанное расширение файла "{0}". Исходные файлы должны иметь расширения .fs, .fsi, .fsx, .fsscript, .ml или .mli.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildCouldNotResolveAssembly">
