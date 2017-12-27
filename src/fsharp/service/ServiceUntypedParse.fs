@@ -1278,47 +1278,6 @@ module UntypedParseImpl =
             }
 
         AstTraversal.Traverse(pos, parsedInput, walker)
-        // Uncompleted attribute applications are not presented in the AST in any way. So, we have to parse source string.
-        |> Option.orElseWith (fun _ ->
-             let cutLeadingAttributes (str: string) =
-                 // cut off leading attributes, i.e. we cut "[<A1; A2; >]" to " >]"
-                 match str.LastIndexOf ';' with
-                 | -1 -> str
-                 | idx when idx < str.Length -> str.[idx + 1..].TrimStart()
-                 | _ -> ""   
-
-             let isLongIdent = Seq.forall (fun c -> IsIdentifierPartCharacter c || c = '.' || c = ':') // ':' may occur in "[<type:AnAttribute>]"
-
-             // match the most nested paired [< and >] first
-             let matches = 
-                insideAttributeApplicationRegex.Matches(lineStr)
-                |> Seq.cast<Match>
-                |> Seq.filter (fun m -> m.Index <= pos.Column && m.Index + m.Length >= pos.Column)
-                |> Seq.toArray
-
-             if not (Array.isEmpty matches) then
-                 matches
-                 |> Seq.tryPick (fun m ->
-                      let g = m.Groups.["attribute"]
-                      let col = pos.Column - g.Index
-                      if col >= 0 && col < g.Length then
-                          let str = g.Value.Substring(0, col).TrimStart() // cut other rhs attributes
-                          let str = cutLeadingAttributes str
-                          if isLongIdent str then
-                              Some CompletionContext.AttributeApplication
-                          else None 
-                      else None)
-             else
-                // Paired [< and >] were not found, try to determine that we are after [< without closing >]
-                match lineStr.LastIndexOf "[<" with
-                | -1 -> None
-                | openParenIndex when pos.Column >= openParenIndex + 2 -> 
-                    let str = lineStr.[openParenIndex + 2..pos.Column - 1].TrimStart()
-                    let str = cutLeadingAttributes str
-                    if isLongIdent str then
-                        Some CompletionContext.AttributeApplication
-                    else None
-                | _ -> None)
 
     /// Check if we are at an "open" declaration
     let GetFullNameOfSmallestModuleOrNamespaceAtPoint (parsedInput: ParsedInput, pos: pos) = 
