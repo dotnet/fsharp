@@ -1371,7 +1371,8 @@ attributeList:
 
   | LBRACK_LESS  opt_OBLOCKSEP ends_coming_soon_or_recover 
       { if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnmatchedLBrackLess())
-        [] }
+        let rhsm = rhs parseState 1
+        [{ TypeName=Ast.LongIdentWithDots([], []); ArgExpr=(mkSynUnit rhsm); Target=None; AppliesToGetterAndSetter=false; Range=rhsm }] }
 
 
 /* One set of custom attributes, not including [< ... >] */
