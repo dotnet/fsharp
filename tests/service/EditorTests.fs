@@ -1,7 +1,7 @@
 ﻿
 // To run the tests in this file:
 //
-// Technique 1: Compile VisualFSharp.Unittests.dll and run it as a set of unit tests
+// Technique 1: Compile VisualFSharp.UnitTests.dll and run it as a set of unit tests
 //
 // Technique 2:
 //
@@ -11,8 +11,8 @@
 //   and capturing large amounts of structured output.
 (*
     cd Debug\net40\bin
-    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.Unittests.exe -g --optimize- -r .\FSharp.LanguageService.Compiler.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\tests\service\EditorTests.fs 
-    .\VisualFSharp.Unittests.exe 
+    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.UnitTests.exe -g --optimize- -r .\FSharp.LanguageService.Compiler.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\tests\service\EditorTests.fs 
+    .\VisualFSharp.UnitTests.exe 
 *)
 // Technique 3: 
 // 
@@ -547,25 +547,24 @@ let _ = arr.[..number2]
         let r = su.RangeAlternate 
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
     |> shouldEqual 
-        [|("val arr", (2, 4, 2, 7)); 
-          ("val number2", (3, 13, 3, 20));
-          ("val number1", (3, 4, 3, 11)); 
-          ("val arr", (4, 8, 4, 11));
-          ("OperatorIntrinsics", (4, 11, 4, 12)); 
-          ("Operators", (4, 11, 4, 12));
-          ("Core", (4, 11, 4, 12)); 
-          ("FSharp", (4, 11, 4, 12));
-          ("Microsoft", (4, 11, 4, 12)); 
-          ("val number1", (4, 16, 4, 23));
-          ("val arr", (5, 8, 5, 11)); 
-          ("OperatorIntrinsics", (5, 11, 5, 12));
-          ("Operators", (5, 11, 5, 12)); 
-          ("Core", (5, 11, 5, 12));
-          ("FSharp", (5, 11, 5, 12)); 
-          ("Microsoft", (5, 11, 5, 12));
-          ("val number2", (5, 15, 5, 22)); 
+        [|("val arr", (2, 4, 2, 7))
+          ("val number2", (3, 13, 3, 20))
+          ("val number1", (3, 4, 3, 11))
+          ("val arr", (4, 8, 4, 11))
+          ("Microsoft", (4, 11, 4, 12))
+          ("OperatorIntrinsics", (4, 11, 4, 12))
+          ("Operators", (4, 11, 4, 12))
+          ("Core", (4, 11, 4, 12))
+          ("FSharp", (4, 11, 4, 12))
+          ("val number1", (4, 16, 4, 23))
+          ("val arr", (5, 8, 5, 11))
+          ("Microsoft", (5, 11, 5, 12))
+          ("OperatorIntrinsics", (5, 11, 5, 12))
+          ("Operators", (5, 11, 5, 12))
+          ("Core", (5, 11, 5, 12))
+          ("FSharp", (5, 11, 5, 12)) 
+          ("val number2", (5, 15, 5, 22))
           ("Test", (1, 0, 1, 0))|]
-
 
 [<Test>]
 let ``Enums should have fields`` () =
@@ -745,6 +744,38 @@ let x: T()
           ("T", (4, 7, 4, 8), false)
           ("val x", (4, 4, 4, 5), false)
           ("Test", (1, 0, 1, 0), false)|]
+
+[<Test>]
+let ``Partially valid namespaces should be reported`` () = 
+    let input = 
+      """
+open System.Threading.Foo
+open System
+
+let _: System.Threading.Tasks.Bar = null
+let _ = Threading.Buzz = null
+"""
+
+    let file = "/home/user/Test.fsx"
+    let _, typeCheckResults = parseAndCheckScript(file, input) 
+    typeCheckResults.GetAllUsesOfAllSymbolsInFile()
+    |> Async.RunSynchronously
+    |> Array.map (fun su -> 
+        let r = su.RangeAlternate 
+        su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
+    |> Array.distinct
+    |> shouldEqual 
+        // note: these "System" sysbol uses are not duplications because each of them corresponts to different namespaces
+        [|("System", (2, 5, 2, 11))
+          ("Threading", (2, 12, 2, 21))
+          ("System", (3, 5, 3, 11))
+          ("System", (5, 7, 5, 13))
+          ("Threading", (5, 14, 5, 23))
+          ("Tasks", (5, 24, 5, 29))
+          ("val op_Equality", (6, 23, 6, 24))
+          ("Threading", (6, 8, 6, 17))
+          ("Test", (1, 0, 1, 0))|]
+
 
 //-------------------------------------------------------------------------------
 
