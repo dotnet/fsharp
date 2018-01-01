@@ -3,10 +3,10 @@
     <metadata>
         <!-- rename to FSharp.Core when done -->
         <id>FSharp.Core</id>
-        <title>FSharp.Core for F# 4.3</title>
-        <summary>FSharp.Core for F# 4.3</summary>
+        <title>FSharp.Core for F# 4.1</title>
+        <summary>FSharp.Core for F# 4.1</summary>
         <description>
-            FSharp.Core redistributables from Visual F# 4.3.0
+            FSharp.Core redistributables from Visual F# Tools version 10.1 For F# 4.1
                 Supported Platforms:
                     .NET 4.5+           (net45)
                     netstandard1.6      (netstandard1.6)

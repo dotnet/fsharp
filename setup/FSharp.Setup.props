@@ -11,7 +11,7 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <FSharpProductVersion>4.3</FSharpProductVersion>
+        <FSharpProductVersion>10.1</FSharpProductVersion>
         <!-- BUILD_BUILDNUMBER is passed from Microbuild. Replace by today's date and (0) if it was a local build -->
         <BUILD_BUILDNUMBER Condition="'$(BUILD_BUILDNUMBER)' == ''">$([System.DateTime]::Now.ToString(yyyyMMdd.0))</BUILD_BUILDNUMBER>
         <!-- Remove .DRAFT suffix if it exists in the build number -->

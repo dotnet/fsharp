@@ -51,7 +51,7 @@
 
     <DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETFramework_4.0_4.4.3.0_$(var.LocaleId)">
       <Component Id="Runtime_LangPack_4.4.3.0_FSharp.Core_LangPack" Transitive="yes" Guid="$(fsharp.guid(Runtime_LangPack_4.4.3.0_FSharp.Core_LangPack, $(var.LocaleCode)))">
-      <File Id="Runtime_LangPack_4.4.3.0_FSharp.Core.resources.dll" Source="$(var.BinariesDir)\net40\bin\$(var.LocaleParentCulture)\FSharp.Core.resources.dll" KeyPath="yes" />
+        <File Id="Runtime_LangPack_4.4.3.0_FSharp.Core.resources.dll" Source="$(var.BinariesDir)\net40\bin\$(var.LocaleParentCulture)\FSharp.Core.resources.dll" KeyPath="yes" />
       </Component>
     </DirectoryRef>
 
@@ -59,7 +59,7 @@
 
     <DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETFramework_4.0_4.4.1.0_$(var.LocaleId)">
       <Component Id="Runtime_LangPack_4.4.1.0_FSharp.Core_LangPack" Transitive="yes" Guid="$(fsharp.guid(Runtime_LangPack_4.4.1.0_FSharp.Core_LangPack, $(var.LocaleCode)))">
-      <File Id="Runtime_LangPack_4.4.1.0_FSharp.Core.resources.dll" Source="$(var.BinariesDir)\net40\bin\$(var.LocaleParentCulture)\FSharp.Core.resources.dll" KeyPath="yes" />
+        <File Id="Runtime_LangPack_4.4.1.0_FSharp.Core.resources.dll" Source="$(var.BinariesDir)\net40\bin\$(var.LocaleParentCulture)\FSharp.Core.resources.dll" KeyPath="yes" />
       </Component>
     </DirectoryRef>
     <DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETPortable_3.47.41.0_$(var.LocaleId)">
@@ -167,7 +167,7 @@
 
     <DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp">
       <Component Id="Runtime_LangPack_RegistryKeys_InstallSuccess_$(var.LocaleCode)" Transitive="yes" Guid="$(fsharp.guid(Runtime_LangPack_RegistryKeys_InstallSuccess_$(var.LocaleCode), $(var.LocaleCode)))">
-        <RegistryKey Root="HKLM" Key="Software\Microsoft\FSharp\4.3\Runtime\v4.0_$(var.LocaleId)\Install" ForceCreateOnInstall="yes" ForceDeleteOnUninstall="yes">
+        <RegistryKey Root="HKLM" Key="Software\Microsoft\FSharp\10.1\Runtime\v4.0_$(var.LocaleId)\Install" ForceCreateOnInstall="yes" ForceDeleteOnUninstall="yes">
           <RegistryValue Name="InstallSuccess" Value="4.4.3.0" Type="string" />
         </RegistryKey>
       </Component>
