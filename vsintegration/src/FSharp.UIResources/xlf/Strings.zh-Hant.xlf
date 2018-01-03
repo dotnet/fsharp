@@ -82,6 +82,11 @@
         <target state="translated">移除未使用的 open 陳述式</target>
         <note />
       </trans-unit>
+      <trans-unit id="Unused_declaration_code_fix">
+        <source>Analyze and suggest fixes for unused values</source>
+        <target state="new">Analyze and suggest fixes for unused values</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
