@@ -158,8 +158,8 @@ set SN64="%WINSDKNETFXTOOLS%x64\sn.exe"
 set NGEN32=%windir%\Microsoft.NET\Framework\v4.0.30319\ngen.exe
 set NGEN64=%windir%\Microsoft.NET\Framework64\v4.0.30319\ngen.exe
 
-set FSHARPVERSION=4.1
-set FSHARPVERSION2=41
+set FSHARPVERSION=4.3
+set FSHARPVERSION2=43
 
 rem The various locations of the SDK and tools
 
