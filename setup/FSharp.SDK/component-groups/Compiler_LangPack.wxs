@@ -9,7 +9,7 @@
       <ComponentRef Id="Compiler_LangPack_FSharp.Compiler.Private.dll_$(var.LocaleCode)" />
     </ComponentGroup>
 
-    <DirectoryRef Id="MicrosoftSDKs_FS_4.1_Framework_v4.0_$(var.LocaleId)">
+    <DirectoryRef Id="MicrosoftSDKs_FS_10.1_Framework_v4.0_$(var.LocaleId)">
       <Component Id="Compiler_LangPack_FSharp.Core.dll_$(var.LocaleCode)" Guid="$(fsharp.guid(Compiler_LangPack_FSharp.Core.dll_$(var.LocaleCode), $(var.LocaleCode)))">
         <File Id="Compiler_LangPack_FSharp.Core.dll_$(var.LocaleCode)" Source="$(var.BinariesDir)\net40\bin\$(var.LocaleParentCulture)\FSharp.Core.resources.dll" KeyPath="yes" />
       </Component>

@@ -814,6 +814,27 @@ type ListModule02() =
         ()   
 
     [<Test>]
+    member this.Transpose() =
+        // integer list
+        Assert.AreEqual([[1; 4]; [2; 5]; [3; 6]], List.transpose (seq [[1..3]; [4..6]]))
+        Assert.AreEqual([[1]; [2]; [3]], List.transpose [[1..3]])
+        Assert.AreEqual([[1..2]], List.transpose [[1]; [2]])
+
+        // string list
+        Assert.AreEqual([["a";"d"]; ["b";"e"]; ["c";"f"]], List.transpose (seq [["a";"b";"c"]; ["d";"e";"f"]]))
+
+        // empty list
+        Assert.AreEqual([], List.transpose [])
+
+        // list of empty lists - m x 0 list transposes to 0 x m (i.e. empty)
+        Assert.AreEqual([], List.transpose [[]])
+        Assert.AreEqual([], List.transpose [[]; []])
+
+        // jagged lists
+        CheckThrowsArgumentException (fun () -> List.transpose [[1; 2]; [3]] |> ignore)
+        CheckThrowsArgumentException (fun () -> List.transpose [[1]; [2; 3]] |> ignore)
+
+    [<Test>]
     member this.Truncate() =
         // integer list
         Assert.AreEqual([1..3], List.truncate 3 [1..5])

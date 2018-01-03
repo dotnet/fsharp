@@ -85,7 +85,7 @@
     <Compile Include="QuickInfo\Navigation.fs" />
     <Compile Include="QuickInfo\Views.fs" />
     <Compile Include="QuickInfo\QuickInfoProvider.fs" />
-    <Compile Include="BlockComment\CommentUncommentService.fs" />
+    <Compile Include="BlockComment\CommentSelectionService.fs" />
     <Compile Include="Structure\BlockStructureService.fs" />
     <Compile Include="Commands\HelpContextService.fs" />
     <Compile Include="Commands\FsiCommandService.fs" />
@@ -254,6 +254,10 @@
     </Reference>
     <Reference Include="Microsoft.CodeAnalysis.EditorFeatures.Text">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.CodeAnalysis.EditorFeatures.Text.$(RoslynVersion)\lib\net46\Microsoft.CodeAnalysis.EditorFeatures.Text.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.CodeAnalysis.EditorFeatures.Wpf">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.CodeAnalysis.EditorFeatures.Wpf.$(RoslynVersion)\lib\net46\Microsoft.CodeAnalysis.EditorFeatures.Wpf.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.CodeAnalysis.Features">

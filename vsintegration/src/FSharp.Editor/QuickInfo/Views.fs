@@ -8,6 +8,7 @@ open System.Windows.Controls
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Editor
+open Microsoft.CodeAnalysis.Editor.QuickInfo
 open Microsoft.CodeAnalysis.Editor.Shared.Utilities
 open Microsoft.CodeAnalysis.Editor.Shared.Extensions
 open Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.QuickInfo
@@ -19,6 +20,7 @@ open Microsoft.VisualStudio.PlatformUI
 open Microsoft.FSharp.Compiler
 
 open Internal.Utilities.StructuredFormat
+open Microsoft.VisualStudio.Text.Classification
 
 module private SessionHandling =
     let mutable currentSession = None
@@ -34,6 +36,9 @@ module private SessionHandling =
                   member __.AugmentQuickInfoSession(session,_,_) = currentSession <- Some session
                   member __.Dispose() = () }
 
+type internal FSharpQuickInfoDeferredContent (toTextBlock, layout) =
+    member __.CreateFrameworkElement () = toTextBlock layout
+    interface IDeferredQuickInfoContent
 
 [<Export>]
 type internal QuickInfoViewProvider
@@ -41,7 +46,7 @@ type internal QuickInfoViewProvider
     (
         // lazy to try to mitigate #2756 (wrong tooltip font)
         typeMap: Lazy<ClassificationTypeMap>,
-        glyphService: IGlyphService
+        classificationFormatMapService: IClassificationFormatMapService
     ) =
 
     let styles = ResourceDictionary(Source = Uri(@"/FSharp.UIResources;component/HyperlinkStyles.xaml", UriKind.Relative))
@@ -56,7 +61,7 @@ type internal QuickInfoViewProvider
             else "no_underline"
         downcast styles.[key]
 
-    let formatMap = lazy typeMap.Value.ClassificationFormatMapService.GetClassificationFormatMap "tooltip"
+    let formatMap = lazy classificationFormatMapService.GetClassificationFormatMap "tooltip"
 
     let layoutTagToFormatting (layoutTag: LayoutTag) =
         layoutTag
@@ -104,15 +109,12 @@ type internal QuickInfoViewProvider
         tb.MaxWidth <- maxWidth
         tb.HorizontalAlignment <- HorizontalAlignment.Left
         tb
-
-    let defer toTextBlock layout =           
-        { new IDeferredQuickInfoContent with member __.Create() = upcast toTextBlock layout }
-
+        
     member __.ProvideContent(glyph: Glyph, description, documentation, typeParameterMap, usage, exceptions, navigation: QuickInfoNavigation) =
-        let navigable = defer (formatText navigation)
-        let wrapped = defer (formatText navigation >> wrap)
-        let empty = defer (fun () -> TextBlock(Visibility = Visibility.Collapsed)) ()
-        let glyphContent = SymbolGlyphDeferredContent(glyph, glyphService)
+        let navigable x = FSharpQuickInfoDeferredContent((formatText navigation), x)
+        let wrapped x = FSharpQuickInfoDeferredContent((formatText navigation >> wrap), x)
+        let empty = FSharpQuickInfoDeferredContent((fun _ -> TextBlock(Visibility = Visibility.Collapsed)), Seq.empty)
+        let glyphContent = SymbolGlyphDeferredContent(glyph)
         QuickInfoDisplayDeferredContent
             (glyphContent, null, 
              mainDescription = navigable description, 
@@ -121,3 +123,12 @@ type internal QuickInfoViewProvider
              anonymousTypes = empty, 
              usageText = navigable usage, 
              exceptionText = navigable exceptions)
+
+[<Export (typeof<IDeferredQuickInfoContentToFrameworkElementConverter>)>] 
+type FSharpDeferredContentConverter () =
+    interface IDeferredQuickInfoContentToFrameworkElementConverter with
+        member this.CreateFrameworkElement(deferredContent, _factory) =
+            let fsharpDeferredContent = deferredContent :?> FSharpQuickInfoDeferredContent
+            upcast fsharpDeferredContent.CreateFrameworkElement()
+        member this.GetApplicableType () =
+            typeof<FSharpQuickInfoDeferredContent>

@@ -198,7 +198,7 @@ type BigIntType() =
         Assert.AreEqual(BigInteger.One,1I)
         
         ()
-#if !FSCORE_PORTABLE_OLD
+
     [<Test>]
     member this.Parse() = 
         Assert.AreEqual(BigInteger.Parse("12345678901234567890"),
@@ -220,7 +220,6 @@ type BigIntType() =
         CheckThrowsArgumentNullException(fun() -> BigInteger.Parse(null) |> ignore)
         
         ()
-#endif
         
     [<Test>]
     member this.Pow() = 
