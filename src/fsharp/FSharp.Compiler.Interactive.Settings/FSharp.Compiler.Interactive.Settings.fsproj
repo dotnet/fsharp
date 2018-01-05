@@ -22,7 +22,6 @@
 
   <ItemGroup>
     <EmbeddedText Include="..\FSInteractiveSettings.txt" />
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Interactive.Settings.dll.fs" />
     <Compile Include="..\..\utils\reshapedreflection.fs" />
     <Compile Include="..\fsiattrs.fs" />
     <Compile Include="..\fsiaux.fsi" />
@@ -44,13 +43,4 @@
       <Name>FSharp.Core</Name>
     </ProjectReference>
   </ItemGroup>
-  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
-    <ItemGroup>
-      <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
-      <FilesToSign Include="@(BinariesToBeSigned)">
-         <Authenticode>Microsoft</Authenticode>
-         <StrongName>StrongName</StrongName>
-      </FilesToSign>
-    </ItemGroup>
-  </Target>
 </Project>

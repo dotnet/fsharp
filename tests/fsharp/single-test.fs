@@ -12,6 +12,7 @@ type Permutation =
     | FSI_CORECLR
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     | FSI_FILE
+    | FSIANYCPU_FILE
     | FSI_STDIN
     | GENERATED_SIGNATURE
     | FSC_OPT_MINUS_DEBUG
@@ -91,6 +92,14 @@ let singleTestBuildAndRunCore  cfg (copyFiles:string) p =
         use testOkFile = new FileGuard (getfullpath cfg "test.ok")
 
         fsi cfg "%s" cfg.fsi_flags sources
+
+        testOkFile.CheckExists()
+
+    | FSIANYCPU_FILE -> 
+        use cleanup = (cleanUpFSharpCore cfg)
+        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
+
+        fsiAnyCpu cfg "%s" cfg.fsi_flags sources
 
         testOkFile.CheckExists()
 

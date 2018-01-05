@@ -1,0 +1,137 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="pl" original="../BuildPropPage.resx">
+    <body>
+      <trans-unit id="lblConditionalCompilationSymbols.Text">
+        <source>Conditional compilation s&amp;ymbols:</source>
+        <target state="translated">S&amp;ymbole kompilacji warunkowej:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkPrefer32Bit.Text">
+        <source>&amp;Prefer 32-bit</source>
+        <target state="translated">&amp;Preferuj wersję 32-bitową</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="outputLabel.Text">
+        <source>Output</source>
+        <target state="translated">Wyjściowe</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="generalLabel.Text">
+        <source>General</source>
+        <target state="translated">Ogólne</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="treatWarningsAsErrorsLabel.Text">
+        <source>Treat warnings as errors</source>
+        <target state="translated">Traktuj ostrzeżenia jako błędy</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="errorsAndWarningsLabel.Text">
+        <source>Errors and warnings</source>
+        <target state="translated">Błędy i ostrzeżenia</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkXMLDocumentationFile.Text">
+        <source>&amp;XML documentation file:</source>
+        <target state="translated">Plik dokumentacji &amp;XML:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="btnOutputPathBrowse.Text">
+        <source>B&amp;rowse...</source>
+        <target state="translated">P&amp;rzeglądaj...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lblOutputPath.Text">
+        <source>&amp;Output path:</source>
+        <target state="translated">Ścieżka &amp;wyjściowa:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="rbWarningAll.Text">
+        <source>A&amp;ll</source>
+        <target state="translated">W&amp;szystkie</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="rbWarningSpecific.Text">
+        <source>Specif&amp;ic warnings:</source>
+        <target state="translated">Specy&amp;ficzne ostrzeżenia:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="rbWarningNone.Text">
+        <source>&amp;None</source>
+        <target state="translated">&amp;Brak</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lblSupressWarnings.Text">
+        <source>&amp;Suppress warnings:</source>
+        <target state="translated">&amp;Pomiń ostrzeżenia:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboWarningLevel.Items">
+        <source>0</source>
+        <target state="translated">0</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboWarningLevel.Items1">
+        <source>1</source>
+        <target state="translated">1</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboWarningLevel.Items2">
+        <source>2</source>
+        <target state="translated">2</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboWarningLevel.Items3">
+        <source>3</source>
+        <target state="translated">3</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboWarningLevel.Items4">
+        <source>4</source>
+        <target state="translated">4</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboWarningLevel.Items5">
+        <source>5</source>
+        <target state="translated">5</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lblWarningLevel.Text">
+        <source>&amp;Warning level:</source>
+        <target state="translated">&amp;Poziom ostrzeżeń:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkOptimizeCode.Text">
+        <source>Optimi&amp;ze code</source>
+        <target state="translated">Optymali&amp;zuj kod</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkTailcalls.Text">
+        <source>G&amp;enerate tail calls</source>
+        <target state="translated">G&amp;eneruj wywołania tail</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkDefineTrace.Text">
+        <source>Define TR&amp;ACE constant</source>
+        <target state="translated">Zdefiniuj stałą TR&amp;ACE</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lblPlatformTarget.Text">
+        <source>Platform tar&amp;get:</source>
+        <target state="translated">Platforma doce&amp;lowa:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lblOtherFlags.Text">
+        <source>Other &amp;flags:</source>
+        <target state="translated">Inne &amp;flagi:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkDefineDebug.Text">
+        <source>Define DEB&amp;UG constant</source>
+        <target state="translated">Zdefiniuj stałą DEB&amp;UG</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

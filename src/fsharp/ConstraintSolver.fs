@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.ConstraintSolver
 
 //-------------------------------------------------------------------------
 // Incremental type inference constraint solving.  
@@ -30,11 +29,13 @@ module internal Microsoft.FSharp.Compiler.ConstraintSolver
 //
 //------------------------------------------------------------------------- 
 
+
+module internal Microsoft.FSharp.Compiler.ConstraintSolver
+
 open Internal.Utilities.Collections
 
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
@@ -58,10 +59,10 @@ open Microsoft.FSharp.Compiler.TypeRelations
 // of the constraint resolution carried out by type checking.
 //------------------------------------------------------------------------- 
    
-let compgen_id = mkSynId range0 unassignedTyparName
+let compgenId = mkSynId range0 unassignedTyparName
 
 let NewCompGenTypar (kind, rigid, staticReq, dynamicReq, error) = 
-    NewTypar(kind, rigid, Typar(compgen_id, staticReq, true), error, dynamicReq, [], false, false) 
+    NewTypar(kind, rigid, Typar(compgenId, staticReq, true), error, dynamicReq, [], false, false) 
     
 let anon_id m = mkSynId m unassignedTyparName
 
@@ -75,7 +76,7 @@ let NewInferenceMeasurePar () = NewCompGenTypar (TyparKind.Measure, TyparRigidit
 
 let NewErrorTypar () = NewCompGenTypar (TyparKind.Type, TyparRigidity.Flexible, NoStaticReq, TyparDynamicReq.No, true)
 let NewErrorMeasureVar () = NewCompGenTypar (TyparKind.Measure, TyparRigidity.Flexible, NoStaticReq, TyparDynamicReq.No, true)
-let NewInferenceType () = mkTyparTy (NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgen_id, NoStaticReq, true), false, TyparDynamicReq.No, [], false, false))
+let NewInferenceType () = mkTyparTy (NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, NoStaticReq, true), false, TyparDynamicReq.No, [], false, false))
 let NewErrorType () = mkTyparTy (NewErrorTypar ())
 let NewErrorMeasure () = Measure.Var (NewErrorMeasureVar ())
 
