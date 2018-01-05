@@ -26,6 +26,8 @@
                         <StackPanel Margin="15 0 0 0"/>
                         <CheckBox x:Name="unusedOpens" IsChecked="{Binding UnusedOpens}"
                                   Content="{x:Static local:Strings.Unused_opens_code_fix}"/>
+                        <CheckBox x:Name="unusedDeclaration" IsChecked="{Binding UnusedDeclarations}"
+                                  Content="{x:Static local:Strings.Unused_declaration_code_fix}"/>
                     </StackPanel>
                 </GroupBox>
             </StackPanel>
