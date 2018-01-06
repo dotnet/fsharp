@@ -2,7 +2,6 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System
 open System.ComponentModel.Composition
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.FSharp.Compiler.SourceCodeServices
@@ -14,28 +13,25 @@ type internal FSharpBraceMatchingService
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: FSharpProjectOptionsManager
     ) =
-
     
     static let defaultUserOpName = "BraceMatching"
 
-    static member GetBraceMatchingResult(checker: FSharpChecker, sourceText, fileName, parsingOptions: FSharpParsingOptions, position: int, userOpName: string) = 
+    static member GetBraceMatchingResult(checker: FSharpChecker, sourceText, fileName, parsingOptions: FSharpParsingOptions, caretPosition: int, userOpName: string) = 
         async {
             let! matchedBraces = checker.MatchBraces(fileName, sourceText.ToString(), parsingOptions, userOpName)
-            let isPositionInRange range = 
+            let isPositionInRange range =
                 match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
                 | None -> false
-                | Some range ->
-                    let length = position - range.Start
-                    length >= 0 && length <= range.Length
+                | Some span -> span.Contains(caretPosition)
             return matchedBraces |> Array.tryFind(fun (left, right) -> isPositionInRange left || isPositionInRange right)
         }
         
     interface IBraceMatcher with
-        member this.FindBracesAsync(document, position, cancellationToken) = 
+        member __.FindBracesAsync(document, caretPosition, cancellationToken) = 
             asyncMaybe {
-                let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                let! parsingOptions, _ = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                 let! sourceText = document.GetTextAsync(cancellationToken)
-                let! (left, right) = FSharpBraceMatchingService.GetBraceMatchingResult(checkerProvider.Checker, sourceText, document.Name, parsingOptions, position, defaultUserOpName)
+                let! (left, right) = FSharpBraceMatchingService.GetBraceMatchingResult(checkerProvider.Checker, sourceText, document.Name, parsingOptions, caretPosition, defaultUserOpName)
                 let! leftSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, left)
                 let! rightSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, right)
                 return BraceMatchingResult(leftSpan, rightSpan)
