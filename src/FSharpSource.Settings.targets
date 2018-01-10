@@ -79,6 +79,8 @@
     <!-- Frozen FSharp.Core package being built with this build -->
     <FSharpCore41TargetPackageVersion>4.1.19</FSharpCore41TargetPackageVersion>
     <FSharpCore41TargetMajorVersion>4.1</FSharpCore41TargetMajorVersion>
+    <FSharpCoreLatestTargetPackageVersion>4.3.0</FSharpCoreLatestTargetPackageVersion>
+    <FSharpCoreLatestTargetMajorVersion>4.3</FSharpCoreLatestTargetMajorVersion>
 
     <!-- Frozen FSharp.Core package -->
     <FSharpCoreFrozenPortablePackageVersion>10.1.0</FSharpCoreFrozenPortablePackageVersion>
