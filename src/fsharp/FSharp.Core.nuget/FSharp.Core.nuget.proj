@@ -58,8 +58,8 @@
       <PackageVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.4.1.xxx.nuspec'">$(FSharpCore41TargetPackageVersion)</PackageVersion>
       <PackageMajorVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.4.1.xxx.nuspec'">$(FSharpCore41TargetMajorVersion)</PackageMajorVersion>
 
-      <PackageVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.LatestNuget.nuspec'">$(FSharpCoreFrozenPortableTargetPackageVersion)</PackageVersion>
-      <PackageMajorVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.LatestNuget.nuspec'">$(FSharpCoreFrozenPortableTargetMajorVersion)</PackageMajorVersion>
+      <PackageVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.LatestNuget.nuspec'">$(FSharpCoreLatestTargetPackageVersion)</PackageVersion>
+      <PackageMajorVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.LatestNuget.nuspec'">$(FSharpCoreLatestTargetMajorVersion)</PackageMajorVersion>
 
       <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
     </PropertyGroup>
