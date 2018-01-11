@@ -4,7 +4,7 @@
         <!-- rename to FSharp.Core when done -->
         <id>FSharp.Core</id>
         <description>
-            FSharp.Core redistributables from Visual F# 10.1.0
+            FSharp.Core redistributables from Visual F# 10.2.0
                 Supported Platforms:
                     .NET 2.0                    (net20)
                     .NET 4.0                    (net40)
