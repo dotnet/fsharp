@@ -164,7 +164,7 @@
       </trans-unit>
       <trans-unit id="ValuesImmutable-Line2">
         <source>in the course of a program's execution unless explicitly marked as mutable.</source>
-        <target state="translated"></target>
+        <target state="translated"> </target>
         <note />
       </trans-unit>
       <trans-unit id="ValuesImmutable-Line3">
