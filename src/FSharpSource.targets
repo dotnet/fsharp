@@ -6,8 +6,6 @@
     <RepoRoot>$(MSBuildThisFileDirectory)..\</RepoRoot>
   </PropertyGroup>
 
-  <Import Project="..\build\targets\GitHash.props" />
-
   <Choose>
     <When Condition="'$(Configuration)' == 'Debug' or '$(Configuration)' == 'Release' ">
       <PropertyGroup>
@@ -368,89 +366,7 @@
 
   </Target>
 
-  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
-    <GeneratedFSharpInternalsVisibleToFile>$(IntermediateOutputPath)$(MSBuildProjectName).InternalsVisibleTo$(DefaultLanguageSourceExtension)</GeneratedFSharpInternalsVisibleToFile>
-  </PropertyGroup>
-
-  <ItemDefinitionGroup>
-    <InternalsVisibleTo>
-      <Visible>false</Visible>
-    </InternalsVisibleTo>
-  </ItemDefinitionGroup>
-
-  <Target Name="PrepareFSharpGenerateInternalsVisibleToFile"
-          Condition="'$(Configuration)' != 'Proto' and '@(InternalsVisibleTo)' != ''">
-    <PropertyGroup>
-      <_PublicKey>002400000480000094000000060200000024000052534131000400000100010007D1FA57C4AED9F0A32E84AA0FAEFD0DE9E8FD6AEC8F87FB03766C834C99921EB23BE79AD9D5DCC1DD9AD236132102900B723CF980957FC4E177108FC607774F29E8320E92EA05ECE4E821C0A5EFE8F1645C4C0C93C1AB99285D622CAA652C1DFAD63D745D6F2DE5F17E5EAF0FC4963D261C8A12436518206DC093344D5AD293</_PublicKey>
-    </PropertyGroup>
-    <ItemGroup>
-      <_InternalsVisibleToAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-        <_Parameter1 Condition="'%(InternalsVisibleTo.Key)' != ''">%(InternalsVisibleTo.Identity), PublicKey=%(InternalsVisibleTo.Key)</_Parameter1>
-        <_Parameter1 Condition="'%(InternalsVisibleTo.Key)' == ''">%(InternalsVisibleTo.Identity), PublicKey=$(_PublicKey)</_Parameter1>
-      </_InternalsVisibleToAttribute>
-    </ItemGroup>
-  </Target>
-
-  <Target Name="GenerateFSharpInternalsVisibleToFile"
-          Inputs="$(MSBuildProjectFile)"
-          Outputs="$(GeneratedFSharpInternalsVisibleToFile)"
-          DependsOnTargets="PrepareFSharpGenerateInternalsVisibleToFile;PrepareForBuild"
-          Condition="'$(Configuration)' != 'Proto' and '@(InternalsVisibleTo)' != ''"
-          BeforeTargets="CoreCompile">
-    <WriteCodeFragment AssemblyAttributes="@(_InternalsVisibleToAttribute)"
-                       Language="$(Language)"
-                       OutputFile="$(GeneratedFSharpInternalsVisibleToFile)">
-      <Output TaskParameter="OutputFile" ItemName="CompileBefore" />
-      <Output TaskParameter="OutputFile" ItemName="FileWrites" />
-    </WriteCodeFragment>
-  </Target>
-
-  <Target Name="GenerateAssemblyFileVersion"
-          BeforeTargets="CoreCompile"
-          Condition="'$(Configuration)' != 'Proto'">
-    <PropertyGroup>
-      <GeneratedFSharpAssemblyVersionFile>$(IntermediateOutputPath)$(MSBuildProjectName).AssemblyVersion$(DefaultLanguageSourceExtension)</GeneratedFSharpAssemblyVersionFile>
-      <!-- AssemblyInformationalVersionAttribute issues a by-design warning if the value passed isn't of the form #.#.#.#, but we specifically want to suppress this to allow the commit hash to be embedded. -->
-      <NoWarn Condition="'$(Language)' == 'F#'">2003;$(NoWarn)</NoWarn>
-    </PropertyGroup>
-
-    <ItemGroup>
-      <_AssemblyVersionAttributes Include="System.Reflection.AssemblyCompanyAttribute">
-        <_Parameter1>Microsoft Corporation</_Parameter1>
-      </_AssemblyVersionAttributes>
-      <_AssemblyVersionAttributes Include="System.Reflection.AssemblyCopyrightAttribute">
-        <_Parameter1>&#169; Microsoft Corporation.  All Rights Reserved.</_Parameter1>
-      </_AssemblyVersionAttributes>
-      <_AssemblyVersionAttributes Include="System.Reflection.AssemblyDescriptionAttribute">
-        <_Parameter1>$(AssemblyName).dll</_Parameter1>
-      </_AssemblyVersionAttributes>
-      <_AssemblyVersionAttributes Include="System.Reflection.AssemblyFileVersionAttribute">
-        <_Parameter1>$(Build_FileVersion)</_Parameter1>
-      </_AssemblyVersionAttributes>
-      <_AssemblyVersionAttributes Include="System.Reflection.AssemblyInformationalVersionAttribute">
-        <_Parameter1>$(MicroBuildAssemblyVersion).  Commit Hash: $(GitHeadSha).</_Parameter1>
-      </_AssemblyVersionAttributes>
-      <_AssemblyVersionAttributes Include="System.Reflection.AssemblyProductAttribute">
-        <_Parameter1>Microsoft&#174; F#</_Parameter1>
-      </_AssemblyVersionAttributes>
-      <_AssemblyVersionAttributes Include="System.Reflection.AssemblyTitleAttribute">
-        <_Parameter1>$(AssemblyName).dll</_Parameter1>
-      </_AssemblyVersionAttributes>
-      <_AssemblyVersionAttributes Include="System.Reflection.AssemblyVersionAttribute">
-        <_Parameter1>$(MicroBuildAssemblyVersion)</_Parameter1>
-      </_AssemblyVersionAttributes>
-    </ItemGroup>
-
-    <WriteCodeFragment AssemblyAttributes="@(_AssemblyVersionAttributes)"
-                       Language="$(Language)"
-                       OutputFile="$(GeneratedFSharpAssemblyVersionFile)">
-      <!-- For FSharp.Core, assembly version must be inserted after all Core files, as it defines F# basic types (strings) -->
-      <Output TaskParameter="OutputFile" ItemName="Compile" Condition="'$(AssemblyName)' == 'FSharp.Core'" />
-      <!-- For other assemblies, this must be inserted before all source files, to keep exe's EntryPoints (if any) as the last source file -->
-      <Output TaskParameter="OutputFile" ItemName="CompileBefore" Condition="'$(AssemblyName)' != 'FSharp.Core'" />
-      <Output TaskParameter="OutputFile" ItemName="FileWrites" />
-    </WriteCodeFragment>
-  </Target>
+  <Import Project="..\build\targets\AssemblyAttributes.targets" />
 
   <UsingTask TaskName="ReplaceFileText" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
     <ParameterGroup>
