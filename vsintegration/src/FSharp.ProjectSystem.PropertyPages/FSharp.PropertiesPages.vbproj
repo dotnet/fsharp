@@ -382,4 +382,5 @@
   
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
   <Import Project="$(VsSDKInstall)\Microsoft.VsSDK.targets" />
+  <Import Project="$(FSharpSourcesRoot)\..\build\targets\AssemblyAttributes.targets" />
 </Project>

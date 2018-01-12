@@ -293,4 +293,5 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
   <Import Project="$(VsSDKTargets)" />
+  <Import Project="$(FSharpSourcesRoot)\..\build\targets\AssemblyAttributes.targets" />
 </Project>
