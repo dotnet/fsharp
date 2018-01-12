@@ -532,7 +532,7 @@ let UseOfAddressOfOperatorE() = DeclareResourceString("UseOfAddressOfOperator", 
 let DefensiveCopyWarningE() = DeclareResourceString("DefensiveCopyWarning", "%s")
 let DeprecatedThreadStaticBindingWarningE() = DeclareResourceString("DeprecatedThreadStaticBindingWarning", "")
 let FunctionValueUnexpectedE() = DeclareResourceString("FunctionValueUnexpected", "%s")
-let UnitTypeExpectedE() = DeclareResourceString("UnitTypeExpected", "")
+let UnitTypeExpectedE() = DeclareResourceString("UnitTypeExpected", "%s")
 let UnitTypeExpectedWithEqualityE() = DeclareResourceString("UnitTypeExpectedWithEquality", "")
 let UnitTypeExpectedWithPossiblePropertySetterE() = DeclareResourceString("UnitTypeExpectedWithPossiblePropertySetter", "%s%s")
 let UnitTypeExpectedWithPossibleAssignmentE() = DeclareResourceString("UnitTypeExpectedWithPossibleAssignment", "%s")
@@ -1296,8 +1296,9 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
           let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
           os.Append(FunctionValueUnexpectedE().Format (NicePrint.stringOfTy denv ty)) |> ignore
 
-      | UnitTypeExpected (_, _, _) ->
-          let warningText = UnitTypeExpectedE().Format
+      | UnitTypeExpected (denv, ty, _) ->
+          let ty, _cxs = PrettyTypes.PrettifyType denv.g ty   
+          let warningText = UnitTypeExpectedE().Format (NicePrint.stringOfTy denv ty)
           os.Append warningText |> ignore
 
       | UnitTypeExpectedWithEquality (_) ->
