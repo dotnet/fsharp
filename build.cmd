@@ -603,10 +603,7 @@ if "%RestorePackages%" == "true" (
     )
 )
 
-if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
-    :: Restore the Tools directory
-    call %~dp0init-tools.cmd
-)
+call %~dp0init-tools.cmd
 
 set _dotnetcliexe=%~dp0Tools\dotnetcli\dotnet.exe
 set _dotnet20exe=%~dp0Tools\dotnet20\dotnet.exe
@@ -676,7 +673,12 @@ if "%BUILD_PHASE%" == "1" (
    @if ERRORLEVEL 1 echo Error build failed && goto :failure
 )
 
-echo ---------------- Done with build, starting assembly signing ---------------
+echo ---------------- Done with build, starting assembly version checks ---------------
+set asmvercheckpath=%~dp0tests\fsharpqa\testenv\src\AssemblyVersionCheck
+%_dotnet20exe% run -p "%asmvercheckpath%\AssemblyVersionCheck.fsproj" "%~dp0build\config\AssemblySignToolData.json" "%~dp0%BUILD_CONFIG%"
+if ERRORLEVEL 1 echo Error verifying assembly versions and commit hashes. && goto :failure
+
+echo ---------------- Done with assembly version checks, starting assembly signing ---------------
 
 if not "%SIGN_TYPE%" == "" (
     echo build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -ConfigFile build\config\AssemblySignToolData.json
