@@ -6,11 +6,6 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 /* F# additions: begin. */
-[assembly:AssemblyDescription("FSharp.ProjectSystem.Base.dll")]
-[assembly:AssemblyCompany("Microsoft Corporation")]
-[assembly:AssemblyTitle("FSharp.ProjectSystem.Base.dll")]
-[assembly:AssemblyCopyright("\x00a9 Microsoft Corporation.  All rights reserved.")]
-[assembly:AssemblyProduct("Microsoft\x00ae F#")]
 [assembly:AssemblyConfiguration("")]
 [assembly:AssemblyCulture("")]
 [assembly:ComVisible(false)]
