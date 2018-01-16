@@ -84,7 +84,7 @@
       </trans-unit>
       <trans-unit id="Unused_declaration_code_fix">
         <source>Analyze and suggest fixes for unused values</source>
-        <target state="new">Analyze and suggest fixes for unused values</target>
+        <target state="translated">未使用の値を分析して修正を提案する</target>
         <note />
       </trans-unit>
     </body>
