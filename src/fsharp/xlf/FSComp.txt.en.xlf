@@ -802,11 +802,6 @@
         <target state="new">The implicit instantiation of a generic construct at or near this point could not be resolved because it could resolve to multiple unrelated types, e.g. '{0}' and '{1}'. Consider using type annotations to resolve the ambiguity</target>
         <note />
       </trans-unit>
-      <trans-unit id="typrelCannotResolveAmbiguityInOverloadedOperator">
-        <source>Could not resolve the ambiguity inherent in the use of the operator '{0}' at or near this program point. Consider using type annotations to resolve the ambiguity.</source>
-        <target state="new">Could not resolve the ambiguity inherent in the use of the operator '{0}' at or near this program point. Consider using type annotations to resolve the ambiguity.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="typrelCannotResolveAmbiguityInPrintf">
         <source>Could not resolve the ambiguity inherent in the use of a 'printf'-style format string</source>
         <target state="new">Could not resolve the ambiguity inherent in the use of a 'printf'-style format string</target>

@@ -161,7 +161,6 @@ FieldNotContainedMutablesDiffer,"The module contains the field\n    %s    \nbut 
 FieldNotContainedLiteralsDiffer,"The module contains the field\n    %s    \nbut its signature specifies\n    %s    \nThe 'literal' modifiers differ"
 FieldNotContainedTypesDiffer,"The module contains the field\n    %s    \nbut its signature specifies\n    %s    \nThe types differ"
 331,typrelCannotResolveImplicitGenericInstantiation,"The implicit instantiation of a generic construct at or near this point could not be resolved because it could resolve to multiple unrelated types, e.g. '%s' and '%s'. Consider using type annotations to resolve the ambiguity"
-332,typrelCannotResolveAmbiguityInOverloadedOperator,"Could not resolve the ambiguity inherent in the use of the operator '%s' at or near this program point. Consider using type annotations to resolve the ambiguity."
 333,typrelCannotResolveAmbiguityInPrintf,"Could not resolve the ambiguity inherent in the use of a 'printf'-style format string"
 334,typrelCannotResolveAmbiguityInEnum,"Could not resolve the ambiguity in the use of a generic construct with an 'enum' constraint at or near this position"
 335,typrelCannotResolveAmbiguityInDelegate,"Could not resolve the ambiguity in the use of a generic construct with a 'delegate' constraint at or near this position"
