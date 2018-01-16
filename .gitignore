@@ -125,3 +125,5 @@ tests/fsharpqa/testenv/bin/System.ValueTuple.dll
 /tests/fcs/
 /fcs/.paket/Paket.Restore.targets
 msbuild.binlog
+/fcs/FSharp.Compiler.Service.netstandard/*.fs
+/fcs/FSharp.Compiler.Service.netstandard/*.fsi
