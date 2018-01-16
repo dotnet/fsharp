@@ -930,11 +930,11 @@ type TypeCheckInfo
         scope.IsRelativeNameResolvable(cursorPos, plid, symbol.Item)
         
     /// Get the auto-complete items at a location
-    member __.GetDeclarations (ctok, parseResultsOpt, line, lineStr, partialName, getAllSymbols, hasTextChangedSinceLastTypecheck) =
+    member __.GetDeclarations (ctok, parseResultsOpt, line, lineStr, partialName, getAllEntities, hasTextChangedSinceLastTypecheck) =
         let isInterfaceFile = SourceFileImpl.IsInterfaceFile mainInputFileName
         ErrorScope.Protect Range.range0 
             (fun () ->
-                match GetDeclItemsForNamesAtPosition(ctok, parseResultsOpt, Some partialName.QualifyingIdents, Some partialName.PartialIdent, partialName.LastDotPos, line, lineStr, partialName.EndColumn + 1, ResolveTypeNamesToCtors, ResolveOverloads.Yes, getAllSymbols, hasTextChangedSinceLastTypecheck) with
+                match GetDeclItemsForNamesAtPosition(ctok, parseResultsOpt, Some partialName.QualifyingIdents, Some partialName.PartialIdent, partialName.LastDotPos, line, lineStr, partialName.EndColumn + 1, ResolveTypeNamesToCtors, ResolveOverloads.Yes, getAllEntities, hasTextChangedSinceLastTypecheck) with
                 | None -> FSharpDeclarationListInfo.Empty  
                 | Some (items, denv, ctx, m) -> 
                     let items = if isInterfaceFile then items |> List.filter (fun x -> IsValidSignatureFileItem x.Item) else items
@@ -950,11 +950,11 @@ type TypeCheckInfo
                 FSharpDeclarationListInfo.Error msg)
 
     /// Get the symbols for auto-complete items at a location
-    member __.GetDeclarationListSymbols (ctok, parseResultsOpt, line, lineStr, partialName, getAllSymbols, hasTextChangedSinceLastTypecheck) =
+    member __.GetDeclarationListSymbols (ctok, parseResultsOpt, line, lineStr, partialName, getAllEntities, hasTextChangedSinceLastTypecheck) =
         let isInterfaceFile = SourceFileImpl.IsInterfaceFile mainInputFileName
         ErrorScope.Protect Range.range0 
             (fun () -> 
-                match GetDeclItemsForNamesAtPosition(ctok, parseResultsOpt, Some partialName.QualifyingIdents, Some partialName.PartialIdent, partialName.LastDotPos, line, lineStr, partialName.EndColumn + 1, ResolveTypeNamesToCtors, ResolveOverloads.Yes, getAllSymbols, hasTextChangedSinceLastTypecheck) with
+                match GetDeclItemsForNamesAtPosition(ctok, parseResultsOpt, Some partialName.QualifyingIdents, Some partialName.PartialIdent, partialName.LastDotPos, line, lineStr, partialName.EndColumn + 1, ResolveTypeNamesToCtors, ResolveOverloads.Yes, getAllEntities, hasTextChangedSinceLastTypecheck) with
                 | None -> List.Empty  
                 | Some (items, denv, _, m) -> 
                     let items = if isInterfaceFile then items |> List.filter (fun x -> IsValidSignatureFileItem x.Item) else items
@@ -1929,15 +1929,17 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
     member info.HasFullTypeCheckInfo = details.IsSome
     
     /// Intellisense autocompletions
-    member info.GetDeclarationListInfo(parseResultsOpt, line, lineStr, partialName, getAllEntities, ?hasTextChangedSinceLastTypecheck, ?userOpName: string) = 
+    member info.GetDeclarationListInfo(parseResultsOpt, line, lineStr, partialName, ?getAllEntities, ?hasTextChangedSinceLastTypecheck, ?userOpName: string) = 
         let userOpName = defaultArg userOpName "Unknown"
+        let getAllEntities = defaultArg getAllEntities (fun() -> [])
         let hasTextChangedSinceLastTypecheck = defaultArg hasTextChangedSinceLastTypecheck (fun _ -> false)
         reactorOp userOpName "GetDeclarations" FSharpDeclarationListInfo.Empty (fun ctok scope -> 
             scope.GetDeclarations(ctok, parseResultsOpt, line, lineStr, partialName, getAllEntities, hasTextChangedSinceLastTypecheck))
 
-    member info.GetDeclarationListSymbols(parseResultsOpt, line, lineStr, partialName, getAllEntities, ?hasTextChangedSinceLastTypecheck, ?userOpName: string) = 
+    member info.GetDeclarationListSymbols(parseResultsOpt, line, lineStr, partialName, ?getAllEntities, ?hasTextChangedSinceLastTypecheck, ?userOpName: string) = 
         let userOpName = defaultArg userOpName "Unknown"
         let hasTextChangedSinceLastTypecheck = defaultArg hasTextChangedSinceLastTypecheck (fun _ -> false)
+        let getAllEntities = defaultArg getAllEntities (fun() -> [])
         reactorOp userOpName "GetDeclarationListSymbols" List.empty (fun ctok scope -> scope.GetDeclarationListSymbols(ctok, parseResultsOpt, line, lineStr, partialName, getAllEntities, hasTextChangedSinceLastTypecheck))
 
     /// Resolve the names at the given location to give a data tip 
