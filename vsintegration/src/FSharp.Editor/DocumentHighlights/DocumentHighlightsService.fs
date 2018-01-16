@@ -79,7 +79,7 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
                 let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! textVersion = document.GetTextVersionAsync(cancellationToken) 
-                let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, parsingOptions)
+                let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
                 let! spans = FSharpDocumentHighlightsService.GetDocumentHighlights(checkerProvider.Checker, document.Id, sourceText, document.FilePath, 
                                                                                    position, defines, projectOptions, textVersion.GetHashCode())
                 let highlightSpans = 

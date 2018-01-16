@@ -101,7 +101,7 @@ type internal FSharpAddOpenCodeFixProvider
             let! _, parsedInput, checkResults = checker.ParseAndCheckDocument(document, projectOptions, allowStaleResults = true, sourceText = sourceText, userOpName = userOpName)
             let line = sourceText.Lines.GetLineFromPosition(context.Span.End)
             let linePos = sourceText.Lines.GetLinePosition(context.Span.End)
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, parsingOptions)
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             
             let! symbol = 
                 asyncMaybe {

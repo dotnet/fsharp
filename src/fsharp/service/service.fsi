@@ -295,6 +295,7 @@ type public FSharpParsingOptions =
       SourceFiles: string[]
       ConditionalCompilationDefines: string list
       ErrorSeverityOptions: FSharpErrorSeverityOptions
+      IsInteractive: bool
       LightSyntax: bool option
       CompilingFsLib: bool
       IsExe: bool
@@ -533,14 +534,14 @@ type public FSharpChecker =
     ///
     /// <param name="sourceFiles">Initial source files list. Additional files may be added during argv evaluation.</param>
     /// <param name="argv">The command line arguments for the project build.</param>
-    member GetParsingOptionsFromCommandLineArgs: sourceFiles: string list * argv: string list -> FSharpParsingOptions * FSharpErrorInfo list
+    member GetParsingOptionsFromCommandLineArgs: sourceFiles: string list * argv: string list * ?isInteractive: bool -> FSharpParsingOptions * FSharpErrorInfo list
 
     /// <summary>
     /// <para>Get the FSharpParsingOptions implied by a set of command line arguments.</para>
     /// </summary>
     ///
     /// <param name="argv">The command line arguments for the project build.</param>
-    member GetParsingOptionsFromCommandLineArgs: argv: string list -> FSharpParsingOptions * FSharpErrorInfo list
+    member GetParsingOptionsFromCommandLineArgs: argv: string list * ?isInteractive: bool -> FSharpParsingOptions * FSharpErrorInfo list
 
     /// <summary>
     /// <para>Get the FSharpParsingOptions implied by a FSharpProjectOptions.</para>
@@ -727,11 +728,11 @@ type public CompilerEnvironment =
 module public CompilerEnvironment =
     /// These are the names of assemblies that should be referenced for .fs or .fsi files that
     /// are not associated with a project.
-    val DefaultReferencesForOrphanSources : assumeDotNetFramework: bool -> string list
+    val DefaultReferencesForOrphanSources: assumeDotNetFramework: bool -> string list
     /// Return the compilation defines that should be used when editing the given file.
-    val GetCompilationDefinesForEditing : filename : string * parsingOptions : FSharpParsingOptions -> string list
+    val GetCompilationDefinesForEditing: parsingOptions: FSharpParsingOptions -> string list
     /// Return true if this is a subcategory of error or warning message that the language service can emit
-    val IsCheckerSupportedSubcategory : string -> bool
+    val IsCheckerSupportedSubcategory: string -> bool
 
 /// Information about the debugging environment
 module public DebuggerEnvironment =
