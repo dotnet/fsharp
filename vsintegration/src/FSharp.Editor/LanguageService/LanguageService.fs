@@ -162,8 +162,8 @@ type internal FSharpProjectOptionsManager
         let parsingOptions = 
             match projectOptionsOpt with 
             | Some (parsingOptions, _site, _projectOptions) -> parsingOptions
-            | _ -> FSharpParsingOptions.Default
-        CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, parsingOptions)
+            | _ -> { FSharpParsingOptions.Default with IsInteractive = IsScript document.Name }
+        CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
 
     /// Try and get the Options for a project 
     member this.TryGetOptionsForProject(projectId:ProjectId) = projectOptionsTable.TryGetOptionsForProject(projectId)

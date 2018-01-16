@@ -41,8 +41,8 @@ module SourceFileImpl =
         0 = String.Compare(".fsi",ext,StringComparison.OrdinalIgnoreCase)
 
     /// Additional #defines that should be in place when editing a file in a file editor such as VS.
-    let AdditionalDefinesForUseInEditor(filename) =
-        if CompileOps.IsScript(filename) then ["INTERACTIVE";"EDITING"] // This is still used by the foreground parse
+    let AdditionalDefinesForUseInEditor(isInteractive: bool) =
+        if isInteractive then ["INTERACTIVE";"EDITING"] // This is still used by the foreground parse
         else ["COMPILED";"EDITING"]
            
 type CompletionPath = string list * string option // plid * residue
