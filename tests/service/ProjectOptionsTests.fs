@@ -14,6 +14,7 @@ open System
 open System.IO
 open NUnit.Framework
 open FsUnit
+open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler.Service.Tests.Common
@@ -518,6 +519,46 @@ let ``Test SourceFiles order for GetProjectOptionsFromScript`` () = // See #594
     test "Main4" [|"BaseLib2"; "Lib5"; "BaseLib1"; "Lib1"; "Lib2"; "Main4"|] 
     test "MainBad" [|"MainBad"|] 
 
+[<Test>]
+let ``Script load closure project`` () =
+    let fileName1 = Path.GetTempPath() + Path.DirectorySeparatorChar.ToString() + "Impl.fs"
+    let fileName2 = Path.ChangeExtension(Path.GetTempFileName(), ".fsx")
 
+    let fileSource1 = """
+module ImplFile
 
+#if INTERACTIVE
+let x = 42
+#endif
+"""
 
+    let fileSource2 = """
+#load "Impl.fs"
+ImplFile.x
+"""
+
+    File.WriteAllText(fileName1, fileSource1)
+    File.WriteAllText(fileName2, fileSource2)
+
+    let projectOptions, diagnostics =
+        checker.GetProjectOptionsFromScript(fileName2, fileSource2) |> Async.RunSynchronously
+    diagnostics.IsEmpty |> shouldEqual true
+
+    let _, checkResults =
+        checker.ParseAndCheckFileInProject(fileName2, 0, fileSource2, projectOptions) |> Async.RunSynchronously
+
+    match checkResults with
+    | FSharpCheckFileAnswer.Succeeded results ->
+        results.Errors |> shouldEqual [| |]
+    | _ -> failwith "type check was aborted"
+
+    let parsingOptions, diagnostics = checker.GetParsingOptionsFromProjectOptions(projectOptions)
+    diagnostics.IsEmpty |> shouldEqual true
+
+    let parseResults = checker.ParseFile(fileName1, fileSource1, parsingOptions) |> Async.RunSynchronously
+    parseResults.ParseTree.IsSome |> shouldEqual true
+    match parseResults.ParseTree.Value with
+    | ParsedInput.ImplFile (ParsedImplFileInput (_, _, _, _, _, modules, _)) ->
+        let (SynModuleOrNamespace (_, _, _, decls, _, _, _, _)) = modules.Head
+        decls.Length |> shouldEqual 1
+    | _ -> failwith "got sig file"

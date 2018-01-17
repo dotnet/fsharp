@@ -802,11 +802,6 @@
         <target state="translated">관련되지 않은 여러 형식(예: '{0}'과(와) '{1}')으로 확인될 수 있으므로 이 지점 또는 이 지점 근처에서 제네릭 구문의 암시적 인스턴스를 확인할 수 없습니다. 형식 주석을 사용하여 모호성을 해결하세요.</target>
         <note />
       </trans-unit>
-      <trans-unit id="typrelCannotResolveAmbiguityInOverloadedOperator">
-        <source>Could not resolve the ambiguity inherent in the use of the operator '{0}' at or near this program point. Consider using type annotations to resolve the ambiguity.</source>
-        <target state="translated">’{0}' 연산자 사용과 관련하여 이 프로그램 지점 또는 이 지점 근처에서 본질적으로 발생하는 모호성을 해결할 수 없습니다. 형식 주석을 사용하여 모호성을 해결하세요.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="typrelCannotResolveAmbiguityInPrintf">
         <source>Could not resolve the ambiguity inherent in the use of a 'printf'-style format string</source>
         <target state="translated">'printf' 스타일의 서식 문자열 사용과 관련하여 본질적으로 발생하는 모호성을 해결할 수 없습니다.</target>
