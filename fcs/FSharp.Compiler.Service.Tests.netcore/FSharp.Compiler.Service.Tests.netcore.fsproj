@@ -1,7 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netcoreapp1.0</TargetFramework>
-    <DefineConstants>$(DefineConstants);DOTNETCORE;FX_ATLEAST_45;FX_ATLEAST_PORTABLE;FX_NO_RUNTIMEENVIRONMENT;FX_RESHAPED_REFLECTION;TODO_REWORK_ASSEMBLY_LOAD;</DefineConstants>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <DefineConstants>$(DefineConstants);DOTNETCORE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_ATLEAST_45</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_ATLEAST_PORTABLE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_RUNTIMEENVIRONMENT</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_RESHAPED_REFLECTION</DefineConstants>
+    <DefineConstants>$(DefineConstants);NO_EXTENSIONTYPING</DefineConstants>
+    <DefineConstants>$(DefineConstants);TODO_REWORK_ASSEMBLY_LOAD</DefineConstants>
     <NoWarn>$(NoWarn);44;</NoWarn>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <DelaySign>true</DelaySign>
@@ -36,25 +42,21 @@
     <!--<Compile Include="../service/ProjectAnalysisTests.fs">
       <Link>ProjectAnalysisTests.fs</Link>
     </Compile>-->
+    <Compile Include="../../tests/service/Program.fs">
+      <Link>Program.fs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../FSharp.Compiler.Service.netstandard/FSharp.Compiler.Service.netstandard.fsproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.0.0" />
-    <PackageReference Include="NUnit3TestAdapter" Version="3.8.0" />
-    <PackageReference Include="NUnitLite" Version="3.6.1" />
-    <PackageReference Include="NUnit" Version="3.6.1" />
-    <PackageReference Include="FSharp.Core" Version="4.1.*" PrivateAssets="All" />
-    <PackageReference Include="System.Runtime" Version="4.3.0" />
-    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
-    <PackageReference Include="System.Reflection.Metadata" Version="1.4.1" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.3.0" />
-    <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
-    <PackageReference Include="Dotnet.ProjInfo" Version="0.5.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0" />
+    <PackageReference Include="NUnit" Version="3.9.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.9.0" />
+    <PackageReference Include="Dotnet.ProjInfo" Version="0.9.0" />
   </ItemGroup>
   <Target Name="PrecompileScript" BeforeTargets="BeforeBuild">
-    <Exec Command="dotnet restore &quot;$(MSBuildProjectDirectory)/../../tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard1.6/Sample_NETCoreSDK_FSharp_Library_netstandard1.6.fsproj&quot;" />
-    <Exec Command="dotnet build &quot;$(MSBuildProjectDirectory)/../../tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard1.6/Sample_NETCoreSDK_FSharp_Library_netstandard1.6.fsproj&quot;" />
+    <Exec Command="dotnet restore &quot;$(MSBuildProjectDirectory)/../../tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0/Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj&quot;" />
+    <Exec Command="dotnet build &quot;$(MSBuildProjectDirectory)/../../tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0/Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj&quot;" />
   </Target>
 </Project>

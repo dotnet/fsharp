@@ -29,9 +29,10 @@ let readRefs (folder : string) (projectFile: string) =
         let exitCode = p.ExitCode
         exitCode, ()
 
+    let projFilePath = Path.Combine(folder, projectFile)
     let runCmd exePath args = runProcess folder exePath (args |> String.concat " ")
     let msbuildExec = Dotnet.ProjInfo.Inspect.dotnetMsbuild runCmd
-    let result = Dotnet.ProjInfo.Inspect.getProjectInfo ignore msbuildExec Dotnet.ProjInfo.Inspect.getFscArgs [] projectFile
+    let result = Dotnet.ProjInfo.Inspect.getProjectInfo ignore msbuildExec Dotnet.ProjInfo.Inspect.getFscArgs [] projFilePath
     match result with
     | Ok(Dotnet.ProjInfo.Inspect.GetResult.FscArgs x) ->
         x
@@ -101,8 +102,8 @@ let fsCoreDefaultReference() =
 
 let mkStandardProjectReferences () = 
 #if DOTNETCORE
-            let file = "Sample_NETCoreSDK_FSharp_Library_netstandard1.6.fsproj"
-            let projDir = Path.Combine(__SOURCE_DIRECTORY__, "../projects/Sample_NETCoreSDK_FSharp_Library_netstandard1.6")
+            let file = "Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj"
+            let projDir = Path.Combine(__SOURCE_DIRECTORY__, "../projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0")
             readRefs projDir file
 #else
             [ yield sysLib "mscorlib"
