@@ -1005,7 +1005,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attrib_ProjectionParameterAttribute           = mk_MFCore_attrib "ProjectionParameterAttribute"
   member val attrib_CustomOperationAttribute               = mk_MFCore_attrib "CustomOperationAttribute"
   member val attrib_NonSerializedAttribute                 = tryFindSysAttrib "System.NonSerializedAttribute"
-  member val attrib_SerializableAttribute                 = tryFindSysAttrib "System.SerializableAttribute"
   
   member val attrib_AutoSerializableAttribute              = mk_MFCore_attrib "AutoSerializableAttribute"
   member val attrib_RequireQualifiedAccessAttribute        = mk_MFCore_attrib "RequireQualifiedAccessAttribute"
