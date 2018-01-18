@@ -249,7 +249,7 @@
       </trans-unit>
       <trans-unit id="buildMultipleToplevelModules">
         <source>This file contains multiple declarations of the form 'module SomeNamespace.SomeModule'. Only one declaration of this form is permitted in a file. Change your file to use an initial namespace declaration and/or use 'module ModuleName = ...' to define your modules.</source>
-        <target state="translated">이 파일에는 'module SomeNamespace.SomeModule' 형식의 선언이 여러 개 포함되어 있습니다. 이러한 형식의 선언은 파일당 하나만 허용됩니다. 초기 네임스페이스 선언을 사용하도록 파일을 변경하거나 'module ModuleName = ...'을 사용하여 모듈을 정의하십시오.</target>
+        <target state="translated">이 파일에는 'module SomeNamespace.SomeModule' 형식의 선언이 여러 개 포함되어 있습니다. 이러한 형식의 선언은 파일당 하나만 허용됩니다. 초기 네임스페이스 선언을 사용하도록 파일을 변경하거나 'module ModuleName = ...'을 사용하여 모듈을 정의하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildOptionRequiresParameter">
@@ -329,7 +329,7 @@
       </trans-unit>
       <trans-unit id="buildSignatureWithoutImplementation">
         <source>The signature file '{0}' does not have a corresponding implementation file. If an implementation file exists then check the 'module' and 'namespace' declarations in the signature and implementation files match.</source>
-        <target state="translated">시그니처 파일 '{0}'에 해당하는 구현 파일이 없습니다. 구현 파일이 있는 경우 시그니처 파일과 구현 파일의 'module' 및 'namespace' 선언이 일치하는지 확인하십시오.</target>
+        <target state="translated">시그니처 파일 '{0}'에 해당하는 구현 파일이 없습니다. 구현 파일이 있는 경우 시그니처 파일과 구현 파일의 'module' 및 'namespace' 선언이 일치하는지 확인하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildArgInvalidInt">
@@ -434,12 +434,12 @@
       </trans-unit>
       <trans-unit id="tastRecursiveValuesMayNotAppearInConstructionOfType">
         <source>Recursive values cannot appear directly as a construction of the type '{0}' within a recursive binding. This feature has been removed from the F# language. Consider using a record instead.</source>
-        <target state="translated">재귀 값은 재귀적 바인딩 내에서 '{0}' 형식의 구성 요소로 직접 나타날 수 없습니다. 이 기능은 F# 언어에서 제거되었습니다. 대신 레코드를 사용하십시오.</target>
+        <target state="translated">재귀 값은 재귀적 바인딩 내에서 '{0}' 형식의 구성 요소로 직접 나타날 수 없습니다. 이 기능은 F# 언어에서 제거되었습니다. 대신 레코드를 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tastRecursiveValuesMayNotBeAssignedToNonMutableField">
         <source>Recursive values cannot be directly assigned to the non-mutable field '{0}' of the type '{1}' within a recursive binding. Consider using a mutable field instead.</source>
-        <target state="translated">재귀 값은 재귀적 바인딩 내에서 '{1}' 형식의 변경할 수 없는 필드 '{0}'에 직접 할당할 수 없습니다. 대신 변경할 수 있는 필드를 사용하십시오.</target>
+        <target state="translated">재귀 값은 재귀적 바인딩 내에서 '{1}' 형식의 변경할 수 없는 필드 '{0}'에 직접 할당할 수 없습니다. 대신 변경할 수 있는 필드를 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tastUnexpectedDecodeOfAutoOpenAttribute">
@@ -799,12 +799,7 @@
       </trans-unit>
       <trans-unit id="typrelCannotResolveImplicitGenericInstantiation">
         <source>The implicit instantiation of a generic construct at or near this point could not be resolved because it could resolve to multiple unrelated types, e.g. '{0}' and '{1}'. Consider using type annotations to resolve the ambiguity</source>
-        <target state="translated">관련되지 않은 여러 형식(예: '{0}'과(와) '{1}')으로 확인될 수 있으므로 이 지점 또는 이 지점 근처에서 제네릭 구문의 암시적 인스턴스를 확인할 수 없습니다. 형식 주석을 사용하여 모호성을 해결하십시오.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="typrelCannotResolveAmbiguityInOverloadedOperator">
-        <source>Could not resolve the ambiguity inherent in the use of the operator '{0}' at or near this program point. Consider using type annotations to resolve the ambiguity.</source>
-        <target state="translated">’{0}' 연산자 사용과 관련하여 이 프로그램 지점 또는 이 지점 근처에서 본질적으로 발생하는 모호성을 해결할 수 없습니다. 형식 주석을 사용하여 모호성을 해결하세요.</target>
+        <target state="translated">관련되지 않은 여러 형식(예: '{0}'과(와) '{1}')으로 확인될 수 있으므로 이 지점 또는 이 지점 근처에서 제네릭 구문의 암시적 인스턴스를 확인할 수 없습니다. 형식 주석을 사용하여 모호성을 해결하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelCannotResolveAmbiguityInPrintf">
@@ -844,17 +839,17 @@
       </trans-unit>
       <trans-unit id="typrelSigImplNotCompatibleConstraintsDifferRemove">
         <source>The signature and implementation are not compatible because the type parameter '{0}' has a constraint of the form {1} but the implementation does not. Either remove this constraint from the signature or add it to the implementation.</source>
-        <target state="translated">형식 매개 변수 '{0}'에 {1} 형식의 제약 조건이 있지만 구현에는 없으므로 시그니처와 구현이 호환되지 않습니다. 이 제약 조건을 시그니처에서 제거하거나 구현에 추가하십시오.</target>
+        <target state="translated">형식 매개 변수 '{0}'에 {1} 형식의 제약 조건이 있지만 구현에는 없으므로 시그니처와 구현이 호환되지 않습니다. 이 제약 조건을 시그니처에서 제거하거나 구현에 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelTypeImplementsIComparableShouldOverrideObjectEquals">
         <source>The type '{0}' implements 'System.IComparable'. Consider also adding an explicit override for 'Object.Equals'</source>
-        <target state="translated">'{0}' 형식이 'System.IComparable'을 구현합니다. 'Object.Equals'에 대한 명시적 재정의도 추가하십시오.</target>
+        <target state="translated">'{0}' 형식이 'System.IComparable'을 구현합니다. 'Object.Equals'에 대한 명시적 재정의도 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelTypeImplementsIComparableDefaultObjectEqualsProvided">
         <source>The type '{0}' implements 'System.IComparable' explicitly but provides no corresponding override for 'Object.Equals'. An implementation of 'Object.Equals' has been automatically provided, implemented via 'System.IComparable'. Consider implementing the override 'Object.Equals' explicitly</source>
-        <target state="translated">'{0}' 형식이 'System.IComparable'을 명시적으로 구현하지만 'Object.Equals'에 해당하는 재정의를 제공하지 않습니다. 'System.IComparable'을 통해 구현된 'Object.Equals'의 구현이 자동으로 제공되었습니다. 재정의 'Object.Equals'를 명시적으로 구현하십시오.</target>
+        <target state="translated">'{0}' 형식이 'System.IComparable'을 명시적으로 구현하지만 'Object.Equals'에 해당하는 재정의를 제공하지 않습니다. 'System.IComparable'을 통해 구현된 'Object.Equals'의 구현이 자동으로 제공되었습니다. 재정의 'Object.Equals'를 명시적으로 구현하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelExplicitImplementationOfGetHashCodeOrEquals">
@@ -864,12 +859,12 @@
       </trans-unit>
       <trans-unit id="typrelExplicitImplementationOfGetHashCode">
         <source>The struct, record or union type '{0}' has an explicit implementation of 'Object.GetHashCode'. Consider implementing a matching override for 'Object.Equals(obj)'</source>
-        <target state="translated">구조체, 레코드 또는 공용 구조체 형식 '{0}'에 'Object.GetHashCode'의 명시적 구현이 있습니다. 'Object.Equals(obj)'에 대해 일치하는 재정의를 구현하십시오.</target>
+        <target state="translated">구조체, 레코드 또는 공용 구조체 형식 '{0}'에 'Object.GetHashCode'의 명시적 구현이 있습니다. 'Object.Equals(obj)'에 대해 일치하는 재정의를 구현하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelExplicitImplementationOfEquals">
         <source>The struct, record or union type '{0}' has an explicit implementation of 'Object.Equals'. Consider implementing a matching override for 'Object.GetHashCode()'</source>
-        <target state="translated">구조체, 레코드 또는 공용 구조체 형식 '{0}'에 'Object.Equals'의 명시적 구현이 있습니다. 'Object.GetHashCode()'에 대해 일치하는 재정의를 구현하십시오.</target>
+        <target state="translated">구조체, 레코드 또는 공용 구조체 형식 '{0}'에 'Object.Equals'의 명시적 구현이 있습니다. 'Object.GetHashCode()'에 대해 일치하는 재정의를 구현하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="ExceptionDefsNotCompatibleHiddenBySignature">
@@ -884,7 +879,7 @@
       </trans-unit>
       <trans-unit id="ExceptionDefsNotCompatibleAbbreviationHiddenBySignature">
         <source>The exception definitions are not compatible because the exception abbreviation is being hidden by the signature. The abbreviation must be visible to other CLI languages. Consider making the abbreviation visible in the signature. The module contains the exception definition\n    {0}    \nbut its signature specifies\n\t{1}.</source>
-        <target state="translated">시그니처에 의해 예외 약어가 숨겨져 있으므로 예외 정의가 호환되지 않습니다. 약어는 다른 CLI 언어에 표시되어야 합니다. 시그니처에서 약어를 표시하십시오. 모듈에 예외 정의\n    {0}이(가) 포함되어 있지만    \n해당 시그니처는\n\t{1}을(를) 지정합니다.</target>
+        <target state="translated">시그니처에 의해 예외 약어가 숨겨져 있으므로 예외 정의가 호환되지 않습니다. 약어는 다른 CLI 언어에 표시되어야 합니다. 시그니처에서 약어를 표시하세요. 모듈에 예외 정의\n    {0}이(가) 포함되어 있지만    \n해당 시그니처는\n\t{1}을(를) 지정합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="ExceptionDefsNotCompatibleSignaturesDiffer">
@@ -954,7 +949,7 @@
       </trans-unit>
       <trans-unit id="typrelNeedExplicitImplementation">
         <source>The interface '{0}' is included in multiple explicitly implemented interface types. Add an explicit implementation of this interface.</source>
-        <target state="translated">'{0}' 인터페이스가 명시적으로 구현된 다중 인터페이스 형식에 포함되어 있습니다. 이 인터페이스의 명시적 구현을 추가하십시오.</target>
+        <target state="translated">'{0}' 인터페이스가 명시적으로 구현된 다중 인터페이스 형식에 포함되어 있습니다. 이 인터페이스의 명시적 구현을 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelNamedArgumentHasBeenAssignedMoreThenOnce">
@@ -1014,7 +1009,7 @@
       </trans-unit>
       <trans-unit id="augNoRefEqualsOnStruct">
         <source>The 'ReferenceEquality' attribute cannot be used on structs. Consider using the 'StructuralEquality' attribute instead, or implement an override for 'System.Object.Equals(obj)'.</source>
-        <target state="translated">'ReferenceEquality' 특성은 구조체에 대해 사용할 수 없습니다. 대신 'StructuralEquality' 특성을 사용하거나 'System.Object.Equals(obj)'의 재정의를 구현하십시오.</target>
+        <target state="translated">'ReferenceEquality' 특성은 구조체에 대해 사용할 수 없습니다. 대신 'StructuralEquality' 특성을 사용하거나 'System.Object.Equals(obj)'의 재정의를 구현하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="augInvalidAttrs">
@@ -1064,12 +1059,12 @@
       </trans-unit>
       <trans-unit id="augNoEqNeedsNoObjEquals">
         <source>A type with attribute 'NoEquality' should not usually have an explicit implementation of 'Object.Equals(obj)'. Disable this warning if this is intentional for interoperability purposes</source>
-        <target state="translated">특성 'NoEquality'가 지정된 형식에는 일반적으로 'Object.Equals(obj)'에 대한 명시적 구현이 있으면 안 됩니다. 상호 운용성을 위해 의도적으로 이러한 구현을 사용한 경우에는 이 경고를 사용하지 마십시오.</target>
+        <target state="translated">특성 'NoEquality'가 지정된 형식에는 일반적으로 'Object.Equals(obj)'에 대한 명시적 구현이 있으면 안 됩니다. 상호 운용성을 위해 의도적으로 이러한 구현을 사용한 경우에는 이 경고를 사용하지 마세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="augNoCompCantImpIComp">
         <source>A type with attribute 'NoComparison' should not usually have an explicit implementation of 'System.IComparable', 'System.IComparable&lt;_&gt;' or 'System.Collections.IStructuralComparable'. Disable this warning if this is intentional for interoperability purposes</source>
-        <target state="translated">특성 'NoComparison'이 지정된 형식에는 일반적으로 'System.IComparable', 'System.IComparable&lt;_&gt;' 또는 'System.Collections.IStructuralComparable'에 대한 명시적 구현이 있으면 안 됩니다. 상호 운용성을 위해 의도적으로 이러한 구현을 사용한 경우에는 이 경고를 사용하지 마십시오.</target>
+        <target state="translated">특성 'NoComparison'이 지정된 형식에는 일반적으로 'System.IComparable', 'System.IComparable&lt;_&gt;' 또는 'System.Collections.IStructuralComparable'에 대한 명시적 구현이 있으면 안 됩니다. 상호 운용성을 위해 의도적으로 이러한 구현을 사용한 경우에는 이 경고를 사용하지 마세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="augCustomEqNeedsNoCompOrCustomComp">
@@ -1174,7 +1169,7 @@
       </trans-unit>
       <trans-unit id="chkBaseUsedInInvalidWay">
         <source>The 'base' keyword is used in an invalid way. Base calls cannot be used in closures. Consider using a private member to make base calls.</source>
-        <target state="translated">'base' 키워드가 잘못된 방식으로 사용되었습니다. 기본 호출은 클로저에 사용할 수 없습니다. 전용 멤버를 사용하여 기본 호출을 수행하십시오.</target>
+        <target state="translated">'base' 키워드가 잘못된 방식으로 사용되었습니다. 기본 호출은 클로저에 사용할 수 없습니다. 전용 멤버를 사용하여 기본 호출을 수행하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkVariableUsedInInvalidWay">
@@ -1394,7 +1389,7 @@
       </trans-unit>
       <trans-unit id="crefQuotationsCantContainGenericFunctions">
         <source>Quotations cannot contain function definitions that are inferred or declared to be generic. Consider adding some type constraints to make this a valid quoted expression.</source>
-        <target state="translated">인용구에는 제네릭 형식으로 유추되거나 선언되는 함수 정의를 포함할 수 없습니다. 형식 제약 조건을 추가하여 올바른 따옴표 붙은 식으로 만드십시오.</target>
+        <target state="translated">인용구에는 제네릭 형식으로 유추되거나 선언되는 함수 정의를 포함할 수 없습니다. 형식 제약 조건을 추가하여 올바른 따옴표 붙은 식으로 만드세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="crefQuotationsCantContainObjExprs">
@@ -1474,12 +1469,12 @@
       </trans-unit>
       <trans-unit id="csCodeLessGeneric">
         <source>This code is less generic than indicated by its annotations. A unit-of-measure specified using '_' has been determined to be '1', i.e. dimensionless. Consider making the code generic, or removing the use of '_'.</source>
-        <target state="translated">이 코드는 해당 주석에 표시된 것보다 일반적이지 않습니다. '_'을 사용하여 지정된 측정 단위는 '1', 즉 차원이 없는 것으로 결정되었습니다. 코드를 제네릭 형식으로 만들거나 '_'을 사용하지 마십시오.</target>
+        <target state="translated">이 코드는 해당 주석에 표시된 것보다 일반적이지 않습니다. '_'을 사용하여 지정된 측정 단위는 '1', 즉 차원이 없는 것으로 결정되었습니다. 코드를 제네릭 형식으로 만들거나 '_'을 사용하지 마세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeInferenceMaxDepth">
         <source>Type inference problem too complicated (maximum iteration depth reached). Consider adding further type annotations.</source>
-        <target state="translated">형식 유추 문제가 너무 복잡합니다(최대 반복 깊이에 도달함). 형식 주석을 더 추가하십시오.</target>
+        <target state="translated">형식 유추 문제가 너무 복잡합니다(최대 반복 깊이에 도달함). 형식 주석을 더 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="csExpectedArguments">
@@ -1514,12 +1509,12 @@
       </trans-unit>
       <trans-unit id="csTypesDoNotSupportOperatorNullable">
         <source>None of the types '{0}' support the operator '{1}'. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'.</source>
-        <target state="translated">{0}' 형식에서 '{1}' 연산자를 지원하지 않습니다. 'Microsoft.FSharp.Linq.NullableOperators' 모듈을 열어 보십시오.</target>
+        <target state="translated">{0}' 형식에서 '{1}' 연산자를 지원하지 않습니다. 'Microsoft.FSharp.Linq.NullableOperators' 모듈을 열어 보세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeDoesNotSupportOperatorNullable">
         <source>The type '{0}' does not support the operator '{1}'. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'.</source>
-        <target state="translated">{0}' 형식은 '{1}' 연산자를 지원하지 않습니다. 'Microsoft.FSharp.Linq.NullableOperators' 모듈을 열어 보십시오.</target>
+        <target state="translated">{0}' 형식은 '{1}' 연산자를 지원하지 않습니다. 'Microsoft.FSharp.Linq.NullableOperators' 모듈을 열어 보세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeDoesNotSupportConversion">
@@ -1549,7 +1544,7 @@
       </trans-unit>
       <trans-unit id="csNullableTypeDoesNotHaveNull">
         <source>The type '{0}' does not have 'null' as a proper value. To create a null value for a Nullable type use 'System.Nullable()'.</source>
-        <target state="translated">'{0}' 형식은 적절한 값으로 'null'을 가지지 않습니다. Nullable 형식에 null 값을 만들려면 'System.Nullable()'을 사용하십시오.</target>
+        <target state="translated">'{0}' 형식은 적절한 값으로 'null'을 가지지 않습니다. Nullable 형식에 null 값을 만들려면 'System.Nullable()'을 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeDoesNotSupportComparison1">
@@ -1564,7 +1559,7 @@
       </trans-unit>
       <trans-unit id="csTypeDoesNotSupportComparison3">
         <source>The type '{0}' does not support the 'comparison' constraint because it is a record, union or struct with one or more structural element types which do not support the 'comparison' constraint. Either avoid the use of comparison with this type, or add the 'StructuralComparison' attribute to the type to determine which field type does not support comparison</source>
-        <target state="translated">'{0}' 형식은 'comparison' 제약 조건을 지원하지 않는 하나 이상의 구조적 요소 형식을 포함하는 레코드, 공용 구조체 또는 구조체이므로 'comparison' 제약 조건을 지원하지 않습니다. 이 형식의 경우 비교를 사용하지 말거나 형식에 'StructuralComparison' 특성을 추가하여 비교를 지원하지 않는 필드 형식을 확인하십시오.</target>
+        <target state="translated">'{0}' 형식은 'comparison' 제약 조건을 지원하지 않는 하나 이상의 구조적 요소 형식을 포함하는 레코드, 공용 구조체 또는 구조체이므로 'comparison' 제약 조건을 지원하지 않습니다. 이 형식의 경우 비교를 사용하지 말거나 형식에 'StructuralComparison' 특성을 추가하여 비교를 지원하지 않는 필드 형식을 확인하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeDoesNotSupportEquality1">
@@ -1579,7 +1574,7 @@
       </trans-unit>
       <trans-unit id="csTypeDoesNotSupportEquality3">
         <source>The type '{0}' does not support the 'equality' constraint because it is a record, union or struct with one or more structural element types which do not support the 'equality' constraint. Either avoid the use of equality with this type, or add the 'StructuralEquality' attribute to the type to determine which field type does not support equality</source>
-        <target state="translated">'{0}' 형식은 'equality' 제약 조건을 지원하지 않는 하나 이상의 구조적 요소 형식을 포함하는 레코드, 공용 구조체 또는 구조체이므로 'equality' 제약 조건을 지원하지 않습니다. 이 형식의 경우 같음 조건을 사용하지 말거나 형식에 'StructuralEquality' 특성을 추가하여 같음 조건을 지원하지 않는 필드 형식을 확인하십시오.</target>
+        <target state="translated">'{0}' 형식은 'equality' 제약 조건을 지원하지 않는 하나 이상의 구조적 요소 형식을 포함하는 레코드, 공용 구조체 또는 구조체이므로 'equality' 제약 조건을 지원하지 않습니다. 이 형식의 경우 같음 조건을 사용하지 말거나 형식에 'StructuralEquality' 특성을 추가하여 같음 조건을 지원하지 않는 필드 형식을 확인하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeIsNotEnumType">
@@ -1664,7 +1659,7 @@
       </trans-unit>
       <trans-unit id="csMethodExpectsParams">
         <source>This method expects a CLI 'params' parameter in this position. 'params' is a way of passing a variable number of arguments to a method in languages such as C#. Consider passing an array for this argument</source>
-        <target state="translated">이 메서드에서는 이 위치에 CLI 'params' 매개 변수가 필요합니다. 'params'는 다양한 수의 인수를 C#과 같은 언어의 메서드에 전달하는 방법입니다. 이 인수에 대한 배열을 전달하십시오.</target>
+        <target state="translated">이 메서드에서는 이 위치에 CLI 'params' 매개 변수가 필요합니다. 'params'는 다양한 수의 인수를 C#과 같은 언어의 메서드에 전달하는 방법입니다. 이 인수에 대한 배열을 전달하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="csMemberIsNotAccessible">
@@ -1904,7 +1899,7 @@
       </trans-unit>
       <trans-unit id="parsNamespaceOrModuleNotBoth">
         <source>Files should begin with either a namespace or module declaration, e.g. 'namespace SomeNamespace.SubNamespace' or 'module SomeNamespace.SomeModule', but not both. To define a module within a namespace use 'module SomeModule = ...'</source>
-        <target state="translated">파일은 네임스페이스 또는 모듈 선언으로 시작해야 하지만(예: 'namespace SomeNamespace.SubNamespace' 또는 'module SomeNamespace.SomeModule') 둘 다로 시작할 수는 없습니다. 네임스페이스 내에 모듈을 정의하려면 'module SomeModule = ...'을 사용하십시오.</target>
+        <target state="translated">파일은 네임스페이스 또는 모듈 선언으로 시작해야 하지만(예: 'namespace SomeNamespace.SubNamespace' 또는 'module SomeNamespace.SomeModule') 둘 다로 시작할 수는 없습니다. 네임스페이스 내에 모듈을 정의하려면 'module SomeModule = ...'을 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsModuleAbbreviationMustBeSimpleName">
@@ -1974,7 +1969,7 @@
       </trans-unit>
       <trans-unit id="parsEmptyTypeDefinition">
         <source>A type definition requires one or more members or other declarations. If you intend to define an empty class, struct or interface, then use 'type ... = class end', 'interface end' or 'struct end'.</source>
-        <target state="translated">형식 정의에는 하나 이상의 멤버 또는 기타 선언이 필요합니다. 빈 클래스, 구조체 또는 인터페이스를 정의하려는 경우에는 'type ... = class end', 'interface end' 또는 'struct end'를 사용하십시오.</target>
+        <target state="translated">형식 정의에는 하나 이상의 멤버 또는 기타 선언이 필요합니다. 빈 클래스, 구조체 또는 인터페이스를 정의하려는 경우에는 'type ... = class end', 'interface end' 또는 'struct end'를 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnmatchedWith">
@@ -2049,7 +2044,7 @@
       </trans-unit>
       <trans-unit id="parsInheritDeclarationsCannotHaveAsBindings">
         <source>'inherit' declarations cannot have 'as' bindings. To access members of the base class when overriding a method, the syntax 'base.SomeMember' may be used; 'base' is a keyword. Remove this 'as' binding.</source>
-        <target state="translated">'inherit' 선언에는 'as' 바인딩을 지정할 수 없습니다. 메서드를 재정의할 때 기본 클래스의 멤버에 액세스하려면 'base.SomeMember' 구문을 사용할 수 있습니다. 'base'는 키워드입니다. 이 'as' 바인딩을 제거하십시오.</target>
+        <target state="translated">'inherit' 선언에는 'as' 바인딩을 지정할 수 없습니다. 메서드를 재정의할 때 기본 클래스의 멤버에 액세스하려면 'base.SomeMember' 구문을 사용할 수 있습니다. 'base'는 키워드입니다. 이 'as' 바인딩을 제거하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsAttributesIllegalHere">
@@ -2084,27 +2079,27 @@
       </trans-unit>
       <trans-unit id="parsUnionCasesCannotHaveVisibilityDeclarations">
         <source>Accessibility modifiers are not permitted on union cases. Use 'type U = internal ...' or 'type U = private ...' to give an accessibility to the whole representation.</source>
-        <target state="translated">액세스 가능성 한정자는 공용 구조체 케이스에서 허용되지 않습니다. 표현 전체에 액세스 가능성을 지정하려면 'type U = internal ...' 또는 'type U = private ...'을 사용하십시오.</target>
+        <target state="translated">액세스 가능성 한정자는 공용 구조체 케이스에서 허용되지 않습니다. 표현 전체에 액세스 가능성을 지정하려면 'type U = internal ...' 또는 'type U = private ...'을 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsEnumFieldsCannotHaveVisibilityDeclarations">
         <source>Accessibility modifiers are not permitted on enumeration fields</source>
-        <target state="translated">액세스 가능성 한정자는 열거 필드에서 허용되지 않습니다.</target>
+        <target state="translated">액세스 가능성 한정자는 열거형 필드에서 허용되지 않습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsConsiderUsingSeparateRecordType">
         <source>Consider using a separate record type instead</source>
-        <target state="translated">대신 별도의 레코드 형식을 사용하십시오.</target>
+        <target state="translated">대신 별도의 레코드 형식을 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsRecordFieldsCannotHaveVisibilityDeclarations">
         <source>Accessibility modifiers are not permitted on record fields. Use 'type R = internal ...' or 'type R = private ...' to give an accessibility to the whole representation.</source>
-        <target state="translated">액세스 가능성 한정자는 레코드 필드에서 허용되지 않습니다. 표현 전체에 액세스 가능성을 지정하려면 'type R = internal ...' 또는 'type R = private ...'을 사용하십시오.</target>
+        <target state="translated">액세스 가능성 한정자는 레코드 필드에서 허용되지 않습니다. 표현 전체에 액세스 가능성을 지정하려면 'type R = internal ...' 또는 'type R = private ...'을 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsLetAndForNonRecBindings">
         <source>The declaration form 'let ... and ...' for non-recursive bindings is not used in F# code. Consider using a sequence of 'let' bindings</source>
-        <target state="translated">비재귀적 바인딩을 위한 선언 형식 'let ... and ...'는 F# 코드에서 사용되지 않습니다. 대신 'let' 바인딩 시퀀스를 사용하십시오.</target>
+        <target state="translated">비재귀적 바인딩을 위한 선언 형식 'let ... and ...'는 F# 코드에서 사용되지 않습니다. 대신 'let' 바인딩 시퀀스를 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnmatchedParen">
@@ -2139,7 +2134,7 @@
       </trans-unit>
       <trans-unit id="parsAssertIsNotFirstClassValue">
         <source>'assert' may not be used as a first class value. Use 'assert &lt;expr&gt;' instead.</source>
-        <target state="translated">'assert'는 첫 번째 클래스 값으로 사용할 수 없습니다. 대신 'assert &lt;expr&gt;'을 사용하십시오.</target>
+        <target state="translated">'assert'는 첫 번째 클래스 값으로 사용할 수 없습니다. 대신 'assert &lt;expr&gt;'을 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIdentifierExpected">
@@ -2224,7 +2219,7 @@
       </trans-unit>
       <trans-unit id="parsMultiArgumentGenericTypeFormDeprecated">
         <source>The syntax '(typ,...,typ) ident' is not used in F# code. Consider using 'ident&lt;typ,...,typ&gt;' instead</source>
-        <target state="translated">'(typ,...,typ) ident' 구문은 F# 코드에서 사용되지 않습니다. 대신 'ident&lt;typ,...,typ&gt;'를 사용하십시오.</target>
+        <target state="translated">'(typ,...,typ) ident' 구문은 F# 코드에서 사용되지 않습니다. 대신 'ident&lt;typ,...,typ&gt;'를 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsInvalidLiteralInType">
@@ -2274,12 +2269,12 @@
       </trans-unit>
       <trans-unit id="parsSyntaxModuleStructEndDeprecated">
         <source>The syntax 'module ... = struct .. end' is not used in F# code. Consider using 'module ... = begin .. end'</source>
-        <target state="translated">'module ... = struct .. end' 구문은 F# 코드에서 사용되지 않습니다. 'module ... = begin .. end'를 사용하십시오.</target>
+        <target state="translated">'module ... = struct .. end' 구문은 F# 코드에서 사용되지 않습니다. 'module ... = begin .. end'를 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsSyntaxModuleSigEndDeprecated">
         <source>The syntax 'module ... : sig .. end' is not used in F# code. Consider using 'module ... = begin .. end'</source>
-        <target state="translated">'module ... : sig .. end' 구문은 F# 코드에서 사용되지 않습니다. 'module ... = begin .. end'를 사용하십시오.</target>
+        <target state="translated">'module ... : sig .. end' 구문은 F# 코드에서 사용되지 않습니다. 'module ... = begin .. end'를 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcStaticFieldUsedWhenInstanceFieldExpected">
@@ -2304,7 +2299,7 @@
       </trans-unit>
       <trans-unit id="tcNonZeroConstantCannotHaveGenericUnit">
         <source>Non-zero constants cannot have generic units. For generic zero, write 0.0&lt;_&gt;.</source>
-        <target state="translated">0이 아닌 상수에는 제네릭 단위를 지정할 수 없습니다. 제네릭 0을 사용하려면 0.0&lt;_&gt;을 작성하십시오.</target>
+        <target state="translated">0이 아닌 상수에는 제네릭 단위를 지정할 수 없습니다. 제네릭 0을 사용하려면 0.0&lt;_&gt;을 작성하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSeqResultsUseYield">
@@ -2349,7 +2344,7 @@
       </trans-unit>
       <trans-unit id="tcNamespaceCannotContainValues">
         <source>Namespaces cannot contain values. Consider using a module to hold your value declarations.</source>
-        <target state="translated">네임스페이스에는 값을 포함할 수 없습니다. 모듈을 사용하여 값 선언을 저장하십시오.</target>
+        <target state="translated">네임스페이스에는 값을 포함할 수 없습니다. 모듈을 사용하여 값 선언을 저장하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNamespaceCannotContainExtensionMembers">
@@ -2369,17 +2364,17 @@
       </trans-unit>
       <trans-unit id="tcInvalidMethodNameForRelationalOperator">
         <source>The name '({0})' should not be used as a member name. To define comparison semantics for a type, implement the 'System.IComparable' interface. If defining a static member for use from other CLI languages then use the name '{1}' instead.</source>
-        <target state="translated">이름 '({0})'은(는) 멤버 이름으로 사용하면 안 됩니다. 형식에 대한 비교 의미 체계를 정의하려면 'System.IComparable' 인터페이스를 구현하십시오. 다른 CLI 언어를 통해 사용할 정적 멤버를 정의하는 경우에는 이름 '{1}'을(를) 대신 사용하십시오.</target>
+        <target state="translated">이름 '({0})'은(는) 멤버 이름으로 사용하면 안 됩니다. 형식에 대한 비교 의미 체계를 정의하려면 'System.IComparable' 인터페이스를 구현하세요. 다른 CLI 언어를 통해 사용할 정적 멤버를 정의하는 경우에는 이름 '{1}'을(를) 대신 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidMethodNameForEquality">
         <source>The name '({0})' should not be used as a member name. To define equality semantics for a type, override the 'Object.Equals' member. If defining a static member for use from other CLI languages then use the name '{1}' instead.</source>
-        <target state="translated">이름 '({0})'은(는) 멤버 이름으로 사용하면 안 됩니다. 형식에 대한 같음 의미 체계를 정의하려면 'Object.Equals' 멤버를 재정의하십시오. 다른 CLI 언어를 통해 사용할 정적 멤버를 정의하는 경우에는 이름 '{1}'을(를) 대신 사용하십시오.</target>
+        <target state="translated">이름 '({0})'은(는) 멤버 이름으로 사용하면 안 됩니다. 형식에 대한 같음 의미 체계를 정의하려면 'Object.Equals' 멤버를 재정의하세요. 다른 CLI 언어를 통해 사용할 정적 멤버를 정의하는 경우에는 이름 '{1}'을(를) 대신 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidMemberName">
         <source>The name '({0})' should not be used as a member name. If defining a static member for use from other CLI languages then use the name '{1}' instead.</source>
-        <target state="translated">이름 '({0})'은(는) 멤버 이름으로 사용하면 안 됩니다. 다른 CLI 언어를 통해 사용할 정적 멤버를 정의하는 경우에는 이름 '{1}'을(를) 대신 사용하십시오.</target>
+        <target state="translated">이름 '({0})'은(는) 멤버 이름으로 사용하면 안 됩니다. 다른 CLI 언어를 통해 사용할 정적 멤버를 정의하는 경우에는 이름 '{1}'을(를) 대신 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidMemberNameFixedTypes">
@@ -2389,22 +2384,22 @@
       </trans-unit>
       <trans-unit id="tcInvalidOperatorDefinitionRelational">
         <source>The '{0}' operator should not normally be redefined. To define overloaded comparison semantics for a particular type, implement the 'System.IComparable' interface in the definition of that type.</source>
-        <target state="translated">'{0}' 연산자는 일반적으로 다시 정의하면 안 됩니다. 특정 형식에 대한 오버로드된 비교 의미 체계를 정의하려면 해당 형식의 정의에서 'System.IComparable' 인터페이스를 구현하십시오.</target>
+        <target state="translated">'{0}' 연산자는 일반적으로 다시 정의하면 안 됩니다. 특정 형식에 대한 오버로드된 비교 의미 체계를 정의하려면 해당 형식의 정의에서 'System.IComparable' 인터페이스를 구현하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidOperatorDefinitionEquality">
         <source>The '{0}' operator should not normally be redefined. To define equality semantics for a type, override the 'Object.Equals' member in the definition of that type.</source>
-        <target state="translated">'{0}' 연산자는 일반적으로 다시 정의하면 안 됩니다. 형식에 대한 같음 의미 체계를 정의하려면 해당 형식의 정의에서 'Object.Equals' 멤버를 재정의하십시오.</target>
+        <target state="translated">'{0}' 연산자는 일반적으로 다시 정의하면 안 됩니다. 형식에 대한 같음 의미 체계를 정의하려면 해당 형식의 정의에서 'Object.Equals' 멤버를 재정의하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidOperatorDefinition">
         <source>The '{0}' operator should not normally be redefined. Consider using a different operator name</source>
-        <target state="translated">'{0}' 연산자는 일반적으로 다시 정의하면 안 됩니다. 다른 연산자 이름을 사용하십시오.</target>
+        <target state="translated">'{0}' 연산자는 일반적으로 다시 정의하면 안 됩니다. 다른 연산자 이름을 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidIndexOperatorDefinition">
         <source>The '{0}' operator cannot be redefined. Consider using a different operator name</source>
-        <target state="translated">'{0}' 연산자를 다시 정의할 수 없습니다. 다른 연산자 이름을 사용하십시오.</target>
+        <target state="translated">'{0}' 연산자를 다시 정의할 수 없습니다. 다른 연산자 이름을 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpectModuleOrNamespaceParent">
@@ -2424,7 +2419,7 @@
       </trans-unit>
       <trans-unit id="tcImplementsIStructuralComparableExplicitly">
         <source>The struct, record or union type '{0}' implements the interface 'System.IStructuralComparable' explicitly. Apply the 'CustomComparison' attribute to the type.</source>
-        <target state="translated">구조체, 레코드 또는 공용 구조체 형식 '{0}'은(는) 'System.IStructuralComparable' 인터페이스를 명시적으로 구현합니다. 형식에 'CustomComparison' 특성을 적용하십시오.</target>
+        <target state="translated">구조체, 레코드 또는 공용 구조체 형식 '{0}'은(는) 'System.IStructuralComparable' 인터페이스를 명시적으로 구현합니다. 형식에 'CustomComparison' 특성을 적용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcRecordFieldInconsistentTypes">
@@ -2504,17 +2499,17 @@
       </trans-unit>
       <trans-unit id="tcPropertyRequiresExplicitTypeParameters">
         <source>A property cannot have explicit type parameters. Consider using a method instead.</source>
-        <target state="translated">속성에는 명시적 형식 매개 변수를 지정할 수 없습니다. 대신 메서드를 사용하십시오.</target>
+        <target state="translated">속성에는 명시적 형식 매개 변수를 지정할 수 없습니다. 대신 메서드를 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcConstructorCannotHaveTypeParameters">
         <source>A constructor cannot have explicit type parameters. Consider using a static construction method instead.</source>
-        <target state="translated">생성자에는 명시적 형식 매개 변수를 지정할 수 없습니다. 대신 정적 생성 메서드를 사용하십시오.</target>
+        <target state="translated">생성자에는 명시적 형식 매개 변수를 지정할 수 없습니다. 대신 정적 생성 메서드를 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInstanceMemberRequiresTarget">
         <source>This instance member needs a parameter to represent the object being invoked. Make the member static or use the notation 'member x.Member(args) = ...'.</source>
-        <target state="translated">이 인스턴스 멤버에는 호출하는 개체를 나타내는 매개 변수가 필요합니다. 멤버를 정적 요소로 만들거나 'member x.Member(args) = ...' 표기법을 사용하십시오.</target>
+        <target state="translated">이 인스턴스 멤버에는 호출하는 개체를 나타내는 매개 변수가 필요합니다. 멤버를 정적 요소로 만들거나 'member x.Member(args) = ...' 표기법을 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnexpectedPropertyInSyntaxTree">
@@ -2534,7 +2529,7 @@
       </trans-unit>
       <trans-unit id="tcStaticMemberShouldNotHaveThis">
         <source>This static member should not have a 'this' parameter. Consider using the notation 'member Member(args) = ...'.</source>
-        <target state="translated">이 정적 멤버에는 'this' 매개 변수가 있으면 안 됩니다. 'member Member(args) = ...' 표기법을 사용하십시오.</target>
+        <target state="translated">이 정적 멤버에는 'this' 매개 변수가 있으면 안 됩니다. 'member Member(args) = ...' 표기법을 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExplicitStaticInitializerSyntax">
@@ -2554,7 +2549,7 @@
       </trans-unit>
       <trans-unit id="tcObjectExpressionFormDeprecated">
         <source>This form of object expression is not used in F#. Use 'member this.MemberName ... = ...' to define member implementations in object expressions.</source>
-        <target state="translated">이러한 형식의 개체 식은 F#에서 사용되지 않습니다. 'member this.MemberName ... = ...'을 사용하여 개체 식에 멤버 구현을 정의하십시오.</target>
+        <target state="translated">이러한 형식의 개체 식은 F#에서 사용되지 않습니다. 'member this.MemberName ... = ...'을 사용하여 개체 식에 멤버 구현을 정의하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidDeclaration">
@@ -2674,7 +2669,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidUnitsOfMeasurePrefix">
         <source>Units-of-measure cannot be used as prefix arguments to a type. Rewrite as postfix arguments in angle brackets.</source>
-        <target state="translated">측정 단위는 형식에 대한 접두사 인수로 사용할 수 없습니다. 꺾쇠 괄호 안에 후위 인수로 다시 작성하십시오.</target>
+        <target state="translated">측정 단위는 형식에 대한 접두사 인수로 사용할 수 없습니다. 꺾쇠 괄호 안에 후위 인수로 다시 작성하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnitsOfMeasureInvalidInTypeConstructor">
@@ -2739,7 +2734,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidNonPrimitiveLiteralInPatternMatch">
         <source>Non-primitive numeric literal constants cannot be used in pattern matches because they can be mapped to multiple different types through the use of a NumericLiteral module. Consider using replacing with a variable, and use 'when &lt;variable&gt; = &lt;constant&gt;' at the end of the match clause.</source>
-        <target state="translated">기본 형식이 아닌 숫자 리터럴 상수는 NumericLiteral 모듈을 사용하여 다양한 형식에 매핑될 수 있으므로 패턴 일치에 사용할 수 없습니다. 변수로 바꾸고 일치 절의 끝에 'when &lt;variable&gt; = &lt;constant&gt;'를 사용하십시오.</target>
+        <target state="translated">기본 형식이 아닌 숫자 리터럴 상수는 NumericLiteral 모듈을 사용하여 다양한 형식에 매핑될 수 있으므로 패턴 일치에 사용할 수 없습니다. 변수로 바꾸고 일치 절의 끝에 'when &lt;variable&gt; = &lt;constant&gt;'를 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidTypeArgumentUsage">
@@ -2844,7 +2839,7 @@
       </trans-unit>
       <trans-unit id="tcExpressionWithIfRequiresParenthesis">
         <source>This list or array expression includes an element of the form 'if ... then ... else'. Parenthesize this expression to indicate it is an individual element of the list or array, to disambiguate this from a list generated using a sequence expression</source>
-        <target state="translated">이 목록 또는 배열 식에는 'if ... then ... else' 형식의 요소가 포함되어 있습니다. 식이 목록 또는 배열의 개별 요소임을 나타내고 이를 시퀀스 식을 사용하여 생성된 목록과 구분하려면 이 식을 괄호로 묶으십시오.</target>
+        <target state="translated">이 목록 또는 배열 식에는 'if ... then ... else' 형식의 요소가 포함되어 있습니다. 식이 목록 또는 배열의 개별 요소임을 나타내고 이를 시퀀스 식을 사용하여 생성된 목록과 구분하려면 이 식을 괄호로 묶으세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseFormatString">
@@ -2854,7 +2849,7 @@
       </trans-unit>
       <trans-unit id="tcListLiteralMaxSize">
         <source>This list expression exceeds the maximum size for list literals. Use an array for larger literals and call Array.ToList.</source>
-        <target state="translated">이 목록 식은 목록 리터럴의 최대 크기를 초과합니다. 보다 큰 리터럴을 위한 배열을 사용하고 Array.ToList를 호출하십시오.</target>
+        <target state="translated">이 목록 식은 목록 리터럴의 최대 크기를 초과합니다. 보다 큰 리터럴을 위한 배열을 사용하고 Array.ToList를 호출하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpressionFormRequiresObjectConstructor">
@@ -2884,7 +2879,7 @@
       </trans-unit>
       <trans-unit id="tcConstructRequiresComputationExpressions">
         <source>This construct may only be used within computation expressions. To return a value from an ordinary function simply write the expression without 'return'.</source>
-        <target state="translated">이 생성자는 계산 식 내에서만 사용할 수 있습니다. 일반 함수에서 값을 반환하려면 단순히 'return' 없이 식을 작성하십시오.</target>
+        <target state="translated">이 생성자는 계산 식 내에서만 사용할 수 있습니다. 일반 함수에서 값을 반환하려면 단순히 'return' 없이 식을 작성하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcConstructRequiresSequenceOrComputations">
@@ -2929,17 +2924,17 @@
       </trans-unit>
       <trans-unit id="tcInheritCannotBeUsedOnInterfaceType">
         <source>'inherit' cannot be used on interface types. Consider implementing the interface by using 'interface ... with ... end' instead.</source>
-        <target state="translated">'inherit'은 인터페이스 형식에 대해 사용할 수 없습니다. 대신 'interface ... with ... end'를 사용하여 인터페이스를 구현하십시오.</target>
+        <target state="translated">'inherit'은 인터페이스 형식에 대해 사용할 수 없습니다. 대신 'interface ... with ... end'를 사용하여 인터페이스를 구현하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNewCannotBeUsedOnInterfaceType">
         <source>'new' cannot be used on interface types. Consider using an object expression '{{ new ... with ... }}' instead.</source>
-        <target state="translated">'new'는 인터페이스 형식에 대해 사용할 수 없습니다. 대신 개체 식 '{{ new ... with ... }}'를 사용하십시오.</target>
+        <target state="translated">'new'는 인터페이스 형식에 대해 사용할 수 없습니다. 대신 개체 식 '{{ new ... with ... }}'를 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAbstractTypeCannotBeInstantiated">
         <source>Instances of this type cannot be created since it has been marked abstract or not all methods have been given implementations. Consider using an object expression '{{ new ... with ... }}' instead.</source>
-        <target state="translated">이 형식의 인스턴스가 abstract로 표시되었거나 메서드 중 일부에 구현이 지정되지 않았으므로 해당 인스턴스를 만들 수 없습니다. 대신 개체 식 '{{ new ... with ... }}'를 사용하십시오.</target>
+        <target state="translated">이 형식의 인스턴스가 abstract로 표시되었거나 메서드 중 일부에 구현이 지정되지 않았으므로 해당 인스턴스를 만들 수 없습니다. 대신 개체 식 '{{ new ... with ... }}'를 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcIDisposableTypeShouldUseNew">
@@ -2954,7 +2949,7 @@
       </trans-unit>
       <trans-unit id="tcConstructorRequiresCall">
         <source>Constructors for the type '{0}' must directly or indirectly call its implicit object constructor. Use a call to the implicit object constructor instead of a record expression.</source>
-        <target state="translated">'{0}' 형식에 대한 생성자는 직접 또는 간접적으로 해당 암시적 개체 생성자를 호출해야 합니다. 레코드 식 대신 암시적 개체 생성자에 대한 호출을 사용하십시오.</target>
+        <target state="translated">'{0}' 형식에 대한 생성자는 직접 또는 간접적으로 해당 암시적 개체 생성자를 호출해야 합니다. 레코드 식 대신 암시적 개체 생성자에 대한 호출을 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUndefinedField">
@@ -3014,7 +3009,7 @@
       </trans-unit>
       <trans-unit id="tcCannotCreateExtensionOfSealedType">
         <source>Cannot create an extension of a sealed type</source>
-        <target state="translated">봉인 형식의 확장을 만들 수 없습니다.</target>
+        <target state="translated">봉인된 형식의 확장을 만들 수 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNoArgumentsForRecordValue">
@@ -3079,7 +3074,7 @@
       </trans-unit>
       <trans-unit id="tcExpressionFormRequiresRecordTypes">
         <source>The expression form {{ expr with ... }} may only be used with record types. To build object types use {{ new Type(...) with ... }}</source>
-        <target state="translated">식 형식 {{ expr with ... }}는 레코드 형식에만 사용할 수 있습니다. 개체 형식을 빌드하려면 {{ new Type(...) with ... }}를 사용하십시오.</target>
+        <target state="translated">식 형식 {{ expr with ... }}는 레코드 형식에만 사용할 수 있습니다. 개체 형식을 빌드하려면 {{ new Type(...) with ... }}를 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInheritedTypeIsNotObjectModelType">
@@ -3089,7 +3084,7 @@
       </trans-unit>
       <trans-unit id="tcObjectConstructionExpressionCanOnlyImplementConstructorsInObjectModelTypes">
         <source>Object construction expressions (i.e. record expressions with inheritance specifications) may only be used to implement constructors in object model types. Use 'new ObjectType(args)' to construct instances of object model types outside of constructors</source>
-        <target state="translated">개체 생성 식, 즉 상속 지정이 있는 레코드 식은 개체 모델 형식의 생성자를 구현하는 데에만 사용할 수 있습니다. 'new ObjectType(args)'을 사용하여 생성자 외부에 개체 모델 형식의 인스턴스를 생성하십시오.</target>
+        <target state="translated">개체 생성 식, 즉 상속 지정이 있는 레코드 식은 개체 모델 형식의 생성자를 구현하는 데에만 사용할 수 있습니다. 'new ObjectType(args)'을 사용하여 생성자 외부에 개체 모델 형식의 인스턴스를 생성하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcEmptyRecordInvalid">
@@ -3124,7 +3119,7 @@
       </trans-unit>
       <trans-unit id="tcUseForInSequenceExpression">
         <source>The use of 'let! x = coll' in sequence expressions is not permitted. Use 'for x in coll' instead.</source>
-        <target state="translated">'let! x = coll'은 시퀀스 식에 사용할 수 없습니다. 대신 'for x in coll'을 사용하십시오.</target>
+        <target state="translated">'let! x = coll'은 시퀀스 식에 사용할 수 없습니다. 대신 'for x in coll'을 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTryIllegalInSequenceExpression">
@@ -3159,7 +3154,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidUseOfDelegate">
         <source>Invalid use of a delegate constructor. Use the syntax 'new Type(args)' or just 'Type(args)'.</source>
-        <target state="translated">대리 생성자를 잘못 사용했습니다. 'new Type(args)' 구문을 사용하거나 'Type(args)'만 사용하십시오.</target>
+        <target state="translated">대리 생성자를 잘못 사용했습니다. 'new Type(args)' 구문을 사용하거나 'Type(args)'만 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcPropertyIsNotStatic">
@@ -3189,7 +3184,7 @@
       </trans-unit>
       <trans-unit id="tcConstructorsCannotBeFirstClassValues">
         <source>Constructors must be applied to arguments and cannot be used as first-class values. If necessary use an anonymous function '(fun arg1 ... argN -&gt; new Type(arg1,...,argN))'.</source>
-        <target state="translated">생성자는 인수에 적용해야 하며 첫 번째 클래스 값으로 사용할 수 없습니다. 필요한 경우 익명 함수 '(fun arg1 ... argN -&gt; new Type(arg1,...,argN))'을 사용하십시오.</target>
+        <target state="translated">생성자는 인수에 적용해야 하며 첫 번째 클래스 값으로 사용할 수 없습니다. 필요한 경우 익명 함수 '(fun arg1 ... argN -&gt; new Type(arg1,...,argN))'을 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSyntaxFormUsedOnlyWithRecordLabelsPropertiesAndFields">
@@ -3214,7 +3209,7 @@
       </trans-unit>
       <trans-unit id="tcOverloadsCannotHaveCurriedArguments">
         <source>One or more of the overloads of this method has curried arguments. Consider redesigning these members to take arguments in tupled form.</source>
-        <target state="translated">이 메서드에 대한 하나 이상의 오버로드에 커리된 인수가 있습니다. 튜플된 형식의 인수를 사용하려면 이러한 멤버를 다시 디자인하십시오.</target>
+        <target state="translated">이 메서드에 대한 하나 이상의 오버로드에 커리된 인수가 있습니다. 튜플된 형식의 인수를 사용하려면 이러한 멤버를 다시 디자인하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnnamedArgumentsDoNotFormPrefix">
@@ -3444,12 +3439,12 @@
       </trans-unit>
       <trans-unit id="tcNewMemberHidesAbstractMember">
         <source>This new member hides the abstract member '{0}'. Rename the member or use 'override' instead.</source>
-        <target state="translated">이 새 멤버는 추상 멤버 '{0}'을(를) 숨깁니다. 멤버의 이름을 바꾸거나 대신 'override'를 사용하십시오.</target>
+        <target state="translated">이 새 멤버는 추상 멤버 '{0}'을(를) 숨깁니다. 멤버의 이름을 바꾸거나 대신 'override'를 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNewMemberHidesAbstractMemberWithSuffix">
         <source>This new member hides the abstract member '{0}' once tuples, functions, units of measure and/or provided types are erased. Rename the member or use 'override' instead.</source>
-        <target state="translated">이 새 멤버는 튜플, 함수, 측정 단위 및/또는 제공된 형식이 지워지면 추상 멤버 '{0}'을(를) 숨깁니다. 멤버의 이름을 바꾸거나 대신 'override'를 사용하십시오.</target>
+        <target state="translated">이 새 멤버는 튜플, 함수, 측정 단위 및/또는 제공된 형식이 지워지면 추상 멤버 '{0}'을(를) 숨깁니다. 멤버의 이름을 바꾸거나 대신 'override'를 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcStaticInitializersIllegalInInterface">
@@ -3589,12 +3584,12 @@
       </trans-unit>
       <trans-unit id="tcOpenUsedWithPartiallyQualifiedPath">
         <source>This declaration opens the namespace or module '{0}' through a partially qualified path. Adjust this code to use the full path of the namespace. This change will make your code more robust as new constructs are added to the F# and CLI libraries.</source>
-        <target state="translated">이 선언은 부분적으로 정규화된 경로를 통해 '{0}' 네임스페이스 또는 모듈을 엽니다. 네임스페이스의 전체 경로가 사용되도록 이 코드를 조정하십시오. 이렇게 변경하면 F# 및 CLI 라이브러리에 새 구문이 추가될 때 코드가 더 견고해집니다.</target>
+        <target state="translated">이 선언은 부분적으로 정규화된 경로를 통해 '{0}' 네임스페이스 또는 모듈을 엽니다. 네임스페이스의 전체 경로가 사용되도록 이 코드를 조정하세요. 이렇게 변경하면 F# 및 CLI 라이브러리에 새 구문이 추가될 때 코드가 더 견고해집니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLocalClassBindingsCannotBeInline">
         <source>Local class bindings cannot be marked inline. Consider lifting the definition out of the class or else do not mark it as inline.</source>
-        <target state="translated">지역 클래스 바인딩은 inline으로 표시할 수 없습니다. 정의를 클래스 밖으로 이동하거나 inline으로 표시하지 마십시오.</target>
+        <target state="translated">지역 클래스 바인딩은 inline으로 표시할 수 없습니다. 정의를 클래스 밖으로 이동하거나 inline으로 표시하지 마세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypeAbbreviationsMayNotHaveMembers">
@@ -3609,7 +3604,7 @@
       </trans-unit>
       <trans-unit id="tcEnumerationsMayNotHaveMembers">
         <source>Enumerations cannot have members</source>
-        <target state="translated">열거에는 멤버를 지정할 수 없습니다.</target>
+        <target state="translated">열거형에는 멤버를 지정할 수 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembers">
@@ -3624,12 +3619,12 @@
       </trans-unit>
       <trans-unit id="tcStructsMayNotContainLetBindings">
         <source>Structs cannot contain value definitions because the default constructor for structs will not execute these bindings. Consider adding additional arguments to the primary constructor for the type.</source>
-        <target state="translated">구조체의 기본 생성자는 이러한 바인딩을 실행하지 않으므로 구조체에는 값 정의를 포함할 수 없습니다. 형식의 주 생성자에 인수를 더 추가하십시오.</target>
+        <target state="translated">구조체의 기본 생성자는 이러한 바인딩을 실행하지 않으므로 구조체에는 값 정의를 포함할 수 없습니다. 형식의 주 생성자에 인수를 더 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcStaticLetBindingsRequireClassesWithImplicitConstructors">
         <source>Static value definitions may only be used in types with a primary constructor. Consider adding arguments to the type definition, e.g. 'type X(args) = ...'.</source>
-        <target state="translated">정적 값 정의는 기본 생성자가 포함된 형식에서만 사용할 수 있습니다. 'type X(args) = ...'와 같이 형식 정의에 인수를 추가해 보십시오.</target>
+        <target state="translated">정적 값 정의는 기본 생성자가 포함된 형식에서만 사용할 수 있습니다. 'type X(args) = ...'와 같이 형식 정의에 인수를 추가해 보세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcMeasureDeclarationsRequireStaticMembersNotConstructors">
@@ -3649,7 +3644,7 @@
       </trans-unit>
       <trans-unit id="tcEnumerationsCannotHaveInterfaceDeclaration">
         <source>Enumerations cannot have interface declarations</source>
-        <target state="translated">열거에는 인터페이스 선언을 지정할 수 없습니다.</target>
+        <target state="translated">열거형에는 인터페이스 선언을 지정할 수 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypeIsNotInterfaceType0">
@@ -3694,12 +3689,12 @@
       </trans-unit>
       <trans-unit id="tcImplementsIStructuralEquatableExplicitly">
         <source>The struct, record or union type '{0}' implements the interface 'System.IStructuralEquatable' explicitly. Apply the 'CustomEquality' attribute to the type.</source>
-        <target state="translated">구조체, 레코드 또는 공용 구조체 형식 '{0}'은(는) 'System.IStructuralEquatable' 인터페이스를 명시적으로 구현합니다. 형식에 'CustomEquality' 특성을 적용하십시오.</target>
+        <target state="translated">구조체, 레코드 또는 공용 구조체 형식 '{0}'은(는) 'System.IStructuralEquatable' 인터페이스를 명시적으로 구현합니다. 형식에 'CustomEquality' 특성을 적용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcImplementsIEquatableExplicitly">
         <source>The struct, record or union type '{0}' implements the interface 'System.IEquatable&lt;_&gt;' explicitly. Apply the 'CustomEquality' attribute to the type and provide a consistent implementation of the non-generic override 'System.Object.Equals(obj)'.</source>
-        <target state="translated">구조체, 레코드 또는 공용 구조체 형식 '{0}'은(는) 'System.IEquatable&lt;_&gt;' 인터페이스를 명시적으로 구현합니다. 형식에 'CustomEquality' 특성을 적용하고 제네릭이 아닌 재정의 'System.Object.Equals(obj)'에 대한 일관된 구현을 제공하십시오.</target>
+        <target state="translated">구조체, 레코드 또는 공용 구조체 형식 '{0}'은(는) 'System.IEquatable&lt;_&gt;' 인터페이스를 명시적으로 구현합니다. 형식에 'CustomEquality' 특성을 적용하고 제네릭이 아닌 재정의 'System.Object.Equals(obj)'에 대한 일관된 구현을 제공하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExplicitTypeSpecificationCannotBeUsedForExceptionConstructors">
@@ -3764,7 +3759,7 @@
       </trans-unit>
       <trans-unit id="tcTypeAbbreviationHasTypeParametersMissingOnType">
         <source>This type abbreviation has one or more declared type parameters that do not appear in the type being abbreviated. Type abbreviations must use all declared type parameters in the type being abbreviated. Consider removing one or more type parameters, or use a concrete type definition that wraps an underlying type, such as 'type C&lt;'a&gt; = C of ...'.</source>
-        <target state="translated">이 형식 약어에는 간략화되는 형식에 나타나지 않는 하나 이상의 선언된 형식 매개 변수가 있습니다. 형식 약어는 간략화되는 형식에 있는 모든 선언된 형식 매개 변수를 사용해야 합니다. 하나 이상의 형식 매개 변수를 제거하거나 내부 형식을 래핑하는 구체적인 형식 정의(예: 'type C&lt;'a&gt; = C of ...')를 사용하십시오.</target>
+        <target state="translated">이 형식 약어에는 간략화되는 형식에 나타나지 않는 하나 이상의 선언된 형식 매개 변수가 있습니다. 형식 약어는 간략화되는 형식에 있는 모든 선언된 형식 매개 변수를 사용해야 합니다. 하나 이상의 형식 매개 변수를 제거하거나 내부 형식을 래핑하는 구체적인 형식 정의(예: 'type C&lt;'a&gt; = C of ...')를 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcStructsInterfacesEnumsDelegatesMayNotInheritFromOtherTypes">
@@ -3859,12 +3854,12 @@
       </trans-unit>
       <trans-unit id="tcCannotInheritFromSealedType">
         <source>Cannot inherit a sealed type</source>
-        <target state="translated">봉인 형식을 상속할 수 없습니다.</target>
+        <target state="translated">봉인된 형식을 상속할 수 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotInheritFromInterfaceType">
         <source>Cannot inherit from interface type. Use interface ... with instead.</source>
-        <target state="translated">인터페이스 형식에서 상속할 수 없습니다. 대신 interface ... with를 사용하십시오.</target>
+        <target state="translated">인터페이스 형식에서 상속할 수 없습니다. 대신 interface ... with를 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcStructTypesCannotContainAbstractMembers">
@@ -3884,7 +3879,7 @@
       </trans-unit>
       <trans-unit id="tcDelegatesCannotBeCurried">
         <source>Delegate specifications must not be curried types. Use 'typ * ... * typ -&gt; typ' for multi-argument delegates, and 'typ -&gt; (typ -&gt; typ)' for delegates returning function values.</source>
-        <target state="translated">대리자 지정은 커리된 형식이어서는 안 됩니다. 다중 인수 대리자의 경우 'typ * ... * typ -&gt; typ', 함수 값을 반환하는 대리자의 경우 'typ -&gt; (typ -&gt; typ)'를 사용하십시오.</target>
+        <target state="translated">대리자 지정은 커리된 형식이어서는 안 됩니다. 다중 인수 대리자의 경우 'typ * ... * typ -&gt; typ', 함수 값을 반환하는 대리자의 경우 'typ -&gt; (typ -&gt; typ)'를 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidTypeForLiteralEnumeration">
@@ -3934,12 +3929,12 @@
       </trans-unit>
       <trans-unit id="tcInheritConstructionCallNotPartOfImplicitSequence">
         <source>This 'inherit' declaration has arguments, but is not in a type with a primary constructor. Consider adding arguments to your type definition, e.g. 'type X(args) = ...'.</source>
-        <target state="translated">이 'inherit' 선언은 인수를 포함하지만 기본 생성자가 포함된 형식이 아닙니다. 'type X(args) = ...'와 같이 형식 정의에 인수를 추가해 보십시오.</target>
+        <target state="translated">이 'inherit' 선언은 인수를 포함하지만 기본 생성자가 포함된 형식이 아닙니다. 'type X(args) = ...'와 같이 형식 정의에 인수를 추가해 보세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLetAndDoRequiresImplicitConstructionSequence">
         <source>This definition may only be used in a type with a primary constructor. Consider adding arguments to your type definition, e.g. 'type X(args) = ...'.</source>
-        <target state="translated">이 정의는 기본 생성자가 포함된 형식에서만 사용할 수 있습니다. 'type X(args) = ...'와 같이 형식 정의에 인수를 추가해 보십시오.</target>
+        <target state="translated">이 정의는 기본 생성자가 포함된 형식에서만 사용할 수 있습니다. 'type X(args) = ...'와 같이 형식 정의에 인수를 추가해 보세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypeAbbreviationsCannotHaveAugmentations">
@@ -3999,7 +3994,7 @@
       </trans-unit>
       <trans-unit id="ilCustomMarshallersCannotBeUsedInFSharp">
         <source>Custom marshallers cannot be specified in F# code. Consider using a C# helper function.</source>
-        <target state="translated">사용자 지정 마샬러는 F# 코드에 지정할 수 없습니다. C# 도우미 함수를 사용하십시오.</target>
+        <target state="translated">사용자 지정 마샬러는 F# 코드에 지정할 수 없습니다. C# 도우미 함수를 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilMarshalAsAttributeCannotBeDecoded">
@@ -4009,7 +4004,7 @@
       </trans-unit>
       <trans-unit id="ilSignatureForExternalFunctionContainsTypeParameters">
         <source>The signature for this external function contains type parameters. Constrain the argument and return types to indicate the types of the corresponding C function.</source>
-        <target state="translated">이 외부 함수의 시그니처에 형식 매개 변수가 포함되어 있습니다. 인수 및 반환 형식을 제한하여 해당하는 C 함수의 형식을 나타내십시오.</target>
+        <target state="translated">이 외부 함수의 시그니처에 형식 매개 변수가 포함되어 있습니다. 인수 및 반환 형식을 제한하여 해당하는 C 함수의 형식을 나타내세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilDllImportAttributeCouldNotBeDecoded">
@@ -4174,7 +4169,7 @@
       </trans-unit>
       <trans-unit id="optsNowin32manifest">
         <source>Do not include the default Win32 manifest</source>
-        <target state="translated">기본 Win32 매니페스트를 포함하지 마십시오.</target>
+        <target state="translated">기본 Win32 매니페스트를 포함하지 마세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsEmbedAllSource">
@@ -4329,7 +4324,7 @@
       </trans-unit>
       <trans-unit id="optsNoframework">
         <source>Do not reference the default CLI assemblies by default</source>
-        <target state="translated">기본 CLI 어셈블리를 기본적으로 참조하지 마십시오.</target>
+        <target state="translated">기본 CLI 어셈블리를 기본적으로 참조하지 마세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsStandalone">
@@ -4379,7 +4374,7 @@
       </trans-unit>
       <trans-unit id="optsClirootDeprecatedMsg">
         <source>The command-line option '--cliroot' has been deprecated. Use an explicit reference to a specific copy of mscorlib.dll instead.</source>
-        <target state="translated">명령줄 옵션 '--cliroot'는 사용되지 않습니다. mscorlib.dll의 특정 복사본에 대한 명시적 참조를 대신 사용하십시오.</target>
+        <target state="translated">명령줄 옵션 '--cliroot'는 사용되지 않습니다. mscorlib.dll의 특정 복사본에 대한 명시적 참조를 대신 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsClirootDescription">
@@ -4449,7 +4444,7 @@
       </trans-unit>
       <trans-unit id="optsDCLODeprecatedSuggestAlternative">
         <source>The command-line option '{0}' has been deprecated. Use '{1}' instead.</source>
-        <target state="translated">명령줄 옵션 '{0}'은(는) 사용되지 않습니다. 대신 '{1}'을(를) 사용하십시오.</target>
+        <target state="translated">명령줄 옵션 '{0}'은(는) 사용되지 않습니다. 대신 '{1}'을(를) 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsDCLOHtmlDoc">
@@ -4469,7 +4464,7 @@
       </trans-unit>
       <trans-unit id="optsSubSystemVersion">
         <source>Specify subsystem version of this assembly</source>
-        <target state="translated">이 어셈블리의 하위 시스템 버전을 지정하십시오.</target>
+        <target state="translated">이 어셈블리의 하위 시스템 버전을 지정하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsTargetProfile">
@@ -4629,7 +4624,7 @@
       </trans-unit>
       <trans-unit id="eventHasNonStandardType">
         <source>The event '{0}' has a non-standard type. If this event is declared in another CLI language, you may need to access this event using the explicit {1} and {2} methods for the event. If this event is declared in F#, make the type of the event an instantiation of either 'IDelegateEvent&lt;_&gt;' or 'IEvent&lt;_,_&gt;'.</source>
-        <target state="translated">{0}' 이벤트에 비표준 형식이 있습니다. 이 이벤트가 다른 CLI 언어로 선언된 경우 이벤트에 대한 명시적 {1} 및 {2} 메서드를 사용하여 이 이벤트에 액세스해야 할 수 있습니다. 이 이벤트가 F#으로 선언된 경우에는 이벤트의 형식을 'IDelegateEvent&lt;_&gt;' 또는 'IEvent&lt;_,_&gt;'의 인스턴스로 만드십시오.</target>
+        <target state="translated">{0}' 이벤트에 비표준 형식이 있습니다. 이 이벤트가 다른 CLI 언어로 선언된 경우 이벤트에 대한 명시적 {1} 및 {2} 메서드를 사용하여 이 이벤트에 액세스해야 할 수 있습니다. 이 이벤트가 F#으로 선언된 경우에는 이벤트의 형식을 'IDelegateEvent&lt;_&gt;' 또는 'IEvent&lt;_,_&gt;'의 인스턴스로 만드세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="typeIsNotAccessible">
@@ -4779,12 +4774,12 @@
       </trans-unit>
       <trans-unit id="lexfltTokenIsOffsideOfContextStartedEarlier">
         <source>Possible incorrect indentation: this token is offside of context started at position {0}. Try indenting this token further or using standard formatting conventions.</source>
-        <target state="translated">들여쓰기가 잘못되었을 수 있습니다. 이 토큰은 {0} 위치에서 시작된 컨텍스트를 벗어납니다. 이 토큰을 더 들여쓰거나 표준 서식 규칙을 사용하십시오.</target>
+        <target state="translated">들여쓰기가 잘못되었을 수 있습니다. 이 토큰은 {0} 위치에서 시작된 컨텍스트를 벗어납니다. 이 토큰을 더 들여쓰거나 표준 서식 규칙을 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexfltSeparatorTokensOfPatternMatchMisaligned">
         <source>The '|' tokens separating rules of this pattern match are misaligned by one column. Consider realigning your code or using further indentation.</source>
-        <target state="translated">이 패턴 일치의 규칙을 구분하는 '|' 토큰의 한 열이 잘못 맞춤되어 있습니다. 코드를 다시 맞추거나 들여쓰기를 더 사용하십시오.</target>
+        <target state="translated">이 패턴 일치의 규칙을 구분하는 '|' 토큰의 한 열이 잘못 맞춤되어 있습니다. 코드를 다시 맞추거나 들여쓰기를 더 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="nrInvalidModuleExprType">
@@ -5054,7 +5049,7 @@
       </trans-unit>
       <trans-unit id="tcStructuralComparisonNotSatisfied1">
         <source>The struct, record or union type '{0}' has the 'StructuralComparison' attribute but the type parameter '{1}' does not satisfy the 'comparison' constraint. Consider adding the 'comparison' constraint to the type parameter</source>
-        <target state="translated">구조체, 레코드 또는 공용 구조체 형식 '{0}'에 'StructuralComparison' 특성이 있지만 형식 매개 변수 '{1}'이(가) 'comparison' 제약 조건을 만족하지 않습니다. 형식 매개 변수에 'comparison' 제약 조건을 추가하십시오.</target>
+        <target state="translated">구조체, 레코드 또는 공용 구조체 형식 '{0}'에 'StructuralComparison' 특성이 있지만 형식 매개 변수 '{1}'이(가) 'comparison' 제약 조건을 만족하지 않습니다. 형식 매개 변수에 'comparison' 제약 조건을 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcStructuralComparisonNotSatisfied2">
@@ -5064,27 +5059,27 @@
       </trans-unit>
       <trans-unit id="tcNoComparisonNeeded1">
         <source>The struct, record or union type '{0}' is not structurally comparable because the type parameter {1} does not satisfy the 'comparison' constraint. Consider adding the 'NoComparison' attribute to the type '{2}' to clarify that the type is not comparable</source>
-        <target state="translated">형식 매개 변수 {1}이(가) 'comparison' 제약 조건을 만족하지 않으므로 구조체, 레코드 또는 공용 구조체 형식 '{0}'을(를) 구조적으로 비교할 수 없습니다. '{2}' 형식에 'NoComparison' 특성을 추가하여 해당 형식을 비교할 수 없음을 명확히 하십시오.</target>
+        <target state="translated">형식 매개 변수 {1}이(가) 'comparison' 제약 조건을 만족하지 않으므로 구조체, 레코드 또는 공용 구조체 형식 '{0}'을(를) 구조적으로 비교할 수 없습니다. '{2}' 형식에 'NoComparison' 특성을 추가하여 해당 형식을 비교할 수 없음을 명확히 하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNoComparisonNeeded2">
         <source>The struct, record or union type '{0}' is not structurally comparable because the type '{1}' does not satisfy the 'comparison' constraint. Consider adding the 'NoComparison' attribute to the type '{2}' to clarify that the type is not comparable</source>
-        <target state="translated">{1}' 형식이 'comparison' 제약 조건을 만족하지 않으므로 구조체, 레코드 또는 공용 구조체 형식 '{0}'을(를) 구조적으로 비교할 수 없습니다. '{2}' 형식에 'NoComparison' 특성을 추가하여 해당 형식을 비교할 수 없음을 명확히 하십시오.</target>
+        <target state="translated">{1}' 형식이 'comparison' 제약 조건을 만족하지 않으므로 구조체, 레코드 또는 공용 구조체 형식 '{0}'을(를) 구조적으로 비교할 수 없습니다. '{2}' 형식에 'NoComparison' 특성을 추가하여 해당 형식을 비교할 수 없음을 명확히 하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNoEqualityNeeded1">
         <source>The struct, record or union type '{0}' does not support structural equality because the type parameter {1} does not satisfy the 'equality' constraint. Consider adding the 'NoEquality' attribute to the type '{2}' to clarify that the type does not support structural equality</source>
-        <target state="translated">형식 매개 변수 {1}이(가) 'equality' 제약 조건을 만족하지 않으므로 구조체, 레코드 또는 공용 구조체 형식 '{0}'이(가) 구조적 같음을 지원하지 않습니다. '{2}' 형식에 'NoEquality' 특성을 추가하여 해당 형식이 구조적 같음을 지원하지 않음을 명확히 하십시오.</target>
+        <target state="translated">형식 매개 변수 {1}이(가) 'equality' 제약 조건을 만족하지 않으므로 구조체, 레코드 또는 공용 구조체 형식 '{0}'이(가) 구조적 같음을 지원하지 않습니다. '{2}' 형식에 'NoEquality' 특성을 추가하여 해당 형식이 구조적 같음을 지원하지 않음을 명확히 하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNoEqualityNeeded2">
         <source>The struct, record or union type '{0}' does not support structural equality because the type '{1}' does not satisfy the 'equality' constraint. Consider adding the 'NoEquality' attribute to the type '{2}' to clarify that the type does not support structural equality</source>
-        <target state="translated">{1}' 형식이 'equality' 제약 조건을 만족하지 않으므로 구조체, 레코드 또는 공용 구조체 형식 '{0}'이(가) 구조적 같음을 지원하지 않습니다. '{2}' 형식에 'NoEquality' 특성을 추가하여 해당 형식이 구조적 같음을 지원하지 않음을 명확히 하십시오.</target>
+        <target state="translated">{1}' 형식이 'equality' 제약 조건을 만족하지 않으므로 구조체, 레코드 또는 공용 구조체 형식 '{0}'이(가) 구조적 같음을 지원하지 않습니다. '{2}' 형식에 'NoEquality' 특성을 추가하여 해당 형식이 구조적 같음을 지원하지 않음을 명확히 하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcStructuralEqualityNotSatisfied1">
         <source>The struct, record or union type '{0}' has the 'StructuralEquality' attribute but the type parameter '{1}' does not satisfy the 'equality' constraint. Consider adding the 'equality' constraint to the type parameter</source>
-        <target state="translated">구조체, 레코드 또는 공용 구조체 형식 '{0}'에 'StructuralEquality' 특성이 있지만 형식 매개 변수 '{1}'이(가) 'equality' 제약 조건을 만족하지 않습니다. 형식 매개 변수에 'equality' 제약 조건을 추가하십시오.</target>
+        <target state="translated">구조체, 레코드 또는 공용 구조체 형식 '{0}'에 'StructuralEquality' 특성이 있지만 형식 매개 변수 '{1}'이(가) 'equality' 제약 조건을 만족하지 않습니다. 형식 매개 변수에 'equality' 제약 조건을 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcStructuralEqualityNotSatisfied2">
@@ -5104,7 +5099,7 @@
       </trans-unit>
       <trans-unit id="chkUnusedThisVariable">
         <source>The recursive object reference '{0}' is unused. The presence of a recursive object reference adds runtime initialization checks to members in this and derived types. Consider removing this recursive object reference.</source>
-        <target state="translated">재귀적 개체 참조 '{0}'을(를) 사용하지 않습니다. 재귀적 개체 참조가 있으면 이 형식 및 파생 형식의 멤버에 대한 런타임 초기화 검사가 추가됩니다. 이 재귀적 개체 참조를 제거하십시오.</target>
+        <target state="translated">재귀적 개체 참조 '{0}'을(를) 사용하지 않습니다. 재귀적 개체 참조가 있으면 이 형식 및 파생 형식의 멤버에 대한 런타임 초기화 검사가 추가됩니다. 이 재귀적 개체 참조를 제거하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsGetterAtMostOneArgument">
@@ -5129,7 +5124,7 @@
       </trans-unit>
       <trans-unit id="tastInvalidAddressOfMutableAcrossAssemblyBoundary">
         <source>This operation accesses a mutable top-level value defined in another assembly in an unsupported way. The value cannot be accessed through its address. Consider copying the expression to a mutable local, e.g. 'let mutable x = ...', and if necessary assigning the value back after the completion of the operation</source>
-        <target state="translated">이 작업은 다른 어셈블리에 정의된 변경할 수 있는 최상위 값에 지원되지 않는 방식으로 액세스합니다. 이 값은 해당 주소를 통해 액세스할 수 없습니다. 식을 변경할 수 있는 로컬 변수로 복사하고(예: 'let mutable x = ...') 필요한 경우 작업이 완료된 후에 값을 다시 할당하십시오.</target>
+        <target state="translated">이 작업은 다른 어셈블리에 정의된 변경할 수 있는 최상위 값에 지원되지 않는 방식으로 액세스합니다. 이 값은 해당 주소를 통해 액세스할 수 없습니다. 식을 변경할 수 있는 로컬 변수로 복사하고(예: 'let mutable x = ...') 필요한 경우 작업이 완료된 후에 값을 다시 할당하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAdjacentTypars">
@@ -5144,7 +5139,7 @@
       </trans-unit>
       <trans-unit id="parsNonAtomicType">
         <source>The use of the type syntax 'int C' and 'C  &lt;int&gt;' is not permitted here. Consider adjusting this type to be written in the form 'C&lt;int&gt;'</source>
-        <target state="translated">형식 구문 'int C' 및 'C  &lt;int&gt;'는 여기에 허용되지 않습니다. 이 형식이 'C&lt;int&gt;' 형식으로 작성되도록 조정하십시오.</target>
+        <target state="translated">형식 구문 'int C' 및 'C  &lt;int&gt;'는 여기에 허용되지 않습니다. 이 형식이 'C&lt;int&gt;' 형식으로 작성되도록 조정하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tastUndefinedItemRefModuleNamespace">
@@ -5174,7 +5169,7 @@
       </trans-unit>
       <trans-unit id="tcNonUniformMemberUse">
         <source>The generic member '{0}' has been used at a non-uniform instantiation prior to this program point. Consider reordering the members so this member occurs first. Alternatively, specify the full type of the member explicitly, including argument types, return type and any additional generic parameters and constraints.</source>
-        <target state="translated">제네릭 멤버 '{0}'이(가) 이 프로그램 지점 전의 비균일 인스턴스화에 사용되었습니다. 이 멤버가 처음에 오도록 멤버들을 다시 정렬해 보십시오. 또는, 인수 형식, 반환 형식 및 추가 제네릭 매개 변수와 제약 조건을 포함한 멤버의 전체 형식을 명시적으로 지정하십시오.</target>
+        <target state="translated">제네릭 멤버 '{0}'이(가) 이 프로그램 지점 전의 비균일 인스턴스화에 사용되었습니다. 이 멤버가 처음에 오도록 멤버들을 다시 정렬해 보세요. 또는, 인수 형식, 반환 형식 및 추가 제네릭 매개 변수와 제약 조건을 포함한 멤버의 전체 형식을 명시적으로 지정하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAttribArgsDiffer">
@@ -5224,7 +5219,7 @@
       </trans-unit>
       <trans-unit id="lexIndentOffForML">
         <source>Consider using a file with extension '.ml' or '.mli' instead</source>
-        <target state="translated">대신 확장명이 '.ml' 또는 '.mli'인 파일을 사용해 보십시오.</target>
+        <target state="translated">대신 확장명이 '.ml' 또는 '.mli'인 파일을 사용해 보세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="activePatternIdentIsNotFunctionTyped">
@@ -5254,7 +5249,7 @@
       </trans-unit>
       <trans-unit id="tcMemberOperatorDefinitionInExtrinsic">
         <source>Extension members cannot provide operator overloads.  Consider defining the operator as part of the type definition instead.</source>
-        <target state="translated">확장 멤버가 연산자 오버로드를 제공할 수 없습니다.  대신 연산자를 형식 정의의 일부분으로 정의하십시오.</target>
+        <target state="translated">확장 멤버가 연산자 오버로드를 제공할 수 없습니다.  대신 연산자를 형식 정의의 일부분으로 정의하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilwriteMDBFileNameCannotBeChangedWarning">
@@ -5314,7 +5309,7 @@
       </trans-unit>
       <trans-unit id="crefNoInnerGenericsInQuotations">
         <source>Inner generic functions are not permitted in quoted expressions. Consider adding some type constraints until this function is no longer generic.</source>
-        <target state="translated">내부 제네릭 함수는 따옴표 붙은 식에 허용되지 않습니다. 이 함수가 더 이상 제네릭 형식이 아닐 때까지 형식 제약 조건을 추가하십시오.</target>
+        <target state="translated">내부 제네릭 함수는 따옴표 붙은 식에 허용되지 않습니다. 이 함수가 더 이상 제네릭 형식이 아닐 때까지 형식 제약 조건을 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcEnumTypeCannotBeEnumerated">
@@ -5349,7 +5344,7 @@
       </trans-unit>
       <trans-unit id="parsUnexpectedQuotationOperatorInTypeAliasDidYouMeanVerbatimString">
         <source>Unexpected quotation operator '&lt;@' in type definition. If you intend to pass a verbatim string as a static argument to a type provider, put a space between the '&lt;' and '@' characters.</source>
-        <target state="translated">형식 정의에 예기치 않은 인용구 연산자 '&lt;@'가 있습니다. 축자 문자열을 정적 인수로 형식 공급자에 전달하려면 '&lt;'와 '@' 문자 사이에 공백을 추가하십시오.</target>
+        <target state="translated">형식 정의에 예기치 않은 인용구 연산자 '&lt;@'가 있습니다. 축자 문자열을 정적 인수로 형식 공급자에 전달하려면 '&lt;'와 '@' 문자 사이에 공백을 추가하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsErrorParsingAsOperatorName">
@@ -5484,7 +5479,7 @@
       </trans-unit>
       <trans-unit id="fscAssemblyNotFoundInDependencySet">
         <source>Assembly '{0}' not found in dependency set of target binary. Statically linked roots should be specified using an assembly name, without a DLL or EXE extension. If this assembly was referenced explicitly then it is possible the assembly was not actually required by the generated binary, in which case it should not be statically linked.</source>
-        <target state="translated">대상 이진 파일의 종속성 집합에서 어셈블리 '{0}'을(를) 찾지 못했습니다. 정적으로 링크된 루트는 DLL 또는 EXE 확장명이 없는 상태로 어셈블리 이름을 사용하여 지정해야 합니다. 이 어셈블리가 명시적으로 참조된 경우 생성된 이진 파일에서 실제로 필요하지 않을 수 있습니다. 이런 경우에는 정적으로 링크하지 마십시오.</target>
+        <target state="translated">대상 이진 파일의 종속성 집합에서 어셈블리 '{0}'을(를) 찾지 못했습니다. 정적으로 링크된 루트는 DLL 또는 EXE 확장명이 없는 상태로 어셈블리 이름을 사용하여 지정해야 합니다. 이 어셈블리가 명시적으로 참조된 경우 생성된 이진 파일에서 실제로 필요하지 않을 수 있습니다. 이런 경우에는 정적으로 링크하지 마세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="fscKeyFileCouldNotBeOpened">
@@ -5539,7 +5534,7 @@
       </trans-unit>
       <trans-unit id="fscResxSourceFileDeprecated">
         <source>Passing a .resx file ({0}) as a source file to the compiler is deprecated. Use resgen.exe to transform the .resx file into a .resources file to pass as a --resource option. If you are using MSBuild, this can be done via an &lt;EmbeddedResource&gt; item in the .fsproj project file.</source>
-        <target state="translated">더 이상 .resx 파일({0})이 컴파일러에 소스 파일로 사용되지 않습니다. resgen.exe를 사용하여 .resx 파일을 .resources 파일로 변환해 --resource 옵션으로 전달하십시오. MSBuild를 사용하는 경우 .fsproj 프로젝트 파일의 &lt;EmbeddedResource&gt; 항목을 통해 이 작업을 수행할 수 있습니다.</target>
+        <target state="translated">더 이상 .resx 파일({0})이 컴파일러에 소스 파일로 사용되지 않습니다. resgen.exe를 사용하여 .resx 파일을 .resources 파일로 변환해 --resource 옵션으로 전달하세요. MSBuild를 사용하는 경우 .fsproj 프로젝트 파일의 &lt;EmbeddedResource&gt; 항목을 통해 이 작업을 수행할 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="fscStaticLinkingNoProfileMismatches">
@@ -5589,12 +5584,12 @@
       </trans-unit>
       <trans-unit id="etEmptyNamespaceOfTypeNotAllowed">
         <source>Type '{0}' from type provider '{1}' has an empty namespace. Use 'null' for the global namespace.</source>
-        <target state="translated">형식 공급자 '{1}' 의 형식 '{0}'에 빈 네임스페이스가 있습니다. 전역 네임스페이스에 대해 'null'을 사용하십시오.</target>
+        <target state="translated">형식 공급자 '{1}' 의 형식 '{0}'에 빈 네임스페이스가 있습니다. 전역 네임스페이스에 대해 'null'을 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="etEmptyNamespaceNotAllowed">
         <source>Empty namespace found from the type provider '{0}'. Use 'null' for the global namespace.</source>
-        <target state="translated">형식 공급자 '{0}'에 빈 네임스페이스가 있습니다. 전역 네임스페이스에 대해 'null'을 사용하십시오.</target>
+        <target state="translated">형식 공급자 '{0}'에 빈 네임스페이스가 있습니다. 전역 네임스페이스에 대해 'null'을 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="etMustNotBeGeneric">
@@ -5654,7 +5649,7 @@
       </trans-unit>
       <trans-unit id="etUnsupportedProvidedExpression">
         <source>Unsupported expression '{0}' from type provider. If you are the author of this type provider, consider adjusting it to provide a different provided expression.</source>
-        <target state="translated">형식 공급자의 '{0}' 식은 지원되지 않습니다. 이 형식 공급자의 작성자인 경우 제공된 다른 식을 제공하도록 조정하십시오.</target>
+        <target state="translated">형식 공급자의 '{0}' 식은 지원되지 않습니다. 이 형식 공급자의 작성자인 경우 제공된 다른 식을 제공하도록 조정하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="etProvidedTypeHasUnexpectedName">
@@ -5894,7 +5889,7 @@
       </trans-unit>
       <trans-unit id="tcIfThenElseMayNotBeUsedWithinQueries">
         <source>An if/then/else expression may not be used within queries. Consider using either an if/then expression, or use a sequence expression instead.</source>
-        <target state="translated">if/then/else 식은 쿼리 내에서 사용할 수 없습니다. 대신 if/then 식을 사용하거나 시퀀스 식을 사용해 보십시오.</target>
+        <target state="translated">if/then/else 식은 쿼리 내에서 사용할 수 없습니다. 대신 if/then 식을 사용하거나 시퀀스 식을 사용해 보세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilxgenUnexpectedArgumentToMethodHandleOfDuringCodegen">
@@ -6129,17 +6124,17 @@
       </trans-unit>
       <trans-unit id="tcAutoPropertyRequiresImplicitConstructionSequence">
         <source>'member val' definitions are only permitted in types with a primary constructor. Consider adding arguments to your type definition, e.g. 'type X(args) = ...'.</source>
-        <target state="translated">'member val' 정의는 기본 생성자가 포함된 형식에서만 허용됩니다. 'type X(args) = ...'와 같이 형식 정의에 인수를 추가해 보십시오.</target>
+        <target state="translated">'member val' 정의는 기본 생성자가 포함된 형식에서만 허용됩니다. 'type X(args) = ...'와 같이 형식 정의에 인수를 추가해 보세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsMutableOnAutoPropertyShouldBeGetSet">
         <source>Property definitions may not be declared mutable. To indicate that this property can be set, use 'member val PropertyName = expr with get,set'.</source>
-        <target state="translated">속성 정의는 mutable로 선언할 수 없습니다. 이 속성을 설정할 수 있도록 표시하려면 'member val PropertyName = expr with get,set'을 사용하십시오.</target>
+        <target state="translated">속성 정의는 mutable로 선언할 수 없습니다. 이 속성을 설정할 수 있도록 표시하려면 'member val PropertyName = expr with get,set'을 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsMutableOnAutoPropertyShouldBeGetSetNotJustSet">
         <source>To indicate that this property can be set, use 'member val PropertyName = expr with get,set'.</source>
-        <target state="translated">이 속성을 설정할 수 있도록 표시하려면 'member val PropertyName = expr with get,set'을 사용하십시오.</target>
+        <target state="translated">이 속성을 설정할 수 있도록 표시하려면 'member val PropertyName = expr with get,set'을 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoByrefsOfByrefs">
@@ -6154,7 +6149,7 @@
       </trans-unit>
       <trans-unit id="tcNoIntegerForLoopInQuery">
         <source>In queries, use the form 'for x in n .. m do ...' for ranging over integers</source>
-        <target state="translated">쿼리에서 정수 범위를 지정하려면 'for x in n .. m do ...' 형식을 사용하십시오.</target>
+        <target state="translated">쿼리에서 정수 범위를 지정하려면 'for x in n .. m do ...' 형식을 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNoWhileInQuery">
@@ -6219,7 +6214,7 @@
       </trans-unit>
       <trans-unit id="etErasedTypeUsedInGeneration">
         <source>The provider '{0}' returned a non-generated type '{1}' in the context of a set of generated types. Consider adjusting the type provider to only return generated types.</source>
-        <target state="translated">{0}' 공급자가 생성된 형식 컨텍스트에 생성되지 않은 형식 '{1}'을(를) 반환했습니다. 생성된 형식만 반환하도록 형식 공급자를 조정하십시오.</target>
+        <target state="translated">{0}' 공급자가 생성된 형식 컨텍스트에 생성되지 않은 형식 '{1}'을(를) 반환했습니다. 생성된 형식만 반환하도록 형식 공급자를 조정하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnrecognizedQueryBinaryOperator">
@@ -6299,7 +6294,7 @@
       </trans-unit>
       <trans-unit id="cannotResolveNullableOperators">
         <source>The operator '{0}' cannot be resolved. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'.</source>
-        <target state="translated">'{0}' 연산자를 확인할 수 없습니다. 'Microsoft.FSharp.Linq.NullableOperators' 모듈을 열어 보십시오.</target>
+        <target state="translated">'{0}' 연산자를 확인할 수 없습니다. 'Microsoft.FSharp.Linq.NullableOperators' 모듈을 열어 보세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOperatorRequiresIn">
@@ -6324,7 +6319,7 @@
       </trans-unit>
       <trans-unit id="tcGeneratedTypesShouldBeInternalOrPrivate">
         <source>The provided types generated by this use of a type provider may not be used from other F# assemblies and should be marked internal or private. Consider using 'type internal TypeName = ...' or 'type private TypeName = ...'.</source>
-        <target state="translated">이런 방법으로 형식 공급자를 사용하여 생성된 제공된 형식은 다른 F# 어셈블리에서 사용할 수 없으므로 내부 또는 개인 형식으로 표시해야 합니다. 'type internal TypeName = ...' 또는 'type private TypeName = ...'을 사용하십시오.</target>
+        <target state="translated">이런 방법으로 형식 공급자를 사용하여 생성된 제공된 형식은 다른 F# 어셈블리에서 사용할 수 없으므로 내부 또는 개인 형식으로 표시해야 합니다. 'type internal TypeName = ...' 또는 'type private TypeName = ...'을 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkGetterAndSetterHaveSamePropertyType">
@@ -6334,7 +6329,7 @@
       </trans-unit>
       <trans-unit id="tcRuntimeSuppliedMethodCannotBeUsedInUserCode">
         <source>Array method '{0}' is supplied by the runtime and cannot be directly used in code. For operations with array elements consider using family of GetArray/SetArray functions from LanguagePrimitives.IntrinsicFunctions module.</source>
-        <target state="translated">배열 메서드 '{0}'은(는) 런타임에서 제공되며 코드에 직접 사용할 수 없습니다. 배열 요소를 사용하는 작업에서는 LanguagePrimitives.IntrinsicFunctions 모듈의 GetArray/SetArray 함수 패밀리를 사용하십시오.</target>
+        <target state="translated">배열 메서드 '{0}'은(는) 런타임에서 제공되며 코드에 직접 사용할 수 없습니다. 배열 요소를 사용하는 작업에서는 LanguagePrimitives.IntrinsicFunctions 모듈의 GetArray/SetArray 함수 패밀리를 사용하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseConstructorDoesNotHaveFieldWithGivenName">

@@ -36,21 +36,12 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service.Tests.Common
 
 let stringMethods = 
-#if DOTNETCORE
-    ["Chars"; "CompareTo"; "Contains"; "CopyTo"; "EndsWith"; "Equals";
-    "GetHashCode"; "GetType"; "IndexOf";
-    "IndexOfAny"; "Insert"; "LastIndexOf"; "LastIndexOfAny";
-    "Length"; "PadLeft"; "PadRight"; "Remove"; "Replace"; "Split";
-    "StartsWith"; "Substring"; "ToCharArray"; "ToLower"; "ToLowerInvariant";
-    "ToString"; "ToUpper"; "ToUpperInvariant"; "Trim"; "TrimEnd"; "TrimStart"]
-#else
     ["Chars"; "Clone"; "CompareTo"; "Contains"; "CopyTo"; "EndsWith"; "Equals";
     "GetEnumerator"; "GetHashCode"; "GetType"; "GetTypeCode"; "IndexOf";
     "IndexOfAny"; "Insert"; "IsNormalized"; "LastIndexOf"; "LastIndexOfAny";
     "Length"; "Normalize"; "PadLeft"; "PadRight"; "Remove"; "Replace"; "Split";
     "StartsWith"; "Substring"; "ToCharArray"; "ToLower"; "ToLowerInvariant";
     "ToString"; "ToUpper"; "ToUpperInvariant"; "Trim"; "TrimEnd"; "TrimStart"]
-#endif
 
 let input = 
   """
@@ -582,7 +573,8 @@ let test3 = System.Text.RegularExpressions.RegexOptions.Compiled
         |> Array.choose(fun s -> match s.Symbol with :? FSharpEntity as e when e.IsEnum -> Some e | _ -> None)
         |> Array.distinct
         |> Array.map(fun e -> (e.DisplayName, e.FSharpFields
-                                              |> Seq.map(fun f -> f.Name, f.LiteralValue )
+                                              |> Seq.sortBy (fun f -> match f.LiteralValue with None -> -1 | Some x -> unbox x)
+                                              |> Seq.map (fun f -> f.Name, f.LiteralValue)
                                               |> Seq.toList))
 
     enums |> shouldEqual

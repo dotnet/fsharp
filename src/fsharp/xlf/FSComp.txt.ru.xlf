@@ -264,7 +264,7 @@
       </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtension">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx, .fsscript, .ml or .mli.</source>
-        <target state="translated">Нераспознанное расширение файла "{0}". Исходные файлы должны иметь расширения .fs, .fsi, .fsx, .fsscript, .ml или .mli..</target>
+        <target state="translated">Нераспознанное расширение файла "{0}". Исходные файлы должны иметь расширения .fs, .fsi, .fsx, .fsscript, .ml или .mli.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildCouldNotResolveAssembly">
@@ -800,11 +800,6 @@
       <trans-unit id="typrelCannotResolveImplicitGenericInstantiation">
         <source>The implicit instantiation of a generic construct at or near this point could not be resolved because it could resolve to multiple unrelated types, e.g. '{0}' and '{1}'. Consider using type annotations to resolve the ambiguity</source>
         <target state="translated">Неявное создание экземпляров базовой конструкции в данной точке или рядом с ней не может быть разрешено, так как тогда возможно разрешение в несколько несвязанных типов, напр. "{0}" и "{1}". Рекомендуется использовать аннотации типа для решения неоднозначности</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="typrelCannotResolveAmbiguityInOverloadedOperator">
-        <source>Could not resolve the ambiguity inherent in the use of the operator '{0}' at or near this program point. Consider using type annotations to resolve the ambiguity.</source>
-        <target state="translated">Не удалось разрешить неоднозначность, унаследованную в использовании оператора "{0}" в данной точке программы или рядом с ней. Рекомендуется использовать аннотации типа для решения неоднозначности.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelCannotResolveAmbiguityInPrintf">

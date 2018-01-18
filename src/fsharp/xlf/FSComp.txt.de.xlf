@@ -344,7 +344,7 @@
       </trans-unit>
       <trans-unit id="buildUnrecognizedOption">
         <source>Unrecognized option: '{0}'</source>
-        <target state="translated">Unbekannte Option: '{0}'</target>
+        <target state="translated">Unbekannte Option: "{0}"</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidModuleOrNamespaceName">
@@ -800,11 +800,6 @@
       <trans-unit id="typrelCannotResolveImplicitGenericInstantiation">
         <source>The implicit instantiation of a generic construct at or near this point could not be resolved because it could resolve to multiple unrelated types, e.g. '{0}' and '{1}'. Consider using type annotations to resolve the ambiguity</source>
         <target state="translated">Die implizite Instanziierung eines generischen Konstrukts an diesem Punkt oder in dessen Umgebung konnte nicht aufgelöst werden, weil sie zu mehreren unzusammenhängenden Typen aufgelöst werden könnte, z.B. "{0}" und "{1}". Verwenden Sie Typanmerkungen, um die Mehrdeutigkeit aufzulösen.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="typrelCannotResolveAmbiguityInOverloadedOperator">
-        <source>Could not resolve the ambiguity inherent in the use of the operator '{0}' at or near this program point. Consider using type annotations to resolve the ambiguity.</source>
-        <target state="translated">Die inhärente Mehrdeutigkeit bei der Verwendung des {0}-Operators an diesem Programmpunkt oder in dessen Umgebung konnte nicht aufgelöst werden. Verwenden Sie Typanmerkungen, um die Mehrdeutigkeit aufzulösen.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelCannotResolveAmbiguityInPrintf">
@@ -4579,7 +4574,7 @@
       </trans-unit>
       <trans-unit id="typeInfoFromFirst">
         <source>from {0}</source>
-        <target state="translated">von {0}</target>
+        <target state="translated">aus {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typeInfoFromNext">
@@ -5184,7 +5179,7 @@
       </trans-unit>
       <trans-unit id="tcCannotCallAbstractBaseMember">
         <source>Cannot call an abstract base member: '{0}'</source>
-        <target state="translated">Ein abstrakter Basismember kann nicht aufgerufen werden: '{0}'</target>
+        <target state="translated">Ein abstrakter Basismember kann nicht aufgerufen werden: "{0}"</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelCannotResolveAmbiguityInUnmanaged">
@@ -6514,7 +6509,7 @@
       </trans-unit>
       <trans-unit id="CallerMemberNameIsOverriden">
         <source>The CallerMemberNameAttribute applied to parameter '{0}' will have no effect. It is overridden by the CallerFilePathAttribute.</source>
-        <target state="translated">Das auf den Parameter "{0}" angewendete CallerMemberNameAttribute besitzt keine Auswirkung. Es wird durch das CallerFilePathAttribute überschrieben.</target>
+        <target state="translated">Das auf Parameter "{0}" angewendete CallerMemberNameAttribute hat keine Auswirkung. Es wird vom CallerFilePathAttribute überschrieben.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">

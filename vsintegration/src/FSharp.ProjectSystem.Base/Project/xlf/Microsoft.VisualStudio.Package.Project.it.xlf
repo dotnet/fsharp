@@ -59,7 +59,7 @@
       </trans-unit>
       <trans-unit id="Compile">
         <source>Compile</source>
-        <target state="translated">Compila</target>
+        <target state="translated">Compilazione</target>
         <note>Build Action - drop down option</note>
       </trans-unit>
       <trans-unit id="ConfirmExtensionChange">
@@ -222,7 +222,7 @@
       </trans-unit>
       <trans-unit id="FolderNameDescription">
         <source>Name of this folder</source>
-        <target state="translated">Nome della cartella corrente</target>
+        <target state="translated">Nome di questa cartella</target>
         <note />
       </trans-unit>
       <trans-unit id="FullPath">
@@ -447,7 +447,7 @@
       </trans-unit>
       <trans-unit id="ReferenceProperties">
         <source>Reference Properties</source>
-        <target state="translated">Proprietà riferimenti</target>
+        <target state="translated">Proprietà del riferimento</target>
         <note />
       </trans-unit>
       <trans-unit id="FileOrFolderAlreadyExists">

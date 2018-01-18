@@ -1394,14 +1394,13 @@ type TypeCheckInfo
     override __.ToString() = "TypeCheckInfo(" + mainInputFileName + ")"
 
 type FSharpParsingOptions =
-    {
-      SourceFiles: string []
+    { SourceFiles: string []
       ConditionalCompilationDefines: string list
       ErrorSeverityOptions: FSharpErrorSeverityOptions
+      IsInteractive: bool
       LightSyntax: bool option
       CompilingFsLib: bool
-      IsExe: bool
-    }
+      IsExe: bool }
 
     member x.LastFileName =
         Debug.Assert(not (Array.isEmpty x.SourceFiles), "Parsing options don't contain any file")
@@ -1411,26 +1410,26 @@ type FSharpParsingOptions =
         { SourceFiles = Array.empty
           ConditionalCompilationDefines = []
           ErrorSeverityOptions = FSharpErrorSeverityOptions.Default
+          IsInteractive = false
           LightSyntax = None
           CompilingFsLib = false
-          IsExe = false
-        }
+          IsExe = false }
 
-    static member FromTcConfig(tcConfig: TcConfig, sourceFiles) =
-        {
-          SourceFiles = sourceFiles
+    static member FromTcConfig(tcConfig: TcConfig, sourceFiles, isInteractive: bool) =
+        { SourceFiles = sourceFiles
           ConditionalCompilationDefines = tcConfig.conditionalCompilationDefines
           ErrorSeverityOptions = tcConfig.errorSeverityOptions
+          IsInteractive = isInteractive
           LightSyntax = tcConfig.light
           CompilingFsLib = tcConfig.compilingFslib
-          IsExe = tcConfig.target.IsExe
-        }
+          IsExe = tcConfig.target.IsExe }
 
-    static member FromTcConfigBuidler(tcConfigB: TcConfigBuilder, sourceFiles) =
+    static member FromTcConfigBuidler(tcConfigB: TcConfigBuilder, sourceFiles, isInteractive: bool) =
         {
           SourceFiles = sourceFiles
           ConditionalCompilationDefines = tcConfigB.conditionalCompilationDefines
           ErrorSeverityOptions = tcConfigB.errorSeverityOptions
+          IsInteractive = isInteractive
           LightSyntax = tcConfigB.light
           CompilingFsLib = tcConfigB.compilingFslib
           IsExe = tcConfigB.target.IsExe
@@ -1502,7 +1501,7 @@ module internal Parser =
 
         // If we're editing a script then we define INTERACTIVE otherwise COMPILED.
         // Since this parsing for intellisense we always define EDITING.
-        let defines = SourceFileImpl.AdditionalDefinesForUseInEditor(fileName) @ options.ConditionalCompilationDefines
+        let defines = (SourceFileImpl.AdditionalDefinesForUseInEditor options.IsInteractive) @ options.ConditionalCompilationDefines
 
         // Note: we don't really attempt to intern strings across a large scope.
         let lexResourceManager = new Lexhelp.LexResourceManager()
@@ -1521,6 +1520,12 @@ module internal Parser =
 
     let matchBraces(source, fileName, options: FSharpParsingOptions, userOpName: string) =
         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "matchBraces", fileName)
+
+        // Make sure there is an ErrorLogger installed whenever we do stuff that might record errors, even if we ultimately ignore the errors
+        let delayedLogger = CapturingErrorLogger("matchBraces")
+        use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayedLogger)
+        use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
+        
         let matchingBraces = new ResizeArray<_>()
         Lexhelp.usingLexbufForParsing(UnicodeLexing.StringAsLexbuf(addNewLine source), fileName) (fun lexbuf ->
             let errHandler = ErrorHandler(false, fileName, options.ErrorSeverityOptions, source)
@@ -2514,7 +2519,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                                 let! tcErrors, tcFileResult = 
                                     Parser.CheckOneFile(parseResults, source, fileName, options.ProjectFileName, tcPrior.TcConfig, tcPrior.TcGlobals, tcPrior.TcImports, 
                                                         tcPrior.TcState, loadClosure, tcPrior.Errors, reactorOps, (fun () -> builder.IsAlive), textSnapshotInfo, userOpName)
-                                let parsingOptions = FSharpParsingOptions.FromTcConfig(tcPrior.TcConfig, Array.ofList builder.SourceFiles)
+                                let parsingOptions = FSharpParsingOptions.FromTcConfig(tcPrior.TcConfig, Array.ofList builder.SourceFiles, options.UseScriptResolutionRules)
                                 let checkAnswer = MakeCheckFileAnswer(fileName, tcFileResult, options, builder, Array.ofList tcPrior.TcDependencyFiles, creationErrors, parseResults.Errors, tcErrors)
                                 bc.RecordTypeCheckFileInProjectResults(fileName, options, parsingOptions, parseResults, fileVersion, tcPrior.TimeStamp, Some checkAnswer, source)
                                 return checkAnswer
@@ -2628,7 +2633,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                         let! tcPrior = execWithReactorAsync <| fun ctok -> builder.GetCheckResultsBeforeFileInProject (ctok, filename) 
                     
                         // Do the parsing.
-                        let parsingOptions = FSharpParsingOptions.FromTcConfig(builder.TcConfig, Array.ofList (builder.SourceFiles))
+                        let parsingOptions = FSharpParsingOptions.FromTcConfig(builder.TcConfig, Array.ofList (builder.SourceFiles), options.UseScriptResolutionRules)
                         let parseErrors, parseTreeOpt, anyErrors = Parser.parseFile (source, filename, parsingOptions, userOpName)
                         let parseTreeOpt = parseTreeOpt |> Option.map builder.DeduplicateParsedInputModuleNameInProject
                         let parseResults = FSharpParseFileResults(parseErrors, parseTreeOpt, anyErrors, builder.AllDependenciesDeprecated)
@@ -2908,7 +2913,7 @@ type FSharpChecker(legacyReferenceResolver, projectCacheSize, keepAssemblyConten
     member ic.GetParsingOptionsFromProjectOptions(options): FSharpParsingOptions * _ =
         let sourceFiles = List.ofArray options.SourceFiles
         let argv = List.ofArray options.OtherOptions
-        ic.GetParsingOptionsFromCommandLineArgs(sourceFiles, argv)
+        ic.GetParsingOptionsFromCommandLineArgs(sourceFiles, argv, options.UseScriptResolutionRules)
 
     member ic.MatchBraces(filename, source, options: FSharpProjectOptions, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
@@ -3111,16 +3116,17 @@ type FSharpChecker(legacyReferenceResolver, projectCacheSize, keepAssemblyConten
           ExtraProjectInfo=extraProjectInfo
           Stamp = None }
 
-    member ic.GetParsingOptionsFromCommandLineArgs(initialSourceFiles, argv) =
+    member ic.GetParsingOptionsFromCommandLineArgs(initialSourceFiles, argv, ?isInteractive) =
+        let isInteractive = defaultArg isInteractive false
         use errorScope = new ErrorScope()
         let tcConfigBuilder = TcConfigBuilder.Initial
 
         // Apply command-line arguments and collect more source files if they are in the arguments
         let sourceFilesNew = ApplyCommandLineArgs(tcConfigBuilder, initialSourceFiles, argv)
-        FSharpParsingOptions.FromTcConfigBuidler(tcConfigBuilder, Array.ofList sourceFilesNew), errorScope.Diagnostics
+        FSharpParsingOptions.FromTcConfigBuidler(tcConfigBuilder, Array.ofList sourceFilesNew, isInteractive), errorScope.Diagnostics
 
-    member ic.GetParsingOptionsFromCommandLineArgs(argv) =
-        ic.GetParsingOptionsFromCommandLineArgs([], argv)
+    member ic.GetParsingOptionsFromCommandLineArgs(argv, ?isInteractive: bool) =
+        ic.GetParsingOptionsFromCommandLineArgs([], argv, ?isInteractive=isInteractive)
 
     /// Begin background parsing the given project.
     member ic.StartBackgroundCompile(options, ?userOpName) = 
@@ -3191,7 +3197,7 @@ type FsiInteractiveChecker(legacyReferenceResolver, reactorOps: IReactorOperatio
             let userOpName = defaultArg userOpName "Unknown"
             let filename = Path.Combine(tcConfig.implicitIncludeDir, "stdin.fsx")
             // Note: projectSourceFiles is only used to compute isLastCompiland, and is ignored if Build.IsScript(mainInputFileName) is true (which it is in this case).
-            let parsingOptions = FSharpParsingOptions.FromTcConfig(tcConfig, [| filename |])
+            let parsingOptions = FSharpParsingOptions.FromTcConfig(tcConfig, [| filename |], true)
             let parseErrors, parseTreeOpt, anyErrors = Parser.parseFile (source, filename, parsingOptions, userOpName)
             let dependencyFiles = [| |] // interactions have no dependencies
             let parseResults = FSharpParseFileResults(parseErrors, parseTreeOpt, parseHadErrors = anyErrors, dependencyFiles = dependencyFiles)
@@ -3234,8 +3240,8 @@ module CompilerEnvironment =
     let DefaultReferencesForOrphanSources(assumeDotNetFramework) = DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework)
     
     /// Publish compiler-flags parsing logic. Must be fast because its used by the colorizer.
-    let GetCompilationDefinesForEditing(filename:string, parsingOptions: FSharpParsingOptions) =
-        SourceFileImpl.AdditionalDefinesForUseInEditor(filename) @
+    let GetCompilationDefinesForEditing (parsingOptions: FSharpParsingOptions) =
+        SourceFileImpl.AdditionalDefinesForUseInEditor(parsingOptions.IsInteractive) @
         parsingOptions.ConditionalCompilationDefines
             
     /// Return true if this is a subcategory of error or warning message that the language service can emit

@@ -58,9 +58,6 @@
     <InternalsVisibleTo Include="LanguageServiceProfiling" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Private.dll.fs">
-      <Link>assemblyinfo.FSharp.Compiler.Private.dll.fs</Link>
-    </Compile>
     <EmbeddedText Include="..\FSComp.txt">
       <Link>FSComp.txt</Link>
     </EmbeddedText>

@@ -629,12 +629,12 @@
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationSealed">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is sealed but the signature implies it is not. Consider adding the [&lt;Sealed&gt;] attribute to the signature.</source>
-        <target state="translated">実装の型はシールされていますが、シグネチャではシールされていないと考えられるため、シグネチャおよび実装内の型 '{1}' の {0} 定義は互換性がありません。シグネチャに [&lt;Sealed&gt;] 属性を追加してください。</target>
+        <target state="translated">実装の型はシールドですが、シグネチャではシールドではないと考えられるため、シグネチャおよび実装内の型 '{1}' の {0} 定義は互換性がありません。シグネチャに [&lt;Sealed&gt;] 属性を追加してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsNotSealed">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is not sealed but signature implies it is. Consider adding the [&lt;Sealed&gt;] attribute to the implementation.</source>
-        <target state="translated">実装の型はシールされていませんが、シグネチャはシールされていると考えられるため、シグネチャおよび実装内の型 '{1}' の {0} 定義は互換性がありません。実装に [&lt;Sealed&gt;] 属性を追加してください。</target>
+        <target state="translated">実装の型はシールドですが、シグネチャではシールドではないと考えられるため、シグネチャおよび実装内の型 '{1}' の {0} 定義は互換性がありません。実装に [&lt;Sealed&gt;] 属性を追加してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsAbstract">
@@ -802,11 +802,6 @@
         <target state="translated">この場所またはその付近にあるジェネリック コンストラクトの暗黙的なインスタンス化を解決できませんでした。これは、関連性のない複数の型に解決される可能性があるためです (たとえば、'{0}' と '{1}')。あいまいさを解決するために、型の注釈を使用してください。</target>
         <note />
       </trans-unit>
-      <trans-unit id="typrelCannotResolveAmbiguityInOverloadedOperator">
-        <source>Could not resolve the ambiguity inherent in the use of the operator '{0}' at or near this program point. Consider using type annotations to resolve the ambiguity.</source>
-        <target state="translated">このプログラム ポイント、またはその付近にある演算子 '{0}' の使用に関して、あいまいな継承を解決できませんでした。あいまいさを解決するために、型の注釈を使用してください。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="typrelCannotResolveAmbiguityInPrintf">
         <source>Could not resolve the ambiguity inherent in the use of a 'printf'-style format string</source>
         <target state="translated">'printf' 形式の書式指定文字列の使用に関して、あいまいな継承を解決できませんでした</target>
@@ -939,7 +934,7 @@
       </trans-unit>
       <trans-unit id="typrelMethodIsSealed">
         <source>The method '{0}' is sealed and cannot be overridden</source>
-        <target state="translated">メソッド '{0}' はシールされているため、オーバーライドできません</target>
+        <target state="translated">メソッド '{0}' がシールドであるため、オーバーライドできません</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelOverrideImplementsMoreThenOneSlot">
@@ -2064,12 +2059,12 @@
       </trans-unit>
       <trans-unit id="parsEnumTypesCannotHaveVisibilityDeclarations">
         <source>Accessibility modifiers are not permitted in this position for enum types</source>
-        <target state="translated">enum 型のこの位置にアクセシビリティ修飾子は使用できません</target>
+        <target state="translated">列挙型のこの位置にアクセシビリティ修飾子は使用できません</target>
         <note />
       </trans-unit>
       <trans-unit id="parsAllEnumFieldsRequireValues">
         <source>All enum fields must be given values</source>
-        <target state="translated">すべての enum フィールドに値を指定する必要があります</target>
+        <target state="translated">すべての列挙型フィールドに値を指定する必要があります</target>
         <note />
       </trans-unit>
       <trans-unit id="parsInlineAssemblyCannotHaveVisibilityDeclarations">
@@ -2634,7 +2629,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidConstraintTypeSealed">
         <source>Invalid constraint: the type used for the constraint is sealed, which means the constraint could only be satisfied by at most one solution</source>
-        <target state="translated">無効な制約: 制約に使用された型が sealed です。つまり、制約を満たすことができるのは、最高でも 1 つの解です。</target>
+        <target state="translated">無効な制約: 制約に使用された型がシールドです。つまり、制約を満たすことができるのは、最高でも 1 つの解です。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidEnumConstraint">
@@ -3014,7 +3009,7 @@
       </trans-unit>
       <trans-unit id="tcCannotCreateExtensionOfSealedType">
         <source>Cannot create an extension of a sealed type</source>
-        <target state="translated">sealed 型の拡張は作成できません</target>
+        <target state="translated">シールド型の拡張は作成できません</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNoArgumentsForRecordValue">
@@ -3769,7 +3764,7 @@
       </trans-unit>
       <trans-unit id="tcStructsInterfacesEnumsDelegatesMayNotInheritFromOtherTypes">
         <source>Structs, interfaces, enums and delegates cannot inherit from other types</source>
-        <target state="translated">構造体、インターフェイス、列挙体、およびデリゲートは、他の型から継承できません</target>
+        <target state="translated">構造体、インターフェイス、列挙型、およびデリゲートは、他の型から継承できません</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypesCannotInheritFromMultipleConcreteTypes">
@@ -3819,32 +3814,32 @@
       </trans-unit>
       <trans-unit id="tcTypesAreAlwaysSealedDU">
         <source>Discriminated union types are always sealed</source>
-        <target state="translated">判別された共用体型は常にシールされます</target>
+        <target state="translated">判別された共用体型は常にシールドです</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypesAreAlwaysSealedRecord">
         <source>Record types are always sealed</source>
-        <target state="translated">レコード型は常にシールされます</target>
+        <target state="translated">レコード型は常にシールドです</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypesAreAlwaysSealedAssemblyCode">
         <source>Assembly code types are always sealed</source>
-        <target state="translated">アセンブリ コード型は常にシールされます</target>
+        <target state="translated">アセンブリ コード型は常にシールドです</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypesAreAlwaysSealedStruct">
         <source>Struct types are always sealed</source>
-        <target state="translated">構造体型は常にシールされます</target>
+        <target state="translated">構造体型は常にシールドです</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypesAreAlwaysSealedDelegate">
         <source>Delegate types are always sealed</source>
-        <target state="translated">デリゲート型は常にシールされます</target>
+        <target state="translated">デリゲート型は常にシールドです</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypesAreAlwaysSealedEnum">
         <source>Enum types are always sealed</source>
-        <target state="translated">enum 型は常にシールされます</target>
+        <target state="translated">列挙型は常にシールドです</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInterfaceTypesAndDelegatesCannotContainFields">
@@ -3859,7 +3854,7 @@
       </trans-unit>
       <trans-unit id="tcCannotInheritFromSealedType">
         <source>Cannot inherit a sealed type</source>
-        <target state="translated">sealed 型を継承できません</target>
+        <target state="translated">シールド型を継承できません</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotInheritFromInterfaceType">
@@ -3874,7 +3869,7 @@
       </trans-unit>
       <trans-unit id="tcInterfaceTypesCannotBeSealed">
         <source>Interface types cannot be sealed</source>
-        <target state="translated">インターフェイス型を sealed にすることはできません</target>
+        <target state="translated">インターフェイス型をシールドにすることはできません</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidDelegateSpecification">
@@ -3909,7 +3904,7 @@
       </trans-unit>
       <trans-unit id="tcMembersThatExtendInterfaceMustBePlacedInSeparateModule">
         <source>Members that extend interface, delegate or enum types must be placed in a module separate to the definition of the type. This module must either have the AutoOpen attribute or be opened explicitly by client code to bring the extension members into scope.</source>
-        <target state="translated">インターフェイス型、デリゲート型、または enum 型を拡張するメンバーは、型の定義とは別のモジュールに配置する必要があります。このモジュールに AutoOpen 属性を指定するか、クライアント コードで明示的にモジュールを開いて、拡張メンバーをスコープに含める必要があります。</target>
+        <target state="translated">インターフェイス型、デリゲート型、または列挙型を拡張するメンバーは、型の定義とは別のモジュールに配置する必要があります。このモジュールに AutoOpen 属性を指定するか、クライアント コードで明示的にモジュールを開いて、拡張メンバーをスコープに含める必要があります。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcDeclaredTypeParametersForExtensionDoNotMatchOriginal">
@@ -4559,7 +4554,7 @@
       </trans-unit>
       <trans-unit id="typeInfoPatternVariable">
         <source>patvar</source>
-        <target state="translated">patvar </target>
+        <target state="translated">patvar</target>
         <note />
       </trans-unit>
       <trans-unit id="typeInfoNamespace">
@@ -5819,7 +5814,7 @@
       </trans-unit>
       <trans-unit id="tcCannotOverrideSealedMethod">
         <source>Cannot override inherited member '{0}' because it is sealed</source>
-        <target state="translated">継承されたメンバー '{0}' はシールされているため、オーバーライドできません</target>
+        <target state="translated">継承されたメンバー '{0}' はシールドであるため、オーバーライドできません</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderErrorWithContext">

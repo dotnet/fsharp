@@ -22,7 +22,6 @@
 
   <ItemGroup>
     <EmbeddedText Include="..\FSInteractiveSettings.txt" />
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Interactive.Settings.dll.fs" />
     <Compile Include="..\..\utils\reshapedreflection.fs" />
     <Compile Include="..\fsiattrs.fs" />
     <Compile Include="..\fsiaux.fsi" />
