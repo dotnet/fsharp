@@ -55,7 +55,7 @@ For the FSharpQA suite, the list of test areas and their associated "tags" is st
 
     tests\fsharpqa\source\test.lst   // FSharpQA suite
 
-Tags are in the left column, paths to to corresponding test folders are in the right column.  If no tags are specifie, all tests will be run.
+Tags are in the left column, paths to to corresponding test folders are in the right column.  If no tags are specified, all tests will be run.
 
 If you want to re-run a particular test area, the easiest way to do so is to set a temporary tag for that area in test.lst (e.g. "RERUN") and then pass that as an argument to `build.cmd`: `build.cmd test-net40-fsharpqa include RERUN`.
 
@@ -65,7 +65,7 @@ These are all NUnit tests. You can execute these tests individually via the Visu
 extension or the command line via `nunit3-console.exe`.
 
 Note that for compatibility reasons, the IDE unit tests should be run in a 32-bit process, 
-using the '--x86' flag to `nunit3-console.exe`
+using the `--x86` flag to `nunit3-console.exe`
 
 
 
