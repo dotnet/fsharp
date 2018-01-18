@@ -452,6 +452,7 @@ module DispatchSlotChecking =
             
             // Is a member an abstract slot of one of the implied interface types?
             let isImpliedInterfaceType ty =
+                isAppTy g ty &&
                 isImpliedInterfaceTable.ContainsKey (tcrefOfAppTy g ty) &&
                 impliedTys |> List.exists (TypesFeasiblyEquiv 0 g amap reqdTyRange ty)
 
