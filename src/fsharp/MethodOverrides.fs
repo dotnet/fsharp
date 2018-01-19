@@ -235,6 +235,7 @@ module DispatchSlotChecking =
     /// Check if an override implements a dispatch slot 
     let OverrideImplementsDispatchSlot g amap m dispatchSlot availPriorOverride =
         IsExactMatch g amap m dispatchSlot availPriorOverride &&
+        isAppTy g dispatchSlot.EnclosingType &&
         // The override has to actually be in some subtype of the dispatch slot
         ExistsHeadTypeInEntireHierarchy g amap m (generalizedTyconRef availPriorOverride.BoundingTyconRef) (tcrefOfAppTy g dispatchSlot.EnclosingType)
 
@@ -610,7 +611,8 @@ module DispatchSlotChecking =
                           let overridenForThisSlotImplSet = 
                               [ for (RequiredSlot(dispatchSlot,_)) in NameMultiMap.find overrideByInfo.LogicalName dispatchSlotsKeyed do 
                                     if OverrideImplementsDispatchSlot g amap m dispatchSlot overrideByInfo then 
-                                        if tyconRefEq g overrideByInfo.BoundingTyconRef (tcrefOfAppTy g dispatchSlot.EnclosingType) then 
+                                        if isAppTy g dispatchSlot.EnclosingType &&
+                                           tyconRefEq g overrideByInfo.BoundingTyconRef (tcrefOfAppTy g dispatchSlot.EnclosingType) then 
                                              match dispatchSlot.ArbitraryValRef with 
                                              | Some virtMember -> 
                                                   if virtMember.MemberInfo.Value.IsImplemented then errorR(Error(FSComp.SR.tcDefaultImplementationAlreadyExists(),overrideByInfo.Range))
