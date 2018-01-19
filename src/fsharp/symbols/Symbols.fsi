@@ -850,7 +850,10 @@ and [<Class>] public FSharpActivePatternCase =
     inherit FSharpSymbol
 
     /// The name of the active pattern case 
-    member Name: string 
+    member Name: string
+
+    /// Index of the case in the pattern group
+    member Index: int
 
     /// The location of declaration of the active pattern case 
     member DeclarationLocation : range 
@@ -866,6 +869,10 @@ and [<Class>] public FSharpActivePatternCase =
 
 /// Represents all cases within an active pattern
 and [<Class>] public FSharpActivePatternGroup =
+
+    /// The whole group name
+    member Name: string option
+
     /// The names of the active pattern cases
     member Names: IList<string> 
 

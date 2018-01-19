@@ -46,6 +46,9 @@
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\EditorTests.fs">
       <Link>EditorTests.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\Symbols.fs">
+      <Link>Symbols.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\FileSystemTests.fs">
       <Link>FileSystemTests.fs</Link>
     </Compile>
