@@ -62,5 +62,8 @@
         <file src="net40\bin\FSharp.Core.optdata"        target="lib\net45" />
         <file src="net40\bin\FSharp.Core.xml"            target="lib\net45" />
 
+        <!-- resources -->
+        <file src="coreclr\bin\**\FSharp.Core.resources.dll" target="lib\netstandard1.6" />
+        <file src="net40\bin\**\FSharp.Core.resources.dll"   target="lib\net45" />
     </files>
 </package>
