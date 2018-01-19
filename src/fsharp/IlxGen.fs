@@ -3747,8 +3747,8 @@ and GenClosureTypeDefs cenv (tref:ILTypeRef, ilGenParams, attrs, ilCloFreeVars, 
       Properties = emptyILProperties
       Methods= mkILMethods mdefs 
       MethodImpls= mkILMethodImpls mimpls 
-      IsSerializable= cenv.g.attrib_SerializableAttribute.IsSome
-      IsComInterop= false    
+      IsSerializable=true
+      IsComInterop= false
       IsSpecialName= true
       NestedTypes=emptyILTypeDefs
       Encoding= ILDefaultPInvokeEncoding.Auto
@@ -3803,8 +3803,8 @@ and GenLambdaClosure cenv (cgbuf:CodeGenBuffer) eenv isLocalTypeFunc selfv expr 
                       Properties = emptyILProperties
                       Methods= mkILMethods ilContractMeths 
                       MethodImpls= emptyILMethodImpls 
-                      IsSerializable= cenv.g.attrib_SerializableAttribute.IsSome 
-                      IsComInterop=false    
+                      IsSerializable=true
+                      IsComInterop=false
                       IsSpecialName= true
                       NestedTypes=emptyILTypeDefs
                       Encoding= ILDefaultPInvokeEncoding.Auto
@@ -6563,9 +6563,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
         let ilFields = mkILFields ilFieldDefs
         
         let tdef, tdefDiscards = 
-           let isSerializable = (TryFindFSharpBoolAttribute cenv.g cenv.g.attrib_AutoSerializableAttribute tycon.Attribs <> Some(false)) 
-                             && cenv.g.attrib_SerializableAttribute.IsSome
-                                       
+           let isSerializable = (TryFindFSharpBoolAttribute cenv.g cenv.g.attrib_AutoSerializableAttribute tycon.Attribs <> Some(false))
+
            match tycon.TypeReprInfo with 
            | TILObjectRepr _ ->
                let td = tycon.ILTyconRawMetadata
@@ -6817,11 +6816,10 @@ and GenExnDef cenv mgbuf eenv m (exnc:Tycon) =
             else
                 []
 
-        
         let serializationRelatedMembers =
-            // do not emit serialization related members if target framework lacks SerializableAttribute or SerializationInfo
-          match cenv.g.attrib_SerializableAttribute, cenv.g.iltyp_SerializationInfo, cenv.g.iltyp_StreamingContext with 
-          | Some _,  Some serializationInfoType, Some streamingContextType -> 
+          // do not emit serialization related members if target framework lacks SerializationInfo or StreamingContext
+          match cenv.g.iltyp_SerializationInfo, cenv.g.iltyp_StreamingContext with 
+          | Some serializationInfoType, Some streamingContextType -> 
             let ilCtorDefForSerialziation = 
                 mkILCtor(ILMemberAccess.Family,
                         [mkILParamNamed("info", serializationInfoType);mkILParamNamed("context",streamingContextType)],
@@ -6880,7 +6878,7 @@ and GenExnDef cenv mgbuf eenv m (exnc:Tycon) =
              emptyILEvents,
              mkILCustomAttrs [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Exception)],
              ILTypeInit.BeforeField)
-        let tdef = { tdef with IsSerializable = cenv.g.attrib_SerializableAttribute.IsSome }
+        let tdef = { tdef with IsSerializable = true }
         mgbuf.AddTypeDef(tref, tdef, false, false, None)
 
 
