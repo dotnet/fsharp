@@ -2302,3 +2302,4 @@ type FSharpSymbolUse(g:TcGlobals, denv: DisplayEnv, symbol:FSharpSymbol, itemOcc
     member __.Range = Range.toZ range
     member __.RangeAlternate = range
 
+    override __.ToString() = sprintf "%A, %A, %A" symbol itemOcc range 
