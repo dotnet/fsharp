@@ -84,7 +84,7 @@
       </trans-unit>
       <trans-unit id="EnableUnmanagedDebugging.Text">
         <source>Enable &amp;unmanaged code debugging</source>
-        <target state="translated">啟用 Unmanaged 程式碼偵錯(&amp;U)</target>
+        <target state="translated">啟用非受控程式碼偵錯(&amp;U)</target>
         <note />
       </trans-unit>
     </body>

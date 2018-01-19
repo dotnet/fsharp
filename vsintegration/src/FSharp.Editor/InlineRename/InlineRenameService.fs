@@ -169,7 +169,7 @@ type internal InlineRenameService
             asyncMaybe {
                 let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                 let! sourceText = document.GetTextAsync(cancellationToken)
-                let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, parsingOptions)
+                let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
                 return! InlineRenameService.GetInlineRenameInfo(checkerProvider.Checker, projectInfoManager, document, sourceText, position, defines, projectOptions)
             }
             |> Async.map (Option.defaultValue FailureInlineRenameInfo.Instance)

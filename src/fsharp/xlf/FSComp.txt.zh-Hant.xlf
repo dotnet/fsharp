@@ -209,7 +209,7 @@
       </trans-unit>
       <trans-unit id="buildInvalidPrivacy">
         <source>Unrecognized privacy setting '{0}' for managed resource, valid options are 'public' and 'private'</source>
-        <target state="translated">Managed 資源的無法辨識隱私設定 '{0}'，有效的選項是 'public' 和 'private'</target>
+        <target state="translated">受控資源的無法辨識隱私設定 '{0}'，有效的選項是 'public' 和 'private'</target>
         <note />
       </trans-unit>
       <trans-unit id="buildMultipleReferencesNotAllowed">
@@ -800,11 +800,6 @@
       <trans-unit id="typrelCannotResolveImplicitGenericInstantiation">
         <source>The implicit instantiation of a generic construct at or near this point could not be resolved because it could resolve to multiple unrelated types, e.g. '{0}' and '{1}'. Consider using type annotations to resolve the ambiguity</source>
         <target state="translated">無法解決在這個點或附近的泛型建構的隱含具現化，因為它可能解析成多個不相關的類型，例如 '{0}' 和 '{1}'。請考慮使用類型註釋來解決模稜兩可</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="typrelCannotResolveAmbiguityInOverloadedOperator">
-        <source>Could not resolve the ambiguity inherent in the use of the operator '{0}' at or near this program point. Consider using type annotations to resolve the ambiguity.</source>
-        <target state="translated">無法解決在這個程式點或附近使用運算子 '{0}' 時固有的模稜兩可。請考慮使用型別註解來解決模稜兩可。</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelCannotResolveAmbiguityInPrintf">
@@ -1609,7 +1604,7 @@
       </trans-unit>
       <trans-unit id="csGenericConstructRequiresUnmanagedType">
         <source>A generic construct requires that the type '{0}' is an unmanaged type</source>
-        <target state="translated">泛型建構要求類型 '{0}' 必須是 Unmanaged 類型</target>
+        <target state="translated">泛型建構要求類型 '{0}' 必須是非受控類型</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeNotCompatibleBecauseOfPrintf">
@@ -4209,7 +4204,7 @@
       </trans-unit>
       <trans-unit id="optsResource">
         <source>Embed the specified managed resource</source>
-        <target state="translated">嵌入指定的 Managed 資源</target>
+        <target state="translated">嵌入指定的受控資源</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLinkresource">
@@ -5469,12 +5464,12 @@
       </trans-unit>
       <trans-unit id="fscStaticLinkingNoMixedDLL">
         <source>Static linking may not include a mixed managed/unmanaged DLL</source>
-        <target state="translated">靜態連結不可包含混合的 Managed/Unmanaged DLL</target>
+        <target state="translated">靜態連結不可包含混合的受控/非受控 DLL</target>
         <note />
       </trans-unit>
       <trans-unit id="fscIgnoringMixedWhenLinking">
         <source>Ignoring mixed managed/unmanaged assembly '{0}' during static linking</source>
-        <target state="translated">在靜態連結期間忽略混合的 Managed/Unmanaged 組件 '{0}'</target>
+        <target state="translated">在靜態連結期間忽略混合的受控/非受控組件 '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="fscAssumeStaticLinkContainsNoDependencies">

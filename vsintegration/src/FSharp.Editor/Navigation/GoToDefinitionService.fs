@@ -58,7 +58,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
     let findSymbolHelper (originDocument: Document, originRange: range, sourceText: SourceText, preferSignature: bool) : Async<FSharpNavigableItem option> =
         asyncMaybe {
             let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject originDocument
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing (originDocument.FilePath, parsingOptions)
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             let! originTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sourceText, originRange)
             let position = originTextSpan.Start
             let! lexerSymbol = Tokenizer.getSymbolAtPosition (originDocument.Id, sourceText, position, originDocument.FilePath, defines, SymbolLookupKind.Greedy, false)
@@ -297,7 +297,7 @@ type internal FSharpGoToDefinitionService
         asyncMaybe {
             let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject originDocument
             let! sourceText = originDocument.GetTextAsync () |> liftTaskAsync
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing (originDocument.FilePath, parsingOptions)
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line

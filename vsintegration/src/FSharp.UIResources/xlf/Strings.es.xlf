@@ -84,7 +84,7 @@
       </trans-unit>
       <trans-unit id="Unused_declaration_code_fix">
         <source>Analyze and suggest fixes for unused values</source>
-        <target state="new">Analyze and suggest fixes for unused values</target>
+        <target state="translated">Analizar y sugerir correcciones para valores no utilizados</target>
         <note />
       </trans-unit>
     </body>

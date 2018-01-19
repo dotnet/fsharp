@@ -122,6 +122,9 @@
 "TemplatesDir"="\.\NullPath"
 @="#6007"
 
+[$RootKey$\Projects\{349C5851-65DF-11DA-9384-00065B846F21}\LanguageTemplates]
+"{F2A71F9B-5D33-465A-A702-920D77279786}"="{76B279E8-36ED-494E-B145-5344F8DEFCB6}"
+
 [$RootKey$\Projects\{4ead5bc6-47f1-4fcb-823d-0cd64302d5b9}\WebApplicationProperties]
 "CodeBehindCodeGenerator"="{00000000-0000-0000-0000-000000000000}"
 

@@ -1642,7 +1642,7 @@ Error:</source>
       </trans-unit>
       <trans-unit id="RSE_Err_RenameNotSupported">
         <source>The current object is auto-generated and only supports renaming through the Managed Resources Editor.</source>
-        <target state="translated">目前的物件是自動產生的，而且僅支援透過 Managed 資源編輯器重新命名。</target>
+        <target state="translated">目前的物件是自動產生的，而且僅支援透過受控資源編輯器重新命名。</target>
         <note />
       </trans-unit>
       <trans-unit id="RSE_Err_CantFindResourceFile_1Arg">
@@ -2123,7 +2123,7 @@ CONSIDER: get this from CodeDom</note>
       </trans-unit>
       <trans-unit id="RSE_ResourceEditor">
         <source>Managed Resources Editor</source>
-        <target state="translated">Managed 資源編輯器</target>
+        <target state="translated">受控資源編輯器</target>
         <note />
       </trans-unit>
       <trans-unit id="RSE_DlgTitle_AddExisting">
