@@ -172,12 +172,12 @@
     <value>Block Structure Guides</value>
   </data>
   <data name="Show_guides" xml:space="preserve">
-    <value>_Show block structure guides for F# code</value>
+    <value>Show structure guidelines for F# code</value>
   </data>
   <data name="Outlining" xml:space="preserve">
     <value>Outlining</value>
   </data>
   <data name="Show_Outlining" xml:space="preserve">
-    <value>Show _outlining for F# code</value>
+    <value>Show outlining and collapsable nodes for F# code</value>
   </data>
 </root>

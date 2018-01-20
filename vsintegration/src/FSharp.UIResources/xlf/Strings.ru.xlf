@@ -93,8 +93,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Show_guides">
-        <source>_Show block structure guides for F# code</source>
-        <target state="new">_Show block structure guides for F# code</target>
+        <source>Show structure guidelines for F# code</source>
+        <target state="new">Show structure guidelines for F# code</target>
         <note />
       </trans-unit>
       <trans-unit id="Outlining">
@@ -103,8 +103,8 @@
         <note />
       </trans-unit>
       <trans-unit id="Show_Outlining">
-        <source>Show _outlining for F# code</source>
-        <target state="new">Show _outlining for F# code</target>
+        <source>Show outlining and collapsable nodes for F# code</source>
+        <target state="new">Show outlining and collapsable nodes for F# code</target>
         <note />
       </trans-unit>
     </body>

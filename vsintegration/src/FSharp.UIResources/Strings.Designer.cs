@@ -187,7 +187,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to _Show block structure guides for F# code.
+        ///   Looks up a localized string similar to Show structure guidelines for F# code.
         /// </summary>
         public static string Show_guides {
             get {
@@ -205,7 +205,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Show _outlining for F# code.
+        ///   Looks up a localized string similar to Show outlining and collapsable nodes for F# code.
         /// </summary>
         public static string Show_Outlining {
             get {
