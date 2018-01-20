@@ -632,7 +632,7 @@ let ExcludeHiddenOfMethInfos g amap m (minfos:MethInfo list list) =
         (fun minfo -> minfo.LogicalName)
         (fun m1 m2 -> 
              // only hide those truly from super classes 
-             not (tyconRefEq g (tcrefOfAppTy g m1.EnclosingType) (tcrefOfAppTy g m2.EnclosingType)) &&
+             not (tyconRefEq g m1.DeclaringEntityRef m2.DeclaringEntityRef) &&
              MethInfosEquivByNameAndPartialSig EraseNone true g amap m m1 m2)
         
     |> List.concat

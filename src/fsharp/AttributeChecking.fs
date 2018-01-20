@@ -457,16 +457,16 @@ let MethInfoIsUnseen g m typ minfo =
         false
 #endif
 
-    let isUnseenByBeingTupleMethod () = isAnyTupleTy g typ
+    //let isUnseenByBeingTupleMethod () = isAnyTupleTy g typ
 
-    isUnseenByObsoleteAttrib () || isUnseenByHidingAttribute () || isUnseenByBeingTupleMethod ()
+    isUnseenByObsoleteAttrib () || isUnseenByHidingAttribute () //|| isUnseenByBeingTupleMethod ()
 
 /// Indicate if a property has 'Obsolete' or 'CompilerMessageAttribute'.
 /// Used to suppress the item in intellisense.
 let PropInfoIsUnseen m pinfo = 
     match pinfo with
     | ILProp (g,(ILPropInfo(_,pdef) as ilpinfo)) -> 
-        // Properties on tuple types are resolvable but unseen
+        // Properties on .NET tuple types are resolvable but unseen
         isAnyTupleTy g ilpinfo.ILTypeInfo.ToType || 
         CheckILAttributesForUnseen g pdef.CustomAttrs m
     | FSProp (g,_,Some vref,_) 
