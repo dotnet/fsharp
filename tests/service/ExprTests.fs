@@ -528,7 +528,7 @@ let bool2 = false
     let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
 //<@ let x = Some(3) in x.IsSome @>
-//#if !NO_EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING || DOTNETCORE
 [<Test>]
 let ``Test Declarations project1`` () =
     let wholeProjectResults = exprChecker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
@@ -769,7 +769,7 @@ let ``Test Optimized Declarations Project1`` () =
       |> shouldEqual (filterHack expected)
 
     ()
-// #endif
+#endif
 
 //---------------------------------------------------------------------------------------------------------
 // This big list expression was causing us trouble
