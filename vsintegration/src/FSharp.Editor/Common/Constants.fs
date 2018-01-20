@@ -3,9 +3,6 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Configuration
-open System.Diagnostics
-open Microsoft.CodeAnalysis.Classification
 
 [<RequireQualifiedAccess>]
 module internal FSharpConstants =
@@ -45,7 +42,6 @@ module internal FSharpProviderConstants =
     /// "Session Capturing Quick Info Source Provider"
     let SessionCapturingProvider = "Session Capturing Quick Info Source Provider"
 
-
 [<RequireQualifiedAccess>]
 module internal Guids =
     
@@ -71,6 +67,5 @@ module internal Guids =
 
     [<Literal>]
     let advancedSettingsPageIdSring = "9007718C-357A-4327-A193-AB3EC38D7EE8"
-
 
     let blueHighContrastThemeId = Guid "{ce94d289-8481-498b-8ca9-9b6191a315b9}"

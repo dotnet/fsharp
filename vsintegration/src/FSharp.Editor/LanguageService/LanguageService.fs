@@ -566,22 +566,11 @@ type
 
         let textViewAdapter = package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
 
-        //
-        //
-        // outlining
-        //
-        //
+        // Toggles outlining (or code folding) based on settings
         let outliningManagerService = this.Package.ComponentModel.GetService<IOutliningManagerService>()
         let wpfTextView = this.EditorAdaptersFactoryService.GetWpfTextView(textView)
         let outliningManager = outliningManagerService.GetOutliningManager(wpfTextView)
-
         outliningManager.Enabled <- Settings.Advanced.IsOutliningEnabled
-        //
-        //
-        // outlining
-        //
-        //
-        //
 
         match textView.GetBuffer() with
         | (VSConstants.S_OK, textLines) ->
