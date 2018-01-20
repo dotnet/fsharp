@@ -33,6 +33,7 @@ open Microsoft.VisualStudio.LanguageServices.ProjectSystem
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.ComponentModelHost
+open Microsoft.VisualStudio.Text.Outlining
 
 // Exposes FSharpChecker as MEF export
 [<Export(typeof<FSharpCheckerProvider>); Composition.Shared>]
@@ -276,6 +277,7 @@ type
     [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.QuickInfoOptionPage>, "F#", null, "QuickInfo", "6009")>]
     [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.CodeFixesOptionPage>, "F#", null, "Code Fixes", "6010")>]
     [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.LanguageServicePerformanceOptionPage>, "F#", null, "Performance", "6011")>]
+    [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.AdvancedSettingsOptionPage>, "F#", null, "Advanced", "6012")>]
     [<ProvideLanguageService(languageService = typeof<FSharpLanguageService>,
                              strLanguageName = FSharpConstants.FSharpLanguageName,
                              languageResourceID = 100,
@@ -563,6 +565,23 @@ type
         base.SetupNewTextView(textView)
 
         let textViewAdapter = package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
+
+        //
+        //
+        // outlining
+        //
+        //
+        let outliningManagerService = this.Package.ComponentModel.GetService<IOutliningManagerService>()
+        let wpfTextView = this.EditorAdaptersFactoryService.GetWpfTextView(textView)
+        let outliningManager = outliningManagerService.GetOutliningManager(wpfTextView)
+
+        outliningManager.Enabled <- Settings.Advanced.IsOutliningEnabled
+        //
+        //
+        // outlining
+        //
+        //
+        //
 
         match textView.GetBuffer() with
         | (VSConstants.S_OK, textLines) ->

@@ -87,6 +87,26 @@
         <target state="translated">分析未使用的值並建議修正</target>
         <note />
       </trans-unit>
+      <trans-unit id="Block_Structure">
+        <source>Block Structure Guides</source>
+        <target state="new">Block Structure Guides</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_guides">
+        <source>_Show block structure guides for F# code</source>
+        <target state="new">_Show block structure guides for F# code</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Outlining">
+        <source>Outlining</source>
+        <target state="new">Outlining</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Outlining">
+        <source>Show _outlining for F# code</source>
+        <target state="new">Show _outlining for F# code</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

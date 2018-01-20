@@ -148,6 +148,8 @@ type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoMan
  
     override __.GetBlockStructureAsync(document, cancellationToken) : Task<BlockStructure> =
         asyncMaybe {
+            do! Option.guard Settings.Advanced.IsBlockStructureEnabled
+
             let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
             let! sourceText = document.GetTextAsync(cancellationToken)
             let! parsedInput = checker.ParseDocument(document, parsingOptions, sourceText, userOpName)

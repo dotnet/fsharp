@@ -168,4 +168,16 @@
   <data name="Unused_declaration_code_fix" xml:space="preserve">
     <value>Analyze and suggest fixes for unused values</value>
   </data>
+  <data name="Block_Structure" xml:space="preserve">
+    <value>Block Structure Guides</value>
+  </data>
+  <data name="Show_guides" xml:space="preserve">
+    <value>_Show block structure guides for F# code</value>
+  </data>
+  <data name="Outlining" xml:space="preserve">
+    <value>Outlining</value>
+  </data>
+  <data name="Show_Outlining" xml:space="preserve">
+    <value>Show _outlining for F# code</value>
+  </data>
 </root>
