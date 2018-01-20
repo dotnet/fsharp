@@ -1668,7 +1668,7 @@
         <note />
       </trans-unit>
       <trans-unit id="csMemberIsNotAccessible2">
-        <source>The member or object constructor '{0}' is not {1}. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.</source>
+        <source>The member or object constructor '{0}' is not {1}. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from within inner lambda expressions, object expressions or computation expressions (such as async { }). If {0} is a protected member, consider creating a member in this type that calls it.</source>
         <target state="translated">Le membre ou le constructeur d'objet '{0}' n'est pas {1}. Les membres privés ne peuvent être accessibles qu'à partir du type déclarant. Les membres protégés ne peuvent être accessibles qu'à partir d'un type d'extension et ne sont pas accessibles à partir d'expressions lambda internes.</target>
         <note />
       </trans-unit>
