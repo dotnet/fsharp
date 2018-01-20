@@ -64,6 +64,9 @@
     <Compile Include="..\..\..\tests\service\Common.fs">
       <Link>Common.fs</Link>
     </Compile>
+    <Compile Include="..\..\..\tests\service\Symbols.fs">
+      <Link>ServiceAnalysis\Symbols.fs</Link>
+    </Compile>
     <Compile Include="..\..\..\tests\service\EditorTests.fs">
       <Link>EditorTests.fs</Link>
     </Compile>
@@ -376,7 +379,7 @@
       <HintPath>$(FSharpSourcesRoot)\..\packages\System.ValueTuple.4.3.1\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
       <Private>true</Private>
     </Reference>
-     <ProjectReference Include="..\Salsa\VisualFSharp.Salsa.fsproj">
+    <ProjectReference Include="..\Salsa\VisualFSharp.Salsa.fsproj">
       <Name>VisualFSharp.Salsa</Name>
       <Project>{fbd4b354-dc6e-4032-8ec7-c81d8dfb1af7}</Project>
       <Private>True</Private>
