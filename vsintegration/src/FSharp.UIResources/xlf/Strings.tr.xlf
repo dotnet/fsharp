@@ -82,6 +82,11 @@
         <target state="translated">Kullanılmayan açık deyimleri kaldır</target>
         <note />
       </trans-unit>
+      <trans-unit id="Unused_declaration_code_fix">
+        <source>Analyze and suggest fixes for unused values</source>
+        <target state="translated">Kullanılmayan değerlere yönelik düzeltmeleri çözümle</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

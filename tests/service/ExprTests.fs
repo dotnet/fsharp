@@ -528,7 +528,7 @@ let bool2 = false
     let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
 //<@ let x = Some(3) in x.IsSome @>
-#if !NO_EXTENSIONTYPING
+//#if !NO_EXTENSIONTYPING
 [<Test>]
 let ``Test Declarations project1`` () =
     let wholeProjectResults = exprChecker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
@@ -648,7 +648,128 @@ let ``Test Declarations project1`` () =
       |> shouldEqual (filterHack expected)
 
     ()
-#endif
+
+
+[<Test>]
+let ``Test Optimized Declarations Project1`` () =
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
+
+    for e in wholeProjectResults.Errors do 
+        printfn "Project1 error: <<<%s>>>" e.Message
+
+    wholeProjectResults.Errors.Length |> shouldEqual 3 // recursive value warning
+    wholeProjectResults.Errors.[0].Severity |> shouldEqual FSharpErrorSeverity.Warning
+    wholeProjectResults.Errors.[1].Severity |> shouldEqual FSharpErrorSeverity.Warning
+    wholeProjectResults.Errors.[2].Severity |> shouldEqual FSharpErrorSeverity.Warning
+
+    wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.Length |> shouldEqual 2
+    let file1 = wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.[0]
+    let file2 = wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.[1]
+
+    // This behaves slightly differently on Mono versions, 'null' is printed somethimes, 'None' other times
+    // Presumably this is very small differences in Mono reflection causing F# printing to change behavious
+    // For now just disabling this test. See https://github.com/fsharp/FSharp.Compiler.Service/pull/766
+    let filterHack l = 
+        l |> List.map (fun (s:string) -> 
+            s.Replace("ILArrayShape [(Some 0, None)]", "ILArrayShapeFIX")
+             .Replace("ILArrayShape [(Some 0, null)]", "ILArrayShapeFIX"))
+
+    let expected = 
+          ["type M"; "type IntAbbrev"; "let boolEx1 = True @ (6,14--6,18)";
+           "let intEx1 = 1 @ (7,13--7,14)"; "let int64Ex1 = 1 @ (8,15--8,17)";
+           "let tupleEx1 = (1,1) @ (9,16--9,21)";
+           "let tupleEx2 = (1,1,1) @ (10,16--10,25)";
+           "let tupleEx3 = (1,1,1,1) @ (11,16--11,29)";
+           "let localExample = let y: Microsoft.FSharp.Core.int = 1 in let z: Microsoft.FSharp.Core.int = 1 in (y,z) @ (14,7--14,8)";
+           "let localGenericFunctionExample(unitVar0) = let y: Microsoft.FSharp.Core.int = 1 in let compiledAsLocalGenericFunction: 'a -> 'a = FUN ... -> fun x -> x in (compiledAsLocalGenericFunction<Microsoft.FSharp.Core.int> y,compiledAsLocalGenericFunction<Microsoft.FSharp.Core.float> 1) @ (19,7--19,8)";
+           "let funcEx1(x) = x @ (23,23--23,24)";
+           "let genericFuncEx1(x) = x @ (24,29--24,30)";
+           "let topPair1b = M.patternInput@25 ().Item1 @ (25,4--25,26)";
+           "let topPair1a = M.patternInput@25 ().Item0 @ (25,4--25,26)";
+           "let tyfuncEx1 = Type.GetTypeFromHandle (Operators.TypeOf<'T> ()) @ (26,20--26,26)";
+           "let testILCall1 = new Object() @ (27,18--27,27)";
+           "let testILCall2 = Console.WriteLine (\"176\") @ (28,18--28,49)";
+           "let recValNeverUsedAtRuntime = recValNeverUsedAtRuntime@31.Force<Microsoft.FSharp.Core.int>(()) @ (31,8--31,32)";
+           "let recFuncIgnoresFirstArg(g) (v) = v @ (32,33--32,34)";
+           "let testFun4(unitVar0) = let rec ... in recValNeverUsedAtRuntime @ (36,4--39,28)";
+           "type ClassWithImplicitConstructor";
+           "member .ctor(compiledAsArg) = (new Object(); (this.compiledAsArg <- compiledAsArg; (this.compiledAsField <- 1; let compiledAsLocal: Microsoft.FSharp.Core.int = 1 in let compiledAsLocal2: Microsoft.FSharp.Core.int = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (compiledAsLocal,compiledAsLocal) in ()))) @ (41,5--41,33)";
+           "member .cctor(unitVar) = (compiledAsStaticField <- 1; let compiledAsStaticLocal: Microsoft.FSharp.Core.int = 1 in let compiledAsStaticLocal2: Microsoft.FSharp.Core.int = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (compiledAsStaticLocal,compiledAsStaticLocal) in ()) @ (49,11--49,40)";
+           "member M1(__) (unitVar1) = Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (__.compiledAsField,__.compiledAsGenericInstanceMethod<Microsoft.FSharp.Core.int>(__.compiledAsField)),__.compiledAsArg) @ (55,21--55,102)";
+           "member M2(__) (unitVar1) = __.compiledAsInstanceMethod(()) @ (56,21--56,47)";
+           "member SM1(unitVar0) = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (compiledAsStaticField,ClassWithImplicitConstructor.compiledAsGenericStaticMethod<Microsoft.FSharp.Core.int> (compiledAsStaticField)) @ (57,26--57,101)";
+           "member SM2(unitVar0) = ClassWithImplicitConstructor.compiledAsStaticMethod (()) @ (58,26--58,50)";
+           "member ToString(__) (unitVar1) = String.Concat (base.ToString(),let x: Microsoft.FSharp.Core.int = 999 in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int> (x) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ...) @ (59,29--59,57)";
+           "member TestCallinToString(this) (unitVar1) = this.ToString() @ (60,39--60,54)";
+           "type Error"; "let err = {Data0 = 3; Data1 = 4} @ (64,10--64,20)";
+           "let matchOnException(err) = match (if err :? M.Error then $0 else $1) targets ... @ (66,33--66,36)";
+           "let upwardForLoop(unitVar0) = let mutable a: Microsoft.FSharp.Core.int = 1 in (for-loop; a) @ (69,16--69,17)";
+           "let upwardForLoop2(unitVar0) = let mutable a: Microsoft.FSharp.Core.int = 1 in (for-loop; a) @ (74,16--74,17)";
+           "let downwardForLoop(unitVar0) = let mutable a: Microsoft.FSharp.Core.int = 1 in (for-loop; a) @ (79,16--79,17)";
+           "let quotationTest1(unitVar0) = quote(Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (1,1)) @ (83,24--83,35)";
+           "let quotationTest2(v) = quote(Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (ExtraTopLevelOperators.SpliceExpression<Microsoft.FSharp.Core.int> (v),1)) @ (84,24--84,36)";
+           "type RecdType"; "type UnionType"; "type ClassWithEventsAndProperties";
+           "member .ctor(unitVar0) = (new Object(); (this.ev <- new FSharpEvent`1(()); ())) @ (89,5--89,33)";
+           "member .cctor(unitVar) = (sev <- new FSharpEvent`1(()); ()) @ (91,11--91,35)";
+           "member get_InstanceProperty(x) (unitVar1) = (x.ev.Trigger(1); 1) @ (92,32--92,48)";
+           "member get_StaticProperty(unitVar0) = (sev.Trigger(1); 1) @ (93,35--93,52)";
+           "member get_InstanceEvent(x) (unitVar1) = x.ev.get_Publish(()) @ (94,29--94,39)";
+           "member get_StaticEvent(x) (unitVar1) = sev.get_Publish(()) @ (95,27--95,38)";
+           "let c = new ClassWithEventsAndProperties(()) @ (97,8--97,38)";
+           "let v = M.c ().get_InstanceProperty(()) @ (98,8--98,26)";
+           "do Console.WriteLine (\"777\")";
+           "let functionWithSubmsumption(x) = IntrinsicFunctions.UnboxGeneric<Microsoft.FSharp.Core.string> (x) @ (102,40--102,52)";
+           "let functionWithCoercion(x) = let x: Microsoft.FSharp.Core.string = let x: Microsoft.FSharp.Core.string = IntrinsicFunctions.UnboxGeneric<Microsoft.FSharp.Core.string> (x :> Microsoft.FSharp.Core.obj) in M.functionWithSubmsumption (x :> Microsoft.FSharp.Core.obj) in M.functionWithSubmsumption (x :> Microsoft.FSharp.Core.obj) @ (103,39--103,116)";
+           "type MultiArgMethods";
+           "member .ctor(c,d) = (new Object(); ()) @ (105,5--105,20)";
+           "member Method(x) (a,b) = 1 @ (106,37--106,38)";
+           "member CurriedMethod(x) (a1,b1) (a2,b2) = 1 @ (107,63--107,64)";
+           "let testFunctionThatCallsMultiArgMethods(unitVar0) = let m: M.MultiArgMethods = new MultiArgMethods(3,4) in Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (m.Method(7,8),let arg00: Microsoft.FSharp.Core.int = 9 in let arg01: Microsoft.FSharp.Core.int = 10 in let arg10: Microsoft.FSharp.Core.int = 11 in let arg11: Microsoft.FSharp.Core.int = 12 in m.CurriedMethod(arg00,arg01,arg10,arg11)) @ (110,8--110,9)";
+           "let functionThatUsesObjectExpression(unitVar0) = { new Object() with member x.ToString(unitVar1) = let x: Microsoft.FSharp.Core.int = 888 in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int> (x) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ...  } @ (114,3--114,55)";
+           "let functionThatUsesObjectExpressionWithInterfaceImpl(unitVar0) = { new Object() with member x.ToString(unitVar1) = let x: Microsoft.FSharp.Core.int = 888 in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int> (x) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... interface System.IComparable with member x.CompareTo(y) = 0 } :> System.IComparable @ (117,3--120,38)";
+           "let testFunctionThatUsesUnitsOfMeasure(x) (y) = Operators.op_Addition<Microsoft.FSharp.Core.float<'u>,Microsoft.FSharp.Core.float<'u>,Microsoft.FSharp.Core.float<'u>> (x,y) @ (122,70--122,75)";
+           "let testFunctionThatUsesAddressesAndByrefs(x) = let mutable w: Microsoft.FSharp.Core.int = 4 in let y1: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = x in let y2: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = &w in let arr: Microsoft.FSharp.Core.int Microsoft.FSharp.Core.[] = [|3; 4|] in let r: Microsoft.FSharp.Core.int Microsoft.FSharp.Core.ref = Operators.Ref<Microsoft.FSharp.Core.int> (3) in let y3: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = [I_ldelema (NormalAddress,false,ILArrayShapeFIX,TypeVar 0us)](arr,0) in let y4: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = &r.contents in let z: Microsoft.FSharp.Core.int = Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (x,y1),y2),y3) in (w <- 3; (x <- 4; (y2 <- 4; (y3 <- 5; Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (z,x),y1),y2),y3),y4),IntrinsicFunctions.GetArray<Microsoft.FSharp.Core.int> (arr,0)),r.contents))))) @ (125,16--125,17)";
+           "let testFunctionThatUsesStructs1(dt) = dt.AddDays(3) @ (139,57--139,72)";
+           "let testFunctionThatUsesStructs2(unitVar0) = let dt1: System.DateTime = DateTime.get_Now () in let mutable dt2: System.DateTime = DateTime.get_Now () in let dt3: System.TimeSpan = DateTime.op_Subtraction (dt1,dt2) in let dt4: System.DateTime = dt1.AddDays(3) in let dt5: Microsoft.FSharp.Core.int = dt1.get_Millisecond() in let dt6: Microsoft.FSharp.Core.byref<System.DateTime> = &dt2 in let dt7: System.TimeSpan = DateTime.op_Subtraction (dt6,dt4) in dt7 @ (142,7--142,10)";
+           "let testFunctionThatUsesWhileLoop(unitVar0) = let mutable x: Microsoft.FSharp.Core.int = 1 in (while Operators.op_LessThan<Microsoft.FSharp.Core.int> (x,100) do x <- Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (x,1) done; x) @ (152,15--152,16)";
+           "let testFunctionThatUsesTryWith(unitVar0) = try M.testFunctionThatUsesWhileLoop (()) with matchValue -> match (if matchValue :? System.ArgumentException then $0 else $1) targets ... @ (158,3--160,60)";
+           "let testFunctionThatUsesTryFinally(unitVar0) = try M.testFunctionThatUsesWhileLoop (()) finally Console.WriteLine (\"8888\") @ (164,3--167,37)";
+           "member Console.WriteTwoLines.Static(unitVar0) = (Console.WriteLine (); Console.WriteLine ()) @ (170,36--170,90)";
+           "member DateTime.get_TwoMinute(x) (unitVar1) = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (x.get_Minute(),x.get_Minute()) @ (173,25--173,44)";
+           "let testFunctionThatUsesExtensionMembers(unitVar0) = (M.Console.WriteTwoLines.Static (()); let v: Microsoft.FSharp.Core.int = DateTime.get_Now ().DateTime.get_TwoMinute(()) in M.Console.WriteTwoLines.Static (())) @ (176,3--178,33)";
+           "let testFunctionThatUsesOptionMembers(unitVar0) = let x: Microsoft.FSharp.Core.int Microsoft.FSharp.Core.option = Some(3) in (x.get_IsSome() (),x.get_IsNone() ()) @ (181,7--181,8)";
+           "let testFunctionThatUsesOverAppliedFunction(unitVar0) = Operators.Identity<Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.int> (fun x -> Operators.Identity<Microsoft.FSharp.Core.int> (x)) 3 @ (185,3--185,10)";
+           "let testFunctionThatUsesPatternMatchingOnLists(x) = match (if x.Isop_ColonColon then (if x.Tail.Isop_ColonColon then (if x.Tail.Tail.Isop_Nil then $2 else $3) else $1) else $0) targets ... @ (188,10--188,11)";
+           "let testFunctionThatUsesPatternMatchingOnOptions(x) = match (if x.IsSome then $1 else $0) targets ... @ (195,10--195,11)";
+           "let testFunctionThatUsesPatternMatchingOnOptions2(x) = match (if x.IsSome then $1 else $0) targets ... @ (200,10--200,11)";
+           "let testFunctionThatUsesConditionalOnOptions2(x) = (if x.get_IsSome() () then 1 else 2) @ (205,4--205,29)";
+           "let f(x) (y) = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (x,y) @ (207,12--207,15)";
+           "let g = let x: Microsoft.FSharp.Core.int = 1 in fun y -> M.f (x,y) @ (208,8--208,11)";
+           "let h = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (M.g () 2,3) @ (209,8--209,17)";
+           "type TestFuncProp";
+           "member .ctor(unitVar0) = (new Object(); ()) @ (211,5--211,17)";
+           "member get_Id(this) (unitVar1) = fun x -> x @ (212,21--212,31)";
+           "let wrong = Operators.op_Equality<Microsoft.FSharp.Core.int> (new TestFuncProp(()).get_Id(()) 0,0) @ (214,12--214,35)";
+           "let start(name) = (name,name) @ (217,4--217,14)";
+           "let last(name,values) = Operators.Identity<Microsoft.FSharp.Core.string * Microsoft.FSharp.Core.string> ((name,values)) @ (220,4--220,21)";
+           "let last2(name) = Operators.Identity<Microsoft.FSharp.Core.string> (name) @ (223,4--223,11)";
+           "let test7(s) = let tupledArg: Microsoft.FSharp.Core.string * Microsoft.FSharp.Core.string = M.start (s) in let name: Microsoft.FSharp.Core.string = tupledArg.Item0 in let values: Microsoft.FSharp.Core.string = tupledArg.Item1 in M.last (name,values) @ (226,4--226,19)";
+           "let test8(unitVar0) = fun tupledArg -> let name: Microsoft.FSharp.Core.string = tupledArg.Item0 in let values: Microsoft.FSharp.Core.string = tupledArg.Item1 in M.last (name,values) @ (229,4--229,8)";
+           "let test9(s) = M.last (s,s) @ (232,4--232,17)";
+           "let test10(unitVar0) = fun name -> M.last2 (name) @ (235,4--235,9)";
+           "let test11(s) = M.last2 (s) @ (238,4--238,14)";
+           "let badLoop = badLoop@240.Force<Microsoft.FSharp.Core.int -> Microsoft.FSharp.Core.int>(()) @ (240,8--240,15)";
+           "type LetLambda";
+           "let f = fun a -> fun b -> Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (a,b) @ (247,8--247,24)";
+           "let letLambdaRes = ListModule.Map<Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun tupledArg -> let a: Microsoft.FSharp.Core.int = tupledArg.Item0 in let b: Microsoft.FSharp.Core.int = tupledArg.Item1 in (LetLambda.f () a) b,Cons((1,2),Empty())) @ (249,19--249,71)"]
+
+    printDeclarations None (List.ofSeq file1.Declarations) 
+      |> Seq.toList 
+      |> filterHack
+      |> shouldEqual (filterHack expected)
+
+    ()
+// #endif
 
 //---------------------------------------------------------------------------------------------------------
 // This big list expression was causing us trouble
@@ -865,6 +986,20 @@ let ``Test expressions of declarations stress big expressions`` () =
 
     // This should not stack overflow
     printDeclarations None (List.ofSeq file1.Declarations) |> Seq.toList |> ignore
+
+
+[<Test>]
+let ``Test expressions of optimized declarations stress big expressions`` () =
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(ProjectStressBigExpressions.options) |> Async.RunSynchronously
+    
+    wholeProjectResults.Errors.Length |> shouldEqual 0
+
+    wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.Length |> shouldEqual 1
+    let file1 = wholeProjectResults.GetOptimizedAssemblyContents().ImplementationFiles.[0]
+
+    // This should not stack overflow
+    printDeclarations None (List.ofSeq file1.Declarations) |> Seq.toList |> ignore
+
 
 #if NOT_YET_ENABLED
 

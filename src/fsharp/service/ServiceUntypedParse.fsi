@@ -112,5 +112,5 @@ module public UntypedParseImpl =
 // implementation details used by other code in the compiler    
 module internal SourceFileImpl =
     val IsInterfaceFile : string -> bool 
-    val AdditionalDefinesForUseInEditor : string -> string list
+    val AdditionalDefinesForUseInEditor: isInteractive: bool -> string list
 

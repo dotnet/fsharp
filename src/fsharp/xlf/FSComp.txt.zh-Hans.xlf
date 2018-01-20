@@ -802,11 +802,6 @@
         <target state="translated">未能解析在此点或其附近进行的泛型构造的隐式实例化，因为它可以解析为多个不相关的类型，例如“{0}”和“{1}”。请考虑使用类型批注来解析此多义性</target>
         <note />
       </trans-unit>
-      <trans-unit id="typrelCannotResolveAmbiguityInOverloadedOperator">
-        <source>Could not resolve the ambiguity inherent in the use of the operator '{0}' at or near this program point. Consider using type annotations to resolve the ambiguity.</source>
-        <target state="translated">未能解析在此程序点或其附近使用运算符“{0}”所产生的固有多义性。请考虑使用类型批注来解析此多义性。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="typrelCannotResolveAmbiguityInPrintf">
         <source>Could not resolve the ambiguity inherent in the use of a 'printf'-style format string</source>
         <target state="translated">未能解析使用“printf”样式的格式字符串所产生的固有多义性</target>

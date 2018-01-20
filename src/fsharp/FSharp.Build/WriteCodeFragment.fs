@@ -113,15 +113,19 @@ open System.Reflection"
                 let sb = StringBuilder().AppendLine(boilerplate).AppendLine()
                 let code = Array.fold (fun (sb:StringBuilder) (item:ITaskItem) -> sb.AppendLine(WriteCodeFragment.GenerateAttribute item)) sb _assemblyAttributes
                 code.AppendLine().AppendLine("do()") |> ignore
+                let fileName = _outputFile.ItemSpec
                 let outputFileItem =
-                    if not (isNull _outputFile) && not (isNull _outputDirectory) && not (Path.IsPathRooted(_outputFile.ItemSpec)) then
-                        TaskItem(Path.Combine(_outputDirectory.ItemSpec, _outputFile.ItemSpec)) :> ITaskItem
+                    if not (isNull _outputFile) && not (isNull _outputDirectory) && not (Path.IsPathRooted(fileName)) then
+                        TaskItem(Path.Combine(_outputDirectory.ItemSpec, fileName)) :> ITaskItem
                     elif isNull _outputFile then
                         let tempFile = Path.Combine(Path.GetTempPath(), sprintf "tmp%s.fs" (Guid.NewGuid().ToString("N")))
                         TaskItem(tempFile) :> ITaskItem
                     else
                         _outputFile
-                File.WriteAllText(_outputFile.ItemSpec, code.ToString())
+                let codeText = code.ToString()
+                let alreadyExists = (try File.Exists fileName && File.ReadAllText(fileName) = codeText with _ -> false)
+                if not alreadyExists then
+                    File.WriteAllText(fileName, codeText)
                 _outputFile <- outputFileItem
                 true
             with e ->
