@@ -511,22 +511,22 @@ module FSharpExprConvert =
                 E.TupleGet(tyR, n, ConvExpr cenv env e) 
 
             | TOp.ILAsm([ I_ldfld(_, _, fspec) ], _), enclTypeArgs, [obj] -> 
-                let typR = ConvILTypeRefApp cenv m fspec.EnclosingTypeRef enclTypeArgs 
+                let typR = ConvILTypeRefApp cenv m fspec.DeclaringTypeRef enclTypeArgs 
                 let objR = ConvLValueExpr cenv env obj
                 E.ILFieldGet(Some objR, typR, fspec.Name) 
 
             | TOp.ILAsm(( [ I_ldsfld (_, fspec) ] | [ I_ldsfld (_, fspec); AI_nop ]), _), enclTypeArgs, []  -> 
-                let typR = ConvILTypeRefApp cenv m fspec.EnclosingTypeRef enclTypeArgs 
+                let typR = ConvILTypeRefApp cenv m fspec.DeclaringTypeRef enclTypeArgs 
                 E.ILFieldGet(None, typR, fspec.Name) 
 
             | TOp.ILAsm([ I_stfld(_, _, fspec) ], _), enclTypeArgs, [obj;arg]  -> 
-                let typR = ConvILTypeRefApp cenv m fspec.EnclosingTypeRef enclTypeArgs 
+                let typR = ConvILTypeRefApp cenv m fspec.DeclaringTypeRef enclTypeArgs 
                 let objR = ConvLValueExpr cenv env obj
                 let argR = ConvExpr cenv env arg
                 E.ILFieldSet(Some objR, typR, fspec.Name, argR) 
 
             | TOp.ILAsm([ I_stsfld(_, fspec) ], _), enclTypeArgs, [arg]  -> 
-                let typR = ConvILTypeRefApp cenv m fspec.EnclosingTypeRef enclTypeArgs 
+                let typR = ConvILTypeRefApp cenv m fspec.DeclaringTypeRef enclTypeArgs 
                 let argR = ConvExpr cenv env arg
                 E.ILFieldSet(None, typR, fspec.Name, argR) 
 
@@ -694,9 +694,9 @@ module FSharpExprConvert =
             // this does not matter currently, type checking fails to resolve it when a TP references a union case subclass
             try
                 // if the type is an union case class, lookup will fail 
-                Import.ImportILTypeRef cenv.amap m ilMethRef.EnclosingTypeRef, None
+                Import.ImportILTypeRef cenv.amap m ilMethRef.DeclaringTypeRef, None
             with _ ->
-                let e = ilMethRef.EnclosingTypeRef
+                let e = ilMethRef.DeclaringTypeRef
                 let parent = ILTypeRef.Create(e.Scope, e.Enclosing.Tail, e.Enclosing.Head)
                 Import.ImportILTypeRef cenv.amap m parent, Some e.Name
                 
@@ -736,7 +736,7 @@ module FSharpExprConvert =
                         enclosingEntity.ModuleOrNamespaceType.AllValsAndMembers 
                         |> Seq.filter (fun v -> 
                             v.CompiledName = vName &&
-                                match v.ActualParent with
+                                match v.DeclaringEntity with
                                 | Parent p -> p.PublicPath = enclosingEntity.PublicPath
                                 | _ -> false 
                         ) |> List.ofSeq
@@ -843,7 +843,7 @@ module FSharpExprConvert =
             let logicalName = ilMethRef.Name 
             let isMember = memberParentName.IsSome
             if isMember then 
-                match ilMethRef.Name, ilMethRef.EnclosingTypeRef.Name with
+                match ilMethRef.Name, ilMethRef.DeclaringTypeRef.Name with
                 | "Invoke", "Microsoft.FSharp.Core.FSharpFunc`2" ->
                     let objR = ConvLValueExpr cenv env callArgs.Head
                     let argR = ConvExpr cenv env callArgs.Tail.Head
@@ -852,7 +852,7 @@ module FSharpExprConvert =
                 | _ ->
                 let isCtor = (ilMethRef.Name = ".ctor")
                 let isStatic = isCtor || ilMethRef.CallingConv.IsStatic
-                let scoref = ilMethRef.EnclosingTypeRef.Scope
+                let scoref = ilMethRef.DeclaringTypeRef.Scope
                 let typars1 = tcref.Typars(m)
                 let typars2 = [ 1 .. ilMethRef.GenericArity ] |> List.map (fun _ -> NewRigidTypar "T" m)
                 let tinst1 = typars1 |> generalizeTypars

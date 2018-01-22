@@ -4300,6 +4300,9 @@ type internal SR private() =
     /// An error occurred while reading the F# metadata of assembly '%s'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.
     /// (Originally from ..\FSComp.txt:1424)
     static member pickleUnexpectedNonZero(a0 : System.String) = (3219, GetStringFunc("pickleUnexpectedNonZero",",,,%s,,,") a0)
+    /// This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.
+    /// (Originally from ..\FSComp.txt:1425)
+    static member tcTupleMemberNotNormallyUsed() = (3220, GetStringFunc("tcTupleMemberNotNormallyUsed",",,,") )
 
     /// Call this method once to validate that all known resources are valid; throws if not
     static member RunStartupValidation() =
@@ -5698,4 +5701,5 @@ type internal SR private() =
         ignore(GetString("notAFunctionButMaybeDeclaration"))
         ignore(GetString("ArgumentsInSigAndImplMismatch"))
         ignore(GetString("pickleUnexpectedNonZero"))
+        ignore(GetString("tcTupleMemberNotNormallyUsed"))
         ()

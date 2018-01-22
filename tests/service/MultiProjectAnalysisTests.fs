@@ -233,7 +233,7 @@ let ``Test multi project 1 xmldoc`` () =
     | _ -> failwith "odd symbol!"
 
     match ctorFromProjectMultiProject with 
-    | :? FSharpMemberOrFunctionOrValue as c -> c.EnclosingEntity.Value.XmlDoc.Count |> shouldEqual 1
+    | :? FSharpMemberOrFunctionOrValue as c -> c.DeclaringEntity.Value.XmlDoc.Count |> shouldEqual 1
     | _ -> failwith "odd symbol!"
 
     match case1FromProjectMultiProject with 
@@ -808,7 +808,7 @@ let ``Test active patterns' XmlDocSig declared in referenced projects`` () =
     divisibleByGroup.IsTotal |> shouldEqual false
     divisibleByGroup.Names |> Seq.toList |> shouldEqual ["DivisibleBy"]
     divisibleByGroup.OverallType.Format(divisibleBySymbolUse.Value.DisplayContext) |> shouldEqual "int -> int -> unit option"
-    let divisibleByEntity = divisibleByGroup.EnclosingEntity.Value
+    let divisibleByEntity = divisibleByGroup.DeclaringEntity.Value
     divisibleByEntity.ToString() |> shouldEqual "Project3A"
 
 //------------------------------------------------------------------------------------

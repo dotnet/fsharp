@@ -6967,6 +6967,11 @@
         <target state="translated">Při čtení metadat jazyka F# sestavení {0} došlo k chybě. Byl použit rezervovaný konstruktor. Je možné, že budete muset upgradovat kompilátor jazyka F# nebo použít dřívější verzi sestavení, ve které se nevyužívá konkrétní konstruktor.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcTupleMemberNotNormallyUsed">
+        <source>This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</source>
+        <target state="new">This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

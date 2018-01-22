@@ -858,7 +858,7 @@ let slotImplMethod (final,c,slotsig) : ValMemberInfo =
           IsOverrideOrExplicitImpl=true
           MemberKind=MemberKind.Member}
     IsImplemented=false
-    ApparentParent=c} 
+    ApparentEnclosingEntity=c} 
 
 let nonVirtualMethod c : ValMemberInfo = 
   { ImplementedSlotSigs=[]
@@ -868,7 +868,7 @@ let nonVirtualMethod c : ValMemberInfo =
                   IsOverrideOrExplicitImpl=false
                   MemberKind=MemberKind.Member}
     IsImplemented=false
-    ApparentParent=c} 
+    ApparentEnclosingEntity=c} 
 
 let unitArg = ValReprInfo.unitArgData
 let unaryArg = [ ValReprInfo.unnamedTopArg ]

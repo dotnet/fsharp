@@ -6967,6 +6967,11 @@
         <target state="translated">Se produjo un error al leer los metadatos de F# del ensamblado "{0}". Se utilizó una construcción reservada. Puede que deba actualizar su compilador de F# o usar una versión anterior del ensamblado que no haga uso de una construcción específica.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcTupleMemberNotNormallyUsed">
+        <source>This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</source>
+        <target state="new">This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
