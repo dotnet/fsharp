@@ -1513,7 +1513,7 @@ let (|AnyRefTupleTrans|) e =
 /// Look for any QueryBuilder.* operation and transform
 let (|AnyQueryBuilderOpTrans|_|) g = function
     | Expr.App((Expr.Val (vref, _, _) as v), vty, tyargs, [builder; AnyRefTupleTrans( (src::rest), replaceArgs) ], m) when 
-          (match vref.ApparentParent with Parent tcref -> tyconRefEq g tcref g.query_builder_tcref | ParentNone -> false) ->  
+          (match vref.ApparentEnclosingEntity with Parent tcref -> tyconRefEq g tcref g.query_builder_tcref | ParentNone -> false) ->  
          Some (src, (fun newSource -> Expr.App(v, vty, tyargs, [builder; replaceArgs(newSource::rest)], m)))
     | _ ->  None
 
@@ -2523,7 +2523,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
             else
                 match finfo.Info with
                 | ValValue(vref, _) ->
-                    match vref.ApparentParent with
+                    match vref.ApparentEnclosingEntity with
                     | Parent(tcr) when (tyconRefEq cenv.g cenv.g.lazy_tcr_canon tcr) ->
                             match tcr.CompiledRepresentation with
                             | CompiledTypeRepr.ILAsmNamed(iltr, _, _) -> iltr.Scope.AssemblyRef.Name = "FSharp.Core"
@@ -2971,7 +2971,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                
                (vref.InlineInfo = ValInline.Never) ||
                // MarshalByRef methods may not be inlined
-               (match vref.ActualParent with 
+               (match vref.DeclaringEntity with 
                 | Parent tcref -> 
                     match cenv.g.system_MarshalByRefObject_tcref with
                     | None -> false

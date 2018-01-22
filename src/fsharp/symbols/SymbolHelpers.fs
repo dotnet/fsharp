@@ -498,8 +498,8 @@ module internal SymbolHelpers =
     let GetXmlDocSigOfScopedValRef g (tcref:TyconRef) (vref:ValRef) = 
         let ccuFileName = libFileOfEntityRef tcref
         let v = vref.Deref
-        if v.XmlDocSig = "" && v.HasTopValActualParent then
-            v.XmlDocSig <- XmlDocSigOfVal g (buildAccessPath vref.TopValActualParent.CompilationPathOpt) v
+        if v.XmlDocSig = "" && v.HasDeclaringEntity then
+            v.XmlDocSig <- XmlDocSigOfVal g (buildAccessPath vref.TopValDeclaringEntity.CompilationPathOpt) v
         Some (ccuFileName, v.XmlDocSig)                
 
     let GetXmlDocSigOfRecdFieldInfo (rfinfo:RecdFieldInfo) = 
@@ -549,8 +549,8 @@ module internal SymbolHelpers =
         if not vref.IsLocalRef then
             let ccuFileName = vref.nlr.Ccu.FileName
             let v = vref.Deref
-            if v.XmlDocSig = "" && v.HasTopValActualParent then
-                v.XmlDocSig <- XmlDocSigOfVal g vref.TopValActualParent.CompiledRepresentationForNamedType.Name v
+            if v.XmlDocSig = "" && v.HasDeclaringEntity then
+                v.XmlDocSig <- XmlDocSigOfVal g vref.TopValDeclaringEntity.CompiledRepresentationForNamedType.Name v
             Some (ccuFileName, v.XmlDocSig)
         else 
             None
@@ -1079,7 +1079,7 @@ module internal SymbolHelpers =
             let rty, _cxs = PrettyTypes.PrettifyType g rty
             let layout =
                 wordL (tagText (FSComp.SR.typeInfoEvent())) ^^
-                NicePrint.layoutTyconRef denv (tcrefOfAppTy g einfo.LogicalEnclosingAppType) ^^
+                NicePrint.layoutTyconRef denv einfo.ApparentEnclosingTyconRef ^^
                 SepL.dot ^^
                 wordL (tagEvent einfo.EventName) ^^
                 RightL.colon ^^
@@ -1110,7 +1110,7 @@ module internal SymbolHelpers =
                 ) ^^
                 SepL.lineBreak ^^ SepL.lineBreak  ^^
                 wordL (tagText (FSComp.SR.typeInfoCallsWord())) ^^
-                NicePrint.layoutTyconRef denv (tcrefOfAppTy g minfo.LogicalEnclosingAppType) ^^
+                NicePrint.layoutTyconRef denv minfo.ApparentEnclosingTyconRef ^^
                 SepL.dot ^^
                 wordL (tagMethod minfo.DisplayName)
 
@@ -1270,7 +1270,7 @@ module internal SymbolHelpers =
         let getKeywordForMethInfo (minfo : MethInfo) =
             match minfo with 
             | FSMeth(_, _, vref, _) ->
-                match vref.ActualParent with
+                match vref.DeclaringEntity with
                 | Parent tcref ->
                     (tcref |> ticksAndArgCountTextOfTyconRef)+"."+vref.CompiledName|> Some
                 | ParentNone -> None
@@ -1290,8 +1290,8 @@ module internal SymbolHelpers =
         match item with
         | Item.Value vref | Item.CustomBuilder (_, vref) -> 
             let v = vref.Deref
-            if v.IsModuleBinding && v.HasTopValActualParent then
-                let tyconRef = v.TopValActualParent
+            if v.IsModuleBinding && v.HasDeclaringEntity then
+                let tyconRef = v.TopValDeclaringEntity
                 let paramsString =
                     match v.Typars with
                     |   [] -> ""
@@ -1359,7 +1359,7 @@ module internal SymbolHelpers =
             | FSProp(_, _, Some vref, _) 
             | FSProp(_, _, _, Some vref) -> 
                 // per spec, extension members in F1 keywords are qualified with definition class
-                match vref.ActualParent with 
+                match vref.DeclaringEntity with 
                 | Parent tcref ->
                     (tcref |> ticksAndArgCountTextOfTyconRef)+"."+vref.PropertyName|> Some                     
                 | ParentNone -> None
@@ -1382,7 +1382,7 @@ module internal SymbolHelpers =
                 match pinfo.ArbitraryValRef with 
                 | Some vref ->
                    // per spec, members in F1 keywords are qualified with definition class
-                   match vref.ActualParent with 
+                   match vref.DeclaringEntity with 
                    | Parent tcref -> (tcref |> ticksAndArgCountTextOfTyconRef)+"."+vref.PropertyName|> Some                     
                    | ParentNone -> None
                 | None -> None
@@ -1393,7 +1393,7 @@ module internal SymbolHelpers =
             match minfos with 
             | [] -> None
             | FSMeth(_, _, vref, _) :: _ ->
-                   match vref.ActualParent with
+                   match vref.DeclaringEntity with
                    | Parent tcref -> (tcref |> ticksAndArgCountTextOfTyconRef) + ".#ctor"|> Some
                    | ParentNone -> None
 #if !NO_EXTENSIONTYPING

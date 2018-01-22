@@ -505,7 +505,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
                    // For F#-declared extension members, yield a value-backed member and a property info if possible
                    let vref = mkNestedValRef entity v
                    yield FSharpMemberOrFunctionOrValue(cenv, V vref, Item.Value vref) 
-                   match v.MemberInfo.Value.MemberFlags.MemberKind, v.ApparentParent with
+                   match v.MemberInfo.Value.MemberFlags.MemberKind, v.ApparentEnclosingEntity with
                    | MemberKind.PropertyGet, Parent p -> 
                         let pinfo = FSProp(cenv.g, generalizedTyconRef p, Some vref, None)
                         yield FSharpMemberOrFunctionOrValue(cenv, P pinfo, Item.Property (pinfo.PropertyName, [pinfo]))
@@ -942,7 +942,7 @@ and FSharpActivePatternGroup(cenv, apinfo:PrettyNaming.ActivePatternInfo, typ, v
     member __.DeclaringEntity = 
         valOpt 
         |> Option.bind (fun vref -> 
-            match vref.ActualParent with 
+            match vref.DeclaringEntity with 
             | ParentNone -> None
             | Parent p -> Some (FSharpEntity(cenv, p)))
 
@@ -1267,18 +1267,18 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | P p -> FSharpEntity(cenv, p.DeclaringTyconRef) |> Some
         | M m | C m -> FSharpEntity(cenv, m.DeclaringTyconRef) |> Some
         | V v -> 
-        match v.ActualParent with 
+        match v.DeclaringEntity with 
         | ParentNone -> None
         | Parent p -> FSharpEntity(cenv, p) |> Some
 
-    member __.LogicalEnclosingEntity = 
+    member __.ApparentEnclosingEntity = 
         checkIsResolved()
         match d with 
-        | E m -> FSharpEntity(cenv, tcrefOfAppTy cenv.g m.LogicalEnclosingAppType)
-        | P p -> FSharpEntity(cenv, tcrefOfAppTy cenv.g p.LogicalEnclosingAppType)
-        | M m | C m -> FSharpEntity(cenv, tcrefOfAppTy cenv.g m.LogicalEnclosingAppType)
+        | E e -> FSharpEntity(cenv, e.ApparentEnclosingTyconRef)
+        | P p -> FSharpEntity(cenv, p.ApparentEnclosingTyconRef)
+        | M m | C m -> FSharpEntity(cenv, m.ApparentEnclosingTyconRef)
         | V v -> 
-        match v.ApparentParent with 
+        match v.ApparentEnclosingEntity with 
         | ParentNone -> invalidOp "the value or member doesn't have a logical parent" 
         | Parent p -> FSharpEntity(cenv, p)
 
@@ -1420,8 +1420,8 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member x.EventForFSharpProperty = 
         match d with 
         | P p when p.IsFSharpEventProperty  ->
-            let minfos1 = GetImmediateIntrinsicMethInfosOfType (Some("add_"+p.PropertyName), AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 p.LogicalEnclosingType 
-            let minfos2 = GetImmediateIntrinsicMethInfosOfType (Some("remove_"+p.PropertyName), AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 p.LogicalEnclosingType
+            let minfos1 = GetImmediateIntrinsicMethInfosOfType (Some("add_"+p.PropertyName), AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 p.ApparentEnclosingType 
+            let minfos2 = GetImmediateIntrinsicMethInfosOfType (Some("remove_"+p.PropertyName), AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 p.ApparentEnclosingType
             match  minfos1, minfos2 with 
             | [addMeth], [removeMeth] -> 
                 match addMeth.ArbitraryValRef, removeMeth.ArbitraryValRef with 
@@ -1609,7 +1609,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             | Some (_, docsig) -> docsig
             | _ -> ""
         | V v ->
-            match v.ActualParent with 
+            match v.DeclaringEntity with 
             | Parent entityRef -> 
                 match SymbolHelpers.GetXmlDocSigOfScopedValRef cenv.g entityRef v with
                 | Some (_, docsig) -> docsig

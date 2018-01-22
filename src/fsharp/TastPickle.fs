@@ -1778,7 +1778,7 @@ and p_attrib_arg (AttribNamedArg(a,b,c,d)) st =
 
 and p_member_info (x:ValMemberInfo) st = 
     p_tup4 (p_tcref "member_info")  p_MemberFlags (p_list p_slotsig) p_bool 
-        (x.ApparentParent,x.MemberFlags,x.ImplementedSlotSigs,x.IsImplemented) st
+        (x.ApparentEnclosingEntity,x.MemberFlags,x.ImplementedSlotSigs,x.IsImplemented) st
 
 and p_tycon_objmodel_kind x st = 
     match x with 
@@ -1822,7 +1822,7 @@ and p_ValData x st =
     p_option p_ValReprInfo x.val_repr_info st
     p_string x.val_xmldocsig st
     p_access x.val_access st
-    p_parentref x.val_actual_parent st
+    p_parentref x.val_declaring_entity st
     p_option p_const x.val_const st
     if st.oInMem then
         p_used_space1 (p_xmldoc x.val_xmldoc) st
@@ -2063,7 +2063,7 @@ and u_attrib_arg st  =
 
 and u_member_info st : ValMemberInfo = 
     let x2,x3,x4,x5 = u_tup4 u_tcref u_MemberFlags (u_list u_slotsig) u_bool st
-    { ApparentParent=x2
+    { ApparentEnclosingEntity=x2
       MemberFlags=x3
       ImplementedSlotSigs=x4
       IsImplemented=x5  }
@@ -2134,7 +2134,7 @@ and u_ValData st =
       val_xmldoc= defaultArg x15 XmlDoc.Empty
       val_xmldocsig=x12
       val_access=x13
-      val_actual_parent=x13b
+      val_declaring_entity=x13b
       val_const=x14
     }
 

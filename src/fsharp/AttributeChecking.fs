@@ -436,7 +436,7 @@ let MethInfoIsUnseen g m typ minfo =
 #if !NO_EXTENSIONTYPING
         not (isObjTy g typ) &&
         isAppTy g typ &&
-        isObjTy g minfo.LogicalEnclosingType &&
+        isObjTy g minfo.ApparentEnclosingType &&
         let tcref = tcrefOfAppTy g typ 
         match tcref.TypeReprInfo with 
         | TProvidedTypeExtensionPoint info -> 

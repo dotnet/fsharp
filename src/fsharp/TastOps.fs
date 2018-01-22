@@ -2161,7 +2161,7 @@ let PartitionValTyparsForApparentEnclosingType g (v:Val)  =
     | None -> error(InternalError("PartitionValTypars: not a top value", v.Range))
     | Some arities -> 
         let fullTypars, _ = destTopForallTy g arities v.Type 
-        let parent = v.MemberApparentParent
+        let parent = v.MemberApparentEntity
         let parentTypars = parent.TyparsNoRange
         let nparentTypars = parentTypars.Length
         if nparentTypars <= fullTypars.Length then 
@@ -4636,7 +4636,7 @@ and remapValData g tmenv (d: ValData) =
     let ty' = ty |> remapPossibleForallTy g tmenv
     { d with 
         val_type    = ty';
-        val_actual_parent = d.val_actual_parent |> remapParentRef tmenv;
+        val_declaring_entity = d.val_declaring_entity |> remapParentRef tmenv;
         val_repr_info = d.val_repr_info |> Option.map (remapValReprInfo g tmenv);
         val_member_info   = d.val_member_info |> Option.map (remapMemberInfo g d.val_range topValInfo ty ty' tmenv);
         val_attribs       = d.val_attribs       |> remapAttribs g tmenv }
@@ -4954,7 +4954,7 @@ and remapMemberInfo g m topValInfo ty ty' tmenv x =
     let renaming, _ = mkTyparToTyparRenaming tpsOrig tps 
     let tmenv = { tmenv with tpinst = tmenv.tpinst @ renaming } 
     { x with 
-        ApparentParent    = x.ApparentParent    |>  remapTyconRef tmenv.tyconRefRemap ;
+        ApparentEnclosingEntity    = x.ApparentEnclosingEntity    |>  remapTyconRef tmenv.tyconRefRemap ;
         ImplementedSlotSigs = x.ImplementedSlotSigs |> List.map (remapSlotSig (remapAttribs g tmenv) tmenv); 
     } 
 
@@ -6936,7 +6936,7 @@ let etaExpandTypeLambda g m tps (tm, ty) =
 
 let AdjustValToTopVal (tmp:Val) parent valData =
     tmp.SetValReprInfo (Some valData);  
-    tmp.val_actual_parent <- parent;  
+    tmp.val_declaring_entity <- parent;  
     tmp.SetIsMemberOrModuleBinding()
 
 /// For match with only one non-failing target T0, the other targets, T1... failing (say, raise exception).
@@ -7105,7 +7105,7 @@ let XmlDocSigOfVal g path (v:Val) =
           | MemberKind.PropertyGetSet 
           | MemberKind.PropertySet
           | MemberKind.PropertyGet -> "P:", v.PropertyName
-        let path = if v.HasTopValActualParent then prependPath path v.TopValActualParent.CompiledName else path
+        let path = if v.HasDeclaringEntity then prependPath path v.TopValDeclaringEntity.CompiledName else path
         let parentTypars, methTypars = 
           match PartitionValTypars g v with
           | Some(_, memberParentTypars, memberMethodTypars, _, _) -> memberParentTypars, memberMethodTypars
@@ -7367,10 +7367,10 @@ let isComInteropTy g ty =
 let ValSpecIsCompiledAsInstance g (v:Val) =
     match v.MemberInfo with 
     | Some(membInfo) -> 
-        // Note it doesn't matter if we pass 'v.TopValActualParent' or 'v.MemberApparentParent' here. 
+        // Note it doesn't matter if we pass 'v.TopValDeclaringEntity' or 'v.MemberApparentEntity' here. 
         // These only differ if the value is an extension member, and in that case MemberIsCompiledAsInstance always returns 
         // false anyway 
-        MemberIsCompiledAsInstance g v.MemberApparentParent v.IsExtensionMember membInfo v.Attribs  
+        MemberIsCompiledAsInstance g v.MemberApparentEntity v.IsExtensionMember membInfo v.Attribs  
     |  _ -> false
 
 let ValRefIsCompiledAsInstanceMember g (vref: ValRef) = ValSpecIsCompiledAsInstance g vref.Deref
@@ -7383,7 +7383,7 @@ let ValRefIsCompiledAsInstanceMember g (vref: ValRef) = ValSpecIsCompiledAsInsta
 let GetMemberCallInfo g (vref:ValRef, vFlags) = 
     match vref.MemberInfo with 
     | Some(membInfo) when not vref.IsExtensionMember -> 
-      let numEnclTypeArgs = vref.MemberApparentParent.TyparsNoRange.Length
+      let numEnclTypeArgs = vref.MemberApparentEntity.TyparsNoRange.Length
       let virtualCall = 
           (membInfo.MemberFlags.IsOverrideOrExplicitImpl || 
            membInfo.MemberFlags.IsDispatchSlot) && 

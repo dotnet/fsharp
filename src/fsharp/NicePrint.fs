@@ -1111,7 +1111,7 @@ module private PrintTastMemberOrVals =
                 DemangleOperatorNameAsLayout (tagFunction >> mkNav v.DefinitionRange) name
             let nameL = 
                 if denv.showMemberContainers then 
-                    layoutTyconRef denv v.MemberApparentParent ^^ SepL.dot ^^ nameL
+                    layoutTyconRef denv v.MemberApparentEntity ^^ SepL.dot ^^ nameL
                 else 
                     nameL
             let nameL = if denv.showTyparBinding then layoutTyparDecls denv nameL true niceMethodTypars else nameL
@@ -1296,14 +1296,14 @@ module InfoMemberPrinting =
     //          Container(argName1:argType1, ..., argNameN:argTypeN) : retType
     //          Container.Method(argName1:argType1, ..., argNameN:argTypeN) : retType
     let private layoutMethInfoCSharpStyle amap m denv (minfo:MethInfo) minst =
-        let retTy = if minfo.IsConstructor then minfo.LogicalEnclosingType else minfo.GetFSharpReturnTy(amap, m, minst) 
+        let retTy = if minfo.IsConstructor then minfo.ApparentEnclosingType else minfo.GetFSharpReturnTy(amap, m, minst) 
         let layout = 
             if minfo.IsExtensionMember then
                 LeftL.leftParen ^^ wordL (tagKeyword (FSComp.SR.typeInfoExtension())) ^^ RightL.rightParen
             else emptyL
         let layout = 
             layout ^^
-                let tcref = tcrefOfAppTy amap.g minfo.LogicalEnclosingAppType 
+                let tcref = minfo.ApparentEnclosingTyconRef 
                 PrintTypes.layoutTyconRef denv tcref
         let layout = 
             layout ^^
@@ -1354,9 +1354,9 @@ module InfoMemberPrinting =
     //          ApparentContainer.Method(argName1:argType1, ..., argNameN:argTypeN) : retType
     let prettyLayoutOfMethInfoFreeStyle (amap: Import.ImportMap) m denv typarInst methInfo =
         match methInfo with 
-        | DefaultStructCtor(g,_typ) -> 
+        | DefaultStructCtor _ -> 
             let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst 
-            prettyTyparInst, PrintTypes.layoutTyconRef denv (tcrefOfAppTy g methInfo.LogicalEnclosingAppType) ^^ wordL (tagPunctuation "()")
+            prettyTyparInst, PrintTypes.layoutTyconRef denv methInfo.ApparentEnclosingTyconRef ^^ wordL (tagPunctuation "()")
         | FSMeth(_,_,vref,_) -> 
             let prettyTyparInst, resL = PrintTastMemberOrVals.prettyLayoutOfValOrMember { denv with showMemberContainers=true } typarInst vref.Deref
             prettyTyparInst, resL
@@ -1380,7 +1380,7 @@ module InfoMemberPrinting =
             | Some vref -> tagProperty >> mkNav vref.DefinitionRange
         let nameL = DemangleOperatorNameAsLayout tagProp pinfo.PropertyName
         wordL (tagText (FSComp.SR.typeInfoProperty())) ^^
-        layoutTyconRef denv (tcrefOfAppTy g pinfo.LogicalEnclosingAppType) ^^
+        layoutTyconRef denv pinfo.ApparentEnclosingTyconRef ^^
         SepL.dot ^^
         nameL ^^
         RightL.colon ^^
@@ -1401,7 +1401,7 @@ module private TastDefinitionPrinting =
     open PrintTypes
 
     let layoutExtensionMember denv (v:Val) =
-        let tycon = v.MemberApparentParent.Deref
+        let tycon = v.MemberApparentEntity.Deref
         let nameL = tagMethod tycon.DisplayName |> mkNav v.DefinitionRange |> wordL
         let nameL = layoutAccessibility denv tycon.Accessibility nameL // "type-accessibility"
         let tps =

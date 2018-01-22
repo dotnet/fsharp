@@ -364,7 +364,7 @@ type TypeCheckInfo
         let result =
             match cnrs with
             | CNR(_, Item.CtorGroup(_, ((ctor::_) as ctors)), _, denv, nenv, ad, m) ::_ ->
-                let props = ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false ctor.LogicalEnclosingType
+                let props = ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false ctor.ApparentEnclosingType
                 let parameters = CollectParameters ctors amap m
                 let items = props @ parameters
                 Some (denv, m, items)
@@ -1353,7 +1353,7 @@ type TypeCheckInfo
                     Some (m, SemanticClassificationType.ValueType)
                 else Some (m, SemanticClassificationType.ReferenceType)
             | CNR(_, Item.CtorGroup(_, minfos), LegitTypeOccurence, _, _, _, m) ->
-                if minfos |> List.exists (fun minfo -> isStructTy g minfo.LogicalEnclosingType) then
+                if minfos |> List.exists (fun minfo -> isStructTy g minfo.ApparentEnclosingType) then
                     Some (m, SemanticClassificationType.ValueType)
                 else Some (m, SemanticClassificationType.ReferenceType)
             | CNR(_, Item.ExnCase _, LegitTypeOccurence, _, _, _, m) ->

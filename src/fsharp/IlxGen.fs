@@ -767,7 +767,7 @@ let GetMethodSpecForMemberVal amap g (memberInfo:ValMemberInfo) (vref:ValRef) =
     let flatArgInfos = List.concat curriedArgInfos
     let isCtor = (memberInfo.MemberFlags.MemberKind = MemberKind.Constructor)
     let cctor = (memberInfo.MemberFlags.MemberKind = MemberKind.ClassConstructor)
-    let parentTcref = vref.TopValActualParent
+    let parentTcref = vref.TopValDeclaringEntity
     let parentTypars = parentTcref.TyparsNoRange
     let numParentTypars = parentTypars.Length
     if tps.Length < numParentTypars then error(InternalError("CodeGen check: type checking did not ensure that this method is sufficiently generic", m))
@@ -2603,7 +2603,7 @@ and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
           let numEnclILTypeArgs = 
               match vref.MemberInfo with 
               | Some _ when not (vref.IsExtensionMember) -> 
-                  List.length(vref.MemberApparentParent.TyparsNoRange |> DropErasedTypars) 
+                  List.length(vref.MemberApparentEntity.TyparsNoRange |> DropErasedTypars) 
               | _ -> 0
 
           let (ilEnclArgTys,ilMethArgTys) = 
@@ -4699,7 +4699,7 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) sta
     // Workaround for .NET and Visual Studio restriction w.r.t debugger type proxys
     // Mark internal constructors in internal classes as public. 
     let access = 
-        if access = ILMemberAccess.Assembly && vspec.IsConstructor && IsHiddenTycon eenv.sigToImplRemapInfo vspec.MemberApparentParent.Deref then 
+        if access = ILMemberAccess.Assembly && vspec.IsConstructor && IsHiddenTycon eenv.sigToImplRemapInfo vspec.MemberApparentEntity.Deref then 
             ILMemberAccess.Public
         else
             access
@@ -4713,7 +4713,7 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) sta
         CommitStartScope cgbuf startScopeMarkOpt
 
     // The initialization code for static 'let' and 'do' bindings gets compiled into the initialization .cctor for the whole file
-    | _ when vspec.IsClassConstructor && isNil vspec.TopValActualParent.TyparsNoRange ->
+    | _ when vspec.IsClassConstructor && isNil vspec.TopValDeclaringEntity.TyparsNoRange ->
         let tps,_,_,_,cctorBody,_ = IteratedAdjustArityOfLambda cenv.g cenv.amap vspec.ValReprInfo.Value rhsExpr
         let eenv = EnvForTypars tps eenv
         CommitStartScope cgbuf startScopeMarkOpt
@@ -5087,7 +5087,7 @@ and ComputeFlagFixupsForMemberBinding cenv (v:Val,memberInfo:ValMemberInfo) =
          memberInfo.ImplementedSlotSigs |> List.map (fun slotsig -> 
              let oty = slotsig.ImplementedType
              let otcref,_ = destAppTy cenv.g oty
-             let tcref = v.MemberApparentParent
+             let tcref = v.MemberApparentEntity
              
              let useMethodImpl = 
                  // REVIEW: it would be good to get rid of this special casing of Compare and GetHashCode during code generation
@@ -5309,7 +5309,7 @@ and GenMethodForBinding
 
            let isAbstract = 
                memberInfo.MemberFlags.IsDispatchSlot && 
-               let tcref =  v.MemberApparentParent
+               let tcref =  v.MemberApparentEntity
                not tcref.Deref.IsFSharpDelegateTycon
 
            let mdef = 

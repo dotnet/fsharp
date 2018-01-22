@@ -130,7 +130,7 @@ let (|ModuleValueOrMemberUse|_|) g expr =
             Some(vref,vFlags,f,fty,tyargs,actualArgs @ args)
         | Expr.App(f,_fty,[],actualArgs,_)  ->
             loop f (actualArgs @ args)
-        | (Expr.Val(vref,vFlags,_m) as f) when (match vref.ActualParent with ParentNone -> false | _ -> true) -> 
+        | (Expr.Val(vref,vFlags,_m) as f) when (match vref.DeclaringEntity with ParentNone -> false | _ -> true) -> 
             let fty = tyOfExpr g f
             Some(vref,vFlags,f,fty,[],args)
         | _ -> 
@@ -301,7 +301,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
                         // We only count one argument block for these.
                         let callArgs = (objArgs::untupledCurriedArgs) |> List.concat
 
-                        let parentTyconR = ConvTyconRef cenv vref.TopValActualParent m 
+                        let parentTyconR = ConvTyconRef cenv vref.TopValDeclaringEntity m 
                         let isNewObj = isNewObj || valUseFlags || isSelfInit
                         // The signature types are w.r.t. to the formal context 
                         let envinner = BindFormalTypars env tps 
@@ -528,7 +528,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
         | TOp.LValueOp(LSet,vref),[],[e] -> 
             // Sets of module values become property sets
-            match vref.ActualParent with 
+            match vref.DeclaringEntity with 
             | Parent tcref when IsCompiledAsStaticProperty cenv.g vref.Deref  -> 
                 let parentTyconR = ConvTyconRef cenv tcref m 
                 let propName = vref.CompiledName
@@ -716,7 +716,7 @@ and ConvModuleValueApp cenv env m (vref:ValRef) tyargs (args: Expr list list) =
     EmitDebugInfoIfNecessary cenv env m (ConvModuleValueAppCore cenv env m vref tyargs args)
 
 and ConvModuleValueAppCore cenv env m (vref:ValRef) tyargs (args: Expr list list) =
-    match vref.ActualParent with 
+    match vref.DeclaringEntity with 
     | ParentNone -> failwith "ConvModuleValueApp"
     | Parent(tcref) -> 
         let isProperty = IsCompiledAsStaticProperty cenv.g vref.Deref
@@ -747,7 +747,7 @@ and private ConvValRefCore holeOk cenv env m (vref:ValRef) tyargs =
         QP.mkThisVar(ConvType cenv env m v.Type)
     else 
         let vty = v.Type
-        match v.ActualParent with 
+        match v.DeclaringEntity with 
         | ParentNone -> 
               // References to local values are embedded by value
               if not holeOk then wfail(Error(FSComp.SR.crefNoSetOfHole(),m))
@@ -1030,14 +1030,14 @@ let ConvExprPublic cenv env e =
 
 let ConvMethodBase cenv env (methName, v:Val) = 
     let m = v.Range 
-    let parentTyconR = ConvTyconRef cenv v.TopValActualParent m 
+    let parentTyconR = ConvTyconRef cenv v.TopValDeclaringEntity m 
 
     match v.MemberInfo with 
     | Some vspr when not v.IsExtensionMember -> 
 
         let vref = mkLocalValRef v
         let tps,argInfos,retTy,_ = GetTypeOfMemberInMemberForm cenv.g vref 
-        let numEnclTypeArgs = vref.MemberApparentParent.TyparsNoRange.Length
+        let numEnclTypeArgs = vref.MemberApparentEntity.TyparsNoRange.Length
         let argTys = argInfos |> List.concat |> List.map fst 
 
         let isNewObj = (vspr.MemberFlags.MemberKind = MemberKind.Constructor)

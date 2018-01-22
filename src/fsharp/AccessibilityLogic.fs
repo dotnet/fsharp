@@ -228,7 +228,7 @@ let IsILFieldInfoAccessible g amap m ad x =
 #if !NO_EXTENSIONTYPING
     | ProvidedField (amap, tpfi, m) -> 
         let access = tpfi.PUntaint((fun fi -> ComputeILAccess fi.IsPublic fi.IsFamily fi.IsFamilyOrAssembly fi.IsFamilyAndAssembly), m)
-        IsProvidedMemberAccessible amap m ad x.LogicalEnclosingType access
+        IsProvidedMemberAccessible amap m ad x.ApparentEnclosingType access
 #endif
 
 let GetILAccessOfILEventInfo (ILEventInfo (tinfo,edef)) =
@@ -314,7 +314,7 @@ let IsTypeAndMethInfoAccessible amap m adTyp ad = function
 #if !NO_EXTENSIONTYPING
     | ProvidedMeth(amap,tpmb,_,m) as etmi -> 
         let access = tpmb.PUntaint((fun mi -> ComputeILAccess mi.IsPublic mi.IsFamily mi.IsFamilyOrAssembly mi.IsFamilyAndAssembly), m)        
-        IsProvidedMemberAccessible amap m ad etmi.LogicalEnclosingType access
+        IsProvidedMemberAccessible amap m ad etmi.ApparentEnclosingType access
 #endif
 let IsMethInfoAccessible amap m ad minfo = IsTypeAndMethInfoAccessible amap m ad ad minfo
 
@@ -334,7 +334,7 @@ let IsPropInfoAccessible g amap m ad = function
                 | None -> tryGetILAccessForProvidedMethodBase(ppi.GetSetMethod())
                 | x -> x), m)
             defaultArg a ILMemberAccess.Public
-        IsProvidedMemberAccessible amap m ad pp.LogicalEnclosingType access
+        IsProvidedMemberAccessible amap m ad pp.ApparentEnclosingType access
 #endif
     | _ -> false
 

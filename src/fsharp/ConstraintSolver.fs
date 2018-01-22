@@ -1035,7 +1035,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) permitWeakResolution ndeep
 
       | _, _, false, ("op_Addition" | "op_Subtraction" | "op_Modulus"), [argty1;argty2] 
           when // Ignore any explicit +/- overloads from any basic integral types
-               (minfos |> List.forall (fun minfo -> isIntegerTy g minfo.LogicalEnclosingType ) &&
+               (minfos |> List.forall (fun minfo -> isIntegerTy g minfo.ApparentEnclosingType ) &&
                 (   (IsNumericOrIntegralEnumType g argty1 || (nm = "op_Addition" && (isCharTy g argty1 || isStringTy g argty1))) && (permitWeakResolution || not (isTyparTy g argty2))
                  || (IsNumericOrIntegralEnumType g argty2 || (nm = "op_Addition" && (isCharTy g argty2 || isStringTy g argty2))) && (permitWeakResolution || not (isTyparTy g argty1)))) ->
           SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace argty2 argty1 ++ (fun () -> 
@@ -1044,7 +1044,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) permitWeakResolution ndeep
 
       | _, _, false, ("op_LessThan" | "op_LessThanOrEqual" | "op_GreaterThan" | "op_GreaterThanOrEqual" | "op_Equality" | "op_Inequality" ), [argty1;argty2] 
           when // Ignore any explicit overloads from any basic integral types
-               (minfos |> List.forall (fun minfo -> isIntegerTy g minfo.LogicalEnclosingType ) &&
+               (minfos |> List.forall (fun minfo -> isIntegerTy g minfo.ApparentEnclosingType ) &&
                 (   (IsRelationalType g argty1 && (permitWeakResolution || not (isTyparTy g argty2)))
                  || (IsRelationalType g argty2 && (permitWeakResolution || not (isTyparTy g argty1))))) ->
           SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace argty2 argty1 ++ (fun () -> 
@@ -1286,9 +1286,9 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) permitWeakResolution ndeep
                       let isInstance = minfo.IsInstance
                       if isInstance <> memFlags.IsInstance then 
                           if isInstance then
-                              ErrorD(ConstraintSolverError(FSComp.SR.csMethodFoundButIsNotStatic((NicePrint.minimalStringOfType denv minfo.LogicalEnclosingType), (DecompileOpName nm), nm), m, m2 ))
+                              ErrorD(ConstraintSolverError(FSComp.SR.csMethodFoundButIsNotStatic((NicePrint.minimalStringOfType denv minfo.ApparentEnclosingType), (DecompileOpName nm), nm), m, m2 ))
                           else
-                              ErrorD(ConstraintSolverError(FSComp.SR.csMethodFoundButIsStatic((NicePrint.minimalStringOfType denv minfo.LogicalEnclosingType), (DecompileOpName nm), nm), m, m2 ))
+                              ErrorD(ConstraintSolverError(FSComp.SR.csMethodFoundButIsStatic((NicePrint.minimalStringOfType denv minfo.ApparentEnclosingType), (DecompileOpName nm), nm), m, m2 ))
                       else 
                           CheckMethInfoAttributes g m None minfo ++ (fun () -> 
                           ResultD (TTraitSolved (minfo, calledMeth.CalledTyArgs))))
@@ -1338,7 +1338,7 @@ and MemberConstraintSolutionOfMethInfo css m minfo minst =
     | ILMeth(_, ilMeth, _) ->
        let mref = IL.mkRefToILMethod (ilMeth.DeclaringTyconRef.CompiledRepresentationForNamedType, ilMeth.RawMetadata)
        let iltref = ilMeth.ILExtensionMethodDeclaringTyconRef |> Option.map (fun tcref -> tcref.CompiledRepresentationForNamedType)
-       ILMethSln(ilMeth.LogicalEnclosingType, iltref, mref, minst)
+       ILMethSln(ilMeth.ApparentEnclosingType, iltref, mref, minst)
     | FSMeth(_, typ, vref, _) ->  
        FSMethSln(typ, vref, minst)
     | MethInfo.DefaultStructCtor _ -> 
@@ -1348,7 +1348,7 @@ and MemberConstraintSolutionOfMethInfo css m minfo minst =
         let g = amap.g
         let minst = []   // GENERIC TYPE PROVIDERS: for generics, we would have an minst here
         let allArgVars, allArgs = minfo.GetParamTypes(amap, m, minst) |> List.concat |> List.mapi (fun i ty -> mkLocal m ("arg"+string i) ty) |> List.unzip
-        let objArgVars, objArgs = (if minfo.IsInstance then [mkLocal m "this" minfo.LogicalEnclosingType] else []) |> List.unzip
+        let objArgVars, objArgs = (if minfo.IsInstance then [mkLocal m "this" minfo.ApparentEnclosingType] else []) |> List.unzip
         let callMethInfoOpt, callExpr, callExprTy = ProvidedMethodCalls.BuildInvokerExpressionForProvidedMethodCall css.TcVal (g, amap, mi, objArgs, NeverMutates, false, ValUseFlag.NormalValUse, allArgs, m) 
         let closedExprSln = ClosedExprSln (mkLambdas m [] (objArgVars@allArgVars) (callExpr, callExprTy) )
         // If the call is a simple call to an IL method with all the arguments in the natural order, then revert to use ILMethSln.
@@ -2207,7 +2207,7 @@ and ResolveOverloading
                     if isOpConversion then 
                         match calledMethGroup, reqdRetTyOpt with 
                         | h :: _, Some rty -> 
-                            Some (h.Method.LogicalEnclosingType, rty)
+                            Some (h.Method.ApparentEnclosingType, rty)
                         | _ -> None 
                     else
                         None

@@ -736,7 +736,7 @@ module FSharpExprConvert =
                         enclosingEntity.ModuleOrNamespaceType.AllValsAndMembers 
                         |> Seq.filter (fun v -> 
                             v.CompiledName = vName &&
-                                match v.ActualParent with
+                                match v.DeclaringEntity with
                                 | Parent p -> p.PublicPath = enclosingEntity.PublicPath
                                 | _ -> false 
                         ) |> List.ofSeq

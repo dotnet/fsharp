@@ -325,7 +325,7 @@ module internal InterfaceStubGenerator =
                 | _, true, _, name -> name + parArgs
                 // Ordinary functions or values
                 | false, _, _, name when
-                    not (Symbol.hasAttribute<RequireQualifiedAccessAttribute> v.LogicalEnclosingEntity.Attributes) -> 
+                    not (Symbol.hasAttribute<RequireQualifiedAccessAttribute> v.ApparentEnclosingEntity.Attributes) -> 
                     name + " " + parArgs
                 // Ordinary static members or things (?) that require fully qualified access
                 | _, _, _, name -> name + parArgs
