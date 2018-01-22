@@ -131,4 +131,3 @@ https://github.com/manofstick/visualfsharp.git all-your-collections-are-belong-t
 https://github.com/manofstick/visualfsharp.git all-your-collections-are-belong-to-us 87dafbc17b494c438b6db9e59e064736bd8a44e2 ba63403cb5898596c5e875a14ce22b33ef618c01 221.58 11.19                31.91                48.23                66.05                52.99               
 https://github.com/manofstick/visualfsharp.git all-your-collections-are-belong-to-us 87dafbc17b494c438b6db9e59e064736bd8a44e2 458e6c29d7e059a5a8a7b4cd7858c7d633fb5906 224.75 11.20                31.09                46.96                63.08                53.08               
 https://github.com/manofstick/visualfsharp.git all-your-collections-are-belong-to-us 87dafbc17b494c438b6db9e59e064736bd8a44e2 7e1fd6ac330f86597f3167e8067cfd805a89eec9 235.48 10.83                33.47                47.17                65.56                52.50               
-
