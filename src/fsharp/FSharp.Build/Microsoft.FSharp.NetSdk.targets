@@ -77,7 +77,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackageFSharpDesignTimeTools</TargetsForTfmSpecificContentInPackage> 
   </PropertyGroup> 
 
-  <Target Name="PackageFSharpDesignTimeTools">
+  <Target Name="PackageFSharpDesignTimeTools" DependsOnTargets="_GetFrameworkAssemblyReferences">
     <PropertyGroup>
       <FSharpDesignTimeProtocol Condition = " '$(FSharpDesignTimeProtocol)' == '' ">fsharp41</FSharpDesignTimeProtocol>
       <FSharpToolsDirectory Condition = " '$(FSharpToolsDirectory)' == '' ">tools</FSharpToolsDirectory>
