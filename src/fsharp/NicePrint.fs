@@ -659,11 +659,11 @@ module private PrintTypes =
         match k with 
         | ILAttrib ilMethRef -> 
             let trimmedName = 
-                let name = ilMethRef.EnclosingTypeRef.Name
+                let name = ilMethRef.DeclaringTypeRef.Name
                 match String.tryDropSuffix name "Attribute" with 
                 | Some shortName -> shortName
                 | None -> name
-            let tref = ilMethRef.EnclosingTypeRef
+            let tref = ilMethRef.DeclaringTypeRef
             let tref = ILTypeRef.Create(scope= tref.Scope, enclosing=tref.Enclosing, name=trimmedName)
             PrintIL.layoutILTypeRef denv tref ++ argsL
         | FSAttrib vref -> 
@@ -1296,18 +1296,15 @@ module InfoMemberPrinting =
     //          Container(argName1:argType1, ..., argNameN:argTypeN) : retType
     //          Container.Method(argName1:argType1, ..., argNameN:argTypeN) : retType
     let private layoutMethInfoCSharpStyle amap m denv (minfo:MethInfo) minst =
-        let retTy = if minfo.IsConstructor then minfo.EnclosingType else minfo.GetFSharpReturnTy(amap, m, minst) 
+        let retTy = if minfo.IsConstructor then minfo.LogicalEnclosingType else minfo.GetFSharpReturnTy(amap, m, minst) 
         let layout = 
             if minfo.IsExtensionMember then
                 LeftL.leftParen ^^ wordL (tagKeyword (FSComp.SR.typeInfoExtension())) ^^ RightL.rightParen
             else emptyL
         let layout = 
             layout ^^
-                match tryDestAppTy amap.g minfo.EnclosingType with
-                | Some tcref ->
-                    PrintTypes.layoutTyconRef denv tcref
-                | None ->
-                    PrintTypes.layoutType denv minfo.EnclosingType
+                let tcref = tcrefOfAppTy amap.g minfo.LogicalEnclosingAppType 
+                PrintTypes.layoutTyconRef denv tcref
         let layout = 
             layout ^^
                 if minfo.IsConstructor then  
@@ -1359,7 +1356,7 @@ module InfoMemberPrinting =
         match methInfo with 
         | DefaultStructCtor(g,_typ) -> 
             let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst 
-            prettyTyparInst, PrintTypes.layoutTyconRef denv (tcrefOfAppTy g methInfo.EnclosingType) ^^ wordL (tagPunctuation "()")
+            prettyTyparInst, PrintTypes.layoutTyconRef denv (tcrefOfAppTy g methInfo.LogicalEnclosingAppType) ^^ wordL (tagPunctuation "()")
         | FSMeth(_,_,vref,_) -> 
             let prettyTyparInst, resL = PrintTastMemberOrVals.prettyLayoutOfValOrMember { denv with showMemberContainers=true } typarInst vref.Deref
             prettyTyparInst, resL
@@ -1383,7 +1380,7 @@ module InfoMemberPrinting =
             | Some vref -> tagProperty >> mkNav vref.DefinitionRange
         let nameL = DemangleOperatorNameAsLayout tagProp pinfo.PropertyName
         wordL (tagText (FSComp.SR.typeInfoProperty())) ^^
-        layoutTyconRef denv (tcrefOfAppTy g pinfo.EnclosingType) ^^
+        layoutTyconRef denv (tcrefOfAppTy g pinfo.LogicalEnclosingAppType) ^^
         SepL.dot ^^
         nameL ^^
         RightL.colon ^^
@@ -1557,8 +1554,8 @@ module private TastDefinitionPrinting =
                                 if p.HasGetter then yield p.GetterMethod.DisplayName
                                 if p.HasSetter then yield p.SetterMethod.DisplayName  
                              for e in events do 
-                                yield e.GetAddMethod().DisplayName 
-                                yield e.GetRemoveMethod().DisplayName ]
+                                yield e.AddMethod.DisplayName 
+                                yield e.RemoveMethod.DisplayName ]
             with _ -> Set.empty
 
         let ctorLs    = 

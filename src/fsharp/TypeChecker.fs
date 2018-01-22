@@ -174,7 +174,7 @@ let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo:MethInfo)  =
     if not (IsTypeAndMethInfoAccessible amap m adOriginal ad minfo) then 
       error (Error (FSComp.SR.tcMethodNotAccessible(minfo.LogicalName), m))
 
-    if isAnyTupleTy g minfo.EnclosingType then 
+    if isAnyTupleTy g minfo.LogicalEnclosingType then 
       warning (Error (FSComp.SR.tcTupleMemberNotNormallyUsed(), m))
 
     CheckMethInfoAttributes g m tyargsOpt minfo |> CommitOperationResult
@@ -1955,7 +1955,7 @@ let FreshenAbstractSlot g amap m synTyparDecls absMethInfo =
     // If the virtual method is a generic method then copy its type parameters 
     let typarsFromAbsSlot, typarInstFromAbsSlot, _ = 
         let ttps = absMethInfo.GetFormalTyparsOfDeclaringType m 
-        let ttinst = argsOfAppTy g absMethInfo.EnclosingType
+        let ttinst = argsOfAppTy g absMethInfo.LogicalEnclosingType
         let rigid = if typarsFromAbsSlotAreRigid then TyparRigidity.Rigid else TyparRigidity.Flexible
         ConstraintSolver.FreshenAndFixupTypars m rigid ttps ttinst fmtps
 
@@ -3094,7 +3094,7 @@ let BuildILFieldGet g amap m objExpr (finfo:ILFieldInfo) =
       // The empty instantiation on the AbstractIL fspec is OK, since we make the correct fspec in IlxGen.GenAsm 
       // This ensures we always get the type instantiation right when doing this from 
       // polymorphic code, after inlining etc. *
-    let fspec = mkILFieldSpec(fref, mkILNamedTy valu fref.EnclosingTypeRef [])
+    let fspec = mkILFieldSpec(fref, mkILNamedTy valu fref.DeclaringTypeRef [])
     // Add an I_nop if this is an initonly field to make sure we never recognize it as an lvalue. See mkExprAddrOfExpr. 
     wrap (mkAsmExpr (([ mkNormalLdfld fspec ] @ (if finfo.IsInitOnly then [ AI_nop ] else [])), tinst, [objExpr], [fieldType], m)) 
 
@@ -3106,7 +3106,7 @@ let BuildILFieldSet g m objExpr (finfo:ILFieldInfo) argExpr =
       // The empty instantiation on the AbstractIL fspec is OK, since we make the correct fspec in IlxGen.GenAsm 
       // This ensures we always get the type instantiation right when doing this from 
       // polymorphic code, after inlining etc. *
-    let fspec = mkILFieldSpec(fref, mkILNamedTy valu fref.EnclosingTypeRef [])
+    let fspec = mkILFieldSpec(fref, mkILNamedTy valu fref.DeclaringTypeRef [])
     if finfo.IsInitOnly then error (Error (FSComp.SR.tcFieldIsReadonly(), m))
     let wrap, objExpr = mkExprAddrOfExpr g isValueType false DefinitelyMutates objExpr None m 
     wrap (mkAsmExpr ([ mkNormalStfld fspec ], tinst, [objExpr; argExpr], [], m)) 
@@ -3119,12 +3119,12 @@ let BuildILStaticFieldSet m (finfo:ILFieldInfo) argExpr =
       // The empty instantiation on the AbstractIL fspec is OK, since we make the correct fspec in IlxGen.GenAsm 
       // This ensures we always get the type instantiation right when doing this from 
       // polymorphic code, after inlining etc. 
-    let fspec = mkILFieldSpec(fref, mkILNamedTy valu fref.EnclosingTypeRef [])
+    let fspec = mkILFieldSpec(fref, mkILNamedTy valu fref.DeclaringTypeRef [])
     if finfo.IsInitOnly then error (Error (FSComp.SR.tcFieldIsReadonly(), m))
     mkAsmExpr ([ mkNormalStsfld fspec ], tinst, [argExpr], [], m)
     
 let BuildRecdFieldSet g m objExpr (rfinfo:RecdFieldInfo) argExpr = 
-    let tgty = rfinfo.EnclosingType
+    let tgty = rfinfo.DeclaringType
     let valu = isStructTy g tgty
     let objExpr = if valu then objExpr else mkCoerceExpr(objExpr, tgty, m, tyOfExpr g objExpr)
     let wrap, objExpr = mkExprAddrOfExpr g valu false DefinitelyMutates objExpr None m
@@ -8659,7 +8659,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
     | Item.CtorGroup(nm, minfos) ->
         let objTy = 
             match minfos with 
-            | (minfo :: _) -> minfo.EnclosingType
+            | (minfo :: _) -> minfo.LogicalEnclosingType
             | [] -> error(Error(FSComp.SR.tcTypeHasNoAccessibleConstructor(), mItem))
         match delayed with 
         | ((DelayedApp (_, arg, mExprAndArg))::otherDelayed) ->
@@ -8685,7 +8685,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
 #endif
                     item, minfos
 
-            minfosAfterTyArgs |> List.iter (fun minfo -> UnifyTypes cenv env mExprAndTypeArgs minfo.EnclosingType objTyAfterTyArgs)
+            minfosAfterTyArgs |> List.iter (fun minfo -> UnifyTypes cenv env mExprAndTypeArgs minfo.LogicalEnclosingType objTyAfterTyArgs)
             TcCtorCall true cenv env tpenv overallTy objTyAfterTyArgs (Some mExprAndTypeArgs) itemAfterTyArgs false [arg] mExprAndArg otherDelayed (Some afterResolution)
 
         | ((DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs))::otherDelayed) ->
@@ -8696,7 +8696,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
             let resolvedItem = Item.Types(nm, [objTy])
             CallNameResolutionSink cenv.tcSink (mExprAndTypeArgs, env.NameEnv, resolvedItem, resolvedItem, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights)
 
-            minfos |> List.iter (fun minfo -> UnifyTypes cenv env mExprAndTypeArgs minfo.EnclosingType objTy)
+            minfos |> List.iter (fun minfo -> UnifyTypes cenv env mExprAndTypeArgs minfo.LogicalEnclosingType objTy)
             TcCtorCall true cenv env tpenv overallTy objTy (Some mExprAndTypeArgs) item false [] mExprAndTypeArgs otherDelayed (Some afterResolution)
 
         | _ ->
@@ -8935,7 +8935,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
                 // The empty instantiation on the fspec is OK, since we make the correct fspec in IlxGen.GenAsm 
                 // This ensures we always get the type instantiation right when doing this from 
                 // polymorphic code, after inlining etc. 
-                let fspec = mkILFieldSpec(fref, mkILNamedTy valu fref.EnclosingTypeRef [])
+                let fspec = mkILFieldSpec(fref, mkILNamedTy valu fref.DeclaringTypeRef [])
 
                 // Add an I_nop if this is an initonly field to make sure we never recognize it as an lvalue. See mkExprAddrOfExpr. 
                 mkAsmExpr ([ mkNormalLdsfld fspec ] @ (if finfo.IsInitOnly then [ AI_nop ] else []), finfo.TypeInst, [], [exprty], mItem)
@@ -9085,7 +9085,7 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
     | Item.RecdField rfinfo ->
         // Get or set instance F# field or literal 
         RecdFieldInstanceChecks cenv.g cenv.amap ad mItem rfinfo
-        let tgty = rfinfo.EnclosingType
+        let tgty = rfinfo.DeclaringType
         let valu = isStructTy cenv.g tgty
         AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css mItem NoTrace tgty objExprTy 
         let objExpr = if valu then objExpr else mkCoerceExpr(objExpr, tgty, mExprAndItem, objExprTy)
@@ -9161,10 +9161,10 @@ and TcEventValueThen cenv overallTy env tpenv mItem mExprAndItem objDetails (ein
              //     EventHelper ((fun d -> e.add_X(d)), (fun d -> e.remove_X(d)), (fun f -> new 'Delegate(f)))
             mkCallCreateEvent cenv.g mItem delegateType argsTy
                (let dv, de = mkCompGenLocal mItem "eventDelegate" delegateType
-                let callExpr, _ = BuildPossiblyConditionalMethodCall cenv env PossiblyMutates mItem false (einfo.GetAddMethod()) NormalValUse [] objVars [de]
+                let callExpr, _ = BuildPossiblyConditionalMethodCall cenv env PossiblyMutates mItem false einfo.AddMethod NormalValUse [] objVars [de]
                 mkLambda mItem dv (callExpr, cenv.g.unit_ty))
                (let dv, de = mkCompGenLocal mItem "eventDelegate" delegateType
-                let callExpr, _ = BuildPossiblyConditionalMethodCall cenv env PossiblyMutates mItem false (einfo.GetRemoveMethod()) NormalValUse [] objVars [de]
+                let callExpr, _ = BuildPossiblyConditionalMethodCall cenv env PossiblyMutates mItem false einfo.RemoveMethod NormalValUse [] objVars [de]
                 mkLambda mItem dv (callExpr, cenv.g.unit_ty))
                (let fvty = (cenv.g.obj_ty --> (argsTy --> cenv.g.unit_ty))
                 let fv, fe = mkCompGenLocal mItem "callback" fvty
@@ -9630,20 +9630,20 @@ and TcMethodApplication
         //
         if (isInstance && 
             finalCalledMethInfo.IsInstance &&
-            typeEquiv cenv.g finalCalledMethInfo.EnclosingType cenv.g.obj_ty && 
+            typeEquiv cenv.g finalCalledMethInfo.LogicalEnclosingType cenv.g.obj_ty && 
             (finalCalledMethInfo.LogicalName = "GetHashCode" ||  finalCalledMethInfo.LogicalName = "Equals")) then 
            
             objArgs |> List.iter (fun expr -> ConstraintSolver.AddCxTypeMustSupportEquality env.DisplayEnv cenv.css mMethExpr NoTrace (tyOfExpr cenv.g expr))
 
         // Uses of a Dictionary() constructor without an IEqualityComparer argument imply an equality constraint 
         // on the first type argument.
-        if HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_Dictionary finalCalledMethInfo.EnclosingType  &&
+        if HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_Dictionary finalCalledMethInfo.LogicalEnclosingType  &&
            finalCalledMethInfo.IsConstructor &&
            not (finalCalledMethInfo.GetParamDatas(cenv.amap, mItem, finalCalledMeth.CalledTyArgs) 
                 |> List.existsSquared (fun (ParamData(_, _, _, _, _, _, ty)) ->  
                     HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_IEqualityComparer ty)) then 
             
-            match argsOfAppTy cenv.g finalCalledMethInfo.EnclosingType with 
+            match argsOfAppTy cenv.g finalCalledMethInfo.LogicalEnclosingType with 
             | [dty; _] -> ConstraintSolver.AddCxTypeMustSupportEquality env.DisplayEnv cenv.css mMethExpr NoTrace dty
             | _ -> ()
     end
@@ -10196,7 +10196,7 @@ and TcAndBuildFixedExpr cenv env (overallPatTy, fixedExpr, overallExprTy, mBindi
             | Expr.Op (op, tyargs, args, _) ->
                     match op, tyargs, args with 
                     | TOp.ValFieldGetAddr rfref, _, [_] -> not rfref.Tycon.IsStructOrEnumTycon
-                    | TOp.ILAsm ([ I_ldflda (fspec)], _), _, _  -> fspec.EnclosingType.Boxity = ILBoxity.AsObject
+                    | TOp.ILAsm ([ I_ldflda (fspec)], _), _, _  -> fspec.DeclaringType.Boxity = ILBoxity.AsObject
                     | TOp.ILAsm ([ I_ldelema _], _), _, _ -> true
                     | TOp.RefAddrGet _, _, _ -> true
                     | _ -> false
@@ -10932,7 +10932,7 @@ and ApplyAbstractSlotInference (cenv:cenv) (envinner:TcEnv) (bindingTy, m, synTy
              let optInferredImplSlotTys = 
                  match optIntfSlotTy with 
                  | Some (x, _) -> [x]
-                 | None -> uniqueAbstractMethSigs |> List.map (fun x -> x.EnclosingType)
+                 | None -> uniqueAbstractMethSigs |> List.map (fun x -> x.LogicalEnclosingType)
 
              optInferredImplSlotTys, declaredTypars
 
@@ -10994,7 +10994,7 @@ and ApplyAbstractSlotInference (cenv:cenv) (envinner:TcEnv) (bindingTy, m, synTy
            let optInferredImplSlotTys = 
                match optIntfSlotTy with 
                | Some (x, _) -> [ x ]
-               | None -> uniqueAbstractPropSigs |> List.map (fun pinfo -> pinfo.EnclosingType) 
+               | None -> uniqueAbstractPropSigs |> List.map (fun pinfo -> pinfo.LogicalEnclosingType) 
 
            optInferredImplSlotTys, declaredTypars
 
@@ -14308,7 +14308,7 @@ module TcExceptionDeclarations =
                           minfo.GenericArity = 0) 
                   match candidates with 
                   | [minfo] -> 
-                      match minfo.EnclosingType with 
+                      match minfo.LogicalEnclosingType with 
                       | AppTy cenv.g (tcref, _) as ety when (TypeDefinitelySubsumesTypeNoCoercion 0 cenv.g cenv.amap m cenv.g.exn_ty ety) ->
                           let tref = tcref.CompiledRepresentationForNamedType
                           TExnAsmRepr tref

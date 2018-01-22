@@ -154,7 +154,7 @@ let rec GetImmediateIntrinsicPropInfosOfTypeAux (optFilter,ad) g amap m origTy m
             let tinfo = ILTypeInfo.FromType g origTy
             let pdefs = tinfo.RawMetadata.Properties
             let pdefs = match optFilter with None -> pdefs.AsList | Some nm -> pdefs.LookupByName nm
-            pdefs |> List.map (fun pdef -> ILProp(g,ILPropInfo(tinfo, pdef))) 
+            pdefs |> List.map (fun pdef -> ILProp(ILPropInfo(tinfo, pdef))) 
 
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
             // Tuple types also support the properties Item1-8, Rest from the compiled tuple type
@@ -249,9 +249,9 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) =
                 let edefs = tinfo.RawMetadata.Events
                 let edefs = match optFilter with None -> edefs.AsList | Some nm -> edefs.LookupByName nm
                 [ for edef in edefs   do
-                    let einfo = ILEventInfo(tinfo,edef)
-                    if IsILEventInfoAccessible g amap m ad einfo then 
-                        yield ILEvent(g,einfo) ]
+                    let ileinfo = ILEventInfo(tinfo,edef)
+                    if IsILEventInfoAccessible g amap m ad ileinfo then 
+                        yield ILEvent ileinfo ]
             | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
                 []
         infos 
@@ -632,7 +632,7 @@ let ExcludeHiddenOfMethInfos g amap m (minfos:MethInfo list list) =
         (fun minfo -> minfo.LogicalName)
         (fun m1 m2 -> 
              // only hide those truly from super classes 
-             not (tyconRefEq g m1.DeclaringEntityRef m2.DeclaringEntityRef) &&
+             not (tyconRefEq g m1.DeclaringTyconRef m2.DeclaringTyconRef) &&
              MethInfosEquivByNameAndPartialSig EraseNone true g amap m m1 m2)
         
     |> List.concat

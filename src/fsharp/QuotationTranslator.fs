@@ -453,7 +453,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
         | TOp.ILAsm([ I_stfld(_,_,fspec) | I_stsfld (_,fspec) ],_),enclTypeArgs,args  -> 
             let tyargsR = ConvTypes cenv env m enclTypeArgs
-            let parentTyconR = ConvILTypeRefUnadjusted cenv m fspec.EnclosingTypeRef
+            let parentTyconR = ConvILTypeRefUnadjusted cenv m fspec.DeclaringTypeRef
             let argsR = ConvLValueArgs cenv env args
             QP.mkFieldSet( (parentTyconR, fspec.Name),tyargsR, argsR)
 
@@ -558,7 +558,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             | _ -> wfail(Error(FSComp.SR.crefQuotationsCantContainDescendingForLoops(), m))
 
         | TOp.ILCall(_,_,_,isNewObj,valUseFlags,isProp,_,ilMethRef,enclTypeArgs,methTypeArgs,_tys),[],callArgs -> 
-             let parentTyconR = ConvILTypeRefUnadjusted cenv m ilMethRef.EnclosingTypeRef
+             let parentTyconR = ConvILTypeRefUnadjusted cenv m ilMethRef.DeclaringTypeRef
              let isNewObj = isNewObj || (match valUseFlags with CtorValUsedAsSuperInit | CtorValUsedAsSelfInit -> true | _ -> false)
              let methArgTypesR = List.map (ConvILType cenv env m) ilMethRef.ArgTypes
              let methRetTypeR = ConvILType cenv env m ilMethRef.ReturnType
@@ -598,7 +598,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
 and ConvLdfld cenv env m (fspec: ILFieldSpec) enclTypeArgs args =
     let tyargsR = ConvTypes cenv env m enclTypeArgs
-    let parentTyconR = ConvILTypeRefUnadjusted cenv m fspec.EnclosingTypeRef
+    let parentTyconR = ConvILTypeRefUnadjusted cenv m fspec.DeclaringTypeRef
     let argsR = ConvLValueArgs cenv env args
     QP.mkFieldGet( (parentTyconR, fspec.Name),tyargsR, argsR)
 

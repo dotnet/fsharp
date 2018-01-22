@@ -2732,8 +2732,8 @@ let superOfTycon (g:TcGlobals) (tycon:Tycon) =
 
 // AbsIL view of attributes (we read these from .NET binaries) 
 let isILAttribByName (tencl:string list, tname: string) (attr: ILAttribute) = 
-    (attr.Method.EnclosingType.TypeSpec.Name = tname) &&
-    (attr.Method.EnclosingType.TypeSpec.Enclosing = tencl)
+    (attr.Method.DeclaringType.TypeSpec.Name = tname) &&
+    (attr.Method.DeclaringType.TypeSpec.Enclosing = tencl)
 
 // AbsIL view of attributes (we read these from .NET binaries) 
 let isILAttrib (tref:ILTypeRef) (attr: ILAttribute) = 
@@ -2753,7 +2753,7 @@ let TryDecodeILAttribute (g:TcGlobals) tref (attrs: ILAttributes) =
 // This one is done by name to ensure the compiler doesn't take a dependency on dereferencing a type that only exists in .NET 3.5
 let ILThingHasExtensionAttribute (attrs : ILAttributes) = 
     attrs.AsArray
-    |> Array.exists (fun attr -> attr.Method.EnclosingType.TypeSpec.Name = "System.Runtime.CompilerServices.ExtensionAttribute")
+    |> Array.exists (fun attr -> attr.Method.DeclaringType.TypeSpec.Name = "System.Runtime.CompilerServices.ExtensionAttribute")
     
 // F# view of attributes (these get converted to AbsIL attributes in ilxgen) 
 let IsMatchingFSharpAttribute g (AttribInfo(_, tcref)) (Attrib(tcref2, _, _, _, _, _, _)) = tyconRefEq g tcref  tcref2
@@ -3547,7 +3547,7 @@ module DebugPrint = begin
                 (lvalopL lvop ^^ valRefL vr --- bracketL (commaListL (List.map atomL args))) |> wrap
             | Expr.Op (TOp.ILCall (_isVirtCall, _isProtectedCall, _valu, _isNewObjCall, _valUseFlags, _isProperty, _noTailCall, ilMethRef, tinst, minst, _tys), tyargs, args, _) ->
                 let meth = ilMethRef.Name
-                wordL(tagText "ILCall") ^^ aboveListL [wordL(tagText "meth  ") --- wordL (tagText ilMethRef.EnclosingTypeRef.FullName) ^^ sepL(tagText ".") ^^ wordL (tagText meth);
+                wordL(tagText "ILCall") ^^ aboveListL [wordL(tagText "meth  ") --- wordL (tagText ilMethRef.DeclaringTypeRef.FullName) ^^ sepL(tagText ".") ^^ wordL (tagText meth);
                                               wordL(tagText "tinst ") --- listL typeL tinst;
                                               wordL(tagText "minst ") --- listL typeL minst;
                                               wordL(tagText "tyargs") --- listL typeL tyargs;
@@ -6356,7 +6356,7 @@ let mkCompilationMappingAttrForQuotationResource (g:TcGlobals) (nm, tys: ILTypeR
 //----------------------------------------------------------------------------
 
 let isTypeProviderAssemblyAttr (cattr:ILAttribute) = 
-    cattr.Method.EnclosingType.BasicQualifiedName = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName
+    cattr.Method.DeclaringType.BasicQualifiedName = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName
 
 let TryDecodeTypeProviderAssemblyAttr ilg (cattr:ILAttribute) = 
     if isTypeProviderAssemblyAttr cattr then 

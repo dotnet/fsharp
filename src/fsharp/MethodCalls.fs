@@ -295,7 +295,7 @@ type CalledMeth<'T>
                     []
 
             let assignedNamedProps,unassignedNamedItems = 
-                let returnedObjTy = if minfo.IsConstructor then minfo.EnclosingType else methodRetTy
+                let returnedObjTy = if minfo.IsConstructor then minfo.LogicalEnclosingType else methodRetTy
                 unassignedNamedItems |> List.splitChoose (fun (CallerNamedArg(id,e) as arg) -> 
                     let nm = id.idText
                     let pinfos = GetIntrinsicPropInfoSetsOfType infoReader (Some(nm),ad,AllowMultiIntfInstantiations.Yes) IgnoreOverrides id.idRange returnedObjTy
@@ -509,7 +509,7 @@ let IsBaseCall objArgs =
 let ComputeConstrainedCallInfo g amap m (objArgs,minfo:MethInfo) =
     match objArgs with 
     | [objArgExpr] when not minfo.IsExtensionMember -> 
-        let methObjTy = minfo.EnclosingType
+        let methObjTy = minfo.LogicalEnclosingType
         let objArgTy = tyOfExpr g objArgExpr
         if TypeDefinitelySubsumesTypeNoCoercion 0 g amap m methObjTy objArgTy 
            // Constrained calls to class types can only ever be needed for the three class types that 
@@ -546,8 +546,8 @@ let TakeObjAddrForMethodCall g amap (minfo:MethInfo) isMutable m objArgs f =
             // Extension members and calls to class constraints may need a coercion for their object argument
             let objArgExpr' = 
               if Option.isNone ccallInfo && // minfo.IsExtensionMember && minfo.IsStruct && 
-                 not (TypeDefinitelySubsumesTypeNoCoercion 0 g amap m minfo.EnclosingType objArgTy) then 
-                  mkCoerceExpr(objArgExpr',minfo.EnclosingType,m,objArgTy)
+                 not (TypeDefinitelySubsumesTypeNoCoercion 0 g amap m minfo.LogicalEnclosingType objArgTy) then 
+                  mkCoerceExpr(objArgExpr',minfo.LogicalEnclosingType,m,objArgTy)
               else
                   objArgExpr'
 
@@ -569,7 +569,7 @@ let TakeObjAddrForMethodCall g amap (minfo:MethInfo) isMutable m objArgs f =
 
 /// Build an expression node that is a call to a .NET method. 
 let BuildILMethInfoCall g amap m isProp (minfo:ILMethInfo) valUseFlags minst direct args = 
-    let valu = isStructTy g minfo.ApparentEnclosingType
+    let valu = isStructTy g minfo.LogicalEnclosingType
     let ctor = minfo.IsConstructor
     if minfo.IsClassConstructor then 
         error (InternalError (minfo.ILName+": cannot call a class constructor",m))
@@ -578,7 +578,7 @@ let BuildILMethInfoCall g amap m isProp (minfo:ILMethInfo) valUseFlags minst dir
     let isProtected = minfo.IsProtectedAccessibility
     let ilMethRef = minfo.ILMethodRef
     let newobj = ctor && (match valUseFlags with NormalValUse -> true | _ -> false)
-    let exprTy = if ctor then minfo.ApparentEnclosingType else minfo.GetFSharpReturnTy(amap, m, minst)
+    let exprTy = if ctor then minfo.LogicalEnclosingType else minfo.GetFSharpReturnTy(amap, m, minst)
     let retTy = (if not ctor && (ilMethRef.ReturnType = ILType.Void) then [] else [exprTy])
     let isDllImport = minfo.IsDllImport g
     Expr.Op(TOp.ILCall(useCallvirt,isProtected,valu,newobj,valUseFlags,isProp,isDllImport,ilMethRef,minfo.DeclaringTypeInst,minst,retTy),[],args,m),
@@ -717,7 +717,7 @@ let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objA
             // TODO: there  is a fair bit of duplication here with mk_il_minfo_call. We should be able to merge these
                 
             /// Build an expression node that is a call to a extension method in a generated assembly
-            let enclTy = minfo.EnclosingType
+            let enclTy = minfo.LogicalEnclosingType
             // prohibit calls to methods that are declared in specific array types (Get,Set,Address)
             // these calls are provided by the runtime and should not be called from the user code
             if isArrayTy g enclTy then
