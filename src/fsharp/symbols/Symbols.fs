@@ -939,7 +939,7 @@ and FSharpActivePatternGroup(cenv, apinfo:PrettyNaming.ActivePatternInfo, typ, v
 
     member __.OverallType = FSharpType(cenv, typ)
 
-    member __.EnclosingEntity = 
+    member __.DeclaringEntity = 
         valOpt 
         |> Option.bind (fun vref -> 
             match vref.ActualParent with 
@@ -1260,7 +1260,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | Some v -> v
         | None -> failwith "DeclarationLocation property not available"
 
-    member __.EnclosingEntity = 
+    member __.DeclaringEntity = 
         checkIsResolved()
         match d with 
         | E e -> FSharpEntity(cenv, e.DeclaringTyconRef) |> Some
@@ -1774,7 +1774,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                 match e with 
                 | ILEvent ileinfo -> 
                     let ilAccess = AccessibilityLogic.GetILAccessOfILEventInfo ileinfo
-                    getApproxFSharpAccessibilityOfMember this.EnclosingEntity.Value.Entity ilAccess
+                    getApproxFSharpAccessibilityOfMember this.DeclaringEntity.Value.Entity ilAccess
                 | _ -> taccessPublic
 
             FSharpAccessibility(access)
@@ -1785,7 +1785,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                 match p with 
                 | ILProp ilpinfo -> 
                     let ilAccess = AccessibilityLogic.GetILAccessOfILPropInfo ilpinfo
-                    getApproxFSharpAccessibilityOfMember this.EnclosingEntity.Value.Entity  ilAccess
+                    getApproxFSharpAccessibilityOfMember this.DeclaringEntity.Value.Entity  ilAccess
                 | _ -> taccessPublic
 
             FSharpAccessibility(access)

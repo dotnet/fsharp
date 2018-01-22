@@ -448,7 +448,7 @@ module internal InterfaceStubGenerator =
 
     let internal (|TypeOfMember|_|) (m: FSharpMemberOrFunctionOrValue) =
         match m.FullTypeSafe with
-        | Some (MemberFunctionType typ) when m.IsProperty && m.EnclosingEntity.IsSome && m.EnclosingEntity.Value.IsFSharp ->
+        | Some (MemberFunctionType typ) when m.IsProperty && m.DeclaringEntity.IsSome && m.DeclaringEntity.Value.IsFSharp ->
             Some typ
         | Some typ -> Some typ
         | None -> None

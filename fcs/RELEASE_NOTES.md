@@ -1,3 +1,12 @@
+#### 19.0.1
+  * Rename ``EnclosingEntity`` to ``DeclaringEntity``.  In the case of extension properties, ``EnclosingEntity`` was incorrectly returning the logical enclosing entity (i.e. the type the property appears to extend), and in this case ``LogicalEnclosingEntity`` should be used instead.
+  
+#### 18.0.1
+  * Integrate visualfsharp master
+  
+#### 17.0.2
+  * Integrate visualfsharp master
+  
 #### 16.0.3
   * [File name deduplication not working with ParseAndCheckFileInProject](https://github.com/fsharp/FSharp.Compiler.Service/issues/819)
   
