@@ -137,8 +137,8 @@
     <Reference Include="Microsoft.VisualStudio.Threading">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Threading.$(MicrosoftVisualStudioThreadingVersion)\lib\net45\Microsoft.VisualStudio.Threading.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.VisualStudio.Shell.15.0">
-      <HintPath>C:\repos\visualfsharp\vsintegration\src\FSharp.LanguageService.Base\..\..\..\src\..\packages\Microsoft.VisualStudio.Shell.15.0.15.5.27130\lib\Microsoft.VisualStudio.Shell.15.0.dll</HintPath>
+    <Reference Include="Microsoft.VisualStudio.Shell.$(VSMajorVersion)">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.$(VSMajorVersion).$(RoslynVSPackagesVersion)\lib\Microsoft.VisualStudio.Shell.$(VSMajorVersion).dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Shell.Framework">
