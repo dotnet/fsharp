@@ -2196,7 +2196,7 @@ type ILEventInfo =
     /// Get the enclosing ("parent"/"declaring") type of the field. 
     member x.ApparentEnclosingType = match x with ILEventInfo(tinfo,_) -> tinfo.ToType
 
-    // Note: events are always assocaited with nominal types
+    // Note: events are always associated with nominal types
     member x.ApparentEnclosingAppType = x.ApparentEnclosingType
 
     // Note: IL Events are never extension members as C# has no notion of extension events as yet

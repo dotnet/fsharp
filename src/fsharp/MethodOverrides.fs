@@ -161,7 +161,6 @@ module DispatchSlotChecking =
          | CanImplementNoSlots -> false
          | CanImplementAnySlot -> true 
          | CanImplementAnyClassHierarchySlot -> not (isInterfaceTy g dispatchSlot.ApparentEnclosingType)
-         //| CanImplementSpecificInterfaceSlot parentTy -> isInterfaceTy g dispatchSlot.ApparentEnclosingType && typeEquiv g parentTy dispatchSlot.ApparentEnclosingType 
          | CanImplementAnyInterfaceSlot -> isInterfaceTy g dispatchSlot.ApparentEnclosingType)
 
     /// Check if the kinds of type parameters match between a dispatch slot and an override.

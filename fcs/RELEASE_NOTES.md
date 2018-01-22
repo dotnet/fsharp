@@ -414,7 +414,7 @@
 * Return additional 'property' and 'event' methods for F#-defined types to regularize symbols (#108, #143)
 * Add IsPropertySetterMethod and IsPropertyGetterMethod which only return true for getter/setter methods, not properties. Deprecate IsSetterMethod and IsGetterMethod in favour of these.
 * Add IsEventAddMethod and IsEventRemoveMethod which return true for add/remove methods with an associated event
-* Change IsProperty and IsEvent to only return true for the symbols for properties and events, rather than the methods assocaited with these
+* Change IsProperty and IsEvent to only return true for the symbols for properties and events, rather than the methods associated with these
 * Fix value of Assembly for some symbols (e.g. property symbols)
 
 #### 0.0.45 - 
