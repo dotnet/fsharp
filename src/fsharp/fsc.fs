@@ -1091,7 +1091,7 @@ module StaticLinker =
                     match depILModule.Manifest with 
                     | Some m -> 
                         for ca in m.CustomAttrs.AsList do
-                           if ca.Method.MethodRef.EnclosingTypeRef.FullName = typeof<CompilationMappingAttribute>.FullName then 
+                           if ca.Method.MethodRef.DeclaringTypeRef.FullName = typeof<CompilationMappingAttribute>.FullName then 
                                yield ca
                     | _ -> () ]
 
@@ -1201,7 +1201,7 @@ module StaticLinker =
                                         |> List.map (fun md ->
                                             {md with CustomAttrs = 
                                                         mkILCustomAttrs (td.CustomAttrs.AsList |> List.filter (fun ilattr ->
-                                                            ilattr.Method.EnclosingType.TypeRef.FullName <> "System.Runtime.TargetedPatchingOptOutAttribute")  )}) 
+                                                            ilattr.Method.DeclaringType.TypeRef.FullName <> "System.Runtime.TargetedPatchingOptOutAttribute")  )}) 
                                         |> mkILMethods } ])}
             //ILAsciiWriter.output_module stdout fakeModule
             fakeModule.TypeDefs.AsList

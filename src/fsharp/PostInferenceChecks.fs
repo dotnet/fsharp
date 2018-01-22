@@ -540,7 +540,7 @@ and CheckExpr (cenv:cenv) (env:env) expr (context:ByrefContext) =
                 errorR(Error(FSComp.SR.chkLimitationsOfBaseKeyword(), m))
               if (match vFlags with NormalValUse -> true | _ -> false) && 
                  v.IsConstructor && 
-                 (match v.ActualParent with Parent tcref -> isAbstractTycon tcref.Deref | _ -> false) then 
+                 (match v.DeclaringEntity with Parent tcref -> isAbstractTycon tcref.Deref | _ -> false) then 
                 errorR(Error(FSComp.SR.tcAbstractTypeCannotBeInstantiated(),m))
 
               if isByrefTy cenv.g v.Type &&
@@ -1157,7 +1157,7 @@ and CheckBinding cenv env alwaysCheckNoReraise (TBind(v,bindRhs,_) as bind) =
 
     // Check accessibility
     if (v.IsMemberOrModuleBinding || v.IsMember) && not v.IsIncrClassGeneratedMember then 
-        let access =  AdjustAccess (IsHiddenVal env.sigToImplRemapInfo v) (fun () -> v.TopValActualParent.CompilationPath) v.Accessibility
+        let access =  AdjustAccess (IsHiddenVal env.sigToImplRemapInfo v) (fun () -> v.TopValDeclaringEntity.CompilationPath) v.Accessibility
         CheckTypeForAccess cenv env (fun () -> NicePrint.stringOfQualifiedValOrMember cenv.denv v) access v.Range v.Type
     
     let env = if v.IsConstructor && not v.IsIncrClassConstructor then { env with limited=true } else env
@@ -1183,9 +1183,9 @@ and CheckBinding cenv env alwaysCheckNoReraise (TBind(v,bindRhs,_) as bind) =
                // Also check the enclosing type for members - for historical reasons, in the TAST member values 
                // are stored in the entity that encloses the type, hence we will not have noticed the ReflectedDefinition
                // on the enclosing type at this point.
-               HasFSharpAttribute cenv.g cenv.g.attrib_ReflectedDefinitionAttribute v.TopValActualParent.Attribs) then 
+               HasFSharpAttribute cenv.g cenv.g.attrib_ReflectedDefinitionAttribute v.TopValDeclaringEntity.Attribs) then 
 
-                if v.IsInstanceMember && v.MemberApparentParent.IsStructOrEnumTycon then
+                if v.IsInstanceMember && v.MemberApparentEntity.IsStructOrEnumTycon then
                     errorR(Error(FSComp.SR.chkNoReflectedDefinitionOnStructMember(),v.Range))
                 cenv.usesQuotations <- true
 
@@ -1264,10 +1264,10 @@ let CheckModuleBinding cenv env (TBind(v,e,_) as bind) =
           // Skip explicit implementations of interface methods
           if ValIsExplicitImpl cenv.g v then () else
           
-          match v.ActualParent with 
+          match v.DeclaringEntity with 
           | ParentNone -> () // this case can happen after error recovery from earlier error
           | Parent _ -> 
-            let tcref = v.TopValActualParent 
+            let tcref = v.TopValDeclaringEntity 
             let hasDefaultAugmentation = 
                 tcref.IsUnionTycon &&
                 match TryFindFSharpAttribute cenv.g cenv.g.attrib_DefaultAugmentationAttribute tcref.Attribs with
@@ -1336,7 +1336,7 @@ let CheckModuleBinding cenv env (TBind(v,e,_) as bind) =
                     if v2.IsExtensionMember && not (valEq v v2) && v.CompiledName = v2.CompiledName then
                         let minfo1 =  FSMeth(cenv.g, generalizedTyconRef tcref, mkLocalValRef v, Some 0UL)
                         let minfo2 =  FSMeth(cenv.g, generalizedTyconRef tcref, mkLocalValRef v2, Some 0UL)
-                        if tyconRefEq cenv.g v.MemberApparentParent v2.MemberApparentParent && 
+                        if tyconRefEq cenv.g v.MemberApparentEntity v2.MemberApparentEntity && 
                            MethInfosEquivByNameAndSig EraseAll true cenv.g cenv.amap v.Range minfo1 minfo2 then 
                             errorR(Duplicate(kind,v.DisplayName,v.Range)))
 

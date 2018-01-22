@@ -654,7 +654,7 @@ let typeIsNotQueryable (typ : Type) =
 let queryableTypeGetField _emEnv (parentT:Type) (fref: ILFieldRef)  =
     let res = parentT.GetField(fref.Name, BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance ||| BindingFlags.Static )  
     match res with 
-    | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("field", fref.Name, fref.EnclosingTypeRef.FullName, fref.EnclosingTypeRef.Scope.QualifiedName), range0))
+    | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("field", fref.Name, fref.DeclaringTypeRef.FullName, fref.DeclaringTypeRef.Scope.QualifiedName), range0))
     | _ -> res
     
 let nonQueryableTypeGetField (parentTI:Type) (fieldInfo : FieldInfo) : FieldInfo = 
@@ -668,8 +668,8 @@ let nonQueryableTypeGetField (parentTI:Type) (fieldInfo : FieldInfo) : FieldInfo
 
 let convFieldSpec cenv emEnv fspec =
     let fref = fspec.FieldRef
-    let tref = fref.EnclosingTypeRef 
-    let parentTI = convType cenv emEnv fspec.EnclosingType
+    let tref = fref.DeclaringTypeRef 
+    let parentTI = convType cenv emEnv fspec.DeclaringType
     if isEmittedTypeRef emEnv tref then
         // NOTE: if "convType becomes convCreatedType", then handle queryable types here too. [bug 4063] (necessary? what repro?)
         let fieldB = envGetFieldB emEnv fref
@@ -793,7 +793,7 @@ let nonQueryableTypeGetMethod (parentTI:Type) (methInfo : MethodInfo) : MethodIn
     else methInfo 
 
 let convMethodRef cenv emEnv (parentTI:Type) (mref:ILMethodRef) =
-    let parent = mref.EnclosingTypeRef
+    let parent = mref.DeclaringTypeRef
     let res = 
         if isEmittedTypeRef emEnv parent then
             // NOTE: if "convType becomes convCreatedType", then handle queryable types here too. [bug 4063]      
@@ -817,7 +817,7 @@ let convMethodRef cenv emEnv (parentTI:Type) (mref:ILMethodRef) =
 //----------------------------------------------------------------------------
       
 let convMethodSpec cenv emEnv (mspec:ILMethodSpec) =
-    let typT     = convType cenv emEnv mspec.EnclosingType       (* (instanced) parent Type *)
+    let typT     = convType cenv emEnv mspec.DeclaringType       (* (instanced) parent Type *)
     let methInfo = convMethodRef cenv emEnv typT mspec.MethodRef (* (generic)   method of (generic) parent *)
     let methInfo =
         if isNil mspec.GenericArgs then 
@@ -852,9 +852,9 @@ let nonQueryableTypeGetConstructor (parentTI:Type) (consInfo : ConstructorInfo) 
 
 let convConstructorSpec cenv emEnv (mspec:ILMethodSpec) =
     let mref   = mspec.MethodRef
-    let parentTI = convType cenv emEnv mspec.EnclosingType
+    let parentTI = convType cenv emEnv mspec.DeclaringType
     let res = 
-        if isEmittedTypeRef emEnv mref.EnclosingTypeRef then
+        if isEmittedTypeRef emEnv mref.DeclaringTypeRef then
             let consB = envGetConsB emEnv mref 
             nonQueryableTypeGetConstructor parentTI consB 
         else

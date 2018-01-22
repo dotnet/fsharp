@@ -6967,6 +6967,11 @@
         <target state="translated">Wystąpił błąd podczas odczytu metadanych języka F# z zestawu „{0}”. Została wykorzystana zarezerwowana konstrukcja. Może być konieczne uaktualnienie kompilatora języka F# lub użycie wcześniejszej wersji zestawu, która nie wykorzystuje określonej konstrukcji.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcTupleMemberNotNormallyUsed">
+        <source>This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</source>
+        <target state="new">This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

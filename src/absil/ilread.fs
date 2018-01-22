@@ -1877,7 +1877,7 @@ and seekReadMethodRefParent ctxt numtypars (TaggedIndex(tag, idx)) =
     | tag when tag = mrp_MethodDef -> 
         let (MethodData(enclTyp, cc, nm, argtys, retty, minst)) = seekReadMethodDefAsMethodData ctxt idx
         let mspec = mkILMethSpecInTy (enclTyp, cc, nm, argtys, retty, minst)
-        mspec.EnclosingType
+        mspec.DeclaringType
     | tag when tag = mrp_TypeSpec -> readBlobHeapAsType ctxt numtypars (seekReadTypeSpecRow ctxt idx)
     | _ -> failwith "seekReadMethodRefParent ctxt"
 
@@ -2416,7 +2416,7 @@ and seekReadMethodImpls ctxt numtypars tidx =
                 Overrides=
                   let (MethodData(enclTyp, cc, nm, argtys, retty, minst)) = seekReadMethodDefOrRefNoVarargs ctxt numtypars c
                   let mspec = mkILMethSpecInTy (enclTyp, cc, nm, argtys, retty, minst)
-                  OverridesSpec(mspec.MethodRef, mspec.EnclosingType) }))
+                  OverridesSpec(mspec.MethodRef, mspec.DeclaringType) }))
 
 and seekReadMultipleMethodSemantics ctxt (flags, id) =
     seekReadIndexedRows 

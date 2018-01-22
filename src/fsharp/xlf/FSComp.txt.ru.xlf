@@ -6967,6 +6967,11 @@
         <target state="translated">Произошла ошибка при чтении метаданных F# сборки "{0}". Использовалась зарезервированная конструкция. Попробуйте обновить компилятор F# или применить более раннюю версию сборки, где конкретная конструкция не используется.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcTupleMemberNotNormallyUsed">
+        <source>This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</source>
+        <target state="new">This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

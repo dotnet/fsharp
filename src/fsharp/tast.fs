@@ -2220,7 +2220,7 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
       //     -- LinearizeTopMatch
       //
       // The fresh temporary should just be created with the right parent
-      mutable val_actual_parent: ParentRef
+      mutable val_declaring_entity: ParentRef
 
       /// XML documentation attached to a value.
       /// MUTABILITY: for unpickle linkage
@@ -2294,7 +2294,7 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     member x.LinkagePartialKey : ValLinkagePartialKey = 
         assert x.IsCompiledAsTopLevel
         { LogicalName = x.LogicalName 
-          MemberParentMangledName = (if x.IsMember then Some x.MemberApparentParent.LogicalName else None)
+          MemberParentMangledName = (if x.IsMember then Some x.MemberApparentEntity.LogicalName else None)
           MemberIsOverride = x.IsOverrideOrExplicitImpl
           TotalArgCount = if x.IsMember then x.ValReprInfo.Value.TotalArgCount else 0 }
 
@@ -2412,26 +2412,26 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
         and set(v) = x.val_xmldocsig <- v
 
     /// The parent type or module, if any (None for expression bindings and parameters)
-    member x.ActualParent               = x.val_actual_parent
+    member x.DeclaringEntity               = x.val_declaring_entity
 
     /// Get the actual parent entity for the value (a module or a type), i.e. the entity under which the
     /// value will appear in compiled code. For extension members this is the module where the extension member
     /// is declared.
-    member x.TopValActualParent = 
-        match x.ActualParent  with 
+    member x.TopValDeclaringEntity = 
+        match x.DeclaringEntity  with 
         | Parent tcref -> tcref
-        | ParentNone -> error(InternalError("TopValActualParent: does not have a parent",x.Range))
+        | ParentNone -> error(InternalError("TopValDeclaringEntity: does not have a parent",x.Range))
 
-    member x.HasTopValActualParent = 
-        match x.ActualParent  with 
+    member x.HasDeclaringEntity = 
+        match x.DeclaringEntity  with 
         | Parent _ -> true
         | ParentNone -> false
             
     /// Get the apparent parent entity for a member
-    member x.MemberApparentParent : TyconRef = 
+    member x.MemberApparentEntity : TyconRef = 
         match x.MemberInfo with 
-        | Some membInfo -> membInfo.ApparentParent
-        | None -> error(InternalError("MemberApparentParent",x.Range))
+        | Some membInfo -> membInfo.ApparentEnclosingEntity
+        | None -> error(InternalError("MemberApparentEntity",x.Range))
 
     /// Get the number of 'this'/'self' object arguments for the member. Instance extension members return '1'.
     member v.NumObjArgs =
@@ -2442,10 +2442,10 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     /// Get the apparent parent entity for the value, i.e. the entity under with which the
     /// value is associated. For extension members this is the nominal type the member extends.
     /// For other values it is just the actual parent.
-    member x.ApparentParent = 
+    member x.ApparentEnclosingEntity = 
         match x.MemberInfo with 
-        | Some membInfo -> Parent(membInfo.ApparentParent)
-        | None -> x.ActualParent
+        | Some membInfo -> Parent(membInfo.ApparentEnclosingEntity)
+        | None -> x.DeclaringEntity
 
     /// Get the public path to the value, if any? Should be set if and only if
     /// IsMemberOrModuleBinding is set.
@@ -2459,7 +2459,7 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     //   - in ilxgen.fs: as a boolean to detect public values for saving quotations 
     //   - in MakeExportRemapping, to build non-local references for values
     member x.PublicPath                 = 
-        match x.ActualParent  with 
+        match x.DeclaringEntity  with 
         | Parent eref -> 
             match eref.PublicPath with 
             | None -> None
@@ -2587,7 +2587,7 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
           val_member_info     = Unchecked.defaultof<_>
           val_attribs         = Unchecked.defaultof<_>
           val_repr_info       = Unchecked.defaultof<_>
-          val_actual_parent   = Unchecked.defaultof<_>
+          val_declaring_entity   = Unchecked.defaultof<_>
           val_xmldoc          = Unchecked.defaultof<_>
           val_xmldocsig       = Unchecked.defaultof<_> }
 
@@ -2613,7 +2613,7 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
         x.val_member_info     <- tg.val_member_info  
         x.val_attribs         <- tg.val_attribs      
         x.val_repr_info       <- tg.val_repr_info    
-        x.val_actual_parent   <- tg.val_actual_parent
+        x.val_declaring_entity   <- tg.val_declaring_entity
         x.val_xmldoc          <- tg.val_xmldoc       
         x.val_xmldocsig       <- tg.val_xmldocsig    
 
@@ -2627,7 +2627,7 @@ and
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
     ValMemberInfo = 
     { /// The parent type. For an extension member this is the type being extended 
-      ApparentParent: TyconRef  
+      ApparentEnclosingEntity: TyconRef  
 
       /// Updated with the full implemented slotsig after interface implementation relation is checked 
       mutable ImplementedSlotSigs: SlotSig list 
@@ -3240,12 +3240,12 @@ and
     member x.Accessibility              = x.Deref.Accessibility
 
     /// The parent type or module, if any (None for expression bindings and parameters)
-    member x.ActualParent               = x.Deref.ActualParent
+    member x.DeclaringEntity               = x.Deref.DeclaringEntity
 
     /// Get the apparent parent entity for the value, i.e. the entity under with which the
     /// value is associated. For extension members this is the nominal type the member extends.
     /// For other values it is just the actual parent.
-    member x.ApparentParent             = x.Deref.ApparentParent
+    member x.ApparentEnclosingEntity             = x.Deref.ApparentEnclosingEntity
 
     member x.DefinitionRange            = x.Deref.DefinitionRange
 
@@ -3373,13 +3373,13 @@ and
     /// Get the actual parent entity for the value (a module or a type), i.e. the entity under which the
     /// value will appear in compiled code. For extension members this is the module where the extension member
     /// is declared.
-    member x.TopValActualParent         = x.Deref.TopValActualParent
+    member x.TopValDeclaringEntity         = x.Deref.TopValDeclaringEntity
 
     // Can be false for members after error recovery
-    member x.HasTopValActualParent         = x.Deref.HasTopValActualParent
+    member x.HasDeclaringEntity         = x.Deref.HasDeclaringEntity
 
     /// Get the apparent parent entity for a member
-    member x.MemberApparentParent       = x.Deref.MemberApparentParent
+    member x.MemberApparentEntity       = x.Deref.MemberApparentEntity
 
     /// Get the number of 'this'/'self' object arguments for the member. Instance extension members return '1'.
     member x.NumObjArgs                 = x.Deref.NumObjArgs
@@ -4988,7 +4988,7 @@ let NewVal (logicalName:string,m:range,compiledName,ty,isMutable,isCompGen,arity
           val_other_range=None
           val_defn=None
           val_repr_info= arity
-          val_actual_parent= actualParent
+          val_declaring_entity= actualParent
           val_flags = ValFlags(recValInfo,baseOrThis,isCompGen,inlineInfo,isMutable,isModuleOrMemberBinding,isExtensionMember,isIncrClassSpecialMember,isTyFunc,allowTypeInst,isGeneratedEventVal)
           val_const= konst
           val_access=access

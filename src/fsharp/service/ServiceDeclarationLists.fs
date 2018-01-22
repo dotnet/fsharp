@@ -560,9 +560,9 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
         let items = items |> SymbolHelpers.RemoveExplicitlySuppressedCompletionItems g
         
         let tyconRefOptEq tref1 tref2 =
-            match tref1 with
-            | Some tref1 -> tyconRefEq g tref1 tref2
-            | None -> false
+            match tref1, tref2 with
+            | Some tref1, tref2 -> tyconRefEq g tref1 tref2
+            | _ -> false
 
         // Adjust items priority. Sort by name. For things with the same name, 
         //     - show types with fewer generic parameters first
@@ -576,10 +576,10 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
                 | Item.FakeInterfaceCtor (TType_app(tcref,_)) 
                 | Item.DelegateCtor (TType_app(tcref,_)) -> { x with MinorPriority = 1000 + tcref.TyparsNoRange.Length }
                 // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
-                | Item.CtorGroup (_, (cinfo :: _)) -> { x with MinorPriority = 1000 + 10 * (tcrefOfAppTy g cinfo.EnclosingType).TyparsNoRange.Length }
-                | Item.MethodGroup(_, minfo :: _, _) -> { x with IsOwnMember = tyconRefOptEq x.Type minfo.DeclaringEntityRef }
-                | Item.Property(_, pinfo :: _) -> { x with IsOwnMember = tyconRefOptEq x.Type (tcrefOfAppTy g pinfo.EnclosingType) }
-                | Item.ILField finfo -> { x with IsOwnMember = tyconRefOptEq x.Type (tcrefOfAppTy g finfo.EnclosingType) }
+                | Item.CtorGroup (_, (cinfo :: _)) -> { x with MinorPriority = 1000 + 10 * cinfo.DeclaringTyconRef.TyparsNoRange.Length }
+                | Item.MethodGroup(_, minfo :: _, _) -> { x with IsOwnMember = tyconRefOptEq x.Type minfo.DeclaringTyconRef }
+                | Item.Property(_, pinfo :: _) -> { x with IsOwnMember = tyconRefOptEq x.Type pinfo.DeclaringTyconRef }
+                | Item.ILField finfo -> { x with IsOwnMember = tyconRefOptEq x.Type finfo.DeclaringTyconRef }
                 | _ -> x)
             |> List.sortBy (fun x -> x.MinorPriority)
             |> List.fold (fun (prevRealPrior, prevNormalizedPrior, acc) x ->
