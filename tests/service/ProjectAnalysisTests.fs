@@ -3304,10 +3304,10 @@ let ``Test Project23 extension properties' getters/setters should refer to the c
         |])
     |> Array.toList
     |> shouldEqual 
-        [ ("Impl.Setter", "Impl.Setter", "System.Int32", "Impl.Setter", ["member"; "prop"; "extmem"]);
-          ("Impl.Setter", "Impl.Setter", "System.Int32", "Impl.Setter", ["member"; "prop"; "extmem"]);
-          ("Impl.Getter", "Impl.Getter", "System.Int32", "Impl.Getter", ["member"; "prop"; "extmem"])
-          ("Impl.Getter", "Impl.Getter", "System.Int32", "Impl.Getter", ["member"; "prop"; "extmem"]) ]
+        [ ("Impl.Setter", "Impl.Setter", "System.Int32", "System.Int32", ["member"; "prop"; "extmem"]);
+          ("Impl.Setter", "Impl.Setter", "System.Int32", "System.Int32", ["member"; "prop"; "extmem"]);
+          ("Impl.Getter", "Impl.Getter", "System.Int32", "System.Int32", ["member"; "prop"; "extmem"])
+          ("Impl.Getter", "Impl.Getter", "System.Int32", "System.Int32", ["member"; "prop"; "extmem"]) ]
 
 // Misc - property symbols
 module internal Project24 = 
