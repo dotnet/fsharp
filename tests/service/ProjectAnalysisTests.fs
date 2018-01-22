@@ -3251,9 +3251,9 @@ let ``Test Project23 property`` () =
         extensionProps
         |> Array.collect (fun f -> 
             [|  if f.HasGetterMethod then
-                    yield (f.DeclaringEntity.Value.FullName, f.LogicalEnclosingEntity.Value.FullName, f.GetterMethod.CompiledName, f.GetterMethod.DeclaringEntity.Value.FullName, attribsOfSymbol f)
+                    yield (f.DeclaringEntity.Value.FullName, f.LogicalEnclosingEntity.FullName, f.GetterMethod.CompiledName, f.GetterMethod.DeclaringEntity.Value.FullName, attribsOfSymbol f)
                 if f.HasSetterMethod then
-                    yield (f.DeclaringEntity.Value.FullName, f.LogicalEnclosingEntity.Value.FullName, f.SetterMethod.CompiledName, f.SetterMethod.DeclaringEntity.Value.FullName, attribsOfSymbol f)
+                    yield (f.DeclaringEntity.Value.FullName, f.LogicalEnclosingEntity.FullName, f.SetterMethod.CompiledName, f.SetterMethod.DeclaringEntity.Value.FullName, attribsOfSymbol f)
             |])
         |> Array.toList
 
@@ -3297,9 +3297,9 @@ let ``Test Project23 extension properties' getters/setters should refer to the c
         match x.Symbol with
         | :? FSharpMemberOrFunctionOrValue as f -> 
             if f.HasGetterMethod then
-                yield (f.DeclaringEntity.Value.FullName, f.GetterMethod.DeclaringEntity.Value.FullName, f.LogicalEnclosingEntity.Value.FullName, f.GetterMethod.LogicalEnclosingEntity.Value.FullName, attribsOfSymbol f)
+                yield (f.DeclaringEntity.Value.FullName, f.GetterMethod.DeclaringEntity.Value.FullName, f.LogicalEnclosingEntity.FullName, f.GetterMethod.LogicalEnclosingEntity.FullName, attribsOfSymbol f)
             if f.HasSetterMethod then
-                yield (f.DeclaringEntity.Value.FullName, f.SetterMethod.DeclaringEntity.Value.FullName, f.LogicalEnclosingEntity.Value.FullName, f.SetterMethod.LogicalEnclosingEntity.Value.FullName, attribsOfSymbol f)
+                yield (f.DeclaringEntity.Value.FullName, f.SetterMethod.DeclaringEntity.Value.FullName, f.LogicalEnclosingEntity.FullName, f.SetterMethod.LogicalEnclosingEntity.FullName, attribsOfSymbol f)
         | _ -> () 
         |])
     |> Array.toList
