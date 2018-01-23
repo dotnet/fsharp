@@ -87,10 +87,17 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <Error Text="The 'FSharpDesignTimeProtocol'  property can be only 'fsharp41'" Condition="'$(FSharpDesignTimeProtocol)' != 'fsharp41'" />
 
     <ItemGroup>
-      <TfmSpecificPackageFile Include="@(_ResolvedProjectReferencePaths)" Condition="'%(_ResolvedProjectReferencePaths.IsFSharpDesignTimeProvider)' == 'true'">
-        <PackagePath>$(FSharpToolsDirectory)/$(FSharpToolsProtocol)/%(_ResolvedProjectReferencePaths.NearestTargetFramework)/%(_ResolvedProjectReferencePaths.FileName)%(_ResolvedProjectReferencePaths.Extension)</PackagePath>
+      <_ResolvedProjectOutputFiles
+          Include="%(_ResolvedProjectReferencePaths.RootDir)%(_ResolvedProjectReferencePaths.Directory)/**/*" 
+          Exclude="%(_ResolvedProjectReferencePaths.RootDir)%(_ResolvedProjectReferencePaths.Directory)/**/FSharp.Core.dll;%(_ResolvedProjectReferencePaths.RootDir)%(_ResolvedProjectReferencePaths.Directory)/**/System.ValueTuple.dll" 
+          Condition="'%(_ResolvedProjectReferencePaths.IsFSharpDesignTimeProvider)' == 'true'">
+        <NearestTargetFramework>%(_ResolvedProjectReferencePaths.NearestTargetFramework)</NearestTargetFramework>
+      </_ResolvedProjectOutputFiles>
+
+      <TfmSpecificPackageFile Include="@(_ResolvedProjectOutputFiles)">
+         <PackagePath>$(FSharpToolsDirectory)/$(FSharpDesignTimeProtocol)/%(_ResolvedProjectOutputFiles.NearestTargetFramework)/%(_ResolvedProjectOutputFiles.FileName)%(_ResolvedProjectOutputFiles.Extension)</PackagePath>
       </TfmSpecificPackageFile>
     </ItemGroup>
   </Target>
-`
+
 </Project>
