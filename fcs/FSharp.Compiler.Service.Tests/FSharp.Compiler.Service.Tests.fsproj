@@ -18,7 +18,7 @@
     <NoWarn>58;75</NoWarn>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <ResolveNuGetPackages>false</ResolveNuGetPackages>
-    <OutputPath>..\..\$(Configuration)\fcs\net45\</OutputPath>
+    <OutputPath>..\..\artifacts\$(Configuration)\fcs\net45\</OutputPath>
     <Tailcalls>true</Tailcalls>
     <WarningLevel>3</WarningLevel>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>

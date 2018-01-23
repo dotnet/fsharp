@@ -63,8 +63,7 @@ set BUILD_CORECLR=0
 set BUILD_FROMSOURCE=0
 set BUILD_VS=0
 set BUILD_FCS=0
-set BUILD_CONFIG=release
-set BUILD_CONFIG_LOWERCASE=release
+set BUILD_CONFIG=Release
 set BUILD_DIAG=
 set BUILD_PUBLICSIGN=0
 
@@ -288,11 +287,11 @@ if /i "%ARG%" == "diag" (
 )
 
 if /i "%ARG%" == "debug" (
-    set BUILD_CONFIG=debug
+    set BUILD_CONFIG=Debug
 )
 
 if /i "%ARG%" == "release" (
-    set BUILD_CONFIG=release
+    set BUILD_CONFIG=Release
 )
 
 if /i "%ARG%" == "test-sign" (
@@ -631,7 +630,7 @@ if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
 echo ---------------- Done with package restore, starting proto ------------------------
 
 rem Decide if Proto need building
-if NOT EXIST Proto\net40\bin\fsc-proto.exe (
+if NOT EXIST artifacts\Proto\bin\net45\fsc-proto.exe (
   set BUILD_PROTO=1
 )
 
@@ -659,8 +658,8 @@ if "%BUILD_PROTO%" == "1" (
     @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
   )
 
-  echo %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
-       %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
+  echo %_ngenexe% install artifacts\Proto\bin\net45\fsc-proto.exe /nologo
+       %_ngenexe% install artifacts\Proto\bin\net45\fsc-proto.exe /nologo
   @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
 )
 
@@ -784,7 +783,7 @@ if not exist "%link_exe%" (
 
 if /I not "%single_threaded%" == "true" (set PARALLEL_ARG=-procs:%NUMBER_OF_PROCESSORS%) else set PARALLEL_ARG=-procs:0
 
-set FSCBINPATH=%~dp0%BUILD_CONFIG%\net40\bin
+set FSCBINPATH=%~dp0artifacts\%BUILD_CONFIG%\bin\net45
 set RESULTSDIR=%~dp0tests\TestResults
 if not exist "%RESULTSDIR%" (mkdir "%RESULTSDIR%")
 
@@ -875,8 +874,8 @@ if "%TEST_NET40_COMPILERUNIT_SUITE%" == "1" (
         set OUTPUTARG=--output:"!OUTPUTFILE!" 
     )
     set ERRORFILE=!RESULTSDIR!\test-net40-compilerunit-errors.log
-    echo "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG!  !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\..\..\net40\bin\FSharp.Compiler.UnitTests.dll" !WHERE_ARG_NUNIT!
-         "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG!  !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\..\..\net40\bin\FSharp.Compiler.UnitTests.dll" !WHERE_ARG_NUNIT!
+    echo "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG!  !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Compiler.UnitTests.dll" !WHERE_ARG_NUNIT!
+         "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG!  !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Compiler.UnitTests.dll" !WHERE_ARG_NUNIT!
 
     if errorlevel 1 (
         echo -----------------------------------------------------------------

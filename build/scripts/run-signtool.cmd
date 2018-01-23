@@ -50,7 +50,7 @@ set SignToolArgs=%SignToolArgs% -test
 :runsigntool
 
 if not exist "%_signtoolexe%" echo The signing tool could not be found at location '%_signtoolexe%' && goto error
-set SignToolArgs=%SignToolArgs% "%scriptdir%..\..\release"
+set SignToolArgs=%SignToolArgs% "%scriptdir%..\..\artifacts\Release"
 echo "%_signtoolexe%" %SignToolArgs%
      "%_signtoolexe%" %SignToolArgs%
 if errorlevel 1 goto error

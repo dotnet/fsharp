@@ -22,7 +22,7 @@
     <OtherFlags>$(OtherFlags) --times</OtherFlags>
     <NoWarn>$(NoWarn);69;65;54;61;75</NoWarn>
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>..\..\$(Configuration)\fcs\net45\</OutputPath>
+    <OutputPath>..\..\artifacts\$(Configuration)\fcs\net45\</OutputPath>
     <TargetFrameworkProfile />
     <ResolveNuGetPackages>false</ResolveNuGetPackages>
     <Prefer32Bit>true</Prefer32Bit>

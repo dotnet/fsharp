@@ -4,6 +4,8 @@
 
   <PropertyGroup>
     <RepoRoot>$(MSBuildThisFileDirectory)..\</RepoRoot>
+    <ArtifactsDirectory>$(RepoRoot)artifacts</ArtifactsDirectory>
+    <ProtoBinDir>$(ArtifactsDirectory)\Proto\bin\net45</ProtoBinDir>
   </PropertyGroup>
 
   <Import Project="..\build\targets\GitHash.props" />
@@ -129,10 +131,21 @@
     <IntermediateOutputPath>obj\$(TargetFrameworkOutputDirectory)\</IntermediateOutputPath>
   </PropertyGroup>
 
+  <!-- Mimic $(TargetFramework) values based on $(TargetDotnetProfile) -->
+  <PropertyGroup Condition="'$(TargetFramework)' == ''">
+    <TargetFramework Condition="'$(TargetDotnetProfile)' == 'net40'">net45</TargetFramework>
+    <TargetFramework Condition="'$(TargetDotnetProfile)' == 'coreclr'">netstandard1.6</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(CustomOutputPath)' != 'true'">
+    <OutputPath>$(ArtifactsDirectory)\$(Configuration)\bin\$(TargetFramework)\</OutputPath>
+    <IntermediateOutputPath>$(ArtifactsDirectory)\$(Configuration)\obj\$(TargetFramework)\</IntermediateOutputPath>
+    <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
+  </PropertyGroup>
+
   <Choose>
     <When Condition="'$(BuildWith)' == 'LKG' AND '$(BUILD_PROTO_WITH_CORECLR_LKG)' == '1'">
       <PropertyGroup >
-        <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(ProtoFlavour)\bin</OutputPath>
         <!-- When using coreclr to bootstrap to proto. We acquire the FSharp.Core LKG, targets LKG, the FSharp.Build LKG from the .NET Framework compiler tools LKG package. -->
         <FSharpNetCoreLkgPath>$(FSharpSourcesRoot)\..\Tools\dotnet20\sdk\2.0.3-servicing-007056\FSharp</FSharpNetCoreLkgPath>
         <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
@@ -146,27 +159,24 @@
     </When>
     <When Condition="'$(BuildWith)' == 'LKG' AND '$(BUILD_PROTO_WITH_CORECLR_LKG)' != '1'">
        <!-- Use .NET Framework to bootstrap to proto -->
-      <PropertyGroup >
-        <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(ProtoFlavour)\bin</OutputPath>
+      <PropertyGroup>
         <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
       </PropertyGroup>
     </When>
     <When Condition="'$(BuildWith)' == '' AND '$(TargetDotnetProfile)'=='coreclr'">
       <!-- Compiling coreclr with Proto, currently always use a .NET Framework/Mono proto -->
       <PropertyGroup>
-        <OutputPath Condition=" '$(CustomOutputPath)' != 'true' ">$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFrameworkOutputDirectory)\bin</OutputPath>
-        <FscToolPath>$(FSharpSourcesRoot)\..\Proto\$(ProtoFlavour)\bin</FscToolPath>
+        <FscToolPath>$(ProtoBinDir)</FscToolPath>
         <FscToolExe>fsc-proto.exe</FscToolExe>
-        <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.Portable.FSharp-proto.targets</FSharpTargetsPath>
+        <FSharpTargetsPath>$(ProtoBinDir)\Microsoft.Portable.FSharp-proto.targets</FSharpTargetsPath>
       </PropertyGroup>
     </When>
     <Otherwise>
       <!-- Compiling net40 with Proto -->
       <PropertyGroup>
-        <OutputPath Condition=" '$(CustomOutputPath)' != 'true' ">$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFrameworkOutputDirectory)\bin</OutputPath>
-        <FscToolPath>$(FSharpSourcesRoot)\..\Proto\$(ProtoFlavour)\bin</FscToolPath>
+        <FscToolPath>$(ProtoBinDir)</FscToolPath>
         <FscToolExe>fsc-proto.exe</FscToolExe>
-        <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.FSharp-proto.targets</FSharpTargetsPath>
+        <FSharpTargetsPath>$(ProtoBinDir)\Microsoft.FSharp-proto.targets</FSharpTargetsPath>
       </PropertyGroup>
     </Otherwise>
   </Choose>
@@ -328,13 +338,13 @@
   </Target>
 
   <UsingTask TaskName="FSharpEmbedResourceText"
-             AssemblyFile="$(FSharpSourcesRoot)\..\Proto\net40\bin\FSharp.Build-proto.dll"
+             AssemblyFile="$(ProtoBinDir)\FSharp.Build-proto.dll"
              Condition="'$(Configuration)' != 'Proto'" />
   <UsingTask TaskName="FSharpEmbedResXSource"
-             AssemblyFile="$(FSharpSourcesRoot)\..\Proto\net40\bin\FSharp.Build-proto.dll"
+             AssemblyFile="$(ProtoBinDir)\FSharp.Build-proto.dll"
              Condition="'$(Configuration)' != 'Proto'" />
   <UsingTask TaskName="WriteCodeFragment"
-             AssemblyFile="$(FSharpSourcesRoot)\..\Proto\net40\bin\FSharp.Build-proto.dll"
+             AssemblyFile="$(ProtoBinDir)\FSharp.Build-proto.dll"
              Condition="'$(Configuration)' != 'Proto'" />
 
   <Target Name="GenerateFSharpTextResources"

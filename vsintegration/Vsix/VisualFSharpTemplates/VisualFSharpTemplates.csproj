@@ -48,9 +48,7 @@
     <ProjectGuid>{385035C1-9171-408A-8EAA-67DDC14E2CF3}</ProjectGuid>
     <IsPackage>true</IsPackage>
     <RootNamespace>VisualFSharpTemplate</RootNamespace>
-    <RootBinPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetDotnetProfile)\bin</RootBinPath>
     <AssemblyName>VisualFSharpTemplate</AssemblyName>
-    <OutputPath>$(RootBinPath)</OutputPath>
     <MicroBuildAssemblyVersion>15.4.1.0</MicroBuildAssemblyVersion>
     <MicroBuildAssemblyFileLanguage>cs</MicroBuildAssemblyFileLanguage>
     <DeployExtension>false</DeployExtension>
@@ -119,4 +117,5 @@
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.tools.targets" />
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 </Project>

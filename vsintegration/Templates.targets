@@ -1,0 +1,25 @@
+<Project>
+
+  <PropertyGroup>
+    <FSharpSourcesRoot>$(MSBuildThisFileDirectory)\..\src</FSharpSourcesRoot>
+  </PropertyGroup>
+
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+
+  <PropertyGroup>
+    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+    <TargetDotnetProfile Condition="'$(TargetDotnetProfile)' == ''">net40</TargetDotnetProfile>
+    <OutputPath>$(ArtifactsDirectory)\$(Configuration)\bin\$(TargetFramework)\$(TemplateCategory)\$(AssemblyName)</OutputPath>
+  </PropertyGroup>
+
+  <Import Project="src\FSharp.Common.props" />
+  <Import Project="src\FSharp.tools.targets" />
+  <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
+
+  <Target Name="CoreCompile" />
+
+  <Target Name="CopyFilesToOutputDirectory" AfterTargets="CoreCompile">
+    <Copy SourceFiles="@(TemplateFiles)" DestinationFiles="@(TemplateFiles->'$(OutputPath)\%(Filename)%(Extension)')" />
+  </Target>
+
+</Project>

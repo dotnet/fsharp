@@ -261,7 +261,7 @@
           AfterTargets="Build"
           Condition="'$(TargetDotnetProfile)' == 'coreclr' "
           Inputs="@(PackageNuspec)" 
-          Outputs='$(FSharpSourcesRoot)\..\$(Configuration)\artifacts\"%(PackageNuspec.Filename)).nupkg'>
+          Outputs='$(ArtifactsDirectory)\$(Configuration)\nuget\"%(PackageNuspec.Filename)).nupkg'>
 
     <PropertyGroup>
       <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(FSharpCore42TargetVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
@@ -269,7 +269,7 @@
 
     <MakeDir Directories="$(FSharpSourcesRoot)\..\artifacts" />
     <SetEnvVar Name="NUGET_PACKAGES" Value="$(NUGET_PACKAGES)" />
-    <Exec Command='$(FSharpSourcesRoot)\..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(OutputPath.TrimEnd("\")) -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot)\..\artifacts' />
+    <Exec Command='$(FSharpSourcesRoot)\..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(OutputPath.TrimEnd("\")) -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(ArtifactsDirectory)\$(Configuration)\nuget' />
   </Target>
 
 </Project>
