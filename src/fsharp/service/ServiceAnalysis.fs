@@ -130,7 +130,7 @@ module UnusedOpens =
                                        let usedByEnclosingEntity =
                                            match symbolUse.Symbol with
                                            | :? FSharpMemberOrFunctionOrValue as f ->
-                                                match f.EnclosingEntity with
+                                                match f.DeclaringEntity with
                                                 | Some ent when ent.IsNamespace || ent.IsFSharpModule ->
                                                     Some (ent.IsEffectivelySameAs modul.Entity)
                                                 | _ -> None

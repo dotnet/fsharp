@@ -6967,6 +6967,11 @@
         <target state="translated">アセンブリ '{0}' の F# メタデータ の読み取り中にエラーが発生しました。予約済みのコンストラクトが使用されました。F# コンパイラをアップグレードするか、特定のコンストラクトを使用しない以前のバージョンのアセンブリを使用しなければならない場合があります。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcTupleMemberNotNormallyUsed">
+        <source>This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</source>
+        <target state="new">This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

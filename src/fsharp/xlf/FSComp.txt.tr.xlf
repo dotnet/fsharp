@@ -6967,6 +6967,11 @@
         <target state="translated">'{0}' bütünleştirilmiş kodunun F# meta verileri okunurken bir hata oluştu. Ayrılmış bir yapı kullanıldı. F# derleyicinizi yükseltmeniz veya bütünleştirilmiş kodun belirli bir yapıyı kullanmayan daha eski bir sürümünü kullanmanız gerekebilir.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcTupleMemberNotNormallyUsed">
+        <source>This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</source>
+        <target state="new">This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

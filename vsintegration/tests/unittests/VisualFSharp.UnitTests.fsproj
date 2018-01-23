@@ -59,49 +59,52 @@
     <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.RoundTrip.fs" />
     <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.UpToDate.fs" />
     <Compile Include="..\..\..\tests\service\FsUnit.fs">
-      <Link>FsUnit.fs</Link>
+      <Link>CompilerService\FsUnit.fs</Link>
     </Compile>
     <Compile Include="..\..\..\tests\service\Common.fs">
-      <Link>Common.fs</Link>
+      <Link>CompilerService\Common.fs</Link>
+    </Compile>
+    <Compile Include="..\..\..\tests\service\Symbols.fs">
+      <Link>CompilerService\Symbols.fs</Link>
     </Compile>
     <Compile Include="..\..\..\tests\service\EditorTests.fs">
-      <Link>EditorTests.fs</Link>
+      <Link>CompilerService\EditorTests.fs</Link>
     </Compile>
     <Compile Include="..\..\..\tests\service\FileSystemTests.fs">
-      <Link>FileSystemTests.fs</Link>
+      <Link>CompilerService\FileSystemTests.fs</Link>
     </Compile>
     <Compile Include="..\..\..\tests\service\ProjectAnalysisTests.fs">
-      <Link>ProjectAnalysisTests.fs</Link>
+      <Link>CompilerService\ProjectAnalysisTests.fs</Link>
     </Compile>
     <Compile Include="..\..\..\tests\service\MultiProjectAnalysisTests.fs">
-      <Link>MultiProjectAnalysisTests.fs</Link>
+      <Link>CompilerService\MultiProjectAnalysisTests.fs</Link>
     </Compile>
     <Compile Include="..\..\..\tests\service\PerfTests.fs">
-      <Link>PerfTests.fs</Link>
+      <Link>CompilerService\PerfTests.fs</Link>
     </Compile>
     <Compile Include="..\..\..\tests\service\InteractiveCheckerTests.fs">
-      <Link>InteractiveCheckerTests.fs</Link>
+      <Link>CompilerService\InteractiveCheckerTests.fs</Link>
     </Compile>
     <Compile Include="..\..\..\tests\service\ExprTests.fs">
-      <Link>ExprTests.fs</Link>
+      <Link>CompilerService\ExprTests.fs</Link>
     </Compile>
     <Compile Include="..\..\..\tests\service\CSharpProjectAnalysis.fs">
-      <Link>CSharpProjectAnalysis.fs</Link>
+      <Link>CompilerService\CSharpProjectAnalysis.fs</Link>
     </Compile>
     <Compile Include="..\..\..\tests\service\ProjectOptionsTests.fs">
-      <Link>ProjectOptionsTests.fs</Link>
+      <Link>CompilerService\ProjectOptionsTests.fs</Link>
     </Compile>
     <Compile Include="..\..\..\tests\service\StructureTests.fs">
-      <Link>StructureTests.fs</Link>
+      <Link>CompilerService\StructureTests.fs</Link>
     </Compile>
     <Compile Include="..\..\..\tests\service\AssemblyContentProviderTests.fs">
-      <Link>AssemblyContentProviderTests.fs</Link>
+      <Link>CompilerService\AssemblyContentProviderTests.fs</Link>
     </Compile>
     <Compile Include="..\..\..\tests\service\ServiceUntypedParseTests.fs">
-      <Link>ServiceUntypedParseTests.fs</Link>
+      <Link>CompilerService\ServiceUntypedParseTests.fs</Link>
     </Compile>
     <Compile Include="UnusedOpensTests.fs">
-      <Link>ServiceAnalysis\UnusedOpensTests.fs</Link>
+      <Link>CompilerService\UnusedOpensTests.fs</Link>
     </Compile>
     <Compile Include="ColorizationServiceTests.fs">
       <Link>Roslyn\ColorizationServiceTests.fs</Link>
@@ -380,7 +383,7 @@
       <HintPath>$(FSharpSourcesRoot)\..\packages\System.ValueTuple.4.3.1\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
       <Private>true</Private>
     </Reference>
-     <ProjectReference Include="..\Salsa\VisualFSharp.Salsa.fsproj">
+    <ProjectReference Include="..\Salsa\VisualFSharp.Salsa.fsproj">
       <Name>VisualFSharp.Salsa</Name>
       <Project>{fbd4b354-dc6e-4032-8ec7-c81d8dfb1af7}</Project>
       <Private>True</Private>

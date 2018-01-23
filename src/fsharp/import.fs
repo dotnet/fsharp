@@ -150,9 +150,7 @@ let CanImportILTypeRef (env:ImportMap) m (tref:ILTypeRef) =
 /// Prefer the F# abbreviation for some built-in types, e.g. 'string' rather than 
 /// 'System.String', since we prefer the F# abbreviation to the .NET equivalents. 
 let ImportTyconRefApp (env:ImportMap) tcref tyargs = 
-    match env.g.betterTyconRefMap tcref tyargs with 
-    | Some res -> res
-    | None -> TType_app (tcref,tyargs) 
+    env.g.improveType tcref tyargs 
 
 /// Import an IL type as an F# type.
 let rec ImportILType (env:ImportMap) m tinst typ =  
