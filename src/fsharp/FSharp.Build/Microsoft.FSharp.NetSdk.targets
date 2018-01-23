@@ -73,4 +73,31 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <PackageReference Include="FSharp.Core" Version="$(FSharpCoreImplicitPackageVersion)"  Condition=" '$(DisableImplicitFSharpCoreReference)' != 'true' "></PackageReference>
   </ItemGroup>
 
+  <PropertyGroup> 
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackageFSharpDesignTimeTools</TargetsForTfmSpecificContentInPackage> 
+  </PropertyGroup> 
+
+  <Target Name="PackageFSharpDesignTimeTools" DependsOnTargets="_GetFrameworkAssemblyReferences">
+    <PropertyGroup>
+      <FSharpDesignTimeProtocol Condition = " '$(FSharpDesignTimeProtocol)' == '' ">fsharp41</FSharpDesignTimeProtocol>
+      <FSharpToolsDirectory Condition = " '$(FSharpToolsDirectory)' == '' ">tools</FSharpToolsDirectory>
+    </PropertyGroup>
+
+    <Error Text="'$(FSharpToolsDirectory)' is an invalid value for 'FSharpToolsDirectory' valid values are 'typeproviders' and 'tools'." Condition="'$(FSharpToolsDirectory)' != 'typeproviders' and '$(FSharpToolsDirectory)' != 'tools'" />
+    <Error Text="The 'FSharpDesignTimeProtocol'  property can be only 'fsharp41'" Condition="'$(FSharpDesignTimeProtocol)' != 'fsharp41'" />
+
+    <ItemGroup>
+      <_ResolvedProjectOutputFiles
+          Include="%(_ResolvedProjectReferencePaths.RootDir)%(_ResolvedProjectReferencePaths.Directory)/**/*" 
+          Exclude="%(_ResolvedProjectReferencePaths.RootDir)%(_ResolvedProjectReferencePaths.Directory)/**/FSharp.Core.dll;%(_ResolvedProjectReferencePaths.RootDir)%(_ResolvedProjectReferencePaths.Directory)/**/System.ValueTuple.dll" 
+          Condition="'%(_ResolvedProjectReferencePaths.IsFSharpDesignTimeProvider)' == 'true'">
+        <NearestTargetFramework>%(_ResolvedProjectReferencePaths.NearestTargetFramework)</NearestTargetFramework>
+      </_ResolvedProjectOutputFiles>
+
+      <TfmSpecificPackageFile Include="@(_ResolvedProjectOutputFiles)">
+         <PackagePath>$(FSharpToolsDirectory)/$(FSharpDesignTimeProtocol)/%(_ResolvedProjectOutputFiles.NearestTargetFramework)/%(_ResolvedProjectOutputFiles.FileName)%(_ResolvedProjectOutputFiles.Extension)</PackagePath>
+      </TfmSpecificPackageFile>
+    </ItemGroup>
+  </Target>
+
 </Project>
