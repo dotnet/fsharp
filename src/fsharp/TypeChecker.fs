@@ -793,8 +793,8 @@ let UnifyFunctionType extraInfo cenv denv mFunExpr ty =
         | None ->    error (FunctionExpected(denv, ty, mFunExpr))
 
 let ReportImplicitlyIgnoredBoolExpression denv m ty expr =
-    let checkExpr m exprOpt =
-        match exprOpt with 
+    let checkExpr m expr =
+        match expr with 
         | Expr.App(Expr.Val(vf, _, _), _, _, exprs, _) when vf.LogicalName = opNameEquals ->
             match exprs with 
             | Expr.App(Expr.Val(propRef, _, _), _, _, Expr.Val(vf, _, _) :: _, _) :: _ ->
@@ -821,17 +821,16 @@ let ReportImplicitlyIgnoredBoolExpression denv m ty expr =
         | _ -> UnitTypeExpected (denv, ty, m)
 
     match expr with 
-    | Some(Expr.Let(_, Expr.Sequential(_, inner, _, _, _), _, _))
-    | Some(Expr.Sequential(_, inner, _, _, _)) ->
+    | Expr.Let(_, Expr.Sequential(_, inner, _, _, _), _, _)
+    | Expr.Sequential(_, inner, _, _, _) ->
         let rec extractNext expr =
             match expr with
             | Expr.Sequential(_, inner, _, _, _) -> extractNext inner
             | _ -> checkExpr expr.Range expr
         extractNext inner
-    | Some expr -> checkExpr m expr
-    | _ -> UnitTypeExpected (denv, ty, m)
+    | expr -> checkExpr m expr
 
-let UnifyUnitType cenv denv m ty exprOpt =
+let UnifyUnitType cenv denv m ty expr =
     if AddCxTypeEqualsTypeUndoIfFailed denv cenv.css m ty cenv.g.unit_ty then 
         true
     else
@@ -843,7 +842,7 @@ let UnifyUnitType cenv denv m ty exprOpt =
             if not (typeEquiv cenv.g cenv.g.bool_ty ty) then 
                 warning (UnitTypeExpected (denv, ty, m)) 
             else
-                warning (ReportImplicitlyIgnoredBoolExpression denv m ty exprOpt)
+                warning (ReportImplicitlyIgnoredBoolExpression denv m ty expr)
         false
 
 //-------------------------------------------------------------------------
@@ -5568,7 +5567,7 @@ and TcStmtThatCantBeCtorBody cenv env tpenv expr =
 and TcStmt cenv env tpenv synExpr =
     let expr, ty, tpenv = TcExprOfUnknownType cenv env tpenv synExpr
     let m = synExpr.Range
-    let wasUnit = UnifyUnitType cenv env.DisplayEnv m ty (Some expr)
+    let wasUnit = UnifyUnitType cenv env.DisplayEnv m ty expr
     if wasUnit then
         expr, tpenv
     else
@@ -10414,7 +10413,7 @@ and TcNormalizedBinding declKind (cenv:cenv) env tpenv overallTy safeThisValOpt 
                 else TcExprThatCantBeCtorBody cenv overallExprTy envinner tpenv rhsExpr)
 
         if bkind = StandaloneExpression && not cenv.isScript then 
-            UnifyUnitType cenv env.DisplayEnv mBinding overallPatTy (Some rhsExprChecked) |> ignore<bool>
+            UnifyUnitType cenv env.DisplayEnv mBinding overallPatTy rhsExprChecked |> ignore<bool>
 
         // Fix up the r.h.s. expression for 'fixed'
         let rhsExprChecked =
