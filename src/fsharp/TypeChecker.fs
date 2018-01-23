@@ -842,8 +842,12 @@ let UnifyUnitType cenv (env:TcEnv) m ty expr =
             warning (FunctionValueUnexpected(denv, ty, m))
         else
             match env.eContextInfo with
-            | ContextInfo.SequenceExpression _ ->
-                warning (Error (FSComp.SR.unitTypeExpectedInSequenceExpression(NicePrint.prettyStringOfTy denv ty), m))
+            | ContextInfo.SequenceExpression seqTy ->
+                let lifted = mkSeqTy cenv.g ty
+                if typeEquiv cenv.g seqTy lifted then
+                    warning (Error (FSComp.SR.implicitlyDiscardedInSequenceExpression(NicePrint.prettyStringOfTy denv ty), m))
+                else
+                    warning (Error (FSComp.SR.implicitlyDiscardedSequenceInSequenceExpression(NicePrint.prettyStringOfTy denv ty), m))                    
             | _ ->
                 if typeEquiv cenv.g cenv.g.bool_ty ty then 
                     warning (ReportImplicitlyIgnoredBoolExpression denv m ty exprOpt)
@@ -8262,7 +8266,7 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
                 // seq { ...; expr } is treated as 'seq { ... ; expr; yield! Seq.empty }'
                 // Note this means seq { ...; () } is treated as 'seq { ... ; (); yield! Seq.empty }'
                 let m = comp.Range
-                let env = { env with eContextInfo = ContextInfo.SequenceExpression m }
+                let env = { env with eContextInfo = ContextInfo.SequenceExpression genOuterTy }
                 let expr, tpenv = TcStmtThatCantBeCtorBody cenv env tpenv comp
                 Expr.Sequential(expr, mkSeqEmpty cenv env m genOuterTy, NormalSeq, SuppressSequencePointOnStmtOfSequential, m), tpenv
 
