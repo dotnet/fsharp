@@ -364,7 +364,7 @@ type TypeCheckInfo
         let result =
             match cnrs with
             | CNR(_, Item.CtorGroup(_, ((ctor::_) as ctors)), _, denv, nenv, ad, m) ::_ ->
-                let props = ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false ctor.EnclosingType
+                let props = ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false ctor.ApparentEnclosingType
                 let parameters = CollectParameters ctors amap m
                 let items = props @ parameters
                 Some (denv, m, items)
@@ -974,7 +974,7 @@ type TypeCheckInfo
                                 | Item.FakeInterfaceCtor (TType_app(tcref,_)) 
                                 | Item.DelegateCtor (TType_app(tcref,_)) -> 1000 + tcref.TyparsNoRange.Length
                                 // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
-                                | Item.CtorGroup (_, (cinfo :: _)) -> 1000 + 10 * (tcrefOfAppTy g cinfo.EnclosingType).TyparsNoRange.Length 
+                                | Item.CtorGroup (_, (cinfo :: _)) -> 1000 + 10 * cinfo.DeclaringTyconRef.TyparsNoRange.Length 
                                 | _ -> 0
                             (d.Item.DisplayName,n))
 
@@ -1149,7 +1149,7 @@ type TypeCheckInfo
                           let typeVarNames = getTypeVarNames ilinfo
                           ParamTypeSymbol.tryOfILTypes typeVarNames ilinfo.ILMethodRef.ArgTypes
                           |> Option.map (fun args ->
-                              let externalSym = ExternalSymbol.Constructor (ilinfo.ILMethodRef.EnclosingTypeRef.FullName, args)
+                              let externalSym = ExternalSymbol.Constructor (ilinfo.ILMethodRef.DeclaringTypeRef.FullName, args)
                               FSharpFindDeclResult.ExternalDecl (assref.Name, externalSym))
                       | _ -> None
 
@@ -1159,33 +1159,33 @@ type TypeCheckInfo
                           let typeVarNames = getTypeVarNames ilinfo
                           ParamTypeSymbol.tryOfILTypes typeVarNames ilinfo.ILMethodRef.ArgTypes
                           |> Option.map (fun args ->
-                              let externalSym = ExternalSymbol.Method (ilinfo.ILMethodRef.EnclosingTypeRef.FullName, name, args, ilinfo.ILMethodRef.GenericArity)
+                              let externalSym = ExternalSymbol.Method (ilinfo.ILMethodRef.DeclaringTypeRef.FullName, name, args, ilinfo.ILMethodRef.GenericArity)
                               FSharpFindDeclResult.ExternalDecl (assref.Name, externalSym))
                       | _ -> None
 
-                  | Item.Property (name, ILProp (_, propInfo) :: _) ->
+                  | Item.Property (name, ILProp propInfo :: _) ->
                       let methInfo = 
-                          if propInfo.HasGetter then Some (propInfo.GetterMethod g)
-                          elif propInfo.HasSetter then Some (propInfo.SetterMethod g)
+                          if propInfo.HasGetter then Some propInfo.GetterMethod
+                          elif propInfo.HasSetter then Some propInfo.SetterMethod
                           else None
                       
                       match methInfo with
                       | Some methInfo ->
                           match methInfo.MetadataScope with
                           | ILScopeRef.Assembly assref ->
-                              let externalSym = ExternalSymbol.Property (methInfo.ILMethodRef.EnclosingTypeRef.FullName, name)
+                              let externalSym = ExternalSymbol.Property (methInfo.ILMethodRef.DeclaringTypeRef.FullName, name)
                               Some (FSharpFindDeclResult.ExternalDecl (assref.Name, externalSym))
                           | _ -> None
                       | None -> None
                   
-                  | Item.ILField (ILFieldInfo (ILTypeInfo (tr, _, _, _) & typeInfo, fieldDef)) when not tr.IsLocalRef ->
+                  | Item.ILField (ILFieldInfo (typeInfo, fieldDef)) when not typeInfo.TyconRefOfRawMetadata.IsLocalRef ->
                       match typeInfo.ILScopeRef with
                       | ILScopeRef.Assembly assref ->
                           let externalSym = ExternalSymbol.Field (typeInfo.ILTypeRef.FullName, fieldDef.Name)
                           Some (FSharpFindDeclResult.ExternalDecl (assref.Name, externalSym))
                       | _ -> None
                   
-                  | Item.Event (ILEvent (_, ILEventInfo (ILTypeInfo (tr, _, _, _) & typeInfo, eventDef))) when not tr.IsLocalRef ->
+                  | Item.Event (ILEvent (ILEventInfo (typeInfo, eventDef))) when not typeInfo.TyconRefOfRawMetadata.IsLocalRef ->
                       match typeInfo.ILScopeRef with
                       | ILScopeRef.Assembly assref ->
                           let externalSym = ExternalSymbol.Event (typeInfo.ILTypeRef.FullName, eventDef.Name)
@@ -1353,7 +1353,7 @@ type TypeCheckInfo
                     Some (m, SemanticClassificationType.ValueType)
                 else Some (m, SemanticClassificationType.ReferenceType)
             | CNR(_, Item.CtorGroup(_, minfos), LegitTypeOccurence, _, _, _, m) ->
-                if minfos |> List.exists (fun minfo -> isStructTy g minfo.EnclosingType) then
+                if minfos |> List.exists (fun minfo -> isStructTy g minfo.ApparentEnclosingType) then
                     Some (m, SemanticClassificationType.ValueType)
                 else Some (m, SemanticClassificationType.ReferenceType)
             | CNR(_, Item.ExnCase _, LegitTypeOccurence, _, _, _, m) ->

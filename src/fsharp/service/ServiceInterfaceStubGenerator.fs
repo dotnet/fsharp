@@ -325,7 +325,7 @@ module internal InterfaceStubGenerator =
                 | _, true, _, name -> name + parArgs
                 // Ordinary functions or values
                 | false, _, _, name when
-                    not (Symbol.hasAttribute<RequireQualifiedAccessAttribute> v.LogicalEnclosingEntity.Attributes) -> 
+                    not (Symbol.hasAttribute<RequireQualifiedAccessAttribute> v.ApparentEnclosingEntity.Attributes) -> 
                     name + " " + parArgs
                 // Ordinary static members or things (?) that require fully qualified access
                 | _, _, _, name -> name + parArgs
@@ -448,7 +448,7 @@ module internal InterfaceStubGenerator =
 
     let internal (|TypeOfMember|_|) (m: FSharpMemberOrFunctionOrValue) =
         match m.FullTypeSafe with
-        | Some (MemberFunctionType typ) when m.IsProperty && m.EnclosingEntity.IsSome && m.EnclosingEntity.Value.IsFSharp ->
+        | Some (MemberFunctionType typ) when m.IsProperty && m.DeclaringEntity.IsSome && m.DeclaringEntity.Value.IsFSharp ->
             Some typ
         | Some typ -> Some typ
         | None -> None

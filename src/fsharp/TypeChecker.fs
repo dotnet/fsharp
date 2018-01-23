@@ -173,6 +173,10 @@ let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo:MethInfo)  =
 
     if not (IsTypeAndMethInfoAccessible amap m adOriginal ad minfo) then 
       error (Error (FSComp.SR.tcMethodNotAccessible(minfo.LogicalName), m))
+
+    if isAnyTupleTy g minfo.ApparentEnclosingType then 
+      warning (Error (FSComp.SR.tcTupleMemberNotNormallyUsed(), m))
+
     CheckMethInfoAttributes g m tyargsOpt minfo |> CommitOperationResult
 
 
@@ -640,7 +644,7 @@ let MakeInnerEnvForTyconRef _cenv env tcref isExtrinsicExtension =
 let MakeInnerEnvForMember cenv env (v:Val) = 
     match v.MemberInfo with 
     | None -> env
-    | Some _ -> MakeInnerEnvForTyconRef cenv env v.MemberApparentParent v.IsExtensionMember 
+    | Some _ -> MakeInnerEnvForTyconRef cenv env v.MemberApparentEntity v.IsExtensionMember 
 
 let GetCurrAccumulatedModuleOrNamespaceType env = !(env.eModuleOrNamespaceTypeAccumulator) 
 let SetCurrAccumulatedModuleOrNamespaceType env x =  env.eModuleOrNamespaceTypeAccumulator := x
@@ -797,7 +801,7 @@ let ReportImplicitlyIgnoredBoolExpression denv m ty expr =
                 if propRef.IsPropertyGetterMethod then
                     let propertyName = propRef.PropertyName
                     let hasCorrespondingSetter =
-                        match propRef.ActualParent with
+                        match propRef.DeclaringEntity with
                         | Parent entityRef ->
                             entityRef.MembersOfFSharpTyconSorted
                             |> List.exists (fun valRef -> valRef.IsPropertySetterMethod && valRef.PropertyName = propertyName)
@@ -1042,7 +1046,7 @@ let MakeMemberDataAndMangledNameForMemberVal(g, tcref, isExtrinsic, attrs, optIm
     let logicalName = ComputeLogicalName id memberFlags
     let optIntfSlotTys = if optImplSlotTys |> List.forall (isInterfaceTy g) then optImplSlotTys else []
     let memberInfo : ValMemberInfo = 
-        { ApparentParent=tcref 
+        { ApparentEnclosingEntity=tcref 
           MemberFlags=memberFlags 
           IsImplemented=false
           // NOTE: This value is initially only set for interface implementations and those overrides 
@@ -1345,7 +1349,7 @@ let PublishValueDefn cenv env declKind (vspec:Val) =
          // // Static initializers don't get published to the tcaug 
          // not (memberInfo.MemberFlags.MemberKind = MemberKind.ClassConstructor)) -> 
         
-        let tcaug = vspec.MemberApparentParent.TypeContents
+        let tcaug = vspec.MemberApparentEntity.TypeContents
         let vref = mkLocalValRef vspec
         tcaug.tcaug_adhoc <- NameMultiMap.add vspec.LogicalName vref tcaug.tcaug_adhoc
         tcaug.tcaug_adhoc_list.Add (ValRefIsExplicitImpl cenv.g vref, vref)
@@ -1430,7 +1434,7 @@ let MakeAndPublishVal cenv env (altActualParent, inSig, declKind, vrec, (ValSche
         // If it's an extrinsic extension member or not a member then use the containing module.
         match memberInfoOpt with 
         | Some (ValMemberInfoTransient(memberInfo, _, _)) when not isExtrinsic -> 
-            if memberInfo.ApparentParent.IsModuleOrNamespace then 
+            if memberInfo.ApparentEnclosingEntity.IsModuleOrNamespace then 
                 errorR(InternalError(FSComp.SR.tcExpectModuleOrNamespaceParent(id.idText), m))
 
             // Members of interface implementations have the accessibility of the interface
@@ -1443,7 +1447,7 @@ let MakeAndPublishVal cenv env (altActualParent, inSig, declKind, vrec, (ValSche
                     | _ -> None
                 else
                     None
-            Parent(memberInfo.ApparentParent), vis
+            Parent(memberInfo.ApparentEnclosingEntity), vis
         | _ -> altActualParent, None
                     
     let vis, _ = ComputeAccessAndCompPath env (Some declKind) id.idRange vis overrideVis actualParent
@@ -1951,7 +1955,7 @@ let FreshenAbstractSlot g amap m synTyparDecls absMethInfo =
     // If the virtual method is a generic method then copy its type parameters 
     let typarsFromAbsSlot, typarInstFromAbsSlot, _ = 
         let ttps = absMethInfo.GetFormalTyparsOfDeclaringType m 
-        let ttinst = argsOfAppTy g absMethInfo.EnclosingType
+        let ttinst = argsOfAppTy g absMethInfo.ApparentEnclosingType
         let rigid = if typarsFromAbsSlotAreRigid then TyparRigidity.Rigid else TyparRigidity.Flexible
         ConstraintSolver.FreshenAndFixupTypars m rigid ttps ttinst fmtps
 
@@ -3090,7 +3094,7 @@ let BuildILFieldGet g amap m objExpr (finfo:ILFieldInfo) =
       // The empty instantiation on the AbstractIL fspec is OK, since we make the correct fspec in IlxGen.GenAsm 
       // This ensures we always get the type instantiation right when doing this from 
       // polymorphic code, after inlining etc. *
-    let fspec = mkILFieldSpec(fref, mkILNamedTy valu fref.EnclosingTypeRef [])
+    let fspec = mkILFieldSpec(fref, mkILNamedTy valu fref.DeclaringTypeRef [])
     // Add an I_nop if this is an initonly field to make sure we never recognize it as an lvalue. See mkExprAddrOfExpr. 
     wrap (mkAsmExpr (([ mkNormalLdfld fspec ] @ (if finfo.IsInitOnly then [ AI_nop ] else [])), tinst, [objExpr], [fieldType], m)) 
 
@@ -3102,7 +3106,7 @@ let BuildILFieldSet g m objExpr (finfo:ILFieldInfo) argExpr =
       // The empty instantiation on the AbstractIL fspec is OK, since we make the correct fspec in IlxGen.GenAsm 
       // This ensures we always get the type instantiation right when doing this from 
       // polymorphic code, after inlining etc. *
-    let fspec = mkILFieldSpec(fref, mkILNamedTy valu fref.EnclosingTypeRef [])
+    let fspec = mkILFieldSpec(fref, mkILNamedTy valu fref.DeclaringTypeRef [])
     if finfo.IsInitOnly then error (Error (FSComp.SR.tcFieldIsReadonly(), m))
     let wrap, objExpr = mkExprAddrOfExpr g isValueType false DefinitelyMutates objExpr None m 
     wrap (mkAsmExpr ([ mkNormalStfld fspec ], tinst, [objExpr; argExpr], [], m)) 
@@ -3115,12 +3119,12 @@ let BuildILStaticFieldSet m (finfo:ILFieldInfo) argExpr =
       // The empty instantiation on the AbstractIL fspec is OK, since we make the correct fspec in IlxGen.GenAsm 
       // This ensures we always get the type instantiation right when doing this from 
       // polymorphic code, after inlining etc. 
-    let fspec = mkILFieldSpec(fref, mkILNamedTy valu fref.EnclosingTypeRef [])
+    let fspec = mkILFieldSpec(fref, mkILNamedTy valu fref.DeclaringTypeRef [])
     if finfo.IsInitOnly then error (Error (FSComp.SR.tcFieldIsReadonly(), m))
     mkAsmExpr ([ mkNormalStsfld fspec ], tinst, [argExpr], [], m)
     
 let BuildRecdFieldSet g m objExpr (rfinfo:RecdFieldInfo) argExpr = 
-    let tgty = rfinfo.EnclosingType
+    let tgty = rfinfo.DeclaringType
     let valu = isStructTy g tgty
     let objExpr = if valu then objExpr else mkCoerceExpr(objExpr, tgty, m, tyOfExpr g objExpr)
     let wrap, objExpr = mkExprAddrOfExpr g valu false DefinitelyMutates objExpr None m
@@ -4929,11 +4933,7 @@ and TcTypeApp cenv newOk checkCxs occ env tpenv m tcref pathTypeArgs (synArgTys:
         List.iter2 (UnifyTypes cenv env m) tinst actualArgTys
 
     // Try to decode System.Tuple --> F~ tuple types etc.
-    let ty = 
-        let decode = if cenv.g.compilingFslib then None else cenv.g.decodeTyconRefMap tcref actualArgTys
-        match decode with 
-        | Some res -> res
-        | None -> mkAppTy tcref actualArgTys
+    let ty = cenv.g.decompileType tcref actualArgTys
 
     ty, tpenv
 
@@ -4954,6 +4954,7 @@ and TcTypeAndRecover cenv newOk checkCxs occ env tpenv ty   =
     TcTypeOrMeasureAndRecover (Some TyparKind.Type) cenv newOk checkCxs occ env tpenv ty
 
 and TcNestedTypeApplication cenv newOk checkCxs occ env tpenv mWholeTypeApp typ tyargs =
+    let typ = helpEnsureTypeHasMetadata cenv.g typ
     if not (isAppTy cenv.g typ) then error(Error(FSComp.SR.tcTypeHasNoNestedTypes(), mWholeTypeApp))
     match typ with 
     | TType_app(tcref, tinst) -> 
@@ -6234,7 +6235,7 @@ and TcNewExpr cenv env tpenv objTy mObjTyOpt superInit arg mWholeExprOrObjTy =
         
         mkCallCreateInstance cenv.g mWholeExprOrObjTy objTy , tpenv
     else 
-        if not (isAppTy cenv.g objTy) then error(Error(FSComp.SR.tcNamedTypeRequired(if superInit then "inherit" else "new"), mWholeExprOrObjTy))
+        if not (isAppTy cenv.g objTy) && not (isAnyTupleTy cenv.g objTy) then error(Error(FSComp.SR.tcNamedTypeRequired(if superInit then "inherit" else "new"), mWholeExprOrObjTy))
         let item = ForceRaise (ResolveObjectConstructor cenv.nameResolver env.DisplayEnv mWholeExprOrObjTy ad objTy)
         
         TcCtorCall false cenv env tpenv objTy objTy mObjTyOpt item superInit [arg] mWholeExprOrObjTy [] None
@@ -8658,7 +8659,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
     | Item.CtorGroup(nm, minfos) ->
         let objTy = 
             match minfos with 
-            | (minfo :: _) -> minfo.EnclosingType
+            | (minfo :: _) -> minfo.ApparentEnclosingType
             | [] -> error(Error(FSComp.SR.tcTypeHasNoAccessibleConstructor(), mItem))
         match delayed with 
         | ((DelayedApp (_, arg, mExprAndArg))::otherDelayed) ->
@@ -8684,7 +8685,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
 #endif
                     item, minfos
 
-            minfosAfterTyArgs |> List.iter (fun minfo -> UnifyTypes cenv env mExprAndTypeArgs minfo.EnclosingType objTyAfterTyArgs)
+            minfosAfterTyArgs |> List.iter (fun minfo -> UnifyTypes cenv env mExprAndTypeArgs minfo.ApparentEnclosingType objTyAfterTyArgs)
             TcCtorCall true cenv env tpenv overallTy objTyAfterTyArgs (Some mExprAndTypeArgs) itemAfterTyArgs false [arg] mExprAndArg otherDelayed (Some afterResolution)
 
         | ((DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs))::otherDelayed) ->
@@ -8695,7 +8696,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
             let resolvedItem = Item.Types(nm, [objTy])
             CallNameResolutionSink cenv.tcSink (mExprAndTypeArgs, env.NameEnv, resolvedItem, resolvedItem, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights)
 
-            minfos |> List.iter (fun minfo -> UnifyTypes cenv env mExprAndTypeArgs minfo.EnclosingType objTy)
+            minfos |> List.iter (fun minfo -> UnifyTypes cenv env mExprAndTypeArgs minfo.ApparentEnclosingType objTy)
             TcCtorCall true cenv env tpenv overallTy objTy (Some mExprAndTypeArgs) item false [] mExprAndTypeArgs otherDelayed (Some afterResolution)
 
         | _ ->
@@ -8934,7 +8935,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
                 // The empty instantiation on the fspec is OK, since we make the correct fspec in IlxGen.GenAsm 
                 // This ensures we always get the type instantiation right when doing this from 
                 // polymorphic code, after inlining etc. 
-                let fspec = mkILFieldSpec(fref, mkILNamedTy valu fref.EnclosingTypeRef [])
+                let fspec = mkILFieldSpec(fref, mkILNamedTy valu fref.DeclaringTypeRef [])
 
                 // Add an I_nop if this is an initonly field to make sure we never recognize it as an lvalue. See mkExprAddrOfExpr. 
                 mkAsmExpr ([ mkNormalLdsfld fspec ] @ (if finfo.IsInitOnly then [ AI_nop ] else []), finfo.TypeInst, [], [exprty], mItem)
@@ -9084,7 +9085,7 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
     | Item.RecdField rfinfo ->
         // Get or set instance F# field or literal 
         RecdFieldInstanceChecks cenv.g cenv.amap ad mItem rfinfo
-        let tgty = rfinfo.EnclosingType
+        let tgty = rfinfo.DeclaringType
         let valu = isStructTy cenv.g tgty
         AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css mItem NoTrace tgty objExprTy 
         let objExpr = if valu then objExpr else mkCoerceExpr(objExpr, tgty, mExprAndItem, objExprTy)
@@ -9160,10 +9161,10 @@ and TcEventValueThen cenv overallTy env tpenv mItem mExprAndItem objDetails (ein
              //     EventHelper ((fun d -> e.add_X(d)), (fun d -> e.remove_X(d)), (fun f -> new 'Delegate(f)))
             mkCallCreateEvent cenv.g mItem delegateType argsTy
                (let dv, de = mkCompGenLocal mItem "eventDelegate" delegateType
-                let callExpr, _ = BuildPossiblyConditionalMethodCall cenv env PossiblyMutates mItem false (einfo.GetAddMethod()) NormalValUse [] objVars [de]
+                let callExpr, _ = BuildPossiblyConditionalMethodCall cenv env PossiblyMutates mItem false einfo.AddMethod NormalValUse [] objVars [de]
                 mkLambda mItem dv (callExpr, cenv.g.unit_ty))
                (let dv, de = mkCompGenLocal mItem "eventDelegate" delegateType
-                let callExpr, _ = BuildPossiblyConditionalMethodCall cenv env PossiblyMutates mItem false (einfo.GetRemoveMethod()) NormalValUse [] objVars [de]
+                let callExpr, _ = BuildPossiblyConditionalMethodCall cenv env PossiblyMutates mItem false einfo.RemoveMethod NormalValUse [] objVars [de]
                 mkLambda mItem dv (callExpr, cenv.g.unit_ty))
                (let fvty = (cenv.g.obj_ty --> (argsTy --> cenv.g.unit_ty))
                 let fv, fe = mkCompGenLocal mItem "callback" fvty
@@ -9629,20 +9630,20 @@ and TcMethodApplication
         //
         if (isInstance && 
             finalCalledMethInfo.IsInstance &&
-            typeEquiv cenv.g finalCalledMethInfo.EnclosingType cenv.g.obj_ty && 
+            typeEquiv cenv.g finalCalledMethInfo.ApparentEnclosingType cenv.g.obj_ty && 
             (finalCalledMethInfo.LogicalName = "GetHashCode" ||  finalCalledMethInfo.LogicalName = "Equals")) then 
            
             objArgs |> List.iter (fun expr -> ConstraintSolver.AddCxTypeMustSupportEquality env.DisplayEnv cenv.css mMethExpr NoTrace (tyOfExpr cenv.g expr))
 
         // Uses of a Dictionary() constructor without an IEqualityComparer argument imply an equality constraint 
         // on the first type argument.
-        if HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_Dictionary finalCalledMethInfo.EnclosingType  &&
+        if HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_Dictionary finalCalledMethInfo.ApparentEnclosingType  &&
            finalCalledMethInfo.IsConstructor &&
            not (finalCalledMethInfo.GetParamDatas(cenv.amap, mItem, finalCalledMeth.CalledTyArgs) 
                 |> List.existsSquared (fun (ParamData(_, _, _, _, _, _, ty)) ->  
                     HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_IEqualityComparer ty)) then 
             
-            match argsOfAppTy cenv.g finalCalledMethInfo.EnclosingType with 
+            match argsOfAppTy cenv.g finalCalledMethInfo.ApparentEnclosingType with 
             | [dty; _] -> ConstraintSolver.AddCxTypeMustSupportEquality env.DisplayEnv cenv.css mMethExpr NoTrace dty
             | _ -> ()
     end
@@ -10195,7 +10196,7 @@ and TcAndBuildFixedExpr cenv env (overallPatTy, fixedExpr, overallExprTy, mBindi
             | Expr.Op (op, tyargs, args, _) ->
                     match op, tyargs, args with 
                     | TOp.ValFieldGetAddr rfref, _, [_] -> not rfref.Tycon.IsStructOrEnumTycon
-                    | TOp.ILAsm ([ I_ldflda (fspec)], _), _, _  -> fspec.EnclosingType.Boxity = ILBoxity.AsObject
+                    | TOp.ILAsm ([ I_ldflda (fspec)], _), _, _  -> fspec.DeclaringType.Boxity = ILBoxity.AsObject
                     | TOp.ILAsm ([ I_ldelema _], _), _, _ -> true
                     | TOp.RefAddrGet _, _, _ -> true
                     | _ -> false
@@ -10762,7 +10763,7 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (binds, bindsm, sco
                     
                     // This assignment forces representation as module value, to maintain the invariant from the 
                     // type checker that anything related to binding module-level values is marked with an 
-                    // val_repr_info, val_actual_parent and is_topbind
+                    // val_repr_info, val_declaring_entity and is_topbind
                     if (DeclKind.MustHaveArity declKind) then 
                         AdjustValToTopVal tmp altActualParent (InferArityOfExprBinding cenv.g AllowTypeDirectedDetupling.Yes tmp rhsExpr)
                     tmp, pat'
@@ -10931,7 +10932,7 @@ and ApplyAbstractSlotInference (cenv:cenv) (envinner:TcEnv) (bindingTy, m, synTy
              let optInferredImplSlotTys = 
                  match optIntfSlotTy with 
                  | Some (x, _) -> [x]
-                 | None -> uniqueAbstractMethSigs |> List.map (fun x -> x.EnclosingType)
+                 | None -> uniqueAbstractMethSigs |> List.map (fun x -> x.ApparentEnclosingType)
 
              optInferredImplSlotTys, declaredTypars
 
@@ -10993,7 +10994,7 @@ and ApplyAbstractSlotInference (cenv:cenv) (envinner:TcEnv) (bindingTy, m, synTy
            let optInferredImplSlotTys = 
                match optIntfSlotTy with 
                | Some (x, _) -> [ x ]
-               | None -> uniqueAbstractPropSigs |> List.map (fun pinfo -> pinfo.EnclosingType) 
+               | None -> uniqueAbstractPropSigs |> List.map (fun pinfo -> pinfo.ApparentEnclosingType) 
 
            optInferredImplSlotTys, declaredTypars
 
@@ -14307,7 +14308,7 @@ module TcExceptionDeclarations =
                           minfo.GenericArity = 0) 
                   match candidates with 
                   | [minfo] -> 
-                      match minfo.EnclosingType with 
+                      match minfo.ApparentEnclosingType with 
                       | AppTy cenv.g (tcref, _) as ety when (TypeDefinitelySubsumesTypeNoCoercion 0 cenv.g cenv.amap m cenv.g.exn_ty ety) ->
                           let tref = tcref.CompiledRepresentationForNamedType
                           TExnAsmRepr tref
