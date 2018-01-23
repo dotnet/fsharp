@@ -840,14 +840,14 @@ let UnifyUnitType cenv (env:TcEnv) m ty expr =
         let resultTy = NewInferenceType ()
         if AddCxTypeEqualsTypeUndoIfFailed denv cenv.css m ty (domainTy --> resultTy) then 
             warning (FunctionValueUnexpected(denv, ty, m))
-        else        
-            if typeEquiv cenv.g cenv.g.bool_ty ty then 
-                warning (ReportImplicitlyIgnoredBoolExpression denv m ty expr)
-            else
-                match env.eContextInfo with
-                | ContextInfo.SequenceExpression _ -> 
-                    warning (Error (FSComp.SR.unitTypeExpectedInSequenceExpression(), m))
-                | _ ->
+        else
+            match env.eContextInfo with
+            | ContextInfo.SequenceExpression _ ->
+                warning (Error (FSComp.SR.unitTypeExpectedInSequenceExpression(NicePrint.prettyStringOfTy denv ty), m))
+            | _ ->
+                if typeEquiv cenv.g cenv.g.bool_ty ty then 
+                    warning (ReportImplicitlyIgnoredBoolExpression denv m ty exprOpt)
+                else
                     warning (UnitTypeExpected (denv, ty, m))
 
         false
