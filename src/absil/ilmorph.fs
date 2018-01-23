@@ -103,7 +103,7 @@ let gparam_typ2typ f gf = {gf with Constraints = List.map f gf.Constraints}
 let gparams_typ2typ f gfs = List.map (gparam_typ2typ f) gfs
 let typs_typ2typ (f: ILType -> ILType)  x = List.map f x
 let mref_typ2typ (f: ILType -> ILType) (x:ILMethodRef) = 
-    ILMethodRef.Create(enclosingTypeRef= (f (mkILBoxedType (mkILNonGenericTySpec x.EnclosingTypeRef))).TypeRef,
+    ILMethodRef.Create(enclosingTypeRef= (f (mkILBoxedType (mkILNonGenericTySpec x.DeclaringTypeRef))).TypeRef,
                        callingConv=x.CallingConv,
                        name=x.Name,
                        genericArity=x.GenericArity,
@@ -115,16 +115,16 @@ type formal_scopeCtxt =  Choice<ILMethodSpec, ILFieldSpec>
 
 let mspec_typ2typ (((factualty : ILType -> ILType) , (fformalty: formal_scopeCtxt -> ILType -> ILType))) (x: ILMethodSpec) = 
     mkILMethSpecForMethRefInTy(mref_typ2typ (fformalty (Choice1Of2 x)) x.MethodRef,
-                               factualty x.EnclosingType, 
+                               factualty x.DeclaringType, 
                                typs_typ2typ factualty  x.GenericArgs)
 
 let fref_typ2typ (f: ILType -> ILType) x = 
-    { x with EnclosingTypeRef = (f (mkILBoxedType (mkILNonGenericTySpec x.EnclosingTypeRef))).TypeRef;
+    { x with DeclaringTypeRef = (f (mkILBoxedType (mkILNonGenericTySpec x.DeclaringTypeRef))).TypeRef;
              Type= f x.Type }
 
 let fspec_typ2typ ((factualty,(fformalty : formal_scopeCtxt -> ILType -> ILType))) x = 
     { FieldRef=fref_typ2typ (fformalty (Choice2Of2 x)) x.FieldRef;
-      EnclosingType= factualty x.EnclosingType }
+      DeclaringType= factualty x.DeclaringType }
 
 let rec celem_typ2typ f celem =
     match celem with

@@ -6967,6 +6967,11 @@
         <target state="translated">Fehler beim Lesen der F#-Metadaten der Assembly "{0}". Es wurde ein reserviertes Konstrukt verwendet. Möglicherweise müssen Sie Ihren F#-Compiler aktualisieren oder eine frühere Version der Assembly verwenden, die dieses spezielle Konstrukt nicht verwendet.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcTupleMemberNotNormallyUsed">
+        <source>This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</source>
+        <target state="new">This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

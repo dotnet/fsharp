@@ -338,12 +338,12 @@ and goutput_mref env os (mref:ILMethodRef) =
 and goutput_mspec env os (mspec:ILMethodSpec) = 
   let fenv = 
     ppenv_enter_method mspec.GenericArity
-      (ppenv_enter_tdef (mkILFormalTypars mspec.EnclosingType.GenericArgs) env) 
+      (ppenv_enter_tdef (mkILFormalTypars mspec.DeclaringType.GenericArgs) env) 
   output_callconv os mspec.CallingConv;
   output_string os " ";
   goutput_typ fenv os mspec.FormalReturnType;
   output_string os " ";
-  goutput_dlocref env os mspec.EnclosingType;
+  goutput_dlocref env os mspec.DeclaringType;
   output_string os " ";
   let name = mspec.Name 
   if name = ".ctor" || name = ".cctor" then output_string os name else output_id os name; 
@@ -356,12 +356,12 @@ and goutput_vararg_mspec env os (mspec, varargs) =
    | Some varargs' -> 
        let fenv = 
          ppenv_enter_method mspec.GenericArity
-           (ppenv_enter_tdef (mkILFormalTypars mspec.EnclosingType.GenericArgs) env) 
+           (ppenv_enter_tdef (mkILFormalTypars mspec.DeclaringType.GenericArgs) env) 
        output_callconv os mspec.CallingConv;
        output_string os " ";
        goutput_typ fenv os mspec.FormalReturnType;
        output_string os " ";
-       goutput_dlocref env os mspec.EnclosingType;
+       goutput_dlocref env os mspec.DeclaringType;
        let name = mspec.Name 
        if name = ".ctor" || name = ".cctor" then output_string os name else output_id os name
        goutput_gactuals env os mspec.GenericArgs;
@@ -385,10 +385,10 @@ and goutput_vararg_sig env os (csig:ILCallingSignature,varargs:ILVarArgs) =
        output_string os ")"; 
 
 and goutput_fspec env os (x:ILFieldSpec) =
-  let fenv = ppenv_enter_tdef (mkILFormalTypars x.EnclosingType.GenericArgs) env 
+  let fenv = ppenv_enter_tdef (mkILFormalTypars x.DeclaringType.GenericArgs) env 
   goutput_typ fenv os x.FormalType;
   output_string os " ";
-  goutput_dlocref env os x.EnclosingType;
+  goutput_dlocref env os x.DeclaringType;
   output_id os x.Name
     
 let output_member_access os access = 
