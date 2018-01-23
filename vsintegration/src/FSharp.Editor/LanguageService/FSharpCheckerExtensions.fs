@@ -111,11 +111,11 @@ type FSharpChecker with
                             if func.IsProperty then
                                 let fullNames =
                                     [|  if func.HasGetterMethod then
-                                            match func.GetterMethod.EnclosingEntity with 
+                                            match func.GetterMethod.DeclaringEntity with 
                                             | Some e -> yield e.TryGetFullName()
                                             | None -> ()
                                         if func.HasSetterMethod then
-                                            match func.SetterMethod.EnclosingEntity with 
+                                            match func.SetterMethod.DeclaringEntity with 
                                             | Some e -> yield e.TryGetFullName()
                                             | None -> ()
                                     |]
@@ -124,7 +124,7 @@ type FSharpChecker with
                                 | [||]  -> None 
                                 | _     -> Some fullNames
                             else 
-                                match func.EnclosingEntity with
+                                match func.DeclaringEntity with
                                 // C# extension method
                                 | Some (Symbol.FSharpEntity Symbol.Class) ->
                                     let fullName = symbolUse.Symbol.FullName.Split '.'

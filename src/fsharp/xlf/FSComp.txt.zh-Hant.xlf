@@ -6967,6 +6967,11 @@
         <target state="translated">讀取組件 '{0}' 的 F# 中繼資料時發生錯誤。已使用保留的建構。建議您升級 F# 編譯器，或使用不會用特定建構的舊版組件。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcTupleMemberNotNormallyUsed">
+        <source>This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</source>
+        <target state="new">This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

@@ -406,8 +406,8 @@ type ILTypeWriterEnv = { EnclosingTyparCount: int }
 let envForTypeDef (td:ILTypeDef)               = { EnclosingTyparCount=td.GenericParams.Length }
 let envForMethodRef env (typ:ILType)           = { EnclosingTyparCount=(match typ with ILType.Array _ -> env.EnclosingTyparCount | _ -> typ.GenericArgs.Length) }
 let envForNonGenericMethodRef _mref            = { EnclosingTyparCount=System.Int32.MaxValue }
-let envForFieldSpec (fspec:ILFieldSpec)        = { EnclosingTyparCount=fspec.EnclosingType.GenericArgs.Length }
-let envForOverrideSpec (ospec:ILOverridesSpec) = { EnclosingTyparCount=ospec.EnclosingType.GenericArgs.Length }
+let envForFieldSpec (fspec:ILFieldSpec)        = { EnclosingTyparCount=fspec.DeclaringType.GenericArgs.Length }
+let envForOverrideSpec (ospec:ILOverridesSpec) = { EnclosingTyparCount=ospec.DeclaringType.GenericArgs.Length }
 
 //---------------------------------------------------------------------
 // TABLES
@@ -1285,7 +1285,7 @@ and GetFieldDefAsFieldDefIdx cenv tidx fd =
 // -------------------------------------------------------------------- 
 
 let GetMethodRefAsMethodDefIdx cenv (mref:ILMethodRef) =
-    let tref = mref.EnclosingTypeRef
+    let tref = mref.DeclaringTypeRef
     try 
         if not (isTypeRefLocal tref) then
              failwithf "method referred to by method impl, event or property is not in a type defined in this module, method ref is %A" mref
@@ -1358,7 +1358,7 @@ and GetMethodSpecAsMethodDef cenv env (mspec, varargs) =
 
 and InfoOfMethodSpec (mspec:ILMethodSpec, varargs) = 
       (mspec.Name, 
-       mspec.EnclosingType, 
+       mspec.DeclaringType, 
        mspec.CallingConv, 
        mspec.FormalArgTypes, 
        mspec.FormalReturnType, 
@@ -1373,11 +1373,11 @@ and InfoOfMethodSpec (mspec:ILMethodSpec, varargs) =
 
 let rec GetOverridesSpecAsMemberRefIdx cenv env ospec = 
     let fenv = envForOverrideSpec ospec
-    let row = MethodRefInfoAsMemberRefRow cenv env fenv  (ospec.MethodRef.Name, ospec.EnclosingType, ospec.MethodRef.CallingConv, ospec.MethodRef.ArgTypes, ospec.MethodRef.ReturnType, None, ospec.MethodRef.GenericArity)
+    let row = MethodRefInfoAsMemberRefRow cenv env fenv  (ospec.MethodRef.Name, ospec.DeclaringType, ospec.MethodRef.CallingConv, ospec.MethodRef.ArgTypes, ospec.MethodRef.ReturnType, None, ospec.MethodRef.GenericArity)
     FindOrAddSharedRow cenv TableNames.MemberRef  row
      
 and GetOverridesSpecAsMethodDefOrRef cenv env (ospec:ILOverridesSpec) =
-    let typ = ospec.EnclosingType
+    let typ = ospec.DeclaringType
     if isTypeLocal typ then 
         if not typ.IsNominal then failwith "GetOverridesSpecAsMethodDefOrRef: unexpected local tref-typ" 
         try (mdor_MethodDef, GetMethodRefAsMethodDefIdx cenv ospec.MethodRef)
@@ -1392,12 +1392,12 @@ and GetOverridesSpecAsMethodDefOrRef cenv env (ospec:ILOverridesSpec) =
 // -------------------------------------------------------------------- 
 
 let rec GetMethodRefAsMemberRefIdx cenv env fenv (mref:ILMethodRef) = 
-    let row = MethodRefInfoAsMemberRefRow cenv env fenv (mref.Name, mkILNonGenericBoxedTy mref.EnclosingTypeRef, mref.CallingConv, mref.ArgTypes, mref.ReturnType, None, mref.GenericArity)
+    let row = MethodRefInfoAsMemberRefRow cenv env fenv (mref.Name, mkILNonGenericBoxedTy mref.DeclaringTypeRef, mref.CallingConv, mref.ArgTypes, mref.ReturnType, None, mref.GenericArity)
     FindOrAddSharedRow cenv TableNames.MemberRef row
 
 and GetMethodRefAsCustomAttribType cenv (mref:ILMethodRef) =
     let fenv = envForNonGenericMethodRef mref
-    let tref = mref.EnclosingTypeRef
+    let tref = mref.DeclaringTypeRef
     if isTypeRefLocal tref then
         try (cat_MethodDef, GetMethodRefAsMethodDefIdx cenv mref)
         with MethodDefNotFound -> (cat_MemberRef, GetMethodRefAsMemberRefIdx cenv fenv fenv mref)
@@ -1452,7 +1452,7 @@ and GenSecurityDeclsPass3 cenv hds attrs =
 // -------------------------------------------------------------------- 
 
 let rec GetFieldSpecAsMemberRefRow cenv env fenv (fspec:ILFieldSpec) = 
-    MemberRefRow (GetTypeAsMemberRefParent cenv env fspec.EnclosingType, 
+    MemberRefRow (GetTypeAsMemberRefParent cenv env fspec.DeclaringType, 
                   GetStringHeapIdx cenv fspec.Name, 
                   GetFieldSpecSigAsBlobIdx cenv fenv fspec)
 
@@ -1472,7 +1472,7 @@ and GetFieldSpecSigAsBlobIdx cenv env x =
     GetBytesAsBlobIdx cenv (GetFieldSpecSigAsBytes cenv env x)
 
 and GetFieldSpecAsFieldDefOrRef cenv env (fspec:ILFieldSpec) =
-    let typ = fspec.EnclosingType
+    let typ = fspec.DeclaringType
     if isTypeLocal typ then
         if not typ.IsNominal then failwith "GetFieldSpecAsFieldDefOrRef: unexpected local tref-typ"
         let tref = typ.TypeRef

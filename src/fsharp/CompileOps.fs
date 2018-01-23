@@ -1249,7 +1249,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
                   | _ :: ts -> hasUnitTType_app ts
                   | [] -> false
 
-              match minfoVirt.EnclosingType with
+              match minfoVirt.ApparentEnclosingType with
               | TType_app (t, types) when t.IsFSharpInterfaceTycon && hasUnitTType_app types ->
                   // match abstract member with 'unit' passed as generic argument
                   os.Append(OverrideDoesntOverride4E().Format sig1) |> ignore
@@ -1347,8 +1347,8 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
 
       | NonUniqueInferredAbstractSlot(_, denv, bindnm, bvirt1, bvirt2, _) ->
           os.Append(NonUniqueInferredAbstractSlot1E().Format bindnm) |> ignore
-          let ty1 = bvirt1.EnclosingType
-          let ty2 = bvirt2.EnclosingType
+          let ty1 = bvirt1.ApparentEnclosingType
+          let ty2 = bvirt2.ApparentEnclosingType
           // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
           os.Append(NonUniqueInferredAbstractSlot2E().Format) |> ignore

@@ -81,7 +81,7 @@ type AttribInfo =
          match x with 
          | FSAttribInfo(_g,Attrib(tcref,_,_,_,_,_,_)) -> tcref
          | ILAttribInfo (g, amap, scoref, a, m) -> 
-             let ty = ImportILType scoref amap m [] a.Method.EnclosingType
+             let ty = ImportILType scoref amap m [] a.Method.DeclaringType
              tcrefOfAppTy g ty
 
     member x.ConstructorArguments = 
@@ -154,7 +154,7 @@ let GetAttribInfosOfMethod amap m minfo =
 
 let GetAttribInfosOfProp amap m pinfo = 
     match pinfo with 
-    | ILProp(g,ilpinfo) -> ilpinfo.RawMetadata.CustomAttrs |> AttribInfosOfIL g amap ilpinfo.ILTypeInfo.ILScopeRef m
+    | ILProp ilpinfo -> ilpinfo.RawMetadata.CustomAttrs |> AttribInfosOfIL ilpinfo.TcGlobals amap ilpinfo.ILTypeInfo.ILScopeRef m
     | FSProp(g,_,Some vref,_) 
     | FSProp(g,_,_,Some vref) -> vref.Attribs |> AttribInfosOfFS g 
     | FSProp _ -> failwith "GetAttribInfosOfProp: unreachable"
@@ -165,7 +165,7 @@ let GetAttribInfosOfProp amap m pinfo =
 
 let GetAttribInfosOfEvent amap m einfo = 
     match einfo with 
-    | ILEvent(g, x) -> x.RawMetadata.CustomAttrs  |> AttribInfosOfIL g amap x.ILTypeInfo.ILScopeRef m
+    | ILEvent ileinfo -> ileinfo.RawMetadata.CustomAttrs |> AttribInfosOfIL einfo.TcGlobals amap ileinfo.ILTypeInfo.ILScopeRef m
     | FSEvent(_, pi, _vref1, _vref2) -> GetAttribInfosOfProp amap m pi
 #if !NO_EXTENSIONTYPING
     // TODO: provided attributes
@@ -373,7 +373,7 @@ let CheckProvidedAttributesForUnseen (provAttribs: Tainted<IProvidedCustomAttrib
 /// Check the attributes associated with a property, returning warnings and errors as data.
 let CheckPropInfoAttributes pinfo m = 
     match pinfo with
-    | ILProp(g,ILPropInfo(_,pdef)) -> CheckILAttributes g pdef.CustomAttrs m
+    | ILProp(ILPropInfo(_,pdef)) -> CheckILAttributes pinfo.TcGlobals pdef.CustomAttrs m
     | FSProp(g,_,Some vref,_) 
     | FSProp(g,_,_,Some vref) -> CheckFSharpAttributes g vref.Attribs m
     | FSProp _ -> failwith "CheckPropInfoAttributes: unreachable"
@@ -419,7 +419,7 @@ let CheckMethInfoAttributes g m tyargsOpt minfo =
 /// Indicate if a method has 'Obsolete', 'CompilerMessageAttribute' or 'TypeProviderEditorHideMethodsAttribute'. 
 /// Used to suppress the item in intellisense.
 let MethInfoIsUnseen g m typ minfo = 
-    let isUnseenByObsoleteAttrib = 
+    let isUnseenByObsoleteAttrib () = 
         match BindMethInfoAttributes m minfo 
                 (fun ilAttribs -> Some(CheckILAttributesForUnseen g ilAttribs m)) 
                 (fun fsAttribs -> Some(CheckFSharpAttributesForUnseen g fsAttribs m))
@@ -432,11 +432,11 @@ let MethInfoIsUnseen g m typ minfo =
         | Some res -> res
         | None -> false
 
-    let isUnseenByHidingAttribute = 
+    let isUnseenByHidingAttribute () = 
 #if !NO_EXTENSIONTYPING
         not (isObjTy g typ) &&
         isAppTy g typ &&
-        isObjTy g minfo.EnclosingType &&
+        isObjTy g minfo.ApparentEnclosingType &&
         let tcref = tcrefOfAppTy g typ 
         match tcref.TypeReprInfo with 
         | TProvidedTypeExtensionPoint info -> 
@@ -449,20 +449,26 @@ let MethInfoIsUnseen g m typ minfo =
         // just to look at the attributes on IL methods.
         if tcref.IsILTycon then 
                 tcref.ILTyconRawMetadata.CustomAttrs.AsList 
-                |> List.exists (fun attr -> attr.Method.EnclosingType.TypeSpec.Name = typeof<TypeProviderEditorHideMethodsAttribute>.FullName)
+                |> List.exists (fun attr -> attr.Method.DeclaringType.TypeSpec.Name = typeof<TypeProviderEditorHideMethodsAttribute>.FullName)
         else 
             false
 #else
         typ |> ignore
         false
 #endif
-    isUnseenByObsoleteAttrib || isUnseenByHidingAttribute
+
+    //let isUnseenByBeingTupleMethod () = isAnyTupleTy g typ
+
+    isUnseenByObsoleteAttrib () || isUnseenByHidingAttribute () //|| isUnseenByBeingTupleMethod ()
 
 /// Indicate if a property has 'Obsolete' or 'CompilerMessageAttribute'.
 /// Used to suppress the item in intellisense.
 let PropInfoIsUnseen m pinfo = 
     match pinfo with
-    | ILProp (g,ILPropInfo(_,pdef)) -> CheckILAttributesForUnseen g pdef.CustomAttrs m
+    | ILProp (ILPropInfo(_,pdef) as ilpinfo) -> 
+        // Properties on .NET tuple types are resolvable but unseen
+        isAnyTupleTy pinfo.TcGlobals ilpinfo.ILTypeInfo.ToType || 
+        CheckILAttributesForUnseen pinfo.TcGlobals pdef.CustomAttrs m
     | FSProp (g,_,Some vref,_) 
     | FSProp (g,_,_,Some vref) -> CheckFSharpAttributesForUnseen g vref.Attribs m
     | FSProp _ -> failwith "CheckPropInfoAttributes: unreachable"

@@ -49,7 +49,7 @@ type IlxUnionRef =
 
 type IlxUnionSpec = 
     | IlxUnionSpec of IlxUnionRef * ILGenericArgs
-    member x.EnclosingType = let (IlxUnionSpec(IlxUnionRef(bx, tref, _, _, _), inst)) = x in mkILNamedTy bx tref inst
+    member x.DeclaringType = let (IlxUnionSpec(IlxUnionRef(bx, tref, _, _, _), inst)) = x in mkILNamedTy bx tref inst
     member x.Boxity = let (IlxUnionSpec(IlxUnionRef(bx, _, _, _, _), _)) = x in bx 
     member x.TypeRef = let (IlxUnionSpec(IlxUnionRef(_, tref, _, _, _), _)) = x in tref
     member x.GenericArgs = let (IlxUnionSpec(_, inst)) = x in inst

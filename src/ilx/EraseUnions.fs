@@ -168,7 +168,7 @@ let cuspecRepr =
          (fun cuspec -> cuspec.HasHelpers = IlxUnionHasHelpers.SpecialFSharpListHelpers),
          (fun cuspec -> cuspec.Boxity = ILBoxity.AsValue),
          (fun (alt:IlxUnionAlternative) -> alt.Name),
-         (fun cuspec -> cuspec.EnclosingType),
+         (fun cuspec -> cuspec.DeclaringType),
          (fun (cuspec,nm) -> mkILNamedTy cuspec.Boxity (mkILTyRefInTyRef (mkCasesTypeRef cuspec, nm)) cuspec.GenericArgs))
 
 type NoTypesGeneratedViaThisReprDecider = NoTypesGeneratedViaThisReprDecider
