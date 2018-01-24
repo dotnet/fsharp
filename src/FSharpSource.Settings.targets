@@ -23,7 +23,7 @@
     <FSCoreVersion>4.4.3.0</FSCoreVersion>
     <FSProductVersion>10.1.1.0</FSProductVersion>
     <FSPackageVersion>10.1.1</FSPackageVersion>
-    <VSAssemblyVersion>15.6.0.0</VSAssemblyVersion>
+    <VSAssemblyVersion>15.7.0.0</VSAssemblyVersion>
   </PropertyGroup>
 
   <PropertyGroup>
