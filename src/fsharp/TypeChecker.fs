@@ -841,18 +841,24 @@ let UnifyUnitType cenv (env:TcEnv) m ty expr =
         if AddCxTypeEqualsTypeUndoIfFailed denv cenv.css m ty (domainTy --> resultTy) then 
             warning (FunctionValueUnexpected(denv, ty, m))
         else
+            let reportImplicitlyDiscardError() =
+                if typeEquiv cenv.g cenv.g.bool_ty ty then 
+                    warning (ReportImplicitlyIgnoredBoolExpression denv m ty expr)
+                else
+                    warning (UnitTypeExpected (denv, ty, m))
+
             match env.eContextInfo with
             | ContextInfo.SequenceExpression seqTy ->
                 let lifted = mkSeqTy cenv.g ty
                 if typeEquiv cenv.g seqTy lifted then
                     warning (Error (FSComp.SR.implicitlyDiscardedInSequenceExpression(NicePrint.prettyStringOfTy denv ty), m))
                 else
-                    warning (Error (FSComp.SR.implicitlyDiscardedSequenceInSequenceExpression(NicePrint.prettyStringOfTy denv ty), m))                    
+                    if isListTy cenv.g ty || isArrayTy cenv.g ty || typeEquiv cenv.g seqTy ty then
+                        warning (Error (FSComp.SR.implicitlyDiscardedSequenceInSequenceExpression(NicePrint.prettyStringOfTy denv ty), m))
+                    else
+                        reportImplicitlyDiscardError() 
             | _ ->
-                if typeEquiv cenv.g cenv.g.bool_ty ty then 
-                    warning (ReportImplicitlyIgnoredBoolExpression denv m ty expr)
-                else
-                    warning (UnitTypeExpected (denv, ty, m))
+                reportImplicitlyDiscardError()
 
         false
 
