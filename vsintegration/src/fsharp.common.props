@@ -14,9 +14,8 @@
     <FSharpSourcesRoot Condition="'$(FSharpSourcesRoot)' == '' and '$(DevDivBuild)' == ''   ">..\..</FSharpSourcesRoot>
     <TargetDotnetProfile Condition="'$(TargetDotnetProfile)' == ''">net40</TargetDotnetProfile>
   </PropertyGroup>
-  <PropertyGroup Condition=" ('$(Configuration)' == 'Debug' or '$(Configuration)' == 'Release') and '$(DevDivBuild)' == ''">
-    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetDotnetProfile)\bin</OutputPath>
-  </PropertyGroup>
+
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug'">
     <DebugSymbols>true</DebugSymbols>

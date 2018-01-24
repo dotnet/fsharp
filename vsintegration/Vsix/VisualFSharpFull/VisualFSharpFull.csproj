@@ -50,14 +50,13 @@
     <ProjectGuid>{59ADCE46-9740-4079-834D-9A03A3494EBC}</ProjectGuid>
     <IsPackage>true</IsPackage>
     <RootNamespace>VisualFSharpFull</RootNamespace>
-    <RootBinPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetDotnetProfile)\bin</RootBinPath>
     <AssemblyName>VisualFSharpFull</AssemblyName>
-    <OutputPath>$(RootBinPath)</OutputPath>
     <MicroBuildAssemblyVersion>15.4.1.0</MicroBuildAssemblyVersion>
     <MicroBuildAssemblyFileLanguage>cs</MicroBuildAssemblyFileLanguage>
     <DeployExtension>false</DeployExtension>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <Import Project="$(FSharpSourcesRoot)\..\packages\$(VSSDK_BUILDTOOLS_VERSION)\build\Microsoft.VsSDK.BuildTools.props" />
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <StartAction>Program</StartAction>

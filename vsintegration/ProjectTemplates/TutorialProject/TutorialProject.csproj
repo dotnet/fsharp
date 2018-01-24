@@ -2,7 +2,6 @@
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\..\src</FSharpSourcesRoot>
     <AssemblyName>TutorialProject</AssemblyName>
     <TemplateCategory>ProjectTemplates</TemplateCategory>
     <IsPackage>true</IsPackage>
@@ -18,15 +17,7 @@
     <CopyVsixManifestToOutput>false</CopyVsixManifestToOutput>
     <CopyBuildOutputToOutputDirectory>false</CopyBuildOutputToOutputDirectory>
     <CopyOutputSymbolsToOutputDirectory>false</CopyOutputSymbolsToOutputDirectory>
-    <ProjectGuid>{2FACEE44-48BD-40B5-A2EE-B54A0C9BB7C4}</ProjectGuid>
   </PropertyGroup>
-  <PropertyGroup>
-    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
-    <TargetDotnetProfile Condition="'$(TargetDotnetProfile)' == ''">net40</TargetDotnetProfile>
-    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetDotnetProfile)\bin\$(TemplateCategory)\$(AssemblyName)</OutputPath>
-  </PropertyGroup>
-
-  <Import Project="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.Common.props" />
 
   <ItemGroup>
     <VSTemplate Include="Template\Tutorial.vstemplate">
@@ -36,8 +27,6 @@
     </VSTemplate>
   </ItemGroup>
 
-  <Import Project="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.tools.targets" />
-
-  <Target Name="CoreCompile" />
+  <Import Project="..\..\Templates.targets" />
 
 </Project>

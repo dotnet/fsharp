@@ -16,7 +16,7 @@ exit /b 1
 
 :ok
 
-set BINDIR=%~dp0..\%1\net40\bin
+set BINDIR=%~dp0..\artifacts\%1\net45\bin
 
 if exist "%WindowsSDK_ExecutablePath_x64%" set WINSDKNETFXTOOLS_X64=%WindowsSDK_ExecutablePath_x64%
 if exist "%WindowsSDK_ExecutablePath_x86%" set WINSDKNETFXTOOLS_X86=%WindowsSDK_ExecutablePath_x86%

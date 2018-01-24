@@ -86,8 +86,7 @@ export BUILD_NET40=0
 export BUILD_CORECLR=0
 export BUILD_PORTABLE=0
 export BUILD_VS=0
-export BUILD_CONFIG=release
-export BUILD_CONFIG_LOWERCASE=release
+export BUILD_CONFIG=Release
 export BUILD_DIAG=
 export BUILD_PUBLICSIGN=0
 
@@ -243,10 +242,10 @@ do
             fi
             ;;
         "debug")
-            export BUILD_CONFIG=debug
+            export BUILD_CONFIG=Debug
             ;;
         "release")
-            export BUILD_CONFIG=release
+            export BUILD_CONFIG=Release
             ;;
         "test")
             _autoselect_tests=1

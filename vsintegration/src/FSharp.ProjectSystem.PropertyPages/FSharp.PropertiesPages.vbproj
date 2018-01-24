@@ -10,7 +10,6 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <TargetDotnetProfile Condition=" '$(TargetDotnetProfile)' == '' ">net40</TargetDotnetProfile>
-    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetDotnetProfile)\bin</OutputPath>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>9.0.21022</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
@@ -48,16 +47,14 @@
     <StrongNames>true</StrongNames>
     <DelaySign>true</DelaySign>
   </PropertyGroup>
-  <ItemGroup>
-    <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
-      <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
-      <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(AssemblyName).dll.lci</LciCommentFile>
-      <HasLceComments>false</HasLceComments>
-      <InProject>false</InProject>
-    </FilesToLocalize>
-  </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
-  
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+
+  <PropertyGroup>
+    <!-- Microsoft.VisualBasic.CurrentVersion.targets always prepends $(IntermediateOutputPath) which is different from everything else, so we manually coerce this value back. -->
+    <DocumentationFile>$(AssemblyName).xml</DocumentationFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <Import Include="Microsoft.VisualBasic" />
     <Import Include="System" />

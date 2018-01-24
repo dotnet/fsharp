@@ -81,9 +81,6 @@ lib/bootstrap/4.1/fsharpc
 lib/bootstrap/4.1/fsharpi
 lib/bootstrap/4.1/policy*
 aclocal.m4
-Debug
-Release
-Proto
 sign_temp
 .libs
 configure
@@ -132,3 +129,6 @@ tests/fsharpqa/testenv/bin/System.ValueTuple.dll
 msbuild.binlog
 /fcs/FSharp.Compiler.Service.netstandard/*.fs
 /fcs/FSharp.Compiler.Service.netstandard/*.fsi
+/artifacts/
+/BuildFromSource/
+bin/

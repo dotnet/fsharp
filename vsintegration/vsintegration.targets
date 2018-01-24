@@ -4,4 +4,6 @@
   <Target Name="RestoreVsIntegrationPackages" BeforeTargets="Build" Condition="'$(RestorePackages)' == ''">
     <Exec Command=".\.nuget\NuGet.exe restore vsintegration\packages.config -PackagesDirectory packages -ConfigFile .\.nuget\NuGet.Config" WorkingDirectory="$(FSharpSourcesRoot)\.." />
   </Target>
+
+  <Import Project="..\src\FSharpSource.targets" />
 </Project>
