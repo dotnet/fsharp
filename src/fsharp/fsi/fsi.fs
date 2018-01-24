@@ -2494,9 +2494,20 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     let fsiOptions       = FsiCommandLineOptions(fsi, argv, tcConfigB, fsiConsoleOutput)
     let fsiConsolePrompt = FsiConsolePrompt(fsiOptions, fsiConsoleOutput)
 
-    // Check if we have a codepage from the console
-#if FX_LCIDFROMCODEPAGE
     do
+#if PREFERRED_UI_LANG
+#if FX_LCIDFROMCODEPAGE
+      ignore lcidFromCodePage
+#endif
+      match tcConfigB.preferredUiLang with
+#if FX_RESHAPED_GLOBALIZATION
+      | Some s -> System.Globalization.CultureInfo.CurrentUICulture <- new System.Globalization.CultureInfo(s)
+#else
+      | Some s -> Thread.CurrentThread.CurrentUICulture <- new System.Globalization.CultureInfo(s)
+#endif
+      | None -> ()
+#else
+#if FX_LCIDFROMCODEPAGE
       match fsiOptions.FsiLCID with
       | Some _ -> ()
       | None -> tcConfigB.lcid <- lcidFromCodePage
@@ -2504,8 +2515,9 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     // Set the ui culture
     do 
       match fsiOptions.FsiLCID with
-      | Some(n) -> Thread.CurrentThread.CurrentUICulture <- new CultureInfo(n)
+      | Some n -> Thread.CurrentThread.CurrentUICulture <- new CultureInfo(n)
       | None -> ()
+#endif
 #endif
 
 #if !FX_NO_SERVERCODEPAGES
