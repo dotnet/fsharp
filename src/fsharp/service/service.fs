@@ -991,7 +991,8 @@ type TypeCheckInfo
                             | Item.UnqualifiedType(tcref :: _)
                             | Item.FakeInterfaceCtor (TType_app(tcref,_)) 
                             | Item.DelegateCtor (TType_app(tcref,_)) -> tcref.CompiledName
-                            | Item.CtorGroup (_, (cinfo :: _)) -> (tcrefOfAppTy g cinfo.EnclosingType).CompiledName
+                            | Item.CtorGroup (_, (cinfo :: _)) ->
+                                (tcrefOfAppTy g cinfo.ApparentEnclosingType).CompiledName
                             | _ -> d.Item.DisplayName)
 
                     // Filter out operators (and list)
