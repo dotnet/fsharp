@@ -3,7 +3,7 @@ include $(topsrcdir)mono/config.make
 .PHONY: restore build build-proto
 
 restore:
-	MONO_ENV_OPTIONS=$(monoopts) mono .nuget/NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget/NuGet.Config
+	MONO_ENV_OPTIONS=$(monoopts) mono .nuget/NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile ./NuGet.Config
 	chmod u+x packages/FSharp.Compiler.Tools.4.1.27/tools/fsi.exe 
 	chmod u+x packages/FsLexYacc.7.0.6/build/fslex.exe
 	chmod u+x packages/FsLexYacc.7.0.6/build/fsyacc.exe
