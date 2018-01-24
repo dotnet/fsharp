@@ -1,26 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
-  </PropertyGroup>
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
-  <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
-    <AssemblyName>FSharp.Build</AssemblyName>
-    <AllowCrossTargeting>true</AllowCrossTargeting>
-    <ProjectGuid>{702A7979-BCF9-4C41-853E-3ADFC9897890}</ProjectGuid>
+    <TargetFrameworks>net45;netstandard1.6</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
-    <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
-      <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
-      <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(AssemblyName).dll.lci</LciCommentFile>
-      <HasLceComments>false</HasLceComments>
-      <InProject>false</InProject>
-    </FilesToLocalize>
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
     <EmbeddedText Include="FSBuild.txt" />
     <Compile Include="..\..\utils\CompilerLocationUtils.fs" />
@@ -71,11 +58,18 @@
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Tasks.Core.14.3.0\lib\net45\Microsoft.Build.Tasks.Core.dll</HintPath>
     </Reference>
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
-      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
-      <Name>FSharp.Core</Name>
-    </ProjectReference>
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.6'">
+    <PackageReference Include="Microsoft.Build" Version="$(MicrosoftBuildPackageVersion)" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildPackageVersion)" />
+    <PackageReference Include="Microsoft.Win32.Registry" Version="$(MicrosoftWin32RegistryPackageVersion)" />
   </ItemGroup>
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net45'">
+    <PackageReference Include="Microsoft.VisualFSharp.Msbuild.15.0" Version="$(MicrosoftVisualFSharpMsbuild150PackageVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FSharp.Core\FSharp.Core.fsproj" />
+  </ItemGroup>
+
 </Project>

@@ -5,11 +5,11 @@ set __scriptpath=%~dp0
 rem build tools
 dotnet restore %__scriptpath%buildtools\fslex\fslex.fsproj
 if ERRORLEVEL 1 echo Error: failed  && goto :failure
-dotnet  publish %__scriptpath%buildtools\fslex\fslex.fsproj -o %__scriptpath%..\Tools\fslex
+dotnet  publish %__scriptpath%buildtools\fslex\fslex.fsproj -o %__scriptpath%..\Tools\fslex -f netcoreapp2.0
 if ERRORLEVEL 1 echo Error: failed  && goto :failure
 dotnet restore %__scriptpath%buildtools\fsyacc\fsyacc.fsproj
 if ERRORLEVEL 1 echo Error: failed  && goto :failure
-dotnet  publish %__scriptpath%buildtools\fsyacc\fsyacc.fsproj -o %__scriptpath%..\Tools\fsyacc
+dotnet  publish %__scriptpath%buildtools\fsyacc\fsyacc.fsproj -o %__scriptpath%..\Tools\fsyacc -f netcoreapp2.0
 if ERRORLEVEL 1 echo Error: failed  && goto :failure
 
 rem build and pack tools

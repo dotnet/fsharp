@@ -1,0 +1,4 @@
+<Project>
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('FSharp.Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" />
+  <Import Project="$(ToolsRoot)\FsLexYacc\FsLexYacc.targets" />
+</Project>

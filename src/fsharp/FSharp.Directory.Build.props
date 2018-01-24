@@ -1,0 +1,10 @@
+<Project>
+
+  <PropertyGroup>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <PackageTargetFallback>portable-net45+win8+wp8+wpa81</PackageTargetFallback>
+  </PropertyGroup>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('FSharp.Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+</Project>

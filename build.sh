@@ -333,6 +333,11 @@ fi
 
 # TODO: Check for existence of fsi (either on the system, or from the FSharp.Compiler.Tools package that was restored).
 
+# Prepare FsLex and FsYacc
+{ printeval "$_msbuildexe $msbuildflags src/buildtools/FsLexYacc.proj /t:Restore"; } || failwith "Restoring FsLexYacc failed"
+{ printeval "$_msbuildexe $msbuildflags src/buildtools/FsLexYacc.proj /t:Build"; } || failwith "Building FsLexYacc failed"
+{ printeval "$_msbuildexe $msbuildflags src/buildtools/FsLexYacc.proj /t:Publish"; } || failwith "Publishing FsLexYacc failed"
+
 build_status "Done with package restore, starting proto"
 
 # Decide if Proto need building
@@ -346,6 +351,8 @@ _architecture=win7-x64
 # Build Proto
 if [ "$BUILD_PROTO" = "1" ]; then
     rm -rfd Proto
+
+    { printeval "$_msbuildexe $msbuildflags src/fsharp-proto-build.proj /t:Restore"; } || failwith "restoring fsharp-proto-build.proj failed"
 
     if [ "$BUILD_PROTO_WITH_CORECLR_LKG" = "1" ]; then
         { pushd ./lkg/fsc && eval "$_dotnetexe restore" && popd; } || failwith "dotnet restore failed"
