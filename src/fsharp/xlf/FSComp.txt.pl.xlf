@@ -1669,7 +1669,7 @@
       </trans-unit>
       <trans-unit id="csMemberIsNotAccessible2">
         <source>The member or object constructor '{0}' is not {1}. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.</source>
-        <target state="translated">Element członkowski lub konstruktor obiektów „{0}” nie jest {1}. Prywatne elementy członkowskie mogą być dostępne tylko w obrębie typu deklarującego. Chronione elementy członkowskie mogą być dostępne tylko z poziomu typu rozszerzającego. Nie można uzyskać do nich dostępu z poziomu wewnętrznych wyrażeń lambda.</target>
+        <target state="needs-review-translation">Element członkowski lub konstruktor obiektów „{0}” nie jest {1}. Prywatne elementy członkowskie mogą być dostępne tylko w obrębie typu deklarującego. Chronione elementy członkowskie mogą być dostępne tylko z poziomu typu rozszerzającego. Nie można uzyskać do nich dostępu z poziomu wewnętrznych wyrażeń lambda.</target>
         <note />
       </trans-unit>
       <trans-unit id="csMethodIsNotAStaticMethod">
