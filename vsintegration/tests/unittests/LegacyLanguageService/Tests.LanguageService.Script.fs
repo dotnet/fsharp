@@ -1343,7 +1343,7 @@ type UsingMSBuild() as this =
             "4.4.0.0"
 #endif
 #if VS_VERSION_DEV15
-            "10.1.0.0"
+            "10.1.1.0"
 #endif
         let binariesFolder = match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None) with
                              | Some(x) -> x
