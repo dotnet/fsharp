@@ -1519,6 +1519,10 @@ module internal Parser =
         if source.Length = 0 || not (source.[source.Length - 1] = '\n') then source + "\n" else source
 
     let matchBraces(source, fileName, options: FSharpParsingOptions, userOpName: string) =
+        let delayedLogger = CapturingErrorLogger("matchBraces")
+        use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayedLogger)
+        use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
+
         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "matchBraces", fileName)
 
         // Make sure there is an ErrorLogger installed whenever we do stuff that might record errors, even if we ultimately ignore the errors
