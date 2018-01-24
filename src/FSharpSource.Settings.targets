@@ -21,8 +21,8 @@
   <!-- Version number computation -->
   <PropertyGroup>
     <FSCoreVersion>4.4.3.0</FSCoreVersion>
-    <FSProductVersion>10.1.0.0</FSProductVersion>
-    <FSPackageVersion>10.1.0</FSPackageVersion>
+    <FSProductVersion>10.1.1.0</FSProductVersion>
+    <FSPackageVersion>10.1.1</FSPackageVersion>
     <VSAssemblyVersion>15.7.0.0</VSAssemblyVersion>
   </PropertyGroup>
 
@@ -85,12 +85,12 @@
     <!-- Frozen FSharp.Core package being built with this build -->
     <FSharpCore41TargetPackageVersion>4.1.19</FSharpCore41TargetPackageVersion>
     <FSharpCore41TargetMajorVersion>4.1</FSharpCore41TargetMajorVersion>
-    <FSharpCoreLatestTargetPackageVersion>4.3.0</FSharpCoreLatestTargetPackageVersion>
+    <FSharpCoreLatestTargetPackageVersion>4.3.1</FSharpCoreLatestTargetPackageVersion>
     <FSharpCoreLatestTargetMajorVersion>4.3</FSharpCoreLatestTargetMajorVersion>
 
     <!-- Frozen FSharp.Core package -->
     <FSharpCoreFrozenPortablePackageVersion>10.1.0</FSharpCoreFrozenPortablePackageVersion>
-    <FSharpCoreFrozenPortableTargetPackageVersion>10.1.1</FSharpCoreFrozenPortableTargetPackageVersion>
+    <FSharpCoreFrozenPortableTargetPackageVersion>10.2.0</FSharpCoreFrozenPortableTargetPackageVersion>
     <FSharpCoreFrozenPortableTargetMajorVersion>10.1</FSharpCoreFrozenPortableTargetMajorVersion>
 
     <!-- Nunit -->
