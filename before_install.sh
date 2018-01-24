@@ -39,14 +39,14 @@ if [ $OS = 'Linux' ] && [ "$(certmgr -list -c Trust | grep -c -F "X.509")" -le 1
 fi
 
 # Restore NuGet packages (needed for compiler bootstrap and tests).
-mono .nuget/NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget/NuGet.Config
+mono .nuget/NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile ./NuGet.Config
 
 (if test x-$BUILD_CORECLR = x-1; then \
   sudo sh -c 'echo "deb [arch=amd64] https://apt-mo.trafficmanager.net/repos/dotnet-release/ trusty main" > /etc/apt/sources.list.d/dotnetdev.list'; \
   sudo apt-key adv --keyserver apt-mo.trafficmanager.net --recv-keys 417A0893; \
   sudo apt-get update; \
   sudo apt-get -y install dotnet-dev-1.0.0-preview2-003131; \
-  (cd tests/fsharp; mono ../../.nuget/NuGet.exe restore  project.json -PackagesDirectory ../../packages -ConfigFile ../../.nuget/NuGet.Config); \
+  (cd tests/fsharp; mono ../../.nuget/NuGet.exe restore  project.json -PackagesDirectory ../../packages -ConfigFile ../../NuGet.Config); \
   ./init-tools.sh;   \
   echo "------ start log";  \
   cat ./init-tools.log; echo "------ end log"; \

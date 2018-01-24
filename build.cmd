@@ -557,7 +557,7 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 echo ---------------- Done with prepare, starting package restore ----------------
 
 set _nugetexe="%~dp0.nuget\NuGet.exe"
-set _nugetconfig="%~dp0.nuget\NuGet.Config"
+set _nugetconfig="%~dp0NuGet.Config"
 
 if "%RestorePackages%" == "true" (
     cd fcs

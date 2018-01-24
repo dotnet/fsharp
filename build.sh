@@ -294,7 +294,7 @@ _nugetexe="mono .nuget/NuGet.exe"
 if command -v nuget > /dev/null; then
     _nugetexe="nuget"
 fi
-_nugetconfig=".nuget/NuGet.Config"
+_nugetconfig="./NuGet.Config"
 
 # TODO: Confirm existence of 'nuget' (or $_nugetexe) before proceeding.
 
