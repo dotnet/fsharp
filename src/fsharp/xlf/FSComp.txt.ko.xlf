@@ -6973,13 +6973,13 @@
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongTypeMaybeIndent">
-        <source>All elements of a list constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'. Maybe you need to indent the second expression a bit further.</source>
-        <target state="new">All elements of a list constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'. Maybe you need to indent the second expression a bit further.</target>
+        <source>All elements of a list constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'. This may be resolved by indenting the second expression further.</source>
+        <target state="new">All elements of a list constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'. This may be resolved by indenting the second expression further.</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongTypeMaybeIndent">
-        <source>All elements of an array constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'. Maybe you need to indent the second expression a bit further.</source>
-        <target state="new">All elements of an array constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'. Maybe you need to indent the second expression a bit further.</target>
+        <source>All elements of an array constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'. This may be resolved by indenting the second expression further.</source>
+        <target state="new">All elements of an array constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'. This may be resolved by indenting the second expression further.</target>
         <note />
       </trans-unit>
     </body>
