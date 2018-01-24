@@ -639,17 +639,25 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
           if m.StartLine <> m2.StartLine then
              os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
 
-      | ConstraintSolverTypesNotInEqualityRelation(denv, t1, t2, m, m2, contextInfo) -> 
+      | ConstraintSolverTypesNotInEqualityRelation(denv, ty1, ty2, m, m2, contextInfo) -> 
           // REVIEW: consider if we need to show _cxs (the type parameter constraints)
-          let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
+          let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
           
           match contextInfo with
           | ContextInfo.IfExpression range when range = m -> os.Append(FSComp.SR.ifExpression(t1, t2)) |> ignore
           | ContextInfo.CollectionElement (isArray, range) when range = m -> 
+
             if isArray then
-                os.Append(FSComp.SR.arrayElementHasWrongType(t1, t2)) |> ignore
+                if isFunTy denv.g ty1 then
+                    os.Append(FSComp.SR.arrayElementHasWrongTypeMaybeIndent(t1, t2)) |> ignore
+                else
+                    os.Append(FSComp.SR.arrayElementHasWrongType(t1, t2)) |> ignore
             else
-                os.Append(FSComp.SR.listElementHasWrongType(t1, t2)) |> ignore
+                if isFunTy denv.g ty1 then
+                    os.Append(FSComp.SR.listElementHasWrongTypeMaybeIndent(t1, t2)) |> ignore
+                else
+                    os.Append(FSComp.SR.listElementHasWrongType(t1, t2)) |> ignore
+
           | ContextInfo.OmittedElseBranch range when range = m -> os.Append(FSComp.SR.missingElseBranch(t2)) |> ignore
           | ContextInfo.ElseBranchResult range when range = m -> os.Append(FSComp.SR.elseBranchHasWrongType(t1, t2)) |> ignore
           | ContextInfo.FollowingPatternMatchClause range when range = m -> os.Append(FSComp.SR.followingPatternMatchClauseHasWrongType(t1, t2)) |> ignore
@@ -676,17 +684,23 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
           | _ -> ()
           fopt |> Option.iter (Printf.bprintf os " %s")
 
-      | ErrorFromAddingTypeEquation(g, denv, t1, t2, ConstraintSolverTypesNotInEqualityRelation(_, t1', t2', m , _ , contextInfo), _) 
-         when typeEquiv g t1 t1'
-         &&   typeEquiv g t2 t2' ->
+      | ErrorFromAddingTypeEquation(g, denv, t1, t2, ConstraintSolverTypesNotInEqualityRelation(_, ty1, ty2, m , _ , contextInfo), _) 
+         when typeEquiv g t1 ty1
+         &&   typeEquiv g t2 ty2 ->
           let t1, t2, tpcs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
           match contextInfo with
           | ContextInfo.IfExpression range when range = m -> os.Append(FSComp.SR.ifExpression(t1, t2)) |> ignore
           | ContextInfo.CollectionElement (isArray, range) when range = m -> 
             if isArray then
-                os.Append(FSComp.SR.arrayElementHasWrongType(t1, t2)) |> ignore
+                if isFunTy denv.g ty1 then
+                    os.Append(FSComp.SR.arrayElementHasWrongTypeMaybeIndent(t1, t2)) |> ignore
+                else
+                    os.Append(FSComp.SR.arrayElementHasWrongType(t1, t2)) |> ignore
             else
-                os.Append(FSComp.SR.listElementHasWrongType(t1, t2)) |> ignore
+                if isFunTy denv.g ty1 then
+                    os.Append(FSComp.SR.listElementHasWrongTypeMaybeIndent(t1, t2)) |> ignore
+                else
+                    os.Append(FSComp.SR.listElementHasWrongType(t1, t2)) |> ignore
           | ContextInfo.OmittedElseBranch range when range = m -> os.Append(FSComp.SR.missingElseBranch(t2)) |> ignore
           | ContextInfo.ElseBranchResult range when range = m -> os.Append(FSComp.SR.elseBranchHasWrongType(t1, t2)) |> ignore
           | ContextInfo.FollowingPatternMatchClause range when range = m -> os.Append(FSComp.SR.followingPatternMatchClauseHasWrongType(t1, t2)) |> ignore
