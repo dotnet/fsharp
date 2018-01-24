@@ -850,7 +850,7 @@ let UnifyUnitType cenv (env:TcEnv) m ty expr =
                     warning (Error (FSComp.SR.implicitlyDiscardedSequenceInSequenceExpression(NicePrint.prettyStringOfTy denv ty), m))                    
             | _ ->
                 if typeEquiv cenv.g cenv.g.bool_ty ty then 
-                    warning (ReportImplicitlyIgnoredBoolExpression denv m ty exprOpt)
+                    warning (ReportImplicitlyIgnoredBoolExpression denv m ty expr)
                 else
                     warning (UnitTypeExpected (denv, ty, m))
 
@@ -5578,7 +5578,7 @@ and TcStmtThatCantBeCtorBody cenv env tpenv expr =
 and TcStmt cenv env tpenv synExpr =
     let expr, ty, tpenv = TcExprOfUnknownType cenv env tpenv synExpr
     let m = synExpr.Range
-    let wasUnit = UnifyUnitType cenv env.DisplayEnv m ty (Some expr)
+    let wasUnit = UnifyUnitType cenv env m ty expr
     if wasUnit then
         expr, tpenv
     else
@@ -10425,7 +10425,7 @@ and TcNormalizedBinding declKind (cenv:cenv) env tpenv overallTy safeThisValOpt 
                 else TcExprThatCantBeCtorBody cenv overallExprTy envinner tpenv rhsExpr)
 
         if bkind = StandaloneExpression && not cenv.isScript then 
-            UnifyUnitType cenv env.DisplayEnv mBinding overallPatTy (Some rhsExprChecked) |> ignore<bool>
+            UnifyUnitType cenv env mBinding overallPatTy rhsExprChecked |> ignore<bool>
 
         // Fix up the r.h.s. expression for 'fixed'
         let rhsExprChecked =
