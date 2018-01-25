@@ -126,8 +126,8 @@
       <PropertyGroup>
         <OutputPath Condition=" '$(CustomOutputPath)' != 'true' ">$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFrameworkOutputDirectory)\bin</OutputPath>
         <FscToolPath>$(FSharpSourcesRoot)\..\Proto\$(ProtoFlavour)\bin</FscToolPath>
-        <FscToolExe>fsc-proto.exe</FscToolExe>
-        <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.Portable.FSharp-proto.targets</FSharpTargetsPath>
+        <FscToolExe>fsc.exe</FscToolExe>
+        <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.Portable.FSharp.targets</FSharpTargetsPath>
       </PropertyGroup>
     </When>
     <Otherwise>
@@ -135,8 +135,8 @@
       <PropertyGroup>
         <OutputPath Condition=" '$(CustomOutputPath)' != 'true' ">$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFrameworkOutputDirectory)\bin</OutputPath>
         <FscToolPath>$(FSharpSourcesRoot)\..\Proto\$(ProtoFlavour)\bin</FscToolPath>
-        <FscToolExe>fsc-proto.exe</FscToolExe>
-        <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.FSharp-proto.targets</FSharpTargetsPath>
+        <FscToolExe>fsc.exe</FscToolExe>
+        <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.FSharp.targets</FSharpTargetsPath>
       </PropertyGroup>
     </Otherwise>
   </Choose>
@@ -298,13 +298,13 @@
   </Target>
 
   <UsingTask TaskName="FSharpEmbedResourceText"
-             AssemblyFile="$(FSharpSourcesRoot)\..\Proto\net40\bin\FSharp.Build-proto.dll"
+             AssemblyFile="$(FSharpSourcesRoot)\..\Proto\net40\bin\FSharp.Build.dll"
              Condition="'$(Configuration)' != 'Proto'" />
   <UsingTask TaskName="FSharpEmbedResXSource"
-             AssemblyFile="$(FSharpSourcesRoot)\..\Proto\net40\bin\FSharp.Build-proto.dll"
+             AssemblyFile="$(FSharpSourcesRoot)\..\Proto\net40\bin\FSharp.Build.dll"
              Condition="'$(Configuration)' != 'Proto'" />
   <UsingTask TaskName="WriteCodeFragment"
-             AssemblyFile="$(FSharpSourcesRoot)\..\Proto\net40\bin\FSharp.Build-proto.dll"
+             AssemblyFile="$(FSharpSourcesRoot)\..\Proto\net40\bin\FSharp.Build.dll"
              Condition="'$(Configuration)' != 'Proto'" />
 
   <Target Name="GenerateFSharpTextResources"
