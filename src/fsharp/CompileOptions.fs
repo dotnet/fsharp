@@ -739,10 +739,8 @@ let codePageFlag (tcConfigB : TcConfigBuilder) =
                      tcConfigB.inputCodePage <- Some(n)), None,
                            Some (FSComp.SR.optsCodepage()))
 
-#if PREFERRED_UI_LANG
 let preferredUiLang (tcConfigB: TcConfigBuilder) = 
         CompilerOption("preferreduilang", tagString, OptionString (fun s -> tcConfigB.preferredUiLang <- Some(s)), None, Some(FSComp.SR.optsPreferredUiLang()))
-#endif
 
 let utf8OutputFlag (tcConfigB: TcConfigBuilder) = 
         CompilerOption("utf8output", tagNone, OptionUnit (fun () -> tcConfigB.utf8output <- true), None,
@@ -771,9 +769,7 @@ let advancedFlagsBoth tcConfigB =
     [
         yield codePageFlag tcConfigB
         yield utf8OutputFlag tcConfigB
-#if PREFERRED_UI_LANG
         yield preferredUiLang tcConfigB
-#endif
         yield fullPathsFlag tcConfigB
         yield libFlag tcConfigB
         yield CompilerOption("simpleresolution", 
@@ -849,11 +845,7 @@ let testFlag tcConfigB =
 let vsSpecificFlags (tcConfigB: TcConfigBuilder) = 
   [ CompilerOption("vserrors", tagNone, OptionUnit (fun () -> tcConfigB.errorStyle <- ErrorStyle.VSErrors), None, None)
     CompilerOption("validate-type-providers", tagNone, OptionUnit (id), None, None)  // preserved for compatibility's sake, no longer has any effect
-#if PREFERRED_UI_LANG
     CompilerOption("LCID", tagInt, OptionInt (fun _n -> ()), None, None)
-#else
-    CompilerOption("LCID", tagInt, OptionInt (fun n -> tcConfigB.lcid <- Some(n)), None, None)
-#endif
     CompilerOption("flaterrors", tagNone, OptionUnit (fun () -> tcConfigB.flatErrors <- true), None, None) 
     CompilerOption("sqmsessionguid", tagNone, OptionString (fun s -> tcConfigB.sqmSessionGuid <- try System.Guid(s) |> Some  with e -> None), None, None)
     CompilerOption("gccerrors", tagNone, OptionUnit (fun () -> tcConfigB.errorStyle <- ErrorStyle.GccErrors), None, None) 
