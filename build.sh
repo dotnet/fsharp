@@ -336,7 +336,7 @@ fi
 build_status "Done with package restore, starting proto"
 
 # Decide if Proto need building
-if [ ! -f "Proto/net40/bin/fsc-proto.exe" ]; then
+if [ ! -f "Proto/net40/bin/fsc.exe" ]; then
   export BUILD_PROTO=1
 fi
 
@@ -356,7 +356,7 @@ if [ "$BUILD_PROTO" = "1" ]; then
 
         { printeval "$_msbuildexe $msbuildflags src/fsharp-proto-build.proj /p:Configuration=Proto /p:DisableLocalization=true"; } || failwith "compiler proto build failed"
 
-#        { printeval "$_ngenexe install Proto/net40/bin/fsc-proto.exe /nologo"; } || failwith "NGen of proto failed"
+#        { printeval "$_ngenexe install Proto/net40/bin/fsc.exe /nologo"; } || failwith "NGen of proto failed"
     else
         # Build proto-compiler and libs
         { printeval "$_msbuildexe $msbuildflags src/fsharp-proto-build.proj /p:Configuration=Proto /p:DisableLocalization=true"; } || failwith "compiler proto build failed"

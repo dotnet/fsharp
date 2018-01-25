@@ -31,26 +31,10 @@
     <Compile Include="FSharpEmbedResXSource.fs" />
     <Compile Include="WriteCodeFragment.fs" />
     <Compile Include="CreateFSharpManifestResourceName.fs" />
-    <CopyAndSubstituteText Include="Microsoft.FSharp.Targets">
-        <TargetFilename>Microsoft.FSharp.Targets</TargetFilename>
-        <Pattern1>{BuildSuffix}</Pattern1>
-        <Replacement1></Replacement1>
-    </CopyAndSubstituteText>
-    <CopyAndSubstituteText Include="Microsoft.Portable.FSharp.Targets">
-      <TargetFilename>Microsoft.Portable.FSharp.Targets</TargetFilename>
-      <Pattern1>{BuildSuffix}</Pattern1>
-      <Replacement1></Replacement1>
-    </CopyAndSubstituteText>
-    <CopyAndSubstituteText Include="Microsoft.FSharp.NetSdk.props">
-        <TargetFilename>Microsoft.FSharp.NetSdk.props</TargetFilename>
-        <Pattern1>{BuildSuffix}</Pattern1>
-        <Replacement1></Replacement1>
-    </CopyAndSubstituteText>
-    <CopyAndSubstituteText Include="Microsoft.FSharp.NetSdk.targets">
-        <TargetFilename>Microsoft.FSharp.NetSdk.targets</TargetFilename>
-        <Pattern1>{BuildSuffix}</Pattern1>
-        <Replacement1></Replacement1>
-    </CopyAndSubstituteText>
+    <None Include="Microsoft.FSharp.Targets" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Microsoft.Portable.FSharp.Targets" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Microsoft.FSharp.NetSdk.props" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Microsoft.FSharp.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr'">
