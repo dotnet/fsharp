@@ -10,7 +10,7 @@
     <PlatformTarget>x86</PlatformTarget>
     <OutputType>Exe</OutputType>
     <NoWarn>$(NoWarn);62</NoWarn>
-    <AssemblyName>fsc-proto</AssemblyName>
+    <AssemblyName>fsc</AssemblyName>
     <DefineConstants>NO_EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
     <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
     <NoWarn>$(NoWarn);35;44;62;9;60;86;47;1203</NoWarn>
