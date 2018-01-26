@@ -261,7 +261,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Shell.$(VSMajorVersion)">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.$(VSMajorVersion).$(RoslynVSPackagesVersion)\lib\Microsoft.VisualStudio.Shell.$(VSMajorVersion).dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.$(VSMajorVersion).$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Shell.$(VSMajorVersion).dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Shell.Framework">
