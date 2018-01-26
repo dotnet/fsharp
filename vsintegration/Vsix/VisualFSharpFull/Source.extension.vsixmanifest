@@ -4,7 +4,7 @@
   <Metadata>
     <Identity Id="VisualFSharp" Version="|%CurrentProject%;GetVsixPackageVersion|" Language="en-US" Publisher="Microsoft.VisualFSharpTools" />
     <DisplayName>Visual F# Tools</DisplayName>
-    <Description xml:space="preserve">Deploy Visual F# Tools templates to Visual Studio</Description>
+    <Description xml:space="preserve">Deploy Visual F# Tools Binaries to Visual Studio</Description>
     <PackageId>Microsoft.FSharp.VSIX.Full.Core</PackageId>
     <MoreInfo>https://docs.microsoft.com/en-us/dotnet/articles/fsharp/</MoreInfo>
   </Metadata>
@@ -44,13 +44,9 @@
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.ProjectSystem.PropertyPages.pkgdef" />
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.Compiler.Server.Shared.pkgdef" />
 
-    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" Path="ProjectTemplates" d:TargetPath="|NetCoreProject;TemplateProjectOutputGroup|" d:ProjectName="NetCoreProject" d:VsixSubPath="ProjectTemplates" />
-    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" Path="ProjectTemplates" d:TargetPath="|NetCore78Project;TemplateProjectOutputGroup|" d:ProjectName="NetCore78Project" d:VsixSubPath="ProjectTemplates" />
-    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" Path="ProjectTemplates" d:TargetPath="|NetCore259Project;TemplateProjectOutputGroup|" d:ProjectName="NetCore259Project" d:VsixSubPath="ProjectTemplates" />
-    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" Path="ProjectTemplates" d:TargetPath="|PortableLibraryProject;TemplateProjectOutputGroup|" d:ProjectName="PortableLibraryProject" d:VsixSubPath="ProjectTemplates" />
-    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" Path="ProjectTemplates" d:TargetPath="|TutorialProject;TemplateProjectOutputGroup|" d:ProjectName="TutorialProject" d:VsixSubPath="ProjectTemplates" />
-    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" Path="ProjectTemplates" d:TargetPath="|ConsoleProject;TemplateProjectOutputGroup|" d:ProjectName="ConsoleProject" d:VsixSubPath="ProjectTemplates" />
-    <Asset Type="Microsoft.VisualStudio.ProjectTemplate" d:Source="Project" Path="ProjectTemplates" d:TargetPath="|LibraryProject;TemplateProjectOutputGroup|" d:ProjectName="LibraryProject" d:VsixSubPath="ProjectTemplates" />
+    <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="FSharp.Editor" Path="|FSharp.Editor|" AssemblyName="|FSharp.Editor;AssemblyName|" />
+    <Asset Type="Microsoft.VisualStudio.Analyzer" d:Source="Project" d:ProjectName="FSharp.Editor" Path="|FSharp.Editor|" />
+    <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="ProjectSystem.Base" Path="|ProjectSystem.Base|" />
 
     <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="Project" Path="ItemTemplates" d:TargetPath="|AppConfig;TemplateProjectOutputGroup|" d:ProjectName="AppConfig" d:VsixSubPath="ItemTemplates" />
     <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="Project" Path="ItemTemplates" d:TargetPath="|CodeFile;TemplateProjectOutputGroup|" d:ProjectName="CodeFile" d:VsixSubPath="ItemTemplates" />
@@ -59,9 +55,6 @@
     <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="Project" Path="ItemTemplates" d:TargetPath="|TextFile;TemplateProjectOutputGroup|" d:ProjectName="TextFile" d:VsixSubPath="ItemTemplates" />
     <Asset Type="Microsoft.VisualStudio.ItemTemplate" d:Source="Project" Path="ItemTemplates" d:TargetPath="|XMLFile;TemplateProjectOutputGroup|" d:ProjectName="XMLFile" d:VsixSubPath="ItemTemplates" />
 
-    <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="FSharp.Editor" Path="|FSharp.Editor|" AssemblyName="|FSharp.Editor;AssemblyName|" />
-    <Asset Type="Microsoft.VisualStudio.Analyzer" d:Source="Project" d:ProjectName="FSharp.Editor" Path="|FSharp.Editor|" />
-    <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="ProjectSystem.Base" Path="|ProjectSystem.Base|" />
   </Assets>
   <Prerequisites>
     <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[15.0,16.0)" DisplayName="Visual Studio core editor" />

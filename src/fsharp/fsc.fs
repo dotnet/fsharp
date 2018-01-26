@@ -13,6 +13,7 @@
 module internal Microsoft.FSharp.Compiler.Driver 
 
 open System
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Diagnostics
 open System.Globalization
@@ -30,19 +31,15 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
-open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.IlxGen
 
 open Microsoft.FSharp.Compiler.AccessibilityLogic
-open Microsoft.FSharp.Compiler.AttributeChecking
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.CompileOptions
 open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.DiagnosticMessage
 open Microsoft.FSharp.Compiler.Optimizer
@@ -53,7 +50,7 @@ open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.TcGlobals
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -77,7 +74,7 @@ type ErrorLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, nameFo
 
     override x.ErrorCount = errors
     override x.DiagnosticSink(err, isError) = 
-      if isError || ReportWarningAsError (tcConfigB.globalWarnLevel, tcConfigB.specificWarnOff, tcConfigB.specificWarnOn, tcConfigB.specificWarnAsError, tcConfigB.specificWarnAsWarn, tcConfigB.globalWarnAsError) err then 
+      if isError || ReportWarningAsError tcConfigB.errorSeverityOptions err then 
         if errors >= tcConfigB.maxErrors then 
             x.HandleTooManyErrors(FSComp.SR.fscTooManyErrors())
             exiter.Exit 1
@@ -92,7 +89,7 @@ type ErrorLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, nameFo
         | :? KeyNotFoundException, None -> Debug.Assert(false, sprintf "Lookup exception in compiler: %s" (err.Exception.ToString()))
         | _ ->  ()
 
-      elif ReportWarning (tcConfigB.globalWarnLevel, tcConfigB.specificWarnOff, tcConfigB.specificWarnOn) err then
+      elif ReportWarning tcConfigB.errorSeverityOptions err then
           x.HandleIssue(tcConfigB, err, isError)
     
 
@@ -435,7 +432,7 @@ let GenerateInterfaceData(tcConfig:TcConfig) =
 
 let EncodeInterfaceData(tcConfig: TcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild) = 
     if GenerateInterfaceData(tcConfig) then 
-        let resource = WriteSignatureData (tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile)
+        let resource = WriteSignatureData (tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild)
         // The resource gets written to a file for FSharp.Core
         let useDataFiles = (tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib) && not isIncrementalBuild
         if useDataFiles then 
@@ -463,7 +460,7 @@ let EncodeOptimizationData(tcGlobals, tcConfig: TcConfig, outfile, exportRemappi
         let useDataFiles = (tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib) && not isIncrementalBuild
         if useDataFiles then 
             let ccu, modulInfo = data
-            let bytes = TastPickle.pickleObjWithDanglingCcus outfile tcGlobals ccu Optimizer.p_CcuOptimizationInfo modulInfo
+            let bytes = TastPickle.pickleObjWithDanglingCcus isIncrementalBuild outfile tcGlobals ccu Optimizer.p_CcuOptimizationInfo modulInfo
             let optDataFileName = (Filename.chopExtension outfile)+".optdata"
             File.WriteAllBytes(optDataFileName, bytes)
         let (ccu, optData) = 
@@ -471,7 +468,7 @@ let EncodeOptimizationData(tcGlobals, tcConfig: TcConfig, outfile, exportRemappi
                 map2Of2 Optimizer.AbstractOptimizationInfoToEssentials data 
             else 
                 data
-        [ WriteOptimizationData (tcGlobals, outfile, ccu, optData) ]
+        [ WriteOptimizationData (tcGlobals, outfile, isIncrementalBuild, ccu, optData) ]
     else
         [ ]
 
@@ -1094,7 +1091,7 @@ module StaticLinker =
                     match depILModule.Manifest with 
                     | Some m -> 
                         for ca in m.CustomAttrs.AsList do
-                           if ca.Method.MethodRef.EnclosingTypeRef.FullName = typeof<CompilationMappingAttribute>.FullName then 
+                           if ca.Method.MethodRef.DeclaringTypeRef.FullName = typeof<CompilationMappingAttribute>.FullName then 
                                yield ca
                     | _ -> () ]
 
@@ -1103,7 +1100,7 @@ module StaticLinker =
                 // Don't save interface, optimization or resource definitions for provider-generated assemblies.
                 // These are "fake".
                 let isProvided (ccu: CcuThunk option) = 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
                     match ccu with 
                     | Some c -> c.IsProviderGenerated 
                     | None -> false
@@ -1204,7 +1201,7 @@ module StaticLinker =
                                         |> List.map (fun md ->
                                             {md with CustomAttrs = 
                                                         mkILCustomAttrs (td.CustomAttrs.AsList |> List.filter (fun ilattr ->
-                                                            ilattr.Method.EnclosingType.TypeRef.FullName <> "System.Runtime.TargetedPatchingOptOutAttribute")  )}) 
+                                                            ilattr.Method.DeclaringType.TypeRef.FullName <> "System.Runtime.TargetedPatchingOptOutAttribute")  )}) 
                                         |> mkILMethods } ])}
             //ILAsciiWriter.output_module stdout fakeModule
             fakeModule.TypeDefs.AsList
@@ -1333,7 +1330,7 @@ module StaticLinker =
     // prior to this point.
     let StaticLink (ctok, tcConfig:TcConfig, tcImports:TcImports, ilGlobals:ILGlobals) = 
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         let providerGeneratedAssemblies = 
 
             [ // Add all EST-generated assemblies into the static linking set
@@ -1347,7 +1344,7 @@ module StaticLinker =
             (fun ilxMainModule -> LegacyFindAndAddMscorlibTypesForStaticLinkingIntoFSharpCoreLibraryForNet20 (tcConfig, ilGlobals, ilxMainModule))
           
         elif not tcConfig.standalone && tcConfig.extraStaticLinkRoots.IsEmpty 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
              && providerGeneratedAssemblies.IsEmpty 
 #endif
              then 
@@ -1360,7 +1357,7 @@ module StaticLinker =
 
               ReportTime tcConfig "Static link"
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
               Morphs.enableMorphCustomAttributeData()
               let providerGeneratedILModules =  FindProviderGeneratedILModules (ctok, tcImports, providerGeneratedAssemblies) 
 
@@ -1758,7 +1755,7 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, openBinarie
     
     let inputs =
         // Deduplicate module names
-        let moduleNamesDict = Dictionary<string,Set<string>>()
+        let moduleNamesDict = ConcurrentDictionary<string,Set<string>>()
         inputs
         |> List.map (fun (input,x) -> DeduplicateParsedInputModuleName moduleNamesDict input,x)
 
@@ -1971,12 +1968,10 @@ let main2b (tcImportsCapture,dynamicAssemblyCreator) (Args (ctok, tcConfig: TcCo
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.IlxGen
     let ilxGenerator = CreateIlxAssemblyGenerator (tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), generatedCcu)
 
-    // Check if System.SerializableAttribute exists in mscorlib.dll, 
-    // so that make sure the compiler only emits "serializable" bit into IL metadata when it is available.
-    // Note that SerializableAttribute may be relocated in the future but now resides in mscorlib.
     let codegenResults = GenerateIlxCode ((if Option.isSome dynamicAssemblyCreator then IlReflectBackend else IlWriteBackend), Option.isSome dynamicAssemblyCreator, false, tcConfig, topAttrs, optimizedImpls, generatedCcu.AssemblyName, ilxGenerator)
     let casApplied = new Dictionary<Stamp, bool>()
     let securityAttrs, topAssemblyAttrs = topAttrs.assemblyAttrs |> List.partition (fun a -> TypeChecker.IsSecurityAttribute tcGlobals (tcImports.GetImportMap()) casApplied a rangeStartup)
+
     // remove any security attributes from the top-level assembly attribute list
     let topAttrs = {topAttrs with assemblyAttrs=topAssemblyAttrs}
     let permissionSets = ilxGenerator.CreatePermissionSets securityAttrs

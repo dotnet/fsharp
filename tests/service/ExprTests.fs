@@ -1,6 +1,6 @@
 ﻿
 #if INTERACTIVE
-#r "../../Debug/net40/bin/FSharp.Compiler.Service.dll" // note, run 'build fcs' to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../Debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
 #r "../../Debug/net40/bin/FSharp.Compiler.Service.ProjectCracker.dll"
 #r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "FsUnit.fs"
@@ -32,7 +32,7 @@ module internal Utils =
         | BasicPatterns.Application(f,tyargs,args) -> quote low (printExpr 10 f + printTyargs tyargs + " " + printCurriedArgs args)
         | BasicPatterns.BaseValue(_) -> "base"
         | BasicPatterns.Call(Some obj,v,tyargs1,tyargs2,argsL) -> printObjOpt (Some obj) + v.CompiledName  + printTyargs tyargs2 + printTupledArgs argsL
-        | BasicPatterns.Call(None,v,tyargs1,tyargs2,argsL) -> v.EnclosingEntity.Value.CompiledName + printTyargs tyargs1 + "." + v.CompiledName  + printTyargs tyargs2 + " " + printTupledArgs argsL
+        | BasicPatterns.Call(None,v,tyargs1,tyargs2,argsL) -> v.DeclaringEntity.Value.CompiledName + printTyargs tyargs1 + "." + v.CompiledName  + printTyargs tyargs2 + " " + printTupledArgs argsL
         | BasicPatterns.Coerce(ty1,e1) -> quote low (printExpr 10 e1 + " :> " + printTy ty1)
         | BasicPatterns.DefaultValue(ty1) -> "dflt"
         | BasicPatterns.FastIntegerForLoop _ -> "for-loop"
@@ -45,7 +45,7 @@ module internal Utils =
         | BasicPatterns.LetRec(vse,b) -> "let rec ... in " + printExpr 0 b
         | BasicPatterns.NewArray(ty,es) -> "[|" + (es |> Seq.map (printExpr 0) |> String.concat "; ") +  "|]" 
         | BasicPatterns.NewDelegate(ty,es) -> "new-delegate" 
-        | BasicPatterns.NewObject(v,tys,args) -> "new " + v.EnclosingEntity.Value.CompiledName + printTupledArgs args 
+        | BasicPatterns.NewObject(v,tys,args) -> "new " + v.DeclaringEntity.Value.CompiledName + printTupledArgs args 
         | BasicPatterns.NewRecord(v,args) -> 
             let fields = v.TypeDefinition.FSharpFields
             "{" + ((fields, args) ||> Seq.map2 (fun f a -> f.Name + " = " + printExpr 0 a) |> String.concat "; ") + "}" 
@@ -528,7 +528,7 @@ let bool2 = false
     let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
 //<@ let x = Some(3) in x.IsSome @>
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 [<Test>]
 let ``Test Declarations project1`` () =
     let wholeProjectResults = exprChecker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously

@@ -1,5 +1,5 @@
 // #Warnings
-//<Expects status="Warning" span="(11,5)" id="FS0020">The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'.</Expects>
+//<Expects status="Warning" span="(11,5)" id="FS0020">The result of this equality expression has type 'bool' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'.</Expects>
 
 type MyClass(property1 : int) =
     member val Property2 = "" with get

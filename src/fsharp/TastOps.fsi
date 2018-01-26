@@ -19,7 +19,7 @@ open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.Lib
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -224,15 +224,35 @@ val mkArrayElemAddress : TcGlobals -> ILReadonly * bool * ILArrayShape * TType *
 // Compiled view of tuples
 //------------------------------------------------------------------------- 
  
+/// The largest tuple before we start encoding, i.e. 7
 val maxTuple : int
+
+/// The number of fields in the largest tuple before we start encoding, i.e. 7
 val goodTupleFields : int
+
+/// Check if a TyconRef is for a .NET tuple type. Currently this includes Tuple`1 even though
+/// that' not really part of the target set of TyconRef used to represent F# tuples.
 val isCompiledTupleTyconRef : TcGlobals -> TyconRef -> bool
+
+/// Get a TyconRef for a .NET tuple type
 val mkCompiledTupleTyconRef : TcGlobals -> bool -> int -> TyconRef
+
+/// Convert from F# tuple types to .NET tuple types.
 val mkCompiledTupleTy : TcGlobals -> bool -> TTypes -> TType
+
+/// Convert from F# tuple creation expression to .NET tuple creation expressions
 val mkCompiledTuple : TcGlobals -> bool -> TTypes * Exprs * range -> TyconRef * TTypes * Exprs * range
+
+/// Make a TAST expression representing getting an item fromm a tuple
 val mkGetTupleItemN : TcGlobals -> range -> int -> ILType -> bool -> Expr -> TType -> Expr
 
+/// Evaluate the TupInfo to work out if it is a struct or a ref.  Currently this is very simple
+/// but TupInfo may later be used carry variables that infer structness.
 val evalTupInfoIsStruct : TupInfo -> bool
+
+/// If it is a tuple type, ensure it's outermost type is a .NET tuple type, otherwise leave unchanged
+val helpEnsureTypeHasMetadata : TcGlobals -> TType -> TType
+
 
 //-------------------------------------------------------------------------
 // Take the address of an expression, or force it into a mutable local. Any allocated
@@ -993,7 +1013,7 @@ val mkPrintfFormatTy : TcGlobals -> TType -> TType -> TType -> TType -> TType ->
 type TypeDefMetadata = 
      | ILTypeMetadata of TILObjectReprData
      | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
      | ProvidedTypeMetadata of  TProvidedTypeInfo
 #endif
 
@@ -1286,7 +1306,7 @@ val TyconRefHasAttribute : TcGlobals -> range -> BuiltinAttribInfo -> TyconRef -
 /// Try to find the AttributeUsage attribute, looking for the value of the AllowMultiple named parameter
 val TryFindAttributeUsageAttribute : TcGlobals -> range -> TyconRef -> bool option
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 /// returns Some(assemblyName) for success
 val TryDecodeTypeProviderAssemblyAttr : ILGlobals -> ILAttribute -> string option
 #endif

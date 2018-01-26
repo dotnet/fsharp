@@ -1,5 +1,5 @@
 ﻿#if INTERACTIVE
-#r "../../Debug/net40/bin/FSharp.Compiler.Service.dll" // note, run 'build fcs' to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../Debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
 #r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
@@ -35,7 +35,8 @@ module internal Project1 =
 
     let fileNames = [ for (_,f) in fileNamesI -> f ]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let parsingOptions, _ = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
 
 
 [<Test>]
@@ -47,7 +48,7 @@ let ``Test request for parse and check doesn't check whole project`` () =
     checker.FileParsed.Add (fun x -> incr backgroundParseCount)
 
     let pB, tB = FSharpChecker.GlobalForegroundParseCountStatistic, FSharpChecker.GlobalForegroundTypeCheckCountStatistic
-    let parseResults1 = checker.ParseFileInProject(Project1.fileNames.[5], Project1.fileSources2.[5], Project1.options)  |> Async.RunSynchronously
+    let parseResults1 = checker.ParseFile(Project1.fileNames.[5], Project1.fileSources2.[5], Project1.parsingOptions)  |> Async.RunSynchronously
     let pC, tC = FSharpChecker.GlobalForegroundParseCountStatistic, FSharpChecker.GlobalForegroundTypeCheckCountStatistic
     (pC - pB) |> shouldEqual 1
     (tC - tB) |> shouldEqual 0
@@ -64,16 +65,15 @@ let ``Test request for parse and check doesn't check whole project`` () =
     let pE, tE = FSharpChecker.GlobalForegroundParseCountStatistic, FSharpChecker.GlobalForegroundTypeCheckCountStatistic
     (pE - pD) |> shouldEqual 0
     (tE - tD) |> shouldEqual 1
-    (backgroundParseCount.Value  <= 8) |> shouldEqual true // but note, the project does not get reparsed
-    (backgroundCheckCount.Value  <= 8) |> shouldEqual true // only two extra typechecks of files
+    (backgroundParseCount.Value  <= 9) |> shouldEqual true // but note, the project does not get reparsed
+    (backgroundCheckCount.Value  <= 9) |> shouldEqual true // only two extra typechecks of files
 
     // A subsequent ParseAndCheck of identical source code doesn't do any more anything
     let checkResults2 = checker.ParseAndCheckFileInProject(Project1.fileNames.[7], 0, Project1.fileSources2.[7], Project1.options)  |> Async.RunSynchronously
     let pF, tF = FSharpChecker.GlobalForegroundParseCountStatistic, FSharpChecker.GlobalForegroundTypeCheckCountStatistic
     (pF - pE) |> shouldEqual 0  // note, no new parse of the file
     (tF - tE) |> shouldEqual 0  // note, no new typecheck of the file
-    (backgroundParseCount.Value <= 8) |> shouldEqual true // but note, the project does not get reparsed
-    (backgroundCheckCount.Value <= 8) |> shouldEqual true // only two extra typechecks of files
-
+    (backgroundParseCount.Value <= 9) |> shouldEqual true // but note, the project does not get reparsed
+    (backgroundCheckCount.Value <= 9) |> shouldEqual true // only two extra typechecks of files
     ()
 

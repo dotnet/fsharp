@@ -27,10 +27,10 @@ try {
     $requestUrl = ""
 
     switch ($branchName) {
-        "microbuild" {
+        "master" {
             $requestUrl = "https://dotnet.myget.org/F/fsharp/vsix/upload"
         }
-        "microbuild-dev15-rtm" {
+        "dev15.6" {
             $requestUrl = "https://dotnet.myget.org/F/fsharp-preview/vsix/upload"
         }
         default {

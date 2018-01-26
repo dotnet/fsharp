@@ -23,7 +23,7 @@ type internal FSharpIndentationService
     static member IsSmartIndentEnabled (options: Microsoft.CodeAnalysis.Options.OptionSet) =
         options.GetOption(FormattingOptions.SmartIndent, FSharpConstants.FSharpLanguageName) = FormattingOptions.IndentStyle.Smart
 
-    static member GetDesiredIndentation(documentId: DocumentId, sourceText: SourceText, filePath: string, lineNumber: int, tabSize: int, indentStyle: FormattingOptions.IndentStyle, projectOptions: FSharpProjectOptions option): Option<int> =
+    static member GetDesiredIndentation(documentId: DocumentId, sourceText: SourceText, filePath: string, lineNumber: int, tabSize: int, indentStyle: FormattingOptions.IndentStyle, options: (FSharpParsingOptions * FSharpProjectOptions) option): Option<int> =
 
         // Match indentation with previous line
         let rec tryFindPreviousNonEmptyLine l =
@@ -36,8 +36,8 @@ type internal FSharpIndentationService
                     tryFindPreviousNonEmptyLine (l - 1)
 
         let rec tryFindLastNonWhitespaceOrCommentToken (line: TextLine) = maybe {
-           let! projectOptions = projectOptions
-           let defines = CompilerEnvironment.GetCompilationDefinesForEditing(filePath, projectOptions.OtherOptions |> Seq.toList)
+           let! parsingOptions, _projectOptions = options
+           let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
            let tokens = Tokenizer.tokenizeLine(documentId, sourceText, line.Start, filePath, defines)
 
            return!

@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="zh-Hans" original="../FSLangSvcStrings.resx">
+    <body>
+      <trans-unit id="StillBuildingContentCache">
+        <source>(The documentation cache is still being constructed. Please try again in a few seconds.)</source>
+        <target state="translated">(文档缓存尚在构建中。请稍后再试。)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ExceptionsHeader">
+        <source>Exceptions:</source>
+        <target state="translated">异常:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IntelliSenseLoading">
+        <source>Loading...</source>
+        <target state="translated">正在加载...</target>
+        <note>displayed when waiting for IntelliSense to load</note>
+      </trans-unit>
+      <trans-unit id="GotoDefinitionFailed_Generic">
+        <source>Cannot navigate to definition.</source>
+        <target state="translated">无法导航到定义。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="GotoDefinitionFailed_NotIdentifier">
+        <source>Cannot navigate to definition. Cursor is not on identifier.</source>
+        <target state="translated">无法导航到定义。光标不在标识符上。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="GotoDefinitionFailed_ProvidedMember">
+        <source>Cannot navigate to the provided member '{0}'.</source>
+        <target state="translated">无法导航到提供的成员“{0}”。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="GotoDefinitionFailed_ProvidedType">
+        <source>Cannot navigate to the provided type '{0}'.</source>
+        <target state="translated">无法导航到提供的类型“{0}”。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="GotoDefinitionFailed_NoTypecheckInfo">
+        <source>Cannot navigate to definition. Type check information is not available, please try later.</source>
+        <target state="translated">无法导航到定义。类型检查信息不可用，请稍后尝试。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="GotoDefinitionFailed_NotSourceCode">
+        <source>Cannot navigate to definition. Source code is not available.</source>
+        <target state="translated">无法导航到定义。源代码不可用。</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

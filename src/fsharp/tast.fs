@@ -26,7 +26,7 @@ open Microsoft.FSharp.Compiler.QuotationPickler
 open Microsoft.FSharp.Core.Printf
 open Microsoft.FSharp.Compiler.Rational
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
 open Microsoft.FSharp.Core.CompilerServices
 #endif
@@ -472,7 +472,7 @@ let getNameOfScopeRef sref =
     | ILScopeRef.Assembly aref -> aref.Name
 
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 let ComputeDefinitionLocationOfProvidedItem (p : Tainted<#IProvidedCustomAttributeProvider>) =
     let attrs = p.PUntaintNoFailure(fun x -> x.GetDefinitionLocationAttribute(p.TypeProvider.PUntaintNoFailure(id)))
     match attrs with
@@ -590,7 +590,7 @@ type Entity =
     /// The display name of the namespace, module or type, e.g. List instead of List`1, including static parameters if any
     member x.DisplayNameWithStaticParameters = x.GetDisplayName(true, false)
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     member x.IsStaticInstantiationTycon = 
         x.IsProvidedErasedTycon &&
             let _nm,args = PrettyNaming.demangleProvidedTypeName x.LogicalName
@@ -609,7 +609,7 @@ type Entity =
                 else
                     nm
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         if x.IsProvidedErasedTycon then 
             let nm,args = PrettyNaming.demangleProvidedTypeName nm
             if withStaticParameters && args.Length > 0 then 
@@ -626,7 +626,7 @@ type Entity =
 
     /// The code location where the module, namespace or type is defined.
     member x.Range = 
-#if EXTENSIONTYPING    
+#if !NO_EXTENSIONTYPING    
         match x.TypeReprInfo with
         | TProvidedTypeExtensionPoint info ->
             match ComputeDefinitionLocationOfProvidedItem info.ProvidedType with
@@ -663,7 +663,7 @@ type Entity =
     /// or comes from another F# assembly then it does not (because the documentation will get read from 
     /// an XML file).
     member x.XmlDoc = 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         match x.TypeReprInfo with
         | TProvidedTypeExtensionPoint info -> XmlDoc (info.ProvidedType.PUntaintNoFailure(fun st -> (st :> IProvidedCustomAttributeProvider).GetXmlDocAttributes(info.ProvidedType.TypeProvider.PUntaintNoFailure(id))))
         | _ -> 
@@ -738,7 +738,7 @@ type Entity =
 
     /// Indicates if the entity is an F# module definition
     member x.IsModule = x.IsModuleOrNamespace && (match x.ModuleOrNamespaceType.ModuleOrNamespaceKind with Namespace -> false | _ -> true)
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 
     /// Indicates if the entity is a provided type or namespace definition
     member x.IsProvided = 
@@ -769,7 +769,7 @@ type Entity =
     /// Indicates if the entity is erased, either a measure definition, or an erased provided type definition
     member x.IsErased = 
         x.IsMeasureableReprTycon 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         || x.IsProvidedErasedTycon
 #endif
 
@@ -957,7 +957,7 @@ type Entity =
 
     /// Indicates if this is an enum type definition 
     member x.IsEnumTycon            = 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         match x.TypeReprInfo with 
         | TProvidedTypeExtensionPoint info -> info.IsEnum 
         | TProvidedNamespaceExtensionPoint _ -> false
@@ -986,7 +986,7 @@ type Entity =
 
     /// Indicates if this is a struct or enum type definition , i.e. a value type definition
     member x.IsStructOrEnumTycon = 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         match x.TypeReprInfo with 
         | TProvidedTypeExtensionPoint info -> info.IsStructOrEnum 
         | TProvidedNamespaceExtensionPoint _ -> false
@@ -1044,7 +1044,7 @@ type Entity =
 
     /// Gets the data indicating the compiled representation of a type or module in terms of Abstract IL data structures.
     member x.CompiledRepresentation =
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         match x.TypeReprInfo with 
         // We should never be computing this property for erased types
         | TProvidedTypeExtensionPoint info when info.IsErased -> 
@@ -1220,7 +1220,7 @@ and
     /// Indicates the type is parameterized on a measure (e.g. float<_>) but erases to some other type (e.g. float)
     | TMeasureableRepr   of TType
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     /// TProvidedTypeExtensionPoint
     ///
     /// Indicates the representation information for a provided type. 
@@ -1247,7 +1247,7 @@ and
     /// TILObjectReprData(scope, nesting, definition)
    TILObjectReprData = TILObjectReprData of ILScopeRef * ILTypeDef list * ILTypeDef 
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 and 
    [<NoComparison; NoEquality; RequireQualifiedAccess>]
    
@@ -1596,7 +1596,7 @@ and
           modulesByDemangledNameCache := None          
           allEntitiesByMangledNameCache := None       
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
       /// Mutation used in hosting scenarios to hold the hosted types in this module or namespace
       member mtyp.AddProvidedTypeEntity(entity:Entity) = 
           entities <- QueueList.appendOne entities entity
@@ -1734,7 +1734,7 @@ and Construct =
     static member NewEmptyModuleOrNamespaceType mkind = 
         Construct.NewModuleOrNamespaceType mkind [] []
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 
     static member NewProvidedTyconRepr(resolutionEnvironment,st:Tainted<ProvidedType>,importProvidedType,isSuppressRelocate,m) = 
 
@@ -2220,7 +2220,7 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
       //     -- LinearizeTopMatch
       //
       // The fresh temporary should just be created with the right parent
-      mutable val_actual_parent: ParentRef
+      mutable val_declaring_entity: ParentRef
 
       /// XML documentation attached to a value.
       /// MUTABILITY: for unpickle linkage
@@ -2294,7 +2294,7 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     member x.LinkagePartialKey : ValLinkagePartialKey = 
         assert x.IsCompiledAsTopLevel
         { LogicalName = x.LogicalName 
-          MemberParentMangledName = (if x.IsMember then Some x.MemberApparentParent.LogicalName else None)
+          MemberParentMangledName = (if x.IsMember then Some x.MemberApparentEntity.LogicalName else None)
           MemberIsOverride = x.IsOverrideOrExplicitImpl
           TotalArgCount = if x.IsMember then x.ValReprInfo.Value.TotalArgCount else 0 }
 
@@ -2412,26 +2412,26 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
         and set(v) = x.val_xmldocsig <- v
 
     /// The parent type or module, if any (None for expression bindings and parameters)
-    member x.ActualParent               = x.val_actual_parent
+    member x.DeclaringEntity               = x.val_declaring_entity
 
     /// Get the actual parent entity for the value (a module or a type), i.e. the entity under which the
     /// value will appear in compiled code. For extension members this is the module where the extension member
     /// is declared.
-    member x.TopValActualParent = 
-        match x.ActualParent  with 
+    member x.TopValDeclaringEntity = 
+        match x.DeclaringEntity  with 
         | Parent tcref -> tcref
-        | ParentNone -> error(InternalError("TopValActualParent: does not have a parent",x.Range))
+        | ParentNone -> error(InternalError("TopValDeclaringEntity: does not have a parent",x.Range))
 
-    member x.HasTopValActualParent = 
-        match x.ActualParent  with 
+    member x.HasDeclaringEntity = 
+        match x.DeclaringEntity  with 
         | Parent _ -> true
         | ParentNone -> false
             
     /// Get the apparent parent entity for a member
-    member x.MemberApparentParent : TyconRef = 
+    member x.MemberApparentEntity : TyconRef = 
         match x.MemberInfo with 
-        | Some membInfo -> membInfo.ApparentParent
-        | None -> error(InternalError("MemberApparentParent",x.Range))
+        | Some membInfo -> membInfo.ApparentEnclosingEntity
+        | None -> error(InternalError("MemberApparentEntity",x.Range))
 
     /// Get the number of 'this'/'self' object arguments for the member. Instance extension members return '1'.
     member v.NumObjArgs =
@@ -2442,10 +2442,10 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     /// Get the apparent parent entity for the value, i.e. the entity under with which the
     /// value is associated. For extension members this is the nominal type the member extends.
     /// For other values it is just the actual parent.
-    member x.ApparentParent = 
+    member x.ApparentEnclosingEntity = 
         match x.MemberInfo with 
-        | Some membInfo -> Parent(membInfo.ApparentParent)
-        | None -> x.ActualParent
+        | Some membInfo -> Parent(membInfo.ApparentEnclosingEntity)
+        | None -> x.DeclaringEntity
 
     /// Get the public path to the value, if any? Should be set if and only if
     /// IsMemberOrModuleBinding is set.
@@ -2459,7 +2459,7 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     //   - in ilxgen.fs: as a boolean to detect public values for saving quotations 
     //   - in MakeExportRemapping, to build non-local references for values
     member x.PublicPath                 = 
-        match x.ActualParent  with 
+        match x.DeclaringEntity  with 
         | Parent eref -> 
             match eref.PublicPath with 
             | None -> None
@@ -2587,7 +2587,7 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
           val_member_info     = Unchecked.defaultof<_>
           val_attribs         = Unchecked.defaultof<_>
           val_repr_info       = Unchecked.defaultof<_>
-          val_actual_parent   = Unchecked.defaultof<_>
+          val_declaring_entity   = Unchecked.defaultof<_>
           val_xmldoc          = Unchecked.defaultof<_>
           val_xmldocsig       = Unchecked.defaultof<_> }
 
@@ -2613,7 +2613,7 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
         x.val_member_info     <- tg.val_member_info  
         x.val_attribs         <- tg.val_attribs      
         x.val_repr_info       <- tg.val_repr_info    
-        x.val_actual_parent   <- tg.val_actual_parent
+        x.val_declaring_entity   <- tg.val_declaring_entity
         x.val_xmldoc          <- tg.val_xmldoc       
         x.val_xmldocsig       <- tg.val_xmldocsig    
 
@@ -2627,7 +2627,7 @@ and
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
     ValMemberInfo = 
     { /// The parent type. For an extension member this is the type being extended 
-      ApparentParent: TyconRef  
+      ApparentEnclosingEntity: TyconRef  
 
       /// Updated with the full implemented slotsig after interface implementation relation is checked 
       mutable ImplementedSlotSigs: SlotSig list 
@@ -2666,13 +2666,13 @@ and NonLocalEntityRef    =
             let next = entity.ModuleOrNamespaceType.AllEntitiesByCompiledAndLogicalMangledNames.TryFind(path.[i])
             match next with 
             | Some res -> NonLocalEntityRef.TryDerefEntityPath(ccu, path, (i+1), res)
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
             | None -> NonLocalEntityRef.TryDerefEntityPathViaProvidedType(ccu, path, i, entity)
 #else
             | None -> VNone
 #endif
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     /// Try to find the entity corresponding to the given path, using type-providers to link the data
     static member TryDerefEntityPathViaProvidedType(ccu: CcuThunk, path:string[], i:int, entity:Entity) = 
         // Errors during linking are not necessarily given good ranges. This has always been the case in F# 2.0, but also applies to
@@ -2998,7 +2998,7 @@ and
     /// Get a blob of data indicating how this type is nested inside other namespaces, modules and types.
     member x.CompilationPathOpt   = x.Deref.CompilationPathOpt
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     /// Indicates if the entity is a provided namespace fragment
     member x.IsProvided               = x.Deref.IsProvided
 
@@ -3240,12 +3240,12 @@ and
     member x.Accessibility              = x.Deref.Accessibility
 
     /// The parent type or module, if any (None for expression bindings and parameters)
-    member x.ActualParent               = x.Deref.ActualParent
+    member x.DeclaringEntity               = x.Deref.DeclaringEntity
 
     /// Get the apparent parent entity for the value, i.e. the entity under with which the
     /// value is associated. For extension members this is the nominal type the member extends.
     /// For other values it is just the actual parent.
-    member x.ApparentParent             = x.Deref.ApparentParent
+    member x.ApparentEnclosingEntity             = x.Deref.ApparentEnclosingEntity
 
     member x.DefinitionRange            = x.Deref.DefinitionRange
 
@@ -3373,13 +3373,13 @@ and
     /// Get the actual parent entity for the value (a module or a type), i.e. the entity under which the
     /// value will appear in compiled code. For extension members this is the module where the extension member
     /// is declared.
-    member x.TopValActualParent         = x.Deref.TopValActualParent
+    member x.TopValDeclaringEntity         = x.Deref.TopValDeclaringEntity
 
     // Can be false for members after error recovery
-    member x.HasTopValActualParent         = x.Deref.HasTopValActualParent
+    member x.HasDeclaringEntity         = x.Deref.HasDeclaringEntity
 
     /// Get the apparent parent entity for a member
-    member x.MemberApparentParent       = x.Deref.MemberApparentParent
+    member x.MemberApparentEntity       = x.Deref.MemberApparentEntity
 
     /// Get the number of 'this'/'self' object arguments for the member. Instance extension members return '1'.
     member x.NumObjArgs                 = x.Deref.NumObjArgs
@@ -3596,7 +3596,7 @@ and
       /// Indicates that this DLL was compiled using the F# compiler and has F# metadata
       IsFSharp: bool 
       
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
       /// Is the CCu an assembly injected by a type provider
       IsProviderGenerated: bool 
 
@@ -3687,7 +3687,7 @@ and CcuThunk =
     /// Holds the filename for the DLL, if any 
     member ccu.FileName            = ccu.Deref.FileName
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     /// Is the CCu an EST injected assembly
     member ccu.IsProviderGenerated      = ccu.Deref.IsProviderGenerated
 
@@ -4672,7 +4672,7 @@ let tyconRefUsesLocalXmlDoc compilingFslib (x: TyconRef) =
     match x with 
     | ERefLocal _ -> true
     | ERefNonLocal _ ->
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         match x.TypeReprInfo with
         | TProvidedTypeExtensionPoint _ -> true
         | _ -> 
@@ -4988,7 +4988,7 @@ let NewVal (logicalName:string,m:range,compiledName,ty,isMutable,isCompGen,arity
           val_other_range=None
           val_defn=None
           val_repr_info= arity
-          val_actual_parent= actualParent
+          val_declaring_entity= actualParent
           val_flags = ValFlags(recValInfo,baseOrThis,isCompGen,inlineInfo,isMutable,isModuleOrMemberBinding,isExtensionMember,isIncrClassSpecialMember,isTyFunc,allowTypeInst,isGeneratedEventVal)
           val_const= konst
           val_access=access

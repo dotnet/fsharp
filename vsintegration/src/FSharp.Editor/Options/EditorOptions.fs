@@ -13,7 +13,7 @@ module DefaultTuning =
     let UnusedDeclarationsAnalyzerInitialDelay = 0 (* 1000 *) (* milliseconds *)
     let UnusedOpensAnalyzerInitialDelay = 0 (* 2000 *) (* milliseconds *)
     let SimplifyNameInitialDelay = 2000 (* milliseconds *)
-    let SimplifyNameEachItemDelay = 5 (* milliseconds *)
+    let SimplifyNameEachItemDelay = 0 (* milliseconds *)
 
 // CLIMutable to make the record work also as a view model
 [<CLIMutable>]
@@ -34,7 +34,8 @@ type QuickInfoOptions =
 type CodeFixesOptions =
     { SimplifyName: bool
       AlwaysPlaceOpensAtTopLevel: bool
-      UnusedOpens: bool }
+      UnusedOpens: bool 
+      UnusedDeclarations: bool }
 
 [<CLIMutable>]
 type LanguageServicePerformanceOptions = 
@@ -59,7 +60,8 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
               // See https://github.com/Microsoft/visualfsharp/pull/3238#issue-237699595
               SimplifyName = false 
               AlwaysPlaceOpensAtTopLevel = false
-              UnusedOpens = true }
+              UnusedOpens = true 
+              UnusedDeclarations = true }
 
         store.RegisterDefault
             { EnableInMemoryCrossProjectReferences = true
