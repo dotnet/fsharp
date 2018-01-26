@@ -2419,19 +2419,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     // We later switch to doing interaction-by-interaction processing on the "event loop" thread.
     let ctokStartup = AssumeCompilationThreadWithoutEvidence ()
 
-#if FX_LCIDFROMCODEPAGE
-
-    // See Bug 735819 
-    let lcidFromCodePage = 
-        if (Console.OutputEncoding.CodePage <> 65001) &&
-           (Console.OutputEncoding.CodePage <> Thread.CurrentThread.CurrentUICulture.TextInfo.OEMCodePage) &&
-           (Console.OutputEncoding.CodePage <> Thread.CurrentThread.CurrentUICulture.TextInfo.ANSICodePage) then
-                Thread.CurrentThread.CurrentUICulture <- new CultureInfo("en-US")
-                Some 1033
-        else
-            None
-#endif
-
     let timeReporter = FsiTimeReporter(outWriter)
 
 #if !FX_RESHAPED_CONSOLE
@@ -2495,9 +2482,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     let fsiConsolePrompt = FsiConsolePrompt(fsiOptions, fsiConsoleOutput)
 
     do
-#if FX_LCIDFROMCODEPAGE
-      ignore lcidFromCodePage
-#endif
       match tcConfigB.preferredUiLang with
 #if FX_RESHAPED_GLOBALIZATION
       | Some s -> System.Globalization.CultureInfo.CurrentUICulture <- new System.Globalization.CultureInfo(s)
