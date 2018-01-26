@@ -6391,9 +6391,9 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                       { Name          = ilFieldName
                         Type          = ilPropType
                         Attributes    = (if isStatic then FieldAttributes.Static else FieldAttributes.Private) ||| 
-                                        (if ilFieldName="value__" && tycon.IsEnumTycon then FieldAttributes.SpecialName else FieldAttributes.Private)
+                                        (if ilFieldName="value__" && tycon.IsEnumTycon then FieldAttributes.SpecialName else FieldAttributes.Private) |||
                                         (if ilNotSerialized then FieldAttributes.NotSerialized else FieldAttributes.Private) |||
-                                        (if fspec.LiteralValue.IsSome then FieldAttributes.Literal else FieldAttributes.Private) |||
+                                        (if fspec.LiteralValue.IsSome then FieldAttributes.Literal else FieldAttributes.Private)
                         Access        = ComputeMemberAccess isFieldHidden
                         Data          = None 
                         LiteralValue  = Option.map (GenFieldInit m) fspec.LiteralValue
