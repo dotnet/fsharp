@@ -16,6 +16,7 @@ open System.Collections
 open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Runtime.CompilerServices
+open System.Reflection
  
 let logging = false 
 
@@ -1446,15 +1447,17 @@ type ILMethodDefs(f : (unit -> ILMethodDef[])) =
 
 [<NoComparison; NoEquality>]
 type ILEventDef =
-    { Type: ILType option; 
+    { Type: ILType option;
       Name: string;
-      IsRTSpecialName: bool;
-      IsSpecialName: bool;
+      Attributes: EventAttributes
       AddMethod: ILMethodRef; 
       RemoveMethod: ILMethodRef;
       FireMethod: ILMethodRef option;
       OtherMethods: ILMethodRef list;
       CustomAttrs: ILAttributes; }
+        member x.IsSpecialName = (x.Attributes &&& EventAttributes.SpecialName) <> enum<_>(0)
+        member x.IsRTSpecialName = (x.Attributes &&& EventAttributes.RTSpecialName) <> enum<_>(0)
+        override x.ToString() = "event " + x.Name
 
 (* Index table by name. *)
 [<NoEquality; NoComparison>]
@@ -1466,8 +1469,7 @@ type ILEventDefs =
 [<NoComparison; NoEquality>]
 type ILPropertyDef = 
     { Name: string;
-      IsRTSpecialName: bool;
-      IsSpecialName: bool;
+      Attributes: PropertyAttributes;
       SetMethod: ILMethodRef option;
       GetMethod: ILMethodRef option;
       CallingConv: ILThisConvention;
@@ -1475,6 +1477,9 @@ type ILPropertyDef =
       Init: ILFieldInit option;
       Args: ILTypes;
       CustomAttrs: ILAttributes; }
+        member x.IsSpecialName = (x.Attributes &&& PropertyAttributes.SpecialName) <> enum<_>(0)
+        member x.IsRTSpecialName = (x.Attributes &&& PropertyAttributes.RTSpecialName) <> enum<_>(0)
+        override x.ToString() = "property " + x.Name
     
 // Index table by name.
 [<NoEquality; NoComparison>]
@@ -1487,17 +1492,18 @@ type ILPropertyDefs =
 type ILFieldDef = 
     { Name: string;
       Type: ILType;
-      IsStatic: bool;
+      Attributes: FieldAttributes;
       Access: ILMemberAccess;
       Data:  byte[] option;
       LiteralValue:  ILFieldInit option;
       Offset:  int32 option; 
-      IsSpecialName: bool;
-      Marshal: ILNativeType option; 
-      NotSerialized: bool;
-      IsLiteral: bool ;
-      IsInitOnly: bool;
+      Marshal: ILNativeType option;
       CustomAttrs: ILAttributes; }
+        member x.IsStatic = x.Attributes &&& FieldAttributes.Static <> enum 0
+        member x.IsSpecialName = x.Attributes &&& FieldAttributes.SpecialName <> enum 0
+        member x.IsLiteral = x.Attributes &&& FieldAttributes.Literal <> enum 0
+        member x.NotSerialized = x.Attributes &&& FieldAttributes.NotSerialized <> enum 0
+        member x.IsInitOnly = x.Attributes &&& FieldAttributes.InitOnly <> enum 0
 
 
 // Index table by name.  Keep a canonical list to make sure field order is not disturbed for binary manipulation.
@@ -2561,15 +2567,12 @@ let prependInstrsToClassCtor instrs tag cd =
 let mkILField (isStatic,nm,ty,init,at,access,isLiteral) =
    { Name=nm;
      Type=ty;
-     IsStatic = isStatic; 
+     Attributes=(if isStatic then FieldAttributes.Static else FieldAttributes.Private) ||| 
+                (if isLiteral then FieldAttributes.Literal else FieldAttributes.Private)
      LiteralValue = init;
      Data=at;
      Offset=None;
-     IsSpecialName = false;
      Marshal=None; 
-     NotSerialized=false;
-     IsInitOnly = false;
-     IsLiteral = isLiteral; 
      Access = access; 
      CustomAttrs=emptyILCustomAttrs }
 
@@ -2823,7 +2826,7 @@ type ILEnumInfo =
 let getTyOfILEnumInfo info = info.enumType
 
 let computeILEnumInfo (mdName,mdFields: ILFieldDefs) = 
-    match (List.partition (fun fd -> fd.IsStatic) mdFields.AsList) with 
+    match (List.partition (fun (fd:ILFieldDef) -> fd.IsStatic) mdFields.AsList) with 
     | staticFields,[vfd] -> 
         { enumType = vfd.Type; 
           enumValues = staticFields |> List.map (fun fd -> (fd.Name, match fd.LiteralValue with Some i -> i | None -> failwith ("info_of_enum_tdef: badly formed enum "+mdName+": static field does not have an default value")))  }

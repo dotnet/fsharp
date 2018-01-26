@@ -27,6 +27,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.NativeInterop
+open System.Reflection
 
 type ILReaderOptions =
     { pdbPath: string option
@@ -1935,12 +1936,8 @@ and seekReadField ctxt (numtypars, hasLayout) (idx:int) =
      let fd = 
        { Name = nm
          Type= readBlobHeapAsFieldSig ctxt numtypars typeIdx
+         Attributes = enum<FieldAttributes>(flags)
          Access = memberAccessOfFlags flags
-         IsStatic = isStatic
-         IsInitOnly = (flags &&& 0x0020) <> 0
-         IsLiteral = (flags &&& 0x0040) <> 0
-         NotSerialized = (flags &&& 0x0080) <> 0
-         IsSpecialName = (flags &&& 0x0200) <> 0 || (flags &&& 0x0400) <> 0 (* REVIEW: RTSpecialName *)
          LiteralValue = if (flags &&& 0x8000) = 0 then None else Some (seekReadConstant ctxt (TaggedIndex(hc_FieldDef, idx)))
          Marshal = 
              if (flags &&& 0x1000) = 0 then None else 
@@ -2445,10 +2442,9 @@ and seekReadMethodSemantics ctxt id =
 
 and seekReadEvent ctxt numtypars idx =
    let (flags, nameIdx, typIdx) = seekReadEventRow ctxt idx
-   { Name = readStringHeap ctxt nameIdx
-     Type = seekReadOptionalTypeDefOrRef ctxt numtypars AsObject typIdx
-     IsSpecialName  = (flags &&& 0x0200) <> 0x0 
-     IsRTSpecialName = (flags &&& 0x0400) <> 0x0
+   { Type = seekReadOptionalTypeDefOrRef ctxt numtypars AsObject typIdx
+     Name = readStringHeap ctxt nameIdx
+     Attributes = enum<EventAttributes>(flags)
      AddMethod= seekReadMethodSemantics ctxt (0x0008, TaggedIndex(hs_Event, idx))
      RemoveMethod=seekReadMethodSemantics ctxt (0x0010, TaggedIndex(hs_Event, idx))
      FireMethod=seekReadoptional_MethodSemantics ctxt (0x0020, TaggedIndex(hs_Event, idx))
@@ -2488,8 +2484,7 @@ and seekReadProperty ctxt numtypars idx =
            | None -> cc
    { Name=readStringHeap ctxt nameIdx
      CallingConv = cc2
-     IsRTSpecialName=(flags &&& 0x0400) <> 0x0 
-     IsSpecialName= (flags &&& 0x0200) <> 0x0 
+     Attributes = enum<PropertyAttributes>(flags)
      SetMethod=setter
      GetMethod=getter
      Type=retty

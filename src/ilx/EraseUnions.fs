@@ -14,6 +14,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX
 open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types
+open System.Reflection
 
 
 [<Literal>]
@@ -613,16 +614,15 @@ let mkMethodsAndPropertiesForFields (addMethodGeneratedAttrs, addPropertyGenerat
     let basicProps = 
         fields 
         |> Array.map (fun field -> 
-            { Name=adjustFieldName hasHelpers field.Name
-              IsRTSpecialName=false
-              IsSpecialName=false
-              SetMethod=None
+            { Name = adjustFieldName hasHelpers field.Name
+              Attributes = PropertyAttributes.None
+              SetMethod = None
               GetMethod = Some (mkILMethRef (typ.TypeRef, ILCallingConv.Instance, "get_" + adjustFieldName hasHelpers field.Name, 0, [], field.Type))
-              CallingConv=ILThisConvention.Instance
-              Type=field.Type          
-              Init=None
+              CallingConv = ILThisConvention.Instance
+              Type = field.Type          
+              Init = None
               Args = []
-              CustomAttrs= field.ILField.CustomAttrs }
+              CustomAttrs = field.ILField.CustomAttrs }
             |> addPropertyGeneratedAttrs 
         )
         |> Array.toList
@@ -698,16 +698,15 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                           mkMethodBody(true,[],2,nonBranchingInstrsToCode 
                                     ([ mkLdarg0 ] @ mkIsData ilg (true, cuspec, num)), attr))
                       |> addMethodGeneratedAttrs ],
-                    [ { Name=mkTesterName altName
-                        IsRTSpecialName=false
-                        IsSpecialName=false
-                        SetMethod=None
+                    [ { Name = mkTesterName altName
+                        Attributes = PropertyAttributes.None
+                        SetMethod = None
                         GetMethod = Some (mkILMethRef (baseTy.TypeRef, ILCallingConv.Instance, "get_" + mkTesterName altName, 0, [], ilg.typ_Bool))
-                        CallingConv=ILThisConvention.Instance
-                        Type=ilg.typ_Bool          
-                        Init=None
+                        CallingConv = ILThisConvention.Instance
+                        Type = ilg.typ_Bool          
+                        Init = None
                         Args = []
-                        CustomAttrs=emptyILCustomAttrs }
+                        CustomAttrs = emptyILCustomAttrs }
                       |> addPropertyGeneratedAttrs
                       |> addPropertyNeverAttrs ]
 
@@ -727,16 +726,15 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
 
                     let nullaryProp = 
                          
-                        { Name=altName
-                          IsRTSpecialName=false
-                          IsSpecialName=false
-                          SetMethod=None
+                        { Name = altName
+                          Attributes = PropertyAttributes.None
+                          SetMethod = None
                           GetMethod = Some (mkILMethRef (baseTy.TypeRef, ILCallingConv.Static, "get_" + altName, 0, [], baseTy))
-                          CallingConv=ILThisConvention.Static
-                          Type=baseTy          
-                          Init=None
+                          CallingConv = ILThisConvention.Static
+                          Type = baseTy
+                          Init = None
                           Args = []
-                          CustomAttrs=emptyILCustomAttrs }
+                          CustomAttrs = emptyILCustomAttrs }
                         |> addPropertyGeneratedAttrs 
                         |> addPropertyNeverAttrs
 
@@ -770,12 +768,12 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
         else
           let altNullaryFields = 
               if repr.MaintainPossiblyUniqueConstantFieldForAlternative(info,alt) then 
-                  let basic = 
+                  let basic : ILFieldDef = 
                      mkILStaticField (constFieldName altName, baseTy, None, None, ILMemberAccess.Assembly)
                             |> addFieldNeverAttrs 
                             |> addFieldGeneratedAttrs 
                   
-                  let uniqObjField = { basic with IsInitOnly=true }
+                  let uniqObjField = { basic with Attributes = basic.Attributes ||| FieldAttributes.InitOnly }
                   let inRootClass = cuspecRepr.OptimizeAlternativeToRootClass (cuspec,alt)
                   [ (info,alt, altTy,num,uniqObjField,inRootClass) ] 
               else 
@@ -829,16 +827,15 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                     let debugProxyGetterProps =
                         fields 
                         |> Array.map (fun fdef -> 
-                            { Name=fdef.Name
-                              IsRTSpecialName=false
-                              IsSpecialName=false
-                              SetMethod=None
-                              GetMethod=Some(mkILMethRef(debugProxyTy.TypeRef,ILCallingConv.Instance,"get_" + fdef.Name,0,[],fdef.Type))
-                              CallingConv=ILThisConvention.Instance
-                              Type=fdef.Type          
-                              Init=None
+                            { Name = fdef.Name
+                              Attributes = PropertyAttributes.None
+                              SetMethod = None
+                              GetMethod = Some(mkILMethRef(debugProxyTy.TypeRef,ILCallingConv.Instance,"get_" + fdef.Name,0,[],fdef.Type))
+                              CallingConv = ILThisConvention.Instance
+                              Type = fdef.Type          
+                              Init = None
                               Args = []
-                              CustomAttrs= fdef.ILField.CustomAttrs }
+                              CustomAttrs = fdef.ILField.CustomAttrs }
                             |> addPropertyGeneratedAttrs)
                         |> Array.toList
 
@@ -864,7 +861,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                       |> Array.map (fun field -> 
                           let fldName,fldTy = mkUnionCaseFieldId field
                           let fdef = mkILInstanceField  (fldName,fldTy, None, ILMemberAccess.Assembly) |> addFieldNeverAttrs |> addFieldGeneratedAttrs
-                          { fdef with IsInitOnly=isTotallyImmutable })
+                          if isTotallyImmutable then { fdef with Attributes=fdef.Attributes ||| FieldAttributes.InitOnly } else fdef)
                       |> Array.toList
 
 
@@ -977,7 +974,7 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
     let selfAndTagFields = 
         [ for (fldName,fldTy) in (selfFields @ tagFieldsInObject)  do
               let fdef = mkILInstanceField  (fldName,fldTy, None, ILMemberAccess.Assembly) |> addFieldNeverAttrs |> addFieldGeneratedAttrs
-              yield { fdef with IsInitOnly= (not isStruct && isTotallyImmutable) } ]
+              yield if not isStruct && isTotallyImmutable then { fdef with Attributes = fdef.Attributes ||| FieldAttributes.InitOnly } else fdef ]
 
     let ctorMeths =
         if (List.isEmpty selfFields && List.isEmpty tagFieldsInObject && not (List.isEmpty selfMeths))
@@ -1042,16 +1039,15 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
               [ mkILNonGenericInstanceMethod("get_" + tagPropertyName,cud.cudHelpersAccess,[],mkILReturn tagFieldType,body) 
                 |> addMethodGeneratedAttrs ], 
           
-              [ { Name=tagPropertyName
-                  IsRTSpecialName=false
-                  IsSpecialName=false
-                  SetMethod=None
-                  GetMethod=Some(mkILMethRef(baseTy.TypeRef,ILCallingConv.Instance,"get_" + tagPropertyName,0,[], tagFieldType))
-                  CallingConv=ILThisConvention.Instance
-                  Type=tagFieldType          
-                  Init=None
+              [ { Name = tagPropertyName
+                  Attributes = PropertyAttributes.None
+                  SetMethod = None
+                  GetMethod = Some(mkILMethRef(baseTy.TypeRef,ILCallingConv.Instance,"get_" + tagPropertyName,0,[], tagFieldType))
+                  CallingConv = ILThisConvention.Instance
+                  Type = tagFieldType          
+                  Init = None
                   Args = []
-                  CustomAttrs=emptyILCustomAttrs }
+                  CustomAttrs = emptyILCustomAttrs }
                 |> addPropertyGeneratedAttrs 
                 |> addPropertyNeverAttrs  ]
 

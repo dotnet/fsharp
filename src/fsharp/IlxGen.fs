@@ -7,6 +7,7 @@
 module internal Microsoft.FSharp.Compiler.IlxGen
 
 open System.IO
+open System.Reflection
 open System.Collections.Generic
 open Internal.Utilities
 open Internal.Utilities.Collections
@@ -4731,8 +4732,7 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) sta
         let ilTy = ilGetterMethSpec.FormalReturnType
         let ilPropDef = 
             { Name = PrettyNaming.ChopPropertyName ilGetterMethSpec.Name
-              IsRTSpecialName = false
-              IsSpecialName = false
+              Attributes = PropertyAttributes.None
               SetMethod = None
               GetMethod = Some ilGetterMethSpec.MethodRef
               CallingConv = ILThisConvention.Static
@@ -4772,7 +4772,7 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) sta
             let ilFieldDef = mkILStaticField (fspec.Name, fty, None, None, access)
             let ilFieldDef =
                 match vref.LiteralValue with 
-                | Some konst -> { ilFieldDef with IsLiteral=true; LiteralValue= Some(GenFieldInit m konst) }
+                | Some konst -> { ilFieldDef with Attributes = ilFieldDef.Attributes ||| FieldAttributes.Literal; LiteralValue = Some(GenFieldInit m konst) }
                 | None  -> ilFieldDef 
               
             let ilFieldDef = 
@@ -4780,7 +4780,7 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) sta
                 if mut || cenv.opts.isInteractiveItExpr || not isClassInitializer || hasLiteralAttr then 
                     ilFieldDef 
                 else 
-                    {ilFieldDef with IsInitOnly=true }
+                    {ilFieldDef with Attributes = ilFieldDef.Attributes ||| FieldAttributes.InitOnly }
 
             let ilAttribs = 
                 if not hasLiteralAttr then
@@ -4810,8 +4810,7 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) sta
                 |> GenAttrs cenv eenv // property only gets attributes that target properties
             let ilPropDef = 
                 { Name=ilPropName
-                  IsRTSpecialName=false
-                  IsSpecialName=false
+                  Attributes = PropertyAttributes.None
                   SetMethod=if mut || cenv.opts.isInteractiveItExpr then Some ilSetterMethRef else None
                   GetMethod=Some ilGetterMethRef
                   CallingConv=ILThisConvention.Static
@@ -5051,16 +5050,15 @@ and GenReturnInfo cenv eenv ilRetTy (retInfo : ArgReprInfo) : ILReturn =
 and GenPropertyForMethodDef compileAsInstance tref mdef (v:Val) (memberInfo:ValMemberInfo) ilArgTys ilPropTy ilAttrs compiledName =
     let name = match compiledName with | Some n -> n | _ -> v.PropertyName in  (* chop "get_" *)
     
-    { Name=name 
-      IsRTSpecialName=false
-      IsSpecialName=false
-      SetMethod=(if memberInfo.MemberFlags.MemberKind= MemberKind.PropertySet then Some(mkRefToILMethod(tref,mdef)) else None)
-      GetMethod=(if memberInfo.MemberFlags.MemberKind= MemberKind.PropertyGet then Some(mkRefToILMethod(tref,mdef)) else None)
-      CallingConv=(if compileAsInstance then ILThisConvention.Instance else ILThisConvention.Static)
-      Type=ilPropTy          
-      Init=None
+    { Name = name 
+      Attributes = PropertyAttributes.None
+      SetMethod = (if memberInfo.MemberFlags.MemberKind= MemberKind.PropertySet then Some(mkRefToILMethod(tref,mdef)) else None)
+      GetMethod = (if memberInfo.MemberFlags.MemberKind= MemberKind.PropertyGet then Some(mkRefToILMethod(tref,mdef)) else None)
+      CallingConv = (if compileAsInstance then ILThisConvention.Instance else ILThisConvention.Static)
+      Type = ilPropTy          
+      Init = None
       Args = ilArgTys
-      CustomAttrs=ilAttrs }  
+      CustomAttrs = ilAttrs }  
 
 and GenEventForProperty cenv eenvForMeth (mspec:ILMethodSpec) (v:Val) ilAttrsThatGoOnPrimaryItem m returnTy =
     let evname = v.PropertyName
@@ -5070,9 +5068,8 @@ and GenEventForProperty cenv eenvForMeth (mspec:ILMethodSpec) (v:Val) ilAttrsTha
     let addMethRef    = mkILMethRef (ilThisTy.TypeRef,mspec.CallingConv,"add_"    + evname,0,[ilDelegateTy],ILType.Void)
     let removeMethRef = mkILMethRef (ilThisTy.TypeRef,mspec.CallingConv,"remove_" + evname,0,[ilDelegateTy],ILType.Void)
     { Type = Some(ilDelegateTy) 
-      Name= evname 
-      IsRTSpecialName=false
-      IsSpecialName=false
+      Name= evname
+      Attributes = EventAttributes.None
       AddMethod = addMethRef 
       RemoveMethod = removeMethRef
       FireMethod= None
@@ -6393,16 +6390,15 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                   yield
                       { Name          = ilFieldName
                         Type          = ilPropType
-                        IsStatic      = isStatic
+                        Attributes    = (if isStatic then FieldAttributes.Static else FieldAttributes.Private) ||| 
+                                        (if ilFieldName="value__" && tycon.IsEnumTycon then FieldAttributes.SpecialName else FieldAttributes.Private)
+                                        (if ilNotSerialized then FieldAttributes.NotSerialized else FieldAttributes.Private) |||
+                                        (if fspec.LiteralValue.IsSome then FieldAttributes.Literal else FieldAttributes.Private) |||
                         Access        = ComputeMemberAccess isFieldHidden
                         Data          = None 
                         LiteralValue  = Option.map (GenFieldInit m) fspec.LiteralValue
                         Offset        = ilFieldOffset
-                        IsSpecialName = (ilFieldName="value__" && tycon.IsEnumTycon)
                         Marshal       = ilFieldMarshal
-                        NotSerialized = ilNotSerialized 
-                        IsInitOnly    = false  
-                        IsLiteral     = fspec.LiteralValue.IsSome 
                         CustomAttrs   = mkILCustomAttrs (GenAttrs cenv eenv fattribs @ extraAttribs) } 
 
                if requiresExtraField then 
@@ -6418,8 +6414,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                      let ilFieldAttrs = GenAttrs cenv eenv propAttribs @ [mkCompilationMappingAttrWithSeqNum cenv.g (int SourceConstructFlags.Field) i]
                      yield
                        { Name            = ilPropName
-                         IsRTSpecialName = false
-                         IsSpecialName   = false
+                         Attributes      = PropertyAttributes.None
                          SetMethod       = (if ilHasSetter then Some(mkILMethRef(tref,ilCallingConv,"set_" + ilPropName,0,[ilPropType],ILType.Void)) else None)
                          GetMethod       = Some(mkILMethRef(tref,ilCallingConv,"get_" + ilPropName,0,[],ilPropType))
                          CallingConv     = ilCallingConv.ThisConv
@@ -6792,14 +6787,13 @@ and GenExnDef cenv mgbuf eenv m (exnc:Tycon) =
                let ilMethodDef = mkLdfldMethodDef (ilMethName,reprAccess,false,ilThisTy,ilFieldName,ilPropType)
                let ilFieldDef = IL.mkILInstanceField(ilFieldName,ilPropType, None, ILMemberAccess.Assembly)
                let ilPropDef = 
-                     { Name=ilPropName
-                       IsRTSpecialName=false
-                       IsSpecialName=false
-                       SetMethod=None
-                       GetMethod=Some(mkILMethRef(tref,ILCallingConv.Instance,ilMethName,0,[],ilPropType))
-                       CallingConv=ILThisConvention.Instance
-                       Type=ilPropType          
-                       Init=None
+                     { Name = ilPropName
+                       Attributes = PropertyAttributes.None
+                       SetMethod = None
+                       GetMethod = Some(mkILMethRef(tref,ILCallingConv.Instance,ilMethName,0,[],ilPropType))
+                       CallingConv = ILThisConvention.Instance
+                       Type = ilPropType          
+                       Init = None
                        Args = []
                        CustomAttrs=mkILCustomAttrs (GenAttrs cenv eenv fld.PropertyAttribs @ [mkCompilationMappingAttrWithSeqNum cenv.g (int SourceConstructFlags.Field) i]) }
                yield (ilMethodDef,ilFieldDef,ilPropDef,(ilPropName,ilFieldName,ilPropType)) ] 

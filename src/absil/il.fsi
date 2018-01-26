@@ -6,6 +6,7 @@ module public Microsoft.FSharp.Compiler.AbstractIL.IL
 
 open Internal.Utilities
 open System.Collections.Generic
+open System.Reflection
 
 [<RequireQualifiedAccess>]
 type PrimaryAssembly = 
@@ -1105,18 +1106,19 @@ type ILMethodDefs =
 type ILFieldDef = 
     { Name: string;
       Type: ILType;
-      IsStatic: bool;
+      Attributes: FieldAttributes;
       Access: ILMemberAccess;
       Data:  byte[] option;
       LiteralValue: ILFieldInit option;  
       /// The explicit offset in bytes when explicit layout is used.
       Offset:  int32 option; 
-      IsSpecialName: bool;
       Marshal: ILNativeType option; 
-      NotSerialized: bool;
-      IsLiteral: bool ;
-      IsInitOnly: bool;
       CustomAttrs: ILAttributes; }
+        member IsStatic: bool
+        member IsSpecialName: bool
+        member IsLiteral: bool
+        member NotSerialized: bool
+        member IsInitOnly: bool
 
 /// Tables of fields.  Logically equivalent to a list of fields but
 /// the table is kept in a form optimized for looking up fields by 
@@ -1129,15 +1131,16 @@ type ILFieldDefs =
 /// Event definitions.
 [<NoComparison; NoEquality>]
 type ILEventDef =
-    { Type: ILType option; 
+    { Type: ILType option;
       Name: string;
-      IsRTSpecialName: bool;
-      IsSpecialName: bool;
+      Attributes: EventAttributes
       AddMethod: ILMethodRef; 
       RemoveMethod: ILMethodRef;
       FireMethod: ILMethodRef option;
       OtherMethods: ILMethodRef list;
       CustomAttrs: ILAttributes; }
+        member IsSpecialName : bool
+        member IsRTSpecialName : bool
 
 /// Table of those events in a type definition.
 [<NoEquality; NoComparison; Sealed>]
@@ -1149,8 +1152,7 @@ type ILEventDefs =
 [<NoComparison; NoEquality>]
 type ILPropertyDef =
     { Name: string;
-      IsRTSpecialName: bool;
-      IsSpecialName: bool;
+      Attributes: PropertyAttributes;
       SetMethod: ILMethodRef option;
       GetMethod: ILMethodRef option;
       CallingConv: ILThisConvention;
@@ -1158,6 +1160,8 @@ type ILPropertyDef =
       Init: ILFieldInit option;
       Args: ILTypes;
       CustomAttrs: ILAttributes; }
+        member IsSpecialName : bool
+        member IsRTSpecialName : bool
 
 /// Table of those properties in a type definition.
 [<NoEquality; NoComparison>]
