@@ -528,7 +528,7 @@ let bool2 = false
     let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
 //<@ let x = Some(3) in x.IsSome @>
-#if !NO_EXTENSIONTYPING
+// #if !NO_EXTENSIONTYPING
 [<Test>]
 let ``Test Declarations project1`` () =
     let wholeProjectResults = exprChecker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
@@ -699,7 +699,11 @@ let ``Test Optimized Declarations Project1`` () =
            "member M2(__) (unitVar1) = __.compiledAsInstanceMethod(()) @ (56,21--56,47)";
            "member SM1(unitVar0) = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (compiledAsStaticField,ClassWithImplicitConstructor.compiledAsGenericStaticMethod<Microsoft.FSharp.Core.int> (compiledAsStaticField)) @ (57,26--57,101)";
            "member SM2(unitVar0) = ClassWithImplicitConstructor.compiledAsStaticMethod (()) @ (58,26--58,50)";
+#if NO_PROJECTCRACKER // proxy for COMPILER
            "member ToString(__) (unitVar1) = String.Concat (base.ToString(),let value: Microsoft.FSharp.Core.int = 999 in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int> (value) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ...) @ (59,29--59,57)";
+#else
+           "member ToString(__) (unitVar1) = String.Concat (base.ToString(),let x: Microsoft.FSharp.Core.int = 999 in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int> (x) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ...) @ (59,29--59,57)";
+#endif
            "member TestCallinToString(this) (unitVar1) = this.ToString() @ (60,39--60,54)";
            "type Error"; "let err = {Data0 = 3; Data1 = 4} @ (64,10--64,20)";
            "let matchOnException(err) = match (if err :? M.Error then $0 else $1) targets ... @ (66,33--66,36)";
@@ -719,14 +723,23 @@ let ``Test Optimized Declarations Project1`` () =
            "let v = M.c ().get_InstanceProperty(()) @ (98,8--98,26)";
            "do Console.WriteLine (\"777\")";
            "let functionWithSubmsumption(x) = IntrinsicFunctions.UnboxGeneric<Microsoft.FSharp.Core.string> (x) @ (102,40--102,52)";
+#if NO_PROJECTCRACKER // proxy for COMPILER
            "let functionWithCoercion(x) = let arg: Microsoft.FSharp.Core.string = let arg: Microsoft.FSharp.Core.string = IntrinsicFunctions.UnboxGeneric<Microsoft.FSharp.Core.string> (x :> Microsoft.FSharp.Core.obj) in M.functionWithSubmsumption (arg :> Microsoft.FSharp.Core.obj) in M.functionWithSubmsumption (arg :> Microsoft.FSharp.Core.obj) @ (103,39--103,116)";
+#else
+           "let functionWithCoercion(x) = let x: Microsoft.FSharp.Core.string = let x: Microsoft.FSharp.Core.string = IntrinsicFunctions.UnboxGeneric<Microsoft.FSharp.Core.string> (x :> Microsoft.FSharp.Core.obj) in M.functionWithSubmsumption (x :> Microsoft.FSharp.Core.obj) in M.functionWithSubmsumption (x :> Microsoft.FSharp.Core.obj) @ (103,39--103,116)";
+#endif
            "type MultiArgMethods";
            "member .ctor(c,d) = (new Object(); ()) @ (105,5--105,20)";
            "member Method(x) (a,b) = 1 @ (106,37--106,38)";
            "member CurriedMethod(x) (a1,b1) (a2,b2) = 1 @ (107,63--107,64)";
            "let testFunctionThatCallsMultiArgMethods(unitVar0) = let m: M.MultiArgMethods = new MultiArgMethods(3,4) in Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (m.Method(7,8),let arg00: Microsoft.FSharp.Core.int = 9 in let arg01: Microsoft.FSharp.Core.int = 10 in let arg10: Microsoft.FSharp.Core.int = 11 in let arg11: Microsoft.FSharp.Core.int = 12 in m.CurriedMethod(arg00,arg01,arg10,arg11)) @ (110,8--110,9)";
+#if NO_PROJECTCRACKER // proxy for COMPILER
            "let functionThatUsesObjectExpression(unitVar0) = { new Object() with member x.ToString(unitVar1) = let value: Microsoft.FSharp.Core.int = 888 in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int> (value) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ...  } @ (114,3--114,55)";
            "let functionThatUsesObjectExpressionWithInterfaceImpl(unitVar0) = { new Object() with member x.ToString(unitVar1) = let value: Microsoft.FSharp.Core.int = 888 in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int> (value) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... interface System.IComparable with member x.CompareTo(y) = 0 } :> System.IComparable @ (117,3--120,38)";
+#else
+           "let functionThatUsesObjectExpression(unitVar0) = { new Object() with member x.ToString(unitVar1) = let x: Microsoft.FSharp.Core.int = 888 in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int> (x) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ...  } @ (114,3--114,55)";
+           "let functionThatUsesObjectExpressionWithInterfaceImpl(unitVar0) = { new Object() with member x.ToString(unitVar1) = let x: Microsoft.FSharp.Core.int = 888 in let matchValue: Microsoft.FSharp.Core.obj = Operators.Box<Microsoft.FSharp.Core.int> (x) in match (if Operators.op_Equality<Microsoft.FSharp.Core.obj> (matchValue,dflt) then $0 else (if matchValue :? System.IFormattable then $1 else $2)) targets ... interface System.IComparable with member x.CompareTo(y) = 0 } :> System.IComparable @ (117,3--120,38)";
+#endif
            "let testFunctionThatUsesUnitsOfMeasure(x) (y) = Operators.op_Addition<Microsoft.FSharp.Core.float<'u>,Microsoft.FSharp.Core.float<'u>,Microsoft.FSharp.Core.float<'u>> (x,y) @ (122,70--122,75)";
            "let testFunctionThatUsesAddressesAndByrefs(x) = let mutable w: Microsoft.FSharp.Core.int = 4 in let y1: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = x in let y2: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = &w in let arr: Microsoft.FSharp.Core.int Microsoft.FSharp.Core.[] = [|3; 4|] in let r: Microsoft.FSharp.Core.int Microsoft.FSharp.Core.ref = Operators.Ref<Microsoft.FSharp.Core.int> (3) in let y3: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = [I_ldelema (NormalAddress,false,ILArrayShapeFIX,TypeVar 0us)](arr,0) in let y4: Microsoft.FSharp.Core.byref<Microsoft.FSharp.Core.int> = &r.contents in let z: Microsoft.FSharp.Core.int = Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (x,y1),y2),y3) in (w <- 3; (x <- 4; (y2 <- 4; (y3 <- 5; Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32,Microsoft.FSharp.Core.int32> (Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (z,x),y1),y2),y3),y4),IntrinsicFunctions.GetArray<Microsoft.FSharp.Core.int> (arr,0)),r.contents))))) @ (125,16--125,17)";
            "let testFunctionThatUsesStructs1(dt) = dt.AddDays(3) @ (139,57--139,72)";
@@ -769,7 +782,7 @@ let ``Test Optimized Declarations Project1`` () =
       |> shouldEqual (filterHack expected)
 
     ()
-#endif
+// #endif
 
 //---------------------------------------------------------------------------------------------------------
 // This big list expression was causing us trouble
