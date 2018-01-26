@@ -22,7 +22,7 @@
   <PropertyGroup>
     <FSCoreVersion>4.4.3.0</FSCoreVersion>
     <FSProductVersion>10.1.1.0</FSProductVersion>
-    <FSPackageVersion>10.1.1</FSPackageVersion>
+    <FSPackageVersion>10.1.2</FSPackageVersion>
     <VSAssemblyVersion>15.6.0.0</VSAssemblyVersion>
   </PropertyGroup>
 
@@ -85,7 +85,7 @@
     <!-- Frozen FSharp.Core package being built with this build -->
     <FSharpCore41TargetPackageVersion>4.1.19</FSharpCore41TargetPackageVersion>
     <FSharpCore41TargetMajorVersion>4.1</FSharpCore41TargetMajorVersion>
-    <FSharpCoreLatestTargetPackageVersion>4.3.2</FSharpCoreLatestTargetPackageVersion>
+    <FSharpCoreLatestTargetPackageVersion>4.3.3</FSharpCoreLatestTargetPackageVersion>
     <FSharpCoreLatestTargetMajorVersion>4.3</FSharpCoreLatestTargetMajorVersion>
 
     <!-- Frozen FSharp.Core package -->
