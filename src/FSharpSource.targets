@@ -58,7 +58,7 @@
     </Otherwise>
   </Choose>
 
-  <PropertyGroup Condition="'$(UseMicroBuild)' != 'true'">
+  <PropertyGroup Condition="'$(Configuration)' == 'Proto'">
     <OtherFlags >$(OtherFlags) --version:"$(MicroBuildAssemblyVersion)"</OtherFlags>
   </PropertyGroup>
 
