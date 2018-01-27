@@ -686,6 +686,12 @@ if not "%SIGN_TYPE%" == "" (
     if ERRORLEVEL 1 echo Error running sign tool && goto :failure
 )
 
+echo ---------------- Done with assembly signing, start package creation ---------------
+
+echo %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG%
+     %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG%
+if ERRORLEVEL 1 echo Error building NuGet packages && goto :failure
+
 if "%BUILD_SETUP%" == "1" (
     echo %_msbuildexe% %msbuildflags% setup\build-msi.proj /p:Configuration=%BUILD_CONFIG%
          %_msbuildexe% %msbuildflags% setup\build-msi.proj /p:Configuration=%BUILD_CONFIG%
