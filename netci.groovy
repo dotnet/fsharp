@@ -19,7 +19,9 @@ def static getBuildJobName(def configuration, def os) {
         else
         {
             // Linux
-            configurations = ['Debug_default', 'Release_default', 'Release_fcs' ];
+            // TODO: It should be possible to enable these configurations immediately subsequent to the PR containing this line
+            //configurations = ['Debug_default', 'Release_net40_test', 'Release_fcs' ];
+            configurations = [ 'Release_default', 'Release_fcs' ];
         }
         
         configurations.each { configuration ->
@@ -57,6 +59,10 @@ def static getBuildJobName(def configuration, def os) {
             else if (configuration == "Release_default") {
                 buildFlavor = "release"
                 build_args = ""
+            }
+            else if (configuration == "Release_net40_test") {
+                buildFlavor = "release"
+                build_args = "net40 test"
             }
             else if (configuration == "Release_ci_part1") {
                 buildFlavor = "release"

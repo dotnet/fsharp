@@ -221,7 +221,7 @@ if [ "$_autoselect_tests" = "1" ]; then
     if [ "$BUILD_NET40" = "1" ]; then
         export TEST_NET40_COMPILERUNIT_SUITE=1
         export TEST_NET40_COREUNIT_SUITE=1
-        export TEST_NET40_FSHARP_SUITE=1
+        # export TEST_NET40_FSHARP_SUITE=1
     fi
 
     if [ "$BUILD_CORECLR" = "1" ]; then
@@ -269,12 +269,6 @@ printf "INCLUDE_TEST_SPEC_NUNIT=%s\n" "$INCLUDE_TEST_SPEC_NUNIT"
 printf "INCLUDE_TEST_TAGS=%s\n" "$INCLUDE_TEST_TAGS"
 printf "\n"
 
-# TODO: Print out environment variables?
-printf "Environment\n"
-printf "\n"
-printf "(TODO)\n"
-printf "\n"
-printf "\n"
 
 build_status "Done with arguments, starting preparation"
 
@@ -373,27 +367,12 @@ if [ "$BUILD_PHASE" = "1" ]; then
     { printeval "$cmd"; } || failwith "'$cmd' failed"
 fi
 
-if [ "$TEST_NET40_COMPILERUNIT_SUITE" != "1" ] || [ "$TEST_CORECLR_COREUNIT_SUITE" != "1" ] && [ "$TEST_NET40_FSHARP_SUITE" != "1" ]; then
+if [ "$TEST_NET40_COMPILERUNIT_SUITE" != "1" ] && [ "$TEST_CORECLR_COREUNIT_SUITE" != "1" ] && [ "$TEST_NET40_FSHARP_SUITE" != "1" ]; then
     # Successful build; not running tests so exit now.
     exit 0
 fi
 
-build_status "Main part of build finished, completing parts of build needed for Mono setup"
-
-if [ "$BUILD_NET40" = "1" ]; then
-    { printeval "./autogen.sh --prefix=/usr"; } || failwith "./autogen.sh failed"
-
-    { printeval "make"; } || failwith "make failed"
-fi
-
-build_status "Done with build, starting update/prepare"
-
-if [ "$BUILD_NET40" = "1" ]; then
-
-    { printeval "sudo make install"; } || failwith "sudo make install failed"
-fi
-
-NUNITPATH="packages/NUnit.Console.3.5.0/tools/"
+NUNITPATH="packages/NUnit.Console.3.0.0/tools/"
 
 if [ "$no_test" = "1" ]; then
     # Successful build; not running tests so exit now.

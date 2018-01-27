@@ -642,14 +642,14 @@
       <Link>FSIstrings.txt</Link>
     </EmbeddedText>
     <Compile Include="..\fsi\fsi.fsi">
-      <Link>InteractiveSession\fsi.fsi</Link>
+      <Link>InteractiveSession/fsi.fsi</Link>
     </Compile>
     <Compile Include="..\fsi\fsi.fs">
-      <Link>InteractiveSession\fsi.fs</Link>
+      <Link>InteractiveSession/fsi.fs</Link>
     </Compile>
 
     <Compile Include="..\MSBuildReferenceResolver.fs"  Condition="'$(MonoPackaging)' != 'true'">
-      <Link>MSBuildReferenceResolver.fs</Link>
+      <Link>Misc/MSBuildReferenceResolver.fs</Link>
     </Compile>
     <!-- an old API for testing the compiler and gathering diagnostics in-memory -->
     <Compile Include="..\LegacyHostedCompilerForTesting.fs" Condition="'$(MonoPackaging)' != 'true'">
