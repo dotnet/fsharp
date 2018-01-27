@@ -118,8 +118,8 @@
     <Compile Include="StructTuples.fs" />
     <Compile Include="SurfaceArea.$(TargetDotnetProfile).fs" />
     <Compile Include="Program.fs" Condition="'$(TargetDotnetProfile)' == 'coreclr'" />
-    <CopyAndSubstituteText Include="FSharp.Core.UnitTests.dll.config">
-      <TargetFilename>FSharp.Core.UnitTests.dll.config</TargetFilename>
+    <CopyAndSubstituteText Include="FSharp.Core.Unittests.dll.config">
+      <TargetFilename>FSharp.Core.Unittests.dll.config</TargetFilename>
       <Pattern1>FSCoreVersion</Pattern1>
       <Replacement1>$(FSCoreVersion)</Replacement1>
     </CopyAndSubstituteText>

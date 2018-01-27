@@ -361,7 +361,7 @@ if [ "$BUILD_PROTO" = "1" ]; then
 #        { printeval "$_ngenexe install Proto/net40/bin/fsc-proto.exe /nologo"; } || failwith "NGen of proto failed"
     else
         # Build proto-compiler and libs
-        { printeval "$_msbuildexe $msbuildflags src/fsharp-proto-build.proj /p:UseMonoPackaging=true /p:Configuration=Proto /p:DisableLocalization=true"; } || failwith "compiler proto build failed"
+        { printeval "$_msbuildexe $msbuildflags src/fsharp-proto-build.proj /p:Configuration=Proto /p:DisableLocalization=true"; } || failwith "compiler proto build failed"
     fi
 fi
 
@@ -369,7 +369,7 @@ fi
 build_status "Done with proto, starting build"
 
 if [ "$BUILD_PHASE" = "1" ]; then
-    cmd="$_msbuildexe $msbuildflags build-everything.proj /p:UseMonoPackaging=true /p:Configuration=$BUILD_CONFIG $BUILD_DIAG /p:BUILD_PUBLICSIGN=$BUILD_PUBLICSIGN"
+    cmd="$_msbuildexe $msbuildflags build-everything.proj /p:Configuration=$BUILD_CONFIG $BUILD_DIAG /p:BUILD_PUBLICSIGN=$BUILD_PUBLICSIGN"
     { printeval "$cmd"; } || failwith "'$cmd' failed"
 fi
 
