@@ -1029,32 +1029,15 @@ type ILLazyMethodBody =
 [<NoComparison; NoEquality>]
 type ILMethodDef = 
     { Name: string;
-      mdKind: MethodKind;
+      Attributes: MethodAttributes;
+      ImplAttributes: MethodImplAttributes;
       CallingConv: ILCallingConv;
       Parameters: ILParameters;
       Return: ILReturn;
-      Access: ILMemberAccess;
       mdBody: ILLazyMethodBody;   
       mdCodeKind: MethodCodeKind;   
-      IsInternalCall: bool;
-      IsManaged: bool;
-      IsForwardRef: bool;
       SecurityDecls: ILPermissions;
-      /// Some methods are marked "HasSecurity" even if there are no permissions attached, e.g. if they use SuppressUnmanagedCodeSecurityAttribute 
-      HasSecurity: bool; 
       IsEntryPoint:bool;
-      IsReqSecObj: bool;
-      IsHideBySig: bool;
-      IsSpecialName: bool;
-      /// The method is exported to unmanaged code using COM interop.
-      IsUnmanagedExport: bool; 
-      IsSynchronized: bool;
-      IsPreserveSig: bool;
-      /// .NET 2.0 feature: SafeHandle finalizer must be run.
-      IsMustRun: bool; 
-      IsNoInline: bool;
-      IsAggressiveInline: bool;
-     
       GenericParams: ILGenericParameterDefs;
       CustomAttrs: ILAttributes; }
       
@@ -1084,10 +1067,27 @@ type ILMethodDef =
     
     member IsFinal: bool
     member IsNewSlot: bool
-    member IsCheckAccessOnOverride : bool
+    member IsCheckAccessOnOverride: bool
     member IsAbstract: bool
-    member MethodBody : ILMethodBody
+    member MethodBody: ILMethodBody
     member CallingSignature: ILCallingSignature
+    member Access: ILMemberAccess
+    member IsHideBySig: bool
+    member IsSpecialName: bool
+    /// The method is exported to unmanaged code using COM interop.
+    member IsUnmanagedExport: bool
+    member IsReqSecObj: bool
+    /// Some methods are marked "HasSecurity" even if there are no permissions attached, e.g. if they use SuppressUnmanagedCodeSecurityAttribute 
+    member HasSecurity: bool
+    member IsManaged: bool
+    member IsForwardRef: bool
+    member IsInternalCall: bool
+    member IsPreserveSig: bool
+    member IsSynchronized: bool
+    member IsNoInline: bool
+    member IsAggressiveInline: bool
+    /// .NET 2.0 feature: SafeHandle finalizer must be run.
+    member IsMustRun: bool
 
 /// Tables of methods.  Logically equivalent to a list of methods but
 /// the table is kept in a form optimized for looking up methods by 
@@ -1107,7 +1107,6 @@ type ILFieldDef =
     { Name: string;
       Type: ILType;
       Attributes: FieldAttributes;
-      Access: ILMemberAccess;
       Data:  byte[] option;
       LiteralValue: ILFieldInit option;  
       /// The explicit offset in bytes when explicit layout is used.
@@ -1119,6 +1118,7 @@ type ILFieldDef =
         member IsLiteral: bool
         member NotSerialized: bool
         member IsInitOnly: bool
+        member Access: ILMemberAccess
 
 /// Tables of fields.  Logically equivalent to a list of fields but
 /// the table is kept in a form optimized for looking up fields by 
@@ -1684,21 +1684,21 @@ val mkILEmptyGenericParams: ILGenericParameterDefs
 val mkILMethodBody: initlocals:bool * ILLocals * int * ILCode * ILSourceMarker option -> ILMethodBody
 val mkMethodBody: bool * ILLocals * int * ILCode * ILSourceMarker option -> MethodBody
 
-val mkILCtor: ILMemberAccess * ILParameter list * MethodBody -> ILMethodDef
+val mkILCtor: MethodAttributes * ILParameter list * MethodBody -> ILMethodDef
 val mkILClassCtor: MethodBody -> ILMethodDef
 val mkILNonGenericEmptyCtor: ILSourceMarker option -> ILType -> ILMethodDef
-val mkILStaticMethod: ILGenericParameterDefs * string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
-val mkILNonGenericStaticMethod: string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
-val mkILGenericVirtualMethod: string * ILMemberAccess * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody -> ILMethodDef
-val mkILGenericNonVirtualMethod: string * ILMemberAccess * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody -> ILMethodDef
-val mkILNonGenericVirtualMethod: string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
-val mkILNonGenericInstanceMethod: string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+val mkILStaticMethod: ILGenericParameterDefs * string * MethodAttributes * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+val mkILNonGenericStaticMethod: string * MethodAttributes * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+val mkILGenericVirtualMethod: string * MethodAttributes * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+val mkILGenericNonVirtualMethod: string * MethodAttributes * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+val mkILNonGenericVirtualMethod: string * MethodAttributes * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+val mkILNonGenericInstanceMethod: string * MethodAttributes * ILParameter list * ILReturn * MethodBody -> ILMethodDef
 
 
 /// Make field definitions.
-val mkILInstanceField: string * ILType * ILFieldInit option * ILMemberAccess -> ILFieldDef
-val mkILStaticField: string * ILType * ILFieldInit option * byte[] option * ILMemberAccess -> ILFieldDef
-val mkILLiteralField: string * ILType * ILFieldInit * byte[] option * ILMemberAccess -> ILFieldDef
+val mkILInstanceField: string * ILType * ILFieldInit option * FieldAttributes -> ILFieldDef
+val mkILStaticField: string * ILType * ILFieldInit option * byte[] option * FieldAttributes -> ILFieldDef
+val mkILLiteralField: string * ILType * ILFieldInit * byte[] option * FieldAttributes -> ILFieldDef
 
 /// Make a type definition.
 val mkILGenericClass: string * ILTypeDefAccess * ILGenericParameterDefs * ILType * ILType list * ILMethodDefs * ILFieldDefs * ILTypeDefs * ILPropertyDefs * ILEventDefs * ILAttributes * ILTypeInit -> ILTypeDef
@@ -1727,9 +1727,9 @@ val prependInstrsToMethod: ILInstr list -> ILMethodDef -> ILMethodDef
 val prependInstrsToClassCtor: ILInstr list -> ILSourceMarker option -> ILTypeDef -> ILTypeDef
 
 /// Derived functions for making some simple constructors
-val mkILStorageCtor: ILSourceMarker option * ILInstr list * ILType * (string * ILType) list * ILMemberAccess -> ILMethodDef
-val mkILSimpleStorageCtor: ILSourceMarker option * ILTypeSpec option * ILType * ILParameter list * (string * ILType) list * ILMemberAccess -> ILMethodDef
-val mkILSimpleStorageCtorWithParamNames: ILSourceMarker option * ILTypeSpec option * ILType * ILParameter list * (string * string * ILType) list * ILMemberAccess -> ILMethodDef
+val mkILStorageCtor: ILSourceMarker option * ILInstr list * ILType * (string * ILType) list * MethodAttributes -> ILMethodDef
+val mkILSimpleStorageCtor: ILSourceMarker option * ILTypeSpec option * ILType * ILParameter list * (string * ILType) list * MethodAttributes -> ILMethodDef
+val mkILSimpleStorageCtorWithParamNames: ILSourceMarker option * ILTypeSpec option * ILType * ILParameter list * (string * string * ILType) list * MethodAttributes -> ILMethodDef
 
 val mkILDelegateMethods: ILGlobals -> ILType * ILType -> ILParameter list * ILReturn -> ILMethodDef list
 

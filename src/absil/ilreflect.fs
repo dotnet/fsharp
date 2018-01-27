@@ -1470,17 +1470,7 @@ let emitParameter cenv emEnv (defineParameter : int * ParameterAttributes * stri
 //----------------------------------------------------------------------------
 
 let convMethodAttributes (mdef: ILMethodDef) =    
-    let attrKind = 
-        match mdef.mdKind with 
-        | MethodKind.Static        -> MethodAttributes.Static
-        | MethodKind.Cctor         -> MethodAttributes.Static
-        | MethodKind.Ctor          -> enum 0                 
-        | MethodKind.NonVirtual    -> enum 0
-        | MethodKind.Virtual vinfo -> MethodAttributes.Virtual |||
-                                      flagsIf vinfo.IsNewSlot   MethodAttributes.NewSlot |||
-                                      flagsIf vinfo.IsFinal     MethodAttributes.Final |||
-                                      flagsIf vinfo.IsCheckAccessOnOverride    MethodAttributes.CheckAccessOnOverride |||
-                                      flagsIf vinfo.IsAbstract  MethodAttributes.Abstract
+    let attrKind = mdef.Attributes
    
     let attrAccess = 
         match mdef.Access with

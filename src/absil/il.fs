@@ -1359,31 +1359,28 @@ type ILGenericParameterDef =
 
 type ILGenericParameterDefs = ILGenericParameterDef list
 
+let memberAccessOfFlags flags =
+    let f = (flags &&& 0x00000007)
+    if f = 0x00000001 then  ILMemberAccess.Private 
+    elif f = 0x00000006 then  ILMemberAccess.Public 
+    elif f = 0x00000004 then  ILMemberAccess.Family 
+    elif f = 0x00000002 then  ILMemberAccess.FamilyAndAssembly 
+    elif f = 0x00000005 then  ILMemberAccess.FamilyOrAssembly 
+    elif f = 0x00000003 then  ILMemberAccess.Assembly 
+    else ILMemberAccess.CompilerControlled
+
 [<NoComparison; NoEquality>]
 type ILMethodDef = 
     { Name: string;
-      mdKind: MethodKind;
+      Attributes: MethodAttributes;
+      ImplAttributes: MethodImplAttributes;
       CallingConv: ILCallingConv;
       Parameters: ILParameters;
       Return: ILReturn;
-      Access: ILMemberAccess;
       mdBody: ILLazyMethodBody;   
       mdCodeKind: MethodCodeKind;   
-      IsInternalCall: bool;
-      IsManaged: bool;
-      IsForwardRef: bool;
       SecurityDecls: ILPermissions;
-      HasSecurity: bool;
       IsEntryPoint:bool;
-      IsReqSecObj: bool;
-      IsHideBySig: bool;
-      IsSpecialName: bool;
-      IsUnmanagedExport: bool;
-      IsSynchronized: bool;
-      IsPreserveSig: bool;
-      IsMustRun: bool;
-      IsNoInline: bool;
-      IsAggressiveInline : bool
       GenericParams: ILGenericParameterDefs;
       CustomAttrs: ILAttributes; }
     member x.ParameterTypes = typesOfILParams x.Parameters
@@ -1401,19 +1398,33 @@ type ILMethodDef =
     member x.MaxStack     = x.MethodBody.MaxStack  
     member x.IsZeroInit   = x.MethodBody.IsZeroInit
 
-    member x.IsClassInitializer   = match x.mdKind with | MethodKind.Cctor      -> true | _ -> false
-    member x.IsConstructor        = match x.mdKind with | MethodKind.Ctor       -> true | _ -> false
-    member x.IsStatic             = match x.mdKind with | MethodKind.Static     -> true | _ -> false
-    member x.IsNonVirtualInstance = match x.mdKind with | MethodKind.NonVirtual -> true | _ -> false
-    member x.IsVirtual            = match x.mdKind with | MethodKind.Virtual _  -> true | _ -> false
-
-    member x.IsFinal                = match x.mdKind with | MethodKind.Virtual v -> v.IsFinal    | _ -> invalidOp "not virtual"
-    member x.IsNewSlot              = match x.mdKind with | MethodKind.Virtual v -> v.IsNewSlot  | _ -> invalidOp "not virtual"
-    member x.IsCheckAccessOnOverride= match x.mdKind with | MethodKind.Virtual v -> v.IsCheckAccessOnOverride   | _ -> invalidOp "not virtual"
-    member x.IsAbstract             = match x.mdKind with | MethodKind.Virtual v -> v.IsAbstract | _ -> invalidOp "not virtual"
-
     member md.CallingSignature =  mkILCallSig (md.CallingConv,md.ParameterTypes,md.Return.Type)
 
+    member x.IsClassInitializer   = x.Name = ".cctor"
+    member x.IsConstructor        = x.Name = ".ctor"
+
+    member x.Access                 = memberAccessOfFlags (int x.Attributes)
+    member x.IsStatic               = x.Attributes &&& MethodAttributes.Static <> enum 0
+    member x.IsNonVirtualInstance   = not x.IsStatic && not x.IsVirtual
+    member x.IsVirtual              = x.Attributes &&& MethodAttributes.Virtual <> enum 0
+    member x.IsFinal                = x.Attributes &&& MethodAttributes.Final <> enum 0
+    member x.IsNewSlot              = x.Attributes &&& MethodAttributes.NewSlot <> enum 0
+    member x.IsCheckAccessOnOverride= x.Attributes &&& MethodAttributes.CheckAccessOnOverride <> enum 0
+    member x.IsAbstract             = x.Attributes &&& MethodAttributes.Abstract <> enum 0
+    member x.IsHideBySig            = x.Attributes &&& MethodAttributes.HideBySig <> enum 0
+    member x.IsSpecialName          = x.Attributes &&& MethodAttributes.SpecialName <> enum 0
+    member x.IsUnmanagedExport      = x.Attributes &&& MethodAttributes.UnmanagedExport <> enum 0
+    member x.IsReqSecObj            = x.Attributes &&& MethodAttributes.RequireSecObject <> enum 0
+    member x.HasSecurity            = x.Attributes &&& MethodAttributes.HasSecurity <> enum 0
+
+    member x.IsManaged         = x.ImplAttributes &&& MethodImplAttributes.Managed <> enum 0
+    member x.IsForwardRef      = x.ImplAttributes &&& MethodImplAttributes.ForwardRef <> enum 0
+    member x.IsInternalCall    = x.ImplAttributes &&& MethodImplAttributes.InternalCall <> enum 0
+    member x.IsPreserveSig     = x.ImplAttributes &&& MethodImplAttributes.PreserveSig <> enum 0
+    member x.IsSynchronized    = x.ImplAttributes &&& MethodImplAttributes.Synchronized <> enum 0
+    member x.IsNoInline        = x.ImplAttributes &&& MethodImplAttributes.NoInlining <> enum 0
+    member x.IsAggressiveInline= x.ImplAttributes &&& MethodImplAttributes.AggressiveInlining <> enum 0
+    member x.IsMustRun         = x.ImplAttributes &&& MethodImplAttributes.NoOptimization <> enum 0
 
 /// Index table by name and arity. 
 type MethodDefMap = Map<string, ILMethodDef list>
@@ -1455,9 +1466,9 @@ type ILEventDef =
       FireMethod: ILMethodRef option;
       OtherMethods: ILMethodRef list;
       CustomAttrs: ILAttributes; }
-        member x.IsSpecialName = (x.Attributes &&& EventAttributes.SpecialName) <> enum<_>(0)
-        member x.IsRTSpecialName = (x.Attributes &&& EventAttributes.RTSpecialName) <> enum<_>(0)
-        override x.ToString() = "event " + x.Name
+    member x.IsSpecialName = (x.Attributes &&& EventAttributes.SpecialName) <> enum<_>(0)
+    member x.IsRTSpecialName = (x.Attributes &&& EventAttributes.RTSpecialName) <> enum<_>(0)
+    override x.ToString() = "event " + x.Name
 
 (* Index table by name. *)
 [<NoEquality; NoComparison>]
@@ -1477,9 +1488,9 @@ type ILPropertyDef =
       Init: ILFieldInit option;
       Args: ILTypes;
       CustomAttrs: ILAttributes; }
-        member x.IsSpecialName = (x.Attributes &&& PropertyAttributes.SpecialName) <> enum<_>(0)
-        member x.IsRTSpecialName = (x.Attributes &&& PropertyAttributes.RTSpecialName) <> enum<_>(0)
-        override x.ToString() = "property " + x.Name
+    member x.IsSpecialName = (x.Attributes &&& PropertyAttributes.SpecialName) <> enum<_>(0)
+    member x.IsRTSpecialName = (x.Attributes &&& PropertyAttributes.RTSpecialName) <> enum<_>(0)
+    override x.ToString() = "property " + x.Name
     
 // Index table by name.
 [<NoEquality; NoComparison>]
@@ -1493,17 +1504,17 @@ type ILFieldDef =
     { Name: string;
       Type: ILType;
       Attributes: FieldAttributes;
-      Access: ILMemberAccess;
       Data:  byte[] option;
       LiteralValue:  ILFieldInit option;
       Offset:  int32 option; 
       Marshal: ILNativeType option;
       CustomAttrs: ILAttributes; }
-        member x.IsStatic = x.Attributes &&& FieldAttributes.Static <> enum 0
-        member x.IsSpecialName = x.Attributes &&& FieldAttributes.SpecialName <> enum 0
-        member x.IsLiteral = x.Attributes &&& FieldAttributes.Literal <> enum 0
-        member x.NotSerialized = x.Attributes &&& FieldAttributes.NotSerialized <> enum 0
-        member x.IsInitOnly = x.Attributes &&& FieldAttributes.InitOnly <> enum 0
+    member x.IsStatic = x.Attributes &&& FieldAttributes.Static <> enum 0
+    member x.IsSpecialName = x.Attributes &&& FieldAttributes.SpecialName <> enum 0
+    member x.IsLiteral = x.Attributes &&& FieldAttributes.Literal <> enum 0
+    member x.NotSerialized = x.Attributes &&& FieldAttributes.NotSerialized <> enum 0
+    member x.IsInitOnly = x.Attributes &&& FieldAttributes.InitOnly <> enum 0
+    member x.Access = memberAccessOfFlags (int x.Attributes)
 
 
 // Index table by name.  Keep a canonical list to make sure field order is not disturbed for binary manipulation.
@@ -2310,29 +2321,16 @@ let mkILVoidReturn = mkILReturn ILType.Void
 
 let mkILCtor (access,args,impl) = 
     { Name=".ctor";
-      mdKind=MethodKind.Ctor;
+      Attributes=access ||| MethodAttributes.SpecialName;
+      ImplAttributes=MethodImplAttributes.Managed
       CallingConv=ILCallingConv.Instance;
       Parameters = args
       Return= mkILVoidReturn;
-      Access=access;
       mdBody= mkMethBodyAux impl;
       mdCodeKind=MethodCodeKind.IL;
-      IsInternalCall=false;
-      IsManaged=true;
-      IsForwardRef=false;
       SecurityDecls=emptyILSecurityDecls;
-      HasSecurity=false;
       IsEntryPoint=false;
       GenericParams=mkILEmptyGenericParams;
-      IsReqSecObj=false;
-      IsHideBySig=false;
-      IsSpecialName=true;
-      IsUnmanagedExport=false;
-      IsSynchronized=false;
-      IsNoInline=false;
-      IsAggressiveInline=false
-      IsMustRun=false;
-      IsPreserveSig=false;
       CustomAttrs = emptyILCustomAttrs; }
 
 // -------------------------------------------------------------------- 
@@ -2354,7 +2352,7 @@ let mkNormalStobj dt = I_stobj(Aligned,Nonvolatile,dt)
 
 let mkILNonGenericEmptyCtor tag superTy = 
     let ctor = mkCallBaseConstructor (superTy,[])
-    mkILCtor(ILMemberAccess.Public,[],mkMethodBody(false,[],8, nonBranchingInstrsToCode ctor,tag))
+    mkILCtor(MethodAttributes.Public,[],mkMethodBody(false,[],8, nonBranchingInstrsToCode ctor,tag))
 
 // -------------------------------------------------------------------- 
 // Make a static, top level monomophic method - very useful for
@@ -2364,59 +2362,33 @@ let mkILNonGenericEmptyCtor tag superTy =
 let mkILStaticMethod (genparams,nm,access,args,ret,impl) = 
     { GenericParams=genparams;
       Name=nm;
+      Attributes=MethodAttributes.Static ||| access;
+      ImplAttributes=MethodImplAttributes.Managed
       CallingConv = ILCallingConv.Static;
-      mdKind=MethodKind.Static;
       Parameters = args
       Return= ret;
-      Access=access;
-      HasSecurity=false;
       SecurityDecls=emptyILSecurityDecls;
       IsEntryPoint=false;
       CustomAttrs = emptyILCustomAttrs;
       mdBody= mkMethBodyAux impl;
-      mdCodeKind=MethodCodeKind.IL;
-      IsInternalCall=false;
-      IsManaged=true;
-      IsForwardRef=false;
-      IsReqSecObj=false;
-      IsHideBySig=false;
-      IsSpecialName=false;
-      IsUnmanagedExport=false;
-      IsSynchronized=false;
-      IsNoInline=false;
-      IsAggressiveInline=false;
-      IsMustRun=false;
-      IsPreserveSig=false; }
+      mdCodeKind=MethodCodeKind.IL; }
 
 let mkILNonGenericStaticMethod (nm,access,args,ret,impl) = 
     mkILStaticMethod (mkILEmptyGenericParams,nm,access,args,ret,impl)
 
 let mkILClassCtor impl = 
     { Name=".cctor";
+      Attributes=MethodAttributes.Private ||| MethodAttributes.SpecialName;
+      ImplAttributes=MethodImplAttributes.Managed
       CallingConv=ILCallingConv.Static;
       GenericParams=mkILEmptyGenericParams;
-      mdKind=MethodKind.Cctor;
       Parameters = []
       Return=mkILVoidReturn;
-      Access=ILMemberAccess.Private; 
       IsEntryPoint=false;
-      HasSecurity=false;
       SecurityDecls=emptyILSecurityDecls;
       CustomAttrs = emptyILCustomAttrs;
       mdBody= mkMethBodyAux impl; 
-      mdCodeKind=MethodCodeKind.IL;
-      IsInternalCall=false;
-      IsManaged=true;
-      IsForwardRef=false;
-      IsReqSecObj=false;
-      IsHideBySig=false;
-      IsSpecialName=true;
-      IsUnmanagedExport=false; 
-      IsSynchronized=false;
-      IsNoInline=false;
-      IsAggressiveInline=false
-      IsMustRun=false;
-      IsPreserveSig=false;  } 
+      mdCodeKind=MethodCodeKind.IL;  } 
 
 // -------------------------------------------------------------------- 
 // Make a virtual method, where the overriding is simply the default
@@ -2428,66 +2400,39 @@ let mk_ospec (typ:ILType,callconv,nm,genparams,formal_args,formal_ret) =
 
 let mkILGenericVirtualMethod (nm,access,genparams,actual_args,actual_ret,impl) = 
   { Name=nm;
+    Attributes= 
+      // REVIEW: We'll need to start setting this eventually
+      access |||
+      MethodAttributes.Virtual ||| 
+      MethodAttributes.CheckAccessOnOverride ||| 
+      (match impl with MethodBody.Abstract -> MethodAttributes.Abstract | _ -> MethodAttributes.Virtual);
+    ImplAttributes=MethodImplAttributes.Managed
     GenericParams=genparams;
     CallingConv=ILCallingConv.Instance;
-    mdKind=
-      MethodKind.Virtual 
-        { IsFinal=false; 
-          // REVIEW: We'll need to start setting this eventually
-          IsNewSlot = false;
-          IsCheckAccessOnOverride=true;
-          IsAbstract=(match impl with MethodBody.Abstract -> true | _ -> false) ; };
     Parameters=actual_args;
     Return=actual_ret;
-    Access=access;
     IsEntryPoint=false;
-    HasSecurity=false;
     SecurityDecls=emptyILSecurityDecls;
     CustomAttrs = emptyILCustomAttrs;
     mdBody= mkMethBodyAux impl;
-    mdCodeKind=MethodCodeKind.IL;
-    IsInternalCall=false;
-    IsManaged=true;
-    IsForwardRef=false;
-    IsReqSecObj=false;
-    IsHideBySig=false;
-    IsSpecialName=false;
-    IsUnmanagedExport=false; 
-    IsSynchronized=false;
-    IsNoInline=false;
-    IsAggressiveInline=false
-    IsMustRun=false;
-    IsPreserveSig=false; }
+    mdCodeKind=MethodCodeKind.IL; }
     
 let mkILNonGenericVirtualMethod (nm,access,args,ret,impl) =  
   mkILGenericVirtualMethod (nm,access,mkILEmptyGenericParams,args,ret,impl)
 
 let mkILGenericNonVirtualMethod (nm,access,genparams, actual_args,actual_ret, impl) = 
   { Name=nm;
+    Attributes=access ||| MethodAttributes.HideBySig; // see Bug343136: missing HideBySig attribute makes it problematic for C# to consume F# method overloads.
+    ImplAttributes=MethodImplAttributes.Managed
     GenericParams=genparams;
     CallingConv=ILCallingConv.Instance;
-    mdKind=MethodKind.NonVirtual;
     Parameters=actual_args;
     Return=actual_ret;
-    Access=access;
     IsEntryPoint=false;
-    HasSecurity=false;
     SecurityDecls=emptyILSecurityDecls;
     CustomAttrs = emptyILCustomAttrs;
     mdBody= mkMethBodyAux impl;
-    mdCodeKind=MethodCodeKind.IL;
-    IsInternalCall=false;
-    IsManaged=true;
-    IsForwardRef=false;
-    IsReqSecObj=false;
-    IsHideBySig=true; // see Bug343136: missing HideBySig attribute makes it problematic for C# to consume F# method overloads.
-    IsSpecialName=false;
-    IsUnmanagedExport=false; 
-    IsSynchronized=false;
-    IsNoInline=false;
-    IsAggressiveInline=false
-    IsMustRun=false;
-    IsPreserveSig=false; }
+    mdCodeKind=MethodCodeKind.IL; }
     
 let mkILNonGenericInstanceMethod (nm,access,args,ret,impl) =  
   mkILGenericNonVirtualMethod (nm,access,mkILEmptyGenericParams,args,ret,impl)
@@ -2567,13 +2512,13 @@ let prependInstrsToClassCtor instrs tag cd =
 let mkILField (isStatic,nm,ty,init,at,access,isLiteral) =
    { Name=nm;
      Type=ty;
-     Attributes=(if isStatic then FieldAttributes.Static else FieldAttributes.Private) ||| 
-                (if isLiteral then FieldAttributes.Literal else FieldAttributes.Private)
+     Attributes=access |||
+                (if isStatic then FieldAttributes.Static else access) ||| 
+                (if isLiteral then FieldAttributes.Literal else access)
      LiteralValue = init;
      Data=at;
      Offset=None;
      Marshal=None; 
-     Access = access; 
      CustomAttrs=emptyILCustomAttrs }
 
 let mkILInstanceField (nm,ty,init,access) = mkILField (false,nm,ty,init,None,access,false)
@@ -2799,16 +2744,16 @@ let buildILCode (_methName:string) lab2pc instrs tryspecs localspecs : ILCode =
 let mkILDelegateMethods (ilg: ILGlobals) (iltyp_AsyncCallback, iltyp_IAsyncResult) (parms,rtv:ILReturn) = 
     let rty = rtv.Type
     let one nm args ret =
-        let mdef = mkILNonGenericVirtualMethod (nm,ILMemberAccess.Public,args,mkILReturn ret,MethodBody.Abstract)
+        let mdef = mkILNonGenericVirtualMethod (nm,MethodAttributes.Public,args,mkILReturn ret,MethodBody.Abstract)
         {mdef with 
-                   mdKind=
-                      match mdef.mdKind with 
-                      | MethodKind.Virtual vinfo -> MethodKind.Virtual {vinfo with IsAbstract=false; } 
-                      | k -> k 
-                   mdCodeKind=MethodCodeKind.Runtime;
-                   IsHideBySig=true; }
-    let ctor = mkILCtor(ILMemberAccess.Public, [ mkILParamNamed("object",ilg.typ_Object); mkILParamNamed("method",ilg.typ_IntPtr) ], MethodBody.Abstract)
-    let ctor = { ctor with  mdCodeKind=MethodCodeKind.Runtime; IsHideBySig=true }
+                   Attributes=
+                      (match mdef.Attributes with 
+                       | MethodAttributes.Virtual -> mdef.Attributes ^^^ MethodAttributes.Abstract
+                       | k -> k) |||
+                      MethodAttributes.HideBySig
+                   mdCodeKind=MethodCodeKind.Runtime; }
+    let ctor = mkILCtor(MethodAttributes.Public, [ mkILParamNamed("object",ilg.typ_Object); mkILParamNamed("method",ilg.typ_IntPtr) ], MethodBody.Abstract)
+    let ctor = { ctor with  mdCodeKind=MethodCodeKind.Runtime; Attributes=ctor.Attributes ||| MethodAttributes.HideBySig }
     [ ctor;
       one "Invoke" parms rty;
       one "BeginInvoke" (parms @ [mkILParamNamed("callback",iltyp_AsyncCallback); mkILParamNamed("objects",ilg.typ_Object) ] ) iltyp_IAsyncResult;

@@ -2528,22 +2528,17 @@ let GenMethodDefSigAsBlobIdx cenv env mdef =
 let GenMethodDefAsRow cenv env midx (md: ILMethodDef) = 
     let flags = 
         GetMemberAccessFlags md.Access |||
-        (if (match md.mdKind with
-              | MethodKind.Static | MethodKind.Cctor -> true
-              | _ -> false) then 0x0010 else 0x0) |||
-        (if (match md.mdKind with MethodKind.Virtual vinfo -> vinfo.IsFinal | _ -> false) then 0x0020 else 0x0) |||
-        (if (match md.mdKind with MethodKind.Virtual _ -> true | _ -> false) then 0x0040 else 0x0) |||
+        (if md.IsSpecialName || md.IsClassInitializer then 0x0010 else 0x0) |||
+        (if md.IsVirtual && md.IsFinal then 0x0020 else 0x0) |||
+        (if md.IsVirtual then 0x0040 else 0x0) |||
         (if md.IsHideBySig then 0x0080 else 0x0) |||
-        (if (match md.mdKind with MethodKind.Virtual vinfo -> vinfo.IsCheckAccessOnOverride | _ -> false) then 0x0200 else 0x0) |||
-        (if (match md.mdKind with MethodKind.Virtual vinfo -> vinfo.IsNewSlot | _ -> false) then 0x0100 else 0x0) |||
-        (if (match md.mdKind with MethodKind.Virtual vinfo -> vinfo.IsAbstract | _ -> false) then 0x0400 else 0x0) |||
+        (if md.IsVirtual && md.IsCheckAccessOnOverride then 0x0200 else 0x0) |||
+        (if md.IsVirtual && md.IsNewSlot then 0x0100 else 0x0) |||
+        (if md.IsVirtual && md.IsAbstract then 0x0400 else 0x0) |||
         (if md.IsSpecialName then 0x0800 else 0x0) |||
         (if (match md.mdBody.Contents with MethodBody.PInvoke _ -> true | _ -> false) then 0x2000 else 0x0) |||
         (if md.IsUnmanagedExport then 0x0008 else 0x0) |||
-        (if 
-          (match md.mdKind with
-          | MethodKind.Ctor | MethodKind.Cctor -> true 
-          | _ -> false) then 0x1000 else 0x0) ||| // RTSpecialName 
+        (if md.IsConstructor || md.IsClassInitializer then 0x1000 else 0x0) ||| // RTSpecialName 
         (if md.IsReqSecObj then 0x8000 else 0x0) |||
         (if md.HasSecurity || not md.SecurityDecls.AsList.IsEmpty then 0x4000 else 0x0)
    

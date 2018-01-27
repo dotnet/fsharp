@@ -13,6 +13,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.IlxSettings
 open Microsoft.FSharp.Compiler.AbstractIL.Morphs 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.PrettyNaming
+open System.Reflection
 
 // -------------------------------------------------------------------- 
 // Erase closures and function types
@@ -334,7 +335,7 @@ let mkILCloFldDefs cenv flds =
     flds 
     |> Array.toList
     |> List.map (fun fv -> 
-         let fdef = mkILInstanceField (fv.fvName, fv.fvType, None, ILMemberAccess.Public)
+         let fdef = mkILInstanceField (fv.fvName, fv.fvType, None, FieldAttributes.Public)
          if fv.fvCompilerGenerated then 
              fdef |> cenv.addFieldNeverAttrs 
                   |> cenv.addFieldGeneratedAttrs 
@@ -465,7 +466,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
               let nowApplyMethDef =
                 mkILGenericVirtualMethod
                   ("Specialize", 
-                   ILMemberAccess.Public, 
+                   MethodAttributes.Public, 
                    addedGenParams,  (* method is generic over added ILGenericParameterDefs *)
                    [], 
                    mkILReturn(cenv.ilg.typ_Object), 
@@ -476,7 +477,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                      [ mkLdarg0; mkNormalCall (mkILCtorMethSpecForTy (cenv.mkILTyFuncTy, [])) ], 
                      nowTy, 
                      mkILCloFldSpecs cenv nowFields, 
-                     ILMemberAccess.Assembly)
+                     MethodAttributes.Assembly)
                    |> cenv.addMethodGeneratedAttrs 
 
               let cloTypeDef = 
@@ -567,7 +568,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                 let cloTypeDef = 
                     let nowApplyMethDef =
                         mkILNonGenericVirtualMethod
-                          ("Invoke", ILMemberAccess.Public, 
+                          ("Invoke", MethodAttributes.Public, 
                            nowParams, 
                            mkILReturn nowReturnTy, 
                            MethodBody.IL (convILMethodBody (Some nowCloSpec, None)  (Lazy.force clo.cloCode)))
@@ -578,7 +579,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                             [ mkLdarg0; mkNormalCall (mkILCtorMethSpecForTy (nowEnvParentClass, [])) ], 
                             nowTy, 
                             mkILCloFldSpecs cenv nowFields, 
-                            ILMemberAccess.Assembly)
+                            MethodAttributes.Assembly)
                         |> cenv.addMethodGeneratedAttrs 
 
                     { Name = td.Name
@@ -617,7 +618,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
 
           let ctorMethodDef = 
             let flds = (mkILCloFldSpecs cenv nowFields)
-            mkILCtor(ILMemberAccess.Public, 
+            mkILCtor(MethodAttributes.Public, 
                     List.map mkILParamNamed flds, 
                     mkMethodBody
                       (cloCode'.IsZeroInit, 

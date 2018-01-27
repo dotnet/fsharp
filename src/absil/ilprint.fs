@@ -13,6 +13,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 
 open System.Text
 open System.IO
+open System.Reflection
 
 #if DEBUG
 let pretty () = true
@@ -788,19 +789,18 @@ let goutput_mbody is_entrypoint env os md =
   output_string os "\n";
   output_string os "}\n"
   
-let goutput_mdef env os md =
+let goutput_mdef env os (md:ILMethodDef) =
   let attrs = 
-      match md.mdKind with
-        | MethodKind.Virtual vinfo -> 
+      if md.IsVirtual then
             "virtual "^
-            (if vinfo.IsFinal then "final " else "")^
-            (if vinfo.IsNewSlot then "newslot " else "")^
-            (if vinfo.IsCheckAccessOnOverride then " strict " else "")^
-            (if vinfo.IsAbstract then " abstract " else "")^
+            (if md.IsFinal then "final " else "")^
+            (if md.IsNewSlot then "newslot " else "")^
+            (if md.IsCheckAccessOnOverride then " strict " else "")^
+            (if md.IsAbstract then " abstract " else "")^
               "  "
-        | MethodKind.NonVirtual ->     ""
-        | MethodKind.Ctor -> "rtspecialname"
-        | MethodKind.Static -> 
+      elif md.IsNonVirtualInstance then     ""
+      elif md.IsConstructor then "rtspecialname"
+      elif md.IsStatic then
             "static "^
             (match md.mdBody.Contents with 
               MethodBody.PInvoke (attr) -> 
@@ -824,7 +824,8 @@ let goutput_mdef env os md =
                 ")"
               | _ -> 
                   "")
-        | MethodKind.Cctor -> "specialname rtspecialname static" 
+      elif md.IsClassInitializer then "specialname rtspecialname static" 
+      else ""
   let is_entrypoint = md.IsEntryPoint 
   let menv = ppenv_enter_method (List.length md.GenericParams) env 
   output_string os " .method ";

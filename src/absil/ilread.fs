@@ -1623,16 +1623,6 @@ and seekReadClassLayout ctxt idx =
     | None -> { Size = None; Pack = None }
     | Some (pack, size) -> { Size = Some size; Pack = Some pack }
 
-and memberAccessOfFlags flags =
-    let f = (flags &&& 0x00000007)
-    if f = 0x00000001 then  ILMemberAccess.Private 
-    elif f = 0x00000006 then  ILMemberAccess.Public 
-    elif f = 0x00000004 then  ILMemberAccess.Family 
-    elif f = 0x00000002 then  ILMemberAccess.FamilyAndAssembly 
-    elif f = 0x00000005 then  ILMemberAccess.FamilyOrAssembly 
-    elif f = 0x00000003 then  ILMemberAccess.Assembly 
-    else ILMemberAccess.CompilerControlled
-
 and typeAccessOfFlags flags =
     let f = (flags &&& 0x00000007)
     if f = 0x00000001 then ILTypeDefAccess.Public 
@@ -1937,7 +1927,6 @@ and seekReadField ctxt (numtypars, hasLayout) (idx:int) =
        { Name = nm
          Type= readBlobHeapAsFieldSig ctxt numtypars typeIdx
          Attributes = enum<FieldAttributes>(flags)
-         Access = memberAccessOfFlags flags
          LiteralValue = if (flags &&& 0x8000) = 0 then None else Some (seekReadConstant ctxt (TaggedIndex(hc_FieldDef, idx)))
          Marshal = 
              if (flags &&& 0x1000) = 0 then None else 
@@ -2278,30 +2267,13 @@ and seekReadFieldDefAsFieldSpecUncached ctxtH idx =
 and seekReadMethod ctxt numtypars (idx:int) =
      let (codeRVA, implflags, flags, nameIdx, typeIdx, paramIdx) = seekReadMethodRow ctxt idx
      let nm = readStringHeap ctxt nameIdx
-     let isStatic = (flags &&& 0x0010) <> 0x0
-     let final = (flags &&& 0x0020) <> 0x0
-     let virt = (flags &&& 0x0040) <> 0x0
-     let strict = (flags &&& 0x0200) <> 0x0
-     let hidebysig = (flags &&& 0x0080) <> 0x0
-     let newslot = (flags &&& 0x0100) <> 0x0
      let abstr = (flags &&& 0x0400) <> 0x0
-     let specialname = (flags &&& 0x0800) <> 0x0
      let pinvoke = (flags &&& 0x2000) <> 0x0
-     let export = (flags &&& 0x0008) <> 0x0
-     let _rtspecialname = (flags &&& 0x1000) <> 0x0
-     let reqsecobj = (flags &&& 0x8000) <> 0x0
-     let hassec = (flags &&& 0x4000) <> 0x0
      let codetype = implflags &&& 0x0003
      let unmanaged = (implflags &&& 0x0004) <> 0x0
-     let forwardref = (implflags &&& 0x0010) <> 0x0
-     let preservesig = (implflags &&& 0x0080) <> 0x0
      let internalcall = (implflags &&& 0x1000) <> 0x0
-     let synchronized = (implflags &&& 0x0020) <> 0x0
      let noinline = (implflags &&& 0x0008) <> 0x0
      let aggressiveinline = (implflags &&& 0x0100) <> 0x0
-     let mustrun = (implflags &&& 0x0040) <> 0x0
-     let cctor = (nm = ".cctor")
-     let ctor = (nm = ".ctor")
      let _generic, _genarity, cc, retty, argtys, varargs = readBlobHeapAsMethodSig ctxt numtypars typeIdx
      if varargs <> None then dprintf "ignoring sentinel and varargs in ILMethodDef signature"
      
@@ -2315,33 +2287,10 @@ and seekReadMethod ctxt numtypars (idx:int) =
      let ret, ilParams = seekReadParams ctxt (retty, argtys) paramIdx endParamIdx
 
      { Name=nm
-       mdKind = 
-           (if cctor then MethodKind.Cctor 
-            elif ctor then MethodKind.Ctor 
-            elif isStatic then MethodKind.Static 
-            elif virt then 
-             MethodKind.Virtual 
-               { IsFinal=final 
-                 IsNewSlot=newslot 
-                 IsCheckAccessOnOverride=strict
-                 IsAbstract=abstr }
-            else MethodKind.NonVirtual)
-       Access = memberAccessOfFlags flags
+       Attributes = enum<MethodAttributes>(flags)
+       ImplAttributes= enum<MethodImplAttributes>(implflags)
        SecurityDecls=seekReadSecurityDecls ctxt (TaggedIndex(hds_MethodDef, idx))
-       HasSecurity=hassec
        IsEntryPoint= (fst ctxt.entryPointToken = TableNames.Method && snd ctxt.entryPointToken = idx)
-       IsReqSecObj=reqsecobj
-       IsHideBySig=hidebysig
-       IsSpecialName=specialname
-       IsUnmanagedExport=export
-       IsSynchronized=synchronized
-       IsNoInline=noinline
-       IsAggressiveInline=aggressiveinline
-       IsMustRun=mustrun
-       IsPreserveSig=preservesig
-       IsManaged = not unmanaged
-       IsInternalCall = internalcall
-       IsForwardRef = forwardref
        mdCodeKind = (if (codetype = 0x00) then MethodCodeKind.IL elif (codetype = 0x01) then MethodCodeKind.Native elif (codetype = 0x03) then MethodCodeKind.Runtime else MethodCodeKind.Native)
        GenericParams=seekReadGenericParams ctxt numtypars (tomd_MethodDef, idx)
        CustomAttrs=seekReadCustomAttrs ctxt (TaggedIndex(hca_MethodDef, idx)) 
