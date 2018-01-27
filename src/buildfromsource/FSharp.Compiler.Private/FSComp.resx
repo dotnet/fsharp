@@ -1120,7 +1120,7 @@
     <value>The member or object constructor '{0}' is not {1}</value>
   </data>
   <data name="csMemberIsNotAccessible2" xml:space="preserve">
-    <value>The member or object constructor '{0}' is not {1}. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.</value>
+    <value>The member or object constructor '{0}' is not {1}. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from within inner lambda expressions, object expressions or computation expressions (such as async { }). If {0} is a protected member, consider creating a member in this type that calls it.</value>
   </data>
   <data name="csMethodIsNotAStaticMethod" xml:space="preserve">
     <value>{0} is not a static method</value>
@@ -4302,5 +4302,8 @@
   </data>
   <data name="pickleUnexpectedNonZero" xml:space="preserve">
     <value>An error occurred while reading the F# metadata of assembly '{0}'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.</value>
+  </data>
+  <data name="tcTupleMemberNotNormallyUsed" xml:space="preserve">
+    <value>This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</value>
   </data>
 </root>

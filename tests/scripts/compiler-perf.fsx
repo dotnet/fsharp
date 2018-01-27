@@ -23,9 +23,9 @@ nuget FAKE
 
 
 #I "script-packages/packages/FAKE/tools"
-#I "script-packages/packages/FSharp.Data/lib/net40"
+#I "script-packages/packages/FSharp.Data/lib/net45"
 #r "script-packages/packages/FAKE/tools/FakeLib.dll"
-#r "script-packages/packages/FSharp.Data/lib/net40/FSharp.Data.dll"
+#r "script-packages/packages/FSharp.Data/lib/net45/FSharp.Data.dll"
 
 open System
 open System.IO

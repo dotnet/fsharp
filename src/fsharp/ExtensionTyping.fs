@@ -38,6 +38,7 @@ module internal ExtensionTyping =
 
     // Specify the tooling-compatible fragments of a path such as:
     //     typeproviders/fsharp41/net461/MyProvider.DesignTime.dll
+    //     tools/fsharp41/net461/MyProvider.DesignTime.dll
     // See https://github.com/Microsoft/visualfsharp/issues/3736
 
     // Represents the FF#-compiler <-> type provider protocol.
@@ -55,16 +56,12 @@ module internal ExtensionTyping =
             System.Diagnostics.Debug.Assert(false, "Couldn't determine runtime tooling context, assuming it supports at least .NET Standard 2.0")
             [  "netstandard2.0"]
 
-    // When significant new processor types appear add a new moniker here. Note that use of this qualifier will be very rare
-    // and we don't expect different design-time assemblies will be needed for different architectures very often.  Some
-    // exceptions may be design-time components for type providers for systems such as Python or R.
-    let toolingCompatibleArch() = if sizeof<nativeint> = 8 then "x64" else "x86" 
+
     let toolingCompatiblePaths() = 
         [ for protocol in toolingCompatibleTypeProviderProtocolMonikers() do
-                for netRuntime in toolingCompatibleVersions() do
-                    let dir = Path.Combine("typeproviders", protocol, netRuntime) 
-                    yield Path.Combine(dir, toolingCompatibleArch())
-                    yield dir
+            for netRuntime in toolingCompatibleVersions() do 
+                yield Path.Combine("typeproviders", protocol, netRuntime)
+                yield Path.Combine("tools", protocol, netRuntime)
         ]
 
     /// Load a the design-time part of a type-provider into the host process, and look for types
