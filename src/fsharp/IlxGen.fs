@@ -6393,14 +6393,15 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                      | TRecdRepr _ when not useGenuineField -> [ cenv.g.DebuggerBrowsableNeverAttribute ] // hide fields in records in debug display
                      | _ -> [] // don't hide fields in classes in debug display
 
+                  let access = ComputeFieldAccess isFieldHidden
                   yield
                       { Name          = ilFieldName
                         Type          = ilPropType
-                        Attributes    = ComputeFieldAccess isFieldHidden |||
-                                        (if isStatic then FieldAttributes.Static else FieldAttributes.Private) ||| 
-                                        (if ilFieldName="value__" && tycon.IsEnumTycon then FieldAttributes.SpecialName else FieldAttributes.Private) |||
-                                        (if ilNotSerialized then FieldAttributes.NotSerialized else FieldAttributes.Private) |||
-                                        (if fspec.LiteralValue.IsSome then FieldAttributes.Literal else FieldAttributes.Private)
+                        Attributes    = access |||
+                                        (if isStatic then FieldAttributes.Static else access) ||| 
+                                        (if ilFieldName="value__" && tycon.IsEnumTycon then FieldAttributes.SpecialName else access) |||
+                                        (if ilNotSerialized then FieldAttributes.NotSerialized else access) |||
+                                        (if fspec.LiteralValue.IsSome then FieldAttributes.Literal else access)
                         Data          = None 
                         LiteralValue  = Option.map (GenFieldInit m) fspec.LiteralValue
                         Offset        = ilFieldOffset
