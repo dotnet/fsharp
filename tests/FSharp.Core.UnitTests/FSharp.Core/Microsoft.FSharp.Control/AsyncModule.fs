@@ -612,24 +612,30 @@ type AsyncModule() =
             x := !x + 1 // Side effect!
             return "" }
 
-        let memFunc = Utils.memoizeAsync <| someSlowFunc
+        let memFunc : string -> Async<string> = Utils.memoizeAsync <| someSlowFunc
 
         async {
+            Console.WriteLine "Do the same memoized thing many ways...."
             do! memFunc "a" |> Async.Ignore
             do! memFunc "a" |> Async.Ignore
             do! memFunc "a" |> Async.Ignore
             do! [|1 .. 30|] |> Seq.map(fun _ -> (memFunc "a")) 
                 |> Async.Parallel |> Async.Ignore
+
+            Console.WriteLine "Still more ways...."
             for _i = 1 to 30 do
                 Async.Start( memFunc "a" |> Async.Ignore )
                 Async.Start( memFunc "a" |> Async.Ignore )
             do! Async.Sleep 500
             do! memFunc "a" |> Async.Ignore
             do! memFunc "a" |> Async.Ignore
+            Console.WriteLine "Still more ways again...."
             for _i = 1 to 30 do
                 Async.Start( memFunc "a" |> Async.Ignore )
 
+            Console.WriteLine "Still more ways again again...."
             do! [|1 .. 30|] |> Seq.map(fun _ -> (memFunc "a")) 
                 |> Async.Parallel |> Async.Ignore
         } |> Async.RunSynchronously
+        Console.WriteLine "Checking result...."
         Assert.AreEqual(1, !x)

@@ -220,7 +220,11 @@ fi
 if [ "$_autoselect_tests" = "1" ]; then
     if [ "$BUILD_NET40" = "1" ]; then
         export TEST_NET40_COMPILERUNIT_SUITE=1
-        export TEST_NET40_COREUNIT_SUITE=1
+        
+        # This requires a build of FSharp.Core.dll?
+        # export TEST_NET40_COREUNIT_SUITE=1
+        
+        # This requires a lot more work to get running on OSX/Linux
         # export TEST_NET40_FSHARP_SUITE=1
     fi
 
