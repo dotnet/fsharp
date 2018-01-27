@@ -360,7 +360,6 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
       let tagApp = (Lazy.force clo.cloCode).SourceMarker
       
       let tyargsl, tmargsl, laterStruct = stripSupportedAbstraction clo.cloStructure
-      let laterAccess = td.Access
 
       // Adjust all the argument and environment accesses 
       let rewriteCodeToAccessArgsFromEnv laterCloSpec (argToFreeVarMap: (int * IlxClosureFreeVar) list)  = 
@@ -430,7 +429,6 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
               let laterTypeDefs = 
                 convIlxClosureDef cenv encl
                   {td with GenericParams=laterGenericParams
-                           Access=laterAccess
                            Name=laterTypeName} 
                   {clo with cloStructure=laterStruct
                             cloFreeVars=laterFields
@@ -483,14 +481,9 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
               let cloTypeDef = 
                 { Name = td.Name
                   GenericParams= td.GenericParams
-                  Access=td.Access
+                  Attributes = td.Attributes ||| TypeAttributes.Sealed ||| (if td.IsSerializable then TypeAttributes.Serializable else TypeAttributes.Sealed)
                   Implements = List.empty
-                  IsAbstract = false
                   NestedTypes = emptyILTypeDefs
-                  IsSealed = true
-                  IsSerializable=td.IsSerializable 
-                  IsComInterop=false
-                  IsSpecialName=false
                   Layout=ILTypeDefLayout.Auto
                   Encoding=ILDefaultPInvokeEncoding.Ansi
                   InitSemantics=ILTypeInit.BeforeField
@@ -501,7 +494,6 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                   MethodImpls=emptyILMethodImpls
                   Properties=emptyILProperties
                   Events=emptyILEvents
-                  HasSecurity=false 
                   SecurityDecls=emptyILSecurityDecls 
                   tdKind = ILTypeDefKind.Class}
               [ cloTypeDef]
@@ -548,7 +540,6 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
               let laterTypeDefs = 
                 convIlxClosureDef cenv encl
                   {td with GenericParams=laterGenericParams
-                           Access=laterAccess
                            Name=laterTypeName} 
                   {clo with cloStructure=laterStruct
                             cloFreeVars=laterFields
@@ -584,13 +575,8 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
 
                     { Name = td.Name
                       GenericParams= td.GenericParams
-                      Access = td.Access
+                      Attributes = td.Attributes ||| TypeAttributes.Sealed ||| (if td.IsSerializable then TypeAttributes.Serializable else TypeAttributes.Sealed)
                       Implements = []
-                      IsAbstract = false
-                      IsSealed = true
-                      IsSerializable=td.IsSerializable 
-                      IsComInterop=false
-                      IsSpecialName=false
                       Layout=ILTypeDefLayout.Auto
                       Encoding=ILDefaultPInvokeEncoding.Ansi
                       InitSemantics=ILTypeInit.BeforeField
@@ -602,7 +588,6 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                       MethodImpls=emptyILMethodImpls
                       Properties=emptyILProperties
                       Events=emptyILEvents
-                      HasSecurity=false 
                       SecurityDecls=emptyILSecurityDecls 
                       tdKind = ILTypeDefKind.Class } 
 

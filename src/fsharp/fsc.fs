@@ -754,8 +754,7 @@ module MainModuleBuilder =
           Seq.map (fun t -> 
                       {   ScopeRef = tcGlobals.ilg.primaryAssemblyScopeRef
                           Name = t  
-                          IsForwarder = true  
-                          Access = ILTypeDefAccess.Public  
+                          Attributes = enum<TypeAttributes>(0x00200000) ||| TypeAttributes.Public
                           Nested = mkILNestedExportedTypes List.empty<ILNestedExportedType>  
                           CustomAttrs = mkILCustomAttrs List.empty<ILAttribute>  }) |> 
           Seq.toList
@@ -778,8 +777,7 @@ module MainModuleBuilder =
                 Seq.map (fun t ->
                             {   ScopeRef = ILScopeRef.Assembly(systemNumericsAssemblyRef)
                                 Name = t
-                                IsForwarder = true 
-                                Access = ILTypeDefAccess.Public 
+                                Attributes = enum<TypeAttributes>(0x00200000) ||| TypeAttributes.Public
                                 Nested = mkILNestedExportedTypes List.empty<ILNestedExportedType> 
                                 CustomAttrs = mkILCustomAttrs List.empty<ILAttribute> }) |>
                 Seq.toList
@@ -1417,15 +1415,11 @@ module StaticLinker =
                               if debugStaticLinking then printfn "Relocating %s to %s " ilOrigTyRef.QualifiedName ilTgtTyRef.QualifiedName
                               { ilOrigTypeDef with 
                                     Name = ilTgtTyRef.Name
-                                    Access = (match ilOrigTypeDef.Access with 
-                                              | ILTypeDefAccess.Public when isNested -> ILTypeDefAccess.Nested ILMemberAccess.Public 
-                                              | ILTypeDefAccess.Private when isNested -> ILTypeDefAccess.Nested ILMemberAccess.Assembly 
-                                              | x -> x)
                                     NestedTypes = mkILTypeDefs (List.map buildRelocatedGeneratedType ch) }
                           else
                               // If there is no matching IL type definition, then make a simple container class
                               if debugStaticLinking then printfn "Generating simple class '%s' because we didn't find an original type '%s' in a provider generated assembly" ilTgtTyRef.QualifiedName ilOrigTyRef.QualifiedName
-                              mkILSimpleClass ilGlobals (ilTgtTyRef.Name, (if isNested  then ILTypeDefAccess.Nested ILMemberAccess.Public else ILTypeDefAccess.Public), emptyILMethods, emptyILFields, mkILTypeDefs (List.map buildRelocatedGeneratedType ch) , emptyILProperties, emptyILEvents, emptyILCustomAttrs, ILTypeInit.OnAny) 
+                              mkILSimpleClass ilGlobals (ilTgtTyRef.Name, (if isNested  then TypeAttributes.NestedPublic else TypeAttributes.Public), emptyILMethods, emptyILFields, mkILTypeDefs (List.map buildRelocatedGeneratedType ch) , emptyILProperties, emptyILEvents, emptyILCustomAttrs, ILTypeInit.OnAny) 
 
                       [ for (ProviderGeneratedType(_, ilTgtTyRef, _) as node) in tcImports.ProviderGeneratedTypeRoots  do
                            yield (ilTgtTyRef, buildRelocatedGeneratedType node) ]
@@ -1451,7 +1445,7 @@ module StaticLinker =
                                let (ltdefs, htd, rtdefs) = 
                                    match tdefs |> trySplitFind (fun td -> td.Name = h) with 
                                    | (ltdefs, None, rtdefs) -> 
-                                       let fresh = mkILSimpleClass ilGlobals (h, (if isNested  then ILTypeDefAccess.Nested ILMemberAccess.Public else ILTypeDefAccess.Public), emptyILMethods, emptyILFields, emptyILTypeDefs, emptyILProperties, emptyILEvents, emptyILCustomAttrs, ILTypeInit.OnAny)
+                                       let fresh = mkILSimpleClass ilGlobals (h, (if isNested  then TypeAttributes.NestedPublic else TypeAttributes.Public), emptyILMethods, emptyILFields, emptyILTypeDefs, emptyILProperties, emptyILEvents, emptyILCustomAttrs, ILTypeInit.OnAny)
                                        (ltdefs, fresh, rtdefs)
                                    | (ltdefs, Some htd, rtdefs) -> 
                                        (ltdefs, htd, rtdefs)

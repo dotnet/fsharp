@@ -1269,24 +1269,15 @@ and [<NoComparison; NoEquality>]
     ILTypeDef =  
     { tdKind: ILTypeDefKind;
       Name: string;  
+      Attributes: TypeAttributes;
       GenericParams: ILGenericParameterDefs;  
-      Access: ILTypeDefAccess;  
-      IsAbstract: bool;
-      IsSealed: bool; 
-      IsSerializable: bool; 
-      /// Class or interface generated for COM interop. 
-      IsComInterop: bool; 
       Layout: ILTypeDefLayout;
-      IsSpecialName: bool;
       Encoding: ILDefaultPInvokeEncoding;
       NestedTypes: ILTypeDefs;
       Implements: ILTypes;  
       Extends: ILType option; 
       Methods: ILMethodDefs;
       SecurityDecls: ILPermissions;
-      /// Some classes are marked "HasSecurity" even if there are no permissions attached, 
-      /// e.g. if they use SuppressUnmanagedCodeSecurityAttribute 
-      HasSecurity: bool; 
       Fields: ILFieldDefs;
       MethodImpls: ILMethodImplDefs;
       InitSemantics: ILTypeInit;
@@ -1298,6 +1289,16 @@ and [<NoComparison; NoEquality>]
     member IsEnum: bool;
     member IsDelegate: bool;
     member IsStructOrEnum : bool
+    member Access: ILTypeDefAccess
+    member IsAbstract: bool
+    member IsSealed: bool
+    member IsSerializable: bool
+    /// Class or interface generated for COM interop. 
+    member IsComInterop: bool
+    member IsSpecialName: bool
+    /// Some classes are marked "HasSecurity" even if there are no permissions attached, 
+    /// e.g. if they use SuppressUnmanagedCodeSecurityAttribute 
+    member HasSecurity: bool
 
 [<NoEquality; NoComparison>]
 [<Sealed>]
@@ -1343,10 +1344,11 @@ type ILExportedTypeOrForwarder =
     { ScopeRef: ILScopeRef;
       /// [Namespace.]Name
       Name: string;
-      IsForwarder: bool;
-      Access: ILTypeDefAccess;
+      Attributes: TypeAttributes
       Nested: ILNestedExportedTypes;
-      CustomAttrs: ILAttributes } 
+      CustomAttrs: ILAttributes }
+    member Access: ILTypeDefAccess
+    member IsForwarder: bool
 
 [<NoEquality; NoComparison>]
 [<Sealed>]
@@ -1701,8 +1703,8 @@ val mkILStaticField: string * ILType * ILFieldInit option * byte[] option * Fiel
 val mkILLiteralField: string * ILType * ILFieldInit * byte[] option * FieldAttributes -> ILFieldDef
 
 /// Make a type definition.
-val mkILGenericClass: string * ILTypeDefAccess * ILGenericParameterDefs * ILType * ILType list * ILMethodDefs * ILFieldDefs * ILTypeDefs * ILPropertyDefs * ILEventDefs * ILAttributes * ILTypeInit -> ILTypeDef
-val mkILSimpleClass: ILGlobals -> string * ILTypeDefAccess * ILMethodDefs * ILFieldDefs * ILTypeDefs * ILPropertyDefs * ILEventDefs * ILAttributes * ILTypeInit  -> ILTypeDef
+val mkILGenericClass: string * TypeAttributes * ILGenericParameterDefs * ILType * ILType list * ILMethodDefs * ILFieldDefs * ILTypeDefs * ILPropertyDefs * ILEventDefs * ILAttributes * ILTypeInit -> ILTypeDef
+val mkILSimpleClass: ILGlobals -> string * TypeAttributes * ILMethodDefs * ILFieldDefs * ILTypeDefs * ILPropertyDefs * ILEventDefs * ILAttributes * ILTypeInit  -> ILTypeDef
 val mkILTypeDefForGlobalFunctions: ILGlobals -> ILMethodDefs * ILFieldDefs -> ILTypeDef
 
 /// Make a type definition for a value type used to point to raw data.

@@ -1560,6 +1560,17 @@ type ILTypeDefAccess =
     | Private
     | Nested of ILMemberAccess 
 
+let typeAccessOfFlags flags =
+    let f = (flags &&& 0x00000007)
+    if f = 0x00000001 then ILTypeDefAccess.Public 
+    elif f = 0x00000002 then ILTypeDefAccess.Nested ILMemberAccess.Public 
+    elif f = 0x00000003 then ILTypeDefAccess.Nested ILMemberAccess.Private 
+    elif f = 0x00000004 then ILTypeDefAccess.Nested ILMemberAccess.Family 
+    elif f = 0x00000006 then ILTypeDefAccess.Nested ILMemberAccess.FamilyAndAssembly 
+    elif f = 0x00000007 then ILTypeDefAccess.Nested ILMemberAccess.FamilyOrAssembly 
+    elif f = 0x00000005 then ILTypeDefAccess.Nested ILMemberAccess.Assembly 
+    else ILTypeDefAccess.Private
+
 [<RequireQualifiedAccess>]
 type ILTypeDefKind =
     | Class
@@ -1573,21 +1584,15 @@ type ILTypeDefKind =
 type ILTypeDef =  
     { tdKind: ILTypeDefKind;
       Name: string;  
+      Attributes: TypeAttributes;
       GenericParams: ILGenericParameterDefs;   (* class is generic *)
-      Access: ILTypeDefAccess;  
-      IsAbstract: bool;
-      IsSealed: bool; 
-      IsSerializable: bool; 
-      IsComInterop: bool; (* Class or interface generated for COM interop *) 
       Layout: ILTypeDefLayout;
-      IsSpecialName: bool;
       Encoding: ILDefaultPInvokeEncoding;
       NestedTypes: ILTypeDefs;
       Implements: ILTypes;  
       Extends: ILType option; 
       Methods: ILMethodDefs;
       SecurityDecls: ILPermissions;
-      HasSecurity: bool;
       Fields: ILFieldDefs;
       MethodImpls: ILMethodImplDefs;
       InitSemantics: ILTypeInit;
@@ -1598,6 +1603,13 @@ type ILTypeDef =
     member x.IsInterface = (match x.tdKind with ILTypeDefKind.Interface -> true | _ -> false)
     member x.IsEnum =      (match x.tdKind with ILTypeDefKind.Enum -> true | _ -> false)
     member x.IsDelegate =  (match x.tdKind with ILTypeDefKind.Delegate -> true | _ -> false)
+    member x.Access = typeAccessOfFlags (int x.Attributes)  
+    member x.IsAbstract = x.Attributes &&& TypeAttributes.Abstract <> enum 0
+    member x.IsSealed = x.Attributes &&& TypeAttributes.Sealed <> enum 0
+    member x.IsSerializable = x.Attributes &&& TypeAttributes.Serializable <> enum 0
+    member x.IsComInterop = x.Attributes &&& TypeAttributes.Import <> enum 0 (* Class or interface generated for COM interop *) 
+    member x.IsSpecialName = x.Attributes &&& TypeAttributes.SpecialName <> enum 0
+    member x.HasSecurity = x.Attributes &&& TypeAttributes.HasSecurity <> enum 0
 
     member tdef.IsStructOrEnum = 
         match tdef.tdKind with
@@ -1646,10 +1658,11 @@ and [<NoComparison; NoEquality>]
     ILExportedTypeOrForwarder =
     { ScopeRef: ILScopeRef;
       Name: string;
-      IsForwarder: bool;
-      Access: ILTypeDefAccess;
+      Attributes: TypeAttributes
       Nested: ILNestedExportedTypes;
       CustomAttrs: ILAttributes } 
+    member x.Access = typeAccessOfFlags (int x.Attributes)  
+    member x.IsForwarder = x.Attributes &&& enum<TypeAttributes>(0x00200000) <> enum 0
 
 and ILExportedTypesAndForwarders = 
     | ILExportedTypesAndForwarders of Lazy<Map<string,ILExportedTypeOrForwarder>>
@@ -2619,14 +2632,9 @@ let mkILStorageCtor(tag,preblock,typ,flds,access) = mkILStorageCtorWithParamName
 let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nestedTypes, props, events, attrs, init) =
   { tdKind=ILTypeDefKind.Class;
     Name=nm;
+    Attributes=access;
     GenericParams= genparams;
-    Access = access;
-    Implements = impl
-    IsAbstract = false;
-    IsSealed = false;
-    IsSerializable = false;
-    IsComInterop=false;
-    IsSpecialName=false;
+    Implements = impl;
     Layout=ILTypeDefLayout.Auto;
     Encoding=ILDefaultPInvokeEncoding.Ansi;
     InitSemantics=init;
@@ -2638,22 +2646,16 @@ let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nes
     MethodImpls=emptyILMethodImpls;
     Properties=props;
     Events=events;
-    SecurityDecls=emptyILSecurityDecls; 
-    HasSecurity=false;
+    SecurityDecls=emptyILSecurityDecls;
 } 
     
 let mkRawDataValueTypeDef (iltyp_ValueType: ILType) (nm,size,pack) =
   { tdKind=ILTypeDefKind.ValueType;
     Name = nm;
     GenericParams= [];
-    Access = ILTypeDefAccess.Private;
+    Attributes = TypeAttributes.NotPublic ||| TypeAttributes.Sealed;
     Implements = []
-    IsAbstract = false;
-    IsSealed = true;
     Extends = Some iltyp_ValueType;
-    IsComInterop=false;    
-    IsSerializable = false;
-    IsSpecialName=false;
     Layout=ILTypeDefLayout.Explicit { Size=Some size; Pack=Some pack };
     Encoding=ILDefaultPInvokeEncoding.Ansi;
     InitSemantics=ILTypeInit.BeforeField;
@@ -2664,14 +2666,13 @@ let mkRawDataValueTypeDef (iltyp_ValueType: ILType) (nm,size,pack) =
     MethodImpls=emptyILMethodImpls;
     Properties=emptyILProperties;
     Events=emptyILEvents;
-    SecurityDecls=emptyILSecurityDecls; 
-    HasSecurity=false;  }
+    SecurityDecls=emptyILSecurityDecls; }
 
 
 let mkILSimpleClass (ilg: ILGlobals) (nm, access, methods, fields, nestedTypes, props, events, attrs, init) =
   mkILGenericClass (nm,access, mkILEmptyGenericParams, ilg.typ_Object, [], methods, fields, nestedTypes, props, events, attrs, init)
 
-let mkILTypeDefForGlobalFunctions ilg (methods,fields) = mkILSimpleClass ilg (typeNameForGlobalFunctions, ILTypeDefAccess.Public, methods, fields, emptyILTypeDefs, emptyILProperties, emptyILEvents, emptyILCustomAttrs,ILTypeInit.BeforeField)
+let mkILTypeDefForGlobalFunctions ilg (methods,fields) = mkILSimpleClass ilg (typeNameForGlobalFunctions, TypeAttributes.Public, methods, fields, emptyILTypeDefs, emptyILProperties, emptyILEvents, emptyILCustomAttrs,ILTypeInit.BeforeField)
 
 let destTypeDefsWithGlobalFunctionsFirst ilg (tdefs: ILTypeDefs) = 
   let l = tdefs.AsList

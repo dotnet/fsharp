@@ -306,12 +306,12 @@ let ComputeFieldAccess hidden = if hidden then FieldAttributes.Assembly else Fie
 
 
 // Under --publicasinternal change types from Public to Private (internal for types)
-let ComputePublicTypeAccess() = ILTypeDefAccess.Public
+let ComputePublicTypeAccess() = TypeAttributes.Public
 
 let ComputeTypeAccess (tref:ILTypeRef) hidden = 
     match tref.Enclosing with 
-    | [] -> if hidden then ILTypeDefAccess.Private else ComputePublicTypeAccess() 
-    | _ -> ILTypeDefAccess.Nested (ComputeMemberAccess hidden)
+    | [] -> if hidden then TypeAttributes.NotPublic else ComputePublicTypeAccess() 
+    | _ -> if hidden then TypeAttributes.NestedAssembly else TypeAttributes.NestedPublic
             
 //--------------------------------------------------------------------------
 // TypeReprEnv
@@ -1170,7 +1170,7 @@ type AssemblyBuilder(cenv:cenv) as mgbuf =
                  let vtdef  = mkRawDataValueTypeDef cenv.g.iltyp_ValueType (name,size,0us)
                  let vtref = NestedTypeRefForCompLoc cloc vtdef.Name 
                  let vtspec = mkILTySpec(vtref,[])
-                 let vtdef = {vtdef with Access= ComputeTypeAccess vtref true}
+                 let vtdef = {vtdef with Attributes = vtdef.Attributes ||| ComputeTypeAccess vtref true}
                  mgbuf.AddTypeDef(vtref, vtdef, false, true, None)
                  vtspec), 
                keyComparer=HashIdentity.Structural)
@@ -3731,27 +3731,21 @@ and GenClosureTypeDefs cenv (tref:ILTypeRef, ilGenParams, attrs, ilCloFreeVars, 
   let td = 
     { Name = tref.Name 
       Layout = ILTypeDefLayout.Auto
-      Access =  ComputeTypeAccess tref true
+      Attributes = ComputeTypeAccess tref true ||| TypeAttributes.Sealed ||| TypeAttributes.Serializable ||| TypeAttributes.SpecialName
       GenericParams = ilGenParams
       CustomAttrs = mkILCustomAttrs(attrs @ [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Closure) ])
       Fields = emptyILFields
-      InitSemantics=ILTypeInit.BeforeField         
-      IsSealed=true
-      IsAbstract=false
+      InitSemantics=ILTypeInit.BeforeField
       tdKind=ILTypeDefKind.Class
       Events= emptyILEvents
       Properties = emptyILProperties
       Methods= mkILMethods mdefs 
-      MethodImpls= mkILMethodImpls mimpls 
-      IsSerializable=true
-      IsComInterop= false
-      IsSpecialName= true
+      MethodImpls= mkILMethodImpls mimpls
       NestedTypes=emptyILTypeDefs
       Encoding= ILDefaultPInvokeEncoding.Auto
       Implements = ilIntfTys  
       Extends= Some ext
-      SecurityDecls= emptyILSecurityDecls
-      HasSecurity=false } 
+      SecurityDecls= emptyILSecurityDecls } 
 
   let tdefs = EraseClosures.convIlxClosureDef cenv.g.ilxPubCloEnv tref.Enclosing td cloInfo
   tdefs
@@ -3787,27 +3781,21 @@ and GenLambdaClosure cenv (cgbuf:CodeGenBuffer) eenv isLocalTypeFunc selfv expr 
                 let ilContractTypeDef = 
                     { Name = ilContractTypeRef.Name 
                       Layout = ILTypeDefLayout.Auto
-                      Access =  ComputeTypeAccess ilContractTypeRef true
+                      Attributes =  ComputeTypeAccess ilContractTypeRef true ||| TypeAttributes.Abstract ||| TypeAttributes.Serializable ||| TypeAttributes.SpecialName // the contract type is an abstract type and not sealed
                       GenericParams = ilContractGenericParams
                       CustomAttrs = mkILCustomAttrs [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Closure) ]
                       Fields = emptyILFields
-                      InitSemantics=ILTypeInit.BeforeField         
-                      IsSealed=false  // the contract type is an abstract type and not sealed
-                      IsAbstract=true // the contract type is an abstract type
+                      InitSemantics=ILTypeInit.BeforeField
                       tdKind=ILTypeDefKind.Class
                       Events= emptyILEvents
                       Properties = emptyILProperties
                       Methods= mkILMethods ilContractMeths 
-                      MethodImpls= emptyILMethodImpls 
-                      IsSerializable=true
-                      IsComInterop=false
-                      IsSpecialName= true
+                      MethodImpls= emptyILMethodImpls
                       NestedTypes=emptyILTypeDefs
                       Encoding= ILDefaultPInvokeEncoding.Auto
                       Implements = []  
                       Extends= Some cenv.g.ilg.typ_Object
-                      SecurityDecls= emptyILSecurityDecls
-                      HasSecurity=false } 
+                      SecurityDecls= emptyILSecurityDecls } 
                 cgbuf.mgbuf.AddTypeDef(ilContractTypeRef, ilContractTypeDef, false, false, None)
                 
                 let ilCtorBody =  mkILMethodBody (true,[],8,nonBranchingInstrsToCode (mkCallBaseConstructor(ilContractTy,[])), None )
@@ -5811,7 +5799,7 @@ and GenTypeDefForCompLoc (cenv, eenv, mgbuf: AssemblyBuilder, cloc, hidden, attr
              then [ ] 
              else [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Module)])),
          initTrigger)
-    let tdef = { tdef with IsSealed=true; IsAbstract=true }
+    let tdef = { tdef with Attributes=tdef.Attributes ||| TypeAttributes.Sealed ||| TypeAttributes.Abstract }
     mgbuf.AddTypeDef(tref, tdef, eliminateIfEmpty, addAtEnd, None)
 
 
@@ -6570,7 +6558,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
            match tycon.TypeReprInfo with 
            | TILObjectRepr _ ->
                let td = tycon.ILTyconRawMetadata
-               {td with Access = access
+               {td with Attributes = td.Attributes ||| access
                         CustomAttrs = mkILCustomAttrs ilCustomAttrs
                         GenericParams = ilGenParams }, None
 
@@ -6612,11 +6600,13 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                // Set some the extra entries in the definition 
                let isTheSealedAttribute = tyconRefEq cenv.g tcref cenv.g.attrib_SealedAttribute.TyconRef
 
-               let tdef = { tdef with  IsSealed = isSealedTy cenv.g thisTy || isTheSealedAttribute
-                                       IsSerializable = isSerializable
-                                       MethodImpls=mkILMethodImpls methodImpls 
-                                       IsAbstract=isAbstract
-                                       IsComInterop=isComInteropTy cenv.g thisTy }
+               let sealedOp = if isSealedTy cenv.g thisTy || isTheSealedAttribute then (|||) else (^^^)
+               let serializableOp = if isSerializable then (|||) else (^^^)
+               let abstractOp = if isAbstract then (|||) else (^^^)
+               let comInteropOp = if isComInteropTy cenv.g thisTy then (|||) else (^^^)
+
+               let tdef = { tdef with  Attributes = comInteropOp (abstractOp (serializableOp (sealedOp tdef.Attributes TypeAttributes.Sealed) TypeAttributes.Serializable) TypeAttributes.Abstract) TypeAttributes.Import
+                                       MethodImpls=mkILMethodImpls methodImpls }
 
                let tdLayout,tdEncoding = 
                     match TryFindFSharpAttribute cenv.g cenv.g.attrib_StructLayoutAttribute tycon.Attribs with
@@ -6680,7 +6670,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                | _ -> ()
                
                let tdef = { tdef with tdKind =  ilTypeDefKind; Layout=tdLayout; Encoding=tdEncoding }
-               let tdef = match ilTypeDefKind with ILTypeDefKind.Interface -> { tdef with Extends = None; IsAbstract=true } | _ -> tdef
+               let tdef = match ilTypeDefKind with ILTypeDefKind.Interface -> { tdef with Extends = None; Attributes=tdef.Attributes ||| TypeAttributes.Abstract } | _ -> tdef
                tdef, None
 
            | TUnionRepr _ -> 
@@ -6712,7 +6702,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                let tdef = 
                    { Name = ilTypeName
                      Layout =  layout
-                     Access = access
+                     Attributes = access ||| TypeAttributes.Sealed ||| (if isSerializable then TypeAttributes.Serializable else access)
                      GenericParams = ilGenParams
                      CustomAttrs = 
                          mkILCustomAttrs (ilCustomAttrs @ 
@@ -6721,23 +6711,17 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                                                     then SourceConstructFlags.SumType ||| SourceConstructFlags.NonPublicRepresentation 
                                                     else SourceConstructFlags.SumType)) ])
                      InitSemantics=ILTypeInit.BeforeField      
-                     IsSealed=true
-                     IsAbstract=false
                      tdKind= (if tycon.IsStructOrEnumTycon then ILTypeDefKind.ValueType else ILTypeDefKind.Class)
                      Fields = ilFields
                      Events= ilEvents
                      Properties = ilProperties
                      Methods= mkILMethods ilMethods 
-                     MethodImpls= mkILMethodImpls methodImpls 
-                     IsComInterop=false    
-                     IsSerializable= isSerializable 
-                     IsSpecialName= false
+                     MethodImpls= mkILMethodImpls methodImpls
                      NestedTypes=emptyILTypeDefs
                      Encoding= ILDefaultPInvokeEncoding.Auto
                      Implements = ilIntfTys
                      Extends= Some (if tycon.IsStructOrEnumTycon then cenv.g.iltyp_ValueType else cenv.g.ilg.typ_Object)
-                     SecurityDecls= emptyILSecurityDecls
-                     HasSecurity=false }
+                     SecurityDecls= emptyILSecurityDecls }
                let tdef2 = cenv.g.eraseClassUnionDef tref tdef cuinfo
    
                // Discard the user-supplied (i.e. prim-type.fs) implementations of the get_Empty, get_IsEmpty, get_Value and get_None and Some methods. 
@@ -6758,7 +6742,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
 
            | _ -> failwith "??"
 
-        let tdef = {tdef with SecurityDecls= secDecls; HasSecurity=securityAttrs.Length > 0}
+        let hasSecurityOp = if securityAttrs.Length > 0 then (|||) else (^^^)
+        let tdef = {tdef with SecurityDecls= secDecls; Attributes=hasSecurityOp tdef.Attributes TypeAttributes.HasSecurity}
         mgbuf.AddTypeDef(tref, tdef, false, false, tdefDiscards)
 
         // If a non-generic type is written with "static let" and "static do" (i.e. it has a ".cctor")
@@ -6879,7 +6864,7 @@ and GenExnDef cenv mgbuf eenv m (exnc:Tycon) =
              emptyILEvents,
              mkILCustomAttrs [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Exception)],
              ILTypeInit.BeforeField)
-        let tdef = { tdef with IsSerializable = true }
+        let tdef = { tdef with Attributes=tdef.Attributes ||| TypeAttributes.Serializable }
         mgbuf.AddTypeDef(tref, tdef, false, false, None)
 
 

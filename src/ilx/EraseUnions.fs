@@ -34,6 +34,16 @@ let ConvertMemberAccess (ilMemberAccess:ILMemberAccess) =
     | ILMemberAccess.Private             -> MethodAttributes.Private
     | ILMemberAccess.Public              -> MethodAttributes.Public
 
+let ConvertToNestedTypeAccess (ilMemberAccess:ILMemberAccess) =
+    match ilMemberAccess with
+    | ILMemberAccess.Assembly            -> TypeAttributes.NestedAssembly
+    | ILMemberAccess.CompilerControlled  -> failwith "Nested compiler controled."
+    | ILMemberAccess.FamilyAndAssembly   -> TypeAttributes.NestedFamANDAssem
+    | ILMemberAccess.FamilyOrAssembly    -> TypeAttributes.NestedFamORAssem
+    | ILMemberAccess.Family              -> TypeAttributes.NestedFamily
+    | ILMemberAccess.Private             -> TypeAttributes.NestedPrivate
+    | ILMemberAccess.Public              -> TypeAttributes.NestedPublic
+
 type DiscriminationTechnique =
    /// Indicates a special representation for the F# list type where the "empty" value has a tail field of value null
    | TailOrNull
@@ -851,7 +861,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
 
                     let debugProxyTypeDef = 
                         mkILGenericClass (debugProxyTypeName, 
-                                          ILTypeDefAccess.Nested ILMemberAccess.Assembly, 
+                                          TypeAttributes.NestedAssembly, 
                                           td.GenericParams, 
                                           ilg.typ_Object, [], 
                                           mkILMethods ([debugProxyCtor] @ debugProxyGetterMeths), 
@@ -862,7 +872,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                                           emptyILCustomAttrs,
                                           ILTypeInit.BeforeField)
 
-                    [ { debugProxyTypeDef with IsSpecialName=true } ],
+                    [ { debugProxyTypeDef with Attributes=debugProxyTypeDef.Attributes ||| TypeAttributes.SpecialName } ],
                     ( [mkDebuggerTypeProxyAttribute debugProxyTy] @ cud.cudDebugDisplayAttributes)
                                     
               let altTypeDef = 
@@ -898,7 +908,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                   let altTypeDef = 
                       mkILGenericClass (altTy.TypeSpec.Name, 
                                         // Types for nullary's become private, they also have names like _Empty
-                                        ILTypeDefAccess.Nested (if alt.IsNullary && cud.cudHasHelpers = IlxUnionHasHelpers.AllHelpers then ILMemberAccess.Assembly else cud.cudReprAccess), 
+                                        (if alt.IsNullary && cud.cudHasHelpers = IlxUnionHasHelpers.AllHelpers then TypeAttributes.NestedAssembly else ConvertToNestedTypeAccess cud.cudReprAccess), 
                                         td.GenericParams, 
                                         baseTy, [], 
                                         mkILMethods ([basicCtorMeth] @ basicMethods), 
@@ -909,7 +919,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                                         mkILCustomAttrs debugAttrs,
                                         ILTypeInit.BeforeField)
 
-                  { altTypeDef with IsSerializable=td.IsSerializable; IsSpecialName=true }
+                  { altTypeDef with Attributes=altTypeDef.Attributes ||| (if td.IsSerializable then TypeAttributes.Serializable else TypeAttributes.SpecialName) ||| TypeAttributes.SpecialName }
 
               [ altTypeDef ], altDebugTypeDefs 
 
@@ -1079,19 +1089,13 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
                 { Name = "Tags"
                   NestedTypes = emptyILTypeDefs
                   GenericParams= td.GenericParams
-                  Access = ILTypeDefAccess.Nested cud.cudReprAccess
-                  IsAbstract = true
-                  IsSealed = true
-                  IsSerializable=false
-                  IsComInterop=false
+                  Attributes = ConvertToNestedTypeAccess cud.cudReprAccess ||| TypeAttributes.Abstract ||| TypeAttributes.Sealed ||| TypeAttributes.Abstract
                   Layout=ILTypeDefLayout.Auto 
-                  IsSpecialName=false
                   Encoding=ILDefaultPInvokeEncoding.Ansi
                   Implements = []
                   Extends= Some ilg.typ_Object 
                   Methods= emptyILMethods
                   SecurityDecls=emptyILSecurityDecls
-                  HasSecurity=false 
                   Fields=mkILFields tagEnumFields
                   MethodImpls=emptyILMethodImpls
                   InitSemantics=ILTypeInit.OnAny
@@ -1100,12 +1104,12 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
                   CustomAttrs= emptyILCustomAttrs
                   tdKind = ILTypeDefKind.Enum }
 
+    let abstractOp = if isAbstract then (|||) else (^^^)
+    let sealedOp = if altTypeDefs.IsEmpty then (|||) else (^^^)
     let baseTypeDef = 
        { td with 
           NestedTypes = mkILTypeDefs (Option.toList enumTypeDef @ altTypeDefs @ altDebugTypeDefs @ td.NestedTypes.AsList)
-          IsAbstract = isAbstract
-          IsSealed = altTypeDefs.IsEmpty
-          IsComInterop=false
+          Attributes = (sealedOp (abstractOp td.Attributes TypeAttributes.Abstract) TypeAttributes.Sealed) ^^^ TypeAttributes.Import
           Extends= (match td.Extends with None -> Some ilg.typ_Object | _ -> td.Extends) 
           Methods= mkILMethods (ctorMeths @ baseMethsFromAlt @ selfMeths @ tagMeths @ altUniqObjMeths @ existingMeths)
           Fields=mkILFields (selfAndTagFields @ List.map (fun (_,_,_,_,fdef,_) -> fdef) altNullaryFields @ td.Fields.AsList)
