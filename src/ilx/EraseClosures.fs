@@ -481,7 +481,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
               let cloTypeDef = 
                 { Name = td.Name
                   GenericParams= td.GenericParams
-                  Attributes = td.Attributes ||| TypeAttributes.Sealed ||| (if td.IsSerializable then TypeAttributes.Serializable else TypeAttributes.Sealed)
+                  Attributes = (td.Attributes ||| TypeAttributes.Sealed ||| (if td.IsSerializable then TypeAttributes.Serializable else TypeAttributes.Sealed)) ^^^ TypeAttributes.HasSecurity
                   Implements = List.empty
                   NestedTypes = emptyILTypeDefs
                   Layout=ILTypeDefLayout.Auto
@@ -575,7 +575,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
 
                     { Name = td.Name
                       GenericParams= td.GenericParams
-                      Attributes = td.Attributes ||| TypeAttributes.Sealed ||| (if td.IsSerializable then TypeAttributes.Serializable else TypeAttributes.Sealed)
+                      Attributes = (td.Attributes ||| TypeAttributes.Sealed ||| (if td.IsSerializable then TypeAttributes.Serializable else TypeAttributes.Sealed)) ^^^ TypeAttributes.HasSecurity
                       Implements = []
                       Layout=ILTypeDefLayout.Auto
                       Encoding=ILDefaultPInvokeEncoding.Ansi

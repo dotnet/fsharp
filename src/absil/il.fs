@@ -2334,7 +2334,7 @@ let mkILVoidReturn = mkILReturn ILType.Void
 
 let mkILCtor (access,args,impl) = 
     { Name=".ctor";
-      Attributes=access ||| MethodAttributes.SpecialName;
+      Attributes=access ||| MethodAttributes.SpecialName ||| MethodAttributes.RTSpecialName;
       ImplAttributes=MethodImplAttributes.Managed
       CallingConv=ILCallingConv.Instance;
       Parameters = args
@@ -2391,7 +2391,7 @@ let mkILNonGenericStaticMethod (nm,access,args,ret,impl) =
 
 let mkILClassCtor impl = 
     { Name=".cctor";
-      Attributes=MethodAttributes.Private ||| MethodAttributes.SpecialName;
+      Attributes=MethodAttributes.Private ||| MethodAttributes.Static ||| MethodAttributes.SpecialName ||| MethodAttributes.RTSpecialName;
       ImplAttributes=MethodImplAttributes.Managed
       CallingConv=ILCallingConv.Static;
       GenericParams=mkILEmptyGenericParams;
@@ -2416,7 +2416,6 @@ let mkILGenericVirtualMethod (nm,access,genparams,actual_args,actual_ret,impl) =
     Attributes= 
       // REVIEW: We'll need to start setting this eventually
       access |||
-      MethodAttributes.Virtual ||| 
       MethodAttributes.CheckAccessOnOverride ||| 
       (match impl with MethodBody.Abstract -> MethodAttributes.Abstract | _ -> MethodAttributes.Virtual);
     ImplAttributes=MethodImplAttributes.Managed
@@ -2747,11 +2746,7 @@ let mkILDelegateMethods (ilg: ILGlobals) (iltyp_AsyncCallback, iltyp_IAsyncResul
     let one nm args ret =
         let mdef = mkILNonGenericVirtualMethod (nm,MethodAttributes.Public,args,mkILReturn ret,MethodBody.Abstract)
         {mdef with 
-                   Attributes=
-                      (match mdef.Attributes with 
-                       | MethodAttributes.Virtual -> mdef.Attributes ^^^ MethodAttributes.Abstract
-                       | k -> k) |||
-                      MethodAttributes.HideBySig
+                   Attributes=(mdef.Attributes ^^^ MethodAttributes.Abstract) ||| MethodAttributes.HideBySig
                    mdCodeKind=MethodCodeKind.Runtime; }
     let ctor = mkILCtor(MethodAttributes.Public, [ mkILParamNamed("object",ilg.typ_Object); mkILParamNamed("method",ilg.typ_IntPtr) ], MethodBody.Abstract)
     let ctor = { ctor with  mdCodeKind=MethodCodeKind.Runtime; Attributes=ctor.Attributes ||| MethodAttributes.HideBySig }

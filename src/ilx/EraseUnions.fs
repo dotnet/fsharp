@@ -1089,7 +1089,7 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
                 { Name = "Tags"
                   NestedTypes = emptyILTypeDefs
                   GenericParams= td.GenericParams
-                  Attributes = ConvertToNestedTypeAccess cud.cudReprAccess ||| TypeAttributes.Abstract ||| TypeAttributes.Sealed ||| TypeAttributes.Abstract
+                  Attributes = (ConvertToNestedTypeAccess cud.cudReprAccess ||| TypeAttributes.Abstract ||| TypeAttributes.Sealed ||| TypeAttributes.Abstract) ^^^ TypeAttributes.HasSecurity
                   Layout=ILTypeDefLayout.Auto 
                   Encoding=ILDefaultPInvokeEncoding.Ansi
                   Implements = []

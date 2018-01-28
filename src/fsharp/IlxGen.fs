@@ -3527,8 +3527,8 @@ and bindBaseOrThisVarOpt cenv eenv baseValOpt =
 
 and fixupVirtualSlotFlags (mdef:ILMethodDef) = 
     {mdef with 
-        Attributes = (match mdef.Attributes with 
-                      | MethodAttributes.Virtual -> 
+        Attributes = (match mdef.IsVirtual with 
+                      | true -> 
                          (mdef.Attributes ^^^ MethodAttributes.CheckAccessOnOverride) ||| MethodAttributes.HideBySig
                       | _ -> failwith "fixupVirtualSlotFlags") } 
 
@@ -3538,10 +3538,11 @@ and renameMethodDef nameOfOverridingMethod (mdef : ILMethodDef) =
 and fixupMethodImplFlags (mdef:ILMethodDef) = 
     {mdef with
                Attributes = MethodAttributes.Private |||
-                            (match mdef.Attributes with 
-                             | MethodAttributes.Virtual -> 
+                            MethodAttributes.HideBySig |||
+                            (match mdef.IsVirtual with 
+                             | true -> 
                                 (mdef.Attributes ^^^ MethodAttributes.CheckAccessOnOverride) ||| 
-                                MethodAttributes.Final ||| MethodAttributes.NewSlot ||| MethodAttributes.HideBySig
+                                MethodAttributes.Final ||| MethodAttributes.NewSlot
                              | _ -> failwith "fixupMethodImpl") }
 
 and GenObjectMethod cenv eenvinner (cgbuf:CodeGenBuffer) useMethodImpl tmethod =
@@ -3731,7 +3732,7 @@ and GenClosureTypeDefs cenv (tref:ILTypeRef, ilGenParams, attrs, ilCloFreeVars, 
   let td = 
     { Name = tref.Name 
       Layout = ILTypeDefLayout.Auto
-      Attributes = ComputeTypeAccess tref true ||| TypeAttributes.Sealed ||| TypeAttributes.Serializable ||| TypeAttributes.SpecialName
+      Attributes = (ComputeTypeAccess tref true ||| TypeAttributes.Sealed ||| TypeAttributes.Serializable ||| TypeAttributes.SpecialName) ^^^ TypeAttributes.HasSecurity
       GenericParams = ilGenParams
       CustomAttrs = mkILCustomAttrs(attrs @ [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Closure) ])
       Fields = emptyILFields
@@ -3781,7 +3782,7 @@ and GenLambdaClosure cenv (cgbuf:CodeGenBuffer) eenv isLocalTypeFunc selfv expr 
                 let ilContractTypeDef = 
                     { Name = ilContractTypeRef.Name 
                       Layout = ILTypeDefLayout.Auto
-                      Attributes =  ComputeTypeAccess ilContractTypeRef true ||| TypeAttributes.Abstract ||| TypeAttributes.Serializable ||| TypeAttributes.SpecialName // the contract type is an abstract type and not sealed
+                      Attributes =  (ComputeTypeAccess ilContractTypeRef true ||| TypeAttributes.Abstract ||| TypeAttributes.Serializable ||| TypeAttributes.SpecialName) ^^^ TypeAttributes.HasSecurity // the contract type is an abstract type and not sealed
                       GenericParams = ilContractGenericParams
                       CustomAttrs = mkILCustomAttrs [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Closure) ]
                       Fields = emptyILFields
@@ -5238,7 +5239,7 @@ and GenMethodForBinding
                                  (if hasNoInliningFlag then MethodImplAttributes.NoInlining else mdef.ImplAttributes) |||
                                  (if hasAggressiveInliningImplFlag then MethodImplAttributes.AggressiveInlining else mdef.ImplAttributes)
                 IsEntryPoint = isExplicitEntryPoint
-                Attributes = if securityAttributes.Length > 0 then mdef.Attributes ||| MethodAttributes.HasSecurity else mdef.Attributes
+                Attributes = if securityAttributes.Length > 0 then mdef.Attributes ||| MethodAttributes.HasSecurity else mdef.Attributes ^^^ MethodAttributes.HasSecurity
                 SecurityDecls = secDecls }
 
         let mdef = 
@@ -5301,12 +5302,12 @@ and GenMethodForBinding
 
            let mdef = 
                {mdef with 
-                    Attributes=match mdef.Attributes with 
-                               | MethodAttributes.Virtual -> 
+                    Attributes=match mdef.IsVirtual || mdef.IsAbstract with 
+                               | true -> 
                                    let finalOp = if memberInfo.MemberFlags.IsFinal then (|||) else (^^^)
                                    let abstractOp = if isAbstract then (|||) else (^^^)
                                    abstractOp (finalOp mdef.Attributes MethodAttributes.Final) MethodAttributes.Abstract
-                               | k -> k }
+                               | _ -> mdef.Attributes }
 
            match memberInfo.MemberFlags.MemberKind with 
                
@@ -6093,12 +6094,12 @@ and GenAbstractBinding cenv eenv tref (vref:ValRef) =
                                  (if hasSynchronizedImplFlag then MethodImplAttributes.Synchronized else mdef.ImplAttributes) |||
                                  (if hasNoInliningFlag then MethodImplAttributes.NoInlining else mdef.ImplAttributes) |||
                                  (if hasAggressiveInliningImplFlag then MethodImplAttributes.AggressiveInlining else mdef.ImplAttributes)
-            Attributes=match mdef.Attributes with 
-                       | MethodAttributes.Virtual ->
+            Attributes=match mdef.IsVirtual || mdef.IsAbstract with 
+                       | true ->
                            let finalOp = if memberInfo.MemberFlags.IsFinal then (|||) else (^^^)
                            let abstractOp = if memberInfo.MemberFlags.IsDispatchSlot then (|||) else (^^^)
                            abstractOp (finalOp mdef.Attributes MethodAttributes.Final) MethodAttributes.Abstract
-                       | k -> k }
+                       | _ -> mdef.Attributes }
         
         match memberInfo.MemberFlags.MemberKind with 
         | MemberKind.ClassConstructor 
