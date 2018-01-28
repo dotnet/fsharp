@@ -27,11 +27,6 @@ open Microsoft.FSharp.Compiler.PrettyNaming
 
 open Microsoft.FSharp.Core.Printf
 
-#if EXTENSIONTYPING
-open Microsoft.FSharp.Compiler.ExtensionTyping
-open Microsoft.FSharp.Core.CompilerServices
-#endif
-
 [<AutoOpen>]
 module internal PrintUtilities = 
     let bracketIfL x lyt = if x then bracketL lyt else lyt
@@ -321,9 +316,11 @@ module private PrintIL =
                     then Some Literals.keywordTrue
                     else Some Literals.keywordFalse
                 | ILFieldInit.Char c   -> ("'" + (char c).ToString () + "'") |> (tagStringLiteral >> Some)
+                | ILFieldInit.Int8 x  -> ((x |> int32 |> string) + "y") |> (tagNumericLiteral >> Some)
                 | ILFieldInit.Int16 x  -> ((x |> int32 |> string) + "s") |> (tagNumericLiteral >> Some)
                 | ILFieldInit.Int32 x  -> x |> (string >> tagNumericLiteral >> Some)
                 | ILFieldInit.Int64 x  -> ((x |> string) + "L") |> (tagNumericLiteral >> Some)
+                | ILFieldInit.UInt8 x  -> ((x |> int32 |> string) + "uy") |> (tagNumericLiteral >> Some)
                 | ILFieldInit.UInt16 x -> ((x |> int32 |> string) + "us")  |> (tagNumericLiteral >> Some)
                 | ILFieldInit.UInt32 x -> (x |> int64 |> string) + "u" |> (tagNumericLiteral >> Some)
                 | ILFieldInit.UInt64 x -> ((x |> int64 |> string) + "UL")  |> (tagNumericLiteral >> Some)
@@ -662,11 +659,11 @@ module private PrintTypes =
         match k with 
         | ILAttrib ilMethRef -> 
             let trimmedName = 
-                let name = ilMethRef.EnclosingTypeRef.Name
+                let name = ilMethRef.DeclaringTypeRef.Name
                 match String.tryDropSuffix name "Attribute" with 
                 | Some shortName -> shortName
                 | None -> name
-            let tref = ilMethRef.EnclosingTypeRef
+            let tref = ilMethRef.DeclaringTypeRef
             let tref = ILTypeRef.Create(scope= tref.Scope, enclosing=tref.Enclosing, name=trimmedName)
             PrintIL.layoutILTypeRef denv tref ++ argsL
         | FSAttrib vref -> 
@@ -1114,7 +1111,7 @@ module private PrintTastMemberOrVals =
                 DemangleOperatorNameAsLayout (tagFunction >> mkNav v.DefinitionRange) name
             let nameL = 
                 if denv.showMemberContainers then 
-                    layoutTyconRef denv v.MemberApparentParent ^^ SepL.dot ^^ nameL
+                    layoutTyconRef denv v.MemberApparentEntity ^^ SepL.dot ^^ nameL
                 else 
                     nameL
             let nameL = if denv.showTyparBinding then layoutTyparDecls denv nameL true niceMethodTypars else nameL
@@ -1299,18 +1296,15 @@ module InfoMemberPrinting =
     //          Container(argName1:argType1, ..., argNameN:argTypeN) : retType
     //          Container.Method(argName1:argType1, ..., argNameN:argTypeN) : retType
     let private layoutMethInfoCSharpStyle amap m denv (minfo:MethInfo) minst =
-        let retTy = minfo.GetFSharpReturnTy(amap, m, minst)
+        let retTy = if minfo.IsConstructor then minfo.ApparentEnclosingType else minfo.GetFSharpReturnTy(amap, m, minst) 
         let layout = 
             if minfo.IsExtensionMember then
                 LeftL.leftParen ^^ wordL (tagKeyword (FSComp.SR.typeInfoExtension())) ^^ RightL.rightParen
             else emptyL
         let layout = 
             layout ^^
-                match tryDestAppTy amap.g minfo.EnclosingType with
-                | Some tcref ->
-                    PrintTypes.layoutTyconRef denv tcref
-                | None ->
-                    PrintTypes.layoutType denv minfo.EnclosingType
+                let tcref = minfo.ApparentEnclosingTyconRef 
+                PrintTypes.layoutTyconRef denv tcref
         let layout = 
             layout ^^
                 if minfo.IsConstructor then  
@@ -1360,9 +1354,9 @@ module InfoMemberPrinting =
     //          ApparentContainer.Method(argName1:argType1, ..., argNameN:argTypeN) : retType
     let prettyLayoutOfMethInfoFreeStyle (amap: Import.ImportMap) m denv typarInst methInfo =
         match methInfo with 
-        | DefaultStructCtor(g,_typ) -> 
+        | DefaultStructCtor _ -> 
             let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst 
-            prettyTyparInst, PrintTypes.layoutTyconRef denv (tcrefOfAppTy g methInfo.EnclosingType) ^^ wordL (tagPunctuation "()")
+            prettyTyparInst, PrintTypes.layoutTyconRef denv methInfo.ApparentEnclosingTyconRef ^^ wordL (tagPunctuation "()")
         | FSMeth(_,_,vref,_) -> 
             let prettyTyparInst, resL = PrintTastMemberOrVals.prettyLayoutOfValOrMember { denv with showMemberContainers=true } typarInst vref.Deref
             prettyTyparInst, resL
@@ -1370,7 +1364,7 @@ module InfoMemberPrinting =
             let prettyTyparInst, prettyMethInfo, minst = prettifyILMethInfo amap m methInfo typarInst ilminfo
             let resL = layoutMethInfoCSharpStyle amap m denv prettyMethInfo minst
             prettyTyparInst, resL
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | ProvidedMeth _  -> 
             let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst 
             prettyTyparInst, layoutMethInfoCSharpStyle amap m denv methInfo methInfo.FormalMethodInst
@@ -1386,7 +1380,7 @@ module InfoMemberPrinting =
             | Some vref -> tagProperty >> mkNav vref.DefinitionRange
         let nameL = DemangleOperatorNameAsLayout tagProp pinfo.PropertyName
         wordL (tagText (FSComp.SR.typeInfoProperty())) ^^
-        layoutTyconRef denv (tcrefOfAppTy g pinfo.EnclosingType) ^^
+        layoutTyconRef denv pinfo.ApparentEnclosingTyconRef ^^
         SepL.dot ^^
         nameL ^^
         RightL.colon ^^
@@ -1407,7 +1401,7 @@ module private TastDefinitionPrinting =
     open PrintTypes
 
     let layoutExtensionMember denv (v:Val) =
-        let tycon = v.MemberApparentParent.Deref
+        let tycon = v.MemberApparentEntity.Deref
         let nameL = tagMethod tycon.DisplayName |> mkNav v.DefinitionRange |> wordL
         let nameL = layoutAccessibility denv tycon.Accessibility nameL // "type-accessibility"
         let tps =
@@ -1469,7 +1463,7 @@ module private TastDefinitionPrinting =
         | TAsmRepr _ 
         | TILObjectRepr _  
         | TMeasureableRepr _ 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         | TProvidedTypeExtensionPoint _
         | TProvidedNamespaceExtensionPoint _
 #endif
@@ -1477,7 +1471,7 @@ module private TastDefinitionPrinting =
 
 
               
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     let private layoutILFieldInfo denv amap m (e: ILFieldInfo) =
         let staticL = if e.IsStatic then WordL.keywordStatic else emptyL
         let nameL = wordL (tagField (adjustILName e.FieldName))
@@ -1560,8 +1554,8 @@ module private TastDefinitionPrinting =
                                 if p.HasGetter then yield p.GetterMethod.DisplayName
                                 if p.HasSetter then yield p.SetterMethod.DisplayName  
                              for e in events do 
-                                yield e.GetAddMethod().DisplayName 
-                                yield e.GetRemoveMethod().DisplayName ]
+                                yield e.AddMethod.DisplayName 
+                                yield e.RemoveMethod.DisplayName ]
             with _ -> Set.empty
 
         let ctorLs    = 
@@ -1642,7 +1636,7 @@ module private TastDefinitionPrinting =
           let tpsL = layoutTyparDecls denv nameL tycon.IsPrefixDisplay tps
           typewordL ^^ tpsL
       let start = Option.map tagKeyword start
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
       match tycon.IsProvided with 
       | true -> 
           layoutProvidedTycon denv infoReader ad m start lhsL ty 

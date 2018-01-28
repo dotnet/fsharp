@@ -25,9 +25,9 @@ The F# tests are split as follows:
 
 * [FSharpQA Suite](tests/fsharpqa/Source) - Broad and deep coverage of a variety of compiler, runtime, and syntax scenarios.
 
-* [FSharp.Core.Unittests](src/fsharp/FSharp.Core.Unittests) - Validation of the core F# types and the public surface area of `FSharp.Core.dll`.
+* [FSharp.Core.UnitTests](tests/FSharp.Core.UnitTests) - Validation of the core F# types and the public surface area of `FSharp.Core.dll`.
 
-* [FSharp.Compiler.Unittests](src/fsharp/FSharp.Compiler.Unittests) - Validation of compiler internals.
+* [FSharp.Compiler.UnitTests](tests/FSharp.Compiler.UnitTests) - Validation of compiler internals.
 
 * [VisualFSharp.UnitTests](vsintegration/tests/unittests) - Visual F# Tools IDE Unit Test Suite
   This suite exercises a wide range of behaviors in the F# Visual Studio project system and language service.
@@ -55,17 +55,17 @@ For the FSharpQA suite, the list of test areas and their associated "tags" is st
 
     tests\fsharpqa\source\test.lst   // FSharpQA suite
 
-Tags are in the left column, paths to to corresponding test folders are in the right column.  If no tags are specifie, all tests will be run.
+Tags are in the left column, paths to to corresponding test folders are in the right column.  If no tags are specified, all tests will be run.
 
 If you want to re-run a particular test area, the easiest way to do so is to set a temporary tag for that area in test.lst (e.g. "RERUN") and then pass that as an argument to `build.cmd`: `build.cmd test-net40-fsharpqa include RERUN`.
 
-### FSharp.Compiler.Unittests, FSharp.Core.Unittests, VisualFSharp.Unittests
+### FSharp.Compiler.UnitTests, FSharp.Core.UnitTests, VisualFSharp.UnitTests
 
 These are all NUnit tests. You can execute these tests individually via the Visual Studio NUnit3 runner 
 extension or the command line via `nunit3-console.exe`.
 
 Note that for compatibility reasons, the IDE unit tests should be run in a 32-bit process, 
-using the '--x86' flag to `nunit3-console.exe`
+using the `--x86` flag to `nunit3-console.exe`
 
 
 

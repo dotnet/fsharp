@@ -2,11 +2,7 @@
 
 /// The "unlinked" view of .NET metadata and code.  Central to 
 ///  to Abstract IL library
-#if COMPILER_PUBLIC_API
 module public Microsoft.FSharp.Compiler.AbstractIL.IL 
-#else
-module internal Microsoft.FSharp.Compiler.AbstractIL.IL 
-#endif
 
 open Internal.Utilities
 open System.Collections.Generic
@@ -287,7 +283,7 @@ type ILTypeRef =
 
     member QualifiedName: string
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     member QualifiedNameWithNoShortPrimaryAssembly: string
 #endif
 
@@ -376,7 +372,7 @@ and ILTypes = list<ILType>
 [<Sealed>]
 type ILMethodRef =
      static member Create : enclosingTypeRef: ILTypeRef * callingConv: ILCallingConv * name: string * genericArity: int * argTypes: ILTypes * returnType: ILType -> ILMethodRef
-     member EnclosingTypeRef: ILTypeRef
+     member DeclaringTypeRef: ILTypeRef
      member CallingConv: ILCallingConv
      member Name: string
      member GenericArity: int
@@ -390,7 +386,7 @@ type ILMethodRef =
  
 [<StructuralEquality; StructuralComparison>]
 type ILFieldRef = 
-    { EnclosingTypeRef: ILTypeRef;
+    { DeclaringTypeRef: ILTypeRef;
       Name: string;
       Type: ILType }
 
@@ -411,7 +407,7 @@ type ILFieldRef =
 type ILMethodSpec =
      static member Create : ILType * ILMethodRef * ILGenericArgs -> ILMethodSpec
      member MethodRef: ILMethodRef
-     member EnclosingType: ILType 
+     member DeclaringType: ILType 
      member GenericArgs: ILGenericArgs
      member CallingConv: ILCallingConv
      member GenericArity: int
@@ -425,8 +421,8 @@ type ILMethodSpec =
 [<StructuralEquality; StructuralComparison>]    
 type ILFieldSpec =
     { FieldRef: ILFieldRef;
-      EnclosingType: ILType }    
-    member EnclosingTypeRef: ILTypeRef
+      DeclaringType: ILType }    
+    member DeclaringTypeRef: ILTypeRef
     member Name: string
     member FormalType: ILType
     member ActualType : ILType
@@ -967,7 +963,7 @@ type PInvokeMethod =
 type ILOverridesSpec =
     | OverridesSpec of ILMethodRef * ILType
     member MethodRef: ILMethodRef
-    member EnclosingType: ILType 
+    member DeclaringType: ILType 
 
 // REVIEW: fold this into ILMethodDef.
 type ILMethodVirtualInfo =
@@ -1925,13 +1921,13 @@ val computeILEnumInfo: string * ILFieldDefs -> ILEnumInfo
 [<Sealed>]
 type ILEventRef =
     static member Create : ILTypeRef * string -> ILEventRef
-    member EnclosingTypeRef: ILTypeRef
+    member DeclaringTypeRef: ILTypeRef
     member Name: string
 
 [<Sealed>]
 type ILPropertyRef =
      static member Create : ILTypeRef * string -> ILPropertyRef
-     member EnclosingTypeRef: ILTypeRef
+     member DeclaringTypeRef: ILTypeRef
      member Name: string
      interface System.IComparable
 

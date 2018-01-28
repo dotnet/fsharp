@@ -11,6 +11,7 @@ module ``FSharp-Tests-Core``
 open System
 open System.IO
 open System.Reflection
+open System.Reflection.PortableExecutable
 open NUnit.Framework
 open TestFramework
 open Scripting
@@ -376,7 +377,7 @@ module CoreTests =
 
 
         // Same without the reference to lib.dll - testing an incomplete reference set, but only compiling a subset of the code
-        fsc cfg "%s --noframework --define:NO_LIB_REFERENCE -r:lib3.dll -r:lib2.dll -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -r:System.Runtime.dll --noframework --define:NO_LIB_REFERENCE -r:lib3.dll -r:lib2.dll -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
 
@@ -568,84 +569,88 @@ module CoreTests =
     let ``printing-5`` () = 
          printing "--quiet" "z.output.test.quiet.stdout.txt" "z.output.test.quiet.stdout.bsl" "z.output.test.quiet.stderr.txt" "z.output.test.quiet.stderr.bsl"
 
+    type SigningType =
+        | DelaySigned
+        | PublicSigned
+        | NotSigned
 
-    let signedtest(args,bslfile) = 
+    let signedtest(programId:string, args:string, expectedSigning:SigningType) = 
     
         let cfg = testConfig "core/signedtests"
-        let cfg = { cfg with fsc_flags=cfg.fsc_flags + " " + args }
+        let newFlags = cfg.fsc_flags + " " + args
 
-        let outfile = Path.ChangeExtension(bslfile,"sn.out") 
-        let exefile = Path.ChangeExtension(bslfile,"exe") 
-        do File.WriteAllLines(getfullpath cfg outfile,
-                              ["sn -q stops all output except error messages                "
-                               "if the output is a valid file no output is produced.       "
-                               "delay-signed and unsigned produce error messages.          "])
+        let exefile = programId + ".exe"
+        fsc cfg "%s -o:%s" newFlags exefile ["test.fs"]
 
-        fsc cfg "%s -o:%s" cfg.fsc_flags exefile ["test.fs"]
-        sn cfg outfile ("-q -vf "+exefile) 
-        let diffs = fsdiff cfg outfile bslfile 
+        let assemblyPath = Path.Combine(cfg.Directory, exefile)
+        let assemblyName = AssemblyName.GetAssemblyName(assemblyPath)
+        let publicKeyToken = assemblyName.GetPublicKeyToken()
+        let isPublicKeyTokenPresent = not (Array.isEmpty publicKeyToken)
+        use exeStream = new FileStream(assemblyPath, FileMode.Open)
+        let peHeader = PEHeaders(exeStream)
+        let isSigned = peHeader.CorHeader.Flags.HasFlag(CorFlags.StrongNameSigned)
+        let actualSigning =
+            match isSigned, isPublicKeyTokenPresent with
+            | true, true-> SigningType.PublicSigned
+            | true, false -> failwith "unreachable"
+            | false, true -> SigningType.DelaySigned
+            | false, false -> SigningType.NotSigned
 
-        match diffs with
-        | "" -> ()
-        | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" outfile bslfile diffs)
-
-    [<Test; Category("signedtest")>]
-    let ``signedtest-1`` () = signedtest("","test-unsigned.bsl")
-
-    [<Test; Category("signedtest")>]
-    let ``signedtest-2`` () = signedtest("--keyfile:sha1full.snk", "test-sha1-full-cl.bsl")
+        Assert.AreEqual(expectedSigning, actualSigning)
 
     [<Test; Category("signedtest")>]
-    let ``signedtest-3`` () = signedtest("--keyfile:sha256full.snk", "test-sha256-full-cl.bsl")
+    let ``signedtest-1`` () = signedtest("test-unsigned", "", SigningType.NotSigned)
 
     [<Test; Category("signedtest")>]
-    let ``signedtest-4`` () = signedtest("--keyfile:sha512full.snk", "test-sha512-full-cl.bsl")
+    let ``signedtest-2`` () = signedtest("test-sha1-full-cl", "--keyfile:sha1full.snk", SigningType.PublicSigned)
 
     [<Test; Category("signedtest")>]
-    let ``signedtest-5`` () = signedtest("--keyfile:sha1024full.snk", "test-sha1024-full-cl.bsl")
+    let ``signedtest-3`` () = signedtest("test-sha256-full-cl", "--keyfile:sha256full.snk", SigningType.PublicSigned)
 
     [<Test; Category("signedtest")>]
-    let ``signedtest-6`` () = signedtest("--keyfile:sha1delay.snk --delaysign", "test-sha1-delay-cl.bsl")
+    let ``signedtest-4`` () = signedtest("test-sha512-full-cl", "--keyfile:sha512full.snk", SigningType.PublicSigned)
 
     [<Test; Category("signedtest")>]
-    let ``signedtest-7`` () = signedtest("--keyfile:sha256delay.snk --delaysign", "test-sha256-delay-cl.bsl")
+    let ``signedtest-5`` () = signedtest("test-sha1024-full-cl", "--keyfile:sha1024full.snk", SigningType.PublicSigned)
 
     [<Test; Category("signedtest")>]
-    let ``signedtest-8`` () = signedtest("--keyfile:sha512delay.snk --delaysign", "test-sha512-delay-cl.bsl")
+    let ``signedtest-6`` () = signedtest("test-sha1-delay-cl", "--keyfile:sha1delay.snk --delaysign", SigningType.DelaySigned)
 
     [<Test; Category("signedtest")>]
-    let ``signedtest-9`` () = signedtest("--keyfile:sha1024delay.snk --delaysign", "test-sha1024-delay-cl.bsl")
+    let ``signedtest-7`` () = signedtest("test-sha256-delay-cl", "--keyfile:sha256delay.snk --delaysign", SigningType.DelaySigned)
+
+    [<Test; Category("signedtest")>]
+    let ``signedtest-8`` () = signedtest("test-sha512-delay-cl", "--keyfile:sha512delay.snk --delaysign", SigningType.DelaySigned)
+
+    [<Test; Category("signedtest")>]
+    let ``signedtest-9`` () = signedtest("test-sha1024-delay-cl", "--keyfile:sha1024delay.snk --delaysign", SigningType.DelaySigned)
 
     // Test SHA1 key full signed  Attributes
     [<Test; Category("signedtest")>]
-    let ``signedtest-10`` () = signedtest("--define:SHA1","test-sha1-full-attributes.bsl")
+    let ``signedtest-10`` () = signedtest("test-sha1-full-attributes", "--define:SHA1", SigningType.PublicSigned)
 
     // Test SHA1 key delayl signed  Attributes
     [<Test; Category("signedtest")>]
-    let ``signedtest-11`` () = signedtest("--keyfile:sha1delay.snk --define:SHA1 --define:DELAY", "test-sha1-delay-attributes.bsl")
+    let ``signedtest-11`` () = signedtest("test-sha1-delay-attributes", "--keyfile:sha1delay.snk --define:SHA1 --define:DELAY", SigningType.DelaySigned)
 
     [<Test; Category("signedtest")>]
-    let ``signedtest-12`` () = signedtest("--define:SHA256", "test-sha256-full-attributes.bsl")
+    let ``signedtest-12`` () = signedtest("test-sha256-full-attributes", "--define:SHA256", SigningType.PublicSigned)
 
     // Test SHA 256 bit key delay signed  Attributes
     [<Test; Category("signedtest")>]
-    let ``signedtest-13`` () = signedtest("--define:SHA256 --define:DELAY", "test-sha256-delay-attributes.bsl")
+    let ``signedtest-13`` () = signedtest("test-sha256-delay-attributes", "--define:SHA256 --define:DELAY", SigningType.DelaySigned)
 
     // Test SHA 512 bit key fully signed  Attributes
     [<Test; Category("signedtest")>]
-    let ``signedtest-14`` () = signedtest("--define:SHA512", "test-sha512-full-attributes.bsl")
+    let ``signedtest-14`` () = signedtest("test-sha512-full-attributes", "--define:SHA512", SigningType.PublicSigned)
 
     // Test SHA 512 bit key delay signed Attributes
     [<Test; Category("signedtest")>]
-    let ``signedtest-15`` () = signedtest("--define:SHA512 --define:DELAY", "test-sha512-delay-attributes.bsl")
+    let ``signedtest-15`` () = signedtest("test-sha512-delay-attributes", "--define:SHA512 --define:DELAY", SigningType.DelaySigned)
 
     // Test SHA 1024 bit key fully signed  Attributes
     [<Test; Category("signedtest")>]
-    let ``signedtest-16`` () = signedtest("--define:SHA1024", "test-sha1024-full-attributes.bsl")
-
-    // Test dumpbin with SHA 1024 bit key public signed CL
-    [<Test; Category("signedtest")>]
-    let ``signedtest-17`` () = signedtest("--keyfile:sha1024delay.snk --publicsign", "test-sha1024-public-cl.bsl")
+    let ``signedtest-16`` () = signedtest("test-sha1024-full-attributes", "--define:SHA1024", SigningType.PublicSigned)
 #endif
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
@@ -1616,9 +1621,9 @@ module OptimizationTests =
 
         fsc cfg "%s --optimize -o:test--optimize.exe -g -r:lib--optimize.dll  -r:lib3--optimize.dll" cfg.fsc_flags ["test.fs "]
 
-        ildasm cfg "/nobar /out=test.il" "test.exe"
+        ildasm cfg "/out=test.il" "test.exe"
 
-        ildasm cfg "/nobar /out=test--optimize.il" "test--optimize.exe"
+        ildasm cfg "/out=test--optimize.il" "test--optimize.exe"
 
         let ``test--optimize.il`` = 
             File.ReadLines (getfullpath cfg "test--optimize.il")
@@ -1641,7 +1646,7 @@ module OptimizationTests =
     let stats () = 
         let cfg = testConfig "optimize/stats"
 
-        ildasm cfg "/nobar /out=FSharp.Core.il" cfg.FSCOREDLLPATH
+        ildasm cfg "/out=FSharp.Core.il" cfg.FSCOREDLLPATH
 
         let fscore = File.ReadLines(getfullpath cfg "FSharp.Core.il") |> Seq.toList
 

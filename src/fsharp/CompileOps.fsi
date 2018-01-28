@@ -6,10 +6,7 @@ module internal Microsoft.FSharp.Compiler.CompileOps
 open System
 open System.Text
 open System.Collections.Generic
-open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.TypeChecker
@@ -17,13 +14,9 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.ReferenceResolver
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Core.CompilerServices
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -65,10 +58,10 @@ val ComputeQualifiedNameOfFileFromUniquePath: range * string list -> Ast.Qualifi
 val PrependPathToInput: Ast.Ident list -> Ast.ParsedInput -> Ast.ParsedInput
 
 /// Checks if a module name is already given and deduplicates the name if needed.
-val DeduplicateModuleName: Dictionary<string,Set<string>> -> Set<string> -> string -> Ast.QualifiedNameOfFile -> Ast.QualifiedNameOfFile
+val DeduplicateModuleName: IDictionary<string,Set<string>> -> Set<string> -> string -> Ast.QualifiedNameOfFile -> Ast.QualifiedNameOfFile
 
 /// Checks if a ParsedInput is using a module name that was already given and deduplicates the name if needed.
-val DeduplicateParsedInputModuleName: Dictionary<string,Set<string>> -> Ast.ParsedInput -> Ast.ParsedInput
+val DeduplicateParsedInputModuleName: IDictionary<string,Set<string>> -> Ast.ParsedInput -> Ast.ParsedInput
 
 val ParseInput: (UnicodeLexing.Lexbuf -> Parser.token) * ErrorLogger * UnicodeLexing.Lexbuf * string option * string * isLastCompiland:(bool * bool) -> Ast.ParsedInput
 
@@ -207,7 +200,7 @@ type AssemblyResolution =
 
 type UnresolvedAssemblyReference = UnresolvedAssemblyReference of string * AssemblyReference list
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 type ResolvedExtensionReference = ResolvedExtensionReference of string * AssemblyReference list * Tainted<ITypeProvider> list
 #endif
 
@@ -347,7 +340,7 @@ type TcConfigBuilder =
       mutable showTimes: bool
       mutable showLoadedAssemblies: bool
       mutable continueAfterParseFailure: bool
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
       mutable showExtensionTypeMessages: bool
 #endif
       mutable pause: bool 
@@ -499,7 +492,7 @@ type TcConfig =
     member showTimes: bool
     member showLoadedAssemblies: bool
     member continueAfterParseFailure: bool
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     member showExtensionTypeMessages: bool
 #endif
     member pause: bool 
@@ -555,7 +548,7 @@ type TcConfigProvider =
 type ImportedBinary = 
     { FileName: string
       RawMetadata: IRawFSharpAssemblyData
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
       ProviderGeneratedAssembly: System.Reflection.Assembly option
       IsProviderGenerated: bool
       ProviderGeneratedStaticLinkMap: ProvidedAssemblyStaticLinkingMap  option
@@ -570,7 +563,7 @@ type ImportedAssembly =
       FSharpViewOfMetadata: CcuThunk
       AssemblyAutoOpenAttributes: string list
       AssemblyInternalsVisibleToAttributes: string list
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
       IsProviderGenerated: bool
       mutable TypeProviders: Tainted<Microsoft.FSharp.Core.CompilerServices.ITypeProvider> list
 #endif
@@ -599,7 +592,7 @@ type TcImports =
     member FindDllInfo: CompilationThreadToken * range * string -> ImportedBinary
     member TryFindDllInfo: CompilationThreadToken * range * string * lookupOnly: bool -> option<ImportedBinary>
     member FindCcuFromAssemblyRef: CompilationThreadToken * range * ILAssemblyRef -> CcuResolutionResult
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     member ProviderGeneratedTypeRoots: ProviderGeneratedType list
 #endif
     member GetImportMap: unit -> Import.ImportMap
@@ -617,7 +610,7 @@ type TcImports =
     /// Try to find the given assembly reference.
     member TryFindExistingFullyQualifiedPathByExactAssemblyRef: CompilationThreadToken * ILAssemblyRef -> string option
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     /// Try to find a provider-generated assembly
     member TryFindProviderGeneratedAssemblyByName: CompilationThreadToken * assemblyName:string -> System.Reflection.Assembly option
 #endif

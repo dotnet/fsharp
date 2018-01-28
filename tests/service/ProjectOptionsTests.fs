@@ -14,11 +14,16 @@ open System
 open System.IO
 open NUnit.Framework
 open FsUnit
+open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler.Service.Tests.Common
 
 #if !NO_PROJECTCRACKER
+
+let hasMSBuild14 =
+  use engine = new Microsoft.Build.Evaluation.ProjectCollection()
+  engine.Toolsets |> Seq.exists (fun x -> x.ToolsPath.Contains "v14.0")
 
 let normalizePath s = (new Uri(s)).LocalPath
 
@@ -90,7 +95,7 @@ let ``Project file parsing example 1 Default configuration relative path`` () =
 
 [<Test>]
 let ``Project file parsing VS2013_FSharp_Portable_Library_net45``() = 
-  if not runningOnMono then  // Disabled on Mono due to lack of installed PCL reference libraries - the modern way is to reference the FSHarp.Core nuget package so this is ok
+    if (not hasMSBuild14) || runningOnMono then () else  // Disabled on Mono due to lack of installed PCL reference libraries - the modern way is to reference the FSHarp.Core nuget package so this is ok
 
     let projectFile = __SOURCE_DIRECTORY__ + @"/../projects/Sample_VS2013_FSharp_Portable_Library_net45/Sample_VS2013_FSharp_Portable_Library_net45.fsproj"
     let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [])
@@ -106,7 +111,7 @@ let ``Project file parsing VS2013_FSharp_Portable_Library_net45``() =
 
 [<Test>]
 let ``Project file parsing Sample_VS2013_FSharp_Portable_Library_net451_adjusted_to_profile78``() = 
-  if not runningOnMono then  // Disabled on Mono due to lack of installed PCL reference libraries - the modern way is to reference the FSHarp.Core nuget package so this is ok
+    if (not hasMSBuild14) || runningOnMono then () else  // Disabled on Mono due to lack of installed PCL reference libraries - the modern way is to reference the FSHarp.Core nuget package so this is ok
 
     let projectFile = __SOURCE_DIRECTORY__ + @"/../projects/Sample_VS2013_FSharp_Portable_Library_net451_adjusted_to_profile78/Sample_VS2013_FSharp_Portable_Library_net451.fsproj"
     Directory.SetCurrentDirectory(__SOURCE_DIRECTORY__ + @"/../projects/Sample_VS2013_FSharp_Portable_Library_net451_adjusted_to_profile78/")
@@ -141,7 +146,8 @@ let ``Project file parsing -- bad project file``() =
     ProjectCracker.GetProjectOptionsFromProjectFileLogged(f) |> ignore
     failwith "Expected exception"
   with e -> 
-    Assert.That(e.Message, Contains.Substring "The project file could not be loaded.")
+    Assert.That(e.Message, Contains.Substring "Could not load project")
+    Assert.That(e.Message, Contains.Substring "Malformed.fsproj")
 
 [<Test>]
 let ``Project file parsing -- non-existent project file``() =
@@ -149,7 +155,7 @@ let ``Project file parsing -- non-existent project file``() =
   try
     ProjectCracker.GetProjectOptionsFromProjectFileLogged(f, enableLogging=true) |> ignore
   with e -> 
-    Assert.That(e.Message, Contains.Substring "Could not find file")
+    Assert.That(e.Message, Contains.Substring "DoesNotExist.fsproj")
 
 [<Test>]
 let ``Project file parsing -- output file``() =
@@ -176,8 +182,19 @@ let ``Project file parsing -- references``() =
   p.ReferencedProjects |> should be Empty
 
 [<Test>]
+let ``Project file parsing -- no project references``() =
+  let p = ProjectCracker.GetProjectOptionsFromProjectFile(__SOURCE_DIRECTORY__ + @"/data/Test3.fsproj")
+
+  let references = getReferencedFilenames p.OtherOptions
+  checkOption references "FSharp.Core.dll"
+  checkOption references "mscorlib.dll"
+  checkOption references "System.Core.dll"
+  checkOption references "System.dll"
+  p.ReferencedProjects |> should haveLength 0
+
+[<Test>]
 let ``Project file parsing -- 2nd level references``() =
-  let p = ProjectCracker.GetProjectOptionsFromProjectFile(__SOURCE_DIRECTORY__ + @"/data/Test2.fsproj")
+  let p,_ = ProjectCracker.GetProjectOptionsFromProjectFileLogged(__SOURCE_DIRECTORY__ + @"/data/Test2.fsproj", enableLogging=true)
 
   let references = getReferencedFilenames p.OtherOptions
   checkOption references "FSharp.Core.dll"
@@ -189,6 +206,7 @@ let ``Project file parsing -- 2nd level references``() =
   references |> should haveLength 5
   p.ReferencedProjects |> should haveLength 1
   (snd p.ReferencedProjects.[0]).ProjectFileName |> should contain (normalizePath (__SOURCE_DIRECTORY__ + @"/data/Test1.fsproj"))
+
 
 [<Test>]
 let ``Project file parsing -- reference project output file``() =
@@ -207,20 +225,23 @@ let ``Project file parsing -- reference project output file``() =
 
 [<Test>]
 let ``Project file parsing -- Tools Version 12``() =
+  if not hasMSBuild14 then () else
   let opts = ProjectCracker.GetProjectOptionsFromProjectFile(__SOURCE_DIRECTORY__ + @"/data/ToolsVersion12.fsproj")
   checkOption (getReferencedFilenames opts.OtherOptions) "System.Core.dll"
 
 [<Test>]
 let ``Project file parsing -- Logging``() =
+  if not hasMSBuild14 then () else
   let projectFileName = normalizePath (__SOURCE_DIRECTORY__ + @"/data/ToolsVersion12.fsproj")
   let _, logMap = ProjectCracker.GetProjectOptionsFromProjectFileLogged(projectFileName, enableLogging=true)
   let log = logMap.[projectFileName]
-
+  
+  Assert.That(log, Is.StringContaining("ResolveAssemblyReference"))
   if runningOnMono then
-    Assert.That(log, Is.StringContaining("Reference System.Core resolved"))
-    Assert.That(log, Is.StringContaining("Using task ResolveAssemblyReference from Microsoft.Build.Tasks.ResolveAssemblyReference"))
-  else
-    Assert.That(log, Is.StringContaining("""Using "ResolveAssemblyReference" task from assembly "Microsoft.Build.Tasks.Core, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"."""))
+    Assert.That(log, Is.StringContaining("System.Core"))
+    Assert.That(log, Is.StringContaining("Microsoft.Build.Tasks.ResolveAssemblyReference"))
+  else  
+    Assert.That(log, Is.StringContaining("Microsoft.Build.Tasks.Core"))
 
 [<Test>]
 let ``Project file parsing -- FSharpProjectOptions.SourceFiles contains both fs and fsi files``() =
@@ -237,6 +258,7 @@ let ``Project file parsing -- FSharpProjectOptions.SourceFiles contains both fs 
   
 [<Test>]
 let ``Project file parsing -- Full path``() =
+  if not hasMSBuild14 then () else
   let f = normalizePath (__SOURCE_DIRECTORY__ + @"/data/ToolsVersion12.fsproj")
   let p = ProjectCracker.GetProjectOptionsFromProjectFile(f)
   p.ProjectFileName |> should equal f
@@ -253,6 +275,7 @@ let ``Project file parsing -- project references``() =
 
 [<Test>]
 let ``Project file parsing -- multi language project``() =
+  if not hasMSBuild14 then () else
   let f = normalizePath (__SOURCE_DIRECTORY__ + @"/data/MultiLanguageProject/ConsoleApplication1.fsproj")
 
   let options = ProjectCracker.GetProjectOptionsFromProjectFile(f)
@@ -265,8 +288,7 @@ let ``Project file parsing -- multi language project``() =
 
 [<Test>]
 let ``Project file parsing -- PCL profile7 project``() =
-  if not runningOnMono then  // Disabled on Mono due to lack of installed PCL reference libraries - the modern way is to reference the FSHarp.Core nuget package so this is ok
-
+    if (not hasMSBuild14) || runningOnMono then () else  // Disabled on Mono due to lack of installed PCL reference libraries - the modern way is to reference the FSHarp.Core nuget package so this is ok
 
     let f = normalizePath (__SOURCE_DIRECTORY__ + @"/../projects/Sample_VS2013_FSharp_Portable_Library_net45/Sample_VS2013_FSharp_Portable_Library_net45.fsproj")
 
@@ -315,8 +337,7 @@ let ``Project file parsing -- PCL profile7 project``() =
 
 [<Test>]
 let ``Project file parsing -- PCL profile78 project``() =
-  if not runningOnMono then  // Disabled on Mono due to lack of installed PCL reference libraries - the modern way is to reference the FSHarp.Core nuget package so this is ok
-
+    if (not hasMSBuild14) || runningOnMono then () else // Disabled on Mono due to lack of installed PCL reference libraries - the modern way is to reference the FSHarp.Core nuget package so this is ok
 
     let f = normalizePath (__SOURCE_DIRECTORY__ + @"/../projects/Sample_VS2013_FSharp_Portable_Library_net451_adjusted_to_profile78/Sample_VS2013_FSharp_Portable_Library_net451.fsproj")
 
@@ -356,7 +377,7 @@ let ``Project file parsing -- PCL profile78 project``() =
 
 [<Test>]
 let ``Project file parsing -- PCL profile259 project``() =
-  if not runningOnMono then  // Disabled on Mono due to lack of installed PCL reference libraries - the modern way is to reference the FSHarp.Core nuget package so this is ok
+    if (not hasMSBuild14) || runningOnMono then () else  // Disabled on Mono due to lack of installed PCL reference libraries - the modern way is to reference the FSHarp.Core nuget package so this is ok
     let f = normalizePath (__SOURCE_DIRECTORY__ + @"/../projects/Sample_VS2013_FSharp_Portable_Library_net451_adjusted_to_profile259/Sample_VS2013_FSharp_Portable_Library_net451.fsproj")
 
     let options = ProjectCracker.GetProjectOptionsFromProjectFile(f)
@@ -465,12 +486,13 @@ let ``Test OtherOptions order for GetProjectOptionsFromScript`` () =
         let scriptPath = __SOURCE_DIRECTORY__ + @"/data/ScriptProject/" + scriptName + ".fsx"
         let scriptSource = File.ReadAllText scriptPath
         let projOpts, _diagnostics = checker.GetProjectOptionsFromScript(scriptPath, scriptSource) |> Async.RunSynchronously
-
         projOpts.OtherOptions
         |> Array.map (fun s -> if s.StartsWith "--" then s else Path.GetFileNameWithoutExtension s)
-        |> Array.sort
-        |> shouldEqual  (Array.sort expected2)
-    let otherArgs = [|"--noframework"; "--warn:3"; "System.Numerics"; "mscorlib"; "FSharp.Core"; "System"; "System.Xml"; "System.Runtime.Remoting"; "System.Runtime.Serialization.Formatters.Soap"; "System.Data"; "System.Drawing"; "System.Core"; "System.Runtime"; "System.Linq"; "System.Reflection"; "System.Linq.Expressions"; "System.Threading.Tasks"; "System.IO"; "System.Net.Requests"; "System.Collections"; "System.Runtime.Numerics"; "System.Threading"; "System.Web"; "System.Web.Services"; "System.Windows.Forms"; "FSharp.Compiler.Interactive.Settings"|]
+        |> Array.forall (fun s -> Set.contains s expected2)
+        |> shouldEqual true
+
+    let otherArgs = [|"--noframework"; "--warn:3"; "System.Numerics"; "System.ValueTuple"; "mscorlib"; "FSharp.Core"; "System"; "System.Xml"; "System.Runtime.Remoting"; "System.Runtime.Serialization.Formatters.Soap"; "System.Data"; "System.Drawing"; "System.Core"; "System.Runtime"; "System.Linq"; "System.Reflection"; "System.Linq.Expressions"; "System.Threading.Tasks"; "System.IO"; "System.Net.Requests"; "System.Collections"; "System.Runtime.Numerics"; "System.Threading"; "System.Web"; "System.Web.Services"; "System.Windows.Forms"; "FSharp.Compiler.Interactive.Settings"|] |> Set.ofArray
+
     test "Main1" otherArgs
     test "Main2" otherArgs
     test "Main3" otherArgs
@@ -497,6 +519,46 @@ let ``Test SourceFiles order for GetProjectOptionsFromScript`` () = // See #594
     test "Main4" [|"BaseLib2"; "Lib5"; "BaseLib1"; "Lib1"; "Lib2"; "Main4"|] 
     test "MainBad" [|"MainBad"|] 
 
+[<Test>]
+let ``Script load closure project`` () =
+    let fileName1 = Path.GetTempPath() + Path.DirectorySeparatorChar.ToString() + "Impl.fs"
+    let fileName2 = Path.ChangeExtension(Path.GetTempFileName(), ".fsx")
 
+    let fileSource1 = """
+module ImplFile
 
+#if INTERACTIVE
+let x = 42
+#endif
+"""
 
+    let fileSource2 = """
+#load "Impl.fs"
+ImplFile.x
+"""
+
+    File.WriteAllText(fileName1, fileSource1)
+    File.WriteAllText(fileName2, fileSource2)
+
+    let projectOptions, diagnostics =
+        checker.GetProjectOptionsFromScript(fileName2, fileSource2) |> Async.RunSynchronously
+    diagnostics.IsEmpty |> shouldEqual true
+
+    let _, checkResults =
+        checker.ParseAndCheckFileInProject(fileName2, 0, fileSource2, projectOptions) |> Async.RunSynchronously
+
+    match checkResults with
+    | FSharpCheckFileAnswer.Succeeded results ->
+        results.Errors |> shouldEqual [| |]
+    | _ -> failwith "type check was aborted"
+
+    let parsingOptions, diagnostics = checker.GetParsingOptionsFromProjectOptions(projectOptions)
+    diagnostics.IsEmpty |> shouldEqual true
+
+    let parseResults = checker.ParseFile(fileName1, fileSource1, parsingOptions) |> Async.RunSynchronously
+    parseResults.ParseTree.IsSome |> shouldEqual true
+    match parseResults.ParseTree.Value with
+    | ParsedInput.ImplFile (ParsedImplFileInput (_, _, _, _, _, modules, _)) ->
+        let (SynModuleOrNamespace (_, _, _, decls, _, _, _, _)) = modules.Head
+        decls.Length |> shouldEqual 1
+    | _ -> failwith "got sig file"

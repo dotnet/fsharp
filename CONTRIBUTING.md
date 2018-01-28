@@ -113,7 +113,7 @@ Feature PRs have the following minimum requirements:
 
 - For Visual F# Tools features, include a link to the [Visual F# Tools](https://github.com/microsoft/visualfsharp) issue for the feature.
 
-- For F# Library features, if you have made additions to the FSharp.Core library public surface area, update [the SurfaceArea tests](https://github.com/Microsoft/visualfsharp/tree/fsharp4/src/fsharp/FSharp.Core.Unittests).
+- For F# Library features, if you have made additions to the FSharp.Core library public surface area, update [the SurfaceArea tests](https://github.com/Microsoft/visualfsharp/tree/fsharp4/tests/FSharp.Core.UnitTests).
 
 - For F# Language and Library features, you will be asked to submit a speclet for the feature to the [F# Language Design](https://github.com/fsharp/fslang-design) GitHub repository of speclets.  In some cases you will only need to do this after your feature is accepted, but for more complex features you may be asked to do this during the review of the feature.  
 

@@ -3,13 +3,8 @@
 /// Logic associated with resolving method calls.
 module internal Microsoft.FSharp.Compiler.MethodCalls
 
-open Internal.Utilities
-open System.Text
-
 open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
@@ -18,8 +13,6 @@ open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.AccessibilityLogic
 open Microsoft.FSharp.Compiler.NameResolution
-open Microsoft.FSharp.Compiler.PrettyNaming
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
 open Microsoft.FSharp.Compiler.InfoReader
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
@@ -27,10 +20,9 @@ open Microsoft.FSharp.Compiler.Tastops.DebugPrint
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.TypeRelations
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
 #endif
-
 
 
 //-------------------------------------------------------------------------
@@ -303,7 +295,7 @@ type CalledMeth<'T>
                     []
 
             let assignedNamedProps,unassignedNamedItems = 
-                let returnedObjTy = if minfo.IsConstructor then minfo.EnclosingType else methodRetTy
+                let returnedObjTy = if minfo.IsConstructor then minfo.ApparentEnclosingType else methodRetTy
                 unassignedNamedItems |> List.splitChoose (fun (CallerNamedArg(id,e) as arg) -> 
                     let nm = id.idText
                     let pinfos = GetIntrinsicPropInfoSetsOfType infoReader (Some(nm),ad,AllowMultiIntfInstantiations.Yes) IgnoreOverrides id.idRange returnedObjTy
@@ -517,7 +509,7 @@ let IsBaseCall objArgs =
 let ComputeConstrainedCallInfo g amap m (objArgs,minfo:MethInfo) =
     match objArgs with 
     | [objArgExpr] when not minfo.IsExtensionMember -> 
-        let methObjTy = minfo.EnclosingType
+        let methObjTy = minfo.ApparentEnclosingType
         let objArgTy = tyOfExpr g objArgExpr
         if TypeDefinitelySubsumesTypeNoCoercion 0 g amap m methObjTy objArgTy 
            // Constrained calls to class types can only ever be needed for the three class types that 
@@ -554,8 +546,8 @@ let TakeObjAddrForMethodCall g amap (minfo:MethInfo) isMutable m objArgs f =
             // Extension members and calls to class constraints may need a coercion for their object argument
             let objArgExpr' = 
               if Option.isNone ccallInfo && // minfo.IsExtensionMember && minfo.IsStruct && 
-                 not (TypeDefinitelySubsumesTypeNoCoercion 0 g amap m minfo.EnclosingType objArgTy) then 
-                  mkCoerceExpr(objArgExpr',minfo.EnclosingType,m,objArgTy)
+                 not (TypeDefinitelySubsumesTypeNoCoercion 0 g amap m minfo.ApparentEnclosingType objArgTy) then 
+                  mkCoerceExpr(objArgExpr',minfo.ApparentEnclosingType,m,objArgTy)
               else
                   objArgExpr'
 
@@ -654,7 +646,7 @@ let MakeMethInfoCall amap m minfo minst args =
         BuildFSharpMethodCall g m (typ,vref) valUseFlags minst args |> fst
     | DefaultStructCtor(_,typ) -> 
        mkDefault (m,typ)
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     | ProvidedMeth(amap,mi,_,m) -> 
         let isProp = false // not necessarily correct, but this is only used post-creflect where this flag is irrelevant 
         let ilMethodRef = Import.ImportProvidedMethodBaseAsILMethodRef amap m mi
@@ -668,7 +660,7 @@ let MakeMethInfoCall amap m minfo minst args =
 
 #endif
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 // This imports a provided method, and checks if it is a known compiler intrinsic like "1 + 2"
 let TryImportProvidedMethodBaseAsLibraryIntrinsic (amap:Import.ImportMap, m:range, mbase: Tainted<ProvidedMethodBase>) = 
     let methodName = mbase.PUntaint((fun x -> x.Name),m)
@@ -718,14 +710,14 @@ let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objA
                     valUseFlags
 
         match minfo with 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         // By this time this is an erased method info, e.g. one returned from an expression
         // REVIEW: copied from tastops, which doesn't allow protected methods
         | ProvidedMeth (amap,providedMeth,_,_) -> 
             // TODO: there  is a fair bit of duplication here with mk_il_minfo_call. We should be able to merge these
                 
             /// Build an expression node that is a call to a extension method in a generated assembly
-            let enclTy = minfo.EnclosingType
+            let enclTy = minfo.ApparentEnclosingType
             // prohibit calls to methods that are declared in specific array types (Get,Set,Address)
             // these calls are provided by the runtime and should not be called from the user code
             if isArrayTy g enclTy then
@@ -835,7 +827,7 @@ let CoerceFromFSharpFuncToDelegate g amap infoReader ad callerArgTy m callerArgE
 //------------------------------------------------------------------------- 
 
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 // This file is not a great place for this functionality to sit, it's here because of BuildMethodCall
 module ProvidedMethodCalls =
 

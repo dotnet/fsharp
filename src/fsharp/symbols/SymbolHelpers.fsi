@@ -14,7 +14,6 @@ open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.InfoReader
 open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.ErrorLogger
 
@@ -23,20 +22,12 @@ open Microsoft.FSharp.Compiler.ErrorLogger
 
 
 [<RequireQualifiedAccess>]
-#if COMPILER_PUBLIC_API
-type FSharpErrorSeverity = 
-#else
-type internal FSharpErrorSeverity = 
-#endif
+type public FSharpErrorSeverity = 
 | Warning 
     | Error
 
 [<Class>]
-#if COMPILER_PUBLIC_API
-type FSharpErrorInfo = 
-#else
-type internal FSharpErrorInfo = 
-#endif
+type public FSharpErrorInfo = 
     member FileName: string
     member StartLineAlternate:int
     member EndLineAlternate:int
@@ -46,8 +37,8 @@ type internal FSharpErrorInfo =
     member Message:string
     member Subcategory:string
     member ErrorNumber:int
-    static member internal CreateFromExceptionAndAdjustEof : PhasedDiagnostic * isError: bool * trim: bool * range * lastPosInFile:(int*int) -> FSharpErrorInfo
-    static member internal CreateFromException : PhasedDiagnostic * isError: bool * trim: bool * range -> FSharpErrorInfo
+    static member internal CreateFromExceptionAndAdjustEof : PhasedDiagnostic * isError: bool * range * lastPosInFile:(int*int) -> FSharpErrorInfo
+    static member internal CreateFromException : PhasedDiagnostic * isError: bool * range -> FSharpErrorInfo
 
 //----------------------------------------------------------------------------
 // Object model for quick info
@@ -56,11 +47,7 @@ type internal FSharpErrorInfo =
 //
 // Note: instances of this type do not hold any references to any compiler resources.
 [<RequireQualifiedAccess>]
-#if COMPILER_PUBLIC_API
-type FSharpXmlDoc =
-#else
-type internal FSharpXmlDoc =
-#endif
+type public FSharpXmlDoc =
     /// No documentation is available
     | None
 
@@ -70,19 +57,11 @@ type internal FSharpXmlDoc =
     /// Indicates that the text for the documentation can be found in a .xml documentation file, using the given signature key
     | XmlDocFileSignature of (*File:*) string * (*Signature:*)string
 
-#if COMPILER_PUBLIC_API
-type Layout = Internal.Utilities.StructuredFormat.Layout
-#else
-type internal Layout = Internal.Utilities.StructuredFormat.Layout
-#endif
+type public Layout = Internal.Utilities.StructuredFormat.Layout
 
 /// A single data tip display element
 [<RequireQualifiedAccess>]
-#if COMPILER_PUBLIC_API
-type FSharpToolTipElementData<'T> = 
-#else
-type internal FSharpToolTipElementData<'T> = 
-#endif
+type public FSharpToolTipElementData<'T> = 
     { MainDescription:  'T 
       XmlDoc: FSharpXmlDoc
       /// typar insantiation text, to go after xml
@@ -96,11 +75,7 @@ type internal FSharpToolTipElementData<'T> =
 //
 // Note: instances of this type do not hold any references to any compiler resources.
 [<RequireQualifiedAccess>]
-#if COMPILER_PUBLIC_API
-type FSharpToolTipElement<'T> = 
-#else
-type internal FSharpToolTipElement<'T> = 
-#endif
+type public FSharpToolTipElement<'T> = 
     | None
 
     /// A single type, method, etc with comment. May represent a method overload group.
@@ -111,49 +86,28 @@ type internal FSharpToolTipElement<'T> =
     static member Single : 'T * FSharpXmlDoc * ?typeMapping: 'T list * ?paramName: string * ?remarks : 'T  -> FSharpToolTipElement<'T>
 
 /// A single data tip display element with where text is expressed as string
-#if COMPILER_PUBLIC_API
-type FSharpToolTipElement = FSharpToolTipElement<string>
-#else
-type internal FSharpToolTipElement = FSharpToolTipElement<string>
-#endif
+type public FSharpToolTipElement = FSharpToolTipElement<string>
 
 
 /// A single data tip display element with where text is expressed as <see cref="Layout"/>
-#if COMPILER_PUBLIC_API
-type FSharpStructuredToolTipElement = FSharpToolTipElement<Layout>
-#else
-type internal FSharpStructuredToolTipElement = FSharpToolTipElement<Layout>
-#endif
+type public FSharpStructuredToolTipElement = FSharpToolTipElement<Layout>
 
 /// Information for building a tool tip box.
 //
 // Note: instances of this type do not hold any references to any compiler resources.
-#if COMPILER_PUBLIC_API
-type FSharpToolTipText<'T> = 
-#else
-type internal FSharpToolTipText<'T> = 
-#endif
+type public FSharpToolTipText<'T> = 
     /// A list of data tip elements to display.
     | FSharpToolTipText of FSharpToolTipElement<'T> list  
 
-#if COMPILER_PUBLIC_API
-type FSharpToolTipText = FSharpToolTipText<string>
-type FSharpStructuredToolTipText = FSharpToolTipText<Layout>
-#else
-type internal FSharpToolTipText = FSharpToolTipText<string>
-type internal FSharpStructuredToolTipText = FSharpToolTipText<Layout>
-#endif
+type public FSharpToolTipText = FSharpToolTipText<string>
+type public FSharpStructuredToolTipText = FSharpToolTipText<Layout>
 
 //----------------------------------------------------------------------------
 // Object model for completion list entries (one of several in the API...)
 
 
 [<RequireQualifiedAccess>]
-#if COMPILER_PUBLIC_API
-type CompletionItemKind =
-#else
-type internal CompletionItemKind =
-#endif
+type public CompletionItemKind =
     | Field
     | Property
     | Method of isExtension : bool
@@ -174,11 +128,7 @@ type internal CompletionItem =
       Unresolved: UnresolvedSymbol option }
     member Item : Item
 
-#if COMPILER_PUBLIC_API
-module Tooltips =
-#else
-module internal Tooltips =
-#endif
+module public Tooltips =
     val ToFSharpToolTipElement: FSharpStructuredToolTipElement -> FSharpToolTipElement
     val ToFSharpToolTipText: FSharpStructuredToolTipText -> FSharpToolTipText
     val Map: f: ('T1 -> 'T2) -> a: Async<'T1> -> Async<'T2>
@@ -212,7 +162,7 @@ module internal SymbolHelpers =
     val IsAttribute : InfoReader -> Item -> bool
     val IsExplicitlySuppressed : TcGlobals -> Item -> bool
     val FlattenItems : TcGlobals -> range -> Item -> Item list
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     val (|ItemIsProvidedType|_|) : TcGlobals -> Item -> TyconRef option
     val (|ItemIsWithStaticArguments|_|): range -> TcGlobals -> Item -> Tainted<ExtensionTyping.ProvidedParameterInfo>[] option
     val (|ItemIsProvidedTypeWithStaticArguments|_|): range -> TcGlobals -> Item -> Tainted<ExtensionTyping.ProvidedParameterInfo>[] option

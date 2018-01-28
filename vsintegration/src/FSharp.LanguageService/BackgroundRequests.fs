@@ -2,17 +2,15 @@
 
 //------- DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS ---------------
 
+//------- DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS ---------------
+
 namespace Microsoft.VisualStudio.FSharp.LanguageService
 
 open System
-open System.Runtime.InteropServices
-open Microsoft.VisualStudio
 open Microsoft.VisualStudio.TextManager.Interop 
 open Microsoft.VisualStudio.Text
-open Microsoft.VisualStudio.OLE.Interop
-open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.VisualStudio.FSharp.LanguageService.SiteProvider
 
 
 #nowarn "44" // use of obsolete CheckFileInProjectAllowingStaleCachedResults
@@ -102,7 +100,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                             let projectSite = ProjectSitesAndFiles.CreateProjectSiteForScript(fileName, referencedProjectFileNames, checkOptions)
                             { ProjectSite = projectSite
                               CheckOptions = checkOptions 
-                              ProjectFileName = projectSite.ProjectFileName()
+                              ProjectFileName = projectSite.ProjectFileName
                               FSharpChecker = checker
                               Colorizer = lazy getColorizer(view) } 
                     Some data
@@ -111,8 +109,8 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                     let rdt = getServiceProvider().RunningDocumentTable
                     let projectSite = getProjectSitesAndFiles().FindOwningProject_DEPRECATED(rdt,fileName)
                     let enableInMemoryCrossProjectReferences = true
-                    let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, fileName, None, getServiceProvider(), false)                            
-                    let projectFileName = projectSite.ProjectFileName()
+                    let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, getServiceProvider(), None(*projectId*), fileName, None(*extraProjectInfo*), None(*FSharpProjectOptionsTable*), false)
+                    let projectFileName = projectSite.ProjectFileName
                     let data = 
                         {   ProjectSite = projectSite
                             CheckOptions = checkOptions 

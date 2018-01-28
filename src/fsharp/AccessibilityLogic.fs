@@ -3,18 +3,15 @@
 /// The basic logic of private/internal/protected/InternalsVisibleTo/public accessibility
 module internal Microsoft.FSharp.Compiler.AccessibilityLogic
 
-open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.TcGlobals
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -165,8 +162,8 @@ let private IsILTypeInfoAccessible amap m ad (tcrefOfViewedItem : TyconRef) =
     check None (enc @ [tdef])
                        
 /// Indicates if an IL member associated with the given ILType is accessible
-let private IsILTypeAndMemberAccessible g amap m adType ad (ILTypeInfo(tcrefOfViewedItem, _, _, _)) access = 
-    IsILTypeInfoAccessible amap m adType tcrefOfViewedItem && IsILMemberAccessible g amap m tcrefOfViewedItem ad access
+let private IsILTypeAndMemberAccessible g amap m adType ad (typ: ILTypeInfo) access = 
+    IsILTypeInfoAccessible amap m adType typ.TyconRefOfRawMetadata && IsILMemberAccessible g amap m typ.TyconRefOfRawMetadata ad access
 
 /// Indicates if an entity is accessible
 let IsEntityAccessible amap m ad (tcref:TyconRef) = 
@@ -228,10 +225,10 @@ let ComputeILAccess isPublic isFamily isFamilyOrAssembly isFamilyAndAssembly =
 let IsILFieldInfoAccessible g amap m ad x = 
     match x with 
     | ILFieldInfo (tinfo,fd) -> IsILTypeAndMemberAccessible g amap m ad ad tinfo fd.Access
-#if EXTENSIONTYPING
-    | ProvidedField (amap, tpfi, m) as pfi -> 
+#if !NO_EXTENSIONTYPING
+    | ProvidedField (amap, tpfi, m) -> 
         let access = tpfi.PUntaint((fun fi -> ComputeILAccess fi.IsPublic fi.IsFamily fi.IsFamilyOrAssembly fi.IsFamilyAndAssembly), m)
-        IsProvidedMemberAccessible amap m ad pfi.EnclosingType access
+        IsProvidedMemberAccessible amap m ad x.ApparentEnclosingType access
 #endif
 
 let GetILAccessOfILEventInfo (ILEventInfo (tinfo,edef)) =
@@ -314,18 +311,18 @@ let IsTypeAndMethInfoAccessible amap m adTyp ad = function
     | ILMeth (g,x,_) -> IsILMethInfoAccessible g amap m adTyp ad x 
     | FSMeth (_,_,vref,_) -> IsValAccessible ad vref
     | DefaultStructCtor(g,typ) -> IsTypeAccessible g amap m ad typ
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     | ProvidedMeth(amap,tpmb,_,m) as etmi -> 
         let access = tpmb.PUntaint((fun mi -> ComputeILAccess mi.IsPublic mi.IsFamily mi.IsFamilyOrAssembly mi.IsFamilyAndAssembly), m)        
-        IsProvidedMemberAccessible amap m ad etmi.EnclosingType access
+        IsProvidedMemberAccessible amap m ad etmi.ApparentEnclosingType access
 #endif
 let IsMethInfoAccessible amap m ad minfo = IsTypeAndMethInfoAccessible amap m ad ad minfo
 
 let IsPropInfoAccessible g amap m ad = function 
-    | ILProp (_,x) -> IsILPropInfoAccessible g amap m ad x
+    | ILProp ilpinfo -> IsILPropInfoAccessible g amap m ad ilpinfo
     | FSProp (_,_,Some vref,_) 
     | FSProp (_,_,_,Some vref) -> IsValAccessible ad vref
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     | ProvidedProp (amap, tppi, m) as pp-> 
         let access = 
             let a = tppi.PUntaint((fun ppi -> 
@@ -337,7 +334,7 @@ let IsPropInfoAccessible g amap m ad = function
                 | None -> tryGetILAccessForProvidedMethodBase(ppi.GetSetMethod())
                 | x -> x), m)
             defaultArg a ILMemberAccess.Public
-        IsProvidedMemberAccessible amap m ad pp.EnclosingType access
+        IsProvidedMemberAccessible amap m ad pp.ApparentEnclosingType access
 #endif
     | _ -> false
 

@@ -3,8 +3,8 @@ neg14a.fs(9,6,9,33): typecheck error FS0343: The type 'missingInterfaceInSignatu
 
 neg14b.fs(2,13,2,14): typecheck error FS0039: The value, constructor, namespace or type 'X' is not defined. Maybe you want one of the following:
 
+   z
+
    A
 
    B
-
-   z

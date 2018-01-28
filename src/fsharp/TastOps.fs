@@ -22,7 +22,7 @@ open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.Layout.TaggedTextOps
 open Microsoft.FSharp.Compiler.PrettyNaming
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -601,12 +601,31 @@ let mkCompiledTupleTyconRef (g:TcGlobals) isStruct n =
     elif n = 8 then (if isStruct then g.struct_tuple8_tcr else g.ref_tuple8_tcr)
     else failwithf "mkCompiledTupleTyconRef, n = %d" n
 
-let rec mkCompiledTupleTy g isStruct tys = 
-    let n = List.length tys 
-    if n < maxTuple then TType_app (mkCompiledTupleTyconRef g isStruct n, tys)
+/// Convert from F# tuple types to .NET tuple types
+let rec mkCompiledTupleTy g isStruct tupElemTys = 
+    let n = List.length tupElemTys 
+    if n < maxTuple then
+        TType_app (mkCompiledTupleTyconRef g isStruct n, tupElemTys)
     else 
-        let tysA, tysB = List.splitAfter goodTupleFields tys
+        let tysA, tysB = List.splitAfter goodTupleFields tupElemTys
         TType_app ((if isStruct then g.struct_tuple8_tcr else g.ref_tuple8_tcr), tysA@[mkCompiledTupleTy g isStruct tysB])
+
+/// Convert from F# tuple types to .NET tuple types, but only the outermost level
+let mkOuterCompiledTupleTy g isStruct tupElemTys = 
+    let n = List.length tupElemTys 
+    if n < maxTuple then 
+        TType_app (mkCompiledTupleTyconRef g isStruct n, tupElemTys)
+    else 
+        let tysA, tysB = List.splitAfter goodTupleFields tupElemTys
+        let tcref = (if isStruct then g.struct_tuple8_tcr else g.ref_tuple8_tcr)
+        // In the case of an 8-tuple we add the Tuple<_> marker. For other sizes we keep the type 
+        // as a regular F# tuple type.
+        match tysB with 
+        | [ tyB ] -> 
+            let marker = TType_app (mkCompiledTupleTyconRef g isStruct 1, [tyB])
+            TType_app (tcref, tysA@[marker])
+        | _ ->
+            TType_app (tcref, tysA@[TType_tuple (TupInfo.Const isStruct, tysB)])
 
 //---------------------------------------------------------------------------
 // Remove inference equations and abbreviations from types 
@@ -627,14 +646,14 @@ let reduceTyconRefAbbrev (tcref:TyconRef) tyargs =
     reduceTyconAbbrev tcref.Deref tyargs
 
 let reduceTyconMeasureableOrProvided (g:TcGlobals) (tycon:Tycon) tyargs =
-#if !EXTENSIONTYPING
+#if NO_EXTENSIONTYPING
     ignore g  // otherwise g would be unused
 #endif
     let repr = tycon.TypeReprInfo
     match repr with 
     | TMeasureableRepr ty -> 
         if isNil tyargs then ty else instType (mkTyconInst tycon tyargs) ty
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     | TProvidedTypeExtensionPoint info when info.IsErased -> info.BaseTypeForErased (range0, g.obj_ty)
 #endif
     | _ -> invalidArg "tc" "this type definition is not a refinement" 
@@ -768,8 +787,15 @@ let mkInstForAppTy g typ =
     | AppTy g (tcref, tinst) -> mkTyconRefInst tcref tinst
     | _ -> []
 
-let domainOfFunTy g ty = fst(destFunTy g ty)
-let rangeOfFunTy  g ty = snd(destFunTy g ty)
+let domainOfFunTy g ty = fst (destFunTy g ty)
+let rangeOfFunTy  g ty = snd (destFunTy g ty)
+
+let helpEnsureTypeHasMetadata g ty = 
+    if isAnyTupleTy g ty then 
+        let (tupInfo, tupElemTys) = destAnyTupleTy g ty
+        mkOuterCompiledTupleTy g (evalTupInfoIsStruct tupInfo) tupElemTys
+    else ty
+
 
 //---------------------------------------------------------------------------
 // Equivalence of types up to alpha-equivalence 
@@ -921,7 +947,7 @@ let measureEquiv g m1 m2 = measureAEquiv g TypeEquivEnv.Empty m1 m2
 
 let isErasedType g ty = 
   match stripTyEqns g ty with
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
   | TType_app (tcref, _) -> tcref.IsProvidedErasedTycon
 #endif
   | _ -> false
@@ -1516,19 +1542,19 @@ let isILAppTy    g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> 
 let isNativePtrTy    g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g g.nativeptr_tcr tcref           | _ -> false) 
 let isByrefTy    g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g g.byref_tcr tcref           | _ -> false) 
 let isByrefLikeTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isByrefLikeTyconRef g tcref          | _ -> false) 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 let extensionInfoOfTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.TypeReprInfo                | _ -> TNoRepr) 
 #endif
 
 type TypeDefMetadata = 
      | ILTypeMetadata of TILObjectReprData
      | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
      | ProvidedTypeMetadata of  TProvidedTypeInfo
 #endif
 
 let metadataOfTycon (tycon:Tycon) = 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     match tycon.TypeReprInfo with 
     | TProvidedTypeExtensionPoint info -> ProvidedTypeMetadata info
     | _ -> 
@@ -1540,7 +1566,7 @@ let metadataOfTycon (tycon:Tycon) =
 
 
 let metadataOfTy g ty = 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     match extensionInfoOfTy g ty with 
     | TProvidedTypeExtensionPoint info -> ProvidedTypeMetadata info
     | _ -> 
@@ -1554,7 +1580,7 @@ let metadataOfTy g ty =
 
 let isILReferenceTy g ty = 
     match metadataOfTy g ty with 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     | ProvidedTypeMetadata info -> not info.IsStructOrEnum
 #endif
     | ILTypeMetadata (TILObjectReprData(_, _, td)) -> not td.IsStructOrEnum
@@ -1562,7 +1588,7 @@ let isILReferenceTy g ty =
 
 let isILInterfaceTycon (tycon:Tycon) = 
     match metadataOfTycon tycon with 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     | ProvidedTypeMetadata info -> info.IsInterface
 #endif
     | ILTypeMetadata (TILObjectReprData(_, _, td)) -> (td.tdKind = ILTypeDefKind.Interface)
@@ -1594,7 +1620,7 @@ let isFSharpInterfaceTy g ty =
 
 let isDelegateTy g ty = 
     match metadataOfTy g ty with 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     | ProvidedTypeMetadata info -> info.IsDelegate ()
 #endif
     | ILTypeMetadata (TILObjectReprData(_, _, td)) -> (td.tdKind = ILTypeDefKind.Delegate)
@@ -1605,7 +1631,7 @@ let isDelegateTy g ty =
 
 let isInterfaceTy g ty = 
     match metadataOfTy g ty with 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     | ProvidedTypeMetadata info -> info.IsInterface
 #endif
     | ILTypeMetadata (TILObjectReprData(_, _, td)) -> (td.tdKind = ILTypeDefKind.Interface)
@@ -1613,7 +1639,7 @@ let isInterfaceTy g ty =
 
 let isClassTy g ty = 
     match metadataOfTy g ty with 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     | ProvidedTypeMetadata info -> info.IsClass
 #endif
     | ILTypeMetadata (TILObjectReprData(_, _, td)) -> (td.tdKind = ILTypeDefKind.Class)
@@ -2135,7 +2161,7 @@ let PartitionValTyparsForApparentEnclosingType g (v:Val)  =
     | None -> error(InternalError("PartitionValTypars: not a top value", v.Range))
     | Some arities -> 
         let fullTypars, _ = destTopForallTy g arities v.Type 
-        let parent = v.MemberApparentParent
+        let parent = v.MemberApparentEntity
         let parentTypars = parent.TyparsNoRange
         let nparentTypars = parentTypars.Length
         if nparentTypars <= fullTypars.Length then 
@@ -2706,8 +2732,8 @@ let superOfTycon (g:TcGlobals) (tycon:Tycon) =
 
 // AbsIL view of attributes (we read these from .NET binaries) 
 let isILAttribByName (tencl:string list, tname: string) (attr: ILAttribute) = 
-    (attr.Method.EnclosingType.TypeSpec.Name = tname) &&
-    (attr.Method.EnclosingType.TypeSpec.Enclosing = tencl)
+    (attr.Method.DeclaringType.TypeSpec.Name = tname) &&
+    (attr.Method.DeclaringType.TypeSpec.Enclosing = tencl)
 
 // AbsIL view of attributes (we read these from .NET binaries) 
 let isILAttrib (tref:ILTypeRef) (attr: ILAttribute) = 
@@ -2727,7 +2753,7 @@ let TryDecodeILAttribute (g:TcGlobals) tref (attrs: ILAttributes) =
 // This one is done by name to ensure the compiler doesn't take a dependency on dereferencing a type that only exists in .NET 3.5
 let ILThingHasExtensionAttribute (attrs : ILAttributes) = 
     attrs.AsArray
-    |> Array.exists (fun attr -> attr.Method.EnclosingType.TypeSpec.Name = "System.Runtime.CompilerServices.ExtensionAttribute")
+    |> Array.exists (fun attr -> attr.Method.DeclaringType.TypeSpec.Name = "System.Runtime.CompilerServices.ExtensionAttribute")
     
 // F# view of attributes (these get converted to AbsIL attributes in ilxgen) 
 let IsMatchingFSharpAttribute g (AttribInfo(_, tcref)) (Attrib(tcref2, _, _, _, _, _, _)) = tyconRefEq g tcref  tcref2
@@ -2781,7 +2807,7 @@ let TryFindILAttributeOpt attr attrs =
 let TryBindTyconRefAttribute g (m:range) (AttribInfo (atref, _) as args) (tcref:TyconRef) f1 f2 f3 = 
     ignore m; ignore f3
     match metadataOfTycon tcref.Deref with 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     | ProvidedTypeMetadata info -> 
         let provAttribs = info.ProvidedType.PApply((fun a -> (a :> IProvidedCustomAttributeProvider)), m)
         match provAttribs.PUntaint((fun a -> a.GetAttributeConstructorArgs(provAttribs.TypeProvider.PUntaintNoFailure(id), atref.FullName)), m) with
@@ -3394,7 +3420,7 @@ module DebugPrint = begin
             | _ -> failwith "unreachable"
         let reprL = 
             match tycon.TypeReprInfo with 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
             | TProvidedTypeExtensionPoint _
             | TProvidedNamespaceExtensionPoint _
 #endif
@@ -3521,7 +3547,7 @@ module DebugPrint = begin
                 (lvalopL lvop ^^ valRefL vr --- bracketL (commaListL (List.map atomL args))) |> wrap
             | Expr.Op (TOp.ILCall (_isVirtCall, _isProtectedCall, _valu, _isNewObjCall, _valUseFlags, _isProperty, _noTailCall, ilMethRef, tinst, minst, _tys), tyargs, args, _) ->
                 let meth = ilMethRef.Name
-                wordL(tagText "ILCall") ^^ aboveListL [wordL(tagText "meth  ") --- wordL (tagText ilMethRef.EnclosingTypeRef.FullName) ^^ sepL(tagText ".") ^^ wordL (tagText meth);
+                wordL(tagText "ILCall") ^^ aboveListL [wordL(tagText "meth  ") --- wordL (tagText ilMethRef.DeclaringTypeRef.FullName) ^^ sepL(tagText ".") ^^ wordL (tagText meth);
                                               wordL(tagText "tinst ") --- listL typeL tinst;
                                               wordL(tagText "minst ") --- listL typeL minst;
                                               wordL(tagText "tyargs") --- listL typeL tyargs;
@@ -4443,7 +4469,7 @@ let InferArityOfExprBinding g allowTypeDirectedDetupling (v:Val) e =
 let underlyingTypeOfEnumTy (g: TcGlobals) typ = 
     assert(isEnumTy g typ)
     match metadataOfTy g typ with 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     | ProvidedTypeMetadata info -> info.UnderlyingTypeOfEnum()
 #endif
     | ILTypeMetadata (TILObjectReprData(_, _, tdef)) -> 
@@ -4610,7 +4636,7 @@ and remapValData g tmenv (d: ValData) =
     let ty' = ty |> remapPossibleForallTy g tmenv
     { d with 
         val_type    = ty';
-        val_actual_parent = d.val_actual_parent |> remapParentRef tmenv;
+        val_declaring_entity = d.val_declaring_entity |> remapParentRef tmenv;
         val_repr_info = d.val_repr_info |> Option.map (remapValReprInfo g tmenv);
         val_member_info   = d.val_member_info |> Option.map (remapMemberInfo g d.val_range topValInfo ty ty' tmenv);
         val_attribs       = d.val_attribs       |> remapAttribs g tmenv }
@@ -4885,7 +4911,7 @@ and remapTyconRepr g tmenv repr =
     | TRecdRepr          x -> TRecdRepr (remapRecdFields g tmenv x)
     | TUnionRepr   x -> TUnionRepr (remapUnionCases g tmenv x)
     | TILObjectRepr    _ -> failwith "cannot remap IL type definitions"
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     | TProvidedNamespaceExtensionPoint _ -> repr
     | TProvidedTypeExtensionPoint info -> 
        TProvidedTypeExtensionPoint 
@@ -4928,7 +4954,7 @@ and remapMemberInfo g m topValInfo ty ty' tmenv x =
     let renaming, _ = mkTyparToTyparRenaming tpsOrig tps 
     let tmenv = { tmenv with tpinst = tmenv.tpinst @ renaming } 
     { x with 
-        ApparentParent    = x.ApparentParent    |>  remapTyconRef tmenv.tyconRefRemap ;
+        ApparentEnclosingEntity    = x.ApparentEnclosingEntity    |>  remapTyconRef tmenv.tyconRefRemap ;
         ImplementedSlotSigs = x.ImplementedSlotSigs |> List.map (remapSlotSig (remapAttribs g tmenv) tmenv); 
     } 
 
@@ -6324,13 +6350,13 @@ let mkCompilationMappingAttrForQuotationResource (g:TcGlobals) (nm, tys: ILTypeR
                                [ ILAttribElem.String (Some nm); ILAttribElem.Array (g.ilg.typ_Type, [ for ty in tys -> ILAttribElem.TypeRef (Some ty) ]) ], 
                                [])
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 //----------------------------------------------------------------------------
 // Decode extensible typing attributes
 //----------------------------------------------------------------------------
 
 let isTypeProviderAssemblyAttr (cattr:ILAttribute) = 
-    cattr.Method.EnclosingType.BasicQualifiedName = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName
+    cattr.Method.DeclaringType.BasicQualifiedName = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName
 
 let TryDecodeTypeProviderAssemblyAttr ilg (cattr:ILAttribute) = 
     if isTypeProviderAssemblyAttr cattr then 
@@ -6910,7 +6936,7 @@ let etaExpandTypeLambda g m tps (tm, ty) =
 
 let AdjustValToTopVal (tmp:Val) parent valData =
     tmp.SetValReprInfo (Some valData);  
-    tmp.val_actual_parent <- parent;  
+    tmp.val_declaring_entity <- parent;  
     tmp.SetIsMemberOrModuleBinding()
 
 /// For match with only one non-failing target T0, the other targets, T1... failing (say, raise exception).
@@ -7079,7 +7105,7 @@ let XmlDocSigOfVal g path (v:Val) =
           | MemberKind.PropertyGetSet 
           | MemberKind.PropertySet
           | MemberKind.PropertyGet -> "P:", v.PropertyName
-        let path = if v.HasTopValActualParent then prependPath path v.TopValActualParent.CompiledName else path
+        let path = if v.HasDeclaringEntity then prependPath path v.TopValDeclaringEntity.CompiledName else path
         let parentTypars, methTypars = 
           match PartitionValTypars g v with
           | Some(_, memberParentTypars, memberMethodTypars, _, _) -> memberParentTypars, memberMethodTypars
@@ -7319,7 +7345,7 @@ let isSealedTy g ty =
     isArrayTy g ty || 
 
     match metadataOfTy g ty with 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     | ProvidedTypeMetadata st -> st.IsSealed
 #endif
     | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsSealed
@@ -7341,10 +7367,10 @@ let isComInteropTy g ty =
 let ValSpecIsCompiledAsInstance g (v:Val) =
     match v.MemberInfo with 
     | Some(membInfo) -> 
-        // Note it doesn't matter if we pass 'v.TopValActualParent' or 'v.MemberApparentParent' here. 
+        // Note it doesn't matter if we pass 'v.TopValDeclaringEntity' or 'v.MemberApparentEntity' here. 
         // These only differ if the value is an extension member, and in that case MemberIsCompiledAsInstance always returns 
         // false anyway 
-        MemberIsCompiledAsInstance g v.MemberApparentParent v.IsExtensionMember membInfo v.Attribs  
+        MemberIsCompiledAsInstance g v.MemberApparentEntity v.IsExtensionMember membInfo v.Attribs  
     |  _ -> false
 
 let ValRefIsCompiledAsInstanceMember g (vref: ValRef) = ValSpecIsCompiledAsInstance g vref.Deref
@@ -7357,7 +7383,7 @@ let ValRefIsCompiledAsInstanceMember g (vref: ValRef) = ValSpecIsCompiledAsInsta
 let GetMemberCallInfo g (vref:ValRef, vFlags) = 
     match vref.MemberInfo with 
     | Some(membInfo) when not vref.IsExtensionMember -> 
-      let numEnclTypeArgs = vref.MemberApparentParent.TyparsNoRange.Length
+      let numEnclTypeArgs = vref.MemberApparentEntity.TyparsNoRange.Length
       let virtualCall = 
           (membInfo.MemberFlags.IsOverrideOrExplicitImpl || 
            membInfo.MemberFlags.IsDispatchSlot) && 

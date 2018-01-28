@@ -31,7 +31,7 @@ module internal SymbolHelpers =
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document) 
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, parsingOptions)
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false)
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(document.FilePath, textVersionHash, sourceText.ToString(), projectOptions, allowStaleResults = true, userOpName = userOpName) 
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, userOpName=userOpName)
@@ -59,7 +59,7 @@ module internal SymbolHelpers =
                     |> Seq.map (fun project ->
                         async {
                             match projectInfoManager.TryGetOptionsForProject(project.Id) with
-                            | Some (_parsingOptions, projectOptions) ->
+                            | Some (_parsingOptions, _site, projectOptions) ->
                                 let! projectCheckResults = checker.ParseAndCheckProject(projectOptions, userOpName = userOpName)
                                 return! projectCheckResults.GetUsesOfSymbol(symbol)
                             | None -> return [||]
@@ -67,16 +67,8 @@ module internal SymbolHelpers =
                     |> Async.Parallel
                     |> Async.map Array.concat
             
-            let declarationLength = 
-                symbol.DeclarationLocation
-                |> Option.map (fun m -> m.EndColumn - m.StartColumn)
-
             return
                 (symbolUses
-                 |> Seq.filter (fun su -> 
-                     match declarationLength with
-                     | Some declLength -> su.RangeAlternate.EndColumn - su.RangeAlternate.StartColumn = declLength
-                     | None -> true)
                  |> Seq.collect (fun symbolUse -> 
                       solution.GetDocumentIdsWithFilePath(symbolUse.FileName) |> Seq.map (fun id -> id, symbolUse))
                  |> Seq.groupBy fst
@@ -104,7 +96,7 @@ module internal SymbolHelpers =
             let originalText = sourceText.ToString(symbolSpan)
             do! Option.guard (originalText.Length > 0)
             let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, parsingOptions)
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, symbolSpan.Start, document.FilePath, defines, SymbolLookupKind.Greedy, false)
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, allowStaleResults = true, userOpName = userOpName)
             let textLine = sourceText.Lines.GetLineFromPosition(symbolSpan.Start)

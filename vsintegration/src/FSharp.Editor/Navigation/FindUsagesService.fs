@@ -51,11 +51,11 @@ type internal FSharpFindUsagesService
         asyncMaybe {
             let! sourceText = document.GetTextAsync(context.CancellationToken) |> Async.AwaitTask |> liftAsync
             let checker = checkerProvider.Checker
-            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
+            let! parsingOptions, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, allowStaleResults = true, userOpName = userOpName)
             let textLine = sourceText.Lines.GetLineFromPosition(position).ToString()
             let lineNumber = sourceText.Lines.GetLinePosition(position).Line + 1
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.FilePath, parsingOptions)
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             
             let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false)
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland, userOpName=userOpName)
@@ -112,7 +112,7 @@ type internal FSharpFindUsagesService
                             projectsToCheck
                             |> Seq.map (fun project ->
                                 asyncMaybe {
-                                    let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForProject(project.Id)
+                                    let! _parsingOptions, _site, projectOptions = projectInfoManager.TryGetOptionsForProject(project.Id)
                                     let! projectCheckResults = checker.ParseAndCheckProject(projectOptions, userOpName = userOpName) |> liftAsync
                                     return! projectCheckResults.GetUsesOfSymbol(symbolUse.Symbol) |> liftAsync
                                 } |> Async.map (Option.defaultValue [||]))

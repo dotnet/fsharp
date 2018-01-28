@@ -2,24 +2,19 @@
 
 module internal Microsoft.FSharp.Compiler.LowerCallsAndSeqs 
 
-open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 
-open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AccessibilityLogic 
 open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.PrettyNaming
 open Microsoft.FSharp.Compiler.InfoReader
 open Microsoft.FSharp.Compiler.MethodCalls
 
@@ -394,6 +389,7 @@ let LowerSeqExpr g amap overallExpr =
             | None -> 
                 None
 
+(*
         | Expr.LetRec(binds,e2,m,_) 
               when  // Restriction: only limited forms of "let rec" in sequence expressions can be handled by assignment to state local values
 
@@ -422,7 +418,7 @@ let LowerSeqExpr g amap overallExpr =
                 Some res4
             | None -> 
                 None
-
+*)
         | Expr.Match (spBind,exprm,pt,targets,m,ty) when targets |> Array.forall (fun (TTarget(vs,_e,_spTarget)) -> isNil vs) ->
             // lower all the targets. abandon if any fail to lower
             let tgl = targets |> Array.map (fun (TTarget(_vs,e,_spTarget)) -> Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel e) |> Array.toList
