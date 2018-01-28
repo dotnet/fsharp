@@ -1267,8 +1267,7 @@ type ILTypeDefs =
 /// have a very specific form.
 and [<NoComparison; NoEquality>]
     ILTypeDef =  
-    { tdKind: ILTypeDefKind;
-      Name: string;  
+    { Name: string;  
       Attributes: TypeAttributes;
       GenericParams: ILGenericParameterDefs;  
       Layout: ILTypeDefLayout;

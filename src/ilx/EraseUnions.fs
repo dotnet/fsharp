@@ -199,7 +199,7 @@ let cudefRepr =
          (fun (_td,cud) -> cud.cudNullPermitted), 
          (fun (alt:IlxUnionAlternative) -> alt.IsNullary),
          (fun (_td,cud) -> cud.cudHasHelpers = IlxUnionHasHelpers.SpecialFSharpListHelpers),
-         (fun (td,_cud) -> match td.tdKind with ILTypeDefKind.ValueType -> true | _ -> false),
+         (fun (td:ILTypeDef,_cud) -> td.IsStructOrEnum),
          (fun (alt:IlxUnionAlternative) -> alt.Name),
          (fun (_td,_cud) -> NoTypesGeneratedViaThisReprDecider),
          (fun ((_td,_cud),_nm) -> NoTypesGeneratedViaThisReprDecider))
@@ -838,7 +838,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                                 mkMethodBody(true,[],2,
                                         nonBranchingInstrsToCode 
                                           [ mkLdarg0
-                                            (match td.tdKind with ILTypeDefKind.ValueType -> mkNormalLdflda | _ -> mkNormalLdfld)  
+                                            (if td.IsStructOrEnum then mkNormalLdflda else mkNormalLdfld)  
                                                 (mkILFieldSpecInTy (debugProxyTy,debugProxyFieldName,altTy)) 
                                             mkNormalLdfld (mkILFieldSpecInTy(altTy,fldName,fldTy))],None))
                             |> addMethodGeneratedAttrs )
@@ -929,8 +929,8 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
     baseMakerMeths, baseMakerProps, altUniqObjMeths, typeDefs, altDebugTypeDefs, altNullaryFields
         
   
-let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addPropertyNeverAttrs, addFieldGeneratedAttrs: ILFieldDef -> ILFieldDef, addFieldNeverAttrs: ILFieldDef -> ILFieldDef, mkDebuggerTypeProxyAttribute) ilg tref td cud = 
-    let boxity = match td.tdKind with ILTypeDefKind.ValueType -> ILBoxity.AsValue | _ -> ILBoxity.AsObject
+let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addPropertyNeverAttrs, addFieldGeneratedAttrs: ILFieldDef -> ILFieldDef, addFieldNeverAttrs: ILFieldDef -> ILFieldDef, mkDebuggerTypeProxyAttribute) ilg tref (td:ILTypeDef) cud = 
+    let boxity = if td.IsStructOrEnum then ILBoxity.AsValue else ILBoxity.AsObject
     let baseTy = mkILFormalNamedTy boxity tref td.GenericParams
     let cuspec = IlxUnionSpec(IlxUnionRef(boxity,baseTy.TypeRef, cud.cudAlternatives, cud.cudNullPermitted, cud.cudHasHelpers), baseTy.GenericArgs)
     let info = (td,cud)
@@ -954,7 +954,7 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
         | SingleCase | RuntimeTypes | TailOrNull -> []
         | IntegerTag -> [ mkTagFieldId ilg cuspec ] 
 
-    let isStruct = match td.tdKind with ILTypeDefKind.ValueType -> true | _ -> false
+    let isStruct = td.IsStructOrEnum
 
     let selfFields, selfMeths, selfProps = 
 
@@ -1085,11 +1085,12 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
         if tagEnumFields.Length <= 1 then 
             None
         else
+            let cudAattributes = ConvertToNestedTypeAccess cud.cudReprAccess
             Some 
                 { Name = "Tags"
                   NestedTypes = emptyILTypeDefs
                   GenericParams= td.GenericParams
-                  Attributes = (ConvertToNestedTypeAccess cud.cudReprAccess ||| TypeAttributes.Abstract ||| TypeAttributes.Sealed ||| TypeAttributes.Abstract) ^^^ TypeAttributes.HasSecurity
+                  Attributes = (if cudAattributes &&& TypeAttributes.HasSecurity <> enum 0 then cudAattributes ^^^ TypeAttributes.HasSecurity else cudAattributes) ||| TypeAttributes.Abstract ||| TypeAttributes.Sealed ||| TypeAttributes.Abstract
                   Layout=ILTypeDefLayout.Auto 
                   Encoding=ILDefaultPInvokeEncoding.Ansi
                   Implements = []
@@ -1101,21 +1102,20 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
                   InitSemantics=ILTypeInit.OnAny
                   Events=emptyILEvents
                   Properties=emptyILProperties
-                  CustomAttrs= emptyILCustomAttrs
-                  tdKind = ILTypeDefKind.Enum }
+                  CustomAttrs= emptyILCustomAttrs }
 
-    let abstractOp = if isAbstract then (|||) else (^^^)
-    let sealedOp = if altTypeDefs.IsEmpty then (|||) else (^^^)
+    let abstractOp = if isAbstract then (|||) elif td.IsAbstract then (^^^) else fun x _ -> x
+    let sealedOp = if altTypeDefs.IsEmpty then (|||) elif td.IsSealed then (^^^) else fun x _ -> x
+    let comInteropOp = if td.IsComInterop then (^^^) else fun x _ -> x
     let baseTypeDef = 
        { td with 
           NestedTypes = mkILTypeDefs (Option.toList enumTypeDef @ altTypeDefs @ altDebugTypeDefs @ td.NestedTypes.AsList)
-          Attributes = (sealedOp (abstractOp td.Attributes TypeAttributes.Abstract) TypeAttributes.Sealed) ^^^ TypeAttributes.Import
+          Attributes = comInteropOp (sealedOp (abstractOp td.Attributes TypeAttributes.Abstract) TypeAttributes.Sealed) TypeAttributes.Import
           Extends= (match td.Extends with None -> Some ilg.typ_Object | _ -> td.Extends) 
           Methods= mkILMethods (ctorMeths @ baseMethsFromAlt @ selfMeths @ tagMeths @ altUniqObjMeths @ existingMeths)
           Fields=mkILFields (selfAndTagFields @ List.map (fun (_,_,_,_,fdef,_) -> fdef) altNullaryFields @ td.Fields.AsList)
           InitSemantics=ILTypeInit.BeforeField
-          Properties=mkILProperties (tagProps @ basePropsFromAlt @ selfProps @ existingProps)
-          tdKind = ILTypeDefKind.Class }
+          Properties=mkILProperties (tagProps @ basePropsFromAlt @ selfProps @ existingProps) }
        // The .cctor goes on the Cases type since that's where the constant fields for nullary constructors live
        |> addConstFieldInit 
 

@@ -905,9 +905,8 @@ let rec goutput_tdef (enc) env contents os cd =
           goutput_pdefs env os cd.Properties;
   else 
       output_string os "\n";
-      match cd.tdKind with 
-      | ILTypeDefKind.Class | ILTypeDefKind.Enum | ILTypeDefKind.Delegate | ILTypeDefKind.ValueType -> output_string os ".class "
-      | ILTypeDefKind.Interface ->  output_string os ".class  interface "
+      if cd.IsInterface then output_string os ".class  interface "
+      else output_string os ".class "
       output_init_semantics os cd.InitSemantics;
       output_string os " ";
       output_type_access os cd.Access;

@@ -1582,8 +1582,7 @@ type ILTypeDefKind =
 
 [<NoComparison; NoEquality>]
 type ILTypeDef =  
-    { tdKind: ILTypeDefKind;
-      Name: string;  
+    { Name: string;  
       Attributes: TypeAttributes;
       GenericParams: ILGenericParameterDefs;   (* class is generic *)
       Layout: ILTypeDefLayout;
@@ -1599,10 +1598,10 @@ type ILTypeDef =
       Events: ILEventDefs;
       Properties: ILPropertyDefs;
       CustomAttrs: ILAttributes; }
-    member x.IsClass =     (match x.tdKind with ILTypeDefKind.Class -> true | _ -> false)
-    member x.IsInterface = (match x.tdKind with ILTypeDefKind.Interface -> true | _ -> false)
-    member x.IsEnum =      (match x.tdKind with ILTypeDefKind.Enum -> true | _ -> false)
-    member x.IsDelegate =  (match x.tdKind with ILTypeDefKind.Delegate -> true | _ -> false)
+    member x.IsClass =     x.Attributes &&& TypeAttributes.Class <> enum 0 && not x.IsEnum && not x.IsDelegate
+    member x.IsInterface = x.Attributes &&& TypeAttributes.Interface <> enum 0
+    member x.IsEnum =      x.Attributes &&& TypeAttributes.Class <> enum 0 && match x.Extends with Some(t) -> t.TypeSpec.Name = "System.Enum" | _ -> false
+    member x.IsDelegate =  x.Attributes &&& TypeAttributes.Class <> enum 0 && match x.Extends with Some(t) -> t.TypeSpec.Name = "System.Delegate" | _ -> false
     member x.Access = typeAccessOfFlags (int x.Attributes)  
     member x.IsAbstract = x.Attributes &&& TypeAttributes.Abstract <> enum 0
     member x.IsSealed = x.Attributes &&& TypeAttributes.Sealed <> enum 0
@@ -1612,9 +1611,7 @@ type ILTypeDef =
     member x.HasSecurity = x.Attributes &&& TypeAttributes.HasSecurity <> enum 0
 
     member tdef.IsStructOrEnum = 
-        match tdef.tdKind with
-        | ILTypeDefKind.ValueType | ILTypeDefKind.Enum -> true
-        | _ -> false
+        (match tdef.Extends with None -> false | Some ty -> ty.TypeSpec.Name = "System.ValueType" || ty.TypeSpec.Name = "System.Enum")
 
 
 and [<Sealed>] ILTypeDefs(f : unit -> (string list * string * ILAttributes * Lazy<ILTypeDef>)[]) =
@@ -2417,7 +2414,7 @@ let mkILGenericVirtualMethod (nm,access,genparams,actual_args,actual_ret,impl) =
       // REVIEW: We'll need to start setting this eventually
       access |||
       MethodAttributes.CheckAccessOnOverride ||| 
-      (match impl with MethodBody.Abstract -> MethodAttributes.Abstract | _ -> MethodAttributes.Virtual);
+      (match impl with MethodBody.Abstract -> MethodAttributes.Abstract ||| MethodAttributes.Virtual | _ -> MethodAttributes.Virtual);
     ImplAttributes=MethodImplAttributes.Managed
     GenericParams=genparams;
     CallingConv=ILCallingConv.Instance;
@@ -2521,12 +2518,13 @@ let prependInstrsToClassCtor instrs tag cd =
     cdef_cctorCode2CodeOrCreate tag (prependInstrsToMethod instrs) cd
     
 
-let mkILField (isStatic,nm,ty,init,at,access,isLiteral) =
+let mkILField (isStatic,nm,ty,(init:ILFieldInit option),at,access,isLiteral) =
    { Name=nm;
      Type=ty;
      Attributes=access |||
                 (if isStatic then FieldAttributes.Static else access) ||| 
-                (if isLiteral then FieldAttributes.Literal else access)
+                (if isLiteral then FieldAttributes.Literal else access) |||
+                (if init.IsSome then FieldAttributes.HasDefault else access)
      LiteralValue = init;
      Data=at;
      Offset=None;
@@ -2629,9 +2627,8 @@ let mkILStorageCtor(tag,preblock,typ,flds,access) = mkILStorageCtorWithParamName
 
 
 let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nestedTypes, props, events, attrs, init) =
-  { tdKind=ILTypeDefKind.Class;
-    Name=nm;
-    Attributes=access;
+  { Name=nm;
+    Attributes=access ||| TypeAttributes.AutoLayout ||| TypeAttributes.Class;
     GenericParams= genparams;
     Implements = impl;
     Layout=ILTypeDefLayout.Auto;
@@ -2649,10 +2646,9 @@ let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nes
 } 
     
 let mkRawDataValueTypeDef (iltyp_ValueType: ILType) (nm,size,pack) =
-  { tdKind=ILTypeDefKind.ValueType;
-    Name = nm;
+  { Name = nm;
     GenericParams= [];
-    Attributes = TypeAttributes.NotPublic ||| TypeAttributes.Sealed;
+    Attributes = TypeAttributes.NotPublic ||| TypeAttributes.Sealed ||| TypeAttributes.ExplicitLayout;
     Implements = []
     Extends = Some iltyp_ValueType;
     Layout=ILTypeDefLayout.Explicit { Size=Some size; Pack=Some pack };
@@ -3558,7 +3554,7 @@ and refs_of_tdef s (td : ILTypeDef)  =
     refs_of_fields       s td.Fields.AsList;
     refs_of_method_impls s td.MethodImpls.AsList;
     refs_of_events       s td.Events;
-    refs_of_tdef_kind    s td.tdKind;
+    refs_of_tdef_kind    s td;
     refs_of_custom_attrs s td.CustomAttrs;
     refs_of_properties   s td.Properties
 

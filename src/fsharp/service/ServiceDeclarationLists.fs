@@ -367,12 +367,11 @@ module internal DescriptionListsImpl =
             | TRecdRepr _ -> FSharpGlyph.Type
             | TUnionRepr _ -> FSharpGlyph.Union
             | TILObjectRepr (TILObjectReprData (_,_,td)) -> 
-                match td.tdKind with 
-                | ILTypeDefKind.Class -> FSharpGlyph.Class
-                | ILTypeDefKind.ValueType -> FSharpGlyph.Struct
-                | ILTypeDefKind.Interface -> FSharpGlyph.Interface
-                | ILTypeDefKind.Enum -> FSharpGlyph.Enum
-                | ILTypeDefKind.Delegate -> FSharpGlyph.Delegate
+                if td.IsClass                           then FSharpGlyph.Class
+                elif td.IsStructOrEnum && not td.IsEnum then FSharpGlyph.Struct
+                elif td.IsInterface                     then FSharpGlyph.Interface
+                elif td.IsEnum                          then FSharpGlyph.Enum
+                else                                         FSharpGlyph.Delegate
             | TAsmRepr _ -> FSharpGlyph.Typedef
             | TMeasureableRepr _-> FSharpGlyph.Typedef 
 #if !NO_EXTENSIONTYPING

@@ -3529,7 +3529,7 @@ and fixupVirtualSlotFlags (mdef:ILMethodDef) =
     {mdef with 
         Attributes = (match mdef.IsVirtual with 
                       | true -> 
-                         (mdef.Attributes ^^^ MethodAttributes.CheckAccessOnOverride) ||| MethodAttributes.HideBySig
+                         (if mdef.IsCheckAccessOnOverride then mdef.Attributes ^^^ MethodAttributes.CheckAccessOnOverride else mdef.Attributes) ||| MethodAttributes.HideBySig
                       | _ -> failwith "fixupVirtualSlotFlags") } 
 
 and renameMethodDef nameOfOverridingMethod (mdef : ILMethodDef) = 
@@ -3541,7 +3541,7 @@ and fixupMethodImplFlags (mdef:ILMethodDef) =
                             MethodAttributes.HideBySig |||
                             (match mdef.IsVirtual with 
                              | true -> 
-                                (mdef.Attributes ^^^ MethodAttributes.CheckAccessOnOverride) ||| 
+                                (if mdef.IsCheckAccessOnOverride then mdef.Attributes ^^^ MethodAttributes.CheckAccessOnOverride else mdef.Attributes) ||| 
                                 MethodAttributes.Final ||| MethodAttributes.NewSlot
                              | _ -> failwith "fixupMethodImpl") }
 
@@ -3729,15 +3729,15 @@ and GenClosureTypeDefs cenv (tref:ILTypeRef, ilGenParams, attrs, ilCloFreeVars, 
         cloStructure=ilCloLambdas
         cloCode=notlazy ilCtorBody }
 
+  let trefAttributes = ComputeTypeAccess tref true
   let td = 
     { Name = tref.Name 
       Layout = ILTypeDefLayout.Auto
-      Attributes = (ComputeTypeAccess tref true ||| TypeAttributes.Sealed ||| TypeAttributes.Serializable ||| TypeAttributes.SpecialName) ^^^ TypeAttributes.HasSecurity
+      Attributes = (if trefAttributes &&& TypeAttributes.HasSecurity <> enum 0 then trefAttributes ^^^ TypeAttributes.HasSecurity else trefAttributes) ||| TypeAttributes.Sealed ||| TypeAttributes.Serializable ||| TypeAttributes.SpecialName
       GenericParams = ilGenParams
       CustomAttrs = mkILCustomAttrs(attrs @ [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Closure) ])
       Fields = emptyILFields
       InitSemantics=ILTypeInit.BeforeField
-      tdKind=ILTypeDefKind.Class
       Events= emptyILEvents
       Properties = emptyILProperties
       Methods= mkILMethods mdefs 
@@ -3778,16 +3778,15 @@ and GenLambdaClosure cenv (cgbuf:CodeGenBuffer) eenv isLocalTypeFunc selfv expr 
                 let ilContractCtor =  mkILNonGenericEmptyCtor None cenv.g.ilg.typ_Object
 
                 let ilContractMeths = [ilContractCtor; mkILGenericVirtualMethod("DirectInvoke",MethodAttributes.Assembly,ilContractMethTyargs,[],mkILReturn ilContractFormalRetTy, MethodBody.Abstract) ]
-
+                let ilContractTypeRefAttribute = ComputeTypeAccess ilContractTypeRef true
                 let ilContractTypeDef = 
                     { Name = ilContractTypeRef.Name 
                       Layout = ILTypeDefLayout.Auto
-                      Attributes =  (ComputeTypeAccess ilContractTypeRef true ||| TypeAttributes.Abstract ||| TypeAttributes.Serializable ||| TypeAttributes.SpecialName) ^^^ TypeAttributes.HasSecurity // the contract type is an abstract type and not sealed
+                      Attributes =  (if ilContractTypeRefAttribute &&& TypeAttributes.HasSecurity <> enum 0 then ilContractTypeRefAttribute ^^^ TypeAttributes.HasSecurity else ilContractTypeRefAttribute) ||| TypeAttributes.Abstract ||| TypeAttributes.Serializable ||| TypeAttributes.SpecialName // the contract type is an abstract type and not sealed
                       GenericParams = ilContractGenericParams
                       CustomAttrs = mkILCustomAttrs [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Closure) ]
                       Fields = emptyILFields
                       InitSemantics=ILTypeInit.BeforeField
-                      tdKind=ILTypeDefKind.Class
                       Events= emptyILEvents
                       Properties = emptyILProperties
                       Methods= mkILMethods ilContractMeths 
@@ -5239,7 +5238,7 @@ and GenMethodForBinding
                                  (if hasNoInliningFlag then MethodImplAttributes.NoInlining else mdef.ImplAttributes) |||
                                  (if hasAggressiveInliningImplFlag then MethodImplAttributes.AggressiveInlining else mdef.ImplAttributes)
                 IsEntryPoint = isExplicitEntryPoint
-                Attributes = if securityAttributes.Length > 0 then mdef.Attributes ||| MethodAttributes.HasSecurity else mdef.Attributes ^^^ MethodAttributes.HasSecurity
+                Attributes = if securityAttributes.Length > 0 then mdef.Attributes ||| MethodAttributes.HasSecurity elif mdef.HasSecurity then mdef.Attributes ^^^ MethodAttributes.HasSecurity else mdef.Attributes
                 SecurityDecls = secDecls }
 
         let mdef = 
@@ -5304,8 +5303,8 @@ and GenMethodForBinding
                {mdef with 
                     Attributes=match mdef.IsVirtual || mdef.IsAbstract with 
                                | true -> 
-                                   let finalOp = if memberInfo.MemberFlags.IsFinal then (|||) else (^^^)
-                                   let abstractOp = if isAbstract then (|||) else (^^^)
+                                   let finalOp = if memberInfo.MemberFlags.IsFinal then (|||) elif mdef.IsFinal then (^^^) else fun x _ -> x
+                                   let abstractOp = if isAbstract then (|||) elif mdef.IsAbstract then (^^^) else fun x _ -> x
                                    abstractOp (finalOp mdef.Attributes MethodAttributes.Final) MethodAttributes.Abstract
                                | _ -> mdef.Attributes }
 
@@ -6096,8 +6095,8 @@ and GenAbstractBinding cenv eenv tref (vref:ValRef) =
                                  (if hasAggressiveInliningImplFlag then MethodImplAttributes.AggressiveInlining else mdef.ImplAttributes)
             Attributes=match mdef.IsVirtual || mdef.IsAbstract with 
                        | true ->
-                           let finalOp = if memberInfo.MemberFlags.IsFinal then (|||) else (^^^)
-                           let abstractOp = if memberInfo.MemberFlags.IsDispatchSlot then (|||) else (^^^)
+                           let finalOp = if memberInfo.MemberFlags.IsFinal then (|||) elif mdef.IsFinal then (^^^) else fun x _ -> x
+                           let abstractOp = if memberInfo.MemberFlags.IsDispatchSlot then (|||) elif mdef.IsAbstract then (^^^) else fun x _ -> x
                            abstractOp (finalOp mdef.Attributes MethodAttributes.Final) MethodAttributes.Abstract
                        | _ -> mdef.Attributes }
         
@@ -6298,21 +6297,21 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
         let reprAccess = ComputeMemberAccess hiddenRepr
 
 
-        let ilTypeDefKind = 
+        let ilTypeAttributes, isStruct = 
            match  tyconRepr with 
            | TFSharpObjectRepr o -> 
                match o.fsobjmodel_kind with 
-               | TTyconClass      -> ILTypeDefKind.Class
-               | TTyconStruct     -> ILTypeDefKind.ValueType
-               | TTyconInterface  -> ILTypeDefKind.Interface
-               | TTyconEnum       -> ILTypeDefKind.Enum 
-               | TTyconDelegate _ -> ILTypeDefKind.Delegate 
-           | TRecdRepr _ | TUnionRepr _ when tycon.IsStructOrEnumTycon -> ILTypeDefKind.ValueType
-           | _ -> ILTypeDefKind.Class
+               | TTyconClass      -> TypeAttributes.Class, false
+               | TTyconStruct     -> TypeAttributes.Class, true
+               | TTyconInterface  -> TypeAttributes.Interface, false
+               | TTyconEnum       -> TypeAttributes.Class, false 
+               | TTyconDelegate _ -> TypeAttributes.Class, false 
+           | TRecdRepr _ | TUnionRepr _ when tycon.IsStructOrEnumTycon -> TypeAttributes.Class, true
+           | _ -> TypeAttributes.Class, false
 
         let requiresExtraField = 
             let isEmptyStruct = 
-                (match ilTypeDefKind with ILTypeDefKind.ValueType -> true | _ -> false) &&
+                isStruct &&
                 // All structs are sequential by default 
                 // Structs with no instance fields get size 1, pack 0
                 tycon.AllFieldsAsList |> List.forall (fun f -> f.IsStatic)
@@ -6383,6 +6382,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                      | _ -> [] // don't hide fields in classes in debug display
 
                   let access = ComputeFieldAccess isFieldHidden
+                  let literalValue = Option.map (GenFieldInit m) fspec.LiteralValue
                   yield
                       { Name          = ilFieldName
                         Type          = ilPropType
@@ -6390,9 +6390,10 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                                         (if isStatic then FieldAttributes.Static else access) ||| 
                                         (if ilFieldName="value__" && tycon.IsEnumTycon then FieldAttributes.SpecialName else access) |||
                                         (if ilNotSerialized then FieldAttributes.NotSerialized else access) |||
-                                        (if fspec.LiteralValue.IsSome then FieldAttributes.Literal else access)
+                                        (if fspec.LiteralValue.IsSome then FieldAttributes.Literal else access) |||
+                                        (if literalValue.IsSome then FieldAttributes.HasDefault else access)
                         Data          = None 
-                        LiteralValue  = Option.map (GenFieldInit m) fspec.LiteralValue
+                        LiteralValue  = literalValue
                         Offset        = ilFieldOffset
                         Marshal       = ilFieldMarshal
                         CustomAttrs   = mkILCustomAttrs (GenAttrs cenv eenv fattribs @ extraAttribs) } 
@@ -6601,10 +6602,10 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                // Set some the extra entries in the definition 
                let isTheSealedAttribute = tyconRefEq cenv.g tcref cenv.g.attrib_SealedAttribute.TyconRef
 
-               let sealedOp = if isSealedTy cenv.g thisTy || isTheSealedAttribute then (|||) else (^^^)
-               let serializableOp = if isSerializable then (|||) else (^^^)
-               let abstractOp = if isAbstract then (|||) else (^^^)
-               let comInteropOp = if isComInteropTy cenv.g thisTy then (|||) else (^^^)
+               let sealedOp = if isSealedTy cenv.g thisTy || isTheSealedAttribute then (|||) elif tdef.IsSealed then (^^^) else fun x _ -> x
+               let serializableOp = if isSerializable then (|||) elif tdef.IsSerializable then (^^^) else fun x _ -> x
+               let abstractOp = if isAbstract then (|||) elif tdef.IsAbstract then (^^^) else fun x _ -> x
+               let comInteropOp = if isComInteropTy cenv.g thisTy then (|||) elif tdef.IsComInterop then (^^^) else fun x _ -> x
 
                let tdef = { tdef with  Attributes = comInteropOp (abstractOp (serializableOp (sealedOp tdef.Attributes TypeAttributes.Sealed) TypeAttributes.Serializable) TypeAttributes.Abstract) TypeAttributes.Import
                                        MethodImpls=mkILMethodImpls methodImpls }
@@ -6636,7 +6637,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                         errorR(Error(FSComp.SR.ilStructLayoutAttributeCouldNotBeDecoded(),m))
                         ILTypeDefLayout.Auto, ILDefaultPInvokeEncoding.Ansi
 
-                    | _ when (match ilTypeDefKind with ILTypeDefKind.ValueType -> true | _ -> false) ->
+                    | _ when isStruct ->
                         
                         // All structs are sequential by default 
                         // Structs with no instance fields get size 1, pack 0
@@ -6670,8 +6671,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                | ILTypeDefLayout.Sequential(_) -> List.iter validateSequential ilFieldDefs                     
                | _ -> ()
                
-               let tdef = { tdef with tdKind =  ilTypeDefKind; Layout=tdLayout; Encoding=tdEncoding }
-               let tdef = match ilTypeDefKind with ILTypeDefKind.Interface -> { tdef with Extends = None; Attributes=tdef.Attributes ||| TypeAttributes.Abstract } | _ -> tdef
+               let tdef = { tdef with Attributes = tdef.Attributes ||| ilTypeAttributes; Layout=tdLayout; Encoding=tdEncoding }
+               let tdef = if tdef.IsInterface then { tdef with Extends = None; Attributes=tdef.Attributes ||| TypeAttributes.Abstract ||| TypeAttributes.Interface } else tdef
                tdef, None
 
            | TUnionRepr _ -> 
@@ -6692,7 +6693,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
 
                let layout = 
                    if isStructTy cenv.g thisTy then 
-                       if (match ilTypeDefKind with ILTypeDefKind.ValueType -> true | _ -> false) then
+                       if isStruct then
                            // Structs with no instance fields get size 1, pack 0
                            ILTypeDefLayout.Sequential { Size=Some 1; Pack=Some 0us }
                        else
@@ -6711,8 +6712,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                                               (int (if hiddenRepr
                                                     then SourceConstructFlags.SumType ||| SourceConstructFlags.NonPublicRepresentation 
                                                     else SourceConstructFlags.SumType)) ])
-                     InitSemantics=ILTypeInit.BeforeField      
-                     tdKind= (if tycon.IsStructOrEnumTycon then ILTypeDefKind.ValueType else ILTypeDefKind.Class)
+                     InitSemantics=ILTypeInit.BeforeField
                      Fields = ilFields
                      Events= ilEvents
                      Properties = ilProperties
@@ -6743,7 +6743,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
 
            | _ -> failwith "??"
 
-        let hasSecurityOp = if securityAttrs.Length > 0 then (|||) else (^^^)
+        let hasSecurityOp = if securityAttrs.Length > 0 then (|||) elif tdef.HasSecurity then (^^^) else fun x _ -> x
         let tdef = {tdef with SecurityDecls= secDecls; Attributes=hasSecurityOp tdef.Attributes TypeAttributes.HasSecurity}
         mgbuf.AddTypeDef(tref, tdef, false, false, tdefDiscards)
 

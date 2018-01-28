@@ -481,7 +481,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
               let cloTypeDef = 
                 { Name = td.Name
                   GenericParams= td.GenericParams
-                  Attributes = (td.Attributes ||| TypeAttributes.Sealed ||| (if td.IsSerializable then TypeAttributes.Serializable else TypeAttributes.Sealed)) ^^^ TypeAttributes.HasSecurity
+                  Attributes = (if td.HasSecurity then td.Attributes ^^^ TypeAttributes.HasSecurity else td.Attributes) ||| TypeAttributes.Sealed ||| (if td.IsSerializable then TypeAttributes.Serializable else TypeAttributes.Sealed)
                   Implements = List.empty
                   NestedTypes = emptyILTypeDefs
                   Layout=ILTypeDefLayout.Auto
@@ -494,8 +494,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                   MethodImpls=emptyILMethodImpls
                   Properties=emptyILProperties
                   Events=emptyILEvents
-                  SecurityDecls=emptyILSecurityDecls 
-                  tdKind = ILTypeDefKind.Class}
+                  SecurityDecls=emptyILSecurityDecls }
               [ cloTypeDef]
 
     // CASE 2 - Term Application 
@@ -575,7 +574,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
 
                     { Name = td.Name
                       GenericParams= td.GenericParams
-                      Attributes = (td.Attributes ||| TypeAttributes.Sealed ||| (if td.IsSerializable then TypeAttributes.Serializable else TypeAttributes.Sealed)) ^^^ TypeAttributes.HasSecurity
+                      Attributes = (if td.HasSecurity then td.Attributes ^^^ TypeAttributes.HasSecurity else td.Attributes) ||| TypeAttributes.Sealed ||| (if td.IsSerializable then TypeAttributes.Serializable else TypeAttributes.Sealed)
                       Implements = []
                       Layout=ILTypeDefLayout.Auto
                       Encoding=ILDefaultPInvokeEncoding.Ansi
@@ -588,8 +587,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                       MethodImpls=emptyILMethodImpls
                       Properties=emptyILProperties
                       Events=emptyILEvents
-                      SecurityDecls=emptyILSecurityDecls 
-                      tdKind = ILTypeDefKind.Class } 
+                      SecurityDecls=emptyILSecurityDecls } 
 
                 [cloTypeDef]
 
@@ -625,8 +623,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                   Name = td.Name
                   GenericParams= td.GenericParams
                   Methods= mkILMethods (ctorMethodDef :: List.map (convMethodDef (Some nowCloSpec)) td.Methods.AsList) 
-                  Fields= mkILFields (mkILCloFldDefs cenv nowFields @ td.Fields.AsList)
-                  tdKind = ILTypeDefKind.Class } 
+                  Fields= mkILFields (mkILCloFldDefs cenv nowFields @ td.Fields.AsList) } 
 
           [cloTypeDef]
 
