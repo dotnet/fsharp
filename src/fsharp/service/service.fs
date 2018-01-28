@@ -1799,12 +1799,12 @@ type FSharpCheckProjectResults(projectFileName:string, tcConfigOption, keepAssem
 
     let getDetails() = 
         match details with 
-        | None -> invalidOp ("The project has no results due to critical errors in the project options. Check the HasCriticalErrors before accessing the detaild results. Errors: " + String.concat "\n" [ for e in errors -> e.Message ])
+        | None -> invalidOp ("The project has no results due to critical errors in the project options. Check the HasCriticalErrors before accessing the detailed results. Errors: " + String.concat "\n" [ for e in errors -> e.Message ])
         | Some d -> d
 
     let getTcConfig() = 
         match tcConfigOption with 
-        | None -> invalidOp ("The project has no results due to critical errors in the project options. Check the HasCriticalErrors before accessing the detaild results. Errors: " + String.concat "\n" [ for e in errors -> e.Message ])
+        | None -> invalidOp ("The project has no results due to critical errors in the project options. Check the HasCriticalErrors before accessing the detailed results. Errors: " + String.concat "\n" [ for e in errors -> e.Message ])
         | Some d -> d
 
     member info.Errors = errors
