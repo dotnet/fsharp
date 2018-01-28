@@ -1466,49 +1466,12 @@ let emitParameter cenv emEnv (defineParameter : int * ParameterAttributes * stri
     emitCustomAttrs cenv emEnv (wrapCustomAttr parB.SetCustomAttribute) param.CustomAttrs
 
 //----------------------------------------------------------------------------
-// convMethodAttributes
-//----------------------------------------------------------------------------
-
-let convMethodAttributes (mdef: ILMethodDef) =    
-    let attrKind = mdef.Attributes
-   
-    let attrAccess = 
-        match mdef.Access with
-        | ILMemberAccess.Assembly -> MethodAttributes.Assembly
-        | ILMemberAccess.CompilerControlled -> failwith "Method access compiler controled."
-        | ILMemberAccess.FamilyAndAssembly        -> MethodAttributes.FamANDAssem
-        | ILMemberAccess.FamilyOrAssembly         -> MethodAttributes.FamORAssem
-        | ILMemberAccess.Family             -> MethodAttributes.Family
-        | ILMemberAccess.Private            -> MethodAttributes.Private
-        | ILMemberAccess.Public             -> MethodAttributes.Public
-   
-    let attrOthers = flagsIf mdef.HasSecurity MethodAttributes.HasSecurity |||
-                     flagsIf mdef.IsSpecialName MethodAttributes.SpecialName |||
-                     flagsIf mdef.IsHideBySig   MethodAttributes.HideBySig |||
-                     flagsIf mdef.IsReqSecObj   MethodAttributes.RequireSecObject 
-   
-    attrKind ||| attrAccess ||| attrOthers
-
-let convMethodImplFlags mdef =    
-    (match  mdef.mdCodeKind with 
-     | MethodCodeKind.Native -> MethodImplAttributes.Native
-     | MethodCodeKind.Runtime -> MethodImplAttributes.Runtime
-     | MethodCodeKind.IL  -> MethodImplAttributes.IL) 
-    ||| flagsIf mdef.IsInternalCall MethodImplAttributes.InternalCall
-    ||| (if mdef.IsManaged then MethodImplAttributes.Managed else MethodImplAttributes.Unmanaged)
-    ||| flagsIf mdef.IsForwardRef MethodImplAttributes.ForwardRef
-    ||| flagsIf mdef.IsPreserveSig MethodImplAttributes.PreserveSig
-    ||| flagsIf mdef.IsSynchronized MethodImplAttributes.Synchronized
-    ||| flagsIf (match mdef.mdBody.Contents with MethodBody.IL b -> b.NoInlining | _ -> false) MethodImplAttributes.NoInlining
-    ||| flagsIf (match mdef.mdBody.Contents with MethodBody.IL b -> b.AggressiveInlining | _ -> false) MethodImplAttributes.AggressiveInlining
-
-//----------------------------------------------------------------------------
 // buildMethodPass2
 //----------------------------------------------------------------------------
   
 let rec buildMethodPass2 cenv tref (typB:TypeBuilder) emEnv (mdef : ILMethodDef) =
-    let attrs = convMethodAttributes mdef
-    let implflags = convMethodImplFlags mdef
+    let attrs = mdef.Attributes
+    let implflags = mdef.ImplAttributes
     let cconv = convCallConv mdef.CallingConv
     let mref = mkRefToILMethod (tref, mdef)   
     let emEnv = if mdef.IsEntryPoint && isNil mdef.ParameterTypes then 
