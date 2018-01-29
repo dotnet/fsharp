@@ -2287,9 +2287,7 @@ type TcConfigBuilder =
       mutable optSettings   : Optimizer.OptimizationSettings 
       mutable emitTailcalls : bool
       mutable deterministic : bool
-#if PREFERRED_UI_LANG
       mutable preferredUiLang: string option
-#endif
       mutable lcid          : int option
       mutable productNameForBannerText : string
       /// show the MS (c) notice, e.g. with help or fsi? 
@@ -2448,9 +2446,7 @@ type TcConfigBuilder =
           optSettings = Optimizer.OptimizationSettings.Defaults
           emitTailcalls = true
           deterministic = false
-#if PREFERRED_UI_LANG
           preferredUiLang = None
-#endif
           lcid = None
           // See bug 6071 for product banner spec
           productNameForBannerText = FSComp.SR.buildProductName(FSharpEnvironment.FSharpBannerVersion)
@@ -2914,9 +2910,7 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
     member x.optSettings        = data.optSettings
     member x.emitTailcalls      = data.emitTailcalls
     member x.deterministic      = data.deterministic
-#if PREFERRED_UI_LANG
     member x.preferredUiLang    = data.preferredUiLang
-#endif
     member x.lcid               = data.lcid
     member x.optsOn             = data.optsOn
     member x.productNameForBannerText  = data.productNameForBannerText
