@@ -88,7 +88,7 @@ module internal GotoDefinition =
                       | FSharpFindDeclResult.DeclFound m when System.IO.File.Exists m.FileName -> 
                           let span = TextSpan (iStartLine = m.StartLine-1, iEndLine = m.StartLine-1, iStartIndex = m.StartColumn, iEndIndex = m.StartColumn) 
                           GotoDefinitionResult_DEPRECATED.MakeSuccess(m.FileName, span)
-                      | FSharpFindDeclResult.DeclFound m (* File does not exist *) -> 
+                      | FSharpFindDeclResult.DeclFound _ (* File does not exist *) -> 
                           GotoDefinitionResult_DEPRECATED.MakeError(Strings.GotoDefinitionFailed_NotSourceCode())
                       | FSharpFindDeclResult.ExternalDecl _ -> 
                           GotoDefinitionResult_DEPRECATED.MakeError(Strings.GotoDefinitionFailed_NotSourceCode())
