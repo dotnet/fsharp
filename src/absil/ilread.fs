@@ -1653,12 +1653,6 @@ and typeKindOfFlags nm _mdefs _fdefs (super:ILType option) flags =
          elif isValueType then ILTypeDefKind.ValueType 
          else ILTypeDefKind.Class 
 
-and typeEncodingOfFlags flags = 
-    let f = (flags &&& 0x00030000)
-    if f = 0x00020000 then ILDefaultPInvokeEncoding.Auto 
-    elif f = 0x00010000 then ILDefaultPInvokeEncoding.Unicode 
-    else ILDefaultPInvokeEncoding.Ansi
-
 and isTopTypeDef flags =
     (typeAccessOfFlags flags =  ILTypeDefAccess.Private) ||
      typeAccessOfFlags flags =  ILTypeDefAccess.Public
@@ -1716,7 +1710,6 @@ and seekReadTypeDef ctxt toponly (idx:int) =
            let hasLayout = (match layout with ILTypeDefLayout.Explicit _ -> true | _ -> false)
            let mdefs = seekReadMethods ctxt numtypars methodsIdx endMethodsIdx
            let fdefs = seekReadFields ctxt (numtypars, hasLayout) fieldsIdx endFieldsIdx
-           let kind = typeKindOfFlags nm mdefs fdefs super flags
            let nested = seekReadNestedTypeDefs ctxt idx 
            let impls  = seekReadInterfaceImpls ctxt numtypars idx
            let sdecls =  seekReadSecurityDecls ctxt (TaggedIndex(hds_TypeDef, idx))
@@ -1727,7 +1720,6 @@ and seekReadTypeDef ctxt toponly (idx:int) =
              GenericParams=typars 
              Attributes= enum<TypeAttributes>(flags)
              Layout = layout
-             Encoding=typeEncodingOfFlags flags
              NestedTypes= nested
              Implements = impls  
              Extends = super 
@@ -1735,10 +1727,6 @@ and seekReadTypeDef ctxt toponly (idx:int) =
              SecurityDecls = sdecls
              Fields=fdefs
              MethodImpls=mimpls
-             InitSemantics=
-                 if kind = ILTypeDefKind.Interface then ILTypeInit.OnAny
-                 elif (flags &&& 0x00100000) <> 0x0 then ILTypeInit.BeforeField
-                 else ILTypeInit.OnAny 
              Events= events
              Properties=props
              CustomAttrs=cas }

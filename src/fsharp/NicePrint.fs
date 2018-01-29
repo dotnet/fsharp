@@ -415,9 +415,9 @@ module private PrintIL =
             | None     -> 
                 aboveListL body
 
-        if typeDef.IsClass || (typeDef.IsStructOrEnum && not typeDef.IsEnum) || typeDef.IsInterface then
+        if typeDef.IsClass || typeDef.IsStruct || typeDef.IsInterface then
             let pre = 
-                if typeDef.IsStructOrEnum then Some WordL.keywordStruct
+                if typeDef.IsStruct then Some WordL.keywordStruct
                 else None
 
             let baseT  = 

@@ -409,8 +409,8 @@ let output_type_access os access =
   | ILTypeDefAccess.Private  -> output_string os "private"
   | ILTypeDefAccess.Nested  ilMemberAccess -> output_string os "nested "; output_member_access os ilMemberAccess
 
-let output_encoding os e = 
-  match e with 
+let output_encoding os (e:ILTypeDef) = 
+  match e.Encoding with 
   | ILDefaultPInvokeEncoding.Ansi -> output_string os " ansi "
   | ILDefaultPInvokeEncoding.Auto  -> output_string os " autochar "
   | ILDefaultPInvokeEncoding.Unicode -> output_string os " unicode "
@@ -907,11 +907,11 @@ let rec goutput_tdef (enc) env contents os cd =
       output_string os "\n";
       if cd.IsInterface then output_string os ".class  interface "
       else output_string os ".class "
-      output_init_semantics os cd.InitSemantics;
+      output_init_semantics os cd.Attributes;
       output_string os " ";
       output_type_access os cd.Access;
       output_string os " ";
-      output_encoding os cd.Encoding;
+      output_encoding os cd;
       output_string os " ";
       output_string os layout_attr;
       output_string os " ";
@@ -937,9 +937,8 @@ let rec goutput_tdef (enc) env contents os cd =
       output_string os "\n}";
 
 and output_init_semantics os f =
-  match f with 
-    ILTypeInit.BeforeField -> output_string os "beforefieldinit";
-  | ILTypeInit.OnAny -> ()
+  if f &&& TypeAttributes.BeforeFieldInit <> enum 0 then output_string os "beforefieldinit"
+  else ()
 
 and goutput_lambdas env os lambdas = 
   match lambdas with

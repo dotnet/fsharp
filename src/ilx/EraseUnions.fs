@@ -870,7 +870,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                                           mkILProperties debugProxyGetterProps,
                                           emptyILEvents,
                                           emptyILCustomAttrs,
-                                          ILTypeInit.BeforeField)
+                                          TypeAttributes.BeforeFieldInit)
 
                     [ { debugProxyTypeDef with Attributes=debugProxyTypeDef.Attributes ||| TypeAttributes.SpecialName } ],
                     ( [mkDebuggerTypeProxyAttribute debugProxyTy] @ cud.cudDebugDisplayAttributes)
@@ -917,7 +917,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                                         mkILProperties basicProps,
                                         emptyILEvents,
                                         mkILCustomAttrs debugAttrs,
-                                        ILTypeInit.BeforeField)
+                                        TypeAttributes.BeforeFieldInit)
 
                   { altTypeDef with Attributes=altTypeDef.Attributes ||| (if td.IsSerializable then TypeAttributes.Serializable else TypeAttributes.SpecialName) ||| TypeAttributes.SpecialName }
 
@@ -1090,16 +1090,14 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
                 { Name = "Tags"
                   NestedTypes = emptyILTypeDefs
                   GenericParams= td.GenericParams
-                  Attributes = (if cudAattributes &&& TypeAttributes.HasSecurity <> enum 0 then cudAattributes ^^^ TypeAttributes.HasSecurity else cudAattributes) ||| TypeAttributes.Abstract ||| TypeAttributes.Sealed ||| TypeAttributes.Abstract
+                  Attributes = (if cudAattributes &&& TypeAttributes.HasSecurity <> enum 0 then cudAattributes ^^^ TypeAttributes.HasSecurity else cudAattributes) ||| TypeAttributes.Abstract ||| TypeAttributes.Sealed ||| TypeAttributes.Abstract ||| TypeAttributes.AnsiClass
                   Layout=ILTypeDefLayout.Auto 
-                  Encoding=ILDefaultPInvokeEncoding.Ansi
                   Implements = []
                   Extends= Some ilg.typ_Object 
                   Methods= emptyILMethods
                   SecurityDecls=emptyILSecurityDecls
                   Fields=mkILFields tagEnumFields
                   MethodImpls=emptyILMethodImpls
-                  InitSemantics=ILTypeInit.OnAny
                   Events=emptyILEvents
                   Properties=emptyILProperties
                   CustomAttrs= emptyILCustomAttrs }
@@ -1110,11 +1108,10 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
     let baseTypeDef = 
        { td with 
           NestedTypes = mkILTypeDefs (Option.toList enumTypeDef @ altTypeDefs @ altDebugTypeDefs @ td.NestedTypes.AsList)
-          Attributes = comInteropOp (sealedOp (abstractOp td.Attributes TypeAttributes.Abstract) TypeAttributes.Sealed) TypeAttributes.Import
+          Attributes = (comInteropOp (sealedOp (abstractOp td.Attributes TypeAttributes.Abstract) TypeAttributes.Sealed) TypeAttributes.Import) ||| TypeAttributes.BeforeFieldInit
           Extends= (match td.Extends with None -> Some ilg.typ_Object | _ -> td.Extends) 
           Methods= mkILMethods (ctorMeths @ baseMethsFromAlt @ selfMeths @ tagMeths @ altUniqObjMeths @ existingMeths)
           Fields=mkILFields (selfAndTagFields @ List.map (fun (_,_,_,_,fdef,_) -> fdef) altNullaryFields @ td.Fields.AsList)
-          InitSemantics=ILTypeInit.BeforeField
           Properties=mkILProperties (tagProps @ basePropsFromAlt @ selfProps @ existingProps) }
        // The .cctor goes on the Cases type since that's where the constant fields for nullary constructors live
        |> addConstFieldInit 

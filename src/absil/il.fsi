@@ -1271,7 +1271,6 @@ and [<NoComparison; NoEquality>]
       Attributes: TypeAttributes;
       GenericParams: ILGenericParameterDefs;  
       Layout: ILTypeDefLayout;
-      Encoding: ILDefaultPInvokeEncoding;
       NestedTypes: ILTypeDefs;
       Implements: ILTypes;  
       Extends: ILType option; 
@@ -1279,11 +1278,11 @@ and [<NoComparison; NoEquality>]
       SecurityDecls: ILPermissions;
       Fields: ILFieldDefs;
       MethodImpls: ILMethodImplDefs;
-      InitSemantics: ILTypeInit;
       Events: ILEventDefs;
       Properties: ILPropertyDefs;
       CustomAttrs: ILAttributes; }
     member IsClass: bool;
+    member IsStruct: bool;
     member IsInterface: bool;
     member IsEnum: bool;
     member IsDelegate: bool;
@@ -1298,6 +1297,7 @@ and [<NoComparison; NoEquality>]
     /// Some classes are marked "HasSecurity" even if there are no permissions attached, 
     /// e.g. if they use SuppressUnmanagedCodeSecurityAttribute 
     member HasSecurity: bool
+    member Encoding: ILDefaultPInvokeEncoding;
 
 [<NoEquality; NoComparison>]
 [<Sealed>]
@@ -1702,8 +1702,8 @@ val mkILStaticField: string * ILType * ILFieldInit option * byte[] option * Fiel
 val mkILLiteralField: string * ILType * ILFieldInit * byte[] option * FieldAttributes -> ILFieldDef
 
 /// Make a type definition.
-val mkILGenericClass: string * TypeAttributes * ILGenericParameterDefs * ILType * ILType list * ILMethodDefs * ILFieldDefs * ILTypeDefs * ILPropertyDefs * ILEventDefs * ILAttributes * ILTypeInit -> ILTypeDef
-val mkILSimpleClass: ILGlobals -> string * TypeAttributes * ILMethodDefs * ILFieldDefs * ILTypeDefs * ILPropertyDefs * ILEventDefs * ILAttributes * ILTypeInit  -> ILTypeDef
+val mkILGenericClass: string * TypeAttributes * ILGenericParameterDefs * ILType * ILType list * ILMethodDefs * ILFieldDefs * ILTypeDefs * ILPropertyDefs * ILEventDefs * ILAttributes * TypeAttributes -> ILTypeDef
+val mkILSimpleClass: ILGlobals -> string * TypeAttributes * ILMethodDefs * ILFieldDefs * ILTypeDefs * ILPropertyDefs * ILEventDefs * ILAttributes * TypeAttributes  -> ILTypeDef
 val mkILTypeDefForGlobalFunctions: ILGlobals -> ILMethodDefs * ILFieldDefs -> ILTypeDef
 
 /// Make a type definition for a value type used to point to raw data.

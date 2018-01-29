@@ -3733,17 +3733,15 @@ and GenClosureTypeDefs cenv (tref:ILTypeRef, ilGenParams, attrs, ilCloFreeVars, 
   let td = 
     { Name = tref.Name 
       Layout = ILTypeDefLayout.Auto
-      Attributes = (if trefAttributes &&& TypeAttributes.HasSecurity <> enum 0 then trefAttributes ^^^ TypeAttributes.HasSecurity else trefAttributes) ||| TypeAttributes.Sealed ||| TypeAttributes.Serializable ||| TypeAttributes.SpecialName
+      Attributes = (if trefAttributes &&& TypeAttributes.HasSecurity <> enum 0 then trefAttributes ^^^ TypeAttributes.HasSecurity else trefAttributes) ||| TypeAttributes.Sealed ||| TypeAttributes.Serializable ||| TypeAttributes.SpecialName ||| TypeAttributes.BeforeFieldInit ||| TypeAttributes.AutoClass
       GenericParams = ilGenParams
       CustomAttrs = mkILCustomAttrs(attrs @ [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Closure) ])
       Fields = emptyILFields
-      InitSemantics=ILTypeInit.BeforeField
       Events= emptyILEvents
       Properties = emptyILProperties
       Methods= mkILMethods mdefs 
       MethodImpls= mkILMethodImpls mimpls
       NestedTypes=emptyILTypeDefs
-      Encoding= ILDefaultPInvokeEncoding.Auto
       Implements = ilIntfTys  
       Extends= Some ext
       SecurityDecls= emptyILSecurityDecls } 
@@ -3782,17 +3780,15 @@ and GenLambdaClosure cenv (cgbuf:CodeGenBuffer) eenv isLocalTypeFunc selfv expr 
                 let ilContractTypeDef = 
                     { Name = ilContractTypeRef.Name 
                       Layout = ILTypeDefLayout.Auto
-                      Attributes =  (if ilContractTypeRefAttribute &&& TypeAttributes.HasSecurity <> enum 0 then ilContractTypeRefAttribute ^^^ TypeAttributes.HasSecurity else ilContractTypeRefAttribute) ||| TypeAttributes.Abstract ||| TypeAttributes.Serializable ||| TypeAttributes.SpecialName // the contract type is an abstract type and not sealed
+                      Attributes =  (if ilContractTypeRefAttribute &&& TypeAttributes.HasSecurity <> enum 0 then ilContractTypeRefAttribute ^^^ TypeAttributes.HasSecurity else ilContractTypeRefAttribute) ||| TypeAttributes.Abstract ||| TypeAttributes.Serializable ||| TypeAttributes.SpecialName ||| TypeAttributes.BeforeFieldInit ||| TypeAttributes.AutoClass // the contract type is an abstract type and not sealed
                       GenericParams = ilContractGenericParams
                       CustomAttrs = mkILCustomAttrs [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Closure) ]
                       Fields = emptyILFields
-                      InitSemantics=ILTypeInit.BeforeField
                       Events= emptyILEvents
                       Properties = emptyILProperties
                       Methods= mkILMethods ilContractMeths 
                       MethodImpls= emptyILMethodImpls
                       NestedTypes=emptyILTypeDefs
-                      Encoding= ILDefaultPInvokeEncoding.Auto
                       Implements = []  
                       Extends= Some cenv.g.ilg.typ_Object
                       SecurityDecls= emptyILSecurityDecls } 
@@ -5866,7 +5862,7 @@ and GenModuleBinding cenv (cgbuf:CodeGenBuffer) (qname:QualifiedNameOfFile) lazy
     if not mspec.IsNamespace then 
         // The use of ILTypeInit.OnAny prevents the execution of the cctor before the 
         // "main" method in the case where the "main" method is implicit.
-        let staticClassTrigger = (* if eenv.isFinalFile then *) ILTypeInit.OnAny (* else ILTypeInit.BeforeField *)
+        let staticClassTrigger = (* if eenv.isFinalFile then *) enum<TypeAttributes> 0 (* else ILTypeInit.BeforeField *)
 
         GenTypeDefForCompLoc (cenv, eenvinner, cgbuf.mgbuf, eenvinner.cloc, hidden, mspec.Attribs, staticClassTrigger, false, (* atEnd= *) true)
 
@@ -5892,7 +5888,7 @@ and GenTopImpl cenv mgbuf mainInfoOpt eenv (TImplFile(qname, _, mexpr, hasExplic
     let initClassCompLoc = CompLocForInitClass eenv.cloc 
     let initClassTy = mkILTyForCompLoc initClassCompLoc 
 
-    let initClassTrigger = (* if isFinalFile then *) ILTypeInit.OnAny (* else ILTypeInit.BeforeField *)
+    let initClassTrigger = (* if isFinalFile then *) enum<TypeAttributes> 0 (* else ILTypeInit.BeforeField *)
     
     let eenv = {eenv with cloc = initClassCompLoc
                           isFinalFile = isFinalFile
@@ -6591,9 +6587,9 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                // before the main method even starts.
                let typeDefTrigger = 
                    if eenv.isFinalFile || tycon.TyparsNoRange.IsEmpty then 
-                       ILTypeInit.OnAny 
+                       enum 0
                    else 
-                       ILTypeInit.BeforeField
+                       TypeAttributes.BeforeFieldInit
 
                let tdef = mkILGenericClass (ilTypeName, access, ilGenParams, ilBaseTy, ilIntfTys, 
                                             mkILMethods ilMethods, ilFields, emptyILTypeDefs, ilProperties, ilEvents, mkILCustomAttrs ilAttrs, 
@@ -6619,9 +6615,9 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                         let tdEncoding = 
                             match (decoder.FindInt32 "CharSet" 0x0) with
                             (* enumeration values for System.Runtime.InteropServices.CharSet taken from mscorlib.il *)
-                            | 0x03 -> ILDefaultPInvokeEncoding.Unicode
-                            | 0x04 -> ILDefaultPInvokeEncoding.Auto
-                            | _ -> ILDefaultPInvokeEncoding.Ansi
+                            | 0x03 -> TypeAttributes.UnicodeClass
+                            | 0x04 -> TypeAttributes.AutoClass
+                            | _ -> TypeAttributes.AnsiClass
                         let layoutInfo = 
                             if ilPack = 0x0 && ilSize = 0x0 
                             then { Size=None; Pack=None } 
@@ -6635,7 +6631,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                         tdLayout,tdEncoding
                     | Some (Attrib(_,_,_,_,_,_,m))  -> 
                         errorR(Error(FSComp.SR.ilStructLayoutAttributeCouldNotBeDecoded(),m))
-                        ILTypeDefLayout.Auto, ILDefaultPInvokeEncoding.Ansi
+                        ILTypeDefLayout.Auto, TypeAttributes.AnsiClass
 
                     | _ when isStruct ->
                         
@@ -6646,12 +6642,12 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                             // In that case we generate a dummy field instead
                            (cenv.opts.workAroundReflectionEmitBugs && not tycon.TyparsNoRange.IsEmpty) 
                            then 
-                            ILTypeDefLayout.Sequential { Size=None; Pack=None }, ILDefaultPInvokeEncoding.Ansi 
+                            ILTypeDefLayout.Sequential { Size=None; Pack=None }, TypeAttributes.AnsiClass
                         else
-                            ILTypeDefLayout.Sequential { Size=Some 1; Pack=Some 0us }, ILDefaultPInvokeEncoding.Ansi 
+                            ILTypeDefLayout.Sequential { Size=Some 1; Pack=Some 0us }, TypeAttributes.AnsiClass
                         
                     | _ -> 
-                        ILTypeDefLayout.Auto, ILDefaultPInvokeEncoding.Ansi
+                        ILTypeDefLayout.Auto, TypeAttributes.AnsiClass
                
                // if the type's layout is Explicit, ensure that each field has a valid offset
                let validateExplicit fdef =
@@ -6665,14 +6661,15 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                     match fdef.Offset with
                     | Some _ -> errorR(Error(FSComp.SR.ilFieldHasOffsetForSequentialLayout(), (trimRangeToLine m)))
                     | _ -> ()
-                    
-               match tdLayout with
-               | ILTypeDefLayout.Explicit(_) -> List.iter validateExplicit ilFieldDefs
-               | ILTypeDefLayout.Sequential(_) -> List.iter validateSequential ilFieldDefs                     
-               | _ -> ()
+                
+               let tdLayoutAttributes =
+                   match tdLayout with
+                   | ILTypeDefLayout.Explicit(_) -> List.iter validateExplicit ilFieldDefs; TypeAttributes.ExplicitLayout
+                   | ILTypeDefLayout.Sequential(_) -> List.iter validateSequential ilFieldDefs; TypeAttributes.SequentialLayout                   
+                   | _ -> TypeAttributes.AutoLayout
                
-               let tdef = { tdef with Attributes = tdef.Attributes ||| ilTypeAttributes; Layout=tdLayout; Encoding=tdEncoding }
-               let tdef = if tdef.IsInterface then { tdef with Extends = None; Attributes=tdef.Attributes ||| TypeAttributes.Abstract ||| TypeAttributes.Interface } else tdef
+               let tdef = { tdef with Attributes = tdef.Attributes ||| ilTypeAttributes ||| tdEncoding ||| tdLayoutAttributes; Layout=tdLayout }
+               let tdef = match ilTypeAttributes with TypeAttributes.Interface -> { tdef with Extends = None; Attributes=tdef.Attributes ||| TypeAttributes.Abstract ||| TypeAttributes.Interface } | _ -> tdef
                tdef, None
 
            | TUnionRepr _ -> 
@@ -6691,20 +6688,20 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                     cudAlternatives= alternatives
                     cudWhere = None}
 
-               let layout = 
+               let layout, layoutAttributes = 
                    if isStructTy cenv.g thisTy then 
                        if isStruct then
                            // Structs with no instance fields get size 1, pack 0
-                           ILTypeDefLayout.Sequential { Size=Some 1; Pack=Some 0us }
+                           ILTypeDefLayout.Sequential { Size=Some 1; Pack=Some 0us }, TypeAttributes.SequentialLayout
                        else
-                           ILTypeDefLayout.Sequential { Size=None; Pack=None } 
+                           ILTypeDefLayout.Sequential { Size=None; Pack=None }, TypeAttributes.SequentialLayout
                    else 
-                       ILTypeDefLayout.Auto
+                       ILTypeDefLayout.Auto, TypeAttributes.AutoLayout
 
                let tdef = 
                    { Name = ilTypeName
                      Layout =  layout
-                     Attributes = access ||| TypeAttributes.Sealed ||| (if isSerializable then TypeAttributes.Serializable else access)
+                     Attributes = access ||| TypeAttributes.Sealed ||| (if isSerializable then TypeAttributes.Serializable else access) ||| TypeAttributes.BeforeFieldInit ||| TypeAttributes.AutoClass ||| layoutAttributes
                      GenericParams = ilGenParams
                      CustomAttrs = 
                          mkILCustomAttrs (ilCustomAttrs @ 
@@ -6712,14 +6709,12 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                                               (int (if hiddenRepr
                                                     then SourceConstructFlags.SumType ||| SourceConstructFlags.NonPublicRepresentation 
                                                     else SourceConstructFlags.SumType)) ])
-                     InitSemantics=ILTypeInit.BeforeField
                      Fields = ilFields
                      Events= ilEvents
                      Properties = ilProperties
                      Methods= mkILMethods ilMethods 
                      MethodImpls= mkILMethodImpls methodImpls
                      NestedTypes=emptyILTypeDefs
-                     Encoding= ILDefaultPInvokeEncoding.Auto
                      Implements = ilIntfTys
                      Extends= Some (if tycon.IsStructOrEnumTycon then cenv.g.iltyp_ValueType else cenv.g.ilg.typ_Object)
                      SecurityDecls= emptyILSecurityDecls }
@@ -6864,7 +6859,7 @@ and GenExnDef cenv mgbuf eenv m (exnc:Tycon) =
              mkILProperties ilPropertyDefs,
              emptyILEvents,
              mkILCustomAttrs [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Exception)],
-             ILTypeInit.BeforeField)
+             TypeAttributes.BeforeFieldInit)
         let tdef = { tdef with Attributes=tdef.Attributes ||| TypeAttributes.Serializable }
         mgbuf.AddTypeDef(tref, tdef, false, false, None)
 
@@ -6910,7 +6905,7 @@ let GenerateCode (cenv, eenv, TypedAssemblyAfterOptimization fileImpls, assemAtt
     let eenv = { eenv with cloc = CompLocForFragment cenv.opts.fragName cenv.viewCcu }
     
     // Generate the PrivateImplementationDetails type
-    GenTypeDefForCompLoc (cenv, eenv, mgbuf, CompLocForPrivateImplementationDetails eenv.cloc, useHiddenInitCode, [], ILTypeInit.BeforeField, true, (* atEnd= *) true)
+    GenTypeDefForCompLoc (cenv, eenv, mgbuf, CompLocForPrivateImplementationDetails eenv.cloc, useHiddenInitCode, [], TypeAttributes.BeforeFieldInit, true, (* atEnd= *) true)
 
     // Generate the whole assembly
     CodegenAssembly cenv eenv mgbuf fileImpls

@@ -1571,6 +1571,12 @@ let typeAccessOfFlags flags =
     elif f = 0x00000005 then ILTypeDefAccess.Nested ILMemberAccess.Assembly 
     else ILTypeDefAccess.Private
 
+let typeEncodingOfFlags flags = 
+    let f = (flags &&& 0x00030000)
+    if f = 0x00020000 then ILDefaultPInvokeEncoding.Auto 
+    elif f = 0x00010000 then ILDefaultPInvokeEncoding.Unicode 
+    else ILDefaultPInvokeEncoding.Ansi
+
 [<RequireQualifiedAccess>]
 type ILTypeDefKind =
     | Class
@@ -1579,6 +1585,19 @@ type ILTypeDefKind =
     | Enum 
     | Delegate
 
+let typeKindOfFlags nm _mdefs _fdefs (super:ILType option) flags =
+    if (flags &&& 0x00000020) <> 0x0 then ILTypeDefKind.Interface 
+    else 
+         let isEnum = (match super with None -> false | Some ty -> ty.TypeSpec.Name = "System.Enum")
+         let isDelegate = (match super with None -> false | Some ty -> ty.TypeSpec.Name = "System.Delegate")
+         let isMulticastDelegate = (match super with None -> false | Some ty -> ty.TypeSpec.Name = "System.MulticastDelegate")
+         let selfIsMulticastDelegate = nm = "System.MulticastDelegate"
+         let isValueType = (match super with None -> false | Some ty -> ty.TypeSpec.Name = "System.ValueType" && nm <> "System.Enum")
+         if isEnum then ILTypeDefKind.Enum 
+         elif  (isDelegate && not selfIsMulticastDelegate) || isMulticastDelegate then ILTypeDefKind.Delegate
+         elif isValueType then ILTypeDefKind.ValueType 
+         else ILTypeDefKind.Class 
+
 
 [<NoComparison; NoEquality>]
 type ILTypeDef =  
@@ -1586,7 +1605,6 @@ type ILTypeDef =
       Attributes: TypeAttributes;
       GenericParams: ILGenericParameterDefs;   (* class is generic *)
       Layout: ILTypeDefLayout;
-      Encoding: ILDefaultPInvokeEncoding;
       NestedTypes: ILTypeDefs;
       Implements: ILTypes;  
       Extends: ILType option; 
@@ -1594,14 +1612,14 @@ type ILTypeDef =
       SecurityDecls: ILPermissions;
       Fields: ILFieldDefs;
       MethodImpls: ILMethodImplDefs;
-      InitSemantics: ILTypeInit;
       Events: ILEventDefs;
       Properties: ILPropertyDefs;
       CustomAttrs: ILAttributes; }
-    member x.IsClass =     x.Attributes &&& TypeAttributes.Class <> enum 0 && not x.IsEnum && not x.IsDelegate
-    member x.IsInterface = x.Attributes &&& TypeAttributes.Interface <> enum 0
-    member x.IsEnum =      x.Attributes &&& TypeAttributes.Class <> enum 0 && match x.Extends with Some(t) -> t.TypeSpec.Name = "System.Enum" | _ -> false
-    member x.IsDelegate =  x.Attributes &&& TypeAttributes.Class <> enum 0 && match x.Extends with Some(t) -> t.TypeSpec.Name = "System.Delegate" | _ -> false
+    member x.IsClass =     (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.Class
+    member x.IsStruct =    (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.ValueType
+    member x.IsInterface = (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.Interface
+    member x.IsEnum =      (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.Enum
+    member x.IsDelegate =  (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.Delegate
     member x.Access = typeAccessOfFlags (int x.Attributes)  
     member x.IsAbstract = x.Attributes &&& TypeAttributes.Abstract <> enum 0
     member x.IsSealed = x.Attributes &&& TypeAttributes.Sealed <> enum 0
@@ -1609,9 +1627,9 @@ type ILTypeDef =
     member x.IsComInterop = x.Attributes &&& TypeAttributes.Import <> enum 0 (* Class or interface generated for COM interop *) 
     member x.IsSpecialName = x.Attributes &&& TypeAttributes.SpecialName <> enum 0
     member x.HasSecurity = x.Attributes &&& TypeAttributes.HasSecurity <> enum 0
-
+    member x.Encoding = typeEncodingOfFlags (int x.Attributes)
     member tdef.IsStructOrEnum = 
-        (match tdef.Extends with None -> false | Some ty -> ty.TypeSpec.Name = "System.ValueType" || ty.TypeSpec.Name = "System.Enum")
+        tdef.IsStruct || tdef.IsEnum
 
 
 and [<Sealed>] ILTypeDefs(f : unit -> (string list * string * ILAttributes * Lazy<ILTypeDef>)[]) =
@@ -2628,12 +2646,10 @@ let mkILStorageCtor(tag,preblock,typ,flds,access) = mkILStorageCtorWithParamName
 
 let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nestedTypes, props, events, attrs, init) =
   { Name=nm;
-    Attributes=access ||| TypeAttributes.AutoLayout ||| TypeAttributes.Class;
+    Attributes=access ||| TypeAttributes.AutoLayout ||| TypeAttributes.Class ||| init ||| TypeAttributes.AnsiClass;
     GenericParams= genparams;
     Implements = impl;
     Layout=ILTypeDefLayout.Auto;
-    Encoding=ILDefaultPInvokeEncoding.Ansi;
-    InitSemantics=init;
     Extends = Some extends;
     Methods= methods; 
     Fields= fields;
@@ -2648,12 +2664,10 @@ let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nes
 let mkRawDataValueTypeDef (iltyp_ValueType: ILType) (nm,size,pack) =
   { Name = nm;
     GenericParams= [];
-    Attributes = TypeAttributes.NotPublic ||| TypeAttributes.Sealed ||| TypeAttributes.ExplicitLayout;
+    Attributes = TypeAttributes.NotPublic ||| TypeAttributes.Sealed ||| TypeAttributes.ExplicitLayout ||| TypeAttributes.BeforeFieldInit ||| TypeAttributes.AnsiClass;
     Implements = []
     Extends = Some iltyp_ValueType;
     Layout=ILTypeDefLayout.Explicit { Size=Some size; Pack=Some pack };
-    Encoding=ILDefaultPInvokeEncoding.Ansi;
-    InitSemantics=ILTypeInit.BeforeField;
     Methods= emptyILMethods; 
     Fields= emptyILFields;
     NestedTypes=emptyILTypeDefs;
@@ -2667,7 +2681,7 @@ let mkRawDataValueTypeDef (iltyp_ValueType: ILType) (nm,size,pack) =
 let mkILSimpleClass (ilg: ILGlobals) (nm, access, methods, fields, nestedTypes, props, events, attrs, init) =
   mkILGenericClass (nm,access, mkILEmptyGenericParams, ilg.typ_Object, [], methods, fields, nestedTypes, props, events, attrs, init)
 
-let mkILTypeDefForGlobalFunctions ilg (methods,fields) = mkILSimpleClass ilg (typeNameForGlobalFunctions, TypeAttributes.Public, methods, fields, emptyILTypeDefs, emptyILProperties, emptyILEvents, emptyILCustomAttrs,ILTypeInit.BeforeField)
+let mkILTypeDefForGlobalFunctions ilg (methods,fields) = mkILSimpleClass ilg (typeNameForGlobalFunctions, TypeAttributes.Public, methods, fields, emptyILTypeDefs, emptyILProperties, emptyILEvents, emptyILCustomAttrs,TypeAttributes.BeforeFieldInit)
 
 let destTypeDefsWithGlobalFunctionsFirst ilg (tdefs: ILTypeDefs) = 
   let l = tdefs.AsList
