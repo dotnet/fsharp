@@ -1214,29 +1214,25 @@ type TypeCheckInfo
                           Some (FSharpFindDeclResult.ExternalDecl (assref.Name, ExternalSymbol.Type fullName))
                       | _ -> None
                   | _ -> None
-       
               match result with
               | Some x -> x
-              | None ->
-                  let fail defaultReason = 
-                      match item.Item with 
+              | None   ->
+              let fail  = FSharpFindDeclResult.DeclNotFound
+              let found = FSharpFindDeclResult.DeclFound
+              match item.Item with 
 #if !NO_EXTENSIONTYPING
-                      | SymbolHelpers.ItemIsProvidedType g (tcref) -> FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.ProvidedType(tcref.DisplayName))
-                      | Item.CtorGroup(name, ProvidedMeth(_)::_)
-                      | Item.MethodGroup(name, ProvidedMeth(_)::_, _)
-                      | Item.Property(name, ProvidedProp(_)::_) -> FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.ProvidedMember(name))
-                      | Item.Event(ProvidedEvent(_) as e) -> FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.ProvidedMember(e.EventName))
-                      | Item.ILField(ProvidedField(_) as f) -> FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.ProvidedMember(f.FieldName))
+// provided items may have TypeProviderDefinitionLocationAttribute that binds them to some location
+              | Item.CtorGroup  (name, ProvidedMeth (_)::_   )
+              | Item.MethodGroup(name, ProvidedMeth (_)::_, _)
+              | Item.Property   (name, ProvidedProp (_)::_   ) -> fail  (FSharpFindDeclFailureReason.ProvidedMember name             )
+              | Item.Event      (      ProvidedEvent(_) as e ) -> fail  (FSharpFindDeclFailureReason.ProvidedMember e.EventName      )  
+              | Item.ILField    (      ProvidedField(_) as f ) -> fail  (FSharpFindDeclFailureReason.ProvidedMember f.FieldName      )  
+              | SymbolHelpers.ItemIsProvidedType g (tcref)     -> fail  (FSharpFindDeclFailureReason.ProvidedType   tcref.DisplayName)
 #endif
-                      | _ -> FSharpFindDeclResult.DeclNotFound defaultReason
-
-                  match rangeOfItem g preferFlag item.Item with
-                  | None   -> fail (FSharpFindDeclFailureReason.Unknown "")
-                  | Some itemRange -> 
-                  
-                      let projectDir = Filename.directoryName (if projectFileName = "" then mainInputFileName else projectFileName)
-                      let filename = fileNameOfItem g (Some projectDir) itemRange item.Item
-                      FSharpFindDeclResult.DeclFound (mkRange filename itemRange.Start itemRange.End)
+              | _ -> 
+              match rangeOfItem g preferFlag item.Item with
+              | None                                           -> fail  (FSharpFindDeclFailureReason.Unknown ""                      )
+              | Some itemRange                                 -> found (mkRange filename itemRange.Start itemRange.End              )
        )
        (fun msg -> 
            Trace.TraceInformation(sprintf "FCS: recovering from error in GetDeclarationLocation: '%s'" msg)
