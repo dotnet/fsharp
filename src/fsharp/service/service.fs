@@ -1217,8 +1217,9 @@ type TypeCheckInfo
               match result with
               | Some x -> x
               | None   ->
-              let fail  = FSharpFindDeclResult.DeclNotFound
-              let found = FSharpFindDeclResult.DeclFound
+              let fail         = FSharpFindDeclResult.DeclNotFound
+              let found        = FSharpFindDeclResult.DeclFound
+              let projectDir   = Filename.directoryName (if projectFileName = "" then mainInputFileName else projectFileName)
               match item.Item with 
 #if !NO_EXTENSIONTYPING
 // provided items may have TypeProviderDefinitionLocationAttribute that binds them to some location
