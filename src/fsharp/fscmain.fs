@@ -48,7 +48,14 @@ module Driver =
                     failwithf "%s" <| FSComp.SR.elSysEnvExitDidntExit() 
             }
 
-        mainCompile (ctok, argv, MSBuildReferenceResolver.Resolver, (*bannerAlreadyPrinted*)false, (*openBinariesInMemory*)false, (*defaultCopyFSharpCore*)true, quitProcessExiter, ConsoleLoggerProvider(), None, None)
+        let legacyReferenceResolver = 
+#if CROSS_PLATFORM_COMPILER
+            SimulatedMSBuildReferenceResolver.SimulatedMSBuildResolver
+#else
+            MSBuildReferenceResolver.Resolver
+#endif
+
+        mainCompile (ctok, argv, legacyReferenceResolver, (*bannerAlreadyPrinted*)false, (*openBinariesInMemory*)false, (*defaultCopyFSharpCore*)true, quitProcessExiter, ConsoleLoggerProvider(), None, None)
         0 
 
 [<EntryPoint>]
