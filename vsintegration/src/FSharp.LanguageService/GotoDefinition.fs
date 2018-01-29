@@ -85,7 +85,7 @@ module internal GotoDefinition =
                               | FSharpFindDeclFailureReason.ProvidedType(typeName) -> String.Format(Strings.GotoDefinitionFailed_ProvidedType(), typeName)
                               | FSharpFindDeclFailureReason.ProvidedMember(name) -> String.Format(Strings.GotoDefinitionFailed_ProvidedMember(), name)
                           GotoDefinitionResult_DEPRECATED.MakeError text
-                      | FSharpFindDeclResult.DeclFound m when FileSystem.SafeExists m.Filename -> 
+                      | FSharpFindDeclResult.DeclFound m when System.IO.File.Exists m.Filename -> 
                           let span = TextSpan (iStartLine = m.StartLine-1, iEndLine = m.StartLine-1, iStartIndex = m.StartColumn, iEndIndex = m.StartColumn) 
                           GotoDefinitionResult_DEPRECATED.MakeSuccess(m.FileName, span)
                       | FSharpFindDeclResult.DeclFound m (* File does not exist *) -> 
