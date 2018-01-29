@@ -1232,7 +1232,8 @@ type TypeCheckInfo
               | _ -> 
               match rangeOfItem g preferFlag item.Item with
               | None                                           -> fail  (FSharpFindDeclFailureReason.Unknown ""                      )
-              | Some itemRange                                 -> found (mkRange filename itemRange.Start itemRange.End              )
+              | Some itemRange                                 -> let filename = fileNameOfItem g (Some projectDir) itemRange item.Item
+                                                                  found (mkRange filename itemRange.Start itemRange.End              )
        )
        (fun msg -> 
            Trace.TraceInformation(sprintf "FCS: recovering from error in GetDeclarationLocation: '%s'" msg)
