@@ -1731,7 +1731,7 @@ val mkILStorageCtor: ILSourceMarker option * ILInstr list * ILType * (string * I
 val mkILSimpleStorageCtor: ILSourceMarker option * ILTypeSpec option * ILType * ILParameter list * (string * ILType) list * MethodAttributes -> ILMethodDef
 val mkILSimpleStorageCtorWithParamNames: ILSourceMarker option * ILTypeSpec option * ILType * ILParameter list * (string * string * ILType) list * MethodAttributes -> ILMethodDef
 
-val mkILDelegateMethods: ILGlobals -> ILType * ILType -> ILParameter list * ILReturn -> ILMethodDef list
+val mkILDelegateMethods: MethodAttributes -> ILGlobals -> ILType * ILType -> ILParameter list * ILReturn -> ILMethodDef list
 
 /// Given a delegate type definition which lies in a particular scope, 
 /// make a reference to its constructor.

@@ -2746,14 +2746,14 @@ let buildILCode (_methName:string) lab2pc instrs tryspecs localspecs : ILCode =
 // Detecting Delegates
 // -------------------------------------------------------------------- 
 
-let mkILDelegateMethods (ilg: ILGlobals) (iltyp_AsyncCallback, iltyp_IAsyncResult) (parms,rtv:ILReturn) = 
+let mkILDelegateMethods (access) (ilg: ILGlobals) (iltyp_AsyncCallback, iltyp_IAsyncResult) (parms,rtv:ILReturn) = 
     let rty = rtv.Type
     let one nm args ret =
-        let mdef = mkILNonGenericVirtualMethod (nm,MethodAttributes.Public,args,mkILReturn ret,MethodBody.Abstract)
+        let mdef = mkILNonGenericVirtualMethod (nm,access,args,mkILReturn ret,MethodBody.Abstract)
         {mdef with 
                    Attributes=(mdef.Attributes ^^^ MethodAttributes.Abstract) ||| MethodAttributes.HideBySig
                    ImplAttributes=mdef.ImplAttributes ||| MethodImplAttributes.Runtime; }
-    let ctor = mkILCtor(MethodAttributes.Public, [ mkILParamNamed("object",ilg.typ_Object); mkILParamNamed("method",ilg.typ_IntPtr) ], MethodBody.Abstract)
+    let ctor = mkILCtor(access, [ mkILParamNamed("object",ilg.typ_Object); mkILParamNamed("method",ilg.typ_IntPtr) ], MethodBody.Abstract)
     let ctor = { ctor with  ImplAttributes=ctor.ImplAttributes ||| MethodImplAttributes.Runtime; Attributes=ctor.Attributes ||| MethodAttributes.HideBySig }
     [ ctor;
       one "Invoke" parms rty;

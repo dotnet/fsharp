@@ -3536,14 +3536,16 @@ and renameMethodDef nameOfOverridingMethod (mdef : ILMethodDef) =
     {mdef with Name=nameOfOverridingMethod }
 
 and fixupMethodImplFlags (mdef:ILMethodDef) = 
-    {mdef with
-               Attributes = MethodAttributes.Private ||| (if mdef.Attributes &&& MethodAttributes.Public <> enum 0 then mdef.Attributes ^^^ MethodAttributes.Public else mdef.Attributes) |||
-                            MethodAttributes.HideBySig |||
-                            (match mdef.IsVirtual with 
-                             | true -> 
-                                (if mdef.IsCheckAccessOnOverride then mdef.Attributes ^^^ MethodAttributes.CheckAccessOnOverride else mdef.Attributes) ||| 
-                                MethodAttributes.Final ||| MethodAttributes.NewSlot
-                             | _ -> failwith "fixupMethodImpl") }
+    let attributes = 
+        MethodAttributes.Private ||| MethodAttributes.HideBySig |||
+        (if mdef.Attributes &&& MethodAttributes.Public <> enum 0 then mdef.Attributes ^^^ MethodAttributes.Public else mdef.Attributes)        
+    { mdef with 
+        Attributes = 
+            attributes |||
+            (if mdef.IsVirtual then
+                (if mdef.IsCheckAccessOnOverride then attributes ^^^ MethodAttributes.CheckAccessOnOverride else attributes) ||| 
+                MethodAttributes.Final ||| MethodAttributes.NewSlot
+            else failwith "fixupMethodImpl") }
 
 and GenObjectMethod cenv eenvinner (cgbuf:CodeGenBuffer) useMethodImpl tmethod =
 
@@ -3568,7 +3570,7 @@ and GenObjectMethod cenv eenvinner (cgbuf:CodeGenBuffer) useMethodImpl tmethod =
         let mdef = 
             mkILGenericVirtualMethod
               (nameOfOverridingMethod,
-               MethodAttributes.Private,
+               MethodAttributes.Public,
                GenGenericParams cenv eenvUnderTypars methTyparsOfOverridingMethod,
                ilParamsOfOverridingMethod,
                ilReturnOfOverridingMethod,
@@ -6538,8 +6540,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                              | [[tsp]] when isUnitTy cenv.g tsp.Type -> [] (* suppress unit arg *)
                              | paraml -> paraml
                          GenActualSlotsig m cenv eenvinner (TSlotSig(nm,typ,ctps,mtps,paraml,returnTy)) [] []
-                     for ilMethodDef in mkILDelegateMethods cenv.g.ilg (cenv.g.iltyp_AsyncCallback, cenv.g.iltyp_IAsyncResult) (p,r) do
-                        yield { ilMethodDef with Attributes=ilMethodDef.Attributes ||| mdAccess }
+                     for ilMethodDef in mkILDelegateMethods mdAccess cenv.g.ilg (cenv.g.iltyp_AsyncCallback, cenv.g.iltyp_IAsyncResult) (p,r) do
+                        yield ilMethodDef
                  | _ -> 
                      ()
               | TUnionRepr _ when not (tycon.HasMember cenv.g "ToString" []) -> 
