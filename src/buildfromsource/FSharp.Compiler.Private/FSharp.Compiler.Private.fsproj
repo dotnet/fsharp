@@ -608,9 +608,6 @@
       <Link>InteractiveSession\fsi.fs</Link>
     </Compile>
 
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\InternalsVisibleTo.fs" Condition="'$(TargetDotnetProfile)' != 'coreclr'">
-      <Link>Misc/InternalsVisibleTo.fs</Link>
-    </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\MSBuildReferenceResolver.fs">
       <Link>Misc/MSBuildReferenceResolver.fs</Link>
     </Compile>
