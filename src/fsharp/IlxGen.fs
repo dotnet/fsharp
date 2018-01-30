@@ -3537,7 +3537,7 @@ and renameMethodDef nameOfOverridingMethod (mdef : ILMethodDef) =
 
 and fixupMethodImplFlags (mdef:ILMethodDef) = 
     {mdef with
-               Attributes = MethodAttributes.Private |||
+               Attributes = MethodAttributes.Private ||| (if mdef.Attributes &&& MethodAttributes.Public <> enum 0 then mdef.Attributes ^^^ MethodAttributes.Public else mdef.Attributes) |||
                             MethodAttributes.HideBySig |||
                             (match mdef.IsVirtual with 
                              | true -> 
@@ -3568,7 +3568,7 @@ and GenObjectMethod cenv eenvinner (cgbuf:CodeGenBuffer) useMethodImpl tmethod =
         let mdef = 
             mkILGenericVirtualMethod
               (nameOfOverridingMethod,
-               MethodAttributes.Public,
+               MethodAttributes.Private,
                GenGenericParams cenv eenvUnderTypars methTyparsOfOverridingMethod,
                ilParamsOfOverridingMethod,
                ilReturnOfOverridingMethod,
@@ -6384,10 +6384,11 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                         Type          = ilPropType
                         Attributes    = access |||
                                         (if isStatic then FieldAttributes.Static else access) ||| 
-                                        (if ilFieldName="value__" && tycon.IsEnumTycon then FieldAttributes.SpecialName else access) |||
+                                        (if ilFieldName="value__" && tycon.IsEnumTycon then FieldAttributes.SpecialName ||| FieldAttributes.RTSpecialName else access) |||
                                         (if ilNotSerialized then FieldAttributes.NotSerialized else access) |||
                                         (if fspec.LiteralValue.IsSome then FieldAttributes.Literal else access) |||
-                                        (if literalValue.IsSome then FieldAttributes.HasDefault else access)
+                                        (if literalValue.IsSome then FieldAttributes.HasDefault else access) |||
+                                        (if ilFieldMarshal.IsSome then FieldAttributes.HasFieldMarshal else access)
                         Data          = None 
                         LiteralValue  = literalValue
                         Offset        = ilFieldOffset

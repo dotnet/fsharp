@@ -1377,8 +1377,7 @@ type ILMethodDef =
       CallingConv: ILCallingConv;
       Parameters: ILParameters;
       Return: ILReturn;
-      mdBody: ILLazyMethodBody;   
-      mdCodeKind: MethodCodeKind;   
+      mdBody: ILLazyMethodBody;
       SecurityDecls: ILPermissions;
       IsEntryPoint:bool;
       GenericParams: ILGenericParameterDefs;
@@ -2355,7 +2354,6 @@ let mkILCtor (access,args,impl) =
       Parameters = args
       Return= mkILVoidReturn;
       mdBody= mkMethBodyAux impl;
-      mdCodeKind=MethodCodeKind.IL;
       SecurityDecls=emptyILSecurityDecls;
       IsEntryPoint=false;
       GenericParams=mkILEmptyGenericParams;
@@ -2398,8 +2396,7 @@ let mkILStaticMethod (genparams,nm,access,args,ret,impl) =
       SecurityDecls=emptyILSecurityDecls;
       IsEntryPoint=false;
       CustomAttrs = emptyILCustomAttrs;
-      mdBody= mkMethBodyAux impl;
-      mdCodeKind=MethodCodeKind.IL; }
+      mdBody= mkMethBodyAux impl; }
 
 let mkILNonGenericStaticMethod (nm,access,args,ret,impl) = 
     mkILStaticMethod (mkILEmptyGenericParams,nm,access,args,ret,impl)
@@ -2415,8 +2412,7 @@ let mkILClassCtor impl =
       IsEntryPoint=false;
       SecurityDecls=emptyILSecurityDecls;
       CustomAttrs = emptyILCustomAttrs;
-      mdBody= mkMethBodyAux impl; 
-      mdCodeKind=MethodCodeKind.IL;  } 
+      mdBody= mkMethBodyAux impl; } 
 
 // -------------------------------------------------------------------- 
 // Make a virtual method, where the overriding is simply the default
@@ -2441,8 +2437,7 @@ let mkILGenericVirtualMethod (nm,access,genparams,actual_args,actual_ret,impl) =
     IsEntryPoint=false;
     SecurityDecls=emptyILSecurityDecls;
     CustomAttrs = emptyILCustomAttrs;
-    mdBody= mkMethBodyAux impl;
-    mdCodeKind=MethodCodeKind.IL; }
+    mdBody= mkMethBodyAux impl; }
     
 let mkILNonGenericVirtualMethod (nm,access,args,ret,impl) =  
   mkILGenericVirtualMethod (nm,access,mkILEmptyGenericParams,args,ret,impl)
@@ -2458,8 +2453,7 @@ let mkILGenericNonVirtualMethod (nm,access,genparams, actual_args,actual_ret, im
     IsEntryPoint=false;
     SecurityDecls=emptyILSecurityDecls;
     CustomAttrs = emptyILCustomAttrs;
-    mdBody= mkMethBodyAux impl;
-    mdCodeKind=MethodCodeKind.IL; }
+    mdBody= mkMethBodyAux impl; }
     
 let mkILNonGenericInstanceMethod (nm,access,args,ret,impl) =  
   mkILGenericNonVirtualMethod (nm,access,mkILEmptyGenericParams,args,ret,impl)
@@ -2536,13 +2530,14 @@ let prependInstrsToClassCtor instrs tag cd =
     cdef_cctorCode2CodeOrCreate tag (prependInstrsToMethod instrs) cd
     
 
-let mkILField (isStatic,nm,ty,(init:ILFieldInit option),at,access,isLiteral) =
+let mkILField (isStatic,nm,ty,(init:ILFieldInit option),(at: byte [] option),access,isLiteral) =
    { Name=nm;
      Type=ty;
      Attributes=access |||
                 (if isStatic then FieldAttributes.Static else access) ||| 
                 (if isLiteral then FieldAttributes.Literal else access) |||
-                (if init.IsSome then FieldAttributes.HasDefault else access)
+                (if init.IsSome then FieldAttributes.HasDefault else access) |||
+                (if at.IsSome then FieldAttributes.HasFieldRVA else access)
      LiteralValue = init;
      Data=at;
      Offset=None;
@@ -2757,9 +2752,9 @@ let mkILDelegateMethods (ilg: ILGlobals) (iltyp_AsyncCallback, iltyp_IAsyncResul
         let mdef = mkILNonGenericVirtualMethod (nm,MethodAttributes.Public,args,mkILReturn ret,MethodBody.Abstract)
         {mdef with 
                    Attributes=(mdef.Attributes ^^^ MethodAttributes.Abstract) ||| MethodAttributes.HideBySig
-                   mdCodeKind=MethodCodeKind.Runtime; }
+                   ImplAttributes=mdef.ImplAttributes ||| MethodImplAttributes.Runtime; }
     let ctor = mkILCtor(MethodAttributes.Public, [ mkILParamNamed("object",ilg.typ_Object); mkILParamNamed("method",ilg.typ_IntPtr) ], MethodBody.Abstract)
-    let ctor = { ctor with  mdCodeKind=MethodCodeKind.Runtime; Attributes=ctor.Attributes ||| MethodAttributes.HideBySig }
+    let ctor = { ctor with  ImplAttributes=ctor.ImplAttributes ||| MethodImplAttributes.Runtime; Attributes=ctor.Attributes ||| MethodAttributes.HideBySig }
     [ ctor;
       one "Invoke" parms rty;
       one "BeginInvoke" (parms @ [mkILParamNamed("callback",iltyp_AsyncCallback); mkILParamNamed("objects",ilg.typ_Object) ] ) iltyp_IAsyncResult;

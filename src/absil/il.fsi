@@ -1035,7 +1035,6 @@ type ILMethodDef =
       Parameters: ILParameters;
       Return: ILReturn;
       mdBody: ILLazyMethodBody;   
-      mdCodeKind: MethodCodeKind;   
       SecurityDecls: ILPermissions;
       IsEntryPoint:bool;
       GenericParams: ILGenericParameterDefs;

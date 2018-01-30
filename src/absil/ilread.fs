@@ -2272,7 +2272,6 @@ and seekReadMethod ctxt numtypars (idx:int) =
        ImplAttributes= enum<MethodImplAttributes>(implflags)
        SecurityDecls=seekReadSecurityDecls ctxt (TaggedIndex(hds_MethodDef, idx))
        IsEntryPoint= (fst ctxt.entryPointToken = TableNames.Method && snd ctxt.entryPointToken = idx)
-       mdCodeKind = (if (codetype = 0x00) then MethodCodeKind.IL elif (codetype = 0x01) then MethodCodeKind.Native elif (codetype = 0x03) then MethodCodeKind.Runtime else MethodCodeKind.Native)
        GenericParams=seekReadGenericParams ctxt numtypars (tomd_MethodDef, idx)
        CustomAttrs=seekReadCustomAttrs ctxt (TaggedIndex(hca_MethodDef, idx)) 
        Parameters= ilParams
