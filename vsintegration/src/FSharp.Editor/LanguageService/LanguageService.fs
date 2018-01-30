@@ -234,12 +234,10 @@ type internal FSharpProjectOptionsManager
             else Path.Combine(Path.GetDirectoryName(path), p)
         let sourcePaths = sources |> Seq.map(fun s -> fullPath s.Path) |> Seq.toArray
         let referencePaths = references |> Seq.map(fun r -> fullPath r.Reference) |> Seq.toArray
-        let result, project = workspace.ProjectTracker.TryGetProjectByBinPath(path)
         let projectId =
-            if result then
-                project.Id
-            else
-                workspace.ProjectTracker.GetOrCreateProjectIdForPath(path, projectDisplayNameOf path)
+            match workspace.ProjectTracker.TryGetProjectByBinPath(path) with
+            | true, project -> project.Id
+            | false, _ -> workspace.ProjectTracker.GetOrCreateProjectIdForPath(path, projectDisplayNameOf path)
         projectOptionsTable.SetOptionsWithProjectId(projectId, sourcePaths, referencePaths, options.ToArray())
         this.UpdateProjectInfoWithProjectId(projectId, "HandleCommandLineChanges", invalidateConfig=true)
 
