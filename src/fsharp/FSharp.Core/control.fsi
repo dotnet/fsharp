@@ -414,6 +414,23 @@ namespace Microsoft.FSharp.Control
         static member StartImmediate: 
             computation:Async<unit> * ?cancellationToken:CancellationToken-> unit
 
+    /// <summary>Opaque type for generated code</summary>
+    type FakeUnitValue
+
+    /// <summary>Opaque type for generated code</summary>
+    [<Sealed>]
+    type AsyncParams<'T> =
+        member IsCancellationRequested: bool
+        member CallSuccessContinuation: 'T -> FakeUnitValue
+        member CallCancellationContinuation: unit -> FakeUnitValue
+
+    [<Sealed>]
+    /// <summary>Entry points for generated code</summary>
+    module AsyncActions =
+        val MakeAsync: f:(AsyncParams<'T> -> FakeUnitValue) -> Async<'T>
+        val UnitAsync: Async<unit>
+        val ExecuteUserCode: args:AsyncParams<'T> -> f:('U -> Async<'T>) -> 'U -> FakeUnitValue
+        val BindUserCode: keepStack: bool -> args:AsyncParams<'T> -> Async<'U> -> f:('U -> Async<'T>) -> FakeUnitValue
 
 
     [<CompiledName("FSharpAsyncBuilder")>]
@@ -441,7 +458,7 @@ namespace Microsoft.FSharp.Control
         /// The existence of this method permits the use of empty <c>else</c> branches in the 
         /// <c>async { ... }</c> computation expression syntax.</remarks>
         /// <returns>An asynchronous computation that returns <c>()</c>.</returns>
-        member Zero : unit -> Async<unit> 
+        member inline Zero : unit -> Async<unit> 
 
         /// <summary>Creates an asynchronous computation that first runs <c>computation1</c>
         /// and then runs <c>computation2</c>, returning the result of <c>computation2</c>.</summary>
@@ -453,7 +470,7 @@ namespace Microsoft.FSharp.Control
         /// <param name="computation1">The first part of the sequenced computation.</param>
         /// <param name="computation2">The second part of the sequenced computation.</param>
         /// <returns>An asynchronous computation that runs both of the computations sequentially.</returns>
-        member Combine : computation1:Async<unit> * computation2:Async<'T> -> Async<'T>
+        member inline Combine : computation1:Async<unit> * computation2:Async<'T> -> Async<'T>
 
         /// <summary>Creates an asynchronous computation that runs <c>computation</c> repeatedly 
         /// until <c>guard()</c> becomes false.</summary>
@@ -476,7 +493,7 @@ namespace Microsoft.FSharp.Control
         /// <c>async { ... }</c> computation expression syntax.</remarks>
         /// <param name="value">The value to return from the computation.</param>
         /// <returns>An asynchronous computation that returns <c>value</c> when executed.</returns>
-        member Return : value:'T -> Async<'T>
+        member inline Return : value:'T -> Async<'T>
 
         /// <summary>Delegates to the input computation.</summary>
         ///
@@ -484,14 +501,14 @@ namespace Microsoft.FSharp.Control
         /// <c>async { ... }</c> computation expression syntax.</remarks>
         /// <param name="computation">The input computation.</param>
         /// <returns>The input computation.</returns>
-        member ReturnFrom : computation:Async<'T> -> Async<'T>
+        member inline ReturnFrom : computation:Async<'T> -> Async<'T>
 
         /// <summary>Creates an asynchronous computation that runs <c>generator</c>.</summary>
         ///
         /// <remarks>A cancellation check is performed when the computation is executed.</remarks>
         /// <param name="generator">The function to run.</param>
         /// <returns>An asynchronous computation that runs <c>generator</c>.</returns>
-        member Delay : generator:(unit -> Async<'T>) -> Async<'T>
+        member inline Delay : generator:(unit -> Async<'T>) -> Async<'T>
 
         /// <summary>Creates an asynchronous computation that runs <c>binder(resource)</c>. 
         /// The action <c>resource.Dispose()</c> is executed as this computation yields its result
@@ -518,7 +535,7 @@ namespace Microsoft.FSharp.Control
         /// <param name="binder">The function to bind the result of <c>computation</c>.</param>
         /// <returns>An asynchronous computation that performs a monadic bind on the result
         /// of <c>computation</c>.</returns>
-        member Bind: computation: Async<'T> * binder: ('T -> Async<'U>) -> Async<'U>
+        member inline Bind: computation: Async<'T> * binder: ('T -> Async<'U>) -> Async<'U>
         
         /// <summary>Creates an asynchronous computation that runs <c>computation</c>. The action <c>compensation</c> is executed 
         /// after <c>computation</c> completes, whether <c>computation</c> exits normally or by an exception. If <c>compensation</c> raises an exception itself
