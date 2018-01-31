@@ -562,7 +562,6 @@ let testToSByteOperator   e1 = sbyte e1
 let testToInt16Operator   e1 = int16 e1
 let testToUInt16Operator  e1 = uint16 e1
 let testToIntOperator     e1 = int e1
-// let testToEnumOperator    e1 = enum e1
 let testToInt32Operator   e1 = int32 e1
 let testToUInt32Operator  e1 = uint32 e1
 let testToInt64Operator   e1 = int64 e1
@@ -571,6 +570,15 @@ let testToSingleOperator  e1 = float32 e1
 let testToDoubleOperator  e1 = float e1
 let testToIntPtrOperator  e1 = nativeint e1
 let testToUIntPtrOperator e1 = unativeint e1
+
+let testHashChar (x:char) = hash x
+let testHashSByte (x:sbyte) = hash x
+let testHashInt16 (x:int16) = hash x
+let testHashInt64 (x:int64) = hash x
+let testHashUInt64 (x:uint64) = hash x
+let testHashIntPtr (x:nativeint) = hash x
+let testHashUIntPtr (x:unativeint) = hash x
+// let testHashString (x:string) = hash x
 
     """
     File.WriteAllText(fileName2, fileSource2)
@@ -733,14 +741,21 @@ let ``Test Declarations project1`` () =
         "let testToInt16Operator(e1) = Operators.ToInt16<Microsoft.FSharp.Core.int> (e1) @ (48,31--48,39)";
         "let testToUInt16Operator(e1) = Operators.ToUInt16<Microsoft.FSharp.Core.int> (e1) @ (49,31--49,40)";
         "let testToIntOperator(e1) = Operators.ToInt<Microsoft.FSharp.Core.int> (e1) @ (50,31--50,37)";
-        "let testToInt32Operator(e1) = Operators.ToInt32<Microsoft.FSharp.Core.int> (e1) @ (52,31--52,39)";
-        "let testToUInt32Operator(e1) = Operators.ToUInt32<Microsoft.FSharp.Core.int> (e1) @ (53,31--53,40)";
-        "let testToInt64Operator(e1) = Operators.ToInt64<Microsoft.FSharp.Core.int> (e1) @ (54,31--54,39)";
-        "let testToUInt64Operator(e1) = Operators.ToUInt64<Microsoft.FSharp.Core.int> (e1) @ (55,31--55,40)";
-        "let testToSingleOperator(e1) = Operators.ToSingle<Microsoft.FSharp.Core.int> (e1) @ (56,31--56,41)";
-        "let testToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.int> (e1) @ (57,31--57,39)";
-        "let testToIntPtrOperator(e1) = Operators.ToIntPtr<Microsoft.FSharp.Core.int> (e1) @ (58,31--58,43)";
-        "let testToUIntPtrOperator(e1) = Operators.ToUIntPtr<Microsoft.FSharp.Core.int> (e1) @ (59,31--59,44)" ]
+        "let testToInt32Operator(e1) = Operators.ToInt32<Microsoft.FSharp.Core.int> (e1) @ (51,31--51,39)";
+        "let testToUInt32Operator(e1) = Operators.ToUInt32<Microsoft.FSharp.Core.int> (e1) @ (52,31--52,40)";
+        "let testToInt64Operator(e1) = Operators.ToInt64<Microsoft.FSharp.Core.int> (e1) @ (53,31--53,39)";
+        "let testToUInt64Operator(e1) = Operators.ToUInt64<Microsoft.FSharp.Core.int> (e1) @ (54,31--54,40)";
+        "let testToSingleOperator(e1) = Operators.ToSingle<Microsoft.FSharp.Core.int> (e1) @ (55,31--55,41)";
+        "let testToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.int> (e1) @ (56,31--56,39)";
+        "let testToIntPtrOperator(e1) = Operators.ToIntPtr<Microsoft.FSharp.Core.int> (e1) @ (57,31--57,43)";
+        "let testToUIntPtrOperator(e1) = Operators.ToUIntPtr<Microsoft.FSharp.Core.int> (e1) @ (58,31--58,44)";
+        "let testHashChar(x) = Operators.Hash<Microsoft.FSharp.Core.char> (x) @ (60,28--60,34)";
+        "let testHashSByte(x) = Operators.Hash<Microsoft.FSharp.Core.sbyte> (x) @ (61,30--61,36)";
+        "let testHashInt16(x) = Operators.Hash<Microsoft.FSharp.Core.int16> (x) @ (62,30--62,36)";
+        "let testHashInt64(x) = Operators.Hash<Microsoft.FSharp.Core.int64> (x) @ (63,30--63,36)";
+        "let testHashUInt64(x) = Operators.Hash<Microsoft.FSharp.Core.uint64> (x) @ (64,32--64,38)";
+        "let testHashIntPtr(x) = Operators.Hash<Microsoft.FSharp.Core.nativeint> (x) @ (65,35--65,41)";
+        "let testHashUIntPtr(x) = Operators.Hash<Microsoft.FSharp.Core.unativeint> (x) @ (66,37--66,43)" ]
 
     printDeclarations None (List.ofSeq file1.Declarations) 
       |> Seq.toList 
@@ -921,14 +936,21 @@ let ``Test Optimized Declarations Project1`` () =
             "let testToInt16Operator(e1) = Operators.ToInt16<Microsoft.FSharp.Core.int> (e1) @ (48,31--48,39)";
             "let testToUInt16Operator(e1) = Operators.ToUInt16<Microsoft.FSharp.Core.int> (e1) @ (49,31--49,40)";
             "let testToIntOperator(e1) = e1 @ (50,35--50,37)";
-            "let testToInt32Operator(e1) = e1 @ (52,37--52,39)";
-            "let testToUInt32Operator(e1) = e1 @ (53,31--53,40)";
-            "let testToInt64Operator(e1) = Operators.ToInt64<Microsoft.FSharp.Core.int> (e1) @ (54,31--54,39)";
-            "let testToUInt64Operator(e1) = Operators.ToInt64<Microsoft.FSharp.Core.int> (e1) @ (55,31--55,40)";
-            "let testToSingleOperator(e1) = Operators.ToSingle<Microsoft.FSharp.Core.int> (e1) @ (56,31--56,41)";
-            "let testToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.int> (e1) @ (57,31--57,39)";
-            "let testToIntPtrOperator(e1) = Operators.ToIntPtr<Microsoft.FSharp.Core.int> (e1) @ (58,31--58,43)";
-            "let testToUIntPtrOperator(e1) = Operators.ToIntPtr<Microsoft.FSharp.Core.int> (e1) @ (59,31--59,44)" ]
+            "let testToInt32Operator(e1) = e1 @ (51,37--51,39)";
+            "let testToUInt32Operator(e1) = e1 @ (52,31--52,40)";
+            "let testToInt64Operator(e1) = Operators.ToInt64<Microsoft.FSharp.Core.int> (e1) @ (53,31--53,39)";
+            "let testToUInt64Operator(e1) = Operators.ToInt64<Microsoft.FSharp.Core.int> (e1) @ (54,31--54,40)";
+            "let testToSingleOperator(e1) = Operators.ToSingle<Microsoft.FSharp.Core.int> (e1) @ (55,31--55,41)";
+            "let testToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.int> (e1) @ (56,31--56,39)";
+            "let testToIntPtrOperator(e1) = Operators.ToIntPtr<Microsoft.FSharp.Core.int> (e1) @ (57,31--57,43)";
+            "let testToUIntPtrOperator(e1) = Operators.ToIntPtr<Microsoft.FSharp.Core.int> (e1) @ (58,31--58,44)";
+            "let testHashChar(x) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.int> (Operators.op_LeftShift<Microsoft.FSharp.Core.char> (x,16),x) @ (60,28--60,34)";
+            "let testHashSByte(x) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int> (Operators.op_LeftShift<Microsoft.FSharp.Core.sbyte> (x,8),x) @ (61,30--61,36)";
+            "let testHashInt16(x) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.int> (Operators.ToUInt16<Microsoft.FSharp.Core.int16> (x),Operators.op_LeftShift<Microsoft.FSharp.Core.int16> (x,16)) @ (62,30--62,36)";
+            "let testHashInt64(x) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int> (Operators.ToInt32<Microsoft.FSharp.Core.int64> (x),Operators.ToInt32<Microsoft.FSharp.Core.int> (Operators.op_RightShift<Microsoft.FSharp.Core.int64> (x,32))) @ (63,30--63,36)";
+            "let testHashUInt64(x) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int> (Operators.ToInt32<Microsoft.FSharp.Core.uint64> (x),Operators.ToInt32<Microsoft.FSharp.Core.int> (Operators.op_RightShift<Microsoft.FSharp.Core.uint64> (x,32))) @ (64,32--64,38)";
+            "let testHashIntPtr(x) = Operators.ToInt32<Microsoft.FSharp.Core.uint64> (Operators.ToUInt64<Microsoft.FSharp.Core.nativeint> (x)) @ (65,35--65,41)";
+            "let testHashUIntPtr(x) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (Operators.ToInt32<Microsoft.FSharp.Core.uint64> (Operators.ToUInt64<Microsoft.FSharp.Core.unativeint> (x)),2147483647) @ (66,37--66,43)"]
 
     printDeclarations None (List.ofSeq file1.Declarations) 
       |> Seq.toList 

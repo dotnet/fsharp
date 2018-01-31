@@ -625,7 +625,6 @@ module FSharpExprConvert =
 
             | TOp.ILAsm([ AI_ldnull; AI_cgt_un ], _), _, [arg] -> 
                 let elemTy = tyOfExpr cenv.g arg
-                // let op = mkCallIsNotNull cenv.g m elemTy arg
                 let nullVal = mkNull m elemTy
                 let op = mkCallNotEqualsOperator cenv.g m elemTy arg nullVal
                 ConvExprPrim cenv env op
@@ -657,7 +656,12 @@ module FSharpExprConvert =
                 let op = binaryOp cenv.g m ty arg1 arg2
                 ConvExprPrim cenv env op
 
-            | TOp.ILAsm([ ILConvertOp _ ; ILConvertOp convertOp ], _), _, [arg]
+            | TOp.ILAsm([ ILConvertOp convertOp1; ILConvertOp convertOp2 ], _), [ty2], [arg] -> 
+                let ty1 = tyOfExpr cenv.g arg
+                let op1 = convertOp1 cenv.g m ty1 arg
+                let op2 = convertOp2 cenv.g m ty2 op1
+                ConvExprPrim cenv env op2
+
             | TOp.ILAsm([ ILConvertOp convertOp ], _), _, [arg] -> 
                 let ty = tyOfExpr cenv.g arg
                 let op = convertOp cenv.g m ty arg
