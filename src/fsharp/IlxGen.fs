@@ -3782,7 +3782,7 @@ and GenLambdaClosure cenv (cgbuf:CodeGenBuffer) eenv isLocalTypeFunc selfv expr 
                 let ilContractTypeDef = 
                     { Name = ilContractTypeRef.Name 
                       Layout = ILTypeDefLayout.Auto
-                      Attributes =  (if ilContractTypeRefAttribute &&& TypeAttributes.HasSecurity <> enum 0 then ilContractTypeRefAttribute ^^^ TypeAttributes.HasSecurity else ilContractTypeRefAttribute) ||| TypeAttributes.Abstract ||| TypeAttributes.Serializable ||| TypeAttributes.SpecialName ||| TypeAttributes.BeforeFieldInit ||| TypeAttributes.AutoClass // the contract type is an abstract type and not sealed
+                      Attributes = ilContractTypeRefAttribute ||| TypeAttributes.Abstract ||| TypeAttributes.Serializable ||| TypeAttributes.SpecialName ||| TypeAttributes.BeforeFieldInit ||| TypeAttributes.AutoLayout // the contract type is an abstract type and not sealed
                       GenericParams = ilContractGenericParams
                       CustomAttrs = mkILCustomAttrs [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Closure) ]
                       Fields = emptyILFields
@@ -5239,7 +5239,7 @@ and GenMethodForBinding
                 IsEntryPoint = isExplicitEntryPoint
                 Attributes = 
                     (if securityAttributes.Length > 0 then mdef.Attributes ||| MethodAttributes.HasSecurity elif mdef.HasSecurity then mdef.Attributes ^^^ MethodAttributes.HasSecurity else mdef.Attributes) |||
-                    (if hasPreserveSigImplFlag || hasPreserveSigNamedArg || hasDllImport then MethodAttributes.PinvokeImpl else mdef.Attributes)
+                    (if hasDllImport then MethodAttributes.PinvokeImpl else mdef.Attributes)
                 SecurityDecls = secDecls }
 
         let mdef = 
