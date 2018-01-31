@@ -205,15 +205,15 @@ module FSharpExprConvert =
 
     let (|ILBinaryOp|_|) e = 
         match e with 
-        | AI_add
+        | AI_add        -> Some mkCallAdditionOperator
         | AI_add_ovf
-        | AI_add_ovf_un -> Some mkCallAdditionOperator
-        | AI_sub
+        | AI_add_ovf_un -> Some mkCallAdditionChecked
+        | AI_sub        -> Some mkCallSubtractionOperator
         | AI_sub_ovf
-        | AI_sub_ovf_un -> Some mkCallSubtractionOperator
-        | AI_mul
+        | AI_sub_ovf_un -> Some mkCallSubtractionChecked
+        | AI_mul        -> Some mkCallMultiplyOperator
         | AI_mul_ovf
-        | AI_mul_ovf_un -> Some mkCallMultiplyOperator
+        | AI_mul_ovf_un -> Some mkCallMultiplyChecked
         | AI_div
         | AI_div_un     -> Some mkCallDivisionOperator
         | AI_rem
@@ -233,9 +233,7 @@ module FSharpExprConvert =
 
     let (|ILConvertOp|_|) e = 
         match e with 
-        | AI_conv basicTy
-        | AI_conv_ovf basicTy
-        | AI_conv_ovf_un basicTy ->
+        | AI_conv basicTy ->
             match basicTy with
             | DT_R  -> Some mkCallToDoubleOperator
             | DT_I1 -> Some mkCallToSByteOperator
@@ -243,13 +241,30 @@ module FSharpExprConvert =
             | DT_I2 -> Some mkCallToInt16Operator
             | DT_U2 -> Some mkCallToUInt16Operator
             | DT_I4 -> Some mkCallToInt32Operator
-            | DT_U4 -> Some mkCallToUInt32Operator 
+            | DT_U4 -> Some mkCallToUInt32Operator
             | DT_I8 -> Some mkCallToInt64Operator
             | DT_U8 -> Some mkCallToUInt64Operator
             | DT_R4 -> Some mkCallToSingleOperator
             | DT_R8 -> Some mkCallToDoubleOperator
             | DT_I  -> Some mkCallToIntPtrOperator
             | DT_U  -> Some mkCallToUIntPtrOperator
+            | DT_REF -> None
+        | AI_conv_ovf basicTy
+        | AI_conv_ovf_un basicTy ->
+            match basicTy with
+            | DT_R  -> Some mkCallToDoubleOperator
+            | DT_I1 -> Some mkCallToSByteChecked
+            | DT_U1 -> Some mkCallToByteChecked
+            | DT_I2 -> Some mkCallToInt16Checked
+            | DT_U2 -> Some mkCallToUInt16Checked
+            | DT_I4 -> Some mkCallToInt32Checked
+            | DT_U4 -> Some mkCallToUInt32Checked
+            | DT_I8 -> Some mkCallToInt64Checked
+            | DT_U8 -> Some mkCallToUInt64Checked
+            | DT_R4 -> Some mkCallToSingleOperator
+            | DT_R8 -> Some mkCallToDoubleOperator
+            | DT_I  -> Some mkCallToIntPtrChecked
+            | DT_U  -> Some mkCallToUIntPtrChecked
             | DT_REF -> None
         | _ -> None
 

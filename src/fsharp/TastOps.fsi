@@ -1237,6 +1237,23 @@ val mkCallShiftRightOperator                 : TcGlobals -> range -> TType -> Ex
 val mkCallUnaryNegOperator                   : TcGlobals -> range -> TType -> Expr -> Expr
 val mkCallUnaryNotOperator                   : TcGlobals -> range -> TType -> Expr -> Expr
 
+val mkCallAdditionChecked                    : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+val mkCallSubtractionChecked                 : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+val mkCallMultiplyChecked                    : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+val mkCallUnaryNegChecked                    : TcGlobals -> range -> TType -> Expr -> Expr
+
+val mkCallToByteChecked                      : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToSByteChecked                     : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToInt16Checked                     : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToUInt16Checked                    : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToIntChecked                       : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToInt32Checked                     : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToUInt32Checked                    : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToInt64Checked                     : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToUInt64Checked                    : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToIntPtrChecked                    : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToUIntPtrChecked                   : TcGlobals -> range -> TType -> Expr -> Expr
+
 val mkCallToByteOperator                     : TcGlobals -> range -> TType -> Expr -> Expr
 val mkCallToSByteOperator                    : TcGlobals -> range -> TType -> Expr -> Expr
 val mkCallToInt16Operator                    : TcGlobals -> range -> TType -> Expr -> Expr

@@ -573,6 +573,23 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_unchecked_unary_minus_info = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_UnaryNegation"                     , None                 , None          , [vara],     mk_unop_ty varaTy)  
   let v_unchecked_unary_not_info   = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "not"                                  , None                 , Some "Not"    , [],     mk_unop_ty v_bool_ty)  
 
+  let v_checked_addition_info      = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "op_Addition"                          , None                 , None          , [vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)  
+  let v_checked_subtraction_info   = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "op_Subtraction"                       , None                 , None          , [vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)  
+  let v_checked_multiply_info      = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "op_Multiply"                          , None                 , None          , [vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)  
+  let v_checked_unary_minus_info   = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "op_UnaryNegation"                     , None                 , None          , [vara],     mk_unop_ty varaTy)  
+
+  let v_byte_checked_info          = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "byte"                                 , None                 , Some "ToByte",    [vara],   ([[varaTy]], v_byte_ty)) 
+  let v_sbyte_checked_info         = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "sbyte"                                , None                 , Some "ToSByte",   [vara],   ([[varaTy]], v_sbyte_ty)) 
+  let v_int16_checked_info         = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "int16"                                , None                 , Some "ToInt16",   [vara],   ([[varaTy]], v_int16_ty)) 
+  let v_uint16_checked_info        = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "uint16"                               , None                 , Some "ToUInt16",  [vara],   ([[varaTy]], v_uint16_ty)) 
+  let v_int_checked_info           = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "int"                                  , None                 , Some "ToInt",     [vara],   ([[varaTy]], v_int_ty)) 
+  let v_int32_checked_info         = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "int32"                                , None                 , Some "ToInt32",   [vara],   ([[varaTy]], v_int32_ty)) 
+  let v_uint32_checked_info        = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "uint32"                               , None                 , Some "ToUInt32",  [vara],   ([[varaTy]], v_uint32_ty)) 
+  let v_int64_checked_info         = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "int64"                                , None                 , Some "ToInt64",   [vara],   ([[varaTy]], v_int64_ty)) 
+  let v_uint64_checked_info        = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "uint64"                               , None                 , Some "ToUInt64",  [vara],   ([[varaTy]], v_uint64_ty)) 
+  let v_nativeint_checked_info     = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "nativeint"                            , None                 , Some "ToIntPtr",  [vara],   ([[varaTy]], v_nativeint_ty)) 
+  let v_unativeint_checked_info    = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "unativeint"                           , None                 , Some "ToUIntPtr", [vara],   ([[varaTy]], v_unativeint_ty))
+
   let v_byte_operator_info         = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "byte"                                 , None                 , Some "ToByte",    [vara],   ([[varaTy]], v_byte_ty)) 
   let v_sbyte_operator_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "sbyte"                                , None                 , Some "ToSByte",   [vara],   ([[varaTy]], v_sbyte_ty)) 
   let v_int16_operator_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "int16"                                , None                 , Some "ToInt16",   [vara],   ([[varaTy]], v_int16_ty)) 
@@ -1144,6 +1161,23 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.unchecked_unary_plus_info  = v_unchecked_unary_plus_info
   member __.unchecked_unary_minus_info = v_unchecked_unary_minus_info
   member __.unchecked_unary_not_info   = v_unchecked_unary_not_info
+
+  member __.checked_addition_info      = v_checked_addition_info
+  member __.checked_subtraction_info   = v_checked_subtraction_info
+  member __.checked_multiply_info      = v_checked_multiply_info
+  member __.checked_unary_minus_info   = v_checked_unary_minus_info
+
+  member __.byte_checked_info          = v_byte_checked_info
+  member __.sbyte_checked_info         = v_sbyte_checked_info
+  member __.int16_checked_info         = v_int16_checked_info
+  member __.uint16_checked_info        = v_uint16_checked_info
+  member __.int_checked_info           = v_int_checked_info
+  member __.int32_checked_info         = v_int32_checked_info
+  member __.uint32_checked_info        = v_uint32_checked_info
+  member __.int64_checked_info         = v_int64_checked_info
+  member __.uint64_checked_info        = v_uint64_checked_info
+  member __.nativeint_checked_info     = v_nativeint_checked_info
+  member __.unativeint_checked_info    = v_unativeint_checked_info
 
   member __.byte_operator_info       = v_byte_operator_info
   member __.sbyte_operator_info      = v_sbyte_operator_info
