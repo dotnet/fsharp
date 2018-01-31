@@ -1640,19 +1640,6 @@ and typeLayoutOfFlags ctxt flags tidx =
     elif f = 0x00000010 then  ILTypeDefLayout.Explicit (seekReadClassLayout ctxt tidx)
     else ILTypeDefLayout.Auto
 
-and typeKindOfFlags nm _mdefs _fdefs (super:ILType option) flags =
-    if (flags &&& 0x00000020) <> 0x0 then ILTypeDefKind.Interface 
-    else 
-         let isEnum = (match super with None -> false | Some ty -> ty.TypeSpec.Name = "System.Enum")
-         let isDelegate = (match super with None -> false | Some ty -> ty.TypeSpec.Name = "System.Delegate")
-         let isMulticastDelegate = (match super with None -> false | Some ty -> ty.TypeSpec.Name = "System.MulticastDelegate")
-         let selfIsMulticastDelegate = nm = "System.MulticastDelegate"
-         let isValueType = (match super with None -> false | Some ty -> ty.TypeSpec.Name = "System.ValueType" && nm <> "System.Enum")
-         if isEnum then ILTypeDefKind.Enum 
-         elif  (isDelegate && not selfIsMulticastDelegate) || isMulticastDelegate then ILTypeDefKind.Delegate
-         elif isValueType then ILTypeDefKind.ValueType 
-         else ILTypeDefKind.Class 
-
 and isTopTypeDef flags =
     (typeAccessOfFlags flags =  ILTypeDefAccess.Private) ||
      typeAccessOfFlags flags =  ILTypeDefAccess.Public

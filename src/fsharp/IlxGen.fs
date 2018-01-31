@@ -4759,7 +4759,7 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) sta
             let ilFieldDef = mkILStaticField (fspec.Name, fty, None, None, access)
             let ilFieldDef =
                 match vref.LiteralValue with 
-                | Some konst -> { ilFieldDef with Attributes = ilFieldDef.Attributes ||| FieldAttributes.Literal; LiteralValue = Some(GenFieldInit m konst) }
+                | Some konst -> { ilFieldDef with Attributes = ilFieldDef.Attributes ||| FieldAttributes.HasDefault; LiteralValue = Some(GenFieldInit m konst) }
                 | None  -> ilFieldDef 
               
             let ilFieldDef = 
@@ -5230,13 +5230,16 @@ and GenMethodForBinding
         
         let mdef = 
             {mdef with 
-                ImplAttributes = mdef.ImplAttributes |||
-                                 (if hasPreserveSigImplFlag || hasPreserveSigNamedArg then MethodImplAttributes.PreserveSig else mdef.ImplAttributes) |||
-                                 (if hasSynchronizedImplFlag then MethodImplAttributes.Synchronized else mdef.ImplAttributes) |||
-                                 (if hasNoInliningFlag then MethodImplAttributes.NoInlining else mdef.ImplAttributes) |||
-                                 (if hasAggressiveInliningImplFlag then MethodImplAttributes.AggressiveInlining else mdef.ImplAttributes)
+                ImplAttributes = 
+                    mdef.ImplAttributes |||
+                    (if hasPreserveSigImplFlag || hasPreserveSigNamedArg then MethodImplAttributes.PreserveSig else mdef.ImplAttributes) |||
+                    (if hasSynchronizedImplFlag then MethodImplAttributes.Synchronized else mdef.ImplAttributes) |||
+                    (if hasNoInliningFlag then MethodImplAttributes.NoInlining else mdef.ImplAttributes) |||
+                    (if hasAggressiveInliningImplFlag then MethodImplAttributes.AggressiveInlining else mdef.ImplAttributes)
                 IsEntryPoint = isExplicitEntryPoint
-                Attributes = if securityAttributes.Length > 0 then mdef.Attributes ||| MethodAttributes.HasSecurity elif mdef.HasSecurity then mdef.Attributes ^^^ MethodAttributes.HasSecurity else mdef.Attributes
+                Attributes = 
+                    (if securityAttributes.Length > 0 then mdef.Attributes ||| MethodAttributes.HasSecurity elif mdef.HasSecurity then mdef.Attributes ^^^ MethodAttributes.HasSecurity else mdef.Attributes) |||
+                    (if hasPreserveSigImplFlag || hasPreserveSigNamedArg then MethodAttributes.PinvokeImpl else mdef.Attributes)
                 SecurityDecls = secDecls }
 
         let mdef = 
