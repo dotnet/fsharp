@@ -3735,7 +3735,7 @@ and GenClosureTypeDefs cenv (tref:ILTypeRef, ilGenParams, attrs, ilCloFreeVars, 
   let td = 
     { Name = tref.Name 
       Layout = ILTypeDefLayout.Auto
-      Attributes = (if trefAttributes &&& TypeAttributes.HasSecurity <> enum 0 then trefAttributes ^^^ TypeAttributes.HasSecurity else trefAttributes) ||| TypeAttributes.Sealed ||| TypeAttributes.Serializable ||| TypeAttributes.SpecialName ||| TypeAttributes.BeforeFieldInit ||| TypeAttributes.AutoClass
+      Attributes = trefAttributes ||| TypeAttributes.Sealed ||| TypeAttributes.Serializable ||| TypeAttributes.SpecialName ||| TypeAttributes.BeforeFieldInit ||| TypeAttributes.AutoLayout
       GenericParams = ilGenParams
       CustomAttrs = mkILCustomAttrs(attrs @ [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Closure) ])
       Fields = emptyILFields
@@ -6707,7 +6707,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                let tdef = 
                    { Name = ilTypeName
                      Layout =  layout
-                     Attributes = access ||| TypeAttributes.Sealed ||| (if isSerializable then TypeAttributes.Serializable else access) ||| TypeAttributes.BeforeFieldInit ||| TypeAttributes.AutoClass ||| layoutAttributes
+                     Attributes = access ||| TypeAttributes.Sealed ||| (if isSerializable then TypeAttributes.Serializable else access) ||| TypeAttributes.BeforeFieldInit ||| layoutAttributes ||| TypeAttributes.AutoClass
                      GenericParams = ilGenParams
                      CustomAttrs = 
                          mkILCustomAttrs (ilCustomAttrs @ 

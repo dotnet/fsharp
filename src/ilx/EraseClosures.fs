@@ -481,7 +481,13 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
               let cloTypeDef = 
                 { Name = td.Name
                   GenericParams= td.GenericParams
-                  Attributes = (if td.HasSecurity then td.Attributes ^^^ TypeAttributes.HasSecurity else td.Attributes) ||| TypeAttributes.Sealed ||| (if td.IsSerializable then TypeAttributes.Serializable else TypeAttributes.Sealed) ||| TypeAttributes.BeforeFieldInit ||| TypeAttributes.AnsiClass
+                  Attributes = 
+                    (if td.HasSecurity then td.Attributes ^^^ TypeAttributes.HasSecurity else td.Attributes) ||| 
+                    (if td.IsSerializable then TypeAttributes.Serializable else TypeAttributes.Sealed) |||
+                    (if td.IsSpecialName then td.Attributes ^^^ TypeAttributes.SpecialName else TypeAttributes.Sealed) |||
+                    (if td.IsAbstract then td.Attributes ^^^ TypeAttributes.Abstract else TypeAttributes.Sealed) |||
+                    (if td.IsComInterop then td.Attributes ^^^ TypeAttributes.Import else TypeAttributes.Sealed) |||
+                    TypeAttributes.Sealed ||| TypeAttributes.BeforeFieldInit ||| TypeAttributes.AnsiClass
                   Implements = List.empty
                   NestedTypes = emptyILTypeDefs
                   Layout=ILTypeDefLayout.Auto
@@ -572,7 +578,13 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
 
                     { Name = td.Name
                       GenericParams= td.GenericParams
-                      Attributes = (if td.HasSecurity then td.Attributes ^^^ TypeAttributes.HasSecurity else td.Attributes) ||| TypeAttributes.Sealed ||| (if td.IsSerializable then TypeAttributes.Serializable else TypeAttributes.Sealed) ||| TypeAttributes.BeforeFieldInit ||| TypeAttributes.AnsiClass
+                      Attributes = 
+                        (if td.HasSecurity then td.Attributes ^^^ TypeAttributes.HasSecurity else td.Attributes) ||| 
+                        (if td.IsSerializable then TypeAttributes.Serializable else TypeAttributes.Sealed) |||
+                        (if td.IsSpecialName then td.Attributes ^^^ TypeAttributes.SpecialName else TypeAttributes.Sealed) |||
+                        (if td.IsAbstract then td.Attributes ^^^ TypeAttributes.Abstract else TypeAttributes.Sealed) |||
+                        (if td.IsComInterop then td.Attributes ^^^ TypeAttributes.Import else TypeAttributes.Sealed) |||
+                        TypeAttributes.Sealed ||| TypeAttributes.BeforeFieldInit ||| TypeAttributes.AnsiClass
                       Implements = []
                       Layout=ILTypeDefLayout.Auto
                       NestedTypes = emptyILTypeDefs 
