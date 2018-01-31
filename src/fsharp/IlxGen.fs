@@ -5163,7 +5163,7 @@ and GenMethodForBinding
 
     // Now generate the code.
 
-    let hasPreserveSigNamedArg,ilMethodBody,_hasDllImport = 
+    let hasPreserveSigNamedArg,ilMethodBody,hasDllImport = 
         match TryFindFSharpAttributeOpt cenv.g cenv.g.attrib_DllImportAttribute v.Attribs with
         | Some (Attrib(_,_,[ AttribStringArg(dll) ],namedArgs,_,_,m))  -> 
             if not (isNil tps) then error(Error(FSComp.SR.ilSignatureForExternalFunctionContainsTypeParameters(),m)) 
@@ -5239,7 +5239,7 @@ and GenMethodForBinding
                 IsEntryPoint = isExplicitEntryPoint
                 Attributes = 
                     (if securityAttributes.Length > 0 then mdef.Attributes ||| MethodAttributes.HasSecurity elif mdef.HasSecurity then mdef.Attributes ^^^ MethodAttributes.HasSecurity else mdef.Attributes) |||
-                    (if hasPreserveSigImplFlag || hasPreserveSigNamedArg then MethodAttributes.PinvokeImpl else mdef.Attributes)
+                    (if hasPreserveSigImplFlag || hasPreserveSigNamedArg || hasDllImport then MethodAttributes.PinvokeImpl else mdef.Attributes)
                 SecurityDecls = secDecls }
 
         let mdef = 

@@ -409,8 +409,8 @@ let output_type_access os access =
   | ILTypeDefAccess.Private  -> output_string os "private"
   | ILTypeDefAccess.Nested  ilMemberAccess -> output_string os "nested "; output_member_access os ilMemberAccess
 
-let output_encoding os (e:ILTypeDef) = 
-  match e.Encoding with 
+let output_encoding os e = 
+  match e with 
   | ILDefaultPInvokeEncoding.Ansi -> output_string os " ansi "
   | ILDefaultPInvokeEncoding.Auto  -> output_string os " autochar "
   | ILDefaultPInvokeEncoding.Unicode -> output_string os " unicode "
@@ -910,7 +910,7 @@ let rec goutput_tdef (enc) env contents os cd =
       output_string os " ";
       output_type_access os cd.Access;
       output_string os " ";
-      output_encoding os cd;
+      output_encoding os cd.Encoding;
       output_string os " ";
       output_string os layout_attr;
       output_string os " ";
