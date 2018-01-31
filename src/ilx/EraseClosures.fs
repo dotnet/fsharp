@@ -478,15 +478,16 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                      MethodAttributes.Assembly)
                    |> cenv.addMethodGeneratedAttrs 
 
+              let securityAttributes = (if td.HasSecurity then td.Attributes ^^^ TypeAttributes.HasSecurity else td.Attributes)
+              let specialNameAttributes = (if td.IsSpecialName then securityAttributes ^^^ TypeAttributes.SpecialName else TypeAttributes.Sealed)
+              let abstractAttributes = (if td.IsAbstract then specialNameAttributes ^^^ TypeAttributes.Abstract else TypeAttributes.Sealed)
+              let comInteropAttributes = (if td.IsComInterop then abstractAttributes ^^^ TypeAttributes.Import else TypeAttributes.Sealed)
               let cloTypeDef = 
                 { Name = td.Name
                   GenericParams= td.GenericParams
                   Attributes = 
-                    (if td.HasSecurity then td.Attributes ^^^ TypeAttributes.HasSecurity else td.Attributes) ||| 
+                    comInteropAttributes |||
                     (if td.IsSerializable then TypeAttributes.Serializable else TypeAttributes.Sealed) |||
-                    (if td.IsSpecialName then td.Attributes ^^^ TypeAttributes.SpecialName else TypeAttributes.Sealed) |||
-                    (if td.IsAbstract then td.Attributes ^^^ TypeAttributes.Abstract else TypeAttributes.Sealed) |||
-                    (if td.IsComInterop then td.Attributes ^^^ TypeAttributes.Import else TypeAttributes.Sealed) |||
                     TypeAttributes.Sealed ||| TypeAttributes.BeforeFieldInit ||| TypeAttributes.AnsiClass
                   Implements = List.empty
                   NestedTypes = emptyILTypeDefs
@@ -576,14 +577,15 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                             MethodAttributes.Assembly)
                         |> cenv.addMethodGeneratedAttrs 
 
+                    let securityAttributes = (if td.HasSecurity then td.Attributes ^^^ TypeAttributes.HasSecurity else td.Attributes)
+                    let specialNameAttributes = (if td.IsSpecialName then securityAttributes ^^^ TypeAttributes.SpecialName else TypeAttributes.Sealed)
+                    let abstractAttributes = (if td.IsAbstract then specialNameAttributes ^^^ TypeAttributes.Abstract else TypeAttributes.Sealed)
+                    let comInteropAttributes = (if td.IsComInterop then abstractAttributes ^^^ TypeAttributes.Import else TypeAttributes.Sealed)
                     { Name = td.Name
                       GenericParams= td.GenericParams
                       Attributes = 
-                        (if td.HasSecurity then td.Attributes ^^^ TypeAttributes.HasSecurity else td.Attributes) ||| 
+                        comInteropAttributes |||
                         (if td.IsSerializable then TypeAttributes.Serializable else TypeAttributes.Sealed) |||
-                        (if td.IsSpecialName then td.Attributes ^^^ TypeAttributes.SpecialName else TypeAttributes.Sealed) |||
-                        (if td.IsAbstract then td.Attributes ^^^ TypeAttributes.Abstract else TypeAttributes.Sealed) |||
-                        (if td.IsComInterop then td.Attributes ^^^ TypeAttributes.Import else TypeAttributes.Sealed) |||
                         TypeAttributes.Sealed ||| TypeAttributes.BeforeFieldInit ||| TypeAttributes.AnsiClass
                       Implements = []
                       Layout=ILTypeDefLayout.Auto
