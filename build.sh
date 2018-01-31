@@ -294,7 +294,7 @@ _nugetexe="mono .nuget/NuGet.exe"
 if command -v nuget > /dev/null; then
     _nugetexe="nuget"
 fi
-_nugetconfig=".nuget/NuGet.Config"
+_nugetconfig="./NuGet.Config"
 
 # TODO: Confirm existence of 'nuget' (or $_nugetexe) before proceeding.
 
@@ -333,10 +333,15 @@ fi
 
 # TODO: Check for existence of fsi (either on the system, or from the FSharp.Compiler.Tools package that was restored).
 
+# Prepare FsLex and FsYacc
+{ printeval "$_msbuildexe $msbuildflags src/buildtools/FsLexYacc.proj /t:Restore"; } || failwith "Restoring FsLexYacc failed"
+{ printeval "$_msbuildexe $msbuildflags src/buildtools/FsLexYacc.proj /t:Build"; } || failwith "Building FsLexYacc failed"
+{ printeval "$_msbuildexe $msbuildflags src/buildtools/FsLexYacc.proj /t:Publish"; } || failwith "Publishing FsLexYacc failed"
+
 build_status "Done with package restore, starting proto"
 
 # Decide if Proto need building
-if [ ! -f "Proto/net40/bin/fsc-proto.exe" ]; then
+if [ ! -f "Proto/net40/bin/fsc.exe" ]; then
   export BUILD_PROTO=1
 fi
 
@@ -347,6 +352,8 @@ _architecture=win7-x64
 if [ "$BUILD_PROTO" = "1" ]; then
     rm -rfd Proto
 
+    { printeval "$_msbuildexe $msbuildflags src/fsharp-proto-build.proj /t:Restore"; } || failwith "restoring fsharp-proto-build.proj failed"
+
     if [ "$BUILD_PROTO_WITH_CORECLR_LKG" = "1" ]; then
         { pushd ./lkg/fsc && eval "$_dotnetexe restore" && popd; } || failwith "dotnet restore failed"
         { pushd ./lkg/fsi && eval "$_dotnetexe restore" && popd; } || failwith "dotnet restore failed"
@@ -356,7 +363,7 @@ if [ "$BUILD_PROTO" = "1" ]; then
 
         { printeval "$_msbuildexe $msbuildflags src/fsharp-proto-build.proj /p:Configuration=Proto /p:DisableLocalization=true"; } || failwith "compiler proto build failed"
 
-#        { printeval "$_ngenexe install Proto/net40/bin/fsc-proto.exe /nologo"; } || failwith "NGen of proto failed"
+#        { printeval "$_ngenexe install Proto/net40/bin/fsc.exe /nologo"; } || failwith "NGen of proto failed"
     else
         # Build proto-compiler and libs
         { printeval "$_msbuildexe $msbuildflags src/fsharp-proto-build.proj /p:Configuration=Proto /p:DisableLocalization=true"; } || failwith "compiler proto build failed"

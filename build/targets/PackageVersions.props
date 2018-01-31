@@ -1,0 +1,34 @@
+<Project>
+
+  <PropertyGroup>
+
+    <!-- System.* packages -->
+    <SystemCollectionsImmutablePackageVersion>1.3.1</SystemCollectionsImmutablePackageVersion>
+    <SystemDiagnosticsProcessPackageVersion>4.3.0</SystemDiagnosticsProcessPackageVersion>
+    <SystemDiagnosticsTraceSourcePackageVersion>4.3.0</SystemDiagnosticsTraceSourcePackageVersion>
+    <SystemLinqExpressionsPackageVersion>4.3.0</SystemLinqExpressionsPackageVersion>
+    <SystemLinqQueryablePackageVersion>4.3.0</SystemLinqQueryablePackageVersion>
+    <SystemNetRequestsPackageVersion>4.3.0</SystemNetRequestsPackageVersion>
+    <SystemReflectionEmitPackageVersion>4.3.0</SystemReflectionEmitPackageVersion>
+    <SystemReflectionMetadataPackageVersion>1.4.2</SystemReflectionMetadataPackageVersion>
+    <SystemReflectionTypeExtensionsPackageVersion>4.3.0</SystemReflectionTypeExtensionsPackageVersion>
+    <SystemRuntimeInteropServicesPackageVersion>4.3.0</SystemRuntimeInteropServicesPackageVersion>
+    <SystemRuntimeLoaderPackageVersion>4.3.0</SystemRuntimeLoaderPackageVersion>
+    <SystemSecurityCryptographyAlgorithmsPackageVersion>4.3.0</SystemSecurityCryptographyAlgorithmsPackageVersion>
+    <SystemThreadingThreadPackageVersion>4.3.0</SystemThreadingThreadPackageVersion>
+    <SystemThreadingThreadPoolPackageVersion>4.3.0</SystemThreadingThreadPoolPackageVersion>
+    <SystemThreadingTasksParallelPackageVersion>4.3.0</SystemThreadingTasksParallelPackageVersion>
+    <SystemValueTuplePackageVersion>4.3.1</SystemValueTuplePackageVersion>
+
+    <!-- other packages -->
+    <MicrosoftBuildPackageVersion>15.1.548</MicrosoftBuildPackageVersion>
+    <MicrosoftBuildTasksCorePackageVersion>15.1.548</MicrosoftBuildTasksCorePackageVersion>
+    <MicrosoftDiaSymReaderPackageVersion>1.2.0</MicrosoftDiaSymReaderPackageVersion>
+    <MicrosoftDiaSymReaderPortablePdbPackageVersion>1.4.0</MicrosoftDiaSymReaderPortablePdbPackageVersion>
+    <MicrosoftVisualFSharpMsbuild150PackageVersion>1.0.1</MicrosoftVisualFSharpMsbuild150PackageVersion>
+    <MicrosoftWin32RegistryPackageVersion>4.3.0</MicrosoftWin32RegistryPackageVersion>
+    <XliffTasksPackageVersion>0.2.0-beta-000081</XliffTasksPackageVersion>
+
+  </PropertyGroup>
+
+</Project>

@@ -50,7 +50,7 @@ If you have only VS2012 installed, and not VS2010, you'll need to install the F#
     [lang=text]
     cd src
     msbuild fsharp-proto-build.proj
-    ngen install ..\lib\proto\4.0\fsc-proto.exe (optional)
+    ngen install ..\lib\proto\4.0\fsc.exe (optional)
     msbuild fsharp-library-build.proj /p:Configuration=Release
     msbuild fsharp-compiler-build.proj /p:Configuration=Release
 

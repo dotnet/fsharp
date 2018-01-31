@@ -1,0 +1,57 @@
+<Project>
+
+  <PropertyGroup>
+    <CoreCompileDependsOn>CallFsLex;CallFsYacc;$(CoreCompileDependsOn)</CoreCompileDependsOn>
+    <FsLexToolPath Condition="'$(FsLexToolPath)' == ''">$(MSBuildThisFileDirectory)</FsLexToolPath>
+    <FsLexToolExe Condition="'$(FsLexToolExe)' == ''">fslex.exe</FsLexToolExe>
+    <FsYaccToolPath Condition="'$(FsYaccToolPath)' == ''">$(MSBuildThisFileDirectory)</FsYaccToolPath>
+    <FsYaccToolExe Condition="'$(FsYaccToolExe)' == ''">fsyacc.exe</FsYaccToolExe>
+    <ExeRunner Condition="'$(OS)' != 'Unix'"></ExeRunner>
+    <ExeRunner Condition="'$(OS)' == 'Unix'">mono</ExeRunner>
+  </PropertyGroup>
+
+  <!-- Build FsLex files. -->
+  <Target Name="CallFsLex"
+          Inputs="@(FsLex)"
+          Outputs="@(FsLex->'$(FsLexOutputFolder)%(Filename).fs')"
+          Condition="'@(FsLex)' != ''">
+
+    <!-- Create the output directory -->
+    <MakeDir Directories="$(FsLexOutputFolder)" />
+    <!-- Call FsLex -->
+    <Exec Command='$(ExeRunner) "$(FsLexToolPath)\$(FsLexToolExe)" -o "$(FsLexOutputFolder)%(FsLex.Filename).fs" %(FsLex.OtherFlags) %(FsLex.Identity)' />
+    <!-- Make sure it will get cleaned  -->
+    <CreateItem Include="$(FsLexOutputFolder)%(FsLex.Filename).fs">
+      <Output TaskParameter="Include" ItemName="FileWrites" />
+    </CreateItem>
+  </Target>
+
+  <!-- Build FsYacc files. -->
+  <Target Name="CallFsYacc"
+          Inputs="@(FsYacc)"
+          Outputs="@(FsYacc->'$(FsYaccOutputFolder)%(Filename).fs')"
+          Condition="'@(FsYacc)' != ''">
+
+    <!-- Create the output directory -->
+    <MakeDir Directories="$(FsYaccOutputFolder)" />
+    <!-- Call FsYacc -->
+    <Exec Command='$(ExeRunner) "$(FsYaccToolPath)\$(FsYaccToolExe)" -o "$(FsYaccOutputFolder)%(FsYacc.Filename).fs" %(FsYacc.OtherFlags) %(FsYacc.Identity)' />
+    <!-- Make sure it will get cleaned  -->
+    <CreateItem Include="$(FsYaccOutputFolder)%(FsYacc.Filename).fs">
+      <Output TaskParameter="Include" ItemName="FileWrites" />
+    </CreateItem>
+  </Target>
+
+  <ItemGroup>
+
+    <AvailableItemName Include="FsLex">
+      <Visible>false</Visible>
+    </AvailableItemName>
+
+    <AvailableItemName Include="FsYacc">
+      <Visible>false</Visible>
+    </AvailableItemName>
+
+  </ItemGroup>
+
+</Project>

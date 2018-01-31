@@ -64,7 +64,6 @@ set BUILD_FROMSOURCE=0
 set BUILD_VS=0
 set BUILD_FCS=0
 set BUILD_CONFIG=release
-set BUILD_CONFIG_LOWERCASE=release
 set BUILD_DIAG=
 set BUILD_PUBLICSIGN=0
 
@@ -557,7 +556,7 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 echo ---------------- Done with prepare, starting package restore ----------------
 
 set _nugetexe="%~dp0.nuget\NuGet.exe"
-set _nugetconfig="%~dp0.nuget\NuGet.Config"
+set _nugetconfig="%~dp0NuGet.Config"
 
 if "%RestorePackages%" == "true" (
     cd fcs
@@ -628,10 +627,24 @@ if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
   popd
 )
 
+echo ---------------------------- Prepare FsLex and FsYacc -----------------------------
+
+echo %_msbuildexe% %msbuildflags% src\buildtools\FsLexYacc.proj /t:Restore
+     %_msbuildexe% %msbuildflags% src\buildtools\FsLexYacc.proj /t:Restore
+if ERRORLEVEL 1 echo Error restoring FsLexYacc && goto :failure
+
+echo %_msbuildexe% %msbuildflags% src\buildtools\FsLexYacc.proj /t:Build /p:TargetFramework=net45
+     %_msbuildexe% %msbuildflags% src\buildtools\FsLexYacc.proj /t:Build /p:TargetFramework=net45
+if ERRORLEVEL 1 echo Error building FsLexYacc && goto :failure
+
+echo %_msbuildexe% %msbuildflags% src\buildtools\FsLexYacc.proj /t:Publish /p:TargetFramework=net45
+     %_msbuildexe% %msbuildflags% src\buildtools\FsLexYacc.proj /t:Publish /p:TargetFramework=net45
+if ERRORLEVEL 1 echo Error publishing FsLexYacc && goto :failure
+
 echo ---------------- Done with package restore, starting proto ------------------------
 
 rem Decide if Proto need building
-if NOT EXIST Proto\net40\bin\fsc-proto.exe (
+if NOT EXIST Proto\net40\bin\fsc.exe (
   set BUILD_PROTO=1
 )
 
@@ -642,25 +655,21 @@ rem Build Proto
 if "%BUILD_PROTO%" == "1" (
   rmdir /s /q Proto
 
-  if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
-
-    echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true
-         %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true
-    @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
-  )
+  echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /t:Restore
+       %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /t:Restore
+  if ERRORLEVEL 1 echo Error restoring proto compiler && goto :failure
 
   if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "0" (
-
-    echo %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.27\tools\fsc.exe /nologo 
-         %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.27\tools\fsc.exe /nologo 
-
-    echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true
-         %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true
-    @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
+    echo %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.27\tools\fsc.exe /nologo
+         %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.27\tools\fsc.exe /nologo
   )
 
-  echo %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
-       %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
+  echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:TargetFramework=net45
+       %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:TargetFramework=net45
+  @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
+
+  echo %_ngenexe% install Proto\net40\bin\fsc.exe /nologo 
+       %_ngenexe% install Proto\net40\bin\fsc.exe /nologo 
   @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
 )
 

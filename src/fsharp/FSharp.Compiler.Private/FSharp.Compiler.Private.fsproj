@@ -1,24 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
-  </PropertyGroup>
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
-  <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
-    <AssemblyName>FSharp.Compiler.Private</AssemblyName>
+    <TargetFrameworks>net45;netstandard1.6</TargetFrameworks>
     <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
     <NoWarn>$(NoWarn);62;9</NoWarn>
-    <ProjectGuid>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</ProjectGuid>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <BaseAddress>0x06800000</BaseAddress>
     <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
   </PropertyGroup>
-  <!-- References -->
-  <Import Project="$(FSharpSourcesRoot)\.nuget\NuGet.targets" Condition="Exists('$(FSharpSourcesRoot)\.nuget\NuGet.targets')" />
+
   <Target Name="CopyToBuiltBin" BeforeTargets="BuiltProjectOutputGroup" AfterTargets="CoreCompile">
     <ItemGroup>
       <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.Framework.dll" />
@@ -34,9 +27,7 @@
       <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\System.ValueTuple.dll" />
     </ItemGroup>
   </Target>
-  <Import Project="$(FSharpSourcesRoot)\.nuget\NuGet.targets" Condition="Exists('$(FSharpSourcesRoot)\.nuget\NuGet.targets')" />
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  <Import Project="$(FsLexToolPath)\FsLexYacc.targets" />
+
   <ItemGroup>
     <InternalsVisibleTo Include="fsc" />
     <InternalsVisibleTo Include="FSharp.Build" />
@@ -57,6 +48,7 @@
     <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
     <InternalsVisibleTo Include="LanguageServiceProfiling" />
   </ItemGroup>
+
   <ItemGroup>
     <EmbeddedText Include="..\FSComp.txt">
       <Link>FSComp.txt</Link>
@@ -656,17 +648,12 @@
       <Link>Misc/LegacyHostedCompilerForTesting.fs</Link>
     </Compile>
   </ItemGroup>
+
   <ItemGroup>
     <PackageNuspec Include="FSharp.Compiler.Private.netcore.nuspec" Condition="'$(TargetDotnetProfile)' == 'coreclr'" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetDotnetProfile)' == 'coreclr'">
-    <None Include="project.json" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetDotnetProfile)' != 'coreclr'">
-    <Reference Include="mscorlib" />
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Numerics" />
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net45'">
     <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.DiaSymReader.PortablePdb">
       <HintPath>..\..\..\packages\Microsoft.DiaSymReader.PortablePdb.1.2.0\lib\portable-net45+win8\Microsoft.DiaSymReader.PortablePdb.dll</HintPath>
@@ -698,11 +685,34 @@
     <Reference Include="Microsoft.Build.Tasks.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Tasks.Core.dll</HintPath>
     </Reference>
+    <PackageReference Include="Microsoft.VisualFSharp.Msbuild.15.0" Version="$(MicrosoftVisualFSharpMsbuild150PackageVersion)" />
   </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.6'">
+    <PackageReference Include="System.Diagnostics.Process" Version="$(SystemDiagnosticsProcessPackageVersion)" />
+    <PackageReference Include="System.Diagnostics.TraceSource" Version="$(SystemDiagnosticsTraceSourcePackageVersion)" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="$(SystemReflectionTypeExtensionsPackageVersion)" />
+    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderPackageVersion)" />
+    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="$(SystemSecurityCryptographyAlgorithmsPackageVersion)" />
+    <PackageReference Include="System.Threading.Thread" Version="$(SystemThreadingThreadPackageVersion)" />
+    <PackageReference Include="System.Threading.ThreadPool" Version="$(SystemThreadingThreadPoolPackageVersion)" />
+  </ItemGroup>
+
   <ItemGroup>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
-      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
-      <Name>FSharp.Core</Name>
-    </ProjectReference>
+    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutablePackageVersion)" />
+    <PackageReference Include="System.Linq.Queryable" Version="$(SystemLinqQueryablePackageVersion)" />
+    <PackageReference Include="System.Net.Requests" Version="$(SystemNetRequestsPackageVersion)" />
+    <PackageReference Include="System.Reflection.Emit" Version="$(SystemReflectionEmitPackageVersion)" />
+    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataPackageVersion)" />
+    <PackageReference Include="System.Runtime.InteropServices" Version="$(SystemRuntimeInteropServicesPackageVersion)" />
+    <PackageReference Include="System.Threading.Tasks.Parallel" Version="$(SystemThreadingTasksParallelPackageVersion)" />
+    <PackageReference Include="System.ValueTuple" Version="$(SystemValueTuplePackageVersion)" />
+    <PackageReference Include="Microsoft.DiaSymReader" Version="$(MicrosoftDiaSymReaderPackageVersion)" />
+    <PackageReference Include="Microsoft.DiaSymReader.PortablePdb" Version="$(MicrosoftDiaSymReaderPortablePdbPackageVersion)" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FSharp.Core\FSharp.Core.fsproj" />
+  </ItemGroup>
+
 </Project>

@@ -60,7 +60,7 @@ VS2010がインストールされておらず、VS2012しかインストール�
     [lang=text]
     cd src
     msbuild fsharp-proto-build.proj
-    ngen install ..\lib\proto\4.0\fsc-proto.exe (optional)
+    ngen install ..\lib\proto\4.0\fsc.exe (optional)
     msbuild fsharp-library-build.proj /p:Configuration=Release
     msbuild fsharp-compiler-build.proj /p:Configuration=Release
 

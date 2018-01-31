@@ -1,0 +1,13 @@
+<Project>
+
+  <PropertyGroup>
+    <ProjectName Condition="'$(ProjectName)' == ''">$(AssemblyName)</ProjectName>
+    <ProjectName Condition="'$(ProjectName)' == ''">$(MSBuildProjectName)</ProjectName>
+    <DocumentationFile>$(OutputPath)\$(ProjectName).xml</DocumentationFile>
+  </PropertyGroup>
+
+  <Import Project="build\targets\GitHash.props" />
+  <Import Project="build\targets\GenerateAssemblyAttributes.targets" />
+  <Import Project="build\targets\GenerateInternalsVisibleTo.targets" />
+
+</Project>
