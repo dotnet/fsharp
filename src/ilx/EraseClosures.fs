@@ -479,9 +479,9 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                    |> cenv.addMethodGeneratedAttrs 
 
               let securityAttributes = (if td.HasSecurity then td.Attributes ^^^ TypeAttributes.HasSecurity else td.Attributes)
-              let specialNameAttributes = (if td.IsSpecialName then securityAttributes ^^^ TypeAttributes.SpecialName else TypeAttributes.Sealed)
-              let abstractAttributes = (if td.IsAbstract then specialNameAttributes ^^^ TypeAttributes.Abstract else TypeAttributes.Sealed)
-              let comInteropAttributes = (if td.IsComInterop then abstractAttributes ^^^ TypeAttributes.Import else TypeAttributes.Sealed)
+              let specialNameAttributes = (if td.IsSpecialName then securityAttributes ^^^ TypeAttributes.SpecialName else securityAttributes)
+              let abstractAttributes = (if td.IsAbstract then specialNameAttributes ^^^ TypeAttributes.Abstract else specialNameAttributes)
+              let comInteropAttributes = (if td.IsComInterop then abstractAttributes ^^^ TypeAttributes.Import else abstractAttributes)
               let cloTypeDef = 
                 { Name = td.Name
                   GenericParams= td.GenericParams
@@ -578,9 +578,9 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                         |> cenv.addMethodGeneratedAttrs 
 
                     let securityAttributes = (if td.HasSecurity then td.Attributes ^^^ TypeAttributes.HasSecurity else td.Attributes)
-                    let specialNameAttributes = (if td.IsSpecialName then securityAttributes ^^^ TypeAttributes.SpecialName else TypeAttributes.Sealed)
-                    let abstractAttributes = (if td.IsAbstract then specialNameAttributes ^^^ TypeAttributes.Abstract else TypeAttributes.Sealed)
-                    let comInteropAttributes = (if td.IsComInterop then abstractAttributes ^^^ TypeAttributes.Import else TypeAttributes.Sealed)
+                    let specialNameAttributes = (if td.IsSpecialName then securityAttributes ^^^ TypeAttributes.SpecialName else securityAttributes)
+                    let abstractAttributes = (if td.IsAbstract then specialNameAttributes ^^^ TypeAttributes.Abstract else specialNameAttributes)
+                    let comInteropAttributes = (if td.IsComInterop then abstractAttributes ^^^ TypeAttributes.Import else abstractAttributes)
                     { Name = td.Name
                       GenericParams= td.GenericParams
                       Attributes = 
