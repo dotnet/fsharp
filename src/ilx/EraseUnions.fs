@@ -1102,11 +1102,10 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
                   Properties=emptyILProperties
                   CustomAttrs= emptyILCustomAttrs }
 
-    let inline conditionalAdd condition flagToAdd source = if condition then source ||| flagToAdd else source &&& ~~~flagToAdd
     let attributes = 
         td.Attributes 
-        |> conditionalAdd isAbstract TypeAttributes.Abstract 
-        |> conditionalAdd altTypeDefs.IsEmpty TypeAttributes.Sealed
+        |> ILRuntimeWriter.conditionalAdd isAbstract TypeAttributes.Abstract 
+        |> ILRuntimeWriter.conditionalAdd altTypeDefs.IsEmpty TypeAttributes.Sealed
     let baseTypeDef = 
        { td with 
           NestedTypes = mkILTypeDefs (Option.toList enumTypeDef @ altTypeDefs @ altDebugTypeDefs @ td.NestedTypes.AsList)

@@ -5220,20 +5220,20 @@ and GenMethodForBinding
     let EmitTheMethodDef mdef = 
         // Does the function have an explicit [<EntryPoint>] attribute? 
         let isExplicitEntryPoint = HasFSharpAttribute cenv.g cenv.g.attrib_EntryPointAttribute attrs
-        let inline conditionalAdd condition flagToAdd source = if condition then source ||| flagToAdd else source &&& ~~~flagToAdd
+
         let mdef = 
             {mdef with 
                 ImplAttributes = 
                     mdef.ImplAttributes
-                    |> conditionalAdd (hasPreserveSigImplFlag || hasPreserveSigNamedArg) MethodImplAttributes.PreserveSig
-                    |> conditionalAdd hasSynchronizedImplFlag MethodImplAttributes.Synchronized
-                    |> conditionalAdd hasNoInliningFlag MethodImplAttributes.NoInlining
-                    |> conditionalAdd hasAggressiveInliningImplFlag MethodImplAttributes.AggressiveInlining
+                    |> ILRuntimeWriter.conditionalAdd (hasPreserveSigImplFlag || hasPreserveSigNamedArg) MethodImplAttributes.PreserveSig
+                    |> ILRuntimeWriter.conditionalAdd hasSynchronizedImplFlag MethodImplAttributes.Synchronized
+                    |> ILRuntimeWriter.conditionalAdd hasNoInliningFlag MethodImplAttributes.NoInlining
+                    |> ILRuntimeWriter.conditionalAdd hasAggressiveInliningImplFlag MethodImplAttributes.AggressiveInlining
                 IsEntryPoint = isExplicitEntryPoint
                 Attributes =
                     mdef.Attributes
-                    |> conditionalAdd (securityAttributes.Length > 0) MethodAttributes.HasSecurity
-                    |> conditionalAdd hasDllImport MethodAttributes.PinvokeImpl
+                    |> ILRuntimeWriter.conditionalAdd (securityAttributes.Length > 0) MethodAttributes.HasSecurity
+                    |> ILRuntimeWriter.conditionalAdd hasDllImport MethodAttributes.PinvokeImpl
                 SecurityDecls = secDecls }
 
         let mdef = 
@@ -5294,14 +5294,13 @@ and GenMethodForBinding
                let tcref =  v.MemberApparentEntity
                not tcref.Deref.IsFSharpDelegateTycon
 
-           let inline conditionalAdd condition flagToAdd source = if condition then source ||| flagToAdd else source &&& ~~~flagToAdd
            let mdef = 
                if mdef.IsVirtual then 
                     { mdef with 
                         Attributes =
                             mdef.Attributes 
-                            |> conditionalAdd memberInfo.MemberFlags.IsFinal MethodAttributes.Final 
-                            |> conditionalAdd isAbstract MethodAttributes.Abstract }
+                            |> ILRuntimeWriter.conditionalAdd memberInfo.MemberFlags.IsFinal MethodAttributes.Final 
+                            |> ILRuntimeWriter.conditionalAdd isAbstract MethodAttributes.Abstract }
                else mdef
 
            match memberInfo.MemberFlags.MemberKind with 
@@ -6081,20 +6080,20 @@ and GenAbstractBinding cenv eenv tref (vref:ValRef) =
         let compileAsInstance = ValRefIsCompiledAsInstanceMember cenv.g vref
         let mdef = mkILGenericVirtualMethod (vref.CompiledName,MethodAttributes.Public,ilMethTypars,ilParams,ilReturn,MethodBody.Abstract)
 
-        let inline conditionalAdd condition flagToAdd source = if condition then source ||| flagToAdd else source &&& ~~~flagToAdd
         let mdef = fixupVirtualSlotFlags mdef
         let mdef = 
           {mdef with 
-            ImplAttributes = mdef.ImplAttributes
-                             |> conditionalAdd hasPreserveSigImplFlag MethodImplAttributes.PreserveSig
-                             |> conditionalAdd hasSynchronizedImplFlag MethodImplAttributes.Synchronized
-                             |> conditionalAdd hasNoInliningFlag MethodImplAttributes.NoInlining
-                             |> conditionalAdd hasAggressiveInliningImplFlag MethodImplAttributes.AggressiveInlining
-            Attributes=
+            ImplAttributes = 
+                mdef.ImplAttributes
+                |> ILRuntimeWriter.conditionalAdd hasPreserveSigImplFlag MethodImplAttributes.PreserveSig
+                |> ILRuntimeWriter.conditionalAdd hasSynchronizedImplFlag MethodImplAttributes.Synchronized
+                |> ILRuntimeWriter.conditionalAdd hasNoInliningFlag MethodImplAttributes.NoInlining
+                |> ILRuntimeWriter.conditionalAdd hasAggressiveInliningImplFlag MethodImplAttributes.AggressiveInlining
+            Attributes =
                 if mdef.IsVirtual then
                     mdef.Attributes
-                    |> conditionalAdd memberInfo.MemberFlags.IsFinal MethodAttributes.Final
-                    |> conditionalAdd memberInfo.MemberFlags.IsDispatchSlot MethodAttributes.Abstract
+                    |> ILRuntimeWriter.conditionalAdd memberInfo.MemberFlags.IsFinal MethodAttributes.Final
+                    |> ILRuntimeWriter.conditionalAdd memberInfo.MemberFlags.IsDispatchSlot MethodAttributes.Abstract
                 else mdef.Attributes }
         
         match memberInfo.MemberFlags.MemberKind with 
@@ -6380,16 +6379,17 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
 
                   let access = ComputeFieldAccess isFieldHidden
                   let literalValue = Option.map (GenFieldInit m) fspec.LiteralValue
+                  
                   yield
                       { Name          = ilFieldName
                         Type          = ilPropType
                         Attributes    = access |||
-                                        (if isStatic then FieldAttributes.Static else access) ||| 
-                                        (if ilFieldName="value__" && tycon.IsEnumTycon then FieldAttributes.SpecialName ||| FieldAttributes.RTSpecialName else access) |||
-                                        (if ilNotSerialized then FieldAttributes.NotSerialized else access) |||
-                                        (if fspec.LiteralValue.IsSome then FieldAttributes.Literal else access) |||
-                                        (if literalValue.IsSome then FieldAttributes.HasDefault else access) |||
-                                        (if ilFieldMarshal.IsSome then FieldAttributes.HasFieldMarshal else access)
+                                        ILRuntimeWriter.flagsIf isStatic FieldAttributes.Static ||| 
+                                        ILRuntimeWriter.flagsIf (ilFieldName="value__" && tycon.IsEnumTycon) (FieldAttributes.SpecialName ||| FieldAttributes.RTSpecialName) |||
+                                        ILRuntimeWriter.flagsIf ilNotSerialized FieldAttributes.NotSerialized |||
+                                        ILRuntimeWriter.flagsIf fspec.LiteralValue.IsSome FieldAttributes.Literal |||
+                                        ILRuntimeWriter.flagsIf literalValue.IsSome FieldAttributes.HasDefault |||
+                                        ILRuntimeWriter.flagsIf ilFieldMarshal.IsSome FieldAttributes.HasFieldMarshal
                         Data          = None 
                         LiteralValue  = literalValue
                         Offset        = ilFieldOffset
@@ -6600,13 +6600,14 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                // Set some the extra entries in the definition 
                let isTheSealedAttribute = tyconRefEq cenv.g tcref cenv.g.attrib_SealedAttribute.TyconRef
 
-               let inline conditionalAdd condition flagToAdd source = if condition then source ||| flagToAdd else source &&& ~~~flagToAdd
-               let tdef = { tdef with  Attributes = tdef.Attributes 
-                                                    |> conditionalAdd (isSealedTy cenv.g thisTy || isTheSealedAttribute) TypeAttributes.Sealed 
-                                                    |> conditionalAdd isSerializable TypeAttributes.Serializable 
-                                                    |> conditionalAdd isAbstract TypeAttributes.Abstract 
-                                                    |> conditionalAdd (isComInteropTy cenv.g thisTy) TypeAttributes.Import
-                                       MethodImpls=mkILMethodImpls methodImpls }
+               let tdef = { tdef with 
+                                Attributes = 
+                                    tdef.Attributes 
+                                    |> ILRuntimeWriter.conditionalAdd (isSealedTy cenv.g thisTy || isTheSealedAttribute) TypeAttributes.Sealed 
+                                    |> ILRuntimeWriter.conditionalAdd isSerializable TypeAttributes.Serializable 
+                                    |> ILRuntimeWriter.conditionalAdd isAbstract TypeAttributes.Abstract 
+                                    |> ILRuntimeWriter.conditionalAdd (isComInteropTy cenv.g thisTy) TypeAttributes.Import
+                                MethodImpls=mkILMethodImpls methodImpls }
 
                let tdLayout,tdEncoding = 
                     match TryFindFSharpAttribute cenv.g cenv.g.attrib_StructLayoutAttribute tycon.Attribs with
@@ -6740,8 +6741,12 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
 
            | _ -> failwith "??"
 
-        let inline conditionalAdd condition flagToAdd source = if condition then source ||| flagToAdd else source &&& ~~~flagToAdd
-        let tdef = {tdef with SecurityDecls= secDecls; Attributes=tdef.Attributes |> conditionalAdd (securityAttrs.Length > 0) TypeAttributes.HasSecurity}
+        let tdef = 
+            { tdef with 
+                SecurityDecls = secDecls
+                Attributes=
+                    tdef.Attributes
+                    |> ILRuntimeWriter.conditionalAdd (securityAttrs.Length > 0) TypeAttributes.HasSecurity}
         mgbuf.AddTypeDef(tref, tdef, false, false, tdefDiscards)
 
         // If a non-generic type is written with "static let" and "static do" (i.e. it has a ".cctor")
