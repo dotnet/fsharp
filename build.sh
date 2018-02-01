@@ -333,6 +333,22 @@ fi
 
 # TODO: Check for existence of fsi (either on the system, or from the FSharp.Compiler.Tools package that was restored).
 
+build_status "Done with package restore, starting dependency uptake check"
+
+if [ "$PB_PACKAGEVERSIONPROPSURL" != "" ]; then
+    dependencyUptakeDir="${_scriptdir}Tools/dependencyUptake"
+    mkdir -p "$dependencyUptakeDir"
+
+    # download package version overrides
+    { printeval "curl '$PB_PACKAGEVERSIONPROPSURL' -o '$dependencyUptakeDir/PackageVersions.props'"; } || failwith "downloading package version properties failed"
+
+    # prepare dependency uptake files
+    { printeval "$_msbuildexe $msbuildflags ${scriptdir}build/projects/PrepareDependencyUptake.proj /t:Build"; } || failwith "building dependency uptake files failed"
+
+    # restore dependencies
+    { printeval "$_nugetexe restore '$dependencyUptakeDir/packages.config' -PackagesDirectory packages -ConfigFile '$dependencyUptakeDir/NuGet.config'"; } || failwith "restoring dependency uptake packages failed"
+fi
+
 build_status "Done with package restore, starting proto"
 
 # Decide if Proto need building
