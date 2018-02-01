@@ -1090,7 +1090,7 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
                 { Name = "Tags"
                   NestedTypes = emptyILTypeDefs
                   GenericParams= td.GenericParams
-                  Attributes = (if cudAattributes &&& TypeAttributes.HasSecurity <> enum 0 then cudAattributes ^^^ TypeAttributes.HasSecurity else cudAattributes) ||| TypeAttributes.Abstract ||| TypeAttributes.Sealed ||| TypeAttributes.Abstract ||| TypeAttributes.AnsiClass
+                  Attributes = (cudAattributes &&& ~~~TypeAttributes.HasSecurity) ||| TypeAttributes.Abstract ||| TypeAttributes.Sealed ||| TypeAttributes.Abstract ||| TypeAttributes.AnsiClass
                   Layout=ILTypeDefLayout.Auto 
                   Implements = []
                   Extends= Some ilg.typ_Object 
@@ -1102,13 +1102,15 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
                   Properties=emptyILProperties
                   CustomAttrs= emptyILCustomAttrs }
 
-    let abstractOp = if isAbstract then (|||) elif td.IsAbstract then (^^^) else fun x _ -> x
-    let sealedOp = if altTypeDefs.IsEmpty then (|||) elif td.IsSealed then (^^^) else fun x _ -> x
-    let comInteropOp = if td.IsComInterop then (^^^) else fun x _ -> x
+    let inline conditionalAdd condition flagToAdd source = if condition then source ||| flagToAdd else source &&& ~~~flagToAdd
+    let attributes = 
+        td.Attributes 
+        |> conditionalAdd isAbstract TypeAttributes.Abstract 
+        |> conditionalAdd altTypeDefs.IsEmpty TypeAttributes.Sealed
     let baseTypeDef = 
        { td with 
           NestedTypes = mkILTypeDefs (Option.toList enumTypeDef @ altTypeDefs @ altDebugTypeDefs @ td.NestedTypes.AsList)
-          Attributes = (comInteropOp (sealedOp (abstractOp td.Attributes TypeAttributes.Abstract) TypeAttributes.Sealed) TypeAttributes.Import) ||| TypeAttributes.BeforeFieldInit
+          Attributes = attributes &&& ~~~TypeAttributes.Import ||| TypeAttributes.BeforeFieldInit
           Extends= (match td.Extends with None -> Some ilg.typ_Object | _ -> td.Extends) 
           Methods= mkILMethods (ctorMeths @ baseMethsFromAlt @ selfMeths @ tagMeths @ altUniqObjMeths @ existingMeths)
           Fields=mkILFields (selfAndTagFields @ List.map (fun (_,_,_,_,fdef,_) -> fdef) altNullaryFields @ td.Fields.AsList)

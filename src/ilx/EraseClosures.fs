@@ -478,18 +478,17 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                      MethodAttributes.Assembly)
                    |> cenv.addMethodGeneratedAttrs 
 
-              let securityAttributes = (if td.HasSecurity then td.Attributes ^^^ TypeAttributes.HasSecurity else td.Attributes)
-              let specialNameAttributes = (if td.IsSpecialName then securityAttributes ^^^ TypeAttributes.SpecialName else securityAttributes)
-              let abstractAttributes = (if td.IsAbstract then specialNameAttributes ^^^ TypeAttributes.Abstract else specialNameAttributes)
-              let comInteropAttributes = (if td.IsComInterop then abstractAttributes ^^^ TypeAttributes.Import else abstractAttributes)
-              let layoutAttributes = (if td.Attributes &&& TypeAttributes.AutoClass <> enum 0 then comInteropAttributes ^^^ TypeAttributes.AutoClass else comInteropAttributes)
+              let attributes =  
+                td.Attributes &&& 
+                ~~~TypeAttributes.HasSecurity &&& 
+                ~~~TypeAttributes.SpecialName &&& 
+                ~~~TypeAttributes.Abstract &&&
+                ~~~TypeAttributes.Import &&&
+                ~~~TypeAttributes.AutoClass
               let cloTypeDef = 
                 { Name = td.Name
                   GenericParams= td.GenericParams
-                  Attributes = 
-                    layoutAttributes |||
-                    (if td.IsSerializable then TypeAttributes.Serializable else TypeAttributes.Sealed) |||
-                    TypeAttributes.Sealed ||| TypeAttributes.BeforeFieldInit ||| TypeAttributes.AnsiClass
+                  Attributes = attributes ||| TypeAttributes.Sealed ||| TypeAttributes.BeforeFieldInit ||| TypeAttributes.AnsiClass
                   Implements = List.empty
                   NestedTypes = emptyILTypeDefs
                   Layout=ILTypeDefLayout.Auto
@@ -578,17 +577,16 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                             MethodAttributes.Assembly)
                         |> cenv.addMethodGeneratedAttrs 
 
-                    let securityAttributes = (if td.HasSecurity then td.Attributes ^^^ TypeAttributes.HasSecurity else td.Attributes)
-                    let specialNameAttributes = (if td.IsSpecialName then securityAttributes ^^^ TypeAttributes.SpecialName else securityAttributes)
-                    let abstractAttributes = (if td.IsAbstract then specialNameAttributes ^^^ TypeAttributes.Abstract else specialNameAttributes)
-                    let comInteropAttributes = (if td.IsComInterop then abstractAttributes ^^^ TypeAttributes.Import else abstractAttributes)
-                    let layoutAttributes = (if td.Attributes &&& TypeAttributes.AutoClass <> enum 0 then comInteropAttributes ^^^ TypeAttributes.AutoClass else comInteropAttributes)
+                    let attributes =  
+                        td.Attributes &&& 
+                        ~~~TypeAttributes.HasSecurity &&& 
+                        ~~~TypeAttributes.SpecialName &&& 
+                        ~~~TypeAttributes.Abstract &&&
+                        ~~~TypeAttributes.Import &&&
+                        ~~~TypeAttributes.AutoClass
                     { Name = td.Name
                       GenericParams= td.GenericParams
-                      Attributes = 
-                        layoutAttributes |||
-                        (if td.IsSerializable then TypeAttributes.Serializable else TypeAttributes.Sealed) |||
-                        TypeAttributes.Sealed ||| TypeAttributes.BeforeFieldInit
+                      Attributes = attributes ||| TypeAttributes.Sealed ||| TypeAttributes.BeforeFieldInit
                       Implements = []
                       Layout=ILTypeDefLayout.Auto
                       NestedTypes = emptyILTypeDefs 

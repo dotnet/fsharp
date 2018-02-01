@@ -3527,24 +3527,17 @@ and bindBaseOrThisVarOpt cenv eenv baseValOpt =
 
 and fixupVirtualSlotFlags (mdef:ILMethodDef) = 
     {mdef with 
-        Attributes = (match mdef.IsVirtual with 
-                      | true -> 
-                         (if mdef.IsCheckAccessOnOverride then mdef.Attributes ^^^ MethodAttributes.CheckAccessOnOverride else mdef.Attributes) ||| MethodAttributes.HideBySig
-                      | _ -> failwith "fixupVirtualSlotFlags") } 
+        Attributes = if mdef.IsVirtual then mdef.Attributes &&& ~~~MethodAttributes.CheckAccessOnOverride ||| MethodAttributes.HideBySig
+                     else failwith "fixupVirtualSlotFlags" }
 
 and renameMethodDef nameOfOverridingMethod (mdef : ILMethodDef) = 
     {mdef with Name=nameOfOverridingMethod }
 
 and fixupMethodImplFlags (mdef:ILMethodDef) = 
-    let attributes = 
-        MethodAttributes.Private ||| MethodAttributes.HideBySig |||
-        (if mdef.Attributes &&& MethodAttributes.Public <> enum 0 then mdef.Attributes ^^^ MethodAttributes.Public else mdef.Attributes)        
+    let attributes = mdef.Attributes &&& ~~~MethodAttributes.Public ||| MethodAttributes.Private ||| MethodAttributes.HideBySig   
     { mdef with 
         Attributes = 
-            attributes |||
-            (if mdef.IsVirtual then
-                (if mdef.IsCheckAccessOnOverride then attributes ^^^ MethodAttributes.CheckAccessOnOverride else attributes) ||| 
-                MethodAttributes.Final ||| MethodAttributes.NewSlot
+            (if mdef.IsVirtual then attributes &&& ~~~MethodAttributes.CheckAccessOnOverride ||| MethodAttributes.Final ||| MethodAttributes.NewSlot
             else failwith "fixupMethodImpl") }
 
 and GenObjectMethod cenv eenvinner (cgbuf:CodeGenBuffer) useMethodImpl tmethod =
@@ -5227,19 +5220,20 @@ and GenMethodForBinding
     let EmitTheMethodDef mdef = 
         // Does the function have an explicit [<EntryPoint>] attribute? 
         let isExplicitEntryPoint = HasFSharpAttribute cenv.g cenv.g.attrib_EntryPointAttribute attrs
-        
+        let inline conditionalAdd condition flagToAdd source = if condition then source ||| flagToAdd else source &&& ~~~flagToAdd
         let mdef = 
             {mdef with 
                 ImplAttributes = 
-                    mdef.ImplAttributes |||
-                    (if hasPreserveSigImplFlag || hasPreserveSigNamedArg then MethodImplAttributes.PreserveSig else mdef.ImplAttributes) |||
-                    (if hasSynchronizedImplFlag then MethodImplAttributes.Synchronized else mdef.ImplAttributes) |||
-                    (if hasNoInliningFlag then MethodImplAttributes.NoInlining else mdef.ImplAttributes) |||
-                    (if hasAggressiveInliningImplFlag then MethodImplAttributes.AggressiveInlining else mdef.ImplAttributes)
+                    mdef.ImplAttributes
+                    |> conditionalAdd (hasPreserveSigImplFlag || hasPreserveSigNamedArg) MethodImplAttributes.PreserveSig
+                    |> conditionalAdd hasSynchronizedImplFlag MethodImplAttributes.Synchronized
+                    |> conditionalAdd hasNoInliningFlag MethodImplAttributes.NoInlining
+                    |> conditionalAdd hasAggressiveInliningImplFlag MethodImplAttributes.AggressiveInlining
                 IsEntryPoint = isExplicitEntryPoint
-                Attributes = 
-                    (if securityAttributes.Length > 0 then mdef.Attributes ||| MethodAttributes.HasSecurity elif mdef.HasSecurity then mdef.Attributes ^^^ MethodAttributes.HasSecurity else mdef.Attributes) |||
-                    (if hasDllImport then MethodAttributes.PinvokeImpl else mdef.Attributes)
+                Attributes =
+                    mdef.Attributes
+                    |> conditionalAdd (securityAttributes.Length > 0) MethodAttributes.HasSecurity
+                    |> conditionalAdd hasDllImport MethodAttributes.PinvokeImpl
                 SecurityDecls = secDecls }
 
         let mdef = 
@@ -5300,14 +5294,15 @@ and GenMethodForBinding
                let tcref =  v.MemberApparentEntity
                not tcref.Deref.IsFSharpDelegateTycon
 
+           let inline conditionalAdd condition flagToAdd source = if condition then source ||| flagToAdd else source &&& ~~~flagToAdd
            let mdef = 
-               {mdef with 
-                    Attributes=match mdef.IsVirtual || mdef.IsAbstract with 
-                               | true -> 
-                                   let finalOp = if memberInfo.MemberFlags.IsFinal then (|||) elif mdef.IsFinal then (^^^) else fun x _ -> x
-                                   let abstractOp = if isAbstract then (|||) elif mdef.IsAbstract then (^^^) else fun x _ -> x
-                                   abstractOp (finalOp mdef.Attributes MethodAttributes.Final) MethodAttributes.Abstract
-                               | _ -> mdef.Attributes }
+               if mdef.IsVirtual then 
+                    { mdef with 
+                        Attributes =
+                            mdef.Attributes 
+                            |> conditionalAdd memberInfo.MemberFlags.IsFinal MethodAttributes.Final 
+                            |> conditionalAdd isAbstract MethodAttributes.Abstract }
+               else mdef
 
            match memberInfo.MemberFlags.MemberKind with 
                
@@ -6086,20 +6081,21 @@ and GenAbstractBinding cenv eenv tref (vref:ValRef) =
         let compileAsInstance = ValRefIsCompiledAsInstanceMember cenv.g vref
         let mdef = mkILGenericVirtualMethod (vref.CompiledName,MethodAttributes.Public,ilMethTypars,ilParams,ilReturn,MethodBody.Abstract)
 
+        let inline conditionalAdd condition flagToAdd source = if condition then source ||| flagToAdd else source &&& ~~~flagToAdd
         let mdef = fixupVirtualSlotFlags mdef
         let mdef = 
           {mdef with 
-            ImplAttributes = mdef.ImplAttributes |||
-                                 (if hasPreserveSigImplFlag then MethodImplAttributes.PreserveSig else mdef.ImplAttributes) |||
-                                 (if hasSynchronizedImplFlag then MethodImplAttributes.Synchronized else mdef.ImplAttributes) |||
-                                 (if hasNoInliningFlag then MethodImplAttributes.NoInlining else mdef.ImplAttributes) |||
-                                 (if hasAggressiveInliningImplFlag then MethodImplAttributes.AggressiveInlining else mdef.ImplAttributes)
-            Attributes=match mdef.IsVirtual || mdef.IsAbstract with 
-                       | true ->
-                           let finalOp = if memberInfo.MemberFlags.IsFinal then (|||) elif mdef.IsFinal then (^^^) else fun x _ -> x
-                           let abstractOp = if memberInfo.MemberFlags.IsDispatchSlot then (|||) elif mdef.IsAbstract then (^^^) else fun x _ -> x
-                           abstractOp (finalOp mdef.Attributes MethodAttributes.Final) MethodAttributes.Abstract
-                       | _ -> mdef.Attributes }
+            ImplAttributes = mdef.ImplAttributes
+                             |> conditionalAdd hasPreserveSigImplFlag MethodImplAttributes.PreserveSig
+                             |> conditionalAdd hasSynchronizedImplFlag MethodImplAttributes.Synchronized
+                             |> conditionalAdd hasNoInliningFlag MethodImplAttributes.NoInlining
+                             |> conditionalAdd hasAggressiveInliningImplFlag MethodImplAttributes.AggressiveInlining
+            Attributes=
+                if mdef.IsVirtual then
+                    mdef.Attributes
+                    |> conditionalAdd memberInfo.MemberFlags.IsFinal MethodAttributes.Final
+                    |> conditionalAdd memberInfo.MemberFlags.IsDispatchSlot MethodAttributes.Abstract
+                else mdef.Attributes }
         
         match memberInfo.MemberFlags.MemberKind with 
         | MemberKind.ClassConstructor 
@@ -6604,12 +6600,12 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                // Set some the extra entries in the definition 
                let isTheSealedAttribute = tyconRefEq cenv.g tcref cenv.g.attrib_SealedAttribute.TyconRef
 
-               let sealedOp = if isSealedTy cenv.g thisTy || isTheSealedAttribute then (|||) elif tdef.IsSealed then (^^^) else fun x _ -> x
-               let serializableOp = if isSerializable then (|||) elif tdef.IsSerializable then (^^^) else fun x _ -> x
-               let abstractOp = if isAbstract then (|||) elif tdef.IsAbstract then (^^^) else fun x _ -> x
-               let comInteropOp = if isComInteropTy cenv.g thisTy then (|||) elif tdef.IsComInterop then (^^^) else fun x _ -> x
-
-               let tdef = { tdef with  Attributes = comInteropOp (abstractOp (serializableOp (sealedOp tdef.Attributes TypeAttributes.Sealed) TypeAttributes.Serializable) TypeAttributes.Abstract) TypeAttributes.Import
+               let inline conditionalAdd condition flagToAdd source = if condition then source ||| flagToAdd else source &&& ~~~flagToAdd
+               let tdef = { tdef with  Attributes = tdef.Attributes 
+                                                    |> conditionalAdd (isSealedTy cenv.g thisTy || isTheSealedAttribute) TypeAttributes.Sealed 
+                                                    |> conditionalAdd isSerializable TypeAttributes.Serializable 
+                                                    |> conditionalAdd isAbstract TypeAttributes.Abstract 
+                                                    |> conditionalAdd (isComInteropTy cenv.g thisTy) TypeAttributes.Import
                                        MethodImpls=mkILMethodImpls methodImpls }
 
                let tdLayout,tdEncoding = 
@@ -6744,8 +6740,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
 
            | _ -> failwith "??"
 
-        let hasSecurityOp = if securityAttrs.Length > 0 then (|||) elif tdef.HasSecurity then (^^^) else fun x _ -> x
-        let tdef = {tdef with SecurityDecls= secDecls; Attributes=hasSecurityOp tdef.Attributes TypeAttributes.HasSecurity}
+        let inline conditionalAdd condition flagToAdd source = if condition then source ||| flagToAdd else source &&& ~~~flagToAdd
+        let tdef = {tdef with SecurityDecls= secDecls; Attributes=tdef.Attributes |> conditionalAdd (securityAttrs.Length > 0) TypeAttributes.HasSecurity}
         mgbuf.AddTypeDef(tref, tdef, false, false, tdefDiscards)
 
         // If a non-generic type is written with "static let" and "static do" (i.e. it has a ".cctor")
