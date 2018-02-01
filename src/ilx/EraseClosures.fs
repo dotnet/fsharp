@@ -482,11 +482,12 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
               let specialNameAttributes = (if td.IsSpecialName then securityAttributes ^^^ TypeAttributes.SpecialName else securityAttributes)
               let abstractAttributes = (if td.IsAbstract then specialNameAttributes ^^^ TypeAttributes.Abstract else specialNameAttributes)
               let comInteropAttributes = (if td.IsComInterop then abstractAttributes ^^^ TypeAttributes.Import else abstractAttributes)
+              let layoutAttributes = (if td.Attributes &&& TypeAttributes.AutoClass <> enum 0 then comInteropAttributes ^^^ TypeAttributes.AutoClass else comInteropAttributes)
               let cloTypeDef = 
                 { Name = td.Name
                   GenericParams= td.GenericParams
                   Attributes = 
-                    comInteropAttributes |||
+                    layoutAttributes |||
                     (if td.IsSerializable then TypeAttributes.Serializable else TypeAttributes.Sealed) |||
                     TypeAttributes.Sealed ||| TypeAttributes.BeforeFieldInit ||| TypeAttributes.AnsiClass
                   Implements = List.empty
@@ -581,12 +582,13 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                     let specialNameAttributes = (if td.IsSpecialName then securityAttributes ^^^ TypeAttributes.SpecialName else securityAttributes)
                     let abstractAttributes = (if td.IsAbstract then specialNameAttributes ^^^ TypeAttributes.Abstract else specialNameAttributes)
                     let comInteropAttributes = (if td.IsComInterop then abstractAttributes ^^^ TypeAttributes.Import else abstractAttributes)
+                    let layoutAttributes = (if td.Attributes &&& TypeAttributes.AutoClass <> enum 0 then comInteropAttributes ^^^ TypeAttributes.AutoClass else comInteropAttributes)
                     { Name = td.Name
                       GenericParams= td.GenericParams
                       Attributes = 
-                        comInteropAttributes |||
+                        layoutAttributes |||
                         (if td.IsSerializable then TypeAttributes.Serializable else TypeAttributes.Sealed) |||
-                        TypeAttributes.Sealed ||| TypeAttributes.BeforeFieldInit ||| TypeAttributes.AnsiClass
+                        TypeAttributes.Sealed ||| TypeAttributes.BeforeFieldInit
                       Implements = []
                       Layout=ILTypeDefLayout.Auto
                       NestedTypes = emptyILTypeDefs 

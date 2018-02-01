@@ -3735,7 +3735,7 @@ and GenClosureTypeDefs cenv (tref:ILTypeRef, ilGenParams, attrs, ilCloFreeVars, 
   let td = 
     { Name = tref.Name 
       Layout = ILTypeDefLayout.Auto
-      Attributes = trefAttributes ||| TypeAttributes.Sealed ||| TypeAttributes.Serializable ||| TypeAttributes.SpecialName ||| TypeAttributes.BeforeFieldInit ||| TypeAttributes.AutoLayout
+      Attributes = trefAttributes ||| TypeAttributes.Sealed ||| TypeAttributes.Serializable ||| TypeAttributes.SpecialName ||| TypeAttributes.BeforeFieldInit ||| TypeAttributes.AutoLayout ||| TypeAttributes.AutoClass
       GenericParams = ilGenParams
       CustomAttrs = mkILCustomAttrs(attrs @ [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Closure) ])
       Fields = emptyILFields
