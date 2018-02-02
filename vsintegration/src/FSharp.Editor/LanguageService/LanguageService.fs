@@ -572,21 +572,15 @@ type
             // Simple explanation:
             //    Legacy projects have IVSHierarchy and IPRojectSite
             //    CPS Projects and loose script files don't
+            // File added events are handled above.
             match VsRunningDocumentTable.FindDocumentWithoutLocking(package.RunningDocumentTable,filename) with
             | Some (hier, _) ->
                 match hier with
-                | :? IProvideProjectSite as siteProvider when not (IsScript(filename)) ->
-                    this.SetupProjectFile(siteProvider, this.Workspace, "SetupNewTextView")
-                | _ when not (IsScript(filename)) ->
-                    let docId = this.Workspace.CurrentSolution.GetDocumentIdsWithFilePath(filename).FirstOrDefault()
-                    match docId with
-                    | null ->
-                        let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
-                        this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
-                    | id ->
-                        projectInfoManager.UpdateProjectInfoWithProjectId(id.ProjectId, "SetupNewTextView", invalidateConfig=true)
-                | _ ->
+                | _ when IsScript(filename) ->
                     let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
                     this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
+                | :? IProvideProjectSite as siteProvider ->
+                    this.SetupProjectFile(siteProvider, this.Workspace, "SetupNewTextView")
+                | _ -> ()
             | _ -> ()
         | _ -> ()
