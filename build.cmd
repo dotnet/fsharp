@@ -603,6 +603,11 @@ if "%RestorePackages%" == "true" (
     )
 )
 
+if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
+    :: Restore the Tools directory
+    call %~dp0init-tools.cmd
+)
+
 echo ----------- Done with package restore, starting dependency uptake check -------------
 
 if not "%PB_PackageVersionPropsUrl%" == "" (
@@ -622,11 +627,6 @@ if not "%PB_PackageVersionPropsUrl%" == "" (
     :: restore dependencies
     %_nugetexe% restore !dependencyUptakeDir!\packages.config -PackagesDirectory packages -ConfigFile !dependencyUptakeDir!\NuGet.config
     if ERRORLEVEL 1 echo Error restoring dependency uptake packages && goto :failure
-)
-
-if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
-    :: Restore the Tools directory
-    call %~dp0init-tools.cmd
 )
 
 set _dotnetcliexe=%~dp0Tools\dotnetcli\dotnet.exe
