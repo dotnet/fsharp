@@ -6969,7 +6969,7 @@
       </trans-unit>
       <trans-unit id="tcTupleMemberNotNormallyUsed">
         <source>This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</source>
-        <target state="new">This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</target>
+        <target state="translated">Questo metodo o questa proprietà non è in genere usato dal codice F#. Per la decostruzione usare invece un criterio di tupla esplicito.</target>
         <note />
       </trans-unit>
     </body>
