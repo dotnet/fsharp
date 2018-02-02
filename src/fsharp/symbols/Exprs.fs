@@ -617,14 +617,14 @@ module FSharpExprConvert =
                 ConvExprPrim cenv env op
 
             | TOp.ILAsm ([ I_call (Normalcall, mspec, None) ], _), _, [arg]
-              when mspec.MethodRef.EnclosingTypeRef.Name = "System.String" && mspec.Name = "GetHashCode" ->
+              when mspec.MethodRef.DeclaringTypeRef.Name = "System.String" && mspec.Name = "GetHashCode" ->
                 let ty = tyOfExpr cenv.g arg
                 let op = mkCallHash cenv.g m ty arg
                 ConvExprPrim cenv env op
 
             | TOp.ILCall(_, _, _, _, _, _, _, mref, _, _, _), [],
               [Expr.Op(TOp.ILAsm([ I_ldtoken (ILToken.ILType _) ], _), [ty], _, _)]
-              when mref.EnclosingTypeRef.Name = "System.Type" && mref.Name = "GetTypeFromHandle" -> 
+              when mref.DeclaringTypeRef.Name = "System.Type" && mref.Name = "GetTypeFromHandle" -> 
                 let op = mkCallTypeOf cenv.g m ty
                 ConvExprPrim cenv env op
 
