@@ -616,7 +616,13 @@ module FSharpExprConvert =
                 let op = mkCallTypeTest cenv.g m ty arg
                 ConvExprPrim cenv env op
 
-            | TOp.ILAsm([ I_ldtoken _ ], _), [ty], _ -> 
+            | TOp.ILAsm ([ I_call (Normalcall, mspec, None) ], _), _, [arg]
+              when mspec.Name = "GetHashCode" ->
+                let ty = tyOfExpr cenv.g arg
+                let op = mkCallHash cenv.g m ty arg
+                ConvExprPrim cenv env op
+
+            | TOp.ILAsm([ I_ldtoken (ILToken.ILType _ilty) ], _), [ty], _ -> 
                 let op = mkCallTypeOf cenv.g m ty
                 ConvExprPrim cenv env op
 
@@ -656,9 +662,10 @@ module FSharpExprConvert =
                 let op = binaryOp cenv.g m ty arg1 arg2
                 ConvExprPrim cenv env op
 
-            | TOp.ILAsm([ ILConvertOp convertOp1; ILConvertOp convertOp2 ], _), [ty2], [arg] -> 
+            | TOp.ILAsm([ ILConvertOp convertOp1; ILConvertOp convertOp2 ], _), _, [arg] -> 
                 let ty1 = tyOfExpr cenv.g arg
                 let op1 = convertOp1 cenv.g m ty1 arg
+                let ty2 = tyOfExpr cenv.g op1
                 let op2 = convertOp2 cenv.g m ty2 op1
                 ConvExprPrim cenv env op2
 
@@ -746,6 +753,10 @@ module FSharpExprConvert =
                         mkCallSubtractionOperator cenv.g lm cenv.g.int32_ty lim1 (mkOne cenv.g lm) // len - 1
                     else lim1
                 E.FastIntegerForLoop(ConvExpr cenv env lim0, ConvExpr cenv env lim1, ConvExpr cenv env body, dir <> FSharpForLoopDown) 
+
+            | TOp.ILCall(_, _, _, _isNewObj, _valUseFlags, _isProp, _, ilMethRef, _enclTypeArgs, _methTypeArgs, _tys), [], [arg]
+              when ilMethRef.EnclosingTypeRef.Name = "System.Type" && ilMethRef.Name = "GetTypeFromHandle" -> 
+                ConvExprPrim cenv env arg
 
             | TOp.ILCall(_, _, _, isNewObj, valUseFlags, _isProp, _, ilMethRef, enclTypeArgs, methTypeArgs, _tys), [], callArgs -> 
                 ConvILCall cenv env (isNewObj, valUseFlags, ilMethRef, enclTypeArgs, methTypeArgs, callArgs, m)

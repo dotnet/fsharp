@@ -511,7 +511,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_greater_than_operator_info           = makeIntrinsicValRef(fslib_MFOperators_nleref,                   CompileOpName ">"                      , None                 , None          , [vara],     mk_rel_sig varaTy) 
   let v_greater_than_or_equals_operator_info = makeIntrinsicValRef(fslib_MFOperators_nleref,                   CompileOpName ">="                     , None                 , None          , [vara],     mk_rel_sig varaTy) 
   
-  let v_enumOfValue_info                     = makeIntrinsicValRef(fslib_MFLanguagePrimitives_nleref,          "EnumOfValue"        , None                 , None          , [vara; varb],     ([[varaTy]], varbTy)) 
+  let v_enumOfValue_info                     = makeIntrinsicValRef(fslib_MFLanguagePrimitives_nleref,          "EnumOfValue"                          , None                 , None          , [vara; varb],     ([[varaTy]], varbTy)) 
   
   let v_generic_comparison_withc_outer_info = makeIntrinsicValRef(fslib_MFLanguagePrimitives_nleref,           "GenericComparisonWithComparer"        , None                 , None          , [vara],     mk_compare_withc_sig  varaTy) 
   let v_generic_hash_withc_tuple2_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,           "FastHashTuple2"                                   , None                 , None          , [vara;varb],               mk_hash_withc_sig (decodeTupleTy tupInfoRef [varaTy; varbTy]))   
@@ -605,6 +605,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_nativeint_operator_info    = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "nativeint"                            , None                 , Some "ToIntPtr",  [vara],   ([[varaTy]], v_nativeint_ty)) 
   let v_unativeint_operator_info   = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "unativeint"                           , None                 , Some "ToUIntPtr", [vara],   ([[varaTy]], v_unativeint_ty))
 
+  let v_hash_info                  = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "hash"                                 , None                 , Some "Hash"   , [vara],     ([[varaTy]], v_int_ty))
   let v_box_info                   = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "box"                                  , None                 , Some "Box"    , [vara],     ([[varaTy]], v_obj_ty))
   let v_isnull_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "isNull"                               , None                 , Some "IsNull" , [vara],     ([[varaTy]], v_bool_ty))
   let v_isnotnull_info             = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "isNotNull"                            , None              , Some "IsNotNull" , [vara],     ([[varaTy]], v_bool_ty))
@@ -665,7 +666,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_cast_quotation_info        = makeIntrinsicValRef(fslib_MFQuotations_nleref,                            "Cast"                                 , Some "Expr"          , None                          , [vara],      ([[mkRawQuotedExprTy]], mkQuotedExprTy varaTy))
   let v_lift_value_info            = makeIntrinsicValRef(fslib_MFQuotations_nleref,                            "Value"                                , Some "Expr"          , None                          , [vara],      ([[varaTy]], mkRawQuotedExprTy))
   let v_lift_value_with_name_info  = makeIntrinsicValRef(fslib_MFQuotations_nleref,                            "ValueWithName"                        , Some "Expr"          , None                          , [vara],      ([[varaTy; v_string_ty]], mkRawQuotedExprTy))
-  let v_lift_value_with_defn_info  = makeIntrinsicValRef(fslib_MFQuotations_nleref,                            "WithValue"                  , Some "Expr"          , None                          , [vara],      ([[varaTy; mkQuotedExprTy varaTy]], mkQuotedExprTy varaTy))
+  let v_lift_value_with_defn_info  = makeIntrinsicValRef(fslib_MFQuotations_nleref,                            "WithValue"                            , Some "Expr"          , None                          , [vara],      ([[varaTy; mkQuotedExprTy varaTy]], mkQuotedExprTy varaTy))
   let v_query_value_info           = makeIntrinsicValRef(fslib_MFExtraTopLevelOperators_nleref,                "query"                                , None                 , None                          , [],      ([], mkQueryBuilderTy) )
   let v_query_run_value_info       = makeIntrinsicValRef(fslib_MFQueryRunExtensionsLowPriority_nleref,         "Run"                                  , Some "QueryBuilder"  , None                          , [vara],      ([[mkQueryBuilderTy];[mkQuotedExprTy varaTy]], varaTy) )
   let v_query_run_enumerable_info  = makeIntrinsicValRef(fslib_MFQueryRunExtensionsHighPriority_nleref,        "Run"                                  , Some "QueryBuilder"  , None                          , [vara],      ([[mkQueryBuilderTy];[mkQuotedExprTy (mkQuerySourceTy varaTy (mkNonGenericTy v_tcref_System_Collections_IEnumerable)) ]], mkSeqTy varaTy) )
@@ -1219,6 +1220,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.greater_than_operator       = v_greater_than_operator_info
   member __.greater_than_or_equals_operator = v_greater_than_or_equals_operator_info
 
+  member __.hash_info                  = v_hash_info
   member __.box_info                   = v_box_info
   member __.isnull_info                = v_isnull_info
   member __.isnotnull_info             = v_isnotnull_info
