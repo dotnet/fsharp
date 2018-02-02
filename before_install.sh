@@ -32,7 +32,7 @@ fi
 # We need to run the command twice -- on some systems (e.g. macOS) the certs are installed in the user store,
 # and on other systems (e.g., Ubuntu) they're installed to the machine store. certmgr only shows what's in
 # the selected store, which is why we need to check both.
-if [ "$(certmgr -list -c Trust | grep -c -F "X.509")" -le 1 ] && [ "$(certmgr -list -c -m Trust | grep -c -F "X.509")" -le 1 ]; then
+if [ $OS = 'Linux' ] && [ "$(certmgr -list -c Trust | grep -c -F "X.509")" -le 1 ] && [ "$(certmgr -list -c -m Trust | grep -c -F "X.509")" -le 1 ]; then
   echo "No SSL certificates installed so unable to restore NuGet packages." >&2;
   echo "Run 'mozroots --sync --import' to install certificates to Mono's certificate store." >&2;
   exit 1
