@@ -62,6 +62,8 @@ To setup Visual Studio to use the latest nightly releases of the Visual F# Tools
 
 https://blogs.msdn.microsoft.com/dotnet/2017/03/14/announcing-nightly-releases-for-the-visual-f-tools/
 
+If you wish to set up a *Preview* nightly atop Visual Studio preview builds, you can either [download a VSIX Manually from here](https://dotnet.myget.org/feed/fsharp-preview/package/vsix/VisualFSharp) or set up a VSIX feed in visual studio from [here](https://dotnet.myget.org/F/fsharp-preview/vsix).
+
 ### Using CI Builds
 
 To install F#, see http://fsharp.org.
