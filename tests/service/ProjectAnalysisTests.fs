@@ -1550,7 +1550,7 @@ let ``Test complete active patterns' exact ranges from uses of symbols`` () =
     oddGroup.IsTotal |> shouldEqual true
     oddGroup.Names |> Seq.toList |> shouldEqual ["Even"; "Odd"]
     oddGroup.OverallType.Format(oddSymbolUse.Value.DisplayContext) |> shouldEqual "int -> Choice<unit,unit>"
-    let oddEntity = oddGroup.EnclosingEntity.Value
+    let oddEntity = oddGroup.DeclaringEntity.Value
     oddEntity.ToString() |> shouldEqual "ActivePatterns"
 
     let evenSymbolUse = backgroundTypedParse1.GetSymbolUseAtLocation(10,9,"",["Even"]) |> Async.RunSynchronously
@@ -1564,7 +1564,7 @@ let ``Test complete active patterns' exact ranges from uses of symbols`` () =
     evenGroup.IsTotal |> shouldEqual true
     evenGroup.Names |> Seq.toList |> shouldEqual ["Even"; "Odd"]
     evenGroup.OverallType.Format(evenSymbolUse.Value.DisplayContext) |> shouldEqual "int -> Choice<unit,unit>"
-    let evenEntity = evenGroup.EnclosingEntity.Value
+    let evenEntity = evenGroup.DeclaringEntity.Value
     evenEntity.ToString() |> shouldEqual "ActivePatterns"
 
     let usesOfEvenSymbol = 
@@ -1608,7 +1608,7 @@ let ``Test partial active patterns' exact ranges from uses of symbols`` () =
     floatGroup.IsTotal |> shouldEqual false
     floatGroup.Names |> Seq.toList |> shouldEqual ["Float"]
     floatGroup.OverallType.Format(floatSymbolUse.Value.DisplayContext) |> shouldEqual "string -> float option"
-    let evenEntity = floatGroup.EnclosingEntity.Value
+    let evenEntity = floatGroup.DeclaringEntity.Value
     evenEntity.ToString() |> shouldEqual "ActivePatterns"
 
     let usesOfFloatSymbol = 
@@ -3251,16 +3251,16 @@ let ``Test Project23 property`` () =
         extensionProps
         |> Array.collect (fun f -> 
             [|  if f.HasGetterMethod then
-                    yield (f.EnclosingEntity.Value.FullName, f.GetterMethod.CompiledName, f.GetterMethod.EnclosingEntity.Value.FullName, attribsOfSymbol f)
+                    yield (f.DeclaringEntity.Value.FullName, f.ApparentEnclosingEntity.FullName, f.GetterMethod.CompiledName, f.GetterMethod.DeclaringEntity.Value.FullName, attribsOfSymbol f)
                 if f.HasSetterMethod then
-                    yield (f.EnclosingEntity.Value.FullName, f.SetterMethod.CompiledName, f.SetterMethod.EnclosingEntity.Value.FullName, attribsOfSymbol f)
+                    yield (f.DeclaringEntity.Value.FullName, f.ApparentEnclosingEntity.FullName, f.SetterMethod.CompiledName, f.SetterMethod.DeclaringEntity.Value.FullName, attribsOfSymbol f)
             |])
         |> Array.toList
 
     extensionPropsRelated  |> shouldEqual
-          [("System.Int32", "Int32.get_Zero.Static", "Impl.Getter",
+          [("Impl.Getter", "System.Int32", "Int32.get_Zero.Static", "Impl.Getter",
             ["member"; "prop"; "extmem"]);
-           ("System.Int32", "Int32.get_Value", "Impl.Getter",
+           ("Impl.Getter", "System.Int32", "Int32.get_Value", "Impl.Getter",
             ["member"; "prop"; "extmem"])]       
 
     allSymbolsUses 
@@ -3297,17 +3297,17 @@ let ``Test Project23 extension properties' getters/setters should refer to the c
         match x.Symbol with
         | :? FSharpMemberOrFunctionOrValue as f -> 
             if f.HasGetterMethod then
-                yield (f.EnclosingEntity.Value.FullName, f.GetterMethod.EnclosingEntity.Value.FullName, attribsOfSymbol f)
+                yield (f.DeclaringEntity.Value.FullName, f.GetterMethod.DeclaringEntity.Value.FullName, f.ApparentEnclosingEntity.FullName, f.GetterMethod.ApparentEnclosingEntity.FullName, attribsOfSymbol f)
             if f.HasSetterMethod then
-                yield (f.EnclosingEntity.Value.FullName, f.SetterMethod.EnclosingEntity.Value.FullName, attribsOfSymbol f)
+                yield (f.DeclaringEntity.Value.FullName, f.SetterMethod.DeclaringEntity.Value.FullName, f.ApparentEnclosingEntity.FullName, f.SetterMethod.ApparentEnclosingEntity.FullName, attribsOfSymbol f)
         | _ -> () 
         |])
     |> Array.toList
     |> shouldEqual 
-        [ ("System.Int32", "Impl.Setter", ["member"; "prop"; "extmem"]);
-          ("System.Int32", "Impl.Setter", ["member"; "prop"; "extmem"]);
-          ("System.Int32", "Impl.Getter", ["member"; "prop"; "extmem"])
-          ("System.Int32", "Impl.Getter", ["member"; "prop"; "extmem"]) ]
+        [ ("Impl.Setter", "Impl.Setter", "System.Int32", "System.Int32", ["member"; "prop"; "extmem"]);
+          ("Impl.Setter", "Impl.Setter", "System.Int32", "System.Int32", ["member"; "prop"; "extmem"]);
+          ("Impl.Getter", "Impl.Getter", "System.Int32", "System.Int32", ["member"; "prop"; "extmem"])
+          ("Impl.Getter", "Impl.Getter", "System.Int32", "System.Int32", ["member"; "prop"; "extmem"]) ]
 
 // Misc - property symbols
 module internal Project24 = 

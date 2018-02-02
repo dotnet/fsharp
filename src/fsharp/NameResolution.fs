@@ -517,7 +517,7 @@ let AddValRefsToItems (bulkAddMode: BulkAdd) (eUnqualifiedItems: LayeredMap<_,_>
 /// Add an F# value to the table of available extension members, if necessary, as an FSharp-style extension member
 let AddValRefToExtensionMembers pri (eIndexedExtensionMembers: TyconRefMultiMap<_>) (vref:ValRef) =
     if vref.IsMember && vref.IsExtensionMember then
-        eIndexedExtensionMembers.Add (vref.MemberApparentParent, FSExtMem (vref,pri)) 
+        eIndexedExtensionMembers.Add (vref.MemberApparentEntity, FSExtMem (vref,pri)) 
     else
         eIndexedExtensionMembers
 
@@ -853,7 +853,8 @@ let AddDeclaredTyparsToNameEnv check nenv typars =
 /// a fresh set of inference type variables for the type parameters of the union type.
 let FreshenTycon (ncenv: NameResolver) m (tcref:TyconRef) = 
     let tinst = ncenv.InstantiationGenerator m (tcref.Typars m)
-    TType_app(tcref,tinst)
+    let improvedTy = ncenv.g.decompileType tcref tinst
+    improvedTy
 
 /// Convert a reference to a union case into a UnionCaseInfo that includes
 /// a fresh set of inference type variables for the type parameters of the union type.
@@ -1299,7 +1300,7 @@ let (|EntityUse|_|) (item: Item) =
     | Item.DelegateCtor(AbbrevOrAppTy tcref) 
     | Item.FakeInterfaceCtor(AbbrevOrAppTy tcref) -> Some tcref
     | Item.CtorGroup(_, ctor::_) -> 
-        match ctor.EnclosingType with 
+        match ctor.ApparentEnclosingType with 
         | AbbrevOrAppTy tcref -> Some tcref
         | _ -> None
     | _ -> None
@@ -1609,7 +1610,7 @@ let CheckAllTyparsInferrable amap m item =
     | Item.Property(_,pinfos) -> 
         pinfos |> List.forall (fun pinfo -> 
             pinfo.IsExtensionMember ||
-            let freeInDeclaringType = freeInType CollectTyparsNoCaching pinfo.EnclosingType
+            let freeInDeclaringType = freeInType CollectTyparsNoCaching pinfo.ApparentEnclosingType
             let freeInArgsAndRetType = 
                 accFreeInTypes CollectTyparsNoCaching (pinfo.GetParamTypes(amap,m)) 
                        (freeInType CollectTyparsNoCaching (pinfo.GetPropertyType(amap,m)))
@@ -1620,7 +1621,7 @@ let CheckAllTyparsInferrable amap m item =
         minfos |> List.forall (fun minfo -> 
             minfo.IsExtensionMember ||
             let fminst = minfo.FormalMethodInst
-            let freeInDeclaringType = freeInType CollectTyparsNoCaching minfo.EnclosingType
+            let freeInDeclaringType = freeInType CollectTyparsNoCaching minfo.ApparentEnclosingType
             let freeInArgsAndRetType = 
                 List.foldBack (accFreeInTypes CollectTyparsNoCaching) (minfo.GetParamTypes(amap, m, fminst)) 
                    (accFreeInTypes CollectTyparsNoCaching (minfo.GetObjArgTypes(amap, m, fminst)) 
@@ -1859,11 +1860,12 @@ let private ResolveObjectConstructorPrim (ncenv:NameResolver) edenv resInfo m ad
                 then 
                     [DefaultStructCtor(g,typ)]
                 else []
-            if (isNil defaultStructCtorInfo && isNil ctorInfos) || not (isAppTy g typ) then 
+            if (isNil defaultStructCtorInfo && isNil ctorInfos) || (not (isAppTy g typ) && not (isAnyTupleTy g typ)) then 
                 raze (Error(FSComp.SR.nrNoConstructorsAvailableForType(NicePrint.minimalStringOfType edenv typ),m))
             else 
                 let ctorInfos = ctorInfos |> List.filter (IsMethInfoAccessible amap m ad)  
-                success (resInfo,Item.MakeCtorGroup ((tcrefOfAppTy g typ).LogicalName, (defaultStructCtorInfo@ctorInfos))) 
+                let metadataTy = helpEnsureTypeHasMetadata g typ
+                success (resInfo,Item.MakeCtorGroup ((tcrefOfAppTy g metadataTy).LogicalName, (defaultStructCtorInfo@ctorInfos))) 
 
 /// Perform name resolution for an identifier which must resolve to be an object constructor.
 let ResolveObjectConstructor (ncenv:NameResolver) edenv m ad typ = 
@@ -1906,7 +1908,7 @@ let ExtensionPropInfosOfTypeInScope (infoReader:InfoReader) (nenv: NameResolutio
     
     let extMemsFromHierarchy = 
         infoReader.GetEntireTypeHierachy(AllowMultiIntfInstantiations.Yes,m,typ) |> List.collect (fun typ -> 
-             if (isAppTy g typ) then 
+             if isAppTy g typ then 
                 let tcref = tcrefOfAppTy g typ
                 let extMemInfos = nenv.eIndexedExtensionMembers.Find tcref
                 SelectPropInfosFromExtMembers (infoReader,ad,optFilter) typ m extMemInfos
@@ -1969,7 +1971,7 @@ let ExtensionMethInfosOfTypeInScope (infoReader:InfoReader) (nenv: NameResolutio
     let extMemsFromHierarchy = 
         infoReader.GetEntireTypeHierachy(AllowMultiIntfInstantiations.Yes,m,typ) |> List.collect (fun typ -> 
             let g = infoReader.g
-            if (isAppTy g typ) then 
+            if isAppTy g typ then 
                 let tcref = tcrefOfAppTy g typ
                 let extValRefs = nenv.eIndexedExtensionMembers.Find tcref
                 SelectMethInfosFromExtMembers infoReader optFilter typ  m extValRefs
@@ -2010,7 +2012,7 @@ let CoreDisplayName(pinfo:PropInfo) =
     | FSProp(_,_,_,Some set) -> set.CoreDisplayName
     | FSProp(_,_,Some get,_) -> get.CoreDisplayName
     | FSProp _ -> failwith "unexpected (property must have either getter or setter)"
-    | ILProp(_,ILPropInfo(_,def))  -> def.Name
+    | ILProp(ILPropInfo(_,def))  -> def.Name
 #if !NO_EXTENSIONTYPING
     | ProvidedProp(_,pi,m) -> pi.PUntaint((fun pi -> pi.Name), m)
 #endif
@@ -2019,8 +2021,8 @@ let DecodeFSharpEvent (pinfos:PropInfo list) ad g (ncenv:NameResolver) m =
     match pinfos with 
     | [pinfo] when pinfo.IsFSharpEventProperty -> 
         let nm = CoreDisplayName(pinfo)
-        let minfos1 = GetImmediateIntrinsicMethInfosOfType (Some("add_"+nm),ad) g ncenv.amap m pinfo.EnclosingType 
-        let minfos2 = GetImmediateIntrinsicMethInfosOfType (Some("remove_"+nm),ad) g ncenv.amap m pinfo.EnclosingType
+        let minfos1 = GetImmediateIntrinsicMethInfosOfType (Some("add_"+nm),ad) g ncenv.amap m pinfo.ApparentEnclosingType 
+        let minfos2 = GetImmediateIntrinsicMethInfosOfType (Some("remove_"+nm),ad) g ncenv.amap m pinfo.ApparentEnclosingType
         match  minfos1,minfos2 with 
         | [FSMeth(_,_,addValRef,_)],[FSMeth(_,_,removeValRef,_)] -> 
             // FOUND PROPERTY-AS-EVENT AND CORRESPONDING ADD/REMOVE METHODS
@@ -2246,7 +2248,7 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv:NameResolver) nenv (typeN
                     match typeNameResInfo.ResolutionFlag with 
                     | ResolveTypeNamesToTypeRefs -> 
                         success [ for (resInfo,tcref) in tcrefs do 
-                                      let typ = FreshenTycon ncenv m tcref
+                                      let typ = FreshenTycon ncenv m tcref 
                                       let item = (resInfo,Item.Types(id.idText,[typ]),[])
                                       yield item ]
                     | ResolveTypeNamesToCtors -> 
@@ -3483,6 +3485,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
             not x.IsSpecialName &&
             x.IsStatic = statics && 
             IsILFieldInfoAccessible g amap m ad x)
+
     let pinfosIncludingUnseen = 
         AllPropInfosOfTypeInScope ncenv.InfoReader nenv (None,ad) PreferOverrides m typ
         |> List.filter (fun x -> 
@@ -3506,8 +3509,8 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
                 let (SigOfFunctionForDelegate(invokeMethInfo,_,_,_)) = GetSigOfFunctionForDelegate ncenv.InfoReader delegateType m ad 
                 // Only events with void return types are suppressed in intellisense.
                 if slotSigHasVoidReturnTy (invokeMethInfo.GetSlotSig(amap, m)) then 
-                  yield einfo.GetAddMethod().DisplayName
-                  yield einfo.GetRemoveMethod().DisplayName ]
+                  yield einfo.AddMethod.DisplayName
+                  yield einfo.RemoveMethod.DisplayName ]
         else []
 
     let suppressedMethNames = Zset.ofList String.order (pinfoMethNames @ einfoMethNames)
@@ -3521,6 +3524,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
             match completionTargets with
             | ResolveCompletionTargets.All x -> x
             | _ -> failwith "internal error: expected completionTargets = ResolveCompletionTargets.All"
+
         // Only show the Finalize, MemberwiseClose etc. methods on System.Object for values whose static type really is 
         // System.Object. Few of these are typically used from F#.  
         //
@@ -3530,10 +3534,10 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
             not minfo.IsExtensionMember &&
             match minfo.LogicalName with
             | "GetType"  -> false
-            | "GetHashCode"  -> isObjTy g minfo.EnclosingType && not (AugmentWithHashCompare.TypeDefinitelyHasEquality g typ)
+            | "GetHashCode"  -> isObjTy g minfo.ApparentEnclosingType && not (AugmentWithHashCompare.TypeDefinitelyHasEquality g typ)
             | "ToString" -> false
             | "Equals" ->                 
-                if not (isObjTy g minfo.EnclosingType) then 
+                if not (isObjTy g minfo.ApparentEnclosingType) then 
                     // declaring type is not System.Object - show it
                     false 
                 elif minfo.IsInstance then
@@ -3544,7 +3548,8 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
                     true
             | _ -> 
                 // filter out self methods of obj type
-                isObjTy g minfo.EnclosingType
+                isObjTy g minfo.ApparentEnclosingType
+
         let result = 
             not isUnseenDueToBasicObjRules &&
             not minfo.IsInstance = statics &&
@@ -3556,6 +3561,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
             not (minfo.LogicalName = ".ctor") &&
             isApplicableMeth minfo typ &&
             not (suppressedMethNames.Contains minfo.LogicalName)
+
         result
 
     let pinfoItems = 
@@ -4143,8 +4149,8 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics typ 
                     let (SigOfFunctionForDelegate(invokeMethInfo,_,_,_)) = GetSigOfFunctionForDelegate ncenv.InfoReader delegateType m ad 
                     // Only events with void return types are suppressed in intellisense.
                     if slotSigHasVoidReturnTy (invokeMethInfo.GetSlotSig(amap, m)) then 
-                      yield einfo.GetAddMethod().DisplayName
-                      yield einfo.GetRemoveMethod().DisplayName ]
+                      yield einfo.AddMethod.DisplayName
+                      yield einfo.RemoveMethod.DisplayName ]
         
             let suppressedMethNames = Zset.ofList String.order (pinfoMethNames @ einfoMethNames)
         
@@ -4162,10 +4168,10 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics typ 
                     not minfo.IsExtensionMember &&
                     match minfo.LogicalName with
                     | "GetType"  -> false
-                    | "GetHashCode"  -> isObjTy g minfo.EnclosingType && not (AugmentWithHashCompare.TypeDefinitelyHasEquality g typ)
+                    | "GetHashCode"  -> isObjTy g minfo.ApparentEnclosingType && not (AugmentWithHashCompare.TypeDefinitelyHasEquality g typ)
                     | "ToString" -> false
                     | "Equals" ->                 
-                        if not (isObjTy g minfo.EnclosingType) then 
+                        if not (isObjTy g minfo.ApparentEnclosingType) then 
                             // declaring type is not System.Object - show it
                             false 
                         elif minfo.IsInstance then
@@ -4176,7 +4182,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics typ 
                             true
                     | _ -> 
                         // filter out self methods of obj type
-                        isObjTy g minfo.EnclosingType
+                        isObjTy g minfo.ApparentEnclosingType
                 let result = 
                     not isUnseenDueToBasicObjRules &&
                     not minfo.IsInstance = statics &&

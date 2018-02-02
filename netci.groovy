@@ -14,12 +14,14 @@ def static getBuildJobName(def configuration, def os) {
     osList.each { os ->
         def configurations = [];
         if (os == 'Windows_NT') {
-            configurations = ['Debug', 'Release_ci_part1', 'Release_ci_part2', 'Release_ci_part3', 'Release_net40_no_vs', 'Release_fcs' ];
+            configurations = ['Debug_default', 'Release_ci_part1', 'Release_ci_part2', 'Release_ci_part3', 'Release_net40_no_vs', 'Release_fcs' ];
         }
         else
         {
             // Linux
-            configurations = ['Release', 'Release_fcs' ];
+            // TODO: It should be possible to enable these configurations immediately subsequent to the PR containing this line
+            //configurations = ['Debug_default', 'Release_net40_test', 'Release_fcs' ];
+            configurations = [ 'Release_default', 'Release_fcs' ];
         }
         
         configurations.each { configuration ->
@@ -50,27 +52,37 @@ def static getBuildJobName(def configuration, def os) {
                     build_args = "Build"
                 }
             }
-            else if (configuration == "Debug") {
+            else if (configuration == "Debug_default") {
                 buildFlavor = "debug"
                 build_args = ""
             }
+            else if (configuration == "Release_default") {
+                buildFlavor = "release"
+                build_args = ""
+            }
+            else if (configuration == "Release_net40_test") {
+                buildFlavor = "release"
+                build_args = "net40 test"
+            }
+            else if (configuration == "Release_ci_part1") {
+                buildFlavor = "release"
+                build_args = "ci_part1"
+            }
+            else if (configuration == "Release_ci_part2") {
+                buildFlavor = "release"
+                build_args = "ci_part2"
+            }
+            else if (configuration == "Release_ci_part3") {
+                buildFlavor = "release"
+                build_args = "ci_part3"
+            }
+            else if (configuration == "Release_net40_no_vs") {
+                buildFlavor = "release"
+                build_args = "net40"
+            }
             else {
                 buildFlavor = "release"
-                if (configuration == "Release_ci_part1") {
-                    build_args = "ci_part1"
-                }
-                else if (configuration == "Release_ci_part2") {
-                    build_args = "ci_part2"
-                }
-                else if (configuration == "Release_ci_part3") {
-                    build_args = "ci_part3"
-                }
-                else if (configuration == "Release_net40_no_vs") {
-                    build_args = "net40"
-                }
-                else {
-                    build_args = "none"
-                }
+                build_args = "none"
             }
 
             if (os == 'Windows_NT') {
@@ -99,7 +111,7 @@ ${buildPath}build.cmd ${buildFlavor} ${build_args}""")
             // TODO: set to false after tests are fully enabled
             def skipIfNoTestFiles = true
 
-            def affinity = configuration == 'Release_net40_no_vs' ? 'latest-or-auto' : (os == 'Windows_NT' ? 'latest-or-auto-dev15-0' : 'latest-or-auto')
+            def affinity = configuration == 'Release_net40_no_vs' ? 'latest-or-auto' : (os == 'Windows_NT' ? 'latest-dev15-5' : 'latest-or-auto')
             Utilities.setMachineAffinity(newJob, os, affinity)
             Utilities.standardJobSetup(newJob, project, isPullRequest, "*/${branch}")
 

@@ -364,7 +364,7 @@ type TypeCheckInfo
         let result =
             match cnrs with
             | CNR(_, Item.CtorGroup(_, ((ctor::_) as ctors)), _, denv, nenv, ad, m) ::_ ->
-                let props = ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false ctor.EnclosingType
+                let props = ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false ctor.ApparentEnclosingType
                 let parameters = CollectParameters ctors amap m
                 let items = props @ parameters
                 Some (denv, m, items)
@@ -930,11 +930,11 @@ type TypeCheckInfo
         scope.IsRelativeNameResolvable(cursorPos, plid, symbol.Item)
         
     /// Get the auto-complete items at a location
-    member __.GetDeclarations (ctok, parseResultsOpt, line, lineStr, partialName, getAllSymbols, hasTextChangedSinceLastTypecheck) =
+    member __.GetDeclarations (ctok, parseResultsOpt, line, lineStr, partialName, getAllEntities, hasTextChangedSinceLastTypecheck) =
         let isInterfaceFile = SourceFileImpl.IsInterfaceFile mainInputFileName
         ErrorScope.Protect Range.range0 
             (fun () ->
-                match GetDeclItemsForNamesAtPosition(ctok, parseResultsOpt, Some partialName.QualifyingIdents, Some partialName.PartialIdent, partialName.LastDotPos, line, lineStr, partialName.EndColumn + 1, ResolveTypeNamesToCtors, ResolveOverloads.Yes, getAllSymbols, hasTextChangedSinceLastTypecheck) with
+                match GetDeclItemsForNamesAtPosition(ctok, parseResultsOpt, Some partialName.QualifyingIdents, Some partialName.PartialIdent, partialName.LastDotPos, line, lineStr, partialName.EndColumn + 1, ResolveTypeNamesToCtors, ResolveOverloads.Yes, getAllEntities, hasTextChangedSinceLastTypecheck) with
                 | None -> FSharpDeclarationListInfo.Empty  
                 | Some (items, denv, ctx, m) -> 
                     let items = if isInterfaceFile then items |> List.filter (fun x -> IsValidSignatureFileItem x.Item) else items
@@ -950,11 +950,11 @@ type TypeCheckInfo
                 FSharpDeclarationListInfo.Error msg)
 
     /// Get the symbols for auto-complete items at a location
-    member __.GetDeclarationListSymbols (ctok, parseResultsOpt, line, lineStr, partialName, hasTextChangedSinceLastTypecheck) =
+    member __.GetDeclarationListSymbols (ctok, parseResultsOpt, line, lineStr, partialName, getAllEntities, hasTextChangedSinceLastTypecheck) =
         let isInterfaceFile = SourceFileImpl.IsInterfaceFile mainInputFileName
         ErrorScope.Protect Range.range0 
             (fun () -> 
-                match GetDeclItemsForNamesAtPosition(ctok, parseResultsOpt, Some partialName.QualifyingIdents, Some partialName.PartialIdent, partialName.LastDotPos, line, lineStr, partialName.EndColumn + 1, ResolveTypeNamesToCtors, ResolveOverloads.Yes, (fun () -> []), hasTextChangedSinceLastTypecheck) with
+                match GetDeclItemsForNamesAtPosition(ctok, parseResultsOpt, Some partialName.QualifyingIdents, Some partialName.PartialIdent, partialName.LastDotPos, line, lineStr, partialName.EndColumn + 1, ResolveTypeNamesToCtors, ResolveOverloads.Yes, getAllEntities, hasTextChangedSinceLastTypecheck) with
                 | None -> List.Empty  
                 | Some (items, denv, _, m) -> 
                     let items = if isInterfaceFile then items |> List.filter (fun x -> IsValidSignatureFileItem x.Item) else items
@@ -966,7 +966,7 @@ type TypeCheckInfo
                     //     - show types with fewer generic parameters first
                     //     - show types before over other related items - they usually have very useful XmlDocs 
                     let items = 
-                        items |> List.sortBy (fun d -> 
+                        items |> List.sortBy (fun d ->
                             let n = 
                                 match d.Item with  
                                 | Item.Types (_,(TType_app(tcref,_) :: _)) -> 1 + tcref.TyparsNoRange.Length
@@ -974,15 +974,26 @@ type TypeCheckInfo
                                 | Item.FakeInterfaceCtor (TType_app(tcref,_)) 
                                 | Item.DelegateCtor (TType_app(tcref,_)) -> 1000 + tcref.TyparsNoRange.Length
                                 // Put type ctors after types, sorted by #typars. RemoveDuplicateItems will remove DefaultStructCtors if a type is also reported with this name
-                                | Item.CtorGroup (_, (cinfo :: _)) -> 1000 + 10 * (tcrefOfAppTy g cinfo.EnclosingType).TyparsNoRange.Length 
+                                | Item.CtorGroup (_, (cinfo :: _)) -> 1000 + 10 * cinfo.DeclaringTyconRef.TyparsNoRange.Length 
                                 | _ -> 0
                             (d.Item.DisplayName,n))
 
                     // Remove all duplicates. We've put the types first, so this removes the DelegateCtor and DefaultStructCtor's.
                     let items = items |> RemoveDuplicateCompletionItems g
 
-                    // Group by display name
-                    let items = items |> List.groupBy (fun d -> d.Item.DisplayName) 
+                    // Group by compiled name for types, display name for functions
+                    // (We don't want types with the same display name to be grouped as overloads)
+                    let items =
+                        items |> List.groupBy (fun d ->
+                            match d.Item with  
+                            | Item.Types (_,(TType_app(tcref,_) :: _))
+                            | Item.ExnCase tcref -> tcref.LogicalName
+                            | Item.UnqualifiedType(tcref :: _)
+                            | Item.FakeInterfaceCtor (TType_app(tcref,_)) 
+                            | Item.DelegateCtor (TType_app(tcref,_)) -> tcref.CompiledName
+                            | Item.CtorGroup (_, (cinfo :: _)) ->
+                                (tcrefOfAppTy g cinfo.ApparentEnclosingType).CompiledName
+                            | _ -> d.Item.DisplayName)
 
                     // Filter out operators (and list)
                     let items = 
@@ -1149,7 +1160,7 @@ type TypeCheckInfo
                           let typeVarNames = getTypeVarNames ilinfo
                           ParamTypeSymbol.tryOfILTypes typeVarNames ilinfo.ILMethodRef.ArgTypes
                           |> Option.map (fun args ->
-                              let externalSym = ExternalSymbol.Constructor (ilinfo.ILMethodRef.EnclosingTypeRef.FullName, args)
+                              let externalSym = ExternalSymbol.Constructor (ilinfo.ILMethodRef.DeclaringTypeRef.FullName, args)
                               FSharpFindDeclResult.ExternalDecl (assref.Name, externalSym))
                       | _ -> None
 
@@ -1159,33 +1170,33 @@ type TypeCheckInfo
                           let typeVarNames = getTypeVarNames ilinfo
                           ParamTypeSymbol.tryOfILTypes typeVarNames ilinfo.ILMethodRef.ArgTypes
                           |> Option.map (fun args ->
-                              let externalSym = ExternalSymbol.Method (ilinfo.ILMethodRef.EnclosingTypeRef.FullName, name, args, ilinfo.ILMethodRef.GenericArity)
+                              let externalSym = ExternalSymbol.Method (ilinfo.ILMethodRef.DeclaringTypeRef.FullName, name, args, ilinfo.ILMethodRef.GenericArity)
                               FSharpFindDeclResult.ExternalDecl (assref.Name, externalSym))
                       | _ -> None
 
-                  | Item.Property (name, ILProp (_, propInfo) :: _) ->
+                  | Item.Property (name, ILProp propInfo :: _) ->
                       let methInfo = 
-                          if propInfo.HasGetter then Some (propInfo.GetterMethod g)
-                          elif propInfo.HasSetter then Some (propInfo.SetterMethod g)
+                          if propInfo.HasGetter then Some propInfo.GetterMethod
+                          elif propInfo.HasSetter then Some propInfo.SetterMethod
                           else None
                       
                       match methInfo with
                       | Some methInfo ->
                           match methInfo.MetadataScope with
                           | ILScopeRef.Assembly assref ->
-                              let externalSym = ExternalSymbol.Property (methInfo.ILMethodRef.EnclosingTypeRef.FullName, name)
+                              let externalSym = ExternalSymbol.Property (methInfo.ILMethodRef.DeclaringTypeRef.FullName, name)
                               Some (FSharpFindDeclResult.ExternalDecl (assref.Name, externalSym))
                           | _ -> None
                       | None -> None
                   
-                  | Item.ILField (ILFieldInfo (ILTypeInfo (tr, _, _, _) & typeInfo, fieldDef)) when not tr.IsLocalRef ->
+                  | Item.ILField (ILFieldInfo (typeInfo, fieldDef)) when not typeInfo.TyconRefOfRawMetadata.IsLocalRef ->
                       match typeInfo.ILScopeRef with
                       | ILScopeRef.Assembly assref ->
                           let externalSym = ExternalSymbol.Field (typeInfo.ILTypeRef.FullName, fieldDef.Name)
                           Some (FSharpFindDeclResult.ExternalDecl (assref.Name, externalSym))
                       | _ -> None
                   
-                  | Item.Event (ILEvent (_, ILEventInfo (ILTypeInfo (tr, _, _, _) & typeInfo, eventDef))) when not tr.IsLocalRef ->
+                  | Item.Event (ILEvent (ILEventInfo (typeInfo, eventDef))) when not typeInfo.TyconRefOfRawMetadata.IsLocalRef ->
                       match typeInfo.ILScopeRef with
                       | ILScopeRef.Assembly assref ->
                           let externalSym = ExternalSymbol.Event (typeInfo.ILTypeRef.FullName, eventDef.Name)
@@ -1353,7 +1364,7 @@ type TypeCheckInfo
                     Some (m, SemanticClassificationType.ValueType)
                 else Some (m, SemanticClassificationType.ReferenceType)
             | CNR(_, Item.CtorGroup(_, minfos), LegitTypeOccurence, _, _, _, m) ->
-                if minfos |> List.exists (fun minfo -> isStructTy g minfo.EnclosingType) then
+                if minfos |> List.exists (fun minfo -> isStructTy g minfo.ApparentEnclosingType) then
                     Some (m, SemanticClassificationType.ValueType)
                 else Some (m, SemanticClassificationType.ReferenceType)
             | CNR(_, Item.ExnCase _, LegitTypeOccurence, _, _, _, m) ->
@@ -1519,6 +1530,10 @@ module internal Parser =
         if source.Length = 0 || not (source.[source.Length - 1] = '\n') then source + "\n" else source
 
     let matchBraces(source, fileName, options: FSharpParsingOptions, userOpName: string) =
+        let delayedLogger = CapturingErrorLogger("matchBraces")
+        use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayedLogger)
+        use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
+
         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "matchBraces", fileName)
 
         // Make sure there is an ErrorLogger installed whenever we do stuff that might record errors, even if we ultimately ignore the errors
@@ -1945,16 +1960,18 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
     member info.HasFullTypeCheckInfo = details.IsSome
     
     /// Intellisense autocompletions
-    member info.GetDeclarationListInfo(parseResultsOpt, line, lineStr, partialName, getAllEntities, ?hasTextChangedSinceLastTypecheck, ?userOpName: string) = 
+    member info.GetDeclarationListInfo(parseResultsOpt, line, lineStr, partialName, ?getAllEntities, ?hasTextChangedSinceLastTypecheck, ?userOpName: string) = 
         let userOpName = defaultArg userOpName "Unknown"
+        let getAllEntities = defaultArg getAllEntities (fun() -> [])
         let hasTextChangedSinceLastTypecheck = defaultArg hasTextChangedSinceLastTypecheck (fun _ -> false)
         reactorOp userOpName "GetDeclarations" FSharpDeclarationListInfo.Empty (fun ctok scope -> 
             scope.GetDeclarations(ctok, parseResultsOpt, line, lineStr, partialName, getAllEntities, hasTextChangedSinceLastTypecheck))
 
-    member info.GetDeclarationListSymbols(parseResultsOpt, line, lineStr, partialName, ?hasTextChangedSinceLastTypecheck, ?userOpName: string) = 
+    member info.GetDeclarationListSymbols(parseResultsOpt, line, lineStr, partialName, ?getAllEntities, ?hasTextChangedSinceLastTypecheck, ?userOpName: string) = 
         let userOpName = defaultArg userOpName "Unknown"
         let hasTextChangedSinceLastTypecheck = defaultArg hasTextChangedSinceLastTypecheck (fun _ -> false)
-        reactorOp userOpName "GetDeclarationListSymbols" List.empty (fun ctok scope -> scope.GetDeclarationListSymbols(ctok, parseResultsOpt, line, lineStr, partialName, hasTextChangedSinceLastTypecheck))
+        let getAllEntities = defaultArg getAllEntities (fun() -> [])
+        reactorOp userOpName "GetDeclarationListSymbols" List.empty (fun ctok scope -> scope.GetDeclarationListSymbols(ctok, parseResultsOpt, line, lineStr, partialName, getAllEntities, hasTextChangedSinceLastTypecheck))
 
     /// Resolve the names at the given location to give a data tip 
     member info.GetStructuredToolTipText(line, colAtEndOfNames, lineStr, names, tokenTag, ?userOpName: string) = 
