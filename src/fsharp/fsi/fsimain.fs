@@ -235,6 +235,12 @@ let evaluateSession(argv: string[]) =
                 None
 #endif
 
+        let legacyReferenceResolver = 
+#if CROSS_PLATFORM_COMPILER
+            SimulatedMSBuildReferenceResolver.SimulatedMSBuildResolver
+#else
+            MSBuildReferenceResolver.Resolver
+#endif
         // Update the configuration to include 'StartServer', WinFormsEventLoop and 'GetOptionalConsoleReadLine()'
         let rec fsiConfig = 
             { new FsiEvaluationSessionHostConfig () with 
@@ -251,21 +257,21 @@ let evaluateSession(argv: string[]) =
                 member __.ReportUserCommandLineArgs args = fsiConfig0.ReportUserCommandLineArgs args
                 member __.EventLoopRun() = 
 #if !FX_NO_WINFORMS
-                    match fsiWinFormsLoop.Value with 
+                    match (if fsiSession.IsGui then fsiWinFormsLoop.Value else None) with 
                     | Some l -> (l :> IEventLoop).Run()
                     | _ -> 
 #endif
                     fsiConfig0.EventLoopRun()
                 member __.EventLoopInvoke(f) = 
 #if !FX_NO_WINFORMS
-                    match fsiWinFormsLoop.Value with 
+                    match (if fsiSession.IsGui then fsiWinFormsLoop.Value else None) with 
                     | Some l -> (l :> IEventLoop).Invoke(f)
                     | _ -> 
 #endif
                     fsiConfig0.EventLoopInvoke(f)
                 member __.EventLoopScheduleRestart() = 
 #if !FX_NO_WINFORMS
-                    match fsiWinFormsLoop.Value with 
+                    match (if fsiSession.IsGui then fsiWinFormsLoop.Value else None) with 
                     | Some l -> (l :> IEventLoop).ScheduleRestart()
                     | _ -> 
 #endif
@@ -279,7 +285,7 @@ let evaluateSession(argv: string[]) =
                 member __.GetOptionalConsoleReadLine(probe) = getConsoleReadLine(probe) }
 
         // Create the console
-        and fsiSession = FsiEvaluationSession.Create (fsiConfig, argv, Console.In, Console.Out, Console.Error, collectible=false, legacyReferenceResolver=MSBuildReferenceResolver.Resolver)
+        and fsiSession : FsiEvaluationSession = FsiEvaluationSession.Create (fsiConfig, argv, Console.In, Console.Out, Console.Error, collectible=false, legacyReferenceResolver=legacyReferenceResolver)
 
 
 #if !FX_NO_WINFORMS
