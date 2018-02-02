@@ -107,10 +107,13 @@ namespace Internal.Utilities.Collections.Tagged
         member ToArray: unit -> 'T array 
 
         interface ICollection<'T> 
+
         interface IEnumerable<'T> 
+
         interface System.Collections.IEnumerable
 
         interface System.IComparable
+
         override Equals : obj -> bool
 
     type internal Set<'T> = Set<'T, IComparer<'T>>    
@@ -128,14 +131,13 @@ namespace Internal.Utilities.Collections.Tagged
     /// Immutable maps.  A constraint tag carries information about the class of key-comparers being used.  
     [<Sealed>]
     type internal Map<'Key,'Value,'ComparerTag>  when 'ComparerTag :> IComparer<'Key> =
+
         /// Return a new map with the binding added to the given map.
         member Add: 'Key * 'Value -> Map<'Key,'Value,'ComparerTag>
 
         /// Return True if there are no bindings in the map.
         member IsEmpty: bool
         
-        //member Comparer : 'ComparerTag
-
         /// The empty map, and use the given comparer comparison function for all operations associated
         /// with any maps built from this map.
         static member Empty: 'ComparerTag -> Map<'Key,'Value,'ComparerTag>
@@ -213,7 +215,9 @@ namespace Internal.Utilities.Collections.Tagged
         interface IEnumerable<KeyValuePair<'Key, 'Value>>
         
         interface System.Collections.IEnumerable 
+
         interface System.IComparable
+
         override Equals : obj -> bool
 
     type internal Map<'Key,'Value> = Map<'Key, 'Value, IComparer<'Key>>    

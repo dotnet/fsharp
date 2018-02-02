@@ -31,7 +31,7 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Tests.FSharpSuite", 
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.UnitTests", "tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj", "{A8D9641A-9170-4CF4-8FE0-6DB8C134E1B5}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Core.UnitTests", "tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj", "{88E2D422-6852-46E3-A740-83E391DC7973}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Core.UnitTests", "tests\FSharp.Core.UnitTests\FSharp.Core.Unittests.fsproj", "{88E2D422-6852-46E3-A740-83E391DC7973}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Compiler", "Compiler", "{3881429D-A97A-49EB-B7AE-A82BA5FE9C77}"
 EndProject
