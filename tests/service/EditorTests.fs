@@ -212,8 +212,8 @@ let ``Symbols many tests`` () =
     fnVal.CurriedParameterGroups.[0].[1].Name.Value |> shouldEqual "y"
     fnVal.DeclarationLocation.StartLine |> shouldEqual 3
     fnVal.DisplayName |> shouldEqual "foo"
-    fnVal.EnclosingEntity.Value.DisplayName |> shouldEqual "Test"
-    fnVal.EnclosingEntity.Value.DeclarationLocation.StartLine |> shouldEqual 1
+    fnVal.DeclaringEntity.Value.DisplayName |> shouldEqual "Test"
+    fnVal.DeclaringEntity.Value.DeclarationLocation.StartLine |> shouldEqual 1
     fnVal.GenericParameters.Count |> shouldEqual 0
     fnVal.InlineAnnotation |> shouldEqual FSharpInlineAnnotation.OptionalInline
     fnVal.IsActivePattern |> shouldEqual false
@@ -348,7 +348,7 @@ type Test() =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
 
-    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(20), fun _ -> false)|> Async.RunSynchronously
+    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(20), (fun () -> []), fun _ -> false)|> Async.RunSynchronously
     //decls |> List.map (fun d -> d.Head.Symbol.DisplayName) |> printfn "---> decls = %A"
     decls |> Seq.exists (fun d -> d.Head.Symbol.DisplayName = "abc") |> shouldEqual true
 
@@ -365,7 +365,7 @@ type Test() =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
 
-    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(21), fun _ -> false)|> Async.RunSynchronously
+    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(21), (fun () -> []), fun _ -> false)|> Async.RunSynchronously
     //decls |> List.map (fun d -> d.Head.Symbol.DisplayName) |> printfn "---> decls = %A"
     decls |> Seq.exists (fun d -> d.Head.Symbol.DisplayName = "abc") |> shouldEqual true
 
@@ -382,7 +382,7 @@ type Test() =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
 
-    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(14), fun _ -> false)|> Async.RunSynchronously
+    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(14), (fun () -> []), fun _ -> false)|> Async.RunSynchronously
     //decls |> List.map (fun d -> d.Head.Symbol.DisplayName) |> printfn "---> decls = %A"
     decls |> Seq.exists (fun d -> d.Head.Symbol.DisplayName = "abc") |> shouldEqual true
 

@@ -642,17 +642,17 @@
       <Link>FSIstrings.txt</Link>
     </EmbeddedText>
     <Compile Include="..\fsi\fsi.fsi">
-      <Link>InteractiveSession\fsi.fsi</Link>
+      <Link>InteractiveSession/fsi.fsi</Link>
     </Compile>
     <Compile Include="..\fsi\fsi.fs">
-      <Link>InteractiveSession\fsi.fs</Link>
+      <Link>InteractiveSession/fsi.fs</Link>
     </Compile>
 
-    <Compile Include="..\MSBuildReferenceResolver.fs">
+    <Compile Include="..\MSBuildReferenceResolver.fs"  Condition="'$(MonoPackaging)' != 'true'">
       <Link>Misc/MSBuildReferenceResolver.fs</Link>
     </Compile>
     <!-- an old API for testing the compiler and gathering diagnostics in-memory -->
-    <Compile Include="..\LegacyHostedCompilerForTesting.fs">
+    <Compile Include="..\LegacyHostedCompilerForTesting.fs" Condition="'$(MonoPackaging)' != 'true'">
       <Link>Misc/LegacyHostedCompilerForTesting.fs</Link>
     </Compile>
   </ItemGroup>
@@ -684,6 +684,8 @@
       <HintPath>..\..\..\packages\System.ValueTuple.4.3.1\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
       <Private>true</Private>
     </Reference>
+  </ItemGroup>
+  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' != 'true' ">
     <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Framework.dll</HintPath>
     </Reference>

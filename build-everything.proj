@@ -54,12 +54,12 @@
   <!-- +++++++++++++++++++++++ Project selection for testing +++++++++++++++++++++++++++++++ -->
 
   <ItemGroup Condition="'$(TEST_NET40_COREUNIT_SUITE)'=='1'" >
-    <ProjectsWithNet40 Include="tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj"/>
+    <ProjectsWithNet40 Include="tests/FSharp.Core.UnitTests/FSharp.Core.Unittests.fsproj"/>
     <ProjectsWithNet40 Include="tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj"/>
   </ItemGroup>
 
   <ItemGroup Condition="'$(TEST_CORECLR_COREUNIT_SUITE)'=='1'">
-    <ProjectsWithCoreClr Include="tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj"/>
+    <ProjectsWithCoreClr Include="tests/FSharp.Core.UnitTests/FSharp.Core.Unittests.fsproj"/>
     <ProjectsWithCoreClr Include="tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj"/>
   </ItemGroup>
 

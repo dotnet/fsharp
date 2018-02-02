@@ -641,8 +641,11 @@ and [<Class>] public FSharpMemberOrFunctionOrValue =
     member IsUnresolved : bool
 
     /// Get the enclosing entity for the definition
-    member EnclosingEntity : FSharpEntity option
+    member DeclaringEntity : FSharpEntity option
     
+    /// Get the logical enclosing entity, which for an extension member is type being extended
+    member ApparentEnclosingEntity: FSharpEntity
+
     /// Get the declaration location of the member, function or value
     member DeclarationLocation: range
     
@@ -768,9 +771,6 @@ and [<Class>] public FSharpMemberOrFunctionOrValue =
     /// Get the logical name of the member
     member LogicalName: string
 
-    /// Get the logical enclosing entity, which for an extension member is type being extended
-    member LogicalEnclosingEntity: FSharpEntity
-
     /// Get the name as presented in F# error messages and documentation
     member DisplayName : string
 
@@ -882,8 +882,8 @@ and [<Class>] public FSharpActivePatternGroup =
     /// Get the type indicating signature of the active pattern
     member OverallType : FSharpType
 
-    /// Try to get the enclosing entity of the active pattern
-    member EnclosingEntity : FSharpEntity option
+    /// Try to get the entity in which the active pattern is declared
+    member DeclaringEntity : FSharpEntity option
 
 and [<Class>] public FSharpType =
 
