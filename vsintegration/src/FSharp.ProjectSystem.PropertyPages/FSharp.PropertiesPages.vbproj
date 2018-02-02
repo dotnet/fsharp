@@ -4,7 +4,7 @@
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\..\src</FSharpSourcesRoot>
     <ProjectLanguage>VisualBasic</ProjectLanguage>
-    <MicroBuildAssemblyVersion>15.4.1.0</MicroBuildAssemblyVersion>
+    <UseVsMicroBuildAssemblyVersion>true</UseVsMicroBuildAssemblyVersion>
     <MicroBuildAssemblyFileLanguage>vb</MicroBuildAssemblyFileLanguage>
   </PropertyGroup>
   <PropertyGroup>
@@ -382,4 +382,5 @@
   
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
   <Import Project="$(VsSDKInstall)\Microsoft.VsSDK.targets" />
+  <Import Project="$(FSharpSourcesRoot)\..\build\targets\AssemblyAttributes.targets" />
 </Project>

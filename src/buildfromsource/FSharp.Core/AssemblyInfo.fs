@@ -9,17 +9,15 @@ open System.Runtime.InteropServices
 [<assembly:AssemblyTitle("FSharp.Core.dll")>]
 [<assembly:AssemblyCopyright("\169 Microsoft Corporation.  All Rights Reserved.")>]
 [<assembly:AssemblyProduct("Microsoft\174 F#")>]
-#if !FSCORE_PORTABLE_OLD
 [<assembly:ComVisible(false)>]
-#endif
 
 #if PORTABLE
 [<assembly:AssemblyProduct("Microsoft\174 F#")>]
 [<assembly:AssemblyFlags(System.Reflection.AssemblyNameFlags.Retargetable)>]
 #endif
 
-[<assembly:AssemblyInformationalVersion("4.4.1.0")>]
-[<assembly:AssemblyVersion("4.4.1.0")>]
+[<assembly:AssemblyInformationalVersion("4.4.3.0")>]
+[<assembly:AssemblyVersion("4.4.3.0")>]
 [<assembly:AssemblyFileVersion("2017.06.27.0")>]
 do()
 
