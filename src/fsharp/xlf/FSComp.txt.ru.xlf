@@ -1669,7 +1669,7 @@
       </trans-unit>
       <trans-unit id="csMemberIsNotAccessible2">
         <source>The member or object constructor '{0}' is not {1}. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.</source>
-        <target state="needs-review-translation">Конструктор элемента или объекта "{0}" не является {1}. Закрытые элементы доступны только внутри типа, в котором они объявляются. Защищенные типы доступны только из расширяющего типа и недоступны из внутренних лямбда-выражений.</target>
+        <target state="translated">Конструктор элемента или объекта "{0}" не является {1}. Закрытые элементы доступны только внутри типа, в котором они объявляются. Защищенные типы доступны только из расширяющего типа и недоступны из внутренних лямбда-выражений.</target>
         <note />
       </trans-unit>
       <trans-unit id="csMethodIsNotAStaticMethod">
@@ -6969,7 +6969,7 @@
       </trans-unit>
       <trans-unit id="tcTupleMemberNotNormallyUsed">
         <source>This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</source>
-        <target state="new">This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</target>
+        <target state="translated">Этот метод или свойство обычно не используется в коде F#. Вместо этого используйте явный шаблон кортежа для деконструкции.</target>
         <note />
       </trans-unit>
     </body>
