@@ -17,7 +17,6 @@
       <Link>FSBuild.resx</Link>
     </EmbeddedResource>
     <Compile Include="FSBuild.fs" />
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\InternalsVisibleTo.fs" />
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="..\..\utils\CompilerLocationUtils.fs" />
     <Compile Include="..\..\utils\reshapedreflection.fs" />
