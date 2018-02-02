@@ -96,6 +96,33 @@ module internal Utils =
     and printIimpls iis = String.concat ";" (List.map printImlementation iis)
     and printImlementation (i, ors) = "interface " + printTy i + " with " + printOverrides ors
 
+    let rec printFSharpDecls prefix decls =
+        seq {
+            let mutable i = 0
+            for decl in decls do
+                i <- i + 1
+                match decl with
+                | FSharpImplementationFileDeclaration.Entity (e, sub) ->
+                    yield sprintf "%s%i) ENTITY: %s %A" prefix i e.CompiledName (attribsOfSymbol e)
+                    if not (Seq.isEmpty e.Attributes) then
+                        yield sprintf "%sattributes: %A" prefix (Seq.toList e.Attributes)
+                    if not (Seq.isEmpty e.DeclaredInterfaces) then
+                        yield sprintf "%sinterfaces: %A" prefix (Seq.toList e.DeclaredInterfaces)
+                    yield ""
+                    yield! printFSharpDecls (prefix + "\t") sub
+                | FSharpImplementationFileDeclaration.MemberOrFunctionOrValue (meth, args, body) ->
+                    yield sprintf "%s%i) METHOD: %s %A" prefix i meth.CompiledName (attribsOfSymbol meth)
+                    yield sprintf "%stype: %A" prefix meth.FullType
+                    yield sprintf "%sargs: %A" prefix args
+                    // if not meth.IsCompilerGenerated then
+                    yield sprintf "%sbody: %A" prefix body
+                    yield ""
+                | FSharpImplementationFileDeclaration.InitAction (expr) ->
+                    yield sprintf "%s%i) ACTION" prefix i
+                    yield sprintf "%s%A" prefix expr
+                    yield ""
+        }
+
     let rec printDeclaration (excludes:HashSet<_> option) (d: FSharpImplementationFileDeclaration) = 
         seq {
            match d with 
@@ -283,7 +310,7 @@ let localGenericFunctionExample() =
 let funcEx1 (x:int) =  x
 let genericFuncEx1 (x:'T) =  x
 let (topPair1a, topPair1b) = (1,2)
-let tyfuncEx1<'T> = typeof<'T>
+
 let testILCall1 = new obj()
 let testILCall2 = System.Console.WriteLine("176")
 
@@ -578,7 +605,10 @@ let testHashInt64 (x:int64) = hash x
 let testHashUInt64 (x:uint64) = hash x
 let testHashIntPtr (x:nativeint) = hash x
 let testHashUIntPtr (x:unativeint) = hash x
-// let testHashString (x:string) = hash x
+
+let testHashString (x:string) = hash x
+let testDualConv (x:byte) = float32(x)
+let testTypeOf (x:'T) = typeof<'T>
 
     """
     File.WriteAllText(fileName2, fileSource2)
@@ -624,7 +654,6 @@ let ``Test Declarations project1`` () =
            "let genericFuncEx1(x) = x @ (24,29--24,30)";
            "let topPair1b = M.patternInput@25 ().Item1 @ (25,4--25,26)";
            "let topPair1a = M.patternInput@25 ().Item0 @ (25,4--25,26)";
-           "let tyfuncEx1 = Operators.TypeOf<'T> () @ (26,20--26,26)";
            "let testILCall1 = new Object() @ (27,18--27,27)";
            "let testILCall2 = Console.WriteLine (\"176\") @ (28,18--28,49)";
            "let recValNeverUsedAtRuntime = recValNeverUsedAtRuntime@31.Force<Microsoft.FSharp.Core.int>(()) @ (31,8--31,32)";
@@ -755,7 +784,10 @@ let ``Test Declarations project1`` () =
         "let testHashInt64(x) = Operators.Hash<Microsoft.FSharp.Core.int64> (x) @ (63,30--63,36)";
         "let testHashUInt64(x) = Operators.Hash<Microsoft.FSharp.Core.uint64> (x) @ (64,32--64,38)";
         "let testHashIntPtr(x) = Operators.Hash<Microsoft.FSharp.Core.nativeint> (x) @ (65,35--65,41)";
-        "let testHashUIntPtr(x) = Operators.Hash<Microsoft.FSharp.Core.unativeint> (x) @ (66,37--66,43)" ]
+        "let testHashUIntPtr(x) = Operators.Hash<Microsoft.FSharp.Core.unativeint> (x) @ (66,37--66,43)";
+        "let testHashString(x) = Operators.Hash<Microsoft.FSharp.Core.string> (x) @ (68,32--68,38)";
+        "let testDualConv(x) = Operators.ToSingle<Microsoft.FSharp.Core.byte> (x) @ (69,28--69,38)";
+        "let testTypeOf(x) = Operators.TypeOf<'T> () @ (70,24--70,30)" ]
 
     printDeclarations None (List.ofSeq file1.Declarations) 
       |> Seq.toList 
@@ -806,7 +838,6 @@ let ``Test Optimized Declarations Project1`` () =
            "let genericFuncEx1(x) = x @ (24,29--24,30)";
            "let topPair1b = M.patternInput@25 ().Item1 @ (25,4--25,26)";
            "let topPair1a = M.patternInput@25 ().Item0 @ (25,4--25,26)";
-           "let tyfuncEx1 = Type.GetTypeFromHandle (Operators.TypeOf<'T> ()) @ (26,20--26,26)";
            "let testILCall1 = new Object() @ (27,18--27,27)";
            "let testILCall2 = Console.WriteLine (\"176\") @ (28,18--28,49)";
            "let recValNeverUsedAtRuntime = recValNeverUsedAtRuntime@31.Force<Microsoft.FSharp.Core.int>(()) @ (31,8--31,32)";
@@ -897,60 +928,65 @@ let ``Test Optimized Declarations Project1`` () =
            "let letLambdaRes = ListModule.Map<Microsoft.FSharp.Core.int * Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun tupledArg -> let a: Microsoft.FSharp.Core.int = tupledArg.Item0 in let b: Microsoft.FSharp.Core.int = tupledArg.Item1 in (LetLambda.f () a) b,Cons((1,2),Empty())) @ (249,19--249,71)"]
 
     let expected2 = 
-          [ "type N"; "type IntAbbrev"; "let bool2 = False @ (6,12--6,17)";
-            "let testEqualsOperator(e1) (e2) = HashCompare.GenericEqualityIntrinsic<'a> (e1,e2) @ (8,46--8,54)";
-            "let testNotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (HashCompare.GenericEqualityIntrinsic<'a> (e1,e2),False) @ (9,46--9,55)";
-            "let testLessThanOperator(e1) (e2) = HashCompare.GenericLessThanIntrinsic<'a> (e1,e2) @ (10,46--10,54)";
-            "let testLessThanOrEqualsOperator(e1) (e2) = HashCompare.GenericLessOrEqualIntrinsic<'a> (e1,e2) @ (11,46--11,55)";
-            "let testGreaterThanOperator(e1) (e2) = HashCompare.GenericGreaterThanIntrinsic<'a> (e1,e2) @ (12,46--12,54)";
-            "let testGreaterThanOrEqualsOperator(e1) (e2) = HashCompare.GenericGreaterOrEqualIntrinsic<'a> (e1,e2) @ (13,46--13,55)";
-            "let testAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (15,38--15,46)";
-            "let testSubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (16,38--16,46)";
-            "let testMultiplyOperator(e1) (e2) = Operators.op_Multiply<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (17,37--17,46)";
-            "let testDivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (18,38--18,46)";
-            "let testModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (19,38--19,46)";
-            "let testBitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e1,e2) @ (20,38--20,48)";
-            "let testBitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.int> (e1,e2) @ (21,38--21,48)";
-            "let testBitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int> (e1,e2) @ (22,38--22,48)";
-            "let testShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.int> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,31)) @ (23,38--23,48)";
-            "let testShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.int> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,31)) @ (24,38--24,48)";
-            "let testUnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.int> (e1) @ (26,33--26,39)";
-            "let testUnaryNotOperator(e1) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (e1,False) @ (27,32--27,35)";
-            "let testAdditionChecked(e1) (e2) = Checked.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (29,35--29,52)";
-            "let testSubtractionChecked(e1) (e2) = Checked.op_Subtraction<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (30,35--30,52)";
-            "let testMultiplyChecked(e1) (e2) = Checked.op_Multiply<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (31,35--31,52)";
-            "let testUnaryNegChecked(e1) = Checked.op_Subtraction<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (0,e1) @ (32,32--32,47)";
-            "let testToByteChecked(e1) = Checked.ToByte<Microsoft.FSharp.Core.int> (e1) @ (34,31--34,46)";
-            "let testToSByteChecked(e1) = Checked.ToSByte<Microsoft.FSharp.Core.int> (e1) @ (35,31--35,47)";
-            "let testToInt16Checked(e1) = Checked.ToInt16<Microsoft.FSharp.Core.int> (e1) @ (36,31--36,47)";
-            "let testToUInt16Checked(e1) = Checked.ToUInt16<Microsoft.FSharp.Core.int> (e1) @ (37,31--37,48)";
-            "let testToIntChecked(e1) = Checked.ToInt32<Microsoft.FSharp.Core.int> (e1) @ (38,31--38,45)";
-            "let testToInt32Checked(e1) = Checked.ToInt32<Microsoft.FSharp.Core.int> (e1) @ (39,31--39,47)";
-            "let testToUInt32Checked(e1) = Checked.ToUInt32<Microsoft.FSharp.Core.int> (e1) @ (40,31--40,48)";
-            "let testToInt64Checked(e1) = Checked.ToInt64<Microsoft.FSharp.Core.int> (e1) @ (41,31--41,47)";
-            "let testToUInt64Checked(e1) = Checked.ToUInt64<Microsoft.FSharp.Core.int> (e1) @ (42,31--42,48)";
-            "let testToIntPtrChecked(e1) = Checked.ToIntPtr<Microsoft.FSharp.Core.int> (e1) @ (43,31--43,51)";
-            "let testToUIntPtrChecked(e1) = Checked.ToUIntPtr<Microsoft.FSharp.Core.int> (e1) @ (44,31--44,52)";
-            "let testToByteOperator(e1) = Operators.ToByte<Microsoft.FSharp.Core.int> (e1) @ (46,31--46,38)";
-            "let testToSByteOperator(e1) = Operators.ToSByte<Microsoft.FSharp.Core.int> (e1) @ (47,31--47,39)";
-            "let testToInt16Operator(e1) = Operators.ToInt16<Microsoft.FSharp.Core.int> (e1) @ (48,31--48,39)";
-            "let testToUInt16Operator(e1) = Operators.ToUInt16<Microsoft.FSharp.Core.int> (e1) @ (49,31--49,40)";
-            "let testToIntOperator(e1) = e1 @ (50,35--50,37)";
-            "let testToInt32Operator(e1) = e1 @ (51,37--51,39)";
-            "let testToUInt32Operator(e1) = e1 @ (52,31--52,40)";
-            "let testToInt64Operator(e1) = Operators.ToInt64<Microsoft.FSharp.Core.int> (e1) @ (53,31--53,39)";
-            "let testToUInt64Operator(e1) = Operators.ToInt64<Microsoft.FSharp.Core.int> (e1) @ (54,31--54,40)";
-            "let testToSingleOperator(e1) = Operators.ToSingle<Microsoft.FSharp.Core.int> (e1) @ (55,31--55,41)";
-            "let testToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.int> (e1) @ (56,31--56,39)";
-            "let testToIntPtrOperator(e1) = Operators.ToIntPtr<Microsoft.FSharp.Core.int> (e1) @ (57,31--57,43)";
-            "let testToUIntPtrOperator(e1) = Operators.ToIntPtr<Microsoft.FSharp.Core.int> (e1) @ (58,31--58,44)";
-            "let testHashChar(x) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.int> (Operators.op_LeftShift<Microsoft.FSharp.Core.char> (x,16),x) @ (60,28--60,34)";
-            "let testHashSByte(x) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int> (Operators.op_LeftShift<Microsoft.FSharp.Core.sbyte> (x,8),x) @ (61,30--61,36)";
-            "let testHashInt16(x) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.int> (Operators.ToUInt16<Microsoft.FSharp.Core.int16> (x),Operators.op_LeftShift<Microsoft.FSharp.Core.int16> (x,16)) @ (62,30--62,36)";
-            "let testHashInt64(x) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int> (Operators.ToInt32<Microsoft.FSharp.Core.int64> (x),Operators.ToInt32<Microsoft.FSharp.Core.int> (Operators.op_RightShift<Microsoft.FSharp.Core.int64> (x,32))) @ (63,30--63,36)";
-            "let testHashUInt64(x) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int> (Operators.ToInt32<Microsoft.FSharp.Core.uint64> (x),Operators.ToInt32<Microsoft.FSharp.Core.int> (Operators.op_RightShift<Microsoft.FSharp.Core.uint64> (x,32))) @ (64,32--64,38)";
-            "let testHashIntPtr(x) = Operators.ToInt32<Microsoft.FSharp.Core.uint64> (Operators.ToUInt64<Microsoft.FSharp.Core.nativeint> (x)) @ (65,35--65,41)";
-            "let testHashUIntPtr(x) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (Operators.ToInt32<Microsoft.FSharp.Core.uint64> (Operators.ToUInt64<Microsoft.FSharp.Core.unativeint> (x)),2147483647) @ (66,37--66,43)"]
+      [ "type N"; "type IntAbbrev"; "let bool2 = False @ (6,12--6,17)";
+        "let testEqualsOperator(e1) (e2) = HashCompare.GenericEqualityIntrinsic<'a> (e1,e2) @ (8,46--8,54)";
+        "let testNotEqualsOperator(e1) (e2) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (HashCompare.GenericEqualityIntrinsic<'a> (e1,e2),False) @ (9,46--9,55)";
+        "let testLessThanOperator(e1) (e2) = HashCompare.GenericLessThanIntrinsic<'a> (e1,e2) @ (10,46--10,54)";
+        "let testLessThanOrEqualsOperator(e1) (e2) = HashCompare.GenericLessOrEqualIntrinsic<'a> (e1,e2) @ (11,46--11,55)";
+        "let testGreaterThanOperator(e1) (e2) = HashCompare.GenericGreaterThanIntrinsic<'a> (e1,e2) @ (12,46--12,54)";
+        "let testGreaterThanOrEqualsOperator(e1) (e2) = HashCompare.GenericGreaterOrEqualIntrinsic<'a> (e1,e2) @ (13,46--13,55)";
+        "let testAdditionOperator(e1) (e2) = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (15,38--15,46)";
+        "let testSubtractionOperator(e1) (e2) = Operators.op_Subtraction<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (16,38--16,46)";
+        "let testMultiplyOperator(e1) (e2) = Operators.op_Multiply<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (17,37--17,46)";
+        "let testDivisionOperator(e1) (e2) = Operators.op_Division<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (18,38--18,46)";
+        "let testModulusOperator(e1) (e2) = Operators.op_Modulus<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (19,38--19,46)";
+        "let testBitwiseAndOperator(e1) (e2) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e1,e2) @ (20,38--20,48)";
+        "let testBitwiseOrOperator(e1) (e2) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.int> (e1,e2) @ (21,38--21,48)";
+        "let testBitwiseXorOperator(e1) (e2) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int> (e1,e2) @ (22,38--22,48)";
+        "let testShiftLeftOperator(e1) (e2) = Operators.op_LeftShift<Microsoft.FSharp.Core.int> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,31)) @ (23,38--23,48)";
+        "let testShiftRightOperator(e1) (e2) = Operators.op_RightShift<Microsoft.FSharp.Core.int> (e1,Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (e2,31)) @ (24,38--24,48)";
+        "let testUnaryNegOperator(e1) = Operators.op_UnaryNegation<Microsoft.FSharp.Core.int> (e1) @ (26,33--26,39)";
+        "let testUnaryNotOperator(e1) = Operators.op_Equality<Microsoft.FSharp.Core.bool> (e1,False) @ (27,32--27,35)";
+        "let testAdditionChecked(e1) (e2) = Checked.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (29,35--29,52)";
+        "let testSubtractionChecked(e1) (e2) = Checked.op_Subtraction<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (30,35--30,52)";
+        "let testMultiplyChecked(e1) (e2) = Checked.op_Multiply<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (e1,e2) @ (31,35--31,52)";
+        "let testUnaryNegChecked(e1) = Checked.op_Subtraction<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (0,e1) @ (32,32--32,47)";
+        "let testToByteChecked(e1) = Checked.ToByte<Microsoft.FSharp.Core.int> (e1) @ (34,31--34,46)";
+        "let testToSByteChecked(e1) = Checked.ToSByte<Microsoft.FSharp.Core.int> (e1) @ (35,31--35,47)";
+        "let testToInt16Checked(e1) = Checked.ToInt16<Microsoft.FSharp.Core.int> (e1) @ (36,31--36,47)";
+        "let testToUInt16Checked(e1) = Checked.ToUInt16<Microsoft.FSharp.Core.int> (e1) @ (37,31--37,48)";
+        "let testToIntChecked(e1) = Checked.ToInt32<Microsoft.FSharp.Core.int> (e1) @ (38,31--38,45)";
+        "let testToInt32Checked(e1) = Checked.ToInt32<Microsoft.FSharp.Core.int> (e1) @ (39,31--39,47)";
+        "let testToUInt32Checked(e1) = Checked.ToUInt32<Microsoft.FSharp.Core.int> (e1) @ (40,31--40,48)";
+        "let testToInt64Checked(e1) = Checked.ToInt64<Microsoft.FSharp.Core.int> (e1) @ (41,31--41,47)";
+        "let testToUInt64Checked(e1) = Checked.ToUInt64<Microsoft.FSharp.Core.int> (e1) @ (42,31--42,48)";
+        "let testToIntPtrChecked(e1) = Checked.ToIntPtr<Microsoft.FSharp.Core.int> (e1) @ (43,31--43,51)";
+        "let testToUIntPtrChecked(e1) = Checked.ToUIntPtr<Microsoft.FSharp.Core.int> (e1) @ (44,31--44,52)";
+        "let testToByteOperator(e1) = Operators.ToByte<Microsoft.FSharp.Core.int> (e1) @ (46,31--46,38)";
+        "let testToSByteOperator(e1) = Operators.ToSByte<Microsoft.FSharp.Core.int> (e1) @ (47,31--47,39)";
+        "let testToInt16Operator(e1) = Operators.ToInt16<Microsoft.FSharp.Core.int> (e1) @ (48,31--48,39)";
+        "let testToUInt16Operator(e1) = Operators.ToUInt16<Microsoft.FSharp.Core.int> (e1) @ (49,31--49,40)";
+        "let testToIntOperator(e1) = e1 @ (50,35--50,37)";
+        "let testToInt32Operator(e1) = e1 @ (51,37--51,39)";
+        "let testToUInt32Operator(e1) = e1 @ (52,31--52,40)";
+        "let testToInt64Operator(e1) = Operators.ToInt64<Microsoft.FSharp.Core.int> (e1) @ (53,31--53,39)";
+        "let testToUInt64Operator(e1) = Operators.ToInt64<Microsoft.FSharp.Core.int> (e1) @ (54,31--54,40)";
+        "let testToSingleOperator(e1) = Operators.ToSingle<Microsoft.FSharp.Core.int> (e1) @ (55,31--55,41)";
+        "let testToDoubleOperator(e1) = Operators.ToDouble<Microsoft.FSharp.Core.int> (e1) @ (56,31--56,39)";
+        "let testToIntPtrOperator(e1) = Operators.ToIntPtr<Microsoft.FSharp.Core.int> (e1) @ (57,31--57,43)";
+        "let testToUIntPtrOperator(e1) = Operators.ToIntPtr<Microsoft.FSharp.Core.int> (e1) @ (58,31--58,44)";
+        "let testHashChar(x) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.int> (Operators.op_LeftShift<Microsoft.FSharp.Core.char> (x,16),x) @ (60,28--60,34)";
+        "let testHashSByte(x) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int> (Operators.op_LeftShift<Microsoft.FSharp.Core.sbyte> (x,8),x) @ (61,30--61,36)";
+        "let testHashInt16(x) = Operators.op_BitwiseOr<Microsoft.FSharp.Core.int> (Operators.ToUInt16<Microsoft.FSharp.Core.int16> (x),Operators.op_LeftShift<Microsoft.FSharp.Core.int16> (x,16)) @ (62,30--62,36)";
+        "let testHashInt64(x) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int> (Operators.ToInt32<Microsoft.FSharp.Core.int64> (x),Operators.ToInt32<Microsoft.FSharp.Core.int> (Operators.op_RightShift<Microsoft.FSharp.Core.int64> (x,32))) @ (63,30--63,36)";
+        "let testHashUInt64(x) = Operators.op_ExclusiveOr<Microsoft.FSharp.Core.int> (Operators.ToInt32<Microsoft.FSharp.Core.uint64> (x),Operators.ToInt32<Microsoft.FSharp.Core.int> (Operators.op_RightShift<Microsoft.FSharp.Core.uint64> (x,32))) @ (64,32--64,38)";
+        "let testHashIntPtr(x) = Operators.ToInt32<Microsoft.FSharp.Core.uint64> (Operators.ToUInt64<Microsoft.FSharp.Core.nativeint> (x)) @ (65,35--65,41)";
+        "let testHashUIntPtr(x) = Operators.op_BitwiseAnd<Microsoft.FSharp.Core.int> (Operators.ToInt32<Microsoft.FSharp.Core.uint64> (Operators.ToUInt64<Microsoft.FSharp.Core.unativeint> (x)),2147483647) @ (66,37--66,43)";
+        "let testHashString(x) = (if Operators.op_Equality<Microsoft.FSharp.Core.string> (x,dflt) then 0 else Operators.Hash<Microsoft.FSharp.Core.string> (x)) @ (68,32--68,38)";
+        "let testDualConv(x) = Operators.ToSingle<Microsoft.FSharp.Core.float> (Operators.ToDouble<Microsoft.FSharp.Core.byte> (x)) @ (69,28--69,38)";
+        "let testTypeOf(x) = Operators.TypeOf<'T> () @ (70,24--70,30)" ]
+
+    // printFSharpDecls "" file2.Declarations |> Seq.iter (printfn "%s")
 
     printDeclarations None (List.ofSeq file1.Declarations) 
       |> Seq.toList 

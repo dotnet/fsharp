@@ -1206,6 +1206,7 @@ val mkCallArray2DSet         : TcGlobals -> range -> TType -> Expr -> Expr -> Ex
 val mkCallArray3DSet         : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
 val mkCallArray4DSet         : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
 
+val mkCallHash               : TcGlobals -> range -> TType -> Expr -> Expr
 val mkCallBox                : TcGlobals -> range -> TType -> Expr -> Expr
 val mkCallIsNull             : TcGlobals -> range -> TType -> Expr -> Expr
 val mkCallIsNotNull          : TcGlobals -> range -> TType -> Expr -> Expr
