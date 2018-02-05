@@ -1,0 +1,12 @@
+<Project>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('FSharp.Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <UseVsMicroBuildAssemblyVersion>true</UseVsMicroBuildAssemblyVersion>
+  </PropertyGroup>
+
+  <Import Project="$(NuGetPackageRoot)Microsoft.VSSDK.BuildTools\$(MicrosoftVSSDKBuildToolsPackageVersion)\build\Microsoft.VsSDK.BuildTools.props"
+          Condition="'$(ImportVsSDK)' == 'true'" />
+
+</Project>

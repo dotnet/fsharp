@@ -1,0 +1,46 @@
+<Project>
+
+  <PropertyGroup>
+
+    <!-- System.* packages -->
+    <SystemCollectionsImmutablePackageVersion>1.3.1</SystemCollectionsImmutablePackageVersion>
+
+    <!-- Roslyn packages -->
+    <MicrosoftCodeAnalysisEditorFeaturesPackageVersion>2.3.0-beta2-61719-01</MicrosoftCodeAnalysisEditorFeaturesPackageVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>2.3.0-beta2-61719-01</MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>
+    <MicrosoftCodeAnalysisWorkspacesCommonPackageVersion>2.3.0-beta2-61719-01</MicrosoftCodeAnalysisWorkspacesCommonPackageVersion>
+    <MicrosoftVisualStudioLanguageServicesPackageVersion>2.3.0-beta2-61719-01</MicrosoftVisualStudioLanguageServicesPackageVersion>
+
+    <!-- Visual Studio packages -->
+    <EnvDTEPackageVersion>8.0.1</EnvDTEPackageVersion>
+    <EnvDTE80PackageVersion>8.0.1</EnvDTE80PackageVersion>
+    <MicrosoftVisualStudioComponentModelHostPackageVersion>15.0.26201-alpha</MicrosoftVisualStudioComponentModelHostPackageVersion>
+    <MicrosoftVisualStudioEditorPackageVersion>15.0.26201</MicrosoftVisualStudioEditorPackageVersion>
+    <MicrosoftVisualStudioLanguageStandardClassificationPackageVersion>15.0.26201</MicrosoftVisualStudioLanguageStandardClassificationPackageVersion>
+    <MicrosoftVisualStudioLanguageIntellisensePackageVersion>15.0.26201</MicrosoftVisualStudioLanguageIntellisensePackageVersion>
+    <MicrosoftVisualStudioPackageLanguageService150PackageVersion>15.0.26201</MicrosoftVisualStudioPackageLanguageService150PackageVersion>
+    <MicrosoftVisualStudioProjectAggregatorPackageVersion>8.0.50727</MicrosoftVisualStudioProjectAggregatorPackageVersion>
+    <MicrosoftVisualStudioShellDesignPackageVersion>15.0.26201</MicrosoftVisualStudioShellDesignPackageVersion>
+    <MicrosoftVisualStudioShellImmutable100PackageVersion>10.0.30319</MicrosoftVisualStudioShellImmutable100PackageVersion>
+    <MicrosoftVisualStudioShellImmutable110PackageVersion>11.0.50727</MicrosoftVisualStudioShellImmutable110PackageVersion>
+    <MicrosoftVisualStudioShellInterop110PackageVersion>11.0.61030</MicrosoftVisualStudioShellInterop110PackageVersion>
+    <MicrosoftVisualStudioTextManagerInteropPackageVersion>7.10.6070</MicrosoftVisualStudioTextManagerInteropPackageVersion>
+    <MicrosoftVisualStudioTextManagerInterop80PackageVersion>8.0.50727</MicrosoftVisualStudioTextManagerInterop80PackageVersion>
+    <MicrosoftVSSDKBuildToolsPackageVersion>15.1.192</MicrosoftVSSDKBuildToolsPackageVersion>
+    <VSSDKVSLangProjPackageVersion>7.0.4</VSSDKVSLangProjPackageVersion>
+
+    <!-- other packages -->
+    <MicrosoftCompositionPackageVersion>1.0.30</MicrosoftCompositionPackageVersion>
+    <NewtonsoftJsonPackageVersion>10.0.2</NewtonsoftJsonPackageVersion>
+    <XliffTasksPackageVersion>0.2.0-beta-000081</XliffTasksPackageVersion>
+
+  </PropertyGroup>
+
+  <!-- dependency uptake version overrides -->
+  <PropertyGroup>
+    <DependencyUptakePackageVersionPropsFile>$(MSBuildThisFileDirectory)..\..\Tools\dependencyUptake\PackageVersions.props</DependencyUptakePackageVersionPropsFile>
+  </PropertyGroup>
+
+  <Import Project="$(DependencyUptakePackageVersionPropsFile)" Condition="Exists('$(DependencyUptakePackageVersionPropsFile)')" />
+
+</Project>

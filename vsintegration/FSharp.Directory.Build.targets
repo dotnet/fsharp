@@ -1,0 +1,10 @@
+<Project>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('FSharp.Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" />
+
+  <Import Project="$(NugetPackageRoot)Microsoft.VSSDK.BuildTools\$(MicrosoftVSSDKBuildToolsPackageVersion)\build\Microsoft.VsSDK.BuildTools.targets"
+          Condition="'$(ImportVsSDK)' == 'true'" />
+  <Import Project="$(NugetPackageRoot)Microsoft.VSSDK.BuildTools\$(MicrosoftVSSDKBuildToolsPackageVersion)\tools\vssdk\Microsoft.VsSDK.targets"
+          Condition="'$(ImportVsSDK)' == 'true'" />
+
+</Project>
