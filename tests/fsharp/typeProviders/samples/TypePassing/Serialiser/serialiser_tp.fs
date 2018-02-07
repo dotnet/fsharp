@@ -10,13 +10,13 @@ open ProviderImplementation.ProvidedTypes
 
 [<TypeProvider>]
 type Serialiser(config: TypeProviderConfig) as this =     
-    inherit TypeProviderForNamespaces()
+    inherit TypeProviderForNamespaces(config)
 
     let ns = "Serialiser"
     let runtimeAssembly = Assembly.LoadFrom(config.RuntimeAssembly)
 
     let createTypes (ty:Type) typeName = 
-        let rootType = ProvidedTypeDefinition(runtimeAssembly,ns,typeName,baseType= (Some typeof<obj>), HideObjectMethods=true)
+        let rootType = ProvidedTypeDefinition(runtimeAssembly,ns,typeName,baseType= (Some typeof<obj>), hideObjectMethods=true)
         let fields = ty.GetFields() //Because IsRecord is false here due to missing attrs in TAST, we cant use FSharp Reflection atm.
         let typName = ty.Name
         let toString x = <@@ (%%x : obj).ToString() @@>
@@ -33,20 +33,20 @@ type Serialiser(config: TypeProviderConfig) as this =
                 sprintf "{%s}" (String.Join(",", jProps))
             @@>
 
-        rootType.AddMember(ProvidedProperty("Headers", typeof<string[]>, IsStatic = true, GetterCode = (fun x -> <@@ headers @@>)))
+        rootType.AddMember(ProvidedProperty("Headers", typeof<string[]>, isStatic = true, getterCode = (fun x -> <@@ headers @@>)))
 
         rootType.AddMember(
              ProvidedMethod("Serialise", 
                             [ProvidedParameter("obj", ty)], 
                             typeof<string>, 
-                            IsStaticMethod = true, 
-                            InvokeCode = (fun x -> toJson (fieldGetters (Expr.Coerce(x.[0], ty))) )
+                            isStatic = true, 
+                            invokeCode = (fun x -> toJson (fieldGetters (Expr.Coerce(x.[0], ty))) )
                            )
                           )
 
         rootType
 
-    let paramType = ProvidedTypeDefinition(runtimeAssembly, ns, "SourceType", Some(typeof<obj>), HideObjectMethods = true)
+    let paramType = ProvidedTypeDefinition(runtimeAssembly, ns, "SourceType", Some(typeof<obj>), hideObjectMethods = true)
     
     do paramType.DefineStaticParameters(
         [
