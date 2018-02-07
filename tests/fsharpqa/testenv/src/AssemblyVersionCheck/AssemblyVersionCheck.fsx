@@ -1,4 +1,7 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+
+// this was restored by packages.config in the root
+#r @"..\..\..\..\..\packages\Newtonsoft.Json.8.0.1\lib\net45\Newtonsoft.Json.dll"
 
 open System
 open System.Diagnostics
@@ -78,10 +81,15 @@ module AssemblyVersionCheck =
         // return code is the number of failures
         failedVersionCheck.Length + failedCommitHash.Length
 
-[<EntryPoint>]
-let main argv =
+let main (argv:string array) =
     if argv.Length <> 2 then
-        printfn "Usage: AssemblyVersionCheck.exe SignToolData.json path/to/binaries"
+        printfn "Usage: fsi.exe AssemblyVersionCheck.fsx -- SignToolData.json path/to/binaries"
         1
     else
         AssemblyVersionCheck.verifyAssemblyVersions argv.[0] argv.[1]
+
+Environment.GetCommandLineArgs()
+|> Seq.skipWhile ((<>) "--")
+|> Seq.skip 1
+|> Array.ofSeq
+|> main
