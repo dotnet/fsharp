@@ -1,9 +1,3 @@
 <Project>
-
   <Import Project="$([MSBuild]::GetPathOfFileAbove('FSharp.Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
-
-  <PropertyGroup>
-    <UseVsMicroBuildAssemblyVersion>true</UseVsMicroBuildAssemblyVersion>
-  </PropertyGroup>
-
 </Project>

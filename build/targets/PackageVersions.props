@@ -12,25 +12,28 @@
     <MicrosoftVisualStudioLanguageServicesPackageVersion>2.3.0-beta2-61719-01</MicrosoftVisualStudioLanguageServicesPackageVersion>
 
     <!-- Visual Studio packages -->
-    <EnvDTEPackageVersion>8.0.1</EnvDTEPackageVersion>
     <EnvDTE80PackageVersion>8.0.1</EnvDTE80PackageVersion>
     <MicrosoftVisualStudioComponentModelHostPackageVersion>15.0.26201-alpha</MicrosoftVisualStudioComponentModelHostPackageVersion>
+    <MicrosoftVisualStudioDesignerInterfacesPackageVersion>1.1.4322</MicrosoftVisualStudioDesignerInterfacesPackageVersion>
     <MicrosoftVisualStudioEditorPackageVersion>15.0.26201</MicrosoftVisualStudioEditorPackageVersion>
     <MicrosoftVisualStudioLanguageStandardClassificationPackageVersion>15.0.26201</MicrosoftVisualStudioLanguageStandardClassificationPackageVersion>
     <MicrosoftVisualStudioLanguageIntellisensePackageVersion>15.0.26201</MicrosoftVisualStudioLanguageIntellisensePackageVersion>
     <MicrosoftVisualStudioPackageLanguageService150PackageVersion>15.0.26201</MicrosoftVisualStudioPackageLanguageService150PackageVersion>
     <MicrosoftVisualStudioProjectAggregatorPackageVersion>8.0.50727</MicrosoftVisualStudioProjectAggregatorPackageVersion>
+    <MicrosoftVisualStudioShell150PackageVersion>15.0.26201</MicrosoftVisualStudioShell150PackageVersion>
     <MicrosoftVisualStudioShellDesignPackageVersion>15.0.26201</MicrosoftVisualStudioShellDesignPackageVersion>
+    <MicrosoftVisualStudioShellInterop100PackageVersion>10.0.30319</MicrosoftVisualStudioShellInterop100PackageVersion>
     <MicrosoftVisualStudioShellImmutable100PackageVersion>10.0.30319</MicrosoftVisualStudioShellImmutable100PackageVersion>
     <MicrosoftVisualStudioShellImmutable110PackageVersion>11.0.50727</MicrosoftVisualStudioShellImmutable110PackageVersion>
     <MicrosoftVisualStudioShellInterop110PackageVersion>11.0.61030</MicrosoftVisualStudioShellInterop110PackageVersion>
-    <MicrosoftVisualStudioTextManagerInteropPackageVersion>7.10.6070</MicrosoftVisualStudioTextManagerInteropPackageVersion>
-    <MicrosoftVisualStudioTextManagerInterop80PackageVersion>8.0.50727</MicrosoftVisualStudioTextManagerInterop80PackageVersion>
     <MicrosoftVSSDKBuildToolsPackageVersion>15.1.192</MicrosoftVSSDKBuildToolsPackageVersion>
     <VSSDKVSLangProjPackageVersion>7.0.4</VSSDKVSLangProjPackageVersion>
+    <VSSDKVSLangProj8PackageVersion>8.0.4</VSSDKVSLangProj8PackageVersion>
+    <VSSDKVSHelpPackageVersion>7.0.4</VSSDKVSHelpPackageVersion>
 
     <!-- other packages -->
     <MicrosoftCompositionPackageVersion>1.0.30</MicrosoftCompositionPackageVersion>
+    <MicrosoftVisualFSharpMSBuild150PackageVersion>1.0.1</MicrosoftVisualFSharpMSBuild150PackageVersion>
     <NewtonsoftJsonPackageVersion>10.0.2</NewtonsoftJsonPackageVersion>
     <XliffTasksPackageVersion>0.2.0-beta-000081</XliffTasksPackageVersion>
 
