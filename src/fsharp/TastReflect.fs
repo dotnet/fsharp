@@ -1030,6 +1030,7 @@ and ReflectTypeDefinition (asm: ReflectAssembly, declTyOpt: Type option, tcref: 
     member x.Metadata = tcref
     member x.MakeMethodInfo (declTy,md) = TxMethodDef declTy md
     member x.MakeConstructorInfo (declTy,md) = TxConstructorDef declTy md
+    member x.UnderlyingTyconRef = tcref
 
     //interface IReflectableType with 
     //    member x.GetTypeInfo() = 

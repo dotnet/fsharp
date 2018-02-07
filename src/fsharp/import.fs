@@ -14,6 +14,7 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.TcGlobals
+open Microsoft.FSharp.Compiler.TastReflect
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
 #if !NO_EXTENSIONTYPING
@@ -201,11 +202,16 @@ let rec CanImportILType (env:ImportMap) m typ =
 #if !NO_EXTENSIONTYPING
 
 /// Import a provided type reference as an F# type TyconRef
-let ImportProvidedNamedType (env:ImportMap) (m:range) (st:Tainted<ProvidedType>) = 
+let ImportProvidedNamedType (env:ImportMap) (m:range) (st:Tainted<ProvidedType>) =
+    let tryGetTyconRef (pt : ProvidedType) =
+        match pt.RawSystemType with
+        | :? ReflectTypeDefinition as pt -> Some pt.UnderlyingTyconRef
+        | _ -> pt.TryGetTyconRef() |> Option.map (fun x -> x :?> TyconRef)
+
     // See if a reverse-mapping exists for a generated/relocated System.Type
-    match st.PUntaint((fun st -> st.TryGetTyconRef()),m) with 
-    | Some x -> (x :?> TyconRef)
-    | None ->         
+    match st.PUntaint(tryGetTyconRef, m) with
+    | Some x -> x
+    | None ->
         let tref = ExtensionTyping.GetILTypeRefOfProvidedType (st,m)
         ImportILTypeRef env m tref
 
