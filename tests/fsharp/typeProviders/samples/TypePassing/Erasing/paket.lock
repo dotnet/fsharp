@@ -428,6 +428,6 @@ NUGET
 GROUP SourceFiles
 
 GITHUB
-  remote: fsprojects/FSharp.TypeProviders.StarterPack
-    src/ProvidedTypes.fs (45f4d8780b3213ef61ba4fccc716cd495565c1a4)
-    src/ProvidedTypes.fsi (45f4d8780b3213ef61ba4fccc716cd495565c1a4)
+  remote: TobyShaw/FSharp.TypeProviders.SDK
+    src/ProvidedTypes.fs (b35a5d957765b061d3a6d8731bc1a4b6c2023b54)
+    src/ProvidedTypes.fsi (b35a5d957765b061d3a6d8731bc1a4b6c2023b54)
