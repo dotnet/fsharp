@@ -19,6 +19,7 @@
   <ItemGroup>
     <SdkProjects Include="src\FSharp.Editor\FSharp.Editor.fsproj" />
     <SdkProjects Include="src\FSharp.LanguageService\FSharp.LanguageService.fsproj" />
+    <SdkProjects Include="src\FSharp.ProjectSystem.FSharp\ProjectSystem.fsproj" />
   </ItemGroup>
 
   <Import Project="..\src\root.traversal.targets"/>

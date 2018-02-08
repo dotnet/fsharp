@@ -2,6 +2,15 @@
 
   <Import Project="$([MSBuild]::GetPathOfFileAbove('FSharp.Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" />
 
+  <PropertyGroup Condition="'$(UsePackageTargetFallbackHack)' == 'true'">
+    <!--
+    HACK: Necessary because FSharp.Compiler.Private has an incomplete project.json that claims to only support
+    netstandard1.6, and one of the packages listed in that project.json only supports net462.  At runtime everything
+    will work out, but for this project's package restore we have to fake it.
+    -->
+    <PackageTargetFallback>net462</PackageTargetFallback>
+  </PropertyGroup>
+
   <Import Project="$(NuGetPackageRoot)Microsoft.VSSDK.BuildTools\$(MicrosoftVSSDKBuildToolsPackageVersion)\build\Microsoft.VsSDK.BuildTools.props"
           Condition="'$(ImportVsSDK)' == 'true'" />
   <Import Project="$(NugetPackageRoot)Microsoft.VSSDK.BuildTools\$(MicrosoftVSSDKBuildToolsPackageVersion)\build\Microsoft.VsSDK.BuildTools.targets"

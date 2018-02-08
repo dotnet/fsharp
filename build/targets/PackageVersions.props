@@ -25,8 +25,10 @@
     <MicrosoftVisualStudioShellInterop100PackageVersion>10.0.30319</MicrosoftVisualStudioShellInterop100PackageVersion>
     <MicrosoftVisualStudioShellImmutable100PackageVersion>10.0.30319</MicrosoftVisualStudioShellImmutable100PackageVersion>
     <MicrosoftVisualStudioShellImmutable110PackageVersion>11.0.50727</MicrosoftVisualStudioShellImmutable110PackageVersion>
+    <MicrosoftVisualStudioShellImmutable150PackageVersion>15.0.25123-Dev15Preview</MicrosoftVisualStudioShellImmutable150PackageVersion>
     <MicrosoftVisualStudioShellInterop110PackageVersion>11.0.61030</MicrosoftVisualStudioShellInterop110PackageVersion>
     <MicrosoftVSSDKBuildToolsPackageVersion>15.1.192</MicrosoftVSSDKBuildToolsPackageVersion>
+    <VSSDKDebuggerVisualizersPackageVersion>12.0.4</VSSDKDebuggerVisualizersPackageVersion>
     <VSSDKVSLangProjPackageVersion>7.0.4</VSSDKVSLangProjPackageVersion>
     <VSSDKVSLangProj8PackageVersion>8.0.4</VSSDKVSLangProj8PackageVersion>
     <VSSDKVSHelpPackageVersion>7.0.4</VSSDKVSHelpPackageVersion>

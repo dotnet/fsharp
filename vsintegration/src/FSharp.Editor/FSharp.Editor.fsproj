@@ -10,15 +10,7 @@
     <NoWarn>$(NoWarn);75</NoWarn>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <OtherFlags>$(OtherFlags) --warnon:1182 --subsystemversion:6.00</OtherFlags>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <!--
-    HACK: Necessary because FSharp.Compiler.Private has a project.json that claims to only support netstandard1.6, and
-    one of the packages listed in that project.json only supports net462.  At runtime everything will work out, but
-    since we're mixing SDK projects and old project.json, we have to get dirty.
-    -->
-    <PackageTargetFallback>net462</PackageTargetFallback>
+    <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
   </PropertyGroup>
 
   <ItemGroup>
