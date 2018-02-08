@@ -13,13 +13,14 @@
     <ProjectFiles Include="src\FSharp.ProjectSystem.Base\Project\ProjectSystem.Base.csproj" />
     <ProjectFiles Include="src\FSharp.ProjectSystem.FSharp\ProjectSystem.fsproj" />
     <ProjectFiles Include="src\FSharp.ProjectSystem.PropertyPages\FSharp.PropertiesPages.vbproj" />
-    <ProjectFiles Include="src\FSharp.VS.FSI\FSHarp.VS.FSI.fsproj" />
+    <ProjectFiles Include="src\FSharp.VS.FSI\FSharp.VS.FSI.fsproj" />
   </ItemGroup>
 
   <ItemGroup>
     <SdkProjects Include="src\FSharp.Editor\FSharp.Editor.fsproj" />
     <SdkProjects Include="src\FSharp.LanguageService\FSharp.LanguageService.fsproj" />
     <SdkProjects Include="src\FSharp.ProjectSystem.FSharp\ProjectSystem.fsproj" />
+    <SdkProjects Include="src\FSharp.VS.FSI\FSharp.VS.FSI.fsproj" />
   </ItemGroup>
 
   <Import Project="..\src\root.traversal.targets"/>
