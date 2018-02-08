@@ -35,7 +35,8 @@
     <WriteCodeFragment AssemblyAttributes="@(_InternalsVisibleToAttribute)"
                        Language="$(Language)"
                        OutputFile="$(GeneratedFSharpInternalsVisibleToFile)">
-      <Output TaskParameter="OutputFile" ItemName="CompileBefore" />
+      <Output TaskParameter="OutputFile" ItemName="CompileBefore" Condition="'$(Language)' == 'F#'" />
+      <Output TaskParameter="OutputFile" ItemName="Compile" Condition="'$(Language)' != 'F#'" />
       <Output TaskParameter="OutputFile" ItemName="FileWrites" />
     </WriteCodeFragment>
   </Target>

@@ -16,7 +16,7 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Core", "src\fsharp\F
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.LanguageService", "vsintegration\src\FSharp.LanguageService\FSharp.LanguageService.fsproj", "{EE85AAB7-CDA0-4C4E-BDA0-A64CCC413E3F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FSharp.LanguageService.Base", "vsintegration\src\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj", "{1C5C163C-37EA-4A3C-8CCC-0D34B74BF8EF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FSharp.LanguageService.Base", "vsintegration\src\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj", "{1C5C163C-37EA-4A3C-8CCC-0D34B74BF8EF}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Editor", "vsintegration\src\FSharp.Editor\FSharp.Editor.fsproj", "{65E0E82A-EACE-4787-8994-888674C2FE87}"
 EndProject
@@ -214,10 +214,10 @@ Global
 		{1C5C163C-37EA-4A3C-8CCC-0D34B74BF8EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1C5C163C-37EA-4A3C-8CCC-0D34B74BF8EF}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{1C5C163C-37EA-4A3C-8CCC-0D34B74BF8EF}.Debug|x86.Build.0 = Debug|Any CPU
-		{1C5C163C-37EA-4A3C-8CCC-0D34B74BF8EF}.Proto|Any CPU.ActiveCfg = Proto|Any CPU
-		{1C5C163C-37EA-4A3C-8CCC-0D34B74BF8EF}.Proto|Any CPU.Build.0 = Proto|Any CPU
-		{1C5C163C-37EA-4A3C-8CCC-0D34B74BF8EF}.Proto|x86.ActiveCfg = Proto|Any CPU
-		{1C5C163C-37EA-4A3C-8CCC-0D34B74BF8EF}.Proto|x86.Build.0 = Proto|Any CPU
+		{1C5C163C-37EA-4A3C-8CCC-0D34B74BF8EF}.Proto|Any CPU.ActiveCfg = Release|Any CPU
+		{1C5C163C-37EA-4A3C-8CCC-0D34B74BF8EF}.Proto|Any CPU.Build.0 = Release|Any CPU
+		{1C5C163C-37EA-4A3C-8CCC-0D34B74BF8EF}.Proto|x86.ActiveCfg = Release|Any CPU
+		{1C5C163C-37EA-4A3C-8CCC-0D34B74BF8EF}.Proto|x86.Build.0 = Release|Any CPU
 		{1C5C163C-37EA-4A3C-8CCC-0D34B74BF8EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1C5C163C-37EA-4A3C-8CCC-0D34B74BF8EF}.Release|Any CPU.Build.0 = Release|Any CPU
 		{1C5C163C-37EA-4A3C-8CCC-0D34B74BF8EF}.Release|x86.ActiveCfg = Release|Any CPU
