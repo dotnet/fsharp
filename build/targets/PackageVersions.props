@@ -22,10 +22,10 @@
     <MicrosoftVisualStudioProjectAggregatorPackageVersion>8.0.50727</MicrosoftVisualStudioProjectAggregatorPackageVersion>
     <MicrosoftVisualStudioShell150PackageVersion>15.0.26201</MicrosoftVisualStudioShell150PackageVersion>
     <MicrosoftVisualStudioShellDesignPackageVersion>15.0.26201</MicrosoftVisualStudioShellDesignPackageVersion>
-    <MicrosoftVisualStudioShellInterop100PackageVersion>10.0.30319</MicrosoftVisualStudioShellInterop100PackageVersion>
     <MicrosoftVisualStudioShellImmutable100PackageVersion>10.0.30319</MicrosoftVisualStudioShellImmutable100PackageVersion>
     <MicrosoftVisualStudioShellImmutable110PackageVersion>11.0.50727</MicrosoftVisualStudioShellImmutable110PackageVersion>
     <MicrosoftVisualStudioShellImmutable150PackageVersion>15.0.25123-Dev15Preview</MicrosoftVisualStudioShellImmutable150PackageVersion>
+    <MicrosoftVisualStudioShellInterop100PackageVersion>10.0.30319</MicrosoftVisualStudioShellInterop100PackageVersion>
     <MicrosoftVisualStudioShellInterop110PackageVersion>11.0.61030</MicrosoftVisualStudioShellInterop110PackageVersion>
     <MicrosoftVisualStudioTextManagerInterop100PackageVersion>10.0.30319</MicrosoftVisualStudioTextManagerInterop100PackageVersion>
     <MicrosoftVSSDKBuildToolsPackageVersion>15.1.192</MicrosoftVSSDKBuildToolsPackageVersion>
@@ -36,6 +36,7 @@
 
     <!-- other packages -->
     <MicrosoftCompositionPackageVersion>1.0.30</MicrosoftCompositionPackageVersion>
+    <MicrosoftMSXMLPackageVersion>8.0.0-alpha</MicrosoftMSXMLPackageVersion>
     <MicrosoftVisualFSharpMSBuild150PackageVersion>1.0.1</MicrosoftVisualFSharpMSBuild150PackageVersion>
     <NewtonsoftJsonPackageVersion>10.0.2</NewtonsoftJsonPackageVersion>
     <XliffTasksPackageVersion>0.2.0-beta-000081</XliffTasksPackageVersion>
