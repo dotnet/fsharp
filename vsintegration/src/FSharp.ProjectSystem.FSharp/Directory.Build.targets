@@ -1,0 +1,3 @@
+<Project>
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('FSharp.Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" />
+</Project>

@@ -24,7 +24,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectSystem.Base", "vsint
 EndProject
 Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "FSharp.PropertiesPages", "vsintegration\src\FSharp.ProjectSystem.PropertyPages\FSharp.PropertiesPages.vbproj", "{FCFB214C-462E-42B3-91CA-FC557EFEE74F}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ProjectSystem", "vsintegration\src\FSharp.ProjectSystem.FSharp\ProjectSystem.fsproj", "{6196B0F8-CAEA-4CF1-AF82-1B520F77FE44}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "ProjectSystem", "vsintegration\src\FSharp.ProjectSystem.FSharp\ProjectSystem.fsproj", "{6196B0F8-CAEA-4CF1-AF82-1B520F77FE44}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ProjectTemplates", "ProjectTemplates", "{C9B1D3F5-4971-4F04-9C26-37E3AC809AB4}"
 EndProject
@@ -262,10 +262,10 @@ Global
 		{6196B0F8-CAEA-4CF1-AF82-1B520F77FE44}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6196B0F8-CAEA-4CF1-AF82-1B520F77FE44}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{6196B0F8-CAEA-4CF1-AF82-1B520F77FE44}.Debug|x86.Build.0 = Debug|Any CPU
-		{6196B0F8-CAEA-4CF1-AF82-1B520F77FE44}.Proto|Any CPU.ActiveCfg = Proto|Any CPU
-		{6196B0F8-CAEA-4CF1-AF82-1B520F77FE44}.Proto|Any CPU.Build.0 = Proto|Any CPU
-		{6196B0F8-CAEA-4CF1-AF82-1B520F77FE44}.Proto|x86.ActiveCfg = Proto|Any CPU
-		{6196B0F8-CAEA-4CF1-AF82-1B520F77FE44}.Proto|x86.Build.0 = Proto|Any CPU
+		{6196B0F8-CAEA-4CF1-AF82-1B520F77FE44}.Proto|Any CPU.ActiveCfg = Release|Any CPU
+		{6196B0F8-CAEA-4CF1-AF82-1B520F77FE44}.Proto|Any CPU.Build.0 = Release|Any CPU
+		{6196B0F8-CAEA-4CF1-AF82-1B520F77FE44}.Proto|x86.ActiveCfg = Release|Any CPU
+		{6196B0F8-CAEA-4CF1-AF82-1B520F77FE44}.Proto|x86.Build.0 = Release|Any CPU
 		{6196B0F8-CAEA-4CF1-AF82-1B520F77FE44}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6196B0F8-CAEA-4CF1-AF82-1B520F77FE44}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6196B0F8-CAEA-4CF1-AF82-1B520F77FE44}.Release|x86.ActiveCfg = Release|Any CPU
