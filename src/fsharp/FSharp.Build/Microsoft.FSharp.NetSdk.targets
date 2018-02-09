@@ -71,14 +71,16 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   <Target Name="FSharpCorePackageReferences" BeforeTargets="CollectPackageReferences;">
     <ItemGroup>
       <FSharpCorePackages Include="@(PackageReference)" Condition=" '%(Identity)' == 'FSharp.Core' " />
-      <PackageReference Remove="FSharp.Core" Condition=" ('$(DisableImplicitFSharpCoreReference)' == 'true' or @(FSharpCorePackages->Count()) &gt; 1) and '%(PackageReference.DefaultInclude)' == 'true' " />
+      <PackageReference Update="FSharp.Core" Version ="$(FSharpCoreImplicitPackageVersion)" Condition=" ( ('$(FSharpCoreImplicitPackageVersion)' != '') and ('$(DisableImplicitFSharpCoreReference)' != 'true') and (@(FSharpCorePackages->Count()) == 1) ) and ('%(PackageReference.DefaultInclude)' == 'true') " />
+      <PackageReference Remove="FSharp.Core" Condition=" ('$(DisableImplicitFSharpCoreReference)' == 'true' or @(FSharpCorePackages->Count()) &gt; 1) and ('%(PackageReference.DefaultInclude)' == 'true') " />
     </ItemGroup>
   </Target>
 
   <Target Name="ValueTuplePackageReferences" BeforeTargets="CollectPackageReferences;">
     <ItemGroup>
       <ValueTuplePackagesPackages Include="@(PackageReference)" Condition=" '%(Identity)' == 'System.ValueTuple' " />
-      <PackageReference Remove="System.ValueTuple" Condition=" ('$(DisableImplicitSystemValueTupleReference)' == 'true' or '$(_FrameworkNeedsValueTupleReference)' != 'true' or @(ValueTuplePackages->Count()) &gt; 1) and '%(PackageReference.DefaultInclude)' == 'true' " />
+      <PackageReference Update="System.ValueTuple" Version="$(ValueTupleImplicitPackageVersion)" Condition=" ( ('$(ValueTupleImplicitPackageVersion)' == '') and ('$(DisableImplicitSystemValueTupleReference)' != 'true') and ('$(_FrameworkNeedsValueTupleReference)' == 'true') and (@(ValueTuplePackages->Count()) == 1) and ('%(PackageReference.DefaultInclude)' == 'true') ) " />
+      <PackageReference Remove="System.ValueTuple" Condition=" ( ('$(DisableImplicitSystemValueTupleReference)' != 'true') or ('$(_FrameworkNeedsValueTupleReference)' != 'true') or (@(ValueTuplePackages->Count()) &gt; 1) ) and ('%(PackageReference.DefaultInclude)' == 'true') " />
     </ItemGroup>
   </Target>
 
