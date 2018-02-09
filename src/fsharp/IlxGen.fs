@@ -40,8 +40,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types
   
 let IsNonErasedTypar (tp:Typar) = not tp.IsErased
 let DropErasedTypars (tps:Typar list) = tps |> List.filter IsNonErasedTypar
-let DropErasedTyargs tys = tys |> List.filter (fun ty -> match ty with TType_measure _ -> false | _ -> true) 
-let AddSpecialNameFlag (mdef:ILMethodDef) = { mdef with Attributes=mdef.Attributes ||| MethodAttributes.SpecialName }
+let DropErasedTyargs tys = tys |> List.filter (fun ty -> match ty with TType_measure _ -> false | _ -> true)
 
 let AddNonUserCompilerGeneratedAttribs (g: TcGlobals) (mdef:ILMethodDef) = g.AddMethodGeneratedAttributes  mdef
 
@@ -67,7 +66,7 @@ let mkLdfldMethodDef (ilMethName,reprAccess,isStatic,ilTy,ilFieldName,ilPropType
            mkILNonGenericStaticMethod (ilMethName,reprAccess,[],ilReturn,mkMethodBody(true,[],2,nonBranchingInstrsToCode [mkNormalLdsfld ilFieldSpec],None))
        else 
            mkILNonGenericInstanceMethod (ilMethName,reprAccess,[],ilReturn,mkMethodBody (true,[],2,nonBranchingInstrsToCode [ mkLdarg0; mkNormalLdfld ilFieldSpec],None))
-   ilMethodDef |> AddSpecialNameFlag
+   ilMethodDef.WithSpecialName
 
 let ChooseParamNames fieldNamesAndTypes = 
     let takenFieldNames = fieldNamesAndTypes |> List.map p23 |> Set.ofList
@@ -3524,19 +3523,13 @@ and bindBaseOrThisVarOpt cenv eenv baseValOpt =
     | Some basev -> AddStorageForVal cenv.g (basev,notlazy (Arg 0))  eenv  
 
 and fixupVirtualSlotFlags (mdef:ILMethodDef) = 
-    {mdef with 
-        Attributes = if mdef.IsVirtual then mdef.Attributes &&& ~~~MethodAttributes.CheckAccessOnOverride ||| MethodAttributes.HideBySig
-                     else failwith "fixupVirtualSlotFlags" }
+    mdef.WithHideBySig
 
 and renameMethodDef nameOfOverridingMethod (mdef : ILMethodDef) = 
     {mdef with Name=nameOfOverridingMethod }
 
 and fixupMethodImplFlags (mdef:ILMethodDef) = 
-    let attributes = mdef.Attributes &&& ~~~MethodAttributes.Public ||| MethodAttributes.Private ||| MethodAttributes.HideBySig   
-    { mdef with 
-        Attributes = 
-            (if mdef.IsVirtual then attributes &&& ~~~MethodAttributes.CheckAccessOnOverride ||| MethodAttributes.Final ||| MethodAttributes.NewSlot
-            else failwith "fixupMethodImpl") }
+    mdef.WithAccess(ILMemberAccess.Private).WithHideBySig.WithFinal(true).WithNewSlot
 
 and GenObjectMethod cenv eenvinner (cgbuf:CodeGenBuffer) useMethodImpl tmethod =
 
@@ -4722,8 +4715,7 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) sta
 
         let ilMethodDef = 
             let ilMethodBody = MethodBody.IL(CodeGenMethodForExpr cenv cgbuf.mgbuf (SPSuppress, [], ilGetterMethSpec.Name, eenv, 0, 0, rhsExpr, Return))
-            mkILStaticMethod ([], ilGetterMethSpec.Name, access, [], mkILReturn ilTy, ilMethodBody) 
-            |> AddSpecialNameFlag
+            (mkILStaticMethod ([], ilGetterMethSpec.Name, access, [], mkILReturn ilTy, ilMethodBody)).WithSpecialName
             |> AddNonUserCompilerGeneratedAttribs cenv.g
 
         CountMethodDef()
@@ -4800,14 +4792,12 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) sta
 
             let getterMethod = 
                 mkILStaticMethod([],ilGetterMethRef.Name,access,[],mkILReturn fty,
-                               mkMethodBody(true,[],2,nonBranchingInstrsToCode [ mkNormalLdsfld fspec ],None)) 
-                |> AddSpecialNameFlag
+                               mkMethodBody(true,[],2,nonBranchingInstrsToCode [ mkNormalLdsfld fspec ],None)).WithSpecialName
             cgbuf.mgbuf.AddMethodDef(ilTypeRefForProperty,getterMethod) 
             if mut || cenv.opts.isInteractiveItExpr then 
                 let setterMethod = 
                     mkILStaticMethod([],ilSetterMethRef.Name,access,[mkILParamNamed("value",fty)],mkILReturn ILType.Void,
-                                   mkMethodBody(true,[],2,nonBranchingInstrsToCode [ mkLdarg0;mkNormalStsfld fspec],None))
-                    |> AddSpecialNameFlag
+                                   mkMethodBody(true,[],2,nonBranchingInstrsToCode [ mkLdarg0;mkNormalStsfld fspec],None)).WithSpecialName
                 cgbuf.mgbuf.AddMethodDef(ilTypeRefForProperty,setterMethod)
 
             GenBindingRhs cenv cgbuf eenv sp vspec rhsExpr
@@ -5215,12 +5205,13 @@ and GenMethodForBinding
     let methName = mspec.Name
     let tref = mspec.MethodRef.DeclaringTypeRef
 
-    let EmitTheMethodDef mdef = 
+    let EmitTheMethodDef (mdef:ILMethodDef) = 
         // Does the function have an explicit [<EntryPoint>] attribute? 
         let isExplicitEntryPoint = HasFSharpAttribute cenv.g cenv.g.attrib_EntryPointAttribute attrs
 
+        let mdef = mdef.WithSecurity(securityAttributes.Length > 0).WithPInvoke(hasDllImport)
         let mdef = 
-            {mdef with 
+            { mdef with 
                 ImplAttributes = 
                     mdef.ImplAttributes
                     |> ILRuntimeWriter.conditionalAdd (hasPreserveSigImplFlag || hasPreserveSigNamedArg) MethodImplAttributes.PreserveSig
@@ -5228,10 +5219,6 @@ and GenMethodForBinding
                     |> ILRuntimeWriter.conditionalAdd hasNoInliningFlag MethodImplAttributes.NoInlining
                     |> ILRuntimeWriter.conditionalAdd hasAggressiveInliningImplFlag MethodImplAttributes.AggressiveInlining
                 IsEntryPoint = isExplicitEntryPoint
-                Attributes =
-                    mdef.Attributes
-                    |> ILRuntimeWriter.conditionalAdd (securityAttributes.Length > 0) MethodAttributes.HasSecurity
-                    |> ILRuntimeWriter.conditionalAdd hasDllImport MethodAttributes.PinvokeImpl
                 SecurityDecls = secDecls }
 
         let mdef = 
@@ -5241,7 +5228,7 @@ and GenMethodForBinding
                mdef.Name.StartsWith("|",System.StringComparison.Ordinal) ||
                // event add/remove method
                v.val_flags.IsGeneratedEventVal then
-                {mdef with Attributes=mdef.Attributes ||| MethodAttributes.SpecialName } 
+                mdef.WithSpecialName
             else 
                 mdef
         CountMethodDef()
@@ -5294,11 +5281,7 @@ and GenMethodForBinding
 
            let mdef = 
                if mdef.IsVirtual then 
-                    { mdef with 
-                        Attributes =
-                            mdef.Attributes 
-                            |> ILRuntimeWriter.conditionalAdd memberInfo.MemberFlags.IsFinal MethodAttributes.Final 
-                            |> ILRuntimeWriter.conditionalAdd isAbstract MethodAttributes.Abstract }
+                    mdef.WithFinal(memberInfo.MemberFlags.IsFinal).WithAbstract(isAbstract)
                else mdef
 
            match memberInfo.MemberFlags.MemberKind with 
@@ -5326,8 +5309,7 @@ and GenMethodForBinding
                        cgbuf.mgbuf.AddOrMergePropertyDef(tref,ilPropDef,m)
 
                    // Add the special name flag for all properties                   
-                   let mdef = mdef |> AddSpecialNameFlag
-                   let mdef = { mdef with CustomAttrs= mkILCustomAttrs ((GenAttrs cenv eenv attrsAppliedToGetterOrSetter) @ sourceNameAttribs @ ilAttrsCompilerGenerated) } 
+                   let mdef = { mdef.WithSpecialName with CustomAttrs= mkILCustomAttrs ((GenAttrs cenv eenv attrsAppliedToGetterOrSetter) @ sourceNameAttribs @ ilAttrsCompilerGenerated) } 
                    EmitTheMethodDef mdef
            | _ -> 
                let mdef = { mdef with CustomAttrs= mkILCustomAttrs (ilAttrsThatGoOnPrimaryItem @ sourceNameAttribs @ ilAttrsCompilerGenerated) } 
@@ -6080,19 +6062,17 @@ and GenAbstractBinding cenv eenv tref (vref:ValRef) =
 
         let mdef = fixupVirtualSlotFlags mdef
         let mdef = 
-          {mdef with 
-            ImplAttributes = 
-                mdef.ImplAttributes
-                |> ILRuntimeWriter.conditionalAdd hasPreserveSigImplFlag MethodImplAttributes.PreserveSig
-                |> ILRuntimeWriter.conditionalAdd hasSynchronizedImplFlag MethodImplAttributes.Synchronized
-                |> ILRuntimeWriter.conditionalAdd hasNoInliningFlag MethodImplAttributes.NoInlining
-                |> ILRuntimeWriter.conditionalAdd hasAggressiveInliningImplFlag MethodImplAttributes.AggressiveInlining
-            Attributes =
-                if mdef.IsVirtual then
-                    mdef.Attributes
-                    |> ILRuntimeWriter.conditionalAdd memberInfo.MemberFlags.IsFinal MethodAttributes.Final
-                    |> ILRuntimeWriter.conditionalAdd memberInfo.MemberFlags.IsDispatchSlot MethodAttributes.Abstract
-                else mdef.Attributes }
+            if mdef.IsVirtual then 
+                mdef.WithFinal(memberInfo.MemberFlags.IsFinal).WithAbstract(memberInfo.MemberFlags.IsDispatchSlot) 
+            else mdef
+        let mdef = 
+            { mdef with 
+                ImplAttributes = 
+                    mdef.ImplAttributes
+                    |> ILRuntimeWriter.conditionalAdd hasPreserveSigImplFlag MethodImplAttributes.PreserveSig
+                    |> ILRuntimeWriter.conditionalAdd hasSynchronizedImplFlag MethodImplAttributes.Synchronized
+                    |> ILRuntimeWriter.conditionalAdd hasNoInliningFlag MethodImplAttributes.NoInlining
+                    |> ILRuntimeWriter.conditionalAdd hasAggressiveInliningImplFlag MethodImplAttributes.AggressiveInlining }
         
         match memberInfo.MemberFlags.MemberKind with 
         | MemberKind.ClassConstructor 
@@ -6113,7 +6093,7 @@ and GenAbstractBinding cenv eenv tref (vref:ValRef) =
                      let ilPropTy = GenType cenv.amap m eenvForMeth.tyenv vtyp
                      let ilArgTys = v |> ArgInfosOfPropertyVal cenv.g |> List.map fst |> GenTypes cenv.amap m eenvForMeth.tyenv
                      GenPropertyForMethodDef compileAsInstance tref mdef v memberInfo ilArgTys ilPropTy (mkILCustomAttrs ilAttrs) None
-                 let mdef = mdef |> AddSpecialNameFlag
+                 let mdef = mdef.WithSpecialName
                  [mdef], [ilPropDef],[]
 
     else 
@@ -6444,7 +6424,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                              mkILNonGenericInstanceMethod
                                (ilMethName,iLAccess,ilParams,ilReturn,
                                   mkMethodBody(true,[],2,nonBranchingInstrsToCode ([ mkLdarg0;mkLdarg 1us;mkNormalStfld ilFieldSpec]),None))
-                    yield ilMethodDef |> AddSpecialNameFlag 
+                    yield ilMethodDef.WithSpecialName
 
               if generateDebugDisplayAttribute then 
                   let (|Lazy|) (x:Lazy<_>) = x.Force()
@@ -6483,7 +6463,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                                                                   yield mkNormalLdobj ilThisTy  ] @
                                                              callInstrs),
                                                           None))
-                      yield ilMethodDef |> AddSpecialNameFlag |> AddNonUserCompilerGeneratedAttribs cenv.g
+                      yield ilMethodDef.WithSpecialName |> AddNonUserCompilerGeneratedAttribs cenv.g
                   | None,_ ->
                       //printfn "sprintf not found"
                       ()

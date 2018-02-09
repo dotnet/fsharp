@@ -1087,6 +1087,15 @@ type ILMethodDef =
     member IsAggressiveInline: bool
     /// .NET 2.0 feature: SafeHandle finalizer must be run.
     member IsMustRun: bool
+    
+    member WithSpecialName: ILMethodDef
+    member WithHideBySig: ILMethodDef
+    member WithFinal: bool -> ILMethodDef
+    member WithAbstract: bool -> ILMethodDef
+    member WithAccess: ILMemberAccess -> ILMethodDef
+    member WithNewSlot: ILMethodDef
+    member WithSecurity: bool -> ILMethodDef
+    member WithPInvoke: bool -> ILMethodDef
 
 /// Tables of methods.  Logically equivalent to a list of methods but
 /// the table is kept in a form optimized for looking up methods by 

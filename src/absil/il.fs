@@ -17,6 +17,7 @@ open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Runtime.CompilerServices
 open System.Reflection
+open System
  
 let logging = false 
 
@@ -1379,6 +1380,8 @@ let convertMemberAccess (ilMemberAccess:ILMemberAccess) =
     | ILMemberAccess.Private             -> MethodAttributes.Private
     | ILMemberAccess.Public              -> MethodAttributes.Public
 
+let inline conditionalAdd condition flagToAdd source = if condition then source ||| flagToAdd else source &&& ~~~flagToAdd
+
 [<NoComparison; NoEquality>]
 type ILMethodDef = 
     { Name: string;
@@ -1434,6 +1437,19 @@ type ILMethodDef =
     member x.IsNoInline        = x.ImplAttributes &&& MethodImplAttributes.NoInlining <> enum 0
     member x.IsAggressiveInline= x.ImplAttributes &&& MethodImplAttributes.AggressiveInlining <> enum 0
     member x.IsMustRun         = x.ImplAttributes &&& MethodImplAttributes.NoOptimization <> enum 0
+
+    member x.WithSpecialName = { x with Attributes = x.Attributes ||| MethodAttributes.SpecialName }
+    member x.WithHideBySig = 
+        { x with 
+            Attributes = 
+                if x.IsVirtual then x.Attributes &&& ~~~MethodAttributes.CheckAccessOnOverride ||| MethodAttributes.HideBySig
+                else failwith "WithHideBySig" }
+    member x.WithFinal(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition MethodAttributes.Final}
+    member x.WithAbstract(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition MethodAttributes.Abstract}
+    member x.WithAccess(access) = { x with Attributes = x.Attributes &&& ~~~MethodAttributes.MemberAccessMask ||| convertMemberAccess access }
+    member x.WithNewSlot = { x with Attributes = x.Attributes ||| MethodAttributes.NewSlot }
+    member x.WithSecurity(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition MethodAttributes.HasSecurity}
+    member x.WithPInvoke(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition MethodAttributes.PinvokeImpl}
 
 /// Index table by name and arity. 
 type MethodDefMap = Map<string, ILMethodDef list>
