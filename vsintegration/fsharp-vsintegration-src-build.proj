@@ -20,6 +20,7 @@
     <SdkProjects Include="src\FSharp.Editor\FSharp.Editor.fsproj" />
     <SdkProjects Include="src\FSharp.LanguageService\FSharp.LanguageService.fsproj" />
     <SdkProjects Include="src\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj" />
+    <SdkProjects Include="src\FSharp.ProjectSystem.Base\Project\ProjectSystem.Base.csproj" />
     <SdkProjects Include="src\FSharp.ProjectSystem.FSharp\ProjectSystem.fsproj" />
     <SdkProjects Include="src\FSharp.VS.FSI\FSharp.VS.FSI.fsproj" />
   </ItemGroup>
