@@ -1,0 +1,14 @@
+<Project ToolsVersion="4.0" DefaultTargets="Test" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <Import Project="Test.props" />
+
+  <!-- if no FSharp.Core is specified, ensure the default is present -->
+
+  <PropertyGroup>
+    <ExpectsFSharpCore>true</ExpectsFSharpCore>
+    <ExpectedFSharpCorePackageVersion>$(DefaultFSharpPackageVersion)</ExpectedFSharpCorePackageVersion>
+  </PropertyGroup>
+
+  <Import Project="Test.targets" />
+
+</Project>

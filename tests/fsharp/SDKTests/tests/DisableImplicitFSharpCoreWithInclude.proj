@@ -1,0 +1,22 @@
+<Project ToolsVersion="4.0" DefaultTargets="Test" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <Import Project="Test.props" />
+
+  <PropertyGroup>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FSharp.Core" Version="99.99.99" />
+  </ItemGroup>
+
+  <!-- if $(DisableImplicitFSharpCoreReference) is set and an explicit PackageReference is added, that version of FSharp.Core is present -->
+
+  <PropertyGroup>
+    <ExpectsFSharpCore>true</ExpectsFSharpCore>
+    <ExpectedFSharpCorePackageVersion>99.99.99</ExpectedFSharpCorePackageVersion>
+  </PropertyGroup>
+
+  <Import Project="Test.targets" />
+
+</Project>
