@@ -1096,6 +1096,10 @@ type ILMethodDef =
     member WithNewSlot: ILMethodDef
     member WithSecurity: bool -> ILMethodDef
     member WithPInvoke: bool -> ILMethodDef
+    member WithPreserveSig: bool -> ILMethodDef
+    member WithSynchronized: bool -> ILMethodDef
+    member WithNoInlining: bool -> ILMethodDef
+    member WithAggressiveInlining: bool -> ILMethodDef
 
 /// Tables of methods.  Logically equivalent to a list of methods but
 /// the table is kept in a form optimized for looking up methods by 
@@ -1308,6 +1312,11 @@ and [<NoComparison; NoEquality>]
     member HasSecurity: bool
     member Encoding: ILDefaultPInvokeEncoding;
     member WithAccess: ILTypeDefAccess -> ILTypeDef
+    member WithSealed: bool -> ILTypeDef
+    member WithSerializable: bool -> ILTypeDef
+    member WithAbstract: bool -> ILTypeDef
+    member WithImport: bool -> ILTypeDef
+    member WithHasSecurity: bool -> ILTypeDef
 
 [<NoEquality; NoComparison>]
 [<Sealed>]

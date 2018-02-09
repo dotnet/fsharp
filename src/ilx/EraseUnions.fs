@@ -1102,14 +1102,11 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
                   Properties=emptyILProperties
                   CustomAttrs= emptyILCustomAttrs }
 
-    let attributes = 
-        td.Attributes 
-        |> ILRuntimeWriter.conditionalAdd isAbstract TypeAttributes.Abstract 
-        |> ILRuntimeWriter.conditionalAdd altTypeDefs.IsEmpty TypeAttributes.Sealed
+    let td = td.WithAbstract(isAbstract).WithSealed(altTypeDefs.IsEmpty).WithImport(false)
     let baseTypeDef = 
        { td with 
           NestedTypes = mkILTypeDefs (Option.toList enumTypeDef @ altTypeDefs @ altDebugTypeDefs @ td.NestedTypes.AsList)
-          Attributes = attributes &&& ~~~TypeAttributes.Import ||| TypeAttributes.BeforeFieldInit
+          Attributes = td.Attributes ||| TypeAttributes.BeforeFieldInit
           Extends= (match td.Extends with None -> Some ilg.typ_Object | _ -> td.Extends) 
           Methods= mkILMethods (ctorMeths @ baseMethsFromAlt @ selfMeths @ tagMeths @ altUniqObjMeths @ existingMeths)
           Fields=mkILFields (selfAndTagFields @ List.map (fun (_,_,_,_,fdef,_) -> fdef) altNullaryFields @ td.Fields.AsList)

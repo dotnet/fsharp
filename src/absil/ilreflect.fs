@@ -292,7 +292,6 @@ type System.Reflection.Emit.ILGenerator with
 //----------------------------------------------------------------------------
 
 let inline flagsIf  b x  = if b then x else enum 0
-let inline conditionalAdd condition flagToAdd source = if condition then source ||| flagToAdd else source &&& ~~~flagToAdd
 
 module Zmap = 
     let force x m str = match Zmap.tryFind x m with Some y -> y | None -> failwithf "Zmap.force: %s: x = %+A" str x

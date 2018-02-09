@@ -1450,6 +1450,10 @@ type ILMethodDef =
     member x.WithNewSlot = { x with Attributes = x.Attributes ||| MethodAttributes.NewSlot }
     member x.WithSecurity(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition MethodAttributes.HasSecurity}
     member x.WithPInvoke(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition MethodAttributes.PinvokeImpl}
+    member x.WithPreserveSig(condition) = { x with ImplAttributes = x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.PreserveSig}
+    member x.WithSynchronized(condition) = { x with ImplAttributes = x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.Synchronized}
+    member x.WithNoInlining(condition) = { x with ImplAttributes = x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.NoInlining}
+    member x.WithAggressiveInlining(condition) = { x with ImplAttributes = x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.AggressiveInlining}
 
 /// Index table by name and arity. 
 type MethodDefMap = Map<string, ILMethodDef list>
@@ -1692,7 +1696,11 @@ type ILTypeDef =
     member x.IsStructOrEnum = 
         x.IsStruct || x.IsEnum
     member x.WithAccess(access) = { x with Attributes = x.Attributes &&& ~~~TypeAttributes.VisibilityMask ||| convertTypeAccessFlags access }
-
+    member x.WithSealed(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition TypeAttributes.Sealed }
+    member x.WithSerializable(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition TypeAttributes.Serializable }
+    member x.WithAbstract(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition TypeAttributes.Abstract }
+    member x.WithImport(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition TypeAttributes.Import }
+    member x.WithHasSecurity(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition TypeAttributes.HasSecurity }
 
 and [<Sealed>] ILTypeDefs(f : unit -> (string list * string * ILAttributes * Lazy<ILTypeDef>)[]) =
 

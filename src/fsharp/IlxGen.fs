@@ -5210,14 +5210,9 @@ and GenMethodForBinding
         let isExplicitEntryPoint = HasFSharpAttribute cenv.g cenv.g.attrib_EntryPointAttribute attrs
 
         let mdef = mdef.WithSecurity(securityAttributes.Length > 0).WithPInvoke(hasDllImport)
-        let mdef = 
+        let mdef = mdef.WithPreserveSig(hasPreserveSigImplFlag || hasPreserveSigNamedArg).WithSynchronized(hasSynchronizedImplFlag).WithNoInlining(hasNoInliningFlag).WithAggressiveInlining(hasAggressiveInliningImplFlag)
+        let mdef =
             { mdef with 
-                ImplAttributes = 
-                    mdef.ImplAttributes
-                    |> ILRuntimeWriter.conditionalAdd (hasPreserveSigImplFlag || hasPreserveSigNamedArg) MethodImplAttributes.PreserveSig
-                    |> ILRuntimeWriter.conditionalAdd hasSynchronizedImplFlag MethodImplAttributes.Synchronized
-                    |> ILRuntimeWriter.conditionalAdd hasNoInliningFlag MethodImplAttributes.NoInlining
-                    |> ILRuntimeWriter.conditionalAdd hasAggressiveInliningImplFlag MethodImplAttributes.AggressiveInlining
                 IsEntryPoint = isExplicitEntryPoint
                 SecurityDecls = secDecls }
 
@@ -5774,7 +5769,7 @@ and GenTypeDefForCompLoc (cenv, eenv, mgbuf: AssemblyBuilder, cloc, hidden, attr
              then [ ] 
              else [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Module)])),
          initTrigger)
-    let tdef = { tdef with Attributes=tdef.Attributes ||| TypeAttributes.Sealed ||| TypeAttributes.Abstract }
+    let tdef = tdef.WithSealed(true).WithAbstract(true)
     mgbuf.AddTypeDef(tref, tdef, eliminateIfEmpty, addAtEnd, None)
 
 
@@ -6065,14 +6060,7 @@ and GenAbstractBinding cenv eenv tref (vref:ValRef) =
             if mdef.IsVirtual then 
                 mdef.WithFinal(memberInfo.MemberFlags.IsFinal).WithAbstract(memberInfo.MemberFlags.IsDispatchSlot) 
             else mdef
-        let mdef = 
-            { mdef with 
-                ImplAttributes = 
-                    mdef.ImplAttributes
-                    |> ILRuntimeWriter.conditionalAdd hasPreserveSigImplFlag MethodImplAttributes.PreserveSig
-                    |> ILRuntimeWriter.conditionalAdd hasSynchronizedImplFlag MethodImplAttributes.Synchronized
-                    |> ILRuntimeWriter.conditionalAdd hasNoInliningFlag MethodImplAttributes.NoInlining
-                    |> ILRuntimeWriter.conditionalAdd hasAggressiveInliningImplFlag MethodImplAttributes.AggressiveInlining }
+        let mdef = mdef.WithPreserveSig(hasPreserveSigImplFlag).WithSynchronized(hasSynchronizedImplFlag).WithNoInlining(hasNoInliningFlag).WithAggressiveInlining(hasAggressiveInliningImplFlag)
         
         match memberInfo.MemberFlags.MemberKind with 
         | MemberKind.ClassConstructor 
@@ -6577,14 +6565,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                // Set some the extra entries in the definition 
                let isTheSealedAttribute = tyconRefEq cenv.g tcref cenv.g.attrib_SealedAttribute.TyconRef
 
-               let tdef = { tdef with 
-                                Attributes = 
-                                    tdef.Attributes 
-                                    |> ILRuntimeWriter.conditionalAdd (isSealedTy cenv.g thisTy || isTheSealedAttribute) TypeAttributes.Sealed 
-                                    |> ILRuntimeWriter.conditionalAdd isSerializable TypeAttributes.Serializable 
-                                    |> ILRuntimeWriter.conditionalAdd isAbstract TypeAttributes.Abstract 
-                                    |> ILRuntimeWriter.conditionalAdd (isComInteropTy cenv.g thisTy) TypeAttributes.Import
-                                MethodImpls=mkILMethodImpls methodImpls }
+               let tdef = tdef.WithSealed(isSealedTy cenv.g thisTy || isTheSealedAttribute).WithSerializable(isSerializable).WithAbstract(isAbstract).WithImport(isComInteropTy cenv.g thisTy)
+               let tdef = { tdef with MethodImpls=mkILMethodImpls methodImpls }
 
                let tdLayout,tdEncoding = 
                     match TryFindFSharpAttribute cenv.g cenv.g.attrib_StructLayoutAttribute tycon.Attribs with
@@ -6719,12 +6701,10 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
 
            | _ -> failwith "??"
 
+        let tdef = tdef.WithHasSecurity(securityAttrs.Length > 0)
         let tdef = 
             { tdef with 
-                SecurityDecls = secDecls
-                Attributes=
-                    tdef.Attributes
-                    |> ILRuntimeWriter.conditionalAdd (securityAttrs.Length > 0) TypeAttributes.HasSecurity}
+                SecurityDecls = secDecls }
         mgbuf.AddTypeDef(tref, tdef, false, false, tdefDiscards)
 
         // If a non-generic type is written with "static let" and "static do" (i.e. it has a ".cctor")
@@ -6845,7 +6825,7 @@ and GenExnDef cenv mgbuf eenv m (exnc:Tycon) =
              emptyILEvents,
              mkILCustomAttrs [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Exception)],
              ILTypeInit.BeforeField)
-        let tdef = { tdef with Attributes=tdef.Attributes ||| TypeAttributes.Serializable }
+        let tdef = tdef.WithSerializable(true)
         mgbuf.AddTypeDef(tref, tdef, false, false, None)
 
 
