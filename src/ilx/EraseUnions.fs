@@ -690,7 +690,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                  let meth =
                      mkILNonGenericStaticMethod
                            (methName,
-                            ConvertMemberAccess cud.cudReprAccess,[],mkILReturn(baseTy),
+                            cud.cudReprAccess,[],mkILReturn(baseTy),
                             mkMethodBody(true,[],fields.Length,
                                     nonBranchingInstrsToCode 
                                       [ I_ldsfld (Nonvolatile,mkConstFieldSpec altName baseTy) ], attr))
@@ -713,7 +713,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                 else
                     [ mkILNonGenericInstanceMethod
                          ("get_" + mkTesterName altName,
-                          ConvertMemberAccess cud.cudHelpersAccess,[],
+                          cud.cudHelpersAccess,[],
                           mkILReturn ilg.typ_Bool,
                           mkMethodBody(true,[],2,nonBranchingInstrsToCode 
                                     ([ mkLdarg0 ] @ mkIsData ilg (true, cuspec, num)), attr))
@@ -739,7 +739,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                     let nullaryMeth = 
                         mkILNonGenericStaticMethod
                           ("get_" + altName,
-                           ConvertMemberAccess cud.cudHelpersAccess, [], mkILReturn baseTy,
+                           cud.cudHelpersAccess, [], mkILReturn baseTy,
                            mkMethodBody(true,[],fields.Length, nonBranchingInstrsToCode (convNewDataInstrInternal ilg cuspec num), attr))
                         |> addMethodGeneratedAttrs 
                         |> addAltAttribs
@@ -764,7 +764,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                     let mdef = 
                          mkILNonGenericStaticMethod
                            (mkMakerName cuspec altName,
-                            ConvertMemberAccess cud.cudHelpersAccess,
+                            cud.cudHelpersAccess,
                             fields |> Array.map (fun fd -> mkILParamNamed (fd.LowerName, fd.Type)) |> Array.toList,
                             mkILReturn baseTy,
                             mkMethodBody(true,[],fields.Length,
@@ -789,7 +789,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
           let altNullaryFields = 
               if repr.MaintainPossiblyUniqueConstantFieldForAlternative(info,alt) then 
                   let basic : ILFieldDef = 
-                     mkILStaticField (constFieldName altName, baseTy, None, None, FieldAttributes.Assembly)
+                     mkILStaticField (constFieldName altName, baseTy, None, None, ILMemberAccess.Assembly)
                             |> addFieldNeverAttrs 
                             |> addFieldGeneratedAttrs 
                   
@@ -811,10 +811,10 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                     let debugProxyFieldName = "_obj"
                     
                     let debugProxyFields = 
-                        [ mkILInstanceField  (debugProxyFieldName,altTy, None, FieldAttributes.Assembly)  |> addFieldNeverAttrs |> addFieldGeneratedAttrs]
+                        [ mkILInstanceField  (debugProxyFieldName,altTy, None, ILMemberAccess.Assembly)  |> addFieldNeverAttrs |> addFieldGeneratedAttrs]
 
                     let debugProxyCtor = 
-                        mkILCtor(MethodAttributes.Public (* must always be public - see jared parson blog entry on implementing debugger type proxy *),
+                        mkILCtor(ILMemberAccess.Public (* must always be public - see jared parson blog entry on implementing debugger type proxy *),
                                 [ mkILParamNamed ("obj",altTy) ],
                                 mkMethodBody
                                   (false,[],3,
@@ -833,7 +833,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                             let fldName,fldTy = mkUnionCaseFieldId field
                             mkILNonGenericInstanceMethod
                                ("get_" + field.Name,
-                                MethodAttributes.Public,[],
+                                ILMemberAccess.Public,[],
                                 mkILReturn field.Type,
                                 mkMethodBody(true,[],2,
                                         nonBranchingInstrsToCode 
@@ -861,7 +861,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
 
                     let debugProxyTypeDef = 
                         mkILGenericClass (debugProxyTypeName, 
-                                          TypeAttributes.NestedAssembly, 
+                                          ILTypeDefAccess.Nested ILMemberAccess.Assembly, 
                                           td.GenericParams, 
                                           ilg.typ_Object, [], 
                                           mkILMethods ([debugProxyCtor] @ debugProxyGetterMeths), 
@@ -870,7 +870,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                                           mkILProperties debugProxyGetterProps,
                                           emptyILEvents,
                                           emptyILCustomAttrs,
-                                          TypeAttributes.BeforeFieldInit)
+                                          ILTypeInit.BeforeField)
 
                     [ { debugProxyTypeDef with Attributes=debugProxyTypeDef.Attributes ||| TypeAttributes.SpecialName } ],
                     ( [mkDebuggerTypeProxyAttribute debugProxyTy] @ cud.cudDebugDisplayAttributes)
@@ -880,12 +880,12 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                       fields 
                       |> Array.map (fun field -> 
                           let fldName,fldTy = mkUnionCaseFieldId field
-                          let fdef = mkILInstanceField  (fldName,fldTy, None, FieldAttributes.Assembly) |> addFieldNeverAttrs |> addFieldGeneratedAttrs
+                          let fdef = mkILInstanceField  (fldName,fldTy, None, ILMemberAccess.Assembly) |> addFieldNeverAttrs |> addFieldGeneratedAttrs
                           if isTotallyImmutable then { fdef with Attributes=fdef.Attributes ||| FieldAttributes.InitOnly } else fdef)
                       |> Array.toList
 
 
-                  let basicProps, basicMethods = mkMethodsAndPropertiesForFields (addMethodGeneratedAttrs, addPropertyGeneratedAttrs) (ConvertMemberAccess cud.cudReprAccess) attr cud.cudHasHelpers altTy fields 
+                  let basicProps, basicMethods = mkMethodsAndPropertiesForFields (addMethodGeneratedAttrs, addPropertyGeneratedAttrs) (cud.cudReprAccess) attr cud.cudHasHelpers altTy fields 
                   
                   let basicCtorMeth = 
                       mkILStorageCtor 
@@ -902,13 +902,13 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                                 failwith "unreachable" ],
                           altTy,
                           (basicFields |> List.map (fun fdef -> fdef.Name, fdef.Type) ),
-                          (if cuspec.HasHelpers = AllHelpers then MethodAttributes.Assembly else ConvertMemberAccess cud.cudReprAccess))
+                          (if cuspec.HasHelpers = AllHelpers then ILMemberAccess.Assembly else cud.cudReprAccess))
                       |> addMethodGeneratedAttrs 
 
                   let altTypeDef = 
                       mkILGenericClass (altTy.TypeSpec.Name, 
                                         // Types for nullary's become private, they also have names like _Empty
-                                        (if alt.IsNullary && cud.cudHasHelpers = IlxUnionHasHelpers.AllHelpers then TypeAttributes.NestedAssembly else ConvertToNestedTypeAccess cud.cudReprAccess), 
+                                        ILTypeDefAccess.Nested (if alt.IsNullary && cud.cudHasHelpers = IlxUnionHasHelpers.AllHelpers then ILMemberAccess.Assembly else cud.cudReprAccess), 
                                         td.GenericParams, 
                                         baseTy, [], 
                                         mkILMethods ([basicCtorMeth] @ basicMethods), 
@@ -917,7 +917,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                                         mkILProperties basicProps,
                                         emptyILEvents,
                                         mkILCustomAttrs debugAttrs,
-                                        TypeAttributes.BeforeFieldInit)
+                                        ILTypeInit.BeforeField)
 
                   { altTypeDef with Attributes=altTypeDef.Attributes ||| (if td.IsSerializable then TypeAttributes.Serializable else TypeAttributes.SpecialName) ||| TypeAttributes.SpecialName }
 
@@ -983,17 +983,17 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
                     baseTy,
                     extraParamsForCtor,
                     (fields @ tagFieldsInObject),
-                    (if cuspec.HasHelpers = AllHelpers then MethodAttributes.Assembly else ConvertMemberAccess cud.cudReprAccess))
+                    (if cuspec.HasHelpers = AllHelpers then ILMemberAccess.Assembly else cud.cudReprAccess))
                 |> addMethodGeneratedAttrs 
 
-            let props, meths = mkMethodsAndPropertiesForFields (addMethodGeneratedAttrs, addPropertyGeneratedAttrs) (ConvertMemberAccess cud.cudReprAccess) cud.cudWhere cud.cudHasHelpers baseTy alt.FieldDefs                 
+            let props, meths = mkMethodsAndPropertiesForFields (addMethodGeneratedAttrs, addPropertyGeneratedAttrs) (cud.cudReprAccess) cud.cudWhere cud.cudHasHelpers baseTy alt.FieldDefs                 
             yield (fields,([ctor] @ meths),props) ]
          |> List.unzip3
          |> (fun (a,b,c) -> List.concat a, List.concat b, List.concat c)
 
     let selfAndTagFields = 
         [ for (fldName,fldTy) in (selfFields @ tagFieldsInObject)  do
-              let fdef = mkILInstanceField  (fldName,fldTy, None, FieldAttributes.Assembly) |> addFieldNeverAttrs |> addFieldGeneratedAttrs
+              let fdef = mkILInstanceField  (fldName,fldTy, None, ILMemberAccess.Assembly) |> addFieldNeverAttrs |> addFieldGeneratedAttrs
               yield if not isStruct && isTotallyImmutable then { fdef with Attributes = fdef.Attributes ||| FieldAttributes.InitOnly } else fdef ]
 
     let ctorMeths =
@@ -1010,7 +1010,7 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
                   baseTy,
                   [],
                   tagFieldsInObject,
-                  MethodAttributes.Assembly) // cud.cudReprAccess)
+                  ILMemberAccess.Assembly) // cud.cudReprAccess)
               |> addMethodGeneratedAttrs ]
 
     // Now initialize the constant fields wherever they are stored... 
@@ -1041,7 +1041,7 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
         let tagFieldType = mkTagFieldType ilg cuspec
         let tagEnumFields = 
             cud.cudAlternatives 
-            |> Array.mapi (fun num alt -> mkILLiteralField (alt.Name, tagFieldType, ILFieldInit.Int32 num, None, FieldAttributes.Public))
+            |> Array.mapi (fun num alt -> mkILLiteralField (alt.Name, tagFieldType, ILFieldInit.Int32 num, None, ILMemberAccess.Public))
             |> Array.toList
 
         
@@ -1051,12 +1051,12 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
           // // If we are using NULL as a representation for an element of this type then we cannot 
           // // use an instance method 
           if (repr.RepresentOneAlternativeAsNull info) then
-              [ mkILNonGenericStaticMethod("Get" + tagPropertyName,ConvertMemberAccess cud.cudHelpersAccess,[mkILParamAnon baseTy],mkILReturn tagFieldType,body)
+              [ mkILNonGenericStaticMethod("Get" + tagPropertyName,cud.cudHelpersAccess,[mkILParamAnon baseTy],mkILReturn tagFieldType,body)
                 |> addMethodGeneratedAttrs ], 
               [] 
 
           else
-              [ mkILNonGenericInstanceMethod("get_" + tagPropertyName,ConvertMemberAccess cud.cudHelpersAccess,[],mkILReturn tagFieldType,body) 
+              [ mkILNonGenericInstanceMethod("get_" + tagPropertyName,cud.cudHelpersAccess,[],mkILReturn tagFieldType,body) 
                 |> addMethodGeneratedAttrs ], 
           
               [ { Name = tagPropertyName

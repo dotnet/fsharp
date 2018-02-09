@@ -1369,6 +1369,16 @@ let memberAccessOfFlags flags =
     elif f = 0x00000003 then  ILMemberAccess.Assembly 
     else ILMemberAccess.CompilerControlled
 
+let convertMemberAccess (ilMemberAccess:ILMemberAccess) =
+    match ilMemberAccess with
+    | ILMemberAccess.Assembly            -> MethodAttributes.Assembly
+    | ILMemberAccess.CompilerControlled  -> MethodAttributes.PrivateScope
+    | ILMemberAccess.FamilyAndAssembly   -> MethodAttributes.FamANDAssem
+    | ILMemberAccess.FamilyOrAssembly    -> MethodAttributes.FamORAssem
+    | ILMemberAccess.Family              -> MethodAttributes.Family
+    | ILMemberAccess.Private             -> MethodAttributes.Private
+    | ILMemberAccess.Public              -> MethodAttributes.Public
+
 [<NoComparison; NoEquality>]
 type ILMethodDef = 
     { Name: string;
@@ -1498,6 +1508,26 @@ type ILPropertyDefs =
     member x.AsList = let (Properties t) = x in t.Entries()
     member x.LookupByName s = let (Properties t) = x in t.[s]
 
+let convertFieldAccesFlags flags = 
+    match flags with
+    | ILMemberAccess.Assembly           -> FieldAttributes.Assembly
+    | ILMemberAccess.CompilerControlled -> failwith "Field access compiler controled."
+    | ILMemberAccess.FamilyAndAssembly        -> FieldAttributes.FamANDAssem
+    | ILMemberAccess.FamilyOrAssembly         -> FieldAttributes.FamORAssem
+    | ILMemberAccess.Family             -> FieldAttributes.Family
+    | ILMemberAccess.Private            -> FieldAttributes.Private
+    | ILMemberAccess.Public             -> FieldAttributes.Public
+
+let convertFieldAccess (ilMemberAccess:ILMemberAccess) =
+    match ilMemberAccess with
+    | ILMemberAccess.Assembly            -> FieldAttributes.Assembly
+    | ILMemberAccess.CompilerControlled  -> FieldAttributes.PrivateScope
+    | ILMemberAccess.FamilyAndAssembly   -> FieldAttributes.FamANDAssem
+    | ILMemberAccess.FamilyOrAssembly    -> FieldAttributes.FamORAssem
+    | ILMemberAccess.Family              -> FieldAttributes.Family
+    | ILMemberAccess.Private             -> FieldAttributes.Private
+    | ILMemberAccess.Public              -> FieldAttributes.Public
+
 [<NoComparison; NoEquality>]
 type ILFieldDef = 
     { Name: string;
@@ -1514,6 +1544,7 @@ type ILFieldDef =
     member x.NotSerialized = x.Attributes &&& FieldAttributes.NotSerialized <> enum 0
     member x.IsInitOnly = x.Attributes &&& FieldAttributes.InitOnly <> enum 0
     member x.Access = memberAccessOfFlags (int x.Attributes)
+    member x.WithAccess(access) = { x with Attributes = x.Attributes &&& ~~~FieldAttributes.FieldAccessMask ||| convertFieldAccess access }
 
 
 // Index table by name.  Keep a canonical list to make sure field order is not disturbed for binary manipulation.
@@ -1601,6 +1632,17 @@ let typeKindOfFlags nm _mdefs _fdefs (super:ILType option) flags =
          elif isValueType then ILTypeDefKind.ValueType 
          else ILTypeDefKind.Class 
 
+let convertTypeAccessFlags  access = 
+    match access with 
+    | ILTypeDefAccess.Public -> TypeAttributes.Public
+    | ILTypeDefAccess.Private  -> TypeAttributes.NotPublic
+    | ILTypeDefAccess.Nested ILMemberAccess.Public -> TypeAttributes.NestedPublic
+    | ILTypeDefAccess.Nested ILMemberAccess.Private  -> TypeAttributes.NestedPrivate
+    | ILTypeDefAccess.Nested ILMemberAccess.Family  -> TypeAttributes.NestedFamily
+    | ILTypeDefAccess.Nested ILMemberAccess.FamilyAndAssembly -> TypeAttributes.NestedFamANDAssem
+    | ILTypeDefAccess.Nested ILMemberAccess.FamilyOrAssembly -> TypeAttributes.NestedFamORAssem
+    | ILTypeDefAccess.Nested ILMemberAccess.Assembly -> TypeAttributes.NestedAssembly
+    | ILTypeDefAccess.Nested ILMemberAccess.CompilerControlled -> failwith "bad type acccess"
 
 [<NoComparison; NoEquality>]
 type ILTypeDef =  
@@ -1631,8 +1673,9 @@ type ILTypeDef =
     member x.IsSpecialName = x.Attributes &&& TypeAttributes.SpecialName <> enum 0
     member x.HasSecurity = x.Attributes &&& TypeAttributes.HasSecurity <> enum 0
     member x.Encoding = typeEncodingOfFlags (int x.Attributes)
-    member tdef.IsStructOrEnum = 
-        tdef.IsStruct || tdef.IsEnum
+    member x.IsStructOrEnum = 
+        x.IsStruct || x.IsEnum
+    member x.WithAccess(access) = { x with Attributes = x.Attributes &&& ~~~TypeAttributes.VisibilityMask ||| convertTypeAccessFlags access }
 
 
 and [<Sealed>] ILTypeDefs(f : unit -> (string list * string * ILAttributes * Lazy<ILTypeDef>)[]) =
@@ -2352,7 +2395,7 @@ let mkILVoidReturn = mkILReturn ILType.Void
 
 let mkILCtor (access,args,impl) = 
     { Name=".ctor";
-      Attributes=access ||| MethodAttributes.SpecialName ||| MethodAttributes.RTSpecialName;
+      Attributes=convertMemberAccess access ||| MethodAttributes.SpecialName ||| MethodAttributes.RTSpecialName;
       ImplAttributes=MethodImplAttributes.Managed
       CallingConv=ILCallingConv.Instance;
       Parameters = args
@@ -2382,7 +2425,7 @@ let mkNormalStobj dt = I_stobj(Aligned,Nonvolatile,dt)
 
 let mkILNonGenericEmptyCtor tag superTy = 
     let ctor = mkCallBaseConstructor (superTy,[])
-    mkILCtor(MethodAttributes.Public,[],mkMethodBody(false,[],8, nonBranchingInstrsToCode ctor,tag))
+    mkILCtor(ILMemberAccess.Public,[],mkMethodBody(false,[],8, nonBranchingInstrsToCode ctor,tag))
 
 // -------------------------------------------------------------------- 
 // Make a static, top level monomophic method - very useful for
@@ -2392,7 +2435,7 @@ let mkILNonGenericEmptyCtor tag superTy =
 let mkILStaticMethod (genparams,nm,access,args,ret,impl) = 
     { GenericParams=genparams;
       Name=nm;
-      Attributes=MethodAttributes.Static ||| access;
+      Attributes=convertMemberAccess access ||| MethodAttributes.Static;
       ImplAttributes=MethodImplAttributes.Managed
       CallingConv = ILCallingConv.Static;
       Parameters = args
@@ -2430,7 +2473,7 @@ let mkILGenericVirtualMethod (nm,access,genparams,actual_args,actual_ret,impl) =
   { Name=nm;
     Attributes= 
       // REVIEW: We'll need to start setting this eventually
-      access |||
+      convertMemberAccess access |||
       MethodAttributes.CheckAccessOnOverride ||| 
       (match impl with MethodBody.Abstract -> MethodAttributes.Abstract ||| MethodAttributes.Virtual | _ -> MethodAttributes.Virtual);
     ImplAttributes=MethodImplAttributes.Managed
@@ -2448,7 +2491,7 @@ let mkILNonGenericVirtualMethod (nm,access,args,ret,impl) =
 
 let mkILGenericNonVirtualMethod (nm,access,genparams, actual_args,actual_ret, impl) = 
   { Name=nm;
-    Attributes=access ||| MethodAttributes.HideBySig; // see Bug343136: missing HideBySig attribute makes it problematic for C# to consume F# method overloads.
+    Attributes=convertMemberAccess access ||| MethodAttributes.HideBySig; // see Bug343136: missing HideBySig attribute makes it problematic for C# to consume F# method overloads.
     ImplAttributes=MethodImplAttributes.Managed
     GenericParams=genparams;
     CallingConv=ILCallingConv.Instance;
@@ -2537,11 +2580,11 @@ let prependInstrsToClassCtor instrs tag cd =
 let mkILField (isStatic,nm,ty,(init:ILFieldInit option),(at: byte [] option),access,isLiteral) =
    { Name=nm;
      Type=ty;
-     Attributes=access |||
-                (if isStatic then FieldAttributes.Static else access) ||| 
-                (if isLiteral then FieldAttributes.Literal else access) |||
-                (if init.IsSome then FieldAttributes.HasDefault else access) |||
-                (if at.IsSome then FieldAttributes.HasFieldRVA else access)
+     Attributes=convertFieldAccesFlags access |||
+                (if isStatic then FieldAttributes.Static else enum 0) ||| 
+                (if isLiteral then FieldAttributes.Literal else enum 0) |||
+                (if init.IsSome then FieldAttributes.HasDefault else enum 0) |||
+                (if at.IsSome then FieldAttributes.HasFieldRVA else enum 0)
      LiteralValue = init;
      Data=at;
      Offset=None;
@@ -2645,7 +2688,7 @@ let mkILStorageCtor(tag,preblock,typ,flds,access) = mkILStorageCtorWithParamName
 
 let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nestedTypes, props, events, attrs, init) =
   { Name=nm;
-    Attributes=access ||| TypeAttributes.AutoLayout ||| TypeAttributes.Class ||| init ||| TypeAttributes.AnsiClass;
+    Attributes=convertTypeAccessFlags access ||| TypeAttributes.AutoLayout ||| TypeAttributes.Class ||| match init with | ILTypeInit.BeforeField -> TypeAttributes.BeforeFieldInit | _ -> enum 0 ||| TypeAttributes.AnsiClass;
     GenericParams= genparams;
     Implements = impl;
     Layout=ILTypeDefLayout.Auto;
@@ -2680,7 +2723,7 @@ let mkRawDataValueTypeDef (iltyp_ValueType: ILType) (nm,size,pack) =
 let mkILSimpleClass (ilg: ILGlobals) (nm, access, methods, fields, nestedTypes, props, events, attrs, init) =
   mkILGenericClass (nm,access, mkILEmptyGenericParams, ilg.typ_Object, [], methods, fields, nestedTypes, props, events, attrs, init)
 
-let mkILTypeDefForGlobalFunctions ilg (methods,fields) = mkILSimpleClass ilg (typeNameForGlobalFunctions, TypeAttributes.Public, methods, fields, emptyILTypeDefs, emptyILProperties, emptyILEvents, emptyILCustomAttrs,TypeAttributes.BeforeFieldInit)
+let mkILTypeDefForGlobalFunctions ilg (methods,fields) = mkILSimpleClass ilg (typeNameForGlobalFunctions, ILTypeDefAccess.Public, methods, fields, emptyILTypeDefs, emptyILProperties, emptyILEvents, emptyILCustomAttrs,ILTypeInit.BeforeField)
 
 let destTypeDefsWithGlobalFunctionsFirst ilg (tdefs: ILTypeDefs) = 
   let l = tdefs.AsList

@@ -335,7 +335,7 @@ let mkILCloFldDefs cenv flds =
     flds 
     |> Array.toList
     |> List.map (fun fv -> 
-         let fdef = mkILInstanceField (fv.fvName, fv.fvType, None, FieldAttributes.Public)
+         let fdef = mkILInstanceField (fv.fvName, fv.fvType, None, ILMemberAccess.Public)
          if fv.fvCompilerGenerated then 
              fdef |> cenv.addFieldNeverAttrs 
                   |> cenv.addFieldGeneratedAttrs 
@@ -464,7 +464,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
               let nowApplyMethDef =
                 mkILGenericVirtualMethod
                   ("Specialize", 
-                   MethodAttributes.Public, 
+                   ILMemberAccess.Public, 
                    addedGenParams,  (* method is generic over added ILGenericParameterDefs *)
                    [], 
                    mkILReturn(cenv.ilg.typ_Object), 
@@ -475,7 +475,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                      [ mkLdarg0; mkNormalCall (mkILCtorMethSpecForTy (cenv.mkILTyFuncTy, [])) ], 
                      nowTy, 
                      mkILCloFldSpecs cenv nowFields, 
-                     MethodAttributes.Assembly)
+                     ILMemberAccess.Assembly)
                    |> cenv.addMethodGeneratedAttrs 
 
               let attributes =  
@@ -563,7 +563,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                 let cloTypeDef = 
                     let nowApplyMethDef =
                         mkILNonGenericVirtualMethod
-                          ("Invoke", MethodAttributes.Public, 
+                          ("Invoke", ILMemberAccess.Public, 
                            nowParams, 
                            mkILReturn nowReturnTy, 
                            MethodBody.IL (convILMethodBody (Some nowCloSpec, None)  (Lazy.force clo.cloCode)))
@@ -574,7 +574,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                             [ mkLdarg0; mkNormalCall (mkILCtorMethSpecForTy (nowEnvParentClass, [])) ], 
                             nowTy, 
                             mkILCloFldSpecs cenv nowFields, 
-                            MethodAttributes.Assembly)
+                            ILMemberAccess.Assembly)
                         |> cenv.addMethodGeneratedAttrs 
 
                     let attributes =  
@@ -611,7 +611,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
 
           let ctorMethodDef = 
             let flds = (mkILCloFldSpecs cenv nowFields)
-            mkILCtor(MethodAttributes.Public, 
+            mkILCtor(ILMemberAccess.Public, 
                     List.map mkILParamNamed flds, 
                     mkMethodBody
                       (cloCode'.IsZeroInit, 

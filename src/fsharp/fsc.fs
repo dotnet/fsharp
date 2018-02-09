@@ -1423,7 +1423,7 @@ module StaticLinker =
                           else
                               // If there is no matching IL type definition, then make a simple container class
                               if debugStaticLinking then printfn "Generating simple class '%s' because we didn't find an original type '%s' in a provider generated assembly" ilTgtTyRef.QualifiedName ilOrigTyRef.QualifiedName
-                              mkILSimpleClass ilGlobals (ilTgtTyRef.Name, (if isNested  then TypeAttributes.NestedPublic else TypeAttributes.Public), emptyILMethods, emptyILFields, mkILTypeDefs (List.map buildRelocatedGeneratedType ch) , emptyILProperties, emptyILEvents, emptyILCustomAttrs, enum 0) 
+                              mkILSimpleClass ilGlobals (ilTgtTyRef.Name, (if isNested  then ILTypeDefAccess.Nested ILMemberAccess.Public else ILTypeDefAccess.Public), emptyILMethods, emptyILFields, mkILTypeDefs (List.map buildRelocatedGeneratedType ch) , emptyILProperties, emptyILEvents, emptyILCustomAttrs, ILTypeInit.OnAny) 
 
                       [ for (ProviderGeneratedType(_, ilTgtTyRef, _) as node) in tcImports.ProviderGeneratedTypeRoots  do
                            yield (ilTgtTyRef, buildRelocatedGeneratedType node) ]
@@ -1449,7 +1449,7 @@ module StaticLinker =
                                let (ltdefs, htd, rtdefs) = 
                                    match tdefs |> trySplitFind (fun td -> td.Name = h) with 
                                    | (ltdefs, None, rtdefs) -> 
-                                       let fresh = mkILSimpleClass ilGlobals (h, (if isNested  then TypeAttributes.NestedPublic else TypeAttributes.Public), emptyILMethods, emptyILFields, emptyILTypeDefs, emptyILProperties, emptyILEvents, emptyILCustomAttrs, enum 0)
+                                       let fresh = mkILSimpleClass ilGlobals (h, (if isNested  then ILTypeDefAccess.Nested ILMemberAccess.Public else ILTypeDefAccess.Public), emptyILMethods, emptyILFields, emptyILTypeDefs, emptyILProperties, emptyILEvents, emptyILCustomAttrs, ILTypeInit.OnAny)
                                        (ltdefs, fresh, rtdefs)
                                    | (ltdefs, Some htd, rtdefs) -> 
                                        (ltdefs, htd, rtdefs)

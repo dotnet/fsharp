@@ -1118,6 +1118,7 @@ type ILFieldDef =
         member NotSerialized: bool
         member IsInitOnly: bool
         member Access: ILMemberAccess
+        member WithAccess: ILMemberAccess -> ILFieldDef
 
 /// Tables of fields.  Logically equivalent to a list of fields but
 /// the table is kept in a form optimized for looking up fields by 
@@ -1297,6 +1298,7 @@ and [<NoComparison; NoEquality>]
     /// e.g. if they use SuppressUnmanagedCodeSecurityAttribute 
     member HasSecurity: bool
     member Encoding: ILDefaultPInvokeEncoding;
+    member WithAccess: ILTypeDefAccess -> ILTypeDef
 
 [<NoEquality; NoComparison>]
 [<Sealed>]
@@ -1684,25 +1686,25 @@ val mkILEmptyGenericParams: ILGenericParameterDefs
 val mkILMethodBody: initlocals:bool * ILLocals * int * ILCode * ILSourceMarker option -> ILMethodBody
 val mkMethodBody: bool * ILLocals * int * ILCode * ILSourceMarker option -> MethodBody
 
-val mkILCtor: MethodAttributes * ILParameter list * MethodBody -> ILMethodDef
+val mkILCtor: ILMemberAccess * ILParameter list * MethodBody -> ILMethodDef
 val mkILClassCtor: MethodBody -> ILMethodDef
 val mkILNonGenericEmptyCtor: ILSourceMarker option -> ILType -> ILMethodDef
-val mkILStaticMethod: ILGenericParameterDefs * string * MethodAttributes * ILParameter list * ILReturn * MethodBody -> ILMethodDef
-val mkILNonGenericStaticMethod: string * MethodAttributes * ILParameter list * ILReturn * MethodBody -> ILMethodDef
-val mkILGenericVirtualMethod: string * MethodAttributes * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody -> ILMethodDef
-val mkILGenericNonVirtualMethod: string * MethodAttributes * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody -> ILMethodDef
-val mkILNonGenericVirtualMethod: string * MethodAttributes * ILParameter list * ILReturn * MethodBody -> ILMethodDef
-val mkILNonGenericInstanceMethod: string * MethodAttributes * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+val mkILStaticMethod: ILGenericParameterDefs * string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+val mkILNonGenericStaticMethod: string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+val mkILGenericVirtualMethod: string * ILMemberAccess  * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+val mkILGenericNonVirtualMethod: string * ILMemberAccess  * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+val mkILNonGenericVirtualMethod: string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+val mkILNonGenericInstanceMethod: string * ILMemberAccess  * ILParameter list * ILReturn * MethodBody -> ILMethodDef
 
 
 /// Make field definitions.
-val mkILInstanceField: string * ILType * ILFieldInit option * FieldAttributes -> ILFieldDef
-val mkILStaticField: string * ILType * ILFieldInit option * byte[] option * FieldAttributes -> ILFieldDef
-val mkILLiteralField: string * ILType * ILFieldInit * byte[] option * FieldAttributes -> ILFieldDef
+val mkILInstanceField: string * ILType * ILFieldInit option * ILMemberAccess -> ILFieldDef
+val mkILStaticField: string * ILType * ILFieldInit option * byte[] option * ILMemberAccess -> ILFieldDef
+val mkILLiteralField: string * ILType * ILFieldInit * byte[] option * ILMemberAccess -> ILFieldDef
 
 /// Make a type definition.
-val mkILGenericClass: string * TypeAttributes * ILGenericParameterDefs * ILType * ILType list * ILMethodDefs * ILFieldDefs * ILTypeDefs * ILPropertyDefs * ILEventDefs * ILAttributes * TypeAttributes -> ILTypeDef
-val mkILSimpleClass: ILGlobals -> string * TypeAttributes * ILMethodDefs * ILFieldDefs * ILTypeDefs * ILPropertyDefs * ILEventDefs * ILAttributes * TypeAttributes  -> ILTypeDef
+val mkILGenericClass: string * ILTypeDefAccess * ILGenericParameterDefs * ILType * ILType list * ILMethodDefs * ILFieldDefs * ILTypeDefs * ILPropertyDefs * ILEventDefs * ILAttributes * ILTypeInit -> ILTypeDef
+val mkILSimpleClass: ILGlobals -> string * ILTypeDefAccess * ILMethodDefs * ILFieldDefs * ILTypeDefs * ILPropertyDefs * ILEventDefs * ILAttributes * ILTypeInit  -> ILTypeDef
 val mkILTypeDefForGlobalFunctions: ILGlobals -> ILMethodDefs * ILFieldDefs -> ILTypeDef
 
 /// Make a type definition for a value type used to point to raw data.
@@ -1727,11 +1729,11 @@ val prependInstrsToMethod: ILInstr list -> ILMethodDef -> ILMethodDef
 val prependInstrsToClassCtor: ILInstr list -> ILSourceMarker option -> ILTypeDef -> ILTypeDef
 
 /// Derived functions for making some simple constructors
-val mkILStorageCtor: ILSourceMarker option * ILInstr list * ILType * (string * ILType) list * MethodAttributes -> ILMethodDef
-val mkILSimpleStorageCtor: ILSourceMarker option * ILTypeSpec option * ILType * ILParameter list * (string * ILType) list * MethodAttributes -> ILMethodDef
-val mkILSimpleStorageCtorWithParamNames: ILSourceMarker option * ILTypeSpec option * ILType * ILParameter list * (string * string * ILType) list * MethodAttributes -> ILMethodDef
+val mkILStorageCtor: ILSourceMarker option * ILInstr list * ILType * (string * ILType) list * ILMemberAccess -> ILMethodDef
+val mkILSimpleStorageCtor: ILSourceMarker option * ILTypeSpec option * ILType * ILParameter list * (string * ILType) list * ILMemberAccess -> ILMethodDef
+val mkILSimpleStorageCtorWithParamNames: ILSourceMarker option * ILTypeSpec option * ILType * ILParameter list * (string * string * ILType) list * ILMemberAccess -> ILMethodDef
 
-val mkILDelegateMethods: MethodAttributes -> ILGlobals -> ILType * ILType -> ILParameter list * ILReturn -> ILMethodDef list
+val mkILDelegateMethods: ILMemberAccess -> ILGlobals -> ILType * ILType -> ILParameter list * ILReturn -> ILMethodDef list
 
 /// Given a delegate type definition which lies in a particular scope, 
 /// make a reference to its constructor.
