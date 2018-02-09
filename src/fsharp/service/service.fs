@@ -1220,8 +1220,8 @@ type TypeCheckInfo
               match rangeOfItem g preferFlag item.Item with
               | Some itemRange -> 
                   let projectDir = Filename.directoryName (if projectFileName = "" then mainInputFileName else projectFileName)
-                  fileNameOfItem g (Some projectDir) itemRange item.Item
-                  |> mkRange <| itemRange.Start <| itemRange.End              
+                  let range = fileNameOfItem g (Some projectDir) itemRange item.Item
+                  mkRange range itemRange.Start itemRange.End              
                   |> FSharpFindDeclResult.DeclFound
               | None -> 
                   match item.Item with 
