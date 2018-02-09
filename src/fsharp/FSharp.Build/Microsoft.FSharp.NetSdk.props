@@ -32,6 +32,8 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   <PropertyGroup>
     <EnableDefaultCompileItems Condition=" '$(EnableDefaultCompileItems)' == '' ">false</EnableDefaultCompileItems>                                <!--- Do not glob F# source files -->
     <EnableDefaultNoneItems Condition=" '$(EnableDefaultNoneItems)' == '' ">false</EnableDefaultNoneItems>
+    <DefaultValueTuplePackageVersion>4.3.1</DefaultValueTuplePackageVersion>
+    <DefaultFSharpPackageVersion>4.3.3</DefaultFSharpPackageVersion>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -63,4 +65,15 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <FscToolPath Condition=" '$(FscToolPath)' == '' ">$(MSBuildThisFileDirectory)</FscToolPath>
     <FscToolExe Condition="'$(OS)' == 'Unix' and '$(FscToolExe)' == ''">RunFsc.sh</FscToolExe>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.ValueTuple" Version="$(DefaultValueTuplePackageVersion)" >
+      <DefaultInclude>true</DefaultInclude>
+    </PackageReference>
+
+    <PackageReference Include="FSharp.Core" Version="$(DefaultFSharpPackageVersion)">
+      <DefaultInclude>true</DefaultInclude>
+    </PackageReference>
+  </ItemGroup>
+
 </Project>
