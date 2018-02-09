@@ -997,13 +997,13 @@ namespace Microsoft.FSharp.Control
             member __.Stop() = isStopped <- true
 
         let StartAsTask (token:CancellationToken, computation : Async<'a>,taskCreationOptions) : Task<'a> =
-#if !FX_NO_ASYNCTASKMETHODBUILDER
+#if FX_NO_ASYNCTASKMETHODBUILDER
+            let taskCreationOptions = defaultArg taskCreationOptions TaskCreationOptions.None
+            let tcs = new TaskCompletionSource<_>(taskCreationOptions)
+#else
             // AsyncTaskMethodBuilder allows us to better control the cancellation process by setting custom exception objects.
             let _ = defaultArg taskCreationOptions TaskCreationOptions.None
             let tcs = System.Runtime.CompilerServices.AsyncTaskMethodBuilder<'a>()
-#else
-            let taskCreationOptions = defaultArg taskCreationOptions TaskCreationOptions.None
-            let tcs = new TaskCompletionSource<_>(taskCreationOptions)
 #endif
 
             // The contract: 
@@ -1020,11 +1020,11 @@ namespace Microsoft.FSharp.Control
                         else
                             edi.SourceException
                     tcs.SetException wrapper |> fake)
-#if !FX_NO_ASYNCTASKMETHODBUILDER
+#if FX_NO_ASYNCTASKMETHODBUILDER
+                (fun _ -> tcs.SetCanceled() |> fake)
+#else
                 // We wrap in a TaskCanceledException to maintain backwards compat.
                 (fun exn -> tcs.SetException (new TaskCanceledException(exn.Message, exn.InnerException)) |> fake)
-#else
-                (fun _ -> tcs.SetCanceled() |> fake)
 #endif
                 computation
             |> unfake
