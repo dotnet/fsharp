@@ -359,7 +359,6 @@ type
     override this.Initialize() = 
         base.Initialize()
 
-
         let workspaceChanged (args:WorkspaceChangeEventArgs) =
             match args.Kind with
             | WorkspaceChangeKind.ProjectAdded     -> this.OnProjectAdded(args.ProjectId)
@@ -586,13 +585,12 @@ type
                 match hier with
                 | :? IProvideProjectSite as siteProvider when not (IsScript(filename)) ->
                     this.SetupProjectFile(siteProvider, this.Workspace, "SetupNewTextView")
-                | h when not (IsScript(filename)) ->
+                | _ when not (IsScript(filename)) ->
                     let docId = this.Workspace.CurrentSolution.GetDocumentIdsWithFilePath(filename).FirstOrDefault()
                     match docId with
                     | null ->
-                        if not (h.IsCapabilityMatch("CPS")) then
-                            let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
-                            this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
+                        let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
+                        this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
                     | id ->
                         projectInfoManager.UpdateProjectInfoWithProjectId(id.ProjectId, "SetupNewTextView", invalidateConfig=true)
                 | _ ->
