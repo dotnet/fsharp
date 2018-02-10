@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27116.0
+VisualStudioVersion = 15.0.27130.2024
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Private", "src\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj", "{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}"
 EndProject
@@ -20,7 +20,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FSharp.LanguageService.Base
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Editor", "vsintegration\src\FSharp.Editor\FSharp.Editor.fsproj", "{65E0E82A-EACE-4787-8994-888674C2FE87}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectSystem.Base", "vsintegration\src\FSharp.ProjectSystem.Base\Project\ProjectSystem.Base.csproj", "{B700E38B-F8C0-4E49-B5EC-DB7B7AC0C4E7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProjectSystem.Base", "vsintegration\src\FSharp.ProjectSystem.Base\Project\ProjectSystem.Base.csproj", "{B700E38B-F8C0-4E49-B5EC-DB7B7AC0C4E7}"
 EndProject
 Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "FSharp.PropertiesPages", "vsintegration\src\FSharp.ProjectSystem.PropertyPages\FSharp.PropertiesPages.vbproj", "{FCFB214C-462E-42B3-91CA-FC557EFEE74F}"
 EndProject
@@ -126,7 +126,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utils", "Utils", "{D086C8C6
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LanguageServiceProfiling", "vsintegration\Utils\LanguageServiceProfiling\LanguageServiceProfiling.fsproj", "{E7FA3A71-51AF-4FCA-9C2F-7C853E515903}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FSharp.UIResources", "vsintegration\src\FSharp.UIResources\FSharp.UIResources.csproj", "{C4586A06-1402-48BC-8E35-A1B8642F895B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FSharp.UIResources", "vsintegration\src\FSharp.UIResources\FSharp.UIResources.csproj", "{C4586A06-1402-48BC-8E35-A1B8642F895B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSharp_Analysis", "tests\service\data\CSharp_Analysis\CSharp_Analysis.csproj", "{887630A3-4B1D-40EA-B8B3-2D842E9C40DB}"
 EndProject
@@ -238,10 +238,10 @@ Global
 		{B700E38B-F8C0-4E49-B5EC-DB7B7AC0C4E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B700E38B-F8C0-4E49-B5EC-DB7B7AC0C4E7}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{B700E38B-F8C0-4E49-B5EC-DB7B7AC0C4E7}.Debug|x86.Build.0 = Debug|Any CPU
-		{B700E38B-F8C0-4E49-B5EC-DB7B7AC0C4E7}.Proto|Any CPU.ActiveCfg = Proto|Any CPU
-		{B700E38B-F8C0-4E49-B5EC-DB7B7AC0C4E7}.Proto|Any CPU.Build.0 = Proto|Any CPU
-		{B700E38B-F8C0-4E49-B5EC-DB7B7AC0C4E7}.Proto|x86.ActiveCfg = Proto|Any CPU
-		{B700E38B-F8C0-4E49-B5EC-DB7B7AC0C4E7}.Proto|x86.Build.0 = Proto|Any CPU
+		{B700E38B-F8C0-4E49-B5EC-DB7B7AC0C4E7}.Proto|Any CPU.ActiveCfg = Release|Any CPU
+		{B700E38B-F8C0-4E49-B5EC-DB7B7AC0C4E7}.Proto|Any CPU.Build.0 = Release|Any CPU
+		{B700E38B-F8C0-4E49-B5EC-DB7B7AC0C4E7}.Proto|x86.ActiveCfg = Release|Any CPU
+		{B700E38B-F8C0-4E49-B5EC-DB7B7AC0C4E7}.Proto|x86.Build.0 = Release|Any CPU
 		{B700E38B-F8C0-4E49-B5EC-DB7B7AC0C4E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B700E38B-F8C0-4E49-B5EC-DB7B7AC0C4E7}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B700E38B-F8C0-4E49-B5EC-DB7B7AC0C4E7}.Release|x86.ActiveCfg = Release|Any CPU
@@ -706,10 +706,10 @@ Global
 		{C4586A06-1402-48BC-8E35-A1B8642F895B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C4586A06-1402-48BC-8E35-A1B8642F895B}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{C4586A06-1402-48BC-8E35-A1B8642F895B}.Debug|x86.Build.0 = Debug|Any CPU
-		{C4586A06-1402-48BC-8E35-A1B8642F895B}.Proto|Any CPU.ActiveCfg = Proto|Any CPU
-		{C4586A06-1402-48BC-8E35-A1B8642F895B}.Proto|Any CPU.Build.0 = Proto|Any CPU
-		{C4586A06-1402-48BC-8E35-A1B8642F895B}.Proto|x86.ActiveCfg = Proto|Any CPU
-		{C4586A06-1402-48BC-8E35-A1B8642F895B}.Proto|x86.Build.0 = Proto|Any CPU
+		{C4586A06-1402-48BC-8E35-A1B8642F895B}.Proto|Any CPU.ActiveCfg = Release|Any CPU
+		{C4586A06-1402-48BC-8E35-A1B8642F895B}.Proto|Any CPU.Build.0 = Release|Any CPU
+		{C4586A06-1402-48BC-8E35-A1B8642F895B}.Proto|x86.ActiveCfg = Release|Any CPU
+		{C4586A06-1402-48BC-8E35-A1B8642F895B}.Proto|x86.Build.0 = Release|Any CPU
 		{C4586A06-1402-48BC-8E35-A1B8642F895B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C4586A06-1402-48BC-8E35-A1B8642F895B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C4586A06-1402-48BC-8E35-A1B8642F895B}.Release|x86.ActiveCfg = Release|Any CPU
