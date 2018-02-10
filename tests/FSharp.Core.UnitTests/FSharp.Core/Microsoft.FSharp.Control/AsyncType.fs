@@ -324,6 +324,7 @@ type AsyncType() =
         Assert.IsTrue(exceptionThrown)
         
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/4337")>]
     member this.CancellationPropagatesToImmediateTask () =
         let a = async {
                 while true do ()
@@ -343,6 +344,7 @@ type AsyncType() =
         Assert.IsTrue(t.IsCanceled)            
         
     [<Test>]
+    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/4337")>]
     member this.CancellationPropagatesToGroupImmediate () =
         let ewh = new ManualResetEvent(false)
         let cancelled = ref false
