@@ -813,16 +813,6 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Count")>]
         let count (set: Set<'T>) = set.Count
 
-        [<CompiledName("MinimumElement")>]
-        let minimumElement (set: Set<'T>) = set.MinimumElement
-
-        [<System.Obsolete("Renamed to MinimumElement")>]
-        [<CompiledName("MinumumElement")>]
-        let minumumElement (set: Set<'T>) = minimumElement set
-
-        [<CompiledName("MaximumElement")>]
-        let maximumElement (set: Set<'T>) = set.MaximumElement
-
         [<CompiledName("OfList")>]
         let ofList elements = Set(List.toSeq elements)
 
