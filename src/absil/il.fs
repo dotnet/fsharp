@@ -18,6 +18,7 @@ open System.Collections.Concurrent
 open System.Runtime.CompilerServices
 open System.Reflection
 open System
+open Internal.Utilities.StructuredFormat
  
 let logging = false 
 
@@ -1652,7 +1653,7 @@ let typeKindOfFlags nm _mdefs _fdefs (super:ILType option) flags =
          elif isValueType then ILTypeDefKind.ValueType 
          else ILTypeDefKind.Class 
 
-let convertTypeAccessFlags  access = 
+let convertTypeAccessFlags access = 
     match access with 
     | ILTypeDefAccess.Public -> TypeAttributes.Public
     | ILTypeDefAccess.Private  -> TypeAttributes.NotPublic
@@ -1664,6 +1665,26 @@ let convertTypeAccessFlags  access =
     | ILTypeDefAccess.Nested ILMemberAccess.Assembly -> TypeAttributes.NestedAssembly
     | ILTypeDefAccess.Nested ILMemberAccess.CompilerControlled -> failwith "bad type acccess"
 
+let convertTypeKind kind =
+    match kind with
+    | ILTypeDefKind.Class -> TypeAttributes.Class
+    | ILTypeDefKind.ValueType -> TypeAttributes.Class
+    | ILTypeDefKind.Interface -> TypeAttributes.Abstract ||| TypeAttributes.Interface
+    | ILTypeDefKind.Enum -> TypeAttributes.Class
+    | ILTypeDefKind.Delegate -> TypeAttributes.Class
+
+let convertLayout layout =
+    match layout with
+    | ILTypeDefLayout.Auto -> TypeAttributes.AutoLayout
+    | ILTypeDefLayout.Sequential _ -> TypeAttributes.SequentialLayout
+    | ILTypeDefLayout.Explicit _ -> TypeAttributes.ExplicitLayout
+
+let convertEncoding encoding =
+    match encoding with
+    | ILDefaultPInvokeEncoding.Auto -> TypeAttributes.AutoClass
+    | ILDefaultPInvokeEncoding.Ansi -> TypeAttributes.AnsiClass
+    | ILDefaultPInvokeEncoding.Unicode -> TypeAttributes.UnicodeClass
+    
 [<NoComparison; NoEquality>]
 type ILTypeDef =  
     { Name: string;  
@@ -1693,14 +1714,17 @@ type ILTypeDef =
     member x.IsSpecialName = x.Attributes &&& TypeAttributes.SpecialName <> enum 0
     member x.HasSecurity = x.Attributes &&& TypeAttributes.HasSecurity <> enum 0
     member x.Encoding = typeEncodingOfFlags (int x.Attributes)
-    member x.IsStructOrEnum = 
-        x.IsStruct || x.IsEnum
+    member x.IsStructOrEnum = x.IsStruct || x.IsEnum
     member x.WithAccess(access) = { x with Attributes = x.Attributes &&& ~~~TypeAttributes.VisibilityMask ||| convertTypeAccessFlags access }
     member x.WithSealed(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition TypeAttributes.Sealed }
     member x.WithSerializable(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition TypeAttributes.Serializable }
     member x.WithAbstract(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition TypeAttributes.Abstract }
     member x.WithImport(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition TypeAttributes.Import }
     member x.WithHasSecurity(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition TypeAttributes.HasSecurity }
+    member x.WithLayout(layout) = { x with Attributes = x.Attributes ||| convertLayout layout; Layout = layout }
+    member x.WithKind(kind) = { x with Attributes = x.Attributes ||| convertTypeKind kind; Extends = match kind with ILTypeDefKind.Interface -> None | _ -> x.Extends }
+    member x.WithEncoding(encoding) = { x with Attributes = x.Attributes ||| convertEncoding encoding }
+    member x.WithSpecialName = { x with Attributes = x.Attributes ||| TypeAttributes.SpecialName}
 
 and [<Sealed>] ILTypeDefs(f : unit -> (string list * string * ILAttributes * Lazy<ILTypeDef>)[]) =
 

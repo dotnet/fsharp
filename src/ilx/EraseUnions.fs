@@ -872,7 +872,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                                           emptyILCustomAttrs,
                                           ILTypeInit.BeforeField)
 
-                    [ { debugProxyTypeDef with Attributes=debugProxyTypeDef.Attributes ||| TypeAttributes.SpecialName } ],
+                    [ debugProxyTypeDef.WithSpecialName ],
                     ( [mkDebuggerTypeProxyAttribute debugProxyTy] @ cud.cudDebugDisplayAttributes)
                                     
               let altTypeDef = 
@@ -919,7 +919,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                                         mkILCustomAttrs debugAttrs,
                                         ILTypeInit.BeforeField)
 
-                  { altTypeDef with Attributes=altTypeDef.Attributes ||| (if td.IsSerializable then TypeAttributes.Serializable else TypeAttributes.SpecialName) ||| TypeAttributes.SpecialName }
+                  altTypeDef.WithSpecialName.WithSerializable(td.IsSerializable)
 
               [ altTypeDef ], altDebugTypeDefs 
 
@@ -1090,7 +1090,7 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
                 { Name = "Tags"
                   NestedTypes = emptyILTypeDefs
                   GenericParams= td.GenericParams
-                  Attributes = (cudAattributes &&& ~~~TypeAttributes.HasSecurity) ||| TypeAttributes.Abstract ||| TypeAttributes.Sealed ||| TypeAttributes.Abstract ||| TypeAttributes.AnsiClass
+                  Attributes = cudAattributes
                   Layout=ILTypeDefLayout.Auto 
                   Implements = []
                   Extends= Some ilg.typ_Object 
@@ -1102,7 +1102,7 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
                   Properties=emptyILProperties
                   CustomAttrs= emptyILCustomAttrs }
 
-    let td = td.WithAbstract(isAbstract).WithSealed(altTypeDefs.IsEmpty).WithImport(false)
+    let td = td.WithAbstract(isAbstract).WithSealed(altTypeDefs.IsEmpty).WithImport(false).WithEncoding(ILDefaultPInvokeEncoding.Ansi).WithHasSecurity(false)
     let baseTypeDef = 
        { td with 
           NestedTypes = mkILTypeDefs (Option.toList enumTypeDef @ altTypeDefs @ altDebugTypeDefs @ td.NestedTypes.AsList)

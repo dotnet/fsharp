@@ -1317,6 +1317,10 @@ and [<NoComparison; NoEquality>]
     member WithAbstract: bool -> ILTypeDef
     member WithImport: bool -> ILTypeDef
     member WithHasSecurity: bool -> ILTypeDef
+    member WithLayout: ILTypeDefLayout -> ILTypeDef
+    member WithKind: ILTypeDefKind -> ILTypeDef
+    member WithEncoding: ILDefaultPInvokeEncoding -> ILTypeDef
+    member WithSpecialName: ILTypeDef
 
 [<NoEquality; NoComparison>]
 [<Sealed>]
