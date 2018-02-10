@@ -112,7 +112,7 @@ let mkStandardProjectReferences () =
               yield fsCoreDefaultReference() ]
 #endif              
 
-let mkProjectCommandLineArgs (dllName, fileNames) = 
+let mkProjectCommandLineArgsSilent (dllName, fileNames) = 
   let args = 
     [|  yield "--simpleresolution" 
         yield "--noframework" 
@@ -134,6 +134,10 @@ let mkProjectCommandLineArgs (dllName, fileNames) =
         for r in references do
             yield "-r:" + r
      |]
+  args
+
+let mkProjectCommandLineArgs (dllName, fileNames) = 
+  let args = mkProjectCommandLineArgsSilent (dllName, fileNames)
   printfn "dllName = %A, args = %A" dllName args
   args
 
