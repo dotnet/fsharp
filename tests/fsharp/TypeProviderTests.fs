@@ -248,15 +248,16 @@ let ``negative type provider tests`` (name:string) =
 
         SingleTest.singleNegTest cfg name
 
-[<Test>]
-let splitAssembly () = 
+let splitAssembly subdir project =
 
-    let cfg = testConfig "typeProviders/splitAssembly"
+    let cfg = testConfig project
 
     let clean() = 
         rm cfg "providerDesigner.dll"
         rmdir cfg "typeproviders"
+        rmdir cfg "tools"
         rmdir cfg (".." ++ "typeproviders")
+        rmdir cfg (".." ++ "tools")
 
     clean()
 
@@ -276,20 +277,11 @@ let splitAssembly () =
 
     // check a few load locations
     let someLoadPaths = 
-        [ "typeproviders" ++ "fsharp41" ++ "net461" ++ "x86"
-          "typeproviders" ++ "fsharp41" ++ "net461"
-          "typeproviders" ++ "fsharp41" ++ "net45"
+        [ subdir ++ "fsharp41" ++ "net461"
+          subdir ++ "fsharp41" ++ "net45"
           // include up one directory
-          ".." ++ "typeproviders" ++ "fsharp41" ++ "net45"
-          "typeproviders" ++ "fsharp41" ++ "netstandard2.0" ]        
-
-    let someLoadPaths64 = 
-        [ "typeproviders" ++ "fsharp41" ++ "net461" ++ "x64" 
-          "typeproviders" ++ "fsharp41" ++ "net461" ]
-
-    let someNegativeLoadPaths64 = 
-        [ "typeproviders" ++ "fsharp41" ++ "net461" ++ "x86"  ]
-
+          ".." ++ subdir ++ "fsharp41" ++ "net45"
+          subdir ++ "fsharp41" ++ "netstandard2.0" ]
 
     for dir in someLoadPaths do
 
@@ -311,31 +303,13 @@ let splitAssembly () =
 
         SingleTest.singleTestBuildAndRunAux cfg FSI_BASIC
 
-    for dir in someLoadPaths64 do
-
-        clean()
-
-        // put providerDesigner.dll into a different place
-        mkdir cfg dir
-        fsc cfg "--out:%s/providerDesigner.dll -a" dir ["providerDesigner.fsx"]
-
-        SingleTest.singleTestBuildAndRunAux cfg FSIANYCPU_BASIC
-
-    for dir in someNegativeLoadPaths64 do
-
-        clean()
-
-        // put providerDesigner.dll into a different place
-        mkdir cfg dir
-        fsc cfg "--out:%s/providerDesigner.dll -a" dir ["providerDesigner.fsx"]
-
-        // We expect a failure here - an error correctly gets printed on the console
-        try 
-            SingleTest.singleTestBuildAndRunAux cfg FSIANYCPU_BASIC |> ignore
-            failwith "expected an AssertionException"
-        with :? NUnit.Framework.AssertionException -> ()
-
     clean()
+
+[<Test>]
+let splitAssemblyTools () = splitAssembly "tools" "typeProviders/splitAssemblyTools"
+
+[<Test>]
+let splitAssemblyTypeProviders () = splitAssembly "typeproviders" "typeProviders/splitAssemblyTypeproviders"
 
 [<Test>]
 let wedgeAssembly () = 
