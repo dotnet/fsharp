@@ -16,20 +16,19 @@
   <Import Project="$(MSBuildThisFileDirectory)packages\$(FeedTasksPackage).$(FeedTasksPackageVersion)\build\$(FeedTasksPackage).targets" />
 
   <ItemGroup>
-    <NuGetPackages Include="$(MSBuildThisFileDirectory)artifacts\**\*.nupkg" />
-    <OtherAssets Include="$(MSBuildThisFileDirectory)insertion\**" />
+    <NuGetPackages Include="$(MSBuildThisFileDirectory)artifacts\Microsoft.FSharp.Compiler.*.nupkg" />
   </ItemGroup>
 
   <Target Name="Build">
     <PushToBlobFeed ExpectedFeedUrl="$(ExpectedFeedUrl)"
                     AccountKey="$(AccountKey)"
                     ItemsToPush="@(NuGetPackages)"
-                    Overwrite="$(PublishOverwrite)" />
-    <PushToBlobFeed ExpectedFeedUrl="$(ExpectedFeedUrl)"
-                    AccountKey="$(AccountKey)"
-                    ItemsToPush="@(OtherAssets)"
-                    PublishFlatContainer="true"
-                    Overwrite="$(PublishOverwrite)" />
+                    Overwrite="$(PublishOverwrite)"
+                    ManifestBranch="$(ManifestBranch)"
+                    ManifestBuildId="$(ManifestBuildId)"
+                    ManifestCommit="$(ManifestCommit)"
+                    ManifestName="fsharp"
+                    SkipCreateManifest="false" />
   </Target>
 
 </Project>
