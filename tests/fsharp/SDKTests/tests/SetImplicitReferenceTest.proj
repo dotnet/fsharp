@@ -1,0 +1,23 @@
+<Project ToolsVersion="4.0" DefaultTargets="Test" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <Import Project="Test.props" />
+
+  <PropertyGroup>
+    <FSharpCoreImplicitPackageVersion>99.99.99</FSharpCoreImplicitPackageVersion>
+    <ValueTupleImplicitPackageVersion>44.44.44</ValueTupleImplicitPackageVersion>
+  </PropertyGroup>
+
+  <!-- if $(FSharpCoreImplicitPackgeVersion) is specified, ensure that's used -->
+  <!-- if $(ValueTupleImplicitPackageVersion) is specified, ensure that's used -->
+
+  <PropertyGroup>
+    <ExpectsFSharpCore>true</ExpectsFSharpCore>
+    <ExpectedFSharpCorePackageVersion>99.99.99</ExpectedFSharpCorePackageVersion>
+
+    <ExpectsValueTuple>true</ExpectsValueTuple>
+    <ExpectedValueTuplePackageVersion>44.44.44</ExpectedValueTuplePackageVersion>
+  </PropertyGroup>
+
+  <Import Project="Test.targets" />
+
+</Project>
