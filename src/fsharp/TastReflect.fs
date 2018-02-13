@@ -1004,7 +1004,10 @@ and ReflectTypeDefinition (asm: ReflectAssembly, declTyOpt: Type option, tcref: 
     override __.HasElementTypeImpl() = false
 
     override this.UnderlyingSystemType = (this :> Type)
-    override __.GetCustomAttributesData() = tcref.Attribs |> TxCustomAttributesData
+    override this.GetCustomAttributesData() =
+        let missingAttribs = [this.CompilationMappingAttribute] |> List.choose id
+        [| yield! (tcref.Attribs |> TxCustomAttributesData)
+           yield! missingAttribs |] :> IList<_>
 
     override this.Equals(that:obj) = System.Object.ReferenceEquals (this, that)  
     override this.GetHashCode() =  hash tcref.CompiledName
@@ -1030,7 +1033,28 @@ and ReflectTypeDefinition (asm: ReflectAssembly, declTyOpt: Type option, tcref: 
     member x.Metadata = tcref
     member x.MakeMethodInfo (declTy,md) = TxMethodDef declTy md
     member x.MakeConstructorInfo (declTy,md) = TxConstructorDef declTy md
-    member x.UnderlyingTyconRef = tcref
+
+    member x.CompilationMappingAttribute : CustomAttributeData option =
+        let flags =
+            if tcref.IsRecordTycon then
+                Some SourceConstructFlags.RecordType
+            elif tcref.IsUnionTycon then
+                Some SourceConstructFlags.SumType
+            elif tcref.IsExceptionDecl then
+                Some SourceConstructFlags.Exception
+            elif tcref.IsFSharpObjectModelTycon then
+                Some SourceConstructFlags.ObjectType
+            elif tcref.IsFSharpStructOrEnumTycon then
+                Some SourceConstructFlags.Value
+            else
+                None
+        flags |> Option.map (fun f ->
+             { new CustomAttributeData () with
+                member __.Constructor = typeof<CompilationMappingAttribute>.GetConstructors().[0]
+                member __.ConstructorArguments = [| new CustomAttributeTypedArgument(f) |] :> _
+                member __.NamedArguments = [| |] :> _
+             }
+            )
 
     //interface IReflectableType with 
     //    member x.GetTypeInfo() = 

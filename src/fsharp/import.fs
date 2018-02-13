@@ -205,7 +205,7 @@ let rec CanImportILType (env:ImportMap) m typ =
 let ImportProvidedNamedType (env:ImportMap) (m:range) (st:Tainted<ProvidedType>) =
     let tryGetTyconRef (pt : ProvidedType) =
         match pt.RawSystemType with
-        | :? ReflectTypeDefinition as pt -> Some pt.UnderlyingTyconRef
+        | :? ReflectTypeDefinition as pt -> Some pt.Metadata
         | _ -> pt.TryGetTyconRef() |> Option.map (fun x -> x :?> TyconRef)
 
     // See if a reverse-mapping exists for a generated/relocated System.Type
