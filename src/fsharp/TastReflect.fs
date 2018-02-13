@@ -455,7 +455,11 @@ and ReflectTypeSymbol(kind: ReflectTypeSymbolKind, args: Type[]) =
     
     override this.UnderlyingSystemType = (this :> Type)
 
-    override this.GetCustomAttributesData()                                                        =  ([| |] :> IList<_>)
+    override this.GetCustomAttributesData() =
+        match kind with
+        | ReflectTypeSymbolKind.Generic gtd -> gtd.GetCustomAttributesData()
+        | _ -> [| |] :> _
+
     override this.MemberType                                                                       = notRequired "MemberType" this.Name
     override this.GetMember(_name,_mt,_bindingAttr)                                                = notRequired "GetMember" this.Name
     override this.GUID                                                                             = notRequired "GUID" this.Name
