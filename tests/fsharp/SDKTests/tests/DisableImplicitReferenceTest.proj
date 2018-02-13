@@ -4,12 +4,15 @@
 
   <PropertyGroup>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
   </PropertyGroup>
 
   <!-- if $(DisableImplicitFSharpCoreReference) is set, ensure that FSharp.Core isn't present -->
+  <!-- if $(DisableImplicitValueTupleReference) is set, ensure that System.ValueTuple isn't present -->
 
   <PropertyGroup>
     <ExpectsFSharpCore>false</ExpectsFSharpCore>
+    <ExpectsValueTuple>false</ExpectsValueTuple>
   </PropertyGroup>
 
   <Import Project="Test.targets" />

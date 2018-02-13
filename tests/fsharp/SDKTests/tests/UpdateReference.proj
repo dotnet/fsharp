@@ -2,19 +2,18 @@
 
   <Import Project="Test.props" />
 
-  <PropertyGroup>
-    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-  </PropertyGroup>
-
   <ItemGroup>
-    <PackageReference Include="FSharp.Core" Version="99.99.99" />
+    <PackageReference Update="FSharp.Core" Version="99.99.99" />
+    <PackageReference Update="System.ValueTuple" Version="44.44.44" />
   </ItemGroup>
 
-  <!-- if $(DisableImplicitFSharpCoreReference) is set and an explicit PackageReference is added, that version of FSharp.Core is present -->
+  <!-- honor updating the reference; this is what the NuGet package manager in Visual Studio does -->
 
   <PropertyGroup>
     <ExpectsFSharpCore>true</ExpectsFSharpCore>
     <ExpectedFSharpCorePackageVersion>99.99.99</ExpectedFSharpCorePackageVersion>
+    <ExpectsValueTuple>true</ExpectsValueTuple>
+    <ExpectedValueTuplePackageVersion>44.44.44</ExpectedValueTuplePackageVersion>
   </PropertyGroup>
 
   <Import Project="Test.targets" />
