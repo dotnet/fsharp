@@ -33,7 +33,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <EnableDefaultCompileItems Condition=" '$(EnableDefaultCompileItems)' == '' ">false</EnableDefaultCompileItems>                                <!--- Do not glob F# source files -->
     <EnableDefaultNoneItems Condition=" '$(EnableDefaultNoneItems)' == '' ">false</EnableDefaultNoneItems>
     <DefaultValueTuplePackageVersion>4.3.1</DefaultValueTuplePackageVersion>
-    <DefaultFSharpPackageVersion>4.3.3</DefaultFSharpPackageVersion>
+    <DefaultFSharpPackageVersion>4.3.4</DefaultFSharpPackageVersion>
   </PropertyGroup>
 
   <PropertyGroup>
