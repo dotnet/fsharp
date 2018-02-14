@@ -415,23 +415,23 @@ namespace Microsoft.FSharp.Control
             computation:Async<unit> * ?cancellationToken:CancellationToken-> unit
 
     /// <summary>Opaque type for generated code</summary>
-    type FakeUnitValue
+    type AsyncReturn
 
     /// <summary>Opaque type for generated code</summary>
     [<Sealed>]
-    type AsyncParams<'T> =
+    type AsyncContext<'T> =
         member IsCancellationRequested: bool
-        member CallSuccessContinuation: 'T -> FakeUnitValue
-        member CallCancellationContinuation: unit -> FakeUnitValue
+        member CallSuccessContinuation: 'T -> AsyncReturn
+        member CallCancellationContinuation: unit -> AsyncReturn
+        //member CallExceptionContinuation: System.Runtime.ExceptionServices.ExceptionDispatchInfo -> AsyncReturn
 
     [<Sealed>]
     /// <summary>Entry points for generated code</summary>
-    module AsyncActions =
-        val MakeAsync: f:(AsyncParams<'T> -> FakeUnitValue) -> Async<'T>
-        val UnitAsync: Async<unit>
-        val ExecuteUserCode: args:AsyncParams<'T> -> f:('U -> Async<'T>) -> 'U -> FakeUnitValue
-        val BindUserCode: keepStack: bool -> args:AsyncParams<'T> -> Async<'U> -> f:('U -> Async<'T>) -> FakeUnitValue
-
+    module AsyncPrimitives =
+        val MakeAsync: body:(AsyncContext<'T> -> AsyncReturn) -> Async<'T>
+        val Call: ctxt:AsyncContext<'T> -> result1:'U -> part2f:('U -> Async<'T>) -> AsyncReturn
+        val Bind: keepStack: bool -> ctxt:AsyncContext<'T> -> part1:Async<'U> -> part2f:('U -> Async<'T>) -> AsyncReturn
+        val TryFinally: ctxt:AsyncContext<'T> -> finallyFunction: (unit -> unit) -> computation: Async<'T> -> AsyncReturn
 
     [<CompiledName("FSharpAsyncBuilder")>]
     [<Sealed>]
@@ -458,7 +458,7 @@ namespace Microsoft.FSharp.Control
         /// The existence of this method permits the use of empty <c>else</c> branches in the 
         /// <c>async { ... }</c> computation expression syntax.</remarks>
         /// <returns>An asynchronous computation that returns <c>()</c>.</returns>
-        member inline Zero : unit -> Async<unit> 
+        member Zero : unit -> Async<unit> 
 
         /// <summary>Creates an asynchronous computation that first runs <c>computation1</c>
         /// and then runs <c>computation2</c>, returning the result of <c>computation2</c>.</summary>
@@ -550,7 +550,7 @@ namespace Microsoft.FSharp.Control
         /// exception (including cancellation).</param>
         /// <returns>An asynchronous computation that executes computation and compensation afterwards or
         /// when an exception is raised.</returns>
-        member TryFinally : computation:Async<'T> * compensation:(unit -> unit) -> Async<'T>
+        member inline TryFinally : computation:Async<'T> * compensation:(unit -> unit) -> Async<'T>
 
         /// <summary>Creates an asynchronous computation that runs <c>computation</c> and returns its result.
         /// If an exception happens then <c>catchHandler(exn)</c> is called and the resulting computation executed instead.</summary>
