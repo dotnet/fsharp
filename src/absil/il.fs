@@ -17,8 +17,6 @@ open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Runtime.CompilerServices
 open System.Reflection
-open System
-open Internal.Utilities.StructuredFormat
  
 let logging = false 
 
