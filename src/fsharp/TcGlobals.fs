@@ -295,7 +295,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_int16_ty        = mkNonGenericTy v_int16_tcr
   let v_uint16_ty       = mkNonGenericTy v_uint16_tcr
   let v_int_ty          = mkNonGenericTy v_int_tcr
-  let v_enum_ty         = mkNonGenericTy v_int_tcr
   let v_int32_ty        = mkNonGenericTy v_int32_tcr
   let v_uint32_ty       = mkNonGenericTy v_uint32_tcr
   let v_int64_ty        = mkNonGenericTy v_int64_tcr
@@ -305,6 +304,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_nativeint_ty    = mkNonGenericTy v_nativeint_tcr
   let v_unativeint_ty   = mkNonGenericTy v_unativeint_tcr
 
+  let v_enum_ty         = mkNonGenericTy v_int_tcr
   let v_bool_ty         = mkNonGenericTy v_bool_tcr   
   let v_char_ty         = mkNonGenericTy v_char_tcr
   let v_obj_ty          = mkNonGenericTy v_obj_tcr    
@@ -607,7 +607,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_int16_operator_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "int16"                                , None                 , Some "ToInt16",   [vara],   ([[varaTy]], v_int16_ty)) 
   let v_uint16_operator_info       = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "uint16"                               , None                 , Some "ToUInt16",  [vara],   ([[varaTy]], v_uint16_ty)) 
   let v_int_operator_info          = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "int"                                  , None                 , Some "ToInt",     [vara],   ([[varaTy]], v_int_ty)) 
-  let v_enum_operator_info         = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "enum"                                 , None                 , Some "ToEnum",    [vara],   ([[varaTy]], v_enum_ty)) 
   let v_int32_operator_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "int32"                                , None                 , Some "ToInt32",   [vara],   ([[varaTy]], v_int32_ty)) 
   let v_uint32_operator_info       = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "uint32"                               , None                 , Some "ToUInt32",  [vara],   ([[varaTy]], v_uint32_ty)) 
   let v_int64_operator_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "int64"                                , None                 , Some "ToInt64",   [vara],   ([[varaTy]], v_int64_ty)) 
@@ -616,6 +615,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_float_operator_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "float"                                , None                 , Some "ToDouble",  [vara],   ([[varaTy]], v_float_ty)) 
   let v_nativeint_operator_info    = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "nativeint"                            , None                 , Some "ToIntPtr",  [vara],   ([[varaTy]], v_nativeint_ty)) 
   let v_unativeint_operator_info   = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "unativeint"                           , None                 , Some "ToUIntPtr", [vara],   ([[varaTy]], v_unativeint_ty))
+
+  let v_char_operator_info         = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "char"                                 , None                 , Some "ToChar",    [vara],   ([[varaTy]], v_char_ty)) 
+  let v_enum_operator_info         = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "enum"                                 , None                 , Some "ToEnum",    [vara],   ([[varaTy]], v_enum_ty)) 
 
   let v_hash_info                  = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "hash"                                 , None                 , Some "Hash"   , [vara],     ([[varaTy]], v_int_ty))
   let v_box_info                   = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "box"                                  , None                 , Some "Box"    , [vara],     ([[varaTy]], v_obj_ty))
@@ -886,6 +888,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.expr_tcr       = v_expr_tcr
   member __.raw_expr_tcr       = v_raw_expr_tcr
   member __.nativeint_tcr  = v_nativeint_tcr
+  member __.unativeint_tcr = v_unativeint_tcr
+  member __.int_tcr        = v_int_tcr
   member __.int32_tcr      = v_int32_tcr
   member __.int16_tcr      = v_int16_tcr
   member __.int64_tcr      = v_int64_tcr
@@ -1227,7 +1231,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.int16_operator_info      = v_int16_operator_info
   member __.uint16_operator_info     = v_uint16_operator_info
   member __.int_operator_info        = v_int_operator_info
-  member __.enum_operator_info       = v_enum_operator_info
   member __.int32_operator_info      = v_int32_operator_info
   member __.uint32_operator_info     = v_uint32_operator_info
   member __.int64_operator_info      = v_int64_operator_info
@@ -1236,6 +1239,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.float_operator_info      = v_float_operator_info
   member __.nativeint_operator_info  = v_nativeint_operator_info
   member __.unativeint_operator_info = v_unativeint_operator_info
+
+  member __.char_operator_info       = v_char_operator_info
+  member __.enum_operator_info       = v_enum_operator_info
 
   member val compare_operator_vref    = ValRefForIntrinsic v_compare_operator_info
   member val equals_operator_vref    = ValRefForIntrinsic v_equals_operator_info

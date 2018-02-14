@@ -1280,7 +1280,6 @@ val mkCallToSByteOperator                    : TcGlobals -> range -> TType -> Ex
 val mkCallToInt16Operator                    : TcGlobals -> range -> TType -> Expr -> Expr
 val mkCallToUInt16Operator                   : TcGlobals -> range -> TType -> Expr -> Expr
 val mkCallToIntOperator                      : TcGlobals -> range -> TType -> Expr -> Expr
-val mkCallToEnumOperator                     : TcGlobals -> range -> TType -> Expr -> Expr
 val mkCallToInt32Operator                    : TcGlobals -> range -> TType -> Expr -> Expr
 val mkCallToUInt32Operator                   : TcGlobals -> range -> TType -> Expr -> Expr
 val mkCallToInt64Operator                    : TcGlobals -> range -> TType -> Expr -> Expr
@@ -1289,6 +1288,9 @@ val mkCallToSingleOperator                   : TcGlobals -> range -> TType -> Ex
 val mkCallToDoubleOperator                   : TcGlobals -> range -> TType -> Expr -> Expr
 val mkCallToIntPtrOperator                   : TcGlobals -> range -> TType -> Expr -> Expr
 val mkCallToUIntPtrOperator                  : TcGlobals -> range -> TType -> Expr -> Expr
+
+val mkCallToCharOperator                     : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToEnumOperator                     : TcGlobals -> range -> TType -> Expr -> Expr
 
 val mkCallDeserializeQuotationFSharp20Plus  : TcGlobals -> range -> Expr -> Expr -> Expr -> Expr -> Expr
 val mkCallDeserializeQuotationFSharp40Plus : TcGlobals -> range -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
