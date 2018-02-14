@@ -1669,7 +1669,7 @@
       </trans-unit>
       <trans-unit id="csMemberIsNotAccessible2">
         <source>The member or object constructor '{0}' is not {1}. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.</source>
-        <target state="needs-review-translation">멤버 또는 개체 생성자 '{0}'은(는) {1}이(가) 아닙니다. 전용 멤버는 선언 형식 내에서만 액세스할 수 있습니다. 보호된 멤버는 확장 형식에서만 액세스할 수 있으며 내부 람다 식에서는 액세스할 수 없습니다.</target>
+        <target state="translated">멤버 또는 개체 생성자 '{0}'은(는) {1}이(가) 아닙니다. 전용 멤버는 선언 형식 내에서만 액세스할 수 있습니다. 보호된 멤버는 확장 형식에서만 액세스할 수 있으며 내부 람다 식에서는 액세스할 수 없습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="csMethodIsNotAStaticMethod">
@@ -6969,7 +6969,17 @@
       </trans-unit>
       <trans-unit id="tcTupleMemberNotNormallyUsed">
         <source>This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</source>
-        <target state="new">This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</target>
+        <target state="translated">이 메서드 또는 속성은 일반적으로 F# 코드에서 사용되지 않습니다. 대신 분해에 대해 명시적 튜플 패턴을 사용하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="implicitlyDiscardedInSequenceExpression">
+        <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.</source>
+        <target state="new">This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="implicitlyDiscardedSequenceInSequenceExpression">
+        <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</source>
+        <target state="new">This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</target>
         <note />
       </trans-unit>
     </body>
