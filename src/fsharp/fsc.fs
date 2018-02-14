@@ -1413,12 +1413,16 @@ module StaticLinker =
                           if allTypeDefsInProviderGeneratedAssemblies.ContainsKey ilOrigTyRef then 
                               let ilOrigTypeDef = allTypeDefsInProviderGeneratedAssemblies.[ilOrigTyRef]
                               if debugStaticLinking then printfn "Relocating %s to %s " ilOrigTyRef.QualifiedName ilTgtTyRef.QualifiedName
+                              let ilOrigTypeDef = 
+                                if isNested then
+                                    ilOrigTypeDef
+                                        .WithAccess(match ilOrigTypeDef.Access with 
+                                                    | ILTypeDefAccess.Public -> ILTypeDefAccess.Nested ILMemberAccess.Public
+                                                    | ILTypeDefAccess.Private -> ILTypeDefAccess.Nested ILMemberAccess.Private
+                                                    | _ -> ilOrigTypeDef.Access)
+                                else ilOrigTypeDef
                               { ilOrigTypeDef with 
                                     Name = ilTgtTyRef.Name
-                                    Attributes = (match ilOrigTypeDef.Access with 
-                                                  | ILTypeDefAccess.Public when isNested -> (ilOrigTypeDef.Attributes &&& ~~~TypeAttributes.VisibilityMask) ||| TypeAttributes.NestedPublic 
-                                                  | ILTypeDefAccess.Private when isNested -> (ilOrigTypeDef.Attributes &&& ~~~TypeAttributes.VisibilityMask) ||| ilOrigTypeDef.Attributes ||| TypeAttributes.NestedAssembly 
-                                                  | _ -> ilOrigTypeDef.Attributes)
                                     NestedTypes = mkILTypeDefs (List.map buildRelocatedGeneratedType ch) }
                           else
                               // If there is no matching IL type definition, then make a simple container class

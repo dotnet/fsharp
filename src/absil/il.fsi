@@ -1312,6 +1312,7 @@ and [<NoComparison; NoEquality>]
     member HasSecurity: bool
     member Encoding: ILDefaultPInvokeEncoding;
     member WithAccess: ILTypeDefAccess -> ILTypeDef
+    member WithNestedAccess: ILMemberAccess -> ILTypeDef
     member WithSealed: bool -> ILTypeDef
     member WithSerializable: bool -> ILTypeDef
     member WithAbstract: bool -> ILTypeDef

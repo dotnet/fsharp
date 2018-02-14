@@ -24,26 +24,6 @@ let TagCons = 1
 [<Literal>]
 let ALT_NAME_CONS = "Cons"
 
-let ConvertMemberAccess (ilMemberAccess:ILMemberAccess) =
-    match ilMemberAccess with
-    | ILMemberAccess.Assembly            -> MethodAttributes.Assembly
-    | ILMemberAccess.CompilerControlled  -> MethodAttributes.PrivateScope
-    | ILMemberAccess.FamilyAndAssembly   -> MethodAttributes.FamANDAssem
-    | ILMemberAccess.FamilyOrAssembly    -> MethodAttributes.FamORAssem
-    | ILMemberAccess.Family              -> MethodAttributes.Family
-    | ILMemberAccess.Private             -> MethodAttributes.Private
-    | ILMemberAccess.Public              -> MethodAttributes.Public
-
-let ConvertToNestedTypeAccess (ilMemberAccess:ILMemberAccess) =
-    match ilMemberAccess with
-    | ILMemberAccess.Assembly            -> TypeAttributes.NestedAssembly
-    | ILMemberAccess.CompilerControlled  -> failwith "Nested compiler controled."
-    | ILMemberAccess.FamilyAndAssembly   -> TypeAttributes.NestedFamANDAssem
-    | ILMemberAccess.FamilyOrAssembly    -> TypeAttributes.NestedFamORAssem
-    | ILMemberAccess.Family              -> TypeAttributes.NestedFamily
-    | ILMemberAccess.Private             -> TypeAttributes.NestedPrivate
-    | ILMemberAccess.Public              -> TypeAttributes.NestedPublic
-
 type DiscriminationTechnique =
    /// Indicates a special representation for the F# list type where the "empty" value has a tail field of value null
    | TailOrNull
@@ -1085,12 +1065,11 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
         if tagEnumFields.Length <= 1 then 
             None
         else
-            let cudAattributes = ConvertToNestedTypeAccess cud.cudReprAccess
-            Some 
+            Some( 
                 { Name = "Tags"
                   NestedTypes = emptyILTypeDefs
                   GenericParams= td.GenericParams
-                  Attributes = cudAattributes
+                  Attributes = enum 0
                   Layout=ILTypeDefLayout.Auto 
                   Implements = []
                   Extends= Some ilg.typ_Object 
@@ -1100,7 +1079,7 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
                   MethodImpls=emptyILMethodImpls
                   Events=emptyILEvents
                   Properties=emptyILProperties
-                  CustomAttrs= emptyILCustomAttrs }
+                  CustomAttrs= emptyILCustomAttrs }.WithNestedAccess(cud.cudReprAccess))
 
     let td = td.WithAbstract(isAbstract).WithSealed(altTypeDefs.IsEmpty).WithImport(false).WithEncoding(ILDefaultPInvokeEncoding.Ansi).WithHasSecurity(false)
     let baseTypeDef = 

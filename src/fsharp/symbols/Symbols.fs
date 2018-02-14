@@ -389,7 +389,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
 #if !NO_EXTENSIONTYPING
         | ProvidedTypeMetadata info -> info.IsDelegate ()
 #endif
-        | ILTypeMetadata (TILObjectReprData(_, _, td)) -> (td.IsDelegate)
+        | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsDelegate
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> entity.IsFSharpDelegateTycon
 
     member __.IsEnum = 

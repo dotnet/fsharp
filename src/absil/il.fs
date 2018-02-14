@@ -1684,6 +1684,16 @@ let convertEncoding encoding =
     | ILDefaultPInvokeEncoding.Auto -> TypeAttributes.AutoClass
     | ILDefaultPInvokeEncoding.Ansi -> TypeAttributes.AnsiClass
     | ILDefaultPInvokeEncoding.Unicode -> TypeAttributes.UnicodeClass
+
+let convertToNestedTypeAccess (ilMemberAccess:ILMemberAccess) =
+    match ilMemberAccess with
+    | ILMemberAccess.Assembly            -> TypeAttributes.NestedAssembly
+    | ILMemberAccess.CompilerControlled  -> failwith "Nested compiler controled."
+    | ILMemberAccess.FamilyAndAssembly   -> TypeAttributes.NestedFamANDAssem
+    | ILMemberAccess.FamilyOrAssembly    -> TypeAttributes.NestedFamORAssem
+    | ILMemberAccess.Family              -> TypeAttributes.NestedFamily
+    | ILMemberAccess.Private             -> TypeAttributes.NestedPrivate
+    | ILMemberAccess.Public              -> TypeAttributes.NestedPublic
     
 [<NoComparison; NoEquality>]
 type ILTypeDef =  
@@ -1716,6 +1726,7 @@ type ILTypeDef =
     member x.Encoding = typeEncodingOfFlags (int x.Attributes)
     member x.IsStructOrEnum = x.IsStruct || x.IsEnum
     member x.WithAccess(access) = { x with Attributes = x.Attributes &&& ~~~TypeAttributes.VisibilityMask ||| convertTypeAccessFlags access }
+    member x.WithNestedAccess(access) = { x with Attributes = x.Attributes &&& ~~~TypeAttributes.VisibilityMask ||| convertToNestedTypeAccess access }
     member x.WithSealed(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition TypeAttributes.Sealed }
     member x.WithSerializable(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition TypeAttributes.Serializable }
     member x.WithAbstract(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition TypeAttributes.Abstract }
