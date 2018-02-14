@@ -268,6 +268,27 @@ module FSharpExprConvert =
             | DT_REF -> None
         | _ -> None
 
+    let (|TTypeConvOp|_|) (cenv:Impl.cenv) ty = 
+        let g = cenv.g
+        match ty with
+        | TType_app (tcref,_) ->
+            match tcref with
+            | x when tyconRefEq g tcref g.sbyte_tcr -> Some mkCallToSByteOperator
+            | x when tyconRefEq g tcref g.byte_tcr -> Some mkCallToByteOperator
+            | x when tyconRefEq g tcref g.int16_tcr -> Some mkCallToInt16Operator
+            | x when tyconRefEq g tcref g.uint16_tcr -> Some mkCallToUInt16Operator
+            | x when tyconRefEq g tcref g.int_tcr -> Some mkCallToIntOperator
+            | x when tyconRefEq g tcref g.int32_tcr -> Some mkCallToInt32Operator
+            | x when tyconRefEq g tcref g.uint32_tcr -> Some mkCallToUInt32Operator
+            | x when tyconRefEq g tcref g.int64_tcr -> Some mkCallToInt64Operator
+            | x when tyconRefEq g tcref g.uint64_tcr -> Some mkCallToUInt64Operator
+            | x when tyconRefEq g tcref g.float32_tcr -> Some mkCallToSingleOperator
+            | x when tyconRefEq g tcref g.float_tcr -> Some mkCallToDoubleOperator
+            | x when tyconRefEq g tcref g.nativeint_tcr -> Some mkCallToIntPtrOperator
+            | x when tyconRefEq g tcref g.unativeint_tcr -> Some mkCallToUIntPtrOperator
+            | _ -> None
+        | _ -> None
+
     let ConvType cenv typ = FSharpType(cenv, typ)
     let ConvTypes cenv typs = List.map (ConvType cenv) typs
     let ConvILTypeRefApp (cenv:Impl.cenv) m tref tyargs = 
@@ -601,8 +622,14 @@ module FSharpExprConvert =
                 let argR = ConvExpr cenv env arg
                 E.ILFieldSet(None, typR, fspec.Name, argR) 
 
-            | TOp.ILAsm([ ], _), _, [arg] -> 
-                ConvExprPrim cenv env arg
+            | TOp.ILAsm([ ], [tty]), _, [arg] -> 
+                match tty with
+                | TTypeConvOp cenv convOp ->
+                    let ty = tyOfExpr cenv.g arg
+                    let op = convOp cenv.g m ty arg
+                    ConvExprPrim cenv env op
+                | _ ->
+                    ConvExprPrim cenv env arg
 
             | TOp.ILAsm([ I_box _ ], _), [ty], [arg] -> 
                 let op = mkCallBox cenv.g m ty arg
@@ -671,9 +698,12 @@ module FSharpExprConvert =
                 let op2 = convertOp2 cenv.g m ty2 op1
                 ConvExprPrim cenv env op2
 
-            | TOp.ILAsm([ ILConvertOp convertOp ], _), _, [arg] -> 
+            | TOp.ILAsm([ ILConvertOp convertOp ], [TType_app (tcref,_)]), _, [arg] -> 
                 let ty = tyOfExpr cenv.g arg
-                let op = convertOp cenv.g m ty arg
+                let op =
+                    if tyconRefEq cenv.g tcref cenv.g.char_tcr
+                    then mkCallToCharOperator cenv.g m ty arg
+                    else convertOp cenv.g m ty arg
                 ConvExprPrim cenv env op
 
             | TOp.ILAsm([ I_throw ], _), _, [arg1]  -> 

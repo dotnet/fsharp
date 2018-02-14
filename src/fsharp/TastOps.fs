@@ -6187,7 +6187,6 @@ let mkCallToSByteOperator   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrin
 let mkCallToInt16Operator   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int16_operator_info, [[ty]], [e1], m)
 let mkCallToUInt16Operator  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.uint16_operator_info, [[ty]], [e1], m)
 let mkCallToIntOperator     (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int_operator_info, [[ty]], [e1], m)
-let mkCallToEnumOperator    (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.enum_operator_info, [[ty]], [e1], m)
 let mkCallToInt32Operator   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int32_operator_info, [[ty]], [e1], m)
 let mkCallToUInt32Operator  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.uint32_operator_info, [[ty]], [e1], m)
 let mkCallToInt64Operator   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int64_operator_info, [[ty]], [e1], m)
@@ -6196,6 +6195,9 @@ let mkCallToSingleOperator  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrin
 let mkCallToDoubleOperator  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.float_operator_info, [[ty]], [e1], m)
 let mkCallToIntPtrOperator  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.nativeint_operator_info, [[ty]], [e1], m)
 let mkCallToUIntPtrOperator (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.unativeint_operator_info, [[ty]], [e1], m)
+
+let mkCallToCharOperator    (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.char_operator_info, [[ty]], [e1], m)
+let mkCallToEnumOperator    (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.enum_operator_info, [[ty]], [e1], m)
 
 let mkCallArrayLength (g:TcGlobals) m ty e1                    = mkApps g (typedExprForIntrinsic g m g.array_length_info, [[ty]], [e1], m)
 let mkCallArrayGet   (g:TcGlobals) m ty e1 idx1                = mkApps g (typedExprForIntrinsic g m g.array_get_info, [[ty]], [ e1 ; idx1 ], m)
