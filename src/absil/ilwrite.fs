@@ -1069,8 +1069,7 @@ and GetFieldInitFlags i =
 // -------------------------------------------------------------------- 
 
 let GetMemberAccessFlags access = 
-    match access with 
-    | ILMemberAccess.CompilerControlled -> 0x00000000
+    match access with
     | ILMemberAccess.Public -> 0x00000006
     | ILMemberAccess.Private  -> 0x00000001
     | ILMemberAccess.Family  -> 0x00000004
@@ -1088,7 +1087,6 @@ let GetTypeAccessFlags  access =
     | ILTypeDefAccess.Nested ILMemberAccess.FamilyAndAssembly -> 0x00000006
     | ILTypeDefAccess.Nested ILMemberAccess.FamilyOrAssembly -> 0x00000007
     | ILTypeDefAccess.Nested ILMemberAccess.Assembly -> 0x00000005
-    | ILTypeDefAccess.Nested ILMemberAccess.CompilerControlled -> failwith "bad type acccess"
 
 let rec GetTypeDefAsRow cenv env _enc (td:ILTypeDef) = 
     let nselem, nelem = GetTypeNameAsElemPair cenv td.Name

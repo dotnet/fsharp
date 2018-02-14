@@ -397,7 +397,6 @@ let output_member_access os access =
     (match access with 
     | ILMemberAccess.Public -> "public"
     | ILMemberAccess.Private  -> "private"
-    | ILMemberAccess.CompilerControlled  -> "privatescope"
     | ILMemberAccess.Family  -> "family"
     | ILMemberAccess.FamilyAndAssembly -> "famandassem"
     | ILMemberAccess.FamilyOrAssembly -> "famorassem"

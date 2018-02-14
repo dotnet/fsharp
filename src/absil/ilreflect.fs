@@ -1708,7 +1708,6 @@ let typeAttrbutesOfTypeAccess x =
     | ILTypeDefAccess.Nested macc  -> 
         match macc with
         | ILMemberAccess.Assembly           -> TypeAttributes.NestedAssembly
-        | ILMemberAccess.CompilerControlled -> failwith "Nested compiler controled."
         | ILMemberAccess.FamilyAndAssembly        -> TypeAttributes.NestedFamANDAssem
         | ILMemberAccess.FamilyOrAssembly         -> TypeAttributes.NestedFamORAssem
         | ILMemberAccess.Family             -> TypeAttributes.NestedFamily

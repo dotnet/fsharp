@@ -113,7 +113,6 @@ module Impl =
         | ILMemberAccess.Assembly -> 
             taccessPrivate  (CompPath(declaringEntity.CompilationPath.ILScopeRef, []))
 
-        | ILMemberAccess.CompilerControlled
         | ILMemberAccess.Private ->
             taccessPrivate  declaringEntity.CompilationPath
 

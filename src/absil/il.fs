@@ -1091,7 +1091,6 @@ type ILMethodBody =
 [<RequireQualifiedAccess>]
 type ILMemberAccess = 
     | Assembly
-    | CompilerControlled
     | FamilyAndAssembly
     | FamilyOrAssembly
     | Family
@@ -1367,12 +1366,11 @@ let memberAccessOfFlags flags =
     elif f = 0x00000002 then  ILMemberAccess.FamilyAndAssembly 
     elif f = 0x00000005 then  ILMemberAccess.FamilyOrAssembly 
     elif f = 0x00000003 then  ILMemberAccess.Assembly 
-    else ILMemberAccess.CompilerControlled
+    else failwith "impossible"
 
 let convertMemberAccess (ilMemberAccess:ILMemberAccess) =
     match ilMemberAccess with
     | ILMemberAccess.Assembly            -> MethodAttributes.Assembly
-    | ILMemberAccess.CompilerControlled  -> MethodAttributes.PrivateScope
     | ILMemberAccess.FamilyAndAssembly   -> MethodAttributes.FamANDAssem
     | ILMemberAccess.FamilyOrAssembly    -> MethodAttributes.FamORAssem
     | ILMemberAccess.Family              -> MethodAttributes.Family
@@ -1530,7 +1528,6 @@ type ILPropertyDefs =
 let convertFieldAccesFlags flags = 
     match flags with
     | ILMemberAccess.Assembly           -> FieldAttributes.Assembly
-    | ILMemberAccess.CompilerControlled -> failwith "Field access compiler controled."
     | ILMemberAccess.FamilyAndAssembly        -> FieldAttributes.FamANDAssem
     | ILMemberAccess.FamilyOrAssembly         -> FieldAttributes.FamORAssem
     | ILMemberAccess.Family             -> FieldAttributes.Family
@@ -1540,7 +1537,6 @@ let convertFieldAccesFlags flags =
 let convertFieldAccess (ilMemberAccess:ILMemberAccess) =
     match ilMemberAccess with
     | ILMemberAccess.Assembly            -> FieldAttributes.Assembly
-    | ILMemberAccess.CompilerControlled  -> FieldAttributes.PrivateScope
     | ILMemberAccess.FamilyAndAssembly   -> FieldAttributes.FamANDAssem
     | ILMemberAccess.FamilyOrAssembly    -> FieldAttributes.FamORAssem
     | ILMemberAccess.Family              -> FieldAttributes.Family
@@ -1661,7 +1657,6 @@ let convertTypeAccessFlags access =
     | ILTypeDefAccess.Nested ILMemberAccess.FamilyAndAssembly -> TypeAttributes.NestedFamANDAssem
     | ILTypeDefAccess.Nested ILMemberAccess.FamilyOrAssembly -> TypeAttributes.NestedFamORAssem
     | ILTypeDefAccess.Nested ILMemberAccess.Assembly -> TypeAttributes.NestedAssembly
-    | ILTypeDefAccess.Nested ILMemberAccess.CompilerControlled -> failwith "bad type acccess"
 
 let convertTypeKind kind =
     match kind with
@@ -1686,7 +1681,6 @@ let convertEncoding encoding =
 let convertToNestedTypeAccess (ilMemberAccess:ILMemberAccess) =
     match ilMemberAccess with
     | ILMemberAccess.Assembly            -> TypeAttributes.NestedAssembly
-    | ILMemberAccess.CompilerControlled  -> failwith "Nested compiler controled."
     | ILMemberAccess.FamilyAndAssembly   -> TypeAttributes.NestedFamANDAssem
     | ILMemberAccess.FamilyOrAssembly    -> TypeAttributes.NestedFamORAssem
     | ILMemberAccess.Family              -> TypeAttributes.NestedFamily
