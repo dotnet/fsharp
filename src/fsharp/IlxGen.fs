@@ -6267,7 +6267,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                | TTyconInterface  -> ILTypeDefKind.Interface
                | TTyconEnum       -> ILTypeDefKind.Enum
                | TTyconDelegate _ -> ILTypeDefKind.Delegate
-           | TRecdRepr _ | TUnionRepr _ when tycon.IsStructOrEnumTycon -> ILTypeDefKind.Class
+           | TRecdRepr _ | TUnionRepr _ when tycon.IsStructOrEnumTycon -> ILTypeDefKind.ValueType
            | _ -> ILTypeDefKind.Class
 
         let requiresExtraField = 
@@ -6677,8 +6677,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                      NestedTypes=emptyILTypeDefs
                      Implements = ilIntfTys
                      Extends= Some (if tycon.IsStructOrEnumTycon then cenv.g.iltyp_ValueType else cenv.g.ilg.typ_Object)
-                     SecurityDecls= emptyILSecurityDecls }.WithLayout(layout).WithSerializable(isSerializable).WithSealed(true).WithEncoding(ILDefaultPInvokeEncoding.Auto)
-               let tdef = tdef.WithAccess(access)
+                     SecurityDecls= emptyILSecurityDecls }.WithLayout(layout).WithSerializable(isSerializable).WithSealed(true).WithEncoding(ILDefaultPInvokeEncoding.Auto).WithAccess(access)
+
                let tdef2 = cenv.g.eraseClassUnionDef tref tdef cuinfo
    
                // Discard the user-supplied (i.e. prim-type.fs) implementations of the get_Empty, get_IsEmpty, get_Value and get_None and Some methods. 

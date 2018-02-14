@@ -179,7 +179,7 @@ let cudefRepr =
          (fun (_td,cud) -> cud.cudNullPermitted), 
          (fun (alt:IlxUnionAlternative) -> alt.IsNullary),
          (fun (_td,cud) -> cud.cudHasHelpers = IlxUnionHasHelpers.SpecialFSharpListHelpers),
-         (fun (td:ILTypeDef,_cud) -> td.IsStructOrEnum),
+         (fun (td:ILTypeDef,_cud) -> td.IsStruct),
          (fun (alt:IlxUnionAlternative) -> alt.Name),
          (fun (_td,_cud) -> NoTypesGeneratedViaThisReprDecider),
          (fun ((_td,_cud),_nm) -> NoTypesGeneratedViaThisReprDecider))
@@ -818,7 +818,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                                 mkMethodBody(true,[],2,
                                         nonBranchingInstrsToCode 
                                           [ mkLdarg0
-                                            (if td.IsStructOrEnum then mkNormalLdflda else mkNormalLdfld)  
+                                            (if td.IsStruct then mkNormalLdflda else mkNormalLdfld)  
                                                 (mkILFieldSpecInTy (debugProxyTy,debugProxyFieldName,altTy)) 
                                             mkNormalLdfld (mkILFieldSpecInTy(altTy,fldName,fldTy))],None))
                             |> addMethodGeneratedAttrs )
@@ -910,7 +910,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
         
   
 let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addPropertyNeverAttrs, addFieldGeneratedAttrs: ILFieldDef -> ILFieldDef, addFieldNeverAttrs: ILFieldDef -> ILFieldDef, mkDebuggerTypeProxyAttribute) ilg tref (td:ILTypeDef) cud = 
-    let boxity = if td.IsStructOrEnum then ILBoxity.AsValue else ILBoxity.AsObject
+    let boxity = if td.IsStruct then ILBoxity.AsValue else ILBoxity.AsObject
     let baseTy = mkILFormalNamedTy boxity tref td.GenericParams
     let cuspec = IlxUnionSpec(IlxUnionRef(boxity,baseTy.TypeRef, cud.cudAlternatives, cud.cudNullPermitted, cud.cudHasHelpers), baseTy.GenericArgs)
     let info = (td,cud)
@@ -934,7 +934,7 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
         | SingleCase | RuntimeTypes | TailOrNull -> []
         | IntegerTag -> [ mkTagFieldId ilg cuspec ] 
 
-    let isStruct = td.IsStructOrEnum
+    let isStruct = td.IsStruct
 
     let selfFields, selfMeths, selfProps = 
 
