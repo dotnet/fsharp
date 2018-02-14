@@ -768,6 +768,17 @@ let _ = Threading.Buzz = null
           ("Threading", (6, 8, 6, 17))
           ("Test", (1, 0, 1, 0))|]
 
+[<Test>]
+let ``GetDeclarationLocation should not require physical file`` () = 
+    let input = "let abc = 1\nlet xyz = abc"
+    let file = "/home/user/Test.fsx"
+    let _, typeCheckResults = parseAndCheckScript(file, input) 
+    let location = typeCheckResults.GetDeclarationLocation(2, 13, "let xyz = abc", ["abc"]) |> Async.RunSynchronously
+    match location with
+    | FSharpFindDeclResult.DeclFound r -> Some (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn, "<=== Found here."                             ) 
+    | _                                -> Some (0          , 0            , 0        , 0          , "Not Found. Should not require physical file." )
+    |> shouldEqual                       (Some (1          , 4            , 1        , 7          , "<=== Found here."                             ))
+
 
 //-------------------------------------------------------------------------------
 
