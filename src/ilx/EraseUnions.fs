@@ -1079,9 +1079,8 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
                   MethodImpls=emptyILMethodImpls
                   Events=emptyILEvents
                   Properties=emptyILProperties
-                  CustomAttrs= emptyILCustomAttrs }.WithNestedAccess(cud.cudReprAccess))
+                  CustomAttrs= emptyILCustomAttrs }.WithNestedAccess(cud.cudReprAccess).WithAbstract(true).WithSealed(true).WithImport(false).WithEncoding(ILDefaultPInvokeEncoding.Ansi).WithHasSecurity(false))
 
-    let td = td.WithAbstract(isAbstract).WithSealed(altTypeDefs.IsEmpty).WithImport(false).WithEncoding(ILDefaultPInvokeEncoding.Ansi).WithHasSecurity(false)
     let baseTypeDef = 
        { td with 
           NestedTypes = mkILTypeDefs (Option.toList enumTypeDef @ altTypeDefs @ altDebugTypeDefs @ td.NestedTypes.AsList)
@@ -1093,6 +1092,6 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
        // The .cctor goes on the Cases type since that's where the constant fields for nullary constructors live
        |> addConstFieldInit 
 
-    baseTypeDef
+    baseTypeDef.WithAbstract(isAbstract).WithSealed(altTypeDefs.IsEmpty)
 
 
