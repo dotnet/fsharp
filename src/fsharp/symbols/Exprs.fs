@@ -273,19 +273,19 @@ module FSharpExprConvert =
         match ty with
         | TType_app (tcref,_) ->
             match tcref with
-            | x when tyconRefEq g tcref g.sbyte_tcr -> Some mkCallToSByteOperator
-            | x when tyconRefEq g tcref g.byte_tcr -> Some mkCallToByteOperator
-            | x when tyconRefEq g tcref g.int16_tcr -> Some mkCallToInt16Operator
-            | x when tyconRefEq g tcref g.uint16_tcr -> Some mkCallToUInt16Operator
-            | x when tyconRefEq g tcref g.int_tcr -> Some mkCallToIntOperator
-            | x when tyconRefEq g tcref g.int32_tcr -> Some mkCallToInt32Operator
-            | x when tyconRefEq g tcref g.uint32_tcr -> Some mkCallToUInt32Operator
-            | x when tyconRefEq g tcref g.int64_tcr -> Some mkCallToInt64Operator
-            | x when tyconRefEq g tcref g.uint64_tcr -> Some mkCallToUInt64Operator
-            | x when tyconRefEq g tcref g.float32_tcr -> Some mkCallToSingleOperator
-            | x when tyconRefEq g tcref g.float_tcr -> Some mkCallToDoubleOperator
-            | x when tyconRefEq g tcref g.nativeint_tcr -> Some mkCallToIntPtrOperator
-            | x when tyconRefEq g tcref g.unativeint_tcr -> Some mkCallToUIntPtrOperator
+            | _ when tyconRefEq g tcref g.sbyte_tcr      -> Some mkCallToSByteOperator
+            | _ when tyconRefEq g tcref g.byte_tcr       -> Some mkCallToByteOperator
+            | _ when tyconRefEq g tcref g.int16_tcr      -> Some mkCallToInt16Operator
+            | _ when tyconRefEq g tcref g.uint16_tcr     -> Some mkCallToUInt16Operator
+            | _ when tyconRefEq g tcref g.int_tcr        -> Some mkCallToIntOperator
+            | _ when tyconRefEq g tcref g.int32_tcr      -> Some mkCallToInt32Operator
+            | _ when tyconRefEq g tcref g.uint32_tcr     -> Some mkCallToUInt32Operator
+            | _ when tyconRefEq g tcref g.int64_tcr      -> Some mkCallToInt64Operator
+            | _ when tyconRefEq g tcref g.uint64_tcr     -> Some mkCallToUInt64Operator
+            | _ when tyconRefEq g tcref g.float32_tcr    -> Some mkCallToSingleOperator
+            | _ when tyconRefEq g tcref g.float_tcr      -> Some mkCallToDoubleOperator
+            | _ when tyconRefEq g tcref g.nativeint_tcr  -> Some mkCallToIntPtrOperator
+            | _ when tyconRefEq g tcref g.unativeint_tcr -> Some mkCallToUIntPtrOperator
             | _ -> None
         | _ -> None
 
