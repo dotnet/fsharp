@@ -18,7 +18,6 @@
       <Link>FSInteractiveSettings.resx</Link>
     </EmbeddedResource>
     <Compile Include="FSInteractiveSettings.fs" />
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Interactive.Settings\InternalsVisibleTo.fs" />
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="InternalsVisibleTo.fs" />
     <Compile Include="..\..\utils\reshapedreflection.fs" />

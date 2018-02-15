@@ -72,7 +72,7 @@
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr'">
+  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' != 'true' ">
     <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Framework.dll</HintPath>
     </Reference>
@@ -89,6 +89,20 @@
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' == 'true' ">
+    <Reference Include="Microsoft.Build.Framework, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Framework.14.3.0\lib\net45\Microsoft.Build.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Build, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.14.3.0\lib\net45\Microsoft.Build.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Build.Utilities.Core, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Utilities.Core.14.3.0\lib\net45\Microsoft.Build.Utilities.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Build.Tasks.Core, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Tasks.Core.14.3.0\lib\net45\Microsoft.Build.Tasks.Core.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 </Project>
