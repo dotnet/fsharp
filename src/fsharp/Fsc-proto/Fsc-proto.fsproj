@@ -438,7 +438,10 @@
     <Compile Include="..\fsc.fs">
       <Link>fsc.fs</Link>
     </Compile>
-    <Compile Include="..\MSBuildReferenceResolver.fs">
+    <Compile Include="..\SimulatedMSBuildReferenceResolver.fs" Condition="'$(MonoPackaging)' == 'true'">
+      <Link>Service/SimulatedMSBuildReferenceResolver.fs</Link>
+    </Compile>
+    <Compile Include="..\MSBuildReferenceResolver.fs"  Condition="'$(MonoPackaging)' != 'true'">
       <Link>MSBuildReferenceResolver.fs</Link>
     </Compile>
     <Compile Include="..\fscmain.fs">
@@ -473,7 +476,7 @@
       <Name>FSharp.Core</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr'">
+  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' != 'true' AND '$(OS)' != 'Unix' ">
     <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Framework.dll</HintPath>
     </Reference>
