@@ -330,10 +330,7 @@ type UsingMSBuild()  =
                 type T = N1.T<"", 1>
                 """,
                 marker = "T<",
-                f = (fun (_, result) ->
-                    Assert.IsFalse(result.Success)
-                    Assert.That(result.ErrorDescription, Does.Contain("provided type 'T'"))
-                    ),
+                f = (fun (_, result) -> Assert.IsFalse(result.Success) ),
                 addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
             )
         
