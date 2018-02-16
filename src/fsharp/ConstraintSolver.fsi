@@ -70,7 +70,8 @@ type ContextInfo =
 | FollowingPatternMatchClause of range
 /// The type equation comes from a pattern match guard.
 | PatternMatchGuard of range
-
+/// The type equation comes from a sequence expression.
+| SequenceExpression of TType
 
 exception ConstraintSolverTupleDiffLengths              of DisplayEnv * TType list * TType list * range * range
 exception ConstraintSolverInfiniteTypes                 of ContextInfo * DisplayEnv * TType * TType * range * range
