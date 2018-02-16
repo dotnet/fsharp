@@ -717,7 +717,8 @@ let ShrinkContext env oldRange newRange =
     | ContextInfo.ReturnInComputationExpression
     | ContextInfo.YieldInComputationExpression
     | ContextInfo.RuntimeTypeTest _
-    | ContextInfo.DowncastUsedInsteadOfUpcast _ ->
+    | ContextInfo.DowncastUsedInsteadOfUpcast _ 
+    | ContextInfo.SequenceExpression _ ->
         env
     | ContextInfo.CollectionElement (b,m) ->
         if m <> oldRange then env else
@@ -830,7 +831,8 @@ let ReportImplicitlyIgnoredBoolExpression denv m ty expr =
         extractNext inner
     | expr -> checkExpr m expr
 
-let UnifyUnitType cenv denv m ty expr =
+let UnifyUnitType cenv (env:TcEnv) m ty expr =
+    let denv = env.DisplayEnv
     if AddCxTypeEqualsTypeUndoIfFailed denv cenv.css m ty cenv.g.unit_ty then 
         true
     else
@@ -838,11 +840,26 @@ let UnifyUnitType cenv denv m ty expr =
         let resultTy = NewInferenceType ()
         if AddCxTypeEqualsTypeUndoIfFailed denv cenv.css m ty (domainTy --> resultTy) then 
             warning (FunctionValueUnexpected(denv, ty, m))
-        else        
-            if not (typeEquiv cenv.g cenv.g.bool_ty ty) then 
-                warning (UnitTypeExpected (denv, ty, m)) 
-            else
-                warning (ReportImplicitlyIgnoredBoolExpression denv m ty expr)
+        else
+            let reportImplicitlyDiscardError() =
+                if typeEquiv cenv.g cenv.g.bool_ty ty then 
+                    warning (ReportImplicitlyIgnoredBoolExpression denv m ty expr)
+                else
+                    warning (UnitTypeExpected (denv, ty, m))
+
+            match env.eContextInfo with
+            | ContextInfo.SequenceExpression seqTy ->
+                let lifted = mkSeqTy cenv.g ty
+                if typeEquiv cenv.g seqTy lifted then
+                    warning (Error (FSComp.SR.implicitlyDiscardedInSequenceExpression(NicePrint.prettyStringOfTy denv ty), m))
+                else
+                    if isListTy cenv.g ty || isArrayTy cenv.g ty || typeEquiv cenv.g seqTy ty then
+                        warning (Error (FSComp.SR.implicitlyDiscardedSequenceInSequenceExpression(NicePrint.prettyStringOfTy denv ty), m))
+                    else
+                        reportImplicitlyDiscardError() 
+            | _ ->
+                reportImplicitlyDiscardError()
+
         false
 
 //-------------------------------------------------------------------------
@@ -5567,7 +5584,7 @@ and TcStmtThatCantBeCtorBody cenv env tpenv expr =
 and TcStmt cenv env tpenv synExpr =
     let expr, ty, tpenv = TcExprOfUnknownType cenv env tpenv synExpr
     let m = synExpr.Range
-    let wasUnit = UnifyUnitType cenv env.DisplayEnv m ty expr
+    let wasUnit = UnifyUnitType cenv env m ty expr
     if wasUnit then
         expr, tpenv
     else
@@ -8255,6 +8272,7 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
                 // seq { ...; expr } is treated as 'seq { ... ; expr; yield! Seq.empty }'
                 // Note this means seq { ...; () } is treated as 'seq { ... ; (); yield! Seq.empty }'
                 let m = comp.Range
+                let env = { env with eContextInfo = ContextInfo.SequenceExpression genOuterTy }
                 let expr, tpenv = TcStmtThatCantBeCtorBody cenv env tpenv comp
                 Expr.Sequential(expr, mkSeqEmpty cenv env m genOuterTy, NormalSeq, SuppressSequencePointOnStmtOfSequential, m), tpenv
 
@@ -10413,7 +10431,7 @@ and TcNormalizedBinding declKind (cenv:cenv) env tpenv overallTy safeThisValOpt 
                 else TcExprThatCantBeCtorBody cenv overallExprTy envinner tpenv rhsExpr)
 
         if bkind = StandaloneExpression && not cenv.isScript then 
-            UnifyUnitType cenv env.DisplayEnv mBinding overallPatTy rhsExprChecked |> ignore<bool>
+            UnifyUnitType cenv env mBinding overallPatTy rhsExprChecked |> ignore<bool>
 
         // Fix up the r.h.s. expression for 'fixed'
         let rhsExprChecked =
