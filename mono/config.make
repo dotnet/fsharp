@@ -21,7 +21,6 @@ debugvars:
 	@echo monobindir=$(monobindir)
 
 TargetDotnetProfile = net40
-CONFIG = release
 Configuration = Release
 DISTVERSION = 201011
 
