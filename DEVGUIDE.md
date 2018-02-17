@@ -79,10 +79,6 @@ Then:
 
 Full testing is not yet enabled on Linux, nor is a .NET Core build of the compiler.
 
-You can alternatively use
-
-    ./build.sh
-
 ###  Developing the F# Compiler (macOS/Mono)
 
 Install XCode command line tools (or homebrew equivalents) and Mono or Visual Studio for Mac, then
