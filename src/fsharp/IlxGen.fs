@@ -4969,7 +4969,8 @@ and GenMarshal cenv attribs =
                error(Error(FSComp.SR.ilCustomMarshallersCannotBeUsedInFSharp(),m))
                (* ILNativeType.Custom of bytes * string * string * bytes (* GUID,nativeTypeName,custMarshallerName,cookieString *) *)
                //ILNativeType.Error  
-            | 0x2D -> ILNativeType.Error  
+            | 0x2D -> ILNativeType.Error
+            | 0x30 -> ILNativeType.LPUTF8STR
             | _ -> ILNativeType.Empty
         Some(decodeUnmanagedType unmanagedType), otherAttribs
     | Some (Attrib(_,_,_,_,_,_,m))  -> 

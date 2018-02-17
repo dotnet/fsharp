@@ -1130,6 +1130,7 @@ type ILNativeType =
     | LPSTR
     | LPWSTR
     | LPTSTR
+    | LPUTF8STR
     | ByValStr
     | TBSTR
     | LPSTRUCT
