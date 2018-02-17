@@ -66,7 +66,7 @@ Building ``FSharp.sln`` builds nearly everything. However building portable prof
 FSharp.Core.dll is not included.  If you are just developing the core compiler and library
 then building the solution will be enough.
 
-###  Developing the F# Compiler (Linux/Mono)
+###  Developing the F# Compiler (Linux)
 
 For Linux/Mono, follow [these instructions](http://www.mono-project.com/docs/getting-started/install/linux/). Also you may need:
 
@@ -75,16 +75,41 @@ For Linux/Mono, follow [these instructions](http://www.mono-project.com/docs/get
 Then:
     
     make
+
+Then to replace your machine-wide installation:
+
     sudo make install
 
 Full testing is not yet enabled on Linux, nor is a .NET Core build of the compiler.
 
-###  Developing the F# Compiler (macOS/Mono)
+###  Developing the F# Compiler (macOS)
 
-Install XCode command line tools (or homebrew equivalents) and Mono or Visual Studio for Mac, then
+Install XCode command line tools (or homebrew equivalents) and Mono or Visual Studio for Mac.
+
+Then:
 
     make
+
+Then to replace your machine-wide installation:
+
     sudo make install
+
+
+###  Developing the F# Compiler (Linux or macOS and .NET Core)
+
+Install [the latest .NET SDK](https://www.microsoft.com/net/download/).  Then use
+
+    src/buildfromsource.sh 
+
+Outputs are placed in 
+
+    BuildFromSource/Debug/...
+    BuildFromSource/Release/...
+
+This uses an installed .NET SDK 2.0 to build the various duplicated project 
+    
+Testing the .NET Core version of the F# compiler on mwcOS and Linux is TBD.
+
 
 ### Developing the Visual F# IDE Tools (Windows Only)
 
