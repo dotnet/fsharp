@@ -26,83 +26,68 @@ def static getBuildJobName(def configuration, def os) {
         
         configurations.each { configuration ->
 
-            def lowerConfiguration = configuration.toLowerCase()
-
-            // Calculate job name
             def jobName = getBuildJobName(configuration, os)
-
-            def buildPath = '';
-            if (os == 'Windows_NT') {
-                buildPath = ".\\"
-            }
-            else {
-                buildPath = "./"
-            }
             def buildCommand = '';
-            def buildFlavor= '';
+            def buildOutput= '';
+            def buildArgs= '';
 
             if (configuration == "Release_fcs" && branch != "dev15.5") {
                 // Build and test FCS NuGet package
-                buildPath = "./fcs/"
-                buildFlavor = ""
+                buildOutput = "Release"
                 if (os == 'Windows_NT') {
-                    build_args = "TestAndNuget"
+                    buildCommand = ".\\fcs\\build.cmd TestAndNuget"
                 }
                 else {
-                    build_args = "Build"
+                    buildCommand = "./fcs/build.sh Build"
                 }
             }
             else if (configuration == "Debug_default") {
-                buildFlavor = "debug"
-                build_args = ""
+                buildOutput = "Debug"
+                if (os == 'Windows_NT') {
+                    buildCommand = "build.cmd debug"
+                }
+                else {
+                    buildCommand = "make Configuration=Debug"
+                }
             }
             else if (configuration == "Release_default") {
-                buildFlavor = "release"
-                build_args = ""
+                buildOutput = "Release"
+                if (os == 'Windows_NT') {
+                    buildCommand = "build.cmd release"
+                }
+                else {
+                    buildCommand = "make Configuration=Release"
+                }
             }
             else if (configuration == "Release_net40_test") {
-                buildFlavor = "release"
-                build_args = "net40 test"
+                buildOutput = "Release"
+                buildCommand = "build.cmd release net40 test"
             }
-            else if (configuration == "Release_ci_part1") {
-                buildFlavor = "release"
-                build_args = "ci_part1"
+            else if (onfiguration == "Release_ci_part1") {
+                buildOutput = "Release"
+                buildCommand = "build.cmd release ci_part1"
             }
             else if (configuration == "Release_ci_part2") {
-                buildFlavor = "release"
-                build_args = "ci_part2"
+                buildOutput = "Release"
+                buildCommand = "build.cmd release ci_part2"
             }
             else if (configuration == "Release_ci_part3") {
-                buildFlavor = "release"
-                build_args = "ci_part3"
+                buildOutput = "Release"
+                buildCommand = "build.cmd release ci_part3"
             }
             else if (configuration == "Release_net40_no_vs") {
-                buildFlavor = "release"
-                build_args = "net40"
-            }
-            else {
-                buildFlavor = "release"
-                build_args = "none"
+                buildOutput = "Release"
+                buildCommand = "build.cmd release net40"
             }
 
-            if (os == 'Windows_NT') {
-                buildCommand = "${buildPath}build.cmd ${buildFlavor} ${build_args}"
-            }
-            else {
-                buildCommand = "${buildPath}build.sh ${buildFlavor} ${build_args}"
-            }
 
             def newJobName = Utilities.getFullJobName(project, jobName, isPullRequest)
             def newJob = job(newJobName) {
                 steps {
                     if (os == 'Windows_NT') {
-                        batchFile("""
-echo *** Build Visual F# Tools ***
-
-${buildPath}build.cmd ${buildFlavor} ${build_args}""")
+                        batchFile(buildCommand)
                     }
                     else {
-                        // Shell
                         shell(buildCommand)
                     }
                 }
@@ -115,15 +100,8 @@ ${buildPath}build.cmd ${buildFlavor} ${build_args}""")
             Utilities.setMachineAffinity(newJob, os, affinity)
             Utilities.standardJobSetup(newJob, project, isPullRequest, "*/${branch}")
 
-            if (build_args != "none") {
-                Utilities.addArchival(newJob, "tests/TestResults/*.*", "", skipIfNoTestFiles, false)
-                if (configuration == "Release_fcs") {
-                    Utilities.addArchival(newJob, "Release/**")
-                }
-                else {
-                    Utilities.addArchival(newJob, "${buildFlavor}/**")
-                }
-            }
+            Utilities.addArchival(newJob, "tests/TestResults/*.*", "", skipIfNoTestFiles, false)
+            Utilities.addArchival(newJob, "${buildOutput}/**")
             if (isPullRequest) {
                 Utilities.addGithubPRTriggerForBranch(newJob, branch, "${os} ${configuration} Build")
             }

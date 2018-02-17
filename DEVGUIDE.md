@@ -70,27 +70,46 @@ then building the solution will be enough.
 
 For Linux/Mono, follow [these instructions](http://www.mono-project.com/docs/getting-started/install/linux/). Also you may need:
 
-    sudo apt-get install mono-complete autoconf libtool pkg-config make git automake
+    sudo apt-get install mono-complete make git
 
 Then:
     
-    ./autoconf.sh --prefix /usr
     make
-    make install
+
+Then to replace your machine-wide installation:
+
+    sudo make install
 
 Full testing is not yet enabled on Linux, nor is a .NET Core build of the compiler.
 
-You can alternatively use
-
-    ./build.sh
-
 ###  Developing the F# Compiler (macOS)
 
-Install Xamarin Studio, then
+Install XCode command line tools (or homebrew equivalents) and Mono or Visual Studio for Mac.
 
-    ./autogen.sh --prefix=/Library/Frameworks/Mono.framework/Versions/Current/
+Then:
+
     make
+
+Then to replace your machine-wide installation:
+
     sudo make install
+
+
+###  Developing the F# Compiler (Linux or macOS and .NET Core)
+
+Install [the latest .NET SDK](https://www.microsoft.com/net/download/).  Then use
+
+    src/buildfromsource.sh 
+
+Outputs are placed in 
+
+    BuildFromSource/Debug/...
+    BuildFromSource/Release/...
+
+This uses an installed .NET SDK 2.0 to build the various duplicated project 
+    
+Testing the .NET Core version of the F# compiler on mwcOS and Linux is TBD.
+
 
 ### Developing the Visual F# IDE Tools (Windows Only)
 
