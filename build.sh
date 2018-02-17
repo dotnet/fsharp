@@ -280,10 +280,10 @@ _msbuildexe="msbuild"
 msbuildflags=""
 
 # Perform any necessary setup and system configuration prior to running builds.
-./before_install.sh
+./mono/prepare-mono.sh
 rc=$?;
 if [ "$rc" != "0" ]; then
-    printf "before_install script failed.\n"
+    printf "prepare-mono script failed.\n"
     exit $rc
 fi
 
@@ -363,20 +363,8 @@ _architecture=win7-x64
 if [ "$BUILD_PROTO" = "1" ]; then
     rm -rfd Proto
 
-    if [ "$BUILD_PROTO_WITH_CORECLR_LKG" = "1" ]; then
-        { pushd ./lkg/fsc && eval "$_dotnetexe restore" && popd; } || failwith "dotnet restore failed"
-        { pushd ./lkg/fsi && eval "$_dotnetexe restore" && popd; } || failwith "dotnet restore failed"
-        
-        { pushd ./lkg/fsc && eval "$_dotnetexe publish project.json --no-build -o ${_scriptdir}Tools/lkg -r $_architecture" && popd; } || failwith "dotnet publish failed"
-        { pushd ./lkg/fsi && eval "$_dotnetexe publish project.json --no-build -o ${_scriptdir}Tools/lkg -r $_architecture" && popd; } || failwith "dotnet publish failed"
+    { printeval "$_msbuildexe $msbuildflags src/fsharp-proto-build.proj  /p:BUILD_PROTO_WITH_CORECLR_LKG=$BUILD_PROTO_WITH_CORECLR_LKG /p:Configuration=Proto /p:DisableLocalization=true"; } || failwith "compiler proto build failed"
 
-        { printeval "$_msbuildexe $msbuildflags src/fsharp-proto-build.proj /p:Configuration=Proto /p:DisableLocalization=true"; } || failwith "compiler proto build failed"
-
-#        { printeval "$_ngenexe install Proto/net40/bin/fsc-proto.exe /nologo"; } || failwith "NGen of proto failed"
-    else
-        # Build proto-compiler and libs
-        { printeval "$_msbuildexe $msbuildflags src/fsharp-proto-build.proj /p:Configuration=Proto /p:DisableLocalization=true"; } || failwith "compiler proto build failed"
-    fi
 fi
 
 

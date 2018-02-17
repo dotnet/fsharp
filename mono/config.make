@@ -2,15 +2,23 @@ DEFAULT: all
 
 .PHONY: install-sdk-lib
 
-prefix := @prefix@
-topdir := @abs_top_srcdir@/
-builddir := @abs_top_builddir@/
+monocmd := $(shell which mono)
+monocmddir := $(shell dirname $(monocmd))
+prefix := $(shell (cd $(monocmddir)/..; pwd))
+topdir := $(strip $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))/..)))
+builddir := ${topdir}
 libdir := ${prefix}/lib/
 bindir := ${prefix}/bin/
-monobindir := @MONOBINDIR@
-monolibdir := @MONOLIBDIR@
-
+monobindir := ${bindir}
+monolibdir := ${libdir}
 monodir := ${libdir}mono
+
+debugvars:
+	@echo prefix=$(prefix)
+	@echo topdir=$(topdir)
+	@echo monodir=$(monodir)
+	@echo monolibdir=$(monolibdir)
+	@echo monobindir=$(monobindir)
 
 TargetDotnetProfile = net40
 CONFIG = release
@@ -95,7 +103,7 @@ INSTALL = $(SHELL) $(topdir)/mono/install-sh
 INSTALL_BIN = $(INSTALL) -c -m 755
 INSTALL_LIB = $(INSTALL_BIN)
 
-MSBUILD = @MSBUILD@
+MSBUILD = msbuild
 
 EXTRA_DIST = configure
 NO_DIST = .gitignore lib/debug lib/proto lib/release
@@ -127,7 +135,7 @@ install-sdk-lib:
 	@mkdir -p $(DESTDIR)$(monodir)/fsharp
 	@if test "x$(DELAY_SIGN)" = "x1"; then \
 	    echo "Signing $(outdir)$(ASSEMBLY) with Mono key"; \
-	    $(monobindir)/sn -q -R $(outdir)$(ASSEMBLY) $(topdir)mono/mono.snk; \
+	    $(monobindir)sn -q -R $(outdir)$(ASSEMBLY) $(topdir)mono/mono.snk; \
 	fi
 	@if test x-$(NAME) = x-FSharp.Compiler.Private; then \
 	    echo "Installing extra dependency System.Collections.Immutable.dll to $(DESTDIR)$(monodir)/fsharp/"; \

@@ -4,6 +4,9 @@ include $(topsrcdir)mono/config.make
 
 restore:
 	MONO_ENV_OPTIONS=$(monoopts) mono .nuget/NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget/NuGet.Config
+	chmod u+x packages/FSharp.Compiler.Tools.4.1.27/tools/fsi.exe 
+	chmod u+x packages/FsLexYacc.7.0.6/build/fslex.exe
+	chmod u+x packages/FsLexYacc.7.0.6/build/fsyacc.exe
 
 # Make the proto using the bootstrap, then make the final compiler using the proto
 # We call MAKE sequentially because we don't want build-final to explicitly depend on build-proto,
