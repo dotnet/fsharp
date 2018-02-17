@@ -2,16 +2,17 @@ DEFAULT: all
 
 .PHONY: install-sdk-lib
 
-monocmd := $(shell which mono)
-monocmddir := $(shell dirname $(monocmd))
-prefix := $(shell (cd $(monocmddir)/..; pwd))
-topdir := $(strip $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))/..)))
-builddir := ${topdir}
-libdir := ${prefix}/lib/
-bindir := ${prefix}/bin/
-monobindir := ${bindir}
-monolibdir := ${libdir}
-monodir := ${libdir}mono
+monocmd = $(shell which mono)
+monocmddir = $(dir $(monocmd))
+prefix = $(shell (cd $(monocmddir)/..; pwd))
+thisdir = $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
+topdir = $(thisdir)../
+builddir = $(topdir)
+libdir = $(prefix)/lib/
+bindir = $(prefix)/bin/
+monobindir = $(bindir)
+monolibdir = $(libdir)
+monodir = $(monolibdir)mono
 
 debugvars:
 	@echo prefix=$(prefix)
