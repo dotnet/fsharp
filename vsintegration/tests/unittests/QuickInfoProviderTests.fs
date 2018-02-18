@@ -1,7 +1,7 @@
 
 // To run the tests in this file:
 //
-// Technique 1: Compile VisualFSharp.Unittests.dll and run it as a set of unit tests
+// Technique 1: Compile VisualFSharp.UnitTests.dll and run it as a set of unit tests
 //
 // Technique 2:
 //
@@ -11,8 +11,8 @@
 //   and capturing large amounts of structured output.
 (*
     cd Debug\net40\bin
-    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.Unittests.exe -g --optimize- -r .\FSharp.Compiler.Private.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\unittests\CompletionProviderTests.fs 
-    .\VisualFSharp.Unittests.exe 
+    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.UnitTests.exe -g --optimize- -r .\FSharp.Compiler.Private.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\unittests\CompletionProviderTests.fs 
+    .\VisualFSharp.UnitTests.exe 
 *)
 // Technique 3: 
 // 
@@ -34,7 +34,7 @@ open UnitTests.TestLib.LanguageService
 
 let filePath = "C:\\test.fs"
 
-let internal options = { 
+let internal projectOptions = { 
     ProjectFileName = "C:\\test.fsproj"
     SourceFiles =  [| filePath |]
     ReferencedProjects = [| |]
@@ -97,8 +97,9 @@ Full name: System.Console"
         let caretPosition = fileContents.IndexOf(symbol)
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
         
+        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
         let quickInfo =
-            FSharpQuickInfoProvider.ProvideQuickInfo(checker, documentId, SourceText.From(fileContents), filePath, caretPosition, options, 0)
+            FSharpQuickInfoProvider.ProvideQuickInfo(checker, documentId, SourceText.From(fileContents), filePath, caretPosition, parsingOptions, projectOptions, 0)
             |> Async.RunSynchronously
         
         let actual = quickInfo |> Option.map (fun (text, _, _, _) -> getQuickInfoText text)
@@ -227,8 +228,9 @@ let res8 = abs 5.0<kg>
         let caretPosition = fileContents.IndexOf(symbol) + symbol.Length - 1
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
         
+        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
         let quickInfo =
-            FSharpQuickInfoProvider.ProvideQuickInfo(checker, documentId, SourceText.From(fileContents), filePath, caretPosition, options, 0)
+            FSharpQuickInfoProvider.ProvideQuickInfo(checker, documentId, SourceText.From(fileContents), filePath, caretPosition, parsingOptions, projectOptions, 0)
             |> Async.RunSynchronously
         
         let actual = quickInfo |> Option.map (fun (text, _, _, _) -> getQuickInfoText text)

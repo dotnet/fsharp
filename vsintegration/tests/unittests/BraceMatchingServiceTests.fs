@@ -17,7 +17,7 @@ open UnitTests.TestLib.LanguageService
 [<TestFixture>][<Category "Roslyn Services">]
 type BraceMatchingServiceTests()  =
     let fileName = "C:\\test.fs"
-    let options: FSharpProjectOptions = { 
+    let projectOptions: FSharpProjectOptions = { 
         ProjectFileName = "C:\\test.fsproj"
         SourceFiles =  [| fileName |]
         ReferencedProjects = [| |]
@@ -36,7 +36,8 @@ type BraceMatchingServiceTests()  =
         let position = fileContents.IndexOf(marker)
         Assert.IsTrue(position >= 0, "Cannot find marker '{0}' in file contents", marker)
 
-        match FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, options, position, "UnitTest") |> Async.RunSynchronously with
+        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
+        match FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, parsingOptions, position, "UnitTest") |> Async.RunSynchronously with
         | None -> ()
         | Some(left, right) -> Assert.Fail("Found match for brace '{0}'", marker)
         
@@ -48,7 +49,8 @@ type BraceMatchingServiceTests()  =
         Assert.IsTrue(startMarkerPosition >= 0, "Cannot find start marker '{0}' in file contents", startMarkerPosition)
         Assert.IsTrue(endMarkerPosition >= 0, "Cannot find end marker '{0}' in file contents", endMarkerPosition)
         
-        match FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, options, startMarkerPosition, "UnitTest") |> Async.RunSynchronously with
+        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
+        match FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, parsingOptions, startMarkerPosition, "UnitTest") |> Async.RunSynchronously with
         | None -> Assert.Fail("Didn't find a match for start brace at position '{0}", startMarkerPosition)
         | Some(left, right) ->
             let endPositionInRange(range) = 
@@ -169,9 +171,10 @@ let main argv =
         // https://github.com/Microsoft/visualfsharp/issues/2092
         let sourceText = SourceText.From(fileContents)
 
+        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
         matchingPositions
         |> Array.iter (fun position ->
-            match FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, options, position, "UnitTest") |> Async.RunSynchronously with
+            match FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, parsingOptions, position, "UnitTest") |> Async.RunSynchronously with
             | Some _ -> ()
             | None ->
                 match position with

@@ -804,7 +804,7 @@ namespace Microsoft.FSharp.Core
             //------------------------------------------------------------------------- 
 
             let FailGenericComparison (obj: obj)  = 
-                raise (new System.ArgumentException(SR.GetString1(SR.genericCompareFail1, obj.GetType().ToString())))
+                raise (new System.ArgumentException(String.Format(SR.GetString(SR.genericCompareFail1), obj.GetType().ToString())))
             
                
             /// This type has two instances - fsComparerER and fsComparerThrow.
@@ -3157,7 +3157,7 @@ namespace Microsoft.FSharp.Collections
         // similar to 'take' but with n representing an index, not a number of elements
         // and with exceptions matching array slicing
         let sliceTake n l =
-            if n < 0 then outOfRange()
+            if n < 0 then [] else
             match l with
             | [] -> outOfRange()
             | x::xs ->

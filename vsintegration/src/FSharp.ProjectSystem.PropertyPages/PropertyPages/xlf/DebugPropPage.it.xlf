@@ -1,0 +1,92 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="it" original="../DebugPropPage.resx">
+    <body>
+      <trans-unit id="StartActionLabel.Text">
+        <source>Start Action</source>
+        <target state="translated">Azione di avvio</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="rbStartProject.Text">
+        <source>&amp;Start project</source>
+        <target state="translated">A&amp;vvia progetto</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="rbStartProgram.Text">
+        <source>Start e&amp;xternal program:</source>
+        <target state="translated">Avvia &amp;programma esterno:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StartProgram.AccessibleName">
+        <source>Program to start</source>
+        <target state="translated">Programma da avviare</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StartProgramBrowse.AccessibleName">
+        <source>Browse for external program</source>
+        <target state="translated">Cerca programma esterno</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StartProgramBrowse.Text">
+        <source>...</source>
+        <target state="translated">...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StartOptionsLabel.Text">
+        <source>Start Options</source>
+        <target state="translated">Opzioni di avvio</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CommandLineArgsLabel.Text">
+        <source>Comma&amp;nd line arguments:</source>
+        <target state="translated">Argomenti della riga di coman&amp;do:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="WorkingDirLabel.Text">
+        <source>Wor&amp;king directory:</source>
+        <target state="translated">Dire&amp;ctory di lavoro:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoteDebugEnabled.Text">
+        <source>Use remote m&amp;achine</source>
+        <target state="translated">&amp;Usa computer remoto</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoteDebugMachine.AccessibleName">
+        <source>Remote Machine Name:</source>
+        <target state="translated">Nome del computer remoto:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StartWorkingDirectoryBrowse.AccessibleName">
+        <source>Browse for working directory</source>
+        <target state="translated">Cerca directory di lavoro</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StartWorkingDirectoryBrowse.Text">
+        <source>...</source>
+        <target state="translated">...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="EnableDebuggerLabel.Text">
+        <source>Enable Debuggers</source>
+        <target state="translated">Abilita debugger</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="EnableSQLServerDebugging.Text">
+        <source>Enable SQ&amp;L Server debugging</source>
+        <target state="translated">Abilita debug SQ&amp;L Server</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseVSHostingProcess.Text">
+        <source>Enable the Visual Studio h&amp;osting process</source>
+        <target state="translated">Abilita processo di h&amp;osting di Visual Studio</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="EnableUnmanagedDebugging.Text">
+        <source>Enable &amp;unmanaged code debugging</source>
+        <target state="translated">Abilita debug codice non &amp;gestito</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

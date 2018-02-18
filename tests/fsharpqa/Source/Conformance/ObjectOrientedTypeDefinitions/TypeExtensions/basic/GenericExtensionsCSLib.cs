@@ -36,14 +36,14 @@ namespace CSExtensionMethods
         static public T1 ExtendTupleItem1<T1, T2>(this Tuple<T1, T2> s1) { return s1.Item1; }
         static public T2 ExtendTupleItem2<T1, T2>(this Tuple<T1, T2> s1) { return s1.Item2; }
 
-        static public T1 Item1<T1, T2>(this Tuple<T1, T2> s1) { return s1.Item1; }
-        static public T1 Item1<T1, T2, T3>(this Tuple<T1, T2, T3> s1) { return s1.Item1; }
-        static public T1 Item1<T1, T2, T3, T4>(this Tuple<T1, T2, T3, T4> s1) { return s1.Item1; }
-        static public T1 Item1<T1, T2, T3, T4, T5>(this Tuple<T1, T2, T3, T4, T5> s1) { return s1.Item1; }
-        static public T1 Item1<T1, T2, T3, T4, T5, T6>(this Tuple<T1, T2, T3, T4, T5, T6> s1) { return s1.Item1; }
-        static public T1 Item1<T1, T2, T3, T4, T5, T6, T7>(this Tuple<T1, T2, T3, T4, T5, T6, T7> s1) { return s1.Item1; }
-        static public T1 Item1<T1, T2, T3, T4, T5, T6, T7, T8>(this Tuple<T1, T2, T3, T4, T5, T6, T7, Tuple<T8>> s1) { return s1.Item1; }
-        static public T1 Item1<T1, T2, T3, T4, T5, T6, T7, T8, T9>(this Tuple<T1, T2, T3, T4, T5, T6, T7, Tuple<T8, T9>> s1) { return s1.Item1; }
+        static public T1 GItem1<T1, T2>(this Tuple<T1, T2> s1) { return s1.Item1; }
+        static public T1 GItem1<T1, T2, T3>(this Tuple<T1, T2, T3> s1) { return s1.Item1; }
+        static public T1 GItem1<T1, T2, T3, T4>(this Tuple<T1, T2, T3, T4> s1) { return s1.Item1; }
+        static public T1 GItem1<T1, T2, T3, T4, T5>(this Tuple<T1, T2, T3, T4, T5> s1) { return s1.Item1; }
+        static public T1 GItem1<T1, T2, T3, T4, T5, T6>(this Tuple<T1, T2, T3, T4, T5, T6> s1) { return s1.Item1; }
+        static public T1 GItem1<T1, T2, T3, T4, T5, T6, T7>(this Tuple<T1, T2, T3, T4, T5, T6, T7> s1) { return s1.Item1; }
+        static public T1 GItem1<T1, T2, T3, T4, T5, T6, T7, T8>(this Tuple<T1, T2, T3, T4, T5, T6, T7, Tuple<T8>> s1) { return s1.Item1; }
+        static public T1 GItem1<T1, T2, T3, T4, T5, T6, T7, T8, T9>(this Tuple<T1, T2, T3, T4, T5, T6, T7, Tuple<T8, T9>> s1) { return s1.Item1; }
 
         /* methods that add extra type parameters not captured by the 'this' argument */
         static public U ExtendGenericIgnore<T, U>(this T s1, U s2) { return s2; }

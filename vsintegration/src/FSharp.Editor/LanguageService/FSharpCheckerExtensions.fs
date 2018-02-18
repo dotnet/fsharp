@@ -8,21 +8,20 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open TypedAstUtils
 
 type CheckResults =
     | Ready of (FSharpParseFileResults * FSharpCheckFileResults) option
     | StillRunning of Async<(FSharpParseFileResults * FSharpCheckFileResults) option>
     
 type FSharpChecker with
-    member checker.ParseDocument(document: Document, options: FSharpProjectOptions, sourceText: string, userOpName: string) =
+    member checker.ParseDocument(document: Document, parsingOptions: FSharpParsingOptions, sourceText: string, userOpName: string) =
         asyncMaybe {
-            let! fileParseResults = checker.ParseFileInProject(document.FilePath, sourceText, options, userOpName=userOpName) |> liftAsync
+            let! fileParseResults = checker.ParseFile(document.FilePath, sourceText, parsingOptions, userOpName=userOpName) |> liftAsync
             return! fileParseResults.ParseTree
         }
 
-    member checker.ParseDocument(document: Document, options: FSharpProjectOptions, sourceText: SourceText, userOpName: string) =
-        checker.ParseDocument(document, options, sourceText=sourceText.ToString(), userOpName=userOpName)
+    member checker.ParseDocument(document: Document, parsingOptions: FSharpParsingOptions, sourceText: SourceText, userOpName: string) =
+        checker.ParseDocument(document, parsingOptions, sourceText=sourceText.ToString(), userOpName=userOpName)
 
     member checker.ParseAndCheckDocument(filePath: string, textVersionHash: int, sourceText: string, options: FSharpProjectOptions, allowStaleResults: bool, userOpName: string) =
         let parseAndCheckFile =
@@ -108,15 +107,15 @@ type FSharpChecker with
                         match symbolUse.Symbol with
                         // Make sure that unsafe manipulation isn't executed if unused opens are disabled
                         | _ when not checkForUnusedOpens -> None
-                        | TypedAstPatterns.MemberFunctionOrValue func when func.IsExtensionMember ->
+                        | Symbol.MemberFunctionOrValue func when func.IsExtensionMember ->
                             if func.IsProperty then
                                 let fullNames =
                                     [|  if func.HasGetterMethod then
-                                            match func.GetterMethod.EnclosingEntity with 
+                                            match func.GetterMethod.DeclaringEntity with 
                                             | Some e -> yield e.TryGetFullName()
                                             | None -> ()
                                         if func.HasSetterMethod then
-                                            match func.SetterMethod.EnclosingEntity with 
+                                            match func.SetterMethod.DeclaringEntity with 
                                             | Some e -> yield e.TryGetFullName()
                                             | None -> ()
                                     |]
@@ -125,9 +124,9 @@ type FSharpChecker with
                                 | [||]  -> None 
                                 | _     -> Some fullNames
                             else 
-                                match func.EnclosingEntity.Value with
+                                match func.DeclaringEntity with
                                 // C# extension method
-                                | TypedAstPatterns.FSharpEntity TypedAstPatterns.Class ->
+                                | Some (Symbol.FSharpEntity Symbol.Class) ->
                                     let fullName = symbolUse.Symbol.FullName.Split '.'
                                     if fullName.Length > 2 then
                                         (* For C# extension methods FCS returns full name including the class name, like:
@@ -142,9 +141,9 @@ type FSharpChecker with
                                     else None
                                 | _ -> None
                         // Operators
-                        | TypedAstPatterns.MemberFunctionOrValue func ->
+                        | Symbol.MemberFunctionOrValue func ->
                             match func with
-                            | TypedAstPatterns.Constructor _ ->
+                            | Symbol.Constructor _ ->
                                 // full name of a constructor looks like "UnusedSymbolClassifierTests.PrivateClass.( .ctor )"
                                 // to make well formed full name parts we cut "( .ctor )" from the tail.
                                 let fullName = func.FullName
@@ -160,16 +159,16 @@ type FSharpChecker with
                                         | Some idents -> yield String.concat "." idents
                                         | None -> ()
                                     |]
-                        | TypedAstPatterns.FSharpEntity e ->
+                        | Symbol.FSharpEntity e ->
                             match e with
-                            | e, TypedAstPatterns.Attribute, _ ->
+                            | e, Symbol.Attribute, _ ->
                                 e.TryGetFullName ()
                                 |> Option.map (fun fullName ->
                                     [| fullName; fullName.Substring(0, fullName.Length - "Attribute".Length) |])
                             | e, _, _ -> 
                                 e.TryGetFullName () |> Option.map (fun fullName -> [| fullName |])
-                        | TypedAstPatterns.RecordField _
-                        | TypedAstPatterns.UnionCase _ as symbol ->
+                        | Symbol.RecordField _
+                        | Symbol.UnionCase _ as symbol ->
                             Some [| let fullName = symbol.FullName
                                     yield fullName
                                     let idents = fullName.Split '.'

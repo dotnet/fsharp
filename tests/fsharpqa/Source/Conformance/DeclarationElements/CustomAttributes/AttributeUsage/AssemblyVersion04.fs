@@ -7,7 +7,7 @@ do
 
 let asm = System.Reflection.Assembly.GetExecutingAssembly().GetName()
 
-let defaultRevision = (uint16)(System.DateTime.Now.TimeOfDay.TotalSeconds / 2.0) % System.UInt16.MaxValue - 1us
+let defaultRevision = (uint16)(System.DateTime.UtcNow.TimeOfDay.TotalSeconds / 2.0) % System.UInt16.MaxValue - 1us
 
 printfn "%s" <| asm.Version.ToString()
 let success =

@@ -66,7 +66,7 @@ type internal IFSharpSource_DEPRECATED =
     /// Store a ProjectSite for obtaining a task provider
     abstract ProjectSite : IProjectSite option with get,set
     /// Specify the files that should trigger a rebuild for the project behind this source
-    abstract SetDependencyFiles : string list -> bool
+    abstract SetDependencyFiles : string[] -> bool
     
     
 
@@ -293,7 +293,7 @@ type internal FSharpIntelliSenseToAppearAdornment_DEPRECATED(view: IWpfTextView,
                         else
                             new SnapshotSpan(view.TextSnapshot, Span.FromBounds(i-1, i))
                     let g = textViewLines.GetMarkerGeometry(span)
-                    let tb = new System.Windows.Controls.TextBlock(Text=Strings.GetString "IntelliSenseLoading", FontFamily=System.Windows.Media.FontFamily(fontFamily), FontSize=pointSize)
+                    let tb = new System.Windows.Controls.TextBlock(Text=Strings.IntelliSenseLoading(), FontFamily=System.Windows.Media.FontFamily(fontFamily), FontSize=pointSize)
                     tb.Foreground <- excludedCodeForegroundColorBrush
                     let sp = new System.Windows.Controls.StackPanel(Orientation=System.Windows.Controls.Orientation.Horizontal)
                     System.Windows.Documents.TextElement.SetForeground(sp, excludedCodeForegroundColorBrush.GetAsFrozen() :?> System.Windows.Media.Brush)
@@ -350,13 +350,13 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                 [|
                     match iSource.ProjectSite with
                     | Some pi -> 
-                        yield! pi.CompilerFlags () |> Array.filter(fun flag -> flag.StartsWith("--define:"))
+                        yield! pi.CompilationOptions |> Array.filter(fun flag -> flag.StartsWith("--define:"))
                     | None -> ()
                     yield "--noframework"
 
                 |]
             // get a sync parse of the file
-            let co = 
+            let co, _ = 
                 { ProjectFileName = fileName + ".dummy.fsproj"
                   SourceFiles = [| fileName |]
                   OtherOptions = flags
@@ -368,8 +368,9 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                   OriginalLoadReferences = []
                   ExtraProjectInfo=None 
                   Stamp = None }
+                |> ic.GetParsingOptionsFromProjectOptions
 
-            ic.ParseFileInProject(fileName, source.GetText(), co) |> Async.RunSynchronously
+            ic.ParseFile(fileName, source.GetText(), co) |> Async.RunSynchronously
 
         override source.GetCommentFormat() = 
             let mutable info = new CommentInfo()

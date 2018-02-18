@@ -2,15 +2,9 @@
 
 module internal Microsoft.FSharp.Compiler.CompileOptions
 
-open Internal.Utilities
 open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.CompileOps
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Import
 open Microsoft.FSharp.Compiler.Optimizer
@@ -68,6 +62,9 @@ val DisplayBannerText : TcConfigBuilder -> unit
 val GetCoreFscCompilerOptions     : TcConfigBuilder -> CompilerOptionBlock list
 val GetCoreFsiCompilerOptions     : TcConfigBuilder -> CompilerOptionBlock list
 val GetCoreServiceCompilerOptions : TcConfigBuilder -> CompilerOptionBlock list
+
+/// Apply args to TcConfigBuilder and return new list of source files
+val ApplyCommandLineArgs: tcConfigB: TcConfigBuilder * sourceFiles: string list * argv: string list -> string list
 
 // Expose the "setters" for some user switches, to enable setting of defaults
 val SetOptimizeSwitch : TcConfigBuilder -> OptionSwitch -> unit

@@ -2,17 +2,18 @@
 
 //------- DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS ---------------
 
+//------- DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS ---------------
+
 namespace Microsoft.VisualStudio.FSharp.LanguageService
 
 open System
-open System.Runtime.InteropServices
-open Microsoft.VisualStudio
 open Microsoft.VisualStudio.TextManager.Interop 
 open Microsoft.VisualStudio.Text
-open Microsoft.VisualStudio.OLE.Interop
-open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.VisualStudio.FSharp.LanguageService.SiteProvider
+
+
+#nowarn "44" // use of obsolete CheckFileInProjectAllowingStaleCachedResults
 
 //
 // Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
@@ -99,7 +100,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                             let projectSite = ProjectSitesAndFiles.CreateProjectSiteForScript(fileName, referencedProjectFileNames, checkOptions)
                             { ProjectSite = projectSite
                               CheckOptions = checkOptions 
-                              ProjectFileName = projectSite.ProjectFileName()
+                              ProjectFileName = projectSite.ProjectFileName
                               FSharpChecker = checker
                               Colorizer = lazy getColorizer(view) } 
                     Some data
@@ -108,8 +109,8 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                     let rdt = getServiceProvider().RunningDocumentTable
                     let projectSite = getProjectSitesAndFiles().FindOwningProject_DEPRECATED(rdt,fileName)
                     let enableInMemoryCrossProjectReferences = true
-                    let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, fileName, None, getServiceProvider(), false)                            
-                    let projectFileName = projectSite.ProjectFileName()
+                    let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, getServiceProvider(), None(*projectId*), fileName, None(*extraProjectInfo*), None(*FSharpProjectOptionsTable*), false)
+                    let projectFileName = projectSite.ProjectFileName
                     let data = 
                         {   ProjectSite = projectSite
                             CheckOptions = checkOptions 
@@ -204,7 +205,12 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                 // Now that we have the parseResults, we can SetDependencyFiles().
                 // 
                 // If the set of dependencies changes, the file needs to be re-checked
-                let anyDependenciesChanged = source.SetDependencyFiles(parseResults.DependencyFiles)
+                let dependencyFiles = 
+                    match typedResults with 
+                    | None -> parseResults.DependencyFiles
+                    | Some r -> r.DependencyFiles
+                
+                let anyDependenciesChanged = source.SetDependencyFiles(dependencyFiles)
                 if anyDependenciesChanged then
                     req.ResultClearsDirtinessOfFile <- false
                     // Furthermore, if the project is out-of-date behave just as if we were notified dependency files changed.  

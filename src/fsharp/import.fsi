@@ -8,7 +8,7 @@ open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -21,7 +21,7 @@ type AssemblyLoader =
     /// Resolve an Abstract IL assembly reference to a Ccu
     abstract FindCcuFromAssemblyRef : CompilationThreadToken * range * ILAssemblyRef -> CcuResolutionResult
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
     /// Get a flag indicating if an assembly is a provided assembly, plus the
     /// table of information recording remappings from type names in the provided assembly to type
     /// names in the statically linked, embedded assembly.
@@ -60,7 +60,7 @@ val internal ImportILType : ImportMap -> range -> TType list -> ILType -> TType
 /// Pre-check for ability to import an IL type as an F# type.
 val internal CanImportILType : ImportMap -> range -> ILType -> bool
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
 
 /// Import a provided type as an F# type.
 val internal ImportProvidedType : ImportMap -> range -> (* TType list -> *) Tainted<ProvidedType> -> TType

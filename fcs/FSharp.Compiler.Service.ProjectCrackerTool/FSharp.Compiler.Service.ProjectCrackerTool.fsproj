@@ -46,24 +46,9 @@
     <Compile Include="Program.fs" />
     <None Include="App.config" />
     <None Include="FSharp.Compiler.Service.ProjectCracker.targets" />
+    <None Include="paket.references" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Build.Framework, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)/../fcs/dependencies/MSBuild.v14.0/Microsoft.Build.Framework.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.Build.Engine, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)/../fcs/dependencies/MSBuild.v14.0/Microsoft.Build.Engine.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.Build, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)/../fcs/dependencies/MSBuild.v14.0/Microsoft.Build.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.Build.Utilities.v12.0">
-      <HintPath>$(FSharpSourcesRoot)/../fcs/dependencies/MSBuild.v12.0/Microsoft.Build.Utilities.v12.0.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -71,13 +56,75 @@
     <Reference Include="System.Numerics" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml" />
-
     <!-- we build the nuget against FSHarp.Core 4.4.0.0 instead of our latest to allow use in wider range of F# tools -->
     <Reference Include="FSharp.Core">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Portable.FSharp.Core.4.1.20\lib\profiles\net40\FSharp.Core.dll</HintPath>
       <Private>false</Private>
     </Reference>
-
   </ItemGroup>
-  <Import Project="$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.23\tools\Microsoft.FSharp.Targets" />
+  <Import Project="$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets" />
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.6')">
+      <ItemGroup>
+        <Reference Include="Microsoft.Build">
+          <HintPath>..\packages\Microsoft.Build\lib\net45\Microsoft.Build.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.6')">
+      <ItemGroup>
+        <Reference Include="Microsoft.Build.Engine">
+          <HintPath>..\packages\Microsoft.Build.Engine\lib\net45\Microsoft.Build.Engine.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.6')">
+      <ItemGroup>
+        <Reference Include="Microsoft.Build.Framework">
+          <HintPath>..\packages\Microsoft.Build.Framework\lib\net45\Microsoft.Build.Framework.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.6')">
+      <ItemGroup>
+        <Reference Include="Microsoft.Build.Utilities.Core">
+          <HintPath>..\packages\Microsoft.Build.Utilities.Core\lib\net45\Microsoft.Build.Utilities.Core.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6'">
+      <ItemGroup>
+        <Reference Include="System.ComponentModel.Composition">
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.6')">
+      <ItemGroup>
+        <Reference Include="System.Threading.Tasks.Dataflow">
+          <HintPath>..\packages\System.Threading.Tasks.Dataflow\lib\portable-net45+win8+wpa81\System.Threading.Tasks.Dataflow.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
 </Project>

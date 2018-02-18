@@ -12,8 +12,15 @@ Follow the instructions below to build and develop the F# Compiler, Core Library
 
 Install
 
-- [.NET 4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40779)
-- [MSBuild 12.0](http://www.microsoft.com/en-us/download/details.aspx?id=40760)
+- [.NET 4.6](https://www.microsoft.com/en-gb/download/details.aspx?id=48130)
+
+**NOTE on Windows:**
+1. It is recommended to run the build.cmd and the qualifiers below on a command prompt with path set to have the location of MSBuild. If you have Visual Studio, we can also run using `Developer Command Prompt for Visual Studio 20xx` (depends on Visual Studio version). This developer command prompt is easier to use than normal command prompt, because it already has the correct path of Visual Studio and .NET's tooling set for us to use (including MSBuild).
+2. The running command prompt must be run under Administrator right (`Run as Administrator`).
+
+Before running the build scripts, ensure that you have cleaned up the visualfsharp repo by running this git command:
+
+    git clean -xfd
 
 On Windows you can build the F# compiler for .NET Framework as follows:
 
@@ -54,46 +61,62 @@ or just build it directly:
 
     msbuild FSharp.sln 
 
-Building ``FSharp.sln`` builds nearly everything. However building portable profiles of 
-FSharp.Core.dll is not included.  If you are just developing the core compiler and library
-then building the solution will be enough.
+If you are just developing the core compiler and library then building ``FSharp.sln`` will be enough.
 
 ###  Developing the F# Compiler (Linux)
 
 For Linux/Mono, follow [these instructions](http://www.mono-project.com/docs/getting-started/install/linux/). Also you may need:
 
-    sudo apt-get install mono-complete autoconf libtool pkg-config make git automake
+    sudo apt-get install mono-complete make git
 
 Then:
     
-    ./autoconf.sh --prefix /usr
     make
-    make install
 
-Full testing is not yet enabled on Linux, nor is a .NET Core build of the compiler.
+Then to replace your machine-wide installation:
 
-You can alternatively use
+    sudo make install
 
-    ./build.sh
+Full testing is not yet enabled on Linux.
 
 ###  Developing the F# Compiler (macOS)
 
-Install Xamarin Studio, then
+Install XCode command line tools (or homebrew equivalents) and Mono or Visual Studio for Mac.
 
-    ./autogen.sh --prefix=/Library/Frameworks/Mono.framework/Versions/Current/
+Then:
+
     make
+
+Then to replace your machine-wide installation:
+
     sudo make install
+
+Full testing is not yet enabled on macOS.
+
+
+###  Developing the F# Compiler (Linux or macOS - .NET Core)
+
+Install [the latest .NET SDK](https://www.microsoft.com/net/download/).  Then use
+
+    src/buildfromsource.sh 
+
+Outputs are placed in 
+
+    BuildFromSource/Debug/...
+    BuildFromSource/Release/...
+
+This uses an installed .NET SDK 2.0 to build the various duplicated project 
+    
+Testing the .NET Core version of the F# compiler on mwcOS and Linux is TBD.
+
 
 ### Developing the Visual F# IDE Tools (Windows Only)
 
 To build and test Visual F# IDE Tools, install these requirements:
 - [Visual Studio 2017](https://www.visualstudio.com/downloads/)
   - Under the "Windows" workloads, select ".NET desktop development"
-    - Select "F# language support" under the optional components
+    - Select "F# desktop language support" under the optional components
   - Under the "Other Toolsets" workloads, select "Visual Studio extension development"
-  - Under the "Individual components" tab select "Windows 10 SDK" as shown below (needed for compiling RC resource, see #2556): \
-  ![image](https://cloud.githubusercontent.com/assets/1249087/23730261/5c78c850-041b-11e7-9d9d-62766351fd0f.png)
-  - Failing to install this will lead to error FS0193: Could not find file visualfsharp\vsintegration\src\FSharp.ProjectSystem.FSharp\obj\net40\ProjectResources.rc.res.
 
 Steps to build:
 
@@ -102,7 +125,6 @@ Steps to build:
     build.cmd vs test         -- build Visual F# IDE Tools, run all tests (see below)
 
 Use ``VisualFSharp.sln`` if you're building the Visual F# IDE Tools.
-
 
 Note on Debug vs Release: ``Release`` Configuration has a degraded debugging experience, so if you want to test a change locally, it is recommended to do it in the ``Debug`` configuration. For more information see https://github.com/Microsoft/visualfsharp/issues/2771 and https://github.com/Microsoft/visualfsharp/pull/2773.
 
@@ -117,7 +139,6 @@ Or hard crash on launch ("Unknown Error"), delete these folders:
 
 #### [Optional] Install the Visual F# IDE Tools  (Windows Only)
 
-At time of writing, the Visual F# IDE Tools can only be installed into the latest Visual Studio 2017 RC releases.
 The new builds of the Visual F# IDE Tools can no longer be installed into Visual Studio 2015.
 
 You can install Visual Studio 2017 from https://www.visualstudio.com/downloads/.
@@ -147,7 +168,6 @@ changes, but the root (default) hive will remain untouched. You can also start t
 
 Because this uses the "RoslynDev" hive you can simultaneously test changes to an appropriate build of Roslyn binaries.
 
-
 #### [Optional] Rapid deployment of incremental changes to Visual F# IDE Tools components
 
 For the brave, you can rapidly deploy incrementally updated versions of Visual F# IDE Tool components such as ``FSHarp.Editor.dll`` by copying them directly into the extension directory in your user AppData folder:
@@ -168,26 +188,18 @@ For **Release**:
 
     vsintegration\update-vsintegration.cmd release
 
-
 # Notes
 
 #### Windows: Links to  Additional frameworks
 
 - [Git for windows](http://msysgit.github.io/)
-- [.NET 3.5](http://www.microsoft.com/en-us/download/details.aspx?id=21)
-- [.NET 4.5](http://www.microsoft.com/en-us/download/details.aspx?id=30653)
-- [.NET 4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40779)
 - [.NET 4.6](http://www.microsoft.com/en-us/download/details.aspx?id=48137)
-- [MSBuild 12.0](http://www.microsoft.com/en-us/download/details.aspx?id=40760)
-- [Windows 7 SDK](http://www.microsoft.com/en-us/download/details.aspx?id=8279)
-- [Windows 8 SDK](http://msdn.microsoft.com/en-us/windows/desktop/hh852363.aspx)
 - [Windows 8.1 SDK](http://msdn.microsoft.com/en-us/library/windows/desktop/bg162891.aspx)
 - [Windows 10 SDK](https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk)
 
-
 #### Notes on the Windows .NET Framework build
 
-1. The `update.cmd` script adds required strong name validation skips, and NGens the compiler and libraries. This requires admin privileges.
+1. The `update.cmd` script adds required strong name validation skips and NGens the compiler and libraries. This requires admin privileges.
 1. The compiler binaries produced are "private" and strong-named signed with a test key.
 1. Some additional tools are required to build the compiler, notably `fslex.exe`, `fsyacc.exe`, `FSharp.PowerPack.Build.Tasks.dll`, `FsSrGen.exe`, `FSharp.SRGen.Build.Tasks.dll`, and the other tools found in the `lkg` directory.
 1. The overall bootstrapping process executes as follows
@@ -209,4 +221,3 @@ Where you should set proper proxy address, user name and password.
 #### Resources
 
 The primary technical guide to the core compiler code is [The F# Compiler Technical Guide](http://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html).  Please read and contribute to that guide.
-

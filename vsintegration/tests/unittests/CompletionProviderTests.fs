@@ -1,7 +1,7 @@
 
 // To run the tests in this file:
 //
-// Technique 1: Compile VisualFSharp.Unittests.dll and run it as a set of unit tests
+// Technique 1: Compile VisualFSharp.UnitTests.dll and run it as a set of unit tests
 //
 // Technique 2:
 //
@@ -11,8 +11,8 @@
 //   and capturing large amounts of structured output.
 (*
     cd Debug\net40\bin
-    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.Unittests.exe -g --optimize- -r .\FSharp.Compiler.Private.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\unittests\CompletionProviderTests.fs 
-    .\VisualFSharp.Unittests.exe 
+    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.UnitTests.exe -g --optimize- -r .\FSharp.Compiler.Private.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\unittests\CompletionProviderTests.fs 
+    .\VisualFSharp.UnitTests.exe 
 *)
 // Technique 3: 
 // 
@@ -35,7 +35,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open UnitTests.TestLib.LanguageService
 
 let filePath = "C:\\test.fs"
-let internal options = { 
+let internal projectOptions = { 
     ProjectFileName = "C:\\test.fsproj"
     SourceFiles =  [| filePath |]
     ReferencedProjects = [| |]
@@ -49,25 +49,61 @@ let internal options = {
     Stamp = None
 }
 
+let formatCompletions(completions : string seq) =
+    "\n\t" + String.Join("\n\t", completions)
+
 let VerifyCompletionList(fileContents: string, marker: string, expected: string list, unexpected: string list) =
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     let results = 
-        FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, SourceText.From(fileContents), caretPosition, options, filePath, 0, fun _ -> []) 
+        FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, SourceText.From(fileContents), caretPosition, projectOptions, filePath, 0, fun _ -> []) 
         |> Async.RunSynchronously 
         |> Option.defaultValue (ResizeArray())
         |> Seq.map(fun result -> result.DisplayText)
 
-    for item in expected do
-        Assert.IsTrue(results.Contains(item), sprintf "Completions should contain '%s'. Got '%s'." item (String.Join(", ", results)))
+    let expectedFound =
+        expected
+        |> Seq.filter results.Contains
 
-    for item in unexpected do
-        Assert.IsFalse(results.Contains(item), sprintf "Completions should not contain '%s'. Got '{%s}'" item (String.Join(", ", results)))
+    let expectedNotFound =
+        expected
+        |> Seq.filter (expectedFound.Contains >> not)
+
+    let unexpectedNotFound =
+        unexpected
+        |> Seq.filter (results.Contains >> not)
+
+    let unexpectedFound =
+        unexpected
+        |> Seq.filter (unexpectedNotFound.Contains >> not)
+
+    // If either of these are true, then the test fails.
+    let hasExpectedNotFound = not (Seq.isEmpty expectedNotFound)
+    let hasUnexpectedFound = not (Seq.isEmpty unexpectedFound)
+
+    if hasExpectedNotFound || hasUnexpectedFound then
+        let expectedNotFoundMsg = 
+            if hasExpectedNotFound then
+                sprintf "\nExpected completions not found:%s\n" (formatCompletions expectedNotFound)
+            else
+                String.Empty
+
+        let unexpectedFoundMsg = 
+            if hasUnexpectedFound then
+                sprintf "\nUnexpected completions found:%s\n" (formatCompletions unexpectedFound)
+            else
+                String.Empty
+
+        let completionsMsg = sprintf "\nin Completions:%s" (formatCompletions results)
+
+        let msg = sprintf "%s%s%s" expectedNotFoundMsg unexpectedFoundMsg completionsMsg
+
+        Assert.Fail(msg)
 
 let VerifyCompletionListExactly(fileContents: string, marker: string, expected: string list) =
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     
     let actual = 
-        FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, SourceText.From(fileContents), caretPosition, options, filePath, 0, fun _ -> []) 
+        FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, SourceText.From(fileContents), caretPosition, projectOptions, filePath, 0, fun _ -> []) 
         |> Async.RunSynchronously 
         |> Option.defaultValue (ResizeArray())
         |> Seq.toList
@@ -159,6 +195,95 @@ System.Console.WriteLine()
     let getInfo() = documentId, filePath, []
     let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
     Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
+
+[<Test>]
+let ShouldNotTriggerCompletionInOperatorWithDot() =
+    // Simulate mistyping '|>' as '|.'
+    let fileContents = """
+let f() =
+    12.0 |. sqrt
+"""
+    let caretPosition = fileContents.IndexOf("|.")
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    let getInfo() = documentId, filePath, []
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger on operators")
+
+[<Test>]
+let ShouldTriggerCompletionInAttribute() =
+    let fileContents = """
+[<A
+module Foo = module end
+"""
+    let marker = "A"
+    let caretPosition = fileContents.IndexOf(marker) + marker.Length
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    let getInfo() = documentId, filePath, []
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    Assert.IsTrue(triggered, "Completion should trigger on Attributes.")
+
+[<Test>]
+let ShouldTriggerCompletionAfterDerefOperator() =
+    let fileContents = """
+let foo = ref 12
+printfn "%d" !f
+"""
+    let marker = "!f"
+    let caretPosition = fileContents.IndexOf(marker) + marker.Length
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    let getInfo() = documentId, filePath, []
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    Assert.IsTrue(triggered, "Completion should trigger after typing an identifier that follows a dereference operator (!).")
+
+[<Test>]
+let ShouldTriggerCompletionAfterAddressOfOperator() =
+    let fileContents = """
+type Point = { mutable X: int; mutable Y: int }
+let pnt = { X = 1; Y = 2 }
+use ptr = fixed &p
+"""
+    let marker = "&p"
+    let caretPosition = fileContents.IndexOf(marker) + marker.Length
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    let getInfo() = documentId, filePath, []
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    Assert.IsTrue(triggered, "Completion should trigger after typing an identifier that follows an addressOf operator (&).")
+
+[<Test>]
+let ShouldTriggerCompletionAfterArithmeticOperation() =
+    let fileContents = """
+let xVal = 1.0
+let yVal = 2.0
+let zVal
+
+xVal+y
+xVal-y
+xVal*y
+xVal/y
+xVal%y
+xVal**y
+"""
+
+    let markers = [ "+y"; "-y"; "*y"; "/y"; "%y";  "**y"]
+
+    for marker in markers do 
+        let caretPosition = fileContents.IndexOf(marker) + marker.Length
+        let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+        let getInfo() = documentId, filePath, []
+        let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+        Assert.IsTrue(triggered, "Completion should trigger after typing an identifier that follows a mathematical operation")
+
+[<Test>]
+let ShouldTriggerCompletionAtStartOfFileWithInsertion =
+    let fileContents = """
+l"""
+
+    let marker = "l"
+    let caretPosition = fileContents.IndexOf(marker) + marker.Length
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    let getInfo() = documentId, filePath, []
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    Assert.IsTrue(triggered, "Completion should trigger after typing an Insertion character at the top of the file, e.g. a function definition in a new script file.")
 
 [<Test>]
 let ShouldDisplayTypeMembers() =
@@ -260,6 +385,52 @@ x.
     VerifyCompletionListExactly(fileContents, "x.", expected)
 
 [<Test>]
+let ``Constructing a new class with object initializer syntax``() =
+    let fileContents = """
+type A() =
+    member val SettableProperty = 1 with get, set
+    member val AnotherSettableProperty = 1 with get, set
+    member val NonSettableProperty = 1
+    
+let _ = new A(Setta)
+"""
+
+    let expected = ["SettableProperty"; "AnotherSettableProperty"]
+    let notExpected = ["NonSettableProperty"]
+    VerifyCompletionList(fileContents, "(Setta", expected, notExpected)
+
+[<Test>]
+let ``Constructing a new class with object initializer syntax and verifying 'at' character doesn't exist.``() =
+    let fileContents = """
+type A() =
+    member val SettableProperty = 1 with get, set
+    member val AnotherSettableProperty = 1 with get, set
+    member val NonSettableProperty = 1
+    
+let _ = new A(Setta)
+"""
+
+    let expected = []
+    let notExpected = ["SettableProperty@"; "AnotherSettableProperty@"; "NonSettableProperty@"]
+    VerifyCompletionList(fileContents, "(Setta", expected, notExpected)
+
+[<Test;Ignore("https://github.com/Microsoft/visualfsharp/issues/3954")>]
+let ``Constructing a new fully qualified class with object initializer syntax without ending paren``() =
+    let fileContents = """
+module M =
+    type A() =
+        member val SettableProperty = 1 with get, set
+        member val AnotherSettableProperty = 1 with get, set
+        member val NonSettableProperty = 1
+    
+let _ = new M.A(Setta
+"""
+
+    let expected = ["SettableProperty"; "AnotherSettableProperty"]
+    let notExpected = ["NonSettableProperty"]
+    VerifyCompletionList(fileContents, "(Setta", expected, notExpected)
+
+[<Test>]
 let ``Extension methods go after everything else, extension properties are treated as normal ones``() =
     let fileContents = """
 open System.Collections.Generic
@@ -270,7 +441,7 @@ type List<'a> with
 
 List().
 """
-    let expected = ["Capacity"; "Count"; "ExtensionProp"; "Item"; "Add"; "AddRange"; "AsReadOnly"; "BinarySearch"; "Clear"; "Contains"; "ConvertAll"; "CopyTo"; "Exists"
+    let expected = ["Capacity"; "Count"; "Item"; "ExtensionProp"; "Add"; "AddRange"; "AsReadOnly"; "BinarySearch"; "Clear"; "Contains"; "ConvertAll"; "CopyTo"; "Exists"
                     "Find"; "FindAll"; "FindIndex"; "FindLast"; "FindLastIndex"; "ForEach"; "GetEnumerator"; "GetRange"; "IndexOf"; "Insert"; "InsertRange"; "LastIndexOf"
                     "Remove"; "RemoveAll"; "RemoveAt"; "RemoveRange"; "Reverse"; "Sort"; "ToArray"; "TrimExcess"; "TrueForAll"; "Equals"; "GetHashCode"; "GetType"; "ToString"
                     "ExtensionMeth"]
@@ -393,6 +564,18 @@ let ``Provide completion on lambda argument type hint``() =
 let _ = fun (p:i) -> ()
 """
     VerifyCompletionList(fileContents, "let _ = fun (p:i", ["int"], [])
+
+[<Test>]
+let ``Extensions.Bug5162``() =
+    let fileContents = """
+module Extensions =
+    type System.Object with
+        member x.P = 1
+module M2 =
+    let x = 1
+    Ext
+"""
+    VerifyCompletionList(fileContents, "    Ext", ["Extensions"; "ExtraTopLevelOperators"], [])
 
 #if EXE
 ShouldDisplaySystemNamespace()

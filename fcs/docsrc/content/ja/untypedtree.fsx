@@ -73,9 +73,11 @@ let getUntypedTree (file, input) =
       checker.GetProjectOptionsFromScript(file, input) 
       |> Async.RunSynchronously
 
+  let parsingOptions, _errors = checker.GetParsingOptionsFromProjectOptions(projOptions)
+
   // コンパイラの第1フェーズを実行する
   let untypedRes = 
-      checker.ParseFileInProject(file, input, projectOptions) 
+      checker.ParseFile(file, input, parsingOptions) 
       |> Async.RunSynchronously
 
   match untypedRes.ParseTree with
@@ -86,7 +88,7 @@ let getUntypedTree (file, input) =
 `FSharpChecker` の詳細については
 [ APIドキュメント](../reference/microsoft-fsharp-compiler-sourcecodeservices-FSharpChecker.html)
 の他に、F# ソースコードのインラインコメントも参考になるでしょう
-( [`service.fsi` のソースコードを参照](https://github.com/fsharp/fsharp/blob/fsharp_31/src/fsharp/vs/service.fsi) )。
+( [`service.fsi` のソースコードを参照](https://github.com/fsharp/fsharp/blob/fsharp_31/src/fsharp/service/service.fsi) )。
 
 ASTの走査
 ---------

@@ -1,0 +1,92 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="fr" original="../Strings.resx">
+    <body>
+      <trans-unit id="Always_place_opens_at_top_level">
+        <source>Always place open statements at the top level</source>
+        <target state="translated">Placer toujours les instructions open au niveau supérieur</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Code_Fixes">
+        <source>Code Fixes</source>
+        <target state="translated">Correctifs du code</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Completion_Lists">
+        <source>Completion Lists</source>
+        <target state="translated">Listes de saisie semi-automatique</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Language_Service_Performance">
+        <source>Performance</source>
+        <target state="translated">Performances</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Dash_underline">
+        <source>D_ash underline</source>
+        <target state="translated">So_ulignement avec des tirets</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Dot_underline">
+        <source>D_ot underline</source>
+        <target state="translated">S_oulignement avec des points</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Navigation_links">
+        <source>Navigation links</source>
+        <target state="translated">Liens de navigation</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_all_symbols">
+        <source>Show s_ymbols in unopened namespaces</source>
+        <target state="translated">Afficher les sym_boles dans les espaces de noms non ouverts</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_completion_list_after_a_character_is_deleted">
+        <source>Show completion list after a character is _deleted</source>
+        <target state="translated">Afficher la liste de saisie semi-automatique après la suppression d'un _caractère</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_completion_list_after_a_character_is_typed">
+        <source>_Show completion list after a character is typed</source>
+        <target state="translated">_Afficher la liste de saisie semi-automatique après la saisie d'un caractère</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_in_memory_cross_project_references">
+        <source>_Enable in-memory cross project references</source>
+        <target state="translated">_Activer les références de projet croisé en mémoire</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Project_check_cache_size">
+        <source>Project check cache size</source>
+        <target state="translated">Taille du cache de vérification du projet</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_navigation_links_as">
+        <source>S_how navigation links as</source>
+        <target state="translated">Affic_her les liens de navigation en tant que</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Simplify_name_code_fix">
+        <source>Simplify names (remove unnecessary qualifiers)</source>
+        <target state="translated">Simplifier les noms (supprimer les qualificateurs inutiles)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Solid_underline">
+        <source>_Solid underline</source>
+        <target state="translated">Soulig_nement avec un trait uni</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Unused_opens_code_fix">
+        <source>Remove unused open statements</source>
+        <target state="translated">Supprimer les instructions open inutilisées</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Unused_declaration_code_fix">
+        <source>Analyze and suggest fixes for unused values</source>
+        <target state="translated">Analyser et proposer des solutions pour les valeurs inutilisées</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

@@ -1,0 +1,137 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="ru" original="../BuildPropPage.resx">
+    <body>
+      <trans-unit id="lblConditionalCompilationSymbols.Text">
+        <source>Conditional compilation s&amp;ymbols:</source>
+        <target state="translated">&amp;Символы условной компиляции:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkPrefer32Bit.Text">
+        <source>&amp;Prefer 32-bit</source>
+        <target state="translated">&amp;Предпочитать 32-разрядн.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="outputLabel.Text">
+        <source>Output</source>
+        <target state="translated">Вывод</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="generalLabel.Text">
+        <source>General</source>
+        <target state="translated">Общие</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="treatWarningsAsErrorsLabel.Text">
+        <source>Treat warnings as errors</source>
+        <target state="translated">Обрабатывать предупреждения как ошибки</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="errorsAndWarningsLabel.Text">
+        <source>Errors and warnings</source>
+        <target state="translated">Ошибки и предупреждения</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkXMLDocumentationFile.Text">
+        <source>&amp;XML documentation file:</source>
+        <target state="translated">&amp;Файл документации XML:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="btnOutputPathBrowse.Text">
+        <source>B&amp;rowse...</source>
+        <target state="translated">&amp;Обзор...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lblOutputPath.Text">
+        <source>&amp;Output path:</source>
+        <target state="translated">&amp;Путь вывода:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="rbWarningAll.Text">
+        <source>A&amp;ll</source>
+        <target state="translated">&amp;Все</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="rbWarningSpecific.Text">
+        <source>Specif&amp;ic warnings:</source>
+        <target state="translated">&amp;Конкретные предупреждения:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="rbWarningNone.Text">
+        <source>&amp;None</source>
+        <target state="translated">&amp;Нет</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lblSupressWarnings.Text">
+        <source>&amp;Suppress warnings:</source>
+        <target state="translated">&amp;Отключить предупреждения:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboWarningLevel.Items">
+        <source>0</source>
+        <target state="translated">0</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboWarningLevel.Items1">
+        <source>1</source>
+        <target state="translated">1</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboWarningLevel.Items2">
+        <source>2</source>
+        <target state="translated">2</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboWarningLevel.Items3">
+        <source>3</source>
+        <target state="translated">3</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboWarningLevel.Items4">
+        <source>4</source>
+        <target state="translated">4</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboWarningLevel.Items5">
+        <source>5</source>
+        <target state="translated">5</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lblWarningLevel.Text">
+        <source>&amp;Warning level:</source>
+        <target state="translated">&amp;Уровень предупреждений:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkOptimizeCode.Text">
+        <source>Optimi&amp;ze code</source>
+        <target state="translated">&amp;Оптимизировать код</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkTailcalls.Text">
+        <source>G&amp;enerate tail calls</source>
+        <target state="translated">&amp;Формировать концевые вызовы</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkDefineTrace.Text">
+        <source>Define TR&amp;ACE constant</source>
+        <target state="translated">Определить константу &amp;TRACE</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lblPlatformTarget.Text">
+        <source>Platform tar&amp;get:</source>
+        <target state="translated">&amp;Конечная платформа:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lblOtherFlags.Text">
+        <source>Other &amp;flags:</source>
+        <target state="translated">Друг&amp;ие флаги:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkDefineDebug.Text">
+        <source>Define DEB&amp;UG constant</source>
+        <target state="translated">Определить константу &amp;DEBUG</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

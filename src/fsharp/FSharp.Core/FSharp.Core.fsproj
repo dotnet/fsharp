@@ -34,16 +34,7 @@
     <None Include="FSharp.Core.runtimeconfig.json"      Condition="'$(TargetDotnetProfile)' == 'coreclr'" ><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></None>
   </ItemGroup>
 
-  <ItemGroup>
-    <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
-      <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
-      <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(AssemblyName).dll.lci</LciCommentFile>
-      <HasLceComments>false</HasLceComments>
-      <InProject>false</InProject>
-    </FilesToLocalize>
-  </ItemGroup>
-
-  <ItemGroup>
+  <ItemGroup Condition="'$(Configuration)' != 'Proto'">
     <CustomAdditionalCompileInputs Include="$(FSharpSourcesRoot)\..\Proto\$(ProtoFlavour)\bin\fsc-proto.exe">
       <Visible>false</Visible>
     </CustomAdditionalCompileInputs>
@@ -51,15 +42,19 @@
 
   <ItemGroup>
     <EmbeddedResource Include="FSCore.resx">
+      <GenerateSource>true</GenerateSource>
+      <GenerateLegacyCode>true</GenerateLegacyCode>
+      <GenerateLiterals>false</GenerateLiterals>
+      <GeneratedModuleName>Microsoft.FSharp.Core.SR</GeneratedModuleName>
       <Link>FSCore.resx</Link>
     </EmbeddedResource>
-    <Compile Include="prim-types-prelude.fsi">
+    <CompileBefore Include="prim-types-prelude.fsi">
       <Link>Primitives/prim-types-prelude.fsi</Link>
-    </Compile>
-    <Compile Include="prim-types-prelude.fs">
+    </CompileBefore>
+    <CompileBefore Include="prim-types-prelude.fs">
       <Link>Primitives/prim-types-prelude.fs</Link>
-    </Compile>
-    <Compile Include="SR.fs">
+    </CompileBefore>
+    <Compile Include="SR.fs" Condition="'$(Configuration)' == 'Proto'">
       <Link>Primitives/SR.fs</Link>
     </Compile>
     <Compile Include="prim-types.fsi">
@@ -230,9 +225,6 @@
     <Compile Include="fslib-extra-pervasives.fs">
       <Link>Extras/fslib-extra-pervasives.fs</Link>
     </Compile>
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Core.dll.fs">
-      <Link>assemblyinfo.FSharp.Core.dll.fs</Link>
-    </Compile>
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetDotnetProfile)' != 'coreclr'">
@@ -262,17 +254,6 @@
     </ItemGroup>
     <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.Core.sigdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
     <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.Core.optdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
-  </Target>
-
-  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
-    <ItemGroup>
-      <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
-      <BinariesToBeSigned Include="$(OutDir)localize\**\$(AssemblyName).resources.dll" />
-      <FilesToSign Include="@(BinariesToBeSigned)">
-         <Authenticode>Microsoft</Authenticode>
-         <StrongName>StrongName</StrongName>
-      </FilesToSign>
-    </ItemGroup>
   </Target>
 
   <Target Name="nugetpack"

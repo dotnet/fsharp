@@ -532,7 +532,7 @@ module internal Tokenizer =
             | _ -> false) 
         |> Option.orElseWith (fun _ -> tokensUnderCursor |> List.tryFind (fun { DraftToken.Kind = k } -> k = LexerSymbolKind.Operator))
         |> Option.map (fun token ->
-            let plid, _ = QuickParse.GetPartialLongNameEx(lineStr, token.RightColumn)
+            let partialName = QuickParse.GetPartialLongNameEx(lineStr, token.RightColumn)
             let identStr = lineStr.Substring(token.Token.LeftColumn, token.Token.FullMatchedLength)
             {   Kind = token.Kind
                 Ident = 
@@ -541,7 +541,7 @@ module internal Tokenizer =
                             fileName 
                             (Range.mkPos (linePos.Line + 1) token.Token.LeftColumn)
                             (Range.mkPos (linePos.Line + 1) (token.RightColumn + 1))) 
-                FullIsland = plid @ [identStr] })
+                FullIsland = partialName.QualifyingIdents @ [identStr] })
 
     let private getCachedSourceLineData(documentKey: DocumentId, sourceText: SourceText, position: int, fileName: string, defines: string list) = 
         let textLine = sourceText.Lines.GetLineFromPosition(position)

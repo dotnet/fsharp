@@ -558,7 +558,7 @@ type internal ErrorLoggerThatStopsOnFirstError(tcConfigB:TcConfigBuilder, fsiStd
     member x.ResetErrorCount() = (errorCount <- 0)
     
     override x.DiagnosticSink(err, isError) = 
-        if isError || ReportWarningAsError (tcConfigB.globalWarnLevel, tcConfigB.specificWarnOff, tcConfigB.specificWarnOn, tcConfigB.specificWarnAsError, tcConfigB.specificWarnAsWarn, tcConfigB.globalWarnAsError) err  then 
+        if isError || ReportWarningAsError tcConfigB.errorSeverityOptions err  then 
             fsiStdinSyphon.PrintError(tcConfigB,err)
             errorCount <- errorCount + 1
             if tcConfigB.abortOnError then exit 1 (* non-zero exit code *)
@@ -566,7 +566,7 @@ type internal ErrorLoggerThatStopsOnFirstError(tcConfigB:TcConfigBuilder, fsiStd
             raise StopProcessing
         else 
           DoWithErrorColor isError (fun () -> 
-            if ReportWarning (tcConfigB.globalWarnLevel, tcConfigB.specificWarnOff, tcConfigB.specificWarnOn) err then 
+            if ReportWarning tcConfigB.errorSeverityOptions err then 
                 fsiConsoleOutput.Error.WriteLine()
                 writeViaBufferWithEnvironmentNewLines fsiConsoleOutput.Error (OutputDiagnosticContext "  " fsiStdinSyphon.GetLine) err
                 writeViaBufferWithEnvironmentNewLines fsiConsoleOutput.Error (OutputDiagnostic (tcConfigB.implicitIncludeDir,tcConfigB.showFullPaths,tcConfigB.flatErrors,tcConfigB.errorStyle,isError)) err
@@ -866,7 +866,7 @@ type internal FsiConsolePrompt(fsiOptions: FsiCommandLineOptions, fsiConsoleOutp
     // A prompt can be skipped by "silent directives", e.g. ones sent to FSI by VS.
     let mutable dropPrompt = 0
     // NOTE: SERVER-PROMPT is not user displayed, rather it's a prefix that code elsewhere 
-    // uses to identify the prompt, see vs\FsPkgs\FSharp.VS.FSI\fsiSessionToolWindow.fs
+    // uses to identify the prompt, see service\FsPkgs\FSharp.VS.FSI\fsiSessionToolWindow.fs
     let prompt = if fsiOptions.IsInteractiveServer then "SERVER-PROMPT>\n" else "> "  
 
     member __.Print()      = if dropPrompt = 0 then fsiConsoleOutput.uprintf "%s" prompt else dropPrompt <- dropPrompt - 1
@@ -1671,7 +1671,7 @@ module internal MagicAssemblyResolution =
                    | Some (OkResult (warns,[r])) -> OkResult (warns, Choice1Of2 r.resolvedPath)
                    | _ -> 
 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
                    match tcImports.TryFindProviderGeneratedAssemblyByName(ctok, simpleAssemName) with
                    | Some(assembly) -> OkResult([],Choice2Of2 assembly)
                    | None -> 
@@ -2419,19 +2419,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     // We later switch to doing interaction-by-interaction processing on the "event loop" thread.
     let ctokStartup = AssumeCompilationThreadWithoutEvidence ()
 
-#if FX_LCIDFROMCODEPAGE
-
-    // See Bug 735819 
-    let lcidFromCodePage = 
-        if (Console.OutputEncoding.CodePage <> 65001) &&
-           (Console.OutputEncoding.CodePage <> Thread.CurrentThread.CurrentUICulture.TextInfo.OEMCodePage) &&
-           (Console.OutputEncoding.CodePage <> Thread.CurrentThread.CurrentUICulture.TextInfo.ANSICodePage) then
-                Thread.CurrentThread.CurrentUICulture <- new CultureInfo("en-US")
-                Some 1033
-        else
-            None
-#endif
-
     let timeReporter = FsiTimeReporter(outWriter)
 
 #if !FX_RESHAPED_CONSOLE
@@ -2464,8 +2451,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     do tcConfigB.useFsiAuxLib <- fsi.UseFsiAuxLib
 
 #if FSI_TODO_NETCORE
-    // "CompilationAndEvaluation" assembly resolution for F# Interactive is not yet properly figured out on .NET Core
-    do tcConfigB.resolutionEnvironment <- ResolutionEnvironment.EditingOrCompilation false
     do tcConfigB.useSimpleResolution <- true
     do SetTargetProfile tcConfigB "netcore" // always assume System.Runtime codegen
 #endif
@@ -2496,19 +2481,14 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     let fsiOptions       = FsiCommandLineOptions(fsi, argv, tcConfigB, fsiConsoleOutput)
     let fsiConsolePrompt = FsiConsolePrompt(fsiOptions, fsiConsoleOutput)
 
-    // Check if we have a codepage from the console
-#if FX_LCIDFROMCODEPAGE
     do
-      match fsiOptions.FsiLCID with
-      | Some _ -> ()
-      | None -> tcConfigB.lcid <- lcidFromCodePage
-
-    // Set the ui culture
-    do 
-      match fsiOptions.FsiLCID with
-      | Some(n) -> Thread.CurrentThread.CurrentUICulture <- new CultureInfo(n)
-      | None -> ()
+      match tcConfigB.preferredUiLang with
+#if FX_RESHAPED_GLOBALIZATION
+      | Some s -> System.Globalization.CultureInfo.CurrentUICulture <- new System.Globalization.CultureInfo(s)
+#else
+      | Some s -> Thread.CurrentThread.CurrentUICulture <- new System.Globalization.CultureInfo(s)
 #endif
+      | None -> ()
 
 #if !FX_NO_SERVERCODEPAGES
     do 
@@ -2564,7 +2544,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         // Explanation: This callback is invoked during compilation to resolve assembly references
         // We don't yet propagate the ctok through these calls (though it looks plausible to do so).
         let ctok = AssumeCompilationThreadWithoutEvidence ()
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
         match tcImports.TryFindProviderGeneratedAssemblyByName (ctok, aref.Name) with
         | Some assembly -> Some (Choice2Of2 assembly)
         | None -> 
@@ -2592,7 +2572,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         | Choice2Of2 None -> failwith "Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpErrorInfo use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing"
         | Choice2Of2 (Some userExn) -> raise userExn
 
-    let commitResultNonThrowing tcConfig scriptFile (errorLogger: CompilationErrorLogger) res = 
+    let commitResultNonThrowing errorOptions scriptFile (errorLogger: CompilationErrorLogger) res = 
         let errs = errorLogger.GetErrors()
         let userRes = 
             match res with 
@@ -2600,7 +2580,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
             | Choice2Of2 None -> Choice2Of2 (System.Exception "Operation could not be completed due to earlier error")
             | Choice2Of2 (Some userExn) -> Choice2Of2 userExn
 
-        userRes, ErrorHelpers.CreateErrorInfos (tcConfig, true, scriptFile, errs)
+        userRes, ErrorHelpers.CreateErrorInfos (errorOptions, true, scriptFile, errs)
 
     let dummyScriptFileName = "input.fsx"
 
@@ -2725,10 +2705,10 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         // is not safe to call concurrently.
         let ctok = AssumeCompilationThreadWithoutEvidence()
 
-        let tcConfig = TcConfig.Create(tcConfigB,validate=false)
-        let errorLogger = CompilationErrorLogger("EvalInteraction",tcConfig)
+        let errorOptions = TcConfig.Create(tcConfigB,validate = false).errorSeverityOptions
+        let errorLogger = CompilationErrorLogger("EvalInteraction", errorOptions)
         fsiInteractionProcessor.EvalExpression(ctok, sourceText, dummyScriptFileName, errorLogger)
-        |> commitResultNonThrowing tcConfig dummyScriptFileName errorLogger
+        |> commitResultNonThrowing errorOptions dummyScriptFileName errorLogger
 
     member x.EvalInteraction(sourceText) : unit =
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the 
@@ -2746,11 +2726,11 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         // is not safe to call concurrently.
         let ctok = AssumeCompilationThreadWithoutEvidence()
 
-        let tcConfig = TcConfig.Create(tcConfigB,validate=false)
-        let errorLogger = CompilationErrorLogger("EvalInteraction",tcConfig)
+        let errorOptions = TcConfig.Create(tcConfigB,validate = false).errorSeverityOptions
+        let errorLogger = CompilationErrorLogger("EvalInteraction", errorOptions)
         fsiInteractionProcessor.EvalInteraction(ctok, sourceText, dummyScriptFileName, errorLogger) 
-        |> commitResultNonThrowing tcConfig "input.fsx" errorLogger
-        |> function Choice1Of2(_), errs -> Choice1Of2 (), errs | Choice2Of2 exn, errs -> Choice2Of2 exn, errs
+        |> commitResultNonThrowing errorOptions "input.fsx" errorLogger
+        |> function Choice1Of2 (_), errs -> Choice1Of2 (), errs | Choice2Of2 exn, errs -> Choice2Of2 exn, errs
 
     member x.EvalScript(scriptPath) : unit =
         // Explanation: When the user of the FsiInteractiveSession object calls this method, the 
@@ -2768,11 +2748,11 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         // is not safe to call concurrently.
         let ctok = AssumeCompilationThreadWithoutEvidence()
 
-        let tcConfig = TcConfig.Create(tcConfigB,validate=false)
-        let errorLogger = CompilationErrorLogger("EvalInteraction",tcConfig)
+        let errorOptions = TcConfig.Create(tcConfigB, validate = false).errorSeverityOptions
+        let errorLogger = CompilationErrorLogger("EvalInteraction", errorOptions)
         fsiInteractionProcessor.EvalScript(ctok, scriptPath, errorLogger)
-        |> commitResultNonThrowing tcConfig scriptPath errorLogger
-        |> function Choice1Of2(_), errs -> Choice1Of2 (), errs | Choice2Of2 exn, errs -> Choice2Of2 exn, errs
+        |> commitResultNonThrowing errorOptions scriptPath errorLogger
+        |> function Choice1Of2 (_), errs -> Choice1Of2 (), errs | Choice2Of2 exn, errs -> Choice2Of2 exn, errs
  
     /// Performs these steps:
     ///    - Load the dummy interaction, if any

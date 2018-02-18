@@ -4,7 +4,6 @@
 module internal Microsoft.FSharp.Compiler.MethodOverrides
 
 open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
@@ -84,7 +83,7 @@ module DispatchSlotChecking =
         let (CompiledSig (argTys,retTy,fmtps,ttpinst)) = CompiledSigOfMeth g amap m minfo
 
         let isFakeEventProperty = minfo.IsFSharpEventPropertyMethod
-        Override(parentType,tcrefOfAppTy g minfo.EnclosingType,mkSynId m nm, (fmtps,ttpinst),argTys,retTy,isFakeEventProperty,false)
+        Override(parentType, minfo.ApparentEnclosingTyconRef, mkSynId m nm, (fmtps,ttpinst),argTys,retTy,isFakeEventProperty,false)
 
     /// Get the override info for a value being used to implement a dispatch slot.
     let GetTypeMemberOverrideInfo g reqdTy (overrideBy:ValRef) = 
@@ -122,7 +121,7 @@ module DispatchSlotChecking =
                 //CanImplementAnySlot  <<----- Change to this to enable implicit interface implementation
 
         let isFakeEventProperty = overrideBy.IsFSharpEventProperty(g)
-        Override(implKind,overrideBy.MemberApparentParent, mkSynId overrideBy.Range nm, (memberMethodTypars,memberToParentInst),argTys,retTy,isFakeEventProperty, overrideBy.IsCompilerGenerated)
+        Override(implKind,overrideBy.MemberApparentEntity, mkSynId overrideBy.Range nm, (memberMethodTypars,memberToParentInst),argTys,retTy,isFakeEventProperty, overrideBy.IsCompilerGenerated)
 
     /// Get the override information for an object expression method being used to implement dispatch slots
     let GetObjectExprOverrideInfo g amap (implty, id:Ident, memberFlags, ty, arityInfo, bindingAttribs, rhsExpr) = 
@@ -161,9 +160,8 @@ module DispatchSlotChecking =
         (match overrideBy.CanImplement with 
          | CanImplementNoSlots -> false
          | CanImplementAnySlot -> true 
-         | CanImplementAnyClassHierarchySlot -> not (isInterfaceTy g dispatchSlot.EnclosingType)
-         //| CanImplementSpecificInterfaceSlot parentTy -> isInterfaceTy g dispatchSlot.EnclosingType && typeEquiv g parentTy dispatchSlot.EnclosingType 
-         | CanImplementAnyInterfaceSlot -> isInterfaceTy g dispatchSlot.EnclosingType)
+         | CanImplementAnyClassHierarchySlot -> not (isInterfaceTy g dispatchSlot.ApparentEnclosingType)
+         | CanImplementAnyInterfaceSlot -> isInterfaceTy g dispatchSlot.ApparentEnclosingType)
 
     /// Check if the kinds of type parameters match between a dispatch slot and an override.
     let IsTyparKindMatch g amap m (dispatchSlot:MethInfo) (Override(_,_,_,(mtps,_),_,_,_,_)) = 
@@ -237,7 +235,7 @@ module DispatchSlotChecking =
     let OverrideImplementsDispatchSlot g amap m dispatchSlot availPriorOverride =
         IsExactMatch g amap m dispatchSlot availPriorOverride &&
         // The override has to actually be in some subtype of the dispatch slot
-        ExistsHeadTypeInEntireHierarchy g amap m (generalizedTyconRef availPriorOverride.BoundingTyconRef) (tcrefOfAppTy g dispatchSlot.EnclosingType)
+        ExistsHeadTypeInEntireHierarchy g amap m (generalizedTyconRef availPriorOverride.BoundingTyconRef) dispatchSlot.DeclaringTyconRef
 
     /// Check if a dispatch slot is already implemented
     let DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed (dispatchSlot: MethInfo) =
@@ -364,11 +362,11 @@ module DispatchSlotChecking =
 
 
             | [dispatchSlot] -> 
-                if dispatchSlot.IsFinal && (isObjExpr || not (typeEquiv g reqdTy dispatchSlot.EnclosingType)) then 
+                if dispatchSlot.IsFinal && (isObjExpr || not (typeEquiv g reqdTy dispatchSlot.ApparentEnclosingType)) then 
                     errorR(Error(FSComp.SR.typrelMethodIsSealed(NicePrint.stringOfMethInfo amap m denv dispatchSlot),m))
             | dispatchSlots -> 
                 match dispatchSlots |> List.filter (fun dispatchSlot -> 
-                              isInterfaceTy g dispatchSlot.EnclosingType || 
+                              isInterfaceTy g dispatchSlot.ApparentEnclosingType || 
                               not (DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed dispatchSlot)) with
                 | h1 :: h2 :: _ -> 
                     errorR(Error(FSComp.SR.typrelOverrideImplementsMoreThenOneSlot((FormatOverride denv overrideBy), (NicePrint.stringOfMethInfo amap m denv h1), (NicePrint.stringOfMethInfo amap m denv h2)),m))
@@ -376,7 +374,7 @@ module DispatchSlotChecking =
                     // dispatch slots are ordered from the derived classes to base
                     // so we can check the topmost dispatch slot if it is final
                     match dispatchSlots with
-                    | meth::_ when meth.IsFinal -> errorR(Error(FSComp.SR.tcCannotOverrideSealedMethod((sprintf "%s::%s" (meth.EnclosingType.ToString()) (meth.LogicalName))), m))
+                    | meth::_ when meth.IsFinal -> errorR(Error(FSComp.SR.tcCannotOverrideSealedMethod((sprintf "%s::%s" (meth.ApparentEnclosingType.ToString()) (meth.LogicalName))), m))
                     | _ -> ()
 
 
@@ -453,6 +451,7 @@ module DispatchSlotChecking =
             
             // Is a member an abstract slot of one of the implied interface types?
             let isImpliedInterfaceType ty =
+                isAppTy g ty &&
                 isImpliedInterfaceTable.ContainsKey (tcrefOfAppTy g ty) &&
                 impliedTys |> List.exists (TypesFeasiblyEquiv 0 g amap reqdTyRange ty)
 
@@ -506,7 +505,7 @@ module DispatchSlotChecking =
             // We also collect up the properties. This is used for abstract slot inference when overriding properties
             let isRelevantRequiredProperty (x:PropInfo) = 
                 (x.IsVirtualProperty && not (isInterfaceTy g reqdTy)) ||
-                isImpliedInterfaceType x.EnclosingType
+                isImpliedInterfaceType x.ApparentEnclosingType
                 
             let reqdProperties = 
                 GetIntrinsicPropInfosOfType infoReader (None,AccessibleFromSomewhere,AllowMultiIntfInstantiations.Yes) IgnoreOverrides reqdTyRange reqdTy 
@@ -610,7 +609,7 @@ module DispatchSlotChecking =
                           let overridenForThisSlotImplSet = 
                               [ for (RequiredSlot(dispatchSlot,_)) in NameMultiMap.find overrideByInfo.LogicalName dispatchSlotsKeyed do 
                                     if OverrideImplementsDispatchSlot g amap m dispatchSlot overrideByInfo then 
-                                        if tyconRefEq g overrideByInfo.BoundingTyconRef (tcrefOfAppTy g dispatchSlot.EnclosingType) then 
+                                        if tyconRefEq g overrideByInfo.BoundingTyconRef dispatchSlot.DeclaringTyconRef then 
                                              match dispatchSlot.ArbitraryValRef with 
                                              | Some virtMember -> 
                                                   if virtMember.MemberInfo.Value.IsImplemented then errorR(Error(FSComp.SR.tcDefaultImplementationAlreadyExists(),overrideByInfo.Range))
@@ -650,7 +649,7 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader:InfoReader, nenv,
   
     // Note you only have to explicitly implement 'System.IComparable' to customize structural comparison AND equality on F# types 
     if isImplementation &&
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
        not tycon.IsProvidedGeneratedTycon &&
 #endif
        Option.isNone tycon.GeneratedCompareToValues &&
@@ -667,7 +666,7 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader:InfoReader, nenv,
     AugmentWithHashCompare.CheckAugmentationAttribs isImplementation g amap tycon
     // Check some conditions about generic comparison and hashing. We can only check this condition after we've done the augmentation 
     if isImplementation 
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
        && not tycon.IsProvidedGeneratedTycon  
 #endif
        then

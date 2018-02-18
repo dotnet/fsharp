@@ -4,16 +4,17 @@
 
   <PropertyGroup Condition="'$(TargetDotnetProfile)'=='net40'">
     <DefineConstants Condition="'$(MonoPackaging)' == 'true'">$(DefineConstants);CROSS_PLATFORM_COMPILER</DefineConstants>
-    <DefineConstants>$(DefineConstants);PREFERRED_UI_LANG</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
     <DefineConstants>$(DefineConstants);BE_SECURITY_TRANSPARENT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_LCIDFROMCODEPAGE</DefineConstants>
   </PropertyGroup>
 
+  <!-- Note: The TargetDotnetProfile value 'coreclr' currently covers all of netstandard1.6, netstandard2.0 and netcoreapp2.0 in a confused way -->
+  <!-- These should be distinguished in the future -->
+
   <PropertyGroup Condition="'$(TargetDotnetProfile)'=='coreclr'">
     <DefineConstants>$(DefineConstants);FX_PORTABLE_OR_NETSTANDARD</DefineConstants>
     <DefineConstants>$(DefineConstants);NETSTANDARD1_6</DefineConstants>
-    <DefineConstants>$(DefineConstants);PREFERRED_UI_LANG</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_APP_DOMAINS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_ARRAY_LONG_LENGTH</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_BEGINEND_READWRITE</DefineConstants>
@@ -56,6 +57,7 @@
     <DefineConstants>$(DefineConstants);FX_RESHAPED_MSBUILD</DefineConstants>
     <DefineConstants>$(DefineConstants);FSI_TODO_NETCORE</DefineConstants>
     <OtherFlags>$(OtherFlags) --simpleresolution</OtherFlags>
+    <TargetFramework Condition="'$(TargetFramework)' == ''">netstandard1.6</TargetFramework>
   </PropertyGroup>
 
 </Project>

@@ -45,7 +45,7 @@
   <ItemGroup>
     <!-- we test against FSharp.Core 4.4.1.0 -->
     <Reference Include="FSharp.Core">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.23\tools\FSharp.Core.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.27\tools\FSharp.Core.dll</HintPath>
       <Private>true</Private>
     </Reference>
     <Reference Include="mscorlib" />
@@ -64,5 +64,5 @@
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
-  <Import Project="$(SolutionDir)\..\packages\FSharp.Compiler.Tools.4.1.23\tools\Microsoft.FSharp.Targets" />
+  <Import Project="$(SolutionDir)\..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets" />
 </Project>
