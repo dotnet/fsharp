@@ -172,7 +172,7 @@ type AsyncType() =
         try
             let result = t.Wait(300)
             Assert.IsFalse (result)
-        with :? AggregateException -> Assert.Fail "Task should not finish, jet"
+        with :? AggregateException -> Assert.Fail "Task should not finish, yet"
 
         tcs.SetCanceled()
         
@@ -200,7 +200,7 @@ type AsyncType() =
         try
             let result = t.Wait(300)
             Assert.IsFalse (result)
-        with :? AggregateException -> Assert.Fail "Task should not finish, jet"
+        with :? AggregateException -> Assert.Fail "Task should not finish, yet"
 
         let msg = "Custom non-conforming 3rd-Party-Api throws"
         tcs.SetException(Exception msg)
@@ -234,7 +234,7 @@ type AsyncType() =
         try
             let result = t.Wait(300)
             Assert.IsFalse (result)
-        with :? AggregateException -> Assert.Fail "Task should not finish, jet"
+        with :? AggregateException -> Assert.Fail "Task should not finish, yet"
 
         tcs.SetCanceled()
 
@@ -266,7 +266,7 @@ type AsyncType() =
         try
             let result = t.Wait(300)
             Assert.IsFalse (result)
-        with :? AggregateException -> Assert.Fail "Task should not finish, jet"
+        with :? AggregateException -> Assert.Fail "Task should not finish, yet"
 
         let msg = "Custom non-conforming 3rd-Party-Api throws"
         tcs.SetException(Exception msg)
