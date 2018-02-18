@@ -1332,16 +1332,6 @@ type internal FSharpProjectNode(package:FSharpProjectPackage) as this =
         else
             0
 
-    // returns an array of all "foo"s of form: <Compile Include="foo"/>
-    member private x.ComputeCompileItems() =
-        FSharpProjectNode.ComputeCompileItems(x.BuildProject, x.ProjectFolder)
-    static member ComputeCompileItems(buildProject, projectFolder) =
-        [|
-        for i in buildProject.Items do
-            if i.ItemType = "Compile" then
-                yield System.IO.Path.GetFullPath(System.IO.Path.Combine(projectFolder, i.EvaluatedInclude))
-        |]
-    
     /// Sync the source files with what's listed in the Solution Explorer.
     /// This is called when a file is added, moved or removed from the project.
     member this.SyncWithHierarchy(movement: SourceMovement.Movement) =
