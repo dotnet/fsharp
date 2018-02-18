@@ -81,7 +81,12 @@ module ExtraTopLevelOperators =
         interface IReadOnlyDictionary<'Key, 'T> with
             member __.Item with get key = t.[makeSafeKey key]
             member __.Keys = t.Keys |> Seq.map getKey
-            member __.TryGetValue(key, value) = t.TryGetValue(makeSafeKey key, ref value)
+            member __.TryGetValue(key, r) =
+                match t.TryGetValue (makeSafeKey key) with
+                | false, _ -> false
+                | true, value ->
+                    r <- value
+                    true
             member __.Values = (t :> IReadOnlyDictionary<_,_>).Values
             member __.ContainsKey k = t.ContainsKey (makeSafeKey k)
 
