@@ -14,9 +14,7 @@
 
   <Import Project="..\BuildFromSource.targets" />
   <ItemGroup>
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Private.dll.fs">
-      <Link>assemblyinfo.FSharp.Compiler.Private.dll.fs</Link>
-    </Compile>
+    <Compile Include="AssemblyInfo.fs" />
     <Compile Include="InternalsVisibleTo.fs" />
     <EmbeddedResource Include="FSComp.resx">
       <Link>FSComp.resx</Link>
@@ -610,9 +608,6 @@
       <Link>InteractiveSession\fsi.fs</Link>
     </Compile>
 
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\InternalsVisibleTo.fs" Condition="'$(TargetDotnetProfile)' != 'coreclr'">
-      <Link>Misc/InternalsVisibleTo.fs</Link>
-    </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\MSBuildReferenceResolver.fs">
       <Link>Misc/MSBuildReferenceResolver.fs</Link>
     </Compile>

@@ -948,13 +948,13 @@ and u_ILCallSig = u_wrap (fun (a,b,c) -> {CallingConv=a; ArgTypes=b; ReturnType=
 and u_ILTypeSpec st = let a,b = u_tup2 u_ILTypeRef u_ILTypes st in ILTypeSpec.Create(a,b)
 
 
-let p_ILMethodRef (x: ILMethodRef) st = p_tup6 p_ILTypeRef p_ILCallConv p_int p_string p_ILTypes p_ILType (x.EnclosingTypeRef,x.CallingConv,x.GenericArity,x.Name,x.ArgTypes,x.ReturnType) st
+let p_ILMethodRef (x: ILMethodRef) st = p_tup6 p_ILTypeRef p_ILCallConv p_int p_string p_ILTypes p_ILType (x.DeclaringTypeRef,x.CallingConv,x.GenericArity,x.Name,x.ArgTypes,x.ReturnType) st
 
-let p_ILFieldRef (x: ILFieldRef) st = p_tup3 p_ILTypeRef p_string p_ILType (x.EnclosingTypeRef, x.Name, x.Type) st
+let p_ILFieldRef (x: ILFieldRef) st = p_tup3 p_ILTypeRef p_string p_ILType (x.DeclaringTypeRef, x.Name, x.Type) st
 
-let p_ILMethodSpec (x: ILMethodSpec) st = p_tup3 p_ILMethodRef p_ILType p_ILTypes (x.MethodRef, x.EnclosingType, x.GenericArgs) st
+let p_ILMethodSpec (x: ILMethodSpec) st = p_tup3 p_ILMethodRef p_ILType p_ILTypes (x.MethodRef, x.DeclaringType, x.GenericArgs) st
 
-let p_ILFieldSpec (x : ILFieldSpec) st = p_tup2 p_ILFieldRef p_ILType (x.FieldRef, x.EnclosingType) st
+let p_ILFieldSpec (x : ILFieldSpec) st = p_tup2 p_ILFieldRef p_ILType (x.FieldRef, x.DeclaringType) st
 
 let p_ILBasicType x st = 
     p_int (match x with 
@@ -982,7 +982,7 @@ let u_ILMethodRef st =
 
 let u_ILFieldRef st = 
     let x1,x2,x3 = u_tup3 u_ILTypeRef u_string u_ILType st 
-    {EnclosingTypeRef=x1;Name=x2;Type=x3}
+    {DeclaringTypeRef=x1;Name=x2;Type=x3}
 
 let u_ILMethodSpec st = 
     let x1,x2,x3 = u_tup3 u_ILMethodRef u_ILType u_ILTypes st 
@@ -990,7 +990,7 @@ let u_ILMethodSpec st =
 
 let u_ILFieldSpec st = 
     let x1,x2 = u_tup2 u_ILFieldRef u_ILType st 
-    {FieldRef=x1;EnclosingType=x2}
+    {FieldRef=x1;DeclaringType=x2}
 
 let u_ILBasicType st = 
     match u_int st with  
@@ -1778,7 +1778,7 @@ and p_attrib_arg (AttribNamedArg(a,b,c,d)) st =
 
 and p_member_info (x:ValMemberInfo) st = 
     p_tup4 (p_tcref "member_info")  p_MemberFlags (p_list p_slotsig) p_bool 
-        (x.ApparentParent,x.MemberFlags,x.ImplementedSlotSigs,x.IsImplemented) st
+        (x.ApparentEnclosingEntity,x.MemberFlags,x.ImplementedSlotSigs,x.IsImplemented) st
 
 and p_tycon_objmodel_kind x st = 
     match x with 
@@ -1822,7 +1822,7 @@ and p_ValData x st =
     p_option p_ValReprInfo x.val_repr_info st
     p_string x.val_xmldocsig st
     p_access x.val_access st
-    p_parentref x.val_actual_parent st
+    p_parentref x.val_declaring_entity st
     p_option p_const x.val_const st
     if st.oInMem then
         p_used_space1 (p_xmldoc x.val_xmldoc) st
@@ -1953,6 +1953,7 @@ and u_recdfield_spec st =
       rfield_xmldoc= defaultArg xmldoc XmlDoc.Empty
       rfield_xmldocsig=f 
       rfield_access=g
+      rfield_name_generated = false
       rfield_other_range = None }
 
 and u_rfield_table st = MakeRecdFieldsTable (u_list u_recdfield_spec st)
@@ -2063,7 +2064,7 @@ and u_attrib_arg st  =
 
 and u_member_info st : ValMemberInfo = 
     let x2,x3,x4,x5 = u_tup4 u_tcref u_MemberFlags (u_list u_slotsig) u_bool st
-    { ApparentParent=x2
+    { ApparentEnclosingEntity=x2
       MemberFlags=x3
       ImplementedSlotSigs=x4
       IsImplemented=x5  }
@@ -2134,7 +2135,7 @@ and u_ValData st =
       val_xmldoc= defaultArg x15 XmlDoc.Empty
       val_xmldocsig=x12
       val_access=x13
-      val_actual_parent=x13b
+      val_declaring_entity=x13b
       val_const=x14
     }
 

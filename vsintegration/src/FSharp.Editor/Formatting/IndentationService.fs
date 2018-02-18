@@ -37,7 +37,7 @@ type internal FSharpIndentationService
 
         let rec tryFindLastNonWhitespaceOrCommentToken (line: TextLine) = maybe {
            let! parsingOptions, _projectOptions = options
-           let defines = CompilerEnvironment.GetCompilationDefinesForEditing(filePath, parsingOptions)
+           let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
            let tokens = Tokenizer.tokenizeLine(documentId, sourceText, line.Start, filePath, defines)
 
            return!

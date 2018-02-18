@@ -1283,28 +1283,28 @@
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpected">
-        <source>The result of this expression is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |&gt; ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</source>
-        <target state="translated">Le résultat de cette expression est ignoré implicitement. Songez à utiliser 'ignore' pour abandonner explicitement cette valeur (par exemple, 'expr |&gt; ignore') ou 'let' pour lier le résultat à un nom (par exemple, 'let result = expr').</target>
+        <source>The result of this expression has type '{0}' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |&gt; ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</source>
+        <target state="translated">Le résultat de cette expression a le type '{0}' et est implicitement ignoré. Utilisez 'ignore' pour abandonner cette valeur de manière explicite, par exemple 'expr |&gt; ignore', ou 'let' pour lier le résultat à un nom, par exemple 'let result = expr'.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithEquality">
-        <source>The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'.</source>
-        <target state="translated">Le résultat de cette expression d'égalité est implicitement ignoré. Utilisez 'let' pour lier le résultat à un nom, par ex., 'let result = expression'.</target>
+        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'.</source>
+        <target state="translated">Le résultat de cette expression d'égalité a le type '{0}' et est implicitement abandonné. Utilisez 'let' pour lier le résultat à un nom, par exemple 'let result = expression'.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossiblePropertySetter">
-        <source>The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{0}.{1} &lt;- expression'.</source>
-        <target state="translated">Le résultat de cette expression d'égalité est implicitement ignoré. Utilisez 'let' pour lier le résultat à un nom, par ex., 'let result = expression'. Si vous voulez définir une valeur sur une propriété, utilisez l'opérateur '&lt;-', par ex., '{0}.{1} &lt;- expression'.</target>
+        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{1}.{2} &lt;- expression'.</source>
+        <target state="translated">Le résultat de cette expression d'égalité a le type '{0}' et est implicitement abandonné. Utilisez 'let' pour lier le résultat à un nom, par exemple 'let result = expression'. Si vous avez l'intention de définir une valeur pour une propriété, utilisez l'opérateur '&lt;-'. Exemple : '{1}.{2} &lt;- expression'.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignment">
-        <source>The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{0} &lt;- expression'.</source>
-        <target state="translated">Le résultat de cette expression d'égalité est implicitement ignoré. Utilisez 'let' pour lier le résultat à un nom, par ex., 'let result = expression'. Si vous voulez muter une valeur, marquez la valeur avec 'mutable' et utilisez l'opérateur '&lt;-', par ex., '{0} &lt;- expression'.</target>
+        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
+        <target state="translated">Le résultat de cette expression d'égalité a le type '{0}' et est implicitement abandonné. Utilisez 'let' pour lier le résultat à un nom, par exemple 'let result = expression'. Si vous avez l'intention de muter une valeur, marquez cette valeur à l'aide de 'mutable' et utilisez l'opérateur '&lt;-'. Exemple : '{1} &lt;- expression'.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignmentToMutable">
-        <source>The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '&lt;-' operator e.g. '{0} &lt;- expression'.</source>
-        <target state="translated">Le résultat de cette expression d'égalité est implicitement ignoré. Utilisez 'let' pour lier le résultat à un nom, par ex., 'let result = expression'. Si vous voulez muter une valeur, utilisez l'opérateur '&lt;-', par ex., '{0} &lt;- expression'.</target>
+        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
+        <target state="translated">Le résultat de cette expression d'égalité a le type '{0}' et est implicitement abandonné. Utilisez 'let' pour lier le résultat à un nom, par exemple 'let result = expression'. Si vous avez l'intention de muter une valeur, utilisez l'opérateur '&lt;-'. Exemple : '{1} &lt;- expression'.</target>
         <note />
       </trans-unit>
       <trans-unit id="RecursiveUseCheckedAtRuntime">

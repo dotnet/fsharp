@@ -105,12 +105,12 @@ module public UntypedParseImpl =
     val TryFindExpressionASTLeftOfDotLeftOfCursor : pos * ParsedInput option -> (pos * bool) option
     val GetRangeOfExprLeftOfDot : pos  * ParsedInput option -> range option
     val TryFindExpressionIslandInPosition : pos * ParsedInput option -> string option
-    val TryGetCompletionContext : pos * FSharpParseFileResults option * lineStr: string -> CompletionContext option
+    val TryGetCompletionContext : pos * ParsedInput * lineStr: string -> CompletionContext option
     val GetEntityKind: pos * ParsedInput -> EntityKind option
     val GetFullNameOfSmallestModuleOrNamespaceAtPoint : ParsedInput * pos -> string[]
 
 // implementation details used by other code in the compiler    
 module internal SourceFileImpl =
     val IsInterfaceFile : string -> bool 
-    val AdditionalDefinesForUseInEditor : string -> string list
+    val AdditionalDefinesForUseInEditor: isInteractive: bool -> string list
 

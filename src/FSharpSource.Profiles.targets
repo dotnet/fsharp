@@ -3,7 +3,7 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup Condition="'$(TargetDotnetProfile)'=='net40'">
-    <DefineConstants>$(DefineConstants);PREFERRED_UI_LANG</DefineConstants>
+    <DefineConstants Condition="'$(MonoPackaging)' == 'true'">$(DefineConstants);CROSS_PLATFORM_COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
     <DefineConstants>$(DefineConstants);BE_SECURITY_TRANSPARENT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_LCIDFROMCODEPAGE</DefineConstants>
@@ -15,7 +15,6 @@
   <PropertyGroup Condition="'$(TargetDotnetProfile)'=='coreclr'">
     <DefineConstants>$(DefineConstants);FX_PORTABLE_OR_NETSTANDARD</DefineConstants>
     <DefineConstants>$(DefineConstants);NETSTANDARD1_6</DefineConstants>
-    <DefineConstants>$(DefineConstants);PREFERRED_UI_LANG</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_APP_DOMAINS</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_ARRAY_LONG_LENGTH</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_BEGINEND_READWRITE</DefineConstants>

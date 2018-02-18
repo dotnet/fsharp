@@ -532,11 +532,11 @@ let UseOfAddressOfOperatorE() = DeclareResourceString("UseOfAddressOfOperator", 
 let DefensiveCopyWarningE() = DeclareResourceString("DefensiveCopyWarning", "%s")
 let DeprecatedThreadStaticBindingWarningE() = DeclareResourceString("DeprecatedThreadStaticBindingWarning", "")
 let FunctionValueUnexpectedE() = DeclareResourceString("FunctionValueUnexpected", "%s")
-let UnitTypeExpectedE() = DeclareResourceString("UnitTypeExpected", "")
-let UnitTypeExpectedWithEqualityE() = DeclareResourceString("UnitTypeExpectedWithEquality", "")
-let UnitTypeExpectedWithPossiblePropertySetterE() = DeclareResourceString("UnitTypeExpectedWithPossiblePropertySetter", "%s%s")
-let UnitTypeExpectedWithPossibleAssignmentE() = DeclareResourceString("UnitTypeExpectedWithPossibleAssignment", "%s")
-let UnitTypeExpectedWithPossibleAssignmentToMutableE() = DeclareResourceString("UnitTypeExpectedWithPossibleAssignmentToMutable", "%s")
+let UnitTypeExpectedE() = DeclareResourceString("UnitTypeExpected", "%s")
+let UnitTypeExpectedWithEqualityE() = DeclareResourceString("UnitTypeExpectedWithEquality", "%s")
+let UnitTypeExpectedWithPossiblePropertySetterE() = DeclareResourceString("UnitTypeExpectedWithPossiblePropertySetter", "%s%s%s")
+let UnitTypeExpectedWithPossibleAssignmentE() = DeclareResourceString("UnitTypeExpectedWithPossibleAssignment", "%s%s")
+let UnitTypeExpectedWithPossibleAssignmentToMutableE() = DeclareResourceString("UnitTypeExpectedWithPossibleAssignmentToMutable", "%s%s")
 let RecursiveUseCheckedAtRuntimeE() = DeclareResourceString("RecursiveUseCheckedAtRuntime", "")
 let LetRecUnsound1E() = DeclareResourceString("LetRecUnsound1", "%s")
 let LetRecUnsound2E() = DeclareResourceString("LetRecUnsound2", "%s%s")
@@ -699,7 +699,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
                 os.Append(System.Environment.NewLine + FSComp.SR.derefInsteadOfNot()) |> ignore
           | _ -> os.Append(ErrorFromAddingTypeEquation1E().Format t2 t1 tpcs) |> ignore
 
-      | ErrorFromAddingTypeEquation(_, _, _, _, ((ConstraintSolverTypesNotInEqualityRelation (_, _, _, _, _, contextInfo) ) as e), _) when contextInfo <> ContextInfo.NoContext ->  
+      | ErrorFromAddingTypeEquation(_, _, _, _, ((ConstraintSolverTypesNotInEqualityRelation (_, _, _, _, _, contextInfo) ) as e), _) when (match contextInfo with ContextInfo.NoContext -> false | _ -> true) ->  
           OutputExceptionR os e
 
       | ErrorFromAddingTypeEquation(_, _, _, _, ((ConstraintSolverTypesNotInSubsumptionRelation _ | ConstraintSolverError _ ) as e), _) ->  
@@ -1249,7 +1249,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
                   | _ :: ts -> hasUnitTType_app ts
                   | [] -> false
 
-              match minfoVirt.EnclosingType with
+              match minfoVirt.ApparentEnclosingType with
               | TType_app (t, types) when t.IsFSharpInterfaceTycon && hasUnitTType_app types ->
                   // match abstract member with 'unit' passed as generic argument
                   os.Append(OverrideDoesntOverride4E().Format sig1) |> ignore
@@ -1292,28 +1292,32 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
           os.Append(DeprecatedThreadStaticBindingWarningE().Format) |> ignore
 
       | FunctionValueUnexpected (denv, ty, _) ->
-          // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
-          os.Append(FunctionValueUnexpectedE().Format (NicePrint.stringOfTy denv ty)) |> ignore
+          let errorText = FunctionValueUnexpectedE().Format (NicePrint.stringOfTy denv ty)
+          os.Append errorText |> ignore
 
-      | UnitTypeExpected (_, _, _) ->
-          let warningText = UnitTypeExpectedE().Format
+      | UnitTypeExpected (denv, ty, _) ->
+          let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
+          let warningText = UnitTypeExpectedE().Format (NicePrint.stringOfTy denv ty)
           os.Append warningText |> ignore
 
-      | UnitTypeExpectedWithEquality (_) ->
-          let warningText = UnitTypeExpectedWithEqualityE().Format
+      | UnitTypeExpectedWithEquality (denv, ty, _) ->
+          let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
+          let warningText = UnitTypeExpectedWithEqualityE().Format (NicePrint.stringOfTy denv ty)
           os.Append warningText |> ignore
 
-      | UnitTypeExpectedWithPossiblePropertySetter (_, _, bindingName, propertyName, _) ->
-          let warningText = UnitTypeExpectedWithPossiblePropertySetterE().Format bindingName propertyName
+      | UnitTypeExpectedWithPossiblePropertySetter (denv, ty, bindingName, propertyName, _) ->
+          let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
+          let warningText = UnitTypeExpectedWithPossiblePropertySetterE().Format (NicePrint.stringOfTy denv ty) bindingName propertyName
           os.Append warningText |> ignore
 
-      | UnitTypeExpectedWithPossibleAssignment (_, _, isAlreadyMutable, bindingName, _) ->
+      | UnitTypeExpectedWithPossibleAssignment (denv, ty, isAlreadyMutable, bindingName, _) ->
+          let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
           let warningText = 
             if isAlreadyMutable then
-                UnitTypeExpectedWithPossibleAssignmentToMutableE().Format bindingName
+                UnitTypeExpectedWithPossibleAssignmentToMutableE().Format (NicePrint.stringOfTy denv ty) bindingName
             else
-                UnitTypeExpectedWithPossibleAssignmentE().Format bindingName
+                UnitTypeExpectedWithPossibleAssignmentE().Format (NicePrint.stringOfTy denv ty)  bindingName
           os.Append warningText |> ignore
 
       | RecursiveUseCheckedAtRuntime  _ -> 
@@ -1347,8 +1351,8 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
 
       | NonUniqueInferredAbstractSlot(_, denv, bindnm, bvirt1, bvirt2, _) ->
           os.Append(NonUniqueInferredAbstractSlot1E().Format bindnm) |> ignore
-          let ty1 = bvirt1.EnclosingType
-          let ty2 = bvirt2.EnclosingType
+          let ty1 = bvirt1.ApparentEnclosingType
+          let ty2 = bvirt2.ApparentEnclosingType
           // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
           os.Append(NonUniqueInferredAbstractSlot2E().Format) |> ignore
@@ -2283,9 +2287,7 @@ type TcConfigBuilder =
       mutable optSettings   : Optimizer.OptimizationSettings 
       mutable emitTailcalls : bool
       mutable deterministic : bool
-#if PREFERRED_UI_LANG
       mutable preferredUiLang: string option
-#endif
       mutable lcid          : int option
       mutable productNameForBannerText : string
       /// show the MS (c) notice, e.g. with help or fsi? 
@@ -2444,9 +2446,7 @@ type TcConfigBuilder =
           optSettings = Optimizer.OptimizationSettings.Defaults
           emitTailcalls = true
           deterministic = false
-#if PREFERRED_UI_LANG
           preferredUiLang = None
-#endif
           lcid = None
           // See bug 6071 for product banner spec
           productNameForBannerText = FSComp.SR.buildProductName(FSharpEnvironment.FSharpBannerVersion)
@@ -2910,9 +2910,7 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
     member x.optSettings        = data.optSettings
     member x.emitTailcalls      = data.emitTailcalls
     member x.deterministic      = data.deterministic
-#if PREFERRED_UI_LANG
     member x.preferredUiLang    = data.preferredUiLang
-#endif
     member x.lcid               = data.lcid
     member x.optsOn             = data.optsOn
     member x.productNameForBannerText  = data.productNameForBannerText

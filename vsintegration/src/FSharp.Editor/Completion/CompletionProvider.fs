@@ -85,10 +85,9 @@ type internal FSharpCompletionProvider
         else
             let triggerPosition = caretPosition - 1
             let triggerChar = sourceText.[triggerPosition]
-            let prevChar = sourceText.[triggerPosition - 1]
-            
+
             // do not trigger completion if it's not single dot, i.e. range expression
-            if not Settings.IntelliSense.ShowAfterCharIsTyped && prevChar = '.' then
+            if not Settings.IntelliSense.ShowAfterCharIsTyped && triggerPosition > 0 && sourceText.[triggerPosition - 1] = '.' then
                 false
             else
                 let documentId, filePath, defines = getInfo()
@@ -194,7 +193,13 @@ type internal FSharpCompletionProvider
 
             if results.Count > 0 && not declarations.IsForType && not declarations.IsError && List.isEmpty partialName.QualifyingIdents then
                 let lineStr = textLines.[caretLinePos.Line].ToString()
-                match UntypedParseImpl.TryGetCompletionContext(Pos.fromZ caretLinePos.Line caretLinePos.Character, Some parseResults, lineStr) with
+                
+                let completionContext =
+                    parseResults.ParseTree 
+                    |> Option.bind (fun parseTree ->
+                         UntypedParseImpl.TryGetCompletionContext(Pos.fromZ caretLinePos.Line caretLinePos.Character, parseTree, lineStr))
+                
+                match completionContext with
                 | None -> results.AddRange(keywordCompletionItems)
                 | _ -> ()
             

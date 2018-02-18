@@ -1,3 +1,13 @@
+#### 19.0.1
+  * Rename ``LogicalEnclosingEntity`` to ``ApparentEnclosingEntity`` for consistency int he F# codebase terminology.
+  * Rename ``EnclosingEntity`` to ``DeclaringEntity``.  In the case of extension properties, ``EnclosingEntity`` was incorrectly returning the logical enclosing entity (i.e. the type the property appears to extend), and in this case ``ApparentEnclosingEntity`` should be used instead.
+  
+#### 18.0.1
+  * Integrate visualfsharp master
+  
+#### 17.0.2
+  * Integrate visualfsharp master
+  
 #### 16.0.3
   * [File name deduplication not working with ParseAndCheckFileInProject](https://github.com/fsharp/FSharp.Compiler.Service/issues/819)
   
@@ -404,7 +414,7 @@
 * Return additional 'property' and 'event' methods for F#-defined types to regularize symbols (#108, #143)
 * Add IsPropertySetterMethod and IsPropertyGetterMethod which only return true for getter/setter methods, not properties. Deprecate IsSetterMethod and IsGetterMethod in favour of these.
 * Add IsEventAddMethod and IsEventRemoveMethod which return true for add/remove methods with an associated event
-* Change IsProperty and IsEvent to only return true for the symbols for properties and events, rather than the methods assocaited with these
+* Change IsProperty and IsEvent to only return true for the symbols for properties and events, rather than the methods associated with these
 * Fix value of Assembly for some symbols (e.g. property symbols)
 
 #### 0.0.45 - 

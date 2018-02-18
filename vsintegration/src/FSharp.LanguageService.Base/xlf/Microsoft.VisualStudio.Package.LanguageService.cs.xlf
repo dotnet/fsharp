@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="CommentSelection">
         <source>Comment Selection</source>
-        <target state="translated">Okomentovat výběr</target>
+        <target state="translated">Výběr komentáře</target>
         <note>IVsCompoundAction::OpenCompoundAction description</note>
       </trans-unit>
       <trans-unit id="EditIntersects">

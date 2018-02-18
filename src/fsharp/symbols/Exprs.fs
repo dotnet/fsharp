@@ -197,6 +197,98 @@ module FSharpExprConvert =
         | Expr.Op(TOp.ValFieldSet rfref, _, _, _)  when IsStaticInitializationField rfref -> Some ()
         | _ -> None
 
+    let (|ILUnaryOp|_|) e = 
+        match e with 
+        | AI_neg -> Some mkCallUnaryNegOperator
+        | AI_not -> Some mkCallUnaryNotOperator
+        | _ -> None
+
+    let (|ILBinaryOp|_|) e = 
+        match e with 
+        | AI_add        -> Some mkCallAdditionOperator
+        | AI_add_ovf
+        | AI_add_ovf_un -> Some mkCallAdditionChecked
+        | AI_sub        -> Some mkCallSubtractionOperator
+        | AI_sub_ovf
+        | AI_sub_ovf_un -> Some mkCallSubtractionChecked
+        | AI_mul        -> Some mkCallMultiplyOperator
+        | AI_mul_ovf
+        | AI_mul_ovf_un -> Some mkCallMultiplyChecked
+        | AI_div
+        | AI_div_un     -> Some mkCallDivisionOperator
+        | AI_rem
+        | AI_rem_un     -> Some mkCallModulusOperator
+        | AI_ceq        -> Some mkCallEqualsOperator
+        | AI_clt
+        | AI_clt_un     -> Some mkCallLessThanOperator
+        | AI_cgt
+        | AI_cgt_un     -> Some mkCallGreaterThanOperator
+        | AI_and        -> Some mkCallBitwiseAndOperator
+        | AI_or         -> Some mkCallBitwiseOrOperator
+        | AI_xor        -> Some mkCallBitwiseXorOperator
+        | AI_shl        -> Some mkCallShiftLeftOperator
+        | AI_shr
+        | AI_shr_un     -> Some mkCallShiftRightOperator
+        | _ -> None
+
+    let (|ILConvertOp|_|) e = 
+        match e with 
+        | AI_conv basicTy ->
+            match basicTy with
+            | DT_R  -> Some mkCallToDoubleOperator
+            | DT_I1 -> Some mkCallToSByteOperator
+            | DT_U1 -> Some mkCallToByteOperator
+            | DT_I2 -> Some mkCallToInt16Operator
+            | DT_U2 -> Some mkCallToUInt16Operator
+            | DT_I4 -> Some mkCallToInt32Operator
+            | DT_U4 -> Some mkCallToUInt32Operator
+            | DT_I8 -> Some mkCallToInt64Operator
+            | DT_U8 -> Some mkCallToUInt64Operator
+            | DT_R4 -> Some mkCallToSingleOperator
+            | DT_R8 -> Some mkCallToDoubleOperator
+            | DT_I  -> Some mkCallToIntPtrOperator
+            | DT_U  -> Some mkCallToUIntPtrOperator
+            | DT_REF -> None
+        | AI_conv_ovf basicTy
+        | AI_conv_ovf_un basicTy ->
+            match basicTy with
+            | DT_R  -> Some mkCallToDoubleOperator
+            | DT_I1 -> Some mkCallToSByteChecked
+            | DT_U1 -> Some mkCallToByteChecked
+            | DT_I2 -> Some mkCallToInt16Checked
+            | DT_U2 -> Some mkCallToUInt16Checked
+            | DT_I4 -> Some mkCallToInt32Checked
+            | DT_U4 -> Some mkCallToUInt32Checked
+            | DT_I8 -> Some mkCallToInt64Checked
+            | DT_U8 -> Some mkCallToUInt64Checked
+            | DT_R4 -> Some mkCallToSingleOperator
+            | DT_R8 -> Some mkCallToDoubleOperator
+            | DT_I  -> Some mkCallToIntPtrChecked
+            | DT_U  -> Some mkCallToUIntPtrChecked
+            | DT_REF -> None
+        | _ -> None
+
+    let (|TTypeConvOp|_|) (cenv:Impl.cenv) ty = 
+        let g = cenv.g
+        match ty with
+        | TType_app (tcref,_) ->
+            match tcref with
+            | _ when tyconRefEq g tcref g.sbyte_tcr      -> Some mkCallToSByteOperator
+            | _ when tyconRefEq g tcref g.byte_tcr       -> Some mkCallToByteOperator
+            | _ when tyconRefEq g tcref g.int16_tcr      -> Some mkCallToInt16Operator
+            | _ when tyconRefEq g tcref g.uint16_tcr     -> Some mkCallToUInt16Operator
+            | _ when tyconRefEq g tcref g.int_tcr        -> Some mkCallToIntOperator
+            | _ when tyconRefEq g tcref g.int32_tcr      -> Some mkCallToInt32Operator
+            | _ when tyconRefEq g tcref g.uint32_tcr     -> Some mkCallToUInt32Operator
+            | _ when tyconRefEq g tcref g.int64_tcr      -> Some mkCallToInt64Operator
+            | _ when tyconRefEq g tcref g.uint64_tcr     -> Some mkCallToUInt64Operator
+            | _ when tyconRefEq g tcref g.float32_tcr    -> Some mkCallToSingleOperator
+            | _ when tyconRefEq g tcref g.float_tcr      -> Some mkCallToDoubleOperator
+            | _ when tyconRefEq g tcref g.nativeint_tcr  -> Some mkCallToIntPtrOperator
+            | _ when tyconRefEq g tcref g.unativeint_tcr -> Some mkCallToUIntPtrOperator
+            | _ -> None
+        | _ -> None
+
     let ConvType cenv typ = FSharpType(cenv, typ)
     let ConvTypes cenv typs = List.map (ConvType cenv) typs
     let ConvILTypeRefApp (cenv:Impl.cenv) m tref tyargs = 
@@ -511,30 +603,108 @@ module FSharpExprConvert =
                 E.TupleGet(tyR, n, ConvExpr cenv env e) 
 
             | TOp.ILAsm([ I_ldfld(_, _, fspec) ], _), enclTypeArgs, [obj] -> 
-                let typR = ConvILTypeRefApp cenv m fspec.EnclosingTypeRef enclTypeArgs 
+                let typR = ConvILTypeRefApp cenv m fspec.DeclaringTypeRef enclTypeArgs 
                 let objR = ConvLValueExpr cenv env obj
                 E.ILFieldGet(Some objR, typR, fspec.Name) 
 
             | TOp.ILAsm(( [ I_ldsfld (_, fspec) ] | [ I_ldsfld (_, fspec); AI_nop ]), _), enclTypeArgs, []  -> 
-                let typR = ConvILTypeRefApp cenv m fspec.EnclosingTypeRef enclTypeArgs 
+                let typR = ConvILTypeRefApp cenv m fspec.DeclaringTypeRef enclTypeArgs 
                 E.ILFieldGet(None, typR, fspec.Name) 
 
             | TOp.ILAsm([ I_stfld(_, _, fspec) ], _), enclTypeArgs, [obj;arg]  -> 
-                let typR = ConvILTypeRefApp cenv m fspec.EnclosingTypeRef enclTypeArgs 
+                let typR = ConvILTypeRefApp cenv m fspec.DeclaringTypeRef enclTypeArgs 
                 let objR = ConvLValueExpr cenv env obj
                 let argR = ConvExpr cenv env arg
                 E.ILFieldSet(Some objR, typR, fspec.Name, argR) 
 
             | TOp.ILAsm([ I_stsfld(_, fspec) ], _), enclTypeArgs, [arg]  -> 
-                let typR = ConvILTypeRefApp cenv m fspec.EnclosingTypeRef enclTypeArgs 
+                let typR = ConvILTypeRefApp cenv m fspec.DeclaringTypeRef enclTypeArgs 
                 let argR = ConvExpr cenv env arg
                 E.ILFieldSet(None, typR, fspec.Name, argR) 
 
+            | TOp.ILAsm([ ], [tty]), _, [arg] -> 
+                match tty with
+                | TTypeConvOp cenv convOp ->
+                    let ty = tyOfExpr cenv.g arg
+                    let op = convOp cenv.g m ty arg
+                    ConvExprPrim cenv env op
+                | _ ->
+                    ConvExprPrim cenv env arg
 
-            | TOp.ILAsm([ AI_ceq ], _), _, [arg1;arg2]  -> 
+            | TOp.ILAsm([ I_box _ ], _), [ty], [arg] -> 
+                let op = mkCallBox cenv.g m ty arg
+                ConvExprPrim cenv env op
+
+            | TOp.ILAsm([ I_unbox_any _ ], _), [ty], [arg] -> 
+                let op = mkCallUnbox cenv.g m ty arg
+                ConvExprPrim cenv env op
+
+            | TOp.ILAsm([ I_isinst _ ], _), [ty], [arg] -> 
+                let op = mkCallTypeTest cenv.g m ty arg
+                ConvExprPrim cenv env op
+
+            | TOp.ILAsm ([ I_call (Normalcall, mspec, None) ], _), _, [arg]
+              when mspec.MethodRef.DeclaringTypeRef.Name = "System.String" && mspec.Name = "GetHashCode" ->
+                let ty = tyOfExpr cenv.g arg
+                let op = mkCallHash cenv.g m ty arg
+                ConvExprPrim cenv env op
+
+            | TOp.ILCall(_, _, _, _, _, _, _, mref, _, _, _), [],
+              [Expr.Op(TOp.ILAsm([ I_ldtoken (ILToken.ILType _) ], _), [ty], _, _)]
+              when mref.DeclaringTypeRef.Name = "System.Type" && mref.Name = "GetTypeFromHandle" -> 
+                let op = mkCallTypeOf cenv.g m ty
+                ConvExprPrim cenv env op
+
+            | TOp.ILAsm([ EI_ilzero _ ], _), [ty], _ -> 
+                E.DefaultValue (ConvType cenv ty)
+
+            | TOp.ILAsm([ AI_ldnull; AI_cgt_un ], _), _, [arg] -> 
+                let elemTy = tyOfExpr cenv.g arg
+                let nullVal = mkNull m elemTy
+                let op = mkCallNotEqualsOperator cenv.g m elemTy arg nullVal
+                ConvExprPrim cenv env op
+
+            | TOp.ILAsm([ I_ldlen; AI_conv DT_I4 ], _), _, [arr] -> 
+                let arrayTy = tyOfExpr cenv.g arr
+                let elemTy = destArrayTy cenv.g arrayTy
+                let op = mkCallArrayLength cenv.g m elemTy arr
+                ConvExprPrim cenv env op
+
+            | TOp.ILAsm([ I_newarr (ILArrayShape [(Some 0, None)], _)], _), [elemTy], xa ->
+                E.NewArray(ConvType cenv elemTy, ConvExprs cenv env xa)
+
+            | TOp.ILAsm([ I_ldelem_any (ILArrayShape [(Some 0, None)], _)], _), [elemTy], [arr; idx1]  -> 
+                let op = mkCallArrayGet cenv.g m elemTy arr idx1
+                ConvExprPrim cenv env op
+
+            | TOp.ILAsm([ I_stelem_any (ILArrayShape [(Some 0, None)], _)], _), [elemTy], [arr; idx1; v]  -> 
+                let op = mkCallArraySet cenv.g m elemTy arr idx1 v
+                ConvExprPrim cenv env op
+
+            | TOp.ILAsm([ ILUnaryOp unaryOp ], _), _, [arg] -> 
+                let ty = tyOfExpr cenv.g arg
+                let op = unaryOp cenv.g m ty arg
+                ConvExprPrim cenv env op
+
+            | TOp.ILAsm([ ILBinaryOp binaryOp ], _), _, [arg1;arg2] -> 
                 let ty = tyOfExpr cenv.g arg1
-                let eq = mkCallEqualsOperator cenv.g m ty arg1 arg2
-                ConvExprPrim cenv env eq
+                let op = binaryOp cenv.g m ty arg1 arg2
+                ConvExprPrim cenv env op
+
+            | TOp.ILAsm([ ILConvertOp convertOp1; ILConvertOp convertOp2 ], _), _, [arg] -> 
+                let ty1 = tyOfExpr cenv.g arg
+                let op1 = convertOp1 cenv.g m ty1 arg
+                let ty2 = tyOfExpr cenv.g op1
+                let op2 = convertOp2 cenv.g m ty2 op1
+                ConvExprPrim cenv env op2
+
+            | TOp.ILAsm([ ILConvertOp convertOp ], [TType_app (tcref,_)]), _, [arg] -> 
+                let ty = tyOfExpr cenv.g arg
+                let op =
+                    if tyconRefEq cenv.g tcref cenv.g.char_tcr
+                    then mkCallToCharOperator cenv.g m ty arg
+                    else convertOp cenv.g m ty arg
+                ConvExprPrim cenv env op
 
             | TOp.ILAsm([ I_throw ], _), _, [arg1]  -> 
                 let raiseExpr = mkCallRaise cenv.g m (tyOfExpr cenv.g expr) arg1 
@@ -603,17 +773,18 @@ module FSharpExprConvert =
             | TOp.While _, [], [Expr.Lambda(_, _, _, [_], test, _, _);Expr.Lambda(_, _, _, [_], body, _, _)]  -> 
                     E.WhileLoop(ConvExpr cenv env test, ConvExpr cenv env body) 
         
-            | TOp.For(_, (FSharpForLoopUp |FSharpForLoopDown as dir) ), [], [Expr.Lambda(_, _, _, [_], lim0, _, _); Expr.Lambda(_, _, _, [_], SimpleArrayLoopUpperBound, lm, _); SimpleArrayLoopBody cenv.g (arr, elemTy, body)] ->
+            | TOp.For(_, dir), [], [Expr.Lambda(_, _, _, [_], lim0, _, _); Expr.Lambda(_, _, _, [_], SimpleArrayLoopUpperBound, lm, _); SimpleArrayLoopBody cenv.g (arr, elemTy, body)] ->
                 let lim1 = 
                     let len = mkCallArrayLength cenv.g lm elemTy arr // Array.length arr
-                    mkCallSubtractionOperator cenv.g lm cenv.g.int32_ty len (Expr.Const(Const.Int32 1, m, cenv.g.int32_ty)) // len - 1
-                E.FastIntegerForLoop(ConvExpr cenv env lim0, ConvExpr cenv env lim1, ConvExpr cenv env body, (dir = FSharpForLoopUp)) 
+                    mkCallSubtractionOperator cenv.g lm cenv.g.int32_ty len (mkOne cenv.g lm) // len - 1
+                E.FastIntegerForLoop(ConvExpr cenv env lim0, ConvExpr cenv env lim1, ConvExpr cenv env body, dir <> FSharpForLoopDown) 
 
-            | TOp.For(_, dir), [], [Expr.Lambda(_, _, _, [_], lim0, _, _);Expr.Lambda(_, _, _, [_], lim1, _, _);body]  -> 
-                match dir with 
-                | FSharpForLoopUp -> E.FastIntegerForLoop(ConvExpr cenv env lim0, ConvExpr cenv env lim1, ConvExpr cenv env body, true) 
-                | FSharpForLoopDown -> E.FastIntegerForLoop(ConvExpr cenv env lim0, ConvExpr cenv env lim1, ConvExpr cenv env body, false) 
-                | _ -> failwith "unexpected for-loop form"
+            | TOp.For(_, dir), [], [Expr.Lambda(_, _, _, [_], lim0, _, _); Expr.Lambda(_, _, _, [_], lim1, lm, _); body]  -> 
+                let lim1 =
+                    if dir = CSharpForLoopUp then
+                        mkCallSubtractionOperator cenv.g lm cenv.g.int32_ty lim1 (mkOne cenv.g lm) // len - 1
+                    else lim1
+                E.FastIntegerForLoop(ConvExpr cenv env lim0, ConvExpr cenv env lim1, ConvExpr cenv env body, dir <> FSharpForLoopDown) 
 
             | TOp.ILCall(_, _, _, isNewObj, valUseFlags, _isProp, _, ilMethRef, enclTypeArgs, methTypeArgs, _tys), [], callArgs -> 
                 ConvILCall cenv env (isNewObj, valUseFlags, ilMethRef, enclTypeArgs, methTypeArgs, callArgs, m)
@@ -694,9 +865,9 @@ module FSharpExprConvert =
             // this does not matter currently, type checking fails to resolve it when a TP references a union case subclass
             try
                 // if the type is an union case class, lookup will fail 
-                Import.ImportILTypeRef cenv.amap m ilMethRef.EnclosingTypeRef, None
+                Import.ImportILTypeRef cenv.amap m ilMethRef.DeclaringTypeRef, None
             with _ ->
-                let e = ilMethRef.EnclosingTypeRef
+                let e = ilMethRef.DeclaringTypeRef
                 let parent = ILTypeRef.Create(e.Scope, e.Enclosing.Tail, e.Enclosing.Head)
                 Import.ImportILTypeRef cenv.amap m parent, Some e.Name
                 
@@ -736,7 +907,7 @@ module FSharpExprConvert =
                         enclosingEntity.ModuleOrNamespaceType.AllValsAndMembers 
                         |> Seq.filter (fun v -> 
                             v.CompiledName = vName &&
-                                match v.ActualParent with
+                                match v.DeclaringEntity with
                                 | Parent p -> p.PublicPath = enclosingEntity.PublicPath
                                 | _ -> false 
                         ) |> List.ofSeq
@@ -843,7 +1014,7 @@ module FSharpExprConvert =
             let logicalName = ilMethRef.Name 
             let isMember = memberParentName.IsSome
             if isMember then 
-                match ilMethRef.Name, ilMethRef.EnclosingTypeRef.Name with
+                match ilMethRef.Name, ilMethRef.DeclaringTypeRef.Name with
                 | "Invoke", "Microsoft.FSharp.Core.FSharpFunc`2" ->
                     let objR = ConvLValueExpr cenv env callArgs.Head
                     let argR = ConvExpr cenv env callArgs.Tail.Head
@@ -852,7 +1023,7 @@ module FSharpExprConvert =
                 | _ ->
                 let isCtor = (ilMethRef.Name = ".ctor")
                 let isStatic = isCtor || ilMethRef.CallingConv.IsStatic
-                let scoref = ilMethRef.EnclosingTypeRef.Scope
+                let scoref = ilMethRef.DeclaringTypeRef.Scope
                 let typars1 = tcref.Typars(m)
                 let typars2 = [ 1 .. ilMethRef.GenericArity ] |> List.map (fun _ -> NewRigidTypar "T" m)
                 let tinst1 = typars1 |> generalizeTypars

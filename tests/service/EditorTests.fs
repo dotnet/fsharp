@@ -36,21 +36,12 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service.Tests.Common
 
 let stringMethods = 
-#if DOTNETCORE
-    ["Chars"; "CompareTo"; "Contains"; "CopyTo"; "EndsWith"; "Equals";
-    "GetHashCode"; "GetType"; "IndexOf";
-    "IndexOfAny"; "Insert"; "LastIndexOf"; "LastIndexOfAny";
-    "Length"; "PadLeft"; "PadRight"; "Remove"; "Replace"; "Split";
-    "StartsWith"; "Substring"; "ToCharArray"; "ToLower"; "ToLowerInvariant";
-    "ToString"; "ToUpper"; "ToUpperInvariant"; "Trim"; "TrimEnd"; "TrimStart"]
-#else
     ["Chars"; "Clone"; "CompareTo"; "Contains"; "CopyTo"; "EndsWith"; "Equals";
     "GetEnumerator"; "GetHashCode"; "GetType"; "GetTypeCode"; "IndexOf";
     "IndexOfAny"; "Insert"; "IsNormalized"; "LastIndexOf"; "LastIndexOfAny";
     "Length"; "Normalize"; "PadLeft"; "PadRight"; "Remove"; "Replace"; "Split";
     "StartsWith"; "Substring"; "ToCharArray"; "ToLower"; "ToLowerInvariant";
     "ToString"; "ToUpper"; "ToUpperInvariant"; "Trim"; "TrimEnd"; "TrimStart"]
-#endif
 
 let input = 
   """
@@ -221,8 +212,8 @@ let ``Symbols many tests`` () =
     fnVal.CurriedParameterGroups.[0].[1].Name.Value |> shouldEqual "y"
     fnVal.DeclarationLocation.StartLine |> shouldEqual 3
     fnVal.DisplayName |> shouldEqual "foo"
-    fnVal.EnclosingEntity.Value.DisplayName |> shouldEqual "Test"
-    fnVal.EnclosingEntity.Value.DeclarationLocation.StartLine |> shouldEqual 1
+    fnVal.DeclaringEntity.Value.DisplayName |> shouldEqual "Test"
+    fnVal.DeclaringEntity.Value.DeclarationLocation.StartLine |> shouldEqual 1
     fnVal.GenericParameters.Count |> shouldEqual 0
     fnVal.InlineAnnotation |> shouldEqual FSharpInlineAnnotation.OptionalInline
     fnVal.IsActivePattern |> shouldEqual false
@@ -357,7 +348,7 @@ type Test() =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
 
-    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(20), fun _ -> false)|> Async.RunSynchronously
+    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(20), (fun () -> []), fun _ -> false)|> Async.RunSynchronously
     //decls |> List.map (fun d -> d.Head.Symbol.DisplayName) |> printfn "---> decls = %A"
     decls |> Seq.exists (fun d -> d.Head.Symbol.DisplayName = "abc") |> shouldEqual true
 
@@ -374,7 +365,7 @@ type Test() =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
 
-    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(21), fun _ -> false)|> Async.RunSynchronously
+    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(21), (fun () -> []), fun _ -> false)|> Async.RunSynchronously
     //decls |> List.map (fun d -> d.Head.Symbol.DisplayName) |> printfn "---> decls = %A"
     decls |> Seq.exists (fun d -> d.Head.Symbol.DisplayName = "abc") |> shouldEqual true
 
@@ -391,7 +382,7 @@ type Test() =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
 
-    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(14), fun _ -> false)|> Async.RunSynchronously
+    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(14), (fun () -> []), fun _ -> false)|> Async.RunSynchronously
     //decls |> List.map (fun d -> d.Head.Symbol.DisplayName) |> printfn "---> decls = %A"
     decls |> Seq.exists (fun d -> d.Head.Symbol.DisplayName = "abc") |> shouldEqual true
 
@@ -582,7 +573,8 @@ let test3 = System.Text.RegularExpressions.RegexOptions.Compiled
         |> Array.choose(fun s -> match s.Symbol with :? FSharpEntity as e when e.IsEnum -> Some e | _ -> None)
         |> Array.distinct
         |> Array.map(fun e -> (e.DisplayName, e.FSharpFields
-                                              |> Seq.map(fun f -> f.Name, f.LiteralValue )
+                                              |> Seq.sortBy (fun f -> match f.LiteralValue with None -> -1 | Some x -> unbox x)
+                                              |> Seq.map (fun f -> f.Name, f.LiteralValue)
                                               |> Seq.toList))
 
     enums |> shouldEqual
@@ -776,6 +768,17 @@ let _ = Threading.Buzz = null
           ("Threading", (6, 8, 6, 17))
           ("Test", (1, 0, 1, 0))|]
 
+[<Test>]
+let ``GetDeclarationLocation should not require physical file`` () = 
+    let input = "let abc = 1\nlet xyz = abc"
+    let file = "/home/user/Test.fsx"
+    let _, typeCheckResults = parseAndCheckScript(file, input) 
+    let location = typeCheckResults.GetDeclarationLocation(2, 13, "let xyz = abc", ["abc"]) |> Async.RunSynchronously
+    match location with
+    | FSharpFindDeclResult.DeclFound r -> Some (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn, "<=== Found here."                             ) 
+    | _                                -> Some (0          , 0            , 0        , 0          , "Not Found. Should not require physical file." )
+    |> shouldEqual                       (Some (1          , 4            , 1        , 7          , "<=== Found here."                             ))
+
 
 //-------------------------------------------------------------------------------
 
@@ -965,3 +968,34 @@ let ``Test TPProject param info`` () =
 ``Basic cancellation test`` ()
 ``Intro test`` () 
 #endif
+
+[<Test>]
+let ``FSharpField.IsNameGenerated`` () =
+    let checkFields source =
+        let file = "/home/user/Test.fsx"
+        let _, typeCheckResults = parseAndCheckScript(file, source) 
+        let symbols =
+            typeCheckResults.GetAllUsesOfAllSymbolsInFile()
+            |> Async.RunSynchronously
+        symbols
+        |> Array.choose (fun su ->
+            match su.Symbol with
+            | :? FSharpEntity as entity -> Some entity.FSharpFields
+            | :? FSharpUnionCase as unionCase -> Some unionCase.UnionCaseFields 
+            | _ -> None)
+        |> Seq.concat
+        |> Seq.map (fun (field: FSharpField) -> field.Name, field.IsNameGenerated)
+        |> List.ofSeq
+        
+    ["exception E of string", ["Data0", true]
+     "exception E of Data0: string", ["Data0", false]
+     "exception E of Name: string", ["Name", false]
+     "exception E of string * Data2: string * Data1: string * Name: string * Data4: string",
+        ["Data0", true; "Data2", false; "Data1", false; "Name", false; "Data4", false]
+    
+     "type U = Case of string", ["Item", true]
+     "type U = Case of Item: string", ["Item", false]
+     "type U = Case of Name: string", ["Name", false]
+     "type U = Case of string * Item2: string * string * Name: string",
+        ["Item1", true; "Item2", false; "Item3", true; "Name", false]]
+    |> List.iter (fun (source, expected) -> checkFields source |> shouldEqual expected)

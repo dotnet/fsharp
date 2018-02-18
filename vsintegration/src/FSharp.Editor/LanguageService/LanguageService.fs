@@ -23,7 +23,8 @@ open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Editor
-open Microsoft.VisualStudio.FSharp.Editor.SiteProvider
+open Microsoft.VisualStudio.FSharp.LanguageService
+open Microsoft.VisualStudio.FSharp.LanguageService.SiteProvider
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.LanguageServices.Implementation.LanguageService
@@ -161,8 +162,8 @@ type internal FSharpProjectOptionsManager
         let parsingOptions = 
             match projectOptionsOpt with 
             | Some (parsingOptions, _site, _projectOptions) -> parsingOptions
-            | _ -> FSharpParsingOptions.Default
-        CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, parsingOptions)
+            | _ -> { FSharpParsingOptions.Default with IsInteractive = IsScript document.Name }
+        CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
 
     /// Try and get the Options for a project 
     member this.TryGetOptionsForProject(projectId:ProjectId) = projectOptionsTable.TryGetOptionsForProject(projectId)
@@ -349,6 +350,7 @@ type
 
     override this.Initialize() = 
         base.Initialize()
+
 
         let workspaceChanged (args:WorkspaceChangeEventArgs) =
             match args.Kind with
@@ -576,12 +578,13 @@ type
                 match hier with
                 | :? IProvideProjectSite as siteProvider when not (IsScript(filename)) ->
                     this.SetupProjectFile(siteProvider, this.Workspace, "SetupNewTextView")
-                | _ when not (IsScript(filename)) ->
+                | h when not (IsScript(filename)) ->
                     let docId = this.Workspace.CurrentSolution.GetDocumentIdsWithFilePath(filename).FirstOrDefault()
                     match docId with
                     | null ->
-                        let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
-                        this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
+                        if not (h.IsCapabilityMatch("CPS")) then
+                            let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
+                            this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
                     | id ->
                         projectInfoManager.UpdateProjectInfoWithProjectId(id.ProjectId, "SetupNewTextView", invalidateConfig=true)
                 | _ ->

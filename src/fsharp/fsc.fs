@@ -1091,7 +1091,7 @@ module StaticLinker =
                     match depILModule.Manifest with 
                     | Some m -> 
                         for ca in m.CustomAttrs.AsList do
-                           if ca.Method.MethodRef.EnclosingTypeRef.FullName = typeof<CompilationMappingAttribute>.FullName then 
+                           if ca.Method.MethodRef.DeclaringTypeRef.FullName = typeof<CompilationMappingAttribute>.FullName then 
                                yield ca
                     | _ -> () ]
 
@@ -1201,7 +1201,7 @@ module StaticLinker =
                                         |> List.map (fun md ->
                                             {md with CustomAttrs = 
                                                         mkILCustomAttrs (td.CustomAttrs.AsList |> List.filter (fun ilattr ->
-                                                            ilattr.Method.EnclosingType.TypeRef.FullName <> "System.Runtime.TargetedPatchingOptOutAttribute")  )}) 
+                                                            ilattr.Method.DeclaringType.TypeRef.FullName <> "System.Runtime.TargetedPatchingOptOutAttribute")  )}) 
                                         |> mkILMethods } ])}
             //ILAsciiWriter.output_module stdout fakeModule
             fakeModule.TypeDefs.AsList
@@ -1635,7 +1635,6 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, openBinarie
     let directoryBuildingFrom = Directory.GetCurrentDirectory()
     let setProcessThreadLocals tcConfigB =
                     tcConfigB.openBinariesInMemory <- openBinariesInMemory
-#if PREFERRED_UI_LANG
                     match tcConfigB.preferredUiLang with
 #if FX_RESHAPED_GLOBALIZATION
                     | Some s -> System.Globalization.CultureInfo.CurrentUICulture <- new System.Globalization.CultureInfo(s)
@@ -1643,11 +1642,6 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, openBinarie
                     | Some s -> Thread.CurrentThread.CurrentUICulture <- new System.Globalization.CultureInfo(s)
 #endif
                     | None -> ()
-#else
-                    match tcConfigB.lcid with
-                    | Some n -> Thread.CurrentThread.CurrentUICulture <- new CultureInfo(n)
-                    | None -> ()
-#endif
                     if tcConfigB.utf8output then 
                         Console.OutputEncoding <- Encoding.UTF8
 
@@ -1968,12 +1962,10 @@ let main2b (tcImportsCapture,dynamicAssemblyCreator) (Args (ctok, tcConfig: TcCo
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.IlxGen
     let ilxGenerator = CreateIlxAssemblyGenerator (tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), generatedCcu)
 
-    // Check if System.SerializableAttribute exists in mscorlib.dll, 
-    // so that make sure the compiler only emits "serializable" bit into IL metadata when it is available.
-    // Note that SerializableAttribute may be relocated in the future but now resides in mscorlib.
     let codegenResults = GenerateIlxCode ((if Option.isSome dynamicAssemblyCreator then IlReflectBackend else IlWriteBackend), Option.isSome dynamicAssemblyCreator, false, tcConfig, topAttrs, optimizedImpls, generatedCcu.AssemblyName, ilxGenerator)
     let casApplied = new Dictionary<Stamp, bool>()
     let securityAttrs, topAssemblyAttrs = topAttrs.assemblyAttrs |> List.partition (fun a -> TypeChecker.IsSecurityAttribute tcGlobals (tcImports.GetImportMap()) casApplied a rangeStartup)
+
     // remove any security attributes from the top-level assembly attribute list
     let topAttrs = {topAttrs with assemblyAttrs=topAssemblyAttrs}
     let permissionSets = ilxGenerator.CreatePermissionSets securityAttrs

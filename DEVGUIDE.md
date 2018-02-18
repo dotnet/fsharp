@@ -12,11 +12,10 @@ Follow the instructions below to build and develop the F# Compiler, Core Library
 
 Install
 
-- [.NET 4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40779)
-- [MSBuild 12.0](http://www.microsoft.com/en-us/download/details.aspx?id=40760) or Visual Studio 2013 (or later)
+- [.NET 4.6](https://www.microsoft.com/en-gb/download/details.aspx?id=48130)
 
 **NOTE on Windows:**
-1. It is recommended to run the build.cmd and the qualifiers below on a command prompt with path set to have the location of MSBuild. If we have Visual Studio, we can also run using `Developer Command Prompt for Visual Studio 20xx` (depends on Visual Studio version). This developer command prompt is easier to use than normal command prompt, because it already has the correct path of Visual Studio and .NET's tooling set for us to use (including MSBuild).
+1. It is recommended to run the build.cmd and the qualifiers below on a command prompt with path set to have the location of MSBuild. If you have Visual Studio, we can also run using `Developer Command Prompt for Visual Studio 20xx` (depends on Visual Studio version). This developer command prompt is easier to use than normal command prompt, because it already has the correct path of Visual Studio and .NET's tooling set for us to use (including MSBuild).
 2. The running command prompt must be run under Administrator right (`Run as Administrator`).
 
 Before running the build scripts, ensure that you have cleaned up the visualfsharp repo by running this git command:
@@ -62,35 +61,54 @@ or just build it directly:
 
     msbuild FSharp.sln 
 
-Building ``FSharp.sln`` builds nearly everything. However building portable profiles of 
-FSharp.Core.dll is not included.  If you are just developing the core compiler and library
-then building the solution will be enough.
+If you are just developing the core compiler and library then building ``FSharp.sln`` will be enough.
 
 ###  Developing the F# Compiler (Linux)
 
 For Linux/Mono, follow [these instructions](http://www.mono-project.com/docs/getting-started/install/linux/). Also you may need:
 
-    sudo apt-get install mono-complete autoconf libtool pkg-config make git automake
+    sudo apt-get install mono-complete make git
 
 Then:
     
-    ./autoconf.sh --prefix /usr
     make
-    make install
 
-Full testing is not yet enabled on Linux, nor is a .NET Core build of the compiler.
+Then to replace your machine-wide installation:
 
-You can alternatively use
+    sudo make install
 
-    ./build.sh
+Full testing is not yet enabled on Linux.
 
 ###  Developing the F# Compiler (macOS)
 
-Install Xamarin Studio, then
+Install XCode command line tools (or homebrew equivalents) and Mono or Visual Studio for Mac.
 
-    ./autogen.sh --prefix=/Library/Frameworks/Mono.framework/Versions/Current/
+Then:
+
     make
+
+Then to replace your machine-wide installation:
+
     sudo make install
+
+Full testing is not yet enabled on macOS.
+
+
+###  Developing the F# Compiler (Linux or macOS - .NET Core)
+
+Install [the latest .NET SDK](https://www.microsoft.com/net/download/).  Then use
+
+    src/buildfromsource.sh 
+
+Outputs are placed in 
+
+    BuildFromSource/Debug/...
+    BuildFromSource/Release/...
+
+This uses an installed .NET SDK 2.0 to build the various duplicated project 
+    
+Testing the .NET Core version of the F# compiler on mwcOS and Linux is TBD.
+
 
 ### Developing the Visual F# IDE Tools (Windows Only)
 
@@ -175,13 +193,7 @@ For **Release**:
 #### Windows: Links to  Additional frameworks
 
 - [Git for windows](http://msysgit.github.io/)
-- [.NET 3.5](http://www.microsoft.com/en-us/download/details.aspx?id=21)
-- [.NET 4.5](http://www.microsoft.com/en-us/download/details.aspx?id=30653)
-- [.NET 4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40779)
 - [.NET 4.6](http://www.microsoft.com/en-us/download/details.aspx?id=48137)
-- [MSBuild 12.0](http://www.microsoft.com/en-us/download/details.aspx?id=40760)
-- [Windows 7 SDK](http://www.microsoft.com/en-us/download/details.aspx?id=8279)
-- [Windows 8 SDK](http://msdn.microsoft.com/en-us/windows/desktop/hh852363.aspx)
 - [Windows 8.1 SDK](http://msdn.microsoft.com/en-us/library/windows/desktop/bg162891.aspx)
 - [Windows 10 SDK](https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk)
 

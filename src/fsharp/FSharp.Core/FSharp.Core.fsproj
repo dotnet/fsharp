@@ -34,7 +34,7 @@
     <None Include="FSharp.Core.runtimeconfig.json"      Condition="'$(TargetDotnetProfile)' == 'coreclr'" ><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></None>
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(Configuration)' != 'Proto'">
     <CustomAdditionalCompileInputs Include="$(FSharpSourcesRoot)\..\Proto\$(ProtoFlavour)\bin\fsc-proto.exe">
       <Visible>false</Visible>
     </CustomAdditionalCompileInputs>
@@ -224,9 +224,6 @@
     </Compile>
     <Compile Include="fslib-extra-pervasives.fs">
       <Link>Extras/fslib-extra-pervasives.fs</Link>
-    </Compile>
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Core.dll.fs">
-      <Link>assemblyinfo.FSharp.Core.dll.fs</Link>
     </Compile>
   </ItemGroup>
 

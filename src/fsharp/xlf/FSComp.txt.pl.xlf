@@ -802,11 +802,6 @@
         <target state="translated">Nie można rozpoznać niejawnego wystąpienia konstrukcji ogólnej w tym miejscu lub w jego pobliżu, ponieważ może to spowodować powstanie wielu niepowiązanych typów, na przykład „{0}” i „{1}”. Rozważ użycie adnotacji typu w celu rozwiązania niejednoznaczności</target>
         <note />
       </trans-unit>
-      <trans-unit id="typrelCannotResolveAmbiguityInOverloadedOperator">
-        <source>Could not resolve the ambiguity inherent in the use of the operator '{0}' at or near this program point. Consider using type annotations to resolve the ambiguity.</source>
-        <target state="translated">Nie można rozwiązać odziedziczonej niejednoznaczności w przypadku użycia operatora „{0}” w tym punkcie programu lub w jego pobliżu. Rozważ użycie adnotacji typu w celu rozwiązania niejednoznaczności.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="typrelCannotResolveAmbiguityInPrintf">
         <source>Could not resolve the ambiguity inherent in the use of a 'printf'-style format string</source>
         <target state="translated">Nie można usunąć niejednoznaczności spowodowanej użyciem ciągu formatu „printf”</target>
@@ -1759,7 +1754,7 @@
       </trans-unit>
       <trans-unit id="csMemberOverloadArityMismatch">
         <source>The member or object constructor '{0}' does not take {1} argument(s). An overload was found taking {2} arguments.</source>
-        <target state="translated">Konstruktor elementu członkowskiego lub obiektu „{0}” nie pobiera argumentów w liczbie {1}. Znaleziono przesłonięcie pobierające argumenty o następującej liczbie: {2}.</target>
+        <target state="translated">Konstruktor elementu członkowskiego lub obiektu „{0}” nie pobiera argumentów w liczbie {1}. Znaleziono przeciążenie pobierające argumenty o następującej liczbie: {2}.</target>
         <note />
       </trans-unit>
       <trans-unit id="csNoMemberTakesTheseArguments">
@@ -2064,12 +2059,12 @@
       </trans-unit>
       <trans-unit id="parsEnumTypesCannotHaveVisibilityDeclarations">
         <source>Accessibility modifiers are not permitted in this position for enum types</source>
-        <target state="translated">Modyfikatory dostępności są niedozwolone w tej pozycji dla typów wyliczanych</target>
+        <target state="translated">Modyfikatory dostępności są niedozwolone w tej pozycji dla typów wyliczeniowych</target>
         <note />
       </trans-unit>
       <trans-unit id="parsAllEnumFieldsRequireValues">
         <source>All enum fields must be given values</source>
-        <target state="translated">Dla wszystkich wyliczanych pól muszą zostać podane wartości</target>
+        <target state="translated">Dla wszystkich pól wyliczeń muszą zostać podane wartości</target>
         <note />
       </trans-unit>
       <trans-unit id="parsInlineAssemblyCannotHaveVisibilityDeclarations">
@@ -2089,7 +2084,7 @@
       </trans-unit>
       <trans-unit id="parsEnumFieldsCannotHaveVisibilityDeclarations">
         <source>Accessibility modifiers are not permitted on enumeration fields</source>
-        <target state="translated">Modyfikatory dostępności są niedozwolone w polach wyliczanych</target>
+        <target state="translated">Modyfikatory dostępności są niedozwolone w polach wyliczeń</target>
         <note />
       </trans-unit>
       <trans-unit id="parsConsiderUsingSeparateRecordType">
@@ -2389,7 +2384,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidOperatorDefinitionRelational">
         <source>The '{0}' operator should not normally be redefined. To define overloaded comparison semantics for a particular type, implement the 'System.IComparable' interface in the definition of that type.</source>
-        <target state="translated">Zwykle nie należy ponownie definiować operatora „{0}”. Aby zdefiniować semantykę porównania z przeładowaniem dla określonego typu, zaimplementuj interfejs „System.IComparable” w definicji tego typu.</target>
+        <target state="translated">Zwykle nie należy ponownie definiować operatora „{0}”. Aby zdefiniować semantykę porównania z przeciążeniem dla określonego typu, zaimplementuj interfejs „System.IComparable” w definicji tego typu.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidOperatorDefinitionEquality">
@@ -2609,7 +2604,7 @@
       </trans-unit>
       <trans-unit id="tcFunctionRequiresExplicitLambda">
         <source>This function value is being used to construct a delegate type whose signature includes a byref argument. You must use an explicit lambda expression taking {0} arguments.</source>
-        <target state="translated">Ta wartość funkcji jest używana do utworzenia typu delegata, którego sygnatura zawiera argument byref. Musisz użyć jawnego wyrażenia lambda pobierającego następującą liczbę argumentów: {0}..</target>
+        <target state="translated">Ta wartość funkcji jest używana do utworzenia typu delegata, którego sygnatura zawiera argument byref. Musisz użyć jawnego wyrażenia lambda pobierającego następującą liczbę argumentów: {0}.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypeCannotBeEnumerated">
@@ -3159,7 +3154,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidUseOfDelegate">
         <source>Invalid use of a delegate constructor. Use the syntax 'new Type(args)' or just 'Type(args)'.</source>
-        <target state="translated">Nieprawidłowe użycie konstruktora delegatów. Użyj składni „new Typ(argumenty)” lub „Typ(argumenty)”..</target>
+        <target state="translated">Nieprawidłowe użycie konstruktora delegatów. Użyj składni „new Typ(argumenty)” lub „Typ(argumenty)”.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcPropertyIsNotStatic">
@@ -3844,7 +3839,7 @@
       </trans-unit>
       <trans-unit id="tcTypesAreAlwaysSealedEnum">
         <source>Enum types are always sealed</source>
-        <target state="translated">Typy wyliczeń są zawsze zapieczętowane</target>
+        <target state="translated">Typy wyliczeniowe są zawsze zapieczętowane</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInterfaceTypesAndDelegatesCannotContainFields">
@@ -4629,7 +4624,7 @@
       </trans-unit>
       <trans-unit id="eventHasNonStandardType">
         <source>The event '{0}' has a non-standard type. If this event is declared in another CLI language, you may need to access this event using the explicit {1} and {2} methods for the event. If this event is declared in F#, make the type of the event an instantiation of either 'IDelegateEvent&lt;_&gt;' or 'IEvent&lt;_,_&gt;'.</source>
-        <target state="translated">Zdarzenie „{0}” ma niestandardowy typ. Jeśli to zdarzenie zadeklarowano w innym języku infrastruktury CLI, może być konieczne uzyskanie dostępu do tego zdarzenia przy użyciu jawnych metod {1} i {2} zdarzenia. Jeśli to zdarzenie zadeklarowano w języku F#, utwórz dla typu zdarzenia wystąpienie interfejsu „IDelegateEvent&lt;_&gt;” lub interfejsu „IEvent&lt;_,_&gt;”..</target>
+        <target state="translated">Zdarzenie „{0}” ma niestandardowy typ. Jeśli to zdarzenie zadeklarowano w innym języku infrastruktury CLI, może być konieczne uzyskanie dostępu do tego zdarzenia przy użyciu jawnych metod {1} i {2} zdarzenia. Jeśli to zdarzenie zadeklarowano w języku F#, utwórz dla typu zdarzenia wystąpienie interfejsu „IDelegateEvent&lt;_&gt;” lub interfejsu „IEvent&lt;_,_&gt;”.</target>
         <note />
       </trans-unit>
       <trans-unit id="typeIsNotAccessible">
@@ -6970,6 +6965,21 @@
       <trans-unit id="pickleUnexpectedNonZero">
         <source>An error occurred while reading the F# metadata of assembly '{0}'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.</source>
         <target state="translated">Wystąpił błąd podczas odczytu metadanych języka F# z zestawu „{0}”. Została wykorzystana zarezerwowana konstrukcja. Może być konieczne uaktualnienie kompilatora języka F# lub użycie wcześniejszej wersji zestawu, która nie wykorzystuje określonej konstrukcji.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTupleMemberNotNormallyUsed">
+        <source>This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</source>
+        <target state="translated">Ta metoda lub właściwość nie jest zwykle używana z kodu języka F#. Zamiast tego do dekonstrukcji użyj jawnego wzorca krotki.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="implicitlyDiscardedInSequenceExpression">
+        <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.</source>
+        <target state="new">This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="implicitlyDiscardedSequenceInSequenceExpression">
+        <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</source>
+        <target state="new">This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</target>
         <note />
       </trans-unit>
     </body>

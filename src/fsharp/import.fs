@@ -4,6 +4,7 @@
 module internal Microsoft.FSharp.Compiler.Import
 
 open System.Reflection
+open System.Collections.Concurrent
 open System.Collections.Generic
 
 open Microsoft.FSharp.Compiler.AbstractIL.IL
@@ -52,7 +53,7 @@ type AssemblyLoader =
 /// serves as an interface through to the tables stored in the primary TcImports structures defined in CompileOps.fs. 
 [<Sealed>]
 type ImportMap(g:TcGlobals,assemblyLoader:AssemblyLoader) =
-    let typeRefToTyconRefCache = new System.Collections.Generic.Dictionary<ILTypeRef,TyconRef>()
+    let typeRefToTyconRefCache = ConcurrentDictionary<ILTypeRef,TyconRef>()
     member this.g = g
     member this.assemblyLoader = assemblyLoader
     member this.ILTypeRefToTyconRefCache = typeRefToTyconRefCache
@@ -149,9 +150,7 @@ let CanImportILTypeRef (env:ImportMap) m (tref:ILTypeRef) =
 /// Prefer the F# abbreviation for some built-in types, e.g. 'string' rather than 
 /// 'System.String', since we prefer the F# abbreviation to the .NET equivalents. 
 let ImportTyconRefApp (env:ImportMap) tcref tyargs = 
-    match env.g.betterTyconRefMap tcref tyargs with 
-    | Some res -> res
-    | None -> TType_app (tcref,tyargs) 
+    env.g.improveType tcref tyargs 
 
 /// Import an IL type as an F# type.
 let rec ImportILType (env:ImportMap) m tinst typ =  

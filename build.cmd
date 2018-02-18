@@ -549,12 +549,6 @@ goto :eof
 :havemsbuild
 set _nrswitch=/nr:false
 
-if defined TF_BUILD (
-    echo Adding remote 'visualfsharptools' for internal build.
-    git remote add visualfsharptools https://github.com/Microsoft/visualfsharp.git
-    git fetch --all
-)
-
 set msbuildflags=%_nrswitch% /nologo
 REM set msbuildflags=%_nrswitch% /nologo
 set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
@@ -612,6 +606,27 @@ if "%RestorePackages%" == "true" (
 if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
     :: Restore the Tools directory
     call %~dp0init-tools.cmd
+)
+
+echo ----------- Done with package restore, starting dependency uptake check -------------
+
+if not "%PB_PackageVersionPropsUrl%" == "" (
+    set dependencyUptakeDir=%~dp0Tools\dependencyUptake
+    if not exist "!dependencyUptakeDir!" mkdir "!dependencyUptakeDir!"
+
+    :: download package version overrides
+    echo powershell -noprofile -executionPolicy RemoteSigned -command "Invoke-WebRequest -Uri '%PB_PackageVersionPropsUrl%' -OutFile '!dependencyUptakeDir!\PackageVersions.props'"
+         powershell -noprofile -executionPolicy RemoteSigned -command "Invoke-WebRequest -Uri '%PB_PackageVersionPropsUrl%' -OutFile '!dependencyUptakeDir!\PackageVersions.props'"
+    if ERRORLEVEL 1 echo Error downloading package version properties && goto :failure
+
+    :: prepare dependency uptake files
+    echo %_msbuildexe% %msbuildflags% %~dp0build\projects\PrepareDependencyUptake.proj /t:Build
+         %_msbuildexe% %msbuildflags% %~dp0build\projects\PrepareDependencyUptake.proj /t:Build
+    if ERRORLEVEL 1 echo Error building dependency uptake files && goto :failure
+
+    :: restore dependencies
+    %_nugetexe% restore !dependencyUptakeDir!\packages.config -PackagesDirectory packages -ConfigFile !dependencyUptakeDir!\NuGet.config
+    if ERRORLEVEL 1 echo Error restoring dependency uptake packages && goto :failure
 )
 
 set _dotnetcliexe=%~dp0Tools\dotnetcli\dotnet.exe

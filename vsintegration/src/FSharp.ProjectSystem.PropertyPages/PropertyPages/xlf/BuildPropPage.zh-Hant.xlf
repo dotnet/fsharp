@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="lblConditionalCompilationSymbols.Text">
         <source>Conditional compilation s&amp;ymbols:</source>
-        <target state="translated">條件式編譯的符號(&amp;Y): </target>
+        <target state="translated">條件式編譯的符號(&amp;Y):</target>
         <note />
       </trans-unit>
       <trans-unit id="chkPrefer32Bit.Text">
@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="chkXMLDocumentationFile.Text">
         <source>&amp;XML documentation file:</source>
-        <target state="translated">XML 文件檔案(&amp;X): </target>
+        <target state="translated">XML 文件檔案(&amp;X):</target>
         <note />
       </trans-unit>
       <trans-unit id="btnOutputPathBrowse.Text">
@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="lblOutputPath.Text">
         <source>&amp;Output path:</source>
-        <target state="translated">輸出路徑(&amp;O): </target>
+        <target state="translated">輸出路徑(&amp;O):</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningAll.Text">
@@ -54,7 +54,7 @@
       </trans-unit>
       <trans-unit id="rbWarningSpecific.Text">
         <source>Specif&amp;ic warnings:</source>
-        <target state="translated">特定警告(&amp;I): </target>
+        <target state="translated">特定警告(&amp;I):</target>
         <note />
       </trans-unit>
       <trans-unit id="rbWarningNone.Text">
@@ -99,7 +99,7 @@
       </trans-unit>
       <trans-unit id="lblWarningLevel.Text">
         <source>&amp;Warning level:</source>
-        <target state="translated">警告層級(&amp;W): </target>
+        <target state="translated">警告層級(&amp;W):</target>
         <note />
       </trans-unit>
       <trans-unit id="chkOptimizeCode.Text">
@@ -119,12 +119,12 @@
       </trans-unit>
       <trans-unit id="lblPlatformTarget.Text">
         <source>Platform tar&amp;get:</source>
-        <target state="translated">平台目標(&amp;G): </target>
+        <target state="translated">平台目標(&amp;G):</target>
         <note />
       </trans-unit>
       <trans-unit id="lblOtherFlags.Text">
         <source>Other &amp;flags:</source>
-        <target state="translated">其他旗標(&amp;F): </target>
+        <target state="translated">其他旗標(&amp;F):</target>
         <note />
       </trans-unit>
       <trans-unit id="chkDefineDebug.Text">

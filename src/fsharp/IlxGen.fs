@@ -767,7 +767,7 @@ let GetMethodSpecForMemberVal amap g (memberInfo:ValMemberInfo) (vref:ValRef) =
     let flatArgInfos = List.concat curriedArgInfos
     let isCtor = (memberInfo.MemberFlags.MemberKind = MemberKind.Constructor)
     let cctor = (memberInfo.MemberFlags.MemberKind = MemberKind.ClassConstructor)
-    let parentTcref = vref.TopValActualParent
+    let parentTcref = vref.TopValDeclaringEntity
     let parentTypars = parentTcref.TyparsNoRange
     let numParentTypars = parentTypars.Length
     if tps.Length < numParentTypars then error(InternalError("CodeGen check: type checking did not ensure that this method is sufficiently generic", m))
@@ -1505,7 +1505,7 @@ let GenConstArray cenv (cgbuf:CodeGenBuffer) eenv ilElementType (data:'a[]) (wri
         let ilFieldDef = { ilFieldDef with CustomAttrs = mkILCustomAttrs [ cenv.g.DebuggerBrowsableNeverAttribute ] }
         let fspec = mkILFieldSpecInTy (mkILTyForCompLoc eenv.cloc,ilFieldName, fty)
         CountStaticFieldDef()
-        cgbuf.mgbuf.AddFieldDef(fspec.EnclosingTypeRef,ilFieldDef) 
+        cgbuf.mgbuf.AddFieldDef(fspec.DeclaringTypeRef,ilFieldDef) 
         CG.EmitInstrs cgbuf 
           (pop 0)
           (Push [ ilArrayType; ilArrayType; cenv.g.iltyp_RuntimeFieldHandle ])
@@ -2171,7 +2171,7 @@ and GenAllocExn cenv cgbuf eenv (c,args,m) sequel =
 and GenAllocUnionCase cenv cgbuf eenv  (c,tyargs,args,m) sequel =
     GenExprs cenv cgbuf eenv args
     let cuspec,idx = GenUnionCaseSpec cenv.amap m eenv.tyenv c tyargs
-    CG.EmitInstrs cgbuf (pop args.Length) (Push [cuspec.EnclosingType]) (EraseUnions.mkNewData cenv.g.ilg (cuspec, idx))
+    CG.EmitInstrs cgbuf (pop args.Length) (Push [cuspec.DeclaringType]) (EraseUnions.mkNewData cenv.g.ilg (cuspec, idx))
     GenSequel cenv eenv.cloc cgbuf sequel
 
 and GenAllocRecd cenv cgbuf eenv ctorInfo (tcref,argtys,args,m) sequel =
@@ -2361,7 +2361,7 @@ and GenSetUnionCaseField cenv cgbuf eenv (e,ucref,tyargs,n,e2,m) sequel =
     let cuspec,idx = GenUnionCaseSpec cenv.amap m eenv.tyenv ucref tyargs
     let avoidHelpers = entityRefInThisAssembly cenv.g.compilingFslib ucref.TyconRef
     EraseUnions.emitCastData cenv.g.ilg (UnionCodeGen cgbuf) (false,avoidHelpers,cuspec,idx)
-    CG.EmitInstrs cgbuf (pop 1) (Push [cuspec.EnclosingType]) [ ] // push/pop to match the line above
+    CG.EmitInstrs cgbuf (pop 1) (Push [cuspec.DeclaringType]) [ ] // push/pop to match the line above
     GenExpr cenv cgbuf eenv SPSuppress e2 Continue
     CG.EmitInstrs cgbuf (pop 2) Push0 (EraseUnions.mkStData (cuspec, idx, n))
     GenUnitThenSequel cenv eenv m eenv.cloc cgbuf sequel
@@ -2406,7 +2406,7 @@ and GenFieldGet isStatic cenv cgbuf eenv (rfref:RecdFieldRef,tyargs,m) =
         CG.EmitInstrs cgbuf (mk_field_pops isStatic 0) (Push [fspec.ActualType]) [ instr ] 
     else
         let cconv = if isStatic then ILCallingConv.Static else ILCallingConv.Instance
-        let mspec = mkILMethSpecInTy (fspec.EnclosingType,cconv, "get_" + rfref.RecdField.rfield_id.idText, [], fspec.FormalType, [])
+        let mspec = mkILMethSpecInTy (fspec.DeclaringType,cconv, "get_" + rfref.RecdField.rfield_id.idText, [], fspec.FormalType, [])
         CG.EmitInstr cgbuf (mk_field_pops isStatic 0) (Push [fspec.ActualType]) (mkNormalCall mspec)
 
 and GenFieldStore isStatic cenv cgbuf eenv (rfref:RecdFieldRef,tyargs,m) sequel =
@@ -2414,7 +2414,7 @@ and GenFieldStore isStatic cenv cgbuf eenv (rfref:RecdFieldRef,tyargs,m) sequel 
     let fld = rfref.RecdField
     if fld.IsMutable && not (useGenuineField rfref.Tycon fld) then
         let cconv = if isStatic then ILCallingConv.Static else ILCallingConv.Instance
-        let mspec = mkILMethSpecInTy (fspec.EnclosingType, cconv, "set_" + fld.rfield_id.idText, [fspec.FormalType],ILType.Void,[])
+        let mspec = mkILMethSpecInTy (fspec.DeclaringType, cconv, "set_" + fld.rfield_id.idText, [fspec.FormalType],ILType.Void,[])
         CG.EmitInstr cgbuf (mk_field_pops isStatic 1) Push0 (mkNormalCall mspec)
     else
         let vol = if rfref.RecdField.IsVolatile then Volatile else Nonvolatile
@@ -2603,14 +2603,14 @@ and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
           let numEnclILTypeArgs = 
               match vref.MemberInfo with 
               | Some _ when not (vref.IsExtensionMember) -> 
-                  List.length(vref.MemberApparentParent.TyparsNoRange |> DropErasedTypars) 
+                  List.length(vref.MemberApparentEntity.TyparsNoRange |> DropErasedTypars) 
               | _ -> 0
 
           let (ilEnclArgTys,ilMethArgTys) = 
               if ilTyArgs.Length  < numEnclILTypeArgs then error(InternalError("length mismatch",m))
               List.chop numEnclILTypeArgs ilTyArgs
 
-          let boxity = mspec.EnclosingType.Boxity
+          let boxity = mspec.DeclaringType.Boxity
           let mspec = mkILMethSpec (mspec.MethodRef, boxity,ilEnclArgTys,ilMethArgTys)
           
           // "Unit" return types on static methods become "void" 
@@ -2645,7 +2645,7 @@ and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
 
           // ok, now we're ready to generate 
           if isSuperInit || isSelfInit then 
-              CG.EmitInstrs cgbuf (pop 0) (Push [mspec.EnclosingType ]) [ mkLdarg0 ] 
+              CG.EmitInstrs cgbuf (pop 0) (Push [mspec.DeclaringType ]) [ mkLdarg0 ] 
 
           GenUntupledArgsDiscardingLoneUnit cenv cgbuf eenv m vref.NumObjArgs curriedArgInfos nowArgs
 
@@ -2668,7 +2668,7 @@ and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
                                      (if mustGenerateUnitAfterCall || isSuperInit || isSelfInit then Push0 else (Push [(GenType cenv.amap m eenv.tyenv actualRetTy)])) callInstr
 
                 // For isSuperInit, load the 'this' pointer as the pretend 'result' of the operation.  It will be popped again in most cases 
-                if isSuperInit then CG.EmitInstrs cgbuf (pop 0) (Push [mspec.EnclosingType]) [ mkLdarg0 ] 
+                if isSuperInit then CG.EmitInstrs cgbuf (pop 0) (Push [mspec.DeclaringType]) [ mkLdarg0 ] 
 
                 // When generating debug code, generate a 'nop' after a 'call' that returns 'void'
                 // This is what C# does, as it allows the call location to be maintained correctly in the stack frame
@@ -3098,8 +3098,8 @@ and GenAsmCode cenv cgbuf eenv (il,tyargs,args,returnTys,m) sequel =
               if isNil ilTyArgs then 
                 fspec 
               else
-                {fspec with EnclosingType= 
-                                   let ty = fspec.EnclosingType
+                {fspec with DeclaringType= 
+                                   let ty = fspec.DeclaringType
                                    let tspec = ty.TypeSpec
                                    mkILTy ty.Boxity (mkILTySpec(tspec.TypeRef, ilTyArgs)) }          
           match i,ilTyArgs with   
@@ -3306,7 +3306,7 @@ and GenILCall cenv cgbuf eenv (virt,valu,newobj,valUseFlags,isDllImport,ilMethRe
 
     // Load the 'this' pointer to pass to the superclass constructor. This argument is not 
     // in the expression tree since it can't be treated like an ordinary value 
-    if isSuperInit then CG.EmitInstrs cgbuf (pop 0) (Push [ilMethSpec.EnclosingType]) [ mkLdarg0 ] 
+    if isSuperInit then CG.EmitInstrs cgbuf (pop 0) (Push [ilMethSpec.DeclaringType]) [ mkLdarg0 ] 
     GenExprs cenv cgbuf eenv argExprs
     let il = 
         if newobj then [ I_newobj(ilMethSpec,None) ] 
@@ -3323,7 +3323,7 @@ and GenILCall cenv cgbuf eenv (virt,valu,newobj,valUseFlags,isDllImport,ilMethRe
 
     // Load the 'this' pointer as the pretend 'result' of the isSuperInit operation.  
     // It will be immediately popped in most cases, but may also be used as the target of some "property set" operations. 
-    if isSuperInit then CG.EmitInstrs cgbuf (pop 0) (Push [ilMethSpec.EnclosingType]) [ mkLdarg0 ] 
+    if isSuperInit then CG.EmitInstrs cgbuf (pop 0) (Push [ilMethSpec.DeclaringType]) [ mkLdarg0 ] 
     CommitCallSequel cenv eenv m eenv.cloc cgbuf mustGenerateUnitAfterCall sequel
 
 and CommitCallSequel cenv eenv m cloc cgbuf mustGenerateUnitAfterCall sequel =
@@ -3747,8 +3747,8 @@ and GenClosureTypeDefs cenv (tref:ILTypeRef, ilGenParams, attrs, ilCloFreeVars, 
       Properties = emptyILProperties
       Methods= mkILMethods mdefs 
       MethodImpls= mkILMethodImpls mimpls 
-      IsSerializable= cenv.g.attrib_SerializableAttribute.IsSome
-      IsComInterop= false    
+      IsSerializable=true
+      IsComInterop= false
       IsSpecialName= true
       NestedTypes=emptyILTypeDefs
       Encoding= ILDefaultPInvokeEncoding.Auto
@@ -3803,8 +3803,8 @@ and GenLambdaClosure cenv (cgbuf:CodeGenBuffer) eenv isLocalTypeFunc selfv expr 
                       Properties = emptyILProperties
                       Methods= mkILMethods ilContractMeths 
                       MethodImpls= emptyILMethodImpls 
-                      IsSerializable= cenv.g.attrib_SerializableAttribute.IsSome 
-                      IsComInterop=false    
+                      IsSerializable=true
+                      IsComInterop=false
                       IsSpecialName= true
                       NestedTypes=emptyILTypeDefs
                       Encoding= ILDefaultPInvokeEncoding.Auto
@@ -4699,7 +4699,7 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) sta
     // Workaround for .NET and Visual Studio restriction w.r.t debugger type proxys
     // Mark internal constructors in internal classes as public. 
     let access = 
-        if access = ILMemberAccess.Assembly && vspec.IsConstructor && IsHiddenTycon eenv.sigToImplRemapInfo vspec.MemberApparentParent.Deref then 
+        if access = ILMemberAccess.Assembly && vspec.IsConstructor && IsHiddenTycon eenv.sigToImplRemapInfo vspec.MemberApparentEntity.Deref then 
             ILMemberAccess.Public
         else
             access
@@ -4713,7 +4713,7 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) sta
         CommitStartScope cgbuf startScopeMarkOpt
 
     // The initialization code for static 'let' and 'do' bindings gets compiled into the initialization .cctor for the whole file
-    | _ when vspec.IsClassConstructor && isNil vspec.TopValActualParent.TyparsNoRange ->
+    | _ when vspec.IsClassConstructor && isNil vspec.TopValDeclaringEntity.TyparsNoRange ->
         let tps,_,_,_,cctorBody,_ = IteratedAdjustArityOfLambda cenv.g cenv.amap vspec.ValReprInfo.Value rhsExpr
         let eenv = EnvForTypars tps eenv
         CommitStartScope cgbuf startScopeMarkOpt
@@ -4740,7 +4740,7 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) sta
               Init = None
               Args = []
               CustomAttrs = mkILCustomAttrs ilAttribs }
-        cgbuf.mgbuf.AddOrMergePropertyDef(ilGetterMethSpec.MethodRef.EnclosingTypeRef, ilPropDef,m)
+        cgbuf.mgbuf.AddOrMergePropertyDef(ilGetterMethSpec.MethodRef.DeclaringTypeRef, ilPropDef,m)
 
         let ilMethodDef = 
             let ilMethodBody = MethodBody.IL(CodeGenMethodForExpr cenv cgbuf.mgbuf (SPSuppress, [], ilGetterMethSpec.Name, eenv, 0, 0, rhsExpr, Return))
@@ -4749,7 +4749,7 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) sta
             |> AddNonUserCompilerGeneratedAttribs cenv.g
 
         CountMethodDef()
-        cgbuf.mgbuf.AddMethodDef(ilGetterMethSpec.MethodRef.EnclosingTypeRef, ilMethodDef)
+        cgbuf.mgbuf.AddMethodDef(ilGetterMethSpec.MethodRef.DeclaringTypeRef, ilMethodDef)
 
         CommitStartScope cgbuf startScopeMarkOpt
         match optShadowLocal with
@@ -4794,7 +4794,7 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) sta
                 { ilFieldDef with 
                    CustomAttrs = mkILCustomAttrs (ilAttribs @ [ cenv.g.DebuggerBrowsableNeverAttribute ]) }
 
-            [ (fspec.EnclosingTypeRef, ilFieldDef) ]
+            [ (fspec.DeclaringTypeRef, ilFieldDef) ]
           
         let ilTypeRefForProperty = ilTyForProperty.TypeRef
 
@@ -5066,7 +5066,7 @@ and GenEventForProperty cenv eenvForMeth (mspec:ILMethodSpec) (v:Val) ilAttrsTha
     let evname = v.PropertyName
     let delegateTy = Infos.FindDelegateTypeOfPropertyEvent cenv.g cenv.amap evname m returnTy
     let ilDelegateTy = GenType cenv.amap m eenvForMeth.tyenv delegateTy
-    let ilThisTy = mspec.EnclosingType
+    let ilThisTy = mspec.DeclaringType
     let addMethRef    = mkILMethRef (ilThisTy.TypeRef,mspec.CallingConv,"add_"    + evname,0,[ilDelegateTy],ILType.Void)
     let removeMethRef = mkILMethRef (ilThisTy.TypeRef,mspec.CallingConv,"remove_" + evname,0,[ilDelegateTy],ILType.Void)
     { Type = Some(ilDelegateTy) 
@@ -5087,7 +5087,7 @@ and ComputeFlagFixupsForMemberBinding cenv (v:Val,memberInfo:ValMemberInfo) =
          memberInfo.ImplementedSlotSigs |> List.map (fun slotsig -> 
              let oty = slotsig.ImplementedType
              let otcref,_ = destAppTy cenv.g oty
-             let tcref = v.MemberApparentParent
+             let tcref = v.MemberApparentEntity
              
              let useMethodImpl = 
                  // REVIEW: it would be good to get rid of this special casing of Compare and GetHashCode during code generation
@@ -5238,7 +5238,7 @@ and GenMethodForBinding
     let ilParams = GenParams cenv eenv mspec paramInfos (Some(nonUnitNonSelfMethodVars))
     let ilReturn = GenReturnInfo cenv eenv mspec.FormalReturnType retInfo
     let methName = mspec.Name
-    let tref = mspec.MethodRef.EnclosingTypeRef
+    let tref = mspec.MethodRef.DeclaringTypeRef
 
     let EmitTheMethodDef mdef = 
         // Does the function have an explicit [<EntryPoint>] attribute? 
@@ -5275,7 +5275,7 @@ and GenMethodForBinding
          ()    
     | Some(memberInfo) when not v.IsExtensionMember -> 
 
-       let ilMethTypars = ilTypars |> List.drop mspec.EnclosingType.GenericArgs.Length
+       let ilMethTypars = ilTypars |> List.drop mspec.DeclaringType.GenericArgs.Length
        if memberInfo.MemberFlags.MemberKind = MemberKind.Constructor then 
            assert (isNil ilMethTypars)
            let mdef = mkILCtor (access,ilParams,ilMethodBody) 
@@ -5309,7 +5309,7 @@ and GenMethodForBinding
 
            let isAbstract = 
                memberInfo.MemberFlags.IsDispatchSlot && 
-               let tcref =  v.MemberApparentParent
+               let tcref =  v.MemberApparentEntity
                not tcref.Deref.IsFSharpDelegateTycon
 
            let mdef = 
@@ -6563,9 +6563,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
         let ilFields = mkILFields ilFieldDefs
         
         let tdef, tdefDiscards = 
-           let isSerializable = (TryFindFSharpBoolAttribute cenv.g cenv.g.attrib_AutoSerializableAttribute tycon.Attribs <> Some(false)) 
-                             && cenv.g.attrib_SerializableAttribute.IsSome
-                                       
+           let isSerializable = (TryFindFSharpBoolAttribute cenv.g cenv.g.attrib_AutoSerializableAttribute tycon.Attribs <> Some(false))
+
            match tycon.TypeReprInfo with 
            | TILObjectRepr _ ->
                let td = tycon.ILTyconRawMetadata
@@ -6817,11 +6816,10 @@ and GenExnDef cenv mgbuf eenv m (exnc:Tycon) =
             else
                 []
 
-        
         let serializationRelatedMembers =
-            // do not emit serialization related members if target framework lacks SerializableAttribute or SerializationInfo
-          match cenv.g.attrib_SerializableAttribute, cenv.g.iltyp_SerializationInfo, cenv.g.iltyp_StreamingContext with 
-          | Some _,  Some serializationInfoType, Some streamingContextType -> 
+          // do not emit serialization related members if target framework lacks SerializationInfo or StreamingContext
+          match cenv.g.iltyp_SerializationInfo, cenv.g.iltyp_StreamingContext with 
+          | Some serializationInfoType, Some streamingContextType -> 
             let ilCtorDefForSerialziation = 
                 mkILCtor(ILMemberAccess.Family,
                         [mkILParamNamed("info", serializationInfoType);mkILParamNamed("context",streamingContextType)],
@@ -6880,7 +6878,7 @@ and GenExnDef cenv mgbuf eenv m (exnc:Tycon) =
              emptyILEvents,
              mkILCustomAttrs [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Exception)],
              ILTypeInit.BeforeField)
-        let tdef = { tdef with IsSerializable = cenv.g.attrib_SerializableAttribute.IsSome }
+        let tdef = { tdef with IsSerializable = true }
         mgbuf.AddTypeDef(tref, tdef, false, false, None)
 
 
@@ -7018,7 +7016,7 @@ let LookupGeneratedValue (amap:ImportMap) (ctxt: ExecutionContext) eenv (v:Val) 
       | StaticField (fspec, _, hasLiteralAttr, ilContainerTy, _, _, ilGetterMethRef, _, _) ->
           let obj =
               if hasLiteralAttr then
-                  let staticTyp = ctxt.LookupTypeRef fspec.EnclosingTypeRef
+                  let staticTyp = ctxt.LookupTypeRef fspec.DeclaringTypeRef
                   // Checked: This FieldInfo (FieldBuilder) supports GetValue().
                   staticTyp.GetField(fspec.Name).GetValue(null:obj)
               else
@@ -7032,7 +7030,7 @@ let LookupGeneratedValue (amap:ImportMap) (ctxt: ExecutionContext) eenv (v:Val) 
 
       | StaticProperty (ilGetterMethSpec, _) ->
           let obj =
-              let staticTyp = ctxt.LookupTypeRef ilGetterMethSpec.MethodRef.EnclosingTypeRef
+              let staticTyp = ctxt.LookupTypeRef ilGetterMethSpec.MethodRef.DeclaringTypeRef
               // We can't call .Invoke on the ILMethodRef's MethodInfo,
               // because it is the MethodBuilder and that does not support Invoke.
               // Rather, we look for the getter MethodInfo from the built type and .Invoke on that.
@@ -7059,7 +7057,7 @@ let ClearGeneratedValue (ctxt: ExecutionContext) (_g:TcGlobals) eenv (v:Val) =
     match StorageForVal v.Range v eenv with
       | StaticField (fspec, _, hasLiteralAttr, _, _, _, _ilGetterMethRef, ilSetterMethRef, _) ->
           if not hasLiteralAttr && v.IsMutable then 
-              let staticTyp = ctxt.LookupTypeRef ilSetterMethRef.EnclosingTypeRef
+              let staticTyp = ctxt.LookupTypeRef ilSetterMethRef.DeclaringTypeRef
               let typ = ctxt.LookupType fspec.ActualType
 
               let methInfo = staticTyp.GetMethod(ilSetterMethRef.Name, BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic)

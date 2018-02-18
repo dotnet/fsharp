@@ -264,7 +264,7 @@
       </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtension">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx, .fsscript, .ml or .mli.</source>
-        <target state="translated">Нераспознанное расширение файла "{0}". Исходные файлы должны иметь расширения .fs, .fsi, .fsx, .fsscript, .ml или .mli..</target>
+        <target state="translated">Нераспознанное расширение файла "{0}". Исходные файлы должны иметь расширения .fs, .fsi, .fsx, .fsscript, .ml или .mli.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildCouldNotResolveAssembly">
@@ -800,11 +800,6 @@
       <trans-unit id="typrelCannotResolveImplicitGenericInstantiation">
         <source>The implicit instantiation of a generic construct at or near this point could not be resolved because it could resolve to multiple unrelated types, e.g. '{0}' and '{1}'. Consider using type annotations to resolve the ambiguity</source>
         <target state="translated">Неявное создание экземпляров базовой конструкции в данной точке или рядом с ней не может быть разрешено, так как тогда возможно разрешение в несколько несвязанных типов, напр. "{0}" и "{1}". Рекомендуется использовать аннотации типа для решения неоднозначности</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="typrelCannotResolveAmbiguityInOverloadedOperator">
-        <source>Could not resolve the ambiguity inherent in the use of the operator '{0}' at or near this program point. Consider using type annotations to resolve the ambiguity.</source>
-        <target state="translated">Не удалось разрешить неоднозначность, унаследованную в использовании оператора "{0}" в данной точке программы или рядом с ней. Рекомендуется использовать аннотации типа для решения неоднозначности.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelCannotResolveAmbiguityInPrintf">
@@ -6970,6 +6965,21 @@
       <trans-unit id="pickleUnexpectedNonZero">
         <source>An error occurred while reading the F# metadata of assembly '{0}'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.</source>
         <target state="translated">Произошла ошибка при чтении метаданных F# сборки "{0}". Использовалась зарезервированная конструкция. Попробуйте обновить компилятор F# или применить более раннюю версию сборки, где конкретная конструкция не используется.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTupleMemberNotNormallyUsed">
+        <source>This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</source>
+        <target state="translated">Этот метод или свойство обычно не используется в коде F#. Вместо этого используйте явный шаблон кортежа для деконструкции.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="implicitlyDiscardedInSequenceExpression">
+        <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.</source>
+        <target state="new">This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="implicitlyDiscardedSequenceInSequenceExpression">
+        <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</source>
+        <target state="new">This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</target>
         <note />
       </trans-unit>
     </body>

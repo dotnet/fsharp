@@ -1283,28 +1283,28 @@
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpected">
-        <source>The result of this expression is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |&gt; ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</source>
-        <target state="translated">Výsledek tohoto výrazu se implicitně ignoruje. Zvažte možnost použít ignore, aby se tato hodnota explicitně zahodila, třeba expr |&gt; ignore, nebo let, aby se výsledek svázal s názvem, třeba let result = expr.</target>
+        <source>The result of this expression has type '{0}' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |&gt; ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</source>
+        <target state="translated">Výsledek tohoto výrazu má typ {0} a implicitně se ignoruje. Zvažte možnost použít klíčové slovo ignore, aby se tato hodnota explicitně zahodila, třeba expr |&gt; ignore, nebo klíčové slovo let, aby se výsledek svázal s názvem, třeba let výsledek = expr.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithEquality">
-        <source>The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'.</source>
-        <target state="translated">Výsledek tohoto výrazu rovnosti se implicitně zruší. Zvažte vytvoření vazby mezi výsledkem a názvem pomocí klíčového slova let, např. let výsledek = výraz.</target>
+        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'.</source>
+        <target state="translated">Výsledek tohoto výrazu rovnosti má typ {0} a implicitně se zruší. Zvažte vytvoření vazby mezi výsledkem a názvem pomocí klíčového slova let, např. let výsledek = výraz.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossiblePropertySetter">
-        <source>The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{0}.{1} &lt;- expression'.</source>
-        <target state="translated">Výsledek tohoto výrazu rovnosti se implicitně zruší. Zvažte vytvoření vazby mezi výsledkem a názvem pomocí klíčového slova let, např. let výsledek = výraz. Pokud jste chtěli nastavit hodnotu na vlastnost, použijte operátor &lt;-, např. {0}.{1} &lt;- výraz.</target>
+        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{1}.{2} &lt;- expression'.</source>
+        <target state="translated">Výsledek tohoto výrazu rovnosti má typ {0} a implicitně se zruší. Zvažte vytvoření vazby mezi výsledkem a názvem pomocí klíčového slova let, např. let výsledek = výraz. Pokud jste chtěli nastavit hodnotu na vlastnost, použijte operátor &lt;-, např. {1}.{2} &lt;- výraz.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignment">
-        <source>The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{0} &lt;- expression'.</source>
-        <target state="translated">Výsledek tohoto výrazu rovnosti se implicitně zruší. Zvažte vytvoření vazby mezi výsledkem a názvem pomocí klíčového slova let, např. let výsledek = výraz. Pokud jste chtěli mutovat hodnotu, označte hodnotu jako mutable a použijte operátor &lt;-, např. {0} &lt;- výraz.</target>
+        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
+        <target state="translated">Výsledek tohoto výrazu rovnosti má typ {0} a implicitně se zruší. Zvažte vytvoření vazby mezi výsledkem a názvem pomocí klíčového slova let, např. let výsledek = výraz. Pokud jste chtěli mutovat hodnotu, označte hodnotu jako mutable a použijte operátor &lt;-, např. {1} &lt;- výraz.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignmentToMutable">
-        <source>The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '&lt;-' operator e.g. '{0} &lt;- expression'.</source>
-        <target state="translated">Výsledek tohoto výrazu rovnosti se implicitně zruší. Zvažte vytvoření vazby mezi výsledkem a názvem pomocí klíčového slova let, např. let výsledek = výraz. Pokud jste chtěli mutovat hodnotu, použijte operátor &lt;-, např. {0} &lt;- výraz.</target>
+        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
+        <target state="translated">Výsledek tohoto výrazu rovnosti má typ {0} a implicitně se zruší. Zvažte vytvoření vazby mezi výsledkem a názvem pomocí klíčového slova let, např. let výsledek = výraz. Pokud jste chtěli mutovat hodnotu, použijte operátor &lt;-, např. {1} &lt;- výraz.</target>
         <note />
       </trans-unit>
       <trans-unit id="RecursiveUseCheckedAtRuntime">

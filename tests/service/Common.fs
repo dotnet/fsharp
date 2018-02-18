@@ -29,9 +29,10 @@ let readRefs (folder : string) (projectFile: string) =
         let exitCode = p.ExitCode
         exitCode, ()
 
+    let projFilePath = Path.Combine(folder, projectFile)
     let runCmd exePath args = runProcess folder exePath (args |> String.concat " ")
     let msbuildExec = Dotnet.ProjInfo.Inspect.dotnetMsbuild runCmd
-    let result = Dotnet.ProjInfo.Inspect.getProjectInfo ignore msbuildExec Dotnet.ProjInfo.Inspect.getFscArgs [] projectFile
+    let result = Dotnet.ProjInfo.Inspect.getProjectInfo ignore msbuildExec Dotnet.ProjInfo.Inspect.getFscArgs [] projFilePath
     match result with
     | Ok(Dotnet.ProjInfo.Inspect.GetResult.FscArgs x) ->
         x
@@ -101,8 +102,8 @@ let fsCoreDefaultReference() =
 
 let mkStandardProjectReferences () = 
 #if DOTNETCORE
-            let file = "Sample_NETCoreSDK_FSharp_Library_netstandard1.6.fsproj"
-            let projDir = Path.Combine(__SOURCE_DIRECTORY__, "../projects/Sample_NETCoreSDK_FSharp_Library_netstandard1.6")
+            let file = "Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj"
+            let projDir = Path.Combine(__SOURCE_DIRECTORY__, "../projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0")
             readRefs projDir file
 #else
             [ yield sysLib "mscorlib"
@@ -111,7 +112,7 @@ let mkStandardProjectReferences () =
               yield fsCoreDefaultReference() ]
 #endif              
 
-let mkProjectCommandLineArgs (dllName, fileNames) = 
+let mkProjectCommandLineArgsSilent (dllName, fileNames) = 
   let args = 
     [|  yield "--simpleresolution" 
         yield "--noframework" 
@@ -133,6 +134,10 @@ let mkProjectCommandLineArgs (dllName, fileNames) =
         for r in references do
             yield "-r:" + r
      |]
+  args
+
+let mkProjectCommandLineArgs (dllName, fileNames) = 
+  let args = mkProjectCommandLineArgsSilent (dllName, fileNames)
   printfn "dllName = %A, args = %A" dllName args
   args
 
@@ -159,6 +164,23 @@ let mkProjectCommandLineArgsForScript (dllName, fileNames) =
             yield "-r:" + r
      |]
 #endif
+
+let mkTestFileAndOptions source additionalArgs =
+    let fileName = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
+    let project = Path.GetTempFileName()
+    let dllName = Path.ChangeExtension(project, ".dll")
+    let projFileName = Path.ChangeExtension(project, ".fsproj")
+    let fileSource1 = "module M"
+    File.WriteAllText(fileName, fileSource1)
+
+    let args = Array.append (mkProjectCommandLineArgs (dllName, [fileName])) additionalArgs
+    let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    fileName, options
+
+let parseAndCheckFile fileName source options =
+    match checker.ParseAndCheckFileInProject(fileName, 0, source, options) |> Async.RunSynchronously with
+    | parseResults, FSharpCheckFileAnswer.Succeeded(checkResults) -> parseResults, checkResults
+    | _ -> failwithf "Parsing aborted unexpectedly..."
 
 let parseAndCheckScript (file, input) = 
 

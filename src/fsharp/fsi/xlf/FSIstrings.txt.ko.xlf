@@ -69,7 +69,7 @@
       </trans-unit>
       <trans-unit id="fsiExec">
         <source>Exit fsi after loading the files or running the .fsx script given on the command line</source>
-        <target state="translated">파일을 로드한 후 또는 명령줄에 지정된 .fsx 스크립트를 실행한 후 fsi를 종료하십시오.</target>
+        <target state="translated">파일을 로드한 후 또는 명령줄에 지정된 .fsx 스크립트를 실행한 후 fsi를 종료하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiGui">
@@ -94,12 +94,12 @@
       </trans-unit>
       <trans-unit id="fsiBanner3">
         <source>For help type #help;;</source>
-        <target state="translated">도움말을 보려면 #help;;를 입력하십시오.</target>
+        <target state="translated">도움말을 보려면 #help;;를 입력하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiConsoleProblem">
         <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
-        <target state="translated">F# Interactive 프로세스를 시작하는 동안 오류가 발생했습니다. 일부 Windows 시스템에서 나타나는 유니코드 기반 응용 프로그램의 백그라운드 프로세스 콘솔 지원과 관련된 알려진 문제가 원인일 수 있습니다. [도구]5D;-&gt;[옵션]5D;-&gt;[F# Interactive for Visual Studio]5D;를 선택하고 '--fsi-server-no-unicode'를 입력해 보십시오.</target>
+        <target state="translated">F# Interactive 프로세스를 시작하는 동안 오류가 발생했습니다. 일부 Windows 시스템에서 나타나는 유니코드 기반 응용 프로그램의 백그라운드 프로세스 콘솔 지원과 관련된 알려진 문제가 원인일 수 있습니다. [도구]5D;-&gt;[옵션]5D;-&gt;[F# Interactive for Visual Studio]5D;를 선택하고 '--fsi-server-no-unicode'를 입력해 보세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInvalidAssembly">
@@ -134,7 +134,7 @@
       </trans-unit>
       <trans-unit id="fsiExceptionDuringPrettyPrinting">
         <source>\n\nException raised during pretty printing.\nPlease report this so it can be fixed.\nTrace: {0}\n</source>
-        <target state="translated">\n\n보기 쉽게 출력하는 동안 예외가 발생했습니다.\n문제를 해결할 수 있도록 보고하십시오.\n추적: {0}\n</target>
+        <target state="translated">\n\n보기 쉽게 출력하는 동안 예외가 발생했습니다.\n문제를 해결할 수 있도록 보고하세요.\n추적: {0}\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader1directives">
@@ -179,7 +179,7 @@
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader3">
         <source>      See '{0}' for options</source>
-        <target state="translated">      옵션에 대해서는 '{0}'을(를) 참조하십시오.</target>
+        <target state="translated">      옵션에 대해서는 '{0}'을(를) 참조하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiLoadingFilesPrefixText">
