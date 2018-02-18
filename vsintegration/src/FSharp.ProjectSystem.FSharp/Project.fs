@@ -393,7 +393,7 @@ type internal FSharpProjectNode(package:FSharpProjectPackage) as this =
 
     let mutable vsProject : VSLangProj.VSProject = null
     let mutable trackDocumentsHandle = 0u
-    let mutable addFilesNotification : option<(array<string> -> unit)> = None  // this object is only used for helping re-order newly added files (VS defaults to alphabetical order)
+    let mutable addFilesNotification : option<string -> unit> = None  // this object is only used for helping re-order newly added files (VS defaults to alphabetical order)
             
     let mutable updateSolnEventsHandle = 0u
     let mutable updateSolnEventsHandle2 = 0u
@@ -656,24 +656,26 @@ type internal FSharpProjectNode(package:FSharpProjectPackage) as this =
             )
             |> Array.ofSeq
 
-        let msBuild = MSBuildUtilities.AllVisibleItemFilenames(this) |> Array.ofSeq
+        let msBuild = MSBuildUtilities.AllVisibleCompileItemFilenames(this) |> Array.ofSeq
         let inMsbuildOnly = msBuild.Except solnExplorer |> Array.ofSeq
         let inSolnExplorerOnly = solnExplorer.Except msBuild |> Array.ofSeq
         
         if inMsbuildOnly.Length > 0 && inSolnExplorerOnly.Length = 0 then
             Debug.Assert(false,
                 inMsbuildOnly
-                |> String.concat "\n- "
-                |> sprintf "Solution Explorer is out of sync with .fsproj file.\n\nThe following files are only visible to MSBuild:\n- %s"
+                |> String.concat "\n "
+                |> sprintf "Solution Explorer is out of sync with .fsproj file.\n\nThe following files are only visible to MSBuild:\n %s"
             )
         elif inSolnExplorerOnly.Length > 0 && inMsbuildOnly.Length = 0 then
             Debug.Assert(false,
                 inSolnExplorerOnly
-                |> String.concat "\n- "
-                |> sprintf "Solution Explorer is out of sync with .fsproj file.\n\nThe following files are only visible to the Solution Explorer:\n- %s"
+                |> String.concat "\n "
+                |> sprintf "Solution Explorer is out of sync with .fsproj file.\n\nThe following files are only visible to the Solution Explorer:\n %s"
             )
         elif msBuild <> solnExplorer then
-            Debug.Assert(false, sprintf "Solution Explorer is out of sync with .fsproj file.\n\nSolution Explorer sees:\n%A\n\nMSBuild sees:\n%A" solnExplorer msBuild)
+            let msBuildFormatted = msBuild |> String.concat "\n "
+            let solnExplorerFormatted = solnExplorer |> String.concat "\n "
+            Debug.Assert(false, sprintf "Solution Explorer is out of sync with .fsproj file.\n\nSolution Explorer sees:\n%A\n\nMSBuild sees:\n%A" solnExplorerFormatted msBuildFormatted)
 
     static member ImageOffset = FSharpProjectNode.imageOffset 
     /// Since we appended the F# images to the base image list in the ctor,
@@ -707,10 +709,7 @@ type internal FSharpProjectNode(package:FSharpProjectPackage) as this =
 
     member fshProjNode.MoveNewlyAddedFileSomehow<'a>(move : FSharpFileNode -> unit, f : unit -> 'a) : 'a =
         Debug.Assert(addFilesNotification.IsNone, "bad use of addFilesNotification")
-        addFilesNotification <- Some (fun files -> 
-            Debug.Assert(files.Length = 1)
-            let absoluteFileName = files.[0]
-
+        addFilesNotification <- Some (fun absoluteFileName ->
             match fshProjNode.FindChild absoluteFileName with
             | :? FSharpFileNode as fileNode ->
                 move fileNode
@@ -728,7 +727,6 @@ type internal FSharpProjectNode(package:FSharpProjectPackage) as this =
             FSharpFileNode.MoveToBottomOfGroup(fileNode)
             FSharpFileNode.MoveTo(Above, nodeToMoveAbove, fileNode)
             MSBuildUtilities.SyncWithHierarchy(fileNode)
-            fshProjNode.SyncWithHierarchy(SourceMovement.Add fileNode.Url)
             ), f)
 
     member fshProjNode.MoveNewlyAddedFileBelow<'a>(nodeToMoveBelow : HierarchyNode, f : unit -> 'a) : 'a =
@@ -736,14 +734,12 @@ type internal FSharpProjectNode(package:FSharpProjectPackage) as this =
             FSharpFileNode.MoveToBottomOfGroup(fileNode)
             FSharpFileNode.MoveTo(Below, nodeToMoveBelow, fileNode)
             MSBuildUtilities.SyncWithHierarchy(fileNode)
-            fshProjNode.SyncWithHierarchy(SourceMovement.Add fileNode.Url)
             ), f)
 
     member fshProjNode.MoveNewlyAddedFileToBottomOfGroup<'a> (f : unit -> 'a) : 'a =
         fshProjNode.MoveNewlyAddedFileSomehow((fun fileNode ->
             FSharpFileNode.MoveToBottomOfGroup(fileNode)
             MSBuildUtilities.SyncWithHierarchy(fileNode)
-            fshProjNode.SyncWithHierarchy(SourceMovement.Add fileNode.Url)
             ), f)
 
     override fshProjNode.MoveFileToBottomIfNoOtherPendingMove(fileNode) = 
@@ -751,7 +747,6 @@ type internal FSharpProjectNode(package:FSharpProjectPackage) as this =
         | None ->
             FSharpFileNode.MoveToBottomOfGroup(fileNode)
             MSBuildUtilities.SyncWithHierarchy(fileNode)
-            fshProjNode.SyncWithHierarchy(SourceMovement.Add fileNode.Url)
         | Some _ -> ()
 
     override fshProjNode.ExecCommandOnNode(guidCmdGroup:Guid, cmd:uint32, nCmdexecopt:uint32, pvaIn:IntPtr, pvaOut:IntPtr ) =
@@ -1347,6 +1342,8 @@ type internal FSharpProjectNode(package:FSharpProjectPackage) as this =
 
             match SourceMovement.newSources oldSources newCompileItems movement with
             | Some newSources ->
+                let newSourcesFormatted = newSources |> String.concat "\n "
+                printfn "%O" newSourcesFormatted
                 sourcesAndFlags <- Some (newSources, flags)
                 sourcesAndFlagsNotifier.Notify()
             | None ->
@@ -1580,27 +1577,28 @@ type internal FSharpProjectNode(package:FSharpProjectPackage) as this =
     interface IVsTrackProjectDocumentsEvents2 with
         member x.OnAfterAddFilesEx(cProjects, _cFiles, rgpProjects, _rgFirstIndices, rgpszMkDocuments, _rgFlags) = 
             if x.OneOfTheProjectsIsThisOne(cProjects, rgpProjects) then
-                match addFilesNotification with
-                | Some(f) -> f rgpszMkDocuments
-                | None -> ()
-                // TODO: fix this
-                //x.SyncWithHierarchy()
+                match rgpszMkDocuments with
+                | [|absoluteFileName|] ->
+                    match addFilesNotification with
+                    | Some f -> f absoluteFileName
+                    | None -> ()
+                    x.SyncWithHierarchy (SourceMovement.Add absoluteFileName)
+                | _ ->
+                    Debug.Assert(rgpszMkDocuments.Length = 1)
             VSConstants.S_OK
         member x.OnAfterAddDirectoriesEx(_cProjects,_cDirectories, _rgpProjects,_rgFirstIndices,_rgpszMkDocuments,  _rgFlags) = 
             VSConstants.S_OK
-        member x.OnAfterRemoveFiles(cProjects,_cFiles, rgpProjects,_rgFirstIndices,_rgpszMkDocuments,  _rgFlags) = 
+        member x.OnAfterRemoveFiles(cProjects,_cFiles, rgpProjects,_rgFirstIndices,rgpszMkDocuments,  _rgFlags) = 
             if x.OneOfTheProjectsIsThisOne(cProjects, rgpProjects) then
-                // TODO: fix this
-                //x.SyncWithHierarchy()
-                ()
+                x.SyncWithHierarchy (SourceMovement.Remove rgpszMkDocuments)
             VSConstants.S_OK
         member x.OnAfterRemoveDirectories(_cProjects,_cDirectories, _rgpProjects,_rgFirstIndices,_rgpszMkDocuments,  _rgFlags) = 
             VSConstants.S_OK
-        member x.OnAfterRenameFiles(cProjects,_cFiles, rgpProjects,_rgFirstIndices,_rgszMkOldNames,_rgszMkNewNames,  _rgFlags) = 
+        member x.OnAfterRenameFiles(cProjects,_cFiles, rgpProjects,_rgFirstIndices,rgszMkOldNames,rgszMkNewNames,  _rgFlags) = 
             if x.OneOfTheProjectsIsThisOne(cProjects, rgpProjects) then
-                // TODO: fix this
-                //x.SyncWithHierarchy()
-                ()
+                Seq.zip rgszMkOldNames rgszMkNewNames
+                |> SourceMovement.Rename
+                |> x.SyncWithHierarchy
             VSConstants.S_OK
         member x.OnAfterRenameDirectories(_cProjects,_cDirs, _rgpProjects,_rgFirstIndices,_rgszMkOldNames,_rgszMkNewNames,  _rgFlags) = 
             VSConstants.S_OK

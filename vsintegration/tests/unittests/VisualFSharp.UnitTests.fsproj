@@ -38,26 +38,6 @@
     <Compile Include="Tests.TaskReporter.fs" />
     <Compile Include="Tests.Watson.fs" />
     <Compile Include="Tests.XmlDocComments.fs" />
-    <Compile Include="LegacyLanguageService\Tests.LanguageService.General.fs" />
-    <Compile Include="LegacyLanguageService\Tests.LanguageService.Completion.fs" />
-    <Compile Include="LegacyLanguageService\Tests.LanguageService.IncrementalBuild.fs" />
-    <Compile Include="LegacyLanguageService\Tests.LanguageService.GotoDefinition.fs" />
-    <Compile Include="LegacyLanguageService\Tests.LanguageService.NavigationBar.fs" />
-    <Compile Include="LegacyLanguageService\Tests.LanguageService.ParameterInfo.fs" />
-    <Compile Include="LegacyLanguageService\Tests.LanguageService.QuickInfo.fs" />
-    <Compile Include="LegacyLanguageService\Tests.LanguageService.QuickParse.fs" />
-    <Compile Include="LegacyLanguageService\Tests.LanguageService.Script.fs" />
-    <Compile Include="LegacyLanguageService\Tests.LanguageService.TimeStamp.fs" />
-    <Compile Include="LegacyLanguageService\Tests.LanguageService.ErrorList.fs" />
-    <Compile Include="LegacyLanguageService\Tests.LanguageService.ErrorRecovery.fs" />
-    <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.Configs.fs" />
-    <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.Miscellaneous.fs" />
-    <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.MultiTargeting.fs" />
-    <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.ProjectItems.fs" />
-    <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.Project.fs" />
-    <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.References.fs" />
-    <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.RoundTrip.fs" />
-    <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.UpToDate.fs" />
     <Compile Include="..\..\..\tests\service\FsUnit.fs">
       <Link>CompilerService\FsUnit.fs</Link>
     </Compile>
@@ -106,6 +86,26 @@
     <Compile Include="UnusedOpensTests.fs">
       <Link>CompilerService\UnusedOpensTests.fs</Link>
     </Compile>
+    <Compile Include="LegacyLanguageService\Tests.LanguageService.General.fs" />
+    <Compile Include="LegacyLanguageService\Tests.LanguageService.Completion.fs" />
+    <Compile Include="LegacyLanguageService\Tests.LanguageService.IncrementalBuild.fs" />
+    <Compile Include="LegacyLanguageService\Tests.LanguageService.GotoDefinition.fs" />
+    <Compile Include="LegacyLanguageService\Tests.LanguageService.NavigationBar.fs" />
+    <Compile Include="LegacyLanguageService\Tests.LanguageService.ParameterInfo.fs" />
+    <Compile Include="LegacyLanguageService\Tests.LanguageService.QuickInfo.fs" />
+    <Compile Include="LegacyLanguageService\Tests.LanguageService.QuickParse.fs" />
+    <Compile Include="LegacyLanguageService\Tests.LanguageService.Script.fs" />
+    <Compile Include="LegacyLanguageService\Tests.LanguageService.TimeStamp.fs" />
+    <Compile Include="LegacyLanguageService\Tests.LanguageService.ErrorList.fs" />
+    <Compile Include="LegacyLanguageService\Tests.LanguageService.ErrorRecovery.fs" />
+    <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.Configs.fs" />
+    <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.Miscellaneous.fs" />
+    <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.MultiTargeting.fs" />
+    <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.ProjectItems.fs" />
+    <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.Project.fs" />
+    <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.References.fs" />
+    <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.RoundTrip.fs" />
+    <Compile Include="LegacyProjectSystem\Tests.ProjectSystem.UpToDate.fs" />
     <Compile Include="ColorizationServiceTests.fs">
       <Link>Roslyn\ColorizationServiceTests.fs</Link>
     </Compile>

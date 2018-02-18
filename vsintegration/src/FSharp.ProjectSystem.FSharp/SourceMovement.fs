@@ -6,7 +6,8 @@ module internal SourceMovement =
     
     type Movement =
         | Add of string
-        | Remove of string
+        | Remove of string[]
+        | Rename of (string * string) seq
         | Reorder
     
     /// Try to re-order/insert/remove files from 'oldSources' (i.e., what we
@@ -21,16 +22,35 @@ module internal SourceMovement =
     let newSources (oldSources : string[]) (newCompileItems : string[]) (movement : Movement) : string[] option =
 
         let normalisePath (source: string) =
-            let lowered = source.ToLowerInvariant()
-            try System.IO.Path.GetFullPath lowered
-            with _ -> lowered
+            try System.IO.Path.GetFullPath (source.ToLowerInvariant())
+            with _ -> source.ToLowerInvariant()
+        
+        let renamer =
+            match movement with
+            | Rename names ->
+                let normalisedNewNameMap =
+                    names
+                    |> Seq.map (fun (oldName, newName) ->
+                        normalisePath oldName, normalisePath newName
+                    )
+                    |> Map.ofSeq
 
-        let oldSources = oldSources |> Array.map normalisePath
+                fun oldName ->
+                    match normalisedNewNameMap |> Map.tryFind oldName with
+                    | None -> oldName
+                    | Some newName -> newName
+
+            | _ -> id
+
+        let oldSources =
+            oldSources
+            |> Array.map (normalisePath >> renamer)
+
         let newCompileItems = newCompileItems |> Array.map normalisePath
 
         let extra =
             match movement with
-            | Remove s -> [|s|]
+            | Remove s -> s |> Array.map normalisePath
             | _ -> [||]
 
         let searchTargets = Array.append newCompileItems extra
@@ -44,18 +64,22 @@ module internal SourceMovement =
             |> Array.skip prefixed.Length
             |> Array.skipWhile (fun s -> Array.contains s searchTargets)
 
-        let newSources = ResizeArray()
-        newSources.AddRange prefixed
-        newSources.AddRange newCompileItems
-        newSources.AddRange suffixed
+        let newSources =
+            [|
+                yield! prefixed
+                yield! newCompileItems
+                yield! suffixed
+            |]
 
         let lengthDelta =
             match movement with
             | Add _ -> 1
-            | Remove _ -> -1
-            | Reorder -> 0
-        
-        if newSources.Count = oldSources.Length + lengthDelta then
+            | Remove files -> -files.Length
+            | Rename _ | Reorder -> 0
+
+        if prefixed.Length + suffixed.Length = oldSources.Length then
+            None
+        elif newSources.Length = oldSources.Length + lengthDelta then
             Some (Array.ofSeq newSources)
         else
             None
