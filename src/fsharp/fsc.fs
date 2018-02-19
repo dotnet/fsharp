@@ -751,13 +751,8 @@ module MainModuleBuilder =
       // We want to write forwarders out for all injected types except for System.ITuple, which is internal
       // Forwarding System.ITuple will cause FxCop failures on 4.0
       Set.union (Set.filter (fun t -> t <> "System.ITuple") injectedCompatTypes) typesForwardedToMscorlib |>
-          Seq.map (fun t -> 
-                      {   ScopeRef = tcGlobals.ilg.primaryAssemblyScopeRef
-                          Name = t  
-                          Attributes = enum<TypeAttributes>(0x00200000) ||| TypeAttributes.Public
-                          Nested = mkILNestedExportedTypes List.empty<ILNestedExportedType>  
-                          CustomAttrs = mkILCustomAttrs List.empty<ILAttribute>  }) |> 
-          Seq.toList
+          Seq.map (fun t -> mkTypeForwarder (tcGlobals.ilg.primaryAssemblyScopeRef) t (mkILNestedExportedTypes List.empty<ILNestedExportedType>) (mkILCustomAttrs List.empty<ILAttribute>) ILTypeDefAccess.Public ) 
+          |> Seq.toList
 
     let createSystemNumericsExportList (tcConfig: TcConfig) (tcImports:TcImports) =
         let refNumericsDllName =

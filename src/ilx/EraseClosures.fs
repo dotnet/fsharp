@@ -478,17 +478,10 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                      ILMemberAccess.Assembly)
                    |> cenv.addMethodGeneratedAttrs 
 
-              let attributes =  
-                td.Attributes &&& 
-                ~~~TypeAttributes.HasSecurity &&& 
-                ~~~TypeAttributes.SpecialName &&& 
-                ~~~TypeAttributes.Abstract &&&
-                ~~~TypeAttributes.Import &&&
-                ~~~TypeAttributes.AutoClass
               let cloTypeDef = 
                 { Name = td.Name
                   GenericParams= td.GenericParams
-                  Attributes = attributes ||| TypeAttributes.Sealed ||| TypeAttributes.BeforeFieldInit ||| TypeAttributes.AnsiClass
+                  Attributes = td.Attributes
                   Implements = List.empty
                   NestedTypes = emptyILTypeDefs
                   Layout=ILTypeDefLayout.Auto
@@ -499,7 +492,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                   MethodImpls=emptyILMethodImpls
                   Properties=emptyILProperties
                   Events=emptyILEvents
-                  SecurityDecls=emptyILSecurityDecls }
+                  SecurityDecls=emptyILSecurityDecls }.WithSpecialName(false).WithImport(false).WithHasSecurity(false).WithAbstract(false).WithSealed(true).WithInitSemantics(ILTypeInit.BeforeField).WithEncoding(ILDefaultPInvokeEncoding.Ansi)
               [ cloTypeDef]
 
     // CASE 2 - Term Application 
@@ -577,16 +570,9 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                             ILMemberAccess.Assembly)
                         |> cenv.addMethodGeneratedAttrs 
 
-                    let attributes =  
-                        td.Attributes &&& 
-                        ~~~TypeAttributes.HasSecurity &&& 
-                        ~~~TypeAttributes.SpecialName &&& 
-                        ~~~TypeAttributes.Abstract &&&
-                        ~~~TypeAttributes.Import &&&
-                        ~~~TypeAttributes.AutoClass
                     { Name = td.Name
                       GenericParams= td.GenericParams
-                      Attributes = attributes ||| TypeAttributes.Sealed ||| TypeAttributes.BeforeFieldInit
+                      Attributes = td.Attributes
                       Implements = []
                       Layout=ILTypeDefLayout.Auto
                       NestedTypes = emptyILTypeDefs 
@@ -597,7 +583,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                       MethodImpls=emptyILMethodImpls
                       Properties=emptyILProperties
                       Events=emptyILEvents
-                      SecurityDecls=emptyILSecurityDecls } 
+                      SecurityDecls=emptyILSecurityDecls }.WithHasSecurity(false).WithSpecialName(false).WithAbstract(false).WithImport(true).WithEncoding(ILDefaultPInvokeEncoding.Ansi).WithSealed(true).WithInitSemantics(ILTypeInit.BeforeField)
 
                 [cloTypeDef]
 

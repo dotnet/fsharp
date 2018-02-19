@@ -773,7 +773,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                             |> addFieldNeverAttrs 
                             |> addFieldGeneratedAttrs 
                   
-                  let uniqObjField = { basic with Attributes = basic.Attributes ||| FieldAttributes.InitOnly }
+                  let uniqObjField = basic.WithInitOnly(true)
                   let inRootClass = cuspecRepr.OptimizeAlternativeToRootClass (cuspec,alt)
                   [ (info,alt, altTy,num,uniqObjField,inRootClass) ] 
               else 
@@ -852,7 +852,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                                           emptyILCustomAttrs,
                                           ILTypeInit.BeforeField)
 
-                    [ debugProxyTypeDef.WithSpecialName ],
+                    [ debugProxyTypeDef.WithSpecialName(true) ],
                     ( [mkDebuggerTypeProxyAttribute debugProxyTy] @ cud.cudDebugDisplayAttributes)
                                     
               let altTypeDef = 
@@ -861,7 +861,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                       |> Array.map (fun field -> 
                           let fldName,fldTy = mkUnionCaseFieldId field
                           let fdef = mkILInstanceField  (fldName,fldTy, None, ILMemberAccess.Assembly) |> addFieldNeverAttrs |> addFieldGeneratedAttrs
-                          if isTotallyImmutable then { fdef with Attributes=fdef.Attributes ||| FieldAttributes.InitOnly } else fdef)
+                          fdef.WithInitOnly(isTotallyImmutable))
                       |> Array.toList
 
 
@@ -899,7 +899,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                                         mkILCustomAttrs debugAttrs,
                                         ILTypeInit.BeforeField)
 
-                  altTypeDef.WithSpecialName.WithSerializable(td.IsSerializable)
+                  altTypeDef.WithSpecialName(true).WithSerializable(td.IsSerializable)
 
               [ altTypeDef ], altDebugTypeDefs 
 
@@ -974,7 +974,7 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
     let selfAndTagFields = 
         [ for (fldName,fldTy) in (selfFields @ tagFieldsInObject)  do
               let fdef = mkILInstanceField  (fldName,fldTy, None, ILMemberAccess.Assembly) |> addFieldNeverAttrs |> addFieldGeneratedAttrs
-              yield if not isStruct && isTotallyImmutable then { fdef with Attributes = fdef.Attributes ||| FieldAttributes.InitOnly } else fdef ]
+              yield fdef.WithInitOnly(not isStruct && isTotallyImmutable) ]
 
     let ctorMeths =
         if (List.isEmpty selfFields && List.isEmpty tagFieldsInObject && not (List.isEmpty selfMeths))
@@ -1082,9 +1082,8 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
                   CustomAttrs= emptyILCustomAttrs }.WithNestedAccess(cud.cudReprAccess).WithAbstract(true).WithSealed(true).WithImport(false).WithEncoding(ILDefaultPInvokeEncoding.Ansi).WithHasSecurity(false))
 
     let baseTypeDef = 
-       { td with 
+       { td.WithInitSemantics(ILTypeInit.BeforeField) with 
           NestedTypes = mkILTypeDefs (Option.toList enumTypeDef @ altTypeDefs @ altDebugTypeDefs @ td.NestedTypes.AsList)
-          Attributes = td.Attributes ||| TypeAttributes.BeforeFieldInit
           Extends= (match td.Extends with None -> Some ilg.typ_Object | _ -> td.Extends) 
           Methods= mkILMethods (ctorMeths @ baseMethsFromAlt @ selfMeths @ tagMeths @ altUniqObjMeths @ existingMeths)
           Fields=mkILFields (selfAndTagFields @ List.map (fun (_,_,_,_,fdef,_) -> fdef) altNullaryFields @ td.Fields.AsList)

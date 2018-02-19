@@ -1451,6 +1451,7 @@ type ILMethodDef =
     member x.WithSynchronized(condition) = { x with ImplAttributes = x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.Synchronized}
     member x.WithNoInlining(condition) = { x with ImplAttributes = x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.NoInlining}
     member x.WithAggressiveInlining(condition) = { x with ImplAttributes = x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.AggressiveInlining}
+    member x.WithRuntime(condition) = { x with ImplAttributes = x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.Runtime}
 
 /// Index table by name and arity. 
 type MethodDefMap = Map<string, ILMethodDef list>
@@ -1525,15 +1526,6 @@ type ILPropertyDefs =
     member x.AsList = let (Properties t) = x in t.Entries()
     member x.LookupByName s = let (Properties t) = x in t.[s]
 
-let convertFieldAccesFlags flags = 
-    match flags with
-    | ILMemberAccess.Assembly           -> FieldAttributes.Assembly
-    | ILMemberAccess.FamilyAndAssembly        -> FieldAttributes.FamANDAssem
-    | ILMemberAccess.FamilyOrAssembly         -> FieldAttributes.FamORAssem
-    | ILMemberAccess.Family             -> FieldAttributes.Family
-    | ILMemberAccess.Private            -> FieldAttributes.Private
-    | ILMemberAccess.Public             -> FieldAttributes.Public
-
 let convertFieldAccess (ilMemberAccess:ILMemberAccess) =
     match ilMemberAccess with
     | ILMemberAccess.Assembly            -> FieldAttributes.Assembly
@@ -1560,6 +1552,13 @@ type ILFieldDef =
     member x.IsInitOnly = x.Attributes &&& FieldAttributes.InitOnly <> enum 0
     member x.Access = memberAccessOfFlags (int x.Attributes)
     member x.WithAccess(access) = { x with Attributes = x.Attributes &&& ~~~FieldAttributes.FieldAccessMask ||| convertFieldAccess access }
+    member x.WithInitOnly(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition FieldAttributes.InitOnly }
+    member x.WithStatic(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition FieldAttributes.Static }
+    member x.WithSpecialName(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition (FieldAttributes.SpecialName ||| FieldAttributes.RTSpecialName) }
+    member x.WithNotSerialized(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition FieldAttributes.NotSerialized }
+    member x.WithLiteral(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition FieldAttributes.Literal }
+    member x.WithHasDefault(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition FieldAttributes.HasDefault }
+    member x.WithHasFieldMarshal(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition FieldAttributes.HasFieldMarshal }
 
 
 // Index table by name.  Keep a canonical list to make sure field order is not disturbed for binary manipulation.
@@ -1687,6 +1686,11 @@ let convertToNestedTypeAccess (ilMemberAccess:ILMemberAccess) =
     | ILMemberAccess.Private             -> TypeAttributes.NestedPrivate
     | ILMemberAccess.Public              -> TypeAttributes.NestedPublic
     
+let convertInitSemantics (init:ILTypeInit) =
+    match init with 
+    | ILTypeInit.BeforeField -> TypeAttributes.BeforeFieldInit
+    | ILTypeInit.OnAny -> enum 0
+
 [<NoComparison; NoEquality>]
 type ILTypeDef =  
     { Name: string;  
@@ -1727,7 +1731,8 @@ type ILTypeDef =
     member x.WithLayout(layout) = { x with Attributes = x.Attributes ||| convertLayout layout; Layout = layout }
     member x.WithKind(kind) = { x with Attributes = x.Attributes ||| convertTypeKind kind; Extends = match kind with ILTypeDefKind.Interface -> None | _ -> x.Extends }
     member x.WithEncoding(encoding) = { x with Attributes = x.Attributes ||| convertEncoding encoding }
-    member x.WithSpecialName = { x with Attributes = x.Attributes ||| TypeAttributes.SpecialName}
+    member x.WithSpecialName(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition TypeAttributes.SpecialName}
+    member x.WithInitSemantics(init) = { x with Attributes = x.Attributes ||| convertInitSemantics init }
 
 and [<Sealed>] ILTypeDefs(f : unit -> (string list * string * ILAttributes * Lazy<ILTypeDef>)[]) =
 
@@ -2523,7 +2528,6 @@ let mk_ospec (typ:ILType,callconv,nm,genparams,formal_args,formal_ret) =
 let mkILGenericVirtualMethod (nm,access,genparams,actual_args,actual_ret,impl) = 
   { Name=nm;
     Attributes= 
-      // REVIEW: We'll need to start setting this eventually
       convertMemberAccess access |||
       MethodAttributes.CheckAccessOnOverride ||| 
       (match impl with MethodBody.Abstract -> MethodAttributes.Abstract ||| MethodAttributes.Virtual | _ -> MethodAttributes.Virtual);
@@ -2631,7 +2635,7 @@ let prependInstrsToClassCtor instrs tag cd =
 let mkILField (isStatic,nm,ty,(init:ILFieldInit option),(at: byte [] option),access,isLiteral) =
    { Name=nm;
      Type=ty;
-     Attributes=convertFieldAccesFlags access |||
+     Attributes=convertFieldAccess access |||
                 (if isStatic then FieldAttributes.Static else enum 0) ||| 
                 (if isLiteral then FieldAttributes.Literal else enum 0) |||
                 (if init.IsSome then FieldAttributes.HasDefault else enum 0) |||
@@ -2678,6 +2682,13 @@ let mkILExportedTypesLazy (l:Lazy<_>) =   ILExportedTypesAndForwarders (lazy (Li
 
 let addNestedExportedTypeToTable (y: ILNestedExportedType) tab =
     Map.add y.Name y tab
+
+let mkTypeForwarder scopeRef name nested customAttrs access =
+    {   ScopeRef = scopeRef
+        Name = name  
+        Attributes = enum<TypeAttributes>(0x00200000) ||| convertTypeAccessFlags access
+        Nested = nested
+        CustomAttrs = customAttrs  }
 
 let mkILNestedExportedTypes l =  
     ILNestedExportedTypes (notlazy (List.foldBack addNestedExportedTypeToTable l Map.empty))
@@ -2739,7 +2750,7 @@ let mkILStorageCtor(tag,preblock,typ,flds,access) = mkILStorageCtorWithParamName
 
 let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nestedTypes, props, events, attrs, init) =
   { Name=nm;
-    Attributes=convertTypeAccessFlags access ||| TypeAttributes.AutoLayout ||| TypeAttributes.Class ||| match init with | ILTypeInit.BeforeField -> TypeAttributes.BeforeFieldInit | _ -> enum 0 ||| TypeAttributes.AnsiClass;
+    Attributes=convertTypeAccessFlags access ||| TypeAttributes.AutoLayout ||| TypeAttributes.Class ||| (match init with | ILTypeInit.BeforeField -> TypeAttributes.BeforeFieldInit | _ -> enum 0) ||| TypeAttributes.AnsiClass;
     GenericParams= genparams;
     Implements = impl;
     Layout=ILTypeDefLayout.Auto;
@@ -2848,11 +2859,9 @@ let mkILDelegateMethods (access) (ilg: ILGlobals) (iltyp_AsyncCallback, iltyp_IA
     let rty = rtv.Type
     let one nm args ret =
         let mdef = mkILNonGenericVirtualMethod (nm,access,args,mkILReturn ret,MethodBody.Abstract)
-        {mdef with 
-                   Attributes=(mdef.Attributes ^^^ MethodAttributes.Abstract) ||| MethodAttributes.HideBySig
-                   ImplAttributes=mdef.ImplAttributes ||| MethodImplAttributes.Runtime; }
+        mdef.WithAbstract(false).WithHideBySig.WithRuntime(true)
     let ctor = mkILCtor(access, [ mkILParamNamed("object",ilg.typ_Object); mkILParamNamed("method",ilg.typ_IntPtr) ], MethodBody.Abstract)
-    let ctor = { ctor with  ImplAttributes=ctor.ImplAttributes ||| MethodImplAttributes.Runtime; Attributes=ctor.Attributes ||| MethodAttributes.HideBySig }
+    let ctor = ctor.WithRuntime(true).WithHideBySig
     [ ctor;
       one "Invoke" parms rty;
       one "BeginInvoke" (parms @ [mkILParamNamed("callback",iltyp_AsyncCallback); mkILParamNamed("objects",ilg.typ_Object) ] ) iltyp_IAsyncResult;

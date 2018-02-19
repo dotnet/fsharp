@@ -3718,7 +3718,7 @@ and GenClosureTypeDefs cenv (tref:ILTypeRef, ilGenParams, attrs, ilCloFreeVars, 
   let td = 
     { Name = tref.Name 
       Layout = ILTypeDefLayout.Auto
-      Attributes = TypeAttributes.BeforeFieldInit
+      Attributes = enum 0
       GenericParams = ilGenParams
       CustomAttrs = mkILCustomAttrs(attrs @ [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Closure) ])
       Fields = emptyILFields
@@ -3730,7 +3730,7 @@ and GenClosureTypeDefs cenv (tref:ILTypeRef, ilGenParams, attrs, ilCloFreeVars, 
       Implements = ilIntfTys  
       Extends= Some ext
       SecurityDecls= emptyILSecurityDecls }
-  let td = td.WithSealed(true).WithSerializable(true).WithSpecialName.WithAccess(ComputeTypeAccess tref true).WithLayout(ILTypeDefLayout.Auto).WithEncoding(ILDefaultPInvokeEncoding.Auto)
+  let td = td.WithSealed(true).WithSerializable(true).WithSpecialName(true).WithAccess(ComputeTypeAccess tref true).WithLayout(ILTypeDefLayout.Auto).WithEncoding(ILDefaultPInvokeEncoding.Auto).WithInitSemantics(ILTypeInit.BeforeField)
 
   let tdefs = EraseClosures.convIlxClosureDef cenv.g.ilxPubCloEnv tref.Enclosing td cloInfo
   tdefs
@@ -3765,7 +3765,7 @@ and GenLambdaClosure cenv (cgbuf:CodeGenBuffer) eenv isLocalTypeFunc selfv expr 
                 let ilContractTypeDef = 
                     { Name = ilContractTypeRef.Name 
                       Layout = ILTypeDefLayout.Auto
-                      Attributes = TypeAttributes.BeforeFieldInit
+                      Attributes = enum 0
                       GenericParams = ilContractGenericParams
                       CustomAttrs = mkILCustomAttrs [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Closure) ]
                       Fields = emptyILFields
@@ -3777,7 +3777,7 @@ and GenLambdaClosure cenv (cgbuf:CodeGenBuffer) eenv isLocalTypeFunc selfv expr 
                       Implements = []  
                       Extends= Some cenv.g.ilg.typ_Object
                       SecurityDecls= emptyILSecurityDecls } 
-                let ilContractTypeDef = ilContractTypeDef.WithAbstract(true).WithAccess(ComputeTypeAccess ilContractTypeRef true).WithSerializable(true).WithSpecialName.WithLayout(ILTypeDefLayout.Auto) // the contract type is an abstract type and not sealed
+                let ilContractTypeDef = ilContractTypeDef.WithAbstract(true).WithAccess(ComputeTypeAccess ilContractTypeRef true).WithSerializable(true).WithSpecialName(true).WithLayout(ILTypeDefLayout.Auto).WithInitSemantics(ILTypeInit.BeforeField) // the contract type is an abstract type and not sealed
                 cgbuf.mgbuf.AddTypeDef(ilContractTypeRef, ilContractTypeDef, false, false, None)
                 
                 let ilCtorBody =  mkILMethodBody (true,[],8,nonBranchingInstrsToCode (mkCallBaseConstructor(ilContractTy,[])), None )
@@ -4742,15 +4742,12 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) sta
             let ilFieldDef = mkILStaticField (fspec.Name, fty, None, None, access)
             let ilFieldDef =
                 match vref.LiteralValue with 
-                | Some konst -> { ilFieldDef with Attributes = ilFieldDef.Attributes ||| FieldAttributes.HasDefault; LiteralValue = Some(GenFieldInit m konst) }
+                | Some konst -> { ilFieldDef.WithHasDefault(true) with LiteralValue = Some(GenFieldInit m konst) }
                 | None  -> ilFieldDef 
               
             let ilFieldDef = 
                 let isClassInitializer = (cgbuf.MethodName = ".cctor")
-                if mut || cenv.opts.isInteractiveItExpr || not isClassInitializer || hasLiteralAttr then 
-                    ilFieldDef 
-                else 
-                    {ilFieldDef with Attributes = ilFieldDef.Attributes ||| FieldAttributes.InitOnly }
+                ilFieldDef.WithInitOnly(not (mut || cenv.opts.isInteractiveItExpr || not isClassInitializer || hasLiteralAttr))
 
             let ilAttribs = 
                 if not hasLiteralAttr then
@@ -6348,18 +6345,20 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                   let fdef =
                       { Name          = ilFieldName
                         Type          = ilPropType
-                        Attributes    = ILRuntimeWriter.flagsIf isStatic FieldAttributes.Static ||| 
-                                        ILRuntimeWriter.flagsIf (ilFieldName="value__" && tycon.IsEnumTycon) (FieldAttributes.SpecialName ||| FieldAttributes.RTSpecialName) |||
-                                        ILRuntimeWriter.flagsIf ilNotSerialized FieldAttributes.NotSerialized |||
-                                        ILRuntimeWriter.flagsIf fspec.LiteralValue.IsSome FieldAttributes.Literal |||
-                                        ILRuntimeWriter.flagsIf literalValue.IsSome FieldAttributes.HasDefault |||
-                                        ILRuntimeWriter.flagsIf ilFieldMarshal.IsSome FieldAttributes.HasFieldMarshal
+                        Attributes    = enum 0
                         Data          = None 
                         LiteralValue  = literalValue
                         Offset        = ilFieldOffset
                         Marshal       = ilFieldMarshal
                         CustomAttrs   = mkILCustomAttrs (GenAttrs cenv eenv fattribs @ extraAttribs) } 
-                  let fdef = fdef.WithAccess(access)
+                  let fdef = 
+                    fdef.WithAccess(access)
+                        .WithStatic(isStatic)
+                        .WithSpecialName(ilFieldName="value__" && tycon.IsEnumTycon)
+                        .WithNotSerialized(ilNotSerialized)
+                        .WithLiteral(fspec.LiteralValue.IsSome)
+                        .WithHasDefault(literalValue.IsSome)
+                        .WithHasFieldMarshal(ilFieldMarshal.IsSome)
                   yield fdef
 
                if requiresExtraField then 
@@ -6661,7 +6660,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                let tdef = 
                    { Name = ilTypeName
                      Layout =  layout
-                     Attributes =  TypeAttributes.BeforeFieldInit
+                     Attributes = enum 0
                      GenericParams = ilGenParams
                      CustomAttrs = 
                          mkILCustomAttrs (ilCustomAttrs @ 
@@ -6677,7 +6676,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                      NestedTypes=emptyILTypeDefs
                      Implements = ilIntfTys
                      Extends= Some (if tycon.IsStructOrEnumTycon then cenv.g.iltyp_ValueType else cenv.g.ilg.typ_Object)
-                     SecurityDecls= emptyILSecurityDecls }.WithLayout(layout).WithSerializable(isSerializable).WithSealed(true).WithEncoding(ILDefaultPInvokeEncoding.Auto).WithAccess(access)
+                     SecurityDecls= emptyILSecurityDecls }.WithLayout(layout).WithSerializable(isSerializable).WithSealed(true).WithEncoding(ILDefaultPInvokeEncoding.Auto).WithAccess(access).WithInitSemantics(ILTypeInit.BeforeField)
 
                let tdef2 = cenv.g.eraseClassUnionDef tref tdef cuinfo
    

@@ -1099,6 +1099,7 @@ type ILMethodDef =
     member WithSynchronized: bool -> ILMethodDef
     member WithNoInlining: bool -> ILMethodDef
     member WithAggressiveInlining: bool -> ILMethodDef
+    member WithRuntime: bool -> ILMethodDef
 
 /// Tables of methods.  Logically equivalent to a list of methods but
 /// the table is kept in a form optimized for looking up methods by 
@@ -1131,6 +1132,13 @@ type ILFieldDef =
         member IsInitOnly: bool
         member Access: ILMemberAccess
         member WithAccess: ILMemberAccess -> ILFieldDef
+        member WithInitOnly: bool -> ILFieldDef
+        member WithStatic: bool -> ILFieldDef
+        member WithSpecialName: bool -> ILFieldDef
+        member WithNotSerialized: bool -> ILFieldDef
+        member WithLiteral: bool -> ILFieldDef
+        member WithHasDefault: bool -> ILFieldDef
+        member WithHasFieldMarshal: bool -> ILFieldDef
 
 /// Tables of fields.  Logically equivalent to a list of fields but
 /// the table is kept in a form optimized for looking up fields by 
@@ -1320,7 +1328,8 @@ and [<NoComparison; NoEquality>]
     member WithLayout: ILTypeDefLayout -> ILTypeDef
     member WithKind: ILTypeDefKind -> ILTypeDef
     member WithEncoding: ILDefaultPInvokeEncoding -> ILTypeDef
-    member WithSpecialName: ILTypeDef
+    member WithSpecialName: bool -> ILTypeDef
+    member WithInitSemantics: ILTypeInit -> ILTypeDef
 
 [<NoEquality; NoComparison>]
 [<Sealed>]
@@ -1813,6 +1822,7 @@ val emptyILTypeDefs: ILTypeDefs
 val mkILTypeDefsComputed: (unit -> (string list * string * ILAttributes * Lazy<ILTypeDef>) array) -> ILTypeDefs
 val addILTypeDef: ILTypeDef -> ILTypeDefs -> ILTypeDefs
 
+val mkTypeForwarder: ILScopeRef -> string -> ILNestedExportedTypes -> ILAttributes -> ILTypeDefAccess -> ILExportedTypeOrForwarder
 val mkILNestedExportedTypes: ILNestedExportedType list -> ILNestedExportedTypes
 val mkILNestedExportedTypesLazy: Lazy<ILNestedExportedType list> -> ILNestedExportedTypes
 
