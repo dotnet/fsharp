@@ -583,7 +583,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                       MethodImpls=emptyILMethodImpls
                       Properties=emptyILProperties
                       Events=emptyILEvents
-                      SecurityDecls=emptyILSecurityDecls }.WithHasSecurity(false).WithSpecialName(false).WithAbstract(false).WithImport(true).WithEncoding(ILDefaultPInvokeEncoding.Ansi).WithSealed(true).WithInitSemantics(ILTypeInit.BeforeField)
+                      SecurityDecls=emptyILSecurityDecls }.WithHasSecurity(false).WithSpecialName(false).WithAbstract(false).WithImport(false).WithEncoding(ILDefaultPInvokeEncoding.Ansi).WithSealed(true).WithInitSemantics(ILTypeInit.BeforeField)
 
                 [cloTypeDef]
 

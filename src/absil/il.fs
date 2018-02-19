@@ -1436,11 +1436,12 @@ type ILMethodDef =
     member x.IsMustRun         = x.ImplAttributes &&& MethodImplAttributes.NoOptimization <> enum 0
 
     member x.WithSpecialName = { x with Attributes = x.Attributes ||| MethodAttributes.SpecialName }
-    member x.WithHideBySig = 
+    member x.WithHideBySig() = 
         { x with 
             Attributes = 
                 if x.IsVirtual then x.Attributes &&& ~~~MethodAttributes.CheckAccessOnOverride ||| MethodAttributes.HideBySig
                 else failwith "WithHideBySig" }
+    member x.WithHideBySig(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition MethodAttributes.HideBySig}
     member x.WithFinal(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition MethodAttributes.Final}
     member x.WithAbstract(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition MethodAttributes.Abstract}
     member x.WithAccess(access) = { x with Attributes = x.Attributes &&& ~~~MethodAttributes.MemberAccessMask ||| convertMemberAccess access }
@@ -2859,9 +2860,9 @@ let mkILDelegateMethods (access) (ilg: ILGlobals) (iltyp_AsyncCallback, iltyp_IA
     let rty = rtv.Type
     let one nm args ret =
         let mdef = mkILNonGenericVirtualMethod (nm,access,args,mkILReturn ret,MethodBody.Abstract)
-        mdef.WithAbstract(false).WithHideBySig.WithRuntime(true)
+        mdef.WithAbstract(false).WithHideBySig().WithRuntime(true)
     let ctor = mkILCtor(access, [ mkILParamNamed("object",ilg.typ_Object); mkILParamNamed("method",ilg.typ_IntPtr) ], MethodBody.Abstract)
-    let ctor = ctor.WithRuntime(true).WithHideBySig
+    let ctor = ctor.WithRuntime(true).WithHideBySig(true)
     [ ctor;
       one "Invoke" parms rty;
       one "BeginInvoke" (parms @ [mkILParamNamed("callback",iltyp_AsyncCallback); mkILParamNamed("objects",ilg.typ_Object) ] ) iltyp_IAsyncResult;

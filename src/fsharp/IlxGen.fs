@@ -3523,13 +3523,13 @@ and bindBaseOrThisVarOpt cenv eenv baseValOpt =
     | Some basev -> AddStorageForVal cenv.g (basev,notlazy (Arg 0))  eenv  
 
 and fixupVirtualSlotFlags (mdef:ILMethodDef) = 
-    mdef.WithHideBySig
+    mdef.WithHideBySig()
 
 and renameMethodDef nameOfOverridingMethod (mdef : ILMethodDef) = 
     {mdef with Name=nameOfOverridingMethod }
 
 and fixupMethodImplFlags (mdef:ILMethodDef) = 
-    mdef.WithAccess(ILMemberAccess.Private).WithHideBySig.WithFinal(true).WithNewSlot
+    mdef.WithAccess(ILMemberAccess.Private).WithHideBySig().WithFinal(true).WithNewSlot
 
 and GenObjectMethod cenv eenvinner (cgbuf:CodeGenBuffer) useMethodImpl tmethod =
 

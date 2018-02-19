@@ -1088,7 +1088,8 @@ type ILMethodDef =
     member IsMustRun: bool
     
     member WithSpecialName: ILMethodDef
-    member WithHideBySig: ILMethodDef
+    member WithHideBySig: unit -> ILMethodDef
+    member WithHideBySig: bool -> ILMethodDef
     member WithFinal: bool -> ILMethodDef
     member WithAbstract: bool -> ILMethodDef
     member WithAccess: ILMemberAccess -> ILMethodDef
