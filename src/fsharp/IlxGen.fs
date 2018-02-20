@@ -3777,7 +3777,7 @@ and GenLambdaClosure cenv (cgbuf:CodeGenBuffer) eenv isLocalTypeFunc selfv expr 
                       Implements = []  
                       Extends= Some cenv.g.ilg.typ_Object
                       SecurityDecls= emptyILSecurityDecls } 
-                let ilContractTypeDef = ilContractTypeDef.WithAbstract(true).WithAccess(ComputeTypeAccess ilContractTypeRef true).WithSerializable(true).WithSpecialName(true).WithLayout(ILTypeDefLayout.Auto).WithInitSemantics(ILTypeInit.BeforeField) // the contract type is an abstract type and not sealed
+                let ilContractTypeDef = ilContractTypeDef.WithAbstract(true).WithAccess(ComputeTypeAccess ilContractTypeRef true).WithSerializable(true).WithSpecialName(true).WithLayout(ILTypeDefLayout.Auto).WithInitSemantics(ILTypeInit.BeforeField).WithEncoding(ILDefaultPInvokeEncoding.Auto) // the contract type is an abstract type and not sealed
                 cgbuf.mgbuf.AddTypeDef(ilContractTypeRef, ilContractTypeDef, false, false, None)
                 
                 let ilCtorBody =  mkILMethodBody (true,[],8,nonBranchingInstrsToCode (mkCallBaseConstructor(ilContractTy,[])), None )

@@ -1731,7 +1731,7 @@ type ILTypeDef =
     member x.WithHasSecurity(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition TypeAttributes.HasSecurity }
     member x.WithLayout(layout) = { x with Attributes = x.Attributes ||| convertLayout layout; Layout = layout }
     member x.WithKind(kind) = { x with Attributes = x.Attributes ||| convertTypeKind kind; Extends = match kind with ILTypeDefKind.Interface -> None | _ -> x.Extends }
-    member x.WithEncoding(encoding) = { x with Attributes = x.Attributes ||| convertEncoding encoding }
+    member x.WithEncoding(encoding) = { x with Attributes = x.Attributes &&& ~~~TypeAttributes.StringFormatMask ||| convertEncoding encoding }
     member x.WithSpecialName(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition TypeAttributes.SpecialName}
     member x.WithInitSemantics(init) = { x with Attributes = x.Attributes ||| convertInitSemantics init }
 
