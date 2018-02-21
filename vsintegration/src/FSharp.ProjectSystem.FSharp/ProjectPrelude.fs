@@ -17,34 +17,10 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
     open System
-    open System.Reflection
-    open System.CodeDom
-    open System.CodeDom.Compiler
-    open System.Runtime.CompilerServices
-    open System.Runtime.InteropServices
-    open System.Runtime.Serialization
-    open System.Collections.Generic
-    open System.Collections
     open System.ComponentModel
-    open System.ComponentModel.Design
-    open System.Text.RegularExpressions
     open System.Diagnostics
     open System.IO
-    open System.Drawing
     open System.Globalization
-    open System.Text
-
-
-    open Microsoft.Win32
-
-    open Microsoft.VisualStudio.Shell
-    open Microsoft.VisualStudio.Shell.Interop
-    open Microsoft.VisualStudio.OLE.Interop
-    open Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
-    open Microsoft.VisualStudio
-    open Microsoft.VisualStudio.FSharp.LanguageService
-    open EnvDTE
-    open System
 
     type IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider
 
@@ -94,7 +70,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             if (outputType = OutputType.Library) then ".dll" else ".exe"
 
         let ParseEnum<'a> (s:string) = 
-            Enum.Parse(typeof<'a>, s, true (*ignorecase*)) |> unbox<'a>
+            Enum.Parse(typeof<'a>, s, ignoreCase=true) |> unbox<'a>
 
         /// A helper to get ther service 'service at interface 'intf from the given service provider
         let TryGetService2<'service, 'intf>(serviceProvider: System.IServiceProvider) : 'intf option = 

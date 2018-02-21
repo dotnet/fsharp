@@ -18,6 +18,7 @@ open Microsoft.VisualStudio.FSharp.ProjectSystem
 
 // Internal unittest namespaces
 open NUnit.Framework
+open FsUnit
 open Salsa
 open UnitTests.TestLib.Utils.Asserts
 open UnitTests.TestLib.Utils.FilesystemHelpers
@@ -629,6 +630,164 @@ type Miscellaneous() =
             finally
                 project.Close() |> ignore
         )
+
+[<TestFixture>]
+type TestSourceMovement() = 
+
+    [<Test>]
+    member public this.``Test re-order with a prefix and suffix`` () =
+
+        SourceMovement.newSources [|"prefix1"; "actual1"; "actual2"; "suffix1"|] [|"actual2"; "actual1"|] SourceMovement.Reorder
+        |> shouldEqual (Some ([|"prefix1"; "actual2"; "actual1"; "suffix1"|] |> Array.map System.IO.Path.GetFullPath))
+        
+    [<Test>]
+    member public this.``Test re-order with multiple prefixes and suffixes`` () =
+
+        SourceMovement.newSources [|"prefix1"; "prefix2"; "actual1"; "actual2"; "suffix1"; "suffix2"|] [|"actual2"; "actual1"|] SourceMovement.Reorder
+        |> shouldEqual (Some ([|"prefix1"; "prefix2"; "actual2"; "actual1"; "suffix1"; "suffix2"|] |> Array.map System.IO.Path.GetFullPath))
+
+    [<Test>]
+    member public this.``Test re-order with no prefixes or suffixes`` () =
+
+        SourceMovement.newSources [|"actual1"; "actual2"|] [|"actual2"; "actual1"|] SourceMovement.Reorder
+        |> shouldEqual (Some ([|"actual2"; "actual1"|] |> Array.map System.IO.Path.GetFullPath))
+
+    [<Test>]
+    member public this.``Test adding a file to end`` () =
+
+        SourceMovement.Add "actual3"
+        |> SourceMovement.newSources [|"prefix1"; "actual1"; "actual2"; "suffix1"|] [|"actual1"; "actual2"; "actual3"|]
+        |> shouldEqual (Some ([|"prefix1"; "actual1"; "actual2"; "actual3"; "suffix1"|] |> Array.map System.IO.Path.GetFullPath))
+
+    [<Test>]
+    member public this.``Test adding a file to middle`` () =
+
+        SourceMovement.Add "actual3"
+        |> SourceMovement.newSources [|"prefix1"; "actual1"; "actual2"; "suffix1"|] [|"actual1"; "actual3"; "actual2"|]
+        |> shouldEqual (Some ([|"prefix1"; "actual1"; "actual3"; "actual2"; "suffix1"|] |> Array.map System.IO.Path.GetFullPath))
+
+    [<Test>]
+    member public this.``Test adding a file to middle with no prefix or suffixes`` () =
+
+        SourceMovement.Add "actual3"
+        |> SourceMovement.newSources [|"actual1"; "actual2"|] [|"actual1"; "actual3"; "actual2"|]
+        |> shouldEqual (Some ([|"actual1"; "actual3"; "actual2"|] |> Array.map System.IO.Path.GetFullPath))
+
+    [<Test>]
+    member public this.``Test adding a file to start`` () =
+
+        SourceMovement.Add "actual3"
+        |> SourceMovement.newSources [|"prefix1"; "actual1"; "actual2"; "suffix1"|] [|"actual3"; "actual1"; "actual2"|]
+        |> shouldEqual (Some ([|"prefix1"; "actual3"; "actual1"; "actual2"; "suffix1"|] |> Array.map System.IO.Path.GetFullPath))
+        
+    [<Test>]
+    member public this.``Test adding a file is case insensitive`` () =
+
+        SourceMovement.Add "ACTUAL3"
+        |> SourceMovement.newSources [|"prefix1"; "actual1"; "actual2"; "suffix1"|] [|"aCTuaL3"; "actual1"; "actual2"|]
+        |> shouldEqual (Some ([|"prefix1"; "actual3"; "actual1"; "actual2"; "suffix1"|] |> Array.map System.IO.Path.GetFullPath))
+
+    [<Test>]
+    member public this.``Test adding a file to an empty project`` () =
+        
+        SourceMovement.Add "new_file"
+        |> SourceMovement.newSources [|"prefix1"; "suffix1"|] [|"new_file"|]
+        |> shouldEqual None
+
+    [<Test>]
+    member public this.``Test removing a file from the end`` () =
+
+        SourceMovement.Remove [|"actual3"|]
+        |> SourceMovement.newSources [|"prefix1"; "actual1"; "actual2"; "actual3"; "suffix1"|] [|"actual1"; "actual2"|]
+        |> shouldEqual (Some ([|"prefix1"; "actual1"; "actual2"; "suffix1"|] |> Array.map System.IO.Path.GetFullPath))
+
+    [<Test>]
+    member public this.``Test removing a file from the middle`` () =
+
+        SourceMovement.Remove [|"actual3"|]
+        |> SourceMovement.newSources [|"prefix1"; "actual1"; "actual3"; "actual2"; "suffix1"|] [|"actual1"; "actual2"|]
+        |> shouldEqual (Some ([|"prefix1"; "actual1"; "actual2"; "suffix1"|] |> Array.map System.IO.Path.GetFullPath))
+
+    [<Test>]
+    member public this.``Test removing a file from the middle with no prefixes or suffixes`` () =
+
+        SourceMovement.Remove [|"actual3"|]
+        |> SourceMovement.newSources [|"actual1"; "actual3"; "actual2"|] [|"actual1"; "actual2"|]
+        |> shouldEqual (Some ([|"actual1"; "actual2"|] |> Array.map System.IO.Path.GetFullPath))
+
+    [<Test>]
+    member public this.``Test removing a file from the start`` () =
+
+        SourceMovement.Remove [|"actual3"|]
+        |> SourceMovement.newSources [|"prefix1"; "actual3"; "actual1"; "actual2"; "suffix1"|] [|"actual1"; "actual2"|]
+        |> shouldEqual (Some ([|"prefix1"; "actual1"; "actual2"; "suffix1"|] |> Array.map System.IO.Path.GetFullPath))
+    
+    [<Test>]
+    member public this.``Test removing a file is case insensitive`` () =
+
+        SourceMovement.Remove [|"ACTUAL3"|]
+        |> SourceMovement.newSources [|"prefix1"; "actual3"; "actual1"; "actual2"; "suffix1"|] [|"actual1"; "actual2"|]
+        |> shouldEqual (Some ([|"prefix1"; "actual1"; "actual2"; "suffix1"|] |> Array.map System.IO.Path.GetFullPath))
+    
+    [<Test>]
+    member public this.``Test removing multiple files from the start and end`` () =
+
+        SourceMovement.Remove [|"actual3"; "actual2"|]
+        |> SourceMovement.newSources [|"prefix1"; "actual3"; "actual1"; "actual2"; "suffix1"|] [|"actual1"|]
+        |> shouldEqual (Some ([|"prefix1"; "actual1"; "suffix1"|] |> Array.map System.IO.Path.GetFullPath))
+
+    [<Test>]
+    member public this.``Test removing the only file`` () =
+
+        SourceMovement.Remove [|"actual"|]
+        |> SourceMovement.newSources [|"prefix1"; "actual"; "suffix1"|] [||]
+        |> shouldEqual (Some ([|"prefix1"; "suffix1"|] |> Array.map System.IO.Path.GetFullPath))
+
+    [<Test>]
+    member public this.``Test renaming a file at the end`` () =
+
+        SourceMovement.Rename ["actual3", "actual4"]
+        |> SourceMovement.newSources [|"prefix1"; "actual1"; "actual2"; "actual3"; "suffix1"|] [|"actual1"; "actual2"; "actual4"|]
+        |> shouldEqual (Some ([|"prefix1"; "actual1"; "actual2"; "actual4"; "suffix1"|] |> Array.map System.IO.Path.GetFullPath))
+
+    [<Test>]
+    member public this.``Test renaming a file at the middle`` () =
+
+        SourceMovement.Rename ["actual3", "actual4"]
+        |> SourceMovement.newSources [|"prefix1"; "actual1"; "actual3"; "actual2"; "suffix1"|] [|"actual1"; "actual4"; "actual2"|]
+        |> shouldEqual (Some ([|"prefix1"; "actual1"; "actual4"; "actual2"; "suffix1"|] |> Array.map System.IO.Path.GetFullPath))
+
+    [<Test>]
+    member public this.``Test renaming a file at the middle with no prefixes or suffixes`` () =
+
+        SourceMovement.Rename ["actual3", "actual4"]
+        |> SourceMovement.newSources [|"actual1"; "actual3"; "actual2"|] [|"actual1"; "actual4"; "actual2"|]
+        |> shouldEqual (Some ([|"actual1"; "actual4"; "actual2"|] |> Array.map System.IO.Path.GetFullPath))
+
+    [<Test>]
+    member public this.``Test renaming a file at the start`` () =
+
+        SourceMovement.Rename ["actual3", "actual4"]
+        |> SourceMovement.newSources [|"prefix1"; "actual3"; "actual1"; "actual2"; "suffix1"|] [|"actual4"; "actual1"; "actual2"|]
+        |> shouldEqual (Some ([|"prefix1"; "actual4"; "actual1"; "actual2"; "suffix1"|] |> Array.map System.IO.Path.GetFullPath))
+
+    [<Test>]
+    member public this.``Test renaming the only file`` () =
+
+        SourceMovement.Rename ["actual", "sponges"]
+        |> SourceMovement.newSources [|"prefix1"; "actual"; "suffix1"|] [|"sponges"|]
+        |> shouldEqual (Some ([|"prefix1"; "sponges"; "suffix1"|] |> Array.map System.IO.Path.GetFullPath))
+    
+    [<Test>]
+    member public this.``Test renaming multiple files at the start and end`` () =
+
+        SourceMovement.Rename [
+            "actual1", "start"
+            "AcTuAl3", "END" // case insensitive
+            "non_existent", "actual2" // file is not in the old sources
+        ]
+        |> SourceMovement.newSources [|"prefix1"; "actual1"; "actual2"; "actual3"; "suffix1"|] [|"start"; "actual2"; "end"|]
+        |> shouldEqual (Some ([|"prefix1"; "start"; "actual2"; "end"; "suffix1"|] |> Array.map System.IO.Path.GetFullPath))
 
 [<TestFixture>]
 type Utilities() = 

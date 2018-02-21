@@ -343,13 +343,16 @@ type internal MSBuildUtilities() =
         let itemToMoveAfter = MSBuildUtilities.FindLast(toMoveAfter, projectNode)
         MSBuildUtilities.MoveFolderDownHelper(folderToBeMoved, itemToMoveAfter, projectNode)
 
-    // this method is only for DEBUG and unit tests
-    static member AllVisibleItemFilenames(projectNode : ProjectNode) =
-        // TODO this logic is slightly broken, should probably use MSBuildProject.ItemIsVisible
+    static member AllVisibleCompileItemFilenames(projectNode : ProjectNode) =
         let msbuildProject = projectNode.BuildProject
-        [for bi in MSBuildProject.GetStaticItemsInOrder(msbuildProject) do
-            if obj.ReferenceEquals(bi.Xml.ContainingProject, msbuildProject.Xml) then // ignore imported items
-                if not (projectNode.FilterItemTypeToBeAddedToHierarchy(bi.ItemType)) then  // ignore references, etc (is this right for folders?)
-                    if not (0=System.String.Compare(bi.GetMetadataValue("Visible"), "false", System.StringComparison.OrdinalIgnoreCase)) then
-                        if not (bi.ItemType = ProjectFileConstants.Folder) then // skip folders, just want filenames
-                            yield Path.GetFileName(GetInclude(bi))]
+        MSBuildProject.GetStaticItemsInOrder(msbuildProject)
+        |> Seq.filter (fun bi ->
+            // ignore imported items
+            obj.ReferenceEquals(bi.Xml.ContainingProject, msbuildProject.Xml) &&
+            // ignore references, etc (is this right for folders?)
+            not (projectNode.FilterItemTypeToBeAddedToHierarchy bi.ItemType) &&
+            // TODO this logic is slightly broken, should probably use MSBuildProject.ItemIsVisible
+            System.String.Compare(bi.GetMetadataValue("Visible"), "false", System.StringComparison.OrdinalIgnoreCase) <> 0 &&
+            bi.ItemType = ProjectFileConstants.Compile
+        )
+        |> Seq.map (GetInclude >> Path.GetFileName)

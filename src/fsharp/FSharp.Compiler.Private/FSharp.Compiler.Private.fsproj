@@ -65,10 +65,10 @@
       <Link>FSStrings.resx</Link>
     </EmbeddedResource>
     <Compile Include="..\..\utils\reshapedreflection.fs">
-      <Link>Reflection\reshapedreflection.fs</Link>
+      <Link>Utils\reshapedreflection.fs</Link>
     </Compile>
     <Compile Include="..\..\utils\reshapedmsbuild.fs">
-      <Link>Reflection\reshapedmsbuild.fs</Link>
+      <Link>Utils\reshapedmsbuild.fs</Link>
     </Compile>
     <Compile Include="..\..\utils\sformat.fsi">
       <Link>ErrorText\sformat.fsi</Link>
@@ -593,9 +593,6 @@
     </Compile>
     <Compile Include="..\service\ServiceXmlDocParser.fs">
       <Link>Service/ServiceXmlDocParser.fs</Link>
-    </Compile>
-    <Compile Include="..\..\utils\reshapedmsbuild.fs">
-      <Link>Service/reshapedmsbuild.fs</Link>
     </Compile>
     <Compile Include="..\SimulatedMSBuildReferenceResolver.fs">
       <Link>Service/SimulatedMSBuildReferenceResolver.fs</Link>
