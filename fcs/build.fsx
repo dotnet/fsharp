@@ -18,7 +18,7 @@ CleanDir (__SOURCE_DIRECTORY__ + "/../tests/TestResults")
 File.WriteAllText(__SOURCE_DIRECTORY__ + "/../tests/TestResults/notestsyet.txt","No tests yet")
 #endif
 
-let dotnetExePath = DotNetCli.InstallDotNetSDK "2.0.2"
+let dotnetExePath = DotNetCli.InstallDotNetSDK "2.1.4"
 
 let runDotnet workingDir args =
     let result =
@@ -167,7 +167,7 @@ Target "Test.NetStd" (fun _ ->
 Target "Nuget.AddNetStd" (fun _ ->
     let nupkg = sprintf "%s/FSharp.Compiler.Service.%s.nupkg" releaseDir release.AssemblyVersion
     let netcoreNupkg = sprintf "FSharp.Compiler.Service.netstandard/bin/Release/FSharp.Compiler.Service.%s.nupkg" release.AssemblyVersion
-    runDotnet __SOURCE_DIRECTORY__ (sprintf "mergenupkg --source %s --other %s --framework netstandard1.6" nupkg netcoreNupkg)
+    runDotnet __SOURCE_DIRECTORY__ (sprintf "mergenupkg --source %s --other %s --framework netstandard2.0" nupkg netcoreNupkg)
 )
 
 

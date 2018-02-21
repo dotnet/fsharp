@@ -15,8 +15,6 @@ let test (s : string) b =
     if b then stderr.WriteLine " OK"
     else report_failure (s)
 
-let printfn s = printfn "%s" s
-
 let _ = test "coic23a" (Seq.toList { 'a' .. 'c' } = ['a';'b';'c'])
 
 let _ = test "coic23q" (Seq.toList {1 .. 0} = [])

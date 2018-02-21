@@ -2793,7 +2793,8 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
     // Look for an explicit reference to FSharp.Core and use that to compute fsharpBinariesDir
     // FUTURE: remove this, we only read the binary for the exception it raises
     let fsharpBinariesDirValue = 
-#if NETSTANDARD1_6
+// NOTE: It's not clear why this behaviour has been changed for the NETSTANDARD compilations of the F# compiler
+#if NETSTANDARD1_6 || NETSTANDARD2_0
         data.defaultFSharpBinariesDir
 #else
         match fslibExplicitFilenameOpt with
@@ -2955,7 +2956,8 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
                 yield tcConfig.MakePathAbsolute x
 
             | None -> 
-#if NETSTANDARD1_6 // there is no really good notion of runtime directory on .NETCore
+// "there is no really good notion of runtime directory on .NETCore"
+#if NETSTANDARD1_6 || NETSTANDARD2_0
                 let runtimeRoot = Path.GetDirectoryName(typeof<System.Object>.Assembly.Location)
 #else
                 let runtimeRoot = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
