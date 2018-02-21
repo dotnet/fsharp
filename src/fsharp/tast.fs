@@ -1469,7 +1469,9 @@ and
       mutable rfield_fattribs: Attribs 
 
       /// Name/declaration-location of the field 
-      rfield_id: Ident 
+      rfield_id: Ident
+
+      rfield_name_generated: bool
 
       /// If this field is populated, this is the implementation range for an item in a signature, otherwise it is 
       /// the signature range for an item in an implementation
@@ -4920,7 +4922,7 @@ let NewExn cpath (id:Ident) access repr attribs doc =
         entity_il_repr_cache= newCache()   } 
 
 /// Create a new TAST RecdField node for an F# class, struct or record field
-let NewRecdField  stat konst id ty isMutable isVolatile pattribs fattribs docOption access secret =
+let NewRecdField  stat konst id nameGenerated ty isMutable isVolatile pattribs fattribs docOption access secret =
     { rfield_mutable=isMutable
       rfield_pattribs=pattribs
       rfield_fattribs=fattribs
@@ -4932,7 +4934,8 @@ let NewRecdField  stat konst id ty isMutable isVolatile pattribs fattribs docOpt
       rfield_secret = secret
       rfield_xmldoc = docOption 
       rfield_xmldocsig = ""
-      rfield_id=id 
+      rfield_id=id
+      rfield_name_generated = nameGenerated
       rfield_other_range = None }
 
     

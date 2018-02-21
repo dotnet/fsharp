@@ -1953,6 +1953,7 @@ and u_recdfield_spec st =
       rfield_xmldoc= defaultArg xmldoc XmlDoc.Empty
       rfield_xmldocsig=f 
       rfield_access=g
+      rfield_name_generated = false
       rfield_other_range = None }
 
 and u_rfield_table st = MakeRecdFieldsTable (u_list u_recdfield_spec st)
