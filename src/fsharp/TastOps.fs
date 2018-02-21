@@ -1591,7 +1591,7 @@ let isILInterfaceTycon (tycon:Tycon) =
 #if !NO_EXTENSIONTYPING
     | ProvidedTypeMetadata info -> info.IsInterface
 #endif
-    | ILTypeMetadata (TILObjectReprData(_, _, td)) -> (td.tdKind = ILTypeDefKind.Interface)
+    | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsInterface
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> false
 
 let rankOfArrayTy g ty = rankOfArrayTyconRef g (tcrefOfAppTy g ty)
@@ -1623,7 +1623,7 @@ let isDelegateTy g ty =
 #if !NO_EXTENSIONTYPING
     | ProvidedTypeMetadata info -> info.IsDelegate ()
 #endif
-    | ILTypeMetadata (TILObjectReprData(_, _, td)) -> (td.tdKind = ILTypeDefKind.Delegate)
+    | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsDelegate
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
         match tryDestAppTy g ty with
         | Some tcref -> tcref.Deref.IsFSharpDelegateTycon
@@ -1634,7 +1634,7 @@ let isInterfaceTy g ty =
 #if !NO_EXTENSIONTYPING
     | ProvidedTypeMetadata info -> info.IsInterface
 #endif
-    | ILTypeMetadata (TILObjectReprData(_, _, td)) -> (td.tdKind = ILTypeDefKind.Interface)
+    | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsInterface
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> isFSharpInterfaceTy g ty
 
 let isClassTy g ty = 
@@ -1642,7 +1642,7 @@ let isClassTy g ty =
 #if !NO_EXTENSIONTYPING
     | ProvidedTypeMetadata info -> info.IsClass
 #endif
-    | ILTypeMetadata (TILObjectReprData(_, _, td)) -> (td.tdKind = ILTypeDefKind.Class)
+    | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsClass
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> isFSharpClassTy g ty
 
 let isStructOrEnumTyconTy g ty = 

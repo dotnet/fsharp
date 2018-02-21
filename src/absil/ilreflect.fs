@@ -1466,59 +1466,12 @@ let emitParameter cenv emEnv (defineParameter : int * ParameterAttributes * stri
     emitCustomAttrs cenv emEnv (wrapCustomAttr parB.SetCustomAttribute) param.CustomAttrs
 
 //----------------------------------------------------------------------------
-// convMethodAttributes
-//----------------------------------------------------------------------------
-
-let convMethodAttributes (mdef: ILMethodDef) =    
-    let attrKind = 
-        match mdef.mdKind with 
-        | MethodKind.Static        -> MethodAttributes.Static
-        | MethodKind.Cctor         -> MethodAttributes.Static
-        | MethodKind.Ctor          -> enum 0                 
-        | MethodKind.NonVirtual    -> enum 0
-        | MethodKind.Virtual vinfo -> MethodAttributes.Virtual |||
-                                      flagsIf vinfo.IsNewSlot   MethodAttributes.NewSlot |||
-                                      flagsIf vinfo.IsFinal     MethodAttributes.Final |||
-                                      flagsIf vinfo.IsCheckAccessOnOverride    MethodAttributes.CheckAccessOnOverride |||
-                                      flagsIf vinfo.IsAbstract  MethodAttributes.Abstract
-   
-    let attrAccess = 
-        match mdef.Access with
-        | ILMemberAccess.Assembly -> MethodAttributes.Assembly
-        | ILMemberAccess.CompilerControlled -> failwith "Method access compiler controled."
-        | ILMemberAccess.FamilyAndAssembly        -> MethodAttributes.FamANDAssem
-        | ILMemberAccess.FamilyOrAssembly         -> MethodAttributes.FamORAssem
-        | ILMemberAccess.Family             -> MethodAttributes.Family
-        | ILMemberAccess.Private            -> MethodAttributes.Private
-        | ILMemberAccess.Public             -> MethodAttributes.Public
-   
-    let attrOthers = flagsIf mdef.HasSecurity MethodAttributes.HasSecurity |||
-                     flagsIf mdef.IsSpecialName MethodAttributes.SpecialName |||
-                     flagsIf mdef.IsHideBySig   MethodAttributes.HideBySig |||
-                     flagsIf mdef.IsReqSecObj   MethodAttributes.RequireSecObject 
-   
-    attrKind ||| attrAccess ||| attrOthers
-
-let convMethodImplFlags mdef =    
-    (match  mdef.mdCodeKind with 
-     | MethodCodeKind.Native -> MethodImplAttributes.Native
-     | MethodCodeKind.Runtime -> MethodImplAttributes.Runtime
-     | MethodCodeKind.IL  -> MethodImplAttributes.IL) 
-    ||| flagsIf mdef.IsInternalCall MethodImplAttributes.InternalCall
-    ||| (if mdef.IsManaged then MethodImplAttributes.Managed else MethodImplAttributes.Unmanaged)
-    ||| flagsIf mdef.IsForwardRef MethodImplAttributes.ForwardRef
-    ||| flagsIf mdef.IsPreserveSig MethodImplAttributes.PreserveSig
-    ||| flagsIf mdef.IsSynchronized MethodImplAttributes.Synchronized
-    ||| flagsIf (match mdef.mdBody.Contents with MethodBody.IL b -> b.NoInlining | _ -> false) MethodImplAttributes.NoInlining
-    ||| flagsIf (match mdef.mdBody.Contents with MethodBody.IL b -> b.AggressiveInlining | _ -> false) MethodImplAttributes.AggressiveInlining
-
-//----------------------------------------------------------------------------
 // buildMethodPass2
 //----------------------------------------------------------------------------
   
 let rec buildMethodPass2 cenv tref (typB:TypeBuilder) emEnv (mdef : ILMethodDef) =
-    let attrs = convMethodAttributes mdef
-    let implflags = convMethodImplFlags mdef
+    let attrs = mdef.Attributes
+    let implflags = mdef.ImplAttributes
     let cconv = convCallConv mdef.CallingConv
     let mref = mkRefToILMethod (tref, mdef)   
     let emEnv = if mdef.IsEntryPoint && isNil mdef.ParameterTypes then 
@@ -1646,20 +1599,8 @@ let buildFieldPass2 cenv tref (typB:TypeBuilder) emEnv (fdef : ILFieldDef) =
     
     (*{ -Data:    bytes option;       
         -Marshal: NativeType option;  *)
-    let attrsAccess = match fdef.Access with
-                      | ILMemberAccess.Assembly           -> FieldAttributes.Assembly
-                      | ILMemberAccess.CompilerControlled -> failwith "Field access compiler controled."
-                      | ILMemberAccess.FamilyAndAssembly        -> FieldAttributes.FamANDAssem
-                      | ILMemberAccess.FamilyOrAssembly         -> FieldAttributes.FamORAssem
-                      | ILMemberAccess.Family             -> FieldAttributes.Family
-                      | ILMemberAccess.Private            -> FieldAttributes.Private
-                      | ILMemberAccess.Public             -> FieldAttributes.Public
-    let attrsOther = flagsIf fdef.IsStatic        FieldAttributes.Static |||
-                     flagsIf fdef.IsSpecialName   FieldAttributes.SpecialName |||
-                     flagsIf fdef.IsLiteral       FieldAttributes.Literal |||
-                     flagsIf fdef.IsInitOnly      FieldAttributes.InitOnly |||
-                     flagsIf fdef.NotSerialized FieldAttributes.NotSerialized 
-    let attrs = attrsAccess ||| attrsOther
+
+    let attrs = fdef.Attributes
     let fieldT = convType cenv emEnv  fdef.Type
     let fieldB = 
         match fdef.Data with 
@@ -1767,7 +1708,6 @@ let typeAttrbutesOfTypeAccess x =
     | ILTypeDefAccess.Nested macc  -> 
         match macc with
         | ILMemberAccess.Assembly           -> TypeAttributes.NestedAssembly
-        | ILMemberAccess.CompilerControlled -> failwith "Nested compiler controled."
         | ILMemberAccess.FamilyAndAssembly        -> TypeAttributes.NestedFamANDAssem
         | ILMemberAccess.FamilyOrAssembly         -> TypeAttributes.NestedFamORAssem
         | ILMemberAccess.Family             -> TypeAttributes.NestedFamily
@@ -1796,9 +1736,9 @@ let typeAttributesOfTypeLayout cenv emEnv x =
                    (p.Size |> Option.toList |> List.map (fun x -> ("Size", cenv.ilg.typ_Int32, false, ILAttribElem.Int32 x)))))) 
         | _ -> None
     match x with 
-    | ILTypeDefLayout.Auto         -> TypeAttributes.AutoLayout, None
-    | ILTypeDefLayout.Explicit p   -> TypeAttributes.ExplicitLayout, (attr 0x02 p)
-    | ILTypeDefLayout.Sequential p -> TypeAttributes.SequentialLayout, (attr 0x00 p)
+    | ILTypeDefLayout.Auto         -> None
+    | ILTypeDefLayout.Explicit p   -> (attr 0x02 p)
+    | ILTypeDefLayout.Sequential p -> (attr 0x00 p)
 
 
 //----------------------------------------------------------------------------
@@ -1810,17 +1750,9 @@ let rec buildTypeDefPass1 cenv emEnv (modB:ModuleBuilder) rootTypeBuilder nestin
     // -SecurityDecls: Permissions;
     // -InitSemantics: ILTypeInit;
     // TypeAttributes
-    let attrsKind   = typeAttrbutesOfTypeDefKind tdef.tdKind 
-    let attrsAccess = typeAttrbutesOfTypeAccess  tdef.Access
-    let attrsLayout, cattrsLayout = typeAttributesOfTypeLayout cenv emEnv tdef.Layout
-    let attrsEnc    = typeAttributesOfTypeEncoding tdef.Encoding
-    let attrsOther  = flagsIf tdef.IsAbstract     TypeAttributes.Abstract |||
-                      flagsIf tdef.IsSealed       TypeAttributes.Sealed |||
-                      flagsIf tdef.IsSerializable TypeAttributes.Serializable |||
-                      flagsIf tdef.IsSpecialName  TypeAttributes.SpecialName |||
-                      flagsIf tdef.HasSecurity  TypeAttributes.HasSecurity
+    let cattrsLayout = typeAttributesOfTypeLayout cenv emEnv tdef.Layout
      
-    let attrsType = attrsKind ||| attrsAccess ||| attrsLayout ||| attrsEnc ||| attrsOther
+    let attrsType = tdef.Attributes
 
     // TypeBuilder from TypeAttributes.
     let typB : TypeBuilder = rootTypeBuilder  (tdef.Name, attrsType)
