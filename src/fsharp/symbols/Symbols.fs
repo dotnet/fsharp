@@ -853,6 +853,12 @@ and FSharpField(cenv: cenv, d: FSharpFieldData)  =
         | Choice1Of2 r -> r.IsCompilerGenerated
         | Choice2Of2 _ -> false
 
+    member __.IsNameGenerated =
+        if isUnresolved() then false else
+        match d.TryRecdField with
+        | Choice1Of2 r -> r.rfield_name_generated
+        | _ -> false
+
     member __.DeclarationLocation = 
         checkIsResolved()
         match d.TryRecdField with 

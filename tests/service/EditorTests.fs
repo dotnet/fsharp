@@ -968,3 +968,34 @@ let ``Test TPProject param info`` () =
 ``Basic cancellation test`` ()
 ``Intro test`` () 
 #endif
+
+[<Test>]
+let ``FSharpField.IsNameGenerated`` () =
+    let checkFields source =
+        let file = "/home/user/Test.fsx"
+        let _, typeCheckResults = parseAndCheckScript(file, source) 
+        let symbols =
+            typeCheckResults.GetAllUsesOfAllSymbolsInFile()
+            |> Async.RunSynchronously
+        symbols
+        |> Array.choose (fun su ->
+            match su.Symbol with
+            | :? FSharpEntity as entity -> Some entity.FSharpFields
+            | :? FSharpUnionCase as unionCase -> Some unionCase.UnionCaseFields 
+            | _ -> None)
+        |> Seq.concat
+        |> Seq.map (fun (field: FSharpField) -> field.Name, field.IsNameGenerated)
+        |> List.ofSeq
+        
+    ["exception E of string", ["Data0", true]
+     "exception E of Data0: string", ["Data0", false]
+     "exception E of Name: string", ["Name", false]
+     "exception E of string * Data2: string * Data1: string * Name: string * Data4: string",
+        ["Data0", true; "Data2", false; "Data1", false; "Name", false; "Data4", false]
+    
+     "type U = Case of string", ["Item", true]
+     "type U = Case of Item: string", ["Item", false]
+     "type U = Case of Name: string", ["Name", false]
+     "type U = Case of string * Item2: string * string * Name: string",
+        ["Item1", true; "Item2", false; "Item3", true; "Name", false]]
+    |> List.iter (fun (source, expected) -> checkFields source |> shouldEqual expected)

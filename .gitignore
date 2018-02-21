@@ -89,10 +89,7 @@ Proto
 sign_temp
 .libs
 configure
-launcher
-autom4te.cache
 config.log
-mono/config.make
 config.status
 *~
 *.suo

@@ -1,19 +1,30 @@
 include $(topsrcdir)mono/config.make
 
-.PHONY: restore build
+.PHONY: restore build build-proto
 
 restore:
 	MONO_ENV_OPTIONS=$(monoopts) mono .nuget/NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget/NuGet.Config
+	chmod u+x packages/FSharp.Compiler.Tools.4.1.27/tools/fsi.exe 
+	chmod u+x packages/FsLexYacc.7.0.6/build/fslex.exe
+	chmod u+x packages/FsLexYacc.7.0.6/build/fsyacc.exe
 
 # Make the proto using the bootstrap, then make the final compiler using the proto
 # We call MAKE sequentially because we don't want build-final to explicitly depend on build-proto,
 # as that causes a complete recompilation of both proto and final everytime you touch the
 # compiler sources.
 all:
+	@echo -----------
+	@echo prefix=$(prefix)
+	@echo topdir=$(topdir)
+	@echo monodir=$(monodir)
+	@echo monolibdir=$(monolibdir)
+	@echo monobindir=$(monobindir)
+	@echo -----------
+	$(MAKE) restore
 	$(MAKE) build-proto
 	$(MAKE) build
 
-build-proto: restore
+build-proto:
 	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=Proto /p:TargetDotnetProfile=$(TargetDotnetProfile) src/fsharp/FSharp.Build-proto/FSharp.Build-proto.fsproj
 	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=Proto /p:TargetDotnetProfile=$(TargetDotnetProfile) src/fsharp/Fsc-proto/Fsc-proto.fsproj
 
