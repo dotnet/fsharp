@@ -936,7 +936,6 @@ let rec goutput_tdef (enc) env contents os cd =
 
 and output_init_semantics os f =
   if f &&& TypeAttributes.BeforeFieldInit <> enum 0 then output_string os "beforefieldinit"
-  else ()
 
 and goutput_lambdas env os lambdas = 
   match lambdas with

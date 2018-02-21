@@ -1366,16 +1366,16 @@ let memberAccessOfFlags flags =
     elif f = 0x00000002 then  ILMemberAccess.FamilyAndAssembly 
     elif f = 0x00000005 then  ILMemberAccess.FamilyOrAssembly 
     elif f = 0x00000003 then  ILMemberAccess.Assembly 
-    else failwith "impossible"
+    else failwith "impossible: the flags parameter value is come from enums MethodAttributes and FieldAttributes must have access flag"
 
 let convertMemberAccess (ilMemberAccess:ILMemberAccess) =
     match ilMemberAccess with
+    | ILMemberAccess.Public              -> MethodAttributes.Public
+    | ILMemberAccess.Private             -> MethodAttributes.Private
     | ILMemberAccess.Assembly            -> MethodAttributes.Assembly
     | ILMemberAccess.FamilyAndAssembly   -> MethodAttributes.FamANDAssem
     | ILMemberAccess.FamilyOrAssembly    -> MethodAttributes.FamORAssem
     | ILMemberAccess.Family              -> MethodAttributes.Family
-    | ILMemberAccess.Private             -> MethodAttributes.Private
-    | ILMemberAccess.Public              -> MethodAttributes.Public
 
 let inline conditionalAdd condition flagToAdd source = if condition then source ||| flagToAdd else source &&& ~~~flagToAdd
 
@@ -2685,11 +2685,11 @@ let addNestedExportedTypeToTable (y: ILNestedExportedType) tab =
     Map.add y.Name y tab
 
 let mkTypeForwarder scopeRef name nested customAttrs access =
-    {   ScopeRef = scopeRef
-        Name = name  
-        Attributes = enum<TypeAttributes>(0x00200000) ||| convertTypeAccessFlags access
-        Nested = nested
-        CustomAttrs = customAttrs  }
+    { ScopeRef=scopeRef;
+      Name=name;
+      Attributes=enum<TypeAttributes>(0x00200000) ||| convertTypeAccessFlags access;
+      Nested=nested;
+      CustomAttrs=customAttrs; }
 
 let mkILNestedExportedTypes l =  
     ILNestedExportedTypes (notlazy (List.foldBack addNestedExportedTypeToTable l Map.empty))
