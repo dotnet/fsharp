@@ -15,9 +15,7 @@ let test (s : string) b =
     if b then stderr.WriteLine " OK"
     else report_failure (s)
 
-#if FSCORE_PORTABLE_OLD
 let printfn s = printfn "%s" s
-#endif
 
 let _ = test "coic23a" (Seq.toList { 'a' .. 'c' } = ['a';'b';'c'])
 
@@ -522,7 +520,7 @@ module MaxIntMinIntBOundaryCases = begin
 
 end
  
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
 open System.IO
 open System.Xml
 

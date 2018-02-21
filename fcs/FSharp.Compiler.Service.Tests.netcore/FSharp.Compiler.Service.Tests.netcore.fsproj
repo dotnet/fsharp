@@ -1,13 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
-    <DefineConstants>$(DefineConstants);DOTNETCORE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_ATLEAST_45</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_ATLEAST_PORTABLE</DefineConstants>
+    <DefineConstants>$(DefineConstants);NETCOREAPP2_0</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_NO_RUNTIMEENVIRONMENT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESHAPED_REFLECTION</DefineConstants>
-    <DefineConstants>$(DefineConstants);NO_EXTENSIONTYPING</DefineConstants>
-    <DefineConstants>$(DefineConstants);TODO_REWORK_ASSEMBLY_LOAD</DefineConstants>
     <NoWarn>$(NoWarn);44;</NoWarn>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <DelaySign>true</DelaySign>

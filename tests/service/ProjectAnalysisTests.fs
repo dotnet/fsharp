@@ -2203,7 +2203,7 @@ let ``Test Project13 all symbols`` () =
           ["type System.IComparable"; 
            "type System.IFormattable";
            "type System.IConvertible";
-#if !DOTNETCORE
+#if !NETCOREAPP2_0
            "type System.Runtime.Serialization.ISerializable";
 #endif
            "type System.IComparable<System.DateTime>";
@@ -3170,7 +3170,7 @@ let ``Test Project22 IList properties`` () =
 
     attribsOfSymbol ilistTypeDefn |> shouldEqual ["interface"]
 
-#if !TODO_REWORK_ASSEMBLY_LOAD
+#if !NETCOREAPP2_0
     ilistTypeDefn.Assembly.SimpleName |> shouldEqual coreLibAssemblyName
 #endif
 
@@ -3631,7 +3631,7 @@ let _ = XmlProvider<"<root><value>1</value><value>3</value></root>">.GetSample()
            yield @"-r:" + sysLib "System.Xml.Linq" |]
     let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
-#if DOTNETCORE
+#if NETCOREAPP2_0
 [<Test; Ignore "Disabled until FSharp.Data.dll is build for dotnet core.">]
 #else
 [<Test>]
@@ -3642,7 +3642,7 @@ let ``Test Project25 whole project errors`` () =
         printfn "Project25 error: <<<%s>>>" e.Message
     wholeProjectResults.Errors.Length |> shouldEqual 0
 
-#if DOTNETCORE
+#if NETCOREAPP2_0
 [<Test; Ignore "Disabled until FSharp.Data.dll is build for dotnet core.">]
 #else
 [<Test>]
@@ -3702,7 +3702,7 @@ let ``Test Project25 symbol uses of type-provided members`` () =
 
     usesOfGetSampleSymbol |> shouldEqual [|("file1", ((5, 8), (5, 25))); ("file1", ((10, 8), (10, 78)))|]
 
-#if DOTNETCORE
+#if NETCOREAPP2_0
 [<Test; Ignore "Disabled until FSharp.Data.dll is build for dotnet core.">]
 #else
 [<Test>]
@@ -4131,7 +4131,7 @@ let ``Test project31 whole project errors`` () =
     wholeProjectResults.Errors.Length |> shouldEqual 0
 
 [<Test>]
-#if DOTNETCORE
+#if NETCOREAPP2_0
 [<Ignore("Fails on .NET Core - DebuggerTypeProxyAttribute and DebuggerDisplayAttribute note being emitted?")>]
 #endif
 let ``Test project31 C# type attributes`` () =
@@ -4174,13 +4174,13 @@ let ``Test project31 C# method attributes`` () =
         |> set
         |> shouldEqual 
               (set [
-#if !DOTNETCORE
+#if !NETCOREAPP2_0
                    "(SecuritySafeCriticalAttribute, [], [])";
 #endif
                    "(CLSCompliantAttribute, [(type Microsoft.FSharp.Core.bool, false)], [])"])
 
 [<Test>]
-#if DOTNETCORE
+#if NETCOREAPP2_0
 [<Ignore("Fails on .NET Core - DebuggerTypeProxyAttribute and DebuggerDisplayAttribute note being emitted?")>]
 #endif
 let ``Test project31 Format C# type attributes`` () =
@@ -4215,7 +4215,7 @@ let ``Test project31 Format C# method attributes`` () =
         |> set
         |> shouldEqual 
               (set ["[<CLSCompliantAttribute (false)>]";
-#if !DOTNETCORE
+#if !NETCOREAPP2_0
                     "[<Security.SecuritySafeCriticalAttribute ()>]";
 #endif
                     ])
@@ -4491,7 +4491,7 @@ module internal Project35b =
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
     let fileNames = [fileName1]
-#if TODO_REWORK_ASSEMBLY_LOAD
+#if NETCOREAPP2_0
     let projPath = Path.ChangeExtension(fileName1, ".fsproj")
     let dllPath = Path.ChangeExtension(fileName1, ".dll")
     let args = mkProjectCommandLineArgs(dllPath, fileNames)

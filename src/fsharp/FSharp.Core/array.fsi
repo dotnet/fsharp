@@ -1102,7 +1102,6 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Zip3")>]
         val zip3: array1:'T1[] -> array2:'T2[] -> array3:'T3[] -> ('T1 * 'T2 * 'T3)[]
 
-#if !FX_NO_TPL_PARALLEL
         /// <summary>Provides parallel operations on arrays </summary>
         module Parallel =
 
@@ -1198,4 +1197,3 @@ namespace Microsoft.FSharp.Collections
             /// <exception cref="System.ArgumentNullException">Thrown when the input array is null.</exception>
             [<CompiledName("Partition")>]
             val partition : predicate:('T -> bool) -> array:'T[] -> 'T[] * 'T[]
-#endif            

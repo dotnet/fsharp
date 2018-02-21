@@ -9,10 +9,7 @@ open System
 open FSharp.Core.UnitTests.LibraryTestFx
 open NUnit.Framework
 open System.Threading
-
-#if !FX_NO_TPL_PARALLEL
 open System.Threading.Tasks
-#endif
 
 type RunWithContinuationsTest_WhatToDo =
     | Exit
@@ -128,8 +125,6 @@ type AsyncType() =
                 Assert.IsTrue(!result = "Cancel" || !result = "Ok")
         )
 
-#if !FX_NO_TPL_PARALLEL
-
     member private this.WaitASec (t:Task) =
         let result = t.Wait(TimeSpan(hours=0,minutes=0,seconds=1))
         Assert.IsTrue(result, "Task did not finish after waiting for a second.")
@@ -139,11 +134,7 @@ type AsyncType() =
     member this.CreateTask () =
         let s = "Hello tasks!"
         let a = async { return s }
-#if FSCORE_PORTABLE_NEW || coreclr
-        let t : Task<string> =
-#else
         use t : Task<string> =
-#endif
             Async.StartAsTask a
         this.WaitASec t
         Assert.IsTrue (t.IsCompleted)
@@ -156,11 +147,7 @@ type AsyncType() =
         let a = async {
             cts.CancelAfter (100)
             do! tcs.Task |> Async.AwaitTask }
-#if FSCORE_PORTABLE_NEW || coreclr
-        let t : Task<unit> =
-#else
         use t : Task<unit> =
-#endif
             Async.StartAsTask(a, cancellationToken = cts.Token)
 
         // Should not finish
@@ -183,11 +170,7 @@ type AsyncType() =
     member this.StartTask () =
         let s = "Hello tasks!"
         let a = async { return s }
-#if FSCORE_PORTABLE_NEW || coreclr
-        let t = 
-#else
         use t =
-#endif
             Async.StartAsTask a
         this.WaitASec t
         Assert.IsTrue (t.IsCompleted)
@@ -213,11 +196,7 @@ type AsyncType() =
         let a = async { 
             do raise (Exception ())
          }
-#if FSCORE_PORTABLE_NEW || coreclr
-        let t = 
-#else
         use t =
-#endif
             Async.StartAsTask a
         let mutable exceptionThrown = false
         try 
@@ -232,12 +211,7 @@ type AsyncType() =
         let a = async {
                 while true do ()
             }
-#if FSCORE_PORTABLE_NEW || coreclr
-        let t = 
-#else
-        use t =
-#endif
-            Async.StartAsTask a
+        use t = Async.StartAsTask a
         Async.CancelDefaultToken () 
         let mutable exceptionThrown = false
         try
@@ -257,12 +231,7 @@ type AsyncType() =
             }
         let cts = new CancellationTokenSource()
         let token = cts.Token
-#if FSCORE_PORTABLE_NEW || coreclr
-        let t = 
-#else
-        use t =
-#endif
-            Async.StartAsTask(a, cancellationToken=token)
+        use t = Async.StartAsTask(a, cancellationToken=token)
 //        printfn "%A" t.Status
         ewh.WaitOne() |> Assert.IsTrue
         cts.Cancel()
@@ -279,12 +248,7 @@ type AsyncType() =
     [<Test>]
     member this.TaskAsyncValue () =
         let s = "Test"
-#if FSCORE_PORTABLE_NEW || coreclr
-        let t = 
-#else
-        use t =
-#endif
-            Task.Factory.StartNew(Func<_>(fun () -> s))
+        use t = Task.Factory.StartNew(Func<_>(fun () -> s))
         let a = async {
                 let! s1 = Async.AwaitTask(t)
                 return s = s1
@@ -319,12 +283,7 @@ type AsyncType() =
         
     [<Test>]
     member this.TaskAsyncValueException () =
-#if FSCORE_PORTABLE_NEW || coreclr
-        let t = 
-#else
-        use t =
-#endif
-            Task.Factory.StartNew(Func<unit>(fun () -> raise <| Exception()))
+        use t = Task.Factory.StartNew(Func<unit>(fun () -> raise <| Exception()))
         let a = async {
                 try
                     let! v = Async.AwaitTask(t)
@@ -338,12 +297,7 @@ type AsyncType() =
         use ewh = new ManualResetEvent(false)    
         let cts = new CancellationTokenSource()
         let token = cts.Token
-#if FSCORE_PORTABLE_NEW || coreclr
-        let t : Task<unit>= 
-#else
-        use t : Task<unit>=
-#endif 
-          Task.Factory.StartNew(Func<unit>(fun () -> while not token.IsCancellationRequested do ()), token)
+        use t : Task<unit> = Task.Factory.StartNew(Func<unit>(fun () -> while not token.IsCancellationRequested do ()), token)
         let cancelled = ref true
         let a = async {
                     use! _holder = Async.OnCancel(fun _ -> ewh.Set() |> ignore)
@@ -357,12 +311,7 @@ type AsyncType() =
     [<Test>]
     member this.NonGenericTaskAsyncValue () =
         let hasBeenCalled = ref false
-#if FSCORE_PORTABLE_NEW || coreclr
-        let t = 
-#else
-        use t =
-#endif 
-            Task.Factory.StartNew(Action(fun () -> hasBeenCalled := true))
+        use t = Task.Factory.StartNew(Action(fun () -> hasBeenCalled := true))
         let a = async {
                 do! Async.AwaitTask(t)
                 return true
@@ -372,12 +321,7 @@ type AsyncType() =
         
     [<Test>]
     member this.NonGenericTaskAsyncValueException () =
-#if FSCORE_PORTABLE_NEW || coreclr
-        let t = 
-#else
-        use t =
-#endif 
-            Task.Factory.StartNew(Action(fun () -> raise <| Exception()))
+        use t = Task.Factory.StartNew(Action(fun () -> raise <| Exception()))
         let a = async {
                 try
                     let! v = Async.AwaitTask(t)
@@ -391,12 +335,7 @@ type AsyncType() =
         use ewh = new ManualResetEvent(false)    
         let cts = new CancellationTokenSource()
         let token = cts.Token
-#if FSCORE_PORTABLE_NEW || coreclr
-        let t = 
-#else
-        use t =
-#endif   
-            Task.Factory.StartNew(Action(fun () -> while not token.IsCancellationRequested do ()), token)
+        use t = Task.Factory.StartNew(Action(fun () -> while not token.IsCancellationRequested do ()), token)
         let cancelled = ref true
         let a = async {
                     use! _holder = Async.OnCancel(fun _ -> ewh.Set() |> ignore)
@@ -407,4 +346,3 @@ type AsyncType() =
         cts.Cancel()
         ewh.WaitOne(10000) |> ignore        
 
-#endif

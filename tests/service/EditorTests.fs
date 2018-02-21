@@ -97,13 +97,13 @@ let ``Intro test`` () =
                ("Concat", ["str0: string"; "str1: string"]);
                ("Concat", ["arg0: obj"; "arg1: obj"; "arg2: obj"]);
                ("Concat", ["str0: string"; "str1: string"; "str2: string"]);
-#if !DOTNETCORE
+#if !NETCOREAPP2_0
                ("Concat", ["arg0: obj"; "arg1: obj"; "arg2: obj"; "arg3: obj"]);
 #endif               
                ("Concat", ["str0: string"; "str1: string"; "str2: string"; "str3: string"])]
 
 
-#if !INTERACTIVE && !DOTNETCORE // InternalsVisibleTo on IncrementalBuild.LocallyInjectCancellationFault not working for some reason?
+#if !INTERACTIVE && !NETCOREAPP2_0 // InternalsVisibleTo on IncrementalBuild.LocallyInjectCancellationFault not working for some reason?
 [<Test>]
 let ``Basic cancellation test`` () = 
    try 
@@ -155,7 +155,7 @@ let ``GetMethodsAsSymbols should return all overloads of a method as FSharpSymbo
              ("Concat", [("str0", "string"); ("str1", "string")]);
              ("Concat", [("arg0", "obj"); ("arg1", "obj"); ("arg2", "obj")]);
              ("Concat", [("str0", "string"); ("str1", "string"); ("str2", "string")]);
-#if !DOTNETCORE
+#if !NETCOREAPP2_0
              ("Concat", [("arg0", "obj"); ("arg1", "obj"); ("arg2", "obj"); ("arg3", "obj")]);
 #endif
              ("Concat", [("str0", "string"); ("str1", "string"); ("str2", "string"); ("str3", "string")])]

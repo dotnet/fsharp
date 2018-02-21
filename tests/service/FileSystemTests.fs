@@ -71,7 +71,7 @@ let UseMyFileSystem() =
     Shim.FileSystem <- myFileSystem
     { new IDisposable with member x.Dispose() = Shim.FileSystem <- myFileSystem }
 
-#if !FX_ATLEAST_PORTABLE
+#if !NETCOREAPP2_0
 
 [<Test>]
 let ``FileSystem compilation test``() = 

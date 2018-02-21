@@ -9,9 +9,7 @@ open System
 open System.Threading
 open FSharp.Core.UnitTests.LibraryTestFx
 open NUnit.Framework
-#if !(FSCORE_PORTABLE_OLD || FSCORE_PORTABLE_NEW)
 open FsCheck
-#endif
 
 module Utils =
     let internal memoizeAsync f =
@@ -25,7 +23,6 @@ type [<Struct>] Dummy (x: int) =
     member this.Dispose () = ()
 
 
-#if !(FSCORE_PORTABLE_OLD || FSCORE_PORTABLE_NEW)
 [<AutoOpen>]
 module ChoiceUtils =
 
@@ -138,8 +135,6 @@ module ChoiceUtils =
             let minTimeout = getMinTime()
             let minTimeoutOps = ops |> Seq.filter (fun op -> op.Timeout <= minTimeout) |> Seq.length
             Assert.LessOrEqual(!completed, minTimeoutOps)
-
-#endif
 
 module LeakUtils =
     // when testing for liveness, the things that we want to observe must always be created in
@@ -417,7 +412,7 @@ type AsyncModule() =
                 Assert.Fail("TimeoutException expected")
             with
                 :? System.TimeoutException -> ()
-#if !FSCORE_PORTABLE_OLD
+
     [<Test>]
     member this.``RunSynchronously.NoThreadJumpsAndTimeout.DifferentSyncContexts``() = 
         let run syncContext =
@@ -434,7 +429,6 @@ type AsyncModule() =
             if !failed then Assert.Fail("TimeoutException expected")
         run null
         run (System.Threading.SynchronizationContext())
-#endif
 
     [<Test>]
     member this.``RaceBetweenCancellationAndError.AwaitWaitHandle``() = 
@@ -447,12 +441,10 @@ type AsyncModule() =
     member this.``RaceBetweenCancellationAndError.Sleep``() =
         testErrorAndCancelRace (Async.Sleep (-5))
 
-#if !(FSCORE_PORTABLE_OLD || FSCORE_PORTABLE_NEW || coreclr)
     [<Test; Category("Expensive"); Explicit>] // takes 3 minutes!
     member this.``Async.Choice specification test``() =
         ThreadPool.SetMinThreads(100,100) |> ignore
         Check.One ({Config.QuickThrowOnFailure with EndSize = 20}, normalize >> runChoice)
-#endif
 
     [<Test>]
     member this.``dispose should not throw when called on null``() =
@@ -499,7 +491,6 @@ type AsyncModule() =
             }
         Async.RunSynchronously(test)
         
-#if !FSCORE_PORTABLE_NEW
     [<Test>]
     member this.``FromContinuationsCanTailCallCurrentThread``() = 
         let cnt = ref 0
@@ -520,7 +511,6 @@ type AsyncModule() =
         f 5000 |> Async.StartImmediate 
         Assert.AreEqual(origTid, !finalTid)
         Assert.AreEqual(5000, !cnt)
-#endif
 
     [<Test>]
     member this.``AwaitWaitHandle With Cancellation``() = 
@@ -573,7 +563,6 @@ type AsyncModule() =
         Assert.AreEqual("boom", !r)
 
 
-#if !FSCORE_PORTABLE_OLD && !FSCORE_PORTABLE_NEW
     [<Test>]
     member this.``SleepContinuations``() = 
         let okCount = ref 0
@@ -600,7 +589,6 @@ type AsyncModule() =
         for i = 1 to 3 do test()
         Assert.AreEqual(0, !okCount)
         Assert.AreEqual(0, !errCount)
-#endif
 
     [<Test>]
     member this.``Async caching should work``() = 

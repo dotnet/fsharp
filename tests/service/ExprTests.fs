@@ -2887,7 +2887,7 @@ let ``Test expressions of optimized declarations stress big expressions`` () =
 
 #if NOT_YET_ENABLED
 
-#if !NO_PROJECTCRACKER && !DOTNETCORE
+#if !NO_PROJECTCRACKER && !NETCOREAPP2_0
 
 [<Test>]
 let ``Check use of type provider that provides calls to F# code`` () = 

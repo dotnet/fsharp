@@ -200,9 +200,8 @@ let FCS (repositoryDir: string) : Options =
          OtherOptions =
           [|@"-o:obj\Release\FSharp.Compiler.Private.dll"; "-g"; "--noframework";
             @"--baseaddress:0x06800000"; "--define:DEBUG";
-            @"--define:CROSS_PLATFORM_COMPILER"; "--define:FX_ATLEAST_45";
+            @"--define:CROSS_PLATFORM_COMPILER";
             @"--define:FX_ATLEAST_40"; "--define:BE_SECURITY_TRANSPARENT";
-            @"--define:TYPE_PROVIDER_SECURITY"; "--define:EXTENSIBLE_DUMPER";
             @"--define:INCLUDE_METADATA_WRITER"; "--define:COMPILER";
             @"--define:ENABLE_MONO_SUPPORT"; "--define:FX_MSBUILDRESOLVER_RUNTIMELIKE";
             @"--define:FX_LCIDFROMCODEPAGE"; "--define:FX_RESX_RESOURCE_READER";

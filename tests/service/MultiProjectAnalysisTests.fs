@@ -831,7 +831,7 @@ let ``Test max memory gets triggered`` () =
 
 //------------------------------------------------------------------------------------
 
-#if !DOTNETCORE
+#if !NETCOREAPP2_0
 
 [<Test>]
 let ``Type provider project references should not throw exceptions`` () =
