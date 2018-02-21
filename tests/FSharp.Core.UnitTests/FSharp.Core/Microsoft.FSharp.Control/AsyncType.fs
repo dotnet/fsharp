@@ -134,7 +134,11 @@ type AsyncType() =
     member this.CreateTask () =
         let s = "Hello tasks!"
         let a = async { return s }
+#if NETSTANDARD1_6
+        let t : Task<string> =
+#else
         use t : Task<string> =
+#endif
             Async.StartAsTask a
         this.WaitASec t
         Assert.IsTrue (t.IsCompleted)
@@ -147,7 +151,11 @@ type AsyncType() =
         let a = async {
             cts.CancelAfter (100)
             do! tcs.Task |> Async.AwaitTask }
+#if NETSTANDARD1_6
+        let t : Task<unit> =
+#else
         use t : Task<unit> =
+#endif
             Async.StartAsTask(a, cancellationToken = cts.Token)
 
         // Should not finish
@@ -170,7 +178,11 @@ type AsyncType() =
     member this.StartTask () =
         let s = "Hello tasks!"
         let a = async { return s }
+#if NETSTANDARD1_6
+        let t = 
+#else
         use t =
+#endif
             Async.StartAsTask a
         this.WaitASec t
         Assert.IsTrue (t.IsCompleted)
@@ -196,7 +208,11 @@ type AsyncType() =
         let a = async { 
             do raise (Exception ())
          }
+#if NETSTANDARD1_6
+        let t = 
+#else
         use t =
+#endif
             Async.StartAsTask a
         let mutable exceptionThrown = false
         try 
@@ -211,7 +227,12 @@ type AsyncType() =
         let a = async {
                 while true do ()
             }
-        use t = Async.StartAsTask a
+#if NETSTANDARD1_6
+        let t = 
+#else
+        use t =
+#endif
+            Async.StartAsTask a
         Async.CancelDefaultToken () 
         let mutable exceptionThrown = false
         try
@@ -231,7 +252,12 @@ type AsyncType() =
             }
         let cts = new CancellationTokenSource()
         let token = cts.Token
-        use t = Async.StartAsTask(a, cancellationToken=token)
+#if NETSTANDARD1_6
+        let t = 
+#else
+        use t =
+#endif
+            Async.StartAsTask(a, cancellationToken=token)
 //        printfn "%A" t.Status
         ewh.WaitOne() |> Assert.IsTrue
         cts.Cancel()
@@ -248,7 +274,12 @@ type AsyncType() =
     [<Test>]
     member this.TaskAsyncValue () =
         let s = "Test"
-        use t = Task.Factory.StartNew(Func<_>(fun () -> s))
+#if NETSTANDARD1_6
+        let t = 
+#else
+        use t =
+#endif
+            Task.Factory.StartNew(Func<_>(fun () -> s))
         let a = async {
                 let! s1 = Async.AwaitTask(t)
                 return s = s1
@@ -283,7 +314,12 @@ type AsyncType() =
         
     [<Test>]
     member this.TaskAsyncValueException () =
-        use t = Task.Factory.StartNew(Func<unit>(fun () -> raise <| Exception()))
+#if NETSTANDARD1_6
+        let t = 
+#else
+        use t =
+#endif
+            Task.Factory.StartNew(Func<unit>(fun () -> raise <| Exception()))
         let a = async {
                 try
                     let! v = Async.AwaitTask(t)
@@ -297,7 +333,12 @@ type AsyncType() =
         use ewh = new ManualResetEvent(false)    
         let cts = new CancellationTokenSource()
         let token = cts.Token
-        use t : Task<unit> = Task.Factory.StartNew(Func<unit>(fun () -> while not token.IsCancellationRequested do ()), token)
+#if NETSTANDARD1_6
+        let t : Task<unit>= 
+#else
+        use t : Task<unit>=
+#endif 
+          Task.Factory.StartNew(Func<unit>(fun () -> while not token.IsCancellationRequested do ()), token)
         let cancelled = ref true
         let a = async {
                     use! _holder = Async.OnCancel(fun _ -> ewh.Set() |> ignore)
@@ -311,7 +352,12 @@ type AsyncType() =
     [<Test>]
     member this.NonGenericTaskAsyncValue () =
         let hasBeenCalled = ref false
-        use t = Task.Factory.StartNew(Action(fun () -> hasBeenCalled := true))
+#if NETSTANDARD1_6
+        let t = 
+#else
+        use t =
+#endif 
+            Task.Factory.StartNew(Action(fun () -> hasBeenCalled := true))
         let a = async {
                 do! Async.AwaitTask(t)
                 return true
@@ -321,7 +367,12 @@ type AsyncType() =
         
     [<Test>]
     member this.NonGenericTaskAsyncValueException () =
-        use t = Task.Factory.StartNew(Action(fun () -> raise <| Exception()))
+#if NETSTANDARD1_6
+        let t = 
+#else
+        use t =
+#endif 
+            Task.Factory.StartNew(Action(fun () -> raise <| Exception()))
         let a = async {
                 try
                     let! v = Async.AwaitTask(t)
@@ -335,7 +386,12 @@ type AsyncType() =
         use ewh = new ManualResetEvent(false)    
         let cts = new CancellationTokenSource()
         let token = cts.Token
-        use t = Task.Factory.StartNew(Action(fun () -> while not token.IsCancellationRequested do ()), token)
+#if NETSTANDARD1_6
+        let t = 
+#else
+        use t =
+#endif   
+            Task.Factory.StartNew(Action(fun () -> while not token.IsCancellationRequested do ()), token)
         let cancelled = ref true
         let a = async {
                     use! _holder = Async.OnCancel(fun _ -> ewh.Set() |> ignore)

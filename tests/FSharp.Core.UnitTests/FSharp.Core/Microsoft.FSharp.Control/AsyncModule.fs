@@ -441,10 +441,12 @@ type AsyncModule() =
     member this.``RaceBetweenCancellationAndError.Sleep``() =
         testErrorAndCancelRace (Async.Sleep (-5))
 
+#if !coreclr
     [<Test; Category("Expensive"); Explicit>] // takes 3 minutes!
     member this.``Async.Choice specification test``() =
         ThreadPool.SetMinThreads(100,100) |> ignore
         Check.One ({Config.QuickThrowOnFailure with EndSize = 20}, normalize >> runChoice)
+#endif
 
     [<Test>]
     member this.``dispose should not throw when called on null``() =
