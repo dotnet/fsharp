@@ -123,15 +123,11 @@ let ``Test Project1 should have protected FullName and TryFullName return same r
     |> Seq.collect (Seq.collect getFullNameComparisons)
     |> Seq.iter (shouldEqual true)
 
-[<Test; Ignore "FCS should not throw exceptions on FSharpEntity.BaseType">]
+[<Test>]
 let ``Test project1 should not throw exceptions on entities from referenced assemblies`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
     let rec getAllBaseTypes (entity: FSharpEntity) =
-        #if !NO_EXTENSIONTYPING
         seq { if not entity.IsProvided && entity.Accessibility.IsPublic then
-        #else 
-        seq{
-        #endif
                 if not entity.IsUnresolved then yield entity.BaseType
                 for e in entity.NestedEntities do
                     yield! getAllBaseTypes e }
@@ -2203,9 +2199,7 @@ let ``Test Project13 all symbols`` () =
           ["type System.IComparable"; 
            "type System.IFormattable";
            "type System.IConvertible";
-#if !NETCOREAPP2_0
            "type System.Runtime.Serialization.ISerializable";
-#endif
            "type System.IComparable<System.DateTime>";
            "type System.IEquatable<System.DateTime>"])
 
@@ -3170,7 +3164,7 @@ let ``Test Project22 IList properties`` () =
 
     attribsOfSymbol ilistTypeDefn |> shouldEqual ["interface"]
 
-#if !NETCOREAPP2_0
+#if !NETCOREAPP2_0 // TODO: check if this can be enabled in .NET Core testing of FSharp.Compiler.Service
     ilistTypeDefn.Assembly.SimpleName |> shouldEqual coreLibAssemblyName
 #endif
 
@@ -4174,7 +4168,7 @@ let ``Test project31 C# method attributes`` () =
         |> set
         |> shouldEqual 
               (set [
-#if !NETCOREAPP2_0
+#if !NETCOREAPP2_0 
                    "(SecuritySafeCriticalAttribute, [], [])";
 #endif
                    "(CLSCompliantAttribute, [(type Microsoft.FSharp.Core.bool, false)], [])"])
@@ -4370,6 +4364,9 @@ let ``Test Project34 whole project errors`` () =
     wholeProjectResults.Errors.Length |> shouldEqual 0
 
 [<Test>]
+#if NETCOREAPP2_0
+[<Ignore("TODO: check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+#endif
 let ``Test project34 should report correct accessibility for System.Data.Listeners`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(Project34.options) |> Async.RunSynchronously
     let rec getNestedEntities (entity: FSharpEntity) = 

@@ -202,7 +202,7 @@ let FCS (repositoryDir: string) : Options =
             @"--baseaddress:0x06800000"; "--define:DEBUG";
             @"--define:CROSS_PLATFORM_COMPILER";
             @"--define:FX_ATLEAST_40"; "--define:BE_SECURITY_TRANSPARENT";
-            @"--define:INCLUDE_METADATA_WRITER"; "--define:COMPILER";
+            @"--define:COMPILER";
             @"--define:ENABLE_MONO_SUPPORT"; "--define:FX_MSBUILDRESOLVER_RUNTIMELIKE";
             @"--define:FX_LCIDFROMCODEPAGE"; "--define:FX_RESX_RESOURCE_READER";
             @"--define:FX_RESIDENT_COMPILER"; "--define:SHADOW_COPY_REFERENCES";

@@ -765,6 +765,9 @@ let ``Test Unoptimized Declarations Project1`` () =
 
 
 [<Test>]
+#if NETCOREAPP2_0
+[<Ignore("TODO: check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+#endif
 let ``Test Optimized Declarations Project1`` () =
     let wholeProjectResults = exprChecker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
 
@@ -916,7 +919,6 @@ let ``Test Optimized Declarations Project1`` () =
       |> shouldEqual (filterHack expected2)
 
     ()
-
 
 let testOperators dnName fsName excludedTests expectedUnoptimized expectedOptimized =
     let basePath = Path.GetTempFileName()
