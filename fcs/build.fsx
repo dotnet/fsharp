@@ -73,7 +73,10 @@ Target "Clean" (fun _ ->
 )
 
 Target "Restore" (fun _ ->
-    runDotnet __SOURCE_DIRECTORY__ (sprintf "restore %s -v n"  "FSharp.Compiler.Service.sln")
+    runDotnet __SOURCE_DIRECTORY__ (sprintf "restore %s -v n" "FSharp.Compiler.Service/FSharp.Compiler.Service.fsproj")
+    runDotnet __SOURCE_DIRECTORY__ (sprintf "restore %s -v n" "FSharp.Compiler.Service.ProjectCrackerTool/FSharp.Compiler.Service.ProjectCrackerTool.fsproj")
+    runDotnet __SOURCE_DIRECTORY__ (sprintf "restore %s -v n" "FSharp.Compiler.Service.ProjectCracker/FSharp.Compiler.Service.ProjectCracker.fsproj")
+    runDotnet __SOURCE_DIRECTORY__ (sprintf "restore %s -v n" "FSharp.Compiler.Service.MSBuild.v12/FSharp.Compiler.Service.MSBuild.v12.fsproj")
     for p in (!! "./../**/packages.config") do
         let result =
             ExecProcess (fun info ->
@@ -89,6 +92,8 @@ Target "BuildVersion" (fun _ ->
 
 Target "Build" (fun _ ->
 #if MONO
+    Shell.Exec("mono", "--version") |> ignore
+    Shell.Exec("dotnet", "--version") |> ignore
     // Using 'dotnet' to build .NET Framework projects fails on Mono, see https://github.com/dotnet/sdk/issues/335
     // Use 'msbuild' instead
     MSBuild "" "Build" ["Configuration","Release" ] 
