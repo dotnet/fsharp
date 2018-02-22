@@ -1020,12 +1020,8 @@ namespace Microsoft.FSharp.Control
                         else
                             edi.SourceException
                     tcs.SetException wrapper |> fake)
-#if FX_NO_ASYNCTASKMETHODBUILDER
-                (fun _ -> tcs.SetCanceled() |> fake)
-#else
                 // We wrap in a TaskCanceledException to maintain backwards compat.
                 (fun exn -> tcs.SetException (new TaskCanceledException(exn.Message, exn.InnerException)) |> fake)
-#endif
                 computation
             |> unfake
             task
