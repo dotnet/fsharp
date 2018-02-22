@@ -11,11 +11,11 @@
     <PackageTargetFallback>net462</PackageTargetFallback>
   </PropertyGroup>
 
-  <Import Project="$(NuGetPackageRoot)Microsoft.VSSDK.BuildTools\$(MicrosoftVSSDKBuildToolsPackageVersion)\build\Microsoft.VsSDK.BuildTools.props"
-          Condition="'$(ImportVsSDK)' == 'true'" />
-  <Import Project="$(NugetPackageRoot)Microsoft.VSSDK.BuildTools\$(MicrosoftVSSDKBuildToolsPackageVersion)\build\Microsoft.VsSDK.BuildTools.targets"
-          Condition="'$(ImportVsSDK)' == 'true'" />
-  <Import Project="$(NugetPackageRoot)Microsoft.VSSDK.BuildTools\$(MicrosoftVSSDKBuildToolsPackageVersion)\tools\vssdk\Microsoft.VsSDK.targets"
-          Condition="'$(ImportVsSDK)' == 'true'" />
+  <ImportGroup Condition="'$(ImportVsSDK)' == 'true'">
+    <Import Project="$(NuGetPackageRoot)Microsoft.VSSDK.BuildTools\$(MicrosoftVSSDKBuildToolsPackageVersion)\build\Microsoft.VsSDK.BuildTools.props" />
+    <Import Project="$(NugetPackageRoot)Microsoft.VSSDK.BuildTools\$(MicrosoftVSSDKBuildToolsPackageVersion)\build\Microsoft.VsSDK.BuildTools.targets" />
+    <Import Project="$(NugetPackageRoot)Microsoft.VSSDK.BuildTools\$(MicrosoftVSSDKBuildToolsPackageVersion)\tools\vssdk\Microsoft.VsSDK.targets" />
+    <Import Project="DisableVsixManifestTargets.targets" Condition="'$(CreateVsixContainer)' == 'false'" />
+  </ImportGroup>
 
 </Project>
