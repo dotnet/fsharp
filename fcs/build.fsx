@@ -101,7 +101,10 @@ Target "BuildVersion" (fun _ ->
 )
 
 Target "Build" (fun _ ->
-  if not skipBuild then
+  if skipBuild then
+    try Directory.CreateDirectory("../Release/") |> ignore with _ -> ()
+    File.WriteAllText("../Release/nichts.txt", "nothing to see here, build was skipped until we knoow how to get an updated version of Mono installed on Jenkins")
+  else
     runDotnet __SOURCE_DIRECTORY__ "build FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -v n -c Release /maxcpucount:1"
 )
 
