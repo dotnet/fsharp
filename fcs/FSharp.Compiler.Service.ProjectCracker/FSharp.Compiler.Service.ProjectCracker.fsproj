@@ -14,7 +14,7 @@
     <AssemblyName>FSharp.Compiler.Service.ProjectCracker</AssemblyName>
     <Name>FSharp.Compiler.Service.ProjectCracker</Name>
     <OutputType>Library</OutputType>
-    <OutputPath>..\..\$(Configuration)\fcs\net45\</OutputPath>
+    <OutputPath>..\..\$(Configuration.ToLower())\fcs\net45\</OutputPath>
     <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
     <ResolveNuGetPackages>false</ResolveNuGetPackages>
     <!-- We target .NET 4.5 for FSharp.Compiler.Service.dll to allow broader use of this DLL -->

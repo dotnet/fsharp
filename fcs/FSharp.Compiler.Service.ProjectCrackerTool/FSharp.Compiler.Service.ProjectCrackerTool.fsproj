@@ -11,7 +11,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>b1bdd96d-47e1-4e65-8107-fbae23a06db4</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <OutputPath>..\..\$(Configuration)\fcs\net45\</OutputPath>
+    <OutputPath>..\..\$(Configuration.ToLower())\fcs\net45\</OutputPath>
     <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
     <RootNamespace>FSharp.Compiler.Service.ProjectCrackerTool</RootNamespace>
     <AssemblyName>FSharp.Compiler.Service.ProjectCrackerTool</AssemblyName>

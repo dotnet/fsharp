@@ -32,7 +32,7 @@ open FSharp.MetadataFormat
 let root = "."
 
 // Paths with template/source/output locations
-let bin         = __SOURCE_DIRECTORY__ @@ "../../../Release/fcs/net45"
+let bin         = __SOURCE_DIRECTORY__ @@ "../../../release/fcs/net45"
 let content     = __SOURCE_DIRECTORY__ @@ "../content"
 let output      = __SOURCE_DIRECTORY__ @@ "../../../docs"
 let files       = __SOURCE_DIRECTORY__ @@ "../files"
