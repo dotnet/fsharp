@@ -19,7 +19,7 @@
     <Tailcalls>true</Tailcalls>
     <NoWarn>$(NoWarn);69;65;54;61;75</NoWarn>
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>..\..\$(Configuration)\fcs\net45\</OutputPath>
+    <OutputPath>..\..\$(Configuration.ToLower())\fcs\net45\</OutputPath>
     <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
     <!-- We target .NET 4.5 for FSharp.Compiler.Service.dll to allow broader use of this DLL -->
     <TargetFrameworkVersion Condition=" '$(TargetFrameworkVersion)' == '' ">v4.5</TargetFrameworkVersion>
