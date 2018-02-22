@@ -47,7 +47,7 @@ def static getBuildJobName(def configuration, def os) {
                     buildCommand = "build.cmd debug"
                 }
                 else {
-                    buildCommand = "./mono/cimake.sh install Configuration=Debug"
+                    buildCommand = "./mono/cibuild.sh Debug"
                 }
             }
             else if (configuration == "Release_default") {
@@ -56,7 +56,7 @@ def static getBuildJobName(def configuration, def os) {
                     buildCommand = "build.cmd release"
                 }
                 else {
-                    buildCommand = "./mono/cimake.sh install Configuration=Release"
+                    buildCommand = "./mono/cibuild.sh Release"
                 }
             }
             else if (configuration == "Release_net40_test") {
