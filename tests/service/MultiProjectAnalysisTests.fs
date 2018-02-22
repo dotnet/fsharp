@@ -130,7 +130,7 @@ let u = Case1 3
 
 [<Test>]
 #if NETCOREAPP2_0
-[<Ignore("TODO: check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``Test multi project 1 whole project errors`` () = 
 
@@ -315,7 +315,7 @@ let p = ("""
 
 [<Test>]
 #if NETCOREAPP2_0
-[<Ignore("TODO: check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``Test ManyProjectsStressTest whole project errors`` () = 
 
@@ -840,7 +840,7 @@ let ``Test max memory gets triggered`` () =
 
 [<Test>]
 #if NETCOREAPP2_0
-[<Ignore("TODO: check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``Type provider project references should not throw exceptions`` () =
     //let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Debug")])
@@ -928,7 +928,7 @@ let ``Type provider project references should not throw exceptions`` () =
 
 [<Test>]
 #if NETCOREAPP2_0
-[<Ignore("TODO: check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``Projects creating generated types should not utilize cross-project-references but should still analyze oK once project is built`` () =
     //let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Debug")])

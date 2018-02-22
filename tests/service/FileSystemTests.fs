@@ -74,7 +74,7 @@ let UseMyFileSystem() =
 
 [<Test>]
 #if NETCOREAPP2_0
-[<Ignore("TODO: check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``FileSystem compilation test``() = 
   if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then // file references only valid on Windows 

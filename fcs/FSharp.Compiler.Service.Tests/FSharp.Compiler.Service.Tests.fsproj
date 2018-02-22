@@ -94,8 +94,4 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\..\tests\service\data\CSharp_Analysis\CSharp_Analysis.csproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\..\fcs\FSharp.Compiler.Service.ProjectCracker\FSharp.Compiler.Service.ProjectCracker.fsproj" />
   </ItemGroup>
-  <Target Name="PrecompileScript" BeforeTargets="BeforeBuild">
-    <Exec Command="dotnet restore &quot;$(MSBuildProjectDirectory)/../../tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0/Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj&quot;" />
-    <Exec Command="dotnet build &quot;$(MSBuildProjectDirectory)/../../tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0/Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj&quot;" />
-  </Target>
 </Project>

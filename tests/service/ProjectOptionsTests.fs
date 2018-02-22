@@ -521,7 +521,7 @@ let ``Test SourceFiles order for GetProjectOptionsFromScript`` () = // See #594
 
 [<Test>]
 #if NETCOREAPP2_0
-[<Ignore("disabled - no project options cracker for .NET Core?")>]
+[<Ignore("SKIPPED: no project options cracker for .NET Core?")>]
 #endif
 let ``Script load closure project`` () =
     let fileName1 = Path.GetTempPath() + Path.DirectorySeparatorChar.ToString() + "Impl.fs"

@@ -14,7 +14,7 @@ def static getBuildJobName(def configuration, def os) {
     osList.each { os ->
         def configurations = [];
         if (os == 'Windows_NT') {
-            configurations = ['Debug_default', 'Release_ci_part1', 'Release_ci_part2', 'Release_ci_part3', 'Release_net40_no_vs', 'Release_fcs' ];
+            configurations = ['Debug_default', 'Release_ci_part1', 'Release_ci_part2', 'Release_ci_part3', 'Release_ci_part4', 'Release_net40_no_vs', 'Release_fcs' ];
         }
         else
         {
@@ -74,6 +74,10 @@ def static getBuildJobName(def configuration, def os) {
             else if (configuration == "Release_ci_part3") {
                 buildOutput = "Release"
                 buildCommand = "build.cmd release ci_part3"
+            }
+            else if (configuration == "Release_ci_part4") {
+                buildOutput = "Release"
+                buildCommand = "build.cmd release ci_part4"
             }
             else if (configuration == "Release_net40_no_vs") {
                 buildOutput = "Release"

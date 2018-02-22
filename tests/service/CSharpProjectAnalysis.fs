@@ -62,7 +62,7 @@ let internal getProjectReferences (content, dllFiles, libDirs, otherFlags) =
 
 [<Test>]
 #if NETCOREAPP2_0
-[<Ignore("TODO: check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``Test that csharp references are recognized as such`` () = 
     let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
@@ -100,7 +100,7 @@ let ``Test that csharp references are recognized as such`` () =
 
 [<Test>]
 #if NETCOREAPP2_0
-[<Ignore("TODO: check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``Test that symbols of csharp inner classes/enums are reported`` () = 
     let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
@@ -123,7 +123,7 @@ let _ = CSharpOuterClass.InnerClass.StaticMember()
 
 [<Test>]
 #if NETCOREAPP2_0
-[<Ignore("TODO: check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
 #endif
 let ``Ctor test`` () =
     let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"

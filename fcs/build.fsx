@@ -17,6 +17,10 @@ CleanDir (__SOURCE_DIRECTORY__ + "/../tests/TestResults")
 File.WriteAllText(__SOURCE_DIRECTORY__ + "/../tests/TestResults/notestsyet.txt","No tests yet")
 #endif
 
+// --------------------------------------------------------------------------------------
+// Utilities
+// --------------------------------------------------------------------------------------
+
 let dotnetExePath = DotNetCli.InstallDotNetSDK "2.1.4"
 
 let runDotnet workingDir args =
@@ -28,11 +32,8 @@ let runDotnet workingDir args =
 
     if result <> 0 then failwithf "dotnet %s failed" args
 
-// --------------------------------------------------------------------------------------
-// Utilities
-// --------------------------------------------------------------------------------------
-
 let assertExitCodeZero x = if x = 0 then () else failwithf "Command failed with exit code %i" x
+
 let runCmdIn workDir (exe:string) = Printf.ksprintf (fun (args:string) ->
 #if MONO
         let exe = exe.Replace("\\","/")
@@ -72,6 +73,7 @@ Target "Clean" (fun _ ->
 )
 
 Target "Restore" (fun _ ->
+    runDotnet __SOURCE_DIRECTORY__ (sprintf "restore %s -v n"  "FSharp.Compiler.Service.sln")
     for p in (!! "./../**/packages.config") do
         let result =
             ExecProcess (fun info ->
@@ -86,19 +88,42 @@ Target "BuildVersion" (fun _ ->
 )
 
 Target "Build" (fun _ ->
+#if MONO
+    // Using 'dotnet' to build .NET Framework projects fails on Mono, see https://github.com/dotnet/sdk/issues/335
+    // Use 'msbuild' instead
+    MSBuild "" "Build" ["Configuration","Release" ] 
+        [ "FSharp.Compiler.Service/FSharp.Compiler.Service.fsproj"
+          "FSharp.Compiler.Service.MSBuild.v12/FSharp.Compiler.Service.MSBuild.v12.fsproj"
+          "FSharp.Compiler.Service.ProjectCracker/FSharp.Compiler.Service.ProjectCracker.fsproj"
+          "FSharp.Compiler.Service.ProjectCrackerTool/FSharp.Compiler.Service.ProjectCrackerTool.fsproj"
+          "FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj" ]
+    |> Log (".NETFxBuild-Output: ")
+
+#else
     runDotnet __SOURCE_DIRECTORY__ (sprintf "build  %s -v n -c Release /maxcpucount:1"  "FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj")
+#endif
 )
 
 Target "Test" (fun _ ->
+#if MONO
+    ()
+#else
+    runDotnet __SOURCE_DIRECTORY__ (sprintf "restore %s -v n"  "../tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0/Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj")
+    runDotnet __SOURCE_DIRECTORY__ (sprintf "build  %s -v n"  "../tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0/Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj")
     runDotnet __SOURCE_DIRECTORY__ (sprintf "test %s -v n -c Release /maxcpucount:1" "FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj")
+#endif
 )
 
 
 Target "NuGet" (fun _ ->
+#if MONO
+    ()
+#else
     runDotnet __SOURCE_DIRECTORY__ (sprintf "pack %s -v n -c Release /maxcpucount:1" "FSharp.Compiler.Service/FSharp.Compiler.Service.fsproj")
     runDotnet __SOURCE_DIRECTORY__ (sprintf "build %s -v n -c Release /maxcpucount:1" "FSharp.Compiler.Service.ProjectCrackerTool/FSharp.Compiler.Service.ProjectCrackerTool.fsproj")
     runDotnet __SOURCE_DIRECTORY__ (sprintf "pack %s -v n -c Release /maxcpucount:1" "FSharp.Compiler.Service.ProjectCracker/FSharp.Compiler.Service.ProjectCracker.fsproj")
     runDotnet __SOURCE_DIRECTORY__ (sprintf "pack %s -v n -c Release /maxcpucount:1" "FSharp.Compiler.Service.MSBuild.v12/FSharp.Compiler.Service.MSBuild.v12.fsproj")
+#endif
 )
 
 Target "GenerateDocsEn" (fun _ ->
