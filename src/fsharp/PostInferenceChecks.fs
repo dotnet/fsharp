@@ -1191,7 +1191,10 @@ and CheckBinding cenv env alwaysCheckNoReraise (TBind(v,bindRhs,_) as bind) =
 
                 // If we've already recorded a definition then skip this 
                 match v.ReflectedDefinition with 
-                | None -> v.val_defn <- Some bindRhs
+                | None ->
+                    match v.val_opt_data with
+                    | Some v -> v.val_defn <- Some bindRhs
+                    | None -> v.val_opt_data <- Some({ val_compiled_name = None; val_other_range = None; val_const = None; val_defn = Some bindRhs; val_member_info = None; val_repr_info = None })
                 | Some _ -> ()
                 // Run the conversion process over the reflected definition to report any errors in the
                 // front end rather than the back end. We currently re-run this during ilxgen.fs but there's
