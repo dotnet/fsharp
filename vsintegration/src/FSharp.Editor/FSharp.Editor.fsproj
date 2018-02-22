@@ -32,8 +32,6 @@
     <InternalsVisibleTo Include="FSharp.ProjectSystem.FSharp" />
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="FSharp.Editor.resx">
       <GenerateSource>true</GenerateSource>
       <GeneratedModuleName>Microsoft.VisualStudio.FSharp.Editor.SR</GeneratedModuleName>
@@ -42,11 +40,11 @@
     <Compile Include="Common\Pervasive.fs" />
     <Compile Include="Common\Extensions.fs" />
     <Compile Include="Common\Constants.fs" />
+    <Compile Include="Common\Error.fs" />
     <Compile Include="Common\Logging.fs" />
     <Compile Include="Common\RoslynHelpers.fs" />
     <Compile Include="Common\CodeAnalysisExtensions.fs" />
     <Compile Include="Common\ContentType.fs" />
-    <Compile Include="Common\Error.fs" />
     <Compile Include="Common\Vs.fs" />
     <Compile Include="Options\SettingsPersistence.fs" />
     <Compile Include="Options\UIHelpers.fs" />
@@ -54,6 +52,8 @@
     <Compile Include="LanguageService\Tokenizer.fs" />
     <Compile Include="LanguageService\Symbols.fs" />
     <Compile Include="LanguageService\FSharpCheckerExtensions.fs" />
+    <Compile Include="LanguageService\IProjectSite.fs" />
+    <Compile Include="LanguageService\ProjectSitesAndFiles.fs" />
     <Compile Include="LanguageService\LanguageService.fs" />
     <Compile Include="LanguageService\AssemblyContentProvider.fs" />
     <Compile Include="LanguageService\SymbolHelpers.fs" />
@@ -107,11 +107,6 @@
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
     </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.LanguageService\FSharp.LanguageService.fsproj">
-      <Name>FSharp.LanguageService</Name>
-      <Project>{ee85aab7-cda0-4c4e-bda0-a64ccc413e3f}</Project>
-      <Private>True</Private>
-    </ProjectReference>
     <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj">
       <Name>FSharp.LanguageService.Base</Name>
       <Project>{1c5c163c-37ea-4a3c-8ccc-0d34b74bf8ef}</Project>
@@ -132,8 +127,6 @@
       <Project>{991dcf75-c2eb-42b6-9a0d-aa1d2409d519}</Project>
       <Private>True</Private>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <Reference Include="mscorlib" />
     <Reference Include="PresentationFramework" />
     <Reference Include="System.Windows.Forms" />
@@ -146,14 +139,16 @@
     <Reference Include="System" />
     <Reference Include="PresentationCore" />
     <Reference Include="System.ComponentModel.Composition" />
-  </ItemGroup>
-  <ItemGroup>
     <Reference Include="EnvDTE">
       <HintPath>$(FSharpSourcesRoot)\..\packages\EnvDTE.8.0.1\lib\net10\EnvDTE.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="EnvDTE80">
       <HintPath>$(FSharpSourcesRoot)\..\packages\EnvDTE80.8.0.1\lib\net10\EnvDTE80.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="VSLangProj">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\VSSDK.VSLangProj.7.0.4\lib\net20\VSLangProj.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Threading">
