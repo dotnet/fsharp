@@ -1,9 +1,10 @@
 <Project>
 
   <PropertyGroup>
-    <ProjectName Condition="'$(ProjectName)' == ''">$(AssemblyName)</ProjectName>
-    <ProjectName Condition="'$(ProjectName)' == ''">$(MSBuildProjectName)</ProjectName>
-    <DocumentationFile>$(OutputPath)\$(ProjectName).xml</DocumentationFile>
+    <TargetDotnetProfile Condition="$(TargetFramework.StartsWith('netstandard')) or $(TargetFramework.StartsWith('netcoreapp'))">coreclr</TargetDotnetProfile>
+    <TargetDotnetProfile Condition="$(TargetFramework.StartsWith('net4'))">net40</TargetDotnetProfile>
+    <OutputPath>$(RepoRoot)$(Configuration)\$(TargetDotnetProfile)\bin</OutputPath>
+    <IntermediateOutputPath>$(RepoRoot)$(Configuration)\$(TargetDotnetProfile)\obj\$(MSBuildProjectName)\</IntermediateOutputPath>
     <XlfLanguages>en;$(XlfLanguages)</XlfLanguages>
   </PropertyGroup>
 
