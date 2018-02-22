@@ -10,11 +10,7 @@
     <FSharpSourcesRoot>$(RepoRoot)src</FSharpSourcesRoot>
     <ToolsRoot>$(RepoRoot)Tools</ToolsRoot>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <TargetDotnetProfile Condition="$(TargetFramework.StartsWith('netstandard')) or $(TargetFramework.StartsWith('netcoreapp'))">coreclr</TargetDotnetProfile>
-    <TargetDotnetProfile Condition="$(TargetFramework.StartsWith('net4'))">net40</TargetDotnetProfile>
     <ProtoOutputPath>$(RepoRoot)Proto\net40\bin</ProtoOutputPath>
-    <OutputPath>$(RepoRoot)$(Configuration)\$(TargetDotnetProfile)\bin</OutputPath>
-    <IntermediateOutputPath>$(RepoRoot)$(Configuration)\$(TargetDotnetProfile)\obj\$(MSBuildProjectName)\</IntermediateOutputPath>
   </PropertyGroup>
 
   <!-- nuget -->
@@ -47,6 +43,7 @@
   <PropertyGroup>
     <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
     <UseStandardResourceNames>false</UseStandardResourceNames>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <!-- SDK targets override -->
