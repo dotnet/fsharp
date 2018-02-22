@@ -33,7 +33,7 @@ def static getBuildJobName(def configuration, def os) {
 
             if (configuration == "Release_fcs" && branch != "dev15.5") {
                 // Build and test FCS NuGet package
-                buildOutput = "Release"
+                buildOutput = "release"
                 if (os == 'Windows_NT') {
                     buildCommand = ".\\fcs\\build.cmd TestAndNuget"
                 }
@@ -42,41 +42,49 @@ def static getBuildJobName(def configuration, def os) {
                 }
             }
             else if (configuration == "Debug_default") {
-                buildOutput = "Debug"
+                buildOutput = "debug"
                 if (os == 'Windows_NT') {
                     buildCommand = "build.cmd debug"
                 }
                 else {
+<<<<<<< HEAD
                     buildCommand = "./mono/cibuild.sh Debug"
+=======
+                    buildCommand = "./mono/cimake.sh install Configuration=Debug"
+>>>>>>> b26d54942400b23f2e405fbc40962fbce91e2a91
                 }
             }
             else if (configuration == "Release_default") {
-                buildOutput = "Release"
+                buildOutput = "release"
                 if (os == 'Windows_NT') {
                     buildCommand = "build.cmd release"
                 }
                 else {
+<<<<<<< HEAD
                     buildCommand = "./mono/cibuild.sh Release"
+=======
+                    buildCommand = "./mono/cimake.sh install Configuration=Release"
+>>>>>>> b26d54942400b23f2e405fbc40962fbce91e2a91
                 }
             }
             else if (configuration == "Release_net40_test") {
-                buildOutput = "Release"
+                buildOutput = "release"
                 buildCommand = "build.cmd release net40 test"
             }
             else if (configuration == "Release_ci_part1") {
-                buildOutput = "Release"
+                buildOutput = "release"
                 buildCommand = "build.cmd release ci_part1"
             }
             else if (configuration == "Release_ci_part2") {
-                buildOutput = "Release"
+                buildOutput = "release"
                 buildCommand = "build.cmd release ci_part2"
             }
             else if (configuration == "Release_ci_part3") {
-                buildOutput = "Release"
+                buildOutput = "release"
                 buildCommand = "build.cmd release ci_part3"
             }
             else if (configuration == "Release_net40_no_vs") {
-                buildOutput = "Release"
+                buildOutput = "release"
                 buildCommand = "build.cmd release net40"
             }
 
@@ -95,13 +103,14 @@ def static getBuildJobName(def configuration, def os) {
 
             // TODO: set to false after tests are fully enabled
             def skipIfNoTestFiles = true
+            def skipIfNoBuildOutput = false
 
             def affinity = configuration == 'Release_net40_no_vs' ? 'latest-or-auto' : (os == 'Windows_NT' ? 'latest-dev15-5' : 'latest-or-auto')
             Utilities.setMachineAffinity(newJob, os, affinity)
             Utilities.standardJobSetup(newJob, project, isPullRequest, "*/${branch}")
 
             Utilities.addArchival(newJob, "tests/TestResults/*.*", "", skipIfNoTestFiles, false)
-            Utilities.addArchival(newJob, "${buildOutput}/**")
+            Utilities.addArchival(newJob, "${buildOutput}/**", "", skipIfNoBuildOutput, false)
             if (isPullRequest) {
                 Utilities.addGithubPRTriggerForBranch(newJob, branch, "${os} ${configuration} Build")
             }
