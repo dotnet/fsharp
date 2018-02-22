@@ -70,7 +70,7 @@ mono --version
                 buildOutput = "Release"
                 buildCommand = "build.cmd release net40 test"
             }
-            else if (onfiguration == "Release_ci_part1") {
+            else if (configuration == "Release_ci_part1") {
                 buildOutput = "Release"
                 buildCommand = "build.cmd release ci_part1"
             }
