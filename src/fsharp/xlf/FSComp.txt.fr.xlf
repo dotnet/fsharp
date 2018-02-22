@@ -6974,12 +6974,12 @@
       </trans-unit>
       <trans-unit id="implicitlyDiscardedInSequenceExpression">
         <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.</source>
-        <target state="new">This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.</target>
+        <target state="translated">Cette expression retourne une valeur de type '{0}', mais est implicitement ignorée. Utilisez 'let' pour lier le résultat à un nom, par ex. 'let result = expression'. Si vous voulez utiliser l'expression comme valeur dans la séquence, utilisez un 'yield' explicite.</target>
         <note />
       </trans-unit>
       <trans-unit id="implicitlyDiscardedSequenceInSequenceExpression">
         <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</source>
-        <target state="new">This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</target>
+        <target state="translated">Cette expression retourne une valeur de type '{0}', mais est implicitement ignorée. Utilisez 'let' pour lier le résultat à un nom, par ex. 'let result = expression'. Si vous voulez utiliser l'expression comme valeur dans la séquence, utilisez un 'yield!' explicite.</target>
         <note />
       </trans-unit>
     </body>
