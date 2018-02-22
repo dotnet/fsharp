@@ -73,14 +73,10 @@ Target "Clean" (fun _ ->
 )
 
 Target "Restore" (fun _ ->
-#if MONO
-    Shell.Exec("mono", "--version") |> ignore
-#endif
-    Shell.Exec("dotnet", "--version") |> ignore
-    runDotnet __SOURCE_DIRECTORY__ (sprintf "restore %s -v n" "FSharp.Compiler.Service/FSharp.Compiler.Service.fsproj")
-    runDotnet __SOURCE_DIRECTORY__ (sprintf "restore %s -v n" "FSharp.Compiler.Service.ProjectCrackerTool/FSharp.Compiler.Service.ProjectCrackerTool.fsproj")
-    runDotnet __SOURCE_DIRECTORY__ (sprintf "restore %s -v n" "FSharp.Compiler.Service.ProjectCracker/FSharp.Compiler.Service.ProjectCracker.fsproj")
-    runDotnet __SOURCE_DIRECTORY__ (sprintf "restore %s -v n" "FSharp.Compiler.Service.MSBuild.v12/FSharp.Compiler.Service.MSBuild.v12.fsproj")
+    runDotnet __SOURCE_DIRECTORY__ "restore FSharp.Compiler.Service/FSharp.Compiler.Service.fsproj -v n"
+    runDotnet __SOURCE_DIRECTORY__ "restore FSharp.Compiler.Service.ProjectCrackerTool/FSharp.Compiler.Service.ProjectCrackerTool.fsproj -v n"
+    runDotnet __SOURCE_DIRECTORY__ "restore FSharp.Compiler.Service.ProjectCracker/FSharp.Compiler.Service.ProjectCracker.fsproj -v n"
+    runDotnet __SOURCE_DIRECTORY__ "restore FSharp.Compiler.Service.MSBuild.v12/FSharp.Compiler.Service.MSBuild.v12.fsproj -v n"
     for p in (!! "./../**/packages.config") do
         let result =
             ExecProcess (fun info ->
@@ -107,7 +103,7 @@ Target "Build" (fun _ ->
     |> Log (".NETFxBuild-Output: ")
 
 #else
-    runDotnet __SOURCE_DIRECTORY__ (sprintf "build  %s -v n -c Release /maxcpucount:1"  "FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj")
+    runDotnet __SOURCE_DIRECTORY__ "build FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -v n -c Release /maxcpucount:1"
 #endif
 )
 
@@ -115,9 +111,9 @@ Target "Test" (fun _ ->
 #if MONO
     ()
 #else
-    runDotnet __SOURCE_DIRECTORY__ (sprintf "restore %s -v n"  "../tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0/Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj")
-    runDotnet __SOURCE_DIRECTORY__ (sprintf "build  %s -v n"  "../tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0/Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj")
-    runDotnet __SOURCE_DIRECTORY__ (sprintf "test %s -v n -c Release /maxcpucount:1" "FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj")
+    runDotnet __SOURCE_DIRECTORY__ "restore ../tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0/Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj -v n"
+    runDotnet __SOURCE_DIRECTORY__ "build ../tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0/Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj -v n"
+    runDotnet __SOURCE_DIRECTORY__ "test FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -v n -c Release /maxcpucount:1"
 #endif
 )
 
@@ -126,10 +122,10 @@ Target "NuGet" (fun _ ->
 #if MONO
     ()
 #else
-    runDotnet __SOURCE_DIRECTORY__ (sprintf "pack %s -v n -c Release /maxcpucount:1" "FSharp.Compiler.Service/FSharp.Compiler.Service.fsproj")
-    runDotnet __SOURCE_DIRECTORY__ (sprintf "build %s -v n -c Release /maxcpucount:1" "FSharp.Compiler.Service.ProjectCrackerTool/FSharp.Compiler.Service.ProjectCrackerTool.fsproj")
-    runDotnet __SOURCE_DIRECTORY__ (sprintf "pack %s -v n -c Release /maxcpucount:1" "FSharp.Compiler.Service.ProjectCracker/FSharp.Compiler.Service.ProjectCracker.fsproj")
-    runDotnet __SOURCE_DIRECTORY__ (sprintf "pack %s -v n -c Release /maxcpucount:1" "FSharp.Compiler.Service.MSBuild.v12/FSharp.Compiler.Service.MSBuild.v12.fsproj")
+    runDotnet __SOURCE_DIRECTORY__ "build FSharp.Compiler.Service.ProjectCrackerTool/FSharp.Compiler.Service.ProjectCrackerTool.fsproj -v n -c Release /maxcpucount:1"
+    runDotnet __SOURCE_DIRECTORY__ "pack FSharp.Compiler.Service/FSharp.Compiler.Service.fsproj -v n -c Release /maxcpucount:1"
+    runDotnet __SOURCE_DIRECTORY__ "pack FSharp.Compiler.Service.ProjectCracker/FSharp.Compiler.Service.ProjectCracker.fsproj -v n -c Release /maxcpucount:1"
+    runDotnet __SOURCE_DIRECTORY__ "pack FSharp.Compiler.Service.MSBuild.v12/FSharp.Compiler.Service.MSBuild.v12.fsproj -v n -c Release /maxcpucount:1"
 #endif
 )
 

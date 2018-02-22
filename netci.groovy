@@ -4,7 +4,7 @@ import jobs.generation.JobReport;
 def project = GithubProject
 def branch = GithubBranchName
 
-def osList = ['Windows_NT', 'Ubuntu16.04']  //, 'OSX'], 'CentOS7.1'
+def osList = ['Windows_NT', 'Ubuntu14.04']  //, 'OSX'], 'CentOS7.1'
 
 def static getBuildJobName(def configuration, def os) {
     return configuration.toLowerCase() + '_' + os.toLowerCase()
@@ -30,6 +30,13 @@ def static getBuildJobName(def configuration, def os) {
             def buildCommand = '';
             def buildOutput= '';
             def buildArgs= '';
+            def getMono = '
+sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
+echo "deb http://download.mono-project.com/repo/ubuntu stable-trusty main" | sudo tee /etc/apt/sources.list.d/mono-official-stable.list
+sudo apt-get update
+sudo apt-get -my install mono-devel
+mono --version
+'
 
             if (configuration == "Release_fcs" && branch != "dev15.5") {
                 // Build and test FCS NuGet package
@@ -38,7 +45,7 @@ def static getBuildJobName(def configuration, def os) {
                     buildCommand = ".\\fcs\\build.cmd TestAndNuget"
                 }
                 else {
-                    buildCommand = "./fcs/build.sh Build"
+                    buildCommand = getMono + "./fcs/build.sh Build"
                 }
             }
             else if (configuration == "Debug_default") {
@@ -47,7 +54,7 @@ def static getBuildJobName(def configuration, def os) {
                     buildCommand = "build.cmd debug"
                 }
                 else {
-                    buildCommand = "make Configuration=Debug"
+                    buildCommand = getMono + "make Configuration=Debug"
                 }
             }
             else if (configuration == "Release_default") {
@@ -56,7 +63,7 @@ def static getBuildJobName(def configuration, def os) {
                     buildCommand = "build.cmd release"
                 }
                 else {
-                    buildCommand = "make Configuration=Release"
+                    buildCommand = getMono + "make Configuration=Release"
                 }
             }
             else if (configuration == "Release_net40_test") {
