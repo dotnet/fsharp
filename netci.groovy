@@ -4,7 +4,7 @@ import jobs.generation.JobReport;
 def project = GithubProject
 def branch = GithubBranchName
 
-def osList = ['Windows_NT', 'Ubuntu14.04']  //, 'OSX'], 'CentOS7.1'
+def osList = ['Windows_NT', 'Ubuntu16.04']  //, 'OSX'], 'CentOS7.1'
 
 def static getBuildJobName(def configuration, def os) {
     return configuration.toLowerCase() + '_' + os.toLowerCase()
@@ -30,13 +30,13 @@ def static getBuildJobName(def configuration, def os) {
             def buildCommand = '';
             def buildOutput= '';
             def buildArgs= '';
-            def getMono = '
+            def getMono = '''
 sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
 echo "deb http://download.mono-project.com/repo/ubuntu stable-trusty main" | sudo tee /etc/apt/sources.list.d/mono-official-stable.list
 sudo apt-get update
 sudo apt-get -my install mono-devel
 mono --version
-'
+'''
 
             if (configuration == "Release_fcs" && branch != "dev15.5") {
                 // Build and test FCS NuGet package
@@ -70,7 +70,7 @@ mono --version
                 buildOutput = "Release"
                 buildCommand = "build.cmd release net40 test"
             }
-            else if (onfiguration == "Release_ci_part1") {
+            else if (configuration == "Release_ci_part1") {
                 buildOutput = "Release"
                 buildCommand = "build.cmd release ci_part1"
             }
