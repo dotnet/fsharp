@@ -30,60 +30,53 @@ def static getBuildJobName(def configuration, def os) {
             def buildCommand = '';
             def buildOutput= '';
             def buildArgs= '';
-            def getMono = '''
-sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
-echo "deb http://download.mono-project.com/repo/ubuntu stable-trusty main" | sudo tee /etc/apt/sources.list.d/mono-official-stable.list
-sudo apt-get update
-sudo apt-get -my install mono-devel
-mono --version
-'''
 
             if (configuration == "Release_fcs" && branch != "dev15.5") {
                 // Build and test FCS NuGet package
-                buildOutput = "Release"
+                buildOutput = "release"
                 if (os == 'Windows_NT') {
                     buildCommand = ".\\fcs\\build.cmd TestAndNuget"
                 }
                 else {
-                    buildCommand = getMono + "./fcs/build.sh Build"
+                    buildCommand = "./fcs/cibuild.sh Build"
                 }
             }
             else if (configuration == "Debug_default") {
-                buildOutput = "Debug"
+                buildOutput = "debug"
                 if (os == 'Windows_NT') {
                     buildCommand = "build.cmd debug"
                 }
                 else {
-                    buildCommand = getMono + "make Configuration=Debug"
+                    buildCommand = "./mono/cimake.sh install Configuration=Debug"
                 }
             }
             else if (configuration == "Release_default") {
-                buildOutput = "Release"
+                buildOutput = "release"
                 if (os == 'Windows_NT') {
                     buildCommand = "build.cmd release"
                 }
                 else {
-                    buildCommand = getMono + "make Configuration=Release"
+                    buildCommand = "./mono/cimake.sh install Configuration=Release"
                 }
             }
             else if (configuration == "Release_net40_test") {
-                buildOutput = "Release"
+                buildOutput = "release"
                 buildCommand = "build.cmd release net40 test"
             }
             else if (configuration == "Release_ci_part1") {
-                buildOutput = "Release"
+                buildOutput = "release"
                 buildCommand = "build.cmd release ci_part1"
             }
             else if (configuration == "Release_ci_part2") {
-                buildOutput = "Release"
+                buildOutput = "release"
                 buildCommand = "build.cmd release ci_part2"
             }
             else if (configuration == "Release_ci_part3") {
-                buildOutput = "Release"
+                buildOutput = "release"
                 buildCommand = "build.cmd release ci_part3"
             }
             else if (configuration == "Release_net40_no_vs") {
-                buildOutput = "Release"
+                buildOutput = "release"
                 buildCommand = "build.cmd release net40"
             }
 
@@ -108,7 +101,7 @@ mono --version
             Utilities.standardJobSetup(newJob, project, isPullRequest, "*/${branch}")
 
             Utilities.addArchival(newJob, "tests/TestResults/*.*", "", skipIfNoTestFiles, false)
-            Utilities.addArchival(newJob, "${buildOutput}/**")
+            Utilities.addArchival(newJob, "${buildOutput}/**", skipIfNoBuildOutput, false)
             if (isPullRequest) {
                 Utilities.addGithubPRTriggerForBranch(newJob, branch, "${os} ${configuration} Build")
             }
