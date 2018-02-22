@@ -86,19 +86,19 @@ Target "BuildVersion" (fun _ ->
 )
 
 Target "Build" (fun _ ->
-    runDotnet __SOURCE_DIRECTORY__ (sprintf "build  %s -v n -c Release"  "FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj")
+    runDotnet __SOURCE_DIRECTORY__ (sprintf "build  %s -v n -c Release /maxcpucount:1"  "FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj")
 )
 
 Target "Test" (fun _ ->
-    runDotnet __SOURCE_DIRECTORY__ (sprintf "test %s -v n -c Release" "FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj")
+    runDotnet __SOURCE_DIRECTORY__ (sprintf "test %s -v n -c Release /maxcpucount:1" "FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj")
 )
 
 
 Target "NuGet" (fun _ ->
-    runDotnet __SOURCE_DIRECTORY__ (sprintf "pack %s -v n -c Release" "FSharp.Compiler.Service/FSharp.Compiler.Service.fsproj")
-    runDotnet __SOURCE_DIRECTORY__ (sprintf "build %s -v n -c Release" "FSharp.Compiler.Service.ProjectCrackerTool/FSharp.Compiler.Service.ProjectCrackerTool.fsproj")
-    runDotnet __SOURCE_DIRECTORY__ (sprintf "pack %s -v n -c Release" "FSharp.Compiler.Service.ProjectCracker/FSharp.Compiler.Service.ProjectCracker.fsproj")
-    runDotnet __SOURCE_DIRECTORY__ (sprintf "pack %s -v n -c Release" "FSharp.Compiler.Service.MSBuild.v12/FSharp.Compiler.Service.MSBuild.v12.fsproj")
+    runDotnet __SOURCE_DIRECTORY__ (sprintf "pack %s -v n -c Release /maxcpucount:1" "FSharp.Compiler.Service/FSharp.Compiler.Service.fsproj")
+    runDotnet __SOURCE_DIRECTORY__ (sprintf "build %s -v n -c Release /maxcpucount:1" "FSharp.Compiler.Service.ProjectCrackerTool/FSharp.Compiler.Service.ProjectCrackerTool.fsproj")
+    runDotnet __SOURCE_DIRECTORY__ (sprintf "pack %s -v n -c Release /maxcpucount:1" "FSharp.Compiler.Service.ProjectCracker/FSharp.Compiler.Service.ProjectCracker.fsproj")
+    runDotnet __SOURCE_DIRECTORY__ (sprintf "pack %s -v n -c Release /maxcpucount:1" "FSharp.Compiler.Service.MSBuild.v12/FSharp.Compiler.Service.MSBuild.v12.fsproj")
 )
 
 Target "GenerateDocsEn" (fun _ ->
