@@ -102,7 +102,7 @@ def static getBuildJobName(def configuration, def os) {
             Utilities.standardJobSetup(newJob, project, isPullRequest, "*/${branch}")
 
             Utilities.addArchival(newJob, "tests/TestResults/*.*", "", skipIfNoTestFiles, false)
-            Utilities.addArchival(newJob, "${buildOutput}/**", skipIfNoBuildOutput, false)
+            Utilities.addArchival(newJob, "${buildOutput}/**", "", skipIfNoBuildOutput, false)
             if (isPullRequest) {
                 Utilities.addGithubPRTriggerForBranch(newJob, branch, "${os} ${configuration} Build")
             }
