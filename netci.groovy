@@ -95,6 +95,7 @@ def static getBuildJobName(def configuration, def os) {
 
             // TODO: set to false after tests are fully enabled
             def skipIfNoTestFiles = true
+            def skipIfNoBuildOutput = false
 
             def affinity = configuration == 'Release_net40_no_vs' ? 'latest-or-auto' : (os == 'Windows_NT' ? 'latest-dev15-5' : 'latest-or-auto')
             Utilities.setMachineAffinity(newJob, os, affinity)
