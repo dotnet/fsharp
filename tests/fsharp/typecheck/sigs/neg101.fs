@@ -1,6 +1,6 @@
 
 module M
-
+open System
 type MyRec = { Foo: string }
 
 let x: int = 1
@@ -48,7 +48,7 @@ let x1 =
 
 let x2 = (1,2,3,4,5,6,7,8).Rest // gives a warning
 let x3 = (1,2).Rest // gives an actual error
-let x4 = (1,2).ToTuple() // no error or warning
+let x4 = (struct (1,2)).ToTuple() // no error or warning
 
 open System.Runtime.CompilerServices
 
