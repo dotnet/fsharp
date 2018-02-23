@@ -13,7 +13,6 @@ Changes contributed here are eventually propagated to this repository and are in
 
 For historical reasons this repository is called "visualfsharp" and currently also contains the Visual F# IDE Tools. The eventual plan is to split these repositories into "fsharp" and "visualfsharp".
 
-
 ## Build Status
 
 |            | Ubuntu (Build) | Windows (Debug Build) | Windows (Release Tests 1) | Windows (Release Tests 2) | Windows  (Release Tests 3) |
@@ -54,7 +53,6 @@ These are the branches in use:
   - May contain new features that depend on new things or fixes in th corresponding Visual Studio release.
   - Gets ingegrated back into master once the corresponding Visual Studio release is made.
   - Used to build Visual F# Tool updates
-
 
 ### Technical Documentation
 
