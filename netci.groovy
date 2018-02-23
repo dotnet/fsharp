@@ -76,7 +76,7 @@ def static getBuildJobName(def configuration, def os) {
                 buildCommand = "build.cmd release ci_part3"
             }
             else if (configuration == "Release_ci_part4") {
-                buildOutput = "Release"
+                buildOutput = "release"
                 buildCommand = "build.cmd release ci_part4"
             }
             else if (configuration == "Release_net40_no_vs") {
