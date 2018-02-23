@@ -106,7 +106,7 @@ type LanguagePrimitivesModule() =
         Assert.AreEqual(1, resultRef)
 
 
-#if FX_PORTABLE_OR_NETSTANDARD
+#if NETSTANDARD1_6
 // TODO named #define ?
 #else  
     [<Test>]
@@ -604,7 +604,7 @@ type UnitType() =
         CheckThrowsNullRefException(fun() ->u.Equals(null) |>ignore) 
         
 
-#if FX_PORTABLE_OR_NETSTANDARD
+#if NETSTANDARD1_6
 // TODO named #define ?
 #else     
 [<TestFixture>]

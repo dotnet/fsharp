@@ -64,5 +64,5 @@
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
-  <Import Project="$(SolutionDir)\..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets" />
+  <Import Project="$(SolutionDir)\..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets" Condition="Exists('$(SolutionDir)\..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets')" />
 </Project>

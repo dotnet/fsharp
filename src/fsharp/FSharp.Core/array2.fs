@@ -53,7 +53,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("ZeroCreateBased")>]
         let zeroCreateBased (base1:int) (base2:int) (length1:int) (length2:int) = 
             if (base1 = 0 && base2 = 0) then 
-#if FX_PORTABLE_OR_NETSTANDARD
+#if NETSTANDARD1_6
                 zeroCreate length1 length2
 #else                
                 // Note: this overload is available on Compact Framework and Silverlight, but not Portable
