@@ -27,7 +27,7 @@ let errStream = new CompilerOutputStream()
 let argv = [| "C:\\fsi.exe" |]
 let allArgs = Array.append argv [|"--noninteractive"|]
 
-#if DOTNETCORE
+#if NETCOREAPP2_0
 let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
 #else
 let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration(fsi)

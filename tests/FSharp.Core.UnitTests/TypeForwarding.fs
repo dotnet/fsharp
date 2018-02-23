@@ -8,7 +8,7 @@ open System
 open FSharp.Core.UnitTests.LibraryTestFx
 open NUnit.Framework
 
-#if FX_PORTABLE_OR_NETSTANDARD
+#if NETSTANDARD1_6
 // TODO named #define ?
 #else
 [<TestFixture>]

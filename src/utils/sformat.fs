@@ -489,21 +489,14 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         let string_of_int (i:int) = i.ToString()
 
         let typeUsesSystemObjectToString (typ:System.Type) =
-#if FX_PORTABLE_OR_NETSTANDARD
             try 
 #if FX_RESHAPED_REFLECTION
                 let methInfo = typ.GetRuntimeMethod("ToString",[| |])
-                methInfo.DeclaringType = typeof<System.Object>
 #else
-                let methInfo = typ.GetMethod("ToString",[| |])
-                methInfo.DeclaringType = typeof<System.Object>
+                let methInfo = typ.GetMethod("ToString",BindingFlags.Public ||| BindingFlags.Instance,null,[| |],null)
 #endif
-            with e -> false
-#else        
-            try let methInfo = typ.GetMethod("ToString",BindingFlags.Public ||| BindingFlags.Instance,null,[| |],null)
                 methInfo.DeclaringType = typeof<System.Object>
             with e -> false
-#endif
         /// If "str" ends with "ending" then remove it from "str", otherwise no change.
         let trimEnding (ending:string) (str:string) =
           if str.EndsWith(ending,StringComparison.Ordinal) then 
@@ -805,20 +798,13 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         // -------------------------------------------------------------------- 
 
         let getProperty (ty: Type) (obj: obj) name =
-#if FX_PORTABLE_OR_NETSTANDARD
+#if FX_RESHAPED_REFLECTION
             let prop = ty.GetProperty(name, (BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic))
             if not (isNull prop) then prop.GetValue(obj,[||])
-#if FX_NO_MISSINGMETHODEXCEPTION
-            // Profile 7, 47, 78 and 259 raise MissingMemberException
-            else 
-                let msg = System.String.Concat([| "Method '"; ty.FullName; "."; name; "' not found." |])
-                raise (System.MissingMemberException(msg))
-#else
             // Others raise MissingMethodException
             else 
                 let msg = System.String.Concat([| "Method '"; ty.FullName; "."; name; "' not found." |])
                 raise (System.MissingMethodException(msg))
-#endif
 #else
             ty.InvokeMember(name, (BindingFlags.GetProperty ||| BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic), null, obj, [| |],CultureInfo.InvariantCulture)
 #endif
@@ -1189,7 +1175,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                                                             // If the leafFormatter was directly here, then layout leaves could store strings.
                            match obj with 
                            | _ when opts.ShowProperties ->
-#if FX_PORTABLE_OR_NETSTANDARD
+#if FX_RESHAPED_REFLECTION
                               let props = ty.GetProperties(BindingFlags.Instance ||| BindingFlags.Public)
 #else                           
                               let props = ty.GetProperties(BindingFlags.GetField ||| BindingFlags.Instance ||| BindingFlags.Public)
@@ -1208,7 +1194,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
                               // massively reign in deep printing of properties 
                               let nDepth = depthLim/10
-#if FX_PORTABLE_OR_NETSTANDARD
+#if NETSTANDARD1_6 || NETSTANDARD2_0 
                               Array.Sort((propsAndFields),{ new IComparer<MemberInfo> with member this.Compare(p1,p2) = compare (p1.Name) (p2.Name) } );
 #else                              
                               Array.Sort((propsAndFields :> Array),{ new System.Collections.IComparer with member this.Compare(p1,p2) = compare ((p1 :?> MemberInfo).Name) ((p2 :?> MemberInfo).Name) } );

@@ -1247,7 +1247,6 @@ namespace Microsoft.FSharp.Collections
                 let count' = Operators.min count len
                 Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 0 count' array
 
-#if !FX_NO_TPL_PARALLEL
         module Parallel =
             open System.Threading.Tasks
             
@@ -1357,4 +1356,3 @@ namespace Microsoft.FSharp.Collections
                         iFalse <- iFalse + 1
 
                 res1, res2
-#endif

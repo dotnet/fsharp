@@ -20,19 +20,21 @@ open System.IO
 
 let sourceTok = FSharpSourceTokenizer([], Some "C:\\test.fsx")
 
+let rec parseLine(line: string, state: int64 ref, tokenizer: FSharpLineTokenizer) = seq {
+  match tokenizer.ScanToken(!state) with
+  | Some(tok), nstate ->
+      let str = line.Substring(tok.LeftColumn, tok.RightColumn - tok.LeftColumn + 1)
+      yield str, tok
+      state := nstate
+      yield! parseLine(line, state, tokenizer)
+  | None, nstate -> 
+      state := nstate }
+
 let tokenizeLines (lines:string[]) =
   [ let state = ref 0L
-    for n, line in lines |> Seq.zip [ 0 .. lines.Length ] do
+    for n, line in lines |> Seq.zip [ 0 .. lines.Length-1 ] do
       let tokenizer = sourceTok.CreateLineTokenizer(line)
-      let rec parseLine() = seq {
-        match tokenizer.ScanToken(!state) with
-        | Some(tok), nstate ->
-            let str = line.Substring(tok.LeftColumn, tok.RightColumn - tok.LeftColumn + 1)
-            yield str, tok
-            state := nstate
-            yield! parseLine()
-        | None, nstate -> state := nstate }
-      yield n, parseLine() |> List.ofSeq ]
+      yield n, parseLine(line, state, tokenizer) |> List.ofSeq ]
 
 [<Test>]
 let ``Tokenizer test 1``() =

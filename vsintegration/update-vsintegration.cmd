@@ -250,68 +250,6 @@ if "!BIN_AVAILABLE!" == "true" (
 )
 
  
-rem Deploying for .NET Core 3.7
-
-echo.
-CALL :colorEcho 02 "[!ACTION!] Processing files for profile_7" & echo.
-
-set SOURCEDIR=%BINDIR%\..\..\portable7\bin
-set RESTOREDIR=!RESTOREBASE!\profile_7
-CALL :checkAvailability profile_7
-if "!BIN_AVAILABLE!" == "true" (
-    CALL :backupAndOrCopy FSharp.Core.dll "%COMPILER7ASSEMBLIESPATH%"
-    CALL :backupAndOrCopy FSharp.Core.optdata "%COMPILER7ASSEMBLIESPATH%"
-    CALL :backupAndOrCopy FSharp.Core.sigdata "%COMPILER7ASSEMBLIESPATH%"
-    CALL :backupAndOrCopy FSharp.Core.xml "%COMPILER7ASSEMBLIESPATH%"
-)
-
- 
-rem Deploying for .NET Core 3.78
-
-echo.
-CALL :colorEcho 02 "[!ACTION!] Processing files for profile_78" & echo.
-
-set SOURCEDIR=%BINDIR%\..\..\portable78\bin
-set RESTOREDIR=!RESTOREBASE!\profile_78
-CALL :checkAvailability profile_78
-if "!BIN_AVAILABLE!" == "true" (
-    CALL :backupAndOrCopy FSharp.Core.dll "%COMPILER78ASSEMBLIESPATH%"
-    CALL :backupAndOrCopy FSharp.Core.optdata "%COMPILER78ASSEMBLIESPATH%"
-    CALL :backupAndOrCopy FSharp.Core.sigdata "%COMPILER78ASSEMBLIESPATH%"
-    CALL :backupAndOrCopy FSharp.Core.xml "%COMPILER78ASSEMBLIESPATH%"
-)
-
-
-rem Deploying for .NET Core 3.259
-
-echo.
-CALL :colorEcho 02 "[!ACTION!] Processing files for profile_259" & echo.
-
-set SOURCEDIR=%BINDIR%\..\..\portable259\bin
-set RESTOREDIR=!RESTOREBASE!\profile_259
-CALL :checkAvailability profile_259
-if "!BIN_AVAILABLE!" == "true" (
-    CALL :backupAndOrCopy FSharp.Core.dll "%COMPILER259ASSEMBLIESPATH%"
-    CALL :backupAndOrCopy FSharp.Core.optdata "%COMPILER259ASSEMBLIESPATH%"
-    CALL :backupAndOrCopy FSharp.Core.sigdata "%COMPILER259ASSEMBLIESPATH%"
-    CALL :backupAndOrCopy FSharp.Core.xml "%COMPILER259ASSEMBLIESPATH%"
-)
-
-
-rem Deploying for .NET Portable 3.47
-
-echo.
-CALL :colorEcho 02 "[!ACTION!] Processing files for profile_47" & echo.
-
-set SOURCEDIR=%BINDIR%\..\..\portable47\bin
-set RESTOREDIR=!RESTOREBASE!\profile_47
-CALL :checkAvailability profile_47
-if "!BIN_AVAILABLE!" == "true" (
-    CALL :backupAndOrCopy FSharp.Core.dll "%COMPILER47ASSEMBLIESPATH%"
-    CALL :backupAndOrCopy FSharp.Core.optdata "%COMPILER47ASSEMBLIESPATH%"
-    CALL :backupAndOrCopy FSharp.Core.sigdata "%COMPILER47ASSEMBLIESPATH%"
-    CALL :backupAndOrCopy FSharp.Core.xml "%COMPILER47ASSEMBLIESPATH%"
-)
 
 REM TODO: this was already here (2017-09-28) and was already commented out, I think (AB) that these redirects aren't necessary anymore and can be permanently removed
 REM echo ^<configuration^>^<runtime^>^<assemblyBinding xmlns="urn:schemas-microsoft-com:asm.v1" appliesTo="v4.0.30319"^>^<dependentAssembly^>^<assemblyIdentity name="FSharp.Core" publicKeyToken="b03f5f7f11d50a3a" culture="neutral" /^> ^<bindingRedirect oldVersion="2.0.0.0-4.%FSHARPVERSION%.0" newVersion="4.%FSHARPVERSION%.0"/^>^</dependentAssembly^>^</assemblyBinding^>^</runtime^>^</configuration^> > "%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.%FSHARPVERSION%.0\pub.config"

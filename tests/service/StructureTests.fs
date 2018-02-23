@@ -53,7 +53,7 @@ let (=>) (source: string) (expectedRanges: (Range * Range) list) =
                 |> List.ofSeq
             let expected = List.sort expectedRanges
             if actual <> expected then
-            failwithf "Expected %s, but was %s" (formatList expected) (formatList actual)
+                failwithf "Expected %s, but was %s" (formatList expected) (formatList actual)
         | None -> failwithf "Expected there to be a parse tree for source:\n%s" source
     with _ ->
         printfn "AST:\n%+A" ast
