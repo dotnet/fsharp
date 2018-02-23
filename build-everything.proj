@@ -34,6 +34,9 @@
     <ProjectsWithNet40 Include="vsintegration/fsharp-vsintegration-item-templates-build.proj" />
     <ProjectsWithNet40 Include="vsintegration/fsharp-vsintegration-vsix-build.proj" />
   </ItemGroup>
+  <PropertyGroup>
+    <RestoreVSIntegration>true</RestoreVSIntegration>
+  </PropertyGroup>
 
   <ItemGroup Condition="'$(BUILD_FCS)'=='1'">
     <ProjectsWithNet40 Include="fcs/FSharp.Compiler.Service/FSharp.Compiler.Service.fsproj" />
@@ -78,17 +81,19 @@
   <ItemGroup Condition="'$(TEST_CORECLR_FSHARP_SUITE)'=='1'" >
     <ProjectsWithCoreClr Include="tests/fsharp/FSharp.Tests.FSharpSuite.DrivingCoreCLR/FSharp.Tests.FSharpSuite.DrivingCoreCLR.fsproj" />
     <ProjectsWithCoreClr Include="tests/fsharpqa/testenv/src/PEVerify/PEVerify.csproj" />
-
-    <ProjectsToRestore Include="tests/fsharpqa/testenv/src/PEVerify/PEVerify.csproj" />
   </ItemGroup>
+  <PropertyGroup Condition="'$(TEST_CORECLR_FSHARP_SUITE)'=='1'">
+    <RestorePEVerify>true</RestorePEVerify>
+  </PropertyGroup>
 
   <ItemGroup Condition="'$(TEST_NET40_FSHARPQA_SUITE)'=='1' OR '$(TEST_NET40_FSHARP_SUITE)'=='1'" >
     <ProjectsWithNet40 Include="tests/fsharpqa/testenv/src/ILComparer/ILComparer.fsproj" />
     <ProjectsWithNet40 Include="tests/fsharpqa/testenv/src/HostedCompilerServer/HostedCompilerServer.fsproj" />
     <ProjectsWithNet40 Include="tests/fsharpqa/testenv/src/PEVerify/PEVerify.csproj" />
-
-    <ProjectsToRestore Include="tests/fsharpqa/testenv/src/PEVerify/PEVerify.csproj" />
   </ItemGroup>
+  <PropertyGroup Condition="'$(TEST_NET40_FSHARPQA_SUITE)'=='1' OR '$(TEST_NET40_FSHARP_SUITE)'=='1'">
+    <RestorePEVerify>true</RestorePEVerify>
+  </PropertyGroup>
 
   <ItemGroup Condition="'$(TEST_FCS)'=='1'" >
     <ProjectsWithNet40 Include="fcs/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj" />
@@ -100,6 +105,11 @@
 
   <ItemGroup Condition="'$(TEST_VS_IDEUNIT_SUITE)'=='1'" >
     <ProjectsWithNet40 Include="vsintegration/fsharp-vsintegration-unittests-build.proj"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectsToRestore Include="tests/fsharpqa/testenv/src/PEVerify/PEVerify.csproj" Condition="'$(RestorePEVerify)' == 'true'" />
+    <ProjectsToRestore Include="vsintegration/fsharp-vsintegration-src-build.proj" Condition="'$(RestoreVSIntegration)' == 'true'" />
   </ItemGroup>
 
   <PropertyGroup>

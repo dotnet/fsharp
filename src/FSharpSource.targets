@@ -126,8 +126,8 @@
       <PropertyGroup>
         <OutputPath Condition=" '$(CustomOutputPath)' != 'true' ">$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFrameworkOutputDirectory)\bin</OutputPath>
         <FscToolPath>$(FSharpSourcesRoot)\..\Proto\$(ProtoFlavour)\bin</FscToolPath>
-        <FscToolExe>fsc-proto.exe</FscToolExe>
-        <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.Portable.FSharp-proto.targets</FSharpTargetsPath>
+        <FscToolExe>fsc.exe</FscToolExe>
+        <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.Portable.FSharp.targets</FSharpTargetsPath>
       </PropertyGroup>
     </When>
     <Otherwise>
@@ -135,8 +135,8 @@
       <PropertyGroup>
         <OutputPath Condition=" '$(CustomOutputPath)' != 'true' ">$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFrameworkOutputDirectory)\bin</OutputPath>
         <FscToolPath>$(FSharpSourcesRoot)\..\Proto\$(ProtoFlavour)\bin</FscToolPath>
-        <FscToolExe>fsc-proto.exe</FscToolExe>
-        <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.FSharp-proto.targets</FSharpTargetsPath>
+        <FscToolExe>fsc.exe</FscToolExe>
+        <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.FSharp.Targets</FSharpTargetsPath>
       </PropertyGroup>
     </Otherwise>
   </Choose>
@@ -172,8 +172,8 @@
 
     <NuGetToolPath Condition="'$(NuGetToolPath)' == ''">$(FSharpSourcesRoot)\..\.nuget\</NuGetToolPath>
     <NuGetConfigCommandLine>-ConfigFile "$(NuGetConfigFile)"</NuGetConfigCommandLine>
-    <NugetRestoreCommand>"$(NuGetToolPath)NuGet.exe install -OutputDirectory "$(PackagesDir)" -Config "$(NuGetToolPath)NuGet.Config"</NugetRestoreCommand>
-    <DnuRestoreCommand>"$(NuGetToolPath)NuGet.exe" restore -OutputDirectory "$(PackagesDir)" -Config "$(NuGetToolPath)NuGet.Config"</DnuRestoreCommand>
+    <NugetRestoreCommand>"$(NuGetToolPath)NuGet.exe install -OutputDirectory "$(PackagesDir)" -Config "$(NuGetToolPath)..\NuGet.Config"</NugetRestoreCommand>
+    <DnuRestoreCommand>"$(NuGetToolPath)NuGet.exe" restore -OutputDirectory "$(PackagesDir)" -Config "$(NuGetToolPath)..\NuGet.Config"</DnuRestoreCommand>
 
     <!-- Current version of .NET Core does not support all semantics used in our packages, 
          so we ignore the pre-calculation in the lock file and calculate asset applicability in the build task -->
@@ -214,12 +214,12 @@
   <Import Project="Microbuild.Settings.targets" Condition="'$(UseMicroBuild)' == 'true'"/>
 
   <Target Name="dotnetrestore" BeforeTargets="Build" Condition=" '$(TargetDotnetProfile)' == 'coreclr' ">
-   <Exec Command="$(MSBuildThisFileDirectory)..\.nuget\nuget.exe restore -PackagesDirectory $(PackagesDir) -Config $(MSBuildThisFileDirectory)..\.nuget\NuGet.Config project.json" />
+   <Exec Command="$(MSBuildThisFileDirectory)..\.nuget\nuget.exe restore -PackagesDirectory $(PackagesDir) -Config $(MSBuildThisFileDirectory)..\NuGet.Config project.json" />
   </Target>
 
   <Target Name="dotnetrestore" BeforeTargets="Build" Condition=" '$(DOTNET_PUBLISH)' == 'true' ">
     <SetEnvVar Name="NUGET_PACKAGES" Value="$(NUGET_PACKAGES)" />
-    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe restore &#45;&#45;configfile $(MSBuildThisFileDirectory)..\.nuget\NuGet.Config project.json"/>
+    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe restore &#45;&#45;configfile $(MSBuildThisFileDirectory)..\NuGet.Config project.json"/>
   </Target>
 
   <Target Name="dotnetpublish" AfterTargets="Build" Condition=" '$(DOTNET_PUBLISH)' == 'true' ">
@@ -298,13 +298,13 @@
   </Target>
 
   <UsingTask TaskName="FSharpEmbedResourceText"
-             AssemblyFile="$(FSharpSourcesRoot)\..\Proto\net40\bin\FSharp.Build-proto.dll"
+             AssemblyFile="$(FSharpSourcesRoot)\..\Proto\net40\bin\FSharp.Build.dll"
              Condition="'$(Configuration)' != 'Proto'" />
   <UsingTask TaskName="FSharpEmbedResXSource"
-             AssemblyFile="$(FSharpSourcesRoot)\..\Proto\net40\bin\FSharp.Build-proto.dll"
+             AssemblyFile="$(FSharpSourcesRoot)\..\Proto\net40\bin\FSharp.Build.dll"
              Condition="'$(Configuration)' != 'Proto'" />
   <UsingTask TaskName="WriteCodeFragment"
-             AssemblyFile="$(FSharpSourcesRoot)\..\Proto\net40\bin\FSharp.Build-proto.dll"
+             AssemblyFile="$(FSharpSourcesRoot)\..\Proto\net40\bin\FSharp.Build.dll"
              Condition="'$(Configuration)' != 'Proto'" />
 
   <Target Name="GenerateFSharpTextResources"

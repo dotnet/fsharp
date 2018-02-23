@@ -109,7 +109,7 @@
     <!-- Localization -->
     <DisableLocalization Condition="'$(MonoPackaging)' == 'true'">true</DisableLocalization>
     <UpdateXlfOnBuild Condition="'$(CI)' != '1'">true</UpdateXlfOnBuild>
-    <XliffTasksVersion>0.2.0-beta-000076</XliffTasksVersion>
+    <XliffTasksVersion>0.2.0-beta-000081</XliffTasksVersion>
 
   </PropertyGroup>
 

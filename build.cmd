@@ -599,7 +599,7 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 echo ---------------- Done with prepare, starting package restore ----------------
 
 set _nugetexe="%~dp0.nuget\NuGet.exe"
-set _nugetconfig="%~dp0.nuget\NuGet.Config"
+set _nugetconfig="%~dp0NuGet.Config"
 
 if "%RestorePackages%" == "true" (
     if "%BUILD_FCS%" == "1" (
@@ -702,7 +702,7 @@ if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
 echo ---------------- Done with package restore, starting proto ------------------------
 
 rem Decide if Proto need building
-if NOT EXIST Proto\net40\bin\fsc-proto.exe (
+if NOT EXIST Proto\net40\bin\fsc.exe (
   set BUILD_PROTO=1
 )
 
@@ -727,8 +727,8 @@ if "%BUILD_PROTO%" == "1" (
     @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
   )
 
-  echo %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
-       %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
+  echo %_ngenexe% install Proto\net40\bin\fsc.exe /nologo 
+       %_ngenexe% install Proto\net40\bin\fsc.exe /nologo 
   @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
 )
 
