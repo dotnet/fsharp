@@ -5,7 +5,7 @@
   <Import Project="..\fcs.props" />
   <PropertyGroup>
     <TargetFrameworks>net45</TargetFrameworks>
-    <OutputPath>..\..\$(Configuration)\fcs</OutputPath>
+    <OutputPath>..\..\$(Configuration.ToLower())\fcs</OutputPath>
     <DefineConstants>$(DefineConstants);CROSS_PLATFORM_COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
   </PropertyGroup>

@@ -5,7 +5,7 @@
   <Import Project="..\fcs.props" />
   <PropertyGroup>
     <TargetFrameworks>net45</TargetFrameworks>
-    <OutputPath>..\..\$(Configuration)\fcs</OutputPath>
+    <OutputPath>..\..\$(Configuration.ToLower())\fcs</OutputPath>
   </PropertyGroup>
   <PropertyGroup>
     <Description>Legacy project file cracker for the F# compiler service.</Description>

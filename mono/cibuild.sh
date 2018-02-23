@@ -2,4 +2,6 @@
 
 # note: expects to run from top directory
 ./mono/latest-mono-stable.sh && \
-./build.sh NuGet
+make Configuration=$@ && \
+sudo make install Configuration=$@ && \
+./mono/test-mono.sh

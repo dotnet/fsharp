@@ -47,7 +47,7 @@ def static getBuildJobName(def configuration, def os) {
                     buildCommand = "build.cmd debug"
                 }
                 else {
-                    buildCommand = "./mono/cimake.sh install Configuration=Debug"
+                    buildCommand = "./mono/cibuild.sh Debug"
                 }
             }
             else if (configuration == "Release_default") {
@@ -56,7 +56,7 @@ def static getBuildJobName(def configuration, def os) {
                     buildCommand = "build.cmd release"
                 }
                 else {
-                    buildCommand = "./mono/cimake.sh install Configuration=Release"
+                    buildCommand = "./mono/cibuild.sh Release"
                 }
             }
             else if (configuration == "Release_net40_test") {
@@ -99,13 +99,16 @@ def static getBuildJobName(def configuration, def os) {
 
             // TODO: set to false after tests are fully enabled
             def skipIfNoTestFiles = true
+            def skipIfNoBuildOutput = false
 
-            def affinity = configuration == 'Release_net40_no_vs' ? 'latest-or-auto' : (os == 'Windows_NT' ? 'latest-dev15-5' : 'latest-or-auto')
+            // "sudo is not enabled by default on most of the VM images. The outerloop images do have this enabled. The image version (usually 'latest') can be set to 'outer-latest' in this case to enable passwordless sudo, which would enable your scenario."
+            // https://github.com/Microsoft/visualfsharp/pull/4372#issuecomment-367850885
+            def affinity = (configuration == 'Release_net40_no_vs' ? 'latest-or-auto' : (os == 'Windows_NT' ? 'latest-dev15-5' : 'outer-latest'))
             Utilities.setMachineAffinity(newJob, os, affinity)
             Utilities.standardJobSetup(newJob, project, isPullRequest, "*/${branch}")
 
             Utilities.addArchival(newJob, "tests/TestResults/*.*", "", skipIfNoTestFiles, false)
-            Utilities.addArchival(newJob, "${buildOutput}/**", skipIfNoBuildOutput, false)
+            Utilities.addArchival(newJob, "${buildOutput}/**", "", skipIfNoBuildOutput, false)
             if (isPullRequest) {
                 Utilities.addGithubPRTriggerForBranch(newJob, branch, "${os} ${configuration} Build")
             }

@@ -54,8 +54,7 @@ let runCmdIn workDir (exe:string) = Printf.ksprintf (fun (args:string) ->
 // The rest of the code is standard F# build script
 // --------------------------------------------------------------------------------------
 
-let releaseDir = Path.Combine(__SOURCE_DIRECTORY__, "../Release/fcs")
-
+let releaseDir = Path.Combine(__SOURCE_DIRECTORY__, "../release/fcs")
 
 // Read release notes & version info from RELEASE_NOTES.md
 let release = LoadReleaseNotes (__SOURCE_DIRECTORY__ + "/RELEASE_NOTES.md")
