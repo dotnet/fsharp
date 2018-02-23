@@ -14,7 +14,7 @@ Copied from RepoToolset. Might be slightly modified to adjust for the current F#
   -->
 
   <PropertyGroup>
-    <RepoRoot>$(MSBuildThisFileDirectory)..\..\</RepoRoot>
+    <RepoRoot Condition="'$(RepoRoot)' == ''">$(MSBuildThisFileDirectory)..\..\</RepoRoot>
   </PropertyGroup>
 
   <Choose>

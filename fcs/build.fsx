@@ -90,7 +90,7 @@ Target "Restore" (fun _ ->
             ExecProcess (fun info ->
                 info.FileName <- FullName @"./../.nuget/NuGet.exe"
                 info.WorkingDirectory <- FullName @"./.."
-                info.Arguments <- sprintf "restore %s -PackagesDirectory \"%s\" -ConfigFile \"%s\""   (FullName p) (FullName "./../packages") (FullName "./../.nuget/NuGet.Config")) TimeSpan.MaxValue
+                info.Arguments <- sprintf "restore %s -PackagesDirectory \"%s\" -ConfigFile \"%s\""   (FullName p) (FullName "./../packages") (FullName "./../NuGet.Config")) TimeSpan.MaxValue
         if result <> 0 then failwithf "nuget restore %s failed" p
 )
 
