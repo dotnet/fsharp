@@ -54,7 +54,6 @@ These are the branches in use:
   - Gets ingegrated back into master once the corresponding Visual Studio release is made.
   - Used to build Visual F# Tool updates
 
-
 ### Technical Documentation
 
 * [The F# Language and Core Library RFC Process](http://fsharp.github.io/2016/09/26/fsharp-rfc-process.html)
