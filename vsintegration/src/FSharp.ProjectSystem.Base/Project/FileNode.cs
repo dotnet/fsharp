@@ -348,10 +348,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             Guid emptyGuid = Guid.Empty;
             int result = 0;
+
+#pragma warning disable CS0618
             ThreadHelper.Generic.Invoke(() =>
             {
                 ErrorHandler.ThrowOnFailure(uiShell.ShowMessageBox(0u, ref emptyGuid, title, message, null, 0u, OLEMSGBUTTON.OLEMSGBUTTON_YESNO, OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST, icon, 0, out result));
             });
+#pragma warning restore CS0618
+
             return result == (int)NativeMethods.IDYES;
         }
 

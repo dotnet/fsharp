@@ -149,48 +149,48 @@
       <HintPath>$(FSharpSourcesRoot)\..\packages\VSSDK.VSHelp.7.0.4\lib\net20\Microsoft.VisualStudio.VSHelp.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Microsoft.VisualStudio.Shell.Framework, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <Reference Include="Microsoft.VisualStudio.Shell.Framework">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Framework.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Shell.Framework.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Threading">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Threading.$(MicrosoftVisualStudioThreadingVersion)\lib\net45\Microsoft.VisualStudio.Threading.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.VisualStudio.Editor, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <Reference Include="Microsoft.VisualStudio.Editor">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Editor.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Editor.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.UI, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <Reference Include="Microsoft.VisualStudio.Text.UI">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Text.UI.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Text.UI.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.UI.Wpf, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <Reference Include="Microsoft.VisualStudio.Text.UI.Wpf">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Text.UI.Wpf.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Text.UI.Wpf.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.Data, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <Reference Include="Microsoft.VisualStudio.Text.Data">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Text.Data.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Text.Data.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.Logic, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <Reference Include="Microsoft.VisualStudio.Text.Logic">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Text.Logic.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Text.Logic.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.VisualStudio.CoreUtility, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <Reference Include="Microsoft.VisualStudio.CoreUtility">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.CoreUtility.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.CoreUtility.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.VisualStudio.Utilities, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Utilities.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Utilities.dll</HintPath>
+    <Reference Include="Microsoft.VisualStudio.Utilities">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Utilities.$(RoslynVSPackagesVersion)\lib\net46\Microsoft.VisualStudio.Utilities.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.VisualStudio.Shell.Design, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <Reference Include="Microsoft.VisualStudio.Shell.Design">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Design.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Shell.Design.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion), Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion).$(RoslynVSPackagesVersion)\lib\Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion).dll</HintPath>
+    <Reference Include="Microsoft.VisualStudio.Shell.$(VSMajorVersion)">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.$(VSMajorVersion).$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Shell.$(VSMajorVersion).dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.VisualStudio.ComponentModelHost, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.ComponentModelHost.15.0.26201-alpha\lib\net46\Microsoft.VisualStudio.ComponentModelHost.dll</HintPath>
+    <Reference Include="Microsoft.VisualStudio.ComponentModelHost">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.ComponentModelHost.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.ComponentModelHost.dll</HintPath>
     </Reference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="..\FSharp.VS.FSI\FSHarp.VS.FSI.fsproj">
+    <ProjectReference Include="..\FSharp.VS.FSI\FSharp.VS.FSI.fsproj">
       <Name>FSharp.VS.FSI</Name>
       <Project>{991dcf75-c2eb-42b6-9a0d-aa1d2409d519}</Project>
       <Private>True</Private>
