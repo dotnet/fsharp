@@ -97,9 +97,14 @@ def static getBuildJobName(def configuration, def os) {
             def skipIfNoTestFiles = true
             def skipIfNoBuildOutput = false
 
-            // "sudo is not enabled by default on most of the VM images. The outerloop images do have this enabled. The image version (usually 'latest') can be set to 'outer-latest' in this case to enable passwordless sudo, which would enable your scenario."
+            // "sudo is not enabled by default on most of the VM images. The outerloop images do have this enabled. 
+            // The image version (usually 'latest') can be set to 'outer-latest' in this case to enable passwordless 
+            // sudo, which would enable your scenario."
+            //
             // https://github.com/Microsoft/visualfsharp/pull/4372#issuecomment-367850885
-            def affinity = (configuration == 'Release_net40_no_vs' ? 'latest-or-auto' : (os == 'Windows_NT' ? 'latest-dev15-5' : 'outer-latest'))
+            //
+            // However, for now we are still just using 'latest-or-auto'. Unclear if that gives 'sudo' or not.
+            def affinity = (configuration == 'Release_net40_no_vs' ? 'latest-or-auto' : (os == 'Windows_NT' ? 'latest-dev15-5' : 'latest-or-auto'))
             Utilities.setMachineAffinity(newJob, os, affinity)
             Utilities.standardJobSetup(newJob, project, isPullRequest, "*/${branch}")
 
