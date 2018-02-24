@@ -351,7 +351,7 @@ this file.
 
     ============================================================
     -->
-    <Target Name="_GenerateCompileDependencyCache" DependsOnTargets="ResolveAssemblyReferences" Condition="'$(DesignTimeBuild)' == 'true'">
+    <Target Name="_GenerateCompileDependencyCache" DependsOnTargets="ResolveAssemblyReferences">
         <ItemGroup>
           <CustomAdditionalCompileInputs Include="$(IntermediateOutputPath)$(MSBuildProjectFile).CoreCompileInputs.cache" />
           <CoreCompileCache Remove="@(Compile)" />
