@@ -71,8 +71,7 @@ let buildVersion =
     else if isAppVeyorBuild then sprintf "%s-b%s" assemblyVersion AppVeyorEnvironment.BuildNumber
     else assemblyVersion
 
-// Skipping build of FCS on Jenkins Mono for now until we knoow how to get an updated version of Mono installed
-let skipBuild = isJenkinsBuild && isMono
+let skipBuild = false // isJenkinsBuild && isMono
 
 Target "Clean" (fun _ ->
   if not skipBuild then
