@@ -484,36 +484,34 @@ module internal Impl =
 #endif
         fields
 
-    let getTupleConstructorMethod(typ:Type,bindingFlags) =
+    let getTupleConstructorMethod (typ:Type) =
         let ctor =
             if typ.IsValueType then
-                let fields = typ.GetFields(bindingFlags) |> orderTupleFields
+                let fields = typ.GetFields (instanceFieldFlags ||| BindingFlags.Public) |> orderTupleFields
 #if FX_RESHAPED_REFLECTION
-                ignore bindingFlags
                 typ.GetConstructor(fields |> Array.map (fun fi -> fi.FieldType))
 #else
-                typ.GetConstructor(BindingFlags.Instance ||| bindingFlags,null,fields |> Array.map (fun fi -> fi.FieldType),null)
+                typ.GetConstructor(BindingFlags.Public ||| BindingFlags.Instance,null,fields |> Array.map (fun fi -> fi.FieldType),null)
 #endif
             else
                 let props = typ.GetProperties() |> orderTupleProperties
 #if FX_RESHAPED_REFLECTION
-                ignore bindingFlags
                 typ.GetConstructor(props |> Array.map (fun p -> p.PropertyType))
 #else
-                typ.GetConstructor(BindingFlags.Instance ||| bindingFlags,null,props |> Array.map (fun p -> p.PropertyType),null)
+                typ.GetConstructor(BindingFlags.Public ||| BindingFlags.Instance,null,props |> Array.map (fun p -> p.PropertyType),null)
 #endif
         match ctor with
         | null -> raise <| ArgumentException(String.Format(SR.GetString(SR.invalidTupleTypeConstructorNotDefined), typ.FullName))
         | _ -> ()
         ctor
 
-    let getTupleCtor(typ:Type,bindingFlags) =
-          let ctor = getTupleConstructorMethod(typ,bindingFlags)
+    let getTupleCtor(typ:Type) =
+          let ctor = getTupleConstructorMethod typ
           (fun (args:obj[]) ->
 #if FX_RESHAPED_REFLECTION   
               ctor.Invoke(args))
 #else
-              ctor.Invoke(BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| bindingFlags,null,args,null))
+              ctor.Invoke(BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public, null, args, null))
 #endif
 
     let rec getTupleReader (typ:Type) = 
@@ -521,7 +519,7 @@ module internal Impl =
         // Get the reader for the outer tuple record
         let reader =
             if typ.IsValueType then
-                let fields = (typ.GetFields(instanceFieldFlags ||| BindingFlags.Public) |> orderTupleFields)
+                let fields = (typ.GetFields (instanceFieldFlags ||| BindingFlags.Public) |> orderTupleFields)
                 ((fun (obj:obj) -> fields |> Array.map (fun field -> field.GetValue(obj))))
             else
                 let props = (typ.GetProperties(instancePropertyFlags ||| BindingFlags.Public) |> orderTupleProperties)
@@ -538,7 +536,7 @@ module internal Impl =
 
     let rec getTupleConstructor (typ:Type) = 
         let etys = typ.GetGenericArguments() 
-        let maker1 =  getTupleCtor (typ,BindingFlags.Public)
+        let maker1 =  getTupleCtor typ
         if etys.Length < maxTuple 
         then maker1
         else
@@ -550,7 +548,7 @@ module internal Impl =
                 
     let getTupleConstructorInfo (typ:Type) = 
         let etys = typ.GetGenericArguments() 
-        let maker1 =  getTupleConstructorMethod (typ,BindingFlags.Public)
+        let maker1 =  getTupleConstructorMethod typ
         if etys.Length < maxTuple then
             maker1,None
         else
