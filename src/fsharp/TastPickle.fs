@@ -1817,7 +1817,7 @@ and p_ValData x st =
     p_ranges (match x.val_opt_data with | Some xx -> (if xx.val_repr_info.IsSome then Some(x.val_range, x.DefinitionRange) else None) | _ -> None) st
     p_typ x.val_type st
     p_int64 x.val_flags.PickledBits st
-    p_option p_member_info (match x.val_opt_data with | Some x -> x.val_member_info | _ -> None) st
+    p_option p_member_info x.val_member_info st
     p_attribs x.val_attribs st
     p_option p_ValReprInfo (match x.val_opt_data with | Some x -> x.val_repr_info | _ -> None) st
     p_string x.val_xmldocsig st
@@ -2131,18 +2131,18 @@ and u_ValData st =
           val_xmldoc= defaultArg x15 XmlDoc.Empty
           val_xmldocsig=x12
           val_access=x13
+          val_member_info=x8
           val_declaring_entity=x13b
           val_opt_data=None
         }
 
     res.val_opt_data <-
-        match x1z, x1a, x8, x10, x14 with
-        | None, None, None, None, None -> None
+        match x1z, x1a, x10, x14 with
+        | None, None, None, None -> None
         | _ -> 
             Some({ val_compiled_name=x1z
                    val_other_range=(match x1a with None -> None | Some(_,b) -> Some(b,true))
                    val_defn = None
-                   val_member_info=x8
                    val_repr_info=x10
                    val_const=x14 })
     res

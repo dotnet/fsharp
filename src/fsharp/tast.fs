@@ -2171,11 +2171,6 @@ and ValOptData =
       /// Used to implement [<ReflectedDefinition>]
       mutable val_defn: Expr option 
 
-      /// Is the value actually an instance method/property/event that augments 
-      /// a type, and if so what name does it take in the IL?
-      /// MUTABILITY: for unpickle linkage
-      mutable val_member_info: ValMemberInfo option
-
       // MUTABILITY CLEANUP: mutability of this field is used by 
       //     -- adjustAllUsesOfRecValue 
       //     -- TLR optimizations
@@ -2212,6 +2207,11 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
       /// How visible is this? 
       /// MUTABILITY: for unpickle linkage
       mutable val_access: Accessibility 
+
+      /// Is the value actually an instance method/property/event that augments 
+      /// a type, and if so what name does it take in the IL?
+      /// MUTABILITY: for unpickle linkage
+      mutable val_member_info: ValMemberInfo option
 
       /// Custom attributes attached to the value. These contain references to other values (i.e. constructors in types). Mutable to fixup  
       /// these value references after copying a collection of values. 
@@ -2329,10 +2329,7 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     ///
     /// Note, the value may still be (a) an extension member or (b) and abstract slot without
     /// a true body. These cases are often causes of bugs in the compiler.
-    member x.MemberInfo                 =
-        match x.val_opt_data with
-        | Some (x) -> x.val_member_info
-        | _ -> None
+    member x.MemberInfo                 = x.val_member_info
 
     /// Indicates if this is a member
     member x.IsMember                   = x.MemberInfo.IsSome
@@ -2586,12 +2583,12 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     member x.SetValReprInfo info                          = 
         match x.val_opt_data with
         | Some x -> x.val_repr_info <- info
-        | _ -> x.val_opt_data <- Some({ val_compiled_name = None; val_other_range = None; val_const = None; val_defn = None; val_member_info = None; val_repr_info = info })
+        | _ -> x.val_opt_data <- Some({ val_compiled_name = None; val_other_range = None; val_const = None; val_defn = None; val_repr_info = info })
     member x.SetType ty                                  = x.val_type <- ty
     member x.SetOtherRange m                              =
         match x.val_opt_data with
         | Some x -> x.val_other_range <- Some m
-        | _ -> x.val_opt_data <- Some({ val_compiled_name = None; val_other_range = Some m; val_const = None; val_defn = None; val_member_info = None; val_repr_info = None })
+        | _ -> x.val_opt_data <- Some({ val_compiled_name = None; val_other_range = Some m; val_const = None; val_defn = None; val_repr_info = None })
 
     /// Create a new value with empty, unlinked data. Only used during unpickling of F# metadata.
     static member NewUnlinked() : Val  = 
@@ -2601,6 +2598,7 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
           val_stamp           = Unchecked.defaultof<_>
           val_flags           = Unchecked.defaultof<_>
           val_access          = Unchecked.defaultof<_>
+          val_member_info     = Unchecked.defaultof<_>
           val_attribs         = Unchecked.defaultof<_>
           val_declaring_entity= Unchecked.defaultof<_>
           val_xmldoc          = Unchecked.defaultof<_>
@@ -2622,6 +2620,7 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
         x.val_stamp           <- tg.val_stamp        
         x.val_flags           <- tg.val_flags        
         x.val_access          <- tg.val_access       
+        x.val_member_info     <- tg.val_member_info  
         x.val_attribs         <- tg.val_attribs      
         x.val_declaring_entity<- tg.val_declaring_entity
         x.val_xmldoc          <- tg.val_xmldoc       
@@ -2632,10 +2631,9 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
             x.val_other_range     <- tg.val_other_range  
             x.val_const           <- tg.val_const        
             x.val_defn            <- tg.val_defn         
-            x.val_member_info     <- tg.val_member_info  
             x.val_repr_info       <- tg.val_repr_info    
         | Some _, None -> x.val_opt_data <- None
-        | None, Some tg -> x.val_opt_data <- Some({ val_compiled_name = tg.val_compiled_name; val_other_range = tg.val_other_range; val_const = tg.val_const; val_defn = tg.val_defn; val_member_info = tg.val_member_info; val_repr_info = tg.val_repr_info })
+        | None, Some tg -> x.val_opt_data <- Some({ val_compiled_name = tg.val_compiled_name; val_other_range = tg.val_other_range; val_const = tg.val_const; val_defn = tg.val_defn; val_repr_info = tg.val_repr_info })
         | None, None -> ()
 
     /// Indicates if a value is linked to backing data yet. Only used during unpickling of F# metadata.
@@ -5010,6 +5008,7 @@ let NewVal (logicalName:string,m:range,compiledName,ty,isMutable,isCompGen,arity
               val_declaring_entity= actualParent
               val_flags = ValFlags(recValInfo,baseOrThis,isCompGen,inlineInfo,isMutable,isModuleOrMemberBinding,isExtensionMember,isIncrClassSpecialMember,isTyFunc,allowTypeInst,isGeneratedEventVal)
               val_access=access
+              val_member_info=specialRepr
               val_attribs=attribs
               val_type = ty
               val_xmldoc = doc
@@ -5024,8 +5023,7 @@ let NewVal (logicalName:string,m:range,compiledName,ty,isMutable,isCompGen,arity
                    val_other_range=None
                    val_defn = None
                    val_repr_info=arity
-                   val_const=konst
-                   val_member_info=specialRepr })
+                   val_const=konst })
     res
 
 
