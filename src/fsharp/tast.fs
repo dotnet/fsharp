@@ -2156,7 +2156,7 @@ and ValLinkageFullKey(partialKey: ValLinkagePartialKey,  typeForLinkage:TType op
     /// The full type of the value for the purposes of linking. May be None for non-members, since they can't be overloaded.
     member x.TypeForLinkage = typeForLinkage
 
-and ValOptData =
+and ValOptionalData =
     {
       /// MUTABILITY: for unpickle linkage
       mutable val_compiled_name: string option
@@ -2179,6 +2179,10 @@ and ValOptData =
       // For example, we use mutability to replace the empty arity initially assumed with an arity garnered from the 
       // type-checked expression.  
       mutable val_repr_info: ValReprInfo option
+
+      /// How visible is this? 
+      /// MUTABILITY: for unpickle linkage
+      mutable val_access: Accessibility 
     }
 and ValData = Val
 and [<StructuredFormatDisplay("{LogicalName}")>]
@@ -2204,10 +2208,6 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
       /// See vflags section further below for encoding/decodings here 
       mutable val_flags: ValFlags
 
-      /// How visible is this? 
-      /// MUTABILITY: for unpickle linkage
-      mutable val_access: Accessibility 
-
       /// Is the value actually an instance method/property/event that augments 
       /// a type, and if so what name does it take in the IL?
       /// MUTABILITY: for unpickle linkage
@@ -2230,7 +2230,7 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
       /// XML documentation signature for the value
       mutable val_xmldocsig : string
       
-      mutable val_opt_data : ValOptData option } 
+      mutable val_opt_data : ValOptionalData option } 
 
     /// Range of the definition (implementation) of the value, used by Visual Studio 
     member x.DefinitionRange            = 
@@ -2258,12 +2258,15 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     member x.Type                       = x.val_type
 
     /// How visible is this value, function or member?
-    member x.Accessibility              = x.val_access
+    member x.Accessibility              = 
+        match x.val_opt_data with
+        | Some x -> x.val_access
+        | _ -> TAccess []
 
     /// The value of a value or member marked with [<LiteralAttribute>] 
     member x.LiteralValue               = 
         match x.val_opt_data with
-        | Some (x) -> x.val_const
+        | Some x -> x.val_const
         | _ -> None
 
     /// Records the "extra information" for a value compiled as a method.
@@ -2583,12 +2586,12 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     member x.SetValReprInfo info                          = 
         match x.val_opt_data with
         | Some x -> x.val_repr_info <- info
-        | _ -> x.val_opt_data <- Some({ val_compiled_name = None; val_other_range = None; val_const = None; val_defn = None; val_repr_info = info })
+        | _ -> x.val_opt_data <- Some({ val_compiled_name = None; val_other_range = None; val_const = None; val_defn = None; val_repr_info = info; val_access = TAccess [] })
     member x.SetType ty                                  = x.val_type <- ty
     member x.SetOtherRange m                              =
         match x.val_opt_data with
         | Some x -> x.val_other_range <- Some m
-        | _ -> x.val_opt_data <- Some({ val_compiled_name = None; val_other_range = Some m; val_const = None; val_defn = None; val_repr_info = None })
+        | _ -> x.val_opt_data <- Some({ val_compiled_name = None; val_other_range = Some m; val_const = None; val_defn = None; val_repr_info = None; val_access = TAccess [] })
 
     /// Create a new value with empty, unlinked data. Only used during unpickling of F# metadata.
     static member NewUnlinked() : Val  = 
@@ -2597,7 +2600,6 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
           val_type            = Unchecked.defaultof<_>
           val_stamp           = Unchecked.defaultof<_>
           val_flags           = Unchecked.defaultof<_>
-          val_access          = Unchecked.defaultof<_>
           val_member_info     = Unchecked.defaultof<_>
           val_attribs         = Unchecked.defaultof<_>
           val_declaring_entity= Unchecked.defaultof<_>
@@ -2619,7 +2621,6 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
         x.val_type            <- tg.val_type         
         x.val_stamp           <- tg.val_stamp        
         x.val_flags           <- tg.val_flags        
-        x.val_access          <- tg.val_access       
         x.val_member_info     <- tg.val_member_info  
         x.val_attribs         <- tg.val_attribs      
         x.val_declaring_entity<- tg.val_declaring_entity
@@ -2632,8 +2633,9 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
             x.val_const           <- tg.val_const        
             x.val_defn            <- tg.val_defn         
             x.val_repr_info       <- tg.val_repr_info    
+            x.val_access          <- tg.val_access       
         | Some _, None -> x.val_opt_data <- None
-        | None, Some tg -> x.val_opt_data <- Some({ val_compiled_name = tg.val_compiled_name; val_other_range = tg.val_other_range; val_const = tg.val_const; val_defn = tg.val_defn; val_repr_info = tg.val_repr_info })
+        | None, Some tg -> x.val_opt_data <- Some({ val_compiled_name = tg.val_compiled_name; val_other_range = tg.val_other_range; val_const = tg.val_const; val_defn = tg.val_defn; val_repr_info = tg.val_repr_info; val_access = tg.val_access })
         | None, None -> ()
 
     /// Indicates if a value is linked to backing data yet. Only used during unpickling of F# metadata.
@@ -5007,7 +5009,6 @@ let NewVal (logicalName:string,m:range,compiledName,ty,isMutable,isCompGen,arity
               val_range=m
               val_declaring_entity= actualParent
               val_flags = ValFlags(recValInfo,baseOrThis,isCompGen,inlineInfo,isMutable,isModuleOrMemberBinding,isExtensionMember,isIncrClassSpecialMember,isTyFunc,allowTypeInst,isGeneratedEventVal)
-              val_access=access
               val_member_info=specialRepr
               val_attribs=attribs
               val_type = ty
@@ -5016,14 +5017,15 @@ let NewVal (logicalName:string,m:range,compiledName,ty,isMutable,isCompGen,arity
               val_opt_data = None } 
 
     res.val_opt_data <-
-        match compiledName, arity, konst, specialRepr with
-        | None, None, None, None -> None
+        match compiledName, arity, konst, specialRepr, access with
+        | None, None, None, None, TAccess [] -> None
         | _ -> 
             Some({ val_compiled_name=(match compiledName with Some v when v <> logicalName -> compiledName | _ -> None)
                    val_other_range=None
                    val_defn = None
-                   val_repr_info=arity
-                   val_const=konst })
+                   val_repr_info = arity
+                   val_const = konst
+                   val_access = access })
     res
 
 

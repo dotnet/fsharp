@@ -1819,11 +1819,11 @@ and p_ValData x st =
     p_int64 x.val_flags.PickledBits st
     p_option p_member_info x.val_member_info st
     p_attribs x.val_attribs st
-    p_option p_ValReprInfo (match x.val_opt_data with | Some x -> x.val_repr_info | _ -> None) st
+    p_option p_ValReprInfo x.ValReprInfo st
     p_string x.val_xmldocsig st
-    p_access x.val_access st
+    p_access x.Accessibility st
     p_parentref x.val_declaring_entity st
-    p_option p_const (match x.val_opt_data with | Some x -> x.val_const | _ -> None) st
+    p_option p_const x.LiteralValue st
     if st.oInMem then
         p_used_space1 (p_xmldoc x.val_xmldoc) st
     else
@@ -2130,21 +2130,21 @@ and u_ValData st =
           val_attribs=x9
           val_xmldoc= defaultArg x15 XmlDoc.Empty
           val_xmldocsig=x12
-          val_access=x13
           val_member_info=x8
           val_declaring_entity=x13b
           val_opt_data=None
         }
 
     res.val_opt_data <-
-        match x1z, x1a, x10, x14 with
-        | None, None, None, None -> None
+        match x1z, x1a, x10, x14, x13 with
+        | None, None, None, None, TAccess [] -> None
         | _ -> 
             Some({ val_compiled_name=x1z
                    val_other_range=(match x1a with None -> None | Some(_,b) -> Some(b,true))
                    val_defn = None
                    val_repr_info=x10
-                   val_const=x14 })
+                   val_const=x14
+                   val_access=x13 })
     res
 
 and u_Val st = u_osgn_decl st.ivals u_ValData st 
