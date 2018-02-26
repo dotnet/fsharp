@@ -69,66 +69,65 @@ let buildVersion =
     else if isAppVeyorBuild then sprintf "%s-b%s" assemblyVersion AppVeyorEnvironment.BuildNumber
     else assemblyVersion
 
-let skipBuild = false // isJenkinsBuild && isMono
-
 Target "Clean" (fun _ ->
-  if not skipBuild then
-    CleanDir releaseDir
+    ()
+    //CleanDir releaseDir
 )
 
 Target "Restore" (fun _ ->
-  if not skipBuild then
-    runDotnet __SOURCE_DIRECTORY__ "restore FSharp.Compiler.Service/FSharp.Compiler.Service.sln -v n"
-    for p in (!! "./../packages.config") do
-        let result =
-            ExecProcess (fun info ->
-                info.FileName <- FullName @"./../.nuget/NuGet.exe"
-                info.WorkingDirectory <- FullName @"./.."
-                info.Arguments <- sprintf "restore %s -PackagesDirectory \"%s\" -ConfigFile \"%s\""   (FullName p) (FullName "./../packages") (FullName "./../NuGet.Config")) TimeSpan.MaxValue
-        if result <> 0 then failwithf "nuget restore %s failed" p
+    // We assume a paket restore has already been run
+    runDotnet __SOURCE_DIRECTORY__ "restore FSharp.Compiler.Service.sln -v n"
+    for p in [ "../packages.config" ] do
+        ExecProcess (fun info ->
+            info.FileName <- FullName @"./../.nuget/NuGet.exe"
+            info.WorkingDirectory <- FullName @"./.."
+            info.Arguments <- sprintf "restore %s -PackagesDirectory \"%s\" -ConfigFile \"%s\""   (FullName p) (FullName "./../packages") (FullName "./../NuGet.Config")) TimeSpan.MaxValue
+        |> assertExitCodeZero           
 )
 
 Target "BuildVersion" (fun _ ->
-  if not skipBuild then
     Shell.Exec("appveyor", sprintf "UpdateBuild -Version \"%s\"" buildVersion) |> ignore
 )
 
 Target "Build" (fun _ ->
-  if skipBuild then
-    try Directory.CreateDirectory("../Release/") |> ignore with _ -> ()
-    File.WriteAllText("../Release/nichts.txt", "nothing to see here, build was skipped until we knoow how to get an updated version of Mono installed on Jenkins")
-  else
-    runDotnet __SOURCE_DIRECTORY__ "build FSharp.Compiler.Service/FSharp.Compiler.Service.sln -v n  -c Release /maxcpucount:1"
+    // Currently needs to use 'msbuild' on Mono, because 'dotnet' doesn't know about Mono's copy of the reference assemblies for .NET Framework
+    if isMono then 
+        Shell.Exec("msbuild", "FSharp.Compiler.Service.sln /v:n /p:Configuration=Release") |> assertExitCodeZero
+    else 
+        runDotnet __SOURCE_DIRECTORY__ "build FSharp.Compiler.Service.sln -v n -c Release"
 )
 
 Target "Test" (fun _ ->
-  if not skipBuild then
+    // Test on net46.  Currently needs to use 'msbuild' on Mono because 'dotnet' doesn't know about Mono's copy of the reference assemblies for .NET Framework
+    if isMono then 
+        runCmdIn __SOURCE_DIRECTORY__ "../packages/NUnit.Console.3.0.0/tools/nunit3-console.exe" "../release/fcs/net46/FSharp.Compiler.Service.Tests.dll"
+    else 
+        runDotnet __SOURCE_DIRECTORY__ "test FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -v n -c Release -f net46"
+
+    // This project file is used for the netcoreapp2.0 tests to work out reference sets
     runDotnet __SOURCE_DIRECTORY__ "restore ../tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0/Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj -v n"
     runDotnet __SOURCE_DIRECTORY__ "build ../tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0/Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj -v n"
-    runDotnet __SOURCE_DIRECTORY__ "test FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -v n -c Release /maxcpucount:1"
+
+    // Test on netcoreapp2.0
+    runDotnet __SOURCE_DIRECTORY__ "test FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -v n -c Release -f netcoreapp2.0"
 )
 
-
 Target "NuGet" (fun _ ->
-  if not skipBuild then
-    runDotnet __SOURCE_DIRECTORY__ "build FSharp.Compiler.Service.ProjectCrackerTool/FSharp.Compiler.Service.ProjectCrackerTool.fsproj -v n -c Release /maxcpucount:1"
-    runDotnet __SOURCE_DIRECTORY__ "pack FSharp.Compiler.Service/FSharp.Compiler.Service.fsproj -v n -c Release /maxcpucount:1"
-    runDotnet __SOURCE_DIRECTORY__ "pack FSharp.Compiler.Service.ProjectCracker/FSharp.Compiler.Service.ProjectCracker.fsproj -v n -c Release /maxcpucount:1"
-    runDotnet __SOURCE_DIRECTORY__ "pack FSharp.Compiler.Service.MSBuild.v12/FSharp.Compiler.Service.MSBuild.v12.fsproj -v n -c Release /maxcpucount:1"
+    if isMono then 
+        Shell.Exec("msbuild", "FSharp.Compiler.Service.sln /v:n /p:Configuration=Release /t:Pack") |> assertExitCodeZero
+    else
+        runDotnet __SOURCE_DIRECTORY__ "pack FSharp.Compiler.Service.sln -v n -c Release"
 )
 
 Target "GenerateDocsEn" (fun _ ->
-  if not skipBuild then
     executeFSIWithArgs "docsrc/tools" "generate.fsx" [] [] |> ignore
 )
 
 Target "GenerateDocsJa" (fun _ ->
-  if not skipBuild then
     executeFSIWithArgs "docsrc/tools" "generate.ja.fsx" [] [] |> ignore
 )
 
 Target "PublishNuGet" (fun _ ->
-  if not skipBuild then
     Paket.Push (fun p ->
         let apikey =
             match getBuildParam "nuget-apikey" with
