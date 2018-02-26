@@ -2183,6 +2183,10 @@ and ValOptionalData =
       /// How visible is this? 
       /// MUTABILITY: for unpickle linkage
       mutable val_access: Accessibility 
+
+      /// XML documentation attached to a value.
+      /// MUTABILITY: for unpickle linkage
+      mutable val_xmldoc : XmlDoc 
     }
 and ValData = Val
 and [<StructuredFormatDisplay("{LogicalName}")>]
@@ -2222,10 +2226,6 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
       //
       // The fresh temporary should just be created with the right parent
       mutable val_declaring_entity: ParentRef
-
-      /// XML documentation attached to a value.
-      /// MUTABILITY: for unpickle linkage
-      mutable val_xmldoc : XmlDoc 
       
       /// XML documentation signature for the value
       mutable val_xmldocsig : string
@@ -2419,7 +2419,10 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     member x.Attribs                    = x.val_attribs
 
     /// Get the declared documentation for the value
-    member x.XmlDoc                     = x.val_xmldoc
+    member x.XmlDoc                     =
+        match x.val_opt_data with
+        | Some x -> x.val_xmldoc
+        | _ -> XmlDoc.Empty
     
     ///Get the signature for the value's XML documentation
     member x.XmlDocSig 
@@ -2586,12 +2589,12 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     member x.SetValReprInfo info                          = 
         match x.val_opt_data with
         | Some x -> x.val_repr_info <- info
-        | _ -> x.val_opt_data <- Some({ val_compiled_name = None; val_other_range = None; val_const = None; val_defn = None; val_repr_info = info; val_access = TAccess [] })
+        | _ -> x.val_opt_data <- Some({ val_compiled_name = None; val_other_range = None; val_const = None; val_defn = None; val_repr_info = info; val_access = TAccess []; val_xmldoc = XmlDoc [||] })
     member x.SetType ty                                  = x.val_type <- ty
     member x.SetOtherRange m                              =
         match x.val_opt_data with
         | Some x -> x.val_other_range <- Some m
-        | _ -> x.val_opt_data <- Some({ val_compiled_name = None; val_other_range = Some m; val_const = None; val_defn = None; val_repr_info = None; val_access = TAccess [] })
+        | _ -> x.val_opt_data <- Some({ val_compiled_name = None; val_other_range = Some m; val_const = None; val_defn = None; val_repr_info = None; val_access = TAccess []; val_xmldoc = XmlDoc [||] })
 
     /// Create a new value with empty, unlinked data. Only used during unpickling of F# metadata.
     static member NewUnlinked() : Val  = 
@@ -2603,7 +2606,6 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
           val_member_info     = Unchecked.defaultof<_>
           val_attribs         = Unchecked.defaultof<_>
           val_declaring_entity= Unchecked.defaultof<_>
-          val_xmldoc          = Unchecked.defaultof<_>
           val_xmldocsig       = Unchecked.defaultof<_>
           val_opt_data        = Unchecked.defaultof<_> }
 
@@ -2624,7 +2626,6 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
         x.val_member_info     <- tg.val_member_info  
         x.val_attribs         <- tg.val_attribs      
         x.val_declaring_entity<- tg.val_declaring_entity
-        x.val_xmldoc          <- tg.val_xmldoc       
         x.val_xmldocsig       <- tg.val_xmldocsig    
         match x.val_opt_data,tg.val_opt_data with
         | Some x, Some tg ->
@@ -2634,8 +2635,9 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
             x.val_defn            <- tg.val_defn         
             x.val_repr_info       <- tg.val_repr_info    
             x.val_access          <- tg.val_access       
+            x.val_xmldoc          <- tg.val_xmldoc       
         | Some _, None -> x.val_opt_data <- None
-        | None, Some tg -> x.val_opt_data <- Some({ val_compiled_name = tg.val_compiled_name; val_other_range = tg.val_other_range; val_const = tg.val_const; val_defn = tg.val_defn; val_repr_info = tg.val_repr_info; val_access = tg.val_access })
+        | None, Some tg -> x.val_opt_data <- Some({ val_compiled_name = tg.val_compiled_name; val_other_range = tg.val_other_range; val_const = tg.val_const; val_defn = tg.val_defn; val_repr_info = tg.val_repr_info; val_access = tg.val_access; val_xmldoc = tg.val_xmldoc })
         | None, None -> ()
 
     /// Indicates if a value is linked to backing data yet. Only used during unpickling of F# metadata.
@@ -5012,20 +5014,20 @@ let NewVal (logicalName:string,m:range,compiledName,ty,isMutable,isCompGen,arity
               val_member_info=specialRepr
               val_attribs=attribs
               val_type = ty
-              val_xmldoc = doc
               val_xmldocsig = ""
               val_opt_data = None } 
 
     res.val_opt_data <-
-        match compiledName, arity, konst, specialRepr, access with
-        | None, None, None, None, TAccess [] -> None
+        match compiledName, arity, konst, access, doc with
+        | None, None, None, TAccess [], XmlDoc [||] -> None
         | _ -> 
             Some({ val_compiled_name=(match compiledName with Some v when v <> logicalName -> compiledName | _ -> None)
                    val_other_range=None
                    val_defn = None
                    val_repr_info = arity
                    val_const = konst
-                   val_access = access })
+                   val_access = access
+                   val_xmldoc = doc })
     res
 
 
