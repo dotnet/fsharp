@@ -3,6 +3,7 @@
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\src</FSharpSourcesRoot>
   </PropertyGroup>
   <Import Project="..\fcs.props" />
+  <Import Project="..\netfx.props" />
   <PropertyGroup>
     <TargetFrameworks>net45;netstandard2.0</TargetFrameworks>
     <DefineConstants>$(DefineConstants);COMPILER_SERVICE_AS_DLL</DefineConstants>
@@ -642,6 +643,8 @@
     <PackageReference Include="FSharp.Core" Version="4.1.*" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net45'">
+    <Reference Include="System.Runtime, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="System.IO, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="Microsoft.DiaSymReader.PortablePdb">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.DiaSymReader.PortablePdb.1.2.0\lib\portable-net45+win8\Microsoft.DiaSymReader.PortablePdb.dll</HintPath>

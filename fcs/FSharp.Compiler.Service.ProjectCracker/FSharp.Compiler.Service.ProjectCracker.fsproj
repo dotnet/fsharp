@@ -3,6 +3,7 @@
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\src</FSharpSourcesRoot>
   </PropertyGroup>
   <Import Project="..\fcs.props" />
+  <Import Project="..\netfx.props" />
   <PropertyGroup>
     <TargetFrameworks>net45</TargetFrameworks>
     <OutputPath>..\..\$(Configuration.ToLower())\fcs</OutputPath>

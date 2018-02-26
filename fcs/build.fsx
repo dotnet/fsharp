@@ -70,8 +70,7 @@ let buildVersion =
     else assemblyVersion
 
 Target "Clean" (fun _ ->
-    ()
-    //CleanDir releaseDir
+    CleanDir releaseDir
 )
 
 Target "Restore" (fun _ ->
@@ -90,33 +89,20 @@ Target "BuildVersion" (fun _ ->
 )
 
 Target "Build" (fun _ ->
-    // Currently needs to use 'msbuild' on Mono, because 'dotnet' doesn't know about Mono's copy of the reference assemblies for .NET Framework
-    if isMono then 
-        Shell.Exec("msbuild", "FSharp.Compiler.Service.sln /v:n /p:Configuration=Release") |> assertExitCodeZero
-    else 
-        runDotnet __SOURCE_DIRECTORY__ "build FSharp.Compiler.Service.sln -v n -c Release"
+    runDotnet __SOURCE_DIRECTORY__ "build FSharp.Compiler.Service.sln -v n -c Release"
 )
 
 Target "Test" (fun _ ->
-    // Test on net46.  Currently needs to use 'msbuild' on Mono because 'dotnet' doesn't know about Mono's copy of the reference assemblies for .NET Framework
-    if isMono then 
-        runCmdIn __SOURCE_DIRECTORY__ "../packages/NUnit.Console.3.0.0/tools/nunit3-console.exe" "../release/fcs/net46/FSharp.Compiler.Service.Tests.dll"
-    else 
-        runDotnet __SOURCE_DIRECTORY__ "test FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -v n -c Release -f net46"
-
     // This project file is used for the netcoreapp2.0 tests to work out reference sets
     runDotnet __SOURCE_DIRECTORY__ "restore ../tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0/Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj -v n"
     runDotnet __SOURCE_DIRECTORY__ "build ../tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0/Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj -v n"
 
-    // Test on netcoreapp2.0
-    runDotnet __SOURCE_DIRECTORY__ "test FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -v n -c Release -f netcoreapp2.0"
+    // Now run the tests
+    runDotnet __SOURCE_DIRECTORY__ "test FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -v n -c Release"
 )
 
 Target "NuGet" (fun _ ->
-    if isMono then 
-        Shell.Exec("msbuild", "FSharp.Compiler.Service.sln /v:n /p:Configuration=Release /t:Pack") |> assertExitCodeZero
-    else
-        runDotnet __SOURCE_DIRECTORY__ "pack FSharp.Compiler.Service.sln -v n -c Release"
+    runDotnet __SOURCE_DIRECTORY__ "pack FSharp.Compiler.Service.sln -v n -c Release"
 )
 
 Target "GenerateDocsEn" (fun _ ->
@@ -141,11 +127,12 @@ Target "PublishNuGet" (fun _ ->
 // --------------------------------------------------------------------------------------
 // Run all targets by default. Invoke 'build <Target>' to override
 
+Target "Start" DoNothing
 Target "Release" DoNothing
 Target "GenerateDocs" DoNothing
 Target "TestAndNuGet" DoNothing
 
-"Clean"
+"Start"
   =?> ("BuildVersion", isAppVeyorBuild)
   ==> "Restore"
   ==> "Build"

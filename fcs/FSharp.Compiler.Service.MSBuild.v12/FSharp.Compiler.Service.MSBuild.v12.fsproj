@@ -3,6 +3,7 @@
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\src</FSharpSourcesRoot>
   </PropertyGroup>
   <Import Project="..\fcs.props" />
+  <Import Project="..\netfx.props" />
   <PropertyGroup>
     <TargetFrameworks>net45</TargetFrameworks>
     <OutputPath>..\..\$(Configuration.ToLower())\fcs</OutputPath>
@@ -23,7 +24,6 @@
     <Compile Include="..\..\src\fsharp\MSBuildReferenceResolver.fs">
       <Link>Service/MSBuildReferenceResolver.fs</Link>
     </Compile>
-    <PackageReference Include="FSharp.Core" Version="4.1.*" />
     <Reference Include="Microsoft.Build.Framework, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\fcs\dependencies\MSBuild.v12.0\Microsoft.Build.Framework.dll</HintPath>
       <Private>false</Private>
