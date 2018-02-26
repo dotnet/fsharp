@@ -13,7 +13,7 @@ Copyright (C) Microsoft Corporation. All Rights Reserved.
 
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <PrepareForBuildDependsOn>ProcessFsSrGen;$(PrepareForBuildDependsOn)</PrepareForBuildDependsOn>
+    <ResGenDependsOn>ProcessFsSrGen;$(ResGenDependsOn)</ResGenDependsOn>
   </PropertyGroup>
 
   <!-- Build FsSrGen files. -->

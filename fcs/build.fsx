@@ -63,8 +63,6 @@ let isJenkinsBuild = buildServer = BuildServer.Jenkins
 let isVersionTag tag = Version.TryParse tag |> fst
 let hasRepoVersionTag = isAppVeyorBuild && AppVeyorEnvironment.RepoTag && isVersionTag AppVeyorEnvironment.RepoTagName
 let assemblyVersion = if hasRepoVersionTag then AppVeyorEnvironment.RepoTagName else release.NugetVersion
-let nugetVersion = release.NugetVersion
-open SemVerHelper
 
 let buildVersion =
     if hasRepoVersionTag then assemblyVersion
@@ -80,11 +78,8 @@ Target "Clean" (fun _ ->
 
 Target "Restore" (fun _ ->
   if not skipBuild then
-    runDotnet __SOURCE_DIRECTORY__ "restore FSharp.Compiler.Service/FSharp.Compiler.Service.fsproj -v n"
-    runDotnet __SOURCE_DIRECTORY__ "restore FSharp.Compiler.Service.ProjectCrackerTool/FSharp.Compiler.Service.ProjectCrackerTool.fsproj -v n"
-    runDotnet __SOURCE_DIRECTORY__ "restore FSharp.Compiler.Service.ProjectCracker/FSharp.Compiler.Service.ProjectCracker.fsproj -v n"
-    runDotnet __SOURCE_DIRECTORY__ "restore FSharp.Compiler.Service.MSBuild.v12/FSharp.Compiler.Service.MSBuild.v12.fsproj -v n"
-    for p in (!! "./../**/packages.config") do
+    runDotnet __SOURCE_DIRECTORY__ "restore FSharp.Compiler.Service/FSharp.Compiler.Service.sln -v n"
+    for p in (!! "./../packages.config") do
         let result =
             ExecProcess (fun info ->
                 info.FileName <- FullName @"./../.nuget/NuGet.exe"
@@ -103,7 +98,7 @@ Target "Build" (fun _ ->
     try Directory.CreateDirectory("../Release/") |> ignore with _ -> ()
     File.WriteAllText("../Release/nichts.txt", "nothing to see here, build was skipped until we knoow how to get an updated version of Mono installed on Jenkins")
   else
-    runDotnet __SOURCE_DIRECTORY__ "build FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -v n -c Release /maxcpucount:1"
+    runDotnet __SOURCE_DIRECTORY__ "build FSharp.Compiler.Service/FSharp.Compiler.Service.sln -v n  -c Release /maxcpucount:1"
 )
 
 Target "Test" (fun _ ->

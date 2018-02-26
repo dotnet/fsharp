@@ -18,6 +18,7 @@
     <Tailcalls>true</Tailcalls>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- <UseStandardResourceNames>true</UseStandardResourceNames> -->
   </PropertyGroup>
   <PropertyGroup>
     <Summary>The F# compiler as library. For editors, for tools, for scripting. For you.</Summary>

@@ -5,10 +5,9 @@
   <Import Project="..\fcs.props" />
   <PropertyGroup>
     <TargetFrameworks>net46;netcoreapp2.0</TargetFrameworks>
-    <!-- <DefineConstants>$(DefineConstants);NETCOREAPP2_0</DefineConstants> -->
     <NoWarn>$(NoWarn);44;</NoWarn>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <DelaySign>true</DelaySign>
+    <DebugType>portable</DebugType>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <OutputPath>..\..\$(Configuration.ToLower())\fcs</OutputPath>
   </PropertyGroup>
@@ -65,17 +64,17 @@
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\Program.fs" Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
       <Link>Program.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\Program.fs" Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
+      <Link>Program.fs</Link>
+    </Compile>
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.6.0" />
     <PackageReference Include="NUnit" Version="3.9.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.9.0" />
     <PackageReference Include="Dotnet.ProjInfo" Version="0.9.0" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
-    <PackageReference Include="FSharp.Core" Version="4.2.3" />
+    <ProjectReference Include="..\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net46'">
     <Reference Include="mscorlib" />
@@ -91,7 +90,7 @@
     <Reference Include="System.Xaml" />
     <Reference Include="WindowsBase" />
     <Reference Include="UIAutomationTypes" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\..\tests\service\data\CSharp_Analysis\CSharp_Analysis.csproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\..\fcs\FSharp.Compiler.Service.ProjectCracker\FSharp.Compiler.Service.ProjectCracker.fsproj" />
+    <ProjectReference Include="..\..\tests\service\data\CSharp_Analysis\CSharp_Analysis.csproj" />
+    <ProjectReference Include="..\FSharp.Compiler.Service.ProjectCracker\FSharp.Compiler.Service.ProjectCracker.fsproj" />
   </ItemGroup>
 </Project>
