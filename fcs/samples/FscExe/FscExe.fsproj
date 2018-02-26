@@ -4,6 +4,7 @@
   <PropertyGroup>
     <TargetFrameworks>net46</TargetFrameworks>
     <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
     <DefineConstants>$(DefineConstants);RESIDENT_COMPILER</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
