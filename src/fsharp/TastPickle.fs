@@ -1814,7 +1814,7 @@ and p_ValData x st =
     p_string x.val_logical_name st
     p_option p_string (match x.val_opt_data with | Some x -> x.val_compiled_name | _ -> None) st
     // only keep range information on published values, not on optimization data
-    p_ranges (match x.val_opt_data with | Some xx -> (if xx.val_repr_info.IsSome then Some(x.val_range, x.DefinitionRange) else None) | _ -> None) st
+    p_ranges (if x.ValReprInfo.IsSome then Some(x.val_range, x.DefinitionRange) else None) st
     p_typ x.val_type st
     p_int64 x.val_flags.PickledBits st
     p_option p_member_info x.val_member_info st

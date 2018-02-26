@@ -4632,10 +4632,10 @@ and remapValReprInfo g tmenv (ValReprInfo(tpNames, arginfosl, retInfo)) =
 
 and remapValData g tmenv (d: ValData) =
     let ty = d.val_type
-    let topValInfo = match d.val_opt_data with | Some d -> d.val_repr_info | _ -> None
+    let topValInfo = d.ValReprInfo
     let ty' = ty |> remapPossibleForallTy g tmenv
     let val_declaring_entity = d.val_declaring_entity |> remapParentRef tmenv
-    let val_repr_info = (match d.val_opt_data with | Some d -> d.val_repr_info | _ -> None) |> Option.map (remapValReprInfo g tmenv)
+    let val_repr_info = d.ValReprInfo |> Option.map (remapValReprInfo g tmenv)
     let val_member_info = d.val_member_info |> Option.map (remapMemberInfo g d.val_range topValInfo ty ty' tmenv)
     let val_attribs = d.val_attribs |> remapAttribs g tmenv
     { d with 
