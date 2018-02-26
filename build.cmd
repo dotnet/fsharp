@@ -64,7 +64,6 @@ set BUILD_FROMSOURCE=0
 set BUILD_VS=0
 set BUILD_FCS=0
 set BUILD_CONFIG=release
-set BUILD_CONFIG_LOWERCASE=release
 set BUILD_DIAG=
 set BUILD_PUBLICSIGN=0
 
@@ -75,6 +74,7 @@ set TEST_NET40_FSHARPQA_SUITE=0
 set TEST_CORECLR_COREUNIT_SUITE=0
 set TEST_CORECLR_FSHARP_SUITE=0
 set TEST_VS_IDEUNIT_SUITE=0
+set TEST_FCS=0
 set INCLUDE_TEST_SPEC_NUNIT=
 set INCLUDE_TEST_TAGS=
 
@@ -114,6 +114,10 @@ if /i "%_autoselect_tests%" == "1" (
         set TEST_NET40_COREUNIT_SUITE=1
         set TEST_NET40_FSHARP_SUITE=1
         set TEST_NET40_FSHARPQA_SUITE=1
+    )
+
+    if /i "%BUILD_FCS%" == "1" (
+        set TEST_FCS=1
     )
 
     if /i "%BUILD_CORECLR%" == "1" (
@@ -236,20 +240,22 @@ REM These divide "ci" into three chunks which can be done in parallel
 if /i "%ARG%" == "ci_part1" (
     set _autoselect=0
 
-    REM what we do
+    REM what we do - build and test Visual F# Tools, including setup and nuget
     set BUILD_PROTO=1
+    set BUILD_NUGET=1
     set BUILD_NET40=1
     set BUILD_NET40_FSHARP_CORE=1
     set BUILD_VS=1
-    set BUILD_FCS=1
     set TEST_VS_IDEUNIT_SUITE=1
+    set BUILD_CORECLR=1
+    set BUILD_SETUP=%FSC_BUILD_SETUP%
     set CI=1
 )
 
 if /i "%ARG%" == "ci_part2" (
     set _autoselect=0
 
-    REM what we do
+    REM what we do - test F# on .NET Framework
     set BUILD_PROTO=1
     set BUILD_NET40=1
     set BUILD_NET40_FSHARP_CORE=1
@@ -263,17 +269,28 @@ if /i "%ARG%" == "ci_part2" (
 if /i "%ARG%" == "ci_part3" (
     set _autoselect=0
 
-    REM what we do
+    REM what we do: test F# on Core CLR: nuget requires coreclr, fcs requires coreclr
     set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_PROTO=1
     set BUILD_CORECLR=1
     set BUILD_NET40_FSHARP_CORE=1
-    set BUILD_NUGET=1
     set BUILD_NET40=1
-    set BUILD_VS=1
-    set BUILD_SETUP=%FSC_BUILD_SETUP%
     set TEST_CORECLR_FSHARP_SUITE=1
     set TEST_CORECLR_COREUNIT_SUITE=1
+    set CI=1
+)
+
+if /i "%ARG%" == "ci_part4" (
+    set _autoselect=0
+
+    REM what we do: test F# on Core CLR: nuget requires coreclr, fcs requires coreclr
+    set BUILD_PROTO_WITH_CORECLR_LKG=1
+    set BUILD_PROTO=1
+    set BUILD_CORECLR=1
+    set BUILD_NET40_FSHARP_CORE=1
+    set BUILD_NET40=1
+    set BUILD_FCS=1
+    set TEST_FCS=1
     set CI=1
 )
 
@@ -335,6 +352,7 @@ if /i "%ARG%" == "test-all" (
     set TEST_NET40_FSHARPQA_SUITE=1
     set TEST_CORECLR_COREUNIT_SUITE=1
     set TEST_VS_IDEUNIT_SUITE=1
+    set TEST_FCS=1
 )
 
 if /i "%ARG%" == "test-net40-fsharpqa" (
@@ -379,6 +397,12 @@ if /i "%ARG%" == "test-net40-fsharp" (
     set TEST_NET40_FSHARP_SUITE=1
 )
 
+if /i "%ARG%" == "test-fcs" (
+    set _autoselect=0
+    set BUILD_FCS=1
+    set TEST_FCS=1
+)
+
 if /i "%ARG%" == "test-coreclr-fsharp" (
     set _autoselect=0
     set BUILD_NET40=1
@@ -419,6 +443,23 @@ if /i "%PB_SKIPTESTS%" == "true" (
     set TEST_VS_IDEUNIT_SUITE=0
 )
 
+if /i "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
+    set NEEDS_DOTNET_CLI_TOOLS=1
+)
+
+if /i "%BUILD_CORECLR%" == "1" (
+    set NEEDS_DOTNET_CLI_TOOLS=1
+)
+
+if /i "%BUILD_FROMSOURCE%" == "1" (
+    set NEEDS_DOTNET_CLI_TOOLS=1
+)
+
+if /i "%BUILD_FCS%" == "1" (
+    set NEEDS_DOTNET_CLI_TOOLS=1
+)
+
+
 echo Build/Tests configuration:
 echo.
 echo BUILD_PROTO=%BUILD_PROTO%
@@ -438,6 +479,7 @@ echo PB_SKIPTESTS=%PB_SKIPTESTS%
 echo PB_RESTORESOURCE=%PB_RESTORESOURCE%
 echo.
 echo SIGN_TYPE=%SIGN_TYPE%
+echo TEST_FCS=%TEST_FCS%
 echo TEST_NET40_COMPILERUNIT_SUITE=%TEST_NET40_COMPILERUNIT_SUITE%
 echo TEST_NET40_COREUNIT_SUITE=%TEST_NET40_COREUNIT_SUITE%
 echo TEST_NET40_FSHARP_SUITE=%TEST_NET40_FSHARP_SUITE%
@@ -557,13 +599,15 @@ if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 echo ---------------- Done with prepare, starting package restore ----------------
 
 set _nugetexe="%~dp0.nuget\NuGet.exe"
-set _nugetconfig="%~dp0.nuget\NuGet.Config"
+set _nugetconfig="%~dp0NuGet.Config"
 
 if "%RestorePackages%" == "true" (
-    cd fcs
-    .paket\paket.exe restore
-    cd..
-    @if ERRORLEVEL 1 echo Error: Paket restore failed  && goto :failure
+    if "%BUILD_FCS%" == "1" (
+      cd fcs
+      .paket\paket.exe restore
+      cd..
+      @if ERRORLEVEL 1 echo Error: Paket restore failed  && goto :failure
+    )
 
     %_ngenexe% install %_nugetexe%  /nologo
     set _nugetoptions=-PackagesDirectory packages -ConfigFile %_nugetconfig%
@@ -603,10 +647,21 @@ if "%RestorePackages%" == "true" (
     )
 )
 
-if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
+if "%NEEDS_DOTNET_CLI_TOOLS%" == "1" (
     :: Restore the Tools directory
     call %~dp0init-tools.cmd
 )
+set _dotnetcliexe=%~dp0Tools\dotnetcli\dotnet.exe
+set _dotnet20exe=%~dp0Tools\dotnet20\dotnet.exe
+set NUGET_PACKAGES=%~dp0Packages
+set path=%~dp0Tools\dotnet20\;%path%
+
+if "%NEEDS_DOTNET_CLI_TOOLS%" == "1" (
+    :: Restore projects using dotnet CLI tool 
+    echo %_dotnet20exe% restore -v:d build-everything.proj %msbuildflags% %BUILD_DIAG%
+         %_dotnet20exe% restore -v:d build-everything.proj %msbuildflags% %BUILD_DIAG%
+)
+
 
 echo ----------- Done with package restore, starting dependency uptake check -------------
 
@@ -673,12 +728,9 @@ if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
 echo ---------------- Done with package restore, starting proto ------------------------
 
 rem Decide if Proto need building
-if NOT EXIST Proto\net40\bin\fsc-proto.exe (
+if NOT EXIST Proto\net40\bin\fsc.exe (
   set BUILD_PROTO=1
 )
-
-set _dotnetexe=%~dp0Tools\dotnetcli\dotnet.exe
-set _architecture=win7-x64
 
 rem Build Proto
 if "%BUILD_PROTO%" == "1" (
@@ -701,16 +753,17 @@ if "%BUILD_PROTO%" == "1" (
     @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
   )
 
-  echo %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
-       %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
+  echo %_ngenexe% install Proto\net40\bin\fsc.exe /nologo 
+       %_ngenexe% install Proto\net40\bin\fsc.exe /nologo 
   @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
 )
 
 echo ---------------- Done with proto, starting build ------------------------
 
 if "%BUILD_PHASE%" == "1" (
-    echo %_msbuildexe% %msbuildflags% build-everything.proj /t:Restore
-         %_msbuildexe% %msbuildflags% build-everything.proj /t:Restore
+
+    echo %_msbuildexe% %msbuildflags% build-everything.proj /t:Restore %BUILD_DIAG%
+         %_msbuildexe% %msbuildflags% build-everything.proj /t:Restore %BUILD_DIAG%
 
     echo %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
          %_msbuildexe% %msbuildflags% build-everything.proj /p:Configuration=%BUILD_CONFIG% %BUILD_DIAG% /p:BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
@@ -815,7 +868,7 @@ echo SNEXE32:           %SNEXE32%
 echo SNEXE64:           %SNEXE64%
 echo
 
-if "%TEST_NET40_COMPILERUNIT_SUITE%" == "0" if "%TEST_NET40_COREUNIT_SUITE%" == "0" if "%TEST_CORECLR_COREUNIT_SUITE%" == "0" if "%TEST_VS_IDEUNIT_SUITE%" == "0" if "%TEST_NET40_FSHARP_SUITE%" == "0" if "%TEST_NET40_FSHARPQA_SUITE%" == "0" goto :success
+if "%TEST_NET40_COMPILERUNIT_SUITE%" == "0" if "%TEST_FCS%" == "0" if "%TEST_NET40_COREUNIT_SUITE%" == "0" if "%TEST_CORECLR_COREUNIT_SUITE%" == "0" if "%TEST_VS_IDEUNIT_SUITE%" == "0" if "%TEST_NET40_FSHARP_SUITE%" == "0" if "%TEST_NET40_FSHARPQA_SUITE%" == "0" goto :success
 
 if "%no_test%" == "1" goto :success
 
@@ -849,7 +902,7 @@ ECHO link_exe=%link_exe%
 ECHO NUNIT3_CONSOLE=%NUNIT3_CONSOLE%
 ECHO NUNITPATH=%NUNITPATH%
 
-REM ---------------- net40-fsharp  -----------------------
+REM ---------------- test-net40-fsharp  -----------------------
 
 if "%TEST_NET40_FSHARP_SUITE%" == "1" (
 
@@ -877,6 +930,32 @@ if "%TEST_NET40_FSHARP_SUITE%" == "1" (
     )
 )
 
+REM ---------------- test-fcs  -----------------------
+
+if "%TEST_FCS%" == "1" (
+
+    del /q fcs\FSharp.Compiler.Service.Tests\TestResults\*.trx
+    echo "!_dotnet20exe!" test fcs/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -c Release --logger:trx
+         "!_dotnet20exe!" test fcs/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -c Release --logger:trx
+
+    if errorlevel 1 (
+        type fcs\FSharp.Compiler.Service.Tests\TestResults\*.trx
+        echo -----------------------------------------------------------------
+        echo Error: Running FCS tests failed. See XML logging output above. Search for 'outcome="Failed"' or 'Failed '
+        echo .
+        echo Error: Note that tests were run with both .NET Core and .NET Framework.
+        echo Error: Try running tests locally and using 
+        echo .
+        echo    dotnet test fcs/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj -c Release --logger:trx
+        echo .
+        echo Error: and look for results in
+        echo .
+        echo    fcs\FSharp.Compiler.Service.Tests\TestResults\*.trx
+        echo .
+        echo -----------------------------------------------------------------
+        goto :failure
+    )
+)
 REM ---------------- net40-fsharpqa  -----------------------
 
 set OSARCH=%PROCESSOR_ARCHITECTURE%

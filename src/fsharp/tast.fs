@@ -980,9 +980,7 @@ type Entity =
     /// Indicates if this is a .NET-defined struct or enum type definition , i.e. a value type definition
     member x.IsILStructOrEnumTycon =
         x.IsILTycon && 
-        match x.ILTyconRawMetadata.tdKind with
-        | ILTypeDefKind.ValueType | ILTypeDefKind.Enum -> true
-        | _ -> false
+        x.ILTyconRawMetadata.IsStructOrEnum
 
     /// Indicates if this is a struct or enum type definition , i.e. a value type definition
     member x.IsStructOrEnumTycon = 

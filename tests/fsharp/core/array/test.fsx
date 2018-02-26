@@ -589,7 +589,6 @@ module Array2Tests = begin
 
 end
 
-#if !FSCORE_PORTABLE_OLD && !FSCORE_PORTABLE_NEW
 module ArrayNonZeroBasedTestsSlice = 
   let runTest () = 
     let arr = (Array2D.initBased 5 4 3 2 (fun i j -> (i,j)))
@@ -636,7 +635,6 @@ module ArrayNonZeroBasedTestsSlice =
     test "fewoih16" (arr3d.[5,5,3] =  (0,1,0))
     test "fewoih16" (arr3d.[6,5,3] =  (0,1,1))
   let _ = runTest()
-#endif
 
 module Array3Tests = begin
 
@@ -1409,7 +1407,7 @@ module bug872632 =
 
 module CheckUnionTypesAreSealed =
     open System
-#if FX_PORTABLE_OR_NETSTANDARD
+#if NETCOREAPP1_0
     open System.Reflection
     type System.Type with
         member this.IsSealed
@@ -1471,7 +1469,7 @@ module manyIndexes =
         0
 
 
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
 module bug6447 =
     let a = System.Array.CreateInstance(typeof<int>, [|1|], [|1|])
     let a1 = System.Array.CreateInstance(typeof<int>, [|1|], [|3|])

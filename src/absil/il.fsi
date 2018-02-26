@@ -6,6 +6,7 @@ module public Microsoft.FSharp.Compiler.AbstractIL.IL
 
 open Internal.Utilities
 open System.Collections.Generic
+open System.Reflection
 
 [<RequireQualifiedAccess>]
 type PrimaryAssembly = 
@@ -756,6 +757,7 @@ type ILNativeType =
     | LPSTR
     | LPWSTR
     | LPTSTR
+    | LPUTF8STR
     | ByValStr
     | TBSTR
     | LPSTRUCT
@@ -812,7 +814,6 @@ type ILMethodBody =
 [<RequireQualifiedAccess>]
 type ILMemberAccess = 
     | Assembly
-    | CompilerControlled
     | FamilyAndAssembly
     | FamilyOrAssembly
     | Family
@@ -1028,32 +1029,14 @@ type ILLazyMethodBody =
 [<NoComparison; NoEquality>]
 type ILMethodDef = 
     { Name: string;
-      mdKind: MethodKind;
+      Attributes: MethodAttributes;
+      ImplAttributes: MethodImplAttributes;
       CallingConv: ILCallingConv;
       Parameters: ILParameters;
       Return: ILReturn;
-      Access: ILMemberAccess;
       mdBody: ILLazyMethodBody;   
-      mdCodeKind: MethodCodeKind;   
-      IsInternalCall: bool;
-      IsManaged: bool;
-      IsForwardRef: bool;
       SecurityDecls: ILPermissions;
-      /// Some methods are marked "HasSecurity" even if there are no permissions attached, e.g. if they use SuppressUnmanagedCodeSecurityAttribute 
-      HasSecurity: bool; 
       IsEntryPoint:bool;
-      IsReqSecObj: bool;
-      IsHideBySig: bool;
-      IsSpecialName: bool;
-      /// The method is exported to unmanaged code using COM interop.
-      IsUnmanagedExport: bool; 
-      IsSynchronized: bool;
-      IsPreserveSig: bool;
-      /// .NET 2.0 feature: SafeHandle finalizer must be run.
-      IsMustRun: bool; 
-      IsNoInline: bool;
-      IsAggressiveInline: bool;
-     
       GenericParams: ILGenericParameterDefs;
       CustomAttrs: ILAttributes; }
       
@@ -1083,10 +1066,42 @@ type ILMethodDef =
     
     member IsFinal: bool
     member IsNewSlot: bool
-    member IsCheckAccessOnOverride : bool
+    member IsCheckAccessOnOverride: bool
     member IsAbstract: bool
-    member MethodBody : ILMethodBody
+    member MethodBody: ILMethodBody
     member CallingSignature: ILCallingSignature
+    member Access: ILMemberAccess
+    member IsHideBySig: bool
+    member IsSpecialName: bool
+    /// The method is exported to unmanaged code using COM interop.
+    member IsUnmanagedExport: bool
+    member IsReqSecObj: bool
+    /// Some methods are marked "HasSecurity" even if there are no permissions attached, e.g. if they use SuppressUnmanagedCodeSecurityAttribute 
+    member HasSecurity: bool
+    member IsManaged: bool
+    member IsForwardRef: bool
+    member IsInternalCall: bool
+    member IsPreserveSig: bool
+    member IsSynchronized: bool
+    member IsNoInline: bool
+    member IsAggressiveInline: bool
+    /// .NET 2.0 feature: SafeHandle finalizer must be run.
+    member IsMustRun: bool
+    
+    member WithSpecialName: ILMethodDef
+    member WithHideBySig: unit -> ILMethodDef
+    member WithHideBySig: bool -> ILMethodDef
+    member WithFinal: bool -> ILMethodDef
+    member WithAbstract: bool -> ILMethodDef
+    member WithAccess: ILMemberAccess -> ILMethodDef
+    member WithNewSlot: ILMethodDef
+    member WithSecurity: bool -> ILMethodDef
+    member WithPInvoke: bool -> ILMethodDef
+    member WithPreserveSig: bool -> ILMethodDef
+    member WithSynchronized: bool -> ILMethodDef
+    member WithNoInlining: bool -> ILMethodDef
+    member WithAggressiveInlining: bool -> ILMethodDef
+    member WithRuntime: bool -> ILMethodDef
 
 /// Tables of methods.  Logically equivalent to a list of methods but
 /// the table is kept in a form optimized for looking up methods by 
@@ -1105,18 +1120,27 @@ type ILMethodDefs =
 type ILFieldDef = 
     { Name: string;
       Type: ILType;
-      IsStatic: bool;
-      Access: ILMemberAccess;
+      Attributes: FieldAttributes;
       Data:  byte[] option;
       LiteralValue: ILFieldInit option;  
       /// The explicit offset in bytes when explicit layout is used.
       Offset:  int32 option; 
-      IsSpecialName: bool;
       Marshal: ILNativeType option; 
-      NotSerialized: bool;
-      IsLiteral: bool ;
-      IsInitOnly: bool;
       CustomAttrs: ILAttributes; }
+        member IsStatic: bool
+        member IsSpecialName: bool
+        member IsLiteral: bool
+        member NotSerialized: bool
+        member IsInitOnly: bool
+        member Access: ILMemberAccess
+        member WithAccess: ILMemberAccess -> ILFieldDef
+        member WithInitOnly: bool -> ILFieldDef
+        member WithStatic: bool -> ILFieldDef
+        member WithSpecialName: bool -> ILFieldDef
+        member WithNotSerialized: bool -> ILFieldDef
+        member WithLiteral: bool -> ILFieldDef
+        member WithHasDefault: bool -> ILFieldDef
+        member WithHasFieldMarshal: bool -> ILFieldDef
 
 /// Tables of fields.  Logically equivalent to a list of fields but
 /// the table is kept in a form optimized for looking up fields by 
@@ -1129,15 +1153,16 @@ type ILFieldDefs =
 /// Event definitions.
 [<NoComparison; NoEquality>]
 type ILEventDef =
-    { Type: ILType option; 
+    { Type: ILType option;
       Name: string;
-      IsRTSpecialName: bool;
-      IsSpecialName: bool;
+      Attributes: EventAttributes
       AddMethod: ILMethodRef; 
       RemoveMethod: ILMethodRef;
       FireMethod: ILMethodRef option;
       OtherMethods: ILMethodRef list;
       CustomAttrs: ILAttributes; }
+        member IsSpecialName : bool
+        member IsRTSpecialName : bool
 
 /// Table of those events in a type definition.
 [<NoEquality; NoComparison; Sealed>]
@@ -1149,8 +1174,7 @@ type ILEventDefs =
 [<NoComparison; NoEquality>]
 type ILPropertyDef =
     { Name: string;
-      IsRTSpecialName: bool;
-      IsSpecialName: bool;
+      Attributes: PropertyAttributes;
       SetMethod: ILMethodRef option;
       GetMethod: ILMethodRef option;
       CallingConv: ILThisConvention;
@@ -1158,6 +1182,8 @@ type ILPropertyDef =
       Init: ILFieldInit option;
       Args: ILTypes;
       CustomAttrs: ILAttributes; }
+        member IsSpecialName : bool
+        member IsRTSpecialName : bool
 
 /// Table of those properties in a type definition.
 [<NoEquality; NoComparison>]
@@ -1263,37 +1289,49 @@ type ILTypeDefs =
 /// have a very specific form.
 and [<NoComparison; NoEquality>]
     ILTypeDef =  
-    { tdKind: ILTypeDefKind;
-      Name: string;  
+    { Name: string;  
+      Attributes: TypeAttributes;
       GenericParams: ILGenericParameterDefs;  
-      Access: ILTypeDefAccess;  
-      IsAbstract: bool;
-      IsSealed: bool; 
-      IsSerializable: bool; 
-      /// Class or interface generated for COM interop. 
-      IsComInterop: bool; 
       Layout: ILTypeDefLayout;
-      IsSpecialName: bool;
-      Encoding: ILDefaultPInvokeEncoding;
       NestedTypes: ILTypeDefs;
       Implements: ILTypes;  
       Extends: ILType option; 
       Methods: ILMethodDefs;
       SecurityDecls: ILPermissions;
-      /// Some classes are marked "HasSecurity" even if there are no permissions attached, 
-      /// e.g. if they use SuppressUnmanagedCodeSecurityAttribute 
-      HasSecurity: bool; 
       Fields: ILFieldDefs;
       MethodImpls: ILMethodImplDefs;
-      InitSemantics: ILTypeInit;
       Events: ILEventDefs;
       Properties: ILPropertyDefs;
       CustomAttrs: ILAttributes; }
     member IsClass: bool;
+    member IsStruct: bool;
     member IsInterface: bool;
     member IsEnum: bool;
     member IsDelegate: bool;
     member IsStructOrEnum : bool
+    member Access: ILTypeDefAccess
+    member IsAbstract: bool
+    member IsSealed: bool
+    member IsSerializable: bool
+    /// Class or interface generated for COM interop. 
+    member IsComInterop: bool
+    member IsSpecialName: bool
+    /// Some classes are marked "HasSecurity" even if there are no permissions attached, 
+    /// e.g. if they use SuppressUnmanagedCodeSecurityAttribute 
+    member HasSecurity: bool
+    member Encoding: ILDefaultPInvokeEncoding;
+    member WithAccess: ILTypeDefAccess -> ILTypeDef
+    member WithNestedAccess: ILMemberAccess -> ILTypeDef
+    member WithSealed: bool -> ILTypeDef
+    member WithSerializable: bool -> ILTypeDef
+    member WithAbstract: bool -> ILTypeDef
+    member WithImport: bool -> ILTypeDef
+    member WithHasSecurity: bool -> ILTypeDef
+    member WithLayout: ILTypeDefLayout -> ILTypeDef
+    member WithKind: ILTypeDefKind -> ILTypeDef
+    member WithEncoding: ILDefaultPInvokeEncoding -> ILTypeDef
+    member WithSpecialName: bool -> ILTypeDef
+    member WithInitSemantics: ILTypeInit -> ILTypeDef
 
 [<NoEquality; NoComparison>]
 [<Sealed>]
@@ -1339,10 +1377,11 @@ type ILExportedTypeOrForwarder =
     { ScopeRef: ILScopeRef;
       /// [Namespace.]Name
       Name: string;
-      IsForwarder: bool;
-      Access: ILTypeDefAccess;
+      Attributes: TypeAttributes
       Nested: ILNestedExportedTypes;
-      CustomAttrs: ILAttributes } 
+      CustomAttrs: ILAttributes }
+    member Access: ILTypeDefAccess
+    member IsForwarder: bool
 
 [<NoEquality; NoComparison>]
 [<Sealed>]
@@ -1685,10 +1724,10 @@ val mkILClassCtor: MethodBody -> ILMethodDef
 val mkILNonGenericEmptyCtor: ILSourceMarker option -> ILType -> ILMethodDef
 val mkILStaticMethod: ILGenericParameterDefs * string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
 val mkILNonGenericStaticMethod: string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
-val mkILGenericVirtualMethod: string * ILMemberAccess * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody -> ILMethodDef
-val mkILGenericNonVirtualMethod: string * ILMemberAccess * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+val mkILGenericVirtualMethod: string * ILMemberAccess  * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+val mkILGenericNonVirtualMethod: string * ILMemberAccess  * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody -> ILMethodDef
 val mkILNonGenericVirtualMethod: string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
-val mkILNonGenericInstanceMethod: string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+val mkILNonGenericInstanceMethod: string * ILMemberAccess  * ILParameter list * ILReturn * MethodBody -> ILMethodDef
 
 
 /// Make field definitions.
@@ -1727,7 +1766,7 @@ val mkILStorageCtor: ILSourceMarker option * ILInstr list * ILType * (string * I
 val mkILSimpleStorageCtor: ILSourceMarker option * ILTypeSpec option * ILType * ILParameter list * (string * ILType) list * ILMemberAccess -> ILMethodDef
 val mkILSimpleStorageCtorWithParamNames: ILSourceMarker option * ILTypeSpec option * ILType * ILParameter list * (string * string * ILType) list * ILMemberAccess -> ILMethodDef
 
-val mkILDelegateMethods: ILGlobals -> ILType * ILType -> ILParameter list * ILReturn -> ILMethodDef list
+val mkILDelegateMethods: ILMemberAccess -> ILGlobals -> ILType * ILType -> ILParameter list * ILReturn -> ILMethodDef list
 
 /// Given a delegate type definition which lies in a particular scope, 
 /// make a reference to its constructor.
@@ -1785,6 +1824,7 @@ val emptyILTypeDefs: ILTypeDefs
 val mkILTypeDefsComputed: (unit -> (string list * string * ILAttributes * Lazy<ILTypeDef>) array) -> ILTypeDefs
 val addILTypeDef: ILTypeDef -> ILTypeDefs -> ILTypeDefs
 
+val mkTypeForwarder: ILScopeRef -> string -> ILNestedExportedTypes -> ILAttributes -> ILTypeDefAccess -> ILExportedTypeOrForwarder
 val mkILNestedExportedTypes: ILNestedExportedType list -> ILNestedExportedTypes
 val mkILNestedExportedTypesLazy: Lazy<ILNestedExportedType list> -> ILNestedExportedTypes
 

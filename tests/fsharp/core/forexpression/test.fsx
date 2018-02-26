@@ -109,7 +109,7 @@ let sumOverRange () =
 let sumOverString () =
     let mutable sum = 0
     for i in testString do
-#if FX_PORTABLE_OR_NETSTANDARD
+#if NETCOREAPP1_0
         sum <- sum + ((int (i :?> char)) - (int '0'))
 #else
         sum <- sum + ((int i) - (int '0'))

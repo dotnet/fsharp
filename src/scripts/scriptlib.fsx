@@ -107,7 +107,7 @@ module Scripting =
             processInfo.UseShellExecute <- false
             processInfo.WorkingDirectory <- workDir
 
-#if FX_PORTABLE_OR_NETSTANDARD
+#if NETSTANDARD1_6
             ignore envs  // work out what to do about this
 #else
             envs

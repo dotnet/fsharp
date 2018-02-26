@@ -415,16 +415,11 @@ module private PrintIL =
             | None     -> 
                 aboveListL body
 
-        match typeDef.tdKind with
-        | ILTypeDefKind.Class     
-        | ILTypeDefKind.ValueType 
-        | ILTypeDefKind.Interface -> 
+        if typeDef.IsClass || typeDef.IsStruct || typeDef.IsInterface then
             let pre = 
-                match typeDef.tdKind with
-                | ILTypeDefKind.Class     -> None
-                | ILTypeDefKind.ValueType -> Some WordL.keywordStruct
-                | ILTypeDefKind.Interface -> None
-                | _ -> failwith "unreachable"
+                if typeDef.IsStruct then Some WordL.keywordStruct
+                else None
+
             let baseT  = 
                 match typeDef.Extends with
                 | Some b -> 
@@ -434,15 +429,14 @@ module private PrintIL =
                         else []
                 | None   -> 
                     // for interface show inherited interfaces 
-                    match typeDef.tdKind with 
-                    | ILTypeDefKind.Interface ->
+                    if typeDef.IsInterface then 
                         typeDef.Implements |> List.choose (fun b -> 
                             let baseName = layoutILType denv ilTyparSubst b
                             if isShowBase baseName
                                 then Some (WordL.keywordInherit ^^ baseName)
                             else None
                         )
-                    | _ -> []
+                    else []
 
             let memberBlockLs (fieldDefs:ILFieldDefs, methodDefs:ILMethodDefs, propertyDefs:ILPropertyDefs, eventDefs:ILEventDefs) =
                 let ctors  =
@@ -509,7 +503,7 @@ module private PrintIL =
             let post   = WordL.keywordEnd
             renderL pre (baseT @ body @ types ) post
 
-        | ILTypeDefKind.Enum      -> 
+        elif typeDef.IsEnum then
             let fldsL = 
                 typeDef.Fields.AsList 
                 |> List.filter isShowEnumField 
@@ -518,7 +512,7 @@ module private PrintIL =
 
             renderL None fldsL emptyL
 
-        | ILTypeDefKind.Delegate  -> 
+        else // Delegate
             let rhs = 
                 match typeDef.Methods.AsList |> List.filter (fun m -> m.Name = "Invoke") with // the delegate delegates to the type of `Invoke`
                 | m :: _ -> layoutILCallingSignature denv ilTyparSubst None m.CallingSignature

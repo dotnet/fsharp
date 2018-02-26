@@ -685,7 +685,7 @@ module Combinator_Examples = begin
 
 end
 
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
 module XmlPattern_Examples = begin
 
 
@@ -813,7 +813,7 @@ module RandomTEst =
     type IEvenCooler =
         inherit ICool
     
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
 module RandomCodeFragment = 
     open System
 

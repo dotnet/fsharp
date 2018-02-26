@@ -1,5 +1,5 @@
 ﻿#if INTERACTIVE
-#r "../../Debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
 #r "../../Debug/net40/bin/FSharp.Compiler.Service.ProjectCracker.dll"
 #r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "FsUnit.fs"
@@ -19,7 +19,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler.Service.Tests.Common
 
-#if !NO_PROJECTCRACKER
+#if !NO_PROJECTCRACKER && DISABLED // Disabled tests because of MSBuild API dependencies.  The ProjectCracker is basically deprecated in any case
 
 let hasMSBuild14 =
   use engine = new Microsoft.Build.Evaluation.ProjectCollection()
@@ -236,12 +236,12 @@ let ``Project file parsing -- Logging``() =
   let _, logMap = ProjectCracker.GetProjectOptionsFromProjectFileLogged(projectFileName, enableLogging=true)
   let log = logMap.[projectFileName]
   
-  Assert.That(log, Is.StringContaining("ResolveAssemblyReference"))
+  Assert.That(log, Does.Contain("ResolveAssemblyReference"))
   if runningOnMono then
-    Assert.That(log, Is.StringContaining("System.Core"))
-    Assert.That(log, Is.StringContaining("Microsoft.Build.Tasks.ResolveAssemblyReference"))
+    Assert.That(log, Does.Contain("System.Core"))
+    Assert.That(log, Does.Contain("Microsoft.Build.Tasks.ResolveAssemblyReference"))
   else  
-    Assert.That(log, Is.StringContaining("Microsoft.Build.Tasks.Core"))
+    Assert.That(log, Does.Contain("Microsoft.Build.Tasks.Core"))
 
 [<Test>]
 let ``Project file parsing -- FSharpProjectOptions.SourceFiles contains both fs and fsi files``() =
@@ -520,6 +520,9 @@ let ``Test SourceFiles order for GetProjectOptionsFromScript`` () = // See #594
     test "MainBad" [|"MainBad"|] 
 
 [<Test>]
+#if NETCOREAPP2_0
+[<Ignore("SKIPPED: no project options cracker for .NET Core?")>]
+#endif
 let ``Script load closure project`` () =
     let fileName1 = Path.GetTempPath() + Path.DirectorySeparatorChar.ToString() + "Impl.fs"
     let fileName2 = Path.ChangeExtension(Path.GetTempFileName(), ".fsx")

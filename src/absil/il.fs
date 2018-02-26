@@ -16,6 +16,7 @@ open System.Collections
 open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Runtime.CompilerServices
+open System.Reflection
  
 let logging = false 
 
@@ -1090,7 +1091,6 @@ type ILMethodBody =
 [<RequireQualifiedAccess>]
 type ILMemberAccess = 
     | Assembly
-    | CompilerControlled
     | FamilyAndAssembly
     | FamilyOrAssembly
     | Family
@@ -1130,6 +1130,7 @@ type ILNativeType =
     | LPSTR
     | LPWSTR
     | LPTSTR
+    | LPUTF8STR
     | ByValStr
     | TBSTR
     | LPSTRUCT
@@ -1358,31 +1359,38 @@ type ILGenericParameterDef =
 
 type ILGenericParameterDefs = ILGenericParameterDef list
 
+let memberAccessOfFlags flags =
+    let f = (flags &&& 0x00000007)
+    if f = 0x00000001 then  ILMemberAccess.Private 
+    elif f = 0x00000006 then  ILMemberAccess.Public 
+    elif f = 0x00000004 then  ILMemberAccess.Family 
+    elif f = 0x00000002 then  ILMemberAccess.FamilyAndAssembly 
+    elif f = 0x00000005 then  ILMemberAccess.FamilyOrAssembly 
+    elif f = 0x00000003 then  ILMemberAccess.Assembly 
+    else failwith "impossible: the flags parameter value is come from enums MethodAttributes and FieldAttributes must have access flag"
+
+let convertMemberAccess (ilMemberAccess:ILMemberAccess) =
+    match ilMemberAccess with
+    | ILMemberAccess.Public              -> MethodAttributes.Public
+    | ILMemberAccess.Private             -> MethodAttributes.Private
+    | ILMemberAccess.Assembly            -> MethodAttributes.Assembly
+    | ILMemberAccess.FamilyAndAssembly   -> MethodAttributes.FamANDAssem
+    | ILMemberAccess.FamilyOrAssembly    -> MethodAttributes.FamORAssem
+    | ILMemberAccess.Family              -> MethodAttributes.Family
+
+let inline conditionalAdd condition flagToAdd source = if condition then source ||| flagToAdd else source &&& ~~~flagToAdd
+
 [<NoComparison; NoEquality>]
 type ILMethodDef = 
     { Name: string;
-      mdKind: MethodKind;
+      Attributes: MethodAttributes;
+      ImplAttributes: MethodImplAttributes;
       CallingConv: ILCallingConv;
       Parameters: ILParameters;
       Return: ILReturn;
-      Access: ILMemberAccess;
-      mdBody: ILLazyMethodBody;   
-      mdCodeKind: MethodCodeKind;   
-      IsInternalCall: bool;
-      IsManaged: bool;
-      IsForwardRef: bool;
+      mdBody: ILLazyMethodBody;
       SecurityDecls: ILPermissions;
-      HasSecurity: bool;
       IsEntryPoint:bool;
-      IsReqSecObj: bool;
-      IsHideBySig: bool;
-      IsSpecialName: bool;
-      IsUnmanagedExport: bool;
-      IsSynchronized: bool;
-      IsPreserveSig: bool;
-      IsMustRun: bool;
-      IsNoInline: bool;
-      IsAggressiveInline : bool
       GenericParams: ILGenericParameterDefs;
       CustomAttrs: ILAttributes; }
     member x.ParameterTypes = typesOfILParams x.Parameters
@@ -1400,19 +1408,52 @@ type ILMethodDef =
     member x.MaxStack     = x.MethodBody.MaxStack  
     member x.IsZeroInit   = x.MethodBody.IsZeroInit
 
-    member x.IsClassInitializer   = match x.mdKind with | MethodKind.Cctor      -> true | _ -> false
-    member x.IsConstructor        = match x.mdKind with | MethodKind.Ctor       -> true | _ -> false
-    member x.IsStatic             = match x.mdKind with | MethodKind.Static     -> true | _ -> false
-    member x.IsNonVirtualInstance = match x.mdKind with | MethodKind.NonVirtual -> true | _ -> false
-    member x.IsVirtual            = match x.mdKind with | MethodKind.Virtual _  -> true | _ -> false
-
-    member x.IsFinal                = match x.mdKind with | MethodKind.Virtual v -> v.IsFinal    | _ -> invalidOp "not virtual"
-    member x.IsNewSlot              = match x.mdKind with | MethodKind.Virtual v -> v.IsNewSlot  | _ -> invalidOp "not virtual"
-    member x.IsCheckAccessOnOverride= match x.mdKind with | MethodKind.Virtual v -> v.IsCheckAccessOnOverride   | _ -> invalidOp "not virtual"
-    member x.IsAbstract             = match x.mdKind with | MethodKind.Virtual v -> v.IsAbstract | _ -> invalidOp "not virtual"
-
     member md.CallingSignature =  mkILCallSig (md.CallingConv,md.ParameterTypes,md.Return.Type)
 
+    member x.IsClassInitializer   = x.Name = ".cctor"
+    member x.IsConstructor        = x.Name = ".ctor"
+
+    member x.Access                 = memberAccessOfFlags (int x.Attributes)
+    member x.IsStatic               = x.Attributes &&& MethodAttributes.Static <> enum 0
+    member x.IsNonVirtualInstance   = not x.IsStatic && not x.IsVirtual
+    member x.IsVirtual              = x.Attributes &&& MethodAttributes.Virtual <> enum 0
+    member x.IsFinal                = x.Attributes &&& MethodAttributes.Final <> enum 0
+    member x.IsNewSlot              = x.Attributes &&& MethodAttributes.NewSlot <> enum 0
+    member x.IsCheckAccessOnOverride= x.Attributes &&& MethodAttributes.CheckAccessOnOverride <> enum 0
+    member x.IsAbstract             = x.Attributes &&& MethodAttributes.Abstract <> enum 0
+    member x.IsHideBySig            = x.Attributes &&& MethodAttributes.HideBySig <> enum 0
+    member x.IsSpecialName          = x.Attributes &&& MethodAttributes.SpecialName <> enum 0
+    member x.IsUnmanagedExport      = x.Attributes &&& MethodAttributes.UnmanagedExport <> enum 0
+    member x.IsReqSecObj            = x.Attributes &&& MethodAttributes.RequireSecObject <> enum 0
+    member x.HasSecurity            = x.Attributes &&& MethodAttributes.HasSecurity <> enum 0
+
+    member x.IsManaged         = x.ImplAttributes &&& MethodImplAttributes.Managed <> enum 0
+    member x.IsForwardRef      = x.ImplAttributes &&& MethodImplAttributes.ForwardRef <> enum 0
+    member x.IsInternalCall    = x.ImplAttributes &&& MethodImplAttributes.InternalCall <> enum 0
+    member x.IsPreserveSig     = x.ImplAttributes &&& MethodImplAttributes.PreserveSig <> enum 0
+    member x.IsSynchronized    = x.ImplAttributes &&& MethodImplAttributes.Synchronized <> enum 0
+    member x.IsNoInline        = x.ImplAttributes &&& MethodImplAttributes.NoInlining <> enum 0
+    member x.IsAggressiveInline= x.ImplAttributes &&& MethodImplAttributes.AggressiveInlining <> enum 0
+    member x.IsMustRun         = x.ImplAttributes &&& MethodImplAttributes.NoOptimization <> enum 0
+
+    member x.WithSpecialName = { x with Attributes = x.Attributes ||| MethodAttributes.SpecialName }
+    member x.WithHideBySig() = 
+        { x with 
+            Attributes = 
+                if x.IsVirtual then x.Attributes &&& ~~~MethodAttributes.CheckAccessOnOverride ||| MethodAttributes.HideBySig
+                else failwith "WithHideBySig" }
+    member x.WithHideBySig(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition MethodAttributes.HideBySig}
+    member x.WithFinal(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition MethodAttributes.Final}
+    member x.WithAbstract(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition MethodAttributes.Abstract}
+    member x.WithAccess(access) = { x with Attributes = x.Attributes &&& ~~~MethodAttributes.MemberAccessMask ||| convertMemberAccess access }
+    member x.WithNewSlot = { x with Attributes = x.Attributes ||| MethodAttributes.NewSlot }
+    member x.WithSecurity(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition MethodAttributes.HasSecurity}
+    member x.WithPInvoke(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition MethodAttributes.PinvokeImpl}
+    member x.WithPreserveSig(condition) = { x with ImplAttributes = x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.PreserveSig}
+    member x.WithSynchronized(condition) = { x with ImplAttributes = x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.Synchronized}
+    member x.WithNoInlining(condition) = { x with ImplAttributes = x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.NoInlining}
+    member x.WithAggressiveInlining(condition) = { x with ImplAttributes = x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.AggressiveInlining}
+    member x.WithRuntime(condition) = { x with ImplAttributes = x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.Runtime}
 
 /// Index table by name and arity. 
 type MethodDefMap = Map<string, ILMethodDef list>
@@ -1446,15 +1487,17 @@ type ILMethodDefs(f : (unit -> ILMethodDef[])) =
 
 [<NoComparison; NoEquality>]
 type ILEventDef =
-    { Type: ILType option; 
+    { Type: ILType option;
       Name: string;
-      IsRTSpecialName: bool;
-      IsSpecialName: bool;
+      Attributes: EventAttributes
       AddMethod: ILMethodRef; 
       RemoveMethod: ILMethodRef;
       FireMethod: ILMethodRef option;
       OtherMethods: ILMethodRef list;
       CustomAttrs: ILAttributes; }
+    member x.IsSpecialName = (x.Attributes &&& EventAttributes.SpecialName) <> enum<_>(0)
+    member x.IsRTSpecialName = (x.Attributes &&& EventAttributes.RTSpecialName) <> enum<_>(0)
+    override x.ToString() = "event " + x.Name
 
 (* Index table by name. *)
 [<NoEquality; NoComparison>]
@@ -1466,8 +1509,7 @@ type ILEventDefs =
 [<NoComparison; NoEquality>]
 type ILPropertyDef = 
     { Name: string;
-      IsRTSpecialName: bool;
-      IsSpecialName: bool;
+      Attributes: PropertyAttributes;
       SetMethod: ILMethodRef option;
       GetMethod: ILMethodRef option;
       CallingConv: ILThisConvention;
@@ -1475,6 +1517,9 @@ type ILPropertyDef =
       Init: ILFieldInit option;
       Args: ILTypes;
       CustomAttrs: ILAttributes; }
+    member x.IsSpecialName = (x.Attributes &&& PropertyAttributes.SpecialName) <> enum<_>(0)
+    member x.IsRTSpecialName = (x.Attributes &&& PropertyAttributes.RTSpecialName) <> enum<_>(0)
+    override x.ToString() = "property " + x.Name
     
 // Index table by name.
 [<NoEquality; NoComparison>]
@@ -1483,21 +1528,39 @@ type ILPropertyDefs =
     member x.AsList = let (Properties t) = x in t.Entries()
     member x.LookupByName s = let (Properties t) = x in t.[s]
 
+let convertFieldAccess (ilMemberAccess:ILMemberAccess) =
+    match ilMemberAccess with
+    | ILMemberAccess.Assembly            -> FieldAttributes.Assembly
+    | ILMemberAccess.FamilyAndAssembly   -> FieldAttributes.FamANDAssem
+    | ILMemberAccess.FamilyOrAssembly    -> FieldAttributes.FamORAssem
+    | ILMemberAccess.Family              -> FieldAttributes.Family
+    | ILMemberAccess.Private             -> FieldAttributes.Private
+    | ILMemberAccess.Public              -> FieldAttributes.Public
+
 [<NoComparison; NoEquality>]
 type ILFieldDef = 
     { Name: string;
       Type: ILType;
-      IsStatic: bool;
-      Access: ILMemberAccess;
+      Attributes: FieldAttributes;
       Data:  byte[] option;
       LiteralValue:  ILFieldInit option;
       Offset:  int32 option; 
-      IsSpecialName: bool;
-      Marshal: ILNativeType option; 
-      NotSerialized: bool;
-      IsLiteral: bool ;
-      IsInitOnly: bool;
+      Marshal: ILNativeType option;
       CustomAttrs: ILAttributes; }
+    member x.IsStatic = x.Attributes &&& FieldAttributes.Static <> enum 0
+    member x.IsSpecialName = x.Attributes &&& FieldAttributes.SpecialName <> enum 0
+    member x.IsLiteral = x.Attributes &&& FieldAttributes.Literal <> enum 0
+    member x.NotSerialized = x.Attributes &&& FieldAttributes.NotSerialized <> enum 0
+    member x.IsInitOnly = x.Attributes &&& FieldAttributes.InitOnly <> enum 0
+    member x.Access = memberAccessOfFlags (int x.Attributes)
+    member x.WithAccess(access) = { x with Attributes = x.Attributes &&& ~~~FieldAttributes.FieldAccessMask ||| convertFieldAccess access }
+    member x.WithInitOnly(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition FieldAttributes.InitOnly }
+    member x.WithStatic(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition FieldAttributes.Static }
+    member x.WithSpecialName(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition (FieldAttributes.SpecialName ||| FieldAttributes.RTSpecialName) }
+    member x.WithNotSerialized(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition FieldAttributes.NotSerialized }
+    member x.WithLiteral(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition FieldAttributes.Literal }
+    member x.WithHasDefault(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition FieldAttributes.HasDefault }
+    member x.WithHasFieldMarshal(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition FieldAttributes.HasFieldMarshal }
 
 
 // Index table by name.  Keep a canonical list to make sure field order is not disturbed for binary manipulation.
@@ -1543,6 +1606,23 @@ type ILTypeDefAccess =
     | Private
     | Nested of ILMemberAccess 
 
+let typeAccessOfFlags flags =
+    let f = (flags &&& 0x00000007)
+    if f = 0x00000001 then ILTypeDefAccess.Public 
+    elif f = 0x00000002 then ILTypeDefAccess.Nested ILMemberAccess.Public 
+    elif f = 0x00000003 then ILTypeDefAccess.Nested ILMemberAccess.Private 
+    elif f = 0x00000004 then ILTypeDefAccess.Nested ILMemberAccess.Family 
+    elif f = 0x00000006 then ILTypeDefAccess.Nested ILMemberAccess.FamilyAndAssembly 
+    elif f = 0x00000007 then ILTypeDefAccess.Nested ILMemberAccess.FamilyOrAssembly 
+    elif f = 0x00000005 then ILTypeDefAccess.Nested ILMemberAccess.Assembly 
+    else ILTypeDefAccess.Private
+
+let typeEncodingOfFlags flags = 
+    let f = (flags &&& 0x00030000)
+    if f = 0x00020000 then ILDefaultPInvokeEncoding.Auto 
+    elif f = 0x00010000 then ILDefaultPInvokeEncoding.Unicode 
+    else ILDefaultPInvokeEncoding.Ansi
+
 [<RequireQualifiedAccess>]
 type ILTypeDefKind =
     | Class
@@ -1551,42 +1631,110 @@ type ILTypeDefKind =
     | Enum 
     | Delegate
 
+let typeKindOfFlags nm _mdefs _fdefs (super:ILType option) flags =
+    if (flags &&& 0x00000020) <> 0x0 then ILTypeDefKind.Interface 
+    else 
+         let isEnum, isDelegate, isMulticastDelegate, isValueType = 
+            match super with 
+            | None -> false , false, false, false
+            | Some ty -> 
+                ty.TypeSpec.Name = "System.Enum", 
+                ty.TypeSpec.Name = "System.Delegate", 
+                ty.TypeSpec.Name = "System.MulticastDelegate", 
+                ty.TypeSpec.Name = "System.ValueType" && nm <> "System.Enum"
+         let selfIsMulticastDelegate = nm = "System.MulticastDelegate"
+         if isEnum then ILTypeDefKind.Enum 
+         elif  (isDelegate && not selfIsMulticastDelegate) || isMulticastDelegate then ILTypeDefKind.Delegate
+         elif isValueType then ILTypeDefKind.ValueType 
+         else ILTypeDefKind.Class 
+
+let convertTypeAccessFlags access = 
+    match access with 
+    | ILTypeDefAccess.Public -> TypeAttributes.Public
+    | ILTypeDefAccess.Private  -> TypeAttributes.NotPublic
+    | ILTypeDefAccess.Nested ILMemberAccess.Public -> TypeAttributes.NestedPublic
+    | ILTypeDefAccess.Nested ILMemberAccess.Private  -> TypeAttributes.NestedPrivate
+    | ILTypeDefAccess.Nested ILMemberAccess.Family  -> TypeAttributes.NestedFamily
+    | ILTypeDefAccess.Nested ILMemberAccess.FamilyAndAssembly -> TypeAttributes.NestedFamANDAssem
+    | ILTypeDefAccess.Nested ILMemberAccess.FamilyOrAssembly -> TypeAttributes.NestedFamORAssem
+    | ILTypeDefAccess.Nested ILMemberAccess.Assembly -> TypeAttributes.NestedAssembly
+
+let convertTypeKind kind =
+    match kind with
+    | ILTypeDefKind.Class -> TypeAttributes.Class
+    | ILTypeDefKind.ValueType -> TypeAttributes.Class
+    | ILTypeDefKind.Interface -> TypeAttributes.Abstract ||| TypeAttributes.Interface
+    | ILTypeDefKind.Enum -> TypeAttributes.Class
+    | ILTypeDefKind.Delegate -> TypeAttributes.Class
+
+let convertLayout layout =
+    match layout with
+    | ILTypeDefLayout.Auto -> TypeAttributes.AutoLayout
+    | ILTypeDefLayout.Sequential _ -> TypeAttributes.SequentialLayout
+    | ILTypeDefLayout.Explicit _ -> TypeAttributes.ExplicitLayout
+
+let convertEncoding encoding =
+    match encoding with
+    | ILDefaultPInvokeEncoding.Auto -> TypeAttributes.AutoClass
+    | ILDefaultPInvokeEncoding.Ansi -> TypeAttributes.AnsiClass
+    | ILDefaultPInvokeEncoding.Unicode -> TypeAttributes.UnicodeClass
+
+let convertToNestedTypeAccess (ilMemberAccess:ILMemberAccess) =
+    match ilMemberAccess with
+    | ILMemberAccess.Assembly            -> TypeAttributes.NestedAssembly
+    | ILMemberAccess.FamilyAndAssembly   -> TypeAttributes.NestedFamANDAssem
+    | ILMemberAccess.FamilyOrAssembly    -> TypeAttributes.NestedFamORAssem
+    | ILMemberAccess.Family              -> TypeAttributes.NestedFamily
+    | ILMemberAccess.Private             -> TypeAttributes.NestedPrivate
+    | ILMemberAccess.Public              -> TypeAttributes.NestedPublic
+    
+let convertInitSemantics (init:ILTypeInit) =
+    match init with 
+    | ILTypeInit.BeforeField -> TypeAttributes.BeforeFieldInit
+    | ILTypeInit.OnAny -> enum 0
 
 [<NoComparison; NoEquality>]
 type ILTypeDef =  
-    { tdKind: ILTypeDefKind;
-      Name: string;  
+    { Name: string;  
+      Attributes: TypeAttributes;
       GenericParams: ILGenericParameterDefs;   (* class is generic *)
-      Access: ILTypeDefAccess;  
-      IsAbstract: bool;
-      IsSealed: bool; 
-      IsSerializable: bool; 
-      IsComInterop: bool; (* Class or interface generated for COM interop *) 
       Layout: ILTypeDefLayout;
-      IsSpecialName: bool;
-      Encoding: ILDefaultPInvokeEncoding;
       NestedTypes: ILTypeDefs;
       Implements: ILTypes;  
       Extends: ILType option; 
       Methods: ILMethodDefs;
       SecurityDecls: ILPermissions;
-      HasSecurity: bool;
       Fields: ILFieldDefs;
       MethodImpls: ILMethodImplDefs;
-      InitSemantics: ILTypeInit;
       Events: ILEventDefs;
       Properties: ILPropertyDefs;
       CustomAttrs: ILAttributes; }
-    member x.IsClass =     (match x.tdKind with ILTypeDefKind.Class -> true | _ -> false)
-    member x.IsInterface = (match x.tdKind with ILTypeDefKind.Interface -> true | _ -> false)
-    member x.IsEnum =      (match x.tdKind with ILTypeDefKind.Enum -> true | _ -> false)
-    member x.IsDelegate =  (match x.tdKind with ILTypeDefKind.Delegate -> true | _ -> false)
-
-    member tdef.IsStructOrEnum = 
-        match tdef.tdKind with
-        | ILTypeDefKind.ValueType | ILTypeDefKind.Enum -> true
-        | _ -> false
-
+    member x.IsClass =     (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.Class
+    member x.IsStruct =    (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.ValueType
+    member x.IsInterface = (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.Interface
+    member x.IsEnum =      (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.Enum
+    member x.IsDelegate =  (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.Delegate
+    member x.Access = typeAccessOfFlags (int x.Attributes)  
+    member x.IsAbstract = x.Attributes &&& TypeAttributes.Abstract <> enum 0
+    member x.IsSealed = x.Attributes &&& TypeAttributes.Sealed <> enum 0
+    member x.IsSerializable = x.Attributes &&& TypeAttributes.Serializable <> enum 0
+    member x.IsComInterop = x.Attributes &&& TypeAttributes.Import <> enum 0 (* Class or interface generated for COM interop *) 
+    member x.IsSpecialName = x.Attributes &&& TypeAttributes.SpecialName <> enum 0
+    member x.HasSecurity = x.Attributes &&& TypeAttributes.HasSecurity <> enum 0
+    member x.Encoding = typeEncodingOfFlags (int x.Attributes)
+    member x.IsStructOrEnum = x.IsStruct || x.IsEnum
+    member x.WithAccess(access) = { x with Attributes = x.Attributes &&& ~~~TypeAttributes.VisibilityMask ||| convertTypeAccessFlags access }
+    member x.WithNestedAccess(access) = { x with Attributes = x.Attributes &&& ~~~TypeAttributes.VisibilityMask ||| convertToNestedTypeAccess access }
+    member x.WithSealed(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition TypeAttributes.Sealed }
+    member x.WithSerializable(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition TypeAttributes.Serializable }
+    member x.WithAbstract(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition TypeAttributes.Abstract }
+    member x.WithImport(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition TypeAttributes.Import }
+    member x.WithHasSecurity(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition TypeAttributes.HasSecurity }
+    member x.WithLayout(layout) = { x with Attributes = x.Attributes ||| convertLayout layout; Layout = layout }
+    member x.WithKind(kind) = { x with Attributes = x.Attributes ||| convertTypeKind kind; Extends = match kind with ILTypeDefKind.Interface -> None | _ -> x.Extends }
+    member x.WithEncoding(encoding) = { x with Attributes = x.Attributes &&& ~~~TypeAttributes.StringFormatMask ||| convertEncoding encoding }
+    member x.WithSpecialName(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition TypeAttributes.SpecialName}
+    member x.WithInitSemantics(init) = { x with Attributes = x.Attributes ||| convertInitSemantics init }
 
 and [<Sealed>] ILTypeDefs(f : unit -> (string list * string * ILAttributes * Lazy<ILTypeDef>)[]) =
 
@@ -1629,10 +1777,11 @@ and [<NoComparison; NoEquality>]
     ILExportedTypeOrForwarder =
     { ScopeRef: ILScopeRef;
       Name: string;
-      IsForwarder: bool;
-      Access: ILTypeDefAccess;
+      Attributes: TypeAttributes
       Nested: ILNestedExportedTypes;
       CustomAttrs: ILAttributes } 
+    member x.Access = typeAccessOfFlags (int x.Attributes)  
+    member x.IsForwarder = x.Attributes &&& enum<TypeAttributes>(0x00200000) <> enum 0
 
 and ILExportedTypesAndForwarders = 
     | ILExportedTypesAndForwarders of Lazy<Map<string,ILExportedTypeOrForwarder>>
@@ -2304,29 +2453,15 @@ let mkILVoidReturn = mkILReturn ILType.Void
 
 let mkILCtor (access,args,impl) = 
     { Name=".ctor";
-      mdKind=MethodKind.Ctor;
+      Attributes=convertMemberAccess access ||| MethodAttributes.SpecialName ||| MethodAttributes.RTSpecialName;
+      ImplAttributes=MethodImplAttributes.Managed
       CallingConv=ILCallingConv.Instance;
       Parameters = args
       Return= mkILVoidReturn;
-      Access=access;
       mdBody= mkMethBodyAux impl;
-      mdCodeKind=MethodCodeKind.IL;
-      IsInternalCall=false;
-      IsManaged=true;
-      IsForwardRef=false;
       SecurityDecls=emptyILSecurityDecls;
-      HasSecurity=false;
       IsEntryPoint=false;
       GenericParams=mkILEmptyGenericParams;
-      IsReqSecObj=false;
-      IsHideBySig=false;
-      IsSpecialName=true;
-      IsUnmanagedExport=false;
-      IsSynchronized=false;
-      IsNoInline=false;
-      IsAggressiveInline=false
-      IsMustRun=false;
-      IsPreserveSig=false;
       CustomAttrs = emptyILCustomAttrs; }
 
 // -------------------------------------------------------------------- 
@@ -2358,59 +2493,31 @@ let mkILNonGenericEmptyCtor tag superTy =
 let mkILStaticMethod (genparams,nm,access,args,ret,impl) = 
     { GenericParams=genparams;
       Name=nm;
+      Attributes=convertMemberAccess access ||| MethodAttributes.Static;
+      ImplAttributes=MethodImplAttributes.Managed
       CallingConv = ILCallingConv.Static;
-      mdKind=MethodKind.Static;
       Parameters = args
       Return= ret;
-      Access=access;
-      HasSecurity=false;
       SecurityDecls=emptyILSecurityDecls;
       IsEntryPoint=false;
       CustomAttrs = emptyILCustomAttrs;
-      mdBody= mkMethBodyAux impl;
-      mdCodeKind=MethodCodeKind.IL;
-      IsInternalCall=false;
-      IsManaged=true;
-      IsForwardRef=false;
-      IsReqSecObj=false;
-      IsHideBySig=false;
-      IsSpecialName=false;
-      IsUnmanagedExport=false;
-      IsSynchronized=false;
-      IsNoInline=false;
-      IsAggressiveInline=false;
-      IsMustRun=false;
-      IsPreserveSig=false; }
+      mdBody= mkMethBodyAux impl; }
 
 let mkILNonGenericStaticMethod (nm,access,args,ret,impl) = 
     mkILStaticMethod (mkILEmptyGenericParams,nm,access,args,ret,impl)
 
 let mkILClassCtor impl = 
     { Name=".cctor";
+      Attributes=MethodAttributes.Private ||| MethodAttributes.Static ||| MethodAttributes.SpecialName ||| MethodAttributes.RTSpecialName;
+      ImplAttributes=MethodImplAttributes.Managed
       CallingConv=ILCallingConv.Static;
       GenericParams=mkILEmptyGenericParams;
-      mdKind=MethodKind.Cctor;
       Parameters = []
       Return=mkILVoidReturn;
-      Access=ILMemberAccess.Private; 
       IsEntryPoint=false;
-      HasSecurity=false;
       SecurityDecls=emptyILSecurityDecls;
       CustomAttrs = emptyILCustomAttrs;
-      mdBody= mkMethBodyAux impl; 
-      mdCodeKind=MethodCodeKind.IL;
-      IsInternalCall=false;
-      IsManaged=true;
-      IsForwardRef=false;
-      IsReqSecObj=false;
-      IsHideBySig=false;
-      IsSpecialName=true;
-      IsUnmanagedExport=false; 
-      IsSynchronized=false;
-      IsNoInline=false;
-      IsAggressiveInline=false
-      IsMustRun=false;
-      IsPreserveSig=false;  } 
+      mdBody= mkMethBodyAux impl; } 
 
 // -------------------------------------------------------------------- 
 // Make a virtual method, where the overriding is simply the default
@@ -2422,66 +2529,35 @@ let mk_ospec (typ:ILType,callconv,nm,genparams,formal_args,formal_ret) =
 
 let mkILGenericVirtualMethod (nm,access,genparams,actual_args,actual_ret,impl) = 
   { Name=nm;
+    Attributes= 
+      convertMemberAccess access |||
+      MethodAttributes.CheckAccessOnOverride ||| 
+      (match impl with MethodBody.Abstract -> MethodAttributes.Abstract ||| MethodAttributes.Virtual | _ -> MethodAttributes.Virtual);
+    ImplAttributes=MethodImplAttributes.Managed
     GenericParams=genparams;
     CallingConv=ILCallingConv.Instance;
-    mdKind=
-      MethodKind.Virtual 
-        { IsFinal=false; 
-          // REVIEW: We'll need to start setting this eventually
-          IsNewSlot = false;
-          IsCheckAccessOnOverride=true;
-          IsAbstract=(match impl with MethodBody.Abstract -> true | _ -> false) ; };
     Parameters=actual_args;
     Return=actual_ret;
-    Access=access;
     IsEntryPoint=false;
-    HasSecurity=false;
     SecurityDecls=emptyILSecurityDecls;
     CustomAttrs = emptyILCustomAttrs;
-    mdBody= mkMethBodyAux impl;
-    mdCodeKind=MethodCodeKind.IL;
-    IsInternalCall=false;
-    IsManaged=true;
-    IsForwardRef=false;
-    IsReqSecObj=false;
-    IsHideBySig=false;
-    IsSpecialName=false;
-    IsUnmanagedExport=false; 
-    IsSynchronized=false;
-    IsNoInline=false;
-    IsAggressiveInline=false
-    IsMustRun=false;
-    IsPreserveSig=false; }
+    mdBody= mkMethBodyAux impl; }
     
 let mkILNonGenericVirtualMethod (nm,access,args,ret,impl) =  
   mkILGenericVirtualMethod (nm,access,mkILEmptyGenericParams,args,ret,impl)
 
 let mkILGenericNonVirtualMethod (nm,access,genparams, actual_args,actual_ret, impl) = 
   { Name=nm;
+    Attributes=convertMemberAccess access ||| MethodAttributes.HideBySig; // see Bug343136: missing HideBySig attribute makes it problematic for C# to consume F# method overloads.
+    ImplAttributes=MethodImplAttributes.Managed
     GenericParams=genparams;
     CallingConv=ILCallingConv.Instance;
-    mdKind=MethodKind.NonVirtual;
     Parameters=actual_args;
     Return=actual_ret;
-    Access=access;
     IsEntryPoint=false;
-    HasSecurity=false;
     SecurityDecls=emptyILSecurityDecls;
     CustomAttrs = emptyILCustomAttrs;
-    mdBody= mkMethBodyAux impl;
-    mdCodeKind=MethodCodeKind.IL;
-    IsInternalCall=false;
-    IsManaged=true;
-    IsForwardRef=false;
-    IsReqSecObj=false;
-    IsHideBySig=true; // see Bug343136: missing HideBySig attribute makes it problematic for C# to consume F# method overloads.
-    IsSpecialName=false;
-    IsUnmanagedExport=false; 
-    IsSynchronized=false;
-    IsNoInline=false;
-    IsAggressiveInline=false
-    IsMustRun=false;
-    IsPreserveSig=false; }
+    mdBody= mkMethBodyAux impl; }
     
 let mkILNonGenericInstanceMethod (nm,access,args,ret,impl) =  
   mkILGenericNonVirtualMethod (nm,access,mkILEmptyGenericParams,args,ret,impl)
@@ -2558,19 +2634,18 @@ let prependInstrsToClassCtor instrs tag cd =
     cdef_cctorCode2CodeOrCreate tag (prependInstrsToMethod instrs) cd
     
 
-let mkILField (isStatic,nm,ty,init,at,access,isLiteral) =
+let mkILField (isStatic,nm,ty,(init:ILFieldInit option),(at: byte [] option),access,isLiteral) =
    { Name=nm;
      Type=ty;
-     IsStatic = isStatic; 
+     Attributes=convertFieldAccess access |||
+                (if isStatic then FieldAttributes.Static else enum 0) ||| 
+                (if isLiteral then FieldAttributes.Literal else enum 0) |||
+                (if init.IsSome then FieldAttributes.HasDefault else enum 0) |||
+                (if at.IsSome then FieldAttributes.HasFieldRVA else enum 0)
      LiteralValue = init;
      Data=at;
      Offset=None;
-     IsSpecialName = false;
      Marshal=None; 
-     NotSerialized=false;
-     IsInitOnly = false;
-     IsLiteral = isLiteral; 
-     Access = access; 
      CustomAttrs=emptyILCustomAttrs }
 
 let mkILInstanceField (nm,ty,init,access) = mkILField (false,nm,ty,init,None,access,false)
@@ -2609,6 +2684,13 @@ let mkILExportedTypesLazy (l:Lazy<_>) =   ILExportedTypesAndForwarders (lazy (Li
 
 let addNestedExportedTypeToTable (y: ILNestedExportedType) tab =
     Map.add y.Name y tab
+
+let mkTypeForwarder scopeRef name nested customAttrs access =
+    { ScopeRef=scopeRef;
+      Name=name;
+      Attributes=enum<TypeAttributes>(0x00200000) ||| convertTypeAccessFlags access;
+      Nested=nested;
+      CustomAttrs=customAttrs; }
 
 let mkILNestedExportedTypes l =  
     ILNestedExportedTypes (notlazy (List.foldBack addNestedExportedTypeToTable l Map.empty))
@@ -2669,19 +2751,11 @@ let mkILStorageCtor(tag,preblock,typ,flds,access) = mkILStorageCtorWithParamName
 
 
 let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nestedTypes, props, events, attrs, init) =
-  { tdKind=ILTypeDefKind.Class;
-    Name=nm;
+  { Name=nm;
+    Attributes=convertTypeAccessFlags access ||| TypeAttributes.AutoLayout ||| TypeAttributes.Class ||| (match init with | ILTypeInit.BeforeField -> TypeAttributes.BeforeFieldInit | _ -> enum 0) ||| TypeAttributes.AnsiClass;
     GenericParams= genparams;
-    Access = access;
-    Implements = impl
-    IsAbstract = false;
-    IsSealed = false;
-    IsSerializable = false;
-    IsComInterop=false;
-    IsSpecialName=false;
+    Implements = impl;
     Layout=ILTypeDefLayout.Auto;
-    Encoding=ILDefaultPInvokeEncoding.Ansi;
-    InitSemantics=init;
     Extends = Some extends;
     Methods= methods; 
     Fields= fields;
@@ -2690,25 +2764,16 @@ let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nes
     MethodImpls=emptyILMethodImpls;
     Properties=props;
     Events=events;
-    SecurityDecls=emptyILSecurityDecls; 
-    HasSecurity=false;
+    SecurityDecls=emptyILSecurityDecls;
 } 
     
 let mkRawDataValueTypeDef (iltyp_ValueType: ILType) (nm,size,pack) =
-  { tdKind=ILTypeDefKind.ValueType;
-    Name = nm;
+  { Name = nm;
     GenericParams= [];
-    Access = ILTypeDefAccess.Private;
+    Attributes = TypeAttributes.NotPublic ||| TypeAttributes.Sealed ||| TypeAttributes.ExplicitLayout ||| TypeAttributes.BeforeFieldInit ||| TypeAttributes.AnsiClass;
     Implements = []
-    IsAbstract = false;
-    IsSealed = true;
     Extends = Some iltyp_ValueType;
-    IsComInterop=false;    
-    IsSerializable = false;
-    IsSpecialName=false;
     Layout=ILTypeDefLayout.Explicit { Size=Some size; Pack=Some pack };
-    Encoding=ILDefaultPInvokeEncoding.Ansi;
-    InitSemantics=ILTypeInit.BeforeField;
     Methods= emptyILMethods; 
     Fields= emptyILFields;
     NestedTypes=emptyILTypeDefs;
@@ -2716,8 +2781,7 @@ let mkRawDataValueTypeDef (iltyp_ValueType: ILType) (nm,size,pack) =
     MethodImpls=emptyILMethodImpls;
     Properties=emptyILProperties;
     Events=emptyILEvents;
-    SecurityDecls=emptyILSecurityDecls; 
-    HasSecurity=false;  }
+    SecurityDecls=emptyILSecurityDecls; }
 
 
 let mkILSimpleClass (ilg: ILGlobals) (nm, access, methods, fields, nestedTypes, props, events, attrs, init) =
@@ -2793,19 +2857,13 @@ let buildILCode (_methName:string) lab2pc instrs tryspecs localspecs : ILCode =
 // Detecting Delegates
 // -------------------------------------------------------------------- 
 
-let mkILDelegateMethods (ilg: ILGlobals) (iltyp_AsyncCallback, iltyp_IAsyncResult) (parms,rtv:ILReturn) = 
+let mkILDelegateMethods (access) (ilg: ILGlobals) (iltyp_AsyncCallback, iltyp_IAsyncResult) (parms,rtv:ILReturn) = 
     let rty = rtv.Type
     let one nm args ret =
-        let mdef = mkILNonGenericVirtualMethod (nm,ILMemberAccess.Public,args,mkILReturn ret,MethodBody.Abstract)
-        {mdef with 
-                   mdKind=
-                      match mdef.mdKind with 
-                      | MethodKind.Virtual vinfo -> MethodKind.Virtual {vinfo with IsAbstract=false; } 
-                      | k -> k 
-                   mdCodeKind=MethodCodeKind.Runtime;
-                   IsHideBySig=true; }
-    let ctor = mkILCtor(ILMemberAccess.Public, [ mkILParamNamed("object",ilg.typ_Object); mkILParamNamed("method",ilg.typ_IntPtr) ], MethodBody.Abstract)
-    let ctor = { ctor with  mdCodeKind=MethodCodeKind.Runtime; IsHideBySig=true }
+        let mdef = mkILNonGenericVirtualMethod (nm,access,args,mkILReturn ret,MethodBody.Abstract)
+        mdef.WithAbstract(false).WithHideBySig(true).WithRuntime(true)
+    let ctor = mkILCtor(access, [ mkILParamNamed("object",ilg.typ_Object); mkILParamNamed("method",ilg.typ_IntPtr) ], MethodBody.Abstract)
+    let ctor = ctor.WithRuntime(true).WithHideBySig(true)
     [ ctor;
       one "Invoke" parms rty;
       one "BeginInvoke" (parms @ [mkILParamNamed("callback",iltyp_AsyncCallback); mkILParamNamed("objects",ilg.typ_Object) ] ) iltyp_IAsyncResult;
@@ -2823,7 +2881,7 @@ type ILEnumInfo =
 let getTyOfILEnumInfo info = info.enumType
 
 let computeILEnumInfo (mdName,mdFields: ILFieldDefs) = 
-    match (List.partition (fun fd -> fd.IsStatic) mdFields.AsList) with 
+    match (List.partition (fun (fd:ILFieldDef) -> fd.IsStatic) mdFields.AsList) with 
     | staticFields,[vfd] -> 
         { enumType = vfd.Type; 
           enumValues = staticFields |> List.map (fun fd -> (fd.Name, match fd.LiteralValue with Some i -> i | None -> failwith ("info_of_enum_tdef: badly formed enum "+mdName+": static field does not have an default value")))  }
@@ -3614,7 +3672,7 @@ and refs_of_tdef s (td : ILTypeDef)  =
     refs_of_fields       s td.Fields.AsList;
     refs_of_method_impls s td.MethodImpls.AsList;
     refs_of_events       s td.Events;
-    refs_of_tdef_kind    s td.tdKind;
+    refs_of_tdef_kind    s td;
     refs_of_custom_attrs s td.CustomAttrs;
     refs_of_properties   s td.Properties
 

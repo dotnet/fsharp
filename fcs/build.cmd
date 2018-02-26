@@ -1,7 +1,7 @@
 @echo off
 
 setlocal
-cd fcs
+pushd %~dp0%
 
 if errorlevel 1 (
   endlocal
