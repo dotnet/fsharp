@@ -58,18 +58,20 @@
     Given $(BUILD_BUILDNUMBER) = '20161225.1'
     Given $(MicroBuildAssemblyVersion) = '15.4.1.0'
 
-    Then $(BuildTimeStamp_Day) = 161225
+    Then $(BuildTimeStamp_Date) = 161225
     Then $(BuildTimeStamp_Number) = 01
     Then $(BuildTimeStamp) = 16122501
     Then $(MicroBuildAssemblyVersion_WithoutRevision) = 15.4.1
     Then $(VsixPackageVersion) = 15.4.1.16122501
+    Then $(NuGetPackageVersionSuffix) = 161225-01
 
     -->
-    <BuildTimeStamp_Day>$(BUILD_BUILDNUMBER.Split('.')[0].Substring(2))</BuildTimeStamp_Day>
+    <BuildTimeStamp_Date>$(BUILD_BUILDNUMBER.Split('.')[0].Substring(2))</BuildTimeStamp_Date>
     <BuildTimeStamp_Number>$(BUILD_BUILDNUMBER.Split('.')[1].PadLeft(2, '0'))</BuildTimeStamp_Number>
-    <BuildTimeStamp>$(BuildTimeStamp_Day)$(BuildTimeStamp_Number)</BuildTimeStamp>
+    <BuildTimeStamp>$(BuildTimeStamp_Date)$(BuildTimeStamp_Number)</BuildTimeStamp>
     <MicroBuildAssemblyVersion_WithoutRevision>$(MicroBuildAssemblyVersion.Substring(0, $(MicroBuildAssemblyVersion.LastIndexOf('.'))))</MicroBuildAssemblyVersion_WithoutRevision>
     <VsixPackageVersion>$(MicroBuildAssemblyVersion_WithoutRevision).$(BuildTimeStamp)</VsixPackageVersion>
+    <NuGetPackageVersionSuffix>$(BuildTimeStamp_Date)-$(BuildTimeStamp_Number)</NuGetPackageVersionSuffix>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -84,7 +86,6 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <BuildToolsTargets45>true</BuildToolsTargets45>
     <WarningsAsErrors />
-    <FX_NO_LOADER Condition=" '$(FX_NO_LOADER)'==''">false</FX_NO_LOADER>
 
     <RoslynVersion>2.6.0-vs-for-mac-62329-05</RoslynVersion>
     <RoslynVSBinariesVersion>15.0</RoslynVSBinariesVersion>
@@ -126,7 +127,7 @@
     <!-- Localization -->
     <DisableLocalization Condition="'$(MonoPackaging)' == 'true'">true</DisableLocalization>
     <UpdateXlfOnBuild Condition="'$(CI)' != '1'">true</UpdateXlfOnBuild>
-    <XliffTasksVersion>0.2.0-beta-000076</XliffTasksVersion>
+    <XliffTasksVersion>0.2.0-beta-000081</XliffTasksVersion>
 
   </PropertyGroup>
 

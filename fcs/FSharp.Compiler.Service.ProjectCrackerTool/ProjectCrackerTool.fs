@@ -11,7 +11,7 @@ module internal ProjectCrackerTool =
   open Microsoft.Build.Evaluation
 
   let runningOnMono =
-#if DOTNETCORE
+#if NETCOREAPP2_0
     false
 #else
     try match System.Type.GetType("Mono.Runtime") with null -> false | _ -> true
@@ -128,7 +128,7 @@ module internal ProjectCrackerTool =
 
     outFileOpt, directory, getItems, references, projectReferences, getprop project, project.FullPath
 
-#if !DOTNETCORE
+#if !NETCOREAPP2_0
   let CrackProjectUsingOldBuildAPI (fsprojFile:string) properties logOpt = 
     let engine = new Microsoft.Build.BuildEngine.Engine()
     Option.iter (fun l -> engine.RegisterLogger(l)) logOpt
@@ -201,7 +201,7 @@ module internal ProjectCrackerTool =
   
       let outFileOpt, directory, getItems, references, projectReferences, getProp, fsprojFullPath =
         try
-#if DOTNETCORE
+#if NETCOREAPP2_0
           CrackProjectUsingNewBuildAPI fsprojFileName properties logOpt
         with
 #else

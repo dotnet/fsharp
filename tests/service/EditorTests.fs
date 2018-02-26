@@ -19,7 +19,7 @@
 //    Use F# Interactive.  This only works for FSHarp.Compiler.Service.dll which has a public API
 
 #if INTERACTIVE
-#r "../../Debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
 #r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
@@ -97,13 +97,14 @@ let ``Intro test`` () =
                ("Concat", ["str0: string"; "str1: string"]);
                ("Concat", ["arg0: obj"; "arg1: obj"; "arg2: obj"]);
                ("Concat", ["str0: string"; "str1: string"; "str2: string"]);
-#if !DOTNETCORE
+#if !NETCOREAPP2_0 // TODO: check why this is needed for .NET Core testing of FSharp.Compiler.Service
                ("Concat", ["arg0: obj"; "arg1: obj"; "arg2: obj"; "arg3: obj"]);
 #endif               
                ("Concat", ["str0: string"; "str1: string"; "str2: string"; "str3: string"])]
 
 
-#if !INTERACTIVE && !DOTNETCORE // InternalsVisibleTo on IncrementalBuild.LocallyInjectCancellationFault not working for some reason?
+// TODO: check if this can be enabled in .NET Core testing of FSharp.Compiler.Service
+#if !INTERACTIVE && !NETCOREAPP2_0 // InternalsVisibleTo on IncrementalBuild.LocallyInjectCancellationFault not working for some reason?
 [<Test>]
 let ``Basic cancellation test`` () = 
    try 
@@ -155,7 +156,7 @@ let ``GetMethodsAsSymbols should return all overloads of a method as FSharpSymbo
              ("Concat", [("str0", "string"); ("str1", "string")]);
              ("Concat", [("arg0", "obj"); ("arg1", "obj"); ("arg2", "obj")]);
              ("Concat", [("str0", "string"); ("str1", "string"); ("str2", "string")]);
-#if !DOTNETCORE
+#if !NETCOREAPP2_0 // TODO: check why this is needed for .NET Core testing of FSharp.Compiler.Service
              ("Concat", [("arg0", "obj"); ("arg1", "obj"); ("arg2", "obj"); ("arg3", "obj")]);
 #endif
              ("Concat", [("str0", "string"); ("str1", "string"); ("str2", "string"); ("str3", "string")])]
@@ -285,7 +286,7 @@ let ``Expression typing test`` () =
 // the incomplete member:
 //    member x.Test = 
 
-[<Test; Ignore("Currently failing, see #139")>]
+[<Test; Ignore("SKIPPED: see #139")>]
 let ``Find function from member 1`` () = 
     let input = 
       """
@@ -335,7 +336,7 @@ type Test() =
     let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(14), (fun _ -> []), fun _ -> false)|> Async.RunSynchronously
     decls.Items |> Seq.exists (fun d -> d.Name = "abc") |> shouldEqual true
 
-[<Test; Ignore("Currently failing, see #139")>]
+[<Test; Ignore("SKIPPED: see #139")>]
 let ``Symbol based find function from member 1`` () = 
     let input = 
       """

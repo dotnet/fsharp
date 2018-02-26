@@ -447,7 +447,7 @@ test "coic23"
 
 
 
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
 let pickering() = 
     let files = Directory.GetFiles(@"C:\Program Files\Microsoft Enterprise Library January 2006\", "*.csproj", SearchOption.AllDirectories)
     for file in files do
@@ -557,7 +557,7 @@ module RandomSmallIfThenElseTest =
             do ()
         return a }
 
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
 module MoreExtensions =
 
     open Microsoft.FSharp.Control
