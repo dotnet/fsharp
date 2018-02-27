@@ -13,6 +13,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 
 open System.Text
 open System.IO
+open System.Reflection
 
 #if DEBUG
 let pretty () = true
@@ -396,7 +397,6 @@ let output_member_access os access =
     (match access with 
     | ILMemberAccess.Public -> "public"
     | ILMemberAccess.Private  -> "private"
-    | ILMemberAccess.CompilerControlled  -> "privatescope"
     | ILMemberAccess.Family  -> "family"
     | ILMemberAccess.FamilyAndAssembly -> "famandassem"
     | ILMemberAccess.FamilyOrAssembly -> "famorassem"
@@ -770,10 +770,9 @@ let goutput_ilmbody env os (il: ILMethodBody) =
   
 
 let goutput_mbody is_entrypoint env os md =
-  match md.mdCodeKind with 
-  | MethodCodeKind.Native -> output_string os "native "
-  | MethodCodeKind.IL -> output_string os "cil "
-  | MethodCodeKind.Runtime -> output_string os "runtime "
+  if md.ImplAttributes &&& MethodImplAttributes.Native <> enum 0 then output_string os "native "
+  elif md.ImplAttributes &&&  MethodImplAttributes.IL <> enum 0 then output_string os "cil "
+  else output_string os "runtime "
   
   output_string os (if md.IsInternalCall then "internalcall " else " ");
   output_string os (if md.IsManaged then "managed " else " ");
@@ -788,19 +787,18 @@ let goutput_mbody is_entrypoint env os md =
   output_string os "\n";
   output_string os "}\n"
   
-let goutput_mdef env os md =
+let goutput_mdef env os (md:ILMethodDef) =
   let attrs = 
-      match md.mdKind with
-        | MethodKind.Virtual vinfo -> 
+      if md.IsVirtual then
             "virtual "^
-            (if vinfo.IsFinal then "final " else "")^
-            (if vinfo.IsNewSlot then "newslot " else "")^
-            (if vinfo.IsCheckAccessOnOverride then " strict " else "")^
-            (if vinfo.IsAbstract then " abstract " else "")^
+            (if md.IsFinal then "final " else "")^
+            (if md.IsNewSlot then "newslot " else "")^
+            (if md.IsCheckAccessOnOverride then " strict " else "")^
+            (if md.IsAbstract then " abstract " else "")^
               "  "
-        | MethodKind.NonVirtual ->     ""
-        | MethodKind.Ctor -> "rtspecialname"
-        | MethodKind.Static -> 
+      elif md.IsNonVirtualInstance then     ""
+      elif md.IsConstructor then "rtspecialname"
+      elif md.IsStatic then
             "static "^
             (match md.mdBody.Contents with 
               MethodBody.PInvoke (attr) -> 
@@ -824,7 +822,8 @@ let goutput_mdef env os md =
                 ")"
               | _ -> 
                   "")
-        | MethodKind.Cctor -> "specialname rtspecialname static" 
+      elif md.IsClassInitializer then "specialname rtspecialname static" 
+      else ""
   let is_entrypoint = md.IsEntryPoint 
   let menv = ppenv_enter_method (List.length md.GenericParams) env 
   output_string os " .method ";
@@ -904,10 +903,9 @@ let rec goutput_tdef (enc) env contents os cd =
           goutput_pdefs env os cd.Properties;
   else 
       output_string os "\n";
-      match cd.tdKind with 
-      | ILTypeDefKind.Class | ILTypeDefKind.Enum | ILTypeDefKind.Delegate | ILTypeDefKind.ValueType -> output_string os ".class "
-      | ILTypeDefKind.Interface ->  output_string os ".class  interface "
-      output_init_semantics os cd.InitSemantics;
+      if cd.IsInterface then output_string os ".class  interface "
+      else output_string os ".class "
+      output_init_semantics os cd.Attributes;
       output_string os " ";
       output_type_access os cd.Access;
       output_string os " ";
@@ -937,9 +935,7 @@ let rec goutput_tdef (enc) env contents os cd =
       output_string os "\n}";
 
 and output_init_semantics os f =
-  match f with 
-    ILTypeInit.BeforeField -> output_string os "beforefieldinit";
-  | ILTypeInit.OnAny -> ()
+  if f &&& TypeAttributes.BeforeFieldInit <> enum 0 then output_string os "beforefieldinit"
 
 and goutput_lambdas env os lambdas = 
   match lambdas with

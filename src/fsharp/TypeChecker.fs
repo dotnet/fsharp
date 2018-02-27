@@ -174,7 +174,7 @@ let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo:MethInfo)  =
     if not (IsTypeAndMethInfoAccessible amap m adOriginal ad minfo) then 
       error (Error (FSComp.SR.tcMethodNotAccessible(minfo.LogicalName), m))
 
-    if isAnyTupleTy g minfo.ApparentEnclosingType then 
+    if isAnyTupleTy g minfo.ApparentEnclosingType && not minfo.IsExtensionMember && (minfo.LogicalName.StartsWith "get_Item" || minfo.LogicalName.StartsWith "get_Rest") then
       warning (Error (FSComp.SR.tcTupleMemberNotNormallyUsed(), m))
 
     CheckMethInfoAttributes g m tyargsOpt minfo |> CommitOperationResult
