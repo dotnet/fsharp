@@ -33,6 +33,7 @@ open Microsoft.VisualStudio.LanguageServices.ProjectSystem
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.ComponentModelHost
+open Microsoft.CodeAnalysis.Formatting
 
 // Exposes FSharpChecker as MEF export
 [<Export(typeof<FSharpCheckerProvider>); Composition.Shared>]
@@ -372,6 +373,7 @@ type
             | WorkspaceChangeKind.SolutionCleared
             | _ -> ()
 
+        this.Workspace.Options <- this.Workspace.Options.WithChangedOption(FormattingOptions.SmartIndent, FSharpConstants.FSharpLanguageName, FormattingOptions.IndentStyle.Smart)
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Completion.CompletionOptions.BlockForCompletionItems, FSharpConstants.FSharpLanguageName, false)
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Shared.Options.ServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpConstants.FSharpLanguageName, Nullable false)
         this.Workspace.WorkspaceChanged.Add(workspaceChanged)
