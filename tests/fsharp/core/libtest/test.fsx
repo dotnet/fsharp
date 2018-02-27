@@ -2227,7 +2227,7 @@ do check "generic format m"  "-1y" (sprintf "%A" (-1y))
 do check "generic format n"  "-1s" (sprintf "%A" (-1s))
 do check "generic format o"  "-1" (sprintf "%A" (-1))
 do check "generic format p"  "-1L" (sprintf "%A" (-1L))
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
 // See FSHARP1.0:4797
 // On NetFx4.0 and above we do not emit the 'I' suffix
 let bigintsuffix = if (System.Environment.Version.Major, System.Environment.Version.Minor) > (2,0) then "" else "I"
@@ -2409,11 +2409,8 @@ module IEnumerableTests = begin
   do check "Seq.averageBy" (Seq.averageBy float [0..100]) 50.
   do check "Seq.min" (Seq.min [1; 4; 2; 5; 8; 4; 0; 3]) 0
   do check "Seq.max" (Seq.max [1; 4; 2; 5; 8; 4; 0; 3]) 8
-#if !FSCORE_PORTABLE_OLD && !FSCORE_PORTABLE_NEW
-  // strings don't have enumerators on portable
   do check "Seq.minBy" (Seq.minBy int "this is a test") ' '
   do check "Seq.maxBy" (Seq.maxBy int "this is a test") 't'
-#endif
 
   // Test where the key includes null values
   do check "dict - option key" (dict [ (None,10); (Some 3, 220) ]).[None] 10
@@ -2719,7 +2716,7 @@ module SeqTestsOnEnumerableEnforcingDisposalAtEnd = begin
    do check "<dispoal>" numActiveEnumerators 0
    do check "Seq.max" (Seq.max (countEnumeratorsAndCheckedDisposedAtMostOnce [1; 4; 2; 5; 8; 4; 0; 3])) 8
    do check "<dispoal>" numActiveEnumerators 0
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
 // strings don't have enumerators in portable
    do check "Seq.minBy" (Seq.minBy int (countEnumeratorsAndCheckedDisposedAtMostOnce "this is a test")) ' '
    do check "<dispoal>" numActiveEnumerators 0
@@ -3521,7 +3518,6 @@ module GenericComparisonAndEquality = begin
     [<StructuralEquality ; StructuralComparison>]
     type RecordTypeA<'T> = {f1 : string ; f2 : 'T}
 
-#if !FSCORE_PORTABLE_OLD && !FSCORE_PORTABLE_NEW
     // IComparable<T>
     let _ = 
         
@@ -3557,7 +3553,6 @@ module GenericComparisonAndEquality = begin
         
         check "d3wiojd32icr" (l1 = l2) true ;
         check "d3wiojd32icu" (l3 = l4) true              
-#endif
 
     // IEquatable<T>        
     let _ = 
@@ -3699,7 +3694,7 @@ module MiscIEnumerableTests = begin
     open System.Net
     open System.IO
 
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
     /// generate the sequence of lines read off an internet connection
     let httpSeq (nm:string) = 
            Seq.generate 
@@ -3871,7 +3866,7 @@ module FloatParseTests = begin
     do check "FloatParse.A" (to_bits (of_string "Infinity"))  0x7ff0000000000000L // 9218868437227405312L
     do check "FloatParse.B" (to_bits (of_string "-Infinity")) 0xfff0000000000000L // (-4503599627370496L)
     do check "FloatParse.C" (to_bits (of_string "NaN"))       0xfff8000000000000L  // (-2251799813685248L)
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
     do check "FloatParse.D" (to_bits (of_string "-NaN"))    ( // http://en.wikipedia.org/wiki/NaN
                                                               let bit64 = System.IntPtr.Size = 8 in
                                                               if bit64 && System.Environment.Version.Major < 4 then
@@ -4083,7 +4078,7 @@ module SetTests = begin
 
     let unionTest n (nx,ny) =
       let check (xs:'a Set) = 
-#if DEBUG && !FSCORE_PORTABLE_OLD && !FSCORE_PORTABLE_NEW
+#if DEBUG
           test "vwnwer" (xs.CheckBalanceInvariant);
 #endif
           xs in
@@ -4276,7 +4271,7 @@ do check "clwnwe91" 10m 10m
 do check "clwnwe92" 10m 10.000m
 do check "clwnwe93" 1000000000m 1000000000m
 do check "clwnwe94" (4294967296000000000m.ToString()) "4294967296000000000"
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
 do check "clwnwe95" (10.000m.ToString(System.Globalization.CultureInfo.GetCultureInfo(1033).NumberFormat)) "10.000"  // The actual output of a vanilla .ToString() depends on current culture UI. For this reason I am specifying the en-us culture.
 #endif
 do check "clwnwe96" (10m.ToString()) "10"
@@ -4327,7 +4322,7 @@ do check "lkvcnwd09g" 2.0M (20.0M % 6.00M)
 do check "lkvcnwd09h" 20.0M (floor 20.300M)
 do check "lkvcnwd09j" 20.0 (floor 20.300)
 do check "lkvcnwd09k" 20.0f (floor 20.300f)
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
 do check "lkvcnwd09l" 20.0M (round 20.300M)
 do check "lkvcnwd09z" 20.0M (round 20.500M)
 do check "lkvcnwd09x" 22.0M (round 21.500M)
@@ -5569,7 +5564,7 @@ module bug122495 =
     let c = C( P = a.[0..1])
 
 
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
 (*---------------------------------------------------------------------------
 !* Bug 33760: wrong codegen for params[] Action overload
  *--------------------------------------------------------------------------- *)      

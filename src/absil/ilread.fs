@@ -27,6 +27,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.NativeInterop
+open System.Reflection
 
 type ILReaderOptions =
     { pdbPath: string option
@@ -1622,16 +1623,6 @@ and seekReadClassLayout ctxt idx =
     | None -> { Size = None; Pack = None }
     | Some (pack, size) -> { Size = Some size; Pack = Some pack }
 
-and memberAccessOfFlags flags =
-    let f = (flags &&& 0x00000007)
-    if f = 0x00000001 then  ILMemberAccess.Private 
-    elif f = 0x00000006 then  ILMemberAccess.Public 
-    elif f = 0x00000004 then  ILMemberAccess.Family 
-    elif f = 0x00000002 then  ILMemberAccess.FamilyAndAssembly 
-    elif f = 0x00000005 then  ILMemberAccess.FamilyOrAssembly 
-    elif f = 0x00000003 then  ILMemberAccess.Assembly 
-    else ILMemberAccess.CompilerControlled
-
 and typeAccessOfFlags flags =
     let f = (flags &&& 0x00000007)
     if f = 0x00000001 then ILTypeDefAccess.Public 
@@ -1648,25 +1639,6 @@ and typeLayoutOfFlags ctxt flags tidx =
     if f = 0x00000008 then ILTypeDefLayout.Sequential (seekReadClassLayout ctxt tidx)
     elif f = 0x00000010 then  ILTypeDefLayout.Explicit (seekReadClassLayout ctxt tidx)
     else ILTypeDefLayout.Auto
-
-and typeKindOfFlags nm _mdefs _fdefs (super:ILType option) flags =
-    if (flags &&& 0x00000020) <> 0x0 then ILTypeDefKind.Interface 
-    else 
-         let isEnum = (match super with None -> false | Some ty -> ty.TypeSpec.Name = "System.Enum")
-         let isDelegate = (match super with None -> false | Some ty -> ty.TypeSpec.Name = "System.Delegate")
-         let isMulticastDelegate = (match super with None -> false | Some ty -> ty.TypeSpec.Name = "System.MulticastDelegate")
-         let selfIsMulticastDelegate = nm = "System.MulticastDelegate"
-         let isValueType = (match super with None -> false | Some ty -> ty.TypeSpec.Name = "System.ValueType" && nm <> "System.Enum")
-         if isEnum then ILTypeDefKind.Enum 
-         elif  (isDelegate && not selfIsMulticastDelegate) || isMulticastDelegate then ILTypeDefKind.Delegate
-         elif isValueType then ILTypeDefKind.ValueType 
-         else ILTypeDefKind.Class 
-
-and typeEncodingOfFlags flags = 
-    let f = (flags &&& 0x00030000)
-    if f = 0x00020000 then ILDefaultPInvokeEncoding.Auto 
-    elif f = 0x00010000 then ILDefaultPInvokeEncoding.Unicode 
-    else ILDefaultPInvokeEncoding.Ansi
 
 and isTopTypeDef flags =
     (typeAccessOfFlags flags =  ILTypeDefAccess.Private) ||
@@ -1725,36 +1697,23 @@ and seekReadTypeDef ctxt toponly (idx:int) =
            let hasLayout = (match layout with ILTypeDefLayout.Explicit _ -> true | _ -> false)
            let mdefs = seekReadMethods ctxt numtypars methodsIdx endMethodsIdx
            let fdefs = seekReadFields ctxt (numtypars, hasLayout) fieldsIdx endFieldsIdx
-           let kind = typeKindOfFlags nm mdefs fdefs super flags
            let nested = seekReadNestedTypeDefs ctxt idx 
            let impls  = seekReadInterfaceImpls ctxt numtypars idx
            let sdecls =  seekReadSecurityDecls ctxt (TaggedIndex(hds_TypeDef, idx))
            let mimpls = seekReadMethodImpls ctxt numtypars idx
            let props  = seekReadProperties ctxt numtypars idx
            let events = seekReadEvents ctxt numtypars idx
-           { tdKind= kind
-             Name=nm
+           { Name=nm
              GenericParams=typars 
-             Access= typeAccessOfFlags flags
-             IsAbstract= (flags &&& 0x00000080) <> 0x0
-             IsSealed= (flags &&& 0x00000100) <> 0x0 
-             IsSerializable= (flags &&& 0x00002000) <> 0x0 
-             IsComInterop= (flags &&& 0x00001000) <> 0x0 
+             Attributes= enum<TypeAttributes>(flags)
              Layout = layout
-             IsSpecialName= (flags &&& 0x00000400) <> 0x0
-             Encoding=typeEncodingOfFlags flags
              NestedTypes= nested
              Implements = impls  
              Extends = super 
              Methods = mdefs 
              SecurityDecls = sdecls
-             HasSecurity=(flags &&& 0x00040000) <> 0x0
              Fields=fdefs
              MethodImpls=mimpls
-             InitSemantics=
-                 if kind = ILTypeDefKind.Interface then ILTypeInit.OnAny
-                 elif (flags &&& 0x00100000) <> 0x0 then ILTypeInit.BeforeField
-                 else ILTypeInit.OnAny 
              Events= events
              Properties=props
              CustomAttrs=cas }
@@ -1935,12 +1894,7 @@ and seekReadField ctxt (numtypars, hasLayout) (idx:int) =
      let fd = 
        { Name = nm
          Type= readBlobHeapAsFieldSig ctxt numtypars typeIdx
-         Access = memberAccessOfFlags flags
-         IsStatic = isStatic
-         IsInitOnly = (flags &&& 0x0020) <> 0
-         IsLiteral = (flags &&& 0x0040) <> 0
-         NotSerialized = (flags &&& 0x0080) <> 0
-         IsSpecialName = (flags &&& 0x0200) <> 0 || (flags &&& 0x0400) <> 0 (* REVIEW: RTSpecialName *)
+         Attributes = enum<FieldAttributes>(flags)
          LiteralValue = if (flags &&& 0x8000) = 0 then None else Some (seekReadConstant ctxt (TaggedIndex(hc_FieldDef, idx)))
          Marshal = 
              if (flags &&& 0x1000) = 0 then None else 
@@ -2281,30 +2235,13 @@ and seekReadFieldDefAsFieldSpecUncached ctxtH idx =
 and seekReadMethod ctxt numtypars (idx:int) =
      let (codeRVA, implflags, flags, nameIdx, typeIdx, paramIdx) = seekReadMethodRow ctxt idx
      let nm = readStringHeap ctxt nameIdx
-     let isStatic = (flags &&& 0x0010) <> 0x0
-     let final = (flags &&& 0x0020) <> 0x0
-     let virt = (flags &&& 0x0040) <> 0x0
-     let strict = (flags &&& 0x0200) <> 0x0
-     let hidebysig = (flags &&& 0x0080) <> 0x0
-     let newslot = (flags &&& 0x0100) <> 0x0
      let abstr = (flags &&& 0x0400) <> 0x0
-     let specialname = (flags &&& 0x0800) <> 0x0
      let pinvoke = (flags &&& 0x2000) <> 0x0
-     let export = (flags &&& 0x0008) <> 0x0
-     let _rtspecialname = (flags &&& 0x1000) <> 0x0
-     let reqsecobj = (flags &&& 0x8000) <> 0x0
-     let hassec = (flags &&& 0x4000) <> 0x0
      let codetype = implflags &&& 0x0003
      let unmanaged = (implflags &&& 0x0004) <> 0x0
-     let forwardref = (implflags &&& 0x0010) <> 0x0
-     let preservesig = (implflags &&& 0x0080) <> 0x0
      let internalcall = (implflags &&& 0x1000) <> 0x0
-     let synchronized = (implflags &&& 0x0020) <> 0x0
      let noinline = (implflags &&& 0x0008) <> 0x0
      let aggressiveinline = (implflags &&& 0x0100) <> 0x0
-     let mustrun = (implflags &&& 0x0040) <> 0x0
-     let cctor = (nm = ".cctor")
-     let ctor = (nm = ".ctor")
      let _generic, _genarity, cc, retty, argtys, varargs = readBlobHeapAsMethodSig ctxt numtypars typeIdx
      if varargs <> None then dprintf "ignoring sentinel and varargs in ILMethodDef signature"
      
@@ -2318,34 +2255,10 @@ and seekReadMethod ctxt numtypars (idx:int) =
      let ret, ilParams = seekReadParams ctxt (retty, argtys) paramIdx endParamIdx
 
      { Name=nm
-       mdKind = 
-           (if cctor then MethodKind.Cctor 
-            elif ctor then MethodKind.Ctor 
-            elif isStatic then MethodKind.Static 
-            elif virt then 
-             MethodKind.Virtual 
-               { IsFinal=final 
-                 IsNewSlot=newslot 
-                 IsCheckAccessOnOverride=strict
-                 IsAbstract=abstr }
-            else MethodKind.NonVirtual)
-       Access = memberAccessOfFlags flags
+       Attributes = enum<MethodAttributes>(flags)
+       ImplAttributes= enum<MethodImplAttributes>(implflags)
        SecurityDecls=seekReadSecurityDecls ctxt (TaggedIndex(hds_MethodDef, idx))
-       HasSecurity=hassec
        IsEntryPoint= (fst ctxt.entryPointToken = TableNames.Method && snd ctxt.entryPointToken = idx)
-       IsReqSecObj=reqsecobj
-       IsHideBySig=hidebysig
-       IsSpecialName=specialname
-       IsUnmanagedExport=export
-       IsSynchronized=synchronized
-       IsNoInline=noinline
-       IsAggressiveInline=aggressiveinline
-       IsMustRun=mustrun
-       IsPreserveSig=preservesig
-       IsManaged = not unmanaged
-       IsInternalCall = internalcall
-       IsForwardRef = forwardref
-       mdCodeKind = (if (codetype = 0x00) then MethodCodeKind.IL elif (codetype = 0x01) then MethodCodeKind.Native elif (codetype = 0x03) then MethodCodeKind.Runtime else MethodCodeKind.Native)
        GenericParams=seekReadGenericParams ctxt numtypars (tomd_MethodDef, idx)
        CustomAttrs=seekReadCustomAttrs ctxt (TaggedIndex(hca_MethodDef, idx)) 
        Parameters= ilParams
@@ -2445,10 +2358,9 @@ and seekReadMethodSemantics ctxt id =
 
 and seekReadEvent ctxt numtypars idx =
    let (flags, nameIdx, typIdx) = seekReadEventRow ctxt idx
-   { Name = readStringHeap ctxt nameIdx
-     Type = seekReadOptionalTypeDefOrRef ctxt numtypars AsObject typIdx
-     IsSpecialName  = (flags &&& 0x0200) <> 0x0 
-     IsRTSpecialName = (flags &&& 0x0400) <> 0x0
+   { Type = seekReadOptionalTypeDefOrRef ctxt numtypars AsObject typIdx
+     Name = readStringHeap ctxt nameIdx
+     Attributes = enum<EventAttributes>(flags)
      AddMethod= seekReadMethodSemantics ctxt (0x0008, TaggedIndex(hs_Event, idx))
      RemoveMethod=seekReadMethodSemantics ctxt (0x0010, TaggedIndex(hs_Event, idx))
      FireMethod=seekReadoptional_MethodSemantics ctxt (0x0020, TaggedIndex(hs_Event, idx))
@@ -2488,8 +2400,7 @@ and seekReadProperty ctxt numtypars idx =
            | None -> cc
    { Name=readStringHeap ctxt nameIdx
      CallingConv = cc2
-     IsRTSpecialName=(flags &&& 0x0400) <> 0x0 
-     IsSpecialName= (flags &&& 0x0200) <> 0x0 
+     Attributes = enum<PropertyAttributes>(flags)
      SetMethod=setter
      GetMethod=getter
      Type=retty
@@ -3245,8 +3156,7 @@ and seekReadTopExportedTypes ctxt () =
                     yield
                       { ScopeRef = seekReadImplAsScopeRef ctxt implIdx
                         Name = readBlobHeapAsTypeName ctxt (nameIdx, namespaceIdx)
-                        IsForwarder = ((flags &&& 0x00200000) <> 0)
-                        Access = typeAccessOfFlags flags
+                        Attributes = enum<TypeAttributes>(flags)
                         Nested = seekReadNestedExportedTypes ctxt exported nested i
                         CustomAttrs = seekReadCustomAttrs ctxt (TaggedIndex(hca_ExportedType, i)) }
             ])

@@ -47,7 +47,7 @@
   <ItemGroup>
     <Compile Include="Program.fs" />
   </ItemGroup>
-  <Import Project="..\..\..\..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets" />
+  <Import Project="..\..\..\..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets"  Condition="Exists('..\..\..\..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets')"  />
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
