@@ -4637,18 +4637,18 @@ and remapValData g tmenv (d: ValData) =
     let val_declaring_entity = d.DeclaringEntity |> remapParentRef tmenv
     let val_repr_info = d.ValReprInfo |> Option.map (remapValReprInfo g tmenv)
     let val_member_info = d.MemberInfo |> Option.map (remapMemberInfo g d.val_range topValInfo ty ty' tmenv)
-    let val_attribs = d.val_attribs |> remapAttribs g tmenv
+    let val_attribs = d.Attribs |> remapAttribs g tmenv
     { d with 
-        val_type     = ty';
+        val_type     = ty'
         val_opt_data =
             match d.val_opt_data with
             | Some dd ->
                 Some { dd with 
                          val_repr_info = val_repr_info
                          val_member_info = val_member_info
-                         val_declaring_entity = val_declaring_entity }
-            | None -> None;
-        val_attribs  = val_attribs }
+                         val_declaring_entity = val_declaring_entity
+                         val_attribs  = val_attribs }
+            | None -> None }
 
 and remapParentRef tyenv p =
     match p with 

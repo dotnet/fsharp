@@ -2201,6 +2201,10 @@ and ValOptionalData =
 
       /// XML documentation signature for the value
       mutable val_xmldocsig : string
+
+      /// Custom attributes attached to the value. These contain references to other values (i.e. constructors in types). Mutable to fixup  
+      /// these value references after copying a collection of values. 
+      mutable val_attribs: Attribs
     }
 and ValData = Val
 and [<StructuredFormatDisplay("{LogicalName}")>]
@@ -2225,10 +2229,6 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
 
       /// See vflags section further below for encoding/decodings here 
       mutable val_flags: ValFlags
-
-      /// Custom attributes attached to the value. These contain references to other values (i.e. constructors in types). Mutable to fixup  
-      /// these value references after copying a collection of values. 
-      mutable val_attribs: Attribs
       
       mutable val_opt_data : ValOptionalData option } 
 
@@ -2419,7 +2419,10 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     member x.IsCompilerGenerated        = x.val_flags.IsCompilerGenerated
     
     /// Get the declared attributes for the value
-    member x.Attribs                    = x.val_attribs
+    member x.Attribs                    = 
+        match x.val_opt_data with
+        | Some x -> x.val_attribs
+        | _ -> []
 
     /// Get the declared documentation for the value
     member x.XmlDoc                     =
@@ -2430,7 +2433,7 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     ///Get the signature for the value's XML documentation
     member x.XmlDocSig 
         with get() = match x.val_opt_data with | Some x -> x.val_xmldocsig | _ -> String.Empty
-        and set(v) = match x.val_opt_data with | Some x -> x.val_xmldocsig <- v | _ -> x.val_opt_data <- Some { val_compiled_name = None; val_other_range = None; val_const = None; val_defn = None; val_repr_info = None; val_access = TAccess []; val_xmldoc = XmlDoc [||]; val_member_info = None; val_declaring_entity = ParentNone; val_xmldocsig = v }
+        and set(v) = match x.val_opt_data with | Some x -> x.val_xmldocsig <- v | _ -> x.val_opt_data <- Some { val_compiled_name = None; val_other_range = None; val_const = None; val_defn = None; val_repr_info = None; val_access = TAccess []; val_xmldoc = XmlDoc [||]; val_member_info = None; val_declaring_entity = ParentNone; val_xmldocsig = v; val_attribs = [] }
 
     /// The parent type or module, if any (None for expression bindings and parameters)
     member x.DeclaringEntity               = 
@@ -2595,16 +2598,20 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     member x.SetValReprInfo info                          = 
         match x.val_opt_data with
         | Some x -> x.val_repr_info <- info
-        | _ -> x.val_opt_data <- Some { val_compiled_name = None; val_other_range = None; val_const = None; val_defn = None; val_repr_info = info; val_access = TAccess []; val_xmldoc = XmlDoc [||]; val_member_info = None; val_declaring_entity = ParentNone; val_xmldocsig = String.Empty }
+        | _ -> x.val_opt_data <- Some { val_compiled_name = None; val_other_range = None; val_const = None; val_defn = None; val_repr_info = info; val_access = TAccess []; val_xmldoc = XmlDoc [||]; val_member_info = None; val_declaring_entity = ParentNone; val_xmldocsig = String.Empty; val_attribs = [] }
     member x.SetType ty                                  = x.val_type <- ty
     member x.SetOtherRange m                              =
         match x.val_opt_data with
         | Some x -> x.val_other_range <- Some m
-        | _ -> x.val_opt_data <- Some { val_compiled_name = None; val_other_range = Some m; val_const = None; val_defn = None; val_repr_info = None; val_access = TAccess []; val_xmldoc = XmlDoc [||]; val_member_info = None; val_declaring_entity = ParentNone; val_xmldocsig = String.Empty }
+        | _ -> x.val_opt_data <- Some { val_compiled_name = None; val_other_range = Some m; val_const = None; val_defn = None; val_repr_info = None; val_access = TAccess []; val_xmldoc = XmlDoc [||]; val_member_info = None; val_declaring_entity = ParentNone; val_xmldocsig = String.Empty; val_attribs = [] }
     member x.SetDeclaringEntity parent                          = 
         match x.val_opt_data with
         | Some x -> x.val_declaring_entity <- parent
-        | _ -> x.val_opt_data <- Some { val_compiled_name = None; val_other_range = None; val_const = None; val_defn = None; val_repr_info = None; val_access = TAccess []; val_xmldoc = XmlDoc [||]; val_member_info = None; val_declaring_entity = parent; val_xmldocsig = String.Empty }
+        | _ -> x.val_opt_data <- Some { val_compiled_name = None; val_other_range = None; val_const = None; val_defn = None; val_repr_info = None; val_access = TAccess []; val_xmldoc = XmlDoc [||]; val_member_info = None; val_declaring_entity = parent; val_xmldocsig = String.Empty; val_attribs = [] }
+    member x.SetAttribs attribs                          = 
+        match x.val_opt_data with
+        | Some x -> x.val_attribs <- attribs
+        | _ -> x.val_opt_data <- Some { val_compiled_name = None; val_other_range = None; val_const = None; val_defn = None; val_repr_info = None; val_access = TAccess []; val_xmldoc = XmlDoc [||]; val_member_info = None; val_declaring_entity = ParentNone; val_xmldocsig = String.Empty; val_attribs = attribs }
 
     /// Create a new value with empty, unlinked data. Only used during unpickling of F# metadata.
     static member NewUnlinked() : Val  = 
@@ -2613,7 +2620,6 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
           val_type            = Unchecked.defaultof<_>
           val_stamp           = Unchecked.defaultof<_>
           val_flags           = Unchecked.defaultof<_>
-          val_attribs         = Unchecked.defaultof<_>
           val_opt_data        = Unchecked.defaultof<_> }
 
 
@@ -2630,13 +2636,12 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
         x.val_type            <- tg.val_type         
         x.val_stamp           <- tg.val_stamp        
         x.val_flags           <- tg.val_flags        
-        x.val_attribs         <- tg.val_attribs      
         match tg.val_opt_data with
-        | Some tg -> x.val_opt_data <- Some { val_compiled_name = tg.val_compiled_name; val_other_range = tg.val_other_range; val_const = tg.val_const; val_defn = tg.val_defn; val_repr_info = tg.val_repr_info; val_access = tg.val_access; val_xmldoc = tg.val_xmldoc; val_member_info = tg.val_member_info; val_declaring_entity = tg.val_declaring_entity; val_xmldocsig = tg.val_xmldocsig }
+        | Some tg -> x.val_opt_data <- Some { val_compiled_name = tg.val_compiled_name; val_other_range = tg.val_other_range; val_const = tg.val_const; val_defn = tg.val_defn; val_repr_info = tg.val_repr_info; val_access = tg.val_access; val_xmldoc = tg.val_xmldoc; val_member_info = tg.val_member_info; val_declaring_entity = tg.val_declaring_entity; val_xmldocsig = tg.val_xmldocsig; val_attribs = tg.val_attribs }
         | None -> ()
 
     /// Indicates if a value is linked to backing data yet. Only used during unpickling of F# metadata.
-    member x.IsLinked = match box x.val_attribs with null -> false | _ -> true 
+    member x.IsLinked = match box x.val_logical_name with null -> false | _ -> true 
 
     override x.ToString() = x.LogicalName
     
@@ -5005,13 +5010,12 @@ let NewVal (logicalName:string,m:range,compiledName,ty,isMutable,isCompGen,arity
               val_logical_name=logicalName
               val_range=m
               val_flags = ValFlags(recValInfo,baseOrThis,isCompGen,inlineInfo,isMutable,isModuleOrMemberBinding,isExtensionMember,isIncrClassSpecialMember,isTyFunc,allowTypeInst,isGeneratedEventVal)
-              val_attribs=attribs
               val_type = ty
               val_opt_data = None } 
 
     res.val_opt_data <-
-        match compiledName, arity, konst, access, doc, specialRepr, actualParent with
-        | None, None, None, TAccess [], XmlDoc [||], None, ParentNone -> None
+        match compiledName, arity, konst, access, doc, specialRepr, actualParent, attribs with
+        | None, None, None, TAccess [], XmlDoc [||], None, ParentNone, [] -> None
         | _ -> 
             Some { val_compiled_name=(match compiledName with Some v when v <> logicalName -> compiledName | _ -> None)
                    val_other_range=None
@@ -5022,7 +5026,8 @@ let NewVal (logicalName:string,m:range,compiledName,ty,isMutable,isCompGen,arity
                    val_xmldoc = doc
                    val_member_info = specialRepr
                    val_declaring_entity = actualParent
-                   val_xmldocsig = "" }
+                   val_xmldocsig = ""
+                   val_attribs = attribs }
     res
 
 
