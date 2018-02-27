@@ -1822,7 +1822,7 @@ and p_ValData x st =
     p_option p_ValReprInfo x.ValReprInfo st
     p_string x.val_xmldocsig st
     p_access x.Accessibility st
-    p_parentref x.val_declaring_entity st
+    p_parentref x.DeclaringEntity st
     p_option p_const x.LiteralValue st
     if st.oInMem then
         p_used_space1 (p_xmldoc x.XmlDoc) st
@@ -2129,13 +2129,12 @@ and u_ValData st =
           val_flags=ValFlags(x4)
           val_attribs=x9
           val_xmldocsig=x12
-          val_declaring_entity=x13b
           val_opt_data=None
         }
 
     res.val_opt_data <-
-        match x1z, x1a, x10, x14, x13, x15, x8 with
-        | None, None, None, None, TAccess [], None, None -> None
+        match x1z, x1a, x10, x14, x13, x15, x8, x13b with
+        | None, None, None, None, TAccess [], None, None, ParentNone -> None
         | _ -> 
             Some({ val_compiled_name=x1z
                    val_other_range=(match x1a with None -> None | Some(_,b) -> Some(b,true))
@@ -2144,7 +2143,8 @@ and u_ValData st =
                    val_const=x14
                    val_access=x13
                    val_xmldoc=defaultArg x15 XmlDoc.Empty
-                   val_member_info=x8 })
+                   val_member_info=x8
+                   val_declaring_entity=x13b })
     res
 
 and u_Val st = u_osgn_decl st.ivals u_ValData st 

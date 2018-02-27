@@ -1194,7 +1194,7 @@ and CheckBinding cenv env alwaysCheckNoReraise (TBind(v,bindRhs,_) as bind) =
                 | None ->
                     match v.val_opt_data with
                     | Some v -> v.val_defn <- Some bindRhs
-                    | None -> v.val_opt_data <- Some({ val_compiled_name = None; val_other_range = None; val_const = None; val_defn = Some bindRhs; val_repr_info = None; val_access = TAccess []; val_xmldoc = XmlDoc.Empty; val_member_info = None })
+                    | None -> v.val_opt_data <- Some { val_compiled_name = None; val_other_range = None; val_const = None; val_defn = Some bindRhs; val_repr_info = None; val_access = TAccess []; val_xmldoc = XmlDoc.Empty; val_member_info = None; val_declaring_entity = ParentNone }
                 | Some _ -> ()
                 // Run the conversion process over the reflected definition to report any errors in the
                 // front end rather than the back end. We currently re-run this during ilxgen.fs but there's
