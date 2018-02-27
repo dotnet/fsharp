@@ -4636,7 +4636,7 @@ and remapValData g tmenv (d: ValData) =
     let ty' = ty |> remapPossibleForallTy g tmenv
     let val_declaring_entity = d.val_declaring_entity |> remapParentRef tmenv
     let val_repr_info = d.ValReprInfo |> Option.map (remapValReprInfo g tmenv)
-    let val_member_info = d.val_member_info |> Option.map (remapMemberInfo g d.val_range topValInfo ty ty' tmenv)
+    let val_member_info = d.MemberInfo |> Option.map (remapMemberInfo g d.val_range topValInfo ty ty' tmenv)
     let val_attribs = d.val_attribs |> remapAttribs g tmenv
     { d with 
         val_type     = ty';
@@ -4645,9 +4645,9 @@ and remapValData g tmenv (d: ValData) =
             match d.val_opt_data with
             | Some dd ->
                 Some({ dd with 
-                         val_repr_info = val_repr_info })
+                         val_repr_info = val_repr_info
+                         val_member_info = val_member_info })
             | None -> None;
-        val_member_info = val_member_info
         val_attribs  = val_attribs }
 
 and remapParentRef tyenv p =
