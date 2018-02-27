@@ -459,6 +459,10 @@ if /i "%BUILD_FCS%" == "1" (
     set NEEDS_DOTNET_CLI_TOOLS=1
 )
 
+rem Decide if Proto need building
+if NOT EXIST Proto\net40\bin\fsc.exe (
+  set BUILD_PROTO=1
+)
 
 echo Build/Tests configuration:
 echo.
@@ -658,8 +662,8 @@ set path=%~dp0Tools\dotnet20\;%path%
 
 if "%NEEDS_DOTNET_CLI_TOOLS%" == "1" (
     :: Restore projects using dotnet CLI tool 
-    echo %_dotnet20exe% restore -v:d build-everything.proj %msbuildflags% %BUILD_DIAG%
-         %_dotnet20exe% restore -v:d build-everything.proj %msbuildflags% %BUILD_DIAG%
+    echo %_dotnet20exe% restore -v:d build-everything.proj -c Proto %msbuildflags% %BUILD_DIAG%
+         %_dotnet20exe% restore -v:d build-everything.proj -c Proto %msbuildflags% %BUILD_DIAG%
 )
 
 
@@ -700,11 +704,6 @@ if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
 )
 
 echo ---------------- Done with package restore, starting proto ------------------------
-
-rem Decide if Proto need building
-if NOT EXIST Proto\net40\bin\fsc.exe (
-  set BUILD_PROTO=1
-)
 
 rem Build Proto
 if "%BUILD_PROTO%" == "1" (
@@ -1004,6 +1003,18 @@ if "%TEST_NET40_COREUNIT_SUITE%" == "1" (
     echo "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Build.UnitTests.dll" !WHERE_ARG_NUNIT!
          "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Build.UnitTests.dll" !WHERE_ARG_NUNIT!
 
+
+    if errorlevel 1 (
+        echo -----------------------------------------------------------------
+        type "!OUTPUTFILE!"
+        echo -----------------------------------------------------------------
+        type "!ERRORFILE!"
+        echo -----------------------------------------------------------------
+        echo Error: Running tests net40-coreunit failed, see logs above -- FAILED
+        echo -----------------------------------------------------------------
+        goto :failure
+    )
+
     echo "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Core.UnitTests.dll" !WHERE_ARG_NUNIT!
          "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Core.UnitTests.dll" !WHERE_ARG_NUNIT!
 
@@ -1030,10 +1041,17 @@ if "%TEST_CORECLR_COREUNIT_SUITE%" == "1" (
     echo "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Build.UnitTests\FSharp.Build.UnitTests.dll" !WHERE_ARG_NUNIT!
          "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Build.UnitTests\FSharp.Build.UnitTests.dll" !WHERE_ARG_NUNIT!
 
+    if errorlevel 1 (
+        echo -----------------------------------------------------------------
+        echo Error: Running tests coreclr-coreunit failed, see logs above-- FAILED
+        echo -----------------------------------------------------------------
+        goto :failure
+    )
+
     echo "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.UnitTests\FSharp.Core.UnitTests.dll" !WHERE_ARG_NUNIT!
          "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.UnitTests\FSharp.Core.UnitTests.dll" !WHERE_ARG_NUNIT!
 
-    if ERRORLEVEL 1 (
+    if errorlevel 1 (
         echo -----------------------------------------------------------------
         echo Error: Running tests coreclr-coreunit failed, see logs above-- FAILED
         echo -----------------------------------------------------------------
