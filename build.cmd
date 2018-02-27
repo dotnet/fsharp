@@ -651,10 +651,8 @@ if "%RestorePackages%" == "true" (
     )
 )
 
-if "%NEEDS_DOTNET_CLI_TOOLS%" == "1" (
-    :: Restore the Tools directory
-    call %~dp0init-tools.cmd
-)
+:: Restore the Tools directory
+call %~dp0init-tools.cmd
 set _dotnetcliexe=%~dp0Tools\dotnetcli\dotnet.exe
 set _dotnet20exe=%~dp0Tools\dotnet20\dotnet.exe
 set NUGET_PACKAGES=%~dp0Packages
@@ -662,8 +660,8 @@ set path=%~dp0Tools\dotnet20\;%path%
 
 if "%NEEDS_DOTNET_CLI_TOOLS%" == "1" (
     :: Restore projects using dotnet CLI tool 
-    echo %_dotnet20exe% restore -v:d build-everything.proj -c Proto %msbuildflags% %BUILD_DIAG%
-         %_dotnet20exe% restore -v:d build-everything.proj -c Proto %msbuildflags% %BUILD_DIAG%
+    echo %_dotnet20exe% restore -v:d build-everything.proj %msbuildflags% %BUILD_DIAG%
+         %_dotnet20exe% restore -v:d build-everything.proj %msbuildflags% %BUILD_DIAG%
 )
 
 
@@ -703,28 +701,40 @@ if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
   popd
 )
 
+echo ---------------------------- Prepare FsLex and FsYacc -----------------------------
+
+echo %_msbuildexe% %msbuildflags% src\buildtools\FsLexYacc.proj /t:Restore
+     %_msbuildexe% %msbuildflags% src\buildtools\FsLexYacc.proj /t:Restore
+if ERRORLEVEL 1 echo Error restoring FsLexYacc && goto :failure
+
+echo %_msbuildexe% %msbuildflags% src\buildtools\FsLexYacc.proj /t:Build /p:TargetFramework=net45
+     %_msbuildexe% %msbuildflags% src\buildtools\FsLexYacc.proj /t:Build /p:TargetFramework=net45
+if ERRORLEVEL 1 echo Error building FsLexYacc && goto :failure
+
+echo %_msbuildexe% %msbuildflags% src\buildtools\FsLexYacc.proj /t:Publish /p:TargetFramework=net45 /p:PublishDir=%~dp0Tools\FsLexYacc
+     %_msbuildexe% %msbuildflags% src\buildtools\FsLexYacc.proj /t:Publish /p:TargetFramework=net45 /p:PublishDir=%~dp0Tools\FsLexYacc
+if ERRORLEVEL 1 echo Error publishing FsLexYacc && goto :failure
+
+
 echo ---------------- Done with package restore, starting proto ------------------------
 
 rem Build Proto
 if "%BUILD_PROTO%" == "1" (
   rmdir /s /q Proto
 
-  if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
-
-    echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true
-         %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true
-    @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
-  )
+  echo dotnet restore src\fsharp-proto-build.proj
+       dotnet restore src\fsharp-proto-build.proj
+  if ERRORLEVEL 1 echo Error restoring proto compiler && goto :failure
 
   if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "0" (
-
-    echo %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.27\tools\fsc.exe /nologo 
-         %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.27\tools\fsc.exe /nologo 
-
-    echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true
-         %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:DisableLocalization=true
+    echo %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.27\tools\fsc.exe /nologo
+         %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.27\tools\fsc.exe /nologo
     @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
   )
+
+  echo dotnet build src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:TargetFramework=net45
+       dotnet build src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto /p:TargetFramework=net45
+  @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
 
   echo %_ngenexe% install Proto\net40\bin\fsc.exe /nologo 
        %_ngenexe% install Proto\net40\bin\fsc.exe /nologo 
