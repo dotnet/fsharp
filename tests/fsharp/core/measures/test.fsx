@@ -123,7 +123,7 @@ module FLOAT =
  let x23p = sinh (4.4<_>)
  let x23r = tan (4.4<_>)
  let x23s = tanh (4.4<_>)
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
  let x23t = truncate (4.5<_>)
 #endif
  // check the types and values!
@@ -313,7 +313,7 @@ module DECIMAL =
  let x1d : decimal = ceil 4.4M 
  let x1h : decimal = floor 4.4M 
  let x1l : decimal = pown 4.4M 3
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
  let x1m : decimal = round 4.4M 
 #endif
  let x1n : int = sign 4.4M 
@@ -499,14 +499,12 @@ module MembersTest =
     let s = 2.0f<kg>
     let d = 2.0M<kg>
 
-#if !FSCORE_PORTABLE_OLD && !FSCORE_PORTABLE_NEW
     let tmpCulture = System.Threading.Thread.CurrentThread.CurrentCulture
     System.Threading.Thread.CurrentThread.CurrentCulture <- System.Globalization.CultureInfo("en-US")
     test "f" (f.ToString().Equals("2"))
     test "s" (s.ToString().Equals("2"))
     test "d" (d.ToString().Equals("2.0"))
     System.Threading.Thread.CurrentThread.CurrentCulture <- tmpCulture
-#endif
 
     let fc = (f :> System.IComparable<float<kg>>).CompareTo(f+f)
     let sc = (s :> System.IComparable<float32<kg>>).CompareTo(s+s)
@@ -518,7 +516,7 @@ module MembersTest =
     let f1 = (f :> System.IFormattable)
     let f2 = (f :> System.IComparable)
     let f3 = (f :> System.IEquatable<float<kg>>)
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
     let f4 = (f :> System.IConvertible)
 #endif
   
@@ -551,7 +549,7 @@ module WrappedFloatTypeTest =
         static member Sin (c1:C<1>) = C<1>(sin c1.V)
         static member Sinh (c1:C<1>) = C<1>(sinh c1.V)
         static member Tanh (c1:C<1>) = C<1>(tan c1.V)
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
         static member Truncate (c1:C<1>) = C<1>(truncate c1.V)
 #endif
         static member Pow (c1:C<1>,c2:C<1>) = C<1>( c1.V ** c2.V)
@@ -599,7 +597,7 @@ module WrappedFloatTypeTest =
     let c26 = sin (C<1>(0.5))
     let c27 = sinh (C<1>(0.5))
     let c28 = tanh (C<1>(0.5))
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
     let c29 = truncate (C<1>(0.5))
 #endif
     let c30 =  C<1>(0.5) ** C<1>(2.0)

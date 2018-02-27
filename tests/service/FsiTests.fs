@@ -1,6 +1,6 @@
 ﻿
 #if INTERACTIVE
-#r "../../Debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
 #r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
@@ -27,7 +27,7 @@ let errStream = new CompilerOutputStream()
 let argv = [| "C:\\fsi.exe" |]
 let allArgs = Array.append argv [|"--noninteractive"|]
 
-#if DOTNETCORE
+#if NETCOREAPP2_0
 let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
 #else
 let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration(fsi)

@@ -1,0 +1,4 @@
+<Project>
+  <Target Name="VSIXNameProjectOutputGroup" />
+  <Target Name="VSIXIdentifierProjectOutputGroup" />
+</Project>

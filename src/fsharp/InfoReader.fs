@@ -453,7 +453,7 @@ let rec GetIntrinsicConstructorInfosOfTypeAux (infoReader:InfoReader) m origTy m
     | ILTypeMetadata _ -> 
         let tinfo = ILTypeInfo.FromType g origTy
         tinfo.RawMetadata.Methods.FindByName ".ctor" 
-        |> List.filter (fun md -> match md.mdKind with MethodKind.Ctor -> true | _ -> false) 
+        |> List.filter (fun md -> md.IsConstructor) 
         |> List.map (fun mdef -> MethInfo.CreateILMeth (amap, m, origTy, mdef)) 
 
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 

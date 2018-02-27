@@ -1454,7 +1454,7 @@
       </trans-unit>
       <trans-unit id="crefQuotationsCantContainArrayPatternMatching">
         <source>Quotations cannot contain array pattern matching</source>
-        <target state="translated">Le quotation non possono contenere caratteri jolly per identificare matrici</target>
+        <target state="translated">Le quotation non possono contenere criteri di ricerca per identificare matrici</target>
         <note />
       </trans-unit>
       <trans-unit id="crefQuotationsCantContainThisType">
@@ -2619,7 +2619,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidObjectConstructionExpression">
         <source>This is not a valid object construction expression. Explicit object constructors must either call an alternate constructor or initialize all fields of the object and specify a call to a super class constructor.</source>
-        <target state="translated">Espressione di costruzione di oggetto non valida. I costruttori di oggetto espliciti devono chiamare un costruttore alternativo o inizializzare tutti i campi dell'oggetto e specificare una chiamata al costruttore di super classe.</target>
+        <target state="translated">Espressione di costruzione di oggetti non valida. I costruttori di oggetto espliciti devono chiamare un costruttore alternativo o inizializzare tutti i campi dell'oggetto e specificare una chiamata al costruttore di super classe.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidConstraint">
@@ -3034,7 +3034,7 @@
       </trans-unit>
       <trans-unit id="tcObjectsMustBeInitializedWithObjectExpression">
         <source>Objects must be initialized by an object construction expression that calls an inherited object constructor and assigns a value to each field</source>
-        <target state="translated">Gli oggetti devono essere inizializzati da un'espressione di costruzione degli oggetti che chiama un costruttore di oggetto ereditato e assegna un valore a ogni campo</target>
+        <target state="translated">Gli oggetti devono essere inizializzati da un'espressione di costruzione degli oggetti che chiama un costruttore di oggetti ereditato e assegna un valore a ogni campo</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpectedInterfaceType">
@@ -5339,7 +5339,7 @@
       </trans-unit>
       <trans-unit id="parsMissingGreaterThan">
         <source>Unmatched '&lt;'. Expected closing '&gt;'</source>
-        <target state="translated">'&lt;' non corrispondente. Previsto '&gt;' di chiusura</target>
+        <target state="translated">'&lt;' senza corrispondenza. Previsto '&gt;' di chiusura</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedQuotationOperatorInTypeAliasDidYouMeanVerbatimString">
@@ -5964,7 +5964,7 @@
       </trans-unit>
       <trans-unit id="parsUnmatchedLBrackLess">
         <source>Unmatched '[&lt;'. Expected closing '&gt;]'</source>
-        <target state="translated">'[&lt;' non corrispondente. Previsto '&gt;]' di chiusura</target>
+        <target state="translated">'[&lt;' senza corrispondenza. Previsto '&gt;]' di chiusura</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileMatch">
@@ -6974,12 +6974,12 @@
       </trans-unit>
       <trans-unit id="implicitlyDiscardedInSequenceExpression">
         <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.</source>
-        <target state="new">This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.</target>
+        <target state="translated">Questa espressione restituisce un valore di tipo '{0}' ma viene rimossa in modo implicito. Provare a usare 'let' per eseguire il binding del risultato a un nome, ad esempio 'let risultato = espressione'. Se si intende usare l'espressione come valore nella sequenza, usare l'operando 'yield' esplicito.</target>
         <note />
       </trans-unit>
       <trans-unit id="implicitlyDiscardedSequenceInSequenceExpression">
         <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</source>
-        <target state="new">This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</target>
+        <target state="translated">Questa espressione restituisce un valore di tipo '{0}' ma viene rimossa in modo implicito. Provare a usare 'let' per eseguire il binding del risultato a un nome, ad esempio 'let risultato = espressione'. Se si intende usare l'espressione come valore nella sequenza, usare l'operando 'yield!' esplicito.</target>
         <note />
       </trans-unit>
     </body>

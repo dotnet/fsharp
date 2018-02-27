@@ -1,5 +1,5 @@
 ﻿#if INTERACTIVE
-#r "../../Debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
 #r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
@@ -71,9 +71,11 @@ let UseMyFileSystem() =
     Shim.FileSystem <- myFileSystem
     { new IDisposable with member x.Dispose() = Shim.FileSystem <- myFileSystem }
 
-#if !FX_ATLEAST_PORTABLE
 
 [<Test>]
+#if NETCOREAPP2_0
+[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+#endif
 let ``FileSystem compilation test``() = 
   if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then // file references only valid on Windows 
     use myFileSystem =  UseMyFileSystem()
@@ -113,4 +115,3 @@ let ``FileSystem compilation test``() =
     results.AssemblySignature.Entities.[0].MembersFunctionsAndValues.Count |> shouldEqual 1
     results.AssemblySignature.Entities.[0].MembersFunctionsAndValues.[0].DisplayName |> shouldEqual "B"
 
-#endif
