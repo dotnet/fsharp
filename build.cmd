@@ -662,8 +662,8 @@ set path=%~dp0Tools\dotnet20\;%path%
 
 if "%NEEDS_DOTNET_CLI_TOOLS%" == "1" (
     :: Restore projects using dotnet CLI tool 
-    echo %_dotnet20exe% restore -v:d build-everything.proj -c Proto %msbuildflags% %BUILD_DIAG%
-         %_dotnet20exe% restore -v:d build-everything.proj -c Proto %msbuildflags% %BUILD_DIAG%
+    echo %_dotnet20exe% restore -v:d build-everything.proj %msbuildflags% %BUILD_DIAG%
+         %_dotnet20exe% restore -v:d build-everything.proj %msbuildflags% %BUILD_DIAG%
 )
 
 
