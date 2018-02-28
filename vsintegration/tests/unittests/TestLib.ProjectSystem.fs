@@ -657,7 +657,7 @@ module LanguageServiceExtension =
                                 failwith "tried to build not-yet-created project"
                             else
                                 let target = if target <> null then target else "Build"
-                                projInfo.Project.BuildToOutput(target,vsOutputWindowPane) |> ignore   // force build through project system for code coverage
+                                projInfo.Project.BuildToOutput(target,vsOutputWindowPane, null) |> ignore   // force build through project system for code coverage
                                 hooks.BuildHook(projFileName, target, vsOutputWindowPane)      // use MSBuild to build and also return MainAssembly value
 
                         member x.GetMainOutputAssemblyHook baseName = hooks.GetMainOutputAssemblyHook baseName 
