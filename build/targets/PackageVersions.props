@@ -2,14 +2,17 @@
 
   <PropertyGroup>
 
+    <!-- version numbers from files -->
+    <RoslynPackageVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)..\..\RoslynPackageVersion.txt').Trim())</RoslynPackageVersion>
+
     <!-- System.* packages -->
     <SystemCollectionsImmutablePackageVersion>1.3.1</SystemCollectionsImmutablePackageVersion>
 
     <!-- Roslyn packages -->
-    <MicrosoftCodeAnalysisEditorFeaturesPackageVersion>2.3.0-beta2-61719-01</MicrosoftCodeAnalysisEditorFeaturesPackageVersion>
-    <MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>2.3.0-beta2-61719-01</MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>
-    <MicrosoftCodeAnalysisWorkspacesCommonPackageVersion>2.3.0-beta2-61719-01</MicrosoftCodeAnalysisWorkspacesCommonPackageVersion>
-    <MicrosoftVisualStudioLanguageServicesPackageVersion>2.3.0-beta2-61719-01</MicrosoftVisualStudioLanguageServicesPackageVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesPackageVersion>$(RoslynPackageVersion)</MicrosoftCodeAnalysisEditorFeaturesPackageVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>$(RoslynPackageVersion)</MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>
+    <MicrosoftCodeAnalysisWorkspacesCommonPackageVersion>$(RoslynPackageVersion)</MicrosoftCodeAnalysisWorkspacesCommonPackageVersion>
+    <MicrosoftVisualStudioLanguageServicesPackageVersion>$(RoslynPackageVersion)</MicrosoftVisualStudioLanguageServicesPackageVersion>
 
     <!-- Visual Studio packages -->
     <EnvDTE80PackageVersion>8.0.1</EnvDTE80PackageVersion>
