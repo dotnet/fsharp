@@ -5,8 +5,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectFiles Include="tests\Salsa\VisualFSharp.Salsa.fsproj"/>
-    <ProjectFiles Include="tests\unittests\VisualFSharp.UnitTests.fsproj"/>
+    <ProjectFiles Include="tests\Salsa\VisualFSharp.Salsa.fsproj" />
+    <ProjectFiles Include="tests\unittests\VisualFSharp.UnitTests.fsproj" />
     <ProjectFiles Include="..\tests\service\data\TestTP\TestTP.fsproj" />
     <ProjectFiles Include="..\tests\service\data\CSharp_Analysis\CSharp_Analysis.csproj" />
     <ProjectFiles Include="tests\unittests\MockTypeProviders\DefinitionLocationAttribute\DefinitionLocationAttribute.csproj" />
@@ -23,6 +23,16 @@
     <ProjectFiles Include="tests\unittests\MockTypeProviders\XmlDocAttributeWithNullComment\XmlDocAttributeWithNullComment.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <SdkProjects Include="tests\Salsa\VisualFSharp.Salsa.fsproj" />
+    <SdkProjects Include="tests\unittests\VisualFSharp.UnitTests.fsproj" />
+  </ItemGroup>
+
   <Import Project="..\src\root.traversal.targets"/>
+
+  <Target Name="Restore">
+    <MSBuild Projects="@(SdkProjects)" Targets="Restore" />
+  </Target>
+
 </Project>
 
