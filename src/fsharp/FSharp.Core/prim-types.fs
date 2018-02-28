@@ -3043,29 +3043,34 @@ namespace Microsoft.FSharp.Collections
     // List (debug view)
     //-------------------------------------------------------------------------
 
-    and 
+    and
        ListDebugView<'T>(l:list<'T>) =
 
-           let ListDebugViewMaxLength = 50
-           let rec count l n = 
-               match l with 
-               | [] -> n 
-               | _::t -> if n > ListDebugViewMaxLength then n else count t (n+1) 
+           let ListDebugViewMaxLength = 50                          // default displayed Max Length
+           let ListDebugViewMaxFullLength = 5000                    // display only when FullList opened (5000 is a super big display used to cut-off an infinite list or undebuggably huge one)
+           let rec count l n max =
+               match l with
+               | [] -> n
+               | _::t -> if n > max then n else count t (n+1) max
 
-           [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
-           member x.Items =
-               let n = count l 0 
-               let items = zeroCreate n 
+           let items length =
+               let items = zeroCreate length
                let rec copy (items: 'T[]) l i = 
                    match l with
                    | [] -> () 
                    | h::t -> 
-                       if i < n then 
+                       if i < length then 
                            SetArray items i h
                            copy items t (i+1)
 
                copy items l 0
                items
+
+           [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
+           member x.Items = items (count l 0 ListDebugViewMaxLength)
+
+           [<DebuggerBrowsable(DebuggerBrowsableState.Collapsed)>]
+           member x._FullList = items (count l 0 ListDebugViewMaxFullLength)
 
     type ResizeArray<'T> = System.Collections.Generic.List<'T>
 
