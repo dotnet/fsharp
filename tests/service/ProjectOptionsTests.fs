@@ -543,10 +543,15 @@ ImplFile.x
     File.WriteAllText(fileName1, fileSource1)
     File.WriteAllText(fileName2, fileSource2)
 
+    printfn "------Starting Script load closure project----"
+    printfn "Getting project options..."
     let projectOptions, diagnostics =
-        checker.GetProjectOptionsFromScript(fileName2, fileSource2) |> Async.RunSynchronously
+        checker.GetProjectOptionsFromScript(fileName2, fileSource2, useFsiAuxLib=false) |> Async.RunSynchronously
+    for d in diagnostics do 
+       printfn "ERROR: %A" d
     diagnostics.IsEmpty |> shouldEqual true
 
+    printfn "Parse and check..."
     let _, checkResults =
         checker.ParseAndCheckFileInProject(fileName2, 0, fileSource2, projectOptions) |> Async.RunSynchronously
 
@@ -555,13 +560,20 @@ ImplFile.x
         results.Errors |> shouldEqual [| |]
     | _ -> failwith "type check was aborted"
 
+    printfn "Getting parsing options..."
     let parsingOptions, diagnostics = checker.GetParsingOptionsFromProjectOptions(projectOptions)
+    for d in diagnostics do 
+       printfn "ERROR: %A" d
     diagnostics.IsEmpty |> shouldEqual true
 
+    printfn "Parsing file..."
     let parseResults = checker.ParseFile(fileName1, fileSource1, parsingOptions) |> Async.RunSynchronously
+    printfn "Checking parsetree..."
     parseResults.ParseTree.IsSome |> shouldEqual true
+    printfn "Checking decls..."
     match parseResults.ParseTree.Value with
     | ParsedInput.ImplFile (ParsedImplFileInput (_, _, _, _, _, modules, _)) ->
         let (SynModuleOrNamespace (_, _, _, decls, _, _, _, _)) = modules.Head
         decls.Length |> shouldEqual 1
     | _ -> failwith "got sig file"
+    printfn "------Finished Script load closure project----"
