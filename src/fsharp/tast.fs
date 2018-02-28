@@ -2238,13 +2238,13 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     /// Range of the definition (implementation) of the value, used by Visual Studio 
     member x.DefinitionRange            = 
         match x.val_opt_data with
-        | Some ({ val_other_range = Some(m,true) }) -> m
+        | Some { val_other_range = Some(m,true) } -> m
         | _ -> x.val_range
 
     /// Range of the definition (signature) of the value, used by Visual Studio 
     member x.SigRange            = 
         match x.val_opt_data with
-        | Some ({ val_other_range = Some(m,false) }) -> m
+        | Some { val_other_range = Some(m,false) } -> m
         | _ -> x.val_range
 
     /// The place where the value was defined. 
@@ -2289,7 +2289,7 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     /// represent as "top level" bindings.     
     member x.ValReprInfo : ValReprInfo option =
         match x.val_opt_data with
-        | Some (x) -> x.val_repr_info
+        | Some x -> x.val_repr_info
         | _ -> None
 
     member x.Id                         = ident(x.LogicalName,x.Range)
@@ -2328,7 +2328,7 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     /// The quotation expression associated with a value given the [<ReflectedDefinition>] tag
     member x.ReflectedDefinition        =
         match x.val_opt_data with
-        | Some (x) -> x.val_defn
+        | Some x -> x.val_defn
         | _ -> None
 
     /// Is this a member, if so some more data about the member.
@@ -5019,32 +5019,29 @@ exception FullAbstraction of string * range
 let NewModuleOrNamespace cpath access (id:Ident) xml attribs mtype = Construct.NewModuleOrNamespace cpath access id xml attribs mtype
 
 let NewVal (logicalName:string,m:range,compiledName,ty,isMutable,isCompGen,arity,access,recValInfo,specialRepr,baseOrThis,attribs,inlineInfo,doc,isModuleOrMemberBinding,isExtensionMember,isIncrClassSpecialMember,isTyFunc,allowTypeInst,isGeneratedEventVal,konst,actualParent) : Val = 
-    let stamp = newStamp() 
-    let res =
-        Val.New
-            { val_stamp = stamp
-              val_logical_name=logicalName
-              val_range=m
-              val_flags = ValFlags(recValInfo,baseOrThis,isCompGen,inlineInfo,isMutable,isModuleOrMemberBinding,isExtensionMember,isIncrClassSpecialMember,isTyFunc,allowTypeInst,isGeneratedEventVal)
-              val_type = ty
-              val_opt_data = None } 
-
-    res.val_opt_data <-
-        match compiledName, arity, konst, access, doc, specialRepr, actualParent, attribs with
-        | None, None, None, TAccess [], XmlDoc [||], None, ParentNone, [] -> None
-        | _ -> 
-            Some { val_compiled_name=(match compiledName with Some v when v <> logicalName -> compiledName | _ -> None)
-                   val_other_range=None
-                   val_defn = None
-                   val_repr_info = arity
-                   val_const = konst
-                   val_access = access
-                   val_xmldoc = doc
-                   val_member_info = specialRepr
-                   val_declaring_entity = actualParent
-                   val_xmldocsig = ""
-                   val_attribs = attribs }
-    res
+    let stamp = newStamp()
+    Val.New
+        { val_stamp        = stamp
+          val_logical_name = logicalName
+          val_range        = m
+          val_flags        = ValFlags(recValInfo,baseOrThis,isCompGen,inlineInfo,isMutable,isModuleOrMemberBinding,isExtensionMember,isIncrClassSpecialMember,isTyFunc,allowTypeInst,isGeneratedEventVal)
+          val_type         = ty
+          val_opt_data     =
+            match compiledName, arity, konst, access, doc, specialRepr, actualParent, attribs with
+            | None, None, None, TAccess [], XmlDoc [||], None, ParentNone, [] -> None
+            | _ -> 
+                Some { val_compiled_name    = (match compiledName with Some v when v <> logicalName -> compiledName | _ -> None)
+                       val_other_range      = None
+                       val_defn             = None
+                       val_repr_info        = arity
+                       val_const            = konst
+                       val_access           = access
+                       val_xmldoc           = doc
+                       val_member_info      = specialRepr
+                       val_declaring_entity = actualParent
+                       val_xmldocsig        = String.Empty
+                       val_attribs          = attribs }
+        }
 
 
 let NewCcuContents sref m nm mty =
