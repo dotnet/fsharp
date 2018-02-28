@@ -51,7 +51,7 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "UntypedTree", "samples\Unty
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FscExe", "samples\FscExe\FscExe.fsproj", "{C94C257C-3C0A-4858-B5D8-D746498D1F08}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSharp_Analysis", "..\tests\service\data\CSharp_Analysis\CSharp_Analysis.csproj", "{887630A3-4B1D-40EA-B8B3-2D842E9C40DB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CSharp_Analysis", "FSharp.Compiler.Service.Tests\CSharp_Analysis\CSharp_Analysis.csproj", "{887630A3-4B1D-40EA-B8B3-2D842E9C40DB}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FsiExe", "samples\FsiExe\FsiExe.fsproj", "{F9540CA8-1CE0-4546-A23A-A461E416E95B}"
 EndProject

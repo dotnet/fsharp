@@ -48,8 +48,8 @@
 
   <PropertyGroup>
     <NugetLocalPackagesDir>$(FSharpSourcesRoot)\..\packages</NugetLocalPackagesDir>
-    <FsCheckVersion>2.6.2</FsCheckVersion>
-    <FsCheckFullVersion>2.6.2.0</FsCheckFullVersion>
+    <FsCheckVersion>3.0.0-alpha3</FsCheckVersion>
+    <FsCheckFullVersion>3.0.0.0</FsCheckFullVersion>
     <FsCheckLibDir>$(FSharpSourcesRoot)\..\packages\FsCheck.$(FsCheckVersion)\lib\</FsCheckLibDir>
   </PropertyGroup>
 
