@@ -1812,9 +1812,9 @@ and p_vrefFlags x st =
 
 and p_ValData x st =
     p_string x.val_logical_name st
-    p_option p_string (match x.val_opt_data with | Some x -> x.val_compiled_name | _ -> None) st
+    p_option p_string x.ValCompiledName st
     // only keep range information on published values, not on optimization data
-    p_ranges (if x.ValReprInfo.IsSome then Some(x.val_range, x.DefinitionRange) else None) st
+    p_ranges (x.ValReprInfo |> Option.map (fun _ -> x.val_range, x.DefinitionRange)) st
     p_typ x.val_type st
     p_int64 x.val_flags.PickledBits st
     p_option p_member_info x.MemberInfo st

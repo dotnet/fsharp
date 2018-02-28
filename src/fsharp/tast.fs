@@ -2206,6 +2206,7 @@ and ValOptionalData =
       /// these value references after copying a collection of values. 
       mutable val_attribs: Attribs
     }
+
 and ValData = Val
 and [<StructuredFormatDisplay("{LogicalName}")>]
     Val = 
@@ -2231,6 +2232,8 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
       mutable val_flags: ValFlags
       
       mutable val_opt_data : ValOptionalData option } 
+
+    static member EmptyValOptData = { val_compiled_name = None; val_other_range = None; val_const = None; val_defn = None; val_repr_info = None; val_access = TAccess []; val_xmldoc = XmlDoc [||]; val_member_info = None; val_declaring_entity = ParentNone; val_xmldocsig = String.Empty; val_attribs = [] }
 
     /// Range of the definition (implementation) of the value, used by Visual Studio 
     member x.DefinitionRange            = 
@@ -2433,7 +2436,7 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     ///Get the signature for the value's XML documentation
     member x.XmlDocSig 
         with get() = match x.val_opt_data with | Some x -> x.val_xmldocsig | _ -> String.Empty
-        and set(v) = match x.val_opt_data with | Some x -> x.val_xmldocsig <- v | _ -> x.val_opt_data <- Some { val_compiled_name = None; val_other_range = None; val_const = None; val_defn = None; val_repr_info = None; val_access = TAccess []; val_xmldoc = XmlDoc [||]; val_member_info = None; val_declaring_entity = ParentNone; val_xmldocsig = v; val_attribs = [] }
+        and set(v) = match x.val_opt_data with | Some x -> x.val_xmldocsig <- v | _ -> x.val_opt_data <- Some { Val.EmptyValOptData with val_xmldocsig = v }
 
     /// The parent type or module, if any (None for expression bindings and parameters)
     member x.DeclaringEntity               = 
@@ -2530,6 +2533,11 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
             | slotsig :: _ -> slotsig.Name
             | _ -> x.val_logical_name
 
+    member x.ValCompiledName =
+        match x.val_opt_data with
+        | Some x -> x.val_compiled_name
+        | _ -> None
+
     /// The name of the method in compiled code (with some exceptions where ilxgen.fs decides not to use a method impl)
     ///   - If this is a property then this is 'get_Foo' or 'set_Foo'
     ///   - If this is an implementation of an abstract slot then this may be a mangled name
@@ -2598,20 +2606,28 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     member x.SetValReprInfo info                          = 
         match x.val_opt_data with
         | Some x -> x.val_repr_info <- info
-        | _ -> x.val_opt_data <- Some { val_compiled_name = None; val_other_range = None; val_const = None; val_defn = None; val_repr_info = info; val_access = TAccess []; val_xmldoc = XmlDoc [||]; val_member_info = None; val_declaring_entity = ParentNone; val_xmldocsig = String.Empty; val_attribs = [] }
+        | _ -> x.val_opt_data <- Some { Val.EmptyValOptData with val_repr_info = info }
     member x.SetType ty                                  = x.val_type <- ty
     member x.SetOtherRange m                              =
         match x.val_opt_data with
         | Some x -> x.val_other_range <- Some m
-        | _ -> x.val_opt_data <- Some { val_compiled_name = None; val_other_range = Some m; val_const = None; val_defn = None; val_repr_info = None; val_access = TAccess []; val_xmldoc = XmlDoc [||]; val_member_info = None; val_declaring_entity = ParentNone; val_xmldocsig = String.Empty; val_attribs = [] }
-    member x.SetDeclaringEntity parent                          = 
+        | _ -> x.val_opt_data <- Some { Val.EmptyValOptData with val_other_range = Some m }
+    member x.SetDeclaringEntity parent                    = 
         match x.val_opt_data with
         | Some x -> x.val_declaring_entity <- parent
-        | _ -> x.val_opt_data <- Some { val_compiled_name = None; val_other_range = None; val_const = None; val_defn = None; val_repr_info = None; val_access = TAccess []; val_xmldoc = XmlDoc [||]; val_member_info = None; val_declaring_entity = parent; val_xmldocsig = String.Empty; val_attribs = [] }
-    member x.SetAttribs attribs                          = 
+        | _ -> x.val_opt_data <- Some { Val.EmptyValOptData with val_declaring_entity = parent }
+    member x.SetAttribs attribs                           = 
         match x.val_opt_data with
         | Some x -> x.val_attribs <- attribs
-        | _ -> x.val_opt_data <- Some { val_compiled_name = None; val_other_range = None; val_const = None; val_defn = None; val_repr_info = None; val_access = TAccess []; val_xmldoc = XmlDoc [||]; val_member_info = None; val_declaring_entity = ParentNone; val_xmldocsig = String.Empty; val_attribs = attribs }
+        | _ -> x.val_opt_data <- Some { Val.EmptyValOptData with val_attribs = attribs }
+    member x.SetMemberInfo member_info                    = 
+        match x.val_opt_data with
+        | Some x -> x.val_member_info <- Some member_info
+        | _ -> x.val_opt_data <- Some { Val.EmptyValOptData with val_member_info = Some member_info }
+    member x.SetValDefn val_defn                    = 
+        match x.val_opt_data with
+        | Some x -> x.val_defn <- Some val_defn
+        | _ -> x.val_opt_data <- Some { Val.EmptyValOptData with val_defn = Some val_defn }
 
     /// Create a new value with empty, unlinked data. Only used during unpickling of F# metadata.
     static member NewUnlinked() : Val  = 
