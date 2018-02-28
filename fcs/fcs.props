@@ -8,13 +8,5 @@
     <!-- The LKG FSI.EXE requires MSBuild 15 to be installed, which is painful -->
     <FsiToolPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.27\tools</FsiToolPath>
     <FsiToolExe>fsi.exe</FsiToolExe>
-
-    <!-- FSharp.Compiler.Service is compiled with FSharp.Compiler.Tools for reproducible builds --> 
-    <FscToolPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.27\tools</FscToolPath>
-    <FscToolExe>fsc.exe</FscToolExe>
-    <FscToolFullPath>$(FscToolPath)\$(FsiToolExe)</FscToolFullPath>
-
-    <AssemblySearchPaths>{HintPathFromItem};{TargetFrameworkDirectory};{RawFileName}</AssemblySearchPaths>
-
   </PropertyGroup>
 </Project>
