@@ -2210,12 +2210,6 @@ and ValOptionalData =
 and ValData = Val
 and [<StructuredFormatDisplay("{LogicalName}")>]
     Val = 
-    // ValData is 19 words!! CONSIDER THIS TINY FORMAT, for all local, immutable, attribute-free values
-    // val_logical_name: string
-    // val_range: range
-    // mutable val_type: TType
-    // val_stamp: Stamp 
-
     { 
       /// MUTABILITY: for unpickle linkage
       mutable val_logical_name: string
@@ -2263,14 +2257,14 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     /// How visible is this value, function or member?
     member x.Accessibility              = 
         match x.val_opt_data with
-        | Some x -> x.val_access
-        | _ -> TAccess []
+        | Some optData -> optData.val_access
+        | _            -> TAccess []
 
     /// The value of a value or member marked with [<LiteralAttribute>] 
     member x.LiteralValue               = 
         match x.val_opt_data with
-        | Some x -> x.val_const
-        | _ -> None
+        | Some optData -> optData.val_const
+        | _            -> None
 
     /// Records the "extra information" for a value compiled as a method.
     ///
@@ -2289,8 +2283,8 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     /// represent as "top level" bindings.     
     member x.ValReprInfo : ValReprInfo option =
         match x.val_opt_data with
-        | Some x -> x.val_repr_info
-        | _ -> None
+        | Some optData -> optData.val_repr_info
+        | _            -> None
 
     member x.Id                         = ident(x.LogicalName,x.Range)
 
@@ -2328,8 +2322,8 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     /// The quotation expression associated with a value given the [<ReflectedDefinition>] tag
     member x.ReflectedDefinition        =
         match x.val_opt_data with
-        | Some x -> x.val_defn
-        | _ -> None
+        | Some optData -> optData.val_defn
+        | _            -> None
 
     /// Is this a member, if so some more data about the member.
     ///
@@ -2337,8 +2331,8 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     /// a true body. These cases are often causes of bugs in the compiler.
     member x.MemberInfo                 = 
         match x.val_opt_data with
-        | Some x -> x.val_member_info
-        | _ -> None
+        | Some optData -> optData.val_member_info
+        | _            -> None
 
     /// Indicates if this is a member
     member x.IsMember                   = x.MemberInfo.IsSome
@@ -2424,25 +2418,31 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     /// Get the declared attributes for the value
     member x.Attribs                    = 
         match x.val_opt_data with
-        | Some x -> x.val_attribs
-        | _ -> []
+        | Some optData -> optData.val_attribs
+        | _            -> []
 
     /// Get the declared documentation for the value
     member x.XmlDoc                     =
         match x.val_opt_data with
-        | Some x -> x.val_xmldoc
-        | _ -> XmlDoc.Empty
+        | Some optData -> optData.val_xmldoc
+        | _            -> XmlDoc.Empty
     
     ///Get the signature for the value's XML documentation
     member x.XmlDocSig 
-        with get() = match x.val_opt_data with | Some x -> x.val_xmldocsig | _ -> String.Empty
-        and set(v) = match x.val_opt_data with | Some x -> x.val_xmldocsig <- v | _ -> x.val_opt_data <- Some { Val.EmptyValOptData with val_xmldocsig = v }
+        with get() = 
+            match x.val_opt_data with 
+            | Some optData -> optData.val_xmldocsig 
+            | _            -> String.Empty
+        and set(v) = 
+            match x.val_opt_data with 
+            | Some optData -> optData.val_xmldocsig <- v 
+            | _            -> x.val_opt_data <- Some { Val.EmptyValOptData with val_xmldocsig = v }
 
     /// The parent type or module, if any (None for expression bindings and parameters)
     member x.DeclaringEntity               = 
         match x.val_opt_data with
-        | Some x -> x.val_declaring_entity
-        | _ -> ParentNone
+        | Some optData -> optData.val_declaring_entity
+        | _            -> ParentNone
 
     /// Get the actual parent entity for the value (a module or a type), i.e. the entity under which the
     /// value will appear in compiled code. For extension members this is the module where the extension member
@@ -2535,8 +2535,8 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
 
     member x.ValCompiledName =
         match x.val_opt_data with
-        | Some x -> x.val_compiled_name
-        | _ -> None
+        | Some optData -> optData.val_compiled_name
+        | _            -> None
 
     /// The name of the method in compiled code (with some exceptions where ilxgen.fs decides not to use a method impl)
     ///   - If this is a property then this is 'get_Foo' or 'set_Foo'
@@ -2603,31 +2603,31 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     member x.SetHasBeenReferenced()                      = x.val_flags <- x.val_flags.SetHasBeenReferenced
     member x.SetIsCompiledAsStaticPropertyWithoutField() = x.val_flags <- x.val_flags.SetIsCompiledAsStaticPropertyWithoutField
     member x.SetIsFixed()                                = x.val_flags <- x.val_flags.SetIsFixed
-    member x.SetValReprInfo info                          = 
+    member x.SetValReprInfo info                         = 
         match x.val_opt_data with
-        | Some x -> x.val_repr_info <- info
-        | _ -> x.val_opt_data <- Some { Val.EmptyValOptData with val_repr_info = info }
+        | Some optData -> optData.val_repr_info <- info
+        | _            -> x.val_opt_data <- Some { Val.EmptyValOptData with val_repr_info = info }
     member x.SetType ty                                  = x.val_type <- ty
-    member x.SetOtherRange m                              =
+    member x.SetOtherRange m                             =
         match x.val_opt_data with
-        | Some x -> x.val_other_range <- Some m
-        | _ -> x.val_opt_data <- Some { Val.EmptyValOptData with val_other_range = Some m }
-    member x.SetDeclaringEntity parent                    = 
+        | Some optData -> optData.val_other_range <- Some m
+        | _            -> x.val_opt_data <- Some { Val.EmptyValOptData with val_other_range = Some m }
+    member x.SetDeclaringEntity parent                   = 
         match x.val_opt_data with
-        | Some x -> x.val_declaring_entity <- parent
-        | _ -> x.val_opt_data <- Some { Val.EmptyValOptData with val_declaring_entity = parent }
-    member x.SetAttribs attribs                           = 
+        | Some optData -> optData.val_declaring_entity <- parent
+        | _            -> x.val_opt_data <- Some { Val.EmptyValOptData with val_declaring_entity = parent }
+    member x.SetAttribs attribs                          = 
         match x.val_opt_data with
-        | Some x -> x.val_attribs <- attribs
-        | _ -> x.val_opt_data <- Some { Val.EmptyValOptData with val_attribs = attribs }
-    member x.SetMemberInfo member_info                    = 
+        | Some optData -> optData.val_attribs <- attribs
+        | _            -> x.val_opt_data <- Some { Val.EmptyValOptData with val_attribs = attribs }
+    member x.SetMemberInfo member_info                   = 
         match x.val_opt_data with
-        | Some x -> x.val_member_info <- Some member_info
-        | _ -> x.val_opt_data <- Some { Val.EmptyValOptData with val_member_info = Some member_info }
-    member x.SetValDefn val_defn                    = 
+        | Some optData -> optData.val_member_info <- Some member_info
+        | _            -> x.val_opt_data <- Some { Val.EmptyValOptData with val_member_info = Some member_info }
+    member x.SetValDefn val_defn                         = 
         match x.val_opt_data with
-        | Some x -> x.val_defn <- Some val_defn
-        | _ -> x.val_opt_data <- Some { Val.EmptyValOptData with val_defn = Some val_defn }
+        | Some optData -> optData.val_defn <- Some val_defn
+        | _            -> x.val_opt_data <- Some { Val.EmptyValOptData with val_defn = Some val_defn }
 
     /// Create a new value with empty, unlinked data. Only used during unpickling of F# metadata.
     static member NewUnlinked() : Val  = 
@@ -5030,17 +5030,15 @@ let NewVal (logicalName:string,m:range,compiledName,ty,isMutable,isCompGen,arity
             match compiledName, arity, konst, access, doc, specialRepr, actualParent, attribs with
             | None, None, None, TAccess [], XmlDoc [||], None, ParentNone, [] -> None
             | _ -> 
-                Some { val_compiled_name    = (match compiledName with Some v when v <> logicalName -> compiledName | _ -> None)
-                       val_other_range      = None
-                       val_defn             = None
-                       val_repr_info        = arity
-                       val_const            = konst
-                       val_access           = access
-                       val_xmldoc           = doc
-                       val_member_info      = specialRepr
-                       val_declaring_entity = actualParent
-                       val_xmldocsig        = String.Empty
-                       val_attribs          = attribs }
+                Some { Val.EmptyValOptData with
+                         val_compiled_name    = (match compiledName with Some v when v <> logicalName -> compiledName | _ -> None)
+                         val_repr_info        = arity
+                         val_const            = konst
+                         val_access           = access
+                         val_xmldoc           = doc
+                         val_member_info      = specialRepr
+                         val_declaring_entity = actualParent
+                         val_attribs          = attribs }
         }
 
 

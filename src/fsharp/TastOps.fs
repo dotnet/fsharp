@@ -4633,21 +4633,21 @@ and remapValReprInfo g tmenv (ValReprInfo(tpNames, arginfosl, retInfo)) =
 and remapValData g tmenv (d: ValData) =
     let ty = d.val_type
     let topValInfo = d.ValReprInfo
-    let ty' = ty |> remapPossibleForallTy g tmenv
-    let val_declaring_entity = d.DeclaringEntity |> remapParentRef tmenv
-    let val_repr_info = d.ValReprInfo |> Option.map (remapValReprInfo g tmenv)
-    let val_member_info = d.MemberInfo |> Option.map (remapMemberInfo g d.val_range topValInfo ty ty' tmenv)
-    let val_attribs = d.Attribs |> remapAttribs g tmenv
+    let tyR = ty |> remapPossibleForallTy g tmenv
+    let declaringEntityR = d.DeclaringEntity |> remapParentRef tmenv
+    let reprInfoR = d.ValReprInfo |> Option.map (remapValReprInfo g tmenv)
+    let memberInfoR = d.MemberInfo |> Option.map (remapMemberInfo g d.val_range topValInfo ty tyR tmenv)
+    let attribsR = d.Attribs |> remapAttribs g tmenv
     { d with 
-        val_type     = ty'
+        val_type     = tyR
         val_opt_data =
             match d.val_opt_data with
             | Some dd ->
                 Some { dd with 
-                         val_repr_info = val_repr_info
-                         val_member_info = val_member_info
-                         val_declaring_entity = val_declaring_entity
-                         val_attribs  = val_attribs }
+                         val_declaring_entity = declaringEntityR
+                         val_repr_info        = reprInfoR
+                         val_member_info      = memberInfoR
+                         val_attribs          = attribsR }
             | None -> None }
 
 and remapParentRef tyenv p =
