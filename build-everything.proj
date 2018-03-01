@@ -103,13 +103,17 @@
     <ProjectsToRestore Include="fcs/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TEST_VS_IDEUNIT_SUITE)'=='1'" >
-    <ProjectsWithNet40 Include="vsintegration/fsharp-vsintegration-unittests-build.proj"/>
+  <ItemGroup Condition="'$(TEST_VS_IDEUNIT_SUITE)'=='1'">
+    <ProjectsWithNet40 Include="vsintegration/fsharp-vsintegration-unittests-build.proj" />
   </ItemGroup>
+  <PropertyGroup Condition="'$(TEST_VS_IDEUNIT_SUITE)'=='1'">
+    <RestoreVSIntegrationUnitTests>true</RestoreVSIntegrationUnitTests>
+  </PropertyGroup>
 
   <ItemGroup>
     <ProjectsToRestore Include="tests/fsharpqa/testenv/src/PEVerify/PEVerify.csproj" Condition="'$(RestorePEVerify)' == 'true'" />
     <ProjectsToRestore Include="vsintegration/fsharp-vsintegration-src-build.proj" Condition="'$(RestoreVSIntegration)' == 'true'" />
+    <ProjectsToRestore Include="vsintegration/fsharp-vsintegration-unittests-build.proj" Condition="'$(RestoreVSIntegrationUnitTests)' == 'true'" />
   </ItemGroup>
 
   <PropertyGroup>
