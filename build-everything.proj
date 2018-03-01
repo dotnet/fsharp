@@ -39,6 +39,7 @@
     <RestoreLanguageServiceProfiling>true</RestoreLanguageServiceProfiling>
     <RestoreVSIntegrationItemTemplates>true</RestoreVSIntegrationItemTemplates>
     <RestoreVSIntegrationProjectTemplates>true</RestoreVSIntegrationProjectTemplates>
+    <RestoreVSIntegrationVsix>true</RestoreVSIntegrationVsix>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(BUILD_FCS)'=='1'">
@@ -120,6 +121,7 @@
     <ProjectsToRestore Include="vsintegration/fsharp-vsintegration-unittests-build.proj" Condition="'$(RestoreVSIntegrationUnitTests)' == 'true'" />
     <ProjectsToRestore Include="vsintegration/fsharp-vsintegration-item-templates-build.proj" Condition="'$(RestoreVSIntegrationItemTemplates)' == 'true'" />
     <ProjectsToRestore Include="vsintegration/fsharp-vsintegration-project-templates-build.proj" Condition="'$(RestoreVSIntegrationProjectTemplates)' == 'true'" />
+    <ProjectsToRestore Include="vsintegration/fsharp-vsintegration-vsix-build.proj" Condition="'$(RestoreVSIntegrationVsix)' == 'true'" />
   </ItemGroup>
 
   <PropertyGroup>

@@ -1,0 +1,17 @@
+<Project>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('FSharp.Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <VSRootSuffix>RoslynDev</VSRootSuffix>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <DeployExtension Condition=" '$(DeployExtension)' == '' and ('$(HUDSON_COOKIE)' != '' or '$(UsingMicrobuild)' != '') ">False</DeployExtension>
+    <DeployExtension Condition=" '$(DeployExtension)' == '' and '$(HUDSON_COOKIE)' == '' and '$(UsingMicrobuild)' == '' ">True</DeployExtension>
+    <StartAction>Program</StartAction>
+    <StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
+    <StartArguments>/rootsuffix $(VSRootSuffix) /log</StartArguments>
+    <VSSDKTargetPlatformRegRootSuffix>$(VSRootSuffix)</VSSDKTargetPlatformRegRootSuffix>
+    <CreateVsixContainer>true</CreateVsixContainer>
+  </PropertyGroup>
+
+</Project>
