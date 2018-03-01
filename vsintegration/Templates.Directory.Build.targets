@@ -1,0 +1,22 @@
+<Project>
+
+  <Import Project="FSharp.Directory.Build.targets" />
+
+  <PropertyGroup>
+    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetDotnetProfile)\bin\$(TemplateCategory)\$(AssemblyName)</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- everything under the `Template` directory is not to be considered part of the project -->
+    <Compile Remove="**\Template\**" />
+    <EmbeddedResource Remove="**\Template\**" />
+    <None Remove="**\Template\**" />
+  </ItemGroup>
+
+  <Target Name="CoreCompile" />
+
+  <Target Name="CopyFilesToOutputDirectory" AfterTargets="CoreCompile">
+    <Copy SourceFiles="@(TemplateFiles)" DestinationFiles="@(TemplateFiles->'$(OutputPath)\%(Filename)%(Extension)')" />
+  </Target>
+
+</Project>
