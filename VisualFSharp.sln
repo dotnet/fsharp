@@ -114,7 +114,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XMLFile", "vsintegration\It
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Vsix", "Vsix", "{141F6C23-E1B1-4D89-9F10-F0B8AD58E71F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VisualFSharpFull", "vsintegration\Vsix\VisualFSharpFull\VisualFSharpFull.csproj", "{59ADCE46-9740-4079-834D-9A03A3494EBC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VisualFSharpFull", "vsintegration\Vsix\VisualFSharpFull\VisualFSharpFull.csproj", "{59ADCE46-9740-4079-834D-9A03A3494EBC}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VisualFSharpOpenSource", "vsintegration\Vsix\VisualFSharpOpenSource\VisualFSharpOpenSource.csproj", "{E6A45CDF-B408-420F-B475-74611BEFC52B}"
 EndProject
@@ -646,10 +646,10 @@ Global
 		{59ADCE46-9740-4079-834D-9A03A3494EBC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{59ADCE46-9740-4079-834D-9A03A3494EBC}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{59ADCE46-9740-4079-834D-9A03A3494EBC}.Debug|x86.Build.0 = Debug|Any CPU
-		{59ADCE46-9740-4079-834D-9A03A3494EBC}.Proto|Any CPU.ActiveCfg = Proto|Any CPU
-		{59ADCE46-9740-4079-834D-9A03A3494EBC}.Proto|Any CPU.Build.0 = Proto|Any CPU
-		{59ADCE46-9740-4079-834D-9A03A3494EBC}.Proto|x86.ActiveCfg = Proto|Any CPU
-		{59ADCE46-9740-4079-834D-9A03A3494EBC}.Proto|x86.Build.0 = Proto|Any CPU
+		{59ADCE46-9740-4079-834D-9A03A3494EBC}.Proto|Any CPU.ActiveCfg = Release|Any CPU
+		{59ADCE46-9740-4079-834D-9A03A3494EBC}.Proto|Any CPU.Build.0 = Release|Any CPU
+		{59ADCE46-9740-4079-834D-9A03A3494EBC}.Proto|x86.ActiveCfg = Release|Any CPU
+		{59ADCE46-9740-4079-834D-9A03A3494EBC}.Proto|x86.Build.0 = Release|Any CPU
 		{59ADCE46-9740-4079-834D-9A03A3494EBC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{59ADCE46-9740-4079-834D-9A03A3494EBC}.Release|Any CPU.Build.0 = Release|Any CPU
 		{59ADCE46-9740-4079-834D-9A03A3494EBC}.Release|x86.ActiveCfg = Release|Any CPU
