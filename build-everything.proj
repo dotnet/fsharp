@@ -37,6 +37,7 @@
   <PropertyGroup Condition="'$(BUILD_VS)'=='1'">
     <RestoreVSIntegration>true</RestoreVSIntegration>
     <RestoreVSIntegrationItemTemplates>true</RestoreVSIntegrationItemTemplates>
+    <RestoreVSIntegrationProjectTemplates>true</RestoreVSIntegrationProjectTemplates>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(BUILD_FCS)'=='1'">
@@ -116,6 +117,7 @@
     <ProjectsToRestore Include="vsintegration/fsharp-vsintegration-src-build.proj" Condition="'$(RestoreVSIntegration)' == 'true'" />
     <ProjectsToRestore Include="vsintegration/fsharp-vsintegration-unittests-build.proj" Condition="'$(RestoreVSIntegrationUnitTests)' == 'true'" />
     <ProjectsToRestore Include="vsintegration/fsharp-vsintegration-item-templates-build.proj" Condition="'$(RestoreVSIntegrationItemTemplates)' == 'true'" />
+    <ProjectsToRestore Include="vsintegration/fsharp-vsintegration-project-templates-build.proj" Condition="'$(RestoreVSIntegrationProjectTemplates)' == 'true'" />
   </ItemGroup>
 
   <PropertyGroup>
