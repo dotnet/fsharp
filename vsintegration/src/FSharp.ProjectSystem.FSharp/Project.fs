@@ -1368,8 +1368,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                         // If property is not set - msbuild will resolve only primary dependencies,
                         // and compiler will be very unhappy when during processing of referenced assembly it will discover that all fundamental types should be
                         // taken from System.Runtime that is not supplied
-                        
-                        let _ = x.InvokeMsBuild("Compile", extraProperties = [KeyValuePair("_ResolveReferenceDependencies", "true")])
+                        let _ = x.InvokeMsBuild("Compile", extraProperties = [KeyValuePair("_ResolveReferenceDependencies", "true"); KeyValuePair("DesignTimeBuild", "true")])
                         sourcesAndFlagsNotifier.Notify()
                     finally
                         actuallyBuild <- true

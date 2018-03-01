@@ -4632,14 +4632,23 @@ and remapValReprInfo g tmenv (ValReprInfo(tpNames, arginfosl, retInfo)) =
 
 and remapValData g tmenv (d: ValData) =
     let ty = d.val_type
-    let topValInfo = d.val_repr_info
-    let ty' = ty |> remapPossibleForallTy g tmenv
+    let topValInfo = d.ValReprInfo
+    let tyR = ty |> remapPossibleForallTy g tmenv
+    let declaringEntityR = d.DeclaringEntity |> remapParentRef tmenv
+    let reprInfoR = d.ValReprInfo |> Option.map (remapValReprInfo g tmenv)
+    let memberInfoR = d.MemberInfo |> Option.map (remapMemberInfo g d.val_range topValInfo ty tyR tmenv)
+    let attribsR = d.Attribs |> remapAttribs g tmenv
     { d with 
-        val_type    = ty';
-        val_declaring_entity = d.val_declaring_entity |> remapParentRef tmenv;
-        val_repr_info = d.val_repr_info |> Option.map (remapValReprInfo g tmenv);
-        val_member_info   = d.val_member_info |> Option.map (remapMemberInfo g d.val_range topValInfo ty ty' tmenv);
-        val_attribs       = d.val_attribs       |> remapAttribs g tmenv }
+        val_type     = tyR
+        val_opt_data =
+            match d.val_opt_data with
+            | Some dd ->
+                Some { dd with 
+                         val_declaring_entity = declaringEntityR
+                         val_repr_info        = reprInfoR
+                         val_member_info      = memberInfoR
+                         val_attribs          = attribsR }
+            | None -> None }
 
 and remapParentRef tyenv p =
     match p with 
@@ -6997,8 +7006,8 @@ let etaExpandTypeLambda g m tps (tm, ty) =
     if isNil tps then tm else mkTypeLambda m tps (mkApps g ((tm, ty), [(List.map mkTyparTy tps)], [], m), ty)
 
 let AdjustValToTopVal (tmp:Val) parent valData =
-    tmp.SetValReprInfo (Some valData);  
-    tmp.val_declaring_entity <- parent;  
+    tmp.SetValReprInfo (Some valData)
+    tmp.SetDeclaringEntity parent
     tmp.SetIsMemberOrModuleBinding()
 
 /// For match with only one non-failing target T0, the other targets, T1... failing (say, raise exception).
