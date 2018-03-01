@@ -847,7 +847,7 @@ type Project() =
             use project = TheTests.CreateProject(projFile)
             let srcFile = (Path.GetDirectoryName projFile) + "\\" + "foo.fs"
             File.AppendAllText(srcFile, "bar") ; // foo.fs will be cleaned up by parent call to DoWithTempFile
-            project.BuildToOutput("Build", vso) |> ignore // Build the project using vso as the output logger
+            project.BuildToOutput("Build", vso, null) |> ignore // Build the project using vso as the output logger
         
             let errors = List.filter (fun s -> (new Regex(expectedError)).IsMatch(s)) !outputWindowPaneErrors
         
@@ -870,7 +870,7 @@ type Project() =
             use project = TheTests.CreateProjectWithUTF8Output(projFile)
             let srcFile = (Path.GetDirectoryName projFile) + "\\" + "新規bcrogram.fs"
             File.AppendAllText(srcFile, "bar") ;            // 新規bcrogram.fs will be cleaned up by parent call to DoWithTempFile
-            project.BuildToOutput("Build", vso) |> ignore   // Build the project using vso as the output logger
+            project.BuildToOutput("Build", vso, null) |> ignore   // Build the project using vso as the output logger
 
             // The console inserts hard line breaks accumulate the output as a single line then look for the expected output.
             let output = (!outputWindowPaneErrors |> String.concat "").Replace("\r\n", "")

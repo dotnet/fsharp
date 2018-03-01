@@ -371,7 +371,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
             }
 
-            BuildResult buildResult = this.ProjectMgr.Build(MsBuildTarget.ResolveAssemblyReferences);
+            var extraProperties = new KeyValuePair<string, string>[]
+            {
+                new KeyValuePair<string, string>("DesignTimeBuild", "true"),
+            }.AsEnumerable();
+            BuildResult buildResult = this.ProjectMgr.BuildWithExtraProperties(MsBuildTarget.ResolveAssemblyReferences, extraProperties);
             foreach (string referenceType in SupportedReferenceTypes)
             {
                 bool isAssemblyReference = referenceType == ProjectFileConstants.Reference;
