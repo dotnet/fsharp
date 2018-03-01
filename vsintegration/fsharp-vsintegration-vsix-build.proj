@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <SdkProjects Include="Vsix\VisualFSharpTemplates\VisualFSharpTemplates.csproj" />
+    <SdkProjects Include="Vsix\VisualFSharpOpenSource\VisualFSharpOpenSource.csproj" />
   </ItemGroup>
 
   <Import Project="..\src\root.traversal.targets"/>
