@@ -2,15 +2,18 @@
 
   <PropertyGroup>
 
+    <!-- version numbers from files -->
+    <RoslynPackageVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)..\..\RoslynPackageVersion.txt').Trim())</RoslynPackageVersion>
+
     <!-- System.* packages -->
     <SystemCollectionsImmutablePackageVersion>1.3.1</SystemCollectionsImmutablePackageVersion>
 
     <!-- Roslyn packages -->
-    <MicrosoftCodeAnalysisEditorFeaturesPackageVersion>2.6.0-vs-for-mac-62329-05</MicrosoftCodeAnalysisEditorFeaturesPackageVersion>
-    <MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>2.6.0-vs-for-mac-62329-05</MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>
-    <MicrosoftCodeAnalysisEditorFeaturesWpfPackageVersion>2.6.0-vs-for-mac-62329-05</MicrosoftCodeAnalysisEditorFeaturesWpfPackageVersion>
-    <MicrosoftCodeAnalysisWorkspacesCommonPackageVersion>2.6.0-vs-for-mac-62329-05</MicrosoftCodeAnalysisWorkspacesCommonPackageVersion>
-    <MicrosoftVisualStudioLanguageServicesPackageVersion>2.6.0-vs-for-mac-62329-05</MicrosoftVisualStudioLanguageServicesPackageVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesPackageVersion>$(RoslynPackageVersion)</MicrosoftCodeAnalysisEditorFeaturesPackageVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>$(RoslynPackageVersion)</MicrosoftCodeAnalysisEditorFeaturesTextPackageVersion>
+    <MicrosoftCodeAnalysisEditorFeaturesWpfPackageVersion>$(RoslynPackageVersion)</MicrosoftCodeAnalysisEditorFeaturesWpfPackageVersion>
+    <MicrosoftCodeAnalysisWorkspacesCommonPackageVersion>$(RoslynPackageVersion)</MicrosoftCodeAnalysisWorkspacesCommonPackageVersion>
+    <MicrosoftVisualStudioLanguageServicesPackageVersion>$(RoslynPackageVersion)</MicrosoftVisualStudioLanguageServicesPackageVersion>
 
     <!-- Visual Studio packages -->
     <EnvDTE80PackageVersion>8.0.1</EnvDTE80PackageVersion>
@@ -20,6 +23,7 @@
     <MicrosoftVisualStudioEditorPackageVersion>15.0.26201</MicrosoftVisualStudioEditorPackageVersion>
     <MicrosoftVisualStudioLanguageStandardClassificationPackageVersion>15.0.26201</MicrosoftVisualStudioLanguageStandardClassificationPackageVersion>
     <MicrosoftVisualStudioLanguageIntellisensePackageVersion>15.0.26201</MicrosoftVisualStudioLanguageIntellisensePackageVersion>
+    <MicrosoftVisualStudioManagedInterfacesPackageVersion>8.0.50727</MicrosoftVisualStudioManagedInterfacesPackageVersion>
     <MicrosoftVisualStudioPackageLanguageService150PackageVersion>15.0.26201</MicrosoftVisualStudioPackageLanguageService150PackageVersion>
     <MicrosoftVisualStudioProjectAggregatorPackageVersion>8.0.50727</MicrosoftVisualStudioProjectAggregatorPackageVersion>
     <MicrosoftVisualStudioShell140PackageVersion>14.3.25407</MicrosoftVisualStudioShell140PackageVersion>
@@ -34,10 +38,12 @@
     <MicrosoftVisualStudioTextManagerInteropPackageVersion>7.10.6070</MicrosoftVisualStudioTextManagerInteropPackageVersion>
     <MicrosoftVisualStudioTextManagerInterop80PackageVersion>8.0.50727</MicrosoftVisualStudioTextManagerInterop80PackageVersion>
     <MicrosoftVisualStudioTextManagerInterop100PackageVersion>10.0.30319</MicrosoftVisualStudioTextManagerInterop100PackageVersion>
+    <MicrosoftVisualStudioWCFReferenceInteropPackageVersion>9.0.30729</MicrosoftVisualStudioWCFReferenceInteropPackageVersion>
     <MicrosoftVSSDKBuildToolsPackageVersion>15.1.192</MicrosoftVSSDKBuildToolsPackageVersion>
     <VSSDKDebuggerVisualizersPackageVersion>12.0.4</VSSDKDebuggerVisualizersPackageVersion>
     <VSSDKVSLangProjPackageVersion>7.0.4</VSSDKVSLangProjPackageVersion>
     <VSSDKVSLangProj8PackageVersion>8.0.4</VSSDKVSLangProj8PackageVersion>
+    <VSSDKVSLangProj11PackageVersion>11.0.4</VSSDKVSLangProj11PackageVersion>
     <VSSDKVSHelpPackageVersion>7.0.4</VSSDKVSHelpPackageVersion>
 
     <!-- other packages -->
@@ -45,6 +51,7 @@
     <MicrosoftMSXMLPackageVersion>8.0.0-alpha</MicrosoftMSXMLPackageVersion>
     <MicrosoftVisualFSharpMSBuild150PackageVersion>1.0.1</MicrosoftVisualFSharpMSBuild150PackageVersion>
     <NewtonsoftJsonPackageVersion>10.0.2</NewtonsoftJsonPackageVersion>
+    <NUnitPackageVersion>3.5.0</NUnitPackageVersion>
     <XliffTasksPackageVersion>0.2.0-beta-000081</XliffTasksPackageVersion>
 
   </PropertyGroup>

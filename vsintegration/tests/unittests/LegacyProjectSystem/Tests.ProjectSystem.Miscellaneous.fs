@@ -327,7 +327,7 @@ type Miscellaneous() =
             use project = TheTests.CreateProject(projFile)
             let srcFile = (Path.GetDirectoryName projFile) + "\\" + "foo.fs"
             File.AppendAllText(srcFile, "#light\nlet foo () =\n  printfn \"A\"\n") 
-            project.BuildToOutput("Build", vso) |> ignore // Build the project using vso as the output logger
+            project.BuildToOutput("Build", vso, null) |> ignore // Build the project using vso as the output logger
             let errors = List.filter (fun (s:string) -> s.Contains(expectedError)) !outputWindowPaneErrors    
             AssertEqual 1 (List.length errors)
         )        
@@ -419,7 +419,7 @@ type Miscellaneous() =
                 let vso = VsMocks.vsOutputWindowPane(outputWindowPaneErrors)
                 let srcFile = (Path.GetDirectoryName projFileName) + "\\" + "foo.fs"
                 File.AppendAllText(srcFile, "let x = 5\n") 
-                project.BuildToOutput("Build", vso) |> ignore // Build the project using vso as the output logger
+                project.BuildToOutput("Build", vso, null) |> ignore // Build the project using vso as the output logger
                 printfn "Build output:"
                 !outputWindowPaneErrors |> Seq.iter (printfn "%s")
                 let expectedRegex = new Regex("\\s*ProjectExt\\[.fsproj\\]")                
