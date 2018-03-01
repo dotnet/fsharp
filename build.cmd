@@ -624,11 +624,6 @@ if "%RestorePackages%" == "true" (
     %_nugetexe% restore packages.config !_nugetoptions!
     @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
 
-    if "%BUILD_VS%" == "1" (
-        %_nugetexe% restore vsintegration\packages.config !_nugetoptions!
-        @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
-    )
-
     if "%BUILD_SETUP%" == "1" (
         %_nugetexe% restore setup\packages.config !_nugetoptions!
         @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
