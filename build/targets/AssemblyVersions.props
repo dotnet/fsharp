@@ -43,4 +43,8 @@
     <VsixPackageVersion>$(MicroBuildAssemblyVersion_WithoutRevision).$(BuildTimeStamp)</VsixPackageVersion>
     <NuGetPackageVersionSuffix>$(BuildTimeStamp_Date)-$(BuildTimeStamp_Number)</NuGetPackageVersionSuffix>
   </PropertyGroup>
+
+  <Target Name="GetVsixPackageVersion" Outputs="$(VsixPackageVersion)">
+  </Target>
+
 </Project>
