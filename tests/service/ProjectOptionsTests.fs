@@ -577,3 +577,35 @@ ImplFile.x
         decls.Length |> shouldEqual 1
     | _ -> failwith "got sig file"
     printfn "------Finished Script load closure project----"
+
+
+[<Test>]
+let ``Script hash directives wrong paths``() =
+    let path = Path.ChangeExtension(Path.GetTempFileName(), "fsx")
+    let source = """
+#load "no such file"
+#r "no such assembly"
+"""
+    let getOptions () =
+        let options, diagnostics = checker.GetProjectOptionsFromScript(path, source) |> Async.RunSynchronously
+        diagnostics |> should be Empty
+
+        let otherOptionsNoFSharpCore =
+            options.OtherOptions |> Array.filter (fun o ->
+                (o.StartsWith("-r:", StringComparison.Ordinal) && o.EndsWith("FSharp.Core.dll", StringComparison.Ordinal))
+                |> not)
+        
+        let fsharpCorePath = [| "-r:" + typeof<Option<_>>.Assembly.Location |]
+        { options with OtherOptions = Array.append otherOptionsNoFSharpCore fsharpCorePath }
+
+    let getCheckResults () =
+        let options = getOptions ()
+        let parseResults, checkAnswer =
+                checker.ParseAndCheckFileInProject(path, 0, source, options) |> Async.RunSynchronously
+
+        match checkAnswer with
+        | FSharpCheckFileAnswer.Succeeded checkResults -> checkResults.Errors |> Array.isEmpty |> should be False
+        | aborted -> failwith "type check was aborted"
+        
+    getCheckResults ()
+    getCheckResults ()
