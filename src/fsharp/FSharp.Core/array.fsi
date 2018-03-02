@@ -985,6 +985,14 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("ToSeq")>]
         val toSeq: array:'T[] -> seq<'T>
 
+        /// <summary>Returns the transpose of the given sequence of arrays.</summary>
+        /// <param name="arrays">The input sequence of arrays.</param>
+        /// <returns>The transposed array.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="System.ArgumentException">Thrown when the input arrays differ in length.</exception>
+        [<CompiledName("Transpose")>]
+        val transpose: arrays:seq<'T[]> -> 'T[][]
+
         /// <summary>Returns at most N elements in a new array.</summary>
         /// <param name="count">The maximum number of items to return.</param>
         /// <param name="array">The input array.</param>

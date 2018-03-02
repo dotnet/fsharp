@@ -711,7 +711,10 @@ namespace Microsoft.FSharp.Collections
             member s.Contains(x) = SetTree.mem s.Comparer x s.Tree
             member s.CopyTo(arr,i) = SetTree.copyToArray s.Tree arr i
             member s.IsReadOnly = true
-            member s.Count = SetTree.count s.Tree  
+            member s.Count = s.Count
+
+        interface IReadOnlyCollection<'T> with
+            member s.Count = s.Count
 
         interface IEnumerable<'T> with
             member s.GetEnumerator() = SetTree.mkIEnumerator s.Tree

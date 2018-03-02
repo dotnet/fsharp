@@ -19,4 +19,13 @@ module M6 =
          if not (NativeInterop.NativePtr.get data i = (if (i % 2)=0 then E.A else E.B)) then 
              noerr <- false
 
+    for i = 0 to 9 do
+        let datai = NativeInterop.NativePtr.toByRef (NativeInterop.NativePtr.add data i)
+        datai <- (if (i % 2)=1 then E.A else E.B)
+    
+    for i = 0 to 9 do
+         let datai = NativeInterop.NativePtr.toByRef (NativeInterop.NativePtr.add data i)
+         if not (datai = (if (i % 2)=1 then E.A else E.B)) then 
+             noerr <- false
+
     (if noerr then 0 else 1) |> exit

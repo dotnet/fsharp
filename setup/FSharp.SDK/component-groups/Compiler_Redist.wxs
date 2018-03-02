@@ -39,7 +39,7 @@
 
     </ComponentGroup>
 
-    <DirectoryRef Id="MicrosoftSDKs_FS_4.1_Framework_v4.0">
+    <DirectoryRef Id="MicrosoftSDKs_FS_10.1_Framework_v4.0">
 
       <Component Id="Compiler_Redist_FSharp.Core.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Core.dll, $(var.LocaleCode)))">
         <File Id="Compiler_Redist_FSharp.Core.dll" Source="$(var.BinariesDir)\net40\bin\FSharp.Core.dll" KeyPath="yes">
@@ -131,18 +131,18 @@
       </Component>
 
       <Component Id="Compiler_Redist_RegistryKeys_CompilerLocation" Guid="$(fsharp.guid(Compiler_Redist_RegistryKeys_CompilerLocation, $(var.LocaleCode)))">
-        <Environment Id="Compiler_Redist_FSHARPINSTALLDIR_Environment_Variable" Name="FSHARPINSTALLDIR" Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]" Action="create" System="yes" />
-        <RegistryKey Root="HKLM" Key="Software\Microsoft\FSharp\4.1\Runtime\v4.0" ForceCreateOnInstall="yes" ForceDeleteOnUninstall="yes">
-          <RegistryValue Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]" Type="string" />
+        <Environment Id="Compiler_Redist_FSHARPINSTALLDIR_Environment_Variable" Name="FSHARPINSTALLDIR" Value="[MicrosoftSDKs_FS_10.1_Framework_v4.0]" Action="set" System="yes" />
+        <RegistryKey Root="HKLM" Key="Software\Microsoft\FSharp\10.1\Runtime\v4.0" ForceCreateOnInstall="yes" ForceDeleteOnUninstall="yes">
+          <RegistryValue Value="[MicrosoftSDKs_FS_10.1_Framework_v4.0]" Type="string" />
         </RegistryKey>
         <RegistryKey Root="HKLM" Key="Software\Microsoft\VisualStudio\15.0\MSBuild\SafeImports" ForceCreateOnInstall="yes" ForceDeleteOnUninstall="yes">
-          <RegistryValue Name="Microsoft.FSharp.Targets" Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]Microsoft.FSharp.Targets" Type="string" />
-          <RegistryValue Name="Microsoft.Portable.FSharp.Targets" Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]Microsoft.Portable.FSharp.Targets" Type="string" />
-          <RegistryValue Name="Microsoft.FSharp.NetSdk.props" Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]Microsoft.FSharp.NetSdk.props" Type="string" />
-          <RegistryValue Name="Microsoft.FSharp.NetSdk.targets" Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]Microsoft.FSharpNetSdk.targets" Type="string" />
+          <RegistryValue Name="Microsoft.FSharp.Targets" Value="[MicrosoftSDKs_FS_10.1_Framework_v4.0]Microsoft.FSharp.Targets" Type="string" />
+          <RegistryValue Name="Microsoft.Portable.FSharp.Targets" Value="[MicrosoftSDKs_FS_10.1_Framework_v4.0]Microsoft.Portable.FSharp.Targets" Type="string" />
+          <RegistryValue Name="Microsoft.FSharp.NetSdk.props" Value="[MicrosoftSDKs_FS_10.1_Framework_v4.0]Microsoft.FSharp.NetSdk.props" Type="string" />
+          <RegistryValue Name="Microsoft.FSharp.NetSdk.targets" Value="[MicrosoftSDKs_FS_10.1_Framework_v4.0]Microsoft.FSharpNetSdk.targets" Type="string" />
         </RegistryKey>
         <RegistryKey Root="HKLM" Key="Software\Microsoft\VisualStudio\15.0\Setup\F#" ForceCreateOnInstall="yes" ForceDeleteOnUninstall="yes">
-          <RegistryValue Name="ProductDir" Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]" Type="string" />
+          <RegistryValue Name="ProductDir" Value="[MicrosoftSDKs_FS_10.1_Framework_v4.0]" Type="string" />
         </RegistryKey>
       </Component>
 

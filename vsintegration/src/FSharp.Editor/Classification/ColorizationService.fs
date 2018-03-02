@@ -16,6 +16,11 @@ open Microsoft.CodeAnalysis.Text
 
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
+// IEditorClassificationService is marked as Obsolete, but is still supported. The replacement (IClassificationService)
+// is internal to Microsoft.CodeAnalysis.Workspaces which we don't have internals visible to. Rather than add yet another
+// IVT, we'll maintain the status quo.
+#nowarn "44"
+
 [<ExportLanguageService(typeof<IEditorClassificationService>, FSharpConstants.FSharpLanguageName)>]
 type internal FSharpColorizationService
     [<ImportingConstructor>]
