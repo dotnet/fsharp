@@ -6098,6 +6098,12 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
     | SynExpr.DoBang  (_, m) 
     | SynExpr.LetOrUseBang  (_, _, _, _, _, _, m) -> 
          error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
+    | SynExpr.MatchBang (spMatch, x, matches, isExnMatch, _m) ->
+
+        let x', inputTy, tpenv = TcExprOfUnknownType cenv env tpenv x
+        let mExpr = x'.Range
+        let v, e, tpenv = TcAndPatternCompileMatchClauses mExpr mExpr (if isExnMatch then Throw else ThrowIncompleteMatchException) cenv inputTy overallTy env tpenv matches
+        (mkLet spMatch mExpr v x'  e, tpenv)
 
 /// Check lambdas as a group, to catch duplicate names in patterns
 and TcIteratedLambdas cenv isFirst (env: TcEnv) overallTy takenNames tpenv e = 
@@ -8813,6 +8819,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
             | SynExpr.ImplicitZero  _
             | SynExpr.YieldOrReturn _
             | SynExpr.YieldOrReturnFrom _
+            | SynExpr.MatchBang _
             | SynExpr.LetOrUseBang _
             | SynExpr.DoBang _ 
             | SynExpr.TraitCall _ 
