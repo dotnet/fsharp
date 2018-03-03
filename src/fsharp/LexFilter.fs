@@ -2031,7 +2031,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
             pushCtxt tokenTup (CtxtIf (tokenStartPos))
             returnToken tokenLexbufState token
 
-        | MATCH, _   -> 
+        | (MATCH | MATCH_BANG), _   -> 
             if debug then dprintf "MATCH, pushing CtxtMatch(%a)\n" outputPos tokenStartPos
             pushCtxt tokenTup (CtxtMatch (tokenStartPos))
             returnToken tokenLexbufState token
