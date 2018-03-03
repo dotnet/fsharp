@@ -1048,7 +1048,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
             | Parser.EOF _ -> false
             | _ -> 
                 not (isSameLine()) ||  
-                (match peekNextToken() with TRY | MATCH | IF | LET _ | FOR | WHILE -> true | _ -> false) 
+                (match peekNextToken() with TRY | MATCH | MATCH_BANG | IF | LET _ | FOR | WHILE -> true | _ -> false) 
 
         // Look for '=' or '.Id.id.id = ' after an identifier
         let rec isLongIdentEquals token = 
