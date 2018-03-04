@@ -1715,14 +1715,14 @@ and p_entity_spec_data (x:Entity) st =
     let flagBit = p_tycon_repr x.entity_tycon_repr st
     p_option p_typ x.entity_tycon_abbrev st
     p_tcaug x.entity_tycon_tcaug st
-    p_string x.entity_xmldocsig st
+    p_string x.XmlDocSig st
     p_kind x.TypeOrMeasureKind st
     p_int64 (x.entity_flags.PickledBits ||| (if flagBit then EntityFlags.ReservedBitForPickleFormatTyconReprFlag else 0L)) st
     p_option p_cpath x.entity_cpath st
     p_maybe_lazy p_modul_typ x.entity_modul_contents st
     p_exnc_repr x.entity_exn_info st
     if st.oInMem then
-        p_used_space1 (p_xmldoc x.entity_xmldoc) st
+        p_used_space1 (p_xmldoc x.XmlDoc) st
     else
         p_space 1 () st
 
@@ -1994,17 +1994,15 @@ and u_entity_spec_data st : Entity =
       entity_tycon_repr=x7
       entity_tycon_abbrev=x8
       entity_tycon_tcaug=x9
-      entity_xmldoc= defaultArg x15 XmlDoc.Empty
-      entity_xmldocsig=x10
       entity_flags=EntityFlags(x11)
       entity_cpath=x12
       entity_modul_contents=MaybeLazy.Lazy x13
       entity_exn_info=x14
       entity_il_repr_cache=newCache()  
       entity_opt_data=
-        match x2b, x10b with
-        | None, TyparKind.Type -> None
-        | _ -> Some { Entity.EmptyEntityOptData with entity_compiled_name = x2b; entity_kind = x10b }
+        match x2b, x10b, x15, x10 with
+        | None, TyparKind.Type, None, "" -> None
+        | _ -> Some { Entity.EmptyEntityOptData with entity_compiled_name = x2b; entity_kind = x10b; entity_xmldoc= defaultArg x15 XmlDoc.Empty; entity_xmldocsig=x10 }
     } 
 
 and u_tcaug st = 
