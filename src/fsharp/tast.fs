@@ -510,6 +510,13 @@ type EntityOptionalData =
       //
       // MUTABILITY; used only during creation and remapping of tycons 
       mutable entity_tycon_abbrev: TType option             
+
+      /// The declared accessibility of the representation, not taking signatures into account 
+      mutable entity_tycon_repr_accessibility: Accessibility
+
+      /// Indicates how visible is the entity is.
+      // MUTABILITY: only for unpickle linkage
+      mutable entity_accessiblity: Accessibility   
     }
 
 and /// Represents a type definition, exception definition, module definition or namespace definition.
@@ -531,9 +538,6 @@ and /// Represents a type definition, exception definition, module definition or
 
       /// The declaration location for the type constructor 
       mutable entity_range: range
-      
-      /// The declared accessibility of the representation, not taking signatures into account 
-      mutable entity_tycon_repr_accessibility: Accessibility
       
       /// The declared attributes for the type 
       // MUTABILITY; used during creation and remapping of tycons 
@@ -565,10 +569,6 @@ and /// Represents a type definition, exception definition, module definition or
       // REVIEW: it looks like entity_cpath subsumes this 
       // MUTABILITY: only for unpickle linkage
       mutable entity_pubpath : PublicPath option 
-
-      /// Indicates how visible is the entity is.
-      // MUTABILITY: only for unpickle linkage
-      mutable entity_accessiblity: Accessibility   
  
       /// The stable path to the type, e.g. Microsoft.FSharp.Core.FSharpFunc`2 
       // MUTABILITY: only for unpickle linkage
@@ -581,7 +581,7 @@ and /// Represents a type definition, exception definition, module definition or
       mutable entity_opt_data : EntityOptionalData option
     }
 
-    static member EmptyEntityOptData = { entity_compiled_name = None; entity_other_range = None; entity_kind = TyparKind.Type; entity_xmldoc = XmlDoc.Empty; entity_xmldocsig = ""; entity_tycon_abbrev = None }
+    static member EmptyEntityOptData = { entity_compiled_name = None; entity_other_range = None; entity_kind = TyparKind.Type; entity_xmldoc = XmlDoc.Empty; entity_xmldocsig = ""; entity_tycon_abbrev = None; entity_tycon_repr_accessibility = TAccess []; entity_accessiblity = TAccess [] }
 
     /// The name of the namespace, module or type, possibly with mangling, e.g. List`1, List or FailureException 
     member x.LogicalName = x.entity_logical_name
@@ -764,7 +764,10 @@ and /// Represents a type definition, exception definition, module definition or
     member x.IsTypeAbbrev = x.TypeAbbrev.IsSome
 
     /// Get the value representing the accessibility of the r.h.s. of an F# type definition.
-    member x.TypeReprAccessibility = x.entity_tycon_repr_accessibility
+    member x.TypeReprAccessibility =
+        match x.entity_opt_data with
+        | Some optData -> optData.entity_tycon_repr_accessibility
+        | _ -> TAccess []
 
     /// Get the cache of the compiled ILTypeRef representation of this module or type.
     member x.CompiledReprCache = x.entity_il_repr_cache
@@ -773,7 +776,10 @@ and /// Represents a type definition, exception definition, module definition or
     member x.PublicPath = x.entity_pubpath
 
     /// Get the value representing the accessibility of an F# type definition or module.
-    member x.Accessibility = x.entity_accessiblity
+    member x.Accessibility =
+        match x.entity_opt_data with
+        | Some optData -> optData.entity_accessiblity
+        | _ -> TAccess []
 
     /// Indicates the type prefers the "tycon<a,b>" syntax for display etc. 
     member x.IsPrefixDisplay = x.entity_flags.IsPrefixDisplay
@@ -901,14 +907,12 @@ and /// Represents a type definition, exception definition, module definition or
           entity_stamp = Unchecked.defaultof<_>
           entity_logical_name = Unchecked.defaultof<_> 
           entity_range = Unchecked.defaultof<_> 
-          entity_tycon_repr_accessibility = Unchecked.defaultof<_>
           entity_attribs = Unchecked.defaultof<_>
           entity_tycon_repr= Unchecked.defaultof<_>
           entity_tycon_tcaug= Unchecked.defaultof<_>
           entity_exn_info= Unchecked.defaultof<_>
           entity_modul_contents= Unchecked.defaultof<_>
           entity_pubpath = Unchecked.defaultof<_>
-          entity_accessiblity= Unchecked.defaultof<_>
           entity_cpath = Unchecked.defaultof<_>
           entity_il_repr_cache = Unchecked.defaultof<_>
           entity_opt_data = Unchecked.defaultof<_>}
@@ -923,19 +927,17 @@ and /// Represents a type definition, exception definition, module definition or
         x.entity_stamp                     <- tg.entity_stamp 
         x.entity_logical_name              <- tg.entity_logical_name  
         x.entity_range                     <- tg.entity_range  
-        x.entity_tycon_repr_accessibility  <- tg.entity_tycon_repr_accessibility
         x.entity_attribs                   <- tg.entity_attribs 
         x.entity_tycon_repr                <- tg.entity_tycon_repr
         x.entity_tycon_tcaug               <- tg.entity_tycon_tcaug
         x.entity_exn_info                  <- tg.entity_exn_info
         x.entity_modul_contents            <- tg.entity_modul_contents
         x.entity_pubpath                   <- tg.entity_pubpath 
-        x.entity_accessiblity              <- tg.entity_accessiblity
         x.entity_cpath                     <- tg.entity_cpath 
         x.entity_il_repr_cache             <- tg.entity_il_repr_cache 
         match tg.entity_opt_data with
         | Some tg ->
-            x.entity_opt_data <- Some { entity_compiled_name = tg.entity_compiled_name; entity_other_range = tg.entity_other_range; entity_kind = tg.entity_kind; entity_xmldoc = tg.entity_xmldoc; entity_xmldocsig = tg.entity_xmldocsig; entity_tycon_abbrev = tg.entity_tycon_abbrev }
+            x.entity_opt_data <- Some { entity_compiled_name = tg.entity_compiled_name; entity_other_range = tg.entity_other_range; entity_kind = tg.entity_kind; entity_xmldoc = tg.entity_xmldoc; entity_xmldocsig = tg.entity_xmldocsig; entity_tycon_abbrev = tg.entity_tycon_abbrev; entity_tycon_repr_accessibility = tg.entity_tycon_repr_accessibility; entity_accessiblity = tg.entity_accessiblity }
         | None -> ()
 
 
@@ -1855,19 +1857,17 @@ and Construct =
             entity_attribs=[] // fetched on demand via est.fs API
             entity_typars= LazyWithContext.NotLazy []
             entity_tycon_repr = repr
-            entity_tycon_repr_accessibility = TAccess([])
             entity_exn_info=TExnNone
             entity_tycon_tcaug=TyconAugmentation.Create()
             entity_modul_contents = MaybeLazy.Lazy (lazy new ModuleOrNamespaceType(Namespace, QueueList.ofList [], QueueList.ofList []))
             // Generated types get internal accessibility
-            entity_accessiblity= access
             entity_pubpath = Some pubpath
             entity_cpath = Some cpath
             entity_il_repr_cache = newCache()
             entity_opt_data =
-                match kind with
-                | TyparKind.Type -> None
-                | _ -> Some { Entity.EmptyEntityOptData with entity_kind = kind } } 
+                match kind, access with
+                | TyparKind.Type, TAccess [] -> None
+                | _ -> Some { Entity.EmptyEntityOptData with entity_kind = kind; entity_accessiblity = access } } 
 #endif
 
     static member NewModuleOrNamespace cpath access (id:Ident) xml attribs mtype = 
@@ -1881,18 +1881,16 @@ and Construct =
             entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=true, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false,isStructRecordOrUnionType=false)
             entity_typars=LazyWithContext.NotLazy []
             entity_tycon_repr = TNoRepr
-            entity_tycon_repr_accessibility = access
             entity_exn_info=TExnNone
             entity_tycon_tcaug=TyconAugmentation.Create()
             entity_pubpath=cpath |> Option.map (fun (cp:CompilationPath) -> cp.NestedPublicPath id)
             entity_cpath=cpath
-            entity_accessiblity=access
             entity_attribs=attribs
             entity_il_repr_cache = newCache()
             entity_opt_data =
-                match xml with
-                | XmlDoc [||] -> None
-                | _ -> Some { Entity.EmptyEntityOptData with entity_xmldoc = xml } } 
+                match xml, access with
+                | XmlDoc [||], TAccess [] -> None
+                | _ -> Some { Entity.EmptyEntityOptData with entity_xmldoc = xml; entity_tycon_repr_accessibility = access; entity_accessiblity = access } } 
 
 and Accessibility = 
     /// Indicates the construct can only be accessed from any code in the given type constructor, module or assembly. [] indicates global scope. 
@@ -4980,8 +4978,6 @@ let NewExn cpath (id:Ident) access repr attribs doc =
         entity_exn_info= repr
         entity_tycon_tcaug=TyconAugmentation.Create()
         entity_pubpath=cpath |> Option.map (fun (cp:CompilationPath) -> cp.NestedPublicPath id)
-        entity_accessiblity=access
-        entity_tycon_repr_accessibility=access
         entity_modul_contents = MaybeLazy.Strict (NewEmptyModuleOrNamespaceType ModuleOrType)
         entity_cpath= cpath
         entity_typars=LazyWithContext.NotLazy []
@@ -4989,9 +4985,9 @@ let NewExn cpath (id:Ident) access repr attribs doc =
         entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordOrUnionType=false)
         entity_il_repr_cache= newCache()
         entity_opt_data =
-            match doc with
-            | XmlDoc [||] -> None
-            | _ -> Some { Entity.EmptyEntityOptData with entity_xmldoc = doc } } 
+            match doc, access with
+            | XmlDoc [||], TAccess [] -> None
+            | _ -> Some { Entity.EmptyEntityOptData with entity_xmldoc = doc; entity_accessiblity = access; entity_tycon_repr_accessibility = access } } 
 
 /// Create a new TAST RecdField node for an F# class, struct or record field
 let NewRecdField  stat konst id nameGenerated ty isMutable isVolatile pattribs fattribs docOption access secret =
@@ -5021,18 +5017,16 @@ let NewTycon (cpath, nm, m, access, reprAccess, kind, typars, docOption, usesPre
         entity_attribs=[] // fixed up after
         entity_typars=typars
         entity_tycon_repr = TNoRepr
-        entity_tycon_repr_accessibility = reprAccess
         entity_exn_info=TExnNone
         entity_tycon_tcaug=TyconAugmentation.Create()
         entity_modul_contents = mtyp
-        entity_accessiblity=access
         entity_pubpath=cpath |> Option.map (fun (cp:CompilationPath) -> cp.NestedPublicPath (mkSynId m nm))
         entity_cpath = cpath
         entity_il_repr_cache = newCache()
         entity_opt_data =
-            match kind, docOption with
-            | TyparKind.Type, XmlDoc [||] -> None
-            | _ -> Some { Entity.EmptyEntityOptData with entity_kind = kind; entity_xmldoc = docOption } } 
+            match kind, docOption, reprAccess, access with
+            | TyparKind.Type, XmlDoc [||], TAccess [], TAccess [] -> None
+            | _ -> Some { Entity.EmptyEntityOptData with entity_kind = kind; entity_xmldoc = docOption; entity_tycon_repr_accessibility = reprAccess; entity_accessiblity=access } } 
 
 
 let NewILTycon nlpath (nm,m) tps (scoref:ILScopeRef, enc, tdef:ILTypeDef) mtyp =

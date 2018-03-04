@@ -1709,8 +1709,8 @@ and p_entity_spec_data (x:Entity) st =
     p_option p_string x.EntityCompiledName st
     p_range  x.entity_range st
     p_option p_pubpath x.entity_pubpath st
-    p_access x.entity_accessiblity st
-    p_access  x.entity_tycon_repr_accessibility st
+    p_access x.Accessibility st
+    p_access  x.TypeReprAccessibility st
     p_attribs x.entity_attribs st
     let flagBit = p_tycon_repr x.entity_tycon_repr st
     p_option p_typ x.TypeAbbrev st
@@ -1988,8 +1988,6 @@ and u_entity_spec_data st : Entity =
       entity_logical_name=x2a
       entity_range=x2c
       entity_pubpath=x3
-      entity_accessiblity=x4a
-      entity_tycon_repr_accessibility=x4b
       entity_attribs=x6
       entity_tycon_repr=x7
       entity_tycon_tcaug=x9
@@ -1999,9 +1997,9 @@ and u_entity_spec_data st : Entity =
       entity_exn_info=x14
       entity_il_repr_cache=newCache()  
       entity_opt_data=
-        match x2b, x10b, x15, x10, x8 with
-        | None, TyparKind.Type, None, "", None -> None
-        | _ -> Some { Entity.EmptyEntityOptData with entity_compiled_name = x2b; entity_kind = x10b; entity_xmldoc= defaultArg x15 XmlDoc.Empty; entity_xmldocsig = x10; entity_tycon_abbrev = x8 }
+        match x2b, x10b, x15, x10, x8, x4a, x4b with
+        | None, TyparKind.Type, None, "", None, TAccess [], TAccess [] -> None
+        | _ -> Some { Entity.EmptyEntityOptData with entity_compiled_name = x2b; entity_kind = x10b; entity_xmldoc= defaultArg x15 XmlDoc.Empty; entity_xmldocsig = x10; entity_tycon_abbrev = x8; entity_accessiblity = x4a; entity_tycon_repr_accessibility = x4b }
     } 
 
 and u_tcaug st = 
