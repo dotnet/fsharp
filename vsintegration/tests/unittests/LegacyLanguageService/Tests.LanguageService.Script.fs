@@ -1335,16 +1335,7 @@ type UsingMSBuild() as this =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
         let project = CreateProject(solution,"testproject")
-        let fsVersion =
-#if VS_VERSION_DEV12
-            "4.3.1.0"
-#endif
-#if VS_VERSION_DEV14
-            "4.4.0.0"
-#endif
-#if VS_VERSION_DEV15
-            "4.4.1.0"
-#endif
+        let fsVersion = "4.4.1.0"
         let binariesFolder = match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None) with
                              | Some(x) -> x
                              | None -> failwith "Location of binaries folder cannot be found"

@@ -33,7 +33,7 @@ open Microsoft.FSharp.Compiler.TypeRelations
 
 open System.Collections.Generic
 
-#if BUILDING_PROTO
+#if DEBUG
 let verboseOptimizationInfo = 
     try not (System.String.IsNullOrEmpty (System.Environment.GetEnvironmentVariable "FSHARP_verboseOptimizationInfo"))  with _ -> false
 let verboseOptimizations = 
