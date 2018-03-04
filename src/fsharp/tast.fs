@@ -485,6 +485,18 @@ let ComputeDefinitionLocationOfProvidedItem (p : Tainted<#IProvidedCustomAttribu
     
 #endif
 
+type EntityOptionalData =
+    {
+      /// The name of the type, possibly with `n mangling 
+      // MUTABILITY; used only when establishing tycons. 
+      mutable entity_compiled_name: string option
+
+      // MUTABILITY: the signature is adjusted when it is checked
+      /// If this field is populated, this is the implementation range for an item in a signature, otherwise it is 
+      /// the signature range for an item in an implementation
+      mutable entity_other_range: (range * bool) option
+    }
+
 /// Represents a type definition, exception definition, module definition or namespace definition.
 [<RequireQualifiedAccess>] 
 type Entity = 
@@ -505,17 +517,8 @@ type Entity =
       // MUTABILITY: only for unpickle linkage
       mutable entity_logical_name: string
 
-      /// The name of the type, possibly with `n mangling 
-      // MUTABILITY; used only when establishing tycons. 
-      mutable entity_compiled_name: string option
-
       /// The declaration location for the type constructor 
       mutable entity_range: range
-      
-      // MUTABILITY: the signature is adjusted when it is checked
-      /// If this field is populated, this is the implementation range for an item in a signature, otherwise it is 
-      /// the signature range for an item in an implementation
-      mutable entity_other_range: (range * bool) option
       
       /// The declared accessibility of the representation, not taking signatures into account 
       mutable entity_tycon_repr_accessibility: Accessibility
@@ -574,12 +577,30 @@ type Entity =
       /// Used during codegen to hold the ILX representation indicating how to access the type 
       // MUTABILITY: only for unpickle linkage and caching
       mutable entity_il_repr_cache : CompiledTypeRepr cache
+
+      mutable entity_opt_data : EntityOptionalData option
     }
+
+    static member EmptyEntityOptData = { entity_compiled_name = None; entity_other_range = None }
+
     /// The name of the namespace, module or type, possibly with mangling, e.g. List`1, List or FailureException 
     member x.LogicalName = x.entity_logical_name
 
     /// The compiled name of the namespace, module or type, e.g. FSharpList`1, ListModule or FailureException 
-    member x.CompiledName = match x.entity_compiled_name with None -> x.LogicalName | Some s -> s
+    member x.CompiledName = 
+        match x.entity_opt_data with 
+        | Some { entity_compiled_name = Some s } -> s
+        | _ -> x.LogicalName 
+
+    member x.EntityCompiledName =
+        match x.entity_opt_data with 
+        | Some optData -> optData.entity_compiled_name
+        | _ -> None 
+
+    member x.SetCompiledName(name) =
+        match x.entity_opt_data with
+        | Some optData -> optData.entity_compiled_name <- name
+        | _ -> x.entity_opt_data <- Some { Entity.EmptyEntityOptData with entity_compiled_name = name }
 
     /// The display name of the namespace, module or type, e.g. List instead of List`1, and no static parameters
     member x.DisplayName = x.GetDisplayName(false, false)
@@ -638,16 +659,19 @@ type Entity =
 
     /// The range in the implementation, adjusted for an item in a signature
     member x.DefinitionRange = 
-        match x.entity_other_range with 
-        | Some (r, true) -> r
+        match x.entity_opt_data with 
+        | Some { entity_other_range = Some (r, true) } -> r
         | _ -> x.Range
 
     member x.SigRange = 
-        match x.entity_other_range with 
-        | Some (r, false) -> r
+        match x.entity_opt_data with 
+        | Some { entity_other_range = Some (r, false) } -> r
         | _ -> x.Range
 
-    member x.SetOtherRange m                              = x.entity_other_range <- Some m
+    member x.SetOtherRange m                              = 
+        match x.entity_opt_data with 
+        | Some optData -> optData.entity_other_range <- Some m
+        | _ -> x.entity_opt_data <- Some { Entity.EmptyEntityOptData with entity_other_range = Some m }
 
     /// A unique stamp for this module, namespace or type definition within the context of this compilation. 
     /// Note that because of signatures, there are situations where in a single compilation the "same" 
@@ -853,9 +877,7 @@ type Entity =
           entity_flags = Unchecked.defaultof<_>
           entity_stamp = Unchecked.defaultof<_>
           entity_logical_name = Unchecked.defaultof<_> 
-          entity_compiled_name = Unchecked.defaultof<_>
           entity_range = Unchecked.defaultof<_> 
-          entity_other_range = Unchecked.defaultof<_>
           entity_tycon_repr_accessibility = Unchecked.defaultof<_>
           entity_attribs = Unchecked.defaultof<_>
           entity_tycon_repr= Unchecked.defaultof<_>
@@ -868,7 +890,8 @@ type Entity =
           entity_pubpath = Unchecked.defaultof<_>
           entity_accessiblity= Unchecked.defaultof<_>
           entity_cpath = Unchecked.defaultof<_>
-          entity_il_repr_cache = Unchecked.defaultof<_> }
+          entity_il_repr_cache = Unchecked.defaultof<_>
+          entity_opt_data = Unchecked.defaultof<_>}
 
     /// Create a new entity with the given backing data. Only used during unpickling of F# metadata.
     static member New _reason (data: Entity) : Entity  = data
@@ -880,9 +903,7 @@ type Entity =
         x.entity_flags                     <- tg.entity_flags 
         x.entity_stamp                     <- tg.entity_stamp 
         x.entity_logical_name              <- tg.entity_logical_name  
-        x.entity_compiled_name             <- tg.entity_compiled_name 
         x.entity_range                     <- tg.entity_range  
-        x.entity_other_range               <- tg.entity_other_range 
         x.entity_tycon_repr_accessibility  <- tg.entity_tycon_repr_accessibility
         x.entity_attribs                   <- tg.entity_attribs 
         x.entity_tycon_repr                <- tg.entity_tycon_repr
@@ -896,6 +917,10 @@ type Entity =
         x.entity_accessiblity              <- tg.entity_accessiblity
         x.entity_cpath                     <- tg.entity_cpath 
         x.entity_il_repr_cache             <- tg.entity_il_repr_cache 
+        match tg.entity_opt_data with
+        | Some tg ->
+            x.entity_opt_data <- Some { entity_compiled_name = tg.entity_compiled_name; entity_other_range = tg.entity_other_range }
+        | None -> ()
 
 
     /// Indicates if the entity is linked to backing data. Only used during unpickling of F# metadata.
@@ -1809,10 +1834,8 @@ and Construct =
         Tycon.New "tycon"
           { entity_stamp=stamp
             entity_logical_name=name
-            entity_compiled_name=None
             entity_kind=kind
             entity_range=m
-            entity_other_range=None
             entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false,preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordOrUnionType=false)
             entity_attribs=[] // fetched on demand via est.fs API
             entity_typars= LazyWithContext.NotLazy []
@@ -1828,7 +1851,8 @@ and Construct =
             entity_xmldocsig=""        
             entity_pubpath = Some pubpath
             entity_cpath = Some cpath
-            entity_il_repr_cache = newCache() } 
+            entity_il_repr_cache = newCache()
+            entity_opt_data = None } 
 #endif
 
     static member NewModuleOrNamespace cpath access (id:Ident) xml attribs mtype = 
@@ -1836,9 +1860,7 @@ and Construct =
         // Put the module suffix on if needed 
         Tycon.New "mspec"
           { entity_logical_name=id.idText
-            entity_compiled_name=None
             entity_range = id.idRange
-            entity_other_range = None
             entity_stamp=stamp
             entity_kind=TyparKind.Type
             entity_modul_contents = mtype
@@ -1855,7 +1877,8 @@ and Construct =
             entity_attribs=attribs
             entity_xmldoc=xml
             entity_xmldocsig=""        
-            entity_il_repr_cache = newCache() } 
+            entity_il_repr_cache = newCache()
+            entity_opt_data = None } 
 
 and Accessibility = 
     /// Indicates the construct can only be accessed from any code in the given type constructor, module or assembly. [] indicates global scope. 
@@ -4940,9 +4963,7 @@ let NewExn cpath (id:Ident) access repr attribs doc =
         entity_attribs=attribs
         entity_kind=TyparKind.Type
         entity_logical_name=id.idText
-        entity_compiled_name=None
         entity_range=id.idRange
-        entity_other_range=None
         entity_exn_info= repr
         entity_tycon_tcaug=TyconAugmentation.Create()
         entity_xmldoc=doc
@@ -4956,7 +4977,8 @@ let NewExn cpath (id:Ident) access repr attribs doc =
         entity_tycon_abbrev = None
         entity_tycon_repr = TNoRepr
         entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordOrUnionType=false)
-        entity_il_repr_cache= newCache()   } 
+        entity_il_repr_cache= newCache()
+        entity_opt_data = None } 
 
 /// Create a new TAST RecdField node for an F# class, struct or record field
 let NewRecdField  stat konst id nameGenerated ty isMutable isVolatile pattribs fattribs docOption access secret =
@@ -4981,10 +5003,8 @@ let NewTycon (cpath, nm, m, access, reprAccess, kind, typars, docOption, usesPre
     Tycon.New "tycon"
       { entity_stamp=stamp
         entity_logical_name=nm
-        entity_compiled_name=None
         entity_kind=kind
         entity_range=m
-        entity_other_range=None
         entity_flags=EntityFlags(usesPrefixDisplay=usesPrefixDisplay, isModuleOrNamespace=false,preEstablishedHasDefaultCtor=preEstablishedHasDefaultCtor, hasSelfReferentialCtor=hasSelfReferentialCtor, isStructRecordOrUnionType=false)
         entity_attribs=[] // fixed up after
         entity_typars=typars
@@ -4999,7 +5019,8 @@ let NewTycon (cpath, nm, m, access, reprAccess, kind, typars, docOption, usesPre
         entity_xmldocsig=""        
         entity_pubpath=cpath |> Option.map (fun (cp:CompilationPath) -> cp.NestedPublicPath (mkSynId m nm))
         entity_cpath = cpath
-        entity_il_repr_cache = newCache() } 
+        entity_il_repr_cache = newCache()
+        entity_opt_data = None } 
 
 
 let NewILTycon nlpath (nm,m) tps (scoref:ILScopeRef, enc, tdef:ILTypeDef) mtyp =

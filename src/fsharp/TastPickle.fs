@@ -1706,7 +1706,7 @@ and p_rfield_table x st =
 and p_entity_spec_data (x:Entity) st = 
     p_typar_specs (x.entity_typars.Force(x.entity_range)) st 
     p_string x.entity_logical_name st
-    p_option p_string x.entity_compiled_name st
+    p_option p_string x.EntityCompiledName st
     p_range  x.entity_range st
     p_option p_pubpath x.entity_pubpath st
     p_access x.entity_accessiblity st
@@ -1986,9 +1986,7 @@ and u_entity_spec_data st : Entity =
     { entity_typars=LazyWithContext.NotLazy x1
       entity_stamp=newStamp()
       entity_logical_name=x2a
-      entity_compiled_name=x2b
       entity_range=x2c
-      entity_other_range=None
       entity_pubpath=x3
       entity_accessiblity=x4a
       entity_tycon_repr_accessibility=x4b
@@ -2004,7 +2002,11 @@ and u_entity_spec_data st : Entity =
       entity_modul_contents=MaybeLazy.Lazy x13
       entity_exn_info=x14
       entity_il_repr_cache=newCache()  
-      } 
+      entity_opt_data=
+        match x2b with
+        | None -> None
+        | _ -> Some { Entity.EmptyEntityOptData with entity_compiled_name = x2b }
+    } 
 
 and u_tcaug st = 
     let a1,a2,a3,b2,c,d,e,g,_space = 

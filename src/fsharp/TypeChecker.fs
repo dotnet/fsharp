@@ -14645,7 +14645,7 @@ module EstablishTypeDefinitionCores =
         tycon.SetIsStructRecordOrUnion isStructRecordOrUnionType
 
         // Set the compiled name, if any
-        tycon.entity_compiled_name <- TryFindFSharpStringAttribute cenv.g cenv.g.attrib_CompiledNameAttribute attrs 
+        tycon.SetCompiledName (TryFindFSharpStringAttribute cenv.g cenv.g.attrib_CompiledNameAttribute attrs)
 
         if hasMeasureAttr then 
             tycon.entity_kind <- TyparKind.Measure
