@@ -495,6 +495,9 @@ type EntityOptionalData =
       /// If this field is populated, this is the implementation range for an item in a signature, otherwise it is 
       /// the signature range for an item in an implementation
       mutable entity_other_range: (range * bool) option
+
+      // MUTABILITY; used only when establishing tycons. 
+      mutable entity_kind : TyparKind
     }
 
 /// Represents a type definition, exception definition, module definition or namespace definition.
@@ -503,9 +506,6 @@ type Entity =
     { /// The declared type parameters of the type  
       // MUTABILITY; used only during creation and remapping  of tycons 
       mutable entity_typars: LazyWithContext<Typars, range>        
-
-      // MUTABILITY; used only when establishing tycons. 
-      mutable entity_kind : TyparKind
       
       mutable entity_flags : EntityFlags
       
@@ -581,7 +581,7 @@ type Entity =
       mutable entity_opt_data : EntityOptionalData option
     }
 
-    static member EmptyEntityOptData = { entity_compiled_name = None; entity_other_range = None }
+    static member EmptyEntityOptData = { entity_compiled_name = None; entity_other_range = None; entity_kind = TyparKind.Type }
 
     /// The name of the namespace, module or type, possibly with mangling, e.g. List`1, List or FailureException 
     member x.LogicalName = x.entity_logical_name
@@ -707,7 +707,15 @@ type Entity =
     member x.TypeContents = x.entity_tycon_tcaug
 
     /// The kind of the type definition - is it a measure definition or a type definition?
-    member x.TypeOrMeasureKind = x.entity_kind
+    member x.TypeOrMeasureKind =
+        match x.entity_opt_data with
+        | Some optData -> optData.entity_kind
+        | _ -> TyparKind.Type
+
+    member x.SetTypeOrMeasureKind kind =
+        match x.entity_opt_data with
+        | Some optData -> optData.entity_kind <- kind
+        | _ -> x.entity_opt_data <- Some { Entity.EmptyEntityOptData with entity_kind = kind }
 
     /// The identifier at the point of declaration of the type definition.
     member x.Id = ident(x.LogicalName, x.Range)
@@ -873,7 +881,6 @@ type Entity =
     /// Create a new entity with empty, unlinked data. Only used during unpickling of F# metadata.
     static member NewUnlinked() : Entity = 
         { entity_typars = Unchecked.defaultof<_>
-          entity_kind = Unchecked.defaultof<_>
           entity_flags = Unchecked.defaultof<_>
           entity_stamp = Unchecked.defaultof<_>
           entity_logical_name = Unchecked.defaultof<_> 
@@ -899,7 +906,6 @@ type Entity =
     /// Link an entity based on empty, unlinked data to the given data. Only used during unpickling of F# metadata.
     member x.Link (tg: EntityData) = 
         x.entity_typars                    <- tg.entity_typars 
-        x.entity_kind                      <- tg.entity_kind  
         x.entity_flags                     <- tg.entity_flags 
         x.entity_stamp                     <- tg.entity_stamp 
         x.entity_logical_name              <- tg.entity_logical_name  
@@ -919,7 +925,7 @@ type Entity =
         x.entity_il_repr_cache             <- tg.entity_il_repr_cache 
         match tg.entity_opt_data with
         | Some tg ->
-            x.entity_opt_data <- Some { entity_compiled_name = tg.entity_compiled_name; entity_other_range = tg.entity_other_range }
+            x.entity_opt_data <- Some { entity_compiled_name = tg.entity_compiled_name; entity_other_range = tg.entity_other_range; entity_kind = tg.entity_kind }
         | None -> ()
 
 
@@ -1834,7 +1840,6 @@ and Construct =
         Tycon.New "tycon"
           { entity_stamp=stamp
             entity_logical_name=name
-            entity_kind=kind
             entity_range=m
             entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false,preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordOrUnionType=false)
             entity_attribs=[] // fetched on demand via est.fs API
@@ -1852,7 +1857,10 @@ and Construct =
             entity_pubpath = Some pubpath
             entity_cpath = Some cpath
             entity_il_repr_cache = newCache()
-            entity_opt_data = None } 
+            entity_opt_data =
+                match kind with
+                | TyparKind.Type -> None
+                | _ -> Some { Entity.EmptyEntityOptData with entity_kind = kind } } 
 #endif
 
     static member NewModuleOrNamespace cpath access (id:Ident) xml attribs mtype = 
@@ -1862,7 +1870,6 @@ and Construct =
           { entity_logical_name=id.idText
             entity_range = id.idRange
             entity_stamp=stamp
-            entity_kind=TyparKind.Type
             entity_modul_contents = mtype
             entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=true, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false,isStructRecordOrUnionType=false)
             entity_typars=LazyWithContext.NotLazy []
@@ -4961,7 +4968,6 @@ let NewExn cpath (id:Ident) access repr attribs doc =
     Tycon.New "exnc"
       { entity_stamp=newStamp()
         entity_attribs=attribs
-        entity_kind=TyparKind.Type
         entity_logical_name=id.idText
         entity_range=id.idRange
         entity_exn_info= repr
@@ -5003,7 +5009,6 @@ let NewTycon (cpath, nm, m, access, reprAccess, kind, typars, docOption, usesPre
     Tycon.New "tycon"
       { entity_stamp=stamp
         entity_logical_name=nm
-        entity_kind=kind
         entity_range=m
         entity_flags=EntityFlags(usesPrefixDisplay=usesPrefixDisplay, isModuleOrNamespace=false,preEstablishedHasDefaultCtor=preEstablishedHasDefaultCtor, hasSelfReferentialCtor=hasSelfReferentialCtor, isStructRecordOrUnionType=false)
         entity_attribs=[] // fixed up after
@@ -5020,7 +5025,10 @@ let NewTycon (cpath, nm, m, access, reprAccess, kind, typars, docOption, usesPre
         entity_pubpath=cpath |> Option.map (fun (cp:CompilationPath) -> cp.NestedPublicPath (mkSynId m nm))
         entity_cpath = cpath
         entity_il_repr_cache = newCache()
-        entity_opt_data = None } 
+        entity_opt_data =
+            match kind with
+            | TyparKind.Type -> None
+            | _ -> Some { Entity.EmptyEntityOptData with entity_kind = kind } } 
 
 
 let NewILTycon nlpath (nm,m) tps (scoref:ILScopeRef, enc, tdef:ILTypeDef) mtyp =

@@ -1716,7 +1716,7 @@ and p_entity_spec_data (x:Entity) st =
     p_option p_typ x.entity_tycon_abbrev st
     p_tcaug x.entity_tycon_tcaug st
     p_string x.entity_xmldocsig st
-    p_kind x.entity_kind st
+    p_kind x.TypeOrMeasureKind st
     p_int64 (x.entity_flags.PickledBits ||| (if flagBit then EntityFlags.ReservedBitForPickleFormatTyconReprFlag else 0L)) st
     p_option p_cpath x.entity_cpath st
     p_maybe_lazy p_modul_typ x.entity_modul_contents st
@@ -1996,16 +1996,15 @@ and u_entity_spec_data st : Entity =
       entity_tycon_tcaug=x9
       entity_xmldoc= defaultArg x15 XmlDoc.Empty
       entity_xmldocsig=x10
-      entity_kind=x10b
       entity_flags=EntityFlags(x11)
       entity_cpath=x12
       entity_modul_contents=MaybeLazy.Lazy x13
       entity_exn_info=x14
       entity_il_repr_cache=newCache()  
       entity_opt_data=
-        match x2b with
-        | None -> None
-        | _ -> Some { Entity.EmptyEntityOptData with entity_compiled_name = x2b }
+        match x2b, x10b with
+        | None, TyparKind.Type -> None
+        | _ -> Some { Entity.EmptyEntityOptData with entity_compiled_name = x2b; entity_kind = x10b }
     } 
 
 and u_tcaug st = 

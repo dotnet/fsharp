@@ -14648,7 +14648,7 @@ module EstablishTypeDefinitionCores =
         tycon.SetCompiledName (TryFindFSharpStringAttribute cenv.g cenv.g.attrib_CompiledNameAttribute attrs)
 
         if hasMeasureAttr then 
-            tycon.entity_kind <- TyparKind.Measure
+            tycon.SetTypeOrMeasureKind TyparKind.Measure
             if not (isNil typars) then error(Error(FSComp.SR.tcMeasureDefinitionsCannotHaveTypeParameters(), m))
 
         let repr = 
