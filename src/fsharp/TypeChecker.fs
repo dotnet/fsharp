@@ -14970,7 +14970,7 @@ module EstablishTypeDefinitionCores =
                             errorR(Deprecated(FSComp.SR.tcTypeAbbreviationHasTypeParametersMissingOnType(), tycon.Range))
 
                     if firstPass then
-                        tycon.entity_tycon_abbrev <- Some ty
+                        tycon.SetTypeAbbrev (Some ty)
 
             | _ -> ()
         
@@ -15487,7 +15487,7 @@ module EstablishTypeDefinitionCores =
         graph.IterateCycles (fun path -> 
             let tycon = path.Head 
             // The thing is cyclic. Set the abbreviation and representation to be "None" to stop later VS crashes
-            tycon.entity_tycon_abbrev <- None
+            tycon.SetTypeAbbrev None
             tycon.entity_tycon_repr <- TNoRepr
             errorR(Error(FSComp.SR.tcTypeDefinitionIsCyclic(), tycon.Range)))
 
@@ -15622,7 +15622,7 @@ module EstablishTypeDefinitionCores =
         graph.IterateCycles (fun path -> 
             let tycon = path.Head 
             // The thing is cyclic. Set the abbreviation and representation to be "None" to stop later VS crashes
-            tycon.entity_tycon_abbrev <- None
+            tycon.SetTypeAbbrev None
             tycon.entity_tycon_repr <- TNoRepr
             errorR(Error(FSComp.SR.tcTypeDefinitionIsCyclicThroughInheritance(), tycon.Range)))
         

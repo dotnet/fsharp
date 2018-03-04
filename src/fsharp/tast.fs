@@ -505,11 +505,16 @@ type EntityOptionalData =
       
       /// The XML document signature for this entity
       mutable entity_xmldocsig : string
+
+      /// If non-None, indicates the type is an abbreviation for another type. 
+      //
+      // MUTABILITY; used only during creation and remapping of tycons 
+      mutable entity_tycon_abbrev: TType option             
     }
 
-/// Represents a type definition, exception definition, module definition or namespace definition.
-[<RequireQualifiedAccess>] 
-type Entity = 
+and /// Represents a type definition, exception definition, module definition or namespace definition.
+    [<RequireQualifiedAccess>] 
+    Entity = 
     { /// The declared type parameters of the type  
       // MUTABILITY; used only during creation and remapping  of tycons 
       mutable entity_typars: LazyWithContext<Typars, range>        
@@ -539,11 +544,6 @@ type Entity =
       //
       // MUTABILITY; used only during creation and remapping of tycons 
       mutable entity_tycon_repr: TyconRepresentation 
-
-      /// If non-None, indicates the type is an abbreviation for another type. 
-      //
-      // MUTABILITY; used only during creation and remapping of tycons 
-      mutable entity_tycon_abbrev: TType option             
       
       /// The methods and properties of the type 
       //
@@ -581,7 +581,7 @@ type Entity =
       mutable entity_opt_data : EntityOptionalData option
     }
 
-    static member EmptyEntityOptData = { entity_compiled_name = None; entity_other_range = None; entity_kind = TyparKind.Type; entity_xmldoc = XmlDoc.Empty; entity_xmldocsig = "" }
+    static member EmptyEntityOptData = { entity_compiled_name = None; entity_other_range = None; entity_kind = TyparKind.Type; entity_xmldoc = XmlDoc.Empty; entity_xmldocsig = ""; entity_tycon_abbrev = None }
 
     /// The name of the namespace, module or type, possibly with mangling, e.g. List`1, List or FailureException 
     member x.LogicalName = x.entity_logical_name
@@ -750,7 +750,15 @@ type Entity =
     member x.TyparsNoRange = x.Typars x.Range
 
     /// Get the type abbreviated by this type definition, if it is an F# type abbreviation definition
-    member x.TypeAbbrev = x.entity_tycon_abbrev
+    member x.TypeAbbrev = 
+        match x.entity_opt_data with
+        | Some optData -> optData.entity_tycon_abbrev
+        | _ -> None
+
+    member x.SetTypeAbbrev tycon_abbrev = 
+        match x.entity_opt_data with
+        | Some optData -> optData.entity_tycon_abbrev <- tycon_abbrev
+        | _ -> x.entity_opt_data <- Some { Entity.EmptyEntityOptData with entity_tycon_abbrev = tycon_abbrev }
 
     /// Indicates if this entity is an F# type abbreviation definition
     member x.IsTypeAbbrev = x.TypeAbbrev.IsSome
@@ -896,7 +904,6 @@ type Entity =
           entity_tycon_repr_accessibility = Unchecked.defaultof<_>
           entity_attribs = Unchecked.defaultof<_>
           entity_tycon_repr= Unchecked.defaultof<_>
-          entity_tycon_abbrev= Unchecked.defaultof<_>
           entity_tycon_tcaug= Unchecked.defaultof<_>
           entity_exn_info= Unchecked.defaultof<_>
           entity_modul_contents= Unchecked.defaultof<_>
@@ -919,7 +926,6 @@ type Entity =
         x.entity_tycon_repr_accessibility  <- tg.entity_tycon_repr_accessibility
         x.entity_attribs                   <- tg.entity_attribs 
         x.entity_tycon_repr                <- tg.entity_tycon_repr
-        x.entity_tycon_abbrev              <- tg.entity_tycon_abbrev
         x.entity_tycon_tcaug               <- tg.entity_tycon_tcaug
         x.entity_exn_info                  <- tg.entity_exn_info
         x.entity_modul_contents            <- tg.entity_modul_contents
@@ -929,7 +935,7 @@ type Entity =
         x.entity_il_repr_cache             <- tg.entity_il_repr_cache 
         match tg.entity_opt_data with
         | Some tg ->
-            x.entity_opt_data <- Some { entity_compiled_name = tg.entity_compiled_name; entity_other_range = tg.entity_other_range; entity_kind = tg.entity_kind; entity_xmldoc = tg.entity_xmldoc; entity_xmldocsig = tg.entity_xmldocsig }
+            x.entity_opt_data <- Some { entity_compiled_name = tg.entity_compiled_name; entity_other_range = tg.entity_other_range; entity_kind = tg.entity_kind; entity_xmldoc = tg.entity_xmldoc; entity_xmldocsig = tg.entity_xmldocsig; entity_tycon_abbrev = tg.entity_tycon_abbrev }
         | None -> ()
 
 
@@ -1848,7 +1854,6 @@ and Construct =
             entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false,preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordOrUnionType=false)
             entity_attribs=[] // fetched on demand via est.fs API
             entity_typars= LazyWithContext.NotLazy []
-            entity_tycon_abbrev = None
             entity_tycon_repr = repr
             entity_tycon_repr_accessibility = TAccess([])
             entity_exn_info=TExnNone
@@ -1875,7 +1880,6 @@ and Construct =
             entity_modul_contents = mtype
             entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=true, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false,isStructRecordOrUnionType=false)
             entity_typars=LazyWithContext.NotLazy []
-            entity_tycon_abbrev = None
             entity_tycon_repr = TNoRepr
             entity_tycon_repr_accessibility = access
             entity_exn_info=TExnNone
@@ -4981,7 +4985,6 @@ let NewExn cpath (id:Ident) access repr attribs doc =
         entity_modul_contents = MaybeLazy.Strict (NewEmptyModuleOrNamespaceType ModuleOrType)
         entity_cpath= cpath
         entity_typars=LazyWithContext.NotLazy []
-        entity_tycon_abbrev = None
         entity_tycon_repr = TNoRepr
         entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordOrUnionType=false)
         entity_il_repr_cache= newCache()
@@ -5017,7 +5020,6 @@ let NewTycon (cpath, nm, m, access, reprAccess, kind, typars, docOption, usesPre
         entity_flags=EntityFlags(usesPrefixDisplay=usesPrefixDisplay, isModuleOrNamespace=false,preEstablishedHasDefaultCtor=preEstablishedHasDefaultCtor, hasSelfReferentialCtor=hasSelfReferentialCtor, isStructRecordOrUnionType=false)
         entity_attribs=[] // fixed up after
         entity_typars=typars
-        entity_tycon_abbrev = None
         entity_tycon_repr = TNoRepr
         entity_tycon_repr_accessibility = reprAccess
         entity_exn_info=TExnNone

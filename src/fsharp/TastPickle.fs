@@ -1713,7 +1713,7 @@ and p_entity_spec_data (x:Entity) st =
     p_access  x.entity_tycon_repr_accessibility st
     p_attribs x.entity_attribs st
     let flagBit = p_tycon_repr x.entity_tycon_repr st
-    p_option p_typ x.entity_tycon_abbrev st
+    p_option p_typ x.TypeAbbrev st
     p_tcaug x.entity_tycon_tcaug st
     p_string x.XmlDocSig st
     p_kind x.TypeOrMeasureKind st
@@ -1992,7 +1992,6 @@ and u_entity_spec_data st : Entity =
       entity_tycon_repr_accessibility=x4b
       entity_attribs=x6
       entity_tycon_repr=x7
-      entity_tycon_abbrev=x8
       entity_tycon_tcaug=x9
       entity_flags=EntityFlags(x11)
       entity_cpath=x12
@@ -2000,9 +1999,9 @@ and u_entity_spec_data st : Entity =
       entity_exn_info=x14
       entity_il_repr_cache=newCache()  
       entity_opt_data=
-        match x2b, x10b, x15, x10 with
-        | None, TyparKind.Type, None, "" -> None
-        | _ -> Some { Entity.EmptyEntityOptData with entity_compiled_name = x2b; entity_kind = x10b; entity_xmldoc= defaultArg x15 XmlDoc.Empty; entity_xmldocsig=x10 }
+        match x2b, x10b, x15, x10, x8 with
+        | None, TyparKind.Type, None, "", None -> None
+        | _ -> Some { Entity.EmptyEntityOptData with entity_compiled_name = x2b; entity_kind = x10b; entity_xmldoc= defaultArg x15 XmlDoc.Empty; entity_xmldocsig = x10; entity_tycon_abbrev = x8 }
     } 
 
 and u_tcaug st = 
