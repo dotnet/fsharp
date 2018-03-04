@@ -1451,7 +1451,7 @@ let tryDestRefTupleTy g ty =
 type UncurriedArgInfos = (TType * ArgReprInfo) list 
 type CurriedArgInfos = (TType * ArgReprInfo) list list
 
-// A 'tau' type is one with its type paramaeters stripped off 
+// A 'tau' type is one with its type parameters stripped off 
 let GetTopTauTypeInFSharpForm g (curriedArgInfos: ArgReprInfo list list) tau m =
     let nArgInfos = curriedArgInfos.Length
     let argtys, rty = stripFunTyN g nArgInfos tau
