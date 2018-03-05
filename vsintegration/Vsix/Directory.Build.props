@@ -5,8 +5,8 @@
   <PropertyGroup>
     <VSRootSuffix>RoslynDev</VSRootSuffix>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <DeployExtension Condition=" '$(DeployExtension)' == '' and ('$(HUDSON_COOKIE)' != '' or '$(UsingMicrobuild)' != '') ">False</DeployExtension>
-    <DeployExtension Condition=" '$(DeployExtension)' == '' and '$(HUDSON_COOKIE)' == '' and '$(UsingMicrobuild)' == '' ">True</DeployExtension>
+    <DeployExtension Condition="'$(DeployExtension)' == '' and '$(CI)' != ''">false</DeployExtension>
+    <DeployExtension Condition="'$(DeployExtension)' == '' and '$(CI)' == ''">true</DeployExtension>
     <VSSDKTargetPlatformRegRootSuffix>$(VSRootSuffix)</VSSDKTargetPlatformRegRootSuffix>
     <CreateVsixContainer>true</CreateVsixContainer>
     <PublishUrl>publish\</PublishUrl>
@@ -32,7 +32,6 @@
     <ExtensionInstallationRoot>CommonExtensions</ExtensionInstallationRoot>
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
     <IsPackage>true</IsPackage>
-    <DeployExtension>false</DeployExtension>
     <ImportVsSDK>true</ImportVsSDK>
   </PropertyGroup>
 

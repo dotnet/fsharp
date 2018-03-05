@@ -7,6 +7,7 @@
     <TargetFramework>net46</TargetFramework>
     <OutputType>Library</OutputType>
     <ExtensionInstallationFolder>Microsoft\FSharpTemplates</ExtensionInstallationFolder>
+    <DeployExtension>false</DeployExtension>
   </PropertyGroup>
 
   <ItemGroup>
