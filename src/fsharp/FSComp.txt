@@ -1372,7 +1372,7 @@ keywordDescriptionLazy,"Used to specify a computation that is to be performed on
 keywordDescriptionLet,"Used to associate, or bind, a name to a value or function."
 keywordDescriptionLetBang,"Used in asynchronous workflows to bind a name to the result of an asynchronous computation, or, in other computation expressions, used to bind a name to a result, which is of the computation type."
 keywordDescriptionMatch,"Used to branch by comparing a value to a pattern."
-keywordDescritpionMatchBang,"Used in asynchronous workflows (and other computation expressions) to first bind the result of the asynchronous workflow (or computation expression), then pattern match over that result"
+keywordDescriptionMatchBang,"Used in computation expressions to pattern match directly over the result of another computation expression."
 keywordDescriptionMember,"Used to declare a property or method in an object type."
 keywordDescriptionModule,"Used to associate a name with a group of related types, values, and functions, to logically separate it from other code."
 keywordDescriptionMutable,"Used to declare a variable, that is, a value that can be changed."
