@@ -1720,7 +1720,7 @@ and p_entity_spec_data (x:Entity) st =
     p_int64 (x.entity_flags.PickledBits ||| (if flagBit then EntityFlags.ReservedBitForPickleFormatTyconReprFlag else 0L)) st
     p_option p_cpath x.entity_cpath st
     p_maybe_lazy p_modul_typ x.entity_modul_contents st
-    p_exnc_repr x.entity_exn_info st
+    p_exnc_repr x.ExceptionInfo st
     if st.oInMem then
         p_used_space1 (p_xmldoc x.XmlDoc) st
     else
@@ -1994,12 +1994,11 @@ and u_entity_spec_data st : Entity =
       entity_flags=EntityFlags(x11)
       entity_cpath=x12
       entity_modul_contents=MaybeLazy.Lazy x13
-      entity_exn_info=x14
       entity_il_repr_cache=newCache()  
       entity_opt_data=
-        match x2b, x10b, x15, x10, x8, x4a, x4b with
-        | None, TyparKind.Type, None, "", None, TAccess [], TAccess [] -> None
-        | _ -> Some { Entity.EmptyEntityOptData with entity_compiled_name = x2b; entity_kind = x10b; entity_xmldoc= defaultArg x15 XmlDoc.Empty; entity_xmldocsig = x10; entity_tycon_abbrev = x8; entity_accessiblity = x4a; entity_tycon_repr_accessibility = x4b }
+        match x2b, x10b, x15, x10, x8, x4a, x4b, x14 with
+        | None, TyparKind.Type, None, "", None, TAccess [], TAccess [], TExnNone -> None
+        | _ -> Some { Entity.EmptyEntityOptData with entity_compiled_name = x2b; entity_kind = x10b; entity_xmldoc= defaultArg x15 XmlDoc.Empty; entity_xmldocsig = x10; entity_tycon_abbrev = x8; entity_accessiblity = x4a; entity_tycon_repr_accessibility = x4b; entity_exn_info = x14 }
     } 
 
 and u_tcaug st = 

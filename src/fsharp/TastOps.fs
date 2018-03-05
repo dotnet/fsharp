@@ -5034,13 +5034,15 @@ and copyAndRemapAndBindTyconsAndVals g compgen tmenv tycons vs =
         tcd'.entity_attribs        <- tcd.entity_attribs       |> remapAttribs g tmenvinner2
         tcd'.entity_tycon_repr     <- tcd.entity_tycon_repr    |> remapTyconRepr g tmenvinner2
         let typeAbbrevR             = tcd.TypeAbbrev           |> Option.map (remapType tmenvinner2)
-        match tcd'.entity_opt_data with
-        | Some optData -> tcd'.entity_opt_data <- Some { optData with entity_tycon_abbrev = typeAbbrevR }
-        | _ -> tcd'.SetTypeAbbrev typeAbbrevR
         tcd'.entity_tycon_tcaug    <- tcd.entity_tycon_tcaug   |> remapTyconAug tmenvinner2
         tcd'.entity_modul_contents <- MaybeLazy.Strict (tcd.entity_modul_contents.Value 
                                                         |> mapImmediateValsAndTycons lookupTycon lookupVal)
-        tcd'.entity_exn_info       <- tcd.entity_exn_info      |> remapTyconExnInfo g tmenvinner2)
+        let exnInfoR                = tcd.ExceptionInfo        |> remapTyconExnInfo g tmenvinner2
+        match tcd'.entity_opt_data with
+        | Some optData -> tcd'.entity_opt_data <- Some { optData with entity_tycon_abbrev = typeAbbrevR; entity_exn_info = exnInfoR }
+        | _ -> 
+            tcd'.SetTypeAbbrev typeAbbrevR
+            tcd'.SetExceptionInfo exnInfoR)
     tycons', vs', tmenvinner
 
 
@@ -7784,18 +7786,17 @@ let rec remapEntityDataToNonLocal g tmenv (d: Entity) =
     let modulContentsR   = 
         MaybeLazy.Strict (d.entity_modul_contents.Value
                           |> mapImmediateValsAndTycons (remapTyconToNonLocal g tmenv) (remapValToNonLocal g tmenv))
-    let exnInfoR         = d.entity_exn_info       |> remapTyconExnInfo g tmenvinner
+    let exnInfoR         = d.ExceptionInfo         |> remapTyconExnInfo g tmenvinner
     { d with 
           entity_typars         = typarsR
           entity_attribs        = attribsR
           entity_tycon_repr     = tyconReprR
           entity_tycon_tcaug    = tyconTcaugR
           entity_modul_contents = modulContentsR
-          entity_exn_info       = exnInfoR
           entity_opt_data       =
             match d.entity_opt_data with
             | Some dd ->
-                Some { dd with  entity_tycon_abbrev = tyconAbbrevR }
+                Some { dd with  entity_tycon_abbrev = tyconAbbrevR; entity_exn_info = exnInfoR }
             | _ -> None }
 
 and remapTyconToNonLocal g tmenv x = 

@@ -14338,7 +14338,7 @@ module TcExceptionDeclarations =
           | None -> 
              TExnFresh (MakeRecdFieldsTable args')
         
-        exnc.entity_exn_info <- repr 
+        exnc.SetExceptionInfo repr 
 
         let item = Item.ExnCase(mkLocalTyconRef exnc)
         CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Binding, env.DisplayEnv, env.eAccessRights)
