@@ -1318,10 +1318,11 @@ module MatchBangSimple =
         Async.Sleep 1
         return Some Hearts }
     
-    Async.RunSynchronously <| async {
+    async {
         match! fetchSuit () with
         | Some Hearts -> printfn "hearts"
         | Some Diamonds | Some Clubs | Some Spades | None -> report_failure "match! matched the wrong case" }
+    |> Async.RunSynchronously
 
 module MatchBangActivePattern =
     type CardSuit = | Hearts | Diamonds | Clubs | Spades
@@ -1335,13 +1336,13 @@ module MatchBangActivePattern =
         Async.Sleep 1
         return Hearts }
 
-    Async.RunSynchronously <| async {
+    async {
         // make sure other syntactic elements nearby parse fine
         let! x = async.Return 42
         match! fetchSuit () with
         | RedSuit as suit -> printfn "%A suit is red" suit
         | BlackSuit as suit -> printfn "%A suit is black" suit }
-
+    |> Async.RunSynchronously
 
 
 
