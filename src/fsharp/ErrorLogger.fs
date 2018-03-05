@@ -518,10 +518,7 @@ type OperationResult<'T> =
     
 type ImperativeOperationResult = OperationResult<unit>
 
-let ReportWarnings warns = 
-    match warns with 
-    | [] -> () // shortcut in common case
-    | _ -> List.iter warning warns
+let inline ReportWarnings warns = List.iter warning warns
 
 let CommitOperationResult res = 
     match res with 
