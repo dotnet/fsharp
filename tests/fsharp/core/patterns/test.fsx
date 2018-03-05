@@ -1311,6 +1311,40 @@ module StructUnionMarshalingBug =
     let buffer = Marshal.AllocHGlobal(64) // HACK: just assumed a much larger size
     Marshal.StructureToPtr<Msg1>(msg1, buffer, false) 
 
+module MatchBangSimple =
+    type CardSuit = | Hearts | Diamonds | Clubs | Spades
+    let fetchSuit () = async {
+        // do something in order to not allow optimizing things away
+        Async.Sleep 1
+        return Some Hearts }
+    
+    Async.RunSynchronously <| async {
+        match! fetchSuit () with
+        | Some Hearts -> printfn "hearts"
+        | Some Diamonds | Some Clubs | Some Spades | None -> report_failure "match! matched the wrong case" }
+
+module MatchBangActivePattern =
+    type CardSuit = | Hearts | Diamonds | Clubs | Spades
+
+    let (|RedSuit|BlackSuit|) suit =
+        match suit with
+        | Hearts | Diamonds -> RedSuit
+        | Clubs | Spades -> BlackSuit
+
+    let fetchSuit () = async {
+        Async.Sleep 1
+        return Hearts }
+
+    Async.RunSynchronously <| async {
+        // make sure other syntactic elements nearby parse fine
+        let! x = async.Return 42
+        match! fetchSuit () with
+        | RedSuit as suit -> printfn "%A suit is red" suit
+        | BlackSuit as suit -> printfn "%A suit is black" suit }
+
+
+
+
 (* check for failure else sign off "ok" *)
 
 
