@@ -651,7 +651,7 @@
     <Reference Include="System.IO, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="System.ValueTuple">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\System.ValueTuple.4.3.1\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\System.ValueTuple.4.4.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
     </Reference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\scripts\fssrgen.targets" Condition="'$(TargetFramework)' != ''" />
