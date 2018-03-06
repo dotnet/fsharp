@@ -615,8 +615,8 @@ let AddUnionCases1 (tab:Map<_,_>) (ucrefs:UnionCaseRef list) =
 let AddUnionCases2 bulkAddMode (eUnqualifiedItems: LayeredMap<_,_>) (ucrefs :UnionCaseRef list) = 
     match bulkAddMode with 
     | BulkAdd.Yes -> 
-        let items = 
-            ucrefs |> Array.ofList |> Array.map (fun ucref -> 
+        let items =
+            ucrefs |> List.map (fun ucref -> 
                 let item = Item.UnionCase(GeneralizeUnionCaseRef ucref,false)
                 KeyValuePair(ucref.CaseName,item))
         eUnqualifiedItems.AddAndMarkAsCollapsible items
@@ -719,17 +719,11 @@ let AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap m root nenv tcrefs =
             AddTyconByAccessNames bulkAddMode tcrefs nenv.eTyconsByAccessNames } 
 
 /// Add an F# exception definition to the name resolution environment 
-let AddExceptionDeclsToNameEnv bulkAddMode nenv (ecref:TyconRef) = 
+let AddExceptionDeclsToNameEnv nenv (ecref:TyconRef) = 
     assert ecref.IsExceptionDecl
     let item = Item.ExnCase ecref
     {nenv with 
-       eUnqualifiedItems =
-            match bulkAddMode with 
-            | BulkAdd.Yes -> 
-                nenv.eUnqualifiedItems.AddAndMarkAsCollapsible [| KeyValuePair(ecref.LogicalName, item) |]
-            | BulkAdd.No -> 
-                nenv.eUnqualifiedItems.Add (ecref.LogicalName, item)
-                
+       eUnqualifiedItems = nenv.eUnqualifiedItems.Add (ecref.LogicalName, item)
        ePatItems = nenv.ePatItems.Add (ecref.LogicalName, item) }
 
 /// Add a module abbreviation to the name resolution environment 
@@ -788,7 +782,7 @@ and AddModuleOrNamespaceContentsToNameEnv (g:TcGlobals) amap (ad:AccessorDomain)
         for exnc in mty.ExceptionDefinitions do
            let tcref = modref.NestedTyconRef exnc
            if IsEntityAccessible amap m ad tcref then 
-               state <- AddExceptionDeclsToNameEnv BulkAdd.Yes state tcref
+               state <- AddExceptionDeclsToNameEnv state tcref
 
         state
 

@@ -185,7 +185,7 @@ val internal AddActivePatternResultTagsToNameEnv   : ActivePatternInfo -> NameRe
 val internal AddTyconRefsToNameEnv                 : BulkAdd -> bool -> TcGlobals -> ImportMap -> range -> bool -> NameResolutionEnv -> TyconRef list -> NameResolutionEnv
 
 /// Add an F# exception definition to the name resolution environment 
-val internal AddExceptionDeclsToNameEnv            : BulkAdd -> NameResolutionEnv -> TyconRef -> NameResolutionEnv
+val internal AddExceptionDeclsToNameEnv            : NameResolutionEnv -> TyconRef -> NameResolutionEnv
 
 /// Add a module abbreviation to the name resolution environment 
 val internal AddModuleAbbrevToNameEnv              : Ident -> NameResolutionEnv -> ModuleOrNamespaceRef list -> NameResolutionEnv

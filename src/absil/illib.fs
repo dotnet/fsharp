@@ -1202,7 +1202,7 @@ type Map<'Key,'Value when 'Key : comparison> with
         | Some r -> res <- r; true
 
     member x.Values = [ for (KeyValue(_,v)) in x -> v ]
-    member x.AddAndMarkAsCollapsible (kvs: _[])   = (x,kvs) ||> Array.fold (fun x (KeyValue(k,v)) -> x.Add(k,v))
+    member x.AddAndMarkAsCollapsible (kvs: _ seq) = (x,kvs) ||> Seq.fold (fun x (KeyValue(k,v)) -> x.Add(k,v))
     member x.LinearTryModifyThenLaterFlatten (key, f: 'Value option -> 'Value) = x.Add (key, f (x.TryFind key))
     member x.MarkAsCollapsible ()  = x
 
@@ -1211,8 +1211,8 @@ type Map<'Key,'Value when 'Key : comparison> with
 type LayeredMultiMap<'Key,'Value when 'Key : equality and 'Key : comparison>(contents : LayeredMap<'Key,'Value list>) = 
     member x.Add (k,v) = LayeredMultiMap(contents.Add(k,v :: x.[k]))
     member x.Item with get k = match contents.TryFind k with None -> [] | Some l -> l
-    member x.AddAndMarkAsCollapsible (kvs: _[])  = 
-        let x = (x,kvs) ||> Array.fold (fun x (KeyValue(k,v)) -> x.Add(k,v))
+    member x.AddAndMarkAsCollapsible (kvs: _ seq)  = 
+        let x = (x,kvs) ||> Seq.fold (fun x (KeyValue(k,v)) -> x.Add(k,v))
         x.MarkAsCollapsible()
     member x.MarkAsCollapsible() = LayeredMultiMap(contents.MarkAsCollapsible())
     member x.TryFind k = contents.TryFind k

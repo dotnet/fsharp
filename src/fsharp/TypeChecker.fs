@@ -422,7 +422,7 @@ let AddLocalVal tcSink scopem v env =
     env
 
 let AddLocalExnDefnAndReport tcSink scopem env (exnc:Tycon) =
-    let env = ModifyNameResEnv (fun nenv -> AddExceptionDeclsToNameEnv BulkAdd.No nenv (mkLocalEntityRef exnc)) env
+    let env = ModifyNameResEnv (fun nenv -> AddExceptionDeclsToNameEnv nenv (mkLocalEntityRef exnc)) env
     (* Also make VisualStudio think there is an identifier in scope at the range of the identifier text of its binding location *)
     CallEnvSink tcSink (exnc.Range, env.NameEnv, env.eAccessRights)
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
