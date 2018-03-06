@@ -579,26 +579,26 @@ let GeneralizeUnionCaseRef (ucref:UnionCaseRef) =
     
     
 /// Add type definitions to the sub-table of the environment indexed by name and arity
-let AddTyconsByDemangledNameAndArity (bulkAddMode: BulkAdd) (tcrefs: TyconRef[]) (tab: LayeredMap<NameArityPair,TyconRef>) = 
-    if tcrefs.Length = 0 then tab else
+let AddTyconsByDemangledNameAndArity (bulkAddMode: BulkAdd) (tcrefs: TyconRef seq) (tab: LayeredMap<NameArityPair,TyconRef>) = 
+    if Seq.isEmpty tcrefs then tab else
     let entries = 
         tcrefs 
-        |> Array.map (fun tcref -> KeyTyconByDemangledNameAndArity tcref.LogicalName tcref.TyparsNoRange tcref)
+        |> Seq.map (fun tcref -> KeyTyconByDemangledNameAndArity tcref.LogicalName tcref.TyparsNoRange tcref)
 
     match bulkAddMode with
     | BulkAdd.Yes -> tab.AddAndMarkAsCollapsible entries
-    | BulkAdd.No -> (tab,entries) ||> Array.fold (fun tab (KeyValue(k,v)) -> tab.Add(k,v))
+    | BulkAdd.No -> (tab,entries) ||> Seq.fold (fun tab (KeyValue(k,v)) -> tab.Add(k,v))
 
 /// Add type definitions to the sub-table of the environment indexed by access name 
-let AddTyconByAccessNames bulkAddMode (tcrefs:TyconRef[]) (tab: LayeredMultiMap<string,_>) =
-    if tcrefs.Length = 0 then tab else
+let AddTyconByAccessNames bulkAddMode (tcrefs:TyconRef seq) (tab: LayeredMultiMap<string,_>) =
+    if Seq.isEmpty tcrefs then tab else
     let entries = 
         tcrefs
-        |> Array.collect (fun tcref -> KeyTyconByAccessNames tcref.LogicalName tcref)
+        |> Seq.collect (fun tcref -> KeyTyconByAccessNames tcref.LogicalName tcref)
 
     match bulkAddMode with
     | BulkAdd.Yes -> tab.AddAndMarkAsCollapsible entries
-    | BulkAdd.No -> (tab,entries) ||> Array.fold (fun tab (KeyValue(k,v)) -> tab.Add (k,v))
+    | BulkAdd.No -> (tab,entries) ||> Seq.fold (fun tab (KeyValue(k,v)) -> tab.Add (k,v))
 
 /// Add a record field to the corresponding sub-table of the name resolution environment 
 let AddRecdField (rfref:RecdFieldRef) tab = NameMultiMap.add rfref.FieldName rfref tab
@@ -698,8 +698,7 @@ let TryFindPatternByName name {ePatItems = patternMap} =
 let AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap m root nenv tcrefs =
     if isNil tcrefs then nenv else
     let env = List.fold (AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap m) nenv tcrefs
-    // Add most of the contents of the tycons en-masse, then flatten the tables if we're opening a module or namespace
-    let tcrefs = Array.ofList tcrefs
+    // Add most of the contents of the tycons en-masse, then flatten the tables if we're opening a module or namespace    
     { env with
         eFullyQualifiedTyconsByDemangledNameAndArity = 
             if root then 
