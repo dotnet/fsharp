@@ -61,6 +61,8 @@ namespace Microsoft.FSharp.Collections
         interface IEnumerable<KeyValuePair<'Key, 'Value>>         
         interface System.IComparable
         interface System.Collections.IEnumerable 
+        interface IReadOnlyCollection<KeyValuePair<'Key,'Value>>
+        interface IReadOnlyDictionary<'Key,'Value>
         override Equals : obj -> bool
 
     /// <summary>Functional programming operators related to the <c>Map&lt;_,_&gt;</c> type.</summary>
