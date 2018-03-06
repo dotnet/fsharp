@@ -1100,14 +1100,9 @@ let ResolveProvidedTypeNameInEntity (amap, m, typeName, modref: ModuleOrNamespac
     | TProvidedNamespaceExtensionPoint(resolutionEnvironment,resolvers) ->
         match modref.Deref.PublicPath with
         | Some(PubPath path) ->
-            let matches = resolvers |> List.map (fun r-> ExtensionTyping.TryResolveProvidedType(r,m,path,typeName)) 
-            let tcrefs = 
-                [ for st in matches do 
-                      match st with 
-                      | None -> ()
-                      | Some st -> 
-                          yield AddEntityForProvidedType (amap, modref, resolutionEnvironment, st, m) ]
-            tcrefs
+            resolvers 
+            |> List.choose (fun r-> ExtensionTyping.TryResolveProvidedType(r,m,path,typeName))
+            |> List.map (fun st -> AddEntityForProvidedType (amap, modref, resolutionEnvironment, st, m))
         | None -> []
 
     // We have a provided type, look up its nested types (populating them on-demand if necessary)
