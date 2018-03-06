@@ -35,7 +35,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="FSharp.Core">
-      <HintPath>..\..\..\packages\Microsoft.Portable.FSharp.Core.4.1.20\lib\profiles\net40\FSharp.Core.dll</HintPath>
+      <HintPath>..\..\..\packages\Microsoft.Portable.FSharp.Core.$(FSharpCoreFrozenPortablePackageVersion)\lib\profiles\net40\FSharp.Core.dll</HintPath>
     </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="System" />
@@ -45,8 +45,8 @@
     <Compile Include="Test1File2.fsi" />
     <Compile Include="Test1File2.fs" />
     <Compile Include="Test1File1.fs" />
-	<Compile Include="Test1File0.fsi" />
-	<Compile Include="Test1File0.fs" />
+    <Compile Include="Test1File0.fsi" />
+    <Compile Include="Test1File0.fs" />
   </ItemGroup>
   <Import Project="..\..\..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets"  Condition="Exists('..\..\..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets')" />
   <Choose>

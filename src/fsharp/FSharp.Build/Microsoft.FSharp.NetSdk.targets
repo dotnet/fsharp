@@ -54,7 +54,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(FSharpCoreImplicitPackageVersion)' == '' ">
-    <FSharpCoreImplicitPackageVersion>4.2.*</FSharpCoreImplicitPackageVersion>
+    <FSharpCoreImplicitPackageVersion>4.3.*</FSharpCoreImplicitPackageVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(DisableImplicitSystemValueTupleReference)' != 'true' ">

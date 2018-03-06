@@ -3034,8 +3034,8 @@ namespace Microsoft.FSharp.Collections
        | (::)  : Head: 'T * Tail: 'T list -> 'T list
        interface System.Collections.Generic.IEnumerable<'T>
        interface System.Collections.IEnumerable
-
        interface System.Collections.Generic.IReadOnlyCollection<'T>
+       interface System.Collections.Generic.IReadOnlyList<'T>
         
     and 'T list = List<'T>
 
@@ -3226,6 +3226,9 @@ namespace Microsoft.FSharp.Collections
 
         interface IReadOnlyCollection<'T> with
             member l.Count = l.Length
+
+        interface IReadOnlyList<'T> with
+            member l.Item with get(index) = l.[index]
 
     type seq<'T> = IEnumerable<'T>
 

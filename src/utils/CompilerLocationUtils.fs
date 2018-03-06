@@ -12,7 +12,7 @@ open System.Runtime.InteropServices
 module internal FSharpEnvironment =
 
     /// The F# version reported in the banner
-    let FSharpBannerVersion = "4.1"
+    let FSharpBannerVersion = "10.1.0 for F# 4.1"
 
     let versionOf<'t> =
 #if FX_RESHAPED_REFLECTION
@@ -210,31 +210,28 @@ module internal FSharpEnvironment =
             let result = tryAppConfig "fsharp-compiler-location"
             match result with 
             | Some _ ->  result 
-            | None -> 
-            
+            | None ->
+
             let safeExists f = (try File.Exists(f) with _ -> false)
             // Look in the probePoint if given, e.g. look for a compiler alongside of FSharp.Build.dll
             match probePoint with 
             | Some p when safeExists (Path.Combine(p,"FSharp.Core.dll")) -> Some p 
             | _ -> 
-                
+
             // On windows the location of the compiler is via a registry key
 
             // Note: If the keys below change, be sure to update code in:
             // Property pages (ApplicationPropPage.vb)
-
-            let key1 = @"Software\Microsoft\FSharp\4.1\Runtime\v4.0"
-            let key2 = @"Software\Microsoft\FSharp\4.0\Runtime\v4.0"
-
-            let result = tryRegKey key1
-            match result with 
-            | Some _ ->  result 
-            | None -> 
-            let result =  tryRegKey key2
-            match result with 
-            | Some _ ->  result 
+            let keys = 
+                [| 
+                    @"Software\Microsoft\FSharp\10.1\Runtime\v4.0"; 
+                    @"Software\Microsoft\FSharp\4.1\Runtime\v4.0"; 
+                    @"Software\Microsoft\FSharp\4.0\Runtime\v4.0"
+                |]
+            let path = keys |> Seq.tryPick(fun k -> tryRegKey k)
+            match path with
+            | Some _ -> path
             | None ->
-
             // On Unix we let you set FSHARP_COMPILER_BIN. I've rarely seen this used and its not documented in the install instructions.
             let result = 
                 let var = System.Environment.GetEnvironmentVariable("FSHARP_COMPILER_BIN")
