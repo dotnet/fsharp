@@ -624,11 +624,6 @@ if "%RestorePackages%" == "true" (
     %_nugetexe% restore packages.config !_nugetoptions!
     @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
 
-    if "%BUILD_VS%" == "1" (
-        %_nugetexe% restore vsintegration\packages.config !_nugetoptions!
-        @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
-    )
-
     if "%BUILD_SETUP%" == "1" (
         %_nugetexe% restore setup\packages.config !_nugetoptions!
         @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
@@ -665,7 +660,6 @@ if "%NEEDS_DOTNET_CLI_TOOLS%" == "1" (
     echo %_dotnet20exe% restore -v:d build-everything.proj %msbuildflags% %BUILD_DIAG%
          %_dotnet20exe% restore -v:d build-everything.proj %msbuildflags% %BUILD_DIAG%
 )
-
 
 echo ----------- Done with package restore, starting dependency uptake check -------------
 
@@ -716,10 +710,10 @@ set path=%~dp0Tools\dotnet20\;%path%
 
 set _fsiexe="packages\FSharp.Compiler.Tools.4.1.27\tools\fsi.exe"
 if not exist %_fsiexe% echo Error: Could not find %_fsiexe% && goto :failure
-%_ngenexe% install %_fsiexe% /nologo 
+%_ngenexe% install %_fsiexe% /nologo
 
 if not exist %_nugetexe% echo Error: Could not find %_nugetexe% && goto :failure
-%_ngenexe% install %_nugetexe% /nologo 
+%_ngenexe% install %_nugetexe% /nologo
 
 echo ---------------- Done with package restore, verify buildfrom source ---------------
 if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (

@@ -6,6 +6,8 @@
     <RepoRoot>$(MSBuildThisFileDirectory)..\</RepoRoot>
   </PropertyGroup>
 
+  <Import Project="..\build\targets\GitHash.props" />
+
   <PropertyGroup>
     <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
   </PropertyGroup>

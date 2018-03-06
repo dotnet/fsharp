@@ -1,6 +1,6 @@
 <Project>
 
-  <Import Project="FSharp.Directory.Build.targets" />
+  <Import Project="Directory.Build.targets" />
 
   <PropertyGroup>
     <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetDotnetProfile)\bin\$(TemplateCategory)\$(AssemblyName)</OutputPath>
