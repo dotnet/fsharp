@@ -102,7 +102,7 @@ type ListType() =
 
     [<Test>]
     member this.IReadOnlyList_T() =
-        
+
         let c = ['a'; 'b'; 'c'] :> IReadOnlyList<char>
 
         Assert.AreEqual(c.[1], 'b')
@@ -110,11 +110,11 @@ type ListType() =
         let c = [1..10] :> IReadOnlyList<int>
 
         Assert.AreEqual(c.[5], 6)
-        
+
         let c = [] :> IReadOnlyList<int>
-        
+
         CheckThrowsArgumentException(fun () -> c.[0] |> ignore)
-    
+
     // Base class methods
     [<Test>]
     member this.ObjectToString() =
