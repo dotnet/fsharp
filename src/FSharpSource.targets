@@ -6,8 +6,6 @@
     <RepoRoot>$(MSBuildThisFileDirectory)..\</RepoRoot>
   </PropertyGroup>
 
-  <Import Project="..\build\targets\GitHash.props" />
-
   <PropertyGroup>
     <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
   </PropertyGroup>
@@ -338,7 +336,8 @@
 
   </Target>
 
-  <Import Project="..\build\targets\AssemblyAttributes.targets" />
+  <Import Project="..\build\targets\GenerateAssemblyAttributes.targets" />
+  <Import Project="..\build\targets\GenerateInternalsVisibleTo.targets" />
 
   <UsingTask TaskName="ReplaceFileText" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
     <ParameterGroup>
