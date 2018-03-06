@@ -2810,7 +2810,7 @@ let TcVal checkAttributes cenv env tpenv (vref:ValRef) optInst optAfterResolutio
                       // If we have got an explicit instantiation then use that 
                       | Some(vrefFlags, checkTys) -> 
                             let checkInst (tinst:TypeInst) = 
-                                if not v.IsMember && not v.PermitsExplicitTypeInstantiation && tinst.Length > 0 && v.Typars.Length > 0 then 
+                                if not v.IsMember && not v.PermitsExplicitTypeInstantiation && not (List.isEmpty tinst) && not (List.isEmpty v.Typars) then 
                                     warning(Error(FSComp.SR.tcDoesNotAllowExplicitTypeArguments(v.DisplayName), m))
                             match vrec with 
                             | ValInRecScope false -> 
@@ -7493,13 +7493,13 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
         | StripApps(SingleIdent nm, [StripApps(SingleIdent nm2, args); arg2]) when 
                   PrettyNaming.IsInfixOperator nm.idText && 
                   expectedArgCountForCustomOperator nm2 > 0 &&
-                  args.Length > 0 -> 
+                  not (List.isEmpty args) -> 
             let estimatedRangeOfIntendedLeftAndRightArguments = unionRanges (List.last args).Range arg2.Range
             errorR(Error(FSComp.SR.tcUnrecognizedQueryBinaryOperator(), estimatedRangeOfIntendedLeftAndRightArguments))
             true
         | SynExpr.Tuple( (StripApps(SingleIdent nm2, args) :: _), _, m) when 
                   expectedArgCountForCustomOperator nm2 > 0 &&
-                  args.Length > 0 -> 
+                  not (List.isEmpty args) -> 
             let estimatedRangeOfIntendedLeftAndRightArguments = unionRanges (List.last args).Range m.EndRange
             errorR(Error(FSComp.SR.tcUnrecognizedQueryBinaryOperator(), estimatedRangeOfIntendedLeftAndRightArguments))
             true
@@ -11252,7 +11252,7 @@ and AnalyzeAndMakeAndPublishRecursiveValue overridesOK isGeneratedEventVal cenv 
     let prelimTyscheme = TypeScheme(enclosingDeclaredTypars@declaredTypars, ty)
     let partialValReprInfo = TranslateTopValSynInfo mBinding (TcAttributes cenv envinner) valSynInfo
     let topValInfo = UseSyntacticArity declKind prelimTyscheme partialValReprInfo
-    let hasDeclaredTypars = declaredTypars.Length > 0
+    let hasDeclaredTypars = not (List.isEmpty declaredTypars)
     let prelimValScheme = ValScheme(bindingId, prelimTyscheme, topValInfo, memberInfoOpt, false, inlineFlag, NormalVal, vis, false, false, false, hasDeclaredTypars)
 
     // Check the literal r.h.s., if any
@@ -13574,13 +13574,13 @@ module MutRecBindingChecking =
         let ad = env.eAccessRights
         let mvvs = ForceRaise (ResolveLongIndentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m OpenQualified env.eNameResEnv ad p false)
         let modrefs = mvvs |> List.map p23 
-        if modrefs.Length > 0 && modrefs |> List.forall (fun modref -> modref.IsNamespace) then 
+        if not (List.isEmpty modrefs) && modrefs |> List.forall (fun modref -> modref.IsNamespace) then 
             errorR(Error(FSComp.SR.tcModuleAbbreviationForNamespace(fullDisplayTextOfModRef (List.head modrefs)), m))
         let modrefs = modrefs |> List.filter (fun mvv -> not mvv.IsNamespace)
+        if List.isEmpty modrefs then env else 
         modrefs |> List.iter (fun modref -> CheckEntityAttributes cenv.g modref m |> CommitOperationResult)        
-        let env = (if modrefs.Length > 0 then AddModuleAbbreviationAndReport cenv.tcSink scopem id modrefs env else env)
+        let env = AddModuleAbbreviationAndReport cenv.tcSink scopem id modrefs env
         env
-
 
     /// Update the contents accessible via the recursive namespace declaration, if any
     let TcMutRecDefns_UpdateNSContents mutRecNSInfo =
@@ -15128,10 +15128,10 @@ module EstablishTypeDefinitionCores =
                     if allowed then 
                         if kind = explicitKind then
                             warning(PossibleUnverifiableCode(m))
-                    elif thisTyconRef.Typars(m).Length > 0 then 
-                        errorR (Error(FSComp.SR.tcGenericTypesCannotHaveStructLayout(), m))
-                    else
+                    elif List.isEmpty (thisTyconRef.Typars m) then
                         errorR (Error(FSComp.SR.tcOnlyStructsCanHaveStructLayout(), m))
+                    else
+                        errorR (Error(FSComp.SR.tcGenericTypesCannotHaveStructLayout(), m))
                 | None -> ()
                 
             let hiddenReprChecks(hasRepr) =
@@ -16361,14 +16361,13 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
             
             let modrefs = unfilteredModrefs |> List.filter (fun modref -> not modref.IsNamespace)
 
-            if unfilteredModrefs.Length > 0 && List.isEmpty modrefs then 
+            if not (List.isEmpty unfilteredModrefs) && List.isEmpty modrefs then 
                 errorR(Error(FSComp.SR.tcModuleAbbreviationForNamespace(fullDisplayTextOfModRef (List.head unfilteredModrefs)), m))
             
+            if List.isEmpty modrefs then return env else
             modrefs |> List.iter (fun modref -> CheckEntityAttributes cenv.g modref m |> CommitOperationResult)        
             
-            let env = 
-                if modrefs.Length > 0 then AddModuleAbbreviationAndReport cenv.tcSink scopem id modrefs env 
-                else env
+            let env = AddModuleAbbreviationAndReport cenv.tcSink scopem id modrefs env 
             return env
 
         | SynModuleSigDecl.HashDirective _ -> 

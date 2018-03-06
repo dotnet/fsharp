@@ -568,7 +568,7 @@ let AddValRefToNameEnv nenv (vref:ValRef) =
 
 /// Add a set of active pattern result tags to the environment.
 let AddActivePatternResultTagsToNameEnv (apinfo: PrettyNaming.ActivePatternInfo) nenv ty m =
-    if apinfo.Names.Length = 0 then nenv else
+    if List.isEmpty apinfo.Names then nenv else
     let apresl = List.indexed apinfo.Names
     { nenv with
         eUnqualifiedItems = 
@@ -675,13 +675,13 @@ let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g:TcGlobals) 
                     | _ -> Item.UnqualifiedType [tcref]))
             else
                 tab
-        if isILOrRequiredQualifiedAccess || ucrefs.Length = 0 then 
+        if isILOrRequiredQualifiedAccess || List.isEmpty ucrefs then 
             tab 
         else 
             AddUnionCases2 bulkAddMode tab ucrefs
 
     let ePatItems = 
-        if isILOrRequiredQualifiedAccess || ucrefs.Length = 0 then 
+        if isILOrRequiredQualifiedAccess || List.isEmpty ucrefs then 
             nenv.ePatItems 
         else 
             AddUnionCases1 nenv.ePatItems ucrefs
@@ -1725,14 +1725,14 @@ let CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities
                 // no explicit type instantiation
                 typeNameResInfo.StaticArgsInfo.HasNoStaticArgsInfo && 
                 // some type arguments required on all types (note sorted by typar count above)
-                tcref.Typars(m).Length > 0 && 
+                not (List.isEmpty (tcref.Typars m)) && 
                 // plausible types have different arities
                 (tcrefs |> Seq.distinctBy (fun (_,tcref) -> tcref.Typars(m).Length) |> Seq.length > 1)  ->
             [ for (resInfo,tcref) in tcrefs do 
                 let resInfo = resInfo.AddWarning (fun _typarChecker -> errorR(Error(FSComp.SR.nrTypeInstantiationNeededToDisambiguateTypesWithSameName(tcref.DisplayName, tcref.DisplayNameWithStaticParametersAndUnderscoreTypars),m)))
                 yield (resInfo,tcref) ]
 
-        | [(resInfo,tcref)] when  typeNameResInfo.StaticArgsInfo.HasNoStaticArgsInfo && tcref.Typars(m).Length > 0 && typeNameResInfo.ResolutionFlag = ResolveTypeNamesToTypeRefs ->
+        | [(resInfo,tcref)] when  typeNameResInfo.StaticArgsInfo.HasNoStaticArgsInfo && not (List.isEmpty (tcref.Typars m)) && typeNameResInfo.ResolutionFlag = ResolveTypeNamesToTypeRefs ->
             let resInfo = 
                 resInfo.AddWarning (fun (ResultTyparChecker typarChecker) -> 
                     if not (typarChecker()) then 
@@ -3223,9 +3223,9 @@ let NeedsWorkAfterResolution namedItem =
     | Item.CtorGroup(_,minfos) -> minfos.Length > 1 || minfos |> List.exists (fun minfo -> not (isNil minfo.FormalMethodInst))
     | Item.Property(_,pinfos) -> pinfos.Length > 1
     | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _)) }) 
-    | Item.Value vref | Item.CustomBuilder (_,vref) -> vref.Typars.Length > 0
+    | Item.Value vref | Item.CustomBuilder (_,vref) -> not (List.isEmpty vref.Typars)
     | Item.CustomOperation (_,_,Some minfo) -> not (isNil minfo.FormalMethodInst)
-    | Item.ActivePatternCase apref -> apref.ActivePatternVal.Typars.Length > 0
+    | Item.ActivePatternCase apref -> not (List.isEmpty apref.ActivePatternVal.Typars)
     | _ -> false
 
 /// Specifies additional work to do after an item has been processed further in type checking.

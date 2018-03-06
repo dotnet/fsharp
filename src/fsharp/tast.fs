@@ -604,7 +604,7 @@ type Entity =
             | [] -> nm
             | tps -> 
                 let nm = DemangleGenericTypeName nm
-                if withUnderscoreTypars && tps.Length > 0 then 
+                if withUnderscoreTypars && not (List.isEmpty tps) then 
                     nm + "<" + String.concat "," (Array.create tps.Length "_") + ">"
                 else
                     nm

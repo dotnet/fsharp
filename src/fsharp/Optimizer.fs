@@ -2507,7 +2507,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
               false
             else true)))) ->
             
-        let isBaseCall =  args.Length > 0 &&          
+        let isBaseCall = not (List.isEmpty args) &&
                               match args.[0] with
                               | Expr.Val(vref, _, _) when vref.BaseOrThisInfo = BaseVal -> true
                               | _ -> false
