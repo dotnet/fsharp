@@ -498,21 +498,19 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap:Import.Import
 type BulkAdd = Yes | No
 
 
-/// bulkAddMode: true when adding the values from the 'open' of a namespace
-/// or module, when we collapse the value table down to a dictionary.
-let AddValRefsToItems (bulkAddMode: BulkAdd) (eUnqualifiedItems: LayeredMap<_,_>) (vrefs:ValRef[]) =
+let AddValRefToItems (eUnqualifiedItems: LayeredMap<_,_>) (vref:ValRef) =
     // Object model members are not added to the unqualified name resolution environment 
-    let vrefs = vrefs |> Array.filter (fun vref -> not vref.IsMember)
-
-    if vrefs.Length = 0 then eUnqualifiedItems else
-
-    match bulkAddMode with 
-    | BulkAdd.Yes -> 
-        eUnqualifiedItems.AddAndMarkAsCollapsible(vrefs |> Array.map (fun vref -> KeyValuePair(vref.LogicalName, Item.Value vref)))
-    | BulkAdd.No -> 
-        assert (vrefs.Length = 1)
-        let vref = vrefs.[0]
+    if vref.IsMember then eUnqualifiedItems else
         eUnqualifiedItems.Add (vref.LogicalName, Item.Value vref)  
+
+/// bulkAddMode. Used when adding the values from the 'open' of a namespace
+/// or module, when we collapse the value table down to a dictionary.
+let AddValRefsToItems (eUnqualifiedItems: LayeredMap<_,_>) (vrefs:ValRef seq) =
+    // Object model members are not added to the unqualified name resolution environment 
+    let vrefs = vrefs |> Seq.filter (fun vref -> not vref.IsMember)
+
+    if Seq.isEmpty vrefs then eUnqualifiedItems else
+    eUnqualifiedItems.AddAndMarkAsCollapsible(vrefs |> Seq.map (fun vref -> KeyValuePair(vref.LogicalName, Item.Value vref)))
 
 /// Add an F# value to the table of available extension members, if necessary, as an FSharp-style extension member
 let AddValRefToExtensionMembers pri (eIndexedExtensionMembers: TyconRefMultiMap<_>) (vref:ValRef) =
@@ -546,12 +544,12 @@ let AddValRefsToActivePatternsNameEnv ePatItems (vref:ValRef) =
     ePatItems
 
 /// Add a set of F# values to the environment.
-let AddValRefsToNameEnvWithPriority bulkAddMode pri nenv (vrefs: ValRef []) =
-    if vrefs.Length = 0 then nenv else
+let AddValRefsToNameEnvWithPriority pri nenv (vrefs: ValRef seq) =
+    if Seq.isEmpty vrefs then nenv else
     { nenv with 
-        eUnqualifiedItems = AddValRefsToItems bulkAddMode nenv.eUnqualifiedItems vrefs
-        eIndexedExtensionMembers = (nenv.eIndexedExtensionMembers,vrefs) ||> Array.fold (AddValRefToExtensionMembers pri)
-        ePatItems = (nenv.ePatItems,vrefs) ||> Array.fold AddValRefsToActivePatternsNameEnv }
+        eUnqualifiedItems = AddValRefsToItems nenv.eUnqualifiedItems vrefs
+        eIndexedExtensionMembers = (nenv.eIndexedExtensionMembers,vrefs) ||> Seq.fold (AddValRefToExtensionMembers pri)
+        ePatItems = (nenv.ePatItems,vrefs) ||> Seq.fold AddValRefsToActivePatternsNameEnv }
 
 /// Add a single F# value to the environment.
 let AddValRefToNameEnv nenv (vref:ValRef) = 
@@ -796,8 +794,8 @@ and AddModuleOrNamespaceContentsToNameEnv (g:TcGlobals) amap (ad:AccessorDomain)
     let vrefs = 
         mty.AllValsAndMembers.ToList() 
         |> List.choose (fun x -> if IsAccessible ad x.Accessibility then TryMkValRefInModRef modref x else None)
-        |> List.toArray
-    let nenv = AddValRefsToNameEnvWithPriority BulkAdd.Yes pri nenv vrefs
+
+    let nenv = AddValRefsToNameEnvWithPriority pri nenv vrefs
     let nestedModules = MakeNestedModuleRefs modref
     let nenv = (nenv,nestedModules) ||> AddModuleOrNamespaceRefsToNameEnv g amap m root ad 
     nenv
