@@ -388,11 +388,10 @@ let addInternalsAccessibility env (ccu:CcuThunk) =
         eAccessRights = computeAccessRights env.eAccessPath eInternalsVisibleCompPaths env.eFamilyType // update this computed field
         eInternalsVisibleCompPaths = compPath :: env.eInternalsVisibleCompPaths }
 
-let ModifyNameResEnv f env = { env with eNameResEnv = f env.eNameResEnv } 
-
 let AddLocalValPrimitive (v:Val) env =
-    let env = ModifyNameResEnv (fun nenv -> AddValRefToNameEnv nenv (mkLocalValRef v)) env
-    { env with eUngeneralizableItems = addFreeItemOfTy v.Type env.eUngeneralizableItems } 
+    { env with
+        eNameResEnv = AddValRefToNameEnv env.eNameResEnv (mkLocalValRef v)
+        eUngeneralizableItems = addFreeItemOfTy v.Type env.eUngeneralizableItems } 
 
 
 let AddLocalValMap tcSink scopem (vals:Val NameMap) env =
@@ -400,8 +399,9 @@ let AddLocalValMap tcSink scopem (vals:Val NameMap) env =
         if vals.IsEmpty then 
             env
         else
-            let env = ModifyNameResEnv (AddValMapToNameEnv vals) env
-            { env with eUngeneralizableItems = NameMap.foldBackRange (typeOfVal >> addFreeItemOfTy) vals env.eUngeneralizableItems }
+            { env with
+                eNameResEnv = AddValMapToNameEnv vals env.eNameResEnv
+                eUngeneralizableItems = NameMap.foldBackRange (typeOfVal >> addFreeItemOfTy) vals env.eUngeneralizableItems }
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     env
 
@@ -410,19 +410,21 @@ let AddLocalVals tcSink scopem (vals:Val list) env =
         if isNil vals then 
             env
         else
-            let env = ModifyNameResEnv (AddValListToNameEnv vals) env
-            { env with eUngeneralizableItems = List.foldBack (typeOfVal >> addFreeItemOfTy) vals env.eUngeneralizableItems }
+            { env with
+                eNameResEnv = AddValListToNameEnv vals env.eNameResEnv
+                eUngeneralizableItems = List.foldBack (typeOfVal >> addFreeItemOfTy) vals env.eUngeneralizableItems }
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     env
 
-let AddLocalVal tcSink scopem v env = 
-    let env = ModifyNameResEnv (fun nenv -> AddValRefToNameEnv nenv (mkLocalValRef v)) env
-    let env = {env with eUngeneralizableItems = addFreeItemOfTy v.Type env.eUngeneralizableItems }
+let AddLocalVal tcSink scopem v env =
+    let env = { env with
+                    eNameResEnv = AddValRefToNameEnv env.eNameResEnv (mkLocalValRef v)
+                    eUngeneralizableItems = addFreeItemOfTy v.Type env.eUngeneralizableItems }
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     env
 
 let AddLocalExnDefnAndReport tcSink scopem env (exnc:Tycon) =
-    let env = ModifyNameResEnv (fun nenv -> AddExceptionDeclsToNameEnv BulkAdd.No nenv (mkLocalEntityRef exnc)) env
+    let env = { env with eNameResEnv = AddExceptionDeclsToNameEnv BulkAdd.No env.eNameResEnv (mkLocalEntityRef exnc) }
     (* Also make VisualStudio think there is an identifier in scope at the range of the identifier text of its binding location *)
     CallEnvSink tcSink (exnc.Range, env.NameEnv, env.eAccessRights)
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
@@ -430,7 +432,7 @@ let AddLocalExnDefnAndReport tcSink scopem env (exnc:Tycon) =
  
 let AddLocalTyconRefs ownDefinition g amap m tcrefs env =
     if isNil tcrefs then env else
-    env |> ModifyNameResEnv (fun nenv -> AddTyconRefsToNameEnv BulkAdd.No ownDefinition g amap m false nenv tcrefs) 
+    { env with eNameResEnv = AddTyconRefsToNameEnv BulkAdd.No ownDefinition g amap m false env.eNameResEnv tcrefs }
 
 let AddLocalTycons g amap m (tycons: Tycon list) env =
     if isNil tycons then env else
@@ -448,14 +450,14 @@ let AddLocalTyconsAndReport tcSink scopem g amap m tycons env =
 let OpenModulesOrNamespaces tcSink g amap scopem root env mvvs openDeclaration =
     let env =
         if isNil mvvs then env else
-        ModifyNameResEnv (fun nenv -> AddModulesAndNamespacesContentsToNameEnv g amap env.eAccessRights scopem root nenv mvvs) env
+        { env with eNameResEnv = AddModulesAndNamespacesContentsToNameEnv g amap env.eAccessRights scopem root env.eNameResEnv mvvs }
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     CallOpenDeclarationSink tcSink openDeclaration
     env
 
 let AddRootModuleOrNamespaceRefs g amap m env modrefs =
     if isNil modrefs then env else
-    ModifyNameResEnv (fun nenv -> AddModuleOrNamespaceRefsToNameEnv g amap m true env.eAccessRights nenv modrefs) env 
+    { env with eNameResEnv = AddModuleOrNamespaceRefsToNameEnv g amap m true env.eAccessRights env.eNameResEnv modrefs }
 
 let AddNonLocalCcu g amap scopem env assemblyName  (ccu:CcuThunk, internalsVisibleToAttributes)  = 
 
@@ -476,7 +478,7 @@ let AddNonLocalCcu g amap scopem env assemblyName  (ccu:CcuThunk, internalsVisib
     let env = AddRootModuleOrNamespaceRefs g amap scopem env modrefs
     let env =
         if isNil tcrefs then env else
-        ModifyNameResEnv (fun nenv -> AddTyconRefsToNameEnv BulkAdd.Yes false g amap scopem true nenv tcrefs) env
+        { env with eNameResEnv = AddTyconRefsToNameEnv BulkAdd.Yes false g amap scopem true env.eNameResEnv tcrefs }
     //CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     env
 
@@ -486,25 +488,26 @@ let AddLocalRootModuleOrNamespace tcSink g amap scopem env (mtyp:ModuleOrNamespa
     // Compute the top-rooted type definitions
     let tcrefs = mtyp.TypeAndExceptionDefinitions |> List.map mkLocalTyconRef
     let env = AddRootModuleOrNamespaceRefs g amap scopem env modrefs
-    let env =
-        if isNil tcrefs then env else
-        ModifyNameResEnv (fun nenv -> AddTyconRefsToNameEnv BulkAdd.No false g amap scopem true nenv tcrefs) env
-    let env = { env with eUngeneralizableItems = addFreeItemOfModuleTy mtyp env.eUngeneralizableItems }
+    let env = { env with
+                    eNameResEnv = if isNil tcrefs then env.eNameResEnv else AddTyconRefsToNameEnv BulkAdd.No false g amap scopem true env.eNameResEnv tcrefs
+                    eUngeneralizableItems = addFreeItemOfModuleTy mtyp env.eUngeneralizableItems }
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     env
 
 let AddModuleAbbreviationAndReport tcSink scopem id modrefs env =
     let env = 
         if isNil modrefs then env else
-        ModifyNameResEnv (fun nenv -> AddModuleAbbrevToNameEnv id nenv modrefs) env
+        { env with eNameResEnv = AddModuleAbbrevToNameEnv id env.eNameResEnv modrefs }
+
     CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
     let item = Item.ModuleOrNamespaces modrefs
     CallNameResolutionSink tcSink (id.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights)
     env
 
 let AddLocalSubModule g amap m env (modul:ModuleOrNamespace) =
-    let env = ModifyNameResEnv (fun nenv -> AddModuleOrNamespaceRefToNameEnv g amap m false env.eAccessRights nenv (mkLocalModRef modul)) env
-    let env = { env with eUngeneralizableItems = addFreeItemOfModuleTy modul.ModuleOrNamespaceType env.eUngeneralizableItems }
+    let env = { env with
+                    eNameResEnv = AddModuleOrNamespaceRefToNameEnv g amap m false env.eAccessRights env.eNameResEnv (mkLocalModRef modul)
+                    eUngeneralizableItems = addFreeItemOfModuleTy modul.ModuleOrNamespaceType env.eUngeneralizableItems }
     env
  
 let AddLocalSubModuleAndReport tcSink scopem g amap m env (modul:ModuleOrNamespace) =
@@ -518,7 +521,7 @@ let RegisterDeclaredTypars typars env =
 
 let AddDeclaredTypars check typars env =
     if isNil typars then env else
-    let env = ModifyNameResEnv (fun nenv -> AddDeclaredTyparsToNameEnv check nenv typars) env
+    let env = { env with eNameResEnv = AddDeclaredTyparsToNameEnv check env.eNameResEnv typars }
     RegisterDeclaredTypars typars env
 
 /// Compilation environment for typechecking a single file in an assembly. Contains the
@@ -7243,8 +7246,12 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
     /// for all custom operations. This adds them to the completion lists and prevents them being used as values inside
     /// the query.
     let env = 
-        env |> ModifyNameResEnv (fun nenv -> (nenv, customOperationMethods) ||> Seq.fold (fun nenv (nm, _, _, _, _, _, _, _, methInfo) -> 
-                 AddFakeNameToNameEnv nm nenv (Item.CustomOperation (nm, (fun () -> customOpUsageText (ident (nm, mBuilderVal))), Some methInfo))))
+        if List.isEmpty customOperationMethods then env else
+        { env with 
+            eNameResEnv =
+                (env.eNameResEnv, customOperationMethods) 
+                ||> Seq.fold (fun nenv (nm, _, _, _, _, _, _, _, methInfo) -> 
+                    AddFakeNameToNameEnv nm nenv (Item.CustomOperation (nm, (fun () -> customOpUsageText (ident (nm, mBuilderVal))), Some methInfo))) }
 
     // Environment is needed for completions
     CallEnvSink cenv.tcSink (comp.Range, env.NameEnv, ad)
@@ -10409,7 +10416,7 @@ and TcNormalizedBinding declKind (cenv:cenv) env tpenv overallTy safeThisValOpt 
                     let item = Item.ActivePatternResult(apinfo, cenv.g.unit_ty, i, tagRange)
                     CallNameResolutionSink cenv.tcSink (tagRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Binding, env.DisplayEnv, env.eAccessRights))
 
-                ModifyNameResEnv (fun nenv -> AddActivePatternResultTagsToNameEnv apinfo nenv ty m) envinner 
+                { envinner with eNameResEnv = AddActivePatternResultTagsToNameEnv apinfo envinner.eNameResEnv ty m }
             | None -> 
                 envinner
         
