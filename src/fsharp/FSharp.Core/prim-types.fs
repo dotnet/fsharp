@@ -3223,7 +3223,7 @@ namespace Microsoft.FSharp.Collections
 
         interface System.Collections.IEnumerable with
             member l.GetEnumerator() = (PrivateListHelpers.mkListEnumerator l :> System.Collections.IEnumerator)
-            
+
         interface IReadOnlyCollection<'T> with
             member l.Count = l.Length
 

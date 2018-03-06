@@ -36,8 +36,10 @@
   </ItemGroup>
   <PropertyGroup Condition="'$(BUILD_VS)'=='1'">
     <RestoreVSIntegration>true</RestoreVSIntegration>
+    <RestoreLanguageServiceProfiling>true</RestoreLanguageServiceProfiling>
     <RestoreVSIntegrationItemTemplates>true</RestoreVSIntegrationItemTemplates>
     <RestoreVSIntegrationProjectTemplates>true</RestoreVSIntegrationProjectTemplates>
+    <RestoreVSIntegrationVsix>true</RestoreVSIntegrationVsix>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(BUILD_FCS)'=='1'">
@@ -111,10 +113,12 @@
 
   <ItemGroup>
     <ProjectsToRestore Include="tests/fsharpqa/testenv/src/PEVerify/PEVerify.csproj" Condition="'$(RestorePEVerify)' == 'true'" />
+    <ProjectsToRestore Include="vsintegration/Utils/LanguageServiceProfiling/LanguageServiceProfiling.fsproj" Condition="'$(RestoreLanguageServiceProfiling)' == 'true'" />
     <ProjectsToRestore Include="vsintegration/fsharp-vsintegration-src-build.proj" Condition="'$(RestoreVSIntegration)' == 'true'" />
     <ProjectsToRestore Include="vsintegration/fsharp-vsintegration-unittests-build.proj" Condition="'$(RestoreVSIntegrationUnitTests)' == 'true'" />
     <ProjectsToRestore Include="vsintegration/fsharp-vsintegration-item-templates-build.proj" Condition="'$(RestoreVSIntegrationItemTemplates)' == 'true'" />
     <ProjectsToRestore Include="vsintegration/fsharp-vsintegration-project-templates-build.proj" Condition="'$(RestoreVSIntegrationProjectTemplates)' == 'true'" />
+    <ProjectsToRestore Include="vsintegration/fsharp-vsintegration-vsix-build.proj" Condition="'$(RestoreVSIntegrationVsix)' == 'true'" />
   </ItemGroup>
 
   <PropertyGroup>
