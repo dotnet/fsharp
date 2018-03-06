@@ -91,7 +91,7 @@
     <ItemGroup>
       <LocalizationResources Include="MenusAndCommands.vsct" />
     </ItemGroup>
-    <Copy SourceFiles="@(LocalizationResources)" DestinationFiles="@(LocalizationResources->'$(OutputPath)%(Filename)%(Extension)')" />
+    <Copy SourceFiles="@(LocalizationResources)" DestinationFiles="@(LocalizationResources->'$(OutputPath)\%(Filename)%(Extension)')" />
   </Target>
 
 </Project>
