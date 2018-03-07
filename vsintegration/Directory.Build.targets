@@ -11,11 +11,6 @@
     <PackageTargetFallback>net462</PackageTargetFallback>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(CreateVsixContainer)' == 'true'">
-    <!-- Ensure VSIX packages end up in the proper location. -->
-    <OutDir>$(OutputPath)\</OutDir>
-  </PropertyGroup>
-
   <ImportGroup Condition="'$(ImportVsSDK)' == 'true'">
     <Import Project="$(NuGetPackageRoot)Microsoft.VSSDK.BuildTools\$(MicrosoftVSSDKBuildToolsPackageVersion)\build\Microsoft.VsSDK.BuildTools.props" />
     <Import Project="$(NugetPackageRoot)Microsoft.VSSDK.BuildTools\$(MicrosoftVSSDKBuildToolsPackageVersion)\build\Microsoft.VsSDK.BuildTools.targets" />
