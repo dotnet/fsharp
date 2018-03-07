@@ -9,7 +9,6 @@
   </PropertyGroup>
 
   <Import Project="build\targets\AssemblyVersions.props" />
-  <Import Project="build\targets\GitHash.props" />
   <Import Project="build\targets\GenerateAssemblyAttributes.targets" />
   <Import Project="build\targets\GenerateInternalsVisibleTo.targets" />
 
