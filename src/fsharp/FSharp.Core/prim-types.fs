@@ -3646,11 +3646,14 @@ namespace Microsoft.FSharp.Core
             | (h::t) -> 
             match list2 with
             | [] -> list1
-            | _ -> 
-              let res = [h] 
-              let lastCons = PrivateListHelpers.appendToFreshConsTail res t 
-              PrivateListHelpers.setFreshConsTail lastCons list2
-              res
+            | _ ->
+              match t with
+              | [] -> h :: list2
+              | _ ->
+                  let res = [h] 
+                  let lastCons = PrivateListHelpers.appendToFreshConsTail res t 
+                  PrivateListHelpers.setFreshConsTail lastCons list2
+                  res
 
         [<CompiledName("Increment")>]
         let incr cell = cell.contents <- cell.contents + 1
