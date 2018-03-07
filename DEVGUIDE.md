@@ -93,6 +93,11 @@ Then to replace your machine-wide installation:
 
 Full testing is not yet enabled on macOS.
 
+### [Optional] Specifying the install path (Linux or macOS)
+
+You can specify a custom installation path using the DESTDIR shell variable
+
+    DESTDIR=/my/path/to/fsharp make install
 
 ###  Developing the F# Compiler (Linux or macOS - .NET Core)
 
@@ -107,7 +112,7 @@ Outputs are placed in
 
 This uses an installed .NET SDK 2.0 to build the various duplicated project 
     
-Testing the .NET Core version of the F# compiler on mwcOS and Linux is TBD.
+Testing the .NET Core version of the F# compiler on macOS and Linux is TBD.
 
 
 ### Developing the Visual F# IDE Tools (Windows Only)

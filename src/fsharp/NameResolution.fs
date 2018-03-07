@@ -1100,14 +1100,9 @@ let ResolveProvidedTypeNameInEntity (amap, m, typeName, modref: ModuleOrNamespac
     | TProvidedNamespaceExtensionPoint(resolutionEnvironment,resolvers) ->
         match modref.Deref.PublicPath with
         | Some(PubPath path) ->
-            let matches = resolvers |> List.map (fun r-> ExtensionTyping.TryResolveProvidedType(r,m,path,typeName)) 
-            let tcrefs = 
-                [ for st in matches do 
-                      match st with 
-                      | None -> ()
-                      | Some st -> 
-                          yield AddEntityForProvidedType (amap, modref, resolutionEnvironment, st, m) ]
-            tcrefs
+            resolvers 
+            |> List.choose (fun r-> ExtensionTyping.TryResolveProvidedType(r,m,path,typeName))
+            |> List.map (fun st -> AddEntityForProvidedType (amap, modref, resolutionEnvironment, st, m))
         | None -> []
 
     // We have a provided type, look up its nested types (populating them on-demand if necessary)
@@ -1455,20 +1450,18 @@ type TcSymbolUseData =
 type TcSymbolUses(g, capturedNameResolutions : ResizeArray<CapturedNameResolution>, formatSpecifierLocations: (range * int)[]) = 
     
     // Make sure we only capture the information we really need to report symbol uses
-    let cnrs = [| for cnr in capturedNameResolutions  ->  { Item=cnr.Item; ItemOccurence=cnr.ItemOccurence; DisplayEnv=cnr.DisplayEnv; Range=cnr.Range } |]
+    let allUsesOfSymbols = [| for cnr in capturedNameResolutions -> { Item=cnr.Item; ItemOccurence=cnr.ItemOccurence; DisplayEnv=cnr.DisplayEnv; Range=cnr.Range } |]
     let capturedNameResolutions = () 
     do ignore capturedNameResolutions // don't capture this!
 
     member this.GetUsesOfSymbol(item) = 
-        [| for cnr in cnrs do
-               if protectAssemblyExploration false (fun () -> ItemsAreEffectivelyEqual g item cnr.Item) then
-                  yield (cnr.ItemOccurence, cnr.DisplayEnv, cnr.Range) |]
+        [| for symbolUse in allUsesOfSymbols do
+               if protectAssemblyExploration false (fun () -> ItemsAreEffectivelyEqual g item symbolUse.Item) then
+                  yield symbolUse |]
 
-    member this.GetAllUsesOfSymbols() = 
-        [| for cnr in cnrs do
-              yield (cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.Range)  |]
+    member this.AllUsesOfSymbols = allUsesOfSymbols
 
-    member this.GetFormatSpecifierLocationsAndArity() =  formatSpecifierLocations
+    member this.GetFormatSpecifierLocationsAndArity() = formatSpecifierLocations
 
 
 /// An accumulator for the results being emitted into the tcSink.
