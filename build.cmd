@@ -656,12 +656,6 @@ set _dotnet20exe=%~dp0Tools\dotnet20\dotnet.exe
 set NUGET_PACKAGES=%~dp0Packages
 set path=%~dp0Tools\dotnet20\;%path%
 
-if "%NEEDS_DOTNET_CLI_TOOLS%" == "1" (
-    :: Restore projects using dotnet CLI tool 
-    echo %_dotnet20exe% restore -v:d build-everything.proj %msbuildflags% %BUILD_DIAG%
-         %_dotnet20exe% restore -v:d build-everything.proj %msbuildflags% %BUILD_DIAG%
-)
-
 echo ----------- Done with package restore, starting dependency uptake check -------------
 
 if not "%PB_PackageVersionPropsUrl%" == "" (
@@ -726,7 +720,14 @@ if "%BUILD_PROTO%" == "1" (
   @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
 )
 
-echo ---------------- Done with proto, starting build ------------------------
+if "%NEEDS_DOTNET_CLI_TOOLS%" == "1" (
+    echo ---------------- Done with proto, starting SDK restore ------------------------
+    :: Restore projects using dotnet CLI tool 
+    echo %_dotnet20exe% restore -v:d build-everything.proj %msbuildflags% %BUILD_DIAG%
+         %_dotnet20exe% restore -v:d build-everything.proj %msbuildflags% %BUILD_DIAG%
+)
+
+echo ---------------- Done with SDK restore, starting build ------------------------
 
 if "%BUILD_PHASE%" == "1" (
 
