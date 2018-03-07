@@ -1855,10 +1855,11 @@ type FSharpCheckProjectResults(projectFileName:string, tcConfigOption, keepAssem
     member info.GetUsesOfSymbol(symbol:FSharpSymbol) = 
         let (tcGlobals, _tcImports, _thisCcu, _ccuSig, tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles) = getDetails()
 
-        [| for r in tcSymbolUses do yield! r.GetUsesOfSymbol(symbol.Item) |] 
-        |> Seq.distinctBy (fun (itemOcc,_denv,m) -> itemOcc, m) 
-        |> Seq.filter (fun (itemOcc,_,_) -> itemOcc <> ItemOccurence.RelatedText) 
-        |> Seq.map (fun (itemOcc,denv,m) -> FSharpSymbolUse(tcGlobals, denv, symbol, itemOcc, m)) 
+        tcSymbolUses
+        |> Seq.collect (fun r -> r.GetUsesOfSymbol symbol.Item)
+        |> Seq.distinctBy (fun symbolUse -> symbolUse.ItemOccurence, symbolUse.Range) 
+        |> Seq.filter (fun symbolUse -> symbolUse.ItemOccurence <> ItemOccurence.RelatedText) 
+        |> Seq.map (fun symbolUse -> FSharpSymbolUse(tcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range)) 
         |> Seq.toArray
         |> async.Return
 
@@ -1866,11 +1867,11 @@ type FSharpCheckProjectResults(projectFileName:string, tcConfigOption, keepAssem
     member info.GetAllUsesOfAllSymbols() = 
         let (tcGlobals, tcImports, thisCcu, _ccuSig, tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles) = getDetails()
 
-        [| for r in tcSymbolUses do 
-             for (item,itemOcc,denv,m) in r.GetAllUsesOfSymbols() do
-                if itemOcc <> ItemOccurence.RelatedText then
-                  let symbol = FSharpSymbol.Create(tcGlobals, thisCcu, tcImports, item)
-                  yield FSharpSymbolUse(tcGlobals, denv, symbol, itemOcc, m) |]
+        [| for r in tcSymbolUses do
+             for symbolUse in r.AllUsesOfSymbols do
+                if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
+                  let symbol = FSharpSymbol.Create(tcGlobals, thisCcu, tcImports, symbolUse.Item)
+                  yield FSharpSymbolUse(tcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range) |]
         |> async.Return
 
     member info.ProjectContext = 
@@ -2050,7 +2051,7 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
         threadSafeOp 
             (fun () -> failwith "not available") 
             (fun scope -> 
-               // This operation is not asynchronous - GetReferencedAssemblies can be run on the calling thread
+                // This operation is not asynchronous - GetReferencedAssemblies can be run on the calling thread
                 FSharpProjectContext(scope.ThisCcu, scope.GetReferencedAssemblies(), scope.AccessRights))
 
     member info.DependencyFiles = dependencyFiles
@@ -2059,19 +2060,19 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
         threadSafeOp 
             (fun () -> [| |]) 
             (fun scope -> 
-                 [| for (item,itemOcc,denv,m) in scope.ScopeSymbolUses.GetAllUsesOfSymbols() do
-                      if itemOcc <> ItemOccurence.RelatedText then
-                        let symbol = FSharpSymbol.Create(scope.TcGlobals, scope.ThisCcu, scope.TcImports, item)
-                        yield FSharpSymbolUse(scope.TcGlobals, denv, symbol, itemOcc, m) |])
+                 [| for symbolUse in scope.ScopeSymbolUses.AllUsesOfSymbols do
+                      if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
+                        let symbol = FSharpSymbol.Create(scope.TcGlobals, scope.ThisCcu, scope.TcImports, symbolUse.Item)
+                        yield FSharpSymbolUse(scope.TcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range) |])
          |> async.Return 
 
     member info.GetUsesOfSymbolInFile(symbol:FSharpSymbol) = 
         threadSafeOp 
             (fun () -> [| |]) 
             (fun scope -> 
-                [| for (itemOcc,denv,m) in scope.ScopeSymbolUses.GetUsesOfSymbol(symbol.Item) |> Seq.distinctBy (fun (itemOcc,_denv,m) -> itemOcc, m) do
-                     if itemOcc <> ItemOccurence.RelatedText then
-                      yield FSharpSymbolUse(scope.TcGlobals, denv, symbol, itemOcc, m) |])
+                [| for symbolUse in scope.ScopeSymbolUses.GetUsesOfSymbol(symbol.Item) |> Seq.distinctBy (fun symbolUse -> symbolUse.ItemOccurence, symbolUse.Range) do
+                     if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
+                        yield FSharpSymbolUse(scope.TcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range) |])
          |> async.Return 
 
     member info.GetVisibleNamespacesAndModulesAtPoint(pos: pos) = 
