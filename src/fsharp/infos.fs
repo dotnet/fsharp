@@ -1189,8 +1189,10 @@ type MethInfo =
 
     /// Indicates if this is an C#-style extension member. 
     member x.IsCSharpStyleExtensionMember = 
-        x.ExtensionMemberPriorityOption.IsSome && 
-        (match x with ILMeth _ -> true | FSMeth (_,_,vref,_) -> not vref.IsExtensionMember | _ -> false)
+        match x with
+        | FSMeth (_,_,vref,Some _) -> not vref.IsExtensionMember
+        | ILMeth (_,_,Some _) -> true
+        | _ -> false
 
     /// Add the actual type instantiation of the apparent type of an F# extension method.
     //
