@@ -6982,6 +6982,11 @@
         <target state="translated">To wyrażenie zwraca wartość typu „{0}”, ale jest niejawnie odrzucane. Rozważ użycie instrukcji „let” do powiązania wyniku z nazwą, np. „let wynik = wyrażenie”. Jeśli chcesz użyć tego wyrażenia jako wartości w sekwencji, użyj jawnej instrukcji „yield!”.</target>
         <note />
       </trans-unit>
+      <trans-unit id="keywordDescriptionMatchBang">
+        <source>Used in computation expressions to pattern match directly over the result of another computation expression.</source>
+        <target state="new">Used in computation expressions to pattern match directly over the result of another computation expression.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
