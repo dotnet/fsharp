@@ -6982,6 +6982,11 @@
         <target state="translated">Это выражение возвращает значение типа "{0}", но оно неявно отбрасывается. Чтобы привязать результат к какому-то имени, используйте "let", например: "let &lt;результат&gt; = &lt;выражение&gt;". Если вы собирались использовать выражение как значение в последовательности, используйте в явном виде "yield!".</target>
         <note />
       </trans-unit>
+      <trans-unit id="keywordDescriptionMatchBang">
+        <source>Used in computation expressions to pattern match directly over the result of another computation expression.</source>
+        <target state="new">Used in computation expressions to pattern match directly over the result of another computation expression.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
