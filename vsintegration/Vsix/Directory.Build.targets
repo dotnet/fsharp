@@ -2,6 +2,16 @@
 
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" />
 
+  <Target Name="AddFilesToVsixContainer"
+          BeforeTargets="CreateVsixContainer"
+          Condition="'@(VsixAdditionalFile)' != ''">
+    <ItemGroup>
+      <VSIXSourceItem Include="%(VsixAdditionalFile.Identity)">
+        <VSIXSubPath>%(VsixAdditionalFile.Path)</VSIXSubPath>
+      </VSIXSourceItem>
+    </ItemGroup>
+  </Target>
+
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.6">
       <Visible>False</Visible>

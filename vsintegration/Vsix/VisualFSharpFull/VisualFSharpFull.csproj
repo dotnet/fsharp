@@ -192,4 +192,8 @@
     <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonPackageVersion)" />
   </ItemGroup>
 
+  <ItemGroup>
+    <VsixAdditionalFile Include="$(NugetPackageRoot)Newtonsoft.Json\$(NewtonsoftJsonPackageVersion)\lib\net45\Newtonsoft.Json.dll" Path="" />
+  </ItemGroup>
+
 </Project>
