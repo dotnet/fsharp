@@ -36,6 +36,9 @@
     <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'" />
+
   <ItemGroup>
     <Import Include="Microsoft.VisualBasic" />
     <Import Include="System" />
