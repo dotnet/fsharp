@@ -6881,6 +6881,13 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                         raise (ReportedError None)
 
                     yield (List.frontAndBack lidwd.Lid, v)
+
+                    match lidwd.Lid with
+                    | [_] ->  yield (List.frontAndBack lidwd.Lid, v)
+                    | _ ->
+                        for r in lidwd.Lid do
+                            yield (List.frontAndBack [r] , v)
+
             ]
             
         match flds with 
