@@ -2333,14 +2333,14 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
     match lid with 
     | [] -> error (Error(FSComp.SR.nrInvalidExpression(textOfLid lid), m))
 
-    | [id] when id.idText = MangledGlobalName ->
-         error (Error(FSComp.SR.nrGlobalUsedOnlyAsFirstName(), id.idRange))
-         
-    | [id;next] when id.idText = MangledGlobalName ->
-          ResolveExprLongIdentPrim sink ncenv fullyQualified m ad nenv typeNameResInfo [next] isOpenDecl
-
     | id :: lid when id.idText = MangledGlobalName ->
-          ResolveExprLongIdentPrim sink ncenv FullyQualified m ad nenv typeNameResInfo lid isOpenDecl
+          match lid with
+          | [] ->
+              error (Error(FSComp.SR.nrGlobalUsedOnlyAsFirstName(), id.idRange))
+          | [next] ->
+              ResolveExprLongIdentPrim sink ncenv fullyQualified m ad nenv typeNameResInfo [next] isOpenDecl
+          | _ ->
+              ResolveExprLongIdentPrim sink ncenv FullyQualified m ad nenv typeNameResInfo lid isOpenDecl
 
     | [id] when fullyQualified <> FullyQualified ->
           let typeError = ref None
@@ -2661,11 +2661,11 @@ type WarnOnUpperFlag = WarnOnUpperCase | AllIdsOK
 let rec ResolvePatternLongIdentPrim sink (ncenv:NameResolver) fullyQualified warnOnUpper newDef m ad nenv numTyArgsOpt (lid:Ident list) =
     match lid with 
 
-    | [id] when id.idText = MangledGlobalName ->
-         error (Error(FSComp.SR.nrGlobalUsedOnlyAsFirstName(), id.idRange))
-         
     | id :: lid when id.idText = MangledGlobalName ->
-        ResolvePatternLongIdentPrim sink ncenv FullyQualified warnOnUpper newDef m ad nenv numTyArgsOpt lid
+         if isNil lid then 
+            error (Error(FSComp.SR.nrGlobalUsedOnlyAsFirstName(), id.idRange))
+         else
+            ResolvePatternLongIdentPrim sink ncenv FullyQualified warnOnUpper newDef m ad nenv numTyArgsOpt lid
 
     // Single identifiers in patterns 
     | [id] when fullyQualified <> FullyQualified ->
@@ -2841,11 +2841,11 @@ let rec ResolveTypeLongIdentPrim sink (ncenv:NameResolver) occurence fullyQualif
     match lid with 
     | [] -> error(Error(FSComp.SR.nrUnexpectedEmptyLongId(),m))
 
-    | [id] when id.idText = MangledGlobalName ->
-         error (Error(FSComp.SR.nrGlobalUsedOnlyAsFirstName(), id.idRange))
-         
     | id :: lid when id.idText = MangledGlobalName ->
-        ResolveTypeLongIdentPrim sink ncenv occurence FullyQualified m nenv ad lid staticResInfo genOk
+         if isNil lid then
+            error (Error(FSComp.SR.nrGlobalUsedOnlyAsFirstName(), id.idRange))         
+         else
+            ResolveTypeLongIdentPrim sink ncenv occurence FullyQualified m nenv ad lid staticResInfo genOk
 
     | [id]  ->  
         match LookupTypeNameInEnvHaveArity fullyQualified id.idText staticResInfo.NumStaticArgs nenv with
