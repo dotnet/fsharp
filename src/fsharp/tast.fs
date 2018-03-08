@@ -1634,13 +1634,13 @@ and
       /// types "List`1", the entry (List,1) will be present.
       member mtyp.TypesByDemangledNameAndArity m = 
         cacheOptRef tyconsByDemangledNameAndArityCache (fun () -> 
-           LayeredMap.Empty.AddAndMarkAsCollapsible( mtyp.TypeAndExceptionDefinitions |> List.map (fun (tc:Tycon) -> KeyTyconByDemangledNameAndArity tc.LogicalName (tc.Typars m) tc)  |> List.toArray))
+           LayeredMap.Empty.AddAndMarkAsCollapsible( mtyp.TypeAndExceptionDefinitions |> List.map (fun (tc:Tycon) -> KeyTyconByDemangledNameAndArity tc.LogicalName (tc.Typars m) tc)))
 
       /// Get a table of types defined within this module, namespace or type. The 
       /// table is indexed by both name and, for generic types, also by mangled name.
       member mtyp.TypesByAccessNames = 
           cacheOptRef tyconsByAccessNamesCache (fun () -> 
-             LayeredMultiMap.Empty.AddAndMarkAsCollapsible  (mtyp.TypeAndExceptionDefinitions |> List.toArray |> Array.collect (fun (tc:Tycon) -> KeyTyconByAccessNames tc.LogicalName tc)))
+             LayeredMultiMap.Empty.AddAndMarkAsCollapsible  (mtyp.TypeAndExceptionDefinitions |> Seq.collect (fun (tc:Tycon) -> KeyTyconByAccessNames tc.LogicalName tc)))
 
       // REVIEW: we can remove this lookup and use AllEntitiedByMangledName instead?
       member mtyp.TypesByMangledName = 

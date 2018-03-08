@@ -498,21 +498,19 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap:Import.Import
 type BulkAdd = Yes | No
 
 
-/// bulkAddMode: true when adding the values from the 'open' of a namespace
-/// or module, when we collapse the value table down to a dictionary.
-let AddValRefsToItems (bulkAddMode: BulkAdd) (eUnqualifiedItems: LayeredMap<_,_>) (vrefs:ValRef[]) =
+let AddValRefToItems (eUnqualifiedItems: LayeredMap<_,_>) (vref:ValRef) =
     // Object model members are not added to the unqualified name resolution environment 
-    let vrefs = vrefs |> Array.filter (fun vref -> not vref.IsMember)
-
-    if vrefs.Length = 0 then eUnqualifiedItems else
-
-    match bulkAddMode with 
-    | BulkAdd.Yes -> 
-        eUnqualifiedItems.AddAndMarkAsCollapsible(vrefs |> Array.map (fun vref -> KeyValuePair(vref.LogicalName, Item.Value vref)))
-    | BulkAdd.No -> 
-        assert (vrefs.Length = 1)
-        let vref = vrefs.[0]
+    if vref.IsMember then eUnqualifiedItems else
         eUnqualifiedItems.Add (vref.LogicalName, Item.Value vref)  
+
+/// bulkAddMode. Used when adding the values from the 'open' of a namespace
+/// or module, when we collapse the value table down to a dictionary.
+let AddValRefsToItems (eUnqualifiedItems: LayeredMap<_,_>) (vrefs:ValRef seq) =
+    // Object model members are not added to the unqualified name resolution environment 
+    let vrefs = vrefs |> Seq.filter (fun vref -> not vref.IsMember)
+
+    if Seq.isEmpty vrefs then eUnqualifiedItems else
+    eUnqualifiedItems.AddAndMarkAsCollapsible(vrefs |> Seq.map (fun vref -> KeyValuePair(vref.LogicalName, Item.Value vref)))
 
 /// Add an F# value to the table of available extension members, if necessary, as an FSharp-style extension member
 let AddValRefToExtensionMembers pri (eIndexedExtensionMembers: TyconRefMultiMap<_>) (vref:ValRef) =
@@ -546,12 +544,12 @@ let AddValRefsToActivePatternsNameEnv ePatItems (vref:ValRef) =
     ePatItems
 
 /// Add a set of F# values to the environment.
-let AddValRefsToNameEnvWithPriority bulkAddMode pri nenv (vrefs: ValRef []) =
-    if vrefs.Length = 0 then nenv else
+let AddValRefsToNameEnvWithPriority pri nenv (vrefs: ValRef seq) =
+    if Seq.isEmpty vrefs then nenv else
     { nenv with 
-        eUnqualifiedItems = AddValRefsToItems bulkAddMode nenv.eUnqualifiedItems vrefs
-        eIndexedExtensionMembers = (nenv.eIndexedExtensionMembers,vrefs) ||> Array.fold (AddValRefToExtensionMembers pri)
-        ePatItems = (nenv.ePatItems,vrefs) ||> Array.fold AddValRefsToActivePatternsNameEnv }
+        eUnqualifiedItems = AddValRefsToItems nenv.eUnqualifiedItems vrefs
+        eIndexedExtensionMembers = (nenv.eIndexedExtensionMembers,vrefs) ||> Seq.fold (AddValRefToExtensionMembers pri)
+        ePatItems = (nenv.ePatItems,vrefs) ||> Seq.fold AddValRefsToActivePatternsNameEnv }
 
 /// Add a single F# value to the environment.
 let AddValRefToNameEnv nenv (vref:ValRef) = 
@@ -581,57 +579,57 @@ let GeneralizeUnionCaseRef (ucref:UnionCaseRef) =
     
     
 /// Add type definitions to the sub-table of the environment indexed by name and arity
-let AddTyconsByDemangledNameAndArity (bulkAddMode: BulkAdd) (tcrefs: TyconRef[]) (tab: LayeredMap<NameArityPair,TyconRef>) = 
-    if tcrefs.Length = 0 then tab else
+let AddTyconsByDemangledNameAndArity (bulkAddMode: BulkAdd) (tcrefs: TyconRef seq) (tab: LayeredMap<NameArityPair,TyconRef>) = 
+    if Seq.isEmpty tcrefs then tab else
     let entries = 
         tcrefs 
-        |> Array.map (fun tcref -> KeyTyconByDemangledNameAndArity tcref.LogicalName tcref.TyparsNoRange tcref)
+        |> Seq.map (fun tcref -> KeyTyconByDemangledNameAndArity tcref.LogicalName tcref.TyparsNoRange tcref)
 
     match bulkAddMode with
     | BulkAdd.Yes -> tab.AddAndMarkAsCollapsible entries
-    | BulkAdd.No -> (tab,entries) ||> Array.fold (fun tab (KeyValue(k,v)) -> tab.Add(k,v))
+    | BulkAdd.No -> (tab,entries) ||> Seq.fold (fun tab (KeyValue(k,v)) -> tab.Add(k,v))
 
 /// Add type definitions to the sub-table of the environment indexed by access name 
-let AddTyconByAccessNames bulkAddMode (tcrefs:TyconRef[]) (tab: LayeredMultiMap<string,_>) =
-    if tcrefs.Length = 0 then tab else
+let AddTyconByAccessNames bulkAddMode (tcrefs:TyconRef seq) (tab: LayeredMultiMap<string,_>) =
+    if Seq.isEmpty tcrefs then tab else
     let entries = 
         tcrefs
-        |> Array.collect (fun tcref -> KeyTyconByAccessNames tcref.LogicalName tcref)
+        |> Seq.collect (fun tcref -> KeyTyconByAccessNames tcref.LogicalName tcref)
 
     match bulkAddMode with
     | BulkAdd.Yes -> tab.AddAndMarkAsCollapsible entries
-    | BulkAdd.No -> (tab,entries) ||> Array.fold (fun tab (KeyValue(k,v)) -> tab.Add (k,v))
+    | BulkAdd.No -> (tab,entries) ||> Seq.fold (fun tab (KeyValue(k,v)) -> tab.Add (k,v))
 
 /// Add a record field to the corresponding sub-table of the name resolution environment 
 let AddRecdField (rfref:RecdFieldRef) tab = NameMultiMap.add rfref.FieldName rfref tab
 
 /// Add a set of union cases to the corresponding sub-table of the environment 
-let AddUnionCases1 (tab:Map<_,_>) (ucrefs:UnionCaseRef list) = 
-    (tab, ucrefs) ||> List.fold (fun acc ucref -> 
+let AddUnionCases1 (tab:Map<_,_>) (ucrefs:UnionCaseRef seq) = 
+    (tab, ucrefs) ||> Seq.fold (fun acc ucref -> 
         let item = Item.UnionCase(GeneralizeUnionCaseRef ucref,false)
         acc.Add (ucref.CaseName, item))
 
 /// Add a set of union cases to the corresponding sub-table of the environment 
-let AddUnionCases2 bulkAddMode (eUnqualifiedItems: LayeredMap<_,_>) (ucrefs :UnionCaseRef list) = 
+let AddUnionCases2 bulkAddMode (eUnqualifiedItems: LayeredMap<_,_>) (ucrefs :UnionCaseRef seq) = 
     match bulkAddMode with 
     | BulkAdd.Yes -> 
-        let items = 
-            ucrefs |> Array.ofList |> Array.map (fun ucref -> 
+        let items =
+            ucrefs |> Seq.map (fun ucref -> 
                 let item = Item.UnionCase(GeneralizeUnionCaseRef ucref,false)
                 KeyValuePair(ucref.CaseName,item))
         eUnqualifiedItems.AddAndMarkAsCollapsible items
 
     | BulkAdd.No -> 
-        (eUnqualifiedItems,ucrefs) ||> List.fold (fun acc ucref -> 
+        (eUnqualifiedItems,ucrefs) ||> Seq.fold (fun acc ucref -> 
             let item = Item.UnionCase(GeneralizeUnionCaseRef ucref,false)
             acc.Add (ucref.CaseName, item))
 
 /// Add any implied contents of a type definition to the environment.
-let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g:TcGlobals) amap m  nenv (tcref:TyconRef) = 
+let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g:TcGlobals) amap m nenv (tcref:TyconRef) = 
 
     let isIL = tcref.IsILTycon
     let ucrefs = if isIL then [] else tcref.UnionCasesAsList |> List.map tcref.MakeNestedUnionCaseRef 
-    let flds =  if isIL then [| |] else tcref.AllFieldsArray
+    let flds = if isIL then [| |] else tcref.AllFieldsArray
 
     let eIndexedExtensionMembers, eUnindexedExtensionMembers = 
         let ilStyleExtensionMeths = GetCSharpStyleIndexedExtensionMembersForTyconRef amap m  tcref 
@@ -675,13 +673,13 @@ let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g:TcGlobals) 
                     | _ -> Item.UnqualifiedType [tcref]))
             else
                 tab
-        if isILOrRequiredQualifiedAccess || ucrefs.Length = 0 then 
+        if isILOrRequiredQualifiedAccess || List.isEmpty ucrefs then 
             tab 
         else 
             AddUnionCases2 bulkAddMode tab ucrefs
 
     let ePatItems = 
-        if isILOrRequiredQualifiedAccess || ucrefs.Length = 0 then 
+        if isILOrRequiredQualifiedAccess || List.isEmpty ucrefs then 
             nenv.ePatItems 
         else 
             AddUnionCases1 nenv.ePatItems ucrefs
@@ -700,8 +698,7 @@ let TryFindPatternByName name {ePatItems = patternMap} =
 let AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap m root nenv tcrefs =
     if isNil tcrefs then nenv else
     let env = List.fold (AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap m) nenv tcrefs
-    // Add most of the contents of the tycons en-masse, then flatten the tables if we're opening a module or namespace
-    let tcrefs = Array.ofList tcrefs
+    // Add most of the contents of the tycons en-masse, then flatten the tables if we're opening a module or namespace    
     { env with
         eFullyQualifiedTyconsByDemangledNameAndArity = 
             if root then 
@@ -719,17 +716,11 @@ let AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap m root nenv tcrefs =
             AddTyconByAccessNames bulkAddMode tcrefs nenv.eTyconsByAccessNames } 
 
 /// Add an F# exception definition to the name resolution environment 
-let AddExceptionDeclsToNameEnv bulkAddMode nenv (ecref:TyconRef) = 
+let AddExceptionDeclsToNameEnv nenv (ecref:TyconRef) = 
     assert ecref.IsExceptionDecl
     let item = Item.ExnCase ecref
     {nenv with 
-       eUnqualifiedItems =
-            match bulkAddMode with 
-            | BulkAdd.Yes -> 
-                nenv.eUnqualifiedItems.AddAndMarkAsCollapsible [| KeyValuePair(ecref.LogicalName, item) |]
-            | BulkAdd.No -> 
-                nenv.eUnqualifiedItems.Add (ecref.LogicalName, item)
-                
+       eUnqualifiedItems = nenv.eUnqualifiedItems.Add (ecref.LogicalName, item)
        ePatItems = nenv.ePatItems.Add (ecref.LogicalName, item) }
 
 /// Add a module abbreviation to the name resolution environment 
@@ -788,7 +779,7 @@ and AddModuleOrNamespaceContentsToNameEnv (g:TcGlobals) amap (ad:AccessorDomain)
         for exnc in mty.ExceptionDefinitions do
            let tcref = modref.NestedTyconRef exnc
            if IsEntityAccessible amap m ad tcref then 
-               state <- AddExceptionDeclsToNameEnv BulkAdd.Yes state tcref
+               state <- AddExceptionDeclsToNameEnv state tcref
 
         state
 
@@ -802,8 +793,8 @@ and AddModuleOrNamespaceContentsToNameEnv (g:TcGlobals) amap (ad:AccessorDomain)
     let vrefs = 
         mty.AllValsAndMembers.ToList() 
         |> List.choose (fun x -> if IsAccessible ad x.Accessibility then TryMkValRefInModRef modref x else None)
-        |> List.toArray
-    let nenv = AddValRefsToNameEnvWithPriority BulkAdd.Yes pri nenv vrefs
+
+    let nenv = AddValRefsToNameEnvWithPriority pri nenv vrefs
     let nestedModules = MakeNestedModuleRefs modref
     let nenv = (nenv,nestedModules) ||> AddModuleOrNamespaceRefsToNameEnv g amap m root ad 
     nenv
