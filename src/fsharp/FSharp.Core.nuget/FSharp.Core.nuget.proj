@@ -61,7 +61,7 @@
       <PackageVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.LatestNuget.nuspec'">$(FSharpCoreLatestTargetPackageVersion)</PackageVersion>
       <PackageMajorVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.LatestNuget.nuspec'">$(FSharpCoreLatestTargetMajorVersion)</PackageMajorVersion>
 
-      <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
+      <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)" -prop "githeadsha=$(GitHeadSha)"</PackageProperties>
     </PropertyGroup>
 
     <MakeDir Directories="$(FSharpSourcesRoot)\..\artifacts\$(PackageMajorVersion)" />
