@@ -216,4 +216,8 @@
     <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutablePackageVersion)" />
   </ItemGroup>
 
+  <ItemGroup>
+    <VsixAdditionalFile Include="$(NugetPackageRoot)Newtonsoft.Json\$(NewtonsoftJsonPackageVersion)\lib\net45\Newtonsoft.Json.dll" Path="" />
+  </ItemGroup>
+
 </Project>
