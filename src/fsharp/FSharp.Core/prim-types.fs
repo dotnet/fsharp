@@ -3034,8 +3034,8 @@ namespace Microsoft.FSharp.Collections
        | (::)  : Head: 'T * Tail: 'T list -> 'T list
        interface System.Collections.Generic.IEnumerable<'T>
        interface System.Collections.IEnumerable
-
        interface System.Collections.Generic.IReadOnlyCollection<'T>
+       interface System.Collections.Generic.IReadOnlyList<'T>
         
     and 'T list = List<'T>
 
@@ -3226,6 +3226,9 @@ namespace Microsoft.FSharp.Collections
 
         interface IReadOnlyCollection<'T> with
             member l.Count = l.Length
+
+        interface IReadOnlyList<'T> with
+            member l.Item with get(index) = l.[index]
 
     type seq<'T> = IEnumerable<'T>
 
@@ -3643,11 +3646,14 @@ namespace Microsoft.FSharp.Core
             | (h::t) -> 
             match list2 with
             | [] -> list1
-            | _ -> 
-              let res = [h] 
-              let lastCons = PrivateListHelpers.appendToFreshConsTail res t 
-              PrivateListHelpers.setFreshConsTail lastCons list2
-              res
+            | _ ->
+              match t with
+              | [] -> h :: list2
+              | _ ->
+                  let res = [h] 
+                  let lastCons = PrivateListHelpers.appendToFreshConsTail res t 
+                  PrivateListHelpers.setFreshConsTail lastCons list2
+                  res
 
         [<CompiledName("Increment")>]
         let incr cell = cell.contents <- cell.contents + 1

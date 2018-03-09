@@ -854,7 +854,6 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Singleton")>]
         let singleton value = mkSeq (fun () -> IEnumerator.Singleton value)
 
-
         [<CompiledName("Truncate")>]
         let truncate count (source: seq<'T>) =
             checkNonNull "source" source
@@ -1078,6 +1077,14 @@ namespace Microsoft.FSharp.Collections
 #endif
                 then mkDelayedSeq (fun () -> groupByValueType projection source)
                 else mkDelayedSeq (fun () -> groupByRefType   projection source)
+
+        [<CompiledName("Transpose")>]
+        let transpose (source: seq<#seq<'T>>) =
+            checkNonNull "source" source
+            source
+            |> collect indexed
+            |> groupBy fst
+            |> map (snd >> (map snd))
 
         [<CompiledName("Distinct")>]
         let distinct source =

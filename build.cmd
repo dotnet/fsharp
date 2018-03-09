@@ -624,11 +624,6 @@ if "%RestorePackages%" == "true" (
     %_nugetexe% restore packages.config !_nugetoptions!
     @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
 
-    if "%BUILD_VS%" == "1" (
-        %_nugetexe% restore vsintegration\packages.config !_nugetoptions!
-        @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
-    )
-
     if "%BUILD_SETUP%" == "1" (
         %_nugetexe% restore setup\packages.config !_nugetoptions!
         @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
@@ -655,17 +650,11 @@ if "%NEEDS_DOTNET_CLI_TOOLS%" == "1" (
     :: Restore the Tools directory
     call %~dp0init-tools.cmd
 )
+
 set _dotnetcliexe=%~dp0Tools\dotnetcli\dotnet.exe
 set _dotnet20exe=%~dp0Tools\dotnet20\dotnet.exe
 set NUGET_PACKAGES=%~dp0Packages
 set path=%~dp0Tools\dotnet20\;%path%
-
-if "%NEEDS_DOTNET_CLI_TOOLS%" == "1" (
-    :: Restore projects using dotnet CLI tool 
-    echo %_dotnet20exe% restore -v:d build-everything.proj %msbuildflags% %BUILD_DIAG%
-         %_dotnet20exe% restore -v:d build-everything.proj %msbuildflags% %BUILD_DIAG%
-)
-
 
 echo ----------- Done with package restore, starting dependency uptake check -------------
 
@@ -690,10 +679,10 @@ if not "%PB_PackageVersionPropsUrl%" == "" (
 
 set _fsiexe="packages\FSharp.Compiler.Tools.4.1.27\tools\fsi.exe"
 if not exist %_fsiexe% echo Error: Could not find %_fsiexe% && goto :failure
-%_ngenexe% install %_fsiexe% /nologo 
+%_ngenexe% install %_fsiexe% /nologo
 
 if not exist %_nugetexe% echo Error: Could not find %_nugetexe% && goto :failure
-%_ngenexe% install %_nugetexe% /nologo 
+%_ngenexe% install %_nugetexe% /nologo
 
 echo ---------------- Done with package restore, verify buildfrom source ---------------
 if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
@@ -731,7 +720,14 @@ if "%BUILD_PROTO%" == "1" (
   @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
 )
 
-echo ---------------- Done with proto, starting build ------------------------
+if "%NEEDS_DOTNET_CLI_TOOLS%" == "1" (
+    echo ---------------- Done with proto, starting SDK restore ------------------------
+    :: Restore projects using dotnet CLI tool 
+    echo %_dotnet20exe% restore -v:d build-everything.proj %msbuildflags% %BUILD_DIAG%
+         %_dotnet20exe% restore -v:d build-everything.proj %msbuildflags% %BUILD_DIAG%
+)
+
+echo ---------------- Done with SDK restore, starting build ------------------------
 
 if "%BUILD_PHASE%" == "1" (
 
@@ -744,13 +740,28 @@ if "%BUILD_PHASE%" == "1" (
    @if ERRORLEVEL 1 echo Error build failed && goto :failure
 )
 
-echo ---------------- Done with build, starting assembly signing ---------------
+echo ---------------- Done with build, starting assembly version checks ---------------
+set asmvercheckpath=%~dp0tests\fsharpqa\testenv\src\AssemblyVersionCheck
+
+if "%BUILD_NET40%" == "1" (
+  echo "%~dp0%BUILD_CONFIG%\net40\bin\fsi.exe" %asmvercheckpath%\AssemblyVersionCheck.fsx -- "%~dp0build\config\AssemblySignToolData.json" "%~dp0%BUILD_CONFIG%"
+       "%~dp0%BUILD_CONFIG%\net40\bin\fsi.exe" %asmvercheckpath%\AssemblyVersionCheck.fsx -- "%~dp0build\config\AssemblySignToolData.json" "%~dp0%BUILD_CONFIG%"
+  if ERRORLEVEL 1 echo Error verifying assembly versions and commit hashes. && goto :failure
+)
+
+echo ---------------- Done with assembly version checks, starting assembly signing ---------------
 
 if not "%SIGN_TYPE%" == "" (
     echo build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -ConfigFile build\config\AssemblySignToolData.json
     call build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -ConfigFile build\config\AssemblySignToolData.json
     if ERRORLEVEL 1 echo Error running sign tool && goto :failure
 )
+
+echo ---------------- Done with assembly signing, start package creation ---------------
+
+echo %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG%
+     %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG%
+if ERRORLEVEL 1 echo Error building NuGet packages && goto :failure
 
 if "%BUILD_SETUP%" == "1" (
     echo %_msbuildexe% %msbuildflags% setup\build-msi.proj /p:Configuration=%BUILD_CONFIG%
