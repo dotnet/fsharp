@@ -17,7 +17,11 @@ module internal FSharpConstants =
     [<Literal>]
     /// "BC6DD5A5-D4D6-4dab-A00D-A51242DBAF1B"
     let languageServiceGuidString = "BC6DD5A5-D4D6-4dab-A00D-A51242DBAF1B"
-    
+
+    [<Literal>]
+    /// "91a04a73-4f2c-4e7c-ad38-c1a68e7da05c"
+    let projectPackageGuidString = "91a04a73-4f2c-4e7c-ad38-c1a68e7da05c"
+
     [<Literal>]
     /// "F#"
     let FSharpLanguageName = "F#"
