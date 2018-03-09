@@ -2338,6 +2338,7 @@ Microsoft.FSharp.Core.LanguagePrimitives: Int32 PhysicalHash[T](T)
 Microsoft.FSharp.Core.LanguagePrimitives: Int64 Int64WithMeasure(Int64)
 Microsoft.FSharp.Core.LanguagePrimitives: Int64 ParseInt64(System.String)
 Microsoft.FSharp.Core.LanguagePrimitives: Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings
+Microsoft.FSharp.Core.LanguagePrimitives: Microsoft.FSharp.Core.LanguagePrimitives+ErrorStringGetters
 Microsoft.FSharp.Core.LanguagePrimitives: Microsoft.FSharp.Core.LanguagePrimitives+HashCompare
 Microsoft.FSharp.Core.LanguagePrimitives: Microsoft.FSharp.Core.LanguagePrimitives+IntrinsicFunctions
 Microsoft.FSharp.Core.LanguagePrimitives: Microsoft.FSharp.Core.LanguagePrimitives+IntrinsicOperators
