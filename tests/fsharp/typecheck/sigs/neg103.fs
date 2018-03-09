@@ -1,7 +1,7 @@
 /// match! - parsing errors
 module M
 
-type AT = Async<T>
+type AT = Async<int>
 
 module A =
     let a (x: AT) =
