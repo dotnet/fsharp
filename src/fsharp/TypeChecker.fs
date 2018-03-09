@@ -1405,32 +1405,34 @@ let ComputeAccessAndCompPath env declKindOpt m vis overrideVis actualParent =
     let cpath = if accessModPermitted then Some env.eCompPath else None
     vis, cpath 
 
-let CheckForAbnormalOperatorNames cenv (idRange:range) opName isMember =    
-    if (idRange.EndColumn - idRange.StartColumn <= 5) && 
-        not cenv.g.compilingFslib 
+let CheckForAbnormalOperatorNames cenv (idRange:range) coreDisplayName (memberInfoOpt: ValMemberInfo option) =
+    if (idRange.EndColumn - idRange.StartColumn <= 5) &&
+        not cenv.g.compilingFslib
     then
-        match opName with 
+        let opName = DecompileOpName coreDisplayName
+        let isMember = memberInfoOpt.IsSome
+        match opName with
         | PrettyNaming.Relational ->
             if isMember then
-                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMethodNameForRelationalOperator(opName, (CompileOpName opName)), idRange))
+                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMethodNameForRelationalOperator(opName, coreDisplayName), idRange))
             else
-                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidOperatorDefinitionRelational(opName), idRange))
+                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidOperatorDefinitionRelational opName, idRange))
         | PrettyNaming.Equality -> 
             if isMember then
-                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMethodNameForEquality(opName, (CompileOpName opName)), idRange))
+                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMethodNameForEquality(opName, coreDisplayName), idRange))
             else
-                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidOperatorDefinitionEquality(opName), idRange))
+                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidOperatorDefinitionEquality opName, idRange))
         | PrettyNaming.Control -> 
             if isMember then
-                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMemberName(opName, (CompileOpName opName)), idRange))
+                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMemberName(opName, coreDisplayName), idRange))
             else
-                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidOperatorDefinition(opName), idRange))
+                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidOperatorDefinition opName, idRange))
         | PrettyNaming.Indexer -> 
             if not isMember then
-                error(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidIndexOperatorDefinition(opName), idRange))
+                error(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidIndexOperatorDefinition opName, idRange))
         | PrettyNaming.FixedTypes -> 
             if isMember then
-                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMemberNameFixedTypes(opName), idRange))
+                warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMemberNameFixedTypes opName, idRange))
         | PrettyNaming.Other -> ()
 
 let MakeAndPublishVal cenv env (altActualParent, inSig, declKind, vrec, (ValScheme(id, typeScheme, topValData, memberInfoOpt, isMutable, inlineFlag, baseOrThis, vis, compgen, isIncrClass, isTyFunc, hasDeclaredTypars)), attrs, doc, konst, isGeneratedEventVal) =
@@ -1537,7 +1539,7 @@ let MakeAndPublishVal cenv env (altActualParent, inSig, declKind, vrec, (ValSche
                       (hasDeclaredTypars || inSig), isGeneratedEventVal, konst, actualParent)
 
     
-    CheckForAbnormalOperatorNames cenv id.idRange (DecompileOpName vspec.CoreDisplayName) (Option.isSome memberInfoOpt)
+    CheckForAbnormalOperatorNames cenv id.idRange vspec.CoreDisplayName memberInfoOpt
 
     PublishValueDefn cenv env declKind vspec
 
