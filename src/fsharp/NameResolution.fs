@@ -2688,6 +2688,7 @@ let rec ResolvePatternLongIdentPrim sink (ncenv:NameResolver) fullyQualified war
         let moduleSearch ad = 
             ResolveLongIndentAsModuleOrNamespaceThen sink ResultCollectionSettings.AtMostOneResult ncenv.amap m fullyQualified nenv ad lid false
                 (ResolvePatternLongIdentInModuleOrNamespace ncenv nenv numTyArgsOpt ad)
+
         let tyconSearch ad = 
             match lid with 
             | tn :: rest when not (isNil rest) ->
@@ -2697,15 +2698,33 @@ let rec ResolvePatternLongIdentPrim sink (ncenv:NameResolver) fullyQualified war
                 ResolveLongIdentInTyconRefs ResultCollectionSettings.AtMostOneResult ncenv nenv LookupKind.Pattern 1 tn.idRange ad rest numTyArgsOpt tn.idRange tcrefs 
             | _ -> 
                 NoResultsOrUsefulErrors
-        let resInfo,res,rest = 
-            match AtMostOneResult m (tyconSearch ad +++ moduleSearch ad) with 
+
+        let resInfo,res,rest =
+            let tyconResult = tyconSearch ad
+            match tyconResult with
+            | Result (res :: _) -> res
+            | _ ->
+
+            let moduleResult = moduleSearch ad
+            match moduleResult with
+            | Result (res :: _) -> res
+            | _ ->
+
+            match AtMostOneResult m (tyconResult +++ moduleResult) with 
             | Result _ as res -> ForceRaise res
-            | _ ->  
-                ForceRaise (AtMostOneResult m (tyconSearch AccessibleFromSomeFSharpCode +++ moduleSearch AccessibleFromSomeFSharpCode))
+            | _ ->
+
+            let tyconResult = tyconSearch AccessibleFromSomeFSharpCode
+            match tyconResult with
+            | Result (res :: _) -> res
+            | _ ->
+                ForceRaise (AtMostOneResult m (tyconResult +++ moduleSearch AccessibleFromSomeFSharpCode))
+
         ResolutionInfo.SendEntityPathToSink(sink,ncenv,nenv,ItemOccurence.Use,ad,resInfo,ResultTyparChecker(fun () -> true))
   
-        if not (isNil rest) then error(Error(FSComp.SR.nrIsNotConstructorOrLiteral(),(List.head rest).idRange))
-        res
+        match rest with
+        | [] -> res
+        | element :: _ -> error(Error(FSComp.SR.nrIsNotConstructorOrLiteral(),element.idRange))
 
 
 /// Resolve a long identifier when used in a pattern.
@@ -3169,16 +3188,16 @@ let private ResolveExprDotLongIdent (ncenv:NameResolver) m ad nenv typ lid findF
             if isAppTy ncenv.g typ then 
                 NoResultsOrUsefulErrors
             else 
-                match lid with 
+                match lid with
                 // A unique record label access, e.g  expr.field  
-                | id::rest when nenv.eFieldLabels.ContainsKey(id.idText) -> 
-                    match nenv.eFieldLabels.[id.idText] with
-                    | [] -> NoResultsOrUsefulErrors
-                    | rfref :: _ ->
+                | id::rest -> 
+                    match Map.tryFind id.idText nenv.eFieldLabels with
+                    | Some (rfref :: _) ->
                         // NOTE (instantiationGenerator cleanup): we need to freshen here because we don't know the type. 
                         // But perhaps the caller should freshen?? 
                         let item = FreshenRecdFieldRef ncenv m rfref
                         OneSuccess (ResolutionInfo.Empty,item,rest)
+                    | _ -> NoResultsOrUsefulErrors
                 | _ -> NoResultsOrUsefulErrors 
         
         let search = dotFieldIdSearch 
