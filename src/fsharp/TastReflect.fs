@@ -13,6 +13,7 @@ open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.TcGlobals
 open System.Runtime.Remoting.Lifetime
+open System.Runtime.InteropServices.ComTypes
 
 
 [<AutoOpen>]
@@ -995,16 +996,87 @@ and ReflectTypeDefinition (asm: ReflectAssembly, declTyOpt: Type option, tcref: 
     override this.MakePointerType() = ReflectTypeSymbol(ReflectTypeSymbolKind.Pointer, [| this |]) :> Type
     override this.MakeByRefType() = ReflectTypeSymbol(ReflectTypeSymbolKind.ByRef, [| this |]) :> Type
 
-    override __.GetAttributeFlagsImpl() = 
-        //TODO: GetAttributeFlagsImpl this needs fully completing
-        let attr = TypeAttributes.Public 
-      //  let attr = if inp.IsSealed then attr ||| TypeAttributes.Sealed else attr
-        let attr = 
-            if isInterfaceTyconRef tcref then attr ||| TypeAttributes.Interface 
-            else attr ||| TypeAttributes.Class 
-       // let attr = if inp.Is then attr ||| TypeAttributes.Serializable else attr
-       // if isNested then adjustTypeAttributes isNested attr else attr
-        attr
+    member this.AttributeFlags =
+        let pickAttr =
+            List.tryFind fst
+            >> Option.map snd
+            >> Option.defaultValue (TypeAttributes())
+
+        let visibility =
+            let isNotPublic = false
+            let isPublic = false
+            let isNestedPublic = true
+            let isNestedPrivate = false
+            let isNestedFamily = false
+            let isNestedAssembly = false
+            let isNestedFamANDAssem = false
+            let isNestedFamORAssem = false
+            [
+                isNotPublic, TypeAttributes.NotPublic
+                isPublic, TypeAttributes.Public
+                isNestedPublic, TypeAttributes.NestedPublic
+                isNestedPrivate, TypeAttributes.NestedPrivate
+                isNestedFamily, TypeAttributes.NestedFamily
+                isNestedAssembly, TypeAttributes.NestedAssembly
+                isNestedFamANDAssem, TypeAttributes.NestedFamANDAssem
+                isNestedFamORAssem, TypeAttributes.NestedFamORAssem
+            ] |> pickAttr
+        let classSemantics =
+            let isInterface = isInterfaceTyconRef tcref
+            let isClass = not isInterface
+            [
+                isInterface, TypeAttributes.Interface
+                isClass, TypeAttributes.Class
+            ] |> pickAttr
+
+        let layout =
+            let isAutoLayout = true
+            let isSequentialLayout = false
+            let isExplicitLayout = false
+            [
+                isAutoLayout, TypeAttributes.AutoLayout
+                isSequentialLayout, TypeAttributes.SequentialLayout
+                isExplicitLayout, TypeAttributes.ExplicitLayout
+            ] |> pickAttr
+        let stringFormat =
+            let isAnsi = true
+            let isUnicode = false
+            let isAuto = false
+            let isCustom = false
+            [
+                isAnsi, TypeAttributes.AnsiClass
+                isUnicode, TypeAttributes.UnicodeClass
+                isAuto, TypeAttributes.AutoClass
+                isCustom, TypeAttributes.CustomFormatClass
+            ] |> pickAttr
+        let isAbstract = isAbstractTycon (tcref.Deref)
+        let isBeforeFieldInit = false
+        let hasSecurity = false
+        let import = false
+        let hasRTSpecialName = false
+        let isSealed = true
+        let isSerializable = true
+        let windowsRuntime = true
+        [
+            isAbstract, TypeAttributes.Abstract
+            isBeforeFieldInit, TypeAttributes.BeforeFieldInit
+            hasSecurity, TypeAttributes.HasSecurity
+            import, TypeAttributes.Import
+            hasRTSpecialName, TypeAttributes.RTSpecialName
+            isSealed, TypeAttributes.Sealed
+            isSerializable, TypeAttributes.Serializable
+            windowsRuntime, TypeAttributes.WindowsRuntime
+        ]
+        |> List.filter fst
+        |> List.map snd
+        |> List.fold (|||) (TypeAttributes())
+        ||| visibility
+        ||| classSemantics
+        ||| layout
+        ||| stringFormat
+
+    override this.GetAttributeFlagsImpl() = this.AttributeFlags
+        
 
     override __.IsValueTypeImpl() = tcref.IsStructOrEnumTycon || tcref.IsFSharpStructOrEnumTycon
     override __.IsArrayImpl() = false
@@ -1018,7 +1090,7 @@ and ReflectTypeDefinition (asm: ReflectAssembly, declTyOpt: Type option, tcref: 
 
     override this.UnderlyingSystemType = (this :> Type)
     override this.GetCustomAttributesData() =
-        let missingAttribs = [this.CompilationMappingAttribute] |> List.choose id
+        let missingAttribs = [this.CompilationMappingAttribute; this.SerializableAttribute] |> List.choose id
         [| yield! (tcref.Attribs |> TxCustomAttributesData)
            yield! missingAttribs |] :> IList<_>
 
@@ -1046,6 +1118,19 @@ and ReflectTypeDefinition (asm: ReflectAssembly, declTyOpt: Type option, tcref: 
     member x.Metadata = tcref
     member x.MakeMethodInfo (declTy,md) = TxMethodDef declTy md
     member x.MakeConstructorInfo (declTy,md) = TxConstructorDef declTy md
+
+    member x.isSerializable = true //TODO: Implement
+
+    member x.SerializableAttribute : CustomAttributeData option =
+        if x.isSerializable then
+            Some <| 
+                { new CustomAttributeData () with
+                    member __.Constructor = typeof<SerializableAttribute>.GetConstructors().[0]
+                    member __.ConstructorArguments = [| |] :> _
+                    member __.NamedArguments = [| |] :> _
+                }
+        else
+            None
 
     member x.CompilationMappingAttribute : CustomAttributeData option =
         let flags =

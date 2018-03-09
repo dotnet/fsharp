@@ -29,6 +29,13 @@ type MyRecord =
     static member TestStaticMethod(y:string) = y
     static member TestStaticProperty = 2
 
+type internal MyInternalRecord =
+    { Id: string }
+    member x.TestInstanceProperty = 1
+    member x.TestInstanceMethod(y:string) = y
+    static member TestStaticMethod(y:string) = y
+    static member TestStaticProperty = 2
+
 type MyUnion =
     | A of int
     | B of string
@@ -193,6 +200,11 @@ module AttributedRecordTest =
 module MyRecordTest =
     let actual = TypePassing.Metadata.Create<MyRecord>()
     let expected = typeof<MyRecord>
+    compare expected actual
+
+module MyInternalRecordTest =
+    let actual = TypePassing.Metadata.Create<MyInternalRecord>()
+    let expected = typeof<MyInternalRecord>
     compare expected actual
 
 module TypeInModuleTest =
