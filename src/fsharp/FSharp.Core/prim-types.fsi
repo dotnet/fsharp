@@ -985,8 +985,8 @@ namespace Microsoft.FSharp.Core
         val inline DivideByInt< ^T >  : x:^T -> y:int -> ^T when ^T : (static member DivideByInt : ^T * int -> ^T) 
 
         /// <summary>For compiler use only</summary>
+        [<Obsolete("This module is only present for backward compatibility, ErrorStringGetters should be used instead")>]
         module (* internal *) ErrorStrings = 
-
             [<CompilerMessage("This value is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
             val InputSequenceEmptyString : string
 
@@ -1001,7 +1001,23 @@ namespace Microsoft.FSharp.Core
                 
             [<CompilerMessage("This value is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
             val InputMustBeNonNegativeString : string
+
+        /// <summary>For compiler use only</summary>
+        module (* internal *) ErrorStringGetters = 
+            [<CompilerMessage("This value is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
+            val getInputSequenceEmptyString : unit -> string
+
+            [<CompilerMessage("This value is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
+            val getInputArrayEmptyString : unit -> string
+        
+            [<CompilerMessage("This value is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
+            val getAddressOpNotFirstClassString : unit -> string
+
+            [<CompilerMessage("This value is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
+            val getNoNegateMinValueString : unit -> string
                 
+            [<CompilerMessage("This value is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
+            val getInputMustBeNonNegativeString : unit -> string                
 
         //-------------------------------------------------------------------------
 

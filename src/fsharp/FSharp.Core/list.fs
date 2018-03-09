@@ -567,7 +567,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Max")>]
         let inline max          (list:list<_>) =
             match list with 
-            | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            | [] -> invalidArg "list" (LanguagePrimitives.ErrorStringGetters.getInputSequenceEmptyString())
             | h::t ->
                 let mutable acc = h
                 for x in t do
@@ -578,7 +578,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("MaxBy")>]
         let inline maxBy projection (list:list<_>) =
             match list with 
-            | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            | [] -> invalidArg "list" (LanguagePrimitives.ErrorStringGetters.getInputSequenceEmptyString())
             | h::t ->
                 let mutable acc = h
                 let mutable accv = projection h
@@ -592,7 +592,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Min")>]
         let inline min          (list:list<_>) =
             match list with 
-            | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            | [] -> invalidArg "list" (LanguagePrimitives.ErrorStringGetters.getInputSequenceEmptyString())
             | h::t ->
                 let mutable acc = h
                 for x in t do
@@ -603,7 +603,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("MinBy")>]
         let inline minBy projection (list:list<_>) =
             match list with 
-            | [] -> invalidArg "list" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            | [] -> invalidArg "list" (LanguagePrimitives.ErrorStringGetters.getInputSequenceEmptyString())
             | h::t ->
                 let mutable acc = h
                 let mutable accv = projection h
@@ -617,7 +617,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Average")>]
         let inline average      (list:list<'T>) =
             match list with 
-            | [] -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            | [] -> invalidArg "source" (LanguagePrimitives.ErrorStringGetters.getInputSequenceEmptyString())
             | xs ->
                 let mutable sum = LanguagePrimitives.GenericZero< 'T >
                 let mutable count = 0
@@ -629,7 +629,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("AverageBy")>]
         let inline averageBy (projection : 'T -> 'U) (list:list<'T>) =
             match list with 
-            | [] -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            | [] -> invalidArg "source" (LanguagePrimitives.ErrorStringGetters.getInputSequenceEmptyString())
             | xs ->
                 let mutable sum = LanguagePrimitives.GenericZero< 'U >
                 let mutable count = 0
@@ -664,7 +664,7 @@ namespace Microsoft.FSharp.Collections
         let exactlyOne (list : list<_>) =
             match list with
             | [x] -> x
-            | []  -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString            
+            | []  -> invalidArg "source" (LanguagePrimitives.ErrorStringGetters.getInputSequenceEmptyString())            
             | _   -> invalidArg "source" (SR.GetString(SR.inputSequenceTooLong))
 
         [<CompiledName("Transpose")>]

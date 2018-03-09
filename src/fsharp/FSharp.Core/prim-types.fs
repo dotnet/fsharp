@@ -510,15 +510,24 @@ namespace Microsoft.FSharp.Core
     module LanguagePrimitives =  
 
         module (* internal *) ErrorStrings =
-            // inline functions cannot call GetString, so we must make these bits public
-            let AddressOpNotFirstClassString = SR.GetString(SR.addressOpNotFirstClass)
-            let NoNegateMinValueString = SR.GetString(SR.noNegateMinValue)
-            // needs to be public to be visible from inline function 'average' and others
-            let InputSequenceEmptyString = SR.GetString(SR.inputSequenceEmpty) 
-            // needs to be public to be visible from inline function 'average' and others
-            let InputArrayEmptyString = SR.GetString(SR.arrayWasEmpty) 
-            // needs to be public to be visible from inline function 'average' and others
-            let InputMustBeNonNegativeString = SR.GetString(SR.inputMustBeNonNegative)
+            // These 5 members were previously in use and calling SR.GetString in the static constructor.
+            // Due to performance problems it created ErrorStringGetters has created to replace them.
+            // As they are part of FSharp.Core public suface they can't be removed and were replaced with hardcoded
+            // english values instead. See github Microsoft/visualfsharp PR #4465 and issue #159
+            let AddressOpNotFirstClassString = "First class uses of address-of operators are not permitted."
+            let NoNegateMinValueString = "Negating the minimum value of a twos complement number is invalid."
+            let InputSequenceEmptyString = "The input sequence was empty."
+            let InputArrayEmptyString = "The input array was empty."
+            let InputMustBeNonNegativeString = "The input must be non-negative."
+            
+        module (* internal *) ErrorStringGetters =
+            //-------------------------------------------------------------------------
+            // Inline functions cannot call GetString, so we must make these bits public
+            let getAddressOpNotFirstClassString() = SR.GetString(SR.addressOpNotFirstClass)
+            let getNoNegateMinValueString() = SR.GetString(SR.noNegateMinValue)
+            let getInputSequenceEmptyString() = SR.GetString(SR.inputSequenceEmpty) 
+            let getInputArrayEmptyString() = SR.GetString(SR.arrayWasEmpty) 
+            let getInputMustBeNonNegativeString() = SR.GetString(SR.inputMustBeNonNegative)            
             
         [<CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible")>]  // nested module OK              
         module IntrinsicOperators =        
@@ -539,13 +548,13 @@ namespace Microsoft.FSharp.Core
             [<NoDynamicInvocation>]
             let inline (~&)  (obj : 'T) : 'T byref     = 
                 ignore obj // pretend the variable is used
-                let e = new System.ArgumentException(ErrorStrings.AddressOpNotFirstClassString) 
+                let e = new System.ArgumentException(ErrorStringGetters.getAddressOpNotFirstClassString()) 
                 (# "throw" (e :> System.Exception) : 'T byref #)
                  
             [<NoDynamicInvocation>]
             let inline (~&&) (obj : 'T) : nativeptr<'T> = 
                 ignore obj // pretend the variable is used
-                let e = new System.ArgumentException(ErrorStrings.AddressOpNotFirstClassString) 
+                let e = new System.ArgumentException(ErrorStringGetters.getAddressOpNotFirstClassString()) 
                 (# "throw" (e :> System.Exception) : nativeptr<'T> #)     
           
         
@@ -5139,7 +5148,7 @@ namespace Microsoft.FSharp.Core
                     let x : nativeint = retype x in 
                     if x >= 0n then x else 
                     let res = -x in 
-                    if res < 0n then raise (System.OverflowException(ErrorStrings.NoNegateMinValueString))
+                    if res < 0n then raise (System.OverflowException(ErrorStringGetters.getNoNegateMinValueString()))
                     res
                  when ^T : int16       = let x : int16     = retype x in System.Math.Abs(x)
                  when ^T : sbyte       = let x : sbyte     = retype x in System.Math.Abs(x)
