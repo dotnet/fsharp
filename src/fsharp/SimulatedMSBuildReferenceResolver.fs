@@ -18,7 +18,9 @@ let internal SimulatedMSBuildResolver =
     { new Resolver with 
         member x.HighestInstalledNetFrameworkVersion() = 
             let root = x.DotNetFrameworkReferenceAssembliesRootDirectory
-            if Directory.Exists(Path.Combine(root,"v4.7")) then "v4.7"
+            if Directory.Exists(Path.Combine(root,"v4.7.1")) then "v4.7.2"
+            elif Directory.Exists(Path.Combine(root,"v4.7.1")) then "v4.7.1"
+            elif Directory.Exists(Path.Combine(root,"v4.7")) then "v4.7"
             elif Directory.Exists(Path.Combine(root,"v4.6.2")) then "v4.6.2"
             elif Directory.Exists(Path.Combine(root,"v4.6.1")) then "v4.6.1"
             elif Directory.Exists(Path.Combine(root,"v4.6")) then "v4.6"
@@ -28,9 +30,7 @@ let internal SimulatedMSBuildResolver =
             else "v4.5"
 
         member __.DotNetFrameworkReferenceAssembliesRootDirectory = 
-#if FX_RESHAPED_MSBUILD
-            ""
-#else
+#if !FX_RESHAPED_MSBUILD
             if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then 
                 let PF = 
                     match Environment.GetEnvironmentVariable("ProgramFiles(x86)") with
@@ -38,13 +38,13 @@ let internal SimulatedMSBuildResolver =
                     | s -> s 
                 PF + @"\Reference Assemblies\Microsoft\Framework\.NETFramework"
             else
-                ""
 #endif
+                ""
 
         member __.Resolve(resolutionEnvironment, references, targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture,                
                             fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, logMessage, logWarningOrError) =
 
-#if !FX_RESHAPED_MSBUILD
+#if !FX_NO_WIN_REGISTRY
             let registrySearchPaths() = 
               [ let registryKey = @"Software\Microsoft\.NetFramework";
                 use key = Registry.LocalMachine.OpenSubKey(registryKey)
@@ -79,7 +79,7 @@ let internal SimulatedMSBuildResolver =
                 yield! explicitIncludeDirs 
                 yield fsharpCoreDir
                 yield implicitIncludeDir 
-#if !FX_RESHAPED_MSBUILD
+#if !FX_NO_WIN_REGISTRY
                 if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then 
                     yield! registrySearchPaths() 
 #endif

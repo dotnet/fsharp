@@ -1,0 +1,55 @@
+<Project>
+
+  <Import Project="build\targets\PackageVersions.props" />
+  <Import Project="build\targets\CommonPackages.targets" />
+
+  <!-- directory locations -->
+  <PropertyGroup>
+    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+    <RepoRoot>$(MSBuildThisFileDirectory)</RepoRoot>
+    <FSharpSourcesRoot>$(RepoRoot)src</FSharpSourcesRoot>
+    <ToolsRoot>$(RepoRoot)Tools</ToolsRoot>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <ProtoOutputPath>$(RepoRoot)Proto\net40\bin</ProtoOutputPath>
+  </PropertyGroup>
+
+  <!-- nuget -->
+  <PropertyGroup>
+    <!-- default NuGet package restore location -->
+    <NugetPackageRoot Condition="'$(NugetPackageRoot)' == ''">$(UserProfile)\.nuget\packages\</NugetPackageRoot>
+  </PropertyGroup>
+
+  <!-- signing -->
+  <PropertyGroup>
+    <SkipSigning>false</SkipSigning>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\fsharp\msft.pubkey</AssemblyOriginatorKeyFile>
+    <StrongNames>true</StrongNames>
+    <DelaySign>true</DelaySign>
+  </PropertyGroup>
+
+  <!-- mono -->
+  <PropertyGroup>
+    <MonoPackaging Condition="$(TargetFramework.StartsWith('net4')) and '$(OS)' == 'Unix'">true</MonoPackaging>
+  </PropertyGroup>
+
+  <!-- localization -->
+  <PropertyGroup>
+    <EnableXlfLocalization Condition="'$(Configuration)' == 'Proto' or '$(MonoPackaging)' == 'true'">false</EnableXlfLocalization>
+    <UpdateXlfOnBuild Condition="'$(CI)' != '1'">true</UpdateXlfOnBuild>
+  </PropertyGroup>
+
+  <!-- other -->
+  <PropertyGroup>
+    <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
+    <UseStandardResourceNames>false</UseStandardResourceNames>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <!-- SDK targets override -->
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+    <ProtoFSharpTargetsShim>$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.targets</ProtoFSharpTargetsShim>
+    <FSharpTargetsShim Condition="Exists('$(ProtoFSharpTargetsShim)')">$(ProtoFSharpTargetsShim)</FSharpTargetsShim>
+  </PropertyGroup>
+
+</Project>

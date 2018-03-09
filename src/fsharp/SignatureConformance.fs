@@ -291,7 +291,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 elif not (checkValInfo aenv (err denv) implVal sigVal) then false
                 elif not (implVal.IsExtensionMember = sigVal.IsExtensionMember) then err denv (FSComp.SR.ValueNotContainedMutabilityExtensionsDiffer)
                 elif not (checkMemberDatasConform (err denv) (implVal.Attribs, implVal,implVal.MemberInfo) (sigVal.Attribs,sigVal,sigVal.MemberInfo)) then false
-                else checkAttribs aenv implVal.Attribs sigVal.Attribs (fun attribs -> implVal.val_attribs <- attribs)              
+                else checkAttribs aenv implVal.Attribs sigVal.Attribs (fun attribs -> implVal.SetAttribs attribs)              
 
 
         and checkExnInfo err aenv implTypeRepr sigTypeRepr =

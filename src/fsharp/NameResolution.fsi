@@ -304,15 +304,22 @@ type internal TcResolutions =
     static member Empty : TcResolutions
 
 
+[<Struct>]
+type TcSymbolUseData = 
+   { Item: Item
+     ItemOccurence: ItemOccurence
+     DisplayEnv: DisplayEnv
+     Range: range }
+
 [<Class>]
 /// Represents container for all name resolutions that were met so far when typechecking some particular file
 type internal TcSymbolUses = 
 
     /// Get all the uses of a particular item within the file
-    member GetUsesOfSymbol : Item -> (ItemOccurence * DisplayEnv * range)[]
+    member GetUsesOfSymbol : Item -> TcSymbolUseData[]
 
-    /// Get all the uses of all items within the file
-    member GetAllUsesOfSymbols : unit -> (Item * ItemOccurence * DisplayEnv * range)[]
+    /// All the uses of all items within the file
+    member AllUsesOfSymbols : TcSymbolUseData[]
 
     /// Get the locations of all the printf format specifiers in the file
     member GetFormatSpecifierLocationsAndArity : unit -> (range * int)[]

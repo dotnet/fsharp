@@ -119,8 +119,8 @@ type public FSharpCheckFileResults =
     ///    The text of the line where the completion is happening. This is only used to make a couple
     ///    of adhoc corrections to completion accuracy (e.g. checking for "..")
     /// </param>
-    /// <param name="getAllSymbols">
-    ///    Function that returns all symbols from current and referenced assemblies.
+    /// <param name="getAllEntities">
+    ///    Function that returns all entities from current and referenced assemblies.
     /// </param>
     /// <param name="hasTextChangedSinceLastTypecheck">
     ///    If text has been used from a captured name resolution from the typecheck, then 
@@ -128,7 +128,7 @@ type public FSharpCheckFileResults =
     ///    and assume that we're going to repeat the operation later on.
     /// </param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member GetDeclarationListInfo : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * lineText:string * partialName: PartialLongName * getAllSymbols: (unit -> AssemblySymbol list) * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) * ?userOpName: string -> Async<FSharpDeclarationListInfo>
+    member GetDeclarationListInfo : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * lineText:string * partialName: PartialLongName * ?getAllEntities: (unit -> AssemblySymbol list) * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) * ?userOpName: string -> Async<FSharpDeclarationListInfo>
 
     /// <summary>Get the items for a declaration list in FSharpSymbol format</summary>
     ///
@@ -145,8 +145,8 @@ type public FSharpCheckFileResults =
     ///    The text of the line where the completion is happening. This is only used to make a couple
     ///    of adhoc corrections to completion accuracy (e.g. checking for "..")
     /// </param>
-    /// <param name="getAllSymbols">
-    ///    Function that returns all symbols from current and referenced assemblies.
+    /// <param name="getAllEntities">
+    ///    Function that returns all entities from current and referenced assemblies.
     /// </param>
     /// <param name="hasTextChangedSinceLastTypecheck">
     ///    If text has been used from a captured name resolution from the typecheck, then 
@@ -154,7 +154,7 @@ type public FSharpCheckFileResults =
     ///    and assume that we're going to repeat the operation later on.
     /// </param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member GetDeclarationListSymbols : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * lineText:string * partialName: PartialLongName * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) * ?userOpName: string -> Async<FSharpSymbolUse list list>
+    member GetDeclarationListSymbols : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * lineText:string * partialName: PartialLongName * ?getAllEntities: (unit -> AssemblySymbol list) * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) * ?userOpName: string -> Async<FSharpSymbolUse list list>
 
 
     /// <summary>Compute a formatted tooltip for the given location</summary>
@@ -269,6 +269,9 @@ type public FSharpCheckProjectResults =
     /// Get a view of the overall contents of the assembly. Only valid to use if HasCriticalErrors is false.
     member AssemblyContents: FSharpAssemblyContents
 
+    /// Get an optimized view of the overall contents of the assembly. Only valid to use if HasCriticalErrors is false.
+    member GetOptimizedAssemblyContents: unit -> FSharpAssemblyContents
+
     /// Get the resolution of the ProjectOptions 
     member ProjectContext: FSharpProjectContext
 
@@ -295,6 +298,7 @@ type public FSharpParsingOptions =
       SourceFiles: string[]
       ConditionalCompilationDefines: string list
       ErrorSeverityOptions: FSharpErrorSeverityOptions
+      IsInteractive: bool
       LightSyntax: bool option
       CompilingFsLib: bool
       IsExe: bool
@@ -533,14 +537,14 @@ type public FSharpChecker =
     ///
     /// <param name="sourceFiles">Initial source files list. Additional files may be added during argv evaluation.</param>
     /// <param name="argv">The command line arguments for the project build.</param>
-    member GetParsingOptionsFromCommandLineArgs: sourceFiles: string list * argv: string list -> FSharpParsingOptions * FSharpErrorInfo list
+    member GetParsingOptionsFromCommandLineArgs: sourceFiles: string list * argv: string list * ?isInteractive: bool -> FSharpParsingOptions * FSharpErrorInfo list
 
     /// <summary>
     /// <para>Get the FSharpParsingOptions implied by a set of command line arguments.</para>
     /// </summary>
     ///
     /// <param name="argv">The command line arguments for the project build.</param>
-    member GetParsingOptionsFromCommandLineArgs: argv: string list -> FSharpParsingOptions * FSharpErrorInfo list
+    member GetParsingOptionsFromCommandLineArgs: argv: string list * ?isInteractive: bool -> FSharpParsingOptions * FSharpErrorInfo list
 
     /// <summary>
     /// <para>Get the FSharpParsingOptions implied by a FSharpProjectOptions.</para>
@@ -727,11 +731,11 @@ type public CompilerEnvironment =
 module public CompilerEnvironment =
     /// These are the names of assemblies that should be referenced for .fs or .fsi files that
     /// are not associated with a project.
-    val DefaultReferencesForOrphanSources : assumeDotNetFramework: bool -> string list
+    val DefaultReferencesForOrphanSources: assumeDotNetFramework: bool -> string list
     /// Return the compilation defines that should be used when editing the given file.
-    val GetCompilationDefinesForEditing : filename : string * parsingOptions : FSharpParsingOptions -> string list
+    val GetCompilationDefinesForEditing: parsingOptions: FSharpParsingOptions -> string list
     /// Return true if this is a subcategory of error or warning message that the language service can emit
-    val IsCheckerSupportedSubcategory : string -> bool
+    val IsCheckerSupportedSubcategory: string -> bool
 
 /// Information about the debugging environment
 module public DebuggerEnvironment =

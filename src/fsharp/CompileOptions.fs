@@ -470,7 +470,13 @@ let SetDebugSwitch (tcConfigB : TcConfigBuilder) (dtype : string option) (s : Op
        | "portable" ->  tcConfigB.portablePDB <- true;  tcConfigB.embeddedPDB <- false; tcConfigB.jitTracking <- true; tcConfigB.ignoreSymbolStoreSequencePoints <- true
        | "pdbonly" ->   tcConfigB.portablePDB <- false; tcConfigB.embeddedPDB <- false; tcConfigB.jitTracking <- false
        | "embedded" ->  tcConfigB.portablePDB <- true;  tcConfigB.embeddedPDB <- true;  tcConfigB.jitTracking <- true; tcConfigB.ignoreSymbolStoreSequencePoints <- true
+#if FX_NO_PDB_WRITER
+       // When building on the coreclr, full means portable
+       | "full" ->      tcConfigB.portablePDB <- true; tcConfigB.embeddedPDB <- false; tcConfigB.jitTracking <- true
+#else
        | "full" ->      tcConfigB.portablePDB <- false; tcConfigB.embeddedPDB <- false; tcConfigB.jitTracking <- true
+#endif
+
        | _ -> error(Error(FSComp.SR.optsUnrecognizedDebugType(s), rangeCmdArgs))
     | None ->           tcConfigB.portablePDB <- false; tcConfigB.embeddedPDB <- false; tcConfigB.jitTracking <- s = OptionSwitch.On;
     tcConfigB.debuginfo <- s = OptionSwitch.On
@@ -739,10 +745,8 @@ let codePageFlag (tcConfigB : TcConfigBuilder) =
                      tcConfigB.inputCodePage <- Some(n)), None,
                            Some (FSComp.SR.optsCodepage()))
 
-#if PREFERRED_UI_LANG
 let preferredUiLang (tcConfigB: TcConfigBuilder) = 
         CompilerOption("preferreduilang", tagString, OptionString (fun s -> tcConfigB.preferredUiLang <- Some(s)), None, Some(FSComp.SR.optsPreferredUiLang()))
-#endif
 
 let utf8OutputFlag (tcConfigB: TcConfigBuilder) = 
         CompilerOption("utf8output", tagNone, OptionUnit (fun () -> tcConfigB.utf8output <- true), None,
@@ -771,9 +775,7 @@ let advancedFlagsBoth tcConfigB =
     [
         yield codePageFlag tcConfigB
         yield utf8OutputFlag tcConfigB
-#if PREFERRED_UI_LANG
         yield preferredUiLang tcConfigB
-#endif
         yield fullPathsFlag tcConfigB
         yield libFlag tcConfigB
         yield CompilerOption("simpleresolution", 
@@ -849,11 +851,7 @@ let testFlag tcConfigB =
 let vsSpecificFlags (tcConfigB: TcConfigBuilder) = 
   [ CompilerOption("vserrors", tagNone, OptionUnit (fun () -> tcConfigB.errorStyle <- ErrorStyle.VSErrors), None, None)
     CompilerOption("validate-type-providers", tagNone, OptionUnit (id), None, None)  // preserved for compatibility's sake, no longer has any effect
-#if PREFERRED_UI_LANG
     CompilerOption("LCID", tagInt, OptionInt (fun _n -> ()), None, None)
-#else
-    CompilerOption("LCID", tagInt, OptionInt (fun n -> tcConfigB.lcid <- Some(n)), None, None)
-#endif
     CompilerOption("flaterrors", tagNone, OptionUnit (fun () -> tcConfigB.flatErrors <- true), None, None) 
     CompilerOption("sqmsessionguid", tagNone, OptionString (fun s -> tcConfigB.sqmSessionGuid <- try System.Guid(s) |> Some  with e -> None), None, None)
     CompilerOption("gccerrors", tagNone, OptionUnit (fun () -> tcConfigB.errorStyle <- ErrorStyle.GccErrors), None, None) 

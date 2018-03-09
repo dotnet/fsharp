@@ -802,11 +802,6 @@
         <target state="translated">관련되지 않은 여러 형식(예: '{0}'과(와) '{1}')으로 확인될 수 있으므로 이 지점 또는 이 지점 근처에서 제네릭 구문의 암시적 인스턴스를 확인할 수 없습니다. 형식 주석을 사용하여 모호성을 해결하세요.</target>
         <note />
       </trans-unit>
-      <trans-unit id="typrelCannotResolveAmbiguityInOverloadedOperator">
-        <source>Could not resolve the ambiguity inherent in the use of the operator '{0}' at or near this program point. Consider using type annotations to resolve the ambiguity.</source>
-        <target state="translated">’{0}' 연산자 사용과 관련하여 이 프로그램 지점 또는 이 지점 근처에서 본질적으로 발생하는 모호성을 해결할 수 없습니다. 형식 주석을 사용하여 모호성을 해결하세요.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="typrelCannotResolveAmbiguityInPrintf">
         <source>Could not resolve the ambiguity inherent in the use of a 'printf'-style format string</source>
         <target state="translated">'printf' 스타일의 서식 문자열 사용과 관련하여 본질적으로 발생하는 모호성을 해결할 수 없습니다.</target>
@@ -6970,6 +6965,56 @@
       <trans-unit id="pickleUnexpectedNonZero">
         <source>An error occurred while reading the F# metadata of assembly '{0}'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.</source>
         <target state="translated">'{0}' 어셈블리의 F# 메타데이터를 읽는 동안 오류가 발생했습니다. 예약 구문이 활용되었습니다. F# 컴파일러를 업그레이드하거나 특정 구문을 사용하지 않는 이전 버전의 어셈블리를 사용해야 할 수 있습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTupleMemberNotNormallyUsed">
+        <source>This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</source>
+        <target state="translated">이 메서드 또는 속성은 일반적으로 F# 코드에서 사용되지 않습니다. 대신 분해에 대해 명시적 튜플 패턴을 사용하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="implicitlyDiscardedInSequenceExpression">
+        <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.</source>
+        <target state="translated">이 식은 '{0}' 형식의 값을 반환하지만 암시적으로 삭제됩니다. 'let'을 사용하여 결과를 이름에 바인딩하세요(예: 'let result = expression'). 식을 시퀀스의 값으로 사용하려면 명시적 'yield'를 사용하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="implicitlyDiscardedSequenceInSequenceExpression">
+        <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</source>
+        <target state="translated">이 식은 '{0}' 형식의 값을 반환하지만 암시적으로 삭제됩니다. 'let'을 사용하여 결과를 이름에 바인딩하세요(예: 'let result = expression'). 식을 시퀀스의 값으로 사용하려면 명시적 'yield!'를 사용하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsUnmatchedBraceBar">
+        <source>Unmatched '{{|'</source>
+        <target state="new">Unmatched '{{|'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typeInfoAnonRecdField">
+        <source>anonymous record field</source>
+        <target state="new">anonymous record field</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdCcuMismatch">
+        <source>Two anonymous record types are from different assemblies '{0}' and '{1}'</source>
+        <target state="new">Two anonymous record types are from different assemblies '{0}' and '{1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdCcuMismatch2">
+        <source>One anonymous record type is assembly-bound to '{0}' (syntax 'new {{| ... |}}'), the other is assembly-neutral (syntax '{{| ... |}}')</source>
+        <target state="new">One anonymous record type is assembly-bound to '{0}' (syntax 'new {{| ... |}}'), the other is assembly-neutral (syntax '{{| ... |}}')</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdFieldNameMismatch">
+        <source>Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</source>
+        <target state="new">Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsInvalidAnonRecdExpr">
+        <source>Invalid anonymous record expression</source>
+        <target state="new">Invalid anonymous record expression</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsInvalidAnonRecdType">
+        <source>Invalid anonymous record type</source>
+        <target state="new">Invalid anonymous record type</target>
         <note />
       </trans-unit>
     </body>

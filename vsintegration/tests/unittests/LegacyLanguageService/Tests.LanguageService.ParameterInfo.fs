@@ -772,8 +772,7 @@ type UsingMSBuild()  =
     [<Category("TypeProvider.StaticParameters")>]
     //This test verifies that ParamInfo location on a provided type without the namespace that exposes static parameter that takes >1 argument works normally.
     member public this.``TypeProvider.Type.ParameterInfoLocation.WithOutNamespace`` () =
-        this.TestParameterInfoLocation("open N1 \n"+ 
-                                       "type boo = T<$",
+        this.TestParameterInfoLocation("open N1 \n"+"type boo = T<$",
             expectedPos = 11,
             addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
  

@@ -227,7 +227,7 @@ module WireVariations =
 
 //! Area variations
   
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
 module AreaVariations = 
     (* Accepted *)
     open System.Drawing
@@ -404,7 +404,7 @@ module ScalaPersonExample =
 
 //! Forms
   
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
 module Forms1 = 
     open System.Drawing
     open System.Windows.Forms

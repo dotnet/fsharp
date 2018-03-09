@@ -209,7 +209,7 @@
       </trans-unit>
       <trans-unit id="buildInvalidPrivacy">
         <source>Unrecognized privacy setting '{0}' for managed resource, valid options are 'public' and 'private'</source>
-        <target state="translated">Managed 資源的無法辨識隱私設定 '{0}'，有效的選項是 'public' 和 'private'</target>
+        <target state="translated">受控資源的無法辨識隱私設定 '{0}'，有效的選項是 'public' 和 'private'</target>
         <note />
       </trans-unit>
       <trans-unit id="buildMultipleReferencesNotAllowed">
@@ -800,11 +800,6 @@
       <trans-unit id="typrelCannotResolveImplicitGenericInstantiation">
         <source>The implicit instantiation of a generic construct at or near this point could not be resolved because it could resolve to multiple unrelated types, e.g. '{0}' and '{1}'. Consider using type annotations to resolve the ambiguity</source>
         <target state="translated">無法解決在這個點或附近的泛型建構的隱含具現化，因為它可能解析成多個不相關的類型，例如 '{0}' 和 '{1}'。請考慮使用類型註釋來解決模稜兩可</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="typrelCannotResolveAmbiguityInOverloadedOperator">
-        <source>Could not resolve the ambiguity inherent in the use of the operator '{0}' at or near this program point. Consider using type annotations to resolve the ambiguity.</source>
-        <target state="translated">無法解決在這個程式點或附近使用運算子 '{0}' 時固有的模稜兩可。請考慮使用型別註解來解決模稜兩可。</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelCannotResolveAmbiguityInPrintf">
@@ -1609,7 +1604,7 @@
       </trans-unit>
       <trans-unit id="csGenericConstructRequiresUnmanagedType">
         <source>A generic construct requires that the type '{0}' is an unmanaged type</source>
-        <target state="translated">泛型建構要求類型 '{0}' 必須是 Unmanaged 類型</target>
+        <target state="translated">泛型建構要求類型 '{0}' 必須是非受控類型</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeNotCompatibleBecauseOfPrintf">
@@ -4209,7 +4204,7 @@
       </trans-unit>
       <trans-unit id="optsResource">
         <source>Embed the specified managed resource</source>
-        <target state="translated">嵌入指定的 Managed 資源</target>
+        <target state="translated">嵌入指定的受控資源</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLinkresource">
@@ -5469,12 +5464,12 @@
       </trans-unit>
       <trans-unit id="fscStaticLinkingNoMixedDLL">
         <source>Static linking may not include a mixed managed/unmanaged DLL</source>
-        <target state="translated">靜態連結不可包含混合的 Managed/Unmanaged DLL</target>
+        <target state="translated">靜態連結不可包含混合的受控/非受控 DLL</target>
         <note />
       </trans-unit>
       <trans-unit id="fscIgnoringMixedWhenLinking">
         <source>Ignoring mixed managed/unmanaged assembly '{0}' during static linking</source>
-        <target state="translated">在靜態連結期間忽略混合的 Managed/Unmanaged 組件 '{0}'</target>
+        <target state="translated">在靜態連結期間忽略混合的受控/非受控組件 '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="fscAssumeStaticLinkContainsNoDependencies">
@@ -6970,6 +6965,56 @@
       <trans-unit id="pickleUnexpectedNonZero">
         <source>An error occurred while reading the F# metadata of assembly '{0}'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.</source>
         <target state="translated">讀取組件 '{0}' 的 F# 中繼資料時發生錯誤。已使用保留的建構。建議您升級 F# 編譯器，或使用不會用特定建構的舊版組件。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTupleMemberNotNormallyUsed">
+        <source>This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</source>
+        <target state="translated">F# 程式碼不常使用這個方法或屬性，請改用明確的元組模式進行解構。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="implicitlyDiscardedInSequenceExpression">
+        <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.</source>
+        <target state="translated">此運算式會傳回類型為 '{0}' 的值，但會被間接捨棄。請考慮使用 'let' 將結果繫結到名稱。例如 'let result = expression'。若您想要在序列中，以值的形式使用運算式，請直接使用 'yield'。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="implicitlyDiscardedSequenceInSequenceExpression">
+        <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</source>
+        <target state="translated">此運算式會傳回類型為 '{0}' 的值，但會被間接捨棄。請考慮使用 'let' 將結果繫結到名稱。例如 'let result = expression'。若您想要在序列中，以值的形式使用運算式，請直接使用 'yield!'。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsUnmatchedBraceBar">
+        <source>Unmatched '{{|'</source>
+        <target state="new">Unmatched '{{|'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typeInfoAnonRecdField">
+        <source>anonymous record field</source>
+        <target state="new">anonymous record field</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdCcuMismatch">
+        <source>Two anonymous record types are from different assemblies '{0}' and '{1}'</source>
+        <target state="new">Two anonymous record types are from different assemblies '{0}' and '{1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdCcuMismatch2">
+        <source>One anonymous record type is assembly-bound to '{0}' (syntax 'new {{| ... |}}'), the other is assembly-neutral (syntax '{{| ... |}}')</source>
+        <target state="new">One anonymous record type is assembly-bound to '{0}' (syntax 'new {{| ... |}}'), the other is assembly-neutral (syntax '{{| ... |}}')</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdFieldNameMismatch">
+        <source>Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</source>
+        <target state="new">Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsInvalidAnonRecdExpr">
+        <source>Invalid anonymous record expression</source>
+        <target state="new">Invalid anonymous record expression</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsInvalidAnonRecdType">
+        <source>Invalid anonymous record type</source>
+        <target state="new">Invalid anonymous record type</target>
         <note />
       </trans-unit>
     </body>

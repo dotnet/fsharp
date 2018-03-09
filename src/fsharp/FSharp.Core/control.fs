@@ -154,33 +154,6 @@ namespace Microsoft.FSharp.Control
             |   _ -> failwith "Internal error: attempting to install continuation twice"
 
 
-#if FSCORE_PORTABLE_NEW
-    // Imitation of desktop functionality for .NETCore
-    // 1. QueueUserWorkItem reimplemented as Task.Run
-    // 2. Thread.CurrentThread type in the code is typically used to check if continuation is called on the same thread that initiated the async computation
-    // if this condition holds we may decide to invoke continuation directly rather than queueing it.
-    // Thread type here is barely a wrapper over CurrentManagedThreadId value - it should be enough to uniquely identify the actual thread
-
-    [<NoComparison; NoEquality>]
-    type internal WaitCallback = WaitCallback of (obj -> unit)
-
-    type ThreadPool =
-        static member QueueUserWorkItem(WaitCallback(cb), state : obj) = 
-            System.Threading.Tasks.Task.Run (fun () -> cb(state)) |> ignore
-            true
-
-    [<AllowNullLiteral>]
-    type Thread(threadId : int) = 
-        static member CurrentThread = Thread(Environment.CurrentManagedThreadId)
-        member this.ThreadId = threadId
-        override this.GetHashCode() = threadId
-        override this.Equals(other : obj) = 
-            match other with
-            | :? Thread as other -> threadId = other.ThreadId
-            | _ -> false
-
-#endif
-
     type TrampolineHolder() as this =
         let mutable trampoline = null
         
@@ -1218,28 +1191,21 @@ namespace Microsoft.FSharp.Control
         static member StartWithContinuations(computation:Async<'T>, continuation, exceptionContinuation, cancellationContinuation, ?cancellationToken) : unit =
             Async.StartWithContinuationsUsingDispatchInfo(computation, continuation, (fun edi -> exceptionContinuation (edi.GetAssociatedSourceException())), cancellationContinuation, ?cancellationToken=cancellationToken)
 
+        static member StartImmediateAsTask (computation : Async<'T>, ?cancellationToken ) : Task<'T>=
+            let token = defaultArg cancellationToken defaultCancellationTokenSource.Token
+            let ts = new TaskCompletionSource<'T>()
+            let task = ts.Task
+            Async.StartWithContinuations(
+                computation, 
+                (fun (k) -> ts.SetResult(k)), 
+                (fun exn -> ts.SetException(exn)), 
+                (fun _ -> ts.SetCanceled()), 
+                token)
+            task
         static member StartImmediate(computation:Async<unit>, ?cancellationToken) : unit =
             let token = defaultArg cancellationToken defaultCancellationTokenSource.Token
             CancellationTokenOps.StartWithContinuations(token, computation, id, (fun edi -> edi.ThrowAny()), ignore)
 
-#if FSCORE_PORTABLE_NEW
-        static member Sleep(dueTime : int) : Async<unit> = 
-            // use combo protectedPrimitiveWithResync + continueWith instead of AwaitTask so we can pass cancellation token to the Delay task
-            unprotectedPrimitiveWithResync ( fun ({ aux = aux} as args) ->
-                let mutable edi = null
-
-                let task = 
-                    try 
-                        Task.Delay(dueTime, aux.token)
-                    with exn -> 
-                        edi <- ExceptionDispatchInfo.RestoreOrCapture(exn)
-                        null
-
-                match edi with
-                | null -> TaskHelpers.continueWithUnit (task, args, true)
-                | _ -> aux.econt edi
-            )
-#else
         static member Sleep(millisecondsDueTime) : Async<unit> =
             unprotectedPrimitiveWithResync (fun ({ aux = aux } as args) ->
                 let timer = ref (None : Timer option)
@@ -1285,7 +1251,6 @@ namespace Microsoft.FSharp.Control
                 | _ -> 
                     aux.econt edi
                 )
-#endif
         
         static member AwaitWaitHandle(waitHandle:WaitHandle,?millisecondsTimeout:int) =
             let millisecondsTimeout = defaultArg millisecondsTimeout Threading.Timeout.Infinite
@@ -1591,7 +1556,7 @@ namespace Microsoft.FSharp.Control
                             // ResultCell allows a race and throws away whichever comes last.
                             resultCell.RegisterResult(res,reuseThread=true) |> unfake) 
                     and del = 
-#if FX_PORTABLE_OR_NETSTANDARD
+#if FX_RESHAPED_REFLECTION
                         let invokeMeth = (typeof<Closure<'T>>).GetMethod("Invoke", BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance)
                         System.Delegate.CreateDelegate(typeof<'Delegate>, obj, invokeMeth) :?> 'Delegate
 #else

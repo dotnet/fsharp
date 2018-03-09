@@ -23,8 +23,8 @@ open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Editor
-open Microsoft.VisualStudio.FSharp.LanguageService
-open Microsoft.VisualStudio.FSharp.LanguageService.SiteProvider
+open Microsoft.VisualStudio.FSharp.Editor
+open Microsoft.VisualStudio.FSharp.Editor.SiteProvider
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.LanguageServices.Implementation.LanguageService
@@ -162,8 +162,8 @@ type internal FSharpProjectOptionsManager
         let parsingOptions = 
             match projectOptionsOpt with 
             | Some (parsingOptions, _site, _projectOptions) -> parsingOptions
-            | _ -> FSharpParsingOptions.Default
-        CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, parsingOptions)
+            | _ -> { FSharpParsingOptions.Default with IsInteractive = IsScript document.Name }
+        CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
 
     /// Try and get the Options for a project 
     member this.TryGetOptionsForProject(projectId:ProjectId) = projectOptionsTable.TryGetOptionsForProject(projectId)
@@ -226,13 +226,21 @@ type internal FSharpProjectOptionsManager
 
     [<Export>]
     /// This handles commandline change notifications from the Dotnet Project-system
+    /// Prior to VS 15.7 path contained path to project file, post 15.7 contains target binpath
+    /// binpath is more accurate because a project file can have multiple in memory projects based on configuration
     member this.HandleCommandLineChanges(path:string, sources:ImmutableArray<CommandLineSourceFile>, references:ImmutableArray<CommandLineReference>, options:ImmutableArray<string>) =
+        let projectId =
+            match workspace.ProjectTracker.TryGetProjectByBinPath(path) with
+            | true, project -> project.Id
+            | false, _ -> workspace.ProjectTracker.GetOrCreateProjectIdForPath(path, projectDisplayNameOf path)
+        let project =  workspace.ProjectTracker.GetProject(projectId)
+        let path = project.ProjectFilePath
         let fullPath p =
-            if Path.IsPathRooted(p) then p
+            if Path.IsPathRooted(p) || path = null then p
             else Path.Combine(Path.GetDirectoryName(path), p)
         let sourcePaths = sources |> Seq.map(fun s -> fullPath s.Path) |> Seq.toArray
         let referencePaths = references |> Seq.map(fun r -> fullPath r.Reference) |> Seq.toArray
-        let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(path, projectDisplayNameOf path)
+
         projectOptionsTable.SetOptionsWithProjectId(projectId, sourcePaths, referencePaths, options.ToArray())
         this.UpdateProjectInfoWithProjectId(projectId, "HandleCommandLineChanges", invalidateConfig=true)
 
@@ -277,6 +285,7 @@ type
     [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.QuickInfoOptionPage>, "F#", null, "QuickInfo", "6009")>]
     [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.CodeFixesOptionPage>, "F#", null, "Code Fixes", "6010")>]
     [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.LanguageServicePerformanceOptionPage>, "F#", null, "Performance", "6011")>]
+    [<ProvideFSharpVersionRegistration(FSharpConstants.projectPackageGuidString, "Microsoft Visual F#")>]
     [<ProvideLanguageService(languageService = typeof<FSharpLanguageService>,
                              strLanguageName = FSharpConstants.FSharpLanguageName,
                              languageResourceID = 100,
@@ -350,6 +359,7 @@ type
 
     override this.Initialize() = 
         base.Initialize()
+
 
         let workspaceChanged (args:WorkspaceChangeEventArgs) =
             match args.Kind with
@@ -577,12 +587,13 @@ type
                 match hier with
                 | :? IProvideProjectSite as siteProvider when not (IsScript(filename)) ->
                     this.SetupProjectFile(siteProvider, this.Workspace, "SetupNewTextView")
-                | _ when not (IsScript(filename)) ->
+                | h when not (IsScript(filename)) ->
                     let docId = this.Workspace.CurrentSolution.GetDocumentIdsWithFilePath(filename).FirstOrDefault()
                     match docId with
                     | null ->
-                        let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
-                        this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
+                        if not (h.IsCapabilityMatch("CPS")) then
+                            let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
+                            this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
                     | id ->
                         projectInfoManager.UpdateProjectInfoWithProjectId(id.ProjectId, "SetupNewTextView", invalidateConfig=true)
                 | _ ->

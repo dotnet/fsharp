@@ -15,7 +15,7 @@
 // all 4 cases the layout types are really different types.
 
 #if COMPILER
-// fsc-proto.exe:
+// fsc.exe:
 // FSharp.Compiler.Service.dll:
 namespace Internal.Utilities.StructuredFormat
 #else
@@ -36,7 +36,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
     type internal TaggedText =
         abstract Tag: LayoutTag
         abstract Text: string
-#else  // FSharp.Compiler.Service.dll, fsc-proto.exe
+#else  // FSharp.Compiler.Service.dll, fsc.exe
 
     /// Data representing joints in structured layouts of terms.  The representation
     /// of this data type is only for the consumption of formatting engines.
