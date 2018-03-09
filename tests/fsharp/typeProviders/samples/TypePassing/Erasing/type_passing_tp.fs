@@ -4,74 +4,98 @@ open System
 open System.Reflection
 open Microsoft.FSharp.Core.CompilerServices
 open ProviderImplementation.ProvidedTypes
+open System.Collections
+open System.Collections.Generic
+open Microsoft.FSharp.Quotations
 
+type GD = Dictionary<string, string>
 
 [<TypeProvider>]
-type TypePassingTp(config: TypeProviderConfig) as this =     
+type TypePassingTp(config: TypeProviderConfig) as this =
     inherit TypeProviderForNamespaces(config)
 
     let ns = "TypePassing"
     let runtimeAssembly = Assembly.LoadFrom(config.RuntimeAssembly)
 
-    let createTypes (ty:Type) typeName = 
-        let rootType = ProvidedTypeDefinition(runtimeAssembly,ns,typeName,baseType= (Some typeof<obj>), hideObjectMethods=true)
-        rootType.AddMember(ProvidedProperty("Name", typeof<string>, getterCode = (fun args -> let v = ty.Name in <@@ v  @@> ), isStatic=true))        
-        rootType.AddMember(ProvidedProperty("FullName", typeof<string>, getterCode = (fun args -> let v = ty.FullName in <@@ v  @@> ), isStatic=true))        
-        rootType.AddMember(ProvidedProperty("AssemblyQualifiedName", typeof<string>, getterCode = (fun args -> let v = ty.AssemblyQualifiedName in <@@ v  @@> ), isStatic=true))        
-        rootType.AddMember(ProvidedProperty("IsAbstract", typeof<bool>, getterCode = (fun args -> let v = ty.IsAbstract in <@@ v  @@> ), isStatic=true))        
-        rootType.AddMember(ProvidedProperty("IsAnsiClass", typeof<bool>, getterCode = (fun args -> let v = ty.IsAnsiClass in <@@ v  @@> ), isStatic=true))        
-        rootType.AddMember(ProvidedProperty("IsArray", typeof<bool>, getterCode = (fun args -> let v = ty.IsArray in <@@ v  @@> ), isStatic=true))        
-        rootType.AddMember(ProvidedProperty("IsAutoClass", typeof<bool>, getterCode = (fun args -> let v = ty.IsAutoClass in <@@ v  @@> ), isStatic=true))        
-        rootType.AddMember(ProvidedProperty("IsAutoLayout", typeof<bool>, getterCode = (fun args -> let v = ty.IsAutoLayout in <@@ v  @@> ), isStatic=true))        
-        rootType.AddMember(ProvidedProperty("IsByRef", typeof<bool>, getterCode = (fun args -> let v = ty.IsByRef in <@@ v  @@> ), isStatic=true))        
-        rootType.AddMember(ProvidedProperty("IsClass", typeof<bool>, getterCode = (fun args -> let v = ty.IsClass in <@@ v  @@> ), isStatic=true))        
-        rootType.AddMember(ProvidedProperty("IsValueType", typeof<bool>, getterCode = (fun args -> let v = ty.IsValueType in <@@ v  @@> ), isStatic=true))        
-        rootType.AddMember(ProvidedProperty("IsInterface", typeof<bool>, getterCode = (fun args -> let v = ty.IsInterface in <@@ v  @@> ), isStatic=true))        
-        rootType.AddMember(ProvidedProperty("IsGenericParameter", typeof<bool>, getterCode = (fun args -> let v = ty.IsGenericParameter in <@@ v  @@> ), isStatic=true))        
-        rootType.AddMember(ProvidedProperty("IsNested", typeof<bool>, getterCode = (fun args -> let v = ty.IsNested in <@@ v  @@> ), isStatic=true))        
-        rootType.AddMember(ProvidedProperty("IsNestedPublic", typeof<bool>, getterCode = (fun args -> let v = ty.IsNestedPublic in <@@ v  @@> ), isStatic=true))        
-        rootType.AddMember(ProvidedProperty("IsPublic", typeof<bool>, getterCode = (fun args -> let v = ty.IsPublic in <@@ v  @@> ), isStatic=true))        
-        rootType.AddMember(ProvidedProperty("IsNotPublic", typeof<bool>, getterCode = (fun args -> let v = ty.IsNotPublic in <@@ v  @@> ), isStatic=true))        
-        rootType.AddMember(ProvidedProperty("IsSealed", typeof<bool>, getterCode = (fun args -> let v = ty.IsSealed in <@@ v  @@> ), isStatic=true))     
-        rootType.AddMember(ProvidedProperty("IsGenericType", typeof<bool>, getterCode = (fun args -> let v = ty.IsGenericType in <@@ v  @@> ), isStatic=true))  
-        rootType.AddMember(ProvidedProperty("IsGenericTypeDefinition", typeof<bool>, getterCode = (fun args -> let v = ty.IsGenericTypeDefinition in <@@ v  @@> ), isStatic=true))         
-        rootType.AddMember(ProvidedProperty("IsRecord", typeof<bool>, getterCode = (fun args -> let v = Reflection.FSharpType.IsRecord(ty) in <@@ v  @@> ), isStatic=true))        
-        rootType.AddMember(ProvidedProperty("IsFunction", typeof<bool>, getterCode = (fun args -> let v = Reflection.FSharpType.IsFunction(ty) in <@@ v  @@> ), isStatic=true))        
-        rootType.AddMember(ProvidedProperty("IsModule", typeof<bool>, getterCode = (fun args -> let v = Reflection.FSharpType.IsModule(ty) in <@@ v  @@> ), isStatic=true))        
-        rootType.AddMember(ProvidedProperty("IsExceptionRepresentation", typeof<bool>, getterCode = (fun args -> let v = Reflection.FSharpType.IsExceptionRepresentation(ty) in <@@ v  @@> ), isStatic=true))        
-        rootType.AddMember(ProvidedProperty("IsTuple", typeof<bool>, getterCode = (fun args -> let v = Reflection.FSharpType.IsTuple(ty) in <@@ v  @@> ), isStatic=true))        
-        rootType.AddMember(ProvidedProperty("IsUnion", typeof<bool>, getterCode = (fun args -> let v = Reflection.FSharpType.IsUnion(ty) in <@@ v  @@> ), isStatic=true))        
-        rootType.AddMember(ProvidedProperty("GetPublicProperties_Length", typeof<int>, getterCode = (fun args -> let v = ty.GetProperties().Length in <@@ v  @@> ), isStatic=true))        
-        rootType.AddMember(ProvidedProperty("GetPublicConstructors_Length", typeof<int>, getterCode = (fun args -> let v = ty.GetConstructors().Length in <@@ v  @@> ), isStatic=true))        
-        rootType.AddMember(ProvidedProperty("GetPublicMethods_Length", typeof<int>, getterCode = (fun args -> let v = ty.GetMethods().Length in <@@ v  @@> ), isStatic=true))    
-        rootType.AddMember(ProvidedProperty("GetGenericArguments_Length", typeof<int>, getterCode = (fun args -> let v = ty.GetGenericArguments().Length in <@@ v  @@> ), isStatic=true))   
+    let properties =
+        let box x = (box x).ToString()
+        Map.ofList
+            [
+                "Name",                             (typeof<string>,     fun (ty : Type) -> box <| ty.Name)
+                "FullName",                         (typeof<string>,     fun (ty : Type) -> box <| ty.FullName)
+                "AssemblyQualifiedName",            (typeof<string>,     fun (ty : Type) -> box <| ty.AssemblyQualifiedName)
+                "IsAbstract",                       (typeof<bool>,       fun (ty : Type) -> box <| ty.IsAbstract)
+                "IsAnsiClass",                      (typeof<bool>,       fun (ty : Type) -> box <| ty.IsAnsiClass)
+                "IsArray",                          (typeof<bool>,       fun (ty : Type) -> box <| ty.IsArray)
+                "IsAutoClass",                      (typeof<bool>,       fun (ty : Type) -> box <| ty.IsAutoClass)
+                "IsAutoLayout",                     (typeof<bool>,       fun (ty : Type) -> box <| ty.IsAutoLayout)
+                "IsByRef",                          (typeof<bool>,       fun (ty : Type) -> box <| ty.IsByRef)
+                "IsClass",                          (typeof<bool>,       fun (ty : Type) -> box <| ty.IsClass)
+                "IsValueType",                      (typeof<bool>,       fun (ty : Type) -> box <| ty.IsValueType)
+                "IsInterface",                      (typeof<bool>,       fun (ty : Type) -> box <| ty.IsInterface)
+                "IsGenericParameter",               (typeof<bool>,       fun (ty : Type) -> box <| ty.IsGenericParameter)
+                "IsNested",                         (typeof<bool>,       fun (ty : Type) -> box <| ty.IsNested)
+                "IsNestedPublic",                   (typeof<bool>,       fun (ty : Type) -> box <| ty.IsNestedPublic)
+                "IsPublic",                         (typeof<bool>,       fun (ty : Type) -> box <| ty.IsPublic)
+                "IsNotPublic",                      (typeof<bool>,       fun (ty : Type) -> box <| ty.IsNotPublic)
+                "IsSealed",                         (typeof<bool>,       fun (ty : Type) -> box <| ty.IsSealed)
+                "IsGenericType",                    (typeof<bool>,       fun (ty : Type) -> box <| ty.IsGenericType)
+                "IsGenericTypeDefinition",          (typeof<bool>,       fun (ty : Type) -> box <| ty.IsGenericTypeDefinition)
+                "IsRecord",                         (typeof<bool>,       fun (ty : Type) -> box <| Reflection.FSharpType.IsRecord(ty))
+                "IsFunction",                       (typeof<bool>,       fun (ty : Type) -> box <| Reflection.FSharpType.IsFunction(ty))
+                "IsModule",                         (typeof<bool>,       fun (ty : Type) -> box <| Reflection.FSharpType.IsModule(ty))
+                "IsExceptionRepresentation",        (typeof<bool>,       fun (ty : Type) -> box <| Reflection.FSharpType.IsExceptionRepresentation(ty))
+                "IsTuple",                          (typeof<bool>,       fun (ty : Type) -> box <| Reflection.FSharpType.IsTuple(ty))
+                "IsUnion",                          (typeof<bool>,       fun (ty : Type) -> box <| Reflection.FSharpType.IsUnion(ty))
+                "GetPublicProperties_Length",       (typeof<int>,        fun (ty : Type) -> box <| ty.GetProperties().Length)
+                "GetPublicConstructors_Length",     (typeof<int>,        fun (ty : Type) -> box <| ty.GetConstructors().Length)
+                "GetPublicMethods_Length",          (typeof<int>,        fun (ty : Type) -> box <| ty.GetMethods().Length)
+                "GetGenericArguments_Length",       (typeof<int>,        fun (ty : Type) -> box <| ty.GetGenericArguments().Length)
+                "CustomAttribute_Names",            (typeof<string[]>,   fun (ty : Type) -> box <| (ty.CustomAttributes |> Seq.map (fun x -> x.AttributeType.Name) |> Seq.toArray))
+                "CustomAttributes_Length",          (typeof<int>,        fun (ty : Type) -> box <| Seq.length ty.CustomAttributes)
+                "Assembly_CodeBase",                (typeof<string>,     fun (ty : Type) -> box <| ty.Assembly.CodeBase)
+                "Assembly_CustomAttributes_Count",  (typeof<int>,        fun (ty : Type) -> box <| Seq.length ty.Assembly.CustomAttributes)
+                "Assembly_DefinedTypes_Count",      (typeof<int>,        fun (ty : Type) -> box <| Seq.length ty.Assembly.DefinedTypes)
+                "Assembly_FullName",                (typeof<string>,     fun (ty : Type) -> box <| ty.Assembly.FullName)
+                "Assembly_EntryPoint_isNull",       (typeof<bool>,       fun (ty : Type) -> box <| isNull ty.Assembly.EntryPoint)
+//                "GUID",                             (typeof<string>,     fun (ty : Type) -> box <| ty.GUID.ToString())
+           ]
 
-        rootType.AddMember(ProvidedProperty("CustomAttribute_Names", typeof<string[]>, getterCode = (fun args -> let v = (ty.CustomAttributes |> Seq.map (fun x -> x.AttributeType.Name) |> Seq.toArray) in <@@ v  @@> ), isStatic=true))      
-        rootType.AddMember(ProvidedProperty("CustomAttributes_Length", typeof<int>, getterCode = (fun args -> let v = Seq.length ty.CustomAttributes in <@@ v  @@> ), isStatic=true))
-        // Raises error is used in program
-        rootType.AddMember(ProvidedProperty("Assembly_CodeBase", typeof<string>, getterCode = (fun args -> let v = ty.Assembly.CodeBase in <@@ v  @@> ), isStatic=true))        
-        
-        // Raises error is used in program
-        rootType.AddMember(ProvidedProperty("Assembly_CustomAttributes_Count", typeof<int>, getterCode = (fun args -> let v = Seq.length ty.Assembly.CustomAttributes in <@@ v  @@> ), isStatic=true))        
-        
-        // Always returns 0
-        rootType.AddMember(ProvidedProperty("Assembly_DefinedTypes_Count", typeof<int>, getterCode = (fun args -> let v = Seq.length ty.Assembly.DefinedTypes in <@@ v  @@> ), isStatic=true))        
+    let (|UnKey|) (kvp : Generic.KeyValuePair<'a, 'b>) =
+        kvp.Key, kvp.Value
 
-        rootType.AddMember(ProvidedProperty("Assembly_FullName", typeof<string>, getterCode = (fun args -> let v = ty.Assembly.FullName in <@@ v  @@> ), isStatic=true))        
-        rootType.AddMember(ProvidedProperty("Assembly_EntryPoint_isNull", typeof<bool>, getterCode = (fun args -> let v = isNull ty.Assembly.EntryPoint in <@@ v  @@> ), isStatic=true))        
-        // TODO - more here
-        rootType.AddMember(ProvidedProperty("GUID", typeof<string>, getterCode = (fun args -> let v = ty.GUID.ToString() in <@@ v  @@> ), isStatic=true))        
+    let metadataType =
+        let rootType = ProvidedTypeDefinition(runtimeAssembly, ns ,"Metadata", baseType = Some typeof<GD>, hideObjectMethods=true)
+        for UnKey (name, (propTy, _)) in properties do
+            let prop = ProvidedProperty(name, typeof<string>, getterCode = (fun ms -> let m = ms.[0] in <@@ (%%m : GD).[name] @@>), isStatic=false)
+            rootType.AddMember(prop)
         rootType
 
-    let paramType = ProvidedTypeDefinition(runtimeAssembly, ns, "Summarize", Some(typeof<obj>), hideObjectMethods = true)
-    
-    do paramType.DefineStaticParameters(
+    let createMethod (t : Type) (name : string) : ProvidedMethod =
+        let invoke (_ : Quotations.Expr list) =
+            let object = properties |> Map.map (fun a (t', g) -> try g t with | _ -> "NOT SUPPORTED")
+            let dictionaryVar = Var("dictionary", typeof<GD>)
+            let dictionary : Expr<GD> = dictionaryVar |> Expr.Var |> Expr.Cast
+            let setValues =
+              object
+              |> Seq.fold (fun state (UnKey(name, arg)) ->
+                <@ (%dictionary).[name] <- arg
+                   %state @>) <@ %dictionary @>
+            Expr.Let(dictionaryVar, <@ GD() @>, setValues)
+        let method = ProvidedMethod(name, [ProvidedParameter("unit", typeof<unit>)], metadataType, invoke, isStatic = true)
+        metadataType.AddMember(method)
+        method
+
+    let builder = ProvidedMethod("Create", [], metadataType, Unchecked.defaultof<_>, isStatic = true)
+    do builder.DefineStaticParameters(
         [
             ProvidedStaticParameter("Type",typeof<Type>, null)
-        ], fun typeName args -> createTypes (unbox args.[0]) typeName)
+        ], fun typeName args -> createMethod (unbox args.[0]) typeName)
 
-    do this.AddNamespace(ns, [paramType])
-                            
-[<assembly:TypeProviderAssembly>] 
+    do metadataType.AddMember(builder)
+
+    do this.AddNamespace(ns, [metadataType])
+
+[<assembly:TypeProviderAssembly>]
 do()
 

@@ -190,7 +190,7 @@ and ReflectTypeSymbol(kind: ReflectTypeSymbolKind, args: Type[]) =
 
     override __.DeclaringType =                                                                 
         match kind,args with 
-        | ReflectTypeSymbolKind.SDArray,[| arg |] 
+        | ReflectTypeSymbolKind.SDArray,[| arg |]
         | ReflectTypeSymbolKind.Array _,[| arg |] 
         | ReflectTypeSymbolKind.Pointer,[| arg |] 
         | ReflectTypeSymbolKind.ByRef,[| arg |] -> arg.DeclaringType
@@ -860,16 +860,25 @@ and ReflectTypeDefinition (asm: ReflectAssembly, declTyOpt: Type option, tcref: 
 
     let rec gps = tcref.TyparsNoRange |> List.mapi (fun i gp -> TxGenericParam (fun () -> gps, [| |]) i gp) |> List.toArray
 
-    let isNested = declTyOpt.IsSome
+    member this.isNested =
+        this.FullName.Contains("+")
 
     override __.Name = tcref.CompiledName 
     override __.Assembly = (asm :> Assembly) 
     override __.DeclaringType = declTyOpt |> optionToNull
-    override __.MemberType = if isNested then MemberTypes.NestedType else MemberTypes.TypeInfo
+    override this.MemberType =
+        if this.isNested then MemberTypes.NestedType else MemberTypes.TypeInfo
 
-    override __.FullName = tcref.CompiledRepresentationForNamedType.FullName
+    override __.FullName = 
+        tcref.CompiledRepresentationForNamedType.QualifiedName
                     
-    override __.Namespace = tcref.CompiledRepresentationForNamedType.Enclosing.[0]
+    override __.Namespace =
+        let outerType = tcref.CompiledRepresentationForNamedType.Enclosing.[0]
+        if outerType.Contains(".") then
+            let i = outerType.LastIndexOf('.')
+            outerType.[0..i-1]
+        else
+            null
     override __.BaseType = null//inp. |> Option.map (TxILType (gps, [| |])) |> optionToNull
     override __.GetInterfaces() = tcref.ImmediateInterfaceTypesOfFSharpTycon |> List.map asm.TxTType |> List.toArray
 
@@ -1060,39 +1069,48 @@ and ReflectTypeDefinition (asm: ReflectAssembly, declTyOpt: Type option, tcref: 
              }
             )
 
-    //interface IReflectableType with 
-    //    member x.GetTypeInfo() = 
-    //        { new TypeInfo() with 
-    //            member __.AsType() = x :?> Type 
-    //        }
-             
-
 and ReflectAssembly(g, ccu: CcuThunk, location:string) as asm =
     inherit Assembly()
 
     // A table tracking how type definition objects are translated.
-    let txTable = TxTable<Type>()
+    let txTable = TxTable<ReflectTypeDefinition>()
     let txTypeDef (declTyOpt: Type option) (inp: TyconRef) =
-        txTable.Get inp.Stamp (fun () -> ReflectTypeDefinition(asm, declTyOpt, inp) :> System.Type)
+        txTable.Get inp.Stamp (fun () -> ReflectTypeDefinition(asm, declTyOpt, inp))
 
-    let name = lazy new AssemblyName(match ccu.ILScopeRef with ILScopeRef.Local -> ccu.AssemblyName | _ -> ccu.ILScopeRef.QualifiedNameWithNoShortPrimaryAssembly)
-    let fullName = lazy name.Value.ToString()
+    let name =
+        lazy
+        new AssemblyName(
+            match ccu.ILScopeRef with
+            | ILScopeRef.Local -> ccu.AssemblyName
+            | _ -> ccu.ILScopeRef.QualifiedNameWithNoShortPrimaryAssembly
+        )
+    let fullName =
+        let printWithDefault x d = if x |> isNull then d else x.ToString()
+        lazy
+            let name = name.Value
+            if name.Version |> isNull then
+                sprintf "%s, Version=%s, Culture=%s, PublicKeyToken=%s" 
+                    name.Name
+                    (printWithDefault name.Version "0.0.0.0") 
+                    (printWithDefault name.CultureInfo "neutral")
+                    (printWithDefault (name.GetPublicKeyToken()) "null")
+            else
+                name.FullName
     let types = lazy [| for td in ccu.RootModulesAndNamespaces -> txTypeDef None (mkLocalEntityRef td) |]
 
-    override x.GetTypes () = types.Value
+    override x.GetTypes () = types.Value |> Array.map (fun x -> x :> System.Type)
     override x.Location = location
 
-    override x.GetType (nm:string) = 
-        if nm.Contains("+") then 
-            let i = nm.LastIndexOf("+")
-            let enc,nm2 = nm.[0..i-1], nm.[i+1..]
-            match x.GetType(enc) with 
-            | null -> null
-            | t -> t.GetNestedType(nm2,BindingFlags.Public ||| BindingFlags.NonPublic)
-        elif nm.Contains("`") then
-            let argI, argE = nm.LastIndexOf("["), nm.LastIndexOf("]")
-            let i = nm.LastIndexOf(".", nm.LastIndexOf("`"))
-            let nsp,nm2, args = nm.[0..i-1], nm.[i+1..argI-1], nm.[argI+1..argE-1]
+    override x.GetType (path:string) =
+        let matches name (t : ReflectTypeDefinition) =
+            name = t.Metadata.CompiledRepresentationForNamedType.QualifiedName
+        let findType name =
+            txTable.Values
+            |> Seq.tryFind (matches name)
+            |> Option.map (fun x -> x :> System.Type)
+        if path.Contains("`") then
+            let argI, argE = path.IndexOf("["), path.LastIndexOf("]")
+            let path2, args = path.[0..argI-1], path.[argI+1..argE-1]
             let genTypeArgs = 
                 args.Split([|","|], StringSplitOptions.RemoveEmptyEntries) 
                 |> Array.map (fun a ->
@@ -1100,15 +1118,12 @@ and ReflectAssembly(g, ccu: CcuThunk, location:string) as asm =
                     | null -> Type.GetType(a)
                     | a -> a
                 )
-            match x.TryBindType(Some nsp, nm2) with 
+            match findType path2 with
             | Some t -> t.MakeGenericType(genTypeArgs)
             | None -> null
-        elif nm.Contains(".") then 
-            let i = nm.LastIndexOf(".")
-            let nsp,nm2 = nm.[0..i-1], nm.[i+1..]
-            x.TryBindType(Some nsp, nm2) |> optionToNull
         else
-            x.TryBindType(None, nm) |> optionToNull
+            findType path
+            |> Option.toObj
 
     override x.GetName () = name.Value
 
@@ -1119,19 +1134,10 @@ and ReflectAssembly(g, ccu: CcuThunk, location:string) as asm =
     override x.GetManifestResourceStream(_:string) = 
         notRequired "GetManifestResourceStreams"
 
-    member x.TryBindType(nsp:string option, nm:string) : Type option = 
-        match ccu.RootModulesAndNamespaces |> List.tryFind (fun x -> x.CompiledName = nm) with 
-        | Some td -> txTypeDef None (mkLocalTyconRef td) |> Some
-        | None -> 
-        match ccu.RootTypeAndExceptionDefinitions |> List.tryFind (fun x -> x.CompiledName = nm) with 
-        | Some td -> txTypeDef None (mkLocalTyconRef td) |> Some
-        | None -> 
-        txTable.Values |> Seq.tryFind (fun t -> (match nsp with | Some ns -> t.Namespace = ns | None -> true) && t.Name = nm)
-
     override x.ToString() = "ctxt assembly " + x.FullName
 
 
-    member __.TxTypeDef declTyOpt inp = txTypeDef declTyOpt inp
+    member __.TxTypeDef declTyOpt inp = txTypeDef declTyOpt inp :> System.Type
 
         /// Makes a field definition read from a binary available as a FieldInfo. Not all methods are implemented.
     member asm.TxTType (typ:TType) = 

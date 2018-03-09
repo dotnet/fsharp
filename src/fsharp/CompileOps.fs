@@ -4060,7 +4060,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
     member tcImports.ImportQualifiedTypeNameAsTypeValue(qname:string, m) =
         // Qualified name string --> TyconRef
         assert (qname.Contains(",")) // we expected a qualified type name, even for references to the assembly being compiled
-        let commaPos = qname.IndexOf ','
+        let commaPos = qname.LastIndexOf ','
         let typeName = qname.[0..commaPos-1]
         let ilTypeRef =
             let assName = if commaPos+2 < qname.Length then qname.[commaPos+2..]  else ""
@@ -5422,11 +5422,11 @@ type TcState =
 
  
 /// Create the initial type checking state for compiling an assembly
-let GetInitialTcState(m, ccuName, tcConfig:TcConfig, tcGlobals, tcImports:TcImports, niceNameGen, tcEnv0) =
+let GetInitialTcState(m, ccuName : string, tcConfig:TcConfig, tcGlobals, tcImports:TcImports, niceNameGen, tcEnv0) =
     ignore tcImports
 
-    // Create a ccu to hold all the results of compilation 
-    let ccuType = NewCcuContents ILScopeRef.Local m ccuName (NewEmptyModuleOrNamespaceType Namespace)
+    // Create a ccu to hold all the results of compilation
+    let ccuType = NewCcuContents ILScopeRef.Local m ccuName (NewEmptyModuleOrNamespaceType ModuleOrNamespaceKind.Namespace)
 
     let ccuData : CcuData = 
         { IsFSharp=true
@@ -5441,8 +5441,8 @@ let GetInitialTcState(m, ccuName, tcConfig:TcConfig, tcGlobals, tcImports:TcImpo
 #endif
           FileName=None 
           Stamp = newStamp()
-          QualifiedName= None
-          SourceCodeDirectory = tcConfig.implicitIncludeDir 
+          QualifiedName = None
+          SourceCodeDirectory = tcConfig.implicitIncludeDir
           ILScopeRef=ILScopeRef.Local
           Contents=ccuType
           MemberSignatureEquality= (Tastops.typeEquivAux EraseAll tcGlobals)

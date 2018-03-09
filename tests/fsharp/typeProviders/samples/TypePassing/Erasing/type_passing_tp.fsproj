@@ -50,7 +50,6 @@
     <Compile Include="paket-files/sourcefiles/TobyShaw/FSharp.TypeProviders.SDK/src/ProvidedTypes.fsi" />
     <Compile Include="paket-files/sourcefiles/TobyShaw/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs" />
     <Compile Include="type_passing_tp.fs" />
-    <None Include="Script.fsx" />
   </ItemGroup>
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v2.0' Or $(TargetFrameworkVersion) == 'v3.0' Or $(TargetFrameworkVersion) == 'v3.5')">

@@ -5,27 +5,31 @@ open FSharp.Reflection
 open Test
 
 [<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Field)>]
-type MyTpAttribute(name:string) = 
-     inherit Attribute() 
+type MyTpAttribute(name:string) =
+     inherit Attribute()
 
      member x.Name with get() = name
 
+module MyModule =
 
-type [<MyTpAttribute("Foo")>] AttributedRecord = 
+    type TypeInModule =
+        { x : int }
+
+type [<MyTpAttribute("Foo")>] AttributedRecord =
     { Id : string }
     member x.TestInstanceProperty = 1
     member x.TestInstanceMethod(y:string) = y
     static member TestStaticMethod(y:string) = y
     static member TestStaticProperty = 2
 
-type MyRecord = 
+type MyRecord =
     { Id: string }
     member x.TestInstanceProperty = 1
     member x.TestInstanceMethod(y:string) = y
     static member TestStaticMethod(y:string) = y
     static member TestStaticProperty = 2
 
-type MyUnion = 
+type MyUnion =
     | A of int
     | B of string
     member x.TestInstanceProperty = 1
@@ -33,9 +37,9 @@ type MyUnion =
     static member TestStaticMethod(y:string) = y
     static member TestStaticProperty = 2
 
-    
-type MyGenericRecord<'a> = 
-    { Id: 'a }
+
+type MyGenericRecord<'a, 'b> =
+    { Id: 'a; X : 'b }
     member x.TestInstanceProperty = 1
     member x.TestInstanceMethod(y:string) = y
     static member TestStaticMethod(y:string) = y
@@ -43,228 +47,175 @@ type MyGenericRecord<'a> =
 
 let mutable failures = []
 
-let check nm v1 v2 = 
-    if v1 = v2 then printfn "%s: PASSED" nm
-    else 
+let check nm v1 v2 =
+    if v1 = v2 then ()
+    else
         failures <- failures @ [nm]
-        printfn "\n*** %s: FAILED, expected %A, got %A\n" nm v2 v1
+        printfn "%s, expected %A, got %A\n" nm v2 v1
 
-let inaccurate nm v1 v2 v3 = 
+let inaccurate nm v1 v2 v3 =
     if v1 = v2 then printfn "%s: PASSED (was failing, now passing)" nm
     elif v1 = v3 then printfn "%s: PASSED (inaccurate), expected %A, allowing %A" nm v2 v1
-    else 
+    else
         failures <- failures @ [nm]
         printfn "\n*** %s: FAILED, expected %A, got %A, would have accepted %A\n" nm v2 v1 v3
 
-module AttributedRecord = 
+let betterCheck prefix testName expected actualGetter =
+    let name = prefix + ": " + testName
+    try
+        let actual = actualGetter()
+        check name actual (string expected)
+    with
+    | e -> printfn "\n*** %s: THREW EXCEPTION, Message = %s\n" name e.Message
 
-    let T = typeof<AttributedRecord>
-    type S = TypePassing.Summarize<AttributedRecord>
-    check "acnkewcwpo1" S.Name T.Name
-    inaccurate "acnkewcwpo2" S.Assembly_DefinedTypes_Count (Seq.length T.Assembly.DefinedTypes) 0  // INACCURACY: this is wrong value, not sure why
-    inaccurate "acnkewcwpo3" S.Assembly_FullName T.FullName "script" // INACCURACY: the full name is not returned
-    check "acnkewcwpo3" S.IsAbstract T.IsAbstract
-    check "acnkewcwpo3" S.IsAnsiClass T.IsAnsiClass
-    check "acnkewcwpo3" S.IsArray T.IsArray
-    check "acnkewcwpo4" S.IsClass T.IsClass
-    inaccurate "acnkewcwpo5a" S.IsPublic T.IsPublic true // INACCURACY: This should report "false", and IsNestedPublic should report "true"
-    inaccurate "acnkewcwpo5b" S.IsNestedPublic T.IsNestedPublic false // INACCURACY: This should report "true", and IsPublic should report "false"
-    check "acnkewcwpo6" S.IsNotPublic T.IsNotPublic
-    check "acnkewcwpo7" S.IsValueType T.IsValueType
-    check "acnkewcwpo8" S.IsInterface T.IsInterface
-    check "acnkewcwpo18"
-    inaccurate "acnkewcwpo9" S.IsRecord (FSharpType.IsRecord(T)) false // INACCURACY:  Getting FSharp.Core reflection to give the right answer here is a  tricky as it looks for attributes that aren't in the TAST
-    check "acnkewcwpo10" S.IsFunction (FSharpType.IsFunction(T))
-    check "acnkewcwpo11" S.IsModule (FSharpType.IsModule(T))
-    check "acnkewcwpo12" S.IsExceptionRepresentation (FSharpType.IsExceptionRepresentation(T))
-    check "acnkewcwpo13" S.IsTuple (FSharpType.IsTuple(T))
-    check "acnkewcwpo14" S.IsUnion (FSharpType.IsUnion(T))
-    inaccurate "acnkewcwpo15" S.GetPublicProperties_Length (T.GetProperties().Length) 2 // INACCURACY: this should also report the properties for the F# record fields (which are not in the TAST unfortunately)
-    inaccurate "acnkewcwpo16" S.GetPublicConstructors_Length (T.GetConstructors().Length)  0  // INACCURACY: this should also report the constructor for the F# record type
-    inaccurate "acnkewcwpo17" S.GetPublicMethods_Length (T.GetMethods().Length)  4 // INACCURACY: like GetProperties, this should report the getter methods for the properties for the F# record fields (which are not in the TAST unfortunately)
-#if CURRENTLY_GIVES_COMPILATION_ERROR_NEED_TO_CHECK_IF_EXPECTED
-    check "acnkewcwpo18" S.Assembly_EntryPoint_isNull true
-    check "acnkewcwpo19" S.GUID ""
-    check "acnkewcwpo20" (try S.Assembly_CodeBase; false with _ -> true) true
-    check "acnkewcwpo21" S.Assembly_CustomAttributes_Count 0
-#endif
-    check "acnkewcwpo22" S.IsGenericType (T.IsGenericType)
-    check "acnkewcwpo23" S.IsGenericTypeDefinition (T.IsGenericTypeDefinition)
-    check "acnkewcwpo24" S.GetGenericArguments_Length (T.GetGenericArguments().Length)
-    inaccurate "acnkewcwpo25" S.CustomAttributes_Length (Seq.length T.CustomAttributes) 3 //Inaccuracy: Serializable and compliation mapping attributes not included I guess these aren't included in the TAST. Same reason why IsRecord fails?
-   // TODO: rest of System.Type properties and methods
-   // TODO: reset of FSharp Reflection methods 
+type TypeMetadata = TypePassing.Metadata
 
+let compare (expected : Type) (actual : TypeMetadata) =
+    let prefix = expected.Name
+    let check x = betterCheck prefix x //'
+    check "Name"
+        (string <| expected.Name)
+        (fun () -> actual.Name)
+    check "FullName"
+        (string <| expected.FullName)
+        (fun () -> actual.FullName)
+    check "AssemblyQualifiedName"
+        (string <| expected.AssemblyQualifiedName)
+        (fun () -> actual.AssemblyQualifiedName)
+    check "IsAbstract"
+        (string <| expected.IsAbstract)
+        (fun () -> actual.IsAbstract)
+    check "IsAnsiClass"
+        (string <| expected.IsAnsiClass)
+        (fun () -> actual.IsAnsiClass)
+    check "IsArray"
+        (string <| expected.IsArray)
+        (fun () -> actual.IsArray)
+    check "IsAutoClass"
+        (string <| expected.IsAutoClass)
+        (fun () -> actual.IsAutoClass)
+    check "IsAutoLayout"
+        (string <| expected.IsAutoLayout)
+        (fun () -> actual.IsAutoLayout)
+    check "IsByRef"
+        (string <| expected.IsByRef)
+        (fun () -> actual.IsByRef)
+    check "IsClass"
+        (string <| expected.IsClass)
+        (fun () -> actual.IsClass)
+    check "IsValueType"
+        (string <| expected.IsValueType)
+        (fun () -> actual.IsValueType)
+    check "IsInterface"
+        (string <| expected.IsInterface)
+        (fun () -> actual.IsInterface)
+    check "IsGenericParameter"
+        (string <| expected.IsGenericParameter)
+        (fun () -> actual.IsGenericParameter)
+    check "IsNested"
+        (string <| expected.IsNested)
+        (fun () -> actual.IsNested)
+    check "IsNestedPublic"
+        (string <| expected.IsNestedPublic)
+        (fun () -> actual.IsNestedPublic)
+    check "IsPublic"
+        (string <| expected.IsPublic)
+        (fun () -> actual.IsPublic)
+    check "IsNotPublic"
+        (string <| expected.IsNotPublic)
+        (fun () -> actual.IsNotPublic)
+    check "IsSealed"
+        (string <| expected.IsSealed)
+        (fun () -> actual.IsSealed)
+    check "IsGenericType"
+        (string <| expected.IsGenericType)
+        (fun () -> actual.IsGenericType)
+    check "IsGenericTypeDefinition"
+        (string <| expected.IsGenericTypeDefinition)
+        (fun () -> actual.IsGenericTypeDefinition)
+    check "IsRecord"
+        (string <| Reflection.FSharpType.IsRecord(expected))
+        (fun () -> actual.IsRecord)
+    check "IsFunction"
+        (string <| Reflection.FSharpType.IsFunction(expected))
+        (fun () -> actual.IsFunction)
+    check "IsModule"
+        (string <| Reflection.FSharpType.IsModule(expected))
+        (fun () -> actual.IsModule)
+    check "IsExceptionRepresentation"
+        (string <| Reflection.FSharpType.IsExceptionRepresentation(expected))
+        (fun () -> actual.IsExceptionRepresentation)
+    check "IsTuple"
+        (string <| Reflection.FSharpType.IsTuple(expected))
+        (fun () -> actual.IsTuple)
+    check "IsUnion"
+        (string <| Reflection.FSharpType.IsUnion(expected))
+        (fun () -> actual.IsUnion)
+    check "GetPublicProperties_Length"
+        (string <| expected.GetProperties().Length)
+        (fun () -> actual.GetPublicProperties_Length)
+    check "GetPublicConstructors_Length"
+        (string <| expected.GetConstructors().Length)
+        (fun () -> actual.GetPublicConstructors_Length)
+    check "GetPublicMethods_Length"
+        (string <| expected.GetMethods().Length)
+        (fun () -> actual.GetPublicMethods_Length)
+    check "GetGenericArguments_Length"
+        (string <| expected.GetGenericArguments().Length)
+        (fun () -> actual.GetGenericArguments_Length)
+    check "CustomAttribute_Names"
+        (string <| (expected.CustomAttributes |> Seq.map (fun x -> x.AttributeType.Name) |> Seq.toArray))
+        (fun () -> actual.CustomAttribute_Names)
+    check "CustomAttributes_Length"
+        (string <| Seq.length expected.CustomAttributes)
+        (fun () -> actual.CustomAttributes_Length)
+//    check "Assembly_CodeBase"
+//        (string <| expected.Assembly.CodeBase)
+//        (fun () -> actual.Assembly_CodeBase)
+//    check "Assembly_CustomAttributes_Count"
+//        (string <| Seq.length expected.Assembly.CustomAttributes)
+//        (fun () -> actual.Assembly_CustomAttributes_Count)
+//    check "Assembly_DefinedTypes_Count"
+//        (string <| Seq.length expected.Assembly.DefinedTypes)
+//        (fun () -> actual.Assembly_DefinedTypes_Count)
+//    check "Assembly_FullName"
+//        (string <| expected.Assembly.FullName)
+//        (fun () -> actual.Assembly_FullName)
+//    check "Assembly_EntryPoint_isNull"
+//        (string <| isNull expected.Assembly.EntryPoint)
+//        (fun () -> actual.Assembly_EntryPoint_isNull)
 
-// Check an generic F# record type from this assembly
-module MyGenericRecord = 
-    let T = typeof<MyGenericRecord<String>>
-    type S = TypePassing.Summarize<MyGenericRecord<String>>
-    check "gcnkewcwpo1" S.Name T.Name
-    inaccurate "gcnkewcwpo2" S.Assembly_DefinedTypes_Count (Seq.length T.Assembly.DefinedTypes) 0  // INACCURACY: this is wrong value, not sure why
-    inaccurate "gcnkewcwpo3" S.Assembly_FullName T.FullName "script" // INACCURACY: the full name is not returned
-    check "gcnkewcwpo3" S.IsAbstract T.IsAbstract
-    check "gcnkewcwpo3" S.IsAnsiClass T.IsAnsiClass
-    check "gcnkewcwpo3" S.IsArray T.IsArray
-    check "gcnkewcwpo4" S.IsClass T.IsClass
-    inaccurate "gcnkewcwpo5a" S.IsPublic T.IsPublic true // INACCURACY: This should report "false", and IsNestedPublic should report "true"
-    inaccurate "gcnkewcwpo5b" S.IsNestedPublic T.IsNestedPublic false // INACCURACY: This should report "true", and IsPublic should report "false"
-    check "gcnkewcwpo6" S.IsNotPublic T.IsNotPublic
-    check "gcnkewcwpo7" S.IsValueType T.IsValueType
-    check "gcnkewcwpo8" S.IsInterface T.IsInterface
-    check "gcnkewcwpo18"
-    inaccurate "gcnkewcwpo9" S.IsRecord (FSharpType.IsRecord(T)) false // INACCURACY:  Getting FSharp.Core reflection to give the right answer here is a  tricky as it looks for attributes that aren't in the TAST
-    check "gcnkewcwpo10" S.IsFunction (FSharpType.IsFunction(T))
-    check "gcnkewcwpo11" S.IsModule (FSharpType.IsModule(T))
-    check "gcnkewcwpo12" S.IsExceptionRepresentation (FSharpType.IsExceptionRepresentation(T))
-    check "gcnkewcwpo13" S.IsTuple (FSharpType.IsTuple(T))
-    check "gcnkewcwpo14" S.IsUnion (FSharpType.IsUnion(T))
-    inaccurate "gcnkewcwpo15" S.GetPublicProperties_Length (T.GetProperties().Length) 2 // INACCURACY: this should also report the properties for the F# record fields (which are not in the TAST unfortunately)
-    inaccurate "gcnkewcwpo16" S.GetPublicConstructors_Length (T.GetConstructors().Length)  0  // INACCURACY: this should also report the constructor for the F# record type
-    inaccurate "gcnkewcwpo17" S.GetPublicMethods_Length (T.GetMethods().Length)  4 // INACCURACY: like GetProperties, this should report the getter methods for the properties for the F# record fields (which are not in the TAST unfortunately)
-#if CURRENTLY_GIVES_COMPILATION_ERROR_NEED_TO_CHECK_IF_EXPECTED
-    check "gcnkewcwpo18" S.Assembly_EntryPoint_isNull true
-    check "gcnkewcwpo19" S.GUID ""
-    check "gcnkewcwpo20" (try S.Assembly_CodeBase; false with _ -> true) true
-    check "gcnkewcwpo21" S.Assembly_CustomAttributes_Count 0
-#endif
-    check "gcnkewcwpo22" S.IsGenericType (T.IsGenericType)
-    check "gcnkewcwpo23" S.IsGenericTypeDefinition (T.IsGenericTypeDefinition)
-    check "gcnkewcwpo24" S.GetGenericArguments_Length (T.GetGenericArguments().Length)
-   // TODO: rest of System.Type properties and methods
-   // TODO: reset of FSharp Reflection methods 
-    
-module MyRecord = 
-    let T = typeof<MyRecord>
-    type S = TypePassing.Summarize<MyRecord>
-    check "cnkewcwpo1" S.Name T.Name
-    inaccurate "cnkewcwpo2" S.Assembly_DefinedTypes_Count (Seq.length T.Assembly.DefinedTypes) 0  // INACCURACY: this is wrong value, not sure why
-    inaccurate "cnkewcwpo3" S.Assembly_FullName T.FullName "script" // INACCURACY: the full name is not returned
-    check "cnkewcwpo3" S.IsAbstract T.IsAbstract
-    check "cnkewcwpo3" S.IsAnsiClass T.IsAnsiClass
-    check "cnkewcwpo3" S.IsArray T.IsArray
-    check "cnkewcwpo4" S.IsClass T.IsClass
-    inaccurate "cnkewcwpo5a" S.IsPublic T.IsPublic true // INACCURACY: This should report "false", and IsNestedPublic should report "true"
-    inaccurate "cnkewcwpo5b" S.IsNestedPublic T.IsNestedPublic false // INACCURACY: This should report "true", and IsPublic should report "false"
-    check "cnkewcwpo6" S.IsNotPublic T.IsNotPublic
-    check "cnkewcwpo7" S.IsValueType T.IsValueType
-    check "cnkewcwpo8" S.IsInterface T.IsInterface
-    inaccurate "cnkewcwpo9" S.IsRecord (FSharpType.IsRecord(T)) false // INACCURACY:  Getting FSharp.Core reflection to give the right answer here is a  tricky as it looks for attributes that aren't in the TAST
-    check "cnkewcwpo10" S.IsFunction (FSharpType.IsFunction(T))
-    check "cnkewcwpo11" S.IsModule (FSharpType.IsModule(T))
-    check "cnkewcwpo12" S.IsExceptionRepresentation (FSharpType.IsExceptionRepresentation(T))
-    check "cnkewcwpo13" S.IsTuple (FSharpType.IsTuple(T))
-    check "cnkewcwpo14" S.IsUnion (FSharpType.IsUnion(T))
-    inaccurate "cnkewcwpo15" S.GetPublicProperties_Length (T.GetProperties().Length) 2 // INACCURACY: this should also report the properties for the F# record fields (which are not in the TAST unfortunately)
-    inaccurate "cnkewcwpo16" S.GetPublicConstructors_Length (T.GetConstructors().Length)  0  // INACCURACY: this should also report the constructor for the F# record type
-    inaccurate "cnkewcwpo17" S.GetPublicMethods_Length (T.GetMethods().Length)  4 // INACCURACY: like GetProperties, this should report the getter methods for the properties for the F# record fields (which are not in the TAST unfortunately)
-#if CURRENTLY_GIVES_COMPILATION_ERROR_NEED_TO_CHECK_IF_EXPECTED
-    check "cnkewcwpo18" S.Assembly_EntryPoint_isNull true
-    check "cnkewcwpo19" S.GUID ""
-    check "cnkewcwpo20" (try S.Assembly_CodeBase; false with _ -> true) true
-    check "cnkewcwpo21" S.Assembly_CustomAttributes_Count 0
-#endif
-    check "cnkewcwpo22" S.IsGenericType (T.IsGenericType)
-    check "cnkewcwpo23" S.IsGenericTypeDefinition (T.IsGenericTypeDefinition)
-    check "cnkewcwpo24" S.GetGenericArguments_Length (T.GetGenericArguments().Length)
-   // TODO: rest of System.Type properties and methods
-   // TODO: reset of FSharp Reflection methods 
+module AttributedRecordTest =
+    let actual = TypePassing.Metadata.Create<AttributedRecord>()
+    let expected = typeof<AttributedRecord>
+    compare expected actual
 
+module MyRecordTest =
+    let actual = TypePassing.Metadata.Create<MyRecord>()
+    let expected = typeof<MyRecord>
+    compare expected actual
 
-// Check an F# record type from this assembly
-module MyUnion = 
-    let T = typeof<MyUnion>
-    type S = TypePassing.Summarize<MyUnion>
-    check "unkewcwpo1" S.Name T.Name
-    inaccurate "unkewcwpo2" S.Assembly_DefinedTypes_Count (Seq.length T.Assembly.DefinedTypes) 0  // INACCURACY: this is wrong value, not sure why
-    inaccurate "unkewcwpo3" S.Assembly_FullName T.FullName "script" // INACCURACY: the full name is not returned
-    inaccurate "unkewcwpo3a" S.IsAbstract T.IsAbstract false  // INACCURACY: reports "false", but "true" is expected for the base class of a union type (but depends on representation of union etc.)
-    inaccurate "unkewcwpo3b" S.IsAnsiClass T.IsAnsiClass true // INACCURACY: reports "true", but "false" is expected, not at all important though
-    check "unkewcwpo3c" S.IsArray T.IsArray
-    check "unkewcwpo4" S.IsClass T.IsClass
-    inaccurate "unkewcwpo5a" S.IsPublic T.IsPublic true // INACCURACY: This should report "false", and IsNestedPublic should report "true"
-    inaccurate "unkewcwpo5b" S.IsNestedPublic T.IsNestedPublic false // INACCURACY: This should report "true", and IsPublic should report "false"
-    check "unkewcwpo6" S.IsNotPublic T.IsNotPublic
-    check "unkewcwpo7" S.IsValueType T.IsValueType
-    check "unkewcwpo8" S.IsInterface T.IsInterface
-    check "unkewcwpo9" S.IsRecord (FSharpType.IsRecord(T)) 
-    check "unkewcwpo10" S.IsFunction (FSharpType.IsFunction(T))
-    check "unkewcwpo11" S.IsModule (FSharpType.IsModule(T))
-    check "unkewcwpo12" S.IsExceptionRepresentation (FSharpType.IsExceptionRepresentation(T))
-    check "unkewcwpo13" S.IsTuple (FSharpType.IsTuple(T))
-    inaccurate "unkewcwpo14" S.IsUnion (FSharpType.IsUnion(T)) false // INACCURACY:  Getting FSharp.Core reflection to give the right answer here is a  tricky as it looks for attributes that aren't in the TAST
-    inaccurate "unkewcwpo15" S.GetPublicProperties_Length (T.GetProperties().Length) 2 // INACCURACY: this should also report the properties for the F# record fields (which are not in the TAST unfortunately)
- 
-    inaccurate "unkewcwpo17" S.GetPublicMethods_Length (T.GetMethods().Length)  4 // INACCURACY: like GetProperties, this should report the getter methods for the properties for the F# record fields (which are not in the TAST unfortunately)
-#if CURRENTLY_GIVES_COMPILATION_ERROR_NEED_TO_CHECK_IF_EXPECTED
-    check "unkewcwpo16" S.GetPublicConstructors_Length (T.GetConstructors().Length)  0 //MOVED: As give compile error with build net40 debug.. 
-    check "unkewcwpo18" S.Assembly_EntryPoint_isNull true
-    check "unkewcwpo19" S.GUID ""
-    check "unkewcwpo20" (try S.Assembly_CodeBase; false with _ -> true) true
-    check "unkewcwpo21" S.Assembly_CustomAttributes_Count 0
-#endif
-    check "unkewcwpo22" S.IsGenericType (T.IsGenericType)
-    check "unkewcwpo23" S.IsGenericTypeDefinition (T.IsGenericTypeDefinition)
-    check "unkewcwpo24" S.GetGenericArguments_Length (T.GetGenericArguments().Length)
-   // TODO: rest of System.Type properties and methods
-   // TODO: reset of FSharp Reflection methods 
+module TypeInModuleTest =
+    let actual = TypePassing.Metadata.Create<MyModule.TypeInModule>()
+    let expected = typeof<MyModule.TypeInModule>
+    compare expected actual
 
+module MyUnionTest =
+    let actual = TypePassing.Metadata.Create<MyUnion>()
+    let expected = typeof<MyUnion>
+    compare expected actual
 
+module MyGenericRecordTest =
+    let actual = TypePassing.Metadata.Create<MyGenericRecord<String, int>>()
+    let expected = typeof<MyGenericRecord<String, int>>
+    compare expected actual
 
-// Check a .NET interface from a system assembly
-module IComparable = 
-    let T = typeof<System.IComparable>
-    type S = TypePassing.Summarize<System.IComparable>
-    check "inkewcwpo1i1" S.Name T.Name
-    check "inkewcwpo1i2" S.FullName T.FullName
-    check "inkewcwpo1i3" S.IsInterface T.IsInterface
-    check "inkewcwpo1i4" S.IsClass T.IsClass
-    check "inkewcwpo1i4" S.IsValueType T.IsValueType
-    check "inkewcwpo2i5" S.Assembly_FullName T.Assembly.FullName
+module IntTest =
+    let actual = TypePassing.Metadata.Create<int>()
+    let expected = typeof<int>
+    compare expected actual
 
-#if CURRENTLY_GIVES_COMPILATION_ERROR_NEED_TO_CHECK_IF_EXPECTED
-    check "inkewcwpo3i" S.Assembly_DefinedTypes_Count 0
-    check "inkewcwpo4i" S.Assembly_EntryPoint_isNull true
-    check "inkewcwpo5i" S.GUID ""
-    check "inkewcwpo6i" (try S.Assembly_CodeBase; false with _ -> true) true
-    check "inkewcwpo7i" S.Assembly_CustomAttributes_Count 0
-#endif
-
-
-
-// Check a .NET primitive struct type from a system assembly
-module Int32 = 
-    let T = typeof<System.Int32>
-    type S = TypePassing.Summarize<System.Int32>
-    check "vnkewcwpo1v" S.Name T.Name
-    check "vnkewcwpo2v" S.FullName T.FullName
-    check "vnkewcwpo1i3" S.IsInterface T.IsInterface
-    check "vnkewcwpo1i4" S.IsClass T.IsClass
-    check "vnkewcwpo1i4" S.IsValueType T.IsValueType
-    check "vnkewcwpo3v" S.Assembly_FullName T.Assembly.FullName
-
-#if CURRENTLY_GIVES_COMPILATION_ERROR_NEED_TO_CHECK_IF_EXPECTED
-    check "vnkewcwpo4v" S.Assembly_DefinedTypes_Count 0
-#endif
-
-module int32_abbreviation = 
-    let T = typeof<int32>
-    type S = TypePassing.Summarize<int32>
-    check "ankewcwpo1" S.Name T.Name
-    check "ankewcwpo1" S.FullName T.FullName
-    check "ankewcwpo1i3" S.IsInterface T.IsInterface
-    check "ankewcwpo1i4" S.IsClass T.IsClass
-    check "ankewcwpo1i4" S.IsValueType T.IsValueType
-    check "ankewcwpo3" S.Assembly_FullName T.Assembly.FullName
-
-#if CURRENTLY_GIVES_COMPILATION_ERROR_NEED_TO_CHECK_IF_EXPECTED
-    check "ankewcwpo3" S.Assembly_DefinedTypes_Count 0
-#endif
-
-
-if failures.Length > 0 then 
-    printfn "FAILURES: %A" failures
-    exit 1
-else   
-    printfn "TEST PASSED (with some inaccuracies)"
-    exit 0
+module IComparableTest =
+    let actual = TypePassing.Metadata.Create<System.IComparable>()
+    let expected = typeof<System.IComparable>
+    compare expected actual
