@@ -31,7 +31,7 @@ open System.Collections.Generic
 let f1 (x: 'a[]) = (x :> ICollection<'a>) 
 do let x = f1 [| 3;4; |] in test "test239809" (x.Contains(3))
 
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
 (* 'a[] :> IReadOnlyCollection<'a> *)
 let f1ReadOnly (x: 'a[]) = (x :> IReadOnlyCollection<'a>) 
 do let x = f1ReadOnly [| 3;4; |] in test "test239809ReadOnly" (x.Count = 2)
@@ -41,7 +41,7 @@ do let x = f1ReadOnly [| 3;4; |] in test "test239809ReadOnly" (x.Count = 2)
 let f2 (x: 'a[]) = (x :> IList<'a>) 
 do let x = f2 [| 3;4; |] in test "test239810" (x.Item(1) = 4)
 
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
 (* 'a[] :> IReadOnlyList<'a> *)
 let f2ReadOnly (x: 'a[]) = (x :> IReadOnlyList<'a>) 
 do let x = f2ReadOnly [| 3;4; |] in test "test239810ReadOnly" (x.Item(1) = 4)
@@ -55,7 +55,7 @@ do let x = f3 [| 3;4; |] in for x in x do (Printf.printf "val %d\n" x) done
 let f4 (x: 'a[]) = (x :> IList<'a>) 
 do let x = f4 [| 31;42; |] in for x in x do (Printf.printf "val %d\n" x) done
 
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
 (* Call 'foreachG' using an IReadOnlyList<int> (solved to IEnumerable<int>) *)
 let f4ReadOnly (x: 'a[]) = (x :> IReadOnlyList<'a>) 
 do let x = f4ReadOnly [| 31;42; |] in for x in x do (Printf.printf "val %d\n" x) done
@@ -65,7 +65,7 @@ do let x = f4ReadOnly [| 31;42; |] in for x in x do (Printf.printf "val %d\n" x)
 let f5 (x: 'a[]) = (x :> ICollection<'a>) 
 do let x = f5 [| 31;42; |] in for x in x do (Printf.printf "val %d\n" x) done
 
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
 (* Call 'foreachG' using an IReadOnlyCollection<int> (solved to IEnumerable<int>) *)
 let f5ReadOnly (x: 'a[]) = (x :> IReadOnlyCollection<'a>) 
 do let x = f5ReadOnly [| 31;42; |] in for x in x do (Printf.printf "val %d\n" x) done
@@ -106,7 +106,7 @@ let testUpcastToEnum1 (x: System.AttributeTargets) = (x :> System.Enum)
 let testUpcastToEnum6 (x: System.Enum) = (x :> System.Enum) 
 
 // these delegates don't exist in portable
-#if !UNIX && !FX_PORTABLE_OR_NETSTANDARD
+#if !UNIX && !NETCOREAPP1_0
 let testUpcastToDelegate1 (x: System.Threading.ThreadStart) = (x :> System.Delegate) 
 
 let testUpcastToMulticastDelegate1 (x: System.Threading.ThreadStart) = (x :> System.MulticastDelegate) 
@@ -244,7 +244,7 @@ module SomeRandomOperatorConstraints = begin
 
     let sum64 seq : int64 = Seq.reduce (+) seq
     let sum32 seq : int64 = Seq.reduce (+) seq
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
     let sumBigInt seq : BigInteger = Seq.reduce (+) seq
 #endif
     let sumDateTime (dt : DateTime) (seq : #seq<TimeSpan>) : DateTime = Seq.fold (+) dt seq
@@ -1790,6 +1790,44 @@ module SRTPFix =
       printfn "%A" <| fmap ((+) 1) (Some 2);
       printfn "%A" <| replace 'q' (test("HI"))
      *)
+
+
+module SRTPFixAmbiguity =
+    // Mini Repro from FSharpPlus https://github.com/gusty/FSharpPlus
+    type Id<'t>(v:'t) = member __.getValue = v
+    type Interface<'t> = abstract member getValue : 't
+
+    type Monad =
+        static member inline InvokeReturn (x:'T) : '``Monad<'T>`` =
+            let inline call (mthd : ^M, output : ^R) = ((^M or ^R) : (static member Return: _ -> _) output)
+            call (Unchecked.defaultof<Monad>, Unchecked.defaultof<'``Monad<'T>``>) x
+        static member Return (_:Interface<'a>) = fun (_:'a) -> Unchecked.defaultof<Interface<'a>> : Interface<'a>
+        static member Return (_:seq<'a>      ) = fun x -> Seq.singleton x                         : seq<'a>
+        static member Return (_:option<'a>   ) = fun x -> Some x                                  : option<'a>
+        static member Return (_:Id<'a>       ) = fun x -> Id x                                    : Id<'a>
+
+        static member inline InvokeBind (source : '``Monad<'T>``) (binder : 'T -> '``Monad<'U>``) : '``Monad<'U>`` =
+            let inline call (mthd : 'M, input : 'I, _output : 'R, f) = ((^M or ^I or ^R) : (static member Bind: _*_ -> _) input, f)
+            call (Unchecked.defaultof<Monad>, source, Unchecked.defaultof<'``Monad<'U>``>, binder)
+        static member Bind (source : Interface<'T>, f : 'T -> Interface<'U>) = f source.getValue    : Interface<'U>
+        static member Bind (source : seq<'T>      , f : 'T -> seq<'U>      ) = Seq.collect f source : seq<'U>
+        static member Bind (source : Id<'T>       , f : 'T -> Id<'U>       ) = f source.getValue    : Id<'U>
+        static member Bind (source :option<'T>    , f : 'T -> _            ) = Option.bind f source : option<'U>
+
+    let inline result (x:'T)                                   = Monad.InvokeReturn x :'``Monad<'T>``
+    let inline (>>=) (x:'``Monad<'T>``) (f:'T->'``Monad<'U>``) = Monad.InvokeBind x f :'``Monad<'U>``
+
+    type ReaderT<'R,'``monad<'T>``> = ReaderT of ('R -> '``monad<'T>``)
+    let runReaderT (ReaderT x) = x : 'R -> '``Monad<'T>``
+    type ReaderT<'R,'``monad<'T>``> with
+        static member inline Return _ = fun (x : 'T) -> ReaderT (fun _ -> result x)                                                   : ReaderT<'R, '``Monad<'T>``> 
+        static member inline Bind (ReaderT (m:_->'``Monad<'T>``), f:'T->_) = ReaderT (fun r -> m r >>= (fun a -> runReaderT (f a) r)) : ReaderT<'R, '``Monad<'U>``>
+
+
+    let test1 : ReaderT<string, option<_>> = ReaderT result >>= result
+    let test2 : ReaderT<string, Id<_>>     = ReaderT result >>= result
+    let test3 : ReaderT<string, seq<_>>    = ReaderT result >>= result
+
 
 // See https://github.com/Microsoft/visualfsharp/issues/4040
 module InferenceRegression4040 = 

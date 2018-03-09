@@ -49,7 +49,7 @@
       </trans-unit>
       <trans-unit id="Show_completion_list_after_a_character_is_typed">
         <source>_Show completion list after a character is typed</source>
-        <target state="translated">_Mostrar lista de finalización después de escribir un carácter</target>
+        <target state="translated">_Mostrar la lista de finalización después de escribir un carácter</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_in_memory_cross_project_references">
@@ -80,6 +80,31 @@
       <trans-unit id="Unused_opens_code_fix">
         <source>Remove unused open statements</source>
         <target state="translated">Quitar instrucciones open no usadas</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Unused_declaration_code_fix">
+        <source>Analyze and suggest fixes for unused values</source>
+        <target state="translated">Analizar y sugerir correcciones para valores no utilizados</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Block_Structure">
+        <source>Block Structure Guides</source>
+        <target state="new">Block Structure Guides</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_guides">
+        <source>Show structure guidelines for F# code</source>
+        <target state="new">Show structure guidelines for F# code</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Outlining">
+        <source>Outlining</source>
+        <target state="new">Outlining</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Outlining">
+        <source>Show outlining and collapsable nodes for F# code</source>
+        <target state="new">Show outlining and collapsable nodes for F# code</target>
         <note />
       </trans-unit>
     </body>

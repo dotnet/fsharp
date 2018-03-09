@@ -88,7 +88,7 @@ module Extensions =
         member x.TryGetFullCompiledOperatorNameIdents() : Idents option =
             // For operator ++ displayName is ( ++ ) compiledName is op_PlusPlus
             if isOperator x.DisplayName && x.DisplayName <> x.CompiledName then
-                x.EnclosingEntity
+                x.DeclaringEntity
                 |> Option.bind (fun e -> e.TryGetFullName())
                 |> Option.map (fun enclosingEntityFullName -> 
                      Array.append (enclosingEntityFullName.Split '.') [| x.CompiledName |])
@@ -157,10 +157,10 @@ type Parent =
                 else ident)
 
         let removeModuleSuffix (idents: Idents) =
-            if entity.IsFSharpModule && idents.Length > 0 && Symbol.hasModuleSuffixAttribute entity then
+            if entity.IsFSharpModule && idents.Length > 0 then
                 let lastIdent = idents.[idents.Length - 1]
-                if lastIdent.EndsWith "Module" then
-                    idents |> Array.replace (idents.Length - 1) (lastIdent.Substring(0, lastIdent.Length - 6))
+                if lastIdent <> entity.DisplayName then
+                    idents |> Array.replace (idents.Length - 1) entity.DisplayName
                 else idents
             else idents
 
@@ -275,7 +275,7 @@ module AssemblyContentProvider =
                             | false, _ -> None 
 
                           WithModuleSuffix = 
-                            if entity.IsFSharpModule && Symbol.hasModuleSuffixAttribute entity then 
+                            if entity.IsFSharpModule && (Symbol.hasModuleSuffixAttribute entity || entity.CompiledName <> entity.DisplayName) then 
                                 currentEntity |> Option.map (fun e -> e.CleanedIdents) 
                             else parent.WithModuleSuffix
 

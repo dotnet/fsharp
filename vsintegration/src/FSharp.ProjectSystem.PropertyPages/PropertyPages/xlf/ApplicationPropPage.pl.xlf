@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="OutputTypeLabel.Text">
         <source>O&amp;utput type:</source>
-        <target state="translated">Typ &amp;wyjściowy:</target>
+        <target state="translated">Typ wy&amp;jściowy:</target>
         <note />
       </trans-unit>
       <trans-unit id="TargetFrameworkLabel.Text">

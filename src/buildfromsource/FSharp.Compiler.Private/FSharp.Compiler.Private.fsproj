@@ -14,9 +14,7 @@
 
   <Import Project="..\BuildFromSource.targets" />
   <ItemGroup>
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Private.dll.fs">
-      <Link>assemblyinfo.FSharp.Compiler.Private.dll.fs</Link>
-    </Compile>
+    <Compile Include="AssemblyInfo.fs" />
     <Compile Include="InternalsVisibleTo.fs" />
     <EmbeddedResource Include="FSComp.resx">
       <Link>FSComp.resx</Link>
@@ -610,9 +608,6 @@
       <Link>InteractiveSession\fsi.fs</Link>
     </Compile>
 
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\InternalsVisibleTo.fs" Condition="'$(TargetDotnetProfile)' != 'coreclr'">
-      <Link>Misc/InternalsVisibleTo.fs</Link>
-    </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\MSBuildReferenceResolver.fs">
       <Link>Misc/MSBuildReferenceResolver.fs</Link>
     </Compile>
@@ -621,7 +616,6 @@
       <Link>Misc/LegacyHostedCompilerForTesting.fs</Link>
     </Compile>
   </ItemGroup>
-  <Import Project = "..\BuildFromSource.targets" />
 
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
@@ -643,7 +637,7 @@
     <PackageReference Include="System.Threading.ThreadPool" Version="4.3.0"></PackageReference>
     <PackageReference Include="Microsoft.DiaSymReader.PortablePdb" Version="1.2.0"></PackageReference>
     <PackageReference Include="Microsoft.DiaSymReader" Version="1.1.0"></PackageReference>
-    <PackageReference Include="System.ValueTuple" Version="4.3.1"></PackageReference>
+    <PackageReference Include="System.ValueTuple" Version="4.4.0"></PackageReference>
   </ItemGroup>
 
 </Project>

@@ -3034,10 +3034,8 @@ namespace Microsoft.FSharp.Collections
        | (::)  : Head: 'T * Tail: 'T list -> 'T list
        interface System.Collections.Generic.IEnumerable<'T>
        interface System.Collections.IEnumerable
-
-#if !FSCORE_PORTABLE_OLD
        interface System.Collections.Generic.IReadOnlyCollection<'T>
-#endif
+       interface System.Collections.Generic.IReadOnlyList<'T>
         
     and 'T list = List<'T>
 
@@ -3045,29 +3043,34 @@ namespace Microsoft.FSharp.Collections
     // List (debug view)
     //-------------------------------------------------------------------------
 
-    and 
+    and
        ListDebugView<'T>(l:list<'T>) =
 
-           let ListDebugViewMaxLength = 50
-           let rec count l n = 
-               match l with 
-               | [] -> n 
-               | _::t -> if n > ListDebugViewMaxLength then n else count t (n+1) 
+           let ListDebugViewMaxLength = 50                          // default displayed Max Length
+           let ListDebugViewMaxFullLength = 5000                    // display only when FullList opened (5000 is a super big display used to cut-off an infinite list or undebuggably huge one)
+           let rec count l n max =
+               match l with
+               | [] -> n
+               | _::t -> if n > max then n else count t (n+1) max
 
-           [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
-           member x.Items =
-               let n = count l 0 
-               let items = zeroCreate n 
+           let items length =
+               let items = zeroCreate length
                let rec copy (items: 'T[]) l i = 
                    match l with
                    | [] -> () 
                    | h::t -> 
-                       if i < n then 
+                       if i < length then 
                            SetArray items i h
                            copy items t (i+1)
 
                copy items l 0
                items
+
+           [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
+           member x.Items = items (count l 0 ListDebugViewMaxLength)
+
+           [<DebuggerBrowsable(DebuggerBrowsableState.Collapsed)>]
+           member x._FullList = items (count l 0 ListDebugViewMaxFullLength)
 
     type ResizeArray<'T> = System.Collections.Generic.List<'T>
 
@@ -3221,10 +3224,11 @@ namespace Microsoft.FSharp.Collections
         interface System.Collections.IEnumerable with
             member l.GetEnumerator() = (PrivateListHelpers.mkListEnumerator l :> System.Collections.IEnumerator)
 
-#if !FSCORE_PORTABLE_OLD
         interface IReadOnlyCollection<'T> with
             member l.Count = l.Length
-#endif
+
+        interface IReadOnlyList<'T> with
+            member l.Item with get(index) = l.[index]
 
     type seq<'T> = IEnumerable<'T>
 
@@ -3642,11 +3646,14 @@ namespace Microsoft.FSharp.Core
             | (h::t) -> 
             match list2 with
             | [] -> list1
-            | _ -> 
-              let res = [h] 
-              let lastCons = PrivateListHelpers.appendToFreshConsTail res t 
-              PrivateListHelpers.setFreshConsTail lastCons list2
-              res
+            | _ ->
+              match t with
+              | [] -> h :: list2
+              | _ ->
+                  let res = [h] 
+                  let lastCons = PrivateListHelpers.appendToFreshConsTail res t 
+                  PrivateListHelpers.setFreshConsTail lastCons list2
+                  res
 
         [<CompiledName("Increment")>]
         let incr cell = cell.contents <- cell.contents + 1

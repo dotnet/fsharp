@@ -837,7 +837,7 @@ let testTryFinallySyntaxOnOneLine () =
     try () finally ()
 
 
-#if !TESTS_AS_APP && !FX_PORTABLE_OR_NETSTANDARD
+#if !TESTS_AS_APP && !NETCOREAPP1_0
 type SampleForm = 
   class
     inherit System.Windows.Forms.Form
@@ -1035,7 +1035,7 @@ do test "vliwe94"   (f -2L = - 2L)
 do test "vliwe95"   (f -2n = - 2n)
 do test "vliwe96"   (f -2.0 = - 2.0)
 do test "vliwe97"   (f -2.0f = - 2.0f)
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
 do test "vliwe99"   (f -2I = - 2I)
 #endif
 

@@ -4,17 +4,17 @@
     <body>
       <trans-unit id="LearnMore">
         <source>Learn more about F# at http://fsharp.org</source>
-        <target state="new">Learn more about F# at http://fsharp.org</target>
+        <target state="translated">F# の詳細については、http://fsharp.org を参照してください</target>
         <note />
       </trans-unit>
       <trans-unit id="SeeTutorial">
         <source>See the 'F# Tutorial' project for more help.</source>
-        <target state="new">See the 'F# Tutorial' project for more help.</target>
+        <target state="translated">詳細については、'F# チュートリアル' プロジェクトを参照してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="Define">
         <source>Define your library scripting code here</source>
-        <target state="new">Define your library scripting code here</target>
+        <target state="translated">ここでライブラリ スクリプト コードを定義します</target>
         <note />
       </trans-unit>
     </body>

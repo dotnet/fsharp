@@ -85,10 +85,9 @@ type internal FSharpCompletionProvider
         else
             let triggerPosition = caretPosition - 1
             let triggerChar = sourceText.[triggerPosition]
-            let prevChar = sourceText.[triggerPosition - 1]
-            
+
             // do not trigger completion if it's not single dot, i.e. range expression
-            if not Settings.IntelliSense.ShowAfterCharIsTyped && prevChar = '.' then
+            if not Settings.IntelliSense.ShowAfterCharIsTyped && triggerPosition > 0 && sourceText.[triggerPosition - 1] = '.' then
                 false
             else
                 let documentId, filePath, defines = getInfo()
@@ -97,13 +96,9 @@ type internal FSharpCompletionProvider
                 
 
     static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, 
-                                             textVersionHash: int, getAllSymbols: unit -> AssemblySymbol list) = 
+                                             textVersionHash: int, getAllSymbols: FSharpCheckFileResults -> AssemblySymbol list) = 
         asyncMaybe {
             let! parseResults, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true, userOpName = userOpName)
-
-            //#if DEBUG
-            //Logging.Logging.logInfof "AST:\n%+A" parsedInput
-            //#endif
 
             let textLines = sourceText.Lines
             let caretLinePos = textLines.GetLinePosition(caretPosition)
@@ -113,7 +108,7 @@ type internal FSharpCompletionProvider
             let partialName = QuickParse.GetPartialLongNameEx(caretLine.ToString(), caretLineColumn - 1) 
             
             let getAllSymbols() = 
-                getAllSymbols() 
+                getAllSymbols checkFileResults
                 |> List.filter (fun entity -> entity.FullName.Contains "." && not (PrettyNaming.IsOperatorName entity.Symbol.DisplayName))
 
             let! declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLine.ToString(), 
@@ -198,7 +193,13 @@ type internal FSharpCompletionProvider
 
             if results.Count > 0 && not declarations.IsForType && not declarations.IsError && List.isEmpty partialName.QualifyingIdents then
                 let lineStr = textLines.[caretLinePos.Line].ToString()
-                match UntypedParseImpl.TryGetCompletionContext(Pos.fromZ caretLinePos.Line caretLinePos.Character, Some parseResults, lineStr) with
+                
+                let completionContext =
+                    parseResults.ParseTree 
+                    |> Option.bind (fun parseTree ->
+                         UntypedParseImpl.TryGetCompletionContext(Pos.fromZ caretLinePos.Line caretLinePos.Character, parseTree, lineStr))
+                
+                match completionContext with
                 | None -> results.AddRange(keywordCompletionItems)
                 | _ -> ()
             
@@ -222,8 +223,7 @@ type internal FSharpCompletionProvider
             do! Option.guard (CompletionUtils.shouldProvideCompletion(document.Id, document.FilePath, defines, sourceText, context.Position))
             let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
             let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken)
-            let! _, _, fileCheckResults = checker.ParseAndCheckDocument(document, projectOptions, true, userOpName=userOpName)
-            let getAllSymbols() =
+            let getAllSymbols(fileCheckResults: FSharpCheckFileResults) =
                 if Settings.IntelliSense.ShowAllSymbols
                 then assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies(fileCheckResults)
                 else []

@@ -2182,7 +2182,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Do the build by invoking msbuild
         /// </summary>
         [SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "vsopts")]
-        internal virtual BuildResult Build(ConfigCanonicalName configCanonicalName, IVsOutputWindowPane output, string target)
+        internal virtual BuildResult Build(ConfigCanonicalName configCanonicalName, IVsOutputWindowPane output, string target, IEnumerable<KeyValuePair<string, string>> extraProperties)
         {
             bool engineLogOnlyCritical = BuildPrelude(output);
             BuildResult result = BuildResult.FAILED;
@@ -2190,7 +2190,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             try
             {
                 this.SetBuildConfigurationProperties(configCanonicalName);
-                result = this.InvokeMsBuild(target);
+                result = this.InvokeMsBuild(target, extraProperties);
             }
             finally
             {
@@ -3277,16 +3277,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 
                 projectInstance.SetProperty("UTFOutput", "true");
 
-#if FX_PREFERRED_UI_LANG
                 // The CoreCLR build of FSC will use the CultureName since lcid doesn't apply very well
                 // so that the errors reported by fsc.exe are in the right locale
                 projectInstance.SetProperty("PREFERREDUILANG", System.Threading.Thread.CurrentThread.CurrentUICulture.Name);
-#else
-                // When building, we need to set the flags for the fsc.exe that we spawned
-                // so that the errors reported by fsc.exe are in the right locale
-                projectInstance.SetProperty("LCID", System.Threading.Thread.CurrentThread.CurrentUICulture.LCID.ToString());
-#endif
-
                 this.BuildProject.ProjectCollection.HostServices.SetNodeAffinity(projectInstance.FullPath, NodeAffinity.InProc);
                 BuildRequestData requestData = new BuildRequestData(projectInstance, targetsToBuild, this.BuildProject.ProjectCollection.HostServices, BuildRequestDataFlags.ReplaceExistingProjectInstance);
                 submission = BuildManager.DefaultBuildManager.PendBuildRequest(requestData);
@@ -4122,15 +4115,23 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         internal BuildResult Build(string target)
         {
-            return this.Build(new ConfigCanonicalName(), null, target);
+            return this.Build(new ConfigCanonicalName(), null, target, null);
+        }
+
+        /// <summary>
+        /// Overloaded method. Invokes MSBuild using the default configuration and does without logging on the output window pane.
+        /// </summary>
+        internal BuildResult BuildWithExtraProperties(string target, IEnumerable<KeyValuePair<string, string>> extraProperties)
+        {
+            return this.Build(new ConfigCanonicalName(), null, target, extraProperties);
         }
 
         /// <summary>
         /// Overloaded method. Invokes MSBuild using the default configuration.
         /// </summary>
-        internal BuildResult BuildToOutput(string target, IVsOutputWindowPane output)
+        internal BuildResult BuildToOutput(string target, IVsOutputWindowPane output, IEnumerable<KeyValuePair<string, string>> extraProperties)
         {
-            return this.Build(new ConfigCanonicalName(), output, target);
+            return this.Build(new ConfigCanonicalName(), output, target, extraProperties);
         }
 
         /// <summary>
@@ -4922,8 +4923,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                             
                             if (context == AddItemContext.Paste && FindChild(file) != null)
                             {
-                                // if we are doing 'Paste' and source file belongs to current project - generate fresh unique name
-                                newFileName = GenerateCopyOfFileName(baseDir, fileName);
+                                newFileName = Path.Combine(baseDir, fileName);
+                                if (FindChild(newFileName) != null)
+                                {
+                                    // if we are doing 'Paste' and source file belongs to current project - generate fresh unique name
+                                    newFileName = GenerateCopyOfFileName(baseDir, fileName);
+                                }
                             }
                             else if (!IsContainedWithinProjectDirectory(file))
                             {
@@ -6515,9 +6520,15 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 return new Tuple<uint, int>(0, VSConstants.E_FAIL);
             }
+
             var projectInstance = this.buildProject.CreateProjectInstance();
-            projectInstance.SetProperty("DesignTimeReference", String.Join(";", prgAssemblySpecs));
-            BuildSubmission submission = DoMSBuildSubmission(BuildKind.SYNC, target, ref projectInstance, null);
+            var extraProperties = new KeyValuePair<string,string>[] 
+            {
+                new KeyValuePair<string, string>("DesignTimeBuild", "true"),
+                new KeyValuePair<string, string>("DesignTimeReference", String.Join(";", prgAssemblySpecs))
+            }.AsEnumerable();
+
+            BuildSubmission submission = DoMSBuildSubmission(BuildKind.SYNC, target, ref projectInstance, null, extraProperties);
             if (submission.BuildResult.OverallResult != BuildResultCode.Success)
             {
                 // can fail, e.g. if call happens during project unload/close, in which case failure is ok

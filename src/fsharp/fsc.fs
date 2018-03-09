@@ -31,19 +31,15 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
-open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.IlxGen
 
 open Microsoft.FSharp.Compiler.AccessibilityLogic
-open Microsoft.FSharp.Compiler.AttributeChecking
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.CompileOptions
 open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.DiagnosticMessage
 open Microsoft.FSharp.Compiler.Optimizer
@@ -755,14 +751,8 @@ module MainModuleBuilder =
       // We want to write forwarders out for all injected types except for System.ITuple, which is internal
       // Forwarding System.ITuple will cause FxCop failures on 4.0
       Set.union (Set.filter (fun t -> t <> "System.ITuple") injectedCompatTypes) typesForwardedToMscorlib |>
-          Seq.map (fun t -> 
-                      {   ScopeRef = tcGlobals.ilg.primaryAssemblyScopeRef
-                          Name = t  
-                          IsForwarder = true  
-                          Access = ILTypeDefAccess.Public  
-                          Nested = mkILNestedExportedTypes List.empty<ILNestedExportedType>  
-                          CustomAttrs = mkILCustomAttrs List.empty<ILAttribute>  }) |> 
-          Seq.toList
+          Seq.map (fun t -> mkTypeForwarder (tcGlobals.ilg.primaryAssemblyScopeRef) t (mkILNestedExportedTypes List.empty<ILNestedExportedType>) (mkILCustomAttrs List.empty<ILAttribute>) ILTypeDefAccess.Public ) 
+          |> Seq.toList
 
     let createSystemNumericsExportList (tcConfig: TcConfig) (tcImports:TcImports) =
         let refNumericsDllName =
@@ -782,8 +772,7 @@ module MainModuleBuilder =
                 Seq.map (fun t ->
                             {   ScopeRef = ILScopeRef.Assembly(systemNumericsAssemblyRef)
                                 Name = t
-                                IsForwarder = true 
-                                Access = ILTypeDefAccess.Public 
+                                Attributes = enum<TypeAttributes>(0x00200000) ||| TypeAttributes.Public
                                 Nested = mkILNestedExportedTypes List.empty<ILNestedExportedType> 
                                 CustomAttrs = mkILCustomAttrs List.empty<ILAttribute> }) |>
                 Seq.toList
@@ -1095,7 +1084,7 @@ module StaticLinker =
                     match depILModule.Manifest with 
                     | Some m -> 
                         for ca in m.CustomAttrs.AsList do
-                           if ca.Method.MethodRef.EnclosingTypeRef.FullName = typeof<CompilationMappingAttribute>.FullName then 
+                           if ca.Method.MethodRef.DeclaringTypeRef.FullName = typeof<CompilationMappingAttribute>.FullName then 
                                yield ca
                     | _ -> () ]
 
@@ -1205,7 +1194,7 @@ module StaticLinker =
                                         |> List.map (fun md ->
                                             {md with CustomAttrs = 
                                                         mkILCustomAttrs (td.CustomAttrs.AsList |> List.filter (fun ilattr ->
-                                                            ilattr.Method.EnclosingType.TypeRef.FullName <> "System.Runtime.TargetedPatchingOptOutAttribute")  )}) 
+                                                            ilattr.Method.DeclaringType.TypeRef.FullName <> "System.Runtime.TargetedPatchingOptOutAttribute")  )}) 
                                         |> mkILMethods } ])}
             //ILAsciiWriter.output_module stdout fakeModule
             fakeModule.TypeDefs.AsList
@@ -1419,12 +1408,16 @@ module StaticLinker =
                           if allTypeDefsInProviderGeneratedAssemblies.ContainsKey ilOrigTyRef then 
                               let ilOrigTypeDef = allTypeDefsInProviderGeneratedAssemblies.[ilOrigTyRef]
                               if debugStaticLinking then printfn "Relocating %s to %s " ilOrigTyRef.QualifiedName ilTgtTyRef.QualifiedName
+                              let ilOrigTypeDef = 
+                                if isNested then
+                                    ilOrigTypeDef
+                                        .WithAccess(match ilOrigTypeDef.Access with 
+                                                    | ILTypeDefAccess.Public -> ILTypeDefAccess.Nested ILMemberAccess.Public
+                                                    | ILTypeDefAccess.Private -> ILTypeDefAccess.Nested ILMemberAccess.Private
+                                                    | _ -> ilOrigTypeDef.Access)
+                                else ilOrigTypeDef
                               { ilOrigTypeDef with 
                                     Name = ilTgtTyRef.Name
-                                    Access = (match ilOrigTypeDef.Access with 
-                                              | ILTypeDefAccess.Public when isNested -> ILTypeDefAccess.Nested ILMemberAccess.Public 
-                                              | ILTypeDefAccess.Private when isNested -> ILTypeDefAccess.Nested ILMemberAccess.Assembly 
-                                              | x -> x)
                                     NestedTypes = mkILTypeDefs (List.map buildRelocatedGeneratedType ch) }
                           else
                               // If there is no matching IL type definition, then make a simple container class
@@ -1639,7 +1632,6 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, openBinarie
     let directoryBuildingFrom = Directory.GetCurrentDirectory()
     let setProcessThreadLocals tcConfigB =
                     tcConfigB.openBinariesInMemory <- openBinariesInMemory
-#if PREFERRED_UI_LANG
                     match tcConfigB.preferredUiLang with
 #if FX_RESHAPED_GLOBALIZATION
                     | Some s -> System.Globalization.CultureInfo.CurrentUICulture <- new System.Globalization.CultureInfo(s)
@@ -1647,11 +1639,6 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, openBinarie
                     | Some s -> Thread.CurrentThread.CurrentUICulture <- new System.Globalization.CultureInfo(s)
 #endif
                     | None -> ()
-#else
-                    match tcConfigB.lcid with
-                    | Some n -> Thread.CurrentThread.CurrentUICulture <- new CultureInfo(n)
-                    | None -> ()
-#endif
                     if tcConfigB.utf8output then 
                         Console.OutputEncoding <- Encoding.UTF8
 
@@ -1972,16 +1959,14 @@ let main2b (tcImportsCapture,dynamicAssemblyCreator) (Args (ctok, tcConfig: TcCo
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.IlxGen
     let ilxGenerator = CreateIlxAssemblyGenerator (tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), generatedCcu)
 
-    // Check if System.SerializableAttribute exists in mscorlib.dll, 
-    // so that make sure the compiler only emits "serializable" bit into IL metadata when it is available.
-    // Note that SerializableAttribute may be relocated in the future but now resides in mscorlib.
     let codegenResults = GenerateIlxCode ((if Option.isSome dynamicAssemblyCreator then IlReflectBackend else IlWriteBackend), Option.isSome dynamicAssemblyCreator, false, tcConfig, topAttrs, optimizedImpls, generatedCcu.AssemblyName, ilxGenerator)
     let casApplied = new Dictionary<Stamp, bool>()
     let securityAttrs, topAssemblyAttrs = topAttrs.assemblyAttrs |> List.partition (fun a -> TypeChecker.IsSecurityAttribute tcGlobals (tcImports.GetImportMap()) casApplied a rangeStartup)
+
     // remove any security attributes from the top-level assembly attribute list
     let topAttrs = {topAttrs with assemblyAttrs=topAssemblyAttrs}
     let permissionSets = ilxGenerator.CreatePermissionSets securityAttrs
-    let secDecls = if securityAttrs.Length > 0 then mkILSecurityDecls permissionSets else emptyILSecurityDecls
+    let secDecls = if List.isEmpty securityAttrs then emptyILSecurityDecls else mkILSecurityDecls permissionSets
 
     let ilxMainModule = MainModuleBuilder.CreateMainModule (ctok, tcConfig, tcGlobals, tcImports, pdbfile, assemblyName, outfile, topAttrs, idata, optDataResources, codegenResults, assemVerFromAttrib, metadataVersion, secDecls)
 

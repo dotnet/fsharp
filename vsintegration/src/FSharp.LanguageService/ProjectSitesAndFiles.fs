@@ -385,8 +385,9 @@ type internal ProjectSitesAndFiles() =
 
     member art.GetDefinesForFile_DEPRECATED(rdt:IVsRunningDocumentTable, filename : string, checker:FSharpChecker) =
         // The only caller of this function calls it each time it needs to colorize a line, so this call must execute very fast.  
-        if SourceFile.MustBeSingleFileProject(filename) then 
-            CompilerEnvironment.GetCompilationDefinesForEditing(filename,FSharpParsingOptions.Default)
+        if SourceFile.MustBeSingleFileProject(filename) then
+            let parsingOptions = { FSharpParsingOptions.Default with IsInteractive = true}
+            CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
         else 
             let siteOpt = 
                 match VsRunningDocumentTable.FindDocumentWithoutLocking(rdt,filename) with 
@@ -399,7 +400,7 @@ type internal ProjectSitesAndFiles() =
                | None -> ProjectSitesAndFiles.ProjectSiteOfSingleFile(filename)
 
             let parsingOptions,_ = checker.GetParsingOptionsFromCommandLineArgs(site.CompilationOptions |> Array.toList)
-            CompilerEnvironment.GetCompilationDefinesForEditing(filename,parsingOptions)
+            CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
 
     member art.TryFindOwningProject_DEPRECATED(rdt:IVsRunningDocumentTable, filename) = 
         if SourceFile.MustBeSingleFileProject(filename) then None

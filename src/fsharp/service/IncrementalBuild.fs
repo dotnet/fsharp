@@ -14,7 +14,6 @@ open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.CompileOptions
@@ -25,9 +24,7 @@ open Microsoft.FSharp.Compiler.TypeChecker
 open Microsoft.FSharp.Compiler.Tast 
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open Internal.Utilities
 open Internal.Utilities.Collections
-
 
 [<AutoOpen>]
 module internal IncrementalBuild =
@@ -1701,14 +1698,16 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     /// CreateIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
     static member TryCreateBackgroundBuilderForProjectOptions (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, frameworkTcImportsCache: FrameworkImportsCache, loadClosureOpt:LoadClosure option, sourceFiles:string list, commandLineArgs:string list, projectReferences, projectDirectory, useScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions, maxTimeShareMilliseconds) =
-      let targetProfileSwitch = "--targetprofile:"
       let useSimpleResolutionSwitch = "--simpleresolution"
 
       cancellable {
 
         // Trap and report warnings and errors from creation.
-        use errorScope = new ErrorScope()
-        let! builderOpt = 
+        let delayedLogger = CapturingErrorLogger("IncrementalBuilderCreation")
+        use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> delayedLogger)
+        use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+
+        let! builderOpt =
          cancellable {
           try
 
@@ -1744,22 +1743,12 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
 #else
                 tcConfigB.useSimpleResolution <- (getSwitchValue useSimpleResolutionSwitch) |> Option.isSome
 #endif
-                match (getSwitchValue targetProfileSwitch) with
-                | Some v ->
-                    let _s = v
-                    CompileOptions.SetTargetProfile tcConfigB v
-                | None -> ()
-
                 // Apply command-line arguments and collect more source files if they are in the arguments
                 let sourceFilesNew = ApplyCommandLineArgs(tcConfigB, sourceFiles, commandLineArgs)
 
                 // Never open PDB files for the language service, even if --standalone is specified
                 tcConfigB.openDebugInformationForLaterStaticLinking <- false
-                match commandLineArgs |> Seq.tryFind(fun s -> s.StartsWith(targetProfileSwitch)) with
-                | Some arg ->
-                    let profile = arg.Substring(targetProfileSwitch.Length)
-                    CompileOptions.SetTargetProfile tcConfigB profile
-                | _ -> ()
+
                 tcConfigB, sourceFilesNew
 
             match loadClosureOpt with
@@ -1828,7 +1817,18 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
             return None
          }
 
-        return builderOpt, errorScope.Diagnostics
+        let diagnostics =
+            match builderOpt with
+            | Some builder ->
+                let errorSeverityOptions = builder.TcConfig.errorSeverityOptions
+                let errorLogger = CompilationErrorLogger("IncrementalBuilderCreation", errorSeverityOptions)
+                delayedLogger.CommitDelayedDiagnostics(errorLogger)
+                errorLogger.GetErrors() |> List.map (fun (d, severity) -> d, severity = FSharpErrorSeverity.Error)
+            | _ ->
+                delayedLogger.Diagnostics
+            |> List.map (fun (d, isError) -> FSharpErrorInfo.CreateFromException(d, isError, range.Zero))
+
+        return builderOpt, diagnostics
       }
     static member KeepBuilderAlive (builderOpt: IncrementalBuilder option) = 
         match builderOpt with 

@@ -3,11 +3,7 @@
 /// Generate the hash/compare functions we add to user-defined types by default.
 module internal Microsoft.FSharp.Compiler.AugmentWithHashCompare 
 
-open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler 
-
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.TcGlobals
 

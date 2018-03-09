@@ -802,11 +802,6 @@
         <target state="translated">Non è stato possibile risolvere la creazione di istanza implicita di un costrutto generico in questo punto o in prossimità di esso perché la risoluzione potrebbe restituire più tipi non correlati, ad esempio '{0}' e '{1}'. Provare a usare annotazioni di tipo per risolvere l'ambiguità</target>
         <note />
       </trans-unit>
-      <trans-unit id="typrelCannotResolveAmbiguityInOverloadedOperator">
-        <source>Could not resolve the ambiguity inherent in the use of the operator '{0}' at or near this program point. Consider using type annotations to resolve the ambiguity.</source>
-        <target state="translated">Non è stato possibile risolvere l'ambiguità relativa all'uso dell'operatore '{0}' in questo punto del programma o in prossimità di esso. Provare invece a risolvere l'ambiguità usando annotazioni di tipo.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="typrelCannotResolveAmbiguityInPrintf">
         <source>Could not resolve the ambiguity inherent in the use of a 'printf'-style format string</source>
         <target state="translated">Non è stato possibile risolvere l'ambiguità relativa all'uso della stringa di formato di stile 'printf'</target>
@@ -1174,7 +1169,7 @@
       </trans-unit>
       <trans-unit id="chkBaseUsedInInvalidWay">
         <source>The 'base' keyword is used in an invalid way. Base calls cannot be used in closures. Consider using a private member to make base calls.</source>
-        <target state="translated">Parola chiave 'base' utilizzata in modo non valido. Le chiamate di base non possono essere utilizzate nelle chiusure. Provare a utilizzare un membro privato per effettuare le chiamate di base.</target>
+        <target state="translated">La parola chiave 'base' è usata in modo non valido. Le chiamate di base non possono essere usate nelle chiusure. Provare a usare un membro privato per effettuare le chiamate di base.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkVariableUsedInInvalidWay">
@@ -1459,7 +1454,7 @@
       </trans-unit>
       <trans-unit id="crefQuotationsCantContainArrayPatternMatching">
         <source>Quotations cannot contain array pattern matching</source>
-        <target state="translated">Le quotation non possono contenere caratteri jolly per identificare matrici</target>
+        <target state="translated">Le quotation non possono contenere criteri di ricerca per identificare matrici</target>
         <note />
       </trans-unit>
       <trans-unit id="crefQuotationsCantContainThisType">
@@ -1584,7 +1579,7 @@
       </trans-unit>
       <trans-unit id="csTypeIsNotEnumType">
         <source>The type '{0}' is not a CLI enum type</source>
-        <target state="translated">Il tipo '{0}' non è un tipo di enumerazione CLI</target>
+        <target state="translated">Il tipo '{0}' non è un tipo enumerazione CLI</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeHasNonStandardDelegateType">
@@ -1974,7 +1969,7 @@
       </trans-unit>
       <trans-unit id="parsEmptyTypeDefinition">
         <source>A type definition requires one or more members or other declarations. If you intend to define an empty class, struct or interface, then use 'type ... = class end', 'interface end' or 'struct end'.</source>
-        <target state="translated">In una definizione di tipo sono necessari uno o più membri oppure altre dichiarazioni. Se si desidera definire una classe, un'interfaccia o uno struct vuoto, utilizzare 'type ... = class end', 'interface end' o 'struct end'.</target>
+        <target state="translated">In una definizione di tipo sono necessari uno o più membri oppure altre dichiarazioni. Se si vuole definire una classe, un'interfaccia o uno struct vuoto, usare 'type ... = class end', 'interface end' o 'struct end'.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnmatchedWith">
@@ -2064,7 +2059,7 @@
       </trans-unit>
       <trans-unit id="parsEnumTypesCannotHaveVisibilityDeclarations">
         <source>Accessibility modifiers are not permitted in this position for enum types</source>
-        <target state="translated">Modificatori di accessibilità non consentiti in questa posizione per tipi di enumerazione</target>
+        <target state="translated">I modificatori di accessibilità non sono consentiti in questa posizione per i tipi enumerazione</target>
         <note />
       </trans-unit>
       <trans-unit id="parsAllEnumFieldsRequireValues">
@@ -2624,7 +2619,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidObjectConstructionExpression">
         <source>This is not a valid object construction expression. Explicit object constructors must either call an alternate constructor or initialize all fields of the object and specify a call to a super class constructor.</source>
-        <target state="translated">Espressione di costruzione di oggetto non valida. I costruttori di oggetto espliciti devono chiamare un costruttore alternativo o inizializzare tutti i campi dell'oggetto e specificare una chiamata al costruttore di super classe.</target>
+        <target state="translated">Espressione di costruzione di oggetti non valida. I costruttori di oggetto espliciti devono chiamare un costruttore alternativo o inizializzare tutti i campi dell'oggetto e specificare una chiamata al costruttore di super classe.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidConstraint">
@@ -2634,7 +2629,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidConstraintTypeSealed">
         <source>Invalid constraint: the type used for the constraint is sealed, which means the constraint could only be satisfied by at most one solution</source>
-        <target state="translated">Vincolo non valido: il tipo utilizzato per il vincolo è Sealed, il che significa che il vincolo può essere soddisfatto al massimo da una soluzione</target>
+        <target state="translated">Vincolo non valido: il tipo usato per il vincolo è sealed, il che significa che il vincolo può essere soddisfatto al massimo da una soluzione</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidEnumConstraint">
@@ -3004,7 +2999,7 @@
       </trans-unit>
       <trans-unit id="tcPredefinedTypeCannotBeUsedAsSuperType">
         <source>The types System.ValueType, System.Enum, System.Delegate, System.MulticastDelegate and System.Array cannot be used as super types in an object expression or class</source>
-        <target state="translated">I tipi System.ValueType, System.Enum, System.Delegate, System.MulticastDelegate e System.Array non possono essere utilizzati come tipi super in una classe o un'espressione di oggetto</target>
+        <target state="translated">I tipi System.ValueType, System.Enum, System.Delegate, System.MulticastDelegate e System.Array non possono essere usati come tipi super in una classe o un'espressione di oggetto</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNewMustBeUsedWithNamedType">
@@ -3039,7 +3034,7 @@
       </trans-unit>
       <trans-unit id="tcObjectsMustBeInitializedWithObjectExpression">
         <source>Objects must be initialized by an object construction expression that calls an inherited object constructor and assigns a value to each field</source>
-        <target state="translated">Gli oggetti devono essere inizializzati da un'espressione di costruzione degli oggetti che chiama un costruttore di oggetto ereditato e assegna un valore a ogni campo</target>
+        <target state="translated">Gli oggetti devono essere inizializzati da un'espressione di costruzione degli oggetti che chiama un costruttore di oggetti ereditato e assegna un valore a ogni campo</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExpectedInterfaceType">
@@ -3844,7 +3839,7 @@
       </trans-unit>
       <trans-unit id="tcTypesAreAlwaysSealedEnum">
         <source>Enum types are always sealed</source>
-        <target state="translated">I tipi di enumerazione sono sempre Sealed</target>
+        <target state="translated">I tipi enumerazione sono sempre sealed</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInterfaceTypesAndDelegatesCannotContainFields">
@@ -3909,7 +3904,7 @@
       </trans-unit>
       <trans-unit id="tcMembersThatExtendInterfaceMustBePlacedInSeparateModule">
         <source>Members that extend interface, delegate or enum types must be placed in a module separate to the definition of the type. This module must either have the AutoOpen attribute or be opened explicitly by client code to bring the extension members into scope.</source>
-        <target state="translated">I membri che estendono tipi delegati, di interfaccia o di enumerazione devono trovarsi in un modulo separato rispetto alla definizione del tipo. Il modulo deve avere l'attributo AutoOpen oppure essere aperto in modo esplicito dal codice client in modo da portare i membri di estensione nell'ambito.</target>
+        <target state="translated">I membri che estendono tipi delegati, interfaccia o enumerazione devono trovarsi in un modulo separato rispetto alla definizione del tipo. Il modulo deve avere l'attributo AutoOpen oppure essere aperto in modo esplicito dal codice client in modo da portare i membri di estensione nell'ambito.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcDeclaredTypeParametersForExtensionDoNotMatchOriginal">
@@ -4079,7 +4074,7 @@
       </trans-unit>
       <trans-unit id="optsCopyright">
         <source>Copyright (c) Microsoft Corporation. All Rights Reserved.</source>
-        <target state="translated">Copyright (c) Microsoft Corporation. Tutti i diritti riservati.</target>
+        <target state="translated">Copyright (c) Microsoft Corporation. Tutti i diritti sono riservati.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsCopyrightCommunity">
@@ -5344,12 +5339,12 @@
       </trans-unit>
       <trans-unit id="parsMissingGreaterThan">
         <source>Unmatched '&lt;'. Expected closing '&gt;'</source>
-        <target state="translated">'&lt;' non corrispondente. Previsto '&gt;' di chiusura</target>
+        <target state="translated">'&lt;' senza corrispondenza. Previsto '&gt;' di chiusura</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedQuotationOperatorInTypeAliasDidYouMeanVerbatimString">
         <source>Unexpected quotation operator '&lt;@' in type definition. If you intend to pass a verbatim string as a static argument to a type provider, put a space between the '&lt;' and '@' characters.</source>
-        <target state="translated">Operatore di quotation '&lt;@' imprevisto nella definizione di tipo. Se si desidera passare una stringa verbatim come argomento statico a un provider di tipi, mettere uno spazio tra i caratteri '&lt;' e '@'.</target>
+        <target state="translated">Operatore di quotation '&lt;@' imprevisto nella definizione di tipo. Se si vuole passare una stringa verbatim come argomento statico a un provider di tipi, inserire uno spazio tra i caratteri '&lt;' e '@'.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsErrorParsingAsOperatorName">
@@ -5969,7 +5964,7 @@
       </trans-unit>
       <trans-unit id="parsUnmatchedLBrackLess">
         <source>Unmatched '[&lt;'. Expected closing '&gt;]'</source>
-        <target state="translated">'[&lt;' non corrispondente. Previsto '&gt;]' di chiusura</target>
+        <target state="translated">'[&lt;' senza corrispondenza. Previsto '&gt;]' di chiusura</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileMatch">
@@ -6970,6 +6965,21 @@
       <trans-unit id="pickleUnexpectedNonZero">
         <source>An error occurred while reading the F# metadata of assembly '{0}'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.</source>
         <target state="translated">Si è verificato un errore durante la lettura dei metadati F# dell'assembly '{0}'. È stato utilizzato un costrutto riservato. Potrebbe essere necessario aggiornare il compilatore F# o usare una versione precedente dell'assembly che non usa un costrutto specifico.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTupleMemberNotNormallyUsed">
+        <source>This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</source>
+        <target state="translated">Questo metodo o questa proprietà non è in genere usato dal codice F#. Per la decostruzione usare invece un criterio di tupla esplicito.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="implicitlyDiscardedInSequenceExpression">
+        <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.</source>
+        <target state="translated">Questa espressione restituisce un valore di tipo '{0}' ma viene rimossa in modo implicito. Provare a usare 'let' per eseguire il binding del risultato a un nome, ad esempio 'let risultato = espressione'. Se si intende usare l'espressione come valore nella sequenza, usare l'operando 'yield' esplicito.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="implicitlyDiscardedSequenceInSequenceExpression">
+        <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</source>
+        <target state="translated">Questa espressione restituisce un valore di tipo '{0}' ma viene rimossa in modo implicito. Provare a usare 'let' per eseguire il binding del risultato a un nome, ad esempio 'let risultato = espressione'. Se si intende usare l'espressione come valore nella sequenza, usare l'operando 'yield!' esplicito.</target>
         <note />
       </trans-unit>
     </body>

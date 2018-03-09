@@ -1283,28 +1283,28 @@
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpected">
-        <source>The result of this expression is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |&gt; ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</source>
-        <target state="translated">Bu ifadenin sonucu örtük olarak yoksayılır. Bu değeri açıkça atmak için 'ignore' kullanmayı (örn. 'expr |&gt; ignore') veya sonucu bir ada bağlamak için 'let' kullanmayı (örn. 'let result = expr') deneyin.</target>
+        <source>The result of this expression has type '{0}' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |&gt; ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</source>
+        <target state="translated">Bu ifadenin sonucu '{0}' türüne sahip ve örtük olarak yoksayılır. Bu değeri açıkça atmak için 'ignore' kullanmayı (örn. 'deyim |&gt; ignore') veya sonucu bir ada bağlamak için 'let' kullanmayı (örn. 'let sonuc = deyim') deneyin.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithEquality">
-        <source>The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'.</source>
-        <target state="translated">Bu eşitlik ifadesinin sonucu örtük olarak atılmıştır. Sonucu bir ada bağlamak için 'let' kullanmayı düşünün; örneğin, 'let sonuç = deyim'.</target>
+        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'.</source>
+        <target state="translated">Bu eşitlik ifadesinin sonucu '{0}' türüne sahip ve örtük olarak atılır. Sonucu bir ada bağlamak için 'let' kullanmayı düşünün (örneğin, 'let sonuc = deyim').</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossiblePropertySetter">
-        <source>The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{0}.{1} &lt;- expression'.</source>
-        <target state="translated">Bu eşitlik ifadesinin sonucu örtük olarak atılmıştır. Sonucu bir ada bağlamak için 'let' kullanmayı düşünün; örneğin, 'let sonuç = deyim'. Bir özelliğin değerini ayarlamak istiyorsanız, '&lt;-' işlecini kullanın; örneğin, '{0}.{1} &lt;- deyim'.</target>
+        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{1}.{2} &lt;- expression'.</source>
+        <target state="translated">Bu eşitlik ifadesinin sonucu '{0}' türüne sahip ve örtük olarak atılır. Sonucu bir ada bağlamak için 'let' kullanmayı düşünün (örneğin, 'let sonuc = deyim'). Bir özelliğin değerini ayarlamak istiyorsanız, '&lt;-' işlecini kullanın (örneğin, '{1}.{2} &lt;- deyim').</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignment">
-        <source>The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{0} &lt;- expression'.</source>
-        <target state="translated">Bu eşitlik ifadesinin sonucu örtük olarak atılmıştır. Sonucu bir ada bağlamak için 'let' kullanmayı düşünün; örneğin, 'let sonuç = deyim'. Bir değeri değiştirmek istiyorsanız, değeri 'mutable' olarak işaretleyin ve '&lt;-' işlecini kullanın; örneğin, '{0} &lt;- deyim'.</target>
+        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
+        <target state="translated">Bu eşitlik ifadesinin sonucu '{0}' türüne sahip ve örtük olarak atılır. Sonucu bir ada bağlamak için 'let' kullanmayı düşünün (örneğin, 'let sonuc = deyim'). Bir değeri değiştirmek istiyorsanız, değeri 'mutable' olarak işaretleyin ve '&lt;-' işlecini kullanın; örneğin, '{1} &lt;- deyim'.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignmentToMutable">
-        <source>The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '&lt;-' operator e.g. '{0} &lt;- expression'.</source>
-        <target state="translated">Bu eşitlik ifadesinin sonucu örtük olarak atılmıştır. Sonucu bir ada bağlamak için 'let' kullanmayı düşünün, örneğin 'let sonuç = deyim'. Bir değeri değiştirmek istiyorsanız, '&lt;-' işlecini kullanın; örneğin, '{0} &lt;- deyim'.</target>
+        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
+        <target state="translated">Bu eşitlik ifadesinin sonucu '{0}' türüne sahip ve örtük olarak atılır. Sonucu bir ada bağlamak için 'let' kullanmayı düşünün (örneğin 'let sonuc = deyim'). Bir değeri değiştirmek istiyorsanız, '&lt;-' işlecini kullanın; örneğin, '{1} &lt;- deyim'.</target>
         <note />
       </trans-unit>
       <trans-unit id="RecursiveUseCheckedAtRuntime">

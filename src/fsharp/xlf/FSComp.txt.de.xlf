@@ -344,7 +344,7 @@
       </trans-unit>
       <trans-unit id="buildUnrecognizedOption">
         <source>Unrecognized option: '{0}'</source>
-        <target state="translated">Unbekannte Option: '{0}'</target>
+        <target state="translated">Unbekannte Option: "{0}"</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidModuleOrNamespaceName">
@@ -800,11 +800,6 @@
       <trans-unit id="typrelCannotResolveImplicitGenericInstantiation">
         <source>The implicit instantiation of a generic construct at or near this point could not be resolved because it could resolve to multiple unrelated types, e.g. '{0}' and '{1}'. Consider using type annotations to resolve the ambiguity</source>
         <target state="translated">Die implizite Instanziierung eines generischen Konstrukts an diesem Punkt oder in dessen Umgebung konnte nicht aufgelöst werden, weil sie zu mehreren unzusammenhängenden Typen aufgelöst werden könnte, z.B. "{0}" und "{1}". Verwenden Sie Typanmerkungen, um die Mehrdeutigkeit aufzulösen.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="typrelCannotResolveAmbiguityInOverloadedOperator">
-        <source>Could not resolve the ambiguity inherent in the use of the operator '{0}' at or near this program point. Consider using type annotations to resolve the ambiguity.</source>
-        <target state="translated">Die inhärente Mehrdeutigkeit bei der Verwendung des {0}-Operators an diesem Programmpunkt oder in dessen Umgebung konnte nicht aufgelöst werden. Verwenden Sie Typanmerkungen, um die Mehrdeutigkeit aufzulösen.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelCannotResolveAmbiguityInPrintf">
@@ -4579,7 +4574,7 @@
       </trans-unit>
       <trans-unit id="typeInfoFromFirst">
         <source>from {0}</source>
-        <target state="translated">von {0}</target>
+        <target state="translated">aus {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="typeInfoFromNext">
@@ -5184,7 +5179,7 @@
       </trans-unit>
       <trans-unit id="tcCannotCallAbstractBaseMember">
         <source>Cannot call an abstract base member: '{0}'</source>
-        <target state="translated">Ein abstrakter Basismember kann nicht aufgerufen werden: '{0}'</target>
+        <target state="translated">Ein abstrakter Basismember kann nicht aufgerufen werden: "{0}"</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelCannotResolveAmbiguityInUnmanaged">
@@ -6514,7 +6509,7 @@
       </trans-unit>
       <trans-unit id="CallerMemberNameIsOverriden">
         <source>The CallerMemberNameAttribute applied to parameter '{0}' will have no effect. It is overridden by the CallerFilePathAttribute.</source>
-        <target state="translated">Das auf den Parameter "{0}" angewendete CallerMemberNameAttribute besitzt keine Auswirkung. Es wird durch das CallerFilePathAttribute überschrieben.</target>
+        <target state="translated">Das auf Parameter "{0}" angewendete CallerMemberNameAttribute hat keine Auswirkung. Es wird vom CallerFilePathAttribute überschrieben.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFixedNotAllowed">
@@ -6970,6 +6965,21 @@
       <trans-unit id="pickleUnexpectedNonZero">
         <source>An error occurred while reading the F# metadata of assembly '{0}'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.</source>
         <target state="translated">Fehler beim Lesen der F#-Metadaten der Assembly "{0}". Es wurde ein reserviertes Konstrukt verwendet. Möglicherweise müssen Sie Ihren F#-Compiler aktualisieren oder eine frühere Version der Assembly verwenden, die dieses spezielle Konstrukt nicht verwendet.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTupleMemberNotNormallyUsed">
+        <source>This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</source>
+        <target state="translated">Diese Methode oder Eigenschaft wird normalerweise nicht im F#-Code verwendet. Nutzen Sie stattdessen zur Dekonstruktion ein explizites Tupelmuster.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="implicitlyDiscardedInSequenceExpression">
+        <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.</source>
+        <target state="translated">Dieser Ausdruck gibt einen Wert des Typs "{0}" zurück, wird aber implizit verworfen. Verwenden Sie ggf. "let", um das Ergebnis an einen Namen zu binden. Beispiel: "let Ergebnis = Ausdruck". Falls Sie den Ausdruck als Wert in der Sequenz einsetzen möchten, verwenden Sie explizit "yield".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="implicitlyDiscardedSequenceInSequenceExpression">
+        <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</source>
+        <target state="translated">Dieser Ausdruck gibt einen Wert des Typs "{0}" zurück, wird aber implizit verworfen. Verwenden Sie ggf. "let", um das Ergebnis an einen Namen zu binden. Beispiel: "let Ergebnis = Ausdruck". Falls Sie den Ausdruck als Wert in der Sequenz einsetzen möchten, verwenden Sie explizit "yield!".</target>
         <note />
       </trans-unit>
     </body>

@@ -6,11 +6,7 @@ open System
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
 /// Qualified long name.
-#if COMPILER_PUBLIC_API
-type PartialLongName =
-#else
-type internal PartialLongName =
-#endif
+type public PartialLongName =
     { /// Qualifying idents, prior to the last dot, not including the last part.
       QualifyingIdents: string list
 
@@ -42,11 +38,7 @@ type internal PartialLongName =
 /// It's also surprising how hard even the job of getting long identifier islands can be. For example the code 
 /// below is inaccurate for long identifier chains involving ``...`` identifiers.  And there are special cases
 /// for active pattern names and so on.
-#if COMPILER_PUBLIC_API
-module QuickParse =
-#else
-module internal QuickParse =
-#endif
+module public QuickParse =
     /// Puts us after the last character.
     val MagicalAdjustmentConstant : int
 

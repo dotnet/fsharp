@@ -264,7 +264,7 @@
       </trans-unit>
       <trans-unit id="CSRDlg_MultipleURL">
         <source>Multiple addresses (editable in .svcmap file)</source>
-        <target state="translated">Wiele adresów (edytowalne w pliku .svcmap)</target>
+        <target state="translated">Wiele adresów (edytowalne w pliku svcmap)</target>
         <note />
       </trans-unit>
       <trans-unit id="AddSvcRefDlg_ContractsFoundAtUrl_2Args">
