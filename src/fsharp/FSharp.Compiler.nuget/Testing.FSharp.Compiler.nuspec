@@ -56,7 +56,7 @@
         <file src="Microsoft.FSharp.Targets"                    target="runtimes\any\native"  />
         <file src="Microsoft.Portable.FSharp.Targets"           target="runtimes\any\native"  />
         <file src="Microsoft.FSharp.NetSdk.props"               target="runtimes\any\native"  />
-        <file src="Microsoft.FSharp.\NetSdk.targets"            target="runtimes\any\native"  />
+        <file src="Microsoft.FSharp.NetSdk.targets"             target="runtimes\any\native"  />
         <file src="Microsoft.FSharp.Overrides.NetSdk.targets"   target="runtimes\any\native"  />
 
         <file src="**\FSharp.Core.resources.dll"                          target="lib\netstandard1.6" />
