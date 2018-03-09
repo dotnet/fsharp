@@ -1715,7 +1715,7 @@ and p_entity_spec_data (x:Entity) st =
     let flagBit = p_tycon_repr x.entity_tycon_repr st
     p_option p_typ x.TypeAbbrev st
     p_tcaug x.entity_tycon_tcaug st
-    p_string x.XmlDocSig st
+    p_string System.String.Empty st
     p_kind x.TypeOrMeasureKind st
     p_int64 (x.entity_flags.PickledBits ||| (if flagBit then EntityFlags.ReservedBitForPickleFormatTyconReprFlag else 0L)) st
     p_option p_cpath x.entity_cpath st
@@ -1959,7 +1959,7 @@ and u_recdfield_spec st =
 and u_rfield_table st = MakeRecdFieldsTable (u_list u_recdfield_spec st)
 
 and u_entity_spec_data st : Entity = 
-    let x1,x2a,x2b,x2c,x3,(x4a,x4b),x6,x7f,x8,x9,x10,x10b,x11,x12,x13,x14,x15 = 
+    let x1,x2a,x2b,x2c,x3,(x4a,x4b),x6,x7f,x8,x9,_x10,x10b,x11,x12,x13,x14,x15 = 
        u_tup17
           u_typar_specs
           u_string
@@ -1996,9 +1996,9 @@ and u_entity_spec_data st : Entity =
       entity_modul_contents=MaybeLazy.Lazy x13
       entity_il_repr_cache=newCache()  
       entity_opt_data=
-        match x2b, x10b, x15, x10, x8, x4a, x4b, x14 with
-        | None, TyparKind.Type, None, "", None, TAccess [], TAccess [], TExnNone -> None
-        | _ -> Some { Entity.EmptyEntityOptData with entity_compiled_name = x2b; entity_kind = x10b; entity_xmldoc= defaultArg x15 XmlDoc.Empty; entity_xmldocsig = x10; entity_tycon_abbrev = x8; entity_accessiblity = x4a; entity_tycon_repr_accessibility = x4b; entity_exn_info = x14 }
+        match x2b, x10b, x15, x8, x4a, x4b, x14 with
+        | None, TyparKind.Type, None, None, TAccess [], TAccess [], TExnNone -> None
+        | _ -> Some { Entity.EmptyEntityOptData with entity_compiled_name = x2b; entity_kind = x10b; entity_xmldoc= defaultArg x15 XmlDoc.Empty; entity_xmldocsig = System.String.Empty; entity_tycon_abbrev = x8; entity_accessiblity = x4a; entity_tycon_repr_accessibility = x4b; entity_exn_info = x14 }
     } 
 
 and u_tcaug st = 
