@@ -295,9 +295,6 @@ type MailboxProcessorType() =
     [<Test>]
     member this.PostAndAsyncReply_Cancellation() =
 
-open System
-open System.Threading
-let f()  =
         use cancel = new CancellationTokenSource(500)
         let mutable gotGood = false
         let mutable gotBad = false
