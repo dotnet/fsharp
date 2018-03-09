@@ -1,0 +1,25 @@
+
+neg102.fs(7,12): error FS0001: This expression was expected to have type
+    'Async<'a>'    
+but here has type
+    'string'    
+
+neg102.fs(12,7): error FS0001: This expression was expected to have type
+    'int'    
+but here has type
+    'MyUnion'    
+
+neg102.fs(17,7): error FS0001: This expression was expected to have type
+    'int'    
+but here has type
+    'MyUnion'    
+
+neg102.fs(21,7): error FS0001: This expression was expected to have type
+    'Async<int>'    
+but here has type
+    'int'    
+
+neg102.fs(25,11): error FS0001: This expression was expected to have type
+    'int'    
+but here has type
+    'MyUnion'    
