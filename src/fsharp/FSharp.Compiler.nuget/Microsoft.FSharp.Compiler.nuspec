@@ -4,7 +4,8 @@
         <id>Microsoft.FSharp.Compiler</id>
         <description>
             .NET Core compatible version of the fsharp compiler fsc.exe.
-            Supported Platforms: - .NET Core (.netstandard1.6)
+            Supported Platforms: - .NET Core (.netstandard1.6).
+            Commit hash: $githeadsha$.
         </description>
         <language>en-US</language>
         <requireLicenseAcceptance>true</requireLicenseAcceptance>
