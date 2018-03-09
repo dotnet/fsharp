@@ -3169,16 +3169,16 @@ let private ResolveExprDotLongIdent (ncenv:NameResolver) m ad nenv typ lid findF
             if isAppTy ncenv.g typ then 
                 NoResultsOrUsefulErrors
             else 
-                match lid with 
+                match lid with
                 // A unique record label access, e.g  expr.field  
-                | id::rest when nenv.eFieldLabels.ContainsKey(id.idText) -> 
-                    match nenv.eFieldLabels.[id.idText] with
-                    | [] -> NoResultsOrUsefulErrors
-                    | rfref :: _ ->
+                | id::rest -> 
+                    match Map.tryFind id.idText nenv.eFieldLabels with
+                    | Some (rfref :: _) ->
                         // NOTE (instantiationGenerator cleanup): we need to freshen here because we don't know the type. 
                         // But perhaps the caller should freshen?? 
                         let item = FreshenRecdFieldRef ncenv m rfref
                         OneSuccess (ResolutionInfo.Empty,item,rest)
+                    | _ -> NoResultsOrUsefulErrors
                 | _ -> NoResultsOrUsefulErrors 
         
         let search = dotFieldIdSearch 
