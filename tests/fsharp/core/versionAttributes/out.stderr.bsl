@@ -6,17 +6,17 @@ Test 2=================================================
 NoWarn2003_2.fs(8,6): warning FS0988: Main module of program is empty: nothing will happen when it is run
 Test 3=================================================
 
-Warn2003_1.fs(5,42): warning FS2003: An System.Reflection.AssemblyInformationalVersionAttribute specified version '5.0.0-beta024', but this value is invalid and has been ignored
+Warn2003_1.fs(5,42): warning FS2003: An AssemblyInformationalVersionAttribute specified version '5.0.0-beta024', but this value is invalid and has been ignored
 
 Warn2003_1.fs(7,6): warning FS0988: Main module of program is empty: nothing will happen when it is run
 Test 4=================================================
 
-Warn2003_2.fs(4,42): warning FS2003: An System.Reflection.AssemblyInformationalVersionAttribute specified version '5.0.0-beta024', but this value is invalid and has been ignored
+Warn2003_2.fs(4,42): warning FS2003: An AssemblyInformationalVersionAttribute specified version '5.0.0-beta024', but this value is invalid and has been ignored
 
 Warn2003_2.fs(6,6): warning FS0988: Main module of program is empty: nothing will happen when it is run
 Test 5=================================================
 
-Warn2003_3.fs(4,38): warning FS2003: An System.Reflection.AssemblyVersionAttribute specified version '5.0.0-beta024', but this value is invalid and has been ignored
+Warn2003_3.fs(4,38): warning FS2003: An AssemblyVersionAttribute specified version '5.0.0-beta024', but this value is invalid and has been ignored
 
 Warn2003_3.fs(6,6): warning FS0988: Main module of program is empty: nothing will happen when it is run
 Test 6=================================================

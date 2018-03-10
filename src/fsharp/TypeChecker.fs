@@ -17152,11 +17152,12 @@ let TypeCheckOneImplFile
     // Warn on version attributes.
     topAttrs.assemblyAttrs |> List.iter (function
        | Attrib(tref, _, [ AttribExpr(Expr.Const (Const.String(version), range, _), _) ] , _, _, _, _) ->
-            let attrName = tref.CompiledRepresentationForNamedType.FullName
+            let fullAttrName = tref.CompiledRepresentationForNamedType.FullName
+            let attrName = tref.LogicalName
             let isValid =
                 try IL.parseILVersion version |> ignore; true
                 with _ -> false
-            match attrName with
+            match fullAttrName with
             | "System.Reflection.AssemblyInformationalVersionAttribute"
             | "System.Reflection.AssemblyFileVersionAttribute" //TODO compile error like c# compiler?
             | "System.Reflection.AssemblyVersionAttribute" when not isValid ->
