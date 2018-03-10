@@ -710,8 +710,7 @@ module AttributeHelpers =
              if deterministic && versionString.Contains("*") then
                  errorR(Error(FSComp.SR.fscAssemblyWildcardAndDeterminism(attribName, versionString), Range.rangeStartup))
              try Some (IL.parseILVersion versionString)
-             with e -> 
-                 warning(Error(FSComp.SR.fscBadAssemblyVersion(attribName, versionString), Range.rangeStartup))
+             with e ->
                  None
         | _ -> None
 
@@ -778,24 +777,21 @@ module MainModuleBuilder =
                 Seq.toList
         | None -> []
 
-    let fileVersion warn findStringAttr (assemblyVersion: ILVersionInfo) =
+    let fileVersion findStringAttr (assemblyVersion: ILVersionInfo) =
         let attrName = "System.Reflection.AssemblyFileVersionAttribute"
         match findStringAttr attrName with
         | None -> assemblyVersion
         | Some (AttributeHelpers.ILVersion(v)) -> v
-        | Some v -> 
-            warn(Error(FSComp.SR.fscBadAssemblyVersion(attrName, v), Range.rangeStartup))
-            //TODO compile error like c# compiler?
+        | Some _ ->
             assemblyVersion
 
-    let productVersion warn findStringAttr (fileVersion: ILVersionInfo) =
+    let productVersion findStringAttr (fileVersion: ILVersionInfo) =
         let attrName = "System.Reflection.AssemblyInformationalVersionAttribute"
         let toDotted (v1, v2, v3, v4) = sprintf "%d.%d.%d.%d" v1 v2 v3 v4
         match findStringAttr attrName with
         | None | Some "" -> fileVersion |> toDotted
         | Some (AttributeHelpers.ILVersion(v)) -> v |> toDotted
         | Some v -> 
-            warn(Error(FSComp.SR.fscBadAssemblyVersion(attrName, v), Range.rangeStartup))
             v
 
     let productVersionToILVersionInfo (version: string) : ILVersionInfo =
@@ -934,9 +930,9 @@ module MainModuleBuilder =
                     | Some text  -> [(key, text)]
                     | _ -> []
 
-                let fileVersionInfo = fileVersion warning findAttr assemblyVersion
+                let fileVersionInfo = fileVersion findAttr assemblyVersion
 
-                let productVersionString = productVersion warning findAttr fileVersionInfo
+                let productVersionString = productVersion findAttr fileVersionInfo
 
                 let stringFileInfo = 
                      // 000004b0:
