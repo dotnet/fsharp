@@ -6871,6 +6871,19 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
     let hasOrigExpr = Option.isSome optOrigExpr
 
     let fldsList = 
+        let rec _buildForNestdFlds (lidwd : LongIdentWithDots) v =
+            match lidwd.Lid with
+            | [] -> []
+            | [fld] -> [(([], fld), v)]
+            | h :: t ->
+                let rec build lid =
+                    match lid with
+                    | [] -> ((LongIdentWithDots ([], []), true), v, None)
+                    | [fld] -> ((LongIdentWithDots ([fld],[]), true), v, None)
+                    | h :: t -> ((LongIdentWithDots ([h], []), true), Some(SynExpr.Record((None, None, [build t], h.idRange))), None)
+                [(([], h), Some(SynExpr.Record(None, None, [build t], h.idRange)))]
+
+                    
         let flds = 
             [
                 // if we met at least one field that is not syntactically correct - raise ReportedError to transfer control to the recovery routine
@@ -6880,14 +6893,12 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                         // we assume that parse errors were already reported
                         raise (ReportedError None)
 
-                    yield (List.frontAndBack lidwd.Lid, v)
-
                     match lidwd.Lid with
-                    | [_] ->  yield (List.frontAndBack lidwd.Lid, v)
-                    | _ ->
-                        for r in lidwd.Lid do
-                            yield (List.frontAndBack [r] , v)
-
+                    | []    -> ()
+                    | [_]   -> yield (List.frontAndBack lidwd.Lid, v)
+                    | _     -> match _buildForNestdFlds lidwd v with
+                                | [h] -> yield(h)
+                                | _ -> ()                    
             ]
             
         match flds with 
