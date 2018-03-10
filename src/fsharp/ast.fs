@@ -100,7 +100,7 @@ type XmlDoc =
             | (lineA::rest) as lines ->
                 let lineAT = lineA.TrimStart([|' '|])
                 if lineAT = "" then processLines rest
-                else if String.hasPrefix lineAT "<" then lines
+                else if lineAT.StartsWith "<" then lines
                 else ["<summary>"] @
                      (lines |> List.map (fun line -> Microsoft.FSharp.Core.XmlAdapters.escape(line))) @
                      ["</summary>"]
