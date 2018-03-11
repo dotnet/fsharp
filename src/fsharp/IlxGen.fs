@@ -4742,7 +4742,7 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) sta
             let ilFieldDef = mkILStaticField (fspec.Name, fty, None, None, access)
             let ilFieldDef =
                 match vref.LiteralValue with 
-                | Some konst -> { ilFieldDef.WithHasDefault(true) with LiteralValue = Some(GenFieldInit m konst) }
+                | Some konst -> { (ilFieldDef.WithHasDefault(true)).WithLiteral(true) with LiteralValue = Some(GenFieldInit m konst) }
                 | None  -> ilFieldDef 
               
             let ilFieldDef = 
