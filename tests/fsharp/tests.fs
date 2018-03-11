@@ -1465,6 +1465,18 @@ module RegressionTests =
 
         peverify cfg "test.exe"
 
+        ildasm cfg "/out=test.il" "test.exe"
+
+        let outFile = "test.il"
+        let expectedFile = "test.il.bsl"
+        
+        let diff = diff true "regression/literal-value-bug-1/test.il.bsl" "regression/literal-value-bug-1/test.il"
+
+        match diff with
+        | "" -> ()
+        | _ ->
+            Assert.Fail (sprintf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff)
+
     [<Test >]
     let ``struct-tuple-bug-1-FSC_BASIC`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSC_BASIC
 
