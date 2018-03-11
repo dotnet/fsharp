@@ -1458,7 +1458,12 @@ module ToolsTests =
 module RegressionTests = 
     
     [<Test >]
-    let ``literal-value-bug-1-FSC_BASIC`` () = singleTestBuildAndRun "regression/literal-value-bug-1" FSC_BASIC
+    let ``literal-value-bug-1-FSC_BASIC`` () =
+        let cfg = testConfig "regression/literal-value-bug-1"
+
+        fsc cfg "%s --optimize- -o:test.exe -g" cfg.fsc_flags ["test.fs"]
+
+        peverify cfg "test.exe"
 
     [<Test >]
     let ``struct-tuple-bug-1-FSC_BASIC`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSC_BASIC
