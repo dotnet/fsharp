@@ -1456,6 +1456,9 @@ module ToolsTests =
 
 
 module RegressionTests = 
+    
+    [<Test >]
+    let ``literal-value-bug-1-FSC_BASIC`` () = singleTestBuildAndRun "regression/literal-value-bug-1" FSC_BASIC
 
     [<Test >]
     let ``struct-tuple-bug-1-FSC_BASIC`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSC_BASIC
