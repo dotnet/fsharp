@@ -512,7 +512,7 @@ namespace Microsoft.FSharp.Core
         module (* internal *) ErrorStrings =
             // These 5 members were previously in use and calling SR.GetString in the static constructor.
             // Due to performance problems it created ErrorStringGetters has created to replace them.
-            // As they are part of FSharp.Core public suface they can't be removed and were replaced with hardcoded
+            // As they are part of FSharp.Core public surface they can't be removed and were replaced with hardcoded
             // english values instead. See github Microsoft/visualfsharp PR #4465 and issue #159
             let rec private getAddressOpNotFirstClassString (culture: CultureInfo) = 
                 let search = culture.Name
