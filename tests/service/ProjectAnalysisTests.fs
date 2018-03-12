@@ -5239,6 +5239,7 @@ module SomeUsedModuleContainingUnion =
 open SomeUnusedModule
 open SomeUsedModuleContainingFunction
 open SomeUsedModuleContainingExtensionMember
+open SomeUsedModuleContainingActivePattern
 open SomeUsedModuleContainingUnion
 
 type UseTheThings(i:int) =
@@ -5310,6 +5311,7 @@ module Helpers =
 open SomeUnusedModule
 open SomeUsedModuleContainingFunction
 open SomeUsedModuleContainingExtensionMember
+open SomeUsedModuleContainingActivePattern
 open SomeUsedModuleContainingUnion
 
 type UseTheThings(i:int) =
