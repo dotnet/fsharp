@@ -1,6 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
-//  Copyright (c) Microsoft Corporation.  All rights reserved.
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.5.22220.0
 
 
 
@@ -20,6 +19,10 @@
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
                                                                                                       int32,
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
+
+  // --- The following custom attribute is added automatically, do not uncomment -------
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
+
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
@@ -30,17 +33,17 @@
 }
 .mresource public FSharpOptimizationData.test
 {
-  // Offset: 0x00000278 Length: 0x000000E6
+  // Offset: 0x00000278 Length: 0x0000006F
   // WARNING: managed resource file FSharpOptimizationData.test created
 }
 .module test.exe
-// MVID: {5AA585B2-D9C1-2E4E-A745-0383B285A55A}
+ // MVID: {5AA663EB-D9C1-2E4E-A745-0383EB63A65A}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x03930000
+// Image base: 0x02BF0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -73,4 +76,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file test.il.res
+// WARNING: Created Win32 resource file test.res

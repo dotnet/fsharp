@@ -1457,7 +1457,7 @@ module ToolsTests =
 
 module RegressionTests = 
 
-    //[<Test >]
+    [<Test>]
     let ``literal-value-bug-1-FSC_BASIC`` () =
         let cfg = testConfig "regression/literal-value-bug-1"
 
@@ -1470,7 +1470,7 @@ module RegressionTests =
         let outFile = "test.il"
         let expectedFile = "test.il.bsl"
         
-        let diff = diff true "regression/literal-value-bug-1/test.il.bsl" "regression/literal-value-bug-1/test.il"
+        let diff = fsdiff cfg outFile expectedFile
 
         match diff with
         | "" -> ()
