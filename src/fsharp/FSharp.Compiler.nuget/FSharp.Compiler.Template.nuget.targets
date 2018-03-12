@@ -15,8 +15,6 @@
     </ProjectReference>
   </ItemGroup>
 
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-
   <Target Name="Build" Outputs="$(TargetPath)" DependsOnTargets="$(nugetpackfsharpcompiler)" />
   <Target Name="Rebuild"  DependsOnTargets="$(nugetpackfsharpcompiler)" />
   <Target Name="Clean"    DependsOnTargets="CleanVersionFile" />
@@ -34,7 +32,7 @@
           Outputs='$(FSharpSourcesRoot)\$(Configuration)\artifacts\$(PackageVersion)\"%(PackageNuspec.Filename)).nupkg'>
 
     <PropertyGroup>
-      <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)" -prop "diasymreaderversion=$(MicrosoftDiaSymReaderPackageVersion)" -prop "diasymreaderportablepdbversion=$(MicrosoftDiaSymReaderPortablePdbPackageVersion)"</PackageProperties>
+      <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)" -prop "diasymreaderversion=$(MicrosoftDiaSymReaderPackageVersion)" -prop "diasymreaderportablepdbversion=$(MicrosoftDiaSymReaderPortablePdbPackageVersion)" -prop "githeadsha=$(GitHeadSha)"</PackageProperties>
     </PropertyGroup>
 
     <MakeDir Directories="$(FSharpSourcesRoot)\..\artifacts" />

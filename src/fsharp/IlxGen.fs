@@ -5188,7 +5188,7 @@ and GenMethodForBinding
     
     let permissionSets = CreatePermissionSets cenv.g cenv.amap eenv securityAttributes
     
-    let secDecls = if securityAttributes.Length > 0 then (mkILSecurityDecls permissionSets) else (emptyILSecurityDecls)
+    let secDecls = if List.isEmpty securityAttributes then emptyILSecurityDecls else mkILSecurityDecls permissionSets
     
     // Do not push the attributes to the method for events and properties    
     let ilAttrsCompilerGenerated = if v.IsCompilerGenerated then [  cenv.g.CompilerGeneratedAttribute ] else []
@@ -5207,7 +5207,7 @@ and GenMethodForBinding
         // Does the function have an explicit [<EntryPoint>] attribute? 
         let isExplicitEntryPoint = HasFSharpAttribute cenv.g cenv.g.attrib_EntryPointAttribute attrs
 
-        let mdef = mdef.WithSecurity(securityAttributes.Length > 0).WithPInvoke(hasDllImport)
+        let mdef = mdef.WithSecurity(not (List.isEmpty securityAttributes)).WithPInvoke(hasDllImport)
         let mdef = mdef.WithPreserveSig(hasPreserveSigImplFlag || hasPreserveSigNamedArg).WithSynchronized(hasSynchronizedImplFlag).WithNoInlining(hasNoInliningFlag).WithAggressiveInlining(hasAggressiveInliningImplFlag)
         let mdef =
             { mdef with 
@@ -6238,7 +6238,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                                     not (HasFSharpAttribute cenv.g cenv.g.attrib_DebuggerTypeProxyAttribute tycon.Attribs))
 
         let permissionSets = CreatePermissionSets cenv.g cenv.amap eenv securityAttrs
-        let secDecls = if securityAttrs.Length > 0 then (mkILSecurityDecls permissionSets) else (emptyILSecurityDecls)
+        let secDecls = if List.isEmpty securityAttrs then emptyILSecurityDecls else mkILSecurityDecls permissionSets
         
         let ilDebugDisplayAttributes = 
             [ yield! GenAttrs cenv eenv debugDisplayAttrs
@@ -6699,7 +6699,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
 
            | _ -> failwith "??"
 
-        let tdef = tdef.WithHasSecurity(securityAttrs.Length > 0)
+        let tdef = tdef.WithHasSecurity(not (List.isEmpty securityAttrs))
         let tdef = 
             { tdef with 
                 SecurityDecls = secDecls }

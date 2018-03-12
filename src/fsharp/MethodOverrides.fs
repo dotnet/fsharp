@@ -709,7 +709,7 @@ let GetAbstractMethInfosForSynMethodDecl(infoReader:InfoReader,ad,memberName:Ide
             GetIntrinsicMethInfosOfType infoReader (Some(memberName.idText), ad, AllowMultiIntfInstantiations.Yes) IgnoreOverrides bindm ty
     let dispatchSlots = minfos |> List.filter (fun minfo -> minfo.IsDispatchSlot)
     let topValSynArities = SynInfo.AritiesOfArgs valSynData
-    let topValSynArities = if topValSynArities.Length > 0 then topValSynArities.Tail else topValSynArities
+    let topValSynArities = if List.isEmpty topValSynArities then topValSynArities else topValSynArities.Tail
     let dispatchSlotsArityMatch = dispatchSlots |> List.filter (fun minfo -> minfo.NumArgs = topValSynArities) 
     dispatchSlots,dispatchSlotsArityMatch 
 

@@ -1816,7 +1816,7 @@ and seekReadTypeDefOrRef ctxt numtypars boxity (ginst:ILTypes) (TaggedIndex(tag,
     | tag when tag = tdor_TypeDef -> seekReadTypeDefAsType ctxt boxity ginst idx
     | tag when tag = tdor_TypeRef -> seekReadTypeRefAsType ctxt boxity ginst idx
     | tag when tag = tdor_TypeSpec -> 
-        if ginst.Length > 0 then dprintn ("type spec used as type constructor for a generic instantiation: ignoring instantiation")
+        if not (List.isEmpty ginst) then dprintn ("type spec used as type constructor for a generic instantiation: ignoring instantiation")
         readBlobHeapAsType ctxt numtypars (seekReadTypeSpecRow ctxt idx)
     | _ -> failwith "seekReadTypeDefOrRef ctxt"
 

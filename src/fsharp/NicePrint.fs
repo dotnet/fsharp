@@ -71,9 +71,10 @@ module internal PrintUtilities =
                     tcref.DisplayName // has no static params
                 else
                     tcref.DisplayName+"<...>" // shorten
-            if isAttribute then 
-                defaultArg (String.tryDropSuffix name "Attribute") name 
-            else name
+            if isAttribute && name.EndsWith "Attribute" then
+                String.dropSuffix name "Attribute"
+            else 
+                name
         let tyconTextL =
             tagEntityRefName tcref demangled
             |> mkNav tcref.DefinitionRange
@@ -654,9 +655,10 @@ module private PrintTypes =
         | ILAttrib ilMethRef -> 
             let trimmedName = 
                 let name = ilMethRef.DeclaringTypeRef.Name
-                match String.tryDropSuffix name "Attribute" with 
-                | Some shortName -> shortName
-                | None -> name
+                if name.EndsWith "Attribute" then
+                    String.dropSuffix name "Attribute"
+                else
+                    name
             let tref = ilMethRef.DeclaringTypeRef
             let tref = ILTypeRef.Create(scope= tref.Scope, enclosing=tref.Enclosing, name=trimmedName)
             PrintIL.layoutILTypeRef denv tref ++ argsL
@@ -1275,7 +1277,7 @@ module InfoMemberPrinting =
         let paramDatas = minfo.GetParamDatas(amap, m, minst)
         let layout =
             layout ^^
-                if isNil (List.concat paramDatas) then
+                if List.forall isNil paramDatas then
                     WordL.structUnit
                 else
                     sepListL WordL.arrow (List.map ((List.map (layoutParamData denv)) >> sepListL WordL.star) paramDatas)
