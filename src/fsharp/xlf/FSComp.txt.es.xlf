@@ -6972,6 +6972,51 @@
         <target state="translated">Este método o propiedad no se utiliza normalmente desde código F#, use un modelo de tupla explícito para la deconstrucción en su lugar.</target>
         <note />
       </trans-unit>
+      <trans-unit id="implicitlyDiscardedInSequenceExpression">
+        <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.</source>
+        <target state="translated">Esta expresión devuelve un valor de tipo “{0}”, pero se descarta de forma implícita. Considere el uso de “let” para enlazar el resultado a un nombre; por ejemplo, “let result = expression”. Si su intención es utilizar la expresión como un valor en la secuencia, utilice “yield” de forma explícita.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="implicitlyDiscardedSequenceInSequenceExpression">
+        <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</source>
+        <target state="translated">Esta expresión devuelve un valor de tipo “{0}”, pero se descarta de forma implícita. Considere el uso de “let” para enlazar el resultado a un nombre; por ejemplo, “let result = expression”. Si su intención es utilizar la expresión como un valor en la secuencia, utilice “yield” de forma explícita.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsUnmatchedBraceBar">
+        <source>Unmatched '{{|'</source>
+        <target state="new">Unmatched '{{|'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typeInfoAnonRecdField">
+        <source>anonymous record field</source>
+        <target state="new">anonymous record field</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdCcuMismatch">
+        <source>Two anonymous record types are from different assemblies '{0}' and '{1}'</source>
+        <target state="new">Two anonymous record types are from different assemblies '{0}' and '{1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdCcuMismatch2">
+        <source>One anonymous record type is assembly-bound to '{0}' (syntax 'new {{| ... |}}'), the other is assembly-neutral (syntax '{{| ... |}}')</source>
+        <target state="new">One anonymous record type is assembly-bound to '{0}' (syntax 'new {{| ... |}}'), the other is assembly-neutral (syntax '{{| ... |}}')</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdFieldNameMismatch">
+        <source>Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</source>
+        <target state="new">Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsInvalidAnonRecdExpr">
+        <source>Invalid anonymous record expression</source>
+        <target state="new">Invalid anonymous record expression</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsInvalidAnonRecdType">
+        <source>Invalid anonymous record type</source>
+        <target state="new">Invalid anonymous record type</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

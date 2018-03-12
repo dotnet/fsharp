@@ -11,6 +11,7 @@
     "Microsoft.Build": "15.1.548",
     "Microsoft.Build.Framework": "15.1.548",
     "Microsoft.Build.Tasks.Core": "15.1.548",
+    "Testing.FSharp.Core": "4.2.4",
     "Microsoft.Build.Utilities.Core": "15.1.548"
   },
   "runtimes": {

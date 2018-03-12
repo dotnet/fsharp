@@ -284,6 +284,10 @@ module internal DescriptionListsImpl =
             let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] rfinfo.FieldType
             [], prettyRetTyL
 
+        | Item.AnonRecdField(_anonInfo,tys,i) ->
+            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] tys.[i]
+            [], prettyRetTyL
+
         | Item.ILField finfo ->
             let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] (finfo.FieldType(amap,m))
             [], prettyRetTyL
@@ -367,12 +371,11 @@ module internal DescriptionListsImpl =
             | TRecdRepr _ -> FSharpGlyph.Type
             | TUnionRepr _ -> FSharpGlyph.Union
             | TILObjectRepr (TILObjectReprData (_,_,td)) -> 
-                match td.tdKind with 
-                | ILTypeDefKind.Class -> FSharpGlyph.Class
-                | ILTypeDefKind.ValueType -> FSharpGlyph.Struct
-                | ILTypeDefKind.Interface -> FSharpGlyph.Interface
-                | ILTypeDefKind.Enum -> FSharpGlyph.Enum
-                | ILTypeDefKind.Delegate -> FSharpGlyph.Delegate
+                if td.IsClass        then FSharpGlyph.Class
+                elif td.IsStruct     then FSharpGlyph.Struct
+                elif td.IsInterface  then FSharpGlyph.Interface
+                elif td.IsEnum       then FSharpGlyph.Enum
+                else                      FSharpGlyph.Delegate
             | TAsmRepr _ -> FSharpGlyph.Typedef
             | TMeasureableRepr _-> FSharpGlyph.Typedef 
 #if !NO_EXTENSIONTYPING
@@ -405,6 +408,7 @@ module internal DescriptionListsImpl =
             | Item.UnionCase _
             | Item.ActivePatternCase _ -> FSharpGlyph.EnumMember   
             | Item.ExnCase _ -> FSharpGlyph.Exception   
+            | Item.AnonRecdField _ -> FSharpGlyph.Field
             | Item.RecdField _ -> FSharpGlyph.Field
             | Item.ILField _ -> FSharpGlyph.Field
             | Item.Event _ -> FSharpGlyph.Event   
@@ -431,7 +435,7 @@ module internal DescriptionListsImpl =
                     if tydef.IsInterface then FSharpGlyph.Interface
                     elif tydef.IsDelegate then FSharpGlyph.Delegate
                     elif tydef.IsEnum then FSharpGlyph.Enum
-                    elif tydef.IsStructOrEnum then FSharpGlyph.Struct
+                    elif tydef.IsStruct then FSharpGlyph.Struct
                     else FSharpGlyph.Class
                 else FSharpGlyph.Class
             | Item.ModuleOrNamespaces(modref::_) -> 

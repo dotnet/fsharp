@@ -597,9 +597,6 @@
   <data name="typrelCannotResolveImplicitGenericInstantiation" xml:space="preserve">
     <value>The implicit instantiation of a generic construct at or near this point could not be resolved because it could resolve to multiple unrelated types, e.g. '{0}' and '{1}'. Consider using type annotations to resolve the ambiguity</value>
   </data>
-  <data name="typrelCannotResolveAmbiguityInOverloadedOperator" xml:space="preserve">
-    <value>Could not resolve the ambiguity inherent in the use of the operator '{0}' at or near this program point. Consider using type annotations to resolve the ambiguity.</value>
-  </data>
   <data name="typrelCannotResolveAmbiguityInPrintf" xml:space="preserve">
     <value>Could not resolve the ambiguity inherent in the use of a 'printf'-style format string</value>
   </data>
@@ -1120,7 +1117,7 @@
     <value>The member or object constructor '{0}' is not {1}</value>
   </data>
   <data name="csMemberIsNotAccessible2" xml:space="preserve">
-    <value>The member or object constructor '{0}' is not {1}. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from inner lambda expressions.</value>
+    <value>The member or object constructor '{0}' is not {1}. Private members may only be accessed from within the declaring type. Protected members may only be accessed from an extending type and cannot be accessed from within inner lambda expressions, object expressions or computation expressions (such as async { }). If {0} is a protected member, consider creating a member in this type that calls it.</value>
   </data>
   <data name="csMethodIsNotAStaticMethod" xml:space="preserve">
     <value>{0} is not a static method</value>
@@ -1433,6 +1430,9 @@
   </data>
   <data name="parsUnmatchedBrace" xml:space="preserve">
     <value>Unmatched '{{'</value>
+  </data>
+  <data name="parsUnmatchedBraceBar" xml:space="preserve">
+    <value>Unmatched '{{|'</value>
   </data>
   <data name="parsFieldBinding" xml:space="preserve">
     <value>Field bindings must have the form 'id = expr;'</value>
@@ -2850,6 +2850,9 @@
   <data name="typeInfoArgument" xml:space="preserve">
     <value>argument</value>
   </data>
+  <data name="typeInfoAnonRecdField" xml:space="preserve">
+    <value>anonymous record field</value>
+  </data>
   <data name="typeInfoPatternVariable" xml:space="preserve">
     <value>patvar</value>
   </data>
@@ -4053,6 +4056,15 @@
   <data name="parsUnexpectedSymbolEqualsInsteadOfIn" xml:space="preserve">
     <value>Unexpected symbol '=' in expression. Did you intend to use 'for x in y .. z do' instead?</value>
   </data>
+  <data name="tcAnonRecdCcuMismatch" xml:space="preserve">
+    <value>Two anonymous record types are from different assemblies '{0}' and '{1}'</value>
+  </data>
+  <data name="tcAnonRecdCcuMismatch2" xml:space="preserve">
+    <value>One anonymous record type is assembly-bound to '{0}' (syntax 'new {{| ... |}}'), the other is assembly-neutral (syntax '{{| ... |}}')</value>
+  </data>
+  <data name="tcAnonRecdFieldNameMismatch" xml:space="preserve">
+    <value>Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</value>
+  </data>
   <data name="keywordDescriptionAbstract" xml:space="preserve">
     <value>Indicates a method that either has no implementation in the type in which it is declared or that is virtual and has a default implementation.</value>
   </data>
@@ -4303,7 +4315,18 @@
   <data name="pickleUnexpectedNonZero" xml:space="preserve">
     <value>An error occurred while reading the F# metadata of assembly '{0}'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.</value>
   </data>
+  <data name="parsInvalidAnonRecdExpr" xml:space="preserve">
+    <value>Invalid anonymous record expression</value>
+  </data>
+  <data name="parsInvalidAnonRecdType" xml:space="preserve">
+    <value>Invalid anonymous record type</value>
   <data name="tcTupleMemberNotNormallyUsed" xml:space="preserve">
     <value>This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</value>
+  </data>
+  <data name="implicitlyDiscardedInSequenceExpression" xml:space="preserve">
+    <value>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.</value>
+  </data>
+  <data name="implicitlyDiscardedSequenceInSequenceExpression" xml:space="preserve">
+    <value>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</value>
   </data>
 </root>

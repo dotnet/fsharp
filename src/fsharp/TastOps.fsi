@@ -181,6 +181,8 @@ val mkReraiseLibCall : TcGlobals -> TType -> range -> Expr
 //------------------------------------------------------------------------- 
  
 val mkTupleFieldGet                : TcGlobals -> TupInfo * Expr * TypeInst * int * range -> Expr
+val mkAnonRecdFieldGet             : TcGlobals -> AnonRecdTypeInfo * Expr * TypeInst * int * range -> Expr
+val mkAnonRecdFieldGetViaExprAddr  : AnonRecdTypeInfo * Expr * TypeInst * int * range -> Expr
 val mkRecdFieldGetViaExprAddr      : Expr * RecdFieldRef   * TypeInst               * range -> Expr
 val mkRecdFieldGetAddrViaExprAddr  : Expr * RecdFieldRef   * TypeInst               * range -> Expr
 val mkStaticRecdFieldGet           :        RecdFieldRef   * TypeInst               * range -> Expr
@@ -249,6 +251,7 @@ val mkGetTupleItemN : TcGlobals -> range -> int -> ILType -> bool -> Expr -> TTy
 /// Evaluate the TupInfo to work out if it is a struct or a ref.  Currently this is very simple
 /// but TupInfo may later be used carry variables that infer structness.
 val evalTupInfoIsStruct : TupInfo -> bool
+val evalAnonInfoIsStruct : AnonRecdTypeInfo -> bool
 
 /// If it is a tuple type, ensure it's outermost type is a .NET tuple type, otherwise leave unchanged
 val helpEnsureTypeHasMetadata : TcGlobals -> TType -> TType
@@ -430,6 +433,8 @@ val isForallTy         : TcGlobals -> TType -> bool
 val isAnyTupleTy       : TcGlobals -> TType -> bool
 val isRefTupleTy       : TcGlobals -> TType -> bool
 val isStructTupleTy    : TcGlobals -> TType -> bool
+val isStructAnonRecdTy    : TcGlobals -> TType -> bool
+val isAnonRecdTy    : TcGlobals -> TType -> bool
 val isUnionTy          : TcGlobals -> TType -> bool
 val isReprHiddenTy     : TcGlobals -> TType -> bool
 val isFSharpObjModelTy : TcGlobals -> TType -> bool
@@ -452,6 +457,7 @@ val tcrefOfAppTy   : TcGlobals -> TType -> TyconRef
 val tryDestAppTy   : TcGlobals -> TType -> TyconRef option
 val tryDestTyparTy : TcGlobals -> TType -> Typar option
 val tryDestFunTy : TcGlobals -> TType -> (TType * TType) option
+val tryDestAnonRecdTy : TcGlobals -> TType -> (AnonRecdTypeInfo * TType list) option
 val argsOfAppTy    : TcGlobals -> TType -> TypeInst
 val mkInstForAppTy  : TcGlobals -> TType -> TyparInst
 
@@ -577,6 +583,7 @@ val returnTypesAEquivAux      : Erasure -> TcGlobals -> TypeEquivEnv -> TType op
 val returnTypesAEquiv         :            TcGlobals -> TypeEquivEnv -> TType option           -> TType option           -> bool
 val tcrefAEquiv               :            TcGlobals -> TypeEquivEnv -> TyconRef             -> TyconRef             -> bool
 val valLinkageAEquiv          :            TcGlobals -> TypeEquivEnv -> Val   -> Val -> bool
+val anonInfoEquiv             : AnonRecdTypeInfo -> AnonRecdTypeInfo -> bool
 
 //-------------------------------------------------------------------------
 // Erasure of types wrt units-of-measure and type providers
@@ -1221,14 +1228,76 @@ val mkCallArrayGet           : TcGlobals -> range -> TType -> Expr -> Expr -> Ex
 val mkCallArray2DGet         : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr 
 val mkCallArray3DGet         : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr
 val mkCallArray4DGet         : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
+val mkCallArraySet           : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
+val mkCallArray2DSet         : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr
+val mkCallArray3DSet         : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
+val mkCallArray4DSet         : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
+
+val mkCallHash               : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallBox                : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallIsNull             : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallIsNotNull          : TcGlobals -> range -> TType -> Expr -> Expr
 val mkCallRaise              : TcGlobals -> range -> TType -> Expr -> Expr
 
 val mkCallGenericComparisonWithComparerOuter : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
 val mkCallGenericEqualityEROuter             : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
-val mkCallEqualsOperator                     : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
-val mkCallSubtractionOperator                : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 val mkCallGenericEqualityWithComparerOuter   : TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
 val mkCallGenericHashWithComparerOuter       : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+
+val mkCallEqualsOperator                     : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+val mkCallNotEqualsOperator                  : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+val mkCallLessThanOperator                   : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+val mkCallLessThanOrEqualsOperator           : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+val mkCallGreaterThanOperator                : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+val mkCallGreaterThanOrEqualsOperator        : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+
+val mkCallAdditionOperator                   : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+val mkCallSubtractionOperator                : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+val mkCallMultiplyOperator                   : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+val mkCallDivisionOperator                   : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+val mkCallModulusOperator                    : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+val mkCallBitwiseAndOperator                 : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+val mkCallBitwiseOrOperator                  : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+val mkCallBitwiseXorOperator                 : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+val mkCallShiftLeftOperator                  : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+val mkCallShiftRightOperator                 : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+
+val mkCallUnaryNegOperator                   : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallUnaryNotOperator                   : TcGlobals -> range -> TType -> Expr -> Expr
+
+val mkCallAdditionChecked                    : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+val mkCallSubtractionChecked                 : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+val mkCallMultiplyChecked                    : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
+val mkCallUnaryNegChecked                    : TcGlobals -> range -> TType -> Expr -> Expr
+
+val mkCallToByteChecked                      : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToSByteChecked                     : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToInt16Checked                     : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToUInt16Checked                    : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToIntChecked                       : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToInt32Checked                     : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToUInt32Checked                    : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToInt64Checked                     : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToUInt64Checked                    : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToIntPtrChecked                    : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToUIntPtrChecked                   : TcGlobals -> range -> TType -> Expr -> Expr
+
+val mkCallToByteOperator                     : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToSByteOperator                    : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToInt16Operator                    : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToUInt16Operator                   : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToIntOperator                      : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToInt32Operator                    : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToUInt32Operator                   : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToInt64Operator                    : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToUInt64Operator                   : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToSingleOperator                   : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToDoubleOperator                   : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToIntPtrOperator                   : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToUIntPtrOperator                  : TcGlobals -> range -> TType -> Expr -> Expr
+
+val mkCallToCharOperator                     : TcGlobals -> range -> TType -> Expr -> Expr
+val mkCallToEnumOperator                     : TcGlobals -> range -> TType -> Expr -> Expr
 
 val mkCallDeserializeQuotationFSharp20Plus  : TcGlobals -> range -> Expr -> Expr -> Expr -> Expr -> Expr
 val mkCallDeserializeQuotationFSharp40Plus : TcGlobals -> range -> Expr -> Expr -> Expr -> Expr -> Expr -> Expr
@@ -1346,7 +1415,6 @@ val isRefTupleExpr : Expr -> bool
 val tryDestRefTupleExpr : Expr -> Exprs
 
 val mkAnyTupledTy : TcGlobals -> TupInfo -> TType list -> TType
-
 val mkAnyTupled : TcGlobals -> range -> TupInfo -> Exprs -> TType list -> Expr 
 val mkRefTupled : TcGlobals -> range -> Exprs -> TType list -> Expr 
 val mkRefTupledNoTypes : TcGlobals -> range -> Exprs -> Expr 
@@ -1354,6 +1422,14 @@ val mkRefTupledTy : TcGlobals -> TType list -> TType
 val mkRefTupledVarsTy : TcGlobals -> Val list -> TType
 val mkRefTupledVars : TcGlobals -> range -> Val list -> Expr 
 val mkMethodTy : TcGlobals -> TType list list -> TType -> TType
+
+
+//-------------------------------------------------------------------------
+// Anonymous records
+//------------------------------------------------------------------------- 
+
+val mkAnyAnonRecdTy : TcGlobals -> AnonRecdTypeInfo -> TType list -> TType
+val mkAnonRecd : TcGlobals -> range -> AnonRecdTypeInfo -> Exprs -> TType list -> Expr 
 
 //-------------------------------------------------------------------------
 // 

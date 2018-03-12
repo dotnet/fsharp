@@ -425,6 +425,26 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             let argsR = ConvExprs cenv env args
             QP.mkRecdMk(rgtypR,tyargsR,argsR)
 
+        | TOp.AnonRecd anonInfo, _, _  ->  
+            if anonInfo.IsErased then 
+                ConvExprCore cenv env (Expr.Op(TOp.Tuple anonInfo.TupInfo,tyargs,args,m)) 
+            else
+                let tref = anonInfo.ILTypeRef
+                let rgtypR = ConvILTypeRef cenv tref
+                let tyargsR = ConvTypes cenv env m tyargs
+                let argsR = ConvExprs cenv env args
+                QP.mkRecdMk(rgtypR,tyargsR,argsR)
+
+        | TOp.AnonRecdGet (anonInfo, n), _, _  ->  
+            if anonInfo.IsErased then 
+                ConvExprCore cenv env (Expr.Op(TOp.TupleFieldGet (anonInfo.TupInfo, n),tyargs,args,m)) 
+            else 
+                let tref = anonInfo.ILTypeRef
+                let rgtypR = ConvILTypeRef cenv tref
+                let tyargsR = ConvTypes cenv env m tyargs
+                let argsR = ConvExprs cenv env args
+                QP.mkRecdGet((rgtypR,anonInfo.Names.[n]),tyargsR,argsR)
+
         | TOp.UnionCaseFieldGet (ucref,n),tyargs,[e] -> 
             ConvUnionFieldGet cenv env m ucref n tyargs e
 
@@ -808,6 +828,13 @@ and ConvType cenv env m typ =
 
     | TType_fun(a,b)          -> QP.mkFunTy(ConvType cenv env m a,ConvType cenv env m b)
     | TType_tuple(tupInfo,l)  -> ConvType cenv env m (mkCompiledTupleTy cenv.g (evalTupInfoIsStruct tupInfo) l)
+    | TType_anon(anonInfo,tinst) -> 
+        if anonInfo.IsErased then 
+            ConvType cenv env m (TType_tuple (anonInfo.TupInfo, tinst))
+        else
+            let tref = anonInfo.ILTypeRef
+            let tinstR = ConvTypes cenv env m tinst
+            QP.mkILNamedTy(ConvILTypeRefUnadjusted cenv m tref, tinstR)
     | TType_var(tp)           -> QP.mkVarTy(ConvTyparRef cenv env m tp)
     | TType_forall(_spec,_ty)   -> wfail(Error(FSComp.SR.crefNoInnerGenericsInQuotations(),m))
     | _ -> wfail(Error (FSComp.SR.crefQuotationsCantContainThisType(),m))

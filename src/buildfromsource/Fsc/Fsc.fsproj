@@ -9,13 +9,11 @@
     <AssemblyName>fsc</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
-    <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <OtherFlags>$(OtherFlags) --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
   </PropertyGroup>
 
   <Import Project="..\BuildFromSource.targets" />
   <ItemGroup>
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\Fsc\InternalsVisibleTo.fs" />
     <Compile Include="AssemblyInfo.fs">
       <Link>Resources/AssemblyInfo.fs</Link>
     </Compile>

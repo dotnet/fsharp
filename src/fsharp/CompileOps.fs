@@ -532,11 +532,11 @@ let UseOfAddressOfOperatorE() = DeclareResourceString("UseOfAddressOfOperator", 
 let DefensiveCopyWarningE() = DeclareResourceString("DefensiveCopyWarning", "%s")
 let DeprecatedThreadStaticBindingWarningE() = DeclareResourceString("DeprecatedThreadStaticBindingWarning", "")
 let FunctionValueUnexpectedE() = DeclareResourceString("FunctionValueUnexpected", "%s")
-let UnitTypeExpectedE() = DeclareResourceString("UnitTypeExpected", "")
-let UnitTypeExpectedWithEqualityE() = DeclareResourceString("UnitTypeExpectedWithEquality", "")
-let UnitTypeExpectedWithPossiblePropertySetterE() = DeclareResourceString("UnitTypeExpectedWithPossiblePropertySetter", "%s%s")
-let UnitTypeExpectedWithPossibleAssignmentE() = DeclareResourceString("UnitTypeExpectedWithPossibleAssignment", "%s")
-let UnitTypeExpectedWithPossibleAssignmentToMutableE() = DeclareResourceString("UnitTypeExpectedWithPossibleAssignmentToMutable", "%s")
+let UnitTypeExpectedE() = DeclareResourceString("UnitTypeExpected", "%s")
+let UnitTypeExpectedWithEqualityE() = DeclareResourceString("UnitTypeExpectedWithEquality", "%s")
+let UnitTypeExpectedWithPossiblePropertySetterE() = DeclareResourceString("UnitTypeExpectedWithPossiblePropertySetter", "%s%s%s")
+let UnitTypeExpectedWithPossibleAssignmentE() = DeclareResourceString("UnitTypeExpectedWithPossibleAssignment", "%s%s")
+let UnitTypeExpectedWithPossibleAssignmentToMutableE() = DeclareResourceString("UnitTypeExpectedWithPossibleAssignmentToMutable", "%s%s")
 let RecursiveUseCheckedAtRuntimeE() = DeclareResourceString("RecursiveUseCheckedAtRuntime", "")
 let LetRecUnsound1E() = DeclareResourceString("LetRecUnsound1", "%s")
 let LetRecUnsound2E() = DeclareResourceString("LetRecUnsound2", "%s%s")
@@ -699,7 +699,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
                 os.Append(System.Environment.NewLine + FSComp.SR.derefInsteadOfNot()) |> ignore
           | _ -> os.Append(ErrorFromAddingTypeEquation1E().Format t2 t1 tpcs) |> ignore
 
-      | ErrorFromAddingTypeEquation(_, _, _, _, ((ConstraintSolverTypesNotInEqualityRelation (_, _, _, _, _, contextInfo) ) as e), _) when contextInfo <> ContextInfo.NoContext ->  
+      | ErrorFromAddingTypeEquation(_, _, _, _, ((ConstraintSolverTypesNotInEqualityRelation (_, _, _, _, _, contextInfo) ) as e), _) when (match contextInfo with ContextInfo.NoContext -> false | _ -> true) ->  
           OutputExceptionR os e
 
       | ErrorFromAddingTypeEquation(_, _, _, _, ((ConstraintSolverTypesNotInSubsumptionRelation _ | ConstraintSolverError _ ) as e), _) ->  
@@ -959,12 +959,12 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
               | Parser.TOKEN_RPAREN | Parser.TOKEN_RPAREN_COMING_SOON | Parser.TOKEN_RPAREN_IS_HERE -> getErrorString("Parser.TOKEN.RPAREN")
               | Parser.TOKEN_LQUOTE  -> getErrorString("Parser.TOKEN.LQUOTE")
               | Parser.TOKEN_LBRACK  -> getErrorString("Parser.TOKEN.LBRACK")
+              | Parser.TOKEN_LBRACE_BAR   -> getErrorString("Parser.TOKEN.LBRACE.BAR")
               | Parser.TOKEN_LBRACK_BAR  -> getErrorString("Parser.TOKEN.LBRACK.BAR")
               | Parser.TOKEN_LBRACK_LESS  -> getErrorString("Parser.TOKEN.LBRACK.LESS")
               | Parser.TOKEN_LBRACE   -> getErrorString("Parser.TOKEN.LBRACE")
-              | Parser.TOKEN_LBRACE_LESS-> getErrorString("Parser.TOKEN.LBRACE.LESS")
               | Parser.TOKEN_BAR_RBRACK   -> getErrorString("Parser.TOKEN.BAR.RBRACK")
-              | Parser.TOKEN_GREATER_RBRACE   -> getErrorString("Parser.TOKEN.GREATER.RBRACE")
+              | Parser.TOKEN_BAR_RBRACE   -> getErrorString("Parser.TOKEN.BAR.RBRACE")
               | Parser.TOKEN_GREATER_RBRACK  -> getErrorString("Parser.TOKEN.GREATER.RBRACK")
               | Parser.TOKEN_RQUOTE_DOT _ 
               | Parser.TOKEN_RQUOTE  -> getErrorString("Parser.TOKEN.RQUOTE")
@@ -1094,7 +1094,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
                   (* Merge a bunch of expression non terminals *)
                   let (|NONTERM_Category_Expr|_|) = function
                         | Parser.NONTERM_argExpr|Parser.NONTERM_minusExpr|Parser.NONTERM_parenExpr|Parser.NONTERM_atomicExpr
-                        | Parser.NONTERM_appExpr|Parser.NONTERM_tupleExpr|Parser.NONTERM_declExpr|Parser.NONTERM_braceExpr
+                        | Parser.NONTERM_appExpr|Parser.NONTERM_tupleExpr|Parser.NONTERM_declExpr|Parser.NONTERM_braceExpr|Parser.NONTERM_braceBarExpr
                         | Parser.NONTERM_typedSeqExprBlock
                         | Parser.NONTERM_interactiveExpr -> Some()
                         | _ -> None
@@ -1292,28 +1292,32 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
           os.Append(DeprecatedThreadStaticBindingWarningE().Format) |> ignore
 
       | FunctionValueUnexpected (denv, ty, _) ->
-          // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
-          os.Append(FunctionValueUnexpectedE().Format (NicePrint.stringOfTy denv ty)) |> ignore
+          let errorText = FunctionValueUnexpectedE().Format (NicePrint.stringOfTy denv ty)
+          os.Append errorText |> ignore
 
-      | UnitTypeExpected (_, _, _) ->
-          let warningText = UnitTypeExpectedE().Format
+      | UnitTypeExpected (denv, ty, _) ->
+          let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
+          let warningText = UnitTypeExpectedE().Format (NicePrint.stringOfTy denv ty)
           os.Append warningText |> ignore
 
-      | UnitTypeExpectedWithEquality (_) ->
-          let warningText = UnitTypeExpectedWithEqualityE().Format
+      | UnitTypeExpectedWithEquality (denv, ty, _) ->
+          let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
+          let warningText = UnitTypeExpectedWithEqualityE().Format (NicePrint.stringOfTy denv ty)
           os.Append warningText |> ignore
 
-      | UnitTypeExpectedWithPossiblePropertySetter (_, _, bindingName, propertyName, _) ->
-          let warningText = UnitTypeExpectedWithPossiblePropertySetterE().Format bindingName propertyName
+      | UnitTypeExpectedWithPossiblePropertySetter (denv, ty, bindingName, propertyName, _) ->
+          let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
+          let warningText = UnitTypeExpectedWithPossiblePropertySetterE().Format (NicePrint.stringOfTy denv ty) bindingName propertyName
           os.Append warningText |> ignore
 
-      | UnitTypeExpectedWithPossibleAssignment (_, _, isAlreadyMutable, bindingName, _) ->
+      | UnitTypeExpectedWithPossibleAssignment (denv, ty, isAlreadyMutable, bindingName, _) ->
+          let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
           let warningText = 
             if isAlreadyMutable then
-                UnitTypeExpectedWithPossibleAssignmentToMutableE().Format bindingName
+                UnitTypeExpectedWithPossibleAssignmentToMutableE().Format (NicePrint.stringOfTy denv ty) bindingName
             else
-                UnitTypeExpectedWithPossibleAssignmentE().Format bindingName
+                UnitTypeExpectedWithPossibleAssignmentE().Format (NicePrint.stringOfTy denv ty)  bindingName
           os.Append warningText |> ignore
 
       | RecursiveUseCheckedAtRuntime  _ -> 
@@ -2283,9 +2287,7 @@ type TcConfigBuilder =
       mutable optSettings   : Optimizer.OptimizationSettings 
       mutable emitTailcalls : bool
       mutable deterministic : bool
-#if PREFERRED_UI_LANG
       mutable preferredUiLang: string option
-#endif
       mutable lcid          : int option
       mutable productNameForBannerText : string
       /// show the MS (c) notice, e.g. with help or fsi? 
@@ -2444,9 +2446,7 @@ type TcConfigBuilder =
           optSettings = Optimizer.OptimizationSettings.Defaults
           emitTailcalls = true
           deterministic = false
-#if PREFERRED_UI_LANG
           preferredUiLang = None
-#endif
           lcid = None
           // See bug 6071 for product banner spec
           productNameForBannerText = FSComp.SR.buildProductName(FSharpEnvironment.FSharpBannerVersion)
@@ -2627,7 +2627,7 @@ let OpenILBinary(filename, optimizeForMemory, openBinariesInMemory, ilGlobalsOpt
           ILBinaryReader.OpenILModuleReaderAfterReadingAllBytes filename opts
       else
         let location =
-#if !FX_RESHAPED_REFLECTION_CORECLR // shadow copy not supported
+#if !FX_RESHAPED_REFLECTION // shadow copy not supported
           // In order to use memory mapped files on the shadow copied version of the Assembly, we `preload the assembly
           // We swallow all exceptions so that we do not change the exception contract of this API
           if shadowCopyReferences then 
@@ -2793,7 +2793,8 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
     // Look for an explicit reference to FSharp.Core and use that to compute fsharpBinariesDir
     // FUTURE: remove this, we only read the binary for the exception it raises
     let fsharpBinariesDirValue = 
-#if FX_NO_SIMPLIFIED_LOADER
+// NOTE: It's not clear why this behaviour has been changed for the NETSTANDARD compilations of the F# compiler
+#if NETSTANDARD1_6 || NETSTANDARD2_0
         data.defaultFSharpBinariesDir
 #else
         match fslibExplicitFilenameOpt with
@@ -2910,9 +2911,7 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
     member x.optSettings        = data.optSettings
     member x.emitTailcalls      = data.emitTailcalls
     member x.deterministic      = data.deterministic
-#if PREFERRED_UI_LANG
     member x.preferredUiLang    = data.preferredUiLang
-#endif
     member x.lcid               = data.lcid
     member x.optsOn             = data.optsOn
     member x.productNameForBannerText  = data.productNameForBannerText
@@ -2957,7 +2956,8 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
                 yield tcConfig.MakePathAbsolute x
 
             | None -> 
-#if FSI_TODO_NETCORE // there is no really good notion of runtime directory on .NETCore
+// "there is no really good notion of runtime directory on .NETCore"
+#if NETSTANDARD1_6 || NETSTANDARD2_0
                 let runtimeRoot = Path.GetDirectoryName(typeof<System.Object>.Assembly.Location)
 #else
                 let runtimeRoot = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
@@ -4287,7 +4287,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             // specified in the attributes
             |> List.distinctBy (fun s -> try Path.GetFileNameWithoutExtension(s) with _ -> s)
 
-        if designTimeAssemblyNames.Length > 0 then
+        if not (List.isEmpty designTimeAssemblyNames) then
 
             // Find the SystemRuntimeAssemblyVersion value to report in the TypeProviderConfig.
             let primaryAssemblyVersion = 

@@ -191,9 +191,11 @@ module public AstTraversal =
                     |> pick expr
                 | SynExpr.Const(_synConst, _range) -> None
                 | SynExpr.Typed(synExpr, synType, _range) -> [ traverseSynExpr synExpr; traverseSynType synType ] |> List.tryPick id
-                | SynExpr.Tuple(synExprList, _, _range) 
-                | SynExpr.StructTuple(synExprList, _, _range) -> synExprList |> List.map (fun x -> dive x x.Range traverseSynExpr) |> pick expr
+                | SynExpr.Tuple(_, synExprList, _, _range) 
                 | SynExpr.ArrayOrList(_, synExprList, _range) -> synExprList |> List.map (fun x -> dive x x.Range traverseSynExpr) |> pick expr
+                
+                // TODO: is this the right traversal
+                | SynExpr.AnonRecd(_isNew, _isStruct, synExprList, _range) -> synExprList |> List.map snd |> List.map (fun x -> dive x x.Range traverseSynExpr) |> pick expr
                 | SynExpr.Record(inheritOpt,copyOpt,fields, _range) -> 
                     [ 
                         let diveIntoSeparator offsideColumn scPosOpt copyOpt  = 
@@ -455,8 +457,7 @@ module public AstTraversal =
                 | SynPat.Paren (p, _) -> traversePat p
                 | SynPat.Or (p1, p2, _) -> [ p1; p2] |> List.tryPick traversePat
                 | SynPat.Ands (ps, _)
-                | SynPat.Tuple (ps, _)
-                | SynPat.StructTuple (ps, _)
+                | SynPat.Tuple (_, ps, _)
                 | SynPat.ArrayOrList (_, ps, _) -> ps |> List.tryPick traversePat
                 | SynPat.Attrib (p, _, _) -> traversePat p
                 | SynPat.LongIdent(_, _, _, args, _, _) ->
@@ -485,8 +486,7 @@ module public AstTraversal =
                 | SynType.Array (_, ty, _) -> traverseSynType ty
                 | SynType.StaticConstantNamed (ty1, ty2, _)
                 | SynType.MeasureDivide (ty1, ty2, _) -> [ty1; ty2] |> List.tryPick traverseSynType
-                | SynType.Tuple (tys, _)
-                | SynType.StructTuple (tys, _) -> tys |> List.map snd |> List.tryPick traverseSynType
+                | SynType.Tuple (_, tys, _) -> tys |> List.map snd |> List.tryPick traverseSynType
                 | SynType.StaticConstantExpr (expr, _) -> traverseSynExpr [] expr
                 | SynType.Anon _ -> None
                 | _ -> None

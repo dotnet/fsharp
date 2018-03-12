@@ -1,6 +1,6 @@
 
 #if INTERACTIVE
-#r "../../Debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
 #r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
@@ -41,7 +41,7 @@ type PEVerifier () =
     static let runsOnMono = try System.Type.GetType("Mono.Runtime") <> null with _ -> false
 
     let verifierInfo =
-#if FX_ATLEAST_PORTABLE
+#if NETCOREAPP2_0
         None
 #else           
         if runsOnMono then
@@ -96,7 +96,7 @@ let checker = FSharpChecker.Create()
 /// Ensures the default FSharp.Core referenced by the F# compiler service (if none is 
 /// provided explicitly) is available in the output directory.
 let ensureDefaultFSharpCoreAvailable tmpDir  =
-#if FX_ATLEAST_PORTABLE
+#if NETCOREAPP2_0
     ignore tmpDir
 #else
     // FSharp.Compiler.Service references FSharp.Core 4.3.0.0 by default.  That's wrong? But the output won't verify

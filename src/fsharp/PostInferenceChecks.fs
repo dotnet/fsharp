@@ -238,7 +238,8 @@ let rec CheckTypeDeep ((visitTyp,visitTyconRefOpt,visitAppTyOpt,visitTraitSoluti
         | Some visitAppTy -> visitAppTy (tcref, tinst)
         | None -> ()
 
-    | TType_ucase (_,tinst) -> CheckTypesDeep f g env tinst
+    | TType_ucase (_,typs)
+    | TType_anon (_,typs) 
     | TType_tuple (_,typs) -> CheckTypesDeep f g env typs
     | TType_fun (s,t) -> CheckTypeDeep f g env s; CheckTypeDeep f g env t
     | TType_var tp -> 
@@ -801,6 +802,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
         // Address-of operator generates byref, and context permits this. 
         CheckExprsNoByrefs cenv env args                   
 
+    | TOp.AnonRecdGet _,_,[arg1]
     | TOp.TupleFieldGet _,_,[arg1] -> 
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprsPermitByrefs cenv env [arg1]             (* Compiled pattern matches on immutable value structs come through here. *)
@@ -1191,7 +1193,7 @@ and CheckBinding cenv env alwaysCheckNoReraise (TBind(v,bindRhs,_) as bind) =
 
                 // If we've already recorded a definition then skip this 
                 match v.ReflectedDefinition with 
-                | None -> v.val_defn <- Some bindRhs
+                | None -> v.SetValDefn bindRhs
                 | Some _ -> ()
                 // Run the conversion process over the reflected definition to report any errors in the
                 // front end rather than the back end. We currently re-run this during ilxgen.fs but there's

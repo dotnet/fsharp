@@ -58,7 +58,7 @@ test "fweoew093" ((f(1)).b = 2)
 
 open System
 open System.Collections
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
 open System.Windows.Forms
 #endif
 
@@ -66,7 +66,7 @@ open System.Windows.Forms
 // Some simple object-expression tests
 
 let x0 = { new System.Object() with member __.GetHashCode() = 3 }
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
 let x1 = { new System.Windows.Forms.Form() with member __.GetHashCode() = 3 }
 #endif
 
@@ -981,7 +981,7 @@ let [<DontPressThisButton("Please don't press this again")>] button () = 1
 // Test we can use base calls
 
 
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
 open System.Windows.Forms
 
 type MyCanvas2 = 
@@ -1781,14 +1781,14 @@ module DefaultConstructorConstraints = begin
   let x1 = (f1() : obj)
   let x2 = (f1() : int)
   let x3 = (f1() : DateTime)
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
   let x4 = (f1() : System.Windows.Forms.Form)
 #endif
   let f2 () = f1()
   let y1 = (f2() : obj)
   let y2 = (f2() : int)
   let y3 = (f2() : DateTime)
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
   let y4 = (f2() : System.Windows.Forms.Form)
 #endif
   
@@ -2031,7 +2031,7 @@ module T1 =
 
     Vector2D(1.0,1.0) = Vector2D(1.0,1.0)
 
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
 module Ex5 = 
     open System.Drawing
     type Label(?text,?font) =
@@ -5584,7 +5584,7 @@ module Devdiv2_Bug_5385 =
                     g "1" |> ignore; // note, use of non-generic 'g' within a generic, generalized memoized function
                     2
 
-        and g : string -> int = memoize f // note, computed function value using generic “f” at an instance
+        and g : string -> int = memoize f // note, computed function value using generic ï¿½fï¿½ at an instance
         g "1"                                        
 
     let res = test3e()

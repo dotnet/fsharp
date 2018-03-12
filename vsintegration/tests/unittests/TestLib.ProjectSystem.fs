@@ -18,6 +18,7 @@ open Microsoft.Win32
 
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.FSharp.ProjectSystem
+open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.Shell.Interop
 
 open Microsoft.Build.Execution
@@ -366,10 +367,10 @@ type TheTests() =
         () 
 
     member internal this.EnsureCausesNotification(project, code) =
-        let ipsf = project :> Microsoft.VisualStudio.FSharp.LanguageService.IProvideProjectSite
+        let ipsf = project :> IProvideProjectSite
         let ips = ipsf.GetProjectSite()
         let changed = ref false
-        let handle = ips.AdviseProjectSiteChanges("EnsureCausesNotificationTest", new Microsoft.VisualStudio.FSharp.LanguageService.AdviseProjectSiteChanges(fun () -> changed := true))
+        let handle = ips.AdviseProjectSiteChanges("EnsureCausesNotificationTest", new AdviseProjectSiteChanges(fun () -> changed := true))
         code()
         AssertEqual true (!changed)
     static member MsBuildCompileItems(project : Microsoft.Build.Evaluation.Project) =
@@ -656,7 +657,7 @@ module LanguageServiceExtension =
                                 failwith "tried to build not-yet-created project"
                             else
                                 let target = if target <> null then target else "Build"
-                                projInfo.Project.BuildToOutput(target,vsOutputWindowPane) |> ignore   // force build through project system for code coverage
+                                projInfo.Project.BuildToOutput(target,vsOutputWindowPane, null) |> ignore   // force build through project system for code coverage
                                 hooks.BuildHook(projFileName, target, vsOutputWindowPane)      // use MSBuild to build and also return MainAssembly value
 
                         member x.GetMainOutputAssemblyHook baseName = hooks.GetMainOutputAssemblyHook baseName 

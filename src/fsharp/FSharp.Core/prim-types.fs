@@ -961,11 +961,11 @@ namespace Microsoft.FSharp.Core
                     let c = int64Order lenx1 leny1 
                     if c <> 0 then c else
                     let basex0 = int64 (x.GetLowerBound(0))
-                    let basex1 = int64 (x.GetLowerBound(1))
                     let basey0 = int64 (y.GetLowerBound(0))
-                    let basey1 = int64 (y.GetLowerBound(1))
                     let c = int64Order basex0 basey0
                     if c <> 0 then c else
+                    let basex1 = int64 (x.GetLowerBound(1))
+                    let basey1 = int64 (y.GetLowerBound(1))
                     let c = int64Order basex1 basey1
                     if c <> 0 then c else
                     let rec check0 i =
@@ -3043,29 +3043,34 @@ namespace Microsoft.FSharp.Collections
     // List (debug view)
     //-------------------------------------------------------------------------
 
-    and 
+    and
        ListDebugView<'T>(l:list<'T>) =
 
-           let ListDebugViewMaxLength = 50
-           let rec count l n = 
-               match l with 
-               | [] -> n 
-               | _::t -> if n > ListDebugViewMaxLength then n else count t (n+1) 
+           let ListDebugViewMaxLength = 50                          // default displayed Max Length
+           let ListDebugViewMaxFullLength = 5000                    // display only when FullList opened (5000 is a super big display used to cut-off an infinite list or undebuggably huge one)
+           let rec count l n max =
+               match l with
+               | [] -> n
+               | _::t -> if n > max then n else count t (n+1) max
 
-           [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
-           member x.Items =
-               let n = count l 0 
-               let items = zeroCreate n 
+           let items length =
+               let items = zeroCreate length
                let rec copy (items: 'T[]) l i = 
                    match l with
                    | [] -> () 
                    | h::t -> 
-                       if i < n then 
+                       if i < length then 
                            SetArray items i h
                            copy items t (i+1)
 
                copy items l 0
                items
+
+           [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
+           member x.Items = items (count l 0 ListDebugViewMaxLength)
+
+           [<DebuggerBrowsable(DebuggerBrowsableState.Collapsed)>]
+           member x._FullList = items (count l 0 ListDebugViewMaxFullLength)
 
     type ResizeArray<'T> = System.Collections.Generic.List<'T>
 
@@ -3218,7 +3223,7 @@ namespace Microsoft.FSharp.Collections
 
         interface System.Collections.IEnumerable with
             member l.GetEnumerator() = (PrivateListHelpers.mkListEnumerator l :> System.Collections.IEnumerator)
-            
+
         interface IReadOnlyCollection<'T> with
             member l.Count = l.Length
 
@@ -3641,11 +3646,14 @@ namespace Microsoft.FSharp.Core
             | (h::t) -> 
             match list2 with
             | [] -> list1
-            | _ -> 
-              let res = [h] 
-              let lastCons = PrivateListHelpers.appendToFreshConsTail res t 
-              PrivateListHelpers.setFreshConsTail lastCons list2
-              res
+            | _ ->
+              match t with
+              | [] -> h :: list2
+              | _ ->
+                  let res = [h] 
+                  let lastCons = PrivateListHelpers.appendToFreshConsTail res t 
+                  PrivateListHelpers.setFreshConsTail lastCons list2
+                  res
 
         [<CompiledName("Increment")>]
         let incr cell = cell.contents <- cell.contents + 1
@@ -4159,7 +4167,7 @@ namespace Microsoft.FSharp.Core
                                     else (# "ceq" e1 e1 : int #)
                  when ^T : float32 = if   (# "clt" e1 e2 : bool #) then (-1)
                                      elif (# "cgt" e1 e2 : bool #) then (1)
-                                     elif (# "ceq" e1 e2 : bool #) then (1)
+                                     elif (# "ceq" e1 e2 : bool #) then (0)
                                      elif (# "ceq" e2 e2 : bool #) then (-1)
                                      else (# "ceq" e1 e1 : int #)
                  when ^T : char   = if (# "clt.un" e1 e2 : bool #) then (-1) else (# "cgt.un" e1 e2 : int #)

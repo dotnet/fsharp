@@ -22,8 +22,7 @@ module XmlDocParsing =
         | SynPat.Attrib(pat,_attrs,_range) -> digNamesFrom pat
         | SynPat.LongIdent(_lid,_idOpt,_typDeclsOpt,ConstructorPats pats,_access,_range) -> 
             pats |> List.collect digNamesFrom 
-        | SynPat.Tuple(pats,_range)
-        | SynPat.StructTuple(pats,_range) -> pats |> List.collect digNamesFrom 
+        | SynPat.Tuple(_,pats,_range) -> pats |> List.collect digNamesFrom 
         | SynPat.Paren(pat,_range) -> digNamesFrom pat
         | SynPat.OptionalVal (id, _) -> [id.idText]
         | SynPat.Or _           // no one uses ors in fun decls

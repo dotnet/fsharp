@@ -359,6 +359,7 @@ module internal SymbolHelpers =
         | Item.UnionCase(ucinfo, _)     -> Some (rangeOfUnionCaseInfo preferFlag ucinfo)
         | Item.ActivePatternCase apref -> Some (rangeOfValRef preferFlag apref.ActivePatternVal)
         | Item.ExnCase tcref           -> Some tcref.Range
+        | Item.AnonRecdField _         -> None // there is no declaration for these
         | Item.RecdField rfinfo        -> Some (rangeOfRecdFieldInfo preferFlag rfinfo)
         | Item.Event einfo             -> rangeOfEventInfo preferFlag einfo
         | Item.ILField _               -> None
@@ -743,6 +744,8 @@ module internal SymbolHelpers =
                   List.zip pi1s pi2s |> List.forall(fun (pi1, pi2) -> PropInfo.PropInfosUseIdenticalDefinitions pi1 pi2)
               | Item.Event(evt1), Item.Event(evt2) -> 
                   EventInfo.EventInfosUseIdenticalDefintions evt1 evt2
+              | Item.AnonRecdField(anon1, _, i1), Item.AnonRecdField(anon2, _, i2) ->
+                 Tastops.anonInfoEquiv anon1 anon2 && i1 = i2
               | Item.CtorGroup(_, meths1), Item.CtorGroup(_, meths2) -> 
                   List.zip meths1 meths2 
                   |> List.forall (fun (minfo1, minfo2) -> MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
@@ -775,6 +778,7 @@ module internal SymbolHelpers =
               | Item.ExnCase(tcref) -> hash tcref.LogicalName
               | Item.UnionCase(UnionCaseInfo(_, UCRef(tcref, n)), _) -> hash(tcref.Stamp, n)
               | Item.RecdField(RecdFieldInfo(_, RFRef(tcref, n))) -> hash(tcref.Stamp, n)
+              | Item.AnonRecdField(anon, _, i) -> hash anon.Names.[i]
               | Item.Event evt -> evt.ComputeHashCode()
               | Item.Property(_name, pis) -> hash (pis |> List.map (fun pi -> pi.ComputeHashCode()))
               | Item.UnqualifiedType(tcref :: _) -> hash tcref.LogicalName
@@ -855,6 +859,7 @@ module internal SymbolHelpers =
         | Item.ActivePatternResult(apinfo, _ty, idx, _) -> apinfo.Names.[idx]
         | Item.ActivePatternCase apref -> FullNameOfItem g (Item.Value apref.ActivePatternVal)  + "." + apref.Name 
         | Item.ExnCase ecref -> fullDisplayTextOfExnRef ecref 
+        | Item.AnonRecdField(anon, _argTys, i) -> anon.Names.[i]
         | Item.RecdField rfinfo -> fullDisplayTextOfRecdFieldRef  rfinfo.RecdFieldRef
         | Item.NewDef id -> id.idText
         | Item.ILField finfo -> bufs (fun os -> NicePrint.outputILTypeRef denv os finfo.ILTypeRef; bprintf os ".%s" finfo.FieldName)
@@ -1191,6 +1196,17 @@ module internal SymbolHelpers =
             else
                 FSharpStructuredToolTipElement.Single (layout, xml)
 
+        | Item.AnonRecdField(anon, argTys, i) -> 
+            let argTy = argTys.[i]
+            let nm = anon.Names.[i]
+            let argTy, _ = PrettyTypes.PrettifyType g argTy
+            let layout =
+                wordL (tagText (FSComp.SR.typeInfoAnonRecdField())) ^^
+                wordL (tagRecordField nm) ^^
+                RightL.colon ^^
+                NicePrint.layoutType denv argTy
+            FSharpStructuredToolTipElement.Single (layout, FSharpXmlDoc.None)
+            
         // Named parameters
         | Item.ArgName (id, argTy, _) -> 
             let argTy, _ = PrettyTypes.PrettifyType g argTy
@@ -1309,6 +1325,8 @@ module internal SymbolHelpers =
 
         | Item.RecdField rfi -> 
             (rfi.TyconRef |> ticksAndArgCountTextOfTyconRef)+"."+rfi.Name |> Some
+        
+        | Item.AnonRecdField _ -> None 
         
         | Item.ILField finfo ->   
              match finfo with 

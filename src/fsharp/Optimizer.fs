@@ -33,7 +33,7 @@ open Microsoft.FSharp.Compiler.TypeRelations
 
 open System.Collections.Generic
 
-#if BUILDING_PROTO
+#if DEBUG
 let verboseOptimizationInfo = 
     try not (System.String.IsNullOrEmpty (System.Environment.GetEnvironmentVariable "FSHARP_verboseOptimizationInfo"))  with _ -> false
 let verboseOptimizations = 
@@ -1258,6 +1258,7 @@ and BindingHasEffect g bind = bind.Expr |> ExprHasEffect g
 and OpHasEffect g op = 
     match op with 
     | TOp.Tuple _ -> false
+    | TOp.AnonRecd _ -> false
     | TOp.Recd (ctor, tcref) -> 
         match ctor with 
         | RecdExprIsObjInit -> true
@@ -1272,6 +1273,7 @@ and OpHasEffect g op =
     | TOp.TupleFieldGet(_) -> false
     | TOp.ExnFieldGet(ecref, n) -> isExnFieldMutable ecref n 
     | TOp.RefAddrGet -> false
+    | TOp.AnonRecdGet _ -> true (* conservative *)
     | TOp.ValFieldGet rfref  -> rfref.RecdField.IsMutable || (TryFindTyconRefBoolAttribute g Range.range0 g.attrib_AllowNullLiteralAttribute rfref.TyconRef = Some(true))
     | TOp.ValFieldGetAddr rfref  -> rfref.RecdField.IsMutable (* data is immutable, so taking address is ok *)
     | TOp.UnionCaseFieldGetAddr _ -> false (* data is immutable, so taking address is ok  *)
@@ -1857,7 +1859,12 @@ and OptimizeExprOpFallback cenv env (op, tyargs, args', m) arginfos valu =
       | TOp.Tuple tupInfo        -> 
           let isStruct = evalTupInfoIsStruct tupInfo 
           if isStruct then 0, valu 
-          else 1, MakeValueInfoForTuple (Array.ofList argValues)
+          else 1,MakeValueInfoForTuple (Array.ofList argValues)
+      | TOp.AnonRecd anonInfo        -> 
+          let isStruct = evalAnonInfoIsStruct anonInfo 
+          if isStruct then 0, valu 
+          else 1, valu
+      | TOp.AnonRecdGet _ 
       | TOp.ValFieldGet _     
       | TOp.TupleFieldGet _    
       | TOp.UnionCaseFieldGet _   
@@ -2507,7 +2514,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
               false
             else true)))) ->
             
-        let isBaseCall =  args.Length > 0 &&          
+        let isBaseCall = not (List.isEmpty args) &&
                               match args.[0] with
                               | Expr.Val(vref, _, _) when vref.BaseOrThisInfo = BaseVal -> true
                               | _ -> false
