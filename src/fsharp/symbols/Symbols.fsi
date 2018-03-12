@@ -86,7 +86,12 @@ type [<Class>] public FSharpSymbol =
     ///
     /// This is the relation used by GetUsesOfSymbol and GetUsesOfSymbolInFile.
     member IsEffectivelySameAs : other: FSharpSymbol -> bool
+
+    /// A hash compatible with the IsEffectivelySameAs relation
+    member GetEffectivelySameAsHash : unit -> int
+
     member IsExplicitlySuppressed : bool
+
     static member GetAccessibility : FSharpSymbol -> FSharpAccessibility option
 
 /// Represents an assembly as seen by the F# language
@@ -292,7 +297,6 @@ and [<Class>] public FSharpEntity =
 
     /// Get the cases of a union type
     member UnionCases : IList<FSharpUnionCase>
-
 
     /// Indicates if the type is a delegate with the given Invoke signature 
     member FSharpDelegateSignature : FSharpDelegateSignature
