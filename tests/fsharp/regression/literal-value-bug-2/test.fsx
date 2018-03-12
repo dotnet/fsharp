@@ -1,5 +1,3 @@
-module LiteralTestCase
-
 open System
 open System.Linq
 open System.Reflection
