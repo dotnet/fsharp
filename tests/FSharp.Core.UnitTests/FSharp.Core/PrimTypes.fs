@@ -816,3 +816,16 @@ type RangeTests() =
         if System.UIntPtr.Size >= 8 then RangeTestsHelpers.unsigned (System.UIntPtr System.UInt64.MinValue) (System.UIntPtr System.UInt64.MaxValue)
         
 
+open NonStructuralComparison
+
+
+[<TestFixture>]
+type NonStructuralComparisonTests() =
+
+    [<Test>]
+    member __.CompareFloat32() = // https://github.com/Microsoft/visualfsharp/pull/4493
+
+        let x = 32 |> float32
+        let y = 32 |> float32
+        let comparison = compare x y
+        Assert.AreEqual(0, comparison)
