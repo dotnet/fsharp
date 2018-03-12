@@ -224,7 +224,7 @@ If you are behind a proxy server, NuGet client tool must be configured to use it
 
 Where you should set proper proxy address, user name and password.
 
-#### When modifying, adding, or removing keywords
+#### When modifying, adding, or removing keywords or compiler messages
 
 If your changes involve modifying the list of language keywords in any way, (e.g. when implementing a new keyword), the XLF localization files need to be synced with the corresponding resx files. This can be done automatically by running `msbuild FSharp.Compiler.Private.fsproj /t:UpdateXlf` (located in [src\fsharp\FSharp.Compiler.Private](https://github.com/Microsoft/visualfsharp/tree/master/src/fsharp/FSharp.Compiler.Private)). This only works on Windows/.NETStandard framework, so changing this from any other platform requires editing and syncing all of the XLF files manually.
 
