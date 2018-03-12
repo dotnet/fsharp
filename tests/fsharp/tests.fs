@@ -1456,8 +1456,8 @@ module ToolsTests =
 
 
 module RegressionTests = 
-    
-    [<Test >]
+
+    //[<Test >]
     let ``literal-value-bug-1-FSC_BASIC`` () =
         let cfg = testConfig "regression/literal-value-bug-1"
 
@@ -1477,7 +1477,13 @@ module RegressionTests =
         | _ ->
             Assert.Fail (sprintf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff)
 
-    [<Test >]
+    [<Test>]
+    let ``literal-value-bug-2-FSC_BASIC`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSC_BASIC
+
+    [<Test>]
+    let ``literal-value-bug-2-FSI_BASIC`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSI_BASIC
+
+    [<Test>]
     let ``struct-tuple-bug-1-FSC_BASIC`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSC_BASIC
 
     [<Test >]
