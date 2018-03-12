@@ -974,46 +974,6 @@ module CoreTests =
 #endif
 
     [<Test>]
-    let ``typeinferenceWarning`` () = 
-        let cfg = testConfig "core/typeinferenceWarning"
-
-        let stdoutPath = "out.stdout.txt" |> getfullpath cfg
-        let stderrPath = "out.stderr.txt" |> getfullpath cfg
-        let stderrBaseline = "out.stderr.bsl" |> getfullpath cfg 
-        let stdoutBaseline = "out.stdout.bsl" |> getfullpath cfg 
-
-        let echo text =
-            Commands.echoAppendToFile cfg.Directory text stdoutPath
-            Commands.echoAppendToFile cfg.Directory text stderrPath
-
-        File.WriteAllText(stdoutPath, "")
-        File.WriteAllText(stderrPath, "")
-        
-        echo "Test 1================================================="
-        fscAppend cfg stdoutPath stderrPath "--nologo" ["Inference_3752.fs"]
-
-        let normalizePaths f =
-            let text = File.ReadAllText(f)
-            let dummyPath = @"D:\staging\staging\src\tests\fsharp\core\load-script"
-            let contents = System.Text.RegularExpressions.Regex.Replace(text, System.Text.RegularExpressions.Regex.Escape(cfg.Directory), dummyPath)
-            File.WriteAllText(f, contents)
-
-        normalizePaths stdoutPath
-        normalizePaths stderrPath
-
-        let diffs = fsdiff cfg stdoutPath stdoutBaseline
-
-        match diffs with
-        | "" -> ()
-        | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" stdoutPath stdoutBaseline diffs)
-
-        let diffs2 = fsdiff cfg stderrPath stderrBaseline
-
-        match diffs2 with
-        | "" -> ()
-        | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" stderrPath stderrBaseline diffs2)
-
-    [<Test>]
     let longnames () = singleTestBuildAndRun "core/longnames" FSC_BASIC
 
     [<Test>]
@@ -2201,6 +2161,9 @@ module TypecheckTests =
 
     [<Test>] 
     let ``type check neg101`` () = singleNegTest (testConfig "typecheck/sigs") "neg101"
+
+    [<Test>] 
+    let ``type check neg_issue_3752`` () = singleNegTest (testConfig "typecheck/sigs") "neg_issue_3752"
 
     [<Test>] 
     let ``type check neg_byref_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_1"

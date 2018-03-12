@@ -77,7 +77,3 @@ members/basics/tmptest.exe
 members/basics/tmptest.fs
 members/basics/tmptest.fsi
 members/basics/tmptest1.exe
-
-typeinferenceWarning/*.exe
-typeinferenceWarning/*.dll
-typeinferenceWarning/*.txt
