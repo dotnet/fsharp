@@ -28,6 +28,10 @@ let result =
     | None ->
         printfn "Failed to find module public MyLiteralFields ="
         1
-if result = 0 then printfn "Succeeded" else printfn "Failed: %d" result
-exit result
 
+if result = 0 then 
+    System.IO.File.WriteAllText("test.ok","ok"); 
+    printfn "Succeeded" 
+else
+    printfn "Failed: %d" result
+exit result
