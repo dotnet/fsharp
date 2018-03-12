@@ -213,11 +213,10 @@ and goutput_typ_with_shortened_class_syntax env os = function
   | typ2 -> goutput_typ env os typ2
 
 and goutput_gactuals env os inst = 
-  if inst.Length = 0 then () 
-  else  
-    output_string os "<";
+  if not (List.isEmpty inst) then
+    output_string os "<"
     output_seq ", " (goutput_gactual env)  os inst
-    output_string os ">";
+    output_string os ">"
 
 and goutput_gactual env os ty = goutput_typ env os ty
 
@@ -864,14 +863,14 @@ let goutput_superclass env os = function
   | Some typ -> output_string os "extends "; (goutput_typ_with_shortened_class_syntax env) os typ
 
 let goutput_superinterfaces env os imp =
-  if imp = [] then () else
-  output_string os "implements ";
-  output_seq "," (goutput_typ_with_shortened_class_syntax env) os imp
+  if not (List.isEmpty imp) then
+      output_string os "implements "
+      output_seq "," (goutput_typ_with_shortened_class_syntax env) os imp
 
 let goutput_implements env os (imp:ILTypes) =
-  if imp.Length = 0 then () else
-  output_string os "implements ";
-  output_seq "," (goutput_typ_with_shortened_class_syntax env) os imp
+  if not (List.isEmpty imp) then
+      output_string os "implements "
+      output_seq "," (goutput_typ_with_shortened_class_syntax env) os imp
 
 let the = function Some x -> x  | None -> failwith "the"
 

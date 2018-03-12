@@ -7,7 +7,6 @@ open Microsoft.VisualStudio.FSharp.UIResources
 open SettingsPersistence
 open OptionsUIHelpers
 
-
 module DefaultTuning = 
     let SemanticColorizationInitialDelay = 0 (* milliseconds *)
     let UnusedDeclarationsAnalyzerInitialDelay = 0 (* 1000 *) (* milliseconds *)
@@ -42,6 +41,11 @@ type LanguageServicePerformanceOptions =
     { EnableInMemoryCrossProjectReferences: bool
       ProjectCheckCacheSize: int }
 
+[<CLIMutable>]
+type AdvancedOptions =
+    { IsBlockStructureEnabled: bool 
+      IsOutliningEnabled: bool }
+
 [<Export(typeof<ISettings>)>]
 type internal Settings [<ImportingConstructor>](store: SettingsStore) =
     do  // Initialize default settings
@@ -67,12 +71,17 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
             { EnableInMemoryCrossProjectReferences = true
               ProjectCheckCacheSize = 200 }
 
+        store.RegisterDefault
+            { IsBlockStructureEnabled = true 
+              IsOutliningEnabled = true }
+
     interface ISettings
 
     static member IntelliSense : IntelliSenseOptions = getSettings()
     static member QuickInfo : QuickInfoOptions = getSettings()
     static member CodeFixes : CodeFixesOptions = getSettings()
     static member LanguageServicePerformance : LanguageServicePerformanceOptions = getSettings()
+    static member Advanced: AdvancedOptions = getSettings()
 
 module internal OptionsUI =
 
@@ -107,3 +116,9 @@ module internal OptionsUI =
         inherit AbstractOptionPage<LanguageServicePerformanceOptions>()
         override this.CreateView() =
             upcast LanguageServicePerformanceOptionControl()
+
+    [<Guid(Guids.advancedSettingsPageIdSring)>]
+    type internal AdvancedSettingsOptionPage() =
+        inherit AbstractOptionPage<AdvancedOptions>()
+        override __.CreateView() =
+            upcast AdvancedOptionsControl()
