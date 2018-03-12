@@ -126,8 +126,10 @@ let mkDefnBindings (mWhole,BindingSetPreAttrs(_,isRec,isUse,declsPreAttrs,_bindi
     if isUse then warning(Error(FSComp.SR.parsUseBindingsIllegalInModules(),mWhole))
     let freeAttrs,decls = declsPreAttrs attrs vis 
     let letDecls = [ SynModuleDecl.Let (isRec,decls,mWhole) ] 
-    let attrDecls = if not (isNil freeAttrs) then [ SynModuleDecl.Attributes (freeAttrs,attrsm) ] else [] 
-    attrDecls @ letDecls
+    if not (isNil freeAttrs) then 
+        (SynModuleDecl.Attributes (freeAttrs,attrsm)) :: letDecls
+    else 
+        letDecls
 
 let idOfPat m p = 
     match p with 
@@ -145,8 +147,8 @@ let grabXmlDoc(parseState:IParseState,elemIdx) =
 let unionRangeWithListBy projectRangeFromThing m listOfThing = 
     (m, listOfThing) ||> List.fold (fun m thing -> unionRanges m (projectRangeFromThing thing))
 
-let rangeOfNonNilAttrs(attrs:SynAttributes) =
-    (attrs.Head.Range,attrs.Tail) ||> unionRangeWithListBy (fun a -> a.Range)
+let rangeOfNonNilAttrs (head:SynAttribute,tail:SynAttributes) =
+    (head.Range,tail) ||> unionRangeWithListBy (fun a -> a.Range)
 
 let rangeOfLongIdent(lid:LongIdent) =
     System.Diagnostics.Debug.Assert(not lid.IsEmpty, "the parser should never produce a long-id that is the empty list") 
@@ -552,8 +554,10 @@ interactiveExpr:
       { match $2 with
         | Some vis -> errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(vis.ToString()),rhs parseState 3))
         | _ -> ()
-        let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] in 
-        attrDecls @ [ mkSynDoDecl($3)] }
+        let decl = [mkSynDoDecl($3)]
+        match $1 with
+        | x::xs -> (SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs(x,xs))) :: decl 
+        | _ -> decl }
 
 
 /* A #directive interaction in F# Interactive */
@@ -1140,29 +1144,36 @@ moduleDefnsOrExpr:
       { match $2 with
         | Some vis -> errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(vis.ToString()),rhs parseState 3))
         | _ -> ()
-        let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
-        attrDecls @ mkSynDoDecl ($3) :: $5 }
+        let decl = mkSynDoDecl ($3) :: $5 
+        match $1 with
+        | x::xs -> (SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs(x,xs))) :: decl
+        | [] -> decl }
 
   | opt_attributes opt_declVisibility declExpr topSeparators
       { match $2 with
         | Some vis -> errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(vis.ToString()),rhs parseState 3))
         | _ -> ()
-        let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
-        attrDecls @ [ mkSynDoDecl($3) ] }
+        let decl = [mkSynDoDecl($3)]
+        match $1 with
+        | x::xs -> (SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs(x,xs))) :: decl
+        | [] -> decl }
 
   | opt_attributes opt_declVisibility declExpr
       { match $2 with
         | Some vis -> errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(vis.ToString()),rhs parseState 3))
         | _ -> ()
-        let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
-        attrDecls @ [ mkSynDoDecl($3) ] }
+        let decl = [mkSynDoDecl($3)]
+        match $1 with
+        | x::xs -> (SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs(x,xs))) :: decl
+        | [] -> decl }
 
   | moduleDefns 
       { $1 } 
 
   | opt_attributes error
-     { if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] }
-
+     { match $1 with
+       | x::xs -> [SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs(x,xs))]
+       | [] -> [] }
 
 /* A sequence of definitions in a namespace or module */
 moduleDefns:
@@ -1321,7 +1332,7 @@ namedModuleDefnBlock:
      { Choice1Of2 $1.Lid }
 
 
-/* A module definition that inccludes a 'begin'...'end' (rarely used in F# with #light syntax) */ 
+/* A module definition that includes a 'begin'...'end' (rarely used in F# with #light syntax) */ 
 wrappedNamedModuleDefn:
   | structOrBegin moduleDefnsOrExprPossiblyEmpty END 
      { $2 }
@@ -1684,10 +1695,9 @@ memberCore:
                    // we should apply it to the last argument, but at this point we've already pushed the patterns that 
                    // make up the arguments onto the RHS. So we just always give a warning. 
 
-                   begin match optPropertyType with 
+                   match optPropertyType with 
                    | Some _ -> errorR(Error(FSComp.SR.parsTypeAnnotationsOnGetSet(),mBindLhs))
                    | None -> ()
-                   end
                    
                    let optReturnType = 
                        match (memberKind, optReturnType) with 
@@ -1792,7 +1802,7 @@ memberCore:
                                            raiseParseErrorAt m (FSComp.SR.parsSetSyntax())
                                    else 
                                        args
-//                               let idTool : Ident list = lidOuter |> List.map (fun (li:Ident) -> ident(li.idText,id.idRange)) |> List.rev |> List.take 1
+
                                SynPat.LongIdent (lidOuter,Some(id),tyargs, SynConstructorArgs.Pats args,mergeLidVisOuter lidVisInner,m)
                            | SynPat.Named (_,nm,_,lidVisInner,m) ->  SynPat.LongIdent (lidOuter,None,None, SynConstructorArgs.Pats [], mergeLidVisOuter lidVisInner,m)
                            | SynPat.Typed (p,ty,m) ->  SynPat.Typed(go p,ty,m)
@@ -1802,7 +1812,7 @@ memberCore:
 
                        go pv,PreXmlDoc.Merge doc2 doc
 
-                   Some <| SynMemberDefn.Member (Binding (vis, NormalBinding, isInline, isMutable, attrs, xmlDocAdjusted, valSynData, bindingPatAdjusted, rhsRetInfo, rhsExpr, mBindLhs, spBind),mWhole)))
+                   Some (SynMemberDefn.Member (Binding (vis, NormalBinding, isInline, isMutable, attrs, xmlDocAdjusted, valSynData, bindingPatAdjusted, rhsRetInfo, rhsExpr, mBindLhs, spBind),mWhole))))
        }
 
 
