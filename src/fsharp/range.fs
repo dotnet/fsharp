@@ -169,13 +169,16 @@ type range(code:int64) =
     member r.FileName = fileOfFileIndex r.FileIndex
 #if DEBUG
     member r.DebugCode =
-        let endCol = r.EndColumn - 1
-        let startCol = r.StartColumn - 1
-        File.ReadAllLines(r.FileName)
-        |> Seq.skip (r.StartLine - 1)
-        |> Seq.take (r.EndLine - r.StartLine + 1)
-        |> String.concat "\n"
-        |> fun s -> s.Substring(startCol + 1, s.LastIndexOf("\n") + 1 - startCol + endCol)
+        try
+            let endCol = r.EndColumn - 1
+            let startCol = r.StartColumn - 1
+            File.ReadAllLines(r.FileName)
+            |> Seq.skip (r.StartLine - 1)
+            |> Seq.take (r.EndLine - r.StartLine + 1)
+            |> String.concat "\n"
+            |> fun s -> s.Substring(startCol + 1, s.LastIndexOf("\n") + 1 - startCol + endCol)
+        with e ->
+            e.ToString()        
 #endif
     member r.MakeSynthetic() = range(code ||| isSyntheticMask)
     override r.ToString() = sprintf "%s (%d,%d--%d,%d) IsSynthetic=%b" r.FileName r.StartLine r.StartColumn r.EndLine r.EndColumn r.IsSynthetic
