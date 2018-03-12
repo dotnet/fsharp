@@ -961,11 +961,11 @@ namespace Microsoft.FSharp.Core
                     let c = int64Order lenx1 leny1 
                     if c <> 0 then c else
                     let basex0 = int64 (x.GetLowerBound(0))
-                    let basex1 = int64 (x.GetLowerBound(1))
                     let basey0 = int64 (y.GetLowerBound(0))
-                    let basey1 = int64 (y.GetLowerBound(1))
                     let c = int64Order basex0 basey0
                     if c <> 0 then c else
+                    let basex1 = int64 (x.GetLowerBound(1))
+                    let basey1 = int64 (y.GetLowerBound(1))
                     let c = int64Order basex1 basey1
                     if c <> 0 then c else
                     let rec check0 i =
