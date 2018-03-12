@@ -60,7 +60,9 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
               // See https://github.com/Microsoft/visualfsharp/pull/3238#issue-237699595
               SimplifyName = false 
               AlwaysPlaceOpensAtTopLevel = false
-              UnusedOpens = true 
+              // We have this off by default, disable until it is performant for large files
+              // See https://github.com/Microsoft/visualfsharp/issues/4488
+              UnusedOpens = false 
               UnusedDeclarations = true }
 
         store.RegisterDefault
