@@ -70,6 +70,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Block Structure Guides.
+        /// </summary>
+        public static string Block_Structure {
+            get {
+                return ResourceManager.GetString("Block_Structure", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Code Fixes.
         /// </summary>
         public static string Code_Fixes {
@@ -133,6 +142,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Outlining.
+        /// </summary>
+        public static string Outlining {
+            get {
+                return ResourceManager.GetString("Outlining", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Project check cache size.
         /// </summary>
         public static string Project_check_cache_size {
@@ -169,11 +187,29 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Show structure guidelines for F# code.
+        /// </summary>
+        public static string Show_guides {
+            get {
+                return ResourceManager.GetString("Show_guides", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to S_how navigation links as.
         /// </summary>
         public static string Show_navigation_links_as {
             get {
                 return ResourceManager.GetString("Show_navigation_links_as", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Show outlining and collapsable nodes for F# code.
+        /// </summary>
+        public static string Show_Outlining {
+            get {
+                return ResourceManager.GetString("Show_Outlining", resourceCulture);
             }
         }
         
