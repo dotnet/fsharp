@@ -149,7 +149,7 @@ The new builds of the Visual F# IDE Tools can no longer be installed into Visual
 
 You can install Visual Studio 2017 from https://www.visualstudio.com/downloads/.
 
-**Note:*- This step will install a VSIX extension into Visual Studio "Next" that changes the Visual F# IDE Tools 
+**Note:** This step will install a VSIX extension into Visual Studio "Next" that changes the Visual F# IDE Tools 
 components installed in that VS installation.  You can revert this step by disabling or uninstalling the addin.
 
 For **Debug**, uninstall then reinstall:
