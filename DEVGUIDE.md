@@ -135,7 +135,7 @@ Note on Debug vs Release: ``Release`` Configuration has a degraded debugging exp
 
 Note: if you face this error [#2351](https://github.com/Microsoft/visualfsharp/issues/2351):
 
->  error VSSDK1077: Unable to locate the extensions directory. "ExternalSettingsManager::GetScopePaths failed to initialize PkgDefManager for C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\devenv.exe".
+> error VSSDK1077: Unable to locate the extensions directory. "ExternalSettingsManager::GetScopePaths failed to initialize PkgDefManager for C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\devenv.exe".
 
 Or hard crash on launch ("Unknown Error"), delete these folders:
 
@@ -222,6 +222,12 @@ If you are behind a proxy server, NuGet client tool must be configured to use it
     .nuget\nuget.exe config -set http_proxy.password=user_password -ConfigFile NuGet.Config
 
 Where you should set proper proxy address, user name and password.
+
+#### When modifying, adding, or removing keywords
+
+If your changes involve modifying the list of language keywords in any way, (e.g. when implementing a new keyword), notice that the XLF localization files need be in sync with the corresponding resx files. This can be done automatically by running `msbuild FSharp.Compiler.Private.fsproj /t:UpdateXlf` (located in [src\fsharp\FSharp.Compiler.Private\](https://github.com/Microsoft/visualfsharp/tree/master/src/fsharp/FSharp.Compiler.Private)). This only works on Windows/.NETStandard framework, so changing this from any other platform requires editing and syncing all of the XLF files manually.
+
+After this, you must copy any differing `resx` files from the output directory into the corresponding subdirectory in [src\buildfromsource](https://github.com/Microsoft/visualfsharp/tree/master/src/fsharp/FSharp.Compiler.Private). This step will soon be eliminated (see issue [#3905](https://github.com/Microsoft/visualfsharp/issues/3905)).
 
 #### Resources
 
