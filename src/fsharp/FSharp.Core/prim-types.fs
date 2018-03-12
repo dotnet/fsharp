@@ -337,12 +337,12 @@ namespace Microsoft.FSharp.Core
     [<Sealed>]
     type OptionalArgumentAttribute() =
         inherit System.Attribute()
-      
+
     [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
     [<Sealed>]
     type GeneralizableValueAttribute() =
         inherit System.Attribute()
-      
+
     [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
     [<Sealed>]
     type RequiresExplicitTypeArgumentsAttribute() =
@@ -352,13 +352,21 @@ namespace Microsoft.FSharp.Core
     [<Sealed>]
     type RequireQualifiedAccessAttribute() =
         inherit System.Attribute()
-      
+
     [<AttributeUsage (AttributeTargets.Class ||| AttributeTargets.Assembly,AllowMultiple=true)>]  
     [<Sealed>]
     type AutoOpenAttribute(path:string) =
         inherit System.Attribute()
         member x.Path = path
         new() =  AutoOpenAttribute("")
+
+    /// This Attribute is used to make Value bindings like
+    ///      let x = some code
+    /// operate like static properties.
+    [<AttributeUsage(AttributeTargets.Property,AllowMultiple=false)>]
+    [<Sealed>]
+    type ValueAsStaticPropertyAttribute() =
+        inherit System.Attribute()
 
     [<MeasureAnnotatedAbbreviation>] type float<[<Measure>] 'Measure> = float 
     [<MeasureAnnotatedAbbreviation>] type float32<[<Measure>] 'Measure> = float32
@@ -510,14 +518,19 @@ namespace Microsoft.FSharp.Core
     module LanguagePrimitives =  
 
         module (* internal *) ErrorStrings =
-            // inline functions cannot call GetString, so we must make these bits public
+            // inline functions cannot call GetString, so we must make these bits public 
+            [<ValueAsStaticPropertyAttribute>]
             let AddressOpNotFirstClassString = SR.GetString(SR.addressOpNotFirstClass)
+            [<ValueAsStaticProperty>]
             let NoNegateMinValueString = SR.GetString(SR.noNegateMinValue)
             // needs to be public to be visible from inline function 'average' and others
+            [<ValueAsStaticProperty>]
             let InputSequenceEmptyString = SR.GetString(SR.inputSequenceEmpty) 
             // needs to be public to be visible from inline function 'average' and others
+            [<ValueAsStaticProperty>]
             let InputArrayEmptyString = SR.GetString(SR.arrayWasEmpty) 
             // needs to be public to be visible from inline function 'average' and others
+            [<ValueAsStaticProperty>]
             let InputMustBeNonNegativeString = SR.GetString(SR.inputMustBeNonNegative)
             
         [<CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible")>]  // nested module OK              
