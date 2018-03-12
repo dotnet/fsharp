@@ -4167,7 +4167,7 @@ namespace Microsoft.FSharp.Core
                                     else (# "ceq" e1 e1 : int #)
                  when ^T : float32 = if   (# "clt" e1 e2 : bool #) then (-1)
                                      elif (# "cgt" e1 e2 : bool #) then (1)
-                                     elif (# "ceq" e1 e2 : bool #) then (1)
+                                     elif (# "ceq" e1 e2 : bool #) then (0)
                                      elif (# "ceq" e2 e2 : bool #) then (-1)
                                      else (# "ceq" e1 e1 : int #)
                  when ^T : char   = if (# "clt.un" e1 e2 : bool #) then (-1) else (# "cgt.un" e1 e2 : int #)
