@@ -16,9 +16,6 @@
             <VsixProjects Include="VisualFSharpFull.csproj">
                 <ProjectPath>..\vsintegration\Vsix\VisualFSharpFull\VisualFSharpFull.csproj</ProjectPath>
             </VsixProjects>
-            <VsixProjects Include="VisualFSharpOpenSource.csproj">
-                <ProjectPath>..\vsintegration\Vsix\VisualFSharpOpenSource\VisualFSharpOpenSource.csproj</ProjectPath>
-            </VsixProjects>
             <VsixProjects Include="VisualFSharpTemplates.csproj">
                 <ProjectPath>..\vsintegration\Vsix\VisualFSharpTemplates\VisualFSharpTemplates.csproj</ProjectPath>
             </VsixProjects>
