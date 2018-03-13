@@ -1138,8 +1138,7 @@ type ILFieldDef =
         member WithStatic: bool -> ILFieldDef
         member WithSpecialName: bool -> ILFieldDef
         member WithNotSerialized: bool -> ILFieldDef
-        member WithLiteral: bool -> ILFieldDef
-        member WithHasDefault: bool -> ILFieldDef
+        member WithLiteralDefaultValue: ILFieldInit option -> ILFieldDef
         member WithHasFieldMarshal: bool -> ILFieldDef
 
 /// Tables of fields.  Logically equivalent to a list of fields but
