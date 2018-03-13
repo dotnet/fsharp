@@ -2380,8 +2380,7 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     member x.HasBeenReferenced = x.val_flags.HasBeenReferenced
 
     /// Indicates if the backing field for a static value is suppressed.
-    member x.IsCompiledAsStaticPropertyWithoutField = 
-            x.val_flags.IsCompiledAsStaticPropertyWithoutField
+    member x.IsCompiledAsStaticPropertyWithoutField = x.val_flags.IsCompiledAsStaticPropertyWithoutField
 
     /// Indicates if the value is pinned/fixed
     member x.IsFixed = x.val_flags.IsFixed
