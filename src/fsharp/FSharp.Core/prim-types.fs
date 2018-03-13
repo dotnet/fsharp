@@ -961,11 +961,11 @@ namespace Microsoft.FSharp.Core
                     let c = int64Order lenx1 leny1 
                     if c <> 0 then c else
                     let basex0 = int64 (x.GetLowerBound(0))
-                    let basex1 = int64 (x.GetLowerBound(1))
                     let basey0 = int64 (y.GetLowerBound(0))
-                    let basey1 = int64 (y.GetLowerBound(1))
                     let c = int64Order basex0 basey0
                     if c <> 0 then c else
+                    let basex1 = int64 (x.GetLowerBound(1))
+                    let basey1 = int64 (y.GetLowerBound(1))
                     let c = int64Order basex1 basey1
                     if c <> 0 then c else
                     let rec check0 i =
@@ -3034,8 +3034,8 @@ namespace Microsoft.FSharp.Collections
        | (::)  : Head: 'T * Tail: 'T list -> 'T list
        interface System.Collections.Generic.IEnumerable<'T>
        interface System.Collections.IEnumerable
-
        interface System.Collections.Generic.IReadOnlyCollection<'T>
+       interface System.Collections.Generic.IReadOnlyList<'T>
         
     and 'T list = List<'T>
 
@@ -3226,6 +3226,9 @@ namespace Microsoft.FSharp.Collections
 
         interface IReadOnlyCollection<'T> with
             member l.Count = l.Length
+
+        interface IReadOnlyList<'T> with
+            member l.Item with get(index) = l.[index]
 
     type seq<'T> = IEnumerable<'T>
 
@@ -3643,11 +3646,14 @@ namespace Microsoft.FSharp.Core
             | (h::t) -> 
             match list2 with
             | [] -> list1
-            | _ -> 
-              let res = [h] 
-              let lastCons = PrivateListHelpers.appendToFreshConsTail res t 
-              PrivateListHelpers.setFreshConsTail lastCons list2
-              res
+            | _ ->
+              match t with
+              | [] -> h :: list2
+              | _ ->
+                  let res = [h] 
+                  let lastCons = PrivateListHelpers.appendToFreshConsTail res t 
+                  PrivateListHelpers.setFreshConsTail lastCons list2
+                  res
 
         [<CompiledName("Increment")>]
         let incr cell = cell.contents <- cell.contents + 1
@@ -4161,7 +4167,7 @@ namespace Microsoft.FSharp.Core
                                     else (# "ceq" e1 e1 : int #)
                  when ^T : float32 = if   (# "clt" e1 e2 : bool #) then (-1)
                                      elif (# "cgt" e1 e2 : bool #) then (1)
-                                     elif (# "ceq" e1 e2 : bool #) then (1)
+                                     elif (# "ceq" e1 e2 : bool #) then (0)
                                      elif (# "ceq" e2 e2 : bool #) then (-1)
                                      else (# "ceq" e1 e1 : int #)
                  when ^T : char   = if (# "clt.un" e1 e2 : bool #) then (-1) else (# "cgt.un" e1 e2 : int #)

@@ -1307,10 +1307,10 @@ and GetMethodDefOrRefAsUncodedToken (tag, idx) =
     getUncodedToken tab idx
 
 and GetMethodSpecInfoAsUncodedToken cenv env ((_, _, _, _, _, _, minst:ILGenericArgs) as minfo) =
-    if minst.Length > 0 then 
-      getUncodedToken TableNames.MethodSpec (GetMethodSpecInfoAsMethodSpecIdx cenv env minfo)
-    else 
-      GetMethodDefOrRefAsUncodedToken (GetMethodRefInfoAsMethodRefOrDef false cenv env (GetMethodRefInfoOfMethodSpecInfo minfo))
+    if List.isEmpty minst then
+        GetMethodDefOrRefAsUncodedToken (GetMethodRefInfoAsMethodRefOrDef false cenv env (GetMethodRefInfoOfMethodSpecInfo minfo))
+    else
+        getUncodedToken TableNames.MethodSpec (GetMethodSpecInfoAsMethodSpecIdx cenv env minfo)
 
 and GetMethodSpecAsUncodedToken cenv env mspec = 
     GetMethodSpecInfoAsUncodedToken cenv env (InfoOfMethodSpec mspec)
@@ -2475,7 +2475,7 @@ let GenReturnPass3 cenv (returnv: ILReturn) =
 let GetMethodDefSigAsBytes cenv env (mdef: ILMethodDef) = 
     emitBytesViaBuffer (fun bb -> 
       bb.EmitByte (callconvToByte mdef.GenericParams.Length mdef.CallingConv)
-      if mdef.GenericParams.Length > 0 then bb.EmitZ32 mdef.GenericParams.Length
+      if not (List.isEmpty mdef.GenericParams) then bb.EmitZ32 mdef.GenericParams.Length
       bb.EmitZ32 mdef.Parameters.Length
       EmitType cenv env bb mdef.Return.Type
       mdef.ParameterTypes |> List.iter (EmitType cenv env bb))

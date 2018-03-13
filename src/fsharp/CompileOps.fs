@@ -4288,7 +4288,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             // specified in the attributes
             |> List.distinctBy (fun s -> try Path.GetFileNameWithoutExtension(s) with _ -> s)
 
-        if designTimeAssemblyNames.Length > 0 then
+        if not (List.isEmpty designTimeAssemblyNames) then
 
             // Find the SystemRuntimeAssemblyVersion value to report in the TypeProviderConfig.
             let primaryAssemblyVersion = 

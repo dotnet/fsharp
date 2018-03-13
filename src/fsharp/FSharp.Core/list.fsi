@@ -782,6 +782,14 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("TryHead")>]
         val tryHead: list:'T list -> 'T option
 
+        /// <summary>Returns the transpose of the given sequence of lists.</summary>
+        /// <param name="lists">The input sequence of list.</param>
+        /// <returns>The transposed list.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="System.ArgumentException">Thrown when the input lists differ in length.</exception>
+        [<CompiledName("Transpose")>]
+        val transpose: lists:seq<'T list> -> 'T list list
+
         /// <summary>Returns at most N elements in a new list.</summary>
         /// <param name="count">The maximum number of items to return.</param>
         /// <param name="array">The input list.</param>
