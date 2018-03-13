@@ -15,7 +15,7 @@ Install
 - [.NET 4.6](https://www.microsoft.com/en-gb/download/details.aspx?id=48130)
 
 **NOTE on Windows:**
-1. It is recommended to run the build.cmd and the qualifiers below on a command prompt with path set to have the location of MSBuild. If you have Visual Studio, we can also run using `Developer Command Prompt for Visual Studio 20xx` (depends on Visual Studio version). This developer command prompt is easier to use than normal command prompt, because it already has the correct path of Visual Studio and .NET's tooling set for us to use (including MSBuild).
+1. It is recommended to run the build.cmd and the qualifiers be on a command prompt with path set to have the location of MSBuild. If you have Visual Studio, we can also run using `Developer Command Prompt for Visual Studio 20xx` (depends on Visual Studio version). This developer command prompt is easier to use than normal command prompt, because it already has the correct path of Visual Studio and .NET's tooling set for us to use (including MSBuild).
 2. The running command prompt must be run under Administrator right (`Run as Administrator`).
 
 Before running the build scripts, ensure that you have cleaned up the visualfsharp repo by running this git command:
@@ -212,6 +212,13 @@ For **Release**:
  - We use this compiler to compile the source in this distribution, to produce a "proto" compiler, dropped to the `proto` directory. When run, this compiler still relies on `FSharp.Core.dll` with version X.
  - We use the proto compiler to compile the source for `FSharp.Core.dll` in this distribution.
  - We use the proto compiler to compile the source for `FSharp.Compiler.dll`, `fsc.exe`, `fsi.exe`, and other binaries found in this distribution.
+
+#### Updating FSComp.fs
+
+If you change error messages you may need to update FSComp.fs in `src\buildfromsource\FSharp.Compiler.Private`.
+
+To do this, build the non-buildfromsource version of FSharp.Compiler.Private (src\fsharp\FSharp.Compiler.Private) then check its obj\ directory for `FSComp.fs` and manually copy that into the buildfromsource directory.
+
 
 #### Configuring proxy server
 
