@@ -6906,7 +6906,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                     let (flds, _, rest) = combineTyAndNextFld h t
                     match rest with
                     | [] ->  [(List.frontAndBack flds, v)]
-                    | _ -> [(List.frontAndBack flds, Some(SynExpr.Record(None, None, [build t], h.idRange)))]
+                    | _ -> [(List.frontAndBack flds, Some(SynExpr.Record(None, None, [build rest], h.idRange)))]
 
                     
                    
