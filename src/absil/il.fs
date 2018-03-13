@@ -1558,8 +1558,7 @@ type ILFieldDef =
     member x.WithStatic(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition FieldAttributes.Static }
     member x.WithSpecialName(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition (FieldAttributes.SpecialName ||| FieldAttributes.RTSpecialName) }
     member x.WithNotSerialized(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition FieldAttributes.NotSerialized }
-    member x.WithLiteral(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition FieldAttributes.Literal }
-    member x.WithHasDefault(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition FieldAttributes.HasDefault }
+    member x.WithLiteralDefaultValue(literal) = { x with LiteralValue = literal; Attributes = x.Attributes |> conditionalAdd literal.IsSome (FieldAttributes.Literal ||| FieldAttributes.HasDefault) }
     member x.WithHasFieldMarshal(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition FieldAttributes.HasFieldMarshal }
 
 
