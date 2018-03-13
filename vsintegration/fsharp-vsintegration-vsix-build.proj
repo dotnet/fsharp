@@ -7,7 +7,6 @@
   <ItemGroup>
     <ProjectFiles Include="Vsix\VisualFSharpFull\VisualFSharpFull.csproj" />
     <ProjectFiles Include="Vsix\VisualFSharpTemplates\VisualFSharpTemplates.csproj" />
-    <ProjectFiles Include="Vsix\VisualFSharpOpenSource\VisualFSharpOpenSource.csproj" />
   </ItemGroup>
 
   <Import Project="..\src\root.traversal.targets"/>
