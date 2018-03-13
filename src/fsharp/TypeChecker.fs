@@ -6876,12 +6876,41 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
             | [] -> []
             | [fld] -> [(([], fld), v)]
             | h :: t ->
+                let (|RecdTy|RecdFld|) (id : Ident) =
+                    let t =
+                        env.NameEnv.eTyconsByAccessNames.TryFind id.idText
+                    match t with
+                    | Some t -> RecdTy t
+                    | None -> RecdFld
+
+                let combineTyAndNextFld (ty : Ident) flds =
+                    match flds with
+                    | [] -> ([ty], ty.idRange, [])  // If no other fields it's invalid syntax. Return but error will be thrown later.
+                    | h :: t -> ([ty; h], h.idRange, t)
+
                 let rec build lid =
                     match lid with
                     | [] -> ((LongIdentWithDots ([], []), true), v, None)
                     | [fld] -> ((LongIdentWithDots ([fld],[]), true), v, None)
-                    | h :: t -> ((LongIdentWithDots ([h], []), true), Some(SynExpr.Record((None, None, [build t], h.idRange))), None)
-                [(([], h), Some(SynExpr.Record(None, None, [build t], h.idRange)))]
+                    | h :: t -> 
+                        match h with
+                        | RecdFld -> ((LongIdentWithDots ([h], []), true), Some(SynExpr.Record((None, None, [build t], h.idRange))), None)
+                        | RecdTy _ ->
+                            // If Ident is Type - LongIdentWithDots is [Type; NextField]
+                            let tyLidwd, fldIdRange, _ = combineTyAndNextFld h t
+                            ((LongIdentWithDots (tyLidwd, [h.idRange]), true), Some(SynExpr.Record((None, None, [build t], fldIdRange))), None)    
+
+                match h with
+                | RecdFld -> [(([], h), Some(SynExpr.Record(None, None, [build t], h.idRange)))]
+                | RecdTy _ ->
+                    let (flds, _, rest) = combineTyAndNextFld h t
+                    match rest with
+                    | [] ->  [(List.frontAndBack flds, v)]
+                    | _ -> [(List.frontAndBack flds, Some(SynExpr.Record(None, None, [build t], h.idRange)))]
+
+                    
+                   
+               
 
                     
         let flds = 
@@ -6893,11 +6922,12 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                         // we assume that parse errors were already reported
                         raise (ReportedError None)
 
+                    //yield (List.frontAndBack lidwd.Lid, v)
                     match lidwd.Lid with
                     | []    -> ()
-                    | [_]   -> yield (List.frontAndBack lidwd.Lid, v)
+                    | [id]   -> yield (([], id), v)
                     | _     -> match _buildForNestdFlds lidwd v with
-                                | [h] -> yield(h)
+                                | [flds] -> yield(flds)
                                 | _ -> ()                    
             ]
             
