@@ -510,15 +510,128 @@ namespace Microsoft.FSharp.Core
     module LanguagePrimitives =  
 
         module (* internal *) ErrorStrings =
-            // inline functions cannot call GetString, so we must make these bits public
-            let AddressOpNotFirstClassString = SR.GetString(SR.addressOpNotFirstClass)
-            let NoNegateMinValueString = SR.GetString(SR.noNegateMinValue)
-            // needs to be public to be visible from inline function 'average' and others
-            let InputSequenceEmptyString = SR.GetString(SR.inputSequenceEmpty) 
-            // needs to be public to be visible from inline function 'average' and others
-            let InputArrayEmptyString = SR.GetString(SR.arrayWasEmpty) 
-            // needs to be public to be visible from inline function 'average' and others
-            let InputMustBeNonNegativeString = SR.GetString(SR.inputMustBeNonNegative)
+            // These 5 members were previously in use and calling SR.GetString in the static constructor.
+            // Due to performance problems it created ErrorStringGetters has created to replace them.
+            // As they are part of FSharp.Core public surface they can't be removed and were replaced with hardcoded
+            // values instead. See github Microsoft/visualfsharp PR #4465 and issue #159
+            let rec private getAddressOpNotFirstClassString (culture: CultureInfo) = 
+                let search = culture.Name
+                if "cs".Equals(search) then "Použití operátorů address-of jako výrazů první třídy není povoleno."
+                else if "de".Equals(search) then "Verwendungen der ersten Klasse von address-of-Operatoren sind nicht zulässig."
+                else if "es".Equals(search) then "No se permite el uso de operadores address-of en la primera clase."
+                else if "fr".Equals(search) then "L'utilisation d'opérateurs address-of par la première classe n'est pas autorisée."
+                else if "it".Equals(search) then "Utilizzi di prima classe di operatori address-of non consentiti."
+                else if "ja".Equals(search) then "アドレス演算子のファースト クラスの使用は許可されていません。"
+                else if "ko".Equals(search) then "address-of 연산자의 첫 번째 클래스 사용은 허용되지 않습니다."
+                else if "pl".Equals(search) then "Używanie operatorów „address-of” w pierwszej klasie jest niedozwolone."
+                else if "pt-BR".Equals(search) then "Usos de operadores address-of de primeira classe não são permitidos."
+                else if "ru".Equals(search) then "Использование операторов address-of в первом классе не допускается."
+                else if "tr".Equals(search) then "Address-of işleçlerinin birinci sınıf kullanımlarına izin verilmiyor."
+                else if "zh-Hans".Equals(search) then "不允许优先使用 address-of 运算符。"
+                else if "zh-Hant".Equals(search) then "不允許優先使用傳址運算子。"
+                else if obj.ReferenceEquals(CultureInfo.InvariantCulture, culture.Parent) then
+                    "First class uses of address-of operators are not permitted."
+                else
+                    getAddressOpNotFirstClassString culture.Parent
+
+            let AddressOpNotFirstClassString = getAddressOpNotFirstClassString CultureInfo.CurrentUICulture
+            
+            let rec private getNoNegateMinValueString (culture: CultureInfo) = 
+                let search = culture.Name
+                if "cs".Equals(search) then "Negace minimální hodnoty čísla ve formátu dvojkového doplňku je neplatná."
+                else if "de".Equals(search) then "Das Negieren des minimalen Wertes einer Ergänzungszahl ist unzulässig."
+                else if "es".Equals(search) then "La negación del valor mínimo de un número complementario de dos no es válida."
+                else if "fr".Equals(search) then "La mise en négatif de la valeur minimale du complément à deux d'un nombre n'est pas valide."
+                else if "it".Equals(search) then "La negazione del valore minimo di un complemento a due non è valida."
+                else if "ja".Equals(search) then "2 の補数の最小値を無効にすることはできません。"
+                else if "ko".Equals(search) then "2의 보수 중 최소값 부정이 잘못되었습니다."
+                else if "pl".Equals(search) then "Negacja minimalnej wartości liczby zapisanej w notacji uzupełniania do dwóch jest nieprawidłowa."
+                else if "pt-BR".Equals(search) then "É inválido negar o valor mínimo de um número de dois complementos."
+                else if "ru".Equals(search) then "Инвертировать минимальное значение двоичного дополнения невозможно."
+                else if "tr".Equals(search) then "İkiye tamamlanmış bir sayının en küçük değerini eksi yapma geçersizdir."
+                else if "zh-Hans".Equals(search) then "对 2 的补数的最小值求反的操作无效。"
+                else if "zh-Hant".Equals(search) then "對二進位補數的最小值取補數無效。"
+                else if obj.ReferenceEquals(CultureInfo.InvariantCulture, culture.Parent) then
+                    "Negating the minimum value of a twos complement number is invalid."
+                else
+                    getNoNegateMinValueString culture.Parent
+            
+            let NoNegateMinValueString = getNoNegateMinValueString CultureInfo.CurrentUICulture
+            
+            let rec private getInputSequenceEmptyString (culture: CultureInfo) = 
+                let search = culture.Name
+                if "cs".Equals(search) then "Vstupní sekvence byla prázdná."
+                else if "de".Equals(search) then "Die Eingabesequenz war leer."
+                else if "es".Equals(search) then "La secuencia de entrada estaba vacía."
+                else if "fr".Equals(search) then "La séquence d'entrée était vide."
+                else if "it".Equals(search) then "Sequenza di input vuota."
+                else if "ja".Equals(search) then "入力シーケンスが空でした。"
+                else if "ko".Equals(search) then "입력 시퀀스가 비어 있습니다."
+                else if "pl".Equals(search) then "Sekwencja wejściowa jest pusta."
+                else if "pt-BR".Equals(search) then "A sequência de entrada estava vazia."
+                else if "ru".Equals(search) then "Входная последовательность была пуста."
+                else if "tr".Equals(search) then "Giriş dizisi boştu."
+                else if "zh-Hans".Equals(search) then "输入序列为空。"
+                else if "zh-Hant".Equals(search) then "輸入序列是空的。"
+                else if obj.ReferenceEquals(CultureInfo.InvariantCulture, culture.Parent) then
+                    "The input sequence was empty."
+                else
+                    getInputSequenceEmptyString culture.Parent
+            
+            let InputSequenceEmptyString = getInputSequenceEmptyString CultureInfo.CurrentUICulture
+            
+            let rec private getInputArrayEmptyString (culture: CultureInfo) = 
+                let search = culture.Name
+                if "cs".Equals(search) then "Vstupní pole bylo prázdné."
+                else if "de".Equals(search) then "Das Eingabearray war leer."
+                else if "es".Equals(search) then "La matriz de entrada estaba vacía."
+                else if "fr".Equals(search) then "Le tableau d'entrée était vide."
+                else if "it".Equals(search) then "La matrice di input è vuota."
+                else if "ja".Equals(search) then "入力配列が空でした。"
+                else if "ko".Equals(search) then "입력 배열이 비어 있습니다."
+                else if "pl".Equals(search) then "Tablica wejściowa jest pusta."
+                else if "pt-BR".Equals(search) then "A matriz de entrada estava vazia."
+                else if "ru".Equals(search) then "Входной массив был пуст."
+                else if "tr".Equals(search) then "Giriş dizisi boştu."
+                else if "zh-Hans".Equals(search) then "输入数组为空。"
+                else if "zh-Hant".Equals(search) then "輸入陣列是空的。"
+                else if obj.ReferenceEquals(CultureInfo.InvariantCulture, culture.Parent) then
+                    "The input array was empty."
+                else
+                    getInputArrayEmptyString culture.Parent
+            
+            let InputArrayEmptyString = getInputArrayEmptyString CultureInfo.CurrentUICulture
+            
+            let rec private getInputMustBeNonNegativeString (culture: CultureInfo) = 
+                let search = culture.Name
+                if "cs".Equals(search) then "Hodnota vstupu musí být nezáporná."
+                else if "de".Equals(search) then "Die Eingabe darf nicht negativ sein."
+                else if "es".Equals(search) then "La entrada no debe ser negativa."
+                else if "fr".Equals(search) then "La saisie ne doit pas être négative."
+                else if "it".Equals(search) then "L'input non può essere negativo."
+                else if "ja".Equals(search) then "入力は負以外である必要があります。"
+                else if "ko".Equals(search) then "입력은 음수가 아니어야 합니다."
+                else if "pl".Equals(search) then "Wartość wejściowa nie może być ujemna."
+                else if "pt-BR".Equals(search) then "A entrada deve ser não negativa."
+                else if "ru".Equals(search) then "Входное значение должно быть неотрицательным."
+                else if "tr".Equals(search) then "Giriş negatif olmayan bir sayı olmalıdır."
+                else if "zh-Hans".Equals(search) then "输入必须为非负数。"
+                else if "zh-Hant".Equals(search) then "輸入必須是非負數。"
+                else if obj.ReferenceEquals(CultureInfo.InvariantCulture, culture.Parent) then
+                    "The input must be non-negative."
+                else
+                    getInputMustBeNonNegativeString culture.Parent
+            
+            let InputMustBeNonNegativeString = getInputMustBeNonNegativeString CultureInfo.CurrentUICulture
+            
+        module (* internal *) ErrorStringGetters =
+            //-------------------------------------------------------------------------
+            // Inline functions cannot call GetString, so we must make these bits public
+            let getAddressOpNotFirstClassString() = SR.GetString(SR.addressOpNotFirstClass)
+            let getNoNegateMinValueString() = SR.GetString(SR.noNegateMinValue)
+            let getInputSequenceEmptyString() = SR.GetString(SR.inputSequenceEmpty) 
+            let getInputArrayEmptyString() = SR.GetString(SR.arrayWasEmpty) 
+            let getInputMustBeNonNegativeString() = SR.GetString(SR.inputMustBeNonNegative)            
             
         [<CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible")>]  // nested module OK              
         module IntrinsicOperators =        
@@ -539,13 +652,13 @@ namespace Microsoft.FSharp.Core
             [<NoDynamicInvocation>]
             let inline (~&)  (obj : 'T) : 'T byref     = 
                 ignore obj // pretend the variable is used
-                let e = new System.ArgumentException(ErrorStrings.AddressOpNotFirstClassString) 
+                let e = new System.ArgumentException(ErrorStringGetters.getAddressOpNotFirstClassString()) 
                 (# "throw" (e :> System.Exception) : 'T byref #)
                  
             [<NoDynamicInvocation>]
             let inline (~&&) (obj : 'T) : nativeptr<'T> = 
                 ignore obj // pretend the variable is used
-                let e = new System.ArgumentException(ErrorStrings.AddressOpNotFirstClassString) 
+                let e = new System.ArgumentException(ErrorStringGetters.getAddressOpNotFirstClassString()) 
                 (# "throw" (e :> System.Exception) : nativeptr<'T> #)     
           
         
@@ -5142,7 +5255,7 @@ namespace Microsoft.FSharp.Core
                     let x : nativeint = retype x in 
                     if x >= 0n then x else 
                     let res = -x in 
-                    if res < 0n then raise (System.OverflowException(ErrorStrings.NoNegateMinValueString))
+                    if res < 0n then raise (System.OverflowException(ErrorStringGetters.getNoNegateMinValueString()))
                     res
                  when ^T : int16       = let x : int16     = retype x in System.Math.Abs(x)
                  when ^T : sbyte       = let x : sbyte     = retype x in System.Math.Abs(x)

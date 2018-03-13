@@ -44,7 +44,7 @@ module internal DetailedExceptions =
 
     /// throws an invalid argument exception and returns the arg's value
     let inline invalidArgInputMustBeNonNegative (arg:string) (count:int) =
-        invalidArgFmt arg "{0}\n{1} = {2}" [|LanguagePrimitives.ErrorStrings.InputMustBeNonNegativeString ; arg; count|]
+        invalidArgFmt arg "{0}\n{1} = {2}" [|LanguagePrimitives.ErrorStringGetters.getInputMustBeNonNegativeString() ; arg; count|]
         
     /// throws an invalid argument exception and returns the arg's value
     let inline invalidArgInputMustBePositive (arg:string) (count:int) =

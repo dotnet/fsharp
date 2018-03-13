@@ -1910,6 +1910,15 @@ Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings: System.String get_InputMu
 Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings: System.String get_InputSequenceEmptyString()
 Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings: System.String get_NoNegateMinValueString()
 Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings: System.Type GetType()
+Microsoft.FSharp.Core.LanguagePrimitives+ErrorStringGetters: Boolean Equals(System.Object)
+Microsoft.FSharp.Core.LanguagePrimitives+ErrorStringGetters: Int32 GetHashCode()
+Microsoft.FSharp.Core.LanguagePrimitives+ErrorStringGetters: System.String ToString()
+Microsoft.FSharp.Core.LanguagePrimitives+ErrorStringGetters: System.String getAddressOpNotFirstClassString()
+Microsoft.FSharp.Core.LanguagePrimitives+ErrorStringGetters: System.String getInputArrayEmptyString()
+Microsoft.FSharp.Core.LanguagePrimitives+ErrorStringGetters: System.String getInputMustBeNonNegativeString()
+Microsoft.FSharp.Core.LanguagePrimitives+ErrorStringGetters: System.String getInputSequenceEmptyString()
+Microsoft.FSharp.Core.LanguagePrimitives+ErrorStringGetters: System.String getNoNegateMinValueString()
+Microsoft.FSharp.Core.LanguagePrimitives+ErrorStringGetters: System.Type GetType()
 Microsoft.FSharp.Core.LanguagePrimitives+HashCompare: Boolean Equals(System.Object)
 Microsoft.FSharp.Core.LanguagePrimitives+HashCompare: Boolean FastEqualsTuple2[T1,T2](System.Collections.IEqualityComparer, System.Tuple`2[T1,T2], System.Tuple`2[T1,T2])
 Microsoft.FSharp.Core.LanguagePrimitives+HashCompare: Boolean FastEqualsTuple3[T1,T2,T3](System.Collections.IEqualityComparer, System.Tuple`3[T1,T2,T3], System.Tuple`3[T1,T2,T3])
@@ -1996,6 +2005,7 @@ Microsoft.FSharp.Core.LanguagePrimitives: Int32 PhysicalHash[T](T)
 Microsoft.FSharp.Core.LanguagePrimitives: Int64 Int64WithMeasure(Int64)
 Microsoft.FSharp.Core.LanguagePrimitives: Int64 ParseInt64(System.String)
 Microsoft.FSharp.Core.LanguagePrimitives: Microsoft.FSharp.Core.LanguagePrimitives+ErrorStrings
+Microsoft.FSharp.Core.LanguagePrimitives: Microsoft.FSharp.Core.LanguagePrimitives+ErrorStringGetters
 Microsoft.FSharp.Core.LanguagePrimitives: Microsoft.FSharp.Core.LanguagePrimitives+HashCompare
 Microsoft.FSharp.Core.LanguagePrimitives: Microsoft.FSharp.Core.LanguagePrimitives+IntrinsicFunctions
 Microsoft.FSharp.Core.LanguagePrimitives: Microsoft.FSharp.Core.LanguagePrimitives+IntrinsicOperators
