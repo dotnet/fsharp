@@ -46,7 +46,8 @@
     <BuildTimeStamp_Date>$(BUILD_BUILDNUMBER.Split('.')[0].Substring(2))</BuildTimeStamp_Date>
     <BuildTimeStamp_Number>$(BUILD_BUILDNUMBER.Split('.')[1].PadLeft(2, '0'))</BuildTimeStamp_Number>
     <BuildTimeStamp>$(BuildTimeStamp_Date)$(BuildTimeStamp_Number)</BuildTimeStamp>
-    <VsixPackageVersion>$(VSAssemblyVersion.Split('.')[0]).$(VSAssemblyVersion.Split('.')[1]).$(BUILD_BUILDNUMBER)</VsixPackageVersion>
+    <VsixPackageVersion Condition="'$(CI)' != ''">$(VSAssemblyVersion.Split('.')[0]).$(VSAssemblyVersion.Split('.')[1]).$(BUILD_BUILDNUMBER)</VsixPackageVersion>
+    <VsixPackageVersion Condition="'$(CI)' == ''">42.42.42.42</VsixPackageVersion>
     <NuGetPackageVersionSuffix>$(BuildTimeStamp_Date)-$(BuildTimeStamp_Number)</NuGetPackageVersionSuffix>
   </PropertyGroup>
 

@@ -156,18 +156,18 @@ components installed in that VS installation.  You can revert this step by disab
 For **Debug**, uninstall then reinstall:
 
     VSIXInstaller.exe /u:"VisualFSharp"
-    VSIXInstaller.exe debug\net40\bin\VisualFSharpOpenSource.vsix
+    VSIXInstaller.exe debug\net40\bin\VisualFSharpFull.vsix
 
 For **Release**, uninstall then reinstall:
 
     VSIXInstaller.exe /u:"VisualFSharp"
-    VSIXInstaller.exe release\net40\bin\VisualFSharpOpenSource.vsix
+    VSIXInstaller.exe release\net40\bin\VisualFSharpFull.vsix
 
 Restart Visual Studio, it should now be running your freshly-built Visual F# IDE Tools with updated F# Interactive.
 
 #### [Optional] F5 testing of local changes
 
-To test your changes locally _without_ overwriting your default installed Visual F# tools, set the `VisualFSharp\Vsix\VisualFSharpOpenSource`
+To test your changes locally _without_ overwriting your default installed Visual F# tools, set the `VisualFSharp\Vsix\VisualFSharpFull`
 project as the startup project.  When you hit F5 a new instance of Visual Studio will be started in the `RoslynDev` hive with your
 changes, but the root (default) hive will remain untouched. You can also start this hive automatically using
 
