@@ -71,9 +71,10 @@ module internal PrintUtilities =
                     tcref.DisplayName // has no static params
                 else
                     tcref.DisplayName+"<...>" // shorten
-            if isAttribute then 
-                defaultArg (String.tryDropSuffix name "Attribute") name 
-            else name
+            if isAttribute && name.EndsWith "Attribute" then
+                String.dropSuffix name "Attribute"
+            else 
+                name
         let tyconTextL =
             tagEntityRefName tcref demangled
             |> mkNav tcref.DefinitionRange
@@ -415,16 +416,11 @@ module private PrintIL =
             | None     -> 
                 aboveListL body
 
-        match typeDef.tdKind with
-        | ILTypeDefKind.Class     
-        | ILTypeDefKind.ValueType 
-        | ILTypeDefKind.Interface -> 
+        if typeDef.IsClass || typeDef.IsStruct || typeDef.IsInterface then
             let pre = 
-                match typeDef.tdKind with
-                | ILTypeDefKind.Class     -> None
-                | ILTypeDefKind.ValueType -> Some WordL.keywordStruct
-                | ILTypeDefKind.Interface -> None
-                | _ -> failwith "unreachable"
+                if typeDef.IsStruct then Some WordL.keywordStruct
+                else None
+
             let baseT  = 
                 match typeDef.Extends with
                 | Some b -> 
@@ -434,15 +430,14 @@ module private PrintIL =
                         else []
                 | None   -> 
                     // for interface show inherited interfaces 
-                    match typeDef.tdKind with 
-                    | ILTypeDefKind.Interface ->
+                    if typeDef.IsInterface then 
                         typeDef.Implements |> List.choose (fun b -> 
                             let baseName = layoutILType denv ilTyparSubst b
                             if isShowBase baseName
                                 then Some (WordL.keywordInherit ^^ baseName)
                             else None
                         )
-                    | _ -> []
+                    else []
 
             let memberBlockLs (fieldDefs:ILFieldDefs, methodDefs:ILMethodDefs, propertyDefs:ILPropertyDefs, eventDefs:ILEventDefs) =
                 let ctors  =
@@ -509,7 +504,7 @@ module private PrintIL =
             let post   = WordL.keywordEnd
             renderL pre (baseT @ body @ types ) post
 
-        | ILTypeDefKind.Enum      -> 
+        elif typeDef.IsEnum then
             let fldsL = 
                 typeDef.Fields.AsList 
                 |> List.filter isShowEnumField 
@@ -518,7 +513,7 @@ module private PrintIL =
 
             renderL None fldsL emptyL
 
-        | ILTypeDefKind.Delegate  -> 
+        else // Delegate
             let rhs = 
                 match typeDef.Methods.AsList |> List.filter (fun m -> m.Name = "Invoke") with // the delegate delegates to the type of `Invoke`
                 | m :: _ -> layoutILCallingSignature denv ilTyparSubst None m.CallingSignature
@@ -660,9 +655,10 @@ module private PrintTypes =
         | ILAttrib ilMethRef -> 
             let trimmedName = 
                 let name = ilMethRef.DeclaringTypeRef.Name
-                match String.tryDropSuffix name "Attribute" with 
-                | Some shortName -> shortName
-                | None -> name
+                if name.EndsWith "Attribute" then
+                    String.dropSuffix name "Attribute"
+                else
+                    name
             let tref = ilMethRef.DeclaringTypeRef
             let tref = ILTypeRef.Create(scope= tref.Scope, enclosing=tref.Enclosing, name=trimmedName)
             PrintIL.layoutILTypeRef denv tref ++ argsL
@@ -1281,7 +1277,7 @@ module InfoMemberPrinting =
         let paramDatas = minfo.GetParamDatas(amap, m, minst)
         let layout =
             layout ^^
-                if isNil (List.concat paramDatas) then
+                if List.forall isNil paramDatas then
                     WordL.structUnit
                 else
                     sepListL WordL.arrow (List.map ((List.map (layoutParamData denv)) >> sepListL WordL.star) paramDatas)

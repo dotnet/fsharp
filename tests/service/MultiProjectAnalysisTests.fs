@@ -1,6 +1,6 @@
 ﻿
 #if INTERACTIVE
-#r "../../Debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
 #r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
@@ -129,6 +129,9 @@ let u = Case1 3
 
 
 [<Test>]
+#if NETCOREAPP2_0
+[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+#endif
 let ``Test multi project 1 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(MultiProject1.options) |> Async.RunSynchronously
@@ -311,6 +314,9 @@ let p = ("""
         FSharpChecker.Create(projectCacheSize=size)
 
 [<Test>]
+#if NETCOREAPP2_0
+[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+#endif
 let ``Test ManyProjectsStressTest whole project errors`` () = 
 
     let checker = ManyProjectsStressTest.makeCheckerForStressTest true
@@ -831,9 +837,11 @@ let ``Test max memory gets triggered`` () =
 
 //------------------------------------------------------------------------------------
 
-#if !DOTNETCORE
 
 [<Test>]
+#if NETCOREAPP2_0
+[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+#endif
 let ``Type provider project references should not throw exceptions`` () =
     //let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Debug")])
     let options = 
@@ -919,6 +927,9 @@ let ``Type provider project references should not throw exceptions`` () =
 //------------------------------------------------------------------------------------
 
 [<Test>]
+#if NETCOREAPP2_0
+[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+#endif
 let ``Projects creating generated types should not utilize cross-project-references but should still analyze oK once project is built`` () =
     //let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Debug")])
     let options = 
@@ -1005,6 +1016,5 @@ let ``Projects creating generated types should not utilize cross-project-referen
 
 
 
-#endif
 
 //------------------------------------------------------------------------------------

@@ -113,7 +113,6 @@ module Impl =
         | ILMemberAccess.Assembly -> 
             taccessPrivate  (CompPath(declaringEntity.CompilationPath.ILScopeRef, []))
 
-        | ILMemberAccess.CompilerControlled
         | ILMemberAccess.Private ->
             taccessPrivate  declaringEntity.CompilationPath
 
@@ -368,7 +367,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
 #if !NO_EXTENSIONTYPING 
         | ProvidedTypeMetadata info -> info.IsClass
 #endif
-        | ILTypeMetadata (TILObjectReprData(_, _, td)) -> (td.tdKind = ILTypeDefKind.Class)
+        | ILTypeMetadata (TILObjectReprData(_, _, td)) -> (td.IsClass)
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> entity.Deref.IsFSharpClassTycon
 
     member __.IsByRef = 
@@ -389,7 +388,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
 #if !NO_EXTENSIONTYPING
         | ProvidedTypeMetadata info -> info.IsDelegate ()
 #endif
-        | ILTypeMetadata (TILObjectReprData(_, _, td)) -> (td.tdKind = ILTypeDefKind.Delegate)
+        | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsDelegate
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> entity.IsFSharpDelegateTycon
 
     member __.IsEnum = 
@@ -852,6 +851,12 @@ and FSharpField(cenv: cenv, d: FSharpFieldData)  =
         match d.TryRecdField with 
         | Choice1Of2 r -> r.IsCompilerGenerated
         | Choice2Of2 _ -> false
+
+    member __.IsNameGenerated =
+        if isUnresolved() then false else
+        match d.TryRecdField with
+        | Choice1Of2 r -> r.rfield_name_generated
+        | _ -> false
 
     member __.DeclarationLocation = 
         checkIsResolved()

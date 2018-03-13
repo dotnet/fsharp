@@ -790,10 +790,7 @@ type ILMethInfo =
     member x.IsFinal = x.RawMetadata.IsFinal
 
     /// Indicates if the IL method is marked abstract.
-    member x.IsAbstract = 
-        match x.RawMetadata.mdKind with 
-        | MethodKind.Virtual vinfo -> vinfo.IsAbstract 
-        | _ -> false
+    member x.IsAbstract = x.RawMetadata.IsAbstract
 
     /// Does it appear to the user as a static method?
     member x.IsStatic = 
@@ -801,10 +798,7 @@ type ILMethInfo =
         x.RawMetadata.CallingConv.IsStatic
 
     /// Does it have the .NET IL 'newslot' flag set, and is also a virtual?
-    member x.IsNewSlot = 
-        match x.RawMetadata.mdKind with 
-        | MethodKind.Virtual vinfo -> vinfo.IsNewSlot 
-        | _ -> false
+    member x.IsNewSlot = x.RawMetadata.IsNewSlot
     
     /// Does it appear to the user as an instance method?
     member x.IsInstance = not x.IsConstructor &&  not x.IsStatic
@@ -1183,7 +1177,11 @@ type MethInfo =
         | _ -> failwith "not supported"
 
     /// Indicates if this is an extension member. 
-    member x.IsExtensionMember = x.IsCSharpStyleExtensionMember || x.IsFSharpStyleExtensionMember
+    member x.IsExtensionMember =
+        match x with
+        | FSMeth (_,_,vref,pri) -> pri.IsSome || vref.IsExtensionMember
+        | ILMeth (_,_,Some _) -> true
+        | _ -> false
 
     /// Indicates if this is an F# extension member. 
     member x.IsFSharpStyleExtensionMember = 
@@ -1191,8 +1189,10 @@ type MethInfo =
 
     /// Indicates if this is an C#-style extension member. 
     member x.IsCSharpStyleExtensionMember = 
-        x.ExtensionMemberPriorityOption.IsSome && 
-        (match x with ILMeth _ -> true | FSMeth (_,_,vref,_) -> not vref.IsExtensionMember | _ -> false)
+        match x with
+        | FSMeth (_,_,vref,Some _) -> not vref.IsExtensionMember
+        | ILMeth (_,_,Some _) -> true
+        | _ -> false
 
     /// Add the actual type instantiation of the apparent type of an F# extension method.
     //

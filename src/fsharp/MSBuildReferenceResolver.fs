@@ -108,7 +108,7 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
 
 
     let GetPathToDotNetFrameworkReferenceAssemblies(version) = 
-#if NETSTANDARD1_6
+#if NETSTANDARD1_6 || NETSTANDARD2_0
         ignore version
         let r : string list = []
         r

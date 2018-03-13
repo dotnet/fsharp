@@ -1812,20 +1812,20 @@ and p_vrefFlags x st =
 
 and p_ValData x st =
     p_string x.val_logical_name st
-    p_option p_string x.val_compiled_name st
+    p_option p_string x.ValCompiledName st
     // only keep range information on published values, not on optimization data
-    p_ranges (if x.val_repr_info.IsSome then Some(x.val_range, x.DefinitionRange) else None) st
+    p_ranges (x.ValReprInfo |> Option.map (fun _ -> x.val_range, x.DefinitionRange)) st
     p_typ x.val_type st
     p_int64 x.val_flags.PickledBits st
-    p_option p_member_info x.val_member_info st
-    p_attribs x.val_attribs st
-    p_option p_ValReprInfo x.val_repr_info st
-    p_string x.val_xmldocsig st
-    p_access x.val_access st
-    p_parentref x.val_declaring_entity st
-    p_option p_const x.val_const st
+    p_option p_member_info x.MemberInfo st
+    p_attribs x.Attribs st
+    p_option p_ValReprInfo x.ValReprInfo st
+    p_string x.XmlDocSig st
+    p_access x.Accessibility st
+    p_parentref x.DeclaringEntity st
+    p_option p_const x.LiteralValue st
     if st.oInMem then
-        p_used_space1 (p_xmldoc x.val_xmldoc) st
+        p_used_space1 (p_xmldoc x.XmlDoc) st
     else
         p_space 1 () st
       
@@ -1953,6 +1953,7 @@ and u_recdfield_spec st =
       rfield_xmldoc= defaultArg xmldoc XmlDoc.Empty
       rfield_xmldocsig=f 
       rfield_access=g
+      rfield_name_generated = false
       rfield_other_range = None }
 
 and u_rfield_table st = MakeRecdFieldsTable (u_list u_recdfield_spec st)
@@ -2120,22 +2121,27 @@ and u_ValData st =
         (u_option u_const) 
         (u_used_space1 u_xmldoc)
         st
-    { val_logical_name=x1
-      val_compiled_name=x1z
-      val_range=(match x1a with None -> range0 | Some(a,_) -> a)
-      val_other_range=(match x1a with None -> None | Some(_,b) -> Some(b,true))
-      val_type=x2
-      val_stamp=newStamp()
-      val_flags=ValFlags(x4)
-      val_defn = None
-      val_member_info=x8
-      val_attribs=x9
-      val_repr_info=x10
-      val_xmldoc= defaultArg x15 XmlDoc.Empty
-      val_xmldocsig=x12
-      val_access=x13
-      val_declaring_entity=x13b
-      val_const=x14
+
+    { val_logical_name = x1
+      val_range        = (match x1a with None -> range0 | Some(a,_) -> a)
+      val_type         = x2
+      val_stamp        = newStamp()
+      val_flags        = ValFlags(x4)
+      val_opt_data     =
+          match x1z, x1a, x10, x14, x13, x15, x8, x13b, x12, x9 with
+          | None, None, None, None, TAccess [], None, None, ParentNone, "", [] -> None
+          | _ -> 
+              Some { val_compiled_name    = x1z
+                     val_other_range      = (match x1a with None -> None | Some(_,b) -> Some(b,true))
+                     val_defn             = None
+                     val_repr_info        = x10
+                     val_const            = x14
+                     val_access           = x13
+                     val_xmldoc           = defaultArg x15 XmlDoc.Empty
+                     val_member_info      = x8
+                     val_declaring_entity = x13b
+                     val_xmldocsig        = x12
+                     val_attribs          = x9 }
     }
 
 and u_Val st = u_osgn_decl st.ivals u_ValData st 
