@@ -2381,8 +2381,7 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
 
     /// Indicates if the backing field for a static value is suppressed.
     member x.IsCompiledAsStaticPropertyWithoutField = 
-            let _hasMTAThreadAttributeattribs = x.Attribs |> List.exists(fun (Attrib(tc,_,_,_,_,_,_)) -> tc.CompiledName = "MTAThreadAttribute")
-            x.val_flags.IsCompiledAsStaticPropertyWithoutField || _hasMTAThreadAttributeattribs
+            x.val_flags.IsCompiledAsStaticPropertyWithoutField
 
     /// Indicates if the value is pinned/fixed
     member x.IsFixed = x.val_flags.IsFixed
