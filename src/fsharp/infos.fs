@@ -88,6 +88,8 @@ let GetSuperTypeOfType g amap m typ =
                 Some(g.system_Enum_typ)
             else
                 Some (g.system_Value_typ)
+        elif isAnonRecdTy g typ then 
+            Some g.obj_ty
         elif isRecdTy g typ || isUnionTy g typ then
             Some g.obj_ty
         else 

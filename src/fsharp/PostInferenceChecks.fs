@@ -163,6 +163,7 @@ let SetArgVals env (vs: Val list) =
 type cenv = 
     { boundVals: Dictionary<Stamp,int> // really a hash set
       mutable potentialUnboundUsesOfVals: StampMap<range> 
+      mutable anonRecdTypes: StampMap<AnonRecdTypeInfo> 
       g: TcGlobals 
       amap: Import.ImportMap 
       /// For reading metadata
@@ -200,7 +201,7 @@ let BindVals cenv env vs = List.iter (BindVal cenv env) vs
 // approx walk of type
 //--------------------------------------------------------------------------
 
-let rec CheckTypeDeep ((visitTyp,visitTyconRefOpt,visitAppTyOpt,visitTraitSolutionOpt, visitTyparOpt) as f) g env typ =
+let rec CheckTypeDeep (cenv: cenv) ((visitTyp,visitTyconRefOpt,visitAppTyOpt,visitTraitSolutionOpt, visitTyparOpt) as f) g env typ =
     // We iterate the _solved_ constraints as well, to pick up any record of trait constraint solutions
     // This means we walk _all_ the constraints _everywhere_ in a type, including
     // those attached to _solved_ type variables. This is used by PostTypeCheckSemanticChecks to detect uses of
@@ -225,22 +226,27 @@ let rec CheckTypeDeep ((visitTyp,visitTyconRefOpt,visitAppTyOpt,visitTraitSoluti
     match typ with
     | TType_forall (tps,body) -> 
         let env = BindTypars g env tps
-        CheckTypeDeep f g env body           
-        tps |> List.iter (fun tp -> tp.Constraints |> List.iter (CheckTypeConstraintDeep f g env))
+        CheckTypeDeep cenv f g env body           
+        tps |> List.iter (fun tp -> tp.Constraints |> List.iter (CheckTypeConstraintDeep cenv f g env))
 
     | TType_measure _          -> ()
     | TType_app (tcref,tinst) -> 
         match visitTyconRefOpt with 
         | Some visitTyconRef -> visitTyconRef tcref 
         | None -> ()
-        CheckTypesDeep f g env tinst
+        CheckTypesDeep cenv f g env tinst
         match visitAppTyOpt with 
         | Some visitAppTy -> visitAppTy (tcref, tinst)
         | None -> ()
+    | TType_anon (anonInfo,typs) -> 
+        if not (cenv.anonRecdTypes.ContainsKey anonInfo.Stamp) then 
+             cenv.anonRecdTypes <- cenv.anonRecdTypes.Add(anonInfo.Stamp, anonInfo)
+        CheckTypesDeep cenv f g env typs
 
-    | TType_ucase (_,tinst) -> CheckTypesDeep f g env tinst
-    | TType_tuple (_,typs) -> CheckTypesDeep f g env typs
-    | TType_fun (s,t) -> CheckTypeDeep f g env s; CheckTypeDeep f g env t
+    | TType_ucase (_,typs)
+    | TType_anon (_,typs) 
+    | TType_tuple (_,typs) -> CheckTypesDeep cenv f g env typs
+    | TType_fun (s,t) -> CheckTypeDeep cenv f g env s; CheckTypeDeep cenv f g env t
     | TType_var tp -> 
           if not tp.IsSolved then 
               match visitTyparOpt with 
@@ -248,16 +254,16 @@ let rec CheckTypeDeep ((visitTyp,visitTyconRefOpt,visitAppTyOpt,visitTraitSoluti
               | Some visitTypar -> 
                     visitTypar (env,tp)
 
-and CheckTypesDeep f g env tys = List.iter (CheckTypeDeep f g env) tys
+and CheckTypesDeep cenv f g env tys = List.iter (CheckTypeDeep cenv f g env) tys
 
-and CheckTypeConstraintDeep f g env x =
+and CheckTypeConstraintDeep cenv f g env x =
      match x with 
-     | TyparConstraint.CoercesTo(ty,_) -> CheckTypeDeep f g env ty
-     | TyparConstraint.MayResolveMember(traitInfo,_) -> CheckTraitInfoDeep f g env traitInfo
-     | TyparConstraint.DefaultsTo(_,ty,_) -> CheckTypeDeep f g env ty
-     | TyparConstraint.SimpleChoice(tys,_) -> CheckTypesDeep f g env tys
-     | TyparConstraint.IsEnum(uty,_) -> CheckTypeDeep f g env uty
-     | TyparConstraint.IsDelegate(aty,bty,_) -> CheckTypeDeep f g env aty; CheckTypeDeep f g env bty
+     | TyparConstraint.CoercesTo(ty,_) -> CheckTypeDeep cenv f g env ty
+     | TyparConstraint.MayResolveMember(traitInfo,_) -> CheckTraitInfoDeep cenv f g env traitInfo
+     | TyparConstraint.DefaultsTo(_,ty,_) -> CheckTypeDeep cenv f g env ty
+     | TyparConstraint.SimpleChoice(tys,_) -> CheckTypesDeep cenv f g env tys
+     | TyparConstraint.IsEnum(uty,_) -> CheckTypeDeep cenv f g env uty
+     | TyparConstraint.IsDelegate(aty,bty,_) -> CheckTypeDeep cenv f g env aty; CheckTypeDeep cenv f g env bty
      | TyparConstraint.SupportsComparison _ 
      | TyparConstraint.SupportsEquality _ 
      | TyparConstraint.SupportsNull _ 
@@ -265,10 +271,10 @@ and CheckTypeConstraintDeep f g env x =
      | TyparConstraint.IsUnmanaged _
      | TyparConstraint.IsReferenceType _ 
      | TyparConstraint.RequiresDefaultConstructor _ -> ()
-and CheckTraitInfoDeep ((_,_,_,visitTraitSolutionOpt,_) as f) g env (TTrait(typs,_,_,argtys,rty,soln))  = 
-    CheckTypesDeep f g env typs 
-    CheckTypesDeep f g env argtys 
-    Option.iter (CheckTypeDeep f g env) rty
+and CheckTraitInfoDeep cenv ((_,_,_,visitTraitSolutionOpt,_) as f) g env (TTrait(typs,_,_,argtys,rty,soln))  = 
+    CheckTypesDeep cenv f g env typs 
+    CheckTypesDeep cenv f g env argtys 
+    Option.iter (CheckTypeDeep cenv f g env) rty
     match visitTraitSolutionOpt, !soln with 
     | Some visitTraitSolution, Some sln -> visitTraitSolution sln
     | _ -> ()
@@ -278,7 +284,7 @@ and CheckTraitInfoDeep ((_,_,_,visitTraitSolutionOpt,_) as f) g env (TTrait(typs
 //--------------------------------------------------------------------------
 
 let CheckForByrefLikeType cenv env typ check = 
-    CheckTypeDeep (ignore, Some (fun tcref -> if isByrefLikeTyconRef cenv.g tcref then check()),  None, None, None) cenv.g env typ
+    CheckTypeDeep cenv (ignore, Some (fun tcref -> if isByrefLikeTyconRef cenv.g tcref then check()),  None, None, None) cenv.g env typ
 
 
 //--------------------------------------------------------------------------
@@ -353,7 +359,7 @@ let CheckTypeForAccess (cenv:cenv) env objName valAcc m ty =
                 if isLessAccessible tyconAcc valAcc then
                     errorR(Error(FSComp.SR.chkTypeLessAccessibleThanType(tcref.DisplayName, (objName())), m))
 
-        CheckTypeDeep (visitType, None, None, None, None) cenv.g env ty
+        CheckTypeDeep cenv (visitType, None, None, None, None) cenv.g env ty
 
 let WarnOnWrongTypeForAccess (cenv:cenv) env objName valAcc m ty =
     if cenv.reportErrors then 
@@ -371,7 +377,7 @@ let WarnOnWrongTypeForAccess (cenv:cenv) env objName valAcc m ty =
                     let warningText = errorText + System.Environment.NewLine + FSComp.SR.tcTypeAbbreviationsCheckedAtCompileTime()
                     warning(AttributeChecking.ObsoleteWarning(warningText, m))
 
-        CheckTypeDeep (visitType, None, None, None, None) cenv.g env ty 
+        CheckTypeDeep cenv (visitType, None, None, None, None) cenv.g env ty 
 
 //--------------------------------------------------------------------------
 // check type instantiations
@@ -402,7 +408,7 @@ let CheckType permitByrefs (cenv:cenv) env m ty =
                     | Some tcref ->  
                         if isByrefLikeTyconRef cenv.g tcref then 
                             errorR(Error(FSComp.SR.chkNoByrefsOfByrefs(NicePrint.minimalStringOfType cenv.denv ty), m)) 
-                CheckTypesDeep (visitType, None, None, None, None) cenv.g env tinst
+                CheckTypesDeep cenv (visitType, None, None, None, None) cenv.g env tinst
 
         let visitTraitSolution info = 
             match info with 
@@ -413,7 +419,7 @@ let CheckType permitByrefs (cenv:cenv) env m ty =
                    cenv.potentialUnboundUsesOfVals <- cenv.potentialUnboundUsesOfVals.Add(vref.Stamp,m)
             | _ -> ()
 
-        CheckTypeDeep (ignore, Some visitTyconRef, Some visitAppTy, Some visitTraitSolution, Some visitTypar) cenv.g env ty
+        CheckTypeDeep cenv (ignore, Some visitTyconRef, Some visitAppTy, Some visitTraitSolution, Some visitTypar) cenv.g env ty
 
 
 /// Check types occurring in TAST (like CheckType) and additionally reject any byrefs.
@@ -801,6 +807,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
         // Address-of operator generates byref, and context permits this. 
         CheckExprsNoByrefs cenv env args                   
 
+    | TOp.AnonRecdGet _,_,[arg1]
     | TOp.TupleFieldGet _,_,[arg1] -> 
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprsPermitByrefs cenv env [arg1]             (* Compiled pattern matches on immutable value structs come through here. *)
@@ -1703,6 +1710,7 @@ let CheckTopImpl (g,amap,reportErrors,infoReader,internalsVisibleToPaths,viewCcu
           reportErrors=reportErrors 
           boundVals= new Dictionary<_,_>(100, HashIdentity.Structural) 
           potentialUnboundUsesOfVals=Map.empty 
+          anonRecdTypes = StampMap.Empty
           usesQuotations=false 
           infoReader=infoReader 
           internalsVisibleToPaths=internalsVisibleToPaths
@@ -1737,4 +1745,4 @@ let CheckTopImpl (g,amap,reportErrors,infoReader,internalsVisibleToPaths,viewCcu
     CheckAttribs cenv env extraAttribs
     if cenv.usesQuotations && QuotationTranslator.QuotationGenerationScope.ComputeQuotationFormat(cenv.g) = QuotationTranslator.QuotationSerializationFormat.FSharp_20_Plus then 
         viewCcu.UsesFSharp20PlusQuotations <- true
-    cenv.entryPointGiven
+    cenv.entryPointGiven, cenv.anonRecdTypes

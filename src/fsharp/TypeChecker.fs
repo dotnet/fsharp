@@ -760,18 +760,46 @@ let UnifyRefTupleType contextInfo cenv denv m ty ps =
     AddCxTypeEqualsType contextInfo denv cenv.css m ty (TType_tuple (tupInfoRef, ptys))
     ptys
 
-/// Optimized unification routine that avoids creating new inference 
-/// variables unnecessarily
-let UnifyStructTupleType contextInfo cenv denv m ty ps = 
-    let ptys = 
-        if isStructTupleTy cenv.g ty then 
-            let ptys = destStructTupleTy cenv.g ty
-            if List.length ps = List.length ptys then ptys 
-            else NewInferenceTypes ps
-        else NewInferenceTypes ps
-    AddCxTypeEqualsType contextInfo denv cenv.css m ty (TType_tuple (tupInfoStruct, ptys))
+/// Allow the inference of structness from the known type, e.g.
+///    let (x : struct (int * int)) = (3,4)
+let UnifyTupleTypeAndInferCharacteristics contextInfo cenv denv m knownTy isExplicitStruct ps = 
+    let tupInfo, ptys = 
+        if isAnyTupleTy cenv.g knownTy then 
+            let tupInfo, ptys = destAnyTupleTy cenv.g knownTy 
+            let tupInfo = (if isExplicitStruct then TupInfo.Const isExplicitStruct else tupInfo)
+            let ptys = 
+                if List.length ps = List.length ptys then ptys 
+                else NewInferenceTypes ps
+            tupInfo, ptys
+        else
+            TupInfo.Const isExplicitStruct, NewInferenceTypes ps
+    let ty2 = TType_tuple (tupInfo, ptys)
+    AddCxTypeEqualsType contextInfo denv cenv.css m knownTy ty2
+    tupInfo, ptys
 
-    ptys
+// Allow inference of assembly-affinity and structness from the known type - even from another assembly. This is a rule of
+// the language design and allows effective cross-assembly use of anonymous types in some limited circumstances.
+let UnifyAnonRecdTypeAndInferCharacteristics contextInfo cenv denv m ty isExplicitStruct unsortedNames = 
+    let anonInfo, ptys = 
+        match tryDestAnonRecdTy cenv.g ty with 
+        | Some (anonInfo, ptys) -> 
+            // Note: use the assembly of the known type, not the current assembly
+            // Note: use the structness of the known type, unless explicit
+            // Note: use the names of our type, since they are always explicit
+            let tupInfo = (if isExplicitStruct then TupInfo.Const isExplicitStruct else anonInfo.TupInfo)
+            let anonInfo = AnonRecdTypeInfo.Create(anonInfo.Assembly, tupInfo, unsortedNames)
+            let ptys = 
+                if List.length ptys = Array.length unsortedNames then ptys
+                else NewInferenceTypes (Array.toList anonInfo.SortedNames)
+            anonInfo, ptys
+        | None -> 
+            // Note: no known anonymous record type - use our assembly
+            let anonInfo = AnonRecdTypeInfo.Create(cenv.topCcu, TupInfo.Const isExplicitStruct, unsortedNames)
+            anonInfo, NewInferenceTypes (Array.toList anonInfo.SortedNames)
+    let ty2 = TType_anon (anonInfo, ptys)
+    AddCxTypeEqualsType contextInfo denv cenv.css m ty ty2
+    anonInfo, ptys
+
 
 /// Optimized unification routine that avoids creating new inference 
 /// variables unnecessarily
@@ -3214,7 +3242,7 @@ let GetMethodArgs arg =
     let args = 
         match arg with 
         | SynExpr.Const (SynConst.Unit, _) -> []
-        | SynExprParen(SynExpr.Tuple (args, _, _), _, _, _) | SynExpr.Tuple (args, _, _) -> args
+        | SynExprParen(SynExpr.Tuple (false, args, _, _), _, _, _) | SynExpr.Tuple (false, args, _, _) -> args
         | SynExprParen(arg, _, _, _) | arg -> [arg]
     let unnamedCallerArgs, namedCallerArgs = 
         args |> List.takeUntil IsNamedArg
@@ -3491,10 +3519,10 @@ let elimFastIntegerForLoop (spBind, id, start, dir, finish, innerExpr, m) =
 let (|ExprAsPat|_|) (f:SynExpr) =    
     match f with 
     | SingleIdent v1 | SynExprParen(SingleIdent v1, _, _, _) -> Some (mkSynPatVar None v1)
-    | SynExprParen(SynExpr.Tuple (elems, _, _), _, _, _) -> 
+    | SynExprParen(SynExpr.Tuple (false, elems, _, _), _, _, _) -> 
         let elems = elems |> List.map (|SingleIdent|_|) 
         if elems |> List.forall (fun x -> x.IsSome) then 
-            Some (SynPat.Tuple((elems |> List.map (fun x -> mkSynPatVar None x.Value)), f.Range))
+            Some (SynPat.Tuple(false, (elems |> List.map (fun x -> mkSynPatVar None x.Value)), f.Range))
         else
             None
     | _ -> None
@@ -4576,21 +4604,34 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscoped
         match ltyp with
         | AppTy cenv.g (tcref, tinst) ->
             let tcref = ResolveTypeLongIdentInTyconRef cenv.tcSink cenv.nameResolver env.eNameResEnv (TypeNameResolutionInfo.ResolveToTypeRefs (TypeNameResolutionStaticArgsInfo.FromTyArgs args.Length)) ad m tcref longId 
-            TcTypeApp cenv newOk checkCxs occ env tpenv m tcref tinst args
+            TcTypeApp cenv newOk checkCxs occ env tpenv m tcref tinst args 
         | _ -> error(Error(FSComp.SR.tcTypeHasNoNestedTypes(), m))
 
-    | SynType.Tuple(args, m) ->   
-        let isMeasure = match optKind with Some TyparKind.Measure -> true | None -> List.exists (fun (isquot, _) -> isquot) args | _ -> false
-        if isMeasure then
-            let ms, tpenv = TcMeasuresAsTuple cenv newOk checkCxs occ env tpenv args m
-            TType_measure ms, tpenv
+    | SynType.Tuple(isStruct, args, m) ->   
+        let tupInfo = TupInfo.Const isStruct
+        if isStruct then 
+            let args',tpenv = TcTypesAsTuple cenv newOk checkCxs occ env tpenv args m
+            TType_tuple(tupInfo,args'),tpenv
         else
-            let args', tpenv = TcTypesAsTuple cenv newOk checkCxs occ env tpenv args m
-            TType_tuple(tupInfoRef, args'), tpenv
+            let isMeasure = match optKind with Some TyparKind.Measure -> true | None -> List.exists (fun (isquot,_) -> isquot) args | _ -> false
+            if isMeasure then
+                let ms,tpenv = TcMeasuresAsTuple cenv newOk checkCxs occ env tpenv args m
+                TType_measure ms,tpenv
+            else
+                let args',tpenv = TcTypesAsTuple cenv newOk checkCxs occ env tpenv args m
+                TType_tuple(tupInfo,args'),tpenv
 
-    | SynType.StructTuple(args, m) ->   
-        let args', tpenv = TcTypesAsTuple cenv newOk checkCxs occ env tpenv args m
-        TType_tuple(tupInfoStruct, args'), tpenv
+    | SynType.AnonRecd(isStruct, args,m) ->   
+        let tupInfo = TupInfo.Const isStruct
+        let args',tpenv = TcTypesAsTuple cenv newOk checkCxs occ env tpenv (args |> List.map snd |> List.map (fun x -> (false,x))) m
+        let unsortedIds = args |> List.map fst |> List.toArray
+        let anonInfo = AnonRecdTypeInfo.Create(cenv.topCcu, tupInfo, unsortedIds)
+        // Sort into canonical order
+        let sortedArgTys, sortedCheckedArgTys = List.zip args args' |> List.indexed |> List.sortBy (fun (i,_) -> unsortedIds.[i].idText) |> List.map snd |> List.unzip
+        sortedArgTys |> List.iteri (fun i (x,_) -> 
+            let item = Item.AnonRecdField(anonInfo, sortedCheckedArgTys, i, x.idRange)
+            CallNameResolutionSink cenv.tcSink (x.idRange,env.NameEnv,item,item,emptyTyparInst,ItemOccurence.UseInType,env.DisplayEnv,env.eAccessRights))
+        TType_anon(anonInfo,  sortedCheckedArgTys),tpenv
 
     | SynType.Fun(domainTy, resultTy, _) -> 
         let domainTy', tpenv = TcTypeAndRecover cenv newOk checkCxs occ env tpenv domainTy
@@ -5265,10 +5306,10 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                             SynExpr.DiscardAfterMissingQualificationAfterDot(e, unionRanges e.Range (List.last dotms))
                         else SynExpr.LongIdent(false, lidwd, None, m)
                     List.fold (fun f x -> mkSynApp1 f (convSynPatToSynExpr x) m) e args
-                | SynPat.Tuple (args, m) -> SynExpr.Tuple(List.map convSynPatToSynExpr args, [], m)
+                | SynPat.Tuple (isStruct, args, m) -> SynExpr.Tuple(isStruct, List.map convSynPatToSynExpr args, [], m)
                 | SynPat.Paren (p, _) -> convSynPatToSynExpr p
-                | SynPat.ArrayOrList (isArray, args, m) -> SynExpr.ArrayOrList(isArray, List.map convSynPatToSynExpr args, m)
-                | SynPat.QuoteExpr (e, _) -> e
+                | SynPat.ArrayOrList (isArray, args, m) -> SynExpr.ArrayOrList(isArray,List.map convSynPatToSynExpr args, m)
+                | SynPat.QuoteExpr (e,_) -> e
                 | SynPat.Null m -> SynExpr.Null(m)
                 | _ -> error(Error(FSComp.SR.tcInvalidArgForParameterizedPattern(), x.Range))
             let activePatArgsAsSynExprs = List.map convSynPatToSynExpr activePatArgsAsSynPats
@@ -5335,13 +5376,13 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
 
                     let args = List.ofArray result
                     if result.Length = 1 then args
-                    else [ SynPat.Tuple(args, m) ]
+                    else [ SynPat.Tuple(false, args, m) ]
 
             let args = 
               match args with 
               | []-> []
               // note: the next will always be parenthesized 
-              | [SynPatErrorSkip(SynPat.Tuple (args, _)) | SynPatErrorSkip(SynPat.Paren(SynPatErrorSkip(SynPat.Tuple (args, _)), _))] when nargtys > 1 -> args
+              | [SynPatErrorSkip(SynPat.Tuple (false, args, _)) | SynPatErrorSkip(SynPat.Paren(SynPatErrorSkip(SynPat.Tuple (false, args, _)), _))] when nargtys > 1 -> args
 
               // note: we allow both 'C _' and 'C (_)' regardless of number of argument of the pattern 
               | [SynPatErrorSkip(SynPat.Wild _ as e) | SynPatErrorSkip(SynPat.Paren(SynPatErrorSkip(SynPat.Wild _ as e), _))] -> Array.toList (Array.create nargtys e)
@@ -5405,17 +5446,10 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
 
     | SynPat.QuoteExpr(_, m) -> error (Error(FSComp.SR.tcInvalidPattern(), m))
           
-    | SynPat.Tuple (args, m) ->
-        let argtys = NewInferenceTypes args
-        UnifyTypes cenv env m ty (TType_tuple (tupInfoRef, argtys))
+    | SynPat.Tuple (isExplicitStruct, args, m) ->
+        let tupInfo, argtys = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m ty isExplicitStruct args
         let args', acc = TcPatterns warnOnUpper cenv env vFlags (tpenv, names, takenNames) argtys args
-        (fun values -> TPat_tuple(tupInfoRef, List.map (fun f -> f values) args', argtys, m)), acc
-
-    | SynPat.StructTuple (args, m) ->
-        let argtys = NewInferenceTypes args
-        UnifyTypes cenv env m ty (TType_tuple (tupInfoStruct, argtys))
-        let args', acc = TcPatterns warnOnUpper cenv env vFlags (tpenv, names, takenNames) argtys args
-        (fun values -> TPat_tuple(tupInfoStruct, List.map (fun f -> f values) args', argtys, m)), acc
+        (fun values -> TPat_tuple(tupInfo, List.map (fun f -> f values) args', argtys, m)), acc
 
     | SynPat.Paren (p, _) ->
         TcPat warnOnUpper cenv env None vFlags (tpenv, names, takenNames) ty p
@@ -5779,19 +5813,31 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
         let e', tpenv = TcExpr cenv ety env tpenv e 
         mkLazyDelayed cenv.g m ety (mkUnitDelayLambda cenv.g m e'), tpenv
 
-    | SynExpr.Tuple (args, _, m) -> 
-        let argtys = UnifyRefTupleType env.eContextInfo cenv env.DisplayEnv m overallTy args
+    | SynExpr.Tuple (isExplicitStruct, args, _, m) -> 
+        let tupInfo, argtys = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m overallTy isExplicitStruct args
         // No subsumption at tuple construction
         let flexes = argtys |> List.map (fun _ -> false)
         let args', tpenv = TcExprs cenv env m tpenv flexes argtys args
-        mkRefTupled cenv.g m args' argtys, tpenv
+        let expr = mkAnyTupled cenv.g m tupInfo args' argtys 
+        expr, tpenv
 
-    | SynExpr.StructTuple (args, _, m) -> 
-        let argtys = UnifyStructTupleType env.eContextInfo cenv env.DisplayEnv m overallTy args
-        // No subsumption at tuple construction
-        let flexes = argtys |> List.map (fun _ -> false)
-        let args', tpenv = TcExprs cenv env m tpenv flexes argtys args
-        mkAnyTupled cenv.g m tupInfoStruct args' argtys, tpenv
+    | SynExpr.AnonRecd (isStruct, unsortedArgs, m) -> 
+        let unsortedIds = unsortedArgs |> List.map fst |> List.toArray
+        let anonInfo, sortedArgTys = UnifyAnonRecdTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m overallTy isStruct unsortedIds
+
+        // Sort into canonical order
+        let sortedIndexedArgs = unsortedArgs |> List.indexed |> List.sortBy (fun (i,_) -> unsortedIds.[i].idText) 
+        let sigma = List.map fst sortedIndexedArgs |> List.toArray
+        let sortedArgs = List.map snd sortedIndexedArgs
+        sortedArgs |> List.iteri (fun j (x, _) -> 
+            let item = Item.AnonRecdField(anonInfo, sortedArgTys, j, x.idRange)
+            CallNameResolutionSink cenv.tcSink (x.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights))
+        let unsortedArgTys = sortedArgTys |> List.indexed |> List.sortBy (fun (j, _) -> sigma.[j]) |> List.map snd
+        let flexes = unsortedArgTys |> List.map (fun _ -> true)
+        let unsortedCheckedArgs, tpenv = TcExprs cenv env m tpenv flexes unsortedArgTys (List.map snd unsortedArgs)
+        let sortedCheckedArgs = unsortedCheckedArgs |> List.indexed |> List.sortBy (fun (i,_) -> unsortedIds.[i].idText) |> List.map snd
+
+        mkAnonRecd cenv.g m anonInfo sortedCheckedArgs sortedArgTys, tpenv
 
     | SynExpr.ArrayOrList (isArray, args, m) -> 
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.DisplayEnv, env.eAccessRights)
@@ -6168,7 +6214,7 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
         match indexArgs with 
         | []  -> failwith "unexpected empty index list"
         | [SynIndexerArg.One h] -> SynExpr.Paren(h, range0, None, idxRange)
-        | _ -> SynExpr.Paren(SynExpr.Tuple(GetIndexArgs indexArgs @ Option.toList vopt, [], idxRange), range0, None, idxRange)
+        | _ -> SynExpr.Paren(SynExpr.Tuple(false, GetIndexArgs indexArgs @ Option.toList vopt, [], idxRange), range0, None, idxRange)
 
     let attemptArrayString = 
         if isArray || isString then 
@@ -6177,13 +6223,13 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
             let sliceOpPath = ["Microsoft";"FSharp";"Core";"Operators";"OperatorIntrinsics"]
             let info = 
                 match isString, isArray, wholeExpr with 
-                | false, true, SynExpr.DotIndexedGet(_, [SynIndexerArg.One(SynExpr.Tuple ([_;_] as idxs, _, _))], _, _)           -> Some (indexOpPath, "GetArray2D", idxs)
-                | false, true, SynExpr.DotIndexedGet(_, [SynIndexerArg.One(SynExpr.Tuple ([_;_;_] as idxs, _, _))], _, _)         -> Some (indexOpPath, "GetArray3D", idxs)
-                | false, true, SynExpr.DotIndexedGet(_, [SynIndexerArg.One(SynExpr.Tuple ([_;_;_;_] as idxs, _, _))], _, _)       -> Some (indexOpPath, "GetArray4D", idxs)
+                | false, true, SynExpr.DotIndexedGet(_, [SynIndexerArg.One(SynExpr.Tuple (false, ([_;_] as idxs), _, _))], _, _)           -> Some (indexOpPath, "GetArray2D", idxs)
+                | false, true, SynExpr.DotIndexedGet(_, [SynIndexerArg.One(SynExpr.Tuple (false, ([_;_;_] as idxs), _, _))], _, _)         -> Some (indexOpPath, "GetArray3D", idxs)
+                | false, true, SynExpr.DotIndexedGet(_, [SynIndexerArg.One(SynExpr.Tuple (false, ([_;_;_;_] as idxs), _, _))], _, _)       -> Some (indexOpPath, "GetArray4D", idxs)
                 | false, true, SynExpr.DotIndexedGet(_, [SynIndexerArg.One idx], _, _)                                          -> Some (indexOpPath, "GetArray", [idx])
-                | false, true, SynExpr.DotIndexedSet(_, [SynIndexerArg.One(SynExpr.Tuple ([_;_] as idxs, _, _))] , e3, _, _, _)     -> Some (indexOpPath, "SetArray2D", (idxs @ [e3]))
-                | false, true, SynExpr.DotIndexedSet(_, [SynIndexerArg.One(SynExpr.Tuple ([_;_;_] as idxs, _, _))] , e3, _, _, _)   -> Some (indexOpPath, "SetArray3D", (idxs @ [e3]))
-                | false, true, SynExpr.DotIndexedSet(_, [SynIndexerArg.One(SynExpr.Tuple ([_;_;_;_] as idxs, _, _))] , e3, _, _, _) -> Some (indexOpPath, "SetArray4D", (idxs @ [e3]))
+                | false, true, SynExpr.DotIndexedSet(_, [SynIndexerArg.One(SynExpr.Tuple (false, ([_;_] as idxs), _, _))] , e3, _, _, _)     -> Some (indexOpPath, "SetArray2D", (idxs @ [e3]))
+                | false, true, SynExpr.DotIndexedSet(_, [SynIndexerArg.One(SynExpr.Tuple (false, ([_;_;_] as idxs), _, _))] , e3, _, _, _)   -> Some (indexOpPath, "SetArray3D", (idxs @ [e3]))
+                | false, true, SynExpr.DotIndexedSet(_, [SynIndexerArg.One(SynExpr.Tuple (false, ([_;_;_;_] as idxs), _, _))] , e3, _, _, _) -> Some (indexOpPath, "SetArray4D", (idxs @ [e3]))
                 | false, true, SynExpr.DotIndexedSet(_, [SynIndexerArg.One _], e3, _, _, _)                                       -> Some (indexOpPath, "SetArray", (GetIndexArgs indexArgs @ [e3]))
                 | true, false, SynExpr.DotIndexedGet(_, [SynIndexerArg.Two _], _, _)                                            -> Some (sliceOpPath, "GetStringSlice", GetIndexArgs indexArgs)
                 | true, false, SynExpr.DotIndexedGet(_, [SynIndexerArg.One _], _, _)                                            -> Some (indexOpPath, "GetString", GetIndexArgs indexArgs)
@@ -6300,10 +6346,6 @@ and TcCtorCall isNaked cenv env tpenv overallTy objTy mObjTyOpt item superInit a
         error(Error(FSComp.SR.tcSyntaxCanOnlyBeUsedToCreateObjectTypes(if superInit then "inherit" else "new"), mWholeCall))
 
 
-//-------------------------------------------------------------------------
-// TcRecordConstruction
-//------------------------------------------------------------------------- 
-  
 // Check a record construction expression 
 and TcRecordConstruction cenv overallTy env tpenv optOrigExpr objTy fldsList m =
     let tcref, tinst = destAppTy cenv.g objTy
@@ -7109,7 +7151,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
             match args with 
             | [] -> SynExpr.Const(SynConst.Unit, m)
             | [arg] -> SynExpr.Paren(SynExpr.Paren(arg, range0, None, m), range0, None, m)
-            | args -> SynExpr.Paren(SynExpr.Tuple(args, [], m), range0, None, m)
+            | args -> SynExpr.Paren(SynExpr.Tuple(false, args, [], m), range0, None, m)
                 
         let builderVal = mkSynIdGet m builderValName
         mkSynApp1 (SynExpr.DotGet(builderVal, range0, LongIdentWithDots([mkSynId m nm], []), m)) args m
@@ -7475,7 +7517,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
         match patvs with 
         | [] -> SynExpr.Const(SynConst.Unit, m)
         | [v] -> SynExpr.Ident v.Id
-        | vs -> SynExpr.Tuple((vs |> List.map (fun v -> SynExpr.Ident v.Id)), [], m)  
+        | vs -> SynExpr.Tuple(false, (vs |> List.map (fun v -> SynExpr.Ident v.Id)), [], m)  
 
     let mkSimplePatForVarSpace m (patvs: Val list) = 
         let spats = 
@@ -7489,7 +7531,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
         match patvs with 
         | [] -> SynPat.Const (SynConst.Unit, m)
         | [v] -> mkSynPatVar None v.Id
-        | vs -> SynPat.Tuple((vs |> List.map (fun x -> mkSynPatVar None x.Id)), m)
+        | vs -> SynPat.Tuple(false, (vs |> List.map (fun x -> mkSynPatVar None x.Id)), m)
 
     let (|OptionalSequential|) e = 
         match e with 
@@ -7506,7 +7548,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
             let estimatedRangeOfIntendedLeftAndRightArguments = unionRanges (List.last args).Range arg2.Range
             errorR(Error(FSComp.SR.tcUnrecognizedQueryBinaryOperator(), estimatedRangeOfIntendedLeftAndRightArguments))
             true
-        | SynExpr.Tuple( (StripApps(SingleIdent nm2, args) :: _), _, m) when 
+        | SynExpr.Tuple(false, (StripApps(SingleIdent nm2, args) :: _), _, m) when 
                   expectedArgCountForCustomOperator nm2 > 0 &&
                   not (List.isEmpty args) -> 
             let estimatedRangeOfIntendedLeftAndRightArguments = unionRanges (List.last args).Range m.EndRange
@@ -8490,8 +8532,8 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
         
         let (|FittedArgs|_|) arg = 
             match arg with 
-            | SynExprParen(SynExpr.Tuple(args, _, _), _, _, _)
-            | SynExpr.Tuple(args, _, _)     when nargtys > 1 -> Some args
+            | SynExprParen(SynExpr.Tuple(false, args, _, _), _, _, _)
+            | SynExpr.Tuple(false, args, _, _)     when nargtys > 1 -> Some args
             | SynExprParen(arg, _, _, _)
             | arg when nargtys = 1 -> Some [arg]
             | _ -> None
@@ -8782,14 +8824,14 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
             | SynExpr.Const _ 
             | SynExpr.LongIdent _ -> true
 
-            | SynExpr.Tuple(synExprs, _, _) 
-            | SynExpr.StructTuple(synExprs, _, _) 
+            | SynExpr.Tuple(_, synExprs, _, _) 
             | SynExpr.ArrayOrList(_, synExprs, _) -> synExprs |> List.forall isSimpleArgument
             | SynExpr.Record(_, copyOpt, fields, _) -> copyOpt |> Option.forall (fst >> isSimpleArgument) && fields |> List.forall (p23 >> Option.forall isSimpleArgument) 
             | SynExpr.App (_, _, synExpr, synExpr2, _) -> isSimpleArgument synExpr && isSimpleArgument synExpr2
             | SynExpr.IfThenElse(synExpr, synExpr2, synExprOpt, _, _, _, _) -> isSimpleArgument synExpr && isSimpleArgument synExpr2 && Option.forall isSimpleArgument synExprOpt
             | SynExpr.DotIndexedGet(synExpr, _, _, _) ->  isSimpleArgument synExpr 
             | SynExpr.ObjExpr _ 
+            | SynExpr.AnonRecd _
             | SynExpr.While _ 
             | SynExpr.For _ 
             | SynExpr.ForEach _ 
@@ -9130,6 +9172,18 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
 
             // Instance F# Record or Class field 
             let objExpr' = mkRecdFieldGet cenv.g (objExpr, rfinfo.RecdFieldRef, rfinfo.TypeInst, mExprAndItem)
+            PropagateThenTcDelayed cenv overallTy env tpenv mExprAndItem (MakeApplicableExprWithFlex cenv env objExpr') fieldTy ExprAtomicFlag.Atomic delayed 
+        
+    | Item.AnonRecdField (anonInfo, tinst, n, _) ->
+        let tgty = TType_anon (anonInfo, tinst)
+        AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css mItem NoTrace tgty objExprTy 
+        let fieldTy = List.item n tinst
+        match delayed with 
+        | DelayedSet _ :: _otherDelayed ->
+            error(Error(FSComp.SR.tcInvalidAssignment(),mItem))
+        | _ ->
+            // Instance F# Anonymous Record 
+            let objExpr' = mkAnonRecdFieldGet cenv.g (anonInfo,objExpr,tinst,n,mExprAndItem)
             PropagateThenTcDelayed cenv overallTy env tpenv mExprAndItem (MakeApplicableExprWithFlex cenv env objExpr') fieldTy ExprAtomicFlag.Atomic delayed 
         
     | Item.ILField finfo -> 
@@ -15450,6 +15504,7 @@ module EstablishTypeDefinitionCores =
 
             let rec accInAbbrevType ty acc  = 
                 match stripTyparEqns ty with 
+                | TType_anon (_,l) 
                 | TType_tuple (_, l) -> accInAbbrevTypes l acc
                 | TType_ucase (UCRef(tc, _), tinst) 
                 | TType_app (tc, tinst) -> 
@@ -17140,16 +17195,16 @@ let TypeCheckOneImplFile
     // We ALWAYS run the PostTypeCheckSemanticChecks phase, though we if we have already encountered some
     // errors we turn off error reporting. This is because it performs various fixups over the TAST, e.g. 
     // assigning nice names for inference variables.
-    let hasExplicitEntryPoint = 
+    let hasExplicitEntryPoint, anonRecdTypes = 
         conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
             try  
                 let reportErrors = not (checkForErrors())
                 PostTypeCheckSemanticChecks.CheckTopImpl (g, cenv.amap, reportErrors, cenv.infoReader, env.eInternalsVisibleCompPaths, cenv.topCcu, envAtEnd.DisplayEnv, implFileExprAfterSig, extraAttribs, isLastCompiland)
             with e -> 
                 errorRecovery e m
-                false)
+                false, StampMap.Empty)
 
-    let implFile = TImplFile(qualNameOfFile, scopedPragmas, implFileExprAfterSig, hasExplicitEntryPoint, isScript)
+    let implFile = TImplFile(qualNameOfFile, scopedPragmas, implFileExprAfterSig, hasExplicitEntryPoint, isScript, anonRecdTypes)
 
     return (topAttrs, implFile, envAtEnd, cenv.createsGeneratedProvidedTypes)
  } 

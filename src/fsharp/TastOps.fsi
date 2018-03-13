@@ -181,6 +181,8 @@ val mkReraiseLibCall : TcGlobals -> TType -> range -> Expr
 //------------------------------------------------------------------------- 
  
 val mkTupleFieldGet                : TcGlobals -> TupInfo * Expr * TypeInst * int * range -> Expr
+val mkAnonRecdFieldGet             : TcGlobals -> AnonRecdTypeInfo * Expr * TypeInst * int * range -> Expr
+val mkAnonRecdFieldGetViaExprAddr  : AnonRecdTypeInfo * Expr * TypeInst * int * range -> Expr
 val mkRecdFieldGetViaExprAddr      : Expr * RecdFieldRef   * TypeInst               * range -> Expr
 val mkRecdFieldGetAddrViaExprAddr  : Expr * RecdFieldRef   * TypeInst               * range -> Expr
 val mkStaticRecdFieldGet           :        RecdFieldRef   * TypeInst               * range -> Expr
@@ -249,6 +251,7 @@ val mkGetTupleItemN : TcGlobals -> range -> int -> ILType -> bool -> Expr -> TTy
 /// Evaluate the TupInfo to work out if it is a struct or a ref.  Currently this is very simple
 /// but TupInfo may later be used carry variables that infer structness.
 val evalTupInfoIsStruct : TupInfo -> bool
+val evalAnonInfoIsStruct : AnonRecdTypeInfo -> bool
 
 /// If it is a tuple type, ensure it's outermost type is a .NET tuple type, otherwise leave unchanged
 val helpEnsureTypeHasMetadata : TcGlobals -> TType -> TType
@@ -430,6 +433,8 @@ val isForallTy         : TcGlobals -> TType -> bool
 val isAnyTupleTy       : TcGlobals -> TType -> bool
 val isRefTupleTy       : TcGlobals -> TType -> bool
 val isStructTupleTy    : TcGlobals -> TType -> bool
+val isStructAnonRecdTy    : TcGlobals -> TType -> bool
+val isAnonRecdTy    : TcGlobals -> TType -> bool
 val isUnionTy          : TcGlobals -> TType -> bool
 val isReprHiddenTy     : TcGlobals -> TType -> bool
 val isFSharpObjModelTy : TcGlobals -> TType -> bool
@@ -452,6 +457,7 @@ val tcrefOfAppTy   : TcGlobals -> TType -> TyconRef
 val tryDestAppTy   : TcGlobals -> TType -> TyconRef option
 val tryDestTyparTy : TcGlobals -> TType -> Typar option
 val tryDestFunTy : TcGlobals -> TType -> (TType * TType) option
+val tryDestAnonRecdTy : TcGlobals -> TType -> (AnonRecdTypeInfo * TType list) option
 val argsOfAppTy    : TcGlobals -> TType -> TypeInst
 val mkInstForAppTy  : TcGlobals -> TType -> TyparInst
 
@@ -577,6 +583,7 @@ val returnTypesAEquivAux      : Erasure -> TcGlobals -> TypeEquivEnv -> TType op
 val returnTypesAEquiv         :            TcGlobals -> TypeEquivEnv -> TType option           -> TType option           -> bool
 val tcrefAEquiv               :            TcGlobals -> TypeEquivEnv -> TyconRef             -> TyconRef             -> bool
 val valLinkageAEquiv          :            TcGlobals -> TypeEquivEnv -> Val   -> Val -> bool
+val anonInfoEquiv             : AnonRecdTypeInfo -> AnonRecdTypeInfo -> bool
 
 //-------------------------------------------------------------------------
 // Erasure of types wrt units-of-measure and type providers
@@ -1408,7 +1415,6 @@ val isRefTupleExpr : Expr -> bool
 val tryDestRefTupleExpr : Expr -> Exprs
 
 val mkAnyTupledTy : TcGlobals -> TupInfo -> TType list -> TType
-
 val mkAnyTupled : TcGlobals -> range -> TupInfo -> Exprs -> TType list -> Expr 
 val mkRefTupled : TcGlobals -> range -> Exprs -> TType list -> Expr 
 val mkRefTupledNoTypes : TcGlobals -> range -> Exprs -> Expr 
@@ -1416,6 +1422,14 @@ val mkRefTupledTy : TcGlobals -> TType list -> TType
 val mkRefTupledVarsTy : TcGlobals -> Val list -> TType
 val mkRefTupledVars : TcGlobals -> range -> Val list -> Expr 
 val mkMethodTy : TcGlobals -> TType list list -> TType -> TType
+
+
+//-------------------------------------------------------------------------
+// Anonymous records
+//------------------------------------------------------------------------- 
+
+val mkAnyAnonRecdTy : TcGlobals -> AnonRecdTypeInfo -> TType list -> TType
+val mkAnonRecd : TcGlobals -> range -> AnonRecdTypeInfo -> Exprs -> TType list -> Expr 
 
 //-------------------------------------------------------------------------
 // 

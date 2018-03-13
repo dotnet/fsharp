@@ -155,6 +155,9 @@ type Item =
     /// Represents the resolution of a name to an F# record field.
     | RecdField of RecdFieldInfo
 
+    /// Represents the resolution of a name to a field of an anonymous record type.
+    | AnonRecdField of AnonRecdTypeInfo * TTypes * int * range
+
     // The following are never in the items table but are valid results of binding 
     // an identifier in different circumstances. 
 
@@ -226,6 +229,7 @@ type Item =
         | Item.UnionCase(uinfo,_) -> DecompileOpName uinfo.UnionCase.DisplayName
         | Item.ExnCase tcref -> tcref.LogicalName
         | Item.RecdField rfinfo -> DecompileOpName rfinfo.RecdField.Name
+        | Item.AnonRecdField (anonInfo, _tys, i, _m) -> anonInfo.SortedNames.[i]
         | Item.NewDef id -> id.idText
         | Item.ILField finfo -> finfo.FieldName
         | Item.Event einfo -> einfo.EventName
@@ -1389,6 +1393,8 @@ let ItemsAreEffectivelyEqual g orig other =
     | (Item.ArgName (id,_, _), ValUse vref) | (ValUse vref, Item.ArgName (id, _, _)) -> 
         ((id.idRange = vref.DefinitionRange || id.idRange = vref.SigRange) && id.idText = vref.DisplayName)
 
+    | Item.AnonRecdField(anon1, _, i1, _), Item.AnonRecdField(anon2, _, i2, _) -> Tastops.anonInfoEquiv anon1 anon2 && i1 = i2
+
     | ILFieldUse f1, ILFieldUse f2 -> 
         ILFieldInfo.ILFieldInfosUseIdenticalDefinitions f1 f2 
 
@@ -1637,6 +1643,7 @@ let CheckAllTyparsInferrable amap m item =
     | Item.UnionCase _ 
     | Item.ExnCase _ 
     | Item.RecdField _ 
+    | Item.AnonRecdField _ 
     | Item.NewDef _ 
     | Item.ILField _ 
     | Item.Event _ 
@@ -2000,6 +2007,15 @@ let TryFindUnionCaseOfType g typ nm =
     else 
         None
 
+/// Try to find a union case of a type, with the given name
+let TryFindAnonRecdFieldOfType g typ nm =
+    match tryDestAnonRecdTy g typ with 
+    | Some (anonInfo, tys) -> 
+        match anonInfo.SortedIds |> Array.tryFindIndex (fun x -> x.idText = nm) with 
+        | Some i -> Some (Item.AnonRecdField(anonInfo, tys, i, anonInfo.SortedIds.[i].idRange))
+        | None -> None
+    | None -> None
+
 let CoreDisplayName(pinfo:PropInfo) =   
     match pinfo with
     | FSProp(_,_,_,Some set) -> set.CoreDisplayName
@@ -2060,7 +2076,18 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
            | Some ucase -> 
                OneResult (success(resInfo,Item.UnionCase(ucase,false),rest))
            | None -> 
-                let isLookUpExpr = lookupKind = LookupKind.Expr
+
+             let anonRecdSearch = 
+                 match lookupKind with 
+                 | LookupKind.Expr -> TryFindAnonRecdFieldOfType g typ nm
+                 | _ -> None
+
+             match anonRecdSearch with 
+             | Some item -> 
+                 OneResult (success(resInfo, item, rest))
+             | None -> 
+
+                let isLookUpExpr = (lookupKind = LookupKind.Expr)
                 match TryFindIntrinsicNamedItemOfType ncenv.InfoReader (nm,ad) findFlag m typ with
                 | Some (PropertyItem psets) when isLookUpExpr -> 
                     let pinfos = psets |> ExcludeHiddenOfPropInfos g ncenv.amap m
@@ -2073,6 +2100,7 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
                     match DecodeFSharpEvent (pinfos@extensionPropInfos) ad g ncenv m with
                     | Some x -> success [resInfo, x, rest]
                     | None -> raze (UndefinedName (depth,FSComp.SR.undefinedNameFieldConstructorOrMember, id,NoSuggestions))
+
                 | Some(MethodItem msets) when isLookUpExpr -> 
                     let minfos = msets |> ExcludeHiddenOfMethInfos g ncenv.amap m
                     
@@ -2080,13 +2108,16 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
                     let extensionMethInfos = ExtensionMethInfosOfTypeInScope ncenv.InfoReader nenv optFilter m typ
 
                     success [resInfo,Item.MakeMethGroup (nm,minfos@extensionMethInfos),rest]
+
                 | Some (ILFieldItem (finfo:: _))  when (match lookupKind with LookupKind.Expr | LookupKind.Pattern -> true | _ -> false) -> 
                     success [resInfo,Item.ILField finfo,rest]
 
                 | Some (EventItem (einfo :: _)) when isLookUpExpr -> 
                     success [resInfo,Item.Event einfo,rest]
+
                 | Some (RecdFieldItem (rfinfo)) when (match lookupKind with LookupKind.Expr | LookupKind.RecdField | LookupKind.Pattern -> true | _ -> false) -> 
                     success [resInfo,Item.RecdField(rfinfo),rest]
+
                 | _ ->
 
                 let pinfos = ExtensionPropInfosOfTypeInScope ncenv.InfoReader nenv (optFilter, ad) m typ
@@ -3633,10 +3664,20 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
             let nm = h.LogicalName
             partitionl t (NameMultiMap.add nm h acc)
 
+    let anonFields =
+        if statics then  []
+        else
+            match tryDestAnonRecdTy g typ with 
+            | Some (anonInfo, tys) -> 
+                [ for (i,id) in Array.indexed anonInfo.SortedIds do 
+                    yield Item.AnonRecdField(anonInfo, tys, i, id.idRange) ]
+            | _ -> []
+
     // Build the results
     ucinfos @
     List.map Item.RecdField rfinfos @
     pinfoItems @
+    anonFields @
     List.map Item.ILField finfos @
     List.map Item.Event einfos @
     List.map (ItemOfTy g) nestedTypes @
@@ -3673,6 +3714,12 @@ let rec ResolvePartialLongIdentInType (ncenv: NameResolver) nenv isApplicableMet
          |> List.filter (fun x -> x.IsStatic = statics)
          |> List.filter (IsPropInfoAccessible g amap m ad) 
          |> List.collect (fun pinfo -> (FullTypeOfPinfo pinfo) |> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest)) @
+
+      (if statics then [] 
+       else 
+          match TryFindAnonRecdFieldOfType g typ id with 
+          | Some (Item.AnonRecdField(_anonInfo, tys, i, _)) -> ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest tys.[i]
+          | _ -> []) @
 
       // e.g. <val-id>.<event-id>.<more> 
       (ncenv.InfoReader.GetEventInfosOfType(Some id,ad,m,typ)
@@ -4133,6 +4180,13 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics typ 
             if statics then
                 yield! typ |> GetNestedTypesOfType (ad, ncenv, None, TypeNameResolutionStaticArgsInfo.Indefinite, false, m) |> List.map (ItemOfTy g)
         | _ ->
+            if not statics then
+                match tryDestAnonRecdTy g typ with 
+                | Some (anonInfo, tys) -> 
+                    for (i,id) in Array.indexed anonInfo.SortedIds do 
+                        yield Item.AnonRecdField(anonInfo, tys, i, id.idRange)
+                | _ -> ()
+
             let pinfosIncludingUnseen = 
                 AllPropInfosOfTypeInScope ncenv.InfoReader nenv (None,ad) PreferOverrides m typ
                 |> List.filter (fun x -> 
@@ -4300,6 +4354,12 @@ let rec ResolvePartialLongIdentInTypeForItem (ncenv: NameResolver) nenv m ad sta
 
           for pinfo in pinfos do
               yield! (fullTypeOfPinfo pinfo) |> ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item
+    
+          match TryFindAnonRecdFieldOfType g typ id with 
+          | Some (Item.AnonRecdField(_anonInfo, tys, i, _)) -> 
+              let tyinfo = tys.[i]
+              yield! ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item tyinfo
+          | _ -> ()
     
           // e.g. <val-id>.<event-id>.<more> 
           for einfo in ncenv.InfoReader.GetEventInfosOfType(Some id, ad, m, typ) do

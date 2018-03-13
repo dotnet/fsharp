@@ -156,17 +156,20 @@ let braceL x = leftL (tagText "{") ^^ x ^^ rightL (tagText "}")
 let seqL xL xs = Seq.fold (fun z x -> z @@ xL x)  emptyL xs
 let namemapL xL xmap = NameMap.foldBack (fun nm x z -> xL nm x @@ z)  xmap emptyL
 
-let rec exprValueInfoL g = function
-  | ConstValue (x, ty)         -> NicePrint.layoutConst g ty x
-  | UnknownValue             -> wordL (tagText "?")
-  | SizeValue (_, vinfo)      -> exprValueInfoL g vinfo
-  | ValValue (vr, vinfo)      -> bracketL ((valRefL vr ^^ wordL (tagText "alias")) --- exprValueInfoL g vinfo)
-  | TupleValue vinfos    -> bracketL (exprValueInfosL g vinfos)
-  | RecdValue (_, vinfos)     -> braceL   (exprValueInfosL g vinfos)
-  | UnionCaseValue (ucr, vinfos) -> unionCaseRefL ucr ^^ bracketL (exprValueInfosL g vinfos)
-  | CurriedLambdaValue(_lambdaId, _arities, _bsize, expr', _ety) -> wordL (tagText "lam") ++ exprL expr' (* (sprintf "lam(size=%d)" bsize) *)
-  | ConstExprValue (_size, x)  -> exprL x
+let rec exprValueInfoL g exprVal = 
+    match exprVal with
+    | ConstValue (x, ty)         -> NicePrint.layoutConst g ty x
+    | UnknownValue             -> wordL (tagText "?")
+    | SizeValue (_, vinfo)      -> exprValueInfoL g vinfo
+    | ValValue (vr, vinfo)      -> bracketL ((valRefL vr ^^ wordL (tagText "alias")) --- exprValueInfoL g vinfo)
+    | TupleValue vinfos    -> bracketL (exprValueInfosL g vinfos)
+    | RecdValue (_, vinfos)     -> braceL   (exprValueInfosL g vinfos)
+    | UnionCaseValue (ucr, vinfos) -> unionCaseRefL ucr ^^ bracketL (exprValueInfosL g vinfos)
+    | CurriedLambdaValue(_lambdaId, _arities, _bsize, expr', _ety) -> wordL (tagText "lam") ++ exprL expr' (* (sprintf "lam(size=%d)" bsize) *)
+    | ConstExprValue (_size, x)  -> exprL x
+
 and exprValueInfosL g vinfos = commaListL (List.map (exprValueInfoL g) (Array.toList vinfos))
+
 and moduleInfoL g (x:LazyModuleInfo) = 
     let x = x.Force()
     braceL ((wordL (tagText "Modules: ") @@ (x.ModuleOrNamespaceInfos |> namemapL (fun nm x -> wordL (tagText nm) ^^ moduleInfoL g x) ) )
@@ -1258,6 +1261,7 @@ and BindingHasEffect g bind = bind.Expr |> ExprHasEffect g
 and OpHasEffect g op = 
     match op with 
     | TOp.Tuple _ -> false
+    | TOp.AnonRecd _ -> false
     | TOp.Recd (ctor, tcref) -> 
         match ctor with 
         | RecdExprIsObjInit -> true
@@ -1272,6 +1276,7 @@ and OpHasEffect g op =
     | TOp.TupleFieldGet(_) -> false
     | TOp.ExnFieldGet(ecref, n) -> isExnFieldMutable ecref n 
     | TOp.RefAddrGet -> false
+    | TOp.AnonRecdGet _ -> true (* conservative *)
     | TOp.ValFieldGet rfref  -> rfref.RecdField.IsMutable || (TryFindTyconRefBoolAttribute g Range.range0 g.attrib_AllowNullLiteralAttribute rfref.TyconRef = Some(true))
     | TOp.ValFieldGetAddr rfref  -> rfref.RecdField.IsMutable (* data is immutable, so taking address is ok *)
     | TOp.UnionCaseFieldGetAddr _ -> false (* data is immutable, so taking address is ok  *)
@@ -1857,7 +1862,12 @@ and OptimizeExprOpFallback cenv env (op, tyargs, args', m) arginfos valu =
       | TOp.Tuple tupInfo        -> 
           let isStruct = evalTupInfoIsStruct tupInfo 
           if isStruct then 0, valu 
-          else 1, MakeValueInfoForTuple (Array.ofList argValues)
+          else 1,MakeValueInfoForTuple (Array.ofList argValues)
+      | TOp.AnonRecd anonInfo        -> 
+          let isStruct = evalAnonInfoIsStruct anonInfo 
+          if isStruct then 0, valu 
+          else 1, valu
+      | TOp.AnonRecdGet _ 
       | TOp.ValFieldGet _     
       | TOp.TupleFieldGet _    
       | TOp.UnionCaseFieldGet _   
@@ -3154,7 +3164,7 @@ and OptimizeModuleDefs cenv (env, bindInfosColl) defs =
     let defs, minfos = List.unzip defs
     (defs, UnionOptimizationInfos minfos), (env, bindInfosColl)
    
-and OptimizeImplFileInternal cenv env isIncrementalFragment hidden (TImplFile(qname, pragmas, (ModuleOrNamespaceExprWithSig(mty, _, _) as mexpr), hasExplicitEntryPoint, isScript)) =
+and OptimizeImplFileInternal cenv env isIncrementalFragment hidden (TImplFile(qname, pragmas, (ModuleOrNamespaceExprWithSig(mty, _, _) as mexpr), hasExplicitEntryPoint, isScript, anonRecdTypes)) =
     let env, mexpr', minfo  = 
         match mexpr with 
         // FSI: FSI compiles everything as if you're typing incrementally into one module 
@@ -3173,7 +3183,7 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment hidden (TImplFile(qn
     let hidden = ComputeHidingInfoAtAssemblyBoundary mty hidden
 
     let minfo = AbstractLazyModulInfoByHiding true hidden minfo
-    env, TImplFile(qname, pragmas, mexpr', hasExplicitEntryPoint, isScript), minfo, hidden
+    env, TImplFile(qname, pragmas, mexpr', hasExplicitEntryPoint, isScript, anonRecdTypes), minfo, hidden
 
 //-------------------------------------------------------------------------
 // Entry point
