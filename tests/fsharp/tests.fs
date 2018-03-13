@@ -1458,26 +1458,6 @@ module ToolsTests =
 module RegressionTests = 
 
     [<Test>]
-    let ``literal-value-bug-1-FSC_BASIC`` () =
-        let cfg = testConfig "regression/literal-value-bug-1"
-
-        fsc cfg "%s --optimize- -o:test.exe -g" cfg.fsc_flags ["test.fs"]
-
-        peverify cfg "test.exe"
-
-        ildasm cfg "/out=test.il" "test.exe"
-
-        let outFile = "test.il"
-        let expectedFile = "test.il.bsl"
-        
-        let diff = fsdiff cfg outFile expectedFile
-
-        match diff with
-        | "" -> ()
-        | _ ->
-            Assert.Fail (sprintf "'%s' and '%s' differ; %A" (getfullpath cfg outFile) (getfullpath cfg expectedFile) diff)
-
-    [<Test>]
     let ``literal-value-bug-2-FSC_BASIC`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSC_BASIC
 
     [<Test>]
