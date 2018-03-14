@@ -53,7 +53,7 @@ module CrossAssemblyTest =
     tests()
 
 module CrossAssemblyTestStruct = 
-    let tesvts() = 
+    let tests() = 
         check "svrknvio1" (SampleAPIStruct.SampleFunction {| A=1; B = "abc" |}) 4 // note, this is creating an instance of an anonymous record from another assembly. The structness is inferred in this case.
         check "svrknvio2" (SampleAPIStruct.SampleFunctionAcceptingList [ {| A=1; B = "abc" |}; {| A=2; B = "def" |} ]) [4; 5] // note, this is creating an instance of an anonymous record from another assembly. The structness is inferred in this case.
         check "svrknvio3" (let d = SampleAPIStruct.SampleFunctionReturningAnonRecd() in d.A + d.B.Length) 4 
