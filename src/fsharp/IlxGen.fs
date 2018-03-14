@@ -6350,7 +6350,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                         Data          = None
                         LiteralValue  = None
                         Offset        = ilFieldOffset
-                        Marshal       = ilFieldMarshal
+                        Marshal       = None
                         CustomAttrs   = mkILCustomAttrs (GenAttrs cenv eenv fattribs @ extraAttribs) } 
                   let fdef = 
                     fdef.WithAccess(access)
@@ -6358,7 +6358,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                         .WithSpecialName(ilFieldName="value__" && tycon.IsEnumTycon)
                         .WithNotSerialized(ilNotSerialized)
                         .WithLiteralDefaultValue(literalValue)
-                        .WithHasFieldMarshal(ilFieldMarshal.IsSome)
+                        .WithFieldMarshal(ilFieldMarshal)
                   yield fdef
 
                if requiresExtraField then 
