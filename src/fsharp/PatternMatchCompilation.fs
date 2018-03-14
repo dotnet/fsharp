@@ -694,7 +694,8 @@ let CompilePatternBasic
                         let ignoreWithWarning = (actionOnFailure = IgnoreWithWarning)
                         let ce = ShowCounterExample g denv matchm refuted
                         match tryDestAppTy g topv.val_type, refuted with
-                        | Some tcref, [RefutedInvestigation(_, decisionTreeTests)] when tcref.IsEnumTycon ->
+                        //| Some tcref, [RefutedInvestigation(_, decisionTreeTests)] when tcref.IsEnumTycon ->
+                        | Some tcref, ds when tcref.IsEnumTycon ->
                             // Check whether or not the match handles all the defined values for the enum -- this
                             // changes what warning is emitted
                             let enumValues =
@@ -703,6 +704,9 @@ let CompilePatternBasic
                                     match f.rfield_const, f.rfield_static with
                                     | Some value, true -> Some value
                                     | _, _ -> None)
+                            let decisionTreeTests =
+                                ds |> List.collect (function | RefutedInvestigation(_,decisionTreeTests) -> decisionTreeTests
+                                                             | _ -> [])
                             let consts = Set.ofList (List.choose (function DecisionTreeTest.Const(c) -> Some c | _ -> None) decisionTreeTests)
                             if enumValues |> Seq.forall (fun c -> consts.Contains c) then
                                 warning (EnumMatchIncomplete(ignoreWithWarning, ce, matchm))
