@@ -1139,7 +1139,7 @@ type ILFieldDef =
         member WithSpecialName: bool -> ILFieldDef
         member WithNotSerialized: bool -> ILFieldDef
         member WithLiteralDefaultValue: ILFieldInit option -> ILFieldDef
-        member WithHasFieldMarshal: bool -> ILFieldDef
+        member WithFieldMarshal: ILNativeType option -> ILFieldDef
 
 /// Tables of fields.  Logically equivalent to a list of fields but
 /// the table is kept in a form optimized for looking up fields by 
