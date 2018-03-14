@@ -42,7 +42,7 @@ type internal DumpCommandFilterProvider
         | _ -> null)
 
     let FSharpDump (this:Package) (sender:obj) (e:EventArgs) =
-        System.Diagnostics.Debbuger.Launch() |> ignore
+        System.Diagnostics.Debugger.Launch() |> ignore
         checkerProvider.Checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
         ()
 
