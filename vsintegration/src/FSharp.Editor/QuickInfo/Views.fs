@@ -122,8 +122,8 @@ type internal QuickInfoViewProvider
              typeParameterMap = navigable typeParameterMap, 
              anonymousTypes = empty, 
              usageText = navigable usage, 
-             exceptionText = navigable exceptions,
-             capturesText = empty)
+             exceptionText = navigable exceptions)
+             //capturesText = empty)
 
 [<Export (typeof<IDeferredQuickInfoContentToFrameworkElementConverter>)>] 
 type FSharpDeferredContentConverter () =
