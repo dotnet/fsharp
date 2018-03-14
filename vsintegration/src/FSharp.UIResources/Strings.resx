@@ -53,7 +53,6 @@
     value   : The object must be serialized with 
             : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
             : and then encoded with base64 encoding.
-
     mimetype: application/x-microsoft.net.object.bytearray.base64
     value   : The object must be serialized into a byte array 
             : using a System.ComponentModel.TypeConverter
@@ -164,6 +163,21 @@
   </data>
   <data name="Unused_opens_code_fix" xml:space="preserve">
     <value>Remove unused open statements</value>
+  </data>
+  <data name="Unused_declaration_code_fix" xml:space="preserve">
+    <value>Analyze and suggest fixes for unused values</value>
+  </data>
+  <data name="Block_Structure" xml:space="preserve">
+    <value>Block Structure Guides</value>
+  </data>
+  <data name="Show_guides" xml:space="preserve">
+    <value>Show structure guidelines for F# code</value>
+  </data>
+  <data name="Outlining" xml:space="preserve">
+    <value>Outlining</value>
+  </data>
+  <data name="Show_Outlining" xml:space="preserve">
+    <value>Show outlining and collapsable nodes for F# code</value>
   </data>
   <data name="CodeLens" xml:space="preserve">
     <value>CodeLens</value>

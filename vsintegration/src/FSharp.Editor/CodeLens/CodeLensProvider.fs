@@ -15,8 +15,11 @@ open Microsoft.VisualStudio.LanguageServices
 open System.Collections.Generic
 open Microsoft.CodeAnalysis.Editor.Shared.Utilities
 open Microsoft.VisualStudio.Text.Tagging
+open Microsoft.VisualStudio.Text.Classification
+open Microsoft.VisualStudio.ComponentModelHost
+open System.Threading
+open Microsoft.VisualStudio.FSharp.Editor.Logging
 
-        
 [<Export(typeof<IWpfTextViewCreationListener>)>]
 [<Export(typeof<IViewTaggerProvider>)>]
 [<TagType(typeof<CodeLensGeneralTag>)>]
@@ -28,7 +31,7 @@ type internal CodeLensProvider
         textDocumentFactory: ITextDocumentFactoryService,
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: FSharpProjectOptionsManager,
-        typeMap: Lazy<ClassificationTypeMap>,
+        typeMap : ClassificationTypeMap Lazy,
         gotoDefinitionService: FSharpGoToDefinitionService
     ) =
         
@@ -36,7 +39,7 @@ type internal CodeLensProvider
     let taggers = ResizeArray()
     let componentModel = Package.GetGlobalService(typeof<ComponentModelHost.SComponentModel>) :?> ComponentModelHost.IComponentModel
     let workspace = componentModel.GetService<VisualStudioWorkspace>()
-
+    
     /// Returns an provider for the textView if already one has been created. Else create one.
     let addCodeLensProviderOnce wpfView buffer =
         let res = taggers |> Seq.tryFind(fun (view, _) -> view = wpfView)
@@ -53,7 +56,7 @@ type internal CodeLensProvider
                 )
 
             let tagger = CodeLensGeneralTagger(wpfView, buffer)
-            let service = FSharpCodeLensService(workspace, documentId, buffer, checkerProvider.Checker, projectInfoManager, typeMap, gotoDefinitionService, tagger)
+            let service = FSharpCodeLensService(workspace, documentId, buffer, checkerProvider.Checker, projectInfoManager, componentModel.GetService(), typeMap, gotoDefinitionService, tagger)
             let provider = (wpfView, (tagger, service))
             wpfView.Closed.Add (fun _ -> taggers.Remove provider |> ignore)
             taggers.Add((wpfView, (tagger, service)))
@@ -72,7 +75,7 @@ type internal CodeLensProvider
                     | _ -> None
                     |> Option.get
                 )
-            let service = FSharpCodeLensService(workspace, documentId, buffer, checkerProvider.Checker, projectInfoManager, typeMap, gotoDefinitionService, LineLensDisplayService(wpfView, buffer))
+            let service = FSharpCodeLensService(workspace, documentId, buffer, checkerProvider.Checker, projectInfoManager, componentModel.GetService(), typeMap, gotoDefinitionService, LineLensDisplayService(wpfView, buffer))
             let provider = (wpfView, service)
             wpfView.Closed.Add (fun _ -> lineLensProvider.Remove provider |> ignore)
             lineLensProvider.Add(provider)
@@ -89,7 +92,7 @@ type internal CodeLensProvider
     member val LineLensAdornmentLayerDefinition : AdornmentLayerDefinition = null with get, set
 
     interface IViewTaggerProvider with
-        override __.CreateTagger(view, buffer) = 
+        override __.CreateTagger(view, buffer) =
             if Settings.CodeLens.Enabled && not Settings.CodeLens.ReplaceWithLineLens then
                 let wpfView =
                     match view with

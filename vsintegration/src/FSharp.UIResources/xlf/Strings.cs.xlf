@@ -44,12 +44,12 @@
       </trans-unit>
       <trans-unit id="Show_completion_list_after_a_character_is_deleted">
         <source>Show completion list after a character is _deleted</source>
-        <target state="translated">Zobrazovat sezna_m dokončení po odstranění znaku</target>
+        <target state="translated">Zobrazovat seznam dokončení po _odstranění znaku</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_completion_list_after_a_character_is_typed">
         <source>_Show completion list after a character is typed</source>
-        <target state="translated">Zobrazovat seznam do_končení po zadání znaku</target>
+        <target state="translated">_Zobrazovat seznam dokončení po zadání znaku</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_in_memory_cross_project_references">
@@ -80,6 +80,31 @@
       <trans-unit id="Unused_opens_code_fix">
         <source>Remove unused open statements</source>
         <target state="translated">Odebrat nepoužívané otevřené výkazy</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Unused_declaration_code_fix">
+        <source>Analyze and suggest fixes for unused values</source>
+        <target state="translated">Analyzovat a navrhovat opravy pro nepoužité hodnoty</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Block_Structure">
+        <source>Block Structure Guides</source>
+        <target state="new">Block Structure Guides</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_guides">
+        <source>Show structure guidelines for F# code</source>
+        <target state="new">Show structure guidelines for F# code</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Outlining">
+        <source>Outlining</source>
+        <target state="new">Outlining</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Outlining">
+        <source>Show outlining and collapsable nodes for F# code</source>
+        <target state="new">Show outlining and collapsable nodes for F# code</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeLens">

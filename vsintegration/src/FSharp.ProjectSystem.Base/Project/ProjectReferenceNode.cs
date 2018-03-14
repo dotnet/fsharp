@@ -805,6 +805,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return FrameworkCompatibility.Ok;
             }
 
+            if (String.Compare(otherFrameworkName.Identifier, ".NETStandard", StringComparison.OrdinalIgnoreCase) == 0)
+            {
+                // we always allow references to projects that are targeted to the ".NETStandard" family
+                return FrameworkCompatibility.Ok;
+            }
+
             var myFrameworkName = GetProjectTargetFrameworkName(thisProject);
             if (String.Compare(otherFrameworkName.Identifier, myFrameworkName.Identifier, StringComparison.OrdinalIgnoreCase) == 0)
             {

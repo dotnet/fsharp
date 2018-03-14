@@ -629,12 +629,12 @@
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationSealed">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is sealed but the signature implies it is not. Consider adding the [&lt;Sealed&gt;] attribute to the signature.</source>
-        <target state="translated">As definições {0} para o tipo '{1}' na assinatura e implementação não são compatíveis, pois o tipo de implementação é lacrado, mas a assinatura implica que ele não é. Considere adicionar o atributo [&lt;Sealed&gt;] à assinatura.</target>
+        <target state="translated">As definições {0} para o tipo '{1}' na assinatura e implementação não são compatíveis, pois o tipo de implementação é selado, mas a assinatura implica que ele não é. Considere adicionar o atributo [&lt;Sealed&gt;] à assinatura.</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsNotSealed">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is not sealed but signature implies it is. Consider adding the [&lt;Sealed&gt;] attribute to the implementation.</source>
-        <target state="translated">As definições {0} para o tipo '{1}' na assinatura e implementação não são compatíveis, pois o tipo de implementação não é lacrado, mas a assinatura implica que ele é. Considere adicionar o atributo [&lt;Sealed&gt;] à implementação.</target>
+        <target state="translated">As definições {0} para o tipo '{1}' na assinatura e implementação não são compatíveis, pois o tipo de implementação não é selado, mas a assinatura implica que ele é. Considere adicionar o atributo [&lt;Sealed&gt;] à implementação.</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsAbstract">
@@ -802,11 +802,6 @@
         <target state="translated">A instanciação implícita do constructo genérico neste ponto ou próximo a ele não pode ser resolvida porque ele conseguiu resolver tipos não relacionados múltiplos, por exemplo '{0}' e '{1}'. Considere usar anotações de tipo para resolver a ambiguidade</target>
         <note />
       </trans-unit>
-      <trans-unit id="typrelCannotResolveAmbiguityInOverloadedOperator">
-        <source>Could not resolve the ambiguity inherent in the use of the operator '{0}' at or near this program point. Consider using type annotations to resolve the ambiguity.</source>
-        <target state="translated">Não foi possível resolver a ambiguidade no uso de um operador '{0}' neste ponto do programa ou próximo a ele. Considere usar anotações de tipo para resolver a ambiguidade.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="typrelCannotResolveAmbiguityInPrintf">
         <source>Could not resolve the ambiguity inherent in the use of a 'printf'-style format string</source>
         <target state="translated">Não foi possível resolver a ambiguidade inerente ao uso de uma cadeia de caracteres com formato de estilo 'printf'</target>
@@ -939,7 +934,7 @@
       </trans-unit>
       <trans-unit id="typrelMethodIsSealed">
         <source>The method '{0}' is sealed and cannot be overridden</source>
-        <target state="translated">O método '{0}' está lacrado e não pode ser substituído</target>
+        <target state="translated">O método '{0}' está selado não pode ser substituído</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelOverrideImplementsMoreThenOneSlot">
@@ -2634,7 +2629,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidConstraintTypeSealed">
         <source>Invalid constraint: the type used for the constraint is sealed, which means the constraint could only be satisfied by at most one solution</source>
-        <target state="translated">Restrição inválida: o tipo usado para restrição está lacrado, o que significa que a restrição só pode ser satisfeita por no máximo uma solução</target>
+        <target state="translated">Restrição inválida: o tipo usado para restrição está selado, o que significa que a restrição só pode ser satisfeita por no máximo uma solução</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidEnumConstraint">
@@ -3014,7 +3009,7 @@
       </trans-unit>
       <trans-unit id="tcCannotCreateExtensionOfSealedType">
         <source>Cannot create an extension of a sealed type</source>
-        <target state="translated">Não é possível criar uma extensão de um tipo lacrado</target>
+        <target state="translated">Não é possível criar uma extensão de um tipo selado</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNoArgumentsForRecordValue">
@@ -3819,32 +3814,32 @@
       </trans-unit>
       <trans-unit id="tcTypesAreAlwaysSealedDU">
         <source>Discriminated union types are always sealed</source>
-        <target state="translated">Tipos de união discriminados são sempre lacrados</target>
+        <target state="translated">Tipos de união discriminados são sempre selados</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypesAreAlwaysSealedRecord">
         <source>Record types are always sealed</source>
-        <target state="translated">Tipos de registros são sempre lacrados</target>
+        <target state="translated">Tipos de registros são sempre selados</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypesAreAlwaysSealedAssemblyCode">
         <source>Assembly code types are always sealed</source>
-        <target state="translated">Tipos de código de assembly são sempre lacrados</target>
+        <target state="translated">Tipos de código de assembly são sempre selados</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypesAreAlwaysSealedStruct">
         <source>Struct types are always sealed</source>
-        <target state="translated">Tipos struct são sempre lacrados</target>
+        <target state="translated">Tipos struct são sempre selados</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypesAreAlwaysSealedDelegate">
         <source>Delegate types are always sealed</source>
-        <target state="translated">Tipos delegados são sempre lacrados</target>
+        <target state="translated">Tipos delegados são sempre selados</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTypesAreAlwaysSealedEnum">
         <source>Enum types are always sealed</source>
-        <target state="translated">Tipos enum são sempre lacrados</target>
+        <target state="translated">Tipos enum são sempre selados</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInterfaceTypesAndDelegatesCannotContainFields">
@@ -3859,7 +3854,7 @@
       </trans-unit>
       <trans-unit id="tcCannotInheritFromSealedType">
         <source>Cannot inherit a sealed type</source>
-        <target state="translated">Não é possível herdar um tipo lacrado</target>
+        <target state="translated">Não é possível herdar um tipo selado</target>
         <note />
       </trans-unit>
       <trans-unit id="tcCannotInheritFromInterfaceType">
@@ -3874,7 +3869,7 @@
       </trans-unit>
       <trans-unit id="tcInterfaceTypesCannotBeSealed">
         <source>Interface types cannot be sealed</source>
-        <target state="translated">Tipos de interface não podem ser lacrados</target>
+        <target state="translated">Tipos de interface não podem ser selados</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidDelegateSpecification">
@@ -6970,6 +6965,21 @@
       <trans-unit id="pickleUnexpectedNonZero">
         <source>An error occurred while reading the F# metadata of assembly '{0}'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.</source>
         <target state="translated">Ocorreu um erro ao ler os metadados F# do assembly '{0}'. Foi utilizada um constructo reservado. Talvez seja necessário atualizar seu compilador F# ou usar uma versão anterior do assembly que não faça uso de um constructo específico.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTupleMemberNotNormallyUsed">
+        <source>This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</source>
+        <target state="translated">Essa propriedade ou esse método normalmente não é usado no código F#. Use um padrão de tupla explícito para a desconstrução.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="implicitlyDiscardedInSequenceExpression">
+        <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.</source>
+        <target state="translated">Essa expressão retorna um valor de tipo '{0}', mas é descartada de forma implícita. Considere o uso de 'let' para associar o resultado a um nome, por exemplo, 'let result = expression'. Se você pretende usar a expressão como um valor na sequência, use um “yield” explícito.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="implicitlyDiscardedSequenceInSequenceExpression">
+        <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</source>
+        <target state="translated">Essa expressão retorna um valor de tipo '{0}', mas é descartada de forma implícita. Considere o uso de 'let' para associar o resultado a um nome, por exemplo, 'let result = expression'. Se você pretende usar a expressão como um valor na sequência, use um “yield!” explícito.</target>
         <note />
       </trans-unit>
     </body>

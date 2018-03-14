@@ -1,7 +1,7 @@
 
 // To run the tests in this file:
 //
-// Technique 1: Compile VisualFSharp.Unittests.dll and run it as a set of unit tests
+// Technique 1: Compile VisualFSharp.UnitTests.dll and run it as a set of unit tests
 //
 // Technique 2:
 //
@@ -11,8 +11,8 @@
 //   and capturing large amounts of structured output.
 (*
     cd Debug\net40\bin
-    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.Unittests.exe -g --optimize- -r .\FSharp.Compiler.Private.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\unittests\CompletionProviderTests.fs 
-    .\VisualFSharp.Unittests.exe 
+    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.UnitTests.exe -g --optimize- -r .\FSharp.Compiler.Private.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\unittests\CompletionProviderTests.fs 
+    .\VisualFSharp.UnitTests.exe 
 *)
 // Technique 3: 
 // 
@@ -197,6 +197,95 @@ System.Console.WriteLine()
     Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger")
 
 [<Test>]
+let ShouldNotTriggerCompletionInOperatorWithDot() =
+    // Simulate mistyping '|>' as '|.'
+    let fileContents = """
+let f() =
+    12.0 |. sqrt
+"""
+    let caretPosition = fileContents.IndexOf("|.")
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    let getInfo() = documentId, filePath, []
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    Assert.IsFalse(triggered, "FSharpCompletionProvider.ShouldTriggerCompletionAux() should not trigger on operators")
+
+[<Test>]
+let ShouldTriggerCompletionInAttribute() =
+    let fileContents = """
+[<A
+module Foo = module end
+"""
+    let marker = "A"
+    let caretPosition = fileContents.IndexOf(marker) + marker.Length
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    let getInfo() = documentId, filePath, []
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    Assert.IsTrue(triggered, "Completion should trigger on Attributes.")
+
+[<Test>]
+let ShouldTriggerCompletionAfterDerefOperator() =
+    let fileContents = """
+let foo = ref 12
+printfn "%d" !f
+"""
+    let marker = "!f"
+    let caretPosition = fileContents.IndexOf(marker) + marker.Length
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    let getInfo() = documentId, filePath, []
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    Assert.IsTrue(triggered, "Completion should trigger after typing an identifier that follows a dereference operator (!).")
+
+[<Test>]
+let ShouldTriggerCompletionAfterAddressOfOperator() =
+    let fileContents = """
+type Point = { mutable X: int; mutable Y: int }
+let pnt = { X = 1; Y = 2 }
+use ptr = fixed &p
+"""
+    let marker = "&p"
+    let caretPosition = fileContents.IndexOf(marker) + marker.Length
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    let getInfo() = documentId, filePath, []
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    Assert.IsTrue(triggered, "Completion should trigger after typing an identifier that follows an addressOf operator (&).")
+
+[<Test>]
+let ShouldTriggerCompletionAfterArithmeticOperation() =
+    let fileContents = """
+let xVal = 1.0
+let yVal = 2.0
+let zVal
+
+xVal+y
+xVal-y
+xVal*y
+xVal/y
+xVal%y
+xVal**y
+"""
+
+    let markers = [ "+y"; "-y"; "*y"; "/y"; "%y";  "**y"]
+
+    for marker in markers do 
+        let caretPosition = fileContents.IndexOf(marker) + marker.Length
+        let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+        let getInfo() = documentId, filePath, []
+        let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+        Assert.IsTrue(triggered, "Completion should trigger after typing an identifier that follows a mathematical operation")
+
+[<Test>]
+let ShouldTriggerCompletionAtStartOfFileWithInsertion =
+    let fileContents = """
+l"""
+
+    let marker = "l"
+    let caretPosition = fileContents.IndexOf(marker) + marker.Length
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    let getInfo() = documentId, filePath, []
+    let triggered = FSharpCompletionProvider.ShouldTriggerCompletionAux(SourceText.From(fileContents), caretPosition, CompletionTriggerKind.Insertion, getInfo)
+    Assert.IsTrue(triggered, "Completion should trigger after typing an Insertion character at the top of the file, e.g. a function definition in a new script file.")
+
+[<Test>]
 let ShouldDisplayTypeMembers() =
     let fileContents = """
 type T1() =
@@ -352,7 +441,7 @@ type List<'a> with
 
 List().
 """
-    let expected = ["Capacity"; "Count"; "ExtensionProp"; "Item"; "Add"; "AddRange"; "AsReadOnly"; "BinarySearch"; "Clear"; "Contains"; "ConvertAll"; "CopyTo"; "Exists"
+    let expected = ["Capacity"; "Count"; "Item"; "ExtensionProp"; "Add"; "AddRange"; "AsReadOnly"; "BinarySearch"; "Clear"; "Contains"; "ConvertAll"; "CopyTo"; "Exists"
                     "Find"; "FindAll"; "FindIndex"; "FindLast"; "FindLastIndex"; "ForEach"; "GetEnumerator"; "GetRange"; "IndexOf"; "Insert"; "InsertRange"; "LastIndexOf"
                     "Remove"; "RemoveAll"; "RemoveAt"; "RemoveRange"; "Reverse"; "Sort"; "ToArray"; "TrimExcess"; "TrueForAll"; "Equals"; "GetHashCode"; "GetType"; "ToString"
                     "ExtensionMeth"]

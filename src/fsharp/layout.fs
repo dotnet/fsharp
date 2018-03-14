@@ -10,15 +10,9 @@ open Microsoft.FSharp.Core.Printf
 
 #nowarn "62" // This construct is for ML compatibility.
 
-#if COMPILER_PUBLIC_API
 type layout = Internal.Utilities.StructuredFormat.Layout
 type LayoutTag = Internal.Utilities.StructuredFormat.LayoutTag
 type TaggedText = Internal.Utilities.StructuredFormat.TaggedText
-#else
-type internal layout = Internal.Utilities.StructuredFormat.Layout
-type internal LayoutTag = Internal.Utilities.StructuredFormat.LayoutTag
-type internal TaggedText = Internal.Utilities.StructuredFormat.TaggedText
-#endif
 
 type NavigableTaggedText(taggedText: TaggedText, range: Range.range) =
     member val Range = range

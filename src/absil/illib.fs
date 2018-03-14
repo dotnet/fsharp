@@ -1,10 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-#if COMPILER_PUBLIC_API
 module public Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-#else
-module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-#endif
 #nowarn "1178" // The struct, record or union type 'internal_instr_extension' is not structurally comparable because the type
 
 
@@ -41,14 +37,14 @@ let inline isSingleton l =
 
 let inline isNonNull x = not (isNull x)
 let inline nonNull msg x = if isNull x then failwith ("null: " ^ msg) else x
-let (===) x y = LanguagePrimitives.PhysicalEquality x y
+let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
 
 //---------------------------------------------------------------------
 // Library: ReportTime
 //---------------------------------------------------------------------
 let reportTime =
-    let tFirst = ref None     
-    let tPrev = ref None     
+    let tFirst = ref None
+    let tPrev = ref None
     fun showTimes descr ->
         if showTimes then 
             let t = System.Diagnostics.Process.GetCurrentProcess().UserProcessorTime.TotalSeconds
@@ -241,36 +237,12 @@ module Option =
     let mapFold f s opt = 
         match opt with 
         | None -> None,s 
-        | Some x -> let x',s' = f s x in Some x',s'
+        | Some x -> 
+            let x',s' = f s x 
+            Some x',s'
 
-    let otherwise opt dflt = 
-        match opt with 
-        | None -> dflt 
-        | Some x -> x
-
-    let fold f z x = 
-        match x with 
-        | None -> z 
-        | Some x -> f z x
-
-    let attempt (f: unit -> 'T) = try Some (f()) with _ -> None        
-
-    
-    let orElseWith f opt = 
-        match opt with 
-        | None -> f()
-        | x -> x
-
-    let orElse v opt = 
-        match opt with 
-        | None -> v
-        | x -> x
-
-    let defaultValue v opt = 
-        match opt with 
-        | None -> v
-        | Some x -> x
-
+    let attempt (f: unit -> 'T) = try Some (f()) with _ -> None
+        
 module List = 
 
     //let item n xs = List.nth xs n
@@ -446,9 +418,6 @@ module List =
           | x::xs -> if i=n then f x::xs else x::mn (i+1) xs
        
         mn 0 xs
-
-    let rec until p l = match l with [] -> [] | h::t -> if p h then [] else h :: until p t 
-
     let count pred xs = List.fold (fun n x -> if pred x then n+1 else n) 0 xs
 
     // WARNING: not tail-recursive 
@@ -525,23 +494,9 @@ module String =
         if s.Length = 0 then  s
         else lowercase s.[0..0] + s.[ 1.. s.Length - 1 ]
 
+    let dropPrefix (s:string) (t:string) = s.[t.Length..s.Length - 1]
 
-    let tryDropPrefix (s:string) (t:string) = 
-        if s.StartsWith t then 
-            Some s.[t.Length..s.Length - 1]
-        else 
-            None
-
-    let tryDropSuffix (s:string) (t:string) = 
-        if s.EndsWith t then
-            Some s.[0..s.Length - t.Length - 1]
-        else
-            None
-
-    let hasPrefix s t = Option.isSome (tryDropPrefix s t)
-    let dropPrefix s t = match (tryDropPrefix s t) with Some(res) -> res | None -> failwith "dropPrefix"
-
-    let dropSuffix s t = match (tryDropSuffix s t) with Some(res) -> res | None -> failwith "dropSuffix"
+    let dropSuffix (s:string) (t:string) = s.[0..s.Length - t.Length - 1]
 
     open System
     open System.IO

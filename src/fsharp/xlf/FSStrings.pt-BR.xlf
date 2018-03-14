@@ -1283,28 +1283,28 @@
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpected">
-        <source>The result of this expression is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |&gt; ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</source>
-        <target state="translated">O resultado dessa expressão é ignorado implicitamente. Considere usar 'ignore' para descartar esse valor explicitamente, por exemplo, 'expr |&gt; ignore' ou 'let' para associar o resultado a um nome, por exemplo, 'let result = expr'.</target>
+        <source>The result of this expression has type '{0}' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |&gt; ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</source>
+        <target state="translated">O resultado dessa expressão contém o tipo '{0}' e é ignorado de forma implícita. Considere o uso de 'ignore' para descartar esse valor de forma explícita, por exemplo, 'expr |&gt; ignore' ou 'let' para associar o resultado a um nome, por exemplo, 'let result = expr'.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithEquality">
-        <source>The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'.</source>
-        <target state="translated">O resultado dessa expressão de igualdade é implicitamente descartado. Considere o uso de 'let' para associar o resultado a um nome, por exemplo, 'let resultado = expressão'.</target>
+        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'.</source>
+        <target state="translated">O resultado dessa expressão de igualdade contém o tipo '{0}' e é descartado de forma implícita. Considere o uso de 'let' para associar o resultado a um nome, por exemplo, 'let result = expression'.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossiblePropertySetter">
-        <source>The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{0}.{1} &lt;- expression'.</source>
-        <target state="translated">O resultado dessa expressão de igualdade é implicitamente descartado. Considere o uso de 'let' para associar o resultado a um nome, por exemplo, 'let resultado = expressão'. Se você pretende definir um valor de uma propriedade, use o operador '&lt;-', por exemplo, '{0}.{1} &lt;- expressão'.</target>
+        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{1}.{2} &lt;- expression'.</source>
+        <target state="translated">O resultado dessa expressão de igualdade contém o tipo '{0}' e é descartado de forma implícita. Considere o uso de 'let' para associar o resultado a um nome, por exemplo, 'let result = expression'. Se você pretende definir um valor com uma propriedade, use o operador '&lt;-', por exemplo, '{1}.{2} &lt;- expression'.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignment">
-        <source>The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{0} &lt;- expression'.</source>
-        <target state="translated">O resultado dessa expressão de igualdade é implicitamente descartado. Considere o uso de 'let' para associar o resultado a um nome, por exemplo, 'let resultado = expressão'. Se você pretende alterar um valor, marque-o como 'mutable' e use o operador '&lt;-', por exemplo, '{0} &lt;-expressão'.</target>
+        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
+        <target state="translated">O resultado dessa expressão de igualdade contém o tipo '{0}' e é descartado de forma implícita. Considere o uso de 'let' para associar o resultado a um nome, por exemplo, 'let result = expression'. Se você pretende alterar um valor, marque-o como 'mutable' e use o operador '&lt;-', por exemplo, '{1} &lt;- expression'.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignmentToMutable">
-        <source>The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '&lt;-' operator e.g. '{0} &lt;- expression'.</source>
-        <target state="translated">O resultado dessa expressão de igualdade é implicitamente descartado. Considere o uso de 'let' para associar o resultado a um nome, por exemplo, 'let resultado = expressão'. Se você pretende alterar um valor, use o operador '&lt;-', por exemplo, '{0} &lt;- expressão'.</target>
+        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
+        <target state="translated">O resultado dessa expressão de igualdade contém o tipo '{0}' e é descartado de forma implícita. Considere o uso de 'let' para associar o resultado a um nome, por exemplo, 'let result = expression'. Se você pretende alterar um valor, use o operador '&lt;-', por exemplo, '{1} &lt;- expression'.</target>
         <note />
       </trans-unit>
       <trans-unit id="RecursiveUseCheckedAtRuntime">

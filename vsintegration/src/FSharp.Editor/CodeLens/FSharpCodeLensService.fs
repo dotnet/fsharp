@@ -23,6 +23,7 @@ open Internal.Utilities.StructuredFormat
 open System.Windows.Media.Animation
 
 open Microsoft.VisualStudio.FSharp.Editor.Logging
+open Microsoft.VisualStudio.Text.Classification
 
 type internal CodeLens(taggedText, computed, fullTypeSignature, uiElement) =
       member val TaggedText: Async<(ResizeArray<Layout.TaggedText> * QuickInfoNavigation) option> = taggedText
@@ -37,6 +38,7 @@ type internal FSharpCodeLensService
         buffer: ITextBuffer, 
         checker: FSharpChecker,
         projectInfoManager: FSharpProjectOptionsManager,
+        classificationFormatMapService: IClassificationFormatMapService,
         typeMap: Lazy<ClassificationTypeMap>,
         gotoDefinitionService: FSharpGoToDefinitionService,
         codeLens : CodeLensDisplayService
@@ -59,7 +61,7 @@ type internal FSharpCodeLensService
                 Some binding.RangeOfBindingAndRhs
         })
 
-    let formatMap = lazy typeMap.Value.ClassificationFormatMapService.GetClassificationFormatMap "tooltip"
+    let formatMap = lazy classificationFormatMapService.GetClassificationFormatMap "tooltip"
 
     let mutable lastResults = Dictionary<string, ITrackingSpan * CodeLens>()
     let mutable firstTimeChecked = false
@@ -74,52 +76,70 @@ type internal FSharpCodeLensService
         |> formatMap.Value.GetTextProperties   
 
     let createTextBox (lens:CodeLens) =
-        asyncMaybe {
-            let! taggedText, navigation = lens.TaggedText
-            let textBlock = new TextBlock(Background = Brushes.Transparent, Opacity = 0.0, TextTrimming = TextTrimming.None)
-            DependencyObjectExtensions.SetDefaultTextProperties(textBlock, formatMap.Value)
+        async {
+            do! Async.SwitchToContext uiContext
+            let! res = lens.TaggedText
+            match res with
+            | Some (taggedText, navigation) -> 
+                logInfof "Tagged text %A" taggedText
+                let textBlock = new TextBlock(Background = Brushes.AliceBlue, Opacity = 0.0, TextTrimming = TextTrimming.None)
+                DependencyObjectExtensions.SetDefaultTextProperties(textBlock, formatMap.Value)
 
-            let prefix = Documents.Run Settings.CodeLens.Prefix
-            prefix.Foreground <- SolidColorBrush(Color.FromRgb(153uy, 153uy, 153uy))
-            textBlock.Inlines.Add (prefix)
+                let prefix = Documents.Run Settings.CodeLens.Prefix
+                prefix.Foreground <- SolidColorBrush(Color.FromRgb(153uy, 153uy, 153uy))
+                textBlock.Inlines.Add prefix
 
-            for text in taggedText do
+                for text in taggedText do
 
-                let coloredProperties = layoutTagToFormatting text.Tag
-                let actualProperties =
-                    if Settings.CodeLens.UseColors
-                    then
-                        // If color is gray (R=G=B), change to correct gray color.
-                        // Otherwise, use the provided color.
-                        match coloredProperties.ForegroundBrush with
-                        | :? SolidColorBrush as b ->
-                            let c = b.Color
-                            if c.R = c.G && c.R = c.B
-                            then coloredProperties.SetForeground(Color.FromRgb(153uy, 153uy, 153uy))
-                            else coloredProperties
-                        | _ -> coloredProperties
-                    else
-                        coloredProperties.SetForeground(Color.FromRgb(153uy, 153uy, 153uy))
+                    let coloredProperties = layoutTagToFormatting text.Tag
+                    let actualProperties =
+                        if Settings.CodeLens.UseColors
+                        then
+                            // If color is gray (R=G=B), change to correct gray color.
+                            // Otherwise, use the provided color.
+                            match coloredProperties.ForegroundBrush with
+                            | :? SolidColorBrush as b ->
+                                let c = b.Color
+                                if c.R = c.G && c.R = c.B
+                                then coloredProperties.SetForeground(Color.FromRgb(153uy, 153uy, 153uy))
+                                else coloredProperties
+                            | _ -> coloredProperties
+                        else
+                            coloredProperties.SetForeground(Color.FromRgb(153uy, 153uy, 153uy))
 
-                let run = Documents.Run text.Text
-                DependencyObjectExtensions.SetTextProperties (run, actualProperties)
+                    let run = Documents.Run text.Text
+                    DependencyObjectExtensions.SetTextProperties (run, actualProperties)
 
-                let inl =
-                    match text with
-                    | :? Layout.NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->
-                        let h = Documents.Hyperlink(run, ToolTip = nav.Range.FileName)
-                        h.Click.Add (fun _ -> 
-                            navigation.NavigateTo nav.Range)
-                        h :> Documents.Inline
-                    | _ -> run :> _
-                DependencyObjectExtensions.SetTextProperties (inl, actualProperties)
-                textBlock.Inlines.Add inl
+                    let inl =
+                        match text with
+                        | :? Layout.NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->
+                            let h = Documents.Hyperlink(run, ToolTip = nav.Range.FileName)
+                            h.Click.Add (fun _ -> 
+                                navigation.NavigateTo nav.Range)
+                            h :> Documents.Inline
+                        | _ -> run :> _
+                    DependencyObjectExtensions.SetTextProperties (inl, actualProperties)
+                    textBlock.Inlines.Add inl
             
 
-            textBlock.Measure(Size(Double.PositiveInfinity, Double.PositiveInfinity))
-            lens.Computed <- true
-            lens.UiElement <- textBlock
+                textBlock.Measure(Size(Double.PositiveInfinity, Double.PositiveInfinity))
+                lens.Computed <- true
+                lens.UiElement <- textBlock
+                return true
+            | _ -> 
+                return false
         }  
+
+    let StartAsyncSafe cancellationToken context computation =
+        let computation =
+            async {
+                try
+                    return! computation
+                with e ->
+                    logExceptionWithContext(e, context)
+                    return Unchecked.defaultof<_>
+            }
+        Async.Start (computation, cancellationToken)
 
     let executeCodeLenseAsync () =  
         asyncMaybe {
@@ -285,9 +305,10 @@ type internal FSharpCodeLensService
             let createCodeLensUIElement (codeLens:CodeLens) trackingSpan _ =
                 if codeLens.Computed |> not then
                     async {
-                        do! Async.SwitchToContext uiContext
                         let! res = createTextBox codeLens
-                        if res.IsSome then
+                        if res then
+                            do! Async.SwitchToContext uiContext
+                            logInfof "Adding ui element for %A" (codeLens.TaggedText)
                             let uiElement = codeLens.UiElement
                             let animation = 
                                 DoubleAnimation(
@@ -305,10 +326,11 @@ type internal FSharpCodeLensService
                         else
                             logWarningf "Couldn't retrieve code lens information for %A" codeLens.FullTypeSignature
                         // logInfo "Adding text box!"
-                    } |> RoslynHelpers.StartAsyncSafe CancellationToken.None
+                    } |> StartAsyncSafe CancellationToken.None "UIElement creation"
 
             for value in tagsToUpdate do
                 let trackingSpan, (newTrackingSpan, _, codeLens) = value.Key, value.Value
+                // logInfof "Adding ui element for %A" (codeLens.TaggedText)
                 lineLens.RemoveCodeLens trackingSpan |> ignore
                 let Grid = lineLens.AddCodeLens newTrackingSpan
                 // logInfof "Trackingspan %A is being added." trackingSpan 
@@ -323,7 +345,7 @@ type internal FSharpCodeLensService
             for value in codeLensToAdd do
                 let trackingSpan, codeLens = value
                 let Grid = lineLens.AddCodeLens trackingSpan
-                // logInfof "Trackingspan %A is being added." trackingSpan 
+                logInfof "Trackingspan %A is being added." trackingSpan 
                 
                 Grid.IsVisibleChanged
                 |> Event.filter (fun eventArgs -> eventArgs.NewValue :?> bool)

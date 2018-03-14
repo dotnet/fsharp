@@ -82,6 +82,31 @@
         <target state="translated">未使用の Open ステートメントを削除する</target>
         <note />
       </trans-unit>
+      <trans-unit id="Unused_declaration_code_fix">
+        <source>Analyze and suggest fixes for unused values</source>
+        <target state="translated">未使用の値を分析して修正を提案する</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Block_Structure">
+        <source>Block Structure Guides</source>
+        <target state="new">Block Structure Guides</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_guides">
+        <source>Show structure guidelines for F# code</source>
+        <target state="new">Show structure guidelines for F# code</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Outlining">
+        <source>Outlining</source>
+        <target state="new">Outlining</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Outlining">
+        <source>Show outlining and collapsable nodes for F# code</source>
+        <target state="new">Show outlining and collapsable nodes for F# code</target>
+        <note />
+      </trans-unit>
       <trans-unit id="CodeLens">
         <source>CodeLens</source>
         <target state="new">CodeLens</target>

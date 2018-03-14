@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="lblPreBuildEventCommandLine.Text">
         <source>P&amp;re-build event command line:</source>
-        <target state="translated">建置前事件命令列(&amp;R): </target>
+        <target state="translated">建置前事件命令列(&amp;R):</target>
         <note />
       </trans-unit>
       <trans-unit id="txtPreBuildEventCommandLine.AccessibleName">
@@ -24,7 +24,7 @@
       </trans-unit>
       <trans-unit id="lblPostBuildEventCommandLine.Text">
         <source>P&amp;ost-build event command line:</source>
-        <target state="translated">建置後事件命令列(&amp;O): </target>
+        <target state="translated">建置後事件命令列(&amp;O):</target>
         <note />
       </trans-unit>
       <trans-unit id="txtPostBuildEventCommandLine.AccessibleName">

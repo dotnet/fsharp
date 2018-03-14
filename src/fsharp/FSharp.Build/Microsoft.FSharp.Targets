@@ -21,11 +21,11 @@ this file.
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     </PropertyGroup>
 
-    <UsingTask TaskName="Fsc" AssemblyFile="FSharp.Build{BuildSuffix}.dll" />
-    <UsingTask TaskName="FSharpEmbedResourceText" AssemblyFile="FSharp.Build{BuildSuffix}.dll" />
-    <UsingTask TaskName="FSharpEmbedResXSource" AssemblyFile="FSharp.Build{BuildSuffix}.dll" />
-    <UsingTask TaskName="CreateFSharpManifestResourceName" AssemblyFile="FSharp.Build{BuildSuffix}.dll" />
-    <UsingTask TaskName="WriteCodeFragment" AssemblyFile="FSharp.Build{BuildSuffix}.dll" />
+    <UsingTask TaskName="Fsc" AssemblyFile="FSharp.Build.dll" />
+    <UsingTask TaskName="FSharpEmbedResourceText" AssemblyFile="FSharp.Build.dll" />
+    <UsingTask TaskName="FSharpEmbedResXSource" AssemblyFile="FSharp.Build.dll" />
+    <UsingTask TaskName="CreateFSharpManifestResourceName" AssemblyFile="FSharp.Build.dll" />
+    <UsingTask TaskName="WriteCodeFragment" AssemblyFile="FSharp.Build.dll" />
 
     <PropertyGroup>
         <ImportByWildcardBeforeMicrosoftFSharpTargets Condition="'$(ImportByWildcardBeforeMicrosoftFSharpTargets)' == ''">true</ImportByWildcardBeforeMicrosoftFSharpTargets>

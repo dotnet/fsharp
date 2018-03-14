@@ -14,7 +14,7 @@
       </trans-unit>
       <trans-unit id="Completion_Lists">
         <source>Completion Lists</source>
-        <target state="translated">自動完成清單</target>
+        <target state="translated">完成清單</target>
         <note />
       </trans-unit>
       <trans-unit id="Language_Service_Performance">
@@ -44,12 +44,12 @@
       </trans-unit>
       <trans-unit id="Show_completion_list_after_a_character_is_deleted">
         <source>Show completion list after a character is _deleted</source>
-        <target state="translated">在刪除字元後顯示自動完成清單(_D)</target>
+        <target state="translated">刪除一個字元後顯示完成清單(_D)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_completion_list_after_a_character_is_typed">
         <source>_Show completion list after a character is typed</source>
-        <target state="translated">在鍵入字元後顯示自動完成清單(_S)</target>
+        <target state="translated">輸入一個字元後顯示完成清單(_S)</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_in_memory_cross_project_references">
@@ -80,6 +80,31 @@
       <trans-unit id="Unused_opens_code_fix">
         <source>Remove unused open statements</source>
         <target state="translated">移除未使用的 open 陳述式</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Unused_declaration_code_fix">
+        <source>Analyze and suggest fixes for unused values</source>
+        <target state="translated">分析未使用的值並建議修正</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Block_Structure">
+        <source>Block Structure Guides</source>
+        <target state="new">Block Structure Guides</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_guides">
+        <source>Show structure guidelines for F# code</source>
+        <target state="new">Show structure guidelines for F# code</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Outlining">
+        <source>Outlining</source>
+        <target state="new">Outlining</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Outlining">
+        <source>Show outlining and collapsable nodes for F# code</source>
+        <target state="new">Show outlining and collapsable nodes for F# code</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeLens">

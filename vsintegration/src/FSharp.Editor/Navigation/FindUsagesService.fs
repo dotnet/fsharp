@@ -55,7 +55,7 @@ type internal FSharpFindUsagesService
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, allowStaleResults = true, userOpName = userOpName)
             let textLine = sourceText.Lines.GetLineFromPosition(position).ToString()
             let lineNumber = sourceText.Lines.GetLinePosition(position).Line + 1
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.FilePath, parsingOptions)
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             
             let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false)
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland, userOpName=userOpName)

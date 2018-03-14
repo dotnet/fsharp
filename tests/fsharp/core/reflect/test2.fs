@@ -30,7 +30,7 @@ module NewTests =
     let (|String|_|) (v:obj) = match v with :? string as s -> Some(s) | _ -> None
     let (|Int|_|) (v:obj) = match v with :? int as s -> Some(s) | _ -> None
     let showAll = 
-#if NETSTANDARD1_6
+#if NETCOREAPP1_0
         true
 #else
         System.Reflection.BindingFlags.Public ||| System.Reflection.BindingFlags.NonPublic 

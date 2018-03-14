@@ -6,10 +6,7 @@ module internal Microsoft.FSharp.Compiler.CompileOps
 open System
 open System.Text
 open System.Collections.Generic
-open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.TypeChecker
@@ -17,10 +14,6 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.ReferenceResolver
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Core.CompilerServices
 #if !NO_EXTENSIONTYPING
@@ -338,9 +331,7 @@ type TcConfigBuilder =
       mutable optSettings  : Optimizer.OptimizationSettings 
       mutable emitTailcalls: bool
       mutable deterministic: bool
-#if PREFERRED_UI_LANG
       mutable preferredUiLang: string option
-#endif
       mutable lcid        : int option
       mutable productNameForBannerText: string
       mutable showBanner : bool
@@ -488,11 +479,7 @@ type TcConfig =
     member optSettings  : Optimizer.OptimizationSettings 
     member emitTailcalls: bool
     member deterministic: bool
-#if PREFERRED_UI_LANG
     member preferredUiLang: string option
-#else
-    member lcid        : int option
-#endif
     member optsOn       : bool 
     member productNameForBannerText: string
     member showBanner : bool

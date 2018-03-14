@@ -7,7 +7,6 @@ open Microsoft.VisualStudio.FSharp.UIResources
 open SettingsPersistence
 open OptionsUIHelpers
 
-
 module DefaultTuning = 
     let SemanticColorizationInitialDelay = 0 (* milliseconds *)
     let UnusedDeclarationsAnalyzerInitialDelay = 0 (* 1000 *) (* milliseconds *)
@@ -34,7 +33,8 @@ type QuickInfoOptions =
 type CodeFixesOptions =
     { SimplifyName: bool
       AlwaysPlaceOpensAtTopLevel: bool
-      UnusedOpens: bool }
+      UnusedOpens: bool 
+      UnusedDeclarations: bool }
 
 [<CLIMutable>]
 type LanguageServicePerformanceOptions = 
@@ -48,6 +48,9 @@ type CodeLensOptions =
     UseColors: bool
     Prefix : string }
 
+type AdvancedOptions =
+    { IsBlockStructureEnabled: bool 
+      IsOutliningEnabled: bool }
 [<Export(typeof<ISettings>)>]
 type internal Settings [<ImportingConstructor>](store: SettingsStore) =
     do  // Initialize default settings
@@ -66,11 +69,16 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
               // See https://github.com/Microsoft/visualfsharp/pull/3238#issue-237699595
               SimplifyName = false 
               AlwaysPlaceOpensAtTopLevel = false
-              UnusedOpens = true }
+              UnusedOpens = true 
+              UnusedDeclarations = true }
 
         store.RegisterDefault
             { EnableInMemoryCrossProjectReferences = true
               ProjectCheckCacheSize = 200 }
+
+        store.RegisterDefault
+            { IsBlockStructureEnabled = true 
+              IsOutliningEnabled = true }
 
         store.RegisterDefault
             { Enabled = true
@@ -85,6 +93,7 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
     static member CodeFixes : CodeFixesOptions = getSettings()
     static member LanguageServicePerformance : LanguageServicePerformanceOptions = getSettings()
     static member CodeLens : CodeLensOptions = getSettings()
+    static member Advanced: AdvancedOptions = getSettings()
 
 module internal OptionsUI =
 
@@ -125,3 +134,9 @@ module internal OptionsUI =
         inherit AbstractOptionPage<CodeLensOptions>()
         override this.CreateView() =
             upcast CodeLensOptionControl()
+
+    [<Guid(Guids.advancedSettingsPageIdSring)>]
+    type internal AdvancedSettingsOptionPage() =
+        inherit AbstractOptionPage<AdvancedOptions>()
+        override __.CreateView() =
+            upcast AdvancedOptionsControl()

@@ -604,7 +604,7 @@ type Entity =
             | [] -> nm
             | tps -> 
                 let nm = DemangleGenericTypeName nm
-                if withUnderscoreTypars && tps.Length > 0 then 
+                if withUnderscoreTypars && not (List.isEmpty tps) then 
                     nm + "<" + String.concat "," (Array.create tps.Length "_") + ">"
                 else
                     nm
@@ -980,9 +980,7 @@ type Entity =
     /// Indicates if this is a .NET-defined struct or enum type definition , i.e. a value type definition
     member x.IsILStructOrEnumTycon =
         x.IsILTycon && 
-        match x.ILTyconRawMetadata.tdKind with
-        | ILTypeDefKind.ValueType | ILTypeDefKind.Enum -> true
-        | _ -> false
+        x.ILTyconRawMetadata.IsStructOrEnum
 
     /// Indicates if this is a struct or enum type definition , i.e. a value type definition
     member x.IsStructOrEnumTycon = 
@@ -1469,7 +1467,9 @@ and
       mutable rfield_fattribs: Attribs 
 
       /// Name/declaration-location of the field 
-      rfield_id: Ident 
+      rfield_id: Ident
+
+      rfield_name_generated: bool
 
       /// If this field is populated, this is the implementation range for an item in a signature, otherwise it is 
       /// the signature range for an item in an implementation
@@ -2156,56 +2156,20 @@ and ValLinkageFullKey(partialKey: ValLinkagePartialKey,  typeForLinkage:TType op
     /// The full type of the value for the purposes of linking. May be None for non-members, since they can't be overloaded.
     member x.TypeForLinkage = typeForLinkage
 
-
-and ValData = Val
-and [<StructuredFormatDisplay("{LogicalName}")>]
-    Val = 
-    // ValData is 19 words!! CONSIDER THIS TINY FORMAT, for all local, immutable, attribute-free values
-    // val_logical_name: string
-    // val_range: range
-    // mutable val_type: TType
-    // val_stamp: Stamp 
-
-    { 
-      /// MUTABILITY: for unpickle linkage
-      mutable val_logical_name: string
-
+and ValOptionalData =
+    {
       /// MUTABILITY: for unpickle linkage
       mutable val_compiled_name: string option
-
-      /// MUTABILITY: for unpickle linkage
-      mutable val_range: range
 
       /// If this field is populated, this is the implementation range for an item in a signature, otherwise it is 
       /// the signature range for an item in an implementation
       mutable val_other_range: (range * bool) option 
-
-      mutable val_type: TType
-
-      /// MUTABILITY: for unpickle linkage
-      mutable val_stamp: Stamp 
-
-      /// See vflags section further below for encoding/decodings here 
-      mutable val_flags: ValFlags
 
       mutable val_const: Const option
       
       /// What is the original, unoptimized, closed-term definition, if any? 
       /// Used to implement [<ReflectedDefinition>]
       mutable val_defn: Expr option 
-
-      /// How visible is this? 
-      /// MUTABILITY: for unpickle linkage
-      mutable val_access: Accessibility 
-
-      /// Is the value actually an instance method/property/event that augments 
-      /// a type, and if so what name does it take in the IL?
-      /// MUTABILITY: for unpickle linkage
-      mutable val_member_info: ValMemberInfo option
-
-      /// Custom attributes attached to the value. These contain references to other values (i.e. constructors in types). Mutable to fixup  
-      /// these value references after copying a collection of values. 
-      mutable val_attribs: Attribs
 
       // MUTABILITY CLEANUP: mutability of this field is used by 
       //     -- adjustAllUsesOfRecValue 
@@ -2216,29 +2180,65 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
       // type-checked expression.  
       mutable val_repr_info: ValReprInfo option
 
-      // MUTABILITY CLEANUP: mutability of this field is used by 
-      //     -- LinearizeTopMatch
-      //
-      // The fresh temporary should just be created with the right parent
-      mutable val_actual_parent: ParentRef
+      /// How visible is this? 
+      /// MUTABILITY: for unpickle linkage
+      mutable val_access: Accessibility 
 
       /// XML documentation attached to a value.
       /// MUTABILITY: for unpickle linkage
       mutable val_xmldoc : XmlDoc 
-      
+
+      /// Is the value actually an instance method/property/event that augments 
+      /// a type, and if so what name does it take in the IL?
+      /// MUTABILITY: for unpickle linkage
+      mutable val_member_info: ValMemberInfo option
+
+      // MUTABILITY CLEANUP: mutability of this field is used by 
+      //     -- LinearizeTopMatch
+      //
+      // The fresh temporary should just be created with the right parent
+      mutable val_declaring_entity: ParentRef
+
       /// XML documentation signature for the value
-      mutable val_xmldocsig : string } 
+      mutable val_xmldocsig : string
+
+      /// Custom attributes attached to the value. These contain references to other values (i.e. constructors in types). Mutable to fixup  
+      /// these value references after copying a collection of values. 
+      mutable val_attribs: Attribs
+    }
+
+and ValData = Val
+and [<StructuredFormatDisplay("{LogicalName}")>]
+    Val = 
+    { 
+      /// MUTABILITY: for unpickle linkage
+      mutable val_logical_name: string
+
+      /// MUTABILITY: for unpickle linkage
+      mutable val_range: range
+
+      mutable val_type: TType
+
+      /// MUTABILITY: for unpickle linkage
+      mutable val_stamp: Stamp 
+
+      /// See vflags section further below for encoding/decodings here 
+      mutable val_flags: ValFlags
+      
+      mutable val_opt_data : ValOptionalData option } 
+
+    static member EmptyValOptData = { val_compiled_name = None; val_other_range = None; val_const = None; val_defn = None; val_repr_info = None; val_access = TAccess []; val_xmldoc = XmlDoc [||]; val_member_info = None; val_declaring_entity = ParentNone; val_xmldocsig = String.Empty; val_attribs = [] }
 
     /// Range of the definition (implementation) of the value, used by Visual Studio 
     member x.DefinitionRange            = 
-        match x.val_other_range with
-        | Some (m,true) -> m
+        match x.val_opt_data with
+        | Some { val_other_range = Some(m,true) } -> m
         | _ -> x.val_range
 
     /// Range of the definition (signature) of the value, used by Visual Studio 
     member x.SigRange            = 
-        match x.val_other_range with
-        | Some (m,false) -> m
+        match x.val_opt_data with
+        | Some { val_other_range = Some(m,false) } -> m
         | _ -> x.val_range
 
     /// The place where the value was defined. 
@@ -2255,10 +2255,16 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     member x.Type                       = x.val_type
 
     /// How visible is this value, function or member?
-    member x.Accessibility              = x.val_access
+    member x.Accessibility              = 
+        match x.val_opt_data with
+        | Some optData -> optData.val_access
+        | _            -> TAccess []
 
     /// The value of a value or member marked with [<LiteralAttribute>] 
-    member x.LiteralValue               = x.val_const
+    member x.LiteralValue               = 
+        match x.val_opt_data with
+        | Some optData -> optData.val_const
+        | _            -> None
 
     /// Records the "extra information" for a value compiled as a method.
     ///
@@ -2275,7 +2281,10 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     ///
     /// TLR also sets this for inner bindings that it wants to 
     /// represent as "top level" bindings.     
-    member x.ValReprInfo : ValReprInfo option = x.val_repr_info
+    member x.ValReprInfo : ValReprInfo option =
+        match x.val_opt_data with
+        | Some optData -> optData.val_repr_info
+        | _            -> None
 
     member x.Id                         = ident(x.LogicalName,x.Range)
 
@@ -2294,7 +2303,7 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     member x.LinkagePartialKey : ValLinkagePartialKey = 
         assert x.IsCompiledAsTopLevel
         { LogicalName = x.LogicalName 
-          MemberParentMangledName = (if x.IsMember then Some x.MemberApparentParent.LogicalName else None)
+          MemberParentMangledName = (if x.IsMember then Some x.MemberApparentEntity.LogicalName else None)
           MemberIsOverride = x.IsOverrideOrExplicitImpl
           TotalArgCount = if x.IsMember then x.ValReprInfo.Value.TotalArgCount else 0 }
 
@@ -2311,13 +2320,19 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     member x.IsExtensionMember          = x.val_flags.IsExtensionMember
 
     /// The quotation expression associated with a value given the [<ReflectedDefinition>] tag
-    member x.ReflectedDefinition        = x.val_defn
+    member x.ReflectedDefinition        =
+        match x.val_opt_data with
+        | Some optData -> optData.val_defn
+        | _            -> None
 
     /// Is this a member, if so some more data about the member.
     ///
     /// Note, the value may still be (a) an extension member or (b) and abstract slot without
     /// a true body. These cases are often causes of bugs in the compiler.
-    member x.MemberInfo                 = x.val_member_info
+    member x.MemberInfo                 = 
+        match x.val_opt_data with
+        | Some optData -> optData.val_member_info
+        | _            -> None
 
     /// Indicates if this is a member
     member x.IsMember                   = x.MemberInfo.IsSome
@@ -2401,37 +2416,52 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     member x.IsCompilerGenerated        = x.val_flags.IsCompilerGenerated
     
     /// Get the declared attributes for the value
-    member x.Attribs                    = x.val_attribs
+    member x.Attribs                    = 
+        match x.val_opt_data with
+        | Some optData -> optData.val_attribs
+        | _            -> []
 
     /// Get the declared documentation for the value
-    member x.XmlDoc                     = x.val_xmldoc
+    member x.XmlDoc                     =
+        match x.val_opt_data with
+        | Some optData -> optData.val_xmldoc
+        | _            -> XmlDoc.Empty
     
     ///Get the signature for the value's XML documentation
     member x.XmlDocSig 
-        with get() = x.val_xmldocsig
-        and set(v) = x.val_xmldocsig <- v
+        with get() = 
+            match x.val_opt_data with 
+            | Some optData -> optData.val_xmldocsig 
+            | _            -> String.Empty
+        and set(v) = 
+            match x.val_opt_data with 
+            | Some optData -> optData.val_xmldocsig <- v 
+            | _            -> x.val_opt_data <- Some { Val.EmptyValOptData with val_xmldocsig = v }
 
     /// The parent type or module, if any (None for expression bindings and parameters)
-    member x.ActualParent               = x.val_actual_parent
+    member x.DeclaringEntity               = 
+        match x.val_opt_data with
+        | Some optData -> optData.val_declaring_entity
+        | _            -> ParentNone
 
     /// Get the actual parent entity for the value (a module or a type), i.e. the entity under which the
     /// value will appear in compiled code. For extension members this is the module where the extension member
     /// is declared.
-    member x.TopValActualParent = 
-        match x.ActualParent  with 
+    member x.TopValDeclaringEntity = 
+        match x.DeclaringEntity  with 
         | Parent tcref -> tcref
-        | ParentNone -> error(InternalError("TopValActualParent: does not have a parent",x.Range))
+        | ParentNone -> error(InternalError("TopValDeclaringEntity: does not have a parent",x.Range))
 
-    member x.HasTopValActualParent = 
-        match x.ActualParent  with 
+    member x.HasDeclaringEntity = 
+        match x.DeclaringEntity  with 
         | Parent _ -> true
         | ParentNone -> false
             
     /// Get the apparent parent entity for a member
-    member x.MemberApparentParent : TyconRef = 
+    member x.MemberApparentEntity : TyconRef = 
         match x.MemberInfo with 
-        | Some membInfo -> membInfo.ApparentParent
-        | None -> error(InternalError("MemberApparentParent",x.Range))
+        | Some membInfo -> membInfo.ApparentEnclosingEntity
+        | None -> error(InternalError("MemberApparentEntity",x.Range))
 
     /// Get the number of 'this'/'self' object arguments for the member. Instance extension members return '1'.
     member v.NumObjArgs =
@@ -2442,10 +2472,10 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     /// Get the apparent parent entity for the value, i.e. the entity under with which the
     /// value is associated. For extension members this is the nominal type the member extends.
     /// For other values it is just the actual parent.
-    member x.ApparentParent = 
+    member x.ApparentEnclosingEntity = 
         match x.MemberInfo with 
-        | Some membInfo -> Parent(membInfo.ApparentParent)
-        | None -> x.ActualParent
+        | Some membInfo -> Parent(membInfo.ApparentEnclosingEntity)
+        | None -> x.DeclaringEntity
 
     /// Get the public path to the value, if any? Should be set if and only if
     /// IsMemberOrModuleBinding is set.
@@ -2459,7 +2489,7 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     //   - in ilxgen.fs: as a boolean to detect public values for saving quotations 
     //   - in MakeExportRemapping, to build non-local references for values
     member x.PublicPath                 = 
-        match x.ActualParent  with 
+        match x.DeclaringEntity  with 
         | Parent eref -> 
             match eref.PublicPath with 
             | None -> None
@@ -2503,6 +2533,11 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
             | slotsig :: _ -> slotsig.Name
             | _ -> x.val_logical_name
 
+    member x.ValCompiledName =
+        match x.val_opt_data with
+        | Some optData -> optData.val_compiled_name
+        | _            -> None
+
     /// The name of the method in compiled code (with some exceptions where ilxgen.fs decides not to use a method impl)
     ///   - If this is a property then this is 'get_Foo' or 'set_Foo'
     ///   - If this is an implementation of an abstract slot then this may be a mangled name
@@ -2510,9 +2545,9 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     ///   - If this is an operator then this is 'op_Addition'
     member x.CompiledName =
         let givenName = 
-            match x.val_compiled_name with 
-            | Some n -> n
-            | None -> x.LogicalName 
+            match x.val_opt_data with 
+            | Some { val_compiled_name = Some n } -> n
+            | _ -> x.LogicalName 
         // These cases must get stable unique names for their static field & static property. This name
         // must be stable across quotation generation and IL code generation (quotations can refer to the 
         // properties implicit in these)
@@ -2568,28 +2603,40 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     member x.SetHasBeenReferenced()                      = x.val_flags <- x.val_flags.SetHasBeenReferenced
     member x.SetIsCompiledAsStaticPropertyWithoutField() = x.val_flags <- x.val_flags.SetIsCompiledAsStaticPropertyWithoutField
     member x.SetIsFixed()                                = x.val_flags <- x.val_flags.SetIsFixed
-    member x.SetValReprInfo info                          = x.val_repr_info <- info
+    member x.SetValReprInfo info                         = 
+        match x.val_opt_data with
+        | Some optData -> optData.val_repr_info <- info
+        | _            -> x.val_opt_data <- Some { Val.EmptyValOptData with val_repr_info = info }
     member x.SetType ty                                  = x.val_type <- ty
-    member x.SetOtherRange m                              = x.val_other_range <- Some m
+    member x.SetOtherRange m                             =
+        match x.val_opt_data with
+        | Some optData -> optData.val_other_range <- Some m
+        | _            -> x.val_opt_data <- Some { Val.EmptyValOptData with val_other_range = Some m }
+    member x.SetDeclaringEntity parent                   = 
+        match x.val_opt_data with
+        | Some optData -> optData.val_declaring_entity <- parent
+        | _            -> x.val_opt_data <- Some { Val.EmptyValOptData with val_declaring_entity = parent }
+    member x.SetAttribs attribs                          = 
+        match x.val_opt_data with
+        | Some optData -> optData.val_attribs <- attribs
+        | _            -> x.val_opt_data <- Some { Val.EmptyValOptData with val_attribs = attribs }
+    member x.SetMemberInfo member_info                   = 
+        match x.val_opt_data with
+        | Some optData -> optData.val_member_info <- Some member_info
+        | _            -> x.val_opt_data <- Some { Val.EmptyValOptData with val_member_info = Some member_info }
+    member x.SetValDefn val_defn                         = 
+        match x.val_opt_data with
+        | Some optData -> optData.val_defn <- Some val_defn
+        | _            -> x.val_opt_data <- Some { Val.EmptyValOptData with val_defn = Some val_defn }
 
     /// Create a new value with empty, unlinked data. Only used during unpickling of F# metadata.
     static member NewUnlinked() : Val  = 
         { val_logical_name    = Unchecked.defaultof<_>
-          val_compiled_name   = Unchecked.defaultof<_>
           val_range           = Unchecked.defaultof<_>
-          val_other_range     = Unchecked.defaultof<_>
           val_type            = Unchecked.defaultof<_>
           val_stamp           = Unchecked.defaultof<_>
           val_flags           = Unchecked.defaultof<_>
-          val_const           = Unchecked.defaultof<_>
-          val_defn            = Unchecked.defaultof<_>
-          val_access          = Unchecked.defaultof<_>
-          val_member_info     = Unchecked.defaultof<_>
-          val_attribs         = Unchecked.defaultof<_>
-          val_repr_info       = Unchecked.defaultof<_>
-          val_actual_parent   = Unchecked.defaultof<_>
-          val_xmldoc          = Unchecked.defaultof<_>
-          val_xmldocsig       = Unchecked.defaultof<_> }
+          val_opt_data        = Unchecked.defaultof<_> }
 
 
     /// Create a new value with the given backing data. Only used during unpickling of F# metadata.
@@ -2601,24 +2648,16 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     /// Set all the data on a value
     member x.SetData (tg: ValData) = 
         x.val_logical_name    <- tg.val_logical_name 
-        x.val_compiled_name   <- tg.val_compiled_name
         x.val_range           <- tg.val_range        
-        x.val_other_range     <- tg.val_other_range  
         x.val_type            <- tg.val_type         
         x.val_stamp           <- tg.val_stamp        
         x.val_flags           <- tg.val_flags        
-        x.val_const           <- tg.val_const        
-        x.val_defn            <- tg.val_defn         
-        x.val_access          <- tg.val_access       
-        x.val_member_info     <- tg.val_member_info  
-        x.val_attribs         <- tg.val_attribs      
-        x.val_repr_info       <- tg.val_repr_info    
-        x.val_actual_parent   <- tg.val_actual_parent
-        x.val_xmldoc          <- tg.val_xmldoc       
-        x.val_xmldocsig       <- tg.val_xmldocsig    
+        match tg.val_opt_data with
+        | Some tg -> x.val_opt_data <- Some { val_compiled_name = tg.val_compiled_name; val_other_range = tg.val_other_range; val_const = tg.val_const; val_defn = tg.val_defn; val_repr_info = tg.val_repr_info; val_access = tg.val_access; val_xmldoc = tg.val_xmldoc; val_member_info = tg.val_member_info; val_declaring_entity = tg.val_declaring_entity; val_xmldocsig = tg.val_xmldocsig; val_attribs = tg.val_attribs }
+        | None -> ()
 
     /// Indicates if a value is linked to backing data yet. Only used during unpickling of F# metadata.
-    member x.IsLinked = match box x.val_attribs with null -> false | _ -> true 
+    member x.IsLinked = match box x.val_logical_name with null -> false | _ -> true 
 
     override x.ToString() = x.LogicalName
     
@@ -2627,7 +2666,7 @@ and
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
     ValMemberInfo = 
     { /// The parent type. For an extension member this is the type being extended 
-      ApparentParent: TyconRef  
+      ApparentEnclosingEntity: TyconRef  
 
       /// Updated with the full implemented slotsig after interface implementation relation is checked 
       mutable ImplementedSlotSigs: SlotSig list 
@@ -3240,12 +3279,12 @@ and
     member x.Accessibility              = x.Deref.Accessibility
 
     /// The parent type or module, if any (None for expression bindings and parameters)
-    member x.ActualParent               = x.Deref.ActualParent
+    member x.DeclaringEntity               = x.Deref.DeclaringEntity
 
     /// Get the apparent parent entity for the value, i.e. the entity under with which the
     /// value is associated. For extension members this is the nominal type the member extends.
     /// For other values it is just the actual parent.
-    member x.ApparentParent             = x.Deref.ApparentParent
+    member x.ApparentEnclosingEntity             = x.Deref.ApparentEnclosingEntity
 
     member x.DefinitionRange            = x.Deref.DefinitionRange
 
@@ -3373,13 +3412,13 @@ and
     /// Get the actual parent entity for the value (a module or a type), i.e. the entity under which the
     /// value will appear in compiled code. For extension members this is the module where the extension member
     /// is declared.
-    member x.TopValActualParent         = x.Deref.TopValActualParent
+    member x.TopValDeclaringEntity         = x.Deref.TopValDeclaringEntity
 
     // Can be false for members after error recovery
-    member x.HasTopValActualParent         = x.Deref.HasTopValActualParent
+    member x.HasDeclaringEntity         = x.Deref.HasDeclaringEntity
 
     /// Get the apparent parent entity for a member
-    member x.MemberApparentParent       = x.Deref.MemberApparentParent
+    member x.MemberApparentEntity       = x.Deref.MemberApparentEntity
 
     /// Get the number of 'this'/'self' object arguments for the member. Instance extension members return '1'.
     member x.NumObjArgs                 = x.Deref.NumObjArgs
@@ -4920,7 +4959,7 @@ let NewExn cpath (id:Ident) access repr attribs doc =
         entity_il_repr_cache= newCache()   } 
 
 /// Create a new TAST RecdField node for an F# class, struct or record field
-let NewRecdField  stat konst id ty isMutable isVolatile pattribs fattribs docOption access secret =
+let NewRecdField  stat konst id nameGenerated ty isMutable isVolatile pattribs fattribs docOption access secret =
     { rfield_mutable=isMutable
       rfield_pattribs=pattribs
       rfield_fattribs=fattribs
@@ -4932,7 +4971,8 @@ let NewRecdField  stat konst id ty isMutable isVolatile pattribs fattribs docOpt
       rfield_secret = secret
       rfield_xmldoc = docOption 
       rfield_xmldocsig = ""
-      rfield_id=id 
+      rfield_id=id
+      rfield_name_generated = nameGenerated
       rfield_other_range = None }
 
     
@@ -4979,24 +5019,27 @@ exception FullAbstraction of string * range
 let NewModuleOrNamespace cpath access (id:Ident) xml attribs mtype = Construct.NewModuleOrNamespace cpath access id xml attribs mtype
 
 let NewVal (logicalName:string,m:range,compiledName,ty,isMutable,isCompGen,arity,access,recValInfo,specialRepr,baseOrThis,attribs,inlineInfo,doc,isModuleOrMemberBinding,isExtensionMember,isIncrClassSpecialMember,isTyFunc,allowTypeInst,isGeneratedEventVal,konst,actualParent) : Val = 
-    let stamp = newStamp() 
+    let stamp = newStamp()
     Val.New
-        { val_stamp = stamp
-          val_logical_name=logicalName
-          val_compiled_name= (match compiledName with Some v when v <> logicalName -> compiledName | _ -> None)
-          val_range=m
-          val_other_range=None
-          val_defn=None
-          val_repr_info= arity
-          val_actual_parent= actualParent
-          val_flags = ValFlags(recValInfo,baseOrThis,isCompGen,inlineInfo,isMutable,isModuleOrMemberBinding,isExtensionMember,isIncrClassSpecialMember,isTyFunc,allowTypeInst,isGeneratedEventVal)
-          val_const= konst
-          val_access=access
-          val_member_info=specialRepr
-          val_attribs=attribs
-          val_type = ty
-          val_xmldoc = doc
-          val_xmldocsig = ""} 
+        { val_stamp        = stamp
+          val_logical_name = logicalName
+          val_range        = m
+          val_flags        = ValFlags(recValInfo,baseOrThis,isCompGen,inlineInfo,isMutable,isModuleOrMemberBinding,isExtensionMember,isIncrClassSpecialMember,isTyFunc,allowTypeInst,isGeneratedEventVal)
+          val_type         = ty
+          val_opt_data     =
+            match compiledName, arity, konst, access, doc, specialRepr, actualParent, attribs with
+            | None, None, None, TAccess [], XmlDoc [||], None, ParentNone, [] -> None
+            | _ -> 
+                Some { Val.EmptyValOptData with
+                         val_compiled_name    = (match compiledName with Some v when v <> logicalName -> compiledName | _ -> None)
+                         val_repr_info        = arity
+                         val_const            = konst
+                         val_access           = access
+                         val_xmldoc           = doc
+                         val_member_info      = specialRepr
+                         val_declaring_entity = actualParent
+                         val_attribs          = attribs }
+        }
 
 
 let NewCcuContents sref m nm mty =

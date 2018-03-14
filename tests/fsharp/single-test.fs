@@ -47,7 +47,7 @@ let singleTestBuildAndRunCore  cfg (copyFiles:string) p =
 
         makeDirectory (getDirectoryName outFile)
         let fscArgs = 
-            sprintf """--debug:portable --debug+ --out:%s  --target:exe -g --define:FX_RESHAPED_REFLECTION --define:NETSTANDARD1_6 --define:FSCORE_PORTABLE_NEW --define:FX_PORTABLE_OR_NETSTANDARD --define:FX_RESHAPED_REFLECTION "%s" %s """
+            sprintf """--debug:portable --debug+ --out:%s  --target:exe -g --define:FX_RESHAPED_REFLECTION --define:NETCOREAPP1_0 "%s" %s """
                outFile
                extraSource
                (String.concat " " sources)
@@ -72,7 +72,7 @@ let singleTestBuildAndRunCore  cfg (copyFiles:string) p =
         let extraSource = (__SOURCE_DIRECTORY__  ++ "coreclr_utilities.fs")
         let outDir =  (__SOURCE_DIRECTORY__ ++ sprintf @"../testbin/%s/coreclr/fsharp/core/%s" cfg.BUILD_CONFIG testName)
         let fsiArgs = 
-            sprintf """ --define:NETSTANDARD1_6 --define:FSCORE_PORTABLE_NEW --define:FX_RESHAPED_REFLECTION --define:FX_PORTABLE_OR_NETSTANDARD "%s" %s """
+            sprintf """ --define:NETCOREAPP1_0 --define:FX_RESHAPED_REFLECTION "%s" %s """
                extraSource
                (String.concat " " sources)
 

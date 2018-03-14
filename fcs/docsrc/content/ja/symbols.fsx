@@ -1,5 +1,5 @@
 (*** hide ***)
-#I "../../../bin/v4.5/"
+#I "../../../../debug/bin/net45/"
 (**
 コンパイラサービス: シンボルの処理
 ==================================
@@ -113,8 +113,8 @@ fnVal.CurriedParameterGroups.[0].[0].Name // "x"
 fnVal.CurriedParameterGroups.[0].[1].Name // "y"
 fnVal.DeclarationLocation.StartLine // 3
 fnVal.DisplayName // "foo"
-fnVal.EnclosingEntity.DisplayName // "Test"
-fnVal.EnclosingEntity.DeclarationLocation.StartLine // 1
+fnVal.DeclaringEntity.DisplayName // "Test"
+fnVal.DeclaringEntity.DeclarationLocation.StartLine // 1
 fnVal.GenericParameters.Count // 0
 fnVal.InlineAnnotation // FSharpInlineAnnotation.OptionalInline
 fnVal.IsActivePattern // false

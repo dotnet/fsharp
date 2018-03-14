@@ -4,8 +4,6 @@ module internal Microsoft.FSharp.Compiler.PatternMatchCompilation
 
 open System.Collections.Generic
 open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
 open Microsoft.FSharp.Compiler.Range
@@ -875,7 +873,7 @@ let CompilePatternBasic
 
              let v,vexp = mkCompGenLocal m "typeTestResult" tgty
              if topv.IsMemberOrModuleBinding then 
-                 AdjustValToTopVal v topv.ActualParent ValReprInfo.emptyValData
+                 AdjustValToTopVal v topv.DeclaringEntity ValReprInfo.emptyValData
              let argexp = GetSubExprOfInput subexpr
              let appexp = mkIsInst tgty argexp matchm
              Some(vexp),Some(mkInvisibleBind v appexp)
@@ -890,7 +888,7 @@ let CompilePatternBasic
              | None -> Some addrexp, None
              | Some (v,e) -> 
                  if topv.IsMemberOrModuleBinding then 
-                     AdjustValToTopVal v topv.ActualParent ValReprInfo.emptyValData
+                     AdjustValToTopVal v topv.DeclaringEntity ValReprInfo.emptyValData
                  Some addrexp, Some (mkInvisibleBind v e) 
              
 
@@ -906,7 +904,7 @@ let CompilePatternBasic
              let ucaseTy = (mkProvenUnionCaseTy g.cons_ucref tinst)
              let v,vexp = mkCompGenLocal m "unionTestResult" ucaseTy
              if topv.IsMemberOrModuleBinding then 
-                 AdjustValToTopVal v topv.ActualParent ValReprInfo.emptyValData
+                 AdjustValToTopVal v topv.DeclaringEntity ValReprInfo.emptyValData
              let argexp = GetSubExprOfInput subexpr
              let appexp = mkIsInst ucaseTy argexp matchm
              Some vexp,Some (mkInvisibleBind v appexp)
@@ -919,7 +917,7 @@ let CompilePatternBasic
              let rty = apinfo.ResultType g m resTys
              let v,vexp = mkCompGenLocal m ("activePatternResult"^string (newUnique())) rty
              if topv.IsMemberOrModuleBinding then 
-                 AdjustValToTopVal v topv.ActualParent ValReprInfo.emptyValData
+                 AdjustValToTopVal v topv.DeclaringEntity ValReprInfo.emptyValData
              let argexp = GetSubExprOfInput subexpr
              let appexp = mkApps g ((pexp,tyOfExpr g pexp), [], [argexp],m)
              
