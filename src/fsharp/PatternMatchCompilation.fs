@@ -692,24 +692,16 @@ let CompilePatternBasic
         match !incompleteMatchClauseOnce with 
         | None -> 
                 (* Emit the incomplete match warning *)
-                if warnOnIncomplete then 
-                    //let mkIncompleteMatchExn = if isEnum then EnumMatchIncomplete else MatchIncomplete
-                    
+                if warnOnIncomplete then
                     match actionOnFailure with
-                    | ThrowIncompleteMatchException ->
+                    | ThrowIncompleteMatchException | IgnoreWithWarning ->
+                        let ignoreWithWarning = (actionOnFailure = IgnoreWithWarning)
                         let ce = ShowCounterExample g denv matchm refuted
                         if isEnumTy g topv.val_type then
-                            warning (EnumMatchIncomplete(false, ce, matchm))
+                            warning (EnumMatchIncomplete(ignoreWithWarning, ce, matchm))
                         else
-                            warning (MatchIncomplete(false, ce, matchm))
-                    | IgnoreWithWarning ->
-                        let ce = ShowCounterExample g denv matchm refuted
-                        if isEnumTy g topv.val_type then
-                            warning (EnumMatchIncomplete(true, ce, matchm))
-                        else
-                            warning (MatchIncomplete(true, ce, matchm))
-                    | _ ->
-                        ()
+                            warning (MatchIncomplete(ignoreWithWarning, ce, matchm))
+                    | _ -> ()
                         
                 let throwExpr =
                     match actionOnFailure with
