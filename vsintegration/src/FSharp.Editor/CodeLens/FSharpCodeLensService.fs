@@ -178,8 +178,8 @@ type internal FSharpCodeLensService
                                     match displayEnv with
                                     | Some denv -> FSharpDisplayContext(fun _ -> denv)
                                     | None -> displayContext
-                                 
-                                let typeLayout = ty.FormatLayout displayContext
+
+                                let typeLayout = func.FormatLayout displayContext
                                 let taggedText = ResizeArray()
                                     
                                 Layout.renderL (Layout.taggedTextListR taggedText.Add) typeLayout |> ignore
