@@ -523,8 +523,8 @@ and
     | Tuple of  isStruct: bool * exprs:SynExpr list * commaRanges:range list * range:range  // "range list" is for interstitial commas, these only matter for parsing/design-time tooling, the typechecker may munge/discard them
 
     /// F# syntax: {| id1=e1; ...; idN=eN |}
-    /// F# syntax: {| new id1=e1; ...; idN=eN |}
-    | AnonRecd of  isStruct: bool * recordFields:(Ident * SynExpr) list * range:range
+    /// F# syntax: struct {| id1=e1; ...; idN=eN |}
+    | AnonRecd of  isStruct: bool *  copyInfo:(SynExpr * BlockSeparator) option * recordFields:(Ident * SynExpr) list * range:range
 
     /// F# syntax: [ e1; ...; en ], [| e1; ...; en |]
     | ArrayOrList of  isList:bool * exprs:SynExpr list * range:range
@@ -2356,10 +2356,12 @@ let rec synExprContainsError inpExpr =
           | SynExpr.Tuple (_,es,_,_) ->
               walkExprs es
 
-          | SynExpr.AnonRecd (_,flds,_) ->
+          | SynExpr.AnonRecd (_,origExpr,flds,_) ->
+              (match origExpr with Some (e,_) -> walkExpr e | None -> false) ||
               walkExprs (List.map snd flds)
 
-          | SynExpr.Record (_,_,fs,_) ->
+          | SynExpr.Record (_,origExpr,fs,_) ->
+              (match origExpr with Some (e,_) -> walkExpr e | None -> false) ||
               let flds = fs |> List.choose (fun (_, v, _) -> v)
               walkExprs (flds)
 

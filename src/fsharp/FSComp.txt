@@ -1430,3 +1430,4 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3222,implicitlyDiscardedSequenceInSequenceExpression,"This expression returns a value of type '%s' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'."
 3223,parsInvalidAnonRecdExpr,"Invalid anonymous record expression"
 3224,parsInvalidAnonRecdType,"Invalid anonymous record type"
+3225,tcCopyAndUpdateNeedsRecordType,"The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record"

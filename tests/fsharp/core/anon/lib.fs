@@ -65,9 +65,6 @@ module KindB1 =
     check "ceoijew90ewcw6"  (FSharp.Reflection.FSharpValue.GetRecordFields({| X = 1 |}).Length) 1
     check "ceoijew90ewcw7"  (FSharp.Reflection.FSharpValue.GetRecordFields({| X = 1 |}).[0]) (box 1)
 
-    // TODO: field reordering....
-    //let test3b() = {| a = 1+1; b = 2 |} = {| b = 1; a = 2 |} 
-
     // Equality is possible
     check "ceijoewwekcj" {| a = 1-1 |} {| a = Unchecked.defaultof<_> |}
 
@@ -145,10 +142,44 @@ module KindB2 =
 
     check "cew9cwo3" testConstrainedAccess2 (0, 1, 2)
 
-    // Copy-and-update may not be used, since C# doesn't allow this on anonymous objects
+module CopyAndUpdateOfAnonRecord = 
+    let data = {| X = 1 |}
+    let data2 = {| data with Y = "1" |}
+    let data3 = {| data with X = "3" |}
+    check "fewjkvwno31" data.X 1
+    check "fewjkvwno32" data2.X 1
+    check "fewjkvwno33" data2.Y "1"
+    check "fewjkvwno34" data3.X "3"
 
-    // Types _can_ be used outside their assembly, but can _not_ be named in the syntax of types, nor created
+module CopyAndUpdateOfAnonRecordStruct = 
+    let data = struct {| X = 1 |}
+    let data2 = struct {| data with Y = "1" |}
+    let data3 = struct {| data with X = "3" |}
+    check "fewjkvwno311" data.X 1
+    check "fewjkvwno322" data2.X 1
+    check "fewjkvwno333" data2.Y "1"
+    check "fewjkvwno344" data3.X "3"
 
+module CopyAndUpdateOfAnonRecordFromRecord = 
+    type Base = { X : int }
+    let data = { X = 1 }
+    let data2 = {| data with Y = "1" |}
+    let data3 = {| data with X = "3" |}
+    check "fewjkvwno315" data.X 1
+    check "fewjkvwno326" data2.X 1
+    check "fewjkvwno337" data2.Y "1"
+    check "fewjkvwno348" data3.X "3"
+
+module CopyAndUpdateOfAnonRecordFromStructRecord = 
+    [<Struct>]
+    type Base = { X : int }
+    let data = { X = 1 }
+    let data2 = {| data with Y = "1" |}
+    let data3 = {| data with X = "3" |}
+    check "fewjkvwno31q" data.X 1
+    check "fewjkvwno32w" data2.X 1
+    check "fewjkvwno33e" data2.Y "1"
+    check "fewjkvwno34r" data3.X "3"
 
 module QuotesNewRecord = 
 

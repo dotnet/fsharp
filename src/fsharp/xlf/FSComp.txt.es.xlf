@@ -7012,6 +7012,11 @@
         <target state="new">Invalid anonymous record type</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcCopyAndUpdateNeedsRecordType">
+        <source>The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record</source>
+        <target state="new">The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

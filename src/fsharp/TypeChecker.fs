@@ -5821,23 +5821,8 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
         let expr = mkAnyTupled cenv.g m tupInfo args' argtys 
         expr, tpenv
 
-    | SynExpr.AnonRecd (isStruct, unsortedArgs, m) -> 
-        let unsortedIds = unsortedArgs |> List.map fst |> List.toArray
-        let anonInfo, sortedArgTys = UnifyAnonRecdTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m overallTy isStruct unsortedIds
-
-        // Sort into canonical order
-        let sortedIndexedArgs = unsortedArgs |> List.indexed |> List.sortBy (fun (i,_) -> unsortedIds.[i].idText) 
-        let sigma = List.map fst sortedIndexedArgs |> List.toArray
-        let sortedArgs = List.map snd sortedIndexedArgs
-        sortedArgs |> List.iteri (fun j (x, _) -> 
-            let item = Item.AnonRecdField(anonInfo, sortedArgTys, j, x.idRange)
-            CallNameResolutionSink cenv.tcSink (x.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights))
-        let unsortedArgTys = sortedArgTys |> List.indexed |> List.sortBy (fun (j, _) -> sigma.[j]) |> List.map snd
-        let flexes = unsortedArgTys |> List.map (fun _ -> true)
-        let unsortedCheckedArgs, tpenv = TcExprs cenv env m tpenv flexes unsortedArgTys (List.map snd unsortedArgs)
-        let sortedCheckedArgs = unsortedCheckedArgs |> List.indexed |> List.sortBy (fun (i,_) -> unsortedIds.[i].idText) |> List.map snd
-
-        mkAnonRecd cenv.g m anonInfo sortedCheckedArgs sortedArgTys, tpenv
+    | SynExpr.AnonRecd (isStruct, optOrigExpr, unsortedArgs, mWholeExpr) -> 
+        TcAnonRecdExpr cenv overallTy env tpenv (isStruct, optOrigExpr, unsortedArgs, mWholeExpr)
 
     | SynExpr.ArrayOrList (isArray, args, m) -> 
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.DisplayEnv, env.eAccessRights)
@@ -6685,9 +6670,9 @@ and TcObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImpls, 
     if // record construction ?
        isRecordTy || 
        // object construction?
-       (isFSharpObjModelTy cenv.g objTy && not (isInterfaceTy cenv.g objTy) && Option.isNone argopt) then  
+       (isFSharpObjModelTy cenv.g objTy && not (isInterfaceTy cenv.g objTy) && argopt.IsNone) then  
 
-        if Option.isSome argopt then error(Error(FSComp.SR.tcNoArgumentsForRecordValue(), mWholeExpr))
+        if argopt.IsSome then error(Error(FSComp.SR.tcNoArgumentsForRecordValue(), mWholeExpr))
         if not (isNil extraImpls) then error(Error(FSComp.SR.tcNoInterfaceImplementationForConstructionExpression(), mNewExpr))
         if isFSharpObjModelTy cenv.g objTy && GetCtorShapeCounter env <> 1 then 
             error(Error(FSComp.SR.tcObjectConstructionCanOnlyBeUsedInClassTypes(), mNewExpr))
@@ -6894,11 +6879,6 @@ and TcAssertExpr cenv overallTy env (m:range) tpenv x  =
     TcExpr cenv overallTy env tpenv callDiagnosticsExpr
 
 
-
-//-------------------------------------------------------------------------
-// TcRecdExpr
-//------------------------------------------------------------------------- 
-
 and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr) =
 
     let requiresCtor = (GetCtorShapeCounter env = 1) // Get special expression forms for constructors 
@@ -6985,9 +6965,104 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
     expr, tpenv
 
 
-//-------------------------------------------------------------------------
-// TcForEachExpr 
-//------------------------------------------------------------------------- 
+// Check '{| .... |}'
+and TcAnonRecdExpr cenv overallTy env tpenv (isStruct, optOrigExpr, unsortedArgs, mWholeExpr) =
+
+    match optOrigExpr with 
+    | None -> 
+        let unsortedIds = unsortedArgs |> List.map fst |> List.toArray
+        let anonInfo, sortedArgTys = UnifyAnonRecdTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv mWholeExpr overallTy isStruct unsortedIds
+
+        // Sort into canonical order
+        let sortedIndexedArgs = unsortedArgs |> List.indexed |> List.sortBy (fun (i,_) -> unsortedIds.[i].idText) 
+        let sigma = List.map fst sortedIndexedArgs |> List.toArray
+        let sortedArgs = List.map snd sortedIndexedArgs
+        sortedArgs |> List.iteri (fun j (x, _) -> 
+            let item = Item.AnonRecdField(anonInfo, sortedArgTys, j, x.idRange)
+            CallNameResolutionSink cenv.tcSink (x.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights))
+        let unsortedArgTys = sortedArgTys |> List.indexed |> List.sortBy (fun (j, _) -> sigma.[j]) |> List.map snd
+        let flexes = unsortedArgTys |> List.map (fun _ -> true)
+        let unsortedCheckedArgs, tpenv = TcExprs cenv env mWholeExpr tpenv flexes unsortedArgTys (List.map snd unsortedArgs)
+        let sortedCheckedArgs = unsortedCheckedArgs |> List.indexed |> List.sortBy (fun (i,_) -> unsortedIds.[i].idText) |> List.map snd
+
+        mkAnonRecd cenv.g mWholeExpr anonInfo sortedCheckedArgs sortedArgTys, tpenv
+
+    | Some (origExpr, _) -> 
+        // The fairly complex case '{| origExpr with X = 1; Y = 2 |}'
+        // The origExpr may be either a record or anonymous record.
+        // The origExpr may be either a struct or not.
+        // All the properties of origExpr are copied across except where they are overridden.
+        // The result is a field-sorted anonymous record.
+        //
+        // Unlike in the case of record type copy-and-update we do _not_ assume that the origExpr has the same type as the overall expression.
+        // Unlike in the case of record type copy-and-update {| a with X = 1 |} does not force a.X to exist or have had type 'int'
+
+        let origExprTy = NewInferenceType()
+        let origExprChecked, tpenv = TcExpr cenv origExprTy env tpenv origExpr
+        let oldv, oldve = mkCompGenLocal mWholeExpr "inputRecord" origExprTy
+        let mOrigExpr = origExpr.Range
+
+        if not (isAppTy cenv.g origExprTy || isAnonRecdTy cenv.g origExprTy) then 
+            error (Error (FSComp.SR.tcCopyAndUpdateNeedsRecordType(), mOrigExpr))
+
+        let origExprIsStruct = 
+            match tryDestAnonRecdTy cenv.g origExprTy with
+            | Some (anonInfo, _) -> evalTupInfoIsStruct anonInfo.TupInfo
+            | None -> 
+                let tcref, _ = destAppTy cenv.g origExprTy
+                tcref.IsStructOrEnumTycon
+
+        let wrap, oldveaddr = mkExprAddrOfExpr cenv.g origExprIsStruct false NeverMutates oldve None mOrigExpr
+
+        // Put all the expressions in unsorted order.  The new bindings come first.  The origin of each is tracked using
+        ///   - Choice1Of2 for a new binding
+        ///   - Choice2Of2 for a binding coming from the original expression
+        let unsortedIdAndExprsAll = 
+            [| for (id, e) in unsortedArgs do
+                    yield (id, Choice1Of2 e)
+               match tryDestAnonRecdTy cenv.g origExprTy with
+               | Some (anonInfo, tinst) -> 
+                   for (i, id) in Array.indexed anonInfo.SortedIds do 
+                       yield id, Choice2Of2 (mkAnonRecdFieldGetViaExprAddr (anonInfo, oldveaddr, tinst, i, mOrigExpr))
+               | None -> 
+                    if isRecdTy cenv.g origExprTy then
+                        let tcref, tinst = destAppTy cenv.g origExprTy
+                        let fspecs = tcref.Deref.TrueInstanceFieldsAsList
+                        for fspec in fspecs do
+                            yield fspec.Id, Choice2Of2 (mkRecdFieldGetViaExprAddr (oldveaddr , tcref.MakeNestedRecdFieldRef fspec, tinst, mOrigExpr)) 
+                    else
+                        error (Error (FSComp.SR.tcCopyAndUpdateNeedsRecordType(), mOrigExpr)) |]
+            |> Array.distinctBy (fst >> textOfId)
+
+        let unsortedIdsAll = Array.map fst unsortedIdAndExprsAll
+        let anonInfo, sortedArgTysAll = UnifyAnonRecdTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv mWholeExpr overallTy isStruct unsortedIdsAll
+        let sortedIndexedArgsAll = unsortedIdAndExprsAll |> Array.indexed |> Array.sortBy (snd >> fst >> textOfId) 
+        let sigma = Array.map fst sortedIndexedArgsAll // map from sorted indexes to unsorted indexes
+        let sortedArgsAll = Array.map snd sortedIndexedArgsAll
+        sortedArgsAll |> Array.iteri (fun j (x, expr) -> 
+            match expr with 
+            | Choice1Of2 _ -> 
+                let item = Item.AnonRecdField(anonInfo, sortedArgTysAll, j, x.idRange)
+                CallNameResolutionSink cenv.tcSink (x.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights)
+            | Choice2Of2 _ -> ())
+
+        let unsortedArgTysNew = sortedArgTysAll |> List.indexed |> List.sortBy (fun (j, _) -> sigma.[j]) |> List.take unsortedArgs.Length |> List.map snd
+        let flexes = unsortedArgTysNew |> List.map (fun _ -> true)
+
+        let unsortedCheckedArgsNew, tpenv = TcExprs cenv env mWholeExpr tpenv flexes unsortedArgTysNew (List.map snd unsortedArgs)
+        let sortedArgTysAllArray = Array.ofList sortedArgTysAll
+        let unsortedCheckedArgsNewArray = unsortedCheckedArgsNew |> List.toArray
+        let sortedCheckedArgsAll = 
+            sortedArgsAll |> Array.mapi (fun j (_, expr) -> 
+                match expr with 
+                | Choice1Of2 _ -> unsortedCheckedArgsNewArray.[sigma.[j]]
+                | Choice2Of2 subExpr -> UnifyTypes cenv env mOrigExpr (tyOfExpr cenv.g subExpr) sortedArgTysAllArray.[j]; subExpr) 
+
+        let expr = mkAnonRecd cenv.g mWholeExpr anonInfo (List.ofArray sortedCheckedArgsAll) sortedArgTysAll
+        let expr = wrap expr
+        let expr = mkCompGenLet mOrigExpr oldv origExprChecked expr
+        expr, tpenv
+
  
 and TcForEachExpr cenv overallTy env tpenv (pat, enumSynExpr, bodySynExpr, mWholeExpr, spForLoop)  =
     UnifyTypes cenv env mWholeExpr overallTy cenv.g.unit_ty

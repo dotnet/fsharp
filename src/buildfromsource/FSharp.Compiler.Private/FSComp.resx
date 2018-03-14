@@ -4327,4 +4327,7 @@
   <data name="parsInvalidAnonRecdType" xml:space="preserve">
     <value>Invalid anonymous record type</value>
   </data>
+  <data name="tcCopyAndUpdateNeedsRecordType" xml:space="preserve">
+    <value>The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record</value>
+  </data>
 </root>
