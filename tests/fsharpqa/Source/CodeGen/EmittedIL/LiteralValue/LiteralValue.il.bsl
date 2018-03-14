@@ -14,7 +14,7 @@
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
   .ver 4:4:3:0
 }
-.assembly test
+.assembly LiteralValue
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
                                                                                                       int32,
@@ -26,17 +26,17 @@
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
-.mresource public FSharpSignatureData.test
+.mresource public FSharpSignatureData.LiteralValue
 {
   // Offset: 0x00000000 Length: 0x00000274
   // WARNING: managed resource file FSharpSignatureData.test created
 }
-.mresource public FSharpOptimizationData.test
+.mresource public FSharpOptimizationData.LiteralValue
 {
   // Offset: 0x00000278 Length: 0x0000006F
   // WARNING: managed resource file FSharpOptimizationData.test created
 }
-.module test.exe
+.module LiteralValue.exe
  // MVID: {5AA663EB-D9C1-2E4E-A745-0383EB63A65A}
 .imagebase 0x00400000
 .file alignment 0x00000200
@@ -48,7 +48,7 @@
 
 // =============== CLASS MEMBERS DECLARATION ===================
 
-.class public abstract auto ansi sealed Test
+.class public abstract auto ansi sealed LiteralValue
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
@@ -61,16 +61,18 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.EntryPointAttribute::.ctor() = ( 01 00 00 00 ) 
     // Code size       2 (0x2)
     .maxstack  8
+    .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
+    .line 6,6 : 5,6 'D:\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\LiteralValue\\LiteralValue.fs'
     IL_0000:  ldc.i4.0
     IL_0001:  ret
-  } // end of method Test::main
+  } // end of method LiteralValue::main
 
-} // end of class Test
+} // end of class LiteralValue
 
-.class private abstract auto ansi sealed '<StartupCode$test>'.$Test
+.class private abstract auto ansi sealed '<StartupCode$LiteralValue>'.$LiteralValue
        extends [mscorlib]System.Object
 {
-} // end of class '<StartupCode$test>'.$Test
+} // end of class '<StartupCode$test>'.$LiteralValue
 
 
 // =============================================================
