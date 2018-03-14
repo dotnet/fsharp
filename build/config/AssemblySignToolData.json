@@ -50,7 +50,6 @@
       "values": [
         "net40\\bin\\VisualFSharpFull.vsix",
         "net40\\bin\\VisualFSharpTemplate.vsix",
-        "net40\\bin\\VisualFSharpOpenSource.vsix",
         "insertion\\Microsoft.FSharp.Dependencies.vsix",
         "insertion\\Microsoft.FSharp.VSIX.Full.Resources.*.vsix"
       ]

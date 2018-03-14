@@ -7,7 +7,6 @@
     <OutputType>Library</OutputType>
     <ExtensionInstallationFolder>Microsoft\FSharp</ExtensionInstallationFolder>
     <PackageTargetFallback>netcoreapp1.0</PackageTargetFallback>
-    <DeployExtension>false</DeployExtension>
   </PropertyGroup>
 
   <ItemGroup>
