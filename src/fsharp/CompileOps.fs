@@ -354,6 +354,7 @@ let GetDiagnosticNumber(err:PhasedDiagnostic) =
       | ExtensionTyping.ProvidedTypeResolutionNoRange _
       | ExtensionTyping.ProvidedTypeResolution _ -> 103
 #endif
+      | PatternMatchCompilation.EnumMatchIncomplete _ -> 104
        (* DO NOT CHANGE THE NUMBERS *)
 
       // Strip TargetInvocationException wrappers
@@ -559,6 +560,7 @@ let MatchIncomplete2E() = DeclareResourceString("MatchIncomplete2", "%s")
 let MatchIncomplete3E() = DeclareResourceString("MatchIncomplete3", "%s")
 let MatchIncomplete4E() = DeclareResourceString("MatchIncomplete4", "")
 let RuleNeverMatchedE() = DeclareResourceString("RuleNeverMatched", "")
+let EnumMatchIncomplete1E() = DeclareResourceString("EnumMatchIncomplete1", "")
 let ValNotMutableE() = DeclareResourceString("ValNotMutable", "%s")
 let ValNotLocalE() = DeclareResourceString("ValNotLocal", "")
 let Obsolete1E() = DeclareResourceString("Obsolete1", "")
@@ -1399,6 +1401,15 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
           | Some (cex, false) ->  os.Append(MatchIncomplete2E().Format cex) |> ignore
           | Some (cex, true) ->  os.Append(MatchIncomplete3E().Format cex) |> ignore
           if isComp then 
+              os.Append(MatchIncomplete4E().Format) |> ignore
+
+      | PatternMatchCompilation.EnumMatchIncomplete (isComp, cexOpt, _) ->
+          os.Append(EnumMatchIncomplete1E().Format) |> ignore
+          match cexOpt with
+          | None -> ()
+          | Some (cex, false) ->  os.Append(MatchIncomplete2E().Format cex) |> ignore
+          | Some (cex, true) ->  os.Append(MatchIncomplete3E().Format cex) |> ignore
+          if isComp then
               os.Append(MatchIncomplete4E().Format) |> ignore
 
       | PatternMatchCompilation.RuleNeverMatched _ -> os.Append(RuleNeverMatchedE().Format) |> ignore

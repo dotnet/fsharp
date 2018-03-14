@@ -957,6 +957,9 @@
   <data name="FullAbstraction" xml:space="preserve">
     <value>{0}</value>
   </data>
+  <data name="EnumMatchIncomplete1" xml:space="preserve">
+    <value>Enums may take values outside known cases.</value>
+  </data>
   <data name="MatchIncomplete1" xml:space="preserve">
     <value>Incomplete pattern matches on this expression.</value>
   </data>

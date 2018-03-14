@@ -19,6 +19,7 @@ open Microsoft.FSharp.Compiler.Lib
 
 exception MatchIncomplete of bool * (string * bool) option * range
 exception RuleNeverMatched of range
+exception EnumMatchIncomplete of bool * (string * bool) option * range
 
 type ActionOnFailure = 
   | ThrowIncompleteMatchException 
@@ -308,13 +309,17 @@ let ShowCounterExample g denv m refuted =
           | h :: t -> 
               if verbose then dprintf "h = %s\n" (Layout.showL (exprL h))
               List.fold (CombineRefutations g) h t
+      //let isEnumCase =
+          //match counterExample with
+          //| Expr.Const _ -> true
+          //| _ -> false
       let text = Layout.showL (NicePrint.dataExprL denv counterExample)
       let failingWhenClause = refuted |> List.exists (function RefutedWhenClause -> true | _ -> false)
       Some(text,failingWhenClause)
       
     with 
         | CannotRefute ->    
-          None 
+          None
         | e -> 
           warning(InternalError(sprintf "<failure during counter example generation: %s>" (e.ToString()),m))
           None
@@ -681,19 +686,29 @@ let CompilePatternBasic
     // Add the incomplete or rethrow match clause on demand, printing a 
     // warning if necessary (only if it is ever exercised) 
     let incompleteMatchClauseOnce = ref None
-    let getIncompleteMatchClause (refuted) = 
+    let getIncompleteMatchClause refuted = 
         // This is lazy because emit a 
         // warning when the lazy thunk gets evaluated 
         match !incompleteMatchClauseOnce with 
         | None -> 
-                (* Emit the incomplete match warning *)               
+                (* Emit the incomplete match warning *)
                 if warnOnIncomplete then 
-                   match actionOnFailure with 
-                   | ThrowIncompleteMatchException ->
-                        warning (MatchIncomplete (false,ShowCounterExample g denv matchm refuted, matchm))
-                   | IgnoreWithWarning ->
-                        warning (MatchIncomplete (true,ShowCounterExample g denv matchm refuted, matchm))
-                   | _ -> 
+                    //let mkIncompleteMatchExn = if isEnum then EnumMatchIncomplete else MatchIncomplete
+                    
+                    match actionOnFailure with
+                    | ThrowIncompleteMatchException ->
+                        let ce = ShowCounterExample g denv matchm refuted
+                        if isEnumTy g topv.val_type then
+                            warning (EnumMatchIncomplete(false, ce, matchm))
+                        else
+                            warning (MatchIncomplete(false, ce, matchm))
+                    | IgnoreWithWarning ->
+                        let ce = ShowCounterExample g denv matchm refuted
+                        if isEnumTy g topv.val_type then
+                            warning (EnumMatchIncomplete(true, ce, matchm))
+                        else
+                            warning (MatchIncomplete(true, ce, matchm))
+                    | _ ->
                         ()
                         
                 let throwExpr =
@@ -741,10 +756,10 @@ let CompilePatternBasic
     // Helpers to get the variables bound at a target. We conceptually add a dummy clause that will always succeed with a "throw" 
     let clausesA = Array.ofList clausesL
     let nclauses = clausesA.Length
-    let GetClause i refuted = 
-        if i < nclauses then 
-            clausesA.[i]  
-        elif i = nclauses then getIncompleteMatchClause(refuted)
+    let GetClause i refuted =
+        if i < nclauses then
+            clausesA.[i]
+        elif i = nclauses then getIncompleteMatchClause refuted
         else failwith "GetClause"
     let GetValsBoundByClause i refuted = (GetClause i refuted).BoundVals
     let GetWhenGuardOfClause i refuted = (GetClause i refuted).GuardExpr
@@ -808,14 +823,14 @@ let CompilePatternBasic
     and CompileSuccessPointAndGuard i refuted valMap rest =
 
         let vs2 = GetValsBoundByClause i refuted
-        let es2 = 
+        let es2 =
             vs2 |> List.map (fun v -> 
                 match valMap.TryFind v with 
                 | None -> error(Error(FSComp.SR.patcMissingVariable(v.DisplayName),v.Range)) 
                 | Some res -> res)
         let rhs' = TDSuccess(es2, i)
         match GetWhenGuardOfClause i refuted with 
-        | Some whenExpr -> 
+        | Some whenExpr ->
 
             let m = whenExpr.Range
 
