@@ -4740,7 +4740,7 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) sta
             let ilFieldDef = mkILStaticField (fspec.Name, fty, None, None, access)
             let ilFieldDef =
                 match vref.LiteralValue with 
-                | Some konst -> { ilFieldDef.WithHasDefault(true) with LiteralValue = Some(GenFieldInit m konst) }
+                | Some konst -> ilFieldDef.WithLiteralDefaultValue( Some (GenFieldInit m konst) )
                 | None  -> ilFieldDef 
               
             let ilFieldDef = 
@@ -6345,19 +6345,18 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                       { Name          = ilFieldName
                         Type          = ilPropType
                         Attributes    = enum 0
-                        Data          = None 
-                        LiteralValue  = literalValue
+                        Data          = None
+                        LiteralValue  = None
                         Offset        = ilFieldOffset
-                        Marshal       = ilFieldMarshal
+                        Marshal       = None
                         CustomAttrs   = mkILCustomAttrs (GenAttrs cenv eenv fattribs @ extraAttribs) } 
                   let fdef = 
                     fdef.WithAccess(access)
                         .WithStatic(isStatic)
                         .WithSpecialName(ilFieldName="value__" && tycon.IsEnumTycon)
                         .WithNotSerialized(ilNotSerialized)
-                        .WithLiteral(fspec.LiteralValue.IsSome)
-                        .WithHasDefault(literalValue.IsSome)
-                        .WithHasFieldMarshal(ilFieldMarshal.IsSome)
+                        .WithLiteralDefaultValue(literalValue)
+                        .WithFieldMarshal(ilFieldMarshal)
                   yield fdef
 
                if requiresExtraField then 

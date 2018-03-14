@@ -20,7 +20,7 @@
 @rem * Installation of F# FSC compiler and FSI are done in the SHARED SDK directory. Henceforth
 @rem   each installation of Visual Studio 2017 will use the updated FSC.exe and the commandline
 @rem   FSI.exe. The in-product VS FSI plugin, syntax highlighting and IntelliSense must be 
-@rem   installed through VSIXInstaller.exe debug\net40\bin\VisualFSharpOpenSource.vsix
+@rem   installed through VSIXInstaller.exe debug\net40\bin\VisualFSharpFull.vsix
 @rem   
 @rem   This procedure needs to be changed once F# supports multiple side-by-side installations
 @rem   at which point everything will go through VSIXInstaller.exe
@@ -117,12 +117,12 @@ echo.
 echo For Release builds:
 echo.
 echo ^> VSIXInstaller.exe /u:"VisualFSharp"
-echo ^> VSIXInstaller.exe release\net40\bin\VisualFSharpOpenSource.vsix
+echo ^> VSIXInstaller.exe release\net40\bin\VisualFSharpFull.vsix
 echo.
 echo For Debug builds:
 echo.
 echo ^> VSIXInstaller.exe /u:"VisualFSharp"
-echo ^> VSIXInstaller.exe debug\net40\bin\VisualFSharpOpenSource.vsix
+echo ^> VSIXInstaller.exe debug\net40\bin\VisualFSharpFull.vsix
 echo.
 
 exit /b 1
