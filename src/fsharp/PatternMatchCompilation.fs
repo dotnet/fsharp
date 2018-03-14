@@ -309,10 +309,6 @@ let ShowCounterExample g denv m refuted =
           | h :: t -> 
               if verbose then dprintf "h = %s\n" (Layout.showL (exprL h))
               List.fold (CombineRefutations g) h t
-      //let isEnumCase =
-          //match counterExample with
-          //| Expr.Const _ -> true
-          //| _ -> false
       let text = Layout.showL (NicePrint.dataExprL denv counterExample)
       let failingWhenClause = refuted |> List.exists (function RefutedWhenClause -> true | _ -> false)
       Some(text,failingWhenClause)
@@ -697,9 +693,22 @@ let CompilePatternBasic
                     | ThrowIncompleteMatchException | IgnoreWithWarning ->
                         let ignoreWithWarning = (actionOnFailure = IgnoreWithWarning)
                         let ce = ShowCounterExample g denv matchm refuted
-                        if isEnumTy g topv.val_type then
-                            warning (EnumMatchIncomplete(ignoreWithWarning, ce, matchm))
-                        else
+                        match tryDestAppTy g topv.val_type, refuted with
+                        | Some tcref, [RefutedInvestigation(_, decisionTreeTests)] when tcref.IsEnumTycon ->
+                            // Check whether or not the match handles all the defined values for the enum -- this
+                            // changes what warning is emitted
+                            let enumValues =
+                                tcref.AllFieldsArray
+                                |> Array.choose (fun f ->
+                                    match f.rfield_const, f.rfield_static with
+                                    | Some value, true -> Some value
+                                    | _, _ -> None)
+                            let consts = Set.ofList (List.choose (function DecisionTreeTest.Const(c) -> Some c | _ -> None) decisionTreeTests)
+                            if enumValues |> Seq.forall (fun c -> consts.Contains c) then
+                                warning (EnumMatchIncomplete(ignoreWithWarning, ce, matchm))
+                            else
+                                warning (MatchIncomplete(ignoreWithWarning, ce, matchm))
+                        | _ ->
                             warning (MatchIncomplete(ignoreWithWarning, ce, matchm))
                     | _ -> ()
                         
