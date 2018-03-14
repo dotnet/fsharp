@@ -519,7 +519,7 @@ namespace Microsoft.FSharp.Core
 
         module (* internal *) ErrorStrings =
             // inline functions cannot call GetString, so we must make these bits public 
-            [<ValueAsStaticPropertyAttribute>]
+            [<ValueAsStaticProperty>]
             let AddressOpNotFirstClassString = SR.GetString(SR.addressOpNotFirstClass)
             [<ValueAsStaticProperty>]
             let NoNegateMinValueString = SR.GetString(SR.noNegateMinValue)
