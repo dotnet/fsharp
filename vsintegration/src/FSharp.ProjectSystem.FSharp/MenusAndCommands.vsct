@@ -133,6 +133,15 @@
           <ButtonText>F# Interactive</ButtonText>
         </Strings>
       </Button>
+      
+      <Button guid="guidFsiPackageCmdSet" id="cmdidFsDump" priority="0x8000" type="Button">
+        <!-- low priority -->
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1"/>
+        <Strings>
+          <CommandName>FSharp.Dump</CommandName>
+          <ButtonText>F# Dump</ButtonText>
+        </Strings>
+      </Button>
 
       <!-- In Dev11+, shell now has 
       <Button guid ="guidVSStd11" id ="cmdidInteractiveSessionInterrupt" priority ="0x100" type ="Button">
@@ -354,6 +363,7 @@
     <GuidSymbol name="guidFsiPackageCmdSet" value="{0be3b0d7-4fc2-45bf-a168-957e8a8834d0}">
       <IDSymbol name="MyMenuGroup" value="0x1020" />
       <IDSymbol name="cmdidFsiToolWindow" value="0x0101" />
+      <IDSymbol name="cmdidFsDump" value="0x0100" />
     </GuidSymbol> 
 
     <GuidSymbol name="guidImages" value="{43ba0ca6-658b-43a7-8773-b5f9506b4335}" >
