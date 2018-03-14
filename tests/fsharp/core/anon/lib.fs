@@ -146,29 +146,38 @@ module CopyAndUpdateOfAnonRecord =
     let data = {| X = 1 |}
     let data2 = {| data with Y = "1" |}
     let data3 = {| data with X = "3" |}
+    let data4 = {| data2 with X = "3" |}
     check "fewjkvwno31" data.X 1
     check "fewjkvwno32" data2.X 1
     check "fewjkvwno33" data2.Y "1"
     check "fewjkvwno34" data3.X "3"
+    check "fewjkvwno3443" data4.X "3"
+    check "fewjkvwno3443" data4.Y "1"
 
 module CopyAndUpdateOfAnonRecordStruct = 
     let data = struct {| X = 1 |}
     let data2 = struct {| data with Y = "1" |}
     let data3 = struct {| data with X = "3" |}
+    let data4 = struct {| data2 with X = "3" |}
     check "fewjkvwno311" data.X 1
     check "fewjkvwno322" data2.X 1
     check "fewjkvwno333" data2.Y "1"
     check "fewjkvwno344" data3.X "3"
+    check "fewjkvwno3444" data4.X "3"
+    check "fewjkvwno3442" data4.Y "1"
 
 module CopyAndUpdateOfAnonRecordFromRecord = 
     type Base = { X : int }
     let data = { X = 1 }
     let data2 = {| data with Y = "1" |}
     let data3 = {| data with X = "3" |}
+    let data4 = {| data2 with X = "3" |}
     check "fewjkvwno315" data.X 1
     check "fewjkvwno326" data2.X 1
     check "fewjkvwno337" data2.Y "1"
     check "fewjkvwno348" data3.X "3"
+    check "fewjkvwno344y" data4.X "3"
+    check "fewjkvwno344b" data4.Y "1"
 
 module CopyAndUpdateOfAnonRecordFromStructRecord = 
     [<Struct>]
@@ -178,8 +187,8 @@ module CopyAndUpdateOfAnonRecordFromStructRecord =
     let data3 = {| data with X = "3" |}
     check "fewjkvwno31q" data.X 1
     check "fewjkvwno32w" data2.X 1
-    check "fewjkvwno33e" data2.Y "1"
-    check "fewjkvwno34r" data3.X "3"
+    check "fewjkvwno33ej" data2.Y "1"
+    check "fewjkvwno34rs" data3.X "3"
 
 module QuotesNewRecord = 
 
