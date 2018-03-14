@@ -457,13 +457,13 @@ type ResultCollectionSettings =
 | AtMostOneResult
 
 /// Resolve a long identifier to a namespace or module.
-val internal ResolveLongIndentAsModuleOrNamespace   : TcResultsSink -> ResultCollectionSettings -> Import.ImportMap -> range -> FullyQualifiedFlag -> NameResolutionEnv -> AccessorDomain -> Ident list -> isOpenDecl: bool -> ResultOrException<(int * ModuleOrNamespaceRef * ModuleOrNamespaceType) list >
+val internal ResolveLongIndentAsModuleOrNamespace   : TcResultsSink -> ResultCollectionSettings -> Import.ImportMap -> range -> bool -> FullyQualifiedFlag -> NameResolutionEnv -> AccessorDomain -> Ident -> Ident list -> isOpenDecl: bool -> ResultOrException<(int * ModuleOrNamespaceRef * ModuleOrNamespaceType) list >
 
 /// Resolve a long identifier to an object constructor.
 val internal ResolveObjectConstructor               : NameResolver -> DisplayEnv -> range -> AccessorDomain -> TType -> ResultOrException<Item>
 
 /// Resolve a long identifier using type-qualified name resolution.
-val internal ResolveLongIdentInType                 : TcResultsSink -> NameResolver -> NameResolutionEnv -> LookupKind -> range -> AccessorDomain -> Ident list -> FindMemberFlag -> TypeNameResolutionInfo -> TType -> Item * Ident list
+val internal ResolveLongIdentInType                 : TcResultsSink -> NameResolver -> NameResolutionEnv -> LookupKind -> range -> AccessorDomain -> Ident -> FindMemberFlag -> TypeNameResolutionInfo -> TType -> Item * Ident list
 
 /// Resolve a long identifier when used in a pattern.
 val internal ResolvePatternLongIdent                : TcResultsSink -> NameResolver -> WarnOnUpperFlag -> bool -> range -> AccessorDomain -> NameResolutionEnv -> TypeNameResolutionInfo -> Ident list -> Item

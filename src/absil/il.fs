@@ -1562,9 +1562,8 @@ type ILFieldDef =
     member x.WithStatic(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition FieldAttributes.Static }
     member x.WithSpecialName(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition (FieldAttributes.SpecialName ||| FieldAttributes.RTSpecialName) }
     member x.WithNotSerialized(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition FieldAttributes.NotSerialized }
-    member x.WithLiteral(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition FieldAttributes.Literal }
-    member x.WithHasDefault(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition FieldAttributes.HasDefault }
-    member x.WithHasFieldMarshal(condition) = { x with Attributes = x.Attributes |> conditionalAdd condition FieldAttributes.HasFieldMarshal }
+    member x.WithLiteralDefaultValue(literal) = { x with LiteralValue = literal; Attributes = x.Attributes |> conditionalAdd literal.IsSome (FieldAttributes.Literal ||| FieldAttributes.HasDefault) }
+    member x.WithFieldMarshal(marshal) = { x with Marshal = marshal; Attributes = x.Attributes |> conditionalAdd marshal.IsSome FieldAttributes.HasFieldMarshal }
 
 
 // Index table by name.  Keep a canonical list to make sure field order is not disturbed for binary manipulation.
