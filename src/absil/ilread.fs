@@ -99,12 +99,28 @@ let tokToTaggedIdx f nbits tok =
 
 [<AbstractClass>]
 type BinaryFile() = 
+
+    /// Read a byte from the file
     abstract ReadByte : addr:int -> byte
+
+    /// Read a chunk of bytes from the file
     abstract ReadBytes : addr:int -> int -> byte[]
+
+    /// Read an Int32 from the file
     abstract ReadInt32 : addr:int -> int
+
+    /// Read a UInt16 from the file
     abstract ReadUInt16 : addr:int -> uint16
+
+    /// Read a length of a UTF8 string from the file
     abstract CountUtf8String : addr:int -> int
+
+    /// Read a UTF8 string from the file
     abstract ReadUTF8String : addr: int -> string
+
+    /// Return a BinaryFile for temporary use which eagerly holds any necessary memory resources for the duration of its lifetime,
+    /// and is faster to access byte-by-byte.  The returned BinaryFile should _not_ be captured in a closure that outlives the 
+    /// desired lifetime.
     abstract HoldEager : BinaryFile
 
 /// Read from memory mapped files.
@@ -209,11 +225,6 @@ type MemoryMappedFile(hMap: MemoryMapping.HANDLE, start:nativeint) =
     override m.ReadUTF8String i = 
         let n = m.CountUtf8String i
         System.Runtime.InteropServices.Marshal.PtrToStringAnsi((m.Addr i), n)
-//#if FX_RESHAPED_REFLECTION
-//        System.Text.Encoding.UTF8.GetString(NativePtr.ofNativeInt (m.Addr i), n)
-//#else
-//        new System.String(NativePtr.ofNativeInt (m.Addr i), 0, n, System.Text.Encoding.UTF8)
-//#endif
 
     override bf.HoldEager = (bf :> BinaryFile)
 
@@ -222,7 +233,9 @@ type ByteFile(bytes:byte[]) =
     inherit BinaryFile()
 
     override mc.ReadByte addr = bytes.[addr]
+
     override mc.ReadBytes addr len = Array.sub bytes addr len
+
     override m.CountUtf8String addr = 
         let mutable p = addr
         while bytes.[p] <> 0uy do
@@ -260,16 +273,21 @@ type WeakBytes(filename) =
     do created <- created + 1
     //do printfn "creating thunk for %s" filename
 #endif
-    let mutable fileStamp = FileSystem.GetLastWriteTimeShim(filename)
 
+    /// Used to check that the file hasn't changed
+    let fileStamp = FileSystem.GetLastWriteTimeShim(filename)
+
+    /// The weak handle to the bytes for the file
     let weakBytes = new WeakReference<byte[]> (null)
 
 #if DEBUG
+    /// Check if the file is actively holding the underlying bytes
     member x.HoldsData : bool = 
         let mutable tg = null
         weakBytes.TryGetTarget(&tg)
 #endif
 
+    /// Get the bytes for the file
     member this.Get =
         let mutable tg = null
         if not (weakBytes.TryGetTarget(&tg)) then 
