@@ -15,13 +15,13 @@ open Microsoft.VisualStudio.FSharp.Editor.Logging
 
 [<AbstractClass>]
 type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerName) as self =
-    
+
     // Add buffer changed event handler
     do (
-        buffer.Changed.Add self.handleBufferChanged
-        view.LayoutChanged.Add self.handleLayoutChanged
+        buffer.Changed.Add self.HandleBufferChanged
+        view.LayoutChanged.Add self.HandleLayoutChanged
        )
-    
+
     /// <summary>
     /// Enqueing an unit signals to the tagger that all visible line lens must be layouted again,
     /// to respect single line changes.
@@ -33,118 +33,122 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
     member val TextBuffer = buffer
 
     /// Saves the ui context to switch context for ui related work.
-    member val uiContext = SynchronizationContext.Current
+    member val UiContext = SynchronizationContext.Current
 
     // Tracks the created ui elements per TrackingSpan
-    member val uiElements = Dictionary<_,Grid>()
+    member val UiElements = Dictionary<_,Grid>()
 
-    member val trackingSpanUiParent = HashSet()
+    member val TrackingSpanUiParent = HashSet()
 
-    member val uiElementNeighbour = Dictionary()
+    member val UiElementNeighbour = Dictionary()
 
-    /// Caches the current used trackingSpans per line. One line can contain multiple trackingSpans
-    member val trackingSpans = Dictionary<int, ResizeArray<_>>()
+    /// Caches the current used TrackingSpans per line. One line can contain multiple trackingSpans
+    member val TrackingSpans = Dictionary<int, ResizeArray<_>>()
+
     /// Text view for accessing the adornment layer.
-    member val view: IWpfTextView = view
-    /// The code lens layer for adding and removing adornments.
-    member val codeLensLayer = view.GetAdornmentLayer layerName
-    /// Tracks the recent first + last visible line numbers for adornment layout logic.
-    member val recentFirstVsblLineNmbr = 0 with get, set
+    member val View: IWpfTextView = view
 
-    member val recentLastVsblLineNmbr = 0 with get, set
+    member val CodeLensLayer = view.GetAdornmentLayer layerName
+
+    /// Tracks the recent first + last visible line numbers for adornment layout logic.
+    member val RecentFirstVsblLineNmbr = 0 with get, set
+
+    member val RecentLastVsblLineNmbr = 0 with get, set
+
     /// Tracks the adornments on the layer.
-    member val addedAdornments = HashSet()
+    member val AddedAdornments = HashSet()
+
     /// Cancellation token source for the layout changed event. Needed to abort previous async-work.
-    member val layoutChangedCts = new CancellationTokenSource() with get, set
+    member val LayoutChangedCts = new CancellationTokenSource() with get, set
 
     /// Tracks the last used buffer snapshot, should be preferred used in combination with mutex.
-    member val currentBufferSnapshot = null with get, set
+    member val CurrentBufferSnapshot = null with get, set
 
     /// Helper method which returns the start line number of a tracking span
-    member __.getTrackingSpanStartLine (snapshot:ITextSnapshot) (trackingSpan:ITrackingSpan) =
+    member __.GetTrackingSpanStartLine (snapshot:ITextSnapshot) (trackingSpan:ITrackingSpan) =
         snapshot.GetLineNumberFromPosition(trackingSpan.GetStartPoint(snapshot).Position)
 
     /// Helper method which returns the start line number of a tracking span
-    member __.tryGetTSpanStartLine (snapshot:ITextSnapshot) (trackingSpan:ITrackingSpan) =
+    member __.TryGetTSpanStartLine (snapshot:ITextSnapshot) (trackingSpan:ITrackingSpan) =
         let pos = trackingSpan.GetStartPoint(snapshot).Position
         if snapshot.Length - 1 < pos then None
         else pos |> snapshot.GetLineNumberFromPosition |> Some
-    
-    member self.updateTrackingSpansFast (snapshot:ITextSnapshot) lineNumber =
-        if lineNumber |> self.trackingSpans.ContainsKey then
-            let currentTrackingSpans = self.trackingSpans.[lineNumber] |> ResizeArray // We need a copy because we modify the list.
+
+    member self.UpdateTrackingSpansFast (snapshot:ITextSnapshot) lineNumber =
+        if lineNumber |> self.TrackingSpans.ContainsKey then
+            let currentTrackingSpans = self.TrackingSpans.[lineNumber] |> ResizeArray // We need a copy because we modify the list.
             for trackingSpan in currentTrackingSpans do
-                let newLineOption = self.tryGetTSpanStartLine snapshot trackingSpan
+                let newLineOption = self.TryGetTSpanStartLine snapshot trackingSpan
                 match newLineOption with 
                 | None -> ()
                 | Some newLine ->
                     if newLine <> lineNumber then
                         // We're on a new line and need to check whether we're currently in another grid 
                         // (because somehow there were multiple trackingSpans per line).
-                        if self.trackingSpanUiParent.Contains trackingSpan then
-                            self.trackingSpanUiParent.Remove trackingSpan |> ignore
-                            self.uiElementNeighbour.Remove self.uiElements.[trackingSpan] |> ignore
+                        if self.TrackingSpanUiParent.Contains trackingSpan then
+                            self.TrackingSpanUiParent.Remove trackingSpan |> ignore
+                            self.UiElementNeighbour.Remove self.UiElements.[trackingSpan] |> ignore
                         // remove our entry in the line cache dictionary
-                        self.trackingSpans.[lineNumber].Remove(trackingSpan) |> ignore
+                        self.TrackingSpans.[lineNumber].Remove(trackingSpan) |> ignore
                         // if the cache entry for the old line is now empty remove it completely
-                        if self.trackingSpans.[lineNumber].Count = 0 then
-                            self.trackingSpans.Remove lineNumber |> ignore
+                        if self.TrackingSpans.[lineNumber].Count = 0 then
+                            self.TrackingSpans.Remove lineNumber |> ignore
                         // now re-register our tracking span in the cache dict.
                         // Check whether the new line has no existing entry to add a fresh one.
                         // If there is already one we put our grid into the grid of the first entry of the line.
-                        if newLine |> self.trackingSpans.ContainsKey |> not then
-                            self.trackingSpans.[newLine] <- ResizeArray()
+                        if newLine |> self.TrackingSpans.ContainsKey |> not then
+                            self.TrackingSpans.[newLine] <- ResizeArray()
                         else
                             let neighbour = 
-                                self.uiElements.[self.trackingSpans.[newLine] |> Seq.last] // This fails if a tracking span has no ui element!
-                            self.uiElementNeighbour.[self.uiElements.[trackingSpan]] <- neighbour
-                            self.trackingSpanUiParent.Add trackingSpan |> ignore
+                                self.UiElements.[self.TrackingSpans.[newLine] |> Seq.last] // This fails if a tracking span has no ui element!
+                            self.UiElementNeighbour.[self.UiElements.[trackingSpan]] <- neighbour
+                            self.TrackingSpanUiParent.Add trackingSpan |> ignore
                         // And finally add us to the cache again.
-                        self.trackingSpans.[newLine].Add(trackingSpan)
-                        // Be sure that the uiElement of the trackingSpan is visible if the new line is in the visible line space.
-                        if newLine < self.recentFirstVsblLineNmbr || newLine > self.recentLastVsblLineNmbr then
-                            if self.uiElements.ContainsKey trackingSpan then 
-                                let mutable element = self.uiElements.[trackingSpan]
+                        self.TrackingSpans.[newLine].Add(trackingSpan)
+                        // Be sure that the uiElement of the trackingSpan is viRecentLastVsblLineNmbr the visible line space.
+                        if newLine < self.RecentFirstVsblLineNmbr || newLine > self.RecentLastVsblLineNmbr then
+                            if self.UiElements.ContainsKey trackingSpan then 
+                                let mutable element = self.UiElements.[trackingSpan]
                                 element.Visibility <- Visibility.Hidden
 
-    member __.createDefaultStackPanel () = 
+    member __.CreateDefaultStackPanel () = 
         let grid = Grid(Visibility = Visibility.Hidden)
         Canvas.SetLeft(grid, 0.)
         Canvas.SetTop(grid, 0.)
         grid
 
     /// Helper methods which invokes every action which is needed for new trackingSpans
-    member self.addTrackingSpan (trackingSpan:ITrackingSpan)=
+    member self.AddTrackingSpan (trackingSpan:ITrackingSpan)=
         let snapshot = buffer.CurrentSnapshot
         let startLineNumber = snapshot.GetLineNumberFromPosition(trackingSpan.GetStartPoint(snapshot).Position)
         let uiElement = 
-            if self.uiElements.ContainsKey trackingSpan then
+            if self.UiElements.ContainsKey trackingSpan then
                 logErrorf "Added a tracking span twice, this is not allowed and will result in invalid values! %A" (trackingSpan.GetText snapshot)
-                self.uiElements.[trackingSpan]
+                self.UiElements.[trackingSpan]
             else
-                let defaultStackPanel = self.createDefaultStackPanel()
-                self.uiElements.[trackingSpan] <- defaultStackPanel
+                let defaultStackPanel = self.CreateDefaultStackPanel()
+                self.UiElements.[trackingSpan] <- defaultStackPanel
                 defaultStackPanel
-        if self.trackingSpans.ContainsKey startLineNumber then
-            self.trackingSpans.[startLineNumber].Add trackingSpan
+        if self.TrackingSpans.ContainsKey startLineNumber then
+            self.TrackingSpans.[startLineNumber].Add trackingSpan
             let neighbour = 
-                self.uiElements.[self.trackingSpans.[startLineNumber] |> Seq.last] // This fails if a tracking span has no ui element!
-            self.uiElementNeighbour.[uiElement] <- neighbour
-            self.trackingSpanUiParent.Add trackingSpan |> ignore
+                self.UiElements.[self.TrackingSpans.[startLineNumber] |> Seq.last] // This fails if a tracking span has no ui element!
+            self.UiElementNeighbour.[uiElement] <- neighbour
+            self.TrackingSpanUiParent.Add trackingSpan |> ignore
         else
-            self.trackingSpans.[startLineNumber] <- ResizeArray()
-            self.trackingSpans.[startLineNumber].Add trackingSpan
+            self.TrackingSpans.[startLineNumber] <- ResizeArray()
+            self.TrackingSpans.[startLineNumber].Add trackingSpan
         uiElement
         
 
-    member self.handleBufferChanged(e:TextContentChangedEventArgs) =
+    member self.HandleBufferChanged(e:TextContentChangedEventArgs) =
         try
             let oldSnapshot = e.Before
             let snapshot = e.After
-            self.currentBufferSnapshot <- snapshot
+            self.CurrentBufferSnapshot <- snapshot
             for line in oldSnapshot.Lines do
                 let lineNumber = line.LineNumber
-                self.updateTrackingSpansFast snapshot lineNumber
+                self.UpdateTrackingSpansFast snapshot lineNumber
             let firstLine = view.TextViewLines.FirstVisibleLine
             view.DisplayTextLineContainingBufferPosition (firstLine.Start, 0., ViewRelativePosition.Top)
             self.RelayoutRequested.Enqueue(())
@@ -155,53 +159,53 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
 
     member self.AddCodeLens (trackingSpan:ITrackingSpan) =
         if trackingSpan.TextBuffer <> buffer then failwith "TrackingSpan text buffer does not equal with CodeLens text buffer"
-        let Grid = self.addTrackingSpan trackingSpan
+        let Grid = self.AddTrackingSpan trackingSpan
         self.RelayoutRequested.Enqueue(())
         Grid :> UIElement
     
     /// Public non-thread-safe method to remove line lens for a given tracking span.
     member self.RemoveCodeLens (trackingSpan:ITrackingSpan) =
-        if self.uiElements.ContainsKey trackingSpan then
-            let Grid = self.uiElements.[trackingSpan]
+        if self.UiElements.ContainsKey trackingSpan then
+            let Grid = self.UiElements.[trackingSpan]
             Grid.Children.Clear()
-            self.uiElements.Remove trackingSpan |> ignore
+            self.UiElements.Remove trackingSpan |> ignore
             try
-                self.codeLensLayer.RemoveAdornment(Grid) 
+                self.CodeLensLayer.RemoveAdornment(Grid) 
             with e -> 
                 logExceptionWithContext(e, "Removing line lens")
         else
             logWarningf "No ui element is attached to this tracking span!"
         let lineNumber = 
-            (trackingSpan.GetStartPoint self.currentBufferSnapshot).Position 
-            |> self.currentBufferSnapshot.GetLineNumberFromPosition
-        if self.trackingSpans.ContainsKey lineNumber then
-            if self.trackingSpans.[lineNumber].Remove trackingSpan |> not then
+            (trackingSpan.GetStartPoint self.CurrentBufferSnapshot).Position 
+            |> self.CurrentBufferSnapshot.GetLineNumberFromPosition
+        if self.TrackingSpans.ContainsKey lineNumber then
+            if self.TrackingSpans.[lineNumber].Remove trackingSpan |> not then
                 logWarningf "No tracking span is accociated with this line number %d!" lineNumber
-            if self.trackingSpans.[lineNumber].Count = 0 then
-                self.trackingSpans.Remove lineNumber |> ignore
+            if self.TrackingSpans.[lineNumber].Count = 0 then
+                self.TrackingSpans.Remove lineNumber |> ignore
         else
             logWarningf "No tracking span is accociated with this line number %d!" lineNumber
 
     abstract member AddUiElementToCodeLens : ITrackingSpan * UIElement -> unit
     default self.AddUiElementToCodeLens (trackingSpan:ITrackingSpan, uiElement:UIElement) =
-        let Grid = self.uiElements.[trackingSpan]
+        let Grid = self.UiElements.[trackingSpan]
         Grid.Children.Add uiElement |> ignore
 
     abstract member AddUiElementToCodeLensOnce : ITrackingSpan * UIElement -> unit
     default self.AddUiElementToCodeLensOnce (trackingSpan:ITrackingSpan, uiElement:UIElement)=
-        let Grid = self.uiElements.[trackingSpan]
+        let Grid = self.UiElements.[trackingSpan]
         if uiElement |> Grid.Children.Contains |> not then
             self.AddUiElementToCodeLens (trackingSpan, uiElement)
 
     abstract member RemoveUiElementFromCodeLens : ITrackingSpan * UIElement -> unit
     default self.RemoveUiElementFromCodeLens (trackingSpan:ITrackingSpan, uiElement:UIElement) =
-        let Grid = self.uiElements.[trackingSpan]
+        let Grid = self.UiElements.[trackingSpan]
         Grid.Children.Remove(uiElement) |> ignore
     
-     member self.handleLayoutChanged (e:TextViewLayoutChangedEventArgs) =
+     member self.HandleLayoutChanged (e:TextViewLayoutChangedEventArgs) =
         try
             let buffer = e.NewSnapshot
-            let recentVisibleLineNumbers = Set [self.recentFirstVsblLineNmbr .. self.recentLastVsblLineNmbr]
+            let recentVisibleLineNumbers = Set [self.RecentLastVsblLineNmbr .. self.RecentLastVsblLineNmbr]
             let firstVisibleLineNumber, lastVisibleLineNumber =
                 let first, last = 
                     view.TextViewLines.FirstVisibleLine, 
@@ -214,9 +218,9 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
         
             let applyFuncOnLineStackPanels (line:IWpfTextViewLine) (func:Grid -> unit) =
                 let lineNumber = line.Snapshot.GetLineNumberFromPosition(line.Start.Position)
-                if (self.trackingSpans.ContainsKey lineNumber) && (self.trackingSpans.[lineNumber]) |> (Seq.isEmpty >> not) then
-                    for trackingSpan in self.trackingSpans.[lineNumber] do
-                        let success, ui = self.uiElements.TryGetValue trackingSpan
+                if (self.TrackingSpans.ContainsKey lineNumber) && (self.TrackingSpans.[lineNumber]) |> (Seq.isEmpty >> not) then
+                    for trackingSpan in self.TrackingSpans.[lineNumber] do
+                        let success, ui = self.UiElements.TryGetValue trackingSpan
                         if success then 
                             func ui
 
@@ -238,7 +242,7 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
                                 |> view.GetTextViewLineContainingBufferPosition
                         applyFuncOnLineStackPanels line (fun ui ->
                             ui.Visibility <- Visibility.Visible
-                            self.layoutUIElementOnLine view line ui
+                            self.LayoutUIElementOnLine view line ui
                         )
                      with e -> logErrorf "Error in new visible lines iteration %A" e
             if not e.VerticalTranslation && e.NewViewState.ViewportHeight <> e.OldViewState.ViewportHeight then
@@ -251,23 +255,20 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
                         |> view.GetTextViewLineContainingBufferPosition
                     applyFuncOnLineStackPanels line (fun ui ->
                         ui.Visibility <- Visibility.Visible
-                        self.layoutUIElementOnLine view line ui
+                        self.LayoutUIElementOnLine view line ui
                     )
             // Save the new first and last visible lines for tracking
-            self.recentFirstVsblLineNmbr <- firstVisibleLineNumber
-            self.recentLastVsblLineNmbr <- lastVisibleLineNumber
+            self.RecentFirstVsblLineNmbr <- firstVisibleLineNumber
+            self.RecentLastVsblLineNmbr <- lastVisibleLineNumber
             // We can cancel existing stuff because the algorithm supports abortion without any data loss
-            self.layoutChangedCts.Cancel()
-            self.layoutChangedCts.Dispose()
-            self.layoutChangedCts <- new CancellationTokenSource()
+            self.LayoutChangedCts.Cancel()
+            self.LayoutChangedCts.Dispose()
+            self.LayoutChangedCts <- new CancellationTokenSource()
 
-            self.asyncCustomLayoutOperation visibleLineNumbers buffer
-            |> RoslynHelpers.StartAsyncSafe self.layoutChangedCts.Token
+            self.AsyncCustomLayoutOperation visibleLineNumbers buffer
+            |> RoslynHelpers.StartAsyncSafe self.LayoutChangedCts.Token "HandleLayoutChanged"
         with e -> logExceptionWithContext (e, "Layout changed")
 
-    abstract layoutUIElementOnLine : IWpfTextView -> ITextViewLine -> Grid -> unit
+    abstract LayoutUIElementOnLine : IWpfTextView -> ITextViewLine -> Grid -> unit
 
-    abstract asyncCustomLayoutOperation : int Set -> ITextSnapshot -> unit Async
-
-
-
+    abstract AsyncCustomLayoutOperation : int Set -> ITextSnapshot -> unit Async
