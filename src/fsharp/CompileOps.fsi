@@ -355,6 +355,7 @@ type TcConfigBuilder =
       mutable exename: string option 
       mutable copyFSharpCore: bool
       mutable shadowCopyReferences: bool
+      mutable stableFileHeuristic: bool
     }
 
     static member Initial: TcConfigBuilder

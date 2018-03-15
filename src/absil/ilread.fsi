@@ -37,7 +37,9 @@ open System.IO
 type ILReaderOptions =
    { pdbPath: string option;
      ilGlobals: ILGlobals;
-     optimizeForMemory: bool  (* normally off, i.e. optimize for startup-path speed *) }
+     optimizeForMemory: bool  
+     /// Indicates that the backing file will be stable and can be re-read if the implementation wants to release in-memory resources
+     stableFileHeuristic: bool }
 
 val mkDefault :  ILGlobals -> ILReaderOptions
 

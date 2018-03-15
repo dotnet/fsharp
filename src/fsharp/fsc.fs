@@ -1161,7 +1161,8 @@ module StaticLinker =
             let ilGlobals = mkILGlobals ILScopeRef.Local
             let opts = { ILBinaryReader.mkDefault (ilGlobals) with 
                             optimizeForMemory=tcConfig.optimizeForMemory
-                            pdbPath = None } 
+                            pdbPath = None 
+                            stableFileHeuristic = true } 
             ILBinaryReader.OpenILModuleReader mscorlib40 opts
               
         let tdefs1 = ilxMainModule.TypeDefs.AsList  |> List.filter (fun td -> not (MainModuleBuilder.injectedCompatTypes.Contains(td.Name)))
