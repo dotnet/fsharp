@@ -691,6 +691,7 @@ let CompilePatternBasic
                 if warnOnIncomplete then
                     match actionOnFailure with
                     | ThrowIncompleteMatchException | IgnoreWithWarning ->
+                        printfn "%A" refuted
                         let ignoreWithWarning = (actionOnFailure = IgnoreWithWarning)
                         let ce = ShowCounterExample g denv matchm refuted
                         match tryDestAppTy g topv.val_type, refuted with
