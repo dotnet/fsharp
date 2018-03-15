@@ -89,22 +89,22 @@
       </trans-unit>
       <trans-unit id="Block_Structure">
         <source>Block Structure Guides</source>
-        <target state="new">Block Structure Guides</target>
+        <target state="translated">ブロック構造のガイド</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_guides">
         <source>Show structure guidelines for F# code</source>
-        <target state="new">Show structure guidelines for F# code</target>
+        <target state="translated">F# コードの構造のガイドラインを表示する</target>
         <note />
       </trans-unit>
       <trans-unit id="Outlining">
         <source>Outlining</source>
-        <target state="new">Outlining</target>
+        <target state="translated">アウトライン</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Outlining">
         <source>Show outlining and collapsable nodes for F# code</source>
-        <target state="new">Show outlining and collapsable nodes for F# code</target>
+        <target state="translated">F# コードのアウトラインおよび折りたたみ可能なノードを表示する</target>
         <note />
       </trans-unit>
     </body>
