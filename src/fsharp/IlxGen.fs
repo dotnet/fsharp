@@ -3640,7 +3640,7 @@ and GenSlotParam m cenv eenv (TSlotParam(nm,ty,inFlag,outFlag,optionalFlag,attri
       IsOptional=optionalFlag || optionalFlag2
       CustomAttrs= mkILCustomAttrs (GenAttrs cenv eenv attribs) }
     
-and GenFormalSlotsig m cenv mgbuf eenv (TSlotSig(_,typ,ctps,mtps,paraml,returnTy)) = 
+and GenFormalSlotsig m cenv eenv (TSlotSig(_,typ,ctps,mtps,paraml,returnTy)) = 
     let paraml = List.concat paraml
     let ilTy = GenType cenv m eenv.tyenv typ
     let eenvForSlotSig = EnvForTypars (ctps @ mtps) eenv
@@ -3651,7 +3651,7 @@ and GenFormalSlotsig m cenv mgbuf eenv (TSlotSig(_,typ,ctps,mtps,paraml,returnTy
 
 and instSlotParam inst (TSlotParam(nm,ty,inFlag,fl2,fl3,attrs)) = TSlotParam(nm,instType inst ty,inFlag,fl2,fl3,attrs) 
 
-and GenActualSlotsig m cenv mgbuf eenv (TSlotSig(_,typ,ctps,mtps,ilSlotParams,ilSlotRetTy)) methTyparsOfOverridingMethod (methodParams: Val list) = 
+and GenActualSlotsig m cenv eenv (TSlotSig(_,typ,ctps,mtps,ilSlotParams,ilSlotRetTy)) methTyparsOfOverridingMethod (methodParams: Val list) = 
     let ilSlotParams = List.concat ilSlotParams
     let instForSlotSig = mkTyparInst (ctps@mtps) (argsOfAppTy cenv.g typ @ generalizeTypars methTyparsOfOverridingMethod)
     let ilParams = ilSlotParams |> List.map (instSlotParam instForSlotSig >> GenSlotParam m cenv eenv) 
@@ -3664,8 +3664,8 @@ and GenActualSlotsig m cenv mgbuf eenv (TSlotSig(_,typ,ctps,mtps,ilSlotParams,il
 and GenNameOfOverridingMethod cenv (useMethodImpl,(TSlotSig(nameOfOverridenMethod,enclTypOfOverridenMethod,_,_,_,_))) =
     if useMethodImpl then qualifiedMangledNameOfTyconRef (tcrefOfAppTy cenv.g enclTypOfOverridenMethod) nameOfOverridenMethod else nameOfOverridenMethod
 
-and GenMethodImpl cenv mgbuf eenv (useMethodImpl,(TSlotSig(nameOfOverridenMethod,_,_,_,_,_) as slotsig)) m =
-    let ilOverrideTy,ilOverrideParams,ilOverrideRet = GenFormalSlotsig m cenv mgbuf eenv slotsig
+and GenMethodImpl cenv eenv (useMethodImpl,(TSlotSig(nameOfOverridenMethod,_,_,_,_,_) as slotsig)) m =
+    let ilOverrideTy,ilOverrideParams,ilOverrideRet = GenFormalSlotsig m cenv eenv slotsig
 
     let nameOfOverridingMethod = GenNameOfOverridingMethod cenv (useMethodImpl,slotsig)
     nameOfOverridingMethod, 
@@ -3673,7 +3673,7 @@ and GenMethodImpl cenv mgbuf eenv (useMethodImpl,(TSlotSig(nameOfOverridenMethod
         let ilOverrideTyRef = ilOverrideTy.TypeRef
         let ilOverrideMethRef = mkILMethRef(ilOverrideTyRef, ILCallingConv.Instance, nameOfOverridenMethod, List.length (DropErasedTypars methTyparsOfOverridingMethod), (typesOfILParams ilOverrideParams), ilOverrideRet.Type)
         let eenvForOverrideBy = AddTyparsToEnv methTyparsOfOverridingMethod eenv 
-        let ilParamsOfOverridingMethod,ilReturnOfOverridingMethod = GenActualSlotsig m cenv mgbuf eenvForOverrideBy slotsig methTyparsOfOverridingMethod []
+        let ilParamsOfOverridingMethod,ilReturnOfOverridingMethod = GenActualSlotsig m cenv eenvForOverrideBy slotsig methTyparsOfOverridingMethod []
         let ilOverrideMethGenericParams = GenGenericParams cenv eenvForOverrideBy methTyparsOfOverridingMethod 
         let ilOverrideMethGenericArgs = mkILFormalGenericArgs 0 ilOverrideMethGenericParams
         let ilOverrideBy = mkILInstanceMethSpecInTy(ilTyForOverriding, nameOfOverridingMethod, typesOfILParams ilParamsOfOverridingMethod, ilReturnOfOverridingMethod.Type, ilOverrideMethGenericArgs)
@@ -3705,14 +3705,14 @@ and GenObjectMethod cenv eenvinner (cgbuf:CodeGenBuffer) useMethodImpl tmethod =
         let eenvUnderTypars = AddTyparsToEnv methTyparsOfOverridingMethod eenvinner
         let methodParams = List.concat methodParams
         let methodParamsNonSelf = match methodParams with [] -> [] | _::t -> t // drop the 'this' arg when computing better argument names for IL parameters
-        let ilParamsOfOverridingMethod,ilReturnOfOverridingMethod = GenActualSlotsig m cenv cgbuf.mgbuf eenvUnderTypars slotsig methTyparsOfOverridingMethod methodParamsNonSelf 
+        let ilParamsOfOverridingMethod,ilReturnOfOverridingMethod = GenActualSlotsig m cenv eenvUnderTypars slotsig methTyparsOfOverridingMethod methodParamsNonSelf 
         let ilAttribs = GenAttrs cenv eenvinner attribs
 
         // Args are stored starting at #1
         let eenvForMeth = AddStorageForLocalVals cenv.g (methodParams  |> List.mapi (fun i v -> (v,Arg i)))  eenvUnderTypars
         let ilMethodBody = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPAlways,[],nameOfOverridenMethod,eenvForMeth,0,0,methodBodyExpr,(if slotSigHasVoidReturnTy slotsig then discardAndReturnVoid else Return))
 
-        let nameOfOverridingMethod,methodImplGenerator = GenMethodImpl cenv cgbuf.mgbuf eenvinner (useMethodImpl,slotsig) methodBodyExpr.Range
+        let nameOfOverridingMethod,methodImplGenerator = GenMethodImpl cenv eenvinner (useMethodImpl,slotsig) methodBodyExpr.Range
 
         let mdef = 
             mkILGenericVirtualMethod
@@ -3729,7 +3729,7 @@ and GenObjectMethod cenv eenvinner (cgbuf:CodeGenBuffer) useMethodImpl tmethod =
         [(useMethodImpl,methodImplGenerator,methTyparsOfOverridingMethod),mdef]
 
 and GenObjectExpr cenv cgbuf eenvouter expr (baseType,baseValOpt,basecall,overrides,interfaceImpls,m)  sequel =
-    let cloinfo,_,eenvinner  = GetIlxClosureInfo cenv cgbuf.mgbuf m false None eenvouter expr 
+    let cloinfo,_,eenvinner  = GetIlxClosureInfo cenv m false None eenvouter expr 
 
     let cloAttribs = cloinfo.cloAttribs
     let cloFreeVars = cloinfo.cloFreeVars
@@ -3787,7 +3787,7 @@ and GenSequenceExpr cenv (cgbuf:CodeGenBuffer) eenvouter (nextEnumeratorValRef:V
     
     // Get the free variables. Make a lambda to pretend that the 'nextEnumeratorValRef' is bound (it is an argument to GenerateNext)
     let (cloAttribs,_,_,cloFreeTyvars,cloFreeVars,ilCloTypeRef:ILTypeRef,ilCloFreeVars,eenvinner) = 
-         GetIlxClosureFreeVars cenv cgbuf.mgbuf m None eenvouter [] (mkLambda m nextEnumeratorValRef.Deref (generateNextExpr, cenv.g.int32_ty))
+         GetIlxClosureFreeVars cenv m None eenvouter [] (mkLambda m nextEnumeratorValRef.Deref (generateNextExpr, cenv.g.int32_ty))
 
     let ilCloSeqElemTy = GenType cenv m eenvinner.tyenv seqElemTy
     let cloRetTy = mkSeqTy cenv.g seqElemTy
@@ -3900,7 +3900,7 @@ and GenLambdaClosure cenv (cgbuf:CodeGenBuffer) eenv isLocalTypeFunc selfv expr 
     | Expr.Lambda (_,_,_,_,_,m,_) 
     | Expr.TyLambda(_,_,_,m,_) -> 
           
-        let cloinfo,body,eenvinner  = GetIlxClosureInfo cenv cgbuf.mgbuf m isLocalTypeFunc selfv eenv expr 
+        let cloinfo,body,eenvinner  = GetIlxClosureInfo cenv m isLocalTypeFunc selfv eenv expr 
           
         let entryPointInfo = 
           match selfv with 
@@ -3975,7 +3975,7 @@ and GenFreevar cenv m eenvouter tyenvinner (fv:Val) =
 #endif
     | _ -> GenType cenv m tyenvinner fv.Type
 
-and GetIlxClosureFreeVars cenv mgbuf m selfv eenvouter takenNames expr =
+and GetIlxClosureFreeVars cenv m selfv eenvouter takenNames expr =
 
     // Choose a base name for the closure
     let basename = 
@@ -4070,7 +4070,7 @@ and GetIlxClosureFreeVars cenv mgbuf m selfv eenvouter takenNames expr =
     (cloAttribs,cloInternalFreeTyvars,cloContractFreeTyvars,cloFreeTyvars,cloFreeVars,ilCloTypeRef,Array.ofList ilCloFreeVars,eenvinner)
 
 
-and GetIlxClosureInfo cenv mgbuf m isLocalTypeFunc  selfv eenvouter expr =
+and GetIlxClosureInfo cenv m isLocalTypeFunc selfv eenvouter expr =
     let returnTy = 
       match expr with 
       | Expr.Lambda (_,_,_,_,_,_,returnTy) | Expr.TyLambda(_,_,_,_,returnTy) -> returnTy
@@ -4096,7 +4096,7 @@ and GetIlxClosureInfo cenv mgbuf m isLocalTypeFunc  selfv eenvouter expr =
     let takenNames = vs |> List.map (fun v -> v.CompiledName)
 
     // Get the free variables and the information about the closure, add the free variables to the environment
-    let (cloAttribs,cloInternalFreeTyvars,cloContractFreeTyvars,_,cloFreeVars,ilCloTypeRef,ilCloFreeVars,eenvinner) = GetIlxClosureFreeVars cenv mgbuf m selfv eenvouter takenNames expr
+    let (cloAttribs,cloInternalFreeTyvars,cloContractFreeTyvars,_,cloFreeVars,ilCloTypeRef,ilCloFreeVars,eenvinner) = GetIlxClosureFreeVars cenv m selfv eenvouter takenNames expr
 
     // Put the type and value arguments into the environment
     let rec getClosureArgs eenv ntmargs tvsl (vs:Val list) = 
@@ -4252,7 +4252,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod((TSlotSig(_,delega
         
     // Work out the free type variables for the morphing thunk 
     let takenNames = List.map nameOfVal tmvs
-    let (cloAttribs,_,_,cloFreeTyvars,cloFreeVars,ilDelegeeTypeRef,ilCloFreeVars,eenvinner) = GetIlxClosureFreeVars cenv cgbuf.mgbuf m None eenvouter takenNames expr
+    let (cloAttribs,_,_,cloFreeTyvars,cloFreeVars,ilDelegeeTypeRef,ilCloFreeVars,eenvinner) = GetIlxClosureFreeVars cenv m None eenvouter takenNames expr
     let ilDelegeeGenericParams = GenGenericParams cenv eenvinner cloFreeTyvars
     let ilDelegeeGenericActualsInner = mkILFormalGenericArgs 0 ilDelegeeGenericParams
 
@@ -4267,7 +4267,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod((TSlotSig(_,delega
 
     // The slot sig contains a formal instantiation.  When creating delegates we're only 
     // interested in the actual instantiation since we don't have to emit a method impl. 
-    let ilDelegeeParams,ilDelegeeRet = GenActualSlotsig m cenv cgbuf.mgbuf envForDelegeeUnderTypars slotsig methTyparsOfOverridingMethod tmvs
+    let ilDelegeeParams,ilDelegeeRet = GenActualSlotsig m cenv envForDelegeeUnderTypars slotsig methTyparsOfOverridingMethod tmvs
 
     let envForDelegeeMeth = AddStorageForLocalVals cenv.g (List.mapi (fun i v -> (v,Arg (i+numthis))) tmvs)  envForDelegeeUnderTypars
     let ilMethodBody = CodeGenMethodForExpr cenv cgbuf.mgbuf (SPAlways,[],delegeeMethName,envForDelegeeMeth,1,0,body,(if slotSigHasVoidReturnTy slotsig then discardAndReturnVoid else Return))
@@ -4741,7 +4741,7 @@ and GenLetRecBindings cenv (cgbuf:CodeGenBuffer) eenv (allBinds: Bindings,m) =
         | Expr.Lambda _ | Expr.TyLambda _ | Expr.Obj _ -> 
             let isLocalTypeFunc = Option.isSome selfv && (IsNamedLocalTypeFuncVal cenv.g (Option.get selfv) e)
             let selfv = (match e with Expr.Obj _ -> None | _ when isLocalTypeFunc -> None | _ -> Option.map mkLocalValRef selfv)
-            let clo,_,eenvclo =  GetIlxClosureInfo cenv cgbuf.mgbuf m isLocalTypeFunc selfv {eenv with  letBoundVars=(mkLocalValRef boundv)::eenv.letBoundVars}  e 
+            let clo,_,eenvclo =  GetIlxClosureInfo cenv m isLocalTypeFunc selfv {eenv with  letBoundVars=(mkLocalValRef boundv)::eenv.letBoundVars}  e 
             clo.cloFreeVars |> List.iter (fun fv -> 
                 if Zset.contains fv forwardReferenceSet then 
                     match StorageForVal m fv eenvclo with
@@ -5688,7 +5688,7 @@ and AllocLocalVal cenv cgbuf v eenv repr scopeMarks =
                 let eenvinner = 
                     {eenv with 
                          letBoundVars=(mkLocalValRef v)::eenv.letBoundVars}
-                let cloinfo,_,_ = GetIlxClosureInfo cenv cgbuf.mgbuf v.Range true None eenvinner (Option.get repr)
+                let cloinfo,_,_ = GetIlxClosureInfo cenv v.Range true None eenvinner (Option.get repr)
                 cloinfo
             
             let idx,eenv = AllocLocal cenv cgbuf eenv v.IsCompilerGenerated (v.CompiledName, cenv.g.ilg.typ_Object, false) scopeMarks
@@ -6196,7 +6196,7 @@ and GenFieldInit m c =
     | ConstToILFieldInit fieldInit -> fieldInit
     | _ -> error(Error(FSComp.SR.ilTypeCannotBeUsedForLiteralField(),m))
 
-and GenAbstractBinding cenv mgbuf eenv tref (vref:ValRef) =
+and GenAbstractBinding cenv eenv tref (vref:ValRef) =
     assert(vref.IsMember)
     let m = vref.Range
     let memberInfo = Option.get vref.MemberInfo
@@ -6339,7 +6339,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                 // REVIEW: this should be based off tcaug_adhoc_list, which is in declaration order
                 tycon.MembersOfFSharpTyconSorted
                 |> List.sortWith (fun v1 v2 -> rangeOrder.Compare(v1.DefinitionRange,v2.DefinitionRange))
-                |> List.map (GenAbstractBinding cenv mgbuf eenv tref)
+                |> List.map (GenAbstractBinding cenv eenv tref)
                 |> List.unzip3 
                 |> mapTriple (List.concat, List.concat, List.concat)
 
@@ -6369,7 +6369,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
 
                                  let useMethodImpl = true
                                  let eenvUnderTypars = EnvForTypars memberParentTypars eenv
-                                 let _,methodImplGenerator = GenMethodImpl cenv mgbuf eenvUnderTypars (useMethodImpl,slotsig) m
+                                 let _,methodImplGenerator = GenMethodImpl cenv eenvUnderTypars (useMethodImpl,slotsig) m
                                  if useMethodImpl then
                                      yield methodImplGenerator (ilThisTy,memberMethodTypars)
 
@@ -6665,7 +6665,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                              match paraml with
                              | [[tsp]] when isUnitTy cenv.g tsp.Type -> [] (* suppress unit arg *)
                              | paraml -> paraml
-                         GenActualSlotsig m cenv mgbuf eenvinner (TSlotSig(nm,typ,ctps,mtps,paraml,returnTy)) [] []
+                         GenActualSlotsig m cenv eenvinner (TSlotSig(nm,typ,ctps,mtps,paraml,returnTy)) [] []
                      yield! mkILDelegateMethods reprAccess cenv.g.ilg (cenv.g.iltyp_AsyncCallback, cenv.g.iltyp_IAsyncResult) (p,r)
                  | _ -> 
                      ()
