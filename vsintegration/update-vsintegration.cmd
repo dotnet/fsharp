@@ -226,6 +226,7 @@ if "!BIN_AVAILABLE!" == "true" (
     CALL :backupAndOrCopy Microsoft.Portable.FSharp.Targets "%COMPILERSDKPATH%"
     CALL :backupAndOrCopy Microsoft.FSharp.NetSdk.props "%COMPILERSDKPATH%"
     CALL :backupAndOrCopy Microsoft.FSharp.NetSdk.targets "%COMPILERSDKPATH%"
+    CALL :backupAndOrCopy Microsoft.FSharp.Overrides.NetSdk.targets "%COMPILERSDKPATH%"
 
     rem Special casing for SupportedRuntimes.xml, it has a different source directory, it's always there
     set SOURCEDIR="%TOPDIR%\vsintegration\src\SupportedRuntimes"
