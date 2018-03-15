@@ -205,7 +205,7 @@ type internal FSharpCodeLensService
                     match symbolUse.Symbol with
                     | :? FSharpMemberOrFunctionOrValue as func when func.IsModuleValueOrMember || func.IsProperty ->
                         let funcID = func.FullName
-                        let fullDeclarationText = funcID
+                        let fullDeclarationText = funcID // (textSnapshot.GetText declarationSpan).Replace(func.CompiledName, funcID)
                         let fullTypeSignature = func.FullType.ToString()
                         // Try to re-use the last results
                         if lastResults.ContainsKey fullDeclarationText then
