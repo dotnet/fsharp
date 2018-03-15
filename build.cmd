@@ -653,7 +653,7 @@ if "%NEEDS_DOTNET_CLI_TOOLS%" == "1" (
 
 set _dotnetcliexe=%~dp0Tools\dotnetcli\dotnet.exe
 set _dotnet20exe=%~dp0Tools\dotnet20\dotnet.exe
-set NUGET_PACKAGES=%~dp0Packages
+set NUGET_PACKAGES=%~dp0packages
 set path=%~dp0Tools\dotnet20\;%path%
 
 echo ----------- Done with package restore, starting dependency uptake check -------------
