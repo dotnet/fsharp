@@ -48,6 +48,7 @@
 
     <!-- other packages -->
     <MicrosoftCompositionPackageVersion>1.0.30</MicrosoftCompositionPackageVersion>
+    <MicrosoftDiaSymReaderPdb2PdbPackageVersion>1.1.0-roslyn-62714-01</MicrosoftDiaSymReaderPdb2PdbPackageVersion>
     <MicrosoftMSXMLPackageVersion>8.0.0-alpha</MicrosoftMSXMLPackageVersion>
     <MicrosoftVisualFSharpMSBuild150PackageVersion>1.0.1</MicrosoftVisualFSharpMSBuild150PackageVersion>
     <NewtonsoftJsonPackageVersion>9.0.1</NewtonsoftJsonPackageVersion>
