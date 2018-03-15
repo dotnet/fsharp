@@ -89,22 +89,22 @@
       </trans-unit>
       <trans-unit id="Block_Structure">
         <source>Block Structure Guides</source>
-        <target state="new">Block Structure Guides</target>
+        <target state="translated">Guias de Estrutura de Bloco</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_guides">
         <source>Show structure guidelines for F# code</source>
-        <target state="new">Show structure guidelines for F# code</target>
+        <target state="translated">Mostrar as diretrizes de estrutura para o código F#</target>
         <note />
       </trans-unit>
       <trans-unit id="Outlining">
         <source>Outlining</source>
-        <target state="new">Outlining</target>
+        <target state="translated">Estrutura de Tópicos</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Outlining">
         <source>Show outlining and collapsable nodes for F# code</source>
-        <target state="new">Show outlining and collapsable nodes for F# code</target>
+        <target state="translated">Mostrar os nós de estrutura de tópicos e recolhíveis para o código F#</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeLens">

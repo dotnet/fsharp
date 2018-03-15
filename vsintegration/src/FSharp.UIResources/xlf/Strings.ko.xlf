@@ -89,22 +89,22 @@
       </trans-unit>
       <trans-unit id="Block_Structure">
         <source>Block Structure Guides</source>
-        <target state="new">Block Structure Guides</target>
+        <target state="translated">블록 구조 가이드</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_guides">
         <source>Show structure guidelines for F# code</source>
-        <target state="new">Show structure guidelines for F# code</target>
+        <target state="translated">F# 코드에 대한 구조체 지침 표시</target>
         <note />
       </trans-unit>
       <trans-unit id="Outlining">
         <source>Outlining</source>
-        <target state="new">Outlining</target>
+        <target state="translated">개요</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Outlining">
         <source>Show outlining and collapsable nodes for F# code</source>
-        <target state="new">Show outlining and collapsable nodes for F# code</target>
+        <target state="translated">F# 코드에 대한 개요 및 축소 가능한 노드 표시</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeLens">
