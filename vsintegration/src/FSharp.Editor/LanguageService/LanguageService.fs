@@ -286,6 +286,7 @@ type
     [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.QuickInfoOptionPage>, "F#", null, "QuickInfo", "6009")>]
     [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.CodeFixesOptionPage>, "F#", null, "Code Fixes", "6010")>]
     [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.LanguageServicePerformanceOptionPage>, "F#", null, "Performance", "6011")>]
+    [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.CodeLensOptionPage>, "F#", null, "Code Lens", "6012")>]
     [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.AdvancedSettingsOptionPage>, "F#", null, "Advanced", "6012")>]
     [<ProvideFSharpVersionRegistration(FSharpConstants.projectPackageGuidString, "Microsoft Visual F#")>]
     [<ProvideLanguageService(languageService = typeof<FSharpLanguageService>,
@@ -580,7 +581,8 @@ type
         let outliningManagerService = this.Package.ComponentModel.GetService<IOutliningManagerService>()
         let wpfTextView = this.EditorAdaptersFactoryService.GetWpfTextView(textView)
         let outliningManager = outliningManagerService.GetOutliningManager(wpfTextView)
-        outliningManager.Enabled <- Settings.Advanced.IsOutliningEnabled
+        if not (isNull outliningManager) then
+            outliningManager.Enabled <- Settings.Advanced.IsOutliningEnabled
 
         match textView.GetBuffer() with
         | (VSConstants.S_OK, textLines) ->
