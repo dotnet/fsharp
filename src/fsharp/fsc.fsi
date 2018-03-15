@@ -32,7 +32,7 @@ val typecheckAndCompile :
     argv : string[] * 
     legacyReferenceResolver: ReferenceResolver.Resolver * 
     bannerAlreadyPrinted : bool * 
-    openBinariesInMemory: bool * 
+    optimizeForMemory: bool * 
     defaultCopyFSharpCore: bool * 
     exiter : Exiter *
     loggerProvider: ErrorLoggerProvider *
@@ -45,7 +45,7 @@ val mainCompile :
     argv: string[] * 
     legacyReferenceResolver: ReferenceResolver.Resolver * 
     bannerAlreadyPrinted: bool * 
-    openBinariesInMemory: bool * 
+    optimizeForMemory: bool * 
     defaultCopyFSharpCore: bool * 
     exiter: Exiter * 
     loggerProvider: ErrorLoggerProvider * 
@@ -56,7 +56,7 @@ val mainCompile :
 val compileOfAst : 
     ctok: CompilationThreadToken *
     legacyReferenceResolver: ReferenceResolver.Resolver * 
-    openBinariesInMemory: bool * 
+    optimizeForMemory: bool * 
     assemblyName:string * 
     target:CompilerTarget * 
     targetDll:string * 

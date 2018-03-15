@@ -3959,33 +3959,30 @@ let ClosePdbReader pdb =
     | None -> ()
 #endif
 
-let OpenILModuleReader infile opts = 
-
-   try 
-        let mmap = MemoryMappedFile.Create infile
-        let modul, ilAssemblyRefs, pdb = genOpenBinaryReader infile mmap opts
-        { modul = modul 
-          ilAssemblyRefs=ilAssemblyRefs
-          dispose = (fun () -> 
-            mmap.Close()
-            ClosePdbReader pdb) }
-    with _ ->
-        let mc = ByteFile(infile |> FileSystem.ReadAllBytesShim)
-        let modul, ilAssemblyRefs, pdb = genOpenBinaryReader infile mc opts
-        { modul = modul 
-          ilAssemblyRefs = ilAssemblyRefs
-          dispose = (fun () -> 
-            ClosePdbReader pdb) }
-
 // ++GLOBAL MUTABLE STATE (concurrency safe via locking)
 type ILModuleReaderCacheLockToken() = interface LockToken
 let ilModuleReaderCache = new AgedLookup<ILModuleReaderCacheLockToken, (string * System.DateTime * ILScopeRef * bool * bool), ILModuleReader>(0, areSimilar=(fun (x, y) -> x = y))
 let ilModuleReaderCacheLock = Lock()
 
 let stableFileHeuristicApplies (filename:string) = 
-    filename.Contains("Reference Assemblies") || filename.Contains("packages") || filename.Contains("lib/mono")
+    try 
+       let directory = Path.GetDirectoryName(filename)
+       directory.Contains("Reference Assemblies") || directory.Contains("packages") || directory.Contains("lib/mono")
+    with _ -> false
 
-let OpenILModuleReaderAfterReadingAllBytes infile opts = 
+let OpenILModuleReaderFromByteFile fileNameForDebugOutput bf opts = 
+    let modul, ilAssemblyRefs, pdb = genOpenBinaryReader fileNameForDebugOutput bf opts
+    let ilModuleReader = 
+        { modul = modul 
+          ilAssemblyRefs = ilAssemblyRefs
+          dispose = (fun () -> ClosePdbReader pdb) }
+    ilModuleReader
+
+let OpenILModuleReaderFromBytes fileNameForDebugOutput bytes opts = 
+    OpenILModuleReaderFromByteFile fileNameForDebugOutput (ByteFile(bytes)) opts
+
+
+let OpenILModuleReader infile opts = 
     // Pseudo-normalize the paths.
     let key, succeeded = 
         try 
@@ -3995,7 +3992,7 @@ let OpenILModuleReaderAfterReadingAllBytes infile opts =
             opts.pdbPath.IsSome,
             opts.stableFileHeuristic), true
         with e -> 
-            System.Diagnostics.Debug.Assert(false, sprintf "Failed to compute key in OpenILModuleReaderAfterReadingAllBytes cache for '%s'. Falling back to uncached." infile) 
+            System.Diagnostics.Debug.Assert(false, sprintf "Failed to compute key in OpenILModuleReader cache for '%s'. Falling back to uncached." infile) 
             ("", System.DateTime.UtcNow, ILScopeRef.Local, false, false), false
 
     let cacheResult = 
@@ -4006,29 +4003,43 @@ let OpenILModuleReaderAfterReadingAllBytes infile opts =
     match cacheResult with 
     | Some ilModuleReader -> ilModuleReader
     | None -> 
-        let mc = 
-            if opts.stableFileHeuristic && opts.pdbPath.IsNone && stableFileHeuristicApplies infile then 
-                WeakByteFile(infile) :> BinaryFile
-            else
-                ByteFile(infile |> FileSystem.ReadAllBytesShim) :> BinaryFile
-        let modul, ilAssemblyRefs, pdb = genOpenBinaryReader infile mc opts
-        let ilModuleReader = 
-            { modul = modul 
-              ilAssemblyRefs = ilAssemblyRefs
-              dispose = (fun () -> ClosePdbReader pdb) }
-        if Option.isNone pdb && succeeded then 
-            ilModuleReaderCacheLock.AcquireLock (fun ltok -> ilModuleReaderCache.Put(ltok, key, ilModuleReader))
-        ilModuleReader
+        if opts.optimizeForMemory && opts.pdbPath.IsNone then 
+            let bf = 
+                if opts.stableFileHeuristic && stableFileHeuristicApplies infile then 
+                    WeakByteFile(infile) :> BinaryFile
+                else
+                    let bytes = FileSystem.ReadAllBytesShim infile 
+                    ByteFile(bytes) :> BinaryFile
 
-let OpenILModuleReaderFromBytes fileNameForDebugOutput bytes opts = 
-        assert opts.pdbPath.IsNone
-        let mc = ByteFile(bytes)
-        let modul, ilAssemblyRefs, pdb = genOpenBinaryReader fileNameForDebugOutput mc opts
-        let ilModuleReader = 
-            { modul = modul 
-              ilAssemblyRefs = ilAssemblyRefs
-              dispose = (fun () -> ClosePdbReader pdb) }
-        ilModuleReader
+            let ilModuleReader = OpenILModuleReaderFromByteFile infile bf opts 
+
+            if succeeded then 
+                ilModuleReaderCacheLock.AcquireLock (fun ltok -> ilModuleReaderCache.Put(ltok, key, ilModuleReader))
+
+            ilModuleReader
+                
+        else
+            try 
+                let mmap = MemoryMappedFile.Create infile
+                let modul, ilAssemblyRefs, pdb = genOpenBinaryReader infile mmap opts
+                let ilModuleReader = 
+                    { modul = modul 
+                      ilAssemblyRefs=ilAssemblyRefs
+                      dispose = (fun () -> 
+                      mmap.Close()
+                      ClosePdbReader pdb) }
+                ilModuleReader
+
+                // We don't cache readers created via memory mapping. We probably could
+            with _ ->
+                // If setting up memory mapping fails for any reason then use a ByteFile reader
+                let bytes = FileSystem.ReadAllBytesShim infile
+                let ilModuleReader = OpenILModuleReaderFromByteFile infile (ByteFile(bytes)) opts 
+
+                if succeeded then 
+                    ilModuleReaderCacheLock.AcquireLock (fun ltok -> ilModuleReaderCache.Put(ltok, key, ilModuleReader))
+
+                ilModuleReader
 
 
 

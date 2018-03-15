@@ -2185,7 +2185,6 @@ type TcConfigBuilder =
       mutable noFeedback: bool
       mutable stackReserveSize: int32 option
       mutable implicitIncludeDir: string (* normally "." *)
-      mutable openBinariesInMemory: bool (* false for command line, true for VS *)
       mutable openDebugInformationForLaterStaticLinking: bool (* only for --standalone *)
       defaultFSharpBinariesDir: string
       mutable compilingFslib: bool
@@ -2346,7 +2345,6 @@ type TcConfigBuilder =
           conditionalCompilationDefines = []
           implicitIncludeDir = String.Empty
           autoResolveOpenDirectivesToDlls = false
-          openBinariesInMemory = false
           openDebugInformationForLaterStaticLinking = false
           defaultFSharpBinariesDir = String.Empty
           compilingFslib = false
@@ -2608,7 +2606,7 @@ type TcConfigBuilder =
             ri, fileNameOfPath ri, ILResourceAccess.Public 
 
 
-let OpenILBinary(filename, optimizeForMemory, openBinariesInMemory, ilGlobalsOpt, pdbPathOption, shadowCopyReferences) = 
+let OpenILBinary(filename, optimizeForMemory, ilGlobalsOpt, pdbPathOption, shadowCopyReferences) = 
       let ilGlobals   = 
           // ILScopeRef.Local can be used only for primary assembly (mscorlib or System.Runtime) itself
           // Remaining assemblies should be opened using existing ilGlobals (so they can properly locate fundamental types)
@@ -2618,18 +2616,11 @@ let OpenILBinary(filename, optimizeForMemory, openBinariesInMemory, ilGlobalsOpt
 
       let opts : ILBinaryReader.ILReaderOptions = 
           { ilGlobals=ilGlobals
-            // fsc.exe does not uses optimizeForMemory (hence keeps MORE caches in AbstractIL)
-            // fsi.exe does use optimizeForMemory (hence keeps FEWER caches in AbstractIL), because its long running
-            // Visual Studio does use optimizeForMemory (hence keeps FEWER caches in AbstractIL), because its long running
             optimizeForMemory = optimizeForMemory
             pdbPath = pdbPathOption
             stableFileHeuristic = optimizeForMemory} 
                       
-      // Visual Studio uses OpenILModuleReaderAfterReadingAllBytes for all DLLs to avoid having to dispose of any readers explicitly
-      if openBinariesInMemory then 
-          ILBinaryReader.OpenILModuleReaderAfterReadingAllBytes filename opts
-      else
-        let location =
+      let location =
 #if !FX_RESHAPED_REFLECTION // shadow copy not supported
           // In order to use memory mapped files on the shadow copied version of the Assembly, we `preload the assembly
           // We swallow all exceptions so that we do not change the exception contract of this API
@@ -2642,7 +2633,7 @@ let OpenILBinary(filename, optimizeForMemory, openBinariesInMemory, ilGlobalsOpt
             ignore shadowCopyReferences
 #endif
             filename
-        ILBinaryReader.OpenILModuleReader location opts
+      ILBinaryReader.OpenILModuleReader location opts
 
 #if DEBUG
 [<System.Diagnostics.DebuggerDisplayAttribute("AssemblyResolution({resolvedPath})")>]
@@ -2692,7 +2683,7 @@ type AssemblyResolution =
                           ilGlobals = EcmaMscorlibILGlobals
                           optimizeForMemory = optimizeForMemory
                           stableFileHeuristic = optimizeForMemory } 
-                    use reader = ILBinaryReader.OpenILModuleReaderAfterReadingAllBytes this.resolvedPath readerSettings
+                    use reader = ILBinaryReader.OpenILModuleReader this.resolvedPath readerSettings
                     mkRefToILAssembly reader.ILModuleDef.ManifestOfAssembly
             this.ilAssemblyRef := Some(assRef)
             return assRef
@@ -2776,7 +2767,7 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
         | Some(primaryAssemblyFilename) ->
             let filename = ComputeMakePathAbsolute data.implicitIncludeDir primaryAssemblyFilename
             try 
-                use ilReader = OpenILBinary(filename, data.optimizeForMemory, data.openBinariesInMemory, None, None, data.shadowCopyReferences)
+                use ilReader = OpenILBinary(filename, data.optimizeForMemory, None, None, data.shadowCopyReferences)
                 let ilModule = ilReader.ILModuleDef
                 match ilModule.ManifestOfAssembly.Version with 
                 | Some(v1, v2, _, _) -> 
@@ -2809,7 +2800,7 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
             let filename = ComputeMakePathAbsolute data.implicitIncludeDir fslibFilename
             if fslibReference.ProjectReference.IsNone then 
                 try 
-                    use ilReader = OpenILBinary(filename, data.optimizeForMemory, data.openBinariesInMemory, None, None, data.shadowCopyReferences)
+                    use ilReader = OpenILBinary(filename, data.optimizeForMemory, None, None, data.shadowCopyReferences)
                     ()
                 with e -> 
                     error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message), rangeStartup))
@@ -2825,7 +2816,6 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
     member x.noFeedback = data.noFeedback
     member x.stackReserveSize = data.stackReserveSize   
     member x.implicitIncludeDir = data.implicitIncludeDir
-    member x.openBinariesInMemory = data.openBinariesInMemory
     member x.openDebugInformationForLaterStaticLinking = data.openDebugInformationForLaterStaticLinking
     member x.fsharpBinariesDir = fsharpBinariesDirValue
     member x.compilingFslib = data.compilingFslib
@@ -3118,7 +3108,7 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
                                   ilGlobals = EcmaMscorlibILGlobals
                                   optimizeForMemory=tcConfig.optimizeForMemory
                                   stableFileHeuristic=tcConfig.optimizeForMemory }
-                            use reader = ILBinaryReader.OpenILModuleReaderAfterReadingAllBytes resolved readerSettings
+                            use reader = ILBinaryReader.OpenILModuleReader resolved readerSettings
                             let assRef = mkRefToILAssembly reader.ILModuleDef.ManifestOfAssembly
                             assRef.QualifiedName
                         with e ->
@@ -4163,7 +4153,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                     None 
             else   
                 None
-        let ilILBinaryReader = OpenILBinary(filename, tcConfig.optimizeForMemory, tcConfig.openBinariesInMemory, ilGlobalsOpt, pdbPathOption, tcConfig.shadowCopyReferences)
+        let ilILBinaryReader = OpenILBinary(filename, tcConfig.optimizeForMemory, ilGlobalsOpt, pdbPathOption, tcConfig.shadowCopyReferences)
         tcImports.AttachDisposeAction(fun _ -> (ilILBinaryReader :> IDisposable).Dispose())
         ilILBinaryReader.ILModuleDef, ilILBinaryReader.ILAssemblyRefs
       with e ->

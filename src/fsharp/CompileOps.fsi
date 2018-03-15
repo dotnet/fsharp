@@ -233,7 +233,6 @@ type TcConfigBuilder =
       mutable noFeedback: bool
       mutable stackReserveSize: int32 option
       mutable implicitIncludeDir: string
-      mutable openBinariesInMemory: bool
       mutable openDebugInformationForLaterStaticLinking: bool
       defaultFSharpBinariesDir: string
       mutable compilingFslib: bool
@@ -389,7 +388,6 @@ type TcConfig =
     member noFeedback: bool
     member stackReserveSize: int32 option
     member implicitIncludeDir: string
-    member openBinariesInMemory: bool
     member openDebugInformationForLaterStaticLinking: bool
     member fsharpBinariesDir: string
     member compilingFslib: bool

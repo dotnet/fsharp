@@ -1726,10 +1726,6 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                 // see also fsc.fs:runFromCommandLineToImportingAssemblies(), as there are many similarities to where the PS creates a tcConfigB
                 let tcConfigB = TcConfigBuilder.CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, implicitIncludeDir=projectDirectory, optimizeForMemory=true, isInteractive=false, isInvalidationSupported=true, defaultCopyFSharpCore=false) 
 
-                // The following uses more memory but means we don't take read-exclusions on the DLLs we reference 
-                // Could detect well-known assemblies--ie System.dll--and open them with read-locks 
-                tcConfigB.openBinariesInMemory <- true
-
                 tcConfigB.resolutionEnvironment <- (ReferenceResolver.ResolutionEnvironment.EditingOrCompilation true)
 
                 tcConfigB.conditionalCompilationDefines <- 

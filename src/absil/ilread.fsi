@@ -36,9 +36,16 @@ open System.IO
 
 type ILReaderOptions =
    { pdbPath: string option;
+
      ilGlobals: ILGlobals;
+
+     // fsc.exe does not uses optimizeForMemory (hence keeps MORE caches in AbstractIL and MORE memory mapping and MORE memory hogging)
+     // fsi.exe does use optimizeForMemory (hence keeps FEWER caches in AbstractIL and LESS memory mapping and LESS memory hogging), because its long running
+     // Visual Studio does use optimizeForMemory (hence keeps FEWER caches in AbstractIL and LESS memory mapping and LESS memory hogging), because its long running
      optimizeForMemory: bool  
+
      /// Indicates that the backing file will be stable and can be re-read if the implementation wants to release in-memory resources
+     /// Normally the same as optimizeForMemory
      stableFileHeuristic: bool }
 
 // The non-memory resources (i.e. the file handle) associated with 
@@ -56,7 +63,7 @@ val OpenILModuleReader: string -> ILReaderOptions -> ILModuleReader
 /// Open a binary reader, except first copy the entire contents of the binary into 
 /// memory, close the file and ensure any subsequent reads happen from the in-memory store. 
 /// PDB files may not be read with this option. 
-val OpenILModuleReaderAfterReadingAllBytes: string -> ILReaderOptions -> ILModuleReader
+val OpenILModuleReader: string -> ILReaderOptions -> ILModuleReader
 
 /// Open a binary reader based on the given bytes. 
 val OpenILModuleReaderFromBytes: fileNameForDebugOutput:string -> assemblyContents: byte[] -> options: ILReaderOptions -> ILModuleReader
