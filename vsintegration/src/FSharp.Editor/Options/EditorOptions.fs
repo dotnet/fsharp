@@ -14,7 +14,7 @@ module DefaultTuning =
     let SimplifyNameInitialDelay = 2000 (* milliseconds *)
     let SimplifyNameEachItemDelay = 0 (* milliseconds *)
 
-// CLIMutable to make the record work also as a view model
+// CLIMutable attribute is required if we want to use the record also as a view model bound to XAML options page
 [<CLIMutable>]
 type IntelliSenseOptions =
   { ShowAfterCharIsTyped: bool
