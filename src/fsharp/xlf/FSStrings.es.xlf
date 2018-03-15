@@ -1422,6 +1422,11 @@
         <target state="translated"> Los elementos que no coinciden se omitirán.</target>
         <note />
       </trans-unit>
+      <trans-unit id="EnumMatchIncomplete1">
+        <source>Enums may take values outside known cases.</value>
+        <target state="translated">Enums may take values outside known cases.</value>
+        <note />
+      </trans-unit>
       <trans-unit id="RuleNeverMatched">
         <source>This rule will never be matched</source>
         <target state="translated">Nunca se buscarán coincidencias con esta regla.</target>
