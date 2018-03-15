@@ -41,6 +41,8 @@ type internal DumpCommandFilterProvider
         runtime.Heap.EnumerateObjects() 
         |> Seq.groupBy (fun x -> x.Type.Name) 
         |> Seq.map (fun (ty, os) -> ty, os |> Seq.sumBy (fun x -> x.Size), os |> Seq.length)
+        |> Seq.sortBy (fun (_, size, _) -> -int64 size)
+        |> Seq.take 100
         |> Seq.iter (fun (ty, size, count) -> outputPane.OutputString (sprintf "Type: %s, Tolal size: %d, Instance count: %d" ty size count) |> ignore)
 
     interface IWpfTextViewCreationListener with
