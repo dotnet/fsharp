@@ -355,7 +355,6 @@ type TcConfigBuilder =
       mutable exename: string option 
       mutable copyFSharpCore: bool
       mutable shadowCopyReferences: bool
-      mutable stableFileHeuristic: bool
     }
 
     static member Initial: TcConfigBuilder
@@ -568,11 +567,8 @@ type ImportedAssembly =
 [<Sealed>] 
 type TcAssemblyResolutions = 
     member GetAssemblyResolutions: unit -> AssemblyResolution list
-
     static member SplitNonFoundationalResolutions : CompilationThreadToken * TcConfig -> AssemblyResolution list * AssemblyResolution list * UnresolvedAssemblyReference list
     static member BuildFromPriorResolutions    : CompilationThreadToken * TcConfig * AssemblyResolution list * UnresolvedAssemblyReference list -> TcAssemblyResolutions 
-    
-
 
 /// Represents a table of imported assemblies with their resolutions.
 [<Sealed>] 

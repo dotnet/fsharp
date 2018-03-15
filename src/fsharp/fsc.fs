@@ -1159,10 +1159,11 @@ module StaticLinker =
               
         let ilBinaryReader = 
             let ilGlobals = mkILGlobals ILScopeRef.Local
-            let opts = { ILBinaryReader.mkDefault (ilGlobals) with 
-                            optimizeForMemory=tcConfig.optimizeForMemory
-                            pdbPath = None 
-                            stableFileHeuristic = true } 
+            let opts : ILBinaryReader.ILReaderOptions = 
+                { ilGlobals = ilGlobals
+                  optimizeForMemory = tcConfig.optimizeForMemory
+                  pdbPath = None 
+                  stableFileHeuristic = true } 
             ILBinaryReader.OpenILModuleReader mscorlib40 opts
               
         let tdefs1 = ilxMainModule.TypeDefs.AsList  |> List.filter (fun td -> not (MainModuleBuilder.injectedCompatTypes.Contains(td.Name)))
@@ -1650,7 +1651,7 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, openBinarie
 
     let optimizeForMemory = false // optimizeForMemory - fsc.exe can use as much memory as it likes to try to compile as fast as possible
 
-    let tcConfigB = TcConfigBuilder.CreateNew(legacyReferenceResolver, DefaultFSharpBinariesDir, optimizeForMemory, directoryBuildingFrom, isInteractive=false, isInvalidationSupported=false, defaultCopyFSharpCore=defaultCopyFSharpCore)
+    let tcConfigB = TcConfigBuilder.CreateNew(legacyReferenceResolver, DefaultFSharpBinariesDir, optimizeForMemory=optimizeForMemory, implicitIncludeDir=directoryBuildingFrom, isInteractive=false, isInvalidationSupported=false, defaultCopyFSharpCore=defaultCopyFSharpCore)
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     SetOptimizeSwitch tcConfigB OptionSwitch.On
     SetDebugSwitch    tcConfigB None OptionSwitch.Off
@@ -1840,7 +1841,7 @@ let main1(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
 // set up typecheck for given AST without parsing any command line parameters
 let main1OfAst (ctok, legacyReferenceResolver, openBinariesInMemory, assemblyName, target, outfile, pdbFile, dllReferences, noframework, exiter, errorLoggerProvider: ErrorLoggerProvider, inputs : ParsedInput list) =
 
-    let tcConfigB = TcConfigBuilder.CreateNew(legacyReferenceResolver, DefaultFSharpBinariesDir, (*optimizeForMemory*) false, Directory.GetCurrentDirectory(), isInteractive=false, isInvalidationSupported=false, defaultCopyFSharpCore=false)
+    let tcConfigB = TcConfigBuilder.CreateNew(legacyReferenceResolver, DefaultFSharpBinariesDir, optimizeForMemory=false, implicitIncludeDir=Directory.GetCurrentDirectory(), isInteractive=false, isInvalidationSupported=false, defaultCopyFSharpCore=false)
     tcConfigB.openBinariesInMemory <- openBinariesInMemory
     tcConfigB.framework <- not noframework 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)

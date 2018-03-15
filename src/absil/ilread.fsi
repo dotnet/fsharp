@@ -41,8 +41,6 @@ type ILReaderOptions =
      /// Indicates that the backing file will be stable and can be re-read if the implementation wants to release in-memory resources
      stableFileHeuristic: bool }
 
-val mkDefault :  ILGlobals -> ILReaderOptions
-
 // The non-memory resources (i.e. the file handle) associated with 
 // the read can be recovered by calling Dispose.  Any remaining 
 // lazily-computed items in the metadata graph returned by MetadataOfILModuleReader 

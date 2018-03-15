@@ -3949,12 +3949,6 @@ let rec genOpenBinaryReader infile (bf: BinaryFile) opts =
 
     ilModule, ilAssemblyRefs, pdb
   
-let mkDefault ilg = 
-    { optimizeForMemory=false 
-      pdbPath= None 
-      ilGlobals = ilg
-      stableFileHeuristic = false } 
-
 let ClosePdbReader pdb =  
 #if FX_NO_PDB_READER
     ignore pdb
@@ -3989,7 +3983,7 @@ let ilModuleReaderCache = new AgedLookup<ILModuleReaderCacheLockToken, (string *
 let ilModuleReaderCacheLock = Lock()
 
 let stableFileHeuristicApplies (filename:string) = 
-    filename.Contains("Program Files") || filename.Contains("packages/") || filename.Contains("packages\\") || filename.Contains("lib/mono")
+    filename.Contains("Reference Assemblies") || filename.Contains("packages") || filename.Contains("lib/mono")
 
 let OpenILModuleReaderAfterReadingAllBytes infile opts = 
     // Pseudo-normalize the paths.
