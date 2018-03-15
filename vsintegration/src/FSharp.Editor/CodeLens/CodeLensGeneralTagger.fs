@@ -25,9 +25,9 @@ type CodeLensGeneralTagger (view, buffer) as self =
     let tagsChangedEvent = new Event<EventHandler<SnapshotSpanEventArgs>,SnapshotSpanEventArgs>()
     
     /// Layouts all stack panels on the line
-    override self.layoutUIElementOnLine (view:IWpfTextView) (line:ITextViewLine) (ui:Grid) =
+    override self.LayoutUIElementOnLine (view:IWpfTextView) (line:ITextViewLine) (ui:Grid) =
         let left, top = 
-            match self.uiElementNeighbour.TryGetValue ui with
+            match self.UiElementNeighbour.TryGetValue ui with
             | true, parent -> 
                 let left = Canvas.GetLeft parent
                 let top = Canvas.GetTop parent
@@ -57,13 +57,13 @@ type CodeLensGeneralTagger (view, buffer) as self =
         Canvas.SetLeft(ui, left)
         Canvas.SetTop(ui, top)
 
-    override self.asyncCustomLayoutOperation _ _ =
+    override self.AsyncCustomLayoutOperation _ _ =
         asyncMaybe {
                 // Suspend 16 ms, instantly applying the layout to the adornment elements isn't needed 
                 // and would consume too much performance
                 do! Async.Sleep(16) |> liftAsync // Skip at least one frames
-                do! Async.SwitchToContext self.uiContext |> liftAsync
-                let layer = self.codeLensLayer
+                do! Async.SwitchToContext self.UiContext |> liftAsync
+                let layer = self.CodeLensLayer
 
                 do! Async.Sleep(495) |> liftAsync
 
@@ -84,10 +84,10 @@ type CodeLensGeneralTagger (view, buffer) as self =
                         match line.GetAdornmentTags self |> Seq.tryHead with
                         | Some (:? seq<Grid> as stackPanels) ->
                             for stackPanel in stackPanels do
-                                if stackPanel |> self.addedAdornments.Contains |> not then
+                                if stackPanel |> self.AddedAdornments.Contains |> not then
                                     layer.AddAdornment(AdornmentPositioningBehavior.OwnerControlled, Nullable(), 
                                         self, stackPanel, AdornmentRemovedCallback(fun _ _ -> ())) |> ignore
-                                    self.addedAdornments.Add stackPanel |> ignore
+                                    self.AddedAdornments.Add stackPanel |> ignore
                         | _ -> ()
                     with e -> logExceptionWithContext (e, "LayoutChanged, processing new visible lines")
             } |> Async.Ignore
@@ -115,13 +115,13 @@ type CodeLensGeneralTagger (view, buffer) as self =
                             try
                                 snapshot.GetLineNumberFromPosition(span.Start.Position)
                             with e -> logExceptionWithContext (e, "line number tagging"); 0
-                        if self.trackingSpans.ContainsKey(lineNumber) && self.trackingSpans.[lineNumber] |> Seq.isEmpty |> not then
+                        if self.TrackingSpans.ContainsKey(lineNumber) && self.TrackingSpans.[lineNumber] |> Seq.isEmpty |> not then
                             
                             let tagSpan = snapshot.GetLineFromLineNumber(lineNumber).Extent
                             let stackPanels = 
-                                self.trackingSpans.[lineNumber] 
+                                self.TrackingSpans.[lineNumber] 
                                 |> Seq.map (fun trackingSpan ->
-                                        let success, res = self.uiElements.TryGetValue trackingSpan
+                                        let success, res = self.UiElements.TryGetValue trackingSpan
                                         if success then res else null
                                     )
                                 |> Seq.filter (isNull >> not)

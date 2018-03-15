@@ -130,17 +130,6 @@ type internal FSharpCodeLensService
                 return false
         }  
 
-    let StartAsyncSafe cancellationToken context computation =
-        let computation =
-            async {
-                try
-                    return! computation
-                with e ->
-                    logExceptionWithContext(e, context)
-                    return Unchecked.defaultof<_>
-            }
-        Async.Start (computation, cancellationToken)
-
     let executeCodeLenseAsync () =  
         asyncMaybe {
             do! Async.Sleep 800 |> liftAsync
@@ -171,7 +160,7 @@ type internal FSharpCodeLensService
                         let lineNumber = Line.toZ func.DeclarationLocation.StartLine
                         if (lineNumber >= 0 || lineNumber < textSnapshot.LineCount) then
                             match func.FullTypeSafe with
-                            | Some ty ->
+                            | Some _ ->
                                 let! displayEnv = checkFileResults.GetDisplayEnvForPos func.DeclarationLocation.Start
                             
                                 let displayContext =
@@ -326,7 +315,7 @@ type internal FSharpCodeLensService
                         else
                             logWarningf "Couldn't retrieve code lens information for %A" codeLens.FullTypeSignature
                         // logInfo "Adding text box!"
-                    } |> StartAsyncSafe CancellationToken.None "UIElement creation"
+                    } |> (RoslynHelpers.StartAsyncSafe CancellationToken.None) "UIElement creation"
 
             for value in tagsToUpdate do
                 let trackingSpan, (newTrackingSpan, _, codeLens) = value.Key, value.Value
@@ -381,5 +370,5 @@ type internal FSharpCodeLensService
         bufferChangedCts.Cancel() // Stop all ongoing async workflow. 
         bufferChangedCts.Dispose()
         bufferChangedCts <- new CancellationTokenSource()
-        executeCodeLenseAsync () |> Async.Ignore |> RoslynHelpers.StartAsyncSafe bufferChangedCts.Token
+        executeCodeLenseAsync () |> Async.Ignore |> RoslynHelpers.StartAsyncSafe bufferChangedCts.Token "Buffer Changed"
 
