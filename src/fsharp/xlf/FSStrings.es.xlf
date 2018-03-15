@@ -1423,8 +1423,8 @@
         <note />
       </trans-unit>
       <trans-unit id="EnumMatchIncomplete1">
-        <source>Enums may take values outside known cases.</value>
-        <target state="translated">Enums may take values outside known cases.</value>
+        <source>Enums may take values outside known cases.</source>
+        <target state="translated">Enums may take values outside known cases.</target>
         <note />
       </trans-unit>
       <trans-unit id="RuleNeverMatched">
