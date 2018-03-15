@@ -189,6 +189,7 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonPackageVersion)" />
+    <PackageReference Include="Microsoft.Diagnostics.Runtime" Version="0.9.180305.1" />
   </ItemGroup>
 
 </Project>

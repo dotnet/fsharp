@@ -4,20 +4,16 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.ComponentModel.Composition
-
+open System.Diagnostics
 open Microsoft.VisualStudio
-open Microsoft.VisualStudio.Editor
-open Microsoft.VisualStudio.OLE.Interop
 open Microsoft.VisualStudio.Text.Editor
-open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.Utilities
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp.Interactive
 open System.ComponentModel.Design
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
-open Microsoft.VisualStudio.Text
+open Microsoft.Diagnostics.Runtime
+open EnvDTE80
 
 
 [<Export(typeof<IWpfTextViewCreationListener>)>]
@@ -26,11 +22,7 @@ open Microsoft.VisualStudio.Text
 type internal DumpCommandFilterProvider 
     [<ImportingConstructor>] 
     (checkerProvider: FSharpCheckerProvider,
-    [<Import(typeof<SVsServiceProvider>)>] serviceProvider: System.IServiceProvider,
-     projectInfoManager: FSharpProjectOptionsManager,
-     workspace: VisualStudioWorkspaceImpl,
-     textDocumentFactoryService: ITextDocumentFactoryService,
-     editorFactory: IVsEditorAdaptersFactoryService) =
+    [<Import(typeof<SVsServiceProvider>)>] serviceProvider: System.IServiceProvider) =
 
     let projectSystemPackage =
       lazy(
@@ -42,13 +34,18 @@ type internal DumpCommandFilterProvider
         | _ -> null)
 
     let FSharpDump (this:Package) (sender:obj) (e:EventArgs) =
-        System.Diagnostics.Debugger.Launch() |> ignore
         checkerProvider.Checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-        ()
+        use target = DataTarget.CreateSnapshotAndAttach(Process.GetCurrentProcess().Id)
+        let runtime = target.ClrVersions.[0].CreateRuntime();
+        let outputPane = projectSystemPackage.Value.GetOutputPane(VSConstants.OutputWindowPaneGuid.BuildOutputPane_guid, "FSharp Dump")
+        runtime.Heap.EnumerateObjects() 
+        |> Seq.groupBy (fun x -> x.Type.Name) 
+        |> Seq.map (fun (ty, os) -> ty, os |> Seq.sumBy (fun x -> x.Size), os |> Seq.length)
+        |> Seq.iter (fun (ty, size, count) -> outputPane.OutputString (sprintf "Type: %s, Tolal size: %d, Instance count: %d" ty size count) |> ignore)
 
     interface IWpfTextViewCreationListener with
         member __.TextViewCreated(textView) = 
-            let commandService = serviceProvider.GetService(typeof<IMenuCommandService>) :?> OleMenuCommandService // FSI-LINKAGE-POINT
+            let commandService = (projectSystemPackage.Value :> System.IServiceProvider).GetService(typeof<IMenuCommandService>) :?> OleMenuCommandService
             let id  = new CommandID(Guids.guidFsiPackageCmdSet,int32 Guids.cmdIDFSharpDump)
             let cmd = new MenuCommand(new EventHandler(FSharpDump projectSystemPackage.Value), id)
             commandService.AddCommand(cmd)
