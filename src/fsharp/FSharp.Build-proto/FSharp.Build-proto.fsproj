@@ -51,6 +51,9 @@
     <None Include="..\FSharp.Build\Microsoft.FSharp.NetSdk.targets" CopyToOutputDirectory="PreserveNewest">
       <Link>Microsoft.FSharp.NetSdk.targets</Link>
     </None>
+    <None Include="..\FSharp.Build\Microsoft.FSharp.Overrides.NetSdk.targets" CopyToOutputDirectory="PreserveNewest">
+      <Link>Microsoft.FSharp.Overrides.NetSdk.targets</Link>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
