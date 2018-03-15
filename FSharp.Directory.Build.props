@@ -46,7 +46,7 @@
 
   <!-- other -->
   <PropertyGroup>
-    <DebugType>full</DebugType>
+    <DebugType>portable</DebugType>
     <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
     <UseStandardResourceNames>false</UseStandardResourceNames>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
