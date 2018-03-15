@@ -32,7 +32,6 @@ type CodeLensGeneralTagger (view, buffer) as self =
                 let left = Canvas.GetLeft parent
                 let top = Canvas.GetTop parent
                 let width = parent.ActualWidth
-                logInfof "Width of parent: %.4f" width
                 left + width, top
             | _ ->
                 try
