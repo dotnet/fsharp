@@ -423,22 +423,15 @@ let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sou
                 list.ToArray() |> Array.sortWith<PdbMethodScope> scopeSorter
 
             collectScopes scope |> Seq.iter(fun s ->
-                                    if s.Children.Length = 0 then
-                                        metadata.AddLocalScope(MetadataTokens.MethodDefinitionHandle(minfo.MethToken),
-                                                               Unchecked.defaultof<ImportScopeHandle>,
-                                                               nextHandle lastLocalVariableHandle,
-                                                               Unchecked.defaultof<LocalConstantHandle>,
-                                                               0, s.EndOffset - s.StartOffset ) |>ignore
-                                    else
-                                        metadata.AddLocalScope(MetadataTokens.MethodDefinitionHandle(minfo.MethToken),
-                                                               Unchecked.defaultof<ImportScopeHandle>,
-                                                               nextHandle lastLocalVariableHandle,
-                                                               Unchecked.defaultof<LocalConstantHandle>,
-                                                               s.StartOffset, s.EndOffset - s.StartOffset) |>ignore
+                                   metadata.AddLocalScope(MetadataTokens.MethodDefinitionHandle(minfo.MethToken),
+                                                          Unchecked.defaultof<ImportScopeHandle>,
+                                                          nextHandle lastLocalVariableHandle,
+                                                          Unchecked.defaultof<LocalConstantHandle>,
+                                                          s.StartOffset, s.EndOffset - s.StartOffset ) |>ignore
 
-                                    for localVariable in s.Locals do
-                                        lastLocalVariableHandle <- metadata.AddLocalVariable(LocalVariableAttributes.None, localVariable.Index, metadata.GetOrAddString(localVariable.Name))
-                                    )
+                                   for localVariable in s.Locals do
+                                       lastLocalVariableHandle <- metadata.AddLocalVariable(LocalVariableAttributes.None, localVariable.Index, metadata.GetOrAddString(localVariable.Name))
+                                   )
 
         match minfo.RootScope with
         | None -> ()
