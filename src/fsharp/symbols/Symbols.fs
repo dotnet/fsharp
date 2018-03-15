@@ -1860,6 +1860,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                     mkIteratedFunTy (List.map (mkRefTupledTy cenv.g) argtysl) rty
                 | V v -> v.TauType
             NicePrint.prettyLayoutOfTypeNoCx (denv.Contents cenv.g) ty
+            
 and FSharpType(cenv, typ:TType) =
 
     let isUnresolved() = 

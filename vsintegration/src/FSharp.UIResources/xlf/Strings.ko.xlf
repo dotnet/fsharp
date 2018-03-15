@@ -89,22 +89,47 @@
       </trans-unit>
       <trans-unit id="Block_Structure">
         <source>Block Structure Guides</source>
-        <target state="new">Block Structure Guides</target>
+        <target state="translated">블록 구조 가이드</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_guides">
         <source>Show structure guidelines for F# code</source>
-        <target state="new">Show structure guidelines for F# code</target>
+        <target state="translated">F# 코드에 대한 구조체 지침 표시</target>
         <note />
       </trans-unit>
       <trans-unit id="Outlining">
         <source>Outlining</source>
-        <target state="new">Outlining</target>
+        <target state="translated">개요</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_Outlining">
         <source>Show outlining and collapsable nodes for F# code</source>
-        <target state="new">Show outlining and collapsable nodes for F# code</target>
+        <target state="translated">F# 코드에 대한 개요 및 축소 가능한 노드 표시</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens">
+        <source>CodeLens</source>
+        <target state="new">CodeLens</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Replace_LineLens">
+        <source>Show annotations to the right instead of above the line</source>
+        <target state="new">Show annotations to the right instead of above the line</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Switch">
+        <source>Show type signature annotations in the editor</source>
+        <target state="new">Show type signature annotations in the editor</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_Prefix">
+        <source>Annotation prefix</source>
+        <target state="new">Annotation prefix</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CodeLens_UseColors">
+        <source>Use colors in annotations</source>
+        <target state="new">Use colors in annotations</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeLens">

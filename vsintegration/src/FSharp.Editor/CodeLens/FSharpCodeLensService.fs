@@ -70,7 +70,7 @@ type internal FSharpCodeLensService
     let mutable lastResults = Dictionary<string, ITrackingSpan * CodeLens>()
     let mutable firstTimeChecked = false
     let mutable bufferChangedCts = new CancellationTokenSource()
-
+    
     let uiContext = SynchronizationContext.Current
 
     let layoutTagToFormatting (layoutTag: LayoutTag) =
@@ -194,7 +194,6 @@ type internal FSharpCodeLensService
                 if newResults.ContainsKey fullDeclarationText then
                     logWarningf "New results already contains: %A" fullDeclarationText
                 newResults.[fullDeclarationText] <- value
-                
             for symbolUse in symbolUses do
                 if symbolUse.IsFromDefinition then
                     match symbolUse.Symbol with
