@@ -938,7 +938,7 @@ set HOSTED_COMPILER=1
 
 if "%TEST_NET40_FSHARPQA_SUITE%" == "1" (
 
-    set CSC_PIPE=%~dp0packages\Microsoft.Net.Compilers.2.4.0\tools\csc.exe
+    set CSC_PIPE=%~dp0packages\Microsoft.Net.Compilers.2.7.0\tools\csc.exe
     set FSC=!FSCBINPATH!\fsc.exe
     set FSCOREDLLPATH=!FSCBinPath!\FSharp.Core.dll
     set PATH=!FSCBINPATH!;!PATH!
