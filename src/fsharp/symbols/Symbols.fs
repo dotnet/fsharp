@@ -1847,7 +1847,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member x.FormatLayout (denv:FSharpDisplayContext) =
         match x.IsMember, d with
         | true, V v ->
-            NicePrint.prettyLayoutOfValOrMemberNoInst { (denv.Contents cenv.g) with showMemberContainers=true } v.Deref
+            NicePrint.prettyLayoutOfMemberNoInstShort { (denv.Contents cenv.g) with showMemberContainers=true } v.Deref
         | _,_ ->
             checkIsResolved()
             let ty = 
@@ -1860,8 +1860,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                     mkIteratedFunTy (List.map (mkRefTupledTy cenv.g) argtysl) rty
                 | V v -> v.TauType
             NicePrint.prettyLayoutOfTypeNoCx (denv.Contents cenv.g) ty
-
-
+            
 and FSharpType(cenv, typ:TType) =
 
     let isUnresolved() = 
@@ -2133,6 +2132,7 @@ and FSharpStaticParameter(cenv, sp: Tainted< ExtensionTyping.ProvidedParameterIn
         |   _ -> false
 
     override x.GetHashCode() = hash x.Name
+
     override x.ToString() = 
         "static parameter " + x.Name 
 #endif
@@ -2145,6 +2145,7 @@ and FSharpParameter(cenv, typ:TType, topArgInfo:ArgReprInfo, mOpt, isParamArrayA
     let attribs = topArgInfo.Attribs
     let idOpt = topArgInfo.Name
     let m = match mOpt with Some m  -> m | None -> range0
+
     member __.Name = match idOpt with None -> None | Some v -> Some v.idText
     member __.cenv: cenv = cenv
     member __.AdjustType(t) = FSharpParameter(cenv, t, topArgInfo, mOpt, isParamArrayArg, isOutArg, isOptionalArg)
