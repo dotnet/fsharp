@@ -159,6 +159,17 @@ module internal RoslynHelpers =
         let linePositionSpan = LinePositionSpan(LinePosition(Line.toZ r.StartLine, r.StartColumn), LinePosition(Line.toZ r.EndLine, r.EndColumn))
         let textSpan = sourceText.Lines.GetTextSpan linePositionSpan
         Location.Create(filePath, textSpan, linePositionSpan)
+    
+    let StartAsyncSafe cancellationToken computation =
+        let computation =
+            async {
+                try
+                    return! computation
+                with e ->
+                    Assert.Exception(e)
+                    return Unchecked.defaultof<_>
+            }
+        Async.Start (computation, cancellationToken)
 
 
 module internal OpenDeclarationHelper =
