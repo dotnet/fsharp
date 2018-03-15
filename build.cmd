@@ -652,7 +652,7 @@ if "%NEEDS_DOTNET_CLI_TOOLS%" == "1" (
 )
 set _dotnetcliexe=%~dp0Tools\dotnetcli\dotnet.exe
 set _dotnet20exe=%~dp0Tools\dotnet20\dotnet.exe
-set NUGET_PACKAGES=%~dp0Packages
+set NUGET_PACKAGES=%~dp0packages
 set path=%~dp0Tools\dotnet20\;%path%
 
 echo ----------- Done with package restore, starting dependency uptake check -------------
@@ -963,6 +963,7 @@ set HOSTED_COMPILER=1
 
 if "%TEST_NET40_FSHARPQA_SUITE%" == "1" (
 
+    set CSC_PIPE=%~dp0packages\Microsoft.Net.Compilers.2.7.0\tools\csc.exe
     set FSC=!FSCBINPATH!\fsc.exe
     set FSCOREDLLPATH=!FSCBinPath!\FSharp.Core.dll
     set PATH=!FSCBINPATH!;!PATH!

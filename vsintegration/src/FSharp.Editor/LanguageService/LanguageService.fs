@@ -581,7 +581,8 @@ type
         let outliningManagerService = this.Package.ComponentModel.GetService<IOutliningManagerService>()
         let wpfTextView = this.EditorAdaptersFactoryService.GetWpfTextView(textView)
         let outliningManager = outliningManagerService.GetOutliningManager(wpfTextView)
-        outliningManager.Enabled <- Settings.Advanced.IsOutliningEnabled
+        if not (isNull outliningManager) then
+            outliningManager.Enabled <- Settings.Advanced.IsOutliningEnabled
 
         match textView.GetBuffer() with
         | (VSConstants.S_OK, textLines) ->
