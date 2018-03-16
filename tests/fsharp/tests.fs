@@ -235,14 +235,14 @@ module CoreTests =
     let ``anon-FSC_BASIC``() = 
         let cfg = testConfig "core/anon"
 
-        fsc cfg "%s -a -o:lib.dll -g" cfg.fsc_flags ["lib.fs"]
+        fsc cfg "%s -a -o:lib.dll" cfg.fsc_flags ["lib.fs"]
 
         copyFile (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
-        peverify cfg "lib.dll"
+        //peverify cfg "lib.dll"
 
-        fsc cfg "%s -r:lib.dll -g" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -r:lib.dll" cfg.fsc_flags ["test.fsx"]
 
-        peverify cfg "test.exe"
+        //peverify cfg "test.exe"
 
         begin 
             use testOkFile = fileguard cfg "test.ok"
