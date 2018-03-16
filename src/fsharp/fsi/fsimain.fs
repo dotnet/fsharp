@@ -236,12 +236,7 @@ let evaluateSession(argv: string[]) =
                 None
 #endif
 
-        let legacyReferenceResolver = 
-#if CROSS_PLATFORM_COMPILER
-            SimulatedMSBuildReferenceResolver.SimulatedMSBuildResolver
-#else
-            MSBuildReferenceResolver.Resolver
-#endif
+        let legacyReferenceResolver = SimulatedMSBuildReferenceResolver.SimulatedMSBuildResolver
         // Update the configuration to include 'StartServer', WinFormsEventLoop and 'GetOptionalConsoleReadLine()'
         let rec fsiConfig = 
             { new FsiEvaluationSessionHostConfig () with 

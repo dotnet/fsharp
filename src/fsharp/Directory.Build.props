@@ -1,0 +1,16 @@
+<Project>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('FSharp.Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <CompilingFsLib>true</CompilingFsLib>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
+    <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(BuildFromSource)' == 'true'">
+    <DefineConstants>$(DefineConstants);BUILD_FROM_SOURCE</DefineConstants>
+  </PropertyGroup>
+
+</Project>

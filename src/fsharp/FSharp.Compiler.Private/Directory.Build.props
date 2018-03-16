@@ -1,0 +1,16 @@
+<Project>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <DotNetExe Condition=" '$(OS)' == 'Unix' ">dotnet</DotNetExe>
+    <DotNetExe Condition=" '$(OS)' != 'Unix' ">dotnet.exe</DotNetExe>
+
+    <DotNetExePathPrefix>$(RepoRoot)Tools\dotnet20\</DotNetExePathPrefix>
+    <DotNetExePath>$(DotNetExePathPrefix)$(DotNetExe)</DotNetExePath>
+
+    <!-- When building from source, `dotnet` is expected to be on the path. -->
+    <DotNetExePath Condition="'$(BuildFromSource)' == 'true'">$(DotNetExe)</DotNetExePath>
+  </PropertyGroup>
+
+</Project>

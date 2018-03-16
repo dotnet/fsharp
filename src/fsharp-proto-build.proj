@@ -3,7 +3,7 @@
 
   <!-- Define all ProjectFiles here -->
   <ItemGroup>
-    <ProjectFiles Include="fsharp\FSharp.Core\FSharp.Core.fsproj"/>
+    <ProjectFiles Include="fsharp\FSharp.Core-proto\FSharp.Core.fsproj"/>
     <ProjectFiles Include="fsharp\FSharp.Build-proto\FSharp.Build-proto.fsproj"/>
     <ProjectFiles Include="fsharp\Fsc-proto\Fsc-proto.fsproj"/>
   </ItemGroup>

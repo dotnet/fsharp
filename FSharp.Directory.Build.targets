@@ -2,12 +2,14 @@
 
   <PropertyGroup>
     <XlfLanguages>en;$(XlfLanguages)</XlfLanguages>
-    <TargetDotnetProfile Condition="$(TargetFramework.StartsWith('netstandard')) or $(TargetFramework.StartsWith('netcoreapp'))">coreclr</TargetDotnetProfile>
-    <TargetDotnetProfile Condition="$(TargetFramework.StartsWith('net4'))">net40</TargetDotnetProfile>
-    <ActualOutputPath Condition="'$(Language)' != 'VB'">$(MSBuildProjectDirectory)\$(OutputPath)</ActualOutputPath>
-    <ActualOutputPath Condition="'$(Language)' == 'VB'">$(OutputPath)</ActualOutputPath>
-    <FinalOutputPath>$(RepoRoot)$(Configuration)\$(TargetDotnetProfile)\bin</FinalOutputPath>
-    <FinalIntermediateOutputPath>$(RepoRoot)$(Configuration)\$(TargetDotnetProfile)\obj</FinalIntermediateOutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(UsePackageTargetFallbackHack)' == 'true'">
+    <!--
+    HACK: Necessary because some packages from FSharp.Compiler.Private only support net462 or net45 on the desktop.  At
+    runtime everything will work out, but for this project's package restore we have to fake it.
+    -->
+    <PackageTargetFallback>net462</PackageTargetFallback>
   </PropertyGroup>
 
   <Target Name="HACK_CopyOutputsToTheProperLocation"
@@ -22,19 +24,31 @@
     The fix is to not set `$(Outputpath)` and simply copy stuff there after the fact.
     -->
 
+    <PropertyGroup>
+      <ActualOutputPath Condition="'$(Language)' != 'VB'">$(MSBuildProjectDirectory)\$(OutputPath)</ActualOutputPath>
+      <ActualOutputPath Condition="'$(Language)' == 'VB'">$(OutputPath)</ActualOutputPath>
+      <TargetDotnetProfile Condition="$(TargetFramework.StartsWith('netstandard')) or $(TargetFramework.StartsWith('netcoreapp'))">coreclr</TargetDotnetProfile>
+      <TargetDotnetProfile Condition="$(TargetFramework.StartsWith('net4'))">net40</TargetDotnetProfile>
+      <FinalOutputPath Condition="'$(FinalOutputPath)' == ''">$(RepoRoot)$(Configuration)\$(TargetDotnetProfile)\bin</FinalOutputPath>
+      <FinalIntermediateOutputPath Condition="'$(FinalIntermediateOutputPath)' == ''">$(RepoRoot)$(Configuration)\$(TargetDotnetProfile)\obj</FinalIntermediateOutputPath>
+    </PropertyGroup>
+
     <ItemGroup>
-      <OutputFilesToCopy Include="$(ActualOutputPath)**" />
+      <OutputFilesToCopy Include="$(ActualOutputPath)\**" />
       <IntermediateFilesToCopy Include="$(IntermediateOutputPath)\**" />
     </ItemGroup>
 
-    <Message Text="Copying build artifacts to $(FinalOutputPath)" />
     <MakeDir Directories="$(FinalOutputPath);$(FinalIntermediateOutputPath)" />
+
+    <Message Text="Copying build artifacts from $(ActualOutputPath) to $(FinalOutputPath)" />
     <Copy SourceFiles="@(OutputFilesToCopy)" DestinationFolder="$(FinalOutputPath)" />
+
+    <Message Text="Copying intermediate build artifacts from $(IntermediateOutputPath) to $(FinalIntermediateOutputPath)" />
     <Copy SourceFiles="@(IntermediateFilesToCopy)" DestinationFolder="$(FinalIntermediateOutputPath)" />
   </Target>
 
   <Import Project="build\targets\AssemblyVersions.props" />
-  <Import Project="build\targets\ConvertPortablePdbs.targets" />
+  <Import Project="build\targets\ConvertPortablePdbs.targets" Condition="'$(BuildFromSource)' != 'true'" />
   <Import Project="build\targets\GenerateAssemblyAttributes.targets" />
   <Import Project="build\targets\GenerateInternalsVisibleTo.targets" />
 
