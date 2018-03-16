@@ -357,7 +357,7 @@ open Printf
             printMessage (sprintf "Skipping generation of %s and %s from %s since up-to-date" outFilename outXmlFilename filename)
             Some (filename, outFilename, outXmlFilename)
           else
-            printMessage (sprintf "Generating %s and %s from %s, because condition%d is false, see FSharpEmbedResourceText.fs in the F# source"  outFilename outXmlFilename filename (if not condition1 then 1 elif not condition2 then 2 elif not condition3 then 3 elif not condition4 then 4 else 5) )
+            printMessage (sprintf "Generating %s and %s from %s, because condition %d is false, see FSharpEmbedResourceText.fs in the F# source"  outFilename outXmlFilename filename (if not condition1 then 1 elif not condition2 then 2 elif not condition3 then 3 elif not condition4 then 4 else 5) )
 
             printMessage (sprintf "Reading %s" filename)
             let lines = File.ReadAllLines(filename) 
