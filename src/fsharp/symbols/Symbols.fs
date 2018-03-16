@@ -1844,23 +1844,6 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             prefix + x.LogicalName 
         with _  -> "??"
 
-    member x.FormatLayout (denv:FSharpDisplayContext) =
-        match x.IsMember, d with
-        | true, V v ->
-            NicePrint.prettyLayoutOfValOrMemberNoInst { (denv.Contents cenv.g) with showMemberContainers=true } v.Deref
-        | _,_ ->
-            checkIsResolved()
-            let ty = 
-                match d with 
-                | E e -> e.GetDelegateType(cenv.amap, range0)
-                | P p -> p.GetPropertyType(cenv.amap, range0)
-                | M m | C m -> 
-                    let rty = m.GetFSharpReturnTy(cenv.amap, range0, m.FormalMethodInst)
-                    let argtysl = m.GetParamTypes(cenv.amap, range0, m.FormalMethodInst) 
-                    mkIteratedFunTy (List.map (mkRefTupledTy cenv.g) argtysl) rty
-                | V v -> v.TauType
-            NicePrint.prettyLayoutOfTypeNoCx (denv.Contents cenv.g) ty
-
 
 and FSharpType(cenv, typ:TType) =
 
@@ -2006,11 +1989,7 @@ and FSharpType(cenv, typ:TType) =
 
     member x.Format(denv: FSharpDisplayContext) = 
        protect <| fun () -> 
-        NicePrint.prettyStringOfTyNoCx (denv.Contents cenv.g) typ
-
-    member x.FormatLayout(denv: FSharpDisplayContext) =
-       protect <| fun () -> 
-        NicePrint.prettyLayoutOfTypeNoCx (denv.Contents cenv.g) typ
+        NicePrint.prettyStringOfTyNoCx (denv.Contents cenv.g) typ 
 
     override x.ToString() = 
        protect <| fun () -> 
