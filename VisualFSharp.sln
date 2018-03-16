@@ -32,7 +32,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{CFE3259A
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "VisualFSharp.Salsa", "vsintegration\tests\Salsa\VisualFSharp.Salsa.fsproj", "{FBD4B354-DC6E-4032-8EC7-C81D8DFB1AF7}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "VisualFSharp.UnitTests", "vsintegration\tests\unittests\VisualFSharp.UnitTests.fsproj", "{EE85AAB7-CDA0-4C4E-BDA0-A64DDDD13E3F}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "VisualFSharp.UnitTests", "vsintegration\tests\VisualFSharp.UnitTests\VisualFSharp.UnitTests.fsproj", "{EE85AAB7-CDA0-4C4E-BDA0-A64DDDD13E3F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DefinitionLocationAttribute", "vsintegration\tests\MockTypeProviders\DefinitionLocationAttribute\DefinitionLocationAttribute.csproj", "{DA39AD38-4A58-47BF-9215-E49768295169}"
 EndProject
