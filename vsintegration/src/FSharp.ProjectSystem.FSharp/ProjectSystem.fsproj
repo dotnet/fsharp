@@ -24,6 +24,7 @@
   <ItemGroup>
     <VSCTCompile Include="MenusAndCommands.vsct">
       <XlfInput>false</XlfInput>
+      <ResourceName>Menus.ctmenu</ResourceName>
     </VSCTCompile>
     <EmbeddedResource Include="VSPackage.resx">
       <GenerateSource>true</GenerateSource>
