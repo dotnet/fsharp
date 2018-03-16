@@ -199,7 +199,7 @@ type public Fsc () as this =
         // WarningsNotAsErrors
         match warningsNotAsErrors with
         | null -> ()
-        | _ -> builder.AppendSwitchIfNotNull("--warnaswarn:", warningsNotAsErrors.Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries), ",")
+        | _ -> builder.AppendSwitchIfNotNull("--warnaserror-:", warningsNotAsErrors.Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries), ",")
 
         // Win32ResourceFile
         builder.AppendSwitchIfNotNull("--win32res:", win32res)
