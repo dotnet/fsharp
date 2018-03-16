@@ -3199,7 +3199,31 @@ let private ResolveExprDotLongIdent (ncenv:NameResolver) m ad nenv typ (id:Ident
                     // But perhaps the caller should freshen?? 
                     let item = FreshenRecdFieldRef ncenv m rfref
                     OneSuccess (ResolutionInfo.Empty,item,rest)
-                | _ -> NoResultsOrUsefulErrors
+                | _ -> 
+                    let getterName = "get_" + id.idText
+                    nenv.eTyconsByDemangledNameAndArity
+                    |> Seq.tryPick (fun kv ->
+                        let inst = ncenv.InstantiationGenerator m (kv.Value.Typars m)
+                        let typ = TType.TType_app (kv.Value,inst)
+                        match metadataOfTy ncenv.g typ with 
+                        | ILTypeMetadata _ ->
+                            let tinfo = ILTypeInfo.FromType ncenv.g typ
+                            let mdefs = tinfo.RawMetadata.Methods.FindByName id.idText
+                            if not (isNil mdefs) then
+                                let infos = mdefs |> List.map (fun mdef -> MethInfo.CreateILMeth(ncenv.amap, m, typ, mdef))
+                                let item = Item.MethodGroup(id.idText, infos, None)
+                                Some(OneSuccess (ResolutionInfo.Empty,item,rest))
+                            else
+                                None
+                        | _ ->
+                        match kv.Value.MembersOfFSharpTyconByName |> Map.tryFind getterName with
+                        | Some [field] ->
+                            let p = PropInfo.FSProp (ncenv.g, typ, Some field ,None)
+                            let item = Item.Property(id.idText, [p])
+                            Some(OneSuccess (ResolutionInfo.Empty,item,rest))
+                        | _ -> None)
+                            
+                    |> Option.defaultValue NoResultsOrUsefulErrors
         
         let search = dotFieldIdSearch 
         match AtMostOneResult m search with 
