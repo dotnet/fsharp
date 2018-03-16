@@ -12,7 +12,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Editor.Shared.Utilities
 open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Host.Mef
-
+open Microsoft.CodeAnalysis.Classification
 open Microsoft.VisualStudio.Text.BraceCompletion
 open Microsoft.VisualStudio.Text.Operations
 open Microsoft.VisualStudio.Text
@@ -312,6 +312,38 @@ module private Parenthesis =
     [<Literal>]
     let CloseCharacter = ')'
 
+module private CurlyBrackets =
+
+    [<Literal>]
+    let OpenCharacter = '{'
+
+    [<Literal>]
+    let CloseCharacter = '}'
+
+module private SquareBrackets =
+
+    [<Literal>]
+    let OpenCharacter = '['
+
+    [<Literal>]
+    let CloseCharacter = ']'
+
+module private DoubleQuote =
+
+    [<Literal>]
+    let OpenCharacter = '"'
+
+    [<Literal>]
+    let CloseCharacter = '"'
+
+module private VerticalBar =
+
+    [<Literal>]
+    let OpenCharacter = '|'
+
+    [<Literal>]
+    let CloseCharacter = '|'
+
 type internal ParenthesisCompletionSession () =
     
     interface IEditorBraceCompletionSession with
@@ -330,24 +362,79 @@ type internal ParenthesisCompletionSession () =
             // TODO: Implement this for F#
             true 
 
+type internal DoubleQuoteCompletionSession () =
+    
+    interface IEditorBraceCompletionSession with
+
+        member this.AfterReturn(_session, _cancellationToken) = 
+            ()
+
+        member this.AfterStart(_session, _cancellationToken) = 
+            ()
+
+        member this.AllowOverType(_session, _cancellationToken) = 
+            // TODO: Implement this for F#
+            true
+
+        member this.CheckOpeningPoint(_session, _cancellationToken) = 
+            // TODO: Implement this for F#
+            true 
+
+type internal VerticalBarCompletionSession () =
+    
+    interface IEditorBraceCompletionSession with
+
+        member this.AfterReturn(_session, _cancellationToken) = 
+            ()
+
+        member this.AfterStart(_session, _cancellationToken) = 
+            ()
+
+        member this.AllowOverType(_session, _cancellationToken) = 
+            // TODO: Implement this for F#
+            true
+
+        member this.CheckOpeningPoint(_session, _cancellationToken) = 
+            let sourceCode = _session.TextView.TextSnapshot
+            //let document = _session.TextView.TextSnapshot.GetOpenDocumentInCurrentContextWithChanges()
+            let position = _session.TextView.Caret.Position.BufferPosition.Position
+            let ret = sourceCode.GetText(position-2,1) = "{" && sourceCode.GetText(position,1) = "}"
+                        || sourceCode.GetText(position-2,1) = "[" && sourceCode.GetText(position,1) = "]"
+            ret
+            
 [<ExportLanguageService(typeof<IEditorBraceCompletionSessionFactory>, FSharpConstants.FSharpLanguageName)>]
 type internal FSharpEditorBraceCompletionSessionFactory () =
     inherit ForegroundThreadAffinitizedObject ()
 
     member __.IsSupportedOpeningBrace openingBrace =
         match openingBrace with
-        | Parenthesis.OpenCharacter -> true
+        | Parenthesis.OpenCharacter | CurlyBrackets.OpenCharacter | SquareBrackets.OpenCharacter
+        | DoubleQuote.OpenCharacter | VerticalBar.OpenCharacter -> true
         | _ -> false
 
-    member this.CheckCodeContext(_document, _position, _openingBrace, _cancellationToken) =
-        this.AssertIsForeground();
-
-        // TODO: We need to know if we are inside a F# comment. If we are, then don't do automatic completion.
-        true
+    member this.CheckCodeContext(_document : Document, _position : int, _openingBrace, _cancellationToken) =
+        this.AssertIsForeground()
+    // TODO: We need to know if we are inside a F# comment. If we are, then don't do automatic completion.
+        let sourceCodeTask = _document.GetTextAsync(_cancellationToken)
+        sourceCodeTask.Wait(_cancellationToken)
+        let sourceCode = sourceCodeTask.Result
+        let colorizationData = Tokenizer.getColorizationData(_document.Id, sourceCode, TextSpan(_position-1, 1), Some (_document.FilePath), [], _cancellationToken)
+        colorizationData.Exists (fun classifiedSpan -> 
+            classifiedSpan.TextSpan.IntersectsWith _position &&
+            (
+                match classifiedSpan.ClassificationType with
+                | ClassificationTypeNames.Comment
+                | ClassificationTypeNames.StringLiteral -> false
+                | _ -> true // anything else is a valid classification type
+            ))                
 
     member this.CreateEditorSession(_document: Document, _openingPosition: int, openingBrace: char, _cancellationToken: CancellationToken) =
         match openingBrace with
         | Parenthesis.OpenCharacter -> ParenthesisCompletionSession() :> IEditorBraceCompletionSession
+        | CurlyBrackets.OpenCharacter -> ParenthesisCompletionSession() :> IEditorBraceCompletionSession
+        | SquareBrackets.OpenCharacter -> ParenthesisCompletionSession() :> IEditorBraceCompletionSession
+        | VerticalBar.OpenCharacter -> VerticalBarCompletionSession() :> IEditorBraceCompletionSession
+        | DoubleQuote.OpenCharacter -> DoubleQuoteCompletionSession() :> IEditorBraceCompletionSession
         | _ -> null
 
     interface IEditorBraceCompletionSessionFactory with
@@ -363,6 +450,10 @@ type internal FSharpEditorBraceCompletionSessionFactory () =
 [<Export(typeof<IBraceCompletionSessionProvider>)>]
 [<ContentType(FSharpConstants.FSharpContentTypeName)>]
 [<BracePair(Parenthesis.OpenCharacter, Parenthesis.CloseCharacter)>]
+[<BracePair(CurlyBrackets.OpenCharacter, CurlyBrackets.CloseCharacter)>]
+[<BracePair(SquareBrackets.OpenCharacter, SquareBrackets.CloseCharacter)>]
+[<BracePair(DoubleQuote.OpenCharacter, DoubleQuote.CloseCharacter)>]
+[<BracePair(VerticalBar.OpenCharacter, VerticalBar.CloseCharacter)>]
 type internal FSharpBraceCompletionSessionProvider
     [<ImportingConstructor>] 
     (
