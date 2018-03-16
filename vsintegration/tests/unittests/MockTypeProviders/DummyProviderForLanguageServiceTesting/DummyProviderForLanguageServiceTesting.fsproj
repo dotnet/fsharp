@@ -6,7 +6,6 @@
     <ProjectLanguage>FSharp</ProjectLanguage>
     <DisableLocalization>true</DisableLocalization>
   </PropertyGroup>
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -37,5 +36,4 @@
     <Compile Include="ProvidedTypes.fs" />
     <Compile Include="DummyProviderForLanguageServiceTesting.fs" />
   </ItemGroup>
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 </Project>

@@ -31,6 +31,7 @@
   <Import Project="..\src\root.traversal.targets"/>
 
   <Target Name="Restore">
+    <MSBuild Projects="@(ProjectFiles)" Targets="Restore" />
     <MSBuild Projects="@(SdkProjects)" Targets="Restore" />
   </Target>
 
