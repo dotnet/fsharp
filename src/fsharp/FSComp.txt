@@ -859,6 +859,7 @@ optsDeterministic,"Produce a deterministic assembly (including module version GU
 optsCrossoptimize,"Enable or disable cross-module optimizations"
 optsWarnaserrorPM,"Report all warnings as errors"
 optsWarnaserror,"Report specific warnings as errors"
+optsWarnaswarn,"Report specific warnings as warnings"
 optsWarn,"Set a warning level (0-5)"
 optsNowarn,"Disable specific warning messages"
 optsWarnOn,"Enable specific warnings that may be off by default"

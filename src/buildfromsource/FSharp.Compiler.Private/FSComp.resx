@@ -2667,6 +2667,9 @@
   <data name="optsWarnaserror" xml:space="preserve">
     <value>Report specific warnings as errors</value>
   </data>
+  <data name="optsWarnaswarn" xml:space="preserve">
+    <value>Report specific warnings as warnings</value>
+  </data>
   <data name="optsWarn" xml:space="preserve">
     <value>Set a warning level (0-5)</value>
   </data>

@@ -274,6 +274,7 @@ module internal ProjectCrackerTool =
       let defines = split (getProp "DefineConstants") [| ';'; ','; ' ' |]
       let nowarn = split (getProp "NoWarn") [| ';'; ','; ' ' |]
       let warningsAsError = split (getProp "WarningsAsErrors") [| ';'; ','; ' ' |]
+      let warningsNotAsError = split (getProp "WarningsNotAsErrors") [| ';'; ','; ' ' |]
       let libPaths = split (getProp "ReferencePath") [| ';'; ',' |]
       let otherFlags = split (getProp "OtherFlags") [| ' ' |]
       let isLib = (outputTypeOpt = Some "Library")
@@ -336,6 +337,8 @@ module internal ProjectCrackerTool =
                   if not (String.IsNullOrWhiteSpace nw) then yield "--nowarn:" + nw
               for nw in warningsAsError do
                   if not (String.IsNullOrWhiteSpace nw) then yield "--warnaserror:" + nw
+              for nw in warningsNotAsError do
+                  if not (String.IsNullOrWhiteSpace nw) then yield "--warnaswarn:" + nw
               yield if debugSymbols then "--debug+"
                       else "--debug-"
               yield if optimize then "--optimize+"

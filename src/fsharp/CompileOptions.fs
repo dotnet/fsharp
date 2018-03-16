@@ -583,6 +583,21 @@ let errorsAndWarningsFlags (tcConfigB: TcConfigBuilder) =
                             WarnAsWarn = ListSet.remove (=) n options.WarnAsWarn }
             | None -> ()), None, Some (FSComp.SR.optsWarnaserror()))
 
+        CompilerOption("warnaswarn", tagWarnList, OptionStringListSwitch (fun n switch ->
+            match trimFStoInt n with
+            | Some n ->
+                let options = tcConfigB.errorSeverityOptions
+                tcConfigB.errorSeverityOptions <-
+                    if switch = OptionSwitch.On then
+                        { options with
+                            WarnAsError = ListSet.remove (=) n options.WarnAsError
+                            WarnAsWarn = ListSet.insert (=) n options.WarnAsWarn }
+                    else
+                        { options with
+                            WarnAsError = ListSet.insert (=) n options.WarnAsError
+                            WarnAsWarn = ListSet.remove (=) n options.WarnAsWarn }
+            | None -> ()), None, Some (FSComp.SR.optsWarnaswarn()))
+
         CompilerOption("warn", tagInt, OptionInt (fun n ->
                  tcConfigB.errorSeverityOptions <-
                      { tcConfigB.errorSeverityOptions with
