@@ -8,6 +8,7 @@
     <NoWarn>$(NoWarn);1591</NoWarn>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <RootNamespace>Microsoft.VisualStudio.FSharp.UIResources</RootNamespace>
+    <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
