@@ -691,11 +691,9 @@ let CompilePatternBasic
                 if warnOnIncomplete then
                     match actionOnFailure with
                     | ThrowIncompleteMatchException | IgnoreWithWarning ->
-                        printfn "%A" refuted
                         let ignoreWithWarning = (actionOnFailure = IgnoreWithWarning)
                         let ce = ShowCounterExample g denv matchm refuted
                         match tryDestAppTy g topv.val_type, refuted with
-                        //| Some tcref, [RefutedInvestigation(_, decisionTreeTests)] when tcref.IsEnumTycon ->
                         | Some tcref, ds when tcref.IsEnumTycon ->
                             // Check whether or not the match handles all the defined values for the enum -- this
                             // changes what warning is emitted
