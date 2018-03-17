@@ -1764,23 +1764,23 @@ and p_rfield_table x st =
 and p_entity_spec_data (x:Entity) st = 
     p_typar_specs (x.entity_typars.Force(x.entity_range)) st 
     p_string x.entity_logical_name st
-    p_option p_string x.entity_compiled_name st
+    p_option p_string x.EntityCompiledName st
     p_range  x.entity_range st
     p_option p_pubpath x.entity_pubpath st
-    p_access x.entity_accessiblity st
-    p_access  x.entity_tycon_repr_accessibility st
+    p_access x.Accessibility st
+    p_access  x.TypeReprAccessibility st
     p_attribs x.entity_attribs st
     let flagBit = p_tycon_repr x.entity_tycon_repr st
-    p_option p_typ x.entity_tycon_abbrev st
+    p_option p_typ x.TypeAbbrev st
     p_tcaug x.entity_tycon_tcaug st
-    p_string x.entity_xmldocsig st
-    p_kind x.entity_kind st
+    p_string System.String.Empty st
+    p_kind x.TypeOrMeasureKind st
     p_int64 (x.entity_flags.PickledBits ||| (if flagBit then EntityFlags.ReservedBitForPickleFormatTyconReprFlag else 0L)) st
     p_option p_cpath x.entity_cpath st
     p_maybe_lazy p_modul_typ x.entity_modul_contents st
-    p_exnc_repr x.entity_exn_info st
+    p_exnc_repr x.ExceptionInfo st
     if st.oInMem then
-        p_used_space1 (p_xmldoc x.entity_xmldoc) st
+        p_used_space1 (p_xmldoc x.XmlDoc) st
     else
         p_space 1 () st
 
@@ -2017,7 +2017,7 @@ and u_recdfield_spec st =
 and u_rfield_table st = MakeRecdFieldsTable (u_list u_recdfield_spec st)
 
 and u_entity_spec_data st : Entity = 
-    let x1,x2a,x2b,x2c,x3,(x4a,x4b),x6,x7f,x8,x9,x10,x10b,x11,x12,x13,x14,x15 = 
+    let x1,x2a,x2b,x2c,x3,(x4a,x4b),x6,x7f,x8,x9,_x10,x10b,x11,x12,x13,x14,x15 = 
        u_tup17
           u_typar_specs
           u_string
@@ -2044,25 +2044,20 @@ and u_entity_spec_data st : Entity =
     { entity_typars=LazyWithContext.NotLazy x1
       entity_stamp=newStamp()
       entity_logical_name=x2a
-      entity_compiled_name=x2b
       entity_range=x2c
-      entity_other_range=None
       entity_pubpath=x3
-      entity_accessiblity=x4a
-      entity_tycon_repr_accessibility=x4b
       entity_attribs=x6
       entity_tycon_repr=x7
-      entity_tycon_abbrev=x8
       entity_tycon_tcaug=x9
-      entity_xmldoc= defaultArg x15 XmlDoc.Empty
-      entity_xmldocsig=x10
-      entity_kind=x10b
       entity_flags=EntityFlags(x11)
       entity_cpath=x12
       entity_modul_contents=MaybeLazy.Lazy x13
-      entity_exn_info=x14
       entity_il_repr_cache=newCache()  
-      } 
+      entity_opt_data=
+        match x2b, x10b, x15, x8, x4a, x4b, x14 with
+        | None, TyparKind.Type, None, None, TAccess [], TAccess [], TExnNone -> None
+        | _ -> Some { Entity.EmptyEntityOptData with entity_compiled_name = x2b; entity_kind = x10b; entity_xmldoc= defaultArg x15 XmlDoc.Empty; entity_xmldocsig = System.String.Empty; entity_tycon_abbrev = x8; entity_accessiblity = x4a; entity_tycon_repr_accessibility = x4b; entity_exn_info = x14 }
+    } 
 
 and u_tcaug st = 
     let a1,a2,a3,b2,c,d,e,g,_space = 

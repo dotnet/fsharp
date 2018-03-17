@@ -149,7 +149,7 @@
       </trans-unit>
       <trans-unit id="6012">
         <source>Advanced</source>
-        <target state="new">Advanced</target>
+        <target state="translated">Дополнительно</target>
         <note />
       </trans-unit>
     </body>
