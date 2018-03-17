@@ -17,8 +17,7 @@
   <PropertyGroup>
     <!-- default NuGet package restore location -->
     <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == ''">$(NUGET_PACKAGES)</NuGetPackageRoot>
-    <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == '' AND '$(OS)' == 'Windows_NT'">$(UserProfile)\.nuget\packages\</NuGetPackageRoot>
-    <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == '' AND '$(OS)' != 'Windows_NT'">$(HOME)/.nuget/packages/</NuGetPackageRoot>
+    <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == ''">$(MSBuildThisFileDirectory)packages</NuGetPackageRoot>
     <!-- ensure there is a trailing slash -->
     <NuGetPackageRoot Condition="!HasTrailingSlash('$(NuGetPackageRoot)') AND '$(OS)' == 'Windows_NT'">$(NuGetPackageRoot)\</NuGetPackageRoot>
     <NuGetPackageRoot Condition="!HasTrailingSlash('$(NuGetPackageRoot)') AND '$(OS)' != 'Windows_NT'">$(NuGetPackageRoot)/</NuGetPackageRoot>
@@ -46,6 +45,7 @@
 
   <!-- other -->
   <PropertyGroup>
+    <DebugType>portable</DebugType>
     <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
     <UseStandardResourceNames>false</UseStandardResourceNames>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
