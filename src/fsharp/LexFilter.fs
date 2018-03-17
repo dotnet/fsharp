@@ -1676,7 +1676,11 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
                 
         //  module ... ~~~> CtxtModuleHead 
         |  MODULE,(_ :: _) -> 
-            insertComingSoonTokens("MODULE", MODULE_COMING_SOON, MODULE_IS_HERE)
+            match peekNextToken() with
+            | COLON ->
+                insertComingSoonTokens("MODULE", MODULE_ATTRIBUTE_TARGET_COMING_SOON, MODULE_ATTRIBUTE_TARGET_IS_HERE)
+            | _ ->
+                insertComingSoonTokens("MODULE", MODULE_COMING_SOON, MODULE_IS_HERE)
             if debug then dprintf "MODULE: entering CtxtModuleHead, awaiting EQUALS to go to CtxtSeqBlock (%a)\n" outputPos tokenStartPos
             pushCtxt tokenTup (CtxtModuleHead (tokenStartPos, token))
             hwTokenFetch(useBlockRule)

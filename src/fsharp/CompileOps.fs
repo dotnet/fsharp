@@ -1014,7 +1014,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
               | Parser.TOKEN_DOWNCAST   -> getErrorString("Parser.TOKEN.DOWNCAST")
               | Parser.TOKEN_NULL   -> getErrorString("Parser.TOKEN.NULL")
               | Parser.TOKEN_RESERVED    -> getErrorString("Parser.TOKEN.RESERVED")
-              | Parser.TOKEN_MODULE | Parser.TOKEN_MODULE_COMING_SOON | Parser.TOKEN_MODULE_IS_HERE   -> getErrorString("Parser.TOKEN.MODULE")
+              | Parser.TOKEN_MODULE | Parser.TOKEN_MODULE_COMING_SOON | Parser.TOKEN_MODULE_IS_HERE | Parser.TOKEN_MODULE_ATTRIBUTE_TARGET_COMING_SOON | Parser.TOKEN_MODULE_ATTRIBUTE_TARGET_IS_HERE   -> getErrorString("Parser.TOKEN.MODULE")
               | Parser.TOKEN_AND    -> getErrorString("Parser.TOKEN.AND")
               | Parser.TOKEN_AS   -> getErrorString("Parser.TOKEN.AS")
               | Parser.TOKEN_ASSERT   -> getErrorString("Parser.TOKEN.ASSERT")

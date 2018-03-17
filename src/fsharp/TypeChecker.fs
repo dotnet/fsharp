@@ -10529,6 +10529,10 @@ and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute)  =
     let targetIndicator           = synAttr.Target
     let isAppliedToGetterOrSetter = synAttr.AppliesToGetterAndSetter
     let mAttr                     = synAttr.Range
+
+    if tycon.IsEmpty then ([], true)
+    else
+
     let (typath, tyid) = List.frontAndBack tycon
     let tpenv = emptyUnscopedTyparEnv
 
