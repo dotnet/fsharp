@@ -147,6 +147,11 @@
         <target state="translated">Zmień nazwę z „{0}” na „__”</target>
         <note />
       </trans-unit>
+      <trans-unit id="6012">
+        <source>Advanced</source>
+        <target state="translated">Zaawansowane</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

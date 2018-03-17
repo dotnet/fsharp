@@ -422,3 +422,4 @@ type CancellationType() =
 
         Assert.IsTrue(t.IsCompleted, "Task should be marked as completed")
         Assert.IsTrue(t.IsCanceled, "Task should be marked as cancelled")
+

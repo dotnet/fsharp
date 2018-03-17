@@ -33,7 +33,7 @@ open Microsoft.FSharp.Compiler.TypeRelations
 
 open System.Collections.Generic
 
-#if BUILDING_PROTO
+#if DEBUG
 let verboseOptimizationInfo = 
     try not (System.String.IsNullOrEmpty (System.Environment.GetEnvironmentVariable "FSHARP_verboseOptimizationInfo"))  with _ -> false
 let verboseOptimizations = 
@@ -2507,7 +2507,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
               false
             else true)))) ->
             
-        let isBaseCall =  args.Length > 0 &&          
+        let isBaseCall = not (List.isEmpty args) &&
                               match args.[0] with
                               | Expr.Val(vref, _, _) when vref.BaseOrThisInfo = BaseVal -> true
                               | _ -> false

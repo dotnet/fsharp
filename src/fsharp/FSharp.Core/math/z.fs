@@ -19,8 +19,7 @@ namespace System.Numerics
     // NOTE: 0 has two repns (+1,0) or (-1,0).
     [<Struct>]
     [<CustomEquality; CustomComparison>]
-#if FX_PORTABLE_OR_NETSTANDARD
-#else
+#if !NETSTANDARD1_6
     [<StructuredFormatDisplay("{StructuredDisplayString}I")>]
 #endif
     type BigInteger(signInt:int, v : BigNat) =
@@ -402,49 +401,6 @@ namespace Microsoft.FSharp.Core
                 if ok then 
                     res 
                 else 
-#if FSCORE_PORTABLE_OLD 
-                    // SL5 (and therefore Portable Profile47) does not have Parse, so make our own simple implementation
-                    let parse(s : string) =
-                        // ws* sign? digits+ ws*
-                        let mutable i = 0
-                        // leading whitespace
-                        while i < s.Length && System.Char.IsWhiteSpace(s.[i]) do
-                            i <- i + 1
-                        if i = s.Length then
-                            raise <| new System.ArgumentException()
-                        // optional sign
-                        let mutable isNegative = false
-                        if s.[i] = '+' then
-                            i <- i + 1
-                        elif s.[i] = '-' then
-                            isNegative <- true
-                            i <- i + 1
-                        if i = s.Length then
-                            raise <| new System.ArgumentException()
-                        // digits
-                        let startDigits = i
-                        while i < s.Length && System.Char.IsDigit(s.[i]) do
-                            i <- i + 1
-                        let endDigits = i
-                        let len = endDigits - startDigits
-                        if len = 0 then
-                            raise <| new System.ArgumentException()
-                        // trailing whitespace
-                        while i < s.Length && System.Char.IsWhiteSpace(s.[i]) do
-                            i <- i + 1
-                        if i <> s.Length then
-                            raise <| new System.ArgumentException()
-                        // text is now valid, parse it
-                        let mutable r = new System.Numerics.BigInteger(int(s.[startDigits]) - int('0'))
-                        let ten = new System.Numerics.BigInteger(10)
-                        for j in startDigits+1 .. endDigits-1 do
-                            r <- r * ten
-                            r <- r + new System.Numerics.BigInteger(int(s.[j]) - int('0'))
-                        if isNegative then
-                            r <- new System.Numerics.BigInteger(0) - r
-                        r
-                    let v = parse s
-#else
                     let v = 
 #if FX_NO_BIGINT
                        BigInteger.Parse s
@@ -453,7 +409,6 @@ namespace Microsoft.FSharp.Core
                           BigInteger.Parse (s.[2..],NumberStyles.AllowHexSpecifier,CultureInfo.InvariantCulture)
                        else
                           BigInteger.Parse (s,NumberStyles.AllowLeadingSign,CultureInfo.InvariantCulture)
-#endif
 #endif
                     res <-  v
                     tabParse.[s] <- res

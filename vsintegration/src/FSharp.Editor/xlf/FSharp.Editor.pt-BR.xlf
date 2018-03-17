@@ -147,6 +147,11 @@
         <target state="translated">Renomear '{0}' para '__'</target>
         <note />
       </trans-unit>
+      <trans-unit id="6012">
+        <source>Advanced</source>
+        <target state="translated">Avançado</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

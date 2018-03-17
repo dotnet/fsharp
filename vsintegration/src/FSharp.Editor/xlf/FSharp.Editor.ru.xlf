@@ -147,6 +147,11 @@
         <target state="translated">Переименовать "{0}" в "__"</target>
         <note />
       </trans-unit>
+      <trans-unit id="6012">
+        <source>Advanced</source>
+        <target state="translated">Дополнительно</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

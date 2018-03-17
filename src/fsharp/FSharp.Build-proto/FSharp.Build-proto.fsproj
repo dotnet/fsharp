@@ -9,9 +9,8 @@
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <AssemblyName>FSharp.Build-proto</AssemblyName>
+    <AssemblyName>FSharp.Build</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
-    <DefineConstants>BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
     <BuildWith>LKG</BuildWith>
     <ProjectGuid>{D8BC791F-C1A9-49DC-9432-0F3090537555}</ProjectGuid>
   </PropertyGroup>
@@ -40,30 +39,21 @@
     <Compile Include="..\FSharp.Build\WriteCodeFragment.fs">
       <Link>WriteCodeFragment.fs</Link>
     </Compile>
-    <CopyAndSubstituteText Include="..\FSharp.Build\Microsoft.FSharp.Targets">
-      <Link>Microsoft.FSharp-proto.targets</Link>
-      <TargetFilename>Microsoft.FSharp-proto.targets</TargetFilename>
-      <Pattern1>{BuildSuffix}</Pattern1>
-      <Replacement1>-proto</Replacement1>
-    </CopyAndSubstituteText>
-    <CopyAndSubstituteText Include="..\FSharp.Build\Microsoft.Portable.FSharp.Targets">
-      <Link>Microsoft.Portable.FSharp-proto.targets</Link>
-      <TargetFilename>Microsoft.Portable.FSharp-proto.targets</TargetFilename>
-      <Pattern1>{BuildSuffix}</Pattern1>
-      <Replacement1>-proto</Replacement1>
-    </CopyAndSubstituteText>
-    <CopyAndSubstituteText Include="..\FSharp.Build\Microsoft.FSharp.NetSdk.props">
-      <Link>Microsoft.FSharp.NetSdk-proto.props</Link>
-      <TargetFilename>Microsoft.FSharp.NetSdk-proto.props</TargetFilename>
-      <Pattern1>{BuildSuffix}</Pattern1>
-      <Replacement1>-proto</Replacement1>
-    </CopyAndSubstituteText>
-    <CopyAndSubstituteText Include="..\FSharp.Build\Microsoft.FSharp.NetSdk.targets">
-      <Link>Microsoft.FSharp.NetSdk-proto.targets</Link>
-      <TargetFilename>Microsoft.FSharp.NetSdk-proto.targets</TargetFilename>
-      <Pattern1>{BuildSuffix}</Pattern1>
-      <Replacement1>-proto</Replacement1>
-    </CopyAndSubstituteText>
+    <None Include="..\FSharp.Build\Microsoft.FSharp.Targets" CopyToOutputDirectory="PreserveNewest">
+      <Link>Microsoft.FSharp.Targets</Link>
+    </None>
+    <None Include="..\FSharp.Build\Microsoft.Portable.FSharp.Targets" CopyToOutputDirectory="PreserveNewest">
+      <Link>Microsoft.Portable.FSharp.Targets</Link>
+    </None>
+    <None Include="..\FSharp.Build\Microsoft.FSharp.NetSdk.props" CopyToOutputDirectory="PreserveNewest">
+      <Link>Microsoft.FSharp.NetSdk.props</Link>
+    </None>
+    <None Include="..\FSharp.Build\Microsoft.FSharp.NetSdk.targets" CopyToOutputDirectory="PreserveNewest">
+      <Link>Microsoft.FSharp.NetSdk.targets</Link>
+    </None>
+    <None Include="..\FSharp.Build\Microsoft.FSharp.Overrides.NetSdk.targets" CopyToOutputDirectory="PreserveNewest">
+      <Link>Microsoft.FSharp.Overrides.NetSdk.targets</Link>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />

@@ -218,8 +218,7 @@ module internal ToolLocationHelper =
         let dotNetFrameworkFolderPrefix = dotNetFrameworkVersionFolderPrefix
         let frameworkName = FrameworkName(dotNetFrameworkIdentifier, version)
 
-#if FX_NO_WIN_REGISTRY
-#else
+#if !FX_NO_WIN_REGISTRY
         let findRegistryValueUnderKey registryBaseKeyName registryKeyName registryView =
          try
             use baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, registryView)

@@ -1457,7 +1457,13 @@ module ToolsTests =
 
 module RegressionTests = 
 
-    [<Test >]
+    [<Test>]
+    let ``literal-value-bug-2-FSC_BASIC`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSC_BASIC
+
+    [<Test>]
+    let ``literal-value-bug-2-FSI_BASIC`` () = singleTestBuildAndRun "regression/literal-value-bug-2" FSI_BASIC
+
+    [<Test>]
     let ``struct-tuple-bug-1-FSC_BASIC`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSC_BASIC
 
     [<Test >]
@@ -2163,6 +2169,9 @@ module TypecheckTests =
     let ``type check neg101`` () = singleNegTest (testConfig "typecheck/sigs") "neg101"
 
     [<Test>] 
+    let ``type check neg_issue_3752`` () = singleNegTest (testConfig "typecheck/sigs") "neg_issue_3752"
+
+    [<Test>] 
     let ``type check neg_byref_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_1"
 
     [<Test>] 
@@ -2297,7 +2306,7 @@ open System.Runtime.InteropServices
         fv.LegalTrademarks |> Assert.areEqual "CST \u2122"
 #endif
 
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETSTANDARD1_6
 module ProductVersionTest =
 
     let informationalVersionAttrName = typeof<System.Reflection.AssemblyInformationalVersionAttribute>.FullName

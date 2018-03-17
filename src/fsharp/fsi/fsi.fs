@@ -1593,7 +1593,7 @@ module internal MagicAssemblyResolution =
     //  It is an explicit user trust decision to load an assembly with #r. Scripts are not run automatically (for example, by double-clicking in explorer).
     //  We considered setting loadFromRemoteSources in fsi.exe.config but this would transitively confer unsafe loading to the code in the referenced 
     //  assemblies. Better to let those assemblies decide for themselves which is safer.
-#if FSI_TODO_NETCORE
+#if NETSTANDARD1_6 || NETSTANDARD2_0
         Assembly.LoadFrom(path)
 #else
         Assembly.UnsafeLoadFrom(path)
@@ -1601,7 +1601,7 @@ module internal MagicAssemblyResolution =
 
     let Install(tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput) = 
 
-#if FSI_TODO_NETCORE
+#if NETSTANDARD1_6 || NETSTANDARD2_0
         ignore tcConfigB
         ignore tcImports
         ignore fsiDynamicCompiler
@@ -2029,7 +2029,7 @@ type internal FsiInteractionProcessor
 
                 // When the last declaration has a shape of DoExp (i.e., non-binding), 
                 // transform it to a shape of "let it = <exp>", so we can refer it.
-                let defsA = if defsA.Length <= 1 || defsB.Length > 0 then  defsA else
+                let defsA = if defsA.Length <= 1 || not (List.isEmpty defsB) then defsA else
                             match List.headAndTail (List.rev defsA) with
                             | SynModuleDecl.DoExpr(_,exp,_), rest -> (rest |> List.rev) @ (fsiDynamicCompiler.BuildItBinding exp)
                             | _ -> defsA
@@ -2421,7 +2421,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     let timeReporter = FsiTimeReporter(outWriter)
 
-#if !FX_RESHAPED_CONSOLE
+#if !FX_REDUCED_CONSOLE
     //----------------------------------------------------------------------------
     // Console coloring
     //----------------------------------------------------------------------------
@@ -2450,7 +2450,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     do tcConfigB.resolutionEnvironment <- ResolutionEnvironment.CompilationAndEvaluation // See Bug 3608
     do tcConfigB.useFsiAuxLib <- fsi.UseFsiAuxLib
 
-#if FSI_TODO_NETCORE
+#if NETSTANDARD1_6 || NETSTANDARD2_0
     do tcConfigB.useSimpleResolution <- true
     do SetTargetProfile tcConfigB "netcore" // always assume System.Runtime codegen
 #endif
@@ -2460,7 +2460,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     do SetDebugSwitch    tcConfigB (Some "pdbonly") OptionSwitch.On
     do SetTailcallSwitch tcConfigB OptionSwitch.On    
 
-#if !FSI_TODO_NETCORE
+#if NETSTANDARD1_6 || NETSTANDARD2_0
     // set platform depending on whether the current process is a 64-bit process.
     // BUG 429882 : FsiAnyCPU.exe issues warnings (x64 v MSIL) when referencing 64-bit assemblies
     do tcConfigB.platform <- if IntPtr.Size = 8 then Some AMD64 else Some X86

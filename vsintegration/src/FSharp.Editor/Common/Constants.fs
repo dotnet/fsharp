@@ -3,9 +3,6 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Configuration
-open System.Diagnostics
-open Microsoft.CodeAnalysis.Classification
 
 [<RequireQualifiedAccess>]
 module internal FSharpConstants =
@@ -17,7 +14,11 @@ module internal FSharpConstants =
     [<Literal>]
     /// "BC6DD5A5-D4D6-4dab-A00D-A51242DBAF1B"
     let languageServiceGuidString = "BC6DD5A5-D4D6-4dab-A00D-A51242DBAF1B"
-    
+
+    [<Literal>]
+    /// "91a04a73-4f2c-4e7c-ad38-c1a68e7da05c"
+    let projectPackageGuidString = "91a04a73-4f2c-4e7c-ad38-c1a68e7da05c"
+
     [<Literal>]
     /// "F#"
     let FSharpLanguageName = "F#"
@@ -45,7 +46,6 @@ module internal FSharpProviderConstants =
     /// "Session Capturing Quick Info Source Provider"
     let SessionCapturingProvider = "Session Capturing Quick Info Source Provider"
 
-
 [<RequireQualifiedAccess>]
 module internal Guids =
     
@@ -68,5 +68,8 @@ module internal Guids =
     [<Literal>]
     /// "8FDA964A-263D-4B4E-9560-29897535217C"
     let languageServicePerformanceOptionPageIdString = "8FDA964A-263D-4B4E-9560-29897535217C"
+
+    [<Literal>]
+    let advancedSettingsPageIdSring = "9007718C-357A-4327-A193-AB3EC38D7EE8"
 
     let blueHighContrastThemeId = Guid "{ce94d289-8481-498b-8ca9-9b6191a315b9}"

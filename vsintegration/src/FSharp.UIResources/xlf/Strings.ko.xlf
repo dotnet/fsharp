@@ -87,6 +87,26 @@
         <target state="translated">사용되지 않는 값에 대해 수정 사항 분석 및 제안</target>
         <note />
       </trans-unit>
+      <trans-unit id="Block_Structure">
+        <source>Block Structure Guides</source>
+        <target state="translated">블록 구조 가이드</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_guides">
+        <source>Show structure guidelines for F# code</source>
+        <target state="translated">F# 코드에 대한 구조체 지침 표시</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Outlining">
+        <source>Outlining</source>
+        <target state="translated">개요</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Outlining">
+        <source>Show outlining and collapsable nodes for F# code</source>
+        <target state="translated">F# 코드에 대한 개요 및 축소 가능한 노드 표시</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

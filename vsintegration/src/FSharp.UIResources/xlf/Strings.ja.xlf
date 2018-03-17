@@ -87,6 +87,26 @@
         <target state="translated">未使用の値を分析して修正を提案する</target>
         <note />
       </trans-unit>
+      <trans-unit id="Block_Structure">
+        <source>Block Structure Guides</source>
+        <target state="translated">ブロック構造のガイド</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_guides">
+        <source>Show structure guidelines for F# code</source>
+        <target state="translated">F# コードの構造のガイドラインを表示する</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Outlining">
+        <source>Outlining</source>
+        <target state="translated">アウトライン</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Outlining">
+        <source>Show outlining and collapsable nodes for F# code</source>
+        <target state="translated">F# コードのアウトラインおよび折りたたみ可能なノードを表示する</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
