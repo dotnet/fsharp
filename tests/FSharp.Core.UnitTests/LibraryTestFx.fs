@@ -71,24 +71,24 @@ module SurfaceArea =
     
         // get current FSharp.Core
         let asm = 
-            #if portable7 || portable78 || portable259 || coreclr
+#if FX_RESHAPED_REFLECTION
             typeof<int list>.GetTypeInfo().Assembly
-            #else
+#else
             typeof<int list>.Assembly
-            #endif
+#endif
         
         // public types only
         let types =
-            #if portable7 || portable78 || portable259 || coreclr
+#if FX_RESHAPED_REFLECTION
             asm.ExportedTypes |> Seq.filter (fun ty -> let ti = ty.GetTypeInfo() in ti.IsPublic || ti.IsNestedPublic) |> Array.ofSeq
-            #else
+#else
             asm.GetExportedTypes()
-            #endif
+#endif
 
         // extract canonical string form for every public member of every type
         let getTypeMemberStrings (t : Type) =
             // for System.Runtime-based profiles, need to do lots of manual work
-            #if portable7 || portable78 || portable259 || coreclr
+#if FX_RESHAPED_REFLECTION
             let getMembers (t : Type) =
                 let ti = t.GetTypeInfo()
                 let cast (info : #MemberInfo) = (t, info :> MemberInfo)
@@ -103,10 +103,10 @@ module SurfaceArea =
 
             getMembers t
             |> Array.map (fun (ty, m) -> sprintf "%s: %s" (ty.ToString()) (m.ToString()))
-            #else
+#else
             t.GetMembers()
             |> Array.map (fun v -> sprintf "%s: %s" (v.ReflectedType.ToString()) (v.ToString()))
-            #endif
+#endif
             
         let actual =
             types |> Array.collect getTypeMemberStrings
