@@ -246,9 +246,7 @@ let RefuteDiscrimSet g m path discrims =
                             match f.rfield_const, f.rfield_static with
                             | Some value, true -> Some value
                             | _, _ -> None)
-                    // enum pattern covers known values when there exist a known value such that consts does not
-                    // contain it
-                    knownValues |> Array.exists (fun ev -> not (consts.Contains ev))
+                    Array.forall (fun ev -> consts.Contains ev) knownValues
                 | _ -> false
 
             (* REVIEW: we could return a better enumeration literal field here if a field matches one of the enumeration cases *)
