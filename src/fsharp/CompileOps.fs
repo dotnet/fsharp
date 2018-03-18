@@ -153,6 +153,7 @@ let GetRangeOfDiagnostic(err:PhasedDiagnostic) =
       | InterfaceNotRevealed(_, _, m) 
       | WrappedError (_, m)
       | PatternMatchCompilation.MatchIncomplete (_, _, m)
+      | PatternMatchCompilation.EnumMatchIncomplete (_, _, m)
       | PatternMatchCompilation.RuleNeverMatched m 
       | ValNotMutable(_, _, m)
       | ValNotLocal(_, _, m) 
