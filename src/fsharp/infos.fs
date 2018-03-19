@@ -1242,6 +1242,7 @@ type MethInfo =
 
     /// Tests whether two method infos have the same underlying definition.
     /// Used to merge operator overloads collected from left and right of an operator constraint.
+    /// Must be compatible with ItemsAreEffectivelyEqual relation.
     static member MethInfosUseIdenticalDefinitions x1 x2 = 
         match x1,x2 with 
         | ILMeth(_,x1,_), ILMeth(_,x2,_) -> (x1.RawMetadata ===  x2.RawMetadata)
@@ -1252,8 +1253,7 @@ type MethInfo =
 #endif
         | _ -> false
 
-    /// Calculates a hash code of method info. Note: this is a very imperfect implementation,
-    /// but it works decently for comparing methods in the language service...
+    /// Calculates a hash code of method info. Must be compatible with ItemsAreEffectivelyEqual relation.
     member x.ComputeHashCode() = 
         match x with 
         | ILMeth(_,x1,_) -> hash x1.RawMetadata.Name
@@ -1691,6 +1691,8 @@ type ILFieldInfo =
         | ProvidedField(amap,fi,m) -> Import.ImportProvidedType amap m (fi.PApply((fun fi -> fi.FieldType),m))
 #endif
 
+    /// Tests whether two infos have the same underlying definition.
+    /// Must be compatible with ItemsAreEffectivelyEqual relation.
     static member ILFieldInfosUseIdenticalDefinitions x1 x2 = 
         match x1,x2 with 
         | ILFieldInfo(_, x1), ILFieldInfo(_, x2) -> (x1 === x2)
@@ -1700,6 +1702,10 @@ type ILFieldInfo =
 #endif
      /// Get an (uninstantiated) reference to the field as an Abstract IL ILFieldRef
     member x.ILFieldRef = rescopeILFieldRef x.ScopeRef (mkILFieldRef(x.ILTypeRef,x.FieldName,x.ILFieldType))
+
+    /// Calculates a hash code of field info. Must be compatible with ItemsAreEffectivelyEqual relation.
+    member x.ComputeHashCode() = hash x.FieldName
+
     override x.ToString() =  x.FieldName
 
 
@@ -2158,8 +2164,8 @@ type PropInfo =
         | FSProp _ -> failwith "no setter method"
 
     /// Test whether two property infos have the same underlying definition.
-    ///
     /// Uses the same techniques as 'MethInfosUseIdenticalDefinitions'.
+    /// Must be compatible with ItemsAreEffectivelyEqual relation.
     static member PropInfosUseIdenticalDefinitions x1 x2 = 
         let optVrefEq g = function 
           | Some(v1), Some(v2) -> valRefEq g v1 v2
@@ -2174,7 +2180,7 @@ type PropInfo =
 #endif
         | _ -> false
 
-    /// Calculates a hash code of property info (similar as previous)
+    /// Calculates a hash code of property info. Must be compatible with ItemsAreEffectivelyEqual relation.
     member pi.ComputeHashCode() = 
         match pi with 
         | ILProp ilpinfo -> hash ilpinfo.RawMetadata.Name
@@ -2413,6 +2419,7 @@ type EventInfo =
 
 
     /// Test whether two event infos have the same underlying definition.
+    /// Must be compatible with ItemsAreEffectivelyEqual relation.
     static member EventInfosUseIdenticalDefintions x1 x2 =
         match x1, x2 with
         | FSEvent(g, pi1, vrefa1, vrefb1), FSEvent(_, pi2, vrefa2, vrefb2) ->
@@ -2424,6 +2431,7 @@ type EventInfo =
         | _ -> false
   
     /// Calculates a hash code of event info (similar as previous)
+    /// Must be compatible with ItemsAreEffectivelyEqual relation.
     member ei.ComputeHashCode() = 
         match ei with 
         | ILEvent ileinfo -> hash ileinfo.RawMetadata.Name

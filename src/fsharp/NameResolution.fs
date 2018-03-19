@@ -1334,11 +1334,17 @@ let (|ActivePatternCaseUse|_|) (item:Item) =
     | Item.ActivePatternResult(ap, _, idx,_) -> Some (ap.Range, ap.Range, idx)
     | _ -> None
 
+let tyconRefDefnHash (_g: TcGlobals) (eref1:EntityRef) =
+    hash eref1.LogicalName 
+
 let tyconRefDefnEq g (eref1:EntityRef) (eref2: EntityRef) =
     tyconRefEq g eref1 eref2 
     // Signature items considered equal to implementation items
     || ((eref1.DefinitionRange = eref2.DefinitionRange || eref1.SigRange = eref2.SigRange) &&
         (eref1.LogicalName = eref2.LogicalName))
+
+let valRefDefnHash (_g: TcGlobals) (vref1:ValRef)=
+    hash vref1.DisplayName
 
 let valRefDefnEq g (vref1:ValRef) (vref2: ValRef) =
     valRefEq g vref1 vref2 
@@ -1415,6 +1421,23 @@ let ItemsAreEffectivelyEqual g orig other =
         modrefs1 |> List.exists (fun modref1 -> modrefs2 |> List.exists (fun r -> tyconRefDefnEq g modref1 r || fullDisplayTextOfModRef modref1 = fullDisplayTextOfModRef r))
 
     | _ -> false
+
+/// Given the Item 'orig' - returns function 'other : Item -> bool', that will yield true if other and orig represents the same item and false - otherwise
+let ItemsAreEffectivelyEqualHash (g: TcGlobals) orig = 
+    match orig with
+    | EntityUse tcref -> tyconRefDefnHash g tcref
+    | Item.TypeVar (nm,_)-> hash nm
+    | ValUse vref -> valRefDefnHash g vref
+    | ActivePatternCaseUse (_, _, idx)-> hash idx
+    | MethodUse minfo -> minfo.ComputeHashCode()
+    | PropertyUse pinfo -> pinfo.ComputeHashCode()
+    | Item.ArgName (id,_, _) -> hash id.idText 
+    | ILFieldUse ilfinfo -> ilfinfo.ComputeHashCode()
+    | UnionCaseUse ucase ->  hash ucase.CaseName
+    | RecordFieldUse (name, _) -> hash name
+    | EventUse einfo -> einfo.ComputeHashCode()
+    | Item.ModuleOrNamespaces _ -> 100013
+    | _ -> 389329
 
 [<System.Diagnostics.DebuggerDisplay("{DebugToString()}")>]
 type CapturedNameResolution(p:pos, i:Item, tpinst, io:ItemOccurence, de:DisplayEnv, nre:NameResolutionEnv, ad:AccessorDomain, m:range) =

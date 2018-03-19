@@ -35,6 +35,7 @@
     <IncludePkgdefInVSIXContainer>true</IncludePkgdefInVSIXContainer>
     <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
     <DisableOutputPathCopying>true</DisableOutputPathCopying>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'" />
