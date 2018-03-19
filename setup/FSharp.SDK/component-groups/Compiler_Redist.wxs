@@ -17,6 +17,7 @@
       <ComponentRef Id="Compiler_Redist_Microsoft.Portable.FSharp.targets" />
       <ComponentRef Id="Compiler_Redist_Microsoft.FSharp.NetSdk.props" />
       <ComponentRef Id="Compiler_Redist_Microsoft.FSharp.NetSdk.targets" />
+      <ComponentRef Id="Compiler_Redist_Microsoft.FSharp.Overrides.NetSdk.targets" />
       <ComponentRef Id="Compiler_Redist_SupportedRuntimes.xml" />
       <ComponentRef Id="Compiler_Redist_RegistryKeys_CompilerLocation" />
 
@@ -126,6 +127,10 @@
         <File Id="Compiler_Redist_Microsoft.FSharp.NetSdk.targets" Source="$(var.BinariesDir)\net40\bin\Microsoft.FSharp.NetSdk.targets" />
       </Component>
 
+      <Component Id="Compiler_Redist_Microsoft.FSharp.Overrides.NetSdk.targets" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.FSharp.Overrides.NetSdk.targets, $(var.LocaleCode)))">
+        <File Id="Compiler_Redist_Microsoft.FSharp.Overrides.NetSdk.targets" Source="$(var.BinariesDir)\net40\bin\Microsoft.FSharp.Overrides.NetSdk.targets" />
+      </Component>
+
       <Component Id="Compiler_Redist_SupportedRuntimes.xml" Guid="$(fsharp.guid(Compiler_Redist_SupportedRuntimes.xml, $(var.LocaleCode)))">
         <File Id="Compiler_Redist_SupportedRuntimes.xml" Source="$(var.FSharpTreeRoot)\vsintegration\src\SupportedRuntimes\SupportedRuntimes.xml" />
       </Component>
@@ -140,6 +145,7 @@
           <RegistryValue Name="Microsoft.Portable.FSharp.Targets" Value="[MicrosoftSDKs_FS_10.1_Framework_v4.0]Microsoft.Portable.FSharp.Targets" Type="string" />
           <RegistryValue Name="Microsoft.FSharp.NetSdk.props" Value="[MicrosoftSDKs_FS_10.1_Framework_v4.0]Microsoft.FSharp.NetSdk.props" Type="string" />
           <RegistryValue Name="Microsoft.FSharp.NetSdk.targets" Value="[MicrosoftSDKs_FS_10.1_Framework_v4.0]Microsoft.FSharpNetSdk.targets" Type="string" />
+          <RegistryValue Name="Microsoft.FSharp.Overrides.NetSdk.targets" Value="[MicrosoftSDKs_FS_10.1_Framework_v4.0]Microsoft.Overrides.FSharpNetSdk.targets" Type="string" />
         </RegistryKey>
         <RegistryKey Root="HKLM" Key="Software\Microsoft\VisualStudio\15.0\Setup\F#" ForceCreateOnInstall="yes" ForceDeleteOnUninstall="yes">
           <RegistryValue Name="ProductDir" Value="[MicrosoftSDKs_FS_10.1_Framework_v4.0]" Type="string" />
@@ -187,7 +193,7 @@
       </Component>
 
       <Component Id="Compiler_Redist_System.ValueTuple.dll" Guid="$(fsharp.guid(Compiler_Redist_System.ValueTuple.dll, $(var.LocaleCode)))">
-        <File Id="Compiler_Redist_System.ValueTuple.dll" Source="$(var.NugetPackagesDir)\System.ValueTuple.4.3.1\lib\netstandard1.0\System.ValueTuple.dll" />
+        <File Id="Compiler_Redist_System.ValueTuple.dll" Source="$(var.NugetPackagesDir)\System.ValueTuple.4.4.0\lib\netstandard1.0\System.ValueTuple.dll" />
       </Component>
     </DirectoryRef>
 

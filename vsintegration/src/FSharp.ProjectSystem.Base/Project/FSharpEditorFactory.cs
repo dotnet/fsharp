@@ -13,6 +13,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
+using ShellPackage = Microsoft.VisualStudio.Shell.Package;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
@@ -27,7 +28,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     [ProvideEditorExtension(typeof(FSharpEditorFactory), ".mli", 64)]
     public class FSharpEditorFactory : IVsEditorFactory
     {
-        private Package _parentPackage;
+        private ShellPackage _parentPackage;
         private IOleServiceProvider _oleServiceProvider;
         private IVsEditorAdaptersFactoryService _editorAdaptersFactoryService;
         private IContentTypeRegistryService _contentTypeRegistryService;
@@ -41,7 +42,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
-        public FSharpEditorFactory(Package parentPackage)
+        public FSharpEditorFactory(ShellPackage parentPackage)
         {
             if (parentPackage == null)
             {

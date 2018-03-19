@@ -20,7 +20,6 @@
     <OutputType>Exe</OutputType>
     <NoWarn>$(NoWarn);62</NoWarn>
     <AssemblyName>fsc</AssemblyName>
-    <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
   </PropertyGroup>

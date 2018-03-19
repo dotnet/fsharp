@@ -1,5 +1,5 @@
 ﻿#if INTERACTIVE
-#r "../../Debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
 #r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
@@ -123,15 +123,12 @@ let ``Test Project1 should have protected FullName and TryFullName return same r
     |> Seq.collect (Seq.collect getFullNameComparisons)
     |> Seq.iter (shouldEqual true)
 
-[<Test; Ignore "FCS should not throw exceptions on FSharpEntity.BaseType">]
+[<Test>]
+[<Ignore("SKIPPED: BaseType shouldn't throw exceptions")>]
 let ``Test project1 should not throw exceptions on entities from referenced assemblies`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
     let rec getAllBaseTypes (entity: FSharpEntity) =
-        #if !NO_EXTENSIONTYPING
         seq { if not entity.IsProvided && entity.Accessibility.IsPublic then
-        #else 
-        seq{
-        #endif
                 if not entity.IsUnresolved then yield entity.BaseType
                 for e in entity.NestedEntities do
                     yield! getAllBaseTypes e }
@@ -2203,9 +2200,7 @@ let ``Test Project13 all symbols`` () =
           ["type System.IComparable"; 
            "type System.IFormattable";
            "type System.IConvertible";
-#if !DOTNETCORE
            "type System.Runtime.Serialization.ISerializable";
-#endif
            "type System.IComparable<System.DateTime>";
            "type System.IEquatable<System.DateTime>"])
 
@@ -3170,7 +3165,7 @@ let ``Test Project22 IList properties`` () =
 
     attribsOfSymbol ilistTypeDefn |> shouldEqual ["interface"]
 
-#if !TODO_REWORK_ASSEMBLY_LOAD
+#if !NETCOREAPP2_0 // TODO: check if this can be enabled in .NET Core testing of FSharp.Compiler.Service
     ilistTypeDefn.Assembly.SimpleName |> shouldEqual coreLibAssemblyName
 #endif
 
@@ -3631,10 +3626,9 @@ let _ = XmlProvider<"<root><value>1</value><value>3</value></root>">.GetSample()
            yield @"-r:" + sysLib "System.Xml.Linq" |]
     let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
-#if DOTNETCORE
-[<Test; Ignore "Disabled until FSharp.Data.dll is build for dotnet core.">]
-#else
 [<Test>]
+#if NETCOREAPP2_0
+[<Ignore "SKIPPED: Disabled until FSharp.Data.dll is build for dotnet core.">]
 #endif
 let ``Test Project25 whole project errors`` () = 
     let wholeProjectResults = checker.ParseAndCheckProject(Project25.options) |> Async.RunSynchronously
@@ -3642,10 +3636,9 @@ let ``Test Project25 whole project errors`` () =
         printfn "Project25 error: <<<%s>>>" e.Message
     wholeProjectResults.Errors.Length |> shouldEqual 0
 
-#if DOTNETCORE
-[<Test; Ignore "Disabled until FSharp.Data.dll is build for dotnet core.">]
-#else
 [<Test>]
+#if NETCOREAPP2_0
+[<Ignore "SKIPPED: Disabled until FSharp.Data.dll is build for dotnet core.">]
 #endif
 let ``Test Project25 symbol uses of type-provided members`` () = 
     let wholeProjectResults = checker.ParseAndCheckProject(Project25.options) |> Async.RunSynchronously
@@ -3702,10 +3695,9 @@ let ``Test Project25 symbol uses of type-provided members`` () =
 
     usesOfGetSampleSymbol |> shouldEqual [|("file1", ((5, 8), (5, 25))); ("file1", ((10, 8), (10, 78)))|]
 
-#if DOTNETCORE
-[<Test; Ignore "Disabled until FSharp.Data.dll is build for dotnet core.">]
-#else
 [<Test>]
+#if NETCOREAPP2_0
+[<Ignore "SKIPPED: Disabled until FSharp.Data.dll is build for dotnet core.">]
 #endif
 let ``Test symbol uses of type-provided types`` () = 
     let wholeProjectResults = checker.ParseAndCheckProject(Project25.options) |> Async.RunSynchronously
@@ -4131,8 +4123,8 @@ let ``Test project31 whole project errors`` () =
     wholeProjectResults.Errors.Length |> shouldEqual 0
 
 [<Test>]
-#if DOTNETCORE
-[<Ignore("Fails on .NET Core - DebuggerTypeProxyAttribute and DebuggerDisplayAttribute note being emitted?")>]
+#if NETCOREAPP2_0
+[<Ignore("SKIPPED: Fails on .NET Core - DebuggerTypeProxyAttribute and DebuggerDisplayAttribute note being emitted?")>]
 #endif
 let ``Test project31 C# type attributes`` () =
     if not runningOnMono then 
@@ -4174,14 +4166,14 @@ let ``Test project31 C# method attributes`` () =
         |> set
         |> shouldEqual 
               (set [
-#if !DOTNETCORE
+#if !NETCOREAPP2_0 
                    "(SecuritySafeCriticalAttribute, [], [])";
 #endif
                    "(CLSCompliantAttribute, [(type Microsoft.FSharp.Core.bool, false)], [])"])
 
 [<Test>]
-#if DOTNETCORE
-[<Ignore("Fails on .NET Core - DebuggerTypeProxyAttribute and DebuggerDisplayAttribute note being emitted?")>]
+#if NETCOREAPP2_0
+[<Ignore("SKIPPED: Fails on .NET Core - DebuggerTypeProxyAttribute and DebuggerDisplayAttribute note being emitted?")>]
 #endif
 let ``Test project31 Format C# type attributes`` () =
     if not runningOnMono then 
@@ -4215,7 +4207,7 @@ let ``Test project31 Format C# method attributes`` () =
         |> set
         |> shouldEqual 
               (set ["[<CLSCompliantAttribute (false)>]";
-#if !DOTNETCORE
+#if !NETCOREAPP2_0
                     "[<Security.SecuritySafeCriticalAttribute ()>]";
 #endif
                     ])
@@ -4370,6 +4362,9 @@ let ``Test Project34 whole project errors`` () =
     wholeProjectResults.Errors.Length |> shouldEqual 0
 
 [<Test>]
+#if NETCOREAPP2_0
+[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+#endif
 let ``Test project34 should report correct accessibility for System.Data.Listeners`` () =
     let wholeProjectResults = checker.ParseAndCheckProject(Project34.options) |> Async.RunSynchronously
     let rec getNestedEntities (entity: FSharpEntity) = 
@@ -4491,7 +4486,7 @@ module internal Project35b =
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
     let fileNames = [fileName1]
-#if TODO_REWORK_ASSEMBLY_LOAD
+#if NETCOREAPP2_0
     let projPath = Path.ChangeExtension(fileName1, ".fsproj")
     let dllPath = Path.ChangeExtension(fileName1, ".dll")
     let args = mkProjectCommandLineArgs(dllPath, fileNames)
@@ -5208,3 +5203,144 @@ let ``#4030, Incremental builder creation warnings`` (args, errorSeverities) =
 
     let _, checkResults = parseAndCheckFile fileName source options
     checkResults.Errors |> Array.map (fun e -> e.Severity = FSharpErrorSeverity.Error) |> shouldEqual errorSeverities 
+
+
+//------------------------------------------------------
+
+[<Test>]
+let ``Unused opens smoke test 1``() =
+
+    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
+    let base2 = Path.GetTempFileName()
+    let dllName = Path.ChangeExtension(base2, ".dll")
+    let projFileName = Path.ChangeExtension(base2, ".fsproj")
+    let fileSource1 = """
+open System.Collections // unused
+open System.Collections.Generic // used, should not appear
+open FSharp.Control // unused
+open FSharp.Data // unused
+open System.Globalization // unused
+
+module SomeUnusedModule = 
+    let f x  = x
+
+module SomeUsedModuleContainingFunction = 
+    let g x  = x
+
+module SomeUsedModuleContainingActivePattern = 
+    let (|ActivePattern|) x  = x
+
+module SomeUsedModuleContainingExtensionMember = 
+    type System.Int32 with member x.Q = 1
+
+module SomeUsedModuleContainingUnion = 
+    type Q = A | B
+
+open SomeUnusedModule
+open SomeUsedModuleContainingFunction
+open SomeUsedModuleContainingExtensionMember
+open SomeUsedModuleContainingActivePattern
+open SomeUsedModuleContainingUnion
+
+type UseTheThings(i:int) =
+    member x.Value = Dictionary<int,int>() // use something from System.Collections.Generic, as a constructor
+    member x.UseSomeUsedModuleContainingFunction() = g 3
+    member x.UseSomeUsedModuleContainingActivePattern(ActivePattern g) = g
+    member x.UseSomeUsedModuleContainingExtensionMember() = (3).Q
+    member x.UseSomeUsedModuleContainingUnion() = A
+"""
+    File.WriteAllText(fileName1, fileSource1)
+
+    let fileNames = [fileName1]
+    let args = mkProjectCommandLineArgs (dllName, fileNames)
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true)
+    let options =  keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    
+    let fileCheckResults = 
+        keepAssemblyContentsChecker.ParseAndCheckFileInProject(fileName1, 0, fileSource1, options)  |> Async.RunSynchronously
+        |> function 
+            | _, FSharpCheckFileAnswer.Succeeded(res) -> res
+            | _ -> failwithf "Parsing aborted unexpectedly..."
+    //let symbolUses = fileCheckResults.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously |> Array.indexed 
+    // Fragments used to check hash codes:
+    //(snd symbolUses.[42]).Symbol.IsEffectivelySameAs((snd symbolUses.[37]).Symbol)
+    //(snd symbolUses.[42]).Symbol.GetEffectivelySameAsHash()
+    //(snd symbolUses.[37]).Symbol.GetEffectivelySameAsHash()
+    let lines = File.ReadAllLines(fileName1)
+    let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines.[i-1])) |> Async.RunSynchronously
+    let unusedOpensData = [ for uo in unusedOpens -> tups uo, lines.[uo.StartLine-1] ]
+    let expected = 
+          [(((2, 5), (2, 23)), "open System.Collections // unused");
+           (((4, 5), (4, 19)), "open FSharp.Control // unused");
+           (((5, 5), (5, 16)), "open FSharp.Data // unused");
+           (((6, 5), (6, 25)), "open System.Globalization // unused");
+           (((23, 5), (23, 21)), "open SomeUnusedModule")]
+    unusedOpensData |> shouldEqual expected
+
+[<Test>]
+let ``Unused opens smoke test auto open``() =
+
+    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
+    let base2 = Path.GetTempFileName()
+    let dllName = Path.ChangeExtension(base2, ".dll")
+    let projFileName = Path.ChangeExtension(base2, ".fsproj")
+    let fileSource1 = """
+open System.Collections // unused
+open System.Collections.Generic // used, should not appear
+open FSharp.Control // unused
+open FSharp.Data // unused
+open System.Globalization // unused
+
+[<AutoOpen>]
+module Helpers = 
+    module SomeUnusedModule = 
+        let f x  = x
+
+    module SomeUsedModuleContainingFunction = 
+        let g x  = x
+
+    module SomeUsedModuleContainingActivePattern = 
+        let (|ActivePattern|) x  = x
+
+    module SomeUsedModuleContainingExtensionMember = 
+        type System.Int32 with member x.Q = 1
+
+    module SomeUsedModuleContainingUnion = 
+        type Q = A | B
+
+open SomeUnusedModule
+open SomeUsedModuleContainingFunction
+open SomeUsedModuleContainingExtensionMember
+open SomeUsedModuleContainingActivePattern
+open SomeUsedModuleContainingUnion
+
+type UseTheThings(i:int) =
+    member x.Value = Dictionary<int,int>() // use something from System.Collections.Generic, as a constructor
+    member x.UseSomeUsedModuleContainingFunction() = g 3
+    member x.UseSomeUsedModuleContainingActivePattern(ActivePattern g) = g
+    member x.UseSomeUsedModuleContainingExtensionMember() = (3).Q
+    member x.UseSomeUsedModuleContainingUnion() = A
+"""
+    File.WriteAllText(fileName1, fileSource1)
+
+    let fileNames = [fileName1]
+    let args = mkProjectCommandLineArgs (dllName, fileNames)
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true)
+    let options =  keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    
+    let fileCheckResults = 
+        keepAssemblyContentsChecker.ParseAndCheckFileInProject(fileName1, 0, fileSource1, options)  |> Async.RunSynchronously
+        |> function 
+            | _, FSharpCheckFileAnswer.Succeeded(res) -> res
+            | _ -> failwithf "Parsing aborted unexpectedly..."
+    let lines = File.ReadAllLines(fileName1)
+    let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines.[i-1])) |> Async.RunSynchronously
+    let unusedOpensData = [ for uo in unusedOpens -> tups uo, lines.[uo.StartLine-1] ]
+    let expected = 
+          [(((2, 5), (2, 23)), "open System.Collections // unused");
+           (((4, 5), (4, 19)), "open FSharp.Control // unused");
+           (((5, 5), (5, 16)), "open FSharp.Data // unused");
+           (((6, 5), (6, 25)), "open System.Globalization // unused");
+           (((25, 5), (25, 21)), "open SomeUnusedModule")]
+    unusedOpensData |> shouldEqual expected
+

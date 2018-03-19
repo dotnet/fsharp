@@ -1451,7 +1451,7 @@ let tryDestRefTupleTy g ty =
 type UncurriedArgInfos = (TType * ArgReprInfo) list 
 type CurriedArgInfos = (TType * ArgReprInfo) list list
 
-// A 'tau' type is one with its type paramaeters stripped off 
+// A 'tau' type is one with its type parameters stripped off 
 let GetTopTauTypeInFSharpForm g (curriedArgInfos: ArgReprInfo list list) tau m =
     let nArgInfos = curriedArgInfos.Length
     let argtys, rty = stripFunTyN g nArgInfos tau
@@ -1591,7 +1591,7 @@ let isILInterfaceTycon (tycon:Tycon) =
 #if !NO_EXTENSIONTYPING
     | ProvidedTypeMetadata info -> info.IsInterface
 #endif
-    | ILTypeMetadata (TILObjectReprData(_, _, td)) -> (td.tdKind = ILTypeDefKind.Interface)
+    | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsInterface
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> false
 
 let rankOfArrayTy g ty = rankOfArrayTyconRef g (tcrefOfAppTy g ty)
@@ -1623,7 +1623,7 @@ let isDelegateTy g ty =
 #if !NO_EXTENSIONTYPING
     | ProvidedTypeMetadata info -> info.IsDelegate ()
 #endif
-    | ILTypeMetadata (TILObjectReprData(_, _, td)) -> (td.tdKind = ILTypeDefKind.Delegate)
+    | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsDelegate
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
         match tryDestAppTy g ty with
         | Some tcref -> tcref.Deref.IsFSharpDelegateTycon
@@ -1634,7 +1634,7 @@ let isInterfaceTy g ty =
 #if !NO_EXTENSIONTYPING
     | ProvidedTypeMetadata info -> info.IsInterface
 #endif
-    | ILTypeMetadata (TILObjectReprData(_, _, td)) -> (td.tdKind = ILTypeDefKind.Interface)
+    | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsInterface
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> isFSharpInterfaceTy g ty
 
 let isClassTy g ty = 
@@ -1642,7 +1642,7 @@ let isClassTy g ty =
 #if !NO_EXTENSIONTYPING
     | ProvidedTypeMetadata info -> info.IsClass
 #endif
-    | ILTypeMetadata (TILObjectReprData(_, _, td)) -> (td.tdKind = ILTypeDefKind.Class)
+    | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsClass
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> isFSharpClassTy g ty
 
 let isStructOrEnumTyconTy g ty = 
@@ -4632,14 +4632,23 @@ and remapValReprInfo g tmenv (ValReprInfo(tpNames, arginfosl, retInfo)) =
 
 and remapValData g tmenv (d: ValData) =
     let ty = d.val_type
-    let topValInfo = d.val_repr_info
-    let ty' = ty |> remapPossibleForallTy g tmenv
+    let topValInfo = d.ValReprInfo
+    let tyR = ty |> remapPossibleForallTy g tmenv
+    let declaringEntityR = d.DeclaringEntity |> remapParentRef tmenv
+    let reprInfoR = d.ValReprInfo |> Option.map (remapValReprInfo g tmenv)
+    let memberInfoR = d.MemberInfo |> Option.map (remapMemberInfo g d.val_range topValInfo ty tyR tmenv)
+    let attribsR = d.Attribs |> remapAttribs g tmenv
     { d with 
-        val_type    = ty';
-        val_declaring_entity = d.val_declaring_entity |> remapParentRef tmenv;
-        val_repr_info = d.val_repr_info |> Option.map (remapValReprInfo g tmenv);
-        val_member_info   = d.val_member_info |> Option.map (remapMemberInfo g d.val_range topValInfo ty ty' tmenv);
-        val_attribs       = d.val_attribs       |> remapAttribs g tmenv }
+        val_type     = tyR
+        val_opt_data =
+            match d.val_opt_data with
+            | Some dd ->
+                Some { dd with 
+                         val_declaring_entity = declaringEntityR
+                         val_repr_info        = reprInfoR
+                         val_member_info      = memberInfoR
+                         val_attribs          = attribsR }
+            | None -> None }
 
 and remapParentRef tyenv p =
     match p with 
@@ -5021,14 +5030,19 @@ and copyAndRemapAndBindTyconsAndVals g compgen tmenv tycons vs =
              
     (tycons, tycons') ||> List.iter2 (fun tcd tcd' -> 
         let tps', tmenvinner2 = tmenvCopyRemapAndBindTypars (remapAttribs g tmenvinner) tmenvinner (tcd.entity_typars.Force(tcd.entity_range))
-        tcd'.entity_typars         <- LazyWithContext.NotLazy tps';
-        tcd'.entity_attribs        <- tcd.entity_attribs |> remapAttribs g tmenvinner2;
-        tcd'.entity_tycon_repr           <- tcd.entity_tycon_repr    |> remapTyconRepr g tmenvinner2;
-        tcd'.entity_tycon_abbrev         <- tcd.entity_tycon_abbrev  |> Option.map (remapType tmenvinner2) ;
-        tcd'.entity_tycon_tcaug          <- tcd.entity_tycon_tcaug   |> remapTyconAug tmenvinner2 ;
+        tcd'.entity_typars         <- LazyWithContext.NotLazy tps'
+        tcd'.entity_attribs        <- tcd.entity_attribs       |> remapAttribs g tmenvinner2
+        tcd'.entity_tycon_repr     <- tcd.entity_tycon_repr    |> remapTyconRepr g tmenvinner2
+        let typeAbbrevR             = tcd.TypeAbbrev           |> Option.map (remapType tmenvinner2)
+        tcd'.entity_tycon_tcaug    <- tcd.entity_tycon_tcaug   |> remapTyconAug tmenvinner2
         tcd'.entity_modul_contents <- MaybeLazy.Strict (tcd.entity_modul_contents.Value 
-                                                        |> mapImmediateValsAndTycons lookupTycon lookupVal);
-        tcd'.entity_exn_info      <- tcd.entity_exn_info      |> remapTyconExnInfo g tmenvinner2) ;
+                                                        |> mapImmediateValsAndTycons lookupTycon lookupVal)
+        let exnInfoR                = tcd.ExceptionInfo        |> remapTyconExnInfo g tmenvinner2
+        match tcd'.entity_opt_data with
+        | Some optData -> tcd'.entity_opt_data <- Some { optData with entity_tycon_abbrev = typeAbbrevR; entity_exn_info = exnInfoR }
+        | _ -> 
+            tcd'.SetTypeAbbrev typeAbbrevR
+            tcd'.SetExceptionInfo exnInfoR)
     tycons', vs', tmenvinner
 
 
@@ -5196,24 +5210,24 @@ and remarkBind m (TBind(v, repr, _)) =
 // Reference semantics?
 //--------------------------------------------------------------------------
 
-let isRecdOrStructFieldAllocObservable (f:RecdField) = not f.IsStatic && f.IsMutable
-let isUnionCaseAllocObservable (uc:UnionCase) = uc.FieldTable.FieldsByIndex |> Array.exists isRecdOrStructFieldAllocObservable
-let isUnionCaseRefAllocObservable (uc:UnionCaseRef) = uc.UnionCase |> isUnionCaseAllocObservable
+let isRecdOrStructFieldMutable (f:RecdField) = not f.IsStatic && f.IsMutable
+let isUnionCaseMutable (uc:UnionCase) = uc.FieldTable.FieldsByIndex |> Array.exists isRecdOrStructFieldMutable
+let isUnionCaseRefMutable (uc:UnionCaseRef) = uc.UnionCase |> isUnionCaseMutable
   
-let isRecdOrUnionOrStructTyconAllocObservable (_g:TcGlobals) (tycon:Tycon) =
+let isRecdOrUnionOrFSharpStructTyconRefMutable (_g: TcGlobals) (tcref : TyconRef) = 
+    let tycon = tcref.Deref
     if tycon.IsUnionTycon then 
-        tycon.UnionCasesArray |> Array.exists isUnionCaseAllocObservable
-    elif tycon.IsRecordTycon || tycon.IsStructOrEnumTycon then 
-        tycon.AllFieldsArray |> Array.exists isRecdOrStructFieldAllocObservable
+        tycon.UnionCasesArray |> Array.exists isUnionCaseMutable
+    elif tycon.IsRecordTycon || tycon.IsFSharpStructOrEnumTycon then 
+        tycon.AllFieldsArray |> Array.exists isRecdOrStructFieldMutable
     else
         false
 
-let isRecdOrUnionOrStructTyconRefAllocObservable g (tcr : TyconRef) = isRecdOrUnionOrStructTyconAllocObservable g tcr.Deref
   
 // Although from the pure F# perspective exception values cannot be changed, the .NET 
 // implementation of exception objects attaches a whole bunch of stack information to 
 // each raised object.  Hence we treat exception objects as if they have identity 
-let isExnAllocObservable (_ecref:TyconRef) = true 
+let isExnMutable (_ecref:TyconRef) = true 
 
 // Some of the implementations of library functions on lists use mutation on the tail 
 // of the cons cell. These cells are always private, i.e. not accessible by any other 
@@ -5529,16 +5543,31 @@ let mkAndSimplifyMatch spBind exprm matchm ty tree targets  =
 // mkExprAddrOfExprAux
 //------------------------------------------------------------------------- 
 
-type Mutates = DefinitelyMutates | PossiblyMutates | NeverMutates
+type Mutates = 
+    | DefinitelyMutates 
+    | LikelyMutates
+    | PossiblyMutates
+    | NeverMutates
+
 exception DefensiveCopyWarning of string * range 
 
-let isRecdOrStructTyImmutable g ty =
+// This is an approximation used to determine if we can take the address of an immutable value in some
+// situations, or avoid a defensive copy in a PossiblyMutates operation.  It is not, however, correct 
+// for .NET struct types, which may be mutable, but we are not aware if they
+// are.  Thus, all .NET struct types are effectively assumed to be immutable.
+let isPossibleMutationAssumedImmutable g ty =
+    match tryDestAppTy g ty with 
+    | None -> false
+    | Some tcref -> not (isRecdOrUnionOrFSharpStructTyconRefMutable g tcref)
+
+// This is a precise predicate: here, .NET struct types are assumed to be mutable, apart from two which are hardwired.  
+// In these cases we give an optional warning when there is a discrepancy between this and the above.
+let isPossibleMutationDefinitelyImmutable g ty =
     match tryDestAppTy g ty with 
     | None -> false
     | Some tcref -> 
-      not (isRecdOrUnionOrStructTyconRefAllocObservable g tcref) ||
-      tyconRefEq g tcref g.decimal_tcr ||
-      tyconRefEq g tcref g.date_tcr
+        not (isRecdOrUnionOrFSharpStructTyconRefMutable g tcref) && 
+        (not tcref.Deref.IsILStructTycon || tyconRefEq g tcref g.decimal_tcr || tyconRefEq g tcref g.date_tcr)
 
 // We can take the address of values of struct type even if the value is immutable
 // under certain conditions
@@ -5551,18 +5580,23 @@ let isRecdOrStructTyImmutable g ty =
 //        let g1 = A.G(1)
 //        (fun () -> g1.x1)
 //
-// Note: isRecdOrStructTyImmutable implies PossiblyMutates or NeverMutates
-//
 // We only do this for true local or closure fields because we can't take addresses of immutable static 
 // fields across assemblies.
-let CanTakeAddressOfImmutableVal g (v:ValRef) mut =
+let CanTakeAddressOfImmutableVal g (v:ValRef) mut m =
     // We can take the address of values of struct type if the operation doesn't mutate 
     // and the value is a true local or closure field. 
     not v.IsMutable &&
     not v.IsMemberOrModuleBinding &&
     (match mut with 
      | NeverMutates -> true 
-     | PossiblyMutates -> isRecdOrStructTyImmutable g v.Type 
+     | LikelyMutates
+     | PossiblyMutates -> 
+         let res = isPossibleMutationAssumedImmutable g v.Type
+         if res && not (isPossibleMutationDefinitelyImmutable g v.Type) then 
+             if mut = LikelyMutates then 
+                 warning(Error(FSComp.SR.tastLikelyMutationOfConstant(), m))
+             warning(Error(FSComp.SR.tcStructTypeAssumedImmutable((tcrefOfAppTy g v.Type).DisplayName), m))
+         res
      | DefinitelyMutates -> false)
 
 let MustTakeAddressOfVal (g:TcGlobals) (v:ValRef) = 
@@ -5581,13 +5615,13 @@ let CanTakeAddressOfRecdFieldRef (g:TcGlobals) (rfref: RecdFieldRef) mut tinst =
     mut <> DefinitelyMutates && 
     // We only do this if the field is defined in this assembly because we can't take addresses across assemblies for immutable fields
     entityRefInThisAssembly g.compilingFslib rfref.TyconRef &&
-    isRecdOrStructTyImmutable g (actualTyOfRecdFieldRef rfref tinst)
+    isPossibleMutationAssumedImmutable g (actualTyOfRecdFieldRef rfref tinst)
 
 let CanTakeAddressOfUnionFieldRef (g:TcGlobals) (uref: UnionCaseRef) mut tinst cidx =
     mut <> DefinitelyMutates && 
     // We only do this if the field is defined in this assembly because we can't take addresses across assemblies for immutable fields
     entityRefInThisAssembly g.compilingFslib uref.TyconRef &&
-    isRecdOrStructTyImmutable g (actualTyOfUnionFieldRef uref cidx tinst)
+    isPossibleMutationAssumedImmutable g (actualTyOfUnionFieldRef uref cidx tinst)
 
 
 let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress mut e addrExprVal m =
@@ -5598,7 +5632,7 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
         None, exprForValRef m v
     // LVALUE: "x" where "x" is mutable local, mutable intra-assembly module/static binding, or operation doesn't mutate 
     // Note: we can always take the address of mutable values
-    | Expr.Val(v, _, m) when MustTakeAddressOfVal g v || CanTakeAddressOfImmutableVal g v mut ->
+    | Expr.Val(v, _, m) when MustTakeAddressOfVal g v || CanTakeAddressOfImmutableVal g v mut m ->
         None, mkValAddr m v
     // LVALUE: "x" where "e.x" is record field. 
     | Expr.Op (TOp.ValFieldGet rfref, tinst, [e], m) when MustTakeAddressOfRecdFieldRef rfref || CanTakeAddressOfRecdFieldRef g rfref mut tinst ->
@@ -5654,11 +5688,11 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
     // Give a nice error message for DefinitelyMutates on immutable values, or mutable values in other assemblies
     | Expr.Val(v, _, m) when mut = DefinitelyMutates
        -> 
-        if isByrefTy g v.Type then error(Error(FSComp.SR.tastUnexpectedByRef(), m));
+        if isByrefTy g v.Type then error(Error(FSComp.SR.tastUnexpectedByRef(), m))
         if v.IsMutable then 
-            error(Error(FSComp.SR.tastInvalidAddressOfMutableAcrossAssemblyBoundary(), m));
+            error(Error(FSComp.SR.tastInvalidAddressOfMutableAcrossAssemblyBoundary(), m))
         else 
-            error(Error(FSComp.SR.tastValueMustBeLocalAndMutable(), m));
+            error(Error(FSComp.SR.tastValueMustBeLocalAndMutable(), m))
          
     | _ -> 
         let ty = tyOfExpr g e
@@ -5666,9 +5700,12 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
             match mut with 
             | NeverMutates -> ()
             | DefinitelyMutates -> 
-                errorR(Error(FSComp.SR.tastInvalidMutationOfConstant(), m));
+                errorR(Error(FSComp.SR.tastInvalidMutationOfConstant(), m))
+            | LikelyMutates ->
+                warning(Error(FSComp.SR.tastLikelyMutationOfConstant(), m))
+                warning(DefensiveCopyWarning(FSComp.SR.tastValueHasBeenCopied(), m))
             | PossiblyMutates -> 
-                warning(DefensiveCopyWarning(FSComp.SR.tastValueHasBeenCopied(), m));
+                warning(DefensiveCopyWarning(FSComp.SR.tastValueHasBeenCopied(), m))
         let tmp, _ = 
             match mut with 
             | NeverMutates -> mkCompGenLocal m "copyOfStruct" ty 
@@ -6140,22 +6177,84 @@ let mkCallNewQuerySource                  (g:TcGlobals) m ty1 ty2 e1         = m
 
 let mkCallCreateEvent                        (g:TcGlobals) m ty1 ty2 e1 e2 e3 = mkApps g (typedExprForIntrinsic g m g.create_event_info,       [[ty1;ty2]], [ e1;e2;e3 ], m)
 let mkCallGenericComparisonWithComparerOuter (g:TcGlobals) m ty comp e1 e2    = mkApps g (typedExprForIntrinsic g m g.generic_comparison_withc_outer_info, [[ty]], [  comp;e1;e2 ], m)
-let mkCallEqualsOperator                     (g:TcGlobals) m ty e1 e2         = mkApps g (typedExprForIntrinsic g m g.equals_operator_info,     [[ty]], [  e1;e2 ], m)
 let mkCallGenericEqualityEROuter             (g:TcGlobals) m ty e1 e2         = mkApps g (typedExprForIntrinsic g m g.generic_equality_er_outer_info,     [[ty]], [  e1;e2 ], m)
 let mkCallGenericEqualityWithComparerOuter   (g:TcGlobals) m ty comp e1 e2    = mkApps g (typedExprForIntrinsic g m g.generic_equality_withc_outer_info, [[ty]], [comp;e1;e2], m)
 let mkCallGenericHashWithComparerOuter       (g:TcGlobals) m ty comp e1       = mkApps g (typedExprForIntrinsic g m g.generic_hash_withc_outer_info, [[ty]], [comp;e1], m)
 
-let mkCallSubtractionOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_subtraction_info, [[ty; ty; ty]], [e1;e2], m)
+let mkCallEqualsOperator                     (g:TcGlobals) m ty e1 e2         = mkApps g (typedExprForIntrinsic g m g.equals_operator_info,     [[ty]], [  e1;e2 ], m)
+let mkCallNotEqualsOperator                  (g:TcGlobals) m ty e1 e2         = mkApps g (typedExprForIntrinsic g m g.not_equals_operator,     [[ty]], [  e1;e2 ], m)
+let mkCallLessThanOperator                   (g:TcGlobals) m ty e1 e2         = mkApps g (typedExprForIntrinsic g m g.less_than_operator,     [[ty]], [  e1;e2 ], m)
+let mkCallLessThanOrEqualsOperator           (g:TcGlobals) m ty e1 e2         = mkApps g (typedExprForIntrinsic g m g.less_than_or_equals_operator,     [[ty]], [  e1;e2 ], m)
+let mkCallGreaterThanOperator                (g:TcGlobals) m ty e1 e2         = mkApps g (typedExprForIntrinsic g m g.greater_than_operator,     [[ty]], [  e1;e2 ], m)
+let mkCallGreaterThanOrEqualsOperator        (g:TcGlobals) m ty e1 e2         = mkApps g (typedExprForIntrinsic g m g.greater_than_or_equals_operator,     [[ty]], [  e1;e2 ], m)
 
-let mkCallArrayLength (g:TcGlobals) m ty el                    = mkApps g (typedExprForIntrinsic g m g.array_length_info, [[ty]], [el], m)
-let mkCallArrayGet   (g:TcGlobals) m ty e1 e2                  = mkApps g (typedExprForIntrinsic g m g.array_get_info, [[ty]], [ e1 ; e2 ], m)
+let mkCallAdditionOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_addition_info, [[ty; ty; ty]], [e1;e2], m)
+let mkCallSubtractionOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_subtraction_info, [[ty; ty; ty]], [e1;e2], m)
+let mkCallMultiplyOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_multiply_info, [[ty; ty; ty]], [e1;e2], m)
+let mkCallDivisionOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_division_info, [[ty; ty; ty]], [e1;e2], m)
+let mkCallModulusOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_modulus_info, [[ty; ty; ty]], [e1;e2], m)
+let mkCallBitwiseAndOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.bitwise_and_info, [[ty]], [e1;e2], m)
+let mkCallBitwiseOrOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.bitwise_or_info, [[ty]], [e1;e2], m)
+let mkCallBitwiseXorOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.bitwise_xor_info, [[ty]], [e1;e2], m)
+let mkCallShiftLeftOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.bitwise_shift_left_info, [[ty]], [e1;e2], m)
+let mkCallShiftRightOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.bitwise_shift_right_info, [[ty]], [e1;e2], m)
+
+let mkCallUnaryNegOperator  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.unchecked_unary_minus_info, [[ty]], [e1], m)
+let mkCallUnaryNotOperator  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.bitwise_unary_not_info, [[ty]], [e1], m)
+
+let mkCallAdditionChecked   (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.checked_addition_info, [[ty; ty; ty]], [e1;e2], m)
+let mkCallSubtractionChecked (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.checked_subtraction_info, [[ty; ty; ty]], [e1;e2], m)
+let mkCallMultiplyChecked   (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.checked_multiply_info, [[ty; ty; ty]], [e1;e2], m)
+let mkCallUnaryNegChecked   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.checked_unary_minus_info, [[ty]], [e1], m)
+
+let mkCallToByteChecked     (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.byte_checked_info, [[ty]], [e1], m)
+let mkCallToSByteChecked    (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.sbyte_checked_info, [[ty]], [e1], m)
+let mkCallToInt16Checked    (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int16_checked_info, [[ty]], [e1], m)
+let mkCallToUInt16Checked   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.uint16_checked_info, [[ty]], [e1], m)
+let mkCallToIntChecked      (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int_checked_info, [[ty]], [e1], m)
+let mkCallToInt32Checked    (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int32_checked_info, [[ty]], [e1], m)
+let mkCallToUInt32Checked   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.uint32_checked_info, [[ty]], [e1], m)
+let mkCallToInt64Checked    (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int64_checked_info, [[ty]], [e1], m)
+let mkCallToUInt64Checked   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.uint64_checked_info, [[ty]], [e1], m)
+let mkCallToIntPtrChecked   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.nativeint_checked_info, [[ty]], [e1], m)
+let mkCallToUIntPtrChecked  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.unativeint_checked_info, [[ty]], [e1], m)
+
+let mkCallToByteOperator    (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.byte_operator_info, [[ty]], [e1], m)
+let mkCallToSByteOperator   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.sbyte_operator_info, [[ty]], [e1], m)
+let mkCallToInt16Operator   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int16_operator_info, [[ty]], [e1], m)
+let mkCallToUInt16Operator  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.uint16_operator_info, [[ty]], [e1], m)
+let mkCallToIntOperator     (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int_operator_info, [[ty]], [e1], m)
+let mkCallToInt32Operator   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int32_operator_info, [[ty]], [e1], m)
+let mkCallToUInt32Operator  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.uint32_operator_info, [[ty]], [e1], m)
+let mkCallToInt64Operator   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int64_operator_info, [[ty]], [e1], m)
+let mkCallToUInt64Operator  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.uint64_operator_info, [[ty]], [e1], m)
+let mkCallToSingleOperator  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.float32_operator_info, [[ty]], [e1], m)
+let mkCallToDoubleOperator  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.float_operator_info, [[ty]], [e1], m)
+let mkCallToIntPtrOperator  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.nativeint_operator_info, [[ty]], [e1], m)
+let mkCallToUIntPtrOperator (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.unativeint_operator_info, [[ty]], [e1], m)
+
+let mkCallToCharOperator    (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.char_operator_info, [[ty]], [e1], m)
+let mkCallToEnumOperator    (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.enum_operator_info, [[ty]], [e1], m)
+
+let mkCallArrayLength (g:TcGlobals) m ty e1                    = mkApps g (typedExprForIntrinsic g m g.array_length_info, [[ty]], [e1], m)
+let mkCallArrayGet   (g:TcGlobals) m ty e1 idx1                = mkApps g (typedExprForIntrinsic g m g.array_get_info, [[ty]], [ e1 ; idx1 ], m)
 let mkCallArray2DGet (g:TcGlobals) m ty e1 idx1 idx2           = mkApps g (typedExprForIntrinsic g m g.array2D_get_info, [[ty]], [ e1 ; idx1; idx2 ], m)
 let mkCallArray3DGet (g:TcGlobals) m ty e1 idx1 idx2 idx3      = mkApps g (typedExprForIntrinsic g m g.array3D_get_info, [[ty]], [ e1 ; idx1; idx2; idx3 ], m)
 let mkCallArray4DGet (g:TcGlobals) m ty e1 idx1 idx2 idx3 idx4 = mkApps g (typedExprForIntrinsic g m g.array4D_get_info, [[ty]], [ e1 ; idx1; idx2; idx3; idx4 ], m)
+let mkCallArraySet   (g:TcGlobals) m ty e1 idx1 v              = mkApps g (typedExprForIntrinsic g m g.array_set_info, [[ty]], [ e1 ; idx1; v ], m)
+let mkCallArray2DSet (g:TcGlobals) m ty e1 idx1 idx2 v         = mkApps g (typedExprForIntrinsic g m g.array2D_set_info, [[ty]], [ e1 ; idx1; idx2; v ], m)
+let mkCallArray3DSet (g:TcGlobals) m ty e1 idx1 idx2 idx3 v    = mkApps g (typedExprForIntrinsic g m g.array3D_set_info, [[ty]], [ e1 ; idx1; idx2; idx3; v ], m)
+let mkCallArray4DSet (g:TcGlobals) m ty e1 idx1 idx2 idx3 idx4 v = mkApps g (typedExprForIntrinsic g m g.array4D_set_info, [[ty]], [ e1 ; idx1; idx2; idx3; idx4; v ], m)
+
+let mkCallHash       (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.hash_info,      [[ty]], [ e1 ], m)
+let mkCallBox        (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.box_info,       [[ty]], [ e1 ], m)
+let mkCallIsNull     (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.isnull_info,    [[ty]], [ e1 ], m)
+let mkCallIsNotNull  (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.isnotnull_info, [[ty]], [ e1 ], m)
+let mkCallRaise      (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.raise_info,     [[ty]], [ e1 ], m)
+
 let mkCallNewDecimal (g:TcGlobals) m (e1, e2, e3, e4, e5)          = mkApps g (typedExprForIntrinsic g m g.new_decimal_info, [], [ e1;e2;e3;e4;e5 ], m)
 
 let mkCallNewFormat (g:TcGlobals) m aty bty cty dty ety e1    = mkApps g (typedExprForIntrinsic g m g.new_format_info, [[aty;bty;cty;dty;ety]], [ e1 ], m)
-let mkCallRaise     (g:TcGlobals) m aty e1    = mkApps g (typedExprForIntrinsic g m g.raise_info, [[aty]], [ e1 ], m)
 
 let TryEliminateDesugaredConstants g m c = 
     match c with 
@@ -6935,8 +7034,8 @@ let etaExpandTypeLambda g m tps (tm, ty) =
     if isNil tps then tm else mkTypeLambda m tps (mkApps g ((tm, ty), [(List.map mkTyparTy tps)], [], m), ty)
 
 let AdjustValToTopVal (tmp:Val) parent valData =
-    tmp.SetValReprInfo (Some valData);  
-    tmp.val_declaring_entity <- parent;  
+    tmp.SetValReprInfo (Some valData)
+    tmp.SetDeclaringEntity parent
     tmp.SetIsMemberOrModuleBinding()
 
 /// For match with only one non-failing target T0, the other targets, T1... failing (say, raise exception).
@@ -7702,17 +7801,26 @@ let MakeExportRemapping viewedCcu (mspec:ModuleOrNamespace) =
 
 let rec remapEntityDataToNonLocal g tmenv (d: Entity) = 
     let tps', tmenvinner = tmenvCopyRemapAndBindTypars (remapAttribs g tmenv) tmenv (d.entity_typars.Force(d.entity_range))
-
+    let typarsR          = LazyWithContext.NotLazy tps'
+    let attribsR         = d.entity_attribs        |> remapAttribs g tmenvinner
+    let tyconReprR       = d.entity_tycon_repr     |> remapTyconRepr g tmenvinner
+    let tyconAbbrevR     = d.TypeAbbrev            |> Option.map (remapType tmenvinner)
+    let tyconTcaugR      = d.entity_tycon_tcaug    |> remapTyconAug tmenvinner
+    let modulContentsR   = 
+        MaybeLazy.Strict (d.entity_modul_contents.Value
+                          |> mapImmediateValsAndTycons (remapTyconToNonLocal g tmenv) (remapValToNonLocal g tmenv))
+    let exnInfoR         = d.ExceptionInfo         |> remapTyconExnInfo g tmenvinner
     { d with 
-          entity_typars         = LazyWithContext.NotLazy tps';
-          entity_attribs        = d.entity_attribs        |> remapAttribs g tmenvinner;
-          entity_tycon_repr           = d.entity_tycon_repr           |> remapTyconRepr g tmenvinner;
-          entity_tycon_abbrev         = d.entity_tycon_abbrev         |> Option.map (remapType tmenvinner) ;
-          entity_tycon_tcaug          = d.entity_tycon_tcaug          |> remapTyconAug tmenvinner ;
-          entity_modul_contents = 
-              MaybeLazy.Strict (d.entity_modul_contents.Value
-                                |> mapImmediateValsAndTycons (remapTyconToNonLocal g tmenv) (remapValToNonLocal g tmenv));
-          entity_exn_info      = d.entity_exn_info      |> remapTyconExnInfo g tmenvinner}
+          entity_typars         = typarsR
+          entity_attribs        = attribsR
+          entity_tycon_repr     = tyconReprR
+          entity_tycon_tcaug    = tyconTcaugR
+          entity_modul_contents = modulContentsR
+          entity_opt_data       =
+            match d.entity_opt_data with
+            | Some dd ->
+                Some { dd with  entity_tycon_abbrev = tyconAbbrevR; entity_exn_info = exnInfoR }
+            | _ -> None }
 
 and remapTyconToNonLocal g tmenv x = 
     x |> NewModifiedTycon (remapEntityDataToNonLocal g tmenv)  

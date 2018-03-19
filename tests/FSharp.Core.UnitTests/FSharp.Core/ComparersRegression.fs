@@ -1628,7 +1628,7 @@ module ComparersRegression =
         static member I = inlinable
         static member N = noninlinable
 
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETSTANDARD1_6
     let create<'a,'b when 'b : equality> name operation (f:IOperation<'a>) (items:array<'a>) =
         printf """ [<Test>]
  member __.``%s %s``() =

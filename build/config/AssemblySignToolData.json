@@ -50,7 +50,6 @@
       "values": [
         "net40\\bin\\VisualFSharpFull.vsix",
         "net40\\bin\\VisualFSharpTemplate.vsix",
-        "net40\\bin\\VisualFSharpOpenSource.vsix",
         "insertion\\Microsoft.FSharp.Dependencies.vsix",
         "insertion\\Microsoft.FSharp.VSIX.Full.Resources.*.vsix"
       ]
@@ -66,7 +65,7 @@
     "Microsoft.DiaSymReader.dll",
     "Microsoft.DiaSymReader.PortablePdb.dll",
     "Newtonsoft.Json.dll",
-    "System.ValueTuple.4.3.1.nupkg",
+    "System.ValueTuple.4.4.0.nupkg",
     "System.Collections.Immutable.dll",
     "System.Reflection.Metadata.dll",
     "System.ValueTuple.dll"

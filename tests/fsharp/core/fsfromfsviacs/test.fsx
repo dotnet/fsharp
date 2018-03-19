@@ -157,6 +157,27 @@ module TestExtensions =
     test "dfeweeon" (r1.ExtendFSharpType() = 5)
     test "dfeweeon" (Lib2().ExtendCSharpType() = 4)
 
+module StructTestsTests = 
+    open StructTests
+    let v = SomeMutableStruct()
+    v.SetX(1) // a "LikelyMutates" warning is expected
+    v.set_X(1) // a "LikelyMutates" warning is expected
+    v.SetY(System.DateTime.Now) // a "LikelyMutates" warning is expected
+    let _ = v.SetZ() // no "LikelyMutates" warning is expected
+
+module StructTestsTests2 = 
+    open StructTests
+    let mutable v = SomeMutableStruct()
+    test "dfeweeon" (v.x = 0)
+    v.SetX(1) // no "LikelyMutates" warning is expected
+    test "dfeweeon" (v.x = 1)
+    v.set_X(2) // no "LikelyMutates" warning is expected
+    test "dfeweeon" (v.x = 2)
+    let now = System.DateTime.Now
+    v.SetY(now) // no "LikelyMutates" warning is expected
+    test "dfeweeon" (v.y = now)
+    let _ = v.SetZ() // no "LikelyMutates" warning is expected
+
 #endif
 
 #if TESTS_AS_APP

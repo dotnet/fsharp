@@ -113,7 +113,6 @@ module Impl =
         | ILMemberAccess.Assembly -> 
             taccessPrivate  (CompPath(declaringEntity.CompilationPath.ILScopeRef, []))
 
-        | ILMemberAccess.CompilerControlled
         | ILMemberAccess.Private ->
             taccessPrivate  declaringEntity.CompilationPath
 
@@ -221,6 +220,8 @@ type FSharpSymbol(cenv:cenv, item: (unit -> Item), access: (FSharpSymbol -> CcuT
         |   _ -> false
 
     override x.GetHashCode() = hash x.ImplementationLocation  
+
+    member x.GetEffectivelySameAsHash() = ItemsAreEffectivelyEqualHash cenv.g x.Item
 
     override x.ToString() = "symbol " + (try item().DisplayName with _ -> "?")
 
@@ -368,7 +369,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
 #if !NO_EXTENSIONTYPING 
         | ProvidedTypeMetadata info -> info.IsClass
 #endif
-        | ILTypeMetadata (TILObjectReprData(_, _, td)) -> (td.tdKind = ILTypeDefKind.Class)
+        | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsClass
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> entity.Deref.IsFSharpClassTycon
 
     member __.IsByRef = 
@@ -389,7 +390,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
 #if !NO_EXTENSIONTYPING
         | ProvidedTypeMetadata info -> info.IsDelegate ()
 #endif
-        | ILTypeMetadata (TILObjectReprData(_, _, td)) -> (td.tdKind = ILTypeDefKind.Delegate)
+        | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsDelegate
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> entity.IsFSharpDelegateTycon
 
     member __.IsEnum = 
@@ -429,7 +430,6 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
 
     member __.Accessibility = 
         if isUnresolved() then FSharpAccessibility(taccessPublic) else
-
         FSharpAccessibility(getApproxFSharpAccessibilityOfEntity entity) 
 
     member __.RepresentationAccessibility = 
@@ -472,7 +472,9 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
         not (isResolvedAndFSharp()) || entity.Deref.IsPrefixDisplay
 
     member x.IsNamespace =  entity.IsNamespace
+
     member x.MembersOrValues =  x.MembersFunctionsAndValues
+
     member x.MembersFunctionsAndValues = 
       if isUnresolved() then makeReadOnlyCollection[] else
       protect <| fun () -> 
@@ -554,6 +556,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
         |> makeReadOnlyCollection
 
     member x.RecordFields = x.FSharpFields
+
     member x.FSharpFields =
         if isUnresolved() then makeReadOnlyCollection[] else
     
@@ -600,7 +603,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
             | [] -> [[path]]
             | _ -> paths |> List.map (fun x -> path :: x)
 
-        let walkParts (parts: (string * ModuleOrNamespaceKind) list) = //: string list list =
+        let walkParts (parts: (string * ModuleOrNamespaceKind) list) =
             let rec loop (currentPaths: string list list) parts =
                 match parts with
                 | [] -> currentPaths
@@ -852,6 +855,12 @@ and FSharpField(cenv: cenv, d: FSharpFieldData)  =
         match d.TryRecdField with 
         | Choice1Of2 r -> r.IsCompilerGenerated
         | Choice2Of2 _ -> false
+
+    member __.IsNameGenerated =
+        if isUnresolved() then false else
+        match d.TryRecdField with
+        | Choice1Of2 r -> r.rfield_name_generated
+        | _ -> false
 
     member __.DeclarationLocation = 
         checkIsResolved()

@@ -26,41 +26,6 @@ if [ $OS = 'Linux' ]; then
     sudo apt-get -y install mono-devel msbuild
 fi
 
-# Check if SSL certificates have been imported into Mono's certificate store.
-# If certs haven't been installed, some/all of the Nuget packages will fail to restore.
-#if [ $('certmgr -list -c Trust | grep -c -F "X.509"') -le 1 ]; then
-#  echo "No SSL certificates installed so unable to restore NuGet packages." >&2;
-#  echo "Run 'mozroots --sync --import' to install certificates to Mono's certificate store." >&2;
-#  exit 1
-#fi
-
-# Restore NuGet packages (needed for compiler bootstrap and tests).
-mono .nuget/NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget/NuGet.Config
-
-(if test x-$BUILD_CORECLR = x-1; then \
-  sudo sh -c 'echo "deb [arch=amd64] https://apt-mo.trafficmanager.net/repos/dotnet-release/ trusty main" > /etc/apt/sources.list.d/dotnetdev.list'; \
-  sudo apt-key adv --keyserver apt-mo.trafficmanager.net --recv-keys 417A0893; \
-  sudo apt-get update; \
-  sudo apt-get -y install dotnet-dev-1.0.0-preview2-003131; \
-  (cd tests/fsharp; mono ../../.nuget/NuGet.exe restore  project.json -PackagesDirectory ../../packages -ConfigFile ../../.nuget/NuGet.Config); \
-  ./init-tools.sh;   \
-  echo "------ start log";  \
-  cat ./init-tools.log; echo "------ end log"; \
-fi)
-
-(if test x-$BUILD_PROTO_WITH_CORECLR_LKG = x-1; then \
-  (cd lkg/fsc &&  dotnet restore --packages ../packages && dotnet publish project.json -o ../Tools/lkg -r ubuntu.14.04-x64); \
-  (cd lkg/fsi &&  dotnet restore --packages ../packages && dotnet publish project.json -o ../Tools/lkg -r ubuntu.14.04-x64); \
-fi)
-
-#TODO: work out how to avoid the need for this
-echo "chmod u+x packages/FSharp.Compiler.Tools.4.1.27/tools/fsi.exe"
-echo "chmod u+x packages/FsLexYacc.7.0.6/build/fslex.exe"
-echo "chmod u+x packages/FsLexYacc.7.0.6/build/fsyacc.exe"
-chmod u+x packages/FSharp.Compiler.Tools.4.1.27/tools/fsi.exe 
-chmod u+x packages/FsLexYacc.7.0.6/build/fslex.exe
-chmod u+x packages/FsLexYacc.7.0.6/build/fsyacc.exe
-
 # The FSharp.Compiler.Tools package doesn't work correctly unless a proper install of F# has been done on the machine.
 # OSX can skip this because the OSX Mono installer includes F#.
 if [ $OS != 'OSX' ]; then

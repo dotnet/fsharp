@@ -239,14 +239,14 @@ open Printf
     // BEGIN BOILERPLATE
 
     static let getCurrentAssembly () =
-    #if DNXCORE50 || NETSTANDARD1_5 || NETSTANDARD1_6 || NETCOREAPP1_0
+    #if FX_RESHAPED_REFLECTION
         typeof<SR>.GetTypeInfo().Assembly
     #else
         System.Reflection.Assembly.GetExecutingAssembly()
     #endif
 
     static let getTypeInfo (t: System.Type) =
-    #if DNXCORE50 || NETSTANDARD1_5 || NETSTANDARD1_6 || NETCOREAPP1_0
+    #if FX_RESHAPED_REFLECTION
         t.GetTypeInfo()
     #else
         t
@@ -348,14 +348,16 @@ open Printf
           let outFilename = Path.Combine(_outputPath, justfilename + ".fs")
           let outXmlFilename = Path.Combine(_outputPath, justfilename + ".resx")
 
-          if File.Exists(outFilename) && 
-               File.Exists(outXmlFilename) && 
-               File.Exists(filename) && 
-               File.GetLastWriteTimeUtc(filename) <= File.GetLastWriteTimeUtc(outFilename) &&
-               File.GetLastWriteTimeUtc(filename) <= File.GetLastWriteTimeUtc(outXmlFilename) then
-            printMessage (sprintf "Skipping generation of %s and %s since up-to-date" outFilename outXmlFilename)
+          let condition1 = File.Exists(outFilename) 
+          let condition2 = condition1 && File.Exists(outXmlFilename)
+          let condition3 = condition2 && File.Exists(filename)
+          let condition4 = condition3 && (File.GetLastWriteTimeUtc(filename) <= File.GetLastWriteTimeUtc(outFilename))
+          let condition5 = condition4 && (File.GetLastWriteTimeUtc(filename) <= File.GetLastWriteTimeUtc(outXmlFilename) )
+          if condition5 then
+            printMessage (sprintf "Skipping generation of %s and %s from %s since up-to-date" outFilename outXmlFilename filename)
             Some (filename, outFilename, outXmlFilename)
           else
+            printMessage (sprintf "Generating %s and %s from %s, because condition %d is false, see FSharpEmbedResourceText.fs in the F# source"  outFilename outXmlFilename filename (if not condition1 then 1 elif not condition2 then 2 elif not condition3 then 3 elif not condition4 then 4 else 5) )
 
             printMessage (sprintf "Reading %s" filename)
             let lines = File.ReadAllLines(filename) 

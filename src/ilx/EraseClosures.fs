@@ -13,6 +13,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.IlxSettings
 open Microsoft.FSharp.Compiler.AbstractIL.Morphs 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.PrettyNaming
+open System.Reflection
 
 // -------------------------------------------------------------------- 
 // Erase closures and function types
@@ -359,7 +360,6 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
       let tagApp = (Lazy.force clo.cloCode).SourceMarker
       
       let tyargsl, tmargsl, laterStruct = stripSupportedAbstraction clo.cloStructure
-      let laterAccess = td.Access
 
       // Adjust all the argument and environment accesses 
       let rewriteCodeToAccessArgsFromEnv laterCloSpec (argToFreeVarMap: (int * IlxClosureFreeVar) list)  = 
@@ -429,7 +429,6 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
               let laterTypeDefs = 
                 convIlxClosureDef cenv encl
                   {td with GenericParams=laterGenericParams
-                           Access=laterAccess
                            Name=laterTypeName} 
                   {clo with cloStructure=laterStruct
                             cloFreeVars=laterFields
@@ -482,17 +481,10 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
               let cloTypeDef = 
                 { Name = td.Name
                   GenericParams= td.GenericParams
-                  Access=td.Access
+                  Attributes = td.Attributes
                   Implements = List.empty
-                  IsAbstract = false
                   NestedTypes = emptyILTypeDefs
-                  IsSealed = true
-                  IsSerializable=td.IsSerializable 
-                  IsComInterop=false
-                  IsSpecialName=false
                   Layout=ILTypeDefLayout.Auto
-                  Encoding=ILDefaultPInvokeEncoding.Ansi
-                  InitSemantics=ILTypeInit.BeforeField
                   Extends= Some cenv.mkILTyFuncTy
                   Methods= mkILMethods ([ctorMethodDef] @ [nowApplyMethDef]) 
                   Fields= mkILFields (mkILCloFldDefs cenv nowFields)
@@ -500,9 +492,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                   MethodImpls=emptyILMethodImpls
                   Properties=emptyILProperties
                   Events=emptyILEvents
-                  HasSecurity=false 
-                  SecurityDecls=emptyILSecurityDecls 
-                  tdKind = ILTypeDefKind.Class}
+                  SecurityDecls=emptyILSecurityDecls }.WithSpecialName(false).WithImport(false).WithHasSecurity(false).WithAbstract(false).WithSealed(true).WithInitSemantics(ILTypeInit.BeforeField).WithEncoding(ILDefaultPInvokeEncoding.Ansi)
               [ cloTypeDef]
 
     // CASE 2 - Term Application 
@@ -547,7 +537,6 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
               let laterTypeDefs = 
                 convIlxClosureDef cenv encl
                   {td with GenericParams=laterGenericParams
-                           Access=laterAccess
                            Name=laterTypeName} 
                   {clo with cloStructure=laterStruct
                             cloFreeVars=laterFields
@@ -583,16 +572,9 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
 
                     { Name = td.Name
                       GenericParams= td.GenericParams
-                      Access = td.Access
+                      Attributes = td.Attributes
                       Implements = []
-                      IsAbstract = false
-                      IsSealed = true
-                      IsSerializable=td.IsSerializable 
-                      IsComInterop=false
-                      IsSpecialName=false
                       Layout=ILTypeDefLayout.Auto
-                      Encoding=ILDefaultPInvokeEncoding.Ansi
-                      InitSemantics=ILTypeInit.BeforeField
                       NestedTypes = emptyILTypeDefs 
                       Extends= Some nowEnvParentClass
                       Methods= mkILMethods ([ctorMethodDef] @ [nowApplyMethDef]) 
@@ -601,9 +583,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                       MethodImpls=emptyILMethodImpls
                       Properties=emptyILProperties
                       Events=emptyILEvents
-                      HasSecurity=false 
-                      SecurityDecls=emptyILSecurityDecls 
-                      tdKind = ILTypeDefKind.Class } 
+                      SecurityDecls=emptyILSecurityDecls }.WithHasSecurity(false).WithSpecialName(false).WithAbstract(false).WithImport(false).WithEncoding(ILDefaultPInvokeEncoding.Ansi).WithSealed(true).WithInitSemantics(ILTypeInit.BeforeField)
 
                 [cloTypeDef]
 
@@ -639,8 +619,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                   Name = td.Name
                   GenericParams= td.GenericParams
                   Methods= mkILMethods (ctorMethodDef :: List.map (convMethodDef (Some nowCloSpec)) td.Methods.AsList) 
-                  Fields= mkILFields (mkILCloFldDefs cenv nowFields @ td.Fields.AsList)
-                  tdKind = ILTypeDefKind.Class } 
+                  Fields= mkILFields (mkILCloFldDefs cenv nowFields @ td.Fields.AsList) } 
 
           [cloTypeDef]
 

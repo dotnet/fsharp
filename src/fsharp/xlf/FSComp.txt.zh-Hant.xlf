@@ -6972,6 +6972,16 @@
         <target state="translated">F# 程式碼不常使用這個方法或屬性，請改用明確的元組模式進行解構。</target>
         <note />
       </trans-unit>
+      <trans-unit id="implicitlyDiscardedInSequenceExpression">
+        <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.</source>
+        <target state="translated">此運算式會傳回類型為 '{0}' 的值，但會被間接捨棄。請考慮使用 'let' 將結果繫結到名稱。例如 'let result = expression'。若您想要在序列中，以值的形式使用運算式，請直接使用 'yield'。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="implicitlyDiscardedSequenceInSequenceExpression">
+        <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</source>
+        <target state="translated">此運算式會傳回類型為 '{0}' 的值，但會被間接捨棄。請考慮使用 'let' 將結果繫結到名稱。例如 'let result = expression'。若您想要在序列中，以值的形式使用運算式，請直接使用 'yield!'。</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

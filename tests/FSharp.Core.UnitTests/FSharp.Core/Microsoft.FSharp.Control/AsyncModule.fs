@@ -9,9 +9,7 @@ open System
 open System.Threading
 open FSharp.Core.UnitTests.LibraryTestFx
 open NUnit.Framework
-#if !FSCORE_PORTABLE_NEW
 open FsCheck
-#endif
 
 module Utils =
     let internal memoizeAsync f =
@@ -25,7 +23,6 @@ type [<Struct>] Dummy (x: int) =
     member this.Dispose () = ()
 
 
-#if !FSCORE_PORTABLE_NEW
 [<AutoOpen>]
 module ChoiceUtils =
 
@@ -138,8 +135,6 @@ module ChoiceUtils =
             let minTimeout = getMinTime()
             let minTimeoutOps = ops |> Seq.filter (fun op -> op.Timeout <= minTimeout) |> Seq.length
             Assert.LessOrEqual(!completed, minTimeoutOps)
-
-#endif
 
 module LeakUtils =
     // when testing for liveness, the things that we want to observe must always be created in
@@ -446,7 +441,7 @@ type AsyncModule() =
     member this.``RaceBetweenCancellationAndError.Sleep``() =
         testErrorAndCancelRace (Async.Sleep (-5))
 
-#if !(FSCORE_PORTABLE_NEW || coreclr)
+#if !coreclr
     [<Test; Category("Expensive"); Explicit>] // takes 3 minutes!
     member this.``Async.Choice specification test``() =
         ThreadPool.SetMinThreads(100,100) |> ignore
@@ -498,7 +493,6 @@ type AsyncModule() =
             }
         Async.RunSynchronously(test)
         
-#if !FSCORE_PORTABLE_NEW
     [<Test>]
     member this.``FromContinuationsCanTailCallCurrentThread``() = 
         let cnt = ref 0
@@ -519,7 +513,6 @@ type AsyncModule() =
         f 5000 |> Async.StartImmediate 
         Assert.AreEqual(origTid, !finalTid)
         Assert.AreEqual(5000, !cnt)
-#endif
 
     [<Test>]
     member this.``AwaitWaitHandle With Cancellation``() = 
@@ -572,7 +565,6 @@ type AsyncModule() =
         Assert.AreEqual("boom", !r)
 
 
-#if !FSCORE_PORTABLE_NEW
     [<Test>]
     member this.``SleepContinuations``() = 
         let okCount = ref 0
@@ -599,7 +591,6 @@ type AsyncModule() =
         for i = 1 to 3 do test()
         Assert.AreEqual(0, !okCount)
         Assert.AreEqual(0, !errCount)
-#endif
 
     [<Test>]
     member this.``Async caching should work``() = 
@@ -611,24 +602,30 @@ type AsyncModule() =
             x := !x + 1 // Side effect!
             return "" }
 
-        let memFunc = Utils.memoizeAsync <| someSlowFunc
+        let memFunc : string -> Async<string> = Utils.memoizeAsync <| someSlowFunc
 
         async {
+            Console.WriteLine "Do the same memoized thing many ways...."
             do! memFunc "a" |> Async.Ignore
             do! memFunc "a" |> Async.Ignore
             do! memFunc "a" |> Async.Ignore
             do! [|1 .. 30|] |> Seq.map(fun _ -> (memFunc "a")) 
                 |> Async.Parallel |> Async.Ignore
+
+            Console.WriteLine "Still more ways...."
             for _i = 1 to 30 do
                 Async.Start( memFunc "a" |> Async.Ignore )
                 Async.Start( memFunc "a" |> Async.Ignore )
             do! Async.Sleep 500
             do! memFunc "a" |> Async.Ignore
             do! memFunc "a" |> Async.Ignore
+            Console.WriteLine "Still more ways again...."
             for _i = 1 to 30 do
                 Async.Start( memFunc "a" |> Async.Ignore )
 
+            Console.WriteLine "Still more ways again again...."
             do! [|1 .. 30|] |> Seq.map(fun _ -> (memFunc "a")) 
                 |> Async.Parallel |> Async.Ignore
         } |> Async.RunSynchronously
+        Console.WriteLine "Checking result...."
         Assert.AreEqual(1, !x)

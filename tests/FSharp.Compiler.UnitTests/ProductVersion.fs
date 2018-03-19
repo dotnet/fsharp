@@ -1,6 +1,7 @@
 ﻿namespace FSharp.Compiler.UnitTests
 
 open System
+open System.IO
 open System.Text
 open NUnit.Framework
 
@@ -111,18 +112,19 @@ module TypeProviderDesignTimeComponentLoading =
 
     [<Test>]
     let ``check tooling paths for type provider design time component loading`` () =
-        let arch = if sizeof<nativeint> = 8 then "x64" else "x86" 
         let expected = 
-          [ @"typeproviders\fsharp41\net461\" + arch
-            @"typeproviders\fsharp41\net461"
-            @"typeproviders\fsharp41\net452\" + arch
-            @"typeproviders\fsharp41\net452"
-            @"typeproviders\fsharp41\net451\" + arch
-            @"typeproviders\fsharp41\net451"
-            @"typeproviders\fsharp41\net45\" + arch
-            @"typeproviders\fsharp41\net45"
-            @"typeproviders\fsharp41\netstandard2.0\" + arch 
-            @"typeproviders\fsharp41\netstandard2.0"
+          [ Path.Combine("typeproviders", "fsharp41", "net461")
+            Path.Combine("tools", "fsharp41", "net461")
+            Path.Combine("typeproviders", "fsharp41", "net452")
+            Path.Combine("tools", "fsharp41", "net452")
+            Path.Combine("typeproviders", "fsharp41", "net451")
+            Path.Combine("tools", "fsharp41", "net451")
+            Path.Combine("typeproviders", "fsharp41", "net45")
+            Path.Combine("tools", "fsharp41", "net45")
+            Path.Combine("typeproviders", "fsharp41", "netstandard2.0")
+            Path.Combine("tools", "fsharp41", "netstandard2.0")
           ]        
         let actual = Microsoft.FSharp.Compiler.ExtensionTyping.toolingCompatiblePaths()
-        Assert.areEqual expected actual
+        printfn "actual = %A" actual
+        printfn "expected = %A" expected
+        Assert.True((expected=actual))

@@ -17,7 +17,6 @@
       <Link>FSBuild.resx</Link>
     </EmbeddedResource>
     <Compile Include="FSBuild.fs" />
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\InternalsVisibleTo.fs" />
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="..\..\utils\CompilerLocationUtils.fs" />
     <Compile Include="..\..\utils\reshapedreflection.fs" />
@@ -44,6 +43,11 @@
     </CopyAndSubstituteText>
     <CopyAndSubstituteText Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\Microsoft.FSharp.NetSdk.targets">
         <TargetFilename>Microsoft.FSharp.NetSdk.targets</TargetFilename>
+        <Pattern1>{BuildSuffix}</Pattern1>
+        <Replacement1></Replacement1>
+    </CopyAndSubstituteText>
+    <CopyAndSubstituteText Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\Microsoft.FSharp.Overrides.NetSdk.targets">
+        <TargetFilename>Microsoft.FSharp.Overrides.NetSdk.targets</TargetFilename>
         <Pattern1>{BuildSuffix}</Pattern1>
         <Replacement1></Replacement1>
     </CopyAndSubstituteText>

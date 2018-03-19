@@ -1283,28 +1283,28 @@
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpected">
-        <source>The result of this expression is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |&gt; ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</source>
-        <target state="translated">此表达式的结果被隐式忽略。请考虑使用 "ignore" 以显式放弃该值，例如 "expr |&gt; ignore" 或 "let" 以将结果绑定到一个名称，例如 "let result = expr"。</target>
+        <source>The result of this expression has type '{0}' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |&gt; ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</source>
+        <target state="translated">此表达式的结果为类型“{0}”且被隐式忽略。请考虑使用 "ignore" 显式放弃该值，例如使用 "expr |&gt; ignore" 或 "let" 将结果绑定到名称，例如 "let result = expr"。</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithEquality">
-        <source>The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'.</source>
-        <target state="translated">此等式表达式的结果被隐式丢弃。请考虑使用 "let" 将结果绑定到一个名称，例如 "let result = expression"。</target>
+        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'.</source>
+        <target state="translated">此等式表达式的结果为类型“{0}”且被隐式放弃。请考虑使用 "let" 将结果绑定到名称，例如 "let result = expression"。</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossiblePropertySetter">
-        <source>The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{0}.{1} &lt;- expression'.</source>
-        <target state="translated">此等式表达式的结果被隐式丢弃。请考虑使用 "let" 将结果绑定到一个名称，例如 "let result = expression"。如果要为某属性设置值，请使用 "&lt;-" 运算符，例如 "{0}.{1} &lt;- expression"。</target>
+        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{1}.{2} &lt;- expression'.</source>
+        <target state="translated">此等式表达式的结果为类型“{0}”且被隐式放弃。请考虑使用 "let" 将结果绑定到名称，例如 "let result = expression"。如果要为某属性设置值，请使用 "&lt;-" 运算符，例如 "{1}.{2} &lt;- expression"。</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignment">
-        <source>The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{0} &lt;- expression'.</source>
-        <target state="translated">此等式表达式的结果被隐式丢弃。请考虑使用 "let" 将结果绑定到一个名称，例如 "let result = expression"。如果想要转变某个值，则将此值标记为 "mutable" 并使用 "&lt;-" 运算符，例如 "{0} &lt;- expression"。</target>
+        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
+        <target state="translated">此等式表达式的结果为类型“{0}”且被隐式放弃。请考虑使用 "let" 将结果绑定到名称，例如 "let result = expression"。如果要转变某个值，则将此值标记为 "mutable" 并使用 "&lt;-" 运算符，例如 "{1} &lt;- expression"。</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignmentToMutable">
-        <source>The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '&lt;-' operator e.g. '{0} &lt;- expression'.</source>
-        <target state="translated">此等式表达式的结果被隐式丢弃。请考虑使用 "let" 将结果绑定到一个名称，例如 "let result = expression"。如果想要转变某个值，请使用 "&lt;-" 运算符，例如 "{0} &lt;- expression"。</target>
+        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
+        <target state="translated">此等式表达式的结果为类型“{0}”且被隐式放弃。请考虑使用 "let" 将结果绑定到名称，例如 "let result = expression"。如果要转变某个值，请使用 "&lt;-" 运算符，例如 "{1} &lt;- expression"。</target>
         <note />
       </trans-unit>
       <trans-unit id="RecursiveUseCheckedAtRuntime">

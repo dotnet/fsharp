@@ -10,7 +10,7 @@ open System.Runtime.InteropServices
 [<assembly:AssemblyCopyright("\169 Microsoft Corporation.  All Rights Reserved.")>]
 [<assembly:AssemblyProduct("Microsoft\174 F#")>]
 [<assembly:ComVisible(false)>]
-[<assembly:AssemblyInformationalVersion("4.4.3.0")>]
-[<assembly:AssemblyVersion("4.4.3.0")>]
+[<assembly:AssemblyInformationalVersion("10.1.1.0")>]
+[<assembly:AssemblyVersion("10.1.1.0")>]
 [<assembly:AssemblyFileVersion("2017.06.27.0")>]
 do()

@@ -24,3 +24,18 @@ namespace Newtonsoft.Json.Converters
 
     }
 }
+
+
+namespace StructTests
+{
+    // Check This should be preferred over the same type in lib2.cs
+    public struct SomeMutableStruct
+    {
+        public int x;
+        public System.DateTime y;
+        public void SetX(int v) { x = v;  }
+        public void SetY(System.DateTime v) { y = v; }
+        public int SetZ() { return 1; } // no warning
+        public void set_X(int v) { x = v; }
+    }
+}

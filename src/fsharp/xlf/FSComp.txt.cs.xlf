@@ -6972,6 +6972,16 @@
         <target state="translated">Tato metoda nebo vlastnost se obvykle z kódu F# nepoužívá, použijte místo toho pro dekonstrukci explicitní vzor řazené kolekce členů.</target>
         <note />
       </trans-unit>
+      <trans-unit id="implicitlyDiscardedInSequenceExpression">
+        <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.</source>
+        <target state="translated">Tento výraz vrátí hodnotu typu {0}, ale implicitně se zahodí. Zvažte vytvoření vazby mezi výsledkem a názvem pomocí klíčového slova let, např. let výsledek = výraz. Pokud jste chtěli výraz použít jako hodnotu v sekvenci, použijte explicitní klíčové slovo yield.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="implicitlyDiscardedSequenceInSequenceExpression">
+        <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</source>
+        <target state="translated">Tento výraz vrátí hodnotu typu {0}, ale implicitně se zahodí. Zvažte vytvoření vazby mezi výsledkem a názvem pomocí klíčového slova let, např. let výsledek = výraz. Pokud jste chtěli výraz použít jako hodnotu v sekvenci, použijte explicitní klíčové slovo yield!.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

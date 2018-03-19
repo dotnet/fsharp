@@ -286,7 +286,7 @@ type internal FsiToolWindow() as this =
         lock textLines (fun () ->
             let  span = textStream.ReadOnlyMarkerSpan
             let lastLine,lastIndex = textLines.GetLastLineIndex() |> throwOnFailure2
-            let strHandle = GCHandle.Alloc(str, GCHandleType.Pinned)
+            let mutable strHandle = GCHandle.Alloc(str, GCHandleType.Pinned)
             try 
                 textLines.ReplaceLines(span.iEndLine, span.iEndIndex, lastLine, lastIndex, strHandle.AddrOfPinnedObject(), str.Length, null) |> throwOnFailure0
             finally
