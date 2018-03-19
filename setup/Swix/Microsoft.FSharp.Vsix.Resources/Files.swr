@@ -11,8 +11,8 @@ folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\$(LocaleParentC
   file source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.Compiler.Private.resources.dll" vs.file.ngen=yes
   file source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.Core.resources.dll" vs.file.ngen=yes
   file source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.Editor.resources.dll" vs.file.ngen=yes
-  file source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\VisualFSharp.Tests.LegacyLanguageService.Base.resources.dll" vs.file.ngen=yes
-  file source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\VisualFSharp.Tests.LegacyLanguageService.resources.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\LegacyLanguageService.Base.resources.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\LegacyLanguageService.resources.dll" vs.file.ngen=yes
   file source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.ProjectSystem.Base.resources.dll" vs.file.ngen=yes
   file source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.ProjectSystem.FSharp.resources.dll" vs.file.ngen=yes
   file source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.ProjectSystem.PropertyPages.resources.dll" vs.file.ngen=yes

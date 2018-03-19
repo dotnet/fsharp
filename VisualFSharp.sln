@@ -14,9 +14,9 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Server.Shar
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Core", "src\fsharp\FSharp.Core\FSharp.Core.fsproj", "{DED3BBD7-53F4-428A-8C9F-27968E768605}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "VisualFSharp.Tests.LegacyLanguageService", "vsintegration\tests\VisualFSharp.Tests.LegacyLanguageService\VisualFSharp.Tests.LegacyLanguageService.fsproj", "{EE85AAB7-CDA0-4C4E-BDA0-A64CCC413E3F}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "LegacyLanguageService", "vsintegration\tests\LegacyLanguageService\LegacyLanguageService.fsproj", "{EE85AAB7-CDA0-4C4E-BDA0-A64CCC413E3F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VisualFSharp.Tests.LegacyLanguageService.Base", "vsintegration\tests\VisualFSharp.Tests.LegacyLanguageService.Base\VisualFSharp.Tests.LegacyLanguageService.Base.csproj", "{1C5C163C-37EA-4A3C-8CCC-0D34B74BF8EF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LegacyLanguageService.Base", "vsintegration\tests\LegacyLanguageService.Base\LegacyLanguageService.Base.csproj", "{1C5C163C-37EA-4A3C-8CCC-0D34B74BF8EF}"
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Editor", "vsintegration\src\FSharp.Editor\FSharp.Editor.fsproj", "{65E0E82A-EACE-4787-8994-888674C2FE87}"
 EndProject

@@ -15,7 +15,7 @@ using Microsoft.VisualStudio.OLE.Interop;
 using EnvDTE;
 using System.Globalization;
 using Microsoft.VisualStudio.FSharp.ProjectSystem;
-using Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService;
+using Microsoft.VisualStudio.LegacyLanguageService;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
 {

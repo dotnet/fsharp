@@ -5,8 +5,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectFiles Include="tests\VisualFSharp.Tests.LegacyLanguageService\VisualFSharp.Tests.LegacyLanguageService.fsproj" />
-    <ProjectFiles Include="tests\VisualFSharp.Tests.LegacyLanguageService.Base\VisualFSharp.Tests.LegacyLanguageService.Base.csproj" />
+    <ProjectFiles Include="tests\LegacyLanguageService\LegacyLanguageService.fsproj" />
+    <ProjectFiles Include="tests\LegacyLanguageService.Base\LegacyLanguageService.Base.csproj" />
     <ProjectFiles Include="tests\Salsa\VisualFSharp.Salsa.fsproj" />
     <ProjectFiles Include="tests\UnitTests\VisualFSharp.UnitTests.fsproj" />
     <ProjectFiles Include="..\tests\service\data\TestTP\TestTP.fsproj" />

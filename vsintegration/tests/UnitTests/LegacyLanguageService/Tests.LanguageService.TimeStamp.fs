@@ -157,7 +157,7 @@ type UsingMSBuild()  =
         Assert.IsTrue(List.length errs > 0, "There should be errors (unresolved reference)")
         
         TakeCoffeeBreak(this.VS) // the code that should clear out the errors is in LanguageService.cs:LanguageService.OnIdle(), 
-                          // but unit tests do not call this VisualFSharp.Tests.LegacyLanguageService.Base code; TakeCoffeeBreak(this.VS) just simulates
+                          // but unit tests do not call this LegacyLanguageService.Base code; TakeCoffeeBreak(this.VS) just simulates
                           // idle processing for the currently-focused file
         printfn "after idling, file2 errors should be cleared even though file2 is not focused"
         AssertNoErrorsOrWarnings(project2)

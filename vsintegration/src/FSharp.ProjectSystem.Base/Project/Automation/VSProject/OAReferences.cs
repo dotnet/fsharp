@@ -11,7 +11,7 @@ using ErrorHandler = Microsoft.VisualStudio.ErrorHandler;
 using VSLangProj;
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
-using Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService;
+using Microsoft.VisualStudio.LegacyLanguageService;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
 {

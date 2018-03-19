@@ -11,7 +11,7 @@ using System.Collections;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
-using Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService;
+using Microsoft.VisualStudio.LegacyLanguageService;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {

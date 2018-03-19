@@ -15,7 +15,7 @@ open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Text
 
 open Microsoft.VisualStudio.FSharp.Editor
-open Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService
+open Microsoft.VisualStudio.LegacyLanguageService
 
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range

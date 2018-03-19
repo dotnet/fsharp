@@ -12,7 +12,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.Editor
-open Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService
+open Microsoft.VisualStudio.LegacyLanguageService
 open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
 

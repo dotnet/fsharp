@@ -278,8 +278,8 @@ if "%DEPLOY%" == "yes" if "!ISADMIN!" == "yes" (
     !SN32! -Vr FSharp.Compiler,b03f5f7f11d50a3a 1>NUL 2>NUL
     !SN32! -Vr FSharp.Compiler.Server.Shared,b03f5f7f11d50a3a 1>NUL 2>NUL
     !SN32! -Vr FSharp.Editor,b03f5f7f11d50a3a 1>NUL 2>NUL
-    !SN32! -Vr VisualFSharp.Tests.LegacyLanguageService,b03f5f7f11d50a3a 1>NUL 2>NUL
-    !SN32! -Vr VisualFSharp.Tests.LegacyLanguageService.Base,b03f5f7f11d50a3a 1>NUL 2>NUL
+    !SN32! -Vr LegacyLanguageService,b03f5f7f11d50a3a 1>NUL 2>NUL
+    !SN32! -Vr LegacyLanguageService.Base,b03f5f7f11d50a3a 1>NUL 2>NUL
     !SN32! -Vr FSharp.ProjectSystem.Base,b03f5f7f11d50a3a 1>NUL 2>NUL
     !SN32! -Vr FSharp.ProjectSystem.FSharp,b03f5f7f11d50a3a 1>NUL 2>NUL
     !SN32! -Vr FSharp.ProjectSystem.PropertyPages,b03f5f7f11d50a3a 1>NUL 2>NUL
@@ -297,8 +297,8 @@ if "%DEPLOY%" == "yes" if "!ISADMIN!" == "yes" (
         !SN64! -Vr FSharp.Compiler,b03f5f7f11d50a3a 1>NUL 2>NUL
         !SN64! -Vr FSharp.Compiler.Server.Shared,b03f5f7f11d50a3a 1>NUL 2>NUL
         !SN64! -Vr FSharp.Editor,b03f5f7f11d50a3a 1>NUL 2>NUL
-        !SN64! -Vr VisualFSharp.Tests.LegacyLanguageService,b03f5f7f11d50a3a 1>NUL 2>NUL
-        !SN64! -Vr VisualFSharp.Tests.LegacyLanguageService.Base,b03f5f7f11d50a3a 1>NUL 2>NUL
+        !SN64! -Vr LegacyLanguageService,b03f5f7f11d50a3a 1>NUL 2>NUL
+        !SN64! -Vr LegacyLanguageService.Base,b03f5f7f11d50a3a 1>NUL 2>NUL
         !SN64! -Vr FSharp.ProjectSystem.Base,b03f5f7f11d50a3a 1>NUL 2>NUL
         !SN64! -Vr FSharp.ProjectSystem.FSharp,b03f5f7f11d50a3a 1>NUL 2>NUL
         !SN64! -Vr FSharp.ProjectSystem.PropertyPages,b03f5f7f11d50a3a 1>NUL 2>NUL
@@ -350,8 +350,8 @@ if "%ACTION%" == "restore" if "!ISADMIN!" == "yes" (
     !SN32! -Vu FSharp.Compiler,b03f5f7f11d50a3a 2>NUL 1>NUL
     !SN32! -Vu FSharp.Compiler.Server.Shared,b03f5f7f11d50a3a 2>NUL 1>NUL
     !SN32! -Vu FSharp.Editor,b03f5f7f11d50a3a 2>NUL 1>NUL
-    !SN32! -Vu VisualFSharp.Tests.LegacyLanguageService,b03f5f7f11d50a3a 2>NUL 1>NUL
-    !SN32! -Vu VisualFSharp.Tests.LegacyLanguageService.Base,b03f5f7f11d50a3a 2>NUL 1>NUL
+    !SN32! -Vu LegacyLanguageService,b03f5f7f11d50a3a 2>NUL 1>NUL
+    !SN32! -Vu LegacyLanguageService.Base,b03f5f7f11d50a3a 2>NUL 1>NUL
     !SN32! -Vu FSharp.ProjectSystem.Base,b03f5f7f11d50a3a 2>NUL 1>NUL
     !SN32! -Vu FSharp.ProjectSystem.FSharp,b03f5f7f11d50a3a 2>NUL 1>NUL
     !SN32! -Vu FSharp.ProjectSystem.PropertyPages,b03f5f7f11d50a3a 2>NUL 1>NUL
@@ -369,8 +369,8 @@ if "%ACTION%" == "restore" if "!ISADMIN!" == "yes" (
         !SN64! -Vu FSharp.Compiler,b03f5f7f11d50a3a 2>NUL 1>NUL
         !SN64! -Vu FSharp.Compiler.Server.Shared,b03f5f7f11d50a3a 2>NUL 1>NUL
         !SN64! -Vu FSharp.Editor,b03f5f7f11d50a3a 2>NUL 1>NUL
-        !SN64! -Vu VisualFSharp.Tests.LegacyLanguageService,b03f5f7f11d50a3a 2>NUL 1>NUL
-        !SN64! -Vu VisualFSharp.Tests.LegacyLanguageService.Base,b03f5f7f11d50a3a 2>NUL 1>NUL
+        !SN64! -Vu LegacyLanguageService,b03f5f7f11d50a3a 2>NUL 1>NUL
+        !SN64! -Vu LegacyLanguageService.Base,b03f5f7f11d50a3a 2>NUL 1>NUL
         !SN64! -Vu FSharp.ProjectSystem.Base,b03f5f7f11d50a3a 2>NUL 1>NUL
         !SN64! -Vu FSharp.ProjectSystem.FSharp,b03f5f7f11d50a3a 2>NUL 1>NUL
         !SN64! -Vu FSharp.ProjectSystem.PropertyPages,b03f5f7f11d50a3a 2>NUL 1>NUL

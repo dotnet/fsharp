@@ -14,7 +14,7 @@ open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Options
 open Microsoft.CodeAnalysis.Text
 
-open Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService
+open Microsoft.VisualStudio.LegacyLanguageService
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 

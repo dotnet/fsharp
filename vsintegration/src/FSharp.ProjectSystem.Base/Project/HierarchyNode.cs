@@ -3172,7 +3172,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
                     // replace existing fscore with one that has matching version with current target framework
                     var existingFsCore =
-                        Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService.UIThread.DoOnUIThread(
+                        Microsoft.VisualStudio.LegacyLanguageService.UIThread.DoOnUIThread(
                             () => references
                                 .OfType<Automation.OAAssemblyReference>()
                                 .FirstOrDefault(r => r.Name == fsCoreName.Name && r.PublicKeyToken == Utilities.FsCorePublicKeyToken && r.Culture == fsCoreName.CultureName)
@@ -3180,7 +3180,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
                     if (existingFsCore != null)
                     {
-                        Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService.UIThread.DoOnUIThread(() =>
+                        Microsoft.VisualStudio.LegacyLanguageService.UIThread.DoOnUIThread(() =>
                         {
                             // save copyLocal value - after calling existingFsCore.Remove() becomes invalid and can raise exceptions
                             var copyLocal = existingFsCore.CopyLocal;

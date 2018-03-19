@@ -21,7 +21,7 @@ using IServiceProvider = System.IServiceProvider;
 using VsShell = Microsoft.VisualStudio.Shell.VsShellUtilities;
 using System.Diagnostics.CodeAnalysis;
 
-namespace Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService
+namespace Microsoft.VisualStudio.LegacyLanguageService
 {
     internal static class UIThread
     {

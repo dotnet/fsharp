@@ -16,8 +16,8 @@ open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.OLE.Interop
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService
-open Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService.SiteProvider
+open Microsoft.VisualStudio.LegacyLanguageService
+open Microsoft.VisualStudio.LegacyLanguageService.SiteProvider
 
 type internal FSharpLanguageServiceTestable() as this =
     static let colorizerGuid = new Guid("{A2976312-7D71-4BB4-A5F8-66A08EBF46C8}") // Guid for colorized user data on IVsTextBuffer
@@ -25,7 +25,7 @@ type internal FSharpLanguageServiceTestable() as this =
     let mutable artifacts : ProjectSitesAndFiles option = None
     let mutable serviceProvider : System.IServiceProvider option = None
     let mutable preferences : LanguagePreferences option = None
-    let mutable documentationBuilder : Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService.IDocumentationBuilder_DEPRECATED option = None
+    let mutable documentationBuilder : Microsoft.VisualStudio.LegacyLanguageService.IDocumentationBuilder_DEPRECATED option = None
     let mutable sourceFactory : (IVsTextLines -> IFSharpSource_DEPRECATED) option = None
     let mutable dirtyForTypeCheckFiles : Set<string> = Set.empty
     let mutable isInitialized = false

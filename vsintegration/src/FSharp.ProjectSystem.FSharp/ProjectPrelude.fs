@@ -4,7 +4,7 @@
 //--------------------------------------------------------------------------------------
 // Mock types for F# LanguageService functionality
 
-namespace Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService
+namespace Microsoft.VisualStudio.LegacyLanguageService
     open Microsoft.VisualStudio.Shell.Interop
 
     type internal IFSharpLibraryManager =
@@ -42,7 +42,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     open Microsoft.VisualStudio.OLE.Interop
     open Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
     open Microsoft.VisualStudio
-    open Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService
+    open Microsoft.VisualStudio.LegacyLanguageService
     open EnvDTE
     open System
 

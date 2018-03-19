@@ -33,7 +33,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
     open Microsoft.VisualStudio.Shell.Flavor
     open Microsoft.VisualStudio.OLE.Interop
     open Microsoft.VisualStudio.FSharp.ProjectSystem
-    open Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService
+    open Microsoft.VisualStudio.LegacyLanguageService
     open Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
     open Microsoft.VisualStudio.FSharp.Editor
     open Microsoft.VisualStudio.Editors

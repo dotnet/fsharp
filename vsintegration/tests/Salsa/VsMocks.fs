@@ -6,9 +6,9 @@
 
 namespace Salsa
 
-open Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService
+open Microsoft.VisualStudio.LegacyLanguageService
 open Microsoft.VisualStudio
-open Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService
+open Microsoft.VisualStudio.LegacyLanguageService
 open Microsoft.VisualStudio.FSharp.ProjectSystem
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop

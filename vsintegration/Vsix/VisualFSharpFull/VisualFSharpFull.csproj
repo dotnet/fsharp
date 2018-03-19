@@ -87,16 +87,16 @@
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\tests\VisualFSharp.Tests.LegacyLanguageService.Base\VisualFSharp.Tests.LegacyLanguageService.Base.csproj">
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\tests\LegacyLanguageService.Base\LegacyLanguageService.Base.csproj">
       <Project>{1C5C163C-37EA-4A3C-8CCC-0D34B74BF8EF}</Project>
-      <Name>VisualFSharp.Tests.LegacyLanguageService.Base</Name>
+      <Name>LegacyLanguageService.Base</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bPkgDefProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\tests\VisualFSharp.Tests.LegacyLanguageService\VisualFSharp.Tests.LegacyLanguageService.fsproj">
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\tests\LegacyLanguageService\LegacyLanguageService.fsproj">
       <Project>{EE85AAB7-CDA0-4C4E-BDA0-A64CCC413E3F}</Project>
-      <Name>VisualFSharp.Tests.LegacyLanguageService</Name>
+      <Name>LegacyLanguageService</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bPkgDefProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <Private>True</Private>

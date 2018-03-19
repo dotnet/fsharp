@@ -16,7 +16,7 @@ using System.IO;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using Microsoft.VisualStudio.FSharp.ProjectSystem;
-using Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService;
+using Microsoft.VisualStudio.LegacyLanguageService;
 
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation

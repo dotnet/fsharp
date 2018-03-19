@@ -14,7 +14,7 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
-open Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService
+open Microsoft.VisualStudio.LegacyLanguageService
 
 [<RequireQualifiedAccess>]
 module internal RoslynHelpers =

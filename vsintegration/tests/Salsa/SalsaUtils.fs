@@ -5,7 +5,7 @@ namespace Salsa
 open System
 open System.IO
 open Microsoft.VisualStudio.FSharp.ProjectSystem
-open Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService
+open Microsoft.VisualStudio.LegacyLanguageService
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open NUnit.Framework
@@ -113,7 +113,7 @@ module internal VsOpsUtils =
     let AutoCompleteAtCursor(file) = 
         (opsOfFile file).AutoCompleteAtCursor(file)
     let CtrlSpaceCompleteAtCursor(file) = 
-        (opsOfFile file).CompleteAtCursorForReason(file,Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService.BackgroundRequestReason.CompleteWord)
+        (opsOfFile file).CompleteAtCursorForReason(file,Microsoft.VisualStudio.LegacyLanguageService.BackgroundRequestReason.CompleteWord)
     let CompleteAtCursorForReason(file,reason) = 
         (opsOfFile file).CompleteAtCursorForReason(file,reason)
     let CompletionBestMatchAtCursorFor(file, value, filterText) = 
