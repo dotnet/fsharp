@@ -274,7 +274,7 @@ open System
     member FormalCallsig: CallSig
     member ActualReturnType: Type
     member ActualArgTypes: List<Type>
-    member ActualParent: TypeRef
+    member DeclaringEntity: TypeRef
     member ActualCallsig: CallSig
     member GenericArity: int
 

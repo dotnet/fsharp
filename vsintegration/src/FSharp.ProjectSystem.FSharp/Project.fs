@@ -45,7 +45,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
     [<assembly:ProvideCodeBase(AssemblyName = "FSharp.Compiler.Private", CodeBase = @"$PackageFolder$\FSharp.Compiler.Private.dll")>]
     [<assembly:ProvideCodeBase(AssemblyName = "FSharp.Compiler.Server.Shared", CodeBase = @"$PackageFolder$\FSharp.Compiler.Server.Shared.dll")>]
     [<assembly:ProvideCodeBase(AssemblyName = "FSharp.UIResources", CodeBase = @"$PackageFolder$\FSharp.UIResources.dll")>]
-    [<assembly:ProvideBindingRedirection(AssemblyName = "FSharp.Core", OldVersionLowerBound = "2.0.0.0", OldVersionUpperBound = "4.4.0.0", NewVersion = "4.4.1.0", CodeBase = @"$PackageFolder$\FSharp.Core.dll")>]
+    [<assembly:ProvideBindingRedirection(AssemblyName = "FSharp.Core", OldVersionLowerBound = "2.0.0.0", OldVersionUpperBound = "4.4.3.0", NewVersion = "4.4.3.0", CodeBase = @"$PackageFolder$\FSharp.Core.dll")>]
     do ()
 
     module internal VSHiveUtilities =
@@ -84,10 +84,8 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             let getConfigExtendedPropertyPages() = match lazyPropertyPages.Force() with (_,config,_) -> config
             let getPriorityExtendedPropertyPages() = match lazyPropertyPages.Force() with (_,_,priority) -> priority
 
-//////////////////////
-
     // An IProjectSite object with hot-swappable inner implementation
-    type internal DynamicProjectSite(origInnerImpl : Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite) =
+    type internal DynamicProjectSite(origInnerImpl : Microsoft.VisualStudio.FSharp.Editor.IProjectSite) =
 
         let mutable inner = origInnerImpl
 
@@ -95,7 +93,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             inner <- newInner
 
         // This interface is thread-safe, assuming "inner" is thread-safe
-        interface Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite with
+        interface Microsoft.VisualStudio.FSharp.Editor.IProjectSite with
             member __.Description = inner.Description
             member __.CompilationSourceFiles = inner.CompilationSourceFiles
             member __.CompilationOptions = inner.CompilationOptions
@@ -128,7 +126,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
         // This member is thread-safe
         member x.GetProjectSite() =
             Debug.Assert(state <> ProjectSiteOptionLifetimeState.Opening, "ProjectSite is not available")
-            projectSite.Value :> Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite
+            projectSite.Value :> Microsoft.VisualStudio.FSharp.Editor.IProjectSite
 
         // This member is thread-safe
         member x.TryGetProjectSite() =
@@ -136,7 +134,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             | ProjectSiteOptionLifetimeState.Opening, _ 
             | ProjectSiteOptionLifetimeState.Closed, _ -> None
             | _, None ->  None
-            | _, Some x ->  Some(x :> Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite)
+            | _, Some x ->  Some(x :> Microsoft.VisualStudio.FSharp.Editor.IProjectSite)
 
         member x.Open(site) =
             Debug.Assert((state = ProjectSiteOptionLifetimeState.Opening), "Called Open, but not in Opening state")
@@ -159,7 +157,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
         static member ExploreFolderInWindows = 1635u
 
     type internal Notifier() =
-        let notificationsDict = new System.Collections.Generic.Dictionary<string,Microsoft.VisualStudio.FSharp.LanguageService.AdviseProjectSiteChanges>()
+        let notificationsDict = new System.Collections.Generic.Dictionary<string,Microsoft.VisualStudio.FSharp.Editor.AdviseProjectSiteChanges>()
         member this.Notify() =
             for kvp in notificationsDict do
                 kvp.Value.Invoke()
@@ -509,7 +507,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                                  "3.259.3.1"; "3.259.4.0"]        // portable 259
                                 |> List.map (fun s -> System.Version(s))
                             let latestOnlyVersions = 
-                                ["4.4.1.0"                        // .NET 4 desktop
+                                ["4.4.3.0"                        // .NET 4 desktop
                                  "3.47.41.0"                       // portable 47
                                  "3.7.41.0"                        // portable 7
                                  "3.78.41.0"                       // portable 78
@@ -1290,8 +1288,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 let result = base.InvokeMsBuild(target, extraProperties)
                 result
 
-            // Fulfill HostObject contract with Fsc task, and enable 'capture' of compiler flags for the project.
-            member x.Compile(compile:System.Converter<int,int>, flags:string[], sources:string[]) = 
+            member x.CoreCompile(flags:string[], sources:string[]) =
                 // Note: This method may be called from non-UI thread!  The Fsc task in FSharp.Build.dll invokes this method via reflection, and
                 // the Fsc task is typically created by MSBuild on a background thread.  So be careful.
 #if DEBUG
@@ -1306,8 +1303,23 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 if projectSite.State = ProjectSiteOptionLifetimeState.Opening then
                     // This is the first time, so set up interface for language service to talk to us
                     projectSite.Open(x.CreateRunningProjectSite())
+
+            // =====================================================================================================
+            // Todo: x.Compile(compile:System.Converter<int,int>, flags:string[], sources:string[]) for VS2017.7
+            // Earlier buildtasks usesd System.Converter<int,int> for cross platform we are moving to Func<int>
+            // This is so that during the interim, earlier VS's will still load the OSS project
+            // =====================================================================================================
+            member x.Compile(compile:System.Converter<int,int>, flags:string[], sources:string[]) =
+                x.CoreCompile(flags, sources)
                 if actuallyBuild then
                     compile.Invoke(0)
+                else
+                    0
+
+            member x.Compile(compile:Func<int>, flags:string[], sources:string[]) =
+                x.CoreCompile(flags, sources)
+                if actuallyBuild then
+                    compile.Invoke()
                 else
                     0
 
@@ -1356,8 +1368,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                         // If property is not set - msbuild will resolve only primary dependencies,
                         // and compiler will be very unhappy when during processing of referenced assembly it will discover that all fundamental types should be
                         // taken from System.Runtime that is not supplied
-                        
-                        let _ = x.InvokeMsBuild("Compile", extraProperties = [KeyValuePair("_ResolveReferenceDependencies", "true")])
+                        let _ = x.InvokeMsBuild("Compile", extraProperties = [KeyValuePair("_ResolveReferenceDependencies", "true"); KeyValuePair("DesignTimeBuild", "true")])
                         sourcesAndFlagsNotifier.Notify()
                     finally
                         actuallyBuild <- true
@@ -1432,7 +1443,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             // Returns an IProjectSite that references "this" to get its information
             member private x.CreateRunningProjectSite() =
                 let creationTime = System.DateTime.UtcNow
-                { new Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite with
+                { new Microsoft.VisualStudio.FSharp.Editor.IProjectSite with
 
                     member __.CompilationSourceFiles = x.CompilationSourceFiles
                     member __.CompilationOptions = x.CompilationOptions
@@ -1457,8 +1468,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member __.TargetFrameworkMoniker = x.GetTargetFrameworkMoniker()
                     member __.ProjectGuid = x.GetProjectGuid()
                     member __.LoadTime = creationTime
-                    member __.ProjectProvider = Some (x :> IProvideProjectSite)
-
+                    member __.ProjectProvider = Some (x :> Microsoft.VisualStudio.FSharp.Editor.IProvideProjectSite)
                 }
 
             // Snapshot-capture relevent values from "this", and returns an IProjectSite 
@@ -1476,7 +1486,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 let creationTime = DateTime.UtcNow
 
                 // This object is thread-safe
-                { new Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite with
+                { new Microsoft.VisualStudio.FSharp.Editor.IProjectSite with
                     member __.Description = description
                     member __.CompilationSourceFiles = sourceFiles
                     member __.CompilationOptions = options
@@ -1493,11 +1503,11 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member __.TargetFrameworkMoniker = targetFrameworkMoniker
                     member __.ProjectGuid = x.GetProjectGuid()
                     member __.LoadTime = creationTime
-                    member __.ProjectProvider = Some (x :> IProvideProjectSite)
+                    member __.ProjectProvider = Some (x :> Microsoft.VisualStudio.FSharp.Editor.IProvideProjectSite)
                 }
 
             // let the language service ask us questions
-            interface Microsoft.VisualStudio.FSharp.LanguageService.IProvideProjectSite with
+            interface Microsoft.VisualStudio.FSharp.Editor.IProvideProjectSite with
                 member x.GetProjectSite() = 
                     match projectSite.State with
                     | ProjectSiteOptionLifetimeState.Opening ->
@@ -1579,7 +1589,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     // in the registry hive so that more editors can be added without changing this part of the
                     // code. FSharp only makes usage of one Editor Factory and therefore we will return 
                     // that guid
-                    guidEditorType <- new Guid(FSharpConstants.editorFactoryGuidString)
+                    guidEditorType <- new Guid(Constants.FSharpEditorFactoryIdString)
                     VSConstants.S_OK
 
             interface IVsProjectSpecificEditorMap2 with 
@@ -1593,7 +1603,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     // in the registry hive so that more editors can be added without changing this part of the
                     // code. FSharp only makes usage of one Editor Factory and therefore we will return 
                     // that guid
-                    guidEditorType <- new Guid(FSharpConstants.editorFactoryGuidString)
+                    guidEditorType <- new Guid(Constants.FSharpEditorFactoryIdString)
                     VSConstants.S_OK
 
                 member x.GetSpecificLanguageService(_mkDocument:string, guidLanguageService:byref<Guid> ) =

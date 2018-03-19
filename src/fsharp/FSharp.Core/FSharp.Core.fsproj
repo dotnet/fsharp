@@ -20,7 +20,6 @@
     <BaseAddress>0x05000000</BaseAddress>
     <CompilingFsLib>true</CompilingFsLib>
     <AllowCrossTargeting>true</AllowCrossTargeting>
-    <FX_NO_LOADER>true</FX_NO_LOADER>
     <OtherFlags>$(OtherFlags) --warnon:1182 --compiling-fslib --extraoptimizationloops:1</OtherFlags>
     <OtherFlags>$(OtherFlags) --warnon:3218</OtherFlags>
     <OtherFlags>$(OtherFlags) --maxerrors:20</OtherFlags>
@@ -34,17 +33,8 @@
     <None Include="FSharp.Core.runtimeconfig.json"      Condition="'$(TargetDotnetProfile)' == 'coreclr'" ><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></None>
   </ItemGroup>
 
-  <ItemGroup>
-    <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
-      <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
-      <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(AssemblyName).dll.lci</LciCommentFile>
-      <HasLceComments>false</HasLceComments>
-      <InProject>false</InProject>
-    </FilesToLocalize>
-  </ItemGroup>
-
-  <ItemGroup>
-    <CustomAdditionalCompileInputs Include="$(FSharpSourcesRoot)\..\Proto\$(ProtoFlavour)\bin\fsc-proto.exe">
+  <ItemGroup Condition="'$(Configuration)' != 'Proto'">
+    <CustomAdditionalCompileInputs Include="$(FSharpSourcesRoot)\..\Proto\$(ProtoFlavour)\bin\fsc.exe">
       <Visible>false</Visible>
     </CustomAdditionalCompileInputs>
   </ItemGroup>
@@ -234,9 +224,6 @@
     <Compile Include="fslib-extra-pervasives.fs">
       <Link>Extras/fslib-extra-pervasives.fs</Link>
     </Compile>
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Core.dll.fs">
-      <Link>assemblyinfo.FSharp.Core.dll.fs</Link>
-    </Compile>
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetDotnetProfile)' != 'coreclr'">
@@ -268,17 +255,6 @@
     <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.Core.optdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
   </Target>
 
-  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
-    <ItemGroup>
-      <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
-      <BinariesToBeSigned Include="$(OutDir)localize\**\$(AssemblyName).resources.dll" />
-      <FilesToSign Include="@(BinariesToBeSigned)">
-         <Authenticode>Microsoft</Authenticode>
-         <StrongName>StrongName</StrongName>
-      </FilesToSign>
-    </ItemGroup>
-  </Target>
-
   <Target Name="nugetpack"
           DependsOnTargets="CreateOrUpdateBuildVersionFile"
           AfterTargets="Build"
@@ -287,7 +263,7 @@
           Outputs='$(FSharpSourcesRoot)\..\$(Configuration)\artifacts\"%(PackageNuspec.Filename)).nupkg'>
 
     <PropertyGroup>
-      <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(FSharpCore42TargetVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
+      <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(FSharpCoreFrozenPortablePackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
     </PropertyGroup>
 
     <MakeDir Directories="$(FSharpSourcesRoot)\..\artifacts" />

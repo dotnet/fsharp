@@ -15,7 +15,7 @@
 // all 4 cases the layout types are really different types.
 
 #if COMPILER
-// fsc-proto.exe:
+// fsc.exe:
 // FSharp.Compiler.Service.dll:
 namespace Internal.Utilities.StructuredFormat
 #else
@@ -36,26 +36,18 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
     type internal TaggedText =
         abstract Tag: LayoutTag
         abstract Text: string
-#else  // FSharp.Compiler.Service.dll, fsc-proto.exe
+#else  // FSharp.Compiler.Service.dll, fsc.exe
 
     /// Data representing joints in structured layouts of terms.  The representation
     /// of this data type is only for the consumption of formatting engines.
     [<StructuralEquality; NoComparison>]
-#if COMPILER_PUBLIC_API
-    type Joint =
-#else
-    type internal Joint =
-#endif
+    type public Joint =
         | Unbreakable
         | Breakable of int
         | Broken of int
     
     [<StructuralEquality; NoComparison>]
-#if COMPILER_PUBLIC_API
-    type LayoutTag =
-#else
-    type internal LayoutTag =
-#endif
+    type public LayoutTag =
         | ActivePatternCase
         | ActivePatternResult
         | Alias
@@ -90,39 +82,27 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         | UnknownType
         | UnknownEntity
 
-#if COMPILER_PUBLIC_API
-    type TaggedText =
-#else
-    type internal TaggedText =
-#endif
+    type public TaggedText =
         abstract Tag : LayoutTag
         abstract Text : string
 
     
-#if COMPILER_PUBLIC_API
-    type TaggedTextWriter =
-#else
-    type internal TaggedTextWriter =
-#endif
+    type public TaggedTextWriter =
         abstract Write: t: TaggedText -> unit
         abstract WriteLine: unit -> unit
 
     /// Data representing structured layouts of terms.  The representation
     /// of this data type is only for the consumption of formatting engines.
     [<NoEquality; NoComparison>]
-#if COMPILER_PUBLIC_API
-    type Layout =
-#else
-    type internal Layout = 
-#endif
+    type public Layout =
      | ObjLeaf of bool * obj * bool
      | Leaf of bool * TaggedText * bool
      | Node of bool * Layout * bool * Layout * bool * Joint
      | Attr of string * (string * string) list * Layout
 #endif
 
-#if COMPILER_PUBLIC_API
-    module TaggedTextOps =
+#if COMPILER
+    module public TaggedTextOps =
 #else
     module internal TaggedTextOps =
 #endif
@@ -172,12 +152,8 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
             val arrow : TaggedText
             val questionMark : TaggedText
 
-#if !FSHARP_CORE   // FSharp.Core.dll doesn't use PrintIntercepts
-#if COMPILER_PUBLIC_API
-    type IEnvironment = 
-#else
-    type internal IEnvironment = 
-#endif
+#if COMPILER
+    type public IEnvironment = 
         /// Return to the layout-generation 
         /// environment to layout any otherwise uninterpreted object
         abstract GetLayout : obj -> Layout
@@ -196,14 +172,15 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
     /// A joint is either unbreakable, breakable or broken.
     /// If a joint is broken the RHS layout occurs on the next line with optional indentation.
     /// A layout can be squashed to for given width which forces breaks as required.
-#if COMPILER_PUBLIC_API
-    module LayoutOps =
+#if COMPILER
+    module public LayoutOps =
 #else
     module internal LayoutOps =
 #endif
 
         /// The empty layout
         val emptyL     : Layout
+
         /// Is it the empty layout?
         val isEmptyL   : layout:Layout -> bool
 
@@ -214,25 +191,34 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
         /// An string leaf 
         val wordL      : text:TaggedText -> Layout
+
         /// An string which requires no spaces either side.
         val sepL       : text:TaggedText -> Layout
+
         /// An string which is right parenthesis (no space on the left).
         val rightL     : text:TaggedText -> Layout
+
         /// An string which is left  parenthesis (no space on the right).
         val leftL      : text:TaggedText -> Layout
 
         /// Join, unbreakable. 
         val ( ^^ )     : layout1:Layout -> layout2:Layout -> Layout   
+
         /// Join, possible break with indent=0
         val ( ++ )     : layout1:Layout -> layout2:Layout -> Layout   
+
         /// Join, possible break with indent=1
         val ( -- )     : layout1:Layout -> layout2:Layout -> Layout   
+
         /// Join, possible break with indent=2 
         val ( --- )    : layout1:Layout -> layout2:Layout -> Layout   
+
         /// Join broken with ident=0
         val ( @@ )     : layout1:Layout -> layout2:Layout -> Layout   
+
         /// Join broken with ident=1 
         val ( @@- )    : layout1:Layout -> layout2:Layout -> Layout   
+
         /// Join broken with ident=2 
         val ( @@-- )   : layout1:Layout -> layout2:Layout -> Layout   
 
@@ -250,19 +236,25 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 
         /// Wrap round brackets around Layout.
         val bracketL   : layout:Layout -> Layout
+
         /// Wrap square brackets around layout.    
         val squareBracketL   : layout:Layout -> Layout
+
         /// Wrap braces around layout.        
         val braceL     : layout:Layout -> Layout
+
         /// Form tuple of layouts.            
         val tupleL     : layouts:Layout list -> Layout
+
         /// Layout two vertically.
         val aboveL     : layout1:Layout -> layout2:Layout -> Layout
+
         /// Layout list vertically.    
         val aboveListL : layouts:Layout list -> Layout
 
         /// Layout like an F# option.
         val optionL    : selector:('T -> Layout) -> value:'T option -> Layout
+
         /// Layout like an F# list.    
         val listL      : selector:('T -> Layout) -> value:'T list   -> Layout
 
@@ -296,8 +288,8 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
     /// </pre>
     /// </example>
     [<NoEquality; NoComparison>]
-#if COMPILER_PUBLIC_API
-    type FormatOptions =
+#if COMPILER
+    type public FormatOptions =
 #else
     type internal FormatOptions =
 #endif
@@ -321,8 +313,8 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
           ShowIEnumerable: bool  }
         static member Default : FormatOptions
 
-#if COMPILER_PUBLIC_API
-    module Display =
+#if COMPILER
+    module public Display =
 #else
     module internal Display =
 #endif

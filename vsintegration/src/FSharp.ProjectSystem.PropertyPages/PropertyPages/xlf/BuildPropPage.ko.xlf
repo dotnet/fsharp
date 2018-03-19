@@ -1,0 +1,137 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="ko" original="../BuildPropPage.resx">
+    <body>
+      <trans-unit id="lblConditionalCompilationSymbols.Text">
+        <source>Conditional compilation s&amp;ymbols:</source>
+        <target state="translated">조건부 컴파일 기호(&amp;Y):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkPrefer32Bit.Text">
+        <source>&amp;Prefer 32-bit</source>
+        <target state="translated">32비트 기본 사용(&amp;P)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="outputLabel.Text">
+        <source>Output</source>
+        <target state="translated">출력</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="generalLabel.Text">
+        <source>General</source>
+        <target state="translated">일반</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="treatWarningsAsErrorsLabel.Text">
+        <source>Treat warnings as errors</source>
+        <target state="translated">경고를 오류로 처리</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="errorsAndWarningsLabel.Text">
+        <source>Errors and warnings</source>
+        <target state="translated">오류 및 경고</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkXMLDocumentationFile.Text">
+        <source>&amp;XML documentation file:</source>
+        <target state="translated">XML 문서 파일(&amp;X):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="btnOutputPathBrowse.Text">
+        <source>B&amp;rowse...</source>
+        <target state="translated">찾아보기(&amp;R)...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lblOutputPath.Text">
+        <source>&amp;Output path:</source>
+        <target state="translated">출력 경로(&amp;O):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="rbWarningAll.Text">
+        <source>A&amp;ll</source>
+        <target state="translated">모두(&amp;L)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="rbWarningSpecific.Text">
+        <source>Specif&amp;ic warnings:</source>
+        <target state="translated">특정 경고(&amp;I):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="rbWarningNone.Text">
+        <source>&amp;None</source>
+        <target state="translated">없음(&amp;N)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lblSupressWarnings.Text">
+        <source>&amp;Suppress warnings:</source>
+        <target state="translated">경고 표시 안 함(&amp;S):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboWarningLevel.Items">
+        <source>0</source>
+        <target state="translated">0</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboWarningLevel.Items1">
+        <source>1</source>
+        <target state="translated">1</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboWarningLevel.Items2">
+        <source>2</source>
+        <target state="translated">2</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboWarningLevel.Items3">
+        <source>3</source>
+        <target state="translated">3</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboWarningLevel.Items4">
+        <source>4</source>
+        <target state="translated">4</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="cboWarningLevel.Items5">
+        <source>5</source>
+        <target state="translated">5</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lblWarningLevel.Text">
+        <source>&amp;Warning level:</source>
+        <target state="translated">경고 수준(&amp;W):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkOptimizeCode.Text">
+        <source>Optimi&amp;ze code</source>
+        <target state="translated">코드 최적화(&amp;Z)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkTailcalls.Text">
+        <source>G&amp;enerate tail calls</source>
+        <target state="translated">마무리 호출 생성(&amp;E)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkDefineTrace.Text">
+        <source>Define TR&amp;ACE constant</source>
+        <target state="translated">TRACE 상수 정의(&amp;A)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lblPlatformTarget.Text">
+        <source>Platform tar&amp;get:</source>
+        <target state="translated">플랫폼 대상(&amp;G):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lblOtherFlags.Text">
+        <source>Other &amp;flags:</source>
+        <target state="translated">다른 플래그(&amp;F):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkDefineDebug.Text">
+        <source>Define DEB&amp;UG constant</source>
+        <target state="translated">DEBUG 상수 정의(&amp;U)</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

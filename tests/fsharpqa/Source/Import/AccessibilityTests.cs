@@ -10,9 +10,7 @@ public class Accessibility
     private int Private { get; set; }
     protected int Protected { get; set; }
     internal int Internal { get; set; }
-    // Note: accessibility was modified using dnspy
-    public int FamOrAssembly { get; set; }
-    // Note: accessibility was modified using dnspy
-    public int FamAndAssembly { get; set; }
+    protected internal int FamOrAssembly { get; set; }
+    private protected int FamAndAssembly { get; set; }
 }
 

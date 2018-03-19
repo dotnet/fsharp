@@ -1,0 +1,92 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="zh-Hant" original="../DebugPropPage.resx">
+    <body>
+      <trans-unit id="StartActionLabel.Text">
+        <source>Start Action</source>
+        <target state="translated">起始動作</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="rbStartProject.Text">
+        <source>&amp;Start project</source>
+        <target state="translated">起始專案(&amp;S)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="rbStartProgram.Text">
+        <source>Start e&amp;xternal program:</source>
+        <target state="translated">起始外部程式(&amp;X):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StartProgram.AccessibleName">
+        <source>Program to start</source>
+        <target state="translated">要啟動的程式</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StartProgramBrowse.AccessibleName">
+        <source>Browse for external program</source>
+        <target state="translated">瀏覽外部程式</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StartProgramBrowse.Text">
+        <source>...</source>
+        <target state="translated">...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StartOptionsLabel.Text">
+        <source>Start Options</source>
+        <target state="translated">起始選項</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CommandLineArgsLabel.Text">
+        <source>Comma&amp;nd line arguments:</source>
+        <target state="translated">命令列的引數(&amp;N):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="WorkingDirLabel.Text">
+        <source>Wor&amp;king directory:</source>
+        <target state="translated">工作目錄(&amp;K):</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoteDebugEnabled.Text">
+        <source>Use remote m&amp;achine</source>
+        <target state="translated">使用遠端電腦(&amp;A)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RemoteDebugMachine.AccessibleName">
+        <source>Remote Machine Name:</source>
+        <target state="translated">遠端電腦名稱:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StartWorkingDirectoryBrowse.AccessibleName">
+        <source>Browse for working directory</source>
+        <target state="translated">瀏覽工作目錄</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StartWorkingDirectoryBrowse.Text">
+        <source>...</source>
+        <target state="translated">...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="EnableDebuggerLabel.Text">
+        <source>Enable Debuggers</source>
+        <target state="translated">啟用偵錯工具</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="EnableSQLServerDebugging.Text">
+        <source>Enable SQ&amp;L Server debugging</source>
+        <target state="translated">啟用 SQL Server 偵錯(&amp;L)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseVSHostingProcess.Text">
+        <source>Enable the Visual Studio h&amp;osting process</source>
+        <target state="translated">啟用 Visual Studio 裝載處理序(&amp;O)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="EnableUnmanagedDebugging.Text">
+        <source>Enable &amp;unmanaged code debugging</source>
+        <target state="translated">啟用非受控程式碼偵錯(&amp;U)</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

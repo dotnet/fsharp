@@ -4,11 +4,12 @@
 module internal Microsoft.FSharp.Compiler.CompileOps
 
 open System
-open System.Diagnostics
-open System.Text
-open System.IO
+open System.Collections.Concurrent
 open System.Collections.Generic
+open System.Diagnostics
+open System.IO
 open System.Runtime.CompilerServices
+open System.Text
 
 open Internal.Utilities
 open Internal.Utilities.Text
@@ -26,9 +27,7 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.TastPickle
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.TypeChecker
-open Microsoft.FSharp.Compiler.SR
 open Microsoft.FSharp.Compiler.DiagnosticMessage
-open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.AttributeChecking
 open Microsoft.FSharp.Compiler.ErrorLogger
@@ -41,7 +40,6 @@ open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.ConstraintSolver
 open Microsoft.FSharp.Compiler.ReferenceResolver
-open Microsoft.FSharp.Compiler.TypeRelations
 open Microsoft.FSharp.Compiler.SignatureConformance
 open Microsoft.FSharp.Compiler.MethodOverrides
 open Microsoft.FSharp.Compiler.NameResolution
@@ -402,7 +400,7 @@ let warningOn err level specificWarnOn =
     | 1182 -> false // chkUnusedValue - off by default
     | 3218 -> false // ArgumentsInSigAndImplMismatch - off by default
     | 3180 -> false // abImplicitHeapAllocation - off by default
-    | 3220 -> false // tcStructTypeAssumedImmutable - off by default
+    | 3223 -> false // tcStructTypeAssumedImmutable - off by default
     | _ -> level >= GetWarningLevel err 
 
 let SplitRelatedDiagnostics(err:PhasedDiagnostic) = 
@@ -535,11 +533,11 @@ let UseOfAddressOfOperatorE() = DeclareResourceString("UseOfAddressOfOperator", 
 let DefensiveCopyWarningE() = DeclareResourceString("DefensiveCopyWarning", "%s")
 let DeprecatedThreadStaticBindingWarningE() = DeclareResourceString("DeprecatedThreadStaticBindingWarning", "")
 let FunctionValueUnexpectedE() = DeclareResourceString("FunctionValueUnexpected", "%s")
-let UnitTypeExpectedE() = DeclareResourceString("UnitTypeExpected", "")
-let UnitTypeExpectedWithEqualityE() = DeclareResourceString("UnitTypeExpectedWithEquality", "")
-let UnitTypeExpectedWithPossiblePropertySetterE() = DeclareResourceString("UnitTypeExpectedWithPossiblePropertySetter", "%s%s")
-let UnitTypeExpectedWithPossibleAssignmentE() = DeclareResourceString("UnitTypeExpectedWithPossibleAssignment", "%s")
-let UnitTypeExpectedWithPossibleAssignmentToMutableE() = DeclareResourceString("UnitTypeExpectedWithPossibleAssignmentToMutable", "%s")
+let UnitTypeExpectedE() = DeclareResourceString("UnitTypeExpected", "%s")
+let UnitTypeExpectedWithEqualityE() = DeclareResourceString("UnitTypeExpectedWithEquality", "%s")
+let UnitTypeExpectedWithPossiblePropertySetterE() = DeclareResourceString("UnitTypeExpectedWithPossiblePropertySetter", "%s%s%s")
+let UnitTypeExpectedWithPossibleAssignmentE() = DeclareResourceString("UnitTypeExpectedWithPossibleAssignment", "%s%s")
+let UnitTypeExpectedWithPossibleAssignmentToMutableE() = DeclareResourceString("UnitTypeExpectedWithPossibleAssignmentToMutable", "%s%s")
 let RecursiveUseCheckedAtRuntimeE() = DeclareResourceString("RecursiveUseCheckedAtRuntime", "")
 let LetRecUnsound1E() = DeclareResourceString("LetRecUnsound1", "%s")
 let LetRecUnsound2E() = DeclareResourceString("LetRecUnsound2", "%s%s")
@@ -702,7 +700,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
                 os.Append(System.Environment.NewLine + FSComp.SR.derefInsteadOfNot()) |> ignore
           | _ -> os.Append(ErrorFromAddingTypeEquation1E().Format t2 t1 tpcs) |> ignore
 
-      | ErrorFromAddingTypeEquation(_, _, _, _, ((ConstraintSolverTypesNotInEqualityRelation (_, _, _, _, _, contextInfo) ) as e), _) when contextInfo <> ContextInfo.NoContext ->  
+      | ErrorFromAddingTypeEquation(_, _, _, _, ((ConstraintSolverTypesNotInEqualityRelation (_, _, _, _, _, contextInfo) ) as e), _) when (match contextInfo with ContextInfo.NoContext -> false | _ -> true) ->  
           OutputExceptionR os e
 
       | ErrorFromAddingTypeEquation(_, _, _, _, ((ConstraintSolverTypesNotInSubsumptionRelation _ | ConstraintSolverError _ ) as e), _) ->  
@@ -1252,7 +1250,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
                   | _ :: ts -> hasUnitTType_app ts
                   | [] -> false
 
-              match minfoVirt.EnclosingType with
+              match minfoVirt.ApparentEnclosingType with
               | TType_app (t, types) when t.IsFSharpInterfaceTycon && hasUnitTType_app types ->
                   // match abstract member with 'unit' passed as generic argument
                   os.Append(OverrideDoesntOverride4E().Format sig1) |> ignore
@@ -1295,28 +1293,32 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
           os.Append(DeprecatedThreadStaticBindingWarningE().Format) |> ignore
 
       | FunctionValueUnexpected (denv, ty, _) ->
-          // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
-          os.Append(FunctionValueUnexpectedE().Format (NicePrint.stringOfTy denv ty)) |> ignore
+          let errorText = FunctionValueUnexpectedE().Format (NicePrint.stringOfTy denv ty)
+          os.Append errorText |> ignore
 
-      | UnitTypeExpected (_, _, _) ->
-          let warningText = UnitTypeExpectedE().Format
+      | UnitTypeExpected (denv, ty, _) ->
+          let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
+          let warningText = UnitTypeExpectedE().Format (NicePrint.stringOfTy denv ty)
           os.Append warningText |> ignore
 
-      | UnitTypeExpectedWithEquality (_) ->
-          let warningText = UnitTypeExpectedWithEqualityE().Format
+      | UnitTypeExpectedWithEquality (denv, ty, _) ->
+          let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
+          let warningText = UnitTypeExpectedWithEqualityE().Format (NicePrint.stringOfTy denv ty)
           os.Append warningText |> ignore
 
-      | UnitTypeExpectedWithPossiblePropertySetter (_, _, bindingName, propertyName, _) ->
-          let warningText = UnitTypeExpectedWithPossiblePropertySetterE().Format bindingName propertyName
+      | UnitTypeExpectedWithPossiblePropertySetter (denv, ty, bindingName, propertyName, _) ->
+          let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
+          let warningText = UnitTypeExpectedWithPossiblePropertySetterE().Format (NicePrint.stringOfTy denv ty) bindingName propertyName
           os.Append warningText |> ignore
 
-      | UnitTypeExpectedWithPossibleAssignment (_, _, isAlreadyMutable, bindingName, _) ->
+      | UnitTypeExpectedWithPossibleAssignment (denv, ty, isAlreadyMutable, bindingName, _) ->
+          let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
           let warningText = 
             if isAlreadyMutable then
-                UnitTypeExpectedWithPossibleAssignmentToMutableE().Format bindingName
+                UnitTypeExpectedWithPossibleAssignmentToMutableE().Format (NicePrint.stringOfTy denv ty) bindingName
             else
-                UnitTypeExpectedWithPossibleAssignmentE().Format bindingName
+                UnitTypeExpectedWithPossibleAssignmentE().Format (NicePrint.stringOfTy denv ty)  bindingName
           os.Append warningText |> ignore
 
       | RecursiveUseCheckedAtRuntime  _ -> 
@@ -1350,8 +1352,8 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
 
       | NonUniqueInferredAbstractSlot(_, denv, bindnm, bvirt1, bvirt2, _) ->
           os.Append(NonUniqueInferredAbstractSlot1E().Format bindnm) |> ignore
-          let ty1 = bvirt1.EnclosingType
-          let ty2 = bvirt2.EnclosingType
+          let ty1 = bvirt1.ApparentEnclosingType
+          let ty2 = bvirt2.ApparentEnclosingType
           // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
           os.Append(NonUniqueInferredAbstractSlot2E().Format) |> ignore
@@ -2286,9 +2288,7 @@ type TcConfigBuilder =
       mutable optSettings   : Optimizer.OptimizationSettings 
       mutable emitTailcalls : bool
       mutable deterministic : bool
-#if PREFERRED_UI_LANG
       mutable preferredUiLang: string option
-#endif
       mutable lcid          : int option
       mutable productNameForBannerText : string
       /// show the MS (c) notice, e.g. with help or fsi? 
@@ -2447,9 +2447,7 @@ type TcConfigBuilder =
           optSettings = Optimizer.OptimizationSettings.Defaults
           emitTailcalls = true
           deterministic = false
-#if PREFERRED_UI_LANG
           preferredUiLang = None
-#endif
           lcid = None
           // See bug 6071 for product banner spec
           productNameForBannerText = FSComp.SR.buildProductName(FSharpEnvironment.FSharpBannerVersion)
@@ -2630,7 +2628,7 @@ let OpenILBinary(filename, optimizeForMemory, openBinariesInMemory, ilGlobalsOpt
           ILBinaryReader.OpenILModuleReaderAfterReadingAllBytes filename opts
       else
         let location =
-#if !FX_RESHAPED_REFLECTION_CORECLR // shadow copy not supported
+#if !FX_RESHAPED_REFLECTION // shadow copy not supported
           // In order to use memory mapped files on the shadow copied version of the Assembly, we `preload the assembly
           // We swallow all exceptions so that we do not change the exception contract of this API
           if shadowCopyReferences then 
@@ -2796,7 +2794,8 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
     // Look for an explicit reference to FSharp.Core and use that to compute fsharpBinariesDir
     // FUTURE: remove this, we only read the binary for the exception it raises
     let fsharpBinariesDirValue = 
-#if FX_NO_SIMPLIFIED_LOADER
+// NOTE: It's not clear why this behaviour has been changed for the NETSTANDARD compilations of the F# compiler
+#if NETSTANDARD1_6 || NETSTANDARD2_0
         data.defaultFSharpBinariesDir
 #else
         match fslibExplicitFilenameOpt with
@@ -2913,9 +2912,7 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
     member x.optSettings        = data.optSettings
     member x.emitTailcalls      = data.emitTailcalls
     member x.deterministic      = data.deterministic
-#if PREFERRED_UI_LANG
     member x.preferredUiLang    = data.preferredUiLang
-#endif
     member x.lcid               = data.lcid
     member x.optsOn             = data.optsOn
     member x.productNameForBannerText  = data.productNameForBannerText
@@ -2960,7 +2957,8 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
                 yield tcConfig.MakePathAbsolute x
 
             | None -> 
-#if FSI_TODO_NETCORE // there is no really good notion of runtime directory on .NETCore
+// "there is no really good notion of runtime directory on .NETCore"
+#if NETSTANDARD1_6 || NETSTANDARD2_0
                 let runtimeRoot = Path.GetDirectoryName(typeof<System.Object>.Assembly.Location)
 #else
                 let runtimeRoot = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
@@ -3510,14 +3508,14 @@ let PostParseModuleSpecs (defaultNamespace, filename, isLastCompiland, ParsedSig
     ParsedInput.SigFile(ParsedSigFileInput(filename, qualName, scopedPragmas, hashDirectives, specs))
 
 /// Checks if a module name is already given and deduplicates the name if needed.
-let DeduplicateModuleName (moduleNamesDict:Dictionary<string, Set<string>>) (paths: Set<string>) path (qualifiedNameOfFile: QualifiedNameOfFile) =
+let DeduplicateModuleName (moduleNamesDict:IDictionary<string, Set<string>>) (paths: Set<string>) path (qualifiedNameOfFile: QualifiedNameOfFile) =
     let count = if paths.Contains path then paths.Count else paths.Count + 1
     moduleNamesDict.[qualifiedNameOfFile.Text] <- Set.add path paths
     let id = qualifiedNameOfFile.Id
     if count = 1 then qualifiedNameOfFile else QualifiedNameOfFile(Ident(id.idText + "___" + count.ToString(), id.idRange))
 
 /// Checks if a ParsedInput is using a module name that was already given and deduplicates the name if needed.
-let DeduplicateParsedInputModuleName (moduleNamesDict:Dictionary<string, Set<string>>) input =
+let DeduplicateParsedInputModuleName (moduleNamesDict:IDictionary<string, Set<string>>) input =
     match input with
     | ParsedInput.ImplFile (ParsedImplFileInput.ParsedImplFileInput(fileName, isScript, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules, (isLastCompiland, isExe))) ->
         let path = Path.GetDirectoryName fileName
@@ -3526,7 +3524,7 @@ let DeduplicateParsedInputModuleName (moduleNamesDict:Dictionary<string, Set<str
             let qualifiedNameOfFile = DeduplicateModuleName moduleNamesDict paths path qualifiedNameOfFile
             ParsedInput.ImplFile(ParsedImplFileInput.ParsedImplFileInput(fileName, isScript, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules, (isLastCompiland, isExe)))
         | _ ->
-            moduleNamesDict.Add(qualifiedNameOfFile.Text, Set.singleton path)
+            moduleNamesDict.[qualifiedNameOfFile.Text] <- Set.singleton path
             input
     | ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules)) ->
         let path = Path.GetDirectoryName fileName
@@ -3535,7 +3533,7 @@ let DeduplicateParsedInputModuleName (moduleNamesDict:Dictionary<string, Set<str
             let qualifiedNameOfFile = DeduplicateModuleName moduleNamesDict paths path qualifiedNameOfFile
             ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName, qualifiedNameOfFile, scopedPragmas, hashDirectives, modules))
         | _ ->
-            moduleNamesDict.Add(qualifiedNameOfFile.Text, Set.singleton path)
+            moduleNamesDict.[qualifiedNameOfFile.Text] <- Set.singleton path
             input
 
 let ParseInput (lexer, errorLogger:ErrorLogger, lexbuf:UnicodeLexing.Lexbuf, defaultNamespace, filename, isLastCompiland) = 
@@ -4281,14 +4279,16 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 
         // Find assembly level TypeProviderAssemblyAttributes. These will point to the assemblies that 
         // have class which implement ITypeProvider and which have TypeProviderAttribute on them.
-        let providerAssemblies = 
+        let designTimeAssemblyNames = 
             runtimeAssemblyAttributes 
             |> List.choose (TryDecodeTypeProviderAssemblyAttr (defaultArg ilGlobalsOpt EcmaMscorlibILGlobals))
             // If no design-time assembly is specified, use the runtime assembly
-            |> List.map (function null -> Path.GetFileNameWithoutExtension fileNameOfRuntimeAssembly | s -> s)
-            |> Set.ofList
+            |> List.map (function null -> fileNameOfRuntimeAssembly | s -> s)
+            // For each simple name of a design-time assembly, we take the first matching one in the order they are 
+            // specified in the attributes
+            |> List.distinctBy (fun s -> try Path.GetFileNameWithoutExtension(s) with _ -> s)
 
-        if providerAssemblies.Count > 0 then
+        if not (List.isEmpty designTimeAssemblyNames) then
 
             // Find the SystemRuntimeAssemblyVersion value to report in the TypeProviderConfig.
             let primaryAssemblyVersion = 
@@ -4316,10 +4316,9 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                 fun arg -> systemRuntimeContainsTypeRef.Value arg  
 
             let providers = 
-                [ for assemblyName in providerAssemblies do
-                      yield ExtensionTyping.GetTypeProvidersOfAssembly(fileNameOfRuntimeAssembly, ilScopeRefOfRuntimeAssembly, assemblyName, typeProviderEnvironment, 
-                                                                       tcConfig.isInvalidationSupported, tcConfig.isInteractive, systemRuntimeContainsType, primaryAssemblyVersion, m) ]
-            let providers = providers |> List.concat
+                [ for designTimeAssemblyName in designTimeAssemblyNames do
+                      yield! ExtensionTyping.GetTypeProvidersOfAssembly(fileNameOfRuntimeAssembly, ilScopeRefOfRuntimeAssembly, designTimeAssemblyName, typeProviderEnvironment, 
+                                                                        tcConfig.isInvalidationSupported, tcConfig.isInteractive, systemRuntimeContainsType, primaryAssemblyVersion, m) ]
 
             // Note, type providers are disposable objects. The TcImports owns the provider objects - when/if it is disposed, the providers are disposed.
             // We ignore all exceptions from provider disposal.
@@ -5072,13 +5071,7 @@ module private ScriptPreprocessClosure =
             match codeContext with 
             | CodeContext.Editing -> ResolutionEnvironment.EditingOrCompilation true
             | CodeContext.Compilation -> ResolutionEnvironment.EditingOrCompilation false
-            | CodeContext.CompilationAndEvaluation -> 
-#if FSI_TODO_NETCORE
-                // "CompilationAndEvaluation" assembly resolution for F# Interactive is not yet properly figured out on .NET Core
-                ResolutionEnvironment.EditingOrCompilation false
-#else
-                ResolutionEnvironment.CompilationAndEvaluation
-#endif
+            | CodeContext.CompilationAndEvaluation -> ResolutionEnvironment.CompilationAndEvaluation
         tcConfigB.framework <- false 
         tcConfigB.useSimpleResolution <- useSimpleResolution
         // Indicates that there are some references not in BasicReferencesForScriptLoadClosure which should

@@ -1,6 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.ConstraintSolver
 
 //-------------------------------------------------------------------------
 // Incremental type inference constraint solving.  
@@ -30,11 +29,13 @@ module internal Microsoft.FSharp.Compiler.ConstraintSolver
 //
 //------------------------------------------------------------------------- 
 
+
+module internal Microsoft.FSharp.Compiler.ConstraintSolver
+
 open Internal.Utilities.Collections
 
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
@@ -58,10 +59,10 @@ open Microsoft.FSharp.Compiler.TypeRelations
 // of the constraint resolution carried out by type checking.
 //------------------------------------------------------------------------- 
    
-let compgen_id = mkSynId range0 unassignedTyparName
+let compgenId = mkSynId range0 unassignedTyparName
 
 let NewCompGenTypar (kind, rigid, staticReq, dynamicReq, error) = 
-    NewTypar(kind, rigid, Typar(compgen_id, staticReq, true), error, dynamicReq, [], false, false) 
+    NewTypar(kind, rigid, Typar(compgenId, staticReq, true), error, dynamicReq, [], false, false) 
     
 let anon_id m = mkSynId m unassignedTyparName
 
@@ -75,7 +76,7 @@ let NewInferenceMeasurePar () = NewCompGenTypar (TyparKind.Measure, TyparRigidit
 
 let NewErrorTypar () = NewCompGenTypar (TyparKind.Type, TyparRigidity.Flexible, NoStaticReq, TyparDynamicReq.No, true)
 let NewErrorMeasureVar () = NewCompGenTypar (TyparKind.Measure, TyparRigidity.Flexible, NoStaticReq, TyparDynamicReq.No, true)
-let NewInferenceType () = mkTyparTy (NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgen_id, NoStaticReq, true), false, TyparDynamicReq.No, [], false, false))
+let NewInferenceType () = mkTyparTy (NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, NoStaticReq, true), false, TyparDynamicReq.No, [], false, false))
 let NewErrorType () = mkTyparTy (NewErrorTypar ())
 let NewErrorMeasure () = Measure.Var (NewErrorMeasureVar ())
 
@@ -141,6 +142,8 @@ type ContextInfo =
 | FollowingPatternMatchClause of range
 /// The type equation comes from a pattern match guard.
 | PatternMatchGuard of range
+/// The type equation comes from a sequence expression.
+| SequenceExpression of TType
 
 exception ConstraintSolverTupleDiffLengths of DisplayEnv * TType list * TType list * range  * range 
 exception ConstraintSolverInfiniteTypes of ContextInfo * DisplayEnv * TType * TType * range * range
@@ -356,7 +359,7 @@ let FilterEachThenUndo f meths =
         trace.Undo()
         match CheckNoErrorsAndGetWarnings res with 
         | None -> None 
-        | Some warns -> Some (calledMeth, warns.Length, trace))
+        | Some warns -> Some (calledMeth, warns, trace))
 
 let ShowAccessDomain ad =
     match ad with 
@@ -1036,7 +1039,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
 
       | _, _, false, ("op_Addition" | "op_Subtraction" | "op_Modulus"), [argty1;argty2] 
           when // Ignore any explicit +/- overloads from any basic integral types
-               (minfos |> List.forall (fun minfo -> isIntegerTy g minfo.EnclosingType ) &&
+               (minfos |> List.forall (fun minfo -> isIntegerTy g minfo.ApparentEnclosingType ) &&
                 (   (IsNumericOrIntegralEnumType g argty1 || (nm = "op_Addition" && (isCharTy g argty1 || isStringTy g argty1))) && (permitWeakResolution || not (isTyparTy g argty2))
                  || (IsNumericOrIntegralEnumType g argty2 || (nm = "op_Addition" && (isCharTy g argty2 || isStringTy g argty2))) && (permitWeakResolution || not (isTyparTy g argty1)))) ->
           SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace argty2 argty1 ++ (fun () -> 
@@ -1045,7 +1048,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
 
       | _, _, false, ("op_LessThan" | "op_LessThanOrEqual" | "op_GreaterThan" | "op_GreaterThanOrEqual" | "op_Equality" | "op_Inequality" ), [argty1;argty2] 
           when // Ignore any explicit overloads from any basic integral types
-               (minfos |> List.forall (fun minfo -> isIntegerTy g minfo.EnclosingType ) &&
+               (minfos |> List.forall (fun minfo -> isIntegerTy g minfo.ApparentEnclosingType ) &&
                 (   (IsRelationalType g argty1 && (permitWeakResolution || not (isTyparTy g argty2)))
                  || (IsRelationalType g argty2 && (permitWeakResolution || not (isTyparTy g argty1))))) ->
           SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace argty2 argty1 ++ (fun () -> 
@@ -1287,9 +1290,9 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
                       let isInstance = minfo.IsInstance
                       if isInstance <> memFlags.IsInstance then 
                           if isInstance then
-                              ErrorD(ConstraintSolverError(FSComp.SR.csMethodFoundButIsNotStatic((NicePrint.minimalStringOfType denv minfo.EnclosingType), (DecompileOpName nm), nm), m, m2 ))
+                              ErrorD(ConstraintSolverError(FSComp.SR.csMethodFoundButIsNotStatic((NicePrint.minimalStringOfType denv minfo.ApparentEnclosingType), (DecompileOpName nm), nm), m, m2 ))
                           else
-                              ErrorD(ConstraintSolverError(FSComp.SR.csMethodFoundButIsStatic((NicePrint.minimalStringOfType denv minfo.EnclosingType), (DecompileOpName nm), nm), m, m2 ))
+                              ErrorD(ConstraintSolverError(FSComp.SR.csMethodFoundButIsStatic((NicePrint.minimalStringOfType denv minfo.ApparentEnclosingType), (DecompileOpName nm), nm), m, m2 ))
                       else 
                           CheckMethInfoAttributes g m None minfo ++ (fun () -> 
                           ResultD (TTraitSolved (minfo, calledMeth.CalledTyArgs))))
@@ -1341,7 +1344,7 @@ and MemberConstraintSolutionOfMethInfo css m minfo minst =
     match minfo with 
     | ILMeth(_, ilMeth, _) ->
        let mref = IL.mkRefToILMethod (ilMeth.DeclaringTyconRef.CompiledRepresentationForNamedType, ilMeth.RawMetadata)
-       let iltref = ilMeth.DeclaringTyconRefOption |> Option.map (fun tcref -> tcref.CompiledRepresentationForNamedType)
+       let iltref = ilMeth.ILExtensionMethodDeclaringTyconRef |> Option.map (fun tcref -> tcref.CompiledRepresentationForNamedType)
        ILMethSln(ilMeth.ApparentEnclosingType, iltref, mref, minst)
     | FSMeth(_, typ, vref, _) ->  
        FSMethSln(typ, vref, minst)
@@ -1352,7 +1355,7 @@ and MemberConstraintSolutionOfMethInfo css m minfo minst =
         let g = amap.g
         let minst = []   // GENERIC TYPE PROVIDERS: for generics, we would have an minst here
         let allArgVars, allArgs = minfo.GetParamTypes(amap, m, minst) |> List.concat |> List.mapi (fun i ty -> mkLocal m ("arg"+string i) ty) |> List.unzip
-        let objArgVars, objArgs = (if minfo.IsInstance then [mkLocal m "this" minfo.EnclosingType] else []) |> List.unzip
+        let objArgVars, objArgs = (if minfo.IsInstance then [mkLocal m "this" minfo.ApparentEnclosingType] else []) |> List.unzip
         let callMethInfoOpt, callExpr, callExprTy = ProvidedMethodCalls.BuildInvokerExpressionForProvidedMethodCall css.TcVal (g, amap, mi, objArgs, NeverMutates, false, ValUseFlag.NormalValUse, allArgs, m) 
         let closedExprSln = ClosedExprSln (mkLambdas m [] (objArgVars@allArgVars) (callExpr, callExprTy) )
         // If the call is a simple call to an IL method with all the arguments in the natural order, then revert to use ILMethSln.
@@ -2048,7 +2051,7 @@ and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs, nNa
         | CallerNamedArg(id, _) :: _ -> 
             if minfo.IsConstructor then
                 let predictFields() =
-                    minfo.DeclaringEntityRef.AllInstanceFieldsAsList
+                    minfo.DeclaringTyconRef.AllInstanceFieldsAsList
                     |> List.map (fun p -> p.Name.Replace("@", ""))
                     |> System.Collections.Generic.HashSet
 
@@ -2191,8 +2194,8 @@ and ResolveOverloading
                          (ArgsEquivInsideUndo csenv cx.IsSome) 
                          reqdRetTyOpt 
                          calledMeth) with
-          | [(calledMeth, _, _)] -> 
-              Some calledMeth, CompleteD, NoTrace // Can't re-play the trace since ArgsEquivInsideUndo was used
+          | [(calledMeth, warns, _)] ->
+              Some calledMeth, OkResult (warns, ()), NoTrace // Can't re-play the trace since ArgsEquivInsideUndo was used
 
           | _ -> 
             // Now determine the applicable methods.
@@ -2215,7 +2218,7 @@ and ResolveOverloading
                     if isOpConversion then 
                         match calledMethGroup, reqdRetTyOpt with 
                         | h :: _, Some rty -> 
-                            Some (h.Method.EnclosingType, rty)
+                            Some (h.Method.ApparentEnclosingType, rty)
                         | _ -> None 
                     else
                         None
@@ -2252,8 +2255,8 @@ and ResolveOverloading
 
                 None, ErrorD (failOverloading (FSComp.SR.csNoOverloadsFound methodName) errors), NoTrace
 
-            | [(calledMeth, _, t)] -> 
-                Some calledMeth, CompleteD, WithTrace t
+            | [(calledMeth, warns, t)] ->
+                Some calledMeth, OkResult (warns, ()), WithTrace t
 
             | applicableMeths -> 
                 
@@ -2289,7 +2292,9 @@ and ResolveOverloading
                     if c <> 0 then c else
                     0
 
-                let better (candidate:CalledMeth<_>, candidateWarnCount, _) (other:CalledMeth<_>, otherWarnCount, _) = 
+                let better (candidate:CalledMeth<_>, candidateWarnings, _) (other:CalledMeth<_>, otherwarnings, _) =
+                    let candidateWarnCount = List.length candidateWarnings
+                    let otherWarnCount = List.length otherwarnings
                     // Prefer methods that don't give "this code is less generic" warnings
                     // Note: Relies on 'compare' respecting true > false
                     let c = compare (candidateWarnCount = 0) (otherWarnCount = 0)
@@ -2380,7 +2385,7 @@ and ResolveOverloading
                         else 
                            None) 
                 match bestMethods with 
-                | [(calledMeth, _, t)] -> Some calledMeth, CompleteD, WithTrace t
+                | [(calledMeth, warns, t)] -> Some calledMeth, OkResult (warns, ()), WithTrace t
                 | bestMethods -> 
                     let methodNames =
                         let methods = 
@@ -2606,15 +2611,16 @@ let CodegenWitnessThatTypSupportsTraitConstraint tcVal g amap m (traitInfo:Trait
               | None -> Choice4Of4()
               | Some sln ->
                   match sln with 
-                  | ILMethSln(typ, extOpt, mref, minst) ->
-                       let tcref, _tinst = destAppTy g typ
+                  | ILMethSln(origTy, extOpt, mref, minst) ->
+                       let metadataTy = helpEnsureTypeHasMetadata g origTy
+                       let tcref, _tinst = destAppTy g metadataTy
                        let mdef = IL.resolveILMethodRef tcref.ILTyconRawMetadata mref
                        let ilMethInfo =
                            match extOpt with 
-                           | None -> MethInfo.CreateILMeth(amap, m, typ, mdef)
+                           | None -> MethInfo.CreateILMeth(amap, m, origTy, mdef)
                            | Some ilActualTypeRef -> 
                                let actualTyconRef = Import.ImportILTypeRef amap m ilActualTypeRef 
-                               MethInfo.CreateILExtensionMeth(amap, m, typ, actualTyconRef, None, mdef)
+                               MethInfo.CreateILExtensionMeth(amap, m, origTy, actualTyconRef, None, mdef)
                        Choice1Of4 (ilMethInfo, minst)
                   | FSMethSln(typ, vref, minst) ->
                        Choice1Of4  (FSMeth(g, typ, vref, None), minst)

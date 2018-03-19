@@ -3631,6 +3631,13 @@ atomicExprQualification:
   |    identOrOp 
       { let idm = rhs parseState 1 
         (fun e lhsm dotm -> mkSynDot dotm lhsm e $1) }
+
+  | GLOBAL
+      { (fun e lhsm dotm -> 
+            reportParseErrorAt (rhs parseState 3) (FSComp.SR.nrGlobalUsedOnlyAsFirstName()) 
+            let fixedLhsm = mkRange lhsm.FileName lhsm.Start dotm.End // previous lhsm is wrong after 'recover'
+            mkSynDotMissing dotm fixedLhsm e) }
+
   |   /* empty */
       { (fun e lhsm dotm -> 
             reportParseErrorAt dotm (FSComp.SR.parsMissingQualificationAfterDot()) 

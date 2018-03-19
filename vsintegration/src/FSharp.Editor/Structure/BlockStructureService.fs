@@ -16,54 +16,57 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.SourceCodeServices.Structure
 
 module internal BlockStructure =
-    let scopeToBlockType = function
-        | Scope.Open -> BlockTypes.Imports
-        | Scope.Namespace
-        | Scope.Module -> BlockTypes.Namespace 
-        | Scope.Record
-        | Scope.Interface
-        | Scope.TypeExtension
-        | Scope.RecordDefn
-        | Scope.CompExpr
-        | Scope.ObjExpr
-        | Scope.UnionDefn
-        | Scope.Attribute
-        | Scope.Type -> BlockTypes.Type
-        | Scope.New
-        | Scope.RecordField
-        | Scope.Member -> BlockTypes.Member
-        | Scope.LetOrUse
-        | Scope.Match
-        | Scope.MatchClause
-        | Scope.EnumCase
-        | Scope.UnionCase
-        | Scope.MatchLambda
-        | Scope.ThenInIfThenElse
-        | Scope.ElseInIfThenElse
-        | Scope.TryWith
-        | Scope.TryInTryWith
-        | Scope.WithInTryWith
-        | Scope.TryFinally
-        | Scope.TryInTryFinally
-        | Scope.FinallyInTryFinally
-        | Scope.IfThenElse-> BlockTypes.Conditional
-        | Scope.Tuple
-        | Scope.ArrayOrList
-        | Scope.CompExprInternal
-        | Scope.Quote
-        | Scope.SpecialFunc
-        | Scope.Lambda
-        | Scope.LetOrUseBang
-        | Scope.Val
-        | Scope.YieldOrReturn
-        | Scope.YieldOrReturnBang
-        | Scope.TryWith -> BlockTypes.Expression
-        | Scope.Do -> BlockTypes.Statement
-        | Scope.While
-        | Scope.For -> BlockTypes.Loop
-        | Scope.HashDirective -> BlockTypes.PreprocessorRegion
-        | Scope.Comment
-        | Scope.XmlDocComment -> BlockTypes.Comment
+    let scopeToBlockType scope =
+        if not Settings.Advanced.IsBlockStructureEnabled then BlockTypes.Nonstructural
+        else
+            match scope with
+            | Scope.Open -> BlockTypes.Imports
+            | Scope.Namespace
+            | Scope.Module -> BlockTypes.Namespace 
+            | Scope.Record
+            | Scope.Interface
+            | Scope.TypeExtension
+            | Scope.RecordDefn
+            | Scope.CompExpr
+            | Scope.ObjExpr
+            | Scope.UnionDefn
+            | Scope.Attribute
+            | Scope.Type -> BlockTypes.Type
+            | Scope.New
+            | Scope.RecordField
+            | Scope.Member -> BlockTypes.Member
+            | Scope.LetOrUse
+            | Scope.Match
+            | Scope.MatchClause
+            | Scope.EnumCase
+            | Scope.UnionCase
+            | Scope.MatchLambda
+            | Scope.ThenInIfThenElse
+            | Scope.ElseInIfThenElse
+            | Scope.TryWith
+            | Scope.TryInTryWith
+            | Scope.WithInTryWith
+            | Scope.TryFinally
+            | Scope.TryInTryFinally
+            | Scope.FinallyInTryFinally
+            | Scope.IfThenElse-> BlockTypes.Conditional
+            | Scope.Tuple
+            | Scope.ArrayOrList
+            | Scope.CompExprInternal
+            | Scope.Quote
+            | Scope.SpecialFunc
+            | Scope.Lambda
+            | Scope.LetOrUseBang
+            | Scope.Val
+            | Scope.YieldOrReturn
+            | Scope.YieldOrReturnBang
+            | Scope.TryWith -> BlockTypes.Expression
+            | Scope.Do -> BlockTypes.Statement
+            | Scope.While
+            | Scope.For -> BlockTypes.Loop
+            | Scope.HashDirective -> BlockTypes.PreprocessorRegion
+            | Scope.Comment
+            | Scope.XmlDocComment -> BlockTypes.Comment
 
     let isAutoCollapsible = function
         | Scope.New
@@ -127,7 +130,7 @@ module internal BlockStructure =
             let hintSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, scopeRange.Range)
             match textSpan,hintSpan with
             | Some textSpan, Some hintSpan ->
-                let line = sourceText.Lines.GetLineFromPosition  textSpan.Start
+                let line = sourceText.Lines.GetLineFromPosition textSpan.Start
                 let bannerText =
                     match Option.ofNullable (line.Span.Intersection textSpan) with
                     | Some span -> sourceText.GetSubText(span).ToString()+"..."

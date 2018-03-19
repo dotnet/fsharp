@@ -1,0 +1,312 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="ko" original="../WCF.resx">
+    <body>
+      <trans-unit id="AddSvcRefDlg_DefaultDialogTitle">
+        <source>Add Service Reference</source>
+        <target state="translated">서비스 참조 추가</target>
+        <note>Title for the "Add Service Reference" dialog</note>
+      </trans-unit>
+      <trans-unit id="CodeGenerator_UnableToGetCodeDomProvider">
+        <source>Unable to find a code generator (CodeDomProvider).</source>
+        <target state="translated">코드 생성기(CodeDomProvider)를 찾을 수 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Configuration_CantSaveTemporaryConfigurations">
+        <source>Configuration could not be saved. Make sure the configuration file exists and can be edited.</source>
+        <target state="translated">구성을 저장할 수 없습니다. 구성 파일이 있는지, 그리고 편집할 수 있는지 확인하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Configuration_IVsProjectSpecialFilesNotSupported">
+        <source>The current project does not support configuration files.</source>
+        <target state="translated">현재 프로젝트에서 구성 파일을 지원하지 않습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_NoServicesFoundInSolution">
+        <source>No services found in the solution.</source>
+        <target state="translated">솔루션에서 서비스를 찾을 수 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_ErrorOnOK">
+        <source>There was an error downloading metadata from the address. Please verify that you have entered a valid address.</source>
+        <target state="translated">주소에서 메타데이터를 다운로드하는 동안 오류가 발생했습니다. 올바른 주소를 입력했는지 확인하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_ServicesFoundAtUrl_2Args">
+        <source>{0} service(s) found at address '{1}'.</source>
+        <target state="translated">주소 '{1}'에서 {0}개의 서비스를 찾았습니다.</target>
+        <note>{0} = count, {1} = URL where the services were found</note>
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_ServicesFoundInSolution_1Arg">
+        <source>{0} service(s) found in the solution.</source>
+        <target state="translated">솔루션에서 {0}개의 서비스를 찾았습니다.</target>
+        <note>{0} = # of services</note>
+      </trans-unit>
+      <trans-unit id="Configuration_OnlyRootItemIdSupported">
+        <source>It is only possible to access the default (ITEMID_ROOT) configuration file.</source>
+        <target state="translated">기본(ITEMID_ROOT) 구성 파일에만 액세스할 수 있습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_InvalidNamespace">
+        <source>'{0}' is not a valid namespace for the service reference.</source>
+        <target state="translated">'{0}'은(는) 올바른 서비스 참조 네임스페이스가 아닙니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_NamespaceConflictsOther">
+        <source>Cannot create a service reference with namespace '{0}' because the name is already in use by an existing service reference, folder or file.</source>
+        <target state="translated">기존 서비스 참조, 폴더 또는 파일에서 '{0}' 이름을 이미 사용하고 있으므로 이 이름의 네임스페이스로 서비스 참조를 만들 수 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_AddMultipleReference">
+        <source>Unable to add a new reference. One or more references already exists or the 'Metadata' section is not empty in the .svcmap file. Edit the .svcmap file and clear all the entries from the 'Metadata' section.</source>
+        <target state="translated">새 참조를 추가할 수 없습니다. .svcmap 파일에 이미 하나 이상의 참조가 있거나 'Metadata' 섹션이 비어 있지 않습니다. .svcmap 파일을 편집하여 'Metadata' 섹션의 모든 항목을 지우세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_NamespaceCantBeEmpty">
+        <source>A namespace needs to be specified for this service reference.</source>
+        <target state="translated">이 서비스 참조에 네임스페이스를 지정해야 합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_InvalidName">
+        <source>{0}' is not a valid name for a service reference.</source>
+        <target state="translated">'{0}'은(는) 올바른 서비스 참조 이름이 아닙니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_NameCantBeEmpty">
+        <source>Empty string is not a valid name for a reference group.</source>
+        <target state="translated">빈 문자열은 올바른 참조 그룹 이름이 아닙니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_NameConflictsOther">
+        <source>Cannot create a reference group named '{0}' because the name is already being used by an existing reference group, folder or file.</source>
+        <target state="translated">기존 참조 그룹, 폴더 또는 파일에서 이미 '{0}'(이)라는 이름을 사용하고 있으므로 이 이름으로 참조 그룹을 만들 수 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_NameCantStartEndWithSpace">
+        <source>Cannot create a reference group with namespace or name with leading or trailing whitespace characters.</source>
+        <target state="translated">선행 공백 또는 후행 공백 문자가 있는 네임스페이스나 이름으로 참조 그룹을 만들 수 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_NotFoundThroughPath">
+        <source>The .svcmap file cannot be found. It may have been moved or deleted.  To generate a new .svcmap file, delete the service reference and add it again.</source>
+        <target state="translated">.svcmap 파일을 찾을 수 없습니다. 이동되었거나 삭제되었을 수 있습니다.  새 .svcmap 파일을 생성하려면 서비스 참조를 삭제하고 다시 추가하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_NotSupportedInCurrentProject">
+        <source>The current project does not support service references. To enable Windows Communication Foundation support, change the target version of the Microsoft .NET Framework.</source>
+        <target state="translated">현재 프로젝트에서는 서비스 참조를 지원하지 않습니다. Windows Communication Foundation이 지원되도록 하려면 Microsoft .NET Framework의 대상 버전을 변경하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_DeleteFailedConfigurationError">
+        <source>The configuration for the service reference could not be deleted due to the following issue: {0}</source>
+        <target state="translated">다음 문제로 인해 서비스 참조의 구성을 삭제할 수 없습니다. {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_UpdateFailedConfigurationError">
+        <source>The configuration for the service reference could not be updated due to the following issue: {0}</source>
+        <target state="translated">다음 문제로 인해 서비스 참조의 구성을 업데이트할 수 없습니다. {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_AddFailedConfigurationError">
+        <source>The configuration for the service reference could not be added due to the following issue: {0}</source>
+        <target state="translated">다음 문제로 인해 서비스 참조의 구성을 추가할 수 없습니다. {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_NothingSelectedOnGo">
+        <source>Please enter the address for a service.</source>
+        <target state="translated">서비스의 주소를 입력하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_Error_DiscoverUrl_1Arg">
+        <source>An error occurred while attempting to find services at '{0}'.</source>
+        <target state="translated">'{0}'에서 서비스를 찾는 동안 오류가 발생했습니다.</target>
+        <note>{0} = a URL path</note>
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_Error_ServicesInSolution">
+        <source>An error occurred while searching for services in the solution.</source>
+        <target state="translated">솔루션에서 서비스를 검색하는 동안 오류가 발생했습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_Error_StartService_1Arg1">
+        <source>An error occurred while attempting to start services at '{0}'".</source>
+        <target state="translated">'{0}'에서 서비스를 시작하는 동안 오류가 발생했습니다.</target>
+        <note>{0} = a URL path</note>
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_PleaseWait">
+        <source>Please wait for service information to be downloaded or click Stop.</source>
+        <target state="translated">서비스 정보가 다운로드될 때까지 기다리거나 [중지]5D;를 클릭하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_FailedToGetReferencedAssembliesFromProject">
+        <source>Cannot get referenced assemblies from the project system.</source>
+        <target state="translated">참조된 어셈블리를 프로젝트 시스템에서 가져올 수 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_SvcMapFileIsMissing">
+        <source>The service reference is invalid, because the .svcmap file ('{0}') cannot be found. It may have been moved, deleted or excluded from the project.  To generate a new .svcmap file, delete the service reference and add it again.</source>
+        <target state="translated">.svcmap 파일('{0}')을 찾을 수 없으므로 서비스 참조가 유효하지 않습니다. 이 파일은 이동 또는 삭제되었거나 프로젝트에서 제외되었을 수 있습니다.  새 .svcmap 파일을 생성하려면 서비스 참조를 삭제하고 다시 추가하세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_SvcMapFileBadFormat">
+        <source>The service reference is invalid. The .svcmap file ('{0}') cannot be loaded. It may be corrupted or in a bad format: {1}</source>
+        <target state="translated">서비스 참조가 잘못되었습니다. .svcmap 파일('{0}')을 로드할 수 없습니다. 이 파일은 손상되거나 형식이 잘못되어 있을 수 있습니다. {1}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddSvcRegDlg_ShowErrorDetails">
+        <source>(Details)</source>
+        <target state="translated">(자세히)</target>
+        <note>This is the text for a link to additional error information.</note>
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_OPSelectContract">
+        <source>Select a service contract to view its operations.</source>
+        <target state="translated">서비스 계약을 선택하여 해당 작업을 확인하세요.</target>
+        <note>This is the message displayed when user selects non-cotract nodes.</note>
+      </trans-unit>
+      <trans-unit id="CSRDlg_Title">
+        <source>Service Reference Settings</source>
+        <target state="translated">서비스 참조 설정</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CSRDlg_CustomType">
+        <source>( Custom )</source>
+        <target state="translated">( 사용자 지정 )</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CSRDlg_AssemblyNotFoundError">
+        <source>The assembly '{0}' could not be found.</source>
+        <target state="translated">'{0}' 어셈블리를 찾을 수 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CSRDlg_NullURL">
+        <source>Address should be a valid non-empty URL.</source>
+        <target state="translated">주소는 비어 있지 않은 올바른 URL이어야 합니다.</target>
+        <note>Error message to display when user enters empty URL in the address change text box</note>
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_ServicesFound_1Arg">
+        <source>{0} service(s) found.</source>
+        <target state="translated">{0}개의 서비스를 찾았습니다.</target>
+        <note>{0} = count</note>
+      </trans-unit>
+      <trans-unit id="Err_UserCancelled">
+        <source>The operation was cancelled.</source>
+        <target state="translated">작업이 취소되었습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UpdateDialog_Title_1Arg">
+        <source>Updating Service Reference '{0}'</source>
+        <target state="translated">서비스 참조 '{0}'을(를) 업데이트하는 중</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_UpdateComplete">
+        <source>Service reference update complete.</source>
+        <target state="translated">서비스 참조가 업데이트되었습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_GeneratingProxy">
+        <source>Generating service reference client code...</source>
+        <target state="translated">서비스 참조 클라이언트 코드를 생성하는 중...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_GeneratingProxyComplete">
+        <source>Generation of service reference client code complete.</source>
+        <target state="translated">서비스 참조 클라이언트 코드가 생성되었습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_StartUpdate_1Arg">
+        <source>Updating service reference '{0}'...</source>
+        <target state="translated">서비스 참조 '{0}'을(를) 업데이트하는 중...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_UpdatingConfig">
+        <source>Updating configuration...</source>
+        <target state="translated">구성을 업데이트하는 중...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_UpdatingConfigComplete">
+        <source>Configuration update complete.</source>
+        <target state="translated">구성이 업데이트되었습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_UpdateCancelled">
+        <source>Service reference update was cancelled.</source>
+        <target state="translated">서비스 참조 업데이트가 취소되었습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_UpdateFailed">
+        <source>Service reference update failed.</source>
+        <target state="translated">서비스 참조를 업데이트하지 못했습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_AddServiceComplete">
+        <source>Add service reference complete.</source>
+        <target state="translated">서비스 참조가 추가되었습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_AddServiceFailed">
+        <source>Add service reference failed.</source>
+        <target state="translated">서비스 참조를 추가하지 못했습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_StartAddService_1Arg">
+        <source>Creating new service reference to '{0}'...</source>
+        <target state="translated">'{0}'에 대한 새 서비스 참조를 만드는 중...</target>
+        <note>{0}=URL</note>
+      </trans-unit>
+      <trans-unit id="CSRDlg_NoAssemblySelected">
+        <source>No assembly is selected.</source>
+        <target state="translated">선택된 어셈블리가 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_AsyncOpPending">
+        <source>The requested operation is not valid while an asynchronous operation is in progress.</source>
+        <target state="translated">비동기 작업이 진행되는 동안에는 요청된 작업이 유효하지 않습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CSRDlg_MultipleURL">
+        <source>Multiple addresses (editable in .svcmap file)</source>
+        <target state="translated">여러 주소(.svcmap 파일에서 편집 가능)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_ContractsFoundAtUrl_2Args">
+        <source>{0} contract(s) found at address '{1}'.</source>
+        <target state="translated">주소 '{1}'에서 {0}개의 계약을 찾았습니다.</target>
+        <note>{0} = count, {1} = URL where the contracts were found</note>
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_Error_CantCreateTempFile">
+        <source>Unable to create temporary configuration file for downloading service information.</source>
+        <target state="translated">서비스 정보를 다운로드하기 위한 임시 구성 파일을 만들 수 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConfigurationFileOpenedInIncompatibleEditor">
+        <source>The file is already opened in an incompatible editor.</source>
+        <target state="translated">이 파일은 호환되지 않는 편집기에 이미 열려 있습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_DownloadingMetadata">
+        <source>Downloading service information...</source>
+        <target state="translated">서비스 정보를 다운로드하는 중...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_Error_ExistingRefGroupNotSupported">
+        <source>The current version of the software does not support adding a service reference to an existing service reference group.</source>
+        <target state="translated">현재 버전의 소프트웨어에서는 기존 서비스 참조 그룹에 서비스 참조를 추가할 수 없습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Discovery_ErrorBuildSolution">
+        <source>If the service is defined in the current solution, try building the solution and adding the service reference again.</source>
+        <target state="translated">서비스가 현재 솔루션에 정의되어 있으면 다시 솔루션을 빌드하고 서비스 참조를 추가해 보세요.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_MismatchBeginEndBatch">
+        <source>Mismatching Begin/EndBatch calls. You have called EndBatch more times than BeginBatch.</source>
+        <target state="translated">BeginBatch와 EndBatch의 호출 횟수가 일치하지 않습니다. BeginBatch보다 EndBatch를 더 많이 호출했습니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SingleFileGenerator_FailedToGenerateTypes_1Arg">
+        <source>Failed to generate code for the service reference '{0}'.  Please check other error and warning messages for details.</source>
+        <target state="translated">서비스 참조 '{0}'에 대해 코드를 생성하지 못했습니다.  자세한 내용은 기타 오류 및 경고 메시지를 확인하세요.</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

@@ -1,7 +1,7 @@
 ﻿
 // To run the tests in this file:
 //
-// Technique 1: Compile VisualFSharp.Unittests.dll and run it as a set of unit tests
+// Technique 1: Compile VisualFSharp.UnitTests.dll and run it as a set of unit tests
 //
 // Technique 2:
 //
@@ -11,15 +11,15 @@
 //   and capturing large amounts of structured output.
 (*
     cd Debug\net40\bin
-    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.Unittests.exe -g --optimize- -r .\FSharp.LanguageService.Compiler.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\tests\service\EditorTests.fs 
-    .\VisualFSharp.Unittests.exe 
+    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.UnitTests.exe -g --optimize- -r .\FSharp.LanguageService.Compiler.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\tests\service\EditorTests.fs 
+    .\VisualFSharp.UnitTests.exe 
 *)
 // Technique 3: 
 // 
 //    Use F# Interactive.  This only works for FSHarp.Compiler.Service.dll which has a public API
 
 #if INTERACTIVE
-#r "../../Debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
 #r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
@@ -36,21 +36,12 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service.Tests.Common
 
 let stringMethods = 
-#if DOTNETCORE
-    ["Chars"; "CompareTo"; "Contains"; "CopyTo"; "EndsWith"; "Equals";
-    "GetHashCode"; "GetType"; "IndexOf";
-    "IndexOfAny"; "Insert"; "LastIndexOf"; "LastIndexOfAny";
-    "Length"; "PadLeft"; "PadRight"; "Remove"; "Replace"; "Split";
-    "StartsWith"; "Substring"; "ToCharArray"; "ToLower"; "ToLowerInvariant";
-    "ToString"; "ToUpper"; "ToUpperInvariant"; "Trim"; "TrimEnd"; "TrimStart"]
-#else
     ["Chars"; "Clone"; "CompareTo"; "Contains"; "CopyTo"; "EndsWith"; "Equals";
     "GetEnumerator"; "GetHashCode"; "GetType"; "GetTypeCode"; "IndexOf";
     "IndexOfAny"; "Insert"; "IsNormalized"; "LastIndexOf"; "LastIndexOfAny";
     "Length"; "Normalize"; "PadLeft"; "PadRight"; "Remove"; "Replace"; "Split";
     "StartsWith"; "Substring"; "ToCharArray"; "ToLower"; "ToLowerInvariant";
     "ToString"; "ToUpper"; "ToUpperInvariant"; "Trim"; "TrimEnd"; "TrimStart"]
-#endif
 
 let input = 
   """
@@ -106,13 +97,14 @@ let ``Intro test`` () =
                ("Concat", ["str0: string"; "str1: string"]);
                ("Concat", ["arg0: obj"; "arg1: obj"; "arg2: obj"]);
                ("Concat", ["str0: string"; "str1: string"; "str2: string"]);
-#if !DOTNETCORE
+#if !NETCOREAPP2_0 // TODO: check why this is needed for .NET Core testing of FSharp.Compiler.Service
                ("Concat", ["arg0: obj"; "arg1: obj"; "arg2: obj"; "arg3: obj"]);
 #endif               
                ("Concat", ["str0: string"; "str1: string"; "str2: string"; "str3: string"])]
 
 
-#if !INTERACTIVE && !DOTNETCORE // InternalsVisibleTo on IncrementalBuild.LocallyInjectCancellationFault not working for some reason?
+// TODO: check if this can be enabled in .NET Core testing of FSharp.Compiler.Service
+#if !INTERACTIVE && !NETCOREAPP2_0 // InternalsVisibleTo on IncrementalBuild.LocallyInjectCancellationFault not working for some reason?
 [<Test>]
 let ``Basic cancellation test`` () = 
    try 
@@ -164,7 +156,7 @@ let ``GetMethodsAsSymbols should return all overloads of a method as FSharpSymbo
              ("Concat", [("str0", "string"); ("str1", "string")]);
              ("Concat", [("arg0", "obj"); ("arg1", "obj"); ("arg2", "obj")]);
              ("Concat", [("str0", "string"); ("str1", "string"); ("str2", "string")]);
-#if !DOTNETCORE
+#if !NETCOREAPP2_0 // TODO: check why this is needed for .NET Core testing of FSharp.Compiler.Service
              ("Concat", [("arg0", "obj"); ("arg1", "obj"); ("arg2", "obj"); ("arg3", "obj")]);
 #endif
              ("Concat", [("str0", "string"); ("str1", "string"); ("str2", "string"); ("str3", "string")])]
@@ -221,8 +213,8 @@ let ``Symbols many tests`` () =
     fnVal.CurriedParameterGroups.[0].[1].Name.Value |> shouldEqual "y"
     fnVal.DeclarationLocation.StartLine |> shouldEqual 3
     fnVal.DisplayName |> shouldEqual "foo"
-    fnVal.EnclosingEntity.Value.DisplayName |> shouldEqual "Test"
-    fnVal.EnclosingEntity.Value.DeclarationLocation.StartLine |> shouldEqual 1
+    fnVal.DeclaringEntity.Value.DisplayName |> shouldEqual "Test"
+    fnVal.DeclaringEntity.Value.DeclarationLocation.StartLine |> shouldEqual 1
     fnVal.GenericParameters.Count |> shouldEqual 0
     fnVal.InlineAnnotation |> shouldEqual FSharpInlineAnnotation.OptionalInline
     fnVal.IsActivePattern |> shouldEqual false
@@ -294,7 +286,7 @@ let ``Expression typing test`` () =
 // the incomplete member:
 //    member x.Test = 
 
-[<Test; Ignore("Currently failing, see #139")>]
+[<Test; Ignore("SKIPPED: see #139")>]
 let ``Find function from member 1`` () = 
     let input = 
       """
@@ -344,7 +336,7 @@ type Test() =
     let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(14), (fun _ -> []), fun _ -> false)|> Async.RunSynchronously
     decls.Items |> Seq.exists (fun d -> d.Name = "abc") |> shouldEqual true
 
-[<Test; Ignore("Currently failing, see #139")>]
+[<Test; Ignore("SKIPPED: see #139")>]
 let ``Symbol based find function from member 1`` () = 
     let input = 
       """
@@ -357,7 +349,7 @@ type Test() =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
 
-    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(20), fun _ -> false)|> Async.RunSynchronously
+    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(20), (fun () -> []), fun _ -> false)|> Async.RunSynchronously
     //decls |> List.map (fun d -> d.Head.Symbol.DisplayName) |> printfn "---> decls = %A"
     decls |> Seq.exists (fun d -> d.Head.Symbol.DisplayName = "abc") |> shouldEqual true
 
@@ -374,7 +366,7 @@ type Test() =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
 
-    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(21), fun _ -> false)|> Async.RunSynchronously
+    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(21), (fun () -> []), fun _ -> false)|> Async.RunSynchronously
     //decls |> List.map (fun d -> d.Head.Symbol.DisplayName) |> printfn "---> decls = %A"
     decls |> Seq.exists (fun d -> d.Head.Symbol.DisplayName = "abc") |> shouldEqual true
 
@@ -391,7 +383,7 @@ type Test() =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
 
-    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(14), fun _ -> false)|> Async.RunSynchronously
+    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(14), (fun () -> []), fun _ -> false)|> Async.RunSynchronously
     //decls |> List.map (fun d -> d.Head.Symbol.DisplayName) |> printfn "---> decls = %A"
     decls |> Seq.exists (fun d -> d.Head.Symbol.DisplayName = "abc") |> shouldEqual true
 
@@ -547,25 +539,24 @@ let _ = arr.[..number2]
         let r = su.RangeAlternate 
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
     |> shouldEqual 
-        [|("val arr", (2, 4, 2, 7)); 
-          ("val number2", (3, 13, 3, 20));
-          ("val number1", (3, 4, 3, 11)); 
-          ("val arr", (4, 8, 4, 11));
-          ("OperatorIntrinsics", (4, 11, 4, 12)); 
-          ("Operators", (4, 11, 4, 12));
-          ("Core", (4, 11, 4, 12)); 
-          ("FSharp", (4, 11, 4, 12));
-          ("Microsoft", (4, 11, 4, 12)); 
-          ("val number1", (4, 16, 4, 23));
-          ("val arr", (5, 8, 5, 11)); 
-          ("OperatorIntrinsics", (5, 11, 5, 12));
-          ("Operators", (5, 11, 5, 12)); 
-          ("Core", (5, 11, 5, 12));
-          ("FSharp", (5, 11, 5, 12)); 
-          ("Microsoft", (5, 11, 5, 12));
-          ("val number2", (5, 15, 5, 22)); 
+        [|("val arr", (2, 4, 2, 7))
+          ("val number2", (3, 13, 3, 20))
+          ("val number1", (3, 4, 3, 11))
+          ("val arr", (4, 8, 4, 11))
+          ("Microsoft", (4, 11, 4, 12))
+          ("OperatorIntrinsics", (4, 11, 4, 12))
+          ("Operators", (4, 11, 4, 12))
+          ("Core", (4, 11, 4, 12))
+          ("FSharp", (4, 11, 4, 12))
+          ("val number1", (4, 16, 4, 23))
+          ("val arr", (5, 8, 5, 11))
+          ("Microsoft", (5, 11, 5, 12))
+          ("OperatorIntrinsics", (5, 11, 5, 12))
+          ("Operators", (5, 11, 5, 12))
+          ("Core", (5, 11, 5, 12))
+          ("FSharp", (5, 11, 5, 12)) 
+          ("val number2", (5, 15, 5, 22))
           ("Test", (1, 0, 1, 0))|]
-
 
 [<Test>]
 let ``Enums should have fields`` () =
@@ -583,7 +574,8 @@ let test3 = System.Text.RegularExpressions.RegexOptions.Compiled
         |> Array.choose(fun s -> match s.Symbol with :? FSharpEntity as e when e.IsEnum -> Some e | _ -> None)
         |> Array.distinct
         |> Array.map(fun e -> (e.DisplayName, e.FSharpFields
-                                              |> Seq.map(fun f -> f.Name, f.LiteralValue )
+                                              |> Seq.sortBy (fun f -> match f.LiteralValue with None -> -1 | Some x -> unbox x)
+                                              |> Seq.map (fun f -> f.Name, f.LiteralValue)
                                               |> Seq.toList))
 
     enums |> shouldEqual
@@ -714,6 +706,80 @@ type Class1() =
           ("val StaticClassValue", (20, 30, 20, 46))
           ("member .cctor", (10, 5, 10, 11))
           ("Test", (1, 0, 1, 0))|]
+
+[<Test>]
+let ``IsConstructor property should return true for constructors`` () = 
+    let input = 
+      """
+type T(x: int) =
+    new() = T(0)
+let x: T()
+"""
+    let file = "/home/user/Test.fsx"
+    let _, typeCheckResults = parseAndCheckScript(file, input) 
+    typeCheckResults.GetAllUsesOfAllSymbolsInFile()
+    |> Async.RunSynchronously
+    |> Array.map (fun su -> 
+        let r = su.RangeAlternate
+        let isConstructor =
+            match su.Symbol with
+            | :? FSharpMemberOrFunctionOrValue as f -> f.IsConstructor
+            | _ -> false
+        su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn), isConstructor)
+    |> Array.distinct
+    |> shouldEqual 
+        [|("T", (2, 5, 2, 6), false)
+          ("int", (2, 10, 2, 13), false)
+          ("val x", (2, 7, 2, 8), false)
+          ("member .ctor", (2, 5, 2, 6), true)
+          ("member .ctor", (3, 4, 3, 7), true)
+          ("member .ctor", (3, 12, 3, 13), true)
+          ("T", (4, 7, 4, 8), false)
+          ("val x", (4, 4, 4, 5), false)
+          ("Test", (1, 0, 1, 0), false)|]
+
+[<Test>]
+let ``Partially valid namespaces should be reported`` () = 
+    let input = 
+      """
+open System.Threading.Foo
+open System
+
+let _: System.Threading.Tasks.Bar = null
+let _ = Threading.Buzz = null
+"""
+
+    let file = "/home/user/Test.fsx"
+    let _, typeCheckResults = parseAndCheckScript(file, input) 
+    typeCheckResults.GetAllUsesOfAllSymbolsInFile()
+    |> Async.RunSynchronously
+    |> Array.map (fun su -> 
+        let r = su.RangeAlternate 
+        su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
+    |> Array.distinct
+    |> shouldEqual 
+        // note: these "System" sysbol uses are not duplications because each of them corresponts to different namespaces
+        [|("System", (2, 5, 2, 11))
+          ("Threading", (2, 12, 2, 21))
+          ("System", (3, 5, 3, 11))
+          ("System", (5, 7, 5, 13))
+          ("Threading", (5, 14, 5, 23))
+          ("Tasks", (5, 24, 5, 29))
+          ("val op_Equality", (6, 23, 6, 24))
+          ("Threading", (6, 8, 6, 17))
+          ("Test", (1, 0, 1, 0))|]
+
+[<Test>]
+let ``GetDeclarationLocation should not require physical file`` () = 
+    let input = "let abc = 1\nlet xyz = abc"
+    let file = "/home/user/Test.fsx"
+    let _, typeCheckResults = parseAndCheckScript(file, input) 
+    let location = typeCheckResults.GetDeclarationLocation(2, 13, "let xyz = abc", ["abc"]) |> Async.RunSynchronously
+    match location with
+    | FSharpFindDeclResult.DeclFound r -> Some (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn, "<=== Found here."                             ) 
+    | _                                -> Some (0          , 0            , 0        , 0          , "Not Found. Should not require physical file." )
+    |> shouldEqual                       (Some (1          , 4            , 1        , 7          , "<=== Found here."                             ))
+
 
 //-------------------------------------------------------------------------------
 
@@ -903,3 +969,34 @@ let ``Test TPProject param info`` () =
 ``Basic cancellation test`` ()
 ``Intro test`` () 
 #endif
+
+[<Test>]
+let ``FSharpField.IsNameGenerated`` () =
+    let checkFields source =
+        let file = "/home/user/Test.fsx"
+        let _, typeCheckResults = parseAndCheckScript(file, source) 
+        let symbols =
+            typeCheckResults.GetAllUsesOfAllSymbolsInFile()
+            |> Async.RunSynchronously
+        symbols
+        |> Array.choose (fun su ->
+            match su.Symbol with
+            | :? FSharpEntity as entity -> Some entity.FSharpFields
+            | :? FSharpUnionCase as unionCase -> Some unionCase.UnionCaseFields 
+            | _ -> None)
+        |> Seq.concat
+        |> Seq.map (fun (field: FSharpField) -> field.Name, field.IsNameGenerated)
+        |> List.ofSeq
+        
+    ["exception E of string", ["Data0", true]
+     "exception E of Data0: string", ["Data0", false]
+     "exception E of Name: string", ["Name", false]
+     "exception E of string * Data2: string * Data1: string * Name: string * Data4: string",
+        ["Data0", true; "Data2", false; "Data1", false; "Name", false; "Data4", false]
+    
+     "type U = Case of string", ["Item", true]
+     "type U = Case of Item: string", ["Item", false]
+     "type U = Case of Name: string", ["Name", false]
+     "type U = Case of string * Item2: string * string * Name: string",
+        ["Item1", true; "Item2", false; "Item3", true; "Name", false]]
+    |> List.iter (fun (source, expected) -> checkFields source |> shouldEqual expected)

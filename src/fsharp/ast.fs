@@ -1,10 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-#if COMPILER_PUBLIC_API
 module public Microsoft.FSharp.Compiler.Ast
-#else
-module internal Microsoft.FSharp.Compiler.Ast
-#endif
 
 open System.Collections.Generic
 open Internal.Utilities.Text.Lexing
@@ -104,7 +100,7 @@ type XmlDoc =
             | (lineA::rest) as lines ->
                 let lineAT = lineA.TrimStart([|' '|])
                 if lineAT = "" then processLines rest
-                else if String.hasPrefix lineAT "<" then lines
+                else if lineAT.StartsWith "<" then lines
                 else ["<summary>"] @
                      (lines |> List.map (fun line -> Microsoft.FSharp.Core.XmlAdapters.escape(line))) @
                      ["</summary>"]

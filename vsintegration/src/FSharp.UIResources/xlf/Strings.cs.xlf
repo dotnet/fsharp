@@ -1,0 +1,112 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="cs" original="../Strings.resx">
+    <body>
+      <trans-unit id="Always_place_opens_at_top_level">
+        <source>Always place open statements at the top level</source>
+        <target state="translated">Vždy umístit otevřené příkazy na nejvyšší úroveň</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Code_Fixes">
+        <source>Code Fixes</source>
+        <target state="translated">Opravy kódu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Completion_Lists">
+        <source>Completion Lists</source>
+        <target state="translated">Seznamy dokončení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Language_Service_Performance">
+        <source>Performance</source>
+        <target state="translated">Výkon</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Dash_underline">
+        <source>D_ash underline</source>
+        <target state="translated">Čá_rkované podtržení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Dot_underline">
+        <source>D_ot underline</source>
+        <target state="translated">_Tečkované podtržení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Navigation_links">
+        <source>Navigation links</source>
+        <target state="translated">Navigační odkazy</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_all_symbols">
+        <source>Show s_ymbols in unopened namespaces</source>
+        <target state="translated">Zobrazit s_ymboly v neotevřených oborech názvů</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_completion_list_after_a_character_is_deleted">
+        <source>Show completion list after a character is _deleted</source>
+        <target state="translated">Zobrazovat seznam dokončení po _odstranění znaku</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_completion_list_after_a_character_is_typed">
+        <source>_Show completion list after a character is typed</source>
+        <target state="translated">_Zobrazovat seznam dokončení po zadání znaku</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_in_memory_cross_project_references">
+        <source>_Enable in-memory cross project references</source>
+        <target state="translated">_Povolit odkazy mezi projekty v paměti</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Project_check_cache_size">
+        <source>Project check cache size</source>
+        <target state="translated">Velikost mezipaměti pro kontrolu projektů</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_navigation_links_as">
+        <source>S_how navigation links as</source>
+        <target state="translated">Zo_brazit navigační odkazy jako</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Simplify_name_code_fix">
+        <source>Simplify names (remove unnecessary qualifiers)</source>
+        <target state="translated">Zjednodušit názvy (odebrat nepotřebné kvalifikátory)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Solid_underline">
+        <source>_Solid underline</source>
+        <target state="translated">_Plné podtržení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Unused_opens_code_fix">
+        <source>Remove unused open statements</source>
+        <target state="translated">Odebrat nepoužívané otevřené výkazy</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Unused_declaration_code_fix">
+        <source>Analyze and suggest fixes for unused values</source>
+        <target state="translated">Analyzovat a navrhovat opravy pro nepoužité hodnoty</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Block_Structure">
+        <source>Block Structure Guides</source>
+        <target state="translated">Vodítka pro strukturu bloku</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_guides">
+        <source>Show structure guidelines for F# code</source>
+        <target state="translated">Zobrazí pokyny pro strukturu kódu F#.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Outlining">
+        <source>Outlining</source>
+        <target state="translated">Sbalení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Outlining">
+        <source>Show outlining and collapsable nodes for F# code</source>
+        <target state="translated">Zobrazí osnovu a sbalitelné uzly kódu F#.</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>
