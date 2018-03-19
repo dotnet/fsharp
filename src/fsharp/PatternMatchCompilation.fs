@@ -172,7 +172,7 @@ let otherSubtypeText = "some-other-subtype"
 exception CannotRefute
 let RefuteDiscrimSet g m path discrims = 
     let mkUnknown ty = snd(mkCompGenLocal m "_" ty)
-    let rec go path (tm: TType -> Expr * bool) = 
+    let rec go path tm = 
         match path with 
         | PathQuery _ -> raise CannotRefute
         | PathConj (p,_j) -> 
@@ -199,12 +199,7 @@ let RefuteDiscrimSet g m path discrims =
         | PathEmpty(ty) -> tm ty
         
     and mkOneKnown tm n tys =
-        let flds =
-            tys
-            |> List.mapi (fun i ty ->
-                let x: Expr * bool =
-                    if i = n then tm ty else (mkUnknown ty, false)
-                x)
+        let flds = List.mapi (fun i ty -> if i = n then tm ty else (mkUnknown ty, false)) tys
         List.map fst flds, List.fold (fun acc (_, eCoversVals) -> eCoversVals || acc) false flds
     and mkUnknowns tys = List.map (fun x -> mkUnknown x) tys
 
@@ -256,18 +251,18 @@ let RefuteDiscrimSet g m path discrims =
             | Some c -> Expr.Const(c,m,ty), coversKnownEnumValues
             
         | (DecisionTreeTest.UnionCase (ucref1,tinst) :: rest) -> 
-            let ucrefs = ucref1 :: List.choose (function DecisionTreeTest.UnionCase(ucref,_) -> Some ucref | _ -> None) rest
-            let tcref = ucref1.TyconRef
-            (* Choose the first ucref based on ordering of names *)
-            let others = 
-                tcref.UnionCasesAsRefList 
-                |> List.filter (fun ucref -> not (List.exists (g.unionCaseRefEq ucref) ucrefs)) 
-                |> List.sortBy (fun ucref -> ucref.CaseName)
-            match others with 
-            | [] -> raise CannotRefute
-            | ucref2 :: _ -> 
-              let flds = ucref2 |> actualTysOfUnionCaseFields (mkTyconRefInst tcref tinst) |> mkUnknowns
-              Expr.Op(TOp.UnionCase(ucref2),tinst, flds,m), false
+             let ucrefs = ucref1 :: List.choose (function DecisionTreeTest.UnionCase(ucref,_) -> Some ucref | _ -> None) rest
+             let tcref = ucref1.TyconRef
+             (* Choose the first ucref based on ordering of names *)
+             let others = 
+                 tcref.UnionCasesAsRefList 
+                 |> List.filter (fun ucref -> not (List.exists (g.unionCaseRefEq ucref) ucrefs)) 
+                 |> List.sortBy (fun ucref -> ucref.CaseName)
+             match others with 
+             | [] -> raise CannotRefute
+             | ucref2 :: _ -> 
+               let flds = ucref2 |> actualTysOfUnionCaseFields (mkTyconRefInst tcref tinst) |> mkUnknowns
+               Expr.Op(TOp.UnionCase(ucref2),tinst, flds,m), false
             
         | [DecisionTreeTest.ArrayLength (n,ty)] -> 
             Expr.Op(TOp.Array,[ty], mkUnknowns (List.replicate (n+1) ty) ,m), false
@@ -277,48 +272,48 @@ let RefuteDiscrimSet g m path discrims =
     go path tm
 
 let rec CombineRefutations g r1 r2 =
-    match r1,r2 with
-    | Expr.Val(vref,_,_), other | other, Expr.Val(vref,_,_) when vref.LogicalName = "_" -> other
-    | Expr.Val(vref,_,_), other | other, Expr.Val(vref,_,_) when vref.LogicalName = notNullText -> other 
-    | Expr.Val(vref,_,_), other | other, Expr.Val(vref,_,_) when vref.LogicalName = otherSubtypeText -> other 
+   match r1,r2 with
+   | Expr.Val(vref,_,_), other | other, Expr.Val(vref,_,_) when vref.LogicalName = "_" -> other 
+   | Expr.Val(vref,_,_), other | other, Expr.Val(vref,_,_) when vref.LogicalName = notNullText -> other 
+   | Expr.Val(vref,_,_), other | other, Expr.Val(vref,_,_) when vref.LogicalName = otherSubtypeText -> other 
 
-    | Expr.Op((TOp.ExnConstr(ecref1) as op1), tinst1,flds1,m1), Expr.Op(TOp.ExnConstr(ecref2), _,flds2,_) when tyconRefEq g ecref1 ecref2 -> 
+   | Expr.Op((TOp.ExnConstr(ecref1) as op1), tinst1,flds1,m1), Expr.Op(TOp.ExnConstr(ecref2), _,flds2,_) when tyconRefEq g ecref1 ecref2 -> 
         Expr.Op(op1, tinst1,List.map2 (CombineRefutations g) flds1 flds2,m1)
 
-    | Expr.Op((TOp.UnionCase(ucref1) as op1), tinst1,flds1,m1), 
-      Expr.Op(TOp.UnionCase(ucref2), _,flds2,_)  -> 
-        if g.unionCaseRefEq ucref1 ucref2 then 
-            Expr.Op(op1, tinst1,List.map2 (CombineRefutations g) flds1 flds2,m1)
-         (* Choose the greater of the two ucrefs based on name ordering *)
-        elif ucref1.CaseName < ucref2.CaseName then 
-            r2
-        else 
-            r1
+   | Expr.Op((TOp.UnionCase(ucref1) as op1), tinst1,flds1,m1), 
+     Expr.Op(TOp.UnionCase(ucref2), _,flds2,_)  -> 
+       if g.unionCaseRefEq ucref1 ucref2 then 
+           Expr.Op(op1, tinst1,List.map2 (CombineRefutations g) flds1 flds2,m1)
+       (* Choose the greater of the two ucrefs based on name ordering *)
+       elif ucref1.CaseName < ucref2.CaseName then 
+           r2
+       else 
+           r1
         
-    | Expr.Op(op1, tinst1,flds1,m1), Expr.Op(_, _,flds2,_) -> 
-         Expr.Op(op1, tinst1,List.map2 (CombineRefutations g) flds1 flds2,m1)
+   | Expr.Op(op1, tinst1,flds1,m1), Expr.Op(_, _,flds2,_) -> 
+        Expr.Op(op1, tinst1,List.map2 (CombineRefutations g) flds1 flds2,m1)
         
-    | Expr.Const(c1, m1, ty1), Expr.Const(c2,_,_) -> 
-        let c12 = 
-            
-            // Make sure longer strings are greater, not the case in the default ordinal comparison
-            // This is needed because the individual counter examples make longer strings
-            let MaxStrings s1 s2 = 
-                let c = compare (String.length s1) (String.length s2)
-                if c < 0 then s2 
-                elif c > 0 then s1 
-                elif s1 < s2 then s2 
-                else s1
-                
-            match c1,c2 with 
-            | Const.String(s1), Const.String(s2) -> Const.String(MaxStrings s1 s2)
-            | Const.Decimal(s1), Const.Decimal(s2) -> Const.Decimal(max s1 s2)
-            | _ -> max c1 c2 
-           
-        (* REVIEW: we could return a better enumeration literal field here if a field matches one of the enumeration cases *)
-        Expr.Const(c12, m1, ty1)
+   | Expr.Const(c1, m1, ty1), Expr.Const(c2,_,_) -> 
+       let c12 = 
 
-    | _ -> r1
+           // Make sure longer strings are greater, not the case in the default ordinal comparison
+           // This is needed because the individual counter examples make longer strings
+           let MaxStrings s1 s2 = 
+               let c = compare (String.length s1) (String.length s2)
+               if c < 0 then s2 
+               elif c > 0 then s1 
+               elif s1 < s2 then s2 
+               else s1
+               
+           match c1,c2 with 
+           | Const.String(s1), Const.String(s2) -> Const.String(MaxStrings s1 s2)
+           | Const.Decimal(s1), Const.Decimal(s2) -> Const.Decimal(max s1 s2)
+           | _ -> max c1 c2 
+           
+       (* REVIEW: we could return a better enumeration literal field here if a field matches one of the enumeration cases *)
+       Expr.Const(c12, m1, ty1)
+
+   | _ -> r1 
 
 let ShowCounterExample g denv m refuted = 
     try
@@ -339,7 +334,7 @@ let ShowCounterExample g denv m refuted =
       
     with 
         | CannotRefute ->    
-          None
+          None 
         | e -> 
           warning(InternalError(sprintf "<failure during counter example generation: %s>" (e.ToString()),m))
           None
@@ -770,10 +765,10 @@ let CompilePatternBasic
     // Helpers to get the variables bound at a target. We conceptually add a dummy clause that will always succeed with a "throw" 
     let clausesA = Array.ofList clausesL
     let nclauses = clausesA.Length
-    let GetClause i refuted =
-        if i < nclauses then
-            clausesA.[i]
-        elif i = nclauses then getIncompleteMatchClause refuted
+    let GetClause i refuted = 
+        if i < nclauses then 
+            clausesA.[i]  
+        elif i = nclauses then getIncompleteMatchClause(refuted)
         else failwith "GetClause"
     let GetValsBoundByClause i refuted = (GetClause i refuted).BoundVals
     let GetWhenGuardOfClause i refuted = (GetClause i refuted).GuardExpr
@@ -837,14 +832,14 @@ let CompilePatternBasic
     and CompileSuccessPointAndGuard i refuted valMap rest =
 
         let vs2 = GetValsBoundByClause i refuted
-        let es2 =
+        let es2 = 
             vs2 |> List.map (fun v -> 
                 match valMap.TryFind v with 
                 | None -> error(Error(FSComp.SR.patcMissingVariable(v.DisplayName),v.Range)) 
                 | Some res -> res)
         let rhs' = TDSuccess(es2, i)
         match GetWhenGuardOfClause i refuted with 
-        | Some whenExpr ->
+        | Some whenExpr -> 
 
             let m = whenExpr.Range
 
