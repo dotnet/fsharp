@@ -6894,52 +6894,67 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                     | h :: t -> ([ty; h], h.idRange, t)
 
                 let combineModuleOrNamespaceWithNextIds env (mOrNRefList : ModuleOrNamespaceRef list) (mOrN : Ident) flds =
-                    let moduleOrNamespaceSearch id =
-                        env.NameEnv.eModulesAndNamespaces.TryFind id.idText
+                    printfn "%A" env
+                    //let _modOrNsSearch refList (id : Ident) =
+                    //    match refList with
+                    //    | [(ref : ModuleOrNamespaceRef)] -> ref.ModuleOrNamespaceType.ModuleAndNamespaceDefinitions.TryFind id.idText
+                    //    |_ -> None
 
                     let tyconSearch refList (id : Ident) =
                         match refList with
                         | [(ref : ModuleOrNamespaceRef)] -> ref.ModuleOrNamespaceType.TypesByAccessNames.TryFind id.idText
                         | _ -> None
 
-                    let tyconFieldSearch tycons id =
+                    let tyconFieldSearch tycons (id : Ident) =
                         match tycons with 
+                        | None -> None
                         | Some lst ->
-                            List.fold (fun res (tyco : Tycon) -> 
+                            List.fold (fun res (tycon : Tycon) -> 
                                 match tycon.GetFieldByName id.idText with
                                 | Some ty -> ty :: res
                                 | None -> res) [] lst
+
                             |>  function
                                 | [] -> None
-                                | _ -> Some res
-                        | None -> None
+                                | res -> Some res
                         
-                    let search =    
-                        match flds with
-                        | [] -> ([mOrN], [])
-                        | [id] -> ([mOrN; id], [])
-                        | h :: t ->
-                            List.fold(fun (lidwd, rest) id ->
-                                let modulesOrNamespaces = moduleOrNamespaceSearch id
-                                let tycons = tyconSearch  moduleOrNamespaces id
-                                let tyconFields = tyconFieldSearch tycons id
+                        
 
-                                match res with
-                                | 
+                    match flds with
+                    | [] ->     ([mOrN], [])
+                    | [id] ->   ([mOrN; id], [])
+                    | _ -> 
+                        let lidwd, rest, _ = 
+                            List.fold (fun (lidwd, rest, (tycons : Tycon list option)) id ->
+                                match tycons with
+                                | Some _ -> 
+                                    let search = tyconFieldSearch tycons id
+                                    match search with
+                                    | Some _ -> (id :: lidwd, rest, None)
+                                    | None ->   (lidwd, id :: rest, None)
+                                | None ->                                     
+                                    let tycon = tyconSearch mOrNRefList id
+                                    match tycon with
+                                    | Some _ -> (id :: lidwd, rest, tycon)
+                                    | None ->   (lidwd, id :: rest, None)) ([], [], None) flds
+
+                        (mOrN :: (List.rev lidwd), List.rev rest)
 
 
 
                 let rec build lid =
                     match lid with
-                    | [] -> ((LongIdentWithDots ([], []), true), v, None)
-                    | [fld] -> ((LongIdentWithDots ([fld],[]), true), v, None)
+                    | [] ->     ((LongIdentWithDots ([], []), true), v, None)
+                    | [fld] ->  ((LongIdentWithDots ([fld],[]), true), v, None)
                     | h :: t -> 
                         match h with
                         | RecdFld -> ((LongIdentWithDots ([h], []), true), Some(SynExpr.Record((None, None, [build t], h.idRange))), None)
+
                         | RecdTy ->
                             // If Ident is Type - LongIdentWithDots is [Type; NextField]
                             let tyLidwd, fldIdRange, _ = combineTyAndNextFld h t
-                            ((LongIdentWithDots (tyLidwd, [h.idRange]), true), Some(SynExpr.Record((None, None, [build t], fldIdRange))), None) 
+                            ((LongIdentWithDots (tyLidwd, [h.idRange]), true), Some(SynExpr.Record((None, None, [build t], fldIdRange))), None)
+                            
                         | ModuleOrNamespace mOrNRefList ->
                             let flds, rest = combineModuleOrNamespaceWithNextIds env mOrNRefList h t
                             ((LongIdentWithDots (flds, [h.idRange]), true), Some(SynExpr.Record((None, None, [build rest], h.idRange))), None)
@@ -6948,16 +6963,18 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
 
                 match h with
                 | RecdFld -> [(([], h), Some(SynExpr.Record(None, None, [build t], h.idRange)))]
+
                 | RecdTy ->
                     let (flds, _, rest) = combineTyAndNextFld h t
                     match rest with
-                    | [] ->  [(List.frontAndBack flds, v)]
-                    | _ -> [(List.frontAndBack flds, Some(SynExpr.Record(None, None, [build rest], h.idRange)))]
+                    | [] -> [(List.frontAndBack flds, v)]
+                    | _ ->  [(List.frontAndBack flds, Some(SynExpr.Record(None, None, [build rest], h.idRange)))]
+
                 | ModuleOrNamespace mOrNRefList ->
                     let (flds, rest) = combineModuleOrNamespaceWithNextIds env mOrNRefList h t
                     match rest with
                     | [] -> [(List.frontAndBack flds, v)]
-                    | _ -> [(List.frontAndBack flds, Some(SynExpr.Record(None, None, [build rest], h.idRange)))]
+                    | _ ->  [(List.frontAndBack flds, Some(SynExpr.Record(None, None, [build rest], h.idRange)))]
 
                                       
         let flds = 
