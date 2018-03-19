@@ -17,7 +17,6 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX
 open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.BinaryConstants 
 
 open Microsoft.FSharp.Compiler 
@@ -35,7 +34,6 @@ open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.TypeRelations
 open Microsoft.FSharp.Compiler.TypeChecker
 open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types 
 
   
 let IsNonErasedTypar (tp:Typar) = not tp.IsErased
