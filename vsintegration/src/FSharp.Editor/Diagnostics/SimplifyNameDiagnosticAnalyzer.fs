@@ -15,7 +15,7 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
-open Microsoft.VisualStudio.FSharp.LanguageService
+open Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService
 
 type private TextVersionHash = int
 

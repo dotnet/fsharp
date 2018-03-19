@@ -52,7 +52,7 @@ module Asserts =
 
 module UIStuff =
     let SetupSynchronizationContext() =
-        Microsoft.VisualStudio.FSharp.LanguageService.UIThread.InitUnitTestingMode()
+        Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService.UIThread.InitUnitTestingMode()
 
 module FilesystemHelpers =
     let pid = System.Diagnostics.Process.GetCurrentProcess().Id 

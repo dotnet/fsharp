@@ -44,8 +44,8 @@
     <InternalsVisibleTo Include="FSharp.Build" />
     <InternalsVisibleTo Include="fsi" />
     <InternalsVisibleTo Include="fsiAnyCpu" />
-    <InternalsVisibleTo Include="FSharp.LanguageService" />
-    <InternalsVisibleTo Include="FSharp.LanguageService.Base" />
+    <InternalsVisibleTo Include="VisualFSharp.Tests.LegacyLanguageService" />
+    <InternalsVisibleTo Include="VisualFSharp.Tests.LegacyLanguageService.Base" />
     <InternalsVisibleTo Include="FSharp.ProjectSystem.Base" />
     <InternalsVisibleTo Include="FSharp.ProjectSystem.FSharp" />
     <InternalsVisibleTo Include="FSharp.ProjectSystem.PropertyPages" />

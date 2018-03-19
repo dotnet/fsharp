@@ -29,7 +29,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
     open Microsoft.VisualStudio.Shell.Interop
     open Microsoft.VisualStudio.OLE.Interop
     open Microsoft.VisualStudio.FSharp.ProjectSystem
-    open Microsoft.VisualStudio.FSharp.LanguageService
+    open Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService
     open Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
     open Microsoft.VisualStudio.Editors
     open Microsoft.VisualStudio.Editors.PropertyPages

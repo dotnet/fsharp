@@ -18,7 +18,7 @@ open Salsa.VsMocks
 
 (*
 type TextSpan = Microsoft.VisualStudio.TextManager.Interop.TextSpan
-type DocumentTask = Microsoft.VisualStudio.FSharp.LanguageService.DocumentTask
+type DocumentTask = Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService.DocumentTask
 
 [<TestFixture>]
 type TaskReporterTests() = 
@@ -60,7 +60,7 @@ type TaskReporterTests() =
             Assert.Fail(message)
             
     let GetNewDocumentTask filePath subcategory span errorMessage taskPriority taskCategory taskErrorCategory =
-        let dt = new Microsoft.VisualStudio.FSharp.LanguageService.DocumentTask(null, 
+        let dt = new Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService.DocumentTask(null, 
                         Salsa.VsMocks.Vs.MakeTextLines(), 
                         Microsoft.VisualStudio.TextManager.Interop.MARKERTYPE.MARKER_CODESENSE_ERROR,
                         span,
@@ -75,7 +75,7 @@ type TaskReporterTests() =
     let CreateTaskListProvider() =
         let tasks : Task array ref = ref [||]
         
-        { new Microsoft.VisualStudio.FSharp.LanguageService.ITaskListProvider with
+        { new Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService.ITaskListProvider with
             member tl.Count() = (!tasks).Length
             member tl.GetTask i = (!tasks).[i]
             member tl.Add t = tasks := Array.append !tasks [| t |]
@@ -87,7 +87,7 @@ type TaskReporterTests() =
         
     let CreateErrorReporter() =
         UIStuff.SetupSynchronizationContext()
-        let errorReporter = new Microsoft.VisualStudio.FSharp.LanguageService.TaskReporter("unit test (taskreporter.unittests.fs)")
+        let errorReporter = new Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService.TaskReporter("unit test (taskreporter.unittests.fs)")
         errorReporter.TaskListProvider <- CreateTaskListProvider() ;
         errorReporter
 

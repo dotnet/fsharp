@@ -9,7 +9,7 @@ open System.Reflection
 open System.Runtime.InteropServices
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.VisualStudio.FSharp.LanguageService
+open Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService
 open Salsa.Salsa
 open Salsa
 open Salsa.VsOpsUtils
@@ -106,13 +106,13 @@ type UsingMSBuild() =
     member public this.``PublicSurfaceArea.DotNetReflection``() =
         let ps = publicTypesInAsm @"FSharp.ProjectSystem.FSharp.dll"
         Assert.AreEqual(1, ps)  // BuildPropertyDescriptor
-        let ls = publicTypesInAsm @"FSharp.LanguageService.dll"
+        let ls = publicTypesInAsm @"VisualFSharp.Tests.LegacyLanguageService.dll"
         Assert.AreEqual(0, ls)
         let compis = publicTypesInAsm @"FSharp.Compiler.Interactive.Settings.dll"
         Assert.AreEqual(4, compis)
         let compserver = publicTypesInAsm @"FSharp.Compiler.Server.Shared.dll"
         Assert.AreEqual(0, compserver)
-        let lsbase = publicTypesInAsm @"FSharp.LanguageService.Base.dll"
+        let lsbase = publicTypesInAsm @"VisualFSharp.Tests.LegacyLanguageService.Base.dll"
         Assert.AreEqual(0, lsbase)
         let psbase = publicTypesInAsm @"FSharp.ProjectSystem.Base.dll"
         Assert.AreEqual(19, psbase)
@@ -151,8 +151,8 @@ type UsingMSBuild() =
             
                         FSharpSourceTokenizer(defines,Some(filename)).CreateLineTokenizer(source))
         
-        let cm = Microsoft.VisualStudio.FSharp.LanguageService.TokenColor.Comment
-        let kw = Microsoft.VisualStudio.FSharp.LanguageService.TokenColor.Keyword
+        let cm = Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService.TokenColor.Comment
+        let kw = Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService.TokenColor.Keyword
         
         // This specifies the source code to test and a collection of tokens that 
         // we want to find in the result (note: it doesn't have to contain every token, because 
@@ -192,7 +192,7 @@ type UsingMSBuild() =
         for lineText, expected in sources do
             scan.SetLineText lineText
             
-            let currentTokenInfo = new Microsoft.VisualStudio.FSharp.LanguageService.TokenInfo()
+            let currentTokenInfo = new Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService.TokenInfo()
             let lastColorState = 0 // First line of code, so no previous state
             currentTokenInfo.EndIndex <- -1
             let refState = ref (ColorStateLookup_DEPRECATED.LexStateOfColorState lastColorState)

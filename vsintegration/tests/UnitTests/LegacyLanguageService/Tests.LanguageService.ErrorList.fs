@@ -32,7 +32,7 @@ type UsingMSBuild() as this =
     let GetWarnings(project : OpenProject) =
         let errorList = GetErrors(project)
         [for error in errorList do
-            if (error.Severity = Microsoft.VisualStudio.FSharp.LanguageService.Severity.Warning) then
+            if (error.Severity = Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService.Severity.Warning) then
             yield error]
     
     let CheckErrorList (content : string) f : unit = 
@@ -384,7 +384,7 @@ type staticInInterface =
             Assert.IsTrue(uniqueErrors.Count = n, "List should not contain duplicate errors")
             for x = 0 to (n - 1) do
                 let expectedName = sprintf "The type provider 'DummyProviderForLanguageServiceTesting.TypeProviderThatThrowsErrors' reported an error: Error %d" x
-                Assert.IsTrue(Set.contains (expectedName, Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error) uniqueErrors)
+                Assert.IsTrue(Set.contains (expectedName, Microsoft.VisualStudio.VisualFSharp.Tests.LegacyLanguageService.Severity.Error) uniqueErrors)
 
         for i = 1 to 10 do
             checkList i
