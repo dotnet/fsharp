@@ -363,7 +363,6 @@
     <GuidSymbol name="guidFsiPackageCmdSet" value="{0be3b0d7-4fc2-45bf-a168-957e8a8834d0}">
       <IDSymbol name="MyMenuGroup" value="0x1020" />
       <IDSymbol name="cmdidFsiToolWindow" value="0x0101" />
-      <IDSymbol name="cmdidFsDump" value="0x0100" />
     </GuidSymbol> 
 
     <GuidSymbol name="guidImages" value="{43ba0ca6-658b-43a7-8773-b5f9506b4335}" >
@@ -430,6 +429,8 @@
       <IDSymbol name = "FSharpSendThisReferenceToInteractiveCmd" value ="0x5004"/>
       <IDSymbol name = "FSharpSendReferencesToInteractiveCmd" value ="0x5005"/>
       <IDSymbol name = "FSharpSendProjectOutputToInteractiveCmd" value ="0x5006"/>    
+    
+      <IDSymbol name="cmdidFsDump" value="0x0100" />
     </GuidSymbol>
     <GuidSymbol name="FSharpMoveUpBmp" value="{6C2FAD07-753D-45ab-BEE9-5D12D207991B}" >
       <IDSymbol name="moveUp" value="1" />

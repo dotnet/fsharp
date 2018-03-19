@@ -70,6 +70,8 @@ module internal Guids =
     // FSI Package command set
     let guidFsiPackageCmdSet            = Guid("0be3b0d7-4fc2-45bf-a168-957e8a8834d0")
     let cmdIDLaunchFsiToolWindow        = 0x101
+
+    let guidFSharpProjectCmdSet         = new Guid("75AC5611-A912-4195-8A65-457AE17416FB");
     let cmdIDFSharpDump                 = 0x100
     
     let nameFsiLanguageService          = "FSharpInteractive"                           // see Package registration attribute

@@ -13,7 +13,6 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp.Interactive
 open System.ComponentModel.Design
 open Microsoft.Diagnostics.Runtime
-open EnvDTE80
 
 
 [<Export(typeof<IWpfTextViewCreationListener>)>]
@@ -22,7 +21,7 @@ open EnvDTE80
 type internal DumpCommandFilterProvider 
     [<ImportingConstructor>] 
     (checkerProvider: FSharpCheckerProvider,
-    [<Import(typeof<SVsServiceProvider>)>] serviceProvider: System.IServiceProvider) =
+     [<Import(typeof<SVsServiceProvider>)>] serviceProvider: System.IServiceProvider) =
 
     let projectSystemPackage =
       lazy(
@@ -33,7 +32,7 @@ type internal DumpCommandFilterProvider
             pkg :?> Package
         | _ -> null)
 
-    let FSharpDump (this:Package) (sender:obj) (e:EventArgs) =
+    let FSharpDump (_this:Package) (_sender:obj) (_e:EventArgs) =
         checkerProvider.Checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
         use target = DataTarget.CreateSnapshotAndAttach(Process.GetCurrentProcess().Id)
         let runtime = target.ClrVersions.[0].CreateRuntime();
@@ -46,8 +45,8 @@ type internal DumpCommandFilterProvider
         |> Seq.iter (fun (ty, size, count) -> outputPane.OutputString (sprintf "Type: %s, Total size: %d, Instance count: %d\r\n" ty size count) |> ignore)
 
     interface IWpfTextViewCreationListener with
-        member __.TextViewCreated(textView) = 
+        member __.TextViewCreated(_textView) = 
             let commandService = (projectSystemPackage.Value :> System.IServiceProvider).GetService(typeof<IMenuCommandService>) :?> OleMenuCommandService
-            let id  = new CommandID(Guids.guidFsiPackageCmdSet,int32 Guids.cmdIDFSharpDump)
+            let id  = new CommandID(Guids.guidFSharpProjectCmdSet,int32 Guids.cmdIDFSharpDump)
             let cmd = new MenuCommand(new EventHandler(FSharpDump projectSystemPackage.Value), id)
             commandService.AddCommand(cmd)
