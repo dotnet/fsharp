@@ -43,7 +43,7 @@ type internal DumpCommandFilterProvider
         |> Seq.map (fun (ty, os) -> ty, os |> Seq.sumBy (fun x -> x.Size), os |> Seq.length)
         |> Seq.sortBy (fun (_, size, _) -> -int64 size)
         |> Seq.take 100
-        |> Seq.iter (fun (ty, size, count) -> outputPane.OutputString (sprintf "Type: %s, Tolal size: %d, Instance count: %d\r\n" ty size count) |> ignore)
+        |> Seq.iter (fun (ty, size, count) -> outputPane.OutputString (sprintf "Type: %s, Total size: %d, Instance count: %d\r\n" ty size count) |> ignore)
 
     interface IWpfTextViewCreationListener with
         member __.TextViewCreated(textView) = 

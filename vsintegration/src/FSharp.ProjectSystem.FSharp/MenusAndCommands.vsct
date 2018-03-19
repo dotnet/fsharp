@@ -134,7 +134,7 @@
         </Strings>
       </Button>
       
-      <Button guid="guidFsiPackageCmdSet" id="cmdidFsDump" priority="0x8000" type="Button">
+      <Button guid="FSharpProjectCmdSet" id="cmdidFsDump" priority="0x8000" type="Button">
         <!-- low priority -->
         <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1"/>
         <Strings>
