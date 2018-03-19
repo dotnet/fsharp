@@ -11,6 +11,7 @@ module internal Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
 
 open System
 open System.IO
+open System.IO.MemoryMappedFiles
 open System.Runtime.InteropServices
 open System.Collections.Generic
 open Internal.Utilities
@@ -106,113 +107,87 @@ type BinaryFile() =
     abstract ReadUTF8String : addr: int -> string
 
 /// Read from memory mapped files.
-module MemoryMapping = 
-
-    type HANDLE = nativeint
-    type ADDR   = nativeint
-    type SIZE_T = nativeint
-
-    [<DllImport("kernel32", SetLastError=true)>]
-    extern bool CloseHandle (HANDLE _handler)
-
-    [<DllImport("kernel32", SetLastError=true, CharSet=CharSet.Unicode)>]
-    extern HANDLE CreateFile (string _lpFileName, 
-                              int _dwDesiredAccess, 
-                              int _dwShareMode, 
-                              HANDLE _lpSecurityAttributes, 
-                              int _dwCreationDisposition, 
-                              int _dwFlagsAndAttributes, 
-                              HANDLE _hTemplateFile)
-             
-    [<DllImport("kernel32", SetLastError=true, CharSet=CharSet.Unicode)>]
-    extern HANDLE CreateFileMapping (HANDLE _hFile, 
-                                     HANDLE _lpAttributes, 
-                                     int _flProtect, 
-                                     int _dwMaximumSizeLow, 
-                                     int _dwMaximumSizeHigh, 
-                                     string _lpName) 
-
-    [<DllImport("kernel32", SetLastError=true)>]
-    extern ADDR MapViewOfFile (HANDLE _hFileMappingObject, 
-                               int    _dwDesiredAccess, 
-                               int    _dwFileOffsetHigh, 
-                               int    _dwFileOffsetLow, 
-                               SIZE_T _dwNumBytesToMap)
-
-    [<DllImport("kernel32", SetLastError=true)>]
-    extern bool UnmapViewOfFile (ADDR _lpBaseAddress)
-
-    let INVALID_HANDLE = new IntPtr(-1)
-    let MAP_READ    = 0x0004
-    let GENERIC_READ = 0x80000000
-    let NULL_HANDLE = IntPtr.Zero
-    let FILE_SHARE_NONE = 0x0000
-    let FILE_SHARE_READ = 0x0001
-    let FILE_SHARE_WRITE = 0x0002
-    let FILE_SHARE_READ_WRITE = 0x0003
-    let CREATE_ALWAYS  = 0x0002
-    let OPEN_EXISTING   = 0x0003
-    let OPEN_ALWAYS  = 0x0004
-
-type MemoryMappedFile(hMap: MemoryMapping.HANDLE, start:nativeint) =
+type MemMappedFile (fileName : string, memMappedFile : MemoryMappedFile) =
     inherit BinaryFile()
 
+    let accessor = memMappedFile.CreateViewAccessor (0L, 0L, MemoryMappedFileAccess.Read)
+
     static member Create fileName  =
-        //printf "fileName = %s\n" fileName
-        let hFile = MemoryMapping.CreateFile (fileName, MemoryMapping.GENERIC_READ, MemoryMapping.FILE_SHARE_READ_WRITE, IntPtr.Zero, MemoryMapping.OPEN_EXISTING, 0, IntPtr.Zero  )
-        //printf "hFile = %Lx\n" (hFile.ToInt64())
-        if ( hFile.Equals(MemoryMapping.INVALID_HANDLE) ) then
-            failwithf "CreateFile(0x%08x)" ( Marshal.GetHRForLastWin32Error() )
-        let protection = 0x00000002 (* ReadOnly *)
-        //printf "OK! hFile = %Lx\n" (hFile.ToInt64())
-        let hMap = MemoryMapping.CreateFileMapping (hFile, IntPtr.Zero, protection, 0, 0, null )
-        ignore(MemoryMapping.CloseHandle(hFile))
-        if hMap.Equals(MemoryMapping.NULL_HANDLE) then
-            failwithf "CreateFileMapping(0x%08x)" ( Marshal.GetHRForLastWin32Error() )
+        let mmapFile =
+            // Use the FileStream-based API to open the file instead of using MemoryMappedFile.CreateFromFile()
+            // directly, so we can control the way the opened file is shared -- we want to allow other processes
+            // to be able to read the file while we're reading it, instead of opening it for exclusive access.
+            // Don't dispose the FileStream (e.g., with a 'use' binding); the MemoryMappedFile takes ownership
+            // of the stream once it's passed in and will take care of disposing it.
+            let fileStream = new FileStream (fileName, FileMode.Open, FileAccess.Read, FileShare.Read)
+            MemoryMappedFile.CreateFromFile (
+                fileStream, null, 0L, MemoryMappedFileAccess.Read,
+// CoreCLR / netstandard only has the 6-argument overload of this function;
+// Mono doesn't seem to have that one, but does have the 7-argument overload.
+#if !FX_PORTABLE_OR_NETSTANDARD
+                null,
+#endif
+                HandleInheritability.None, false)
 
-        let start = MemoryMapping.MapViewOfFile (hMap, MemoryMapping.MAP_READ, 0, 0, 0n)
+        new MemMappedFile (fileName, mmapFile)
 
-        if start.Equals(IntPtr.Zero) then
-           failwithf "MapViewOfFile(0x%08x)" ( Marshal.GetHRForLastWin32Error() )
-        MemoryMappedFile(hMap, start)
+    member private this.Dispose disposing =
+        accessor.Dispose ()
+        memMappedFile.Dispose ()
+        if disposing then
+            GC.SuppressFinalize this
 
-    member m.Addr (i:int) : nativeint = 
-        start + nativeint i
+    override this.Finalize () =
+        this.Dispose false
 
-    override m.ReadByte i = 
-        Marshal.ReadByte(m.Addr i)
+    override __.ReadByte i =
+        accessor.ReadByte (int64 i)
 
-    override m.ReadBytes i len = 
+    override __.ReadBytes i len =
         let res = Bytes.zeroCreate len
-        Marshal.Copy(m.Addr i, res, 0, len)
-        res
+        if len = accessor.ReadArray (int64 i, res, 0, len) then res
+        else
+            failwithf "Unable to read %i bytes from position %i in file '%s'"
+                len i fileName
       
-    override m.ReadInt32 i = 
-        Marshal.ReadInt32(m.Addr i)
+    override __.ReadInt32 i =
+        accessor.ReadInt32 (int64 i)
 
-    override m.ReadUInt16 i = 
-        uint16(Marshal.ReadInt16(m.Addr i))
+    override __.ReadUInt16 i =
+        accessor.ReadUInt16 (int64 i)
 
-    member m.Close() = 
-        ignore(MemoryMapping.UnmapViewOfFile start)
-        ignore(MemoryMapping.CloseHandle hMap)
+    override __.CountUtf8String i =
+        let mutable idx = int64 i
+        while accessor.ReadByte idx <> 0uy do
+            idx <- idx + 1L
+        int (idx - int64 i)
 
-    override m.CountUtf8String i = 
-        let start = m.Addr i
-        let mutable p = start 
-        while Marshal.ReadByte(p) <> 0uy do
-            p <- p + 1n
-        int (p - start) 
+    override this.ReadUTF8String i =
+        match this.CountUtf8String i with
+        | 0 ->
+            String.Empty
+        | n ->
+            let handle = accessor.SafeMemoryMappedViewHandle
 
-    override m.ReadUTF8String i = 
-        let n = m.CountUtf8String i
-        System.Runtime.InteropServices.Marshal.PtrToStringAnsi((m.Addr i), n)
+// RuntimeHelpers.PrepareConstrainedRegions () doesn't seem to be available on CoreCLR?
+#if !FX_PORTABLE_OR_NETSTANDARD
+            System.Runtime.CompilerServices.RuntimeHelpers.PrepareConstrainedRegions ()
+#endif
+            try
+                let mutable ptr : nativeptr<byte> = Unchecked.defaultof<_>
+                handle.AcquirePointer (&ptr)
+                System.Runtime.InteropServices.Marshal.PtrToStringAnsi(NativePtr.toNativeInt ptr, n)
 //#if FX_RESHAPED_REFLECTION
-//        System.Text.Encoding.UTF8.GetString(NativePtr.ofNativeInt (m.Addr i), n)
+//                System.Text.Encoding.UTF8.GetString(NativePtr.toNativeInt ptr, n)
 //#else
-//        new System.String(NativePtr.ofNativeInt (m.Addr i), 0, n, System.Text.Encoding.UTF8)
+//                new System.String(NativePtr.toNativeInt ptr, 0, n, System.Text.Encoding.UTF8)
 //#endif
+            finally
+                handle.ReleasePointer ()
 
+    interface System.IDisposable with
+        member this.Dispose () =
+            this.Dispose true
 
 //---------------------------------------------------------------------
 // Read file from memory blocks 
@@ -3864,12 +3839,12 @@ let ClosePdbReader pdb =
 let OpenILModuleReader infile opts = 
 
    try 
-        let mmap = MemoryMappedFile.Create infile
+        let mmap = MemMappedFile.Create infile
         let modul, ilAssemblyRefs, pdb = genOpenBinaryReader infile mmap opts
         { modul = modul 
           ilAssemblyRefs=ilAssemblyRefs
           dispose = (fun () -> 
-            mmap.Close()
+            (mmap :> IDisposable).Dispose()
             ClosePdbReader pdb) }
     with _ ->
         let mc = ByteFile(infile |> FileSystem.ReadAllBytesShim)
