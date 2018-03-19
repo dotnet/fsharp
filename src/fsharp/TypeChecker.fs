@@ -6894,12 +6894,6 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                     | h :: t -> ([ty; h], h.idRange, t)
 
                 let combineModuleOrNamespaceWithNextIds env (mOrNRefList : ModuleOrNamespaceRef list) (mOrN : Ident) flds =
-                    printfn "%A" env
-                    //let _modOrNsSearch refList (id : Ident) =
-                    //    match refList with
-                    //    | [(ref : ModuleOrNamespaceRef)] -> ref.ModuleOrNamespaceType.ModuleAndNamespaceDefinitions.TryFind id.idText
-                    //    |_ -> None
-
                     let tyconSearch refList (id : Ident) =
                         match refList with
                         | [(ref : ModuleOrNamespaceRef)] -> ref.ModuleOrNamespaceType.TypesByAccessNames.TryFind id.idText
@@ -6986,7 +6980,6 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                         // we assume that parse errors were already reported
                         raise (ReportedError None)
 
-                    //yield (List.frontAndBack lidwd.Lid, v) 
                     match lidwd.Lid with
                     | []    -> ()
                     | [id]   -> yield (([], id), v)
