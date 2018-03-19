@@ -12,7 +12,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="FSharp.Editor" />
-    <InternalsVisibleTo Include="FSharp.LanguageService" />
+    <InternalsVisibleTo Include="LegacyLanguageService" />
     <InternalsVisibleTo Include="FSharp.ProjectSystem.Base" />
     <InternalsVisibleTo Include="FSharp.ProjectSystem.FSharp" />
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />

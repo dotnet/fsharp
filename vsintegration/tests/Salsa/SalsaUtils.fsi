@@ -5,7 +5,7 @@ namespace Salsa
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp.ProjectSystem
-open Microsoft.VisualStudio.FSharp.LanguageService
+open Microsoft.VisualStudio.LegacyLanguageService
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.Build.Framework
@@ -67,14 +67,14 @@ module internal VsOpsUtils =
     val ReplaceFileInMemory               : OpenFile -> string list -> unit
     val ReplaceFileInMemoryWithoutCoffeeBreak   : OpenFile -> string list -> unit
     val SaveFileToDisk                    : OpenFile -> unit
-    val GetSquiggleAtCursor               : OpenFile -> (Microsoft.VisualStudio.FSharp.LanguageService.Severity * string) option
-    val GetSquigglesAtCursor               : OpenFile -> (Microsoft.VisualStudio.FSharp.LanguageService.Severity * string) list
+    val GetSquiggleAtCursor               : OpenFile -> (Microsoft.VisualStudio.LegacyLanguageService.Severity * string) option
+    val GetSquigglesAtCursor               : OpenFile -> (Microsoft.VisualStudio.LegacyLanguageService.Severity * string) list
     /// does a BackgroundRequestReason.MemberSelect at the cursor
     val AutoCompleteAtCursor              : OpenFile -> CompletionItem array
     /// does a BackgroundRequestReason.CompleteWord at the cursor
     val CtrlSpaceCompleteAtCursor         : OpenFile -> CompletionItem array
     /// like AutoCompleteAtCursor, but can pass e.g. BackgroundRequestReason.CompleteWord to do Ctrl-space rather than auto-dot-popup-completion
-    val CompleteAtCursorForReason         : OpenFile * Microsoft.VisualStudio.FSharp.LanguageService.BackgroundRequestReason -> CompletionItem array
+    val CompleteAtCursorForReason         : OpenFile * Microsoft.VisualStudio.LegacyLanguageService.BackgroundRequestReason -> CompletionItem array
     val CompletionBestMatchAtCursorFor    : OpenFile * string * string option -> (string * bool * bool) option 
     val MoveCursorToEndOfMarker           : OpenFile * string -> unit
     val MoveCursorToStartOfMarker         : OpenFile * string -> unit

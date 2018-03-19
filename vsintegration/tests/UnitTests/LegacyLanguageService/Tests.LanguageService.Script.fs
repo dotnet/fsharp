@@ -93,10 +93,10 @@ type UsingMSBuild() as this =
             | Some(severity,message) ->
                 Assert.IsTrue((severity=expectedSeverity), sprintf "Expected %s but saw %s: %s" nameOfExpected nameOfNotExpected message)
                 assertf(message,containing)        
-        AssertSquiggle Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error    "Error"    "Warning" AssertContains,
-        AssertSquiggle Microsoft.VisualStudio.FSharp.LanguageService.Severity.Warning  "Warning"  "Error"   AssertContains,
-        AssertSquiggle Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error    "Error"    "Warning" AssertNotContains,
-        AssertSquiggle Microsoft.VisualStudio.FSharp.LanguageService.Severity.Warning  "Warning"  "Error"   AssertNotContains 
+        AssertSquiggle Microsoft.VisualStudio.LegacyLanguageService.Severity.Error    "Error"    "Warning" AssertContains,
+        AssertSquiggle Microsoft.VisualStudio.LegacyLanguageService.Severity.Warning  "Warning"  "Error"   AssertContains,
+        AssertSquiggle Microsoft.VisualStudio.LegacyLanguageService.Severity.Error    "Error"    "Warning" AssertNotContains,
+        AssertSquiggle Microsoft.VisualStudio.LegacyLanguageService.Severity.Warning  "Warning"  "Error"   AssertNotContains 
 
 
     //Verify the error list in fsx file containd the expected string
@@ -1014,7 +1014,7 @@ type UsingMSBuild() as this =
         let ans = GetSquiggleAtCursor(file)
         match ans with
         | Some(sev,msg) -> 
-            AssertEqual(Microsoft.VisualStudio.FSharp.LanguageService.Severity.Error,sev)
+            AssertEqual(Microsoft.VisualStudio.LegacyLanguageService.Severity.Error,sev)
             AssertContains(msg,expectedStr)
         | _ -> Assert.Fail() 
 

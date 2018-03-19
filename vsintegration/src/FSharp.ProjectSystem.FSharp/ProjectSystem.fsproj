@@ -45,7 +45,7 @@
     <ProjectReference Include="..\FSharp.VS.FSI\FSharp.VS.FSI.fsproj" />
     <ProjectReference Include="..\FSharp.ProjectSystem.Base\Project\ProjectSystem.Base.csproj" />
     <ProjectReference Include="..\FSharp.ProjectSystem.PropertyPages\FSharp.PropertiesPages.vbproj" />
-    <ProjectReference Include="..\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj" />
+    <ProjectReference Include="..\LegacyLanguageService.Base\LegacyLanguageService.Base.csproj" />
     <ProjectReference Include="..\FSharp.Editor\FSharp.Editor.fsproj" />
   </ItemGroup>
 

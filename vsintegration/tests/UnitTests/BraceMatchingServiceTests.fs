@@ -11,7 +11,7 @@ open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Text
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.Editor
-open Microsoft.VisualStudio.FSharp.LanguageService
+open Microsoft.VisualStudio.LegacyLanguageService
 open UnitTests.TestLib.LanguageService
 
 [<TestFixture>][<Category "Roslyn Services">]

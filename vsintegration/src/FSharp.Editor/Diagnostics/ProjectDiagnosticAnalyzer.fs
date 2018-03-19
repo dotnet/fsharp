@@ -19,7 +19,7 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
 
-open Microsoft.VisualStudio.FSharp.LanguageService
+open Microsoft.VisualStudio.LegacyLanguageService
 
 #if PROJECT_ANALYSIS
 // Project-wide error analysis.  We don't enable this because ParseAndCheckProject checks projects against the versions of the files

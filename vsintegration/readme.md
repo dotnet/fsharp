@@ -16,11 +16,11 @@ In general, if something is implemented here and the logic becomes rather length
 
 GUI controls and resources for Visual F# tooling.
 
-# src/FSharp.LanguageService
+# tests/LegacyLanguageService
 
 Legacy bindings to the F# Compiler Service.  Most of the code paths here are dead, and exist mainly to allow our test suite to extensively test the F# Compiler Service.
 
-# src/FSharp.LanguageService.Base
+# tests/LegacyLanguageService.Base
 
 Legacy bits for a base-level, editor-agnostic language service.  This code isn't used anywhere else, though.
 

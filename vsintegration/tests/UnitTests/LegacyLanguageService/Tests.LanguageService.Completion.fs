@@ -60,23 +60,23 @@ type UsingMSBuild() as this  =
                 AssertCompListContainsAll(completions, should)
                 AssertCompListDoesNotContainAny(completions, shouldnot) 
 
-        ((AssertAutoCompleteContains true SourceFileKind.FS Microsoft.VisualStudio.FSharp.LanguageService.BackgroundRequestReason.MemberSelect),
-         (AssertAutoCompleteContains false SourceFileKind.FS Microsoft.VisualStudio.FSharp.LanguageService.BackgroundRequestReason.MemberSelect),
-         (AssertAutoCompleteContains true SourceFileKind.FSI Microsoft.VisualStudio.FSharp.LanguageService.BackgroundRequestReason.MemberSelect),
-         (AssertAutoCompleteContains true SourceFileKind.FS Microsoft.VisualStudio.FSharp.LanguageService.BackgroundRequestReason.CompleteWord),
-         (AssertAutoCompleteContains false SourceFileKind.FS Microsoft.VisualStudio.FSharp.LanguageService.BackgroundRequestReason.CompleteWord))
+        ((AssertAutoCompleteContains true SourceFileKind.FS Microsoft.VisualStudio.LegacyLanguageService.BackgroundRequestReason.MemberSelect),
+         (AssertAutoCompleteContains false SourceFileKind.FS Microsoft.VisualStudio.LegacyLanguageService.BackgroundRequestReason.MemberSelect),
+         (AssertAutoCompleteContains true SourceFileKind.FSI Microsoft.VisualStudio.LegacyLanguageService.BackgroundRequestReason.MemberSelect),
+         (AssertAutoCompleteContains true SourceFileKind.FS Microsoft.VisualStudio.LegacyLanguageService.BackgroundRequestReason.CompleteWord),
+         (AssertAutoCompleteContains false SourceFileKind.FS Microsoft.VisualStudio.LegacyLanguageService.BackgroundRequestReason.CompleteWord))
     
     let AssertCtrlSpaceCompletionListIsEmpty code marker = 
-        DoWithAutoComplete true SourceFileKind.FS Microsoft.VisualStudio.FSharp.LanguageService.BackgroundRequestReason.CompleteWord code marker AssertCompListIsEmpty
+        DoWithAutoComplete true SourceFileKind.FS Microsoft.VisualStudio.LegacyLanguageService.BackgroundRequestReason.CompleteWord code marker AssertCompListIsEmpty
 
     let AssertCtrlSpaceCompletionListIsEmptyNoCoffeeBreak code marker = 
-        DoWithAutoComplete false SourceFileKind.FS Microsoft.VisualStudio.FSharp.LanguageService.BackgroundRequestReason.CompleteWord code marker AssertCompListIsEmpty
+        DoWithAutoComplete false SourceFileKind.FS Microsoft.VisualStudio.LegacyLanguageService.BackgroundRequestReason.CompleteWord code marker AssertCompListIsEmpty
 
     let AssertAutoCompleteCompletionListIsEmpty code marker = 
-        DoWithAutoComplete true SourceFileKind.FS Microsoft.VisualStudio.FSharp.LanguageService.BackgroundRequestReason.MemberSelect code marker AssertCompListIsEmpty
+        DoWithAutoComplete true SourceFileKind.FS Microsoft.VisualStudio.LegacyLanguageService.BackgroundRequestReason.MemberSelect code marker AssertCompListIsEmpty
 
     let AssertAutoCompleteCompletionListIsEmptyNoCoffeeBreak code marker = 
-        DoWithAutoComplete false SourceFileKind.FS Microsoft.VisualStudio.FSharp.LanguageService.BackgroundRequestReason.MemberSelect code marker AssertCompListIsEmpty
+        DoWithAutoComplete false SourceFileKind.FS Microsoft.VisualStudio.LegacyLanguageService.BackgroundRequestReason.MemberSelect code marker AssertCompListIsEmpty
 
 
     let testAutoCompleteAdjacentToDot op =
@@ -366,7 +366,7 @@ a.
     [<Category("TypeProvider")>]
     member this.``TypeProvider.VisibilityChecksForGeneratedTypes``() = 
         let extraRefs = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
-        let check = DoWithAutoCompleteUsingExtraRefs extraRefs true SourceFileKind.FS Microsoft.VisualStudio.FSharp.LanguageService.BackgroundRequestReason.MemberSelect
+        let check = DoWithAutoCompleteUsingExtraRefs extraRefs true SourceFileKind.FS Microsoft.VisualStudio.LegacyLanguageService.BackgroundRequestReason.MemberSelect
 
         let code = 
             [
@@ -5210,7 +5210,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
         MoveCursorToEndOfMarker(file, marker)
-        let completions = CompleteAtCursorForReason(file,Microsoft.VisualStudio.FSharp.LanguageService.BackgroundRequestReason.CompleteWord)
+        let completions = CompleteAtCursorForReason(file,Microsoft.VisualStudio.LegacyLanguageService.BackgroundRequestReason.CompleteWord)
         AssertCompListContainsAll(completions, contained)
         gpatcc.AssertExactly(0,0)
 

@@ -21,7 +21,7 @@ open System.Threading
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp.ProjectSystem
-open Microsoft.VisualStudio.FSharp.LanguageService
+open Microsoft.VisualStudio.LegacyLanguageService
 open Microsoft.VisualStudio.TextManager.Interop
 open UnitTests.TestLib.Utils.FilesystemHelpers
 open Microsoft.Build.Framework
@@ -256,7 +256,7 @@ module internal Salsa =
             match flags with
             | Some flags -> flags
             | _ -> raise Error.Bug
-        let changeHandlers =  new System.Collections.Generic.Dictionary<string,Microsoft.VisualStudio.FSharp.LanguageService.AdviseProjectSiteChanges>()
+        let changeHandlers =  new System.Collections.Generic.Dictionary<string,Microsoft.VisualStudio.LegacyLanguageService.AdviseProjectSiteChanges>()
         member x.TriggerChanges() = 
             for handler in changeHandlers do 
                 handler.Value.Invoke()
@@ -339,7 +339,7 @@ module internal Salsa =
         end    
     /// An error
     [<Sealed>]
-    type Error(path: string, subcategory:string, msg: string, context: Microsoft.VisualStudio.TextManager.Interop.TextSpan, sev: Microsoft.VisualStudio.FSharp.LanguageService.Severity) = 
+    type Error(path: string, subcategory:string, msg: string, context: Microsoft.VisualStudio.TextManager.Interop.TextSpan, sev: Microsoft.VisualStudio.LegacyLanguageService.Severity) = 
         member e.Path = path
         member e.Subcategory = subcategory
         member e.Message = msg
@@ -448,7 +448,7 @@ module internal Salsa =
         abstract CleanInvisibleProject : unit -> unit
         
     and TextSpan       = Microsoft.VisualStudio.TextManager.Interop.TextSpan
-    and GotoDefnResult = Microsoft.VisualStudio.FSharp.LanguageService.GotoDefinitionResult_DEPRECATED
+    and GotoDefnResult = Microsoft.VisualStudio.LegacyLanguageService.GotoDefinitionResult_DEPRECATED
     
 
     // Result of querying the completion list
@@ -506,12 +506,12 @@ module internal Salsa =
         abstract CleanUp: VisualStudio -> unit
         abstract CleanInvisibleProject: VisualStudio -> unit
         abstract ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients: VisualStudio -> unit
-        abstract GetSquiggleAtCursor: OpenFile -> (Microsoft.VisualStudio.FSharp.LanguageService.Severity * string) option
-        abstract GetSquigglesAtCursor: OpenFile -> (Microsoft.VisualStudio.FSharp.LanguageService.Severity * string) list
+        abstract GetSquiggleAtCursor: OpenFile -> (Microsoft.VisualStudio.LegacyLanguageService.Severity * string) option
+        abstract GetSquigglesAtCursor: OpenFile -> (Microsoft.VisualStudio.LegacyLanguageService.Severity * string) list
         /// does a BackgroundRequestReason.MemberSelect at the cursor
         abstract AutoCompleteAtCursor: OpenFile -> CompletionItem[]
         /// like AutoCompleteAtCursor, but can pass e.g. BackgroundRequestReason.CompleteWord to do Ctrl-space rather than auto-dot-popup-completion
-        abstract CompleteAtCursorForReason: OpenFile * Microsoft.VisualStudio.FSharp.LanguageService.BackgroundRequestReason -> CompletionItem[]
+        abstract CompleteAtCursorForReason: OpenFile * Microsoft.VisualStudio.LegacyLanguageService.BackgroundRequestReason -> CompletionItem[]
         abstract CompletionBestMatchAtCursorFor: OpenFile * string * string option -> (string * bool * bool) option
         abstract MoveCursorToEndOfMarker: OpenFile * string -> unit
         abstract MoveCursorToStartOfMarker: OpenFile * string -> unit
@@ -536,7 +536,7 @@ module internal Salsa =
 
     [<AutoOpen>]
     module GotoDefnResultExtensions = 
-        type Microsoft.VisualStudio.FSharp.LanguageService.GotoDefinitionResult_DEPRECATED with
+        type Microsoft.VisualStudio.LegacyLanguageService.GotoDefinitionResult_DEPRECATED with
             member this.ToOption() = if this.Success then Some(this.Span, this.Url) else None
 
 
@@ -1241,9 +1241,9 @@ module internal Salsa =
                 [|
                     for o in sink.Braces do
                         match o with
-                        | (:? Microsoft.VisualStudio.FSharp.LanguageService.BraceMatch_DEPRECATED as m) -> 
+                        | (:? Microsoft.VisualStudio.LegacyLanguageService.BraceMatch_DEPRECATED as m) -> 
                             yield (m.a, m.b)
-                        | x -> failwithf "Microsoft.VisualStudio.FSharp.LanguageService.BraceMatch expected, but got %A" (if box x = null then "null" else (x.GetType()).FullName)
+                        | x -> failwithf "Microsoft.VisualStudio.LegacyLanguageService.BraceMatch expected, but got %A" (if box x = null then "null" else (x.GetType()).FullName)
                 |]
 
                 

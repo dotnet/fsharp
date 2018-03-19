@@ -7,7 +7,7 @@ open System.Collections.Generic
 open System.Composition
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Classification
-open Microsoft.VisualStudio.FSharp.LanguageService
+open Microsoft.VisualStudio.LegacyLanguageService
 open Microsoft.VisualStudio.LanguageServices.Implementation.F1Help
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.FSharp.Compiler

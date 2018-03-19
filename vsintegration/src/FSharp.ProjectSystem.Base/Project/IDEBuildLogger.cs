@@ -14,7 +14,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.TextManager.Interop;
 using Microsoft.Win32;
 using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
-using Microsoft.VisualStudio.FSharp.LanguageService;
+using Microsoft.VisualStudio.LegacyLanguageService;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {

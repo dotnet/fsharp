@@ -16,8 +16,8 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="FSharp.Editor" />
-    <InternalsVisibleTo Include="FSharp.LanguageService" />
-    <InternalsVisibleTo Include="FSharp.LanguageService.Base" />
+    <InternalsVisibleTo Include="LegacyLanguageService" />
+    <InternalsVisibleTo Include="LegacyLanguageService.Base" />
     <InternalsVisibleTo Include="FSharp.ProjectSystem.FSharp" />
   </ItemGroup>
 

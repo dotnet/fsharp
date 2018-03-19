@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.FSharp.ProjectSystem;
 using VSLangProj;
 using System.Diagnostics.CodeAnalysis;
-using Microsoft.VisualStudio.FSharp.LanguageService;
+using Microsoft.VisualStudio.LegacyLanguageService;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
 {
