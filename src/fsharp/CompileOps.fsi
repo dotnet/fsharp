@@ -233,7 +233,6 @@ type TcConfigBuilder =
       mutable noFeedback: bool
       mutable stackReserveSize: int32 option
       mutable implicitIncludeDir: string
-      mutable openBinariesInMemory: bool
       mutable openDebugInformationForLaterStaticLinking: bool
       defaultFSharpBinariesDir: string
       mutable compilingFslib: bool
@@ -389,7 +388,6 @@ type TcConfig =
     member noFeedback: bool
     member stackReserveSize: int32 option
     member implicitIncludeDir: string
-    member openBinariesInMemory: bool
     member openDebugInformationForLaterStaticLinking: bool
     member fsharpBinariesDir: string
     member compilingFslib: bool
@@ -567,11 +565,8 @@ type ImportedAssembly =
 [<Sealed>] 
 type TcAssemblyResolutions = 
     member GetAssemblyResolutions: unit -> AssemblyResolution list
-
     static member SplitNonFoundationalResolutions : CompilationThreadToken * TcConfig -> AssemblyResolution list * AssemblyResolution list * UnresolvedAssemblyReference list
     static member BuildFromPriorResolutions    : CompilationThreadToken * TcConfig * AssemblyResolution list * UnresolvedAssemblyReference list -> TcAssemblyResolutions 
-    
-
 
 /// Represents a table of imported assemblies with their resolutions.
 [<Sealed>] 
