@@ -251,6 +251,9 @@ type internal ItemOccurence =
 /// Check for equality, up to signature matching
 val ItemsAreEffectivelyEqual : TcGlobals -> Item -> Item -> bool
 
+/// Hash compatible with ItemsAreEffectivelyEqual
+val ItemsAreEffectivelyEqualHash : TcGlobals -> Item -> int
+
 [<Class>]
 type internal CapturedNameResolution = 
     /// line and column
