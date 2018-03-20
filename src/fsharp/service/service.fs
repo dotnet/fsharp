@@ -17,6 +17,7 @@ open Microsoft.FSharp.Core.Printf
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.IL
+open Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.AbstractIL.Internal  
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library  
@@ -2199,11 +2200,10 @@ module CompileHelpers =
     /// Compile using the given flags.  Source files names are resolved via the FileSystem API. The output file must be given by a -o flag. 
     let compileFromArgs (ctok, argv: string[], legacyReferenceResolver, tcImportsCapture, dynamicAssemblyCreator)  = 
     
-        let reduceMemoryUsage = true
         let errors, errorLogger, loggerProvider = mkCompilationErorHandlers()
         let result = 
             tryCompile errorLogger (fun exiter -> 
-                mainCompile (ctok, argv, legacyReferenceResolver, (*bannerAlreadyPrinted*)true, reduceMemoryUsage, (*defaultCopyFSharpCore*)false, exiter, loggerProvider, tcImportsCapture, dynamicAssemblyCreator) )
+                mainCompile (ctok, argv, legacyReferenceResolver, (*bannerAlreadyPrinted*)true, ReduceMemoryFlag.Yes, CopyFSharpCoreFlag.No, exiter, loggerProvider, tcImportsCapture, dynamicAssemblyCreator) )
     
         errors.ToArray(), result
 
@@ -2216,7 +2216,7 @@ module CompileHelpers =
     
         let result = 
             tryCompile errorLogger (fun exiter -> 
-                compileOfAst (ctok, legacyReferenceResolver, (*reduceMemoryUsage=*)true, assemblyName, target, outFile, pdbFile, dependencies, noframework, exiter, loggerProvider, asts, tcImportsCapture, dynamicAssemblyCreator))
+                compileOfAst (ctok, legacyReferenceResolver, ReduceMemoryFlag.Yes, assemblyName, target, outFile, pdbFile, dependencies, noframework, exiter, loggerProvider, asts, tcImportsCapture, dynamicAssemblyCreator))
 
         errors.ToArray(), result
 
@@ -2770,7 +2770,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             // Do we add a reference to FSharp.Compiler.Interactive.Settings by default?
             let useFsiAuxLib = defaultArg useFsiAuxLib true
 
-            let reduceMemoryUsage = true
+            let reduceMemoryUsage = ReduceMemoryFlag.Yes
 
             // Do we assume .NET Framework references for scripts?
             let assumeDotNetFramework = defaultArg assumeDotNetFramework true
@@ -2786,7 +2786,13 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 let fsiCompilerOptions = CompileOptions.GetCoreFsiCompilerOptions tcConfigB 
                 CompileOptions.ParseCompilerOptions (ignore, fsiCompilerOptions, Array.toList otherFlags)
 
-            let loadClosure = LoadClosure.ComputeClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, source, CodeContext.Editing, useSimpleResolution, useFsiAuxLib, new Lexhelp.LexResourceManager(), applyCompilerOptions, assumeDotNetFramework, tryGetMetadataSnapshot=tryGetMetadataSnapshot, reduceMemoryUsage=reduceMemoryUsage)
+            let loadClosure = 
+                LoadClosure.ComputeClosureOfScriptText(ctok, legacyReferenceResolver, 
+                    defaultFSharpBinariesDir, filename, source, 
+                    CodeContext.Editing, useSimpleResolution, useFsiAuxLib, new Lexhelp.LexResourceManager(), 
+                    applyCompilerOptions, assumeDotNetFramework, 
+                    tryGetMetadataSnapshot=tryGetMetadataSnapshot, 
+                    reduceMemoryUsage=reduceMemoryUsage)
 
             let otherFlags = 
                 [| yield "--noframework"; yield "--warn:3"; 
@@ -3248,7 +3254,7 @@ type FsiInteractiveChecker(legacyReferenceResolver, reactorOps: IReactorOperatio
             let parseResults = FSharpParseFileResults(parseErrors, parseTreeOpt, parseHadErrors = anyErrors, dependencyFiles = dependencyFiles)
             
             let backgroundDiagnostics = []
-            let reduceMemoryUsage = true
+            let reduceMemoryUsage = ReduceMemoryFlag.Yes
             let assumeDotNetFramework = true
 
             let applyCompilerOptions tcConfigB  = 

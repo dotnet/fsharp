@@ -50,6 +50,7 @@ type internal FSharpCheckerProvider
 
     let tryGetMetadataSnapshot (path, timeStamp) = 
         try 
+            Debug.Assert((Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader.GetStatistics().weakByteArrayFileCount = 0), "Expected weakByteArrayFileCount to be zero when using F# in Visual Studio. Was there a problem reading a .NET binary?")
             let md = metadataManager.GetMetadata(path, timeStamp)
             let amd = (md :?> AssemblyMetadata)
             let mmd = amd.GetModules().[0]

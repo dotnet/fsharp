@@ -206,6 +206,7 @@ type UnresolvedAssemblyReference = UnresolvedAssemblyReference of string * Assem
 type ResolvedExtensionReference = ResolvedExtensionReference of string * AssemblyReference list * Tainted<ITypeProvider> list
 #endif
 
+[<RequireQualifiedAccess>]
 type CompilerTarget = 
     | WinExe 
     | ConsoleExe 
@@ -213,9 +214,13 @@ type CompilerTarget =
     | Module
     member IsExe: bool
     
+[<RequireQualifiedAccess>]
 type ResolveAssemblyReferenceMode = 
     | Speculative 
     | ReportErrors
+
+[<RequireQualifiedAccess>]
+type CopyFSharpCoreFlag = Yes | No
 
 //----------------------------------------------------------------------------
 // TcConfig
@@ -258,7 +263,7 @@ type TcConfigBuilder =
       mutable referencedDLLs: AssemblyReference  list
       mutable projectReferences: IProjectReference list
       mutable knownUnresolvedReferences: UnresolvedAssemblyReference list
-      reduceMemoryUsage: bool
+      reduceMemoryUsage: ReduceMemoryFlag
       mutable subsystemVersion: int * int
       mutable useHighEntropyVA: bool
       mutable inputCodePage: int option
@@ -355,7 +360,7 @@ type TcConfigBuilder =
       sqmSessionStartedTime: int64
       mutable emitDebugInfoInQuotations: bool
       mutable exename: string option 
-      mutable copyFSharpCore: bool
+      mutable copyFSharpCore: CopyFSharpCoreFlag
       mutable shadowCopyReferences: bool
 
       /// A function to call to try to get an object that acts as a snapshot of the metadata section of a .NET binary,
@@ -368,11 +373,11 @@ type TcConfigBuilder =
     static member CreateNew: 
         legacyReferenceResolver: ReferenceResolver.Resolver *
         defaultFSharpBinariesDir: string * 
-        reduceMemoryUsage: bool * 
+        reduceMemoryUsage: ReduceMemoryFlag * 
         implicitIncludeDir: string * 
         isInteractive: bool * 
         isInvalidationSupported: bool *
-        defaultCopyFSharpCore: bool *
+        defaultCopyFSharpCore: CopyFSharpCoreFlag *
         tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot 
           -> TcConfigBuilder
 
@@ -415,7 +420,7 @@ type TcConfig =
     member subsystemVersion: int * int
     member useHighEntropyVA: bool
     member referencedDLLs: AssemblyReference list
-    member reduceMemoryUsage: bool
+    member reduceMemoryUsage: ReduceMemoryFlag
     member inputCodePage: int option
     member embedResources: string list
     member errorSeverityOptions: FSharpErrorSeverityOptions
@@ -522,7 +527,7 @@ type TcConfig =
     member sqmSessionGuid: System.Guid option
     member sqmNumOfSourceFiles: int
     member sqmSessionStartedTime: int64
-    member copyFSharpCore: bool
+    member copyFSharpCore: CopyFSharpCoreFlag
     member shadowCopyReferences: bool
     static member Create: TcConfigBuilder * validate: bool -> TcConfig
 
@@ -758,7 +763,6 @@ type LoadClosureInput =
       ParseDiagnostics: (PhasedDiagnostic * bool) list 
       MetaCommandDiagnostics: (PhasedDiagnostic * bool) list  }
 
-
 [<RequireQualifiedAccess>]
 type LoadClosure = 
     { /// The source files along with the ranges of the #load positions in each file.
@@ -788,8 +792,13 @@ type LoadClosure =
       /// Diagnostics seen while processing the compiler options implied root of closure
       LoadClosureRootFileDiagnostics: (PhasedDiagnostic * bool) list }   
 
-    // Used from service.fs, when editing a script file
-    static member ComputeClosureOfScriptText: CompilationThreadToken * legacyReferenceResolver: ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * filename: string * source: string * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) * assumeDotNetFramework: bool * tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot * reduceMemoryUsage: bool -> LoadClosure
+    /// Analyze a script text and find the closure of its references. 
+    /// Used from FCS, when editing a script file.  
+    //
+    /// A temporary TcConfig is created along the way, is why this routine takes so many arguments. We want to be sure to use exactly the
+    /// same arguments as the rest of the application.
+    static member ComputeClosureOfScriptText: CompilationThreadToken * legacyReferenceResolver: ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * filename: string * source: string * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) * assumeDotNetFramework: bool * tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot * reduceMemoryUsage: ReduceMemoryFlag -> LoadClosure
 
-    /// Used from fsi.fs and fsc.fs, for #load and command line. The resulting references are then added to a TcConfig.
+    /// Analyze a set of script files and find the closure of their references. The resulting references are then added to the given TcConfig.
+    /// Used from fsi.fs and fsc.fs, for #load and command line. 
     static member ComputeClosureOfScriptFiles: CompilationThreadToken * tcConfig:TcConfig * (string * range) list * implicitDefines:CodeContext * lexResourceManager: Lexhelp.LexResourceManager -> LoadClosure

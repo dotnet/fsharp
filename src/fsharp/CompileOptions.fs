@@ -457,10 +457,10 @@ let (++) x s = x @ [s]
 
 let SetTarget (tcConfigB : TcConfigBuilder)(s : string) =
     match s.ToLowerInvariant() with
-    | "exe"     ->  tcConfigB.target <- ConsoleExe
-    | "winexe"  ->  tcConfigB.target <- WinExe
-    | "library" ->  tcConfigB.target <- Dll
-    | "module"  ->  tcConfigB.target <- Module
+    | "exe"     ->  tcConfigB.target <- CompilerTarget.ConsoleExe
+    | "winexe"  ->  tcConfigB.target <- CompilerTarget.WinExe
+    | "library" ->  tcConfigB.target <- CompilerTarget.Dll
+    | "module"  ->  tcConfigB.target <- CompilerTarget.Module
     | _         ->  error(Error(FSComp.SR.optsUnrecognizedTarget(s),rangeCmdArgs))
 
 let SetDebugSwitch (tcConfigB : TcConfigBuilder) (dtype : string option) (s : OptionSwitch) =
@@ -648,7 +648,7 @@ let outputFileFlagsFsc (tcConfigB : TcConfigBuilder) =
         CompilerOption("sig", tagFile, OptionString (setSignatureFile tcConfigB), None,
                            Some (FSComp.SR.optsSig()))    
                            
-        CompilerOption("nocopyfsharpcore", tagNone, OptionUnit (fun () -> tcConfigB.copyFSharpCore <- false), None, Some (FSComp.SR.optsNoCopyFsharpCore()))
+        CompilerOption("nocopyfsharpcore", tagNone, OptionUnit (fun () -> tcConfigB.copyFSharpCore <- CopyFSharpCoreFlag.No), None, Some (FSComp.SR.optsNoCopyFsharpCore()))
     ]
 
 
@@ -1016,7 +1016,7 @@ let abbreviatedFlagsFsc tcConfigB =
     abbreviatedFlagsBoth tcConfigB @
     [   (* FSC only abbreviated options *)
         CompilerOption("o", tagString, OptionString (setOutFileName tcConfigB), None, Some(FSComp.SR.optsShortFormOf("--out")))
-        CompilerOption("a", tagString, OptionUnit (fun () -> tcConfigB.target <- Dll), None, Some(FSComp.SR.optsShortFormOf("--target library")))
+        CompilerOption("a", tagString, OptionUnit (fun () -> tcConfigB.target <- CompilerTarget.Dll), None, Some(FSComp.SR.optsShortFormOf("--target library")))
         (* FSC help abbreviations. FSI has it's own help options... *)
         CompilerOption("?"        , tagNone, OptionHelp (fun blocks -> displayHelpFsc tcConfigB blocks), None, Some(FSComp.SR.optsShortFormOf("--help")))
         CompilerOption("help"     , tagNone, OptionHelp (fun blocks -> displayHelpFsc tcConfigB blocks), None, Some(FSComp.SR.optsShortFormOf("--help")))
@@ -1348,7 +1348,7 @@ let GenerateIlxCode (ilxBackend, isInteractiveItExpr, isInteractiveOnMono, tcCon
           fragName = fragName
           localOptimizationsAreOn= tcConfig.optSettings.localOpt ()
           testFlagEmitFeeFeeAs100001 = tcConfig.testFlagEmitFeeFeeAs100001
-          mainMethodInfo= (if (tcConfig.target = Dll || tcConfig.target = Module) then None else Some topAttrs.mainMethodAttrs)
+          mainMethodInfo= (if (tcConfig.target = CompilerTarget.Dll || tcConfig.target = CompilerTarget.Module) then None else Some topAttrs.mainMethodAttrs)
           ilxBackend = ilxBackend
           isInteractive = tcConfig.isInteractive
           isInteractiveItExpr = isInteractiveItExpr
@@ -1372,7 +1372,7 @@ let NormalizeAssemblyRefs (ctok, tcImports:TcImports) scoref =
 
 let GetGeneratedILModuleName (t:CompilerTarget) (s:string) = 
     // return the name of the file as a module name
-    let ext = match t with | Dll -> "dll" | Module -> "netmodule" | _ -> "exe"
+    let ext = match t with CompilerTarget.Dll -> "dll" | CompilerTarget.Module -> "netmodule" | _ -> "exe"
     s + "." + ext
 
 let ignoreFailureOnMono1_1_16 f = try f() with _ -> ()

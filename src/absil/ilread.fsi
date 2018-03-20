@@ -37,6 +37,12 @@ open System.IO
 type ILReaderMetadataSnapshot = (obj * nativeint * int) 
 type ILReaderTryGetMetadataSnapshot = (* path: *) string * (* snapshotTimeStamp: *) System.DateTime -> ILReaderMetadataSnapshot option
 
+[<RequireQualifiedAccess>]
+type internal MetadataOnlyFlag = Yes | No
+
+[<RequireQualifiedAccess>]
+type internal ReduceMemoryFlag = Yes | No
+
 type internal ILReaderOptions =
    { pdbPath: string option
 
@@ -45,22 +51,18 @@ type internal ILReaderOptions =
      // fsc.exe does not use reduceMemoryUsage (hence keeps MORE caches in AbstractIL and MORE memory mapping and MORE memory hogging but FASTER and SIMPLER file access)
      // fsi.exe does uses reduceMemoryUsage (hence keeps FEWER caches in AbstractIL and LESS memory mapping and LESS memory hogging but slightly SLOWER file access), because its long running
      // FCS uses reduceMemoryUsage (hence keeps FEWER caches in AbstractIL and LESS memory mapping and LESS memory hogging), because it is typically long running
-     reduceMemoryUsage: bool
+     reduceMemoryUsage: ReduceMemoryFlag
 
      /// Only open a metadata reader for the metadata portion of the .NET binary without keeping alive any data associated with the PE reader
      /// - IL code will not be available (mdBody in ILMethodDef will return NotAvailable)
      /// - Managed resources will be reported back as ILResourceLocation.LocalIn (as always)
      /// - Native resources will not be available (none will be returned)
      /// - Static data associated with fields will not be available
-     metadataOnly: bool
+     metadataOnly: MetadataOnlyFlag
 
      /// A function to call to try to get an object that acts as a snapshot of the metadata section of a .NET binary,
      /// and from which we can read the metadata. Only used when metadataOnly=true.
-     tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot
-
-     /// Indicates that the backing file will be stable and can be re-read if the implementation wants to release in-memory resources
-     /// Normally the same as reduceMemoryUsage
-     stableFileHeuristic: bool }
+     tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot }
 
 /// Represents a reader of the metadata of a .NET binary.  May also give some values (e.g. IL code) from the PE file
 /// if it was provided.
@@ -80,7 +82,11 @@ val internal OpenILModuleReader: string -> ILReaderOptions -> ILModuleReader
 /// Open a binary reader based on the given bytes. 
 val internal OpenILModuleReaderFromBytes: fileNameForDebugOutput:string -> assemblyContents: byte[] -> options: ILReaderOptions -> ILModuleReader
 
-#if STATISTICS
-(* report statistics from all reads *)
-val report: TextWriter -> unit
-#endif
+type Statistics = 
+    { mutable rawMemoryFileCount : int
+      mutable memoryMapFileOpenedCount : int
+      mutable memoryMapFileClosedCount : int
+      mutable weakByteArrayFileCount : int
+      mutable byteArrayFileCount : int }
+
+val GetStatistics : unit -> Statistics

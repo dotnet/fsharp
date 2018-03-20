@@ -2037,6 +2037,7 @@ let ComputeMakePathAbsolute implicitIncludeDir (path : string) =
 // Configuration
 //----------------------------------------------------------------------------
 
+[<RequireQualifiedAccess>]
 type CompilerTarget = 
     | WinExe 
     | ConsoleExe 
@@ -2044,7 +2045,11 @@ type CompilerTarget =
     | Module
     member x.IsExe = (match x with ConsoleExe | WinExe -> true | _ -> false)
 
+[<RequireQualifiedAccess>]
 type ResolveAssemblyReferenceMode = Speculative | ReportErrors
+
+[<RequireQualifiedAccess>]
+type CopyFSharpCoreFlag = Yes | No
 
 /// Represents the file or string used for the --version flag
 type VersionFlag = 
@@ -2206,7 +2211,7 @@ type TcConfigBuilder =
       mutable referencedDLLs : AssemblyReference list
       mutable projectReferences : IProjectReference list
       mutable knownUnresolvedReferences : UnresolvedAssemblyReference list
-      reduceMemoryUsage: bool
+      reduceMemoryUsage: ReduceMemoryFlag
       mutable subsystemVersion : int * int
       mutable useHighEntropyVA : bool
       mutable inputCodePage: int option
@@ -2327,7 +2332,7 @@ type TcConfigBuilder =
       mutable exename : string option
       
       // If true - the compiler will copy FSharp.Core.dll along the produced binaries
-      mutable copyFSharpCore : bool
+      mutable copyFSharpCore : CopyFSharpCoreFlag
 
       /// When false FSI will lock referenced assemblies requiring process restart, false = disable Shadow Copy false (*default*)
       mutable shadowCopyReferences : bool
@@ -2371,7 +2376,7 @@ type TcConfigBuilder =
           errorSeverityOptions = FSharpErrorSeverityOptions.Default
           embedResources = []
           inputCodePage = None
-          reduceMemoryUsage = true
+          reduceMemoryUsage = ReduceMemoryFlag.Yes // always gets set explicitly 
           subsystemVersion = 4, 0 // per spec for 357994
           useHighEntropyVA = false
           mlCompatibility = false
@@ -2381,7 +2386,7 @@ type TcConfigBuilder =
           platform = None
           prefer32Bit = false
           useSimpleResolution = runningOnMono
-          target = ConsoleExe
+          target = CompilerTarget.ConsoleExe
           debuginfo = false
           testFlagEmitFeeFeeAs100001 = false
           dumpDebugInfo = false
@@ -2472,7 +2477,7 @@ type TcConfigBuilder =
           sqmSessionStartedTime = System.DateTime.UtcNow.Ticks
           emitDebugInfoInQuotations = false
           exename = None
-          copyFSharpCore = false
+          copyFSharpCore = CopyFSharpCoreFlag.No
           shadowCopyReferences = false
           tryGetMetadataSnapshot = (fun _ -> None)
         }
@@ -2504,7 +2509,7 @@ type TcConfigBuilder =
     member tcConfigB.DecideNames (sourceFiles) =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
         if sourceFiles = [] then errorR(Error(FSComp.SR.buildNoInputsSpecified(), rangeCmdArgs))
-        let ext() = match tcConfigB.target with Dll -> ".dll" | Module -> ".netmodule" | ConsoleExe | WinExe -> ".exe"
+        let ext() = match tcConfigB.target with CompilerTarget.Dll -> ".dll" | CompilerTarget.Module -> ".netmodule" | CompilerTarget.ConsoleExe | CompilerTarget.WinExe -> ".exe"
         let implFiles = sourceFiles |> List.filter (fun lower -> List.exists (Filename.checkSuffix (String.lowercase lower)) FSharpImplFileSuffixes)
         let outfile = 
             match tcConfigB.outputFile, List.rev implFiles with 
@@ -2626,12 +2631,11 @@ let OpenILBinary(filename, reduceMemoryUsage, ilGlobalsOpt, pdbPathOption, shado
           | Some g -> g
 
       let opts : ILReaderOptions = 
-          { ilGlobals=ilGlobals
-            metadataOnly=true
+          { ilGlobals = ilGlobals
+            metadataOnly = MetadataOnlyFlag.Yes
             reduceMemoryUsage = reduceMemoryUsage
             pdbPath = pdbPathOption
-            tryGetMetadataSnapshot = tryGetMetadataSnapshot
-            stableFileHeuristic = reduceMemoryUsage } 
+            tryGetMetadataSnapshot = tryGetMetadataSnapshot } 
                       
       let location =
 #if !FX_RESHAPED_REFLECTION // shadow copy not supported
@@ -2695,8 +2699,7 @@ type AssemblyResolution =
                         { pdbPath=None
                           ilGlobals = EcmaMscorlibILGlobals
                           reduceMemoryUsage = reduceMemoryUsage
-                          metadataOnly = true
-                          stableFileHeuristic = reduceMemoryUsage 
+                          metadataOnly = MetadataOnlyFlag.Yes
                           tryGetMetadataSnapshot = tryGetMetadataSnapshot } 
                     use reader = OpenILModuleReader this.resolvedPath readerSettings
                     mkRefToILAssembly reader.ILModuleDef.ManifestOfAssembly
@@ -3122,10 +3125,9 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
                             let readerSettings : ILReaderOptions = 
                                 { pdbPath=None
                                   ilGlobals = EcmaMscorlibILGlobals
-                                  reduceMemoryUsage=tcConfig.reduceMemoryUsage
-                                  metadataOnly = true
-                                  stableFileHeuristic=tcConfig.reduceMemoryUsage
-                                  tryGetMetadataSnapshot=tcConfig.tryGetMetadataSnapshot}
+                                  reduceMemoryUsage = tcConfig.reduceMemoryUsage
+                                  metadataOnly = MetadataOnlyFlag.Yes
+                                  tryGetMetadataSnapshot = tcConfig.tryGetMetadataSnapshot}
                             use reader = OpenILModuleReader resolved readerSettings
                             let assRef = mkRefToILAssembly reader.ILModuleDef.ManifestOfAssembly
                             assRef.QualifiedName
@@ -3196,7 +3198,7 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
 
             let logDiagnostic showMessages = 
                 (fun isError code message->
-                    if showMessages && mode = ReportErrors then 
+                    if showMessages && mode = ResolveAssemblyReferenceMode.ReportErrors then 
                       if isError then
                         errorR(MSBuildReferenceResolutionError(code, message, errorAndWarningRange))
                       else
@@ -3295,7 +3297,7 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
 
             // If mode=Speculative, then we haven't reported any errors.
             // We report the error condition by returning an empty list of resolutions
-            if mode = Speculative && (List.length unresolvedReferences) > 0 then 
+            if mode = ResolveAssemblyReferenceMode.Speculative && (List.length unresolvedReferences) > 0 then 
                 [], (List.ofArray groupedReferences) |> List.map (fun (name, _, r) -> (name, r)) |> List.map UnresolvedAssemblyReference
             else 
                 resultingResolutions, unresolvedReferences |> List.map (fun (name, _, r) -> (name, r)) |> List.map UnresolvedAssemblyReference    
@@ -3702,7 +3704,7 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
                 successes, failures
             else
                 RequireCompilationThread ctok // we don't want to do assembly resolution concurrently, we assume MSBuild doesn't handle this
-                TcConfig.TryResolveLibsUsingMSBuildRules (tcConfig, assemblyList, rangeStartup, ReportErrors)
+                TcConfig.TryResolveLibsUsingMSBuildRules (tcConfig, assemblyList, rangeStartup, ResolveAssemblyReferenceMode.ReportErrors)
         TcAssemblyResolutions(tcConfig, resolved, unresolved @ knownUnresolved)                    
 
 
@@ -4074,9 +4076,8 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                     { ilGlobals = g.ilg 
                       reduceMemoryUsage = tcConfig.reduceMemoryUsage
                       pdbPath = None 
-                      metadataOnly = true
-                      tryGetMetadataSnapshot = tcConfig.tryGetMetadataSnapshot
-                      stableFileHeuristic = tcConfig.reduceMemoryUsage }                       
+                      metadataOnly = MetadataOnlyFlag.Yes
+                      tryGetMetadataSnapshot = tcConfig.tryGetMetadataSnapshot }                       
                 let reader = OpenILModuleReaderFromBytes fileName bytes opts
                 reader.ILModuleDef, reader.ILAssemblyRefs
 
@@ -5077,7 +5078,7 @@ module private ScriptPreprocessClosure =
         let projectDir = Path.GetDirectoryName(filename)
         let isInteractive = (codeContext = CodeContext.CompilationAndEvaluation)
         let isInvalidationSupported = (codeContext = CodeContext.Editing)
-        let tcConfigB = TcConfigBuilder.CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, reduceMemoryUsage, projectDir, isInteractive, isInvalidationSupported, defaultCopyFSharpCore=false, tryGetMetadataSnapshot=tryGetMetadataSnapshot) 
+        let tcConfigB = TcConfigBuilder.CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, reduceMemoryUsage, projectDir, isInteractive, isInvalidationSupported, defaultCopyFSharpCore=CopyFSharpCoreFlag.No, tryGetMetadataSnapshot=tryGetMetadataSnapshot) 
         applyCommandLineArgs tcConfigB
         match basicReferences with 
         | None -> BasicReferencesForScriptLoadClosure(useFsiAuxLib, assumeDotNetFramework) |> List.iter(fun f->tcConfigB.AddReferencedAssemblyByPath(range0, f)) // Add script references
@@ -5266,14 +5267,17 @@ module private ScriptPreprocessClosure =
         GetLoadClosure(ctok, mainFile, closureFiles, tcConfig, codeContext)        
 
 type LoadClosure with
-    /// Analyze a script text and find the closure of its references. Used from FCS, when editing a script file.  
-    /// A temporary TcConfig is created along the way, which accounts for all the unfortunate extra arguments.
+    /// Analyze a script text and find the closure of its references. 
+    /// Used from FCS, when editing a script file.  
+    //
+    /// A temporary TcConfig is created along the way, is why this routine takes so many arguments. We want to be sure to use exactly the
+    /// same arguments as the rest of the application.
     static member ComputeClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename:string, source:string, codeContext, useSimpleResolution:bool, useFsiAuxLib, lexResourceManager:Lexhelp.LexResourceManager, applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage) : LoadClosure = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
         ScriptPreprocessClosure.GetFullClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, source, codeContext, useSimpleResolution, useFsiAuxLib, lexResourceManager, applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage)
 
     /// Analyze a set of script files and find the closure of their references. The resulting references are then added to the given TcConfig.
-    /// Used from fsc.exe and fsi.exe when executing a script file.  
+    /// Used from fsi.fs and fsc.fs, for #load and command line. 
     static member ComputeClosureOfScriptFiles (ctok, tcConfig:TcConfig, files:(string*range) list, codeContext, lexResourceManager:Lexhelp.LexResourceManager) = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
         ScriptPreprocessClosure.GetFullClosureOfScriptFiles (ctok, tcConfig, files, codeContext, lexResourceManager)

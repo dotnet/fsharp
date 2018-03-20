@@ -14,6 +14,7 @@ open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.IL
+open Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.CompileOptions
@@ -1718,10 +1719,16 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                     | Some idx -> Some(commandLineArgs.[idx].Substring(switchstring.Length))
                     | _ -> None
 
-                let reduceMemoryUsage = true
-
                 // see also fsc.fs:runFromCommandLineToImportingAssemblies(), as there are many similarities to where the PS creates a tcConfigB
-                let tcConfigB = TcConfigBuilder.CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, implicitIncludeDir=projectDirectory, reduceMemoryUsage=reduceMemoryUsage, isInteractive=false, isInvalidationSupported=true, defaultCopyFSharpCore=false, tryGetMetadataSnapshot=tryGetMetadataSnapshot) 
+                let tcConfigB = 
+                    TcConfigBuilder.CreateNew(legacyReferenceResolver, 
+                         defaultFSharpBinariesDir, 
+                         implicitIncludeDir=projectDirectory, 
+                         reduceMemoryUsage=ReduceMemoryFlag.Yes, 
+                         isInteractive=false, 
+                         isInvalidationSupported=true, 
+                         defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
+                         tryGetMetadataSnapshot=tryGetMetadataSnapshot) 
 
                 tcConfigB.resolutionEnvironment <- (ReferenceResolver.ResolutionEnvironment.EditingOrCompilation true)
 
