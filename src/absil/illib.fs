@@ -1251,3 +1251,12 @@ module Shim =
                 System.Text.Encoding.GetEncoding(n)
 
     let mutable FileSystem = DefaultFileSystem() :> IFileSystem 
+    let readChunk (fileName, start, len) = 
+        use stream = FileSystem.FileStreamReadShim fileName
+        stream.Seek(int64 start, SeekOrigin.Begin) |> ignore
+        let buffer = Array.zeroCreate  len 
+        let mutable n = 0
+        while n < len do 
+            n <- n + stream.Read(buffer, n, len-n)
+        buffer
+

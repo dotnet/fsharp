@@ -988,6 +988,7 @@ type MethodBody =
     | PInvoke of PInvokeMethod       (* platform invoke to native  *)
     | Abstract
     | Native
+    | NotAvailable
 
 // REVIEW: fold this into ILMethodDef.
 [<RequireQualifiedAccess>]
@@ -1394,7 +1395,8 @@ type ILResourceAccess =
 
 [<RequireQualifiedAccess>]
 type ILResourceLocation = 
-    | Local of (unit -> byte[])  (* resources may be re-read each time this function is called *)
+    | LocalIn of string * int * int //(unit -> byte[])  (* resources may be re-read each time this function is called *)
+    | LocalOut of byte[] //string * int * int //(unit -> byte[])  (* resources may be re-read each time this function is called *)
     | File of ILModuleRef * int32
     | Assembly of ILAssemblyRef
 
@@ -1408,7 +1410,7 @@ type ILResource =
       Access: ILResourceAccess;
       CustomAttrs: ILAttributes }
     /// Read the bytes from a resource local to an assembly
-    member Bytes : byte[]
+    member GetBytes : unit -> byte[]
 
 /// Table of resources in a module.
 [<NoEquality; NoComparison>]
@@ -1455,7 +1457,12 @@ type ILAssemblyManifest =
       /// Records whether the entrypoint resides in another module. 
       EntrypointElsewhere: ILModuleRef option;
     } 
-    
+
+[<RequireQualifiedAccess>]
+type ILNativeResource = 
+    | In of fileName: string * linkedResourceBase: int * linkedResourceStart: int * linkedResourceLength: int
+    | Out of unlinkedResource: byte[]
+
 /// One module in the "current" assembly, either a main-module or
 /// an auxiliary module.  The main module will have a manifest.
 ///
@@ -1481,8 +1488,8 @@ type ILModuleDef =
       ImageBase: int32;
       MetadataVersion: string;
       Resources: ILResources; 
-      /// e.g. win86 resources, as the exact contents of a .res or .obj file. 
-      NativeResources: Lazy<byte[]> list;  }
+      /// e.g. win86 resources, as the exact contents of a .res or .obj file. Must be unlinked manually.
+      NativeResources: ILNativeResource list;  }
     member ManifestOfAssembly: ILAssemblyManifest 
     member HasManifest : bool
 
@@ -1831,7 +1838,6 @@ val mkILExportedTypes: ILExportedTypeOrForwarder list -> ILExportedTypesAndForwa
 val mkILExportedTypesLazy: Lazy<ILExportedTypeOrForwarder list> ->   ILExportedTypesAndForwarders
 
 val mkILResources: ILResource list -> ILResources
-val mkILResourcesLazy: Lazy<ILResource list> -> ILResources
 
 /// Making modules.
 val mkILSimpleModule: assemblyName:string -> moduleName:string -> dll:bool -> subsystemVersion : (int * int) -> useHighEntropyVA : bool -> ILTypeDefs -> int32 option -> string option -> int -> ILExportedTypesAndForwarders -> string -> ILModuleDef

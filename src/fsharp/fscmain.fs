@@ -55,7 +55,7 @@ module Driver =
             MSBuildReferenceResolver.Resolver
 #endif
 
-        mainCompile (ctok, argv, legacyReferenceResolver, (*bannerAlreadyPrinted*)false, (*optimizeForMemory*)false, (*defaultCopyFSharpCore*)true, quitProcessExiter, ConsoleLoggerProvider(), None, None)
+        mainCompile (ctok, argv, legacyReferenceResolver, (*bannerAlreadyPrinted*)false, (*reduceMemoryUsage*)false, (*defaultCopyFSharpCore*)true, quitProcessExiter, ConsoleLoggerProvider(), None, None)
         0 
 
 [<EntryPoint>]

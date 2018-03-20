@@ -1324,6 +1324,7 @@ type MethodBody =
     | PInvoke of PInvokeMethod       (* platform invoke to native  *)
     | Abstract
     | Native
+    | NotAvailable
 
 type ILLazyMethodBody = 
     | ILLazyMethodBody of Lazy<MethodBody >
@@ -1793,7 +1794,8 @@ type ILResourceAccess =
 
 [<RequireQualifiedAccess>]
 type ILResourceLocation =
-    | Local of (unit -> byte[])
+    | LocalIn of string * int * int
+    | LocalOut of byte[]
     | File of ILModuleRef * int32
     | Assembly of ILAssemblyRef
 
@@ -1802,15 +1804,16 @@ type ILResource =
       Location: ILResourceLocation;
       Access: ILResourceAccess;
       CustomAttrs: ILAttributes }
-    /// Read the bytes from a resource local to an assembly
-    member r.Bytes = 
-        match r.Location with 
-        | ILResourceLocation.Local b -> b()
-        | _ -> failwith "Bytes"
+    member r.GetBytes() = 
+        match r.Location with
+        | ILResourceLocation.LocalIn (file, start, len) -> 
+            FileSystem.ReadAllBytesShim(file).[start .. start + len - 1]
+        | ILResourceLocation.LocalOut bytes -> bytes
+        | _ -> failwith "GetBytes"
 
 type ILResources = 
-    | ILResources of Lazy<ILResource list>
-    member x.AsList = let (ILResources ltab) = x in (ltab.Force())
+    | ILResources of ILResource list
+    member x.AsList = let (ILResources ltab) = x in ltab
 
 // -------------------------------------------------------------------- 
 // One module in the "current" assembly
@@ -1846,6 +1849,11 @@ type ILAssemblyManifest =
       EntrypointElsewhere: ILModuleRef option; 
     } 
 
+[<RequireQualifiedAccess>]
+type ILNativeResource = 
+    | In of fileName: string * linkedResourceBase: int * linkedResourceStart: int * linkedResourceLength: int
+    | Out of unlinkedResource: byte[]
+
 type ILModuleDef = 
     { Manifest: ILAssemblyManifest option;
       CustomAttrs: ILAttributes;
@@ -1867,7 +1875,7 @@ type ILModuleDef =
       ImageBase: int32;
       MetadataVersion: string;
       Resources: ILResources;
-      NativeResources: list<Lazy<byte[]>>; (* e.g. win32 resources *)
+      NativeResources: ILNativeResource list; (* e.g. win32 resources *)
     }
     member x.ManifestOfAssembly = 
         match x.Manifest with 
@@ -2697,8 +2705,7 @@ let mkILNestedExportedTypes l =
 let mkILNestedExportedTypesLazy (l:Lazy<_>) =  
     ILNestedExportedTypes (lazy (List.foldBack addNestedExportedTypeToTable (l.Force()) Map.empty))
 
-let mkILResources l =  ILResources (notlazy l)
-let mkILResourcesLazy l =  ILResources l
+let mkILResources l =  ILResources l
 
 let addMethodImplToTable y tab =
     let key = (y.Overrides.MethodRef.Name,y.Overrides.MethodRef.ArgTypes.Length)
@@ -3685,7 +3692,8 @@ and refs_of_exported_types s (tab: ILExportedTypesAndForwarders) = List.iter (re
     
 and refs_of_resource_where s x = 
     match x with 
-    | ILResourceLocation.Local _ -> ()
+    | ILResourceLocation.LocalIn _ -> ()
+    | ILResourceLocation.LocalOut _ -> ()
     | ILResourceLocation.File (mref,_) -> refs_of_modref s mref
     | ILResourceLocation.Assembly aref -> refs_of_assref s aref
 

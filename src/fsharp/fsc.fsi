@@ -32,7 +32,7 @@ val typecheckAndCompile :
     argv : string[] * 
     legacyReferenceResolver: ReferenceResolver.Resolver * 
     bannerAlreadyPrinted : bool * 
-    optimizeForMemory: bool * 
+    reduceMemoryUsage: bool * 
     defaultCopyFSharpCore: bool * 
     exiter : Exiter *
     loggerProvider: ErrorLoggerProvider *
@@ -45,7 +45,7 @@ val mainCompile :
     argv: string[] * 
     legacyReferenceResolver: ReferenceResolver.Resolver * 
     bannerAlreadyPrinted: bool * 
-    optimizeForMemory: bool * 
+    reduceMemoryUsage: bool * 
     defaultCopyFSharpCore: bool * 
     exiter: Exiter * 
     loggerProvider: ErrorLoggerProvider * 
@@ -56,7 +56,7 @@ val mainCompile :
 val compileOfAst : 
     ctok: CompilationThreadToken *
     legacyReferenceResolver: ReferenceResolver.Resolver * 
-    optimizeForMemory: bool * 
+    reduceMemoryUsage: bool * 
     assemblyName:string * 
     target:CompilerTarget * 
     targetDll:string * 

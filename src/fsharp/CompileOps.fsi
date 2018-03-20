@@ -6,7 +6,9 @@ module internal Microsoft.FSharp.Compiler.CompileOps
 open System
 open System.Text
 open System.Collections.Generic
+open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.IL
+open Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.TypeChecker
@@ -227,6 +229,7 @@ type VersionFlag =
     member GetVersionInfo: implicitIncludeDir:string -> ILVersionInfo
     member GetVersionString: implicitIncludeDir:string -> string
 
+[<NoEquality; NoComparison>]
 type TcConfigBuilder =
     { mutable primaryAssembly: PrimaryAssembly
       mutable autoResolveOpenDirectivesToDlls: bool
@@ -255,7 +258,7 @@ type TcConfigBuilder =
       mutable referencedDLLs: AssemblyReference  list
       mutable projectReferences: IProjectReference list
       mutable knownUnresolvedReferences: UnresolvedAssemblyReference list
-      optimizeForMemory: bool
+      reduceMemoryUsage: bool
       mutable subsystemVersion: int * int
       mutable useHighEntropyVA: bool
       mutable inputCodePage: int option
@@ -354,6 +357,10 @@ type TcConfigBuilder =
       mutable exename: string option 
       mutable copyFSharpCore: bool
       mutable shadowCopyReferences: bool
+
+      /// A function to call to try to get an object that acts as a snapshot of the metadata section of a .NET binary,
+      /// and from which we can read the metadata. Only used when metadataOnly=true.
+      mutable tryGetMetadataSnapshot : ILReaderTryGetMetadataSnapshot
     }
 
     static member Initial: TcConfigBuilder
@@ -361,11 +368,13 @@ type TcConfigBuilder =
     static member CreateNew: 
         legacyReferenceResolver: ReferenceResolver.Resolver *
         defaultFSharpBinariesDir: string * 
-        optimizeForMemory: bool * 
+        reduceMemoryUsage: bool * 
         implicitIncludeDir: string * 
         isInteractive: bool * 
         isInvalidationSupported: bool *
-        defaultCopyFSharpCore: bool -> TcConfigBuilder
+        defaultCopyFSharpCore: bool *
+        tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot 
+          -> TcConfigBuilder
 
     member DecideNames: string list -> outfile: string * pdbfile: string option * assemblyName: string 
     member TurnWarningOff: range * string -> unit
@@ -406,7 +415,7 @@ type TcConfig =
     member subsystemVersion: int * int
     member useHighEntropyVA: bool
     member referencedDLLs: AssemblyReference list
-    member optimizeForMemory: bool
+    member reduceMemoryUsage: bool
     member inputCodePage: int option
     member embedResources: string list
     member errorSeverityOptions: FSharpErrorSeverityOptions
@@ -631,6 +640,9 @@ val WriteSignatureData: TcConfig * TcGlobals * Tastops.Remap * CcuThunk * filena
 /// Write F# optimization data as an IL resource
 val WriteOptimizationData: TcGlobals * filename: string * inMem: bool * CcuThunk * Optimizer.LazyModuleInfo -> ILResource
 
+//----------------------------------------------------------------------------
+// #r and other directives
+//--------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
 // #r and other directives
@@ -777,7 +789,7 @@ type LoadClosure =
       LoadClosureRootFileDiagnostics: (PhasedDiagnostic * bool) list }   
 
     // Used from service.fs, when editing a script file
-    static member ComputeClosureOfSourceText: CompilationThreadToken * legacyReferenceResolver: ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * filename: string * source: string * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) * assumeDotNetFramework: bool -> LoadClosure
+    static member ComputeClosureOfScriptText: CompilationThreadToken * legacyReferenceResolver: ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * filename: string * source: string * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) * assumeDotNetFramework: bool * tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot * reduceMemoryUsage: bool -> LoadClosure
 
     /// Used from fsi.fs and fsc.fs, for #load and command line. The resulting references are then added to a TcConfig.
-    static member ComputeClosureOfSourceFiles: CompilationThreadToken * tcConfig:TcConfig * (string * range) list * implicitDefines:CodeContext * lexResourceManager: Lexhelp.LexResourceManager -> LoadClosure
+    static member ComputeClosureOfScriptFiles: CompilationThreadToken * tcConfig:TcConfig * (string * range) list * implicitDefines:CodeContext * lexResourceManager: Lexhelp.LexResourceManager -> LoadClosure

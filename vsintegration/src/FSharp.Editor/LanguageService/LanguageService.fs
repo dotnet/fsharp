@@ -35,14 +35,32 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.ComponentModelHost
 open Microsoft.VisualStudio.Text.Outlining
+open FSharp.NativeInterop
+
+#nowarn "9" // NativePtr.toNativeInt
 
 // Exposes FSharpChecker as MEF export
 [<Export(typeof<FSharpCheckerProvider>); Composition.Shared>]
 type internal FSharpCheckerProvider 
     [<ImportingConstructor>]
     (
-        analyzerService: IDiagnosticAnalyzerService
+        analyzerService: IDiagnosticAnalyzerService,
+        metadataManager : VisualStudioMetadataReferenceManager
     ) =
+
+    let tryGetMetadataSnapshot (path, timeStamp) = 
+        try 
+            let md = metadataManager.GetMetadata(path, timeStamp)
+            let amd = (md :?> AssemblyMetadata)
+            let mmd = amd.GetModules().[0]
+            let mmr = mmd.GetMetadataReader()
+            let objToHold = box md
+            // "lifetime is timed to Metadata you got from the GetMetadata(…). As long as you hold it strongly, raw 
+            // memory we got from metadata reader will be alive. Once you are done, just let everything go and 
+            // let finalizer handle resource rather than calling Dispose from Metadata directly. It is shared metadata. 
+            // You shouldn’t dispose it directly."
+            Some (objToHold, NativePtr.toNativeInt mmr.MetadataPointer, mmr.MetadataLength)
+        with _ -> None // We catch all and let the backup routines in the F# compiler find the error
 
     // Enabling this would mean that if devenv.exe goes above 2.3GB we do a one-off downsize of the F# Compiler Service caches
     //let maxMemory = 2300 
@@ -54,7 +72,8 @@ type internal FSharpCheckerProvider
                     projectCacheSize = Settings.LanguageServicePerformance.ProjectCheckCacheSize, 
                     keepAllBackgroundResolutions = false,
                     (* , MaxMemory = 2300 *) 
-                    legacyReferenceResolver=Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver)
+                    legacyReferenceResolver=Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver,
+                    tryGetMetadataSnapshot = tryGetMetadataSnapshot)
 
             // This is one half of the bridge between the F# background builder and the Roslyn analysis engine.
             // When the F# background builder refreshes the background semantic build context for a file,

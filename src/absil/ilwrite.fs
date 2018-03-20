@@ -2680,17 +2680,18 @@ and GenEventPass3 cenv env (md: ILEventDef) =
 let rec GetResourceAsManifestResourceRow cenv r = 
     let data, impl = 
       match r.Location with
-      | ILResourceLocation.Local bf ->
-          let b = bf()
+      | ILResourceLocation.LocalIn _
+      | ILResourceLocation.LocalOut _ ->
+          let bytes = r.GetBytes()
           // Embedded managed resources must be word-aligned.  However resource format is 
           // not specified in ECMA.  Some mscorlib resources appear to be non-aligned - it seems it doesn't matter.. 
           let offset = cenv.resources.Position
           let alignedOffset =  (align 0x8 offset)
           let pad = alignedOffset - offset
-          let resourceSize = b.Length
+          let resourceSize = bytes.Length
           cenv.resources.EmitPadding pad
           cenv.resources.EmitInt32 resourceSize
-          cenv.resources.EmitBytes b
+          cenv.resources.EmitBytes bytes
           Data (alignedOffset, true),  (i_File, 0) 
       | ILResourceLocation.File (mref, offset) -> ULong offset, (i_File, GetModuleRefAsFileIdx cenv mref)
       | ILResourceLocation.Assembly aref -> ULong 0x0, (i_AssemblyRef, GetAssemblyRefAsIdx cenv aref)
@@ -3712,7 +3713,13 @@ let writeBinaryAndReportMappings (outfile,
                   ignore resourceFormat
                   [||]
 #else
-                  let unlinkedResources = List.map Lazy.force resources
+                  let unlinkedResources = 
+                      resources |> List.map (function 
+                          | ILNativeResource.Out bytes -> bytes
+                          | ILNativeResource.In (fileName, linkedResourceBase, start, len) -> 
+                               let linkedResource = readChunk (fileName, start, len)
+                               unlinkResource linkedResourceBase linkedResource)
+                               
                   begin
                     try linkNativeResources unlinkedResources next resourceFormat (Path.GetDirectoryName(outfile))
                     with e -> failwith ("Linking a native resource failed: "+e.Message+"")

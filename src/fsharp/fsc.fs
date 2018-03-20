@@ -206,7 +206,7 @@ let AdjustForScriptCompile(ctok, tcConfigB:TcConfigBuilder, commandLineSourceFil
     
     let AppendClosureInformation(filename) =
         if IsScript filename then 
-            let closure = LoadClosure.ComputeClosureOfSourceFiles(ctok, tcConfig, [filename, rangeStartup], CodeContext.Compilation, lexResourceManager=lexResourceManager)
+            let closure = LoadClosure.ComputeClosureOfScriptFiles(ctok, tcConfig, [filename, rangeStartup], CodeContext.Compilation, lexResourceManager=lexResourceManager)
             // Record the references from the analysis of the script. The full resolutions are recorded as the corresponding #I paths used to resolve them
             // are local to the scripts and not added to the tcConfigB (they are added to localized clones of the tcConfigB).
             let references = closure.References |> List.collect snd |> List.filter (fun r->r.originalReference.Range<>range0 && r.originalReference.Range<>rangeStartup)
@@ -215,7 +215,7 @@ let AdjustForScriptCompile(ctok, tcConfigB:TcConfigBuilder, commandLineSourceFil
             closure.SourceFiles |> List.map fst |> List.iter AddIfNotPresent
             closure.AllRootFileDiagnostics |> List.iter diagnosticSink
             
-            else AddIfNotPresent(filename)
+        else AddIfNotPresent(filename)
          
     // Find closure of .fsx files.
     commandLineSourceFiles |> List.iter AppendClosureInformation
@@ -437,7 +437,7 @@ let EncodeInterfaceData(tcConfig: TcConfig, tcGlobals, exportRemapping, generate
         let useDataFiles = (tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib) && not isIncrementalBuild
         if useDataFiles then 
             let sigDataFileName = (Filename.chopExtension outfile)+".sigdata"
-            File.WriteAllBytes(sigDataFileName, resource.Bytes)
+            File.WriteAllBytes(sigDataFileName, resource.GetBytes())
         let resources = 
             [ resource ]
         let sigAttr = mkSignatureDataVersionAttr tcGlobals (IL.parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision) 
@@ -857,7 +857,7 @@ module MainModuleBuilder =
                         [  ]
                 let reflectedDefinitionResource = 
                   { Name=reflectedDefinitionResourceName
-                    Location = ILResourceLocation.Local (fun () -> reflectedDefinitionBytes)
+                    Location = ILResourceLocation.LocalOut reflectedDefinitionBytes
                     Access= ILResourceAccess.Public
                     CustomAttrs = emptyILCustomAttrs }
                 reflectedDefinitionAttrs, reflectedDefinitionResource) 
@@ -900,7 +900,7 @@ module MainModuleBuilder =
                          let bytes = FileSystem.ReadAllBytesShim file
                          name, bytes, pub
                  yield { Name=name 
-                         Location=ILResourceLocation.Local (fun () -> bytes) 
+                         Location=ILResourceLocation.LocalOut bytes
                          Access=pub 
                          CustomAttrs=emptyILCustomAttrs }
                
@@ -1013,12 +1013,12 @@ module MainModuleBuilder =
 #endif
         let nativeResources = 
             [ for av in assemblyVersionResources findAttribute assemblyVersion do
-                  yield Lazy<_>.CreateFromValue av
+                  yield ILNativeResource.Out av
               if not(tcConfig.win32res = "") then
-                  yield Lazy<_>.CreateFromValue (FileSystem.ReadAllBytesShim tcConfig.win32res) 
+                  yield ILNativeResource.Out (FileSystem.ReadAllBytesShim tcConfig.win32res) 
               if tcConfig.includewin32manifest && not(win32Manifest = "") && not runningOnMono then
-                  yield  Lazy<_>.CreateFromValue [|   yield! ResFileFormat.ResFileHeader() 
-                                                      yield! (ManifestResourceFormat.VS_MANIFEST_RESOURCE((FileSystem.ReadAllBytesShim win32Manifest), tcConfig.target = Dll)) |]]
+                  yield  ILNativeResource.Out [| yield! ResFileFormat.ResFileHeader() 
+                                                 yield! (ManifestResourceFormat.VS_MANIFEST_RESOURCE((FileSystem.ReadAllBytesShim win32Manifest), tcConfig.target = Dll)) |]]
 
         // Add attributes, version number, resources etc. 
         {mainModule with 
@@ -1122,7 +1122,6 @@ module StaticLinker =
 
             let moduls = ilxMainModule :: (List.map snd dependentILModules)
 
-            // NOTE: version resources from statically linked DLLs are dropped in the binary reader/writer
             let savedNativeResources = 
                 [ //yield! ilxMainModule.NativeResources 
                   for m in moduls do 
@@ -1161,9 +1160,11 @@ module StaticLinker =
             let ilGlobals = mkILGlobals ILScopeRef.Local
             let opts : ILBinaryReader.ILReaderOptions = 
                 { ilGlobals = ilGlobals
-                  optimizeForMemory = tcConfig.optimizeForMemory
+                  reduceMemoryUsage = false
+                  metadataOnly = false
+                  tryGetMetadataSnapshot = (fun _ -> None)
                   pdbPath = None 
-                  stableFileHeuristic = true } 
+                  stableFileHeuristic = false } 
             ILBinaryReader.OpenILModuleReader mscorlib40 opts
               
         let tdefs1 = ilxMainModule.TypeDefs.AsList  |> List.filter (fun td -> not (MainModuleBuilder.injectedCompatTypes.Contains(td.Name)))
@@ -1216,7 +1217,7 @@ module StaticLinker =
           mutable visited: bool }
 
     // Find all IL modules that are to be statically linked given the static linking roots.
-    let FindDependentILModulesForStaticLinking (ctok, tcConfig:TcConfig, tcImports:TcImports, ilxMainModule) = 
+    let FindDependentILModulesForStaticLinking (ctok, tcConfig:TcConfig, tcImports:TcImports, ilGlobals, ilxMainModule) = 
         if not tcConfig.standalone && tcConfig.extraStaticLinkRoots.IsEmpty then 
             []
         else
@@ -1247,7 +1248,32 @@ module StaticLinker =
                                     | ResolvedCcu ccu -> Some ccu
                                     | UnresolvedCcu(_ccuName) -> None
 
-                                let modul = dllInfo.RawMetadata.TryGetRawILModule().Value
+                                let fileName = dllInfo.FileName
+                                let modul = 
+                                    let pdbPathOption = 
+                                        // We open the pdb file if one exists parallel to the binary we 
+                                        // are reading, so that --standalone will preserve debug information. 
+                                        if tcConfig.openDebugInformationForLaterStaticLinking then 
+                                            let pdbDir = (try Filename.directoryName fileName with _ -> ".") 
+                                            let pdbFile = (try Filename.chopExtension fileName with _ -> fileName)+".pdb" 
+                                            if FileSystem.SafeExists pdbFile then 
+                                                if verbose then dprintf "reading PDB file %s from directory %s during static linking\n" pdbFile pdbDir
+                                                Some pdbDir
+                                            else 
+                                                None 
+                                        else   
+                                            None
+
+                                    let opts : ILBinaryReader.ILReaderOptions = 
+                                        { ilGlobals = ilGlobals
+                                          metadataOnly = false // turn this off here as we need the actual IL code
+                                          reduceMemoryUsage = false
+                                          pdbPath = pdbPathOption
+                                          tryGetMetadataSnapshot = (fun _ -> None)
+                                          stableFileHeuristic = false } 
+
+                                    let reader = ILBinaryReader.OpenILModuleReader dllInfo.FileName opts
+                                    reader.ILModuleDef
 
                                 let refs = 
                                     if ilAssemRef.Name = GetFSharpCoreLibraryName() then 
@@ -1348,7 +1374,7 @@ module StaticLinker =
             (fun ilxMainModule  ->
               ReportTime tcConfig "Find assembly references"
 
-              let dependentILModules = FindDependentILModulesForStaticLinking (ctok, tcConfig, tcImports, ilxMainModule)
+              let dependentILModules = FindDependentILModulesForStaticLinking (ctok, tcConfig, tcImports, ilGlobals, ilxMainModule)
 
               ReportTime tcConfig "Static link"
 
@@ -1617,7 +1643,7 @@ let CopyFSharpCore(outFile: string, referencedDlls: AssemblyReference list) =
 [<NoEquality; NoComparison>]
 type Args<'T> = Args  of 'T
 
-let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, optimizeForMemory:bool, defaultCopyFSharpCore: bool, exiter:Exiter, errorLoggerProvider : ErrorLoggerProvider, disposables : DisposablesTracker) = 
+let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage:bool, defaultCopyFSharpCore: bool, exiter:Exiter, errorLoggerProvider : ErrorLoggerProvider, disposables : DisposablesTracker) = 
 
     // See Bug 735819 
     let lcidFromCodePage = 
@@ -1648,7 +1674,8 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, optimizeFor
                     if not bannerAlreadyPrinted then 
                         DisplayBannerText tcConfigB
 
-    let tcConfigB = TcConfigBuilder.CreateNew(legacyReferenceResolver, DefaultFSharpBinariesDir, optimizeForMemory=optimizeForMemory, implicitIncludeDir=directoryBuildingFrom, isInteractive=false, isInvalidationSupported=false, defaultCopyFSharpCore=defaultCopyFSharpCore)
+    let tryGetMetadataSnapshot = (fun _ -> None)
+    let tcConfigB = TcConfigBuilder.CreateNew(legacyReferenceResolver, DefaultFSharpBinariesDir, reduceMemoryUsage=reduceMemoryUsage, implicitIncludeDir=directoryBuildingFrom, isInteractive=false, isInvalidationSupported=false, defaultCopyFSharpCore=defaultCopyFSharpCore, tryGetMetadataSnapshot=tryGetMetadataSnapshot)
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     SetOptimizeSwitch tcConfigB OptionSwitch.On
     SetDebugSwitch    tcConfigB None OptionSwitch.Off
@@ -1836,9 +1863,10 @@ let main1(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
 
 
 // set up typecheck for given AST without parsing any command line parameters
-let main1OfAst (ctok, legacyReferenceResolver, optimizeForMemory, assemblyName, target, outfile, pdbFile, dllReferences, noframework, exiter, errorLoggerProvider: ErrorLoggerProvider, inputs : ParsedInput list) =
+let main1OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target, outfile, pdbFile, dllReferences, noframework, exiter, errorLoggerProvider: ErrorLoggerProvider, inputs : ParsedInput list) =
 
-    let tcConfigB = TcConfigBuilder.CreateNew(legacyReferenceResolver, DefaultFSharpBinariesDir, optimizeForMemory=optimizeForMemory, implicitIncludeDir=Directory.GetCurrentDirectory(), isInteractive=false, isInvalidationSupported=false, defaultCopyFSharpCore=false)
+    let tryGetMetadataSnapshot = (fun _ -> None)
+    let tcConfigB = TcConfigBuilder.CreateNew(legacyReferenceResolver, DefaultFSharpBinariesDir, reduceMemoryUsage=reduceMemoryUsage, implicitIncludeDir=Directory.GetCurrentDirectory(), isInteractive=false, isInvalidationSupported=false, defaultCopyFSharpCore=false, tryGetMetadataSnapshot=tryGetMetadataSnapshot)
     tcConfigB.framework <- not noframework 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     SetOptimizeSwitch tcConfigB OptionSwitch.On
@@ -2039,12 +2067,12 @@ let main4 dynamicAssemblyCreator (Args (ctok, tcConfig, errorLogger: ErrorLogger
 //-----------------------------------------------------------------------------
 
 /// Entry point typecheckAndCompile
-let typecheckAndCompile (ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, optimizeForMemory, defaultCopyFSharpCore, exiter:Exiter, errorLoggerProvider, tcImportsCapture, dynamicAssemblyCreator) =
+let typecheckAndCompile (ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage, defaultCopyFSharpCore, exiter:Exiter, errorLoggerProvider, tcImportsCapture, dynamicAssemblyCreator) =
 
     use d = new DisposablesTracker()
     use e = new SaveAndRestoreConsoleEncoding()
 
-    main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, optimizeForMemory, defaultCopyFSharpCore, exiter, errorLoggerProvider, d)
+    main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage, defaultCopyFSharpCore, exiter, errorLoggerProvider, d)
     |> main1
     |> main2a
     |> main2b (tcImportsCapture,dynamicAssemblyCreator)
@@ -2052,14 +2080,14 @@ let typecheckAndCompile (ctok, argv, legacyReferenceResolver, bannerAlreadyPrint
     |> main4 dynamicAssemblyCreator
 
 
-let compileOfAst (ctok, legacyReferenceResolver, optimizeForMemory, assemblyName, target, outFile, pdbFile, dllReferences, noframework, exiter, errorLoggerProvider, inputs, tcImportsCapture, dynamicAssemblyCreator) = 
-    main1OfAst (ctok, legacyReferenceResolver, optimizeForMemory, assemblyName, target, outFile, pdbFile, dllReferences, noframework, exiter, errorLoggerProvider, inputs)
+let compileOfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target, outFile, pdbFile, dllReferences, noframework, exiter, errorLoggerProvider, inputs, tcImportsCapture, dynamicAssemblyCreator) = 
+    main1OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target, outFile, pdbFile, dllReferences, noframework, exiter, errorLoggerProvider, inputs)
     |> main2a
     |> main2b (tcImportsCapture, dynamicAssemblyCreator)
     |> main3
     |> main4 dynamicAssemblyCreator
 
-let mainCompile (ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, optimizeForMemory, defaultCopyFSharpCore, exiter, errorLoggerProvider, tcImportsCapture, dynamicAssemblyCreator) = 
+let mainCompile (ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage, defaultCopyFSharpCore, exiter, errorLoggerProvider, tcImportsCapture, dynamicAssemblyCreator) = 
     //System.Runtime.GCSettings.LatencyMode <- System.Runtime.GCLatencyMode.Batch
-    typecheckAndCompile(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, optimizeForMemory, defaultCopyFSharpCore, exiter, errorLoggerProvider, tcImportsCapture, dynamicAssemblyCreator)
+    typecheckAndCompile(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemoryUsage, defaultCopyFSharpCore, exiter, errorLoggerProvider, tcImportsCapture, dynamicAssemblyCreator)
 

@@ -24,7 +24,7 @@
 ///     class.  That is not particularly satisfactory, and it may be
 ///     a good idea to build a small library which extracts the information
 ///     you need.  
-module internal Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader 
+module Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader 
 
 open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL 
@@ -33,40 +33,52 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.ErrorLogger
 open System.IO
 
+/// Used to implement a Binary file over native memory, used by Roslyn integration
+type ILReaderMetadataSnapshot = (obj * nativeint * int) 
+type ILReaderTryGetMetadataSnapshot = (* path: *) string * (* snapshotTimeStamp: *) System.DateTime -> ILReaderMetadataSnapshot option
 
-type ILReaderOptions =
-   { pdbPath: string option;
+type internal ILReaderOptions =
+   { pdbPath: string option
 
-     ilGlobals: ILGlobals;
+     ilGlobals: ILGlobals
 
-     // fsc.exe does not uses optimizeForMemory (hence keeps MORE caches in AbstractIL and MORE memory mapping and MORE memory hogging)
-     // fsi.exe does use optimizeForMemory (hence keeps FEWER caches in AbstractIL and LESS memory mapping and LESS memory hogging), because its long running
-     // Visual Studio does use optimizeForMemory (hence keeps FEWER caches in AbstractIL and LESS memory mapping and LESS memory hogging), because its long running
-     optimizeForMemory: bool  
+     // fsc.exe does not use reduceMemoryUsage (hence keeps MORE caches in AbstractIL and MORE memory mapping and MORE memory hogging but FASTER and SIMPLER file access)
+     // fsi.exe does uses reduceMemoryUsage (hence keeps FEWER caches in AbstractIL and LESS memory mapping and LESS memory hogging but slightly SLOWER file access), because its long running
+     // FCS uses reduceMemoryUsage (hence keeps FEWER caches in AbstractIL and LESS memory mapping and LESS memory hogging), because it is typically long running
+     reduceMemoryUsage: bool
+
+     /// Only open a metadata reader for the metadata portion of the .NET binary without keeping alive any data associated with the PE reader
+     /// - IL code will not be available (mdBody in ILMethodDef will return NotAvailable)
+     /// - Managed resources will be reported back as ILResourceLocation.LocalIn (as always)
+     /// - Native resources will not be available (none will be returned)
+     /// - Static data associated with fields will not be available
+     metadataOnly: bool
+
+     /// A function to call to try to get an object that acts as a snapshot of the metadata section of a .NET binary,
+     /// and from which we can read the metadata. Only used when metadataOnly=true.
+     tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot
 
      /// Indicates that the backing file will be stable and can be re-read if the implementation wants to release in-memory resources
-     /// Normally the same as optimizeForMemory
+     /// Normally the same as reduceMemoryUsage
      stableFileHeuristic: bool }
 
-// The non-memory resources (i.e. the file handle) associated with 
-// the read can be recovered by calling Dispose.  Any remaining 
-// lazily-computed items in the metadata graph returned by MetadataOfILModuleReader 
-// will no longer be valid. 
+/// Represents a reader of the metadata of a .NET binary.  May also give some values (e.g. IL code) from the PE file
+/// if it was provided.
 [<Sealed>]
-type ILModuleReader =
+type internal ILModuleReader =
     member ILModuleDef : ILModuleDef
     member ILAssemblyRefs : ILAssemblyRef list
+    
+    /// ILModuleReader objects only need to be explicitly disposed if memory mapping is used, i.e. reduceMemoryUsage = false
     interface System.IDisposable
     
-val OpenILModuleReader: string -> ILReaderOptions -> ILModuleReader
-
 /// Open a binary reader, except first copy the entire contents of the binary into 
 /// memory, close the file and ensure any subsequent reads happen from the in-memory store. 
 /// PDB files may not be read with this option. 
-val OpenILModuleReader: string -> ILReaderOptions -> ILModuleReader
+val internal OpenILModuleReader: string -> ILReaderOptions -> ILModuleReader
 
 /// Open a binary reader based on the given bytes. 
-val OpenILModuleReaderFromBytes: fileNameForDebugOutput:string -> assemblyContents: byte[] -> options: ILReaderOptions -> ILModuleReader
+val internal OpenILModuleReaderFromBytes: fileNameForDebugOutput:string -> assemblyContents: byte[] -> options: ILReaderOptions -> ILModuleReader
 
 #if STATISTICS
 (* report statistics from all reads *)
