@@ -11,6 +11,7 @@
     <NoWarn>$(NoWarn);1570;1574;1587;1591;3001,3002,3003</NoWarn>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Update="Microsoft.VisualStudio.Package.LanguageService.resx">
+    <EmbeddedResource Include="Microsoft.VisualStudio.Package.LanguageService.resx">
       <Generator>ResXCodeGenerator</Generator>
       <LastGenOutput>Microsoft.VisualStudio.Package.LanguageService.cs</LastGenOutput>
       <CustomToolNamespace>Microsoft.VisualStudio.Package.LanguageServiceResources</CustomToolNamespace>
