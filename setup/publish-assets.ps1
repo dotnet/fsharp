@@ -30,8 +30,11 @@ try {
         "master" {
             $requestUrl = "https://dotnet.myget.org/F/fsharp/vsix/upload"
         }
-        "dev15.6" {
+        "dev15.7" {
             $requestUrl = "https://dotnet.myget.org/F/fsharp-preview/vsix/upload"
+        }
+        "dev15.8" {
+            $requestUrl = "https://dotnet.myget.org/F/fsharp-dev15-8-preview/vsix/upload"
         }
         default {
             Write-Host "Branch [$branchName] is not supported for publishing."

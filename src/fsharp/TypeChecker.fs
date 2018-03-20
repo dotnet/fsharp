@@ -697,13 +697,16 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath env =
             | Some(_, rest) -> rest
             | None -> enclosingNamespacePath
 
-        let ad = env.eAccessRights
-        match ResolveLongIndentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap scopem OpenQualified env.eNameResEnv ad enclosingNamespacePathToOpen true with 
-        | Result modrefs -> 
-            let modrefs = List.map p23 modrefs
-            let openDecl = OpenDeclaration.Create (enclosingNamespacePathToOpen, modrefs, scopem, true)
-            OpenModulesOrNamespaces tcSink g amap scopem false env modrefs openDecl
-        | Exception _ ->  env
+        match enclosingNamespacePathToOpen with
+        | id::rest ->
+            let ad = env.eAccessRights
+            match ResolveLongIndentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap scopem true OpenQualified env.eNameResEnv ad id rest true with 
+            | Result modrefs -> 
+                let modrefs = List.map p23 modrefs
+                let openDecl = OpenDeclaration.Create (enclosingNamespacePathToOpen, modrefs, scopem, true)
+                OpenModulesOrNamespaces tcSink g amap scopem false env modrefs openDecl
+            | Exception _ -> env
+        | _ -> env
 
 
 //-------------------------------------------------------------------------
@@ -6805,7 +6808,7 @@ and TcConstExpr cenv overallTy env m tpenv c  =
         let expr = 
             let modName = "NumericLiteral" + suffix
             let ad = env.eAccessRights
-            match ResolveLongIndentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AtMostOneResult cenv.amap m OpenQualified env.eNameResEnv ad [ident (modName, m)] false with 
+            match ResolveLongIndentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AtMostOneResult cenv.amap m true OpenQualified env.eNameResEnv ad (ident (modName, m)) [] false with 
             | Result []
             | Exception _ -> error(Error(FSComp.SR.tcNumericLiteralRequiresModule(modName), m))
             | Result ((_, mref, _) :: _) -> 
@@ -10632,13 +10635,13 @@ and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute)  =
                   attributeAssignedNamedItems |> List.map (fun (CallerNamedArg(id, CallerArg(argtyv, m, isOpt, callerArgExpr))) ->
                     if isOpt then error(Error(FSComp.SR.tcOptionalArgumentsCannotBeUsedInCustomAttribute(), m))
                     let m = callerArgExpr.Range
-                    let setterItem, _ = ResolveLongIdentInType cenv.tcSink cenv.nameResolver env.NameEnv LookupKind.Expr m ad [id] IgnoreOverrides TypeNameResolutionInfo.Default ty
+                    let setterItem, _ = ResolveLongIdentInType cenv.tcSink cenv.nameResolver env.NameEnv LookupKind.Expr m ad id IgnoreOverrides TypeNameResolutionInfo.Default ty
                     let nm, isProp, argty = 
                       match setterItem with   
                       | Item.Property (_, [pinfo]) -> 
                           if not pinfo.HasSetter then 
                             errorR(Error(FSComp.SR.tcPropertyCannotBeSet0(), m))
-                          id.idText, true, pinfo.GetPropertyType(cenv.amap, m) 
+                          id.idText, true, pinfo.GetPropertyType(cenv.amap, m)
                       | Item.ILField finfo -> 
                           CheckILFieldInfoAccessible cenv.g cenv.amap m ad finfo
                           CheckILFieldAttributes cenv.g finfo m
@@ -12081,10 +12084,13 @@ let TcTyconMemberSpecs cenv env containerInfo declKind tpenv (augSpfn: SynMember
 
 let TcModuleOrNamespaceLidAndPermitAutoResolve tcSink env amap (longId : Ident list) =
     let ad = env.eAccessRights
-    let m = longId |> List.map (fun id -> id.idRange) |> List.reduce unionRanges
-    match ResolveLongIndentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap m OpenQualified env.eNameResEnv ad longId true with 
-    | Result res -> Result res
-    | Exception err ->  raze err
+    match longId with
+    | [] -> Result []
+    | id::rest ->
+        let m = longId |> List.map (fun id -> id.idRange) |> List.reduce unionRanges
+        match ResolveLongIndentAsModuleOrNamespace tcSink ResultCollectionSettings.AllResults amap m true OpenQualified env.eNameResEnv ad id rest true with 
+        | Result res -> Result res
+        | Exception err -> raze err
 
 let TcOpenDecl tcSink (g:TcGlobals) amap m scopem env (longId : Ident list)  = 
     let modrefs = ForceRaise (TcModuleOrNamespaceLidAndPermitAutoResolve tcSink env amap longId)
@@ -13581,12 +13587,17 @@ module MutRecBindingChecking =
     /// Check a "module X = A.B.C" module abbreviation declaration
     let TcModuleAbbrevDecl (cenv:cenv) scopem env (id, p, m) = 
         let ad = env.eAccessRights
-        let mvvs = ForceRaise (ResolveLongIndentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m OpenQualified env.eNameResEnv ad p false)
-        let modrefs = mvvs |> List.map p23 
-        if not (List.isEmpty modrefs) && modrefs |> List.forall (fun modref -> modref.IsNamespace) then 
+        let resolved =
+            match p with
+            | [] -> Result []
+            | id::rest -> ResolveLongIndentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m true OpenQualified env.eNameResEnv ad id rest false
+        let mvvs = ForceRaise resolved
+        if isNil mvvs then env else
+        let modrefs = mvvs |> List.map p23
+        if not (isNil modrefs) && modrefs |> List.forall (fun modref -> modref.IsNamespace) then 
             errorR(Error(FSComp.SR.tcModuleAbbreviationForNamespace(fullDisplayTextOfModRef (List.head modrefs)), m))
         let modrefs = modrefs |> List.filter (fun mvv -> not mvv.IsNamespace)
-        if List.isEmpty modrefs then env else 
+        if isNil modrefs then env else 
         modrefs |> List.iter (fun modref -> CheckEntityAttributes cenv.g modref m |> CommitOperationResult)        
         let env = AddModuleAbbreviationAndReport cenv.tcSink scopem id modrefs env
         env
@@ -14347,7 +14358,7 @@ module TcExceptionDeclarations =
           | None -> 
              TExnFresh (MakeRecdFieldsTable args')
         
-        exnc.entity_exn_info <- repr 
+        exnc.SetExceptionInfo repr 
 
         let item = Item.ExnCase(mkLocalTyconRef exnc)
         CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Binding, env.DisplayEnv, env.eAccessRights)
@@ -14654,10 +14665,10 @@ module EstablishTypeDefinitionCores =
         tycon.SetIsStructRecordOrUnion isStructRecordOrUnionType
 
         // Set the compiled name, if any
-        tycon.entity_compiled_name <- TryFindFSharpStringAttribute cenv.g cenv.g.attrib_CompiledNameAttribute attrs 
+        tycon.SetCompiledName (TryFindFSharpStringAttribute cenv.g cenv.g.attrib_CompiledNameAttribute attrs)
 
         if hasMeasureAttr then 
-            tycon.entity_kind <- TyparKind.Measure
+            tycon.SetTypeOrMeasureKind TyparKind.Measure
             if not (isNil typars) then error(Error(FSComp.SR.tcMeasureDefinitionsCannotHaveTypeParameters(), m))
 
         let repr = 
@@ -14979,7 +14990,7 @@ module EstablishTypeDefinitionCores =
                             errorR(Deprecated(FSComp.SR.tcTypeAbbreviationHasTypeParametersMissingOnType(), tycon.Range))
 
                     if firstPass then
-                        tycon.entity_tycon_abbrev <- Some ty
+                        tycon.SetTypeAbbrev (Some ty)
 
             | _ -> ()
         
@@ -15496,7 +15507,7 @@ module EstablishTypeDefinitionCores =
         graph.IterateCycles (fun path -> 
             let tycon = path.Head 
             // The thing is cyclic. Set the abbreviation and representation to be "None" to stop later VS crashes
-            tycon.entity_tycon_abbrev <- None
+            tycon.SetTypeAbbrev None
             tycon.entity_tycon_repr <- TNoRepr
             errorR(Error(FSComp.SR.tcTypeDefinitionIsCyclic(), tycon.Range)))
 
@@ -15631,7 +15642,7 @@ module EstablishTypeDefinitionCores =
         graph.IterateCycles (fun path -> 
             let tycon = path.Head 
             // The thing is cyclic. Set the abbreviation and representation to be "None" to stop later VS crashes
-            tycon.entity_tycon_abbrev <- None
+            tycon.SetTypeAbbrev None
             tycon.entity_tycon_repr <- TNoRepr
             errorR(Error(FSComp.SR.tcTypeDefinitionIsCyclicThroughInheritance(), tycon.Range)))
         
@@ -16364,7 +16375,11 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
             
         | SynModuleSigDecl.ModuleAbbrev (id, p, m) -> 
             let ad = env.eAccessRights
-            let mvvs = ForceRaise (ResolveLongIndentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m OpenQualified env.eNameResEnv ad p false)
+            let resolved =
+                match p with
+                | [] -> Result []
+                | id::rest -> ResolveLongIndentAsModuleOrNamespace cenv.tcSink ResultCollectionSettings.AllResults cenv.amap m true OpenQualified env.eNameResEnv ad id rest false
+            let mvvs = ForceRaise resolved
             let scopem = unionRanges m endm
             let unfilteredModrefs = mvvs |> List.map p23
             

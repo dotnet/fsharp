@@ -46,6 +46,11 @@
         <Pattern1>{BuildSuffix}</Pattern1>
         <Replacement1></Replacement1>
     </CopyAndSubstituteText>
+    <CopyAndSubstituteText Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\Microsoft.FSharp.Overrides.NetSdk.targets">
+        <TargetFilename>Microsoft.FSharp.Overrides.NetSdk.targets</TargetFilename>
+        <Pattern1>{BuildSuffix}</Pattern1>
+        <Replacement1></Replacement1>
+    </CopyAndSubstituteText>
   </ItemGroup>
 
   <ItemGroup>
