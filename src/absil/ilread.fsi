@@ -87,6 +87,6 @@ type Statistics =
       mutable memoryMapFileOpenedCount : int
       mutable memoryMapFileClosedCount : int
       mutable weakByteArrayFileCount : int
-      mutable byteArrayFileCount : int }
+      mutable byteFileCount : int }
 
 val GetStatistics : unit -> Statistics

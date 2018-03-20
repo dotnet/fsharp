@@ -37,14 +37,16 @@ module Driver =
 
         // Check for --pause as the very first step so that a compiler can be attached here.
         let pauseFlag = argv |> Array.exists  (fun x -> x = "/pause" || x = "--pause")
-        let timesFlag = argv |> Array.exists  (fun x -> x = "/times" || x = "--times")
         if pauseFlag then 
             System.Console.WriteLine("Press return to continue...")
             System.Console.ReadLine() |> ignore
 
+#if !FX_NO_APP_DOMAINS
+        let timesFlag = argv |> Array.exists  (fun x -> x = "/times" || x = "--times")
         if timesFlag then 
             let stats = ILBinaryReader.GetStatistics()
-            AppDomain.CurrentDomain.ProcessExit.Add(fun _ -> printfn "STATS: #ByteArrayFile = %d, #MemoryMappedFileOpen = %d, #MemoryMappedFileClosed = %d, #RawMemoryFile = %d, #WeakByteArrayFile = %d" stats.byteArrayFileCount stats.memoryMapFileOpenedCount stats.memoryMapFileClosedCount stats.rawMemoryFileCount stats.weakByteArrayFileCount)
+            AppDomain.CurrentDomain.ProcessExit.Add(fun _ -> printfn "STATS: #ByteArrayFile = %d, #MemoryMappedFileOpen = %d, #MemoryMappedFileClosed = %d, #RawMemoryFile = %d, #WeakByteArrayFile = %d" stats.byteFileCount stats.memoryMapFileOpenedCount stats.memoryMapFileClosedCount stats.rawMemoryFileCount stats.weakByteArrayFileCount)
+#endif
 
         let quitProcessExiter = 
             { new Exiter with 

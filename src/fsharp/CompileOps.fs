@@ -3083,10 +3083,6 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
         let ext = System.IO.Path.GetExtension(nm)
         let isNetModule = String.Compare(ext, ".netmodule", StringComparison.OrdinalIgnoreCase)=0 
         
-        let unknownToolTip (resolvedPath, resolved) = 
-            let line(append:string) = append.Trim([|' '|])+"\n"
-            line(resolvedPath) + line(resolved)
-
         // See if the language service has already produced the contents of the assembly for us, virtually
         match r.ProjectReference with 
         | Some _ -> 
@@ -3118,25 +3114,13 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
             match resolved with 
             | Some(resolved) -> 
                 let sysdir = tcConfig.IsSystemAssembly resolved
-                let fusionName = 
-                    if isNetModule then ""
-                    else 
-                        try
-                            let readerSettings : ILReaderOptions = 
-                                { pdbPath=None
-                                  ilGlobals = EcmaMscorlibILGlobals
-                                  reduceMemoryUsage = tcConfig.reduceMemoryUsage
-                                  metadataOnly = MetadataOnlyFlag.Yes
-                                  tryGetMetadataSnapshot = tcConfig.tryGetMetadataSnapshot}
-                            use reader = OpenILModuleReader resolved readerSettings
-                            let assRef = mkRefToILAssembly reader.ILModuleDef.ManifestOfAssembly
-                            assRef.QualifiedName
-                        with e ->
-                            ""
                 Some
                     { originalReference = r
                       resolvedPath = resolved
-                      prepareToolTip = (fun () -> unknownToolTip (resolved, fusionName))
+                      prepareToolTip = (fun () -> 
+                            let fusionName = System.Reflection.AssemblyName.GetAssemblyName(resolved).ToString()
+                            let line(append:string) = append.Trim([|' '|])+"\n"
+                            line(resolved) + line(fusionName))
                       sysdir = sysdir
                       ilAssemblyRef = ref None }
             | None -> None
@@ -3264,11 +3248,11 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
                                         ms|>List.map(fun originalReference ->
                                                     System.Diagnostics.Debug.Assert(FileSystem.IsPathRootedShim(resolvedFile.itemSpec), sprintf "msbuild-resolved path is not absolute: '%s'" resolvedFile.itemSpec)
                                                     let canonicalItemSpec = FileSystem.GetFullPathShim(resolvedFile.itemSpec)
-                                                    {originalReference=originalReference 
-                                                     resolvedPath=canonicalItemSpec 
-                                                     prepareToolTip = (fun () -> resolvedFile.prepareToolTip (originalReference.Text, canonicalItemSpec))
-                                                     sysdir= tcConfig.IsSystemAssembly canonicalItemSpec
-                                                     ilAssemblyRef = ref None})
+                                                    { originalReference=originalReference 
+                                                      resolvedPath=canonicalItemSpec 
+                                                      prepareToolTip = (fun () -> resolvedFile.prepareToolTip (originalReference.Text, canonicalItemSpec))
+                                                      sysdir= tcConfig.IsSystemAssembly canonicalItemSpec
+                                                      ilAssemblyRef = ref None })
                                     (maxIndexOfReference, assemblyResolutions))
 
             // When calculating the resulting resolutions, we're going to use the index of the reference

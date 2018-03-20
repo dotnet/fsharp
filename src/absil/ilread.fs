@@ -34,7 +34,7 @@ open System.Reflection
 let checking = false  
 let logging = false
 let _ = if checking then dprintn "warning : Ilread.checking is on"
-let stableFileHeuristic = try (System.Environment.GetEnvironmentVariable("FSharp_StableFileHeuristic") <> null) with _ -> false
+let noStableFileHeuristic = try (System.Environment.GetEnvironmentVariable("FSharp_NoStableFileHeuristic") <> null) with _ -> false
 
 let singleOfBits (x:int32) = System.BitConverter.ToSingle(System.BitConverter.GetBytes(x), 0)
 let doubleOfBits (x:int64) = System.BitConverter.Int64BitsToDouble(x)
@@ -92,14 +92,14 @@ type Statistics =
       mutable memoryMapFileOpenedCount : int
       mutable memoryMapFileClosedCount : int
       mutable weakByteArrayFileCount : int
-      mutable byteArrayFileCount : int }
+      mutable byteFileCount : int }
 
 let stats = 
     { rawMemoryFileCount = 0
       memoryMapFileOpenedCount = 0
       memoryMapFileClosedCount = 0
       weakByteArrayFileCount = 0
-      byteArrayFileCount = 0 }
+      byteFileCount = 0 }
 
 let GetStatistics() = stats
 
@@ -334,14 +334,14 @@ type ByteArrayView(bytes:byte[]) =
 
 /// A BinaryFile backed by an array of bytes held strongly as managed memory
 [<DebuggerDisplay("{FileName}")>]
-type ByteArrayFile(fileName: string, bytes:byte[]) = 
+type ByteFile(fileName: string, bytes:byte[]) = 
     let view = ByteArrayView(bytes)
-    do stats.byteArrayFileCount <- stats.byteArrayFileCount + 1
+    do stats.byteFileCount <- stats.byteFileCount + 1
     member __.FileName = fileName
     interface BinaryFile with
         override bf.GetView() = view :> BinaryView
  
-/// Same as ByteArrayFile but holds the bytes weakly. The bytes will be re-read from the backing file when a view is requested.
+/// Same as ByteFile but holds the bytes weakly. The bytes will be re-read from the backing file when a view is requested.
 /// This is the default implementation used by F# Compiler Services when accessing "stable" binaries.  It is not used
 /// by Visual Studio, where tryGetMetadataSnapshot provides a RawMemoryFile backed by Roslyn data.
 [<DebuggerDisplay("{FileName}")>]
@@ -3893,24 +3893,27 @@ let ilModuleReaderCache = new AgedLookup<ILModuleReaderCacheLockToken, (string *
 let ilModuleReaderCacheLock = Lock()
 
 let stableFileHeuristicApplies (filename:string) = 
+    not noStableFileHeuristic && 
     try 
        let directory = Path.GetDirectoryName(filename)
        directory.Contains("Reference Assemblies") || directory.Contains("packages") || directory.Contains("lib/mono")
     with _ -> false
 
-let creteByteFile opts fileName = 
-    if opts.reduceMemoryUsage = ReduceMemoryFlag.Yes && stableFileHeuristic && stableFileHeuristicApplies fileName then 
+let createByteFile opts fileName = 
+    // If we're trying to reduce memory usage then we are willing to go back and re-read the binary, so we can use
+    // a weakly-held handle to an array of bytes.
+    if opts.reduceMemoryUsage = ReduceMemoryFlag.Yes && stableFileHeuristicApplies fileName then 
         WeakByteFile(fileName) :> BinaryFile 
     else 
         let bytes = FileSystem.ReadAllBytesShim(fileName)
-        ByteArrayFile(fileName, bytes) :> BinaryFile
+        ByteFile(fileName, bytes) :> BinaryFile
 
 let tryMemoryMap opts fileName = 
     let file = 
         try 
             MemoryMapFile.Create fileName :> BinaryFile
         with _ ->
-            creteByteFile opts fileName
+            createByteFile opts fileName
     let disposer = 
         { new IDisposable with 
            member __.Dispose() = 
@@ -3920,7 +3923,7 @@ let tryMemoryMap opts fileName =
     disposer, file
 
 let OpenILModuleReaderFromBytes fileName bytes opts = 
-    let pefile = ByteArrayFile(fileName, bytes) :> BinaryFile
+    let pefile = ByteFile(fileName, bytes) :> BinaryFile
     let ilModule, ilAssemblyRefs, pdb = openPE (fileName, pefile, opts.pdbPath, (opts.reduceMemoryUsage = ReduceMemoryFlag.Yes), opts.ilGlobals)
     new ILModuleReader(ilModule, ilAssemblyRefs, (fun () -> ClosePdbReader pdb))
 
@@ -3954,8 +3957,10 @@ let OpenILModuleReader fileName opts =
 
     if reduceMemoryUsage && opts.pdbPath.IsNone then 
 
-        // Check if we are doing metadataOnly reading (the most common case in the IDE)
+        // This case is used in FCS applications, devenv.exe and fsi.exe
+        //
         let ilModuleReader = 
+            // Check if we are doing metadataOnly reading (the most common case in both the compiler and IDE)
             if metadataOnly then 
 
                 // See if tryGetMetadata gives us a BinaryFile for the metadata section alone.
@@ -3975,14 +3980,14 @@ let OpenILModuleReader fileName opts =
                     | None -> 
                         // If tryGetMetadata doesn't give anything, then just read the metadata chunk out of the binary
                         let bytes = readChunk (fileName, metadataPhysLoc, metadataSize)
-                        ByteArrayFile(fileName, bytes) :> BinaryFile
+                        ByteFile(fileName, bytes) :> BinaryFile
 
                 let ilModule, ilAssemblyRefs = openPEMetadataOnly (fileName, peinfo, pectxtEager, pevEager, mdfile, reduceMemoryUsage, opts.ilGlobals) 
                 new ILModuleReader(ilModule, ilAssemblyRefs, ignore)
             else
                 // If we are not doing metadata-only, then just go ahead and read all the bytes and hold them either strongly or weakly
                 // depending on the heuristic
-                let pefile = creteByteFile opts fileName
+                let pefile = createByteFile opts fileName
                 let ilModule, ilAssemblyRefs, _pdb = openPE (fileName, pefile, None, reduceMemoryUsage, opts.ilGlobals) 
                 new ILModuleReader(ilModule, ilAssemblyRefs, ignore)
 
@@ -3992,13 +3997,31 @@ let OpenILModuleReader fileName opts =
         ilModuleReader
                 
     else
-        // OK, we're not trying to reduce memory usage, nor do we care if we leak memory.  Just use memory mapping.
-        let disposer, pefile = tryMemoryMap opts fileName
+        // This case is primarily used in fsc.exe. 
+        //
+        // In fsc.exe, we're not trying to reduce memory usage, nor do we really care if we leak memory.  
+        //
+        // Note we ignore the "metadata only" flag as it's generally OK to read in the
+        // whole binary for the command-line compiler: address space is rarely an issue.
+        //
+        // We do however care about avoiding locks on files that prevent their deletion during a 
+        // multi-proc build. So use memory mapping, but only for stable files.  Other files
+        // fill use an in-memory ByteFile
+        let _disposer, pefile = 
+            if stableFileHeuristicApplies fileName then 
+                tryMemoryMap opts fileName
+            else
+                let pefile = createByteFile opts fileName
+                let disposer = { new IDisposable with member __.Dispose() = () }
+                disposer, pefile
+
         let ilModule, ilAssemblyRefs, pdb = openPE (fileName, pefile, opts.pdbPath, reduceMemoryUsage, opts.ilGlobals)
-        let ilModuleReader = new ILModuleReader(ilModule, ilAssemblyRefs, (fun () -> disposer.Dispose(); ClosePdbReader pdb))
-        // Readers with disposal logic don't go in the cache
-        //if keyOk then 
-        //    ilModuleReaderCacheLock.AcquireLock (fun ltok -> ilModuleReaderCache.Put(ltok, key, ilModuleReader))
+        let ilModuleReader = new ILModuleReader(ilModule, ilAssemblyRefs, (fun () -> ClosePdbReader pdb))
+
+        // Readers with PDB reader disposal logic don't go in the cache.  Note the PDB reader is only used in static linking.
+        if keyOk && opts.pdbPath.IsNone then 
+            ilModuleReaderCacheLock.AcquireLock (fun ltok -> ilModuleReaderCache.Put(ltok, key, ilModuleReader))
+
         ilModuleReader
 
 
