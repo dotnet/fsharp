@@ -776,6 +776,12 @@ let UnifyTupleTypeAndInferCharacteristics contextInfo cenv denv m knownTy isExpl
             tupInfo, ptys
         else
             TupInfo.Const isExplicitStruct, NewInferenceTypes ps
+
+    let contextInfo =
+        match contextInfo with
+        | ContextInfo.RecordFields -> ContextInfo.TupleInRecordFields
+        | _ -> contextInfo
+
     let ty2 = TType_tuple (tupInfo, ptys)
     AddCxTypeEqualsType contextInfo denv cenv.css m knownTy ty2
     tupInfo, ptys
