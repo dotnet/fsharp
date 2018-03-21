@@ -38,7 +38,7 @@ let B = File1.A + File1.A"""
             match files.TryGetValue(fileName) with
             | true, text -> new MemoryStream(Encoding.UTF8.GetBytes(text)) :> Stream
             | _ -> defaultFileSystem.FileStreamReadShim(fileName)
-            l
+            
         member __.FileStreamCreateShim(fileName) = 
             defaultFileSystem.FileStreamCreateShim(fileName)
 
