@@ -1009,7 +1009,7 @@ type ILReaderContext =
     seekReadMemberRefAsMethodData : MemberRefAsMspecIdx -> VarArgMethodData
     seekReadMemberRefAsFieldSpec : MemberRefAsFspecIdx -> ILFieldSpec
     seekReadCustomAttr : CustomAttrIdx -> ILAttribute
-    seekReadSecurityDecl : SecurityDeclIdx -> ILPermission
+    seekReadSecurityDecl : SecurityDeclIdx -> ILSecurityDecl
     seekReadTypeRef : int ->ILTypeRef
     seekReadTypeRefAsType : TypeRefAsTypIdx -> ILType
     readBlobHeapAsPropertySig : BlobAsPropSigIdx -> ILThisConvention * ILType * ILTypes
@@ -1703,20 +1703,20 @@ and seekReadTypeDef ctxt toponly (idx:int) =
            let mimpls = seekReadMethodImpls ctxt numtypars idx
            let props  = seekReadProperties ctxt numtypars idx
            let events = seekReadEvents ctxt numtypars idx
-           { Name=nm
-             GenericParams=typars 
-             Attributes= enum<TypeAttributes>(flags)
-             Layout = layout
-             NestedTypes= nested
-             Implements = impls  
-             Extends = super 
-             Methods = mdefs 
-             SecurityDecls = sdecls
-             Fields=fdefs
-             MethodImpls=mimpls
-             Events= events
-             Properties=props
-             CustomAttrs=cas }
+           ILTypeDef(name=nm,
+                     genericParams=typars ,
+                     attributes= enum<TypeAttributes>(flags),
+                     layout = layout,
+                     nestedTypes= nested,
+                     implements = impls,
+                     extends = super,
+                     methods = mdefs,
+                     securityDecls = sdecls,
+                     fields=fdefs,
+                     methodImpls=mimpls,
+                     events= events,
+                     properties=props,
+                     customAttrs=cas)
      Some (ns, n, cas, rest) 
 
 and seekReadTopTypeDefs ctxt () =
@@ -1888,32 +1888,33 @@ and seekReadOptionalTypeDefOrRef ctxt numtypars boxity idx =
     else Some (seekReadTypeDefOrRef ctxt numtypars boxity List.empty idx)
 
 and seekReadField ctxt (numtypars, hasLayout) (idx:int) =
-     let (flags, nameIdx, typeIdx) = seekReadFieldRow ctxt idx
-     let nm = readStringHeap ctxt nameIdx
-     let isStatic = (flags &&& 0x0010) <> 0
-     let fd = 
-       { Name = nm
-         Type= readBlobHeapAsFieldSig ctxt numtypars typeIdx
-         Attributes = enum<FieldAttributes>(flags)
-         LiteralValue = if (flags &&& 0x8000) = 0 then None else Some (seekReadConstant ctxt (TaggedIndex(hc_FieldDef, idx)))
-         Marshal = 
-             if (flags &&& 0x1000) = 0 then None else 
-             Some (seekReadIndexedRow (ctxt.getNumRows TableNames.FieldMarshal, seekReadFieldMarshalRow ctxt, 
-                                       fst, hfmCompare (TaggedIndex(hfm_FieldDef, idx)), 
-                                       isSorted ctxt TableNames.FieldMarshal, 
-                                       (snd >> readBlobHeapAsNativeType ctxt)))
-         Data = 
-             if (flags &&& 0x0100) = 0 then None 
-             else 
-               let rva = seekReadIndexedRow (ctxt.getNumRows TableNames.FieldRVA, seekReadFieldRVARow ctxt, 
-                                             snd, simpleIndexCompare idx, isSorted ctxt TableNames.FieldRVA, fst) 
-               Some (rvaToData ctxt "field" rva)
-         Offset = 
-             if hasLayout && not isStatic then 
-                 Some (seekReadIndexedRow (ctxt.getNumRows TableNames.FieldLayout, seekReadFieldLayoutRow ctxt, 
-                                           snd, simpleIndexCompare idx, isSorted ctxt TableNames.FieldLayout, fst)) else None 
-         CustomAttrs=seekReadCustomAttrs ctxt (TaggedIndex(hca_FieldDef, idx)) }
-     fd
+    let (flags, nameIdx, typeIdx) = seekReadFieldRow ctxt idx
+    let nm = readStringHeap ctxt nameIdx
+    let isStatic = (flags &&& 0x0010) <> 0
+    ILFieldDef(name = nm,
+               fieldType= readBlobHeapAsFieldSig ctxt numtypars typeIdx,
+               attributes = enum<FieldAttributes>(flags),
+               literalValue = (if (flags &&& 0x8000) = 0 then None else Some (seekReadConstant ctxt (TaggedIndex(hc_FieldDef, idx)))),
+               marshal = 
+                   (if (flags &&& 0x1000) = 0 then 
+                       None 
+                    else 
+                       Some (seekReadIndexedRow (ctxt.getNumRows TableNames.FieldMarshal, seekReadFieldMarshalRow ctxt, 
+                                                 fst, hfmCompare (TaggedIndex(hfm_FieldDef, idx)), 
+                                                 isSorted ctxt TableNames.FieldMarshal, 
+                                                 (snd >> readBlobHeapAsNativeType ctxt)))),
+               data = 
+                   (if (flags &&& 0x0100) = 0 then 
+                       None 
+                    else 
+                       let rva = seekReadIndexedRow (ctxt.getNumRows TableNames.FieldRVA, seekReadFieldRVARow ctxt, 
+                                                     snd, simpleIndexCompare idx, isSorted ctxt TableNames.FieldRVA, fst) 
+                       Some (rvaToData ctxt "field" rva)),
+               offset = 
+                   (if hasLayout && not isStatic then 
+                       Some (seekReadIndexedRow (ctxt.getNumRows TableNames.FieldLayout, seekReadFieldLayoutRow ctxt, 
+                                               snd, simpleIndexCompare idx, isSorted ctxt TableNames.FieldLayout, fst)) else None), 
+               customAttrs=seekReadCustomAttrs ctxt (TaggedIndex(hca_FieldDef, idx) ))
      
 and seekReadFields ctxt (numtypars, hasLayout) fidx1 fidx2 =
     mkILFieldsLazy 
@@ -2254,27 +2255,26 @@ and seekReadMethod ctxt numtypars (idx:int) =
      
      let ret, ilParams = seekReadParams ctxt (retty, argtys) paramIdx endParamIdx
 
-     { Name=nm
-       Attributes = enum<MethodAttributes>(flags)
-       ImplAttributes= enum<MethodImplAttributes>(implflags)
-       SecurityDecls=seekReadSecurityDecls ctxt (TaggedIndex(hds_MethodDef, idx))
-       IsEntryPoint= (fst ctxt.entryPointToken = TableNames.Method && snd ctxt.entryPointToken = idx)
-       GenericParams=seekReadGenericParams ctxt numtypars (tomd_MethodDef, idx)
-       CustomAttrs=seekReadCustomAttrs ctxt (TaggedIndex(hca_MethodDef, idx)) 
-       Parameters= ilParams
-       CallingConv=cc
-       Return=ret
-       mdBody=
-         if (codetype = 0x01) && pinvoke then 
-           mkMethBodyLazyAux (notlazy MethodBody.Native)
-         elif pinvoke then 
-           seekReadImplMap ctxt nm  idx
-         elif internalcall || abstr || unmanaged || (codetype <> 0x00) then 
-           //if codeRVA <> 0x0 then dprintn "non-IL or abstract method with non-zero RVA"
-           mkMethBodyLazyAux (notlazy MethodBody.Abstract)  
-         else 
-           seekReadMethodRVA ctxt (idx, nm, internalcall, noinline, aggressiveinline, numtypars) codeRVA   
-     }
+     ILMethodDef(name=nm,
+                 attributes = enum<MethodAttributes>(flags),
+                 implAttributes= enum<MethodImplAttributes>(implflags),
+                 securityDecls=seekReadSecurityDecls ctxt (TaggedIndex(hds_MethodDef, idx)),
+                 isEntryPoint= (fst ctxt.entryPointToken = TableNames.Method && snd ctxt.entryPointToken = idx),
+                 genericParams=seekReadGenericParams ctxt numtypars (tomd_MethodDef, idx),
+                 customAttrs=seekReadCustomAttrs ctxt (TaggedIndex(hca_MethodDef, idx)) ,
+                 parameters= ilParams,
+                 callingConv=cc,
+                 ret=ret,
+                 body=
+                    (if (codetype = 0x01) && pinvoke then 
+                       mkMethBodyLazyAux (notlazy MethodBody.Native)
+                     elif pinvoke then 
+                       seekReadImplMap ctxt nm  idx
+                     elif internalcall || abstr || unmanaged || (codetype <> 0x00) then 
+                       //if codeRVA <> 0x0 then dprintn "non-IL or abstract method with non-zero RVA"
+                       mkMethBodyLazyAux (notlazy MethodBody.Abstract)  
+                     else 
+                       seekReadMethodRVA ctxt (idx, nm, internalcall, noinline, aggressiveinline, numtypars) codeRVA))
      
      
 and seekReadParams ctxt (retty, argtys) pidx1 pidx2 =
@@ -2358,14 +2358,14 @@ and seekReadMethodSemantics ctxt id =
 
 and seekReadEvent ctxt numtypars idx =
    let (flags, nameIdx, typIdx) = seekReadEventRow ctxt idx
-   { Type = seekReadOptionalTypeDefOrRef ctxt numtypars AsObject typIdx
-     Name = readStringHeap ctxt nameIdx
-     Attributes = enum<EventAttributes>(flags)
-     AddMethod= seekReadMethodSemantics ctxt (0x0008, TaggedIndex(hs_Event, idx))
-     RemoveMethod=seekReadMethodSemantics ctxt (0x0010, TaggedIndex(hs_Event, idx))
-     FireMethod=seekReadoptional_MethodSemantics ctxt (0x0020, TaggedIndex(hs_Event, idx))
-     OtherMethods = seekReadMultipleMethodSemantics ctxt (0x0004, TaggedIndex(hs_Event, idx))
-     CustomAttrs=seekReadCustomAttrs ctxt (TaggedIndex(hca_Event, idx)) }
+   ILEventDef(eventType = seekReadOptionalTypeDefOrRef ctxt numtypars AsObject typIdx,
+              name = readStringHeap ctxt nameIdx,
+              attributes = enum<EventAttributes>(flags),
+              addMethod= seekReadMethodSemantics ctxt (0x0008, TaggedIndex(hs_Event, idx)),
+              removeMethod=seekReadMethodSemantics ctxt (0x0010, TaggedIndex(hs_Event, idx)),
+              fireMethod=seekReadoptional_MethodSemantics ctxt (0x0020, TaggedIndex(hs_Event, idx)),
+              otherMethods = seekReadMultipleMethodSemantics ctxt (0x0004, TaggedIndex(hs_Event, idx)),
+              customAttrs=seekReadCustomAttrs ctxt (TaggedIndex(hca_Event, idx)))
    
   (* REVIEW: can substantially reduce numbers of EventMap and PropertyMap reads by first checking if the whole table is sorted according to ILTypeDef tokens and then doing a binary chop *)
 and seekReadEvents ctxt numtypars tidx =
@@ -2398,15 +2398,15 @@ and seekReadProperty ctxt numtypars idx =
            match setter with 
            | Some mref ->  mref.CallingConv .ThisConv
            | None -> cc
-   { Name=readStringHeap ctxt nameIdx
-     CallingConv = cc2
-     Attributes = enum<PropertyAttributes>(flags)
-     SetMethod=setter
-     GetMethod=getter
-     Type=retty
-     Init= if (flags &&& 0x1000) = 0 then None else Some (seekReadConstant ctxt (TaggedIndex(hc_Property, idx)))
-     Args=argtys
-     CustomAttrs=seekReadCustomAttrs ctxt (TaggedIndex(hca_Property, idx)) }
+   ILPropertyDef(name=readStringHeap ctxt nameIdx,
+                 callingConv = cc2,
+                 attributes = enum<PropertyAttributes>(flags),
+                 setMethod=setter,
+                 getMethod=getter,
+                 propertyType=retty,
+                 init= (if (flags &&& 0x1000) = 0 then None else Some (seekReadConstant ctxt (TaggedIndex(hc_Property, idx)))),
+                 args=argtys,
+                 customAttrs=seekReadCustomAttrs ctxt (TaggedIndex(hca_Property, idx)))
    
 and seekReadProperties ctxt numtypars tidx =
    mkILPropertiesLazy
@@ -2461,9 +2461,8 @@ and seekReadSecurityDecl ctxt (a, b) =
 
 and seekReadSecurityDeclUncached ctxtH (SecurityDeclIdx (act, ty)) = 
     let ctxt = getHole ctxtH
-    PermissionSet ((if List.memAssoc (int act) (Lazy.force ILSecurityActionRevMap) then List.assoc (int act) (Lazy.force ILSecurityActionRevMap) else failwith "unknown security action"), 
+    ILSecurityDecl ((if List.memAssoc (int act) (Lazy.force ILSecurityActionRevMap) then List.assoc (int act) (Lazy.force ILSecurityActionRevMap) else failwith "unknown security action"), 
                    readBlobHeap ctxt ty)
-
 
 and seekReadConstant ctxt idx =
   let kind, vidx = seekReadIndexedRow (ctxt.getNumRows TableNames.Constant, 
