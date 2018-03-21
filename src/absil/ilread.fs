@@ -3892,12 +3892,8 @@ type ILModuleReaderCacheLockToken() = interface LockToken
 let ilModuleReaderCache = new AgedLookup<ILModuleReaderCacheLockToken, (string * System.DateTime * ILScopeRef * bool * ReduceMemoryFlag * MetadataOnlyFlag), ILModuleReader>(0, areSimilar=(fun (x, y) -> x = y))
 let ilModuleReaderCacheLock = Lock()
 
-let stableFileHeuristicApplies (filename:string) = 
-    not noStableFileHeuristic && 
-    try 
-       let directory = Path.GetDirectoryName(filename)
-       directory.Contains("Reference Assemblies") || directory.Contains("packages") || directory.Contains("lib/mono")
-    with _ -> false
+let stableFileHeuristicApplies fileName = 
+    not noStableFileHeuristic && try FileSystem.StableFileHeuristic fileName with _ -> false
 
 let createByteFile opts fileName = 
     // If we're trying to reduce memory usage then we are willing to go back and re-read the binary, so we can use
@@ -3979,7 +3975,7 @@ let OpenILModuleReader fileName opts =
                     | Some mdfile -> mdfile
                     | None -> 
                         // If tryGetMetadata doesn't give anything, then just read the metadata chunk out of the binary
-                        let bytes = readChunk (fileName, metadataPhysLoc, metadataSize)
+                        let bytes = File.ReadBinaryChunk (fileName, metadataPhysLoc, metadataSize)
                         ByteFile(fileName, bytes) :> BinaryFile
 
                 let ilModule, ilAssemblyRefs = openPEMetadataOnly (fileName, peinfo, pectxtEager, pevEager, mdfile, reduceMemoryUsage, opts.ilGlobals) 

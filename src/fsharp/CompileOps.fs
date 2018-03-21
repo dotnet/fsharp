@@ -5080,7 +5080,7 @@ module private ScriptPreprocessClosure =
             use reader = 
                 match inputCodePage with 
                 | None -> new  StreamReader(stream, true)
-                | Some n -> new  StreamReader(stream, Encoding.GetEncodingShim(n)) 
+                | Some (n: int) -> new  StreamReader(stream, Encoding.GetEncoding(n)) 
             let source = reader.ReadToEnd()
             [ClosureSource(filename, m, source, parseRequired)]
         with e -> 

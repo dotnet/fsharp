@@ -738,7 +738,7 @@ let libFlagAbbrev (tcConfigB : TcConfigBuilder) =
 let codePageFlag (tcConfigB : TcConfigBuilder) = 
         CompilerOption("codepage", tagInt, OptionInt (fun n -> 
                      try 
-                         System.Text.Encoding.GetEncodingShim(n) |> ignore
+                         System.Text.Encoding.GetEncoding(n) |> ignore
                      with :? System.ArgumentException as err -> 
                          error(Error(FSComp.SR.optsProblemWithCodepage(n,err.Message),rangeCmdArgs))
 

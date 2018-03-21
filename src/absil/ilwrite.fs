@@ -3717,7 +3717,7 @@ let writeBinaryAndReportMappings (outfile,
                       resources |> List.map (function 
                           | ILNativeResource.Out bytes -> bytes
                           | ILNativeResource.In (fileName, linkedResourceBase, start, len) -> 
-                               let linkedResource = readChunk (fileName, start, len)
+                               let linkedResource = File.ReadBinaryChunk (fileName, start, len)
                                unlinkResource linkedResourceBase linkedResource)
                                
                   begin
