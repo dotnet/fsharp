@@ -69,7 +69,7 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
 
         store.RegisterDefault
             { EnableInMemoryCrossProjectReferences = true
-              ProjectCheckCacheSize = 200 }
+              ProjectCheckCacheSize = 40 }
 
         store.RegisterDefault
             { IsBlockStructureEnabled = true 
