@@ -178,23 +178,23 @@ let RefuteDiscrimSet g m path discrims =
         | PathConj (p,_j) -> 
              go p tm
         | PathTuple (p,tys,j) -> 
-            let k, eCoversVals = mkOneKnown tm j tys
-            go p (fun _ -> mkRefTupled g m k tys, eCoversVals)
+             let k, eCoversVals = mkOneKnown tm j tys
+             go p (fun _ -> mkRefTupled g m k tys, eCoversVals)
         | PathRecd (p,tcref,tinst,j) -> 
-            let flds, eCoversVals = tcref |> actualTysOfInstanceRecdFields (mkTyconRefInst tcref tinst) |> mkOneKnown tm j
-            go p (fun _ -> Expr.Op(TOp.Recd(RecdExpr, tcref),tinst, flds,m), eCoversVals)
+             let flds, eCoversVals = tcref |> actualTysOfInstanceRecdFields (mkTyconRefInst tcref tinst) |> mkOneKnown tm j
+             go p (fun _ -> Expr.Op(TOp.Recd(RecdExpr, tcref),tinst, flds,m), eCoversVals)
 
         | PathUnionConstr (p,ucref,tinst,j) -> 
-            let flds, eCoversVals = ucref |> actualTysOfUnionCaseFields (mkTyconRefInst ucref.TyconRef tinst)|> mkOneKnown tm j
-            go p (fun _ -> Expr.Op(TOp.UnionCase(ucref),tinst, flds,m), eCoversVals)
+             let flds, eCoversVals = ucref |> actualTysOfUnionCaseFields (mkTyconRefInst ucref.TyconRef tinst)|> mkOneKnown tm j
+             go p (fun _ -> Expr.Op(TOp.UnionCase(ucref),tinst, flds,m), eCoversVals)
 
         | PathArray (p,ty,len,n) -> 
-            let flds, eCoversVals = mkOneKnown tm n (List.replicate len ty)
-            go p (fun _ -> Expr.Op(TOp.Array,[ty], flds ,m), eCoversVals)
+             let flds, eCoversVals = mkOneKnown tm n (List.replicate len ty)
+             go p (fun _ -> Expr.Op(TOp.Array,[ty], flds ,m), eCoversVals)
 
         | PathExnConstr (p,ecref,n) -> 
-            let flds, eCoversVals = ecref |> recdFieldTysOfExnDefRef |> mkOneKnown tm n
-            go p (fun _ -> Expr.Op(TOp.ExnConstr(ecref),[], flds,m), eCoversVals)
+             let flds, eCoversVals = ecref |> recdFieldTysOfExnDefRef |> mkOneKnown tm n
+             go p (fun _ -> Expr.Op(TOp.ExnConstr(ecref),[], flds,m), eCoversVals)
 
         | PathEmpty(ty) -> tm ty
         
@@ -263,9 +263,9 @@ let RefuteDiscrimSet g m path discrims =
              | ucref2 :: _ -> 
                let flds = ucref2 |> actualTysOfUnionCaseFields (mkTyconRefInst tcref tinst) |> mkUnknowns
                Expr.Op(TOp.UnionCase(ucref2),tinst, flds,m), false
-            
+               
         | [DecisionTreeTest.ArrayLength (n,ty)] -> 
-            Expr.Op(TOp.Array,[ty], mkUnknowns (List.replicate (n+1) ty) ,m), false
+             Expr.Op(TOp.Array,[ty], mkUnknowns (List.replicate (n+1) ty) ,m), false
              
         | _ -> 
             raise CannotRefute
@@ -316,21 +316,18 @@ let rec CombineRefutations g r1 r2 =
    | _ -> r1 
 
 let ShowCounterExample g denv m refuted = 
-    try
-        let refutations = refuted |> List.collect (function RefutedWhenClause -> [] | (RefutedInvestigation(path,discrim)) -> [RefuteDiscrimSet g m path discrim])
-        let counterExample, enumCoversKnown = 
-            match refutations with 
-            | [] -> raise CannotRefute
-            | (r, eck) :: t -> 
-                if verbose then dprintf "r = %s (enumCoversKnownValue = %b)\n" (Layout.showL (exprL r)) eck
-                //List.fold (fun (rAcc, eckAcc) r ->
-                    //let rAcc, eck = CombineRefutations g rAcc r
-                    //rAcc, eckAcc || eck) (r, eck) t
-                List.fold (fun (rAcc, eckAcc) (r, eck) ->
-                    CombineRefutations g rAcc r, eckAcc || eck) (r, eck) t
-        let text = Layout.showL (NicePrint.dataExprL denv counterExample)
-        let failingWhenClause = refuted |> List.exists (function RefutedWhenClause -> true | _ -> false)
-        Some(text,failingWhenClause,enumCoversKnown)
+   try
+      let refutations = refuted |> List.collect (function RefutedWhenClause -> [] | (RefutedInvestigation(path,discrim)) -> [RefuteDiscrimSet g m path discrim])
+      let counterExample, enumCoversKnown = 
+          match refutations with 
+          | [] -> raise CannotRefute
+          | (r, eck) :: t -> 
+              if verbose then dprintf "r = %s (enumCoversKnownValue = %b)\n" (Layout.showL (exprL r)) eck
+              List.fold (fun (rAcc, eckAcc) (r, eck) ->
+                  CombineRefutations g rAcc r, eckAcc || eck) (r, eck) t
+      let text = Layout.showL (NicePrint.dataExprL denv counterExample)
+      let failingWhenClause = refuted |> List.exists (function RefutedWhenClause -> true | _ -> false)
+      Some(text,failingWhenClause,enumCoversKnown)
       
     with 
         | CannotRefute ->    
@@ -701,24 +698,25 @@ let CompilePatternBasic
     // Add the incomplete or rethrow match clause on demand, printing a 
     // warning if necessary (only if it is ever exercised) 
     let incompleteMatchClauseOnce = ref None
-    let getIncompleteMatchClause refuted = 
+    let getIncompleteMatchClause (refuted) = 
         // This is lazy because emit a 
         // warning when the lazy thunk gets evaluated 
         match !incompleteMatchClauseOnce with 
         | None -> 
-                (* Emit the incomplete match warning *)
-                if warnOnIncomplete then
-                    match actionOnFailure with
-                    | ThrowIncompleteMatchException | IgnoreWithWarning ->
-                        let ignoreWithWarning = (actionOnFailure = IgnoreWithWarning)
-                        match ShowCounterExample g denv matchm refuted with
-                        | Some(text,failingWhenClause,true) ->
-                            warning (EnumMatchIncomplete(ignoreWithWarning, Some(text,failingWhenClause), matchm))
-                        | Some(text,failingWhenClause,false) ->
-                            warning (MatchIncomplete(ignoreWithWarning, Some(text,failingWhenClause), matchm))
-                        | None ->
-                            warning (MatchIncomplete(ignoreWithWarning, None, matchm))
-                    | _ -> ()
+                (* Emit the incomplete match warning *)               
+                if warnOnIncomplete then 
+                   match actionOnFailure with 
+                   | ThrowIncompleteMatchException | IgnoreWithWarning ->
+                       let ignoreWithWarning = (actionOnFailure = IgnoreWithWarning)
+                       match ShowCounterExample g denv matchm refuted with
+                       | Some(text,failingWhenClause,true) ->
+                           warning (EnumMatchIncomplete(ignoreWithWarning, Some(text,failingWhenClause), matchm))
+                       | Some(text,failingWhenClause,false) ->
+                           warning (MatchIncomplete(ignoreWithWarning, Some(text,failingWhenClause), matchm))
+                       | None ->
+                           warning (MatchIncomplete(ignoreWithWarning, None, matchm))
+                   | _ -> 
+                        ()
                         
                 let throwExpr =
                     match actionOnFailure with
