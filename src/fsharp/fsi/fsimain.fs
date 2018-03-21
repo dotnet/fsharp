@@ -332,9 +332,8 @@ let MainMain argv =
     let argv = System.Environment.GetCommandLineArgs()
     use e = new SaveAndRestoreConsoleEncoding()
 
-    let timesFlag = argv |> Array.exists  (fun x -> x = "/times" || x = "--times")
-
 #if !FX_NO_APP_DOMAINS
+    let timesFlag = argv |> Array.exists  (fun x -> x = "/times" || x = "--times")
     if timesFlag then 
         AppDomain.CurrentDomain.ProcessExit.Add(fun _ -> 
             let stats = ILBinaryReader.GetStatistics()
