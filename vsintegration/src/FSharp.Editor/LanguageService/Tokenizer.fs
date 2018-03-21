@@ -7,6 +7,7 @@ open System.Diagnostics
 open System.Threading
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
+open System.Runtime.Caching
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Classification
@@ -45,6 +46,10 @@ type internal SymbolLookupKind =
 
 [<RequireQualifiedAccess>]
 module internal Tokenizer =
+
+    /// How long is the per-document data saved before it is eligible for eviction from the cache? 10 seconds.
+    /// Re-tokenizing is fast so we don't need to save this data long.
+    let TokenizationSavedDataSlidingWindow = TimeSpan(0,0,10)
 
     let (|Public|Internal|Protected|Private|) (a: FSharpAccessibility option) =
         match a with
@@ -331,7 +336,10 @@ module internal Tokenizer =
     /// This saves the tokenization data for a file for as long as the DocumentId object is alive.
     /// This seems risky - if one single thing leaks a DocumentId (e.g. stores it in some global table of documents 
     /// that have been closed), then we leak **all** this associated data, forever.
-    let private dataCache = ConditionalWeakTable<DocumentId, ConcurrentDictionary<string list, SourceTextData>>()
+
+    type private PerDocumentSavedData = ConcurrentDictionary<string list, SourceTextData>
+    let private dataCache = new System.Runtime.Caching.MemoryCache("FSharp.Editor.Tokenization")
+    //let private dataCache = ConditionalWeakTable<DocumentId, ConcurrentDictionary<string list, SourceTextData>>()
 
     let compilerTokenToRoslynToken(colorKind: FSharpTokenColorKind) : string = 
         match colorKind with
@@ -420,8 +428,21 @@ module internal Tokenizer =
     // We keep incremental data per-document.  When text changes we correlate text line-by-line (by hash codes of lines)
     // We index the data by the active defines in the document.
     let private getSourceTextData(documentKey: DocumentId, defines: string list, linesCount) =
-        let dict = dataCache.GetValue(documentKey, fun key -> new ConcurrentDictionary<_,_>(1,1,HashIdentity.Structural))
-        if dict.ContainsKey(defines) then dict.[defines] 
+        let key = documentKey.ToString()
+        let dict = 
+            match dataCache.Get(key) with
+            | :? PerDocumentSavedData as dict -> dict
+            | _ -> 
+                let dict = new PerDocumentSavedData(1,1,HashIdentity.Structural)
+                let cacheItem = CacheItem(key, dict)
+                // evict per-document data after a sliding window
+                let policy = CacheItemPolicy(SlidingExpiration=TokenizationSavedDataSlidingWindow)
+                let cacheItemExisting = dataCache.AddOrGetExisting(cacheItem, policy)
+                match cacheItemExisting.Value with 
+                | :? PerDocumentSavedData as dict2 -> dict2
+                | _ -> dict 
+        if dict.ContainsKey(defines) then 
+            dict.[defines] 
         else 
             let data = SourceTextData(linesCount) 
             dict.TryAdd(defines, data) |> ignore
