@@ -23,7 +23,7 @@
       <Link>License.txt</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
-    <Content Include="$(FSharpSourcesRoot)\..\packages\System.ValueTuple.4.3.1\System.ValueTuple.4.3.1.nupkg"  Condition = " '$(BUILD_MICROBUILD)' == '' ">
+    <Content Include="$(FSharpSourcesRoot)\..\packages\System.ValueTuple.4.3.1\System.ValueTuple.4.3.1.nupkg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>packages\System.ValueTuple.4.3.1.nupkg</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
