@@ -4123,15 +4123,6 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         CheckDisposed()
         disposeActions <- action :: disposeActions
   
-    override obj.ToString() = 
-        sprintf "tcImports = \n    dllInfos=%A\n    dllTable=%A\n    ccuInfos=%A\n    ccuTable=%A\n    Base=%s\n"
-            dllInfos
-            dllTable
-            ccuInfos
-            ccuTable
-            (match importsBase with None-> "None" | Some(importsBase) -> importsBase.ToString())
-    
-      
     // Note: the returned binary reader is associated with the tcImports, i.e. when the tcImports are closed 
     // then the reader is closed. 
     member tcImports.OpenILBinaryModule(ctok, filename, m) = 
@@ -4828,6 +4819,8 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             disposeActions <- []
             for action in actions do action()
 
+    override tcImports.ToString() = "TcImports(...)"
+        
 /// Process #r in F# Interactive.
 /// Adds the reference to the tcImports and add the ccu to the type checking environment.
 let RequireDLL (ctok, tcImports:TcImports, tcEnv, thisAssemblyName, m, file) = 

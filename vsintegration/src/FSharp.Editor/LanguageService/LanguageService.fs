@@ -45,26 +45,33 @@ type internal FSharpCheckerProvider
     [<ImportingConstructor>]
     (
         analyzerService: IDiagnosticAnalyzerService,
-        metadataManager : VisualStudioMetadataReferenceManager
+        [<Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspaceImpl
     ) =
 
     let tryGetMetadataSnapshot (path, timeStamp) = 
-        try 
-            Debug.Assert((Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader.GetStatistics().weakByteArrayFileCount = 0), "Expected weakByteArrayFileCount to be zero when using F# in Visual Studio. Was there a problem reading a .NET binary?")
-            let md = metadataManager.GetMetadata(path, timeStamp)
+        try
+            let metadataReferenceProvider = workspace.Services.GetService<VisualStudioMetadataReferenceManager>()
+            let md = metadataReferenceProvider.GetMetadata(path, timeStamp)
             let amd = (md :?> AssemblyMetadata)
             let mmd = amd.GetModules().[0]
             let mmr = mmd.GetMetadataReader()
-            let objToHold = box md
+
             // "lifetime is timed to Metadata you got from the GetMetadata(…). As long as you hold it strongly, raw 
             // memory we got from metadata reader will be alive. Once you are done, just let everything go and 
             // let finalizer handle resource rather than calling Dispose from Metadata directly. It is shared metadata. 
             // You shouldn’t dispose it directly."
-            Some (objToHold, NativePtr.toNativeInt mmr.MetadataPointer, mmr.MetadataLength)
-        with _ -> None // We catch all and let the backup routines in the F# compiler find the error
 
-    // Enabling this would mean that if devenv.exe goes above 2.3GB we do a one-off downsize of the F# Compiler Service caches
-    //let maxMemory = 2300 
+            let objToHold = box md
+
+            // We don't expect any ilread WeakByteFile to be created when working in Visual Studio
+            Debug.Assert((Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader.GetStatistics().weakByteArrayFileCount = 0), "Expected weakByteArrayFileCount to be zero when using F# in Visual Studio. Was there a problem reading a .NET binary?")
+
+            Some (objToHold, NativePtr.toNativeInt mmr.MetadataPointer, mmr.MetadataLength)
+        with ex -> 
+            // We catch all and let the backup routines in the F# compiler find the error
+            Assert.Exception(ex)
+            None 
+
 
     let checker = 
         lazy
@@ -72,6 +79,7 @@ type internal FSharpCheckerProvider
                 FSharpChecker.Create(
                     projectCacheSize = Settings.LanguageServicePerformance.ProjectCheckCacheSize, 
                     keepAllBackgroundResolutions = false,
+                    // Enabling this would mean that if devenv.exe goes above 2.3GB we do a one-off downsize of the F# Compiler Service caches
                     (* , MaxMemory = 2300 *) 
                     legacyReferenceResolver=Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver,
                     tryGetMetadataSnapshot = tryGetMetadataSnapshot)
@@ -79,20 +87,17 @@ type internal FSharpCheckerProvider
             // This is one half of the bridge between the F# background builder and the Roslyn analysis engine.
             // When the F# background builder refreshes the background semantic build context for a file,
             // we request Roslyn to reanalyze that individual file.
-            checker.BeforeBackgroundFileCheck.Add(fun (fileName, extraProjectInfo) ->  
+            checker.BeforeBackgroundFileCheck.Add(fun (fileName, _extraProjectInfo) ->  
                 async {
                     try 
-                        match extraProjectInfo with 
-                        | Some (:? Workspace as workspace) -> 
-                            let solution = workspace.CurrentSolution
-                            let documentIds = solution.GetDocumentIdsWithFilePath(fileName)
-                            if not documentIds.IsEmpty then 
-                                let documentIdsFiltered = documentIds |> Seq.filter workspace.IsDocumentOpen |> Seq.toArray
-                                for documentId in documentIdsFiltered do
-                                    Trace.TraceInformation("{0:n3} Requesting Roslyn reanalysis of {1}", DateTime.Now.TimeOfDay.TotalSeconds, documentId)
-                                if documentIdsFiltered.Length > 0 then 
-                                    analyzerService.Reanalyze(workspace,documentIds=documentIdsFiltered)
-                        | _ -> ()
+                        let solution = workspace.CurrentSolution
+                        let documentIds = solution.GetDocumentIdsWithFilePath(fileName)
+                        if not documentIds.IsEmpty then 
+                            let documentIdsFiltered = documentIds |> Seq.filter workspace.IsDocumentOpen |> Seq.toArray
+                            for documentId in documentIdsFiltered do
+                                Trace.TraceInformation("{0:n3} Requesting Roslyn reanalysis of {1}", DateTime.Now.TimeOfDay.TotalSeconds, documentId)
+                            if documentIdsFiltered.Length > 0 then 
+                                analyzerService.Reanalyze(workspace,documentIds=documentIdsFiltered)
                     with ex -> 
                         Assert.Exception(ex)
                 } |> Async.StartImmediate
