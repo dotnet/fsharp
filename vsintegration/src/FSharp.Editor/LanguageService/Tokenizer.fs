@@ -47,9 +47,6 @@ type internal SymbolLookupKind =
 [<RequireQualifiedAccess>]
 module internal Tokenizer =
 
-    /// How long is the per-document data saved before it is eligible for eviction from the cache? 10 seconds.
-    /// Re-tokenizing is fast so we don't need to save this data long.
-    let TokenizationSavedDataSlidingWindow = TimeSpan(0,0,10)
 
     let (|Public|Internal|Protected|Private|) (a: FSharpAccessibility option) =
         match a with
@@ -338,8 +335,7 @@ module internal Tokenizer =
     /// that have been closed), then we leak **all** this associated data, forever.
 
     type private PerDocumentSavedData = ConcurrentDictionary<string list, SourceTextData>
-    let private dataCache = new System.Runtime.Caching.MemoryCache("FSharp.Editor.Tokenization")
-    //let private dataCache = ConditionalWeakTable<DocumentId, ConcurrentDictionary<string list, SourceTextData>>()
+    let private dataCache = new MemoryCache("FSharp.Editor.Tokenization")
 
     let compilerTokenToRoslynToken(colorKind: FSharpTokenColorKind) : string = 
         match colorKind with
@@ -436,11 +432,9 @@ module internal Tokenizer =
                 let dict = new PerDocumentSavedData(1,1,HashIdentity.Structural)
                 let cacheItem = CacheItem(key, dict)
                 // evict per-document data after a sliding window
-                let policy = CacheItemPolicy(SlidingExpiration=TokenizationSavedDataSlidingWindow)
-                let cacheItemExisting = dataCache.AddOrGetExisting(cacheItem, policy)
-                match cacheItemExisting.Value with 
-                | :? PerDocumentSavedData as dict2 -> dict2
-                | _ -> dict 
+                let policy = CacheItemPolicy(SlidingExpiration=DefaultTuning.PerDocumentSavedDataSlidingWindow)
+                dataCache.Set(cacheItem, policy)
+                dict 
         if dict.ContainsKey(defines) then 
             dict.[defines] 
         else 

@@ -21,6 +21,7 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open System.Runtime.Caching
 
 type internal FSharpCompletionProvider
     (
@@ -34,7 +35,8 @@ type internal FSharpCompletionProvider
     inherit CompletionProvider()
 
     static let userOpName = "CompletionProvider"
-    static let declarationItemsCache = ConditionalWeakTable<string, FSharpDeclarationListItem>()
+    // Save the backing data in a memory cache held in a sliding window
+    static let declarationItemsCache = new MemoryCache("FSharp.Editor." + userOpName)
     static let [<Literal>] NameInCodePropName = "NameInCode"
     static let [<Literal>] FullNamePropName = "FullName"
     static let [<Literal>] IsExtensionMemberPropName = "IsExtensionMember"
@@ -139,15 +141,15 @@ type internal FSharpCompletionProvider
 
             let maxHints = if mruItems.Values.Count = 0 then 0 else Seq.max mruItems.Values
 
-            sortedDeclItems |> Array.iteri (fun number declItem ->
-                let glyph = Tokenizer.FSharpGlyphToRoslynGlyph (declItem.Glyph, declItem.Accessibility)
+            sortedDeclItems |> Array.iteri (fun number declarationItem ->
+                let glyph = Tokenizer.FSharpGlyphToRoslynGlyph (declarationItem.Glyph, declarationItem.Accessibility)
                 let name =
-                    match declItem.NamespaceToOpen with
-                    | Some namespaceToOpen -> sprintf "%s (open %s)" declItem.Name namespaceToOpen
-                    | _ -> declItem.Name
+                    match declarationItem.NamespaceToOpen with
+                    | Some namespaceToOpen -> sprintf "%s (open %s)" declarationItem.Name namespaceToOpen
+                    | _ -> declarationItem.Name
                     
                 let filterText =
-                    match declItem.NamespaceToOpen, declItem.Name.Split '.' with
+                    match declarationItem.NamespaceToOpen, declarationItem.Name.Split '.' with
                     // There is no namespace to open and the item name does not contain dots, so we don't need to pass special FilterText to Roslyn.
                     | None, [|_|] -> null
                     // Either we have a namespace to open ("DateTime (open System)") or item name contains dots ("Array.map"), or both.
@@ -156,39 +158,37 @@ type internal FSharpCompletionProvider
 
                 let completionItem = 
                     CommonCompletionItem.Create(name, glyph = Nullable glyph, rules = getRules(), filterText = filterText)
-                                        .AddProperty(FullNamePropName, declItem.FullName)
+                                        .AddProperty(FullNamePropName, declarationItem.FullName)
                         
                 let completionItem =
-                    match declItem.Kind with
+                    match declarationItem.Kind with
                     | CompletionItemKind.Method (isExtension = true) ->
                           completionItem.AddProperty(IsExtensionMemberPropName, "")
                     | _ -> completionItem
                 
                 let completionItem =
-                    if name <> declItem.NameInCode then
-                        completionItem.AddProperty(NameInCodePropName, declItem.NameInCode)
+                    if name <> declarationItem.NameInCode then
+                        completionItem.AddProperty(NameInCodePropName, declarationItem.NameInCode)
                     else completionItem
 
                 let completionItem =
-                    match declItem.NamespaceToOpen with
+                    match declarationItem.NamespaceToOpen with
                     | Some ns -> completionItem.AddProperty(NamespaceToOpenPropName, ns)
                     | None -> completionItem
 
                 let priority = 
-                    match mruItems.TryGetValue declItem.FullName with
+                    match mruItems.TryGetValue declarationItem.FullName with
                     | true, hints -> maxHints - hints
                     | _ -> number + maxHints + 1
 
                 let sortText = sprintf "%06d" priority
 
-                //#if DEBUG
-                //Logging.Logging.logInfof "***** %s => %s" name sortText
-                //#endif
-
                 let completionItem = completionItem.WithSortText(sortText)
 
-                declarationItemsCache.Remove(completionItem.DisplayText) |> ignore // clear out stale entries if they exist
-                declarationItemsCache.Add(completionItem.DisplayText, declItem)
+                let key = completionItem.DisplayText
+                let cacheItem = CacheItem(key, declarationItem)
+                let policy = CacheItemPolicy(SlidingExpiration=DefaultTuning.PerDocumentSavedDataSlidingWindow)
+                declarationItemsCache.Set(cacheItem, policy)
                 results.Add(completionItem))
 
             if results.Count > 0 && not declarations.IsForType && not declarations.IsError && List.isEmpty partialName.QualifyingIdents then
@@ -235,15 +235,15 @@ type internal FSharpCompletionProvider
         
     override this.GetDescriptionAsync(_: Document, completionItem: Completion.CompletionItem, cancellationToken: CancellationToken): Task<CompletionDescription> =
         async {
-            let exists, declarationItem = declarationItemsCache.TryGetValue(completionItem.DisplayText)
-            if exists then
+            match declarationItemsCache.Get(completionItem.DisplayText) with
+            | :? FSharpDeclarationListItem as declarationItem -> 
                 let! description = declarationItem.StructuredDescriptionTextAsync
                 let documentation = List()
                 let collector = RoslynHelpers.CollectTaggedText documentation
                 // mix main description and xmldoc by using one collector
                 XmlDocumentation.BuildDataTipText(documentationBuilder, collector, collector, collector, collector, collector, description) 
                 return CompletionDescription.Create(documentation.ToImmutableArray())
-            else
+            | _ -> 
                 return CompletionDescription.Empty
         } |> RoslynHelpers.StartAsyncAsTask cancellationToken
 

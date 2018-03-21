@@ -14,10 +14,11 @@ open Microsoft.CodeAnalysis.Diagnostics
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
-
 open Microsoft.VisualStudio.FSharp.LanguageService
+open System.Runtime.Caching
 
 type private TextVersionHash = int
+type private PerDocumentSavedData = { Hash: int; Diagnostics: ImmutableArray<Diagnostic> }
 
 [<DiagnosticAnalyzer(FSharpConstants.FSharpLanguageName)>]
 type internal SimplifyNameDiagnosticAnalyzer() =
@@ -27,7 +28,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
     let getProjectInfoManager (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().FSharpProjectOptionsManager
     let getChecker (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Checker
     let getPlidLength (plid: string list) = (plid |> List.sumBy String.length) + plid.Length
-    static let cache = ConditionalWeakTable<DocumentId, TextVersionHash * ImmutableArray<Diagnostic>>()
+    static let cache = new MemoryCache("FSharp.Editor." + userOpName)
     // Make sure only one document is being analyzed at a time, to be nice
     static let guard = new SemaphoreSlim(1)
 
@@ -56,8 +57,9 @@ type internal SimplifyNameDiagnosticAnalyzer() =
             let textVersionHash = textVersion.GetHashCode()
             let! _ = guard.WaitAsync(cancellationToken) |> Async.AwaitTask |> liftAsync
             try
-                match cache.TryGetValue document.Id with
-                | true, (oldTextVersionHash, diagnostics) when oldTextVersionHash = textVersionHash -> return diagnostics
+                let key = document.Id.ToString()
+                match cache.Get(key) with
+                | :? PerDocumentSavedData as data when data.Hash = textVersionHash -> return data.Diagnostics
                 | _ ->
                     let! sourceText = document.GetTextAsync()
                     let checker = getChecker document
@@ -118,8 +120,11 @@ type internal SimplifyNameDiagnosticAnalyzer() =
                                        properties = (dict [SimplifyNameDiagnosticAnalyzer.LongIdentPropertyKey, relativeName]).ToImmutableDictionary()))
                     
                     let diagnostics = result.ToImmutableArray()
-                    cache.Remove(document.Id) |> ignore
-                    cache.Add(document.Id, (textVersionHash, diagnostics))
+                    cache.Remove(key) |> ignore
+                    let data = { Hash = textVersionHash; Diagnostics=diagnostics }
+                    let cacheItem = CacheItem(key, data)
+                    let policy = CacheItemPolicy(SlidingExpiration=DefaultTuning.PerDocumentSavedDataSlidingWindow)
+                    cache.Set(cacheItem, policy)
                     return diagnostics
             finally guard.Release() |> ignore
         } 

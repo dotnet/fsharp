@@ -4,6 +4,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Runtime.CompilerServices
+open System.Runtime.Caching
 open System.Text.RegularExpressions
 open Internal.Utilities.Collections
 open EnvDTE
