@@ -1000,15 +1000,21 @@ type MethodCodeKind =
 /// may include the bounds, if any, on the generic parameter.
 type ILGenericParameterDef =
     { Name: string
-    /// At most one is the parent type, the others are interface types.
+
+      /// At most one is the parent type, the others are interface types.
       Constraints: ILTypes 
+
       /// Variance of type parameters, only applicable to generic parameters for generic interfaces and delegates.
       Variance: ILGenericVariance 
+
       /// Indicates the type argument must be a reference type.
       HasReferenceTypeConstraint: bool     
+
       CustomAttrs: ILAttributes
+
       /// Indicates the type argument must be a value type, but not Nullable.
       HasNotNullableValueTypeConstraint: bool  
+
       /// Indicates the type argument must have a public nullary constructor.
       HasDefaultConstructorConstraint: bool }
 
@@ -1020,13 +1026,14 @@ type ILLazyMethodBody =
 
 /// IL Method definitions. 
 ///
-/// The object is immutable.  We use a class to get control over the representation used, 
-/// which allows more efficient representation of the information.
+/// This type is immutable and record-like.  We use a class to get control over the representation
+/// used, which allows more efficient representation of the information.
 [<NoComparison; NoEquality>]
 type ILMethodDef = 
+
+    /// Functional creation of a value
     new: name: string * attributes: MethodAttributes * implAttributes: MethodImplAttributes * callingConv: ILCallingConv * parameters: ILParameters * ret: ILReturn * body: ILLazyMethodBody * securityDecls: ILSecurityDecls * isEntryPoint:bool * genericParams: ILGenericParameterDefs * customAttrs: ILAttributes -> ILMethodDef
       
-    member With: ?name: string * ?attributes: MethodAttributes * ?implAttributes: MethodImplAttributes * ?callingConv: ILCallingConv * ?parameters: ILParameters * ?ret: ILReturn * ?body: ILLazyMethodBody * ?securityDecls: ILSecurityDecls * ?isEntryPoint:bool * ?genericParams: ILGenericParameterDefs * ?customAttrs: ILAttributes -> ILMethodDef
     member Name: string
     member Attributes: MethodAttributes
     member ImplAttributes: MethodImplAttributes
@@ -1073,6 +1080,7 @@ type ILMethodDef =
     /// The method is exported to unmanaged code using COM interop.
     member IsUnmanagedExport: bool
     member IsReqSecObj: bool
+
     /// Some methods are marked "HasSecurity" even if there are no permissions attached, e.g. if they use SuppressUnmanagedCodeSecurityAttribute 
     member HasSecurity: bool
     member IsManaged: bool
@@ -1086,6 +1094,8 @@ type ILMethodDef =
     /// SafeHandle finalizer must be run.
     member IsMustRun: bool
     
+    /// Functional update of the value
+    member With: ?name: string * ?attributes: MethodAttributes * ?implAttributes: MethodImplAttributes * ?callingConv: ILCallingConv * ?parameters: ILParameters * ?ret: ILReturn * ?body: ILLazyMethodBody * ?securityDecls: ILSecurityDecls * ?isEntryPoint:bool * ?genericParams: ILGenericParameterDefs * ?customAttrs: ILAttributes -> ILMethodDef
     member WithSpecialName: ILMethodDef
     member WithHideBySig: unit -> ILMethodDef
     member WithHideBySig: bool -> ILMethodDef
@@ -1104,8 +1114,9 @@ type ILMethodDef =
 /// Tables of methods.  Logically equivalent to a list of methods but
 /// the table is kept in a form optimized for looking up methods by 
 /// name and arity.
-
-/// abstract type equivalent to [ILMethodDef list] 
+///
+/// This type is immutable and record-like.  We use a class to get control over the representation
+/// used, which allows more efficient representation of the information.
 [<NoEquality; NoComparison; Sealed>]
 type ILMethodDefs =
     interface IEnumerable<ILMethodDef>
@@ -1114,15 +1125,21 @@ type ILMethodDefs =
     member FindByName: string -> ILMethodDef list
 
 /// Field definitions.
+///
+/// This type is immutable and record-like.  We use a class to get control over the representation
+/// used, which allows more efficient representation of the information.
 [<NoComparison; NoEquality>]
 type ILFieldDef = 
+
+    /// Functional creation of a value
     new: name: string * fieldType: ILType * attributes: FieldAttributes * data: byte[] option * literalValue: ILFieldInit option * offset:  int32 option * marshal: ILNativeType option * customAttrs: ILAttributes -> ILFieldDef
-    member With: ?name: string * ?fieldType: ILType * ?attributes: FieldAttributes * ?data: byte[] option * ?literalValue: ILFieldInit option * ?offset:  int32 option * ?marshal: ILNativeType option * ?customAttrs: ILAttributes -> ILFieldDef
+
     member Name: string
     member FieldType: ILType
     member Attributes: FieldAttributes
     member Data:  byte[] option
     member LiteralValue: ILFieldInit option  
+
     /// The explicit offset in bytes when explicit layout is used.
     member Offset:  int32 option 
     member Marshal: ILNativeType option 
@@ -1133,6 +1150,9 @@ type ILFieldDef =
     member NotSerialized: bool
     member IsInitOnly: bool
     member Access: ILMemberAccess
+
+    /// Functional update of the value
+    member With: ?name: string * ?fieldType: ILType * ?attributes: FieldAttributes * ?data: byte[] option * ?literalValue: ILFieldInit option * ?offset:  int32 option * ?marshal: ILNativeType option * ?customAttrs: ILAttributes -> ILFieldDef
     member WithAccess: ILMemberAccess -> ILFieldDef
     member WithInitOnly: bool -> ILFieldDef
     member WithStatic: bool -> ILFieldDef
@@ -1150,10 +1170,15 @@ type ILFieldDefs =
     member LookupByName: string -> ILFieldDef list
 
 /// Event definitions.
+///
+/// This type is immutable and record-like.  We use a class to get control over the representation
+/// used, which allows more efficient representation of the information.
 [<NoComparison; NoEquality>]
 type ILEventDef =
+
+    /// Functional creation of a value
     new: eventType: ILType option * name: string * attributes: EventAttributes * addMethod: ILMethodRef * removeMethod: ILMethodRef * fireMethod: ILMethodRef option * otherMethods: ILMethodRef list * customAttrs: ILAttributes -> ILEventDef
-    member With: ?eventType: ILType option * ?name: string * ?attributes: EventAttributes * ?addMethod: ILMethodRef * ?removeMethod: ILMethodRef * ?fireMethod: ILMethodRef option * ?otherMethods: ILMethodRef list * ?customAttrs: ILAttributes -> ILEventDef
+
     member EventType: ILType option
     member Name: string
     member Attributes: EventAttributes
@@ -1165,17 +1190,31 @@ type ILEventDef =
     member IsSpecialName: bool
     member IsRTSpecialName: bool
 
+    /// Functional update of the value
+    member With: ?eventType: ILType option * ?name: string * ?attributes: EventAttributes * ?addMethod: ILMethodRef * ?removeMethod: ILMethodRef * ?fireMethod: ILMethodRef option * ?otherMethods: ILMethodRef list * ?customAttrs: ILAttributes -> ILEventDef
+
 /// Table of those events in a type definition.
+///
+/// This type is immutable and record-like.  We use a class to get control over the representation
+/// used, which allows more efficient representation of the information.
 [<NoEquality; NoComparison; Sealed>]
 type ILEventDefs =
     member AsList: ILEventDef list
     member LookupByName: string -> ILEventDef list
 
 /// Property definitions
+///
+/// This type is immutable and record-like.  We use a class to get control over the representation
+/// used, which allows more efficient representation of the information.
 [<NoComparison; NoEquality>]
 type ILPropertyDef =
+
+    /// Functional creation of a value
     new: name: string * attributes: PropertyAttributes * setMethod: ILMethodRef option * getMethod: ILMethodRef option * callingConv: ILThisConvention * propertyType: ILType * init: ILFieldInit option * args: ILTypes * customAttrs: ILAttributes -> ILPropertyDef
+
+    /// Functional update of the value
     member With: ?name: string * ?attributes: PropertyAttributes * ?setMethod: ILMethodRef option * ?getMethod: ILMethodRef option * ?callingConv: ILThisConvention * ?propertyType: ILType * ?init: ILFieldInit option * ?args: ILTypes * ?customAttrs: ILAttributes -> ILPropertyDef
+
     member Name: string
     member Attributes: PropertyAttributes
     member SetMethod: ILMethodRef option
@@ -1267,9 +1306,9 @@ type ILTypeDefs =
 
 /// Represents IL Type Definitions. 
 ///
-/// The object is immutable.  We use a class
-/// to get control over the representation used, which allows more efficient representation of the information.
-and [<NoComparison; NoEquality; Class>]
+/// This type is immutable and record-like.  We use a class to get control over the representation
+/// used, which allows more efficient representation of the information.
+and [<NoComparison; NoEquality>]
     ILTypeDef =  
 
     /// Create the contents 
