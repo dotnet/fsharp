@@ -45,7 +45,7 @@ type internal FSharpCheckerProvider
     ) =
 
     // Enabling this would mean that if devenv.exe goes above 2.3GB we do a one-off downsize of the F# Compiler Service caches
-    //let maxMemory = 2300 
+    let maxMemory = 400
 
     let checker = 
         lazy
@@ -53,8 +53,12 @@ type internal FSharpCheckerProvider
                 FSharpChecker.Create(
                     projectCacheSize = Settings.LanguageServicePerformance.ProjectCheckCacheSize, 
                     keepAllBackgroundResolutions = false,
-                    (* , MaxMemory = 2300 *) 
+                    MaxMemory = maxMemory,
                     legacyReferenceResolver=Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver)
+
+            checker.MaxMemoryReached.Add(fun () -> 
+                System.Windows.Forms.MessageBox.Show("Due to high memory utilization, in-memory cross-project references have been disabled for F# projects, and otehr cachig reduced. You will need to explicitly rebuild your solution to propagate changes from one project to another for the duration of this instance of Visual Studio.  You can disable in-memory cross-project references in Options -> Text Editor -> F# -> Performance.") |> ignore
+            )
 
             // This is one half of the bridge between the F# background builder and the Roslyn analysis engine.
             // When the F# background builder refreshes the background semantic build context for a file,

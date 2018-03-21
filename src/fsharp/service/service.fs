@@ -61,7 +61,7 @@ module EnvMisc =
     let checkFileInProjectCacheSize = GetEnvInteger "FCS_CheckFileInProjectCacheSize" 5
 
     let projectCacheSizeDefault   = GetEnvInteger "FCS_ProjectCacheSizeDefault" 3
-    let frameworkTcImportsCacheStrongSize = GetEnvInteger "FCS_frameworkTcImportsCacheStrongSizeDefault" 8
+    let frameworkTcImportsCacheStrongSize = GetEnvInteger "FCS_frameworkTcImportsCacheStrongSizeDefault" 2
     let maxMBDefault =  GetEnvInteger "FCS_MaxMB" 1000000 // a million MB = 1TB = disabled
     //let maxMBDefault = GetEnvInteger "FCS_maxMB" (if sizeof<int> = 4 then 1700 else 3400)
 
@@ -2293,6 +2293,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     let fileParsed = Event<string * obj option>()
     let fileChecked = Event<string * obj option>()
     let projectChecked = Event<string * obj option>()
+    let mutable inMemoryCrossProjectReferencesAutoDisabled = false
 
 
     let mutable implicitlyStartBackgroundWork = true
@@ -2317,7 +2318,8 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
       cancellable {
         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "CreateOneIncrementalBuilder", options.ProjectFileName)
         let projectReferences =  
-            [ for (nm,opts) in options.ReferencedProjects do
+          [ if not inMemoryCrossProjectReferencesAutoDisabled then 
+             for (nm,opts) in options.ReferencedProjects do
                
                // Don't use cross-project references for FSharp.Core, since various bits of code require a concrete FSharp.Core to exist on-disk.
                // The only solutions that have these cross-project references to FSharp.Core are VisualFSharp.sln and FSharp.sln. The only ramification
@@ -2884,7 +2886,8 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 checkFileInProjectCachePossiblyStale.Resize(ltok, keepStrongly=1)
                 checkFileInProjectCache.Resize(ltok, keepStrongly=1)
                 parseFileCache.Resize(ltok, keepStrongly=1))
-            incrementalBuildersCache.Resize(ctok, keepStrongly=1, keepMax=1)
+            inMemoryCrossProjectReferencesAutoDisabled <- true
+            incrementalBuildersCache.Resize(ctok, keepStrongly=3, keepMax=1-)
             frameworkTcImportsCache.Downsize(ctok)
             scriptClosureCacheLock.AcquireLock (fun ltok -> scriptClosureCache.Resize(ltok,keepStrongly=1, keepMax=1))
             cancellable.Return ())
@@ -3078,7 +3081,7 @@ type FSharpChecker(legacyReferenceResolver, projectCacheSize, keepAssemblyConten
             // If the maxMB limit is reached, drastic action is taken
             //   - reduce strong cache sizes to a minimum
             let userOpName = "MaxMemoryReached"
-            backgroundCompiler.CompleteAllQueuedOps()
+            //backgroundCompiler.CompleteAllQueuedOps()
             maxMemoryReached <- true
             braceMatchCache.Resize(AssumeAnyCallerThreadWithoutEvidence(), keepStrongly=10)
             backgroundCompiler.DownsizeCaches(userOpName) |> Async.RunSynchronously

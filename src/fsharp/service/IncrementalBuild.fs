@@ -1043,7 +1043,7 @@ type FrameworkImportsCache(keepStrongly) =
     let frameworkTcImportsCache = AgedLookup<CompilationThreadToken, FrameworkImportsCacheKey, (TcGlobals * TcImports)>(keepStrongly, areSimilar=(fun (x, y) -> x = y)) 
 
     /// Reduce the size of the cache in low-memory scenarios
-    member __.Downsize(ctok) = frameworkTcImportsCache.Resize(ctok, keepStrongly=0)
+    member __.Downsize(ctok) = frameworkTcImportsCache.Resize(ctok, keepStrongly=1)
 
     /// Clear the cache
     member __.Clear(ctok) = frameworkTcImportsCache.Clear(ctok)
