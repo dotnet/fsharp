@@ -1218,7 +1218,7 @@ module Shim =
 
         abstract AssemblyLoad: assemblyName: AssemblyName -> Assembly 
 
-        abstract StableFileHeuristic: fileName: string -> bool
+        abstract IsStableFileHeuristic: fileName: string -> bool
 
 
     type DefaultFileSystem() =
@@ -1266,7 +1266,7 @@ module Shim =
             member __.FileDelete (fileName:string) = File.Delete fileName
 
             /// Used to determine if a file will not be subject to deletion during the lifetime of a typical client process.
-            member __.StableFileHeuristic (fileName: string) = 
+            member __.IsStableFileHeuristic (fileName: string) = 
                 let directory = Path.GetDirectoryName(fileName)
                 directory.Contains("Reference Assemblies/") || 
                 directory.Contains("Reference Assemblies\\") || 

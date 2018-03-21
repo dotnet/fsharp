@@ -3893,7 +3893,7 @@ let ilModuleReaderCache = new AgedLookup<ILModuleReaderCacheLockToken, (string *
 let ilModuleReaderCacheLock = Lock()
 
 let stableFileHeuristicApplies fileName = 
-    not noStableFileHeuristic && try FileSystem.StableFileHeuristic fileName with _ -> false
+    not noStableFileHeuristic && try FileSystem.IsStableFileHeuristic fileName with _ -> false
 
 let createByteFile opts fileName = 
     // If we're trying to reduce memory usage then we are willing to go back and re-read the binary, so we can use
