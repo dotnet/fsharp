@@ -15,8 +15,6 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
-open Microsoft.VisualStudio.FSharp.LanguageService
-
 type private TextVersionHash = int
 
 [<DiagnosticAnalyzer(FSharpConstants.FSharpLanguageName)>]
