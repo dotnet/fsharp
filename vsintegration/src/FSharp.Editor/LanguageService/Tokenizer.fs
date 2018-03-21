@@ -328,6 +328,9 @@ module internal Tokenizer =
                 data.[i] <- None
                 i <- i + 1
 
+    /// This saves the tokenization data for a file for as long as the DocumentId object is alive.
+    /// This seems risky - if one single thing leaks a DocumentId (e.g. stores it in some global table of documents 
+    /// that have been closed), then we leak **all** this associated data, forever.
     let private dataCache = ConditionalWeakTable<DocumentId, ConcurrentDictionary<string list, SourceTextData>>()
 
     let compilerTokenToRoslynToken(colorKind: FSharpTokenColorKind) : string = 
