@@ -1755,7 +1755,7 @@ and seekReadPreTypeDef ctxt toponly (idx:int) =
     else
      let ns, n = readBlobHeapAsSplitTypeName ctxt (nameIdx, namespaceIdx)
      // Return the ILPreTypeDef
-     Some { Namespace=ns; Name=n; MetadataIndex=idx; Rest= ctxt.typeDefReader }
+     Some (mkILPreTypeDefRead (ns, n, idx, ctxt.typeDefReader))
 
 and typeDefReader ctxtH : ILTypeDefStored =
   mkILTypeDefReader

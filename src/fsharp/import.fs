@@ -507,7 +507,7 @@ let ImportILAssemblyExportedType amap m auxModLoader (scoref:ILScopeRef) (export
             lazy (match 
                     (try 
                         let modul = auxModLoader exportedType.ScopeRef
-                        let ptd = { Namespace=ns; Name=n; MetadataIndex=NoMetadataIdx; Rest=mkILTypeDefComputed (fun () -> modul.TypeDefs.FindByName exportedType.Name)}
+                        let ptd = mkILPreTypeDefComputed (ns, n, (fun () -> modul.TypeDefs.FindByName exportedType.Name))
                         Some ptd
                      with :? KeyNotFoundException -> None)
                     with 

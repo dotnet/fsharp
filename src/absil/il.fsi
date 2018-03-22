@@ -1400,22 +1400,24 @@ and [<NoComparison; NoEquality>]
     /// Functional update
     member With: ?name: string * ?attributes: TypeAttributes * ?layout: ILTypeDefLayout *  ?implements: ILTypes * ?genericParams:ILGenericParameterDefs * ?extends:ILType option * ?methods:ILMethodDefs * ?nestedTypes:ILTypeDefs * ?fields: ILFieldDefs * ?methodImpls:ILMethodImplDefs * ?events:ILEventDefs * ?properties:ILPropertyDefs * ?customAttrs:ILAttributes * ?securityDecls: ILSecurityDecls -> ILTypeDef
 
+/// Represents a prefix of information for ILTypeDef.
+///
 /// The information is enough to perform name resolution for the F# compiler, probe attributes
 /// for ExtensionAttribute  etc.  This is key to the on-demand exploration of .NET metadata.
 /// This information has to be "Goldilocks" - not too much, not too little, just right.
-and [<NoEquality; NoComparison>] ILPreTypeDef = 
-    { Namespace: string list
-      Name: string
-      MetadataIndex: int32 
-      mutable Rest: ILTypeDefStored }
+and [<NoEquality; NoComparison; Sealed>] ILPreTypeDef = 
+    member Namespace: string list
+    member Name: string
+    member MetadataIndex: int32 
     /// Realise the actual full typedef
     member GetTypeDef : unit -> ILTypeDef
 
 and [<Sealed>] ILTypeDefStored 
 
 val mkILPreTypeDef : ILTypeDef -> ILPreTypeDef
+val mkILPreTypeDefComputed : string list * string * (unit -> ILTypeDef) -> ILPreTypeDef
+val mkILPreTypeDefRead : string list * string * int32 * ILTypeDefStored -> ILPreTypeDef
 val mkILTypeDefReader: (int32 -> ILTypeDef) -> ILTypeDefStored
-val mkILTypeDefComputed: (unit -> ILTypeDef) -> ILTypeDefStored
 
 [<NoEquality; NoComparison; Sealed>]
 type ILNestedExportedTypes =

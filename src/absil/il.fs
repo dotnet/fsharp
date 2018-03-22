@@ -7,16 +7,19 @@ module Microsoft.FSharp.Compiler.AbstractIL.IL
 #nowarn "346" // The struct, record or union type 'IlxExtensionType' has an explicit implementation of 'Object.Equals'. ...
 
 
-open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
-open Microsoft.FSharp.Compiler.AbstractIL.Internal
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open System
 open System.Collections
 open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Runtime.CompilerServices
 open System.Reflection
+
+open Microsoft.FSharp.Compiler.AbstractIL
+open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
+open Microsoft.FSharp.Compiler.AbstractIL.Internal
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+
+open Internal.Utilities
  
 let logging = false 
 
@@ -1908,25 +1911,26 @@ and [<Sealed>] ILTypeDefs(f : unit -> ILPreTypeDef[]) =
         let ns,n = splitILTypeName nm
         dict.Value.[(ns,n)].GetTypeDef()
 
-and ILPreTypeDef = 
-    { Namespace: string list
-      Name: string
-      MetadataIndex: int32 
-      mutable Rest: ILTypeDefStored }
+/// This is a memory-critical class. Very many of these objects get allocated and held to represent the contents of .NET assemblies.
+and [<Sealed>] ILPreTypeDef(nameSpace: string list, name: string, metadataIndex: int32, storage: ILTypeDefStored) = 
+    let mutable store : ILTypeDef = Unchecked.defaultof<_>
+
+    member __.Namespace = nameSpace
+    member __.Name = name
+    member __.MetadataIndex = metadataIndex
+
     member x.GetTypeDef() = 
-        let r = x.Rest
-        match r with 
-        | ILTypeDefStored.Given td -> td 
-        | ILTypeDefStored.Computed f -> 
-            lock r (fun () -> 
-                let td = f ()
-                x.Rest <- ILTypeDefStored.Given td
-                td)
-        | ILTypeDefStored.Reader f -> 
-            lock r (fun () -> 
-                let td = f x.MetadataIndex
-                x.Rest <- ILTypeDefStored.Given td
-                td)
+        match box store with 
+        | null -> 
+            match storage with 
+            | ILTypeDefStored.Given td -> 
+                store <- td
+                td
+            | ILTypeDefStored.Computed f -> 
+                System.Threading.LazyInitializer.EnsureInitialized<ILTypeDef>(&store, System.Func<_>(fun () -> f()))
+            | ILTypeDefStored.Reader f -> 
+                System.Threading.LazyInitializer.EnsureInitialized<ILTypeDef>(&store, System.Func<_>(fun () -> f x.MetadataIndex))
+        | _ -> store
       
 and ILTypeDefStored = 
     | Given of ILTypeDef
@@ -1934,7 +1938,6 @@ and ILTypeDefStored =
     | Computed of (unit -> ILTypeDef)
 
 let mkILTypeDefReader f = ILTypeDefStored.Reader f
-let mkILTypeDefComputed f = ILTypeDefStored.Computed f
 
 type ILNestedExportedType =
     { Name: string
@@ -2277,7 +2280,12 @@ let mkRefForNestedILTypeDef scope (enc:ILTypeDef list,td:ILTypeDef)  =
 
 let mkILPreTypeDef (td:ILTypeDef) = 
     let ns,n = splitILTypeName td.Name
-    { Namespace=ns; Name=n; MetadataIndex=td.MetadataIndex; Rest= ILTypeDefStored.Given td }
+    ILPreTypeDef(ns, n, NoMetadataIdx, ILTypeDefStored.Given td)
+let mkILPreTypeDefComputed (ns, n, f) =
+    ILPreTypeDef(ns, n, NoMetadataIdx, ILTypeDefStored.Computed f)
+let mkILPreTypeDefRead (ns, n, idx, f) =
+    ILPreTypeDef(ns, n, idx, f)
+
 
 let addILTypeDef td (tdefs: ILTypeDefs) = ILTypeDefs (fun () -> [| yield mkILPreTypeDef td; yield! tdefs.AsArrayOfPreTypeDefs |])
 let mkILTypeDefsFromArray (l: ILTypeDef[]) =  ILTypeDefs (fun () -> Array.map mkILPreTypeDef l)
