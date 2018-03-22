@@ -1258,7 +1258,8 @@ let CheckModuleBinding cenv env (TBind(v,e,_) as bind) =
        // Having a field makes the binding a static initialization trigger
        IsSimpleSyntacticConstantExpr cenv.g e && 
        // Check the thing is actually compiled as a property
-       IsCompiledAsStaticProperty cenv.g v 
+       IsCompiledAsStaticProperty cenv.g v ||
+       (cenv.g.compilingFslib && v.Attribs |> List.exists(fun (Attrib(tc,_,_,_,_,_,_)) -> tc.CompiledName = "ValueAsStaticPropertyAttribute"))
      then 
         v.SetIsCompiledAsStaticPropertyWithoutField()
 
