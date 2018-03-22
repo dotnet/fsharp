@@ -51,8 +51,8 @@ These are the branches in use:
 * `dev15.x`
   - Latest release branch for the particular point release of Visual Studio.
   - Incorporates features and fixes from master up to a particular branch point, then selective cherry-picks.
-  - May contain new features that depend on new things or fixes in th corresponding Visual Studio release.
-  - Gets ingegrated back into master once the corresponding Visual Studio release is made.
+  - May contain new features that depend on new things or fixes in the corresponding Visual Studio release.
+  - Gets integrated back into master once the corresponding Visual Studio release is made.
   - Used to build Visual F# Tool updates
 
 

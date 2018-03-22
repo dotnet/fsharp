@@ -1706,23 +1706,23 @@ and p_rfield_table x st =
 and p_entity_spec_data (x:Entity) st = 
     p_typar_specs (x.entity_typars.Force(x.entity_range)) st 
     p_string x.entity_logical_name st
-    p_option p_string x.entity_compiled_name st
+    p_option p_string x.EntityCompiledName st
     p_range  x.entity_range st
     p_option p_pubpath x.entity_pubpath st
-    p_access x.entity_accessiblity st
-    p_access  x.entity_tycon_repr_accessibility st
+    p_access x.Accessibility st
+    p_access  x.TypeReprAccessibility st
     p_attribs x.entity_attribs st
     let flagBit = p_tycon_repr x.entity_tycon_repr st
-    p_option p_typ x.entity_tycon_abbrev st
+    p_option p_typ x.TypeAbbrev st
     p_tcaug x.entity_tycon_tcaug st
-    p_string x.entity_xmldocsig st
-    p_kind x.entity_kind st
+    p_string System.String.Empty st
+    p_kind x.TypeOrMeasureKind st
     p_int64 (x.entity_flags.PickledBits ||| (if flagBit then EntityFlags.ReservedBitForPickleFormatTyconReprFlag else 0L)) st
     p_option p_cpath x.entity_cpath st
     p_maybe_lazy p_modul_typ x.entity_modul_contents st
-    p_exnc_repr x.entity_exn_info st
+    p_exnc_repr x.ExceptionInfo st
     if st.oInMem then
-        p_used_space1 (p_xmldoc x.entity_xmldoc) st
+        p_used_space1 (p_xmldoc x.XmlDoc) st
     else
         p_space 1 () st
 
@@ -1812,20 +1812,20 @@ and p_vrefFlags x st =
 
 and p_ValData x st =
     p_string x.val_logical_name st
-    p_option p_string x.val_compiled_name st
+    p_option p_string x.ValCompiledName st
     // only keep range information on published values, not on optimization data
-    p_ranges (if x.val_repr_info.IsSome then Some(x.val_range, x.DefinitionRange) else None) st
+    p_ranges (x.ValReprInfo |> Option.map (fun _ -> x.val_range, x.DefinitionRange)) st
     p_typ x.val_type st
     p_int64 x.val_flags.PickledBits st
-    p_option p_member_info x.val_member_info st
-    p_attribs x.val_attribs st
-    p_option p_ValReprInfo x.val_repr_info st
-    p_string x.val_xmldocsig st
-    p_access x.val_access st
-    p_parentref x.val_declaring_entity st
-    p_option p_const x.val_const st
+    p_option p_member_info x.MemberInfo st
+    p_attribs x.Attribs st
+    p_option p_ValReprInfo x.ValReprInfo st
+    p_string x.XmlDocSig st
+    p_access x.Accessibility st
+    p_parentref x.DeclaringEntity st
+    p_option p_const x.LiteralValue st
     if st.oInMem then
-        p_used_space1 (p_xmldoc x.val_xmldoc) st
+        p_used_space1 (p_xmldoc x.XmlDoc) st
     else
         p_space 1 () st
       
@@ -1959,7 +1959,7 @@ and u_recdfield_spec st =
 and u_rfield_table st = MakeRecdFieldsTable (u_list u_recdfield_spec st)
 
 and u_entity_spec_data st : Entity = 
-    let x1,x2a,x2b,x2c,x3,(x4a,x4b),x6,x7f,x8,x9,x10,x10b,x11,x12,x13,x14,x15 = 
+    let x1,x2a,x2b,x2c,x3,(x4a,x4b),x6,x7f,x8,x9,_x10,x10b,x11,x12,x13,x14,x15 = 
        u_tup17
           u_typar_specs
           u_string
@@ -1986,25 +1986,20 @@ and u_entity_spec_data st : Entity =
     { entity_typars=LazyWithContext.NotLazy x1
       entity_stamp=newStamp()
       entity_logical_name=x2a
-      entity_compiled_name=x2b
       entity_range=x2c
-      entity_other_range=None
       entity_pubpath=x3
-      entity_accessiblity=x4a
-      entity_tycon_repr_accessibility=x4b
       entity_attribs=x6
       entity_tycon_repr=x7
-      entity_tycon_abbrev=x8
       entity_tycon_tcaug=x9
-      entity_xmldoc= defaultArg x15 XmlDoc.Empty
-      entity_xmldocsig=x10
-      entity_kind=x10b
       entity_flags=EntityFlags(x11)
       entity_cpath=x12
       entity_modul_contents=MaybeLazy.Lazy x13
-      entity_exn_info=x14
       entity_il_repr_cache=newCache()  
-      } 
+      entity_opt_data=
+        match x2b, x10b, x15, x8, x4a, x4b, x14 with
+        | None, TyparKind.Type, None, None, TAccess [], TAccess [], TExnNone -> None
+        | _ -> Some { Entity.EmptyEntityOptData with entity_compiled_name = x2b; entity_kind = x10b; entity_xmldoc= defaultArg x15 XmlDoc.Empty; entity_xmldocsig = System.String.Empty; entity_tycon_abbrev = x8; entity_accessiblity = x4a; entity_tycon_repr_accessibility = x4b; entity_exn_info = x14 }
+    } 
 
 and u_tcaug st = 
     let a1,a2,a3,b2,c,d,e,g,_space = 
@@ -2121,22 +2116,27 @@ and u_ValData st =
         (u_option u_const) 
         (u_used_space1 u_xmldoc)
         st
-    { val_logical_name=x1
-      val_compiled_name=x1z
-      val_range=(match x1a with None -> range0 | Some(a,_) -> a)
-      val_other_range=(match x1a with None -> None | Some(_,b) -> Some(b,true))
-      val_type=x2
-      val_stamp=newStamp()
-      val_flags=ValFlags(x4)
-      val_defn = None
-      val_member_info=x8
-      val_attribs=x9
-      val_repr_info=x10
-      val_xmldoc= defaultArg x15 XmlDoc.Empty
-      val_xmldocsig=x12
-      val_access=x13
-      val_declaring_entity=x13b
-      val_const=x14
+
+    { val_logical_name = x1
+      val_range        = (match x1a with None -> range0 | Some(a,_) -> a)
+      val_type         = x2
+      val_stamp        = newStamp()
+      val_flags        = ValFlags(x4)
+      val_opt_data     =
+          match x1z, x1a, x10, x14, x13, x15, x8, x13b, x12, x9 with
+          | None, None, None, None, TAccess [], None, None, ParentNone, "", [] -> None
+          | _ -> 
+              Some { val_compiled_name    = x1z
+                     val_other_range      = (match x1a with None -> None | Some(_,b) -> Some(b,true))
+                     val_defn             = None
+                     val_repr_info        = x10
+                     val_const            = x14
+                     val_access           = x13
+                     val_xmldoc           = defaultArg x15 XmlDoc.Empty
+                     val_member_info      = x8
+                     val_declaring_entity = x13b
+                     val_xmldocsig        = x12
+                     val_attribs          = x9 }
     }
 
 and u_Val st = u_osgn_decl st.ivals u_ValData st 

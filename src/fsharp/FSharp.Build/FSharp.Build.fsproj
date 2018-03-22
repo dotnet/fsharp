@@ -3,6 +3,8 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
+    <ProjectLanguage>FSharp</ProjectLanguage>
+    <UseFSharpProductVersion>true</UseFSharpProductVersion>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
   <PropertyGroup>
@@ -35,6 +37,7 @@
     <None Include="Microsoft.Portable.FSharp.Targets" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Microsoft.FSharp.NetSdk.props" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Microsoft.FSharp.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Microsoft.FSharp.Overrides.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr'">

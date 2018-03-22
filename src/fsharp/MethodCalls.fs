@@ -530,22 +530,21 @@ let ComputeConstrainedCallInfo g amap m (objArgs,minfo:MethInfo) =
 /// Adjust the 'this' pointer before making a call 
 /// Take the address of a struct, and coerce to an interface/base/constraint type if necessary 
 let TakeObjAddrForMethodCall g amap (minfo:MethInfo) isMutable m objArgs f =
-    let ccallInfo = ComputeConstrainedCallInfo g amap m (objArgs,minfo) 
-    let mustTakeAddress = 
-        (minfo.IsStruct && not minfo.IsExtensionMember)  // don't take the address of a struct when passing to an extension member
-        ||
-        (match ccallInfo with 
-         | Some _ -> true 
-         | None -> false) 
+    let ccallInfo = ComputeConstrainedCallInfo g amap m (objArgs,minfo)
+
     let wrap,objArgs = 
         match objArgs with
-        | [objArgExpr] -> 
+        | [objArgExpr] ->
+            let hasCallInfo = ccallInfo.IsSome
+            let mustTakeAddress = 
+                (minfo.IsStruct && not minfo.IsExtensionMember)  // don't take the address of a struct when passing to an extension member
+                || hasCallInfo
             let objArgTy = tyOfExpr g objArgExpr
-            let wrap,objArgExpr' = mkExprAddrOfExpr g mustTakeAddress (Option.isSome ccallInfo) isMutable objArgExpr None m
+            let wrap,objArgExpr' = mkExprAddrOfExpr g mustTakeAddress hasCallInfo isMutable objArgExpr None m
             
             // Extension members and calls to class constraints may need a coercion for their object argument
             let objArgExpr' = 
-              if Option.isNone ccallInfo && // minfo.IsExtensionMember && minfo.IsStruct && 
+              if not hasCallInfo && // minfo.IsExtensionMember && minfo.IsStruct && 
                  not (TypeDefinitelySubsumesTypeNoCoercion 0 g amap m minfo.ApparentEnclosingType objArgTy) then 
                   mkCoerceExpr(objArgExpr',minfo.ApparentEnclosingType,m,objArgTy)
               else
@@ -554,7 +553,7 @@ let TakeObjAddrForMethodCall g amap (minfo:MethInfo) isMutable m objArgs f =
             wrap,[objArgExpr'] 
 
         | _ -> 
-            (fun x -> x), objArgs
+            id, objArgs
     let e,ety = f ccallInfo objArgs
     wrap e,ety
 
@@ -579,7 +578,7 @@ let BuildILMethInfoCall g amap m isProp (minfo:ILMethInfo) valUseFlags minst dir
     let ilMethRef = minfo.ILMethodRef
     let newobj = ctor && (match valUseFlags with NormalValUse -> true | _ -> false)
     let exprTy = if ctor then minfo.ApparentEnclosingType else minfo.GetFSharpReturnTy(amap, m, minst)
-    let retTy = (if not ctor && (ilMethRef.ReturnType = ILType.Void) then [] else [exprTy])
+    let retTy = if not ctor && ilMethRef.ReturnType = ILType.Void then [] else [exprTy]
     let isDllImport = minfo.IsDllImport g
     Expr.Op(TOp.ILCall(useCallvirt,isProtected,valu,newobj,valUseFlags,isProp,isDllImport,ilMethRef,minfo.DeclaringTypeInst,minst,retTy),[],args,m),
     exprTy
@@ -604,9 +603,7 @@ let BuildFSharpMethodApp g m (vref: ValRef) vexp vexprty (args: Exprs) =
         ((args,vexprty), arities) ||> List.mapFold (fun (args,fty) arity -> 
             match arity,args with 
             | (0|1),[] when typeEquiv g (domainOfFunTy g fty) g.unit_ty -> mkUnit g m, (args, rangeOfFunTy g fty)
-            | 0,(arg::argst)-> 
-                
-                
+            | 0,(arg::argst) -> 
                 warning(InternalError(sprintf "Unexpected zero arity, args = %s" (Layout.showL (Layout.sepListL (Layout.rightL (Layout.TaggedTextOps.tagText ";")) (List.map exprL args))),m));
                 arg, (argst, rangeOfFunTy g fty)
             | 1,(arg :: argst) -> arg, (argst, rangeOfFunTy g fty)
@@ -673,9 +670,8 @@ let TryImportProvidedMethodBaseAsLibraryIntrinsic (amap:Import.ImportMap, m:rang
             | _ -> 
             match amap.g.knownFSharpCoreModules.TryGetValue(declaringEntity.LogicalName) with
             | true,modRef -> 
-                match modRef.ModuleOrNamespaceType.AllValsByLogicalName |> Seq.tryPick (fun (KeyValue(_,v)) -> if v.CompiledName = methodName then Some v else None) with 
-                | Some v -> Some (mkNestedValRef modRef v)
-                | None -> None
+                modRef.ModuleOrNamespaceType.AllValsByLogicalName 
+                |> Seq.tryPick (fun (KeyValue(_,v)) -> if v.CompiledName = methodName then Some (mkNestedValRef modRef v) else None)
             | _ -> None
         else
             None
@@ -693,13 +689,12 @@ let TryImportProvidedMethodBaseAsLibraryIntrinsic (amap:Import.ImportMap, m:rang
 //   objArgs: the 'this' argument, if any 
 //   args: the arguments, if any 
 let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objArgs args =
-
     let direct = IsBaseCall objArgs
 
     TakeObjAddrForMethodCall g amap minfo isMutable m objArgs (fun ccallInfo objArgs -> 
-        let allArgs = (objArgs @ args)
+        let allArgs = objArgs @ args
         let valUseFlags = 
-            if (direct && (match valUseFlags with NormalValUse -> true | _ -> false)) then 
+            if direct && (match valUseFlags with NormalValUse -> true | _ -> false) then 
                 VSlotDirectCall 
             else 
                 match ccallInfo with
@@ -722,7 +717,7 @@ let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objA
             // these calls are provided by the runtime and should not be called from the user code
             if isArrayTy g enclTy then
                 let tpe = TypeProviderError(FSComp.SR.tcRuntimeSuppliedMethodCannotBeUsedInUserCode(minfo.DisplayName), providedMeth.TypeProviderDesignation, m)
-                error (tpe)
+                error tpe
             let valu = isStructTy g enclTy
             let isCtor = minfo.IsConstructor
             if minfo.IsClassConstructor then 
@@ -747,7 +742,7 @@ let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objA
                     elif isFunTy g enclTy then [ domainOfFunTy g enclTy; rangeOfFunTy g enclTy ]  // provided expressions can call Invoke
                     else minfo.DeclaringTypeInst
                 let actualMethInst = minst
-                let retTy = (if not isCtor && (ilMethRef.ReturnType = ILType.Void) then [] else [exprTy])
+                let retTy = if not isCtor && (ilMethRef.ReturnType = ILType.Void) then [] else [exprTy]
                 let noTailCall = false
                 let expr = Expr.Op(TOp.ILCall(useCallvirt,isProtected,valu,isNewObj,valUseFlags,isProp,noTailCall,ilMethRef,actualTypeInst,actualMethInst, retTy),[],allArgs,m)
                 expr,exprTy
@@ -1191,7 +1186,7 @@ module ProvidedMethodCalls =
             |> Array.map (fun pty -> eraseSystemType (amap,m,pty))
         let paramVars = 
             erasedParamTys
-            |> Array.mapi (fun i erasedParamTy -> erasedParamTy.PApply((fun ty ->  ProvidedVar.Fresh("arg" + i.ToString(),ty)),m))
+            |> Array.mapi (fun i erasedParamTy -> erasedParamTy.PApply((fun ty -> ProvidedVar.Fresh("arg" + i.ToString(),ty)),m))
 
 
         // encode "this" as the first ParameterExpression, if applicable

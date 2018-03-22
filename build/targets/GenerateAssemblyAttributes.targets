@@ -1,7 +1,10 @@
 <Project>
 
+  <Import Project="GitHash.props" />
+
   <Target Name="GenerateAssemblyFileVersion"
-          BeforeTargets="CoreCompile">
+          BeforeTargets="CoreCompile"
+          Condition="'$(Configuration)' != 'Proto'">
 
     <PropertyGroup>
       <GeneratedFSharpAssemblyVersionFile>$(IntermediateOutputPath)$(MSBuildProjectName).AssemblyVersion$(DefaultLanguageSourceExtension)</GeneratedFSharpAssemblyVersionFile>
@@ -41,6 +44,17 @@
       </_AssemblyVersionAttributes>
     </ItemGroup>
 
+    <WriteCodeFragment AssemblyAttributes="@(_AssemblyVersionAttributes)"
+                       Language="$(Language)"
+                       OutputFile="$(GeneratedFSharpAssemblyVersionFile)"
+                       Condition="'$(_UseWriteCodeFragmentHack)' != 'true'">
+      <!-- For FSharp.Core, assembly version must be inserted after all Core files, as it defines F# basic types (strings) -->
+      <Output TaskParameter="OutputFile" ItemName="Compile" Condition="'$(Language)' != 'F#' or '$(AssemblyName)' == 'FSharp.Core'" />
+      <!-- For other assemblies, this must be inserted before all source files, to keep exe's EntryPoints (if any) as the last source file -->
+      <Output TaskParameter="OutputFile" ItemName="CompileBefore" Condition="'$(Language)' == 'F#' and '$(AssemblyName)' != 'FSharp.Core'" />
+      <Output TaskParameter="OutputFile" ItemName="FileWrites" />
+    </WriteCodeFragment>
+
     <ItemGroup Condition="'$(_UseWriteCodeFragmentHack)' == 'true'">
       <_LinesToWrite Include="// &lt;auto-generated&gt;" />
       <_LinesToWrite Include="namespace FSharp" />
@@ -53,17 +67,6 @@
       <CompileBefore Include="$(GeneratedFSharpAssemblyVersionFile)" Condition="'$(Language)' == 'F#' and '$(AssemblyName)' != 'FSharp.Core'" />
       <FileWrites Include="$(GeneratedFSharpAssemblyVersionFile)" />
     </ItemGroup>
-
-    <WriteCodeFragment AssemblyAttributes="@(_AssemblyVersionAttributes)"
-                       Language="$(Language)"
-                       OutputFile="$(GeneratedFSharpAssemblyVersionFile)"
-                       Condition="'$(_UseWriteCodeFragmentHack)' != 'true'">
-      <!-- For FSharp.Core, assembly version must be inserted after all Core files, as it defines F# basic types (strings) -->
-      <Output TaskParameter="OutputFile" ItemName="Compile" Condition="'$(Language)' != 'F#' or '$(AssemblyName)' == 'FSharp.Core'" />
-      <!-- For other assemblies, this must be inserted before all source files, to keep exe's EntryPoints (if any) as the last source file -->
-      <Output TaskParameter="OutputFile" ItemName="CompileBefore" Condition="'$(Language)' == 'F#' and '$(AssemblyName)' != 'FSharp.Core'" />
-      <Output TaskParameter="OutputFile" ItemName="FileWrites" />
-    </WriteCodeFragment>
 
     <WriteLinesToFile File="$(GeneratedFSharpAssemblyVersionFile)"
                       Lines="@(_LinesToWrite)"

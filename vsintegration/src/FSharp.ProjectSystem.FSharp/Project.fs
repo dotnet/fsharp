@@ -45,7 +45,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
     [<assembly:ProvideCodeBase(AssemblyName = "FSharp.Compiler.Private", CodeBase = @"$PackageFolder$\FSharp.Compiler.Private.dll")>]
     [<assembly:ProvideCodeBase(AssemblyName = "FSharp.Compiler.Server.Shared", CodeBase = @"$PackageFolder$\FSharp.Compiler.Server.Shared.dll")>]
     [<assembly:ProvideCodeBase(AssemblyName = "FSharp.UIResources", CodeBase = @"$PackageFolder$\FSharp.UIResources.dll")>]
-    [<assembly:ProvideBindingRedirection(AssemblyName = "FSharp.Core", OldVersionLowerBound = "2.0.0.0", OldVersionUpperBound = "4.4.0.0", NewVersion = "4.4.1.0", CodeBase = @"$PackageFolder$\FSharp.Core.dll")>]
+    [<assembly:ProvideBindingRedirection(AssemblyName = "FSharp.Core", OldVersionLowerBound = "2.0.0.0", OldVersionUpperBound = "4.4.3.0", NewVersion = "4.4.3.0", CodeBase = @"$PackageFolder$\FSharp.Core.dll")>]
     do ()
 
     module internal VSHiveUtilities =
@@ -507,7 +507,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                                  "3.259.3.1"; "3.259.4.0"]        // portable 259
                                 |> List.map (fun s -> System.Version(s))
                             let latestOnlyVersions = 
-                                ["4.4.1.0"                        // .NET 4 desktop
+                                ["4.4.3.0"                        // .NET 4 desktop
                                  "3.47.41.0"                       // portable 47
                                  "3.7.41.0"                        // portable 7
                                  "3.78.41.0"                       // portable 78
@@ -1368,8 +1368,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                         // If property is not set - msbuild will resolve only primary dependencies,
                         // and compiler will be very unhappy when during processing of referenced assembly it will discover that all fundamental types should be
                         // taken from System.Runtime that is not supplied
-                        
-                        let _ = x.InvokeMsBuild("Compile", extraProperties = [KeyValuePair("_ResolveReferenceDependencies", "true")])
+                        let _ = x.InvokeMsBuild("Compile", extraProperties = [KeyValuePair("_ResolveReferenceDependencies", "true"); KeyValuePair("DesignTimeBuild", "true")])
                         sourcesAndFlagsNotifier.Notify()
                     finally
                         actuallyBuild <- true

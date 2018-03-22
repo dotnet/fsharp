@@ -14,5 +14,14 @@ module M2 =
         if not (NativeInterop.NativePtr.get data i = (int64 (i*i))) then 
             noerr <- false
 
+   for i = 0 to 99 do
+        let datai = NativeInterop.NativePtr.toByRef (NativeInterop.NativePtr.add data i)
+        datai <- int64 (1-i)
+    
+   for i = 0 to 99 do
+        let datai = NativeInterop.NativePtr.toByRef (NativeInterop.NativePtr.add data i)
+        if not (datai = int64 (1-i)) then 
+            noerr <- false
+
    (if noerr then 0 else 1) |> exit
 

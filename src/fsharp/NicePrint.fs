@@ -71,9 +71,10 @@ module internal PrintUtilities =
                     tcref.DisplayName // has no static params
                 else
                     tcref.DisplayName+"<...>" // shorten
-            if isAttribute then 
-                defaultArg (String.tryDropSuffix name "Attribute") name 
-            else name
+            if isAttribute && name.EndsWith "Attribute" then
+                String.dropSuffix name "Attribute"
+            else 
+                name
         let tyconTextL =
             tagEntityRefName tcref demangled
             |> mkNav tcref.DefinitionRange
@@ -259,7 +260,7 @@ module private PrintIL =
         let staticL =  if f.IsStatic then WordL.keywordStatic else emptyL
         let name    = adjustILName f.Name
         let nameL   = wordL (tagField name)
-        let typL    = layoutILType denv ilTyparSubst f.Type
+        let typL    = layoutILType denv ilTyparSubst f.FieldType
         staticL ^^ WordL.keywordVal ^^ nameL ^^ WordL.colon ^^ typL  
             
     let private layoutILEventDef denv  ilTyparSubst (e: ILEventDef) =
@@ -267,7 +268,7 @@ module private PrintIL =
         let name = adjustILName e.Name
         let nameL = wordL (tagEvent name)
         let typL = 
-            match e.Type with
+            match e.EventType with
             | Some t -> layoutILType denv ilTyparSubst t
             | _ -> emptyL
         staticL ^^ WordL.keywordEvent ^^ nameL ^^ WordL.colon ^^ typL     
@@ -294,16 +295,16 @@ module private PrintIL =
             
         let typL = 
             match p.GetMethod, p.SetMethod with
-            |   None, None -> layoutILType denv ilTyparSubst p.Type // shouldn't happen
-            |   Some getterRef, _ -> layoutGetterType getterRef
-            |   None, Some setterRef -> layoutSetterType setterRef
+            | None, None -> layoutILType denv ilTyparSubst p.PropertyType // shouldn't happen
+            | Some getterRef, _ -> layoutGetterType getterRef
+            | None, Some setterRef -> layoutSetterType setterRef
                 
         let specGetSetL =
             match p.GetMethod, p.SetMethod with
-            |   None,None 
-            |   Some _, None -> emptyL
-            |   None, Some _ -> WordL.keywordWith ^^ WordL.keywordSet
-            |   Some _, Some _ -> WordL.keywordWith ^^ WordL.keywordGet ^^ RightL.comma ^^ WordL.keywordSet
+            | None,None 
+            | Some _, None -> emptyL
+            | None, Some _ -> WordL.keywordWith ^^ WordL.keywordSet
+            | Some _, Some _ -> WordL.keywordWith ^^ WordL.keywordGet ^^ RightL.comma ^^ WordL.keywordSet
         staticL ^^ WordL.keywordMember ^^ nameL ^^ WordL.colon ^^ typL ^^ specGetSetL
 
     let layoutILFieldInit x =
@@ -654,9 +655,10 @@ module private PrintTypes =
         | ILAttrib ilMethRef -> 
             let trimmedName = 
                 let name = ilMethRef.DeclaringTypeRef.Name
-                match String.tryDropSuffix name "Attribute" with 
-                | Some shortName -> shortName
-                | None -> name
+                if name.EndsWith "Attribute" then
+                    String.dropSuffix name "Attribute"
+                else
+                    name
             let tref = ilMethRef.DeclaringTypeRef
             let tref = ILTypeRef.Create(scope= tref.Scope, enclosing=tref.Enclosing, name=trimmedName)
             PrintIL.layoutILTypeRef denv tref ++ argsL
@@ -1275,7 +1277,7 @@ module InfoMemberPrinting =
         let paramDatas = minfo.GetParamDatas(amap, m, minst)
         let layout =
             layout ^^
-                if isNil (List.concat paramDatas) then
+                if List.forall isNil paramDatas then
                     WordL.structUnit
                 else
                     sepListL WordL.arrow (List.map ((List.map (layoutParamData denv)) >> sepListL WordL.star) paramDatas)

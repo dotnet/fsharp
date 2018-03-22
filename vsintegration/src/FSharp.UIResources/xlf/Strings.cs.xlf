@@ -87,6 +87,26 @@
         <target state="translated">Analyzovat a navrhovat opravy pro nepoužité hodnoty</target>
         <note />
       </trans-unit>
+      <trans-unit id="Block_Structure">
+        <source>Block Structure Guides</source>
+        <target state="translated">Vodítka pro strukturu bloku</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_guides">
+        <source>Show structure guidelines for F# code</source>
+        <target state="translated">Zobrazí pokyny pro strukturu kódu F#.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Outlining">
+        <source>Outlining</source>
+        <target state="translated">Sbalení</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Outlining">
+        <source>Show outlining and collapsable nodes for F# code</source>
+        <target state="translated">Zobrazí osnovu a sbalitelné uzly kódu F#.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

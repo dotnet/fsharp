@@ -87,6 +87,26 @@
         <target state="translated">分析未使用的值并建议相应的修补程序</target>
         <note />
       </trans-unit>
+      <trans-unit id="Block_Structure">
+        <source>Block Structure Guides</source>
+        <target state="translated">块结构指南</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_guides">
+        <source>Show structure guidelines for F# code</source>
+        <target state="translated">显示 F# 代码的结构指南</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Outlining">
+        <source>Outlining</source>
+        <target state="translated">大纲</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Outlining">
+        <source>Show outlining and collapsable nodes for F# code</source>
+        <target state="translated">显示 F# 代码的大纲和可折叠节点</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

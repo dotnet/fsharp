@@ -211,6 +211,7 @@ if /i "%ARG%" == "microbuild" (
     set BUILD_VS=1
     set BUILD_SETUP=%FSC_BUILD_SETUP%
     set BUILD_NUGET=1
+    set BUILD_MICROBUILD=1
 
     set TEST_NET40_COMPILERUNIT_SUITE=1
     set TEST_NET40_COREUNIT_SUITE=1
@@ -459,6 +460,10 @@ if /i "%BUILD_FCS%" == "1" (
     set NEEDS_DOTNET_CLI_TOOLS=1
 )
 
+rem Decide if Proto need building
+if NOT EXIST Proto\net40\bin\fsc.exe (
+  set BUILD_PROTO=1
+)
 
 echo Build/Tests configuration:
 echo.
@@ -474,6 +479,7 @@ echo BUILD_SETUP=%BUILD_SETUP%
 echo BUILD_NUGET=%BUILD_NUGET%
 echo BUILD_CONFIG=%BUILD_CONFIG%
 echo BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
+echo BUILD_MICROBUILD=%BUILD_MICROBUILD%
 echo.
 echo PB_SKIPTESTS=%PB_SKIPTESTS%
 echo PB_RESTORESOURCE=%PB_RESTORESOURCE%
@@ -620,11 +626,6 @@ if "%RestorePackages%" == "true" (
     %_nugetexe% restore packages.config !_nugetoptions!
     @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
 
-    if "%BUILD_VS%" == "1" (
-        %_nugetexe% restore vsintegration\packages.config !_nugetoptions!
-        @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
-    )
-
     if "%BUILD_SETUP%" == "1" (
         %_nugetexe% restore setup\packages.config !_nugetoptions!
         @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
@@ -651,17 +652,11 @@ if "%NEEDS_DOTNET_CLI_TOOLS%" == "1" (
     :: Restore the Tools directory
     call %~dp0init-tools.cmd
 )
+
 set _dotnetcliexe=%~dp0Tools\dotnetcli\dotnet.exe
 set _dotnet20exe=%~dp0Tools\dotnet20\dotnet.exe
-set NUGET_PACKAGES=%~dp0Packages
+set NUGET_PACKAGES=%~dp0packages
 set path=%~dp0Tools\dotnet20\;%path%
-
-if "%NEEDS_DOTNET_CLI_TOOLS%" == "1" (
-    :: Restore projects using dotnet CLI tool 
-    echo %_dotnet20exe% restore -v:d build-everything.proj %msbuildflags% %BUILD_DIAG%
-         %_dotnet20exe% restore -v:d build-everything.proj %msbuildflags% %BUILD_DIAG%
-)
-
 
 echo ----------- Done with package restore, starting dependency uptake check -------------
 
@@ -686,10 +681,10 @@ if not "%PB_PackageVersionPropsUrl%" == "" (
 
 set _fsiexe="packages\FSharp.Compiler.Tools.4.1.27\tools\fsi.exe"
 if not exist %_fsiexe% echo Error: Could not find %_fsiexe% && goto :failure
-%_ngenexe% install %_fsiexe% /nologo 
+%_ngenexe% install %_fsiexe% /nologo
 
 if not exist %_nugetexe% echo Error: Could not find %_nugetexe% && goto :failure
-%_ngenexe% install %_nugetexe% /nologo 
+%_ngenexe% install %_nugetexe% /nologo
 
 echo ---------------- Done with package restore, verify buildfrom source ---------------
 if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
@@ -700,11 +695,6 @@ if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
 )
 
 echo ---------------- Done with package restore, starting proto ------------------------
-
-rem Decide if Proto need building
-if NOT EXIST Proto\net40\bin\fsc.exe (
-  set BUILD_PROTO=1
-)
 
 rem Build Proto
 if "%BUILD_PROTO%" == "1" (
@@ -732,7 +722,14 @@ if "%BUILD_PROTO%" == "1" (
   @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
 )
 
-echo ---------------- Done with proto, starting build ------------------------
+if "%NEEDS_DOTNET_CLI_TOOLS%" == "1" (
+    echo ---------------- Done with proto, starting SDK restore ------------------------
+    :: Restore projects using dotnet CLI tool 
+    echo %_dotnet20exe% restore -v:d build-everything.proj %msbuildflags% %BUILD_DIAG%
+         %_dotnet20exe% restore -v:d build-everything.proj %msbuildflags% %BUILD_DIAG%
+)
+
+echo ---------------- Done with SDK restore, starting build ------------------------
 
 if "%BUILD_PHASE%" == "1" (
 
@@ -745,13 +742,28 @@ if "%BUILD_PHASE%" == "1" (
    @if ERRORLEVEL 1 echo Error build failed && goto :failure
 )
 
-echo ---------------- Done with build, starting assembly signing ---------------
+echo ---------------- Done with build, starting assembly version checks ---------------
+set asmvercheckpath=%~dp0tests\fsharpqa\testenv\src\AssemblyVersionCheck
+
+if "%BUILD_NET40%" == "1" (
+  echo "%~dp0%BUILD_CONFIG%\net40\bin\fsi.exe" %asmvercheckpath%\AssemblyVersionCheck.fsx -- "%~dp0build\config\AssemblySignToolData.json" "%~dp0%BUILD_CONFIG%"
+       "%~dp0%BUILD_CONFIG%\net40\bin\fsi.exe" %asmvercheckpath%\AssemblyVersionCheck.fsx -- "%~dp0build\config\AssemblySignToolData.json" "%~dp0%BUILD_CONFIG%"
+  if ERRORLEVEL 1 echo Error verifying assembly versions and commit hashes. && goto :failure
+)
+
+echo ---------------- Done with assembly version checks, starting assembly signing ---------------
 
 if not "%SIGN_TYPE%" == "" (
     echo build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -ConfigFile build\config\AssemblySignToolData.json
     call build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -ConfigFile build\config\AssemblySignToolData.json
     if ERRORLEVEL 1 echo Error running sign tool && goto :failure
 )
+
+echo ---------------- Done with assembly signing, start package creation ---------------
+
+echo %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG%
+     %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG%
+if ERRORLEVEL 1 echo Error building NuGet packages && goto :failure
 
 if "%BUILD_SETUP%" == "1" (
     echo %_msbuildexe% %msbuildflags% setup\build-msi.proj /p:Configuration=%BUILD_CONFIG%
@@ -829,7 +841,7 @@ echo SNEXE32:           %SNEXE32%
 echo SNEXE64:           %SNEXE64%
 echo
 
-if "%TEST_NET40_COMPILERUNIT_SUITE%" == "0" if "%TEST_FCS%" == "0" if "%TEST_NET40_COREUNIT_SUITE%" == "0" if "%TEST_CORECLR_COREUNIT_SUITE%" == "0" if "%TEST_VS_IDEUNIT_SUITE%" == "0" if "%TEST_NET40_FSHARP_SUITE%" == "0" if "%TEST_NET40_FSHARPQA_SUITE%" == "0" goto :success
+if "%TEST_NET40_COMPILERUNIT_SUITE%" == "0" if "%TEST_FCS%" == "0" if "%TEST_NET40_COREUNIT_SUITE%" == "0" if "TEST_CORECLR_FSHARP_SUITE" == "0" if "%TEST_CORECLR_COREUNIT_SUITE%" == "0" if "%TEST_VS_IDEUNIT_SUITE%" == "0" if "%TEST_NET40_FSHARP_SUITE%" == "0" if "%TEST_NET40_FSHARPQA_SUITE%" == "0" goto :success
 
 if "%no_test%" == "1" goto :success
 
@@ -928,6 +940,7 @@ set HOSTED_COMPILER=1
 
 if "%TEST_NET40_FSHARPQA_SUITE%" == "1" (
 
+    set CSC_PIPE=%~dp0packages\Microsoft.Net.Compilers.2.7.0\tools\csc.exe
     set FSC=!FSCBINPATH!\fsc.exe
     set FSCOREDLLPATH=!FSCBinPath!\FSharp.Core.dll
     set PATH=!FSCBINPATH!;!PATH!
@@ -983,6 +996,32 @@ if "%TEST_NET40_COMPILERUNIT_SUITE%" == "1" (
         echo -----------------------------------------------------------------
         goto :failure
     )
+
+    set OUTPUTARG=
+    set ERRORARG=
+    set OUTPUTFILE=
+    set ERRORFILE=
+    set XMLFILE=!RESULTSDIR!\test-net40-buildunit-results.xml
+    if "%CI%" == "1" (
+        set OUTPUTFILE=!RESULTSDIR!\test-net40-buildunit-output.log
+        set ERRORFILE=!RESULTSDIR!\test-net40-buildunit-errors.log
+        set ERRORARG=--err:"!ERRORFILE!" 
+        set OUTPUTARG=--output:"!OUTPUTFILE!" 
+    )
+    set ERRORFILE=!RESULTSDIR!\test-net40-buildunit-errors.log
+    echo "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Build.UnitTests.dll" !WHERE_ARG_NUNIT!
+         "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Build.UnitTests.dll" !WHERE_ARG_NUNIT!
+
+    if errorlevel 1 (
+        echo -----------------------------------------------------------------
+        type "!OUTPUTFILE!"
+        echo -----------------------------------------------------------------
+        type "!ERRORFILE!"
+        echo -----------------------------------------------------------------
+        echo Error: Running tests net40-compilernit failed, see logs above -- FAILED
+        echo -----------------------------------------------------------------
+        goto :failure
+    )
 )
 
 REM ---------------- net40-coreunit  -----------------------
@@ -1000,9 +1039,6 @@ if "%TEST_NET40_COREUNIT_SUITE%" == "1" (
         set ERRORARG=--err:"!ERRORFILE!" 
         set OUTPUTARG=--output:"!OUTPUTFILE!" 
     )
-
-    echo "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Build.UnitTests.dll" !WHERE_ARG_NUNIT!
-         "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Build.UnitTests.dll" !WHERE_ARG_NUNIT!
 
     echo "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Core.UnitTests.dll" !WHERE_ARG_NUNIT!
          "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Core.UnitTests.dll" !WHERE_ARG_NUNIT!
@@ -1030,10 +1066,17 @@ if "%TEST_CORECLR_COREUNIT_SUITE%" == "1" (
     echo "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Build.UnitTests\FSharp.Build.UnitTests.dll" !WHERE_ARG_NUNIT!
          "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Build.UnitTests\FSharp.Build.UnitTests.dll" !WHERE_ARG_NUNIT!
 
+    if errorlevel 1 (
+        echo -----------------------------------------------------------------
+        echo Error: Running tests coreclr-coreunit failed, see logs above-- FAILED
+        echo -----------------------------------------------------------------
+        goto :failure
+    )
+
     echo "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.UnitTests\FSharp.Core.UnitTests.dll" !WHERE_ARG_NUNIT!
          "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.UnitTests\FSharp.Core.UnitTests.dll" !WHERE_ARG_NUNIT!
 
-    if ERRORLEVEL 1 (
+    if errorlevel 1 (
         echo -----------------------------------------------------------------
         echo Error: Running tests coreclr-coreunit failed, see logs above-- FAILED
         echo -----------------------------------------------------------------

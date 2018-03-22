@@ -87,6 +87,26 @@
         <target state="translated">Analizar y sugerir correcciones para valores no utilizados</target>
         <note />
       </trans-unit>
+      <trans-unit id="Block_Structure">
+        <source>Block Structure Guides</source>
+        <target state="translated">Guías de estructura de bloque</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_guides">
+        <source>Show structure guidelines for F# code</source>
+        <target state="translated">Mostrar las guías de la estructura del código F#</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Outlining">
+        <source>Outlining</source>
+        <target state="translated">Esquematización</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Outlining">
+        <source>Show outlining and collapsable nodes for F# code</source>
+        <target state="translated">Mostrar los nodos de esquematización y contraíbles del código F#</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
