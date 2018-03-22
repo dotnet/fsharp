@@ -3783,13 +3783,15 @@ let MakeILResource rname bytes =
     { Name = rname
       Location = ILResourceLocation.Local (fun () -> bytes)
       Access = ILResourceAccess.Public
-      CustomAttrs = emptyILCustomAttrs }
+      CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
+      MetadataIndex = NoMetadataIdx }
 
 let PickleToResource inMem file g scope rname p x = 
     { Name = rname
       Location = (let bytes = pickleObjWithDanglingCcus inMem file g scope p x in ILResourceLocation.Local (fun () -> bytes))
       Access = ILResourceAccess.Public
-      CustomAttrs = emptyILCustomAttrs }
+      CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
+      MetadataIndex = NoMetadataIdx }
 
 let GetSignatureData (file, ilScopeRef, ilModule, byteReader) : PickledDataWithReferences<PickledCcuInfo> = 
     unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleCcuInfo byteReader

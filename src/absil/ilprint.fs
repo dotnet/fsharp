@@ -1020,11 +1020,10 @@ let goutput_manifest env os m =
   output_sqstring os m.Name;
   output_string os " { \n";
   output_string os ".hash algorithm "; output_i32 os m.AuxModuleHashAlgorithm; output_string os "\n";
-  goutput_custom_attrs env os m.CustomAttrs;
-  goutput_security_decls env os m.SecurityDecls;
-  (output_option output_publickey) os m.PublicKey;
-  (output_option output_ver) os m.Version;
-  (output_option output_locale) os m.Locale;
+  goutput_custom_attrs env os m.CustomAttrs
+  (output_option output_publickey) os m.PublicKey
+  (output_option output_ver) os m.Version
+  (output_option output_locale) os m.Locale
   output_string os " } \n"
 
 

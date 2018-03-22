@@ -1430,7 +1430,7 @@ let buildGenParamsPass1b cenv emEnv (genArgs : Type array) (gps : ILGenericParam
           | _       -> failwith "buildGenParam: multiple base types"
         );
         // set interface constraints (interfaces that instances of gp must meet)
-        gpB.SetInterfaceConstraints(Array.ofList interfaceTs);
+        gpB.SetInterfaceConstraints(Array.ofList interfaceTs)
         gp.CustomAttrs |> emitCustomAttrs cenv emEnv (wrapCustomAttr gpB.SetCustomAttribute)
 
         let flags = GenericParameterAttributes.None 
