@@ -248,11 +248,11 @@ type public FSharpCheckFileResults =
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member IsRelativeNameResolvableFromSymbol: cursorPos : pos * plid : string list * symbol: FSharpSymbol * ?userOpName: string -> Async<bool>
 
-    /// Represents complete typechecked implementation files, including thier typechecked signatures if any.
-    member ImplementationFiles: FSharpImplementationFileContents list option
+    /// Represents complete typechecked implementation file, including its typechecked signatures if any.
+    member ImplementationFile: FSharpImplementationFileContents option
 
     /// Open declarations in the file, including auto open modules.
-    member OpenDeclarations: FSharpOpenDeclaration list
+    member OpenDeclarations: FSharpOpenDeclaration[]
 
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]

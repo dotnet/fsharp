@@ -724,10 +724,10 @@ val GetInitialTcState:
 /// Check one input, returned as an Eventually computation
 val TypeCheckOneInputEventually :
     checkForErrors:(unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * NameResolution.TcResultsSink * TcState * Ast.ParsedInput  
-           -> Eventually<(TcEnv * TopAttribs * TypedImplFile list) * TcState>
+           -> Eventually<(TcEnv * TopAttribs * TypedImplFile option) * TcState>
 
 /// Finish the checking of multiple inputs 
-val TypeCheckMultipleInputsFinish: (TcEnv * TopAttribs * 'T list) list * TcState -> (TcEnv * TopAttribs * 'T list) * TcState
+val TypeCheckMultipleInputsFinish: (TcEnv * TopAttribs * 'T option) list * TcState -> (TcEnv * TopAttribs * 'T list) * TcState
     
 /// Finish the checking of a closed set of inputs 
 val TypeCheckClosedInputSetFinish: TypedImplFile list * TcState -> TcState * TypedImplFile list

@@ -3781,13 +3781,15 @@ let MakeILResource rname bytes =
     { Name = rname
       Location = ILResourceLocation.LocalOut bytes
       Access = ILResourceAccess.Public
-      CustomAttrs = emptyILCustomAttrs }
+      CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
+      MetadataIndex = NoMetadataIdx }
 
 let PickleToResource inMem file g scope rname p x = 
     { Name = rname
       Location = (let bytes = pickleObjWithDanglingCcus inMem file g scope p x in ILResourceLocation.LocalOut bytes)
       Access = ILResourceAccess.Public
-      CustomAttrs = emptyILCustomAttrs }
+      CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
+      MetadataIndex = NoMetadataIdx }
 
 let GetSignatureData (file, ilScopeRef, ilModule, byteReader) : PickledDataWithReferences<PickledCcuInfo> = 
     unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleCcuInfo byteReader
@@ -5205,11 +5207,11 @@ module private ScriptPreprocessClosure =
         let allRootDiagnostics = allRootDiagnostics |> List.filter (fst >> isRootRange)
         
         let result : LoadClosure = 
-            { SourceFiles = List.groupByFirst sourceFiles
-              References = List.groupByFirst references
+            { SourceFiles = List.groupBy fst sourceFiles |> List.map (map2Of2 (List.map snd))
+              References = List.groupBy fst references  |> List.map (map2Of2 (List.map snd))
               UnresolvedReferences = unresolvedReferences
               Inputs = sourceInputs
-              NoWarns = List.groupByFirst globalNoWarns
+              NoWarns = List.groupBy fst globalNoWarns  |> List.map (map2Of2 (List.map snd))
               OriginalLoadReferences = tcConfig.loadedSources
               ResolutionDiagnostics = resolutionDiagnostics
               AllRootFileDiagnostics = allRootDiagnostics
@@ -5430,7 +5432,7 @@ let TypeCheckOneInputEventually
                         let m = qualNameOfFile.Range
                         TcOpenDecl tcSink tcGlobals amap m m tcEnv prefixPath
 
-                let res = (EmptyTopAttrs, [], tcEnv, tcEnv, tcState.tcsTcImplEnv, RootSigsAndImpls(rootSigs, rootImpls, allSigModulTyp, allImplementedSigModulTyp), tcState.tcsCcuType, createsGeneratedProvidedTypes)
+                let res = (EmptyTopAttrs, None, tcEnv, tcEnv, tcState.tcsTcImplEnv, RootSigsAndImpls(rootSigs, rootImpls, allSigModulTyp, allImplementedSigModulTyp), tcState.tcsCcuType, createsGeneratedProvidedTypes)
                 return res
 
             | ParsedInput.ImplFile (ParsedImplFileInput(filename, _, qualNameOfFile, _, _, _, _) as file) ->
@@ -5490,7 +5492,7 @@ let TypeCheckOneInputEventually
                 if verbose then  dprintf "done TypeCheckOneInputEventually...\n"
 
                 let topSigsAndImpls = RootSigsAndImpls(rootSigs, rootImpls, allSigModulTyp, allImplementedSigModulTyp)
-                let res = (topAttrs, [implFile], tcEnvAtEnd, tcSigEnv, tcImplEnv, topSigsAndImpls, ccuType, createsGeneratedProvidedTypes)
+                let res = (topAttrs, Some implFile, tcEnvAtEnd, tcSigEnv, tcImplEnv, topSigsAndImpls, ccuType, createsGeneratedProvidedTypes)
                 return res }
      
       return (tcEnvAtEnd, topAttrs, implFiles), 
@@ -5502,7 +5504,7 @@ let TypeCheckOneInputEventually
                   tcsRootSigsAndImpls = topSigsAndImpls }
    with e -> 
       errorRecovery e range0 
-      return (tcState.TcEnvFromSignatures, EmptyTopAttrs, []), tcState
+      return (tcState.TcEnvFromSignatures, EmptyTopAttrs, None), tcState
  }
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
@@ -5518,7 +5520,7 @@ let TypeCheckMultipleInputsFinish(results, tcState: TcState) =
     let tcEnvsAtEndFile, topAttrs, implFiles = List.unzip3 results
     
     let topAttrs = List.foldBack CombineTopAttrs topAttrs EmptyTopAttrs
-    let implFiles = List.concat implFiles
+    let implFiles = List.choose id implFiles
     // This is the environment required by fsi.exe when incrementally adding definitions 
     let tcEnvAtEndOfLastFile = (match tcEnvsAtEndFile with h :: _ -> h | _ -> tcState.TcEnvFromSignatures)
     

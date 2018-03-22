@@ -200,8 +200,8 @@ let morphILTypesInILInstr ((factualty,fformalty)) i =
         | ILToken.ILField fr -> I_ldtoken (ILToken.ILField (conv_fspec fr))
     | x -> x
 
-let return_typ2typ ilg f (r:ILReturn) = {r with Type=f r.Type; CustomAttrs=cattrs_typ2typ ilg f r.CustomAttrs}
-let param_typ2typ ilg f (p: ILParameter) = {p with Type=f p.Type; CustomAttrs=cattrs_typ2typ ilg f p.CustomAttrs}
+let return_typ2typ ilg f (r:ILReturn) = {r with Type=f r.Type; CustomAttrsStored= storeILCustomAttrs (cattrs_typ2typ ilg f r.CustomAttrs)}
+let param_typ2typ ilg f (p: ILParameter) = {p with Type=f p.Type; CustomAttrsStored= storeILCustomAttrs (cattrs_typ2typ ilg f p.CustomAttrs)}
 
 let morphILMethodDefs f (m:ILMethodDefs) = mkILMethods (List.map f m.AsList)
 let fdefs_fdef2fdef f (m:ILFieldDefs) = mkILFields (List.map f m.AsList)
@@ -287,14 +287,14 @@ and tdefs_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg enc fs tdefs =
 // -------------------------------------------------------------------- 
 
 let manifest_typ2typ ilg f (m : ILAssemblyManifest) =
-    { m with CustomAttrs = cattrs_typ2typ ilg f m.CustomAttrs }
+    { m with CustomAttrsStored = storeILCustomAttrs (cattrs_typ2typ ilg f m.CustomAttrs) }
 
 let morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs ilg ((ftype: ILModuleDef -> (ILTypeDef list * ILTypeDef) option -> ILMethodDef option -> ILType -> ILType),fmdefs) m = 
 
     let ftdefs = tdefs_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg [] (ftype m,fmdefs m) 
 
     { m with TypeDefs=ftdefs m.TypeDefs;
-             CustomAttrs=cattrs_typ2typ ilg (ftype m None None) m.CustomAttrs;
+             CustomAttrsStored= storeILCustomAttrs (cattrs_typ2typ ilg (ftype m None None) m.CustomAttrs);
              Manifest=Option.map (manifest_typ2typ ilg (ftype m None None)) m.Manifest  }
     
 let module_instr2instr_typ2typ ilg fs x = 

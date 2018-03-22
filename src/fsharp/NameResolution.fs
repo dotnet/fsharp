@@ -1470,6 +1470,10 @@ type TcSymbolUseData =
      Range: range }
 
 /// Represents container for all name resolutions that were met so far when typechecking some particular file
+///
+/// This is a memory-critical data structure - allocations of this data structure and its immediate contents
+/// is one of the highest memory long-lived data structures in typical uses of IDEs. Not many of these objects
+/// are allocated (one per file), but they are large because the allUsesOfAllSymbols array is large.
 type TcSymbolUses(g, capturedNameResolutions : ResizeArray<CapturedNameResolution>, formatSpecifierLocations: (range * int)[]) = 
     
     // Make sure we only capture the information we really need to report symbol uses
@@ -1516,7 +1520,7 @@ type TcResultsSinkImpl(g, ?source: string) =
     member this.GetSymbolUses() = 
         TcSymbolUses(g, capturedNameResolutions, capturedFormatSpecifierLocations.ToArray())
 
-    member this.OpenDeclarations = Seq.toList capturedOpenDeclarations
+    member this.GetOpenDeclarations() = capturedOpenDeclarations.ToArray()
 
     interface ITypecheckResultsSink with
         member sink.NotifyEnvWithScope(m,nenv,ad) = 

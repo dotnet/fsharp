@@ -1005,7 +1005,7 @@ type internal FsiDynamicCompiler
         { mainModule 
           with Manifest = 
                 (let man = mainModule.ManifestOfAssembly
-                 Some { man with  CustomAttrs = mkILCustomAttrs codegenResults.ilAssemAttrs }); }
+                 Some { man with  CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs codegenResults.ilAssemAttrs) }) }
 
     let ProcessInputs (ctok, errorLogger: ErrorLogger, istate: FsiDynamicCompilerState, inputs: ParsedInput list, showTypes: bool, isIncrementalFragment: bool, isInteractiveItExpr: bool, prefixPath: LongIdent) =
         let optEnv    = istate.optEnv
