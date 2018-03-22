@@ -473,8 +473,8 @@ and ImportILTypeDefList amap m (cpath:CompilationPath) enc items =
                 let modty = lazy (ImportILTypeDefList amap m (cpath.NestedCompPath n Namespace) enc tgs)
                 NewModuleOrNamespace (Some cpath) taccessPublic (mkSynId m n) XmlDoc.Empty [] (MaybeLazy.Lazy modty))
             (fun (n,info:Lazy<_>) -> 
-                let (scoref2,_,lazyTypeDef:Lazy<ILTypeDef>) = info.Force()
-                ImportILTypeDef amap m scoref2 cpath enc n (lazyTypeDef.Force()))
+                let (scoref2,_,lazyTypeDef:ILPreTypeDef) = info.Force()
+                ImportILTypeDef amap m scoref2 cpath enc n (lazyTypeDef.GetTypeDef()))
 
     let kind = match enc with [] -> Namespace | _ -> ModuleOrType
     NewModuleOrNamespaceType kind entities []
@@ -483,8 +483,8 @@ and ImportILTypeDefList amap m (cpath:CompilationPath) enc items =
 ///
 and ImportILTypeDefs amap m scoref cpath enc (tdefs: ILTypeDefs) =
     // We be very careful not to force a read of the type defs here
-    tdefs.AsArrayOfLazyTypeDefs
-    |> Array.map (fun (ns,n,attrs,lazyTypeDef) -> (ns,(n,notlazy(scoref,attrs,lazyTypeDef))))
+    tdefs.AsArrayOfPreTypeDefs
+    |> Array.map (fun pre -> (pre.Namespace,(pre.Name,notlazy(scoref,pre.MetadataIndex,pre))))
     |> Array.toList
     |> ImportILTypeDefList amap m cpath enc
 
@@ -502,19 +502,20 @@ let ImportILAssemblyExportedType amap m auxModLoader (scoref:ILScopeRef) (export
     if exportedType.IsForwarder then 
         []
     else
+        let ns,n = splitILTypeName exportedType.Name
         let info = 
             lazy (match 
                     (try 
                         let modul = auxModLoader exportedType.ScopeRef
-                        Some (lazy modul.TypeDefs.FindByName exportedType.Name) 
-                     with :? System.Collections.Generic.KeyNotFoundException -> None)
+                        let ptd = mkILPreTypeDefComputed (ns, n, (fun () -> modul.TypeDefs.FindByName exportedType.Name))
+                        Some ptd
+                     with :? KeyNotFoundException -> None)
                     with 
                   | None -> 
                      error(Error(FSComp.SR.impReferenceToDllRequiredByAssembly(exportedType.ScopeRef.QualifiedName, scoref.QualifiedName, exportedType.Name),m))
-                  | Some lazyTypeDef -> 
-                     scoref,exportedType.CustomAttrs,lazyTypeDef)
+                  | Some preTypeDef -> 
+                     scoref,-1,preTypeDef)
               
-        let ns,n = splitILTypeName exportedType.Name
         [ ImportILTypeDefList amap m (CompPath(scoref,[])) [] [(ns,(n,info))]  ]
 
 /// Import the "exported types" table for multi-module assemblies. 
