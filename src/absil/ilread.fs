@@ -2546,8 +2546,8 @@ and seekReadSecurityDecls (ctxt: ILMetadataReader)  idx =
                                  (fun (act, _, ty) -> seekReadSecurityDecl ctxt (act, ty))))
 
 and seekReadSecurityDecl ctxt (act, ty) = 
-    PermissionSet ((if List.memAssoc (int act) (Lazy.force ILSecurityActionRevMap) then List.assoc (int act) (Lazy.force ILSecurityActionRevMap) else failwith "unknown security action"), 
-                   readBlobHeap ctxt ty)
+    ILSecurityDecl ((if List.memAssoc (int act) (Lazy.force ILSecurityActionRevMap) then List.assoc (int act) (Lazy.force ILSecurityActionRevMap) else failwith "unknown security action"), 
+                    readBlobHeap ctxt ty)
 
 and seekReadConstant (ctxt: ILMetadataReader)  idx =
   let kind, vidx = seekReadIndexedRow (ctxt.getNumRows TableNames.Constant, 
