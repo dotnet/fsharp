@@ -1341,7 +1341,7 @@ module StaticLinker =
                       | ResolvedCcu ccu -> Some ccu
                       | UnresolvedCcu(_ccuName) -> None
 
-                  let modul = dllInfo.RawMetadata.TryGetRawILModule().Value
+                  let modul = dllInfo.RawMetadata.TryGetILModuleDef().Value
                   yield (ccu, dllInfo.ILScopeRef, modul), (ilAssemRef.Name, provAssemStaticLinkInfo)
               | None -> () ]
 
@@ -1967,7 +1967,7 @@ let main2a(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlo
     let metadataVersion = 
         match tcConfig.metadataVersion with
         | Some v -> v
-        | _ -> match (frameworkTcImports.DllTable.TryFind tcConfig.primaryAssembly.Name) with | Some ib -> ib.RawMetadata.TryGetRawILModule().Value.MetadataVersion | _ -> ""
+        | _ -> match (frameworkTcImports.DllTable.TryFind tcConfig.primaryAssembly.Name) with | Some ib -> ib.RawMetadata.TryGetILModuleDef().Value.MetadataVersion | _ -> ""
     let optimizedImpls, optimizationData, _ = ApplyAllOptimizations (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile, importMap, false, optEnv0, generatedCcu, typedImplFiles)
 
     AbortOnError(errorLogger, exiter)

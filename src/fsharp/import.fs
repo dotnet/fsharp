@@ -552,10 +552,10 @@ let ImportILAssemblyTypeForwarders (amap, m, exportedTypes:ILExportedTypesAndFor
   
 
 /// Import an IL assembly as a new TAST CCU
-let ImportILAssembly(amap:(unit -> ImportMap),m,auxModuleLoader,sref,sourceDir,filename,ilModule:ILModuleDef,invalidateCcu:IEvent<string>) = 
+let ImportILAssembly(amap:(unit -> ImportMap), m, auxModuleLoader, ilScopeRef, sourceDir, filename, ilModule:ILModuleDef, invalidateCcu:IEvent<string>) = 
         invalidateCcu |> ignore
         let aref =   
-            match sref with 
+            match ilScopeRef with 
             | ILScopeRef.Assembly aref -> aref 
             | _ -> error(InternalError("ImportILAssembly: cannot reference .NET netmodules directly, reference the containing assembly instead",m))
         let nm = aref.Name
@@ -568,13 +568,14 @@ let ImportILAssembly(amap:(unit -> ImportMap),m,auxModuleLoader,sref,sourceDir,f
             IsProviderGenerated = false
             ImportProvidedType = (fun ty -> ImportProvidedType (amap()) m ty)
 #endif
-            QualifiedName= Some sref.QualifiedName
-            Contents = NewCcuContents sref m nm mty 
-            ILScopeRef = sref
+            QualifiedName= Some ilScopeRef.QualifiedName
+            Contents = NewCcuContents ilScopeRef m nm mty 
+            ILScopeRef = ilScopeRef
             Stamp = newStamp()
             SourceCodeDirectory = sourceDir  // note: not an accurate value, but IL assemblies don't give us this information in any attributes. 
             FileName = filename
             MemberSignatureEquality= (fun ty1 ty2 -> Tastops.typeEquivAux EraseAll (amap()).g ty1 ty2)
+            TryGetILModuleDef = (fun () -> Some ilModule)
             TypeForwarders = 
                (match ilModule.Manifest with 
                 | None -> Map.empty

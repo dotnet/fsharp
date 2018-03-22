@@ -2173,11 +2173,22 @@ and FSharpAssemblySignature private (cenv, topAttribs: TypeChecker.TopAttribs op
         loop mtyp |> makeReadOnlyCollection
 
     member __.Attributes =
-        match topAttribs with
-        | None -> makeReadOnlyCollection []
-        | Some tA ->
-            tA.assemblyAttrs
-            |> List.map (fun a -> FSharpAttribute(cenv, AttribInfo.FSAttribInfo(cenv.g, a))) |> makeReadOnlyCollection
+        [ match optViewedCcu with 
+          | Some ccu -> 
+              if ccu.IsFSharp then
+                  for a in ccu.Contents.Attribs do 
+                      yield FSharpAttribute(cenv, FSAttribInfo (cenv.g, a))
+              else
+                  match ccu.TryGetILModuleDef() with 
+                  | None -> ()
+                  | Some ilModule -> 
+                      for a in AttribInfosOfIL cenv.g cenv.amap cenv.thisCcu.ILScopeRef range0 ilModule.CustomAttrs do
+                          yield FSharpAttribute(cenv, a)
+          | None -> 
+              match topAttribs with
+              | None -> ()
+              | Some tA -> for a in tA.assemblyAttrs do yield FSharpAttribute(cenv, AttribInfo.FSAttribInfo(cenv.g, a)) ]
+        |> makeReadOnlyCollection
 
     member __.FindEntityByPath path =
         let inline findNested name = function

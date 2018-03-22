@@ -4726,6 +4726,14 @@ let ``Test project37 typeof and arrays in attribute constructor arguments`` () =
     |> Seq.map (fun a -> a.AttributeType.CompiledName)
     |> Array.ofSeq |> shouldEqual [| "AttrTestAttribute"; "AttrTest2Attribute" |]
 
+    for a in wholeProjectResults.ProjectContext.GetReferencedAssemblies() do
+        if a.SimpleName = "mscorlib" then 
+            // check we get some attributes on mscorlib, we don't check which ones
+            shouldEqual (a.Contents.Attributes.Count > 0) true
+        if a.SimpleName = "FSharp.Core" then 
+            // check we get some attributes on mscorlib, we don't check which ones
+            shouldEqual (a.Contents.Attributes.Count > 0) true
+
 //-----------------------------------------------------------
 
 
