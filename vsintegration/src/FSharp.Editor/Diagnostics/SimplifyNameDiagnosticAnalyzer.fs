@@ -40,7 +40,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
             customTags = DiagnosticCustomTags.Unnecessary)
 
     static member LongIdentPropertyKey = "FullName"
-    
+    override __.Priority = 100 // Default = 50
     override __.SupportedDiagnostics = ImmutableArray.Create Descriptor
     override this.AnalyzeSyntaxAsync(_, _) = Task.FromResult ImmutableArray<Diagnostic>.Empty
 
