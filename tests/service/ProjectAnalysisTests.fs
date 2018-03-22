@@ -5175,12 +5175,12 @@ type A(i:int) =
             | _ -> failwithf "Parsing aborted unexpectedly..."
 
     let declarations =
-        match fileCheckResults.ImplementationFiles with
-        | Some (implFile :: _) ->
+        match fileCheckResults.ImplementationFile with
+        | Some implFile ->
             match implFile.Declarations |> List.tryHead with
             | Some (FSharpImplementationFileDeclaration.Entity (_, subDecls)) -> subDecls
             | _ -> failwith "unexpected declaration"
-        | Some [] | None -> failwith "File check results does not contain any `ImplementationFile`s"
+        | None -> failwith "File check results does not contain any `ImplementationFile`s"
 
     match declarations |> List.tryHead with
     | Some (FSharpImplementationFileDeclaration.Entity(entity, [])) ->

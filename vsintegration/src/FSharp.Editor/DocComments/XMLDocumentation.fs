@@ -3,6 +3,8 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
+open System.Runtime.CompilerServices
+open System.Runtime.Caching
 open System.Text.RegularExpressions
 open Internal.Utilities.Collections
 open EnvDTE
@@ -413,6 +415,6 @@ module internal XmlDocumentation =
     let BuildMethodParamText(documentationProvider, xmlCollector, xml, paramName) =
         AppendXmlComment(documentationProvider, TextSanitizingCollector(xmlCollector), TextSanitizingCollector(xmlCollector), xml, false, true, Some paramName)
 
-    let documentationBuilderCache = System.Runtime.CompilerServices.ConditionalWeakTable<IVsXMLMemberIndexService, IDocumentationBuilder>()
+    let documentationBuilderCache = ConditionalWeakTable<IVsXMLMemberIndexService, IDocumentationBuilder>()
     let CreateDocumentationBuilder(xmlIndexService: IVsXMLMemberIndexService, dte: DTE) = 
         documentationBuilderCache.GetValue(xmlIndexService,(fun _ -> Provider(xmlIndexService, dte) :> IDocumentationBuilder))

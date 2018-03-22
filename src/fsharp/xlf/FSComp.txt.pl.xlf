@@ -6982,6 +6982,11 @@
         <target state="translated">To wyrażenie zwraca wartość typu „{0}”, ale jest niejawnie odrzucane. Rozważ użycie instrukcji „let” do powiązania wyniku z nazwą, np. „let wynik = wyrażenie”. Jeśli chcesz użyć tego wyrażenia jako wartości w sekwencji, użyj jawnej instrukcji „yield!”.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ilreadFileChanged">
+        <source>The file '{0}' changed on disk unexpectedly, please reload.</source>
+        <target state="new">The file '{0}' changed on disk unexpectedly, please reload.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

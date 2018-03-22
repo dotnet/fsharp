@@ -4,7 +4,9 @@ namespace Tests.Compiler.Watson
 
 #nowarn "52" // The value has been copied to ensure the original is not mutated
 
+open Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
+open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.Driver
 open NUnit.Framework
 open System
@@ -27,7 +29,7 @@ type Check =
                 let argv = [| "--simulateException:"+simulationCode; "watson-test.fs"|]
 
                 let ctok = AssumeCompilationThreadWithoutEvidence ()
-                let _code = mainCompile (ctok, argv, Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver, false, false, false, Microsoft.FSharp.Compiler.ErrorLogger.QuitProcessExiter, ConsoleLoggerProvider(), None, None)
+                let _code = mainCompile (ctok, argv, Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver, false, ReduceMemoryFlag.No, CopyFSharpCoreFlag.No, Microsoft.FSharp.Compiler.ErrorLogger.QuitProcessExiter, ConsoleLoggerProvider(), None, None)
                 ()
             with 
             | :? 'TException as e -> 

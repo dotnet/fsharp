@@ -77,6 +77,9 @@ module FSharpTokenTag =
     let STRUCT = tagOfToken STRUCT
     let CLASS = tagOfToken CLASS
     let TRY = tagOfToken TRY
+    let NEW = tagOfToken NEW
+    let WITH = tagOfToken WITH
+    let OWITH = tagOfToken OWITH
 
            
 /// This corresponds to a token categorization originally used in Visual Studio 2003.
