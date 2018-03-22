@@ -6893,7 +6893,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                     | [] -> ([ty], ty.idRange, [])  // If no other fields it's invalid syntax. Return but error will be thrown later.
                     | h :: t -> ([ty; h], h.idRange, t)
 
-                let combineModuleOrNamespaceWithNextIds env (mOrNRefList : ModuleOrNamespaceRef list) (mOrN : Ident) flds =
+                let combineModuleOrNamespaceWithNextIds (mOrNRefList : ModuleOrNamespaceRef list) (mOrN : Ident) flds =
                     let tyconSearch refList (id : Ident) =
                         match refList with
                         | [(ref : ModuleOrNamespaceRef)] -> ref.ModuleOrNamespaceType.TypesByAccessNames.TryFind id.idText
@@ -6950,7 +6950,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                             ((LongIdentWithDots (tyLidwd, [h.idRange]), true), Some(SynExpr.Record((None, None, [build t], fldIdRange))), None)
                             
                         | ModuleOrNamespace mOrNRefList ->
-                            let flds, rest = combineModuleOrNamespaceWithNextIds env mOrNRefList h t
+                            let flds, rest = combineModuleOrNamespaceWithNextIds mOrNRefList h t
                             ((LongIdentWithDots (flds, [h.idRange]), true), Some(SynExpr.Record((None, None, [build rest], h.idRange))), None)
                         
 
@@ -6965,7 +6965,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                     | _ ->  [(List.frontAndBack flds, Some(SynExpr.Record(None, None, [build rest], h.idRange)))]
 
                 | ModuleOrNamespace mOrNRefList ->
-                    let (flds, rest) = combineModuleOrNamespaceWithNextIds env mOrNRefList h t
+                    let (flds, rest) = combineModuleOrNamespaceWithNextIds mOrNRefList h t
                     match rest with
                     | [] -> [(List.frontAndBack flds, v)]
                     | _ ->  [(List.frontAndBack flds, Some(SynExpr.Record(None, None, [build rest], h.idRange)))]
