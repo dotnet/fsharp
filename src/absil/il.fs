@@ -1428,10 +1428,13 @@ let inline conditionalAdd condition flagToAdd source = if condition then source 
 let NoMetadataIdx = -1
 
 [<NoComparison; NoEquality>]
-type ILMethodDef (name: string, attributes: MethodAttributes, implAttributes: MethodImplAttributes, callingConv: ILCallingConv, parameters: ILParameters, ret: ILReturn, body: ILLazyMethodBody, securityDeclsStored: ILSecurityDeclsStored, isEntryPoint:bool, genericParams: ILGenericParameterDefs, customAttrsStored: ILAttributesStored, metadataIndex: int32) =
+type ILMethodDef (name: string, attributes: MethodAttributes, implAttributes: MethodImplAttributes, callingConv: ILCallingConv, 
+                  parameters: ILParameters, ret: ILReturn, body: ILLazyMethodBody, isEntryPoint:bool, genericParams: ILGenericParameterDefs, 
+                  securityDeclsStored: ILSecurityDeclsStored, customAttrsStored: ILAttributesStored, metadataIndex: int32) =
 
-    new (name, attributes, implAttributes, callingConv, parameters, ret, body, securityDecls, isEntryPoint, genericParams, customAttrs) = 
-       ILMethodDef(name, attributes, implAttributes, callingConv, parameters, ret, body, storeILSecurityDecls securityDecls, isEntryPoint, genericParams, storeILCustomAttrs customAttrs, NoMetadataIdx)
+    new (name, attributes, implAttributes, callingConv, parameters, ret, body, isEntryPoint, genericParams, securityDecls, customAttrs) = 
+       ILMethodDef(name, attributes, implAttributes, callingConv, parameters, ret, body, isEntryPoint, genericParams, 
+                   storeILSecurityDecls securityDecls, storeILCustomAttrs customAttrs, NoMetadataIdx)
     
     // The captured data - remember the object will be as large as the data captured by these members
     member __.Name = name

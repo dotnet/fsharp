@@ -1516,7 +1516,7 @@ type TcResultsSinkImpl(g, ?source: string) =
     member this.GetSymbolUses() = 
         TcSymbolUses(g, capturedNameResolutions, capturedFormatSpecifierLocations.ToArray())
 
-    member this.OpenDeclarations = Seq.toList capturedOpenDeclarations
+    member this.GetOpenDeclarations() = capturedOpenDeclarations.ToArray()
 
     interface ITypecheckResultsSink with
         member sink.NotifyEnvWithScope(m,nenv,ad) = 
