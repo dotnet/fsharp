@@ -1153,7 +1153,7 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, tcState:
     interface IRawFSharpAssemblyData with 
         member __.GetAutoOpenAttributes(_ilg) = autoOpenAttrs
         member __.GetInternalsVisibleToAttributes(_ilg) =  ivtAttrs
-        member __.ILModuleDef() = None
+        member __.TryGetILModuleDef() = None
         member __.GetRawFSharpSignatureData(_m, _ilShortAssemName, _filename) = sigData
         member __.GetRawFSharpOptimizationData(_m, _ilShortAssemName, _filename) = [ ]
         member __.GetRawTypeForwarders() = mkILExportedTypes []  // TODO: cross-project references with type forwarders
