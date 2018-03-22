@@ -45,7 +45,7 @@ let _ = if logging then dprintn "* warning: Il.logging is on"
 
 let int_order = LanguagePrimitives.FastGenericComparer<int>
 
-let notlazy v = Lazy.CreateFromValue v
+let notlazy v = Lazy<_>.CreateFromValue v
 
 /// A little ugly, but the idea is that if a data structure does not 
 /// contain lazy values then we don't add laziness.  So if the thing to map  
@@ -1378,7 +1378,7 @@ type MethodCodeKind =
     | Native
     | Runtime
 
-let mkMethBodyAux mb = ILLazyMethodBody (Lazy.CreateFromValue mb)
+let mkMethBodyAux mb = ILLazyMethodBody (notlazy mb)
 let mkMethBodyLazyAux mb = ILLazyMethodBody mb
 
 let typesOfILParams (ps:ILParameters) : ILTypes = ps |> List.map (fun p -> p.Type)
