@@ -29,7 +29,6 @@ type QuickParse() =
         let Check(line,expected) = 
             CheckAt(line, line.Length-1, expected)
     
-        do Microsoft.FSharp.Compiler.AbstractIL.Diagnostics.setDiagnosticsChannel(Some(Console.Out));
         Check("let y = List.",(["List"], "", Some 12))
         Check("let y = List.conc",(["List"], "conc", Some 12))
         Check("let y = S", ([], "S", None))

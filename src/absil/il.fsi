@@ -1001,6 +1001,7 @@ type MethodBody =
     | PInvoke of PInvokeMethod       (* platform invoke to native  *)
     | Abstract
     | Native
+    | NotAvailable
 
 [<RequireQualifiedAccess>]
 type MethodCodeKind =
@@ -1481,8 +1482,16 @@ type ILResourceAccess =
 
 [<RequireQualifiedAccess>]
 type ILResourceLocation = 
-    | Local of (unit -> byte[])  (* resources may be re-read each time this function is called *)
+    /// Represents a manifest resource that can be read from within the PE file
+    | LocalIn of string * int * int
+
+    /// Represents a manifest resource that is due to be written to the output PE file
+    | LocalOut of byte[]
+
+    /// Represents a manifest resource in an associated file
     | File of ILModuleRef * int32
+
+    /// Represents a manifest resource in a different assembly
     | Assembly of ILAssemblyRef
 
 /// "Manifest ILResources" are chunks of resource data, being one of:
@@ -1495,8 +1504,10 @@ type ILResource =
       Access: ILResourceAccess
       CustomAttrsStored: ILAttributesStored
       MetadataIndex: int32 }
-    /// Read the bytes from a resource local to an assembly
-    member Bytes: byte[]
+
+    /// Read the bytes from a resource local to an assembly. Will fail for non-local resources.
+    member GetBytes : unit -> byte[]
+
     member CustomAttrs: ILAttributes
 
 /// Table of resources in a module.
@@ -1548,6 +1559,15 @@ type ILAssemblyManifest =
     member CustomAttrs: ILAttributes
     member SecurityDecls: ILSecurityDecls
     
+
+[<RequireQualifiedAccess>]
+type ILNativeResource = 
+    /// Represents a native resource to be read from the PE file
+    | In of fileName: string * linkedResourceBase: int * linkedResourceStart: int * linkedResourceLength: int
+
+    /// Represents a native resource to be written in an output file
+    | Out of unlinkedResource: byte[]
+
 /// One module in the "current" assembly, either a main-module or
 /// an auxiliary module.  The main module will have a manifest.
 ///
@@ -1572,8 +1592,8 @@ type ILModuleDef =
       ImageBase: int32
       MetadataVersion: string
       Resources: ILResources 
-      /// e.g. win86 resources, as the exact contents of a .res or .obj file. 
-      NativeResources: Lazy<byte[]> list
+      /// e.g. win86 resources, as the exact contents of a .res or .obj file. Must be unlinked manually.
+      NativeResources: ILNativeResource list
       CustomAttrsStored: ILAttributesStored
       MetadataIndex: int32 }
     member ManifestOfAssembly: ILAssemblyManifest 
@@ -1811,6 +1831,9 @@ val mkILEmptyGenericParams: ILGenericParameterDefs
 /// Make method definitions.
 val mkILMethodBody: initlocals:bool * ILLocals * int * ILCode * ILSourceMarker option -> ILMethodBody
 val mkMethodBody: bool * ILLocals * int * ILCode * ILSourceMarker option -> MethodBody
+val methBodyNotAvailable: ILLazyMethodBody 
+val methBodyAbstract: ILLazyMethodBody 
+val methBodyNative: ILLazyMethodBody 
 
 val mkILCtor: ILMemberAccess * ILParameter list * MethodBody -> ILMethodDef
 val mkILClassCtor: MethodBody -> ILMethodDef
@@ -1927,7 +1950,6 @@ val mkILExportedTypes: ILExportedTypeOrForwarder list -> ILExportedTypesAndForwa
 val mkILExportedTypesLazy: Lazy<ILExportedTypeOrForwarder list> ->   ILExportedTypesAndForwarders
 
 val mkILResources: ILResource list -> ILResources
-val mkILResourcesLazy: Lazy<ILResource list> -> ILResources
 
 /// Making modules.
 val mkILSimpleModule: assemblyName:string -> moduleName:string -> dll:bool -> subsystemVersion: (int * int) -> useHighEntropyVA: bool -> ILTypeDefs -> int32 option -> string option -> int -> ILExportedTypesAndForwarders -> string -> ILModuleDef

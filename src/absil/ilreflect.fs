@@ -1385,9 +1385,10 @@ let emitILMethodBody cenv modB emEnv (ilG:ILGenerator) (ilmbody: ILMethodBody) =
 let emitMethodBody cenv modB emEnv ilG _name (mbody: ILLazyMethodBody) =
     match mbody.Contents with
     | MethodBody.IL ilmbody       -> emitILMethodBody cenv modB emEnv (ilG()) ilmbody
-    | MethodBody.PInvoke  _pinvoke -> () (* printf "EMIT: pinvoke method %s\n" name *) (* XXX - check *)
-    | MethodBody.Abstract         -> () (* printf "EMIT: abstract method %s\n" name *) (* XXX - check *)
-    | MethodBody.Native           -> failwith "emitMethodBody cenv: native"               (* XXX - gap *)
+    | MethodBody.PInvoke  _pinvoke -> ()
+    | MethodBody.Abstract         -> ()
+    | MethodBody.Native           -> failwith "emitMethodBody: native"               
+    | MethodBody.NotAvailable     -> failwith "emitMethodBody: metadata only"
 
 let convCustomAttr cenv emEnv cattr =
     let methInfo = 
@@ -2023,8 +2024,11 @@ let buildModuleFragment cenv emEnv (asmB : AssemblyBuilder) (modB : ModuleBuilde
     m.Resources.AsList |> List.iter (fun r -> 
         let attribs = (match r.Access with ILResourceAccess.Public -> ResourceAttributes.Public | ILResourceAccess.Private -> ResourceAttributes.Private) 
         match r.Location with 
-        | ILResourceLocation.Local bf -> 
-            modB.DefineManifestResourceAndLog(r.Name, new System.IO.MemoryStream(bf()), attribs)
+        | ILResourceLocation.LocalIn (file, start, len) -> 
+            let bytes = FileSystem.ReadAllBytesShim(file).[start .. start + len - 1]
+            modB.DefineManifestResourceAndLog(r.Name, new System.IO.MemoryStream(bytes), attribs)
+        | ILResourceLocation.LocalOut bytes -> 
+            modB.DefineManifestResourceAndLog(r.Name, new System.IO.MemoryStream(bytes), attribs)
         | ILResourceLocation.File (mr, _) -> 
            asmB.AddResourceFileAndLog(r.Name, mr.Name, attribs)
         | ILResourceLocation.Assembly _ -> 
