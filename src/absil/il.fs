@@ -2523,6 +2523,9 @@ let mkMethodBody (zeroinit,locals,maxstack,code,tag) = MethodBody.IL (mkILMethod
 
 let mkILVoidReturn = mkILReturn ILType.Void
 
+let methBodyNotAvailable = mkMethBodyAux MethodBody.NotAvailable
+let methBodyAbstract = mkMethBodyAux MethodBody.Abstract
+let methBodyNative = mkMethBodyAux MethodBody.Native
 
 let mkILCtor (access,args,impl) = 
     ILMethodDef(name=".ctor",

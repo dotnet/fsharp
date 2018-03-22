@@ -337,7 +337,7 @@ let MainMain argv =
     if timesFlag then 
         AppDomain.CurrentDomain.ProcessExit.Add(fun _ -> 
             let stats = ILBinaryReader.GetStatistics()
-            printfn "STATS: #ByteArrayFile = %d, #MemoryMappedFileOpen = %d, #MemoryMappedFileClosed = %d, #RawMemoryFile = %d, #WeakByteArrayFile = %d" stats.byteFileCount stats.memoryMapFileOpenedCount stats.memoryMapFileClosedCount stats.rawMemoryFileCount stats.weakByteArrayFileCount)
+            printfn "STATS: #ByteArrayFile = %d, #MemoryMappedFileOpen = %d, #MemoryMappedFileClosed = %d, #RawMemoryFile = %d, #WeakByteArrayFile = %d" stats.byteFileCount stats.memoryMapFileOpenedCount stats.memoryMapFileClosedCount stats.rawMemoryFileCount stats.weakByteFileCount)
 #endif
 
 #if FSI_SHADOW_COPY_REFERENCES

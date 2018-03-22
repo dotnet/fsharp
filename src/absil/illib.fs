@@ -1188,12 +1188,16 @@ module Shim =
 
     type IFileSystem = 
 
+        /// A shim over File.ReadAllBytes
         abstract ReadAllBytesShim: fileName:string -> byte[] 
 
+        /// A shim over FileStream with FileMode.Open,FileAccess.Read,FileShare.ReadWrite
         abstract FileStreamReadShim: fileName:string -> Stream
 
+        /// A shim over FileStream with FileMode.Create,FileAccess.Write,FileShare.Read
         abstract FileStreamCreateShim: fileName:string -> Stream
 
+        /// A shim over FileStream with FileMode.Open,FileAccess.Write,FileShare.Read
         abstract FileStreamWriteExistingShim: fileName:string -> Stream
 
         /// Take in a filename with an absolute path, and return the same filename
@@ -1201,23 +1205,31 @@ module Shim =
         /// and '..' portions
         abstract GetFullPathShim: fileName:string -> string
 
+        /// A shim over Path.IsPathRooted
         abstract IsPathRootedShim: path:string -> bool
 
+        /// A shim over Path.IsInvalidPath
         abstract IsInvalidPathShim: filename:string -> bool
 
+        /// A shim over Path.GetTempPath
         abstract GetTempPathShim : unit -> string
 
         /// Utc time of the last modification
         abstract GetLastWriteTimeShim: fileName: string -> DateTime
 
+        /// A shim over File.Exists
         abstract SafeExists: fileName: string -> bool
 
+        /// A shim over File.Delete
         abstract FileDelete: fileName: string -> unit
 
+        /// Used to load type providers and located assemblies in F# Interactive
         abstract AssemblyLoadFrom: fileName: string -> Assembly 
 
+        /// Used to load a dependency for F# Interactive and in an unused corner-case of type provider loading
         abstract AssemblyLoad: assemblyName: AssemblyName -> Assembly 
 
+        /// Used to determine if a file will not be subject to deletion during the lifetime of a typical client process.
         abstract IsStableFileHeuristic: fileName: string -> bool
 
 
@@ -1265,7 +1277,6 @@ module Shim =
 
             member __.FileDelete (fileName:string) = File.Delete fileName
 
-            /// Used to determine if a file will not be subject to deletion during the lifetime of a typical client process.
             member __.IsStableFileHeuristic (fileName: string) = 
                 let directory = Path.GetDirectoryName(fileName)
                 directory.Contains("Reference Assemblies/") || 

@@ -35,6 +35,7 @@ let checking = false
 let logging = false
 let _ = if checking then dprintn "warning : Ilread.checking is on"
 let noStableFileHeuristic = try (System.Environment.GetEnvironmentVariable("FSharp_NoStableFileHeuristic") <> null) with _ -> false
+let alwaysMemoryMapFSC = try (System.Environment.GetEnvironmentVariable("FSharp_AlwaysMemoryMapCommandLineCompiler") <> null) with _ -> false
 
 let singleOfBits (x:int32) = System.BitConverter.ToSingle(System.BitConverter.GetBytes(x), 0)
 let doubleOfBits (x:int64) = System.BitConverter.Int64BitsToDouble(x)
@@ -91,14 +92,14 @@ type Statistics =
     { mutable rawMemoryFileCount : int
       mutable memoryMapFileOpenedCount : int
       mutable memoryMapFileClosedCount : int
-      mutable weakByteArrayFileCount : int
+      mutable weakByteFileCount : int
       mutable byteFileCount : int }
 
 let stats = 
     { rawMemoryFileCount = 0
       memoryMapFileOpenedCount = 0
       memoryMapFileClosedCount = 0
-      weakByteArrayFileCount = 0
+      weakByteFileCount = 0
       byteFileCount = 0 }
 
 let GetStatistics() = stats
@@ -303,7 +304,7 @@ type MemoryMapFile(fileName: string, view: MemoryMapView, hMap: MemoryMapping.HA
         override __.GetView() = (view :> BinaryView)
 
 /// Read file from memory blocks 
-type ByteArrayView(bytes:byte[]) = 
+type ByteView(bytes:byte[]) = 
     inherit BinaryView()
 
     override __.ReadByte addr = bytes.[addr]
@@ -335,7 +336,7 @@ type ByteArrayView(bytes:byte[]) =
 /// A BinaryFile backed by an array of bytes held strongly as managed memory
 [<DebuggerDisplay("{FileName}")>]
 type ByteFile(fileName: string, bytes:byte[]) = 
-    let view = ByteArrayView(bytes)
+    let view = ByteView(bytes)
     do stats.byteFileCount <- stats.byteFileCount + 1
     member __.FileName = fileName
     interface BinaryFile with
@@ -347,7 +348,7 @@ type ByteFile(fileName: string, bytes:byte[]) =
 [<DebuggerDisplay("{FileName}")>]
 type WeakByteFile(fileName: string) = 
 
-    do stats.weakByteArrayFileCount <- stats.weakByteArrayFileCount + 1
+    do stats.weakByteFileCount <- stats.weakByteFileCount + 1
 
     /// Used to check that the file hasn't changed
     let fileStamp = FileSystem.GetLastWriteTimeShim(fileName)
@@ -378,7 +379,7 @@ type WeakByteFile(fileName: string) =
                     tg <- FileSystem.ReadAllBytesShim fileName
                     weakBytes.SetTarget tg
                 tg
-            (ByteArrayView(strongBytes) :> BinaryView)
+            (ByteView(strongBytes) :> BinaryView)
 
 
     
@@ -2336,30 +2337,33 @@ and seekReadMethod (ctxt: ILMetadataReader)  mdv numtypars (idx:int) =
      
      let ret, ilParams = seekReadParams ctxt mdv (retty, argtys) paramIdx endParamIdx
 
+     let isEntryPoint = 
+         let (tab, tok) = ctxt.entryPointToken 
+         (tab = TableNames.Method && tok = idx)
+
+     let body = 
+         if (codetype = 0x01) && pinvoke then 
+             methBodyNative
+         elif pinvoke then 
+             seekReadImplMap ctxt nm idx
+         elif internalcall || abstr || unmanaged || (codetype <> 0x00) then 
+             methBodyAbstract
+         else 
+             match ctxt.pectxtCaptured with 
+             | None -> methBodyNotAvailable 
+             | Some pectxt -> seekReadMethodRVA pectxt ctxt (idx, nm, internalcall, noinline, aggressiveinline, numtypars) codeRVA
+
      ILMethodDef(name=nm,
                  attributes = enum<MethodAttributes>(flags),
                  implAttributes= enum<MethodImplAttributes>(implflags),
                  securityDecls=seekReadSecurityDecls ctxt (TaggedIndex(hds_MethodDef, idx)),
-                 isEntryPoint=
-                    (let (tab, tok) = ctxt.entryPointToken 
-                     (tab = TableNames.Method && tok = idx)),
+                 isEntryPoint=isEntryPoint,
                  genericParams=seekReadGenericParams ctxt numtypars (tomd_MethodDef, idx),
                  customAttrs=seekReadCustomAttrs ctxt (TaggedIndex(hca_MethodDef, idx)),
                  parameters= ilParams,
                  callingConv=cc,
                  ret=ret,
-                 body=
-                    (if (codetype = 0x01) && pinvoke then 
-                       mkMethBodyLazyAux (notlazy MethodBody.Native)
-                     elif pinvoke then 
-                       seekReadImplMap ctxt nm  idx
-                     elif internalcall || abstr || unmanaged || (codetype <> 0x00) then 
-                       //if codeRVA <> 0x0 then dprintn "non-IL or abstract method with non-zero RVA"
-                       mkMethBodyLazyAux (notlazy MethodBody.Abstract)  
-                     else 
-                       match ctxt.pectxtCaptured with 
-                       | None -> mkMethBodyLazyAux (notlazy MethodBody.NotAvailable)  
-                       | Some pectxt -> seekReadMethodRVA pectxt ctxt (idx, nm, internalcall, noinline, aggressiveinline, numtypars) codeRVA))
+                 body=body)
      
      
 and seekReadParams (ctxt: ILMetadataReader)  mdv (retty, argtys) pidx1 pidx2 =
@@ -4005,7 +4009,7 @@ let OpenILModuleReader fileName opts =
         // multi-proc build. So use memory mapping, but only for stable files.  Other files
         // fill use an in-memory ByteFile
         let _disposer, pefile = 
-            if stableFileHeuristicApplies fileName then 
+            if alwaysMemoryMapFSC || stableFileHeuristicApplies fileName then 
                 tryMemoryMap opts fileName
             else
                 let pefile = createByteFile opts fileName

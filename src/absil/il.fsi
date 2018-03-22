@@ -1427,9 +1427,16 @@ type ILResourceAccess =
 
 [<RequireQualifiedAccess>]
 type ILResourceLocation = 
-    | LocalIn of string * int * int //(unit -> byte[])  (* resources may be re-read each time this function is called *)
-    | LocalOut of byte[] //string * int * int //(unit -> byte[])  (* resources may be re-read each time this function is called *)
+    /// Represents a manifest resource that can be read from within the PE file
+    | LocalIn of string * int * int
+
+    /// Represents a manifest resource that is due to be written to the output PE file
+    | LocalOut of byte[]
+
+    /// Represents a manifest resource in an associated file
     | File of ILModuleRef * int32
+
+    /// Represents a manifest resource in a different assembly
     | Assembly of ILAssemblyRef
 
 /// "Manifest ILResources" are chunks of resource data, being one of:
@@ -1441,7 +1448,8 @@ type ILResource =
       Location: ILResourceLocation
       Access: ILResourceAccess
       CustomAttrs: ILAttributes }
-    /// Read the bytes from a resource local to an assembly
+
+    /// Read the bytes from a resource local to an assembly. Will fail for non-local resources.
     member GetBytes : unit -> byte[]
 
 /// Table of resources in a module.
@@ -1492,7 +1500,10 @@ type ILAssemblyManifest =
 
 [<RequireQualifiedAccess>]
 type ILNativeResource = 
+    /// Represents a native resource to be read from the PE file
     | In of fileName: string * linkedResourceBase: int * linkedResourceStart: int * linkedResourceLength: int
+
+    /// Represents a native resource to be written in an output file
     | Out of unlinkedResource: byte[]
 
 /// One module in the "current" assembly, either a main-module or
@@ -1756,6 +1767,9 @@ val mkILEmptyGenericParams: ILGenericParameterDefs
 /// Make method definitions.
 val mkILMethodBody: initlocals:bool * ILLocals * int * ILCode * ILSourceMarker option -> ILMethodBody
 val mkMethodBody: bool * ILLocals * int * ILCode * ILSourceMarker option -> MethodBody
+val methBodyNotAvailable: ILLazyMethodBody 
+val methBodyAbstract: ILLazyMethodBody 
+val methBodyNative: ILLazyMethodBody 
 
 val mkILCtor: ILMemberAccess * ILParameter list * MethodBody -> ILMethodDef
 val mkILClassCtor: MethodBody -> ILMethodDef

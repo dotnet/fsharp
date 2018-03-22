@@ -64,7 +64,7 @@ type internal FSharpCheckerProvider
             let objToHold = box md
 
             // We don't expect any ilread WeakByteFile to be created when working in Visual Studio
-            Debug.Assert((Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader.GetStatistics().weakByteArrayFileCount = 0), "Expected weakByteArrayFileCount to be zero when using F# in Visual Studio. Was there a problem reading a .NET binary?")
+            Debug.Assert((Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader.GetStatistics().weakByteFileCount = 0), "Expected weakByteFileCount to be zero when using F# in Visual Studio. Was there a problem reading a .NET binary?")
 
             Some (objToHold, NativePtr.toNativeInt mmr.MetadataPointer, mmr.MetadataLength)
         with ex -> 
