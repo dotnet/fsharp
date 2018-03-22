@@ -270,14 +270,14 @@ and goutput_permission _env os p =
 
 
   match p with 
-  | PermissionSet (sa,b) -> 
+  | ILSecurityDecl (sa,b) -> 
       output_string os " .permissionset "
       output_security_action os sa 
       output_string os " = (" 
       output_bytes os b 
       output_string os ")" 
   
-and goutput_security_decls env os (ps: ILPermissions) =  output_seq " " (goutput_permission env)  os ps.AsList
+and goutput_security_decls env os (ps: ILSecurityDecls) =  output_seq " " (goutput_permission env)  os ps.AsList
 
 and goutput_gparam env os (gf: ILGenericParameterDef) =  
   output_string os (tyvar_generator gf.Name);
@@ -469,30 +469,30 @@ let output_custom_attr_data os data =
   output_string os " = "; output_parens output_bytes os data
       
 let goutput_custom_attr env os attr =
-  output_string os " .custom ";
-  goutput_mspec env os attr.Method;
+  output_string os " .custom "
+  goutput_mspec env os attr.Method
   output_custom_attr_data os attr.Data
 
 let goutput_custom_attrs env os (attrs : ILAttributes) =
   List.iter (fun attr -> goutput_custom_attr env os attr;  output_string os "\n" ) attrs.AsList
 
-let goutput_fdef _tref env os fd =
-  output_string os " .field ";
+let goutput_fdef _tref env os (fd: ILFieldDef) =
+  output_string os " .field "
   match fd.Offset with Some i -> output_string os "["; output_i32 os i; output_string os "] " | None -> () 
   match fd.Marshal with Some _i -> output_string os "// marshal attribute not printed\n"; | None -> () 
-  output_member_access os fd.Access;
-  output_string os " ";
-  if fd.IsStatic then output_string os " static ";
-  if fd.IsLiteral then output_string os " literal ";
-  if fd.IsSpecialName then output_string os " specialname rtspecialname ";
-  if fd.IsInitOnly then output_string os " initonly ";
-  if fd.NotSerialized then output_string os " notserialized ";
-  goutput_typ env os fd.Type;
-  output_string os " ";
-  output_id os fd.Name;
-  output_option output_at os  fd.Data; 
-  output_option output_field_init os fd.LiteralValue;
-  output_string os "\n";
+  output_member_access os fd.Access
+  output_string os " "
+  if fd.IsStatic then output_string os " static "
+  if fd.IsLiteral then output_string os " literal "
+  if fd.IsSpecialName then output_string os " specialname rtspecialname "
+  if fd.IsInitOnly then output_string os " initonly "
+  if fd.NotSerialized then output_string os " notserialized "
+  goutput_typ env os fd.FieldType
+  output_string os " "
+  output_id os fd.Name
+  output_option output_at os  fd.Data
+  output_option output_field_init os fd.LiteralValue
+  output_string os "\n"
   goutput_custom_attrs env os fd.CustomAttrs
 
 
@@ -768,7 +768,7 @@ let goutput_ilmbody env os (il: ILMethodBody) =
     output_string os ")\n"
   
 
-let goutput_mbody is_entrypoint env os md =
+let goutput_mbody is_entrypoint env os (md: ILMethodDef) =
   if md.ImplAttributes &&& MethodImplAttributes.Native <> enum 0 then output_string os "native "
   elif md.ImplAttributes &&&  MethodImplAttributes.IL <> enum 0 then output_string os "cil "
   else output_string os "runtime "
@@ -779,7 +779,7 @@ let goutput_mbody is_entrypoint env os md =
   output_string os " \n{ \n"  ;
   goutput_security_decls env os md.SecurityDecls;
   goutput_custom_attrs env os md.CustomAttrs;
-  match md.mdBody.Contents with 
+  match md.Body.Contents with 
     | MethodBody.IL il -> goutput_ilmbody env os il
     | _ -> ()
   if is_entrypoint then output_string os " .entrypoint";
@@ -799,7 +799,7 @@ let goutput_mdef env os (md:ILMethodDef) =
       elif md.IsConstructor then "rtspecialname"
       elif md.IsStatic then
             "static "^
-            (match md.mdBody.Contents with 
+            (match md.Body.Contents with 
               MethodBody.PInvoke (attr) -> 
                 "pinvokeimpl(\""^ attr.Where.Name^"\" as \""^ attr.Name ^"\""^
                 (match attr.CallingConv with 
@@ -852,7 +852,7 @@ let goutput_mdef env os (md:ILMethodDef) =
   (goutput_mbody is_entrypoint menv) os md;
   output_string os "\n"
 
-let goutput_pdef env os pd =
+let goutput_pdef env os (pd: ILPropertyDef) =
     output_string os  "property\n\tgetter: ";
     (match pd.GetMethod with None -> () | Some mref -> goutput_mref env os mref);
     output_string os  "\n\tsetter: ";
@@ -891,7 +891,7 @@ let goutput_mdefs env os (mdefs: ILMethodDefs) =
 let goutput_pdefs env os (pdefs: ILPropertyDefs) = 
   List.iter (fun f -> (goutput_pdef env) os f; output_string os "\n" ) pdefs.AsList
 
-let rec goutput_tdef (enc) env contents os cd =
+let rec goutput_tdef enc env contents os (cd: ILTypeDef) =
   let env = ppenv_enter_tdef cd.GenericParams env 
   let layout_attr,pp_layout_decls = splitTypeLayout cd.Layout 
   if isTypeNameForGlobalFunctions cd.Name then 
@@ -939,26 +939,26 @@ and output_init_semantics os f =
 and goutput_lambdas env os lambdas = 
   match lambdas with
    | Lambdas_forall (gf,l) -> 
-       output_angled (goutput_gparam env) os gf; 
-       output_string os " "; 
+       output_angled (goutput_gparam env) os gf
+       output_string os " "
        (goutput_lambdas env) os l
    | Lambdas_lambda (ps,l) ->  
        output_parens (goutput_param env) os ps; 
-       output_string os " ";
+       output_string os " "
        (goutput_lambdas env) os l
    | Lambdas_return typ -> output_string os "--> "; (goutput_typ env) os typ
   
-and goutput_tdefs contents (enc) env os (td: ILTypeDefs) =
+and goutput_tdefs contents enc env os (td: ILTypeDefs) =
   List.iter (goutput_tdef enc env contents os) td.AsList
 
 let output_ver os (a,b,c,d) =
-    output_string os " .ver ";
-    output_u16 os a;
-    output_string os " : ";
-    output_u16 os b;
-    output_string os " : ";
-    output_u16 os c;
-    output_string os " : ";
+    output_string os " .ver "
+    output_u16 os a
+    output_string os " : "
+    output_u16 os b
+    output_string os " : "
+    output_u16 os c
+    output_string os " : "
     output_u16 os d
 
 let output_locale os s = output_string os " .Locale "; output_qstring os s
