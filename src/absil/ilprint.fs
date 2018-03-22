@@ -997,7 +997,8 @@ let goutput_resource env os r =
   output_string os " { ";
   goutput_custom_attrs env os r.CustomAttrs;
   match r.Location with 
-  | ILResourceLocation.Local _ -> 
+  | ILResourceLocation.LocalIn _ 
+  | ILResourceLocation.LocalOut _ -> 
       output_string os " /* loc nyi */ "; 
   | ILResourceLocation.File (mref,off) ->
       output_string os " .file "; 

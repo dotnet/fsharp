@@ -47,7 +47,7 @@ let UnicodeFileAsLexbuf (filename,codePage : int option, retryLocked:bool) :  Le
         use reader = 
             match codePage with 
             | None -> new  StreamReader(stream,true)
-            | Some n -> new  StreamReader(stream,System.Text.Encoding.GetEncodingShim(n)) 
+            | Some n -> new  StreamReader(stream,System.Text.Encoding.GetEncoding(n)) 
         reader.ReadToEnd()
       with 
           // We can get here if the file is locked--like when VS is saving a file--we don't have direct

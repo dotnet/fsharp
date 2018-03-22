@@ -6982,6 +6982,11 @@
         <target state="translated">Tento výraz vrátí hodnotu typu {0}, ale implicitně se zahodí. Zvažte vytvoření vazby mezi výsledkem a názvem pomocí klíčového slova let, např. let výsledek = výraz. Pokud jste chtěli výraz použít jako hodnotu v sekvenci, použijte explicitní klíčové slovo yield!.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ilreadFileChanged">
+        <source>The file '{0}' changed on disk unexpectedly, please reload.</source>
+        <target state="new">The file '{0}' changed on disk unexpectedly, please reload.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

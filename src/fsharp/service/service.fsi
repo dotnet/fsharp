@@ -10,7 +10,10 @@ open System
 open System.IO
 open System.Collections.Generic
 
+open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.IL
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+open Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.Driver
@@ -19,12 +22,7 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.CompileOps
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.TcGlobals 
 open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.InfoReader
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
@@ -366,7 +364,8 @@ type public FSharpChecker =
     /// <param name="keepAssemblyContents">Keep the checked contents of projects.</param>
     /// <param name="keepAllBackgroundResolutions">If false, do not keep full intermediate checking results from background checking suitable for returning from GetBackgroundCheckResultsForFileInProject. This reduces memory usage.</param>
     /// <param name="legacyReferenceResolver">An optional resolver for non-file references, for legacy purposes</param>
-    static member Create : ?projectCacheSize: int * ?keepAssemblyContents: bool * ?keepAllBackgroundResolutions: bool  * ?legacyReferenceResolver: ReferenceResolver.Resolver -> FSharpChecker
+    /// <param name="tryGetMetadataSnapshot">An optional resolver to access the contents of .NET binaries in a memory-efficient way</param>
+    static member Create : ?projectCacheSize: int * ?keepAssemblyContents: bool * ?keepAllBackgroundResolutions: bool  * ?legacyReferenceResolver: ReferenceResolver.Resolver * ?tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot -> FSharpChecker
 
     /// <summary>
     ///   Parse a source code file, returning information about brace matching in the file.
