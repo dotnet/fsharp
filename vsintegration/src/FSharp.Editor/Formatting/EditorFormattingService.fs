@@ -44,7 +44,7 @@ type internal FSharpEditorFormattingService
 
             let! firstMeaningfulToken = 
                 tokens
-                |> List.tryFind (fun x ->
+                |> Array.tryFind (fun x ->
                     x.Tag <> FSharpTokenTag.WHITESPACE &&
                     x.Tag <> FSharpTokenTag.COMMENT &&
                     x.Tag <> FSharpTokenTag.LINE_COMMENT)

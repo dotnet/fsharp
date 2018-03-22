@@ -182,6 +182,12 @@ module FSharpTokenTag =
     val CLASS : int
     /// Indicates the token is keyword `try`
     val TRY : int
+    /// Indicates the token is keyword `with`
+    val WITH : int
+    /// Indicates the token is keyword `with` in #light
+    val OWITH : int
+    /// Indicates the token is keyword `new` 
+    val NEW : int
     
 /// Information about a particular token from the tokenizer
 type FSharpTokenInfo = 

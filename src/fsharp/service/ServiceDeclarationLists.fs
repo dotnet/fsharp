@@ -736,7 +736,7 @@ type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] )
     // BUG 413009 : [ParameterInfo] takes about 3 seconds to move from one overload parameter to another
     // cache allows to avoid recomputing parameterinfo for the same item
 #if !FX_NO_WEAKTABLE
-    static let methodOverloadsCache = System.Runtime.CompilerServices.ConditionalWeakTable()
+    static let methodOverloadsCache = System.Runtime.CompilerServices.ConditionalWeakTable<ItemWithInst, FSharpMethodGroupItem[]>()
 #endif
 
     let methods = 
