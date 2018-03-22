@@ -427,7 +427,6 @@ type LanguageServiceBaseTests() =
         ShiftKeyUp(currentVS)
         ops.CleanInvisibleProject(currentVS)
 
-        do AbstractIL.Diagnostics.setDiagnosticsChannel(None);
         ResetStopWatch()
         testStopwatch.Reset()
         testStopwatch.Start()

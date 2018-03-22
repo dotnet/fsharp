@@ -3454,7 +3454,8 @@ and GenGenericParam cenv eenv (tp:Typar) =
 
       Constraints = subTypeConstraints
       Variance=NonVariant
-      CustomAttrs = mkILCustomAttrs (GenAttrs cenv eenv tp.Attribs)
+      CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs (GenAttrs cenv eenv tp.Attribs))
+      MetadataIndex = NoMetadataIdx
       HasReferenceTypeConstraint=refTypeConstraint
       HasNotNullableValueTypeConstraint=notNullableValueTypeConstraint
       HasDefaultConstructorConstraint= defaultConstructorConstraint }
@@ -3474,7 +3475,8 @@ and GenSlotParam m cenv eenv (TSlotParam(nm,ty,inFlag,outFlag,optionalFlag,attri
       IsIn=inFlag || inFlag2
       IsOut=outFlag || outFlag2
       IsOptional=optionalFlag || optionalFlag2
-      CustomAttrs= mkILCustomAttrs (GenAttrs cenv eenv attribs) }
+      CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs (GenAttrs cenv eenv attribs))
+      MetadataIndex = NoMetadataIdx }
     
 and GenFormalSlotsig m cenv eenv (TSlotSig(_,typ,ctps,mtps,paraml,returnTy)) = 
     let paraml = List.concat paraml
@@ -5005,7 +5007,8 @@ and GenParams cenv eenv (mspec:ILMethodSpec) (attribs:ArgReprInfo list) (implVal
               IsIn=inFlag    
               IsOut=outFlag  
               IsOptional=optionalFlag 
-              CustomAttrs= mkILCustomAttrs (GenAttrs cenv eenv attribs) }
+              CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs (GenAttrs cenv eenv attribs))
+              MetadataIndex = NoMetadataIdx }
 
         param, takenNames)
     |> fst
@@ -5014,7 +5017,8 @@ and GenReturnInfo cenv eenv ilRetTy (retInfo : ArgReprInfo) : ILReturn =
     let marshal,attrs = GenMarshal cenv retInfo.Attribs
     { Type=ilRetTy
       Marshal=marshal
-      CustomAttrs= mkILCustomAttrs (GenAttrs cenv eenv attrs) }
+      CustomAttrsStored= storeILCustomAttrs (mkILCustomAttrs (GenAttrs cenv eenv attrs))
+      MetadataIndex = NoMetadataIdx }
        
 and GenPropertyForMethodDef compileAsInstance tref mdef (v:Val) (memberInfo:ValMemberInfo) ilArgTys ilPropTy ilAttrs compiledName =
     let name = match compiledName with | Some n -> n | _ -> v.PropertyName in  (* chop "get_" *)
