@@ -2322,9 +2322,6 @@ type TcConfigBuilder =
       isInvalidationSupported : bool
 
       /// used to log sqm data
-      mutable sqmSessionGuid : System.Guid option
-      mutable sqmNumOfSourceFiles : int
-      sqmSessionStartedTime : int64
 
       /// if true - every expression in quotations will be augmented with full debug info (filename, location in file)
       mutable emitDebugInfoInQuotations : bool
@@ -2472,9 +2469,6 @@ type TcConfigBuilder =
           noDebugData = false
           isInteractive = false
           isInvalidationSupported = false
-          sqmSessionGuid = None
-          sqmNumOfSourceFiles = 0
-          sqmSessionStartedTime = System.DateTime.UtcNow.Ticks
           emitDebugInfoInQuotations = false
           exename = None
           copyFSharpCore = CopyFSharpCoreFlag.No
@@ -2943,9 +2937,6 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
     member x.isInteractive = data.isInteractive
     member x.isInvalidationSupported = data.isInvalidationSupported
     member x.emitDebugInfoInQuotations = data.emitDebugInfoInQuotations
-    member x.sqmSessionGuid = data.sqmSessionGuid
-    member x.sqmNumOfSourceFiles = data.sqmNumOfSourceFiles
-    member x.sqmSessionStartedTime = data.sqmSessionStartedTime
     member x.copyFSharpCore = data.copyFSharpCore
     member x.shadowCopyReferences = data.shadowCopyReferences
     member x.tryGetMetadataSnapshot = data.tryGetMetadataSnapshot

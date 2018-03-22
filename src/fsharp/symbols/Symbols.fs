@@ -2175,15 +2175,18 @@ and FSharpAssemblySignature private (cenv, topAttribs: TypeChecker.TopAttribs op
     member __.Attributes =
         [ match optViewedCcu with 
           | Some ccu -> 
-              if ccu.IsFSharp then
-                  for a in ccu.Contents.Attribs do 
-                      yield FSharpAttribute(cenv, FSAttribInfo (cenv.g, a))
-              else
-                  match ccu.TryGetILModuleDef() with 
-                  | None -> ()
-                  | Some ilModule -> 
-                      for a in AttribInfosOfIL cenv.g cenv.amap cenv.thisCcu.ILScopeRef range0 ilModule.CustomAttrs do
-                          yield FSharpAttribute(cenv, a)
+                match ccu.TryGetILModuleDef() with 
+                | Some ilModule -> 
+                    match ilModule.Manifest with 
+                    | None -> ()
+                    | Some manifest -> 
+                        for a in AttribInfosOfIL cenv.g cenv.amap cenv.thisCcu.ILScopeRef range0 manifest.CustomAttrs do
+                            yield FSharpAttribute(cenv, a)
+                | None -> 
+                    // If no module is available, then look in the CCU contents. 
+                    if ccu.IsFSharp then
+                        for a in ccu.Contents.Attribs do 
+                            yield FSharpAttribute(cenv, FSAttribInfo (cenv.g, a))
           | None -> 
               match topAttribs with
               | None -> ()
