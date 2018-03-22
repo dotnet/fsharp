@@ -1191,14 +1191,14 @@ module StaticLinker =
                 TypeDefs = 
                   mkILTypeDefs 
                       ([ for td in fakeModule.TypeDefs do 
-                            yield {td with 
-                                      Methods =
-                                        td.Methods.AsList
-                                        |> List.map (fun md ->
-                                            {md with CustomAttrs = 
-                                                        mkILCustomAttrs (td.CustomAttrs.AsList |> List.filter (fun ilattr ->
-                                                            ilattr.Method.DeclaringType.TypeRef.FullName <> "System.Runtime.TargetedPatchingOptOutAttribute")  )}) 
-                                        |> mkILMethods } ])}
+                             let meths = td.Methods.AsList
+                                            |> List.map (fun md ->
+                                                md.With(customAttrs = 
+                                                            mkILCustomAttrs (td.CustomAttrs.AsList |> List.filter (fun ilattr ->
+                                                                ilattr.Method.DeclaringType.TypeRef.FullName <> "System.Runtime.TargetedPatchingOptOutAttribute")))) 
+                                            |> mkILMethods
+                             let td = td.With(methods=meths)
+                             yield td.With(methods=meths) ])}
             //ILAsciiWriter.output_module stdout fakeModule
             fakeModule.TypeDefs.AsList
 
@@ -1443,9 +1443,8 @@ module StaticLinker =
                                                     | ILTypeDefAccess.Private -> ILTypeDefAccess.Nested ILMemberAccess.Private
                                                     | _ -> ilOrigTypeDef.Access)
                                 else ilOrigTypeDef
-                              { ilOrigTypeDef with 
-                                    Name = ilTgtTyRef.Name
-                                    NestedTypes = mkILTypeDefs (List.map buildRelocatedGeneratedType ch) }
+                              ilOrigTypeDef.With(name = ilTgtTyRef.Name,
+                                                 nestedTypes = mkILTypeDefs (List.map buildRelocatedGeneratedType ch))
                           else
                               // If there is no matching IL type definition, then make a simple container class
                               if debugStaticLinking then printfn "Generating simple class '%s' because we didn't find an original type '%s' in a provider generated assembly" ilTgtTyRef.QualifiedName ilOrigTyRef.QualifiedName
@@ -1479,7 +1478,7 @@ module StaticLinker =
                                        (ltdefs, fresh, rtdefs)
                                    | (ltdefs, Some htd, rtdefs) -> 
                                        (ltdefs, htd, rtdefs)
-                               let htd = { htd with NestedTypes = implantTypeDef true htd.NestedTypes t td }
+                               let htd = htd.With(nestedTypes = implantTypeDef true htd.NestedTypes t td)
                                mkILTypeDefs (ltdefs @ [htd] @ rtdefs)
 
                       let newTypeDefs = 
@@ -1498,7 +1497,7 @@ module StaticLinker =
                                         let ilOrigTyRef = mkILNestedTyRef (ilOrigScopeRef, enc, tdef.Name)
                                         if  not (ilOrigTyRefsForProviderGeneratedTypesToRelocate.ContainsKey ilOrigTyRef) then
                                           if debugStaticLinking then printfn "Keep provided type %s in place because it wasn't relocated" ilOrigTyRef.QualifiedName
-                                          yield { tdef with NestedTypes = rw (enc@[tdef.Name]) tdef.NestedTypes  } ]
+                                          yield tdef.With(nestedTypes = rw (enc@[tdef.Name]) tdef.NestedTypes) ]
                               rw [] ilModule.TypeDefs
                           (ccu, { ilModule with TypeDefs = ilTypeDefsAfterRemovingRelocatedTypes }))
 

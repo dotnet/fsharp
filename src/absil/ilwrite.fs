@@ -1120,7 +1120,7 @@ and GetTypeDefAsEventMapRow cenv tidx =
            SimpleIndex (TableNames.Event, cenv.eventDefs.Count + 1) |]  
     
 and GetKeyForFieldDef tidx (fd: ILFieldDef) = 
-    FieldDefKey (tidx, fd.Name, fd.Type)
+    FieldDefKey (tidx, fd.Name, fd.FieldType)
 
 and GenFieldDefPass2 cenv tidx fd = 
     ignore (cenv.fieldDefs.AddUniqueEntry "field" (fun (fdkey:FieldDefKey) -> fdkey.Name) (GetKeyForFieldDef tidx fd))
@@ -1144,7 +1144,7 @@ and GenMethodDefPass2 cenv tidx md =
     cenv.methodDefIdxs.[md] <- idx
 
 and GetKeyForPropertyDef tidx (x: ILPropertyDef)  = 
-    PropKey (tidx, x.Name, x.Type, x.Args)
+    PropKey (tidx, x.Name, x.PropertyType, x.Args)
 
 and GenPropertyDefPass2 cenv tidx x = 
     ignore (cenv.propertyDefs.AddUniqueEntry "property" (fun (PropKey (_, n, _, _)) -> n) (GetKeyForPropertyDef tidx x))
@@ -1400,10 +1400,10 @@ and GenCustomAttrsPass3Or4 cenv hca (attrs: ILAttributes) =
     attrs.AsList |> List.iter (GenCustomAttrPass3Or4 cenv hca) 
 
 // -------------------------------------------------------------------- 
-// ILPermissionSet --> DeclSecurity rows
+// ILSecurityDecl --> DeclSecurity rows
 // -------------------------------------------------------------------- *)
 
-let rec GetSecurityDeclRow cenv hds (PermissionSet (action, s)) = 
+let rec GetSecurityDeclRow cenv hds (ILSecurityDecl (action, s)) = 
     UnsharedRow 
         [| UShort (uint16 (List.assoc action (Lazy.force ILSecurityActionMap)))
            HasDeclSecurity (fst hds, snd hds)
@@ -2323,7 +2323,7 @@ let rec GetFieldDefAsFieldDefRow cenv env (fd: ILFieldDef) =
            StringE (GetStringHeapIdx cenv fd.Name)
            Blob (GetFieldDefSigAsBlobIdx cenv env fd ) |]
 
-and GetFieldDefSigAsBlobIdx cenv env fd = GetFieldDefTypeAsBlobIdx cenv env fd.Type
+and GetFieldDefSigAsBlobIdx cenv env fd = GetFieldDefTypeAsBlobIdx cenv env fd.FieldType
 
 and GenFieldDefPass3 cenv env fd = 
     let fidx = AddUnsharedRow cenv TableNames.Field (GetFieldDefAsFieldDefRow cenv env fd)
@@ -2492,7 +2492,7 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
         if cenv.entrypoint <> None then failwith "duplicate entrypoint"
         else cenv.entrypoint <- Some (true, midx)
     let codeAddr = 
-      (match md.mdBody.Contents with 
+      (match md.Body.Contents with 
       | MethodBody.IL ilmbody -> 
           let addr = cenv.nextCodeAddr
           let (localToken, code, seqpoints, rootScope) = GenILMethodBody md.Name cenv env ilmbody
@@ -2563,7 +2563,7 @@ let GenMethodDefPass3 cenv env (md:ILMethodDef) =
     md.CustomAttrs |> GenCustomAttrsPass3Or4 cenv (hca_MethodDef, midx) 
     md.SecurityDecls.AsList |> GenSecurityDeclsPass3 cenv (hds_MethodDef, midx)
     md.GenericParams |> List.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_MethodDef, midx) gp) 
-    match md.mdBody.Contents with 
+    match md.Body.Contents with 
     | MethodBody.PInvoke attr ->
         let flags = 
           begin match attr.CallingConv with 
@@ -2616,12 +2616,12 @@ let GenPropertyMethodSemanticsPass3 cenv pidx kind mref =
 let rec GetPropertySigAsBlobIdx cenv env prop = 
     GetBytesAsBlobIdx cenv (GetPropertySigAsBytes cenv env prop)
 
-and GetPropertySigAsBytes cenv env prop = 
+and GetPropertySigAsBytes cenv env (prop: ILPropertyDef) = 
     emitBytesViaBuffer (fun bb -> 
         let b =  ((hasthisToByte prop.CallingConv) ||| e_IMAGE_CEE_CS_CALLCONV_PROPERTY)
         bb.EmitByte b
         bb.EmitZ32 prop.Args.Length
-        EmitType cenv env bb prop.Type
+        EmitType cenv env bb prop.PropertyType
         prop.Args |> List.iter (EmitType cenv env bb))
 
 and GetPropertyAsPropertyRow cenv env (prop:ILPropertyDef) = 
@@ -2658,7 +2658,7 @@ let rec GenEventMethodSemanticsPass3 cenv eidx kind mref =
 /// ILEventDef --> Event Row + MethodSemantics entries
 and GenEventAsEventRow cenv env (md: ILEventDef) = 
     let flags = md.Attributes
-    let tdorTag, tdorRow = GetTypeOptionAsTypeDefOrRef cenv env md.Type
+    let tdorTag, tdorRow = GetTypeOptionAsTypeDefOrRef cenv env md.EventType
     UnsharedRow 
        [| UShort (uint16 flags) 
           StringE (GetStringHeapIdx cenv md.Name) 
