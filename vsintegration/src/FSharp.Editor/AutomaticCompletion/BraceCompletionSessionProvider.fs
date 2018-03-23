@@ -336,6 +336,8 @@ module private DoubleQuote =
     [<Literal>]
     let CloseCharacter = '"'
 
+(* This is for [| |] and {| |} , since the implementation deals with chars only. 
+   We have to test if there is a { or [ before the cursor position and insert the closing '|'. *)
 module private VerticalBar =
 
     [<Literal>]
@@ -343,6 +345,26 @@ module private VerticalBar =
 
     [<Literal>]
     let CloseCharacter = '|'
+
+(* This is for attributes [< >] , since the implementation deals with chars only. 
+   We have to test if there is a [ before the cursor position and insert the closing '>'. *)
+module private AngleBrackets =
+
+    [<Literal>]
+    let OpenCharacter = '<'
+
+    [<Literal>]
+    let CloseCharacter = '>'
+
+(* For multiline comments like this, since the implementation deals with chars only *)
+module private Asterisk =
+
+    [<Literal>]
+    let OpenCharacter = '*'
+
+    [<Literal>]
+    let CloseCharacter = '*'
+
 
 type internal ParenthesisCompletionSession () =
     
@@ -393,15 +415,65 @@ type internal VerticalBarCompletionSession () =
         member this.AllowOverType(_session, _cancellationToken) = 
             // TODO: Implement this for F#
             true
-
+        
+        (* This is for [| |] and {| |} , since the implementation deals with chars only. 
+           We have to test if there is a { or [ before the cursor position and insert the closing '|'. *)
         member this.CheckOpeningPoint(_session, _cancellationToken) = 
             let sourceCode = _session.TextView.TextSnapshot
             //let document = _session.TextView.TextSnapshot.GetOpenDocumentInCurrentContextWithChanges()
             let position = _session.TextView.Caret.Position.BufferPosition.Position
-            let ret = sourceCode.GetText(position-2,1) = "{" && sourceCode.GetText(position,1) = "}"
-                        || sourceCode.GetText(position-2,1) = "[" && sourceCode.GetText(position,1) = "]"
+            let ret =   position-2 >= 0 && position < sourceCode.Length &&
+                        (sourceCode.GetText(position-2,1) = "{" && sourceCode.GetText(position,1) = "}"
+                        || sourceCode.GetText(position-2,1) = "[" && sourceCode.GetText(position,1) = "]")
             ret
-            
+
+type internal AngleBracketCompletionSession () =
+    
+    interface IEditorBraceCompletionSession with
+
+        member this.AfterReturn(_session, _cancellationToken) = 
+            ()
+
+        member this.AfterStart(_session, _cancellationToken) = 
+            ()
+
+        member this.AllowOverType(_session, _cancellationToken) = 
+            // TODO: Implement this for F#
+            true
+        
+        (* This is for attributes [< >] , since the implementation deals with chars only. 
+           We have to test if there is a [ before the cursor position and insert the closing '>'. *)
+        member this.CheckOpeningPoint(_session, _cancellationToken) = 
+            let sourceCode = _session.TextView.TextSnapshot
+            let position = _session.TextView.Caret.Position.BufferPosition.Position
+            let ret =   position-2 >= 0 && position < sourceCode.Length &&
+                        sourceCode.GetText(position-2,1).Equals("[") && sourceCode.GetText(position,1).Equals("]")
+            ret            
+
+(* For multi-line comments, test if it is between "()" *)
+type internal AsteriskCompletionSession () =
+    
+    interface IEditorBraceCompletionSession with
+
+        member this.AfterReturn(_session, _cancellationToken) = 
+            ()
+
+        member this.AfterStart(_session, _cancellationToken) = 
+            ()
+
+        member this.AllowOverType(_session, _cancellationToken) = 
+            // TODO: Implement this for F#
+            true
+        
+        (* This is for attributes [< >] , since the implementation deals with chars only. 
+           We have to test if there is a [ before the cursor position and insert the closing '>'. *)
+        member this.CheckOpeningPoint(_session, _cancellationToken) = 
+            let sourceCode = _session.TextView.TextSnapshot
+            let position = _session.TextView.Caret.Position.BufferPosition.Position
+            let ret =   position-2 >= 0 && position < sourceCode.Length &&
+                        sourceCode.GetText(position-2,1).Equals("(") && sourceCode.GetText(position,1).Equals(")")
+            ret            
+
 [<ExportLanguageService(typeof<IEditorBraceCompletionSessionFactory>, FSharpConstants.FSharpLanguageName)>]
 type internal FSharpEditorBraceCompletionSessionFactory () =
     inherit ForegroundThreadAffinitizedObject ()
@@ -409,24 +481,28 @@ type internal FSharpEditorBraceCompletionSessionFactory () =
     member __.IsSupportedOpeningBrace openingBrace =
         match openingBrace with
         | Parenthesis.OpenCharacter | CurlyBrackets.OpenCharacter | SquareBrackets.OpenCharacter
-        | DoubleQuote.OpenCharacter | VerticalBar.OpenCharacter -> true
+        | DoubleQuote.OpenCharacter | VerticalBar.OpenCharacter | AngleBrackets.OpenCharacter 
+        | Asterisk.OpenCharacter -> true
         | _ -> false
 
     member this.CheckCodeContext(_document : Document, _position : int, _openingBrace, _cancellationToken) =
         this.AssertIsForeground()
-    // TODO: We need to know if we are inside a F# comment. If we are, then don't do automatic completion.
+    // We need to know if we are inside a F# comment. If we are, then don't do automatic completion.
         let sourceCodeTask = _document.GetTextAsync(_cancellationToken)
         sourceCodeTask.Wait(_cancellationToken)
         let sourceCode = sourceCodeTask.Result
-        let colorizationData = Tokenizer.getColorizationData(_document.Id, sourceCode, TextSpan(_position-1, 1), Some (_document.FilePath), [], _cancellationToken)
-        colorizationData.Exists (fun classifiedSpan -> 
-            classifiedSpan.TextSpan.IntersectsWith _position &&
-            (
-                match classifiedSpan.ClassificationType with
-                | ClassificationTypeNames.Comment
-                | ClassificationTypeNames.StringLiteral -> false
-                | _ -> true // anything else is a valid classification type
-            ))                
+        
+        _position = 0 
+        || let colorizationData = Tokenizer.getColorizationData(_document.Id, sourceCode, TextSpan(_position-1, 1), Some (_document.FilePath), [], _cancellationToken)
+           in colorizationData.Count = 0 
+              || colorizationData.Exists (fun classifiedSpan -> 
+                    classifiedSpan.TextSpan.IntersectsWith _position &&
+                    (
+                        match classifiedSpan.ClassificationType with
+                        | ClassificationTypeNames.Comment
+                        | ClassificationTypeNames.StringLiteral -> false
+                        | _ -> true // anything else is a valid classification type
+                    ))                
 
     member this.CreateEditorSession(_document: Document, _openingPosition: int, openingBrace: char, _cancellationToken: CancellationToken) =
         match openingBrace with
@@ -434,7 +510,9 @@ type internal FSharpEditorBraceCompletionSessionFactory () =
         | CurlyBrackets.OpenCharacter -> ParenthesisCompletionSession() :> IEditorBraceCompletionSession
         | SquareBrackets.OpenCharacter -> ParenthesisCompletionSession() :> IEditorBraceCompletionSession
         | VerticalBar.OpenCharacter -> VerticalBarCompletionSession() :> IEditorBraceCompletionSession
+        | AngleBrackets.OpenCharacter -> AngleBracketCompletionSession() :> IEditorBraceCompletionSession
         | DoubleQuote.OpenCharacter -> DoubleQuoteCompletionSession() :> IEditorBraceCompletionSession
+        | Asterisk.OpenCharacter -> DoubleQuoteCompletionSession() :> IEditorBraceCompletionSession
         | _ -> null
 
     interface IEditorBraceCompletionSessionFactory with
@@ -454,6 +532,8 @@ type internal FSharpEditorBraceCompletionSessionFactory () =
 [<BracePair(SquareBrackets.OpenCharacter, SquareBrackets.CloseCharacter)>]
 [<BracePair(DoubleQuote.OpenCharacter, DoubleQuote.CloseCharacter)>]
 [<BracePair(VerticalBar.OpenCharacter, VerticalBar.CloseCharacter)>]
+[<BracePair(AngleBrackets.OpenCharacter, AngleBrackets.CloseCharacter)>]
+[<BracePair(Asterisk.OpenCharacter, Asterisk.CloseCharacter)>]
 type internal FSharpBraceCompletionSessionProvider
     [<ImportingConstructor>] 
     (
