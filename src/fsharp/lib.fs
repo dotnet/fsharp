@@ -16,8 +16,8 @@ let verbose = false
 let progress = ref false 
 let tracking = ref false // intended to be a general hook to control diagnostic output when tracking down bugs
 
-let condition _s = 
-    try (System.Environment.GetEnvironmentVariable(_s) <> null) with _ -> false
+let condition s = 
+    try (System.Environment.GetEnvironmentVariable(s) <> null) with _ -> false
 
 let GetEnvInteger e dflt = match System.Environment.GetEnvironmentVariable(e) with null -> dflt | t -> try int t with _ -> dflt
 

@@ -969,6 +969,9 @@
   <data name="MatchIncomplete4" xml:space="preserve">
     <value> Unmatched elements will be ignored.</value>
   </data>
+  <data name="EnumMatchIncomplete1" xml:space="preserve">
+    <value>Enums may take values outside known cases.</value>
+  </data>
   <data name="RuleNeverMatched" xml:space="preserve">
     <value>This rule will never be matched</value>
   </data>

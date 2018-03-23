@@ -76,10 +76,10 @@ module UnusedOpens =
           AppliedScope: range }
 
     /// Gets the open statements, their scopes and their resolutions
-    let getOpenStatements (openDeclarations: FSharpOpenDeclaration list) : OpenStatement list = 
+    let getOpenStatements (openDeclarations: FSharpOpenDeclaration[]) : OpenStatement[] = 
         openDeclarations
-        |> List.filter (fun x -> not x.IsOwnNamespace)
-        |> List.choose (fun openDecl ->
+        |> Array.filter (fun x -> not x.IsOwnNamespace)
+        |> Array.choose (fun openDecl ->
              match openDecl.LongId, openDecl.Range with
              | firstId :: _, Some range ->
                  if firstId.idText = MangledGlobalName then 
@@ -191,7 +191,7 @@ module UnusedOpens =
     /// Async to allow cancellation.
     let filterOpenStatements symbolUses openStatements =
         async {
-            let! results = filterOpenStatementsIncremental symbolUses openStatements [] []
+            let! results = filterOpenStatementsIncremental symbolUses (List.ofArray openStatements) [] []
             return results |> List.map (fun os -> os.Range)
         }
 
