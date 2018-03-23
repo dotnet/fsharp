@@ -22,7 +22,7 @@ and internal IProjectSite =
     abstract CompilationOptions : string[]
 
     /// The normalized '-r:' assembly references, without the '-r:'
-    abstract CompilationReferences : string []
+    abstract CompilationReferences : string[]
 
     /// The '-o:' output bin path, without the '-o:'
     abstract CompilationBinOutputPath : string option

@@ -1,8 +1,7 @@
 // #Regression #Conformance #PatternMatching 
-// Match warning when using enum for incomplete match.
-// (Even if you use every possible value.
+// Match warning when covering all defined values of an enum
 
-//<Expects status="warning" id="FS0025">Incomplete pattern matches on this expression</Expects>
+//<Expects status="warning" id="FS0104">Enums may take values outside known cases.</Expects>
 
 
 open System
