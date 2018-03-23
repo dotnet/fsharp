@@ -145,7 +145,7 @@ type IRawFSharpAssemblyData =
     abstract GetInternalsVisibleToAttributes: ILGlobals  -> string list
     ///  The raw IL module definition in the assembly, if any. This is not present for cross-project references
     /// in the language service
-    abstract TryGetRawILModule: unit -> ILModuleDef option
+    abstract TryGetILModuleDef: unit -> ILModuleDef option
     abstract HasAnyFSharpSignatureDataAttribute: bool
     abstract HasMatchingFSharpSignatureDataAttribute: ILGlobals -> bool
     ///  The raw F# signature data in the assembly, if any
@@ -355,9 +355,6 @@ type TcConfigBuilder =
       /// If true, indicates all type checking and code generation is in the context of fsi.exe
       isInteractive: bool 
       isInvalidationSupported: bool 
-      mutable sqmSessionGuid: System.Guid option
-      mutable sqmNumOfSourceFiles: int
-      sqmSessionStartedTime: int64
       mutable emitDebugInfoInQuotations: bool
       mutable exename: string option 
       mutable copyFSharpCore: CopyFSharpCoreFlag
@@ -524,9 +521,6 @@ type TcConfig =
     /// File system query based on TcConfig settings
     member MakePathAbsolute: string -> string
 
-    member sqmSessionGuid: System.Guid option
-    member sqmNumOfSourceFiles: int
-    member sqmSessionStartedTime: int64
     member copyFSharpCore: CopyFSharpCoreFlag
     member shadowCopyReferences: bool
     static member Create: TcConfigBuilder * validate: bool -> TcConfig

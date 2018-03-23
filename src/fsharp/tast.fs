@@ -3695,6 +3695,10 @@ and
       
       /// A helper function used to link method signatures using type equality. This is effectively a forward call to the type equality 
       /// logic in tastops.fs
+      TryGetILModuleDef: (unit -> ILModuleDef option) 
+      
+      /// A helper function used to link method signatures using type equality. This is effectively a forward call to the type equality 
+      /// logic in tastops.fs
       MemberSignatureEquality : (TType -> TType -> bool) 
       
       /// The table of .NET CLI type forwarders for this assembly
@@ -3764,6 +3768,9 @@ and CcuThunk =
 
     /// Holds the filename for the DLL, if any 
     member ccu.FileName            = ccu.Deref.FileName
+
+    /// Try to get the .NET Assembly, if known.  May not be present for `IsFSharp` for in-memory cross-project references
+    member ccu.TryGetILModuleDef()  = ccu.Deref.TryGetILModuleDef()
 
 #if !NO_EXTENSIONTYPING
     /// Is the CCu an EST injected assembly
