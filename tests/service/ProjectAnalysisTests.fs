@@ -4726,6 +4726,18 @@ let ``Test project37 typeof and arrays in attribute constructor arguments`` () =
     |> Seq.map (fun a -> a.AttributeType.CompiledName)
     |> Array.ofSeq |> shouldEqual [| "AttrTestAttribute"; "AttrTest2Attribute" |]
 
+    wholeProjectResults.ProjectContext.GetReferencedAssemblies() 
+    |> Seq.find (fun a -> a.SimpleName = "mscorlib")
+    |> fun a -> 
+        printfn "Attributes found in mscorlib: %A" a.Contents.Attributes
+        shouldEqual (a.Contents.Attributes.Count > 0) true
+
+    wholeProjectResults.ProjectContext.GetReferencedAssemblies() 
+    |> Seq.find (fun a -> a.SimpleName = "FSharp.Core")
+    |> fun a -> 
+        printfn "Attributes found in FSharp.Core: %A" a.Contents.Attributes
+        shouldEqual (a.Contents.Attributes.Count > 0) true
+
 //-----------------------------------------------------------
 
 
@@ -5175,12 +5187,12 @@ type A(i:int) =
             | _ -> failwithf "Parsing aborted unexpectedly..."
 
     let declarations =
-        match fileCheckResults.ImplementationFiles with
-        | Some (implFile :: _) ->
+        match fileCheckResults.ImplementationFile with
+        | Some implFile ->
             match implFile.Declarations |> List.tryHead with
             | Some (FSharpImplementationFileDeclaration.Entity (_, subDecls)) -> subDecls
             | _ -> failwith "unexpected declaration"
-        | Some [] | None -> failwith "File check results does not contain any `ImplementationFile`s"
+        | None -> failwith "File check results does not contain any `ImplementationFile`s"
 
     match declarations |> List.tryHead with
     | Some (FSharpImplementationFileDeclaration.Entity(entity, [])) ->

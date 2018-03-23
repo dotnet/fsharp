@@ -1424,3 +1424,4 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3220,tcTupleMemberNotNormallyUsed,"This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead."
 3221,implicitlyDiscardedInSequenceExpression,"This expression returns a value of type '%s' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'."
 3222,implicitlyDiscardedSequenceInSequenceExpression,"This expression returns a value of type '%s' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'."
+3223,ilreadFileChanged,"The file '%s' changed on disk unexpectedly, please reload."

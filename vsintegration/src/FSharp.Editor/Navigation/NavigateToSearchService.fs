@@ -10,6 +10,7 @@ open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
+open System.Runtime.Caching
 open System.Globalization
 
 open Microsoft.CodeAnalysis
@@ -135,7 +136,9 @@ module private Index =
                   Seq.toArray result 
               member __.AllItems = items }
 
+[<AutoOpen>]
 module private Utils =
+
     let navigateToItemKindToRoslynKind = function
         | NavigateTo.NavigableItemKind.Module -> NavigateToItemKind.Module
         | NavigateTo.NavigableItemKind.ModuleAbbreviation -> NavigateToItemKind.Module
@@ -177,6 +180,8 @@ module private Utils =
             | _ -> container.Name
         typeAsString + name
 
+    type PerDocumentSavedData = { Hash: int; Items: Index.IIndexedNavigableItems }
+
 [<ExportLanguageService(typeof<INavigateToSearchService>, FSharpConstants.FSharpLanguageName); Shared>]
 type internal FSharpNavigateToSearchService 
     [<ImportingConstructor>] 
@@ -185,7 +190,8 @@ type internal FSharpNavigateToSearchService
         projectInfoManager: FSharpProjectOptionsManager
     ) =
 
-    let itemsByDocumentId = ConditionalWeakTable<DocumentId, (int * Index.IIndexedNavigableItems)>()
+    // Save the backing navigation data in a memory cache held in a sliding window
+    let itemsByDocumentId = new MemoryCache("FSharp.Editor.FSharpNavigateToSearchService")
 
     let getNavigableItems(document: Document, parsingOptions: FSharpParsingOptions) =
         async {
@@ -199,9 +205,9 @@ type internal FSharpNavigateToSearchService
                          match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, item.Range) with 
                          | None -> ()
                          | Some sourceSpan ->
-                             let glyph = Utils.navigateToItemKindToGlyph item.Kind
-                             let kind = Utils.navigateToItemKindToRoslynKind item.Kind
-                             let additionalInfo = Utils.containerToString item.Container document.Project
+                             let glyph = navigateToItemKindToGlyph item.Kind
+                             let kind = navigateToItemKindToRoslynKind item.Kind
+                             let additionalInfo = containerToString item.Container document.Project
                              yield NavigableItem(document, sourceSpan, glyph, item.Name, kind, additionalInfo) |]
                 | None -> [||]
         }
@@ -211,16 +217,17 @@ type internal FSharpNavigateToSearchService
             let! cancellationToken = Async.CancellationToken
             let! textVersion = document.GetTextVersionAsync(cancellationToken)  |> Async.AwaitTask
             let textVersionHash = hash textVersion
-            match itemsByDocumentId.TryGetValue document.Id with
-            | true, (oldTextVersionHash, items) when oldTextVersionHash = textVersionHash ->
-                return items
-            | _ ->
+            let key = document.Id.ToString()
+            match itemsByDocumentId.Get(key) with
+            | :? PerDocumentSavedData as data when data.Hash = textVersionHash -> return data.Items
+            | _ -> 
                 let! items = getNavigableItems(document, parsingOptions)
                 let indexedItems = Index.build items
-                itemsByDocumentId.Remove(document.Id) |> ignore
-                itemsByDocumentId.Add(document.Id, (textVersionHash, indexedItems))
-                return indexedItems
-        }
+                let data = { Hash= textVersionHash; Items = indexedItems }
+                let cacheItem = CacheItem(key, data)
+                let policy = CacheItemPolicy(SlidingExpiration=DefaultTuning.PerDocumentSavedDataSlidingWindow)
+                itemsByDocumentId.Set(cacheItem, policy)
+                return indexedItems }
 
     let patternMatchKindToNavigateToMatchKind = function
         | PatternMatchKind.Exact -> NavigateToMatchKind.Exact
