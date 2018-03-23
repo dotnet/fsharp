@@ -6982,6 +6982,11 @@
         <target state="translated">此表达式返回类型为“{0}”的值，但被隐式放弃。请考虑使用 "let" 将结果绑定到名称，例如 "let result = expression"。如果要使用该表达式作为序列中的值，则使用显式 "yield!"。</target>
         <note />
       </trans-unit>
+      <trans-unit id="ilreadFileChanged">
+        <source>The file '{0}' changed on disk unexpectedly, please reload.</source>
+        <target state="new">The file '{0}' changed on disk unexpectedly, please reload.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

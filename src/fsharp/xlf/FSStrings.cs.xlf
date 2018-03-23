@@ -1422,6 +1422,11 @@
         <target state="translated"> Nespárované prvky se budou ignorovat.</target>
         <note />
       </trans-unit>
+      <trans-unit id="EnumMatchIncomplete1">
+        <source>Enums may take values outside known cases.</source>
+        <target state="new">Enums may take values outside known cases.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="RuleNeverMatched">
         <source>This rule will never be matched</source>
         <target state="translated">Pro toto pravidlo nebude nikdy existovat shoda.</target>

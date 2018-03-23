@@ -1,5 +1,6 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+open System
 open System.ComponentModel.Composition
 open System.Runtime.InteropServices
 
@@ -13,6 +14,10 @@ module DefaultTuning =
     let UnusedOpensAnalyzerInitialDelay = 0 (* 2000 *) (* milliseconds *)
     let SimplifyNameInitialDelay = 2000 (* milliseconds *)
     let SimplifyNameEachItemDelay = 0 (* milliseconds *)
+
+    /// How long is the per-document data saved before it is eligible for eviction from the cache? 10 seconds.
+    /// Re-tokenizing is fast so we don't need to save this data long.
+    let PerDocumentSavedDataSlidingWindow = TimeSpan(0,0,10)(* seconds *)
 
 // CLIMutable to make the record work also as a view model
 [<CLIMutable>]
