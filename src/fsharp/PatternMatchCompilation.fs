@@ -233,8 +233,6 @@ let RefuteDiscrimSet g m path discrims =
                       | _ -> 
                           raise CannotRefute) 
             
-            (* REVIEW: we could return a better enumeration literal field here if a field matches one of the enumeration cases *)
-
             match c' with 
             | None -> raise CannotRefute
             | Some c ->
