@@ -240,20 +240,17 @@ let RefuteDiscrimSet g m path discrims =
             | Some c ->
                 match tryDestAppTy g ty with
                 | Some tcref when tcref.IsEnumTycon ->
-                    let knownValuesAsConsts =
-                        tcref.AllFieldsArray |> Array.choose (fun f ->
-                            match f.rfield_const, f.rfield_static with
-                            | Some value, true -> Some value
-                            | _, _ -> None)
-                    let coversKnownEnumValues = Array.forall (fun ev -> consts.Contains ev) knownValuesAsConsts
-                    if coversKnownEnumValues then
-                        Expr.Const(c,m,ty), true
-                    else
-                        match Array.tryFind (fun f -> f.rfield_const = c') tcref.AllFieldsArray with
-                        | Some f ->
-                            let v: RecdFieldRef = RecdFieldRef.RFRef(tcref, f.rfield_id.idText)
-                            Expr.Op(TOp.ValFieldGet v, [ty], [], m), false
-                        | None -> Expr.Const(c,m,ty), false
+                    // search for an enum value that pattern match (consts) does not contain
+                    let nonCoveredEnumValues =
+                        tcref.AllFieldsArray |> Array.tryFind (fun f ->
+                            match f.rfield_const with
+                            | None -> false
+                            | Some fieldValue -> (not (consts.Contains fieldValue)) && f.rfield_static)
+                    match nonCoveredEnumValues with
+                    | None -> Expr.Const(c,m,ty), true
+                    | Some f ->
+                        let v = RecdFieldRef.RFRef(tcref, f.rfield_id.idText)
+                        Expr.Op(TOp.ValFieldGet v, [ty], [], m), false
                 | _ -> Expr.Const(c,m,ty), false
             
         | (DecisionTreeTest.UnionCase (ucref1,tinst) :: rest) -> 
