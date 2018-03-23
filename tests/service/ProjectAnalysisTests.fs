@@ -4726,6 +4726,18 @@ let ``Test project37 typeof and arrays in attribute constructor arguments`` () =
     |> Seq.map (fun a -> a.AttributeType.CompiledName)
     |> Array.ofSeq |> shouldEqual [| "AttrTestAttribute"; "AttrTest2Attribute" |]
 
+    wholeProjectResults.ProjectContext.GetReferencedAssemblies() 
+    |> Seq.find (fun a -> a.SimpleName = "mscorlib")
+    |> fun a -> 
+        printfn "Attributes found in mscorlib: %A" a.Contents.Attributes
+        shouldEqual (a.Contents.Attributes.Count > 0) true
+
+    wholeProjectResults.ProjectContext.GetReferencedAssemblies() 
+    |> Seq.find (fun a -> a.SimpleName = "FSharp.Core")
+    |> fun a -> 
+        printfn "Attributes found in FSharp.Core: %A" a.Contents.Attributes
+        shouldEqual (a.Contents.Attributes.Count > 0) true
+
 //-----------------------------------------------------------
 
 

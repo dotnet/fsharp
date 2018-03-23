@@ -1422,6 +1422,11 @@
         <target state="translated"> 無對應的項目將會被忽略。</target>
         <note />
       </trans-unit>
+     <trans-unit id="EnumMatchIncomplete1">
+        <source>Enums may take values outside known cases.</source>
+        <target state="new">Enums may take values outside known cases.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="RuleNeverMatched">
         <source>This rule will never be matched</source>
         <target state="translated">這個規則絕不會比對到</target>
