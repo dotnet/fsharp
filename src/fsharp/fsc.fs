@@ -168,10 +168,6 @@ type DisposablesTracker() =
                 try i.Dispose() with _ -> ()
 
 
-//----------------------------------------------------------------------------
-// TypeCheck, AdjustForScriptCompile
-//----------------------------------------------------------------------------
-
 let TypeCheck (ctok, tcConfig, tcImports, tcGlobals, errorLogger:ErrorLogger, assemblyName, niceNameGen, tcEnv0, inputs, exiter: Exiter) =
     try 
         if isNil inputs then error(Error(FSComp.SR.fscNoImplementationFiles(), Range.rangeStartup))
@@ -1346,7 +1342,7 @@ module StaticLinker =
                       | ResolvedCcu ccu -> Some ccu
                       | UnresolvedCcu(_ccuName) -> None
 
-                  let modul = dllInfo.RawMetadata.TryGetRawILModule().Value
+                  let modul = dllInfo.RawMetadata.TryGetILModuleDef().Value
                   yield (ccu, dllInfo.ILScopeRef, modul), (ilAssemRef.Name, provAssemStaticLinkInfo)
               | None -> () ]
 
@@ -1714,7 +1710,6 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemor
             delayForFlagsLogger.ForwardDelayedDiagnostics(tcConfigB)
             exiter.Exit 1 
     
-    tcConfigB.sqmNumOfSourceFiles <- sourceFiles.Length
     tcConfigB.conditionalCompilationDefines <- "COMPILED" :: tcConfigB.conditionalCompilationDefines 
     displayBannerIfNeeded tcConfigB
 
@@ -1823,10 +1818,12 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemor
 
     Args (ctok, tcGlobals, tcImports, frameworkTcImports, tcState.Ccu, typedAssembly, topAttrs, tcConfig, outfile, pdbfile, assemblyName, errorLogger, exiter)
 
-let main1(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, generatedCcu, typedImplFiles, topAttrs, tcConfig: TcConfig, outfile, pdbfile, assemblyName, errorLogger, exiter: Exiter)) =
+let main1(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, generatedCcu: CcuThunk, typedImplFiles, topAttrs, tcConfig: TcConfig, outfile, pdbfile, assemblyName, errorLogger, exiter: Exiter)) =
 
     if tcConfig.typeCheckOnly then exiter.Exit 0
     
+    generatedCcu.Contents.SetAttribs(generatedCcu.Contents.Attribs @ topAttrs.assemblyAttrs)
+
     use unwindPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.CodeGen
     let signingInfo = ValidateKeySigningAttributes (tcConfig, tcGlobals, topAttrs)
     
@@ -1872,7 +1869,8 @@ let main1(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
     Args (ctok, tcConfig, tcImports, frameworkTcImports, tcGlobals, errorLogger, generatedCcu, outfile, typedImplFiles, topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter)
 
 
-// set up typecheck for given AST without parsing any command line parameters
+// This is for the compile-from-AST feature of FCS.
+// TODO: consider removing this feature from FCS, which as far as I know is not used by anyone.
 let main1OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target, outfile, pdbFile, dllReferences, noframework, exiter, errorLoggerProvider: ErrorLoggerProvider, inputs : ParsedInput list) =
 
     let tryGetMetadataSnapshot = (fun _ -> None)
@@ -1893,7 +1891,6 @@ let main1OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, 
         | None -> OptionSwitch.Off)
     SetTailcallSwitch tcConfigB OptionSwitch.On
     tcConfigB.target <- target
-    tcConfigB.sqmNumOfSourceFiles <- 1
         
     let errorLogger = errorLoggerProvider.CreateErrorLoggerUpToMaxErrors (tcConfigB, exiter)
 
@@ -1930,6 +1927,7 @@ let main1OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, 
         TypeCheck(ctok, tcConfig, tcImports, tcGlobals, errorLogger, assemblyName, NiceNameGenerator(), tcEnv0, inputs,exiter)
 
     let generatedCcu = tcState.Ccu
+    generatedCcu.Contents.SetAttribs(generatedCcu.Contents.Attribs @ topAttrs.assemblyAttrs)
 
     use unwindPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.CodeGen)
     let signingInfo = ValidateKeySigningAttributes (tcConfig, tcGlobals, topAttrs)
@@ -1972,7 +1970,7 @@ let main2a(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlo
     let metadataVersion = 
         match tcConfig.metadataVersion with
         | Some v -> v
-        | _ -> match (frameworkTcImports.DllTable.TryFind tcConfig.primaryAssembly.Name) with | Some ib -> ib.RawMetadata.TryGetRawILModule().Value.MetadataVersion | _ -> ""
+        | _ -> match (frameworkTcImports.DllTable.TryFind tcConfig.primaryAssembly.Name) with | Some ib -> ib.RawMetadata.TryGetILModuleDef().Value.MetadataVersion | _ -> ""
     let optimizedImpls, optimizationData, _ = ApplyAllOptimizations (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile, importMap, false, optEnv0, generatedCcu, typedImplFiles)
 
     AbortOnError(errorLogger, exiter)
