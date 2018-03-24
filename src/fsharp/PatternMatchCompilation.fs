@@ -694,8 +694,7 @@ let CompilePatternBasic
     // Note the input expression has already been evaluated and saved into a variable.
     // Hence no need for a new sequence point.
     let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding,exprm)
-    clausesL |> List.iteri (fun _i c -> mbuilder.AddTarget c.Target |> ignore) 
-    //clausesL |> List.iter (printfn "%A")
+    clausesL |> List.iteri (fun _i c -> mbuilder.AddTarget c.Target |> ignore)
     
     // Add the incomplete or rethrow match clause on demand, printing a 
     // warning if necessary (only if it is ever exercised) 
