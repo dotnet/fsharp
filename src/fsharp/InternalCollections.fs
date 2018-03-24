@@ -198,37 +198,3 @@ type internal MruCache<'Token, 'Key,'Value when 'Value : not struct>(keepStrongl
     member bc.Resize(tok, newKeepStrongly, ?newKeepMax) =
         cache.Resize(tok, newKeepStrongly, ?newKeepMax=newKeepMax)
         
-/// List helpers
-[<Sealed>]
-type internal List = 
-    /// Return a new list with one element for each unique 'Key. Multiple 'TValues are flattened. 
-    /// The original order of the first instance of 'Key is preserved.
-    static member groupByFirst( l : ('Key * 'Value) list) : ('Key * 'Value list) list =
-        let nextIndex = ref 0
-        let result = System.Collections.Generic.List<'Key * System.Collections.Generic.List<'Value>>()
-        let keyToIndex = Dictionary<'Key,int>(HashIdentity.Structural)
-        let indexOfKey(key) =
-            match keyToIndex.TryGetValue(key) with
-            | true, v -> v
-            | false, _ -> 
-                keyToIndex.Add(key,!nextIndex)
-                nextIndex := !nextIndex + 1
-                !nextIndex - 1
-            
-        for kv in l do 
-            let index = indexOfKey(fst kv)
-            if index>= result.Count then 
-                let k,vs = fst kv,System.Collections.Generic.List<'Value>()
-                vs.Add(snd kv)
-                result.Add(k,vs)
-            else
-                let _,vs = result.[index]
-                vs.Add(snd kv)
-        
-        result |> Seq.map(fun (k,vs) -> k,vs |> List.ofSeq ) |> List.ofSeq
-
-    /// Return each distinct item in the list using reference equality.
-    static member referenceDistinct( l : 'T list) : 'T list when 'T : not struct =
-        let set = System.Collections.Generic.Dictionary<'T,bool>(HashIdentity.Reference)
-        l |> List.iter(fun i->set.Add(i,true))
-        set |> Seq.map(fun kv->kv.Key) |> List.ofSeq

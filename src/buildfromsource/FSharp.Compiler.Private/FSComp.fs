@@ -4309,6 +4309,9 @@ type internal SR private() =
     /// This expression returns a value of type '%s' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.
     /// (Originally from ../FSComp.txt:1427)
     static member implicitlyDiscardedSequenceInSequenceExpression(a0 : System.String) = (3222, GetStringFunc("implicitlyDiscardedSequenceInSequenceExpression",",,,%s,,,") a0)
+    /// The file '%s' changed on disk unexpectedly, please reload.
+    /// (Originally from ..\FSComp.txt:1427)
+    static member ilreadFileChanged(a0 : System.String) = (3223, GetStringFunc("ilreadFileChanged",",,,%s,,,") a0)
 
     /// Call this method once to validate that all known resources are valid; throws if not
     static member RunStartupValidation() =
@@ -5710,4 +5713,5 @@ type internal SR private() =
         ignore(GetString("tcTupleMemberNotNormallyUsed"))
         ignore(GetString("implicitlyDiscardedInSequenceExpression"))
         ignore(GetString("implicitlyDiscardedSequenceInSequenceExpression"))
+        ignore(GetString("ilreadFileChanged"))
         ()

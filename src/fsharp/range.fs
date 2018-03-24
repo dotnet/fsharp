@@ -140,7 +140,11 @@ let fileOfFileIndex n = fileIndexTable.IndexToFile(n)
 let mkPos l c = pos (l, c)
 
 [<Struct; CustomEquality; NoComparison>]
+#if DEBUG
+[<System.Diagnostics.DebuggerDisplay("({StartLine},{StartColumn}-{EndLine},{EndColumn}) {FileName} IsSynthetic={IsSynthetic} -> {DebugCode}")>]
+#else
 [<System.Diagnostics.DebuggerDisplay("({StartLine},{StartColumn}-{EndLine},{EndColumn}) {FileName} IsSynthetic={IsSynthetic}")>]
+#endif
 type range(code:int64) =
     static member Zero = range(0L)
     new (fidx, bl, bc, el, ec) = 
@@ -163,6 +167,19 @@ type range(code:int64) =
     member m.StartRange = range (m.FileIndex, m.Start, m.Start)
     member m.EndRange = range (m.FileIndex, m.End, m.End)
     member r.FileName = fileOfFileIndex r.FileIndex
+#if DEBUG
+    member r.DebugCode =
+        try
+            let endCol = r.EndColumn - 1
+            let startCol = r.StartColumn - 1
+            File.ReadAllLines(r.FileName)
+            |> Seq.skip (r.StartLine - 1)
+            |> Seq.take (r.EndLine - r.StartLine + 1)
+            |> String.concat "\n"
+            |> fun s -> s.Substring(startCol + 1, s.LastIndexOf("\n") + 1 - startCol + endCol)
+        with e ->
+            e.ToString()        
+#endif
     member r.MakeSynthetic() = range(code ||| isSyntheticMask)
     override r.ToString() = sprintf "%s (%d,%d--%d,%d) IsSynthetic=%b" r.FileName r.StartLine r.StartColumn r.EndLine r.EndColumn r.IsSynthetic
     member r.ToShortString() = sprintf "(%d,%d--%d,%d)" r.StartLine r.StartColumn r.EndLine r.EndColumn

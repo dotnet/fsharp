@@ -1,35 +1,25 @@
-/// match! - parsing errors
+/// match! - type check errors
 module M
 
-type AT = Async<int>
+type MyUnion = | CaseA of int | CaseB | CaseC of string
 
-module A =
-    let a (x: AT) =
-        match! x with _ -> ()
-    let b (x: int) =
-        match! x with _ -> ()    
+let a (notAnAsync: string) = async {
+    match! notAnAsync with
+    | x -> () }
 
-module B =
-    let a (x: AT) = async {
-        match! }
+let b (myAsync: Async<int>) = async {
+    match! myAsync with
+    | CaseA(_) | CaseB | CaseC(_) -> () }
 
-    let b (x: AT) = async {
-        match! x }
+let c (myAsync: Async<int>) = async {
+    match! myAsync with
+    | 42 -> ()
+    | CaseA(_) -> () }
 
-    let c (x: AT) = async {
-        match! x with }
-
-    let d (x: AT) = async {
-        match! x with | }
-
-    let e (x: AT) = async {
-        match! x with | x' }
-
-    let f (x: AT) = async {
-        match! x with | x' -> }
-
-module C =
-    let a (x: AT) = async {
-        let! match! = x
-        let! x = match!
-        return () }
+let d (myAsyncChild: Async<Async<int>>) = async {
+    match! myAsyncChild with
+    | 42 -> ()
+    match! myAsyncChild with
+    | x ->
+        match! x with
+        | CaseA(_) | CaseB | CaseC(_) -> () }

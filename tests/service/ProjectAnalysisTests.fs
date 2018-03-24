@@ -4726,6 +4726,18 @@ let ``Test project37 typeof and arrays in attribute constructor arguments`` () =
     |> Seq.map (fun a -> a.AttributeType.CompiledName)
     |> Array.ofSeq |> shouldEqual [| "AttrTestAttribute"; "AttrTest2Attribute" |]
 
+    wholeProjectResults.ProjectContext.GetReferencedAssemblies() 
+    |> Seq.find (fun a -> a.SimpleName = "mscorlib")
+    |> fun a -> 
+        printfn "Attributes found in mscorlib: %A" a.Contents.Attributes
+        shouldEqual (a.Contents.Attributes.Count > 0) true
+
+    wholeProjectResults.ProjectContext.GetReferencedAssemblies() 
+    |> Seq.find (fun a -> a.SimpleName = "FSharp.Core")
+    |> fun a -> 
+        printfn "Attributes found in FSharp.Core: %A" a.Contents.Attributes
+        shouldEqual (a.Contents.Attributes.Count > 0) true
+
 //-----------------------------------------------------------
 
 
@@ -5175,12 +5187,12 @@ type A(i:int) =
             | _ -> failwithf "Parsing aborted unexpectedly..."
 
     let declarations =
-        match fileCheckResults.ImplementationFiles with
-        | Some (implFile :: _) ->
+        match fileCheckResults.ImplementationFile with
+        | Some implFile ->
             match implFile.Declarations |> List.tryHead with
             | Some (FSharpImplementationFileDeclaration.Entity (_, subDecls)) -> subDecls
             | _ -> failwith "unexpected declaration"
-        | Some [] | None -> failwith "File check results does not contain any `ImplementationFile`s"
+        | None -> failwith "File check results does not contain any `ImplementationFile`s"
 
     match declarations |> List.tryHead with
     | Some (FSharpImplementationFileDeclaration.Entity(entity, [])) ->
@@ -5203,3 +5215,144 @@ let ``#4030, Incremental builder creation warnings`` (args, errorSeverities) =
 
     let _, checkResults = parseAndCheckFile fileName source options
     checkResults.Errors |> Array.map (fun e -> e.Severity = FSharpErrorSeverity.Error) |> shouldEqual errorSeverities 
+
+
+//------------------------------------------------------
+
+[<Test>]
+let ``Unused opens smoke test 1``() =
+
+    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
+    let base2 = Path.GetTempFileName()
+    let dllName = Path.ChangeExtension(base2, ".dll")
+    let projFileName = Path.ChangeExtension(base2, ".fsproj")
+    let fileSource1 = """
+open System.Collections // unused
+open System.Collections.Generic // used, should not appear
+open FSharp.Control // unused
+open FSharp.Data // unused
+open System.Globalization // unused
+
+module SomeUnusedModule = 
+    let f x  = x
+
+module SomeUsedModuleContainingFunction = 
+    let g x  = x
+
+module SomeUsedModuleContainingActivePattern = 
+    let (|ActivePattern|) x  = x
+
+module SomeUsedModuleContainingExtensionMember = 
+    type System.Int32 with member x.Q = 1
+
+module SomeUsedModuleContainingUnion = 
+    type Q = A | B
+
+open SomeUnusedModule
+open SomeUsedModuleContainingFunction
+open SomeUsedModuleContainingExtensionMember
+open SomeUsedModuleContainingActivePattern
+open SomeUsedModuleContainingUnion
+
+type UseTheThings(i:int) =
+    member x.Value = Dictionary<int,int>() // use something from System.Collections.Generic, as a constructor
+    member x.UseSomeUsedModuleContainingFunction() = g 3
+    member x.UseSomeUsedModuleContainingActivePattern(ActivePattern g) = g
+    member x.UseSomeUsedModuleContainingExtensionMember() = (3).Q
+    member x.UseSomeUsedModuleContainingUnion() = A
+"""
+    File.WriteAllText(fileName1, fileSource1)
+
+    let fileNames = [fileName1]
+    let args = mkProjectCommandLineArgs (dllName, fileNames)
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true)
+    let options =  keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    
+    let fileCheckResults = 
+        keepAssemblyContentsChecker.ParseAndCheckFileInProject(fileName1, 0, fileSource1, options)  |> Async.RunSynchronously
+        |> function 
+            | _, FSharpCheckFileAnswer.Succeeded(res) -> res
+            | _ -> failwithf "Parsing aborted unexpectedly..."
+    //let symbolUses = fileCheckResults.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously |> Array.indexed 
+    // Fragments used to check hash codes:
+    //(snd symbolUses.[42]).Symbol.IsEffectivelySameAs((snd symbolUses.[37]).Symbol)
+    //(snd symbolUses.[42]).Symbol.GetEffectivelySameAsHash()
+    //(snd symbolUses.[37]).Symbol.GetEffectivelySameAsHash()
+    let lines = File.ReadAllLines(fileName1)
+    let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines.[i-1])) |> Async.RunSynchronously
+    let unusedOpensData = [ for uo in unusedOpens -> tups uo, lines.[uo.StartLine-1] ]
+    let expected = 
+          [(((2, 5), (2, 23)), "open System.Collections // unused");
+           (((4, 5), (4, 19)), "open FSharp.Control // unused");
+           (((5, 5), (5, 16)), "open FSharp.Data // unused");
+           (((6, 5), (6, 25)), "open System.Globalization // unused");
+           (((23, 5), (23, 21)), "open SomeUnusedModule")]
+    unusedOpensData |> shouldEqual expected
+
+[<Test>]
+let ``Unused opens smoke test auto open``() =
+
+    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
+    let base2 = Path.GetTempFileName()
+    let dllName = Path.ChangeExtension(base2, ".dll")
+    let projFileName = Path.ChangeExtension(base2, ".fsproj")
+    let fileSource1 = """
+open System.Collections // unused
+open System.Collections.Generic // used, should not appear
+open FSharp.Control // unused
+open FSharp.Data // unused
+open System.Globalization // unused
+
+[<AutoOpen>]
+module Helpers = 
+    module SomeUnusedModule = 
+        let f x  = x
+
+    module SomeUsedModuleContainingFunction = 
+        let g x  = x
+
+    module SomeUsedModuleContainingActivePattern = 
+        let (|ActivePattern|) x  = x
+
+    module SomeUsedModuleContainingExtensionMember = 
+        type System.Int32 with member x.Q = 1
+
+    module SomeUsedModuleContainingUnion = 
+        type Q = A | B
+
+open SomeUnusedModule
+open SomeUsedModuleContainingFunction
+open SomeUsedModuleContainingExtensionMember
+open SomeUsedModuleContainingActivePattern
+open SomeUsedModuleContainingUnion
+
+type UseTheThings(i:int) =
+    member x.Value = Dictionary<int,int>() // use something from System.Collections.Generic, as a constructor
+    member x.UseSomeUsedModuleContainingFunction() = g 3
+    member x.UseSomeUsedModuleContainingActivePattern(ActivePattern g) = g
+    member x.UseSomeUsedModuleContainingExtensionMember() = (3).Q
+    member x.UseSomeUsedModuleContainingUnion() = A
+"""
+    File.WriteAllText(fileName1, fileSource1)
+
+    let fileNames = [fileName1]
+    let args = mkProjectCommandLineArgs (dllName, fileNames)
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true)
+    let options =  keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    
+    let fileCheckResults = 
+        keepAssemblyContentsChecker.ParseAndCheckFileInProject(fileName1, 0, fileSource1, options)  |> Async.RunSynchronously
+        |> function 
+            | _, FSharpCheckFileAnswer.Succeeded(res) -> res
+            | _ -> failwithf "Parsing aborted unexpectedly..."
+    let lines = File.ReadAllLines(fileName1)
+    let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines.[i-1])) |> Async.RunSynchronously
+    let unusedOpensData = [ for uo in unusedOpens -> tups uo, lines.[uo.StartLine-1] ]
+    let expected = 
+          [(((2, 5), (2, 23)), "open System.Collections // unused");
+           (((4, 5), (4, 19)), "open FSharp.Control // unused");
+           (((5, 5), (5, 16)), "open FSharp.Data // unused");
+           (((6, 5), (6, 25)), "open System.Globalization // unused");
+           (((25, 5), (25, 21)), "open SomeUnusedModule")]
+    unusedOpensData |> shouldEqual expected
+

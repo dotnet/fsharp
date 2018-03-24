@@ -1427,6 +1427,11 @@
         <target state="translated"> 一致しない要素は無視されます。</target>
         <note />
       </trans-unit>
+      <trans-unit id="EnumMatchIncomplete1">
+        <source>Enums may take values outside known cases.</source>
+        <target state="new">Enums may take values outside known cases.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="RuleNeverMatched">
         <source>This rule will never be matched</source>
         <target state="translated">この規則には一致しません</target>

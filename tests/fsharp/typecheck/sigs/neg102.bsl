@@ -1,25 +1,10 @@
 
-neg102.fs(7,12,7,22): typecheck error FS0001: This expression was expected to have type
-    'Async<'a>'    
-but here has type
-    'string'    
+neg102.fs(8,14,8,22): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value 'enum<EnumAB> (1)' may indicate a case not covered by the pattern(s).
 
-neg102.fs(12,7,12,15): typecheck error FS0001: This expression was expected to have type
-    'int'    
-but here has type
-    'MyUnion'    
+neg102.fs(11,14,11,22): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value 'B' may indicate a case not covered by the pattern(s).
 
-neg102.fs(17,7,17,15): typecheck error FS0001: This expression was expected to have type
-    'int'    
-but here has type
-    'MyUnion'    
+neg102.fs(14,14,14,22): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s).
 
-neg102.fs(21,7,21,9): typecheck error FS0001: This expression was expected to have type
-    'Async<int>'    
-but here has type
-    'int'    
+neg102.fs(20,14,20,22): typecheck error FS0104: Enums may take values outside known cases. For example, the value 'enum<EnumAB> (2)' may indicate a case not covered by the pattern(s).
 
-neg102.fs(25,11,25,19): typecheck error FS0001: This expression was expected to have type
-    'int'    
-but here has type
-    'MyUnion'    
+neg102.fs(24,14,24,22): typecheck error FS0104: Enums may take values outside known cases. For example, the value 'Some (enum<EnumAB> (2))' may indicate a case not covered by the pattern(s).

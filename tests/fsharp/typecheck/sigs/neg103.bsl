@@ -1,20 +1,25 @@
 
-neg103.fs(14,16,14,17): parse error FS0010: Unexpected symbol '}' in expression
+neg102.fs(7,12,7,22): typecheck error FS0001: This expression was expected to have type
+    'Async<'a>'    
+but here has type
+    'string'    
 
-neg103.fs(17,18,17,19): parse error FS0010: Unexpected symbol '}' in expression. Expected 'with' or other token.
+neg102.fs(12,7,12,15): typecheck error FS0001: This expression was expected to have type
+    'int'    
+but here has type
+    'MyUnion'    
 
-neg103.fs(20,23,20,24): parse error FS0010: Incomplete structured construct at or before this point in expression
+neg102.fs(17,7,17,15): typecheck error FS0001: This expression was expected to have type
+    'int'    
+but here has type
+    'MyUnion'    
 
-neg103.fs(23,25,23,26): parse error FS0010: Incomplete structured construct at or before this point in expression
+neg102.fs(21,7,21,9): typecheck error FS0001: This expression was expected to have type
+    'Async<int>'    
+but here has type
+    'int'    
 
-neg103.fs(26,28,26,29): parse error FS0010: Incomplete structured construct at or before this point in pattern
-
-neg103.fs(29,31,29,32): parse error FS0010: Incomplete structured construct at or before this point in pattern matching
-
-neg103.fs(33,14,33,20): parse error FS0010: Unexpected keyword 'match!' in expression
-
-neg103.fs(32,27,32,28): parse error FS0604: Unmatched '{'
-
-neg103.fs(35,19,35,20): parse error FS0010: Unexpected symbol '}' in definition. Expected incomplete structured construct at or before this point or other token.
-
-neg103.fs(35,1,35,20): parse error FS0010: Incomplete structured construct at or before this point in implementation file
+neg102.fs(25,11,25,19): typecheck error FS0001: This expression was expected to have type
+    'int'    
+but here has type
+    'MyUnion'    

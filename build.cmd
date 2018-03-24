@@ -211,6 +211,7 @@ if /i "%ARG%" == "microbuild" (
     set BUILD_VS=1
     set BUILD_SETUP=%FSC_BUILD_SETUP%
     set BUILD_NUGET=1
+    set BUILD_MICROBUILD=1
 
     set TEST_NET40_COMPILERUNIT_SUITE=1
     set TEST_NET40_COREUNIT_SUITE=1
@@ -478,6 +479,7 @@ echo BUILD_SETUP=%BUILD_SETUP%
 echo BUILD_NUGET=%BUILD_NUGET%
 echo BUILD_CONFIG=%BUILD_CONFIG%
 echo BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
+echo BUILD_MICROBUILD=%BUILD_MICROBUILD%
 echo.
 echo PB_SKIPTESTS=%PB_SKIPTESTS%
 echo PB_RESTORESOURCE=%PB_RESTORESOURCE%
@@ -653,7 +655,7 @@ if "%NEEDS_DOTNET_CLI_TOOLS%" == "1" (
 
 set _dotnetcliexe=%~dp0Tools\dotnetcli\dotnet.exe
 set _dotnet20exe=%~dp0Tools\dotnet20\dotnet.exe
-set NUGET_PACKAGES=%~dp0Packages
+set NUGET_PACKAGES=%~dp0packages
 set path=%~dp0Tools\dotnet20\;%path%
 
 echo ----------- Done with package restore, starting dependency uptake check -------------
@@ -839,7 +841,7 @@ echo SNEXE32:           %SNEXE32%
 echo SNEXE64:           %SNEXE64%
 echo
 
-if "%TEST_NET40_COMPILERUNIT_SUITE%" == "0" if "%TEST_FCS%" == "0" if "%TEST_NET40_COREUNIT_SUITE%" == "0" if "%TEST_CORECLR_COREUNIT_SUITE%" == "0" if "%TEST_VS_IDEUNIT_SUITE%" == "0" if "%TEST_NET40_FSHARP_SUITE%" == "0" if "%TEST_NET40_FSHARPQA_SUITE%" == "0" goto :success
+if "%TEST_NET40_COMPILERUNIT_SUITE%" == "0" if "%TEST_FCS%" == "0" if "%TEST_NET40_COREUNIT_SUITE%" == "0" if "TEST_CORECLR_FSHARP_SUITE" == "0" if "%TEST_CORECLR_COREUNIT_SUITE%" == "0" if "%TEST_VS_IDEUNIT_SUITE%" == "0" if "%TEST_NET40_FSHARP_SUITE%" == "0" if "%TEST_NET40_FSHARPQA_SUITE%" == "0" goto :success
 
 if "%no_test%" == "1" goto :success
 
@@ -938,6 +940,7 @@ set HOSTED_COMPILER=1
 
 if "%TEST_NET40_FSHARPQA_SUITE%" == "1" (
 
+    set CSC_PIPE=%~dp0packages\Microsoft.Net.Compilers.2.7.0\tools\csc.exe
     set FSC=!FSCBINPATH!\fsc.exe
     set FSCOREDLLPATH=!FSCBinPath!\FSharp.Core.dll
     set PATH=!FSCBINPATH!;!PATH!
@@ -993,6 +996,32 @@ if "%TEST_NET40_COMPILERUNIT_SUITE%" == "1" (
         echo -----------------------------------------------------------------
         goto :failure
     )
+
+    set OUTPUTARG=
+    set ERRORARG=
+    set OUTPUTFILE=
+    set ERRORFILE=
+    set XMLFILE=!RESULTSDIR!\test-net40-buildunit-results.xml
+    if "%CI%" == "1" (
+        set OUTPUTFILE=!RESULTSDIR!\test-net40-buildunit-output.log
+        set ERRORFILE=!RESULTSDIR!\test-net40-buildunit-errors.log
+        set ERRORARG=--err:"!ERRORFILE!" 
+        set OUTPUTARG=--output:"!OUTPUTFILE!" 
+    )
+    set ERRORFILE=!RESULTSDIR!\test-net40-buildunit-errors.log
+    echo "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Build.UnitTests.dll" !WHERE_ARG_NUNIT!
+         "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Build.UnitTests.dll" !WHERE_ARG_NUNIT!
+
+    if errorlevel 1 (
+        echo -----------------------------------------------------------------
+        type "!OUTPUTFILE!"
+        echo -----------------------------------------------------------------
+        type "!ERRORFILE!"
+        echo -----------------------------------------------------------------
+        echo Error: Running tests net40-compilernit failed, see logs above -- FAILED
+        echo -----------------------------------------------------------------
+        goto :failure
+    )
 )
 
 REM ---------------- net40-coreunit  -----------------------
@@ -1009,21 +1038,6 @@ if "%TEST_NET40_COREUNIT_SUITE%" == "1" (
         set OUTPUTFILE=!RESULTSDIR!\test-net40-coreunit-output.log
         set ERRORARG=--err:"!ERRORFILE!" 
         set OUTPUTARG=--output:"!OUTPUTFILE!" 
-    )
-
-    echo "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Build.UnitTests.dll" !WHERE_ARG_NUNIT!
-         "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Build.UnitTests.dll" !WHERE_ARG_NUNIT!
-
-
-    if errorlevel 1 (
-        echo -----------------------------------------------------------------
-        type "!OUTPUTFILE!"
-        echo -----------------------------------------------------------------
-        type "!ERRORFILE!"
-        echo -----------------------------------------------------------------
-        echo Error: Running tests net40-coreunit failed, see logs above -- FAILED
-        echo -----------------------------------------------------------------
-        goto :failure
     )
 
     echo "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Core.UnitTests.dll" !WHERE_ARG_NUNIT!

@@ -1,25 +1,27 @@
-/// match! - type check errors
 module M
+type EnumAB = A = 0 | B = 1
+type UnionAB = A | B
 
-type MyUnion = | CaseA of int | CaseB | CaseC of string
+module FS0025 =
+    // All of these should emit warning FS0025 ("Incomplete pattern match....")
+        
+    let f1 = function
+        | EnumAB.A -> "A"
 
-let a (notAnAsync: string) = async {
-    match! notAnAsync with
-    | x -> () }
+    let f2 = function
+        | UnionAB.A -> "A"
 
-let b (myAsync: Async<int>) = async {
-    match! myAsync with
-    | CaseA(_) | CaseB | CaseC(_) -> () }
+    let f3 = function
+        | 42 -> "forty-two"        
 
-let c (myAsync: Async<int>) = async {
-    match! myAsync with
-    | 42 -> ()
-    | CaseA(_) -> () }
+module FS0104 =
+    // These should emit warning FS0104 ("Enums may take values outside of known cases....")
 
-let d (myAsyncChild: Async<Async<int>>) = async {
-    match! myAsyncChild with
-    | 42 -> ()
-    match! myAsyncChild with
-    | x ->
-        match! x with
-        | CaseA(_) | CaseB | CaseC(_) -> () }
+    let f1 = function
+        | EnumAB.A -> "A"
+        | EnumAB.B -> "B"
+
+    let f2 = function
+        | Some(EnumAB.A) -> "A"
+        | Some(EnumAB.B) -> "B"
+        | None -> "none"

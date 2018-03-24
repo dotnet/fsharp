@@ -1427,6 +1427,11 @@
         <target state="translated"> Les éléments non appariés seront ignorés.</target>
         <note />
       </trans-unit>
+      <trans-unit id="EnumMatchIncomplete1">
+        <source>Enums may take values outside known cases.</source>
+        <target state="new">Enums may take values outside known cases.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="RuleNeverMatched">
         <source>This rule will never be matched</source>
         <target state="translated">Cette règle n'aura aucune correspondance</target>
