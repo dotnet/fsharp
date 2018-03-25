@@ -1511,7 +1511,7 @@ let p_typar_spec_data (x:Typar) st =
       p_typar_constraints
       p_xmldoc
 
-      (x.typar_id,x.typar_attribs,int64 x.typar_flags.PickledBits,x.typar_constraints,x.XmlDoc) st
+      (x.typar_id,x.typar_attribs,int64 x.typar_flags.PickledBits,x.Constraints,x.XmlDoc) st
 
 let p_typar_spec (x:Typar) st = 
     //Disabled, workaround for bug 2721: if x.Rigidity <> TyparRigidity.Rigid then warning(Error(sprintf "p_typar_spec: typar#%d is not rigid" x.Stamp, x.Range))
@@ -1526,13 +1526,12 @@ let u_typar_spec_data st =
       typar_stamp=newStamp()
       typar_attribs=c
       typar_flags=TyparFlags(int32 d)
-      typar_constraints=e
       typar_solution=None
       typar_astype= Unchecked.defaultof<_>
       typar_opt_data=
-        match g with
-        | XmlDoc [||] -> None
-        | _ -> Some { typar_il_name = None; typar_xmldoc = g } }
+        match g, e with
+        | XmlDoc [||], [] -> None
+        | _ -> Some { typar_il_name = None; typar_xmldoc = g; typar_constraints = e } }
 
 let u_typar_spec st = 
     u_osgn_decl st.itypars u_typar_spec_data st 

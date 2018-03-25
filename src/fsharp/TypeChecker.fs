@@ -4940,7 +4940,7 @@ and TcTypeApp cenv newOk checkCxs occ env tpenv m tcref pathTypeArgs (synArgTys:
 
     // If we're not checking constraints, i.e. when we first assert the super/interfaces of a type definition, then just 
     // clear the constraint lists of the freshly generated type variables. A little ugly but fairly localized. 
-    if checkCxs = NoCheckCxs then tps |> List.iter (fun tp -> tp.typar_constraints <- [])
+    if checkCxs = NoCheckCxs then tps |> List.iter (fun tp -> tp.SetConstraints [])
     if tinst.Length <> pathTypeArgs.Length + synArgTys.Length then 
         error (TyconBadArgs(env.DisplayEnv, tcref, pathTypeArgs.Length + synArgTys.Length, m))
 
