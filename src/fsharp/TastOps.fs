@@ -2282,7 +2282,7 @@ module PrettyTypes =
     // Finally, we skip any names already in use
     let NeedsPrettyTyparName (tp:Typar) = 
         tp.IsCompilerGenerated && 
-        tp.typar_il_name.IsNone && 
+        tp.ILName.IsNone && 
         (tp.typar_id.idText = unassignedTyparName) 
 
     let PrettyTyparNames pred alreadyInUse tps = 

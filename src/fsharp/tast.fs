@@ -1900,6 +1900,15 @@ and Accessibility =
     /// Indicates the construct can only be accessed from any code in the given type constructor, module or assembly. [] indicates global scope. 
     | TAccess of CompilationPath list
     
+and TyparOptionalData =
+    {
+      /// MUTABILITY: we set the names of generalized inference type parameters to make the look nice for IL code generation 
+      mutable typar_il_name: string option 
+
+      /// The documentation for the type parameter. Empty for type inference variables.
+      /// MUTABILITY: for linking when unpickling
+      mutable typar_xmldoc : XmlDoc
+    }
 and TyparData = Typar
 and 
     [<NoEquality; NoComparison>]
@@ -1923,18 +1932,11 @@ and
     { /// MUTABILITY: we set the names of generalized inference type parameters to make the look nice for IL code generation 
       mutable typar_id: Ident 
        
-      /// MUTABILITY: we set the names of generalized inference type parameters to make the look nice for IL code generation 
-      mutable typar_il_name: string option 
-       
       mutable typar_flags: TyparFlags
        
       /// The unique stamp of the typar blob. 
       /// MUTABILITY: for linking when unpickling
       mutable typar_stamp: Stamp 
-       
-      /// The documentation for the type parameter. Empty for type inference variables.
-      /// MUTABILITY: for linking when unpickling
-      mutable typar_xmldoc : XmlDoc
        
       /// The declared attributes of the type parameter. Empty for type inference variables. 
       mutable typar_attribs: Attribs                      
@@ -1946,7 +1948,9 @@ and
       mutable typar_constraints: TyparConstraint list 
 
       /// A cached TAST type used when this type variable is used as type.
-      mutable typar_astype: TType }
+      mutable typar_astype: TType
+      
+      mutable typar_opt_data: TyparOptionalData option }
 
     /// The name of the type parameter 
     member x.Name                = x.typar_id.idText
@@ -1997,6 +2001,21 @@ and
     /// The declared attributes of the type parameter. Empty for type inference variables and parameters from .NET 
     member x.Attribs             = x.typar_attribs
 
+    member x.XmlDoc              =
+        match x.typar_opt_data with
+        | Some optData -> optData.typar_xmldoc
+        | _ -> XmlDoc.Empty
+
+    member x.ILName              =
+        match x.typar_opt_data with
+        | Some optData -> optData.typar_il_name
+        | _ -> None
+
+    member x.SetILName il_name   =
+        match x.typar_opt_data with
+        | Some optData -> optData.typar_il_name <- il_name
+        | _ -> x.typar_opt_data <- Some { typar_il_name = il_name; typar_xmldoc = XmlDoc.Empty }
+
     /// Indicates the display name of a type variable
     member x.DisplayName = if x.Name = "?" then "?"+string x.Stamp else x.Name
 
@@ -2008,14 +2027,13 @@ and
     /// Creates a type variable that contains empty data, and is not yet linked. Only used during unpickling of F# metadata.
     static member NewUnlinked() : Typar  = 
         { typar_id = Unchecked.defaultof<_>
-          typar_il_name = Unchecked.defaultof<_>
           typar_flags = Unchecked.defaultof<_>
           typar_stamp = Unchecked.defaultof<_>
-          typar_xmldoc = Unchecked.defaultof<_>
           typar_attribs = Unchecked.defaultof<_>       
           typar_solution = Unchecked.defaultof<_>
           typar_constraints = Unchecked.defaultof<_>
-          typar_astype = Unchecked.defaultof<_> }
+          typar_astype = Unchecked.defaultof<_>
+          typar_opt_data = Unchecked.defaultof<_> }
 
     /// Creates a type variable based on the given data. Only used during unpickling of F# metadata.
     static member New (data: TyparData) : Typar = data
@@ -2023,13 +2041,14 @@ and
     /// Links a previously unlinked type variable to the given data. Only used during unpickling of F# metadata.
     member x.Link (tg: TyparData) = 
         x.typar_id <- tg.typar_id
-        x.typar_il_name <- tg.typar_il_name
         x.typar_flags <- tg.typar_flags
         x.typar_stamp <- tg.typar_stamp
-        x.typar_xmldoc <- tg.typar_xmldoc
         x.typar_attribs <- tg.typar_attribs
         x.typar_solution <- tg.typar_solution
         x.typar_constraints <- tg.typar_constraints
+        match tg.typar_opt_data with
+        | Some tg -> x.typar_opt_data <- Some { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc }
+        | _ -> ()
 
     /// Links a previously unlinked type variable to the given data. Only used during unpickling of F# metadata.
     member x.AsType = 
@@ -2042,7 +2061,10 @@ and
         | _ -> ty
 
     /// Indicates if a type variable has been linked. Only used during unpickling of F# metadata.
-    member x.IsLinked = match box x.typar_attribs with null -> false | _ -> true 
+    member x.IsLinked = 
+        match x.typar_stamp with 
+        | 0L -> false 
+        | _ -> true 
 
     /// Indicates if a type variable has been solved.
     member x.IsSolved = 
@@ -4945,14 +4967,13 @@ let MakeUnionRepr ucs = TUnionRepr (MakeUnionCases ucs)
 let NewTypar (kind,rigid,Typar(id,staticReq,isCompGen),isFromError,dynamicReq,attribs,eqDep,compDep) = 
     Typar.New
       { typar_id = id 
-        typar_il_name = None
         typar_stamp = newStamp() 
         typar_flags= TyparFlags(kind,rigid,isFromError,isCompGen,staticReq,dynamicReq,eqDep,compDep) 
         typar_attribs= attribs 
         typar_solution = None
         typar_constraints=[]
-        typar_xmldoc = XmlDoc.Empty 
-        typar_astype = Unchecked.defaultof<_>} 
+        typar_astype = Unchecked.defaultof<_>
+        typar_opt_data = None } 
 
 let NewRigidTypar nm m = NewTypar (TyparKind.Type,TyparRigidity.Rigid,Typar(mkSynId m nm,NoStaticReq,true),false,TyparDynamicReq.Yes,[],false,false)
 

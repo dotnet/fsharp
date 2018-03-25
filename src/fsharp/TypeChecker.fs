@@ -4513,7 +4513,7 @@ and TcTyparDecl cenv env (TyparDecl(synAttrs, (Typar(id, _, _) as stp))) =
     let tp = NewTypar ((if hasMeasureAttr then TyparKind.Measure else TyparKind.Type), TyparRigidity.WarnIfNotRigid, stp, false, TyparDynamicReq.Yes, attrs, hasEqDepAttr, hasCompDepAttr)
     match TryFindFSharpStringAttribute cenv.g cenv.g.attrib_CompiledNameAttribute attrs with 
     | Some compiledName -> 
-        tp.typar_il_name <- Some compiledName
+        tp.SetILName (Some compiledName)
     | None ->  
         ()
     let item = Item.TypeVar(id.idText, tp)
