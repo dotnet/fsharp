@@ -33,9 +33,11 @@ open System.Reflection
 
 let checking = false  
 let logging = false
-let _ = if checking then dprintn "warning : Ilread.checking is on"
+let _ = if checking then dprintn "warning : ILBinaryReader.checking is on"
 let noStableFileHeuristic = try (System.Environment.GetEnvironmentVariable("FSharp_NoStableFileHeuristic") <> null) with _ -> false
 let alwaysMemoryMapFSC = try (System.Environment.GetEnvironmentVariable("FSharp_AlwaysMemoryMapCommandLineCompiler") <> null) with _ -> false
+let stronglyHeldReaderCacheSizeDefault = 30
+let stronglyHeldReaderCacheSize = try match System.Environment.GetEnvironmentVariable("FSharp_StronglyHeldBinaryReaderCacheSize") with null -> stronglyHeldReaderCacheSizeDefault | s -> int32 s with _ -> stronglyHeldReaderCacheSizeDefault
 
 let singleOfBits (x:int32) = System.BitConverter.ToSingle(System.BitConverter.GetBytes(x), 0)
 let doubleOfBits (x:int64) = System.BitConverter.Int64BitsToDouble(x)
@@ -3935,7 +3937,8 @@ type ILModuleReader(ilModule: ILModuleDef, ilAssemblyRefs: Lazy<ILAssemblyRef li
     
 // ++GLOBAL MUTABLE STATE (concurrency safe via locking)
 type ILModuleReaderCacheLockToken() = interface LockToken
-let ilModuleReaderCache = new AgedLookup<ILModuleReaderCacheLockToken, (string * DateTime * ILScopeRef * bool * ReduceMemoryFlag * MetadataOnlyFlag), ILModuleReader>(30, areSimilar=(fun (x, y) -> x = y))
+type ILModuleReaderCacheKey = ILModuleReaderCacheKey of string * DateTime * ILScopeRef * bool * ReduceMemoryFlag * MetadataOnlyFlag
+let ilModuleReaderCache = new AgedLookup<ILModuleReaderCacheLockToken, ILModuleReaderCacheKey, ILModuleReader>(stronglyHeldReaderCacheSize, areSimilar=(fun (x, y) -> x = y))
 let ilModuleReaderCacheLock = Lock()
 
 let stableFileHeuristicApplies fileName = 
@@ -3974,17 +3977,16 @@ let OpenILModuleReaderFromBytes fileName bytes opts =
 
 let OpenILModuleReader fileName opts = 
     // Pseudo-normalize the paths.
-    let ((_,writeStamp,_,_,_,_) as key), keyOk = 
+    let (ILModuleReaderCacheKey (_,writeStamp,_,_,_,_) as key), keyOk = 
         try 
-           (FileSystem.GetFullPathShim(fileName), 
-            FileSystem.GetLastWriteTimeShim(fileName), 
-            opts.ilGlobals.primaryAssemblyScopeRef, 
-            opts.pdbPath.IsSome,
-            opts.reduceMemoryUsage,
-            opts.metadataOnly), true
-        with e -> 
-            System.Diagnostics.Debug.Assert(false, sprintf "Failed to compute key in OpenILModuleReader cache for '%s'. Falling back to uncached." fileName) 
-            ("", System.DateTime.UtcNow, ILScopeRef.Local, false, ReduceMemoryFlag.Yes, MetadataOnlyFlag.Yes), false
+           let fullPath = FileSystem.GetFullPathShim(fileName)
+           let writeTime = FileSystem.GetLastWriteTimeShim(fileName)
+           let key = ILModuleReaderCacheKey (fullPath, writeTime, opts.ilGlobals.primaryAssemblyScopeRef, opts.pdbPath.IsSome, opts.reduceMemoryUsage, opts.metadataOnly)
+           key, true
+        with exn -> 
+            System.Diagnostics.Debug.Assert(false, sprintf "Failed to compute key in OpenILModuleReader cache for '%s'. Falling back to uncached. Error = %s" fileName (exn.ToString())) 
+            let fakeKey = ILModuleReaderCacheKey("", System.DateTime.UtcNow, ILScopeRef.Local, false, ReduceMemoryFlag.Yes, MetadataOnlyFlag.Yes)
+            fakeKey, false
 
     let cacheResult = 
         if keyOk then 
