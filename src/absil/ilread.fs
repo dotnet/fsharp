@@ -361,36 +361,27 @@ type WeakByteFile(fileName: string, chunk: (int * int) option) =
     member __.FileName = fileName
 
     /// Get the bytes for the file
-    member __.Get() =
-        let mutable tg = null
-        if not (weakBytes.TryGetTarget(&tg)) then 
-            if FileSystem.GetLastWriteTimeShim(fileName) <> fileStamp then 
-                error (Error (FSComp.SR.ilreadFileChanged fileName, range0))
-
-            let bytes = 
-                match chunk with 
-                | None -> FileSystem.ReadAllBytesShim fileName
-                | Some(start, length) -> File.ReadBinaryChunk (fileName, start, length)
-
-            tg <- bytes
-
-            weakBytes.SetTarget tg
-
-        tg
-
     interface BinaryFile with
-        override __.GetView() = 
-            let mutable tg = null
+
+        override this.GetView() = 
             let strongBytes = 
+                let mutable tg = null
                 if not (weakBytes.TryGetTarget(&tg)) then 
                     if FileSystem.GetLastWriteTimeShim(fileName) <> fileStamp then 
-                       errorR (Error (FSComp.SR.ilreadFileChanged fileName, range0))
+                        error (Error (FSComp.SR.ilreadFileChanged fileName, range0))
 
-                    tg <- FileSystem.ReadAllBytesShim fileName
-                    weakBytes.SetTarget tg
+                    let bytes = 
+                        match chunk with 
+                        | None -> FileSystem.ReadAllBytesShim fileName
+                        | Some(start, length) -> File.ReadBinaryChunk (fileName, start, length)
+
+                    tg <- bytes
+
+                    weakBytes.SetTarget bytes
+
                 tg
-            (ByteView(strongBytes) :> BinaryView)
 
+            (ByteView(strongBytes) :> BinaryView)
 
     
 let seekReadByte (mdv:BinaryView) addr = mdv.ReadByte addr
@@ -3952,7 +3943,7 @@ let createByteFileChunk opts fileName chunk =
     else 
         let bytes = 
             match chunk with 
-            | None -> FileSystem.ReadAllBytesShim(fileName)
+            | None -> FileSystem.ReadAllBytesShim fileName
             | Some (start, length) -> File.ReadBinaryChunk(fileName, start, length)
         ByteFile(fileName, bytes) :> BinaryFile
 
@@ -3977,7 +3968,7 @@ let OpenILModuleReaderFromBytes fileName bytes opts =
 
 let OpenILModuleReader fileName opts = 
     // Pseudo-normalize the paths.
-    let (ILModuleReaderCacheKey (_,writeStamp,_,_,_,_) as key), keyOk = 
+    let (ILModuleReaderCacheKey (fullPath,writeStamp,_,_,_,_) as key), keyOk = 
         try 
            let fullPath = FileSystem.GetFullPathShim(fileName)
            let writeTime = FileSystem.GetLastWriteTimeShim(fileName)
@@ -3985,7 +3976,7 @@ let OpenILModuleReader fileName opts =
            key, true
         with exn -> 
             System.Diagnostics.Debug.Assert(false, sprintf "Failed to compute key in OpenILModuleReader cache for '%s'. Falling back to uncached. Error = %s" fileName (exn.ToString())) 
-            let fakeKey = ILModuleReaderCacheKey("", System.DateTime.UtcNow, ILScopeRef.Local, false, ReduceMemoryFlag.Yes, MetadataOnlyFlag.Yes)
+            let fakeKey = ILModuleReaderCacheKey(fileName, System.DateTime.UtcNow, ILScopeRef.Local, false, ReduceMemoryFlag.Yes, MetadataOnlyFlag.Yes)
             fakeKey, false
 
     let cacheResult = 
@@ -4012,29 +4003,29 @@ let OpenILModuleReader fileName opts =
 
                 // See if tryGetMetadata gives us a BinaryFile for the metadata section alone.
                 let mdfileOpt = 
-                    match opts.tryGetMetadataSnapshot (fileName, writeStamp) with 
-                    | Some (obj, start, len) -> Some (RawMemoryFile(fileName, obj, start, len) :> BinaryFile)
+                    match opts.tryGetMetadataSnapshot (fullPath, writeStamp) with 
+                    | Some (obj, start, len) -> Some (RawMemoryFile(fullPath, obj, start, len) :> BinaryFile)
                     | None  -> None
 
                 // For metadata-only, always use a temporary, short-lived PE file reader, preferably over a memory mapped file.
                 // Then use the metadata blob as the long-lived memory resource.
-                let disposer, pefileEager = tryMemoryMapWholeFile opts fileName
+                let disposer, pefileEager = tryMemoryMapWholeFile opts fullPath
                 use _disposer = disposer
-                let (metadataPhysLoc, metadataSize, peinfo, pectxtEager, pevEager, _pdb) = openPEFileReader (fileName, pefileEager, None) 
+                let (metadataPhysLoc, metadataSize, peinfo, pectxtEager, pevEager, _pdb) = openPEFileReader (fullPath, pefileEager, None) 
                 let mdfile = 
                     match mdfileOpt with 
                     | Some mdfile -> mdfile
                     | None -> 
                         // If tryGetMetadata doesn't give anything, then just read the metadata chunk out of the binary
-                        createByteFileChunk opts fileName (Some (metadataPhysLoc, metadataSize))
+                        createByteFileChunk opts fullPath (Some (metadataPhysLoc, metadataSize))
 
-                let ilModule, ilAssemblyRefs = openPEMetadataOnly (fileName, peinfo, pectxtEager, pevEager, mdfile, reduceMemoryUsage, opts.ilGlobals) 
+                let ilModule, ilAssemblyRefs = openPEMetadataOnly (fullPath, peinfo, pectxtEager, pevEager, mdfile, reduceMemoryUsage, opts.ilGlobals) 
                 new ILModuleReader(ilModule, ilAssemblyRefs, ignore)
             else
                 // If we are not doing metadata-only, then just go ahead and read all the bytes and hold them either strongly or weakly
                 // depending on the heuristic
-                let pefile = createByteFileChunk opts fileName None
-                let ilModule, ilAssemblyRefs, _pdb = openPE (fileName, pefile, None, reduceMemoryUsage, opts.ilGlobals) 
+                let pefile = createByteFileChunk opts fullPath None
+                let ilModule, ilAssemblyRefs, _pdb = openPE (fullPath, pefile, None, reduceMemoryUsage, opts.ilGlobals) 
                 new ILModuleReader(ilModule, ilAssemblyRefs, ignore)
 
         if keyOk then 
@@ -4054,14 +4045,14 @@ let OpenILModuleReader fileName opts =
         // multi-proc build. So use memory mapping, but only for stable files.  Other files
         // fill use an in-memory ByteFile
         let _disposer, pefile = 
-            if alwaysMemoryMapFSC || stableFileHeuristicApplies fileName then 
-                tryMemoryMapWholeFile opts fileName
+            if alwaysMemoryMapFSC || stableFileHeuristicApplies fullPath then 
+                tryMemoryMapWholeFile opts fullPath
             else
-                let pefile = createByteFileChunk opts fileName None
+                let pefile = createByteFileChunk opts fullPath None
                 let disposer = { new IDisposable with member __.Dispose() = () }
                 disposer, pefile
 
-        let ilModule, ilAssemblyRefs, pdb = openPE (fileName, pefile, opts.pdbPath, reduceMemoryUsage, opts.ilGlobals)
+        let ilModule, ilAssemblyRefs, pdb = openPE (fullPath, pefile, opts.pdbPath, reduceMemoryUsage, opts.ilGlobals)
         let ilModuleReader = new ILModuleReader(ilModule, ilAssemblyRefs, (fun () -> ClosePdbReader pdb))
 
         // Readers with PDB reader disposal logic don't go in the cache.  Note the PDB reader is only used in static linking.
