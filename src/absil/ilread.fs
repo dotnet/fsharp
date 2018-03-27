@@ -359,11 +359,11 @@ type WeakByteFile(fileName: string, chunk: (int * int) option) =
     member __.FileName = fileName
 
     /// Get the bytes for the file
-    member this.Get() =
+    member __.Get() =
         let mutable tg = null
         if not (weakBytes.TryGetTarget(&tg)) then 
             if FileSystem.GetLastWriteTimeShim(fileName) <> fileStamp then 
-               errorR (Error (FSComp.SR.ilreadFileChanged fileName, range0))
+                error (Error (FSComp.SR.ilreadFileChanged fileName, range0))
 
             let bytes = 
                 match chunk with 
@@ -373,6 +373,7 @@ type WeakByteFile(fileName: string, chunk: (int * int) option) =
             tg <- bytes
 
             weakBytes.SetTarget tg
+
         tg
 
     interface BinaryFile with
