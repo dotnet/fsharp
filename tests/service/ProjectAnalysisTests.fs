@@ -2685,14 +2685,12 @@ let ``Test project16 DeclaringEntity`` () =
            shouldEqual e.DeclaringEntity.IsSome (e.AccessPath <> "global")
            match e.AccessPath with 
            | "C" | "D" | "E" | "F" | "G" -> 
-               shouldEqual e.DeclaringEntity.Value.AccessPath "Impl"
+               shouldEqual e.AccessPath "Impl"
                shouldEqual e.DeclaringEntity.Value.IsFSharpModule true
                shouldEqual e.DeclaringEntity.Value.IsNamespace false
            | "int" -> 
-               shouldEqual e.DeclaringEntity.Value.AccessPath "Microsoft.FSharp.Core"
-               shouldEqual e.DeclaringEntity.Value.IsNamespace true
-               shouldEqual e.DeclaringEntity.Value.DeclaringEntity.Value.AccessPath "Microsoft.FSharp"
-               shouldEqual e.DeclaringEntity.Value.DeclaringEntity.Value.IsNamespace true
+               shouldEqual e.AccessPath "Microsoft.FSharp.Core"
+               shouldEqual e.DeclaringEntity.Value.AccessPath "Microsoft.FSharp"
            | _ -> ()
        | :? FSharpMemberOrFunctionOrValue as e when e.IsModuleValueOrMember -> 
            printfn "checking declaring type of value '%s', assembly = '%s'" e.CompiledName (e.Assembly.ToString())
@@ -4774,19 +4772,27 @@ let ``Test project37 DeclaringEntity`` () =
        | :? FSharpEntity as e when not e.IsNamespace || e.AccessPath.Contains(".") -> 
            printfn "checking declaring type of entity '%s' --> '%s', assembly = '%s'" e.AccessPath e.CompiledName (e.Assembly.ToString())
            shouldEqual e.DeclaringEntity.IsSome true
-           match e.AccessPath with 
-           | "AttrTestAttribute" -> shouldEqual e.DeclaringEntity.Value.AccessPath "AttrTests"
-           | "int" -> shouldEqual e.DeclaringEntity.Value.AccessPath "Microsoft.FSharp.Core"
+           match e.CompiledName with 
+           | "AttrTestAttribute" -> 
+               shouldEqual e.AccessPath "AttrTests"
+           | "int" -> 
+               shouldEqual e.AccessPath "Microsoft.FSharp.Core"
+               shouldEqual e.DeclaringEntity.Value.AccessPath "Microsoft.FSharp"
            | "list`1" -> 
-               shouldEqual e.DeclaringEntity.Value.AccessPath "Microsoft.FSharp.Collections"
+               shouldEqual e.AccessPath "Microsoft.FSharp.Collections"
+               shouldEqual e.DeclaringEntity.Value.AccessPath "Microsoft.FSharp"
                shouldEqual e.DeclaringEntity.Value.DeclaringEntity.IsSome true
                shouldEqual e.DeclaringEntity.Value.DeclaringEntity.Value.IsNamespace true
-               shouldEqual e.DeclaringEntity.Value.DeclaringEntity.Value.AccessPath "Microsoft.FSharp"
-           | "Attribute" -> shouldEqual e.DeclaringEntity.Value.AccessPath "System"
+               shouldEqual e.DeclaringEntity.Value.DeclaringEntity.Value.AccessPath "Microsoft"
+               shouldEqual e.DeclaringEntity.Value.DeclaringEntity.Value.DeclaringEntity.Value.DeclaringEntity.IsSome false
+           | "Attribute" -> 
+               shouldEqual e.AccessPath "System"
+               shouldEqual e.DeclaringEntity.Value.AccessPath "global"
            | "NestedRecordType" -> 
-                shouldEqual e.DeclaringEntity.Value.AccessPath "AttrTests.Test.NestedModule"
-                shouldEqual e.DeclaringEntity.Value.DeclaringEntity.Value.AccessPath "AttrTests.Test"
-                shouldEqual e.DeclaringEntity.Value.DeclaringEntity.Value.DeclaringEntity.Value.AccessPath "AttrTests.Test"
+                shouldEqual e.AccessPath "AttrTests.Test.NestedModule"
+                shouldEqual e.DeclaringEntity.Value.AccessPath "AttrTests.Test"
+                shouldEqual e.DeclaringEntity.Value.DeclaringEntity.Value.AccessPath "AttrTests"
+                shouldEqual e.DeclaringEntity.Value.DeclaringEntity.Value.DeclaringEntity.Value.AccessPath "global"
            | _ -> ()
        | :? FSharpMemberOrFunctionOrValue as e when e.IsModuleValueOrMember -> 
            printfn "checking declaring type of value '%s', assembly = '%s'" e.CompiledName (e.Assembly.ToString())
