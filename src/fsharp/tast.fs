@@ -2066,9 +2066,10 @@ and
 
     /// Indicates if a type variable has been linked. Only used during unpickling of F# metadata.
     member x.IsLinked = 
-        match x.typar_stamp with 
-        | 0L -> false 
-        | _ -> true 
+        match box x.typar_attribs with null -> false | _ -> true
+        //match x.typar_stamp with 
+        //| 0L -> false 
+        //| _ -> true 
 
     /// Indicates if a type variable has been solved.
     member x.IsSolved = 
