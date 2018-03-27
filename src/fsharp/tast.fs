@@ -4386,9 +4386,10 @@ and SlotParam =
     member x.Type = let (TSlotParam(_,ty,_,_,_,_)) = x in ty
 
 /// A type for a module-or-namespace-fragment and the actual definition of the module-or-namespace-fragment
+/// The first ModuleOrNamespaceType is the signature and is a binder. However the bindings are not used in the ModuleOrNamespaceExpr: it is only referenced from the 'outside' 
+// is for use by FCS only to report the "hidden" contents of the assembly prior to applying the signature.
 and ModuleOrNamespaceExprWithSig = 
     | ModuleOrNamespaceExprWithSig of 
-         /// The ModuleOrNamespaceType is a binder. However it is not used in the ModuleOrNamespaceExpr: it is only referenced from the 'outside' 
          ModuleOrNamespaceType 
          * ModuleOrNamespaceExpr
          * range
@@ -4398,20 +4399,25 @@ and ModuleOrNamespaceExprWithSig =
 and ModuleOrNamespaceExpr = 
     /// Indicates the module is a module with a signature 
     | TMAbstract of ModuleOrNamespaceExprWithSig
+
     /// Indicates the module fragment is made of several module fragments in succession 
     | TMDefs     of ModuleOrNamespaceExpr list  
+
     /// Indicates the module fragment is a 'let' definition 
     | TMDefLet   of Binding * range
+
     /// Indicates the module fragment is an evaluation of expression for side-effects
     | TMDefDo   of Expr * range
+
     /// Indicates the module fragment is a 'rec' or 'non-rec' definition of types and modules
     | TMDefRec   of isRec:bool * Tycon list * ModuleOrNamespaceBinding list * range
 
 /// A named module-or-namespace-fragment definition 
 and [<RequireQualifiedAccess>] 
     ModuleOrNamespaceBinding = 
-    //| Do of Expr 
+
     | Binding of Binding 
+
     | Module of 
          /// This ModuleOrNamespace that represents the compilation of a module as a class. 
          /// The same set of tycons etc. are bound in the ModuleOrNamespace as in the ModuleOrNamespaceExpr

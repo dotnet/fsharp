@@ -1037,7 +1037,9 @@ type TypeCheckAccumulator =
       topAttribs:TopAttribs option
 
       /// Result of checking most recent file, if any
-      lastestTypedImplFile:TypedImplFile option
+      latestImplFile:TypedImplFile option
+
+      latestCcuSigForFile: ModuleOrNamespaceType option
 
       tcDependencyFiles: string list
 
@@ -1126,7 +1128,8 @@ type PartialCheckResults =
       TcDependencyFiles: string list 
       TopAttribs: TopAttribs option
       TimeStamp: DateTime
-      LatestImplementationFile: TypedImplFile option }
+      LatestImplementationFile: TypedImplFile option 
+      LastestCcuSigForFile: ModuleOrNamespaceType option }
 
     member x.TcErrors  = Array.concat (List.rev x.TcErrorsRev)
     member x.TcSymbolUses  = List.rev x.TcSymbolUsesRev
@@ -1144,7 +1147,8 @@ type PartialCheckResults =
           TcDependencyFiles = tcAcc.tcDependencyFiles
           TopAttribs = tcAcc.topAttribs
           TimeStamp = timestamp 
-          LatestImplementationFile = tcAcc.lastestTypedImplFile }
+          LatestImplementationFile = tcAcc.latestImplFile 
+          LastestCcuSigForFile = tcAcc.latestCcuSigForFile }
 
 
 [<AutoOpen>]
@@ -1350,7 +1354,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
               tcSymbolUsesRev=[]
               tcOpenDeclarationsRev=[]
               topAttribs=None
-              lastestTypedImplFile=None
+              latestImplFile=None
+              latestCcuSigForFile=None
               tcDependencyFiles=basicDependencies
               tcErrorsRev = [ initialErrors ] }   
         return tcAcc }
@@ -1373,7 +1378,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                     let sink = TcResultsSinkImpl(tcAcc.tcGlobals)
                     let hadParseErrors = not (Array.isEmpty parseErrors)
 
-                    let! (tcEnvAtEndOfFile, topAttribs, lastestTypedImplFile), tcState = 
+                    let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState = 
                         TypeCheckOneInputEventually 
                             ((fun () -> hadParseErrors || errorLogger.ErrorCount > 0), 
                              tcConfig, tcAcc.tcImports, 
@@ -1383,7 +1388,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                              tcAcc.tcState, input)
                         
                     /// Only keep the typed interface files when doing a "full" build for fsc.exe, otherwise just throw them away
-                    let lastestTypedImplFile = if keepAssemblyContents then lastestTypedImplFile else None
+                    let implFile = if keepAssemblyContents then implFile else None
                     let tcResolutions = if keepAllBackgroundResolutions then sink.GetResolutions() else TcResolutions.Empty
                     let tcEnvAtEndOfFile = (if keepAllBackgroundResolutions then tcEnvAtEndOfFile else tcState.TcEnvFromImpls)
                     let tcSymbolUses = sink.GetSymbolUses()  
@@ -1395,7 +1400,8 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                     return {tcAcc with tcState=tcState 
                                        tcEnvAtEndOfFile=tcEnvAtEndOfFile
                                        topAttribs=Some topAttribs
-                                       lastestTypedImplFile=lastestTypedImplFile
+                                       latestImplFile=implFile
+                                       latestCcuSigForFile=Some ccuSigForFile
                                        tcResolutionsRev=tcResolutions :: tcAcc.tcResolutionsRev
                                        tcSymbolUsesRev=tcSymbolUses :: tcAcc.tcSymbolUsesRev
                                        tcOpenDeclarationsRev = sink.GetOpenDeclarations() :: tcAcc.tcOpenDeclarationsRev
@@ -1437,16 +1443,16 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
         let finalAcc = tcStates.[tcStates.Length-1]
 
         // Finish the checking
-        let (_tcEnvAtEndOfLastFile, topAttrs, mimpls), tcState = 
-            let results = tcStates |> List.ofArray |> List.map (fun acc-> acc.tcEnvAtEndOfFile, defaultArg acc.topAttribs EmptyTopAttrs, acc.lastestTypedImplFile)
+        let (_tcEnvAtEndOfLastFile, topAttrs, mimpls, _), tcState = 
+            let results = tcStates |> List.ofArray |> List.map (fun acc-> acc.tcEnvAtEndOfFile, defaultArg acc.topAttribs EmptyTopAttrs, acc.latestImplFile, acc.latestCcuSigForFile)
             TypeCheckMultipleInputsFinish (results, finalAcc.tcState)
   
         let ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt = 
           try
-            // TypeCheckClosedInputSetFinish fills in tcState.Ccu but in incremental scenarios we don't want this, 
-            // so we make this temporary here
-            let oldContents = tcState.Ccu.Deref.Contents
-            try
+           // TypeCheckClosedInputSetFinish fills in tcState.Ccu but in incremental scenarios we don't want this, 
+           // so we make this temporary here
+           let oldContents = tcState.Ccu.Deref.Contents
+           try
             let tcState, tcAssemblyExpr = TypeCheckClosedInputSetFinish (mimpls, tcState)
 
             // Compute the identity of the generated assembly based on attributes, options etc.
