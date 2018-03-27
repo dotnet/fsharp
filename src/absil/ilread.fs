@@ -346,7 +346,7 @@ type ByteFile(fileName: string, bytes:byte[]) =
 /// This is the default implementation used by F# Compiler Services when accessing "stable" binaries.  It is not used
 /// by Visual Studio, where tryGetMetadataSnapshot provides a RawMemoryFile backed by Roslyn data.
 [<DebuggerDisplay("{FileName}")>]
-type WeakByteFile(fileName: string) = 
+type WeakByteFile(fileName: string, chunk: (int * int) option) = 
 
     do stats.weakByteFileCount <- stats.weakByteFileCount + 1
 
@@ -357,6 +357,7 @@ type WeakByteFile(fileName: string) =
     let weakBytes = new WeakReference<byte[]> (null)
 
     member __.FileName = fileName
+
     /// Get the bytes for the file
     member this.Get() =
         let mutable tg = null
@@ -364,7 +365,13 @@ type WeakByteFile(fileName: string) =
             if FileSystem.GetLastWriteTimeShim(fileName) <> fileStamp then 
                errorR (Error (FSComp.SR.ilreadFileChanged fileName, range0))
 
-            tg <- FileSystem.ReadAllBytesShim fileName
+            let bytes = 
+                match chunk with 
+                | None -> FileSystem.ReadAllBytesShim fileName
+                | Some(start, length) -> File.ReadBinaryChunk (fileName, start, length)
+
+            tg <- bytes
+
             weakBytes.SetTarget tg
         tg
 
@@ -3927,27 +3934,30 @@ type ILModuleReader(ilModule: ILModuleDef, ilAssemblyRefs: Lazy<ILAssemblyRef li
     
 // ++GLOBAL MUTABLE STATE (concurrency safe via locking)
 type ILModuleReaderCacheLockToken() = interface LockToken
-let ilModuleReaderCache = new AgedLookup<ILModuleReaderCacheLockToken, (string * System.DateTime * ILScopeRef * bool * ReduceMemoryFlag * MetadataOnlyFlag), ILModuleReader>(0, areSimilar=(fun (x, y) -> x = y))
+let ilModuleReaderCache = new AgedLookup<ILModuleReaderCacheLockToken, (string * DateTime * ILScopeRef * bool * ReduceMemoryFlag * MetadataOnlyFlag), ILModuleReader>(30, areSimilar=(fun (x, y) -> x = y))
 let ilModuleReaderCacheLock = Lock()
 
 let stableFileHeuristicApplies fileName = 
     not noStableFileHeuristic && try FileSystem.IsStableFileHeuristic fileName with _ -> false
 
-let createByteFile opts fileName = 
+let createByteFileChunk opts fileName chunk = 
     // If we're trying to reduce memory usage then we are willing to go back and re-read the binary, so we can use
     // a weakly-held handle to an array of bytes.
     if opts.reduceMemoryUsage = ReduceMemoryFlag.Yes && stableFileHeuristicApplies fileName then 
-        WeakByteFile(fileName) :> BinaryFile 
+        WeakByteFile(fileName, chunk) :> BinaryFile 
     else 
-        let bytes = FileSystem.ReadAllBytesShim(fileName)
+        let bytes = 
+            match chunk with 
+            | None -> FileSystem.ReadAllBytesShim(fileName)
+            | Some (start, length) -> File.ReadBinaryChunk(fileName, start, length)
         ByteFile(fileName, bytes) :> BinaryFile
 
-let tryMemoryMap opts fileName = 
+let tryMemoryMapWholeFile opts fileName = 
     let file = 
         try 
             MemoryMapFile.Create fileName :> BinaryFile
         with _ ->
-            createByteFile opts fileName
+            createByteFileChunk opts fileName None
     let disposer = 
         { new IDisposable with 
            member __.Dispose() = 
@@ -4005,7 +4015,7 @@ let OpenILModuleReader fileName opts =
 
                 // For metadata-only, always use a temporary, short-lived PE file reader, preferably over a memory mapped file.
                 // Then use the metadata blob as the long-lived memory resource.
-                let disposer, pefileEager = tryMemoryMap opts fileName
+                let disposer, pefileEager = tryMemoryMapWholeFile opts fileName
                 use _disposer = disposer
                 let (metadataPhysLoc, metadataSize, peinfo, pectxtEager, pevEager, _pdb) = openPEFileReader (fileName, pefileEager, None) 
                 let mdfile = 
@@ -4013,15 +4023,14 @@ let OpenILModuleReader fileName opts =
                     | Some mdfile -> mdfile
                     | None -> 
                         // If tryGetMetadata doesn't give anything, then just read the metadata chunk out of the binary
-                        let bytes = File.ReadBinaryChunk (fileName, metadataPhysLoc, metadataSize)
-                        ByteFile(fileName, bytes) :> BinaryFile
+                        createByteFileChunk opts fileName (Some (metadataPhysLoc, metadataSize))
 
                 let ilModule, ilAssemblyRefs = openPEMetadataOnly (fileName, peinfo, pectxtEager, pevEager, mdfile, reduceMemoryUsage, opts.ilGlobals) 
                 new ILModuleReader(ilModule, ilAssemblyRefs, ignore)
             else
                 // If we are not doing metadata-only, then just go ahead and read all the bytes and hold them either strongly or weakly
                 // depending on the heuristic
-                let pefile = createByteFile opts fileName
+                let pefile = createByteFileChunk opts fileName None
                 let ilModule, ilAssemblyRefs, _pdb = openPE (fileName, pefile, None, reduceMemoryUsage, opts.ilGlobals) 
                 new ILModuleReader(ilModule, ilAssemblyRefs, ignore)
 
@@ -4043,9 +4052,9 @@ let OpenILModuleReader fileName opts =
         // fill use an in-memory ByteFile
         let _disposer, pefile = 
             if alwaysMemoryMapFSC || stableFileHeuristicApplies fileName then 
-                tryMemoryMap opts fileName
+                tryMemoryMapWholeFile opts fileName
             else
-                let pefile = createByteFile opts fileName
+                let pefile = createByteFileChunk opts fileName None
                 let disposer = { new IDisposable with member __.Dispose() = () }
                 disposer, pefile
 
