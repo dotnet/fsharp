@@ -1912,6 +1912,9 @@ and [<NoEquality; NoComparison>]
 
       /// The inferred constraints for the type inference variable 
       mutable typar_constraints: TyparConstraint list 
+
+      /// The declared attributes of the type parameter. Empty for type inference variables. 
+      mutable typar_attribs: Attribs
     }
 and TyparData = Typar
 and 
@@ -1921,14 +1924,6 @@ and
     Typar = 
     // Backing data for type parameters and type inference variables
     // 
-    // MEMORY PERF: TyparData objects are common. They could be reduced to a record of 4-5 words in 
-    // the common case of inference type variables, e.g.
-    //
-    // TyparDataCommon = 
-    //       typar_details: TyparDataUncommon // null indicates standard values for uncommon data
-    //       typar_stamp: Stamp 
-    //       typar_solution: TType option
-    //       typar_constraints: TyparConstraint list 
     // where the "common" settings are 
     //     kind=TyparKind.Type, rigid=TyparRigidity.Flexible, id=compgen_id, staticReq=NoStaticReq, isCompGen=true, isFromError=false,
     //     dynamicReq=TyparDynamicReq.No, attribs=[], eqDep=false, compDep=false
@@ -1940,10 +1935,7 @@ and
        
       /// The unique stamp of the typar blob. 
       /// MUTABILITY: for linking when unpickling
-      mutable typar_stamp: Stamp 
-       
-      /// The declared attributes of the type parameter. Empty for type inference variables. 
-      mutable typar_attribs: Attribs                      
+      mutable typar_stamp: Stamp       
        
        /// An inferred equivalence for a type inference variable. 
       mutable typar_solution: TType option
@@ -2003,7 +1995,15 @@ and
     member x.IsErased            = match x.Kind with TyparKind.Type -> false | _ -> true
 
     /// The declared attributes of the type parameter. Empty for type inference variables and parameters from .NET 
-    member x.Attribs             = x.typar_attribs
+    member x.Attribs             = 
+        match x.typar_opt_data with
+        | Some optData -> optData.typar_attribs
+        | _ -> []
+
+    member x.SetAttribs attribs  = 
+        match x.typar_opt_data with
+        | Some optData -> optData.typar_attribs <- attribs
+        | _ -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = attribs }
 
     member x.XmlDoc              =
         match x.typar_opt_data with
@@ -2018,7 +2018,7 @@ and
     member x.SetILName il_name   =
         match x.typar_opt_data with
         | Some optData -> optData.typar_il_name <- il_name
-        | _ -> x.typar_opt_data <- Some { typar_il_name = il_name; typar_xmldoc = XmlDoc.Empty; typar_constraints = [] }
+        | _ -> x.typar_opt_data <- Some { typar_il_name = il_name; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = [] }
 
     /// Indicates the display name of a type variable
     member x.DisplayName = if x.Name = "?" then "?"+string x.Stamp else x.Name
@@ -2027,15 +2027,14 @@ and
     member x.SetConstraints cs =
         match x.typar_opt_data with
         | Some optData -> optData.typar_constraints <- cs
-        | _ -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = cs }
+        | _ -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = cs; typar_attribs = [] }
 
 
     /// Creates a type variable that contains empty data, and is not yet linked. Only used during unpickling of F# metadata.
     static member NewUnlinked() : Typar  = 
         { typar_id = Unchecked.defaultof<_>
           typar_flags = Unchecked.defaultof<_>
-          typar_stamp = Unchecked.defaultof<_>
-          typar_attribs = Unchecked.defaultof<_>       
+          typar_stamp = -1L
           typar_solution = Unchecked.defaultof<_>
           typar_astype = Unchecked.defaultof<_>
           typar_opt_data = Unchecked.defaultof<_> }
@@ -2048,7 +2047,6 @@ and
         x.typar_id <- tg.typar_id
         x.typar_flags <- tg.typar_flags
         x.typar_stamp <- tg.typar_stamp
-        x.typar_attribs <- tg.typar_attribs
         x.typar_solution <- tg.typar_solution
         match x.typar_opt_data with
         | Some optData -> 
@@ -2059,10 +2057,11 @@ and
                 optData.typar_il_name <- tg.typar_il_name
                 optData.typar_xmldoc <- tg.typar_xmldoc
                 optData.typar_constraints <- tg.typar_constraints
+                optData.typar_attribs <- tg.typar_attribs
         | None -> 
             match tg.typar_opt_data with
             | Some tg -> 
-                let optData = { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints }
+                let optData = { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints; typar_attribs = tg.typar_attribs }
                 x.typar_opt_data <- Some optData
             | None -> ()
 
@@ -2077,11 +2076,7 @@ and
         | _ -> ty
 
     /// Indicates if a type variable has been linked. Only used during unpickling of F# metadata.
-    member x.IsLinked = 
-        match box x.typar_attribs with null -> false | _ -> true
-        //match x.typar_stamp with 
-        //| 0L -> false 
-        //| _ -> true 
+    member x.IsLinked = x.typar_stamp <> -1L
 
     /// Indicates if a type variable has been solved.
     member x.IsSolved = 
@@ -4707,15 +4702,11 @@ let mkTyparTy (tp:Typar) =
     | TyparKind.Measure -> TType_measure (Measure.Var tp)
 
 let copyTypar (tp: Typar) = 
+    let optData = tp.typar_opt_data |> Option.map (fun tg -> { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints; typar_attribs = tg.typar_attribs })
     Typar.New { tp with typar_stamp=newStamp(); 
                         typar_astype=Unchecked.defaultof<_>; 
                         // Be careful to clone the mutable optional data too
-                        typar_opt_data=
-                           match tp.typar_opt_data with 
-                           | None -> None
-                           | Some tg -> 
-                               let optData = { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints }
-                               Some optData } 
+                        typar_opt_data=optData } 
 
 let copyTypars tps = List.map copyTypar tps
 
@@ -5003,10 +4994,12 @@ let NewTypar (kind,rigid,Typar(id,staticReq,isCompGen),isFromError,dynamicReq,at
       { typar_id = id 
         typar_stamp = newStamp() 
         typar_flags= TyparFlags(kind,rigid,isFromError,isCompGen,staticReq,dynamicReq,eqDep,compDep) 
-        typar_attribs= attribs 
         typar_solution = None
         typar_astype = Unchecked.defaultof<_>
-        typar_opt_data = None } 
+        typar_opt_data =
+            match attribs with
+            | [] -> None
+            | _ -> Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = attribs } } 
 
 let NewRigidTypar nm m = NewTypar (TyparKind.Type,TyparRigidity.Rigid,Typar(mkSynId m nm,NoStaticReq,true),false,TyparDynamicReq.Yes,[],false,false)
 

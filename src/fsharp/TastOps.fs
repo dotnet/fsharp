@@ -288,7 +288,7 @@ and copyAndRemapAndBindTyparsFull remapAttrib tyenv tps =
       let tyenv = { tyenv with tpinst = bindTypars tps (generalizeTypars tps') tyenv.tpinst } 
       (tps, tps') ||> List.iter2 (fun tporig tp -> 
          tp.SetConstraints (remapTyparConstraintsAux tyenv  tporig.Constraints)
-         tp.typar_attribs  <- tporig.typar_attribs |> remapAttrib)
+         tp.SetAttribs (tporig.Attribs |> remapAttrib))
       tps', tyenv
 
 // copies bound typars, extends tpinst 
