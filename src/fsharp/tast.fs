@@ -4464,7 +4464,7 @@ and SlotParam =
 
 /// A type for a module-or-namespace-fragment and the actual definition of the module-or-namespace-fragment
 /// The first ModuleOrNamespaceType is the signature and is a binder. However the bindings are not used in the ModuleOrNamespaceExpr: it is only referenced from the 'outside' 
-// is for use by FCS only to report the "hidden" contents of the assembly prior to applying the signature.
+/// is for use by FCS only to report the "hidden" contents of the assembly prior to applying the signature.
 and ModuleOrNamespaceExprWithSig = 
     | ModuleOrNamespaceExprWithSig of 
          ModuleOrNamespaceType 
