@@ -2672,6 +2672,30 @@ let ``Test Project16 sym locations`` () =
             ("val x", ("file1", (11, 11), (11, 12)), ("file1", (11, 11), (11, 12)),("file1", (11, 11), (11, 12)));
             ("Impl", ("sig1", (2, 7), (2, 11)), ("file1", (2, 7), (2, 11)),("file1", (2, 7), (2, 11)))|]
 
+[<Test>]
+let ``Test project16 DeclaringEntity`` () =
+    let wholeProjectResults =
+        checker.ParseAndCheckProject(Project16.options)
+        |> Async.RunSynchronously
+    let allSymbolsUses = wholeProjectResults.GetAllUsesOfAllSymbols() |> Async.RunSynchronously
+    for sym in allSymbolsUses do
+       match sym.Symbol with 
+       | :? FSharpEntity as e when not e.IsNamespace || e.AccessPath.Contains(".") -> 
+           printfn "checking declaring type of entity '%s' --> '%s', assembly = '%s'" e.AccessPath e.CompiledName (e.Assembly.ToString())
+           shouldEqual e.DeclaringEntity.IsSome (e.AccessPath <> "global")
+           match e.AccessPath with 
+           | "C" | "D" | "E" | "F" | "G" -> 
+               shouldEqual e.AccessPath "Impl"
+               shouldEqual e.DeclaringEntity.Value.IsFSharpModule true
+               shouldEqual e.DeclaringEntity.Value.IsNamespace false
+           | "int" -> 
+               shouldEqual e.AccessPath "Microsoft.FSharp.Core"
+               shouldEqual e.DeclaringEntity.Value.AccessPath "Microsoft.FSharp"
+           | _ -> ()
+       | :? FSharpMemberOrFunctionOrValue as e when e.IsModuleValueOrMember -> 
+           printfn "checking declaring type of value '%s', assembly = '%s'" e.CompiledName (e.Assembly.ToString())
+           shouldEqual e.DeclaringEntity.IsSome true
+       | _ ->  ()
 
 
 //-----------------------------------------------------------------------------------------
@@ -4636,7 +4660,7 @@ module internal Project37 =
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
 namespace AttrTests
-
+type X = int list
 [<System.AttributeUsage(System.AttributeTargets.Method ||| System.AttributeTargets.Assembly) >]
 type AttrTestAttribute() =
     inherit System.Attribute()
@@ -4665,6 +4689,8 @@ module Test =
     let withTypeArray = 0
     [<AttrTest([| 0; 1; 2 |])>]
     let withIntArray = 0
+    module NestedModule = 
+        type NestedRecordType = { B : int }
 
 [<assembly: AttrTest()>]
 do ()
@@ -4722,21 +4748,56 @@ let ``Test project37 typeof and arrays in attribute constructor arguments`` () =
                 a |> shouldEqual [| 0; 1; 2 |] 
             | _ -> ()
         | _ -> ()
-    wholeProjectResults.AssemblySignature.Attributes
-    |> Seq.map (fun a -> a.AttributeType.CompiledName)
-    |> Array.ofSeq |> shouldEqual [| "AttrTestAttribute"; "AttrTest2Attribute" |]
 
-    wholeProjectResults.ProjectContext.GetReferencedAssemblies() 
-    |> Seq.find (fun a -> a.SimpleName = "mscorlib")
-    |> fun a -> 
-        printfn "Attributes found in mscorlib: %A" a.Contents.Attributes
-        shouldEqual (a.Contents.Attributes.Count > 0) true
+    let mscorlibAsm = 
+        wholeProjectResults.ProjectContext.GetReferencedAssemblies() 
+        |> Seq.find (fun a -> a.SimpleName = "mscorlib")
+    printfn "Attributes found in mscorlib: %A" mscorlibAsm.Contents.Attributes
+    shouldEqual (mscorlibAsm.Contents.Attributes.Count > 0) true
 
-    wholeProjectResults.ProjectContext.GetReferencedAssemblies() 
-    |> Seq.find (fun a -> a.SimpleName = "FSharp.Core")
-    |> fun a -> 
-        printfn "Attributes found in FSharp.Core: %A" a.Contents.Attributes
-        shouldEqual (a.Contents.Attributes.Count > 0) true
+    let fsharpCoreAsm = 
+        wholeProjectResults.ProjectContext.GetReferencedAssemblies() 
+        |> Seq.find (fun a -> a.SimpleName = "FSharp.Core")
+    printfn "Attributes found in FSharp.Core: %A" fsharpCoreAsm.Contents.Attributes
+    shouldEqual (fsharpCoreAsm.Contents.Attributes.Count > 0) true
+
+[<Test>]
+let ``Test project37 DeclaringEntity`` () =
+    let wholeProjectResults =
+        checker.ParseAndCheckProject(Project37.options)
+        |> Async.RunSynchronously
+    let allSymbolsUses = wholeProjectResults.GetAllUsesOfAllSymbols() |> Async.RunSynchronously
+    for sym in allSymbolsUses do
+       match sym.Symbol with 
+       | :? FSharpEntity as e when not e.IsNamespace || e.AccessPath.Contains(".") -> 
+           printfn "checking declaring type of entity '%s' --> '%s', assembly = '%s'" e.AccessPath e.CompiledName (e.Assembly.ToString())
+           shouldEqual e.DeclaringEntity.IsSome true
+           match e.CompiledName with 
+           | "AttrTestAttribute" -> 
+               shouldEqual e.AccessPath "AttrTests"
+           | "int" -> 
+               shouldEqual e.AccessPath "Microsoft.FSharp.Core"
+               shouldEqual e.DeclaringEntity.Value.AccessPath "Microsoft.FSharp"
+           | "list`1" -> 
+               shouldEqual e.AccessPath "Microsoft.FSharp.Collections"
+               shouldEqual e.DeclaringEntity.Value.AccessPath "Microsoft.FSharp"
+               shouldEqual e.DeclaringEntity.Value.DeclaringEntity.IsSome true
+               shouldEqual e.DeclaringEntity.Value.DeclaringEntity.Value.IsNamespace true
+               shouldEqual e.DeclaringEntity.Value.DeclaringEntity.Value.AccessPath "Microsoft"
+               shouldEqual e.DeclaringEntity.Value.DeclaringEntity.Value.DeclaringEntity.Value.DeclaringEntity.IsSome false
+           | "Attribute" -> 
+               shouldEqual e.AccessPath "System"
+               shouldEqual e.DeclaringEntity.Value.AccessPath "global"
+           | "NestedRecordType" -> 
+                shouldEqual e.AccessPath "AttrTests.Test.NestedModule"
+                shouldEqual e.DeclaringEntity.Value.AccessPath "AttrTests.Test"
+                shouldEqual e.DeclaringEntity.Value.DeclaringEntity.Value.AccessPath "AttrTests"
+                shouldEqual e.DeclaringEntity.Value.DeclaringEntity.Value.DeclaringEntity.Value.AccessPath "global"
+           | _ -> ()
+       | :? FSharpMemberOrFunctionOrValue as e when e.IsModuleValueOrMember -> 
+           printfn "checking declaring type of value '%s', assembly = '%s'" e.CompiledName (e.Assembly.ToString())
+           shouldEqual e.DeclaringEntity.IsSome true
+       | _ ->  ()
 
 //-----------------------------------------------------------
 
