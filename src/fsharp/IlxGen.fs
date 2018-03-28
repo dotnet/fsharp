@@ -3436,7 +3436,7 @@ and GenGenericParam cenv eenv (tp:Typar) =
           // use the CompiledName if given
           // Inference variables get given an IL name "TA, TB" etc.
           let nm = 
-              match tp.typar_il_name with 
+              match tp.ILName with 
               | None -> tp.Name  
               | Some nm -> nm
           // Some special rules apply when compiling Fsharp.Core.dll to avoid a proliferation of [<CompiledName>] attributes on type parameters

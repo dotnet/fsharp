@@ -21,7 +21,7 @@ let lowestDefaultPriority = 0 (* See comment on TyparConstraint.DefaultsTo *)
 
 let mkFlexibleFormatTypar m tys dflt = 
     let tp = NewTypar (TyparKind.Type,TyparRigidity.Rigid,Typar(mkSynId m "fmt",HeadTypeStaticReq,true),false,TyparDynamicReq.Yes,[],false,false)
-    tp.FixupConstraints [ TyparConstraint.SimpleChoice (tys,m); TyparConstraint.DefaultsTo (lowestDefaultPriority,dflt,m)]
+    tp.SetConstraints [ TyparConstraint.SimpleChoice (tys,m); TyparConstraint.DefaultsTo (lowestDefaultPriority,dflt,m)]
     copyAndFixupFormatTypar m tp
 
 let mkFlexibleIntFormatTypar (g: TcGlobals) m = 
