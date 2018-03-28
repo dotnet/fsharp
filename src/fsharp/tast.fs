@@ -4706,7 +4706,17 @@ let mkTyparTy (tp:Typar) =
     | TyparKind.Type -> tp.AsType 
     | TyparKind.Measure -> TType_measure (Measure.Var tp)
 
-let copyTypar (tp: Typar) = Typar.New { tp with typar_stamp=newStamp(); typar_astype=Unchecked.defaultof<_>; typar_opt_data=tp.typar_opt_data }
+let copyTypar (tp: Typar) = 
+    Typar.New { tp with typar_stamp=newStamp(); 
+                        typar_astype=Unchecked.defaultof<_>; 
+                        // Be careful to clone the mutable optional data too
+                        typar_opt_data=
+                           match tp.typar_opt_data with 
+                           | None -> None
+                           | Some tg -> 
+                               let optData = { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints }
+                               Some optData } 
+
 let copyTypars tps = List.map copyTypar tps
 
 //--------------------------------------------------------------------------
