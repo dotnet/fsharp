@@ -23,6 +23,7 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.AbstractIL.IL
+open Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX
@@ -1000,11 +1001,11 @@ type internal FsiDynamicCompiler
     /// Add attributes 
     let CreateModuleFragment (tcConfigB: TcConfigBuilder, assemblyName, codegenResults) =
         if !progress then fprintfn fsiConsoleOutput.Out "Creating main module...";
-        let mainModule = mkILSimpleModule assemblyName (GetGeneratedILModuleName tcConfigB.target assemblyName) (tcConfigB.target = Dll) tcConfigB.subsystemVersion tcConfigB.useHighEntropyVA (mkILTypeDefs codegenResults.ilTypeDefs) None None 0x0 (mkILExportedTypes []) ""
+        let mainModule = mkILSimpleModule assemblyName (GetGeneratedILModuleName tcConfigB.target assemblyName) (tcConfigB.target = CompilerTarget.Dll) tcConfigB.subsystemVersion tcConfigB.useHighEntropyVA (mkILTypeDefs codegenResults.ilTypeDefs) None None 0x0 (mkILExportedTypes []) ""
         { mainModule 
           with Manifest = 
                 (let man = mainModule.ManifestOfAssembly
-                 Some { man with  CustomAttrs = mkILCustomAttrs codegenResults.ilAssemAttrs }); }
+                 Some { man with  CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs codegenResults.ilAssemAttrs) }) }
 
     let ProcessInputs (ctok, errorLogger: ErrorLogger, istate: FsiDynamicCompilerState, inputs: ParsedInput list, showTypes: bool, isIncrementalFragment: bool, isInteractiveItExpr: bool, prefixPath: LongIdent) =
         let optEnv    = istate.optEnv
@@ -1292,7 +1293,8 @@ type internal FsiDynamicCompiler
           let sourceFiles = sourceFiles |> List.map (fun nm -> tcConfig.ResolveSourceFile(m, nm, tcConfig.implicitIncludeDir),m) 
          
           // Close the #load graph on each file and gather the inputs from the scripts.
-          let closure = LoadClosure.ComputeClosureOfSourceFiles(ctok, TcConfig.Create(tcConfigB,validate=false), sourceFiles, CodeContext.CompilationAndEvaluation, lexResourceManager=lexResourceManager)
+          let tcConfig = TcConfig.Create(tcConfigB,validate=false)
+          let closure = LoadClosure.ComputeClosureOfScriptFiles(ctok, tcConfig, sourceFiles, CodeContext.CompilationAndEvaluation, lexResourceManager=lexResourceManager)
           
           // Intent "[Loading %s]\n" (String.concat "\n     and " sourceFiles)
           fsiConsoleOutput.uprintf "[%s " (FSIstrings.SR.fsiLoadingFilesPrefixText())
@@ -2029,7 +2031,7 @@ type internal FsiInteractionProcessor
 
                 // When the last declaration has a shape of DoExp (i.e., non-binding), 
                 // transform it to a shape of "let it = <exp>", so we can refer it.
-                let defsA = if defsA.Length <= 1 || defsB.Length > 0 then  defsA else
+                let defsA = if defsA.Length <= 1 || not (List.isEmpty defsB) then defsA else
                             match List.headAndTail (List.rev defsA) with
                             | SynModuleDecl.DoExpr(_,exp,_), rest -> (rest |> List.rev) @ (fsiDynamicCompiler.BuildItBinding exp)
                             | _ -> defsA
@@ -2437,6 +2439,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     //----------------------------------------------------------------------------
 
     let currentDirectory = Directory.GetCurrentDirectory()
+    let tryGetMetadataSnapshot = (fun _ -> None)
 
     let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(FSharpEnvironment.tryCurrentDomain()).Value
 
@@ -2445,7 +2448,16 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         | None -> SimulatedMSBuildReferenceResolver.GetBestAvailableResolver()
         | Some rr -> rr
 
-    let tcConfigB = TcConfigBuilder.CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir=defaultFSharpBinariesDir, optimizeForMemory=true, implicitIncludeDir=currentDirectory, isInteractive=true, isInvalidationSupported=false, defaultCopyFSharpCore=false)
+    let tcConfigB = 
+        TcConfigBuilder.CreateNew(legacyReferenceResolver, 
+            defaultFSharpBinariesDir=defaultFSharpBinariesDir, 
+            reduceMemoryUsage=ReduceMemoryFlag.Yes, 
+            implicitIncludeDir=currentDirectory, 
+            isInteractive=true, 
+            isInvalidationSupported=false, 
+            defaultCopyFSharpCore=CopyFSharpCoreFlag.No, 
+            tryGetMetadataSnapshot=tryGetMetadataSnapshot)
+
     let tcConfigP = TcConfigProvider.BasedOnMutableBuilder(tcConfigB)
     do tcConfigB.resolutionEnvironment <- ResolutionEnvironment.CompilationAndEvaluation // See Bug 3608
     do tcConfigB.useFsiAuxLib <- fsi.UseFsiAuxLib

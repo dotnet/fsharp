@@ -147,6 +147,11 @@
         <target state="translated">'{0}' から '__' に名前を変更する</target>
         <note />
       </trans-unit>
+      <trans-unit id="6012">
+        <source>Advanced</source>
+        <target state="translated">詳細</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

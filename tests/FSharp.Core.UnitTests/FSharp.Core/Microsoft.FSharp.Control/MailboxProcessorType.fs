@@ -292,3 +292,43 @@ type MailboxProcessorType() =
 
         test()
 
+    [<Test>]
+    member this.PostAndAsyncReply_Cancellation() =
+
+        use cancel = new CancellationTokenSource(500)
+        let mutable gotGood = false
+        let mutable gotBad = false
+
+        let goodAsync = async {
+            try
+              for i in Seq.initInfinite (fun i -> i) do
+                if i % 10000000 = 0 then
+                  printfn "good async working..."
+            finally
+              printfn "good async exited - that's what we want"
+              gotGood <- true
+          }
+
+        let badAsync (mbox:MailboxProcessor<AsyncReplyChannel<int>>) = async {
+            try
+              printfn "bad async working..."
+              let! result = mbox.PostAndAsyncReply id // <- got stuck in here forever 
+              printfn "%d" result
+            finally
+              printfn "bad async exited - that's what we want" // <- we never got here
+              gotBad <- true
+          }
+
+        let mbox = MailboxProcessor.Start(fun inbox -> async {
+            let! (reply : AsyncReplyChannel<int>) = inbox.Receive()
+            do! Async.Sleep 1000000
+            reply.Reply (200)
+          }, cancel.Token)
+
+        [goodAsync; badAsync mbox]
+        |> Async.Parallel
+        |> Async.Ignore
+        |> fun x -> Async.Start(x, cancel.Token)
+        System.Threading.Thread.Sleep(1000) // cancellation after 500
+        if not gotGood || not gotBad then 
+            failwith "Exected both good and bad async's to be cancelled afteMailbox should not fail!"

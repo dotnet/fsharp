@@ -155,8 +155,8 @@ let cattrs_typ2typ ilg f (cs: ILAttributes) =
     mkILCustomAttrs (List.map (cattr_typ2typ ilg f) cs.AsList)
 
 let fdef_typ2typ ilg ftype (fd: ILFieldDef) = 
-    {fd with Type=ftype fd.Type; 
-             CustomAttrs=cattrs_typ2typ ilg ftype fd.CustomAttrs}
+    fd.With(fieldType=ftype fd.FieldType,
+            customAttrs=cattrs_typ2typ ilg ftype fd.CustomAttrs)
 
 let local_typ2typ f (l: ILLocal) = {l with Type = f l.Type}
 let varargs_typ2typ f (varargs: ILVarArgs) = Option.map (List.map f) varargs
@@ -200,8 +200,8 @@ let morphILTypesInILInstr ((factualty,fformalty)) i =
         | ILToken.ILField fr -> I_ldtoken (ILToken.ILField (conv_fspec fr))
     | x -> x
 
-let return_typ2typ ilg f (r:ILReturn) = {r with Type=f r.Type; CustomAttrs=cattrs_typ2typ ilg f r.CustomAttrs}
-let param_typ2typ ilg f (p: ILParameter) = {p with Type=f p.Type; CustomAttrs=cattrs_typ2typ ilg f p.CustomAttrs}
+let return_typ2typ ilg f (r:ILReturn) = {r with Type=f r.Type; CustomAttrsStored= storeILCustomAttrs (cattrs_typ2typ ilg f r.CustomAttrs)}
+let param_typ2typ ilg f (p: ILParameter) = {p with Type=f p.Type; CustomAttrsStored= storeILCustomAttrs (cattrs_typ2typ ilg f p.CustomAttrs)}
 
 let morphILMethodDefs f (m:ILMethodDefs) = mkILMethods (List.map f m.AsList)
 let fdefs_fdef2fdef f (m:ILFieldDefs) = mkILFields (List.map f m.AsList)
@@ -225,16 +225,15 @@ let morphILMethodBody (filmbody) (x: ILLazyMethodBody) =
 
 let ospec_typ2typ f (OverridesSpec(mref,ty)) = OverridesSpec(mref_typ2typ f mref, f ty)
 
-let mdef_typ2typ_ilmbody2ilmbody ilg fs md  = 
+let mdef_typ2typ_ilmbody2ilmbody ilg fs (md: ILMethodDef)  = 
     let (ftype,filmbody) = fs 
     let ftype' = ftype (Some md) 
-    let body' = morphILMethodBody (filmbody (Some md))  md.mdBody 
-    {md with 
-      GenericParams=gparams_typ2typ ftype' md.GenericParams;
-      mdBody= body';
-      Parameters = List.map (param_typ2typ ilg ftype') md.Parameters;
-      Return = return_typ2typ ilg ftype' md.Return;
-      CustomAttrs=cattrs_typ2typ ilg ftype' md.CustomAttrs }
+    let body' = morphILMethodBody (filmbody (Some md))  md.Body 
+    md.With(genericParams=gparams_typ2typ ftype' md.GenericParams,
+            body= body',
+            parameters = List.map (param_typ2typ ilg ftype') md.Parameters,
+            ret = return_typ2typ ilg ftype' md.Return,
+            customAttrs=cattrs_typ2typ ilg ftype' md.CustomAttrs)
 
 let fdefs_typ2typ ilg f x = fdefs_fdef2fdef (fdef_typ2typ ilg f) x
 
@@ -244,44 +243,41 @@ let mimpl_typ2typ f e =
     { Overrides = ospec_typ2typ f e.Overrides;
       OverrideBy = mspec_typ2typ (f,(fun _ -> f)) e.OverrideBy; }
 
-let edef_typ2typ ilg f e =
-    { e with
-        Type = Option.map f e.Type;
-        AddMethod = mref_typ2typ f e.AddMethod;
-        RemoveMethod = mref_typ2typ f e.RemoveMethod;
-        FireMethod = Option.map (mref_typ2typ f) e.FireMethod;
-        OtherMethods = List.map (mref_typ2typ f) e.OtherMethods;
-        CustomAttrs = cattrs_typ2typ ilg f e.CustomAttrs }
+let edef_typ2typ ilg f (e: ILEventDef) =
+    e.With(eventType = Option.map f e.EventType,
+           addMethod = mref_typ2typ f e.AddMethod,
+           removeMethod = mref_typ2typ f e.RemoveMethod,
+           fireMethod = Option.map (mref_typ2typ f) e.FireMethod,
+           otherMethods = List.map (mref_typ2typ f) e.OtherMethods,
+           customAttrs = cattrs_typ2typ ilg f e.CustomAttrs)
 
-let pdef_typ2typ ilg f p =
-    { p with
-        SetMethod = Option.map (mref_typ2typ f) p.SetMethod;
-        GetMethod = Option.map (mref_typ2typ f) p.GetMethod;
-        Type = f p.Type;
-        Args = List.map f p.Args;
-        CustomAttrs = cattrs_typ2typ ilg f p.CustomAttrs }
+let pdef_typ2typ ilg f (p: ILPropertyDef) =
+    p.With(setMethod = Option.map (mref_typ2typ f) p.SetMethod,
+           getMethod = Option.map (mref_typ2typ f) p.GetMethod,
+           propertyType = f p.PropertyType,
+           args = List.map f p.Args,
+           customAttrs = cattrs_typ2typ ilg f p.CustomAttrs)
 
 let pdefs_typ2typ ilg f (pdefs: ILPropertyDefs) = mkILProperties (List.map (pdef_typ2typ ilg f) pdefs.AsList)
 let edefs_typ2typ ilg f (edefs: ILEventDefs) = mkILEvents (List.map (edef_typ2typ ilg f) edefs.AsList)
 
 let mimpls_typ2typ f (mimpls : ILMethodImplDefs) = mkILMethodImpls (List.map (mimpl_typ2typ f) mimpls.AsList)
 
-let rec tdef_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg enc fs td = 
+let rec tdef_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg enc fs (td: ILTypeDef) = 
    let (ftype,fmdefs) = fs 
    let ftype' = ftype (Some (enc,td)) None 
    let mdefs' = fmdefs (enc,td) td.Methods 
    let fdefs' = fdefs_typ2typ ilg ftype' td.Fields 
-   {td with Implements= List.map ftype' td.Implements;
-            GenericParams= gparams_typ2typ ftype' td.GenericParams; 
-            Extends = Option.map ftype' td.Extends;
-            Methods=mdefs';
-            NestedTypes=tdefs_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg (enc@[td]) fs td.NestedTypes;
-            Fields=fdefs';
-            MethodImpls = mimpls_typ2typ ftype' td.MethodImpls;
-            Events = edefs_typ2typ ilg ftype' td.Events; 
-            Properties = pdefs_typ2typ ilg ftype' td.Properties;
-            CustomAttrs = cattrs_typ2typ ilg ftype' td.CustomAttrs;
-  }
+   td.With(implements= List.map ftype' td.Implements,
+           genericParams= gparams_typ2typ ftype' td.GenericParams,
+           extends = Option.map ftype' td.Extends,
+           methods=mdefs',
+           nestedTypes=tdefs_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg (enc@[td]) fs td.NestedTypes,
+           fields=fdefs',
+           methodImpls = mimpls_typ2typ ftype' td.MethodImpls,
+           events = edefs_typ2typ ilg ftype' td.Events,
+           properties = pdefs_typ2typ ilg ftype' td.Properties,
+           customAttrs = cattrs_typ2typ ilg ftype' td.CustomAttrs)
 
 and tdefs_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg enc fs tdefs = 
   morphILTypeDefs (tdef_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg enc fs) tdefs
@@ -291,14 +287,14 @@ and tdefs_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg enc fs tdefs =
 // -------------------------------------------------------------------- 
 
 let manifest_typ2typ ilg f (m : ILAssemblyManifest) =
-    { m with CustomAttrs = cattrs_typ2typ ilg f m.CustomAttrs }
+    { m with CustomAttrsStored = storeILCustomAttrs (cattrs_typ2typ ilg f m.CustomAttrs) }
 
 let morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs ilg ((ftype: ILModuleDef -> (ILTypeDef list * ILTypeDef) option -> ILMethodDef option -> ILType -> ILType),fmdefs) m = 
 
     let ftdefs = tdefs_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg [] (ftype m,fmdefs m) 
 
     { m with TypeDefs=ftdefs m.TypeDefs;
-             CustomAttrs=cattrs_typ2typ ilg (ftype m None None) m.CustomAttrs;
+             CustomAttrsStored= storeILCustomAttrs (cattrs_typ2typ ilg (ftype m None None) m.CustomAttrs);
              Manifest=Option.map (manifest_typ2typ ilg (ftype m None None)) m.Manifest  }
     
 let module_instr2instr_typ2typ ilg fs x = 

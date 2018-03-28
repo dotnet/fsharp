@@ -37,6 +37,7 @@
     <None Include="Microsoft.Portable.FSharp.Targets" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Microsoft.FSharp.NetSdk.props" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Microsoft.FSharp.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Microsoft.FSharp.Overrides.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr'">

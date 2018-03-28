@@ -359,7 +359,7 @@ let FilterEachThenUndo f meths =
         trace.Undo()
         match CheckNoErrorsAndGetWarnings res with 
         | None -> None 
-        | Some warns -> Some (calledMeth, warns.Length, trace))
+        | Some warns -> Some (calledMeth, warns, trace))
 
 let ShowAccessDomain ad =
     match ad with 
@@ -2194,8 +2194,8 @@ and ResolveOverloading
                          (ArgsEquivInsideUndo csenv cx.IsSome) 
                          reqdRetTyOpt 
                          calledMeth) with
-          | [(calledMeth, _, _)] -> 
-              Some calledMeth, CompleteD, NoTrace // Can't re-play the trace since ArgsEquivInsideUndo was used
+          | [(calledMeth, warns, _)] ->
+              Some calledMeth, OkResult (warns, ()), NoTrace // Can't re-play the trace since ArgsEquivInsideUndo was used
 
           | _ -> 
             // Now determine the applicable methods.
@@ -2255,8 +2255,8 @@ and ResolveOverloading
 
                 None, ErrorD (failOverloading (FSComp.SR.csNoOverloadsFound methodName) errors), NoTrace
 
-            | [(calledMeth, _, t)] -> 
-                Some calledMeth, CompleteD, WithTrace t
+            | [(calledMeth, warns, t)] ->
+                Some calledMeth, OkResult (warns, ()), WithTrace t
 
             | applicableMeths -> 
                 
@@ -2292,7 +2292,9 @@ and ResolveOverloading
                     if c <> 0 then c else
                     0
 
-                let better (candidate:CalledMeth<_>, candidateWarnCount, _) (other:CalledMeth<_>, otherWarnCount, _) = 
+                let better (candidate:CalledMeth<_>, candidateWarnings, _) (other:CalledMeth<_>, otherwarnings, _) =
+                    let candidateWarnCount = List.length candidateWarnings
+                    let otherWarnCount = List.length otherwarnings
                     // Prefer methods that don't give "this code is less generic" warnings
                     // Note: Relies on 'compare' respecting true > false
                     let c = compare (candidateWarnCount = 0) (otherWarnCount = 0)
@@ -2383,7 +2385,7 @@ and ResolveOverloading
                         else 
                            None) 
                 match bestMethods with 
-                | [(calledMeth, _, t)] -> Some calledMeth, CompleteD, WithTrace t
+                | [(calledMeth, warns, t)] -> Some calledMeth, OkResult (warns, ()), WithTrace t
                 | bestMethods -> 
                     let methodNames =
                         let methods = 

@@ -1451,7 +1451,7 @@ let tryDestRefTupleTy g ty =
 type UncurriedArgInfos = (TType * ArgReprInfo) list 
 type CurriedArgInfos = (TType * ArgReprInfo) list list
 
-// A 'tau' type is one with its type paramaeters stripped off 
+// A 'tau' type is one with its type parameters stripped off 
 let GetTopTauTypeInFSharpForm g (curriedArgInfos: ArgReprInfo list list) tau m =
     let nArgInfos = curriedArgInfos.Length
     let argtys, rty = stripFunTyN g nArgInfos tau
@@ -5030,14 +5030,19 @@ and copyAndRemapAndBindTyconsAndVals g compgen tmenv tycons vs =
              
     (tycons, tycons') ||> List.iter2 (fun tcd tcd' -> 
         let tps', tmenvinner2 = tmenvCopyRemapAndBindTypars (remapAttribs g tmenvinner) tmenvinner (tcd.entity_typars.Force(tcd.entity_range))
-        tcd'.entity_typars         <- LazyWithContext.NotLazy tps';
-        tcd'.entity_attribs        <- tcd.entity_attribs |> remapAttribs g tmenvinner2;
-        tcd'.entity_tycon_repr           <- tcd.entity_tycon_repr    |> remapTyconRepr g tmenvinner2;
-        tcd'.entity_tycon_abbrev         <- tcd.entity_tycon_abbrev  |> Option.map (remapType tmenvinner2) ;
-        tcd'.entity_tycon_tcaug          <- tcd.entity_tycon_tcaug   |> remapTyconAug tmenvinner2 ;
+        tcd'.entity_typars         <- LazyWithContext.NotLazy tps'
+        tcd'.entity_attribs        <- tcd.entity_attribs       |> remapAttribs g tmenvinner2
+        tcd'.entity_tycon_repr     <- tcd.entity_tycon_repr    |> remapTyconRepr g tmenvinner2
+        let typeAbbrevR             = tcd.TypeAbbrev           |> Option.map (remapType tmenvinner2)
+        tcd'.entity_tycon_tcaug    <- tcd.entity_tycon_tcaug   |> remapTyconAug tmenvinner2
         tcd'.entity_modul_contents <- MaybeLazy.Strict (tcd.entity_modul_contents.Value 
-                                                        |> mapImmediateValsAndTycons lookupTycon lookupVal);
-        tcd'.entity_exn_info      <- tcd.entity_exn_info      |> remapTyconExnInfo g tmenvinner2) ;
+                                                        |> mapImmediateValsAndTycons lookupTycon lookupVal)
+        let exnInfoR                = tcd.ExceptionInfo        |> remapTyconExnInfo g tmenvinner2
+        match tcd'.entity_opt_data with
+        | Some optData -> tcd'.entity_opt_data <- Some { optData with entity_tycon_abbrev = typeAbbrevR; entity_exn_info = exnInfoR }
+        | _ -> 
+            tcd'.SetTypeAbbrev typeAbbrevR
+            tcd'.SetExceptionInfo exnInfoR)
     tycons', vs', tmenvinner
 
 
@@ -7773,17 +7778,26 @@ let MakeExportRemapping viewedCcu (mspec:ModuleOrNamespace) =
 
 let rec remapEntityDataToNonLocal g tmenv (d: Entity) = 
     let tps', tmenvinner = tmenvCopyRemapAndBindTypars (remapAttribs g tmenv) tmenv (d.entity_typars.Force(d.entity_range))
-
+    let typarsR          = LazyWithContext.NotLazy tps'
+    let attribsR         = d.entity_attribs        |> remapAttribs g tmenvinner
+    let tyconReprR       = d.entity_tycon_repr     |> remapTyconRepr g tmenvinner
+    let tyconAbbrevR     = d.TypeAbbrev            |> Option.map (remapType tmenvinner)
+    let tyconTcaugR      = d.entity_tycon_tcaug    |> remapTyconAug tmenvinner
+    let modulContentsR   = 
+        MaybeLazy.Strict (d.entity_modul_contents.Value
+                          |> mapImmediateValsAndTycons (remapTyconToNonLocal g tmenv) (remapValToNonLocal g tmenv))
+    let exnInfoR         = d.ExceptionInfo         |> remapTyconExnInfo g tmenvinner
     { d with 
-          entity_typars         = LazyWithContext.NotLazy tps';
-          entity_attribs        = d.entity_attribs        |> remapAttribs g tmenvinner;
-          entity_tycon_repr           = d.entity_tycon_repr           |> remapTyconRepr g tmenvinner;
-          entity_tycon_abbrev         = d.entity_tycon_abbrev         |> Option.map (remapType tmenvinner) ;
-          entity_tycon_tcaug          = d.entity_tycon_tcaug          |> remapTyconAug tmenvinner ;
-          entity_modul_contents = 
-              MaybeLazy.Strict (d.entity_modul_contents.Value
-                                |> mapImmediateValsAndTycons (remapTyconToNonLocal g tmenv) (remapValToNonLocal g tmenv));
-          entity_exn_info      = d.entity_exn_info      |> remapTyconExnInfo g tmenvinner}
+          entity_typars         = typarsR
+          entity_attribs        = attribsR
+          entity_tycon_repr     = tyconReprR
+          entity_tycon_tcaug    = tyconTcaugR
+          entity_modul_contents = modulContentsR
+          entity_opt_data       =
+            match d.entity_opt_data with
+            | Some dd ->
+                Some { dd with  entity_tycon_abbrev = tyconAbbrevR; entity_exn_info = exnInfoR }
+            | _ -> None }
 
 and remapTyconToNonLocal g tmenv x = 
     x |> NewModifiedTycon (remapEntityDataToNonLocal g tmenv)  

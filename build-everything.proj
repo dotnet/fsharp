@@ -34,6 +34,7 @@
     <ProjectsWithNet40 Include="vsintegration/fsharp-vsintegration-item-templates-build.proj" />
     <ProjectsWithNet40 Include="vsintegration/fsharp-vsintegration-vsix-build.proj" />
   </ItemGroup>
+
   <PropertyGroup Condition="'$(BUILD_VS)'=='1'">
     <RestoreVSIntegration>true</RestoreVSIntegration>
     <RestoreLanguageServiceProfiling>true</RestoreLanguageServiceProfiling>
@@ -60,7 +61,7 @@
 
   <!-- +++++++++++++++++++++++ Project selection for testing +++++++++++++++++++++++++++++++ -->
 
-  <ItemGroup Condition="'$(TEST_NET40_COREUNIT_SUITE)'=='1'" >
+  <ItemGroup Condition="'$(TEST_NET40_COMPILERUNIT_SUITE)'=='1'" >
     <ProjectsWithNet40 Include="tests/FSharp.Core.UnitTests/FSharp.Core.Unittests.fsproj"/>
     <ProjectsWithNet40 Include="tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj"/>
   </ItemGroup>
@@ -103,9 +104,15 @@
     <ProjectsToRestore Include="fcs/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(BUILD_VS)'=='1' OR '$(TEST_VS_IDEUNIT_SUITE)'=='1'">
+    <!-- always restore these so VisualFSharp.sln is usable -->
+    <ProjectsToRestore Include="vsintegration/fsharp-vsintegration-unittests-build.proj" />
+  </ItemGroup>
+
   <ItemGroup Condition="'$(TEST_VS_IDEUNIT_SUITE)'=='1'">
     <ProjectsWithNet40 Include="vsintegration/fsharp-vsintegration-unittests-build.proj" />
   </ItemGroup>
+
   <PropertyGroup Condition="'$(TEST_VS_IDEUNIT_SUITE)'=='1'">
     <RestoreVSIntegrationUnitTests>true</RestoreVSIntegrationUnitTests>
   </PropertyGroup>

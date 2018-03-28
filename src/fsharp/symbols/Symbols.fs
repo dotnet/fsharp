@@ -221,6 +221,8 @@ type FSharpSymbol(cenv:cenv, item: (unit -> Item), access: (FSharpSymbol -> CcuT
 
     override x.GetHashCode() = hash x.ImplementationLocation  
 
+    member x.GetEffectivelySameAsHash() = ItemsAreEffectivelyEqualHash cenv.g x.Item
+
     override x.ToString() = "symbol " + (try item().DisplayName with _ -> "?")
 
 
@@ -367,7 +369,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
 #if !NO_EXTENSIONTYPING 
         | ProvidedTypeMetadata info -> info.IsClass
 #endif
-        | ILTypeMetadata (TILObjectReprData(_, _, td)) -> (td.IsClass)
+        | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsClass
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> entity.Deref.IsFSharpClassTycon
 
     member __.IsByRef = 
@@ -428,7 +430,6 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
 
     member __.Accessibility = 
         if isUnresolved() then FSharpAccessibility(taccessPublic) else
-
         FSharpAccessibility(getApproxFSharpAccessibilityOfEntity entity) 
 
     member __.RepresentationAccessibility = 
@@ -471,7 +472,9 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
         not (isResolvedAndFSharp()) || entity.Deref.IsPrefixDisplay
 
     member x.IsNamespace =  entity.IsNamespace
+
     member x.MembersOrValues =  x.MembersFunctionsAndValues
+
     member x.MembersFunctionsAndValues = 
       if isUnresolved() then makeReadOnlyCollection[] else
       protect <| fun () -> 
@@ -553,6 +556,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
         |> makeReadOnlyCollection
 
     member x.RecordFields = x.FSharpFields
+
     member x.FSharpFields =
         if isUnresolved() then makeReadOnlyCollection[] else
     
@@ -599,7 +603,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
             | [] -> [[path]]
             | _ -> paths |> List.map (fun x -> path :: x)
 
-        let walkParts (parts: (string * ModuleOrNamespaceKind) list) = //: string list list =
+        let walkParts (parts: (string * ModuleOrNamespaceKind) list) =
             let rec loop (currentPaths: string list list) parts =
                 match parts with
                 | [] -> currentPaths
@@ -2169,11 +2173,25 @@ and FSharpAssemblySignature private (cenv, topAttribs: TypeChecker.TopAttribs op
         loop mtyp |> makeReadOnlyCollection
 
     member __.Attributes =
-        match topAttribs with
-        | None -> makeReadOnlyCollection []
-        | Some tA ->
-            tA.assemblyAttrs
-            |> List.map (fun a -> FSharpAttribute(cenv, AttribInfo.FSAttribInfo(cenv.g, a))) |> makeReadOnlyCollection
+        [ match optViewedCcu with 
+          | Some ccu -> 
+                match ccu.TryGetILModuleDef() with 
+                | Some ilModule -> 
+                    match ilModule.Manifest with 
+                    | None -> ()
+                    | Some manifest -> 
+                        for a in AttribInfosOfIL cenv.g cenv.amap cenv.thisCcu.ILScopeRef range0 manifest.CustomAttrs do
+                            yield FSharpAttribute(cenv, a)
+                | None -> 
+                    // If no module is available, then look in the CCU contents. 
+                    if ccu.IsFSharp then
+                        for a in ccu.Contents.Attribs do 
+                            yield FSharpAttribute(cenv, FSAttribInfo (cenv.g, a))
+          | None -> 
+              match topAttribs with
+              | None -> ()
+              | Some tA -> for a in tA.assemblyAttrs do yield FSharpAttribute(cenv, AttribInfo.FSAttribInfo(cenv.g, a)) ]
+        |> makeReadOnlyCollection
 
     member __.FindEntityByPath path =
         let inline findNested name = function

@@ -444,7 +444,7 @@ type TokenTup =
 let (|TyparsCloseOp|_|) (txt:string) = 
     let angles = txt |> Seq.takeWhile (fun c -> c = '>') |> Seq.toList
     let afterAngles = txt |> Seq.skipWhile (fun c -> c = '>') |> Seq.toList
-    if angles.Length = 0 then None else
+    if List.isEmpty angles then None else
 
     let afterOp = 
         match (new System.String(Array.ofSeq afterAngles)) with 

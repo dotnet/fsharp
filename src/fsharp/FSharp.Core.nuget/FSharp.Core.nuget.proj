@@ -61,7 +61,10 @@
       <PackageVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.LatestNuget.nuspec'">$(FSharpCoreLatestTargetPackageVersion)</PackageVersion>
       <PackageMajorVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.LatestNuget.nuspec'">$(FSharpCoreLatestTargetMajorVersion)</PackageMajorVersion>
 
-      <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
+      <!-- can't have &lt; and &gt; which happens when building locally -->
+      <NormalizedGitHeadSha>$(GitHeadSha)</NormalizedGitHeadSha>
+      <NormalizedGitHeadSha Condition="'$(NormalizedGitHeadSha)' == '&lt;developer build&gt;'">[developer build]</NormalizedGitHeadSha>
+      <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)" -prop "githeadsha=$(NormalizedGitHeadSha)"</PackageProperties>
     </PropertyGroup>
 
     <MakeDir Directories="$(FSharpSourcesRoot)\..\artifacts\$(PackageMajorVersion)" />

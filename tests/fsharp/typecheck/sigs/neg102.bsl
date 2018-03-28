@@ -1,14 +1,10 @@
 
-neg102.fs(2,552,2,557): typecheck error FS0039: The type 'fail1' is not defined.
+neg102.fs(8,14,8,22): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value 'enum<EnumAB> (1)' may indicate a case not covered by the pattern(s).
 
-neg102.fs(2,552,2,557): typecheck error FS0039: The type 'fail1' is not defined.
+neg102.fs(11,14,11,22): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value 'B' may indicate a case not covered by the pattern(s).
 
-neg102.fs(3,624,3,629): typecheck error FS0039: The value or constructor 'fail2' is not defined. Maybe you want one of the following:
+neg102.fs(14,14,14,22): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s).
 
-   Failure
+neg102.fs(20,14,20,22): typecheck error FS0104: Enums may take values outside known cases. For example, the value 'enum<EnumAB> (2)' may indicate a case not covered by the pattern(s).
 
-   failwith
-
-   failwithf
-
-neg102.fs(5,538,5,540): typecheck error FS0003: This value is not a function and cannot be applied.
+neg102.fs(24,14,24,22): typecheck error FS0104: Enums may take values outside known cases. For example, the value 'Some (enum<EnumAB> (2))' may indicate a case not covered by the pattern(s).

@@ -8,6 +8,7 @@
     <NoWarn>$(NoWarn);45;47;52;58;75</NoWarn>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UsePackageTargetFallbackHack>true</UsePackageTargetFallbackHack>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
   </PropertyGroup>
 
   <ItemGroup>
