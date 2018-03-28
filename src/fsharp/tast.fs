@@ -2050,9 +2050,21 @@ and
         x.typar_stamp <- tg.typar_stamp
         x.typar_attribs <- tg.typar_attribs
         x.typar_solution <- tg.typar_solution
-        match tg.typar_opt_data with
-        | Some tg -> x.typar_opt_data <- Some { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints }
-        | _ -> ()
+        match x.typar_opt_data with
+        | Some optData -> 
+            match tg.typar_opt_data with
+            | None -> 
+                x.typar_opt_data <- None
+            | Some tg ->
+                optData.typar_il_name <- tg.typar_il_name
+                optData.typar_xmldoc <- tg.typar_xmldoc
+                optData.typar_constraints <- tg.typar_constraints
+        | None -> 
+            match tg.typar_opt_data with
+            | Some tg -> 
+                let optData = { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints }
+                x.typar_opt_data <- Some optData
+            | None -> ()
 
     /// Links a previously unlinked type variable to the given data. Only used during unpickling of F# metadata.
     member x.AsType = 
