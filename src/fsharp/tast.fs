@@ -2040,8 +2040,11 @@ and
         | _ -> []
 
     member x.SetAttribs attribs  = 
-        match x.typar_opt_data with
-        | Some optData -> optData.typar_attribs <- attribs
+        match attribs, x.typar_opt_data with
+        | [], None -> ()
+        | [], Some { typar_il_name = None; typar_xmldoc = XmlDoc [||]; typar_constraints = [] } ->
+            x.typar_opt_data <- None
+        | _, Some optData -> optData.typar_attribs <- attribs
         | _ -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = attribs }
 
     member x.XmlDoc              =
@@ -2064,8 +2067,11 @@ and
 
     /// Adjusts the constraints associated with a type variable
     member x.SetConstraints cs =
-        match x.typar_opt_data with
-        | Some optData -> optData.typar_constraints <- cs
+        match cs, x.typar_opt_data with
+        | [], None -> ()
+        | [], Some { typar_il_name = None; typar_xmldoc = XmlDoc [||]; typar_attribs = [] } ->
+            x.typar_opt_data <- None
+        | _, Some optData -> optData.typar_constraints <- cs
         | _ -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = cs; typar_attribs = [] }
 
 
