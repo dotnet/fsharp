@@ -1657,7 +1657,7 @@ let CheckEntityDefns cenv env tycons =
 
 let rec CheckModuleExpr cenv env x = 
     match x with  
-    | ModuleOrNamespaceExprWithSig(mty,def,_) -> 
+    | ModuleOrNamespaceExprWithSig(mty, def, _) -> 
        let (rpi,mhi) = ComputeRemappingFromImplementationToSignature cenv.g def mty
        let env = { env with sigToImplRemapInfo = (mkRepackageRemapping rpi,mhi) :: env.sigToImplRemapInfo }
        CheckDefnInModule cenv env def

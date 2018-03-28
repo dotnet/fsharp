@@ -408,8 +408,6 @@ type ILAssemblyRef(data)  =
 
         ILAssemblyRef.Create(aname.Name,None,publicKey,retargetable,version,locale)
  
-
-
     member aref.QualifiedName = 
         let b = new System.Text.StringBuilder(100)
         let add (s:string) = (b.Append(s) |> ignore)
@@ -478,13 +476,6 @@ type ILScopeRef =
     member x.AssemblyRef  = match x with ILScopeRef.Assembly x -> x | _ -> failwith "not an assembly reference"
 
     member scoref.QualifiedName = 
-        match scoref with 
-        | ILScopeRef.Local -> ""
-        | ILScopeRef.Module mref -> "module "^mref.Name
-        | ILScopeRef.Assembly aref when aref.Name = "mscorlib" -> ""
-        | ILScopeRef.Assembly aref -> aref.QualifiedName
-
-    member scoref.QualifiedNameWithNoShortPrimaryAssembly = 
         match scoref with 
         | ILScopeRef.Local -> ""
         | ILScopeRef.Module mref -> "module "+mref.Name
@@ -602,18 +593,12 @@ type ILTypeRef =
     member tref.BasicQualifiedName =
         (String.concat "+" (tref.Enclosing @ [ tref.Name ] )).Replace(",", @"\,")
 
-    member tref.AddQualifiedNameExtensionWithNoShortPrimaryAssembly(basic) = 
-        let sco = tref.Scope.QualifiedNameWithNoShortPrimaryAssembly
-        if sco = "" then basic else String.concat ", " [basic;sco]
-
-    member tref.QualifiedNameWithNoShortPrimaryAssembly = 
-        tref.AddQualifiedNameExtensionWithNoShortPrimaryAssembly(tref.BasicQualifiedName)
-
-    member tref.QualifiedName = 
-        let basic = tref.BasicQualifiedName
+    member tref.AddQualifiedNameExtension(basic) = 
         let sco = tref.Scope.QualifiedName
         if sco = "" then basic else String.concat ", " [basic;sco]
 
+    member tref.QualifiedName = 
+        tref.AddQualifiedNameExtension(tref.BasicQualifiedName)
 
     override x.ToString() = x.FullName
 
@@ -624,22 +609,30 @@ and
     { tspecTypeRef: ILTypeRef;    
       /// The type instantiation if the type is generic.
       tspecInst: ILGenericArgs }    
+
     member x.TypeRef=x.tspecTypeRef
+
     member x.Scope=x.TypeRef.Scope
+
     member x.Enclosing=x.TypeRef.Enclosing
+
     member x.Name=x.TypeRef.Name
+
     member x.GenericArgs=x.tspecInst
+
     static member Create(tref,inst) = { tspecTypeRef =tref; tspecInst=inst }
+
     override x.ToString() = x.TypeRef.ToString() + if isNil x.GenericArgs then "" else "<...>"
+
     member x.BasicQualifiedName = 
         let tc = x.TypeRef.BasicQualifiedName
         if isNil x.GenericArgs then
             tc
         else 
-            tc + "[" + String.concat "," (x.GenericArgs |> List.map (fun arg -> "[" + arg.QualifiedNameWithNoShortPrimaryAssembly + "]")) + "]"
+            tc + "[" + String.concat "," (x.GenericArgs |> List.map (fun arg -> "[" + arg.QualifiedName + "]")) + "]"
 
-    member x.AddQualifiedNameExtensionWithNoShortPrimaryAssembly(basic) = 
-        x.TypeRef.AddQualifiedNameExtensionWithNoShortPrimaryAssembly(basic)
+    member x.AddQualifiedNameExtension(basic) = 
+        x.TypeRef.AddQualifiedNameExtension(basic)
 
     member x.FullName=x.TypeRef.FullName
 
@@ -666,19 +659,19 @@ and [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
         | ILType.Byref _ty -> failwith "unexpected byref type"
         | ILType.FunctionPointer _mref -> failwith "unexpected function pointer type"
 
-    member x.AddQualifiedNameExtensionWithNoShortPrimaryAssembly(basic) = 
+    member x.AddQualifiedNameExtension(basic) = 
         match x with 
         | ILType.TypeVar _n -> basic
-        | ILType.Modified(_,_ty1,ty2) -> ty2.AddQualifiedNameExtensionWithNoShortPrimaryAssembly(basic)
-        | ILType.Array (ILArrayShape(_s),ty) -> ty.AddQualifiedNameExtensionWithNoShortPrimaryAssembly(basic)
-        | ILType.Value tr | ILType.Boxed tr -> tr.AddQualifiedNameExtensionWithNoShortPrimaryAssembly(basic)
+        | ILType.Modified(_,_ty1,ty2) -> ty2.AddQualifiedNameExtension(basic)
+        | ILType.Array (ILArrayShape(_s),ty) -> ty.AddQualifiedNameExtension(basic)
+        | ILType.Value tr | ILType.Boxed tr -> tr.AddQualifiedNameExtension(basic)
         | ILType.Void -> failwith "void"
         | ILType.Ptr _ty -> failwith "unexpected pointer type"
         | ILType.Byref _ty -> failwith "unexpected byref type"
         | ILType.FunctionPointer _mref -> failwith "unexpected function pointer type"
         
-    member x.QualifiedNameWithNoShortPrimaryAssembly = 
-        x.AddQualifiedNameExtensionWithNoShortPrimaryAssembly(x.BasicQualifiedName)
+    member x.QualifiedName = 
+        x.AddQualifiedNameExtension(x.BasicQualifiedName)
 
     member x.TypeSpec =
       match x with 
@@ -3301,7 +3294,7 @@ let rec encodeCustomAttrElemType x =
     | ILType.Boxed tspec when tspec.Name = tname_String ->  [| et_STRING |]
     | ILType.Boxed tspec when tspec.Name = tname_Object ->  [| 0x51uy |] 
     | ILType.Boxed tspec when tspec.Name = tname_Type ->  [| 0x50uy |]
-    | ILType.Value tspec ->  Array.append [| 0x55uy |] (encodeCustomAttrString tspec.TypeRef.QualifiedNameWithNoShortPrimaryAssembly)
+    | ILType.Value tspec ->  Array.append [| 0x55uy |] (encodeCustomAttrString tspec.TypeRef.QualifiedName)
     | ILType.Array (shape, elemType) when shape = ILArrayShape.SingleDimensional -> 
           Array.append [| et_SZARRAY |] (encodeCustomAttrElemType elemType)
     | _ ->  failwith "encodeCustomAttrElemType: unrecognized custom element type"
@@ -3372,8 +3365,8 @@ let rec encodeCustomAttrPrimValue ilg c =
     | ILAttribElem.UInt64 x -> u64AsBytes x
     | ILAttribElem.Single x -> ieee32AsBytes x
     | ILAttribElem.Double x -> ieee64AsBytes x
-    | ILAttribElem.Type (Some ty) -> encodeCustomAttrString ty.QualifiedNameWithNoShortPrimaryAssembly 
-    | ILAttribElem.TypeRef (Some tref) -> encodeCustomAttrString tref.QualifiedNameWithNoShortPrimaryAssembly
+    | ILAttribElem.Type (Some ty) -> encodeCustomAttrString ty.QualifiedName
+    | ILAttribElem.TypeRef (Some tref) -> encodeCustomAttrString tref.QualifiedName
     | ILAttribElem.Array (_,elems) ->  
          [| yield! i32AsBytes elems.Length; for elem in elems do yield! encodeCustomAttrPrimValue ilg elem |]
 
@@ -3427,7 +3420,7 @@ let mkPermissionSet (ilg: ILGlobals) (action,attributes: list<(ILTypeRef * (stri
         [| yield (byte '.');
            yield! z_unsigned_int attributes.Length;
            for (tref:ILTypeRef,props) in attributes do 
-              yield! encodeCustomAttrString tref.QualifiedNameWithNoShortPrimaryAssembly
+              yield! encodeCustomAttrString tref.QualifiedName
               let bytes = 
                   [| yield! z_unsigned_int props.Length;
                       for (nm,typ,value) in props do 
