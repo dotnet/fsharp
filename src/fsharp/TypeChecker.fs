@@ -17166,7 +17166,7 @@ let TypeCheckOneImplFile
 
     let implFile = TImplFile(qualNameOfFile, scopedPragmas, implFileExprAfterSig, hasExplicitEntryPoint, isScript)
 
-    return (topAttrs, implFile, envAtEnd, cenv.createsGeneratedProvidedTypes)
+    return (topAttrs, implFile, implFileTypePriorToSig, envAtEnd, cenv.createsGeneratedProvidedTypes)
  } 
    
 

@@ -970,7 +970,7 @@ and AddBindingsForModuleDef allocVal cloc eenv x =
         allocVal cloc bind.Var eenv
     | TMDefDo _ -> 
         eenv
-    | TMAbstract(ModuleOrNamespaceExprWithSig(mtyp,_,_)) -> 
+    | TMAbstract(ModuleOrNamespaceExprWithSig(mtyp, _, _)) -> 
         AddBindingsForLocalModuleType allocVal cloc eenv  mtyp
     | TMDefs(mdefs) -> 
         AddBindingsForModuleDefs allocVal cloc eenv  mdefs 
@@ -1001,8 +1001,7 @@ let AddIncrementalLocalAssemblyFragmentToIlxGenEnv (amap:ImportMap, isIncrementa
         let cloc = { cloc with clocTopImplQualifiedName = qname.Text }
         if isIncrementalFragment then 
             match mexpr with
-            | ModuleOrNamespaceExprWithSig(_,mdef,_) -> AddBindingsForModuleDef allocVal cloc eenv mdef
-            (* | ModuleOrNamespaceExprWithSig(mtyp,_,m) -> error(Error("don't expect inner defs to have a constraint",m)) *)
+            | ModuleOrNamespaceExprWithSig(_, mdef, _) -> AddBindingsForModuleDef allocVal cloc eenv mdef
         else
             AddBindingsForLocalModuleType allocVal cloc eenv mexpr.Type) 
 
@@ -5782,7 +5781,7 @@ and GenTypeDefForCompLoc (cenv, eenv, mgbuf: AssemblyBuilder, cloc, hidden, attr
 
 
 and GenModuleExpr cenv cgbuf qname lazyInitInfo eenv x   = 
-    let (ModuleOrNamespaceExprWithSig(mty,def,_)) = x 
+    let (ModuleOrNamespaceExprWithSig(mty, def, _)) = x 
     // REVIEW: the scopeMarks are used for any shadow locals we create for the module bindings 
     // We use one scope for all the bindings in the module, which makes them all appear with their "default" values
     // rather than incrementally as we step through the  initializations in the module. This is a little unfortunate 

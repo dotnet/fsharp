@@ -268,7 +268,7 @@ module FSharpExprConvert =
             | DT_REF -> None
         | _ -> None
 
-    let (|TTypeConvOp|_|) (cenv:Impl.cenv) ty = 
+    let (|TTypeConvOp|_|) (cenv:SymbolEnv) ty = 
         let g = cenv.g
         match ty with
         | TType_app (tcref,_) ->
@@ -291,14 +291,14 @@ module FSharpExprConvert =
 
     let ConvType cenv typ = FSharpType(cenv, typ)
     let ConvTypes cenv typs = List.map (ConvType cenv) typs
-    let ConvILTypeRefApp (cenv:Impl.cenv) m tref tyargs = 
+    let ConvILTypeRefApp (cenv:SymbolEnv) m tref tyargs = 
         let tcref = Import.ImportILTypeRef cenv.amap m tref
         ConvType cenv (mkAppTy tcref tyargs)
 
     let ConvUnionCaseRef cenv (ucref:UnionCaseRef) = FSharpUnionCase(cenv, ucref)
     let ConvRecdFieldRef cenv (rfref:RecdFieldRef) = FSharpField(cenv, rfref )
 
-    let rec exprOfExprAddr (cenv:Impl.cenv) expr = 
+    let rec exprOfExprAddr (cenv:SymbolEnv) expr = 
         match expr with 
         | Expr.Op(op, tyargs, args, m) -> 
             match op, args, tyargs  with
@@ -323,7 +323,7 @@ module FSharpExprConvert =
 
     let Mk2 cenv (orig:Expr) e = FSharpExpr(cenv, None, e, orig.Range, tyOfExpr cenv.g orig)
 
-    let rec ConvLValueExpr (cenv:Impl.cenv) env expr = ConvExpr cenv env (exprOfExprAddr cenv expr)
+    let rec ConvLValueExpr (cenv:SymbolEnv) env expr = ConvExpr cenv env (exprOfExprAddr cenv expr)
 
     and ConvExpr cenv env expr = 
         Mk2 cenv expr (ConvExprPrim cenv env expr) 
@@ -391,7 +391,7 @@ module FSharpExprConvert =
 
     /// A nasty function copied from creflect.fs. Made nastier by taking a continuation to process the 
     /// arguments to the call in a tail-recursive fashion.
-    and ConvModuleValueOrMemberUseLinear (cenv:Impl.cenv) env (expr:Expr, vref, vFlags, tyargs, curriedArgs) contf =
+    and ConvModuleValueOrMemberUseLinear (cenv:SymbolEnv) env (expr:Expr, vref, vFlags, tyargs, curriedArgs) contf =
         let m = expr.Range 
 
         let (numEnclTypeArgs, _, isNewObj, _valUseFlags, _isSelfInit, takesInstanceArg, _isPropGet, _isPropSet) = 
@@ -462,7 +462,7 @@ module FSharpExprConvert =
                 // tailcall
                 ConvObjectModelCallLinear cenv env (false, v, [], tyargs, List.concat untupledCurriedArgs) contf2
 
-    and ConvExprPrim (cenv:Impl.cenv) (env:ExprTranslationEnv) expr = 
+    and ConvExprPrim (cenv:SymbolEnv) (env:ExprTranslationEnv) expr = 
         // Eliminate integer 'for' loops 
         let expr = DetectAndOptimizeForExpression cenv.g OptimizeIntRangesOnly expr
 
@@ -854,7 +854,7 @@ module FSharpExprConvert =
             let envinner = env.BindVal v
             Some(vR, rhsR), envinner
 
-    and ConvILCall (cenv:Impl.cenv) env (isNewObj, valUseFlags, ilMethRef, enclTypeArgs, methTypeArgs, callArgs, m) =
+    and ConvILCall (cenv:SymbolEnv) env (isNewObj, valUseFlags, ilMethRef, enclTypeArgs, methTypeArgs, callArgs, m) =
         let isNewObj = (isNewObj || (match valUseFlags with CtorValUsedAsSuperInit | CtorValUsedAsSelfInit -> true | _ -> false))
         let methName = ilMethRef.Name
         let isPropGet = methName.StartsWith("get_", System.StringComparison.Ordinal)
@@ -1210,9 +1210,9 @@ module FSharpExprConvert =
 
 
 /// The contents of the F# assembly as provided through the compiler API
-type FSharpAssemblyContents(cenv: Impl.cenv, mimpls: TypedImplFile list) = 
+type FSharpAssemblyContents(cenv: SymbolEnv, mimpls: TypedImplFile list) = 
 
-    new (g, thisCcu, tcImports, mimpls) = FSharpAssemblyContents(Impl.cenv(g, thisCcu, tcImports), mimpls)
+    new (g, thisCcu, thisCcuType, tcImports, mimpls) = FSharpAssemblyContents(SymbolEnv(g, thisCcu, thisCcuType, tcImports), mimpls)
 
     member __.ImplementationFiles = 
         [ for mimpl in mimpls -> FSharpImplementationFileContents(cenv, mimpl)]
@@ -1223,7 +1223,7 @@ and FSharpImplementationFileDeclaration =
     | InitAction of FSharpExpr
 
 and FSharpImplementationFileContents(cenv, mimpl) = 
-    let (TImplFile(qname, _pragmas, ModuleOrNamespaceExprWithSig(_mty, mdef, _), hasExplicitEntryPoint, isScript)) = mimpl 
+    let (TImplFile(qname, _pragmas, ModuleOrNamespaceExprWithSig(_, mdef, _), hasExplicitEntryPoint, isScript)) = mimpl 
     let rec getDecls2 (ModuleOrNamespaceExprWithSig(_mty, def, _m)) = getDecls def
     and getBind (bind: Binding) = 
         let v = bind.Var
