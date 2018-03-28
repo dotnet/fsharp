@@ -141,9 +141,9 @@ let mkPos l c = pos (l, c)
 [<System.Diagnostics.DebuggerDisplay("({StartLine},{StartColumn}-{EndLine},{EndColumn}) {FileName} IsSynthetic={IsSynthetic} -> {DebugCode}")>]
 #else
 [<System.Diagnostics.DebuggerDisplay("({StartLine},{StartColumn}-{EndLine},{EndColumn}) {FileName} IsSynthetic={IsSynthetic}")>]
+#endif
 type range(code1:int64, code2: int64) =
     static member Zero = range(0L, 0L)
-#endif
     new (fidx, bl, bc, el, ec) = 
         let code1 = ((int64 fidx) &&& fileIndexMask)
                 ||| ((int64 bc        <<< startColumnShift) &&& startColumnMask)
@@ -168,6 +168,9 @@ type range(code1:int64, code2: int64) =
     member r.FileName = fileOfFileIndex r.FileIndex
     member r.MakeSynthetic() = range(code1, code2 ||| isSyntheticMask)
 
+    member r.Code1 = code1
+    member r.Code2 = code2
+
 #if DEBUG
     member r.DebugCode =
         try
@@ -181,13 +184,14 @@ type range(code1:int64, code2: int64) =
         with e ->
             e.ToString()        
 #endif
-    member r.MakeSynthetic() = range(code ||| isSyntheticMask)
-    override r.ToString() = sprintf "%s (%d,%d--%d,%d) IsSynthetic=%b" r.FileName r.StartLine r.StartColumn r.EndLine r.EndColumn r.IsSynthetic
+
     member r.ToShortString() = sprintf "(%d,%d--%d,%d)" r.StartLine r.StartColumn r.EndLine r.EndColumn
-    member r.Code1 = code1
-    member r.Code2 = code2
+
     override r.Equals(obj) = match obj with :? range as r2 -> code1 = r2.Code1 && code2 = r2.Code2 | _ -> false
+
     override r.GetHashCode() = hash code1 + hash code2
+
+    override r.ToString() = sprintf "%s (%d,%d--%d,%d) IsSynthetic=%b" r.FileName r.StartLine r.StartColumn r.EndLine r.EndColumn r.IsSynthetic
 
 let mkRange f b e =
     // remove relative parts from full path
