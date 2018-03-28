@@ -2048,22 +2048,11 @@ and
         x.typar_flags <- tg.typar_flags
         x.typar_stamp <- tg.typar_stamp
         x.typar_solution <- tg.typar_solution
-        match x.typar_opt_data with
-        | Some optData -> 
-            match tg.typar_opt_data with
-            | None -> 
-                x.typar_opt_data <- None
-            | Some tg ->
-                optData.typar_il_name <- tg.typar_il_name
-                optData.typar_xmldoc <- tg.typar_xmldoc
-                optData.typar_constraints <- tg.typar_constraints
-                optData.typar_attribs <- tg.typar_attribs
-        | None -> 
-            match tg.typar_opt_data with
-            | Some tg -> 
-                let optData = { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints; typar_attribs = tg.typar_attribs }
-                x.typar_opt_data <- Some optData
-            | None -> ()
+        match tg.typar_opt_data with
+        | Some tg -> 
+            let optData = { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints; typar_attribs = tg.typar_attribs }
+            x.typar_opt_data <- Some optData
+        | None -> ()
 
     /// Links a previously unlinked type variable to the given data. Only used during unpickling of F# metadata.
     member x.AsType = 
@@ -4703,10 +4692,13 @@ let mkTyparTy (tp:Typar) =
 
 let copyTypar (tp: Typar) = 
     let optData = tp.typar_opt_data |> Option.map (fun tg -> { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints; typar_attribs = tg.typar_attribs })
-    Typar.New { tp with typar_stamp=newStamp(); 
-                        typar_astype=Unchecked.defaultof<_>; 
-                        // Be careful to clone the mutable optional data too
-                        typar_opt_data=optData } 
+    Typar.New { typar_id       = tp.typar_id
+                typar_flags    = tp.typar_flags
+                typar_stamp    =newStamp()
+                typar_solution = tp.typar_solution
+                typar_astype   = Unchecked.defaultof<_>
+                // Be careful to clone the mutable optional data too
+                typar_opt_data = optData } 
 
 let copyTypars tps = List.map copyTypar tps
 
