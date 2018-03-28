@@ -4694,7 +4694,7 @@ let copyTypar (tp: Typar) =
     let optData = tp.typar_opt_data |> Option.map (fun tg -> { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints; typar_attribs = tg.typar_attribs })
     Typar.New { typar_id       = tp.typar_id
                 typar_flags    = tp.typar_flags
-                typar_stamp    =newStamp()
+                typar_stamp    = newStamp()
                 typar_solution = tp.typar_solution
                 typar_astype   = Unchecked.defaultof<_>
                 // Be careful to clone the mutable optional data too
