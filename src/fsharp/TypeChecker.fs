@@ -6913,15 +6913,28 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                     let tyconSearch (id : Ident) =
                         search (fun (mOrNsTy : ModuleOrNamespaceType) -> mOrNsTy.TypesByAccessNames.TryFind id.idText)
 
+                    let rec abbrevTyconFieldSearch (abbrvTycon : TyconRef) (id : Ident) =
+                        match abbrvTycon.TypeAbbrev with
+                        | None -> abbrvTycon.GetFieldByName id.idText
+                        | Some (TType_app (abbrv, _)) -> abbrevTyconFieldSearch abbrv id
+                        | _ -> None
+
                     let tyconFieldSearch (id : Ident) =
-                        search (fun (tycon : Tycon) -> tycon.GetFieldByName id.idText)
+                        search (fun (tycon : Tycon) -> match tycon.TypeAbbrev with
+                                                       | None -> tycon.GetFieldByName id.idText
+                                                       | Some (TType_app (abbrv, _)) -> abbrevTyconFieldSearch abbrv id
+                                                       | _ -> None)
 
                     let searchFieldsOfAllTycons (id : Ident) =
                         let searchForFld (lst : ModuleOrNamespaceType list) =
                             lst
                             |> List.map (fun mOrNs -> mOrNs.TypeDefinitions)
                             |> List.concat
-                            |> List.tryFind (fun e -> e.GetFieldByName id.idText |> Option.isSome)
+                            |> List.tryFind (fun e -> match e.TypeAbbrev with
+                                                      | None -> e.GetFieldByName id.idText
+                                                      | Some (TType_app (abbrv, _)) -> abbrevTyconFieldSearch abbrv id
+                                                      | _ -> None 
+                                                      |> Option.isSome)
                         Option.bind searchForFld
 
                        
