@@ -57,10 +57,10 @@ type internal FSharpCheckerProvider
             let mmd = amd.GetModules().[0]
             let mmr = mmd.GetMetadataReader()
 
-            // "lifetime is timed to Metadata you got from the GetMetadata(…). As long as you hold it strongly, raw 
+            // "lifetime is timed to Metadata you got from the GetMetadata(ï¿½). As long as you hold it strongly, raw 
             // memory we got from metadata reader will be alive. Once you are done, just let everything go and 
             // let finalizer handle resource rather than calling Dispose from Metadata directly. It is shared metadata. 
-            // You shouldn’t dispose it directly."
+            // You shouldnï¿½t dispose it directly."
 
             let objToHold = box md
 
@@ -321,20 +321,13 @@ type internal FSharpCheckerWorkspaceServiceFactory
                     Width = 360,
                     Height = 120,
                     Window="34E76E81-EE4A-11D0-AE2E-00A0C90FFFC3")>]
+[<ProvideEditorFactory(typeof<FSharpEditorFactory>, 101s, CommonPhysicalViewAttributes = Constants.FSharpEditorFactoryPhysicalViewAttributes)>]
 [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.IntelliSenseOptionPage>, "F#", null, "IntelliSense", "6008")>]
 [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.QuickInfoOptionPage>, "F#", null, "QuickInfo", "6009")>]
 [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.CodeFixesOptionPage>, "F#", null, "Code Fixes", "6010")>]
 [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.LanguageServicePerformanceOptionPage>, "F#", null, "Performance", "6011")>]
 [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.AdvancedSettingsOptionPage>, "F#", null, "Advanced", "6012")>]
 [<ProvideFSharpVersionRegistration(FSharpConstants.projectPackageGuidString, "Microsoft Visual F#")>]
-// 64 represents a hex number. It needs to be greater than 37 so the TextMate editor will not be chosen as higher priority.
-[<ProvideEditorExtension(typeof<FSharpEditorFactory>, ".fs", 64)>]
-[<ProvideEditorExtension(typeof<FSharpEditorFactory>, ".fsi", 64)>]
-[<ProvideEditorExtension(typeof<FSharpEditorFactory>, ".fsscript", 64)>]
-[<ProvideEditorExtension(typeof<FSharpEditorFactory>, ".fsx", 64)>]
-[<ProvideEditorExtension(typeof<FSharpEditorFactory>, ".ml", 64)>]
-[<ProvideEditorExtension(typeof<FSharpEditorFactory>, ".mli", 64)>]
-[<ProvideEditorFactory(typeof<FSharpEditorFactory>, 101s, CommonPhysicalViewAttributes = Constants.FSharpEditorFactoryPhysicalViewAttributes)>]
 [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fs")>]
 [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsi")>]
 [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsx")>]
