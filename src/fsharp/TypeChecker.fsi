@@ -43,7 +43,7 @@ val TypeCheckOneImplFile :
       -> TcEnv 
       -> Tast.ModuleOrNamespaceType option
       -> ParsedImplFileInput
-      -> Eventually<TopAttribs * Tast.TypedImplFile * TcEnv * bool>
+      -> Eventually<TopAttribs * Tast.TypedImplFile * ModuleOrNamespaceType * TcEnv * bool>
 
 val TypeCheckOneSigFile : 
       TcGlobals * NiceNameGenerator * ImportMap * CcuThunk  * (unit -> bool) * ConditionalDefines * NameResolution.TcResultsSink 

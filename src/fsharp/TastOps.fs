@@ -3692,6 +3692,7 @@ let wrapModuleOrNamespaceExprInNamespace (id :Ident) cpath mexpr =
 // cleanup: make this a property
 let SigTypeOfImplFile (TImplFile(_, _, mexpr, _, _)) = mexpr.Type 
 
+
 //--------------------------------------------------------------------------
 // Data structures representing what gets hidden and what gets remapped (i.e. renamed or alpha-converted)
 // when a module signature is applied to a module.
@@ -5087,12 +5088,12 @@ and allValsOfModDef mdef =
           | TMAbstract(ModuleOrNamespaceExprWithSig(mty, _, _)) -> 
               yield! allValsOfModuleOrNamespaceTy mty }
 
-and remapAndBindModExpr g compgen tmenv (ModuleOrNamespaceExprWithSig(mty, mdef, m)) =
+and remapAndBindModuleOrNamespaceExprWithSig g compgen tmenv (ModuleOrNamespaceExprWithSig(mty, mdef, m)) =
     let mdef = copyAndRemapModDef g compgen tmenv mdef
     let mty, tmenv = copyAndRemapAndBindModTy g compgen tmenv mty
     ModuleOrNamespaceExprWithSig(mty, mdef, m), tmenv
 
-and remapModExpr g compgen tmenv (ModuleOrNamespaceExprWithSig(mty, mdef, m)) =
+and remapModuleOrNamespaceExprWithSig g compgen tmenv (ModuleOrNamespaceExprWithSig(mty, mdef, m)) =
     let mdef = copyAndRemapModDef g compgen tmenv mdef 
     let mty = remapModTy g compgen tmenv mty 
     ModuleOrNamespaceExprWithSig(mty, mdef, m)
@@ -5124,7 +5125,7 @@ and remapAndRenameModDef g compgen tmenv mdef =
         let defs = remapAndRenameModDefs g compgen tmenv defs
         TMDefs defs
     | TMAbstract mexpr -> 
-        let mexpr = remapModExpr g compgen tmenv mexpr
+        let mexpr = remapModuleOrNamespaceExprWithSig g compgen tmenv mexpr
         TMAbstract mexpr
 
 and remapAndRenameModBind g compgen tmenv x = 
@@ -5139,7 +5140,7 @@ and remapAndRenameModBind g compgen tmenv x =
         ModuleOrNamespaceBinding.Module(mspec, def)
 
 and remapImplFile g compgen tmenv mv = 
-    mapAccImplFile (remapAndBindModExpr g compgen) tmenv mv
+    mapAccImplFile (remapAndBindModuleOrNamespaceExprWithSig g compgen) tmenv mv
 
 let copyModuleOrNamespaceType     g compgen mtyp = copyAndRemapAndBindModTy g compgen Remap.Empty mtyp |> fst
 let copyExpr     g compgen e    = remapExpr g compgen Remap.Empty e    
@@ -7709,7 +7710,6 @@ and rewriteObjExprInterfaceImpl env (ty, overrides) =
     
 and rewriteModuleOrNamespaceExpr env x = 
     match x with  
-    (* | ModuleOrNamespaceExprWithSig(mty, e, m) -> ModuleOrNamespaceExprWithSig(mty, rewriteModuleOrNamespaceExpr env e, m) *)
     | ModuleOrNamespaceExprWithSig(mty, def, m) ->  ModuleOrNamespaceExprWithSig(mty, rewriteModuleOrNamespaceDef env def, m)
 
 and rewriteModuleOrNamespaceDefs env x = List.map (rewriteModuleOrNamespaceDef env) x
