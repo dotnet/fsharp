@@ -10,7 +10,6 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
     open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
 #if FX_RESHAPED_MSBUILD
-    open Microsoft.FSharp.Compiler.MsBuildAdapters
     open Microsoft.FSharp.Compiler.ToolLocationHelper
 #endif
 

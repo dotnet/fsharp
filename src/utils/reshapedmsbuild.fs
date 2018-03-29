@@ -67,40 +67,12 @@ open System.Runtime.Versioning
 open FSComp
 open Microsoft.Win32
 
-module internal MsBuildAdapters = 
-
-    open Microsoft.FSharp.Core.ReflectionAdapters
-
-    /// <summary>
-    /// Used to specify the targeted version of the .NET Framework for some methods of ToolLocationHelper.
-    /// </summary>
-    type public TargetDotNetFrameworkVersion =
-    | Version11 = 0
-    | Version20 = 1
-    | Version30 = 2
-    | Version35 = 3
-    | Version40 = 4
-    | Version45 = 5
-    | Version451 = 6
-    | Version46 = 7
-    | Version461 = 8
-    | Version452 = 9
-    | VersionLatest = 8  //TargetDotNetFrameworkVersion.Version461
-
-    /// <summary>
-    /// Used to specify the targeted bitness of the .NET Framework for some methods of ToolLocationHelper
-    /// </summary>
-    type DotNetFrameworkArchitecture =
-    | Current = 0                                   // Indicates the .NET Framework that is currently being run under
-    | Bitness32 = 1                                 // Indicates the 32-bit .NET Framework
-    | Bitness64 = 2                                 // Indicates the 64-bit .NET Framework
-
 module internal ToolLocationHelper =
     open Microsoft.Build.Framework
+    open Microsoft.Build.Utilities
     open Microsoft.FSharp.Core.ReflectionAdapters
     open System.Linq
     open System.Reflection
-    open MsBuildAdapters
 
     let dotNetFrameworkIdentifier = ".NETFramework"
 

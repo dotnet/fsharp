@@ -1,3 +1,5 @@
 <Project>
-  <!-- empty to prevent directory crawling -->
+  <PropertyGroup>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+  </PropertyGroup>
 </Project>

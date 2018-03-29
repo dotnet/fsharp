@@ -1627,8 +1627,6 @@ module internal VsMocks =
         }            
 
 module internal VsActual = 
-    // Since the editor exports MEF components, we can use those components directly from unit tests without having to load too many heavy
-    // VS assemblies.  Use editor MEF components directly from the VS product.
 
     open System.IO
     open System.ComponentModel.Composition.Hosting
