@@ -12,14 +12,14 @@ open Microsoft.FSharp.Compiler.CompileOps
 /// Represents the definitional contents of an assembly, as seen by the F# language
 type public FSharpAssemblyContents = 
 
-    internal new : tcGlobals: TcGlobals * thisCcu: CcuThunk * tcImports: TcImports * mimpls: TypedImplFile list -> FSharpAssemblyContents
+    internal new : tcGlobals: TcGlobals * thisCcu: CcuThunk * thisCcuType: ModuleOrNamespaceType option * tcImports: TcImports * mimpls: TypedImplFile list -> FSharpAssemblyContents
 
     /// The contents of the implementation files in the assembly
     member ImplementationFiles:  FSharpImplementationFileContents list
 
 /// Represents the definitional contents of a single file or fragment in an assembly, as seen by the F# language
 and [<Class>] public FSharpImplementationFileContents = 
-    internal new : cenv: Impl.cenv * mimpl: TypedImplFile -> FSharpImplementationFileContents
+    internal new : cenv: SymbolEnv * mimpl: TypedImplFile -> FSharpImplementationFileContents
 
     /// The qualified name acts to fully-qualify module specifications and implementations
     member QualifiedName: string
