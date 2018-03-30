@@ -51,7 +51,7 @@ type internal HashDirectiveCompletionProvider(workspace: Workspace, projectInfoM
         let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
         let textLines = text.Lines
         let triggerLine = textLines.GetLineFromPosition(position)
-        Tokenizer.getColorizationData(documentId, text, triggerLine.Span, Some document.FilePath, defines, CancellationToken.None)
+        Tokenizer.getClassifiedSpans(documentId, text, triggerLine.Span, Some document.FilePath, defines, CancellationToken.None)
 
     let isInStringLiteral(text: SourceText, position: int) : bool =
         getColorizationData(text, position)

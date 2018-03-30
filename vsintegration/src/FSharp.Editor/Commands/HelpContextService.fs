@@ -104,7 +104,7 @@ type internal FSharpHelpContextService
                 let! textVersion = document.GetTextVersionAsync(cancellationToken)
                 let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
                 let textLine = sourceText.Lines.GetLineFromPosition(textSpan.Start)
-                let tokens = Tokenizer.getColorizationData(document.Id, sourceText, textLine.Span, Some document.Name, defines, cancellationToken)
+                let tokens = Tokenizer.getClassifiedSpans(document.Id, sourceText, textLine.Span, Some document.Name, defines, cancellationToken)
                 return! FSharpHelpContextService.GetHelpTerm(checkerProvider.Checker, sourceText, document.FilePath, projectOptions, textSpan, tokens, textVersion.GetHashCode())
             } 
             |> Async.map (Option.defaultValue "")

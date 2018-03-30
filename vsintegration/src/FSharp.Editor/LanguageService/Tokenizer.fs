@@ -441,7 +441,7 @@ module internal Tokenizer =
             dict.TryAdd(defines, data) |> ignore
             data
 
-    let getColorizationData(documentKey: DocumentId, sourceText: SourceText, textSpan: TextSpan, fileName: string option, defines: string list, 
+    let getClassifiedSpans(documentKey: DocumentId, sourceText: SourceText, textSpan: TextSpan, fileName: string option, defines: string list, 
                              cancellationToken: CancellationToken) : List<ClassifiedSpan> =
             try
                 let sourceTokenizer = FSharpSourceTokenizer(defines, fileName)
