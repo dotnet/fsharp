@@ -441,6 +441,7 @@ module internal Tokenizer =
             dict.TryAdd(defines, data) |> ignore
             data
 
+    /// Generates a list of Classified Spans for tokens which undergo syntactic classification (i.e., are not typechecked).
     let getClassifiedSpans(documentKey: DocumentId, sourceText: SourceText, textSpan: TextSpan, fileName: string option, defines: string list, 
                              cancellationToken: CancellationToken) : List<ClassifiedSpan> =
             try

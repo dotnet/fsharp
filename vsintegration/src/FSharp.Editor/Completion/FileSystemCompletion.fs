@@ -45,7 +45,7 @@ type internal HashDirectiveCompletionProvider(workspace: Workspace, projectInfoM
 
     let includeDirectiveCleanRegex = Regex("""#I\s+(@?"*(?<literal>[^"]*)"?)""", RegexOptions.Compiled ||| RegexOptions.ExplicitCapture)
 
-    let getColorizationData(text: SourceText, position: int) : ResizeArray<ClassifiedSpan> =
+    let getClassifiedSpans(text: SourceText, position: int) : ResizeArray<ClassifiedSpan> =
         let documentId = workspace.GetDocumentIdInCurrentContext(text.Container)
         let document = workspace.CurrentSolution.GetDocument(documentId)
         let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
@@ -54,7 +54,7 @@ type internal HashDirectiveCompletionProvider(workspace: Workspace, projectInfoM
         Tokenizer.getClassifiedSpans(documentId, text, triggerLine.Span, Some document.FilePath, defines, CancellationToken.None)
 
     let isInStringLiteral(text: SourceText, position: int) : bool =
-        getColorizationData(text, position)
+        getClassifiedSpans(text, position)
         |> Seq.exists(fun classifiedSpan -> 
             classifiedSpan.TextSpan.IntersectsWith position &&
             classifiedSpan.ClassificationType = ClassificationTypeNames.StringLiteral)
@@ -71,7 +71,7 @@ type internal HashDirectiveCompletionProvider(workspace: Workspace, projectInfoM
             else
                 match includeDirectiveCleanRegex.Match lineStr with
                 | m when m.Success ->
-                    getColorizationData(text, line.Start)
+                    getClassifiedSpans(text, line.Start)
                     |> Seq.tryPick (fun span -> 
                         if span.TextSpan.IntersectsWith line.Start &&
                            (span.ClassificationType <> ClassificationTypeNames.Comment &&
