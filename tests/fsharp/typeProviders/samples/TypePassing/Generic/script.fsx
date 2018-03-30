@@ -5,12 +5,16 @@ open FSharp.Reflection
 
 open Test
 
-type I = Generic.Identity
+type M = Generic.IdentityMethod
 
 let myIdentity (x : 'a) =
-  I.Create<'a option> (Some x)
+  M.Create<'a option> (Some x)
 
-printfn "%A" (myIdentity "body")
+//let myIdentity2 (x : 'a) =
+//  Generic.IdentityType<'a>.Invoke x
+
+printfn "%A; %A" (myIdentity "body")
+//  (myIdentity2 "body")
 
 // let myApply (f : 'a -> 'a) =
 //   // myApply f x = f (f (f (f x)))

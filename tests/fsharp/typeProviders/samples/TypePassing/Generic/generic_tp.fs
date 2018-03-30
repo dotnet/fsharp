@@ -15,26 +15,45 @@ type TypePassingTp(config: TypeProviderConfig) as this =
     let ns = "Generic"
     let runtimeAssembly = Assembly.LoadFrom(config.RuntimeAssembly)
 
-    let baseType =
-        let rootType = ProvidedTypeDefinition(runtimeAssembly, ns, "Identity", baseType = Some typeof<obj>, hideObjectMethods=true)
-        rootType
+    // ====== Generic Method ========
+
+    let genericMethodType = ProvidedTypeDefinition(runtimeAssembly, ns, "IdentityMethod", baseType = Some typeof<obj>, hideObjectMethods=true)
 
     let createMethod (t : Type) (name : string) : ProvidedMethod =
         let invoke (xs : Quotations.Expr list) =
             xs.[0]
         let m = ProvidedMethod(name, [ProvidedParameter("x", t)], t, invoke, isStatic = true)
-        baseType.AddMember(m)
+        genericMethodType.AddMember(m)
         m
 
-    let builder = ProvidedMethod("Create", [], baseType, Unchecked.defaultof<_>, isStatic = true)
+    let builder = ProvidedMethod("Create", [], genericMethodType, Unchecked.defaultof<_>, isStatic = true)
     do builder.DefineStaticParameters(
         [
             ProvidedStaticParameter("Type",typeof<Type>, null)
         ], fun typeName args -> createMethod (unbox args.[0]) typeName)
 
-    do baseType.AddMember(builder)
+    do genericMethodType.AddMember(builder)
 
-    do this.AddNamespace(ns, [baseType])
+    // ====== Generic Type ========
+
+    let genericType = ProvidedTypeDefinition(runtimeAssembly, ns, "IdentityType", baseType = Some typeof<obj>, hideObjectMethods=true)
+
+    let createType (t : Type) (name : string) : ProvidedTypeDefinition =
+        let invoke (xs : Quotations.Expr list) =
+            xs.[0]
+        let newType = ProvidedTypeDefinition(runtimeAssembly, ns, name, baseType = Some typeof<obj>, hideObjectMethods = true)
+        let m = ProvidedMethod("Invoke", [ProvidedParameter("x", t)], t, invoke, isStatic = true)
+        newType.AddMember(m)
+        newType
+
+    do genericType.DefineStaticParameters(
+        [
+            ProvidedStaticParameter("Type",typeof<Type>, null)
+        ], fun typeName args -> createType (unbox args.[0]) typeName)
+
+    // ===========================
+
+    do this.AddNamespace(ns, [genericMethodType; genericType])
 
 [<assembly:TypeProviderAssembly>]
 do()
