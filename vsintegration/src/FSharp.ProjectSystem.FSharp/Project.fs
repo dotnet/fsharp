@@ -183,39 +183,9 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
     exception internal ExitedOk
     exception internal ExitedWithError
 
-    //--------------------------------------------------------------------------------------
-    // The big mutually recursive set of types.
-    //    FSharpProjectPackage
-    //    EditorFactory
-    //    FSharpProjectFactory
-    //    ....
-
-    [<ProvideOptionPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>,
-                        "F# Tools", "F# Interactive",   // category/sub-category on Tools>Options...
-                        6000s,      6001s,              // resource id for localisation of the above
-                        true)>]                         // true = supports automation
-    [<ProvideKeyBindingTable("{dee22b65-9761-4a26-8fb2-759b971d6dfc}", 6001s)>] // <-- resource ID for localised name
-    [<ProvideToolWindow(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow>, 
-                        // The following should place the ToolWindow with the OutputWindow by default.
-                        Orientation=ToolWindowOrientation.Bottom,
-                        Style=VsDockStyle.Tabbed,
-                        PositionX = 0,
-                        PositionY = 0,
-                        Width = 360,
-                        Height = 120,
-                        Window="34E76E81-EE4A-11D0-AE2E-00A0C90FFFC3")>] // where 34E76E81-EE4A-11D0-AE2E-00A0C90FFFC3 = outputToolWindow
     [<Guid(GuidList.guidFSharpProjectPkgString)>]
-    type internal FSharpProjectPackage() as this = 
+    type internal FSharpProjectPackage() = 
             inherit ProjectPackage() 
-
-            let mutable vfsiToolWindow = Unchecked.defaultof<Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow>
-            let GetToolWindowAsITestVFSI() =
-                if vfsiToolWindow = Unchecked.defaultof<_> then
-                    vfsiToolWindow <- this.FindToolWindow(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow>, 0, true) :?> Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow
-                vfsiToolWindow :> Microsoft.VisualStudio.FSharp.Interactive.ITestVFSI
-
-            // FSI-LINKAGE-POINT: unsited init
-            do Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
 
             /// This method loads a localized string based on the specified resource.
 
@@ -234,9 +204,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 UIThread.CaptureSynchronizationContext()
 
                 base.Initialize()
-
-                let fSharpEditorFactory = new Microsoft.VisualStudio.FSharp.ProjectSystem.FSharpEditorFactory(this);
-                this.RegisterEditorFactory(fSharpEditorFactory);
 
                 // read list of available FSharp.Core versions
                 do
@@ -314,13 +281,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 //TODO the TypeProviderSecurityGlobals does not exists anymore, remove the initialization?
                 this.GetService(typeof<FSharpLanguageService>) |> ignore  
 
-                // FSI-LINKAGE-POINT: sited init
-                let commandService = this.GetService(typeof<IMenuCommandService>) :?> OleMenuCommandService // FSI-LINKAGE-POINT
-                Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitalizeSited (this :> Package) commandService
-                // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
-                let _fsiPropertyPage = this.GetDialogPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>)
-                ()
-
             /// This method is called during Devenv /Setup to get the bitmap to
             /// display on the splash screen for this package.
             /// This method may be deprecated - IdIcoLogoForAboutbox should now be called instead
@@ -364,13 +324,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             member this.getIdIcoLogoForAboutbox(pIdIco:byref<uint32>) =
                 pIdIco <- 400u
                 VSConstants.S_OK
-
-            interface Microsoft.VisualStudio.FSharp.Interactive.ITestVFSI with
-                member this.SendTextInteraction(s:string) =
-                    GetToolWindowAsITestVFSI().SendTextInteraction(s)
-                member this.GetMostRecentLines(n:int) : string[] =
-                    GetToolWindowAsITestVFSI().GetMostRecentLines(n)
-            
 
     /// Factory for creating our editor, creates FSharp Projects
     [<Guid(GuidList.guidFSharpProjectFactoryString)>]
@@ -543,7 +496,17 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                         this.ComputeSourcesAndFlags()
             
             override this.SendReferencesToFSI(references) = 
-                Microsoft.VisualStudio.FSharp.Interactive.Hooks.AddReferencesToFSI this.Package references
+                let shell = this.Site.GetService(typeof<SVsShell>) :?> IVsShell
+                let packageToBeLoadedGuid = ref (Guid(FSharpConstants.fsiPackageGuidString))
+                let pkg =
+                    match shell.LoadPackage packageToBeLoadedGuid with
+                    | VSConstants.S_OK, pkg -> pkg :?> Package
+                    | _ -> null
+
+                if pkg = null then
+                    nullArg "Can't find FSI Package."
+
+                Microsoft.VisualStudio.FSharp.Interactive.Hooks.AddReferencesToFSI pkg references
 
             override x.SetSite(site:IOleServiceProvider) = 
                 base.SetSite(site)  |> ignore
