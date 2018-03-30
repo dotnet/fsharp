@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27004.2010
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "generic_tp", "generic_tp.fsproj", "{E63195A9-D5D9-4E31-9DB3-81A119B0B7A0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Proto|Any CPU = Proto|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E63195A9-D5D9-4E31-9DB3-81A119B0B7A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E63195A9-D5D9-4E31-9DB3-81A119B0B7A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E63195A9-D5D9-4E31-9DB3-81A119B0B7A0}.Proto|Any CPU.ActiveCfg = Proto|Any CPU
+		{E63195A9-D5D9-4E31-9DB3-81A119B0B7A0}.Proto|Any CPU.Build.0 = Proto|Any CPU
+		{E63195A9-D5D9-4E31-9DB3-81A119B0B7A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E63195A9-D5D9-4E31-9DB3-81A119B0B7A0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0CF2207F-6882-4E85-825C-95836C80C642}
+	EndGlobalSection
+EndGlobal

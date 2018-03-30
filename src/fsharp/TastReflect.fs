@@ -511,6 +511,85 @@ and ReflectMethodSymbol(gmd: MethodInfo, gargs: Type[]) =
 
     override __.ToString() = gmd.ToString() + "@inst"
     
+and ReflectTypar(asm: ReflectAssembly, _tp : Typar) =
+    inherit Type()
+    member __.Metadata = _tp
+    override __.InvokeMember(_name, _invokeAttr, _binder, _target, _args, _modifiers, _culture, _namedParameters) =
+      failwith ""
+    override __.GetMembers(_) =
+      failwith ""  
+    override __.Assembly= 
+      asm :> Assembly
+    override __.AssemblyQualifiedName= 
+      failwith "" 
+    override __.BaseType= 
+      failwith "" 
+    override __.FullName =
+        _tp.Name
+    override __.GetAttributeFlagsImpl()= 
+      failwith "" 
+    override __.GetConstructorImpl(_,_,_,_,_)= 
+      failwith "" 
+    override __.GetConstructors(_b)= 
+      failwith "" 
+    override __.GetElementType()= 
+      failwith "" 
+    override __.GetEvent(_s, _b) = 
+      failwith "" 
+    override __.GetEvents(_b)= 
+      failwith "" 
+    override __.GetField(_s, _b) = 
+      failwith "" 
+    override __.GetFields(_b)= 
+      failwith "" 
+    override __.GetInterface(_s, _b) = 
+      failwith "" 
+    override __.GetInterfaces()= 
+      failwith "" 
+    override __.GetMethodImpl(_,_,_,_,_,_)= 
+      failwith "" 
+    override __.GetMethods(_b)= 
+      failwith "" 
+    override __.GetNestedType(_s, _b) = 
+      failwith "" 
+    override __.GetNestedTypes(_b)= 
+      failwith "" 
+    override __.GetProperties(_b)= 
+      failwith "" 
+    override __.GetPropertyImpl (_,_,_,_,_,_)= 
+      failwith "" 
+    override __.GUID= 
+      failwith "" 
+    override __.HasElementTypeImpl() =
+        false
+    override __.IsArrayImpl() =
+        false
+    override __.IsByRefImpl() =
+        false
+    override __.IsCOMObjectImpl() =
+        false
+    override __.IsPointerImpl() = 
+        false
+    override __.IsPrimitiveImpl() =
+        false
+    override __.Module : Module= 
+      failwith "" 
+    override __.Namespace=
+        null
+    override __.TypeHandle= 
+      failwith "" 
+    override t.UnderlyingSystemType= 
+      t :> Type 
+    override __.GetCustomAttributes(_b)= 
+      failwith "" 
+    override __.GetCustomAttributes(_,_)= 
+      failwith "" 
+    override __.IsDefined(_,_)= 
+      failwith ""
+    override __.IsGenericParameter =
+      true
+    override __.Name=
+        _tp.Name
 
 /// Clones namespaces, type providers, types and members provided by tp, renaming namespace nsp1 into namespace nsp2.
 
@@ -1255,7 +1334,7 @@ and ReflectAssembly(g, ccu: CcuThunk, location:string) as asm =
             let etyR = destByrefTy g ty  |> asm.TxTType 
             etyR.MakeByRefType()  
         | ty when isTyparTy g ty -> 
-            let tp = destTyparTy g ty  
-            asm.TxTType (mkTyparTy tp)
+            let tp = destTyparTy g ty
+            ReflectTypar(asm, tp) :> Type
         | _ -> failwithf "Unsupported TxTType %+A" typ
       

@@ -263,6 +263,8 @@ let rec ImportProvidedType (env:ImportMap) (m:range) (* (tinst:TypeInst) *) (st:
     let ctok = AssumeCompilationThreadWithoutEvidence ()
     RequireCompilationThread ctok
 
+    st.PUntaint((fun st -> printfn "%A" <| st.GetType()), m)
+
     let g = env.g
     if st.PUntaint((fun st -> st.IsArray),m) then 
         let elemTy = (ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()),m)))
@@ -273,6 +275,13 @@ let rec ImportProvidedType (env:ImportMap) (m:range) (* (tinst:TypeInst) *) (st:
     elif st.PUntaint((fun st -> st.IsPointer),m) then 
         let elemTy = (ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()),m)))
         mkNativePtrTy g elemTy
+    elif st.PUntaint((fun st -> st.IsGenericParameter),m) then
+        let getTypeVar (t : ProvidedType) =
+            let underlying = t.RawSystemType
+            match underlying with
+            | :? ReflectTypar as tpar -> TType.TType_var tpar.Metadata
+            | _ -> failwith ""
+        st.PUntaint(getTypeVar, m)
     else
 
         // REVIEW: Extension type could try to be its own generic arg (or there could be a type loop)

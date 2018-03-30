@@ -4810,6 +4810,17 @@ and TcStaticConstantParameter cenv (env:TcEnv) tpenv kind (v:SynType) idOpt cont
             PrettyNaming.StaticArg (box st), tpenv'
         | TyparKind.Measure ->
             error(Error(FSComp.SR.tcInvalidConstantExpression(),v.Range))
+    | SynType.Var (SynTypar.Typar (_a,NoStaticReq,false), _range) ->
+        if typeEquiv cenv.g cenv.g.system_Type_typ kind then
+            let _assm = cenv.topCcu.ReflectAssembly :?> TastReflect.ReflectAssembly
+            let typar = TryFindUnscopedTypar _a.idText tpenv
+            match typar with
+            | None -> fail()
+            | Some _typar ->
+                let st = _assm.TxTType (TType_var _typar)
+                PrettyNaming.StaticArg (box st), tpenv
+        else
+            fail()
     | _ ->
         fail()
 

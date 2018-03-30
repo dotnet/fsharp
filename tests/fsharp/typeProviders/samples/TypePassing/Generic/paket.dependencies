@@ -1,0 +1,9 @@
+source https://www.nuget.org/api/v2
+nuget FAKE
+nuget FSharp.Core
+
+group SourceFiles
+    source https://nuget.org/api/v2
+
+    github TobyShaw/FSharp.TypeProviders.SDK src/ProvidedTypes.fsi
+    github TobyShaw/FSharp.TypeProviders.SDK src/ProvidedTypes.fs
