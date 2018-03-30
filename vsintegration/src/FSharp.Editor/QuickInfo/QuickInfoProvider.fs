@@ -9,12 +9,13 @@ open System.ComponentModel.Composition
 open System.Text
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Text
-open Microsoft.CodeAnalysis.FindSymbols
 
+open Microsoft.VisualStudio.Language.Intellisense
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
+open Microsoft.VisualStudio.Text
+open Microsoft.VisualStudio.Utilities
 
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
@@ -98,7 +99,7 @@ module private FSharpQuickInfo =
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, allowStaleResults = true, sourceText=sourceText, userOpName = userOpName)
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()        
+            let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland, userOpName=userOpName)
             
             /// Gets the tooltip information for the orignal target
@@ -156,101 +157,125 @@ module private FSharpQuickInfo =
                 return result |> Option.defaultValue (symbolUse, None, Some targetTooltipInfo)
         }
 
-[<ExportQuickInfoProvider(PredefinedQuickInfoProviderNames.Semantic, FSharpConstants.FSharpLanguageName)>]
-type internal FSharpQuickInfoProvider 
-    [<ImportingConstructor>] 
+type internal FSharpAsyncQuickInfoSource
     (
-        [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
-        checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager,
-        gotoDefinitionService: FSharpGoToDefinitionService,
-        viewProvider: QuickInfoViewProvider
+        serviceProvider:IServiceProvider,
+        checkerProvider:FSharpCheckerProvider,
+        projectInfoManager:FSharpProjectOptionsManager,
+        gotoDefinitionService:FSharpGoToDefinitionService,
+        textBuffer:ITextBuffer
     ) =
 
-    let xmlMemberIndexService = serviceProvider.GetService(typeof<SVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
-    let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
-
-    static member ProvideQuickInfo(checker: FSharpChecker, documentId: DocumentId, sourceText: SourceText, filePath: string, position: int, parsingOptions: FSharpParsingOptions, options: FSharpProjectOptions, textVersionHash: int) =
+    // test helper
+    static member ProvideQuickInfo(checker:FSharpChecker, documentId:DocumentId, sourceText:SourceText, filePath:string, position:int, parsingOptions:FSharpParsingOptions, options:FSharpProjectOptions, textVersionHash:int) =
         asyncMaybe {
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument (filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true, userOpName = FSharpQuickInfo.userOpName)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults=true, userOpName=FSharpQuickInfo.userOpName)
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLineNumber = textLine.LineNumber + 1 // Roslyn line numbers are zero-based
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
             let! symbol = Tokenizer.getSymbolAtPosition (documentId, sourceText, position, filePath, defines, SymbolLookupKind.Precise, true)
             let! res = checkFileResults.GetStructuredToolTipText (textLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, FSharpTokenTag.IDENT, userOpName=FSharpQuickInfo.userOpName) |> liftAsync
             match res with
-            | FSharpToolTipText [] 
+            | FSharpToolTipText []
             | FSharpToolTipText [FSharpStructuredToolTipElement.None] -> return! None
-            | _ -> 
+            | _ ->
                 let! symbolUse = checkFileResults.GetSymbolUseAtLocation (textLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, userOpName=FSharpQuickInfo.userOpName)
                 let! symbolSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sourceText, symbol.Range)
                 return res, symbolSpan, symbolUse.Symbol, symbol.Kind
         }
-    
-    interface IQuickInfoProvider with
-        override this.GetItemAsync(document: Document, position: int, cancellationToken: CancellationToken): Task<QuickInfoItem> =
-            asyncMaybe {
-                let! symbolUse, sigTooltipInfo, targetTooltipInfo = 
-                    FSharpQuickInfo.getTooltipInfo(checkerProvider.Checker, projectInfoManager, document, position, cancellationToken)
 
-                match sigTooltipInfo, targetTooltipInfo with 
-                | None, None -> return null
-                | Some tooltip, None  
-                | None, Some tooltip -> 
-                    let mainDescription, documentation, typeParameterMap, usage, exceptions = ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
-                    XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, documentation.Add, typeParameterMap.Add, usage.Add, exceptions.Add, tooltip.StructuredText)
-                    let glyph = Tokenizer.GetGlyphForSymbol(tooltip.Symbol, tooltip.SymbolKind)
-                    let navigation = QuickInfoNavigation(gotoDefinitionService, document, symbolUse.RangeAlternate)
-                    let content = viewProvider.ProvideContent(glyph, mainDescription, documentation=documentation, typeParameterMap=typeParameterMap, usage=usage, exceptions=exceptions, navigation=navigation)
-                    return QuickInfoItem (tooltip.Span, content)
+    interface IAsyncQuickInfoSource with
+        override __.Dispose() = () // no cleanup necessary
+        override __.GetQuickInfoItemAsync(session:IAsyncQuickInfoSession, cancellationToken:CancellationToken) : Task<QuickInfoItem> =
+            let triggerPoint = session.GetTriggerPoint(textBuffer.CurrentSnapshot)
+            match triggerPoint.HasValue with
+            | false -> Task.FromResult<QuickInfoItem>(null)
+            | true ->
+                let triggerPoint = triggerPoint.GetValueOrDefault()
+                let xmlMemberIndexService = serviceProvider.GetService(typeof<SVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
+                let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
+                asyncMaybe {
+                    let document = textBuffer.CurrentSnapshot.GetOpenDocumentInCurrentContextWithChanges()
+                    let! symbolUse, sigTooltipInfo, targetTooltipInfo = FSharpQuickInfo.getTooltipInfo(checkerProvider.Checker, projectInfoManager, document, triggerPoint.Position, cancellationToken)
+                    let getTrackingSpan (span:TextSpan) =
+                        textBuffer.CurrentSnapshot.CreateTrackingSpan(span.Start, span.Length, SpanTrackingMode.EdgeInclusive)
 
-                | Some sigTooltip, Some targetTooltip ->
-                    let mainDescription, targetDocumentation, sigDocumentation, typeParameterMap, exceptions, usage = ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
-                    XmlDocumentation.BuildDataTipText(documentationBuilder, ignore, sigDocumentation.Add, ignore, ignore, ignore, sigTooltip.StructuredText)
-                    XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, targetDocumentation.Add, typeParameterMap.Add, exceptions.Add, usage.Add, targetTooltip.StructuredText)
+                    match sigTooltipInfo, targetTooltipInfo with
+                    | None, None -> return null
+                    | Some tooltip, None
+                    | None, Some tooltip ->
+                        let mainDescription, documentation, typeParameterMap, usage, exceptions = ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
+                        XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, documentation.Add, typeParameterMap.Add, usage.Add, exceptions.Add, tooltip.StructuredText)
+                        let imageId = Tokenizer.GetImageIdForSymbol(tooltip.Symbol, tooltip.SymbolKind)
+                        let navigation = QuickInfoNavigation(gotoDefinitionService, document, symbolUse.RangeAlternate)
+                        let content = QuickInfoViewProvider.provideContent(imageId, mainDescription, documentation, typeParameterMap, usage, exceptions, navigation)
+                        let span = getTrackingSpan tooltip.Span
+                        return QuickInfoItem(span, content)
 
-                    let width = 
-                        mainDescription
-                        |> Seq.append targetDocumentation
-                        |> Seq.append exceptions
-                        |> Seq.append usage
-                        |> Seq.append sigDocumentation
-                        |> Seq.append typeParameterMap
-                        |> Seq.map (fun x -> x.Text.Length)
-                        |> Seq.max
+                    | Some sigTooltip, Some targetTooltip ->
+                        let mainDescription, targetDocumentation, sigDocumentation, typeParameterMap, exceptions, usage = ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
+                        XmlDocumentation.BuildDataTipText(documentationBuilder, ignore, sigDocumentation.Add, ignore, ignore, ignore, sigTooltip.StructuredText)
+                        XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, targetDocumentation.Add, typeParameterMap.Add, exceptions.Add, usage.Add, targetTooltip.StructuredText)
 
-                    // eyeballed formula returning separator width in chars such as to prevent it from wrapping
-                    // will not be needed once we replace the ascii-art divider with a XAML element
-                    let width = if width / 2 > 85 then 85 else width / 2
+                        let width = 
+                            mainDescription
+                            |> Seq.append targetDocumentation
+                            |> Seq.append exceptions
+                            |> Seq.append usage
+                            |> Seq.append sigDocumentation
+                            |> Seq.append typeParameterMap
+                            |> Seq.map (fun x -> x.Text.Length)
+                            |> Seq.max
 
-                    let seperator = TaggedTextOps.tag Text (String.replicate width "⎯")  
-                    let lineBreak = TaggedTextOps.tag LineBreak "\n"
+                        // eyeballed formula returning separator width in chars such as to prevent it from wrapping
+                        // will not be needed once we replace the ascii-art divider with a XAML element
+                        let width = if width / 2 > 85 then 85 else width / 2
 
-                    // get whitespace nomalized documentation text
-                    let getText (tts: seq<Layout.TaggedText>) = 
-                        let text = 
-                            (StringBuilder(), tts) 
-                            ||> Seq.fold (fun sb tt -> 
-                                if String.IsNullOrWhiteSpace tt.Text then sb else sb.Append tt.Text)
-                            |> string
-                        if String.IsNullOrWhiteSpace text then None else Some text
+                        let seperator = TaggedTextOps.tag Text (String.replicate width "⎯")
+                        let lineBreak = TaggedTextOps.tag LineBreak "\n"
+
+                        // get whitespace nomalized documentation text
+                        let getText (tts: seq<Layout.TaggedText>) =
+                            let text =
+                                (StringBuilder(), tts)
+                                ||> Seq.fold (fun sb tt ->
+                                    if String.IsNullOrWhiteSpace tt.Text then sb else sb.Append tt.Text)
+                                |> string
+                            if String.IsNullOrWhiteSpace text then None else Some text
                     
-                    let documentation = 
-                        [ match getText targetDocumentation, getText sigDocumentation with
-                          | None, None -> ()
-                          | None, Some _ -> yield! sigDocumentation
-                          | Some _, None -> yield! targetDocumentation
-                          | Some implText, Some sigText when implText.Equals (sigText, StringComparison.OrdinalIgnoreCase) -> 
-                              yield! sigDocumentation
-                          | Some _, Some _ -> 
-                              yield! sigDocumentation
-                              yield lineBreak
-                              yield seperator
-                              yield lineBreak
-                              yield! targetDocumentation ]
-                    let glyph = Tokenizer.GetGlyphForSymbol(targetTooltip.Symbol, targetTooltip.SymbolKind)
-                    let navigation = QuickInfoNavigation(gotoDefinitionService, document, symbolUse.RangeAlternate)
-                    let content = viewProvider.ProvideContent(glyph, mainDescription, documentation=documentation, typeParameterMap=typeParameterMap, usage=usage, exceptions=exceptions, navigation=navigation)
-                    return QuickInfoItem (targetTooltip.Span, content)
-            }   |> Async.map Option.toObj
-                |> RoslynHelpers.StartAsyncAsTask cancellationToken 
+                        let documentation = 
+                            [ match getText targetDocumentation, getText sigDocumentation with
+                              | None, None -> ()
+                              | None, Some _ -> yield! sigDocumentation
+                              | Some _, None -> yield! targetDocumentation
+                              | Some implText, Some sigText when implText.Equals (sigText, StringComparison.OrdinalIgnoreCase) ->
+                                    yield! sigDocumentation
+                              | Some _  , Some _ -> 
+                                    yield! sigDocumentation
+                                    yield lineBreak
+                                    yield seperator
+                                    yield lineBreak
+                                    yield! targetDocumentation ]
+                            |> ResizeArray
+                        let imageId = Tokenizer.GetImageIdForSymbol(targetTooltip.Symbol, targetTooltip.SymbolKind)
+                        let navigation = QuickInfoNavigation(gotoDefinitionService, document, symbolUse.RangeAlternate)
+                        let content = QuickInfoViewProvider.provideContent(imageId, mainDescription, documentation, typeParameterMap, usage, exceptions, navigation)
+                        let span = getTrackingSpan targetTooltip.Span
+                        return QuickInfoItem(span, content)
+                }   |> Async.map Option.toObj
+                    |> RoslynHelpers.StartAsyncAsTask cancellationToken 
+
+[<Export(typeof<IAsyncQuickInfoSourceProvider>)>]
+[<Name("F# Quick Info Provider")>]
+[<ContentType(FSharpConstants.FSharpLanguageName)>]
+[<Order>]
+type internal FSharpAsyncQuickInfoSourceProvider
+    [<ImportingConstructor>]
+    (
+        [<Import(typeof<SVsServiceProvider>)>] serviceProvider:IServiceProvider,
+        checkerProvider:FSharpCheckerProvider,
+        projectInfoManager:FSharpProjectOptionsManager,
+        gotoDefinitionService:FSharpGoToDefinitionService
+    ) =
+    interface IAsyncQuickInfoSourceProvider with
+        override __.TryCreateQuickInfoSource(textBuffer:ITextBuffer) : IAsyncQuickInfoSource = new FSharpAsyncQuickInfoSource(serviceProvider, checkerProvider, projectInfoManager, gotoDefinitionService, textBuffer) :> IAsyncQuickInfoSource
