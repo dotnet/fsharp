@@ -10,11 +10,11 @@ type M = Generic.IdentityMethod
 let myIdentity (x : 'a) =
   M.Create<'a option> (Some x)
 
-//let myIdentity2 (x : 'a) =
-//  Generic.IdentityType<'a>.Invoke x
+let myIdentity2 (x : 'a) =
+  Generic.IdentityType<'a>.Invoke x
 
 printfn "%A; %A" (myIdentity "body")
-//  (myIdentity2 "body")
+  (myIdentity2 "body")
 
 // let myApply (f : 'a -> 'a) =
 //   // myApply f x = f (f (f (f x)))

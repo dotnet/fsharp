@@ -520,8 +520,8 @@ and ReflectTypar(asm: ReflectAssembly, _tp : Typar) =
       failwith ""  
     override __.Assembly= 
       asm :> Assembly
-    override __.AssemblyQualifiedName= 
-      failwith "" 
+    override this.AssemblyQualifiedName= 
+      this.FullName + ", " + asm.FullName
     override __.BaseType= 
       failwith "" 
     override __.FullName =
@@ -1237,9 +1237,11 @@ and ReflectAssembly(g, ccu: CcuThunk, location:string) as asm =
     inherit Assembly()
 
     // A table tracking how type definition objects are translated.
-    let txTable = TxTable<ReflectTypeDefinition>()
+    let txTable = TxTable<Type>() // CHANGE THIS TO CONTAIN TYPES, DO CASTS WHEN NEEDED
     let txTypeDef (declTyOpt: Type option) (inp: TyconRef) =
-        txTable.Get inp.Stamp (fun () -> ReflectTypeDefinition(asm, declTyOpt, inp))
+        txTable.Get inp.Stamp (fun () -> ReflectTypeDefinition(asm, declTyOpt, inp) :> Type)
+    let txTypeVar (inp: Typar) =
+        txTable.Get inp.Stamp (fun () -> ReflectTypar(asm, inp) :> Type)
 
     let name =
         lazy
@@ -1262,16 +1264,15 @@ and ReflectAssembly(g, ccu: CcuThunk, location:string) as asm =
                 name.FullName
     let types = lazy [| for td in ccu.RootModulesAndNamespaces -> txTypeDef None (mkLocalEntityRef td) |]
 
-    override x.GetTypes () = types.Value |> Array.map (fun x -> x :> System.Type)
+    override x.GetTypes () = types.Value
     override x.Location = location
 
     override x.GetType (path:string) =
-        let matches name (t : ReflectTypeDefinition) =
-            name = t.Metadata.CompiledRepresentationForNamedType.QualifiedName
+        let matches name (t : Type) =
+            name = t.FullName
         let findType name =
             txTable.Values
             |> Seq.tryFind (matches name)
-            |> Option.map (fun x -> x :> System.Type)
         if path.Contains("`") then
             let argI, argE = path.IndexOf("["), path.LastIndexOf("]")
             let path2, args = path.[0..argI-1], path.[argI+1..argE-1]
@@ -1301,7 +1302,7 @@ and ReflectAssembly(g, ccu: CcuThunk, location:string) as asm =
     override x.ToString() = "ctxt assembly " + x.FullName
 
 
-    member __.TxTypeDef declTyOpt inp = txTypeDef declTyOpt inp :> System.Type
+    member __.TxTypeDef declTyOpt inp = txTypeDef declTyOpt inp
 
         /// Makes a field definition read from a binary available as a FieldInfo. Not all methods are implemented.
     member asm.TxTType (typ:TType) = 
@@ -1335,6 +1336,6 @@ and ReflectAssembly(g, ccu: CcuThunk, location:string) as asm =
             etyR.MakeByRefType()  
         | ty when isTyparTy g ty -> 
             let tp = destTyparTy g ty
-            ReflectTypar(asm, tp) :> Type
+            txTypeVar tp
         | _ -> failwithf "Unsupported TxTType %+A" typ
       
