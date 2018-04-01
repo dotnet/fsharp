@@ -5288,6 +5288,8 @@ let ``Unused opens smoke test 1``() =
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
+module rec Module
+
 open System.Collections // unused
 open System.Collections.Generic // used, should not appear
 open FSharp.Control // unused
@@ -5343,11 +5345,11 @@ type UseTheThings(i:int) =
     let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines.[i-1])) |> Async.RunSynchronously
     let unusedOpensData = [ for uo in unusedOpens -> tups uo, lines.[uo.StartLine-1] ]
     let expected = 
-          [(((2, 5), (2, 23)), "open System.Collections // unused");
-           (((4, 5), (4, 19)), "open FSharp.Control // unused");
-           (((5, 5), (5, 16)), "open FSharp.Data // unused");
-           (((6, 5), (6, 25)), "open System.Globalization // unused");
-           (((23, 5), (23, 21)), "open SomeUnusedModule")]
+          [(((4, 5), (4, 23)), "open System.Collections // unused");
+           (((6, 5), (6, 19)), "open FSharp.Control // unused");
+           (((7, 5), (7, 16)), "open FSharp.Data // unused");
+           (((8, 5), (8, 25)), "open System.Globalization // unused");
+           (((25, 5), (25, 21)), "open SomeUnusedModule")]
     unusedOpensData |> shouldEqual expected
 
 [<Test>]
