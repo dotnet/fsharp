@@ -502,26 +502,17 @@ echo TEMP=%TEMP%
 :: If this is not set, VsDevCmd.bat will change %cd% to [USERPROFILE]\source, causing the build to fail.
 SET VSCMD_START_DIR=%cd%
 
-:: try to find an RC or RTM edition of VS2017
-if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat" (
-    call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"
-)
-if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsDevCmd.bat" (
-    call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsDevCmd.bat"
-)
-if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat" (
-    call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
+:: Try find installation path of VS2017 with vswhere.exe
+if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\" (
+    pushd "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\"
+    for /f "usebackq delims==" %%i in (`vswhere.exe -latest -prerelease -property installationPath`) do set VS_INSTALLATION_PATH=%%i
+    popd
 )
 
-:: Allow build from Preview editions
-if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Enterprise\Common7\Tools\VsDevCmd.bat" (
-    call "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Enterprise\Common7\Tools\VsDevCmd.bat"
-)
-if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Professional\Common7\Tools\VsDevCmd.bat" (
-    call "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Enterprise\Common7\Tools\VsDevCmd.bat"
-)
-if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Community\Common7\Tools\VsDevCmd.bat" (
-    call "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Enterprise\Common7\Tools\VsDevCmd.bat"
+if "%VS_INSTALLATION_PATH%" NEQ "" (
+    call "%VS_INSTALLATION_PATH%\Common7\Tools\VsDevCmd.bat"
+    echo Visual Studio installation path = %VS_INSTALLATION_PATH%
+    echo %VS150COMNTOOLS%
 )
 
 :: If there's no installation of VS2017 or VS2017 Preview, use the build tools
