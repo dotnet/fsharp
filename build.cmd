@@ -511,9 +511,9 @@ if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\" (
 
 if "%VS_INSTALLATION_PATH%" NEQ "" (
     call "%VS_INSTALLATION_PATH%\Common7\Tools\VsDevCmd.bat"
-    echo Visual Studio installation path = %VS_INSTALLATION_PATH%
-    echo %VS150COMNTOOLS%
 )
+
+echo Visual Studio installation path = %VS_INSTALLATION_PATH%
 
 :: If there's no installation of VS2017 or VS2017 Preview, use the build tools
 if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat" (
