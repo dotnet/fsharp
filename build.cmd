@@ -503,17 +503,13 @@ echo TEMP=%TEMP%
 SET VSCMD_START_DIR=%cd%
 
 :: Try find installation path of VS2017 with vswhere.exe
-if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\" (
-    pushd "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\"
-    for /f "usebackq delims==" %%i in (`vswhere.exe -latest -prerelease -property installationPath`) do set VS_INSTALLATION_PATH=%%i
-    popd
+if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\" (
+    for /f "usebackq delims=" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -prerelease -property installationPath`) do set VS_INSTALLATION_PATH=%%i
 )
 
 if "%VS_INSTALLATION_PATH%" NEQ "" (
     call "%VS_INSTALLATION_PATH%\Common7\Tools\VsDevCmd.bat"
 )
-
-echo Visual Studio installation path = %VS_INSTALLATION_PATH%
 
 :: If there's no installation of VS2017 or VS2017 Preview, use the build tools
 if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat" (
