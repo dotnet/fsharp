@@ -158,6 +158,9 @@ let getEntitiesUses source =
     |> List.ofSeq
 
 [<Test>]
+#if NETCOREAPP2_0
+[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+#endif
 let ``Different types with the same short name equality check`` () =
     let source = """
 module CtorTest
@@ -175,6 +178,9 @@ let (s2: FSharp.Compiler.Service.Tests.String) = null
     | _ -> sprintf "Expecting two symbols, got %A" stringSymbols |> failwith
 
 [<Test>]
+#if NETCOREAPP2_0
+[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+#endif
 let ``Different namespaces with the same short name equality check`` () =
     let source = """
 module CtorTest
