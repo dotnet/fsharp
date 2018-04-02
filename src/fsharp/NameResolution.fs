@@ -1337,7 +1337,7 @@ let tyconRefDefnEq g (eref1:EntityRef) (eref2: EntityRef) =
     tyconRefEq g eref1 eref2 || 
 
     // Signature items considered equal to implementation items
-    eref1.DefinitionRange <> Range.rangeStartup &&
+    eref1.DefinitionRange <> Range.rangeStartup && eref1.DefinitionRange <> Range.range0 && eref1.DefinitionRange <> Range.rangeCmdArgs &&
     (eref1.DefinitionRange = eref2.DefinitionRange || eref1.SigRange = eref2.SigRange) &&
     eref1.LogicalName = eref2.LogicalName
 
@@ -1348,7 +1348,7 @@ let valRefDefnEq g (vref1:ValRef) (vref2: ValRef) =
     valRefEq g vref1 vref2 ||
 
     // Signature items considered equal to implementation items
-    vref1.DefinitionRange <> Range.rangeStartup &&
+    vref1.DefinitionRange <> Range.rangeStartup && vref1.DefinitionRange <> Range.range0 && vref1.DefinitionRange <> Range.rangeCmdArgs &&
     (vref1.DefinitionRange = vref2.DefinitionRange || vref1.SigRange = vref2.SigRange) && 
     vref1.LogicalName = vref2.LogicalName
 
