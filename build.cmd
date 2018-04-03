@@ -939,11 +939,11 @@ if "%TEST_FCS%" == "1" (
 REM ---------------- end2end  -----------------------
 if "%TEST_END_2_END%" == "1" (
 
-    pushd %~dp0tests\EndToEnd
+    pushd %~dp0tests\EndToEndBuildTests
 
     echo Execute end to end compiler tests
-    echo call EndToEndTest.cmd
-    call EndToEndTests.cmd
+    echo call EndToEndBuildTests.cmd
+    call EndToEndBuildTests.cmd
     if errorlevel 1 (
         popd
         Echo end to end tests failed.
