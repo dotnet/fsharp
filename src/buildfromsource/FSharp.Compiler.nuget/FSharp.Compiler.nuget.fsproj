@@ -21,12 +21,12 @@
     <PackageTags       Condition="'$(PackageTags)' == ''"      >Visual F# Compiler FSharp functional programming</PackageTags> 
     <PreReleaseSuffix  Condition="'$(PreRelease)' != 'false'">-rc-$(BuildRevision.Trim())-0</PreReleaseSuffix>
     <PackageVersion>10.1.1$(PreReleaseSuffix)</PackageVersion>
-    <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)" -prop "diasymreaderversion=1.1.0" -prop "diasymreaderportablepdbversion=1.2.0"</PackageProperties>
+    <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)" -prop "diasymreaderversion=$(MicrosoftDiaSymReaderPackageVersion)" -prop "diasymreaderportablepdbversion=$(MicrosoftDiaSymReaderPortablePdbPackageVersion)"</PackageProperties>
   </PropertyGroup>
 
   <PropertyGroup>
       <NuspecFile>$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.nuget\Microsoft.FSharp.Compiler.nuspec</NuspecFile>
-      <NuspecProperties>licenseUrl=$(PackageLicenceUrl);version=$(PackageVersion);authors=$(PackageAuthors);projectUrl=$(PackageProjectUrl);tags=$(PackageTags);diasymreaderversion=1.1.0;diasymreaderportablepdbversion=1.2.0</NuspecProperties>
+      <NuspecProperties>licenseUrl=$(PackageLicenceUrl);version=$(PackageVersion);authors=$(PackageAuthors);projectUrl=$(PackageProjectUrl);tags=$(PackageTags);diasymreaderversion=$(MicrosoftDiaSymReaderPackageVersion);diasymreaderportablepdbversion=$(MicrosoftDiaSymReaderPortablePdbPackageVersion)</NuspecProperties>
       <NuspecBasePath>$(OutputPath)/$(TargetFramework)</NuspecBasePath>
   </PropertyGroup>
 

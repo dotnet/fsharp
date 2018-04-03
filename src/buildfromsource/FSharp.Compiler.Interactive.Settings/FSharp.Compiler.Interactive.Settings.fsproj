@@ -25,10 +25,12 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\fsiaux.fs" />
   </ItemGroup>
 
-
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.3.0"></PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="$(SystemReflectionTypeExtensionsPackageVersion)" />
   </ItemGroup>
 
 </Project>
