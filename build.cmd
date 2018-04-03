@@ -19,10 +19,10 @@ echo Usage:
 echo.
 echo build.cmd ^<all^|net40^|coreclr^|vs^>
 echo           ^<proto^|protofx^>
-echo           ^<ci^|ci_part1^|ci_part2^|ci_part3^|microbuild^|nuget^>
+echo           ^<ci^|ci_part1^|ci_part2^|ci_part3^|ci_part4^|microbuild^|nuget^>
 echo           ^<debug^|release^>
 echo           ^<diag^|publicsign^>
-echo           ^<test^|no-test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-net40-ideunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^>
+echo           ^<nobuild^|test^|no-test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-net40-ideunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^|end-2-end^>
 echo           ^<include tag^>
 echo           ^<init^>
 echo.
@@ -75,6 +75,7 @@ set TEST_CORECLR_COREUNIT_SUITE=0
 set TEST_CORECLR_FSHARP_SUITE=0
 set TEST_VS_IDEUNIT_SUITE=0
 set TEST_FCS=0
+set TEST_END_2_END=0
 set INCLUDE_TEST_SPEC_NUNIT=
 set INCLUDE_TEST_TAGS=
 
@@ -295,6 +296,14 @@ if /i "%ARG%" == "ci_part4" (
     set CI=1
 )
 
+if /i "%ARG%" == "end-2-end" (
+    set BUILD_PROTO=1
+    set BUILD_CORECLR=1
+    set BUILD_NET40_FSHARP_CORE=1
+    set BUILD_NET40=1
+    set TEST_END_2_END=1
+)
+
 if /i "%ARG%" == "proto" (
     set _autoselect=0
     set BUILD_PROTO=1
@@ -354,6 +363,7 @@ if /i "%ARG%" == "test-all" (
     set TEST_CORECLR_COREUNIT_SUITE=1
     set TEST_VS_IDEUNIT_SUITE=1
     set TEST_FCS=1
+    set TEST_END_2_END=1
 )
 
 if /i "%ARG%" == "test-net40-fsharpqa" (
@@ -444,6 +454,12 @@ if /i "%PB_SKIPTESTS%" == "true" (
     set TEST_VS_IDEUNIT_SUITE=0
 )
 
+if /i "%TEST_NET40_FSHARP_SUITE" == "1" (
+    if /i "%TEST_CORECLR_FSHARP_SUITE%" == "1" (
+        TEST_END_2_END=1
+    )
+)
+
 if /i "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
     set NEEDS_DOTNET_CLI_TOOLS=1
 )
@@ -464,6 +480,9 @@ rem Decide if Proto need building
 if NOT EXIST Proto\net40\bin\fsc.exe (
   set BUILD_PROTO=1
 )
+
+set DOTNET_MULTILEVEL_LOOKUP=false
+set NUGET_PACKAGES=%~dp0packages
 
 echo Build/Tests configuration:
 echo.
@@ -916,6 +935,22 @@ if "%TEST_FCS%" == "1" (
         goto :failure
     )
 )
+
+REM ---------------- end2end  -----------------------
+if "%TEST_END_2_END%" == "1" (
+
+    pushd %~dp0tests\EndToEnd
+
+    echo Execute end to end compiler tests
+    echo call EndToEndTest.cmd
+    call EndToEndTests.cmd
+    if errorlevel 1 (
+        popd
+        Echo end to end tests failed.
+        goto :failure
+    )
+)
+
 REM ---------------- net40-fsharpqa  -----------------------
 
 set OSARCH=%PROCESSOR_ARCHITECTURE%

@@ -1,0 +1,9 @@
+<Project>
+
+  <PropertyGroup>
+    <UseFSharpBuild Condition = " '$(UseFSharpBuild)' == '' ">net40</UseFSharpBuild>
+  </PropertyGroup>
+
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('FSharpTests.Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+</Project>

@@ -1,0 +1,20 @@
+<Project>
+
+  <Target Name="HACK_CopyFscDependenciesToReleaseDirectory"
+          BeforeTargets="CoreCompile"
+          Condition=" '$(UseFSharpBuild)' == 'coreclr' ">
+    <!--
+    When the build is done using correct netsdk projects this won't be necessary
+    -->
+
+    <ItemGroup>
+      <CompilerFilesToCopy Include="$(MSBuildThisFileDirectory)Tools/dotnet20/sdk/2.1.300-preview3-008433/FSharp/*.json" />
+      <CompilerFilesToCopy Include="$(MSBuildThisFileDirectory)Tools/dotnet20/sdk/2.1.300-preview3-008433/FSharp/Microsoft.DiaSymReader.dll" />
+      <CompilerFilesToCopy Include="$(MSBuildThisFileDirectory)Tools/dotnet20/sdk/2.1.300-preview3-008433/FSharp/Microsoft.DiaSymReader.PortablePdb.dll" />
+    </ItemGroup>
+
+    <Message Text="Copying compiler files to $(_FSharpCompilerPath)" />
+    <Copy SourceFiles="@(CompilerFilesToCopy)" DestinationFolder="$(_FSharpCompilerPath)" SkipUnchangedFiles = "true" />
+  </Target>
+
+</Project>

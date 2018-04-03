@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFrameworks>netcoreapp2.0;net461</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\ProvidedTypes\ProvidedTypes.fsi" />
+    <Compile Include="..\..\ProvidedTypes\ProvidedTypes.fs" />
+    <Compile Include="ComboProvider.fs" />
+  </ItemGroup>
+
+</Project>
