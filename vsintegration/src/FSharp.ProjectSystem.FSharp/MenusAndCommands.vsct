@@ -94,35 +94,7 @@
         </Strings>
       </Menu>
     </Menus>
-  </Commands>
 
-  <Commands package ="FSharpProjectPackage">
-    <Groups>
-      <Group guid ="FSharpProjectCmdSet"  id ="MyFSharpGroup" priority ="0x100" />
-      <Group guid ="FSharpProjectCmdSet"  id ="FSharpGroupAddBelow" priority ="0x105" />
-      <Group guid ="FSharpProjectCmdSet"  id ="FSharpGroupAddAbove" priority ="0x100" />
-      <Group guid="FSharpProjectCmdSet" id="FSharpSendThisReferenceToInteractiveGroup" priority="0x105" />
-      <Group guid="FSharpProjectCmdSet" id="FSharpSendReferencesToInteractiveGroup" priority="0x105" />
-      <Group guid="FSharpProjectCmdSet" id="FSharpSendProjectOutputToInteractiveGroup" priority="0x105" />
-    </Groups>
-    <Menus>
-      <Menu guid ="FSharpProjectCmdSet"  id ="FSharpAddBelowMenu" priority ="0x305" type ="Menu">
-        <Parent guid="FSharpProjectCmdSet" id="MyFSharpGroup"/>
-        <Strings>
-          <ButtonText _locID="FSharpProjectAddBelowButton">Add &amp;Below</ButtonText>
-          <MenuText _locID="FSharpProjectAddBelowMenu">Add &amp;Below</MenuText>
-          <CommandName>Add &amp;Below</CommandName>
-        </Strings>
-      </Menu>
-      <Menu guid ="FSharpProjectCmdSet"  id ="FSharpAddAboveMenu" priority ="0x300" type ="Menu">
-        <Parent guid="FSharpProjectCmdSet" id="MyFSharpGroup"/>
-        <Strings>
-          <ButtonText _locID="FSharpProjectAddAboveButton">Add &amp;Above</ButtonText>
-          <MenuText _locID="FSharpProjectAddAboveMenu">Add &amp;Above</MenuText>
-          <CommandName>Add &amp;Above</CommandName>
-        </Strings>
-      </Menu>
-    </Menus>
     <Buttons>
       <Button guid="guidFsiPackageCmdSet" id="cmdidFsiToolWindow" priority="0x8000" type="Button"> <!-- low priority -->
         <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1"/>
@@ -166,7 +138,37 @@
         </Strings>
        <CommandFlag>DynamicVisibility | DefaultInvisible</CommandFlag>
       </Button>
+    </Buttons>
+  </Commands>
 
+  <Commands package ="FSharpProjectPackage">
+    <Groups>
+      <Group guid ="FSharpProjectCmdSet"  id ="MyFSharpGroup" priority ="0x100" />
+      <Group guid ="FSharpProjectCmdSet"  id ="FSharpGroupAddBelow" priority ="0x105" />
+      <Group guid ="FSharpProjectCmdSet"  id ="FSharpGroupAddAbove" priority ="0x100" />
+      <Group guid="FSharpProjectCmdSet" id="FSharpSendThisReferenceToInteractiveGroup" priority="0x105" />
+      <Group guid="FSharpProjectCmdSet" id="FSharpSendReferencesToInteractiveGroup" priority="0x105" />
+      <Group guid="FSharpProjectCmdSet" id="FSharpSendProjectOutputToInteractiveGroup" priority="0x105" />
+    </Groups>
+    <Menus>
+      <Menu guid ="FSharpProjectCmdSet"  id ="FSharpAddBelowMenu" priority ="0x305" type ="Menu">
+        <Parent guid="FSharpProjectCmdSet" id="MyFSharpGroup"/>
+        <Strings>
+          <ButtonText _locID="FSharpProjectAddBelowButton">Add &amp;Below</ButtonText>
+          <MenuText _locID="FSharpProjectAddBelowMenu">Add &amp;Below</MenuText>
+          <CommandName>Add &amp;Below</CommandName>
+        </Strings>
+      </Menu>
+      <Menu guid ="FSharpProjectCmdSet"  id ="FSharpAddAboveMenu" priority ="0x300" type ="Menu">
+        <Parent guid="FSharpProjectCmdSet" id="MyFSharpGroup"/>
+        <Strings>
+          <ButtonText _locID="FSharpProjectAddAboveButton">Add &amp;Above</ButtonText>
+          <MenuText _locID="FSharpProjectAddAboveMenu">Add &amp;Above</MenuText>
+          <CommandName>Add &amp;Above</CommandName>
+        </Strings>
+      </Menu>
+    </Menus>
+    <Buttons>
       <Button guid ="FSharpProjectCmdSet" id ="FSharpSendThisReferenceToInteractiveCmd" priority ="0x100" type ="Button">
         <Parent guid ="FSharpProjectCmdSet" id ="FSharpSendThisReferenceToInteractiveGroup"/>
         <CommandFlag>DynamicVisibility</CommandFlag>
@@ -342,7 +344,7 @@
   <Symbols>
     <!-- FSI-LINKAGE-POINT: choose the right package guid. -->
     <!-- GuidSymbol name="guidFsiPkg" value="{eeeeeeee-9342-42f1-8ea9-42f0e8a6be55}" /-->  <!-- fsi package guid    -->
-    <GuidSymbol name="guidFsiPkg" value="{91A04A73-4F2C-4E7C-AD38-C1A68E7DA05C}" />        <!-- project system guid -->
+    <GuidSymbol name="guidFsiPkg" value="{871D2A70-12A2-4e42-9440-425DD92A4116}" />        <!-- fsharp package guid -->
 
     <GuidSymbol name="guidFSharpEditorFactory" value="{8a5aa6cf-46e3-4520-a70a-7393d15233e9}" /> <!-- FSharpEditorFactory Guid --> 
     <GuidSymbol name="GUID_CMDSETID_StandardCommandSet2K" value="{1496A755-94DE-11D0-8C3F-00C04FC2AAE2}" /> <!-- See stdidcmd.h -->
