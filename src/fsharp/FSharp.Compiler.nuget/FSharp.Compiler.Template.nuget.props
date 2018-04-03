@@ -3,6 +3,7 @@
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
     <PreReleaseLabel>rc</PreReleaseLabel>
     <BuildVersionFilePath Condition="'$(BuildVersionFilePath)'==''" >obj\BuildVersionFile.props</BuildVersionFilePath>
+    <ProjectLanguage>NuGet</ProjectLanguage>
   </PropertyGroup>
 
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />

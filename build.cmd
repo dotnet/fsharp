@@ -628,17 +628,10 @@ if "%RestorePackages%" == "true" (
     set restore_fsharp_suite=0
     if "%TEST_NET40_FSHARP_SUITE%" == "1" set restore_fsharp_suite=1
     if "%TEST_CORECLR_FSHARP_SUITE%" == "1" set restore_fsharp_suite=1
-
-    if "!restore_fsharp_suite!" == "1" (
-        %_nugetexe% restore tests\fsharp\packages.config !_nugetoptions!
-        @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
-    )
 )
 
-if "%NEEDS_DOTNET_CLI_TOOLS%" == "1" (
-    :: Restore the Tools directory
-    call %~dp0init-tools.cmd
-)
+:: Restore the Tools directory
+call %~dp0init-tools.cmd
 
 set _dotnetcliexe=%~dp0Tools\dotnetcli\dotnet.exe
 set _dotnet20exe=%~dp0Tools\dotnet20\dotnet.exe
@@ -717,6 +710,14 @@ if "%NEEDS_DOTNET_CLI_TOOLS%" == "1" (
 )
 
 echo ---------------- Done with SDK restore, starting build ------------------------
+
+echo %_msbuildexe% %msbuildflags% src\fsharp-buildtools-build.proj /t:Restore
+     %_msbuildexe% %msbuildflags% src\fsharp-buildtools-build.proj /t:Restore
+if errorlevel 1 echo Error restoring buildtools && goto :failure
+
+echo %_msbuildexe% %msbuildflags% src\fsharp-buildtools-build.proj /t:Publish
+     %_msbuildexe% %msbuildflags% src\fsharp-buildtools-build.proj /t:Publish
+if errorlevel 1 echo Error publishing buildtools && goto :failure
 
 if "%BUILD_PHASE%" == "1" (
 
@@ -927,7 +928,7 @@ set HOSTED_COMPILER=1
 
 if "%TEST_NET40_FSHARPQA_SUITE%" == "1" (
 
-    set CSC_PIPE=%~dp0packages\Microsoft.Net.Compilers.2.7.0\tools\csc.exe
+    set CSC_PIPE=%~dp0packages\Microsoft.Net.Compilers\2.7.0\tools\csc.exe
     set FSC=!FSCBINPATH!\fsc.exe
     set FSCOREDLLPATH=!FSCBinPath!\FSharp.Core.dll
     set PATH=!FSCBINPATH!;!PATH!

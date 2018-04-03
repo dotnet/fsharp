@@ -7,6 +7,15 @@ restore:
 	chmod u+x packages/FSharp.Compiler.Tools.4.1.27/tools/fsi.exe 
 	chmod u+x packages/FsLexYacc.7.0.6/build/fslex.exe
 	chmod u+x packages/FsLexYacc.7.0.6/build/fsyacc.exe
+	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) src/fsharp/FSharp.Core/FSharp.Core.fsproj /t:Restore
+	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) src/fsharp/FSharp.Build/FSharp.Build.fsproj /t:Restore
+	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) src/fsharp/FSharp.Compiler.Private/FSharp.Compiler.Private.fsproj /t:Restore
+	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) src/fsharp/Fsc/Fsc.fsproj /t:Restore
+	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) src/fsharp/FSharp.Compiler.Interactive.Settings/FSharp.Compiler.Interactive.Settings.fsproj /t:Restore
+	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) src/fsharp/FSharp.Compiler.Server.Shared/FSharp.Compiler.Server.Shared.fsproj /t:Restore
+	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) src/fsharp/fsi/fsi.fsproj /t:Restore
+	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) src/fsharp/fsiAnyCpu/fsiAnyCpu.fsproj /t:Restore
+	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj /t:Restore
 
 # Make the proto using the bootstrap, then make the final compiler using the proto
 # We call MAKE sequentially because we don't want build-final to explicitly depend on build-proto,
@@ -25,20 +34,21 @@ all:
 	$(MAKE) build
 
 build-proto:
+	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=Proto /p:TargetDotnetProfile=$(TargetDotnetProfile) src/fsharp/FSharp.Core-proto/FSharp.Core.fsproj
 	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=Proto /p:TargetDotnetProfile=$(TargetDotnetProfile) src/fsharp/FSharp.Build-proto/FSharp.Build-proto.fsproj
 	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=Proto /p:TargetDotnetProfile=$(TargetDotnetProfile) src/fsharp/Fsc-proto/Fsc-proto.fsproj
 
 # The main targets
 build:
-	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetDotnetProfile=net40 src/fsharp/FSharp.Core/FSharp.Core.fsproj
-	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetDotnetProfile=net40 src/fsharp/FSharp.Build/FSharp.Build.fsproj
-	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetDotnetProfile=net40 src/fsharp/FSharp.Compiler.Private/FSharp.Compiler.Private.fsproj
-	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetDotnetProfile=net40 src/fsharp/Fsc/Fsc.fsproj
-	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetDotnetProfile=net40 src/fsharp/FSharp.Compiler.Interactive.Settings/FSharp.Compiler.Interactive.Settings.fsproj
-	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetDotnetProfile=net40 src/fsharp/FSharp.Compiler.Server.Shared/FSharp.Compiler.Server.Shared.fsproj
-	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetDotnetProfile=net40 src/fsharp/fsi/Fsi.fsproj
-	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetDotnetProfile=net40 src/fsharp/fsiAnyCpu/FsiAnyCPU.fsproj
-	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetDotnetProfile=net40 tests/FSharp.Core.UnitTests/FSharp.Core.Unittests.fsproj
+	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=net46 src/fsharp/FSharp.Core/FSharp.Core.fsproj
+	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=net46 src/fsharp/FSharp.Build/FSharp.Build.fsproj
+	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=net46 src/fsharp/FSharp.Compiler.Private/FSharp.Compiler.Private.fsproj
+	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=net46 src/fsharp/Fsc/Fsc.fsproj
+	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=net46 src/fsharp/FSharp.Compiler.Interactive.Settings/FSharp.Compiler.Interactive.Settings.fsproj
+	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=net46 src/fsharp/FSharp.Compiler.Server.Shared/FSharp.Compiler.Server.Shared.fsproj
+	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=net46 src/fsharp/fsi/fsi.fsproj
+	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=net46 src/fsharp/fsiAnyCpu/fsiAnyCpu.fsproj
+	MONO_ENV_OPTIONS=$(monoopts) $(MSBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=net46 tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj
 	mkdir -p $(Configuration)/fsharp30/net40/bin
 	mkdir -p $(Configuration)/fsharp31/net40/bin
 	mkdir -p $(Configuration)/fsharp40/net40/bin

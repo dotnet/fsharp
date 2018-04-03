@@ -9,8 +9,8 @@
     <RepoRoot>$(MSBuildThisFileDirectory)</RepoRoot>
     <FSharpSourcesRoot>$(RepoRoot)src</FSharpSourcesRoot>
     <ToolsRoot>$(RepoRoot)Tools</ToolsRoot>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <ProtoOutputPath>$(RepoRoot)Proto\net40\bin</ProtoOutputPath>
+    <ProtoOutputPath Condition="'$(MSBuildRuntimeType)' == 'Core'">$(RepoRoot)Proto\coreclr\bin</ProtoOutputPath>
+    <ProtoOutputPath Condition="'$(MSBuildRuntimeType)' != 'Core'">$(RepoRoot)Proto\net40\bin</ProtoOutputPath>
   </PropertyGroup>
 
   <!-- nuget -->
@@ -39,7 +39,7 @@
 
   <!-- localization -->
   <PropertyGroup>
-    <EnableXlfLocalization Condition="'$(Configuration)' == 'Proto' or '$(MonoPackaging)' == 'true'">false</EnableXlfLocalization>
+    <EnableXlfLocalization Condition="'$(Configuration)' == 'Proto' or '$(MonoPackaging)' == 'true' or '$(BuildFromSource)' == 'true'">false</EnableXlfLocalization>
     <UpdateXlfOnBuild Condition="'$(CI)' != '1'">true</UpdateXlfOnBuild>
   </PropertyGroup>
 
@@ -49,12 +49,17 @@
     <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
     <UseStandardResourceNames>false</UseStandardResourceNames>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <!-- ubuntu MSBuild defaults this to true -->
+    <EnableDefaultCompileItems Condition="'$(OS)' != 'Windows_NT'">false</EnableDefaultCompileItems>
   </PropertyGroup>
 
   <!-- SDK targets override -->
-  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto' AND '$(BuildFromSource)' != 'true'">
     <ProtoFSharpTargetsShim>$(ProtoOutputPath)\Microsoft.FSharp.NetSdk.targets</ProtoFSharpTargetsShim>
     <FSharpTargetsShim Condition="Exists('$(ProtoFSharpTargetsShim)')">$(ProtoFSharpTargetsShim)</FSharpTargetsShim>
   </PropertyGroup>
+
+  <Import Project="FSharp.Profiles.props" />
 
 </Project>

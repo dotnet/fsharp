@@ -9,15 +9,15 @@ dotnet restore $__scriptpath/buildtools/fsyacc/fsyacc.fsproj
 dotnet publish $__scriptpath/buildtools/fsyacc/fsyacc.fsproj -o $__scriptpath/../Tools/fsyacc
 
 # build tools
-dotnet restore $__scriptpath/buildfromsource/FSharp.Build/FSharp.Build.fsproj
-dotnet publish $__scriptpath/buildfromsource/FSharp.Build/FSharp.Build.fsproj
+dotnet restore $__scriptpath/fsharp/FSharp.Build/FSharp.Build.fsproj
+dotnet publish $__scriptpath/fsharp/FSharp.Build/FSharp.Build.fsproj /p:BuildFromSource=true
 
-dotnet restore $__scriptpath/buildfromsource/Fsi/Fsi.fsproj
-dotnet publish $__scriptpath/buildfromsource/Fsi/Fsi.fsproj
+dotnet restore $__scriptpath/fsharp/fsi/fsi.fsproj
+dotnet publish $__scriptpath/fsharp/fsi/fsi.fsproj /p:BuildFromSource=true
 
-dotnet restore $__scriptpath/buildfromsource/Fsc/Fsc.fsproj
-dotnet publish $__scriptpath/buildfromsource/Fsc/Fsc.fsproj
+dotnet restore $__scriptpath/fsharp/Fsc/Fsc.fsproj
+dotnet publish $__scriptpath/fsharp/Fsc/Fsc.fsproj /p:BuildFromSource=true
 
 # build and pack tools
-dotnet restore $__scriptpath/buildfromsource/FSharp.Compiler.nuget/FSharp.Compiler.nuget.fsproj
-dotnet pack $__scriptpath/buildfromsource/FSharp.Compiler.nuget/FSharp.Compiler.nuget.fsproj -c Release
+dotnet restore $__scriptpath/fsharp/FSharp.Compiler.nuget/Microsoft.FSharp.Compiler.nuget.proj
+dotnet pack $__scriptpath/fsharp/FSharp.Compiler.nuget/Microsoft.FSharp.Compiler.nuget.proj -c Release /p:BuildFromSource=true

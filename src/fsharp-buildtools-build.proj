@@ -1,0 +1,19 @@
+<Project>
+
+  <ItemGroup>
+    <ProjectFiles Include="buildtools\fslex\fslex.fsproj" />
+    <ProjectFiles Include="buildtools\fsyacc\fsyacc.fsproj" />
+  </ItemGroup>
+
+  <Import Project="root.traversal.targets" />
+
+  <Target Name="Publish">
+    <MSBuild Projects="buildtools\fslex\fslex.fsproj" Targets="Publish" Properties="PublishDir=$(MSBuildThisFileDirectory)..\Tools\fslex" />
+    <MSBuild Projects="buildtools\fsyacc\fsyacc.fsproj" Targets="Publish" Properties="PublishDir=$(MSBuildThisFileDirectory)..\Tools\fsyacc" />
+  </Target>
+
+  <Target Name="Restore">
+    <MSBuild Projects="@(ProjectFiles)" Targets="Restore" />
+  </Target>
+
+</Project>

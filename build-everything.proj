@@ -4,18 +4,21 @@
   <!-- +++++++++++++++++++++++ Project selection for building +++++++++++++++++++++++++++++++ -->
 
   <ItemGroup Condition="'$(BUILD_NET40_FSHARP_CORE)'=='1'">
-    <ProjectsWithNet40 Include="src/fsharp/FSharp.Core/FSharp.Core.fsproj" />
+    <ProjectsWithNet46 Include="src/fsharp/FSharp.Core/FSharp.Core.fsproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(BUILD_NET40)'=='1'">
-    <ProjectsWithNet40 Include="src/fsharp/FSharp.Build/FSharp.Build.fsproj" />
-    <ProjectsWithNet40 Include="src/fsharp/FSharp.Compiler.Private/FSharp.Compiler.Private.fsproj" />
-    <ProjectsWithNet40 Include="src/fsharp/FSharp.Compiler.Server.Shared/FSharp.Compiler.Server.Shared.fsproj"/>
-    <ProjectsWithNet40 Include="src/fsharp/FSharp.Compiler.Interactive.Settings/FSharp.Compiler.Interactive.Settings.fsproj" />
-    <ProjectsWithNet40 Include="src/fsharp/Fsc/Fsc.fsproj" />
-    <ProjectsWithNet40 Include="src/fsharp/fsi/Fsi.fsproj" />
-    <ProjectsWithNet40 Include="src/fsharp/fsiAnyCpu/FsiAnyCPU.fsproj"/>
+    <ProjectsWithNet46 Include="src/fsharp/FSharp.Build/FSharp.Build.fsproj" />
+    <ProjectsWithNet46 Include="src/fsharp/FSharp.Compiler.Private/FSharp.Compiler.Private.fsproj" />
+    <ProjectsWithNet46 Include="src/fsharp/FSharp.Compiler.Server.Shared/FSharp.Compiler.Server.Shared.fsproj"/>
+    <ProjectsWithNet46 Include="src/fsharp/FSharp.Compiler.Interactive.Settings/FSharp.Compiler.Interactive.Settings.fsproj" />
+    <ProjectsWithNet46 Include="src/fsharp/Fsc/Fsc.fsproj" />
+    <ProjectsWithNet46 Include="src/fsharp/fsi/fsi.fsproj" />
+    <ProjectsWithNet46 Include="src/fsharp/fsiAnyCpu/fsiAnyCpu.fsproj" />
   </ItemGroup>
+  <PropertyGroup Condition="'$(BUILD_NET40)'=='1'">
+    <RestoreSrcFSharp>true</RestoreSrcFSharp>
+  </PropertyGroup>
 
   <ItemGroup Condition="'$(BUILD_CORECLR)'=='1'">
     <ProjectsWithCoreClr Include="src/fsharp/FSharp.Core/FSharp.Core.fsproj" />
@@ -23,16 +26,19 @@
     <ProjectsWithCoreClr Include="src/fsharp/FSharp.Compiler.Private/FSharp.Compiler.Private.fsproj" />
     <ProjectsWithCoreClr Include="src/fsharp/FSharp.Compiler.Interactive.Settings/FSharp.Compiler.Interactive.Settings.fsproj" />
     <ProjectsWithCoreClr Include="src/fsharp/Fsc/Fsc.fsproj" />
-    <ProjectsWithCoreClr Include="src/fsharp/fsi/Fsi.fsproj" />
+    <ProjectsWithCoreClr Include="src/fsharp/fsi/fsi.fsproj" />
     <ProjectsWithCoreClr Include="src/fsharp/FSharp.Compiler.nuget/Testing.FSharp.Compiler.nuget.proj" />
   </ItemGroup>
+  <PropertyGroup Condition="'$(BUILD_CORECLR)'=='1'">
+    <RestoreSrcFSharp>true</RestoreSrcFSharp>
+  </PropertyGroup>
 
   <ItemGroup Condition="'$(BUILD_VS)'=='1'">
-    <ProjectsWithNet40 Include="vsintegration/fsharp-vsintegration-src-build.proj" />
-    <ProjectsWithNet40 Include="vsintegration/Utils/LanguageServiceProfiling/LanguageServiceProfiling.fsproj" />
-    <ProjectsWithNet40 Include="vsintegration/fsharp-vsintegration-project-templates-build.proj" />
-    <ProjectsWithNet40 Include="vsintegration/fsharp-vsintegration-item-templates-build.proj" />
-    <ProjectsWithNet40 Include="vsintegration/fsharp-vsintegration-vsix-build.proj" />
+    <ProjectsWithNet46 Include="vsintegration/fsharp-vsintegration-src-build.proj" />
+    <ProjectsWithNet46 Include="vsintegration/Utils/LanguageServiceProfiling/LanguageServiceProfiling.fsproj" />
+    <ProjectsWithNet46 Include="vsintegration/fsharp-vsintegration-project-templates-build.proj" />
+    <ProjectsWithNet46 Include="vsintegration/fsharp-vsintegration-item-templates-build.proj" />
+    <ProjectsWithNet46 Include="vsintegration/fsharp-vsintegration-vsix-build.proj" />
   </ItemGroup>
 
   <PropertyGroup Condition="'$(BUILD_VS)'=='1'">
@@ -44,10 +50,10 @@
   </PropertyGroup>
 
   <ItemGroup Condition="'$(BUILD_FCS)'=='1'">
-    <ProjectsWithNet40 Include="fcs/FSharp.Compiler.Service/FSharp.Compiler.Service.fsproj" />
-    <ProjectsWithNet40 Include="fcs/FSharp.Compiler.Service.MSBuild.v12/FSharp.Compiler.Service.MSBuild.v12.fsproj" />
-    <ProjectsWithNet40 Include="fcs/FSharp.Compiler.Service.ProjectCracker/FSharp.Compiler.Service.ProjectCracker.fsproj" />
-    <ProjectsWithNet40 Include="fcs/FSharp.Compiler.Service.ProjectCrackerTool/FSharp.Compiler.Service.ProjectCrackerTool.fsproj" />
+    <ProjectsWithNet45 Include="fcs/FSharp.Compiler.Service/FSharp.Compiler.Service.fsproj" />
+    <ProjectsWithNet45 Include="fcs/FSharp.Compiler.Service.MSBuild.v12/FSharp.Compiler.Service.MSBuild.v12.fsproj" />
+    <ProjectsWithNet45 Include="fcs/FSharp.Compiler.Service.ProjectCracker/FSharp.Compiler.Service.ProjectCracker.fsproj" />
+    <ProjectsWithNet45 Include="fcs/FSharp.Compiler.Service.ProjectCrackerTool/FSharp.Compiler.Service.ProjectCrackerTool.fsproj" />
 
     <ProjectsToRestore Include="fcs/FSharp.Compiler.Service/FSharp.Compiler.Service.fsproj" />
     <ProjectsToRestore Include="fcs/FSharp.Compiler.Service.MSBuild.v12/FSharp.Compiler.Service.MSBuild.v12.fsproj" />
@@ -62,22 +68,31 @@
   <!-- +++++++++++++++++++++++ Project selection for testing +++++++++++++++++++++++++++++++ -->
 
   <ItemGroup Condition="'$(TEST_NET40_COMPILERUNIT_SUITE)'=='1'" >
-    <ProjectsWithNet40 Include="tests/FSharp.Core.UnitTests/FSharp.Core.Unittests.fsproj"/>
-    <ProjectsWithNet40 Include="tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj"/>
+    <ProjectsWithNet46 Include="tests/FSharp.Core.UnitTests/FSharp.Core.Unittests.fsproj"/>
+    <ProjectsWithNet46 Include="tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj"/>
   </ItemGroup>
+  <PropertyGroup Condition="'$(TEST_NET40_COMPILERUNIT_SUITE)' == '1'">
+    <RestoreCoreUnitTests>true</RestoreCoreUnitTests>
+  </PropertyGroup>
 
-  <ItemGroup Condition="'$(TEST_CORECLR_COREUNIT_SUITE)'=='1'">
-    <ProjectsWithCoreClr Include="tests/FSharp.Core.UnitTests/FSharp.Core.Unittests.fsproj"/>
+  <ItemGroup Condition="'$(TEST_CORECLR_COREUNIT_SUITE)' == '1'">
+    <ProjectsWithCoreClr Include="tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj"/>
     <ProjectsWithCoreClr Include="tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj"/>
   </ItemGroup>
+  <PropertyGroup Condition="'$(TEST_NET40_COREUNIT_SUITE)' == '1'">
+    <RestoreCoreUnitTests>true</RestoreCoreUnitTests>
+  </PropertyGroup>
 
-  <ItemGroup Condition="'$(TEST_NET40_COMPILERUNIT_SUITE)'=='1'" >
-    <ProjectsWithNet40 Include="tests/FSharp.Compiler.UnitTests/FSharp.Compiler.UnitTests.fsproj"/>
+  <ItemGroup Condition="'$(TEST_CORECLR_COREUNIT_SUITE)' == '1'" >
+    <ProjectsWithNet46 Include="tests/FSharp.Compiler.UnitTests/FSharp.Compiler.UnitTests.fsproj"/>
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TEST_NET40_FSHARP_SUITE)'=='1'" >
-    <ProjectsWithNet40 Include="tests/fsharp/FSharp.Tests.FSharpSuite.fsproj" />
+  <ItemGroup Condition="'$(TEST_NET40_FSHARP_SUITE)' == '1'" >
+    <ProjectsWithNet46 Include="tests/fsharp/FSharp.Tests.FSharpSuite.fsproj" />
   </ItemGroup>
+  <PropertyGroup Condition="'$(TEST_NET40_FSHARP_SUITE)' == '1'">
+    <RestoreFSharpTestsFSharpSuite>true</RestoreFSharpTestsFSharpSuite>
+  </PropertyGroup>
 
   <ItemGroup Condition="'$(TEST_CORECLR_FSHARP_SUITE)'=='1'" >
     <ProjectsWithCoreClr Include="tests/fsharp/FSharp.Tests.FSharpSuite.DrivingCoreCLR/FSharp.Tests.FSharpSuite.DrivingCoreCLR.fsproj" />
@@ -85,19 +100,22 @@
   </ItemGroup>
   <PropertyGroup Condition="'$(TEST_CORECLR_FSHARP_SUITE)'=='1'">
     <RestorePEVerify>true</RestorePEVerify>
+    <RestoreFSharpTestsFSharpSuite>true</RestoreFSharpTestsFSharpSuite>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TEST_NET40_FSHARPQA_SUITE)'=='1' OR '$(TEST_NET40_FSHARP_SUITE)'=='1'" >
-    <ProjectsWithNet40 Include="tests/fsharpqa/testenv/src/ILComparer/ILComparer.fsproj" />
-    <ProjectsWithNet40 Include="tests/fsharpqa/testenv/src/HostedCompilerServer/HostedCompilerServer.fsproj" />
-    <ProjectsWithNet40 Include="tests/fsharpqa/testenv/src/PEVerify/PEVerify.csproj" />
+    <ProjectsWithNet46 Include="tests/fsharpqa/testenv/src/ILComparer/ILComparer.fsproj" />
+    <ProjectsWithNet46 Include="tests/fsharpqa/testenv/src/HostedCompilerServer/HostedCompilerServer.fsproj" />
+    <ProjectsWithNet46 Include="tests/fsharpqa/testenv/src/PEVerify/PEVerify.csproj" />
   </ItemGroup>
   <PropertyGroup Condition="'$(TEST_NET40_FSHARPQA_SUITE)'=='1' OR '$(TEST_NET40_FSHARP_SUITE)'=='1'">
+    <RestoreILComparer>true</RestoreILComparer>
+    <RestoreHostedCompilerServer>true</RestoreHostedCompilerServer>
     <RestorePEVerify>true</RestorePEVerify>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TEST_FCS)'=='1'" >
-    <ProjectsWithNet40 Include="fcs/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj" />
+    <ProjectsWithNet46 Include="fcs/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj" />
     <ProjectsWithCoreClr Include="tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0/Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj" />
 
     <ProjectsToRestore Include="tests/projects/Sample_NETCoreSDK_FSharp_Library_netstandard2_0/Sample_NETCoreSDK_FSharp_Library_netstandard2_0.fsproj" />
@@ -110,7 +128,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TEST_VS_IDEUNIT_SUITE)'=='1'">
-    <ProjectsWithNet40 Include="vsintegration/fsharp-vsintegration-unittests-build.proj" />
+    <ProjectsWithNet46 Include="vsintegration/fsharp-vsintegration-unittests-build.proj" />
   </ItemGroup>
 
   <PropertyGroup Condition="'$(TEST_VS_IDEUNIT_SUITE)'=='1'">
@@ -118,6 +136,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectsToRestore Include="tests/fsharp/FSharp.Tests.FSharpSuite.fsproj" Condition="'$(RestoreFSharpTestsFSharpSuite)' == 'true'" />
+    <ProjectsToRestore Include="tests/fsharpqa/testenv/src/ILComparer/ILComparer.fsproj" Condition="'$(RestoreILComparer)' == 'true'" />
+    <ProjectsToRestore Include="tests/fsharpqa/testenv/src/HostedCompilerServer/HostedCompilerServer.fsproj" Condition="'$(RestoreHostedCompilerServer)' == 'true'" />
     <ProjectsToRestore Include="tests/fsharpqa/testenv/src/PEVerify/PEVerify.csproj" Condition="'$(RestorePEVerify)' == 'true'" />
     <ProjectsToRestore Include="vsintegration/Utils/LanguageServiceProfiling/LanguageServiceProfiling.fsproj" Condition="'$(RestoreLanguageServiceProfiling)' == 'true'" />
     <ProjectsToRestore Include="vsintegration/fsharp-vsintegration-src-build.proj" Condition="'$(RestoreVSIntegration)' == 'true'" />
@@ -125,6 +146,19 @@
     <ProjectsToRestore Include="vsintegration/fsharp-vsintegration-item-templates-build.proj" Condition="'$(RestoreVSIntegrationItemTemplates)' == 'true'" />
     <ProjectsToRestore Include="vsintegration/fsharp-vsintegration-project-templates-build.proj" Condition="'$(RestoreVSIntegrationProjectTemplates)' == 'true'" />
     <ProjectsToRestore Include="vsintegration/fsharp-vsintegration-vsix-build.proj" Condition="'$(RestoreVSIntegrationVsix)' == 'true'" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(RestoreCoreUnitTests)' == 'true'">
+    <ProjectsToRestore Include="tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj" />
+    <ProjectsToRestore Include="tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(RestoreSrcFSharp)' == 'true'">
+    <ProjectsToRestore Include="src/fsharp/FSharp.Build/FSharp.Build.fsproj" />
+    <ProjectsToRestore Include="src/fsharp/FSharp.Compiler.Private/FSharp.Compiler.Private.fsproj" />
+    <ProjectsToRestore Include="src/fsharp/FSharp.Compiler.Server.Shared/FSharp.Compiler.Server.Shared.fsproj"/>
+    <ProjectsToRestore Include="src/fsharp/FSharp.Compiler.Interactive.Settings/FSharp.Compiler.Interactive.Settings.fsproj" />
+    <ProjectsToRestore Include="src/fsharp/Fsc/Fsc.fsproj" />
+    <ProjectsToRestore Include="src/fsharp/fsi/fsi.fsproj" />
+    <ProjectsToRestore Include="src/fsharp/fsiAnyCpu/fsiAnyCpu.fsproj" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -134,23 +168,26 @@
   <!-- +++++++++++++++++++++++ Targets +++++++++++++++++++++++++++++++ -->
 
   <Target Name="Build">
-    <MSBuild Projects="@(ProjectsWithNet40)"              Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(ProjectsWithNet45)"              Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=net45;TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(ProjectsWithNet46)"              Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=net46;TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
     <MSBuild Projects="@(ProjectsWithCoreClr)"            Targets="Build" BuildInParallel="false" Properties="Configuration=$(Configuration);TargetDotnetProfile=coreclr;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
     <MSBuild Projects="@(NugetProjects)"                  Targets="Build" BuildInParallel="false" Properties="Configuration=$(Configuration);$(CustomProps)" />
     <MSBuild Projects="@(SetupProjects)"                  Targets="Build" BuildInParallel="false" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
   </Target>
 
   <Target Name="Rebuild">
-    <MSBuild Projects="@(ProjectsWithNet40)"              Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
-    <MSBuild Projects="@(ProjectsWithNet40PlusDefine)"    Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);FSHARP_SUITE_DRIVES_CORECLR_TESTS=true;$(CustomProps)" />
+    <MSBuild Projects="@(ProjectsWithNet45)"              Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=net45;TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(ProjectsWithNet46)"              Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=net46;TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(ProjectsWithNet46PlusDefine)"    Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=net46;TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);FSHARP_SUITE_DRIVES_CORECLR_TESTS=true;$(CustomProps)" />
     <MSBuild Projects="@(ProjectsWithCoreClr)"            Targets="Rebuild" BuildInParallel="false" Properties="Configuration=$(Configuration);TargetDotnetProfile=coreclr;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
     <MSBuild Projects="@(NugetProjects)"                  Targets="Rebuild" BuildInParallel="false" Properties="Configuration=$(Configuration);$(CustomProps)" />
     <MSBuild Projects="@(SetupProjects)"                  Targets="Rebuild" BuildInParallel="false" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
   </Target>
 
   <Target Name="Clean">
-    <MSBuild Projects="@(ProjectsWithNet40)"              Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
-    <MSBuild Projects="@(ProjectsWithNet40PlusDefine)"    Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);FSHARP_SUITE_DRIVES_CORECLR_TESTS=true;$(CustomProps)" />
+    <MSBuild Projects="@(ProjectsWithNet45)"              Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=net45;TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(ProjectsWithNet46)"              Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=net46;TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
+    <MSBuild Projects="@(ProjectsWithNet46PlusDefine)"    Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=net46;TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);FSHARP_SUITE_DRIVES_CORECLR_TESTS=true;$(CustomProps)" />
     <MSBuild Projects="@(ProjectsWithCoreClr)"            Targets="Clean" BuildInParallel="false" Properties="Configuration=$(Configuration);TargetDotnetProfile=coreclr;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />
     <MSBuild Projects="@(NugetProjects)"                  Targets="Clean" BuildInParallel="false" Properties="Configuration=$(Configuration);$(CustomProps)" />
     <MSBuild Projects="@(SetupProjects)"                  Targets="Clean" BuildInParallel="false" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);$(CustomProps)" />

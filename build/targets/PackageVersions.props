@@ -7,6 +7,22 @@
 
     <!-- System.* packages -->
     <SystemCollectionsImmutablePackageVersion>1.3.1</SystemCollectionsImmutablePackageVersion>
+    <SystemDiagnosticsProcessPackageVersion>4.3.0</SystemDiagnosticsProcessPackageVersion>
+    <SystemDiagnosticsTraceSourcePackageVersion>4.3.0</SystemDiagnosticsTraceSourcePackageVersion>
+    <SystemLinqExpressionsPackageVersion>4.3.0</SystemLinqExpressionsPackageVersion>
+    <SystemLinqQueryablePackageVersion>4.3.0</SystemLinqQueryablePackageVersion>
+    <SystemNetRequestsPackageVersion>4.3.0</SystemNetRequestsPackageVersion>
+    <SystemReflectionEmitPackageVersion>4.3.0</SystemReflectionEmitPackageVersion>
+    <SystemReflectionMetadataPackageVersion>1.4.2</SystemReflectionMetadataPackageVersion>
+    <SystemReflectionTypeExtensionsPackageVersion>4.3.0</SystemReflectionTypeExtensionsPackageVersion>
+    <SystemRuntimeInteropServicesPackageVersion>4.3.0</SystemRuntimeInteropServicesPackageVersion>
+    <SystemRuntimeLoaderPackageVersion>4.3.0</SystemRuntimeLoaderPackageVersion>
+    <SystemRuntimePackageVersion>4.3.0</SystemRuntimePackageVersion>
+    <SystemSecurityCryptographyAlgorithmsPackageVersion>4.3.0</SystemSecurityCryptographyAlgorithmsPackageVersion>
+    <SystemThreadingTasksParallelPackageVersion>4.3.0</SystemThreadingTasksParallelPackageVersion>
+    <SystemThreadingThreadPackageVersion>4.3.0</SystemThreadingThreadPackageVersion>
+    <SystemThreadingThreadPoolPackageVersion>4.3.0</SystemThreadingThreadPoolPackageVersion>
+    <SystemValueTuplePackageVersion>4.4.0</SystemValueTuplePackageVersion>
 
     <!-- Roslyn packages -->
     <MicrosoftCodeAnalysisEditorFeaturesPackageVersion>$(RoslynPackageVersion)</MicrosoftCodeAnalysisEditorFeaturesPackageVersion>
@@ -22,7 +38,7 @@
     <MicrosoftVisualStudioDesignerInterfacesPackageVersion>1.1.4322</MicrosoftVisualStudioDesignerInterfacesPackageVersion>
     <MicrosoftVisualStudioEditorPackageVersion>15.0.26201</MicrosoftVisualStudioEditorPackageVersion>
     <MicrosoftVisualStudioLanguageStandardClassificationPackageVersion>15.0.26201</MicrosoftVisualStudioLanguageStandardClassificationPackageVersion>
-    <MicrosoftVisualStudioLanguageIntellisensePackageVersion>15.0.26201</MicrosoftVisualStudioLanguageIntellisensePackageVersion>
+    <MicrosoftVisualStudioLanguageIntellisensePackageVersion>15.6.27740</MicrosoftVisualStudioLanguageIntellisensePackageVersion>
     <MicrosoftVisualStudioManagedInterfacesPackageVersion>8.0.50727</MicrosoftVisualStudioManagedInterfacesPackageVersion>
     <MicrosoftVisualStudioPackageLanguageService150PackageVersion>15.0.26201</MicrosoftVisualStudioPackageLanguageService150PackageVersion>
     <MicrosoftVisualStudioProjectAggregatorPackageVersion>8.0.50727</MicrosoftVisualStudioProjectAggregatorPackageVersion>
@@ -35,11 +51,15 @@
     <MicrosoftVisualStudioShellInterop100PackageVersion>10.0.30319</MicrosoftVisualStudioShellInterop100PackageVersion>
     <MicrosoftVisualStudioShellInterop110PackageVersion>11.0.61030</MicrosoftVisualStudioShellInterop110PackageVersion>
     <MicrosoftVisualStudioShellInterop120PackageVersion>12.0.30110</MicrosoftVisualStudioShellInterop120PackageVersion>
+    <MicrosoftVisualStudioTelemetryPackageVersion>15.0.777-rtm6FAA2C78</MicrosoftVisualStudioTelemetryPackageVersion>
+    <MicrosoftVisualStudioTextInternalPackageVersion>15.0.26927-alpha</MicrosoftVisualStudioTextInternalPackageVersion>
     <MicrosoftVisualStudioTextManagerInteropPackageVersion>7.10.6070</MicrosoftVisualStudioTextManagerInteropPackageVersion>
     <MicrosoftVisualStudioTextManagerInterop80PackageVersion>8.0.50727</MicrosoftVisualStudioTextManagerInterop80PackageVersion>
     <MicrosoftVisualStudioTextManagerInterop100PackageVersion>10.0.30319</MicrosoftVisualStudioTextManagerInterop100PackageVersion>
+    <MicrosoftVisualStudioTextUIWpfPackageVersion>15.6.27740</MicrosoftVisualStudioTextUIWpfPackageVersion>
+    <MicrosoftVisualStudioThreadingPackageVersion>15.3.23</MicrosoftVisualStudioThreadingPackageVersion>
     <MicrosoftVisualStudioWCFReferenceInteropPackageVersion>9.0.30729</MicrosoftVisualStudioWCFReferenceInteropPackageVersion>
-    <MicrosoftVSSDKBuildToolsPackageVersion>15.1.192</MicrosoftVSSDKBuildToolsPackageVersion>
+    <MicrosoftVSSDKBuildToolsPackageVersion>15.6.170</MicrosoftVSSDKBuildToolsPackageVersion>
     <VSSDKDebuggerVisualizersPackageVersion>12.0.4</VSSDKDebuggerVisualizersPackageVersion>
     <VSSDKVSLangProjPackageVersion>7.0.4</VSSDKVSLangProjPackageVersion>
     <VSSDKVSLangProj8PackageVersion>8.0.4</VSSDKVSLangProj8PackageVersion>
@@ -47,12 +67,21 @@
     <VSSDKVSHelpPackageVersion>7.0.4</VSSDKVSHelpPackageVersion>
 
     <!-- other packages -->
+    <FsCheckPackageVersion>3.0.0-alpha3</FsCheckPackageVersion>
+    <MicrosoftBuildConversionCorePackageVersion>15.6.82</MicrosoftBuildConversionCorePackageVersion>
+    <MicrosoftBuildRuntimePackageVersion>15.6.82</MicrosoftBuildRuntimePackageVersion>
     <MicrosoftCompositionPackageVersion>1.0.30</MicrosoftCompositionPackageVersion>
-    <MicrosoftDiaSymReaderPdb2PdbPackageVersion>1.1.0-roslyn-62714-01</MicrosoftDiaSymReaderPdb2PdbPackageVersion>
+    <MicrosoftDiaSymReaderPackageVersion>1.1.0</MicrosoftDiaSymReaderPackageVersion>
+    <MicrosoftDiaSymReaderPdb2PdbPackageVersion>1.1.0-beta1-62722-04</MicrosoftDiaSymReaderPdb2PdbPackageVersion>
+    <MicrosoftDiaSymReaderPortablePdbPackageVersion>1.2.0</MicrosoftDiaSymReaderPortablePdbPackageVersion>
     <MicrosoftMSXMLPackageVersion>8.0.0-alpha</MicrosoftMSXMLPackageVersion>
-    <MicrosoftVisualFSharpMSBuild150PackageVersion>1.0.1</MicrosoftVisualFSharpMSBuild150PackageVersion>
+    <MicrosoftNetCompilersPackageVersion>2.7.0</MicrosoftNetCompilersPackageVersion>
+    <MicrosoftNETCoreILDAsmPackageVersion>2.0.3</MicrosoftNETCoreILDAsmPackageVersion>
+    <MicrosoftNETCoreRuntimeCoreCLRPackageVersion>2.0.3</MicrosoftNETCoreRuntimeCoreCLRPackageVersion>
+    <MicrosoftWin32RegistryPackageVersion>4.3.0</MicrosoftWin32RegistryPackageVersion>
     <NewtonsoftJsonPackageVersion>9.0.1</NewtonsoftJsonPackageVersion>
     <NUnitPackageVersion>3.5.0</NUnitPackageVersion>
+    <NUnitLitePackageVersion>3.5.0</NUnitLitePackageVersion>
     <XliffTasksPackageVersion>0.2.0-beta-000081</XliffTasksPackageVersion>
 
   </PropertyGroup>

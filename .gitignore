@@ -23,7 +23,6 @@ scripts/*.patch
 /fcs/FSharp.Compiler.Service/pppars.fsi
 /src/*.userprefs
 /src/fsharp/FSStrings.resources
-/src/fsharp/FSharp.Build/*.resx
 /src/fsharp/FSharp.Build-proto/*.resx
 /src/fsharp/FSharp.Build-proto/*.resources
 /src/fsharp/FSharp.Compiler-proto/*.resx
@@ -31,11 +30,9 @@ scripts/*.patch
 /src/fsharp/FSharp.Compiler-proto/*.sln
 /src/fsharp/FSharp.Compiler-proto/*.userprefs
 /src/fsharp/fsi/*.resx
-/src/fsharp/FSharp.Compiler.Interactive.Settings/*.resx
 /src/fsharp/FSharp.Compiler.Server.Shared/*.resx
 /src/fsharp/fsi/Fsi.sln
 /src/fsharp/FSharp.Build/*.resources
-/src/fsharp/FSharp.Compiler.Private/*.resx
 /src/fsharp/FSharp.Compiler.Private/*.resources
 /src/fsharp/FSharp.Compiler.Private/*.sln
 /src/fsharp/FSharp.Compiler.Private/*.userprefs

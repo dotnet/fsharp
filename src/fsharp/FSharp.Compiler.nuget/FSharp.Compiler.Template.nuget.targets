@@ -3,7 +3,7 @@
   <ItemGroup>
     <RefMarker Include="_._"></RefMarker>
 
-    <ProjectReference Include="..\fsi\Fsi.fsproj">
+    <ProjectReference Include="..\fsi\fsi.fsproj">
       <Name>fsi</Name>
       <Project>{d0e98c0d-490b-4c61-9329-0862f6e87645}</Project>
       <Private>True</Private>
@@ -25,7 +25,7 @@
         DestinationFolder="$(OutputPath)"
     />
   </Target>  
-  <Target Name="nugetpack"
+  <Target Name="pack"
           DependsOnTargets="CreateOrUpdateBuildVersionFile;CopyFiles"
           AfterTargets="Build"
           Inputs="@(PackageNuspec)" 
