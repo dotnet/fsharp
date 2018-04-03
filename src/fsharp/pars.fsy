@@ -288,7 +288,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %type <Ast.SynModuleDecl list> moduleDefnsOrExprPossiblyEmptyOrBlock
 %type <Ast.LongIdentWithDots list> openDecl
 %type <Ast.LongIdentWithDots> path
-%type <Ast.Ident list> commaSeparatedPaths
+%type <Ast.LongIdentWithDots list> commaSeparatedPaths
 %type <Ast.LongIdentWithDots list> multiPath
 %type <Ast.LongIdentWithDots> pathOp
 /*     LESS    GREATER        parsedOk   typeArgs           m for each   mWhole  */
@@ -4729,13 +4729,13 @@ path:
        let (LongIdentWithDots(lid,dotms)) = $1 in LongIdentWithDots(lid, dotms @ [rhs parseState 2])  } 
 
 commaSeparatedPaths:
-  | ident { [$1] }
-  | ident COMMA commaSeparatedPaths { $1 :: $3 }
+  | path { [$1] }
+  | path COMMA commaSeparatedPaths { $1 :: $3 }
 
 multiPath:
   | path DOT LPAREN commaSeparatedPaths rparen
     { let (LongIdentWithDots(lid,dotms)) = $1
-      List.map (fun p -> LongIdentWithDots(lid @ [p], dotms @ [rhs parseState 2])) $4 }
+      List.map (fun (p: LongIdentWithDots) -> LongIdentWithDots(lid @ p.Lid, dotms @ [rhs parseState 2])) $4 }
     
 /* An operator name, with surrounnding parentheses */
 opName: 
