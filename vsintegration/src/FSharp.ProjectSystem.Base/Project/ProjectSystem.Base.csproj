@@ -72,13 +72,13 @@
     <PackageReference Include="VSSDK.VSLangProj.8" Version="$(VSSDKVSLangProj8PackageVersion)" />
   </ItemGroup>
 
-  <Target Name="HACK_AddAliasToMicrosoftVisualStudioShell140" BeforeTargets="ResolveReferences">
+  <Target Name="HACK_AddAliasToMicrosoftVisualStudioShell140" BeforeTargets="CoreCompile">
     <ItemGroup>
       <!--
       We require a reference to Microsoft.VisualStudio.Shell.14.0.dll, but that causes some issues with duplicate type
       names.  The ~hack~ fix is to include the package reference and ensure the Aliases metadata gets set afterwards.
       -->
-      <ReferencePath Update="%(Identity)" Aliases="Shell14" Condition="'%(ReferencePath.PackageName)' == 'Microsoft.VisualStudio.Shell.14.0'" />
+      <ReferencePathWithRefAssemblies Update="%(Identity)" Aliases="Shell14" Condition="'%(ReferencePathWithRefAssemblies.NuGetPackageId)' == 'Microsoft.VisualStudio.Shell.14.0'" />
     </ItemGroup>
   </Target>
 

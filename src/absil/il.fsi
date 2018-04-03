@@ -184,15 +184,12 @@ type ILTypeRef =
 
     member QualifiedName: string
 
-#if !NO_EXTENSIONTYPING
-    member QualifiedNameWithNoShortPrimaryAssembly: string
-#endif
-
     interface System.IComparable
     
 /// Type specs and types.  
 [<Sealed>]
 type ILTypeSpec =
+    /// Create an ILTypeSpec.
     static member Create: typeRef:ILTypeRef * instantiation:ILGenericArgs -> ILTypeSpec
 
     /// Which type is being referred to?
@@ -200,10 +197,19 @@ type ILTypeSpec =
 
     /// The type instantiation if the type is generic, otherwise empty
     member GenericArgs: ILGenericArgs
+    
+    /// Where is the type, i.e. is it in this module, in another module in this assembly or in another assembly? 
     member Scope: ILScopeRef
+    
+    /// The list of enclosing type names for a nested type. If non-nil then the first of these also contains the namespace.
     member Enclosing: string list
+    
+    /// The name of the type. This also contains the namespace if Enclosing is empty.
     member Name: string
+    
+    /// The name of the type in the assembly using the '.' notation for nested types.
     member FullName: string
+    
     interface System.IComparable
 
 and 
@@ -244,13 +250,20 @@ and
           ILType                     
 
     member TypeSpec: ILTypeSpec
+
     member Boxity: ILBoxity
+
     member TypeRef: ILTypeRef
+
     member IsNominal: bool
+
     member GenericArgs: ILGenericArgs
+
     member IsTyvar: bool
+
     member BasicQualifiedName: string
-    member QualifiedNameWithNoShortPrimaryAssembly: string
+
+    member QualifiedName: string
 
 and [<StructuralEquality; StructuralComparison>]
     ILCallingSignature =  
@@ -271,13 +284,21 @@ type ILMethodRef =
      static member Create: enclosingTypeRef: ILTypeRef * callingConv: ILCallingConv * name: string * genericArity: int * argTypes: ILTypes * returnType: ILType -> ILMethodRef
 
      member DeclaringTypeRef: ILTypeRef
+
      member CallingConv: ILCallingConv
+
      member Name: string
+
      member GenericArity: int
+
      member ArgCount: int
+
      member ArgTypes: ILTypes
+
      member ReturnType: ILType
+
      member CallingSignature: ILCallingSignature
+
      interface System.IComparable
      
 /// Formal identities of fields. 
@@ -295,13 +316,21 @@ type ILMethodSpec =
      static member Create: ILType * ILMethodRef * ILGenericArgs -> ILMethodSpec
 
      member MethodRef: ILMethodRef
+
      member DeclaringType: ILType 
+
      member GenericArgs: ILGenericArgs
+
      member CallingConv: ILCallingConv
+
      member GenericArity: int
+
      member Name: string
+
      member FormalArgTypes: ILTypes
+
      member FormalReturnType: ILType
+
      interface System.IComparable
       
 /// Field specs.  The data given for a ldfld, stfld etc. instruction.
@@ -311,8 +340,11 @@ type ILFieldSpec =
       DeclaringType: ILType }    
 
     member DeclaringTypeRef: ILTypeRef
+
     member Name: string
+
     member FormalType: ILType
+
     member ActualType: ILType
 
 /// ILCode labels.  In structured code each code label refers to a basic block somewhere in the code of the method.

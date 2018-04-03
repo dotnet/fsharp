@@ -64,7 +64,10 @@ type internal PartialCheckResults =
       
       /// Represents latest complete typechecked implementation file, including its typechecked signature if any.
       /// Empty for a signature file.
-      LatestImplementationFile: TypedImplFile option }
+      LatestImplementationFile: TypedImplFile option 
+      
+      /// Represents latest inferred signature contents.
+      LastestCcuSigForFile: ModuleOrNamespaceType option}
 
     member TcErrors: (PhasedDiagnostic * FSharpErrorSeverity)[]
 
