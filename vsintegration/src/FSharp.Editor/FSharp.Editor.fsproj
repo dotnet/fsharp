@@ -50,7 +50,7 @@
     <Compile Include="LanguageService\AssemblyContentProvider.fs" />
     <Compile Include="LanguageService\SymbolHelpers.fs" />
     <Compile Include="Classification\ClassificationDefinitions.fs" />
-    <Compile Include="Classification\ColorizationService.fs" />
+    <Compile Include="Classification\ClassificationService.fs" />
     <Compile Include="Formatting\BraceMatchingService.fs" />
     <Compile Include="Formatting\IndentationService.fs" />
     <Compile Include="Formatting\EditorFormattingService.fs" />

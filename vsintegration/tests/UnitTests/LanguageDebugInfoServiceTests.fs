@@ -54,8 +54,8 @@ let main argv =
 
         let sourceText = SourceText.From(code)
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let tokens = Tokenizer.getColorizationData(documentId, sourceText, TextSpan.FromBounds(0, sourceText.Length), Some(fileName), defines, CancellationToken.None)
-        let actualDataTipSpanOption = FSharpLanguageDebugInfoService.GetDataTipInformation(sourceText, searchPosition, tokens)
+        let classifiedSpans = Tokenizer.getClassifiedSpans(documentId, sourceText, TextSpan.FromBounds(0, sourceText.Length), Some(fileName), defines, CancellationToken.None)
+        let actualDataTipSpanOption = FSharpLanguageDebugInfoService.GetDataTipInformation(sourceText, searchPosition, classifiedSpans)
         
         match actualDataTipSpanOption with
         | None -> Assert.IsTrue(expectedDataTip.IsNone, "LanguageDebugInfoService failed to produce a data tip")
