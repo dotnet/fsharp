@@ -38,6 +38,8 @@
     <Compile Include="Options\SettingsPersistence.fs" />
     <Compile Include="Options\UIHelpers.fs" />
     <Compile Include="Options\EditorOptions.fs" />
+    <Compile Include="LanguageService\FSharpEditorFactory.fs" />
+    <Compile Include="LanguageService\TextViewCreationListener.fs" />
     <Compile Include="LanguageService\Tokenizer.fs" />
     <Compile Include="LanguageService\Symbols.fs" />
     <Compile Include="LanguageService\FSharpCheckerExtensions.fs" />

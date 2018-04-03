@@ -79,11 +79,9 @@ type internal FsiEditorSendAction =
     | ExecuteLine
     | DebugSelection
 
-[<Guid("dee22b65-9761-4a26-8fb2-759b971d6dfc")>] //REVIEW: double check fresh guid! IIRC it is.
+[<Guid(Guids.guidFsiSessionToolWindow)>]
 type internal FsiToolWindow() as this = 
     inherit ToolWindowPane(null)
-    
-    do  assert("dee22b65-9761-4a26-8fb2-759b971d6dfc" = Guids.guidFsiSessionToolWindow)
     
     let providerGlobal = Package.GetGlobalService(typeof<IOleServiceProvider>) :?> IOleServiceProvider
     let provider       = new ServiceProvider(providerGlobal) :> System.IServiceProvider

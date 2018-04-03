@@ -10,6 +10,10 @@ module internal FSharpConstants =
     [<Literal>]
     /// "871D2A70-12A2-4e42-9440-425DD92A4116"
     let packageGuidString = "871D2A70-12A2-4e42-9440-425DD92A4116"
+
+    [<Literal>]
+    /// "871D2A70-12A2-4e42-9440-425DD92A4116" - FSharp Package
+    let fsiPackageGuidString = "871D2A70-12A2-4e42-9440-425DD92A4116"
     
     [<Literal>]
     /// "BC6DD5A5-D4D6-4dab-A00D-A51242DBAF1B"
