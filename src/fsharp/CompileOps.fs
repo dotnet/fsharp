@@ -5326,7 +5326,6 @@ let CheckSimulateException(tcConfig:TcConfig) =
 
 type RootSigs =  Zmap<QualifiedNameOfFile, ModuleOrNamespaceType>
 type RootImpls = Zset<QualifiedNameOfFile >
-type TypecheckerSigsAndImpls = RootSigsAndImpls of RootSigs * RootImpls * ModuleOrNamespaceType * ModuleOrNamespaceType
 
 let qnameOrder = Order.orderBy (fun (q:QualifiedNameOfFile) -> q.Text)
 
@@ -5337,17 +5336,25 @@ type TcState =
       tcsTcSigEnv: TcEnv
       tcsTcImplEnv: TcEnv
       tcsCreatesGeneratedProvidedTypes: bool
-      /// The accumulated results of type checking for this assembly 
-      tcsRootSigsAndImpls : TypecheckerSigsAndImpls }
+      tcsRootSigs: RootSigs 
+      tcsRootImpls: RootImpls 
+      tcsCcuSig: ModuleOrNamespaceType  }
+
     member x.NiceNameGenerator = x.tcsNiceNameGen
+
     member x.TcEnvFromSignatures = x.tcsTcSigEnv
+
     member x.TcEnvFromImpls = x.tcsTcImplEnv
+
     member x.Ccu = x.tcsCcu
+
     member x.CreatesGeneratedProvidedTypes = x.tcsCreatesGeneratedProvidedTypes
 
-    member x.PartialAssemblySignature = 
-      let (RootSigsAndImpls(_rootSigs, _rootImpls, _allSigModulTyp, allImplementedSigModulTyp)) = x.tcsRootSigsAndImpls
-      allImplementedSigModulTyp
+    // Assem(a.fsi + b.fsi + c.fsi) (after checking implementation file )
+    member x.CcuType = x.tcsCcuType
+ 
+    // a.fsi + b.fsi + c.fsi (after checking implementation file for c.fs)
+    member x.CcuSig = x.tcsCcuSig
  
     member x.NextStateAfterIncrementalFragment(tcEnvAtEndOfLastInput) = 
         { x with tcsTcSigEnv = tcEnvAtEndOfLastInput
@@ -5385,133 +5392,127 @@ let GetInitialTcState(m, ccuName, tcConfig:TcConfig, tcGlobals, tcImports:TcImpo
     if tcConfig.compilingFslib then 
         tcGlobals.fslibCcu.Fixup(ccu)
 
-    let rootSigs = Zmap.empty qnameOrder
-    let rootImpls = Zset.empty qnameOrder
-    let allSigModulTyp = NewEmptyModuleOrNamespaceType Namespace
-    let allImplementedSigModulTyp = NewEmptyModuleOrNamespaceType Namespace
     { tcsCcu= ccu
       tcsCcuType=ccuType
       tcsNiceNameGen=niceNameGen
       tcsTcSigEnv=tcEnv0
       tcsTcImplEnv=tcEnv0
       tcsCreatesGeneratedProvidedTypes=false
-      tcsRootSigsAndImpls = RootSigsAndImpls (rootSigs, rootImpls, allSigModulTyp, allImplementedSigModulTyp) }
+      tcsRootSigs = Zmap.empty qnameOrder
+      tcsRootImpls = Zset.empty qnameOrder
+      tcsCcuSig = NewEmptyModuleOrNamespaceType Namespace }
+
 
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
-let TypeCheckOneInputEventually
-      (checkForErrors, tcConfig:TcConfig, tcImports:TcImports, 
-       tcGlobals, prefixPathOpt, tcSink, tcState: TcState, inp: ParsedInput) =
-  eventually {
-   try 
-      let! ctok = Eventually.token
-      RequireCompilationThread ctok // Everything here requires the compilation thread since it works on the TAST
+let TypeCheckOneInputEventually (checkForErrors, tcConfig:TcConfig, tcImports:TcImports, tcGlobals, prefixPathOpt, tcSink, tcState: TcState, inp: ParsedInput) =
 
-      CheckSimulateException(tcConfig)
-      let (RootSigsAndImpls(rootSigs, rootImpls, allSigModulTyp, allImplementedSigModulTyp)) = tcState.tcsRootSigsAndImpls
-      let m = inp.Range
-      let amap = tcImports.GetImportMap()
-      let! (topAttrs, implFiles, tcEnvAtEnd, tcSigEnv, tcImplEnv, topSigsAndImpls, ccuType, createsGeneratedProvidedTypes) = 
-        eventually {
-            match inp with 
-            | ParsedInput.SigFile (ParsedSigFileInput(_, qualNameOfFile, _, _, _) as file) ->
+    eventually {
+        try 
+          let! ctok = Eventually.token
+          RequireCompilationThread ctok // Everything here requires the compilation thread since it works on the TAST
+
+          CheckSimulateException(tcConfig)
+
+          let m = inp.Range
+          let amap = tcImports.GetImportMap()
+          match inp with 
+          | ParsedInput.SigFile (ParsedSigFileInput(_, qualNameOfFile, _, _, _) as file) ->
                 
-                // Check if we've seen this top module signature before. 
-                if Zmap.mem qualNameOfFile rootSigs then 
-                    errorR(Error(FSComp.SR.buildSignatureAlreadySpecified(qualNameOfFile.Text), m.StartRange))
+              // Check if we've seen this top module signature before. 
+              if Zmap.mem qualNameOfFile tcState.tcsRootSigs then 
+                  errorR(Error(FSComp.SR.buildSignatureAlreadySpecified(qualNameOfFile.Text), m.StartRange))
 
-                // Check if the implementation came first in compilation order 
-                if Zset.contains qualNameOfFile rootImpls then 
-                    errorR(Error(FSComp.SR.buildImplementationAlreadyGivenDetail(qualNameOfFile.Text), m))
+              // Check if the implementation came first in compilation order 
+              if Zset.contains qualNameOfFile tcState.tcsRootImpls then 
+                  errorR(Error(FSComp.SR.buildImplementationAlreadyGivenDetail(qualNameOfFile.Text), m))
 
-                // Typecheck the signature file 
-                let! (tcEnv, sigFileType, createsGeneratedProvidedTypes) = 
-                    TypeCheckOneSigFile (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, tcConfig.conditionalCompilationDefines, tcSink) tcState.tcsTcSigEnv file
+              // Typecheck the signature file 
+              let! (tcEnv, sigFileType, createsGeneratedProvidedTypes) = 
+                  TypeCheckOneSigFile (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, tcConfig.conditionalCompilationDefines, tcSink) tcState.tcsTcSigEnv file
 
-                let rootSigs = Zmap.add qualNameOfFile  sigFileType rootSigs
+              let rootSigs = Zmap.add qualNameOfFile  sigFileType tcState.tcsRootSigs
 
-                // Open the prefixPath for fsi.exe 
-                let tcEnv = 
-                    match prefixPathOpt with 
-                    | None -> tcEnv 
-                    | Some prefixPath -> 
-                        let m = qualNameOfFile.Range
-                        TcOpenDecl tcSink tcGlobals amap m m tcEnv prefixPath
+              // Add the  signature to the signature env (unless it had an explicit signature)
+              let ccuSigForFile = CombineCcuContentFragments m [sigFileType; tcState.tcsCcuSig]
+                
+              // Open the prefixPath for fsi.exe 
+              let tcEnv = 
+                  match prefixPathOpt with 
+                  | None -> tcEnv 
+                  | Some prefixPath -> 
+                      let m = qualNameOfFile.Range
+                      TcOpenDecl tcSink tcGlobals amap m m tcEnv prefixPath
 
-                let res = (EmptyTopAttrs, None, tcEnv, tcEnv, tcState.tcsTcImplEnv, RootSigsAndImpls(rootSigs, rootImpls, allSigModulTyp, allImplementedSigModulTyp), tcState.tcsCcuType, createsGeneratedProvidedTypes)
-                return res
+              let tcState = 
+                   { tcState with 
+                        tcsTcSigEnv=tcEnv
+                        tcsTcImplEnv=tcState.tcsTcImplEnv
+                        tcsRootSigs=rootSigs
+                        tcsCreatesGeneratedProvidedTypes=tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes}
 
-            | ParsedInput.ImplFile (ParsedImplFileInput(filename, _, qualNameOfFile, _, _, _, _) as file) ->
+              return (tcEnv, EmptyTopAttrs, None, ccuSigForFile), tcState
+
+          | ParsedInput.ImplFile (ParsedImplFileInput(_, _, qualNameOfFile, _, _, _, _) as file) ->
             
-                // Check if we've got an interface for this fragment 
-                let rootSigOpt = rootSigs.TryFind(qualNameOfFile)
+              // Check if we've got an interface for this fragment 
+              let rootSigOpt = tcState.tcsRootSigs.TryFind(qualNameOfFile)
 
-                if verbose then dprintf "ParsedInput.ImplFile, nm = %s, qualNameOfFile = %s, ?rootSigOpt = %b\n" filename qualNameOfFile.Text (Option.isSome rootSigOpt)
-
-                // Check if we've already seen an implementation for this fragment 
-                if Zset.contains qualNameOfFile rootImpls then 
+              // Check if we've already seen an implementation for this fragment 
+              if Zset.contains qualNameOfFile tcState.tcsRootImpls then 
                   errorR(Error(FSComp.SR.buildImplementationAlreadyGiven(qualNameOfFile.Text), m))
 
-                let tcImplEnv = tcState.tcsTcImplEnv
+              let tcImplEnv = tcState.tcsTcImplEnv
 
-                // Typecheck the implementation file 
-                let! topAttrs, implFile, tcEnvAtEnd, createsGeneratedProvidedTypes = 
-                    TypeCheckOneImplFile  (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, tcConfig.conditionalCompilationDefines, tcSink) tcImplEnv rootSigOpt file
+              // Typecheck the implementation file 
+              let! topAttrs, implFile, _implFileHiddenType, tcEnvAtEnd, createsGeneratedProvidedTypes = 
+                  TypeCheckOneImplFile  (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, tcConfig.conditionalCompilationDefines, tcSink) tcImplEnv rootSigOpt file
 
-                let hadSig = Option.isSome rootSigOpt
-                let implFileSigType = SigTypeOfImplFile implFile
+              let hadSig = rootSigOpt.IsSome
+              let implFileSigType = SigTypeOfImplFile implFile
 
-                if verbose then  dprintf "done TypeCheckOneImplFile...\n"
-                let rootImpls = Zset.add qualNameOfFile rootImpls
+              let rootImpls = Zset.add qualNameOfFile tcState.tcsRootImpls
         
-                // Only add it to the environment if it didn't have a signature 
-                let m = qualNameOfFile.Range
+              // Only add it to the environment if it didn't have a signature 
+              let m = qualNameOfFile.Range
 
-                // Add the implementation as to the implementation env
-                let tcImplEnv = AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcImplEnv implFileSigType
+              // Add the implementation as to the implementation env
+              let tcImplEnv = AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcImplEnv implFileSigType
 
-                // Add the implementation as to the signature env (unless it had an explicit signature)
-                let tcSigEnv = 
-                    if hadSig then tcState.tcsTcSigEnv 
-                    else AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcState.tcsTcSigEnv implFileSigType
+              // Add the implementation as to the signature env (unless it had an explicit signature)
+              let tcSigEnv = 
+                  if hadSig then tcState.tcsTcSigEnv 
+                  else AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcState.tcsTcSigEnv implFileSigType
                 
-                // Open the prefixPath for fsi.exe (tcImplEnv)
-                let tcImplEnv = 
-                    match prefixPathOpt with 
-                    | Some prefixPath -> TcOpenDecl tcSink tcGlobals amap m m tcImplEnv prefixPath
-                    | _ -> tcImplEnv 
+              // Open the prefixPath for fsi.exe (tcImplEnv)
+              let tcImplEnv = 
+                  match prefixPathOpt with 
+                  | Some prefixPath -> TcOpenDecl tcSink tcGlobals amap m m tcImplEnv prefixPath
+                  | _ -> tcImplEnv 
 
-                // Open the prefixPath for fsi.exe (tcSigEnv)
-                let tcSigEnv = 
-                    match prefixPathOpt with 
-                    | Some prefixPath when not hadSig -> TcOpenDecl tcSink tcGlobals amap m m tcSigEnv prefixPath
-                    | _ -> tcSigEnv 
+              // Open the prefixPath for fsi.exe (tcSigEnv)
+              let tcSigEnv = 
+                  match prefixPathOpt with 
+                  | Some prefixPath when not hadSig -> TcOpenDecl tcSink tcGlobals amap m m tcSigEnv prefixPath
+                  | _ -> tcSigEnv 
 
-                let allImplementedSigModulTyp = CombineCcuContentFragments m [implFileSigType; allImplementedSigModulTyp]
+              let ccuSig = CombineCcuContentFragments m [implFileSigType; tcState.tcsCcuSig ]
 
-                // Add it to the CCU 
-                let ccuType = 
-                    // The signature must be reestablished. 
-                    //   [CHECK: Why? This seriously degraded performance] 
-                    NewCcuContents ILScopeRef.Local m tcState.tcsCcu.AssemblyName allImplementedSigModulTyp
+              let ccuSigForFile = CombineCcuContentFragments m [implFileSigType; tcState.tcsCcuSig]
 
-                if verbose then  dprintf "done TypeCheckOneInputEventually...\n"
-
-                let topSigsAndImpls = RootSigsAndImpls(rootSigs, rootImpls, allSigModulTyp, allImplementedSigModulTyp)
-                let res = (topAttrs, Some implFile, tcEnvAtEnd, tcSigEnv, tcImplEnv, topSigsAndImpls, ccuType, createsGeneratedProvidedTypes)
-                return res }
+              let tcState = 
+                   { tcState with 
+                        tcsTcSigEnv=tcSigEnv
+                        tcsTcImplEnv=tcImplEnv
+                        tcsRootImpls=rootImpls
+                        tcsCcuSig=ccuSig
+                        tcsCreatesGeneratedProvidedTypes=tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes }
+              return (tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile), tcState
      
-      return (tcEnvAtEnd, topAttrs, implFiles), 
-             { tcState with 
-                  tcsCcuType=ccuType
-                  tcsTcSigEnv=tcSigEnv
-                  tcsTcImplEnv=tcImplEnv
-                  tcsCreatesGeneratedProvidedTypes=tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
-                  tcsRootSigsAndImpls = topSigsAndImpls }
-   with e -> 
-      errorRecovery e range0 
-      return (tcState.TcEnvFromSignatures, EmptyTopAttrs, None), tcState
- }
+        with e -> 
+            errorRecovery e range0 
+            return (tcState.TcEnvFromSignatures, EmptyTopAttrs, None, tcState.tcsCcuSig), tcState
+    }
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
 let TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState  inp =
@@ -5523,19 +5524,12 @@ let TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, pre
 
 /// Finish checking multiple files (or one interactive entry into F# Interactive)
 let TypeCheckMultipleInputsFinish(results, tcState: TcState) =
-    let tcEnvsAtEndFile, topAttrs, implFiles = List.unzip3 results
-    
+    let tcEnvsAtEndFile, topAttrs, implFiles, ccuSigsForFiles = List.unzip4 results
     let topAttrs = List.foldBack CombineTopAttrs topAttrs EmptyTopAttrs
     let implFiles = List.choose id implFiles
     // This is the environment required by fsi.exe when incrementally adding definitions 
     let tcEnvAtEndOfLastFile = (match tcEnvsAtEndFile with h :: _ -> h | _ -> tcState.TcEnvFromSignatures)
-    
-    (tcEnvAtEndOfLastFile, topAttrs, implFiles), tcState
-
-/// Check multiple files (or one interactive entry into F# Interactive)
-let TypeCheckMultipleInputs (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs) =
-    let results, tcState =  (tcState, inputs) ||> List.mapFold (TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt)) 
-    TypeCheckMultipleInputsFinish(results, tcState)
+    (tcEnvAtEndOfLastFile, topAttrs, implFiles, ccuSigsForFiles), tcState
 
 let TypeCheckOneInputAndFinishEventually(checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input) =
     eventually {
@@ -5545,18 +5539,18 @@ let TypeCheckOneInputAndFinishEventually(checkForErrors, tcConfig: TcConfig, tcI
 
 let TypeCheckClosedInputSetFinish (declaredImpls: TypedImplFile list, tcState) =
     // Publish the latest contents to the CCU 
-    tcState.tcsCcu.Deref.Contents <- tcState.tcsCcuType
+    tcState.tcsCcu.Deref.Contents <- NewCcuContents ILScopeRef.Local range0 tcState.tcsCcu.AssemblyName tcState.tcsCcuSig
 
     // Check all interfaces have implementations 
-    let (RootSigsAndImpls(rootSigs, rootImpls, _, _)) = tcState.tcsRootSigsAndImpls
-    rootSigs |> Zmap.iter (fun qualNameOfFile _ ->  
-      if not (Zset.contains qualNameOfFile rootImpls) then 
+    tcState.tcsRootSigs |> Zmap.iter (fun qualNameOfFile _ ->  
+      if not (Zset.contains qualNameOfFile tcState.tcsRootImpls) then 
         errorR(Error(FSComp.SR.buildSignatureWithoutImplementation(qualNameOfFile.Text), qualNameOfFile.Range)))
 
     tcState, declaredImpls
     
 let TypeCheckClosedInputSet (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs) =
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions 
-    let (tcEnvAtEndOfLastFile, topAttrs, implFiles), tcState = TypeCheckMultipleInputs (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs)
+    let results, tcState =  (tcState, inputs) ||> List.mapFold (TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt)) 
+    let (tcEnvAtEndOfLastFile, topAttrs, implFiles, _), tcState = TypeCheckMultipleInputsFinish(results, tcState)
     let tcState, declaredImpls = TypeCheckClosedInputSetFinish (implFiles, tcState)
     tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile

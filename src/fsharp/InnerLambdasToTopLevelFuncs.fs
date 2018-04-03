@@ -1249,9 +1249,9 @@ module Pass4_RewriteAssembly =
     and TransValBindings penv z binds = List.mapFold (TransValBinding penv) z  binds
     and TransModuleExpr penv z x = 
         match x with  
-        | ModuleOrNamespaceExprWithSig(mty,def,m) ->  
+        | ModuleOrNamespaceExprWithSig(mty, def, m) ->  
             let def,z = TransModuleDef penv z def
-            ModuleOrNamespaceExprWithSig(mty,def,m),z
+            ModuleOrNamespaceExprWithSig(mty, def, m),z
         
     and TransModuleDefs penv z x = List.mapFold (TransModuleDef penv) z x
     and TransModuleDef penv (z: RewriteState) x : ModuleOrNamespaceExpr * RewriteState = 
