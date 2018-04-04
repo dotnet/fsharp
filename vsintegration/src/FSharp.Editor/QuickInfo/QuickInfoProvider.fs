@@ -23,8 +23,8 @@ open Microsoft.FSharp.Compiler
 
 open Internal.Utilities.StructuredFormat
 
-type private TooltipInfo =
-    { StructuredText: FSharpStructuredToolTipText 
+type private QuickInfo =
+    { StructuredText: FSharpStructuredToolTipText
       Span: TextSpan
       Symbol: FSharpSymbol
       SymbolKind: LexerSymbolKind }
@@ -35,17 +35,17 @@ module private FSharpQuickInfo =
 
     // when a construct has been declared in a signature file the documentation comments that are
     // written in that file are the ones that go into the generated xml when the project is compiled
-    // therefore we should include these doccoms in our design time tooltips
-    let getTooltipFromRange
+    // therefore we should include these doccoms in our design time quick info
+    let getQuickInfoFromRange
         (
-            checker: FSharpChecker, 
-            projectInfoManager: FSharpProjectOptionsManager, 
-            document: Document, 
-            declRange: range, 
+            checker: FSharpChecker,
+            projectInfoManager: FSharpProjectOptionsManager,
+            document: Document,
+            declRange: range,
             cancellationToken: CancellationToken
-        ) 
-        : Async<TooltipInfo option> = 
-        
+        )
+        : Async<QuickInfo option> =
+
         asyncMaybe {
             let solution = document.Project.Solution
             // ascertain the location of the target declaration in the signature file
@@ -54,41 +54,41 @@ module private FSharpQuickInfo =
             let! extSourceText = extDocument.GetTextAsync cancellationToken
             let! extSpan = RoslynHelpers.TryFSharpRangeToTextSpan (extSourceText, declRange)
             let extLineText = (extSourceText.Lines.GetLineFromPosition extSpan.Start).ToString()
-            
-            // project options need to be retrieved because the signature file could be in another project 
+
+            // project options need to be retrieved because the signature file could be in another project
             let! extParsingOptions, _extSite, extProjectOptions = projectInfoManager.TryGetOptionsForProject extDocId.ProjectId
             let extDefines = CompilerEnvironment.GetCompilationDefinesForEditing extParsingOptions
             let! extLexerSymbol = Tokenizer.getSymbolAtPosition(extDocId, extSourceText, extSpan.Start, declRange.FileName, extDefines, SymbolLookupKind.Greedy, true)
             let! _, _, extCheckFileResults = checker.ParseAndCheckDocument(extDocument, extProjectOptions, allowStaleResults=true, sourceText=extSourceText, userOpName = userOpName)
-            
-            let! extTooltipText = 
+
+            let! extQuickInfoText = 
                 extCheckFileResults.GetStructuredToolTipText
                     (declRange.StartLine, extLexerSymbol.Ident.idRange.EndColumn, extLineText, extLexerSymbol.FullIsland, FSharpTokenTag.IDENT, userOpName=userOpName) |> liftAsync
-            
-            match extTooltipText with
-            | FSharpToolTipText [] 
+
+            match extQuickInfoText with
+            | FSharpToolTipText []
             | FSharpToolTipText [FSharpStructuredToolTipElement.None] -> return! None
-            | extTooltipText  -> 
+            | extQuickInfoText  ->
                 let! extSymbolUse =
                     extCheckFileResults.GetSymbolUseAtLocation(declRange.StartLine, extLexerSymbol.Ident.idRange.EndColumn, extLineText, extLexerSymbol.FullIsland, userOpName=userOpName)
                 let! span = RoslynHelpers.TryFSharpRangeToTextSpan (extSourceText, extLexerSymbol.Range)
-                
-                return { StructuredText = extTooltipText
+
+                return { StructuredText = extQuickInfoText
                          Span = span
                          Symbol = extSymbolUse.Symbol
                          SymbolKind = extLexerSymbol.Kind }
         }
 
-    /// Get tooltip combined from doccom of Signature and definition
-    let getTooltipInfo 
+    /// Get QuickInfo combined from doccom of Signature and definition
+    let getQuickInfo
         (
-            checker: FSharpChecker, 
-            projectInfoManager: FSharpProjectOptionsManager, 
-            document: Document, 
-            position: int, 
+            checker: FSharpChecker,
+            projectInfoManager: FSharpProjectOptionsManager,
+            document: Document,
+            position: int,
             cancellationToken: CancellationToken
-        ) 
-        : Async<(FSharpSymbolUse * TooltipInfo option * TooltipInfo option) option> = 
+        )
+        : Async<(FSharpSymbolUse * QuickInfo option * QuickInfo option) option> =
 
         asyncMaybe {
             let! sourceText = document.GetTextAsync cancellationToken
@@ -101,60 +101,60 @@ module private FSharpQuickInfo =
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland, userOpName=userOpName)
-            
-            /// Gets the tooltip information for the orignal target
-            let getTargetSymbolTooltip () = 
+
+            /// Gets the QuickInfo information for the orignal target
+            let getTargetSymbolQuickInfo () =
                 asyncMaybe {
-                    let! targetTooltip = 
+                    let! targetQuickInfo =
                         checkFileResults.GetStructuredToolTipText
                             (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland, FSharpTokenTag.IDENT, userOpName=userOpName) |> liftAsync
-                    
-                    match targetTooltip with
-                    | FSharpToolTipText [] 
+
+                    match targetQuickInfo with
+                    | FSharpToolTipText []
                     | FSharpToolTipText [FSharpStructuredToolTipElement.None] -> return! None
-                    | _ -> 
+                    | _ ->
                         let! targetTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sourceText, lexerSymbol.Range)
-                        return { StructuredText = targetTooltip
+                        return { StructuredText = targetQuickInfo
                                  Span = targetTextSpan
                                  Symbol = symbolUse.Symbol
                                  SymbolKind = lexerSymbol.Kind }
-                } 
+                }
 
-            // if the target is in a signature file, adjusting the tooltip info is unnecessary
+            // if the target is in a signature file, adjusting the quick info is unnecessary
             if isSignatureFile document.FilePath then
-                let! targetTooltipInfo = getTargetSymbolTooltip()
-                return symbolUse, None, Some targetTooltipInfo
+                let! targetQuickInfo = getTargetSymbolQuickInfo()
+                return symbolUse, None, Some targetQuickInfo
             else
                 // find the declaration location of the target symbol, with a preference for signature files
                 let! findSigDeclarationResult = checkFileResults.GetDeclarationLocation (idRange.StartLine, idRange.EndColumn, lineText, lexerSymbol.FullIsland, preferFlag=true, userOpName=userOpName) |> liftAsync
-                    
-                // it is necessary to retrieve the backup tooltip info because this acquires
-                // the textSpan designating where we want the tooltip to appear.
-                let! targetTooltipInfo = getTargetSymbolTooltip()
-                
+
+                // it is necessary to retrieve the backup quick info because this acquires
+                // the textSpan designating where we want the quick info to appear.
+                let! targetQuickInfo = getTargetSymbolQuickInfo()
+
                 let! result =
                     match findSigDeclarationResult with 
                     | FSharpFindDeclResult.DeclFound declRange when isSignatureFile declRange.FileName ->
                         asyncMaybe {
-                            let! sigTooltipInfo = getTooltipFromRange(checker, projectInfoManager, document, declRange, cancellationToken)
-                            
+                            let! sigQuickInfo = getQuickInfoFromRange(checker, projectInfoManager, document, declRange, cancellationToken)
+
                             // if the target was declared in a signature file, and the current file
                             // is not the corresponding module implementation file for that signature,
-                            // the doccoms from the signature will overwrite any doccoms that might be 
+                            // the doccoms from the signature will overwrite any doccoms that might be
                             // present on the definition/implementation
-                            let! findImplDefinitionResult = checkFileResults.GetDeclarationLocation (idRange.StartLine, idRange.EndColumn, lineText, lexerSymbol.FullIsland, preferFlag=false, userOpName=userOpName) |> liftAsync   
-                            
-                            match findImplDefinitionResult  with 
-                            | FSharpFindDeclResult.DeclNotFound _ 
-                            | FSharpFindDeclResult.ExternalDecl _ -> return symbolUse, Some sigTooltipInfo, None
-                            | FSharpFindDeclResult.DeclFound declRange -> 
-                                let! implTooltipInfo = getTooltipFromRange(checker, projectInfoManager, document, declRange, cancellationToken)
-                                return symbolUse, Some sigTooltipInfo, Some { implTooltipInfo with Span = targetTooltipInfo.Span }
+                            let! findImplDefinitionResult = checkFileResults.GetDeclarationLocation (idRange.StartLine, idRange.EndColumn, lineText, lexerSymbol.FullIsland, preferFlag=false, userOpName=userOpName) |> liftAsync
+
+                            match findImplDefinitionResult  with
+                            | FSharpFindDeclResult.DeclNotFound _
+                            | FSharpFindDeclResult.ExternalDecl _ -> return symbolUse, Some sigQuickInfo, None
+                            | FSharpFindDeclResult.DeclFound declRange ->
+                                let! implQuickInfo = getQuickInfoFromRange(checker, projectInfoManager, document, declRange, cancellationToken)
+                                return symbolUse, Some sigQuickInfo, Some { implQuickInfo with Span = targetQuickInfo.Span }
                         }
                     | _ -> async.Return None
                     |> liftAsync
-                
-                return result |> Option.defaultValue (symbolUse, None, Some targetTooltipInfo)
+
+                return result |> Option.defaultValue (symbolUse, None, Some targetQuickInfo)
         }
 
 type internal FSharpAsyncQuickInfoSource
@@ -196,26 +196,26 @@ type internal FSharpAsyncQuickInfoSource
                 let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
                 asyncMaybe {
                     let document = textBuffer.CurrentSnapshot.GetOpenDocumentInCurrentContextWithChanges()
-                    let! symbolUse, sigTooltipInfo, targetTooltipInfo = FSharpQuickInfo.getTooltipInfo(checkerProvider.Checker, projectInfoManager, document, triggerPoint.Position, cancellationToken)
+                    let! symbolUse, sigQuickInfo, targetQuickInfo = FSharpQuickInfo.getQuickInfo(checkerProvider.Checker, projectInfoManager, document, triggerPoint.Position, cancellationToken)
                     let getTrackingSpan (span:TextSpan) =
                         textBuffer.CurrentSnapshot.CreateTrackingSpan(span.Start, span.Length, SpanTrackingMode.EdgeInclusive)
 
-                    match sigTooltipInfo, targetTooltipInfo with
+                    match sigQuickInfo, targetQuickInfo with
                     | None, None -> return null
-                    | Some tooltip, None
-                    | None, Some tooltip ->
+                    | Some quickInfo, None
+                    | None, Some quickInfo->
                         let mainDescription, documentation, typeParameterMap, usage, exceptions = ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
-                        XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, documentation.Add, typeParameterMap.Add, usage.Add, exceptions.Add, tooltip.StructuredText)
-                        let imageId = Tokenizer.GetImageIdForSymbol(tooltip.Symbol, tooltip.SymbolKind)
+                        XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, documentation.Add, typeParameterMap.Add, usage.Add, exceptions.Add, quickInfo.StructuredText)
+                        let imageId = Tokenizer.GetImageIdForSymbol(quickInfo.Symbol, quickInfo.SymbolKind)
                         let navigation = QuickInfoNavigation(gotoDefinitionService, document, symbolUse.RangeAlternate)
                         let content = QuickInfoViewProvider.provideContent(imageId, mainDescription, documentation, typeParameterMap, usage, exceptions, navigation)
-                        let span = getTrackingSpan tooltip.Span
+                        let span = getTrackingSpan quickInfo.Span
                         return QuickInfoItem(span, content)
 
-                    | Some sigTooltip, Some targetTooltip ->
+                    | Some sigQuickInfo, Some targetQuickInfo ->
                         let mainDescription, targetDocumentation, sigDocumentation, typeParameterMap, exceptions, usage = ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
-                        XmlDocumentation.BuildDataTipText(documentationBuilder, ignore, sigDocumentation.Add, ignore, ignore, ignore, sigTooltip.StructuredText)
-                        XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, targetDocumentation.Add, typeParameterMap.Add, exceptions.Add, usage.Add, targetTooltip.StructuredText)
+                        XmlDocumentation.BuildDataTipText(documentationBuilder, ignore, sigDocumentation.Add, ignore, ignore, ignore, sigQuickInfo.StructuredText)
+                        XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, targetDocumentation.Add, typeParameterMap.Add, exceptions.Add, usage.Add, targetQuickInfo.StructuredText)
 
                         let width = 
                             mainDescription
@@ -242,28 +242,28 @@ type internal FSharpAsyncQuickInfoSource
                                     if String.IsNullOrWhiteSpace tt.Text then sb else sb.Append tt.Text)
                                 |> string
                             if String.IsNullOrWhiteSpace text then None else Some text
-                    
-                        let documentation = 
+
+                        let documentation =
                             [ match getText targetDocumentation, getText sigDocumentation with
                               | None, None -> ()
                               | None, Some _ -> yield! sigDocumentation
                               | Some _, None -> yield! targetDocumentation
                               | Some implText, Some sigText when implText.Equals (sigText, StringComparison.OrdinalIgnoreCase) ->
                                     yield! sigDocumentation
-                              | Some _  , Some _ -> 
+                              | Some _  , Some _ ->
                                     yield! sigDocumentation
                                     yield lineBreak
                                     yield seperator
                                     yield lineBreak
                                     yield! targetDocumentation ]
                             |> ResizeArray
-                        let imageId = Tokenizer.GetImageIdForSymbol(targetTooltip.Symbol, targetTooltip.SymbolKind)
+                        let imageId = Tokenizer.GetImageIdForSymbol(targetQuickInfo.Symbol, targetQuickInfo.SymbolKind)
                         let navigation = QuickInfoNavigation(gotoDefinitionService, document, symbolUse.RangeAlternate)
                         let content = QuickInfoViewProvider.provideContent(imageId, mainDescription, documentation, typeParameterMap, usage, exceptions, navigation)
-                        let span = getTrackingSpan targetTooltip.Span
+                        let span = getTrackingSpan targetQuickInfo.Span
                         return QuickInfoItem(span, content)
                 }   |> Async.map Option.toObj
-                    |> RoslynHelpers.StartAsyncAsTask cancellationToken 
+                    |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
 [<Export(typeof<IAsyncQuickInfoSourceProvider>)>]
 [<Name("F# Quick Info Provider")>]
