@@ -102,8 +102,8 @@
       <PropertyGroup >
         <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(ProtoFlavour)\bin</OutputPath>
 
-        <DotnetSdkVersion>$([System.IO.File]::ReadAllText('..\DotnetCLIToolsVersion.txt').Trim())</DotnetSdkVersion>
-        <FSharpNetCoreLkgPath>$(FSharpSourcesRoot)\..\Tools\dotnet20\sdk\$(DotnetSdkVersion)\FSharp</FSharpNetCoreLkgPath>
+        <DotnetSdkVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)..\DotnetCLIToolsVersion.txt').Trim())</DotnetSdkVersion>
+        <FSharpNetCoreLkgPath>$(MSBuildThisFileDirectory)..\Tools\dotnet20\sdk\$(DotnetSdkVersion)\FSharp</FSharpNetCoreLkgPath>
 
         <!-- When using coreclr to bootstrap to proto. We acquire the FSharp.Core LKG, targets LKG, the FSharp.Build LKG from the .NET Framework compiler tools LKG package. -->
         <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
