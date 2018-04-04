@@ -141,7 +141,7 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Build.UnitTests", "t
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PEVerify", "tests\fsharpqa\testenv\src\PEVerify\PEVerify.csproj", "{B0689A4E-07D8-494D-A0C8-791CB1D74E54}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PatternMatcher", "vsintegration\src\PatternMatcher\PatternMatcher.csproj", "{18227628-DF90-4C47-AF3D-CC72D2EDD986}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FSharp.PatternMatcher", "vsintegration\src\FSharp.PatternMatcher\FSharp.PatternMatcher.csproj", "{18227628-DF90-4C47-AF3D-CC72D2EDD986}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Legacy", "Legacy", "{CCAB6E50-34C6-42AF-A6B0-567C29FCD91B}"
 EndProject
