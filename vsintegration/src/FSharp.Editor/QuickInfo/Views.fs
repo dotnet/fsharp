@@ -123,6 +123,7 @@ type internal QuickInfoViewProvider
              anonymousTypes = empty, 
              usageText = navigable usage, 
              exceptionText = navigable exceptions)
+             //capturesText = empty)
 
 [<Export (typeof<IDeferredQuickInfoContentToFrameworkElementConverter>)>] 
 type FSharpDeferredContentConverter () =
