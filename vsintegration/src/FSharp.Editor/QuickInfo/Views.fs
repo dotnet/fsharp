@@ -1,134 +1,107 @@
-﻿namespace Microsoft.VisualStudio.FSharp.Editor
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-open System.ComponentModel.Composition
-open System
-open System.Windows
-open System.Windows.Controls
+namespace Microsoft.VisualStudio.FSharp.Editor
 
-open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Classification
-open Microsoft.CodeAnalysis.Editor
-open Microsoft.CodeAnalysis.Editor.QuickInfo
-open Microsoft.CodeAnalysis.Editor.Shared.Utilities
-open Microsoft.CodeAnalysis.Editor.Shared.Extensions
-open Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.QuickInfo
-
-open Microsoft.VisualStudio.Language.Intellisense
-open Microsoft.VisualStudio.Utilities
-open Microsoft.VisualStudio.PlatformUI
-
-open Microsoft.FSharp.Compiler
-
+open System.Collections.Generic
 open Internal.Utilities.StructuredFormat
-open Microsoft.VisualStudio.Text.Classification
+open Microsoft.CodeAnalysis
+open Microsoft.FSharp.Compiler
+open Microsoft.VisualStudio.Core.Imaging
+open Microsoft.VisualStudio.Language.StandardClassification
+open Microsoft.VisualStudio.Text.Adornments
 
-module private SessionHandling =
-    let mutable currentSession = None
-    
-    [<Export (typeof<IQuickInfoSourceProvider>)>]
-    [<Name (FSharpProviderConstants.SessionCapturingProvider)>]
-    [<Order (After = PredefinedQuickInfoProviderNames.Semantic)>]
-    [<ContentType (FSharpConstants.FSharpContentTypeName)>]
-    type SourceProviderForCapturingSession () =
-        interface IQuickInfoSourceProvider with 
-            member x.TryCreateQuickInfoSource _ =
-              { new IQuickInfoSource with
-                  member __.AugmentQuickInfoSession(session,_,_) = currentSession <- Some session
-                  member __.Dispose() = () }
+module internal QuickInfoViewProvider =
 
-type internal FSharpQuickInfoDeferredContent (toTextBlock, layout) =
-    member __.CreateFrameworkElement () = toTextBlock layout
-    interface IDeferredQuickInfoContent
+    let layoutTagToClassificationTag (layoutTag:LayoutTag) =
+        match layoutTag with
+        | ActivePatternCase
+        | UnionCase -> PredefinedClassificationTypeNames.SymbolDefinition
+        | ActivePatternResult
+        | Alias
+        | Class
+        | Enum
+        | Interface
+        | Module
+        | Record
+        | Struct
+        | TypeParameter
+        | Union
+        | UnknownType
+        | UnknownEntity -> PredefinedClassificationTypeNames.Type
+        | Event
+        | Field
+        | Local
+        | Method
+        | Member
+        | ModuleBinding
+        | Namespace
+        | Parameter
+        | Property
+        | RecordField -> PredefinedClassificationTypeNames.Identifier
+        | StringLiteral -> PredefinedClassificationTypeNames.String
+        | NumericLiteral -> PredefinedClassificationTypeNames.Number
+        | Operator -> PredefinedClassificationTypeNames.Operator
+        | Keyword -> PredefinedClassificationTypeNames.Keyword
+        | LineBreak
+        | Space -> PredefinedClassificationTypeNames.WhiteSpace
+        | Delegate
+        | Punctuation
+        | Text -> PredefinedClassificationTypeNames.Other
 
-[<Export>]
-type internal QuickInfoViewProvider
-    [<ImportingConstructor>]
-    (
-        // lazy to try to mitigate #2756 (wrong tooltip font)
-        typeMap: Lazy<ClassificationTypeMap>,
-        classificationFormatMapService: IClassificationFormatMapService
-    ) =
+    let provideContent
+        (
+            imageId:ImageId,
+            description:#seq<Layout.TaggedText>,
+            documentation:#seq<Layout.TaggedText>,
+            typeParameterMap:#seq<Layout.TaggedText>,
+            usage:#seq<Layout.TaggedText>,
+            exceptions:#seq<Layout.TaggedText>,
+            navigation:QuickInfoNavigation
+        ) =
 
-    let styles = ResourceDictionary(Source = Uri(@"/FSharp.UIResources;component/HyperlinkStyles.xaml", UriKind.Relative))
+        let buildContainerElement (itemGroup:#seq<Layout.TaggedText>) =
+            let finalCollection = List<ContainerElement>()
+            let currentContainerItems = List<obj>()
+            let runsCollection = List<ClassifiedTextRun>()
+            let flushRuns() =
+                if runsCollection.Count > 0 then
+                    let element = ClassifiedTextElement(runsCollection)
+                    currentContainerItems.Add(element :> obj)
+                    runsCollection.Clear()
+            let flushContainer() =
+                if currentContainerItems.Count > 0 then
+                    let element = ContainerElement(ContainerElementStyle.Wrapped, currentContainerItems)
+                    finalCollection.Add(element)
+                    currentContainerItems.Clear()
+            for item in itemGroup do
+                let classificationTag = layoutTagToClassificationTag item.Tag
+                match item with
+                | :? Layout.NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->
+                    flushRuns()
+                    let navigableTextRun = NavigableTextRun(classificationTag, item.Text, fun () -> navigation.NavigateTo nav.Range)
+                    currentContainerItems.Add(navigableTextRun :> obj)
+                | _ when item.Tag = LineBreak ->
+                    flushRuns()
+                    flushContainer()
+                | _ ->
+                    let newRun = ClassifiedTextRun(classificationTag, item.Text)
+                    runsCollection.Add(newRun)
+                ()
+            flushRuns()
+            flushContainer()
+            finalCollection |> List.ofSeq
 
-    let getStyle() : Style =
-        let key =
-            if Settings.QuickInfo.DisplayLinks then
-                match Settings.QuickInfo.UnderlineStyle with
-                | QuickInfoUnderlineStyle.Solid -> "solid_underline"
-                | QuickInfoUnderlineStyle.Dot -> "dot_underline"
-                | QuickInfoUnderlineStyle.Dash -> "dash_underline"
-            else "no_underline"
-        downcast styles.[key]
-
-    let formatMap = lazy classificationFormatMapService.GetClassificationFormatMap "tooltip"
-
-    let layoutTagToFormatting (layoutTag: LayoutTag) =
-        layoutTag
-        |> RoslynHelpers.roslynTag
-        |> ClassificationTags.GetClassificationTypeName
-        |> typeMap.Value.GetClassificationType
-        |> formatMap.Value.GetTextProperties
-    
-    let formatText (navigation: QuickInfoNavigation) (content: #seq<Layout.TaggedText>) =
-
-        let navigateAndDismiss range _ =
-            navigation.NavigateTo range
-            SessionHandling.currentSession |> Option.iter ( fun session -> session.Dismiss() )
-
-        let secondaryToolTip range =
-            let t = ToolTip(Content = navigation.RelativePath range)
-            DependencyObjectExtensions.SetDefaultTextProperties(t, formatMap.Value)
-            let color = VSColorTheme.GetThemedColor(EnvironmentColors.ToolTipBrushKey)
-            t.Background <- Media.SolidColorBrush(Media.Color.FromRgb(color.R, color.G, color.B))
-            t
-
-        let toInline (taggedText: Layout.TaggedText) =
-            let run = Documents.Run taggedText.Text
-            let inl =
-                match taggedText with
-                | :? Layout.NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->                        
-                    let h = Documents.Hyperlink(run, ToolTip = secondaryToolTip nav.Range)
-                    h.Click.Add <| navigateAndDismiss nav.Range
-                    h :> Documents.Inline
-                | _ -> run :> _
-            DependencyObjectExtensions.SetTextProperties (inl, layoutTagToFormatting taggedText.Tag)
-            inl
-
-        let tb = TextBlock(TextWrapping = TextWrapping.Wrap, TextTrimming = TextTrimming.None)
-        DependencyObjectExtensions.SetDefaultTextProperties(tb, formatMap.Value)
-        tb.Inlines.AddRange(content |> Seq.map toInline)
-        if tb.Inlines.Count = 0 then tb.Visibility <- Visibility.Collapsed
-        tb.Resources.[typeof<Documents.Hyperlink>] <- getStyle()
-        tb
-
-    let wrap (tb: TextBlock) =
-        // Formula to make max width of the TextBlock proportional to the tooltip font size.
-        // We need it, because the ascii-art divider inserted into xml documentation is of variable length and could wrap otherwise
-        let maxWidth = formatMap.Value.DefaultTextProperties.FontRenderingEmSize * 60.0
-        tb.MaxWidth <- maxWidth
-        tb.HorizontalAlignment <- HorizontalAlignment.Left
-        tb
-        
-    member __.ProvideContent(glyph: Glyph, description, documentation, typeParameterMap, usage, exceptions, navigation: QuickInfoNavigation) =
-        let navigable x = FSharpQuickInfoDeferredContent((formatText navigation), x)
-        let wrapped x = FSharpQuickInfoDeferredContent((formatText navigation >> wrap), x)
-        let empty = FSharpQuickInfoDeferredContent((fun _ -> TextBlock(Visibility = Visibility.Collapsed)), Seq.empty)
-        let glyphContent = SymbolGlyphDeferredContent(glyph)
-        QuickInfoDisplayDeferredContent
-            (glyphContent, null, 
-             mainDescription = navigable description, 
-             documentation = wrapped documentation,
-             typeParameterMap = navigable typeParameterMap, 
-             anonymousTypes = empty, 
-             usageText = navigable usage, 
-             exceptionText = navigable exceptions)
-
-[<Export (typeof<IDeferredQuickInfoContentToFrameworkElementConverter>)>] 
-type FSharpDeferredContentConverter () =
-    interface IDeferredQuickInfoContentToFrameworkElementConverter with
-        member this.CreateFrameworkElement(deferredContent, _factory) =
-            let fsharpDeferredContent = deferredContent :?> FSharpQuickInfoDeferredContent
-            upcast fsharpDeferredContent.CreateFrameworkElement()
-        member this.GetApplicableType () =
-            typeof<FSharpQuickInfoDeferredContent>
+        let elements =
+            [ description
+              documentation
+              typeParameterMap
+              usage
+              exceptions ]
+            |> List.filter (Seq.isEmpty >> not)
+            |> List.map buildContainerElement
+            |> List.concat
+            |> List.map (fun x -> x :> obj)
+            |> (fun e -> ContainerElement(ContainerElementStyle.Stacked, e))
+        ContainerElement(
+            ContainerElementStyle.Wrapped,
+            [(ImageElement(imageId) :> obj); elements :> obj])
