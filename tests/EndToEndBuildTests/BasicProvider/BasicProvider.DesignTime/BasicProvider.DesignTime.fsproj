@@ -16,11 +16,11 @@
  
      <!-- The design-time component contains a copy of the TPSDK core files -->
     <Compile Include="..\..\ProvidedTypes\ProvidedTypes.fsi">
-      <Link>..\..\ProvidedTypes\ProvidedTypes.fsi</Link>
+      <Link>ProvidedTypes\ProvidedTypes.fsi</Link>
     </Compile>
 
     <Compile Include="..\..\ProvidedTypes\ProvidedTypes.fs">
-      <Link>..\..\ProvidedTypes\ProvidedTypes.fs</Link>
+      <Link>ProvidedTypes\ProvidedTypes.fs</Link>
     </Compile>
 
     <Compile Include="BasicProvider.Provider.fs" />

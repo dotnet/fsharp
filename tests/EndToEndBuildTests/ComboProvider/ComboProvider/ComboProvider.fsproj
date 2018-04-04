@@ -6,8 +6,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\ProvidedTypes\ProvidedTypes.fsi" />
-    <Compile Include="..\..\ProvidedTypes\ProvidedTypes.fs" />
+    <Compile Include="..\..\ProvidedTypes\ProvidedTypes.fsi">
+      <Link>ProvidedTypes\ProvidedTypes.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\ProvidedTypes\ProvidedTypes.fs">
+      <Link>ProvidedTypes\ProvidedTypes.fs</Link>
+    </Compile>
     <Compile Include="ComboProvider.fs" />
   </ItemGroup>
 

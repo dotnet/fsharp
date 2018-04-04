@@ -1,7 +1,7 @@
 <Project>
 
   <!-- SDK targets override -->
-  <PropertyGroup Condition=" '$(UseFSharpBuild)' == 'net40' ">
+  <PropertyGroup Condition=" '$(FSharpTestCompilerVersion)' == 'net40' ">
     <_FSharpCompilerPath>$(MSBuildThisFileDirectory)$(Configuration)/net40/bin</_FSharpCompilerPath>
 
     <FscToolPath>$(_FSharpCompilerPath)</FscToolPath>
@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <!-- SDK targets override -->
-  <PropertyGroup Condition=" '$(UseFSharpBuild)' == 'coreclr' ">
+  <PropertyGroup Condition=" '$(FSharpTestCompilerVersion)' == 'coreclr' ">
     <_FSharpCompilerPath>$(MSBuildThisFileDirectory)$(Configuration)/coreclr/bin</_FSharpCompilerPath>
 
     <FscToolPath>$(MSBuildThisFileDirectory)Tools/dotnet20</FscToolPath>

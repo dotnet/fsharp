@@ -16,16 +16,16 @@ rem
 
 if not '%NUGET_PACKAGES%' == '' rd %NUGET_PACKAGES%\basicprovider /s /q
 
-@echo %__scriptpath%..\..\..\tools\dotnet20\dotnet.exe pack ComboProvider\ComboProvider.fsproj -o %~dp0artifacts -c release -v minimal -p:UseFSharpBuild=net40
-%__scriptpath%..\..\..\tools\dotnet20\dotnet.exe pack ComboProvider\ComboProvider.fsproj -o %~dp0artifacts -c release -v minimal -p:UseFSharpBuild=net40
+@echo %__scriptpath%..\..\..\tools\dotnet20\dotnet.exe pack ComboProvider\ComboProvider.fsproj -o %~dp0artifacts -c release -v minimal -p:FSharpTestCompilerVersion=net40
+%__scriptpath%..\..\..\tools\dotnet20\dotnet.exe pack ComboProvider\ComboProvider.fsproj -o %~dp0artifacts -c release -v minimal -p:FSharpTestCompilerVersion=net40
 @if ERRORLEVEL 1 echo Error: ComboProvider failed  && goto :failure
 
-@echo %__scriptpath%..\..\..\tools\dotnet20\dotnet.exe test ComboProvider.Tests\ComboProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=net461 -p:UseFSharpBuild=net40
-%__scriptpath%..\..\..\tools\dotnet20\dotnet.exe test ComboProvider.Tests\ComboProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=net461 -p:UseFSharpBuild=net40
+@echo %__scriptpath%..\..\..\tools\dotnet20\dotnet.exe test ComboProvider.Tests\ComboProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=net461 -p:FSharpTestCompilerVersion=net40
+%__scriptpath%..\..\..\tools\dotnet20\dotnet.exe test ComboProvider.Tests\ComboProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=net461 -p:FSharpTestCompilerVersion=net40
 @if ERRORLEVEL 1 echo Error: ComboProvider failed  && goto :failure
 
-@echo %__scriptpath%..\..\..\tools\dotnet20\dotnet.exe test ComboProvider.Tests\ComboProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=netcoreapp2.0 -p:UseFSharpBuild=coreclr
-%__scriptpath%..\..\..\tools\dotnet20\dotnet.exe test ComboProvider.Tests\ComboProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=netcoreapp2.0 -p:UseFSharpBuild=coreclr
+@echo %__scriptpath%..\..\..\tools\dotnet20\dotnet.exe test ComboProvider.Tests\ComboProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=netcoreapp2.0 -p:FSharpTestCompilerVersion=coreclr
+%__scriptpath%..\..\..\tools\dotnet20\dotnet.exe test ComboProvider.Tests\ComboProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=netcoreapp2.0 -p:FSharpTestCompilerVersion=coreclr
 @if ERRORLEVEL 1 echo Error: ComboProviderProvider failed  && goto :failure
 
 rem
@@ -34,16 +34,16 @@ rem Test it with both desktop and coreclr compilers
 rem
 if not '%NUGET_PACKAGES%' == '' rd %NUGET_PACKAGES%\basicprovider /s /q
 
-@echo %__scriptpath%..\..\..\tools\dotnet20\dotnet.exe pack ComboProvider\ComboProvider.fsproj -o %~dp0artifacts -c release -v minimal -p:UseFSharpBuild=coreclr
-%__scriptpath%..\..\..\tools\dotnet20\dotnet.exe pack ComboProvider\ComboProvider.fsproj -o %~dp0artifacts -c release -v minimal -p:UseFSharpBuild=coreclr
+@echo %__scriptpath%..\..\..\tools\dotnet20\dotnet.exe pack ComboProvider\ComboProvider.fsproj -o %~dp0artifacts -c release -v minimal -p:FSharpTestCompilerVersion=coreclr
+%__scriptpath%..\..\..\tools\dotnet20\dotnet.exe pack ComboProvider\ComboProvider.fsproj -o %~dp0artifacts -c release -v minimal FSharpTestCompilerVersion
 @if ERRORLEVEL 1 echo Error: ComboProviderProvider failed  && goto :failure
 
-@echo%__scriptpath%..\..\..\tools\dotnet20\dotnet.exe test ComboProvider.Tests\ComboProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=net461 -p:UseFSharpBuild=net40
-%__scriptpath%..\..\..\tools\dotnet20\dotnet.exe test ComboProvider.Tests\ComboProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=net461 -p:UseFSharpBuild=net40
+@echo%__scriptpath%..\..\..\tools\dotnet20\dotnet.exe test ComboProvider.Tests\ComboProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=net461 -p:FSharpTestCompilerVersion=net40
+%__scriptpath%..\..\..\tools\dotnet20\dotnet.exe test ComboProvider.Tests\ComboProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=net461 -p:FSharpTestCompilerVersion=net40
 @if ERRORLEVEL 1 echo Error: TestBasicProvider failed  && goto :failure
 
-@echo %__scriptpath%..\..\..\tools\dotnet20\dotnet.exe test ComboProvider.Tests\ComboProvider.Tests.fsproj -v minimal -p:TestTargetFramework=netcoreapp2.0 -p:UseFSharpBuild=coreclr
-%__scriptpath%..\..\..\tools\dotnet20\dotnet.exe test ComboProvider.Tests\ComboProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=netcoreapp2.0 -p:UseFSharpBuild=coreclr
+@echo %__scriptpath%..\..\..\tools\dotnet20\dotnet.exe test ComboProvider.Tests\ComboProvider.Tests.fsproj -v minimal -p:TestTargetFramework=netcoreapp2.0 -p:FSharpTestCompilerVersion=coreclr
+%__scriptpath%..\..\..\tools\dotnet20\dotnet.exe test ComboProvider.Tests\ComboProvider.Tests.fsproj -c release -v minimal -p:TestTargetFramework=netcoreapp2.0 -p:FSharpTestCompilerVersion=coreclr
 @if ERRORLEVEL 1 echo Error: ComboProvider failed  && goto :failure
 
 :success

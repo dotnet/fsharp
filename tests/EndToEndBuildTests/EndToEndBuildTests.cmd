@@ -8,7 +8,7 @@ setlocal
 set __scriptpath=%~dp0
 
 @echo %__scriptpath%BasicProvider\TestBasicProvider.cmd
-%__scriptpath%BasicProvider\TestBasicProvider.cmd
+call %__scriptpath%BasicProvider\TestBasicProvider.cmd
 @if ERRORLEVEL 1 echo Error: TestBasicProvider failed  && goto :failure
 
 :success

@@ -481,6 +481,12 @@ if NOT EXIST Proto\net40\bin\fsc.exe (
   set BUILD_PROTO=1
 )
 
+rem
+rem This stops the dotnet cli from hunting around and 
+rem finding the highest possible dotnet sdk version to use.
+rem
+rem description of dotnet lookup here:  
+rem     https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet?tabs=netcore2x
 set DOTNET_MULTILEVEL_LOOKUP=false
 set NUGET_PACKAGES=%~dp0packages
 

@@ -2,15 +2,18 @@
 
   <Target Name="HACK_CopyFscDependenciesToReleaseDirectory"
           BeforeTargets="CoreCompile"
-          Condition=" '$(UseFSharpBuild)' == 'coreclr' ">
+          Condition=" '$(FSharpTestCompilerVersion)' == 'coreclr' ">
     <!--
     When the build is done using correct netsdk projects this won't be necessary
     -->
 
+    <PropertyGroup>
+      <DotnetSdkVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)DotnetCLIToolsVersion.txt').Trim())</DotnetSdkVersion>
+    </PropertyGroup>
     <ItemGroup>
-      <CompilerFilesToCopy Include="$(MSBuildThisFileDirectory)Tools/dotnet20/sdk/2.1.300-preview3-008433/FSharp/*.json" />
-      <CompilerFilesToCopy Include="$(MSBuildThisFileDirectory)Tools/dotnet20/sdk/2.1.300-preview3-008433/FSharp/Microsoft.DiaSymReader.dll" />
-      <CompilerFilesToCopy Include="$(MSBuildThisFileDirectory)Tools/dotnet20/sdk/2.1.300-preview3-008433/FSharp/Microsoft.DiaSymReader.PortablePdb.dll" />
+      <CompilerFilesToCopy Include="$(MSBuildThisFileDirectory)Tools/dotnet20/sdk/$(DotnetSdkVersion)/FSharp/*.json" />
+      <CompilerFilesToCopy Include="$(MSBuildThisFileDirectory)Tools/dotnet20/sdk/$(DotnetSdkVersion)/FSharp/Microsoft.DiaSymReader.dll" />
+      <CompilerFilesToCopy Include="$(MSBuildThisFileDirectory)Tools/dotnet20/sdk/$(DotnetSdkVersion)/FSharp/Microsoft.DiaSymReader.PortablePdb.dll" />
     </ItemGroup>
 
     <Message Text="Copying compiler files to $(_FSharpCompilerPath)" />
