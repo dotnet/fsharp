@@ -58,10 +58,6 @@
   </PropertyGroup>
 
   <!-- dependency uptake version overrides -->
-  <PropertyGroup>
-    <DependencyUptakePackageVersionPropsFile>$(MSBuildThisFileDirectory)..\..\Tools\dependencyUptake\PackageVersions.props</DependencyUptakePackageVersionPropsFile>
-  </PropertyGroup>
-
-  <Import Project="$(DependencyUptakePackageVersionPropsFile)" Condition="Exists('$(DependencyUptakePackageVersionPropsFile)')" />
+  <Import Project="$(DotNetPackageVersionPropsPath)" Condition="'$(DotNetPackageVersionPropsPath)' != '' AND Exists('$(DotNetPackageVersionPropsPath)')" />
 
 </Project>
