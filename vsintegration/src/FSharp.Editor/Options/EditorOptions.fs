@@ -9,7 +9,7 @@ open SettingsPersistence
 open OptionsUIHelpers
 
 module DefaultTuning = 
-    let SemanticColorizationInitialDelay = 0 (* milliseconds *)
+    let SemanticClassificationInitialDelay = 0 (* milliseconds *)
     let UnusedDeclarationsAnalyzerInitialDelay = 0 (* 1000 *) (* milliseconds *)
     let UnusedOpensAnalyzerInitialDelay = 0 (* 2000 *) (* milliseconds *)
     let SimplifyNameInitialDelay = 2000 (* milliseconds *)
