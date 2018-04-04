@@ -45,6 +45,13 @@
     <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataPackageVersion)" />
     <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderPackageVersion)" />
     <PackageReference Include="System.Threading.Thread" Version="$(SystemThreadingThreadPackageVersion)" />
+    <PackageReference Include="System.Diagnostics.Process" Version="4.3.0"></PackageReference>
+    <PackageReference Include="System.Linq.Expressions" Version="4.3.0"></PackageReference>
+    <PackageReference Include="System.Reflection.Emit" Version="4.3.0"></PackageReference>
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.3.0"></PackageReference>
+    <PackageReference Include="System.Reflection.Metadata" Version="1.6.0-preview2-26401-03"></PackageReference>
+    <PackageReference Include="System.Runtime.Loader" Version="4.3.0"></PackageReference>
+    <PackageReference Include="System.Threading.Thread" Version="4.3.0"></PackageReference>
   </ItemGroup>
 
 </Project>
