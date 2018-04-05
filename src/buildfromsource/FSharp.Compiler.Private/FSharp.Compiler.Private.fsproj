@@ -619,25 +619,28 @@
 
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
-    <PackageReference Include="System.Collections.Immutable" Version="1.3.1"></PackageReference>
-    <PackageReference Include="System.Diagnostics.Process" Version="4.3.0"></PackageReference>
-    <PackageReference Include="System.Diagnostics.TraceSource" Version="4.3.0"></PackageReference>
-    <PackageReference Include="System.Linq.Expressions" Version="4.3.0"></PackageReference>
-    <PackageReference Include="System.Linq.Queryable" Version="4.3.0"></PackageReference>
-    <PackageReference Include="System.Net.Requests" Version="4.3.0"></PackageReference>
-    <PackageReference Include="System.Reflection.Emit" Version="4.3.0"></PackageReference>
-    <PackageReference Include="System.Reflection.Metadata" Version="1.4.2"></PackageReference>
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.3.0"></PackageReference>
-    <PackageReference Include="System.Runtime" Version="4.3.0"></PackageReference>
-    <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0"></PackageReference>
-    <PackageReference Include="System.Runtime.Loader" Version="4.3.0"></PackageReference>
-    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="4.3.0"></PackageReference>
-    <PackageReference Include="System.Threading.Tasks.Parallel" Version="4.3.0"></PackageReference>
-    <PackageReference Include="System.Threading.Thread" Version="4.3.0"></PackageReference>
-    <PackageReference Include="System.Threading.ThreadPool" Version="4.3.0"></PackageReference>
-    <PackageReference Include="Microsoft.DiaSymReader.PortablePdb" Version="1.2.0"></PackageReference>
-    <PackageReference Include="Microsoft.DiaSymReader" Version="1.1.0"></PackageReference>
-    <PackageReference Include="System.ValueTuple" Version="4.4.0"></PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutablePackageVersion)" />
+    <PackageReference Include="System.Diagnostics.Process" Version="$(SystemDiagnosticsProcessPackageVersion)" />
+    <PackageReference Include="System.Diagnostics.TraceSource" Version="$(SystemDiagnosticsTraceSourcePackageVersion)" />
+    <PackageReference Include="System.Linq.Expressions" Version="$(SystemLinqExpressionsPackageVersion)" />
+    <PackageReference Include="System.Linq.Queryable" Version="$(SystemLinqExpressionsPackageVersion)" />
+    <PackageReference Include="System.Net.Requests" Version="$(SystemNetRequestsPackageVersion)" />
+    <PackageReference Include="System.Reflection.Emit" Version="$(SystemReflectionEmitPackageVersion)" />
+    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataPackageVersion)" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="$(SystemReflectionTypeExtensionsPackageVersion)" />
+    <PackageReference Include="System.Runtime" Version="$(SystemRuntimePackageVersion)" />
+    <PackageReference Include="System.Runtime.InteropServices" Version="$(SystemRuntimeInteropServicesPackageVersion)" />
+    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderPackageVersion)" />
+    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="$(SystemSecurityCryptographyAlgorithmsPackageVersion)" />
+    <PackageReference Include="System.Threading.Tasks.Parallel" Version="$(SystemThreadingTasksParallelPackageVersion)" />
+    <PackageReference Include="System.Threading.Thread" Version="$(SystemThreadingThreadPackageVersion)" />
+    <PackageReference Include="System.Threading.ThreadPool" Version="$(SystemThreadingThreadPoolPackageVersion)" />
+    <PackageReference Include="Microsoft.DiaSymReader.PortablePdb" Version="$(MicrosoftDiaSymReaderPortablePdbPackageVersion)" />
+    <PackageReference Include="Microsoft.DiaSymReader" Version="$(MicrosoftDiaSymReaderPackageVersion)" />
+    <PackageReference Include="System.ValueTuple" Version="$(SystemValueTuplePackageVersion)" />
   </ItemGroup>
 
 </Project>

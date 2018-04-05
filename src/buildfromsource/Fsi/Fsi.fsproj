@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp1.0</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <TargetExt>.exe</TargetExt>
     <AssemblyName>fsi</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
@@ -35,13 +35,16 @@
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
-    <PackageReference Include="System.Diagnostics.Process" Version="4.3.0"></PackageReference>
-    <PackageReference Include="System.Linq.Expressions" Version="4.3.0"></PackageReference>
-    <PackageReference Include="System.Reflection.Emit" Version="4.3.0"></PackageReference>
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.3.0"></PackageReference>
-    <PackageReference Include="System.Reflection.Metadata" Version="1.4.2"></PackageReference>
-    <PackageReference Include="System.Runtime.Loader" Version="4.3.0"></PackageReference>
-    <PackageReference Include="System.Threading.Thread" Version="4.3.0"></PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Diagnostics.Process" Version="$(SystemDiagnosticsProcessPackageVersion)" />
+    <PackageReference Include="System.Linq.Expressions" Version="$(SystemLinqExpressionsPackageVersion)" />
+    <PackageReference Include="System.Reflection.Emit" Version="$(SystemReflectionEmitPackageVersion)" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="$(SystemReflectionTypeExtensionsPackageVersion)" />
+    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataPackageVersion)" />
+    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderPackageVersion)" />
+    <PackageReference Include="System.Threading.Thread" Version="$(SystemThreadingThreadPackageVersion)" />
   </ItemGroup>
 
 </Project>
