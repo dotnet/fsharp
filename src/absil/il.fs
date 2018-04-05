@@ -1986,7 +1986,11 @@ type ILResource =
     member r.GetBytes() = 
         match r.Location with
         | ILResourceLocation.LocalIn (file, start, len) -> 
-            FileSystem.ReadAllBytesShim(file).[start .. start + len - 1]
+            let bytes = Array.zeroCreate len
+            use fileStream = FileSystem.FileStreamReadShim(file)
+            fileStream.Position <- int64 start
+            fileStream.Read(bytes, 0, len) |> ignore
+            bytes
         | ILResourceLocation.LocalOut bytes -> bytes
         | _ -> failwith "GetBytes"
 
