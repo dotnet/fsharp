@@ -488,7 +488,6 @@ rem
 rem description of dotnet lookup here:  
 rem     https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet?tabs=netcore2x
 set DOTNET_MULTILEVEL_LOOKUP=false
-set NUGET_PACKAGES=%~dp0packages
 
 echo Build/Tests configuration:
 echo.
