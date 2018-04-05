@@ -663,6 +663,9 @@ if not "%PB_PackageVersionPropsUrl%" == "" (
     :: restore dependencies
     %_nugetexe% restore !dependencyUptakeDir!\packages.config -PackagesDirectory packages -ConfigFile !dependencyUptakeDir!\NuGet.config
     if ERRORLEVEL 1 echo Error restoring dependency uptake packages && goto :failure
+
+    :: set DotNetPackageVersionPropsPath
+    set DotNetPackageVersionPropsPath=!dependencyUptakeDir!\PackageVersions.props
 )
 
 echo ----------- Done with package restore, starting dependency uptake check -------------
