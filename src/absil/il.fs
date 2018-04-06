@@ -8,6 +8,7 @@ module Microsoft.FSharp.Compiler.AbstractIL.IL
 
 
 open System
+open System.IO
 open System.Collections
 open System.Collections.Generic
 open System.Collections.Concurrent
@@ -1986,11 +1987,7 @@ type ILResource =
     member r.GetBytes() = 
         match r.Location with
         | ILResourceLocation.LocalIn (file, start, len) -> 
-            let bytes = Array.zeroCreate len
-            use fileStream = FileSystem.FileStreamReadShim(file)
-            fileStream.Position <- int64 start
-            fileStream.Read(bytes, 0, len) |> ignore
-            bytes
+            File.ReadBinaryChunk(file, start, len)
         | ILResourceLocation.LocalOut bytes -> bytes
         | _ -> failwith "GetBytes"
 
