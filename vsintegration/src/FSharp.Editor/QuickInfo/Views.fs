@@ -4,7 +4,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Collections.Generic
 open Internal.Utilities.StructuredFormat
-open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.Classification
 open Microsoft.FSharp.Compiler
 open Microsoft.VisualStudio.Core.Imaging
 open Microsoft.VisualStudio.Language.StandardClassification
@@ -15,38 +15,38 @@ module internal QuickInfoViewProvider =
     let layoutTagToClassificationTag (layoutTag:LayoutTag) =
         match layoutTag with
         | ActivePatternCase
-        | UnionCase -> PredefinedClassificationTypeNames.SymbolDefinition
         | ActivePatternResult
+        | UnionCase
+        | Enum -> ClassificationTypeNames.EnumName // Roslyn-style classification name
         | Alias
         | Class
-        | Enum
-        | Interface
         | Module
         | Record
         | Struct
         | TypeParameter
         | Union
-        | UnknownType
-        | UnknownEntity -> PredefinedClassificationTypeNames.Type
+        | UnknownType -> PredefinedClassificationTypeNames.Type
+        | Interface -> ClassificationTypeNames.InterfaceName // Roslyn-style classification name
+        | Keyword -> PredefinedClassificationTypeNames.Keyword
+        | Delegate
         | Event
         | Field
         | Local
-        | Method
         | Member
+        | Method
         | ModuleBinding
         | Namespace
         | Parameter
         | Property
         | RecordField -> PredefinedClassificationTypeNames.Identifier
-        | StringLiteral -> PredefinedClassificationTypeNames.String
-        | NumericLiteral -> PredefinedClassificationTypeNames.Number
-        | Operator -> PredefinedClassificationTypeNames.Operator
-        | Keyword -> PredefinedClassificationTypeNames.Keyword
         | LineBreak
         | Space -> PredefinedClassificationTypeNames.WhiteSpace
-        | Delegate
+        | NumericLiteral -> PredefinedClassificationTypeNames.Number
+        | Operator -> PredefinedClassificationTypeNames.Operator
+        | StringLiteral -> PredefinedClassificationTypeNames.String
         | Punctuation
-        | Text -> PredefinedClassificationTypeNames.Other
+        | Text
+        | UnknownEntity -> PredefinedClassificationTypeNames.Other
 
     let provideContent
         (
