@@ -11,6 +11,18 @@ open Microsoft.VisualStudio.Text.Adornments
 open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.Utilities
 
+module private Resources =
+    let styles =
+#if DEBUG
+        // load ResourceDictionary in a not 100% safe way for better debugging experience
+        if (isNull Application.ResourceAssembly) then 
+            Application.ResourceAssembly <- typeof<Microsoft.VisualStudio.FSharp.UIResources.QuickInfoOptionControl>.Assembly
+            ResourceDictionary(Source = Uri("HyperlinkStyles.xaml", UriKind.Relative))
+        else
+#endif
+            ResourceDictionary(Source = Uri(@"/FSharp.UIResources;component/HyperlinkStyles.xaml", UriKind.Relative))
+
+
 [<Export(typeof<IViewElementFactory>)>]
 [<Name("NavigableTextRun to UIElement")>]
 [<TypeConversion(typeof<NavigableTextRun>, typeof<UIElement>)>]
@@ -20,7 +32,6 @@ type WpfNavigableTextRunViewElementFactory
     (
         viewElementFactoryService:IViewElementFactoryService
     ) =
-    let styles = ResourceDictionary(Source = Uri(@"/FSharp.UIResources;component/HyperlinkStyles.xaml", UriKind.Relative))
     interface IViewElementFactory with
         override __.CreateViewElement<'TView when 'TView: not struct>(textView:ITextView, model:obj) : 'TView =
             if not (model :? NavigableTextRun) || typeof<'TView> <> typeof<UIElement> then
@@ -44,8 +55,17 @@ type WpfNavigableTextRunViewElementFactory
                             | QuickInfoUnderlineStyle.Dot -> "dot_underline"
                         else
                             "no_underline"
-                    styles.[key] :?> Style
-                tb.Resources.[typeof<TextBlock>] <- underlineStyle
+                    Resources.styles.[key] :?> Style
+
+                // we need to enclose the generated Inline, which is actually a Run element, 
+                // because fancy styling does not seem to work properly with Runs
+                let inl = tb.Inlines.FirstInline
+                let color = inl.Foreground
+                // clear the color here to make it inherit
+                inl.ClearValue(Documents.TextElement.ForegroundProperty) |> ignore
+                // this constructor inserts into TextBlock
+                Documents.Underline(tb.Inlines.FirstInline, tb.ContentStart, Foreground = color) |> ignore
+                tb.Resources.[typeof<Documents.Underline>] <- underlineStyle
             | _ -> ()
 
             // add navigation
