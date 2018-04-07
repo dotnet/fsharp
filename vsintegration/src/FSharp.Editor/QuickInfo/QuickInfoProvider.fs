@@ -208,7 +208,7 @@ type internal FSharpAsyncQuickInfoSource
                         XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, documentation.Add, typeParameterMap.Add, usage.Add, exceptions.Add, quickInfo.StructuredText)
                         let imageId = Tokenizer.GetImageIdForSymbol(quickInfo.Symbol, quickInfo.SymbolKind)
                         let navigation = QuickInfoNavigation(gotoDefinitionService, document, symbolUse.RangeAlternate)
-                        let content = QuickInfoViewProvider.provideContent(imageId, mainDescription, documentation, typeParameterMap, usage, exceptions, navigation)
+                        let content = QuickInfoViewProvider.provideContent(imageId, mainDescription, Seq.concat [documentation; typeParameterMap; usage; exceptions], navigation)
                         let span = getTrackingSpan quickInfo.Span
                         return QuickInfoItem(span, content)
 
@@ -259,7 +259,7 @@ type internal FSharpAsyncQuickInfoSource
                             |> ResizeArray
                         let imageId = Tokenizer.GetImageIdForSymbol(targetQuickInfo.Symbol, targetQuickInfo.SymbolKind)
                         let navigation = QuickInfoNavigation(gotoDefinitionService, document, symbolUse.RangeAlternate)
-                        let content = QuickInfoViewProvider.provideContent(imageId, mainDescription, documentation, typeParameterMap, usage, exceptions, navigation)
+                        let content = QuickInfoViewProvider.provideContent(imageId, mainDescription, Seq.concat [documentation; typeParameterMap; usage; exceptions], navigation)
                         let span = getTrackingSpan targetQuickInfo.Span
                         return QuickInfoItem(span, content)
                 }   |> Async.map Option.toObj

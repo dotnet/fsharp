@@ -53,9 +53,6 @@ module internal QuickInfoViewProvider =
             imageId:ImageId,
             description:#seq<Layout.TaggedText>,
             documentation:#seq<Layout.TaggedText>,
-            typeParameterMap:#seq<Layout.TaggedText>,
-            usage:#seq<Layout.TaggedText>,
-            exceptions:#seq<Layout.TaggedText>,
             navigation:QuickInfoNavigation
         ) =
 
@@ -89,19 +86,11 @@ module internal QuickInfoViewProvider =
                 ()
             flushRuns()
             flushContainer()
-            finalCollection |> List.ofSeq
+            ContainerElement(ContainerElementStyle.Stacked, finalCollection |> Seq.map box)
 
-        let elements =
-            [ description
-              documentation
-              typeParameterMap
-              usage
-              exceptions ]
-            |> List.filter (Seq.isEmpty >> not)
-            |> List.map buildContainerElement
-            |> List.concat
-            |> List.map (fun x -> x :> obj)
-            |> (fun e -> ContainerElement(ContainerElementStyle.Stacked, e))
-        ContainerElement(
-            ContainerElementStyle.Wrapped,
-            [(ImageElement(imageId) :> obj); elements :> obj])
+        ContainerElement(ContainerElementStyle.Stacked,
+            ContainerElement(ContainerElementStyle.Wrapped, 
+                ImageElement(imageId), 
+                buildContainerElement description),
+            buildContainerElement documentation
+        )
