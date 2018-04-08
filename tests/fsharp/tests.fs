@@ -1684,19 +1684,6 @@ module TypecheckTests =
 #endif
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
-    [<Test>]
-    let ``sigs pos27`` () = 
-        let cfg = testConfig "typecheck/sigs"
-        fsc cfg "%s --target:exe -o:pos27.exe" cfg.fsc_flags ["pos27.fs"]
-        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
-
-        peverify cfg "pos27.exe"
-
-    [<Test>]
-    let ``sigs pos28`` () = 
-        let cfg = testConfig "typecheck/sigs"
-        fsc cfg "%s --target:exe -o:pos28.exe" cfg.fsc_flags ["pos28.fs"]
-        peverify cfg "pos28.exe"
 
     [<Test>]
     let ``sigs pos26`` () = 
@@ -1709,6 +1696,25 @@ module TypecheckTests =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos25.exe" cfg.fsc_flags ["pos25.fs"]
         peverify cfg "pos25.exe"
+
+    [<Test>]
+    let ``sigs pos27`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:exe -o:pos27.exe" cfg.fsc_flags ["pos27.fs"]
+        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
+        peverify cfg "pos27.exe"
+
+    [<Test>]
+    let ``sigs pos28`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:exe -o:pos28.exe" cfg.fsc_flags ["pos28.fs"]
+        peverify cfg "pos28.exe"
+
+    [<Test>]
+    let ``sigs pos29`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:exe -o:pos29.exe" cfg.fsc_flags ["pos29.fsi"; "pos29.fs"; "pos29.app.fs"]
+        peverify cfg "pos29.exe"
 
     [<Test>]
     let ``sigs pos24`` () = 
@@ -2167,6 +2173,9 @@ module TypecheckTests =
 
     [<Test>] 
     let ``type check neg101`` () = singleNegTest (testConfig "typecheck/sigs") "neg101"
+
+    [<Test>]
+    let ``type check neg102`` () = singleNegTest (testConfig "typecheck/sigs") "neg102"
 
     [<Test>] 
     let ``type check neg_issue_3752`` () = singleNegTest (testConfig "typecheck/sigs") "neg_issue_3752"

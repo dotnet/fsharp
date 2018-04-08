@@ -970,7 +970,7 @@ and AddBindingsForModuleDef allocVal cloc eenv x =
         allocVal cloc bind.Var eenv
     | TMDefDo _ -> 
         eenv
-    | TMAbstract(ModuleOrNamespaceExprWithSig(mtyp,_,_)) -> 
+    | TMAbstract(ModuleOrNamespaceExprWithSig(mtyp, _, _)) -> 
         AddBindingsForLocalModuleType allocVal cloc eenv  mtyp
     | TMDefs(mdefs) -> 
         AddBindingsForModuleDefs allocVal cloc eenv  mdefs 
@@ -1001,8 +1001,7 @@ let AddIncrementalLocalAssemblyFragmentToIlxGenEnv (amap:ImportMap, isIncrementa
         let cloc = { cloc with clocTopImplQualifiedName = qname.Text }
         if isIncrementalFragment then 
             match mexpr with
-            | ModuleOrNamespaceExprWithSig(_,mdef,_) -> AddBindingsForModuleDef allocVal cloc eenv mdef
-            (* | ModuleOrNamespaceExprWithSig(mtyp,_,m) -> error(Error("don't expect inner defs to have a constraint",m)) *)
+            | ModuleOrNamespaceExprWithSig(_, mdef, _) -> AddBindingsForModuleDef allocVal cloc eenv mdef
         else
             AddBindingsForLocalModuleType allocVal cloc eenv mexpr.Type) 
 
@@ -3454,7 +3453,8 @@ and GenGenericParam cenv eenv (tp:Typar) =
 
       Constraints = subTypeConstraints
       Variance=NonVariant
-      CustomAttrs = mkILCustomAttrs (GenAttrs cenv eenv tp.Attribs)
+      CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs (GenAttrs cenv eenv tp.Attribs))
+      MetadataIndex = NoMetadataIdx
       HasReferenceTypeConstraint=refTypeConstraint
       HasNotNullableValueTypeConstraint=notNullableValueTypeConstraint
       HasDefaultConstructorConstraint= defaultConstructorConstraint }
@@ -3474,7 +3474,8 @@ and GenSlotParam m cenv eenv (TSlotParam(nm,ty,inFlag,outFlag,optionalFlag,attri
       IsIn=inFlag || inFlag2
       IsOut=outFlag || outFlag2
       IsOptional=optionalFlag || optionalFlag2
-      CustomAttrs= mkILCustomAttrs (GenAttrs cenv eenv attribs) }
+      CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs (GenAttrs cenv eenv attribs))
+      MetadataIndex = NoMetadataIdx }
     
 and GenFormalSlotsig m cenv eenv (TSlotSig(_,typ,ctps,mtps,paraml,returnTy)) = 
     let paraml = List.concat paraml
@@ -5005,7 +5006,8 @@ and GenParams cenv eenv (mspec:ILMethodSpec) (attribs:ArgReprInfo list) (implVal
               IsIn=inFlag    
               IsOut=outFlag  
               IsOptional=optionalFlag 
-              CustomAttrs= mkILCustomAttrs (GenAttrs cenv eenv attribs) }
+              CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs (GenAttrs cenv eenv attribs))
+              MetadataIndex = NoMetadataIdx }
 
         param, takenNames)
     |> fst
@@ -5014,7 +5016,8 @@ and GenReturnInfo cenv eenv ilRetTy (retInfo : ArgReprInfo) : ILReturn =
     let marshal,attrs = GenMarshal cenv retInfo.Attribs
     { Type=ilRetTy
       Marshal=marshal
-      CustomAttrs= mkILCustomAttrs (GenAttrs cenv eenv attrs) }
+      CustomAttrsStored= storeILCustomAttrs (mkILCustomAttrs (GenAttrs cenv eenv attrs))
+      MetadataIndex = NoMetadataIdx }
        
 and GenPropertyForMethodDef compileAsInstance tref mdef (v:Val) (memberInfo:ValMemberInfo) ilArgTys ilPropTy ilAttrs compiledName =
     let name = match compiledName with | Some n -> n | _ -> v.PropertyName in  (* chop "get_" *)
@@ -5778,7 +5781,7 @@ and GenTypeDefForCompLoc (cenv, eenv, mgbuf: AssemblyBuilder, cloc, hidden, attr
 
 
 and GenModuleExpr cenv cgbuf qname lazyInitInfo eenv x   = 
-    let (ModuleOrNamespaceExprWithSig(mty,def,_)) = x 
+    let (ModuleOrNamespaceExprWithSig(mty, def, _)) = x 
     // REVIEW: the scopeMarks are used for any shadow locals we create for the module bindings 
     // We use one scope for all the bindings in the module, which makes them all appear with their "default" values
     // rather than incrementally as we step through the  initializations in the module. This is a little unfortunate 

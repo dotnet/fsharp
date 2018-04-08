@@ -168,10 +168,6 @@ type DisposablesTracker() =
                 try i.Dispose() with _ -> ()
 
 
-//----------------------------------------------------------------------------
-// TypeCheck, AdjustForScriptCompile
-//----------------------------------------------------------------------------
-
 let TypeCheck (ctok, tcConfig, tcImports, tcGlobals, errorLogger:ErrorLogger, assemblyName, niceNameGen, tcEnv0, inputs, exiter: Exiter) =
     try 
         if isNil inputs then error(Error(FSComp.SR.fscNoImplementationFiles(), Range.rangeStartup))
@@ -771,11 +767,12 @@ module MainModuleBuilder =
             let systemNumericsAssemblyRef = ILAssemblyRef.Create(refNumericsDllName, aref.Hash, aref.PublicKey, aref.Retargetable, aref.Version, aref.Locale)
             typesForwardedToSystemNumerics |>
                 Seq.map (fun t ->
-                            {   ScopeRef = ILScopeRef.Assembly(systemNumericsAssemblyRef)
-                                Name = t
-                                Attributes = enum<TypeAttributes>(0x00200000) ||| TypeAttributes.Public
-                                Nested = mkILNestedExportedTypes List.empty<ILNestedExportedType> 
-                                CustomAttrs = mkILCustomAttrs List.empty<ILAttribute> }) |>
+                            { ScopeRef = ILScopeRef.Assembly(systemNumericsAssemblyRef)
+                              Name = t
+                              Attributes = enum<TypeAttributes>(0x00200000) ||| TypeAttributes.Public
+                              Nested = mkILNestedExportedTypes []
+                              CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
+                              MetadataIndex = NoMetadataIdx }) |>
                 Seq.toList
         | None -> []
 
@@ -860,7 +857,8 @@ module MainModuleBuilder =
                   { Name=reflectedDefinitionResourceName
                     Location = ILResourceLocation.LocalOut reflectedDefinitionBytes
                     Access= ILResourceAccess.Public
-                    CustomAttrs = emptyILCustomAttrs }
+                    CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
+                    MetadataIndex = NoMetadataIdx }
                 reflectedDefinitionAttrs, reflectedDefinitionResource) 
             |> List.unzip
             |> (fun (attrs, resource) -> List.concat attrs, resource)
@@ -886,11 +884,11 @@ module MainModuleBuilder =
                  | None -> tcVersion
                  | Some v -> v
              Some { man with Version= Some ver
-                             CustomAttrs = manifestAttrs
+                             CustomAttrsStored = storeILCustomAttrs manifestAttrs
                              DisableJitOptimizations=disableJitOptimizations
                              JitTracking= tcConfig.jitTracking
                              IgnoreSymbolStoreSequencePoints = tcConfig.ignoreSymbolStoreSequencePoints
-                             SecurityDecls=secDecls } 
+                             SecurityDeclsStored=storeILSecurityDecls secDecls } 
 
         let resources = 
           mkILResources 
@@ -903,7 +901,8 @@ module MainModuleBuilder =
                  yield { Name=name 
                          Location=ILResourceLocation.LocalOut bytes
                          Access=pub 
-                         CustomAttrs=emptyILCustomAttrs }
+                         CustomAttrsStored=storeILCustomAttrs emptyILCustomAttrs 
+                         MetadataIndex = NoMetadataIdx }
                
               yield! reflectedDefinitionResources
               yield! intfDataResources
@@ -913,7 +912,8 @@ module MainModuleBuilder =
                  yield { Name=name 
                          Location=ILResourceLocation.File(ILModuleRef.Create(name=file, hasMetadata=false, hash=Some (sha1HashBytes (FileSystem.ReadAllBytesShim file))), 0)
                          Access=pub 
-                         CustomAttrs=emptyILCustomAttrs } ]
+                         CustomAttrsStored=storeILCustomAttrs emptyILCustomAttrs
+                         MetadataIndex = NoMetadataIdx } ]
 
         let assemblyVersion = 
             match tcConfig.version with
@@ -1033,11 +1033,12 @@ module MainModuleBuilder =
               Is32Bit=(match tcConfig.platform with Some X86 -> true | _ -> false)
               Is64Bit=(match tcConfig.platform with Some AMD64 | Some IA64 -> true | _ -> false)          
               Is32BitPreferred = if tcConfig.prefer32Bit && not tcConfig.target.IsExe then (error(Error(FSComp.SR.invalidPlatformTarget(), rangeCmdArgs))) else tcConfig.prefer32Bit
-              CustomAttrs= 
-                  mkILCustomAttrs 
+              CustomAttrsStored= 
+                  storeILCustomAttrs
+                    (mkILCustomAttrs 
                       [ if tcConfig.target = CompilerTarget.Module then 
                            yield! iattrs 
-                        yield! codegenResults.ilNetModuleAttrs ]
+                        yield! codegenResults.ilNetModuleAttrs ])
               NativeResources=nativeResources
               Manifest = manifest }
 
@@ -1084,7 +1085,7 @@ module StaticLinker =
                 [ for (_, depILModule) in dependentILModules do 
                     match depILModule.Manifest with 
                     | Some m -> 
-                        for ca in m.CustomAttrs.AsList do
+                        for ca in m.CustomAttrs.AsArray do
                            if ca.Method.MethodRef.DeclaringTypeRef.FullName = typeof<CompilationMappingAttribute>.FullName then 
                                yield ca
                     | _ -> () ]
@@ -1141,8 +1142,8 @@ module StaticLinker =
 
             let ilxMainModule = 
                 { ilxMainModule with 
-                    Manifest = (let m = ilxMainModule.ManifestOfAssembly in Some {m with CustomAttrs = mkILCustomAttrs (m.CustomAttrs.AsList @ savedManifestAttrs) })
-                    CustomAttrs = mkILCustomAttrs [ for m in moduls do yield! m.CustomAttrs.AsList ]
+                    Manifest = (let m = ilxMainModule.ManifestOfAssembly in Some {m with CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs (m.CustomAttrs.AsList @ savedManifestAttrs)) })
+                    CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs [ for m in moduls do yield! m.CustomAttrs.AsArray ])
                     TypeDefs = mkILTypeDefs (topTypeDef :: List.concat normalTypeDefs)
                     Resources = mkILResources (savedResources @ ilxMainModule.Resources.AsList)
                     NativeResources = savedNativeResources }
@@ -1194,7 +1195,7 @@ module StaticLinker =
                              let meths = td.Methods.AsList
                                             |> List.map (fun md ->
                                                 md.With(customAttrs = 
-                                                            mkILCustomAttrs (td.CustomAttrs.AsList |> List.filter (fun ilattr ->
+                                                              mkILCustomAttrs (td.CustomAttrs.AsList |> List.filter (fun ilattr ->
                                                                 ilattr.Method.DeclaringType.TypeRef.FullName <> "System.Runtime.TargetedPatchingOptOutAttribute")))) 
                                             |> mkILMethods
                              let td = td.With(methods=meths)
@@ -1341,7 +1342,7 @@ module StaticLinker =
                       | ResolvedCcu ccu -> Some ccu
                       | UnresolvedCcu(_ccuName) -> None
 
-                  let modul = dllInfo.RawMetadata.TryGetRawILModule().Value
+                  let modul = dllInfo.RawMetadata.TryGetILModuleDef().Value
                   yield (ccu, dllInfo.ILScopeRef, modul), (ilAssemRef.Name, provAssemStaticLinkInfo)
               | None -> () ]
 
@@ -1709,7 +1710,6 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemor
             delayForFlagsLogger.ForwardDelayedDiagnostics(tcConfigB)
             exiter.Exit 1 
     
-    tcConfigB.sqmNumOfSourceFiles <- sourceFiles.Length
     tcConfigB.conditionalCompilationDefines <- "COMPILED" :: tcConfigB.conditionalCompilationDefines 
     displayBannerIfNeeded tcConfigB
 
@@ -1818,10 +1818,12 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, reduceMemor
 
     Args (ctok, tcGlobals, tcImports, frameworkTcImports, tcState.Ccu, typedAssembly, topAttrs, tcConfig, outfile, pdbfile, assemblyName, errorLogger, exiter)
 
-let main1(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, generatedCcu, typedImplFiles, topAttrs, tcConfig: TcConfig, outfile, pdbfile, assemblyName, errorLogger, exiter: Exiter)) =
+let main1(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, generatedCcu: CcuThunk, typedImplFiles, topAttrs, tcConfig: TcConfig, outfile, pdbfile, assemblyName, errorLogger, exiter: Exiter)) =
 
     if tcConfig.typeCheckOnly then exiter.Exit 0
     
+    generatedCcu.Contents.SetAttribs(generatedCcu.Contents.Attribs @ topAttrs.assemblyAttrs)
+
     use unwindPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.CodeGen
     let signingInfo = ValidateKeySigningAttributes (tcConfig, tcGlobals, topAttrs)
     
@@ -1867,7 +1869,8 @@ let main1(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
     Args (ctok, tcConfig, tcImports, frameworkTcImports, tcGlobals, errorLogger, generatedCcu, outfile, typedImplFiles, topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter)
 
 
-// set up typecheck for given AST without parsing any command line parameters
+// This is for the compile-from-AST feature of FCS.
+// TODO: consider removing this feature from FCS, which as far as I know is not used by anyone.
 let main1OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, target, outfile, pdbFile, dllReferences, noframework, exiter, errorLoggerProvider: ErrorLoggerProvider, inputs : ParsedInput list) =
 
     let tryGetMetadataSnapshot = (fun _ -> None)
@@ -1888,7 +1891,6 @@ let main1OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, 
         | None -> OptionSwitch.Off)
     SetTailcallSwitch tcConfigB OptionSwitch.On
     tcConfigB.target <- target
-    tcConfigB.sqmNumOfSourceFiles <- 1
         
     let errorLogger = errorLoggerProvider.CreateErrorLoggerUpToMaxErrors (tcConfigB, exiter)
 
@@ -1925,6 +1927,7 @@ let main1OfAst (ctok, legacyReferenceResolver, reduceMemoryUsage, assemblyName, 
         TypeCheck(ctok, tcConfig, tcImports, tcGlobals, errorLogger, assemblyName, NiceNameGenerator(), tcEnv0, inputs,exiter)
 
     let generatedCcu = tcState.Ccu
+    generatedCcu.Contents.SetAttribs(generatedCcu.Contents.Attribs @ topAttrs.assemblyAttrs)
 
     use unwindPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.CodeGen)
     let signingInfo = ValidateKeySigningAttributes (tcConfig, tcGlobals, topAttrs)
@@ -1967,7 +1970,7 @@ let main2a(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlo
     let metadataVersion = 
         match tcConfig.metadataVersion with
         | Some v -> v
-        | _ -> match (frameworkTcImports.DllTable.TryFind tcConfig.primaryAssembly.Name) with | Some ib -> ib.RawMetadata.TryGetRawILModule().Value.MetadataVersion | _ -> ""
+        | _ -> match (frameworkTcImports.DllTable.TryFind tcConfig.primaryAssembly.Name) with | Some ib -> ib.RawMetadata.TryGetILModuleDef().Value.MetadataVersion | _ -> ""
     let optimizedImpls, optimizationData, _ = ApplyAllOptimizations (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile, importMap, false, optEnv0, generatedCcu, typedImplFiles)
 
     AbortOnError(errorLogger, exiter)

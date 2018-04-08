@@ -154,6 +154,7 @@ let GetRangeOfDiagnostic(err:PhasedDiagnostic) =
       | InterfaceNotRevealed(_, _, m) 
       | WrappedError (_, m)
       | PatternMatchCompilation.MatchIncomplete (_, _, m)
+      | PatternMatchCompilation.EnumMatchIncomplete (_, _, m)
       | PatternMatchCompilation.RuleNeverMatched m 
       | ValNotMutable(_, _, m)
       | ValNotLocal(_, _, m) 
@@ -355,6 +356,7 @@ let GetDiagnosticNumber(err:PhasedDiagnostic) =
       | ExtensionTyping.ProvidedTypeResolutionNoRange _
       | ExtensionTyping.ProvidedTypeResolution _ -> 103
 #endif
+      | PatternMatchCompilation.EnumMatchIncomplete _ -> 104
        (* DO NOT CHANGE THE NUMBERS *)
 
       // Strip TargetInvocationException wrappers
@@ -560,6 +562,7 @@ let MatchIncomplete2E() = DeclareResourceString("MatchIncomplete2", "%s")
 let MatchIncomplete3E() = DeclareResourceString("MatchIncomplete3", "%s")
 let MatchIncomplete4E() = DeclareResourceString("MatchIncomplete4", "")
 let RuleNeverMatchedE() = DeclareResourceString("RuleNeverMatched", "")
+let EnumMatchIncomplete1E() = DeclareResourceString("EnumMatchIncomplete1", "")
 let ValNotMutableE() = DeclareResourceString("ValNotMutable", "%s")
 let ValNotLocalE() = DeclareResourceString("ValNotLocal", "")
 let Obsolete1E() = DeclareResourceString("Obsolete1", "")
@@ -1402,6 +1405,15 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
           if isComp then 
               os.Append(MatchIncomplete4E().Format) |> ignore
 
+      | PatternMatchCompilation.EnumMatchIncomplete (isComp, cexOpt, _) ->
+          os.Append(EnumMatchIncomplete1E().Format) |> ignore
+          match cexOpt with
+          | None -> ()
+          | Some (cex, false) ->  os.Append(MatchIncomplete2E().Format cex) |> ignore
+          | Some (cex, true) ->  os.Append(MatchIncomplete3E().Format cex) |> ignore
+          if isComp then
+              os.Append(MatchIncomplete4E().Format) |> ignore
+
       | PatternMatchCompilation.RuleNeverMatched _ -> os.Append(RuleNeverMatchedE().Format) |> ignore
 
       | ValNotMutable(_, valRef, _) -> os.Append(ValNotMutableE().Format(valRef.DisplayName)) |> ignore
@@ -2084,7 +2096,7 @@ type IRawFSharpAssemblyData =
     abstract GetInternalsVisibleToAttributes : ILGlobals  -> string list
     ///  The raw IL module definition in the assembly, if any. This is not present for cross-project references
     /// in the language service
-    abstract TryGetRawILModule : unit -> ILModuleDef option
+    abstract TryGetILModuleDef : unit -> ILModuleDef option
     ///  The raw F# signature data in the assembly, if any
     abstract GetRawFSharpSignatureData : range * ilShortAssemName: string * fileName: string -> (string * byte[]) list
     ///  The raw F# optimization data in the assembly, if any
@@ -2322,9 +2334,6 @@ type TcConfigBuilder =
       isInvalidationSupported : bool
 
       /// used to log sqm data
-      mutable sqmSessionGuid : System.Guid option
-      mutable sqmNumOfSourceFiles : int
-      sqmSessionStartedTime : int64
 
       /// if true - every expression in quotations will be augmented with full debug info (filename, location in file)
       mutable emitDebugInfoInQuotations : bool
@@ -2472,9 +2481,6 @@ type TcConfigBuilder =
           noDebugData = false
           isInteractive = false
           isInvalidationSupported = false
-          sqmSessionGuid = None
-          sqmNumOfSourceFiles = 0
-          sqmSessionStartedTime = System.DateTime.UtcNow.Ticks
           emitDebugInfoInQuotations = false
           exename = None
           copyFSharpCore = CopyFSharpCoreFlag.No
@@ -2943,9 +2949,6 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
     member x.isInteractive = data.isInteractive
     member x.isInvalidationSupported = data.isInvalidationSupported
     member x.emitDebugInfoInQuotations = data.emitDebugInfoInQuotations
-    member x.sqmSessionGuid = data.sqmSessionGuid
-    member x.sqmNumOfSourceFiles = data.sqmNumOfSourceFiles
-    member x.sqmSessionStartedTime = data.sqmSessionStartedTime
     member x.copyFSharpCore = data.copyFSharpCore
     member x.shadowCopyReferences = data.shadowCopyReferences
     member x.tryGetMetadataSnapshot = data.tryGetMetadataSnapshot
@@ -3781,13 +3784,15 @@ let MakeILResource rname bytes =
     { Name = rname
       Location = ILResourceLocation.LocalOut bytes
       Access = ILResourceAccess.Public
-      CustomAttrs = emptyILCustomAttrs }
+      CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
+      MetadataIndex = NoMetadataIdx }
 
 let PickleToResource inMem file g scope rname p x = 
     { Name = rname
       Location = (let bytes = pickleObjWithDanglingCcus inMem file g scope p x in ILResourceLocation.LocalOut bytes)
       Access = ILResourceAccess.Public
-      CustomAttrs = emptyILCustomAttrs }
+      CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
+      MetadataIndex = NoMetadataIdx }
 
 let GetSignatureData (file, ilScopeRef, ilModule, byteReader) : PickledDataWithReferences<PickledCcuInfo> = 
     unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleCcuInfo byteReader
@@ -3820,7 +3825,7 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
     interface IRawFSharpAssemblyData with 
          member __.GetAutoOpenAttributes(ilg) = GetAutoOpenAttributes ilg ilModule 
          member __.GetInternalsVisibleToAttributes(ilg) = GetInternalsVisibleToAttributes ilg ilModule 
-         member __.TryGetRawILModule() = Some ilModule 
+         member __.TryGetILModuleDef() = Some ilModule 
          member __.GetRawFSharpSignatureData(m, ilShortAssemName, filename) = 
             let resources = ilModule.Resources.AsList
             let sigDataReaders = 
@@ -4088,6 +4093,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                 FileName = Some fileName
                 MemberSignatureEquality = (fun ty1 ty2 -> Tastops.typeEquivAux EraseAll g ty1 ty2)
                 ImportProvidedType = (fun ty -> Import.ImportProvidedType (tcImports.GetImportMap()) m ty)
+                TryGetILModuleDef = (fun () -> Some ilModule)
                 TypeForwarders = Map.empty }
                     
             let ccu = CcuThunk.Create(ilShortAssemName, ccuData)
@@ -4390,8 +4396,8 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
     member tcImports.PrepareToImportReferencedILAssembly (ctok, m, filename, dllinfo:ImportedBinary) =
         CheckDisposed()
         let tcConfig = tcConfigP.Get(ctok)
-        assert dllinfo.RawMetadata.TryGetRawILModule().IsSome
-        let ilModule = dllinfo.RawMetadata.TryGetRawILModule().Value
+        assert dllinfo.RawMetadata.TryGetILModuleDef().IsSome
+        let ilModule = dllinfo.RawMetadata.TryGetILModuleDef().Value
         let ilScopeRef = dllinfo.ILScopeRef
         let aref =   
             match ilScopeRef with 
@@ -4439,7 +4445,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         let ccuRawDataAndInfos = 
             ilModule.GetRawFSharpSignatureData(m, ilShortAssemName, filename)
             |> List.map (fun (ccuName, sigDataReader) -> 
-                let data = GetSignatureData (filename, ilScopeRef, ilModule.TryGetRawILModule(), sigDataReader)
+                let data = GetSignatureData (filename, ilScopeRef, ilModule.TryGetILModuleDef(), sigDataReader)
 
                 let optDatas = Map.ofList optDataReaders
 
@@ -4464,6 +4470,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                       IsProviderGenerated = false
                       ImportProvidedType = (fun ty -> Import.ImportProvidedType (tcImports.GetImportMap()) m ty)
 #endif
+                      TryGetILModuleDef = ilModule.TryGetILModuleDef
                       UsesFSharp20PlusQuotations = minfo.usesQuotations
                       MemberSignatureEquality= (fun ty1 ty2 -> Tastops.typeEquivAux EraseAll (tcImports.GetTcGlobals()) ty1 ty2)
                       TypeForwarders = ImportILAssemblyTypeForwarders(tcImports.GetImportMap, m, ilModule.GetRawTypeForwarders()) }
@@ -4477,7 +4484,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                             if verbose then dprintf "*** no optimization data for CCU %s, was DLL compiled with --no-optimization-data??\n" ccuName 
                             None
                          | Some info -> 
-                            let data = GetOptimizationData (filename, ilScopeRef, ilModule.TryGetRawILModule(), info)
+                            let data = GetOptimizationData (filename, ilScopeRef, ilModule.TryGetILModuleDef(), info)
                             let res = data.OptionalFixup(fun nm -> availableToOptionalCcu(tcImports.FindCcu(ctok, m, nm, lookupOnly=false))) 
                             if verbose then dprintf "found optimization data for CCU %s\n" ccuName 
                             Some res)
@@ -4494,7 +4501,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                       ILScopeRef = ilScopeRef }  
                 let phase2() = 
 #if !NO_EXTENSIONTYPING
-                     match ilModule.TryGetRawILModule() with 
+                     match ilModule.TryGetILModuleDef() with 
                      | None -> () // no type providers can be used without a real IL Module present
                      | Some ilModule ->
                          ccuinfo.TypeProviders <- tcImports.ImportTypeProviderExtensions (ctok, tcConfig, filename, ilScopeRef, ilModule.ManifestOfAssembly.CustomAttrs.AsList, ccu.Contents, invalidateCcu, m)
@@ -5205,11 +5212,11 @@ module private ScriptPreprocessClosure =
         let allRootDiagnostics = allRootDiagnostics |> List.filter (fst >> isRootRange)
         
         let result : LoadClosure = 
-            { SourceFiles = List.groupByFirst sourceFiles
-              References = List.groupByFirst references
+            { SourceFiles = List.groupBy fst sourceFiles |> List.map (map2Of2 (List.map snd))
+              References = List.groupBy fst references  |> List.map (map2Of2 (List.map snd))
               UnresolvedReferences = unresolvedReferences
               Inputs = sourceInputs
-              NoWarns = List.groupByFirst globalNoWarns
+              NoWarns = List.groupBy fst globalNoWarns  |> List.map (map2Of2 (List.map snd))
               OriginalLoadReferences = tcConfig.loadedSources
               ResolutionDiagnostics = resolutionDiagnostics
               AllRootFileDiagnostics = allRootDiagnostics
@@ -5319,7 +5326,6 @@ let CheckSimulateException(tcConfig:TcConfig) =
 
 type RootSigs =  Zmap<QualifiedNameOfFile, ModuleOrNamespaceType>
 type RootImpls = Zset<QualifiedNameOfFile >
-type TypecheckerSigsAndImpls = RootSigsAndImpls of RootSigs * RootImpls * ModuleOrNamespaceType * ModuleOrNamespaceType
 
 let qnameOrder = Order.orderBy (fun (q:QualifiedNameOfFile) -> q.Text)
 
@@ -5330,17 +5336,25 @@ type TcState =
       tcsTcSigEnv: TcEnv
       tcsTcImplEnv: TcEnv
       tcsCreatesGeneratedProvidedTypes: bool
-      /// The accumulated results of type checking for this assembly 
-      tcsRootSigsAndImpls : TypecheckerSigsAndImpls }
+      tcsRootSigs: RootSigs 
+      tcsRootImpls: RootImpls 
+      tcsCcuSig: ModuleOrNamespaceType  }
+
     member x.NiceNameGenerator = x.tcsNiceNameGen
+
     member x.TcEnvFromSignatures = x.tcsTcSigEnv
+
     member x.TcEnvFromImpls = x.tcsTcImplEnv
+
     member x.Ccu = x.tcsCcu
+
     member x.CreatesGeneratedProvidedTypes = x.tcsCreatesGeneratedProvidedTypes
 
-    member x.PartialAssemblySignature = 
-      let (RootSigsAndImpls(_rootSigs, _rootImpls, _allSigModulTyp, allImplementedSigModulTyp)) = x.tcsRootSigsAndImpls
-      allImplementedSigModulTyp
+    // Assem(a.fsi + b.fsi + c.fsi) (after checking implementation file )
+    member x.CcuType = x.tcsCcuType
+ 
+    // a.fsi + b.fsi + c.fsi (after checking implementation file for c.fs)
+    member x.CcuSig = x.tcsCcuSig
  
     member x.NextStateAfterIncrementalFragment(tcEnvAtEndOfLastInput) = 
         { x with tcsTcSigEnv = tcEnvAtEndOfLastInput
@@ -5362,6 +5376,7 @@ let GetInitialTcState(m, ccuName, tcConfig:TcConfig, tcGlobals, tcImports:TcImpo
           IsProviderGenerated = false
           ImportProvidedType = (fun ty -> Import.ImportProvidedType (tcImports.GetImportMap()) m ty)
 #endif
+          TryGetILModuleDef = (fun () -> None)
           FileName=None 
           Stamp = newStamp()
           QualifiedName= None
@@ -5377,133 +5392,127 @@ let GetInitialTcState(m, ccuName, tcConfig:TcConfig, tcGlobals, tcImports:TcImpo
     if tcConfig.compilingFslib then 
         tcGlobals.fslibCcu.Fixup(ccu)
 
-    let rootSigs = Zmap.empty qnameOrder
-    let rootImpls = Zset.empty qnameOrder
-    let allSigModulTyp = NewEmptyModuleOrNamespaceType Namespace
-    let allImplementedSigModulTyp = NewEmptyModuleOrNamespaceType Namespace
     { tcsCcu= ccu
       tcsCcuType=ccuType
       tcsNiceNameGen=niceNameGen
       tcsTcSigEnv=tcEnv0
       tcsTcImplEnv=tcEnv0
       tcsCreatesGeneratedProvidedTypes=false
-      tcsRootSigsAndImpls = RootSigsAndImpls (rootSigs, rootImpls, allSigModulTyp, allImplementedSigModulTyp) }
+      tcsRootSigs = Zmap.empty qnameOrder
+      tcsRootImpls = Zset.empty qnameOrder
+      tcsCcuSig = NewEmptyModuleOrNamespaceType Namespace }
+
 
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
-let TypeCheckOneInputEventually
-      (checkForErrors, tcConfig:TcConfig, tcImports:TcImports, 
-       tcGlobals, prefixPathOpt, tcSink, tcState: TcState, inp: ParsedInput) =
-  eventually {
-   try 
-      let! ctok = Eventually.token
-      RequireCompilationThread ctok // Everything here requires the compilation thread since it works on the TAST
+let TypeCheckOneInputEventually (checkForErrors, tcConfig:TcConfig, tcImports:TcImports, tcGlobals, prefixPathOpt, tcSink, tcState: TcState, inp: ParsedInput) =
 
-      CheckSimulateException(tcConfig)
-      let (RootSigsAndImpls(rootSigs, rootImpls, allSigModulTyp, allImplementedSigModulTyp)) = tcState.tcsRootSigsAndImpls
-      let m = inp.Range
-      let amap = tcImports.GetImportMap()
-      let! (topAttrs, implFiles, tcEnvAtEnd, tcSigEnv, tcImplEnv, topSigsAndImpls, ccuType, createsGeneratedProvidedTypes) = 
-        eventually {
-            match inp with 
-            | ParsedInput.SigFile (ParsedSigFileInput(_, qualNameOfFile, _, _, _) as file) ->
+    eventually {
+        try 
+          let! ctok = Eventually.token
+          RequireCompilationThread ctok // Everything here requires the compilation thread since it works on the TAST
+
+          CheckSimulateException(tcConfig)
+
+          let m = inp.Range
+          let amap = tcImports.GetImportMap()
+          match inp with 
+          | ParsedInput.SigFile (ParsedSigFileInput(_, qualNameOfFile, _, _, _) as file) ->
                 
-                // Check if we've seen this top module signature before. 
-                if Zmap.mem qualNameOfFile rootSigs then 
-                    errorR(Error(FSComp.SR.buildSignatureAlreadySpecified(qualNameOfFile.Text), m.StartRange))
+              // Check if we've seen this top module signature before. 
+              if Zmap.mem qualNameOfFile tcState.tcsRootSigs then 
+                  errorR(Error(FSComp.SR.buildSignatureAlreadySpecified(qualNameOfFile.Text), m.StartRange))
 
-                // Check if the implementation came first in compilation order 
-                if Zset.contains qualNameOfFile rootImpls then 
-                    errorR(Error(FSComp.SR.buildImplementationAlreadyGivenDetail(qualNameOfFile.Text), m))
+              // Check if the implementation came first in compilation order 
+              if Zset.contains qualNameOfFile tcState.tcsRootImpls then 
+                  errorR(Error(FSComp.SR.buildImplementationAlreadyGivenDetail(qualNameOfFile.Text), m))
 
-                // Typecheck the signature file 
-                let! (tcEnv, sigFileType, createsGeneratedProvidedTypes) = 
-                    TypeCheckOneSigFile (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, tcConfig.conditionalCompilationDefines, tcSink) tcState.tcsTcSigEnv file
+              // Typecheck the signature file 
+              let! (tcEnv, sigFileType, createsGeneratedProvidedTypes) = 
+                  TypeCheckOneSigFile (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, tcConfig.conditionalCompilationDefines, tcSink) tcState.tcsTcSigEnv file
 
-                let rootSigs = Zmap.add qualNameOfFile  sigFileType rootSigs
+              let rootSigs = Zmap.add qualNameOfFile  sigFileType tcState.tcsRootSigs
 
-                // Open the prefixPath for fsi.exe 
-                let tcEnv = 
-                    match prefixPathOpt with 
-                    | None -> tcEnv 
-                    | Some prefixPath -> 
-                        let m = qualNameOfFile.Range
-                        TcOpenDecl tcSink tcGlobals amap m m tcEnv prefixPath
+              // Add the  signature to the signature env (unless it had an explicit signature)
+              let ccuSigForFile = CombineCcuContentFragments m [sigFileType; tcState.tcsCcuSig]
+                
+              // Open the prefixPath for fsi.exe 
+              let tcEnv = 
+                  match prefixPathOpt with 
+                  | None -> tcEnv 
+                  | Some prefixPath -> 
+                      let m = qualNameOfFile.Range
+                      TcOpenDecl tcSink tcGlobals amap m m tcEnv prefixPath
 
-                let res = (EmptyTopAttrs, [], tcEnv, tcEnv, tcState.tcsTcImplEnv, RootSigsAndImpls(rootSigs, rootImpls, allSigModulTyp, allImplementedSigModulTyp), tcState.tcsCcuType, createsGeneratedProvidedTypes)
-                return res
+              let tcState = 
+                   { tcState with 
+                        tcsTcSigEnv=tcEnv
+                        tcsTcImplEnv=tcState.tcsTcImplEnv
+                        tcsRootSigs=rootSigs
+                        tcsCreatesGeneratedProvidedTypes=tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes}
 
-            | ParsedInput.ImplFile (ParsedImplFileInput(filename, _, qualNameOfFile, _, _, _, _) as file) ->
+              return (tcEnv, EmptyTopAttrs, None, ccuSigForFile), tcState
+
+          | ParsedInput.ImplFile (ParsedImplFileInput(_, _, qualNameOfFile, _, _, _, _) as file) ->
             
-                // Check if we've got an interface for this fragment 
-                let rootSigOpt = rootSigs.TryFind(qualNameOfFile)
+              // Check if we've got an interface for this fragment 
+              let rootSigOpt = tcState.tcsRootSigs.TryFind(qualNameOfFile)
 
-                if verbose then dprintf "ParsedInput.ImplFile, nm = %s, qualNameOfFile = %s, ?rootSigOpt = %b\n" filename qualNameOfFile.Text (Option.isSome rootSigOpt)
-
-                // Check if we've already seen an implementation for this fragment 
-                if Zset.contains qualNameOfFile rootImpls then 
+              // Check if we've already seen an implementation for this fragment 
+              if Zset.contains qualNameOfFile tcState.tcsRootImpls then 
                   errorR(Error(FSComp.SR.buildImplementationAlreadyGiven(qualNameOfFile.Text), m))
 
-                let tcImplEnv = tcState.tcsTcImplEnv
+              let tcImplEnv = tcState.tcsTcImplEnv
 
-                // Typecheck the implementation file 
-                let! topAttrs, implFile, tcEnvAtEnd, createsGeneratedProvidedTypes = 
-                    TypeCheckOneImplFile  (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, tcConfig.conditionalCompilationDefines, tcSink) tcImplEnv rootSigOpt file
+              // Typecheck the implementation file 
+              let! topAttrs, implFile, _implFileHiddenType, tcEnvAtEnd, createsGeneratedProvidedTypes = 
+                  TypeCheckOneImplFile  (tcGlobals, tcState.tcsNiceNameGen, amap, tcState.tcsCcu, checkForErrors, tcConfig.conditionalCompilationDefines, tcSink) tcImplEnv rootSigOpt file
 
-                let hadSig = Option.isSome rootSigOpt
-                let implFileSigType = SigTypeOfImplFile implFile
+              let hadSig = rootSigOpt.IsSome
+              let implFileSigType = SigTypeOfImplFile implFile
 
-                if verbose then  dprintf "done TypeCheckOneImplFile...\n"
-                let rootImpls = Zset.add qualNameOfFile rootImpls
+              let rootImpls = Zset.add qualNameOfFile tcState.tcsRootImpls
         
-                // Only add it to the environment if it didn't have a signature 
-                let m = qualNameOfFile.Range
+              // Only add it to the environment if it didn't have a signature 
+              let m = qualNameOfFile.Range
 
-                // Add the implementation as to the implementation env
-                let tcImplEnv = AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcImplEnv implFileSigType
+              // Add the implementation as to the implementation env
+              let tcImplEnv = AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcImplEnv implFileSigType
 
-                // Add the implementation as to the signature env (unless it had an explicit signature)
-                let tcSigEnv = 
-                    if hadSig then tcState.tcsTcSigEnv 
-                    else AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcState.tcsTcSigEnv implFileSigType
+              // Add the implementation as to the signature env (unless it had an explicit signature)
+              let tcSigEnv = 
+                  if hadSig then tcState.tcsTcSigEnv 
+                  else AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcState.tcsTcSigEnv implFileSigType
                 
-                // Open the prefixPath for fsi.exe (tcImplEnv)
-                let tcImplEnv = 
-                    match prefixPathOpt with 
-                    | Some prefixPath -> TcOpenDecl tcSink tcGlobals amap m m tcImplEnv prefixPath
-                    | _ -> tcImplEnv 
+              // Open the prefixPath for fsi.exe (tcImplEnv)
+              let tcImplEnv = 
+                  match prefixPathOpt with 
+                  | Some prefixPath -> TcOpenDecl tcSink tcGlobals amap m m tcImplEnv prefixPath
+                  | _ -> tcImplEnv 
 
-                // Open the prefixPath for fsi.exe (tcSigEnv)
-                let tcSigEnv = 
-                    match prefixPathOpt with 
-                    | Some prefixPath when not hadSig -> TcOpenDecl tcSink tcGlobals amap m m tcSigEnv prefixPath
-                    | _ -> tcSigEnv 
+              // Open the prefixPath for fsi.exe (tcSigEnv)
+              let tcSigEnv = 
+                  match prefixPathOpt with 
+                  | Some prefixPath when not hadSig -> TcOpenDecl tcSink tcGlobals amap m m tcSigEnv prefixPath
+                  | _ -> tcSigEnv 
 
-                let allImplementedSigModulTyp = CombineCcuContentFragments m [implFileSigType; allImplementedSigModulTyp]
+              let ccuSig = CombineCcuContentFragments m [implFileSigType; tcState.tcsCcuSig ]
 
-                // Add it to the CCU 
-                let ccuType = 
-                    // The signature must be reestablished. 
-                    //   [CHECK: Why? This seriously degraded performance] 
-                    NewCcuContents ILScopeRef.Local m tcState.tcsCcu.AssemblyName allImplementedSigModulTyp
+              let ccuSigForFile = CombineCcuContentFragments m [implFileSigType; tcState.tcsCcuSig]
 
-                if verbose then  dprintf "done TypeCheckOneInputEventually...\n"
-
-                let topSigsAndImpls = RootSigsAndImpls(rootSigs, rootImpls, allSigModulTyp, allImplementedSigModulTyp)
-                let res = (topAttrs, [implFile], tcEnvAtEnd, tcSigEnv, tcImplEnv, topSigsAndImpls, ccuType, createsGeneratedProvidedTypes)
-                return res }
+              let tcState = 
+                   { tcState with 
+                        tcsTcSigEnv=tcSigEnv
+                        tcsTcImplEnv=tcImplEnv
+                        tcsRootImpls=rootImpls
+                        tcsCcuSig=ccuSig
+                        tcsCreatesGeneratedProvidedTypes=tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes }
+              return (tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile), tcState
      
-      return (tcEnvAtEnd, topAttrs, implFiles), 
-             { tcState with 
-                  tcsCcuType=ccuType
-                  tcsTcSigEnv=tcSigEnv
-                  tcsTcImplEnv=tcImplEnv
-                  tcsCreatesGeneratedProvidedTypes=tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
-                  tcsRootSigsAndImpls = topSigsAndImpls }
-   with e -> 
-      errorRecovery e range0 
-      return (tcState.TcEnvFromSignatures, EmptyTopAttrs, []), tcState
- }
+        with e -> 
+            errorRecovery e range0 
+            return (tcState.TcEnvFromSignatures, EmptyTopAttrs, None, tcState.tcsCcuSig), tcState
+    }
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
 let TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt) tcState  inp =
@@ -5515,19 +5524,12 @@ let TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, pre
 
 /// Finish checking multiple files (or one interactive entry into F# Interactive)
 let TypeCheckMultipleInputsFinish(results, tcState: TcState) =
-    let tcEnvsAtEndFile, topAttrs, implFiles = List.unzip3 results
-    
+    let tcEnvsAtEndFile, topAttrs, implFiles, ccuSigsForFiles = List.unzip4 results
     let topAttrs = List.foldBack CombineTopAttrs topAttrs EmptyTopAttrs
-    let implFiles = List.concat implFiles
+    let implFiles = List.choose id implFiles
     // This is the environment required by fsi.exe when incrementally adding definitions 
     let tcEnvAtEndOfLastFile = (match tcEnvsAtEndFile with h :: _ -> h | _ -> tcState.TcEnvFromSignatures)
-    
-    (tcEnvAtEndOfLastFile, topAttrs, implFiles), tcState
-
-/// Check multiple files (or one interactive entry into F# Interactive)
-let TypeCheckMultipleInputs (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs) =
-    let results, tcState =  (tcState, inputs) ||> List.mapFold (TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt)) 
-    TypeCheckMultipleInputsFinish(results, tcState)
+    (tcEnvAtEndOfLastFile, topAttrs, implFiles, ccuSigsForFiles), tcState
 
 let TypeCheckOneInputAndFinishEventually(checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input) =
     eventually {
@@ -5537,18 +5539,18 @@ let TypeCheckOneInputAndFinishEventually(checkForErrors, tcConfig: TcConfig, tcI
 
 let TypeCheckClosedInputSetFinish (declaredImpls: TypedImplFile list, tcState) =
     // Publish the latest contents to the CCU 
-    tcState.tcsCcu.Deref.Contents <- tcState.tcsCcuType
+    tcState.tcsCcu.Deref.Contents <- NewCcuContents ILScopeRef.Local range0 tcState.tcsCcu.AssemblyName tcState.tcsCcuSig
 
     // Check all interfaces have implementations 
-    let (RootSigsAndImpls(rootSigs, rootImpls, _, _)) = tcState.tcsRootSigsAndImpls
-    rootSigs |> Zmap.iter (fun qualNameOfFile _ ->  
-      if not (Zset.contains qualNameOfFile rootImpls) then 
+    tcState.tcsRootSigs |> Zmap.iter (fun qualNameOfFile _ ->  
+      if not (Zset.contains qualNameOfFile tcState.tcsRootImpls) then 
         errorR(Error(FSComp.SR.buildSignatureWithoutImplementation(qualNameOfFile.Text), qualNameOfFile.Range)))
 
     tcState, declaredImpls
     
 let TypeCheckClosedInputSet (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs) =
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions 
-    let (tcEnvAtEndOfLastFile, topAttrs, implFiles), tcState = TypeCheckMultipleInputs (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs)
+    let results, tcState =  (tcState, inputs) ||> List.mapFold (TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt)) 
+    let (tcEnvAtEndOfLastFile, topAttrs, implFiles, _), tcState = TypeCheckMultipleInputsFinish(results, tcState)
     let tcState, declaredImpls = TypeCheckClosedInputSetFinish (implFiles, tcState)
     tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile

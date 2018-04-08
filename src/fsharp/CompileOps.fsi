@@ -145,7 +145,7 @@ type IRawFSharpAssemblyData =
     abstract GetInternalsVisibleToAttributes: ILGlobals  -> string list
     ///  The raw IL module definition in the assembly, if any. This is not present for cross-project references
     /// in the language service
-    abstract TryGetRawILModule: unit -> ILModuleDef option
+    abstract TryGetILModuleDef: unit -> ILModuleDef option
     abstract HasAnyFSharpSignatureDataAttribute: bool
     abstract HasMatchingFSharpSignatureDataAttribute: ILGlobals -> bool
     ///  The raw F# signature data in the assembly, if any
@@ -355,9 +355,6 @@ type TcConfigBuilder =
       /// If true, indicates all type checking and code generation is in the context of fsi.exe
       isInteractive: bool 
       isInvalidationSupported: bool 
-      mutable sqmSessionGuid: System.Guid option
-      mutable sqmNumOfSourceFiles: int
-      sqmSessionStartedTime: int64
       mutable emitDebugInfoInQuotations: bool
       mutable exename: string option 
       mutable copyFSharpCore: CopyFSharpCoreFlag
@@ -524,9 +521,6 @@ type TcConfig =
     /// File system query based on TcConfig settings
     member MakePathAbsolute: string -> string
 
-    member sqmSessionGuid: System.Guid option
-    member sqmNumOfSourceFiles: int
-    member sqmSessionStartedTime: int64
     member copyFSharpCore: CopyFSharpCoreFlag
     member shadowCopyReferences: bool
     static member Create: TcConfigBuilder * validate: bool -> TcConfig
@@ -710,8 +704,10 @@ type TcState =
 
     /// Get the typing environment implied by the set of implementation files checked so far
     member TcEnvFromImpls: TcEnv
-    /// The inferred contents of the assembly, containing the signatures of all implemented files.
-    member PartialAssemblySignature: ModuleOrNamespaceType
+
+    /// The inferred contents of the assembly, containing the signatures of all files.
+    // a.fsi + b.fsi + c.fsi (after checking implementation file for c.fs)
+    member CcuSig: ModuleOrNamespaceType
 
     member NextStateAfterIncrementalFragment: TcEnv -> TcState
 
@@ -724,10 +720,10 @@ val GetInitialTcState:
 /// Check one input, returned as an Eventually computation
 val TypeCheckOneInputEventually :
     checkForErrors:(unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * NameResolution.TcResultsSink * TcState * Ast.ParsedInput  
-           -> Eventually<(TcEnv * TopAttribs * TypedImplFile list) * TcState>
+           -> Eventually<(TcEnv * TopAttribs * TypedImplFile option * ModuleOrNamespaceType) * TcState>
 
 /// Finish the checking of multiple inputs 
-val TypeCheckMultipleInputsFinish: (TcEnv * TopAttribs * 'T list) list * TcState -> (TcEnv * TopAttribs * 'T list) * TcState
+val TypeCheckMultipleInputsFinish: (TcEnv * TopAttribs * 'T option * 'U) list * TcState -> (TcEnv * TopAttribs * 'T list * 'U list) * TcState
     
 /// Finish the checking of a closed set of inputs 
 val TypeCheckClosedInputSetFinish: TypedImplFile list * TcState -> TcState * TypedImplFile list
@@ -738,7 +734,7 @@ val TypeCheckClosedInputSet: CompilationThreadToken * checkForErrors: (unit -> b
 /// Check a single input and finish the checking
 val TypeCheckOneInputAndFinishEventually :
     checkForErrors: (unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * NameResolution.TcResultsSink * TcState * Ast.ParsedInput 
-        -> Eventually<(TcEnv * TopAttribs * TypedImplFile list) * TcState>
+        -> Eventually<(TcEnv * TopAttribs * TypedImplFile list * ModuleOrNamespaceType list) * TcState>
 
 /// Indicates if we should report a warning
 val ReportWarning: FSharpErrorSeverityOptions -> PhasedDiagnostic -> bool

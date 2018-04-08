@@ -1,0 +1,36 @@
+<Project>
+
+  <!-- SDK targets override -->
+  <PropertyGroup Condition=" '$(FSharpTestCompilerVersion)' == 'net40' ">
+    <_FSharpCompilerPath>$(MSBuildThisFileDirectory)$(Configuration)/net40/bin</_FSharpCompilerPath>
+
+    <FscToolPath>$(_FSharpCompilerPath)</FscToolPath>
+    <FscToolExe>fsc.exe</FscToolExe>
+    <DotnetFscCompilerPath></DotnetFscCompilerPath>
+  </PropertyGroup>
+
+  <!-- SDK targets override -->
+  <PropertyGroup Condition=" '$(FSharpTestCompilerVersion)' == 'coreclr' ">
+    <_FSharpCompilerPath>$(MSBuildThisFileDirectory)$(Configuration)/coreclr/bin</_FSharpCompilerPath>
+
+    <FscToolPath>$(MSBuildThisFileDirectory)Tools/dotnet20</FscToolPath>
+    <FscToolExe Condition="'$(OS)' != 'Unix'">dotnet.exe</FscToolExe>
+    <FscToolExe Condition="'$(OS)' == 'Unix'">dotnet</FscToolExe>
+    <DotnetFscCompilerPath>$(_FSharpCompilerPath)/fsc.exe</DotnetFscCompilerPath>
+  </PropertyGroup>
+
+  <!-- SDK targets override -->
+  <PropertyGroup>
+    <FSharpPropsShim>$(_FSharpCompilerPath)/Microsoft.FSharp.NetSdk.props</FSharpPropsShim>
+    <FSharpTargetsShim>$(_FSharpCompilerPath)/Microsoft.FSharp.NetSdk.targets</FSharpTargetsShim>
+    <FSharpOverridesTargetsShim>$(_FSharpCompilerPath)/Microsoft.FSharp.Overrides.NetSdk.targets</FSharpOverridesTargetsShim>
+  </PropertyGroup>
+
+
+  <!-- We are running under netcore so even though we will use the fsc compiler we can't use the desktop version of the fsharp.build tasks -->
+  <PropertyGroup>
+    <FSharpBuildAssemblyFile Condition = " '$(DOTNET_HOST_PATH)' != '' ">$(MSBuildThisFileDirectory)$(Configuration)\coreclr\bin\FSharp.Build.dll</FSharpBuildAssemblyFile>
+    <FSharpBuildAssemblyFile Condition = " '$(DOTNET_HOST_PATH)' == '' ">$(MSBuildThisFileDirectory)$(Configuration)\net40\bin\FSharp.Build.dll</FSharpBuildAssemblyFile>
+  </PropertyGroup>
+
+</Project>
