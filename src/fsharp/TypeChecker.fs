@@ -6861,25 +6861,7 @@ and TcAssertExpr cenv overallTy env (m:range) tpenv x  =
 //------------------------------------------------------------------------- 
 
 and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr) =
-
-    let requiresCtor = (GetCtorShapeCounter env = 1) // Get special expression forms for constructors 
-    let haveCtor = Option.isSome inherits
-
-    let optOrigExpr, tpenv = 
-      match optOrigExpr with 
-      | None -> None, tpenv 
-      | Some (origExpr, _) -> 
-          match inherits with 
-          | Some (_, _, mInherits, _, _) -> error(Error(FSComp.SR.tcInvalidRecordConstruction(), mInherits))
-          | None -> 
-              let olde, tpenv = TcExpr cenv overallTy env tpenv origExpr
-              let oldv, oldve = mkCompGenLocal mWholeExpr "inputRecord" overallTy
-              Some (olde, oldv, oldve), tpenv
-
-    let hasOrigExpr = Option.isSome optOrigExpr
-
-    let fldsList = 
-        let buildForNestdFlds (lidwd : LongIdentWithDots) v =
+    let buildForNestdFlds (lidwd : LongIdentWithDots) v =
             match lidwd.Lid with
             | [] -> []
             | [fld] -> [(([], fld), v)]
@@ -6895,6 +6877,33 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                     | (Some mOrN, None, None) -> ModuleOrNamespace mOrN
                     | (_, Some _, None) -> RecdTy
                     | _ -> RecdFld
+                   
+                let buildRecdExprCopyInfo (optOrigExpr : (SynExpr * BlockSeparator) option) (id : Ident) =
+                    let upToId origSepRng id lidwd =
+                        let rec buildLid res (id : Ident) =
+                            function
+                            | [] -> res
+                            | (h : Ident) :: t -> if h.idText = id.idText then h :: res else buildLid (h :: res) id t
+
+                        let rec combineIds =
+                            function
+                            | [] | [_] -> []
+                            | id1::id2::rest -> (id1, id2) :: (id2 :: rest |> combineIds)
+
+                        let calcLidSeparatorRanges lid =
+                            match lid with
+                            | [] | [_] -> [origSepRng]
+                            | _ :: t -> origSepRng :: List.map (fun (s : Ident, e : Ident) -> mkRange s.idRange.FileName s.idRange.End e.idRange.Start) t
+
+                        let lid = buildLid [] id lidwd |> List.rev
+
+                        (lid, lid |> combineIds |> calcLidSeparatorRanges)
+                
+                    match optOrigExpr with 
+                    | Some (SynExpr.Ident origId, (sepRange, _)) -> 
+                        let lid, rng = upToId sepRange id (origId :: lidwd.Lid)
+                        Some (SynExpr.LongIdent (false, LongIdentWithDots(lid, rng), None, origId.idRange), (id.idRange, None))
+                    | _ -> None
 
                 let combineTyAndNextFld (ty : Ident) flds =
                     match flds with
@@ -6921,9 +6930,9 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
 
                     let tyconFieldSearch (id : Ident) =
                         search (fun (tycon : Tycon) -> match tycon.TypeAbbrev with
-                                                       | None -> tycon.GetFieldByName id.idText
-                                                       | Some (TType_app (abbrv, _)) -> abbrevTyconFieldSearch abbrv id
-                                                       | _ -> None)
+                                                        | None -> tycon.GetFieldByName id.idText
+                                                        | Some (TType_app (abbrv, _)) -> abbrevTyconFieldSearch abbrv id
+                                                        | _ -> None)
 
                     let searchFieldsOfAllTycons (id : Ident) =
                         let searchForFld (lst : ModuleOrNamespaceType list) =
@@ -6931,10 +6940,10 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                             |> List.map (fun mOrNs -> mOrNs.TypeDefinitions)
                             |> List.concat
                             |> List.tryFind (fun e -> match e.TypeAbbrev with
-                                                      | None -> e.GetFieldByName id.idText
-                                                      | Some (TType_app (abbrv, _)) -> abbrevTyconFieldSearch abbrv id
-                                                      | _ -> None 
-                                                      |> Option.isSome)
+                                                        | None -> e.GetFieldByName id.idText
+                                                        | Some (TType_app (abbrv, _)) -> abbrevTyconFieldSearch abbrv id
+                                                        | _ -> None 
+                                                        |> Option.isSome)
                         Option.bind searchForFld
 
                        
@@ -6978,14 +6987,14 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                     | [fld] ->  ((LongIdentWithDots ([fld],[]), true), v, None)
                     | h :: t ->
                         match h with
-                        | RecdFld -> ((LongIdentWithDots ([h], []), true), Some(SynExpr.Record((None, None, [build t], h.idRange))), None)
+                        | RecdFld -> ((LongIdentWithDots ([h], []), true), Some(SynExpr.Record((None, (buildRecdExprCopyInfo optOrigExpr h), [build t], h.idRange))), None)
                         | RecdTy ->
                             // If Ident is Type - LongIdentWithDots is [Type; NextField]
                             let tyLidwd, fldIdRange, _ = combineTyAndNextFld h t
-                            ((LongIdentWithDots (tyLidwd, [h.idRange]), true), Some(SynExpr.Record((None, None, [build t], fldIdRange))), None)                                                 
+                            ((LongIdentWithDots (tyLidwd, [h.idRange]), true), Some(SynExpr.Record((None, (buildRecdExprCopyInfo optOrigExpr h), [build t], fldIdRange))), None)                                                 
                         | ModuleOrNamespace mOrNRefList ->
                             let lidwd, rest = combineModuleOrNamespaceWithNextIds mOrNRefList h t
-                            ((LongIdentWithDots (lidwd, [h.idRange]), true), Some(SynExpr.Record((None, None, [build rest], h.idRange))), None)
+                            ((LongIdentWithDots (lidwd, [h.idRange]), true), Some(SynExpr.Record((None, (buildRecdExprCopyInfo optOrigExpr h), [build rest], h.idRange))), None)
 
                 let lidwd, rest =
                     match h with
@@ -6997,8 +7006,27 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
 
                 match rest with
                 | [] -> [(List.frontAndBack lidwd, v)]
-                | _ ->  [(List.frontAndBack lidwd, Some(SynExpr.Record(None, None, [build rest], h.idRange)))]
-                                      
+                | _ ->  [(List.frontAndBack lidwd, Some(SynExpr.Record(None, (buildRecdExprCopyInfo optOrigExpr h), [build rest], h.idRange)))]
+    
+        
+                 
+    let requiresCtor = (GetCtorShapeCounter env = 1) // Get special expression forms for constructors 
+    let haveCtor = Option.isSome inherits
+
+    let optOrigExpr, tpenv = 
+        match optOrigExpr with 
+        | None -> None, tpenv 
+        | Some (origExpr, _) -> 
+            match inherits with 
+            | Some (_, _, mInherits, _, _) -> error(Error(FSComp.SR.tcInvalidRecordConstruction(), mInherits))
+            | None -> 
+                let olde, tpenv = TcExpr cenv overallTy env tpenv origExpr
+                let oldv, oldve = mkCompGenLocal mWholeExpr "inputRecord" overallTy
+                Some (olde, oldv, oldve), tpenv
+
+    let hasOrigExpr = Option.isSome optOrigExpr
+
+    let fldsList =     
         let flds = 
             [
                 // if we met at least one field that is not syntactically correct - raise ReportedError to transfer control to the recovery routine
@@ -7015,10 +7043,22 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                                 | [flds] -> yield(flds)
                                 | _ -> ()                    
             ]
-            
+                   
         match flds with 
         | [] -> []
         | _ ->
+            let groupedFldsOfSameTy =
+                match flds with
+                | []
+                | [_] -> flds
+                | _ ->
+                    // if there is more than one set of flds we need to group associated flds by type
+                    let grouped = flds |> List.groupBy (fun ((_, id), _) -> id.idText)
+
+                    List.map (fun (_, flds) -> flds) grouped |> List.concat
+
+            printfn "%A" groupedFldsOfSameTy
+
             let tcref, _, fldsList = BuildFieldMap cenv env hasOrigExpr overallTy flds mWholeExpr
             let _, _, _, gtyp = infoOfTyconRef mWholeExpr tcref
             UnifyTypes cenv env mWholeExpr overallTy gtyp
