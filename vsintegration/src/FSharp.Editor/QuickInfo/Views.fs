@@ -79,11 +79,14 @@ module internal QuickInfoViewProvider =
                     currentContainerItems.Add(navigableTextRun :> obj)
                 | _ when item.Tag = LineBreak ->
                     flushRuns()
+                    // preserve succesive linebreaks
+                    if currentContainerItems.Count = 0 then
+                        runsCollection.Add(ClassifiedTextRun(classificationTag, System.String.Empty))
+                        flushRuns()
                     flushContainer()
-                | _ ->
+                | _ -> 
                     let newRun = ClassifiedTextRun(classificationTag, item.Text)
-                    runsCollection.Add(newRun)
-                ()
+                    runsCollection.Add(newRun)   
             flushRuns()
             flushContainer()
             ContainerElement(ContainerElementStyle.Stacked, finalCollection |> Seq.map box)
