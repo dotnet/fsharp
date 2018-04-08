@@ -84,7 +84,7 @@ module internal QuickInfoViewProvider =
                         runsCollection.Add(ClassifiedTextRun(classificationTag, System.String.Empty))
                         flushRuns()
                     flushContainer()
-                | _ -> 
+                | _ ->
                     let newRun = ClassifiedTextRun(classificationTag, item.Text)
                     runsCollection.Add(newRun)   
             flushRuns()
