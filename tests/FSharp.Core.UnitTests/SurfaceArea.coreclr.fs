@@ -1110,6 +1110,7 @@ Microsoft.FSharp.Core.ExtraTopLevelOperators: Microsoft.FSharp.Linq.QueryBuilder
 Microsoft.FSharp.Core.ExtraTopLevelOperators: SByte ToSByte[T](T)
 Microsoft.FSharp.Core.ExtraTopLevelOperators: Single ToSingle[T](T)
 Microsoft.FSharp.Core.ExtraTopLevelOperators: System.Collections.Generic.IDictionary`2[TKey,TValue] CreateDictionary[TKey,TValue](System.Collections.Generic.IEnumerable`1[System.Tuple`2[TKey,TValue]])
+Microsoft.FSharp.Core.ExtraTopLevelOperators: System.Collections.Generic.IReadOnlyDictionary`2[TKey,TValue] CreateReadOnlyDictionary[TKey,TValue](System.Collections.Generic.IEnumerable`1[System.Tuple`2[TKey,TValue]])
 Microsoft.FSharp.Core.ExtraTopLevelOperators: System.String ToString()
 Microsoft.FSharp.Core.ExtraTopLevelOperators: System.Type GetType()
 Microsoft.FSharp.Core.ExtraTopLevelOperators: T LazyPattern[T](System.Lazy`1[T])
