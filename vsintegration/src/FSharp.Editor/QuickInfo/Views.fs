@@ -81,10 +81,10 @@ module internal QuickInfoViewProvider =
                     flushRuns()
                     // preserve succesive linebreaks
                     if currentContainerItems.Count = 0 then
-                        runsCollection.Add(ClassifiedTextRun(classificationTag, System.String.Empty))
+                        runsCollection.Add(ClassifiedTextRun(PredefinedClassificationTypeNames.Other, System.String.Empty))
                         flushRuns()
                     flushContainer()
-                | _ ->
+                | _ -> 
                     let newRun = ClassifiedTextRun(classificationTag, item.Text)
                     runsCollection.Add(newRun)   
             flushRuns()
