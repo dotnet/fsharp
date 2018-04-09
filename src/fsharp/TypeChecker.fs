@@ -6898,11 +6898,14 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                         let lid = buildLid [] id lidwd |> List.rev
 
                         (lid, lid |> combineIds |> calcLidSeparatorRanges)
+
+                    let totalRange (origId : Ident) (id : Ident) =
+                        mkRange origId.idRange.FileName origId.idRange.End id.idRange.Start
                 
                     match optOrigExpr with 
                     | Some (SynExpr.Ident origId, (sepRange, _)) -> 
                         let lid, rng = upToId sepRange id (origId :: lidwd.Lid)
-                        Some (SynExpr.LongIdent (false, LongIdentWithDots(lid, rng), None, origId.idRange), (id.idRange, None))
+                        Some (SynExpr.LongIdent (false, LongIdentWithDots(lid, rng), None, totalRange origId id), (id.idRange, None)) // TODO: id.idRange should be the range of the next separator
                     | _ -> None
 
                 let combineTyAndNextFld (ty : Ident) flds =
@@ -7047,18 +7050,6 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
         match flds with 
         | [] -> []
         | _ ->
-            let groupedFldsOfSameTy =
-                match flds with
-                | []
-                | [_] -> flds
-                | _ ->
-                    // if there is more than one set of flds we need to group associated flds by type
-                    let grouped = flds |> List.groupBy (fun ((_, id), _) -> id.idText)
-
-                    List.map (fun (_, flds) -> flds) grouped |> List.concat
-
-            printfn "%A" groupedFldsOfSameTy
-
             let tcref, _, fldsList = BuildFieldMap cenv env hasOrigExpr overallTy flds mWholeExpr
             let _, _, _, gtyp = infoOfTyconRef mWholeExpr tcref
             UnifyTypes cenv env mWholeExpr overallTy gtyp
