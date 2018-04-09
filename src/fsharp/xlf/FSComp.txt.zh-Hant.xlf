@@ -6984,7 +6984,7 @@
       </trans-unit>
       <trans-unit id="ilreadFileChanged">
         <source>The file '{0}' changed on disk unexpectedly, please reload.</source>
-        <target state="new">The file '{0}' changed on disk unexpectedly, please reload.</target>
+        <target state="translated">檔案 '{0}' 在磁碟上意外變更，請重新載入。</target>
         <note />
       </trans-unit>
     </body>
