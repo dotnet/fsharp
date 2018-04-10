@@ -23,10 +23,10 @@ type internal FSharpIndentationService
     static member IsSmartIndentEnabled (options: Microsoft.CodeAnalysis.Options.OptionSet) =
         options.GetOption(FormattingOptions.SmartIndent, FSharpConstants.FSharpLanguageName) = FormattingOptions.IndentStyle.Smart
 
-    static member IndentShouldFollow (documentId: DocumentId, sourceText: SourceText, filePath: string, line: TextLine, parsingOptions: FSharpParsingOptions) =
+    static member IndentShouldFollow (documentId: DocumentId, sourceText: SourceText, filePath: string, position: int, parsingOptions: FSharpParsingOptions) =
         let lastTokenOpt =
            let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
-           let tokens = Tokenizer.tokenizeLine(documentId, sourceText, line.Start, filePath, defines)
+           let tokens = Tokenizer.tokenizeLine(documentId, sourceText, position, filePath, defines)
 
            tokens
            |> Array.rev
@@ -86,7 +86,7 @@ type internal FSharpIndentationService
             // Only use smart indentation after tokens that need indentation
             // if the option is enabled
             return
-                if indentStyle = FormattingOptions.IndentStyle.Smart && FSharpIndentationService.IndentShouldFollow(documentId, sourceText, filePath, previousLine, parsingOptions) then
+                if indentStyle = FormattingOptions.IndentStyle.Smart && FSharpIndentationService.IndentShouldFollow(documentId, sourceText, filePath, previousLine.Start, parsingOptions) then
                     (lastIndent/tabSize + 1) * tabSize
                 else
                     lastIndent

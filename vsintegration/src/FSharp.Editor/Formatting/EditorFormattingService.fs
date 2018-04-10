@@ -136,7 +136,7 @@ type internal FSharpEditorFormattingService
             if leadingIndentation > 0 then
                 return stripIndentation leadingIndentation
             else
-                let nextLineShouldBeIndented = FSharpIndentationService.IndentShouldFollow(documentId, sourceText, filePath, fixedPasteText.Lines.[0], parsingOptions)
+                let nextLineShouldBeIndented = FSharpIndentationService.IndentShouldFollow(documentId, sourceText, filePath, span.Start, parsingOptions)
                 
                 let removeIndentation =
                     let nextLineIndent = fixedPasteText.Lines.[1].ToString() |> getIndentation
