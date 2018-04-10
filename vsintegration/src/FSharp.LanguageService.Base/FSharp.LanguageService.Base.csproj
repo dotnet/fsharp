@@ -52,8 +52,8 @@
 
   <ItemGroup>
     <PackageReference Include="EnvDTE80" Version="$(EnvDTE80PackageVersion)" />
+    <PackageReference Include="Microsoft.Build.Runtime" Version="$(MicrosoftBuildRuntimePackageVersion)" />
     <PackageReference Include="Microsoft.MSXML" Version="$(MicrosoftMSXMLPackageVersion)" />
-    <PackageReference Include="Microsoft.VisualFSharp.Msbuild.15.0" Version="$(MicrosoftVisualFSharpMSBuild150PackageVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Designer.Interfaces" Version="$(MicrosoftVisualStudioDesignerInterfacesPackageVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Editor" Version="$(MicrosoftVisualStudioEditorPackageVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Package.LanguageService.15.0" Version="$(MicrosoftVisualStudioPackageLanguageService150PackageVersion)" />

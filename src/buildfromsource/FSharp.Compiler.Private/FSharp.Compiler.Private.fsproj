@@ -638,6 +638,7 @@
     <PackageReference Include="Microsoft.DiaSymReader.PortablePdb" Version="1.2.0"></PackageReference>
     <PackageReference Include="Microsoft.DiaSymReader" Version="1.1.0"></PackageReference>
     <PackageReference Include="System.ValueTuple" Version="4.4.0"></PackageReference>
+    <PackageReference Include="Microsoft.Build.Runtime" Version="15.6.82"></PackageReference>
   </ItemGroup>
 
 </Project>
