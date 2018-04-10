@@ -6879,6 +6879,8 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                     | _ -> RecdFld
                    
                 let buildRecdExprCopyInfo (optOrigExpr : (SynExpr * BlockSeparator) option) (id : Ident) =
+                    let lidOfTys = lidwd.Lid |> List.filter (function | RecdFld -> true | _ -> false)
+
                     let upToId origSepRng id lidwd =
                         let rec buildLid res (id : Ident) =
                             function
@@ -6904,7 +6906,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                 
                     match optOrigExpr with 
                     | Some (SynExpr.Ident origId, (sepRange, _)) -> 
-                        let lid, rng = upToId sepRange id (origId :: lidwd.Lid)
+                        let lid, rng = upToId sepRange id (origId :: lidOfTys)
                         Some (SynExpr.LongIdent (false, LongIdentWithDots(lid, rng), None, totalRange origId id), (id.idRange, None)) // TODO: id.idRange should be the range of the next separator
                     | _ -> None
 
@@ -6999,20 +7001,22 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                             let lidwd, rest = combineModuleOrNamespaceWithNextIds mOrNRefList h t
                             ((LongIdentWithDots (lidwd, [h.idRange]), true), Some(SynExpr.Record((None, (buildRecdExprCopyInfo optOrigExpr h), [build rest], h.idRange))), None)
 
-                let lidwd, rest =
-                    match h with
-                    | RecdFld -> ([h], t)
-                    | RecdTy ->
-                        let lidwd, _, rest = combineTyAndNextFld h t
-                        (lidwd, rest)
-                    | ModuleOrNamespace mOrNRefList -> combineModuleOrNamespaceWithNextIds mOrNRefList h t
+                match h with
+                | RecdFld -> [(([], h), Some(SynExpr.Record(None, (buildRecdExprCopyInfo optOrigExpr h), [build t], h.idRange)))]
+                | RecdTy ->
+                    let lidwd, _, rest = combineTyAndNextFld h t
+                    let f, b = List.frontAndBack lidwd
+                    match rest with
+                    | [] -> [((f, b), v)]
+                    | _ ->  [((f, b), Some(SynExpr.Record(None, (buildRecdExprCopyInfo optOrigExpr b), [build rest], h.idRange)))]
+                | ModuleOrNamespace mOrNRefList ->
+                    let flds, rest = combineModuleOrNamespaceWithNextIds mOrNRefList h t
+                    let f, b = List.frontAndBack flds
+                    match rest with
+                    | [] -> [((f, b), v)]
+                    | _ ->  [((f, b), Some(SynExpr.Record(None, (buildRecdExprCopyInfo optOrigExpr b), [build rest], h.idRange)))]
 
-                match rest with
-                | [] -> [(List.frontAndBack lidwd, v)]
-                | _ ->  [(List.frontAndBack lidwd, Some(SynExpr.Record(None, (buildRecdExprCopyInfo optOrigExpr h), [build rest], h.idRange)))]
-    
-        
-                 
+             
     let requiresCtor = (GetCtorShapeCounter env = 1) // Get special expression forms for constructors 
     let haveCtor = Option.isSome inherits
 
