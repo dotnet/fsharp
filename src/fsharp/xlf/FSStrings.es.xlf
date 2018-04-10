@@ -1424,7 +1424,7 @@
       </trans-unit>
       <trans-unit id="EnumMatchIncomplete1">
         <source>Enums may take values outside known cases.</source>
-        <target state="new">Enums may take values outside known cases.</target>
+        <target state="translated">Las enumeraciones pueden tomar valores fuera de las clases conocidas.</target>
         <note />
       </trans-unit>
       <trans-unit id="RuleNeverMatched">
