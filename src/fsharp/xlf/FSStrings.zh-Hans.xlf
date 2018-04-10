@@ -1429,7 +1429,7 @@
       </trans-unit>
       <trans-unit id="EnumMatchIncomplete1">
         <source>Enums may take values outside known cases.</source>
-        <target state="new">Enums may take values outside known cases.</target>
+        <target state="translated">枚举可能使用已知用例外的值。</target>
         <note />
       </trans-unit>
       <trans-unit id="RuleNeverMatched">

@@ -6989,7 +6989,7 @@
       </trans-unit>
       <trans-unit id="ilreadFileChanged">
         <source>The file '{0}' changed on disk unexpectedly, please reload.</source>
-        <target state="new">The file '{0}' changed on disk unexpectedly, please reload.</target>
+        <target state="translated">Soubor {0} se na disku neočekávaně změnil, opakujte prosím načtení.</target>
         <note />
       </trans-unit>
     </body>

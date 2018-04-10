@@ -6989,7 +6989,7 @@
       </trans-unit>
       <trans-unit id="ilreadFileChanged">
         <source>The file '{0}' changed on disk unexpectedly, please reload.</source>
-        <target state="new">The file '{0}' changed on disk unexpectedly, please reload.</target>
+        <target state="translated">'{0}' 파일이 디스크에서 예기치 않게 변경되었습니다. 다시 로드하세요.</target>
         <note />
       </trans-unit>
     </body>

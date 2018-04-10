@@ -704,8 +704,10 @@ type TcState =
 
     /// Get the typing environment implied by the set of implementation files checked so far
     member TcEnvFromImpls: TcEnv
-    /// The inferred contents of the assembly, containing the signatures of all implemented files.
-    member PartialAssemblySignature: ModuleOrNamespaceType
+
+    /// The inferred contents of the assembly, containing the signatures of all files.
+    // a.fsi + b.fsi + c.fsi (after checking implementation file for c.fs)
+    member CcuSig: ModuleOrNamespaceType
 
     member NextStateAfterIncrementalFragment: TcEnv -> TcState
 
@@ -718,10 +720,10 @@ val GetInitialTcState:
 /// Check one input, returned as an Eventually computation
 val TypeCheckOneInputEventually :
     checkForErrors:(unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * NameResolution.TcResultsSink * TcState * Ast.ParsedInput  
-           -> Eventually<(TcEnv * TopAttribs * TypedImplFile option) * TcState>
+           -> Eventually<(TcEnv * TopAttribs * TypedImplFile option * ModuleOrNamespaceType) * TcState>
 
 /// Finish the checking of multiple inputs 
-val TypeCheckMultipleInputsFinish: (TcEnv * TopAttribs * 'T option) list * TcState -> (TcEnv * TopAttribs * 'T list) * TcState
+val TypeCheckMultipleInputsFinish: (TcEnv * TopAttribs * 'T option * 'U) list * TcState -> (TcEnv * TopAttribs * 'T list * 'U list) * TcState
     
 /// Finish the checking of a closed set of inputs 
 val TypeCheckClosedInputSetFinish: TypedImplFile list * TcState -> TcState * TypedImplFile list
@@ -732,7 +734,7 @@ val TypeCheckClosedInputSet: CompilationThreadToken * checkForErrors: (unit -> b
 /// Check a single input and finish the checking
 val TypeCheckOneInputAndFinishEventually :
     checkForErrors: (unit -> bool) * TcConfig * TcImports * TcGlobals * Ast.LongIdent option * NameResolution.TcResultsSink * TcState * Ast.ParsedInput 
-        -> Eventually<(TcEnv * TopAttribs * TypedImplFile list) * TcState>
+        -> Eventually<(TcEnv * TopAttribs * TypedImplFile list * ModuleOrNamespaceType list) * TcState>
 
 /// Indicates if we should report a warning
 val ReportWarning: FSharpErrorSeverityOptions -> PhasedDiagnostic -> bool

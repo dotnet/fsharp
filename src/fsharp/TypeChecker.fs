@@ -16321,7 +16321,11 @@ module TcDeclarations =
                        (fun _binds ->  [  (* no values are available yet *) ]) 
                        cenv true scopem m 
 
-        let _ = TcMutRecSignatureDecls_Phase2 cenv scopem envMutRecPrelimWithReprs withEnvs
+        let mutRecDefnsAfterVals = TcMutRecSignatureDecls_Phase2 cenv scopem envMutRecPrelimWithReprs withEnvs
+
+        // Updates the types of the modules to contain the contents so far, which now includes values and members
+        MutRecBindingChecking.TcMutRecDefns_UpdateModuleContents mutRecNSInfo mutRecDefnsAfterVals
+
         envMutRec
 
 //-------------------------------------------------------------------------
@@ -17180,7 +17184,7 @@ let TypeCheckOneImplFile
 
     let implFile = TImplFile(qualNameOfFile, scopedPragmas, implFileExprAfterSig, hasExplicitEntryPoint, isScript)
 
-    return (topAttrs, implFile, envAtEnd, cenv.createsGeneratedProvidedTypes)
+    return (topAttrs, implFile, implFileTypePriorToSig, envAtEnd, cenv.createsGeneratedProvidedTypes)
  } 
    
 
