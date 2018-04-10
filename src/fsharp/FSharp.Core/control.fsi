@@ -50,8 +50,8 @@ namespace Microsoft.FSharp.Control
         /// <param name="computation">The computation to run.</param>
         /// <param name="timeout">The amount of time in milliseconds to wait for the result of the
         /// computation before raising a <c>System.TimeoutException</c>.  If no value is provided
-        /// for timeout then a default of -1 is used to correspond to System.Threading.Timeout.Infinite.</param>
-        ////If a cancellable cancellationToken is provided, timeout parameter will be ignored</param>
+        /// for timeout then a default of -1 is used to correspond to System.Threading.Timeout.Infinite.
+        /// If a cancellable cancellationToken is provided, timeout parameter will be ignored</param>
         /// <param name="cancellationToken">The cancellation token to be associated with the computation.
         /// If one is not supplied, the default cancellation token is used.</param>
         /// <returns>The result of the computation.</returns>
