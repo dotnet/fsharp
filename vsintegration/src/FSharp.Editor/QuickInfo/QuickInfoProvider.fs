@@ -160,7 +160,6 @@ module private FSharpQuickInfo =
 type internal FSharpAsyncQuickInfoSource
     (
         xmlMemberIndexService: IVsXMLMemberIndexService,
-        dte: EnvDTE.DTE,
         checkerProvider:FSharpCheckerProvider,
         projectInfoManager:FSharpProjectOptionsManager,
         gotoDefinitionService:FSharpGoToDefinitionService,
@@ -193,7 +192,7 @@ type internal FSharpAsyncQuickInfoSource
             | false -> Task.FromResult<QuickInfoItem>(null)
             | true ->
                 let triggerPoint = triggerPoint.GetValueOrDefault()
-                let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, dte)
+                let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService)
                 asyncMaybe {
                     let document = textBuffer.CurrentSnapshot.GetOpenDocumentInCurrentContextWithChanges()
                     let! symbolUse, sigQuickInfo, targetQuickInfo = FSharpQuickInfo.getQuickInfo(checkerProvider.Checker, projectInfoManager, document, triggerPoint.Position, cancellationToken)
@@ -264,4 +263,4 @@ type internal FSharpAsyncQuickInfoSourceProvider
     ) =
     interface IAsyncQuickInfoSourceProvider with
         override __.TryCreateQuickInfoSource(textBuffer:ITextBuffer) : IAsyncQuickInfoSource =
-            new FSharpAsyncQuickInfoSource(serviceProvider.XmlService, serviceProvider.DTE, checkerProvider, projectInfoManager, gotoDefinitionService, textBuffer) :> IAsyncQuickInfoSource
+            new FSharpAsyncQuickInfoSource(serviceProvider.XMLMemberIndexService, checkerProvider, projectInfoManager, gotoDefinitionService, textBuffer) :> IAsyncQuickInfoSource
