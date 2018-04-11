@@ -22,20 +22,23 @@ open Microsoft.CodeAnalysis.Classification
 [<AutoOpen>]
 module BraceCompletionSessionProviderHelpers =
 
-    let getLanguageService<'T when 'T :> ILanguageService and 'T : null> (document: Document) =
+    let tryGetLanguageService<'T when 'T :> ILanguageService and 'T : null> (document: Document) =
         match document.Project with
-        | null -> null
+        | null -> None
         | project ->
             match project.LanguageServices with
-            | null -> null
+            | null -> None
             | languageServices ->
                 languageServices.GetService<'T>()
+                |> Some
 
-    let getCaretPoint (buffer: ITextBuffer) (session: IBraceCompletionSession) =
-        session.TextView.Caret.Position.Point.GetPoint(buffer, PositionAffinity.Predecessor)
+    let tryGetCaretPoint (buffer: ITextBuffer) (session: IBraceCompletionSession) =
+        let point = session.TextView.Caret.Position.Point.GetPoint(buffer, PositionAffinity.Predecessor)
+        if point.HasValue then Some point.Value
+        else None
 
-    let getCaretPosition session =
-        session |> getCaretPoint session.SubjectBuffer
+    let tryGetCaretPosition session =
+        session |> tryGetCaretPoint session.SubjectBuffer
 
     let tryInsertAdditionalBracePair (session: IBraceCompletionSession) openingChar closingChar =
         let sourceCode = session.TextView.TextSnapshot
@@ -170,12 +173,9 @@ type BraceCompletionSession
         let closingSnapshotPoint = closingPoint.GetPoint(subjectBuffer.CurrentSnapshot)
 
         if closingSnapshotPoint.Position > 0 then
-            let caretPos = getCaretPosition this
-
-            if caretPos.HasValue && not (this.HasNoForwardTyping(caretPos.Value, closingSnapshotPoint.Subtract(1))) then
-                true
-            else
-                false
+            match tryGetCaretPosition this with
+            | Some caretPos when not (this.HasNoForwardTyping(caretPos, closingSnapshotPoint.Subtract(1))) -> true
+            | _ -> false
         else
             false
 
@@ -200,31 +200,33 @@ type BraceCompletionSession
         member this.PreBackspace handledCommand =
             handledCommand <- false
 
-            let caretPos = getCaretPosition this
-            let snapshot = subjectBuffer.CurrentSnapshot
+            match tryGetCaretPosition this with
+            | Some caretPos ->
+                let snapshot = subjectBuffer.CurrentSnapshot
 
-            if caretPos.HasValue && caretPos.Value.Position > 0 &&
-                    caretPos.Value.Position - 1 = openingPoint.GetPoint(snapshot).Position &&
-                    not this.HasForwardTyping then
+                if caretPos.Position > 0 &&
+                        caretPos.Position - 1 = openingPoint.GetPoint(snapshot).Position &&
+                        not this.HasForwardTyping then
                 
-                use undo = this.CreateUndoTransaction()
-                use edit = subjectBuffer.CreateEdit()
+                    use undo = this.CreateUndoTransaction()
+                    use edit = subjectBuffer.CreateEdit()
 
-                let span = SnapshotSpan(openingPoint.GetPoint(snapshot), closingPoint.GetPoint(snapshot))
+                    let span = SnapshotSpan(openingPoint.GetPoint(snapshot), closingPoint.GetPoint(snapshot))
 
-                edit.Delete(span.Span) |> ignore
+                    edit.Delete(span.Span) |> ignore
 
-                if edit.HasFailedChanges then
-                    edit.Cancel()
-                    undo.Cancel()
-                    Debug.Fail("Unable to clear braces")
-                else
-                    // handle the command so the backspace does 
-                    // not go through since we've already cleared the braces
-                    handledCommand <- true
-                    edit.Apply() |> ignore // FIXME: ApplyAndLogExceptions()
-                    undo.Complete()
-                    this.EndSession()
+                    if edit.HasFailedChanges then
+                        edit.Cancel()
+                        undo.Cancel()
+                        Debug.Fail("Unable to clear braces")
+                    else
+                        // handle the command so the backspace does 
+                        // not go through since we've already cleared the braces
+                        handledCommand <- true
+                        edit.Apply() |> ignore // FIXME: ApplyAndLogExceptions()
+                        undo.Complete()
+                        this.EndSession()
+            | _ -> ()
            
         member __.PostBackspace() = ()
 
@@ -239,16 +241,16 @@ type BraceCompletionSession
 
                 let closingSnapshotPoint = closingPoint.GetPoint(snapshot)
                 if not this.HasForwardTyping && session.AllowOverType(this, cancellationToken) then
-                    let caretPos = getCaretPosition this
+                    let caretPosOpt = tryGetCaretPosition this
 
-                    Debug.Assert(caretPos.HasValue && caretPos.Value.Position < closingSnapshotPoint.Position)
+                    Debug.Assert(caretPosOpt.IsSome && caretPosOpt.Value.Position < closingSnapshotPoint.Position)
 
+                    match caretPosOpt with
                     // ensure that we are within the session before clearing
-                    if caretPos.HasValue && caretPos.Value.Position < closingSnapshotPoint.Position && closingSnapshotPoint.Position > 0 then
-
+                    | Some caretPos when caretPos.Position < closingSnapshotPoint.Position && closingSnapshotPoint.Position > 0 ->
                         use undo = this.CreateUndoTransaction()
 
-                        let span = SnapshotSpan(caretPos.Value, closingSnapshotPoint.Subtract(1))
+                        let span = SnapshotSpan(caretPos, closingSnapshotPoint.Subtract(1))
 
                         use edit = subjectBuffer.CreateEdit()
 
@@ -264,6 +266,7 @@ type BraceCompletionSession
                             this.MoveCaretToClosingPoint()
                             editorOperations.AddAfterTextBufferChangePrimitive()
                             undo.Complete()
+                    | _ -> ()
                 
         member __.PostOverType() = ()
 
@@ -284,13 +287,13 @@ type BraceCompletionSession
             handledCommand <- false
 
         member this.PostReturn() =
-            let caretPos = getCaretPosition this
-
-            if caretPos.HasValue then
+            match tryGetCaretPosition this with
+            | Some caretPos ->
                 let closingSnapshotPoint = closingPoint.GetPoint(subjectBuffer.CurrentSnapshot)
 
-                if closingSnapshotPoint.Position > 0 && this.HasNoForwardTyping(caretPos.Value, closingSnapshotPoint.Subtract(1)) then
+                if closingSnapshotPoint.Position > 0 && this.HasNoForwardTyping(caretPos, closingSnapshotPoint.Subtract(1)) then
                     session.AfterReturn(this, CancellationToken.None)
+            | _ -> ()
                 
         member __.Finish() = ()
 
@@ -528,33 +531,24 @@ type BraceCompletionSessionProvider
     interface IBraceCompletionSessionProvider with
 
         member __.TryCreateSession(textView, openingPoint, openingBrace, closingBrace, session) =
-            let textSnapshot = openingPoint.Snapshot
+            session <-
+                maybe {
+                    let! document =       openingPoint.Snapshot.GetOpenDocumentInCurrentContextWithChanges() |> Option.ofObj
+                    let! sessionFactory = tryGetLanguageService<IEditorBraceCompletionSessionFactory> document
+                    let! session =        sessionFactory.TryCreateSession(document, openingPoint.Position, openingBrace, CancellationToken.None) |> Option.ofObj
 
-            let newSession =
-                match textSnapshot.GetOpenDocumentInCurrentContextWithChanges() with
-                | null -> null
-                | document ->
-                    match getLanguageService<IEditorBraceCompletionSessionFactory> document with
-                    | null -> null
-                    | editorSessionFactory ->
-                        // Brace completion is (currently) not cancellable.
-                        let cancellationToken = CancellationToken.None
-                        
-                        match editorSessionFactory.TryCreateSession(document, openingPoint.Position, openingBrace, cancellationToken) with
-                        | null -> null
-                        | editorSession ->
-                            let undoHistory = undoManager.GetTextBufferUndoManager(textView.TextBuffer).TextBufferUndoHistory
-                            BraceCompletionSession(
-                                textView,
-                                openingPoint.Snapshot.TextBuffer,
-                                openingPoint, 
-                                openingBrace, 
-                                closingBrace, 
-                                undoHistory, 
-                                editorOperationsFactoryService, 
-                                editorSession) :> IBraceCompletionSession
-
-            session <- newSession
+                    let undoHistory = undoManager.GetTextBufferUndoManager(textView.TextBuffer).TextBufferUndoHistory
+                    return BraceCompletionSession(
+                        textView,
+                        openingPoint.Snapshot.TextBuffer,
+                        openingPoint, 
+                        openingBrace, 
+                        closingBrace, 
+                        undoHistory, 
+                        editorOperationsFactoryService, 
+                        session) :> IBraceCompletionSession
+                }
+                |> Option.toObj
 
             match session with
             | null -> false
