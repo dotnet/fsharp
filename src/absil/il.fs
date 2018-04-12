@@ -8,6 +8,7 @@ module Microsoft.FSharp.Compiler.AbstractIL.IL
 
 
 open System
+open System.IO
 open System.Collections
 open System.Collections.Generic
 open System.Collections.Concurrent
@@ -1986,7 +1987,7 @@ type ILResource =
     member r.GetBytes() = 
         match r.Location with
         | ILResourceLocation.LocalIn (file, start, len) -> 
-            FileSystem.ReadAllBytesShim(file).[start .. start + len - 1]
+            File.ReadBinaryChunk(file, start, len)
         | ILResourceLocation.LocalOut bytes -> bytes
         | _ -> failwith "GetBytes"
 
