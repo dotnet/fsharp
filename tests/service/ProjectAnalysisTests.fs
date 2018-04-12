@@ -5417,3 +5417,30 @@ type UseTheThings(i:int) =
            (((25, 5), (25, 21)), "open SomeUnusedModule")]
     unusedOpensData |> shouldEqual expected
 
+[<Test>]
+let ``Unused opens should not fail`` () =
+    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
+    let source1 = "namespace MyLib.Namespace"
+
+    let fileName2 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
+    let source2 = """
+module MyLib.Namespace
+
+open MyLib
+
+type t = int
+"""
+
+    File.WriteAllText(fileName1, source1)
+    let proj = Path.GetTempFileName()
+    let dllName = Path.ChangeExtension(proj, ".dll")
+    let projFileName = Path.ChangeExtension(proj, ".fsproj")
+    let fileNames = [fileName1; fileName2]
+    let lines = File.ReadAllLines(fileName2)
+
+    let args = mkProjectCommandLineArgs (dllName, fileNames)
+    let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    match checker.ParseAndCheckFileInProject(fileName2, 0, source2, options) |> Async.RunSynchronously with
+    | _, FSharpCheckFileAnswer.Succeeded checkResults ->
+        UnusedOpens.getUnusedOpens(checkResults, fun i -> lines.[i - 1]) |> Async.RunSynchronously |> ignore
+    | _ -> failwith "Check aborted"
