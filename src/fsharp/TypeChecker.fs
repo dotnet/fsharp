@@ -4513,7 +4513,7 @@ and TcTyparDecl cenv env (TyparDecl(synAttrs, (Typar(id, _, _) as stp))) =
     let tp = NewTypar ((if hasMeasureAttr then TyparKind.Measure else TyparKind.Type), TyparRigidity.WarnIfNotRigid, stp, false, TyparDynamicReq.Yes, attrs, hasEqDepAttr, hasCompDepAttr)
     match TryFindFSharpStringAttribute cenv.g cenv.g.attrib_CompiledNameAttribute attrs with 
     | Some compiledName -> 
-        tp.typar_il_name <- Some compiledName
+        tp.SetILName (Some compiledName)
     | None ->  
         ()
     let item = Item.TypeVar(id.idText, tp)
@@ -4940,7 +4940,7 @@ and TcTypeApp cenv newOk checkCxs occ env tpenv m tcref pathTypeArgs (synArgTys:
 
     // If we're not checking constraints, i.e. when we first assert the super/interfaces of a type definition, then just 
     // clear the constraint lists of the freshly generated type variables. A little ugly but fairly localized. 
-    if checkCxs = NoCheckCxs then tps |> List.iter (fun tp -> tp.typar_constraints <- [])
+    if checkCxs = NoCheckCxs then tps |> List.iter (fun tp -> tp.SetConstraints [])
     if tinst.Length <> pathTypeArgs.Length + synArgTys.Length then 
         error (TyconBadArgs(env.DisplayEnv, tcref, pathTypeArgs.Length + synArgTys.Length, m))
 
