@@ -1045,6 +1045,7 @@ val isInterfaceTyconRef                 : TyconRef -> bool
 
 val isDelegateTy                 : TcGlobals -> TType -> bool
 val isInterfaceTy                : TcGlobals -> TType -> bool
+val isInlineInterfaceTy                : TcGlobals -> TType -> bool
 val isRefTy                      : TcGlobals -> TType -> bool
 val isSealedTy                   : TcGlobals -> TType -> bool
 val isComInteropTy               : TcGlobals -> TType -> bool

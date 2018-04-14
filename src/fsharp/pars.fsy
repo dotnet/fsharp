@@ -745,17 +745,17 @@ moduleSpfn:
       { let isRec, path, xml, vis = $3 
         if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleDefnMustBeSimpleName())
         if isRec then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsInvalidUseOfRec())
-        let info = ComponentInfo($1,[],[],path,xml,false,vis,rhs parseState 3)
+        let info = ComponentInfo($1,[],[],path,xml,false,vis,rhs parseState 3,false)
         if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2))
         SynModuleSigDecl.NestedModule(info, isRec, $5, rhs2 parseState 3 5) }
 
   | opt_attributes opt_declVisibility  tyconSpfns 
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2))
-        let (TypeDefnSig(ComponentInfo(cas,a,cs,b,c,d,d2,d3),e,f,g)),rest = 
+        let (TypeDefnSig(ComponentInfo(cas,a,cs,b,c,d,d2,d3,d4),e,f,g)),rest = 
            match $3 with
            | [] -> raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedEmptyModuleDefn()) 
            | h::t -> h,t 
-        let tc = (TypeDefnSig(ComponentInfo($1@cas,a,cs,b,c,d,d2,d3),e,f,g))in 
+        let tc = (TypeDefnSig(ComponentInfo($1@cas,a,cs,b,c,d,d2,d3,d4),e,f,g))in 
         SynModuleSigDecl.Types (tc::rest,rhs parseState 3) } 
 
   | opt_attributes opt_declVisibility exconSpfn
@@ -1216,11 +1216,11 @@ moduleDefn:
         mkDefnBindings (mWhole,$3,$1,$2,mWhole) }
   
   /* 'type' definitions */
-  | opt_attributes opt_declVisibility typeKeyword tyconDefn tyconDefnList
+  | opt_attributes opt_declVisibility typeKeyword opt_inline tyconDefn tyconDefnList
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2))
-        let      (TypeDefn(ComponentInfo(cas   ,a,cs,b,c,d,d2,d3),e,f,g)) = $4
-        let tc = (TypeDefn(ComponentInfo($1@cas,a,cs,b,c,d,d2,d3),e,f,g))
-        let types = tc :: $5
+        let      (TypeDefn(ComponentInfo(cas   ,a,cs,b,c,d,d2,d3, d4),e,f,g)) = $5
+        let tc = (TypeDefn(ComponentInfo($1@cas,a,cs,b,c,d,d2,d3, $4),e,f,g))
+        let types = tc :: $6
         [ SynModuleDecl.Types(types, (rhs parseState 3, types) ||> unionRangeWithListBy (fun t -> t.Range) ) ] }
 
   /* 'exception' definitions */
@@ -1247,7 +1247,7 @@ moduleDefn:
             [ SynModuleDecl.ModuleAbbrev(List.head path,eqn,(rhs parseState 3, eqn) ||> unionRangeWithListBy (fun id -> id.idRange) ) ]
         | Choice2Of2 def -> 
             if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleAbbreviationMustBeSimpleName())
-            let info = ComponentInfo(attribs,[],[],path,xml,false,vis,rhs parseState 3)
+            let info = ComponentInfo(attribs,[],[],path,xml,false,vis,rhs parseState 3, false)
             [ SynModuleDecl.NestedModule(info, isRec, def, false,(rhs2 parseState 3 4, def) ||> unionRangeWithListBy (fun d -> d.Range) ) ] }
 
   /* unattached custom attributes */
@@ -1427,7 +1427,7 @@ typeNameInfo:
   | opt_attributes tyconNameAndTyparDecls opt_typeConstraints
      { let typars,lid,fixity,tpcs1,vis,xmlDoc = $2 
        let tpcs2 = $3 
-       ComponentInfo($1,typars,(tpcs1 @ tpcs2),lid,xmlDoc,fixity,vis,rangeOfLid lid)  }
+       ComponentInfo($1,typars,(tpcs1 @ tpcs2),lid,xmlDoc,fixity,vis,rangeOfLid lid, false)  }
 
 /* Part of a set of type definitions */
 tyconDefnList:  
@@ -1438,7 +1438,7 @@ tyconDefnList:
 
 /* A type definition */
 tyconDefn: 
-  | typeNameInfo 
+  | typeNameInfo
      { TypeDefn($1,SynTypeDefnRepr.Simple(SynTypeDefnSimpleRepr.None($1.Range),$1.Range),[],$1.Range) }
 
   | typeNameInfo EQUALS tyconDefnRhsBlock
@@ -1456,7 +1456,7 @@ tyconDefn:
      { let vis,spats, az = $3,$5,$6
        let nameRange = rhs parseState 1
        let (tcDefRepr,members) = $8 nameRange
-       let (ComponentInfo(_,_,_,lid,_,_,_,_)) = $1 
+       let (ComponentInfo(_,_,_,lid,_,_,_,_,_)) = $1 
        let memberCtorPattern = SynMemberDefn.ImplicitCtor (vis,$2,spats,az,rangeOfLid lid)
        let tcDefRepr = 
          match tcDefRepr with

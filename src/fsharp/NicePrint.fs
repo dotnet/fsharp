@@ -1621,6 +1621,7 @@ module private TastDefinitionPrinting =
       let start, name = 
           let n = tycon.DisplayName
           if isStructTy g ty then Some "struct", tagStruct n
+          elif isInlineInterfaceTy g ty then Some "inline interface", tagInterface n
           elif isInterfaceTy g ty then Some "interface", tagInterface n
           elif isClassTy g ty then (if simplified then None else Some "class" ), tagClass n
           else None, tagUnknownType n
@@ -1664,7 +1665,7 @@ module private TastDefinitionPrinting =
           let adhoc = adhoc |> List.sortBy sortKey
           let iimpls = 
               match tycon.TypeReprInfo with 
-              | TFSharpObjectRepr r when (match r.fsobjmodel_kind with TTyconInterface -> true | _ -> false) -> []
+              | TFSharpObjectRepr r when (match r.fsobjmodel_kind with TTyconInterface _ -> true | _ -> false) -> []
               | _ -> tycon.ImmediateInterfacesOfFSharpTycon
           let iimpls = iimpls |> List.filter (fun (_,compgen,_) -> not compgen)
           // if TTyconInterface, the iimpls should be printed as inherited interfaces 
@@ -1722,7 +1723,7 @@ module private TastDefinitionPrinting =
                               let inherits = 
                                   match r.fsobjmodel_kind, tycon.TypeContents.tcaug_super with
                                   | TTyconClass,Some super -> [wordL  (tagKeyword "inherit") ^^ (layoutType denv super)] 
-                                  | TTyconInterface,_ -> 
+                                  | TTyconInterface _,_ -> 
                                     tycon.ImmediateInterfacesOfFSharpTycon
                                       |> List.filter (fun (_,compgen,_) -> not compgen)
                                       |> List.map (fun (ity,_,_) -> wordL  (tagKeyword "inherit") ^^ (layoutType denv ity))

@@ -473,7 +473,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             | (TFSharpObjectRepr r1), (TFSharpObjectRepr r2) -> 
                 if not (match r1.fsobjmodel_kind,r2.fsobjmodel_kind with 
                          | TTyconClass,TTyconClass -> true
-                         | TTyconInterface,TTyconInterface -> true
+                         | TTyconInterface _,TTyconInterface _ -> true
                          | TTyconStruct,TTyconStruct -> true
                          | TTyconEnum, TTyconEnum -> true
                          | TTyconDelegate (TSlotSig(_,typ1,ctps1,mtps1,ps1, rty1)), 

@@ -1257,7 +1257,7 @@ and
     /// for a type definition or module. For modules, entries such as the type parameters are
     /// always empty.
     SynComponentInfo =
-    | ComponentInfo of attribs:SynAttributes * typeParams:SynTyparDecl list * constraints:SynTypeConstraint list * longId:LongIdent * xmlDoc:PreXmlDoc * preferPostfix:bool * accessibility:SynAccess option * range:range
+    | ComponentInfo of attribs:SynAttributes * typeParams:SynTyparDecl list * constraints:SynTypeConstraint list * longId:LongIdent * xmlDoc:PreXmlDoc * preferPostfix:bool * accessibility:SynAccess option * range:range * inlineType : bool
     member this.Range =
         match this with
         | ComponentInfo (range=m) -> m

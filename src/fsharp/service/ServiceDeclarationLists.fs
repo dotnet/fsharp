@@ -360,7 +360,7 @@ module internal DescriptionListsImpl =
             | TFSharpObjectRepr om -> 
                 match om.fsobjmodel_kind with 
                 | TTyconClass -> FSharpGlyph.Class
-                | TTyconInterface -> FSharpGlyph.Interface
+                | TTyconInterface _ -> FSharpGlyph.Interface
                 | TTyconStruct -> FSharpGlyph.Struct
                 | TTyconDelegate _ -> FSharpGlyph.Delegate
                 | TTyconEnum _ -> FSharpGlyph.Enum

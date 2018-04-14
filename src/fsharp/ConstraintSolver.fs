@@ -849,10 +849,18 @@ and SolveTypSubsumesTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
     let amap = csenv.amap
     let aenv = csenv.EquivEnv
     let denv = csenv.DisplayEnv
+    let feasibleInlineInterfaceCandidate (foo:TyconRef) (bar:TyconRef) =
+        let getFuncSignatures = List.map (fun (v:ValRef) -> if v.IsPropertyGetterMethod || v.IsPropertySetterMethod then v.PropertyName else v.CompiledName)
+        let barSignatures = bar.MembersOfFSharpTyconSorted |> getFuncSignatures
+        let fooSignatures = foo.MembersOfFSharpTyconSorted |> getFuncSignatures
+        if barSignatures |> List.exists(fun ttype -> fooSignatures |> List.exists(fun name -> name = ttype) |> not) then
+            None // errorR (System.Exception("This wasn't expected!"))
+        else Some ty2
+
     match sty1, sty2 with 
     | TType_var tp1, _ when aenv.EquivTypars.ContainsKey tp1 -> 
         SolveTypSubsumesTyp csenv ndeep m2 trace cxsln aenv.EquivTypars.[tp1] ty2 
-        
+      
     | TType_var r1, TType_var r2 when typarEq r1 r2 -> CompleteD
     | _, TType_var r when not csenv.MatchingOnly -> SolveTyparSubtypeOfType csenv ndeep m2 trace r ty1
     | TType_var _ , _ ->  SolveTypEqualsTypKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ty1 ty2
@@ -874,6 +882,12 @@ and SolveTypSubsumesTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
     | TType_ucase (uc1, l1)  , TType_ucase (uc2, l2) when g.unionCaseRefEq uc1 uc2  -> 
         SolveTypEqualsTypEqns csenv ndeep m2 trace cxsln l1 l2
 
+    | TType_app(bar, _), TType_app(foo, _) when bar.Deref.IsFSharpInlineInterfaceTycon ->
+        match feasibleInlineInterfaceCandidate foo bar with
+        | Some _ -> CompleteD
+        | _ -> ErrorD(ConstraintSolverTypesNotInSubsumptionRelation(denv, ty1, ty2, m2, m2))
+    | TType_app(_, _), TType_var foo when foo.Solution.IsSome ->
+        SolveTypSubsumesTyp csenv ndeep m2 trace cxsln ty1 (foo.Solution.Value)
     | _ ->  
         // By now we know the type is not a variable type 
 

@@ -988,7 +988,9 @@ and /// Represents a type definition, exception definition, module definition or
     member x.IsHiddenReprTycon = match x.TypeAbbrev,x.TypeReprInfo with | None,TNoRepr -> true |  _ -> false
 
     /// Indicates if this is an F#-defined interface type definition 
-    member x.IsFSharpInterfaceTycon = x.IsFSharpObjectModelTycon && match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with TTyconInterface -> true | _ -> false
+    member x.IsFSharpInterfaceTycon = x.IsFSharpObjectModelTycon && match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with TTyconInterface _ -> true | _ -> false
+
+    member x.IsFSharpInlineInterfaceTycon = x.IsFSharpObjectModelTycon && match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with TTyconInterface isInline -> isInline | _ -> false
 
     /// Indicates if this is an F#-defined delegate type definition 
     member x.IsFSharpDelegateTycon  = x.IsFSharpObjectModelTycon && match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with TTyconDelegate _ -> true | _ -> false
@@ -1020,7 +1022,7 @@ and /// Represents a type definition, exception definition, module definition or
         | TUnionRepr _ -> x.IsStructRecordOrUnionTycon
         | TFSharpObjectRepr info ->
             match info.fsobjmodel_kind with
-            | TTyconClass | TTyconInterface   | TTyconDelegate _ -> false
+            | TTyconClass | TTyconInterface _ | TTyconDelegate _ -> false
             | TTyconStruct | TTyconEnum -> true
         | _ -> false
 
@@ -1368,8 +1370,8 @@ and
     /// Indicates the type is a class (also used for units-of-measure)
     | TTyconClass 
 
-    /// Indicates the type is an interface 
-    | TTyconInterface 
+    /// Indicates the type is an interface
+    | TTyconInterface of Inline:bool
 
     /// Indicates the type is a struct 
     | TTyconStruct 
@@ -1382,7 +1384,7 @@ and
     
     member x.IsValueType =
         match x with 
-        | TTyconClass | TTyconInterface   | TTyconDelegate _ -> false
+        | TTyconClass | TTyconInterface _  | TTyconDelegate _ -> false
         | TTyconStruct | TTyconEnum -> true
 
 and 

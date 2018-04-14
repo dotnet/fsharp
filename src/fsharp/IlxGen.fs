@@ -6270,11 +6270,11 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
            match  tyconRepr with 
            | TFSharpObjectRepr o -> 
                match o.fsobjmodel_kind with 
-               | TTyconClass      -> ILTypeDefKind.Class
-               | TTyconStruct     -> ILTypeDefKind.ValueType
-               | TTyconInterface  -> ILTypeDefKind.Interface
-               | TTyconEnum       -> ILTypeDefKind.Enum
-               | TTyconDelegate _ -> ILTypeDefKind.Delegate
+               | TTyconClass       -> ILTypeDefKind.Class
+               | TTyconStruct      -> ILTypeDefKind.ValueType
+               | TTyconInterface _ -> ILTypeDefKind.Interface
+               | TTyconEnum        -> ILTypeDefKind.Enum
+               | TTyconDelegate _  -> ILTypeDefKind.Delegate
            | TRecdRepr _ | TUnionRepr _ when tycon.IsStructOrEnumTycon -> ILTypeDefKind.ValueType
            | _ -> ILTypeDefKind.Class
 

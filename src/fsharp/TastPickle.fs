@@ -1783,7 +1783,7 @@ and p_member_info (x:ValMemberInfo) st =
 and p_tycon_objmodel_kind x st = 
     match x with 
     | TTyconClass       -> p_byte 0 st
-    | TTyconInterface   -> p_byte 1 st
+    | TTyconInterface _ -> p_byte 1 st
     | TTyconStruct      -> p_byte 2 st
     | TTyconDelegate ss -> p_byte 3 st; p_slotsig ss st
     | TTyconEnum        -> p_byte 4 st
@@ -2068,7 +2068,7 @@ and u_tycon_objmodel_kind st =
     let tag = u_byte st
     match tag with
     | 0 -> TTyconClass 
-    | 1 -> TTyconInterface  
+    | 1 -> TTyconInterface false
     | 2 -> TTyconStruct 
     | 3 -> u_slotsig st |> TTyconDelegate
     | 4 -> TTyconEnum 

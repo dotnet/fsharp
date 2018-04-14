@@ -518,7 +518,7 @@ module Structure =
                     parseAttributes attrs
             | _ -> ()
 
-        and parseTypeDefn (TypeDefn(ComponentInfo(_,typeArgs,_,_,_,_,_,r), objectModel, members, fullrange)) = 
+        and parseTypeDefn (TypeDefn(ComponentInfo(_,typeArgs,_,_,_,_,_,r,_), objectModel, members, fullrange)) = 
            let typeArgsRange = rangeOfTypeArgsElse r typeArgs
            let collapse = Range.endToEnd (Range.modEnd 1 typeArgsRange) fullrange
            match objectModel with
@@ -590,7 +590,7 @@ module Structure =
                 for t in types do
                     parseTypeDefn t
             // Fold the attributes above a module
-            | SynModuleDecl.NestedModule (ComponentInfo (attrs,_,_,_,_,_,_,cmpRange),_, decls,_,_) ->                
+            | SynModuleDecl.NestedModule (ComponentInfo (attrs,_,_,_,_,_,_,cmpRange,_),_, decls,_,_) ->                
                 // Outline the full scope of the module
                 let r = Range.endToEnd cmpRange decl.Range
                 rcheck Scope.Module Collapse.Below decl.Range r
@@ -731,7 +731,7 @@ module Structure =
                 parseTypeDefnSig typeDefSig
             | _ -> ()
 
-        and parseTypeDefnSig (TypeDefnSig (ComponentInfo(attribs,typeArgs,_,longId,_,_,_,r) as __, objectModel, memberSigs, _)) = 
+        and parseTypeDefnSig (TypeDefnSig (ComponentInfo(attribs,typeArgs,_,longId,_,_,_,r,_) as __, objectModel, memberSigs, _)) = 
             parseAttributes attribs
 
             let makeRanges memberSigs =
@@ -815,7 +815,7 @@ module Structure =
             | SynModuleSigDecl.Types (typeSigs,_) ->
                 List.iter parseTypeDefnSig typeSigs
             // Fold the attributes above a module
-            | SynModuleSigDecl.NestedModule (ComponentInfo (attrs,_,_,_,_,_,_,cmpRange),_,decls,moduleRange) ->
+            | SynModuleSigDecl.NestedModule (ComponentInfo (attrs,_,_,_,_,_,_,cmpRange,_),_,decls,moduleRange) ->
                 let rangeEnd = lastModuleSigDeclRangeElse moduleRange decls
                 // Outline the full scope of the module
                 let collapse = Range.endToEnd cmpRange rangeEnd

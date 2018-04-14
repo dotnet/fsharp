@@ -1600,7 +1600,7 @@ let isFSharpObjModelRefTy g ty =
     isFSharpObjModelTy g ty && 
     let tcr, _ = destAppTy g ty
     match tcr.FSharpObjectModelTypeInfo.fsobjmodel_kind with 
-    | TTyconClass | TTyconInterface   | TTyconDelegate _ -> true
+    | TTyconClass | TTyconInterface _ | TTyconDelegate _ -> true
     | TTyconStruct | TTyconEnum -> false
 
 let isFSharpClassTy g ty =
@@ -1616,6 +1616,11 @@ let isFSharpStructTy g ty =
 let isFSharpInterfaceTy g ty = 
     match tryDestAppTy g ty with
     | Some tcref -> tcref.Deref.IsFSharpInterfaceTycon
+    | _ -> false
+
+let isFSharpInlineInterfaceTy g ty = 
+    match tryDestAppTy g ty with
+    | Some tcref -> tcref.Deref.IsFSharpInlineInterfaceTycon
     | _ -> false
 
 let isDelegateTy g ty = 
@@ -1636,6 +1641,11 @@ let isInterfaceTy g ty =
 #endif
     | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsInterface
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> isFSharpInterfaceTy g ty
+
+let isInlineInterfaceTy g ty = 
+    match metadataOfTy g ty with 
+    | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> isFSharpInlineInterfaceTy g ty
+    | _ -> false
 
 let isClassTy g ty = 
     match metadataOfTy g ty with 
@@ -3353,7 +3363,7 @@ module DebugPrint = begin
                     |> List.filter (fun v -> isNil (Option.get v.MemberInfo).ImplementedSlotSigs)
             let iimpls = 
                 match tycon.TypeReprInfo with 
-                | TFSharpObjectRepr r when (match r.fsobjmodel_kind with TTyconInterface -> true | _ -> false) -> []
+                | TFSharpObjectRepr r when (match r.fsobjmodel_kind with TTyconInterface _ -> true | _ -> false) -> []
                 | _ -> tycon.ImmediateInterfacesOfFSharpTycon
             let iimpls = iimpls |> List.filter (fun (_, compgen, _) -> not compgen)
             // if TTyconInterface, the iimpls should be printed as inherited interfaces 
@@ -3393,14 +3403,14 @@ module DebugPrint = begin
                     let start = 
                         match r.fsobjmodel_kind with
                         | TTyconClass -> "class" 
-                        | TTyconInterface -> "interface" 
+                        | TTyconInterface isInline -> if isInline then "inline interface" else "interface" 
                         | TTyconStruct -> "struct" 
                         | TTyconEnum -> "enum" 
                         | _ -> failwith "???"
                     let inherits = 
                        match r.fsobjmodel_kind, tycon.TypeContents.tcaug_super with
                        | TTyconClass, Some super -> [wordL(tagText "inherit") ^^ (typeL super)] 
-                       | TTyconInterface, _ -> 
+                       | TTyconInterface _ , _ -> 
                          tycon.ImmediateInterfacesOfFSharpTycon
                            |> List.filter (fun (_, compgen, _) -> not compgen)
                            |> List.map (fun (ity, _, _) -> wordL(tagText "inherit") ^^ (typeL ity))
@@ -4910,7 +4920,7 @@ and remapFsObjData g tmenv x =
           fsobjmodel_kind = 
              (match x.fsobjmodel_kind with 
               | TTyconDelegate slotsig -> TTyconDelegate (remapSlotSig (remapAttribs g tmenv) tmenv slotsig)
-              | TTyconClass | TTyconInterface | TTyconStruct | TTyconEnum -> x.fsobjmodel_kind);
+              | TTyconClass | TTyconInterface _ | TTyconStruct | TTyconEnum -> x.fsobjmodel_kind);
           fsobjmodel_vslots  = x.fsobjmodel_vslots  |> List.map (remapValRef tmenv);
           fsobjmodel_rfields = x.fsobjmodel_rfields |> remapRecdFields g tmenv } 
 

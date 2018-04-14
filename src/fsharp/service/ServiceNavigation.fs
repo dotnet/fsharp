@@ -164,7 +164,7 @@ module NavigationImpl =
             let nested = processMembers membDefns FSharpEnclosingEntityKind.Exception |> snd
             processExnDefnRepr baseName nested repr
 
-        and processTycon baseName (TypeDefn(ComponentInfo(_, _, _, lid, _, _, access, _), repr, membDefns, m)) =
+        and processTycon baseName (TypeDefn(ComponentInfo(_, _, _, lid, _, _, access, _, _), repr, membDefns, m)) =
             let topMembers = processMembers membDefns FSharpEnclosingEntityKind.Class |> snd
             match repr with
             | SynTypeDefnRepr.Exception repr -> processExnDefnRepr baseName [] repr
@@ -253,7 +253,7 @@ module NavigationImpl =
             | SynModuleDecl.ModuleAbbrev(id, lid, m) ->
                 [ createDecl(baseName, id, ModuleDecl, FSharpGlyph.Module, m, rangeOfLid lid, [], FSharpEnclosingEntityKind.Namespace, false, None) ]
                 
-            | SynModuleDecl.NestedModule(ComponentInfo(_, _, _, lid, _, _, access, _), _isRec, decls, _, m) ->
+            | SynModuleDecl.NestedModule(ComponentInfo(_, _, _, lid, _, _, access, _, _), _isRec, decls, _, m) ->
                 // Find let bindings (for the right dropdown)
                 let nested = processNestedDeclarations(decls)
                 let newBaseName = (if (baseName = "") then "" else baseName+".") + (textOfLid lid)
@@ -333,7 +333,7 @@ module NavigationImpl =
             let nested = processSigMembers memberSigs
             processExnRepr baseName nested repr
 
-        and processTycon baseName (TypeDefnSig(ComponentInfo(_, _, _, lid, _, _, access, _), repr, membDefns, m)) =
+        and processTycon baseName (TypeDefnSig(ComponentInfo(_, _, _, lid, _, _, access, _, _), repr, membDefns, m)) =
             let topMembers = processSigMembers membDefns
             match repr with
             | SynTypeDefnSigRepr.Exception repr -> processExnRepr baseName [] repr
@@ -393,7 +393,7 @@ module NavigationImpl =
             | SynModuleSigDecl.ModuleAbbrev(id, lid, m) ->
                 [ createDecl(baseName, id, ModuleDecl, FSharpGlyph.Module, m, rangeOfLid lid, [], FSharpEnclosingEntityKind.Module, false, None) ]
                 
-            | SynModuleSigDecl.NestedModule(ComponentInfo(_, _, _, lid, _, _, access, _), _, decls, m) ->                
+            | SynModuleSigDecl.NestedModule(ComponentInfo(_, _, _, lid, _, _, access, _, _), _, decls, m) ->                
                 // Find let bindings (for the right dropdown)
                 let nested = processNestedSigDeclarations(decls)
                 let newBaseName = (if (baseName = "") then "" else baseName+".") + (textOfLid lid)
@@ -515,7 +515,7 @@ module NavigateTo =
             addIdent NavigableItemKind.Exception id isSig container
             { Type = ContainerType.Exception; Name = id.idText }
     
-        let addComponentInfo containerType kind (ComponentInfo(_, _, _, lid, _, _, _, _)) isSig container = 
+        let addComponentInfo containerType kind (ComponentInfo(_, _, _, lid, _, _, _, _, _)) isSig container = 
             match lastInLid lid with
             | Some id -> addIdent kind id isSig container
             | _ -> ()

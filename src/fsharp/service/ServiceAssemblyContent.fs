@@ -771,7 +771,7 @@ module ParsedInput =
             | SynTypeDefnSimpleRepr.TypeAbbrev (_, t, _) -> walkType t
             | _ -> ()
     
-        and walkComponentInfo isTypeExtensionOrAlias (ComponentInfo(attrs, typars, constraints, longIdent, _, _, _, _)) =
+        and walkComponentInfo isTypeExtensionOrAlias (ComponentInfo(attrs, typars, constraints, longIdent, _, _, _, _, _)) =
             List.iter walkAttribute attrs
             List.iter walkTyparDecl typars
             List.iter walkTypeConstraint constraints
@@ -915,7 +915,7 @@ module ParsedInput =
         and walkSynModuleDecl (parent: LongIdent) (decl: SynModuleDecl) =
             match decl with
             | SynModuleDecl.NamespaceFragment fragment -> walkSynModuleOrNamespace parent fragment
-            | SynModuleDecl.NestedModule(ComponentInfo(_, _, _, ident, _, _, _, _), _, decls, _, range) ->
+            | SynModuleDecl.NestedModule(ComponentInfo(_, _, _, ident, _, _, _, _, _), _, decls, _, range) ->
                 let fullIdent = parent @ ident
                 addModule (fullIdent, range)
                 if range.EndLine >= currentLine then

@@ -301,7 +301,7 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
                       yield! walkExpr true e2 ]
             
             // Process a class declaration or F# type declaration
-            let rec walkTycon (TypeDefn(ComponentInfo(_, _, _, _, _, _, _, _), repr, membDefns, m)) =
+            let rec walkTycon (TypeDefn(ComponentInfo(_, _, _, _, _, _, _, _, _), repr, membDefns, m)) =
                 if not (isMatchRange m) then [] else
                 [ for memb in membDefns do yield! walkMember memb
                   match repr with
@@ -895,7 +895,7 @@ module UntypedParseImpl =
             | SynTypeDefnSimpleRepr.TypeAbbrev(_, t, _) -> walkType t
             | _ -> None
 
-        and walkComponentInfo isModule (ComponentInfo(attrs, typars, constraints, _, _, _, _, r)) =
+        and walkComponentInfo isModule (ComponentInfo(attrs, typars, constraints, _, _, _, _, r, _)) =
             if isModule then None else ifPosInRange r (fun _ -> Some EntityKind.Type)
             |> Option.orElse (
                 List.tryPick walkAttribute attrs
@@ -999,7 +999,7 @@ module UntypedParseImpl =
             | false, false, true -> Struct
             | _ -> Invalid
 
-        let GetCompletionContextForInheritSynMember ((ComponentInfo(synAttributes, _, _, _,_, _, _, _)), typeDefnKind : SynTypeDefnKind, completionPath) = 
+        let GetCompletionContextForInheritSynMember ((ComponentInfo(synAttributes, _, _, _,_, _, _, _, _)), typeDefnKind : SynTypeDefnKind, completionPath) = 
             
             let success k = Some (CompletionContext.Inherit (k, completionPath))
 
@@ -1165,7 +1165,7 @@ module UntypedParseImpl =
                         let contextFromTreePath completionPath = 
                             // detect records usage in constructor
                             match path with
-                            | TS.Expr(_)::TS.Binding(_):: TS.MemberDefn(_)::TS.TypeDefn(SynTypeDefn.TypeDefn(ComponentInfo(_, _, _, [id], _, _, _, _), _, _, _))::_ ->  
+                            | TS.Expr(_)::TS.Binding(_):: TS.MemberDefn(_)::TS.TypeDefn(SynTypeDefn.TypeDefn(ComponentInfo(_, _, _, [id], _, _, _, _, _), _, _, _))::_ ->  
                                 RecordContext.Constructor(id.idText)
                             | _ -> RecordContext.New (completionPath)
                         match field with
