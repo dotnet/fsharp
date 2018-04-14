@@ -7054,6 +7054,23 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
         match flds with 
         | [] -> []
         | _ ->
+            let flds =
+                flds
+                |> Seq.groupBy (fun ((_, fld), _) -> fld.idText)
+                |> Seq.map (fun (_, flds) -> 
+                    let fldsList = flds |> List.ofSeq
+                    match fldsList with
+                    | [] | [_] -> fldsList
+                    | _ -> 
+                        [fldsList
+                        |> List.reduce (fun a b ->
+                            match (a, b) with
+                            | (lidwid, Some(SynExpr.Record (aBI, aCI, aFlds, aRng))), (_, Some(SynExpr.Record (_, _, bFlds, _))) -> (lidwid, Some(SynExpr.Record (aBI, aCI, (aFlds @ bFlds), aRng)))
+                            | _ -> a)]
+                    )
+                |> Seq.concat
+                |> List.ofSeq
+
             let tcref, _, fldsList = BuildFieldMap cenv env hasOrigExpr overallTy flds mWholeExpr
             let _, _, _, gtyp = infoOfTyconRef mWholeExpr tcref
             UnifyTypes cenv env mWholeExpr overallTy gtyp
