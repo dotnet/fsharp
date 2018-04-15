@@ -6862,161 +6862,183 @@ and TcAssertExpr cenv overallTy env (m:range) tpenv x  =
 
 and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr) =
     let buildForNestdFlds (lidwd : LongIdentWithDots) v =
-            match lidwd.Lid with
-            | [] -> []
-            | [fld] -> [(([], fld), v)]
-            | h :: t ->
-                let (|ModuleOrNamespace|RecdTy|RecdFld|) (id : Ident) =
-                    let modOrNamespace = 
-                        env.NameEnv.eModulesAndNamespaces.TryFind id.idText
-                    let ty =
-                        env.NameEnv.eTyconsByAccessNames.TryFind id.idText
-                    let fld =
-                        env.NameEnv.eFieldLabels.TryFind id.idText
-                    match (modOrNamespace, ty, fld) with
-                    | (Some mOrN, None, None) -> ModuleOrNamespace mOrN
-                    | (_, Some _, None) -> RecdTy
-                    | _ -> RecdFld
+        let (|ModuleOrNamespace|RecdTy|RecdFld|) (id : Ident) =
+            let modOrNamespace = 
+                env.NameEnv.eModulesAndNamespaces.TryFind id.idText
+            let ty =
+                env.NameEnv.eTyconsByAccessNames.TryFind id.idText
+            let fld =
+                env.NameEnv.eFieldLabels.TryFind id.idText
+            match (modOrNamespace, ty, fld) with
+            | (Some mOrN, None, None) -> ModuleOrNamespace mOrN
+            | (_, Some _, None) -> RecdTy
+            | _ -> RecdFld
                    
-                let buildRecdExprCopyInfo (optOrigExpr : (SynExpr * BlockSeparator) option) (id : Ident) =
-                    let lidOfTys = lidwd.Lid |> List.filter (function | RecdFld -> true | _ -> false)
+        let buildRecdExprCopyInfo (optOrigExpr : (SynExpr * BlockSeparator) option) (id : Ident) =
+            let lidOfTys = lidwd.Lid |> List.filter (function | RecdFld -> true | _ -> false)
 
-                    let upToId origSepRng id lidwd =
-                        let rec buildLid res (id : Ident) =
-                            function
-                            | [] -> res
-                            | (h : Ident) :: t -> if h.idText = id.idText then h :: res else buildLid (h :: res) id t
+            let upToId origSepRng id lidwd =
+                let rec buildLid res (id : Ident) =
+                    function
+                    | [] -> res
+                    | (h : Ident) :: t -> if h.idText = id.idText then h :: res else buildLid (h :: res) id t
 
-                        let rec combineIds =
-                            function
-                            | [] | [_] -> []
-                            | id1::id2::rest -> (id1, id2) :: (id2 :: rest |> combineIds)
+                let rec combineIds =
+                    function
+                    | [] | [_] -> []
+                    | id1::id2::rest -> (id1, id2) :: (id2 :: rest |> combineIds)
 
-                        let calcLidSeparatorRanges lid =
-                            match lid with
-                            | [] | [_] -> [origSepRng]
-                            | _ :: t -> origSepRng :: List.map (fun (s : Ident, e : Ident) -> mkRange s.idRange.FileName s.idRange.End e.idRange.Start) t
+                let calcLidSeparatorRanges lid =
+                    match lid with
+                    | [] | [_] -> [origSepRng]
+                    | _ :: t -> origSepRng :: List.map (fun (s : Ident, e : Ident) -> mkRange s.idRange.FileName s.idRange.End e.idRange.Start) t
 
-                        let lid = buildLid [] id lidwd |> List.rev
+                let lid = buildLid [] id lidwd |> List.rev
 
-                        (lid, lid |> combineIds |> calcLidSeparatorRanges)
+                (lid, lid |> combineIds |> calcLidSeparatorRanges)
 
-                    let totalRange (origId : Ident) (id : Ident) =
-                        mkRange origId.idRange.FileName origId.idRange.End id.idRange.Start
+            let totalRange (origId : Ident) (id : Ident) =
+                mkRange origId.idRange.FileName origId.idRange.End id.idRange.Start
                 
-                    match optOrigExpr with 
-                    | Some (SynExpr.Ident origId, (sepRange, _)) -> 
-                        let lid, rng = upToId sepRange id (origId :: lidOfTys)
-                        Some (SynExpr.LongIdent (false, LongIdentWithDots(lid, rng), None, totalRange origId id), (id.idRange, None)) // TODO: id.idRange should be the range of the next separator
-                    | _ -> None
+            match optOrigExpr with 
+            | Some (SynExpr.Ident origId, (sepRange, _)) -> 
+                let lid, rng = upToId sepRange id (origId :: lidOfTys)
+                Some (SynExpr.LongIdent (false, LongIdentWithDots(lid, rng), None, totalRange origId id), (id.idRange, None)) // TODO: id.idRange should be the range of the next separator
+            | _ -> None
 
-                let combineTyAndNextFld (ty : Ident) flds =
-                    match flds with
-                    | [] -> ([ty], ty.idRange, [])  // If no other fields it's invalid syntax. Return but error will be thrown later.
-                    | h :: t -> ([ty; h], h.idRange, t)
+        let combineTyAndNextFld (ty : Ident) flds =
+            match flds with
+            | [] -> ([ty], ty.idRange, [])  // If no other fields it's invalid syntax. Return but error will be thrown later.
+            | h :: t -> ([ty; h], h.idRange, t)
 
-                let combineModuleOrNamespaceWithNextIds (mOrNRefList : ModuleOrNamespaceRef list) (mOrN : Ident) flds =
-                    let search mapFn mOrNsTyList =
-                        mOrNsTyList
-                        |> Option.bind (fun lst -> lst |> List.map mapFn |> List.tryFind Option.isSome)
-                        |> Option.flatten
+        let combineModuleOrNamespaceWithNextIds (mOrNRefList : ModuleOrNamespaceRef list) (mOrN : Ident) flds =
+            let search mapFn mOrNsTyList =
+                mOrNsTyList
+                |> Option.bind (fun lst -> lst |> List.map mapFn |> List.tryFind Option.isSome)
+                |> Option.flatten
 
-                    let modOrNsSearch (id : Ident) =
-                        search (fun (mOrNsTy : ModuleOrNamespaceType) -> mOrNsTy.ModulesAndNamespacesByDemangledName.TryFind id.idText)
+            let modOrNsSearch (id : Ident) =
+                search (fun (mOrNsTy : ModuleOrNamespaceType) -> mOrNsTy.ModulesAndNamespacesByDemangledName.TryFind id.idText)
 
-                    let tyconSearch (id : Ident) =
-                        search (fun (mOrNsTy : ModuleOrNamespaceType) -> mOrNsTy.TypesByAccessNames.TryFind id.idText)
+            let tyconSearch (id : Ident) =
+                search (fun (mOrNsTy : ModuleOrNamespaceType) -> mOrNsTy.TypesByAccessNames.TryFind id.idText)
 
-                    let rec abbrevTyconFieldSearch (abbrvTycon : TyconRef) (id : Ident) =
-                        match abbrvTycon.TypeAbbrev with
-                        | None -> abbrvTycon.GetFieldByName id.idText
-                        | Some (TType_app (abbrv, _)) -> abbrevTyconFieldSearch abbrv id
-                        | _ -> None
+            let rec abbrevTyconFieldSearch (abbrvTycon : TyconRef) (id : Ident) =
+                match abbrvTycon.TypeAbbrev with
+                | None -> abbrvTycon.GetFieldByName id.idText
+                | Some (TType_app (abbrv, _)) -> abbrevTyconFieldSearch abbrv id
+                | _ -> None
 
-                    let tyconFieldSearch (id : Ident) =
-                        search (fun (tycon : Tycon) -> match tycon.TypeAbbrev with
-                                                        | None -> tycon.GetFieldByName id.idText
-                                                        | Some (TType_app (abbrv, _)) -> abbrevTyconFieldSearch abbrv id
-                                                        | _ -> None)
+            let tyconFieldSearch (id : Ident) =
+                search (fun (tycon : Tycon) -> match tycon.TypeAbbrev with
+                                                | None -> tycon.GetFieldByName id.idText
+                                                | Some (TType_app (abbrv, _)) -> abbrevTyconFieldSearch abbrv id
+                                                | _ -> None)
 
-                    let searchFieldsOfAllTycons (id : Ident) =
-                        let searchForFld (lst : ModuleOrNamespaceType list) =
-                            lst
-                            |> List.map (fun mOrNs -> mOrNs.TypeDefinitions)
-                            |> List.concat
-                            |> List.tryFind (fun e -> match e.TypeAbbrev with
-                                                        | None -> e.GetFieldByName id.idText
-                                                        | Some (TType_app (abbrv, _)) -> abbrevTyconFieldSearch abbrv id
-                                                        | _ -> None 
-                                                        |> Option.isSome)
-                        Option.bind searchForFld
+            let searchFieldsOfAllTycons (id : Ident) =
+                let searchForFld (lst : ModuleOrNamespaceType list) =
+                    lst
+                    |> List.map (fun mOrNs -> mOrNs.TypeDefinitions)
+                    |> List.concat
+                    |> List.tryFind (fun e -> match e.TypeAbbrev with
+                                                | None -> e.GetFieldByName id.idText
+                                                | Some (TType_app (abbrv, _)) -> abbrevTyconFieldSearch abbrv id
+                                                | _ -> None 
+                                                |> Option.isSome)
+                Option.bind searchForFld
+
+
+            let rec loop lid rst mOrNs tycons ids =
+                let lidAndRst l r ids = (l |> List.rev, (r |> List.rev) @ ids)
+
+                match ids with
+                | [] -> lidAndRst lid rst ids
+                | id :: ids ->
+                    match (mOrNs, tycons) with
+                    | (_, Some _) -> 
+                        // If there is some tycons then search for id in their fields
+                        let search = (tyconFieldSearch id tycons)
+                        match search with
+                        | None -> lidAndRst lid (id :: rst) ids
+                        | Some _ -> lidAndRst (id :: lid) rst ids                
+                    | _ -> 
+                        // If no tycons search for namespace, module or type name
+                        let mOrN, tycons = (modOrNsSearch id mOrNs, tyconSearch id mOrNs)
+                        match (mOrN, tycons) with
+                        | (Some m, _) -> loop (id :: lid) rst (Some [m.ModuleOrNamespaceType]) None ids
+                        | (_, Some _) -> loop (id :: lid) rst mOrNs tycons ids
+                        | _ -> 
+                            // As a last resort - search across fields of module's tycons for case ModuleName.FieldName
+                            let fld = searchFieldsOfAllTycons id mOrNs
+                            match fld with
+                            | Some _ -> lidAndRst (id :: lid) rst ids
+                            | None -> lidAndRst lid (id :: rst) ids
 
                        
-                    match flds with
-                    | [] ->     ([mOrN], [])
-                    | [id] ->   ([mOrN; id], [])
-                    | _ ->
-                        let mOrNsTyLst = 
-                            let lst = List.map (fun (mOrNsRef : ModuleOrNamespaceRef) -> mOrNsRef.ModuleOrNamespaceType) mOrNRefList
+            match flds with
+            | [] ->     ([mOrN], [])
+            | [id] ->   ([mOrN; id], [])
+            | _ ->
+                let mOrNsTyList = if (mOrNRefList |> List.isEmpty) then None else Some (mOrNRefList |> List.map (fun (mOrNsRef : ModuleOrNamespaceRef) -> mOrNsRef.ModuleOrNamespaceType))
+                let lid, rst = loop [] [] mOrNsTyList None flds
 
-                            match lst with
-                            | [] -> None
-                            | _ -> Some lst
-
-                        let lidwd, rest, _, _ = 
-                            List.fold (fun (lidwd, rest, (mOrNsTy : ModuleOrNamespaceType list option), (tycons : Tycon list option)) id ->
-                                match tycons with
-                                | Some _ -> 
-                                    match (tyconFieldSearch id tycons) with
-                                    | Some _ -> (id :: lidwd, rest, mOrNsTy, None)
-                                    | None ->   (lidwd, id :: rest, mOrNsTy, None)
-                                | None ->
-                                    match (modOrNsSearch id mOrNsTy) with
-                                    | Some mOrNs -> (id :: lidwd, rest, Some [mOrNs.ModuleOrNamespaceType], None)
-                                    | None ->
-                                        match (tyconSearch id mOrNsTy) with
-                                        | Some tycons -> (id :: lidwd, rest, mOrNsTy, Some tycons)
-                                        | None ->
-                                            // Handle the case where a record field is referenced without TypeName
-                                            match (searchFieldsOfAllTycons id mOrNsTy) with
-                                            | Some _ -> (id :: lidwd, rest, None, None)
-                                            | None ->  (lidwd, id :: rest, mOrNsTy, None)) ([], [], mOrNsTyLst, None) flds
-
-                        (mOrN :: (List.rev lidwd), List.rev rest)
+                (mOrN :: lid, rst)
 
 
 
-                let rec build lid =
-                    match lid with
-                    | [] ->     ((LongIdentWithDots ([], []), true), v, None)
-                    | [fld] ->  ((LongIdentWithDots ([fld],[]), true), v, None)
-                    | h :: t ->
-                        match h with
-                        | RecdFld -> ((LongIdentWithDots ([h], []), true), Some(SynExpr.Record((None, (buildRecdExprCopyInfo optOrigExpr h), [build t], h.idRange))), None)
-                        | RecdTy ->
-                            // If Ident is Type - LongIdentWithDots is [Type; NextField]
-                            let tyLidwd, fldIdRange, _ = combineTyAndNextFld h t
-                            ((LongIdentWithDots (tyLidwd, [h.idRange]), true), Some(SynExpr.Record((None, (buildRecdExprCopyInfo optOrigExpr h), [build t], fldIdRange))), None)                                                 
-                        | ModuleOrNamespace mOrNRefList ->
-                            let lidwd, rest = combineModuleOrNamespaceWithNextIds mOrNRefList h t
-                            ((LongIdentWithDots (lidwd, [h.idRange]), true), Some(SynExpr.Record((None, (buildRecdExprCopyInfo optOrigExpr h), [build rest], h.idRange))), None)
-
+        let rec build lid =
+            match lid with
+            | [] ->     ((LongIdentWithDots ([], []), true), v, None)
+            | [fld] ->  ((LongIdentWithDots ([fld],[]), true), v, None)
+            | h :: t ->
                 match h with
-                | RecdFld -> [(([], h), Some(SynExpr.Record(None, (buildRecdExprCopyInfo optOrigExpr h), [build t], h.idRange)))]
+                | RecdFld -> ((LongIdentWithDots ([h], []), true), Some(SynExpr.Record((None, (buildRecdExprCopyInfo optOrigExpr h), [build t], h.idRange))), None)
                 | RecdTy ->
-                    let lidwd, _, rest = combineTyAndNextFld h t
-                    let f, b = List.frontAndBack lidwd
-                    match rest with
-                    | [] -> [((f, b), v)]
-                    | _ ->  [((f, b), Some(SynExpr.Record(None, (buildRecdExprCopyInfo optOrigExpr b), [build rest], h.idRange)))]
+                    // If Ident is Type - LongIdentWithDots is [Type; NextField]
+                    let tyLidwd, fldIdRange, _ = combineTyAndNextFld h t
+                    ((LongIdentWithDots (tyLidwd, [h.idRange]), true), Some(SynExpr.Record((None, (buildRecdExprCopyInfo optOrigExpr h), [build t], fldIdRange))), None)                                                 
                 | ModuleOrNamespace mOrNRefList ->
-                    let flds, rest = combineModuleOrNamespaceWithNextIds mOrNRefList h t
-                    let f, b = List.frontAndBack flds
-                    match rest with
-                    | [] -> [((f, b), v)]
-                    | _ ->  [((f, b), Some(SynExpr.Record(None, (buildRecdExprCopyInfo optOrigExpr b), [build rest], h.idRange)))]
+                    let lidwd, rest = combineModuleOrNamespaceWithNextIds mOrNRefList h t
+                    ((LongIdentWithDots (lidwd, [h.idRange]), true), Some(SynExpr.Record((None, (buildRecdExprCopyInfo optOrigExpr h), [build rest], h.idRange))), None)
 
-             
+
+
+        match lidwd.Lid with
+        | [] -> []
+        | [fld] -> [(([], fld), v)]
+        | h :: t ->
+            match h with
+            | RecdFld -> [(([], h), Some(SynExpr.Record(None, (buildRecdExprCopyInfo optOrigExpr h), [build t], h.idRange)))]
+            | RecdTy ->
+                let lidwd, _, rest = combineTyAndNextFld h t
+                let f, b = List.frontAndBack lidwd
+                match rest with
+                | [] -> [((f, b), v)]
+                | _ ->  [((f, b), Some(SynExpr.Record(None, (buildRecdExprCopyInfo optOrigExpr b), [build rest], h.idRange)))]
+            | ModuleOrNamespace mOrNRefList ->
+                let flds, rest = combineModuleOrNamespaceWithNextIds mOrNRefList h t
+                let f, b = List.frontAndBack flds
+                match rest with
+                | [] -> [((f, b), v)]
+                | _ ->  [((f, b), Some(SynExpr.Record(None, (buildRecdExprCopyInfo optOrigExpr b), [build rest], h.idRange)))]
+
+    let grpNestdMultiUpdates flds =
+        flds
+        |> Seq.groupBy (fun ((_, fld : Ident), _) -> fld.idText)
+        |> Seq.map (fun (_, flds) -> 
+            let fldsList = flds |> List.ofSeq
+            match fldsList with
+            | [] | [_] -> fldsList
+            | _ -> 
+                [fldsList
+                |> List.reduce (fun a b ->
+                    match (a, b) with
+                    | (lidwid, Some(SynExpr.Record (aBI, aCI, aFlds, aRng))), (_, Some(SynExpr.Record (_, _, bFlds, _))) -> (lidwid, Some(SynExpr.Record (aBI, aCI, (aFlds @ bFlds), aRng)))
+                    | _ -> a)]
+            )
+        |> Seq.concat
+        |> List.ofSeq
+
     let requiresCtor = (GetCtorShapeCounter env = 1) // Get special expression forms for constructors 
     let haveCtor = Option.isSome inherits
 
@@ -7049,28 +7071,11 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                     | _     -> match buildForNestdFlds lidwd v with
                                 | [flds] -> yield(flds)
                                 | _ -> ()                    
-            ]
+            ] |> grpNestdMultiUpdates
                    
         match flds with 
         | [] -> []
         | _ ->
-            let flds =
-                flds
-                |> Seq.groupBy (fun ((_, fld), _) -> fld.idText)
-                |> Seq.map (fun (_, flds) -> 
-                    let fldsList = flds |> List.ofSeq
-                    match fldsList with
-                    | [] | [_] -> fldsList
-                    | _ -> 
-                        [fldsList
-                        |> List.reduce (fun a b ->
-                            match (a, b) with
-                            | (lidwid, Some(SynExpr.Record (aBI, aCI, aFlds, aRng))), (_, Some(SynExpr.Record (_, _, bFlds, _))) -> (lidwid, Some(SynExpr.Record (aBI, aCI, (aFlds @ bFlds), aRng)))
-                            | _ -> a)]
-                    )
-                |> Seq.concat
-                |> List.ofSeq
-
             let tcref, _, fldsList = BuildFieldMap cenv env hasOrigExpr overallTy flds mWholeExpr
             let _, _, _, gtyp = infoOfTyconRef mWholeExpr tcref
             UnifyTypes cenv env mWholeExpr overallTy gtyp
