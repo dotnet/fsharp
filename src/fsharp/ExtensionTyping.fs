@@ -1151,6 +1151,12 @@ module internal ExtensionTyping =
                     error(Error(FSComp.SR.etProvidedAppliedMethodHadWrongName(methWithArguments.TypeProviderDesignation, mangledName, actualName), m))
                 Some methWithArguments
 
+    let computeFullTypePathAfterArguments (typeBeforeArguments:Tainted<ProvidedType>) staticArgs m =
+        let nm = typeBeforeArguments.PUntaint((fun x -> x.Name), m)
+        let enc, _ = ILPathToProvidedType (typeBeforeArguments, m)
+        let staticParams = typeBeforeArguments.PApplyWithProvider((fun (mb, resolver) -> mb.GetStaticParameters(resolver)), range=m) 
+        let mangledName = ComputeMangledNameForApplyStaticParameters(nm, staticArgs, staticParams, m)
+        enc @ [ mangledName ]
 
     /// Apply the given provided type to the given static arguments (the arguments are assumed to have been sorted into application order
     let TryApplyProvidedType(typeBeforeArguments:Tainted<ProvidedType>, optGeneratedTypePath: string list option, staticArgs:PrettyNaming.StaticArg[], m:range) =
@@ -1164,11 +1170,7 @@ module internal ExtensionTyping =
                 | Some path -> path
                 | None -> 
                     // Otherwise, use the full path of the erased type, including mangled arguments
-                    let nm = typeBeforeArguments.PUntaint((fun x -> x.Name), m)
-                    let enc, _ = ILPathToProvidedType (typeBeforeArguments, m)
-                    let staticParams = typeBeforeArguments.PApplyWithProvider((fun (mb, resolver) -> mb.GetStaticParameters(resolver)), range=m) 
-                    let mangledName = ComputeMangledNameForApplyStaticParameters(nm, staticArgs, staticParams, m)
-                    enc @ [ mangledName ]
+                    computeFullTypePathAfterArguments typeBeforeArguments staticArgs m
  
             let staticArgObjArray = [| for (PrettyNaming.StaticArg obj) in staticArgs -> obj |]
             match typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, provider) -> typeBeforeArguments.ApplyStaticArguments(provider, Array.ofList fullTypePathAfterArguments, staticArgObjArray)), range=m) with 

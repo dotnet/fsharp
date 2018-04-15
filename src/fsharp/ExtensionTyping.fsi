@@ -324,6 +324,8 @@ module internal ExtensionTyping =
     /// Detect a provided 'Var' expression 
     val (|ProvidedVarExpr|_|)  : ProvidedExpr -> ProvidedVar option
 
+    val computeFullTypePathAfterArguments : Tainted<ProvidedType> -> PrettyNaming.StaticArg[] -> range -> string list
+
     /// Get the provided expression for a particular use of a method.
     val GetInvokerExpression : ITypeProvider * ProvidedMethodBase * ProvidedVar[] ->  ProvidedExpr
 
