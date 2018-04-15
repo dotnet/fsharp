@@ -4263,13 +4263,16 @@ let rec TcTyparConstraint ridx cenv newOk checkCxs occ (env: TcEnv) tpenv c =
                     let memberflags = {IsInstance = true; IsDispatchSlot = false; IsOverrideOrExplicitImpl = false; IsFinal = false; MemberKind = MemberKind.Member}
                     let traitInfo, _ = TTrait([(mkTyparTy tp')], member'.LogicalName, memberflags, [(mkTyparTy tp')] @ args, retType, ref None), tpenv
                     AddCxMethodConstraint env.DisplayEnv cenv.css m NoTrace traitInfo
+                    ()
+                    //Item.MakeMethGroup (nm,minfos)
+
                 | _ -> ()
-            ()
         | _ ->
             if newOk = NoNewTypars && isSealedTy cenv.g ty' then 
                 errorR(Error(FSComp.SR.tcInvalidConstraintTypeSealed(), m))
-            AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace ty' (mkTyparTy tp') 
+            AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace ty' (mkTyparTy tp')
         tpenv
+        
 
     | WhereTyparSupportsNull(tp, m) -> checkSimpleConstraint tp m AddCxTypeMustSupportNull
 
@@ -9199,6 +9202,35 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
         TcEventValueThen cenv overallTy env tpenv mItem mExprAndItem (Some(objExpr, objExprTy)) einfo delayed
      
     | (Item.FakeInterfaceCtor _ | Item.DelegateCtor _) -> error (Error (FSComp.SR.tcConstructorsCannotBeFirstClassValues(), mItem))
+    | Item.ImplicitOp(_, solutionOptionRef) when solutionOptionRef.Value.IsSome-> 
+        match solutionOptionRef.Value with
+        | Some(BuiltInSln _) ->
+            match objExprTy with
+            | TType_var t when t.Solution.IsSome ->
+                match t.Solution with
+                | Some(TType_var solution) ->
+                    let (ttypes, logicalName, flags, argtys, retTypeOption, sln), m = 
+                        let res = 
+                            solution.Constraints
+                            |> List.tryFind(function | TyparConstraint.MayResolveMember(TTrait(_, logicalName, _, _, _,_),_) when logicalName = (longId.Head.idText) -> true | _ -> false)
+                        match res with
+                        | Some(TyparConstraint.MayResolveMember(TTrait(a, b, c, d, e, f), range)) -> (a,b,c,d,e,f), range
+                        | _ -> 
+                            error (Error (FSComp.SR.tcSyntaxFormUsedOnlyWithRecordLabelsPropertiesAndFields(), mItem))
+                    let _ = GetFSharpViewOfReturnType cenv.g retTypeOption
+                    let _, _, args, _, tpenv = GetSynMemberApplicationArgs delayed tpenv
+                    let argtys = 
+                        match argtys with
+                        | [ _ ] -> argtys
+                        | _ -> argtys.Tail
+                    // Subsumption at trait calls if arguments have nominal type prior to unification of any arguments or return type
+                    let flexes = argtys |> List.map (isTyparTy cenv.g >> not)
+                    let args', tpenv = TcExprs cenv env m tpenv flexes argtys args
+                    //UnifyTypes cenv env m overallTy returnTy
+                    Expr.Op(TOp.TraitCall(TTrait(ttypes, logicalName, flags, argtys, retTypeOption, sln)), [], args', m), tpenv
+                | _ -> error (Error (FSComp.SR.tcSyntaxFormUsedOnlyWithRecordLabelsPropertiesAndFields(), mItem))
+            | _ -> error (Error (FSComp.SR.tcSyntaxFormUsedOnlyWithRecordLabelsPropertiesAndFields(), mItem))
+        | _ -> error (Error (FSComp.SR.tcSyntaxFormUsedOnlyWithRecordLabelsPropertiesAndFields(), mItem))
     | _ -> error (Error (FSComp.SR.tcSyntaxFormUsedOnlyWithRecordLabelsPropertiesAndFields(), mItem))
 
 and TcEventValueThen cenv overallTy env tpenv mItem mExprAndItem objDetails (einfo:EventInfo) delayed = 

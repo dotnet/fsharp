@@ -2115,10 +2115,23 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
             if not (isNil pinfos) && isLookUpExpr then OneResult(success (resInfo,Item.Property (nm,pinfos),rest)) else
             let minfos = ExtensionMethInfosOfTypeInScope ncenv.InfoReader nenv optFilter m typ
 
+             
             if not (isNil minfos) && isLookUpExpr then 
                 success [resInfo,Item.MakeMethGroup (nm,minfos),rest]
-            elif isTyparTy g typ then raze (IndeterminateType(unionRanges m id.idRange))
-            else NoResultsOrUsefulErrors
+            elif isTyparTy g typ then 
+                match typ with
+                | TType_var s when s.Solution.IsSome -> 
+                    match s.Solution with
+                    | Some(TType_var solution) ->
+                        if  solution.Constraints |> List.exists(function | TyparConstraint.MayResolveMember(TTrait(_, logicalName, _, _, _,_),_) when logicalName = nm -> true | _ -> false) then 
+                            let s = Some BuiltInSln |> ref
+                            success [resInfo, Item.ImplicitOp(id, s), rest]
+                        else
+                            raze (IndeterminateType(unionRanges m id.idRange))
+                    | _ -> raze (IndeterminateType(unionRanges m id.idRange))
+                | _ -> raze (IndeterminateType(unionRanges m id.idRange))
+            else 
+                NoResultsOrUsefulErrors
 
     match contentsSearchAccessible with
     | Result res when not (isNil res) -> contentsSearchAccessible

@@ -144,21 +144,26 @@ module internal Utilities =
 
                 member r.AddText z s =
                     let color =
-                        match s.Tag with
-                        | LayoutTag.Keyword -> ConsoleColor.White
-                        | LayoutTag.TypeParameter
-                        | LayoutTag.Alias
-                        | LayoutTag.Class 
-                        | LayoutTag.Module
-                        | LayoutTag.Interface
-                        | LayoutTag.Record
-                        | LayoutTag.Struct
-                        | LayoutTag.Union
-                        | LayoutTag.UnknownType -> ConsoleColor.Cyan
-                        | LayoutTag.UnionCase
-                        | LayoutTag.ActivePatternCase -> ConsoleColor.Magenta
-                        | LayoutTag.StringLiteral -> ConsoleColor.Yellow
-                        | LayoutTag.NumericLiteral -> ConsoleColor.Green
+                        match s.Text, s.Tag with
+                        | "inline interface", LayoutTag.Keyword
+                        | "interface", LayoutTag.Keyword
+                        | "struct", LayoutTag.Keyword
+                        | "class", LayoutTag.Keyword
+                        | "end", LayoutTag.Keyword -> ConsoleColor.DarkYellow
+                        | _, LayoutTag.Keyword -> ConsoleColor.White
+                        | _, LayoutTag.TypeParameter
+                        | _, LayoutTag.Alias
+                        | _, LayoutTag.Class 
+                        | _, LayoutTag.Module
+                        | _, LayoutTag.Interface
+                        | _, LayoutTag.Record
+                        | _, LayoutTag.Struct
+                        | _, LayoutTag.Union
+                        | _, LayoutTag.UnknownType -> ConsoleColor.Cyan
+                        | _, LayoutTag.UnionCase
+                        | _, LayoutTag.ActivePatternCase -> ConsoleColor.Magenta
+                        | _, LayoutTag.StringLiteral -> ConsoleColor.Yellow
+                        | _, LayoutTag.NumericLiteral -> ConsoleColor.Green
                         | _ -> Console.ForegroundColor
 
                     DoWithColor color (fun () -> outWriter.Write s.Text)

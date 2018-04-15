@@ -1,0 +1,23 @@
+type inline IBar =
+       abstract spam : int -> unit
+       abstract ham : unit -> unit
+type Cherry() =
+       member __.spam (a:int) = printfn "SPAAAAM!"
+       member __.ham () = ()
+       override __.ToString() = "I'm a Cherry!"
+let inline spam (a:^A when ^A :> IBar) = ()
+       a.spam(1)
+       ()
+       printfn "%s" a
+       let b : Cherry = a
+       a.spam()
+spam(Cherry());;
+
+(A^ : member ham : unit -> unit) (a)
+
+
+let c = Cherry()
+spam(c);;
+let inline s(a:^A) =
+    (^A : (member ham: unit -> int -> unit) (a,(),()))
+s(Cherry());;
