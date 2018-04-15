@@ -9209,25 +9209,30 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
             | TType_var t when t.Solution.IsSome ->
                 match t.Solution with
                 | Some(TType_var solution) ->
-                    let (ttypes, logicalName, flags, argtys, retTypeOption, sln), m = 
+                    let m = mExprAndItem
+                    let (ttypes, logicalName, flags, argtys, retTypeOption, sln) = 
                         let res = 
                             solution.Constraints
                             |> List.tryFind(function | TyparConstraint.MayResolveMember(TTrait(_, logicalName, _, _, _,_),_) when logicalName = (longId.Head.idText) -> true | _ -> false)
                         match res with
-                        | Some(TyparConstraint.MayResolveMember(TTrait(a, b, c, d, e, f), range)) -> (a,b,c,d,e,f), range
+                        | Some(TyparConstraint.MayResolveMember(TTrait(a, b, c, d, e, f), _)) -> (a,b,c,d,e,f)
                         | _ -> 
                             error (Error (FSComp.SR.tcSyntaxFormUsedOnlyWithRecordLabelsPropertiesAndFields(), mItem))
-                    let _ = GetFSharpViewOfReturnType cenv.g retTypeOption
+                    let returnTy = GetFSharpViewOfReturnType cenv.g retTypeOption
                     let _, _, args, _, tpenv = GetSynMemberApplicationArgs delayed tpenv
-                    let argtys = 
-                        match argtys with
-                        | [ _ ] -> argtys
-                        | _ -> argtys.Tail
+                    let traitInfo = TTrait(ttypes, logicalName, flags, argtys, retTypeOption, sln)
+                    let argty = 
+                        match ttypes |> List.tryHead, argtys, logicalName.StartsWith("get_") || logicalName.StartsWith("set_") with
+                        | Some head, [ a ], false when typeEquiv cenv.g head a -> 
+                           [ cenv.g.unit_ty ]
+                        | Some head, _, false when argtys.Length > 1 && typeEquiv cenv.g head (argtys.Head) ->
+                            argtys.Tail
+                        | _ -> argtys
                     // Subsumption at trait calls if arguments have nominal type prior to unification of any arguments or return type
-                    let flexes = argtys |> List.map (isTyparTy cenv.g >> not)
-                    let args', tpenv = TcExprs cenv env m tpenv flexes argtys args
-                    //UnifyTypes cenv env m overallTy returnTy
-                    Expr.Op(TOp.TraitCall(TTrait(ttypes, logicalName, flags, argtys, retTypeOption, sln)), [], args', m), tpenv
+                    let flexes = argty |> List.map (isTyparTy cenv.g >> not)
+                    let args', tpenv = TcExprs cenv env m tpenv flexes argty args
+                    UnifyTypes cenv env m overallTy returnTy
+                    Expr.Op(TOp.TraitCall(traitInfo), [], args', m), tpenv
                 | _ -> error (Error (FSComp.SR.tcSyntaxFormUsedOnlyWithRecordLabelsPropertiesAndFields(), mItem))
             | _ -> error (Error (FSComp.SR.tcSyntaxFormUsedOnlyWithRecordLabelsPropertiesAndFields(), mItem))
         | _ -> error (Error (FSComp.SR.tcSyntaxFormUsedOnlyWithRecordLabelsPropertiesAndFields(), mItem))

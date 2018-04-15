@@ -1,17 +1,67 @@
 type inline IBar =
+       abstract cherry : unit
        abstract spam : int -> unit
        abstract ham : unit -> unit
 type Cherry() =
        member __.spam (a:int) = printfn "SPAAAAM!"
-       member __.ham () = ()
+       member __.ham () = printfn "BAAAH!"
        override __.ToString() = "I'm a Cherry!"
-let inline spam (a:^A when ^A :> IBar) = ()
-       a.spam(1)
+let inline spam (a:^A when ^A :> IBar) = ();;
+
+type inline IBar =
+       abstract cherry : unit
+       abstract spam : int -> unit
+       abstract ham : unit -> unit
+type Cherry() =
+       member __.spam (a:int) = printfn "SPAAAAM!"
+       member __.ham () = printfn "BAAAH!"
+       member __.cherry = ()
+       override __.ToString() = "I'm a Cherry!"
+let inline spam (a:^A when ^A :> IBar) = a.ham()
+let c = Cherry()
+let result : Cherry = spam(c);;
+
+type inline IBar =
+       abstract cherry : unit
+       abstract spam : int -> unit
+       abstract ham : unit -> unit
+type Cherry() =
+       member __.spam (a:int) = printfn "SPAAAAM!"
+       member __.ham () = printfn "BAAAH!"
+       override __.ToString() = "I'm a Cherry!"
+let inline spam (a:^A when ^A :> IBar) = a.cherry;;
+
+type inline IBar =
+       abstract cherry : unit
+       abstract spam : int -> unit
+       abstract ham : unit -> unit
+type Cherry() =
+       member __.spam (a:int) = printfn "SPAAAAM!"
+       member __.ham () = printfn "BAAAH!"
+       override __.ToString() = "I'm a Cherry!"
+let inline spam (a:^A when ^A :> IBar) = a.ham()
+spam(Cherry());;
+
+type SomethingNeat = | SomethingNeat
+type inline IBar =
+       abstract spam : unit -> int
+       abstract ham : unit -> SomethingNeat
+let inline spam (a:^A when ^A :> IBar) = 
+    a.ham()
+    |> printfn "%A"
+    a.spam()
+type Cherry() =
+       member __.spam () = printfn "SPAAAAM!"; 42
+       member __.ham () = printfn "BAAAH!"; SomethingNeat
+       override __.ToString() = "I'm a Cherry!"
+let c = Cherry()
+let res = spam(c);;
+
+       a.ham()
        ()
        printfn "%s" a
        let b : Cherry = a
        a.spam()
-spam(Cherry());;
 
 (A^ : member ham : unit -> unit) (a)
 
@@ -19,5 +69,5 @@ spam(Cherry());;
 let c = Cherry()
 spam(c);;
 let inline s(a:^A) =
-    (^A : (member ham: unit -> int -> unit) (a,(),()))
+    (^A : (member ham: int -> unit) (a,1))
 s(Cherry());;
