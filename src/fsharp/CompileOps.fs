@@ -2626,14 +2626,7 @@ type TcConfigBuilder =
             ri, fileNameOfPath ri, ILResourceAccess.Public 
 
 
-let OpenILBinary(filename, reduceMemoryUsage, ilGlobalsOpt, pdbDirPath, shadowCopyReferences, tryGetMetadataSnapshot) = 
-      let ilGlobals   = 
-          // ILScopeRef.Local can be used only for primary assembly (mscorlib or System.Runtime) itself
-          // Remaining assemblies should be opened using existing ilGlobals (so they can properly locate fundamental types)
-          match ilGlobalsOpt with 
-          | None -> mkILGlobals ILScopeRef.Local
-          | Some g -> g
-
+let OpenILBinary(filename, reduceMemoryUsage, ilGlobals, pdbDirPath, shadowCopyReferences, tryGetMetadataSnapshot) =
       let opts : ILReaderOptions = 
           { ilGlobals = ilGlobals
             metadataOnly = MetadataOnlyFlag.Yes
@@ -2654,7 +2647,7 @@ let OpenILBinary(filename, reduceMemoryUsage, ilGlobalsOpt, pdbDirPath, shadowCo
             ignore shadowCopyReferences
 #endif
             filename
-      OpenILModuleReader location opts
+      AssemblyReader.GetILModuleReader(location, opts)
 
 #if DEBUG
 [<System.Diagnostics.DebuggerDisplayAttribute("AssemblyResolution({resolvedPath})")>]
@@ -2784,12 +2777,13 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
     do if ((primaryAssemblyExplicitFilenameOpt.IsSome || fslibExplicitFilenameOpt.IsSome) && data.framework) then
             error(Error(FSComp.SR.buildExplicitCoreLibRequiresNoFramework("--noframework"), rangeStartup))
 
+    let ilGlobals = mkILGlobals ILScopeRef.Local
     let clrRootValue, targetFrameworkVersionValue  = 
         match primaryAssemblyExplicitFilenameOpt with
         | Some(primaryAssemblyFilename) ->
             let filename = ComputeMakePathAbsolute data.implicitIncludeDir primaryAssemblyFilename
             try 
-                use ilReader = OpenILBinary(filename, data.reduceMemoryUsage, None, None, data.shadowCopyReferences, data.tryGetMetadataSnapshot)
+                use ilReader = OpenILBinary(filename, data.reduceMemoryUsage, ilGlobals, None, data.shadowCopyReferences, data.tryGetMetadataSnapshot)
                 let ilModule = ilReader.ILModuleDef
                 match ilModule.ManifestOfAssembly.Version with 
                 | Some(v1, v2, _, _) -> 
@@ -2822,7 +2816,7 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
             let filename = ComputeMakePathAbsolute data.implicitIncludeDir fslibFilename
             if fslibReference.ProjectReference.IsNone then 
                 try 
-                    use ilReader = OpenILBinary(filename, data.reduceMemoryUsage, None, None, data.shadowCopyReferences, data.tryGetMetadataSnapshot)
+                    use ilReader = OpenILBinary(filename, data.reduceMemoryUsage, ilGlobals, None, data.shadowCopyReferences, data.tryGetMetadataSnapshot)
                     ()
                 with e -> 
                     error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message), rangeStartup))
@@ -4132,21 +4126,26 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
       try
         CheckDisposed()
         let tcConfig = tcConfigP.Get(ctok)
-        let pdbDirPath =
-            // We open the pdb file if one exists parallel to the binary we 
-            // are reading, so that --standalone will preserve debug information. 
-            if tcConfig.openDebugInformationForLaterStaticLinking then 
-                let pdbDir = try Filename.directoryName filename with _ -> "."
-                let pdbFile = (try Filename.chopExtension filename with _ -> filename) + ".pdb" 
+        let pdbDirPathOpt =
+            let pdbDir = try Filename.directoryName filename with _ -> "."
+            let pdbFile = (try Filename.chopExtension filename with _ -> filename) + ".pdb" 
 
-                if FileSystem.SafeExists(pdbFile) then 
-                    if verbose then dprintf "reading PDB file %s from directory %s\n" pdbFile pdbDir
-                    Some pdbDir
-                else
-                    None
+            if FileSystem.SafeExists(pdbFile) then 
+                if verbose then dprintf "reading PDB file %s from directory %s\n" pdbFile pdbDir
+                Some pdbDir
             else
                 None
-        let ilILBinaryReader = OpenILBinary(filename, tcConfig.reduceMemoryUsage, ilGlobalsOpt, pdbDirPath, tcConfig.shadowCopyReferences, tcConfig.tryGetMetadataSnapshot)
+
+        let ilGlobals =
+            // ILScopeRef.Local can be used only for primary assembly (mscorlib or System.Runtime) itself
+            // Remaining assemblies should be opened using existing ilGlobals (so they can properly locate fundamental types)
+            match ilGlobalsOpt with 
+            | None -> mkILGlobals ILScopeRef.Local
+            | Some g -> g
+
+        let ilILBinaryReader =
+            OpenILBinary (filename, tcConfig.reduceMemoryUsage, ilGlobals, pdbDirPathOpt, tcConfig.shadowCopyReferences, tcConfig.tryGetMetadataSnapshot)
+
         tcImports.AttachDisposeAction(fun _ -> (ilILBinaryReader :> IDisposable).Dispose())
         ilILBinaryReader.ILModuleDef, ilILBinaryReader.ILAssemblyRefs
       with e ->
@@ -4384,13 +4383,11 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         let tcGlobals = tcImports.GetTcGlobals()
         tcGlobals.TryFindSysTyconRef ns typeName |> Option.isSome
 
-    // Add a referenced assembly
-    //
-    // Retargetable assembly refs are required for binaries that must run 
-    // against DLLs supported by multiple publishers. For example
-    // Compact Framework binaries must use this. However it is not
-    // clear when else it is required, e.g. for Mono.
-    
+    /// Add a referenced assembly
+    ///
+    /// Retargetable assembly refs are required for binaries that must run against DLLs supported by multiple publishers.
+    /// For example Compact Framework binaries must use this.
+    /// However it is not clear when else it is required, e.g. for Mono.
     member tcImports.PrepareToImportReferencedILAssembly (ctok, m, filename, dllinfo:ImportedBinary) =
         CheckDisposed()
         let tcConfig = tcConfigP.Get(ctok)

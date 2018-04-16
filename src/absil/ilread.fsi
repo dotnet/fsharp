@@ -27,10 +27,12 @@
 module Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader 
 
 open Internal.Utilities
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
+open Microsoft.FSharp.Compiler.AbstractIL
+open Microsoft.FSharp.Compiler.AbstractIL.IL
+open Microsoft.FSharp.Compiler.AbstractIL.Internal
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.ErrorLogger
+open Microsoft.FSharp.Compiler.Range
 open System.IO
 
 /// Used to implement a Binary file over native memory, used by Roslyn integration
@@ -90,3 +92,15 @@ type Statistics =
       mutable byteFileCount : int }
 
 val GetStatistics : unit -> Statistics
+
+[<AutoOpen>]
+module Shim =
+
+    type IAssemblyReader =
+        abstract GetILModuleReader: filename: string * readerOptions: ILReaderOptions -> ILModuleReader
+
+    [<Sealed>]
+    type DefaultAssemblyReader =
+        interface IAssemblyReader
+
+    val mutable AssemblyReader: IAssemblyReader
