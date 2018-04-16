@@ -1067,8 +1067,7 @@ and FSharpGenericParameter(cenv, v:Typar) =
     member __.IsCompilerGenerated = v.IsCompilerGenerated
        
     member __.IsMeasure = (v.Kind = TyparKind.Measure)
-
-    member __.XmlDoc = v.typar_xmldoc |> makeXmlDoc
+    member __.XmlDoc = v.XmlDoc |> makeXmlDoc
 
     member __.IsSolveAtCompileTime = (v.StaticReq = TyparStaticReq.HeadTypeStaticReq)
 
