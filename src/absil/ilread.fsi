@@ -70,7 +70,7 @@ type internal ILReaderOptions =
 /// if it was provided.
 [<Sealed>]
 type internal ILModuleReader =
-    member ILModuleDef : ILModuleDef
+    member ILModuleDef : IModuleDef
     member ILAssemblyRefs : ILAssemblyRef list
     
     /// ILModuleReader objects only need to be explicitly disposed if memory mapping is used, i.e. reduceMemoryUsage = false

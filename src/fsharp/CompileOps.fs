@@ -2094,7 +2094,7 @@ type IRawFSharpAssemblyData =
     abstract GetInternalsVisibleToAttributes : ILGlobals  -> string list
     ///  The raw IL module definition in the assembly, if any. This is not present for cross-project references
     /// in the language service
-    abstract TryGetILModuleDef : unit -> ILModuleDef option
+    abstract TryGetILModuleDef : unit -> IModuleDef option
     ///  The raw F# signature data in the assembly, if any
     abstract GetRawFSharpSignatureData : range * ilShortAssemName: string * fileName: string -> (string * (unit -> byte[])) list
     ///  The raw F# optimization data in the assembly, if any
@@ -2708,18 +2708,18 @@ type AssemblyResolution =
 // Names to match up refs and defs for assemblies and modules
 //--------------------------------------------------------------------------
 
-let GetNameOfILModule (m: ILModuleDef) = 
+let GetNameOfILModule (m: IModuleDef) = 
     match m.Manifest with 
     | Some manifest -> manifest.Name
     | None -> m.Name
 
 
-let MakeScopeRefForILModule (ilModule: ILModuleDef) = 
+let MakeScopeRefForILModule (ilModule: IModuleDef) = 
     match ilModule.Manifest with 
     | Some m -> ILScopeRef.Assembly (mkRefToILAssembly m)
     | None -> ILScopeRef.Module (mkRefToILModule ilModule)
 
-let GetCustomAttributesOfILModule (ilModule:ILModuleDef) = 
+let GetCustomAttributesOfILModule (ilModule:IModuleDef) = 
     (match ilModule.Manifest with Some m -> m.CustomAttrs | None -> ilModule.CustomAttrs).AsList 
 
 let GetAutoOpenAttributes ilg ilModule = 
@@ -3812,7 +3812,7 @@ let WriteOptimizationData (tcGlobals, file, inMem, ccu: CcuThunk, modulInfo) =
 //----------------------------------------------------------------------------
 // Abstraction for project reference
 
-type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyRefs) = 
+type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: IModuleDef, ilAssemblyRefs) = 
     let externalSigAndOptData = ["FSharp.Core"]
     interface IRawFSharpAssemblyData with 
          member __.GetAutoOpenAttributes(ilg) = GetAutoOpenAttributes ilg ilModule 

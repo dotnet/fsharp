@@ -1028,7 +1028,7 @@ let goutput_manifest env os m =
   output_string os " } \n"
 
 
-let output_module_fragment_aux _refs os  modul = 
+let output_module_fragment_aux _refs os (modul: IModuleDef) = 
   try 
     let env = mk_ppenv 
     let env = ppenv_enter_modul env 
@@ -1047,7 +1047,7 @@ let output_module_refs os refs =
   List.iter (fun  x -> output_assref os x; output_string os "\n") refs.AssemblyReferences;
   List.iter (fun x -> output_modref os x; output_string os "\n") refs.ModuleReferences
   
-let goutput_module_manifest env os modul = 
+let goutput_module_manifest env os (modul: IModuleDef) = 
   output_string os " .module "; output_sqstring os modul.Name;
   goutput_custom_attrs env os modul.CustomAttrs;
   output_string os " .imagebase "; output_i32 os modul.ImageBase;

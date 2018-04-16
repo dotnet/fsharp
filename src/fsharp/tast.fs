@@ -3801,7 +3801,7 @@ and
       
       /// A helper function used to link method signatures using type equality. This is effectively a forward call to the type equality 
       /// logic in tastops.fs
-      TryGetILModuleDef: (unit -> ILModuleDef option) 
+      TryGetILModuleDef: (unit -> IModuleDef option) 
       
       /// A helper function used to link method signatures using type equality. This is effectively a forward call to the type equality 
       /// logic in tastops.fs

@@ -2844,19 +2844,19 @@ and GenManifestPass3 cenv m =
         else cenv.entrypoint <- Some (false, GetModuleRefAsIdx cenv mref)
     | None -> ()
 
-and newGuid (modul: ILModuleDef) = 
+and newGuid (modul: IModuleDef) = 
     let n = timestamp
     let m = hash n
     let m2 = hash modul.Name
     [| b0 m; b1 m; b2 m; b3 m; b0 m2; b1 m2; b2 m2; b3 m2; 0xa7uy; 0x45uy; 0x03uy; 0x83uy; b0 n; b1 n; b2 n; b3 n |]
 
-and deterministicGuid (modul: ILModuleDef) =
+and deterministicGuid (modul: IModuleDef) =
     let n = 16909060
     let m = hash n
     let m2 = hash modul.Name
     [| b0 m; b1 m; b2 m; b3 m; b0 m2; b1 m2; b2 m2; b3 m2; 0xa7uy; 0x45uy; 0x03uy; 0x83uy; b0 n; b1 n; b2 n; b3 n |]
 
-and GetModuleAsRow (cenv:cenv) (modul: ILModuleDef) = 
+and GetModuleAsRow (cenv:cenv) (modul: IModuleDef) = 
     // Store the generated MVID in the environment (needed for generating debug information)
     let modulGuid = if cenv.deterministic then deterministicGuid modul else newGuid modul
     cenv.moduleGuid <- modulGuid
@@ -2886,7 +2886,7 @@ let SortTableRows tab (rows:GenericRow[]) =
         |> Array.ofList
         //|> Array.map SharedRow
 
-let GenModule (cenv : cenv) (modul: ILModuleDef) = 
+let GenModule (cenv : cenv) (modul: IModuleDef) = 
     let midx = AddUnsharedRow cenv TableNames.Module (GetModuleAsRow cenv modul)
     List.iter (GenResourcePass3 cenv) modul.Resources.AsList 
     let tds = destTypeDefsWithGlobalFunctionsFirst cenv.ilg modul.TypeDefs
@@ -2907,7 +2907,7 @@ let GenModule (cenv : cenv) (modul: ILModuleDef) =
     GenTypeDefsPass4 [] cenv tds
     reportTime cenv.showTimes "Module Generation Pass 4"
 
-let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : ILGlobals, emitTailcalls, deterministic, showTimes)  (m : ILModuleDef) cilStartAddress =
+let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : ILGlobals, emitTailcalls, deterministic, showTimes)  (m : IModuleDef) cilStartAddress =
     let isDll = m.IsDLL
 
     let cenv = 
@@ -3505,7 +3505,7 @@ let writeBytes (os: BinaryWriter) (chunk:byte[]) = os.Write(chunk, 0, chunk.Leng
 
 let writeBinaryAndReportMappings (outfile, 
                                   ilg: ILGlobals, pdbfile: string option, signer: ILStrongNameSigner option, portablePDB, embeddedPDB, 
-                                  embedAllSource, embedSourceList, sourceLink, emitTailcalls, deterministic, showTimes, dumpDebugInfo ) modul =
+                                  embedAllSource, embedSourceList, sourceLink, emitTailcalls, deterministic, showTimes, dumpDebugInfo ) (modul: IModuleDef) =
     // Store the public key from the signer into the manifest.  This means it will be written 
     // to the binary and also acts as an indicator to leave space for delay sign 
 
@@ -3542,7 +3542,7 @@ let writeBinaryAndReportMappings (outfile,
            if m.PublicKey <> None && m.PublicKey <> pubkey then 
              dprintn "Warning: The output assembly is being signed or delay-signed with a strong name that is different to the original."
         end;
-        { modul with Manifest = match modul.Manifest with None -> None | Some m -> Some {m with PublicKey = pubkey} }
+        modul.With(manifest = match modul.Manifest with None -> None | Some m -> Some {m with PublicKey = pubkey})
 
     let os = 
         try

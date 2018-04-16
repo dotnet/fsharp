@@ -1466,37 +1466,76 @@ type ILNativeResource =
     /// Represents a native resource to be written in an output file
     | Out of unlinkedResource: byte[]
 
-/// One module in the "current" assembly, either a main-module or
-/// an auxiliary module.  The main module will have a manifest.
+type IModuleDef =
+    abstract Manifest: ILAssemblyManifest option
+    abstract Name: string
+    abstract TypeDefs: ILTypeDefs
+    abstract SubsystemVersion: int * int
+    abstract UseHighEntropyVA: bool
+    abstract SubSystemFlags: int32
+    abstract IsDLL: bool
+    abstract IsILOnly: bool
+    abstract Platform: ILPlatform option
+    abstract StackReserveSize: int32 option
+    abstract Is32Bit: bool
+    abstract Is32BitPreferred: bool
+    abstract Is64Bit: bool
+    abstract VirtualAlignment: int32
+    abstract PhysicalAlignment: int32
+    abstract ImageBase: int32
+    abstract MetadataVersion: string
+    abstract Resources: ILResources 
+
+    /// e.g. win86 resources, as the exact contents of a .res or .obj file. Must be unlinked manually.
+    abstract NativeResources: ILNativeResource list
+    abstract CustomAttrsStored: ILAttributesStored
+    abstract MetadataIndex: int32 
+    abstract ManifestOfAssembly: ILAssemblyManifest 
+    abstract HasManifest: bool
+    abstract CustomAttrs: ILAttributes
+
+    abstract With:
+        ?name: string * ?manifest: ILAssemblyManifest option * ?typeDefs: ILTypeDefs *
+        ?subsystemVersion: (int * int) * ?useHighEntropyVA: bool * ?subSystemFlags: int32 * ?isDLL: bool *
+        ?isILOnly: bool * ?platform: ILPlatform option * ?stackReserveSize: int32 option * ?is32Bit: bool *
+        ?is32BitPreferred: bool * ?is64Bit: bool * ?virtualAlignment: int32 * ?physicalAlignment: int32 *
+        ?imageBase: int32 * ?metadataVersion: string * ?resources: ILResources *
+        ?nativeResources: ILNativeResource list * ?customAttrsStored: ILAttributesStored * ?metadataIndex: int32
+            -> IModuleDef
+
+/// One module in the "current" assembly, either a main-module or an auxiliary module.
+/// The main module will have a manifest.
 ///
-/// An assembly is built by joining together a "main" module plus 
-/// several auxiliary modules. 
-type ILModuleDef = 
-    { Manifest: ILAssemblyManifest option
-      Name: string
-      TypeDefs: ILTypeDefs
-      SubsystemVersion: int * int
-      UseHighEntropyVA: bool
-      SubSystemFlags: int32
-      IsDLL: bool
-      IsILOnly: bool
-      Platform: ILPlatform option
-      StackReserveSize: int32 option
-      Is32Bit: bool
-      Is32BitPreferred: bool
-      Is64Bit: bool
-      VirtualAlignment: int32
-      PhysicalAlignment: int32
-      ImageBase: int32
-      MetadataVersion: string
-      Resources: ILResources 
-      /// e.g. win86 resources, as the exact contents of a .res or .obj file. Must be unlinked manually.
-      NativeResources: ILNativeResource list
-      CustomAttrsStored: ILAttributesStored
-      MetadataIndex: int32 }
-    member ManifestOfAssembly: ILAssemblyManifest 
-    member HasManifest: bool
-    member CustomAttrs: ILAttributes
+/// An assembly is built by joining together a "main" module plus several auxiliary modules. 
+[<Sealed>]
+type ILModuleDef =
+    new:
+        name: string *
+        manifest: ILAssemblyManifest option *
+        typeDefs: ILTypeDefs *
+        subsystemVersion: (int * int) *
+        useHighEntropyVA: bool *
+        subSystemFlags: int32 *
+        isDLL: bool *
+        isILOnly: bool *
+        platform: ILPlatform option *
+        stackReserveSize: int32 option *
+        is32Bit: bool *
+        is32BitPreferred: bool *
+        is64Bit: bool *
+        virtualAlignment: int32 *
+        physicalAlignment: int32 *
+        imageBase: int32 *
+        metadataVersion: string *
+        resources: ILResources *
+
+        /// e.g. win86 resources, as the exact contents of a .res or .obj file. Must be unlinked manually.
+        nativeResources: ILNativeResource list *
+        customAttrsStored: ILAttributesStored *
+        metadataIndex: int32
+            -> ILModuleDef
+
+    interface IModuleDef
 
 /// Find the method definition corresponding to the given property or 
 /// event operation. These are always in the same class as the property 
@@ -1851,7 +1890,7 @@ val mkILExportedTypesLazy: Lazy<ILExportedTypeOrForwarder list> ->   ILExportedT
 val mkILResources: ILResource list -> ILResources
 
 /// Making modules.
-val mkILSimpleModule: assemblyName:string -> moduleName:string -> dll:bool -> subsystemVersion: (int * int) -> useHighEntropyVA: bool -> ILTypeDefs -> int32 option -> string option -> int -> ILExportedTypesAndForwarders -> string -> ILModuleDef
+val mkILSimpleModule: assemblyName:string -> moduleName:string -> dll:bool -> subsystemVersion: (int * int) -> useHighEntropyVA: bool -> ILTypeDefs -> int32 option -> string option -> int -> ILExportedTypesAndForwarders -> string -> IModuleDef
 
 /// Generate references to existing type definitions, method definitions
 /// etc.  Useful for generating references, e.g. to a  class we're processing
@@ -1868,7 +1907,7 @@ val mkRefToILMethod: ILTypeRef * ILMethodDef -> ILMethodRef
 val mkRefToILField: ILTypeRef * ILFieldDef -> ILFieldRef
 
 val mkRefToILAssembly: ILAssemblyManifest -> ILAssemblyRef
-val mkRefToILModule: ILModuleDef -> ILModuleRef
+val mkRefToILModule: IModuleDef -> ILModuleRef
 
 val NoMetadataIdx: int32
 
@@ -1982,6 +2021,6 @@ type ILReferences =
       ModuleReferences: ILModuleRef list }
 
 /// Find the full set of assemblies referenced by a module.
-val computeILRefs: ILModuleDef -> ILReferences
+val computeILRefs: IModuleDef -> ILReferences
 val emptyILRefs: ILReferences
 

@@ -289,14 +289,15 @@ and tdefs_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg enc fs tdefs =
 let manifest_typ2typ ilg f (m : ILAssemblyManifest) =
     { m with CustomAttrsStored = storeILCustomAttrs (cattrs_typ2typ ilg f m.CustomAttrs) }
 
-let morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs ilg ((ftype: ILModuleDef -> (ILTypeDef list * ILTypeDef) option -> ILMethodDef option -> ILType -> ILType),fmdefs) m = 
+let morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs ilg ((ftype: IModuleDef -> (ILTypeDef list * ILTypeDef) option -> ILMethodDef option -> ILType -> ILType),fmdefs) m = 
 
-    let ftdefs = tdefs_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg [] (ftype m,fmdefs m) 
+    let ftdefs = tdefs_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg [] (ftype m,fmdefs m)
+    let typeDefs = ftdefs m.TypeDefs
+    let customAttrsStored = storeILCustomAttrs (cattrs_typ2typ ilg (ftype m None None) m.CustomAttrs)
+    let manifest = Option.map (manifest_typ2typ ilg (ftype m None None)) m.Manifest
 
-    { m with TypeDefs=ftdefs m.TypeDefs;
-             CustomAttrsStored= storeILCustomAttrs (cattrs_typ2typ ilg (ftype m None None) m.CustomAttrs);
-             Manifest=Option.map (manifest_typ2typ ilg (ftype m None None)) m.Manifest  }
-    
+    m.With(typeDefs = typeDefs, customAttrsStored = customAttrsStored, manifest = manifest)
+
 let module_instr2instr_typ2typ ilg fs x = 
     let (fcode,ftype) = fs 
     let filmbody modCtxt tdefCtxt mdefCtxt = ilmbody_instr2instr_typ2typ (fcode modCtxt tdefCtxt mdefCtxt, ftype modCtxt (Some tdefCtxt) mdefCtxt) 

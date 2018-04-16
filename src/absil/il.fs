@@ -2053,39 +2053,113 @@ type ILNativeResource =
     | In of fileName: string * linkedResourceBase: int * linkedResourceStart: int * linkedResourceLength: int
     | Out of unlinkedResource: byte[]
 
-type ILModuleDef = 
-    { Manifest: ILAssemblyManifest option
-      Name: string
-      TypeDefs: ILTypeDefs
-      SubsystemVersion : int * int
-      UseHighEntropyVA : bool
-      (* Random bits of relatively uninteresting data *)
-      SubSystemFlags: int32
-      IsDLL: bool
-      IsILOnly: bool
-      Platform: ILPlatform option
-      StackReserveSize: int32 option
-      Is32Bit: bool
-      Is32BitPreferred: bool
-      Is64Bit: bool
-      VirtualAlignment: int32
-      PhysicalAlignment: int32
-      ImageBase: int32
-      MetadataVersion: string
-      Resources: ILResources
-      NativeResources: ILNativeResource list (* e.g. win32 resources *)
-      CustomAttrsStored: ILAttributesStored
-      MetadataIndex: int32
-    }
-    member x.ManifestOfAssembly = 
-        match x.Manifest with 
-        | Some m -> m
-        | None -> failwith "no manifest.  It is possible you are using an auxiliary module of an assembly in a context where the main module of an assembly is expected.  Typically the main module of an assembly must be specified first within a list of the modules in an assembly."
+type IModuleDef =
+    abstract Manifest: ILAssemblyManifest option
+    abstract Name: string
+    abstract TypeDefs: ILTypeDefs
+    abstract SubsystemVersion: int * int
+    abstract UseHighEntropyVA: bool
+    abstract SubSystemFlags: int32
+    abstract IsDLL: bool
+    abstract IsILOnly: bool
+    abstract Platform: ILPlatform option
+    abstract StackReserveSize: int32 option
+    abstract Is32Bit: bool
+    abstract Is32BitPreferred: bool
+    abstract Is64Bit: bool
+    abstract VirtualAlignment: int32
+    abstract PhysicalAlignment: int32
+    abstract ImageBase: int32
+    abstract MetadataVersion: string
+    abstract Resources: ILResources 
 
-    member m.HasManifest = 
-        match m.Manifest with None -> false | _ -> true
+    /// e.g. win86 resources, as the exact contents of a .res or .obj file. Must be unlinked manually.
+    abstract NativeResources: ILNativeResource list
+    abstract CustomAttrsStored: ILAttributesStored
+    abstract MetadataIndex: int32 
+    abstract ManifestOfAssembly: ILAssemblyManifest 
+    abstract HasManifest: bool
+    abstract CustomAttrs: ILAttributes
 
-    member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
+    abstract With:
+        ?name: string * ?manifest: ILAssemblyManifest option * ?typeDefs: ILTypeDefs *
+        ?subsystemVersion: (int * int) * ?useHighEntropyVA: bool * ?subSystemFlags: int32 * ?isDLL: bool *
+        ?isILOnly: bool * ?platform: ILPlatform option * ?stackReserveSize: int32 option * ?is32Bit: bool *
+        ?is32BitPreferred: bool * ?is64Bit: bool * ?virtualAlignment: int32 * ?physicalAlignment: int32 *
+        ?imageBase: int32 * ?metadataVersion: string * ?resources: ILResources *
+        ?nativeResources: ILNativeResource list * ?customAttrsStored: ILAttributesStored * ?metadataIndex: int32
+            -> IModuleDef
+
+[<Sealed>]
+type ILModuleDef
+        (name: string, manifest: ILAssemblyManifest option, typeDefs: ILTypeDefs, subsystemVersion: (int * int),
+         useHighEntropyVA: bool, subSystemFlags: int32, isDLL: bool, isILOnly: bool, platform: ILPlatform option,
+         stackReserveSize: int32 option, is32Bit: bool, is32BitPreferred: bool, is64Bit: bool, virtualAlignment: int32,
+         physicalAlignment: int32, imageBase: int32, metadataVersion: string, resources: ILResources,
+         nativeResources: ILNativeResource list, customAttrsStored: ILAttributesStored, metadataIndex: int32) = 
+
+    interface IModuleDef with
+        member __.Manifest = manifest
+        member __.Name = name
+        member __.TypeDefs = typeDefs
+        member __.SubsystemVersion = subsystemVersion
+        member __.UseHighEntropyVA = useHighEntropyVA
+        member __.SubSystemFlags = subSystemFlags
+        member __.IsDLL = isDLL
+        member __.IsILOnly = isILOnly
+        member __.Platform = platform
+        member __.StackReserveSize = stackReserveSize
+        member __.Is32Bit = is32Bit
+        member __.Is32BitPreferred = is32BitPreferred
+        member __.Is64Bit = is64Bit
+        member __.VirtualAlignment = virtualAlignment
+        member __.PhysicalAlignment = physicalAlignment
+        member __.ImageBase = imageBase
+        member __.MetadataVersion = metadataVersion
+        member __.Resources = resources 
+        member __.NativeResources = nativeResources
+        member __.CustomAttrsStored = customAttrsStored
+        member __.MetadataIndex = metadataIndex 
+
+        member __.ManifestOfAssembly =
+            match manifest with 
+            | Some m -> m
+            | None ->
+                "No manifest.\n" +
+                "It is possible you are using an auxiliary module of an assembly in a context where the main module of an assembly is expected.\n" +
+                "Typically the main module of an assembly must be specified first within a list of the modules in an assembly."
+                |> failwith 
+
+        member __.HasManifest = match manifest with None -> false | _ -> true
+        member __.CustomAttrs = customAttrsStored.GetCustomAttrs metadataIndex        
+
+        member x.With(?name, ?manifest, ?typeDefs, ?subsystemVersion, ?useHighEntropyVA, ?subSystemFlags, ?isDLL,
+                      ?isILOnly, ?platform, ?stackReserveSize, ?is32Bit, ?is32BitPreferred, ?is64Bit,
+                      ?virtualAlignment, ?physicalAlignment, ?imageBase, ?metadataVersion, ?resources,
+                      ?nativeResources, ?customAttrsStored, ?metadataIndex) =
+            let x = x :> IModuleDef
+            ILModuleDef
+                (manifest = defaultArg manifest x.Manifest,
+                 name = defaultArg name x.Name,
+                 typeDefs = defaultArg typeDefs x.TypeDefs,
+                 subsystemVersion = defaultArg subsystemVersion x.SubsystemVersion,
+                 useHighEntropyVA = defaultArg useHighEntropyVA x.UseHighEntropyVA,
+                 subSystemFlags = defaultArg subSystemFlags x.SubSystemFlags,
+                 isDLL = defaultArg isDLL x.IsDLL,
+                 isILOnly = defaultArg isILOnly x.IsILOnly,
+                 platform = defaultArg platform x.Platform,
+                 stackReserveSize = defaultArg stackReserveSize x.StackReserveSize,
+                 is32Bit = defaultArg is32Bit x.Is32Bit,
+                 is32BitPreferred = defaultArg is32BitPreferred x.Is32BitPreferred,
+                 is64Bit = defaultArg is64Bit x.Is64Bit,
+                 virtualAlignment = defaultArg virtualAlignment x.VirtualAlignment,
+                 physicalAlignment = defaultArg physicalAlignment x.PhysicalAlignment,
+                 imageBase = defaultArg imageBase x.ImageBase,
+                 metadataVersion = defaultArg metadataVersion x.MetadataVersion,
+                 resources = defaultArg resources x.Resources,
+                 nativeResources = defaultArg nativeResources x.NativeResources,
+                 customAttrsStored = defaultArg customAttrsStored x.CustomAttrsStored,
+                 metadataIndex = defaultArg metadataIndex x.MetadataIndex) :> IModuleDef
 
 // -------------------------------------------------------------------- 
 // Add fields and types to tables, with decent error messages
@@ -3021,28 +3095,28 @@ let mkILSimpleModule assname modname dll subsystemVersion useHighEntropyVA tdefs
           ExportedTypes=exportedTypes
           EntrypointElsewhere=None 
           MetadataIndex = NoMetadataIdx }
-    { Manifest= Some manifest
-      CustomAttrsStored=storeILCustomAttrs emptyILCustomAttrs
-      Name=modname
-      NativeResources=[]
-      TypeDefs=tdefs
-      SubsystemVersion = subsystemVersion
-      UseHighEntropyVA = useHighEntropyVA
-      SubSystemFlags=defaultSubSystem
-      IsDLL=dll
-      IsILOnly=true
-      Platform=None
-      StackReserveSize=None
-      Is32Bit=false
-      Is32BitPreferred=false
-      Is64Bit=false
-      PhysicalAlignment=defaultPhysAlignment
-      VirtualAlignment=defaultVirtAlignment
-      ImageBase=defaultImageBase
-      MetadataVersion=metadataVersion
-      Resources=mkILResources []
-      MetadataIndex = NoMetadataIdx 
-    }
+    ILModuleDef
+        (manifest = Some manifest,
+         customAttrsStored = storeILCustomAttrs emptyILCustomAttrs,
+         name = modname,
+         nativeResources = [],
+         typeDefs = tdefs,
+         subsystemVersion = subsystemVersion,
+         useHighEntropyVA = useHighEntropyVA,
+         subSystemFlags = defaultSubSystem,
+         isDLL = dll,
+         isILOnly = true,
+         platform = None,
+         stackReserveSize = None,
+         is32Bit = false,
+         is32BitPreferred = false,
+         is64Bit = false,
+         physicalAlignment = defaultPhysAlignment,
+         virtualAlignment = defaultVirtAlignment,
+         imageBase = defaultImageBase,
+         metadataVersion = metadataVersion,
+         resources = mkILResources [],
+         metadataIndex = NoMetadataIdx) :> IModuleDef
 
 
 //-----------------------------------------------------------------------
@@ -3908,7 +3982,7 @@ and refs_of_resource s x =
     
 and refs_of_resources s (tab: ILResources) = List.iter (refs_of_resource s) tab.AsList
     
-and refs_of_modul s m = 
+and refs_of_modul s (m: IModuleDef) = 
     refs_of_types s m.TypeDefs
     refs_of_resources s m.Resources
     Option.iter (refs_of_manifest s) m.Manifest
@@ -4016,7 +4090,7 @@ let resolveILMethodRefWithRescope r (td: ILTypeDef) (mref:ILMethodRef) =
         
 let resolveILMethodRef td mref = resolveILMethodRefWithRescope id td mref
 
-let mkRefToILModule m =
+let mkRefToILModule (m: IModuleDef) =
   ILModuleRef.Create(m.Name, true, None)
 
 

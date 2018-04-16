@@ -145,7 +145,7 @@ type IRawFSharpAssemblyData =
     abstract GetInternalsVisibleToAttributes: ILGlobals  -> string list
     ///  The raw IL module definition in the assembly, if any. This is not present for cross-project references
     /// in the language service
-    abstract TryGetILModuleDef: unit -> ILModuleDef option
+    abstract TryGetILModuleDef: unit -> IModuleDef option
     abstract HasAnyFSharpSignatureDataAttribute: bool
     abstract HasMatchingFSharpSignatureDataAttribute: ILGlobals -> bool
     ///  The raw F# signature data in the assembly, if any

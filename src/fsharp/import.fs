@@ -496,11 +496,11 @@ and ImportILTypeDefs amap m scoref cpath enc (tdefs: ILTypeDefs) =
 /// Example: for a collection of types "System.Char", "System.Int32" and "Library.C"
 /// the return ModuleOrNamespaceType will contain namespace entities for "System" and "Library", which in turn contain
 /// type definition entities for ["Char"; "Int32"]  and ["C"] respectively.  
-let ImportILAssemblyMainTypeDefs amap m scoref modul = 
+let ImportILAssemblyMainTypeDefs amap m scoref (modul: IModuleDef) = 
     modul.TypeDefs |> ImportILTypeDefs amap m scoref (CompPath(scoref,[])) [] 
 
 /// Import the "exported types" table for multi-module assemblies. 
-let ImportILAssemblyExportedType amap m auxModLoader (scoref:ILScopeRef) (exportedType:ILExportedTypeOrForwarder) = 
+let ImportILAssemblyExportedType amap m (auxModLoader: ILScopeRef -> IModuleDef) (scoref:ILScopeRef) (exportedType:ILExportedTypeOrForwarder) = 
     // Forwarders are dealt with separately in the ref->def dereferencing logic in tast.fs as they effectively give rise to type equivalences
     if exportedType.IsForwarder then 
         []
@@ -522,13 +522,13 @@ let ImportILAssemblyExportedType amap m auxModLoader (scoref:ILScopeRef) (export
         [ ImportILTypeDefList amap m (CompPath(scoref,[])) [] [(ns,(n,info))]  ]
 
 /// Import the "exported types" table for multi-module assemblies. 
-let ImportILAssemblyExportedTypes amap m auxModLoader scoref (exportedTypes: ILExportedTypesAndForwarders) = 
+let ImportILAssemblyExportedTypes amap m (auxModLoader: ILScopeRef -> IModuleDef) scoref (exportedTypes: ILExportedTypesAndForwarders) = 
     [ for exportedType in exportedTypes.AsList do 
          yield! ImportILAssemblyExportedType amap m auxModLoader scoref exportedType ]
 
 /// Import both the main type definitions and the "exported types" table, i.e. all the 
 /// types defined in an IL assembly.
-let ImportILAssemblyTypeDefs (amap, m, auxModLoader, aref, mainmod:ILModuleDef) = 
+let ImportILAssemblyTypeDefs (amap, m, auxModLoader, aref, mainmod:IModuleDef) = 
     let scoref = ILScopeRef.Assembly aref
     let mtypsForExportedTypes = ImportILAssemblyExportedTypes amap m auxModLoader scoref mainmod.ManifestOfAssembly.ExportedTypes
     let mainmod = ImportILAssemblyMainTypeDefs amap m scoref mainmod
@@ -556,7 +556,7 @@ let ImportILAssemblyTypeForwarders (amap, m, exportedTypes:ILExportedTypesAndFor
   
 
 /// Import an IL assembly as a new TAST CCU
-let ImportILAssembly(amap:(unit -> ImportMap), m, auxModuleLoader, ilScopeRef, sourceDir, filename, ilModule:ILModuleDef, invalidateCcu:IEvent<string>) = 
+let ImportILAssembly(amap:(unit -> ImportMap), m, auxModuleLoader, ilScopeRef, sourceDir, filename, ilModule:IModuleDef, invalidateCcu:IEvent<string>) = 
         invalidateCcu |> ignore
         let aref =   
             match ilScopeRef with 

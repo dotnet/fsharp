@@ -1618,30 +1618,19 @@ let rec seekReadModule (ctxt: ILMetadataReader) (pectxtEager: PEReader) pevEager
     let (_generation, nameIdx, _mvidIdx, _encidIdx, _encbaseidIdx) = seekReadModuleRow ctxt mdv idx
     let ilModuleName = readStringHeap ctxt nameIdx
     let nativeResources = readNativeResources pectxtEager
+    let manifest =
+        if ctxt.getNumRows (TableNames.Assembly) > 0 then Some (seekReadAssemblyManifest ctxt pectxtEager 1) 
+        else None
+    let typeDefs = mkILTypeDefsComputed (fun () -> seekReadTopTypeDefs ctxt)
+    let subSystemFlags = int32 subsys
+    let resources = seekReadManifestResources ctxt mdv pectxtEager pevEager
+    let customAttrsStored = ctxt.customAttrsReader_Module
+    let stackReserveSize = None // todo
 
-    { Manifest =
-         if ctxt.getNumRows (TableNames.Assembly) > 0 then Some (seekReadAssemblyManifest ctxt pectxtEager 1) 
-         else None
-      CustomAttrsStored = ctxt.customAttrsReader_Module
-      MetadataIndex = idx
-      Name = ilModuleName
-      NativeResources=nativeResources
-      TypeDefs = mkILTypeDefsComputed (fun () -> seekReadTopTypeDefs ctxt)
-      SubSystemFlags = int32 subsys
-      IsILOnly = ilOnly
-      SubsystemVersion = subsysversion
-      UseHighEntropyVA = useHighEntropyVA
-      Platform = platform
-      StackReserveSize = None  // TODO
-      Is32Bit = only32
-      Is32BitPreferred = is32bitpreferred
-      Is64Bit = only64
-      IsDLL=isDll
-      VirtualAlignment = alignVirt
-      PhysicalAlignment = alignPhys
-      ImageBase = imageBaseReal
-      MetadataVersion = ilMetadataVersion
-      Resources = seekReadManifestResources ctxt mdv pectxtEager pevEager }  
+    ILModuleDef
+        (ilModuleName, manifest, typeDefs, subsysversion, useHighEntropyVA, subSystemFlags, isDll, ilOnly, platform,
+         stackReserveSize, only32, is32bitpreferred, only64, alignVirt, alignPhys, imageBaseReal, ilMetadataVersion,
+         resources, nativeResources, customAttrsStored, idx)
 
 and seekReadAssemblyManifest (ctxt: ILMetadataReader) pectxt idx =
     let mdview = ctxt.mdfile.GetView()
@@ -3926,7 +3915,7 @@ type ILReaderOptions =
       tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot }
 
 [<Sealed>]
-type ILModuleReader(ilModule: ILModuleDef, ilAssemblyRefs: Lazy<ILAssemblyRef list>, dispose: unit -> unit) =
+type ILModuleReader(ilModule: IModuleDef, ilAssemblyRefs: Lazy<ILAssemblyRef list>, dispose: unit -> unit) =
     member x.ILModuleDef = ilModule
     member x.ILAssemblyRefs = ilAssemblyRefs.Force()
     interface IDisposable with
