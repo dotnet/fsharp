@@ -287,8 +287,8 @@ and copyAndRemapAndBindTyparsFull remapAttrib tyenv tps =
       let tps' = copyTypars tps
       let tyenv = { tyenv with tpinst = bindTypars tps (generalizeTypars tps') tyenv.tpinst } 
       (tps, tps') ||> List.iter2 (fun tporig tp -> 
-         tp.FixupConstraints (remapTyparConstraintsAux tyenv  tporig.Constraints)
-         tp.typar_attribs  <- tporig.typar_attribs |> remapAttrib)
+         tp.SetConstraints (remapTyparConstraintsAux tyenv  tporig.Constraints)
+         tp.SetAttribs (tporig.Attribs |> remapAttrib))
       tps', tyenv
 
 // copies bound typars, extends tpinst 
@@ -2273,7 +2273,7 @@ module PrettyTypes =
         let niceTypars = List.map2 newPrettyTypar tps names
         let tl, _tt = mkTyparToTyparRenaming tps niceTypars in
         let renaming = renaming @ tl
-        (tps, niceTypars) ||> List.iter2 (fun tp tpnice -> tpnice.FixupConstraints (instTyparConstraints renaming tp.Constraints)) ;
+        (tps, niceTypars) ||> List.iter2 (fun tp tpnice -> tpnice.SetConstraints (instTyparConstraints renaming tp.Constraints)) ;
         niceTypars, renaming
 
     // We choose names for type parameters from 'a'..'t'
@@ -2282,7 +2282,7 @@ module PrettyTypes =
     // Finally, we skip any names already in use
     let NeedsPrettyTyparName (tp:Typar) = 
         tp.IsCompilerGenerated && 
-        tp.typar_il_name.IsNone && 
+        tp.ILName.IsNone && 
         (tp.typar_id.idText = unassignedTyparName) 
 
     let PrettyTyparNames pred alreadyInUse tps = 
