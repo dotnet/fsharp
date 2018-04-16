@@ -29,8 +29,7 @@ type internal FSharpSignatureHelpProvider
     ) =
 
     static let userOpName = "SignatureHelpProvider"
-    let xmlMemberIndexService = serviceProvider.GetService(typeof<IVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
-    let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
+    let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(serviceProvider.XMLMemberIndexService)
 
     static let oneColAfter (lp: LinePosition) = LinePosition(lp.Line,lp.Character+1)
     static let oneColBefore (lp: LinePosition) = LinePosition(lp.Line,max 0 (lp.Character-1))
