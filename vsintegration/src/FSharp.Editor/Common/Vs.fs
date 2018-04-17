@@ -88,5 +88,4 @@ module internal ServiceProviderExtensions =
 
         member sp.TextManager = sp.GetService<SVsTextManager, IVsTextManager>()
         member sp.RunningDocumentTable = sp.GetService<SVsRunningDocumentTable, IVsRunningDocumentTable>()
-        member sp.XmlService = sp.GetService<SVsXMLMemberIndexService, IVsXMLMemberIndexService>()
-        member sp.DTE = sp.GetService<SDTE, EnvDTE.DTE>()
+        member sp.XMLMemberIndexService = sp.GetService<SVsXMLMemberIndexService, IVsXMLMemberIndexService>()
