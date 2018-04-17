@@ -101,3 +101,23 @@ module Mod2 =
          mod2func2.XmlDocSig |> shouldEqual "M:Mod1.Mod2.func2"
 
                  
+open Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
+
+[<Test>]
+let ``Assembly reader test`` () =
+    let defaultReader = Shim.AssemblyReader
+    let reader =
+        { new IAssemblyReader with
+            member x.GetILModuleReader(path, opts) =
+                let result = defaultReader.GetILModuleReader(path, opts)
+                let y = result
+                y }
+    Shim.AssemblyReader <- reader
+    let source = """
+module M
+let x = 123
+"""
+
+    let fileName, options = mkTestFileAndOptions source [| |]
+    let _, checkResults = checker.ParseAndCheckFileInProject(fileName, 0, source, options) |> Async.RunSynchronously
+    ()

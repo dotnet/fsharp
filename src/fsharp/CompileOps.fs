@@ -2698,7 +2698,7 @@ type AssemblyResolution =
                           reduceMemoryUsage = reduceMemoryUsage
                           metadataOnly = MetadataOnlyFlag.Yes
                           tryGetMetadataSnapshot = tryGetMetadataSnapshot } 
-                    use reader = OpenILModuleReader this.resolvedPath readerSettings
+                    use reader = AssemblyReader.GetILModuleReader(this.resolvedPath, readerSettings)
                     mkRefToILAssembly reader.ILModuleDef.ManifestOfAssembly
             this.ilAssemblyRef := Some(assRef)
             return assRef
@@ -4127,12 +4127,17 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         CheckDisposed()
         let tcConfig = tcConfigP.Get(ctok)
         let pdbDirPathOpt =
-            let pdbDir = try Filename.directoryName filename with _ -> "."
-            let pdbFile = (try Filename.chopExtension filename with _ -> filename) + ".pdb" 
+            // We open the pdb file if one exists parallel to the binary we 
+            // are reading, so that --standalone will preserve debug information. 
+            if tcConfig.openDebugInformationForLaterStaticLinking then 
+                let pdbDir = try Filename.directoryName filename with _ -> "."
+                let pdbFile = (try Filename.chopExtension filename with _ -> filename) + ".pdb" 
 
-            if FileSystem.SafeExists(pdbFile) then 
-                if verbose then dprintf "reading PDB file %s from directory %s\n" pdbFile pdbDir
-                Some pdbDir
+                if FileSystem.SafeExists(pdbFile) then 
+                    if verbose then dprintf "reading PDB file %s from directory %s\n" pdbFile pdbDir
+                    Some pdbDir
+                else
+                    None
             else
                 None
 

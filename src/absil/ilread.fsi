@@ -40,12 +40,12 @@ type ILReaderMetadataSnapshot = (obj * nativeint * int)
 type ILReaderTryGetMetadataSnapshot = (* path: *) string * (* snapshotTimeStamp: *) System.DateTime -> ILReaderMetadataSnapshot option
 
 [<RequireQualifiedAccess>]
-type internal MetadataOnlyFlag = Yes | No
+type MetadataOnlyFlag = Yes | No
 
 [<RequireQualifiedAccess>]
-type internal ReduceMemoryFlag = Yes | No
+type ReduceMemoryFlag = Yes | No
 
-type internal ILReaderOptions =
+type ILReaderOptions =
    { pdbDirPath: string option
 
      ilGlobals: ILGlobals
@@ -69,7 +69,9 @@ type internal ILReaderOptions =
 /// Represents a reader of the metadata of a .NET binary.  May also give some values (e.g. IL code) from the PE file
 /// if it was provided.
 [<Sealed>]
-type internal ILModuleReader =
+type ILModuleReader =
+    new: IModuleDef * Lazy<ILAssemblyRef list> * (unit -> unit) -> ILModuleReader
+
     member ILModuleDef : IModuleDef
     member ILAssemblyRefs : ILAssemblyRef list
     

@@ -2133,33 +2133,32 @@ type ILModuleDef
         member __.HasManifest = match manifest with None -> false | _ -> true
         member __.CustomAttrs = customAttrsStored.GetCustomAttrs metadataIndex        
 
-        member x.With(?name, ?manifest, ?typeDefs, ?subsystemVersion, ?useHighEntropyVA, ?subSystemFlags, ?isDLL,
-                      ?isILOnly, ?platform, ?stackReserveSize, ?is32Bit, ?is32BitPreferred, ?is64Bit,
-                      ?virtualAlignment, ?physicalAlignment, ?imageBase, ?metadataVersion, ?resources,
-                      ?nativeResources, ?customAttrsStored, ?metadataIndex) =
-            let x = x :> IModuleDef
+        member x.With(?newName, ?newManifest, ?newTypeDefs, ?newSubsystemVersion, ?newUseHighEntropyVA, ?newSubSystemFlags, ?newIsDLL,
+                      ?newIsILOnly, ?newPlatform, ?newStackReserveSize, ?newIs32Bit, ?newIs32BitPreferred, ?newIs64Bit,
+                      ?newVirtualAlignment, ?newPhysicalAlignment, ?newImageBase, ?newMetadataVersion, ?newResources,
+                      ?newNativeResources, ?newCustomAttrsStored, ?newMetadataIndex) =
             ILModuleDef
-                (manifest = defaultArg manifest x.Manifest,
-                 name = defaultArg name x.Name,
-                 typeDefs = defaultArg typeDefs x.TypeDefs,
-                 subsystemVersion = defaultArg subsystemVersion x.SubsystemVersion,
-                 useHighEntropyVA = defaultArg useHighEntropyVA x.UseHighEntropyVA,
-                 subSystemFlags = defaultArg subSystemFlags x.SubSystemFlags,
-                 isDLL = defaultArg isDLL x.IsDLL,
-                 isILOnly = defaultArg isILOnly x.IsILOnly,
-                 platform = defaultArg platform x.Platform,
-                 stackReserveSize = defaultArg stackReserveSize x.StackReserveSize,
-                 is32Bit = defaultArg is32Bit x.Is32Bit,
-                 is32BitPreferred = defaultArg is32BitPreferred x.Is32BitPreferred,
-                 is64Bit = defaultArg is64Bit x.Is64Bit,
-                 virtualAlignment = defaultArg virtualAlignment x.VirtualAlignment,
-                 physicalAlignment = defaultArg physicalAlignment x.PhysicalAlignment,
-                 imageBase = defaultArg imageBase x.ImageBase,
-                 metadataVersion = defaultArg metadataVersion x.MetadataVersion,
-                 resources = defaultArg resources x.Resources,
-                 nativeResources = defaultArg nativeResources x.NativeResources,
-                 customAttrsStored = defaultArg customAttrsStored x.CustomAttrsStored,
-                 metadataIndex = defaultArg metadataIndex x.MetadataIndex) :> IModuleDef
+                (manifest = defaultArg newManifest manifest,
+                 name = defaultArg newName name,
+                 typeDefs = defaultArg newTypeDefs typeDefs,
+                 subsystemVersion = defaultArg newSubsystemVersion subsystemVersion,
+                 useHighEntropyVA = defaultArg newUseHighEntropyVA useHighEntropyVA,
+                 subSystemFlags = defaultArg newSubSystemFlags subSystemFlags,
+                 isDLL = defaultArg newIsDLL isDLL,
+                 isILOnly = defaultArg newIsILOnly isILOnly,
+                 platform = defaultArg newPlatform platform,
+                 stackReserveSize = defaultArg newStackReserveSize stackReserveSize,
+                 is32Bit = defaultArg newIs32Bit is32Bit,
+                 is32BitPreferred = defaultArg newIs32BitPreferred is32BitPreferred,
+                 is64Bit = defaultArg newIs64Bit is64Bit,
+                 virtualAlignment = defaultArg newVirtualAlignment virtualAlignment,
+                 physicalAlignment = defaultArg newPhysicalAlignment physicalAlignment,
+                 imageBase = defaultArg newImageBase imageBase,
+                 metadataVersion = defaultArg newMetadataVersion metadataVersion,
+                 resources = defaultArg newResources resources,
+                 nativeResources = defaultArg newNativeResources nativeResources,
+                 customAttrsStored = defaultArg newCustomAttrsStored customAttrsStored,
+                 metadataIndex = defaultArg newMetadataIndex metadataIndex) :> IModuleDef
 
 // -------------------------------------------------------------------- 
 // Add fields and types to tables, with decent error messages
