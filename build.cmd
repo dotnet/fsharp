@@ -779,6 +779,12 @@ echo %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BU
      %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG%
 if ERRORLEVEL 1 echo Error building NuGet packages && goto :failure
 
+if not "%SIGN_TYPE%" == "" (
+    echo build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -ConfigFile build\config\PackageSignToolData.json
+    call build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -ConfigFile build\config\PackageSignToolData.json
+    if ERRORLEVEL 1 echo Error running sign tool && goto :failure
+)
+
 if "%BUILD_SETUP%" == "1" (
     echo %_msbuildexe% %msbuildflags% setup\build-msi.proj /p:Configuration=%BUILD_CONFIG%
          %_msbuildexe% %msbuildflags% setup\build-msi.proj /p:Configuration=%BUILD_CONFIG%
