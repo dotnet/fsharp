@@ -2475,27 +2475,27 @@ and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr sequel =
 and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
   match (f,tyargs,args) with 
    (* Look for tailcall to turn into branch *)
-  | (Expr.Val(v,_,_),_,_) when  
-       ((ListAssoc.containsKey cenv.g.valRefEq v eenv.innerVals) && 
-        not v.IsConstructor &&
-        let (kind,_) = ListAssoc.find cenv.g.valRefEq v eenv.innerVals
-        (* when branch-calling methods we must have the right type parameters *)
-        begin match kind with
-          | BranchCallClosure _ -> true
-          | BranchCallMethod (_,_,tps,_,_)  ->  
-              (List.lengthsEqAndForall2 (fun ty tp -> typeEquiv cenv.g ty (mkTyparTy tp)) tyargs tps)
-        end &&
-        (* must be exact #args, ignoring tupling - we untuple if needed below *)
-        (let arityInfo = 
-           match kind with
-           | BranchCallClosure arityInfo
-           | BranchCallMethod (arityInfo,_,_,_,_)  ->  arityInfo
-         arityInfo.Length = args.Length
-        ) &&
-        (* no tailcall out of exception handler, etc. *)
-        (match sequelIgnoringEndScopesAndDiscard sequel with Return | ReturnVoid -> true | _ -> false))
+  | (Expr.Val(v,_,_),_,_) when
+        match ListAssoc.tryFind cenv.g.valRefEq v eenv.innerVals with
+        | Some (kind,_) ->
+           (not v.IsConstructor &&
+            (* when branch-calling methods we must have the right type parameters *)
+            (match kind with
+             | BranchCallClosure _ -> true
+             | BranchCallMethod (_,_,tps,_,_)  ->  
+                  (List.lengthsEqAndForall2 (fun ty tp -> typeEquiv cenv.g ty (mkTyparTy tp)) tyargs tps)) &&
+            (* must be exact #args, ignoring tupling - we untuple if needed below *)
+            (let arityInfo = 
+               match kind with
+               | BranchCallClosure arityInfo
+               | BranchCallMethod (arityInfo,_,_,_,_)  -> arityInfo
+             arityInfo.Length = args.Length
+            ) &&
+            (* no tailcall out of exception handler, etc. *)
+            (match sequelIgnoringEndScopesAndDiscard sequel with Return | ReturnVoid -> true | _ -> false))
+        | None -> false
     -> 
-        let (kind,mark) = ListAssoc.find cenv.g.valRefEq v eenv.innerVals
+        let (kind,mark) = ListAssoc.find cenv.g.valRefEq v eenv.innerVals // already checked above in when guard
         let ntmargs = 
           match kind with
           | BranchCallClosure arityInfo ->
