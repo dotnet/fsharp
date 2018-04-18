@@ -43,6 +43,10 @@ type TyparMap<'T> =
         let (TPMap m) = tm
         m.ContainsKey(v.Stamp)
 
+    member tm.TryFind (v: Typar) =
+        let (TPMap m) = tm
+        m.TryFind(v.Stamp)
+
     member tm.Add (v: Typar, x) = 
         let (TPMap m) = tm
         TPMap (m.Add(v.Stamp, x))
