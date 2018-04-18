@@ -12,8 +12,6 @@
   <!-- Prepare a dummy packages.config -->
   <ItemGroup>
     <PackagesConfigLines Include="&lt;packages&gt;" />
-    <PackagesConfigLines Include="  &lt;package id=&quot;Microsoft.DiaSymReader&quot; version=&quot;$(MicrosoftDiaSymReaderPackageVersion)&quot; /&gt;" />
-    <PackagesConfigLines Include="  &lt;package id=&quot;Microsoft.DiaSymReader.PortablePdb&quot; version=&quot;$(MicrosoftDiaSymReaderPortablePdbPackageVersion)&quot; /&gt;" />
     <PackagesConfigLines Include="&lt;/packages&gt;" />
   </ItemGroup>
 
