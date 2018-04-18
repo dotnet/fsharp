@@ -94,9 +94,6 @@
     <MicrosoftVisualStudioThreadingVersion>15.3.23</MicrosoftVisualStudioThreadingVersion>
     <MicrosoftVisualStudioValidationVersion>15.3.15</MicrosoftVisualStudioValidationVersion>
 
-    <MicrosoftDiaSymReaderPackageVersion>1.1.0</MicrosoftDiaSymReaderPackageVersion>
-    <MicrosoftDiaSymReaderPortablePdbPackageVersion>1.2.0</MicrosoftDiaSymReaderPortablePdbPackageVersion>
-
     <!-- Frozen FSharp.Core package being built with this build -->
     <FSharpCore41TargetPackageVersion>4.1.19</FSharpCore41TargetPackageVersion>
     <FSharpCore41TargetMajorVersion>4.1</FSharpCore41TargetMajorVersion>
