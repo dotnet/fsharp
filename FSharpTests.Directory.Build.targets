@@ -12,8 +12,6 @@
     </PropertyGroup>
     <ItemGroup>
       <CompilerFilesToCopy Include="$(MSBuildThisFileDirectory)Tools/dotnet20/sdk/$(DotnetSdkVersion)/FSharp/*.json" />
-      <CompilerFilesToCopy Include="$(MSBuildThisFileDirectory)Tools/dotnet20/sdk/$(DotnetSdkVersion)/FSharp/Microsoft.DiaSymReader.dll" />
-      <CompilerFilesToCopy Include="$(MSBuildThisFileDirectory)Tools/dotnet20/sdk/$(DotnetSdkVersion)/FSharp/Microsoft.DiaSymReader.PortablePdb.dll" />
     </ItemGroup>
 
     <Message Text="Copying compiler files to $(_FSharpCompilerPath)" />

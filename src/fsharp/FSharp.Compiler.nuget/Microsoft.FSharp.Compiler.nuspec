@@ -34,8 +34,6 @@
                 <dependency id="System.Threading.Thread" version="4.0.0" />
                 <dependency id="System.Threading.ThreadPool" version="4.0.10" />
                 <dependency id="System.ValueTuple" version="4.4.0" />
-                <dependency id="Microsoft.DiaSymReader.PortablePdb" version="$diasymreaderportablepdbversion$" />
-                <dependency id="Microsoft.DiaSymReader" version="$diasymreaderversion$" />
             </group>
         </dependencies>
         <contentFiles>
