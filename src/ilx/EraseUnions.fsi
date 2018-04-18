@@ -28,7 +28,7 @@ val mkStData : IlxUnionSpec * int * int -> ILInstr list
 val mkBrIsData : ILGlobals -> sense: bool -> avoidHelpers:bool * IlxUnionSpec * int * ILCodeLabel -> ILInstr list
 
 /// Make the type definition for a union type
-val mkClassUnionDef : addMethodGeneratedAttrs:(ILMethodDef -> ILMethodDef) * addPropertyGeneratedAttrs:(ILPropertyDef -> ILPropertyDef) * addPropertyNeverAttrs:(ILPropertyDef -> ILPropertyDef) * addFieldGeneratedAttrs:(ILFieldDef -> ILFieldDef) * addFieldNeverAttrs:(ILFieldDef -> ILFieldDef) * mkDebuggerTypeProxyAttribute:(ILType -> ILAttribute) -> ilg:ILGlobals -> tref:ILTypeRef -> td:ILTypeDef -> cud:IlxUnionInfo -> ILTypeDef    
+val mkClassUnionDef : addMethodGeneratedAttrs:(ILMethodDef -> ILMethodDef) * addPropertyGeneratedAttrs:(ILPropertyDef -> ILPropertyDef) * addPropertyNeverAttrs:(ILPropertyDef -> ILPropertyDef) * addFieldGeneratedAttrs:(ILFieldDef -> ILFieldDef) * addFieldNeverAttrs:(ILFieldDef -> ILFieldDef) * mkDebuggerTypeProxyAttribute:(ILType -> ILAttribute) -> ilg:ILGlobals -> tref:ILTypeRef -> td:ITypeDef -> cud:IlxUnionInfo -> ITypeDef    
 
 /// Make the IL type for a union type alternative
 val GetILTypeForAlternative : IlxUnionSpec -> int -> ILType

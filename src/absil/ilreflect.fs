@@ -372,7 +372,7 @@ let convTypeRefAux (cenv:cenv) (tref:ILTypeRef) =
 /// and could be placed as hash tables in the global environment.
 [<AutoSerializable(false)>]
 type emEnv =
-    { emTypMap   : Zmap<ILTypeRef, Type * TypeBuilder * ILTypeDef * Type option (*the created type*) > ;
+    { emTypMap   : Zmap<ILTypeRef, Type * TypeBuilder * ITypeDef * Type option (*the created type*) > ;
       emConsMap  : Zmap<ILMethodRef, ConstructorBuilder>;    
       emMethMap  : Zmap<ILMethodRef, MethodBuilder>;
       emFieldMap : Zmap<ILFieldRef, FieldBuilder>;
@@ -1740,7 +1740,7 @@ let typeAttributesOfTypeLayout cenv emEnv x =
 // buildTypeDefPass1 cenv
 //----------------------------------------------------------------------------
     
-let rec buildTypeDefPass1 cenv emEnv (modB:ModuleBuilder) rootTypeBuilder nesting (tdef : ILTypeDef) =
+let rec buildTypeDefPass1 cenv emEnv (modB:ModuleBuilder) rootTypeBuilder nesting (tdef : ITypeDef) =
     // -IsComInterop: bool; (* Class or interface generated for COM interop *) 
     // -SecurityDecls: Permissions;
     // -InitSemantics: ILTypeInit;
@@ -1776,7 +1776,7 @@ and buildTypeTypeDef cenv emEnv modB (typB : TypeBuilder) nesting tdef =
 // buildTypeDefPass1b
 //----------------------------------------------------------------------------
     
-let rec buildTypeDefPass1b cenv nesting emEnv (tdef : ILTypeDef) = 
+let rec buildTypeDefPass1b cenv nesting emEnv (tdef : ITypeDef) = 
     let tref = mkRefForNestedILTypeDef ILScopeRef.Local (nesting, tdef)
     let typB  = envGetTypB emEnv tref
     let genArgs = getGenericArgumentsOfType (typB.AsType())
@@ -1794,7 +1794,7 @@ let rec buildTypeDefPass1b cenv nesting emEnv (tdef : ILTypeDef) =
 // buildTypeDefPass2
 //----------------------------------------------------------------------------
 
-let rec buildTypeDefPass2 cenv nesting emEnv (tdef : ILTypeDef) = 
+let rec buildTypeDefPass2 cenv nesting emEnv (tdef : ITypeDef) = 
     let tref = mkRefForNestedILTypeDef ILScopeRef.Local (nesting, tdef)
     let typB  = envGetTypB emEnv tref
     let emEnv = envPushTyvars emEnv (getGenericArgumentsOfType (typB.AsType()))
@@ -1814,7 +1814,7 @@ let rec buildTypeDefPass2 cenv nesting emEnv (tdef : ILTypeDef) =
 // buildTypeDefPass3 cenv
 //----------------------------------------------------------------------------
     
-let rec buildTypeDefPass3 cenv nesting modB emEnv (tdef : ILTypeDef) =
+let rec buildTypeDefPass3 cenv nesting modB emEnv (tdef : ITypeDef) =
     let tref = mkRefForNestedILTypeDef ILScopeRef.Local (nesting, tdef)
     let typB = envGetTypB emEnv tref
     let emEnv = envPushTyvars emEnv (getGenericArgumentsOfType (typB.AsType()))
@@ -1905,7 +1905,7 @@ let verbose2 = false
 
 let createTypeRef (visited : Dictionary<_, _>, created : Dictionary<_, _>) emEnv tref = 
 
-    let rec traverseTypeDef (tref:ILTypeRef) (tdef:ILTypeDef) =
+    let rec traverseTypeDef (tref:ILTypeRef) (tdef:ITypeDef) =
         if verbose2 then dprintf "buildTypeDefPass4: Creating Enclosing Types of %s\n" tdef.Name
         for enc in getEnclosingTypeRefs tref do
             traverseTypeRef enc
@@ -1986,7 +1986,7 @@ let createTypeRef (visited : Dictionary<_, _>, created : Dictionary<_, _>) emEnv
     
     traverseTypeRef tref 
 
-let rec buildTypeDefPass4 (visited, created) nesting emEnv (tdef : ILTypeDef) =
+let rec buildTypeDefPass4 (visited, created) nesting emEnv (tdef : ITypeDef) =
     if verbose2 then dprintf "buildTypeDefPass4 %s\n" tdef.Name; 
     let tref = mkRefForNestedILTypeDef ILScopeRef.Local (nesting, tdef)
     createTypeRef (visited, created) emEnv tref;
@@ -2000,7 +2000,7 @@ let rec buildTypeDefPass4 (visited, created) nesting emEnv (tdef : ILTypeDef) =
 // buildModuleType
 //----------------------------------------------------------------------------
      
-let buildModuleTypePass1 cenv (modB:ModuleBuilder) emEnv (tdef:ILTypeDef) =
+let buildModuleTypePass1 cenv (modB:ModuleBuilder) emEnv (tdef:ITypeDef) =
     buildTypeDefPass1 cenv emEnv modB modB.DefineTypeAndLog [] tdef
 
 let buildModuleTypePass1b          cenv emEnv tdef = buildTypeDefPass1b cenv [] emEnv tdef

@@ -1213,88 +1213,104 @@ type ILTypeDefKind =
     | Enum 
     | Delegate 
 
+
 /// Tables of named type definitions.  
-[<NoEquality; NoComparison; Sealed>]
-type ILTypeDefs =
-    interface IEnumerable<ILTypeDef>
+type ITypeDefs =
+    inherit  IEnumerable<ITypeDef>
 
-    member AsArray: ILTypeDef[]
-
-    member AsList: ILTypeDef list
+    abstract AsArray: ITypeDef[]
+    abstract AsList: ITypeDef list
 
     /// Get some information about the type defs, but do not force the read of the type defs themselves.
-    member AsArrayOfPreTypeDefs: ILPreTypeDef[]
+    abstract AsArrayOfPreTypeDefs: IPreTypeDef[]
 
     /// Calls to <c>FindByName</c> will result in any laziness in the overall 
     /// set of ILTypeDefs being read in in addition 
     /// to the details for the type found, but the remaining individual 
     /// type definitions will not be read. 
-    member FindByName: string -> ILTypeDef
+    abstract FindByName: string -> ITypeDef
+
+
+and ITypeDef =
+    abstract Name: string  
+    abstract Attributes: TypeAttributes
+    abstract GenericParams: ILGenericParameterDefs
+    abstract Layout: ILTypeDefLayout
+    abstract NestedTypes: ITypeDefs
+    abstract Implements: ILTypes
+    abstract Extends: ILType option
+    abstract Methods: ILMethodDefs
+    abstract SecurityDecls: ILSecurityDecls
+    abstract Fields: ILFieldDefs
+    abstract MethodImpls: ILMethodImplDefs
+    abstract Events: ILEventDefs
+    abstract Properties: ILPropertyDefs
+    abstract CustomAttrs: ILAttributes
+    abstract IsClass: bool
+    abstract IsStruct: bool
+    abstract IsInterface: bool
+    abstract IsEnum: bool
+    abstract IsDelegate: bool
+    abstract IsStructOrEnum: bool
+    abstract Access: ILTypeDefAccess
+    abstract IsAbstract: bool
+    abstract IsSealed: bool
+    abstract IsSerializable: bool
+    /// Class or interface generated for COM interop. 
+    abstract IsComInterop: bool
+    abstract IsSpecialName: bool
+    /// Some classes are marked "HasSecurity" even if there are no permissions attached, 
+    /// e.g. if they use SuppressUnmanagedCodeSecurityAttribute 
+    abstract HasSecurity: bool
+    abstract Encoding: ILDefaultPInvokeEncoding
+
+    abstract WithAccess: ILTypeDefAccess -> ITypeDef
+    abstract WithNestedAccess: ILMemberAccess -> ITypeDef
+    abstract WithSealed: bool -> ITypeDef
+    abstract WithSerializable: bool -> ITypeDef
+    abstract WithAbstract: bool -> ITypeDef
+    abstract WithImport: bool -> ITypeDef
+    abstract WithHasSecurity: bool -> ITypeDef
+    abstract WithLayout: ILTypeDefLayout -> ITypeDef
+    abstract WithKind: ILTypeDefKind -> ITypeDef
+    abstract WithEncoding: ILDefaultPInvokeEncoding -> ITypeDef
+    abstract WithSpecialName: bool -> ITypeDef
+    abstract WithInitSemantics: ILTypeInit -> ITypeDef
+
+    /// Functional update
+    abstract With: ?name: string * ?attributes: TypeAttributes * ?layout: ILTypeDefLayout *  ?implements: ILTypes * 
+                 ?genericParams:ILGenericParameterDefs * ?extends:ILType option * ?methods:ILMethodDefs * 
+                 ?nestedTypes:ITypeDefs * ?fields: ILFieldDefs * ?methodImpls:ILMethodImplDefs * ?events:ILEventDefs * 
+                 ?properties:ILPropertyDefs * ?customAttrs:ILAttributes * ?securityDecls: ILSecurityDecls -> ITypeDef
+
+and IPreTypeDef = 
+        abstract Namespace: string list
+        abstract Name: string
+        abstract MetadataIndex: int32
+        /// Realise the actual full typedef
+        abstract GetTypeDef : unit -> ITypeDef
+
+
+/// Tables of named type definitions.
+[<NoEquality; NoComparison; Sealed>]
+type ILTypeDefs =
+    interface IEnumerable<ITypeDef>
+    interface ITypeDefs
 
 /// Represents IL Type Definitions. 
-and [<NoComparison; NoEquality>]
-    ILTypeDef =  
+and [<NoComparison; NoEquality>] ILTypeDef =  
 
     /// Functional creation of a value, using delayed reading via a metadata index, for ilread.fs
     new: name: string * attributes: TypeAttributes * layout: ILTypeDefLayout * implements: ILTypes * genericParams: ILGenericParameterDefs * 
-          extends: ILType option * methods: ILMethodDefs * nestedTypes: ILTypeDefs * fields: ILFieldDefs * methodImpls: ILMethodImplDefs * 
+          extends: ILType option * methods: ILMethodDefs * nestedTypes: ITypeDefs * fields: ILFieldDefs * methodImpls: ILMethodImplDefs * 
           events: ILEventDefs * properties: ILPropertyDefs * securityDeclsStored: ILSecurityDeclsStored * customAttrsStored: ILAttributesStored * metadataIndex: int32 -> ILTypeDef
 
     /// Functional creation of a value, immediate
     new: name: string * attributes: TypeAttributes * layout: ILTypeDefLayout * implements: ILTypes * genericParams: ILGenericParameterDefs * 
-          extends: ILType option * methods: ILMethodDefs * nestedTypes: ILTypeDefs * fields: ILFieldDefs * methodImpls: ILMethodImplDefs * 
+          extends: ILType option * methods: ILMethodDefs * nestedTypes: ITypeDefs * fields: ILFieldDefs * methodImpls: ILMethodImplDefs * 
           events: ILEventDefs * properties: ILPropertyDefs * securityDecls: ILSecurityDecls * customAttrs: ILAttributes -> ILTypeDef
 
-    member Name: string  
-    member Attributes: TypeAttributes
-    member GenericParams: ILGenericParameterDefs
-    member Layout: ILTypeDefLayout
-    member NestedTypes: ILTypeDefs
-    member Implements: ILTypes
-    member Extends: ILType option
-    member Methods: ILMethodDefs
-    member SecurityDecls: ILSecurityDecls
-    member Fields: ILFieldDefs
-    member MethodImpls: ILMethodImplDefs
-    member Events: ILEventDefs
-    member Properties: ILPropertyDefs
-    member CustomAttrs: ILAttributes
-    member IsClass: bool
-    member IsStruct: bool
-    member IsInterface: bool
-    member IsEnum: bool
-    member IsDelegate: bool
-    member IsStructOrEnum: bool
-    member Access: ILTypeDefAccess
-    member IsAbstract: bool
-    member IsSealed: bool
-    member IsSerializable: bool
-    /// Class or interface generated for COM interop. 
-    member IsComInterop: bool
-    member IsSpecialName: bool
-    /// Some classes are marked "HasSecurity" even if there are no permissions attached, 
-    /// e.g. if they use SuppressUnmanagedCodeSecurityAttribute 
-    member HasSecurity: bool
-    member Encoding: ILDefaultPInvokeEncoding
-
-    member WithAccess: ILTypeDefAccess -> ILTypeDef
-    member WithNestedAccess: ILMemberAccess -> ILTypeDef
-    member WithSealed: bool -> ILTypeDef
-    member WithSerializable: bool -> ILTypeDef
-    member WithAbstract: bool -> ILTypeDef
-    member WithImport: bool -> ILTypeDef
-    member WithHasSecurity: bool -> ILTypeDef
-    member WithLayout: ILTypeDefLayout -> ILTypeDef
-    member WithKind: ILTypeDefKind -> ILTypeDef
-    member WithEncoding: ILDefaultPInvokeEncoding -> ILTypeDef
-    member WithSpecialName: bool -> ILTypeDef
-    member WithInitSemantics: ILTypeInit -> ILTypeDef
-
-    /// Functional update
-    member With: ?name: string * ?attributes: TypeAttributes * ?layout: ILTypeDefLayout *  ?implements: ILTypes * 
-                 ?genericParams:ILGenericParameterDefs * ?extends:ILType option * ?methods:ILMethodDefs * 
-                 ?nestedTypes:ILTypeDefs * ?fields: ILFieldDefs * ?methodImpls:ILMethodImplDefs * ?events:ILEventDefs * 
-                 ?properties:ILPropertyDefs * ?customAttrs:ILAttributes * ?securityDecls: ILSecurityDecls -> ILTypeDef
+    interface ITypeDef
 
 /// Represents a prefix of information for ILTypeDef.
 ///
@@ -1302,18 +1318,14 @@ and [<NoComparison; NoEquality>]
 /// for ExtensionAttribute  etc.  This is key to the on-demand exploration of .NET metadata.
 /// This information has to be "Goldilocks" - not too much, not too little, just right.
 and [<NoEquality; NoComparison; Sealed>] ILPreTypeDef = 
-    member Namespace: string list
-    member Name: string
-    member MetadataIndex: int32 
-    /// Realise the actual full typedef
-    member GetTypeDef : unit -> ILTypeDef
+    interface IPreTypeDef
 
 and [<Sealed>] ILTypeDefStored 
 
-val mkILPreTypeDef : ILTypeDef -> ILPreTypeDef
-val mkILPreTypeDefComputed : string list * string * (unit -> ILTypeDef) -> ILPreTypeDef
-val mkILPreTypeDefRead : string list * string * int32 * ILTypeDefStored -> ILPreTypeDef
-val mkILTypeDefReader: (int32 -> ILTypeDef) -> ILTypeDefStored
+val mkILPreTypeDef : ITypeDef -> IPreTypeDef
+val mkILPreTypeDefComputed : string list * string * (unit -> ITypeDef) -> IPreTypeDef
+val mkILPreTypeDefRead : string list * string * int32 * ILTypeDefStored -> IPreTypeDef
+val mkILTypeDefReader: (int32 -> ITypeDef) -> ILTypeDefStored
 
 [<NoEquality; NoComparison; Sealed>]
 type ILNestedExportedTypes =
@@ -1474,7 +1486,7 @@ type ILNativeResource =
 type IModuleDef =
     abstract Manifest: ILAssemblyManifest option
     abstract Name: string
-    abstract TypeDefs: ILTypeDefs
+    abstract TypeDefs: ITypeDefs
     abstract SubsystemVersion: int * int
     abstract UseHighEntropyVA: bool
     abstract SubSystemFlags: int32
@@ -1500,7 +1512,7 @@ type IModuleDef =
     abstract CustomAttrs: ILAttributes
 
     abstract With:
-        ?name: string * ?manifest: ILAssemblyManifest option * ?typeDefs: ILTypeDefs *
+        ?name: string * ?manifest: ILAssemblyManifest option * ?typeDefs: ITypeDefs *
         ?subsystemVersion: (int * int) * ?useHighEntropyVA: bool * ?subSystemFlags: int32 * ?isDLL: bool *
         ?isILOnly: bool * ?platform: ILPlatform option * ?stackReserveSize: int32 option * ?is32Bit: bool *
         ?is32BitPreferred: bool * ?is64Bit: bool * ?virtualAlignment: int32 * ?physicalAlignment: int32 *
@@ -1511,10 +1523,10 @@ type IModuleDef =
 
 [<Sealed>]
 type ILModuleDef =
-    new:
+    internal new:
         name: string *
         manifest: ILAssemblyManifest option *
-        typeDefs: ILTypeDefs *
+        typeDefs: ITypeDefs *
         subsystemVersion: (int * int) *
         useHighEntropyVA: bool *
         subSystemFlags: int32 *
@@ -1543,8 +1555,8 @@ type ILModuleDef =
 /// event operation. These are always in the same class as the property 
 /// or event. This is useful especially if your code is not using the Ilbind 
 /// API to bind references. 
-val resolveILMethodRef: ILTypeDef -> ILMethodRef -> ILMethodDef
-val resolveILMethodRefWithRescope: (ILType -> ILType) -> ILTypeDef -> ILMethodRef -> ILMethodDef
+val resolveILMethodRef: ITypeDef -> ILMethodRef -> ILMethodDef
+val resolveILMethodRefWithRescope: (ILType -> ILType) -> ITypeDef -> ILMethodRef -> ILMethodDef
 
 // ------------------------------------------------------------------ 
 // Type Names
@@ -1624,7 +1636,7 @@ val EcmaMscorlibILGlobals: ILGlobals
 /// When writing a binary the fake "toplevel" type definition (called <Module>)
 /// must come first. This function puts it first, and creates it in the returned 
 /// list as an empty typedef if it doesn't already exist.
-val destTypeDefsWithGlobalFunctionsFirst: ILGlobals -> ILTypeDefs -> ILTypeDef list
+val destTypeDefsWithGlobalFunctionsFirst: ILGlobals -> ITypeDefs -> ITypeDef list
 
 /// Not all custom attribute data can be decoded without binding types.  In particular 
 /// enums must be bound in order to discover the size of the underlying integer. 
@@ -1792,9 +1804,9 @@ val mkILStaticField: string * ILType * ILFieldInit option * byte[] option * ILMe
 val mkILLiteralField: string * ILType * ILFieldInit * byte[] option * ILMemberAccess -> ILFieldDef
 
 /// Make a type definition.
-val mkILGenericClass: string * ILTypeDefAccess * ILGenericParameterDefs * ILType * ILType list * ILMethodDefs * ILFieldDefs * ILTypeDefs * ILPropertyDefs * ILEventDefs * ILAttributes * ILTypeInit -> ILTypeDef
-val mkILSimpleClass: ILGlobals -> string * ILTypeDefAccess * ILMethodDefs * ILFieldDefs * ILTypeDefs * ILPropertyDefs * ILEventDefs * ILAttributes * ILTypeInit  -> ILTypeDef
-val mkILTypeDefForGlobalFunctions: ILGlobals -> ILMethodDefs * ILFieldDefs -> ILTypeDef
+val mkILGenericClass: string * ILTypeDefAccess * ILGenericParameterDefs * ILType * ILType list * ILMethodDefs * ILFieldDefs * ITypeDefs * ILPropertyDefs * ILEventDefs * ILAttributes * ILTypeInit -> ITypeDef
+val mkILSimpleClass: ILGlobals -> string * ILTypeDefAccess * ILMethodDefs * ILFieldDefs * ITypeDefs * ILPropertyDefs * ILEventDefs * ILAttributes * ILTypeInit  -> ITypeDef
+val mkILTypeDefForGlobalFunctions: ILGlobals -> ILMethodDefs * ILFieldDefs -> ITypeDef
 
 /// Make a type definition for a value type used to point to raw data.
 /// These are useful when generating array initialization code 
@@ -1802,7 +1814,7 @@ val mkILTypeDefForGlobalFunctions: ILGlobals -> ILMethodDefs * ILFieldDefs -> IL
 ///   ldtoken    field valuetype '<PrivateImplementationDetails>'/'$$struct0x6000127-1' '<PrivateImplementationDetails>'::'$$method0x6000127-1'
 ///   call       void System.Runtime.CompilerServices.RuntimeHelpers::InitializeArray(class System.Array,valuetype System.RuntimeFieldHandle)
 /// idiom.
-val mkRawDataValueTypeDef:  ILType -> string * size:int32 * pack:uint16 -> ILTypeDef
+val mkRawDataValueTypeDef:  ILType -> string * size:int32 * pack:uint16 -> ITypeDef
 
 /// Injecting code into existing code blocks.  A branch will
 /// be added from the given instructions to the (unique) entry of
@@ -1815,7 +1827,7 @@ val prependInstrsToMethod: ILInstr list -> ILMethodDef -> ILMethodDef
 /// Injecting initialization code into a class.
 /// Add some code to the end of the .cctor for a type.  Create a .cctor
 /// if one doesn't exist already.
-val prependInstrsToClassCtor: ILInstr list -> ILSourceMarker option -> ILTypeDef -> ILTypeDef
+val prependInstrsToClassCtor: ILInstr list -> ILSourceMarker option -> ITypeDef -> ITypeDef
 
 /// Derived functions for making some simple constructors
 val mkILStorageCtor: ILSourceMarker option * ILInstr list * ILType * (string * ILType) list * ILMemberAccess -> ILMethodDef
@@ -1868,9 +1880,9 @@ val mkILMethodImpls: ILMethodImplDef list -> ILMethodImplDefs
 val mkILMethodImplsLazy: Lazy<ILMethodImplDef list> -> ILMethodImplDefs
 val emptyILMethodImpls: ILMethodImplDefs
 
-val mkILTypeDefs: ILTypeDef list -> ILTypeDefs
-val mkILTypeDefsFromArray: ILTypeDef[] -> ILTypeDefs
-val emptyILTypeDefs: ILTypeDefs
+val mkILTypeDefs: ITypeDef list -> ITypeDefs
+val mkILTypeDefsFromArray: ITypeDef[] -> ITypeDefs
+val emptyILTypeDefs: ITypeDefs
 
 /// Create table of types which is loaded/computed on-demand, and whose individual 
 /// elements are also loaded/computed on-demand. Any call to tdefs.AsList will 
@@ -1880,8 +1892,8 @@ val emptyILTypeDefs: ILTypeDefs
 /// 
 /// Note that individual type definitions may contain further delays 
 /// in their method, field and other tables. 
-val mkILTypeDefsComputed: (unit -> ILPreTypeDef[]) -> ILTypeDefs
-val addILTypeDef: ILTypeDef -> ILTypeDefs -> ILTypeDefs
+val mkILTypeDefsComputed: (unit -> IPreTypeDef[]) -> ITypeDefs
+val addILTypeDef: ITypeDef -> ITypeDefs -> ITypeDefs
 
 val mkTypeForwarder: ILScopeRef -> string -> ILNestedExportedTypes -> ILAttributes -> ILTypeDefAccess -> ILExportedTypeOrForwarder
 val mkILNestedExportedTypes: ILNestedExportedType list -> ILNestedExportedTypes
@@ -1893,7 +1905,7 @@ val mkILExportedTypesLazy: Lazy<ILExportedTypeOrForwarder list> ->   ILExportedT
 val mkILResources: ILResource list -> ILResources
 
 /// Making modules.
-val mkILSimpleModule: assemblyName:string -> moduleName:string -> dll:bool -> subsystemVersion: (int * int) -> useHighEntropyVA: bool -> ILTypeDefs -> int32 option -> string option -> int -> ILExportedTypesAndForwarders -> string -> IModuleDef
+val mkILSimpleModule: assemblyName:string -> moduleName:string -> dll:bool -> subsystemVersion: (int * int) -> useHighEntropyVA: bool -> ITypeDefs -> int32 option -> string option -> int -> ILExportedTypesAndForwarders -> string -> IModuleDef
 
 /// Generate references to existing type definitions, method definitions
 /// etc.  Useful for generating references, e.g. to a  class we're processing
@@ -1902,9 +1914,9 @@ val mkILSimpleModule: assemblyName:string -> moduleName:string -> dll:bool -> su
 /// an auxiliary module or are generating multiple assemblies at 
 /// once.
 
-val mkRefForNestedILTypeDef: ILScopeRef -> ILTypeDef list * ILTypeDef -> ILTypeRef
-val mkRefForILMethod       : ILScopeRef -> ILTypeDef list * ILTypeDef -> ILMethodDef -> ILMethodRef
-val mkRefForILField       : ILScopeRef -> ILTypeDef list * ILTypeDef -> ILFieldDef  -> ILFieldRef
+val mkRefForNestedILTypeDef: ILScopeRef -> ITypeDef list * ITypeDef -> ILTypeRef
+val mkRefForILMethod       : ILScopeRef -> ITypeDef list * ITypeDef -> ILMethodDef -> ILMethodRef
+val mkRefForILField       : ILScopeRef -> ITypeDef list * ITypeDef -> ILFieldDef  -> ILFieldRef
 
 val mkRefToILMethod: ILTypeRef * ILMethodDef -> ILMethodRef
 val mkRefToILField: ILTypeRef * ILFieldDef -> ILFieldRef

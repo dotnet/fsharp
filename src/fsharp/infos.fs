@@ -659,7 +659,7 @@ let ArbitraryMethodInfoOfPropertyInfo (pi:Tainted<ProvidedPropertyInfo>) m =
 [<NoComparison; NoEquality>]
 type ILTypeInfo = 
     /// ILTypeInfo (tyconRef, ilTypeRef, typeArgs, ilTypeDef).
-    | ILTypeInfo of TcGlobals * TType * ILTypeRef * ILTypeDef
+    | ILTypeInfo of TcGlobals * TType * ILTypeRef * ITypeDef
 
     member x.TcGlobals = let (ILTypeInfo(g,_,_,_)) = x in g
 

@@ -123,7 +123,7 @@ type cenv =
       addFieldNeverAttrs: ILFieldDef -> ILFieldDef
       addMethodGeneratedAttrs: ILMethodDef -> ILMethodDef }
   
-let addMethodGeneratedAttrsToTypeDef cenv (tdef: ILTypeDef) = 
+let addMethodGeneratedAttrsToTypeDef cenv (tdef: ITypeDef) = 
     tdef.With(methods = (tdef.Methods.AsList |> List.map (fun md -> md |> cenv.addMethodGeneratedAttrs) |> mkILMethods))
 
 let newIlxPubCloEnv(ilg, addMethodGeneratedAttrs, addFieldGeneratedAttrs, addFieldNeverAttrs) =
@@ -348,7 +348,7 @@ let mkILCloFldDefs cenv flds =
 // it's a type abstraction or a term abstraction.
 // -------------------------------------------------------------------- 
 
-let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo = 
+let rec convIlxClosureDef cenv encl (td: ITypeDef) clo = 
     let newTypeDefs = 
 
       // the following are shared between cases 1 && 2 
@@ -477,8 +477,9 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                      ILMemberAccess.Assembly)
                    |> cenv.addMethodGeneratedAttrs 
 
-              let cloTypeDef = 
-                ILTypeDef(name = td.Name,
+              let cloTypeDef =
+                  let tdef = 
+                      ILTypeDef(name = td.Name,
                           genericParams= td.GenericParams,
                           attributes = td.Attributes,
                           implements = [],
@@ -491,7 +492,8 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                           methodImpls=emptyILMethodImpls,
                           properties=emptyILProperties,
                           events=emptyILEvents,
-                          securityDecls=emptyILSecurityDecls)
+                          securityDecls=emptyILSecurityDecls) :> ITypeDef
+                  tdef
                      .WithSpecialName(false)
                      .WithImport(false)
                      .WithHasSecurity(false)
@@ -575,7 +577,8 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                             ILMemberAccess.Assembly)
                         |> cenv.addMethodGeneratedAttrs 
 
-                    ILTypeDef(name = td.Name,
+                    let tdef =
+                        ILTypeDef(name = td.Name,
                               genericParams= td.GenericParams,
                               attributes = td.Attributes,
                               implements = [],
@@ -588,14 +591,15 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                               methodImpls=emptyILMethodImpls,
                               properties=emptyILProperties,
                               events=emptyILEvents,
-                              securityDecls=emptyILSecurityDecls)
-                         .WithHasSecurity(false)
-                         .WithSpecialName(false)
-                         .WithAbstract(false)
-                         .WithImport(false)
-                         .WithEncoding(ILDefaultPInvokeEncoding.Ansi)
-                         .WithSealed(true)
-                         .WithInitSemantics(ILTypeInit.BeforeField)
+                              securityDecls=emptyILSecurityDecls) :> ITypeDef
+                    tdef
+                        .WithHasSecurity(false)
+                        .WithSpecialName(false)
+                        .WithAbstract(false)
+                        .WithImport(false)
+                        .WithEncoding(ILDefaultPInvokeEncoding.Ansi)
+                        .WithSealed(true)
+                        .WithInitSemantics(ILTypeInit.BeforeField)
 
                 [cloTypeDef]
 

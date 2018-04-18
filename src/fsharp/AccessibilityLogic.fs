@@ -102,7 +102,7 @@ let private IsILMemberAccessible g amap m (tcrefOfViewedItem : TyconRef) ad acce
     
 /// Indicates if tdef is accessible. If tdef.Access = ILTypeDefAccess.Nested then encTyconRefOpt s TyconRef of enclosing type
 /// and visibility of tdef is obtained using member access rules
-let private IsILTypeDefAccessible (amap : Import.ImportMap) m ad encTyconRefOpt (tdef: ILTypeDef) =
+let private IsILTypeDefAccessible (amap : Import.ImportMap) m ad encTyconRefOpt (tdef: ITypeDef) =
     match tdef.Access with
     | ILTypeDefAccess.Nested nestedAccess ->
         match encTyconRefOpt with

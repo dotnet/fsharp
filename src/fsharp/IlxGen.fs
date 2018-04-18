@@ -1071,7 +1071,7 @@ let MergePropertyDefs m ilPropertyDefs =
 //-------------------------------------------------------------------------- 
 
 /// Information collected imperatively for each type definition 
-type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) = 
+type TypeDefBuilder(tdef: ITypeDef, tdefDiscards) = 
     let gmethods   = new ResizeArray<ILMethodDef>(0)
     let gfields    = new ResizeArray<ILFieldDef>(0)
     let gproperties : Dictionary<PropKey,(int * ILPropertyDef)> = new Dictionary<_,_>(3,HashIdentity.Structural)
@@ -1147,7 +1147,7 @@ and TypeDefsBuilder() =
     member b.FindNestedTypeDefBuilder(tref:ILTypeRef) = 
         b.FindNestedTypeDefsBuilder(tref.Enclosing).FindTypeDefBuilder(tref.Name)
 
-    member b.AddTypeDef(tdef:ILTypeDef, eliminateIfEmpty, addAtEnd, tdefDiscards) = 
+    member b.AddTypeDef(tdef:ITypeDef, eliminateIfEmpty, addAtEnd, tdefDiscards) = 
         let idx = if addAtEnd then (countDown <- countDown - 1; countDown) else tdefs.Count
         tdefs.Add (tdef.Name, (idx, (new TypeDefBuilder(tdef, tdefDiscards), eliminateIfEmpty)))
 
@@ -3714,8 +3714,9 @@ and GenClosureTypeDefs cenv (tref:ILTypeRef, ilGenParams, attrs, ilCloFreeVars, 
         cloStructure=ilCloLambdas
         cloCode=notlazy ilCtorBody }
 
-  let tdef = 
-    ILTypeDef(name = tref.Name,
+  let tdef =
+      let tdef =
+          ILTypeDef(name = tref.Name,
               layout = ILTypeDefLayout.Auto,
               attributes = enum 0,
               genericParams = ilGenParams,
@@ -3723,12 +3724,13 @@ and GenClosureTypeDefs cenv (tref:ILTypeRef, ilGenParams, attrs, ilCloFreeVars, 
               fields = emptyILFields,
               events= emptyILEvents,
               properties = emptyILProperties,
-              methods= mkILMethods mdefs,
-              methodImpls= mkILMethodImpls mimpls,
-              nestedTypes=emptyILTypeDefs,
+              methods = mkILMethods mdefs,
+              methodImpls = mkILMethodImpls mimpls,
+              nestedTypes = emptyILTypeDefs,
               implements = ilIntfTys,
-              extends= Some ext,
-              securityDecls= emptyILSecurityDecls)
+              extends = Some ext,
+              securityDecls = emptyILSecurityDecls) :> ITypeDef
+      tdef
         .WithSealed(true)
         .WithSerializable(true)
         .WithSpecialName(true)
@@ -3781,7 +3783,7 @@ and GenLambdaClosure cenv (cgbuf:CodeGenBuffer) eenv isLocalTypeFunc selfv expr 
                               nestedTypes=emptyILTypeDefs,
                               implements = [],
                               extends= Some cenv.g.ilg.typ_Object,
-                              securityDecls= emptyILSecurityDecls)
+                              securityDecls= emptyILSecurityDecls) :> ITypeDef
                 let ilContractTypeDef = ilContractTypeDef.WithAbstract(true).WithAccess(ComputeTypeAccess ilContractTypeRef true).WithSerializable(true).WithSpecialName(true).WithLayout(ILTypeDefLayout.Auto).WithInitSemantics(ILTypeInit.BeforeField).WithEncoding(ILDefaultPInvokeEncoding.Auto) // the contract type is an abstract type and not sealed
                 cgbuf.mgbuf.AddTypeDef(ilContractTypeRef, ilContractTypeDef, false, false, None)
                 
@@ -6671,8 +6673,9 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                                         (int (if hiddenRepr
                                               then SourceConstructFlags.SumType ||| SourceConstructFlags.NonPublicRepresentation 
                                               else SourceConstructFlags.SumType)) ])
-               let tdef = 
-                   ILTypeDef(name = ilTypeName,
+               let tdef =
+                   let tdef =
+                       ILTypeDef(name = ilTypeName,
                              layout =  layout,
                              attributes = enum 0,
                              genericParams = ilGenParams,
@@ -6685,13 +6688,14 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                              nestedTypes=emptyILTypeDefs,
                              implements = ilIntfTys,
                              extends= Some (if tycon.IsStructOrEnumTycon then cenv.g.iltyp_ValueType else cenv.g.ilg.typ_Object),
-                             securityDecls= emptyILSecurityDecls)
-                         .WithLayout(layout)
-                         .WithSerializable(isSerializable)
-                         .WithSealed(true)
-                         .WithEncoding(ILDefaultPInvokeEncoding.Auto)
-                         .WithAccess(access)
-                         .WithInitSemantics(ILTypeInit.BeforeField)
+                             securityDecls= emptyILSecurityDecls) :> ITypeDef
+                   tdef
+                     .WithLayout(layout)
+                     .WithSerializable(isSerializable)
+                     .WithSealed(true)
+                     .WithEncoding(ILDefaultPInvokeEncoding.Auto)
+                     .WithAccess(access)
+                     .WithInitSemantics(ILTypeInit.BeforeField)
 
                let tdef2 = cenv.g.eraseClassUnionDef tref tdef cuinfo
    
@@ -6865,7 +6869,7 @@ let GetEmptyIlxGenEnv (ilg : ILGlobals) ccu =
       withinSEH = false }
 
 type IlxGenResults = 
-    { ilTypeDefs: ILTypeDef list
+    { ilTypeDefs: ITypeDef list
       ilAssemAttrs : ILAttribute list
       ilNetModuleAttrs: ILAttribute list
       quotationResourceInfo: (ILTypeRef list * byte[]) list }

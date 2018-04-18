@@ -891,7 +891,7 @@ let goutput_mdefs env os (mdefs: ILMethodDefs) =
 let goutput_pdefs env os (pdefs: ILPropertyDefs) = 
   List.iter (fun f -> (goutput_pdef env) os f; output_string os "\n" ) pdefs.AsList
 
-let rec goutput_tdef enc env contents os (cd: ILTypeDef) =
+let rec goutput_tdef enc env contents os (cd: ITypeDef) =
   let env = ppenv_enter_tdef cd.GenericParams env 
   let layout_attr,pp_layout_decls = splitTypeLayout cd.Layout 
   if isTypeNameForGlobalFunctions cd.Name then 
@@ -948,7 +948,7 @@ and goutput_lambdas env os lambdas =
        (goutput_lambdas env) os l
    | Lambdas_return typ -> output_string os "--> "; (goutput_typ env) os typ
   
-and goutput_tdefs contents enc env os (td: ILTypeDefs) =
+and goutput_tdefs contents enc env os (td: ITypeDefs) =
   List.iter (goutput_tdef enc env contents os) td.AsList
 
 let output_ver os (a,b,c,d) =

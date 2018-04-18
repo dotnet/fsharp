@@ -1865,7 +1865,7 @@ and u_tycon_repr st =
                     | None -> TNoRepr
                     | Some iILModule -> 
                     try 
-                        let rec find acc enclosingTypeNames (tdefs:ILTypeDefs) = 
+                        let rec find acc enclosingTypeNames (tdefs:ITypeDefs) = 
                             match enclosingTypeNames with 
                             | [] -> List.rev acc, tdefs.FindByName iltref.Name
                             | h::t -> let nestedTypeDef = tdefs.FindByName h

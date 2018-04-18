@@ -1412,7 +1412,7 @@ module StaticLinker =
 
                   // Build a dictionary of all IL type defs, mapping ilOrigTyRef --> ilTypeDef
                   let allTypeDefsInProviderGeneratedAssemblies = 
-                      let rec loop ilOrigTyRef (ilTypeDef:ILTypeDef) = 
+                      let rec loop ilOrigTyRef (ilTypeDef:ITypeDef) = 
                           seq { yield (ilOrigTyRef, ilTypeDef) 
                                 for ntdef in ilTypeDef.NestedTypes do 
                                     yield! loop (mkILTyRefInTyRef (ilOrigTyRef, ntdef.Name)) ntdef }
@@ -1465,7 +1465,7 @@ module StaticLinker =
                           loop xs []
 
                       /// Implant the (nested) type definition 'td' at path 'enc' in 'tdefs'. 
-                      let rec implantTypeDef isNested (tdefs: ILTypeDefs) (enc:string list) (td: ILTypeDef) = 
+                      let rec implantTypeDef isNested (tdefs: ITypeDefs) (enc:string list) (td: ITypeDef) = 
                           match enc with 
                           | [] -> addILTypeDef td tdefs
                           | h::t -> 
@@ -1490,7 +1490,7 @@ module StaticLinker =
                   let providerGeneratedILModules = 
                       providerGeneratedILModules |> List.map (fun (ccu, ilOrigScopeRef, ilModule) -> 
                           let ilTypeDefsAfterRemovingRelocatedTypes = 
-                              let rec rw enc (tdefs: ILTypeDefs) = 
+                              let rec rw enc (tdefs: ITypeDefs) = 
                                   mkILTypeDefs
                                    [ for tdef in tdefs do 
                                         let ilOrigTyRef = mkILNestedTyRef (ilOrigScopeRef, enc, tdef.Name)

@@ -57,7 +57,7 @@ type internal IlxGenOptions =
 /// The results of the ILX compilation of one fragment of an assembly
 type public IlxGenResults = 
     { /// The generated IL/ILX type definitions
-      ilTypeDefs             : ILTypeDef list
+      ilTypeDefs             : ITypeDef list
       /// The generated IL/ILX assembly attributes
       ilAssemAttrs           : ILAttribute list
       /// The generated IL/ILX .NET module attributes

@@ -393,7 +393,7 @@ module private PrintIL =
     let private isPublicILField       (f : ILFieldDef)  = 
         (f.Access = ILMemberAccess.Public)
 
-    let private isPublicILTypeDef       (c : ILTypeDef)   : bool =
+    let private isPublicILTypeDef       (c : ITypeDef)   : bool =
         match c.Access with
         | ILTypeDefAccess.Public
         | ILTypeDefAccess.Nested ILMemberAccess.Public -> true
@@ -404,7 +404,7 @@ module private PrintIL =
     let private isShowBase      (n : layout)   : bool = 
         not (noShow.Contains(showL n))
 
-    let rec layoutILTypeDef (denv: DisplayEnv) (typeDef : ILTypeDef) : layout =
+    let rec layoutILTypeDef (denv: DisplayEnv) (typeDef : ITypeDef) : layout =
         let ilTyparSubst       = typeDef.GenericParams |> layoutILGenericParameterDefs
 
         let renderL pre body post = 
@@ -520,7 +520,7 @@ module private PrintIL =
                 | _      -> comment "`Invoke` method could not be found"
             WordL.keywordDelegate ^^ WordL.keywordOf ^^ rhs
           
-    and layoutILNestedClassDef (denv: DisplayEnv) (typeDef : ILTypeDef) =
+    and layoutILNestedClassDef (denv: DisplayEnv) (typeDef : ITypeDef) =
         let name     = adjustILName typeDef.Name
         let nameL    = wordL (tagClass name)
         let ilTyparSubst    = typeDef.GenericParams |> layoutILGenericParameterDefs

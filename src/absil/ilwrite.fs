@@ -403,7 +403,7 @@ type UnsharedRow(elems: RowElement[]) =
 // This environment keeps track of how many generic parameters are in scope. 
 // This lets us translate AbsIL type variable number to IL type variable numbering 
 type ILTypeWriterEnv = { EnclosingTyparCount: int }
-let envForTypeDef (td:ILTypeDef)               = { EnclosingTyparCount=td.GenericParams.Length }
+let envForTypeDef (td:ITypeDef)               = { EnclosingTyparCount=td.GenericParams.Length }
 let envForMethodRef env (typ:ILType)           = { EnclosingTyparCount=(match typ with ILType.Array _ -> env.EnclosingTyparCount | _ -> typ.GenericArgs.Length) }
 let envForNonGenericMethodRef _mref            = { EnclosingTyparCount=System.Int32.MaxValue }
 let envForFieldSpec (fspec:ILFieldSpec)        = { EnclosingTyparCount=fspec.DeclaringType.GenericArgs.Length }
@@ -605,7 +605,7 @@ let FindOrAddSharedRow (cenv:cenv) tbl x = cenv.GetTable(tbl).FindOrAddSharedEnt
 // Shared rows must be hash-cons'd to be made unique (no duplicates according to contents)
 let AddSharedRow (cenv:cenv) tbl x = cenv.GetTable(tbl).AddSharedEntry x
 
-// Unshared rows correspond to definition elements (e.g. a ILTypeDef or a ILMethodDef)
+// Unshared rows correspond to definition elements (e.g. a ITypeDef or a ILMethodDef)
 let AddUnsharedRow (cenv:cenv) tbl (x:UnsharedRow) = cenv.GetTable(tbl).AddUnsharedEntry x
 
 let metadataSchemaVersionSupportedByCLRVersion v = 
@@ -636,11 +636,11 @@ let peOptionalHeaderByteByCLRVersion v =
 // returned by writeBinaryAndReportMappings 
 [<NoEquality; NoComparison>]
 type ILTokenMappings =  
-    { TypeDefTokenMap: ILTypeDef list * ILTypeDef -> int32
-      FieldDefTokenMap: ILTypeDef list * ILTypeDef -> ILFieldDef -> int32
-      MethodDefTokenMap: ILTypeDef list * ILTypeDef -> ILMethodDef -> int32
-      PropertyTokenMap: ILTypeDef list * ILTypeDef -> ILPropertyDef -> int32
-      EventTokenMap: ILTypeDef list * ILTypeDef -> ILEventDef -> int32 }
+    { TypeDefTokenMap: ITypeDef list * ITypeDef -> int32
+      FieldDefTokenMap: ITypeDef list * ITypeDef -> ILFieldDef -> int32
+      MethodDefTokenMap: ITypeDef list * ITypeDef -> ILMethodDef -> int32
+      PropertyTokenMap: ITypeDef list * ITypeDef -> ILPropertyDef -> int32
+      EventTokenMap: ITypeDef list * ITypeDef -> ILEventDef -> int32 }
 
 let recordRequiredDataFixup requiredDataFixups (buf: ByteBuffer) pos lab =
     requiredDataFixups :=  (pos, lab) :: !requiredDataFixups
@@ -678,7 +678,7 @@ let GetTypeNameAsElemPair cenv n =
 // Pass 1 - allocate indexes for types 
 //=====================================================================
 
-let rec GenTypeDefPass1 enc cenv (td:ILTypeDef) = 
+let rec GenTypeDefPass1 enc cenv (td:ITypeDef) = 
   ignore (cenv.typeDefs.AddUniqueEntry "type index" (fun (TdKey (_, n)) -> n) (TdKey (enc, td.Name)))
   GenTypeDefsPass1 (enc@[td.Name]) cenv td.NestedTypes.AsList
 
@@ -785,7 +785,7 @@ and GetResolutionScopeAsElem cenv (scoref, enc) =
 let emitTypeInfoAsTypeDefOrRefEncoded cenv (bb: ByteBuffer) (scoref, enc, nm) = 
     if isScopeRefLocal scoref then 
         let idx = GetIdxForTypeDef cenv (TdKey(enc, nm))
-        bb.EmitZ32 (idx <<< 2) // ECMA 22.2.8 TypeDefOrRefEncoded - ILTypeDef 
+        bb.EmitZ32 (idx <<< 2) // ECMA 22.2.8 TypeDefOrRefEncoded - ITypeDef 
     else 
         let idx = GetTypeDescAsTypeRefIdx cenv (scoref, enc, nm)
         bb.EmitZ32 ((idx <<< 2) ||| 0x01) // ECMA 22.2.8 TypeDefOrRefEncoded - ILTypeRef 
@@ -1088,7 +1088,7 @@ let GetTypeAccessFlags  access =
     | ILTypeDefAccess.Nested ILMemberAccess.FamilyOrAssembly -> 0x00000007
     | ILTypeDefAccess.Nested ILMemberAccess.Assembly -> 0x00000005
 
-let rec GetTypeDefAsRow cenv env _enc (td:ILTypeDef) = 
+let rec GetTypeDefAsRow cenv env _enc (td:ITypeDef) = 
     let nselem, nelem = GetTypeNameAsElemPair cenv td.Name
     let flags = 
       if (isTypeNameForGlobalFunctions td.Name) then 0x00000000
@@ -1164,7 +1164,7 @@ and GetKeyForEvent tidx (x: ILEventDef) =
 and GenEventDefPass2 cenv tidx x = 
     ignore (cenv.eventDefs.AddUniqueEntry "event" (fun (EventKey(_, b)) -> b) (GetKeyForEvent tidx x))
 
-and GenTypeDefPass2 pidx enc cenv (td:ILTypeDef) =
+and GenTypeDefPass2 pidx enc cenv (td:ITypeDef) =
    try 
       let env = envForTypeDef td
       let tidx = GetIdxForTypeDef cenv (TdKey(enc, td.Name))
@@ -2710,10 +2710,10 @@ and GenResourcePass3 cenv r =
   GenCustomAttrsPass3Or4 cenv (hca_ManifestResource, idx) r.CustomAttrs
 
 // -------------------------------------------------------------------- 
-// ILTypeDef --> generate ILFieldDef, ILMethodDef, ILPropertyDef etc. rows
+// ITypeDef --> generate ILFieldDef, ILMethodDef, ILPropertyDef etc. rows
 // -------------------------------------------------------------------- 
 
-let rec GenTypeDefPass3 enc cenv (td:ILTypeDef) = 
+let rec GenTypeDefPass3 enc cenv (td:ITypeDef) = 
    try
       let env = envForTypeDef td
       let tidx = GetIdxForTypeDef cenv (TdKey(enc, td.Name))
@@ -2745,10 +2745,10 @@ let rec GenTypeDefPass3 enc cenv (td:ILTypeDef) =
 and GenTypeDefsPass3 enc cenv tds =
   List.iter (GenTypeDefPass3 enc cenv) tds
 
-/// ILTypeDef --> generate generic params on ILMethodDef: ensures
+/// ITypeDef --> generate generic params on ILMethodDef: ensures
 /// GenericParam table is built sorted by owner.
 
-let rec GenTypeDefPass4 enc cenv (td:ILTypeDef) = 
+let rec GenTypeDefPass4 enc cenv (td:ITypeDef) = 
    try
        let env = envForTypeDef td
        let tidx = GetIdxForTypeDef cenv (TdKey(enc, td.Name))
@@ -2978,7 +2978,7 @@ let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : IL
           Methods = cenv.pdbinfo.ToArray() 
           TableRowCounts = cenv.tables |> Seq.map(fun t -> t.Count) |> Seq.toArray }
 
-    let idxForNextedTypeDef (tds:ILTypeDef list, td:ILTypeDef) =
+    let idxForNextedTypeDef (tds:ITypeDef list, td:ITypeDef) =
         let enc = tds |> List.map (fun td -> td.Name)
         GetIdxForTypeDef cenv (TdKey(enc, td.Name))
 

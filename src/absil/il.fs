@@ -1825,77 +1825,178 @@ let convertInitSemantics (init:ILTypeInit) =
     | ILTypeInit.BeforeField -> TypeAttributes.BeforeFieldInit
     | ILTypeInit.OnAny -> enum 0
 
+
+/// Tables of named type definitions.  
+type ITypeDefs =
+    inherit  IEnumerable<ITypeDef>
+
+    abstract AsArray: ITypeDef[]
+    abstract AsList: ITypeDef list
+
+    /// Get some information about the type defs, but do not force the read of the type defs themselves.
+    abstract AsArrayOfPreTypeDefs: IPreTypeDef[]
+
+    /// Calls to <c>FindByName</c> will result in any laziness in the overall 
+    /// set of ILTypeDefs being read in in addition 
+    /// to the details for the type found, but the remaining individual 
+    /// type definitions will not be read. 
+    abstract FindByName: string -> ITypeDef
+
+
+and ITypeDef =
+    abstract Name: string  
+    abstract Attributes: TypeAttributes
+    abstract GenericParams: ILGenericParameterDefs
+    abstract Layout: ILTypeDefLayout
+    abstract NestedTypes: ITypeDefs
+    abstract Implements: ILTypes
+    abstract Extends: ILType option
+    abstract Methods: ILMethodDefs
+    abstract SecurityDecls: ILSecurityDecls
+    abstract Fields: ILFieldDefs
+    abstract MethodImpls: ILMethodImplDefs
+    abstract Events: ILEventDefs
+    abstract Properties: ILPropertyDefs
+    abstract CustomAttrs: ILAttributes
+    abstract IsClass: bool
+    abstract IsStruct: bool
+    abstract IsInterface: bool
+    abstract IsEnum: bool
+    abstract IsDelegate: bool
+    abstract IsStructOrEnum: bool
+    abstract Access: ILTypeDefAccess
+    abstract IsAbstract: bool
+    abstract IsSealed: bool
+    abstract IsSerializable: bool
+    /// Class or interface generated for COM interop. 
+    abstract IsComInterop: bool
+    abstract IsSpecialName: bool
+    /// Some classes are marked "HasSecurity" even if there are no permissions attached, 
+    /// e.g. if they use SuppressUnmanagedCodeSecurityAttribute 
+    abstract HasSecurity: bool
+    abstract Encoding: ILDefaultPInvokeEncoding
+
+    abstract WithAccess: ILTypeDefAccess -> ITypeDef
+    abstract WithNestedAccess: ILMemberAccess -> ITypeDef
+    abstract WithSealed: bool -> ITypeDef
+    abstract WithSerializable: bool -> ITypeDef
+    abstract WithAbstract: bool -> ITypeDef
+    abstract WithImport: bool -> ITypeDef
+    abstract WithHasSecurity: bool -> ITypeDef
+    abstract WithLayout: ILTypeDefLayout -> ITypeDef
+    abstract WithKind: ILTypeDefKind -> ITypeDef
+    abstract WithEncoding: ILDefaultPInvokeEncoding -> ITypeDef
+    abstract WithSpecialName: bool -> ITypeDef
+    abstract WithInitSemantics: ILTypeInit -> ITypeDef
+
+    /// Functional update
+    abstract With: ?name: string * ?attributes: TypeAttributes * ?layout: ILTypeDefLayout *  ?implements: ILTypes * 
+                 ?genericParams:ILGenericParameterDefs * ?extends:ILType option * ?methods:ILMethodDefs * 
+                 ?nestedTypes:ITypeDefs * ?fields: ILFieldDefs * ?methodImpls:ILMethodImplDefs * ?events:ILEventDefs * 
+                 ?properties:ILPropertyDefs * ?customAttrs:ILAttributes * ?securityDecls: ILSecurityDecls -> ITypeDef
+
+and IPreTypeDef = 
+        abstract Namespace: string list
+        abstract Name: string
+        abstract MetadataIndex: int32 
+        /// Realise the actual full typedef
+        abstract GetTypeDef : unit -> ITypeDef
+
+
 [<NoComparison; NoEquality>]
-type ILTypeDef(name: string, attributes: TypeAttributes, layout: ILTypeDefLayout, implements: ILTypes, genericParams: ILGenericParameterDefs, 
-               extends: ILType option, methods: ILMethodDefs, nestedTypes: ILTypeDefs, fields: ILFieldDefs, methodImpls: ILMethodImplDefs, 
-               events: ILEventDefs, properties: ILPropertyDefs, securityDeclsStored: ILSecurityDeclsStored, customAttrsStored: ILAttributesStored, metadataIndex: int32) =  
+type ILTypeDef
+        (name: string, attributes: TypeAttributes, layout: ILTypeDefLayout, implements: ILTypes,
+         genericParams: ILGenericParameterDefs, extends: ILType option, methods: ILMethodDefs, nestedTypes: ITypeDefs,
+         fields: ILFieldDefs, methodImpls: ILMethodImplDefs, events: ILEventDefs, properties: ILPropertyDefs,
+         securityDeclsStored: ILSecurityDeclsStored, customAttrsStored: ILAttributesStored, metadataIndex: int32) =  
 
-    new (name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields, methodImpls, events, properties, securityDecls, customAttrs) =  
-       ILTypeDef (name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields, methodImpls, events, properties, storeILSecurityDecls securityDecls, storeILCustomAttrs customAttrs, NoMetadataIdx)
+    new (name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields, methodImpls,
+         events, properties, securityDecls, customAttrs) =  
+       ILTypeDef(name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields, methodImpls,
+                 events, properties, storeILSecurityDecls securityDecls, storeILCustomAttrs customAttrs, NoMetadataIdx)
 
-    member __.Name = name
-    member __.Attributes = attributes
-    member __.GenericParams = genericParams
-    member __.Layout = layout
-    member __.NestedTypes = nestedTypes
-    member __.Implements = implements
-    member __.Extends = extends
-    member __.Methods = methods
-    member __.SecurityDeclsStored = securityDeclsStored
-    member __.Fields = fields
-    member __.MethodImpls = methodImpls
-    member __.Events = events
-    member __.Properties = properties
-    member __.CustomAttrsStored = customAttrsStored
-    member __.MetadataIndex = metadataIndex
+    member __.IsClass =     (typeKindOfFlags name methods fields extends (int attributes)) = ILTypeDefKind.Class
+    member __.IsStruct =    (typeKindOfFlags name methods fields extends (int attributes)) = ILTypeDefKind.ValueType
+    member __.IsInterface = (typeKindOfFlags name methods fields extends (int attributes)) = ILTypeDefKind.Interface
+    member __.IsEnum =      (typeKindOfFlags name methods fields extends (int attributes)) = ILTypeDefKind.Enum
+    member __.IsDelegate =  (typeKindOfFlags name methods fields extends (int attributes)) = ILTypeDefKind.Delegate
 
-    member x.With(?name, ?attributes, ?layout, ?implements, ?genericParams, ?extends, ?methods, ?nestedTypes, ?fields, ?methodImpls, ?events, ?properties, ?customAttrs, ?securityDecls) = 
-        ILTypeDef(name=defaultArg name x.Name, 
-                  attributes=defaultArg attributes x.Attributes, 
-                  layout=defaultArg layout x.Layout, 
-                  genericParams = defaultArg genericParams x.GenericParams,
-                  nestedTypes = defaultArg nestedTypes x.NestedTypes,
-                  implements = defaultArg implements x.Implements,
-                  extends = defaultArg extends x.Extends,
-                  methods = defaultArg methods x.Methods,
-                  securityDecls = defaultArg securityDecls x.SecurityDecls,
-                  fields = defaultArg fields x.Fields,
-                  methodImpls = defaultArg methodImpls x.MethodImpls,
-                  events = defaultArg events x.Events,
-                  properties = defaultArg properties x.Properties,
-                  customAttrs = defaultArg customAttrs x.CustomAttrs)
+    member x.With(?newName, ?newAttributes, ?newLayout, ?newImplements, ?newGenericParams, ?newExtends, ?newMethods,
+                  ?newNestedTypes, ?newFields, ?newMethodImpls, ?newEvents, ?newProperties, ?newCustomAttrs,
+                  ?newSecurityDecls) = 
 
-    member x.CustomAttrs = customAttrsStored.GetCustomAttrs x.MetadataIndex
-    member x.SecurityDecls = x.SecurityDeclsStored.GetSecurityDecls x.MetadataIndex
+        ILTypeDef(
+            name          = defaultArg newName name, 
+            attributes    = defaultArg newAttributes attributes,
+            layout        = defaultArg newLayout layout,
+            genericParams = defaultArg newGenericParams genericParams,
+            nestedTypes   = defaultArg newNestedTypes nestedTypes,
+            implements    = defaultArg newImplements implements,
+            extends       = defaultArg newExtends extends,
+            methods       = defaultArg newMethods methods,
+            securityDecls = defaultArg newSecurityDecls (securityDeclsStored.GetSecurityDecls metadataIndex),
+            fields        = defaultArg newFields fields,
+            methodImpls   = defaultArg newMethodImpls methodImpls,
+            events        = defaultArg newEvents events,
+            properties    = defaultArg newProperties properties,
+            customAttrs   = defaultArg newCustomAttrs (customAttrsStored.GetCustomAttrs metadataIndex)) :> ITypeDef
 
-    member x.IsClass =     (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.Class
-    member x.IsStruct =    (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.ValueType
-    member x.IsInterface = (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.Interface
-    member x.IsEnum =      (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.Enum
-    member x.IsDelegate =  (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.Delegate
-    member x.Access = typeAccessOfFlags (int x.Attributes)  
-    member x.IsAbstract = x.Attributes &&& TypeAttributes.Abstract <> enum 0
-    member x.IsSealed = x.Attributes &&& TypeAttributes.Sealed <> enum 0
-    member x.IsSerializable = x.Attributes &&& TypeAttributes.Serializable <> enum 0
-    member x.IsComInterop = x.Attributes &&& TypeAttributes.Import <> enum 0 (* Class or interface generated for COM interop *) 
-    member x.IsSpecialName = x.Attributes &&& TypeAttributes.SpecialName <> enum 0
-    member x.HasSecurity = x.Attributes &&& TypeAttributes.HasSecurity <> enum 0
-    member x.Encoding = typeEncodingOfFlags (int x.Attributes)
-    member x.IsStructOrEnum = x.IsStruct || x.IsEnum
-    member x.WithAccess(access) = x.With(attributes=(x.Attributes &&& ~~~TypeAttributes.VisibilityMask ||| convertTypeAccessFlags access))
-    member x.WithNestedAccess(access) = x.With(attributes=(x.Attributes &&& ~~~TypeAttributes.VisibilityMask ||| convertToNestedTypeAccess access))
-    member x.WithSealed(condition) = x.With(attributes=(x.Attributes |> conditionalAdd condition TypeAttributes.Sealed))
-    member x.WithSerializable(condition) = x.With(attributes=(x.Attributes |> conditionalAdd condition TypeAttributes.Serializable))
-    member x.WithAbstract(condition) = x.With(attributes=(x.Attributes |> conditionalAdd condition TypeAttributes.Abstract))
-    member x.WithImport(condition) = x.With(attributes=(x.Attributes |> conditionalAdd condition TypeAttributes.Import))
-    member x.WithHasSecurity(condition) = x.With(attributes=(x.Attributes |> conditionalAdd condition TypeAttributes.HasSecurity))
-    member x.WithLayout(layout) = x.With(attributes=(x.Attributes ||| convertLayout layout), layout = layout)
-    member x.WithKind(kind) = x.With(attributes=(x.Attributes ||| convertTypeKind kind), extends = match kind with ILTypeDefKind.Interface -> None | _ -> x.Extends)
-    member x.WithEncoding(encoding) = x.With(attributes=(x.Attributes &&& ~~~TypeAttributes.StringFormatMask ||| convertEncoding encoding))
-    member x.WithSpecialName(condition) = x.With(attributes=(x.Attributes |> conditionalAdd condition TypeAttributes.SpecialName))
-    member x.WithInitSemantics(init) = x.With(attributes=(x.Attributes ||| convertInitSemantics init))
+    interface ITypeDef with
+        member __.Name           = name
+        member __.Attributes     = attributes
+        member __.GenericParams  = genericParams
+        member __.Layout         = layout
+        member __.NestedTypes    = nestedTypes
+        member __.Implements     = implements
+        member __.Extends        = extends
+        member __.Methods        = methods
+        member __.Fields         = fields
+        member __.MethodImpls    = methodImpls
+        member __.Events         = events
+        member __.Properties     = properties
+        member __.CustomAttrs    = customAttrsStored.GetCustomAttrs metadataIndex
+        member __.SecurityDecls  = securityDeclsStored.GetSecurityDecls metadataIndex
+        member __.Access         = typeAccessOfFlags   (int attributes)  
+        member __.Encoding       = typeEncodingOfFlags (int attributes)
 
-and [<Sealed>] ILTypeDefs(f : unit -> ILPreTypeDef[]) =
+        member __.IsAbstract     = attributes &&& TypeAttributes.Abstract <> enum 0
+        member __.IsSealed       = attributes &&& TypeAttributes.Sealed <> enum 0
+        member __.IsSerializable = attributes &&& TypeAttributes.Serializable <> enum 0
+        member __.IsComInterop   = attributes &&& TypeAttributes.Import <> enum 0 (* Class or interface generated for COM interop *) 
+        member __.IsSpecialName  = attributes &&& TypeAttributes.SpecialName <> enum 0
+        member __.HasSecurity    = attributes &&& TypeAttributes.HasSecurity <> enum 0
+
+        member x.IsClass         = x.IsClass
+        member x.IsStruct        = x.IsStruct
+        member x.IsInterface     = x.IsInterface
+        member x.IsEnum          = x.IsEnum
+        member x.IsDelegate      = x.IsDelegate
+        member x.IsStructOrEnum  = x.IsStruct || x.IsEnum
+
+        member x.With(?newName, ?newAttributes, ?newLayout, ?newImplements, ?newGenericParams, ?newExtends, ?newMethods,
+                      ?newNestedTypes, ?newFields, ?newMethodImpls, ?newEvents, ?newProperties, ?newCustomAttrs,
+                      ?newSecurityDecls) = 
+            x.With(
+                ?newName = newName, ?newAttributes = newAttributes, ?newLayout = newLayout,
+                ?newGenericParams = newGenericParams, ?newNestedTypes = newNestedTypes, ?newImplements = newImplements,
+                ?newExtends = newExtends, ?newMethods = newMethods, ?newSecurityDecls = newSecurityDecls,
+                ?newFields = newFields, ?newMethodImpls = newMethodImpls, ?newEvents = newEvents,
+                ?newProperties = newProperties, ?newCustomAttrs = newCustomAttrs)
+
+        member x.WithAccess(access)          = x.With(newAttributes = (attributes &&& ~~~TypeAttributes.VisibilityMask ||| convertTypeAccessFlags access))
+        member x.WithNestedAccess(access)    = x.With(newAttributes = (attributes &&& ~~~TypeAttributes.VisibilityMask ||| convertToNestedTypeAccess access))
+        member x.WithSealed(condition)       = x.With(newAttributes = (attributes |> conditionalAdd condition TypeAttributes.Sealed))
+        member x.WithSerializable(condition) = x.With(newAttributes = (attributes |> conditionalAdd condition TypeAttributes.Serializable))
+        member x.WithAbstract(condition)     = x.With(newAttributes = (attributes |> conditionalAdd condition TypeAttributes.Abstract))
+        member x.WithImport(condition)       = x.With(newAttributes = (attributes |> conditionalAdd condition TypeAttributes.Import))
+        member x.WithHasSecurity(condition)  = x.With(newAttributes = (attributes |> conditionalAdd condition TypeAttributes.HasSecurity))
+        member x.WithLayout(layout)          = x.With(newAttributes = (attributes ||| convertLayout layout), newLayout = layout)
+        member x.WithKind(kind)              = x.With(newAttributes = (attributes ||| convertTypeKind kind), newExtends = match kind with ILTypeDefKind.Interface -> None | _ -> extends)
+        member x.WithEncoding(encoding)      = x.With(newAttributes = (attributes &&& ~~~TypeAttributes.StringFormatMask ||| convertEncoding encoding))
+        member x.WithSpecialName(condition)  = x.With(newAttributes = (attributes |> conditionalAdd condition TypeAttributes.SpecialName))
+        member x.WithInitSemantics(init)     = x.With(newAttributes = (attributes ||| convertInitSemantics init))
+
+and [<Sealed>] ILTypeDefs(f : unit -> IPreTypeDef[]) =
 
     let mutable array = InlineDelayInit<_>(f)
     let mutable dict = InlineDelayInit<_>(fun () -> 
@@ -1906,47 +2007,50 @@ and [<Sealed>] ILTypeDefs(f : unit -> ILPreTypeDef[]) =
             t.[key] <- pre
         t)
 
-    member x.AsArray = [| for pre in array.Value -> pre.GetTypeDef() |]
-    member x.AsList = [ for pre in array.Value -> pre.GetTypeDef() ]
+    interface ITypeDefs with
+        member x.AsArray = [| for pre in array.Value -> pre.GetTypeDef() |]
+        member x.AsList = [ for pre in array.Value -> pre.GetTypeDef() ]
+
+        member x.AsArrayOfPreTypeDefs = array.Value
+
+        member x.FindByName nm  = 
+            let ns,n = splitILTypeName nm
+            dict.Value.[(ns,n)].GetTypeDef()
 
     interface IEnumerable with 
-        member x.GetEnumerator() = ((x :> IEnumerable<ILTypeDef>).GetEnumerator() :> IEnumerator)
+        member x.GetEnumerator() = ((x :> IEnumerable<ITypeDef>).GetEnumerator() :> IEnumerator)
 
-    interface IEnumerable<ILTypeDef> with 
+    interface IEnumerable<ITypeDef> with 
         member x.GetEnumerator() = 
             (seq { for pre in array.Value -> pre.GetTypeDef() }).GetEnumerator()
-    
-    member x.AsArrayOfPreTypeDefs = array.Value
 
-    member x.FindByName nm  = 
-        let ns,n = splitILTypeName nm
-        dict.Value.[(ns,n)].GetTypeDef()
 
 /// This is a memory-critical class. Very many of these objects get allocated and held to represent the contents of .NET assemblies.
 and [<Sealed>] ILPreTypeDef(nameSpace: string list, name: string, metadataIndex: int32, storage: ILTypeDefStored) = 
-    let mutable store : ILTypeDef = Unchecked.defaultof<_>
+    let mutable store : ITypeDef = Unchecked.defaultof<_>
 
-    member __.Namespace = nameSpace
-    member __.Name = name
-    member __.MetadataIndex = metadataIndex
-
-    member x.GetTypeDef() = 
-        match box store with 
-        | null -> 
-            match storage with 
-            | ILTypeDefStored.Given td -> 
-                store <- td
-                td
-            | ILTypeDefStored.Computed f -> 
-                System.Threading.LazyInitializer.EnsureInitialized<ILTypeDef>(&store, System.Func<_>(fun () -> f()))
-            | ILTypeDefStored.Reader f -> 
-                System.Threading.LazyInitializer.EnsureInitialized<ILTypeDef>(&store, System.Func<_>(fun () -> f x.MetadataIndex))
-        | _ -> store
+    interface IPreTypeDef with
+        member __.Namespace = nameSpace
+        member __.Name = name
+        member __.MetadataIndex = metadataIndex
+    
+        member x.GetTypeDef() = 
+            match box store with 
+            | null -> 
+                match storage with 
+                | ILTypeDefStored.Given td -> 
+                    store <- td
+                    td
+                | ILTypeDefStored.Computed f -> 
+                    System.Threading.LazyInitializer.EnsureInitialized<ITypeDef>(&store, System.Func<_>(fun () -> f()))
+                | ILTypeDefStored.Reader f -> 
+                    System.Threading.LazyInitializer.EnsureInitialized<ITypeDef>(&store, System.Func<_>(fun () -> f metadataIndex))
+            | _ -> store
       
 and ILTypeDefStored = 
-    | Given of ILTypeDef
-    | Reader of (int32 -> ILTypeDef)
-    | Computed of (unit -> ILTypeDef)
+    | Given of ITypeDef
+    | Reader of (int32 -> ITypeDef)
+    | Computed of (unit -> ITypeDef)
 
 let mkILTypeDefReader f = ILTypeDefStored.Reader f
 
@@ -2056,7 +2160,7 @@ type ILNativeResource =
 type IModuleDef =
     abstract Manifest: ILAssemblyManifest option
     abstract Name: string
-    abstract TypeDefs: ILTypeDefs
+    abstract TypeDefs: ITypeDefs
     abstract SubsystemVersion: int * int
     abstract UseHighEntropyVA: bool
     abstract SubSystemFlags: int32
@@ -2082,7 +2186,7 @@ type IModuleDef =
     abstract CustomAttrs: ILAttributes
 
     abstract With:
-        ?name: string * ?manifest: ILAssemblyManifest option * ?typeDefs: ILTypeDefs *
+        ?name: string * ?manifest: ILAssemblyManifest option * ?typeDefs: ITypeDefs *
         ?subsystemVersion: (int * int) * ?useHighEntropyVA: bool * ?subSystemFlags: int32 * ?isDLL: bool *
         ?isILOnly: bool * ?platform: ILPlatform option * ?stackReserveSize: int32 option * ?is32Bit: bool *
         ?is32BitPreferred: bool * ?is64Bit: bool * ?virtualAlignment: int32 * ?physicalAlignment: int32 *
@@ -2092,7 +2196,8 @@ type IModuleDef =
 
 [<Sealed>]
 type ILModuleDef
-        (name: string, manifest: ILAssemblyManifest option, typeDefs: ILTypeDefs, subsystemVersion: (int * int),
+    internal
+        (name: string, manifest: ILAssemblyManifest option, typeDefs: ITypeDefs, subsystemVersion: (int * int),
          useHighEntropyVA: bool, subSystemFlags: int32, isDLL: bool, isILOnly: bool, platform: ILPlatform option,
          stackReserveSize: int32 option, is32Bit: bool, is32BitPreferred: bool, is64Bit: bool, virtualAlignment: int32,
          physicalAlignment: int32, imageBase: int32, metadataVersion: string, resources: ILResources,
@@ -2355,26 +2460,28 @@ let mkILFormalNamedTy bx tref gparams = mkILNamedTy bx tref (mkILFormalGenericAr
 // Operations on class etc. defs.
 // -------------------------------------------------------------------- 
 
-let mkRefForNestedILTypeDef scope (enc:ILTypeDef list,td:ILTypeDef)  = 
+let mkRefForNestedILTypeDef scope (enc:ITypeDef list,td:ITypeDef)  = 
     mkILNestedTyRef(scope, (enc |> List.map (fun etd -> etd.Name)), td.Name)
 
 // -------------------------------------------------------------------- 
 // Operations on type tables.
 // -------------------------------------------------------------------- 
 
-let mkILPreTypeDef (td:ILTypeDef) = 
-    let ns,n = splitILTypeName td.Name
-    ILPreTypeDef(ns, n, NoMetadataIdx, ILTypeDefStored.Given td)
+let mkILPreTypeDef (td:ITypeDef) = 
+    let ns, n = splitILTypeName td.Name
+    ILPreTypeDef(ns, n, NoMetadataIdx, ILTypeDefStored.Given td) :> IPreTypeDef
+
 let mkILPreTypeDefComputed (ns, n, f) =
-    ILPreTypeDef(ns, n, NoMetadataIdx, ILTypeDefStored.Computed f)
+    ILPreTypeDef(ns, n, NoMetadataIdx, ILTypeDefStored.Computed f) :> IPreTypeDef
+
 let mkILPreTypeDefRead (ns, n, idx, f) =
-    ILPreTypeDef(ns, n, idx, f)
+    ILPreTypeDef(ns, n, idx, f) :> IPreTypeDef
 
 
-let addILTypeDef td (tdefs: ILTypeDefs) = ILTypeDefs (fun () -> [| yield mkILPreTypeDef td; yield! tdefs.AsArrayOfPreTypeDefs |])
-let mkILTypeDefsFromArray (l: ILTypeDef[]) =  ILTypeDefs (fun () -> Array.map mkILPreTypeDef l)
+let addILTypeDef td (tdefs: ITypeDefs) = ILTypeDefs (fun () -> [| yield mkILPreTypeDef td; yield! tdefs.AsArrayOfPreTypeDefs |]) :> ITypeDefs
+let mkILTypeDefsFromArray (l: ITypeDef[]) =  ILTypeDefs (fun () -> Array.map mkILPreTypeDef l) :> ITypeDefs
 let mkILTypeDefs l =  mkILTypeDefsFromArray (Array.ofList l)
-let mkILTypeDefsComputed f = ILTypeDefs f
+let mkILTypeDefsComputed f = ILTypeDefs f :> ITypeDefs
 let emptyILTypeDefs = mkILTypeDefsFromArray [| |]
 
 // -------------------------------------------------------------------- 
@@ -2885,7 +2992,7 @@ let prependInstrsToMethod new_code md  =
     mdef_code2code (prependInstrsToCode new_code) md
 
 // Creates cctor if needed 
-let cdef_cctorCode2CodeOrCreate tag f (cd: ILTypeDef) = 
+let cdef_cctorCode2CodeOrCreate tag f (cd: ITypeDef) = 
     let mdefs = cd.Methods
     let cctor = 
         match mdefs.FindByName ".cctor" with 
@@ -3047,7 +3154,7 @@ let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nes
               methodImpls=emptyILMethodImpls,
               properties=props,
               events=events,
-              securityDecls=emptyILSecurityDecls)
+              securityDecls=emptyILSecurityDecls) :> ITypeDef
     
 let mkRawDataValueTypeDef (iltyp_ValueType: ILType) (nm,size,pack) =
     ILTypeDef(name = nm,
@@ -3063,7 +3170,7 @@ let mkRawDataValueTypeDef (iltyp_ValueType: ILType) (nm,size,pack) =
               methodImpls=emptyILMethodImpls,
               properties=emptyILProperties,
               events=emptyILEvents,
-              securityDecls=emptyILSecurityDecls)
+              securityDecls=emptyILSecurityDecls) :> ITypeDef
 
 
 let mkILSimpleClass (ilg: ILGlobals) (nm, access, methods, fields, nestedTypes, props, events, attrs, init) =
@@ -3071,7 +3178,7 @@ let mkILSimpleClass (ilg: ILGlobals) (nm, access, methods, fields, nestedTypes, 
 
 let mkILTypeDefForGlobalFunctions ilg (methods,fields) = mkILSimpleClass ilg (typeNameForGlobalFunctions, ILTypeDefAccess.Public, methods, fields, emptyILTypeDefs, emptyILProperties, emptyILEvents, emptyILCustomAttrs,ILTypeInit.BeforeField)
 
-let destTypeDefsWithGlobalFunctionsFirst ilg (tdefs: ILTypeDefs) = 
+let destTypeDefsWithGlobalFunctionsFirst ilg (tdefs: ITypeDefs) = 
   let l = tdefs.AsList
   let top,nontop = l |> List.partition (fun td -> td.Name = typeNameForGlobalFunctions)
   let top2 = if isNil top then [ mkILTypeDefForGlobalFunctions ilg (emptyILMethods, emptyILFields) ] else top
@@ -3947,7 +4054,7 @@ and refs_of_method_impl s m =
 
 and refs_of_tdef_kind _s _k =  ()
   
-and refs_of_tdef s (td : ILTypeDef)  =  
+and refs_of_tdef s (td : ITypeDef)  =  
     refs_of_types s td.NestedTypes
     refs_of_genparams s  td.GenericParams
     refs_of_typs  s td.Implements
@@ -3961,7 +4068,7 @@ and refs_of_tdef s (td : ILTypeDef)  =
     refs_of_properties   s td.Properties
 
 and refs_of_string _s _ = ()
-and refs_of_types s (types: ILTypeDefs) = Seq.iter  (refs_of_tdef s) types
+and refs_of_types s (types: ITypeDefs) = Seq.iter  (refs_of_tdef s) types
     
 and refs_of_exported_type s (c: ILExportedTypeOrForwarder) = 
     refs_of_custom_attrs s c.CustomAttrs
@@ -4068,7 +4175,7 @@ and unscopeILTypes i =
 and unscopeILCallSig csig = 
     mkILCallSig (csig.CallingConv,unscopeILTypes csig.ArgTypes,unscopeILType csig.ReturnType)
 
-let resolveILMethodRefWithRescope r (td: ILTypeDef) (mref:ILMethodRef) = 
+let resolveILMethodRefWithRescope r (td: ITypeDef) (mref:ILMethodRef) = 
     let args = mref.ArgTypes
     let nargs = args.Length
     let nm = mref.Name

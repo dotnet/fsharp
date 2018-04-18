@@ -1790,7 +1790,7 @@ and typeDefReader ctxtH : ILTypeDefStored =
                      events= events,
                      properties=props,
                      customAttrsStored=ctxt.customAttrsReader_TypeDef,
-                     metadataIndex=idx)
+                     metadataIndex=idx) :> ITypeDef
     )
 
 and seekReadTopTypeDefs (ctxt: ILMetadataReader)  =

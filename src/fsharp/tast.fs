@@ -1301,7 +1301,7 @@ and
    [<NoComparison; NoEquality>]
     /// TILObjectReprData(scope, nesting, definition)
    TILObjectReprData = 
-    | TILObjectReprData of ILScopeRef * ILTypeDef list * ILTypeDef 
+    | TILObjectReprData of ILScopeRef * ITypeDef list * ITypeDef 
 
     override x.ToString() = "TILObjectReprData(...)"
 
@@ -5159,7 +5159,7 @@ let NewTycon (cpath, nm, m, access, reprAccess, kind, typars, docOption, usesPre
             | _ -> Some { Entity.EmptyEntityOptData with entity_kind = kind; entity_xmldoc = docOption; entity_tycon_repr_accessibility = reprAccess; entity_accessiblity=access } } 
 
 
-let NewILTycon nlpath (nm,m) tps (scoref:ILScopeRef, enc, tdef:ILTypeDef) mtyp =
+let NewILTycon nlpath (nm,m) tps (scoref:ILScopeRef, enc, tdef:ITypeDef) mtyp =
 
     // NOTE: hasSelfReferentialCtor=false is an assumption about mscorlib
     let hasSelfReferentialCtor = tdef.IsClass && (not scoref.IsAssemblyRef && scoref.AssemblyRef.Name = "mscorlib")

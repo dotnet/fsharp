@@ -442,7 +442,7 @@ let multisetDiscriminateAndMap nodef tipf (items: ('Key list * 'Value) list) =
  
 
 /// Import an IL type definition as a new F# TAST Entity node.
-let rec ImportILTypeDef amap m scoref (cpath:CompilationPath) enc nm (tdef:ILTypeDef)  =
+let rec ImportILTypeDef amap m scoref (cpath:CompilationPath) enc nm (tdef:ITypeDef)  =
     let lazyModuleOrNamespaceTypeForNestedTypes = 
         lazy 
             let cpath = cpath.NestedCompPath nm ModuleOrType
@@ -476,7 +476,7 @@ and ImportILTypeDefList amap m (cpath:CompilationPath) enc items =
                 let modty = lazy (ImportILTypeDefList amap m (cpath.NestedCompPath n Namespace) enc tgs)
                 NewModuleOrNamespace (Some cpath) taccessPublic (mkSynId m n) XmlDoc.Empty [] (MaybeLazy.Lazy modty))
             (fun (n,info:Lazy<_>) -> 
-                let (scoref2,_,lazyTypeDef:ILPreTypeDef) = info.Force()
+                let (scoref2,_,lazyTypeDef:IPreTypeDef) = info.Force()
                 ImportILTypeDef amap m scoref2 cpath enc n (lazyTypeDef.GetTypeDef()))
 
     let kind = match enc with [] -> Namespace | _ -> ModuleOrType
@@ -484,7 +484,7 @@ and ImportILTypeDefList amap m (cpath:CompilationPath) enc items =
       
 /// Import a table of IL types as a ModuleOrNamespaceType.
 ///
-and ImportILTypeDefs amap m scoref cpath enc (tdefs: ILTypeDefs) =
+and ImportILTypeDefs amap m scoref cpath enc (tdefs: ITypeDefs) =
     // We be very careful not to force a read of the type defs here
     tdefs.AsArrayOfPreTypeDefs
     |> Array.map (fun pre -> (pre.Namespace,(pre.Name,notlazy(scoref,pre.MetadataIndex,pre))))
