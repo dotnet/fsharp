@@ -1433,8 +1433,8 @@ module StaticLinker =
                   let generatedILTypeDefs = 
                       let rec buildRelocatedGeneratedType (ProviderGeneratedType(ilOrigTyRef, ilTgtTyRef, ch)) = 
                           let isNested = not (isNil ilTgtTyRef.Enclosing)
-                          if allTypeDefsInProviderGeneratedAssemblies.ContainsKey ilOrigTyRef then 
-                              let ilOrigTypeDef = allTypeDefsInProviderGeneratedAssemblies.[ilOrigTyRef]
+                          match allTypeDefsInProviderGeneratedAssemblies.TryGetValue(ilOrigTyRef) with
+                          | true, ilOrigTypeDef ->
                               if debugStaticLinking then printfn "Relocating %s to %s " ilOrigTyRef.QualifiedName ilTgtTyRef.QualifiedName
                               let ilOrigTypeDef = 
                                 if isNested then
@@ -1446,7 +1446,7 @@ module StaticLinker =
                                 else ilOrigTypeDef
                               ilOrigTypeDef.With(name = ilTgtTyRef.Name,
                                                  nestedTypes = mkILTypeDefs (List.map buildRelocatedGeneratedType ch))
-                          else
+                          | _ ->
                               // If there is no matching IL type definition, then make a simple container class
                               if debugStaticLinking then printfn "Generating simple class '%s' because we didn't find an original type '%s' in a provider generated assembly" ilTgtTyRef.QualifiedName ilOrigTyRef.QualifiedName
                               mkILSimpleClass ilGlobals (ilTgtTyRef.Name, (if isNested  then ILTypeDefAccess.Nested ILMemberAccess.Public else ILTypeDefAccess.Public), emptyILMethods, emptyILFields, mkILTypeDefs (List.map buildRelocatedGeneratedType ch) , emptyILProperties, emptyILEvents, emptyILCustomAttrs, ILTypeInit.OnAny) 

@@ -173,7 +173,13 @@ type LazyOrderedMultiMap<'Key,'Data when 'Key : equality>(keyf : 'Data -> 'Key, 
     let quickMap= 
         lazyItems |> lazyMap (fun entries -> 
             let t = new Dictionary<_,_>(entries.Length, HashIdentity.Structural)
-            do entries |> List.iter (fun y -> let key = keyf y in t.[key] <- y :: (if t.ContainsKey(key) then t.[key] else [])) 
+            do entries |> List.iter (fun y ->
+                let key = keyf y
+                let v =
+                    match t.TryGetValue(key) with
+                    | true, v -> v
+                    | _ -> []
+                t.[key] <- y :: v) 
             t)
 
     member self.Entries() = lazyItems.Force()
@@ -182,7 +188,11 @@ type LazyOrderedMultiMap<'Key,'Data when 'Key : equality>(keyf : 'Data -> 'Key, 
     
     member self.Filter(f) = new LazyOrderedMultiMap<'Key,'Data>(keyf, lazyItems |> lazyMap (List.filter f))
 
-    member self.Item with get(x) = let t = quickMap.Force() in if t.ContainsKey x then t.[x] else []
+    member self.Item
+        with get(x) =
+            match quickMap.Force().TryGetValue(x) with
+            | true, v -> v
+            | _ -> []
 
 
 //---------------------------------------------------------------------
@@ -1535,10 +1545,9 @@ type ILMethodDefs(f : (unit -> ILMethodDef[])) =
             for i = arr.Length - 1 downto 0 do 
                 let y = arr.[i]
                 let key = y.Name
-                if t.ContainsKey key then 
-                    t.[key] <- y :: t.[key]
-                else
-                    t.[key] <- [ y ]
+                match t.TryGetValue(key) with
+                | true, m -> t.[key] <- y :: m
+                | _ -> t.[key] <- [y]
             t)
 
     interface IEnumerable with 
@@ -1549,7 +1558,12 @@ type ILMethodDefs(f : (unit -> ILMethodDef[])) =
 
     member x.AsArray = array.Value
     member x.AsList = array.Value|> Array.toList
-    member x.FindByName nm  =  if dict.Value.ContainsKey nm then dict.Value.[nm] else []
+
+    member x.FindByName(nm) =
+        match dict.Value.TryGetValue(nm) with
+        | true, m -> m
+        | _ -> []
+
     member x.FindByNameAndArity (nm,arity) = x.FindByName nm |> List.filter (fun x -> List.length x.Parameters = arity)
 
 [<NoComparison; NoEquality>]
