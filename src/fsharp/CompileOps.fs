@@ -1926,8 +1926,6 @@ let SystemAssemblies () =
       yield "System.Threading.Timer"
 
       yield "FSharp.Compiler.Interactive.Settings"
-      yield "Microsoft.DiaSymReader"
-      yield "Microsoft.DiaSymReader.PortablePdb"
       yield "Microsoft.Win32.Registry"
       yield "System.Diagnostics.Tracing"
       yield "System.Globalization.Calendars"

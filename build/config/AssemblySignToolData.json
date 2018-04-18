@@ -63,8 +63,6 @@
     "Microsoft.Build.Framework.dll",
     "Microsoft.Build.Tasks.Core.dll",
     "Microsoft.Build.Utilities.Core.dll",
-    "Microsoft.DiaSymReader.dll",
-    "Microsoft.DiaSymReader.PortablePdb.dll",
     "Newtonsoft.Json.dll",
     "System.Collections.Immutable.dll",
     "System.Reflection.Metadata.dll",
