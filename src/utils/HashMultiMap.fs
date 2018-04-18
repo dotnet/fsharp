@@ -146,7 +146,7 @@ type internal HashMultiMap<'Key,'Value>(n: int, hasheq: IEqualityComparer<'Key>)
 
         member s.ContainsKey(k) = s.ContainsKey(k)
 
-        member s.TryGetValue(k,r) = if s.ContainsKey(k) then (r <- s.[k]; true) else false
+        member s.TryGetValue(k,r) = match s.TryFind k with Some v-> (r <- v; true) | _ -> false
 
         member s.Remove(k:'Key) = 
             let res = s.ContainsKey(k) in 
