@@ -28,8 +28,6 @@
       <ComponentRef Id="Compiler_Redist_Microsoft.Build.Tasks.Core.dll" />
       <ComponentRef Id="Compiler_Redist_Microsoft.Build.Utilities.Core.dll" />
 
-      <ComponentRef Id="Compiler_Redist_Microsoft.DiaSymReader.PortablePdb.dll" />
-      <ComponentRef Id="Compiler_Redist_Microsoft.DiaSymReader.dll" />
       <ComponentRef Id="Compiler_Redist_System.Reflection.Metadata.dll" />
       <ComponentRef Id="Compiler_Redist_System.Collections.Immutable.dll" />
       <ComponentRef Id="Compiler_Redist_System.ValueTuple.dll" />
@@ -182,14 +180,6 @@
 
       <Component Id="Compiler_Redist_System.Reflection.Metadata.dll" Guid="$(fsharp.guid(Compiler_Redist_System.Reflection.Metadata.dll, $(var.LocaleCode)))">
         <File Id="Compiler_Redist_System.Reflection.Metadata.dll" Source="$(var.NugetPackagesDir)\System.Reflection.Metadata.1.4.2\lib\netstandard1.1\System.Reflection.Metadata.dll" />
-      </Component>
-
-      <Component Id="Compiler_Redist_Microsoft.DiaSymReader.PortablePdb.dll" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.DiaSymReader.PortablePdb.dll, $(var.LocaleCode)))">
-        <File Id="Compiler_Redist_Microsoft.DiaSymReader.PortablePdb.dll" Source="$(var.NugetPackagesDir)\Microsoft.DiaSymReader.PortablePdb.1.2.0\lib\netstandard1.1\Microsoft.DiaSymReader.PortablePdb.dll" />
-      </Component>
-
-      <Component Id="Compiler_Redist_Microsoft.DiaSymReader.dll" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.DiaSymReader.dll, $(var.LocaleCode)))">
-        <File Id="Compiler_Redist_Microsoft.DiaSymReader.dll" Source="$(var.NugetPackagesDir)\Microsoft.DiaSymReader.1.1.0\lib\netstandard1.1\Microsoft.DiaSymReader.dll" />
       </Component>
 
       <Component Id="Compiler_Redist_System.ValueTuple.dll" Guid="$(fsharp.guid(Compiler_Redist_System.ValueTuple.dll, $(var.LocaleCode)))">
