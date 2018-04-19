@@ -58,6 +58,7 @@ type Context =
     | CtxtModuleBody of Position  * bool 
     | CtxtNamespaceBody of Position 
     | CtxtException of Position 
+    | CtxtProvider of Position
     | CtxtParen of Parser.token * Position 
     // Position is position of following token 
     | CtxtSeqBlock of FirstInSequence * Position * AddBlockEnd   
@@ -70,6 +71,7 @@ type Context =
         | CtxtLetDecl (_,p) | CtxtDo p | CtxtInterfaceHead p | CtxtTypeDefns p | CtxtParen (_,p) | CtxtMemberHead p | CtxtMemberBody p
         | CtxtWithAsLet p
         | CtxtWithAsAugment p
+        | CtxtProvider p
         | CtxtMatchClauses (_,p) | CtxtIf p | CtxtMatch p | CtxtFor p | CtxtWhile p | CtxtWhen p | CtxtFunction p | CtxtFun p | CtxtTry p | CtxtThen p | CtxtElse p | CtxtVanilla (p,_)
         | CtxtSeqBlock (_,p,_) -> p
 
@@ -80,6 +82,7 @@ type Context =
         | CtxtNamespaceHead _ -> "nshead"
         | CtxtModuleHead _ -> "modhead"
         | CtxtException _ -> "exception"
+        | CtxtProvider _ -> "provider"
         | CtxtModuleBody _ -> "modbody"
         | CtxtNamespaceBody _ -> "nsbody"
         | CtxtLetDecl(b,p) -> sprintf "let(%b,%s)" b (stringOfPos p)
@@ -691,7 +694,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
             //           type ...
             //           with ... 
             //           end 
-            | CtxtWithAsAugment _,((CtxtInterfaceHead _ | CtxtMemberHead _ | CtxtException _ | CtxtTypeDefns _) as limitCtxt  :: _rest)
+            | CtxtWithAsAugment _,((CtxtInterfaceHead _ | CtxtMemberHead _ | CtxtException _ | CtxtProvider _ | CtxtTypeDefns _) as limitCtxt  :: _rest)
                       -> PositionWithColumn(limitCtxt.StartPos,limitCtxt.StartCol) 
 
             // Permit unindentation via parentheses (or begin/end) following a 'then', 'else' or 'do':
@@ -787,7 +790,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
 
 
             // These contexts all require indentation by at least one space 
-            | _,((CtxtInterfaceHead _ | CtxtNamespaceHead _ | CtxtModuleHead _ | CtxtException _ | CtxtModuleBody (_,false) | CtxtIf _ | CtxtWithAsLet _ | CtxtLetDecl _ | CtxtMemberHead _ | CtxtMemberBody _) as limitCtxt :: _) 
+            | _,((CtxtInterfaceHead _ | CtxtNamespaceHead _ | CtxtModuleHead _ | CtxtException _ | CtxtProvider _ | CtxtModuleBody (_,false) | CtxtIf _ | CtxtWithAsLet _ | CtxtLetDecl _ | CtxtMemberHead _ | CtxtMemberBody _) as limitCtxt :: _) 
                       -> PositionWithColumn(limitCtxt.StartPos,limitCtxt.StartCol + 1) 
 
             // These contexts can have their contents exactly aligning 
@@ -853,7 +856,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
 
     let peekAdjacentTypars indentation (tokenTup:TokenTup) =
         let lookaheadTokenTup = peekNextTokenTup()
-        match lookaheadTokenTup.Token with 
+        match lookaheadTokenTup.Token with
         | INFIX_COMPARE_OP "</" | LESS _ -> 
             let tokenEndPos = tokenTup.LexbufState.EndPos 
             if isAdjacent tokenTup lookaheadTokenTup then 

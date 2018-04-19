@@ -34,6 +34,7 @@ module public AstTraversal =
         | Module of SynModuleDecl
         | ModuleOrNamespace of SynModuleOrNamespace
         | TypeDefn of SynTypeDefn
+        | ProviderDefn of SynProviderDefn
         | MemberDefn of SynMemberDefn
         | MatchClause of SynMatchClause
         | Binding of SynBinding
@@ -52,6 +53,9 @@ module public AstTraversal =
         /// VisitTypeAbbrev(ty,m), defaults to ignoring this leaf of the AST
         abstract VisitTypeAbbrev : SynType * range -> 'T option
         default this.VisitTypeAbbrev(_ty,_m) = None
+        /// VisitProviderAlias(ty,m), defaults to ignoring this leaf of the AST
+        abstract VisitProviderAlias : SynType * range -> 'T option
+        default this.VisitProviderAlias(_ty,_m) = None
         /// VisitImplicitInherit(defaultTraverse,ty,expr,m), defaults to just visiting expr
         abstract VisitImplicitInherit : (SynExpr -> 'T option) * SynType * SynExpr * range -> 'T option
         default this.VisitImplicitInherit(defaultTraverse, _ty, expr, _m) = defaultTraverse expr
@@ -163,6 +167,7 @@ module public AstTraversal =
                     | None -> synBindingList |> List.map (fun x -> dive x x.RangeOfBindingAndRhs (traverseSynBinding path)) |> pick decl
                 | SynModuleDecl.DoExpr(_sequencePointInfoForBinding, synExpr, _range) -> traverseSynExpr path synExpr  
                 | SynModuleDecl.Types(synTypeDefnList, _range) -> synTypeDefnList |> List.map (fun x -> dive x x.Range (traverseSynTypeDefn path)) |> pick decl
+                | SynModuleDecl.Provider(synProviderDefn, _range) -> traverseSynProviderDefn path synProviderDefn
                 | SynModuleDecl.Exception(_synExceptionDefn, _range) -> None
                 | SynModuleDecl.Open(_longIdent, _range) -> None
                 | SynModuleDecl.Attributes(_synAttributes, _range) -> None
@@ -593,6 +598,11 @@ module public AstTraversal =
             | SynMemberDefn.Inherit(synType, _identOption, range) -> traverseInherit (synType, range)
             | SynMemberDefn.ValField(_synField, _range) -> None
             | SynMemberDefn.NestedType(synTypeDefn, _synAccessOption, _range) -> traverseSynTypeDefn path synTypeDefn
+
+        and traverseSynProviderDefn _path (SynProviderDefn.ProviderDefn(synComponentInfo, SynProviderDefnRepr.ProviderDefnRepr(_, t, m), _tRange)) =
+            match visitor.VisitComponentInfo synComponentInfo with
+            | Some x -> Some x
+            | None -> visitor.VisitTypeAbbrev(t,m)
 
         and traverseSynMatchClause path mc =
             let path = TraverseStep.MatchClause mc :: path

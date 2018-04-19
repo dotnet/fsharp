@@ -1239,6 +1239,20 @@ and
     /// The information for a type definition in a signature
     | TypeDefnSig of SynComponentInfo * SynTypeDefnSigRepr * SynMemberSigs * range:range
 
+and
+    [<NoEquality; NoComparison>]
+    /// The untyped, unchecked syntax tree for a provider definition in a signature
+    SynProviderDefnSigRepr =
+    /// The information for a provider definition in a signature
+    | ProviderDefnSigRepr of SynAccess option * SynType * range:range
+
+and
+    [<NoEquality; NoComparison>]
+    /// The untyped, unchecked syntax tree for a type definition in a signature
+    SynProviderDefnSig =
+    /// The information for a type definition in a signature
+    | ProviderDefnSig of SynComponentInfo * SynProviderDefnSigRepr * range:range
+
 and SynFields = SynField list
 
 and
@@ -1329,6 +1343,7 @@ and
         | Simple (range=m) -> m
         | Exception t -> t.Range
 
+
 and
     [<NoEquality; NoComparison>]
     SynTypeDefn =
@@ -1336,6 +1351,22 @@ and
     member this.Range =
         match this with
         | TypeDefn (range=m) -> m
+and
+
+    [<NoEquality; NoComparison>]
+    SynProviderDefnRepr =
+    | ProviderDefnRepr of SynAccess option * SynType * range:range
+    member this.Range =
+        match this with
+        | ProviderDefnRepr (range = m) -> m
+
+and
+    [<NoEquality; NoComparison>]
+    SynProviderDefn =
+    | ProviderDefn of SynComponentInfo * SynProviderDefnRepr * range:range
+    member this.Range =
+        match this with
+        | ProviderDefn (range=m) -> m
 
 and
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1389,6 +1420,7 @@ and
     | Attributes of SynAttributes * range:range
     | HashDirective of ParsedHashDirective * range:range
     | NamespaceFragment of SynModuleOrNamespace
+    | Provider of SynProviderDefn * range:range
     member d.Range =
         match d with
         | SynModuleDecl.ModuleAbbrev (range=m)
@@ -1400,6 +1432,7 @@ and
         | SynModuleDecl.Open (range=m)
         | SynModuleDecl.HashDirective (range=m)
         | SynModuleDecl.NamespaceFragment (SynModuleOrNamespace (range=m))
+        | SynModuleDecl.Provider (range = m)
         | SynModuleDecl.Attributes (range=m) -> m
 
 and SynModuleDecls = SynModuleDecl list

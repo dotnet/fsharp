@@ -280,7 +280,7 @@ let rec ImportProvidedType (env:ImportMap) (m:range) (* (tinst:TypeInst) *) (st:
             let underlying = t.RawSystemType
             match underlying with
             | :? ReflectTypar as tpar -> TType.TType_var tpar.Metadata
-            | _ -> failwith ""
+            | _ -> failwith "" // FS-1023 TODO
         st.PUntaint(getTypeVar, m)
     else
 

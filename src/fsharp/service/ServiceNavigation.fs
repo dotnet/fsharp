@@ -17,6 +17,7 @@ type FSharpNavigationDeclarationItemKind =
     | ExnDecl
     | ModuleDecl
     | TypeDecl
+    | ProviderDecl
     | MethodDecl
     | PropertyDecl
     | FieldDecl
@@ -455,6 +456,7 @@ module NavigateTo =
         | ModuleAbbreviation
         | Exception
         | Type
+        | Provider
         | ModuleValue
         | Field
         | Property
@@ -470,6 +472,7 @@ module NavigateTo =
         | Namespace
         | Module
         | Type
+        | Provider
         | Exception
 
     type Container =
@@ -660,6 +663,8 @@ module NavigateTo =
             | SynModuleDecl.Types(typeDefs, _range) ->
                 for t in typeDefs do
                     walkSynTypeDefn t container
+            | SynModuleDecl.Provider(providerDef, _range) ->
+                walkSynProviderDefn providerDef container
             | SynModuleDecl.Attributes _
             | SynModuleDecl.DoExpr _
             | SynModuleDecl.HashDirective _
@@ -722,6 +727,9 @@ module NavigateTo =
             | SynMemberDefn.ImplicitInherit _
             | SynMemberDefn.Inherit _
             | SynMemberDefn.ImplicitCtor _ -> ()
+
+        and walkSynProviderDefn (ProviderDefn(componentInfo, _representation, _range)) container =
+            ignore <| addComponentInfo ContainerType.Type NavigableItemKind.Provider componentInfo false container
 
         match parsedInput with
         | ParsedInput.SigFile input -> walkSigFileInput input

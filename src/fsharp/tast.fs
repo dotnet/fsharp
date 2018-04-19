@@ -1556,8 +1556,8 @@ and ExceptionInfo =
 
 and 
     [<Sealed>]
-    ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, entities: QueueList<Entity>) = 
-
+    ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, entities: QueueList<Entity>) =
+      
       /// Mutation used during compilation of FSharp.Core.dll
       let mutable entities = entities 
       

@@ -503,6 +503,14 @@ let AddModuleAbbreviationAndReport tcSink scopem id modrefs env =
     CallNameResolutionSink tcSink (id.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights)
     env
 
+let AddLocalProviderAlias g amap m env prov =
+    // FS-1023 TODO : Implement
+    ignore g
+    ignore amap
+    ignore m
+    ignore prov
+    env
+
 let AddLocalSubModule g amap m env (modul:ModuleOrNamespace) =
     let env = ModifyNameResEnv (fun nenv -> AddModuleOrNamespaceRefToNameEnv g amap m false env.eAccessRights nenv (mkLocalModRef modul)) env
     let env = { env with eUngeneralizableItems = addFreeItemOfModuleTy modul.ModuleOrNamespaceType env.eUngeneralizableItems }
@@ -3544,20 +3552,30 @@ let (|SimpleSemicolonSequence|_|) acceptDeprecated c =
 
 /// Represents the shape of a mutually recursive group of declarations including nested modules
 [<RequireQualifiedAccess>]
+<<<<<<< HEAD
 type MutRecShape<'TypeData, 'LetsData, 'ModuleData, 'ModuleAbbrevData, 'OpenData> = 
     | Tycon of 'TypeData
     | Lets of 'LetsData
     | Module of 'ModuleData * MutRecShapes<'TypeData, 'LetsData, 'ModuleData, 'ModuleAbbrevData, 'OpenData> 
     | ModuleAbbrev of 'ModuleAbbrevData 
+=======
+type MutRecShape<'TypeData, 'LetsData, 'ProviderData, 'ModuleData, 'ModuleAbbrevData, 'OpenData> =
+    | Tycon of 'TypeData
+    | Lets of 'LetsData
+    | Provider of 'ProviderData
+    | Module of 'ModuleData * MutRecShapes<'TypeData, 'LetsData, 'ProviderData, 'ModuleData, 'ModuleAbbrevData, 'OpenData>
+    | ModuleAbbrev of 'ModuleAbbrevData
+>>>>>>> 443717d... Add Providers to core datatypes, add parsing of providers
     | Open of 'OpenData
 
-and MutRecShapes<'TypeData, 'LetsData, 'ModuleData, 'ModuleAbbrevData, 'OpenData> = MutRecShape<'TypeData, 'LetsData, 'ModuleData, 'ModuleAbbrevData, 'OpenData> list
+and MutRecShapes<'TypeData, 'LetsData, 'ProviderData, 'ModuleData, 'ModuleAbbrevData, 'OpenData> = MutRecShape<'TypeData, 'LetsData, 'ProviderData, 'ModuleData, 'ModuleAbbrevData, 'OpenData> list
 
 module MutRecShapes = 
    let rec map f1 f2 f3 x = 
        x |> List.map (function 
            | MutRecShape.Open a -> MutRecShape.Open a
            | MutRecShape.ModuleAbbrev b -> MutRecShape.ModuleAbbrev b
+           | MutRecShape.Provider b -> MutRecShape.Provider b
            | MutRecShape.Tycon a -> MutRecShape.Tycon (f1 a)
            | MutRecShape.Lets b -> MutRecShape.Lets (f2 b)
            | MutRecShape.Module (c, d) -> MutRecShape.Module (f3 c, map f1 f2 f3 d))
@@ -3572,21 +3590,28 @@ module MutRecShapes =
        x |> List.map (function 
            | MutRecShape.Open a -> MutRecShape.Open a
            | MutRecShape.ModuleAbbrev a -> MutRecShape.ModuleAbbrev a
+           | MutRecShape.Provider b -> MutRecShape.Provider b
            | MutRecShape.Tycon a -> MutRecShape.Tycon (fTycon env a)
            | MutRecShape.Lets b -> MutRecShape.Lets (fLets env b)
            | MutRecShape.Module ((c, env2), d) -> MutRecShape.Module ((c, env2), mapWithEnv fTycon fLets env2 d))
 
    let mapTyconsWithEnv f1 env xs = mapWithEnv f1 (fun _env x -> x) env xs
 
+<<<<<<< HEAD
    let rec mapWithParent parent f1 f2 f3 xs = 
        xs |> List.map (function 
+=======
+   let rec mapWithParent parent f1 f2 f3 f4 xs =
+       xs |> List.map (function
+>>>>>>> 443717d... Add Providers to core datatypes, add parsing of providers
            | MutRecShape.Open a -> MutRecShape.Open a
            | MutRecShape.ModuleAbbrev a -> MutRecShape.ModuleAbbrev a
+           | MutRecShape.Provider b -> MutRecShape.Provider (f4 parent b)
            | MutRecShape.Tycon a -> MutRecShape.Tycon (f2 parent a)
            | MutRecShape.Lets b -> MutRecShape.Lets (f3 parent b)
            | MutRecShape.Module (c, d) -> 
                let c2, parent2 = f1 parent c d
-               MutRecShape.Module (c2, mapWithParent parent2 f1 f2 f3 d))
+               MutRecShape.Module (c2, mapWithParent parent2 f1 f2 f3 f4 d))
 
    let rec computeEnvs f1 f2 (env: 'Env) xs = 
        let env = f2 env xs
@@ -3594,6 +3619,7 @@ module MutRecShapes =
        xs |> List.map (function 
            | MutRecShape.Open a -> MutRecShape.Open a
            | MutRecShape.ModuleAbbrev a -> MutRecShape.ModuleAbbrev a
+           | MutRecShape.Provider b -> MutRecShape.Provider b
            | MutRecShape.Tycon a -> MutRecShape.Tycon a
            | MutRecShape.Lets b -> MutRecShape.Lets b
            | MutRecShape.Module (c, ds) -> 
@@ -3642,27 +3668,39 @@ module MutRecShapes =
    let topTycons x = 
        x |> List.choose (function MutRecShape.Tycon a -> Some a | _ -> None)
 
+<<<<<<< HEAD
    let rec iter f1 f2 f3 f4 f5 x = 
        x |> List.iter (function 
+=======
+   let rec iter f1 f2 f3 f4 f5 f6 x =
+       x |> List.iter (function
+>>>>>>> 443717d... Add Providers to core datatypes, add parsing of providers
            | MutRecShape.Tycon a -> f1 a
            | MutRecShape.Lets b -> f2 b
-           | MutRecShape.Module (c, d) -> f3 c; iter f1 f2 f3 f4 f5 d
-           | MutRecShape.Open a -> f4 a
-           | MutRecShape.ModuleAbbrev a -> f5 a)
+           | MutRecShape.Provider b -> f3 b
+           | MutRecShape.Module (c, d) -> f4 c; iter f1 f2 f3 f4 f5 f6 d
+           | MutRecShape.Open a -> f5 a
+           | MutRecShape.ModuleAbbrev a -> f6 a)
 
-   let iterTycons f1 x = iter f1 ignore ignore ignore ignore x
-   let iterTyconsAndLets f1 f2 x = iter f1 f2 ignore ignore ignore x
-   let iterModules f1 x = iter ignore ignore f1 ignore ignore x
+   let iterTycons f1 x = iter f1 ignore ignore ignore ignore ignore x
+   let iterTyconsAndLets f1 f2 x = iter f1 f2 ignore ignore ignore ignore x
+   let iterModules f1 x = iter ignore ignore ignore f1 ignore ignore x
 
+<<<<<<< HEAD
    let rec iterWithEnv f1 f2 f3 f4 env x = 
        x |> List.iter (function 
+=======
+   let rec iterWithEnv f1 f2 f3 f4 f5 env x =
+       x |> List.iter (function
+>>>>>>> 443717d... Add Providers to core datatypes, add parsing of providers
            | MutRecShape.Tycon a -> f1 env a
            | MutRecShape.Lets b -> f2 env b
-           | MutRecShape.Module ((_, env), d) -> iterWithEnv f1 f2 f3 f4 env d
-           | MutRecShape.Open a -> f3 env a
-           | MutRecShape.ModuleAbbrev a -> f4 env a)
+           | MutRecShape.Provider b -> f3 env b
+           | MutRecShape.Module ((_, env), d) -> iterWithEnv f1 f2 f3 f4 f5 env d
+           | MutRecShape.Open a -> f4 env a
+           | MutRecShape.ModuleAbbrev a -> f5 env a)
 
-   let iterTyconsWithEnv f1 env xs = iterWithEnv f1 (fun _env _x -> ()) (fun _env _x -> ()) (fun _env _x -> ()) env xs
+   let iterTyconsWithEnv f1 env xs = iterWithEnv f1 (fun _env _x -> ()) (fun _env _x -> ()) (fun _env _x -> ()) (fun _env _x -> ()) env xs
 
 //-------------------------------------------------------------------------
 // Post-transform initialization graphs using the 'lazy' interpretation.
@@ -3687,8 +3725,13 @@ let EliminateInitializationGraphs
       (morphTyconBinds: (PreInitializationGraphEliminationBinding list -> Binding list)  -> 'TyconDataIn -> 'TyconDataOut)
       (getLetBinds: 'LetDataIn list -> PreInitializationGraphEliminationBinding list) 
       (morphLetBinds: (PreInitializationGraphEliminationBinding list -> Binding list)  -> 'LetDataIn list -> Binding list)
+<<<<<<< HEAD
       g mustHaveArity denv 
       (fixupsAndBindingsWithoutLaziness : MutRecShape<_, _, _, _, _> list) bindsm =
+=======
+      g mustHaveArity denv
+      (fixupsAndBindingsWithoutLaziness : MutRecShape<_, _, _, _, _, _> list) bindsm =
+>>>>>>> 443717d... Add Providers to core datatypes, add parsing of providers
 
     let recursiveVals = 
         let hash = ValHash<Val>.Create()
@@ -4095,18 +4138,20 @@ type RecDefnBindingInfo = RecDefnBindingInfo of ContainerInfo * NewSlotsOK * Dec
 type MutRecDataForOpen = MutRecDataForOpen of LongIdent * range
 type MutRecDataForModuleAbbrev = MutRecDataForModuleAbbrev of Ident * LongIdent * range
 
-type MutRecSigsInitialData = MutRecShape<SynTypeDefnSig, SynValSig, SynComponentInfo, MutRecDataForModuleAbbrev, MutRecDataForOpen > list
-type MutRecDefnsInitialData = MutRecShape<SynTypeDefn, SynBinding list, SynComponentInfo, MutRecDataForModuleAbbrev, MutRecDataForOpen > list
+type MutRecSigsInitialData = MutRecShape<SynTypeDefnSig, SynValSig, SynProviderDefnSig, SynComponentInfo, MutRecDataForModuleAbbrev, MutRecDataForOpen > list
+type MutRecDefnsInitialData = MutRecShape<SynTypeDefn, SynBinding list, SynProviderDefn, SynComponentInfo, MutRecDataForModuleAbbrev, MutRecDataForOpen > list
+
+type ProviderStuff = unit
 
 type MutRecDefnsPhase1DataForTycon = MutRecDefnsPhase1DataForTycon of SynComponentInfo * SynTypeDefnSimpleRepr * (SynType * range) list * preEstablishedHasDefaultCtor: bool * hasSelfReferentialCtor: bool * isAtOriginalTyconDefn: bool
-type MutRecDefnsPhase1Data = MutRecShape<MutRecDefnsPhase1DataForTycon * SynMemberDefn list, RecDefnBindingInfo list, SynComponentInfo, MutRecDataForModuleAbbrev, MutRecDataForOpen > list
+type MutRecDefnsPhase1Data = MutRecShape<MutRecDefnsPhase1DataForTycon * SynMemberDefn list, RecDefnBindingInfo list, ProviderStuff, SynComponentInfo, MutRecDataForModuleAbbrev, MutRecDataForOpen > list
 
 type MutRecDefnsPhase2DataForTycon = MutRecDefnsPhase2DataForTycon of Tycon option * ParentRef * DeclKind * TyconRef * Val option * SafeInitData * Typars * SynMemberDefn list * range * NewSlotsOK * fixupFinalAttribs: (unit -> unit)
 type MutRecDefnsPhase2DataForModule = MutRecDefnsPhase2DataForModule of ModuleOrNamespaceType ref * ModuleOrNamespace
-type MutRecDefnsPhase2Data = MutRecShape<MutRecDefnsPhase2DataForTycon, RecDefnBindingInfo list, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForModuleAbbrev, MutRecDataForOpen > list
+type MutRecDefnsPhase2Data = MutRecShape<MutRecDefnsPhase2DataForTycon, RecDefnBindingInfo list, ProviderStuff, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForModuleAbbrev, MutRecDataForOpen > list
 
 type MutRecDefnsPhase2InfoForTycon = MutRecDefnsPhase2InfoForTycon of Tycon option * TyconRef * Typars * DeclKind * TyconBindingDefn list * fixupFinalAttrs: (unit -> unit)
-type MutRecDefnsPhase2Info = MutRecShape<MutRecDefnsPhase2InfoForTycon, RecDefnBindingInfo list, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForModuleAbbrev, MutRecDataForOpen > list
+type MutRecDefnsPhase2Info = MutRecShape<MutRecDefnsPhase2InfoForTycon, RecDefnBindingInfo list, ProviderStuff, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForModuleAbbrev, MutRecDataForOpen > list
 
 
 /// RecursiveBindingInfo - flows through initial steps of TcLetrec 
@@ -12982,7 +13027,7 @@ module MutRecBindingChecking =
       | TyconBindingsPhase2A of Tycon option * DeclKind * Val list * TyconRef * Typar list * TType * TyconBindingPhase2A list
 
     /// The collected syntactic input definitions for a recursive group of type or type-extension definitions
-    type MutRecDefnsPhase2AData = MutRecShape<TyconBindingsPhase2A, PreCheckingRecursiveBinding list, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForModuleAbbrev, MutRecDataForOpen>  list
+    type MutRecDefnsPhase2AData = MutRecShape<TyconBindingsPhase2A, PreCheckingRecursiveBinding list, ProviderStuff, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForModuleAbbrev, MutRecDataForOpen>  list
 
     /// Represents one element in a type definition, after the second phase
     type TyconBindingPhase2B =
@@ -13001,7 +13046,7 @@ module MutRecBindingChecking =
 
     type TyconBindingsPhase2B = TyconBindingsPhase2B of Tycon option * TyconRef * TyconBindingPhase2B list
 
-    type MutRecDefnsPhase2BData = MutRecShape<TyconBindingsPhase2B, int list, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForModuleAbbrev, MutRecDataForOpen> list
+    type MutRecDefnsPhase2BData = MutRecShape<TyconBindingsPhase2B, int list, ProviderStuff, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForModuleAbbrev, MutRecDataForOpen> list
 
     /// Represents one element in a type definition, after the third phase
     type TyconBindingPhase2C =
@@ -13015,7 +13060,7 @@ module MutRecBindingChecking =
 
     type TyconBindingsPhase2C = TyconBindingsPhase2C of Tycon option * TyconRef * TyconBindingPhase2C list
 
-    type MutRecDefnsPhase2CData = MutRecShape<TyconBindingsPhase2C, PreInitializationGraphEliminationBinding list, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForModuleAbbrev, MutRecDataForOpen> list
+    type MutRecDefnsPhase2CData = MutRecShape<TyconBindingsPhase2C, PreInitializationGraphEliminationBinding list, ProviderStuff, MutRecDefnsPhase2DataForModule * TcEnv, MutRecDataForModuleAbbrev, MutRecDataForOpen> list
 
 
 
@@ -13035,11 +13080,12 @@ module MutRecBindingChecking =
               let (tpenv, recBindIdx, uncheckedBindsRev) = outerState
               match defn with 
               | MutRecShape.Module _ ->  failwith "unreachable"
-              | MutRecShape.Open x ->  MutRecShape.Open x, outerState 
-              | MutRecShape.ModuleAbbrev x ->  MutRecShape.ModuleAbbrev x, outerState 
-              | MutRecShape.Lets recBinds -> 
-                let normRecDefns = 
-                   [ for (RecDefnBindingInfo(a, b, c, bind)) in recBinds do 
+              | MutRecShape.Open x ->  MutRecShape.Open x, outerState
+              | MutRecShape.ModuleAbbrev x ->  MutRecShape.ModuleAbbrev x, outerState
+              | MutRecShape.Provider _x -> failwith "" // FS-1023 TODO
+              | MutRecShape.Lets recBinds ->
+                let normRecDefns =
+                   [ for (RecDefnBindingInfo(a, b, c, bind)) in recBinds do
                        yield NormalizedRecBindingDefn(a, b, c, BindingNormalization.NormalizeBinding ValOrMemberBinding cenv envForDecls bind) ]
                 let bindsAndValues, (tpenv, recBindIdx) = ((tpenv, recBindIdx), normRecDefns) ||> List.mapFold (AnalyzeAndMakeAndPublishRecursiveValue ErrorOnOverrides false cenv envForDecls) 
                 let binds = bindsAndValues |> List.collect fst
@@ -13230,8 +13276,14 @@ module MutRecBindingChecking =
 
               match defnsA with 
               | MutRecShape.Module _ -> failwith "unreachable"
+<<<<<<< HEAD
               | MutRecShape.Open x ->  MutRecShape.Open x, outerState 
               | MutRecShape.ModuleAbbrev x ->  MutRecShape.ModuleAbbrev x, outerState 
+=======
+              | MutRecShape.Open x ->  MutRecShape.Open x, outerState
+              | MutRecShape.Provider _x -> failwith "" // FS-1023 TODO
+              | MutRecShape.ModuleAbbrev x ->  MutRecShape.ModuleAbbrev x, outerState
+>>>>>>> 443717d... Add Providers to core datatypes, add parsing of providers
               | MutRecShape.Lets binds ->
                 
                 let defnBs, (tpenv, _, envNonRec, generalizedRecBinds, preGeneralizationRecBinds, uncheckedRecBindsTable) = 
@@ -13621,8 +13673,13 @@ module MutRecBindingChecking =
         TcMutRecDefns_UpdateNSContents mutRecNSInfo
     
     /// Compute the active environments within each nested module.
+<<<<<<< HEAD
     let TcMutRecDefns_ComputeEnvs getTyconOpt getVals (cenv: cenv) report scopem m envInitial mutRecShape =
         (envInitial, mutRecShape) ||> MutRecShapes.computeEnvs 
+=======
+    let TcMutRecDefns_ComputeEnvs getTyconOpt getVals getProv (cenv: cenv) report scopem m envInitial mutRecShape =
+        (envInitial, mutRecShape) ||> MutRecShapes.computeEnvs
+>>>>>>> 443717d... Add Providers to core datatypes, add parsing of providers
             (fun envAbove (MutRecDefnsPhase2DataForModule (mtypeAcc, mspec)) ->  MakeInnerEnvWithAcc envAbove mspec.Id mtypeAcc mspec.ModuleOrNamespaceType.ModuleOrNamespaceKind)
             (fun envAbove decls -> 
 
@@ -13632,6 +13689,7 @@ module MutRecBindingChecking =
                 let moduleAbbrevs = decls |> List.choose (function MutRecShape.ModuleAbbrev (MutRecDataForModuleAbbrev (id, mp, m)) -> Some (id, mp, m) | _ -> None)
                 let opens = decls |> List.choose (function MutRecShape.Open (MutRecDataForOpen (mp, m)) -> Some (mp, m) | _ -> None)
                 let lets = decls |> List.collect (function MutRecShape.Lets binds -> getVals binds | _ -> [])
+                let provs = decls |> List.collect (function MutRecShape.Provider ps -> getProv ps | _ -> [])
                 let exns = tycons |> List.filter (fun (tycon:Tycon) -> tycon.IsExceptionDecl)
 
                 // Add the type definitions, exceptions, modules and "open" declarations.
@@ -13667,6 +13725,9 @@ module MutRecBindingChecking =
                 let envForDecls = (envForDecls, moduleAbbrevs) ||> List.fold (TcModuleAbbrevDecl cenv scopem)
                 // Add the values and members
                 let envForDecls = AddLocalVals cenv.tcSink scopem lets envForDecls
+                // Add the provider aliases
+                let envForDecls = (envForDecls, provs) ||> List.fold (AddLocalProviderAlias cenv.g cenv.amap m)
+
                 envForDecls)
 
     /// Phase 2: Check the members and 'let' definitions in a mutually recursive group of definitions.
@@ -13687,6 +13748,7 @@ module MutRecBindingChecking =
 
         // Updates the environments to include the values
         // We must open all modules from scratch again because there may be extension methods and/or AutoOpen
+<<<<<<< HEAD
         let envMutRec, defnsAs =  
             (envInitial, MutRecShapes.dropEnvs defnsAs) 
             ||> TcMutRecDefns_ComputeEnvs 
@@ -13699,6 +13761,21 @@ module MutRecBindingChecking =
                     decls |> List.collect (function 
                         | MutRecShape.Tycon (TyconBindingsPhase2A(_, _, prelimRecValues, _, _, _, _)) -> prelimRecValues 
                         | MutRecShape.Lets binds -> [ for bind in binds -> bind.RecBindingInfo.Val ] 
+=======
+        let envMutRec, defnsAs =
+            (envInitial, MutRecShapes.dropEnvs defnsAs)
+            ||> TcMutRecDefns_ComputeEnvs
+                   (fun (TyconBindingsPhase2A(tyconOpt, _, _, _, _, _, _)) -> tyconOpt)
+                   (fun binds ->  [ for bind in binds -> bind.RecBindingInfo.Val ])
+                   (fun _provs -> []) // FS-1023 TODO
+                   cenv false scopem scopem
+            ||> MutRecShapes.extendEnvs (fun envForDecls decls ->
+
+                let prelimRecValues =
+                    decls |> List.collect (function
+                        | MutRecShape.Tycon (TyconBindingsPhase2A(_, _, prelimRecValues, _, _, _, _)) -> prelimRecValues
+                        | MutRecShape.Lets binds -> [ for bind in binds -> bind.RecBindingInfo.Val ]
+>>>>>>> 443717d... Add Providers to core datatypes, add parsing of providers
                         | _ -> [])
 
                 let ctorVals = 
@@ -14542,11 +14619,19 @@ module EstablishTypeDefinitionCores =
     let AdjustModuleName modKind nm = (match modKind with FSharpModuleWithSuffix -> nm+FSharpModuleSuffix | _ -> nm)
 
 
+<<<<<<< HEAD
     let TypeNamesInMutRecDecls (compDecls: MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo, _, _>) =
         [ for d in compDecls do 
                 match d with 
                 | MutRecShape.Tycon (MutRecDefnsPhase1DataForTycon(ComponentInfo(_, _, _, ids, _, _, _, _), _, _, _, _, isAtOriginalTyconDefn), _) -> 
                     if isAtOriginalTyconDefn then 
+=======
+    let TypeNamesInMutRecDecls (compDecls: MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, _, SynComponentInfo, _, _>) =
+        [ for d in compDecls do
+                match d with
+                | MutRecShape.Tycon (MutRecDefnsPhase1DataForTycon(ComponentInfo(_, _, _, ids, _, _, _, _), _, _, _, _, isAtOriginalTyconDefn), _) ->
+                    if isAtOriginalTyconDefn then
+>>>>>>> 443717d... Add Providers to core datatypes, add parsing of providers
                         yield (List.last ids).idText
                 | _ -> () ]
          |> set
@@ -15003,7 +15088,11 @@ module EstablishTypeDefinitionCores =
 
     // Third phase: check and publish the supr types. Run twice, once before constraints are established
     // and once after
+<<<<<<< HEAD
     let private TcTyconDefnCore_Phase1D_Phase1F_EstablishSuperTypesAndInterfaceTypes cenv tpenv inSig pass (envMutRec, mutRecDefns:MutRecShape<(_ * (Tycon * (Attribs * _)) option), _, _, _, _> list) = 
+=======
+    let private TcTyconDefnCore_Phase1D_Phase1F_EstablishSuperTypesAndInterfaceTypes cenv tpenv inSig pass (envMutRec, mutRecDefns:MutRecShape<(_ * (Tycon * (Attribs * _)) option), _, _, _, _, _> list) =
+>>>>>>> 443717d... Add Providers to core datatypes, add parsing of providers
         let checkCxs = if (pass = SecondPass) then CheckCxs else NoCheckCxs
         let firstPass = (pass = FirstPass)
 
@@ -15666,7 +15755,7 @@ module EstablishTypeDefinitionCores =
                | _ -> ())
 
 
-    let TcMutRecDefns_Phase1 mkLetInfo cenv envInitial parent typeNames inSig tpenv m scopem mutRecNSInfo (mutRecDefns:MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, SynComponentInfo, _, _>) =
+    let TcMutRecDefns_Phase1 mkLetInfo cenv envInitial parent typeNames inSig tpenv m scopem mutRecNSInfo (mutRecDefns:MutRecShapes<MutRecDefnsPhase1DataForTycon * 'MemberInfo, 'LetInfo, _, SynComponentInfo, _, _>) =
 
         // Phase1A - build Entity for type definitions, exception definitions and module definitions.
         // Also for abbreviations of any of these.  Augmentations are skipped in this phase.
@@ -15693,6 +15782,8 @@ module EstablishTypeDefinitionCores =
                     let containerInfo = ModuleOrNamespaceContainerInfo(match innerParent with Parent p -> p | _ -> failwith "unreachable")
                     mkLetInfo containerInfo synBinds)
 
+                 (fun _ _ -> ()) // FS-1023 TODO
+
         // Phase1AB - Publish modules
         let envTmp, withEnvs =  
             (envInitial, withEntities) ||> MutRecShapes.computeEnvs 
@@ -15717,6 +15808,7 @@ module EstablishTypeDefinitionCores =
 
         // Phase1AB - Compute the active environments within each nested module.
         //
+<<<<<<< HEAD
         // Add the types to the environment. This does not add the fields and union cases (because we haven't established them yet). 
         // We re-add them to the original environment later on. We don't report them to the Language Service yet as we don't know if 
         // they are well-formed (e.g. free of abbreviation cycles) 
@@ -15729,6 +15821,20 @@ module EstablishTypeDefinitionCores =
             (envMutRecPrelim, withEnvs) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (origInfo, tyconOpt) -> 
                 let res = 
                     match origInfo, tyconOpt with 
+=======
+        // Add the types to the environment. This does not add the fields and union cases (because we haven't established them yet).
+        // We re-add them to the original environment later on. We don't report them to the Language Service yet as we don't know if
+        // they are well-formed (e.g. free of abbreviation cycles)
+        let envMutRecPrelim, withEnvs =  (envInitial, withEntities) ||> MutRecBindingChecking.TcMutRecDefns_ComputeEnvs snd (fun _ -> []) (fun _provs -> []) (* FS-1023 TODO *) cenv false scopem m
+
+        // Phase 1B. Establish the kind of each type constructor
+        // Here we run InferTyconKind and record partial information about the kind of the type constructor.
+        // This means TyconObjModelKind is set, which means isSealedTy, isInterfaceTy etc. give accurate results.
+        let withAttrs =
+            (envMutRecPrelim, withEnvs) ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (origInfo, tyconOpt) ->
+                let res =
+                    match origInfo, tyconOpt with
+>>>>>>> 443717d... Add Providers to core datatypes, add parsing of providers
                     | (typeDefCore, _, _), Some tycon -> Some (tycon, TcTyconDefnCore_Phase1B_EstablishBasicKind cenv inSig envForDecls typeDefCore tycon)
                     | _ -> None
                 origInfo, res)
@@ -16135,6 +16241,7 @@ module TcDeclarations =
             let core = MutRecDefnsPhase1DataForTycon(synTyconInfo, SynTypeDefnSimpleRepr.Exception r, implements1, false, false, isAtOriginalTyconDefn)
             core, extraMembers
 
+
     //-------------------------------------------------------------------------
 
     /// Bind a collection of mutually recursive definitions in an implementation file
@@ -16171,12 +16278,22 @@ module TcDeclarations =
         //
         // Note: This environment reconstruction doesn't seem necessary. We're about to create Val's for all members, 
         // which does require type checking, but no more information than is already available.
+<<<<<<< HEAD
         let envMutRecPrelimWithReprs, withEnvs =  
             (envInitial, MutRecShapes.dropEnvs mutRecDefnsAfterPrep) 
                 ||> MutRecBindingChecking.TcMutRecDefns_ComputeEnvs 
                        (fun (MutRecDefnsPhase2DataForTycon(tyconOpt, _, _, _, _, _, _, _, _, _, _)) -> tyconOpt)  
                        (fun _binds ->  [  (* no values are available yet *) ]) 
                        cenv true scopem m 
+=======
+        let envMutRecPrelimWithReprs, withEnvs =
+            (envInitial, MutRecShapes.dropEnvs mutRecDefnsAfterPrep)
+                ||> MutRecBindingChecking.TcMutRecDefns_ComputeEnvs
+                       (fun (MutRecDefnsPhase2DataForTycon(tyconOpt, _, _, _, _, _, _, _, _, _, _)) -> tyconOpt)
+                       (fun _binds ->  [  (* no values are available yet *) ])
+                       (fun _ -> []) // FS-1023 TODO
+                       cenv true scopem m
+>>>>>>> 443717d... Add Providers to core datatypes, add parsing of providers
 
         // Check the members and decide on representations for types with implicit constructors.
         let withBindings, envFinal = TcMutRecDefns_Phase2 cenv envInitial m scopem mutRecNSInfo  envMutRecPrelimWithReprs withEnvs
@@ -16304,12 +16421,22 @@ module TcDeclarations =
         //
         // Note: This environment reconstruction doesn't seem necessary. We're about to create Val's for all members, 
         // which does require type checking, but no more information than is already available.
+<<<<<<< HEAD
         let envMutRecPrelimWithReprs, withEnvs =  
             (envInitial, MutRecShapes.dropEnvs mutRecDefnsAfterCore) 
                 ||> MutRecBindingChecking.TcMutRecDefns_ComputeEnvs 
                        (fun (_, tyconOpt, _, _) -> tyconOpt)  
                        (fun _binds ->  [  (* no values are available yet *) ]) 
                        cenv true scopem m 
+=======
+        let envMutRecPrelimWithReprs, withEnvs =
+            (envInitial, MutRecShapes.dropEnvs mutRecDefnsAfterCore)
+                ||> MutRecBindingChecking.TcMutRecDefns_ComputeEnvs
+                       (fun (_, tyconOpt, _, _) -> tyconOpt)
+                       (fun _binds ->  [  (* no values are available yet *) ])
+                       (fun _provs -> []) // FS-1023 TODO
+                       cenv true scopem m
+>>>>>>> 443717d... Add Providers to core datatypes, add parsing of providers
 
         let _ = TcMutRecSignatureDecls_Phase2 cenv scopem envMutRecPrelimWithReprs withEnvs
         envMutRec
@@ -16564,7 +16691,11 @@ let ElimModuleDoBinding bind =
         SynModuleDecl.Let(false, [bind2], m)
     | _ -> bind
 
+<<<<<<< HEAD
 let TcMutRecDefnsEscapeCheck (binds: MutRecShapes<_, _, _, _, _>) env = 
+=======
+let TcMutRecDefnsEscapeCheck (binds: MutRecShapes<_, _, _, _, _, _>) env =
+>>>>>>> 443717d... Add Providers to core datatypes, add parsing of providers
     let freeInEnv = GeneralizationHelpers.ComputeUnabstractableTycons env
     let checkTycon (tycon: Tycon) = 
         if not tycon.IsTypeAbbrev && Zset.contains tycon freeInEnv then 
@@ -16655,7 +16786,12 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv:cenv) parent typeNames scopem 
           let attrs, _ = TcAttributesWithPossibleTargets false cenv env AttributeTargets.Top synAttrs
           return ((fun e -> e), attrs), env, env
 
+<<<<<<< HEAD
       | SynModuleDecl.HashDirective _ -> 
+=======
+      | SynModuleDecl.Provider(_x,_) -> return failwith "" // FS-1023 TODO
+      | SynModuleDecl.HashDirective _ ->
+>>>>>>> 443717d... Add Providers to core datatypes, add parsing of providers
           return ((fun e -> e), []), env, env
 
       | SynModuleDecl.NestedModule(compInfo, isRec, mdefs, isContinuingModule, m) ->
@@ -16838,7 +16974,14 @@ and TcModuleOrNamespaceElementsMutRec cenv parent typeNames endm envInitial mutR
                   let decls = [ MutRecShape.Tycon(SynTypeDefn.TypeDefn(compInfo, SynTypeDefnRepr.Exception repr, members, m)) ]
                   decls, (false, false, attrs)
 
+<<<<<<< HEAD
               | SynModuleDecl.HashDirective _ -> 
+=======
+              | SynModuleDecl.Provider (SynProviderDefn.ProviderDefn(_repr, _, _), _m) ->
+                  failwith "" // FS-1023 TODO: Figure out what to put here
+
+              | SynModuleDecl.HashDirective _ ->
+>>>>>>> 443717d... Add Providers to core datatypes, add parsing of providers
                   [ ], (openOk, moduleAbbrevOk, attrs)
 
               | SynModuleDecl.Attributes (synAttrs, _) -> 
@@ -16877,10 +17020,18 @@ and TcMutRecDefsFinish cenv defs m =
         defs |> List.collect (function 
             | MutRecShape.Open _ -> []
             | MutRecShape.ModuleAbbrev _ -> []
+<<<<<<< HEAD
             | MutRecShape.Tycon (_, binds) 
             | MutRecShape.Lets binds -> 
                 binds |> List.map ModuleOrNamespaceBinding.Binding 
             | MutRecShape.Module ((MutRecDefnsPhase2DataForModule(mtypeAcc, mspec), _), mdefs) -> 
+=======
+            | MutRecShape.Provider _x -> failwith "" // FS-1023 TODO
+            | MutRecShape.Tycon (_, binds)
+            | MutRecShape.Lets binds ->
+                binds |> List.map ModuleOrNamespaceBinding.Binding
+            | MutRecShape.Module ((MutRecDefnsPhase2DataForModule(mtypeAcc, mspec), _), mdefs) ->
+>>>>>>> 443717d... Add Providers to core datatypes, add parsing of providers
                 let mexpr = TcMutRecDefsFinish cenv mdefs m
                 mspec.entity_modul_contents <- MaybeLazy.Strict !mtypeAcc  
                 [ ModuleOrNamespaceBinding.Module(mspec, mexpr) ])

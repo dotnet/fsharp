@@ -194,7 +194,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %token AND AS ASSERT OASSERT ASR BEGIN DO DONE DOWNTO ELSE ELIF END DOT_DOT
 %token EXCEPTION FALSE FOR FUN FUNCTION IF IN JOIN_IN FINALLY DO_BANG 
 %token LAZY OLAZY  MATCH MUTABLE NEW OF 
-%token OPEN OR REC THEN TO TRUE TRY TYPE VAL INLINE INTERFACE INSTANCE CONST
+%token OPEN OR REC PROVIDER THEN TO TRUE TRY TYPE VAL INLINE INTERFACE INSTANCE CONST
 %token WHEN WHILE WITH HASH AMP AMP_AMP QUOTE LPAREN RPAREN RPAREN_COMING_SOON RPAREN_IS_HERE STAR COMMA RARROW GREATER_BAR_RBRACK LPAREN_STAR_RPAREN
 %token QMARK QMARK_QMARK DOT COLON COLON_COLON COLON_GREATER  COLON_QMARK_GREATER COLON_QMARK COLON_EQUALS SEMICOLON 
 %token SEMICOLON_SEMICOLON LARROW EQUALS  LBRACK  LBRACK_BAR  LBRACK_LESS LBRACE
@@ -1230,6 +1230,15 @@ moduleDefn:
         let f = (f, $1) ||> unionRangeWithListBy (fun a -> a.Range)
         let ec = (SynExceptionDefn(SynExceptionDefnRepr($1@cas,a,b,c,d,d2),e,f)) 
         [ SynModuleDecl.Exception(ec, f) ] }
+
+  /* 'provider' definitions */
+  | opt_attributes opt_declVisibility PROVIDER typeNameInfo EQUALS typ
+     { let r = $4.Range
+       let provRepr = ProviderDefnRepr($2, $6, r)
+       let (ComponentInfo(cas,a,cs,b,c,d,d2,d3)) = $4
+       let compInfo = ComponentInfo($1@cas,a,cs,b,c,d,d2,d3)
+       let prov = ProviderDefn(compInfo, provRepr, r)
+       [ SynModuleDecl.Provider(prov, r) ] }
 
   /* 'module' definitions */
   | opt_attributes opt_declVisibility moduleIntro EQUALS  namedModuleDefnBlock

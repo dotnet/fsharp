@@ -5,6 +5,7 @@ open System
 open System.Text
 open NUnit.Framework
 open Microsoft.FSharp.Compiler
+open PrettyNaming
 
 [<TestFixture>]
 type ManglingNamesOfProvidedTypesWithSingleParameter() = 
@@ -12,13 +13,13 @@ type ManglingNamesOfProvidedTypesWithSingleParameter() =
     [<Test>]
     member this.MangleWithNonDefaultValue() = 
         let mangled = 
-            PrettyNaming.computeMangledNameWithoutDefaultArgValues("MyNamespace.Test", [| "xyz" |], [| "Foo", Some "abc" |])
+            PrettyNaming.computeMangledNameWithoutDefaultArgValues("MyNamespace.Test", [| StaticArg "xyz" |], [| "Foo", Some "abc" |])
         Assert.AreEqual("MyNamespace.Test,Foo=\"xyz\"", mangled)
     
     [<Test>]
     member this.MangleWithDefaultValue() = 
         let mangled = 
-            PrettyNaming.computeMangledNameWithoutDefaultArgValues("MyNamespace.Test", [| "xyz" |], [| "Foo", Some "xyz" |])
+            PrettyNaming.computeMangledNameWithoutDefaultArgValues("MyNamespace.Test", [| StaticArg "xyz" |], [| "Foo", Some "xyz" |])
         Assert.AreEqual("MyNamespace.Test", mangled)
     
     [<Test>]
@@ -46,7 +47,7 @@ type ManglingNamesOfProvidedTypesWithMultipleParameter() =
     member this.MangleWithNonDefaultValue() = 
         let mangled = 
             PrettyNaming.computeMangledNameWithoutDefaultArgValues 
-                ("MyNamespace.Test", [| "xyz"; "abc" |], 
+                ("MyNamespace.Test", [| StaticArg "xyz"; StaticArg "abc" |], 
                     [| "Foo", Some "foo"
                        "Foo2", Some "foo2" |])
         Assert.AreEqual("MyNamespace.Test,Foo=\"xyz\",Foo2=\"abc\"", mangled)
@@ -55,7 +56,7 @@ type ManglingNamesOfProvidedTypesWithMultipleParameter() =
     member this.MangleWithDefaultValue() = 
         let mangled = 
             PrettyNaming.computeMangledNameWithoutDefaultArgValues 
-                ("MyNamespace.Test", [| "xyz"; "abc" |], 
+                ("MyNamespace.Test", [| StaticArg "xyz"; StaticArg "abc" |], 
                     [| "Foo", Some "xyz"
                        "Foo2", Some "abc" |])
         Assert.AreEqual("MyNamespace.Test", mangled)

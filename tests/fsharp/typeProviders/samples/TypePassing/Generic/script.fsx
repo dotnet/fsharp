@@ -7,7 +7,9 @@ open Test
 
 //type M = Generic.IdentityMethod
 
-type MyNewProvider<'a> = Generic.IdentityType<Generic.IdentityType<'a>>
+type T = Generic.IdentityType<int>
+
+provider sdas MyNewProvider<'a> = Generic.IdentityType<Generic.IdentityType<'a>>
 
 //let myIdentity (x : 'a) =
 //  M.Create<'a option> (Some x)
