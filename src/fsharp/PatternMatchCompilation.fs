@@ -281,8 +281,7 @@ let rec CombineRefutations g r1 r2 =
     | Expr.Op((TOp.ExnConstr(ecref1) as op1), tinst1,flds1,m1), Expr.Op(TOp.ExnConstr(ecref2), _,flds2,_) when tyconRefEq g ecref1 ecref2 -> 
         Expr.Op(op1, tinst1,List.map2 (CombineRefutations g) flds1 flds2,m1)
 
-    | Expr.Op((TOp.UnionCase(ucref1) as op1), tinst1,flds1,m1),
-        Expr.Op(TOp.UnionCase(ucref2), _,flds2,_)  ->
+    | Expr.Op((TOp.UnionCase(ucref1) as op1), tinst1,flds1,m1), Expr.Op(TOp.UnionCase(ucref2), _,flds2,_) ->
         if g.unionCaseRefEq ucref1 ucref2 then
             Expr.Op(op1, tinst1,List.map2 (CombineRefutations g) flds1 flds2,m1)
         (* Choose the greater of the two ucrefs based on name ordering *)
