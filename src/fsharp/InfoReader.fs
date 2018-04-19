@@ -102,17 +102,16 @@ type PropertyCollector(g, amap, m, typ, optFilter, ad) =
     let props = new Dictionary<PropInfo,PropInfo>(hashIdentity)
 
     let add pinfo =
-        if props.ContainsKey(pinfo) then 
-            match props.[pinfo], pinfo with 
-            | FSProp (_,typ,Some vref1,_), FSProp (_,_,_,Some vref2)
-            | FSProp (_,typ,_,Some vref2), FSProp (_,_,Some vref1,_)  -> 
-                let pinfo = FSProp (g,typ,Some vref1,Some vref2)
-                props.[pinfo] <- pinfo 
-            | _ -> 
-                // This assert fires while editing bad code. We will give a warning later in check.fs
-                //assert ("unexpected case"= "")
-                ()
-        else
+        match props.TryGetValue(pinfo), pinfo with
+        | (true, FSProp (_, typ, Some vref1 ,_)), FSProp (_, _, _, Some vref2)
+        | (true, FSProp (_, typ, _, Some vref2)), FSProp (_, _, Some vref1, _) ->
+            let pinfo = FSProp (g,typ,Some vref1,Some vref2)
+            props.[pinfo] <- pinfo 
+        | (true, _), _ -> 
+            // This assert fires while editing bad code. We will give a warning later in check.fs
+            //assert ("unexpected case"= "")
+            ()
+        | _ ->
             props.[pinfo] <- pinfo
 
     member x.Collect(membInfo:ValMemberInfo,vref:ValRef) = 
