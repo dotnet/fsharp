@@ -11,6 +11,7 @@ module Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
 
 open System
 open System.Collections.Generic
+open System.Collections.Immutable
 open System.Diagnostics
 open System.IO
 open System.Runtime.InteropServices
@@ -55,7 +56,6 @@ let i32ToUncodedToken tok  =
     let tab = tok >>>& 24
     (TableName.FromIndex tab, idx)
 
-
 [<Struct>]
 type TaggedIndex<'T> = 
     val tag: 'T
@@ -78,7 +78,7 @@ let uncodedTokenToMethodDefOrRef (tab, tok) =
     TaggedIndex(tag, tok)
 
 let (|TaggedIndex|) (x:TaggedIndex<'T>) = x.tag, x.index    
-let tokToTaggedIdx f nbits tok = 
+let inline tokToTaggedIdx f nbits tok = 
     let tagmask = 
         if nbits = 1 then 1 
         elif nbits = 2 then 3 
@@ -1017,6 +1017,80 @@ let seekReadIndexedRows (numRows, rowReader, keyFunc, keyComparer, binaryChop, r
               res := rowConverter rowinfo :: !res
         List.rev !res  
 
+type ISeekReadIndexedRowReader<'RowT, 'KeyT, 'T when 'RowT : struct> =
+
+    abstract GetRow : int * byref<'RowT> -> unit
+
+    abstract GetKey : byref<'RowT> -> 'KeyT
+
+    abstract CompareKey : 'KeyT -> int
+
+    abstract ConvertRow : byref<'RowT> -> 'T
+
+let seekReadIndexedRowsByInterface numRows binaryChop (reader: ISeekReadIndexedRowReader<'RowT, _, _>) =
+    let mutable row = Unchecked.defaultof<'RowT>
+    if binaryChop then
+        let mutable low = 0
+        let mutable high = numRows + 1
+
+        let mutable fin = false
+        while not fin do 
+            if high - low <= 1  then 
+                fin <- true 
+            else 
+                let mid = (low + high) / 2
+                reader.GetRow(mid, &row)
+                let c = reader.CompareKey(reader.GetKey(&row))
+                if c > 0 then 
+                    low <- mid
+                elif c < 0 then 
+                    high <- mid 
+                else 
+                    fin <- true
+
+        let res = ImmutableArray.CreateBuilder()
+        if high - low > 1 then 
+            // now read off rows, forward and backwards 
+            let mid = (low + high) / 2
+
+            // read backwards 
+            let mutable fin = false
+            let mutable curr = mid - 1
+            while not fin do 
+                if curr = 0 then 
+                    fin <- true
+                else  
+                    reader.GetRow(curr, &row)
+                    if reader.CompareKey(reader.GetKey(&row)) = 0 then
+                        res.Add(reader.ConvertRow(&row))
+                    else 
+                        fin <- true
+                curr <- curr - 1
+
+            res.Reverse()
+
+            // read forward 
+            let mutable fin = false
+            let mutable curr = mid
+            while not fin do 
+                if curr > numRows then 
+                    fin <- true
+                else 
+                    reader.GetRow(curr, &row)
+                    if reader.CompareKey(reader.GetKey(&row)) = 0 then
+                        res.Add(reader.ConvertRow(&row))
+                    else 
+                        fin <- true
+                    curr <- curr + 1
+
+        res.ToArray()
+    else 
+        let res = ImmutableArray.CreateBuilder()
+        for i = 1 to numRows do
+            reader.GetRow(i, &row)
+            if reader.CompareKey(reader.GetKey(&row)) = 0 then 
+              res.Add(reader.ConvertRow(&row))
+        res.ToArray()
 
 let seekReadOptionalIndexedRow info =
     match seekReadIndexedRows info with 
@@ -1150,7 +1224,7 @@ let seekReadUInt16AsInt32Adv mdv (addr: byref<int>) =
     addr <- addr+2
     res
 
-let seekReadTaggedIdx f nbits big mdv (addr: byref<int>) =  
+let inline seekReadTaggedIdx f nbits big mdv (addr: byref<int>) =  
     let tok = if big then seekReadInt32Adv mdv &addr else seekReadUInt16AsInt32Adv mdv &addr 
     tokToTaggedIdx f nbits tok
 
@@ -1264,14 +1338,18 @@ let seekReadConstantRowUncached ctxtH idx =
     let valIdx = seekReadBlobIdx ctxt mdv &addr
     (kind, parentIdx, valIdx)
 
+[<Struct>]
+type CustomAttributeRow =
+    val mutable parentIndex : TaggedIndex<HasCustomAttributeTag>
+    val mutable typeIndex : TaggedIndex<CustomAttributeTypeTag>
+    val mutable valueIndex : int
+
 /// Read Table CustomAttribute.
-let seekReadCustomAttributeRow (ctxt: ILMetadataReader)  idx =
-    let mdv = ctxt.mdfile.GetView()
+let seekReadCustomAttributeRow (ctxt: ILMetadataReader) mdv idx (attrRow: byref<CustomAttributeRow>) =
     let mutable addr = ctxt.rowAddr TableNames.CustomAttribute idx
-    let parentIdx = seekReadHasCustomAttributeIdx ctxt mdv &addr
-    let typeIdx = seekReadCustomAttributeTypeIdx ctxt mdv &addr
-    let valIdx = seekReadBlobIdx ctxt mdv &addr
-    (parentIdx, typeIdx, valIdx)  
+    attrRow.parentIndex <- seekReadHasCustomAttributeIdx ctxt mdv &addr
+    attrRow.typeIndex <- seekReadCustomAttributeTypeIdx ctxt mdv &addr
+    attrRow.valueIndex <- seekReadBlobIdx ctxt mdv &addr
 
 /// Read Table FieldMarshal.
 let seekReadFieldMarshalRow (ctxt: ILMetadataReader)  mdv idx = 
@@ -2529,17 +2607,24 @@ and seekReadProperties (ctxt: ILMetadataReader)  numtypars tidx =
                [ for i in beginPropIdx .. endPropIdx - 1 do
                    yield seekReadProperty ctxt mdv numtypars i ])
 
-
 and customAttrsReader ctxtH tag : ILAttributesStored = 
     mkILCustomAttrsReader
       (fun idx -> 
-          let (ctxt: ILMetadataReader) = getHole ctxtH
-          seekReadIndexedRows (ctxt.getNumRows TableNames.CustomAttribute, 
-                                  seekReadCustomAttributeRow ctxt, (fun (a, _, _) -> a), 
-                                  hcaCompare (TaggedIndex(tag,idx)), 
-                                  isSorted ctxt TableNames.CustomAttribute, 
-                                  (fun (_, b, c) -> seekReadCustomAttr ctxt (b, c)))
-          |> List.toArray)
+          let ctxt : ILMetadataReader = getHole ctxtH
+          let mdv = ctxt.mdfile.GetView()
+          let reader =
+            { new ISeekReadIndexedRowReader<CustomAttributeRow, TaggedIndex<HasCustomAttributeTag>, ILAttribute> with
+
+                member __.GetRow(i, row) = seekReadCustomAttributeRow ctxt mdv i &row
+
+                member __.GetKey(attrRow) = attrRow.parentIndex
+
+                member __.CompareKey(key) = hcaCompare (TaggedIndex(tag, idx)) key
+
+                member __.ConvertRow(attrRow) = seekReadCustomAttr ctxt (attrRow.typeIndex, attrRow.valueIndex) }
+
+          seekReadIndexedRowsByInterface (ctxt.getNumRows TableNames.CustomAttribute) (isSorted ctxt TableNames.CustomAttribute) reader
+      )
 
 and seekReadCustomAttr ctxt (TaggedIndex(cat, idx), b) = 
     ctxt.seekReadCustomAttr (CustomAttrIdx (cat, idx, b))
