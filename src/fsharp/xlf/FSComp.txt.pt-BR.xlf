@@ -5438,7 +5438,7 @@
         <note />
       </trans-unit>
       <trans-unit id="fscBadAssemblyVersion">
-        <source>An {0} specified version '{1}', but this value is invalid and has been ignored</source>
+        <source>The attribute {0} specified version '{1}', but this value is invalid and has been ignored</source>
         <target state="translated">Um {0} especificou a versão '{1}', mas esse valor é inválido e foi ignorado</target>
         <note />
       </trans-unit>

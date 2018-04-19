@@ -5438,7 +5438,7 @@
         <note />
       </trans-unit>
       <trans-unit id="fscBadAssemblyVersion">
-        <source>An {0} specified version '{1}', but this value is invalid and has been ignored</source>
+        <source>The attribute {0} specified version '{1}', but this value is invalid and has been ignored</source>
         <target state="translated">AssemblyVersionAttribute에 {0} 버전 '{1}'이(가) 지정되었지만 이 값이 잘못되어 무시되었습니다.</target>
         <note />
       </trans-unit>

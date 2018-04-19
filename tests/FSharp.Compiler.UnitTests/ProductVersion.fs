@@ -22,28 +22,17 @@ module FileVersionTest =
     [<Test>]
     let ``should use AssemblyFileVersionAttribute if set`` () =
         let findStringAttr n = n |> Assert.areEqual fileVersionAttrName; Some "1.2.3.4"
-        let warn = Assert.failf "no warning expected but was '%A'"
-        fileVersion warn findStringAttr (1us,0us,0us,0us) |> Assert.areEqual (1us,2us,3us,4us) 
+        fileVersion findStringAttr (1us,0us,0us,0us) |> Assert.areEqual (1us,2us,3us,4us)
 
     [<Test>] 
-    let ``should raise warning FS2003 if AssemblyFileVersionAttribute is not a valid version`` () = 
-        let mutable exns = []
-        let warn e = exns <- List.append exns [e]
-
-        fileVersion warn (fun _ -> Some "1.2a.3.3") (3us,7us,8us,6us) 
+    let ``should fallback if AssemblyFileVersionAttribute is not a valid version`` () =
+        fileVersion (fun _ -> Some "1.2a.3.3") (3us,7us,8us,6us)
         |> Assert.areEqual (3us,7us,8us,6us)
-
-        match exns with
-        | [ Warning(2003, description) ] as a ->
-            description |> StringAssert.contains "1.2a.3.3"
-            description |> StringAssert.contains fileVersionAttrName
-        | ex -> Assert.failf "expecting warning 2003 but was %A" ex
 
     [<Test>] 
     let ``should fallback to assemblyVersion if AssemblyFileVersionAttribute not set`` () = 
         let findStringAttr n = n |> Assert.areEqual fileVersionAttrName; None;
-        let warn = Assert.failf "no warning expected but was '%A'"
-        fileVersion warn findStringAttr (1us,0us,0us,4us) |> Assert.areEqual (1us,0us,0us,4us)
+        fileVersion findStringAttr (1us,0us,0us,4us) |> Assert.areEqual (1us,0us,0us,4us)
 
 module ProductVersionTest =
 
@@ -54,28 +43,18 @@ module ProductVersionTest =
     let ``should use AssemblyInformationalVersionAttribute if set`` () = 
         let mutable args = []
         let findStrAttr x = args <- List.append args [x]; Some "12.34.56.78"
-        productVersion ignore findStrAttr (1us,0us,0us,6us) |> Assert.areEqual "12.34.56.78"
+        productVersion findStrAttr (1us,0us,0us,6us) |> Assert.areEqual "12.34.56.78"
         args |> Assert.areEqual [ informationalVersionAttrName ]
 
     [<Test>] 
-    let ``should raise warning FS2003 if AssemblyInformationalVersionAttribute is not a valid version`` () = 
-        let mutable exns = []
-        let warn e = exns <- List.append exns [e]
-
-        productVersion warn (fun _ -> Some "1.2.3-main (build #12)") (1us,0us,0us,6us) 
+    let ``should fallback if AssemblyInformationalVersionAttribute is not a valid version`` () =
+        productVersion (fun _ -> Some "1.2.3-main (build #12)") (1us,0us,0us,6us)
         |> Assert.areEqual "1.2.3-main (build #12)"
 
-        match exns with
-        | [ Warning(2003, description) ] as a ->
-            description |> StringAssert.contains "1.2.3-main (build #12)"
-            description |> StringAssert.contains informationalVersionAttrName
-        | ex -> Assert.failf "expecting warning 2003 but was %A" ex
-
     [<Test>] 
-    let ``should fallback to fileVersion if AssemblyInformationalVersionAttribute not set or empty`` () = 
-        let warn = Assert.failf "no warnings expected, but was '%A'"
-        productVersion warn (fun _ -> None) (3us,2us,1us,0us) |> Assert.areEqual "3.2.1.0" 
-        productVersion warn (fun _ -> Some "") (3us,2us,1us,0us) |> Assert.areEqual "3.2.1.0" 
+    let ``should fallback to fileVersion if AssemblyInformationalVersionAttribute not set or empty`` () =
+        productVersion (fun _ -> None) (3us,2us,1us,0us) |> Assert.areEqual "3.2.1.0"
+        productVersion (fun _ -> Some "") (3us,2us,1us,0us) |> Assert.areEqual "3.2.1.0"
 
     let validValues () =
         let max = System.UInt16.MaxValue
