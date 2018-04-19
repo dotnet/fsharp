@@ -1482,7 +1482,7 @@ let emitParameter cenv emEnv (defineParameter : int * ParameterAttributes * stri
 // buildMethodPass2
 //----------------------------------------------------------------------------
   
-let rec buildMethodPass2 cenv tref (typB:TypeBuilder) emEnv (mdef : ILMethodDef) =
+let rec buildMethodPass2 cenv tref (typB:TypeBuilder) emEnv (mdef : IMethodDef) =
     let attrs = mdef.Attributes
     let implflags = mdef.ImplAttributes
     let cconv = convCallConv mdef.CallingConv
@@ -1549,7 +1549,7 @@ let rec buildMethodPass2 cenv tref (typB:TypeBuilder) emEnv (mdef : ILMethodDef)
 // buildMethodPass3 cenv
 //----------------------------------------------------------------------------
     
-let rec buildMethodPass3 cenv tref modB (typB:TypeBuilder) emEnv (mdef : ILMethodDef) =
+let rec buildMethodPass3 cenv tref modB (typB:TypeBuilder) emEnv (mdef : IMethodDef) =
     let mref  = mkRefToILMethod (tref, mdef)
     let isPInvoke = 
         match mdef.Body.Contents with

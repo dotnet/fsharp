@@ -40,7 +40,7 @@ let IsNonErasedTypar (tp:Typar) = not tp.IsErased
 let DropErasedTypars (tps:Typar list) = tps |> List.filter IsNonErasedTypar
 let DropErasedTyargs tys = tys |> List.filter (fun ty -> match ty with TType_measure _ -> false | _ -> true)
 
-let AddNonUserCompilerGeneratedAttribs (g: TcGlobals) (mdef:ILMethodDef) = g.AddMethodGeneratedAttributes  mdef
+let AddNonUserCompilerGeneratedAttribs (g: TcGlobals) (mdef:IMethodDef) = g.AddMethodGeneratedAttributes  mdef
 
 let debugDisplayMethodName = "__DebugDisplay"
 
@@ -1072,7 +1072,7 @@ let MergePropertyDefs m ilPropertyDefs =
 
 /// Information collected imperatively for each type definition 
 type TypeDefBuilder(tdef: ITypeDef, tdefDiscards) = 
-    let gmethods   = new ResizeArray<ILMethodDef>(0)
+    let gmethods   = new ResizeArray<IMethodDef>(0)
     let gfields    = new ResizeArray<ILFieldDef>(0)
     let gproperties : Dictionary<PropKey,(int * ILPropertyDef)> = new Dictionary<_,_>(3,HashIdentity.Structural)
     let gevents    = new ResizeArray<ILEventDef>(0)
@@ -1185,7 +1185,7 @@ type AssemblyBuilder(cenv:cenv) as mgbuf =
         match explicitEntryPointInfo with
         | Some tref ->
             let IntializeCompiledScript(fspec,m) =
-                mgbuf.AddExplicitInitToSpecificMethodDef((fun (md:ILMethodDef) -> md.IsEntryPoint), tref, fspec, GenPossibleILSourceMarker cenv m, [], [])              
+                mgbuf.AddExplicitInitToSpecificMethodDef((fun (md:IMethodDef) -> md.IsEntryPoint), tref, fspec, GenPossibleILSourceMarker cenv m, [], [])              
             scriptInitFspecs |> List.iter IntializeCompiledScript
         | None -> ()
 
@@ -3521,13 +3521,13 @@ and bindBaseOrThisVarOpt cenv eenv baseValOpt =
     | None -> eenv
     | Some basev -> AddStorageForVal cenv.g (basev,notlazy (Arg 0))  eenv  
 
-and fixupVirtualSlotFlags (mdef:ILMethodDef) = 
+and fixupVirtualSlotFlags (mdef:IMethodDef) = 
     mdef.WithHideBySig()
 
-and renameMethodDef nameOfOverridingMethod (mdef : ILMethodDef) = 
+and renameMethodDef nameOfOverridingMethod (mdef : IMethodDef) = 
     mdef.With(name=nameOfOverridingMethod)
 
-and fixupMethodImplFlags (mdef:ILMethodDef) = 
+and fixupMethodImplFlags (mdef:IMethodDef) = 
     mdef.WithAccess(ILMemberAccess.Private).WithHideBySig().WithFinal(true).WithNewSlot
 
 and GenObjectMethod cenv eenvinner (cgbuf:CodeGenBuffer) useMethodImpl tmethod =
@@ -5210,7 +5210,7 @@ and GenMethodForBinding
     let methName = mspec.Name
     let tref = mspec.MethodRef.DeclaringTypeRef
 
-    let EmitTheMethodDef (mdef:ILMethodDef) = 
+    let EmitTheMethodDef (mdef:IMethodDef) = 
         // Does the function have an explicit [<EntryPoint>] attribute? 
         let isExplicitEntryPoint = HasFSharpAttribute cenv.g cenv.g.attrib_EntryPointAttribute attrs
 
@@ -6705,7 +6705,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                // 
                // Also discard the F#-compiler supplied implementation of the Empty, IsEmpty, Value and None properties.
                let tdefDiscards = 
-                  Some ((fun (md: ILMethodDef) ->
+                  Some ((fun (md: IMethodDef) ->
                             (cuinfo.cudHasHelpers = SpecialFSharpListHelpers && (md.Name = "get_Empty" || md.Name = "Cons" || md.Name = "get_IsEmpty")) ||
                             (cuinfo.cudHasHelpers = SpecialFSharpOptionHelpers && (md.Name = "get_Value" || md.Name = "get_None" || md.Name = "Some"))),
     

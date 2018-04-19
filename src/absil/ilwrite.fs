@@ -579,7 +579,7 @@ type cenv =
       AssemblyRefs: MetadataTable<SharedRow>
       fieldDefs: MetadataTable<FieldDefKey>
       methodDefIdxsByKey:  MetadataTable<MethodDefKey>
-      methodDefIdxs:  Dictionary<ILMethodDef, int>
+      methodDefIdxs:  Dictionary<IMethodDef, int>
       propertyDefs: MetadataTable<PropertyTableKey>
       eventDefs: MetadataTable<EventTableKey>
       typeDefs: MetadataTable<TypeDefTableKey> 
@@ -638,7 +638,7 @@ let peOptionalHeaderByteByCLRVersion v =
 type ILTokenMappings =  
     { TypeDefTokenMap: ITypeDef list * ITypeDef -> int32
       FieldDefTokenMap: ITypeDef list * ITypeDef -> ILFieldDef -> int32
-      MethodDefTokenMap: ITypeDef list * ITypeDef -> ILMethodDef -> int32
+      MethodDefTokenMap: ITypeDef list * ITypeDef -> IMethodDef -> int32
       PropertyTokenMap: ITypeDef list * ITypeDef -> ILPropertyDef -> int32
       EventTokenMap: ITypeDef list * ITypeDef -> ILEventDef -> int32 }
 
@@ -1125,7 +1125,7 @@ and GetKeyForFieldDef tidx (fd: ILFieldDef) =
 and GenFieldDefPass2 cenv tidx fd = 
     ignore (cenv.fieldDefs.AddUniqueEntry "field" (fun (fdkey:FieldDefKey) -> fdkey.Name) (GetKeyForFieldDef tidx fd))
 
-and GetKeyForMethodDef tidx (md: ILMethodDef) = 
+and GetKeyForMethodDef tidx (md: IMethodDef) = 
     MethodDefKey (tidx, md.GenericParams.Length, md.Name, md.Return.Type, md.ParameterTypes, md.CallingConv.IsStatic)
 
 and GenMethodDefPass2 cenv tidx md = 
@@ -2476,7 +2476,7 @@ let GenReturnPass3 cenv (returnv: ILReturn) =
 // ILMethodDef --> ILMethodDef Row
 // -------------------------------------------------------------------- 
 
-let GetMethodDefSigAsBytes cenv env (mdef: ILMethodDef) = 
+let GetMethodDefSigAsBytes cenv env (mdef: IMethodDef) = 
     emitBytesViaBuffer (fun bb -> 
       bb.EmitByte (callconvToByte mdef.GenericParams.Length mdef.CallingConv)
       if not (List.isEmpty mdef.GenericParams) then bb.EmitZ32 mdef.GenericParams.Length
@@ -2487,7 +2487,7 @@ let GetMethodDefSigAsBytes cenv env (mdef: ILMethodDef) =
 let GenMethodDefSigAsBlobIdx cenv env mdef = 
     GetBytesAsBlobIdx cenv (GetMethodDefSigAsBytes cenv env mdef)
 
-let GenMethodDefAsRow cenv env midx (md: ILMethodDef) = 
+let GenMethodDefAsRow cenv env midx (md: IMethodDef) = 
     let flags = md.Attributes
    
     let implflags = md.ImplAttributes
@@ -2558,7 +2558,7 @@ let GenMethodImplPass3 cenv env _tgparams tidx mimpl =
                 MethodDefOrRef (midxTag, midxRow)
                 MethodDefOrRef (midx2Tag, midx2Row) |]) |> ignore
     
-let GenMethodDefPass3 cenv env (md:ILMethodDef) = 
+let GenMethodDefPass3 cenv env (md:IMethodDef) = 
     let midx = GetMethodDefIdx cenv md
     let idx2 = AddUnsharedRow cenv TableNames.Method (GenMethodDefAsRow cenv env midx md)
     if midx <> idx2 then failwith "index of method def on pass 3 does not match index on pass 2"

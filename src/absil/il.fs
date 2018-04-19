@@ -1431,6 +1431,87 @@ let inline conditionalAdd condition flagToAdd source = if condition then source 
 
 let NoMetadataIdx = -1
 
+
+type IMethodDef =
+    abstract Name: string
+    abstract Attributes: MethodAttributes
+    abstract ImplAttributes: MethodImplAttributes
+    abstract CallingConv: ILCallingConv
+    abstract Parameters: ILParameters
+    abstract Return: ILReturn
+    abstract Body: ILLazyMethodBody
+    abstract SecurityDecls: ILSecurityDecls
+    abstract IsEntryPoint:bool
+    abstract GenericParams: ILGenericParameterDefs
+    abstract CustomAttrs: ILAttributes 
+    abstract ParameterTypes: ILTypes
+    abstract IsIL: bool
+    abstract Code: ILCode option
+    abstract Locals: ILLocals
+    
+    /// Indicates a .cctor method.
+    abstract IsClassInitializer: bool
+
+    /// Indicates a .ctor method.
+    abstract IsConstructor: bool
+
+    /// Indicates a static method.
+    abstract IsStatic: bool
+
+    /// Indicates this is an instance methods that is not virtual.
+    abstract IsNonVirtualInstance: bool
+
+    /// Indicates an instance methods that is virtual or abstract or implements an interface slot.  
+    abstract IsVirtual: bool
+    
+    abstract IsFinal: bool
+    abstract IsNewSlot: bool
+    abstract IsCheckAccessOnOverride: bool
+    abstract IsAbstract: bool
+    abstract MethodBody: ILMethodBody
+    abstract CallingSignature: ILCallingSignature
+    abstract Access: ILMemberAccess
+    abstract IsHideBySig: bool
+    abstract IsSpecialName: bool
+
+    /// The method is exported to unmanaged code using COM interop.
+    abstract IsUnmanagedExport: bool
+    abstract IsReqSecObj: bool
+
+    /// Some methods are marked "HasSecurity" even if there are no permissions attached, e.g. if they use SuppressUnmanagedCodeSecurityAttribute 
+    abstract HasSecurity: bool
+    abstract IsManaged: bool
+    abstract IsForwardRef: bool
+    abstract IsInternalCall: bool
+    abstract IsPreserveSig: bool
+    abstract IsSynchronized: bool
+    abstract IsNoInline: bool
+    abstract IsAggressiveInline: bool
+
+    /// SafeHandle finalizer must be run.
+    abstract IsMustRun: bool
+    
+    /// Functional update of the value
+    abstract With: ?name: string * ?attributes: MethodAttributes * ?implAttributes: MethodImplAttributes * ?callingConv: ILCallingConv * 
+                 ?parameters: ILParameters * ?ret: ILReturn * ?body: ILLazyMethodBody * ?securityDecls: ILSecurityDecls * ?isEntryPoint:bool * 
+                 ?genericParams: ILGenericParameterDefs * ?customAttrs: ILAttributes -> IMethodDef
+
+    abstract WithSpecialName: IMethodDef
+    abstract WithHideBySig: unit -> IMethodDef
+    abstract WithHideBySig: bool -> IMethodDef
+    abstract WithFinal: bool -> IMethodDef
+    abstract WithAbstract: bool -> IMethodDef
+    abstract WithAccess: ILMemberAccess -> IMethodDef
+    abstract WithNewSlot: IMethodDef
+    abstract WithSecurity: bool -> IMethodDef
+    abstract WithPInvoke: bool -> IMethodDef
+    abstract WithPreserveSig: bool -> IMethodDef
+    abstract WithSynchronized: bool -> IMethodDef
+    abstract WithNoInlining: bool -> IMethodDef
+    abstract WithAggressiveInlining: bool -> IMethodDef
+    abstract WithRuntime: bool -> IMethodDef
+
+
 [<NoComparison; NoEquality>]
 type ILMethodDef (name: string, attributes: MethodAttributes, implAttributes: MethodImplAttributes, callingConv: ILCallingConv, 
                   parameters: ILParameters, ret: ILReturn, body: ILLazyMethodBody, isEntryPoint:bool, genericParams: ILGenericParameterDefs, 
@@ -1439,104 +1520,131 @@ type ILMethodDef (name: string, attributes: MethodAttributes, implAttributes: Me
     new (name, attributes, implAttributes, callingConv, parameters, ret, body, isEntryPoint, genericParams, securityDecls, customAttrs) = 
        ILMethodDef(name, attributes, implAttributes, callingConv, parameters, ret, body, isEntryPoint, genericParams, 
                    storeILSecurityDecls securityDecls, storeILCustomAttrs customAttrs, NoMetadataIdx)
+
+    member __.ParameterTypes = typesOfILParams parameters
+    member __.Access = memberAccessOfFlags (int attributes)
+    member __.IsStatic = attributes &&& MethodAttributes.Static <> enum 0
+    member __.IsVirtual = attributes &&& MethodAttributes.Virtual <> enum 0
+    member __.CustomAttrs    = customAttrsStored.GetCustomAttrs metadataIndex
+    member __.SecurityDecls  = securityDeclsStored.GetSecurityDecls metadataIndex
+
+    member x.With(?newName: string, ?newAttributes: MethodAttributes, ?newImplAttributes: MethodImplAttributes,
+                  ?newCallingConv: ILCallingConv, ?newParameters: ILParameters, ?newRet: ILReturn, ?newBody: ILLazyMethodBody,
+                  ?newSecurityDecls: ILSecurityDecls, ?newIsEntryPoint:bool, ?newGenericParams: ILGenericParameterDefs,
+                  ?newCustomAttrs: ILAttributes) =
+
+        ILMethodDef
+            (name           = defaultArg newName name,
+             attributes     = defaultArg newAttributes attributes,
+             implAttributes = defaultArg newImplAttributes implAttributes,
+             callingConv    = defaultArg newCallingConv callingConv,
+             parameters     = defaultArg newParameters parameters,
+             ret            = defaultArg newRet ret,
+             body           = defaultArg newBody body,
+             securityDecls  = (match newSecurityDecls with None -> x.SecurityDecls | Some attrs -> attrs),
+             isEntryPoint   = defaultArg newIsEntryPoint isEntryPoint,
+             genericParams  = defaultArg newGenericParams genericParams,
+             customAttrs    = (match newCustomAttrs with None -> x.CustomAttrs | Some attrs -> attrs)) :> IMethodDef
+
+    interface IMethodDef with
+        // The captured data - remember the object will be as large as the data captured by these members
+        member __.Name = name
+        member __.Attributes = attributes
+        member __.ImplAttributes = implAttributes
+        member __.CallingConv = callingConv
+        member __.Parameters = parameters
+        member __.Return = ret
+        member __.Body = body
+        member __.IsEntryPoint = isEntryPoint
+        member __.GenericParams = genericParams
     
-    // The captured data - remember the object will be as large as the data captured by these members
-    member __.Name = name
-    member __.Attributes = attributes
-    member __.ImplAttributes = implAttributes
-    member __.CallingConv = callingConv
-    member __.Parameters = parameters
-    member __.Return = ret
-    member __.Body = body
-    member __.SecurityDeclsStored = securityDeclsStored
-    member __.IsEntryPoint = isEntryPoint
-    member __.GenericParams = genericParams
-    member __.CustomAttrsStored = customAttrsStored
-    member __.MetadataIndex = metadataIndex
+        member x.With(?newName: string, ?newAttributes: MethodAttributes, ?newImplAttributes: MethodImplAttributes,
+                      ?newCallingConv: ILCallingConv, ?newParameters: ILParameters, ?newRet: ILReturn, ?newBody: ILLazyMethodBody,
+                      ?newSecurityDecls: ILSecurityDecls, ?newIsEntryPoint:bool, ?newGenericParams: ILGenericParameterDefs,
+                      ?newCustomAttrs: ILAttributes) =
 
-    member x.With (?name: string, ?attributes: MethodAttributes, ?implAttributes: MethodImplAttributes, ?callingConv: ILCallingConv, ?parameters: ILParameters, ?ret: ILReturn, ?body: ILLazyMethodBody, ?securityDecls: ILSecurityDecls, ?isEntryPoint:bool, ?genericParams: ILGenericParameterDefs, ?customAttrs: ILAttributes) =
-        ILMethodDef (name = defaultArg name x.Name,
-                     attributes = defaultArg attributes x.Attributes,
-                     implAttributes = defaultArg implAttributes x.ImplAttributes,
-                     callingConv = defaultArg callingConv x.CallingConv,
-                     parameters = defaultArg parameters x.Parameters,
-                     ret = defaultArg ret x.Return,
-                     body = defaultArg body x.Body,
-                     securityDecls = (match securityDecls with None -> x.SecurityDecls | Some attrs -> attrs),
-                     isEntryPoint = defaultArg isEntryPoint x.IsEntryPoint,
-                     genericParams = defaultArg genericParams x.GenericParams,
-                     customAttrs=(match customAttrs with None -> x.CustomAttrs | Some attrs -> attrs))
+            x.With(?newName = newName, ?newAttributes = newAttributes, ?newImplAttributes = newImplAttributes,
+                   ?newCallingConv = newCallingConv, ?newParameters = newParameters, ?newRet = newRet, ?newBody = newBody,
+                   ?newSecurityDecls = newSecurityDecls, ?newIsEntryPoint = newIsEntryPoint, ?newGenericParams = newGenericParams,
+                   ?newCustomAttrs = newCustomAttrs)
 
-    member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs metadataIndex
-    member x.SecurityDecls = x.SecurityDeclsStored.GetSecurityDecls x.MetadataIndex
-    member x.ParameterTypes = typesOfILParams x.Parameters
+        member x.CustomAttrs    = x.CustomAttrs
+        member x.SecurityDecls  = x.SecurityDecls
+        member __.ParameterTypes = typesOfILParams parameters
 
-    member md.Code = 
-          match md.Body.Contents with 
-          | MethodBody.IL il-> Some il.Code
-          | _ -> None
+        member __.Code      = match body.Contents with | MethodBody.IL il-> Some il.Code | _ -> None
+        member __.IsIL       = match body.Contents with | MethodBody.IL _ -> true | _ -> false
+        member __.Locals     = match body.Contents with | MethodBody.IL il -> il.Locals | _ -> []
+        member __.MethodBody = match body.Contents with | MethodBody.IL il -> il | _ -> failwith "not IL"
 
-    member x.IsIL = match x.Body.Contents with | MethodBody.IL _ -> true | _ -> false
+        member x.CallingSignature =  mkILCallSig (callingConv, x.ParameterTypes, ret.Type)
 
-    member x.Locals = match x.Body.Contents with | MethodBody.IL il -> il.Locals | _ -> []
+        member __.IsClassInitializer      = name = ".cctor"
+        member __.IsConstructor           = name = ".ctor"
 
-    member x.MethodBody = match x.Body.Contents with MethodBody.IL il -> il | _ -> failwith "not IL"
+        member x.IsNonVirtualInstance     = not x.IsStatic && not x.IsVirtual
 
-    member x.SourceMarker = x.MethodBody.SourceMarker
-    member x.MaxStack     = x.MethodBody.MaxStack  
-    member x.IsZeroInit   = x.MethodBody.IsZeroInit
+        member x.Access    = x.Access
+        member x.IsStatic  = x.IsStatic
+        member x.IsVirtual = x.IsVirtual
 
-    member md.CallingSignature =  mkILCallSig (md.CallingConv,md.ParameterTypes,md.Return.Type)
+        member __.IsFinal                 = attributes &&& MethodAttributes.Final <> enum 0
+        member __.IsNewSlot               = attributes &&& MethodAttributes.NewSlot <> enum 0
+        member __.IsCheckAccessOnOverride = attributes &&& MethodAttributes.CheckAccessOnOverride <> enum 0
+        member __.IsAbstract              = attributes &&& MethodAttributes.Abstract <> enum 0
+        member __.IsHideBySig             = attributes &&& MethodAttributes.HideBySig <> enum 0
+        member __.IsSpecialName           = attributes &&& MethodAttributes.SpecialName <> enum 0
+        member __.IsUnmanagedExport       = attributes &&& MethodAttributes.UnmanagedExport <> enum 0
+        member __.IsReqSecObj             = attributes &&& MethodAttributes.RequireSecObject <> enum 0
+        member __.HasSecurity             = attributes &&& MethodAttributes.HasSecurity <> enum 0
 
-    member x.IsClassInitializer   = x.Name = ".cctor"
-    member x.IsConstructor        = x.Name = ".ctor"
+        member __.IsManaged               = implAttributes &&& MethodImplAttributes.Managed <> enum 0
+        member __.IsForwardRef            = implAttributes &&& MethodImplAttributes.ForwardRef <> enum 0
+        member __.IsInternalCall          = implAttributes &&& MethodImplAttributes.InternalCall <> enum 0
+        member __.IsPreserveSig           = implAttributes &&& MethodImplAttributes.PreserveSig <> enum 0
+        member __.IsSynchronized          = implAttributes &&& MethodImplAttributes.Synchronized <> enum 0
+        member __.IsNoInline              = implAttributes &&& MethodImplAttributes.NoInlining <> enum 0
+        member __.IsAggressiveInline      = implAttributes &&& MethodImplAttributes.AggressiveInlining <> enum 0
+        member __.IsMustRun               = implAttributes &&& MethodImplAttributes.NoOptimization <> enum 0
 
-    member x.Access                 = memberAccessOfFlags (int x.Attributes)
-    member x.IsStatic               = x.Attributes &&& MethodAttributes.Static <> enum 0
-    member x.IsNonVirtualInstance   = not x.IsStatic && not x.IsVirtual
-    member x.IsVirtual              = x.Attributes &&& MethodAttributes.Virtual <> enum 0
-    member x.IsFinal                = x.Attributes &&& MethodAttributes.Final <> enum 0
-    member x.IsNewSlot              = x.Attributes &&& MethodAttributes.NewSlot <> enum 0
-    member x.IsCheckAccessOnOverride= x.Attributes &&& MethodAttributes.CheckAccessOnOverride <> enum 0
-    member x.IsAbstract             = x.Attributes &&& MethodAttributes.Abstract <> enum 0
-    member x.IsHideBySig            = x.Attributes &&& MethodAttributes.HideBySig <> enum 0
-    member x.IsSpecialName          = x.Attributes &&& MethodAttributes.SpecialName <> enum 0
-    member x.IsUnmanagedExport      = x.Attributes &&& MethodAttributes.UnmanagedExport <> enum 0
-    member x.IsReqSecObj            = x.Attributes &&& MethodAttributes.RequireSecObject <> enum 0
-    member x.HasSecurity            = x.Attributes &&& MethodAttributes.HasSecurity <> enum 0
+        member x.WithNewSlot     = x.With(newAttributes = (attributes ||| MethodAttributes.NewSlot))
+        member x.WithSpecialName = x.With(newAttributes = (attributes ||| MethodAttributes.SpecialName))
 
-    member x.IsManaged         = x.ImplAttributes &&& MethodImplAttributes.Managed <> enum 0
-    member x.IsForwardRef      = x.ImplAttributes &&& MethodImplAttributes.ForwardRef <> enum 0
-    member x.IsInternalCall    = x.ImplAttributes &&& MethodImplAttributes.InternalCall <> enum 0
-    member x.IsPreserveSig     = x.ImplAttributes &&& MethodImplAttributes.PreserveSig <> enum 0
-    member x.IsSynchronized    = x.ImplAttributes &&& MethodImplAttributes.Synchronized <> enum 0
-    member x.IsNoInline        = x.ImplAttributes &&& MethodImplAttributes.NoInlining <> enum 0
-    member x.IsAggressiveInline= x.ImplAttributes &&& MethodImplAttributes.AggressiveInlining <> enum 0
-    member x.IsMustRun         = x.ImplAttributes &&& MethodImplAttributes.NoOptimization <> enum 0
+        member x.WithHideBySig() = 
+            x.With(newAttributes = (
+                    if x.IsVirtual then attributes &&& ~~~MethodAttributes.CheckAccessOnOverride ||| MethodAttributes.HideBySig
+                    else failwith "WithHideBySig"))
 
-    member x.WithSpecialName = x.With(attributes = (x.Attributes ||| MethodAttributes.SpecialName))
-    member x.WithHideBySig() = 
-        x.With(attributes = (
-                if x.IsVirtual then x.Attributes &&& ~~~MethodAttributes.CheckAccessOnOverride ||| MethodAttributes.HideBySig
-                else failwith "WithHideBySig"))
-    member x.WithHideBySig(condition) = x.With(attributes = (x.Attributes |> conditionalAdd condition MethodAttributes.HideBySig))
-    member x.WithFinal(condition) = x.With(attributes = (x.Attributes |> conditionalAdd condition MethodAttributes.Final))
-    member x.WithAbstract(condition) = x.With(attributes = (x.Attributes |> conditionalAdd condition MethodAttributes.Abstract))
-    member x.WithAccess(access) = x.With(attributes = (x.Attributes &&& ~~~MethodAttributes.MemberAccessMask ||| convertMemberAccess access))
-    member x.WithNewSlot = x.With(attributes = (x.Attributes ||| MethodAttributes.NewSlot))
-    member x.WithSecurity(condition) = x.With(attributes = (x.Attributes |> conditionalAdd condition MethodAttributes.HasSecurity))
-    member x.WithPInvoke(condition) = x.With(attributes = (x.Attributes |> conditionalAdd condition MethodAttributes.PinvokeImpl))
-    member x.WithPreserveSig(condition) = x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.PreserveSig))
-    member x.WithSynchronized(condition) = x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.Synchronized))
-    member x.WithNoInlining(condition) = x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.NoInlining))
-    member x.WithAggressiveInlining(condition) = x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.AggressiveInlining))
-    member x.WithRuntime(condition) = x.With(implAttributes = (x.ImplAttributes |> conditionalAdd condition MethodImplAttributes.Runtime))
+        member x.WithHideBySig(condition)          = x.With(newAttributes = (attributes |> conditionalAdd condition MethodAttributes.HideBySig))
+        member x.WithFinal(condition)              = x.With(newAttributes = (attributes |> conditionalAdd condition MethodAttributes.Final))
+        member x.WithAbstract(condition)           = x.With(newAttributes = (attributes |> conditionalAdd condition MethodAttributes.Abstract))
+        member x.WithAccess(newAccess)             = x.With(newAttributes = (attributes &&& ~~~MethodAttributes.MemberAccessMask ||| convertMemberAccess newAccess))
+        member x.WithSecurity(condition)           = x.With(newAttributes = (attributes |> conditionalAdd condition MethodAttributes.HasSecurity))
+        member x.WithPInvoke(condition)            = x.With(newAttributes = (attributes |> conditionalAdd condition MethodAttributes.PinvokeImpl))
+
+        member x.WithPreserveSig(condition)        = x.With(newImplAttributes = (implAttributes |> conditionalAdd condition MethodImplAttributes.PreserveSig))
+        member x.WithSynchronized(condition)       = x.With(newImplAttributes = (implAttributes |> conditionalAdd condition MethodImplAttributes.Synchronized))
+        member x.WithNoInlining(condition)         = x.With(newImplAttributes = (implAttributes |> conditionalAdd condition MethodImplAttributes.NoInlining))
+        member x.WithAggressiveInlining(condition) = x.With(newImplAttributes = (implAttributes |> conditionalAdd condition MethodImplAttributes.AggressiveInlining))
+        member x.WithRuntime(condition)            = x.With(newImplAttributes = (implAttributes |> conditionalAdd condition MethodImplAttributes.Runtime))
+
 
 /// Index table by name and arity. 
-type MethodDefMap = Map<string, ILMethodDef list>
+type MethodDefMap = Map<string, IMethodDef list>
+
+
+type IMethodDefs =
+    inherit IEnumerable<IMethodDef>
+
+    abstract AsArray: IMethodDef[]
+    abstract AsList: IMethodDef list
+
+    abstract FindByName: string -> IMethodDef list
+    abstract FindByNameAndArity: string * int -> IMethodDef list
+
 
 [<Sealed>]
-type ILMethodDefs(f : (unit -> ILMethodDef[])) = 
+type ILMethodDefs(f : (unit -> IMethodDef[])) = 
 
     let mutable array = InlineDelayInit<_>(f)
     let mutable dict = InlineDelayInit<_>(fun () -> 
@@ -1550,21 +1658,24 @@ type ILMethodDefs(f : (unit -> ILMethodDef[])) =
                 | _ -> t.[key] <- [y]
             t)
 
-    interface IEnumerable with 
-        member x.GetEnumerator() = ((x :> IEnumerable<ILMethodDef>).GetEnumerator() :> IEnumerator)
-
-    interface IEnumerable<ILMethodDef> with 
-        member x.GetEnumerator() = (array.Value :> IEnumerable<ILMethodDef>).GetEnumerator()
-
-    member x.AsArray = array.Value
-    member x.AsList = array.Value|> Array.toList
-
-    member x.FindByName(nm) =
+    let findByName nm =
         match dict.Value.TryGetValue(nm) with
         | true, m -> m
         | _ -> []
 
-    member x.FindByNameAndArity (nm,arity) = x.FindByName nm |> List.filter (fun x -> List.length x.Parameters = arity)
+
+    interface IEnumerable with 
+        member x.GetEnumerator() = ((x :> IEnumerable<IMethodDef>).GetEnumerator() :> IEnumerator)
+
+    interface IEnumerable<IMethodDef> with 
+        member x.GetEnumerator() = (array.Value :> IEnumerable<IMethodDef>).GetEnumerator()
+
+    interface IMethodDefs with
+        member x.AsArray = array.Value
+        member x.AsList = array.Value|> Array.toList
+        member x.FindByName(nm) = findByName nm
+        member x.FindByNameAndArity (nm,arity) = findByName nm |> List.filter (fun x -> List.length x.Parameters = arity)
+
 
 [<NoComparison; NoEquality>]
 type ILEventDef(eventType: ILType option, name: string, attributes: EventAttributes, addMethod: ILMethodRef, removeMethod: ILMethodRef, fireMethod: ILMethodRef option, otherMethods: ILMethodRef list, customAttrsStored: ILAttributesStored, metadataIndex: int32) =
@@ -1851,7 +1962,7 @@ and ITypeDef =
     abstract NestedTypes: ITypeDefs
     abstract Implements: ILTypes
     abstract Extends: ILType option
-    abstract Methods: ILMethodDefs
+    abstract Methods: IMethodDefs
     abstract SecurityDecls: ILSecurityDecls
     abstract Fields: ILFieldDefs
     abstract MethodImpls: ILMethodImplDefs
@@ -1891,7 +2002,7 @@ and ITypeDef =
 
     /// Functional update
     abstract With: ?name: string * ?attributes: TypeAttributes * ?layout: ILTypeDefLayout *  ?implements: ILTypes * 
-                 ?genericParams:ILGenericParameterDefs * ?extends:ILType option * ?methods:ILMethodDefs * 
+                 ?genericParams:ILGenericParameterDefs * ?extends:ILType option * ?methods:IMethodDefs * 
                  ?nestedTypes:ITypeDefs * ?fields: ILFieldDefs * ?methodImpls:ILMethodImplDefs * ?events:ILEventDefs * 
                  ?properties:ILPropertyDefs * ?customAttrs:ILAttributes * ?securityDecls: ILSecurityDecls -> ITypeDef
 
@@ -1906,7 +2017,7 @@ and IPreTypeDef =
 [<NoComparison; NoEquality>]
 type ILTypeDef
         (name: string, attributes: TypeAttributes, layout: ILTypeDefLayout, implements: ILTypes,
-         genericParams: ILGenericParameterDefs, extends: ILType option, methods: ILMethodDefs, nestedTypes: ITypeDefs,
+         genericParams: ILGenericParameterDefs, extends: ILType option, methods: IMethodDefs, nestedTypes: ITypeDefs,
          fields: ILFieldDefs, methodImpls: ILMethodImplDefs, events: ILEventDefs, properties: ILPropertyDefs,
          securityDeclsStored: ILSecurityDeclsStored, customAttrsStored: ILAttributesStored, metadataIndex: int32) =  
 
@@ -1995,6 +2106,7 @@ type ILTypeDef
         member x.WithEncoding(encoding)      = x.With(newAttributes = (attributes &&& ~~~TypeAttributes.StringFormatMask ||| convertEncoding encoding))
         member x.WithSpecialName(condition)  = x.With(newAttributes = (attributes |> conditionalAdd condition TypeAttributes.SpecialName))
         member x.WithInitSemantics(init)     = x.With(newAttributes = (attributes ||| convertInitSemantics init))
+
 
 and [<Sealed>] ILTypeDefs(f : unit -> IPreTypeDef[]) =
 
@@ -2529,12 +2641,12 @@ let emptyILTypeDefs = mkILTypeDefsFromArray [| |]
 // Operations on method tables.
 // -------------------------------------------------------------------- 
 
-let mkILMethodsFromArray xs =  ILMethodDefs (fun () -> xs)
+let mkILMethodsFromArray xs =  ILMethodDefs (fun () -> xs) :> IMethodDefs
 let mkILMethods xs =  xs |> Array.ofList |> mkILMethodsFromArray
-let mkILMethodsComputed f =  ILMethodDefs f
+let mkILMethodsComputed f =  ILMethodDefs f :> IMethodDefs
 let emptyILMethods = mkILMethodsFromArray [| |]
 
-let filterILMethodDefs f (mdefs: ILMethodDefs) = 
+let filterILMethodDefs f (mdefs: IMethodDefs) = 
     ILMethodDefs (fun () -> mdefs.AsArray |> Array.filter f)
 
 // -------------------------------------------------------------------- 
@@ -2892,7 +3004,7 @@ let mkILCtor (access,args,impl) =
                 securityDecls=emptyILSecurityDecls,
                 isEntryPoint=false,
                 genericParams=mkILEmptyGenericParams,
-                customAttrs = emptyILCustomAttrs)
+                customAttrs = emptyILCustomAttrs) :> IMethodDef
 
 // -------------------------------------------------------------------- 
 // Do-nothing ctor, just pass on to monomorphic superclass
@@ -2931,7 +3043,7 @@ let mkILStaticMethod (genparams,nm,access,args,ret,impl) =
                 securityDecls=emptyILSecurityDecls,
                 isEntryPoint=false,
                 customAttrs = emptyILCustomAttrs,
-                body= mkMethBodyAux impl)
+                body= mkMethBodyAux impl) :> IMethodDef
 
 let mkILNonGenericStaticMethod (nm,access,args,ret,impl) = 
     mkILStaticMethod (mkILEmptyGenericParams,nm,access,args,ret,impl)
@@ -2947,7 +3059,7 @@ let mkILClassCtor impl =
                 isEntryPoint=false,
                 securityDecls=emptyILSecurityDecls,
                 customAttrs=emptyILCustomAttrs,
-                body= mkMethBodyAux impl)
+                body= mkMethBodyAux impl) :> IMethodDef
 
 // -------------------------------------------------------------------- 
 // Make a virtual method, where the overriding is simply the default
@@ -2971,7 +3083,7 @@ let mkILGenericVirtualMethod (nm,access,genparams,actual_args,actual_ret,impl) =
                 isEntryPoint=false,
                 securityDecls=emptyILSecurityDecls,
                 customAttrs = emptyILCustomAttrs,
-                body= mkMethBodyAux impl)
+                body= mkMethBodyAux impl) :> IMethodDef
     
 let mkILNonGenericVirtualMethod (nm,access,args,ret,impl) =  
     mkILGenericVirtualMethod (nm,access,mkILEmptyGenericParams,args,ret,impl)
@@ -2987,7 +3099,7 @@ let mkILGenericNonVirtualMethod (nm,access,genparams, actual_args,actual_ret, im
                 isEntryPoint=false,
                 securityDecls=emptyILSecurityDecls,
                 customAttrs = emptyILCustomAttrs,
-                body= mkMethBodyAux impl)
+                body= mkMethBodyAux impl) :> IMethodDef
     
 let mkILNonGenericInstanceMethod (nm,access,args,ret,impl) =  
   mkILGenericNonVirtualMethod (nm,access,mkILEmptyGenericParams,args,ret,impl)
@@ -3001,7 +3113,7 @@ let mkILNonGenericInstanceMethod (nm,access,args,ret,impl) =
 let ilmbody_code2code f (il: ILMethodBody)  =
   {il with Code = f il.Code}
 
-let mdef_code2code f (md: ILMethodDef)  =
+let mdef_code2code f (md: IMethodDef)  =
     let il = 
         match md.Body.Contents with 
         | MethodBody.IL il-> il 
@@ -3045,12 +3157,12 @@ let cdef_cctorCode2CodeOrCreate tag f (cd: ITypeDef) =
     cd.With(methods = methods)
 
 
-let code_of_mdef (md:ILMethodDef) = 
+let code_of_mdef (md:IMethodDef) = 
     match md.Code with 
     | Some x -> x
     | None -> failwith "code_of_mdef: not IL" 
 
-let mkRefToILMethod (tref, md: ILMethodDef) =
+let mkRefToILMethod (tref, md: IMethodDef) =
     mkILMethRef (tref, md.CallingConv, md.Name, md.GenericParams.Length, md.ParameterTypes, md.Return.Type)
 
 let mkRefToILField (tref,fdef:ILFieldDef) =   mkILFieldRef (tref, fdef.Name, fdef.FieldType)
@@ -4053,7 +4165,7 @@ and refs_of_mbody s x =
     | MethodBody.PInvoke (attr) -> refs_of_modref s attr.Where
     | _ -> ()
 
-and refs_of_mdef s (md: ILMethodDef) = 
+and refs_of_mdef s (md: IMethodDef) = 
     List.iter (refs_of_param s) md.Parameters
     refs_of_return s md.Return
     refs_of_mbody s  md.Body.Contents

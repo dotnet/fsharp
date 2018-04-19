@@ -203,7 +203,7 @@ let morphILTypesInILInstr ((factualty,fformalty)) i =
 let return_typ2typ ilg f (r:ILReturn) = {r with Type=f r.Type; CustomAttrsStored= storeILCustomAttrs (cattrs_typ2typ ilg f r.CustomAttrs)}
 let param_typ2typ ilg f (p: ILParameter) = {p with Type=f p.Type; CustomAttrsStored= storeILCustomAttrs (cattrs_typ2typ ilg f p.CustomAttrs)}
 
-let morphILMethodDefs f (m:ILMethodDefs) = mkILMethods (List.map f m.AsList)
+let morphILMethodDefs f (m:IMethodDefs) = mkILMethods (List.map f m.AsList)
 let fdefs_fdef2fdef f (m:ILFieldDefs) = mkILFields (List.map f m.AsList)
 
 (* use this when the conversion produces just one type... *)
@@ -225,7 +225,7 @@ let morphILMethodBody (filmbody) (x: ILLazyMethodBody) =
 
 let ospec_typ2typ f (OverridesSpec(mref,ty)) = OverridesSpec(mref_typ2typ f mref, f ty)
 
-let mdef_typ2typ_ilmbody2ilmbody ilg fs (md: ILMethodDef)  = 
+let mdef_typ2typ_ilmbody2ilmbody ilg fs (md: IMethodDef)  = 
     let (ftype,filmbody) = fs 
     let ftype' = ftype (Some md) 
     let body' = morphILMethodBody (filmbody (Some md))  md.Body 
@@ -289,7 +289,7 @@ and tdefs_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg enc fs tdefs =
 let manifest_typ2typ ilg f (m : IAssemblyManifest) =
     m.With(newCustomAttrsStored = storeILCustomAttrs (cattrs_typ2typ ilg f m.CustomAttrs))
 
-let morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs ilg ((ftype: IModuleDef -> (ITypeDef list * ITypeDef) option -> ILMethodDef option -> ILType -> ILType),fmdefs) m = 
+let morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs ilg ((ftype: IModuleDef -> (ITypeDef list * ITypeDef) option -> IMethodDef option -> ILType -> ILType),fmdefs) m = 
 
     let ftdefs = tdefs_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg [] (ftype m,fmdefs m)
     let typeDefs = ftdefs m.TypeDefs

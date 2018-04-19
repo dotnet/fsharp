@@ -244,7 +244,7 @@ module private PrintIL =
     //          new : argType1 * ... * argTypeN -> retType
     //          Method : argType1 * ... * argTypeN -> retType
     //
-    let private layoutILMethodDef denv ilTyparSubst className (m: ILMethodDef) =
+    let private layoutILMethodDef denv ilTyparSubst className (m: IMethodDef) =
         let myParms         = m.GenericParams |> layoutILGenericParameterDefs
         let ilTyparSubst           = ilTyparSubst @ myParms
         let name            = adjustILMethodName m.Name
@@ -358,7 +358,7 @@ module private PrintIL =
         | None, None        -> true
 
 
-    let private isPublicILMethod      (m : ILMethodDef) = 
+    let private isPublicILMethod      (m : IMethodDef) = 
         (m.Access = ILMemberAccess.Public)
 
     let private isPublicILEvent typeDef (e: ILEventDef)         = 
@@ -384,10 +384,10 @@ module private PrintIL =
         with _ -> 
             false
 
-    let private isPublicILCtor        (m : ILMethodDef) = 
+    let private isPublicILCtor        (m : IMethodDef) = 
         (m.Access = ILMemberAccess.Public && m.IsConstructor)
 
-    let private isNotSpecialName    (m : ILMethodDef) = 
+    let private isNotSpecialName    (m : IMethodDef) = 
         not m.IsSpecialName
 
     let private isPublicILField       (f : ILFieldDef)  = 
@@ -439,7 +439,7 @@ module private PrintIL =
                         )
                     else []
 
-            let memberBlockLs (fieldDefs:ILFieldDefs, methodDefs:ILMethodDefs, propertyDefs:ILPropertyDefs, eventDefs:ILEventDefs) =
+            let memberBlockLs (fieldDefs:ILFieldDefs, methodDefs:IMethodDefs, propertyDefs:ILPropertyDefs, eventDefs:ILEventDefs) =
                 let ctors  =
                     methodDefs.AsList
                     |> List.filter isPublicILCtor 

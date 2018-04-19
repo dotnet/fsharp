@@ -2382,7 +2382,7 @@ and seekReadMethod (ctxt: ILMetadataReader)  mdv numtypars (idx:int) =
                  ret=ret,
                  body=body,
                  customAttrsStored=ctxt.customAttrsReader_MethodDef,
-                 metadataIndex=idx)
+                 metadataIndex=idx) :> IMethodDef
      
      
 and seekReadParams (ctxt: ILMetadataReader)  mdv (retty, argtys) pidx1 pidx2 =

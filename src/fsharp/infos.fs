@@ -717,7 +717,7 @@ type ILMethInfo =
     ///
     /// If ilDeclaringTyconRefOpt is 'Some' then this is an F# use of an C#-style extension method.
     /// If ilDeclaringTyconRefOpt is 'None' then ilApparentType is an IL type definition.
-    | ILMethInfo of TcGlobals * TType * TyconRef option  * ILMethodDef * Typars  
+    | ILMethInfo of TcGlobals * TType * TyconRef option  * IMethodDef * Typars  
 
     member x.TcGlobals = match x with ILMethInfo(g,_,_,_,_) -> g
 
@@ -1227,13 +1227,13 @@ type MethInfo =
         isStructTy x.TcGlobals x.ApparentEnclosingType
 
     /// Build IL method infos.  
-    static member CreateILMeth (amap:Import.ImportMap, m, typ:TType, md: ILMethodDef) =     
+    static member CreateILMeth (amap:Import.ImportMap, m, typ:TType, md: IMethodDef) =     
         let tinfo = ILTypeInfo.FromType amap.g typ
         let mtps = Import.ImportILGenericParameters (fun () -> amap) m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata md.GenericParams
         ILMeth (amap.g,ILMethInfo(amap.g, typ, None, md, mtps),None)
 
     /// Build IL method infos for a C#-style extension method
-    static member CreateILExtensionMeth (amap, m, apparentTy:TType, declaringTyconRef:TyconRef, extMethPri, md: ILMethodDef) =     
+    static member CreateILExtensionMeth (amap, m, apparentTy:TType, declaringTyconRef:TyconRef, extMethPri, md: IMethodDef) =     
         let scoref =  declaringTyconRef.CompiledRepresentationForNamedType.Scope
         let mtps = Import.ImportILGenericParameters (fun () -> amap) m scoref [] md.GenericParams
         ILMeth (amap.g,ILMethInfo(amap.g,apparentTy,Some declaringTyconRef,md,mtps),extMethPri)

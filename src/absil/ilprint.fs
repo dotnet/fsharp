@@ -768,7 +768,7 @@ let goutput_ilmbody env os (il: ILMethodBody) =
     output_string os ")\n"
   
 
-let goutput_mbody is_entrypoint env os (md: ILMethodDef) =
+let goutput_mbody is_entrypoint env os (md: IMethodDef) =
   if md.ImplAttributes &&& MethodImplAttributes.Native <> enum 0 then output_string os "native "
   elif md.ImplAttributes &&&  MethodImplAttributes.IL <> enum 0 then output_string os "cil "
   else output_string os "runtime "
@@ -786,7 +786,7 @@ let goutput_mbody is_entrypoint env os (md: ILMethodDef) =
   output_string os "\n";
   output_string os "}\n"
   
-let goutput_mdef env os (md:ILMethodDef) =
+let goutput_mdef env os (md:IMethodDef) =
   let attrs = 
       if md.IsVirtual then
             "virtual "^
@@ -886,7 +886,7 @@ let splitTypeLayout = function
       
 let goutput_fdefs tref env os (fdefs: ILFieldDefs) = 
   List.iter (fun f -> (goutput_fdef tref env) os f; output_string os "\n" ) fdefs.AsList
-let goutput_mdefs env os (mdefs: ILMethodDefs) = 
+let goutput_mdefs env os (mdefs: IMethodDefs) = 
   List.iter (fun f -> (goutput_mdef env) os f; output_string os "\n" ) mdefs.AsList
 let goutput_pdefs env os (pdefs: ILPropertyDefs) = 
   List.iter (fun f -> (goutput_pdef env) os f; output_string os "\n" ) pdefs.AsList

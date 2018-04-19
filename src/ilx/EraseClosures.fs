@@ -121,7 +121,7 @@ type cenv =
       mkILTyFuncTy: ILType
       addFieldGeneratedAttrs: ILFieldDef -> ILFieldDef
       addFieldNeverAttrs: ILFieldDef -> ILFieldDef
-      addMethodGeneratedAttrs: ILMethodDef -> ILMethodDef }
+      addMethodGeneratedAttrs: IMethodDef -> IMethodDef }
   
 let addMethodGeneratedAttrsToTypeDef cenv (tdef: ITypeDef) = 
     tdef.With(methods = (tdef.Methods.AsList |> List.map (fun md -> md |> cenv.addMethodGeneratedAttrs) |> mkILMethods))
@@ -313,7 +313,7 @@ let convMethodBody thisClo = function
     | MethodBody.IL il -> MethodBody.IL (convILMethodBody (thisClo, None) il)
     | x -> x
 
-let convMethodDef thisClo (md: ILMethodDef)  =
+let convMethodDef thisClo (md: IMethodDef)  =
     let b' = convMethodBody thisClo (md.Body.Contents)
     md.With(body=mkMethBodyAux b')
 

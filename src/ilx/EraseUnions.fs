@@ -648,7 +648,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
     let repr = cudefRepr 
 
     // Attributes on unions get attached to the construction methods in the helpers
-    let addAltAttribs (mdef: ILMethodDef) = mdef.With(customAttrs=alt.altCustomAttrs)
+    let addAltAttribs (mdef: IMethodDef) = mdef.With(customAttrs=alt.altCustomAttrs)
 
     // The stdata instruction is only ever used for the F# "List" type
     //
