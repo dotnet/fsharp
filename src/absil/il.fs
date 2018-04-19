@@ -1323,20 +1323,54 @@ type PInvokeMethod =
       ThrowOnUnmappableChar: PInvokeThrowOnUnmappableChar
       CharBestFit: PInvokeCharBestFit }
 
-[<RequireQualifiedAccess; NoEquality; NoComparison>]
-type ILParameter =
-    { Name: string option
-      Type: ILType
-      Default: ILFieldInit option
-      Marshal: ILNativeType option
-      IsIn: bool
-      IsOut: bool
-      IsOptional: bool
-      CustomAttrsStored: ILAttributesStored
-      MetadataIndex: int32  }
-    member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
 
-type ILParameters = list<ILParameter>
+type IParameter =
+    abstract Name: string option
+    abstract Type: ILType
+    abstract Default: ILFieldInit option  
+
+    /// Marshalling map for parameters. COM Interop only. 
+    abstract Marshal: ILNativeType option 
+
+    abstract IsIn: bool
+    abstract IsOut: bool
+    abstract IsOptional: bool
+    abstract CustomAttrs: ILAttributes
+
+    abstract With:
+        ?newName: string option * ?newTy: ILType * ?newDefaultValue: ILFieldInit option *
+        ?newMarshal: ILNativeType option * ?newIsIn: bool * ?newIsOut: bool * ?newIsOptional: bool *
+        ?newCustomAttrsStored: ILAttributesStored * ?newMetadataIndex: int
+           -> IParameter
+
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type ILParameter
+        (name, ty, defaultValue, marshal, isIn, isOut, isOptional, customAttrsStored: ILAttributesStored,
+         metadataIndex) =
+
+    interface IParameter with
+        member x.Name        = name
+        member x.Type        = ty
+        member x.Default     = defaultValue  
+        member x.Marshal     = marshal 
+    
+        member x.IsIn        = isIn
+        member x.IsOut       = isOut
+        member x.IsOptional  = isOptional
+        member x.CustomAttrs = customAttrsStored.GetCustomAttrs(metadataIndex)
+
+        member x.With(?newName: string option, ?newTy: ILType, ?newDefaultValue: ILFieldInit option,
+                      ?newMarshal: ILNativeType option, ?newIsIn: bool, ?newIsOut: bool, ?newIsOptional: bool,
+                      ?newCustomAttrsStored: ILAttributesStored, ?newMetadataIndex: int) =
+
+            ILParameter(name = defaultArg newName name, ty = defaultArg newTy ty,
+                        defaultValue = defaultArg newDefaultValue defaultValue, marshal = defaultArg newMarshal marshal,
+                        isIn = defaultArg newIsIn isIn, isOut = defaultArg newIsOut isOut,
+                        isOptional = defaultArg newIsOptional isOptional,
+                        customAttrsStored = defaultArg newCustomAttrsStored customAttrsStored,
+                        metadataIndex = defaultArg newMetadataIndex metadataIndex) :> IParameter
+
+type ILParameters = list<IParameter>
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type ILReturn = 
@@ -2939,16 +2973,9 @@ let instILType     i t = instILTypeAux 0 i t
 // MS-IL: Parameters, Return types and Locals
 // -------------------------------------------------------------------- 
 
-let mkILParam (name,ty) : ILParameter =
-    { Name=name
-      Default=None
-      Marshal=None
-      IsIn=false
-      IsOut=false
-      IsOptional=false
-      Type=ty
-      CustomAttrsStored=storeILCustomAttrs emptyILCustomAttrs
-      MetadataIndex = NoMetadataIdx  }
+let mkILParam (name, ty) : IParameter =
+    ILParameter(name, ty, None, None, false, false, false, storeILCustomAttrs emptyILCustomAttrs, NoMetadataIdx) :> _
+
 let mkILParamNamed (s,ty) = mkILParam (Some s,ty)
 let mkILParamAnon ty = mkILParam (None,ty)
 

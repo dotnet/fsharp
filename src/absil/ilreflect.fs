@@ -1463,7 +1463,7 @@ let buildGenParamsPass1b cenv emEnv (genArgs : Type array) (gps : ILGenericParam
 // emitParameter
 //----------------------------------------------------------------------------
 
-let emitParameter cenv emEnv (defineParameter : int * ParameterAttributes * string -> ParameterBuilder) i (param: ILParameter) =
+let emitParameter cenv emEnv (defineParameter : int * ParameterAttributes * string -> ParameterBuilder) i (param: IParameter) =
     //  -Type: typ;
     //  -Default: ILFieldInit option;  
     //  -Marshal: NativeType option; (* Marshalling map for parameters. COM Interop only. *)

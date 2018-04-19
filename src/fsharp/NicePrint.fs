@@ -203,7 +203,7 @@ module private PrintIL =
     /// Layout a function pointer signature using type-only-F#-style. No argument names are printed.
     //
     // Note, this duplicates functionality in formatParamDataToBuffer
-    and private layoutILParameter denv ilTyparSubst (p: ILParameter) =
+    and private layoutILParameter denv ilTyparSubst (p: IParameter) =
         let preL = 
             let isParamArray = TryFindILAttribute denv.g.attrib_ParamArrayAttribute p.CustomAttrs
             match isParamArray, p.Name, p.IsOptional with 

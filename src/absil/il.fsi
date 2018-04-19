@@ -768,21 +768,44 @@ type ILAttributes =
 type ILAttributesStored
 
 /// Method parameters and return values.
-[<RequireQualifiedAccess; NoEquality; NoComparison>]
-type ILParameter = 
-    { Name: string option
-      Type: ILType
-      Default: ILFieldInit option  
-      /// Marshalling map for parameters. COM Interop only. 
-      Marshal: ILNativeType option 
-      IsIn: bool
-      IsOut: bool
-      IsOptional: bool
-      CustomAttrsStored: ILAttributesStored
-      MetadataIndex: int32 }
-    member CustomAttrs: ILAttributes
+type IParameter =
+    abstract Name: string option
+    abstract Type: ILType
+    abstract Default: ILFieldInit option  
 
-type ILParameters = list<ILParameter>
+    /// Marshalling map for parameters. COM Interop only. 
+    abstract Marshal: ILNativeType option 
+
+    abstract IsIn: bool
+    abstract IsOut: bool
+    abstract IsOptional: bool
+    abstract CustomAttrs: ILAttributes
+
+    abstract With:
+         ?newName: string option * ?newTy: ILType * ?newDefaultValue: ILFieldInit option *
+         ?newMarshal: ILNativeType option * ?newIsIn: bool * ?newIsOut: bool * ?newIsOptional: bool *
+         ?newCustomAttrsStored: ILAttributesStored * ?newMetadataIndex: int
+            -> IParameter
+
+[<NoEquality; NoComparison; Class>]
+type ILParameter =
+
+    new:
+        name: string option *
+        ty: ILType *
+        defaultValue: ILFieldInit option *
+        marshal: ILNativeType option *
+        isIn: bool *
+        isOut: bool *
+        isOptional: bool *
+        customAttrsStored: ILAttributesStored *
+        metadataIndex: int
+            -> ILParameter
+
+    interface IParameter 
+
+
+type ILParameters = list<IParameter>
 
 val typesOfILParams: ILParameters -> ILType list
 
@@ -1809,9 +1832,9 @@ val andTailness: ILTailcall -> bool -> ILTailcall
 
 /// Derived functions for making return, parameter and local variable
 /// objects for use in method definitions.
-val mkILParam: string option * ILType -> ILParameter
-val mkILParamAnon: ILType -> ILParameter
-val mkILParamNamed: string * ILType -> ILParameter
+val mkILParam: string option * ILType -> IParameter
+val mkILParamAnon: ILType -> IParameter
+val mkILParamNamed: string * ILType -> IParameter
 val mkILReturn: ILType -> ILReturn
 val mkILLocal: ILType -> (string * int * int) option -> ILLocal
 
@@ -1825,15 +1848,15 @@ val methBodyNotAvailable: ILLazyMethodBody
 val methBodyAbstract: ILLazyMethodBody 
 val methBodyNative: ILLazyMethodBody 
 
-val mkILCtor: ILMemberAccess * ILParameter list * MethodBody -> IMethodDef
+val mkILCtor: ILMemberAccess * IParameter list * MethodBody -> IMethodDef
 val mkILClassCtor: MethodBody -> IMethodDef
 val mkILNonGenericEmptyCtor: ILSourceMarker option -> ILType -> IMethodDef
-val mkILStaticMethod: ILGenericParameterDefs * string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> IMethodDef
-val mkILNonGenericStaticMethod: string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> IMethodDef
-val mkILGenericVirtualMethod: string * ILMemberAccess  * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody -> IMethodDef
-val mkILGenericNonVirtualMethod: string * ILMemberAccess  * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody -> IMethodDef
-val mkILNonGenericVirtualMethod: string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> IMethodDef
-val mkILNonGenericInstanceMethod: string * ILMemberAccess  * ILParameter list * ILReturn * MethodBody -> IMethodDef
+val mkILStaticMethod: ILGenericParameterDefs * string * ILMemberAccess * IParameter list * ILReturn * MethodBody -> IMethodDef
+val mkILNonGenericStaticMethod: string * ILMemberAccess * IParameter list * ILReturn * MethodBody -> IMethodDef
+val mkILGenericVirtualMethod: string * ILMemberAccess  * ILGenericParameterDefs * IParameter list * ILReturn * MethodBody -> IMethodDef
+val mkILGenericNonVirtualMethod: string * ILMemberAccess  * ILGenericParameterDefs * IParameter list * ILReturn * MethodBody -> IMethodDef
+val mkILNonGenericVirtualMethod: string * ILMemberAccess * IParameter list * ILReturn * MethodBody -> IMethodDef
+val mkILNonGenericInstanceMethod: string * ILMemberAccess  * IParameter list * ILReturn * MethodBody -> IMethodDef
 
 
 /// Make field definitions.
@@ -1869,10 +1892,10 @@ val prependInstrsToClassCtor: ILInstr list -> ILSourceMarker option -> ITypeDef 
 
 /// Derived functions for making some simple constructors
 val mkILStorageCtor: ILSourceMarker option * ILInstr list * ILType * (string * ILType) list * ILMemberAccess -> IMethodDef
-val mkILSimpleStorageCtor: ILSourceMarker option * ILTypeSpec option * ILType * ILParameter list * (string * ILType) list * ILMemberAccess -> IMethodDef
-val mkILSimpleStorageCtorWithParamNames: ILSourceMarker option * ILTypeSpec option * ILType * ILParameter list * (string * string * ILType) list * ILMemberAccess -> IMethodDef
+val mkILSimpleStorageCtor: ILSourceMarker option * ILTypeSpec option * ILType * IParameter list * (string * ILType) list * ILMemberAccess -> IMethodDef
+val mkILSimpleStorageCtorWithParamNames: ILSourceMarker option * ILTypeSpec option * ILType * IParameter list * (string * string * ILType) list * ILMemberAccess -> IMethodDef
 
-val mkILDelegateMethods: ILMemberAccess -> ILGlobals -> ILType * ILType -> ILParameter list * ILReturn -> IMethodDef list
+val mkILDelegateMethods: ILMemberAccess -> ILGlobals -> ILType * ILType -> IParameter list * ILReturn -> IMethodDef list
 
 /// Given a delegate type definition which lies in a particular scope, 
 /// make a reference to its constructor.

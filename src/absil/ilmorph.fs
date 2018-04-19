@@ -201,7 +201,8 @@ let morphILTypesInILInstr ((factualty,fformalty)) i =
     | x -> x
 
 let return_typ2typ ilg f (r:ILReturn) = {r with Type=f r.Type; CustomAttrsStored= storeILCustomAttrs (cattrs_typ2typ ilg f r.CustomAttrs)}
-let param_typ2typ ilg f (p: ILParameter) = {p with Type=f p.Type; CustomAttrsStored= storeILCustomAttrs (cattrs_typ2typ ilg f p.CustomAttrs)}
+let param_typ2typ ilg f (p: IParameter) =
+    p.With(newTy = f p.Type, newCustomAttrsStored = storeILCustomAttrs (cattrs_typ2typ ilg f p.CustomAttrs))
 
 let morphILMethodDefs f (m:IMethodDefs) = mkILMethods (List.map f m.AsList)
 let fdefs_fdef2fdef f (m:ILFieldDefs) = mkILFields (List.map f m.AsList)

@@ -2418,7 +2418,7 @@ and GenGenericParamPass4 cenv env idx owner gp =
 // param and return --> Param Row
 // -------------------------------------------------------------------- 
 
-let rec GetParamAsParamRow cenv _env seq (param: ILParameter)  = 
+let rec GetParamAsParamRow cenv _env seq (param: IParameter)  = 
     let flags = 
         (if param.IsIn then 0x0001 else 0x0000) |||
         (if param.IsOut then 0x0002 else 0x0000) |||
@@ -2431,7 +2431,7 @@ let rec GetParamAsParamRow cenv _env seq (param: ILParameter)  =
            UShort (uint16 seq) 
            StringE (GetStringHeapIdxOption cenv param.Name) |]  
 
-and GenParamPass3 cenv env seq (param: ILParameter) = 
+and GenParamPass3 cenv env seq (param: IParameter) = 
     if not param.IsIn && not param.IsOut && not param.IsOptional && Option.isNone param.Default && Option.isNone param.Name && Option.isNone param.Marshal 
     then ()
     else    

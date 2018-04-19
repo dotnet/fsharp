@@ -2406,15 +2406,15 @@ and seekReadParamExtras (ctxt: ILMetadataReader)  mdv (retRes, paramsRes) (idx:i
    elif seq > Array.length paramsRes then dprintn "bad seq num. for param"
    else 
        paramsRes.[seq - 1] <- 
-          { paramsRes.[seq - 1] with 
-               Marshal=(if hasMarshal then Some (fmReader (TaggedIndex(hfm_ParamDef, idx))) else None)
-               Default = (if hasDefault then Some (seekReadConstant ctxt (TaggedIndex(hc_ParamDef, idx))) else None)
-               Name = readStringHeapOption ctxt nameIdx
-               IsIn = ((inOutMasked &&& 0x0001) <> 0x0)
-               IsOut = ((inOutMasked &&& 0x0002) <> 0x0)
-               IsOptional = ((inOutMasked &&& 0x0010) <> 0x0)
-               CustomAttrsStored = ctxt.customAttrsReader_ParamDef
-               MetadataIndex = idx }
+          paramsRes.[seq - 1].With( 
+               newMarshal=(if hasMarshal then Some (fmReader (TaggedIndex(hfm_ParamDef, idx))) else None),
+               newDefaultValue = (if hasDefault then Some (seekReadConstant ctxt (TaggedIndex(hc_ParamDef, idx))) else None),
+               newName = readStringHeapOption ctxt nameIdx,
+               newIsIn = ((inOutMasked &&& 0x0001) <> 0x0),
+               newIsOut = ((inOutMasked &&& 0x0002) <> 0x0),
+               newIsOptional = ((inOutMasked &&& 0x0010) <> 0x0),
+               newCustomAttrsStored = ctxt.customAttrsReader_ParamDef,
+               newMetadataIndex = idx)
           
 and seekReadMethodImpls (ctxt: ILMetadataReader)  numtypars tidx =
    mkILMethodImplsLazy 

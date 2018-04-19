@@ -322,7 +322,7 @@ let convMethodDef thisClo (md: IMethodDef)  =
 //   REVIEW: change type abstractions to use other closure mechanisms.
 // -------------------------------------------------------------------- 
 
-let mkILFreeVarForParam (p : ILParameter) = 
+let mkILFreeVarForParam (p : IParameter) = 
     let nm = (match p.Name with Some x -> x | None -> failwith "closure parameters must be given names")
     mkILFreeVar(nm, false, p.Type)
 

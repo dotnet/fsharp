@@ -541,7 +541,7 @@ let goutput_local env os (l: ILLocal) =
   goutput_typ env os l.Type;
   if l.IsPinned then output_string os " pinned"
 
-let goutput_param env os (l: ILParameter) = 
+let goutput_param env os (l: IParameter) = 
   match l.Name with 
       None ->  goutput_typ env os l.Type;
     | Some n -> goutput_typ env os l.Type; output_string os " "; output_sqstring os n

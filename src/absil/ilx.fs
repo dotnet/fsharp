@@ -63,7 +63,7 @@ type IlxUnionSpec =
 
 type IlxClosureLambdas = 
     | Lambdas_forall of ILGenericParameterDef * IlxClosureLambdas
-    | Lambdas_lambda of ILParameter * IlxClosureLambdas
+    | Lambdas_lambda of IParameter * IlxClosureLambdas
     | Lambdas_return of ILType
 
 type IlxClosureApps = 
@@ -80,7 +80,7 @@ let rec instLambdasAux n inst = function
   | Lambdas_forall (b, rty) -> 
       Lambdas_forall(b, instLambdasAux n inst rty)
   | Lambdas_lambda (p, rty) ->  
-      Lambdas_lambda({ p with Type=instILTypeAux n inst p.Type}, instLambdasAux n inst rty)
+      Lambdas_lambda(p.With(newTy = instILTypeAux n inst p.Type), instLambdasAux n inst rty)
   | Lambdas_return rty ->  Lambdas_return(instILTypeAux n inst rty)
 
 let instLambdas i t = instLambdasAux 0 i t

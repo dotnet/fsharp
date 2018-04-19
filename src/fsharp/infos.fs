@@ -507,7 +507,7 @@ type OptionalArgInfo =
     /// Compute the OptionalArgInfo for an IL parameter
     ///
     /// This includes the Visual Basic rules for IDispatchConstant and IUnknownConstant and optional arguments.
-    static member FromILParameter g amap m ilScope ilTypeInst (ilParam: ILParameter) = 
+    static member FromILParameter g amap m ilScope ilTypeInst (ilParam: IParameter) = 
         if ilParam.IsOptional then 
             match ilParam.Default with 
             | None -> 

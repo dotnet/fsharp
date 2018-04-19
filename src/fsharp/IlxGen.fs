@@ -3463,19 +3463,13 @@ and GenGenericParam cenv eenv (tp:Typar) =
 //-------------------------------------------------------------------------- 
 
 /// Generates the data used for parameters at definitions of abstract method slots such as interface methods or override methods.
-and GenSlotParam m cenv eenv (TSlotParam(nm,ty,inFlag,outFlag,optionalFlag,attribs)) : ILParameter = 
+and GenSlotParam m cenv eenv (TSlotParam(nm,ty,inFlag,outFlag,optionalFlag,attribs)) : IParameter = 
     let inFlag2,outFlag2,optionalFlag2,defaultParamValue,paramMarshal2,attribs = GenParamAttribs cenv attribs
-    
-    { Name=nm
-      Type= GenParamType cenv.amap m eenv.tyenv ty
-      Default=defaultParamValue  
-      Marshal=paramMarshal2 
-      IsIn=inFlag || inFlag2
-      IsOut=outFlag || outFlag2
-      IsOptional=optionalFlag || optionalFlag2
-      CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs (GenAttrs cenv eenv attribs))
-      MetadataIndex = NoMetadataIdx }
-    
+
+    ILParameter(nm, GenParamType cenv.amap m eenv.tyenv ty, defaultParamValue, paramMarshal2, inFlag || inFlag2,
+                outFlag || outFlag2, optionalFlag || optionalFlag2,
+                storeILCustomAttrs (mkILCustomAttrs (GenAttrs cenv eenv attribs)), NoMetadataIdx) :> IParameter
+
 and GenFormalSlotsig m cenv eenv (TSlotSig(_,typ,ctps,mtps,paraml,returnTy)) = 
     let paraml = List.concat paraml
     let ilTy = GenType cenv.amap m eenv.tyenv typ
@@ -3492,7 +3486,7 @@ and GenActualSlotsig m cenv eenv (TSlotSig(_,typ,ctps,mtps,ilSlotParams,ilSlotRe
     let instForSlotSig = mkTyparInst (ctps@mtps) (argsOfAppTy cenv.g typ @ generalizeTypars methTyparsOfOverridingMethod)
     let ilParams = ilSlotParams |> List.map (instSlotParam instForSlotSig >> GenSlotParam m cenv eenv) 
     // Use the better names if available
-    let ilParams = if ilParams.Length = methodParams.Length then (ilParams, methodParams) ||> List.map2 (fun p pv -> { p with Name = Some (nameOfVal pv) }) else ilParams
+    let ilParams = if ilParams.Length = methodParams.Length then (ilParams, methodParams) ||> List.map2 (fun p pv -> p.With(newName = Some (nameOfVal pv))) else ilParams
     let ilRetTy = GenReturnType cenv.amap m eenv.tyenv (Option.map (instType instForSlotSig) ilSlotRetTy)
     let iLRet = mkILReturn ilRetTy
     ilParams,iLRet
@@ -4999,16 +4993,10 @@ and GenParams cenv eenv (mspec:ILMethodSpec) (attribs:ArgReprInfo list) (implVal
             | None -> 
                 None, takenNames
             
-        let param : ILParameter = 
-            { Name=nmOpt
-              Type= ilArgTy  
-              Default=defaultParamValue
-              Marshal=Marshal 
-              IsIn=inFlag    
-              IsOut=outFlag  
-              IsOptional=optionalFlag 
-              CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs (GenAttrs cenv eenv attribs))
-              MetadataIndex = NoMetadataIdx }
+        let param : IParameter =
+            ILParameter
+              (nmOpt, ilArgTy, defaultParamValue, Marshal, inFlag, outFlag, optionalFlag,
+               storeILCustomAttrs (mkILCustomAttrs (GenAttrs cenv eenv attribs)), NoMetadataIdx) :> IParameter
 
         param, takenNames)
     |> fst
