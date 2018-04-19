@@ -256,7 +256,7 @@ module private PrintIL =
         let signaturL       = (m.Parameters, m.Return.Type) |> layoutILParameters denv ilTyparSubst isCons
         nameL ^^ WordL.colon ^^ signaturL
 
-    let private layoutILFieldDef (denv: DisplayEnv) (ilTyparSubst: layout list) (f: ILFieldDef) =
+    let private layoutILFieldDef (denv: DisplayEnv) (ilTyparSubst: layout list) (f: IFieldDef) =
         let staticL =  if f.IsStatic then WordL.keywordStatic else emptyL
         let name    = adjustILName f.Name
         let nameL   = wordL (tagField name)
@@ -348,7 +348,7 @@ module private PrintIL =
     let layoutILEnumDefParts nm litVal =
         WordL.bar ^^ wordL (tagEnum (adjustILName nm)) ^^ layoutILFieldInit litVal
 
-    let private layoutILEnumDef (f : ILFieldDef) = layoutILEnumDefParts f.Name f.LiteralValue
+    let private layoutILEnumDef (f : IFieldDef) = layoutILEnumDefParts f.Name f.LiteralValue
 
     // filtering methods for hiding things we oughtn't show
     let private isStaticILProperty    (p : ILPropertyDef)      = 
@@ -390,7 +390,7 @@ module private PrintIL =
     let private isNotSpecialName    (m : IMethodDef) = 
         not m.IsSpecialName
 
-    let private isPublicILField       (f : ILFieldDef)  = 
+    let private isPublicILField       (f : IFieldDef)  = 
         (f.Access = ILMemberAccess.Public)
 
     let private isPublicILTypeDef       (c : ITypeDef)   : bool =
@@ -399,7 +399,7 @@ module private PrintIL =
         | ILTypeDefAccess.Nested ILMemberAccess.Public -> true
         | _                                  -> false
 
-    let private isShowEnumField (f : ILFieldDef) : bool = f.Name <> "value__" // this appears to be the hard-coded underlying storage field
+    let private isShowEnumField (f : IFieldDef) : bool = f.Name <> "value__" // this appears to be the hard-coded underlying storage field
     let private noShow = set [ "System.Object" ; "Object"; "System.ValueType" ; "ValueType"; "obj" ] // hide certain 'obvious' base classes
     let private isShowBase      (n : layout)   : bool = 
         not (noShow.Contains(showL n))
@@ -439,7 +439,7 @@ module private PrintIL =
                         )
                     else []
 
-            let memberBlockLs (fieldDefs:ILFieldDefs, methodDefs:IMethodDefs, propertyDefs:ILPropertyDefs, eventDefs:ILEventDefs) =
+            let memberBlockLs (fieldDefs:IFieldDefs, methodDefs:IMethodDefs, propertyDefs:ILPropertyDefs, eventDefs:ILEventDefs) =
                 let ctors  =
                     methodDefs.AsList
                     |> List.filter isPublicILCtor 

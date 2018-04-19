@@ -1575,7 +1575,7 @@ type MethInfo =
 [<NoComparison; NoEquality>]
 type ILFieldInfo = 
      /// Represents a single use of a field backed by Abstract IL metadata
-    | ILFieldInfo of ILTypeInfo * ILFieldDef // .NET IL fields 
+    | ILFieldInfo of ILTypeInfo * IFieldDef // .NET IL fields 
 #if !NO_EXTENSIONTYPING
      /// Represents a single use of a field backed by provided metadata
     | ProvidedField of Import.ImportMap * Tainted<ProvidedFieldInfo> * range

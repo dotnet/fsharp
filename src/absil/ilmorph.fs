@@ -154,9 +154,8 @@ let cattr_typ2typ ilg f c =
 let cattrs_typ2typ ilg f (cs: ILAttributes) =
     mkILCustomAttrs (List.map (cattr_typ2typ ilg f) cs.AsList)
 
-let fdef_typ2typ ilg ftype (fd: ILFieldDef) = 
-    fd.With(fieldType=ftype fd.FieldType,
-            customAttrs=cattrs_typ2typ ilg ftype fd.CustomAttrs)
+let fdef_typ2typ ilg ftype (fd: IFieldDef) = 
+    fd.With(newFieldType=ftype fd.FieldType, newCustomAttrs=cattrs_typ2typ ilg ftype fd.CustomAttrs)
 
 let local_typ2typ f (l: ILLocal) = {l with Type = f l.Type}
 let varargs_typ2typ f (varargs: ILVarArgs) = Option.map (List.map f) varargs
@@ -205,7 +204,7 @@ let param_typ2typ ilg f (p: IParameter) =
     p.With(newTy = f p.Type, newCustomAttrsStored = storeILCustomAttrs (cattrs_typ2typ ilg f p.CustomAttrs))
 
 let morphILMethodDefs f (m:IMethodDefs) = mkILMethods (List.map f m.AsList)
-let fdefs_fdef2fdef f (m:ILFieldDefs) = mkILFields (List.map f m.AsList)
+let fdefs_fdef2fdef f (m:IFieldDefs) = mkILFields (List.map f m.AsList)
 
 (* use this when the conversion produces just one type... *)
 let morphILTypeDefs f (m: ITypeDefs) = mkILTypeDefsFromArray (Array.map f m.AsArray)

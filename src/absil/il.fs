@@ -1800,51 +1800,103 @@ let convertFieldAccess (ilMemberAccess:ILMemberAccess) =
     | ILMemberAccess.Private             -> FieldAttributes.Private
     | ILMemberAccess.Public              -> FieldAttributes.Public
 
+type IFieldDef =
+    abstract Name: string
+    abstract FieldType: ILType
+    abstract Attributes: FieldAttributes
+    abstract Data:  byte[] option
+    abstract LiteralValue: ILFieldInit option  
+
+    abstract Offset:  int32 option 
+    abstract Marshal: ILNativeType option 
+    abstract CustomAttrs: ILAttributes
+    abstract IsStatic: bool
+    abstract IsSpecialName: bool
+    abstract IsLiteral: bool
+    abstract NotSerialized: bool
+    abstract IsInitOnly: bool
+    abstract Access: ILMemberAccess
+
+    abstract With:
+        ?newName: string * ?newFieldType: ILType * ?newAttributes: FieldAttributes * ?newData: byte[] option *
+        ?newLiteralValue: ILFieldInit option * ?newOffset:  int32 option * ?newMarshal: ILNativeType option *
+        ?newCustomAttrs: ILAttributes
+            -> IFieldDef
+
+    abstract WithAccess: ILMemberAccess -> IFieldDef
+    abstract WithInitOnly: bool -> IFieldDef
+    abstract WithStatic: bool -> IFieldDef
+    abstract WithSpecialName: bool -> IFieldDef
+    abstract WithNotSerialized: bool -> IFieldDef
+    abstract WithLiteralDefaultValue: ILFieldInit option -> IFieldDef
+    abstract WithFieldMarshal: ILNativeType option -> IFieldDef
+
+
+type IFieldDefs =
+    abstract AsList: IFieldDef list
+    abstract LookupByName: string -> IFieldDef list
+
+
 [<NoComparison; NoEquality>]
 type ILFieldDef(name: string, fieldType: ILType, attributes: FieldAttributes, data: byte[] option, literalValue: ILFieldInit option, offset:  int32 option, marshal: ILNativeType option, customAttrsStored: ILAttributesStored, metadataIndex: int32) = 
 
     new (name, fieldType, attributes, data, literalValue, offset, marshal, customAttrs) = 
         ILFieldDef(name, fieldType, attributes, data, literalValue, offset, marshal, storeILCustomAttrs customAttrs, NoMetadataIdx)
-    member __.Name=name
-    member __.FieldType = fieldType
-    member __.Attributes=attributes
-    member __.Data=data
-    member __.LiteralValue=literalValue
-    member __.Offset=offset
-    member __.Marshal=marshal
-    member x.CustomAttrsStored = customAttrsStored
-    member x.CustomAttrs = customAttrsStored.GetCustomAttrs x.MetadataIndex
-    member x.MetadataIndex = metadataIndex
 
-    member x.With(?name: string, ?fieldType: ILType, ?attributes: FieldAttributes, ?data: byte[] option, ?literalValue: ILFieldInit option, ?offset:  int32 option, ?marshal: ILNativeType option, ?customAttrs: ILAttributes) = 
-        ILFieldDef(name=defaultArg name x.Name,
-                   fieldType=defaultArg fieldType x.FieldType,
-                   attributes=defaultArg attributes x.Attributes,
-                   data=defaultArg data x.Data,
-                   literalValue=defaultArg literalValue x.LiteralValue,
-                   offset=defaultArg offset x.Offset,
-                   marshal=defaultArg marshal x.Marshal,
-                   customAttrs=defaultArg customAttrs x.CustomAttrs)
-    member x.IsStatic = x.Attributes &&& FieldAttributes.Static <> enum 0
-    member x.IsSpecialName = x.Attributes &&& FieldAttributes.SpecialName <> enum 0
-    member x.IsLiteral = x.Attributes &&& FieldAttributes.Literal <> enum 0
-    member x.NotSerialized = x.Attributes &&& FieldAttributes.NotSerialized <> enum 0
-    member x.IsInitOnly = x.Attributes &&& FieldAttributes.InitOnly <> enum 0
-    member x.Access = memberAccessOfFlags (int x.Attributes)
-    member x.WithAccess(access) = x.With(attributes = (x.Attributes &&& ~~~FieldAttributes.FieldAccessMask ||| convertFieldAccess access))
-    member x.WithInitOnly(condition) = x.With(attributes = (x.Attributes |> conditionalAdd condition FieldAttributes.InitOnly))
-    member x.WithStatic(condition) = x.With(attributes = (x.Attributes |> conditionalAdd condition FieldAttributes.Static))
-    member x.WithSpecialName(condition) = x.With(attributes = (x.Attributes |> conditionalAdd condition (FieldAttributes.SpecialName ||| FieldAttributes.RTSpecialName)))
-    member x.WithNotSerialized(condition) = x.With(attributes = (x.Attributes |> conditionalAdd condition FieldAttributes.NotSerialized))
-    member x.WithLiteralDefaultValue(literal) = x.With(literalValue = literal, attributes = (x.Attributes |> conditionalAdd literal.IsSome (FieldAttributes.Literal ||| FieldAttributes.HasDefault)))
-    member x.WithFieldMarshal(marshal) = x.With(marshal = marshal, attributes = (x.Attributes |> conditionalAdd marshal.IsSome FieldAttributes.HasFieldMarshal))
+    member x.CustomAttrs = customAttrsStored.GetCustomAttrs metadataIndex
+
+    member x.With(?newName: string, ?newFieldType: ILType, ?newAttributes: FieldAttributes, ?newData: byte[] option,
+                  ?newLiteralValue: ILFieldInit option, ?newOffset:  int32 option, ?newMarshal: ILNativeType option,
+                  ?newCustomAttrs: ILAttributes) = 
+        ILFieldDef(name = defaultArg newName name,
+                   fieldType = defaultArg newFieldType fieldType,
+                   attributes = defaultArg newAttributes attributes,
+                   data = defaultArg newData data,
+                   literalValue = defaultArg newLiteralValue literalValue,
+                   offset = defaultArg newOffset offset,
+                   marshal = defaultArg newMarshal marshal,
+                   customAttrs = defaultArg newCustomAttrs x.CustomAttrs) :> IFieldDef
+
+    interface IFieldDef with
+        member __.Name          = name
+        member __.FieldType     = fieldType
+        member __.Attributes    = attributes
+        member __.Data          = data
+        member __.LiteralValue  = literalValue
+        member __.Offset        = offset
+        member __.Marshal       = marshal
+
+        member __.IsStatic      = attributes &&& FieldAttributes.Static <> enum 0
+        member __.IsSpecialName = attributes &&& FieldAttributes.SpecialName <> enum 0
+        member __.IsLiteral     = attributes &&& FieldAttributes.Literal <> enum 0
+        member __.NotSerialized = attributes &&& FieldAttributes.NotSerialized <> enum 0
+        member __.IsInitOnly    = attributes &&& FieldAttributes.InitOnly <> enum 0
+        member __.Access        = memberAccessOfFlags (int attributes)
+
+        member x.CustomAttrs   = x.CustomAttrs
+
+        member x.With(?newName: string, ?newFieldType: ILType, ?newAttributes: FieldAttributes, ?newData: byte[] option,
+                      ?newLiteralValue: ILFieldInit option, ?newOffset:  int32 option, ?newMarshal: ILNativeType option,
+                      ?newCustomAttrs: ILAttributes) =
+            x.With(?newName = newName, ?newFieldType = newFieldType, ?newAttributes = newAttributes, ?newData = newData,
+                   ?newLiteralValue = newLiteralValue, ?newOffset = newOffset, ?newMarshal = newMarshal,
+                   ?newCustomAttrs = newCustomAttrs)
+
+        member x.WithAccess(access)               = x.With(newAttributes = (attributes &&& ~~~FieldAttributes.FieldAccessMask ||| convertFieldAccess access))
+        member x.WithInitOnly(condition)          = x.With(newAttributes = (attributes |> conditionalAdd condition FieldAttributes.InitOnly))
+        member x.WithStatic(condition)            = x.With(newAttributes = (attributes |> conditionalAdd condition FieldAttributes.Static))
+        member x.WithSpecialName(condition)       = x.With(newAttributes = (attributes |> conditionalAdd condition (FieldAttributes.SpecialName ||| FieldAttributes.RTSpecialName)))
+        member x.WithNotSerialized(condition)     = x.With(newAttributes = (attributes |> conditionalAdd condition FieldAttributes.NotSerialized))
+        member x.WithLiteralDefaultValue(literal) = x.With(newLiteralValue = literal, newAttributes = (attributes |> conditionalAdd literal.IsSome (FieldAttributes.Literal ||| FieldAttributes.HasDefault)))
+        member x.WithFieldMarshal(marshal)        = x.With(newMarshal = marshal, newAttributes = (attributes |> conditionalAdd marshal.IsSome FieldAttributes.HasFieldMarshal))
 
 
-// Index table by name.  Keep a canonical list to make sure field order is not disturbed for binary manipulation.
-type ILFieldDefs = 
-    | ILFields of LazyOrderedMultiMap<string, ILFieldDef>
-    member x.AsList = let (ILFields t) = x in t.Entries()
-    member x.LookupByName s = let (ILFields t) = x in t.[s]
+/// Index table by name. Keep a canonical list to make sure field order is not disturbed for binary manipulation.
+[<NoEquality; NoComparison; Sealed>]
+type ILFieldDefs(t: LazyOrderedMultiMap<string, IFieldDef>) =
+    interface IFieldDefs with 
+        member x.AsList =  t.Entries()
+        member x.LookupByName(s) = t.[s]
 
 type ILMethodImplDef =
     { Overrides: ILOverridesSpec;
@@ -1998,7 +2050,7 @@ and ITypeDef =
     abstract Extends: ILType option
     abstract Methods: IMethodDefs
     abstract SecurityDecls: ILSecurityDecls
-    abstract Fields: ILFieldDefs
+    abstract Fields: IFieldDefs
     abstract MethodImpls: ILMethodImplDefs
     abstract Events: ILEventDefs
     abstract Properties: ILPropertyDefs
@@ -2037,7 +2089,7 @@ and ITypeDef =
     /// Functional update
     abstract With: ?name: string * ?attributes: TypeAttributes * ?layout: ILTypeDefLayout *  ?implements: ILTypes * 
                  ?genericParams:ILGenericParameterDefs * ?extends:ILType option * ?methods:IMethodDefs * 
-                 ?nestedTypes:ITypeDefs * ?fields: ILFieldDefs * ?methodImpls:ILMethodImplDefs * ?events:ILEventDefs * 
+                 ?nestedTypes:ITypeDefs * ?fields: IFieldDefs * ?methodImpls:ILMethodImplDefs * ?events:ILEventDefs * 
                  ?properties:ILPropertyDefs * ?customAttrs:ILAttributes * ?securityDecls: ILSecurityDecls -> ITypeDef
 
 and IPreTypeDef = 
@@ -2052,7 +2104,7 @@ and IPreTypeDef =
 type ILTypeDef
         (name: string, attributes: TypeAttributes, layout: ILTypeDefLayout, implements: ILTypes,
          genericParams: ILGenericParameterDefs, extends: ILType option, methods: IMethodDefs, nestedTypes: ITypeDefs,
-         fields: ILFieldDefs, methodImpls: ILMethodImplDefs, events: ILEventDefs, properties: ILPropertyDefs,
+         fields: IFieldDefs, methodImpls: ILMethodImplDefs, events: ILEventDefs, properties: ILPropertyDefs,
          securityDeclsStored: ILSecurityDeclsStored, customAttrsStored: ILAttributesStored, metadataIndex: int32) =  
 
     new (name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields, methodImpls,
@@ -3192,10 +3244,10 @@ let code_of_mdef (md:IMethodDef) =
 let mkRefToILMethod (tref, md: IMethodDef) =
     mkILMethRef (tref, md.CallingConv, md.Name, md.GenericParams.Length, md.ParameterTypes, md.Return.Type)
 
-let mkRefToILField (tref,fdef:ILFieldDef) =   mkILFieldRef (tref, fdef.Name, fdef.FieldType)
+let mkRefToILField (tref,fdef:IFieldDef) =   mkILFieldRef (tref, fdef.Name, fdef.FieldType)
 
 let mkRefForILMethod scope (tdefs,tdef) mdef = mkRefToILMethod (mkRefForNestedILTypeDef scope (tdefs,tdef), mdef)
-let mkRefForILField scope (tdefs,tdef) (fdef:ILFieldDef) = mkILFieldRef (mkRefForNestedILTypeDef scope (tdefs,tdef), fdef.Name, fdef.FieldType)
+let mkRefForILField scope (tdefs,tdef) (fdef:IFieldDef) = mkILFieldRef (mkRefForNestedILTypeDef scope (tdefs,tdef), fdef.Name, fdef.FieldType)
 
 
 (* Creates cctor if needed *)
@@ -3216,7 +3268,7 @@ let mkILField (isStatic,nm,ty,(init:ILFieldInit option),(at: byte [] option),acc
                 data=at,
                 offset=None,
                 marshal=None,
-                customAttrs=emptyILCustomAttrs)
+                customAttrs=emptyILCustomAttrs) :> IFieldDef
 
 let mkILInstanceField (nm,ty,init,access) = mkILField (false,nm,ty,init,None,access,false)
 let mkILStaticField (nm,ty,init,at,access) = mkILField (true,nm,ty,init,at,access,false)
@@ -3236,7 +3288,7 @@ type ILLocalsAllocator(numPrealloc:int) =
     member tmps.Close() = ResizeArray.toList newLocals
 
 
-let mkILFieldsLazy l =  ILFields (LazyOrderedMultiMap((fun (f:ILFieldDef) -> f.Name),l))
+let mkILFieldsLazy l = ILFieldDefs (LazyOrderedMultiMap((fun (f:IFieldDef) -> f.Name),l)) :> IFieldDefs
 let mkILFields l =  mkILFieldsLazy (notlazy l)
 let emptyILFields = mkILFields []
 
@@ -3453,8 +3505,8 @@ type ILEnumInfo =
 
 let getTyOfILEnumInfo info = info.enumType
 
-let computeILEnumInfo (mdName,mdFields: ILFieldDefs) = 
-    match (List.partition (fun (fd:ILFieldDef) -> fd.IsStatic) mdFields.AsList) with 
+let computeILEnumInfo (mdName,mdFields: IFieldDefs) = 
+    match (List.partition (fun (fd:IFieldDef) -> fd.IsStatic) mdFields.AsList) with 
     | staticFields,[vfd] -> 
         { enumType = vfd.FieldType; 
           enumValues = staticFields |> List.map (fun fd -> (fd.Name, match fd.LiteralValue with Some i -> i | None -> failwith ("info_of_enum_tdef: badly formed enum "+mdName+": static field does not have an default value")))  }
@@ -4222,7 +4274,7 @@ and refs_of_property_def s (pd: ILPropertyDef) =
     
 and refs_of_properties s (x: ILPropertyDefs) = List.iter (refs_of_property_def s) x.AsList
     
-and refs_of_fdef s (fd: ILFieldDef) = 
+and refs_of_fdef s (fd: IFieldDef) = 
     refs_of_typ  s fd.FieldType
     refs_of_custom_attrs  s fd.CustomAttrs
 

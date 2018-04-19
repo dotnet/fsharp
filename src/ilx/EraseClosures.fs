@@ -119,8 +119,8 @@ type cenv =
     { ilg:ILGlobals
       tref_Func: ILTypeRef[]
       mkILTyFuncTy: ILType
-      addFieldGeneratedAttrs: ILFieldDef -> ILFieldDef
-      addFieldNeverAttrs: ILFieldDef -> ILFieldDef
+      addFieldGeneratedAttrs: IFieldDef -> IFieldDef
+      addFieldNeverAttrs: IFieldDef -> IFieldDef
       addMethodGeneratedAttrs: IMethodDef -> IMethodDef }
   
 let addMethodGeneratedAttrsToTypeDef cenv (tdef: ITypeDef) = 

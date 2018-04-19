@@ -476,7 +476,7 @@ let goutput_custom_attr env os attr =
 let goutput_custom_attrs env os (attrs : ILAttributes) =
   List.iter (fun attr -> goutput_custom_attr env os attr;  output_string os "\n" ) attrs.AsList
 
-let goutput_fdef _tref env os (fd: ILFieldDef) =
+let goutput_fdef _tref env os (fd: IFieldDef) =
   output_string os " .field "
   match fd.Offset with Some i -> output_string os "["; output_i32 os i; output_string os "] " | None -> () 
   match fd.Marshal with Some _i -> output_string os "// marshal attribute not printed\n"; | None -> () 
@@ -884,7 +884,7 @@ let splitTypeLayout = function
   | ILTypeDefLayout.Explicit info ->  "explicit", (fun os () -> output_type_layout_info os info)
 
       
-let goutput_fdefs tref env os (fdefs: ILFieldDefs) = 
+let goutput_fdefs tref env os (fdefs: IFieldDefs) = 
   List.iter (fun f -> (goutput_fdef tref env) os f; output_string os "\n" ) fdefs.AsList
 let goutput_mdefs env os (mdefs: IMethodDefs) = 
   List.iter (fun f -> (goutput_mdef env) os f; output_string os "\n" ) mdefs.AsList

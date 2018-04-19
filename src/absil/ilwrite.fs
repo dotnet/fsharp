@@ -637,7 +637,7 @@ let peOptionalHeaderByteByCLRVersion v =
 [<NoEquality; NoComparison>]
 type ILTokenMappings =  
     { TypeDefTokenMap: ITypeDef list * ITypeDef -> int32
-      FieldDefTokenMap: ITypeDef list * ITypeDef -> ILFieldDef -> int32
+      FieldDefTokenMap: ITypeDef list * ITypeDef -> IFieldDef -> int32
       MethodDefTokenMap: ITypeDef list * ITypeDef -> IMethodDef -> int32
       PropertyTokenMap: ITypeDef list * ITypeDef -> ILPropertyDef -> int32
       EventTokenMap: ITypeDef list * ITypeDef -> ILEventDef -> int32 }
@@ -1119,7 +1119,7 @@ and GetTypeDefAsEventMapRow cenv tidx =
         [| SimpleIndex (TableNames.TypeDef,  tidx)
            SimpleIndex (TableNames.Event, cenv.eventDefs.Count + 1) |]  
     
-and GetKeyForFieldDef tidx (fd: ILFieldDef) = 
+and GetKeyForFieldDef tidx (fd: IFieldDef) = 
     FieldDefKey (tidx, fd.Name, fd.FieldType)
 
 and GenFieldDefPass2 cenv tidx fd = 
@@ -2320,7 +2320,7 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
 // ILFieldDef --> FieldDef Row
 // -------------------------------------------------------------------- 
 
-let rec GetFieldDefAsFieldDefRow cenv env (fd: ILFieldDef) = 
+let rec GetFieldDefAsFieldDefRow cenv env (fd: IFieldDef) = 
     let flags = int fd.Attributes
     UnsharedRow 
         [| UShort (uint16 flags) 

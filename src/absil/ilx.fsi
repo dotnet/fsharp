@@ -14,12 +14,12 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 
 [<Sealed>]
 type IlxUnionField = 
-    new : ILFieldDef -> IlxUnionField
+    new : IFieldDef -> IlxUnionField
     member Type : ILType
     member Name : string
     /// The name used for the field in parameter or IL field position.
     member LowerName : string 
-    member ILField : ILFieldDef
+    member ILField : IFieldDef
     
 type IlxUnionAlternative = 
     { altName: string

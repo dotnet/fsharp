@@ -1593,7 +1593,7 @@ let rec buildMethodPass3 cenv tref modB (typB:TypeBuilder) emEnv (mdef : IMethod
 // buildFieldPass2
 //----------------------------------------------------------------------------
   
-let buildFieldPass2 cenv tref (typB:TypeBuilder) emEnv (fdef : ILFieldDef) =
+let buildFieldPass2 cenv tref (typB:TypeBuilder) emEnv (fdef : IFieldDef) =
     
     let attrs = fdef.Attributes
     let fieldT = convType cenv emEnv  fdef.FieldType
@@ -1626,7 +1626,7 @@ let buildFieldPass2 cenv tref (typB:TypeBuilder) emEnv (fdef : ILFieldDef) =
     let fref = mkILFieldRef (tref, fdef.Name, fdef.FieldType)    
     envBindFieldRef emEnv fref fieldB
 
-let buildFieldPass3 cenv tref (_typB:TypeBuilder) emEnv (fdef : ILFieldDef) =
+let buildFieldPass3 cenv tref (_typB:TypeBuilder) emEnv (fdef : IFieldDef) =
     let fref = mkILFieldRef (tref, fdef.Name, fdef.FieldType)    
     let fieldB = envGetFieldB emEnv fref
     emitCustomAttrs cenv emEnv (wrapCustomAttr fieldB.SetCustomAttribute) fdef.CustomAttrs

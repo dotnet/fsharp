@@ -1998,7 +1998,7 @@ and seekReadField ctxt mdv (numtypars, hasLayout) (idx:int) =
                        Some (seekReadIndexedRow (ctxt.getNumRows TableNames.FieldLayout, seekReadFieldLayoutRow ctxt mdv, 
                                                snd, simpleIndexCompare idx, isSorted ctxt TableNames.FieldLayout, fst)) else None), 
                customAttrsStored=ctxt.customAttrsReader_FieldDef,
-               metadataIndex = idx)
+               metadataIndex = idx) :> IFieldDef
      
 and seekReadFields (ctxt: ILMetadataReader)  (numtypars, hasLayout) fidx1 fidx2 =
     mkILFieldsLazy 

@@ -19,7 +19,7 @@ let mkLowerName (nm: string) =
     if lowerName = nm then "_" + nm else lowerName
 
 [<Sealed>]
-type IlxUnionField(fd: ILFieldDef) =
+type IlxUnionField(fd: IFieldDef) =
     let lowerName = mkLowerName fd.Name
     member x.ILField = fd
     member x.Type = x.ILField.FieldType

@@ -1073,6 +1073,41 @@ type IMethodDefs =
 type ILMethodDefs =
     interface IMethodDefs
 
+
+type IFieldDef =
+    abstract Name: string
+    abstract FieldType: ILType
+    abstract Attributes: FieldAttributes
+    abstract Data:  byte[] option
+    abstract LiteralValue: ILFieldInit option  
+
+    /// The explicit offset in bytes when explicit layout is used.
+    abstract Offset:  int32 option 
+    abstract Marshal: ILNativeType option 
+    abstract CustomAttrs: ILAttributes
+    abstract IsStatic: bool
+    abstract IsSpecialName: bool
+    abstract IsLiteral: bool
+    abstract NotSerialized: bool
+    abstract IsInitOnly: bool
+    abstract Access: ILMemberAccess
+
+    /// Functional update of the value
+    abstract With:
+        ?newName: string * ?newFieldType: ILType * ?newAttributes: FieldAttributes * ?newData: byte[] option *
+        ?newLiteralValue: ILFieldInit option * ?newOffset:  int32 option * ?newMarshal: ILNativeType option *
+        ?newCustomAttrs: ILAttributes
+            -> IFieldDef
+
+    abstract WithAccess: ILMemberAccess -> IFieldDef
+    abstract WithInitOnly: bool -> IFieldDef
+    abstract WithStatic: bool -> IFieldDef
+    abstract WithSpecialName: bool -> IFieldDef
+    abstract WithNotSerialized: bool -> IFieldDef
+    abstract WithLiteralDefaultValue: ILFieldInit option -> IFieldDef
+    abstract WithFieldMarshal: ILNativeType option -> IFieldDef
+
+
 /// Field definitions.
 [<NoComparison; NoEquality>]
 type ILFieldDef = 
@@ -1087,40 +1122,20 @@ type ILFieldDef =
          literalValue: ILFieldInit option * offset:  int32 option * marshal: ILNativeType option * 
          customAttrs: ILAttributes -> ILFieldDef
 
-    member Name: string
-    member FieldType: ILType
-    member Attributes: FieldAttributes
-    member Data:  byte[] option
-    member LiteralValue: ILFieldInit option  
+    interface IFieldDef
 
-    /// The explicit offset in bytes when explicit layout is used.
-    member Offset:  int32 option 
-    member Marshal: ILNativeType option 
-    member CustomAttrs: ILAttributes
-    member IsStatic: bool
-    member IsSpecialName: bool
-    member IsLiteral: bool
-    member NotSerialized: bool
-    member IsInitOnly: bool
-    member Access: ILMemberAccess
 
-    /// Functional update of the value
-    member With: ?name: string * ?fieldType: ILType * ?attributes: FieldAttributes * ?data: byte[] option * ?literalValue: ILFieldInit option * 
-                 ?offset:  int32 option * ?marshal: ILNativeType option * ?customAttrs: ILAttributes -> ILFieldDef
-    member WithAccess: ILMemberAccess -> ILFieldDef
-    member WithInitOnly: bool -> ILFieldDef
-    member WithStatic: bool -> ILFieldDef
-    member WithSpecialName: bool -> ILFieldDef
-    member WithNotSerialized: bool -> ILFieldDef
-    member WithLiteralDefaultValue: ILFieldInit option -> ILFieldDef
-    member WithFieldMarshal: ILNativeType option -> ILFieldDef
-
-/// Tables of fields.  Logically equivalent to a list of fields but the table is kept in 
+/// Tables of fields. Logically equivalent to a list of fields but the table is kept in 
 /// a form to allow efficient looking up fields by name.
+type IFieldDefs =
+    abstract AsList: IFieldDef list
+    abstract LookupByName: string -> IFieldDef list
+
+
 [<NoEquality; NoComparison; Sealed>]
 type ILFieldDefs =
-    member AsList: ILFieldDef list
-    member LookupByName: string -> ILFieldDef list
+    interface IFieldDefs
+
 
 /// Event definitions.
 [<NoComparison; NoEquality>]
@@ -1273,7 +1288,7 @@ and ITypeDef =
     abstract Extends: ILType option
     abstract Methods: IMethodDefs
     abstract SecurityDecls: ILSecurityDecls
-    abstract Fields: ILFieldDefs
+    abstract Fields: IFieldDefs
     abstract MethodImpls: ILMethodImplDefs
     abstract Events: ILEventDefs
     abstract Properties: ILPropertyDefs
@@ -1310,10 +1325,12 @@ and ITypeDef =
     abstract WithInitSemantics: ILTypeInit -> ITypeDef
 
     /// Functional update
-    abstract With: ?name: string * ?attributes: TypeAttributes * ?layout: ILTypeDefLayout *  ?implements: ILTypes * 
-                 ?genericParams:ILGenericParameterDefs * ?extends:ILType option * ?methods:IMethodDefs * 
-                 ?nestedTypes:ITypeDefs * ?fields: ILFieldDefs * ?methodImpls:ILMethodImplDefs * ?events:ILEventDefs * 
-                 ?properties:ILPropertyDefs * ?customAttrs:ILAttributes * ?securityDecls: ILSecurityDecls -> ITypeDef
+    abstract With:
+        ?name: string * ?attributes: TypeAttributes * ?layout: ILTypeDefLayout *  ?implements: ILTypes * 
+        ?genericParams:ILGenericParameterDefs * ?extends:ILType option * ?methods:IMethodDefs * 
+        ?nestedTypes:ITypeDefs * ?fields: IFieldDefs * ?methodImpls:ILMethodImplDefs * ?events:ILEventDefs * 
+        ?properties:ILPropertyDefs * ?customAttrs:ILAttributes * ?securityDecls: ILSecurityDecls
+            -> ITypeDef
 
 and IPreTypeDef = 
         abstract Namespace: string list
@@ -1334,12 +1351,12 @@ and [<NoComparison; NoEquality>] ILTypeDef =
 
     /// Functional creation of a value, using delayed reading via a metadata index, for ilread.fs
     new: name: string * attributes: TypeAttributes * layout: ILTypeDefLayout * implements: ILTypes * genericParams: ILGenericParameterDefs * 
-          extends: ILType option * methods: IMethodDefs * nestedTypes: ITypeDefs * fields: ILFieldDefs * methodImpls: ILMethodImplDefs * 
+          extends: ILType option * methods: IMethodDefs * nestedTypes: ITypeDefs * fields: IFieldDefs * methodImpls: ILMethodImplDefs * 
           events: ILEventDefs * properties: ILPropertyDefs * securityDeclsStored: ILSecurityDeclsStored * customAttrsStored: ILAttributesStored * metadataIndex: int32 -> ILTypeDef
 
     /// Functional creation of a value, immediate
     new: name: string * attributes: TypeAttributes * layout: ILTypeDefLayout * implements: ILTypes * genericParams: ILGenericParameterDefs * 
-          extends: ILType option * methods: IMethodDefs * nestedTypes: ITypeDefs * fields: ILFieldDefs * methodImpls: ILMethodImplDefs * 
+          extends: ILType option * methods: IMethodDefs * nestedTypes: ITypeDefs * fields: IFieldDefs * methodImpls: ILMethodImplDefs * 
           events: ILEventDefs * properties: ILPropertyDefs * securityDecls: ILSecurityDecls * customAttrs: ILAttributes -> ILTypeDef
 
     interface ITypeDef
@@ -1860,14 +1877,14 @@ val mkILNonGenericInstanceMethod: string * ILMemberAccess  * IParameter list * I
 
 
 /// Make field definitions.
-val mkILInstanceField: string * ILType * ILFieldInit option * ILMemberAccess -> ILFieldDef
-val mkILStaticField: string * ILType * ILFieldInit option * byte[] option * ILMemberAccess -> ILFieldDef
-val mkILLiteralField: string * ILType * ILFieldInit * byte[] option * ILMemberAccess -> ILFieldDef
+val mkILInstanceField: string * ILType * ILFieldInit option * ILMemberAccess -> IFieldDef
+val mkILStaticField: string * ILType * ILFieldInit option * byte[] option * ILMemberAccess -> IFieldDef
+val mkILLiteralField: string * ILType * ILFieldInit * byte[] option * ILMemberAccess -> IFieldDef
 
 /// Make a type definition.
-val mkILGenericClass: string * ILTypeDefAccess * ILGenericParameterDefs * ILType * ILType list * IMethodDefs * ILFieldDefs * ITypeDefs * ILPropertyDefs * ILEventDefs * ILAttributes * ILTypeInit -> ITypeDef
-val mkILSimpleClass: ILGlobals -> string * ILTypeDefAccess * IMethodDefs * ILFieldDefs * ITypeDefs * ILPropertyDefs * ILEventDefs * ILAttributes * ILTypeInit  -> ITypeDef
-val mkILTypeDefForGlobalFunctions: ILGlobals -> IMethodDefs * ILFieldDefs -> ITypeDef
+val mkILGenericClass: string * ILTypeDefAccess * ILGenericParameterDefs * ILType * ILType list * IMethodDefs * IFieldDefs * ITypeDefs * ILPropertyDefs * ILEventDefs * ILAttributes * ILTypeInit -> ITypeDef
+val mkILSimpleClass: ILGlobals -> string * ILTypeDefAccess * IMethodDefs * IFieldDefs * ITypeDefs * ILPropertyDefs * ILEventDefs * ILAttributes * ILTypeInit  -> ITypeDef
+val mkILTypeDefForGlobalFunctions: ILGlobals -> IMethodDefs * IFieldDefs -> ITypeDef
 
 /// Make a type definition for a value type used to point to raw data.
 /// These are useful when generating array initialization code 
@@ -1933,9 +1950,9 @@ val mkILMethodsFromArray: IMethodDef[] -> IMethodDefs
 val mkILMethodsComputed: (unit -> IMethodDef[]) -> IMethodDefs
 val emptyILMethods: IMethodDefs
 
-val mkILFields: ILFieldDef list -> ILFieldDefs
-val mkILFieldsLazy: Lazy<ILFieldDef list> -> ILFieldDefs
-val emptyILFields: ILFieldDefs
+val mkILFields: IFieldDef list -> IFieldDefs
+val mkILFieldsLazy: Lazy<IFieldDef list> -> IFieldDefs
+val emptyILFields: IFieldDefs
 
 val mkILMethodImpls: ILMethodImplDef list -> ILMethodImplDefs
 val mkILMethodImplsLazy: Lazy<ILMethodImplDef list> -> ILMethodImplDefs
@@ -1977,10 +1994,10 @@ val mkILSimpleModule: assemblyName:string -> moduleName:string -> dll:bool -> su
 
 val mkRefForNestedILTypeDef: ILScopeRef -> ITypeDef list * ITypeDef -> ILTypeRef
 val mkRefForILMethod       : ILScopeRef -> ITypeDef list * ITypeDef -> IMethodDef -> ILMethodRef
-val mkRefForILField       : ILScopeRef -> ITypeDef list * ITypeDef -> ILFieldDef  -> ILFieldRef
+val mkRefForILField       : ILScopeRef -> ITypeDef list * ITypeDef -> IFieldDef  -> ILFieldRef
 
 val mkRefToILMethod: ILTypeRef * IMethodDef -> ILMethodRef
-val mkRefToILField: ILTypeRef * ILFieldDef -> ILFieldRef
+val mkRefToILField: ILTypeRef * IFieldDef -> ILFieldRef
 
 val mkRefToILAssembly: IAssemblyManifest -> ILAssemblyRef
 val mkRefToILModule: IModuleDef -> ILModuleRef
@@ -2073,7 +2090,7 @@ type ILEnumInfo =
 
 val getTyOfILEnumInfo: ILEnumInfo -> ILType
 
-val computeILEnumInfo: string * ILFieldDefs -> ILEnumInfo
+val computeILEnumInfo: string * IFieldDefs -> ILEnumInfo
 
 /// A utility type provided for completeness
 [<Sealed>]

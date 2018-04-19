@@ -768,7 +768,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
         else
           let altNullaryFields = 
               if repr.MaintainPossiblyUniqueConstantFieldForAlternative(info,alt) then 
-                  let basic : ILFieldDef = 
+                  let basic : IFieldDef = 
                      mkILStaticField (constFieldName altName, baseTy, None, None, ILMemberAccess.Assembly)
                             |> addFieldNeverAttrs 
                             |> addFieldGeneratedAttrs 
@@ -909,7 +909,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
     baseMakerMeths, baseMakerProps, altUniqObjMeths, typeDefs, altDebugTypeDefs, altNullaryFields
         
   
-let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addPropertyNeverAttrs, addFieldGeneratedAttrs: ILFieldDef -> ILFieldDef, addFieldNeverAttrs: ILFieldDef -> ILFieldDef, mkDebuggerTypeProxyAttribute) ilg tref (td:ITypeDef) cud = 
+let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addPropertyNeverAttrs, addFieldGeneratedAttrs: IFieldDef -> IFieldDef, addFieldNeverAttrs: IFieldDef -> IFieldDef, mkDebuggerTypeProxyAttribute) ilg tref (td:ITypeDef) cud = 
     let boxity = if td.IsStruct then ILBoxity.AsValue else ILBoxity.AsObject
     let baseTy = mkILFormalNamedTy boxity tref td.GenericParams
     let cuspec = IlxUnionSpec(IlxUnionRef(boxity,baseTy.TypeRef, cud.cudAlternatives, cud.cudNullPermitted, cud.cudHasHelpers), baseTy.GenericArgs)
