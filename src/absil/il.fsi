@@ -1435,40 +1435,69 @@ type ILAssemblyLongevity =
     | PlatformProcess
     | PlatformSystem
 
+
+type IAssemblyManifest =
+    abstract Name: string
+
+    /// This is the ID of the algorithm used for the hashes of auxiliary files in the assembly.
+    /// These hashes are stored in the <c>ILModuleRef.Hash</c> fields of this assembly.
+    /// These are not cryptographic hashes: they are simple file hashes.
+    /// The algorithm is normally <c>0x00008004</c> indicating the SHA1 hash algorithm.  
+    abstract AuxModuleHashAlgorithm: int
+
+    /// This is the public key used to sign this assembly (the signature itself is stored elsewhere: see the 
+    /// binary format, and may not have been written if delay signing is used).
+    /// (member Name, member PublicKey) forms the full public name of the assembly.  
+    abstract PublicKey: byte[] option  
+
+    abstract Version: ILVersionInfo option
+    abstract Locale: string option
+    abstract AssemblyLongevity: ILAssemblyLongevity 
+    abstract DisableJitOptimizations: bool
+    abstract JitTracking: bool
+    abstract IgnoreSymbolStoreSequencePoints: bool
+    abstract Retargetable: bool
+
+    /// Records the types implemented by this assembly in auxiliary modules. 
+    abstract ExportedTypes: ILExportedTypesAndForwarders
+
+    /// Records whether the entrypoint resides in another module. 
+    abstract EntrypointElsewhere: ILModuleRef option
+
+    abstract CustomAttrs: ILAttributes
+    abstract SecurityDecls: ILSecurityDecls
+
+    abstract With:
+        ?newPublicKey: byte[] option * ?newVersion: ILVersionInfo option * ?newDisableJitOptimizations: bool *
+        ?newJitTracking: bool * ?newIgnoreSymbolStoreSequencePoints: bool *
+        ?newCustomAttrsStored: ILAttributesStored * ?newSecurityDeclsStored: ILSecurityDeclsStored
+            -> IAssemblyManifest
+
+
 /// The main module of an assembly is a module plus some manifest information.
-type ILAssemblyManifest = 
-    { Name: string
-      /// This is the ID of the algorithm used for the hashes of auxiliary 
-      /// files in the assembly.   These hashes are stored in the 
-      /// <c>ILModuleRef.Hash</c> fields of this assembly. These are not 
-      /// cryptographic hashes: they are simple file hashes. The algorithm 
-      /// is normally <c>0x00008004</c> indicating the SHA1 hash algorithm.  
-      AuxModuleHashAlgorithm: int32 
-      SecurityDeclsStored: ILSecurityDeclsStored
-      /// This is the public key used to sign this 
-      /// assembly (the signature itself is stored elsewhere: see the 
-      /// binary format, and may not have been written if delay signing 
-      /// is used).  (member Name, member PublicKey) forms the full 
-      /// public name of the assembly.  
-      PublicKey: byte[] option  
-      Version: ILVersionInfo option
-      Locale: string option
-      CustomAttrsStored: ILAttributesStored
-      AssemblyLongevity: ILAssemblyLongevity 
-      DisableJitOptimizations: bool
-      JitTracking: bool
-      IgnoreSymbolStoreSequencePoints: bool
-      Retargetable: bool
-      /// Records the types implemented by this assembly in auxiliary 
-      /// modules. 
-      ExportedTypes: ILExportedTypesAndForwarders
-      /// Records whether the entrypoint resides in another module. 
-      EntrypointElsewhere: ILModuleRef option
-      MetadataIndex: int32
-    } 
-    member CustomAttrs: ILAttributes
-    member SecurityDecls: ILSecurityDecls
-    
+[<Sealed>]
+type ILAssemblyManifest =
+
+    new:
+        name: string *
+        auxModuleHashAlgorithm: int *
+        securityDeclsStored: ILSecurityDeclsStored *
+        publicKey: byte[] option *
+        version: ILVersionInfo option *
+        locale: string option *
+        customAttrsStored: ILAttributesStored *
+        assemblyLongevity: ILAssemblyLongevity *
+        disableJitOptimizations: bool *
+        jitTracking: bool *
+        ignoreSymbolStoreSequencePoints: bool *
+        retargetable: bool *
+        exportedTypes: ILExportedTypesAndForwarders *
+        entrypointElsewhere: ILModuleRef option *
+        metadataIndex: int
+            -> ILAssemblyManifest 
+
+    interface IAssemblyManifest
+
 
 [<RequireQualifiedAccess>]
 type ILNativeResource = 
@@ -1484,7 +1513,7 @@ type ILNativeResource =
 ///
 /// An assembly is built by joining together a "main" module plus several auxiliary modules. 
 type IModuleDef =
-    abstract Manifest: ILAssemblyManifest option
+    abstract Manifest: IAssemblyManifest option
     abstract Name: string
     abstract TypeDefs: ITypeDefs
     abstract SubsystemVersion: int * int
@@ -1507,12 +1536,12 @@ type IModuleDef =
     abstract NativeResources: ILNativeResource list
     abstract CustomAttrsStored: ILAttributesStored
     abstract MetadataIndex: int32 
-    abstract ManifestOfAssembly: ILAssemblyManifest 
+    abstract ManifestOfAssembly: IAssemblyManifest 
     abstract HasManifest: bool
     abstract CustomAttrs: ILAttributes
 
     abstract With:
-        ?name: string * ?manifest: ILAssemblyManifest option * ?typeDefs: ITypeDefs *
+        ?name: string * ?manifest: IAssemblyManifest option * ?typeDefs: ITypeDefs *
         ?subsystemVersion: (int * int) * ?useHighEntropyVA: bool * ?subSystemFlags: int32 * ?isDLL: bool *
         ?isILOnly: bool * ?platform: ILPlatform option * ?stackReserveSize: int32 option * ?is32Bit: bool *
         ?is32BitPreferred: bool * ?is64Bit: bool * ?virtualAlignment: int32 * ?physicalAlignment: int32 *
@@ -1525,7 +1554,7 @@ type IModuleDef =
 type ILModuleDef =
     internal new:
         name: string *
-        manifest: ILAssemblyManifest option *
+        manifest: IAssemblyManifest option *
         typeDefs: ITypeDefs *
         subsystemVersion: (int * int) *
         useHighEntropyVA: bool *
@@ -1921,7 +1950,7 @@ val mkRefForILField       : ILScopeRef -> ITypeDef list * ITypeDef -> ILFieldDef
 val mkRefToILMethod: ILTypeRef * ILMethodDef -> ILMethodRef
 val mkRefToILField: ILTypeRef * ILFieldDef -> ILFieldRef
 
-val mkRefToILAssembly: ILAssemblyManifest -> ILAssemblyRef
+val mkRefToILAssembly: IAssemblyManifest -> ILAssemblyRef
 val mkRefToILModule: IModuleDef -> ILModuleRef
 
 val NoMetadataIdx: int32

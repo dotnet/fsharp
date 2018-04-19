@@ -286,8 +286,8 @@ and tdefs_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg enc fs tdefs =
 // Derived versions of the above, e.g. with defaults added
 // -------------------------------------------------------------------- 
 
-let manifest_typ2typ ilg f (m : ILAssemblyManifest) =
-    { m with CustomAttrsStored = storeILCustomAttrs (cattrs_typ2typ ilg f m.CustomAttrs) }
+let manifest_typ2typ ilg f (m : IAssemblyManifest) =
+    m.With(newCustomAttrsStored = storeILCustomAttrs (cattrs_typ2typ ilg f m.CustomAttrs))
 
 let morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs ilg ((ftype: IModuleDef -> (ITypeDef list * ITypeDef) option -> ILMethodDef option -> ILType -> ILType),fmdefs) m = 
 

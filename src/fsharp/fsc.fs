@@ -882,12 +882,13 @@ module MainModuleBuilder =
                  match assemVerFromAttrib with 
                  | None -> tcVersion
                  | Some v -> v
-             Some { man with Version= Some ver
-                             CustomAttrsStored = storeILCustomAttrs manifestAttrs
-                             DisableJitOptimizations=disableJitOptimizations
-                             JitTracking= tcConfig.jitTracking
-                             IgnoreSymbolStoreSequencePoints = tcConfig.ignoreSymbolStoreSequencePoints
-                             SecurityDeclsStored=storeILSecurityDecls secDecls } 
+             man.With(
+                newVersion = Some ver,
+                newCustomAttrsStored = storeILCustomAttrs manifestAttrs,
+                newDisableJitOptimizations = disableJitOptimizations,
+                newJitTracking = tcConfig.jitTracking,
+                newIgnoreSymbolStoreSequencePoints = tcConfig.ignoreSymbolStoreSequencePoints,
+                newSecurityDeclsStored = storeILSecurityDecls secDecls) |> Some
 
         let resources = 
           mkILResources 
@@ -1141,7 +1142,7 @@ module StaticLinker =
 
             let ilxMainModule =
                 ilxMainModule.With(
-                    manifest = (let m = ilxMainModule.ManifestOfAssembly in Some {m with CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs (m.CustomAttrs.AsList @ savedManifestAttrs)) }),
+                    manifest = (let m = ilxMainModule.ManifestOfAssembly in Some (m.With(newCustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs (m.CustomAttrs.AsList @ savedManifestAttrs))))),
                     customAttrsStored = storeILCustomAttrs (mkILCustomAttrs [ for m in moduls do yield! m.CustomAttrs.AsArray ]),
                     typeDefs = mkILTypeDefs (topTypeDef :: List.concat normalTypeDefs),
                     resources = mkILResources (savedResources @ ilxMainModule.Resources.AsList),

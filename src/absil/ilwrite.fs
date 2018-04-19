@@ -2808,7 +2808,7 @@ and GenExportedTypesPass3 cenv (ce: ILExportedTypesAndForwarders) =
 // manifest --> generate Assembly row
 // -------------------------------------------------------------------- 
 
-and GetManifsetAsAssemblyRow cenv m = 
+and GetManifsetAsAssemblyRow cenv (m: IAssemblyManifest) = 
     UnsharedRow 
         [|ULong m.AuxModuleHashAlgorithm
           UShort (match m.Version with None -> 0us | Some (x, _, _, _) -> x)
@@ -3516,7 +3516,8 @@ let writeBinaryAndReportMappings (outfile,
         match signer, modul.Manifest with
         | Some _, _ -> signer
         | _, None -> signer
-        | None, Some {PublicKey=Some pubkey} -> 
+        | None, Some manifest when manifest.PublicKey.IsSome ->
+            let pubkey = manifest.PublicKey.Value
             (dprintn "Note: The output assembly will be delay-signed using the original public";
              dprintn "Note: key. In order to load it you will need to either sign it with";
              dprintn "Note: the original private key or to turn off strong-name verification";
@@ -3542,7 +3543,7 @@ let writeBinaryAndReportMappings (outfile,
            if m.PublicKey <> None && m.PublicKey <> pubkey then 
              dprintn "Warning: The output assembly is being signed or delay-signed with a strong name that is different to the original."
         end;
-        modul.With(manifest = match modul.Manifest with None -> None | Some m -> Some {m with PublicKey = pubkey})
+        modul.With(manifest = match modul.Manifest with None -> None | Some m -> Some (m.With(newPublicKey = pubkey)))
 
     let os = 
         try

@@ -1010,7 +1010,7 @@ let goutput_resource env os r =
       output_sqstring os aref.Name
   output_string os " }\n "
 
-let goutput_manifest env os m = 
+let goutput_manifest env os (m: IAssemblyManifest) = 
   output_string os " .assembly "; 
   match m.AssemblyLongevity with 
             | ILAssemblyLongevity.Unspecified -> ()

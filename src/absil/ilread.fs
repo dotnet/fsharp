@@ -1637,30 +1637,33 @@ and seekReadAssemblyManifest (ctxt: ILMetadataReader) pectxt idx =
     let (hash, v1, v2, v3, v4, flags, publicKeyIdx, nameIdx, localeIdx) = seekReadAssemblyRow ctxt mdview idx
     let name = readStringHeap ctxt nameIdx
     let pubkey = readBlobHeapOption ctxt publicKeyIdx
-    { Name= name 
-      AuxModuleHashAlgorithm=hash
-      SecurityDeclsStored= ctxt.securityDeclsReader_Assembly
-      PublicKey= pubkey  
-      Version= Some (v1, v2, v3, v4)
-      Locale= readStringHeapOption ctxt localeIdx
-      CustomAttrsStored = ctxt.customAttrsReader_Assembly
-      MetadataIndex = idx
-      AssemblyLongevity= 
-        let masked = flags &&& 0x000e
-        if masked = 0x0000 then ILAssemblyLongevity.Unspecified
-        elif masked = 0x0002 then ILAssemblyLongevity.Library
-        elif masked = 0x0004 then ILAssemblyLongevity.PlatformAppDomain
-        elif masked = 0x0006 then ILAssemblyLongevity.PlatformProcess
-        elif masked = 0x0008 then ILAssemblyLongevity.PlatformSystem
-        else ILAssemblyLongevity.Unspecified
-      ExportedTypes= seekReadTopExportedTypes ctxt 
-      EntrypointElsewhere=
-            let (tab, tok) = pectxt.entryPointToken
-            if tab = TableNames.File then Some (seekReadFile ctxt mdview tok) else None
-      Retargetable = 0 <> (flags &&& 0x100)
-      DisableJitOptimizations = 0 <> (flags &&& 0x4000)
-      JitTracking = 0 <> (flags &&& 0x8000) 
-      IgnoreSymbolStoreSequencePoints = 0 <> (flags &&& 0x2000) } 
+    let assemblyLongevity =
+         match flags &&& 0x000e with
+         | 0x0000 -> ILAssemblyLongevity.Unspecified
+         | 0x0002 -> ILAssemblyLongevity.Library
+         | 0x0004 -> ILAssemblyLongevity.PlatformAppDomain
+         | 0x0006 -> ILAssemblyLongevity.PlatformProcess
+         | 0x0008 -> ILAssemblyLongevity.PlatformSystem
+         | _      -> ILAssemblyLongevity.Unspecified
+
+    ILAssemblyManifest
+        (name = name,
+         auxModuleHashAlgorithm = hash,
+         securityDeclsStored = ctxt.securityDeclsReader_Assembly,
+         publicKey = pubkey,  
+         version = Some (v1, v2, v3, v4),
+         locale = readStringHeapOption ctxt localeIdx,
+         customAttrsStored = ctxt.customAttrsReader_Assembly,
+         metadataIndex = idx,
+         assemblyLongevity = assemblyLongevity,
+         exportedTypes = seekReadTopExportedTypes ctxt, 
+         entrypointElsewhere =
+               (let (tab, tok) = pectxt.entryPointToken
+                if tab = TableNames.File then Some (seekReadFile ctxt mdview tok) else None),
+         retargetable = (0 <> (flags &&& 0x100)),
+         disableJitOptimizations = (0 <> (flags &&& 0x4000)),
+         jitTracking = (0 <> (flags &&& 0x8000)),
+         ignoreSymbolStoreSequencePoints = (0 <> (flags &&& 0x2000))) :> IAssemblyManifest
 
 and seekReadAssemblyRef (ctxt: ILMetadataReader)  idx = ctxt.seekReadAssemblyRef idx
 and seekReadAssemblyRefUncached ctxtH idx = 

@@ -2128,29 +2128,70 @@ type ILAssemblyLongevity =
     | PlatformSystem
 
 
-type ILAssemblyManifest = 
-    { Name: string
-      AuxModuleHashAlgorithm: int32
-      SecurityDeclsStored: ILSecurityDeclsStored
-      PublicKey: byte[] option
-      Version: ILVersionInfo option
-      Locale: Locale option
-      CustomAttrsStored: ILAttributesStored
+type IAssemblyManifest =
+    abstract Name: string
+    abstract AuxModuleHashAlgorithm: int32 
+    abstract PublicKey: byte[] option  
+    abstract Version: ILVersionInfo option
+    abstract Locale: string option
+    abstract AssemblyLongevity: ILAssemblyLongevity 
+    abstract DisableJitOptimizations: bool
+    abstract JitTracking: bool
+    abstract IgnoreSymbolStoreSequencePoints: bool
+    abstract Retargetable: bool
+    abstract ExportedTypes: ILExportedTypesAndForwarders
+    abstract EntrypointElsewhere: ILModuleRef option
+    abstract CustomAttrs: ILAttributes
+    abstract SecurityDecls: ILSecurityDecls
 
-      AssemblyLongevity: ILAssemblyLongevity 
-      DisableJitOptimizations: bool
-      JitTracking: bool
-      IgnoreSymbolStoreSequencePoints: bool
-      Retargetable: bool
+    abstract With:
+        ?newPublicKey: byte[] option * ?newVersion: ILVersionInfo option * ?newDisableJitOptimizations: bool *
+        ?newJitTracking: bool * ?newIgnoreSymbolStoreSequencePoints: bool *
+        ?newCustomAttrsStored: ILAttributesStored * ?newSecurityDeclsStored: ILSecurityDeclsStored
+            -> IAssemblyManifest
 
-      /// Records the types implemented by other modules. 
-      ExportedTypes: ILExportedTypesAndForwarders
-      /// Records whether the entrypoint resides in another module. 
-      EntrypointElsewhere: ILModuleRef option 
-      MetadataIndex: int32
-    } 
-    member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
-    member x.SecurityDecls = x.SecurityDeclsStored.GetSecurityDecls x.MetadataIndex
+[<Sealed>]
+type ILAssemblyManifest
+        (name, auxModuleHashAlgorithm, securityDeclsStored: ILSecurityDeclsStored, publicKey, version, locale,
+         customAttrsStored: ILAttributesStored, assemblyLongevity, disableJitOptimizations, jitTracking,
+         ignoreSymbolStoreSequencePoints, retargetable, exportedTypes, entrypointElsewhere, metadataIndex) = 
+
+    interface IAssemblyManifest with
+        member x.Name = name
+        member x.AuxModuleHashAlgorithm = auxModuleHashAlgorithm
+        member x.PublicKey = publicKey
+        member x.Version = version
+        member x.Locale = locale
+        member x.AssemblyLongevity = assemblyLongevity  
+        member x.DisableJitOptimizations = disableJitOptimizations
+        member x.JitTracking = jitTracking
+        member x.IgnoreSymbolStoreSequencePoints = ignoreSymbolStoreSequencePoints
+        member x.Retargetable = retargetable
+        member x.ExportedTypes = exportedTypes
+        member x.EntrypointElsewhere = entrypointElsewhere
+        member x.CustomAttrs = customAttrsStored.GetCustomAttrs(metadataIndex)
+        member x.SecurityDecls = securityDeclsStored.GetSecurityDecls(metadataIndex)
+
+        member x.With(?newPublicKey: byte[] option, ?newVersion: ILVersionInfo option, ?newDisableJitOptimizations: bool,
+                      ?newJitTracking: bool, ?newIgnoreSymbolStoreSequencePoints: bool,
+                      ?newCustomAttrsStored: ILAttributesStored, ?newSecurityDeclsStored: ILSecurityDeclsStored) =
+            ILAssemblyManifest
+                (name = name,
+                 auxModuleHashAlgorithm = auxModuleHashAlgorithm,
+                 securityDeclsStored = defaultArg newSecurityDeclsStored securityDeclsStored,
+                 publicKey = defaultArg newPublicKey publicKey,
+                 version = defaultArg newVersion version,
+                 locale = locale,
+                 customAttrsStored = defaultArg newCustomAttrsStored customAttrsStored,
+                 assemblyLongevity = assemblyLongevity,
+                 disableJitOptimizations = defaultArg newDisableJitOptimizations disableJitOptimizations,
+                 jitTracking = defaultArg newJitTracking jitTracking,
+                 ignoreSymbolStoreSequencePoints = defaultArg newIgnoreSymbolStoreSequencePoints ignoreSymbolStoreSequencePoints,
+                 retargetable = retargetable,
+                 exportedTypes = exportedTypes,
+                 entrypointElsewhere = entrypointElsewhere,
+                 metadataIndex = metadataIndex) :> IAssemblyManifest
+
 
 [<RequireQualifiedAccess>]
 type ILNativeResource = 
@@ -2158,7 +2199,7 @@ type ILNativeResource =
     | Out of unlinkedResource: byte[]
 
 type IModuleDef =
-    abstract Manifest: ILAssemblyManifest option
+    abstract Manifest: IAssemblyManifest option
     abstract Name: string
     abstract TypeDefs: ITypeDefs
     abstract SubsystemVersion: int * int
@@ -2181,12 +2222,12 @@ type IModuleDef =
     abstract NativeResources: ILNativeResource list
     abstract CustomAttrsStored: ILAttributesStored
     abstract MetadataIndex: int32 
-    abstract ManifestOfAssembly: ILAssemblyManifest 
+    abstract ManifestOfAssembly: IAssemblyManifest 
     abstract HasManifest: bool
     abstract CustomAttrs: ILAttributes
 
     abstract With:
-        ?name: string * ?manifest: ILAssemblyManifest option * ?typeDefs: ITypeDefs *
+        ?name: string * ?manifest: IAssemblyManifest option * ?typeDefs: ITypeDefs *
         ?subsystemVersion: (int * int) * ?useHighEntropyVA: bool * ?subSystemFlags: int32 * ?isDLL: bool *
         ?isILOnly: bool * ?platform: ILPlatform option * ?stackReserveSize: int32 option * ?is32Bit: bool *
         ?is32BitPreferred: bool * ?is64Bit: bool * ?virtualAlignment: int32 * ?physicalAlignment: int32 *
@@ -2197,7 +2238,7 @@ type IModuleDef =
 [<Sealed>]
 type ILModuleDef
     internal
-        (name: string, manifest: ILAssemblyManifest option, typeDefs: ITypeDefs, subsystemVersion: (int * int),
+        (name: string, manifest: IAssemblyManifest option, typeDefs: ITypeDefs, subsystemVersion: (int * int),
          useHighEntropyVA: bool, subSystemFlags: int32, isDLL: bool, isILOnly: bool, platform: ILPlatform option,
          stackReserveSize: int32 option, is32Bit: bool, is32BitPreferred: bool, is64Bit: bool, virtualAlignment: int32,
          physicalAlignment: int32, imageBase: int32, metadataVersion: string, resources: ILResources,
@@ -3185,22 +3226,24 @@ let destTypeDefsWithGlobalFunctionsFirst ilg (tdefs: ITypeDefs) =
   top2@nontop
 
 let mkILSimpleModule assname modname dll subsystemVersion useHighEntropyVA tdefs hashalg locale flags exportedTypes metadataVersion = 
-    let manifest = 
-        { Name=assname
-          AuxModuleHashAlgorithm= match hashalg with | Some(alg) -> alg | _ -> 0x8004 // SHA1
-          SecurityDeclsStored=emptyILSecurityDeclsStored
-          PublicKey= None
-          Version= None
-          Locale=locale
-          CustomAttrsStored=storeILCustomAttrs emptyILCustomAttrs
-          AssemblyLongevity=ILAssemblyLongevity.Unspecified
-          DisableJitOptimizations = 0 <> (flags &&& 0x4000)
-          JitTracking = (0 <> (flags &&& 0x8000)) // always turn these on
-          IgnoreSymbolStoreSequencePoints = (0 <> (flags &&& 0x2000))
-          Retargetable = (0 <> (flags &&& 0x100))
-          ExportedTypes=exportedTypes
-          EntrypointElsewhere=None 
-          MetadataIndex = NoMetadataIdx }
+    let manifest =
+        ILAssemblyManifest 
+            (name = assname,
+             auxModuleHashAlgorithm = (match hashalg with | Some(alg) -> alg | _ -> 0x8004), // SHA1
+             securityDeclsStored = emptyILSecurityDeclsStored,
+             publicKey = None,
+             version = None,
+             locale = locale,
+             customAttrsStored = storeILCustomAttrs emptyILCustomAttrs,
+             assemblyLongevity = ILAssemblyLongevity.Unspecified,
+             disableJitOptimizations = (0 <> (flags &&& 0x4000)),
+             jitTracking = (0 <> (flags &&& 0x8000)), // always turn these on
+             ignoreSymbolStoreSequencePoints = (0 <> (flags &&& 0x2000)),
+             retargetable = (0 <> (flags &&& 0x100)),
+             exportedTypes = exportedTypes,
+             entrypointElsewhere = None,
+             metadataIndex = NoMetadataIdx) :> IAssemblyManifest
+
     ILModuleDef
         (manifest = Some manifest,
          customAttrsStored = storeILCustomAttrs emptyILCustomAttrs,
@@ -3390,7 +3433,7 @@ let sigptr_get_serstring_possibly_null  bytes sigptr =
 // Get the public key token from the public key.
 //---------------------------------------------------------------------
 
-let mkRefToILAssembly (m: ILAssemblyManifest) = 
+let mkRefToILAssembly (m: IAssemblyManifest) = 
     ILAssemblyRef.Create(m.Name, None, (match m.PublicKey with Some k -> Some (PublicKey.KeyAsToken(k)) | None -> None), m.Retargetable, m.Version, m.Locale)
 
 let z_unsigned_int_size n = 
@@ -4093,7 +4136,7 @@ and refs_of_modul s (m: IModuleDef) =
     refs_of_resources s m.Resources
     Option.iter (refs_of_manifest s) m.Manifest
     
-and refs_of_manifest s (m: ILAssemblyManifest) = 
+and refs_of_manifest s (m: IAssemblyManifest) = 
     refs_of_custom_attrs s m.CustomAttrs
     refs_of_exported_types s m.ExportedTypes
 
