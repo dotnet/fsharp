@@ -1659,7 +1659,7 @@ let buildPropertyPass3 cenv tref (_typB:TypeBuilder) emEnv (prop : ILPropertyDef
 //----------------------------------------------------------------------------
   
 
-let buildEventPass3 cenv (typB:TypeBuilder) emEnv (eventDef : ILEventDef) = 
+let buildEventPass3 cenv (typB:TypeBuilder) emEnv (eventDef : IEventDef) = 
     let attrs = flagsIf eventDef.IsSpecialName EventAttributes.SpecialName |||
                 flagsIf eventDef.IsRTSpecialName EventAttributes.RTSpecialName 
     assert eventDef.EventType.IsSome

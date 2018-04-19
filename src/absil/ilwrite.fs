@@ -640,7 +640,7 @@ type ILTokenMappings =
       FieldDefTokenMap: ITypeDef list * ITypeDef -> IFieldDef -> int32
       MethodDefTokenMap: ITypeDef list * ITypeDef -> IMethodDef -> int32
       PropertyTokenMap: ITypeDef list * ITypeDef -> ILPropertyDef -> int32
-      EventTokenMap: ITypeDef list * ITypeDef -> ILEventDef -> int32 }
+      EventTokenMap: ITypeDef list * ITypeDef -> IEventDef -> int32 }
 
 let recordRequiredDataFixup requiredDataFixups (buf: ByteBuffer) pos lab =
     requiredDataFixups :=  (pos, lab) :: !requiredDataFixups
@@ -1158,7 +1158,7 @@ and GetTypeAsImplementsRow cenv env tidx ty =
 and GenImplementsPass2 cenv env tidx ty =
     AddUnsharedRow cenv TableNames.InterfaceImpl (GetTypeAsImplementsRow cenv env tidx ty) |> ignore
       
-and GetKeyForEvent tidx (x: ILEventDef) = 
+and GetKeyForEvent tidx (x: IEventDef) = 
     EventKey (tidx, x.Name)
 
 and GenEventDefPass2 cenv tidx x = 
@@ -2660,7 +2660,7 @@ let rec GenEventMethodSemanticsPass3 cenv eidx kind mref =
                HasSemantics (hs_Event, eidx) |]) |> ignore
 
 /// ILEventDef --> Event Row + MethodSemantics entries
-and GenEventAsEventRow cenv env (md: ILEventDef) = 
+and GenEventAsEventRow cenv env (md: IEventDef) = 
     let flags = md.Attributes
     let tdorTag, tdorRow = GetTypeOptionAsTypeDefOrRef cenv env md.EventType
     UnsharedRow 
@@ -2668,7 +2668,7 @@ and GenEventAsEventRow cenv env (md: ILEventDef) =
           StringE (GetStringHeapIdx cenv md.Name) 
           TypeDefOrRefOrSpec (tdorTag, tdorRow) |]
 
-and GenEventPass3 cenv env (md: ILEventDef) = 
+and GenEventPass3 cenv env (md: IEventDef) = 
     let eidx = AddUnsharedRow cenv TableNames.Event (GenEventAsEventRow cenv env md)
     md.AddMethod |> GenEventMethodSemanticsPass3 cenv eidx 0x0008  
     md.RemoveMethod |> GenEventMethodSemanticsPass3 cenv eidx 0x0010 

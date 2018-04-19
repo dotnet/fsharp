@@ -243,7 +243,7 @@ let mimpl_typ2typ f e =
     { Overrides = ospec_typ2typ f e.Overrides;
       OverrideBy = mspec_typ2typ (f,(fun _ -> f)) e.OverrideBy; }
 
-let edef_typ2typ ilg f (e: ILEventDef) =
+let edef_typ2typ ilg f (e: IEventDef) =
     e.With(eventType = Option.map f e.EventType,
            addMethod = mref_typ2typ f e.AddMethod,
            removeMethod = mref_typ2typ f e.RemoveMethod,
@@ -259,7 +259,7 @@ let pdef_typ2typ ilg f (p: ILPropertyDef) =
            customAttrs = cattrs_typ2typ ilg f p.CustomAttrs)
 
 let pdefs_typ2typ ilg f (pdefs: ILPropertyDefs) = mkILProperties (List.map (pdef_typ2typ ilg f) pdefs.AsList)
-let edefs_typ2typ ilg f (edefs: ILEventDefs) = mkILEvents (List.map (edef_typ2typ ilg f) edefs.AsList)
+let edefs_typ2typ ilg f (edefs: IEventDefs) = mkILEvents (List.map (edef_typ2typ ilg f) edefs.AsList)
 
 let mimpls_typ2typ f (mimpls : ILMethodImplDefs) = mkILMethodImpls (List.map (mimpl_typ2typ f) mimpls.AsList)
 

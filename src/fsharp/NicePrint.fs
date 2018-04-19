@@ -146,7 +146,7 @@ module private PrintIL =
             else s
         n |> Lexhelp.Keywords.QuoteIdentifierIfNeeded |> demangleOperatorNameIfNeeded 
 
-    let private isStaticILEvent (e: ILEventDef) = 
+    let private isStaticILEvent (e: IEventDef) = 
         e.AddMethod.CallingSignature.CallingConv.IsStatic || 
         e.RemoveMethod.CallingSignature.CallingConv.IsStatic
 
@@ -263,7 +263,7 @@ module private PrintIL =
         let typL    = layoutILType denv ilTyparSubst f.FieldType
         staticL ^^ WordL.keywordVal ^^ nameL ^^ WordL.colon ^^ typL  
             
-    let private layoutILEventDef denv  ilTyparSubst (e: ILEventDef) =
+    let private layoutILEventDef denv  ilTyparSubst (e: IEventDef) =
         let staticL = if isStaticILEvent e then WordL.keywordStatic else emptyL
         let name = adjustILName e.Name
         let nameL = wordL (tagEvent name)
@@ -361,7 +361,7 @@ module private PrintIL =
     let private isPublicILMethod      (m : IMethodDef) = 
         (m.Access = ILMemberAccess.Public)
 
-    let private isPublicILEvent typeDef (e: ILEventDef)         = 
+    let private isPublicILEvent typeDef (e: IEventDef)         = 
         try
             isPublicILMethod(resolveILMethodRef typeDef e.AddMethod) &&
             isPublicILMethod(resolveILMethodRef typeDef e.RemoveMethod)
@@ -439,7 +439,7 @@ module private PrintIL =
                         )
                     else []
 
-            let memberBlockLs (fieldDefs:IFieldDefs, methodDefs:IMethodDefs, propertyDefs:ILPropertyDefs, eventDefs:ILEventDefs) =
+            let memberBlockLs (fieldDefs:IFieldDefs, methodDefs:IMethodDefs, propertyDefs:ILPropertyDefs, eventDefs:IEventDefs) =
                 let ctors  =
                     methodDefs.AsList
                     |> List.filter isPublicILCtor 

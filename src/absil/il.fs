@@ -1711,44 +1711,76 @@ type ILMethodDefs(f : (unit -> IMethodDef[])) =
         member x.FindByNameAndArity (nm,arity) = findByName nm |> List.filter (fun x -> List.length x.Parameters = arity)
 
 
+type IEventDef =
+    abstract EventType: ILType option
+    abstract Name: string
+    abstract Attributes: EventAttributes
+    abstract AddMethod: ILMethodRef 
+    abstract RemoveMethod: ILMethodRef
+    abstract FireMethod: ILMethodRef option
+    abstract OtherMethods: ILMethodRef list
+    abstract CustomAttrs: ILAttributes
+    abstract IsSpecialName: bool
+    abstract IsRTSpecialName: bool
+
+    /// Functional update of the value
+    abstract With:
+        ?eventType: ILType option * ?name: string * ?attributes: EventAttributes * ?addMethod: ILMethodRef * 
+        ?removeMethod: ILMethodRef * ?fireMethod: ILMethodRef option * ?otherMethods: ILMethodRef list * 
+        ?customAttrs: ILAttributes
+            -> IEventDef
+
+
+type IEventDefs =
+    abstract AsList: IEventDef list
+    abstract LookupByName: string -> IEventDef list
+
+
 [<NoComparison; NoEquality>]
-type ILEventDef(eventType: ILType option, name: string, attributes: EventAttributes, addMethod: ILMethodRef, removeMethod: ILMethodRef, fireMethod: ILMethodRef option, otherMethods: ILMethodRef list, customAttrsStored: ILAttributesStored, metadataIndex: int32) =
+type ILEventDef
+        (eventType: ILType option, name: string, attributes: EventAttributes, addMethod: ILMethodRef,
+         removeMethod: ILMethodRef, fireMethod: ILMethodRef option, otherMethods: ILMethodRef list,
+         customAttrsStored: ILAttributesStored, metadataIndex: int32) =
 
     new (eventType, name, attributes, addMethod, removeMethod, fireMethod, otherMethods, customAttrs) =
         ILEventDef(eventType, name, attributes, addMethod, removeMethod, fireMethod, otherMethods, storeILCustomAttrs customAttrs, NoMetadataIdx)
 
-    member __.EventType = eventType
-    member __.Name = name
-    member __.Attributes = attributes
-    member __.AddMethod = addMethod
-    member __.RemoveMethod = removeMethod
-    member __.FireMethod = fireMethod
-    member __.OtherMethods = otherMethods
-    member __.CustomAttrsStored = customAttrsStored
-    member __.MetadataIndex = metadataIndex
-    member x.CustomAttrs = customAttrsStored.GetCustomAttrs x.MetadataIndex
+    member x.CustomAttrs = customAttrsStored.GetCustomAttrs(metadataIndex)
 
-    member x.With(?eventType, ?name, ?attributes, ?addMethod, ?removeMethod, ?fireMethod, ?otherMethods, ?customAttrs) = 
-        ILEventDef(eventType= defaultArg eventType x.EventType,
-                   name= defaultArg name x.Name, 
-                   attributes= defaultArg attributes x.Attributes, 
-                   addMethod=defaultArg addMethod x.AddMethod, 
-                   removeMethod=defaultArg removeMethod x.RemoveMethod, 
-                   fireMethod= defaultArg fireMethod x.FireMethod, 
-                   otherMethods= defaultArg otherMethods x.OtherMethods, 
-                   customAttrs=(match customAttrs with None -> x.CustomAttrs | Some attrs -> attrs))
+    override x.ToString() = "event " + name
 
-    member x.IsSpecialName = (x.Attributes &&& EventAttributes.SpecialName) <> enum<_>(0)
-    member x.IsRTSpecialName = (x.Attributes &&& EventAttributes.RTSpecialName) <> enum<_>(0)
+    interface IEventDef with
+        member __.EventType = eventType
+        member __.Name = name
+        member __.Attributes = attributes
+        member __.AddMethod = addMethod
+        member __.RemoveMethod = removeMethod
+        member __.FireMethod = fireMethod
+        member __.OtherMethods = otherMethods
+        member __.IsSpecialName = (attributes &&& EventAttributes.SpecialName) <> enum<_>(0)
+        member __.IsRTSpecialName = (attributes &&& EventAttributes.RTSpecialName) <> enum<_>(0)
 
-    override x.ToString() = "event " + x.Name
+        member x.CustomAttrs = x.CustomAttrs
+
+        member x.With(?newEventType, ?newName, ?newAttributes, ?newAddMethod, ?newRemoveMethod, ?newFireMethod,
+                      ?newOtherMethods, ?newCustomAttrs) = 
+            ILEventDef(eventType    = defaultArg newEventType eventType,
+                       name         = defaultArg newName name, 
+                       attributes   = defaultArg newAttributes attributes, 
+                       addMethod    = defaultArg newAddMethod addMethod, 
+                       removeMethod = defaultArg newRemoveMethod removeMethod, 
+                       fireMethod   = defaultArg newFireMethod fireMethod, 
+                       otherMethods = defaultArg newOtherMethods otherMethods, 
+                       customAttrs  = (match newCustomAttrs with None -> x.CustomAttrs | Some attrs -> attrs)) :> IEventDef
+
 
 (* Index table by name. *)
-[<NoEquality; NoComparison>]
-type ILEventDefs = 
-    | ILEvents of LazyOrderedMultiMap<string, ILEventDef>
-    member x.AsList = let (ILEvents t) = x in t.Entries()
-    member x.LookupByName s = let (ILEvents t) = x in t.[s]
+[<NoEquality; NoComparison; Sealed>]
+type ILEventDefs(t: LazyOrderedMultiMap<string, IEventDef>) =
+    interface IEventDefs with 
+        member x.AsList = t.Entries()
+        member x.LookupByName(s) = t.[s]
+
 
 [<NoComparison; NoEquality>]
 type ILPropertyDef(name: string, attributes: PropertyAttributes, setMethod: ILMethodRef option, getMethod: ILMethodRef option, callingConv: ILThisConvention, propertyType: ILType, init: ILFieldInit option, args: ILTypes, customAttrsStored: ILAttributesStored, metadataIndex: int32) =
@@ -2052,7 +2084,7 @@ and ITypeDef =
     abstract SecurityDecls: ILSecurityDecls
     abstract Fields: IFieldDefs
     abstract MethodImpls: ILMethodImplDefs
-    abstract Events: ILEventDefs
+    abstract Events: IEventDefs
     abstract Properties: ILPropertyDefs
     abstract CustomAttrs: ILAttributes
     abstract IsClass: bool
@@ -2089,7 +2121,7 @@ and ITypeDef =
     /// Functional update
     abstract With: ?name: string * ?attributes: TypeAttributes * ?layout: ILTypeDefLayout *  ?implements: ILTypes * 
                  ?genericParams:ILGenericParameterDefs * ?extends:ILType option * ?methods:IMethodDefs * 
-                 ?nestedTypes:ITypeDefs * ?fields: IFieldDefs * ?methodImpls:ILMethodImplDefs * ?events:ILEventDefs * 
+                 ?nestedTypes:ITypeDefs * ?fields: IFieldDefs * ?methodImpls:ILMethodImplDefs * ?events:IEventDefs * 
                  ?properties:ILPropertyDefs * ?customAttrs:ILAttributes * ?securityDecls: ILSecurityDecls -> ITypeDef
 
 and IPreTypeDef = 
@@ -2104,7 +2136,7 @@ and IPreTypeDef =
 type ILTypeDef
         (name: string, attributes: TypeAttributes, layout: ILTypeDefLayout, implements: ILTypes,
          genericParams: ILGenericParameterDefs, extends: ILType option, methods: IMethodDefs, nestedTypes: ITypeDefs,
-         fields: IFieldDefs, methodImpls: ILMethodImplDefs, events: ILEventDefs, properties: ILPropertyDefs,
+         fields: IFieldDefs, methodImpls: ILMethodImplDefs, events: IEventDefs, properties: ILPropertyDefs,
          securityDeclsStored: ILSecurityDeclsStored, customAttrsStored: ILAttributesStored, metadataIndex: int32) =  
 
     new (name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields, methodImpls,
@@ -3288,11 +3320,11 @@ type ILLocalsAllocator(numPrealloc:int) =
     member tmps.Close() = ResizeArray.toList newLocals
 
 
-let mkILFieldsLazy l = ILFieldDefs (LazyOrderedMultiMap((fun (f:IFieldDef) -> f.Name),l)) :> IFieldDefs
+let mkILFieldsLazy l = ILFieldDefs(LazyOrderedMultiMap((fun (f:IFieldDef) -> f.Name), l)) :> IFieldDefs
 let mkILFields l =  mkILFieldsLazy (notlazy l)
 let emptyILFields = mkILFields []
 
-let mkILEventsLazy l =  ILEvents (LazyOrderedMultiMap((fun (e: ILEventDef) -> e.Name),l))
+let mkILEventsLazy l = ILEventDefs(LazyOrderedMultiMap((fun (e: IEventDef) -> e.Name), l)) :> IEventDefs
 let mkILEvents l =  mkILEventsLazy (notlazy l)
 let emptyILEvents =  mkILEvents []
 
@@ -4255,7 +4287,7 @@ and refs_of_param s p = refs_of_typ s p.Type
 and refs_of_return s (rt:ILReturn) = refs_of_typ s rt.Type
 and refs_of_mdefs s x =  Seq.iter (refs_of_mdef s) x
     
-and refs_of_event_def s (ed: ILEventDef) = 
+and refs_of_event_def s (ed: IEventDef) = 
     Option.iter (refs_of_typ s)  ed.EventType
     refs_of_mref s ed.AddMethod
     refs_of_mref s ed.RemoveMethod
@@ -4263,7 +4295,7 @@ and refs_of_event_def s (ed: ILEventDef) =
     List.iter (refs_of_mref s) ed.OtherMethods
     refs_of_custom_attrs s ed.CustomAttrs
     
-and refs_of_events s (x: ILEventDefs) =  List.iter (refs_of_event_def s) x.AsList
+and refs_of_events s (x: IEventDefs) =  List.iter (refs_of_event_def s) x.AsList
     
 and refs_of_property_def s (pd: ILPropertyDef) = 
     Option.iter (refs_of_mref s)  pd.SetMethod

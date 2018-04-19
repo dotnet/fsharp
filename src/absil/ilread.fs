@@ -2465,7 +2465,7 @@ and seekReadEvent ctxt mdv numtypars idx =
               fireMethod=seekReadoptional_MethodSemantics ctxt (0x0020, TaggedIndex(hs_Event, idx)),
               otherMethods = seekReadMultipleMethodSemantics ctxt (0x0004, TaggedIndex(hs_Event, idx)),
               customAttrsStored=ctxt.customAttrsReader_Event,
-              metadataIndex = idx )
+              metadataIndex = idx ) :> IEventDef
    
   (* REVIEW: can substantially reduce numbers of EventMap and PropertyMap reads by first checking if the whole table mdv sorted according to ILTypeDef tokens and then doing a binary chop *)
 and seekReadEvents (ctxt: ILMetadataReader)  numtypars tidx =

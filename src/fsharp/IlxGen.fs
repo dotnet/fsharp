@@ -1075,7 +1075,7 @@ type TypeDefBuilder(tdef: ITypeDef, tdefDiscards) =
     let gmethods   = new ResizeArray<IMethodDef>(0)
     let gfields    = new ResizeArray<IFieldDef>(0)
     let gproperties : Dictionary<PropKey,(int * ILPropertyDef)> = new Dictionary<_,_>(3,HashIdentity.Structural)
-    let gevents    = new ResizeArray<ILEventDef>(0)
+    let gevents    = new ResizeArray<IEventDef>(0)
     let gnested    = new TypeDefsBuilder()
     
     member b.Close() = 
@@ -5035,7 +5035,7 @@ and GenEventForProperty cenv eenvForMeth (mspec:ILMethodSpec) (v:Val) ilAttrsTha
                removeMethod = removeMethRef,
                fireMethod= None,
                otherMethods= [],
-               customAttrs = mkILCustomAttrs ilAttrsThatGoOnPrimaryItem)
+               customAttrs = mkILCustomAttrs ilAttrsThatGoOnPrimaryItem) :> IEventDef
 
 
 and ComputeFlagFixupsForMemberBinding cenv (v:Val,memberInfo:ValMemberInfo) =

@@ -2197,7 +2197,7 @@ type PropInfo =
 /// Describes an F# use of an event backed by Abstract IL metadata
 [<NoComparison; NoEquality>]
 type ILEventInfo = 
-    | ILEventInfo of ILTypeInfo * ILEventDef
+    | ILEventInfo of ILTypeInfo * IEventDef
 
     /// Get the enclosing ("parent"/"declaring") type of the field. 
     member x.ApparentEnclosingType = match x with ILEventInfo(tinfo,_) -> tinfo.ToType

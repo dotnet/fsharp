@@ -1138,6 +1138,32 @@ type ILFieldDefs =
 
 
 /// Event definitions.
+type IEventDef =
+    abstract EventType: ILType option
+    abstract Name: string
+    abstract Attributes: EventAttributes
+    abstract AddMethod: ILMethodRef 
+    abstract RemoveMethod: ILMethodRef
+    abstract FireMethod: ILMethodRef option
+    abstract OtherMethods: ILMethodRef list
+    abstract CustomAttrs: ILAttributes
+    abstract IsSpecialName: bool
+    abstract IsRTSpecialName: bool
+
+    /// Functional update of the value
+    abstract With:
+        ?eventType: ILType option * ?name: string * ?attributes: EventAttributes * ?addMethod: ILMethodRef * 
+        ?removeMethod: ILMethodRef * ?fireMethod: ILMethodRef option * ?otherMethods: ILMethodRef list * 
+        ?customAttrs: ILAttributes
+            -> IEventDef
+
+
+/// Table of those events in a type definition.
+type IEventDefs =
+    abstract AsList: IEventDef list
+    abstract LookupByName: string -> IEventDef list
+
+
 [<NoComparison; NoEquality>]
 type ILEventDef =
 
@@ -1151,27 +1177,13 @@ type ILEventDef =
          removeMethod: ILMethodRef * fireMethod: ILMethodRef option * otherMethods: ILMethodRef list * 
          customAttrs: ILAttributes -> ILEventDef
 
-    member EventType: ILType option
-    member Name: string
-    member Attributes: EventAttributes
-    member AddMethod: ILMethodRef 
-    member RemoveMethod: ILMethodRef
-    member FireMethod: ILMethodRef option
-    member OtherMethods: ILMethodRef list
-    member CustomAttrs: ILAttributes
-    member IsSpecialName: bool
-    member IsRTSpecialName: bool
+    interface IEventDef
 
-    /// Functional update of the value
-    member With: ?eventType: ILType option * ?name: string * ?attributes: EventAttributes * ?addMethod: ILMethodRef * 
-                 ?removeMethod: ILMethodRef * ?fireMethod: ILMethodRef option * ?otherMethods: ILMethodRef list * 
-                 ?customAttrs: ILAttributes -> ILEventDef
 
-/// Table of those events in a type definition.
 [<NoEquality; NoComparison; Sealed>]
 type ILEventDefs =
-    member AsList: ILEventDef list
-    member LookupByName: string -> ILEventDef list
+    interface IEventDefs
+
 
 /// Property definitions
 [<NoComparison; NoEquality>]
@@ -1290,7 +1302,7 @@ and ITypeDef =
     abstract SecurityDecls: ILSecurityDecls
     abstract Fields: IFieldDefs
     abstract MethodImpls: ILMethodImplDefs
-    abstract Events: ILEventDefs
+    abstract Events: IEventDefs
     abstract Properties: ILPropertyDefs
     abstract CustomAttrs: ILAttributes
     abstract IsClass: bool
@@ -1328,7 +1340,7 @@ and ITypeDef =
     abstract With:
         ?name: string * ?attributes: TypeAttributes * ?layout: ILTypeDefLayout *  ?implements: ILTypes * 
         ?genericParams:ILGenericParameterDefs * ?extends:ILType option * ?methods:IMethodDefs * 
-        ?nestedTypes:ITypeDefs * ?fields: IFieldDefs * ?methodImpls:ILMethodImplDefs * ?events:ILEventDefs * 
+        ?nestedTypes:ITypeDefs * ?fields: IFieldDefs * ?methodImpls:ILMethodImplDefs * ?events:IEventDefs * 
         ?properties:ILPropertyDefs * ?customAttrs:ILAttributes * ?securityDecls: ILSecurityDecls
             -> ITypeDef
 
@@ -1352,12 +1364,12 @@ and [<NoComparison; NoEquality>] ILTypeDef =
     /// Functional creation of a value, using delayed reading via a metadata index, for ilread.fs
     new: name: string * attributes: TypeAttributes * layout: ILTypeDefLayout * implements: ILTypes * genericParams: ILGenericParameterDefs * 
           extends: ILType option * methods: IMethodDefs * nestedTypes: ITypeDefs * fields: IFieldDefs * methodImpls: ILMethodImplDefs * 
-          events: ILEventDefs * properties: ILPropertyDefs * securityDeclsStored: ILSecurityDeclsStored * customAttrsStored: ILAttributesStored * metadataIndex: int32 -> ILTypeDef
+          events: IEventDefs * properties: ILPropertyDefs * securityDeclsStored: ILSecurityDeclsStored * customAttrsStored: ILAttributesStored * metadataIndex: int32 -> ILTypeDef
 
     /// Functional creation of a value, immediate
     new: name: string * attributes: TypeAttributes * layout: ILTypeDefLayout * implements: ILTypes * genericParams: ILGenericParameterDefs * 
           extends: ILType option * methods: IMethodDefs * nestedTypes: ITypeDefs * fields: IFieldDefs * methodImpls: ILMethodImplDefs * 
-          events: ILEventDefs * properties: ILPropertyDefs * securityDecls: ILSecurityDecls * customAttrs: ILAttributes -> ILTypeDef
+          events: IEventDefs * properties: ILPropertyDefs * securityDecls: ILSecurityDecls * customAttrs: ILAttributes -> ILTypeDef
 
     interface ITypeDef
 
@@ -1882,8 +1894,8 @@ val mkILStaticField: string * ILType * ILFieldInit option * byte[] option * ILMe
 val mkILLiteralField: string * ILType * ILFieldInit * byte[] option * ILMemberAccess -> IFieldDef
 
 /// Make a type definition.
-val mkILGenericClass: string * ILTypeDefAccess * ILGenericParameterDefs * ILType * ILType list * IMethodDefs * IFieldDefs * ITypeDefs * ILPropertyDefs * ILEventDefs * ILAttributes * ILTypeInit -> ITypeDef
-val mkILSimpleClass: ILGlobals -> string * ILTypeDefAccess * IMethodDefs * IFieldDefs * ITypeDefs * ILPropertyDefs * ILEventDefs * ILAttributes * ILTypeInit  -> ITypeDef
+val mkILGenericClass: string * ILTypeDefAccess * ILGenericParameterDefs * ILType * ILType list * IMethodDefs * IFieldDefs * ITypeDefs * ILPropertyDefs * IEventDefs * ILAttributes * ILTypeInit -> ITypeDef
+val mkILSimpleClass: ILGlobals -> string * ILTypeDefAccess * IMethodDefs * IFieldDefs * ITypeDefs * ILPropertyDefs * IEventDefs * ILAttributes * ILTypeInit  -> ITypeDef
 val mkILTypeDefForGlobalFunctions: ILGlobals -> IMethodDefs * IFieldDefs -> ITypeDef
 
 /// Make a type definition for a value type used to point to raw data.
@@ -1937,9 +1949,9 @@ val mkILSecurityDeclsReader: (int32 -> ILSecurityDecl[]) -> ILSecurityDeclsStore
 val mkMethBodyAux: MethodBody -> ILLazyMethodBody
 val mkMethBodyLazyAux: Lazy<MethodBody> -> ILLazyMethodBody
 
-val mkILEvents: ILEventDef list -> ILEventDefs
-val mkILEventsLazy: Lazy<ILEventDef list> -> ILEventDefs
-val emptyILEvents: ILEventDefs
+val mkILEvents: IEventDef list -> IEventDefs
+val mkILEventsLazy: Lazy<IEventDef list> -> IEventDefs
+val emptyILEvents: IEventDefs
 
 val mkILProperties: ILPropertyDef list -> ILPropertyDefs
 val mkILPropertiesLazy: Lazy<ILPropertyDef list> -> ILPropertyDefs
