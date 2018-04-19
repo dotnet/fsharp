@@ -77,3 +77,7 @@ members/basics/tmptest.exe
 members/basics/tmptest.fs
 members/basics/tmptest.fsi
 members/basics/tmptest1.exe
+
+versionAttributes/out.stderr.txt
+versionAttributes/out.stdout.txt
+versionAttributes/*.exe
