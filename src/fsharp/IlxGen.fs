@@ -1045,13 +1045,13 @@ let MergeOptions m o1 o2 =
 #endif
        Some x 
 
-let MergePropertyPair m (pd: ILPropertyDef) (pdef: ILPropertyDef) = 
+let MergePropertyPair m (pd: IPropertyDef) (pdef: IPropertyDef) = 
     pd.With(getMethod=MergeOptions m pd.GetMethod pdef.GetMethod,
             setMethod=MergeOptions m pd.SetMethod pdef.SetMethod)
 
 type PropKey = PropKey of string * ILTypes * ILThisConvention
 
-let AddPropertyDefToHash (m:range) (ht:Dictionary<PropKey,(int * ILPropertyDef)>) (pdef: ILPropertyDef) =
+let AddPropertyDefToHash (m:range) (ht:Dictionary<PropKey,(int * IPropertyDef)>) (pdef: IPropertyDef) =
     let nm = PropKey(pdef.Name, pdef.Args, pdef.CallingConv)
     match ht.TryGetValue(nm) with
     | true, (idx, pd) ->
@@ -1074,7 +1074,7 @@ let MergePropertyDefs m ilPropertyDefs =
 type TypeDefBuilder(tdef: ITypeDef, tdefDiscards) = 
     let gmethods   = new ResizeArray<IMethodDef>(0)
     let gfields    = new ResizeArray<IFieldDef>(0)
-    let gproperties : Dictionary<PropKey,(int * ILPropertyDef)> = new Dictionary<_,_>(3,HashIdentity.Structural)
+    let gproperties : Dictionary<PropKey,(int * IPropertyDef)> = new Dictionary<_,_>(3,HashIdentity.Structural)
     let gevents    = new ResizeArray<IEventDef>(0)
     let gnested    = new TypeDefsBuilder()
     
@@ -4711,7 +4711,7 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) sta
                           propertyType = ilTy,
                           init = None,
                           args = [],
-                          customAttrs = mkILCustomAttrs ilAttribs)
+                          customAttrs = mkILCustomAttrs ilAttribs) :> IPropertyDef
         cgbuf.mgbuf.AddOrMergePropertyDef(ilGetterMethSpec.MethodRef.DeclaringTypeRef, ilPropDef,m)
 
         let ilMethodDef = 
@@ -4783,7 +4783,7 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) sta
                               propertyType=fty,
                               init=None,
                               args = [],
-                              customAttrs=mkILCustomAttrs (ilAttribs @ [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Value)]))
+                              customAttrs=mkILCustomAttrs (ilAttribs @ [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Value)])) :> IPropertyDef
             cgbuf.mgbuf.AddOrMergePropertyDef(ilTypeRefForProperty,ilPropDef,m)
 
             let getterMethod = 
@@ -5019,7 +5019,7 @@ and GenPropertyForMethodDef compileAsInstance tref mdef (v:Val) (memberInfo:ValM
                   propertyType = ilPropTy,
                   init = None,
                   args = ilArgTys,
-                  customAttrs = ilAttrs)
+                  customAttrs = ilAttrs) :> IPropertyDef
 
 and GenEventForProperty cenv eenvForMeth (mspec:ILMethodSpec) (v:Val) ilAttrsThatGoOnPrimaryItem m returnTy =
     let evname = v.PropertyName
@@ -6381,7 +6381,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                                      propertyType= ilPropType,
                                      init= None,
                                      args= [],
-                                     customAttrs     = mkILCustomAttrs ilFieldAttrs) ] 
+                                     customAttrs     = mkILCustomAttrs ilFieldAttrs) :> IPropertyDef ] 
          
         let methodDefs = 
             [ // Generate property getter methods for those fields that have properties 
@@ -6699,7 +6699,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                             (cuinfo.cudHasHelpers = SpecialFSharpListHelpers && (md.Name = "get_Empty" || md.Name = "Cons" || md.Name = "get_IsEmpty")) ||
                             (cuinfo.cudHasHelpers = SpecialFSharpOptionHelpers && (md.Name = "get_Value" || md.Name = "get_None" || md.Name = "Some"))),
     
-                        (fun (pd: ILPropertyDef) ->
+                        (fun (pd: IPropertyDef) ->
                             (cuinfo.cudHasHelpers = SpecialFSharpListHelpers && (pd.Name = "Empty"  || pd.Name = "IsEmpty"  )) ||
                             (cuinfo.cudHasHelpers = SpecialFSharpOptionHelpers && (pd.Name = "Value" || pd.Name = "None"))))
 
@@ -6752,7 +6752,7 @@ and GenExnDef cenv mgbuf eenv m (exnc:Tycon) =
                                  propertyType = ilPropType,
                                  init = None,
                                  args = [],
-                                 customAttrs=mkILCustomAttrs (GenAttrs cenv eenv fld.PropertyAttribs @ [mkCompilationMappingAttrWithSeqNum cenv.g (int SourceConstructFlags.Field) i]))
+                                 customAttrs=mkILCustomAttrs (GenAttrs cenv eenv fld.PropertyAttribs @ [mkCompilationMappingAttrWithSeqNum cenv.g (int SourceConstructFlags.Field) i])) :> IPropertyDef
                yield (ilMethodDef,ilFieldDef,ilPropDef,(ilPropName,ilFieldName,ilPropType)) ] 
              |> List.unzip4
 

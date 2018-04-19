@@ -2509,7 +2509,7 @@ and seekReadProperty ctxt mdv numtypars idx =
                  init= (if (flags &&& 0x1000) = 0 then None else Some (seekReadConstant ctxt (TaggedIndex(hc_Property, idx)))),
                  args=argtys,
                  customAttrsStored=ctxt.customAttrsReader_Property,
-                 metadataIndex = idx )
+                 metadataIndex = idx ) :> IPropertyDef
    
 and seekReadProperties (ctxt: ILMetadataReader)  numtypars tidx =
    mkILPropertiesLazy

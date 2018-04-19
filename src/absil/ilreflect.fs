@@ -1635,7 +1635,7 @@ let buildFieldPass3 cenv tref (_typB:TypeBuilder) emEnv (fdef : IFieldDef) =
 // buildPropertyPass2, 3
 //----------------------------------------------------------------------------
   
-let buildPropertyPass2 cenv tref (typB:TypeBuilder) emEnv (prop : ILPropertyDef) =
+let buildPropertyPass2 cenv tref (typB:TypeBuilder) emEnv (prop : IPropertyDef) =
     let attrs = flagsIf prop.IsRTSpecialName PropertyAttributes.RTSpecialName |||
                 flagsIf prop.IsSpecialName   PropertyAttributes.SpecialName
 
@@ -1649,7 +1649,7 @@ let buildPropertyPass2 cenv tref (typB:TypeBuilder) emEnv (prop : ILPropertyDef)
     let pref = ILPropertyRef.Create (tref, prop.Name)    
     envBindPropRef emEnv pref propB
 
-let buildPropertyPass3 cenv tref (_typB:TypeBuilder) emEnv (prop : ILPropertyDef) = 
+let buildPropertyPass3 cenv tref (_typB:TypeBuilder) emEnv (prop : IPropertyDef) = 
   let pref = ILPropertyRef.Create (tref, prop.Name)    
   let propB = envGetPropB emEnv pref
   emitCustomAttrs cenv emEnv (wrapCustomAttr propB.SetCustomAttribute) prop.CustomAttrs

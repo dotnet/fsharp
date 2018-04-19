@@ -1776,7 +1776,7 @@ type UnionCaseInfo =
 /// Describes an F# use of a property backed by Abstract IL metadata
 [<NoComparison; NoEquality>]
 type ILPropInfo = 
-    | ILPropInfo of ILTypeInfo * ILPropertyDef 
+    | ILPropInfo of ILTypeInfo * IPropertyDef 
 
     /// Get the TcGlobals governing this value
     member x.TcGlobals = match x with ILPropInfo(tinfo,_) -> tinfo.TcGlobals

@@ -273,7 +273,7 @@ module private PrintIL =
             | _ -> emptyL
         staticL ^^ WordL.keywordEvent ^^ nameL ^^ WordL.colon ^^ typL     
        
-    let private layoutILPropertyDef denv ilTyparSubst (p : ILPropertyDef) =
+    let private layoutILPropertyDef denv ilTyparSubst (p : IPropertyDef) =
         let staticL =  if p.CallingConv =  ILThisConvention.Static then WordL.keywordStatic else emptyL
         let name    = adjustILName p.Name
         let nameL   = wordL (tagProperty name)
@@ -351,7 +351,7 @@ module private PrintIL =
     let private layoutILEnumDef (f : IFieldDef) = layoutILEnumDefParts f.Name f.LiteralValue
 
     // filtering methods for hiding things we oughtn't show
-    let private isStaticILProperty    (p : ILPropertyDef)      = 
+    let private isStaticILProperty    (p : IPropertyDef)      = 
         match p.GetMethod,p.SetMethod with
         | Some getter, _    -> getter.CallingSignature.CallingConv.IsStatic
         | None, Some setter -> setter.CallingSignature.CallingConv.IsStatic
@@ -368,7 +368,7 @@ module private PrintIL =
         with _ ->
             false
 
-    let private isPublicILProperty typeDef (m : ILPropertyDef) = 
+    let private isPublicILProperty typeDef (m : IPropertyDef) = 
         try
             match m.GetMethod with 
             | Some ilMethRef -> isPublicILMethod (resolveILMethodRef typeDef ilMethRef)
@@ -439,7 +439,7 @@ module private PrintIL =
                         )
                     else []
 
-            let memberBlockLs (fieldDefs:IFieldDefs, methodDefs:IMethodDefs, propertyDefs:ILPropertyDefs, eventDefs:IEventDefs) =
+            let memberBlockLs (fieldDefs:IFieldDefs, methodDefs:IMethodDefs, propertyDefs:IPropertyDefs, eventDefs:IEventDefs) =
                 let ctors  =
                     methodDefs.AsList
                     |> List.filter isPublicILCtor 

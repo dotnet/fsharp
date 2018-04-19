@@ -852,7 +852,7 @@ let goutput_mdef env os (md:IMethodDef) =
   (goutput_mbody is_entrypoint menv) os md;
   output_string os "\n"
 
-let goutput_pdef env os (pd: ILPropertyDef) =
+let goutput_pdef env os (pd: IPropertyDef) =
     output_string os  "property\n\tgetter: ";
     (match pd.GetMethod with None -> () | Some mref -> goutput_mref env os mref);
     output_string os  "\n\tsetter: ";
@@ -888,7 +888,7 @@ let goutput_fdefs tref env os (fdefs: IFieldDefs) =
   List.iter (fun f -> (goutput_fdef tref env) os f; output_string os "\n" ) fdefs.AsList
 let goutput_mdefs env os (mdefs: IMethodDefs) = 
   List.iter (fun f -> (goutput_mdef env) os f; output_string os "\n" ) mdefs.AsList
-let goutput_pdefs env os (pdefs: ILPropertyDefs) = 
+let goutput_pdefs env os (pdefs: IPropertyDefs) = 
   List.iter (fun f -> (goutput_pdef env) os f; output_string os "\n" ) pdefs.AsList
 
 let rec goutput_tdef enc env contents os (cd: ITypeDef) =

@@ -1782,46 +1782,75 @@ type ILEventDefs(t: LazyOrderedMultiMap<string, IEventDef>) =
         member x.LookupByName(s) = t.[s]
 
 
+type IPropertyDef =
+    abstract Name: string
+    abstract Attributes: PropertyAttributes
+    abstract SetMethod: ILMethodRef option
+    abstract GetMethod: ILMethodRef option
+    abstract CallingConv: ILThisConvention
+    abstract PropertyType: ILType          
+    abstract Init: ILFieldInit option
+    abstract Args: ILTypes
+    abstract CustomAttrs: ILAttributes
+    abstract IsSpecialName: bool
+    abstract IsRTSpecialName: bool
+
+    /// Functional update of the value
+    abstract With: ?name: string * ?attributes: PropertyAttributes * ?setMethod: ILMethodRef option * ?getMethod: ILMethodRef option * 
+                 ?callingConv: ILThisConvention * ?propertyType: ILType * ?init: ILFieldInit option * ?args: ILTypes * 
+                 ?customAttrs: ILAttributes -> IPropertyDef
+
+
+type IPropertyDefs =
+    abstract AsList: IPropertyDef list
+    abstract LookupByName: string -> IPropertyDef list
+
+
 [<NoComparison; NoEquality>]
 type ILPropertyDef(name: string, attributes: PropertyAttributes, setMethod: ILMethodRef option, getMethod: ILMethodRef option, callingConv: ILThisConvention, propertyType: ILType, init: ILFieldInit option, args: ILTypes, customAttrsStored: ILAttributesStored, metadataIndex: int32) =
 
     new (name, attributes, setMethod, getMethod, callingConv, propertyType, init, args, customAttrs) =
-       ILPropertyDef(name, attributes, setMethod, getMethod, callingConv, propertyType, init, args, storeILCustomAttrs customAttrs, NoMetadataIdx)
+        ILPropertyDef(name, attributes, setMethod, getMethod, callingConv, propertyType, init, args,
+                      storeILCustomAttrs customAttrs, NoMetadataIdx)
 
-    member x.Name = name
-    member x.Attributes = attributes
-    member x.GetMethod = getMethod
-    member x.SetMethod = setMethod
-    member x.CallingConv = callingConv
-    member x.PropertyType = propertyType
-    member x.Init = init
-    member x.Args = args
-    member x.CustomAttrsStored = customAttrsStored
-    member x.CustomAttrs = customAttrsStored.GetCustomAttrs x.MetadataIndex
-    member x.MetadataIndex = metadataIndex
+    member x.CustomAttrs = customAttrsStored.GetCustomAttrs metadataIndex
 
-    member x.With(?name, ?attributes, ?setMethod, ?getMethod, ?callingConv, ?propertyType, ?init, ?args, ?customAttrs) = 
-      ILPropertyDef(name=defaultArg name x.Name, 
-                    attributes=defaultArg attributes x.Attributes, 
-                    setMethod=defaultArg setMethod x.SetMethod, 
-                    getMethod=defaultArg getMethod x.GetMethod, 
-                    callingConv=defaultArg callingConv x.CallingConv, 
-                    propertyType=defaultArg propertyType x.PropertyType, 
-                    init=defaultArg init x.Init, 
-                    args=defaultArg args x.Args, 
-                    customAttrs=(match customAttrs with None -> x.CustomAttrs | Some attrs -> attrs))
+    override x.ToString() = "property " + name
 
-
-    member x.IsSpecialName = (x.Attributes &&& PropertyAttributes.SpecialName) <> enum<_>(0)
-    member x.IsRTSpecialName = (x.Attributes &&& PropertyAttributes.RTSpecialName) <> enum<_>(0)
-    override x.ToString() = "property " + x.Name
+    interface IPropertyDef with
+        member x.Name = name
+        member x.Attributes = attributes
+        member x.GetMethod = getMethod
+        member x.SetMethod = setMethod
+        member x.CallingConv = callingConv
+        member x.PropertyType = propertyType
+        member x.Init = init
+        member x.Args = args
+        member x.CustomAttrs = x.CustomAttrs
     
+        member x.With(?newName, ?newAttributes, ?newSetMethod, ?newGetMethod, ?newCallingConv, ?newPropertyType, ?newInit, ?newArgs, ?newCustomAttrs) = 
+            ILPropertyDef(name = defaultArg newName name, 
+                          attributes = defaultArg newAttributes attributes, 
+                          setMethod = defaultArg newSetMethod setMethod, 
+                          getMethod = defaultArg newGetMethod getMethod, 
+                          callingConv = defaultArg newCallingConv callingConv, 
+                          propertyType = defaultArg newPropertyType propertyType, 
+                          init = defaultArg newInit init, 
+                          args = defaultArg newArgs args,
+                          customAttrs = (match newCustomAttrs with None -> x.CustomAttrs | Some attrs -> attrs)) :> IPropertyDef
+    
+    
+        member x.IsSpecialName = (attributes &&& PropertyAttributes.SpecialName) <> enum<_>(0)
+        member x.IsRTSpecialName = (attributes &&& PropertyAttributes.RTSpecialName) <> enum<_>(0)
+
+
 // Index table by name.
-[<NoEquality; NoComparison>]
-type ILPropertyDefs = 
-    | ILProperties of LazyOrderedMultiMap<string, ILPropertyDef>
-    member x.AsList = let (ILProperties t) = x in t.Entries()
-    member x.LookupByName s = let (ILProperties t) = x in t.[s]
+[<NoEquality; NoComparison; Sealed>]
+type ILPropertyDefs(t: LazyOrderedMultiMap<string, IPropertyDef>) =
+    interface IPropertyDefs with 
+        member x.AsList = t.Entries()
+        member x.LookupByName s = t.[s]
+
 
 let convertFieldAccess (ilMemberAccess:ILMemberAccess) =
     match ilMemberAccess with
@@ -2085,7 +2114,7 @@ and ITypeDef =
     abstract Fields: IFieldDefs
     abstract MethodImpls: ILMethodImplDefs
     abstract Events: IEventDefs
-    abstract Properties: ILPropertyDefs
+    abstract Properties: IPropertyDefs
     abstract CustomAttrs: ILAttributes
     abstract IsClass: bool
     abstract IsStruct: bool
@@ -2122,7 +2151,7 @@ and ITypeDef =
     abstract With: ?name: string * ?attributes: TypeAttributes * ?layout: ILTypeDefLayout *  ?implements: ILTypes * 
                  ?genericParams:ILGenericParameterDefs * ?extends:ILType option * ?methods:IMethodDefs * 
                  ?nestedTypes:ITypeDefs * ?fields: IFieldDefs * ?methodImpls:ILMethodImplDefs * ?events:IEventDefs * 
-                 ?properties:ILPropertyDefs * ?customAttrs:ILAttributes * ?securityDecls: ILSecurityDecls -> ITypeDef
+                 ?properties:IPropertyDefs * ?customAttrs:ILAttributes * ?securityDecls: ILSecurityDecls -> ITypeDef
 
 and IPreTypeDef = 
         abstract Namespace: string list
@@ -2136,7 +2165,7 @@ and IPreTypeDef =
 type ILTypeDef
         (name: string, attributes: TypeAttributes, layout: ILTypeDefLayout, implements: ILTypes,
          genericParams: ILGenericParameterDefs, extends: ILType option, methods: IMethodDefs, nestedTypes: ITypeDefs,
-         fields: IFieldDefs, methodImpls: ILMethodImplDefs, events: IEventDefs, properties: ILPropertyDefs,
+         fields: IFieldDefs, methodImpls: ILMethodImplDefs, events: IEventDefs, properties: IPropertyDefs,
          securityDeclsStored: ILSecurityDeclsStored, customAttrsStored: ILAttributesStored, metadataIndex: int32) =  
 
     new (name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields, methodImpls,
@@ -3328,7 +3357,7 @@ let mkILEventsLazy l = ILEventDefs(LazyOrderedMultiMap((fun (e: IEventDef) -> e.
 let mkILEvents l =  mkILEventsLazy (notlazy l)
 let emptyILEvents =  mkILEvents []
 
-let mkILPropertiesLazy l =  ILProperties (LazyOrderedMultiMap((fun (p: ILPropertyDef) -> p.Name),l) )
+let mkILPropertiesLazy l = ILPropertyDefs(LazyOrderedMultiMap((fun (p: IPropertyDef) -> p.Name), l)) :> IPropertyDefs
 let mkILProperties l =  mkILPropertiesLazy (notlazy l)
 let emptyILProperties =  mkILProperties []
 
@@ -4297,14 +4326,14 @@ and refs_of_event_def s (ed: IEventDef) =
     
 and refs_of_events s (x: IEventDefs) =  List.iter (refs_of_event_def s) x.AsList
     
-and refs_of_property_def s (pd: ILPropertyDef) = 
+and refs_of_property_def s (pd: IPropertyDef) = 
     Option.iter (refs_of_mref s)  pd.SetMethod
     Option.iter (refs_of_mref s)  pd.GetMethod
     refs_of_typ s pd.PropertyType
     refs_of_typs s pd.Args
     refs_of_custom_attrs s pd.CustomAttrs
     
-and refs_of_properties s (x: ILPropertyDefs) = List.iter (refs_of_property_def s) x.AsList
+and refs_of_properties s (x: IPropertyDefs) = List.iter (refs_of_property_def s) x.AsList
     
 and refs_of_fdef s (fd: IFieldDef) = 
     refs_of_typ  s fd.FieldType

@@ -622,7 +622,7 @@ let mkMethodsAndPropertiesForFields (addMethodGeneratedAttrs, addPropertyGenerat
                           propertyType = field.Type,
                           init = None,
                           args = [],
-                          customAttrs = field.ILField.CustomAttrs)
+                          customAttrs = field.ILField.CustomAttrs) :> IPropertyDef
             |> addPropertyGeneratedAttrs 
         )
         |> Array.toList
@@ -706,7 +706,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                                     propertyType = ilg.typ_Bool,
                                     init = None,
                                     args = [],
-                                    customAttrs = emptyILCustomAttrs)
+                                    customAttrs = emptyILCustomAttrs) :> IPropertyDef
                       |> addPropertyGeneratedAttrs
                       |> addPropertyNeverAttrs ]
 
@@ -734,7 +734,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                                       propertyType = baseTy,
                                       init = None,
                                       args = [],
-                                      customAttrs = emptyILCustomAttrs)
+                                      customAttrs = emptyILCustomAttrs) :> IPropertyDef
                         |> addPropertyGeneratedAttrs 
                         |> addPropertyNeverAttrs
 
@@ -835,7 +835,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                                           propertyType = fdef.Type,
                                           init = None,
                                           args = [],
-                                          customAttrs = fdef.ILField.CustomAttrs)
+                                          customAttrs = fdef.ILField.CustomAttrs) :> IPropertyDef
                             |> addPropertyGeneratedAttrs)
                         |> Array.toList
 
@@ -1047,7 +1047,7 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
                               propertyType = tagFieldType,
                               init = None,
                               args = [],
-                              customAttrs = emptyILCustomAttrs)
+                              customAttrs = emptyILCustomAttrs) :> IPropertyDef
                 |> addPropertyGeneratedAttrs 
                 |> addPropertyNeverAttrs  ]
 

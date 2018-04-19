@@ -720,7 +720,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
     mkILCustomAttrs (attrs.AsList @ attribs)
 
   let addMethodGeneratedAttrs (mdef:IMethodDef)   = mdef.With(customAttrs   = addGeneratedAttrs mdef.CustomAttrs)
-  let addPropertyGeneratedAttrs (pdef:ILPropertyDef) = pdef.With(customAttrs = addGeneratedAttrs pdef.CustomAttrs)
+  let addPropertyGeneratedAttrs (pdef:IPropertyDef) = pdef.With(customAttrs = addGeneratedAttrs pdef.CustomAttrs)
   let addFieldGeneratedAttrs (fdef:IFieldDef) = fdef.With(newCustomAttrs = addGeneratedAttrs fdef.CustomAttrs)
 
   let tref_DebuggerBrowsableAttribute n = 
@@ -738,7 +738,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
       | Some res -> res
 
   let addNeverAttrs (attrs: ILAttributes) = mkILCustomAttrs (attrs.AsList @ [mkDebuggerBrowsableNeverAttribute()])
-  let addPropertyNeverAttrs (pdef:ILPropertyDef) = pdef.With(customAttrs = addNeverAttrs pdef.CustomAttrs)
+  let addPropertyNeverAttrs (pdef:IPropertyDef) = pdef.With(customAttrs = addNeverAttrs pdef.CustomAttrs)
   let addFieldNeverAttrs (fdef:IFieldDef) = fdef.With(newCustomAttrs = addNeverAttrs fdef.CustomAttrs)
   let mkDebuggerTypeProxyAttribute (ty : ILType) = mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerTypeProxyAttribute,  [ilg.typ_Type], [ILAttribElem.TypeRef (Some ty.TypeRef)], [])
 

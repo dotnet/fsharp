@@ -251,14 +251,14 @@ let edef_typ2typ ilg f (e: IEventDef) =
            otherMethods = List.map (mref_typ2typ f) e.OtherMethods,
            customAttrs = cattrs_typ2typ ilg f e.CustomAttrs)
 
-let pdef_typ2typ ilg f (p: ILPropertyDef) =
+let pdef_typ2typ ilg f (p: IPropertyDef) =
     p.With(setMethod = Option.map (mref_typ2typ f) p.SetMethod,
            getMethod = Option.map (mref_typ2typ f) p.GetMethod,
            propertyType = f p.PropertyType,
            args = List.map f p.Args,
            customAttrs = cattrs_typ2typ ilg f p.CustomAttrs)
 
-let pdefs_typ2typ ilg f (pdefs: ILPropertyDefs) = mkILProperties (List.map (pdef_typ2typ ilg f) pdefs.AsList)
+let pdefs_typ2typ ilg f (pdefs: IPropertyDefs) = mkILProperties (List.map (pdef_typ2typ ilg f) pdefs.AsList)
 let edefs_typ2typ ilg f (edefs: IEventDefs) = mkILEvents (List.map (edef_typ2typ ilg f) edefs.AsList)
 
 let mimpls_typ2typ f (mimpls : ILMethodImplDefs) = mkILMethodImpls (List.map (mimpl_typ2typ f) mimpls.AsList)

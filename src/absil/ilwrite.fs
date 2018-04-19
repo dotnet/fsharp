@@ -639,7 +639,7 @@ type ILTokenMappings =
     { TypeDefTokenMap: ITypeDef list * ITypeDef -> int32
       FieldDefTokenMap: ITypeDef list * ITypeDef -> IFieldDef -> int32
       MethodDefTokenMap: ITypeDef list * ITypeDef -> IMethodDef -> int32
-      PropertyTokenMap: ITypeDef list * ITypeDef -> ILPropertyDef -> int32
+      PropertyTokenMap: ITypeDef list * ITypeDef -> IPropertyDef -> int32
       EventTokenMap: ITypeDef list * ITypeDef -> IEventDef -> int32 }
 
 let recordRequiredDataFixup requiredDataFixups (buf: ByteBuffer) pos lab =
@@ -1143,7 +1143,7 @@ and GenMethodDefPass2 cenv tidx md =
     
     cenv.methodDefIdxs.[md] <- idx
 
-and GetKeyForPropertyDef tidx (x: ILPropertyDef)  = 
+and GetKeyForPropertyDef tidx (x: IPropertyDef)  = 
     PropKey (tidx, x.Name, x.PropertyType, x.Args)
 
 and GenPropertyDefPass2 cenv tidx x = 
@@ -2620,7 +2620,7 @@ let GenPropertyMethodSemanticsPass3 cenv pidx kind mref =
 let rec GetPropertySigAsBlobIdx cenv env prop = 
     GetBytesAsBlobIdx cenv (GetPropertySigAsBytes cenv env prop)
 
-and GetPropertySigAsBytes cenv env (prop: ILPropertyDef) = 
+and GetPropertySigAsBytes cenv env (prop: IPropertyDef) = 
     emitBytesViaBuffer (fun bb -> 
         let b =  ((hasthisToByte prop.CallingConv) ||| e_IMAGE_CEE_CS_CALLCONV_PROPERTY)
         bb.EmitByte b
@@ -2628,7 +2628,7 @@ and GetPropertySigAsBytes cenv env (prop: ILPropertyDef) =
         EmitType cenv env bb prop.PropertyType
         prop.Args |> List.iter (EmitType cenv env bb))
 
-and GetPropertyAsPropertyRow cenv env (prop:ILPropertyDef) = 
+and GetPropertyAsPropertyRow cenv env (prop:IPropertyDef) = 
     let flags = prop.Attributes
     UnsharedRow 
        [| UShort (uint16 flags) 
