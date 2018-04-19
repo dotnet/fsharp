@@ -233,22 +233,23 @@ let RefuteDiscrimSet g m path discrims =
                       | _ -> 
                           raise CannotRefute) 
             
-            let coversKnownEnumValues =
-                match tryDestAppTy g ty with
-                | Some tcref when tcref.IsEnumTycon ->
-                    let knownValues =
-                        tcref.AllFieldsArray |> Array.choose (fun f ->
-                            match f.rfield_const, f.rfield_static with
-                            | Some value, true -> Some value
-                            | _, _ -> None)
-                    Array.forall (fun ev -> consts.Contains ev) knownValues
-                | _ -> false
-
-            (* REVIEW: we could return a better enumeration literal field here if a field matches one of the enumeration cases *)
-
             match c' with 
             | None -> raise CannotRefute
-            | Some c -> Expr.Const(c,m,ty), coversKnownEnumValues
+            | Some c ->
+                match tryDestAppTy g ty with
+                | Some tcref when tcref.IsEnumTycon ->
+                    // search for an enum value that pattern match (consts) does not contain
+                    let nonCoveredEnumValues =
+                        tcref.AllFieldsArray |> Array.tryFind (fun f ->
+                            match f.rfield_const with
+                            | None -> false
+                            | Some fieldValue -> (not (consts.Contains fieldValue)) && f.rfield_static)
+                    match nonCoveredEnumValues with
+                    | None -> Expr.Const(c,m,ty), true
+                    | Some f ->
+                        let v = RecdFieldRef.RFRef(tcref, f.rfield_id.idText)
+                        Expr.Op(TOp.ValFieldGet v, [ty], [], m), false
+                | _ -> Expr.Const(c,m,ty), false
             
         | (DecisionTreeTest.UnionCase (ucref1,tinst) :: rest) -> 
              let ucrefs = ucref1 :: List.choose (function DecisionTreeTest.UnionCase(ucref,_) -> Some ucref | _ -> None) rest
@@ -693,7 +694,7 @@ let CompilePatternBasic
     // Note the input expression has already been evaluated and saved into a variable.
     // Hence no need for a new sequence point.
     let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding,exprm)
-    clausesL |> List.iteri (fun _i c -> mbuilder.AddTarget c.Target |> ignore) 
+    clausesL |> List.iteri (fun _i c -> mbuilder.AddTarget c.Target |> ignore)
     
     // Add the incomplete or rethrow match clause on demand, printing a 
     // warning if necessary (only if it is ever exercised) 
