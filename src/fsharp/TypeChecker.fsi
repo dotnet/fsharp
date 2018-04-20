@@ -66,6 +66,7 @@ exception LetRecEvaluatedOutOfOrder of DisplayEnv * ValRef * ValRef * range
 exception LetRecCheckedAtRuntime of range
 exception LetRecUnsound of DisplayEnv * ValRef list * range
 exception TyconBadArgs of DisplayEnv * TyconRef * int * range
+exception UnionCaseMissingArguments of DisplayEnv * int * string * range
 exception UnionCaseWrongArguments of DisplayEnv * int * int * range
 exception UnionCaseWrongNumberOfArgs of DisplayEnv * int * int * range
 exception FieldsFromDifferentTypes of DisplayEnv * RecdFieldRef * RecdFieldRef * range

@@ -78,6 +78,7 @@ exception LetRecEvaluatedOutOfOrder of DisplayEnv * ValRef * ValRef * range
 exception LetRecCheckedAtRuntime of range
 exception LetRecUnsound of DisplayEnv * ValRef list * range
 exception TyconBadArgs of DisplayEnv * TyconRef * int * range
+exception UnionCaseMissingArguments of DisplayEnv * int * string * range
 exception UnionCaseWrongArguments of DisplayEnv * int * int * range
 exception UnionCaseWrongNumberOfArgs of DisplayEnv * int * int * range
 exception FieldsFromDifferentTypes of DisplayEnv * RecdFieldRef * RecdFieldRef * range
@@ -2085,7 +2086,9 @@ let ApplyUnionCaseOrExnTypesForPat m cenv env overallTy c =
                        (fun a mArgs args -> TPat_exnconstr(a, args, unionRanges m mArgs))) m cenv env overallTy c
 
 let UnionCaseOrExnCheck (env: TcEnv) nargtys nargs m =
-  if nargs <> nargtys then error (UnionCaseWrongArguments(env.DisplayEnv, nargtys, nargs, m))
+    if nargs <> nargtys then
+        if nargs = 0 then error (UnionCaseMissingArguments(env.DisplayEnv, nargtys, "foo(bar)", m))
+        else error (UnionCaseWrongArguments(env.DisplayEnv, nargtys, nargs, m))
 
 let TcUnionCaseOrExnField cenv (env: TcEnv) ty1 m c n funcs =
     let ad = env.eAccessRights

@@ -264,6 +264,7 @@ let GetDiagnosticNumber(err:PhasedDiagnostic) =
       | OverrideDoesntOverride _ -> 17
       | UnionPatternsBindDifferentNames _  -> 18
       | UnionCaseWrongArguments  _ -> 19
+      | UnionCaseMissingArguments _ -> 19
       | UnitTypeExpected _  -> 20
       | UnitTypeExpectedWithEquality _  -> 20
       | UnitTypeExpectedWithPossiblePropertySetter _  -> 20
@@ -528,6 +529,9 @@ let OverrideDoesntOverride1E() = DeclareResourceString("OverrideDoesntOverride1"
 let OverrideDoesntOverride2E() = DeclareResourceString("OverrideDoesntOverride2", "%s")
 let OverrideDoesntOverride3E() = DeclareResourceString("OverrideDoesntOverride3", "%s")
 let OverrideDoesntOverride4E() = DeclareResourceString("OverrideDoesntOverride4", "%s")
+let UnionCaseMissingArgumentE() = DeclareResourceString("UnionCaseMissingArgument", "")
+let UnionCaseMissingArguments1E() = DeclareResourceString("UnionCaseMissingArguments1", "%d")
+let UnionCaseMissingArguments2E() = DeclareResourceString("UnionCaseMissingArguments2", "%s")
 let UnionCaseWrongArgumentsE() = DeclareResourceString("UnionCaseWrongArguments", "%d%d")
 let UnionPatternsBindDifferentNamesE() = DeclareResourceString("UnionPatternsBindDifferentNames", "")
 let RequiredButNotSpecifiedE() = DeclareResourceString("RequiredButNotSpecified", "%s%s%s")
@@ -1262,6 +1266,13 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
                   let sig2 = DispatchSlotChecking.FormatMethInfoSig g amap m denv minfoVirt
                   if sig1 <> sig2 then 
                       os.Append(OverrideDoesntOverride3E().Format  sig2) |> ignore
+
+      | UnionCaseMissingArguments (_, n, example, _) ->
+          if n = 1 then
+              os.Append(UnionCaseMissingArgumentE().Format) |> ignore
+          else
+              os.Append(UnionCaseMissingArguments1E().Format n) |> ignore
+          os.Append(UnionCaseMissingArguments2E().Format example) |> ignore
 
       | UnionCaseWrongArguments (_, n1, n2, _) ->
           os.Append(UnionCaseWrongArgumentsE().Format n2 n1) |> ignore
