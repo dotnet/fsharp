@@ -1415,6 +1415,7 @@ type IReturn =
         ?newMetadataIndex: int
             -> IReturn
 
+
 [<RequireQualifiedAccess; NoEquality; NoComparison; Sealed>]
 type ILReturn(ty, marshal, customAttrsStored: ILAttributesStored, metadataIndex) =
 
@@ -1501,6 +1502,7 @@ type IGenericParameterDef =
         ?newCustomAttrs: IAttributes
             -> IGenericParameterDef
 
+
 [<Sealed>]
 type ILGenericParameterDef
         (name, constraints, variance, hasReferenceTypeConstraint, hasNotNullableValueTypeConstraint,
@@ -1576,22 +1578,11 @@ type IMethodDef =
     abstract IsIL: bool
     abstract Code: ILCode option
     abstract Locals: ILLocals
-    
-    /// Indicates a .cctor method.
     abstract IsClassInitializer: bool
-
-    /// Indicates a .ctor method.
     abstract IsConstructor: bool
-
-    /// Indicates a static method.
     abstract IsStatic: bool
-
-    /// Indicates this is an instance methods that is not virtual.
     abstract IsNonVirtualInstance: bool
-
-    /// Indicates an instance methods that is virtual or abstract or implements an interface slot.  
     abstract IsVirtual: bool
-    
     abstract IsFinal: bool
     abstract IsNewSlot: bool
     abstract IsCheckAccessOnOverride: bool
@@ -1601,12 +1592,8 @@ type IMethodDef =
     abstract Access: ILMemberAccess
     abstract IsHideBySig: bool
     abstract IsSpecialName: bool
-
-    /// The method is exported to unmanaged code using COM interop.
     abstract IsUnmanagedExport: bool
     abstract IsReqSecObj: bool
-
-    /// Some methods are marked "HasSecurity" even if there are no permissions attached, e.g. if they use SuppressUnmanagedCodeSecurityAttribute 
     abstract HasSecurity: bool
     abstract IsManaged: bool
     abstract IsForwardRef: bool
@@ -1615,11 +1602,8 @@ type IMethodDef =
     abstract IsSynchronized: bool
     abstract IsNoInline: bool
     abstract IsAggressiveInline: bool
-
-    /// SafeHandle finalizer must be run.
     abstract IsMustRun: bool
-    
-    /// Functional update of the value
+
     abstract With: ?name: string * ?attributes: MethodAttributes * ?implAttributes: MethodImplAttributes * ?callingConv: ILCallingConv * 
                  ?parameters: ILParameters * ?ret: IReturn * ?body: ILLazyMethodBody * ?securityDecls: ILSecurityDecls * ?isEntryPoint:bool * 
                  ?genericParams: ILGenericParameterDefs * ?customAttrs: IAttributes -> IMethodDef
@@ -1791,7 +1775,6 @@ type ILMethodDefs(f : (unit -> IMethodDef[])) =
         | true, m -> m
         | _ -> []
 
-
     interface IEnumerable with 
         member x.GetEnumerator() = ((x :> IEnumerable<IMethodDef>).GetEnumerator() :> IEnumerator)
 
@@ -1817,7 +1800,6 @@ type IEventDef =
     abstract IsSpecialName: bool
     abstract IsRTSpecialName: bool
 
-    /// Functional update of the value
     abstract With:
         ?eventType: ILType option * ?name: string * ?attributes: EventAttributes * ?addMethod: ILMethodRef * 
         ?removeMethod: ILMethodRef * ?fireMethod: ILMethodRef option * ?otherMethods: ILMethodRef list * 
@@ -1869,7 +1851,6 @@ type ILEventDef
                        customAttrs  = (match newCustomAttrs with None -> x.CustomAttrs | Some attrs -> attrs)) :> IEventDef
 
 
-(* Index table by name. *)
 [<NoEquality; NoComparison; Sealed>]
 type ILEventDefs(t: LazyOrderedMultiMap<string, IEventDef>) =
     interface IEventDefs with 
@@ -1890,10 +1871,11 @@ type IPropertyDef =
     abstract IsSpecialName: bool
     abstract IsRTSpecialName: bool
 
-    /// Functional update of the value
-    abstract With: ?name: string * ?attributes: PropertyAttributes * ?setMethod: ILMethodRef option * ?getMethod: ILMethodRef option * 
-                 ?callingConv: ILThisConvention * ?propertyType: ILType * ?init: ILFieldInit option * ?args: ILTypes * 
-                 ?customAttrs: IAttributes -> IPropertyDef
+    abstract With:
+        ?name: string * ?attributes: PropertyAttributes * ?setMethod: ILMethodRef option *
+        ?getMethod: ILMethodRef option * ?callingConv: ILThisConvention * ?propertyType: ILType *
+        ?init: ILFieldInit option * ?args: ILTypes * ?customAttrs: IAttributes
+            -> IPropertyDef
 
 
 type IPropertyDefs =
@@ -1902,7 +1884,10 @@ type IPropertyDefs =
 
 
 [<NoComparison; NoEquality>]
-type ILPropertyDef(name: string, attributes: PropertyAttributes, setMethod: ILMethodRef option, getMethod: ILMethodRef option, callingConv: ILThisConvention, propertyType: ILType, init: ILFieldInit option, args: ILTypes, customAttrsStored: ILAttributesStored, metadataIndex: int32) =
+type ILPropertyDef
+        (name: string, attributes: PropertyAttributes, setMethod: ILMethodRef option, getMethod: ILMethodRef option,
+         callingConv: ILThisConvention, propertyType: ILType, init: ILFieldInit option, args: ILTypes,
+         customAttrsStored: ILAttributesStored, metadataIndex: int32) =
 
     new (name, attributes, setMethod, getMethod, callingConv, propertyType, init, args, customAttrs) =
         ILPropertyDef(name, attributes, setMethod, getMethod, callingConv, propertyType, init, args,
@@ -1922,24 +1907,23 @@ type ILPropertyDef(name: string, attributes: PropertyAttributes, setMethod: ILMe
         member x.Init = init
         member x.Args = args
         member x.CustomAttrs = x.CustomAttrs
-    
-        member x.With(?newName, ?newAttributes, ?newSetMethod, ?newGetMethod, ?newCallingConv, ?newPropertyType, ?newInit, ?newArgs, ?newCustomAttrs) = 
-            ILPropertyDef(name = defaultArg newName name, 
-                          attributes = defaultArg newAttributes attributes, 
-                          setMethod = defaultArg newSetMethod setMethod, 
-                          getMethod = defaultArg newGetMethod getMethod, 
-                          callingConv = defaultArg newCallingConv callingConv, 
+
+        member x.With(?newName, ?newAttributes, ?newSetMethod, ?newGetMethod, ?newCallingConv, ?newPropertyType,
+                      ?newInit, ?newArgs, ?newCustomAttrs) = 
+            ILPropertyDef(name         = defaultArg newName name, 
+                          attributes   = defaultArg newAttributes attributes, 
+                          setMethod    = defaultArg newSetMethod setMethod, 
+                          getMethod    = defaultArg newGetMethod getMethod, 
+                          callingConv  = defaultArg newCallingConv callingConv, 
                           propertyType = defaultArg newPropertyType propertyType, 
-                          init = defaultArg newInit init, 
-                          args = defaultArg newArgs args,
-                          customAttrs = (match newCustomAttrs with None -> x.CustomAttrs | Some attrs -> attrs)) :> IPropertyDef
-    
-    
+                          init         = defaultArg newInit init, 
+                          args         = defaultArg newArgs args,
+                          customAttrs  = (match newCustomAttrs with None -> x.CustomAttrs | Some attrs -> attrs)) :> IPropertyDef
+
         member x.IsSpecialName = (attributes &&& PropertyAttributes.SpecialName) <> enum<_>(0)
         member x.IsRTSpecialName = (attributes &&& PropertyAttributes.RTSpecialName) <> enum<_>(0)
 
 
-// Index table by name.
 [<NoEquality; NoComparison; Sealed>]
 type ILPropertyDefs(t: LazyOrderedMultiMap<string, IPropertyDef>) =
     interface IPropertyDefs with 
@@ -1956,14 +1940,14 @@ let convertFieldAccess (ilMemberAccess:ILMemberAccess) =
     | ILMemberAccess.Private             -> FieldAttributes.Private
     | ILMemberAccess.Public              -> FieldAttributes.Public
 
+
 type IFieldDef =
     abstract Name: string
     abstract FieldType: ILType
     abstract Attributes: FieldAttributes
     abstract Data:  byte[] option
     abstract LiteralValue: ILFieldInit option  
-
-    abstract Offset:  int32 option 
+    abstract Offset:  int option 
     abstract Marshal: ILNativeType option 
     abstract CustomAttrs: IAttributes
     abstract IsStatic: bool
@@ -1975,7 +1959,7 @@ type IFieldDef =
 
     abstract With:
         ?newName: string * ?newFieldType: ILType * ?newAttributes: FieldAttributes * ?newData: byte[] option *
-        ?newLiteralValue: ILFieldInit option * ?newOffset:  int32 option * ?newMarshal: ILNativeType option *
+        ?newLiteralValue: ILFieldInit option * ?newOffset:  int option * ?newMarshal: ILNativeType option *
         ?newCustomAttrs: IAttributes
             -> IFieldDef
 
@@ -1994,7 +1978,10 @@ type IFieldDefs =
 
 
 [<NoComparison; NoEquality>]
-type ILFieldDef(name: string, fieldType: ILType, attributes: FieldAttributes, data: byte[] option, literalValue: ILFieldInit option, offset:  int32 option, marshal: ILNativeType option, customAttrsStored: ILAttributesStored, metadataIndex: int32) = 
+type ILFieldDef
+        (name: string, fieldType: ILType, attributes: FieldAttributes, data: byte[] option,
+         literalValue: ILFieldInit option, offset:  int option, marshal: ILNativeType option,
+         customAttrsStored: ILAttributesStored, metadataIndex: int) = 
 
     new (name, fieldType, attributes, data, literalValue, offset, marshal, customAttrs) = 
         ILFieldDef(name, fieldType, attributes, data, literalValue, offset, marshal, storeILCustomAttrs customAttrs, NoMetadataIdx)
@@ -2002,16 +1989,16 @@ type ILFieldDef(name: string, fieldType: ILType, attributes: FieldAttributes, da
     member x.CustomAttrs = customAttrsStored.GetCustomAttrs metadataIndex
 
     member x.With(?newName: string, ?newFieldType: ILType, ?newAttributes: FieldAttributes, ?newData: byte[] option,
-                  ?newLiteralValue: ILFieldInit option, ?newOffset:  int32 option, ?newMarshal: ILNativeType option,
+                  ?newLiteralValue: ILFieldInit option, ?newOffset:  int option, ?newMarshal: ILNativeType option,
                   ?newCustomAttrs: IAttributes) = 
-        ILFieldDef(name = defaultArg newName name,
-                   fieldType = defaultArg newFieldType fieldType,
-                   attributes = defaultArg newAttributes attributes,
-                   data = defaultArg newData data,
+        ILFieldDef(name         = defaultArg newName name,
+                   fieldType    = defaultArg newFieldType fieldType,
+                   attributes   = defaultArg newAttributes attributes,
+                   data         = defaultArg newData data,
                    literalValue = defaultArg newLiteralValue literalValue,
-                   offset = defaultArg newOffset offset,
-                   marshal = defaultArg newMarshal marshal,
-                   customAttrs = defaultArg newCustomAttrs x.CustomAttrs) :> IFieldDef
+                   offset       = defaultArg newOffset offset,
+                   marshal      = defaultArg newMarshal marshal,
+                   customAttrs  = defaultArg newCustomAttrs x.CustomAttrs) :> IFieldDef
 
     interface IFieldDef with
         member __.Name          = name
@@ -2047,18 +2034,18 @@ type ILFieldDef(name: string, fieldType: ILType, attributes: FieldAttributes, da
         member x.WithFieldMarshal(marshal)        = x.With(newMarshal = marshal, newAttributes = (attributes |> conditionalAdd marshal.IsSome FieldAttributes.HasFieldMarshal))
 
 
-/// Index table by name. Keep a canonical list to make sure field order is not disturbed for binary manipulation.
 [<NoEquality; NoComparison; Sealed>]
 type ILFieldDefs(t: LazyOrderedMultiMap<string, IFieldDef>) =
     interface IFieldDefs with 
         member x.AsList =  t.Entries()
         member x.LookupByName(s) = t.[s]
 
+
 type ILMethodImplDef =
     { Overrides: ILOverridesSpec;
       OverrideBy: ILMethodSpec }
 
-// Index table by name and arity. 
+ 
 type ILMethodImplDefs = 
     | ILMethodImpls of Lazy<MethodImplsMap>
     member x.AsList = let (ILMethodImpls ltab) = x in Map.foldBack (fun _x y r -> y@r) (ltab.Force()) []
@@ -2179,20 +2166,12 @@ let convertInitSemantics (init:ILTypeInit) =
     | ILTypeInit.OnAny -> enum 0
 
 
-/// Tables of named type definitions.  
 type ITypeDefs =
     inherit  IEnumerable<ITypeDef>
 
     abstract AsArray: ITypeDef[]
     abstract AsList: ITypeDef list
-
-    /// Get some information about the type defs, but do not force the read of the type defs themselves.
     abstract AsArrayOfPreTypeDefs: IPreTypeDef[]
-
-    /// Calls to <c>FindByName</c> will result in any laziness in the overall 
-    /// set of ILTypeDefs being read in in addition 
-    /// to the details for the type found, but the remaining individual 
-    /// type definitions will not be read. 
     abstract FindByName: string -> ITypeDef
 
 
@@ -2221,11 +2200,8 @@ and ITypeDef =
     abstract IsAbstract: bool
     abstract IsSealed: bool
     abstract IsSerializable: bool
-    /// Class or interface generated for COM interop. 
     abstract IsComInterop: bool
     abstract IsSpecialName: bool
-    /// Some classes are marked "HasSecurity" even if there are no permissions attached, 
-    /// e.g. if they use SuppressUnmanagedCodeSecurityAttribute 
     abstract HasSecurity: bool
     abstract Encoding: ILDefaultPInvokeEncoding
 
@@ -2242,7 +2218,6 @@ and ITypeDef =
     abstract WithSpecialName: bool -> ITypeDef
     abstract WithInitSemantics: ILTypeInit -> ITypeDef
 
-    /// Functional update
     abstract With: ?name: string * ?attributes: TypeAttributes * ?layout: ILTypeDefLayout *  ?implements: ILTypes * 
                  ?genericParams:ILGenericParameterDefs * ?extends:ILType option * ?methods:IMethodDefs * 
                  ?nestedTypes:ITypeDefs * ?fields: IFieldDefs * ?methodImpls:ILMethodImplDefs * ?events:IEventDefs * 
@@ -2252,7 +2227,6 @@ and IPreTypeDef =
         abstract Namespace: string list
         abstract Name: string
         abstract MetadataIndex: int32 
-        /// Realise the actual full typedef
         abstract GetTypeDef : unit -> ITypeDef
 
 
@@ -2379,7 +2353,6 @@ and [<Sealed>] ILTypeDefs(f : unit -> IPreTypeDef[]) =
             (seq { for pre in array.Value -> pre.GetTypeDef() }).GetEnumerator()
 
 
-/// This is a memory-critical class. Very many of these objects get allocated and held to represent the contents of .NET assemblies.
 and [<Sealed>] ILPreTypeDef(nameSpace: string list, name: string, metadataIndex: int32, storage: ILTypeDefStored) = 
     let mutable store : ITypeDef = Unchecked.defaultof<_>
 
@@ -2400,7 +2373,8 @@ and [<Sealed>] ILPreTypeDef(nameSpace: string list, name: string, metadataIndex:
                 | ILTypeDefStored.Reader f -> 
                     System.Threading.LazyInitializer.EnsureInitialized<ITypeDef>(&store, System.Func<_>(fun () -> f metadataIndex))
             | _ -> store
-      
+
+
 and ILTypeDefStored = 
     | Given of ITypeDef
     | Reader of (int32 -> ITypeDef)
@@ -2504,6 +2478,7 @@ type IAssemblyManifest =
         ?newCustomAttrsStored: ILAttributesStored * ?newSecurityDeclsStored: ILSecurityDeclsStored
             -> IAssemblyManifest
 
+
 [<Sealed>]
 type ILAssemblyManifest
         (name, auxModuleHashAlgorithm, securityDeclsStored: ILSecurityDeclsStored, publicKey, version, locale,
@@ -2552,6 +2527,7 @@ type ILNativeResource =
     | In of fileName: string * linkedResourceBase: int * linkedResourceStart: int * linkedResourceLength: int
     | Out of unlinkedResource: byte[]
 
+
 type IModuleDef =
     abstract Manifest: IAssemblyManifest option
     abstract Name: string
@@ -2571,8 +2547,6 @@ type IModuleDef =
     abstract ImageBase: int32
     abstract MetadataVersion: string
     abstract Resources: ILResources 
-
-    /// e.g. win86 resources, as the exact contents of a .res or .obj file. Must be unlinked manually.
     abstract NativeResources: ILNativeResource list
     abstract CustomAttrsStored: ILAttributesStored
     abstract MetadataIndex: int32 
@@ -2589,6 +2563,7 @@ type IModuleDef =
         ?nativeResources: ILNativeResource list * ?customAttrsStored: ILAttributesStored * ?metadataIndex: int32
             -> IModuleDef
 
+
 [<Sealed>]
 type ILModuleDef
     internal
@@ -2599,27 +2574,27 @@ type ILModuleDef
          nativeResources: ILNativeResource list, customAttrsStored: ILAttributesStored, metadataIndex: int32) = 
 
     interface IModuleDef with
-        member __.Manifest = manifest
-        member __.Name = name
-        member __.TypeDefs = typeDefs
-        member __.SubsystemVersion = subsystemVersion
-        member __.UseHighEntropyVA = useHighEntropyVA
-        member __.SubSystemFlags = subSystemFlags
-        member __.IsDLL = isDLL
-        member __.IsILOnly = isILOnly
-        member __.Platform = platform
-        member __.StackReserveSize = stackReserveSize
-        member __.Is32Bit = is32Bit
-        member __.Is32BitPreferred = is32BitPreferred
-        member __.Is64Bit = is64Bit
-        member __.VirtualAlignment = virtualAlignment
+        member __.Manifest          = manifest
+        member __.Name              = name
+        member __.TypeDefs          = typeDefs
+        member __.SubsystemVersion  = subsystemVersion
+        member __.UseHighEntropyVA  = useHighEntropyVA
+        member __.SubSystemFlags    = subSystemFlags
+        member __.IsDLL             = isDLL
+        member __.IsILOnly          = isILOnly
+        member __.Platform          = platform
+        member __.StackReserveSize  = stackReserveSize
+        member __.Is32Bit           = is32Bit
+        member __.Is32BitPreferred  = is32BitPreferred
+        member __.Is64Bit           = is64Bit
+        member __.VirtualAlignment  = virtualAlignment
         member __.PhysicalAlignment = physicalAlignment
-        member __.ImageBase = imageBase
-        member __.MetadataVersion = metadataVersion
-        member __.Resources = resources 
-        member __.NativeResources = nativeResources
+        member __.ImageBase         = imageBase
+        member __.MetadataVersion   = metadataVersion
+        member __.Resources         = resources 
+        member __.NativeResources   = nativeResources
         member __.CustomAttrsStored = customAttrsStored
-        member __.MetadataIndex = metadataIndex 
+        member __.MetadataIndex     = metadataIndex 
 
         member __.ManifestOfAssembly =
             match manifest with 
@@ -2633,10 +2608,10 @@ type ILModuleDef
         member __.HasManifest = match manifest with None -> false | _ -> true
         member __.CustomAttrs = customAttrsStored.GetCustomAttrs metadataIndex        
 
-        member x.With(?newName, ?newManifest, ?newTypeDefs, ?newSubsystemVersion, ?newUseHighEntropyVA, ?newSubSystemFlags, ?newIsDLL,
-                      ?newIsILOnly, ?newPlatform, ?newStackReserveSize, ?newIs32Bit, ?newIs32BitPreferred, ?newIs64Bit,
-                      ?newVirtualAlignment, ?newPhysicalAlignment, ?newImageBase, ?newMetadataVersion, ?newResources,
-                      ?newNativeResources, ?newCustomAttrsStored, ?newMetadataIndex) =
+        member x.With(?newName, ?newManifest, ?newTypeDefs, ?newSubsystemVersion, ?newUseHighEntropyVA, ?newSubSystemFlags,
+                      ?newIsDLL, ?newIsILOnly, ?newPlatform, ?newStackReserveSize, ?newIs32Bit, ?newIs32BitPreferred,
+                      ?newIs64Bit, ?newVirtualAlignment, ?newPhysicalAlignment, ?newImageBase, ?newMetadataVersion,
+                      ?newResources, ?newNativeResources, ?newCustomAttrsStored, ?newMetadataIndex) =
             ILModuleDef
                 (manifest = defaultArg newManifest manifest,
                  name = defaultArg newName name,

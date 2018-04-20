@@ -998,6 +998,7 @@ type IGenericParameterDef =
         ?newCustomAttrs: IAttributes
             -> IGenericParameterDef
 
+
 /// Generic parameters.  Formal generic parameter declarations may include the bounds, if any, on the generic parameter.
 [<Sealed>]
 type ILGenericParameterDef =
@@ -1013,6 +1014,7 @@ type ILGenericParameterDef =
         customAttrsStored: ILAttributesStored *
         metadataIndex: int
             -> ILGenericParameterDef
+
 
 type ILGenericParameterDefs = IGenericParameterDef list
 
@@ -1067,7 +1069,8 @@ type IMethodDef =
     abstract IsUnmanagedExport: bool
     abstract IsReqSecObj: bool
 
-    /// Some methods are marked "HasSecurity" even if there are no permissions attached, e.g. if they use SuppressUnmanagedCodeSecurityAttribute 
+    /// Some methods are marked "HasSecurity" even if there are no permissions attached,
+    /// e.g. if they use SuppressUnmanagedCodeSecurityAttribute.
     abstract HasSecurity: bool
     abstract IsManaged: bool
     abstract IsForwardRef: bool
@@ -1118,15 +1121,15 @@ type ILMethodDef =
     interface IMethodDef
 
 
-/// Tables of methods.  Logically equivalent to a list of methods but
-/// the table is kept in a form optimized for looking up methods by 
-/// name and arity.
+/// Tables of methods.  Logically equivalent to a list of methods but the table is kept in a form optimized
+/// for looking up methods by name and arity.
 type IMethodDefs =
     inherit IEnumerable<IMethodDef>
     abstract AsArray: IMethodDef[]
     abstract AsList: IMethodDef list
     abstract FindByName: string -> IMethodDef list
     abstract FindByNameAndArity: string * int -> IMethodDef list
+
 
 [<NoEquality; NoComparison; Sealed>]
 type ILMethodDefs =
@@ -1191,6 +1194,7 @@ type IFieldDefs =
     abstract LookupByName: string -> IFieldDef list
 
 
+/// Index table by name. Keep a canonical list to make sure field order is not disturbed for binary manipulation.
 [<NoEquality; NoComparison; Sealed>]
 type ILFieldDefs =
     interface IFieldDefs
@@ -1239,6 +1243,7 @@ type ILEventDef =
     interface IEventDef
 
 
+/// Index table by name.
 [<NoEquality; NoComparison; Sealed>]
 type ILEventDefs =
     interface IEventDefs
@@ -1285,6 +1290,8 @@ type ILPropertyDef =
 
     interface IPropertyDef
 
+
+// Index table by name.
 [<NoEquality; NoComparison>]
 [<Sealed>]
 type ILPropertyDefs =
@@ -1296,6 +1303,8 @@ type ILMethodImplDef =
     { Overrides: ILOverridesSpec
       OverrideBy: ILMethodSpec }
 
+
+// Index table by name and arity.
 [<NoEquality; NoComparison; Sealed>]
 type ILMethodImplDefs =
     member AsList: ILMethodImplDef list
@@ -1383,9 +1392,11 @@ and ITypeDef =
     abstract IsAbstract: bool
     abstract IsSealed: bool
     abstract IsSerializable: bool
+
     /// Class or interface generated for COM interop. 
     abstract IsComInterop: bool
     abstract IsSpecialName: bool
+
     /// Some classes are marked "HasSecurity" even if there are no permissions attached, 
     /// e.g. if they use SuppressUnmanagedCodeSecurityAttribute 
     abstract HasSecurity: bool
@@ -1412,10 +1423,12 @@ and ITypeDef =
         ?properties:IPropertyDefs * ?customAttrs:IAttributes * ?securityDecls: ILSecurityDecls
             -> ITypeDef
 
+
 and IPreTypeDef = 
         abstract Namespace: string list
         abstract Name: string
         abstract MetadataIndex: int32
+
         /// Realise the actual full typedef
         abstract GetTypeDef : unit -> ITypeDef
 
@@ -1425,6 +1438,7 @@ and IPreTypeDef =
 type ILTypeDefs =
     interface IEnumerable<ITypeDef>
     interface ITypeDefs
+
 
 /// Represents IL Type Definitions. 
 and [<NoComparison; NoEquality>] ILTypeDef =  
@@ -1441,11 +1455,15 @@ and [<NoComparison; NoEquality>] ILTypeDef =
 
     interface ITypeDef
 
+
 /// Represents a prefix of information for ILTypeDef.
 ///
 /// The information is enough to perform name resolution for the F# compiler, probe attributes
 /// for ExtensionAttribute  etc.  This is key to the on-demand exploration of .NET metadata.
 /// This information has to be "Goldilocks" - not too much, not too little, just right.
+///
+/// This is a memory-critical class.
+/// Very many of these objects get allocated and held to represent the contents of .NET assemblies.
 and [<NoEquality; NoComparison; Sealed>] ILPreTypeDef = 
     interface IPreTypeDef
 
@@ -1708,6 +1726,7 @@ type ILModuleDef =
             -> ILModuleDef
 
     interface IModuleDef
+
 
 /// Find the method definition corresponding to the given property or 
 /// event operation. These are always in the same class as the property 
