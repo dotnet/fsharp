@@ -52,6 +52,7 @@ open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.TypeRelations
+open System
 
 //-------------------------------------------------------------------------
 // Generate type variables and record them in within the scope of the
@@ -2119,10 +2120,12 @@ and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs, nNa
         let msg = FSComp.SR.csIncorrectGenericInstantiation((ShowAccessDomain ad), methodName, cmeth.NumCallerTyArgs)
         Error (msg, m)
     // Many methods of different arities, all incorrect 
-    | _, _, ([], (cmeth :: _)), _, _ -> 
-        let minfo = cmeth.Method
+    | _, _, ([], (cmeth :: _ as cmeths)), _, _ -> 
         let sb = System.Text.StringBuilder()
-        NicePrint.formatMethInfoToBufferFreeStyle amap m denv sb minfo
+        for cmeth in cmeths do
+            sb.Append Environment.NewLine |> ignore
+            NicePrint.formatMethInfoToBufferFreeStyle amap m denv sb cmeth.Method
+
         Error (FSComp.SR.csMemberOverloadArityMismatch(methodName, cmeth.TotalNumUnnamedCallerArgs, sb.ToString()), m)
     | _ -> 
         let msg = 
