@@ -88,6 +88,51 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to CodeLens.
+        /// </summary>
+        public static string CodeLens {
+            get {
+                return ResourceManager.GetString("CodeLens", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Annotation prefix.
+        /// </summary>
+        public static string CodeLens_Prefix {
+            get {
+                return ResourceManager.GetString("CodeLens_Prefix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Show annotations to the right instead of above the line.
+        /// </summary>
+        public static string CodeLens_Replace_LineLens {
+            get {
+                return ResourceManager.GetString("CodeLens_Replace_LineLens", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Show type signature annotations in the editor.
+        /// </summary>
+        public static string CodeLens_Switch {
+            get {
+                return ResourceManager.GetString("CodeLens_Switch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use colors in annotations.
+        /// </summary>
+        public static string CodeLens_UseColors {
+            get {
+                return ResourceManager.GetString("CodeLens_UseColors", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Completion Lists.
         /// </summary>
         public static string Completion_Lists {
