@@ -1122,7 +1122,7 @@ type ILMetadataReader =
     readBlobHeapAsLocalsSig : BlobAsLocalSigIdx -> ILLocal list
     seekReadTypeDefAsType : TypeDefAsTypIdx -> ILType
     seekReadMethodDefAsMethodData : int -> MethodData
-    seekReadGenericParams : GenericParamsIdx -> ILGenericParameterDef list
+    seekReadGenericParams : GenericParamsIdx -> IGenericParameterDef list
     seekReadFieldDefAsFieldSpec : int -> ILFieldSpec
     customAttrsReader_Module : ILAttributesStored
     customAttrsReader_Assembly : ILAttributesStored
@@ -1839,14 +1839,17 @@ and seekReadGenericParamsUncached ctxtH (GenericParamsIdx(numtypars, a, b)) =
                      elif variance_flags = 0x0002 then ContraVariant 
                      else NonVariant
                  let constraints = seekReadGenericParamConstraints ctxt mdv numtypars gpidx
-                 seq, {Name=readStringHeap ctxt nameIdx
-                       Constraints = constraints
-                       Variance=variance  
-                       CustomAttrsStored = ctxt.customAttrsReader_GenericParam
-                       MetadataIndex=gpidx
-                       HasReferenceTypeConstraint= (flags &&& 0x0004) <> 0
-                       HasNotNullableValueTypeConstraint= (flags &&& 0x0008) <> 0
-                       HasDefaultConstructorConstraint=(flags &&& 0x0010) <> 0 }))
+                 let genericParam =
+                    ILGenericParameterDef
+                        (name = readStringHeap ctxt nameIdx,
+                         constraints = constraints,
+                         variance = variance,
+                         hasReferenceTypeConstraint = ((flags &&& 0x0004) <> 0),
+                         hasNotNullableValueTypeConstraint = ((flags &&& 0x0008) <> 0),
+                         hasDefaultConstructorConstraint = ((flags &&& 0x0010) <> 0),
+                         customAttrsStored = ctxt.customAttrsReader_GenericParam,
+                         metadataIndex = gpidx) :> IGenericParameterDef
+                 seq, genericParam))
     pars |> List.sortBy fst |> List.map snd 
 
 and seekReadGenericParamConstraints (ctxt: ILMetadataReader)  mdv numtypars gpidx =

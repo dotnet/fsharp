@@ -279,7 +279,7 @@ and goutput_permission _env os p =
   
 and goutput_security_decls env os (ps: ILSecurityDecls) =  output_seq " " (goutput_permission env)  os ps.AsList
 
-and goutput_gparam env os (gf: ILGenericParameterDef) =  
+and goutput_gparam env os (gf: IGenericParameterDef) =  
   output_string os (tyvar_generator gf.Name);
   output_parens (output_seq "," (goutput_typ env)) os gf.Constraints
 

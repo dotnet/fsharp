@@ -99,7 +99,7 @@ let callsig_typ2typ f (x: ILCallingSignature) =
       ArgTypes=List.map f x.ArgTypes;
       ReturnType=f x.ReturnType}
 
-let gparam_typ2typ f gf = {gf with Constraints = List.map f gf.Constraints}
+let gparam_typ2typ f (gf: IGenericParameterDef) = gf.With(newConstraints = List.map f gf.Constraints)
 let gparams_typ2typ f gfs = List.map (gparam_typ2typ f) gfs
 let typs_typ2typ (f: ILType -> ILType)  x = List.map f x
 let mref_typ2typ (f: ILType -> ILType) (x:ILMethodRef) = 

@@ -2368,7 +2368,7 @@ and GenFieldDefPass3 cenv env fd =
 // ILGenericParameterDef --> GenericParam Row
 // -------------------------------------------------------------------- 
 
-let rec GetGenericParamAsGenericParamRow cenv _env idx owner gp = 
+let rec GetGenericParamAsGenericParamRow cenv _env idx owner (gp: IGenericParameterDef) = 
     let flags = 
         (match  gp.Variance with 
            | NonVariant -> 0x0000

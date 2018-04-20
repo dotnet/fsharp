@@ -928,34 +928,54 @@ type MethodCodeKind =
     | Native
     | Runtime
 
+
+type IGenericParameterDef =
+    abstract Name: string
+    
+     /// At most one is the parent type, the others are interface types.
+    abstract Constraints: ILTypes 
+
+     /// Variance of type parameters, only applicable to generic parameters for generic interfaces and delegates.
+    abstract Variance: ILGenericVariance 
+
+     /// Indicates the type argument must be a reference type.
+    abstract HasReferenceTypeConstraint: bool    
+
+     /// Indicates the type argument must be a value type, but not Nullable.
+    abstract HasNotNullableValueTypeConstraint: bool  
+
+     /// Indicates the type argument must have a public nullary constructor.
+    abstract HasDefaultConstructorConstraint: bool 
+
+    abstract CustomAttrs: ILAttributes
+
+    abstract With:
+        ?newName: string *
+        ?newConstraints: ILTypes *
+        ?newVariance: ILGenericVariance *
+        ?newHasReferenceTypeConstraint: bool *
+        ?newHasNotNullableValueTypeConstraint: bool *
+        ?newHasDefaultConstructorConstraint: bool *
+        ?newCustomAttrs: ILAttributes
+            -> IGenericParameterDef
+
 /// Generic parameters.  Formal generic parameter declarations may include the bounds, if any, on the generic parameter.
+[<Sealed>]
 type ILGenericParameterDef =
-    { Name: string
+    interface IGenericParameterDef
 
-      /// At most one is the parent type, the others are interface types.
-      Constraints: ILTypes 
+    new:
+        name: string *
+        constraints: ILTypes *
+        variance: ILGenericVariance *
+        hasReferenceTypeConstraint: bool *
+        hasNotNullableValueTypeConstraint: bool *
+        hasDefaultConstructorConstraint: bool *
+        customAttrsStored: ILAttributesStored *
+        metadataIndex: int
+            -> ILGenericParameterDef
 
-      /// Variance of type parameters, only applicable to generic parameters for generic interfaces and delegates.
-      Variance: ILGenericVariance 
-
-      /// Indicates the type argument must be a reference type.
-      HasReferenceTypeConstraint: bool     
-
-      /// Indicates the type argument must be a value type, but not Nullable.
-      HasNotNullableValueTypeConstraint: bool  
-
-      /// Indicates the type argument must have a public nullary constructor.
-      HasDefaultConstructorConstraint: bool 
-      
-      /// Do not use this
-      CustomAttrsStored: ILAttributesStored
-
-      /// Do not use this
-      MetadataIndex: int32 }
-
-    member CustomAttrs: ILAttributes 
-
-type ILGenericParameterDefs = ILGenericParameterDef list
+type ILGenericParameterDefs = IGenericParameterDef list
 
 [<NoComparison; NoEquality; Sealed>]
 type ILLazyMethodBody = 
@@ -1809,12 +1829,12 @@ val mkILFieldSpecInTy: ILType * string * ILType -> ILFieldSpec
 val mkILCallSig: ILCallingConv * ILType list * ILType -> ILCallingSignature
 
 /// Make generalized versions of possibly-generic types, e.g. Given the ILTypeDef for List, return the type "List<T>".
-val mkILFormalBoxedTy: ILTypeRef -> ILGenericParameterDef list -> ILType
-val mkILFormalNamedTy: ILBoxity -> ILTypeRef -> ILGenericParameterDef list -> ILType
+val mkILFormalBoxedTy: ILTypeRef -> IGenericParameterDef list -> ILType
+val mkILFormalNamedTy: ILBoxity -> ILTypeRef -> IGenericParameterDef list -> ILType
 
 val mkILFormalTypars: ILType list -> ILGenericParameterDefs
 val mkILFormalGenericArgs: int -> ILGenericParameterDefs -> ILGenericArgsList
-val mkILSimpleTypar: string -> ILGenericParameterDef
+val mkILSimpleTypar: string -> IGenericParameterDef
 
 /// Make custom attributes.
 val mkILCustomAttribMethRef: 

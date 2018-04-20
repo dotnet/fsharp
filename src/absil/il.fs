@@ -1427,20 +1427,64 @@ type ILGenericVariance =
     | CoVariant
     | ContraVariant
 
-type ILGenericParameterDef =
-    { Name: string
-      Constraints: ILTypes
-      Variance: ILGenericVariance 
-      HasReferenceTypeConstraint: bool
-      HasNotNullableValueTypeConstraint: bool
-      HasDefaultConstructorConstraint: bool 
-      CustomAttrsStored : ILAttributesStored
-      MetadataIndex: int32 }
+let NoMetadataIdx = -1
 
-    member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
-    override x.ToString() = x.Name 
+type IGenericParameterDef =
+    abstract Name: string
+    abstract Constraints: ILTypes
+    abstract Variance: ILGenericVariance
+    abstract HasReferenceTypeConstraint: bool
+    abstract HasNotNullableValueTypeConstraint: bool
+    abstract HasDefaultConstructorConstraint: bool
+    abstract CustomAttrs: ILAttributes
 
-type ILGenericParameterDefs = ILGenericParameterDef list
+    abstract With:
+        ?newName: string *
+        ?newConstraints: ILTypes *
+        ?newVariance: ILGenericVariance *
+        ?newHasReferenceTypeConstraint: bool *
+        ?newHasNotNullableValueTypeConstraint: bool *
+        ?newHasDefaultConstructorConstraint: bool *
+        ?newCustomAttrs: ILAttributes
+            -> IGenericParameterDef
+
+[<Sealed>]
+type ILGenericParameterDef
+        (name, constraints, variance, hasReferenceTypeConstraint, hasNotNullableValueTypeConstraint,
+         hasDefaultConstructorConstraint, customAttrsStored: ILAttributesStored, metadataIndex) =
+
+    new (name, constraints, variance, hasReferenceTypeConstraint, hasNotNullableValueTypeConstraint,
+         hasDefaultConstructorConstraint, customAttrs: ILAttributes) =
+         ILGenericParameterDef(name, constraints, variance, hasReferenceTypeConstraint,
+                               hasNotNullableValueTypeConstraint, hasDefaultConstructorConstraint,
+                               storeILCustomAttrs customAttrs, NoMetadataIdx)
+
+    member x.CustomAttrs = customAttrsStored.GetCustomAttrs(metadataIndex)
+    override x.ToString() = name
+
+    interface IGenericParameterDef with
+        member __.Name                              = name
+        member __.Constraints                       = constraints
+        member __.Variance                          = variance 
+        member __.HasReferenceTypeConstraint        = hasReferenceTypeConstraint
+        member __.HasNotNullableValueTypeConstraint = hasNotNullableValueTypeConstraint
+        member __.HasDefaultConstructorConstraint   = hasDefaultConstructorConstraint 
+
+        member x.CustomAttrs = x.CustomAttrs
+
+        member x.With(?newName: string, ?newConstraints: ILTypes, ?newVariance: ILGenericVariance, ?newHasReferenceTypeConstraint: bool,
+                      ?newHasNotNullableValueTypeConstraint: bool, ?newHasDefaultConstructorConstraint: bool,
+                      ?newCustomAttrs: ILAttributes) =
+            ILGenericParameterDef
+                (name = defaultArg newName name,
+                 constraints = defaultArg newConstraints constraints,
+                 variance = defaultArg newVariance variance,
+                 hasReferenceTypeConstraint = defaultArg newHasReferenceTypeConstraint hasReferenceTypeConstraint,
+                 hasNotNullableValueTypeConstraint = defaultArg newHasNotNullableValueTypeConstraint hasNotNullableValueTypeConstraint,
+                 hasDefaultConstructorConstraint = defaultArg newHasDefaultConstructorConstraint hasDefaultConstructorConstraint,
+                 customAttrs = (match newCustomAttrs with None -> x.CustomAttrs | Some attrs -> attrs)) :> IGenericParameterDef
+
+type ILGenericParameterDefs = IGenericParameterDef list
 
 let memberAccessOfFlags flags =
     let f = (flags &&& 0x00000007)
@@ -1462,9 +1506,6 @@ let convertMemberAccess (ilMemberAccess:ILMemberAccess) =
     | ILMemberAccess.Family              -> MethodAttributes.Family
 
 let inline conditionalAdd condition flagToAdd source = if condition then source ||| flagToAdd else source &&& ~~~flagToAdd
-
-let NoMetadataIdx = -1
-
 
 type IMethodDef =
     abstract Name: string
@@ -1743,7 +1784,8 @@ type ILEventDef
          customAttrsStored: ILAttributesStored, metadataIndex: int32) =
 
     new (eventType, name, attributes, addMethod, removeMethod, fireMethod, otherMethods, customAttrs) =
-        ILEventDef(eventType, name, attributes, addMethod, removeMethod, fireMethod, otherMethods, storeILCustomAttrs customAttrs, NoMetadataIdx)
+        ILEventDef(eventType, name, attributes, addMethod, removeMethod, fireMethod, otherMethods,
+                   storeILCustomAttrs customAttrs, NoMetadataIdx)
 
     member x.CustomAttrs = customAttrsStored.GetCustomAttrs(metadataIndex)
 
@@ -2736,14 +2778,15 @@ let nonBranchingInstrsToCode instrs : ILCode =
 let mkILTyvarTy tv = ILType.TypeVar tv
 
 let mkILSimpleTypar nm =
-   { Name=nm
-     Constraints = []
-     Variance=NonVariant
-     HasReferenceTypeConstraint=false
-     HasNotNullableValueTypeConstraint=false
-     HasDefaultConstructorConstraint=false
-     CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
-     MetadataIndex = NoMetadataIdx }
+    ILGenericParameterDef(
+        name = nm,
+        constraints = [],
+        variance = NonVariant,
+        hasReferenceTypeConstraint = false,
+        hasNotNullableValueTypeConstraint = false,
+        hasDefaultConstructorConstraint = false,
+        customAttrsStored = storeILCustomAttrs emptyILCustomAttrs,
+        metadataIndex = NoMetadataIdx) :> IGenericParameterDef
 
 let gparam_of_gactual (_ga:ILType) = mkILSimpleTypar "T"
 
@@ -4220,7 +4263,7 @@ let rec refs_of_typ s x =
 and refs_of_inst s i = refs_of_typs s i
 and refs_of_tspec s (x:ILTypeSpec) = refs_of_tref s x.TypeRef;  refs_of_inst s x.GenericArgs
 and refs_of_callsig s csig  = refs_of_typs s csig.ArgTypes; refs_of_typ s csig.ReturnType
-and refs_of_genparam s x = refs_of_typs s x.Constraints
+and refs_of_genparam s (x: IGenericParameterDef) = refs_of_typs s x.Constraints
 and refs_of_genparams s b = List.iter (refs_of_genparam s) b
     
 and refs_of_dloc s ts = refs_of_tref s ts

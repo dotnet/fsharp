@@ -76,7 +76,7 @@ val internal ImportProvidedMethodBaseAsILMethodRef : ImportMap -> range -> Taint
 #endif
 
 /// Import a set of Abstract IL generic parameter specifications as a list of new F# generic parameters.  
-val internal ImportILGenericParameters : (unit -> ImportMap) -> range -> ILScopeRef -> TType list -> ILGenericParameterDef list -> Typar list
+val internal ImportILGenericParameters : (unit -> ImportMap) -> range -> ILScopeRef -> TType list -> IGenericParameterDef list -> Typar list
 
 /// Import an IL assembly as a new TAST CCU
 val internal ImportILAssembly : (unit -> ImportMap) * range * (ILScopeRef -> IModuleDef) * ILScopeRef * sourceDir:string * filename: string option * IModuleDef * IEvent<string> -> CcuThunk

@@ -1431,7 +1431,7 @@ let buildGenParamsPass1b cenv emEnv (genArgs : Type array) (gps : ILGenericParam
 #else
     let genpBs =  genArgs |>  Array.map (fun x -> (x :?> GenericTypeParameterBuilder)) 
 #endif
-    gps |> List.iteri (fun i (gp:ILGenericParameterDef) ->
+    gps |> List.iteri (fun i (gp:IGenericParameterDef) ->
         let gpB = genpBs.[i]
         // the Constraints are either the parent (base) type or interfaces.
         let constraintTs = convTypes cenv emEnv gp.Constraints

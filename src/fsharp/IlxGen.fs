@@ -513,7 +513,7 @@ and GenParamTypes amap m tyenv tys =
 
 and GenTypeArgs amap m tyenv tyargs = GenTypeArgsAux amap m tyenv tyargs
 
-let GenericParamHasConstraint (gp: ILGenericParameterDef) = 
+let GenericParamHasConstraint (gp: IGenericParameterDef) = 
      gp.Constraints.Length <> 0 ||
      gp.Variance <> NonVariant ||
      gp.HasReferenceTypeConstraint ||
@@ -3429,34 +3429,34 @@ and GenGenericParam cenv eenv (tp:Typar) =
     let refTypeConstraint              = tp.Constraints |> List.exists (function TyparConstraint.IsReferenceType _ -> true | TyparConstraint.SupportsNull _ -> true | _ -> false)
     let notNullableValueTypeConstraint = tp.Constraints |> List.exists (function TyparConstraint.IsNonNullableStruct _ -> true | _ -> false)
     let defaultConstructorConstraint   = tp.Constraints |> List.exists (function TyparConstraint.RequiresDefaultConstructor _ -> true | _ -> false)
-    { Name= 
-
-          // use the CompiledName if given
-          // Inference variables get given an IL name "TA, TB" etc.
-          let nm = 
-              match tp.ILName with 
-              | None -> tp.Name  
-              | Some nm -> nm
-          // Some special rules apply when compiling Fsharp.Core.dll to avoid a proliferation of [<CompiledName>] attributes on type parameters
-          if cenv.g.compilingFslib then 
-              match nm with 
-              | "U" -> "TResult"
-              | "U1" -> "TResult1"
-              | "U2" -> "TResult2"
-              | _ -> 
-                  if nm.TrimEnd([| '0' .. '9' |]).Length = 1 then nm 
-                  elif nm.Length >= 1 && nm.[0] = 'T' && (nm.Length = 1 || not (System.Char.IsLower nm.[1]))  then nm
-                  else "T" + (String.capitalize nm)
-          else 
-               nm 
-
-      Constraints = subTypeConstraints
-      Variance=NonVariant
-      CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs (GenAttrs cenv eenv tp.Attribs))
-      MetadataIndex = NoMetadataIdx
-      HasReferenceTypeConstraint=refTypeConstraint
-      HasNotNullableValueTypeConstraint=notNullableValueTypeConstraint
-      HasDefaultConstructorConstraint= defaultConstructorConstraint }
+    ILGenericParameterDef
+        (name =
+            (
+              // use the CompiledName if given
+              // Inference variables get given an IL name "TA, TB" etc.
+              let nm = 
+                  match tp.ILName with 
+                  | None -> tp.Name  
+                  | Some nm -> nm
+              // Some special rules apply when compiling Fsharp.Core.dll to avoid a proliferation of [<CompiledName>] attributes on type parameters
+              if cenv.g.compilingFslib then 
+                  match nm with 
+                  | "U" -> "TResult"
+                  | "U1" -> "TResult1"
+                  | "U2" -> "TResult2"
+                  | _ -> 
+                      if nm.TrimEnd([| '0' .. '9' |]).Length = 1 then nm 
+                      elif nm.Length >= 1 && nm.[0] = 'T' && (nm.Length = 1 || not (System.Char.IsLower nm.[1]))  then nm
+                      else "T" + (String.capitalize nm)
+              else 
+                   nm),
+          constraints = subTypeConstraints,
+          variance=NonVariant,
+          customAttrsStored = storeILCustomAttrs (mkILCustomAttrs (GenAttrs cenv eenv tp.Attribs)),
+          metadataIndex = NoMetadataIdx,
+          hasReferenceTypeConstraint=refTypeConstraint,
+          hasNotNullableValueTypeConstraint=notNullableValueTypeConstraint,
+          hasDefaultConstructorConstraint= defaultConstructorConstraint) :> IGenericParameterDef
 
 //--------------------------------------------------------------------------
 // Generate object expressions as ILX "closures"
