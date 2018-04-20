@@ -907,11 +907,10 @@ let _ = eventually { use x = null in return 1 }
 type UniqueStampGenerator<'T when 'T : equality>() = 
     let encodeTab = new Dictionary<'T,int>(HashIdentity.Structural)
     let mutable nItems = 0
-    let encode str = 
-        if encodeTab.ContainsKey(str)
-        then
-            encodeTab.[str]
-        else
+    let encode str =
+        match encodeTab.TryGetValue(str) with
+        | true, idx -> idx
+        | _ ->
             let idx = nItems
             encodeTab.[str] <- idx
             nItems <- nItems + 1

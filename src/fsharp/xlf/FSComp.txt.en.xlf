@@ -5438,8 +5438,8 @@
         <note />
       </trans-unit>
       <trans-unit id="fscBadAssemblyVersion">
-        <source>An {0} specified version '{1}', but this value is invalid and has been ignored</source>
-        <target state="new">An {0} specified version '{1}', but this value is invalid and has been ignored</target>
+        <source>The attribute {0} specified version '{1}', but this value is invalid and has been ignored</source>
+        <target state="new">The attribute {0} specified version '{1}', but this value is invalid and has been ignored</target>
         <note />
       </trans-unit>
       <trans-unit id="fscTwoResourceManifests">
