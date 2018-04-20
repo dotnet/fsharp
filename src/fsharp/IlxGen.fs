@@ -5001,13 +5001,10 @@ and GenParams cenv eenv (mspec:ILMethodSpec) (attribs:ArgReprInfo list) (implVal
         param, takenNames)
     |> fst
     
-and GenReturnInfo cenv eenv ilRetTy (retInfo : ArgReprInfo) : ILReturn =
+and GenReturnInfo cenv eenv ilRetTy (retInfo : ArgReprInfo) : IReturn =
     let marshal,attrs = GenMarshal cenv retInfo.Attribs
-    { Type=ilRetTy
-      Marshal=marshal
-      CustomAttrsStored= storeILCustomAttrs (mkILCustomAttrs (GenAttrs cenv eenv attrs))
-      MetadataIndex = NoMetadataIdx }
-       
+    ILReturn(ilRetTy, marshal, storeILCustomAttrs (mkILCustomAttrs (GenAttrs cenv eenv attrs)), NoMetadataIdx) :> IReturn
+
 and GenPropertyForMethodDef compileAsInstance tref mdef (v:Val) (memberInfo:ValMemberInfo) ilArgTys ilPropTy ilAttrs compiledName =
     let name = match compiledName with | Some n -> n | _ -> v.PropertyName in  (* chop "get_" *)
     

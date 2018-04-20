@@ -2402,10 +2402,12 @@ and seekReadParamExtras (ctxt: ILMetadataReader)  mdv (retRes, paramsRes) (idx:i
    let hasDefault = (flags &&& 0x1000) <> 0x0
    let fmReader idx = seekReadIndexedRow (ctxt.getNumRows TableNames.FieldMarshal, seekReadFieldMarshalRow ctxt mdv, fst, hfmCompare idx, isSorted ctxt TableNames.FieldMarshal, (snd >> readBlobHeapAsNativeType ctxt))
    if seq = 0 then
-       retRes := { !retRes with 
-                        Marshal=(if hasMarshal then Some (fmReader (TaggedIndex(hfm_ParamDef, idx))) else None)
-                        CustomAttrsStored = ctxt.customAttrsReader_ParamDef
-                        MetadataIndex = idx}
+       retRes :=
+           (!retRes)
+               .With 
+                    (newMarshal=(if hasMarshal then Some (fmReader (TaggedIndex(hfm_ParamDef, idx))) else None),
+                     newCustomAttrsStored = ctxt.customAttrsReader_ParamDef,
+                     newMetadataIndex = idx)
    elif seq > Array.length paramsRes then dprintn "bad seq num. for param"
    else 
        paramsRes.[seq - 1] <- 

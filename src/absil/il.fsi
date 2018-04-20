@@ -831,15 +831,32 @@ type ILParameters = list<IParameter>
 
 val typesOfILParams: ILParameters -> ILType list
 
-/// Method return values.
-[<RequireQualifiedAccess; NoEquality; NoComparison>]
-type ILReturn = 
-    { Marshal: ILNativeType option
-      Type: ILType 
-      CustomAttrsStored: ILAttributesStored
-      MetadataIndex: int32  }
 
-    member CustomAttrs: IAttributes
+/// Method return values.
+type IReturn =
+    abstract Type: ILType
+    abstract Marshal: ILNativeType option
+    abstract CustomAttrs: IAttributes
+
+    abstract With:
+        ?newTy: ILType *
+        ?newMarshal: ILNativeType option *
+        ?newCustomAttrsStored: ILAttributesStored *
+        ?newMetadataIndex: int
+            -> IReturn
+
+
+[<NoEquality; NoComparison; Sealed>]
+type ILReturn =
+    new:
+        ty: ILType *
+        marshal: ILNativeType option *
+        customAttrsStored: ILAttributesStored *
+        metadataIndex: int
+            -> ILReturn
+
+    interface IReturn
+
 
 [<RequireQualifiedAccess>]
 type ILSecurityAction = 
@@ -1010,7 +1027,7 @@ type IMethodDef =
     abstract ImplAttributes: MethodImplAttributes
     abstract CallingConv: ILCallingConv
     abstract Parameters: ILParameters
-    abstract Return: ILReturn
+    abstract Return: IReturn
     abstract Body: ILLazyMethodBody
     abstract SecurityDecls: ILSecurityDecls
     abstract IsEntryPoint:bool
@@ -1065,7 +1082,7 @@ type IMethodDef =
     
     /// Functional update of the value
     abstract With: ?name: string * ?attributes: MethodAttributes * ?implAttributes: MethodImplAttributes * ?callingConv: ILCallingConv * 
-                 ?parameters: ILParameters * ?ret: ILReturn * ?body: ILLazyMethodBody * ?securityDecls: ILSecurityDecls * ?isEntryPoint:bool * 
+                 ?parameters: ILParameters * ?ret: IReturn * ?body: ILLazyMethodBody * ?securityDecls: ILSecurityDecls * ?isEntryPoint:bool * 
                  ?genericParams: ILGenericParameterDefs * ?customAttrs: IAttributes -> IMethodDef
 
     abstract WithSpecialName: IMethodDef
@@ -1090,12 +1107,12 @@ type ILMethodDef =
 
     /// Functional creation of a value, with delayed reading of some elements via a metadata index
     new: name: string * attributes: MethodAttributes * implAttributes: MethodImplAttributes * callingConv: ILCallingConv * 
-         parameters: ILParameters * ret: ILReturn * body: ILLazyMethodBody * isEntryPoint:bool * genericParams: ILGenericParameterDefs * 
+         parameters: ILParameters * ret: IReturn * body: ILLazyMethodBody * isEntryPoint:bool * genericParams: ILGenericParameterDefs * 
          securityDeclsStored: ILSecurityDeclsStored * customAttrsStored: ILAttributesStored * metadataIndex: int32 -> ILMethodDef
 
     /// Functional creation of a value, immediate
     new: name: string * attributes: MethodAttributes * implAttributes: MethodImplAttributes * callingConv: ILCallingConv * 
-         parameters: ILParameters * ret: ILReturn * body: ILLazyMethodBody * isEntryPoint:bool * genericParams: ILGenericParameterDefs * 
+         parameters: ILParameters * ret: IReturn * body: ILLazyMethodBody * isEntryPoint:bool * genericParams: ILGenericParameterDefs * 
          securityDecls: ILSecurityDecls * customAttrs: IAttributes -> ILMethodDef
 
     interface IMethodDef
@@ -1915,7 +1932,7 @@ val andTailness: ILTailcall -> bool -> ILTailcall
 val mkILParam: string option * ILType -> IParameter
 val mkILParamAnon: ILType -> IParameter
 val mkILParamNamed: string * ILType -> IParameter
-val mkILReturn: ILType -> ILReturn
+val mkILReturn: ILType -> IReturn
 val mkILLocal: ILType -> (string * int * int) option -> ILLocal
 
 /// Make a formal generic parameters.
@@ -1931,12 +1948,12 @@ val methBodyNative: ILLazyMethodBody
 val mkILCtor: ILMemberAccess * IParameter list * MethodBody -> IMethodDef
 val mkILClassCtor: MethodBody -> IMethodDef
 val mkILNonGenericEmptyCtor: ILSourceMarker option -> ILType -> IMethodDef
-val mkILStaticMethod: ILGenericParameterDefs * string * ILMemberAccess * IParameter list * ILReturn * MethodBody -> IMethodDef
-val mkILNonGenericStaticMethod: string * ILMemberAccess * IParameter list * ILReturn * MethodBody -> IMethodDef
-val mkILGenericVirtualMethod: string * ILMemberAccess  * ILGenericParameterDefs * IParameter list * ILReturn * MethodBody -> IMethodDef
-val mkILGenericNonVirtualMethod: string * ILMemberAccess  * ILGenericParameterDefs * IParameter list * ILReturn * MethodBody -> IMethodDef
-val mkILNonGenericVirtualMethod: string * ILMemberAccess * IParameter list * ILReturn * MethodBody -> IMethodDef
-val mkILNonGenericInstanceMethod: string * ILMemberAccess  * IParameter list * ILReturn * MethodBody -> IMethodDef
+val mkILStaticMethod: ILGenericParameterDefs * string * ILMemberAccess * IParameter list * IReturn * MethodBody -> IMethodDef
+val mkILNonGenericStaticMethod: string * ILMemberAccess * IParameter list * IReturn * MethodBody -> IMethodDef
+val mkILGenericVirtualMethod: string * ILMemberAccess  * ILGenericParameterDefs * IParameter list * IReturn * MethodBody -> IMethodDef
+val mkILGenericNonVirtualMethod: string * ILMemberAccess  * ILGenericParameterDefs * IParameter list * IReturn * MethodBody -> IMethodDef
+val mkILNonGenericVirtualMethod: string * ILMemberAccess * IParameter list * IReturn * MethodBody -> IMethodDef
+val mkILNonGenericInstanceMethod: string * ILMemberAccess  * IParameter list * IReturn * MethodBody -> IMethodDef
 
 
 /// Make field definitions.
@@ -1975,7 +1992,7 @@ val mkILStorageCtor: ILSourceMarker option * ILInstr list * ILType * (string * I
 val mkILSimpleStorageCtor: ILSourceMarker option * ILTypeSpec option * ILType * IParameter list * (string * ILType) list * ILMemberAccess -> IMethodDef
 val mkILSimpleStorageCtorWithParamNames: ILSourceMarker option * ILTypeSpec option * ILType * IParameter list * (string * string * ILType) list * ILMemberAccess -> IMethodDef
 
-val mkILDelegateMethods: ILMemberAccess -> ILGlobals -> ILType * ILType -> IParameter list * ILReturn -> IMethodDef list
+val mkILDelegateMethods: ILMemberAccess -> ILGlobals -> ILType * ILType -> IParameter list * IReturn -> IMethodDef list
 
 /// Given a delegate type definition which lies in a particular scope, 
 /// make a reference to its constructor.

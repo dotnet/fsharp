@@ -199,7 +199,9 @@ let morphILTypesInILInstr ((factualty,fformalty)) i =
         | ILToken.ILField fr -> I_ldtoken (ILToken.ILField (conv_fspec fr))
     | x -> x
 
-let return_typ2typ ilg f (r:ILReturn) = {r with Type=f r.Type; CustomAttrsStored= storeILCustomAttrs (cattrs_typ2typ ilg f r.CustomAttrs)}
+let return_typ2typ ilg f (r:IReturn) =
+    r.With(newTy = f r.Type, newCustomAttrsStored = storeILCustomAttrs (cattrs_typ2typ ilg f r.CustomAttrs))
+
 let param_typ2typ ilg f (p: IParameter) =
     p.With(newTy = f p.Type, newCustomAttrsStored = storeILCustomAttrs (cattrs_typ2typ ilg f p.CustomAttrs))
 

@@ -1351,6 +1351,9 @@ type PInvokeMethod =
       CharBestFit: PInvokeCharBestFit }
 
 
+let NoMetadataIdx = -1
+
+
 type IParameter =
     abstract Name: string option
     abstract Type: ILType
@@ -1399,13 +1402,38 @@ type ILParameter
 
 type ILParameters = list<IParameter>
 
-[<RequireQualifiedAccess; NoEquality; NoComparison>]
-type ILReturn = 
-    { Marshal: ILNativeType option
-      Type: ILType
-      CustomAttrsStored: ILAttributesStored
-      MetadataIndex: int32  }
-    member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
+
+type IReturn =
+    abstract Marshal: ILNativeType option
+    abstract Type: ILType 
+    abstract CustomAttrs: IAttributes
+
+    abstract With:
+        ?newTy: ILType *
+        ?newMarshal: ILNativeType option *
+        ?newCustomAttrsStored: ILAttributesStored *
+        ?newMetadataIndex: int
+            -> IReturn
+
+[<RequireQualifiedAccess; NoEquality; NoComparison; Sealed>]
+type ILReturn(ty, marshal, customAttrsStored: ILAttributesStored, metadataIndex) =
+
+    new(ty, marshal, customAttrs) =
+        ILReturn(ty, marshal, storeILCustomAttrs customAttrs, NoMetadataIdx)
+
+    member x.CustomAttrs = customAttrsStored.GetCustomAttrs(metadataIndex)
+
+    interface IReturn with 
+        member x.Marshal = marshal
+        member x.Type = ty
+        member x.CustomAttrs = x.CustomAttrs
+
+        member x.With(?newTy, ?newMarshal, ?newCustomAttrsStored, ?newMetadataIndex) =
+            ILReturn(
+                ty = defaultArg newTy ty,
+                marshal = defaultArg newMarshal marshal,
+                customAttrsStored = defaultArg newCustomAttrsStored customAttrsStored,
+                metadataIndex = defaultArg newMetadataIndex metadataIndex) :> IReturn
 
 type ILOverridesSpec = 
     | OverridesSpec of ILMethodRef * ILType
@@ -1453,8 +1481,6 @@ type ILGenericVariance =
     | NonVariant
     | CoVariant
     | ContraVariant
-
-let NoMetadataIdx = -1
 
 type IGenericParameterDef =
     abstract Name: string
@@ -1540,7 +1566,7 @@ type IMethodDef =
     abstract ImplAttributes: MethodImplAttributes
     abstract CallingConv: ILCallingConv
     abstract Parameters: ILParameters
-    abstract Return: ILReturn
+    abstract Return: IReturn
     abstract Body: ILLazyMethodBody
     abstract SecurityDecls: ILSecurityDecls
     abstract IsEntryPoint:bool
@@ -1595,7 +1621,7 @@ type IMethodDef =
     
     /// Functional update of the value
     abstract With: ?name: string * ?attributes: MethodAttributes * ?implAttributes: MethodImplAttributes * ?callingConv: ILCallingConv * 
-                 ?parameters: ILParameters * ?ret: ILReturn * ?body: ILLazyMethodBody * ?securityDecls: ILSecurityDecls * ?isEntryPoint:bool * 
+                 ?parameters: ILParameters * ?ret: IReturn * ?body: ILLazyMethodBody * ?securityDecls: ILSecurityDecls * ?isEntryPoint:bool * 
                  ?genericParams: ILGenericParameterDefs * ?customAttrs: IAttributes -> IMethodDef
 
     abstract WithSpecialName: IMethodDef
@@ -1616,7 +1642,7 @@ type IMethodDef =
 
 [<NoComparison; NoEquality>]
 type ILMethodDef (name: string, attributes: MethodAttributes, implAttributes: MethodImplAttributes, callingConv: ILCallingConv, 
-                  parameters: ILParameters, ret: ILReturn, body: ILLazyMethodBody, isEntryPoint:bool, genericParams: ILGenericParameterDefs, 
+                  parameters: ILParameters, ret: IReturn, body: ILLazyMethodBody, isEntryPoint:bool, genericParams: ILGenericParameterDefs, 
                   securityDeclsStored: ILSecurityDeclsStored, customAttrsStored: ILAttributesStored, metadataIndex: int32) =
 
     new (name, attributes, implAttributes, callingConv, parameters, ret, body, isEntryPoint, genericParams, securityDecls, customAttrs) = 
@@ -1631,7 +1657,7 @@ type ILMethodDef (name: string, attributes: MethodAttributes, implAttributes: Me
     member __.SecurityDecls  = securityDeclsStored.GetSecurityDecls metadataIndex
 
     member x.With(?newName: string, ?newAttributes: MethodAttributes, ?newImplAttributes: MethodImplAttributes,
-                  ?newCallingConv: ILCallingConv, ?newParameters: ILParameters, ?newRet: ILReturn, ?newBody: ILLazyMethodBody,
+                  ?newCallingConv: ILCallingConv, ?newParameters: ILParameters, ?newRet: IReturn, ?newBody: ILLazyMethodBody,
                   ?newSecurityDecls: ILSecurityDecls, ?newIsEntryPoint:bool, ?newGenericParams: ILGenericParameterDefs,
                   ?newCustomAttrs: IAttributes) =
 
@@ -1661,7 +1687,7 @@ type ILMethodDef (name: string, attributes: MethodAttributes, implAttributes: Me
         member __.GenericParams = genericParams
     
         member x.With(?newName: string, ?newAttributes: MethodAttributes, ?newImplAttributes: MethodImplAttributes,
-                      ?newCallingConv: ILCallingConv, ?newParameters: ILParameters, ?newRet: ILReturn, ?newBody: ILLazyMethodBody,
+                      ?newCallingConv: ILCallingConv, ?newParameters: ILParameters, ?newRet: IReturn, ?newBody: ILLazyMethodBody,
                       ?newSecurityDecls: ILSecurityDecls, ?newIsEntryPoint:bool, ?newGenericParams: ILGenericParameterDefs,
                       ?newCustomAttrs: IAttributes) =
 
@@ -3162,11 +3188,8 @@ let mkILParam (name, ty) : IParameter =
 let mkILParamNamed (s,ty) = mkILParam (Some s,ty)
 let mkILParamAnon ty = mkILParam (None,ty)
 
-let mkILReturn ty : ILReturn = 
-    { Marshal=None
-      Type=ty
-      CustomAttrsStored=storeILCustomAttrs emptyILCustomAttrs
-      MetadataIndex = NoMetadataIdx }
+let mkILReturn ty : IReturn =
+    ILReturn(ty, None, storeILCustomAttrs emptyILCustomAttrs, NoMetadataIdx) :> IReturn
 
 let mkILLocal ty dbgInfo : ILLocal = 
     { IsPinned=false;
@@ -3613,7 +3636,7 @@ let buildILCode (_methName:string) lab2pc instrs tryspecs localspecs : ILCode =
 // Detecting Delegates
 // -------------------------------------------------------------------- 
 
-let mkILDelegateMethods (access) (ilg: ILGlobals) (iltyp_AsyncCallback, iltyp_IAsyncResult) (parms,rtv:ILReturn) = 
+let mkILDelegateMethods (access) (ilg: ILGlobals) (iltyp_AsyncCallback, iltyp_IAsyncResult) (parms,rtv:IReturn) = 
     let rty = rtv.Type
     let one nm args ret =
         let mdef = mkILNonGenericVirtualMethod (nm,access,args,mkILReturn ret,MethodBody.Abstract)
@@ -4381,7 +4404,7 @@ and refs_of_mdef s (md: IMethodDef) =
     refs_of_genparams s  md.GenericParams
     
 and refs_of_param s p = refs_of_typ s p.Type 
-and refs_of_return s (rt:ILReturn) = refs_of_typ s rt.Type
+and refs_of_return s (rt:IReturn) = refs_of_typ s rt.Type
 and refs_of_mdefs s x =  Seq.iter (refs_of_mdef s) x
     
 and refs_of_event_def s (ed: IEventDef) = 

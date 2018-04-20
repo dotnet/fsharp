@@ -2453,14 +2453,14 @@ and GenParamPass3 cenv env seq (param: IParameter) =
                      HasConstant (hc_ParamDef, pidx)
                      Blob (GetFieldInitAsBlobIdx cenv i) |]) |> ignore
 
-let GenReturnAsParamRow (returnv : ILReturn) = 
+let GenReturnAsParamRow (returnv : IReturn) = 
     let flags = (if returnv.Marshal <> None then 0x2000 else 0x0000)
     UnsharedRow 
         [| UShort (uint16 flags) 
            UShort 0us (* sequence num. *)
            StringE 0 |]  
 
-let GenReturnPass3 cenv (returnv: ILReturn) = 
+let GenReturnPass3 cenv (returnv: IReturn) = 
     if Option.isSome returnv.Marshal || not (isNil returnv.CustomAttrs.AsList) then
         let pidx = AddUnsharedRow cenv TableNames.Param (GenReturnAsParamRow returnv)
         GenCustomAttrsPass3Or4 cenv (hca_ParamDef, pidx) returnv.CustomAttrs
