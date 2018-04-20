@@ -4272,7 +4272,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                (ctok, tcConfig:TcConfig, 
                 fileNameOfRuntimeAssembly, 
                 ilScopeRefOfRuntimeAssembly, 
-                runtimeAssemblyAttributes:ILAttribute list, 
+                runtimeAssemblyAttributes:IAttribute list, 
                 entityToInjectInto, invalidateCcu:Event<_>, m) = 
 
         let startingErrorCount = CompileThreadStatic.ErrorLogger.ErrorCount

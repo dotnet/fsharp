@@ -751,17 +751,39 @@ type ILAttribElem =
 /// Named args: values and flags indicating if they are fields or properties.
 type ILAttributeNamedArg = string * ILType * bool * ILAttribElem
 
+
 /// Custom attributes.  See 'decodeILAttribData' for a helper to parse the byte[] 
-/// to ILAttribElem's as best as possible.  
+/// to ILAttribElem's as best as possible.
+type IAttribute =
+    abstract Method: ILMethodSpec  
+    abstract Data: byte[] 
+    abstract Elements: ILAttribElem list
+
+    abstract With:
+        ?newMethod: ILMethodSpec *
+        ?newData: byte[] *
+        ?newElements: ILAttribElem list
+            -> IAttribute
+
+type IAttributes =
+    abstract AsArray: IAttribute []
+    abstract AsList: IAttribute list
+
+
+[<Sealed>]
 type ILAttribute =
-    { Method: ILMethodSpec  
-      Data: byte[] 
-      Elements: ILAttribElem list}
+    new:
+        method: ILMethodSpec *
+        data: byte[] *
+        elements: ILAttribElem list
+            -> ILAttribute 
+
+    interface IAttribute
+
 
 [<NoEquality; NoComparison; Struct>]
 type ILAttributes =
-    member AsArray: ILAttribute []
-    member AsList: ILAttribute list
+    interface IAttributes
 
 /// Represents the efficiency-oriented storage of ILAttributes in another item.
 [<NoEquality; NoComparison>]
@@ -779,7 +801,7 @@ type IParameter =
     abstract IsIn: bool
     abstract IsOut: bool
     abstract IsOptional: bool
-    abstract CustomAttrs: ILAttributes
+    abstract CustomAttrs: IAttributes
 
     abstract With:
          ?newName: string option * ?newTy: ILType * ?newDefaultValue: ILFieldInit option *
@@ -817,7 +839,7 @@ type ILReturn =
       CustomAttrsStored: ILAttributesStored
       MetadataIndex: int32  }
 
-    member CustomAttrs: ILAttributes
+    member CustomAttrs: IAttributes
 
 [<RequireQualifiedAccess>]
 type ILSecurityAction = 
@@ -947,7 +969,7 @@ type IGenericParameterDef =
      /// Indicates the type argument must have a public nullary constructor.
     abstract HasDefaultConstructorConstraint: bool 
 
-    abstract CustomAttrs: ILAttributes
+    abstract CustomAttrs: IAttributes
 
     abstract With:
         ?newName: string *
@@ -956,7 +978,7 @@ type IGenericParameterDef =
         ?newHasReferenceTypeConstraint: bool *
         ?newHasNotNullableValueTypeConstraint: bool *
         ?newHasDefaultConstructorConstraint: bool *
-        ?newCustomAttrs: ILAttributes
+        ?newCustomAttrs: IAttributes
             -> IGenericParameterDef
 
 /// Generic parameters.  Formal generic parameter declarations may include the bounds, if any, on the generic parameter.
@@ -993,7 +1015,7 @@ type IMethodDef =
     abstract SecurityDecls: ILSecurityDecls
     abstract IsEntryPoint:bool
     abstract GenericParams: ILGenericParameterDefs
-    abstract CustomAttrs: ILAttributes 
+    abstract CustomAttrs: IAttributes 
     abstract ParameterTypes: ILTypes
     abstract IsIL: bool
     abstract Code: ILCode option
@@ -1044,7 +1066,7 @@ type IMethodDef =
     /// Functional update of the value
     abstract With: ?name: string * ?attributes: MethodAttributes * ?implAttributes: MethodImplAttributes * ?callingConv: ILCallingConv * 
                  ?parameters: ILParameters * ?ret: ILReturn * ?body: ILLazyMethodBody * ?securityDecls: ILSecurityDecls * ?isEntryPoint:bool * 
-                 ?genericParams: ILGenericParameterDefs * ?customAttrs: ILAttributes -> IMethodDef
+                 ?genericParams: ILGenericParameterDefs * ?customAttrs: IAttributes -> IMethodDef
 
     abstract WithSpecialName: IMethodDef
     abstract WithHideBySig: unit -> IMethodDef
@@ -1074,7 +1096,7 @@ type ILMethodDef =
     /// Functional creation of a value, immediate
     new: name: string * attributes: MethodAttributes * implAttributes: MethodImplAttributes * callingConv: ILCallingConv * 
          parameters: ILParameters * ret: ILReturn * body: ILLazyMethodBody * isEntryPoint:bool * genericParams: ILGenericParameterDefs * 
-         securityDecls: ILSecurityDecls * customAttrs: ILAttributes -> ILMethodDef
+         securityDecls: ILSecurityDecls * customAttrs: IAttributes -> ILMethodDef
 
     interface IMethodDef
 
@@ -1104,7 +1126,7 @@ type IFieldDef =
     /// The explicit offset in bytes when explicit layout is used.
     abstract Offset:  int32 option 
     abstract Marshal: ILNativeType option 
-    abstract CustomAttrs: ILAttributes
+    abstract CustomAttrs: IAttributes
     abstract IsStatic: bool
     abstract IsSpecialName: bool
     abstract IsLiteral: bool
@@ -1116,7 +1138,7 @@ type IFieldDef =
     abstract With:
         ?newName: string * ?newFieldType: ILType * ?newAttributes: FieldAttributes * ?newData: byte[] option *
         ?newLiteralValue: ILFieldInit option * ?newOffset:  int32 option * ?newMarshal: ILNativeType option *
-        ?newCustomAttrs: ILAttributes
+        ?newCustomAttrs: IAttributes
             -> IFieldDef
 
     abstract WithAccess: ILMemberAccess -> IFieldDef
@@ -1140,7 +1162,7 @@ type ILFieldDef =
     /// Functional creation of a value, immediate
     new: name: string * fieldType: ILType * attributes: FieldAttributes * data: byte[] option * 
          literalValue: ILFieldInit option * offset:  int32 option * marshal: ILNativeType option * 
-         customAttrs: ILAttributes -> ILFieldDef
+         customAttrs: IAttributes -> ILFieldDef
 
     interface IFieldDef
 
@@ -1166,7 +1188,7 @@ type IEventDef =
     abstract RemoveMethod: ILMethodRef
     abstract FireMethod: ILMethodRef option
     abstract OtherMethods: ILMethodRef list
-    abstract CustomAttrs: ILAttributes
+    abstract CustomAttrs: IAttributes
     abstract IsSpecialName: bool
     abstract IsRTSpecialName: bool
 
@@ -1174,7 +1196,7 @@ type IEventDef =
     abstract With:
         ?eventType: ILType option * ?name: string * ?attributes: EventAttributes * ?addMethod: ILMethodRef * 
         ?removeMethod: ILMethodRef * ?fireMethod: ILMethodRef option * ?otherMethods: ILMethodRef list * 
-        ?customAttrs: ILAttributes
+        ?customAttrs: IAttributes
             -> IEventDef
 
 
@@ -1195,7 +1217,7 @@ type ILEventDef =
     /// Functional creation of a value, immediate
     new: eventType: ILType option * name: string * attributes: EventAttributes * addMethod: ILMethodRef * 
          removeMethod: ILMethodRef * fireMethod: ILMethodRef option * otherMethods: ILMethodRef list * 
-         customAttrs: ILAttributes -> ILEventDef
+         customAttrs: IAttributes -> ILEventDef
 
     interface IEventDef
 
@@ -1214,14 +1236,14 @@ type IPropertyDef =
     abstract PropertyType: ILType          
     abstract Init: ILFieldInit option
     abstract Args: ILTypes
-    abstract CustomAttrs: ILAttributes
+    abstract CustomAttrs: IAttributes
     abstract IsSpecialName: bool
     abstract IsRTSpecialName: bool
 
     /// Functional update of the value
     abstract With: ?name: string * ?attributes: PropertyAttributes * ?setMethod: ILMethodRef option * ?getMethod: ILMethodRef option * 
                  ?callingConv: ILThisConvention * ?propertyType: ILType * ?init: ILFieldInit option * ?args: ILTypes * 
-                 ?customAttrs: ILAttributes -> IPropertyDef
+                 ?customAttrs: IAttributes -> IPropertyDef
 
 
 /// Table of properties in an IL type definition.
@@ -1242,7 +1264,7 @@ type ILPropertyDef =
     /// Functional creation of a value, immediate
     new: name: string * attributes: PropertyAttributes * setMethod: ILMethodRef option * getMethod: ILMethodRef option * 
          callingConv: ILThisConvention * propertyType: ILType * init: ILFieldInit option * args: ILTypes * 
-         customAttrs: ILAttributes -> ILPropertyDef
+         customAttrs: IAttributes -> ILPropertyDef
 
     interface IPropertyDef
 
@@ -1333,7 +1355,7 @@ and ITypeDef =
     abstract MethodImpls: ILMethodImplDefs
     abstract Events: IEventDefs
     abstract Properties: IPropertyDefs
-    abstract CustomAttrs: ILAttributes
+    abstract CustomAttrs: IAttributes
     abstract IsClass: bool
     abstract IsStruct: bool
     abstract IsInterface: bool
@@ -1370,7 +1392,7 @@ and ITypeDef =
         ?name: string * ?attributes: TypeAttributes * ?layout: ILTypeDefLayout *  ?implements: ILTypes * 
         ?genericParams:ILGenericParameterDefs * ?extends:ILType option * ?methods:IMethodDefs * 
         ?nestedTypes:ITypeDefs * ?fields: IFieldDefs * ?methodImpls:ILMethodImplDefs * ?events:IEventDefs * 
-        ?properties:IPropertyDefs * ?customAttrs:ILAttributes * ?securityDecls: ILSecurityDecls
+        ?properties:IPropertyDefs * ?customAttrs:IAttributes * ?securityDecls: ILSecurityDecls
             -> ITypeDef
 
 and IPreTypeDef = 
@@ -1398,7 +1420,7 @@ and [<NoComparison; NoEquality>] ILTypeDef =
     /// Functional creation of a value, immediate
     new: name: string * attributes: TypeAttributes * layout: ILTypeDefLayout * implements: ILTypes * genericParams: ILGenericParameterDefs * 
           extends: ILType option * methods: IMethodDefs * nestedTypes: ITypeDefs * fields: IFieldDefs * methodImpls: ILMethodImplDefs * 
-          events: IEventDefs * properties: IPropertyDefs * securityDecls: ILSecurityDecls * customAttrs: ILAttributes -> ILTypeDef
+          events: IEventDefs * properties: IPropertyDefs * securityDecls: ILSecurityDecls * customAttrs: IAttributes -> ILTypeDef
 
     interface ITypeDef
 
@@ -1454,7 +1476,7 @@ and ILNestedExportedType =
       Nested: ILNestedExportedTypes
       CustomAttrsStored: ILAttributesStored
       MetadataIndex: int32 } 
-    member CustomAttrs: ILAttributes
+    member CustomAttrs: IAttributes
 
 /// these are only found in the ILExportedTypesAndForwarders table in the manifest 
 [<NoComparison; NoEquality>]
@@ -1468,7 +1490,7 @@ type ILExportedTypeOrForwarder =
       MetadataIndex: int32 }
     member Access: ILTypeDefAccess
     member IsForwarder: bool
-    member CustomAttrs: ILAttributes
+    member CustomAttrs: IAttributes
 
 [<NoEquality; NoComparison>]
 [<Sealed>]
@@ -1508,7 +1530,7 @@ type ILResource =
     /// Read the bytes from a resource local to an assembly. Will fail for non-local resources.
     member GetBytes : unit -> byte[]
 
-    member CustomAttrs: ILAttributes
+    member CustomAttrs: IAttributes
 
 /// Table of resources in a module.
 [<NoEquality; NoComparison>]
@@ -1554,7 +1576,7 @@ type IAssemblyManifest =
     /// Records whether the entrypoint resides in another module. 
     abstract EntrypointElsewhere: ILModuleRef option
 
-    abstract CustomAttrs: ILAttributes
+    abstract CustomAttrs: IAttributes
     abstract SecurityDecls: ILSecurityDecls
 
     abstract With:
@@ -1628,7 +1650,7 @@ type IModuleDef =
     abstract MetadataIndex: int32 
     abstract ManifestOfAssembly: IAssemblyManifest 
     abstract HasManifest: bool
-    abstract CustomAttrs: ILAttributes
+    abstract CustomAttrs: IAttributes
 
     abstract With:
         ?name: string * ?manifest: IAssemblyManifest option * ?typeDefs: ITypeDefs *
@@ -1762,7 +1784,7 @@ val destTypeDefsWithGlobalFunctionsFirst: ILGlobals -> ITypeDefs -> ITypeDef lis
 /// The following assumes enums have size int32. 
 val decodeILAttribData: 
     ILGlobals -> 
-    ILAttribute -> 
+    IAttribute -> 
       ILAttribElem list *  (* fixed args *)
       ILAttributeNamedArg list (* named args: values and flags indicating if they are fields or properties *) 
 
@@ -1842,14 +1864,14 @@ val mkILCustomAttribMethRef:
     -> ILMethodSpec 
        * ILAttribElem list (* fixed args: values and implicit types *) 
        * ILAttributeNamedArg list (* named args: values and flags indicating if they are fields or properties *) 
-      -> ILAttribute
+      -> IAttribute
 
 val mkILCustomAttribute: 
     ILGlobals 
     -> ILTypeRef * ILType list * 
        ILAttribElem list (* fixed args: values and implicit types *) * 
        ILAttributeNamedArg list (* named args: values and flags indicating if they are fields or properties *) 
-         -> ILAttribute
+         -> IAttribute
 
 val mkPermissionSet: ILGlobals -> ILSecurityAction * (ILTypeRef * (string * ILType * ILAttribElem) list) list -> ILSecurityDecl
 
@@ -1923,8 +1945,8 @@ val mkILStaticField: string * ILType * ILFieldInit option * byte[] option * ILMe
 val mkILLiteralField: string * ILType * ILFieldInit * byte[] option * ILMemberAccess -> IFieldDef
 
 /// Make a type definition.
-val mkILGenericClass: string * ILTypeDefAccess * ILGenericParameterDefs * ILType * ILType list * IMethodDefs * IFieldDefs * ITypeDefs * IPropertyDefs * IEventDefs * ILAttributes * ILTypeInit -> ITypeDef
-val mkILSimpleClass: ILGlobals -> string * ILTypeDefAccess * IMethodDefs * IFieldDefs * ITypeDefs * IPropertyDefs * IEventDefs * ILAttributes * ILTypeInit  -> ITypeDef
+val mkILGenericClass: string * ILTypeDefAccess * ILGenericParameterDefs * ILType * ILType list * IMethodDefs * IFieldDefs * ITypeDefs * IPropertyDefs * IEventDefs * IAttributes * ILTypeInit -> ITypeDef
+val mkILSimpleClass: ILGlobals -> string * ILTypeDefAccess * IMethodDefs * IFieldDefs * ITypeDefs * IPropertyDefs * IEventDefs * IAttributes * ILTypeInit  -> ITypeDef
 val mkILTypeDefForGlobalFunctions: ILGlobals -> IMethodDefs * IFieldDefs -> ITypeDef
 
 /// Make a type definition for a value type used to point to raw data.
@@ -1963,11 +1985,11 @@ val mkCtorMethSpecForDelegate: ILGlobals -> ILType * bool -> ILMethodSpec
 val mkILTypeForGlobalFunctions: ILScopeRef -> ILType
 
 /// Making tables of custom attributes, etc.
-val mkILCustomAttrs: ILAttribute list -> ILAttributes
-val mkILCustomAttrsFromArray: ILAttribute[] -> ILAttributes
-val storeILCustomAttrs: ILAttributes -> ILAttributesStored
-val mkILCustomAttrsReader: (int32 -> ILAttribute[]) -> ILAttributesStored
-val emptyILCustomAttrs: ILAttributes
+val mkILCustomAttrs: IAttribute list -> IAttributes
+val mkILCustomAttrsFromArray: IAttribute[] -> IAttributes
+val storeILCustomAttrs: IAttributes -> ILAttributesStored
+val mkILCustomAttrsReader: (int32 -> IAttribute[]) -> ILAttributesStored
+val emptyILCustomAttrs: IAttributes
 
 val mkILSecurityDecls: ILSecurityDecl list -> ILSecurityDecls
 val emptyILSecurityDecls: ILSecurityDecls
@@ -2014,7 +2036,7 @@ val emptyILTypeDefs: ITypeDefs
 val mkILTypeDefsComputed: (unit -> IPreTypeDef[]) -> ITypeDefs
 val addILTypeDef: ITypeDef -> ITypeDefs -> ITypeDefs
 
-val mkTypeForwarder: ILScopeRef -> string -> ILNestedExportedTypes -> ILAttributes -> ILTypeDefAccess -> ILExportedTypeOrForwarder
+val mkTypeForwarder: ILScopeRef -> string -> ILNestedExportedTypes -> IAttributes -> ILTypeDefAccess -> ILExportedTypeOrForwarder
 val mkILNestedExportedTypes: ILNestedExportedType list -> ILNestedExportedTypes
 val mkILNestedExportedTypesLazy: Lazy<ILNestedExportedType list> -> ILNestedExportedTypes
 

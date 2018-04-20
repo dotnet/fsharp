@@ -24,7 +24,7 @@ type IlxUnionField =
 type IlxUnionAlternative = 
     { altName: string
       altFields: IlxUnionField[]
-      altCustomAttrs: ILAttributes }
+      altCustomAttrs: IAttributes }
 
     member FieldDefs : IlxUnionField[]
     member FieldDef : int -> IlxUnionField
@@ -107,7 +107,7 @@ type IlxUnionInfo =
       /// Generate the helpers? 
       cudHasHelpers: IlxUnionHasHelpers 
       cudDebugProxies: bool 
-      cudDebugDisplayAttributes: ILAttribute list
+      cudDebugDisplayAttributes: IAttribute list
       cudAlternatives: IlxUnionAlternative[]
       cudNullPermitted: bool
       /// Debug info for generated code for classunions.

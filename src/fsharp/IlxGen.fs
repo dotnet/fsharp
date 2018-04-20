@@ -6860,8 +6860,8 @@ let GetEmptyIlxGenEnv (ilg : ILGlobals) ccu =
 
 type IlxGenResults = 
     { ilTypeDefs: ITypeDef list
-      ilAssemAttrs : ILAttribute list
-      ilNetModuleAttrs: ILAttribute list
+      ilAssemAttrs : IAttribute list
+      ilNetModuleAttrs: IAttribute list
       quotationResourceInfo: (ILTypeRef list * byte[]) list }
 
 

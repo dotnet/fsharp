@@ -850,33 +850,60 @@ type ILAttribElem =
   | Array of ILType * ILAttribElem list
 
 type ILAttributeNamedArg =  (string * ILType * bool * ILAttribElem)
-type ILAttribute = 
-    { Method: ILMethodSpec
-      Data: byte[] 
-      Elements: ILAttribElem list}
+
+type IAttribute =
+    abstract Method: ILMethodSpec  
+    abstract Data: byte[] 
+    abstract Elements: ILAttribElem list
+
+    abstract With:
+        ?newMethod: ILMethodSpec *
+        ?newData: byte[] *
+        ?newElements: ILAttribElem list
+            -> IAttribute
+
+
+type IAttributes =
+    abstract AsArray: IAttribute []
+    abstract AsList: IAttribute list
+
+
+[<Sealed>]
+type ILAttribute(method, data, elements) = 
+    interface IAttribute with
+        member __.Method   = method
+        member __.Data     = data 
+        member __.Elements = elements
+
+        member __.With(?newMethod, ?newData, ?newElements) =
+            ILAttribute
+                (method   = defaultArg newMethod method,
+                 data     = defaultArg newData data,
+                 elements = defaultArg newElements elements) :> IAttribute
 
 [<NoEquality; NoComparison; Struct>]
-type ILAttributes(array : ILAttribute[]) =
-    member x.AsArray = array
-    member x.AsList = x.AsArray |> Array.toList
+type ILAttributes(array : IAttribute[]) =
+    interface IAttributes with
+        member __.AsArray = array
+        member __.AsList  = array |> Array.toList
 
 [<NoEquality; NoComparison>]
 type ILAttributesStored =
     /// Computed by ilread.fs based on metadata index
-    | Reader of (int32 -> ILAttribute[])
+    | Reader of (int32 -> IAttribute[])
     /// Already computed
-    | Given of ILAttributes
+    | Given of IAttributes
     member x.GetCustomAttrs metadataIndex = 
        match x with
-       | Reader f -> ILAttributes(f metadataIndex)
+       | Reader f -> ILAttributes(f metadataIndex) :> IAttributes
        | Given attrs -> attrs
 
-let emptyILCustomAttrs = ILAttributes [| |]
-let mkILCustomAttrsFromArray (attrs: ILAttribute[]) = if attrs.Length = 0 then emptyILCustomAttrs else ILAttributes attrs
+let emptyILCustomAttrs = ILAttributes [| |] :> IAttributes
+let mkILCustomAttrsFromArray (attrs: IAttribute[]) = if attrs.Length = 0 then emptyILCustomAttrs else (ILAttributes attrs :> IAttributes)
 let mkILCustomAttrs l = match l with [] -> emptyILCustomAttrs | _ -> mkILCustomAttrsFromArray (List.toArray l)
 
 let emptyILCustomAttrsStored = ILAttributesStored.Given emptyILCustomAttrs
-let storeILCustomAttrs (attrs: ILAttributes)  = if attrs.AsArray.Length = 0 then emptyILCustomAttrsStored else ILAttributesStored.Given attrs
+let storeILCustomAttrs (attrs: IAttributes)  = if attrs.AsArray.Length = 0 then emptyILCustomAttrsStored else ILAttributesStored.Given attrs
 let mkILCustomAttrsReader f = ILAttributesStored.Reader f
 
 type ILCodeLabel = int
@@ -1335,7 +1362,7 @@ type IParameter =
     abstract IsIn: bool
     abstract IsOut: bool
     abstract IsOptional: bool
-    abstract CustomAttrs: ILAttributes
+    abstract CustomAttrs: IAttributes
 
     abstract With:
         ?newName: string option * ?newTy: ILType * ?newDefaultValue: ILFieldInit option *
@@ -1436,7 +1463,7 @@ type IGenericParameterDef =
     abstract HasReferenceTypeConstraint: bool
     abstract HasNotNullableValueTypeConstraint: bool
     abstract HasDefaultConstructorConstraint: bool
-    abstract CustomAttrs: ILAttributes
+    abstract CustomAttrs: IAttributes
 
     abstract With:
         ?newName: string *
@@ -1445,7 +1472,7 @@ type IGenericParameterDef =
         ?newHasReferenceTypeConstraint: bool *
         ?newHasNotNullableValueTypeConstraint: bool *
         ?newHasDefaultConstructorConstraint: bool *
-        ?newCustomAttrs: ILAttributes
+        ?newCustomAttrs: IAttributes
             -> IGenericParameterDef
 
 [<Sealed>]
@@ -1454,7 +1481,7 @@ type ILGenericParameterDef
          hasDefaultConstructorConstraint, customAttrsStored: ILAttributesStored, metadataIndex) =
 
     new (name, constraints, variance, hasReferenceTypeConstraint, hasNotNullableValueTypeConstraint,
-         hasDefaultConstructorConstraint, customAttrs: ILAttributes) =
+         hasDefaultConstructorConstraint, customAttrs: IAttributes) =
          ILGenericParameterDef(name, constraints, variance, hasReferenceTypeConstraint,
                                hasNotNullableValueTypeConstraint, hasDefaultConstructorConstraint,
                                storeILCustomAttrs customAttrs, NoMetadataIdx)
@@ -1474,7 +1501,7 @@ type ILGenericParameterDef
 
         member x.With(?newName: string, ?newConstraints: ILTypes, ?newVariance: ILGenericVariance, ?newHasReferenceTypeConstraint: bool,
                       ?newHasNotNullableValueTypeConstraint: bool, ?newHasDefaultConstructorConstraint: bool,
-                      ?newCustomAttrs: ILAttributes) =
+                      ?newCustomAttrs: IAttributes) =
             ILGenericParameterDef
                 (name = defaultArg newName name,
                  constraints = defaultArg newConstraints constraints,
@@ -1518,7 +1545,7 @@ type IMethodDef =
     abstract SecurityDecls: ILSecurityDecls
     abstract IsEntryPoint:bool
     abstract GenericParams: ILGenericParameterDefs
-    abstract CustomAttrs: ILAttributes 
+    abstract CustomAttrs: IAttributes 
     abstract ParameterTypes: ILTypes
     abstract IsIL: bool
     abstract Code: ILCode option
@@ -1569,7 +1596,7 @@ type IMethodDef =
     /// Functional update of the value
     abstract With: ?name: string * ?attributes: MethodAttributes * ?implAttributes: MethodImplAttributes * ?callingConv: ILCallingConv * 
                  ?parameters: ILParameters * ?ret: ILReturn * ?body: ILLazyMethodBody * ?securityDecls: ILSecurityDecls * ?isEntryPoint:bool * 
-                 ?genericParams: ILGenericParameterDefs * ?customAttrs: ILAttributes -> IMethodDef
+                 ?genericParams: ILGenericParameterDefs * ?customAttrs: IAttributes -> IMethodDef
 
     abstract WithSpecialName: IMethodDef
     abstract WithHideBySig: unit -> IMethodDef
@@ -1606,7 +1633,7 @@ type ILMethodDef (name: string, attributes: MethodAttributes, implAttributes: Me
     member x.With(?newName: string, ?newAttributes: MethodAttributes, ?newImplAttributes: MethodImplAttributes,
                   ?newCallingConv: ILCallingConv, ?newParameters: ILParameters, ?newRet: ILReturn, ?newBody: ILLazyMethodBody,
                   ?newSecurityDecls: ILSecurityDecls, ?newIsEntryPoint:bool, ?newGenericParams: ILGenericParameterDefs,
-                  ?newCustomAttrs: ILAttributes) =
+                  ?newCustomAttrs: IAttributes) =
 
         ILMethodDef
             (name           = defaultArg newName name,
@@ -1636,7 +1663,7 @@ type ILMethodDef (name: string, attributes: MethodAttributes, implAttributes: Me
         member x.With(?newName: string, ?newAttributes: MethodAttributes, ?newImplAttributes: MethodImplAttributes,
                       ?newCallingConv: ILCallingConv, ?newParameters: ILParameters, ?newRet: ILReturn, ?newBody: ILLazyMethodBody,
                       ?newSecurityDecls: ILSecurityDecls, ?newIsEntryPoint:bool, ?newGenericParams: ILGenericParameterDefs,
-                      ?newCustomAttrs: ILAttributes) =
+                      ?newCustomAttrs: IAttributes) =
 
             x.With(?newName = newName, ?newAttributes = newAttributes, ?newImplAttributes = newImplAttributes,
                    ?newCallingConv = newCallingConv, ?newParameters = newParameters, ?newRet = newRet, ?newBody = newBody,
@@ -1760,7 +1787,7 @@ type IEventDef =
     abstract RemoveMethod: ILMethodRef
     abstract FireMethod: ILMethodRef option
     abstract OtherMethods: ILMethodRef list
-    abstract CustomAttrs: ILAttributes
+    abstract CustomAttrs: IAttributes
     abstract IsSpecialName: bool
     abstract IsRTSpecialName: bool
 
@@ -1768,7 +1795,7 @@ type IEventDef =
     abstract With:
         ?eventType: ILType option * ?name: string * ?attributes: EventAttributes * ?addMethod: ILMethodRef * 
         ?removeMethod: ILMethodRef * ?fireMethod: ILMethodRef option * ?otherMethods: ILMethodRef list * 
-        ?customAttrs: ILAttributes
+        ?customAttrs: IAttributes
             -> IEventDef
 
 
@@ -1833,14 +1860,14 @@ type IPropertyDef =
     abstract PropertyType: ILType          
     abstract Init: ILFieldInit option
     abstract Args: ILTypes
-    abstract CustomAttrs: ILAttributes
+    abstract CustomAttrs: IAttributes
     abstract IsSpecialName: bool
     abstract IsRTSpecialName: bool
 
     /// Functional update of the value
     abstract With: ?name: string * ?attributes: PropertyAttributes * ?setMethod: ILMethodRef option * ?getMethod: ILMethodRef option * 
                  ?callingConv: ILThisConvention * ?propertyType: ILType * ?init: ILFieldInit option * ?args: ILTypes * 
-                 ?customAttrs: ILAttributes -> IPropertyDef
+                 ?customAttrs: IAttributes -> IPropertyDef
 
 
 type IPropertyDefs =
@@ -1912,7 +1939,7 @@ type IFieldDef =
 
     abstract Offset:  int32 option 
     abstract Marshal: ILNativeType option 
-    abstract CustomAttrs: ILAttributes
+    abstract CustomAttrs: IAttributes
     abstract IsStatic: bool
     abstract IsSpecialName: bool
     abstract IsLiteral: bool
@@ -1923,7 +1950,7 @@ type IFieldDef =
     abstract With:
         ?newName: string * ?newFieldType: ILType * ?newAttributes: FieldAttributes * ?newData: byte[] option *
         ?newLiteralValue: ILFieldInit option * ?newOffset:  int32 option * ?newMarshal: ILNativeType option *
-        ?newCustomAttrs: ILAttributes
+        ?newCustomAttrs: IAttributes
             -> IFieldDef
 
     abstract WithAccess: ILMemberAccess -> IFieldDef
@@ -1950,7 +1977,7 @@ type ILFieldDef(name: string, fieldType: ILType, attributes: FieldAttributes, da
 
     member x.With(?newName: string, ?newFieldType: ILType, ?newAttributes: FieldAttributes, ?newData: byte[] option,
                   ?newLiteralValue: ILFieldInit option, ?newOffset:  int32 option, ?newMarshal: ILNativeType option,
-                  ?newCustomAttrs: ILAttributes) = 
+                  ?newCustomAttrs: IAttributes) = 
         ILFieldDef(name = defaultArg newName name,
                    fieldType = defaultArg newFieldType fieldType,
                    attributes = defaultArg newAttributes attributes,
@@ -1980,7 +2007,7 @@ type ILFieldDef(name: string, fieldType: ILType, attributes: FieldAttributes, da
 
         member x.With(?newName: string, ?newFieldType: ILType, ?newAttributes: FieldAttributes, ?newData: byte[] option,
                       ?newLiteralValue: ILFieldInit option, ?newOffset:  int32 option, ?newMarshal: ILNativeType option,
-                      ?newCustomAttrs: ILAttributes) =
+                      ?newCustomAttrs: IAttributes) =
             x.With(?newName = newName, ?newFieldType = newFieldType, ?newAttributes = newAttributes, ?newData = newData,
                    ?newLiteralValue = newLiteralValue, ?newOffset = newOffset, ?newMarshal = newMarshal,
                    ?newCustomAttrs = newCustomAttrs)
@@ -2157,7 +2184,7 @@ and ITypeDef =
     abstract MethodImpls: ILMethodImplDefs
     abstract Events: IEventDefs
     abstract Properties: IPropertyDefs
-    abstract CustomAttrs: ILAttributes
+    abstract CustomAttrs: IAttributes
     abstract IsClass: bool
     abstract IsStruct: bool
     abstract IsInterface: bool
@@ -2193,7 +2220,7 @@ and ITypeDef =
     abstract With: ?name: string * ?attributes: TypeAttributes * ?layout: ILTypeDefLayout *  ?implements: ILTypes * 
                  ?genericParams:ILGenericParameterDefs * ?extends:ILType option * ?methods:IMethodDefs * 
                  ?nestedTypes:ITypeDefs * ?fields: IFieldDefs * ?methodImpls:ILMethodImplDefs * ?events:IEventDefs * 
-                 ?properties:IPropertyDefs * ?customAttrs:ILAttributes * ?securityDecls: ILSecurityDecls -> ITypeDef
+                 ?properties:IPropertyDefs * ?customAttrs:IAttributes * ?securityDecls: ILSecurityDecls -> ITypeDef
 
 and IPreTypeDef = 
         abstract Namespace: string list
@@ -2442,7 +2469,7 @@ type IAssemblyManifest =
     abstract Retargetable: bool
     abstract ExportedTypes: ILExportedTypesAndForwarders
     abstract EntrypointElsewhere: ILModuleRef option
-    abstract CustomAttrs: ILAttributes
+    abstract CustomAttrs: IAttributes
     abstract SecurityDecls: ILSecurityDecls
 
     abstract With:
@@ -2525,7 +2552,7 @@ type IModuleDef =
     abstract MetadataIndex: int32 
     abstract ManifestOfAssembly: IAssemblyManifest 
     abstract HasManifest: bool
-    abstract CustomAttrs: ILAttributes
+    abstract CustomAttrs: IAttributes
 
     abstract With:
         ?name: string * ?manifest: IAssemblyManifest option * ?typeDefs: ITypeDefs *
@@ -3929,9 +3956,7 @@ let mkILCustomAttribMethRef (ilg: ILGlobals) (mspec:ILMethodSpec, fixedArgs: lis
          yield! u16AsBytes (uint16 namedArgs.Length) 
          for namedArg in namedArgs do 
              yield! encodeCustomAttrNamedArg ilg namedArg |]
-    { Method = mspec;
-      Data = args;
-      Elements = fixedArgs @ (namedArgs |> List.map(fun (_,_,_,e) -> e)) }
+    ILAttribute(mspec, args, fixedArgs @ (namedArgs |> List.map(fun (_,_,_,e) -> e))) :> IAttribute
 
 let mkILCustomAttribute ilg (tref,argtys,argvs,propvs) = 
     mkILCustomAttribMethRef ilg (mkILNonGenericCtorMethSpec (tref,argtys),argvs,propvs)
@@ -4102,7 +4127,7 @@ type ILTypeSigParser(tstring : string) =
         let ilty = x.ParseType()
         ILAttribElem.Type(Some(ilty))
 
-let decodeILAttribData (ilg: ILGlobals) (ca: ILAttribute) = 
+let decodeILAttribData (ilg: ILGlobals) (ca: IAttribute) = 
     let bytes = ca.Data
     let sigptr = 0
     let bb0,sigptr = sigptr_get_byte bytes sigptr
@@ -4292,9 +4317,9 @@ and refs_of_token s x =
     | ILToken.ILMethod mr -> refs_of_mspec s mr
     | ILToken.ILField fr -> refs_of_fspec s fr
 
-and refs_of_custom_attr s x = refs_of_mspec s x.Method
+and refs_of_custom_attr s (x: IAttribute) = refs_of_mspec s x.Method
     
-and refs_of_custom_attrs s (cas : ILAttributes) = List.iter (refs_of_custom_attr s) cas.AsList
+and refs_of_custom_attrs s (cas : IAttributes) = List.iter (refs_of_custom_attr s) cas.AsList
 and refs_of_varargs s tyso = Option.iter (refs_of_typs s) tyso 
 and refs_of_instr s x = 
     match x with

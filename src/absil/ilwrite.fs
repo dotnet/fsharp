@@ -1379,7 +1379,7 @@ and GetMethodRefAsCustomAttribType cenv (mref:ILMethodRef) =
 let rec GetCustomAttrDataAsBlobIdx cenv (data:byte[]) = 
     if data.Length = 0 then 0 else GetBytesAsBlobIdx cenv data
 
-and GetCustomAttrRow cenv hca attr = 
+and GetCustomAttrRow cenv hca (attr: IAttribute) = 
     let cat = GetMethodRefAsCustomAttribType cenv attr.Method.MethodRef
     for element in attr.Elements do
         match element with
@@ -1396,7 +1396,7 @@ and GetCustomAttrRow cenv hca attr =
 and GenCustomAttrPass3Or4 cenv hca attr = 
     AddUnsharedRow cenv TableNames.CustomAttribute (GetCustomAttrRow cenv hca attr) |> ignore
 
-and GenCustomAttrsPass3Or4 cenv hca (attrs: ILAttributes) = 
+and GenCustomAttrsPass3Or4 cenv hca (attrs: IAttributes) = 
     attrs.AsList |> List.iter (GenCustomAttrPass3Or4 cenv hca) 
 
 // -------------------------------------------------------------------- 

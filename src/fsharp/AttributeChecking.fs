@@ -75,7 +75,7 @@ let rec private evalFSharpAttribArg g e =
 
 type AttribInfo = 
     | FSAttribInfo of TcGlobals * Attrib
-    | ILAttribInfo of TcGlobals * Import.ImportMap * ILScopeRef * ILAttribute * range
+    | ILAttribInfo of TcGlobals * Import.ImportMap * ILScopeRef * IAttribute * range
 
     member x.TyconRef = 
          match x with 
@@ -118,7 +118,7 @@ type AttribInfo =
 
 /// Check custom attributes. This is particularly messy because custom attributes come in in three different
 /// formats.
-let AttribInfosOfIL g amap scoref m (attribs: ILAttributes) = 
+let AttribInfosOfIL g amap scoref m (attribs: IAttributes) = 
     attribs.AsList  |> List.map (fun a -> ILAttribInfo (g, amap, scoref, a, m))
 
 let AttribInfosOfFS g attribs = 

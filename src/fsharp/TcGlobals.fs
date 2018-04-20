@@ -707,7 +707,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let mkCompilerGeneratedAttribute () = mkILCustomAttribute ilg (tref_CompilerGeneratedAttribute, [], [], [])
 
   // Requests attributes to be added to compiler generated methods.
-  let addGeneratedAttrs (attrs: ILAttributes) = 
+  let addGeneratedAttrs (attrs: IAttributes) = 
     let attribs = 
        match generatedAttribsCache with 
        | [] -> 
@@ -737,7 +737,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
           res
       | Some res -> res
 
-  let addNeverAttrs (attrs: ILAttributes) = mkILCustomAttrs (attrs.AsList @ [mkDebuggerBrowsableNeverAttribute()])
+  let addNeverAttrs (attrs: IAttributes) = mkILCustomAttrs (attrs.AsList @ [mkDebuggerBrowsableNeverAttribute()])
   let addPropertyNeverAttrs (pdef:IPropertyDef) = pdef.With(customAttrs = addNeverAttrs pdef.CustomAttrs)
   let addFieldNeverAttrs (fdef:IFieldDef) = fdef.With(newCustomAttrs = addNeverAttrs fdef.CustomAttrs)
   let mkDebuggerTypeProxyAttribute (ty : ILType) = mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerTypeProxyAttribute,  [ilg.typ_Type], [ILAttribElem.TypeRef (Some ty.TypeRef)], [])

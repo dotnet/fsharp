@@ -59,9 +59,9 @@ type public IlxGenResults =
     { /// The generated IL/ILX type definitions
       ilTypeDefs             : ITypeDef list
       /// The generated IL/ILX assembly attributes
-      ilAssemAttrs           : ILAttribute list
+      ilAssemAttrs           : IAttribute list
       /// The generated IL/ILX .NET module attributes
-      ilNetModuleAttrs       : ILAttribute list
+      ilNetModuleAttrs       : IAttribute list
       /// The generated IL/ILX resources associated with F# quotations
       quotationResourceInfo : (ILTypeRef list * byte[])  list }
 

@@ -136,7 +136,7 @@ let rec celem_typ2typ f celem =
 let cnamedarg_typ2typ f ((nm, ty, isProp, elem) : ILAttributeNamedArg)  =
     (nm, f ty, isProp, celem_typ2typ f elem) 
 
-let cattr_typ2typ ilg f c =
+let cattr_typ2typ ilg f (c: IAttribute) =
     let meth = mspec_typ2typ (f, (fun _ -> f)) c.Method
     // dev11 M3 defensive coding: if anything goes wrong with attribute decoding or encoding, then back out.
     if morphCustomAttributeData then
@@ -146,12 +146,12 @@ let cattr_typ2typ ilg f c =
            let namedArgs = namedArgs |> List.map (cnamedarg_typ2typ f)
            IL.mkILCustomAttribMethRef ilg (meth, elems, namedArgs)       
         with _ -> 
-           { c with Method = meth }
+           c.With(newMethod = meth)
     else
-        { c with Method = meth }
+        c.With(newMethod = meth)
 
 
-let cattrs_typ2typ ilg f (cs: ILAttributes) =
+let cattrs_typ2typ ilg f (cs: IAttributes) =
     mkILCustomAttrs (List.map (cattr_typ2typ ilg f) cs.AsList)
 
 let fdef_typ2typ ilg ftype (fd: IFieldDef) = 

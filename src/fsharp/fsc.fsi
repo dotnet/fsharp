@@ -18,7 +18,7 @@ type ErrorLoggerProvider =
 
 type StrongNameSigningInfo 
 
-val EncodeInterfaceData: tcConfig:TcConfig * tcGlobals:TcGlobals * exportRemapping:Tastops.Remap * generatedCcu: Tast.CcuThunk * outfile: string * isIncrementalBuild: bool -> ILAttribute list * ILResource list
+val EncodeInterfaceData: tcConfig:TcConfig * tcGlobals:TcGlobals * exportRemapping:Tastops.Remap * generatedCcu: Tast.CcuThunk * outfile: string * isIncrementalBuild: bool -> IAttribute list * ILResource list
 val ValidateKeySigningAttributes : tcConfig:TcConfig * tcGlobals:TcGlobals * TypeChecker.TopAttribs -> StrongNameSigningInfo
 val GetStrongNameSigner : StrongNameSigningInfo -> ILBinaryWriter.ILStrongNameSigner option
 

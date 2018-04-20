@@ -468,12 +468,12 @@ let output_basic_type os x =
 let output_custom_attr_data os data = 
   output_string os " = "; output_parens output_bytes os data
       
-let goutput_custom_attr env os attr =
+let goutput_custom_attr env os (attr: IAttribute) =
   output_string os " .custom "
   goutput_mspec env os attr.Method
   output_custom_attr_data os attr.Data
 
-let goutput_custom_attrs env os (attrs : ILAttributes) =
+let goutput_custom_attrs env os (attrs : IAttributes) =
   List.iter (fun attr -> goutput_custom_attr env os attr;  output_string os "\n" ) attrs.AsList
 
 let goutput_fdef _tref env os (fd: IFieldDef) =

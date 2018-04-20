@@ -1113,7 +1113,7 @@ type ILMetadataReader =
     seekReadMethodSpecAsMethodData : MethodSpecAsMspecIdx -> VarArgMethodData
     seekReadMemberRefAsMethodData : MemberRefAsMspecIdx -> VarArgMethodData
     seekReadMemberRefAsFieldSpec : MemberRefAsFspecIdx -> ILFieldSpec
-    seekReadCustomAttr : CustomAttrIdx -> ILAttribute
+    seekReadCustomAttr : CustomAttrIdx -> IAttribute
     seekReadTypeRef : int ->ILTypeRef
     seekReadTypeRefAsType : TypeRefAsTypIdx -> ILType
     readBlobHeapAsPropertySig : BlobAsPropSigIdx -> ILThisConvention * ILType * ILTypes
@@ -2547,12 +2547,13 @@ and seekReadCustomAttr ctxt (TaggedIndex(cat, idx), b) =
 
 and seekReadCustomAttrUncached ctxtH (CustomAttrIdx (cat, idx, valIdx)) = 
     let ctxt = getHole ctxtH
-    { Method=seekReadCustomAttrType ctxt (TaggedIndex(cat, idx))
-      Data=
-        match readBlobHeapOption ctxt valIdx with
-        | Some bytes -> bytes
-        | None -> Bytes.ofInt32Array [| |] 
-      Elements = [] }
+    ILAttribute
+        (method = seekReadCustomAttrType ctxt (TaggedIndex(cat, idx)),
+         data =
+             (match readBlobHeapOption ctxt valIdx with
+              | Some bytes -> bytes
+              | None -> Bytes.ofInt32Array [| |]), 
+         elements = []) :> IAttribute
 
 and securityDeclsReader ctxtH tag = 
     mkILSecurityDeclsReader

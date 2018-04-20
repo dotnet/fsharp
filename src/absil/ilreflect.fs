@@ -1402,7 +1402,7 @@ let emitMethodBody cenv modB emEnv ilG _name (mbody: ILLazyMethodBody) =
     | MethodBody.Native           -> failwith "emitMethodBody: native"               
     | MethodBody.NotAvailable     -> failwith "emitMethodBody: metadata only"
 
-let convCustomAttr cenv emEnv cattr =
+let convCustomAttr cenv emEnv (cattr: IAttribute) =
     let methInfo = 
        match convConstructorSpec cenv emEnv cattr.Method with 
        | null -> failwithf "convCustomAttr: %+A" cattr.Method
@@ -1411,7 +1411,7 @@ let convCustomAttr cenv emEnv cattr =
     (methInfo, data)
 
 let emitCustomAttr cenv emEnv add cattr  = add (convCustomAttr cenv emEnv cattr)
-let emitCustomAttrs cenv emEnv add (cattrs : ILAttributes) = List.iter (emitCustomAttr cenv emEnv add) cattrs.AsList
+let emitCustomAttrs cenv emEnv add (cattrs : IAttributes) = List.iter (emitCustomAttr cenv emEnv add) cattrs.AsList
 
 //----------------------------------------------------------------------------
 // buildGenParams
