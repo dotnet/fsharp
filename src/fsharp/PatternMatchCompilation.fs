@@ -213,7 +213,7 @@ let RefuteDiscrimSet g m path discrims =
             let consts = Set.ofList (c :: List.choose (function DecisionTreeTest.Const(c) -> Some c | _ -> None) rest)
             let c' =
                 Seq.tryFind (fun c -> not (consts.Contains(c)))
-                    (match c with
+                   (match c with
                     | Const.Bool _ -> [ true; false ] |> List.toSeq |> Seq.map (fun v -> Const.Bool(v))
                     | Const.SByte _ ->  Seq.append (seq { 0y .. System.SByte.MaxValue }) (seq { System.SByte.MinValue .. 0y })|> Seq.map (fun v -> Const.SByte(v))
                     | Const.Int16 _ -> Seq.append (seq { 0s .. System.Int16.MaxValue }) (seq { System.Int16.MinValue .. 0s }) |> Seq.map (fun v -> Const.Int16(v))
@@ -312,7 +312,7 @@ let rec CombineRefutations g r1 r2 =
         
         Expr.Const(c12, m1, ty1)
 
-   | _ -> r1
+    | _ -> r1
 
 let ShowCounterExample g denv m refuted =
     try
@@ -323,7 +323,7 @@ let ShowCounterExample g denv m refuted =
             | (r, eck) :: t ->
                 if verbose then dprintf "r = %s (enumCoversKnownValue = %b)\n" (Layout.showL (exprL r)) eck
                 List.fold (fun (rAcc, eckAcc) (r, eck) ->
-        CombineRefutations g rAcc r, eckAcc || eck) (r, eck) t
+                    CombineRefutations g rAcc r, eckAcc || eck) (r, eck) t
         let text = Layout.showL (NicePrint.dataExprL denv counterExample)
         let failingWhenClause = refuted |> List.exists (function RefutedWhenClause -> true | _ -> false)
         Some(text,failingWhenClause,enumCoversKnown)
