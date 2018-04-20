@@ -3281,8 +3281,8 @@ and seekReadTopExportedTypes (ctxt: ILMetadataReader)  =
             ])
 
 #if !FX_NO_PDB_READER
-let getPdbReader pdbPath fileName =  
-    match pdbPath with 
+let getPdbReader pdbDirPath fileName =  
+    match pdbDirPath with 
     | None -> None
     | Some pdbpath ->
          try 
@@ -3694,7 +3694,7 @@ let openMetadataReader (fileName, mdfile: BinaryFile, metadataPhysLoc, peinfo, p
 // read of the AbsIL module.
 // ----------------------------------------------------------------------
 
-let openPEFileReader (fileName, pefile: BinaryFile, pdbPath) = 
+let openPEFileReader (fileName, pefile: BinaryFile, pdbDirPath) = 
     let pev = pefile.GetView()
     (* MSDOS HEADER *)
     let peSignaturePhysLoc = seekReadInt32 pev 0x3c
@@ -3861,13 +3861,13 @@ let openPEFileReader (fileName, pefile: BinaryFile, pdbPath) =
    // Set up the PDB reader so we can read debug info for methods.
    // ----------------------------------------------------------------------
 #if FX_NO_PDB_READER
-    let pdb = ignore pdbPath; None
+    let pdb = ignore pdbDirPath; None
 #else
     let pdb = 
         if runningOnMono then 
             None 
         else 
-            getPdbReader pdbPath fileName
+            getPdbReader pdbDirPath fileName
 #endif
 
     let pectxt : PEReader = 
@@ -3891,8 +3891,8 @@ let openPEFileReader (fileName, pefile: BinaryFile, pdbPath) =
     let peinfo = (subsys, (subsysMajor, subsysMinor), useHighEnthropyVA, ilOnly, only32, is32bitpreferred, only64, platform, isDll, alignVirt, alignPhys, imageBaseReal)
     (metadataPhysLoc, metadataSize, peinfo, pectxt, pev, pdb)
 
-let openPE (fileName, pefile, pdbPath, reduceMemoryUsage, ilGlobals) = 
-    let (metadataPhysLoc, _metadataSize, peinfo, pectxt, pev, pdb) = openPEFileReader (fileName, pefile, pdbPath) 
+let openPE (fileName, pefile, pdbDirPath, reduceMemoryUsage, ilGlobals) = 
+    let (metadataPhysLoc, _metadataSize, peinfo, pectxt, pev, pdb) = openPEFileReader (fileName, pefile, pdbDirPath) 
     let ilModule, ilAssemblyRefs = openMetadataReader (fileName, pefile, metadataPhysLoc, peinfo, pectxt, pev, Some pectxt, reduceMemoryUsage, ilGlobals)
     ilModule, ilAssemblyRefs, pdb
 
@@ -3919,7 +3919,7 @@ type MetadataOnlyFlag = Yes | No
 type ReduceMemoryFlag = Yes | No
 
 type ILReaderOptions =
-    { pdbPath: string option
+    { pdbDirPath: string option
       ilGlobals: ILGlobals
       reduceMemoryUsage: ReduceMemoryFlag
       metadataOnly: MetadataOnlyFlag
@@ -3969,7 +3969,7 @@ let tryMemoryMapWholeFile opts fileName =
 
 let OpenILModuleReaderFromBytes fileName bytes opts = 
     let pefile = ByteFile(fileName, bytes) :> BinaryFile
-    let ilModule, ilAssemblyRefs, pdb = openPE (fileName, pefile, opts.pdbPath, (opts.reduceMemoryUsage = ReduceMemoryFlag.Yes), opts.ilGlobals)
+    let ilModule, ilAssemblyRefs, pdb = openPE (fileName, pefile, opts.pdbDirPath, (opts.reduceMemoryUsage = ReduceMemoryFlag.Yes), opts.ilGlobals)
     new ILModuleReader(ilModule, ilAssemblyRefs, (fun () -> ClosePdbReader pdb))
 
 let OpenILModuleReader fileName opts = 
@@ -3978,7 +3978,7 @@ let OpenILModuleReader fileName opts =
         try 
            let fullPath = FileSystem.GetFullPathShim(fileName)
            let writeTime = FileSystem.GetLastWriteTimeShim(fileName)
-           let key = ILModuleReaderCacheKey (fullPath, writeTime, opts.ilGlobals.primaryAssemblyScopeRef, opts.pdbPath.IsSome, opts.reduceMemoryUsage, opts.metadataOnly)
+           let key = ILModuleReaderCacheKey (fullPath, writeTime, opts.ilGlobals.primaryAssemblyScopeRef, opts.pdbDirPath.IsSome, opts.reduceMemoryUsage, opts.metadataOnly)
            key, true
         with exn -> 
             System.Diagnostics.Debug.Assert(false, sprintf "Failed to compute key in OpenILModuleReader cache for '%s'. Falling back to uncached. Error = %s" fileName (exn.ToString())) 
@@ -3987,7 +3987,7 @@ let OpenILModuleReader fileName opts =
 
     let cacheResult = 
         if keyOk then 
-            if opts.pdbPath.IsSome then None // can't used a cached entry when reading PDBs, since it makes the returned object IDisposable
+            if opts.pdbDirPath.IsSome then None // can't used a cached entry when reading PDBs, since it makes the returned object IDisposable
             else ilModuleReaderCacheLock.AcquireLock (fun ltok -> ilModuleReaderCache.TryGet(ltok, key))
         else 
             None
@@ -3999,7 +3999,7 @@ let OpenILModuleReader fileName opts =
     let reduceMemoryUsage = (opts.reduceMemoryUsage = ReduceMemoryFlag.Yes)
     let metadataOnly = (opts.metadataOnly = MetadataOnlyFlag.Yes) 
 
-    if reduceMemoryUsage && opts.pdbPath.IsNone then 
+    if reduceMemoryUsage && opts.pdbDirPath.IsNone then 
 
         // This case is used in FCS applications, devenv.exe and fsi.exe
         //
@@ -4058,11 +4058,11 @@ let OpenILModuleReader fileName opts =
                 let disposer = { new IDisposable with member __.Dispose() = () }
                 disposer, pefile
 
-        let ilModule, ilAssemblyRefs, pdb = openPE (fullPath, pefile, opts.pdbPath, reduceMemoryUsage, opts.ilGlobals)
+        let ilModule, ilAssemblyRefs, pdb = openPE (fullPath, pefile, opts.pdbDirPath, reduceMemoryUsage, opts.ilGlobals)
         let ilModuleReader = new ILModuleReader(ilModule, ilAssemblyRefs, (fun () -> ClosePdbReader pdb))
 
         // Readers with PDB reader disposal logic don't go in the cache.  Note the PDB reader is only used in static linking.
-        if keyOk && opts.pdbPath.IsNone then 
+        if keyOk && opts.pdbDirPath.IsNone then 
             ilModuleReaderCacheLock.AcquireLock (fun ltok -> ilModuleReaderCache.Put(ltok, key, ilModuleReader))
 
         ilModuleReader
