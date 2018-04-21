@@ -1,7 +1,7 @@
 // #Conformance #TypesAndModules #Records
 #light
 
-// Verify the ability to clone records and update nested fields using nested copy and update syntax
+// Verify cloning and updating of fields using nested copy and update syntax
 
 type AnotherNestedRecTy = { A : int; }
 
