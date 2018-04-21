@@ -6861,12 +6861,12 @@ and TcAssertExpr cenv overallTy env (m:range) tpenv x  =
 //------------------------------------------------------------------------- 
 
 and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr) =
-    let (|ModuleOrNamespace|RecdTy|RecdFld|Undefined|) ids =
-        match ids with
-        | ((_, _, Some _), _) -> RecdFld
-        | ((_,Some _, _), _) -> RecdTy
-        | ((Some _, None, None), _)  -> ModuleOrNamespace
-        | _ -> Undefined
+    let (|ModuleOrNamespace|RecdTy|RecdFld|Undefined|) id =
+        match id with
+        | ((_, _, Some _), id) -> RecdFld id
+        | ((_,Some _, _), id) -> RecdTy id
+        | ((Some _, None, None), id)  -> ModuleOrNamespace id
+        | (_, id) -> Undefined id
                    
     let search mapFn mOrNsTyList =
         mOrNsTyList
@@ -6901,7 +6901,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
 
         Option.bind searchForFld
 
-    let _resolveIdTypes =
+    let resolveIds =
         let rec loop res mOrNs tycons ids =
             match ids with
             | [] -> success (res |> List.rev)
@@ -6952,10 +6952,10 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
         loop [] None None   
 
     let buildForNestdFlds (lidwd : LongIdentWithDots) v =                   
-        let buildRecdExprCopyInfo ids (optOrigExpr : (SynExpr * BlockSeparator) option) (id : Ident) =
+        let recdExprCopyInfo ids (optOrigExpr : (SynExpr * BlockSeparator) option) (id : Ident) =
             let lidOfFlds = 
                 ids 
-                |> List.filter (function | ((_, _, Some _), _) -> true | _ -> false)
+                |> List.filter (function | RecdFld _ -> true | _ -> false)
                 |> List.map (fun (_, id) -> id)
 
             let upToId origSepRng id lidwd =
@@ -6994,7 +6994,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                 | [] -> lidAndRst lid rst
                 | h :: t -> 
                     match h with
-                    | ((_, _, Some _), fld) -> lidAndRst (fld :: lid) t
+                    | RecdFld fld -> lidAndRst (fld :: lid) t
                     | (_, id) -> loop (id :: lid) t
 
             loop [h] rst
@@ -7007,24 +7007,27 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                                                         | [(_, fld)] -> yield ((LongIdentWithDots ([fld],[]), true), v, None)
                                                         | (_, h) :: t -> yield ((LongIdentWithDots ([h], []), true), (synExprRecd copyInfo h h.idRange t), None)], idRng)))
 
-        match lidwd.Lid with
-        | [] -> []
-        | h :: _ ->
-            let ids = _resolveIdTypes lidwd.Lid |> ForceRaise
-            let lid, id, rng, rst =
-                match ids with
-                | RecdFld :: rst -> success (([], h), h, h.idRange, rst)
-                | RecdTy :: rst
-                | ModuleOrNamespace :: rst  ->
-                    let ids, rest = combineIdsUpToNextFld h rst
-                    let f, b = List.frontAndBack ids
-                    success ((f, b), b, h.idRange, rest)
-                | _ ->  raze (UndefinedName(0, FSComp.SR.undefinedNameRecordLabelOrNamespace, h, NoSuggestions))
-                |> ForceRaise
+        let ids = lidwd.Lid |> resolveIds |> ForceRaise
+
+        [
+            match ids with
+            | [] -> ()
+            | h :: t ->
+                let lid, id, rng, rst =
+                    match h with
+                    | RecdFld id -> success (([], id), id, id.idRange, t)
+                    | RecdTy id
+                    | ModuleOrNamespace id ->
+                        let ids, rest = combineIdsUpToNextFld id t
+                        let f, b = List.frontAndBack ids
+                        success ((f, b), b, id.idRange, rest)
+                    | Undefined id ->  raze (UndefinedName(0, FSComp.SR.undefinedNameRecordLabelOrNamespace, id, NoSuggestions))
+                    |> ForceRaise
                 
-            match rst with
-            | [] -> [lid, v]
-            | _ ->  [lid, synExprRecd (buildRecdExprCopyInfo ids optOrigExpr) id rng rst]
+                match rst with
+                | [] -> yield (lid, v)
+                | _ ->  yield (lid, synExprRecd (recdExprCopyInfo ids optOrigExpr) id rng rst)
+        ]
 
     let grpNestdMultiUpdates flds =
         flds
