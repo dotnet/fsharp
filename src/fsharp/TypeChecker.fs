@@ -6938,7 +6938,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                     | None -> raze (UndefinedName(0, FSComp.SR.undefinedNameRecordLabelOrNamespace, id, NoSuggestions))
                     | Some s -> 
                         let tys =   match s.FormalType with
-                                    | TType_app (tycon, _) -> Some [tycon]
+                                    | TType_app (tycon, _) -> Some [tycon.Deref]
                                     | _ -> tycons
                         loop (((None, None, Some [s]), id) :: res) mOrNs tys ids
                 | _ -> 
