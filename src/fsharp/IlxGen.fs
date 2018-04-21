@@ -1053,10 +1053,10 @@ type PropKey = PropKey of string * ILTypes * ILThisConvention
 
 let AddPropertyDefToHash (m:range) (ht:Dictionary<PropKey,(int * ILPropertyDef)>) (pdef: ILPropertyDef) =
     let nm = PropKey(pdef.Name, pdef.Args, pdef.CallingConv)
-    if ht.ContainsKey nm then
-        let idx,pd = ht.[nm]
+    match ht.TryGetValue(nm) with
+    | true, (idx, pd) ->
         ht.[nm] <- (idx, MergePropertyPair m pd pdef)
-    else 
+    | _ ->
         ht.[nm] <- (ht.Count, pdef)
     
 
@@ -1291,10 +1291,9 @@ type CodeGenBuffer(m:range,
     
     let rec lab2pc n lbl = 
         if n = System.Int32.MaxValue then error(InternalError("recursive label graph",m))
-        if codeLabelToCodeLabel.ContainsKey lbl then 
-            lab2pc (n+1) codeLabelToCodeLabel.[lbl]
-        else
-           codeLabelToPC.[lbl] 
+        match codeLabelToCodeLabel.TryGetValue(lbl) with
+        | true, l -> lab2pc (n + 1) l
+        | _ -> codeLabelToPC.[lbl] 
     
     let mutable lastSeqPoint = None
 
@@ -3435,7 +3434,7 @@ and GenGenericParam cenv eenv (tp:Typar) =
           // use the CompiledName if given
           // Inference variables get given an IL name "TA, TB" etc.
           let nm = 
-              match tp.typar_il_name with 
+              match tp.ILName with 
               | None -> tp.Name  
               | Some nm -> nm
           // Some special rules apply when compiling Fsharp.Core.dll to avoid a proliferation of [<CompiledName>] attributes on type parameters

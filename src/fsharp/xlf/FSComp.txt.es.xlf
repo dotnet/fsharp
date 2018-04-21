@@ -5438,7 +5438,7 @@
         <note />
       </trans-unit>
       <trans-unit id="fscBadAssemblyVersion">
-        <source>An {0} specified version '{1}', but this value is invalid and has been ignored</source>
+        <source>The attribute {0} specified version '{1}', but this value is invalid and has been ignored</source>
         <target state="translated">Un {0} ha especificado la versión "{1}", pero este valor no es válido y se ha omitido</target>
         <note />
       </trans-unit>
@@ -6984,7 +6984,7 @@
       </trans-unit>
       <trans-unit id="ilreadFileChanged">
         <source>The file '{0}' changed on disk unexpectedly, please reload.</source>
-        <target state="new">The file '{0}' changed on disk unexpectedly, please reload.</target>
+        <target state="translated">El archivo "{0}" cambió en el disco de manera inesperada; cárguelo de nuevo.</target>
         <note />
       </trans-unit>
     </body>

@@ -1926,8 +1926,6 @@ let SystemAssemblies () =
       yield "System.Threading.Timer"
 
       yield "FSharp.Compiler.Interactive.Settings"
-      yield "Microsoft.DiaSymReader"
-      yield "Microsoft.DiaSymReader.PortablePdb"
       yield "Microsoft.Win32.Registry"
       yield "System.Diagnostics.Tracing"
       yield "System.Globalization.Calendars"
@@ -2098,7 +2096,7 @@ type IRawFSharpAssemblyData =
     /// in the language service
     abstract TryGetILModuleDef : unit -> ILModuleDef option
     ///  The raw F# signature data in the assembly, if any
-    abstract GetRawFSharpSignatureData : range * ilShortAssemName: string * fileName: string -> (string * byte[]) list
+    abstract GetRawFSharpSignatureData : range * ilShortAssemName: string * fileName: string -> (string * (unit -> byte[])) list
     ///  The raw F# optimization data in the assembly, if any
     abstract GetRawFSharpOptimizationData : range * ilShortAssemName: string * fileName: string -> (string * (unit -> byte[])) list
     ///  The table of type forwarders in the assembly
@@ -3795,7 +3793,7 @@ let PickleToResource inMem file g scope rname p x =
       MetadataIndex = NoMetadataIdx }
 
 let GetSignatureData (file, ilScopeRef, ilModule, byteReader) : PickledDataWithReferences<PickledCcuInfo> = 
-    unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleCcuInfo byteReader
+    unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleCcuInfo (byteReader())
 
 let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: CcuThunk, file, inMem) : ILResource = 
     let mspec = ccu.Contents
@@ -3831,16 +3829,15 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
             let sigDataReaders = 
                 [ for iresource in resources do
                     if IsSignatureDataResource iresource then 
-                        let ccuName = GetSignatureDataResourceName iresource 
-                        let bytes = iresource.GetBytes()
-                        yield (ccuName, bytes) ]
+                        let ccuName = GetSignatureDataResourceName iresource
+                        yield (ccuName, fun () -> iresource.GetBytes()) ]
                         
             let sigDataReaders = 
                 if sigDataReaders.IsEmpty && List.contains ilShortAssemName externalSigAndOptData then 
                     let sigFileName = Path.ChangeExtension(filename, "sigdata")
                     if not (FileSystem.SafeExists sigFileName) then 
                         error(Error(FSComp.SR.buildExpectedSigdataFile (FileSystem.GetFullPathShim sigFileName), m))
-                    [ (ilShortAssemName, FileSystem.ReadAllBytesShim sigFileName)]
+                    [ (ilShortAssemName, fun () -> FileSystem.ReadAllBytesShim sigFileName)]
                 else
                     sigDataReaders
             sigDataReaders
