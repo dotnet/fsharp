@@ -6861,17 +6861,12 @@ and TcAssertExpr cenv overallTy env (m:range) tpenv x  =
 //------------------------------------------------------------------------- 
 
 and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr) =
-    //let (|ModuleOrNamespace|RecdTy|RecdFld|) (id : Ident) =
-    //    let modOrNamespace = 
-    //        env.NameEnv.eModulesAndNamespaces.TryFind id.idText
-    //    let ty =
-    //        env.NameEnv.eTyconsByAccessNames.TryFind id.idText
-    //    let fld =
-    //        env.NameEnv.eFieldLabels.TryFind id.idText
-    //    match (modOrNamespace, ty, fld) with
-    //    | (Some mOrN, None, None) -> ModuleOrNamespace mOrN
-    //    | (_, Some _, None) -> RecdTy
-    //    | _ -> RecdFld
+    let (|ModuleOrNamespace|RecdTy|RecdFld|Undefined|) ids =
+        match ids with
+        | ((_, _, Some _), _) -> RecdFld
+        | ((_,Some _, _), _) -> RecdTy
+        | ((Some _, None, None), _)  -> ModuleOrNamespace
+        | _ -> Undefined
                    
     let search mapFn mOrNsTyList =
         mOrNsTyList
@@ -6992,14 +6987,9 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                 Some (SynExpr.LongIdent (false, LongIdentWithDots(lid, rng), None, totalRange origId id), (id.idRange, None)) // TODO: id.idRange should be the range of the next separator
             | _ -> None
 
-        let combineTyAndNextFld (ty : Ident) flds =
-            match flds with
-            | [] -> ([ty], ty.idRange, [])  // If no other fields it's invalid syntax. Return but error will be thrown later.
-            | ((_, _ , _), h) :: t -> ([ty; h], h.idRange, t)
-
-        let combineModuleOrNamespaceWithNextIds mOrN rst =
+        let combineIdsUpToNextFld h rst =
             let rec loop lid rst =
-                let lidAndRst l r = (l |> List.rev, r |> List.rev)
+                let lidAndRst l r = (l |> List.rev, r)
                 match rst with
                 | [] -> lidAndRst lid rst
                 | h :: t -> 
@@ -7007,20 +6997,15 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                     | ((_, _, Some _), fld) -> lidAndRst (fld :: lid) t
                     | (_, id) -> loop (id :: lid) t
 
-            loop [mOrN] rst
+            loop [h] rst
 
-        let build copyInfo lid =
-            let rec loop  =
-                function
-                | [] ->          ((LongIdentWithDots ([], []), true), v, None)
-                | [(_, fld)] ->  ((LongIdentWithDots ([fld],[]), true), v, None)
-                | (_, h) :: t -> ((LongIdentWithDots ([h], []), true), Some(SynExpr.Record((None, (copyInfo h), [loop t], h.idRange))), None)
 
-            loop lid
-
-        let t = _resolveIdTypes lidwd.Lid
-
-        printfn "%A" t
+        let rec synExprRecd copyInfo id idRng ids =
+            Some(SynExpr.Record((None, (copyInfo id), [
+                                                        match ids with 
+                                                        | [] -> yield ((LongIdentWithDots ([], []), true), v, None)
+                                                        | [(_, fld)] -> yield ((LongIdentWithDots ([fld],[]), true), v, None)
+                                                        | (_, h) :: t -> yield ((LongIdentWithDots ([h], []), true), (synExprRecd copyInfo h h.idRange t), None)], idRng)))
 
         match lidwd.Lid with
         | [] -> []
@@ -7028,26 +7013,22 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
         | h :: _ ->
             let ids = _resolveIdTypes lidwd.Lid |> ForceRaise
             let copyInfo = buildRecdExprCopyInfo ids optOrigExpr
-            let buildR = build copyInfo
 
-            match ids with
-            // Record Field
-            | ((_, _, Some _), _) :: rst -> [(([], h), Some(SynExpr.Record(None, (copyInfo h), [buildR rst], h.idRange)))]
-            // Type
-            | ((_,Some _, _), _) :: rst ->
-                let lidwd, _, rest = combineTyAndNextFld h rst
-                let f, b = List.frontAndBack lidwd
-                match rest with
-                | [] -> [((f, b), v)]
-                | _ ->  [((f, b), Some(SynExpr.Record(None, (copyInfo b), [buildR rest], h.idRange)))]
-            // Module or Namespace
-            | ((Some _, None, None), _) :: rst  ->
-                let flds, rest = combineModuleOrNamespaceWithNextIds h rst
-                let f, b = List.frontAndBack flds
-                match rest with
-                | [] -> [((f, b), v)]
-                | _ ->  [((f, b), Some(SynExpr.Record(None, (copyInfo b), [buildR rest], h.idRange)))]
-            | _ ->  [] // error here!!
+            let ids, id, rng, rst = 
+
+                match ids with
+                | RecdFld :: rst -> success (([], h), h, h.idRange, rst)
+                | RecdTy :: rst
+                | ModuleOrNamespace :: rst  ->
+                    let ids, rest = combineIdsUpToNextFld h rst
+                    let f, b = List.frontAndBack ids
+                    success ((f, b), b, h.idRange, rest)
+                | _ ->  raze (UndefinedName(0, FSComp.SR.undefinedNameRecordLabelOrNamespace, h, NoSuggestions))
+                |> ForceRaise
+            
+            match rst with
+            | [] -> [ids, v]
+            | _ ->  [ids, synExprRecd copyInfo id rng rst]
 
     let grpNestdMultiUpdates flds =
         flds
