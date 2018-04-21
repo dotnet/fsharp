@@ -7009,13 +7009,9 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
 
         match lidwd.Lid with
         | [] -> []
-        | [fld] -> [(([], fld), v)]
         | h :: _ ->
             let ids = _resolveIdTypes lidwd.Lid |> ForceRaise
-            let copyInfo = buildRecdExprCopyInfo ids optOrigExpr
-
-            let ids, id, rng, rst = 
-
+            let lid, id, rng, rst =
                 match ids with
                 | RecdFld :: rst -> success (([], h), h, h.idRange, rst)
                 | RecdTy :: rst
@@ -7025,10 +7021,10 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                     success ((f, b), b, h.idRange, rest)
                 | _ ->  raze (UndefinedName(0, FSComp.SR.undefinedNameRecordLabelOrNamespace, h, NoSuggestions))
                 |> ForceRaise
-            
+                
             match rst with
-            | [] -> [ids, v]
-            | _ ->  [ids, synExprRecd copyInfo id rng rst]
+            | [] -> [lid, v]
+            | _ ->  [lid, synExprRecd (buildRecdExprCopyInfo ids optOrigExpr) id rng rst]
 
     let grpNestdMultiUpdates flds =
         flds
@@ -7074,11 +7070,9 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                         raise (ReportedError None)
 
                     match lidwd.Lid with
-                    | []    -> ()
-                    | [id]   -> yield (([], id), v)
-                    | _     -> match buildForNestdFlds lidwd v with
-                                | [flds] -> yield(flds)
-                                | _ -> ()                    
+                    | [] -> ()
+                    | [id] -> yield (([], id), v)
+                    | _ -> yield! buildForNestdFlds lidwd v                 
             ] |> grpNestdMultiUpdates
                    
         match flds with 
