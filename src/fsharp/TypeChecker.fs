@@ -6861,97 +6861,96 @@ and TcAssertExpr cenv overallTy env (m:range) tpenv x  =
 //------------------------------------------------------------------------- 
 
 and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr) =
-    let (|ModuleOrNamespace|RecdTy|RecdFld|Undefined|) id =
-        match id with
-        | ((_, _, Some _), id) -> RecdFld id
-        | ((_,Some _, _), id) -> RecdTy id
-        | ((Some _, None, None), id)  -> ModuleOrNamespace id
-        | (_, id) -> Undefined id
+    let buildForNestdFlds (lidwd : LongIdentWithDots) v =
+        let (|ModuleOrNamespace|RecdTy|RecdFld|Undefined|) =
+            function
+            | ((_, _, Some _), id) -> RecdFld id
+            | ((_,Some _, _), id) -> RecdTy id
+            | ((Some _, None, None), id)  -> ModuleOrNamespace id
+            | (_, id) -> Undefined id
                    
-    let search mapFn mOrNsTyList =
-        mOrNsTyList
-        |> Option.bind (fun lst -> lst |> List.map mapFn |> List.tryFind Option.isSome)
-        |> Option.flatten
+        let resolveIds ids =
+            let search mapFn mOrNsTyList =
+                mOrNsTyList
+                |> Option.bind (fun lst -> lst |> List.map mapFn |> List.tryFind Option.isSome)
+                |> Option.flatten
 
-    let modOrNsSearch (id : Ident) =
-        search (fun (mOrNsTy : ModuleOrNamespaceType) -> mOrNsTy.ModulesAndNamespacesByDemangledName.TryFind id.idText)
+            let modOrNsSearch (id : Ident) =
+                search (fun (mOrNsTy : ModuleOrNamespaceType) -> mOrNsTy.ModulesAndNamespacesByDemangledName.TryFind id.idText)
 
-    let tyconSearch (id : Ident) =
-        search (fun (mOrNsTy : ModuleOrNamespaceType) -> mOrNsTy.TypesByAccessNames.TryFind id.idText)
+            let tyconSearch (id : Ident) =
+                search (fun (mOrNsTy : ModuleOrNamespaceType) -> mOrNsTy.TypesByAccessNames.TryFind id.idText)
 
-    let rec abbrevTyconFieldSearch (abbrvTycon : TyconRef) (id : Ident) =
-        match abbrvTycon.TypeAbbrev with
-        | None -> abbrvTycon.GetFieldByName id.idText
-        | Some (TType_app (abbrv, _)) -> abbrevTyconFieldSearch abbrv id
-        | _ -> None
+            let rec abbrevTyconFieldSearch (abbrvTycon : TyconRef) (id : Ident) =
+                match abbrvTycon.TypeAbbrev with
+                | None -> abbrvTycon.GetFieldByName id.idText
+                | Some (TType_app (abbrv, _)) -> abbrevTyconFieldSearch abbrv id
+                | _ -> None
 
-    let tyconFieldSearch (id : Ident) =
-        search (fun (tycon : Tycon) -> match tycon.TypeAbbrev with
-                                        | None -> tycon.GetFieldByName id.idText
-                                        | Some (TType_app (abbrv, _)) -> abbrevTyconFieldSearch abbrv id
-                                        | _ -> None)
+            let tyconFieldSearch (id : Ident) =
+                search (fun (tycon : Tycon) -> match tycon.TypeAbbrev with
+                                                | None -> tycon.GetFieldByName id.idText
+                                                | Some (TType_app (abbrv, _)) -> abbrevTyconFieldSearch abbrv id
+                                                | _ -> None)
 
-    let searchFieldsOfAllTycons (id : Ident) =
-        let searchForFld (lst : ModuleOrNamespaceType list) =
-            lst
-            |> List.map (fun mOrNs -> mOrNs.TypeDefinitions |> List.map (fun (t : Tycon) -> t))
-            |> List.concat
-            |> Some
-            |> tyconFieldSearch id
+            let searchFieldsOfAllTycons (id : Ident) =
+                let searchForFld (lst : ModuleOrNamespaceType list) =
+                    lst
+                    |> List.map (fun mOrNs -> mOrNs.TypeDefinitions |> List.map (fun (t : Tycon) -> t))
+                    |> List.concat
+                    |> Some
+                    |> tyconFieldSearch id
 
-        Option.bind searchForFld
+                Option.bind searchForFld
+            let rec loop res mOrNs tycons ids =
+                match ids with
+                | [] -> success (res |> List.rev)
+                | (id : Ident) :: ids ->
+                    match (mOrNs, tycons) with
+                    // If we're not given any namespaces, modules or tycons to restrict search - look in current env
+                    | (None, None) -> 
+                        let mOrN = 
+                            env.NameEnv.eModulesAndNamespaces.TryFind id.idText
+                            |> Option.bind (fun ml -> Some (ml |> List.map (fun m -> m.ModuleOrNamespaceType)))
 
-    let resolveIds =
-        let rec loop res mOrNs tycons ids =
-            match ids with
-            | [] -> success (res |> List.rev)
-            | (id : Ident) :: ids ->
-                match (mOrNs, tycons) with
-                // If we're not given any namespaces, modules or tycons to restrict search - look in current env
-                | (None, None) -> 
-                    let mOrN = 
-                        env.NameEnv.eModulesAndNamespaces.TryFind id.idText
-                        |> Option.bind (fun ml -> Some (ml |> List.map (fun m -> m.ModuleOrNamespaceType)))
+                        let ty : Tycon list option =
+                            env.NameEnv.eTyconsByAccessNames.TryFind id.idText
+                            |> Option.bind (fun tl -> Some (tl |> List.map (fun t -> t.Deref)))
 
-                    let ty : Tycon list option =
-                        env.NameEnv.eTyconsByAccessNames.TryFind id.idText
-                        |> Option.bind (fun tl -> Some (tl |> List.map (fun t -> t.Deref)))
+                        let fld =
+                            env.NameEnv.eFieldLabels.TryFind id.idText
+                            |> Option.bind (fun fl -> Some(fl |> List.map (fun f -> f.RecdField)))
 
-                    let fld =
-                        env.NameEnv.eFieldLabels.TryFind id.idText
-                        |> Option.bind (fun fl -> Some(fl |> List.map (fun f -> f.RecdField)))
+                        let searchResult = (mOrN, ty, fld)
 
-                    let searchResult = (mOrN, ty, fld)
-
-                    match searchResult with
-                    | (None, None, None) -> raze (UndefinedName(0, FSComp.SR.undefinedNameRecordLabelOrNamespace, id, NoSuggestions))
-                    | _ -> loop ((searchResult, id) :: res) mOrN None ids
-                | (_, Some _) -> 
-                    // If there is some tycons then search for id in their fields
-                    let search = (tyconFieldSearch id tycons)
-                    match search with
-                    | None -> raze (UndefinedName(0, FSComp.SR.undefinedNameRecordLabelOrNamespace, id, NoSuggestions))
-                    | Some s -> 
-                        let tys =   match s.FormalType with
-                                    | TType_app (tycon, _) -> Some [tycon.Deref]
-                                    | _ -> tycons
-                        loop (((None, None, Some [s]), id) :: res) mOrNs tys ids
-                | _ -> 
-                    // If no tycons search for namespace, module or type name
-                    let mOrN, tycon = (modOrNsSearch id mOrNs, tyconSearch id mOrNs)
-                    match (mOrN, tycon) with
-                    | (Some m, _) -> loop (((Some [m.ModuleOrNamespaceType], None, None), id) :: res) (Some [m.ModuleOrNamespaceType]) None ids
-                    | (_, Some _) -> loop (((None, tycons, None), id) :: res) mOrNs tycon ids
+                        match searchResult with
+                        | (None, None, None) -> raze (UndefinedName(List.length res, FSComp.SR.undefinedNameRecordLabelOrNamespace, id, NoSuggestions))
+                        | _ -> loop ((searchResult, id) :: res) mOrN None ids
+                    | (_, Some _) -> 
+                        // If there is some tycons then search for id in their fields
+                        let search = (tyconFieldSearch id tycons)
+                        match search with
+                        | None -> raze (UndefinedName(List.length res, FSComp.SR.undefinedNameRecordLabelOrNamespace, id, NoSuggestions))
+                        | Some s -> 
+                            let tys =   match s.FormalType with
+                                        | TType_app (tycon, _) -> Some [tycon.Deref]
+                                        | _ -> tycons
+                            loop (((None, None, Some [s]), id) :: res) mOrNs tys ids
                     | _ -> 
-                        // As a last resort - search across fields of module's tycons for case ModuleName.FieldName
-                        let fld = searchFieldsOfAllTycons id mOrNs
-                        match fld with
-                        | Some f -> loop (((None, None, Some [f]), id) :: res) mOrNs tycons ids
-                        | None -> raze (UndefinedName(0, FSComp.SR.undefinedNameRecordLabelOrNamespace, id, NoSuggestions))
+                        // If no tycons search for namespace, module or type name
+                        let mOrN, tycon = (modOrNsSearch id mOrNs, tyconSearch id mOrNs)
+                        match (mOrN, tycon) with
+                        | (Some m, _) -> loop (((Some [m.ModuleOrNamespaceType], None, None), id) :: res) (Some [m.ModuleOrNamespaceType]) None ids
+                        | (_, Some _) -> loop (((None, tycons, None), id) :: res) mOrNs tycon ids
+                        | _ -> 
+                            // As a last resort - search across fields of module's tycons for case ModuleName.FieldName
+                            let fld = searchFieldsOfAllTycons id mOrNs
+                            match fld with
+                            | Some f -> loop (((None, None, Some [f]), id) :: res) mOrNs tycons ids
+                            | None -> raze (UndefinedName(List.length res, FSComp.SR.undefinedNameRecordLabelOrNamespace, id, NoSuggestions))
 
-        loop [] None None   
+            loop [] None None ids |> ForceRaise
 
-    let buildForNestdFlds (lidwd : LongIdentWithDots) v =                   
         let recdExprCopyInfo ids (optOrigExpr : (SynExpr * BlockSeparator) option) (id : Ident) =
             let lidOfFlds = 
                 ids 
@@ -7007,7 +7006,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                                                         | [(_, fld)] -> yield ((LongIdentWithDots ([fld],[]), true), v, None)
                                                         | (_, h) :: t -> yield ((LongIdentWithDots ([h], []), true), (synExprRecd copyInfo h h.idRange t), None)], idRng)))
 
-        let ids = lidwd.Lid |> resolveIds |> ForceRaise
+        let ids = lidwd.Lid |> resolveIds
 
         [
             match ids with
@@ -7029,22 +7028,22 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                 | _ ->  yield (lid, synExprRecd (recdExprCopyInfo ids optOrigExpr) id rng rst)
         ]
 
-    let grpNestdMultiUpdates flds =
-        flds
-        |> Seq.groupBy (fun ((_, fld : Ident), _) -> fld.idText)
-        |> Seq.map (fun (_, flds) -> 
-            let fldsList = flds |> List.ofSeq
-            match fldsList with
-            | [] | [_] -> fldsList
-            | _ -> 
-                [fldsList
-                |> List.reduce (fun a b ->
-                    match (a, b) with
-                    | (lidwid, Some(SynExpr.Record (aBI, aCI, aFlds, aRng))), (_, Some(SynExpr.Record (_, _, bFlds, _))) -> (lidwid, Some(SynExpr.Record (aBI, aCI, (aFlds @ bFlds), aRng)))
-                    | _ -> a)]
-            )
-        |> Seq.concat
-        |> List.ofSeq
+    let grpMultipleNstdUpdates flds =
+        let grpdByFld = flds |> Seq.groupBy (fun ((_, fld : Ident), _) -> fld.idText)
+        [
+            for (_, flds) in grpdByFld do
+                if (flds |> Seq.length < 2) then 
+                    yield! flds
+                else
+                    yield 
+                        flds 
+                        |> Seq.reduce (
+                            fun a b -> 
+                                match a, b with 
+                                | (lidwid, Some(SynExpr.Record (aBI, aCI, aFlds, aRng))), (_, Some(SynExpr.Record (_, _, bFlds, _))) -> (lidwid, Some(SynExpr.Record (aBI, aCI, (aFlds @ bFlds), aRng))) 
+                                | _ -> a
+                        )
+        ]
 
     let requiresCtor = (GetCtorShapeCounter env = 1) // Get special expression forms for constructors 
     let haveCtor = Option.isSome inherits
@@ -7076,7 +7075,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
                     | [] -> ()
                     | [id] -> yield (([], id), v)
                     | _ -> yield! buildForNestdFlds lidwd v                 
-            ] |> grpNestdMultiUpdates
+            ] |> grpMultipleNstdUpdates
                    
         match flds with 
         | [] -> []
