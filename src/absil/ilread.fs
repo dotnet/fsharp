@@ -925,8 +925,14 @@ let mkCacheGeneric lowMem _inbase _nm _sz  =
             | null -> cache := new Dictionary<_, _>(11 (* sz:int *) ) 
             | _ -> ()
             !cache
-        if cache.ContainsKey idx then (incr count; cache.[idx])
-        else let res = f idx in cache.[idx] <- res; res 
+        match cache.TryGetValue(idx) with
+        | true, v ->
+            incr count
+            v
+        | _ ->
+            let res = f idx
+            cache.[idx] <- res
+            res
 
 //-----------------------------------------------------------------------
 // Polymorphic general helpers for searching for particular rows.
@@ -2652,11 +2658,10 @@ and seekReadImplMap (ctxt: ILMetadataReader)  nm midx =
 and seekReadTopCode (ctxt: ILMetadataReader)  pev mdv numtypars (sz:int) start seqpoints = 
    let labelsOfRawOffsets = new Dictionary<_, _>(sz/2)
    let ilOffsetsOfLabels = new Dictionary<_, _>(sz/2)
-   let tryRawToLabel rawOffset = 
-       if labelsOfRawOffsets.ContainsKey rawOffset then 
-           Some(labelsOfRawOffsets.[rawOffset])
-       else 
-           None
+   let tryRawToLabel rawOffset =
+       match labelsOfRawOffsets.TryGetValue(rawOffset) with
+       | true, v -> Some v
+       | _ -> None
 
    let rawToLabel rawOffset = 
        match tryRawToLabel rawOffset with 
@@ -3092,11 +3097,9 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
                       end
                    
                     let key =  (tryStart, tryFinish)
-                    if sehMap.ContainsKey key then 
-                        let prev = sehMap.[key]
-                        sehMap.[key] <- (prev @ [clause])
-                    else 
-                        sehMap.[key] <- [clause])
+                    match sehMap.TryGetValue(key) with
+                    | true, prev -> sehMap.[key] <- prev @ [clause]
+                    | _ -> sehMap.[key] <- [clause])
                   clauses
                 ([], sehMap) ||> Seq.fold  (fun acc (KeyValue(key, bs)) -> [ for b in bs -> {Range=key; Clause=b} : ILExceptionSpec ] @ acc)  
              seh := sehClauses
@@ -3295,7 +3298,10 @@ let getPdbReader pdbPath fileName =
                                             documentType = Some (pdbDocumentGetType pdbdoc), 
                                             file = url))
 
-              let docfun url = if tab.ContainsKey url then tab.[url] else failwith ("Document with URL "+url+" not found in list of documents in the PDB file")
+              let docfun url =
+                  match tab.TryGetValue(url) with
+                  | true, doc -> doc
+                  | _ -> failwith ("Document with URL " + url + " not found in list of documents in the PDB file")
               Some (pdbr, docfun)
           with e -> dprintn ("* Warning: PDB file could not be read and will be ignored: "+e.Message); None         
 #endif

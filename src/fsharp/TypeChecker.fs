@@ -124,13 +124,13 @@ let IsSecurityAttribute (g: TcGlobals) amap (casmap : Dictionary<Stamp, bool>) (
     | Some attr ->
         match attr.TyconRef.TryDeref with
         | VSome _ -> 
-           let tcs = tcref.Stamp
-           if casmap.ContainsKey(tcs) then
-             casmap.[tcs]
-           else
-             let exists = ExistsInEntireHierarchyOfType (fun t -> typeEquiv g t (mkAppTy attr.TyconRef [])) g amap m AllowMultiIntfInstantiations.Yes (mkAppTy tcref [])
-             casmap.[tcs] <- exists
-             exists
+            let tcs = tcref.Stamp
+            match casmap.TryGetValue(tcs) with
+            | true, c -> c
+            | _ ->
+                let exists = ExistsInEntireHierarchyOfType (fun t -> typeEquiv g t (mkAppTy attr.TyconRef [])) g amap m AllowMultiIntfInstantiations.Yes (mkAppTy tcref [])
+                casmap.[tcs] <- exists
+                exists
         | VNone -> false  
 
 let IsSecurityCriticalAttribute g (Attrib(tcref, _, _, _, _, _, _)) =
@@ -4513,7 +4513,7 @@ and TcTyparDecl cenv env (TyparDecl(synAttrs, (Typar(id, _, _) as stp))) =
     let tp = NewTypar ((if hasMeasureAttr then TyparKind.Measure else TyparKind.Type), TyparRigidity.WarnIfNotRigid, stp, false, TyparDynamicReq.Yes, attrs, hasEqDepAttr, hasCompDepAttr)
     match TryFindFSharpStringAttribute cenv.g cenv.g.attrib_CompiledNameAttribute attrs with 
     | Some compiledName -> 
-        tp.typar_il_name <- Some compiledName
+        tp.SetILName (Some compiledName)
     | None ->  
         ()
     let item = Item.TypeVar(id.idText, tp)
@@ -4940,7 +4940,7 @@ and TcTypeApp cenv newOk checkCxs occ env tpenv m tcref pathTypeArgs (synArgTys:
 
     // If we're not checking constraints, i.e. when we first assert the super/interfaces of a type definition, then just 
     // clear the constraint lists of the freshly generated type variables. A little ugly but fairly localized. 
-    if checkCxs = NoCheckCxs then tps |> List.iter (fun tp -> tp.typar_constraints <- [])
+    if checkCxs = NoCheckCxs then tps |> List.iter (fun tp -> tp.SetConstraints [])
     if tinst.Length <> pathTypeArgs.Length + synArgTys.Length then 
         error (TyconBadArgs(env.DisplayEnv, tcref, pathTypeArgs.Length + synArgTys.Length, m))
 
@@ -17353,6 +17353,21 @@ let TypeCheckOneImplFile
             with e -> 
                 errorRecovery e m
                 false)
+
+    // Warn on version attributes.
+    topAttrs.assemblyAttrs |> List.iter (function
+       | Attrib(tref, _, [ AttribExpr(Expr.Const (Const.String(version), range, _), _) ] , _, _, _, _) ->
+            let attrName = tref.CompiledRepresentationForNamedType.FullName
+            let isValid =
+                try IL.parseILVersion version |> ignore; true
+                with _ -> false
+            match attrName with
+            | "System.Reflection.AssemblyInformationalVersionAttribute"
+            | "System.Reflection.AssemblyFileVersionAttribute" //TODO compile error like c# compiler?
+            | "System.Reflection.AssemblyVersionAttribute" when not isValid ->
+                warning(Error(FSComp.SR.fscBadAssemblyVersion(attrName, version), range))
+            | _ -> ()
+        | _ -> ())
 
     let implFile = TImplFile(qualNameOfFile, scopedPragmas, implFileExprAfterSig, hasExplicitEntryPoint, isScript)
 

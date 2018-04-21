@@ -159,7 +159,7 @@ module private FSharpQuickInfo =
 
 type internal FSharpAsyncQuickInfoSource
     (
-        serviceProvider:IServiceProvider,
+        xmlMemberIndexService: IVsXMLMemberIndexService,
         checkerProvider:FSharpCheckerProvider,
         projectInfoManager:FSharpProjectOptionsManager,
         gotoDefinitionService:FSharpGoToDefinitionService,
@@ -192,13 +192,17 @@ type internal FSharpAsyncQuickInfoSource
             | false -> Task.FromResult<QuickInfoItem>(null)
             | true ->
                 let triggerPoint = triggerPoint.GetValueOrDefault()
-                let xmlMemberIndexService = serviceProvider.GetService(typeof<SVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
-                let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
+                let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService)
                 asyncMaybe {
                     let document = textBuffer.CurrentSnapshot.GetOpenDocumentInCurrentContextWithChanges()
                     let! symbolUse, sigQuickInfo, targetQuickInfo = FSharpQuickInfo.getQuickInfo(checkerProvider.Checker, projectInfoManager, document, triggerPoint.Position, cancellationToken)
                     let getTrackingSpan (span:TextSpan) =
                         textBuffer.CurrentSnapshot.CreateTrackingSpan(span.Start, span.Length, SpanTrackingMode.EdgeInclusive)
+                    let lineBreak = TaggedTextOps.Literals.lineBreak
+                    let joinWithLineBreaks segments =
+                        match segments |> List.filter (Seq.isEmpty >> not) with
+                        | [] -> Seq.empty
+                        | xs -> xs |> List.reduce (fun acc elem -> seq { yield! acc; yield lineBreak; yield! elem })
 
                     match sigQuickInfo, targetQuickInfo with
                     | None, None -> return null
@@ -208,7 +212,8 @@ type internal FSharpAsyncQuickInfoSource
                         XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, documentation.Add, typeParameterMap.Add, usage.Add, exceptions.Add, quickInfo.StructuredText)
                         let imageId = Tokenizer.GetImageIdForSymbol(quickInfo.Symbol, quickInfo.SymbolKind)
                         let navigation = QuickInfoNavigation(gotoDefinitionService, document, symbolUse.RangeAlternate)
-                        let content = QuickInfoViewProvider.provideContent(imageId, mainDescription, documentation, typeParameterMap, usage, exceptions, navigation)
+                        let docs = joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
+                        let content = QuickInfoViewProvider.provideContent(imageId, mainDescription, docs, navigation)
                         let span = getTrackingSpan quickInfo.Span
                         return QuickInfoItem(span, content)
 
@@ -216,24 +221,6 @@ type internal FSharpAsyncQuickInfoSource
                         let mainDescription, targetDocumentation, sigDocumentation, typeParameterMap, exceptions, usage = ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
                         XmlDocumentation.BuildDataTipText(documentationBuilder, ignore, sigDocumentation.Add, ignore, ignore, ignore, sigQuickInfo.StructuredText)
                         XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, targetDocumentation.Add, typeParameterMap.Add, exceptions.Add, usage.Add, targetQuickInfo.StructuredText)
-
-                        let width = 
-                            mainDescription
-                            |> Seq.append targetDocumentation
-                            |> Seq.append exceptions
-                            |> Seq.append usage
-                            |> Seq.append sigDocumentation
-                            |> Seq.append typeParameterMap
-                            |> Seq.map (fun x -> x.Text.Length)
-                            |> Seq.max
-
-                        // eyeballed formula returning separator width in chars such as to prevent it from wrapping
-                        // will not be needed once we replace the ascii-art divider with a XAML element
-                        let width = if width / 2 > 85 then 85 else width / 2
-
-                        let seperator = TaggedTextOps.tag Text (String.replicate width "⎯")
-                        let lineBreak = TaggedTextOps.tag LineBreak "\n"
-
                         // get whitespace nomalized documentation text
                         let getText (tts: seq<Layout.TaggedText>) =
                             let text =
@@ -251,15 +238,12 @@ type internal FSharpAsyncQuickInfoSource
                               | Some implText, Some sigText when implText.Equals (sigText, StringComparison.OrdinalIgnoreCase) ->
                                     yield! sigDocumentation
                               | Some _  , Some _ ->
-                                    yield! sigDocumentation
-                                    yield lineBreak
-                                    yield seperator
-                                    yield lineBreak
-                                    yield! targetDocumentation ]
-                            |> ResizeArray
+                                    yield! joinWithLineBreaks [ sigDocumentation; [ TaggedTextOps.tagText "-------------" ]; targetDocumentation ]
+                            ] |> ResizeArray
+                        let docs = joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
                         let imageId = Tokenizer.GetImageIdForSymbol(targetQuickInfo.Symbol, targetQuickInfo.SymbolKind)
                         let navigation = QuickInfoNavigation(gotoDefinitionService, document, symbolUse.RangeAlternate)
-                        let content = QuickInfoViewProvider.provideContent(imageId, mainDescription, documentation, typeParameterMap, usage, exceptions, navigation)
+                        let content = QuickInfoViewProvider.provideContent(imageId, mainDescription, docs, navigation)
                         let span = getTrackingSpan targetQuickInfo.Span
                         return QuickInfoItem(span, content)
                 }   |> Async.map Option.toObj
@@ -278,4 +262,5 @@ type internal FSharpAsyncQuickInfoSourceProvider
         gotoDefinitionService:FSharpGoToDefinitionService
     ) =
     interface IAsyncQuickInfoSourceProvider with
-        override __.TryCreateQuickInfoSource(textBuffer:ITextBuffer) : IAsyncQuickInfoSource = new FSharpAsyncQuickInfoSource(serviceProvider, checkerProvider, projectInfoManager, gotoDefinitionService, textBuffer) :> IAsyncQuickInfoSource
+        override __.TryCreateQuickInfoSource(textBuffer:ITextBuffer) : IAsyncQuickInfoSource =
+            new FSharpAsyncQuickInfoSource(serviceProvider.XMLMemberIndexService, checkerProvider, projectInfoManager, gotoDefinitionService, textBuffer) :> IAsyncQuickInfoSource
