@@ -18,6 +18,7 @@
         <authors>$authors$</authors>
         <licenseUrl>$licenseUrl$</licenseUrl>
         <projectUrl>$projectUrl$</projectUrl>
+        <iconUrl>http://fsharp.org/img/logo.png</iconUrl>
         <tags>$tags$</tags>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <dependencies>
