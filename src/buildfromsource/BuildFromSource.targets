@@ -10,6 +10,7 @@
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <UseStandardResourceNames>false</UseStandardResourceNames>
     <DefineConstants>$(DefineConstants);BUILD_FROM_SOURCE</DefineConstants>
 
     <!-- Signing flags currently done using OtherFlags.  Can migrate to properties once build target updated -->
