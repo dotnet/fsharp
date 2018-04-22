@@ -1199,16 +1199,8 @@ module internal ExtensionTyping =
                 staticParameters |> Array.map (fun sp -> 
                       let typeBeforeArgumentsName = typeBeforeArguments.PUntaint ((fun st -> st.Name), m)
                       let spName = sp.PUntaint ((fun sp -> sp.Name), m)
-                      if not (argSpecsTable.ContainsKey spName) then 
-                          if sp.PUntaint ((fun sp -> sp.IsOptional), m) then 
-                              match sp.PUntaint((fun sp -> sp.RawDefaultValue), m) with
-                              | null -> error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, typeBeforeArgumentsName, typeBeforeArgumentsName, spName), range0))
-                              | v -> v
-                          else
-                              error(Error(FSComp.SR.etProvidedTypeReferenceMissingArgument(spName), range0))
-                      else
-                          let arg = argSpecsTable.[spName]
-                      
+                      match argSpecsTable.TryGetValue(spName) with
+                      | true, arg ->
                           /// Find the name of the representation type for the static parameter
                           let spReprTypeName = 
                               sp.PUntaint((fun sp -> 
@@ -1232,7 +1224,16 @@ module internal ExtensionTyping =
                           | "System.Char" -> box (char arg)
                           | "System.Boolean" -> box (arg = "True")
                           | "System.String" -> box (string arg)
-                          | s -> error(Error(FSComp.SR.etUnknownStaticArgumentKind(s, typeLogicalName), range0)))
+                          | s -> error(Error(FSComp.SR.etUnknownStaticArgumentKind(s, typeLogicalName), range0))
+
+                      | _ ->
+                          if sp.PUntaint ((fun sp -> sp.IsOptional), m) then 
+                              match sp.PUntaint((fun sp -> sp.RawDefaultValue), m) with
+                              | null -> error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, typeBeforeArgumentsName, typeBeforeArgumentsName, spName), range0))
+                              | v -> v
+                          else
+                              error(Error(FSComp.SR.etProvidedTypeReferenceMissingArgument(spName), range0)))
+                    
 
             match TryApplyProvidedType(typeBeforeArguments, None, staticArgs, range0) with 
             | Some (typeWithArguments, checkTypeName) -> 

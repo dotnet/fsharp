@@ -844,6 +844,66 @@ module CoreTests =
     let recordResolution () = singleTestBuildAndRun "core/recordResolution" FSC_OPT_PLUS_DEBUG
 
     [<Test>]
+    let ``no-warn-2003-tests`` () =
+        // see https://github.com/Microsoft/visualfsharp/issues/3139
+        let cfg = testConfig "core/versionAttributes"
+        let stdoutPath = "out.stdout.txt" |> getfullpath cfg
+        let stderrPath = "out.stderr.txt" |> getfullpath cfg
+        let stderrBaseline = "out.stderr.bsl" |> getfullpath cfg
+        let stdoutBaseline = "out.stdout.bsl" |> getfullpath cfg
+        let echo text =
+            Commands.echoAppendToFile cfg.Directory text stdoutPath
+            Commands.echoAppendToFile cfg.Directory text stderrPath
+
+        File.WriteAllText(stdoutPath, "")
+        File.WriteAllText(stderrPath, "")
+
+        echo "Test 1================================================="
+        fscAppend cfg stdoutPath stderrPath "--nologo" ["NoWarn2003.fs"]
+
+        echo "Test 2================================================="
+        fscAppend cfg stdoutPath stderrPath "--nologo" ["NoWarn2003_2.fs"]
+
+        echo "Test 3================================================="
+        fscAppend cfg stdoutPath stderrPath "--nologo" ["Warn2003_1.fs"]
+
+        echo "Test 4================================================="
+        fscAppend cfg stdoutPath stderrPath "--nologo" ["Warn2003_2.fs"]
+
+        echo "Test 5================================================="
+        fscAppend cfg stdoutPath stderrPath "--nologo" ["Warn2003_3.fs"]
+
+        echo "Test 6================================================="
+        fscAppend cfg stdoutPath stderrPath "--nologo --nowarn:2003" ["Warn2003_1.fs"]
+
+        echo "Test 7================================================="
+        fscAppend cfg stdoutPath stderrPath "--nologo --nowarn:2003" ["Warn2003_2.fs"]
+
+        echo "Test 8================================================="
+        fscAppend cfg stdoutPath stderrPath "--nologo --nowarn:2003" ["Warn2003_3.fs"]
+
+        let normalizePaths f =
+            let text = File.ReadAllText(f)
+            let dummyPath = @"D:\staging\staging\src\tests\fsharp\core\load-script"
+            let contents = System.Text.RegularExpressions.Regex.Replace(text, System.Text.RegularExpressions.Regex.Escape(cfg.Directory), dummyPath)
+            File.WriteAllText(f, contents)
+
+        normalizePaths stdoutPath
+        normalizePaths stderrPath
+
+        let diffs = fsdiff cfg stdoutPath stdoutBaseline
+
+        match diffs with
+        | "" -> ()
+        | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" stdoutPath stdoutBaseline diffs)
+
+        let diffs2 = fsdiff cfg stderrPath stderrBaseline
+
+        match diffs2 with
+        | "" -> ()
+        | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" stderrPath stderrBaseline diffs2)
+
+    [<Test>]
     let ``load-script`` () = 
         let cfg = testConfig "core/load-script"
 

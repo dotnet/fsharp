@@ -1413,8 +1413,10 @@ let CheckEntityDefn cenv env (tycon:Entity) =
 
         let immediateProps = GetImmediateIntrinsicPropInfosOfType (None,AccessibleFromSomewhere) cenv.g cenv.amap m typ
 
-        let getHash (hash:Dictionary<string,_>) nm = 
-             if hash.ContainsKey(nm) then hash.[nm] else []
+        let getHash (hash:Dictionary<string,_>) nm =
+            match hash.TryGetValue(nm) with
+            | true, h -> h
+            | _ -> []
         
         // precompute methods grouped by MethInfo.LogicalName
         let hashOfImmediateMeths = 
