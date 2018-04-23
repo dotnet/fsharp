@@ -58,7 +58,7 @@ let iLdcSingle i = AI_ldc (DT_R4,ILConst.R4 i)
 /// Make a method that simply loads a field
 let mkLdfldMethodDef (ilMethName,reprAccess,isStatic,ilTy,ilFieldName,ilPropType) =
    let ilFieldSpec = mkILFieldSpecInTy(ilTy,ilFieldName,ilPropType)
-   let ilReturn = mkILReturn ilPropType
+   let ilReturn = mkSimpleILReturn ilPropType
    let ilMethodDef = 
        if isStatic then 
            mkILNonGenericStaticMethod (ilMethName,reprAccess,[],ilReturn,mkMethodBody(true,[],2,nonBranchingInstrsToCode [mkNormalLdsfld ilFieldSpec],None))
@@ -1037,7 +1037,8 @@ let MergeOptions m o1 o2 =
     | Some x, Some _ -> 
 #if DEBUG
        // This warning fires on some code that also triggers this warning:
-       //          warning(Error("The implementation of a specified generic interface required a method implementation not fully supported by F# Interactive. In the unlikely event that the resulting class fails to load then compile the interface type into a statically-compiled DLL and reference it using '#r'",m))
+       //     warning(Error("The implementation of a specified generic interface required a method implementation not fully supported by F# Interactive.
+       //                    In the unlikely event that the resulting class fails to load then compile the interface type into a statically-compiled DLL and reference it using '#r'",m))
        // The code is OK so we don't print this.
        errorR(InternalError("MergeOptions: two values given",m)) 
 #else
@@ -3429,34 +3430,32 @@ and GenGenericParam cenv eenv (tp:Typar) =
     let refTypeConstraint              = tp.Constraints |> List.exists (function TyparConstraint.IsReferenceType _ -> true | TyparConstraint.SupportsNull _ -> true | _ -> false)
     let notNullableValueTypeConstraint = tp.Constraints |> List.exists (function TyparConstraint.IsNonNullableStruct _ -> true | _ -> false)
     let defaultConstructorConstraint   = tp.Constraints |> List.exists (function TyparConstraint.RequiresDefaultConstructor _ -> true | _ -> false)
-    ILGenericParameterDef
-        (name =
-            (
-              // use the CompiledName if given
-              // Inference variables get given an IL name "TA, TB" etc.
-              let nm = 
-                  match tp.ILName with 
-                  | None -> tp.Name  
-                  | Some nm -> nm
-              // Some special rules apply when compiling Fsharp.Core.dll to avoid a proliferation of [<CompiledName>] attributes on type parameters
-              if cenv.g.compilingFslib then 
-                  match nm with 
-                  | "U" -> "TResult"
-                  | "U1" -> "TResult1"
-                  | "U2" -> "TResult2"
-                  | _ -> 
-                      if nm.TrimEnd([| '0' .. '9' |]).Length = 1 then nm 
-                      elif nm.Length >= 1 && nm.[0] = 'T' && (nm.Length = 1 || not (System.Char.IsLower nm.[1]))  then nm
-                      else "T" + (String.capitalize nm)
-              else 
-                   nm),
-          constraints = subTypeConstraints,
-          variance=NonVariant,
-          customAttrsStored = storeILCustomAttrs (mkILCustomAttrs (GenAttrs cenv eenv tp.Attribs)),
-          metadataIndex = NoMetadataIdx,
-          hasReferenceTypeConstraint=refTypeConstraint,
-          hasNotNullableValueTypeConstraint=notNullableValueTypeConstraint,
-          hasDefaultConstructorConstraint= defaultConstructorConstraint) :> IGenericParameterDef
+    let name =
+        (
+          // use the CompiledName if given
+          // Inference variables get given an IL name "TA, TB" etc.
+          let nm = 
+              match tp.ILName with 
+              | None -> tp.Name  
+              | Some nm -> nm
+          // Some special rules apply when compiling Fsharp.Core.dll to avoid a proliferation of [<CompiledName>] attributes on type parameters
+          if cenv.g.compilingFslib then 
+              match nm with 
+              | "U" -> "TResult"
+              | "U1" -> "TResult1"
+              | "U2" -> "TResult2"
+              | _ -> 
+                  if nm.TrimEnd([| '0' .. '9' |]).Length = 1 then nm 
+                  elif nm.Length >= 1 && nm.[0] = 'T' && (nm.Length = 1 || not (System.Char.IsLower nm.[1]))  then nm
+                  else "T" + (String.capitalize nm)
+          else 
+               nm)
+    let constraints = subTypeConstraints
+    let customAttrsStored = storeILCustomAttrs (mkILCustomAttrs (GenAttrs cenv eenv tp.Attribs))
+
+    mkILGenericParam
+        (name, constraints, NonVariant, refTypeConstraint, notNullableValueTypeConstraint, defaultConstructorConstraint,
+         customAttrsStored, NoMetadataIdx)
 
 //--------------------------------------------------------------------------
 // Generate object expressions as ILX "closures"
@@ -3464,11 +3463,13 @@ and GenGenericParam cenv eenv (tp:Typar) =
 
 /// Generates the data used for parameters at definitions of abstract method slots such as interface methods or override methods.
 and GenSlotParam m cenv eenv (TSlotParam(nm,ty,inFlag,outFlag,optionalFlag,attribs)) : IParameter = 
-    let inFlag2,outFlag2,optionalFlag2,defaultParamValue,paramMarshal2,attribs = GenParamAttribs cenv attribs
+    let inFlag2, outFlag2, optionalFlag2, defaultParamValue, paramMarshal2, attribs = GenParamAttribs cenv attribs
+    let paramTy = GenParamType cenv.amap m eenv.tyenv ty
+    let customAttrs = storeILCustomAttrs (mkILCustomAttrs (GenAttrs cenv eenv attribs))
 
-    ILParameter(nm, GenParamType cenv.amap m eenv.tyenv ty, defaultParamValue, paramMarshal2, inFlag || inFlag2,
-                outFlag || outFlag2, optionalFlag || optionalFlag2,
-                storeILCustomAttrs (mkILCustomAttrs (GenAttrs cenv eenv attribs)), NoMetadataIdx) :> IParameter
+    mkILParam
+        (nm, paramTy, defaultParamValue, paramMarshal2, inFlag || inFlag2, outFlag || outFlag2,
+         optionalFlag || optionalFlag2, customAttrs, NoMetadataIdx)
 
 and GenFormalSlotsig m cenv eenv (TSlotSig(_,typ,ctps,mtps,paraml,returnTy)) = 
     let paraml = List.concat paraml
@@ -3476,7 +3477,7 @@ and GenFormalSlotsig m cenv eenv (TSlotSig(_,typ,ctps,mtps,paraml,returnTy)) =
     let eenvForSlotSig = EnvForTypars (ctps @ mtps) eenv
     let ilParams = paraml |> List.map (GenSlotParam m cenv eenvForSlotSig) 
     let ilRetTy = GenReturnType cenv.amap m eenvForSlotSig.tyenv returnTy
-    let ilRet = mkILReturn  ilRetTy
+    let ilRet = mkSimpleILReturn  ilRetTy
     ilTy, ilParams, ilRet
 
 and instSlotParam inst (TSlotParam(nm,ty,inFlag,fl2,fl3,attrs)) = TSlotParam(nm,instType inst ty,inFlag,fl2,fl3,attrs) 
@@ -3488,7 +3489,7 @@ and GenActualSlotsig m cenv eenv (TSlotSig(_,typ,ctps,mtps,ilSlotParams,ilSlotRe
     // Use the better names if available
     let ilParams = if ilParams.Length = methodParams.Length then (ilParams, methodParams) ||> List.map2 (fun p pv -> p.With(newName = Some (nameOfVal pv))) else ilParams
     let ilRetTy = GenReturnType cenv.amap m eenv.tyenv (Option.map (instType instForSlotSig) ilSlotRetTy)
-    let iLRet = mkILReturn ilRetTy
+    let iLRet = mkSimpleILReturn ilRetTy
     ilParams,iLRet
 
 and GenNameOfOverridingMethod cenv (useMethodImpl,(TSlotSig(nameOfOverridenMethod,enclTypOfOverridenMethod,_,_,_,_))) =
@@ -3655,28 +3656,28 @@ and GenSequenceExpr cenv (cgbuf:CodeGenBuffer) eenvouter (nextEnumeratorValRef:V
                                                 CG.EmitInstr cgbuf (pop ilCloFreeVars.Length) (Push [ilCloRetTyInner]) (I_newobj (formalClospec.Constructor,None))
                                                 GenSequel cenv eenv.cloc cgbuf Return),
                                             m)
-        mkILNonGenericVirtualMethod("GetFreshEnumerator",ILMemberAccess.Public, [], mkILReturn ilCloEnumeratorTy, MethodBody.IL mbody)
+        mkILNonGenericVirtualMethod("GetFreshEnumerator",ILMemberAccess.Public, [], mkSimpleILReturn ilCloEnumeratorTy, MethodBody.IL mbody)
         |> AddNonUserCompilerGeneratedAttribs cenv.g
 
     let closeMethod = 
         // Note: We suppress the first sequence point in the body of this method since it is the initial state machine jump
         let spReq = SPSuppress
-        mkILNonGenericVirtualMethod("Close",ILMemberAccess.Public, [], mkILReturn ILType.Void, MethodBody.IL (CodeGenMethodForExpr cenv cgbuf.mgbuf (spReq,[],"Close",eenvinner,1,0,closeExpr,discardAndReturnVoid)))
+        mkILNonGenericVirtualMethod("Close",ILMemberAccess.Public, [], mkSimpleILReturn ILType.Void, MethodBody.IL (CodeGenMethodForExpr cenv cgbuf.mgbuf (spReq,[],"Close",eenvinner,1,0,closeExpr,discardAndReturnVoid)))
 
     let checkCloseMethod = 
         // Note: We suppress the first sequence point in the body of this method since it is the initial state machine jump
         let spReq = SPSuppress
-        mkILNonGenericVirtualMethod("get_CheckClose",ILMemberAccess.Public, [], mkILReturn cenv.g.ilg.typ_Bool, MethodBody.IL (CodeGenMethodForExpr cenv cgbuf.mgbuf (spReq,[],"get_CheckClose",eenvinner,1,0,checkCloseExpr,Return)))
+        mkILNonGenericVirtualMethod("get_CheckClose",ILMemberAccess.Public, [], mkSimpleILReturn cenv.g.ilg.typ_Bool, MethodBody.IL (CodeGenMethodForExpr cenv cgbuf.mgbuf (spReq,[],"get_CheckClose",eenvinner,1,0,checkCloseExpr,Return)))
 
     let generateNextMethod = 
         // Note: We suppress the first sequence point in the body of this method since it is the initial state machine jump
         let spReq = SPSuppress
         // the 'next enumerator' byref arg is at arg position 1 
         let eenvinner = eenvinner |> AddStorageForLocalVals cenv.g [ (nextEnumeratorValRef.Deref, Arg 1) ]
-        mkILNonGenericVirtualMethod("GenerateNext",ILMemberAccess.Public, [mkILParamNamed("next",ILType.Byref ilCloEnumerableTy)], mkILReturn cenv.g.ilg.typ_Int32, MethodBody.IL (CodeGenMethodForExpr cenv cgbuf.mgbuf (spReq,[],"GenerateNext",eenvinner,2,0,generateNextExpr,Return)))
+        mkILNonGenericVirtualMethod("GenerateNext",ILMemberAccess.Public, [mkILParamNamed("next",ILType.Byref ilCloEnumerableTy)], mkSimpleILReturn cenv.g.ilg.typ_Int32, MethodBody.IL (CodeGenMethodForExpr cenv cgbuf.mgbuf (spReq,[],"GenerateNext",eenvinner,2,0,generateNextExpr,Return)))
 
     let lastGeneratedMethod = 
-        mkILNonGenericVirtualMethod("get_LastGenerated",ILMemberAccess.Public, [], mkILReturn ilCloSeqElemTy, MethodBody.IL (CodeGenMethodForExpr cenv cgbuf.mgbuf (SPSuppress,[],"get_LastGenerated",eenvinner,1,0,exprForValRef m currvref,Return)))
+        mkILNonGenericVirtualMethod("get_LastGenerated",ILMemberAccess.Public, [], mkSimpleILReturn ilCloSeqElemTy, MethodBody.IL (CodeGenMethodForExpr cenv cgbuf.mgbuf (SPSuppress,[],"get_LastGenerated",eenvinner,1,0,exprForValRef m currvref,Return)))
         |> AddNonUserCompilerGeneratedAttribs cenv.g
 
     let ilCtorBody = 
@@ -3709,21 +3710,25 @@ and GenClosureTypeDefs cenv (tref:ILTypeRef, ilGenParams, attrs, ilCloFreeVars, 
         cloCode=notlazy ilCtorBody }
 
   let tdef =
+      let name = tref.Name
+      let layout = ILTypeDefLayout.Auto
+      let attributes = enum 0
+      let genericParams = ilGenParams
+      let customAttrs = mkILCustomAttrs(attrs @ [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Closure) ])
+      let fields = emptyILFields
+      let events= emptyILEvents
+      let properties = emptyILProperties
+      let methods = mkILMethods mdefs
+      let methodImpls = mkILMethodImpls mimpls
+      let nestedTypes = emptyILTypeDefs
+      let implements = ilIntfTys
+      let extends = Some ext
+      let securityDecls = storeILSecurityDecls emptyILSecurityDecls
+  
       let tdef =
-          ILTypeDef(name = tref.Name,
-              layout = ILTypeDefLayout.Auto,
-              attributes = enum 0,
-              genericParams = ilGenParams,
-              customAttrs = mkILCustomAttrs(attrs @ [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Closure) ]),
-              fields = emptyILFields,
-              events= emptyILEvents,
-              properties = emptyILProperties,
-              methods = mkILMethods mdefs,
-              methodImpls = mkILMethodImpls mimpls,
-              nestedTypes = emptyILTypeDefs,
-              implements = ilIntfTys,
-              extends = Some ext,
-              securityDecls = emptyILSecurityDecls) :> ITypeDef
+          mkILTypeDef
+              (name, attributes, layout,  implements, genericParams, extends, methods, nestedTypes, fields, methodImpls,
+               events, properties, securityDecls, storeILCustomAttrs customAttrs, NoMetadataIdx)
       tdef
         .WithSealed(true)
         .WithSerializable(true)
@@ -3762,27 +3767,41 @@ and GenLambdaClosure cenv (cgbuf:CodeGenBuffer) eenv isLocalTypeFunc selfv expr 
                 let ilContractTy = mkILFormalBoxedTy ilContractTypeRef ilContractGenericParams
                 let ilContractCtor =  mkILNonGenericEmptyCtor None cenv.g.ilg.typ_Object
 
-                let ilContractMeths = [ilContractCtor; mkILGenericVirtualMethod("DirectInvoke",ILMemberAccess.Assembly,ilContractMethTyargs,[],mkILReturn ilContractFormalRetTy, MethodBody.Abstract) ]
-                let ilContractTypeDef = 
-                    ILTypeDef(name = ilContractTypeRef.Name,
-                              layout = ILTypeDefLayout.Auto,
-                              attributes = enum 0,
-                              genericParams = ilContractGenericParams,
-                              customAttrs = mkILCustomAttrs [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Closure) ],
-                              fields = emptyILFields,
-                              events= emptyILEvents,
-                              properties = emptyILProperties,
-                              methods= mkILMethods ilContractMeths,
-                              methodImpls= emptyILMethodImpls,
-                              nestedTypes=emptyILTypeDefs,
-                              implements = [],
-                              extends= Some cenv.g.ilg.typ_Object,
-                              securityDecls= emptyILSecurityDecls) :> ITypeDef
-                let ilContractTypeDef = ilContractTypeDef.WithAbstract(true).WithAccess(ComputeTypeAccess ilContractTypeRef true).WithSerializable(true).WithSpecialName(true).WithLayout(ILTypeDefLayout.Auto).WithInitSemantics(ILTypeInit.BeforeField).WithEncoding(ILDefaultPInvokeEncoding.Auto) // the contract type is an abstract type and not sealed
+                let ilContractMeths = [ilContractCtor; mkILGenericVirtualMethod("DirectInvoke",ILMemberAccess.Assembly,ilContractMethTyargs,[],mkSimpleILReturn ilContractFormalRetTy, MethodBody.Abstract) ]
+                let ilContractTypeDef =
+                    let name = ilContractTypeRef.Name
+                    let layout = ILTypeDefLayout.Auto
+                    let attributes = enum 0
+                    let genericParams = ilContractGenericParams
+                    let customAttrs = mkILCustomAttrs [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Closure) ]
+                    let fields = emptyILFields
+                    let events = emptyILEvents
+                    let properties = emptyILProperties
+                    let methods= mkILMethods ilContractMeths
+                    let methodImpls = emptyILMethodImpls
+                    let nestedTypes = emptyILTypeDefs
+                    let implements = []
+                    let extends = Some cenv.g.ilg.typ_Object
+                    let securityDecls = storeILSecurityDecls emptyILSecurityDecls
+
+                    mkILTypeDef
+                        (name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields,
+                         methodImpls, events, properties, securityDecls, storeILCustomAttrs customAttrs, NoMetadataIdx)
+
+                let ilContractTypeDef =
+                    ilContractTypeDef
+                        .WithAbstract(true)
+                        .WithAccess(ComputeTypeAccess ilContractTypeRef true)
+                        .WithSerializable(true)
+                        .WithSpecialName(true)
+                        .WithLayout(ILTypeDefLayout.Auto)
+                        .WithInitSemantics(ILTypeInit.BeforeField)
+                        .WithEncoding(ILDefaultPInvokeEncoding.Auto) // the contract type is an abstract type and not sealed
+
                 cgbuf.mgbuf.AddTypeDef(ilContractTypeRef, ilContractTypeDef, false, false, None)
                 
                 let ilCtorBody =  mkILMethodBody (true,[],8,nonBranchingInstrsToCode (mkCallBaseConstructor(ilContractTy,[])), None )
-                let cloMethods = [ mkILGenericVirtualMethod("DirectInvoke",ILMemberAccess.Assembly,cloinfo.localTypeFuncDirectILGenericParams,[],mkILReturn (cloinfo.cloILFormalRetTy), MethodBody.IL ilCloBody) ]
+                let cloMethods = [ mkILGenericVirtualMethod("DirectInvoke",ILMemberAccess.Assembly,cloinfo.localTypeFuncDirectILGenericParams,[],mkSimpleILReturn (cloinfo.cloILFormalRetTy), MethodBody.IL ilCloBody) ]
                 let cloTypeDefs = GenClosureTypeDefs cenv (ilCloTypeRef,cloinfo.cloILGenericParams,[],cloinfo.cloILFreeVars,cloinfo.ilCloLambdas,ilCtorBody,cloMethods,[],ilContractTy,[])
                 cloTypeDefs
                 
@@ -4702,21 +4721,25 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) sta
 
         let ilAttribs = GenAttrs cenv eenv vspec.Attribs
         let ilTy = ilGetterMethSpec.FormalReturnType
+        let name = PrettyNaming.ChopPropertyName ilGetterMethSpec.Name
+        let attributes = PropertyAttributes.None
+        let setMethod = None
+        let getMethod = Some ilGetterMethSpec.MethodRef
+        let callingConv = ILThisConvention.Static
+        let propertyType = ilTy
+        let init = None
+        let args = []
+        let customAttrs = storeILCustomAttrs (mkILCustomAttrs ilAttribs)
         let ilPropDef = 
-            ILPropertyDef(name = PrettyNaming.ChopPropertyName ilGetterMethSpec.Name,
-                          attributes = PropertyAttributes.None,
-                          setMethod = None,
-                          getMethod = Some ilGetterMethSpec.MethodRef,
-                          callingConv = ILThisConvention.Static,
-                          propertyType = ilTy,
-                          init = None,
-                          args = [],
-                          customAttrs = mkILCustomAttrs ilAttribs) :> IPropertyDef
+            mkILProperty
+                (name, attributes, setMethod, getMethod, callingConv, propertyType, init, args, customAttrs,
+                 NoMetadataIdx)
+
         cgbuf.mgbuf.AddOrMergePropertyDef(ilGetterMethSpec.MethodRef.DeclaringTypeRef, ilPropDef,m)
 
         let ilMethodDef = 
             let ilMethodBody = MethodBody.IL(CodeGenMethodForExpr cenv cgbuf.mgbuf (SPSuppress, [], ilGetterMethSpec.Name, eenv, 0, 0, rhsExpr, Return))
-            (mkILStaticMethod ([], ilGetterMethSpec.Name, access, [], mkILReturn ilTy, ilMethodBody)).WithSpecialName
+            (mkILStaticMethod ([], ilGetterMethSpec.Name, access, [], mkSimpleILReturn ilTy, ilMethodBody)).WithSpecialName
             |> AddNonUserCompilerGeneratedAttribs cenv.g
 
         CountMethodDef()
@@ -4774,25 +4797,30 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) sta
                 vspec.Attribs 
                 |> List.filter (fun (Attrib(_,_,_,_,_,targets,_)) -> canTarget(targets, System.AttributeTargets.Property))
                 |> GenAttrs cenv eenv // property only gets attributes that target properties
+            let name = ilPropName
+            let attributes = PropertyAttributes.None
+            let setMethod = (if mut || cenv.opts.isInteractiveItExpr then Some ilSetterMethRef else None)
+            let getMethod = Some ilGetterMethRef
+            let callingConv = ILThisConvention.Static
+            let propertyType = fty
+            let init = None
+            let args = []
+            let customAttrs =
+                mkILCustomAttrs (ilAttribs @ [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Value)])
+                |> storeILCustomAttrs
+
             let ilPropDef = 
-                ILPropertyDef(name=ilPropName,
-                              attributes = PropertyAttributes.None,
-                              setMethod=(if mut || cenv.opts.isInteractiveItExpr then Some ilSetterMethRef else None),
-                              getMethod=Some ilGetterMethRef,
-                              callingConv=ILThisConvention.Static,
-                              propertyType=fty,
-                              init=None,
-                              args = [],
-                              customAttrs=mkILCustomAttrs (ilAttribs @ [mkCompilationMappingAttr cenv.g (int SourceConstructFlags.Value)])) :> IPropertyDef
+                mkILProperty
+                    (name, attributes, setMethod, getMethod, callingConv, propertyType, init, args, customAttrs, NoMetadataIdx)
             cgbuf.mgbuf.AddOrMergePropertyDef(ilTypeRefForProperty,ilPropDef,m)
 
             let getterMethod = 
-                mkILStaticMethod([],ilGetterMethRef.Name,access,[],mkILReturn fty,
+                mkILStaticMethod([],ilGetterMethRef.Name,access,[],mkSimpleILReturn fty,
                                mkMethodBody(true,[],2,nonBranchingInstrsToCode [ mkNormalLdsfld fspec ],None)).WithSpecialName
             cgbuf.mgbuf.AddMethodDef(ilTypeRefForProperty,getterMethod) 
             if mut || cenv.opts.isInteractiveItExpr then 
                 let setterMethod = 
-                    mkILStaticMethod([],ilSetterMethRef.Name,access,[mkILParamNamed("value",fty)],mkILReturn ILType.Void,
+                    mkILStaticMethod([],ilSetterMethRef.Name,access,[mkILParamNamed("value",fty)],mkSimpleILReturn ILType.Void,
                                    mkMethodBody(true,[],2,nonBranchingInstrsToCode [ mkLdarg0;mkNormalStsfld fspec],None)).WithSpecialName
                 cgbuf.mgbuf.AddMethodDef(ilTypeRefForProperty,setterMethod)
 
@@ -4992,31 +5020,33 @@ and GenParams cenv eenv (mspec:ILMethodSpec) (attribs:ArgReprInfo list) (implVal
                 Some nm, takenNames.Add(nm)
             | None -> 
                 None, takenNames
-            
-        let param : IParameter =
-            ILParameter
-              (nmOpt, ilArgTy, defaultParamValue, Marshal, inFlag, outFlag, optionalFlag,
-               storeILCustomAttrs (mkILCustomAttrs (GenAttrs cenv eenv attribs)), NoMetadataIdx) :> IParameter
+        let customAttrs = storeILCustomAttrs (mkILCustomAttrs (GenAttrs cenv eenv attribs))
+        let param =
+            mkILParam
+                (nmOpt, ilArgTy, defaultParamValue, Marshal, inFlag, outFlag, optionalFlag, customAttrs, NoMetadataIdx)
 
         param, takenNames)
     |> fst
     
 and GenReturnInfo cenv eenv ilRetTy (retInfo : ArgReprInfo) : IReturn =
-    let marshal,attrs = GenMarshal cenv retInfo.Attribs
-    ILReturn(ilRetTy, marshal, storeILCustomAttrs (mkILCustomAttrs (GenAttrs cenv eenv attrs)), NoMetadataIdx) :> IReturn
+    let marshal, attrs = GenMarshal cenv retInfo.Attribs
+    let customAttrs = storeILCustomAttrs (mkILCustomAttrs (GenAttrs cenv eenv attrs))
+    mkILReturn (ilRetTy, marshal, customAttrs, NoMetadataIdx)
 
 and GenPropertyForMethodDef compileAsInstance tref mdef (v:Val) (memberInfo:ValMemberInfo) ilArgTys ilPropTy ilAttrs compiledName =
     let name = match compiledName with | Some n -> n | _ -> v.PropertyName in  (* chop "get_" *)
+    let name = name
+    let attributes = PropertyAttributes.None
+    let setMethod = if memberInfo.MemberFlags.MemberKind= MemberKind.PropertySet then Some(mkRefToILMethod(tref,mdef)) else None
+    let getMethod = if memberInfo.MemberFlags.MemberKind= MemberKind.PropertyGet then Some(mkRefToILMethod(tref,mdef)) else None
+    let callingConv = if compileAsInstance then ILThisConvention.Instance else ILThisConvention.Static
+    let propertyType = ilPropTy
+    let init = None
+    let args = ilArgTys
+    let customAttrs = storeILCustomAttrs ilAttrs
     
-    ILPropertyDef(name = name,
-                  attributes = PropertyAttributes.None,
-                  setMethod = (if memberInfo.MemberFlags.MemberKind= MemberKind.PropertySet then Some(mkRefToILMethod(tref,mdef)) else None),
-                  getMethod = (if memberInfo.MemberFlags.MemberKind= MemberKind.PropertyGet then Some(mkRefToILMethod(tref,mdef)) else None),
-                  callingConv = (if compileAsInstance then ILThisConvention.Instance else ILThisConvention.Static),
-                  propertyType = ilPropTy,
-                  init = None,
-                  args = ilArgTys,
-                  customAttrs = ilAttrs) :> IPropertyDef
+    mkILProperty
+        (name, attributes, setMethod, getMethod, callingConv, propertyType, init, args, customAttrs, NoMetadataIdx)
 
 and GenEventForProperty cenv eenvForMeth (mspec:ILMethodSpec) (v:Val) ilAttrsThatGoOnPrimaryItem m returnTy =
     let evname = v.PropertyName
@@ -5025,14 +5055,17 @@ and GenEventForProperty cenv eenvForMeth (mspec:ILMethodSpec) (v:Val) ilAttrsTha
     let ilThisTy = mspec.DeclaringType
     let addMethRef    = mkILMethRef (ilThisTy.TypeRef,mspec.CallingConv,"add_"    + evname,0,[ilDelegateTy],ILType.Void)
     let removeMethRef = mkILMethRef (ilThisTy.TypeRef,mspec.CallingConv,"remove_" + evname,0,[ilDelegateTy],ILType.Void)
-    ILEventDef(eventType = Some ilDelegateTy,
-               name= evname,
-               attributes = EventAttributes.None,
-               addMethod = addMethRef,
-               removeMethod = removeMethRef,
-               fireMethod= None,
-               otherMethods= [],
-               customAttrs = mkILCustomAttrs ilAttrsThatGoOnPrimaryItem) :> IEventDef
+    let eventType = Some ilDelegateTy
+    let name = evname
+    let attributes = EventAttributes.None
+    let addMethod = addMethRef
+    let removeMethod = removeMethRef
+    let fireMethod = None
+    let otherMethods = []
+    let customAttrs = storeILCustomAttrs (mkILCustomAttrs ilAttrsThatGoOnPrimaryItem)
+
+    mkILEvent
+        (eventType, name, attributes, addMethod, removeMethod, fireMethod, otherMethods, customAttrs, NoMetadataIdx)
 
 
 and ComputeFlagFixupsForMemberBinding cenv (v:Val,memberInfo:ValMemberInfo) =
@@ -5948,7 +5981,7 @@ and GenTopImpl cenv mgbuf mainInfoOpt eenv (TImplFile(qname, _, mexpr, hasExplic
 
                 // generate main@ 
                 let ilMainMethodDef = 
-                    let mdef = mkILNonGenericStaticMethod(mainMethName,ILMemberAccess.Public,[],mkILReturn ILType.Void, MethodBody.IL topCode) 
+                    let mdef = mkILNonGenericStaticMethod(mainMethName,ILMemberAccess.Public,[],mkSimpleILReturn ILType.Void, MethodBody.IL topCode) 
                     mdef.With(isEntryPoint= true, customAttrs = ilAttrs)
 
                 mgbuf.AddMethodDef(initClassTy.TypeRef,ilMainMethodDef)
@@ -6009,7 +6042,7 @@ and GenEqualsOverrideCallingIComparable cenv (tcref:TyconRef, ilThisTy, _ilThatT
     mkILNonGenericVirtualMethod
         ("Equals",ILMemberAccess.Public,
          [mkILParamNamed ("obj",cenv.g.ilg.typ_Object)], 
-         mkILReturn cenv.g.ilg.typ_Bool,
+         mkSimpleILReturn cenv.g.ilg.typ_Bool,
          mkMethodBody(true,[],2,
                          nonBranchingInstrsToCode
                             [ yield mkLdarg0
@@ -6103,7 +6136,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                let callInstrs = EraseClosures.mkCallFunc cenv.g.ilxPubCloEnv (fun _ -> 0us) eenv.tyenv.Count Normalcall (Apps_app(ilThisTy, Apps_done cenv.g.ilg.typ_String))
                let mdef = 
                    mkILNonGenericVirtualMethod ("ToString",ILMemberAccess.Public,[],
-                        mkILReturn cenv.g.ilg.typ_String,
+                        mkSimpleILReturn cenv.g.ilg.typ_String,
                         mkMethodBody (true,[],2,nonBranchingInstrsToCode 
                                 ([ // load the hardwired format string
                                     yield I_ldstr "%+A"  
@@ -6340,15 +6373,17 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                   let literalValue = Option.map (GenFieldInit m) fspec.LiteralValue
                   
                   let fdef =
+                      let name          = ilFieldName
+                      let fieldType     = ilPropType
+                      let attributes    = enum 0
+                      let data          = None
+                      let offset        = ilFieldOffset
+                      let marshal       = None
+                      let attrs = GenAttrs cenv eenv fattribs @ extraAttribs
+                      let customAttrs   = storeILCustomAttrs (mkILCustomAttrs attrs)
                       let fdef =
-                          ILFieldDef(name          = ilFieldName,
-                                     fieldType          = ilPropType,
-                                     attributes    = enum 0,
-                                     data          = None,
-                                     literalValue  = None,
-                                     offset        = ilFieldOffset,
-                                     marshal       = None,
-                                     customAttrs   = mkILCustomAttrs (GenAttrs cenv eenv fattribs @ extraAttribs)) :> IFieldDef
+                          mkILField
+                              (name, fieldType, attributes, data, None, offset, marshal, customAttrs, NoMetadataIdx)
                       fdef
                         .WithAccess(access)
                         .WithStatic(isStatic)
@@ -6369,17 +6404,20 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                      let ilPropName = fspec.Name
                      let ilHasSetter = isCLIMutable || isFSharpMutable
                      let ilFieldAttrs = GenAttrs cenv eenv propAttribs @ [mkCompilationMappingAttrWithSeqNum cenv.g (int SourceConstructFlags.Field) i]
+                     let name = ilPropName
+                     let attributes = PropertyAttributes.None
+                     let setMethod = if ilHasSetter then Some(mkILMethRef(tref,ilCallingConv,"set_" + ilPropName,0,[ilPropType],ILType.Void)) else None
+                     let getMethod = Some(mkILMethRef(tref,ilCallingConv,"get_" + ilPropName,0,[],ilPropType))
+                     let callingConv = ilCallingConv.ThisConv
+                     let propertyType = ilPropType
+                     let init = None
+                     let args = []
+                     let customAttrs = storeILCustomAttrs (mkILCustomAttrs ilFieldAttrs) 
                      yield
-                       ILPropertyDef(name= ilPropName,
-                                     attributes= PropertyAttributes.None,
-                                     setMethod= (if ilHasSetter then Some(mkILMethRef(tref,ilCallingConv,"set_" + ilPropName,0,[ilPropType],ILType.Void)) else None),
-                                     getMethod= Some(mkILMethRef(tref,ilCallingConv,"get_" + ilPropName,0,[],ilPropType)),
-                                     callingConv= ilCallingConv.ThisConv,
-                                     propertyType= ilPropType,
-                                     init= None,
-                                     args= [],
-                                     customAttrs     = mkILCustomAttrs ilFieldAttrs) :> IPropertyDef ] 
-         
+                         mkILProperty
+                             (name, attributes, setMethod, getMethod, callingConv, propertyType, init, args,
+                              customAttrs, NoMetadataIdx) ]
+
         let methodDefs = 
             [ // Generate property getter methods for those fields that have properties 
               for (useGenuineField,ilFieldName,_,isStatic,_,ilPropType,isPropHidden,fspec) in fieldSummaries do
@@ -6397,7 +6435,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                     let ilFieldSpec = mkILFieldSpecInTy(ilThisTy,ilFieldName,ilPropType)
                     let ilMethName = "set_" + ilPropName
                     let ilParams = [mkILParamNamed("value",ilPropType)]
-                    let ilReturn = mkILReturn ILType.Void
+                    let ilReturn = mkSimpleILReturn ILType.Void
                     let iLAccess = ComputeMemberAccess isPropHidden
                     let ilMethodDef = 
                          if isStatic then 
@@ -6431,7 +6469,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                       // Here's the body of the method. Call printf, then invoke the function it returns
                       let callInstrs = EraseClosures.mkCallFunc cenv.g.ilxPubCloEnv (fun _ -> 0us) eenv.tyenv.Count Normalcall (Apps_app(ilThisTy, Apps_done cenv.g.ilg.typ_String))
                       let ilMethodDef = mkILNonGenericInstanceMethod (debugDisplayMethodName,ILMemberAccess.Assembly,[],
-                                                   mkILReturn cenv.g.ilg.typ_Object,
+                                                   mkSimpleILReturn cenv.g.ilg.typ_Object,
                                                    mkMethodBody 
                                                          (true,[],2,
                                                           nonBranchingInstrsToCode 
@@ -6660,22 +6698,26 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                                         (int (if hiddenRepr
                                               then SourceConstructFlags.SumType ||| SourceConstructFlags.NonPublicRepresentation 
                                               else SourceConstructFlags.SumType)) ])
+                                              
                let tdef =
+                   let name = ilTypeName
+                   let layout =  layout
+                   let attributes = enum 0
+                   let genericParams = ilGenParams
+                   let customAttrs = storeILCustomAttrs cattrs
+                   let fields = ilFields
+                   let events = ilEvents
+                   let properties = ilProperties
+                   let methods = mkILMethods ilMethods
+                   let methodImpls = mkILMethodImpls methodImpls
+                   let nestedTypes = emptyILTypeDefs
+                   let implements = ilIntfTys
+                   let extends = Some (if tycon.IsStructOrEnumTycon then cenv.g.iltyp_ValueType else cenv.g.ilg.typ_Object)
+                   let securityDecls = storeILSecurityDecls emptyILSecurityDecls
                    let tdef =
-                       ILTypeDef(name = ilTypeName,
-                             layout =  layout,
-                             attributes = enum 0,
-                             genericParams = ilGenParams,
-                             customAttrs = cattrs,
-                             fields = ilFields,
-                             events= ilEvents,
-                             properties = ilProperties,
-                             methods= mkILMethods ilMethods,
-                             methodImpls= mkILMethodImpls methodImpls,
-                             nestedTypes=emptyILTypeDefs,
-                             implements = ilIntfTys,
-                             extends= Some (if tycon.IsStructOrEnumTycon then cenv.g.iltyp_ValueType else cenv.g.ilg.typ_Object),
-                             securityDecls= emptyILSecurityDecls) :> ITypeDef
+                       mkILTypeDef
+                           (name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields,
+                            methodImpls, events, properties, securityDecls, customAttrs, NoMetadataIdx)
                    tdef
                      .WithLayout(layout)
                      .WithSerializable(isSerializable)
@@ -6740,16 +6782,15 @@ and GenExnDef cenv mgbuf eenv m (exnc:Tycon) =
                let ilFieldName = ComputeFieldName exnc fld 
                let ilMethodDef = mkLdfldMethodDef (ilMethName,reprAccess,false,ilThisTy,ilFieldName,ilPropType)
                let ilFieldDef = IL.mkILInstanceField(ilFieldName,ilPropType, None, ILMemberAccess.Assembly)
+               let getMethod = Some (mkILMethRef(tref,ILCallingConv.Instance,ilMethName,0,[],ilPropType))
+               let init = None
+               let args = []
+               let customAttrs = mkILCustomAttrs (GenAttrs cenv eenv fld.PropertyAttribs @ [mkCompilationMappingAttrWithSeqNum cenv.g (int SourceConstructFlags.Field) i])
+               
                let ilPropDef = 
-                   ILPropertyDef(name = ilPropName,
-                                 attributes = PropertyAttributes.None,
-                                 setMethod = None,
-                                 getMethod = Some(mkILMethRef(tref,ILCallingConv.Instance,ilMethName,0,[],ilPropType)),
-                                 callingConv = ILThisConvention.Instance,
-                                 propertyType = ilPropType,
-                                 init = None,
-                                 args = [],
-                                 customAttrs=mkILCustomAttrs (GenAttrs cenv eenv fld.PropertyAttribs @ [mkCompilationMappingAttrWithSeqNum cenv.g (int SourceConstructFlags.Field) i])) :> IPropertyDef
+                   mkILProperty
+                       (ilPropName, PropertyAttributes.None, None, getMethod, ILThisConvention.Instance, ilPropType,
+                        init, args, storeILCustomAttrs customAttrs, NoMetadataIdx)
                yield (ilMethodDef,ilFieldDef,ilPropDef,(ilPropName,ilFieldName,ilPropType)) ] 
              |> List.unzip4
 
@@ -6790,7 +6831,7 @@ and GenExnDef cenv mgbuf eenv m (exnc:Tycon) =
                     mkILNonGenericVirtualMethod
                         ("GetObjectData",ILMemberAccess.Public,
                          [mkILParamNamed ("info", serializationInfoType);mkILParamNamed("context",cenv.g.iltyp_StreamingContext)], 
-                         mkILReturn ILType.Void,
+                         mkSimpleILReturn ILType.Void,
                          (let code = 
                             nonBranchingInstrsToCode
                               [ mkLdarg0 

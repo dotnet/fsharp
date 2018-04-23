@@ -613,16 +613,20 @@ let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec, cases) =
 let mkMethodsAndPropertiesForFields (addMethodGeneratedAttrs, addPropertyGeneratedAttrs) access attr hasHelpers (typ: ILType) (fields: IlxUnionField[]) = 
     let basicProps = 
         fields 
-        |> Array.map (fun field -> 
-            ILPropertyDef(name = adjustFieldName hasHelpers field.Name,
-                          attributes = PropertyAttributes.None,
-                          setMethod = None,
-                          getMethod = Some (mkILMethRef (typ.TypeRef, ILCallingConv.Instance, "get_" + adjustFieldName hasHelpers field.Name, 0, [], field.Type)),
-                          callingConv = ILThisConvention.Instance,
-                          propertyType = field.Type,
-                          init = None,
-                          args = [],
-                          customAttrs = field.ILField.CustomAttrs) :> IPropertyDef
+        |> Array.map (fun field ->
+            let name = adjustFieldName hasHelpers field.Name
+            let attributes = PropertyAttributes.None
+            let setMethod = None
+            let getMethod = Some (mkILMethRef (typ.TypeRef, ILCallingConv.Instance, "get_" + adjustFieldName hasHelpers field.Name, 0, [], field.Type))
+            let callingConv = ILThisConvention.Instance
+            let propertyType = field.Type
+            let init = None
+            let args = []
+            let customAttrs = field.ILField.CustomAttrs
+
+            mkILProperty
+                (name, attributes, setMethod, getMethod, callingConv, propertyType, init, args,
+                 storeILCustomAttrs customAttrs, NoMetadataIdx)
             |> addPropertyGeneratedAttrs 
         )
         |> Array.toList
@@ -633,7 +637,7 @@ let mkMethodsAndPropertiesForFields (addMethodGeneratedAttrs, addPropertyGenerat
               yield 
                   mkILNonGenericInstanceMethod
                      ("get_" + adjustFieldName hasHelpers field.Name,
-                      access, [], mkILReturn field.Type,
+                      access, [], mkSimpleILReturn field.Type,
                       mkMethodBody(true,[],2,nonBranchingInstrsToCode [ mkLdarg 0us; mkNormalLdfld fspec ], attr))
                   |> addMethodGeneratedAttrs ]
     
@@ -670,7 +674,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                  let meth =
                      mkILNonGenericStaticMethod
                            (methName,
-                            cud.cudReprAccess,[],mkILReturn(baseTy),
+                            cud.cudReprAccess,[],mkSimpleILReturn(baseTy),
                             mkMethodBody(true,[],fields.Length,
                                     nonBranchingInstrsToCode 
                                       [ I_ldsfld (Nonvolatile,mkConstFieldSpec altName baseTy) ], attr))
@@ -694,19 +698,14 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                     [ mkILNonGenericInstanceMethod
                          ("get_" + mkTesterName altName,
                           cud.cudHelpersAccess,[],
-                          mkILReturn ilg.typ_Bool,
+                          mkSimpleILReturn ilg.typ_Bool,
                           mkMethodBody(true,[],2,nonBranchingInstrsToCode 
                                     ([ mkLdarg0 ] @ mkIsData ilg (true, cuspec, num)), attr))
                       |> addMethodGeneratedAttrs ],
-                    [ ILPropertyDef(name = mkTesterName altName,
-                                    attributes = PropertyAttributes.None,
-                                    setMethod = None,
-                                    getMethod = Some (mkILMethRef (baseTy.TypeRef, ILCallingConv.Instance, "get_" + mkTesterName altName, 0, [], ilg.typ_Bool)),
-                                    callingConv = ILThisConvention.Instance,
-                                    propertyType = ilg.typ_Bool,
-                                    init = None,
-                                    args = [],
-                                    customAttrs = emptyILCustomAttrs) :> IPropertyDef
+                    [ mkILProperty
+                        (mkTesterName altName, PropertyAttributes.None, None,
+                         Some (mkILMethRef (baseTy.TypeRef, ILCallingConv.Instance, "get_" + mkTesterName altName, 0, [], ilg.typ_Bool)),
+                         ILThisConvention.Instance, ilg.typ_Bool, None, [], storeILCustomAttrs emptyILCustomAttrs, NoMetadataIdx)
                       |> addPropertyGeneratedAttrs
                       |> addPropertyNeverAttrs ]
 
@@ -719,22 +718,16 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                     let nullaryMeth = 
                         mkILNonGenericStaticMethod
                           ("get_" + altName,
-                           cud.cudHelpersAccess, [], mkILReturn baseTy,
+                           cud.cudHelpersAccess, [], mkSimpleILReturn baseTy,
                            mkMethodBody(true,[],fields.Length, nonBranchingInstrsToCode (convNewDataInstrInternal ilg cuspec num), attr))
                         |> addMethodGeneratedAttrs 
                         |> addAltAttribs
 
                     let nullaryProp = 
-                         
-                        ILPropertyDef(name = altName,
-                                      attributes = PropertyAttributes.None,
-                                      setMethod = None,
-                                      getMethod = Some (mkILMethRef (baseTy.TypeRef, ILCallingConv.Static, "get_" + altName, 0, [], baseTy)),
-                                      callingConv = ILThisConvention.Static,
-                                      propertyType = baseTy,
-                                      init = None,
-                                      args = [],
-                                      customAttrs = emptyILCustomAttrs) :> IPropertyDef
+                        let getMethod = Some (mkILMethRef (baseTy.TypeRef, ILCallingConv.Static, "get_" + altName, 0, [], baseTy))
+                        mkILProperty
+                            (altName, PropertyAttributes.None, None, getMethod, ILThisConvention.Static, baseTy, None,
+                             [], storeILCustomAttrs emptyILCustomAttrs, NoMetadataIdx)
                         |> addPropertyGeneratedAttrs 
                         |> addPropertyNeverAttrs
 
@@ -746,7 +739,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                            (mkMakerName cuspec altName,
                             cud.cudHelpersAccess,
                             fields |> Array.map (fun fd -> mkILParamNamed (fd.LowerName, fd.Type)) |> Array.toList,
-                            mkILReturn baseTy,
+                            mkSimpleILReturn baseTy,
                             mkMethodBody(true,[],fields.Length,
                                     nonBranchingInstrsToCode 
                                       (Array.toList (Array.mapi (fun i _ -> mkLdarg (uint16 i)) fields) @
@@ -814,7 +807,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
                             mkILNonGenericInstanceMethod
                                ("get_" + field.Name,
                                 ILMemberAccess.Public,[],
-                                mkILReturn field.Type,
+                                mkSimpleILReturn field.Type,
                                 mkMethodBody(true,[],2,
                                         nonBranchingInstrsToCode 
                                           [ mkLdarg0
@@ -826,16 +819,18 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
 
                     let debugProxyGetterProps =
                         fields 
-                        |> Array.map (fun fdef -> 
-                            ILPropertyDef(name = fdef.Name,
-                                          attributes = PropertyAttributes.None,
-                                          setMethod = None,
-                                          getMethod = Some(mkILMethRef(debugProxyTy.TypeRef,ILCallingConv.Instance,"get_" + fdef.Name,0,[],fdef.Type)),
-                                          callingConv = ILThisConvention.Instance,
-                                          propertyType = fdef.Type,
-                                          init = None,
-                                          args = [],
-                                          customAttrs = fdef.ILField.CustomAttrs) :> IPropertyDef
+                        |> Array.map (fun fdef ->
+                            let setMethod = None
+                            let getMethod = Some (mkILMethRef(debugProxyTy.TypeRef,ILCallingConv.Instance,"get_" + fdef.Name,0,[],fdef.Type))
+                            let callingConv = ILThisConvention.Instance
+                            let propertyType = fdef.Type
+                            let init = None
+                            let args = []
+                            let customAttrs = fdef.ILField.CustomAttrs
+
+                            mkILProperty
+                                (fdef.Name, PropertyAttributes.None, setMethod, getMethod, callingConv, propertyType,
+                                 init, args, storeILCustomAttrs customAttrs, NoMetadataIdx)
                             |> addPropertyGeneratedAttrs)
                         |> Array.toList
 
@@ -1031,23 +1026,18 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
           // // If we are using NULL as a representation for an element of this type then we cannot 
           // // use an instance method 
           if (repr.RepresentOneAlternativeAsNull info) then
-              [ mkILNonGenericStaticMethod("Get" + tagPropertyName,cud.cudHelpersAccess,[mkILParamAnon baseTy],mkILReturn tagFieldType,body)
+              [ mkILNonGenericStaticMethod("Get" + tagPropertyName,cud.cudHelpersAccess,[mkILParamAnon baseTy],mkSimpleILReturn tagFieldType,body)
                 |> addMethodGeneratedAttrs ], 
               [] 
 
           else
-              [ mkILNonGenericInstanceMethod("get_" + tagPropertyName,cud.cudHelpersAccess,[],mkILReturn tagFieldType,body) 
+              [ mkILNonGenericInstanceMethod("get_" + tagPropertyName,cud.cudHelpersAccess,[],mkSimpleILReturn tagFieldType,body) 
                 |> addMethodGeneratedAttrs ], 
           
-              [ ILPropertyDef(name = tagPropertyName,
-                              attributes = PropertyAttributes.None,
-                              setMethod = None,
-                              getMethod = Some(mkILMethRef(baseTy.TypeRef,ILCallingConv.Instance,"get_" + tagPropertyName,0,[], tagFieldType)),
-                              callingConv = ILThisConvention.Instance,
-                              propertyType = tagFieldType,
-                              init = None,
-                              args = [],
-                              customAttrs = emptyILCustomAttrs) :> IPropertyDef
+              [ mkILProperty
+                  (tagPropertyName, PropertyAttributes.None, None,
+                   Some(mkILMethRef(baseTy.TypeRef,ILCallingConv.Instance,"get_" + tagPropertyName,0,[], tagFieldType)),
+                   ILThisConvention.Instance, tagFieldType, None, [], storeILCustomAttrs emptyILCustomAttrs, NoMetadataIdx)
                 |> addPropertyGeneratedAttrs 
                 |> addPropertyNeverAttrs  ]
 
@@ -1067,20 +1057,10 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
         else
             let tdef =
                 let tdef =
-                    ILTypeDef(name = "Tags",
-                          nestedTypes = emptyILTypeDefs,
-                          genericParams= td.GenericParams,
-                          attributes = enum 0,
-                          layout=ILTypeDefLayout.Auto,
-                          implements = [],
-                          extends= Some ilg.typ_Object,
-                          methods= emptyILMethods,
-                          securityDecls=emptyILSecurityDecls,
-                          fields=mkILFields tagEnumFields,
-                          methodImpls=emptyILMethodImpls,
-                          events=emptyILEvents,
-                          properties=emptyILProperties,
-                          customAttrs= emptyILCustomAttrs) :> ITypeDef
+                    mkILTypeDef
+                        ("Tags", enum 0, ILTypeDefLayout.Auto, [], td.GenericParams, Some ilg.typ_Object, emptyILMethods,
+                         emptyILTypeDefs, mkILFields tagEnumFields, emptyILMethodImpls, emptyILEvents, emptyILProperties,
+                         storeILSecurityDecls emptyILSecurityDecls, storeILCustomAttrs emptyILCustomAttrs, NoMetadataIdx)
                 tdef
                   .WithNestedAccess(cud.cudReprAccess)
                   .WithAbstract(true)

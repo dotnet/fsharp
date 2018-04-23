@@ -2232,11 +2232,14 @@ and IPreTypeDef =
 
 [<NoComparison; NoEquality>]
 type ILTypeDef
+
+        /// Functional creation of a value, using delayed reading via a metadata index, for ilread.fs
         (name: string, attributes: TypeAttributes, layout: ILTypeDefLayout, implements: ILTypes,
          genericParams: ILGenericParameterDefs, extends: ILType option, methods: IMethodDefs, nestedTypes: ITypeDefs,
          fields: IFieldDefs, methodImpls: ILMethodImplDefs, events: IEventDefs, properties: IPropertyDefs,
          securityDeclsStored: ILSecurityDeclsStored, customAttrsStored: ILAttributesStored, metadataIndex: int32) =  
 
+    /// Functional creation of a value, immediate
     new (name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields, methodImpls,
          events, properties, securityDecls, customAttrs) =  
        ILTypeDef(name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields, methodImpls,
@@ -2481,9 +2484,9 @@ type IAssemblyManifest =
 
 [<Sealed>]
 type ILAssemblyManifest
-        (name, auxModuleHashAlgorithm, securityDeclsStored: ILSecurityDeclsStored, publicKey, version, locale,
-         customAttrsStored: ILAttributesStored, assemblyLongevity, disableJitOptimizations, jitTracking,
-         ignoreSymbolStoreSequencePoints, retargetable, exportedTypes, entrypointElsewhere, metadataIndex) = 
+        (name, auxModuleHashAlgorithm, publicKey, version, locale, assemblyLongevity, disableJitOptimizations,
+         jitTracking, ignoreSymbolStoreSequencePoints, retargetable, exportedTypes, entrypointElsewhere,
+         securityDeclsStored: ILSecurityDeclsStored, customAttrsStored: ILAttributesStored, metadataIndex) = 
 
     interface IAssemblyManifest with
         member x.Name = name
@@ -2566,7 +2569,6 @@ type IModuleDef =
 
 [<Sealed>]
 type ILModuleDef
-    internal
         (name: string, manifest: IAssemblyManifest option, typeDefs: ITypeDefs, subsystemVersion: (int * int),
          useHighEntropyVA: bool, subSystemFlags: int32, isDLL: bool, isILOnly: bool, platform: ILPlatform option,
          stackReserveSize: int32 option, is32Bit: bool, is32BitPreferred: bool, is64Bit: bool, virtualAlignment: int32,
@@ -2643,7 +2645,10 @@ type ILModuleDef
 let mkILEmptyGenericParams = ([]: ILGenericParameterDefs)
 let emptyILGenericArgsList = ([ ]: ILType list)
 
-
+let mkILGenericParam (name, constraints, variance, hasReferenceTypeConstraint, hasNotNullableValueTypeConstraint,
+                      hasDefaultConstructorConstraint, customAttrsStored, metadataIndex) =
+    ILGenericParameterDef(name, constraints, variance, hasReferenceTypeConstraint, hasNotNullableValueTypeConstraint,
+                          hasDefaultConstructorConstraint, customAttrsStored, metadataIndex) :> IGenericParameterDef
 
 
 // --------------------------------------------------------------------
@@ -2855,6 +2860,11 @@ let mkILTypeDefs l =  mkILTypeDefsFromArray (Array.ofList l)
 let mkILTypeDefsComputed f = ILTypeDefs f :> ITypeDefs
 let emptyILTypeDefs = mkILTypeDefsFromArray [| |]
 
+let mkILTypeDef (name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields, methodImpls,
+                 events, properties, securityDeclsStored, customAttrsStored, metadataIndex) =
+    ILTypeDef(name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields, methodImpls,
+              events, properties, securityDeclsStored, customAttrsStored, metadataIndex) :> ITypeDef
+
 // -------------------------------------------------------------------- 
 // Operations on method tables.
 // -------------------------------------------------------------------- 
@@ -2866,6 +2876,11 @@ let emptyILMethods = mkILMethodsFromArray [| |]
 
 let filterILMethodDefs f (mdefs: IMethodDefs) = 
     ILMethodDefs (fun () -> mdefs.AsArray |> Array.filter f)
+
+let mkILMethodDef (name, attributes, implAttributes, callingConv, parameters, ret, body, isEntryPoint, genericParams, 
+                   securityDeclsStored, customAttrsStored, metadataIndex) =
+    ILMethodDef(name, attributes, implAttributes, callingConv, parameters, ret, body, isEntryPoint, genericParams, 
+                securityDeclsStored, customAttrsStored, metadataIndex) :> IMethodDef
 
 // -------------------------------------------------------------------- 
 // Operations and defaults for modules, assemblies etc.
@@ -3157,19 +3172,25 @@ let instILType     i t = instILTypeAux 0 i t
 // MS-IL: Parameters, Return types and Locals
 // -------------------------------------------------------------------- 
 
-let mkILParam (name, ty) : IParameter =
+let mkSimpleILParam (name, ty) : IParameter =
     ILParameter(name, ty, None, None, false, false, false, storeILCustomAttrs emptyILCustomAttrs, NoMetadataIdx) :> _
 
-let mkILParamNamed (s,ty) = mkILParam (Some s,ty)
-let mkILParamAnon ty = mkILParam (None,ty)
+let mkILParamNamed (s,ty) = mkSimpleILParam (Some s,ty)
+let mkILParamAnon ty = mkSimpleILParam (None,ty)
 
-let mkILReturn ty : IReturn =
+let mkSimpleILReturn ty : IReturn =
     ILReturn(ty, None, storeILCustomAttrs emptyILCustomAttrs, NoMetadataIdx) :> IReturn
 
 let mkILLocal ty dbgInfo : ILLocal = 
     { IsPinned=false;
       Type=ty;
       DebugInfo=dbgInfo }
+
+let mkILParam (name, ty, defaultValue, marshal, isIn, isOut, isOptional, customAttrsStored, metadataIndex) =
+    ILParameter(name, ty, defaultValue, marshal, isIn, isOut, isOptional, customAttrsStored, metadataIndex) :> IParameter
+
+let mkILReturn (ty, marshal, customAttrsStored, metadataIndex) =
+    ILReturn(ty, marshal, customAttrsStored, metadataIndex) :> IReturn
 
 type ILFieldSpec with
   member fr.ActualType = 
@@ -3195,7 +3216,7 @@ let mkMethodBody (zeroinit,locals,maxstack,code,tag) = MethodBody.IL (mkILMethod
 // Make a constructor
 // -------------------------------------------------------------------- 
 
-let mkILVoidReturn = mkILReturn ILType.Void
+let mkILVoidReturn = mkSimpleILReturn ILType.Void
 
 let methBodyNotAvailable = mkMethBodyAux MethodBody.NotAvailable
 let methBodyAbstract = mkMethBodyAux MethodBody.Abstract
@@ -3384,7 +3405,7 @@ let prependInstrsToClassCtor instrs tag cd =
     cdef_cctorCode2CodeOrCreate tag (prependInstrsToMethod instrs) cd
     
 
-let mkILField (isStatic,nm,ty,(init:ILFieldInit option),(at: byte [] option),access,isLiteral) =
+let mkSimpleILField (isStatic,nm,ty,(init:ILFieldInit option),(at: byte [] option),access,isLiteral) =
      ILFieldDef(name=nm,
                 fieldType=ty,
                 attributes=
@@ -3399,9 +3420,9 @@ let mkILField (isStatic,nm,ty,(init:ILFieldInit option),(at: byte [] option),acc
                 marshal=None,
                 customAttrs=emptyILCustomAttrs) :> IFieldDef
 
-let mkILInstanceField (nm,ty,init,access) = mkILField (false,nm,ty,init,None,access,false)
-let mkILStaticField (nm,ty,init,at,access) = mkILField (true,nm,ty,init,at,access,false)
-let mkILLiteralField (nm,ty,init,at,access) = mkILField (true, nm, ty, Some init, at, access, true)
+let mkILInstanceField (nm,ty,init,access) = mkSimpleILField (false,nm,ty,init,None,access,false)
+let mkILStaticField (nm,ty,init,at,access) = mkSimpleILField (true,nm,ty,init,at,access,false)
+let mkILLiteralField (nm,ty,init,at,access) = mkSimpleILField (true, nm, ty, Some init, at, access, true)
 
 // -------------------------------------------------------------------- 
 // Scopes for allocating new temporary variables.
@@ -3421,13 +3442,26 @@ let mkILFieldsLazy l = ILFieldDefs(LazyOrderedMultiMap((fun (f:IFieldDef) -> f.N
 let mkILFields l =  mkILFieldsLazy (notlazy l)
 let emptyILFields = mkILFields []
 
+let mkILField (name, fieldType, attributes, data, literalValue, offset, marshal, customAttrsStored, metadataIndex) =
+    ILFieldDef(name, fieldType, attributes, data, literalValue, offset, marshal, customAttrsStored, metadataIndex) :> IFieldDef
+
 let mkILEventsLazy l = ILEventDefs(LazyOrderedMultiMap((fun (e: IEventDef) -> e.Name), l)) :> IEventDefs
 let mkILEvents l =  mkILEventsLazy (notlazy l)
 let emptyILEvents =  mkILEvents []
 
+let mkILEvent (eventType, name, attributes, addMethod, removeMethod, fireMethod, otherMethods, customAttrsStored,
+               metadataIndex) =
+    ILEventDef(eventType, name, attributes, addMethod, removeMethod, fireMethod, otherMethods, customAttrsStored,
+               metadataIndex) :> IEventDef
+
 let mkILPropertiesLazy l = ILPropertyDefs(LazyOrderedMultiMap((fun (p: IPropertyDef) -> p.Name), l)) :> IPropertyDefs
 let mkILProperties l =  mkILPropertiesLazy (notlazy l)
 let emptyILProperties =  mkILProperties []
+
+let mkILProperty (name, attributes, setMethod, getMethod, callingConv, propertyType, init, args, customAttrsStored,
+                  metadataIndex) =
+    ILPropertyDef(name, attributes, setMethod, getMethod, callingConv, propertyType, init, args, customAttrsStored,
+                  metadataIndex) :> IPropertyDef
 
 let addExportedTypeToTable (y: ILExportedTypeOrForwarder) tab = Map.add y.Name y tab
 let mkILExportedTypes l =  ILExportedTypesAndForwarders (notlazy (List.foldBack addExportedTypeToTable l Map.empty))
@@ -3587,6 +3621,20 @@ let mkILSimpleModule assname modname dll subsystemVersion useHighEntropyVA tdefs
          resources = mkILResources [],
          metadataIndex = NoMetadataIdx) :> IModuleDef
 
+let mkILModuleDef (name, manifest, typeDefs, subsystemVersion, useHighEntropyVA, subSystemFlags, isDLL, isILOnly,
+                   platform, stackReserveSize, is32Bit, is32BitPreferred, is64Bit, virtualAlignment, physicalAlignment,
+                   imageBase, metadataVersion, resources, nativeResources, customAttrsStored, metadataIndex) =
+    ILModuleDef(name, manifest, typeDefs, subsystemVersion, useHighEntropyVA, subSystemFlags, isDLL, isILOnly,
+                platform, stackReserveSize, is32Bit, is32BitPreferred, is64Bit, virtualAlignment, physicalAlignment,
+                imageBase, metadataVersion, resources, nativeResources, customAttrsStored, metadataIndex) :> IModuleDef
+
+let mkILAssemblyManifest (name, auxModuleHashAlgorithm, publicKey, version, locale, assemblyLongevity,
+                          disableJitOptimizations, jitTracking, ignoreSymbolStoreSequencePoints, retargetable,
+                          exportedTypes, entrypointElsewhere, securityDeclsStored, customAttrsStored, metadataIndex) =
+    ILAssemblyManifest(name, auxModuleHashAlgorithm, publicKey, version, locale, assemblyLongevity,
+                       disableJitOptimizations, jitTracking, ignoreSymbolStoreSequencePoints, retargetable,
+                       exportedTypes, entrypointElsewhere, securityDeclsStored, customAttrsStored, metadataIndex)
+        :> IAssemblyManifest
 
 //-----------------------------------------------------------------------
 // [instructions_to_code] makes the basic block structure of code from
@@ -3614,7 +3662,7 @@ let buildILCode (_methName:string) lab2pc instrs tryspecs localspecs : ILCode =
 let mkILDelegateMethods (access) (ilg: ILGlobals) (iltyp_AsyncCallback, iltyp_IAsyncResult) (parms,rtv:IReturn) = 
     let rty = rtv.Type
     let one nm args ret =
-        let mdef = mkILNonGenericVirtualMethod (nm,access,args,mkILReturn ret,MethodBody.Abstract)
+        let mdef = mkILNonGenericVirtualMethod (nm,access,args,mkSimpleILReturn ret,MethodBody.Abstract)
         mdef.WithAbstract(false).WithHideBySig(true).WithRuntime(true)
     let ctor = mkILCtor(access, [ mkILParamNamed("object",ilg.typ_Object); mkILParamNamed("method",ilg.typ_IntPtr) ], MethodBody.Abstract)
     let ctor = ctor.WithRuntime(true).WithHideBySig(true)
@@ -3958,6 +4006,9 @@ let mkILCustomAttribMethRef (ilg: ILGlobals) (mspec:ILMethodSpec, fixedArgs: lis
 
 let mkILCustomAttribute ilg (tref,argtys,argvs,propvs) = 
     mkILCustomAttribMethRef ilg (mkILNonGenericCtorMethSpec (tref,argtys),argvs,propvs)
+
+let mkILAttribute (method, data, elements) =
+    ILAttribute(method, data, elements) :> IAttribute
 
 let MscorlibScopeRef = ILScopeRef.Assembly (ILAssemblyRef.Create("mscorlib", None, Some ecmaPublicKey, true, None, None))
 let EcmaMscorlibILGlobals = mkILGlobals MscorlibScopeRef

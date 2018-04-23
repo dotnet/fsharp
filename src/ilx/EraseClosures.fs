@@ -466,7 +466,7 @@ let rec convIlxClosureDef cenv encl (td: ITypeDef) clo =
                    ILMemberAccess.Public, 
                    addedGenParams,  (* method is generic over added ILGenericParameterDefs *)
                    [], 
-                   mkILReturn(cenv.ilg.typ_Object), 
+                   mkSimpleILReturn(cenv.ilg.typ_Object), 
                    MethodBody.IL (convILMethodBody (Some nowCloSpec, boxReturnTy) (Lazy.force clo.cloCode)))
               let ctorMethodDef = 
                   mkILStorageCtor 
@@ -479,20 +479,12 @@ let rec convIlxClosureDef cenv encl (td: ITypeDef) clo =
 
               let cloTypeDef =
                   let tdef = 
-                      ILTypeDef(name = td.Name,
-                          genericParams= td.GenericParams,
-                          attributes = td.Attributes,
-                          implements = [],
-                          nestedTypes = emptyILTypeDefs,
-                          layout=ILTypeDefLayout.Auto,
-                          extends= Some cenv.mkILTyFuncTy,
-                          methods= mkILMethods ([ctorMethodDef] @ [nowApplyMethDef]) ,
-                          fields= mkILFields (mkILCloFldDefs cenv nowFields),
-                          customAttrs=emptyILCustomAttrs,
-                          methodImpls=emptyILMethodImpls,
-                          properties=emptyILProperties,
-                          events=emptyILEvents,
-                          securityDecls=emptyILSecurityDecls) :> ITypeDef
+                      mkILTypeDef
+                          (td.Name, td.Attributes, ILTypeDefLayout.Auto, [], td.GenericParams, Some cenv.mkILTyFuncTy,
+                           mkILMethods ([ctorMethodDef] @ [nowApplyMethDef]), emptyILTypeDefs,
+                           mkILFields (mkILCloFldDefs cenv nowFields), emptyILMethodImpls, emptyILEvents,
+                           emptyILProperties, storeILSecurityDecls emptyILSecurityDecls,
+                           storeILCustomAttrs emptyILCustomAttrs, NoMetadataIdx)
                   tdef
                      .WithSpecialName(false)
                      .WithImport(false)
@@ -565,7 +557,7 @@ let rec convIlxClosureDef cenv encl (td: ITypeDef) clo =
                         mkILNonGenericVirtualMethod
                           ("Invoke", ILMemberAccess.Public, 
                            nowParams, 
-                           mkILReturn nowReturnTy, 
+                           mkSimpleILReturn nowReturnTy, 
                            MethodBody.IL (convILMethodBody (Some nowCloSpec, None)  (Lazy.force clo.cloCode)))
 
                     let ctorMethodDef = 
@@ -578,20 +570,12 @@ let rec convIlxClosureDef cenv encl (td: ITypeDef) clo =
                         |> cenv.addMethodGeneratedAttrs 
 
                     let tdef =
-                        ILTypeDef(name = td.Name,
-                              genericParams= td.GenericParams,
-                              attributes = td.Attributes,
-                              implements = [],
-                              layout=ILTypeDefLayout.Auto,
-                              nestedTypes = emptyILTypeDefs,
-                              extends= Some nowEnvParentClass,
-                              methods= mkILMethods ([ctorMethodDef] @ [nowApplyMethDef]),
-                              fields= mkILFields (mkILCloFldDefs cenv nowFields),
-                              customAttrs=emptyILCustomAttrs,
-                              methodImpls=emptyILMethodImpls,
-                              properties=emptyILProperties,
-                              events=emptyILEvents,
-                              securityDecls=emptyILSecurityDecls) :> ITypeDef
+                        mkILTypeDef
+                            (td.Name, td.Attributes, ILTypeDefLayout.Auto, [], td.GenericParams, Some nowEnvParentClass,
+                             mkILMethods ([ctorMethodDef] @ [nowApplyMethDef]), emptyILTypeDefs,
+                             mkILFields (mkILCloFldDefs cenv nowFields), emptyILMethodImpls, emptyILEvents,
+                             emptyILProperties, storeILSecurityDecls emptyILSecurityDecls,
+                             storeILCustomAttrs emptyILCustomAttrs, NoMetadataIdx)
                     tdef
                         .WithHasSecurity(false)
                         .WithSpecialName(false)
