@@ -624,20 +624,20 @@ type TcImports =
 //--------------------------------------------------------------------------
 
 /// Determine if an IL resource attached to an F# assembly is an F# signature data resource
-val IsSignatureDataResource: ILResource -> bool
+val IsSignatureDataResource: IResource -> bool
 
 /// Determine if an IL resource attached to an F# assembly is an F# optimization data resource
-val IsOptimizationDataResource: ILResource -> bool
+val IsOptimizationDataResource: IResource -> bool
 
 /// Determine if an IL resource attached to an F# assembly is an F# quotation data resource for reflected definitions
-val IsReflectedDefinitionsResource: ILResource -> bool
-val GetSignatureDataResourceName: ILResource -> string
+val IsReflectedDefinitionsResource: IResource -> bool
+val GetSignatureDataResourceName: IResource -> string
 
 /// Write F# signature data as an IL resource
-val WriteSignatureData: TcConfig * TcGlobals * Tastops.Remap * CcuThunk * filename: string * inMem: bool -> ILResource
+val WriteSignatureData: TcConfig * TcGlobals * Tastops.Remap * CcuThunk * filename: string * inMem: bool -> IResource
 
 /// Write F# optimization data as an IL resource
-val WriteOptimizationData: TcGlobals * filename: string * inMem: bool * CcuThunk * Optimizer.LazyModuleInfo -> ILResource
+val WriteOptimizationData: TcGlobals * filename: string * inMem: bool * CcuThunk * Optimizer.LazyModuleInfo -> IResource
 
 //----------------------------------------------------------------------------
 // #r and other directives

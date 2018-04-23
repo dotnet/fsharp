@@ -2681,7 +2681,7 @@ and GenEventPass3 cenv env (md: IEventDef) =
 // resource --> generate ...
 // -------------------------------------------------------------------- 
 
-let rec GetResourceAsManifestResourceRow cenv r = 
+let rec GetResourceAsManifestResourceRow cenv (r: IResource) = 
     let data, impl = 
       match r.Location with
       | ILResourceLocation.LocalIn _

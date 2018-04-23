@@ -3223,13 +3223,12 @@ and seekReadManifestResources (ctxt: ILMetadataReader) (mdv: BinaryView) (pectxt
                | ILScopeRef.Module mref -> ILResourceLocation.File (mref, offset)
                | ILScopeRef.Assembly aref -> ILResourceLocation.Assembly aref
 
-             let r = 
-               { Name= readStringHeap ctxt nameIdx
-                 Location = location
-                 Access = (if (flags &&& 0x01) <> 0x0 then ILResourceAccess.Public else ILResourceAccess.Private)
-                 CustomAttrsStored = ctxt.customAttrsReader_ManifestResource
-                 MetadataIndex = i }
-             yield r ]
+             let name = readStringHeap ctxt nameIdx
+             let location = location
+             let access = if (flags &&& 0x01) <> 0x0 then ILResourceAccess.Public else ILResourceAccess.Private
+             let customAttrsStored = ctxt.customAttrsReader_ManifestResource
+             let metadataIndex = i
+             yield mkILResource (name, location, access, customAttrsStored, metadataIndex) ]
 
 and seekReadNestedExportedTypes ctxt (exported: _ array) (nested: Lazy<_ array>) parentIdx = 
     mkILNestedExportedTypesLazy

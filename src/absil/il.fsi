@@ -1390,27 +1390,25 @@ type ILResourceLocation =
     /// Represents a manifest resource in a different assembly
     | Assembly of ILAssemblyRef
 
+
 /// "Manifest ILResources" are chunks of resource data, being one of:
 ///   - the data section of the current module (byte[] of resource given directly).
-///   - in an external file in this assembly (offset given in the ILResourceLocation field). 
-///   - as a resources in another assembly of the same name.  
-type ILResource =
-    { Name: string
-      Location: ILResourceLocation
-      Access: ILResourceAccess
-      CustomAttrsStored: ILAttributesStored
-      MetadataIndex: int32 }
+///   - in an external file in this assembly (offset given in the ILResourceLocation field).
+///   - as a resources in another assembly of the same name.
+type IResource =
+    abstract Name: string
+    abstract Location: ILResourceLocation
+    abstract Access: ILResourceAccess
+    abstract CustomAttrs: IAttributes
 
     /// Read the bytes from a resource local to an assembly. Will fail for non-local resources.
-    member GetBytes : unit -> byte[]
+    abstract GetBytes : unit -> byte[]
 
-    member CustomAttrs: IAttributes
 
 /// Table of resources in a module.
 [<NoEquality; NoComparison>]
-[<Sealed>]
-type ILResources =
-    member AsList: ILResource  list
+type IResources =
+    abstract AsList: IResource list
 
 
 [<RequireQualifiedAccess>]
@@ -1493,7 +1491,7 @@ type IModuleDef =
     abstract PhysicalAlignment: int32
     abstract ImageBase: int32
     abstract MetadataVersion: string
-    abstract Resources: ILResources 
+    abstract Resources: IResources
 
     /// e.g. win86 resources, as the exact contents of a .res or .obj file. Must be unlinked manually.
     abstract NativeResources: ILNativeResource list
@@ -1508,7 +1506,7 @@ type IModuleDef =
         ?subsystemVersion: (int * int) * ?useHighEntropyVA: bool * ?subSystemFlags: int32 * ?isDLL: bool *
         ?isILOnly: bool * ?platform: ILPlatform option * ?stackReserveSize: int32 option * ?is32Bit: bool *
         ?is32BitPreferred: bool * ?is64Bit: bool * ?virtualAlignment: int32 * ?physicalAlignment: int32 *
-        ?imageBase: int32 * ?metadataVersion: string * ?resources: ILResources *
+        ?imageBase: int32 * ?metadataVersion: string * ?resources: IResources *
         ?nativeResources: ILNativeResource list * ?customAttrsStored: ILAttributesStored * ?metadataIndex: int32
             -> IModuleDef
 
@@ -1915,7 +1913,12 @@ val mkILNestedExportedTypesLazy: Lazy<ILNestedExportedType list> -> ILNestedExpo
 val mkILExportedTypes: ILExportedTypeOrForwarder list -> ILExportedTypesAndForwarders
 val mkILExportedTypesLazy: Lazy<ILExportedTypeOrForwarder list> ->   ILExportedTypesAndForwarders
 
-val mkILResources: ILResource list -> ILResources
+val mkILResources: IResource list -> IResources
+
+val mkILResource:
+    name: string * location: ILResourceLocation * access: ILResourceAccess *customAttrsStored: ILAttributesStored *
+    metadataIndex: int
+        -> IResource
 
 // Making modules.
 
@@ -1929,7 +1932,7 @@ val mkILModuleDef:
     name: string * manifest: IAssemblyManifest option * typeDefs: ITypeDefs * subsystemVersion: (int * int) *
     useHighEntropyVA: bool * subSystemFlags: int32 * isDLL: bool * isILOnly: bool * platform: ILPlatform option *
     stackReserveSize: int32 option * is32Bit: bool * is32BitPreferred: bool * is64Bit: bool * virtualAlignment: int32 *
-    physicalAlignment: int32 * imageBase: int32 * metadataVersion: string * resources: ILResources *
+    physicalAlignment: int32 * imageBase: int32 * metadataVersion: string * resources: IResources *
     nativeResources: ILNativeResource list * customAttrsStored: ILAttributesStored * metadataIndex: int32
         -> IModuleDef
 

@@ -990,7 +990,7 @@ let output_modref os (modref:ILModuleRef) =
   output_sqstring os modref.Name;
   (output_option output_hash) os modref.Hash
 
-let goutput_resource env os r = 
+let goutput_resource env os (r: IResource) = 
   output_string os " .mresource ";
   output_string os (match r.Access with ILResourceAccess.Public -> " public " | ILResourceAccess.Private -> " private ");
   output_sqstring os r.Name;

@@ -2425,26 +2425,43 @@ type ILResourceLocation =
     | File of ILModuleRef * int32
     | Assembly of ILAssemblyRef
 
-type ILResource =
-    { Name: string;
-      Location: ILResourceLocation
-      Access: ILResourceAccess
-      CustomAttrsStored: ILAttributesStored 
-      MetadataIndex: int32 }
 
-    /// Read the bytes from a resource local to an assembly
-    member r.GetBytes() = 
-        match r.Location with
-        | ILResourceLocation.LocalIn (file, start, len) -> 
-            File.ReadBinaryChunk(file, start, len)
-        | ILResourceLocation.LocalOut bytes -> bytes
-        | _ -> failwith "GetBytes"
+type IResource =
+    abstract Name: string
+    abstract Location: ILResourceLocation
+    abstract Access: ILResourceAccess
+    abstract CustomAttrs: IAttributes
+    abstract GetBytes : unit -> byte[]
 
-    member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
 
-type ILResources = 
-    | ILResources of ILResource list
-    member x.AsList = let (ILResources ltab) = x in ltab
+[<Sealed>]
+type ILResource
+        (name: string, location: ILResourceLocation, access: ILResourceAccess, customAttrsStored: ILAttributesStored,
+         metadataIndex: int) =
+
+    interface IResource with
+        member x.Name = name
+        member x.Location = location
+        member x.Access = access
+        member x.CustomAttrs = customAttrsStored.GetCustomAttrs(metadataIndex)
+      
+        /// Read the bytes from a resource local to an assembly
+        member r.GetBytes() = 
+            match location with
+            | ILResourceLocation.LocalIn (file, start, len) -> 
+                File.ReadBinaryChunk(file, start, len)
+            | ILResourceLocation.LocalOut bytes -> bytes
+            | _ -> failwith "GetBytes"
+
+
+[<NoEquality; NoComparison>]
+type IResources =
+    abstract AsList: IResource list
+
+
+type ILResources(ltab: IResource list) =
+    interface IResources with
+        member x.AsList = ltab
 
 // -------------------------------------------------------------------- 
 // One module in the "current" assembly
@@ -2549,7 +2566,7 @@ type IModuleDef =
     abstract PhysicalAlignment: int32
     abstract ImageBase: int32
     abstract MetadataVersion: string
-    abstract Resources: ILResources 
+    abstract Resources: IResources 
     abstract NativeResources: ILNativeResource list
     abstract CustomAttrsStored: ILAttributesStored
     abstract MetadataIndex: int32 
@@ -2562,7 +2579,7 @@ type IModuleDef =
         ?subsystemVersion: (int * int) * ?useHighEntropyVA: bool * ?subSystemFlags: int32 * ?isDLL: bool *
         ?isILOnly: bool * ?platform: ILPlatform option * ?stackReserveSize: int32 option * ?is32Bit: bool *
         ?is32BitPreferred: bool * ?is64Bit: bool * ?virtualAlignment: int32 * ?physicalAlignment: int32 *
-        ?imageBase: int32 * ?metadataVersion: string * ?resources: ILResources *
+        ?imageBase: int32 * ?metadataVersion: string * ?resources: IResources *
         ?nativeResources: ILNativeResource list * ?customAttrsStored: ILAttributesStored * ?metadataIndex: int32
             -> IModuleDef
 
@@ -2572,7 +2589,7 @@ type ILModuleDef
         (name: string, manifest: IAssemblyManifest option, typeDefs: ITypeDefs, subsystemVersion: (int * int),
          useHighEntropyVA: bool, subSystemFlags: int32, isDLL: bool, isILOnly: bool, platform: ILPlatform option,
          stackReserveSize: int32 option, is32Bit: bool, is32BitPreferred: bool, is64Bit: bool, virtualAlignment: int32,
-         physicalAlignment: int32, imageBase: int32, metadataVersion: string, resources: ILResources,
+         physicalAlignment: int32, imageBase: int32, metadataVersion: string, resources: IResources,
          nativeResources: ILNativeResource list, customAttrsStored: ILAttributesStored, metadataIndex: int32) = 
 
     interface IModuleDef with
@@ -3484,7 +3501,10 @@ let mkILNestedExportedTypes l =
 let mkILNestedExportedTypesLazy (l:Lazy<_>) =  
     ILNestedExportedTypes (lazy (List.foldBack addNestedExportedTypeToTable (l.Force()) Map.empty))
 
-let mkILResources l =  ILResources l
+let mkILResources l =  ILResources l :> IResources
+
+let mkILResource (name, location, access, customAttrsStored, metadataIndex) =
+    ILResource(name, location, access, customAttrsStored, metadataIndex) :> IResource
 
 let addMethodImplToTable y tab =
     let key = (y.Overrides.MethodRef.Name,y.Overrides.MethodRef.ArgTypes.Length)
@@ -4494,11 +4514,11 @@ and refs_of_resource_where s x =
     | ILResourceLocation.File (mref,_) -> refs_of_modref s mref
     | ILResourceLocation.Assembly aref -> refs_of_assref s aref
 
-and refs_of_resource s x = 
+and refs_of_resource s (x: IResource) = 
     refs_of_resource_where s x.Location
     refs_of_custom_attrs s x.CustomAttrs
     
-and refs_of_resources s (tab: ILResources) = List.iter (refs_of_resource s) tab.AsList
+and refs_of_resources s (tab: IResources) = List.iter (refs_of_resource s) tab.AsList
     
 and refs_of_modul s (m: IModuleDef) = 
     refs_of_types s m.TypeDefs

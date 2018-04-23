@@ -3748,48 +3748,42 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
 // Typecheck and optimization environments on disk
 //--------------------------------------------------------------------------
 
-let IsSignatureDataResource         (r: ILResource) = 
+let IsSignatureDataResource         (r: IResource) = 
     r.Name.StartsWith FSharpSignatureDataResourceName ||
     r.Name.StartsWith FSharpSignatureDataResourceName2
 
-let IsOptimizationDataResource      (r: ILResource) = 
+let IsOptimizationDataResource      (r: IResource) = 
     r.Name.StartsWith FSharpOptimizationDataResourceName || 
     r.Name.StartsWith FSharpOptimizationDataResourceName2
 
-let GetSignatureDataResourceName    (r: ILResource) = 
+let GetSignatureDataResourceName    (r: IResource) = 
     if r.Name.StartsWith FSharpSignatureDataResourceName then 
         String.dropPrefix r.Name FSharpSignatureDataResourceName
     elif r.Name.StartsWith FSharpSignatureDataResourceName2 then 
         String.dropPrefix r.Name FSharpSignatureDataResourceName2
     else failwith "GetSignatureDataResourceName"
 
-let GetOptimizationDataResourceName (r: ILResource) = 
+let GetOptimizationDataResourceName (r: IResource) = 
     if r.Name.StartsWith FSharpOptimizationDataResourceName then 
         String.dropPrefix r.Name FSharpOptimizationDataResourceName
     elif r.Name.StartsWith FSharpOptimizationDataResourceName2 then 
         String.dropPrefix r.Name FSharpOptimizationDataResourceName2
     else failwith "GetOptimizationDataResourceName"
 
-let IsReflectedDefinitionsResource  (r: ILResource) = r.Name.StartsWith QuotationPickler.SerializedReflectedDefinitionsResourceNameBase
+let IsReflectedDefinitionsResource  (r: IResource) = r.Name.StartsWith QuotationPickler.SerializedReflectedDefinitionsResourceNameBase
 
-let MakeILResource rname bytes = 
-    { Name = rname
-      Location = ILResourceLocation.LocalOut bytes
-      Access = ILResourceAccess.Public
-      CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
-      MetadataIndex = NoMetadataIdx }
+let MakeILResource rname bytes =
+    let location = ILResourceLocation.LocalOut bytes
+    mkILResource (rname, location, ILResourceAccess.Public, storeILCustomAttrs emptyILCustomAttrs, NoMetadataIdx)
 
-let PickleToResource inMem file g scope rname p x = 
-    { Name = rname
-      Location = (let bytes = pickleObjWithDanglingCcus inMem file g scope p x in ILResourceLocation.LocalOut bytes)
-      Access = ILResourceAccess.Public
-      CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
-      MetadataIndex = NoMetadataIdx }
+let PickleToResource inMem file g scope rname p x =
+    let location = let bytes = pickleObjWithDanglingCcus inMem file g scope p x in ILResourceLocation.LocalOut bytes
+    mkILResource (rname, location, ILResourceAccess.Public, storeILCustomAttrs emptyILCustomAttrs, NoMetadataIdx)
 
 let GetSignatureData (file, ilScopeRef, ilModule, byteReader) : PickledDataWithReferences<PickledCcuInfo> = 
     unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleCcuInfo (byteReader())
 
-let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: CcuThunk, file, inMem) : ILResource = 
+let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: CcuThunk, file, inMem) : IResource = 
     let mspec = ccu.Contents
     let mspec = ApplyExportRemappingToEntity tcGlobals exportRemapping mspec
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers 

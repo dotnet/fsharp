@@ -852,12 +852,11 @@ module MainModuleBuilder =
                         [ mkCompilationMappingAttrForQuotationResource tcGlobals (reflectedDefinitionResourceName, referencedTypeDefs) ]
                     | QuotationTranslator.QuotationSerializationFormat.FSharp_20_Plus ->
                         [  ]
-                let reflectedDefinitionResource = 
-                  { Name=reflectedDefinitionResourceName
-                    Location = ILResourceLocation.LocalOut reflectedDefinitionBytes
-                    Access= ILResourceAccess.Public
-                    CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
-                    MetadataIndex = NoMetadataIdx }
+                let reflectedDefinitionResource =
+                    let location = ILResourceLocation.LocalOut reflectedDefinitionBytes
+                    mkILResource
+                        (reflectedDefinitionResourceName, location, ILResourceAccess.Public,
+                         storeILCustomAttrs emptyILCustomAttrs, NoMetadataIdx)
                 reflectedDefinitionAttrs, reflectedDefinitionResource) 
             |> List.unzip
             |> (fun (attrs, resource) -> List.concat attrs, resource)
@@ -894,26 +893,25 @@ module MainModuleBuilder =
           mkILResources 
             [ for file in tcConfig.embedResources do
                  let name, bytes, pub = 
-                         let file, name, pub = TcConfigBuilder.SplitCommandLineResourceInfo file
-                         let file = tcConfig.ResolveSourceFile(rangeStartup, file, tcConfig.implicitIncludeDir)
-                         let bytes = FileSystem.ReadAllBytesShim file
-                         name, bytes, pub
-                 yield { Name=name 
-                         Location=ILResourceLocation.LocalOut bytes
-                         Access=pub 
-                         CustomAttrsStored=storeILCustomAttrs emptyILCustomAttrs 
-                         MetadataIndex = NoMetadataIdx }
-               
+                     let file, name, pub = TcConfigBuilder.SplitCommandLineResourceInfo file
+                     let file = tcConfig.ResolveSourceFile(rangeStartup, file, tcConfig.implicitIncludeDir)
+                     let bytes = FileSystem.ReadAllBytesShim file
+                     name, bytes, pub
+                 let location = ILResourceLocation.LocalOut bytes
+
+                 yield mkILResource (name, location, pub, storeILCustomAttrs emptyILCustomAttrs, NoMetadataIdx)
+
               yield! reflectedDefinitionResources
               yield! intfDataResources
               yield! optDataResources
               for ri in tcConfig.linkResources do 
-                 let file, name, pub = TcConfigBuilder.SplitCommandLineResourceInfo ri
-                 yield { Name=name 
-                         Location=ILResourceLocation.File(ILModuleRef.Create(name=file, hasMetadata=false, hash=Some (sha1HashBytes (FileSystem.ReadAllBytesShim file))), 0)
-                         Access=pub 
-                         CustomAttrsStored=storeILCustomAttrs emptyILCustomAttrs
-                         MetadataIndex = NoMetadataIdx } ]
+                  let file, name, pub = TcConfigBuilder.SplitCommandLineResourceInfo ri
+                  let location =
+                      let hash = Some (sha1HashBytes (FileSystem.ReadAllBytesShim file))
+                      let moduleRef = ILModuleRef.Create(name = file, hasMetadata = false, hash = hash)
+                      ILResourceLocation.File(moduleRef, 0)
+
+                  yield mkILResource (name, location, pub, storeILCustomAttrs emptyILCustomAttrs, NoMetadataIdx) ]
 
         let assemblyVersion = 
             match tcConfig.version with
