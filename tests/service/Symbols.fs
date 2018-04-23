@@ -104,14 +104,15 @@ module Mod2 =
 open Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
 
 [<Test>]
-let ``Assembly reader test`` () =
+let ``Assembly reader shim gets requests`` () =
     let defaultReader = Shim.AssemblyReader
+    let mutable gotRequest = false
     let reader =
         { new IAssemblyReader with
             member x.GetILModuleReader(path, opts) =
-                let result = defaultReader.GetILModuleReader(path, opts)
-                let y = result
-                y }
+                gotRequest <- true
+                defaultReader.GetILModuleReader(path, opts)
+        }
     Shim.AssemblyReader <- reader
     let source = """
 module M
@@ -119,5 +120,5 @@ let x = 123
 """
 
     let fileName, options = mkTestFileAndOptions source [| |]
-    let _, checkResults = checker.ParseAndCheckFileInProject(fileName, 0, source, options) |> Async.RunSynchronously
-    ()
+    checker.ParseAndCheckFileInProject(fileName, 0, source, options) |> Async.RunSynchronously |> ignore
+    gotRequest |> should be True

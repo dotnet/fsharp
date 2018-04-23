@@ -1459,7 +1459,6 @@ type IAssemblyManifest =
             -> IAssemblyManifest
 
 
-
 [<RequireQualifiedAccess>]
 type ILNativeResource = 
     /// Represents a native resource to be read from the PE file

@@ -2218,10 +2218,13 @@ and ITypeDef =
     abstract WithSpecialName: bool -> ITypeDef
     abstract WithInitSemantics: ILTypeInit -> ITypeDef
 
-    abstract With: ?name: string * ?attributes: TypeAttributes * ?layout: ILTypeDefLayout *  ?implements: ILTypes * 
-                 ?genericParams:ILGenericParameterDefs * ?extends:ILType option * ?methods:IMethodDefs * 
-                 ?nestedTypes:ITypeDefs * ?fields: IFieldDefs * ?methodImpls:ILMethodImplDefs * ?events:IEventDefs * 
-                 ?properties:IPropertyDefs * ?customAttrs:IAttributes * ?securityDecls: ILSecurityDecls -> ITypeDef
+    abstract With:
+        ?name: string * ?attributes: TypeAttributes * ?layout: ILTypeDefLayout *  ?implements: ILTypes * 
+        ?genericParams: ILGenericParameterDefs * ?extends: ILType option * ?methods: IMethodDefs * 
+        ?nestedTypes: ITypeDefs * ?fields: IFieldDefs * ?methodImpls: ILMethodImplDefs * ?events: IEventDefs * 
+        ?properties: IPropertyDefs * ?customAttrs: IAttributes * ?securityDecls: ILSecurityDecls
+            -> ITypeDef
+
 
 and IPreTypeDef = 
         abstract Namespace: string list
@@ -2525,21 +2528,21 @@ type ILAssemblyManifest
                       ?newJitTracking: bool, ?newIgnoreSymbolStoreSequencePoints: bool,
                       ?newCustomAttrsStored: ILAttributesStored, ?newSecurityDeclsStored: ILSecurityDeclsStored) =
             ILAssemblyManifest
-                (name = name,
-                 auxModuleHashAlgorithm = auxModuleHashAlgorithm,
-                 securityDeclsStored = defaultArg newSecurityDeclsStored securityDeclsStored,
-                 publicKey = defaultArg newPublicKey publicKey,
-                 version = defaultArg newVersion version,
-                 locale = locale,
-                 customAttrsStored = defaultArg newCustomAttrsStored customAttrsStored,
-                 assemblyLongevity = assemblyLongevity,
-                 disableJitOptimizations = defaultArg newDisableJitOptimizations disableJitOptimizations,
-                 jitTracking = defaultArg newJitTracking jitTracking,
+                (name                            = name,
+                 auxModuleHashAlgorithm          = auxModuleHashAlgorithm,
+                 securityDeclsStored             = defaultArg newSecurityDeclsStored securityDeclsStored,
+                 publicKey                       = defaultArg newPublicKey publicKey,
+                 version                         = defaultArg newVersion version,
+                 locale                          = locale,
+                 customAttrsStored               = defaultArg newCustomAttrsStored customAttrsStored,
+                 assemblyLongevity               = assemblyLongevity,
+                 disableJitOptimizations         = defaultArg newDisableJitOptimizations disableJitOptimizations,
+                 jitTracking                     = defaultArg newJitTracking jitTracking,
                  ignoreSymbolStoreSequencePoints = defaultArg newIgnoreSymbolStoreSequencePoints ignoreSymbolStoreSequencePoints,
-                 retargetable = retargetable,
-                 exportedTypes = exportedTypes,
-                 entrypointElsewhere = entrypointElsewhere,
-                 metadataIndex = metadataIndex) :> IAssemblyManifest
+                 retargetable                    = retargetable,
+                 exportedTypes                   = exportedTypes,
+                 entrypointElsewhere             = entrypointElsewhere,
+                 metadataIndex                   = metadataIndex) :> IAssemblyManifest
 
 
 [<RequireQualifiedAccess>]
@@ -2632,27 +2635,27 @@ type ILModuleDef
                       ?newIs64Bit, ?newVirtualAlignment, ?newPhysicalAlignment, ?newImageBase, ?newMetadataVersion,
                       ?newResources, ?newNativeResources, ?newCustomAttrsStored, ?newMetadataIndex) =
             ILModuleDef
-                (manifest = defaultArg newManifest manifest,
-                 name = defaultArg newName name,
-                 typeDefs = defaultArg newTypeDefs typeDefs,
-                 subsystemVersion = defaultArg newSubsystemVersion subsystemVersion,
-                 useHighEntropyVA = defaultArg newUseHighEntropyVA useHighEntropyVA,
-                 subSystemFlags = defaultArg newSubSystemFlags subSystemFlags,
-                 isDLL = defaultArg newIsDLL isDLL,
-                 isILOnly = defaultArg newIsILOnly isILOnly,
-                 platform = defaultArg newPlatform platform,
-                 stackReserveSize = defaultArg newStackReserveSize stackReserveSize,
-                 is32Bit = defaultArg newIs32Bit is32Bit,
-                 is32BitPreferred = defaultArg newIs32BitPreferred is32BitPreferred,
-                 is64Bit = defaultArg newIs64Bit is64Bit,
-                 virtualAlignment = defaultArg newVirtualAlignment virtualAlignment,
+                (manifest          = defaultArg newManifest manifest,
+                 name              = defaultArg newName name,
+                 typeDefs          = defaultArg newTypeDefs typeDefs,
+                 subsystemVersion  = defaultArg newSubsystemVersion subsystemVersion,
+                 useHighEntropyVA  = defaultArg newUseHighEntropyVA useHighEntropyVA,
+                 subSystemFlags    = defaultArg newSubSystemFlags subSystemFlags,
+                 isDLL             = defaultArg newIsDLL isDLL,
+                 isILOnly          = defaultArg newIsILOnly isILOnly,
+                 platform          = defaultArg newPlatform platform,
+                 stackReserveSize  = defaultArg newStackReserveSize stackReserveSize,
+                 is32Bit           = defaultArg newIs32Bit is32Bit,
+                 is32BitPreferred  = defaultArg newIs32BitPreferred is32BitPreferred,
+                 is64Bit           = defaultArg newIs64Bit is64Bit,
+                 virtualAlignment  = defaultArg newVirtualAlignment virtualAlignment,
                  physicalAlignment = defaultArg newPhysicalAlignment physicalAlignment,
-                 imageBase = defaultArg newImageBase imageBase,
-                 metadataVersion = defaultArg newMetadataVersion metadataVersion,
-                 resources = defaultArg newResources resources,
-                 nativeResources = defaultArg newNativeResources nativeResources,
+                 imageBase         = defaultArg newImageBase imageBase,
+                 metadataVersion   = defaultArg newMetadataVersion metadataVersion,
+                 resources         = defaultArg newResources resources,
+                 nativeResources   = defaultArg newNativeResources nativeResources,
                  customAttrsStored = defaultArg newCustomAttrsStored customAttrsStored,
-                 metadataIndex = defaultArg newMetadataIndex metadataIndex) :> IModuleDef
+                 metadataIndex     = defaultArg newMetadataIndex metadataIndex) :> IModuleDef
 
 // -------------------------------------------------------------------- 
 // Add fields and types to tables, with decent error messages
