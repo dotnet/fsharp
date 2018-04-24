@@ -2085,10 +2085,16 @@ let ApplyUnionCaseOrExnTypesForPat m cenv env overallTy c =
   ApplyUnionCaseOrExn ((fun (a, b) mArgs args -> TPat_unioncase(a, b, args, unionRanges m mArgs)), 
                        (fun a mArgs args -> TPat_exnconstr(a, args, unionRanges m mArgs))) m cenv env overallTy c
 
-let UnionCaseOrExnCheck (env: TcEnv) nargtys nargs m =
+let UnionCaseOrExnCheck (env: TcEnv) (uc: Item) nargtys nargs m =
     if nargs <> nargtys then
-        if nargs = 0 then error (UnionCaseMissingArguments(env.DisplayEnv, nargtys, "foo(bar)", m))
-        else error (UnionCaseWrongArguments(env.DisplayEnv, nargtys, nargs, m))
+        match nargs, uc with
+        | 0, Item.UnionCase(uc: UnionCaseInfo, _) ->
+                let ucFields = uc.UnionCaseRef.AllFieldsAsList |> List.map (fun field ->
+                    Expr.Const(Const.String field.rfield_id.idText, m, field.rfield_type))
+                let exampleExpr = Expr.Op (TOp.UnionCase(uc.UnionCaseRef), uc.TypeInst, ucFields, m)
+                let exampleText = Layout.showL (NicePrint.dataExprL env.DisplayEnv exampleExpr)
+                error (UnionCaseMissingArguments(env.DisplayEnv, nargtys, exampleText, m))
+        | nargs, _ -> error (UnionCaseWrongArguments(env.DisplayEnv, nargtys, nargs, m))
 
 let TcUnionCaseOrExnField cenv (env: TcEnv) ty1 m c n funcs =
     let ad = env.eAccessRights
@@ -5355,7 +5361,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
               | _ when nargtys = 0 -> error(Error(FSComp.SR.tcUnionCaseDoesNotTakeArguments(), m)) 
               | _ when nargtys = 1 -> error(Error(FSComp.SR.tcUnionCaseRequiresOneArgument(), m)) 
               | _ -> error(Error(FSComp.SR.tcUnionCaseExpectsTupledArguments(nargtys), m))
-            UnionCaseOrExnCheck env nargtys args.Length m
+            UnionCaseOrExnCheck env item nargtys args.Length m
 
             let args', acc = TcPatterns warnOnUpper cenv env vFlags (tpenv, names, takenNames) argtys args
             (fun values -> 
@@ -8510,7 +8516,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
                 UnifyTypes cenv env mExprAndArg overallTy ucaseAppTy 
 
             let nargs = List.length args
-            UnionCaseOrExnCheck env nargtys nargs mExprAndArg
+            UnionCaseOrExnCheck env item nargtys nargs mExprAndArg
             
             // if we manage to get here - number of formal arguments = number of actual arguments
             // apply named parameters
@@ -8607,7 +8613,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
                         let constrApp = mkConstrApp mItem args
                         let lam = mkMultiLambda mItem vs (constrApp, tyOfExpr cenv.g constrApp)
                         lam)
-            UnionCaseOrExnCheck env nargtys nargs mItem
+            UnionCaseOrExnCheck env item nargtys nargs mItem
             let expr = mkExpr()
             let exprTy = tyOfExpr cenv.g expr
             PropagateThenTcDelayed cenv overallTy env tpenv mItem (MakeApplicableExprNoFlex cenv expr) exprTy ExprAtomicFlag.Atomic delayed 
