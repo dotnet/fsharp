@@ -41,7 +41,7 @@ if not defined ConfigFile echo Configuration file not specified. && goto error
 if not exist "%MSBuild%" echo The specified MSBuild.exe does not exist. && goto error
 
 set NUGET_PACKAGES=%USERPROFILE%\.nuget\packages
-set _signtoolexe=%NUGET_PACKAGES%\RoslynTools.SignTool\1.0.0-beta-62328-01\tools\SignTool.exe
+set _signtoolexe=%NUGET_PACKAGES%\RoslynTools.SignTool\1.0.0-beta2-dev3\tools\SignTool.exe
 set SignToolArgs=-msbuildPath %MSBuild% -config "%ConfigFile%" -nugetPackagesPath "%NUGET_PACKAGES%"
 if /i "%SignType%" == "real" goto runsigntool
 if /i "%SignType%" == "test" set SignToolArgs=%SignToolArgs% -testSign && goto runsigntool
