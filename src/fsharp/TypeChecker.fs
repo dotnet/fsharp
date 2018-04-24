@@ -2090,7 +2090,11 @@ let UnionCaseOrExnCheck (env: TcEnv) (uc: Item) nargtys nargs m =
         match nargs, uc with
         | 0, Item.UnionCase(uc: UnionCaseInfo, _) ->
                 let ucFields = uc.UnionCaseRef.AllFieldsAsList |> List.map (fun field ->
-                    Expr.Val (VRefLocal { Val.NewUnlinked() with val_logical_name = field.rfield_id.idText }, ValUseFlag.NormalValUse, m))
+                    let fldName = field.rfield_id.idText
+                    let fldName =
+                        if String.IsNullOrEmpty fldName then ""
+                        else string (Char.ToLower fldName.[0]) + fldName.[1 .. fldName.Length - 1]
+                    Expr.Val (VRefLocal { Val.NewUnlinked() with val_logical_name = fldName }, ValUseFlag.NormalValUse, m))
                 let exampleExpr = Expr.Op (TOp.UnionCase(uc.UnionCaseRef), uc.TypeInst, ucFields, m)
                 let exampleText = Layout.showL (NicePrint.dataExprL env.DisplayEnv exampleExpr)
                 error (UnionCaseMissingArguments(env.DisplayEnv, nargtys, exampleText, m))
