@@ -212,13 +212,14 @@ and remapMeasureAux tyenv unt =
     | Measure.RationalPower(u, q) -> Measure.RationalPower(remapMeasureAux tyenv u, q)
     | Measure.Inv u -> Measure.Inv(remapMeasureAux tyenv u)
     | Measure.Var tp as unt -> 
-      match tp.Solution with
+       match tp.Solution with
        | None -> 
-          if ListAssoc.containsKey typarEq tp tyenv.tpinst then 
-              match ListAssoc.find typarEq tp tyenv.tpinst with 
+          match ListAssoc.tryFind typarEq tp tyenv.tpinst with
+          | Some v -> 
+              match v with
               | TType_measure unt -> unt
               | _ -> failwith "remapMeasureAux: incorrect kinds"
-          else unt
+          | None -> unt
        | Some (TType_measure unt) -> remapMeasureAux tyenv unt
        | Some ty -> failwithf "incorrect kinds: %A" ty
 
