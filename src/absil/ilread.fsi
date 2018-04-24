@@ -44,7 +44,7 @@ type internal MetadataOnlyFlag = Yes | No
 type internal ReduceMemoryFlag = Yes | No
 
 type internal ILReaderOptions =
-   { pdbPath: string option
+   { pdbDirPath: string option
 
      ilGlobals: ILGlobals
 
