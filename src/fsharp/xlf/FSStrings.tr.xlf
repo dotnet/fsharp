@@ -1242,6 +1242,21 @@
         <target state="translated">'{0}' üyesi 'unit' ile özelleştirilmiş ancak 'unit', dönüş türünde parametreleştirilen bir özet metodunun dönüş türü olarak kullanılamaz.</target>
         <note />
       </trans-unit>
+      <trans-unit id="UnionCaseMissingArgument">
+        <source>This constructor is missing arguments; 1 is expected.</source>
+        <target state="new">This constructor is missing arguments; 1 is expected.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnionCaseMissingArguments1">
+        <source>This constructor is missing arguments; {0} are expected.</source>
+        <target state="new">This constructor is missing arguments; {0} are expected.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnionCaseMissingArguments2">
+        <source> Patterns must unpack them, e.g. '{0}'</source>
+        <target state="new"> Patterns must unpack them, e.g. '{0}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UnionCaseWrongArguments">
         <source>This constructor is applied to {0} argument(s) but expects {1}</source>
         <target state="translated">Bu oluşturucu {0} bağımsız değişkene uygulandı ancak {1} bekliyor</target>

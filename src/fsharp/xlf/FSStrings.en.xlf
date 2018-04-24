@@ -1242,6 +1242,21 @@
         <target state="new">The member '{0}' is specialized with 'unit' but 'unit' can't be used as return type of an abstract method parameterized on return type.</target>
         <note />
       </trans-unit>
+      <trans-unit id="UnionCaseMissingArgument">
+        <source>This constructor is missing arguments; 1 is expected.</source>
+        <target state="new">This constructor is missing arguments; 1 is expected.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnionCaseMissingArguments1">
+        <source>This constructor is missing arguments; {0} are expected.</source>
+        <target state="new">This constructor is missing arguments; {0} are expected.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnionCaseMissingArguments2">
+        <source> Patterns must unpack them, e.g. '{0}'</source>
+        <target state="new"> Patterns must unpack them, e.g. '{0}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UnionCaseWrongArguments">
         <source>This constructor is applied to {0} argument(s) but expects {1}</source>
         <target state="new">This constructor is applied to {0} argument(s) but expects {1}</target>

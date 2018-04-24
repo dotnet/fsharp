@@ -1242,6 +1242,21 @@
         <target state="translated">Element członkowski „{0}” jest wyspecjalizowany przy użyciu parametru „unit”, ale parametru „unit” nie można używać jako zwracanego typu metody abstrakcyjnej z parametrami zwracanego typu.</target>
         <note />
       </trans-unit>
+      <trans-unit id="UnionCaseMissingArgument">
+        <source>This constructor is missing arguments; 1 is expected.</source>
+        <target state="new">This constructor is missing arguments; 1 is expected.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnionCaseMissingArguments1">
+        <source>This constructor is missing arguments; {0} are expected.</source>
+        <target state="new">This constructor is missing arguments; {0} are expected.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnionCaseMissingArguments2">
+        <source> Patterns must unpack them, e.g. '{0}'</source>
+        <target state="new"> Patterns must unpack them, e.g. '{0}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UnionCaseWrongArguments">
         <source>This constructor is applied to {0} argument(s) but expects {1}</source>
         <target state="translated">Ten konstruktor został zastosowany do następującej liczby argumentów: {0}. Oczekiwana liczba argumentów: {1}</target>

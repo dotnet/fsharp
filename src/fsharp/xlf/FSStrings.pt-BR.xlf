@@ -1242,6 +1242,21 @@
         <target state="translated">O membro '{0}' é especializado com 'unit', mas 'unit' não pode ser usado como um tipo de retorno de um método abstrato parametrizado no tipo de retorno.</target>
         <note />
       </trans-unit>
+      <trans-unit id="UnionCaseMissingArgument">
+        <source>This constructor is missing arguments; 1 is expected.</source>
+        <target state="new">This constructor is missing arguments; 1 is expected.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnionCaseMissingArguments1">
+        <source>This constructor is missing arguments; {0} are expected.</source>
+        <target state="new">This constructor is missing arguments; {0} are expected.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnionCaseMissingArguments2">
+        <source> Patterns must unpack them, e.g. '{0}'</source>
+        <target state="new"> Patterns must unpack them, e.g. '{0}'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UnionCaseWrongArguments">
         <source>This constructor is applied to {0} argument(s) but expects {1}</source>
         <target state="translated">Este construtor é aplicado aos argumentos {0}, mas espera {1}</target>
