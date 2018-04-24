@@ -4445,21 +4445,12 @@ let rec GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolutionEnv) m a
                     else Seq.empty)
             
             // Look for values called 'id' that accept the dot-notation 
-            let values, isItemVal = 
-                (if nenv.eUnqualifiedItems.ContainsKey(id) then 
-                         // v.lookup : member of a value
-                  let v = nenv.eUnqualifiedItems.[id]
-                  match v with 
-                  | Item.Value x -> 
-                      let typ = x.Type
-                      let typ = if x.BaseOrThisInfo = CtorThisVal && isRefCellTy g typ then destRefCellTy g typ else typ
-                      (ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item typ), true
-                  | _ -> Seq.empty, false
-                 else Seq.empty, false)
-            
-            yield! values
-
-            if not isItemVal then 
+            match Map.tryFind id nenv.eUnqualifiedItems with
+            | Some (Item.Value x) ->
+                let typ = x.Type
+                let typ = if x.BaseOrThisInfo = CtorThisVal && isRefCellTy g typ then destRefCellTy g typ else typ
+                yield! ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item typ
+            | _ ->
                 // type.lookup : lookup a static something in a type 
                 for tcref in LookupTypeNameInEnvNoArity OpenQualified id nenv do
                     let tcref = ResolveNestedTypeThroughAbbreviation ncenv tcref m
