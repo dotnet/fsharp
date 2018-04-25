@@ -6,7 +6,6 @@ open Microsoft.VisualStudio.Shell
 
 [<assembly: ProvideCodeBase(CodeBase = @"$PackageFolder$\FSharp.Editor.dll")>]
 [<assembly: ProvideCodeBase(CodeBase = @"$PackageFolder$\FSharp.UIResources.dll")>]
-[<assembly: ProvideCodeBase(CodeBase = @"$PackageFolder$\Newtonsoft.Json.dll")>]
 
 do()
 
