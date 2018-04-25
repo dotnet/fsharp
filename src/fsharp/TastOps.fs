@@ -43,7 +43,7 @@ type TyparMap<'T> =
         let (TPMap m) = tm
         m.ContainsKey(v.Stamp)
 
-    member tm.TryFind (v: Typar) =
+    member tm.TryFind (v: Typar) = 
         let (TPMap m) = tm
         m.TryFind(v.Stamp)
 
@@ -212,13 +212,14 @@ and remapMeasureAux tyenv unt =
     | Measure.RationalPower(u, q) -> Measure.RationalPower(remapMeasureAux tyenv u, q)
     | Measure.Inv u -> Measure.Inv(remapMeasureAux tyenv u)
     | Measure.Var tp as unt -> 
-      match tp.Solution with
+       match tp.Solution with
        | None -> 
-          if ListAssoc.containsKey typarEq tp tyenv.tpinst then 
-              match ListAssoc.find typarEq tp tyenv.tpinst with 
+          match ListAssoc.tryFind typarEq tp tyenv.tpinst with
+          | Some v -> 
+              match v with
               | TType_measure unt -> unt
               | _ -> failwith "remapMeasureAux: incorrect kinds"
-          else unt
+          | None -> unt
        | Some (TType_measure unt) -> remapMeasureAux tyenv unt
        | Some ty -> failwithf "incorrect kinds: %A" ty
 
@@ -890,7 +891,7 @@ and typarsAEquivAux erasureFlag g (aenv: TypeEquivEnv) tps1 tps2 =
 
 and tcrefAEquiv g aenv tc1 tc2 = 
     tyconRefEq g tc1 tc2 || 
-    (aenv.EquivTycons.ContainsKey tc1  && tyconRefEq g aenv.EquivTycons.[tc1] tc2)
+      (match aenv.EquivTycons.TryFind tc1 with Some v -> tyconRefEq g v tc2 | None -> false)
 
 and typeAEquivAux erasureFlag g aenv ty1 ty2 = 
     let ty1 = stripTyEqnsWrtErasure erasureFlag g ty1 
@@ -900,8 +901,10 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
         typarsAEquivAux erasureFlag g aenv tps1 tps2 && typeAEquivAux erasureFlag g (aenv.BindEquivTypars tps1 tps2) rty1 rty2
     | TType_var tp1, TType_var tp2 when typarEq tp1 tp2 -> 
         true
-    | TType_var tp1, _ when aenv.EquivTypars.ContainsKey tp1 -> 
-        typeEquivAux erasureFlag g aenv.EquivTypars.[tp1] ty2
+    | TType_var tp1, _ ->
+        match aenv.EquivTypars.TryFind tp1 with
+        | Some v -> typeEquivAux erasureFlag g v ty2
+        | None -> false
     | TType_app (tc1, b1)  , TType_app (tc2, b2) -> 
         tcrefAEquiv g aenv tc1 tc2 &&
         typesAEquivAux erasureFlag g aenv b1 b2
