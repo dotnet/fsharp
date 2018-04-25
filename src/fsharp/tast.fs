@@ -3001,8 +3001,9 @@ and NonLocalEntityRef    =
         match nleref.TryDeref(canError=true) with 
         | VSome res -> res
         | VNone -> 
-              errorR (InternalUndefinedItemRef (FSComp.SR.tastUndefinedItemRefModuleNamespace, nleref.DisplayName, nleref.AssemblyName, "<some module on this path>")) 
-              raise (KeyNotFoundException())
+            let exn = InternalUndefinedItemRef (FSComp.SR.tastUndefinedItemRefModuleNamespace, nleref.DisplayName, nleref.AssemblyName, "<some module on this path>")
+            errorR exn
+            raise exn
         
     /// Get the details of the module or namespace fragment for the entity referred to by this non-local reference.
     member nleref.ModuleOrNamespaceType = 
