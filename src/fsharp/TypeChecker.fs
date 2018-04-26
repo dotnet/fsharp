@@ -11450,10 +11450,10 @@ and TcIncrementalLetRecGeneralization cenv scopem
         // pathological situations
         let freeInUncheckedRecBinds = 
             lazy ((emptyFreeTyvars, cenv.recUses.Contents) ||> Map.fold (fun acc vStamp _ -> 
-                       if uncheckedRecBindsTable.ContainsKey vStamp then 
-                           let fwdBind = uncheckedRecBindsTable.[vStamp]  
+                       match Map.tryFind vStamp uncheckedRecBindsTable with
+                       | Some fwdBind ->
                            accFreeInType CollectAllNoCaching  fwdBind.RecBindingInfo.Val.Type acc
-                       else
+                       | None ->
                            acc))
 
         let rec loop (preGeneralizationRecBinds: PreGeneralizationRecursiveBinding list, 
