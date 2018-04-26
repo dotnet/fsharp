@@ -782,11 +782,13 @@ module ParsedInput =
             | SynTypeDefnRepr.ObjectModel (_, defns, _) -> List.iter walkMember defns
             | SynTypeDefnRepr.Simple(defn, _) -> walkTypeDefnSimple defn
             | SynTypeDefnRepr.Exception _ -> ()
+            | SynTypeDefnRepr.Provider _ -> () // FS-1023 TODO: Is this right?
     
         and walkTypeDefnSigRepr = function
             | SynTypeDefnSigRepr.ObjectModel (_, defns, _) -> List.iter walkMemberSig defns
             | SynTypeDefnSigRepr.Simple(defn, _) -> walkTypeDefnSimple defn
             | SynTypeDefnSigRepr.Exception _ -> ()
+            | SynTypeDefnSigRepr.Provider _ -> () // FS-1023 TODO: Is this right?
     
         and walkTypeDefn (TypeDefn (info, repr, members, _)) =
             let isTypeExtensionOrAlias =

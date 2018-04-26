@@ -369,8 +369,115 @@ module internal ExtensionTyping =
     type CustomAttributeTypedArgument = System.Reflection.CustomAttributeTypedArgument
 #endif
 
-    [<AllowNullLiteral; Sealed>]
-    type ProvidedType (x:System.Type, ctxt: ProvidedTypeContext) =
+    
+    
+    type ProvidedType =
+    | Null
+    | Simple of SimpleProvidedType
+    | Composite of CompositeProvidedType
+
+        member this.impl (sf : SimpleProvidedType -> 'a) (cf : CompositeProvidedType -> 'a) =
+            match this with
+            | Null        -> failwith (null.ToString())
+            | Simple s    -> sf s
+            | Composite c -> cf c
+
+        member this.onlySimpleImpl (sf : SimpleProvidedType -> 'a) =
+            match this with
+            | Null        -> failwith (null.ToString())
+            | Simple s    -> sf s
+            | Composite _c -> failwith "Should never be called on a composite type."
+
+        interface IProvidedCustomAttributeProvider with
+            member this.GetHasTypeProviderEditorHideMethodsAttribute p =
+                this.onlySimpleImpl (fun x -> (x :> IProvidedCustomAttributeProvider).GetHasTypeProviderEditorHideMethodsAttribute p)
+            member this.GetDefinitionLocationAttribute p =
+                this.onlySimpleImpl (fun x -> (x :> IProvidedCustomAttributeProvider).GetDefinitionLocationAttribute p) 
+            member this.GetXmlDocAttributes p =
+                this.onlySimpleImpl (fun x -> (x :> IProvidedCustomAttributeProvider).GetXmlDocAttributes p) 
+            member this.GetAttributeConstructorArgs(a,b) =
+                this.onlySimpleImpl (fun x -> (x :> IProvidedCustomAttributeProvider).GetAttributeConstructorArgs(a,b)) 
+        member this.Handle = this.impl (fun x -> x.Handle) (fun x -> x.Handle)
+        member this.Assembly = this.impl (fun x -> x.Assembly) (fun x -> x.Assembly)
+        member this.FullName = this.impl (fun x -> x.FullName) (fun x -> x.FullName)
+        member this.Name = this.impl (fun x -> x.Name) (fun x -> x.Name)
+        member this.Namespace = this.impl (fun x -> x.Namespace) (fun x -> x.Namespace)
+        member this.Context= this.impl (fun x -> x.Context) (fun x -> x.Context)
+        member this.DeclaringType= this.impl (fun x -> x.DeclaringType) (fun x -> x.DeclaringType)
+        member this.IsGenericType = this.onlySimpleImpl (fun x -> x.IsGenericType) 
+        member this.IsArray = this.onlySimpleImpl (fun x -> x.IsArray) 
+        member this.IsEnum = this.onlySimpleImpl (fun x -> x.IsEnum) 
+        member this.GetInterfaces() = this.onlySimpleImpl (fun x -> x.GetInterfaces()) 
+        member this.GetMethods() = this.onlySimpleImpl (fun x -> x.GetMethods()) 
+        member this.GetFields() = this.onlySimpleImpl (fun x -> x.GetFields()) 
+        member this.GetEvents() = this.onlySimpleImpl (fun x -> x.GetEvents()) 
+        member this.GetProperties() = this.onlySimpleImpl (fun x -> x.GetProperties()) 
+        member this.GetConstructors() = this.onlySimpleImpl (fun x -> x.GetConstructors()) 
+        member this.GetStaticParameters t = this.impl (fun x -> x.GetStaticParameters t) (fun x -> x.GetStaticParameters t)
+        member this.ApplyStaticArguments t = this.impl (fun x -> x.ApplyStaticArguments t) (fun x -> x.ApplyStaticArguments t)
+        member this.RawSystemType= this.impl (fun x -> x.RawSystemType) (fun x -> x.RawSystemType)
+        member this.TryGetILTypeRef()= this.onlySimpleImpl (fun x -> x.TryGetILTypeRef()) 
+        member this.TryGetTyconRef()= this.onlySimpleImpl (fun x -> x.TryGetTyconRef()) 
+
+        member this.IsSuppressRelocate = this.onlySimpleImpl (fun x -> x.IsSuppressRelocate) 
+        member this.IsErased = this.onlySimpleImpl (fun x -> x.IsErased) 
+        member this.BaseType = this.onlySimpleImpl (fun x -> x.BaseType) 
+        member this.IsVoid = this.onlySimpleImpl (fun x -> x.IsVoid) 
+        member this.IsGenericParameter = this.onlySimpleImpl (fun x -> x.IsGenericParameter) 
+        member this.IsValueType = this.onlySimpleImpl (fun x -> x.IsValueType) 
+        member this.IsByRef = this.onlySimpleImpl (fun x -> x.IsByRef) 
+        member this.IsPointer = this.onlySimpleImpl (fun x -> x.IsPointer) 
+        member this.IsPublic = this.onlySimpleImpl (fun x -> x.IsPublic) 
+        member this.IsNestedPublic = this.onlySimpleImpl (fun x -> x.IsNestedPublic) 
+        member this.IsClass = this.onlySimpleImpl (fun x -> x.IsClass) 
+        member this.IsSealed = this.onlySimpleImpl (fun x -> x.IsSealed) 
+        member this.IsInterface = this.onlySimpleImpl (fun x -> x.IsInterface) 
+
+        member this.GetEvent nm = this.onlySimpleImpl (fun x -> x.GetEvent nm) 
+        member this.GetProperty nm = this.onlySimpleImpl (fun x -> x.GetProperty nm) 
+        member this.GetField nm = this.onlySimpleImpl (fun x -> x.GetField nm) 
+        member this.GetNestedTypes() = this.onlySimpleImpl (fun x -> x.GetNestedTypes()) 
+        member this.GetAllNestedTypes() = this.onlySimpleImpl (fun x -> x.GetAllNestedTypes()) 
+        member this.GetNestedType nm = this.onlySimpleImpl (fun x -> x.GetNestedType nm) 
+        member this.GetGenericTypeDefinition() = this.onlySimpleImpl (fun x -> x.GetGenericTypeDefinition()) 
+        member this.GetElementType() = this.onlySimpleImpl (fun x -> x.GetElementType()) 
+        member this.GetGenericArguments() = this.onlySimpleImpl (fun x -> x.GetGenericArguments()) 
+        member this.GetArrayRank() = this.onlySimpleImpl (fun x -> x.GetArrayRank()) 
+        member this.GenericParameterPosition = this.onlySimpleImpl (fun x -> x.GenericParameterPosition) 
+        member this.GetEnumUnderlyingType() = this.onlySimpleImpl (fun x -> x.GetEnumUnderlyingType()) 
+
+        static member Create ctxt x = match x with null -> ProvidedType.Null | t -> ProvidedType.Simple (SimpleProvidedType(t, ctxt))
+        static member CreateWithNullCheck ctxt name x = match x with null -> nullArg name | t -> ProvidedType.Simple (SimpleProvidedType(t, ctxt))
+        static member CreateArray ctxt xs = match xs with null -> null | _ -> xs |> Array.map (ProvidedType.Create ctxt)
+        static member CreateNoContext (x:Type) = ProvidedType.Create ProvidedTypeContext.Empty x
+        static member Void = ProvidedType.CreateNoContext typeof<System.Void>
+
+        static member ApplyContext (pt:ProvidedType, ctxt) =
+            match pt with
+            | Null -> Null
+            | Simple pt -> ProvidedType.Simple (SimpleProvidedType(pt.Handle, ctxt))
+            | Composite _ct -> failwith "" // FS-1023 TODO
+        static member TaintedEquals (pt1:Tainted<ProvidedType>, pt2:Tainted<ProvidedType>) = 
+           Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
+
+    and
+        CompositeProvidedType =
+        | CompositeProvidedType of unit
+        member __.Handle = failwith ""
+        member __.Assembly = failwith ""
+        member __.FullName = failwith ""
+        member __.Context = failwith ""
+        member __.Name = failwith ""
+        member __.Namespace = failwith ""
+        member __.DeclaringType = failwith ""
+        member __.RawSystemType = failwith ""
+        member __.GetStaticParameters _t = failwith ""
+        member __.ApplyStaticArguments _t = failwith ""
+
+
+    and 
+        [<AllowNullLiteral; Sealed>]
+        SimpleProvidedType (x:System.Type, ctxt: ProvidedTypeContext) =
 #if FX_RESHAPED_REFLECTION
         inherit ProvidedMemberInfo(x.GetTypeInfo(), ctxt)
 #if FX_NO_CUSTOMATTRIBUTEDATA
@@ -446,20 +553,12 @@ module internal ExtensionTyping =
         member __.GetEnumUnderlyingType() = 
             x.GetEnumUnderlyingType() 
             |> ProvidedType.CreateWithNullCheck ctxt "EnumUnderlyingType"
-        static member Create ctxt x = match x with null -> null | t -> ProvidedType (t, ctxt)
-        static member CreateWithNullCheck ctxt name x = match x with null -> nullArg name | t -> ProvidedType (t, ctxt)
-        static member CreateArray ctxt xs = match xs with null -> null | _ -> xs |> Array.map (ProvidedType.Create ctxt)
-        static member CreateNoContext (x:Type) = ProvidedType.Create ProvidedTypeContext.Empty x
-        static member Void = ProvidedType.CreateNoContext typeof<System.Void>
         member __.Handle = x
         override __.Equals y = assert false; match y with :? ProvidedType as y -> x.Equals y.Handle | _ -> false
         override __.GetHashCode() = assert false; x.GetHashCode()
         member __.TryGetILTypeRef() = ctxt.TryGetILTypeRef x
         member __.TryGetTyconRef() = ctxt.TryGetTyconRef x
         member __.Context = ctxt
-        static member ApplyContext (pt:ProvidedType, ctxt) = ProvidedType(pt.Handle, ctxt)
-        static member TaintedEquals (pt1:Tainted<ProvidedType>, pt2:Tainted<ProvidedType>) = 
-           Tainted.EqTainted (pt1.PApplyNoFailure(fun st -> st.Handle)) (pt2.PApplyNoFailure(fun st -> st.Handle))
 
     and [<AllowNullLiteral>] 
         IProvidedCustomAttributeProvider =
@@ -925,8 +1024,8 @@ module internal ExtensionTyping =
 
         let namespaceName = TryTypeMember(st, name, "Namespace", m, "", fun st -> st.Namespace) |> unmarshal
         let rec declaringTypes (st:Tainted<ProvidedType>) accu =
-            match TryTypeMember(st, name, "DeclaringType", m, null, fun st -> st.DeclaringType) with
-            |   Tainted.Null -> accu
+            match TryTypeMember(st, name, "DeclaringType", m, ProvidedType.Null, fun st -> st.DeclaringType) with
+            |   Tainted.Is ProvidedType.Null -> accu
             |   dt -> declaringTypes dt (CheckAndComputeProvidedNameProperty(m, dt, (fun dt -> dt.Name), "Name")::accu)
         let path = 
             [|  match namespaceName with 
@@ -977,8 +1076,8 @@ module internal ExtensionTyping =
                     let miDeclaringType = TryMemberMember(mi, fullName, memberName, "DeclaringType", m, ProvidedType.CreateNoContext(typeof<obj>), fun mi -> mi.DeclaringType)
                     match miDeclaringType with 
                         // Generated nested types may have null DeclaringType
-                    | Tainted.Null when (mi.OfType<ProvidedType>().IsSome) -> ()
-                    | Tainted.Null -> 
+                    | Tainted.Is ProvidedType.Null when (mi.OfType<ProvidedType>().IsSome) -> ()
+                    | Tainted.Is ProvidedType.Null -> 
                         errorR(Error(FSComp.SR.etNullMemberDeclaringType(fullName, memberName), m))   
                     | _ ->     
                         let miDeclaringTypeFullName = 
@@ -1078,7 +1177,7 @@ module internal ExtensionTyping =
             if displayName = providedNamespaceName then
                 let resolvedType = providedNamespace.PApply((fun providedNamespace -> ProvidedType.CreateNoContext(providedNamespace.ResolveTypeName typeName)), range=m) 
                 match resolvedType with
-                |   Tainted.Null -> None
+                |   Tainted.Is ProvidedType.Null -> None
                 |   result -> 
                     ValidateProvidedTypeDefinition(m, result, moduleOrNamespace, typeName)
                     Some result
@@ -1093,14 +1192,14 @@ module internal ExtensionTyping =
 
         let providedNamespaces = resolver.PApplyArray((fun resolver -> resolver.GetNamespaces()), "GetNamespaces", range=m)
         match tryNamespaces providedNamespaces with 
-        | None -> resolver.PApply((fun _ -> null), m)
+        | None -> resolver.PApply((fun _ -> ProvidedType.Null), m)
         | Some res -> res
                     
     /// Try to resolve a type against the given host with the given resolution environment.
     let TryResolveProvidedType(resolver:Tainted<ITypeProvider>, m, moduleOrNamespace, typeName) =
         try 
             match ResolveProvidedType(resolver, m, moduleOrNamespace, typeName) with
-            | Tainted.Null -> None
+            | Tainted.Is ProvidedType.Null -> None
             | typ -> Some typ
         with e -> 
             errorRecovery e m
@@ -1110,7 +1209,7 @@ module internal ExtensionTyping =
         let nameContrib (st:Tainted<ProvidedType>) = 
             let typeName = st.PUntaint((fun st -> st.Name), m)
             match st.PApply((fun st -> st.DeclaringType), m) with 
-            | Tainted.Null -> 
+            | Tainted.Is ProvidedType.Null -> 
                //TODO: FIX me.. see serailiser TP example..
                match (try st.PUntaint((fun st -> st.Namespace), m) with _ -> null) with 
                | null -> typeName
@@ -1119,7 +1218,7 @@ module internal ExtensionTyping =
 
         let rec encContrib (st:Tainted<ProvidedType>) = 
             match st.PApply((fun st ->st.DeclaringType), m) with 
-            | Tainted.Null -> []
+            | Tainted.Is ProvidedType.Null -> []
             | enc -> encContrib enc @ [ nameContrib enc ]
 
         encContrib st, nameContrib st
@@ -1174,7 +1273,7 @@ module internal ExtensionTyping =
  
             let staticArgObjArray = [| for (PrettyNaming.StaticArg obj) in staticArgs -> obj |]
             match typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, provider) -> typeBeforeArguments.ApplyStaticArguments(provider, Array.ofList fullTypePathAfterArguments, staticArgObjArray)), range=m) with 
-            | Tainted.Null -> None
+            | Tainted.Is ProvidedType.Null -> None
             | typeWithArguments -> 
                 let actualName = typeWithArguments.PUntaint((fun x -> x.Name), m)
                 let checkTypeName() = 
@@ -1198,7 +1297,7 @@ module internal ExtensionTyping =
         let typeBeforeArguments = ResolveProvidedType(resolver, range0, moduleOrNamespace, typeName) 
 
         match typeBeforeArguments with 
-        | Tainted.Null -> None
+        | Tainted.Is ProvidedType.Null -> None
         | _ -> 
             // Take the static arguments (as strings, taken from the text in the reference we're relinking), 
             // and convert them to objects of the appropriate type, based on the expected kind.
@@ -1282,7 +1381,7 @@ module internal ExtensionTyping =
         let namespaceParts = GetPartsOfNamespaceRecover(st.PUntaint((fun st -> st.Namespace), m))
         let rec walkUpNestedClasses(st:Tainted<ProvidedType>, soFar) =
             match st with
-            | Tainted.Null -> soFar
+            | Tainted.Is ProvidedType.Null -> soFar
             | st -> walkUpNestedClasses(st.PApply((fun st ->st.DeclaringType), m), soFar) @ [st.PUntaint((fun st -> st.Name), m)]
 
         walkUpNestedClasses(st.PApply((fun st ->st.DeclaringType), m), namespaceParts)

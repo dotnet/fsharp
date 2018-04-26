@@ -28,6 +28,7 @@ type public FSharpEnclosingEntityKind =
     | Module
     | Class
     | Exception
+    | Provider
     | Interface
     | Record
     | Enum

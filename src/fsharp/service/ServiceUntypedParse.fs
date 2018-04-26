@@ -906,16 +906,25 @@ module UntypedParseImpl =
             | SynTypeDefnRepr.ObjectModel (_, defns, _) -> List.tryPick walkMember defns
             | SynTypeDefnRepr.Simple(defn, _) -> walkTypeDefnSimple defn
             | SynTypeDefnRepr.Exception(_) -> None
+            | SynTypeDefnRepr.Provider(_) -> None
 
         and walkTypeDefnSigRepr = function
             | SynTypeDefnSigRepr.ObjectModel (_, defns, _) -> List.tryPick walkMemberSig defns
             | SynTypeDefnSigRepr.Simple(defn, _) -> walkTypeDefnSimple defn
             | SynTypeDefnSigRepr.Exception(_) -> None
+            | SynTypeDefnSigRepr.Provider(_) -> None
 
         and walkTypeDefn (TypeDefn (info, repr, members, _)) =
             walkComponentInfo false info
             |> Option.orElse (walkTypeDefnRepr repr)
             |> Option.orElse (List.tryPick walkMember members)
+
+        and walkProviderDefnRepr (ProviderDefnRepr(_, t, _)) =
+            walkType t
+
+        and walkProviderDefn (ProviderDefn(compInfo, repr, m)) =
+            walkComponentInfo false compInfo
+            |> Option.orElse (ifPosInRange m (fun () -> walkProviderDefnRepr repr))
 
         and walkSynModuleDecl isTopLevel (decl: SynModuleDecl) =
             match decl with
@@ -927,6 +936,7 @@ module UntypedParseImpl =
             | SynModuleDecl.Let (_, bindings, _) -> List.tryPick walkBinding bindings
             | SynModuleDecl.DoExpr (_, expr, _) -> walkExpr expr
             | SynModuleDecl.Types (types, _) -> List.tryPick walkTypeDefn types
+            | SynModuleDecl.Provider(defn, _) -> walkProviderDefn defn
             | _ -> None
 
         match input with 

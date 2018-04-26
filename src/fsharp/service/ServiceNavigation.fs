@@ -29,6 +29,7 @@ type FSharpEnclosingEntityKind =
     | Module
     | Class
     | Exception
+    | Provider
     | Interface
     | Record
     | Enum
@@ -169,6 +170,8 @@ module NavigationImpl =
             let topMembers = processMembers membDefns FSharpEnclosingEntityKind.Class |> snd
             match repr with
             | SynTypeDefnRepr.Exception repr -> processExnDefnRepr baseName [] repr
+            | SynTypeDefnRepr.Provider(ProviderDefn(range=mb)) ->
+                [ createDeclLid(baseName, lid, ProviderDecl, FSharpGlyph.Provider, m, bodyRange mb topMembers, topMembers, FSharpEnclosingEntityKind.Provider, false, access) ] 
             | SynTypeDefnRepr.ObjectModel(_, membDefns, mb) ->
                 // F# class declaration
                 let members = processMembers membDefns FSharpEnclosingEntityKind.Class |> snd
@@ -338,6 +341,8 @@ module NavigationImpl =
             let topMembers = processSigMembers membDefns
             match repr with
             | SynTypeDefnSigRepr.Exception repr -> processExnRepr baseName [] repr
+            | SynTypeDefnSigRepr.Provider (ProviderDefn(_,_,mb)) ->
+                [ createDeclLid(baseName, lid, ProviderDecl, FSharpGlyph.Provider, m, bodyRange mb topMembers, topMembers, FSharpEnclosingEntityKind.Provider, false, access) ] 
             | SynTypeDefnSigRepr.ObjectModel(_, membDefns, mb) ->
                 // F# class declaration
                 let members = processSigMembers membDefns
@@ -513,7 +518,7 @@ module NavigateTo =
     
         let addModuleAbbreviation (id: Ident) isSig container =
             addIdent NavigableItemKind.ModuleAbbreviation id isSig container
-        
+
         let addExceptionRepr (SynExceptionDefnRepr(_, UnionCase(_, id, _, _, _, _), _, _, _, _)) isSig container = 
             addIdent NavigableItemKind.Exception id isSig container
             { Type = ContainerType.Exception; Name = id.idText }
@@ -590,6 +595,8 @@ module NavigateTo =
             match decl with
             | SynModuleSigDecl.ModuleAbbrev(lhs, _, _range) ->
                 addModuleAbbreviation lhs true container
+            | SynModuleSigDecl.Provider(ProviderSig(ProviderDefn(compInfo, _, _), _), _) ->
+                addComponentInfo ContainerType.Provider NavigableItemKind.Provider compInfo true container |> ignore
             | SynModuleSigDecl.Exception(SynExceptionSig(representation, _, _), _) ->
                 addExceptionRepr representation true container |> ignore
             | SynModuleSigDecl.NamespaceFragment fragment ->
@@ -617,6 +624,7 @@ module NavigateTo =
             | SynTypeDefnSigRepr.Simple(repr, _) ->
                 walkSynTypeDefnSimpleRepr repr true container
             | SynTypeDefnSigRepr.Exception _ -> ()
+            | SynTypeDefnSigRepr.Provider _ -> ()
     
         and walkSynMemberSig (synMemberSig: SynMemberSig) container = 
             match synMemberSig with
@@ -684,6 +692,7 @@ module NavigateTo =
             | SynTypeDefnRepr.Simple(repr, _) -> 
                 walkSynTypeDefnSimpleRepr repr false container
             | SynTypeDefnRepr.Exception _ -> ()
+            | SynTypeDefnRepr.Provider _ -> ()
     
         and walkSynTypeDefnSimpleRepr(repr: SynTypeDefnSimpleRepr) isSig container = 
             match repr with
@@ -701,6 +710,7 @@ module NavigateTo =
             | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly _
             | SynTypeDefnSimpleRepr.None _
             | SynTypeDefnSimpleRepr.TypeAbbrev _
+            | SynTypeDefnSimpleRepr.Provider _
             | SynTypeDefnSimpleRepr.Exception _ -> ()
     
         and walkSynMemberDefn (memberDefn: SynMemberDefn) container =

@@ -103,6 +103,7 @@ module XmlDocParsing =
                 | SynTypeDefnRepr.ObjectModel(_, synMemberDefns, _) -> (synMemberDefns |> List.collect getXmlDocablesSynMemberDefn)
                 | SynTypeDefnRepr.Simple(_synTypeDefnSimpleRepr, _range) -> []
                 | SynTypeDefnRepr.Exception _ -> []
+                | SynTypeDefnRepr.Provider _ -> []
             let docForTypeDefn = 
                 if isEmptyXmlDoc preXmlDoc then
                     let fullRange = synAttributes |> List.fold (fun r a -> unionRanges r a.Range) (unionRanges compRange tRange)

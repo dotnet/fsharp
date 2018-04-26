@@ -536,6 +536,7 @@ module Structure =
                parseSimpleRepr simpleRepr
                List.iter (parseSynMemberDefn r) members
            | SynTypeDefnRepr.Exception _ -> ()
+           | SynTypeDefnRepr.Provider _ -> ()
 
         let getConsecutiveModuleDecls (predicate: SynModuleDecl -> range option) (scope: Scope) (decls: SynModuleDecls) =
             let groupConsecutiveDecls input =
@@ -764,6 +765,7 @@ module Structure =
                 rcheck Scope.Type Collapse.Below fullrange collapse
                 parseSimpleRepr simpleRepr
             | SynTypeDefnSigRepr.Exception _ -> ()
+            | SynTypeDefnSigRepr.Provider _ -> ()
 
         let getConsecutiveSigModuleDecls (predicate: SynModuleSigDecl -> range option) (scope:Scope) (decls: SynModuleSigDecls) =
             let groupConsecutiveSigDecls input =

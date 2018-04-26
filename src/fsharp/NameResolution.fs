@@ -1121,7 +1121,7 @@ let ResolveProvidedTypeNameInEntity (amap, m, typeName, modref: ModuleOrNamespac
 #endif
 
         match sty.PApply((fun sty -> sty.GetNestedType(typeName)), m) with
-        | Tainted.Null -> 
+        | Tainted.Is ProvidedType.Null -> 
             //if staticResInfo.NumStaticArgs > 0 then 
             //    error(Error(FSComp.SR.etNestedProvidedTypesDoNotTakeStaticArgumentsOrGenericParameters(),m))
             []

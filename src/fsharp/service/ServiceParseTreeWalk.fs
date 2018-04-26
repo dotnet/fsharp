@@ -546,10 +546,13 @@ module public AstTraversal =
             | None ->
             [
                 match synTypeDefnRepr with
+                // These node are generated in TypeChecker.fs, not in the AST.  
+                // But note exception declarations (and provider declarations) are missing from this tree walk.
                 | SynTypeDefnRepr.Exception _ -> 
-                    // This node is generated in TypeChecker.fs, not in the AST.  
-                    // But note exception declarations are missing from this tree walk.
                     () 
+                | SynTypeDefnRepr.Provider _ -> 
+                    () 
+
                 | SynTypeDefnRepr.ObjectModel(synTypeDefnKind, synMemberDefns, _oRange) ->
                     // traverse inherit function is used to capture type specific data required for processing Inherit part
                     let traverseInherit (synType : SynType, range : range) = 

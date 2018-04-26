@@ -895,7 +895,7 @@ module ProvidedMethodCalls =
                     let baseType = 
                         st.PApply((fun st -> 
                             match st.BaseType with 
-                            | null -> ProvidedType.CreateNoContext(typeof<obj>)  // it might be an interface
+                            | ProvidedType.Null -> ProvidedType.CreateNoContext(typeof<obj>)  // it might be an interface
                             | st -> st),m)
                     loop baseType
                 else

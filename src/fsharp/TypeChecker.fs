@@ -14408,6 +14408,11 @@ module TcExceptionDeclarations =
         let vals, _ = TcTyconMemberSpecs cenv envMutRec (ContainerInfo(parent, Some(MemberOrValContainerInfo(ecref, None, None, NoSafeInitInfo, [])))) ModuleOrMemberBinding tpenv aug
         binds, vals, ecref, envMutRec
 
+ module TcProviderDeclarations =
+    
+    let TcProviderDefn _cenv _envInitial _parent _tpenv (_p, _m) = failwith "" // FS-1023 TODO
+    let TcProviderSignature _cenv _envInitial _parent _tpenv (_p, _m) = failwith "" // FS-1023 TODO
+
 
 
 /// Bind type definitions
@@ -14628,7 +14633,8 @@ module EstablishTypeDefinitionCores =
             | SynTypeDefnSimpleRepr.General _ -> None
             | SynTypeDefnSimpleRepr.Enum _ -> None
             | SynTypeDefnSimpleRepr.Exception _ -> None
-         
+            | SynTypeDefnSimpleRepr.Provider _ -> None
+
         let visOfRepr, _ = ComputeAccessAndCompPath env None id.idRange synVisOfRepr None parent
         let visOfRepr = combineAccess vis visOfRepr 
         // If we supported nested types and modules then additions would be needed here
@@ -14678,7 +14684,8 @@ module EstablishTypeDefinitionCores =
         let repr = 
             match synTyconRepr with 
             | SynTypeDefnSimpleRepr.Exception _ ->  TNoRepr
-            | SynTypeDefnSimpleRepr.None m -> 
+            | SynTypeDefnSimpleRepr.Provider _ ->  TNoRepr
+            | SynTypeDefnSimpleRepr.None m ->
                 // Run InferTyconKind to raise errors on inconsistent attribute sets
                 InferTyconKind cenv.g (TyconHiddenRepr, attrs, [], [], inSig, true, m)  |> ignore
                 if not inSig && not hasMeasureAttr then 
@@ -15026,6 +15033,7 @@ module EstablishTypeDefinitionCores =
                 let implementedTys, inheritedTys = 
                     match synTyconRepr with 
                     | SynTypeDefnSimpleRepr.Exception _ -> [], []
+                    | SynTypeDefnSimpleRepr.Provider _ -> [], []
                     | SynTypeDefnSimpleRepr.General (kind, inherits, slotsigs, fields, isConcrete, _, _, m) ->
                         let kind = InferTyconKind cenv.g (kind, attrs, slotsigs, fields, inSig, isConcrete, m)
 
@@ -15065,6 +15073,7 @@ module EstablishTypeDefinitionCores =
                   | SynTypeDefnSimpleRepr.Exception _ -> Some cenv.g.exn_ty
                   | SynTypeDefnSimpleRepr.None _ -> None
                   | SynTypeDefnSimpleRepr.TypeAbbrev _ -> None
+                  | SynTypeDefnSimpleRepr.Provider _ -> None
                   | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly _ -> None
                   | SynTypeDefnSimpleRepr.Union _ 
                   | SynTypeDefnSimpleRepr.Record _ ->
@@ -15214,7 +15223,11 @@ module EstablishTypeDefinitionCores =
             let typeRepr, baseValOpt, safeInitInfo = 
                 match synTyconRepr with 
 
-                | SynTypeDefnSimpleRepr.Exception synExnDefnRepr -> 
+                | SynTypeDefnSimpleRepr.Provider _providerDefnRepr ->
+                    // FS-1023 TODO: Something here?
+                    TNoRepr, None, NoSafeInitInfo
+
+                | SynTypeDefnSimpleRepr.Exception synExnDefnRepr ->
                     let parent = Parent (mkLocalTyconRef tycon)
                     TcExceptionDeclarations.TcExnDefnCore_Phase1G_EstablishRepresentation cenv envinner parent tycon synExnDefnRepr |> ignore
                     TNoRepr, None, NoSafeInitInfo
@@ -15383,6 +15396,7 @@ module EstablishTypeDefinitionCores =
                             match synTyconRepr with 
                             | SynTypeDefnSimpleRepr.None _ -> None
                             | SynTypeDefnSimpleRepr.Exception _ -> None
+                            | SynTypeDefnSimpleRepr.Provider _ -> None
                             | SynTypeDefnSimpleRepr.TypeAbbrev _ -> None
                             | SynTypeDefnSimpleRepr.Union _ -> None
                             | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly _ -> None
@@ -16135,6 +16149,11 @@ module TcDeclarations =
             let core = MutRecDefnsPhase1DataForTycon(synTyconInfo, SynTypeDefnSimpleRepr.Exception r, implements1, false, false, isAtOriginalTyconDefn)
             core, extraMembers
 
+        | SynTypeDefnRepr.Provider(ProviderDefn(_,repr,_)) ->
+            let isAtOriginalTyconDefn = true
+            let core = MutRecDefnsPhase1DataForTycon(synTyconInfo, SynTypeDefnSimpleRepr.Provider repr, implements1, false, false, isAtOriginalTyconDefn)
+            core, extraMembers
+
     //-------------------------------------------------------------------------
 
     /// Bind a collection of mutually recursive definitions in an implementation file
@@ -16260,7 +16279,12 @@ module TcDeclarations =
             let core = MutRecDefnsPhase1DataForTycon(synTyconInfo, SynTypeDefnSimpleRepr.Exception r, implements1, false, false, isAtOriginalTyconDefn)
             core, (synTyconInfo, extraMembers)
 
-        | SynTypeDefnSigRepr.Simple(r, _) -> 
+        | SynTypeDefnSigRepr.Provider(ProviderDefn(_,repr,_)) ->
+            let isAtOriginalTyconDefn = true
+            let core = MutRecDefnsPhase1DataForTycon(synTyconInfo, SynTypeDefnSimpleRepr.Provider repr, implements1, false, false, isAtOriginalTyconDefn)
+            core, (synTyconInfo, extraMembers)
+
+        | SynTypeDefnSigRepr.Simple(r, _) ->
             let isAtOriginalTyconDefn = true
             let tyconCore = MutRecDefnsPhase1DataForTycon (synTyconInfo, r, implements1, false, false, isAtOriginalTyconDefn)
             tyconCore, (synTyconInfo, extraMembers) 
@@ -16327,7 +16351,12 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
             let _, _, _, env = TcExceptionDeclarations.TcExnSignature cenv env parent emptyUnscopedTyparEnv (edef, scopem)
             return env
 
-        | SynModuleSigDecl.Types (typeSpecs, m) -> 
+        | SynModuleSigDecl.Provider (pdef, m) ->
+            let scopem = unionRanges m.EndRange endm
+            let _, _, _, env = TcProviderDeclarations.TcProviderSignature cenv env parent emptyUnscopedTyparEnv (pdef, scopem)
+            return env
+
+        | SynModuleSigDecl.Types (typeSpecs, m) ->
             let scopem = unionRanges m endm
             let mutRecDefns = typeSpecs |> List.map MutRecShape.Tycon
             let env = TcDeclarations.TcMutRecSignatureDecls cenv env parent typeNames emptyUnscopedTyparEnv m scopem None mutRecDefns
@@ -16508,8 +16537,13 @@ and TcSignatureElementsMutRec cenv parent typeNames endm mutRecNSInfo envInitial
                       let decls = [ MutRecShape.Tycon(SynTypeDefnSig.TypeDefnSig(compInfo, SynTypeDefnSigRepr.Exception exnRepr, members, m)) ]
                       decls, (false, false)
 
-                | SynModuleSigDecl.Val (vspec, _) -> 
-                    if isNamespace then error(NumberedError(FSComp.SR.tcNamespaceCannotContainValues(), vspec.RangeOfId)) 
+                | SynModuleSigDecl.Provider (ProviderSig(defn, _), _) ->
+                      let (ProviderDefn(compInfo, _, m)) = defn
+                      let decls = [ MutRecShape.Tycon(SynTypeDefnSig.TypeDefnSig(compInfo, SynTypeDefnSigRepr.Provider defn, [], m)) ]
+                      decls, (false, false)
+
+                | SynModuleSigDecl.Val (vspec, _) ->
+                    if isNamespace then error(NumberedError(FSComp.SR.tcNamespaceCannotContainValues(), vspec.RangeOfId))
                     let decls = [ MutRecShape.Lets(vspec) ]
                     decls, (false, false)
 
@@ -16858,7 +16892,10 @@ and TcModuleOrNamespaceElementsMutRec cenv parent typeNames endm envInitial mutR
                   let decls = [ MutRecShape.ModuleAbbrev (MutRecDataForModuleAbbrev(id, p, m)) ]
                   decls, (false, moduleAbbrevOk, attrs)
 
-              | SynModuleDecl.Provider(_x,_) -> failwith "" // FS-1023 TODO
+              | SynModuleDecl.Provider(p,_) ->
+                  let (ProviderDefn(compInfo, _, m)) = p
+                  let decls = [ MutRecShape.Tycon(SynTypeDefn.TypeDefn(compInfo, SynTypeDefnRepr.Provider p, [], m)) ]
+                  decls, (false, false, attrs)
 
               | SynModuleDecl.DoExpr _ -> failwith "unreachable: SynModuleDecl.DoExpr - ElimModuleDoBinding"
 
