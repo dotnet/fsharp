@@ -2066,7 +2066,7 @@ let defineDynamicAssemblyAndLog(asmName, flags, asmDir:string) =
     asmB
 
 let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo, collectible) =
-    let filename = assemblyName ^ ".dll"
+    let filename = assemblyName + ".dll"
     let asmDir  = "."
     let asmName = new AssemblyName()
     asmName.Name <- assemblyName;

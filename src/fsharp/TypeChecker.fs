@@ -1087,8 +1087,8 @@ let MakeMemberDataAndMangledNameForMemberVal(g, tcref, isExtrinsic, attrs, optIm
         if isExtrinsic then 
              let tname = tcref.LogicalName
              let text = tname + "." + logicalName
-             let text = if memberFlags.MemberKind <> MemberKind.Constructor && memberFlags.MemberKind <> MemberKind.ClassConstructor && not memberFlags.IsInstance then text^".Static" else text
-             let text = if memberFlags.IsOverrideOrExplicitImpl then text^".Override" else text
+             let text = if memberFlags.MemberKind <> MemberKind.Constructor && memberFlags.MemberKind <> MemberKind.ClassConstructor && not memberFlags.IsInstance then text + ".Static" else text
+             let text = if memberFlags.IsOverrideOrExplicitImpl then text + ".Override" else text
              text
         else
             List.foldBack (tcrefOfAppTy g >> qualifiedMangledNameOfTyconRef) optIntfSlotTys logicalName
@@ -2655,7 +2655,7 @@ module EventDeclarationNormalization =
         if CompileAsEvent cenv.g bindingAttribs then 
 
             let MakeOne (prefix, target) = 
-                let declPattern = RenameBindingPattern (fun s -> prefix^s) declPattern
+                let declPattern = RenameBindingPattern (fun s -> prefix + s) declPattern
                 let argName = "handler"
                 // modify the rhs and argument data
                 let bindingRhs, valSynData = 
