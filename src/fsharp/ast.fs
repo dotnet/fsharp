@@ -1172,7 +1172,7 @@ and
     /// An exception definition , "exception E = ..."
     | Exception of SynExceptionDefnRepr
     /// A provider definition , "provider P = ..."
-    | Provider of SynProviderDefnRepr
+    | Provider of SynProviderDefn
 
 
     member this.Range =
@@ -1360,7 +1360,7 @@ and
         match this with
         | TypeDefn (range=m) -> m
 and
-
+    // FS-1023 TODO: Remove this type, inline into SynProviderDefn
     [<NoEquality; NoComparison>]
     SynProviderDefnRepr =
     | ProviderDefnRepr of SynAccess option * SynType * range:range

@@ -14408,13 +14408,6 @@ module TcExceptionDeclarations =
         let vals, _ = TcTyconMemberSpecs cenv envMutRec (ContainerInfo(parent, Some(MemberOrValContainerInfo(ecref, None, None, NoSafeInitInfo, [])))) ModuleOrMemberBinding tpenv aug
         binds, vals, ecref, envMutRec
 
- module TcProviderDeclarations =
-    
-    let TcProviderDefn _cenv _envInitial _parent _tpenv (_p, _m) = failwith "" // FS-1023 TODO
-    let TcProviderSignature _cenv _envInitial _parent _tpenv (_p, _m) = failwith "" // FS-1023 TODO
-
-
-
 /// Bind type definitions
 ///
 /// We first establish the cores of a set of type definitions (i.e. everything
@@ -14605,7 +14598,7 @@ module EstablishTypeDefinitionCores =
     ///    - computing the mangled name for C
     /// but 
     ///    - we don't yet 'properly' establish constraints on type parameters
-    let private TcTyconDefnCore_Phase1A_BuildInitialTycon cenv env parent (MutRecDefnsPhase1DataForTycon(synTyconInfo, synTyconRepr, _, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, _)) = 
+    let TcTyconDefnCore_Phase1A_BuildInitialTycon cenv env parent (MutRecDefnsPhase1DataForTycon(synTyconInfo, synTyconRepr, _, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, _)) =
         let (ComponentInfo (_, synTypars, _, id, doc, preferPostfix, synVis, _)) = synTyconInfo
         let checkedTypars = TcTyparDecls cenv env synTypars
         id |> List.iter (CheckNamespaceModuleOrTypeName cenv.g)
@@ -16149,9 +16142,9 @@ module TcDeclarations =
             let core = MutRecDefnsPhase1DataForTycon(synTyconInfo, SynTypeDefnSimpleRepr.Exception r, implements1, false, false, isAtOriginalTyconDefn)
             core, extraMembers
 
-        | SynTypeDefnRepr.Provider(ProviderDefn(_,repr,_)) ->
+        | SynTypeDefnRepr.Provider(defn) ->
             let isAtOriginalTyconDefn = true
-            let core = MutRecDefnsPhase1DataForTycon(synTyconInfo, SynTypeDefnSimpleRepr.Provider repr, implements1, false, false, isAtOriginalTyconDefn)
+            let core = MutRecDefnsPhase1DataForTycon(synTyconInfo, SynTypeDefnSimpleRepr.Provider defn, implements1, false, false, isAtOriginalTyconDefn)
             core, extraMembers
 
     //-------------------------------------------------------------------------
@@ -16279,9 +16272,9 @@ module TcDeclarations =
             let core = MutRecDefnsPhase1DataForTycon(synTyconInfo, SynTypeDefnSimpleRepr.Exception r, implements1, false, false, isAtOriginalTyconDefn)
             core, (synTyconInfo, extraMembers)
 
-        | SynTypeDefnSigRepr.Provider(ProviderDefn(_,repr,_)) ->
+        | SynTypeDefnSigRepr.Provider(defn) ->
             let isAtOriginalTyconDefn = true
-            let core = MutRecDefnsPhase1DataForTycon(synTyconInfo, SynTypeDefnSimpleRepr.Provider repr, implements1, false, false, isAtOriginalTyconDefn)
+            let core = MutRecDefnsPhase1DataForTycon(synTyconInfo, SynTypeDefnSimpleRepr.Provider defn, implements1, false, false, isAtOriginalTyconDefn)
             core, (synTyconInfo, extraMembers)
 
         | SynTypeDefnSigRepr.Simple(r, _) ->
@@ -16337,6 +16330,21 @@ module TcDeclarations =
 
         let _ = TcMutRecSignatureDecls_Phase2 cenv scopem envMutRecPrelimWithReprs withEnvs
         envMutRec
+
+
+ module TcProviderDeclarations =
+
+    let TcProviderDefn_Phase1A cenv env parent defn =
+        let (ProviderDefn(compInfo, _, _)) = defn
+        let mutrec = MutRecDefnsPhase1DataForTycon(compInfo, SynTypeDefnSimpleRepr.Provider(defn), [], false, false, true)
+        EstablishTypeDefinitionCores.TcTyconDefnCore_Phase1A_BuildInitialTycon cenv env parent mutrec
+
+    let TcProviderDefn cenv envInitial parent _tpenv (p, _m) =
+        let entity = TcProviderDefn_Phase1A cenv envInitial parent p
+        entity, envInitial
+        // FS-1023 TODO
+    let TcProviderSignature _cenv _envInitial _parent _tpenv (_p, _m) = failwith "" // FS-1023 TODO
+
 
 //-------------------------------------------------------------------------
 // Bind module types
@@ -16685,11 +16693,9 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv:cenv) parent typeNames scopem 
 
       | SynModuleDecl.DoExpr _ -> return! failwith "unreachable"
 
-      | SynModuleDecl.Attributes (synAttrs, _) -> 
-          let attrs, _ = TcAttributesWithPossibleTargets false cenv env AttributeTargets.Top synAttrs
-          return ((fun e -> e), attrs), env, env
-
-      | SynModuleDecl.Provider(_x,_) -> return failwith "" // FS-1023 TODO
+      | SynModuleDecl.Provider(pdefn, m) ->
+          let decl, env = TcProviderDeclarations.TcProviderDefn cenv env parent tpenv (pdefn, scopem)
+          return ((fun e -> TMDefRec(false, [decl], [] |> List.map ModuleOrNamespaceBinding.Binding, m) :: e), []), env, env
 
       | SynModuleDecl.Attributes (synAttrs, _) ->
           let attrs, _ = TcAttributesWithPossibleTargets false cenv env AttributeTargets.Top synAttrs

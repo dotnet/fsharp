@@ -546,12 +546,12 @@ module public AstTraversal =
             | None ->
             [
                 match synTypeDefnRepr with
-                // These node are generated in TypeChecker.fs, not in the AST.  
+                // These nodes are generated in TypeChecker.fs, not in the AST.  
                 // But note exception declarations (and provider declarations) are missing from this tree walk.
                 | SynTypeDefnRepr.Exception _ -> 
                     () 
                 | SynTypeDefnRepr.Provider _ -> 
-                    () 
+                    () // FS-1023 TODO: Should this assert false?
 
                 | SynTypeDefnRepr.ObjectModel(synTypeDefnKind, synMemberDefns, _oRange) ->
                     // traverse inherit function is used to capture type specific data required for processing Inherit part
@@ -602,7 +602,7 @@ module public AstTraversal =
             | SynMemberDefn.ValField(_synField, _range) -> None
             | SynMemberDefn.NestedType(synTypeDefn, _synAccessOption, _range) -> traverseSynTypeDefn path synTypeDefn
 
-        and traverseSynProviderDefn _path (SynProviderDefn.ProviderDefn(synComponentInfo, SynProviderDefnRepr.ProviderDefnRepr(_, t, m), _tRange)) =
+        and traverseSynProviderDefn _path (SynProviderDefn.ProviderDefn(synComponentInfo, ProviderDefnRepr(_, t, m), _tRange)) =
             match visitor.VisitComponentInfo synComponentInfo with
             | Some x -> Some x
             | None -> visitor.VisitTypeAbbrev(t,m)

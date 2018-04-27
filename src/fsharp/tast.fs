@@ -4934,6 +4934,31 @@ let NewExn cpath (id:Ident) access repr attribs doc =
         entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordOrUnionType=false)
         entity_il_repr_cache= newCache()   } 
 
+/// Create a new TAST Entity node for an F# provider definition
+let NewProvider cpath (id:Ident) access repr attribs doc info = 
+    Tycon.New "provider"
+      { entity_stamp=newStamp()
+        entity_attribs=attribs
+        entity_kind=TyparKind.Type
+        entity_logical_name=id.idText
+        entity_compiled_name=None
+        entity_range=id.idRange
+        entity_other_range=None
+        entity_exn_info= repr
+        entity_tycon_tcaug=TyconAugmentation.Create()
+        entity_xmldoc=doc
+        entity_xmldocsig=""
+        entity_pubpath=cpath |> Option.map (fun (cp:CompilationPath) -> cp.NestedPublicPath id)
+        entity_accessiblity=access
+        entity_tycon_repr_accessibility=access
+        entity_modul_contents = MaybeLazy.Strict (NewEmptyModuleOrNamespaceType ModuleOrType)
+        entity_cpath= cpath
+        entity_typars=LazyWithContext.NotLazy []
+        entity_tycon_abbrev = None
+        entity_tycon_repr = TProvidedTypeExtensionPoint info
+        entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordOrUnionType=false)
+        entity_il_repr_cache= newCache()   } 
+
 /// Create a new TAST RecdField node for an F# class, struct or record field
 let NewRecdField  stat konst id ty isMutable isVolatile pattribs fattribs docOption access secret =
     { rfield_mutable=isMutable
