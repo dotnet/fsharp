@@ -27,7 +27,7 @@ open Microsoft.FSharp.Compiler.PrettyNaming
 //     ilxgen.fs: GenCoerce (omit unnecessary castclass or isinst instruction)
 //
 let rec TypeDefinitelySubsumesTypeNoCoercion ndeep g amap m ty1 ty2 = 
-  if ndeep > 100 then error(InternalError("recursive class hierarchy (detected in TypeDefinitelySubsumesTypeNoCoercion), ty1 = "^(DebugPrint.showType ty1),m))
+  if ndeep > 100 then error(InternalError("recursive class hierarchy (detected in TypeDefinitelySubsumesTypeNoCoercion), ty1 = " + (DebugPrint.showType ty1), m))
   if ty1 === ty2 then true 
   // QUERY : quadratic
   elif typeEquiv g ty1 ty2 then true
@@ -66,7 +66,7 @@ type CanCoerce = CanCoerce | NoCoerce
 /// The feasible equivalence relation. Part of the language spec.
 let rec TypesFeasiblyEquiv ndeep g amap m ty1 ty2 = 
 
-    if ndeep > 100 then error(InternalError("recursive class hierarchy (detected in TypeFeasiblySubsumesType), ty1 = "^(DebugPrint.showType ty1),m));
+    if ndeep > 100 then error(InternalError("recursive class hierarchy (detected in TypeFeasiblySubsumesType), ty1 = " + (DebugPrint.showType ty1), m));
     let ty1 = stripTyEqns g ty1
     let ty2 = stripTyEqns g ty2
     match ty1,ty2 with 
@@ -88,7 +88,7 @@ let rec TypesFeasiblyEquiv ndeep g amap m ty1 ty2 =
 /// The feasible coercion relation. Part of the language spec.
 
 let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 = 
-    if ndeep > 100 then error(InternalError("recursive class hierarchy (detected in TypeFeasiblySubsumesType), ty1 = "^(DebugPrint.showType ty1),m))
+    if ndeep > 100 then error(InternalError("recursive class hierarchy (detected in TypeFeasiblySubsumesType), ty1 = " + (DebugPrint.showType ty1), m))
     let ty1 = stripTyEqns g ty1
     let ty2 = stripTyEqns g ty2
     match ty1,ty2 with 

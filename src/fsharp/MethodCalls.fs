@@ -721,7 +721,7 @@ let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objA
             let valu = isStructTy g enclTy
             let isCtor = minfo.IsConstructor
             if minfo.IsClassConstructor then 
-                error (InternalError (minfo.LogicalName ^": cannot call a class constructor",m))
+                error (InternalError (minfo.LogicalName + ": cannot call a class constructor", m))
             let useCallvirt = not valu && not direct && minfo.IsVirtual
             let isProtected = minfo.IsProtectedAccessiblity
             let exprTy = if isCtor then enclTy else minfo.GetFSharpReturnTy(amap, m, minst)
@@ -791,7 +791,7 @@ let BuildNewDelegateExpr (eventInfoOpt:EventInfo option, g, amap, delegateTy, in
             if List.exists (isByrefTy g) delArgTys then
                     error(Error(FSComp.SR.tcFunctionRequiresExplicitLambda(List.length delArgTys),m)) 
 
-            let delArgVals = delArgTys |> List.mapi (fun i argty -> fst (mkCompGenLocal m ("delegateArg"^string i) argty)) 
+            let delArgVals = delArgTys |> List.mapi (fun i argty -> fst (mkCompGenLocal m ("delegateArg" + string i) argty)) 
             let expr = 
                 let args = 
                     match eventInfoOpt with 
