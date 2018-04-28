@@ -156,13 +156,13 @@ let DisplaySample (form:Form) (measure, fileName) =
 			let ShowStatistics count total skills = 					
 				let (mean:float) = (total/(float) count ) in
 				let _ = try if not form.IsDisposed then form.Invoke( new MethodInvoker( 
-					fun _ -> try tip.SetToolTip(labelK1, "Mean: " ^ mean.ToString() ) with e -> LogWarning e
+					fun _ -> try tip.SetToolTip(labelK1, "Mean: " + mean.ToString() ) with e -> LogWarning e
 					)) |> ignore with e -> LogWarning e
 				in
 				let deltaSquared = skills |> List.fold ( fun acc value -> let delta = (mean-value) in acc + (delta*delta) ) 0.0 in
 				let sd = Math.Sqrt(deltaSquared / (float count)) in								
 				try if not form.IsDisposed then form.Invoke( new MethodInvoker( 
-					fun _ -> try tip.SetToolTip(labelK2, "Standard Deviation: " ^ sd.ToString() ) with e -> LogWarning e
+					fun _ -> try tip.SetToolTip(labelK2, "Standard Deviation: " + sd.ToString() ) with e -> LogWarning e
 					)) |>ignore  with e -> LogWarning e |> ignore
 			in
 			lock lastFileLock ( fun _ ->
@@ -275,7 +275,7 @@ let ChangeHandler measure path =
 	// Check for tracked players file
 	let trackFile = GetLatestFile path "Track-*.csv" in
 	let _ = match trackFile with 
-		| Some name -> 	let title = "Select Tracked Players (" ^ path ^ ")" in
+		| Some name -> 	let title = "Select Tracked Players (" + path + ")" in
 						let form = match formDock.GetChildForm "track" with
 								   | Some child -> child.Text <- title; child
 								   | None -> let child = CreateForm title in
@@ -292,7 +292,7 @@ let ChangeHandler measure path =
 	// Check for leader board of players file
 	let leadFile = GetLatestFile path "Lead-*.csv" in
 	let _ = match leadFile with 
-		| Some name ->	let title =  "Bar graph (" ^ path ^ ")" in
+		| Some name ->	let title =  "Bar graph (" + path + ")" in
 						let form = match formDock.GetChildForm "lead" with
 								  | Some child -> child.Text<-title;child.Controls.Clear();child.Menu.MenuItems.Clear();child
 								  | None -> let child = CreateForm title in child.Show();
@@ -794,15 +794,15 @@ do menuEdit.MenuItems.Add(miEditCopy) |> ignore
 do menuEdit.MenuItems.Add(miEditPaste) |> ignore
 do miEditCopy.Click.Add( fun _ ->
 			let levels = (!skillList) |> List.mapi ( fun i x -> 
-				if pins.[i] then ("\t\t<level index=\"" ^ (i+1).ToString() ^ "\">" ^ x.ToString() ^ "</level>\r\n") else "")  in
-			let value = "<view>\r\n" ^ 
-				"\t<folder>" ^ (GetRelativePath combos) ^ "</folder>\r\n" ^
-				"\t<k1>" ^ (!k1).ToString() ^ "</k1>\r\n" ^
-				"\t<k2>" ^ (!k2).ToString() ^ "</k2>\r\n" ^
-				"\t<sigma>" ^(!SigmaFactor).ToString() ^ "</sigma>\r\n" ^
-				"\t<playedStart>" ^ (!gamesPlayedStart).ToString() ^ "</playedStart>\r\n" ^
-				"\t<playedEnd>" ^ (!gamesPlayedEnd).ToString() ^ "</playedEnd>\r\n" ^
-				"\t<levels>\r\n" ^ System.String.Join("",levels |> List.toArray) ^ "\t</levels>\r\n" ^								
+				if pins.[i] then ("\t\t<level index=\"" + (i+1).ToString() + "\">" + x.ToString() + "</level>\r\n") else "") in
+			let value = "<view>\r\n" + 
+				"\t<folder>" + (GetRelativePath combos) + "</folder>\r\n" +
+				"\t<k1>" + (!k1).ToString() + "</k1>\r\n" +
+				"\t<k2>" + (!k2).ToString() + "</k2>\r\n" +
+				"\t<sigma>" + (!SigmaFactor).ToString() + "</sigma>\r\n" +
+				"\t<playedStart>" + (!gamesPlayedStart).ToString() + "</playedStart>\r\n" +
+				"\t<playedEnd>" + (!gamesPlayedEnd).ToString() + "</playedEnd>\r\n" +
+				"\t<levels>\r\n" + System.String.Join("",levels |> List.toArray) + "\t</levels>\r\n" +
 				"</view>\r\n" 
 			in Clipboard.SetDataObject(value)	// Copy xml to clip board
 		)
@@ -853,7 +853,7 @@ do miEditPaste.Click.Add( fun _ ->
 						in
 					
 					()															
-				with e -> MessageBox.Show("Paste failed: " ^ e.Message) |> ignore
+				with e -> MessageBox.Show("Paste failed: " + e.Message) |> ignore
 				in () 			
 			| _ -> ()	
 	)
@@ -869,11 +869,11 @@ do miHelpAbout.Click.Add( fun _ ->
 		box.SelectionAlignment <- HorizontalAlignment.Center;	
 		box.SelectedText <- "Experiment Viewer\r\n\r\n";
 		box.SelectionAlignment <- HorizontalAlignment.Left;
-		box.SelectedText <- "The starting folder can be specified from the command line or the File Menu.\r\n\r\n" ^
-							"Once an experiment file has loaded the suggested values for K1 & K2 are viewable by hovering the mouse over the respective labels.\r\n" ^
-							"The values for K1 & K2 are calculated as the mean and standard deviation of Mu-(n*Sigma).\r\n\r\n" ^
-							"The setting can be copied and pasted as XML to and from the editable windows using CTRL-C & CTRL-V.\r\n\r\n" ^
-							"The graphs can be panned by moving the mouse with the left mouse button down, and zoomed with the right mouse button down." ^
+		box.SelectedText <- "The starting folder can be specified from the command line or the File Menu.\r\n\r\n" +
+							"Once an experiment file has loaded the suggested values for K1 & K2 are viewable by hovering the mouse over the respective labels.\r\n" +
+							"The values for K1 & K2 are calculated as the mean and standard deviation of Mu-(n*Sigma).\r\n\r\n" +
+							"The setting can be copied and pasted as XML to and from the editable windows using CTRL-C & CTRL-V.\r\n\r\n" +
+							"The graphs can be panned by moving the mouse with the left mouse button down, and zoomed with the right mouse button down." +
 							"Press F5 to reset the view, and F3 to toggle the grid off and on.";
 		box.Enabled <- false;
 		dialog.Controls.Add(box);
