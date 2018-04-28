@@ -1066,6 +1066,7 @@ type PEReader =
     resourcesAddr:int32
     strongnameAddr:int32
     vtableFixupsAddr:int32
+    fromByteArray:bool
 }
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1543,11 +1544,22 @@ let readBlobHeapAsDouble ctxt vidx = fst (sigptrGetDouble (readBlobHeap ctxt vid
 //        (e) the start of the native resources attached to the binary if any
 // ----------------------------------------------------------------------*)
 
-let readNativeResources (pectxt: PEReader)  = 
+let readNativeResources (pectxt: PEReader) = 
     [ if pectxt.nativeResourcesSize <> 0x0  && pectxt.nativeResourcesAddr <> 0x0 then 
-           let start = pectxt.anyV2P (pectxt.fileName + ": native resources", pectxt.nativeResourcesAddr)
-           yield ILNativeResource.In (pectxt.fileName, pectxt.nativeResourcesAddr, start, pectxt.nativeResourcesSize ) ]
-   
+        let start = pectxt.anyV2P (pectxt.fileName + ": native resources", pectxt.nativeResourcesAddr)
+        if pectxt.fromByteArray then
+#if !FX_NO_LINKEDRESOURCES
+            let unlinkedResource =
+                let linkedResource = seekReadBytes (pectxt.pefile.GetView()) start pectxt.nativeResourcesSize
+                unlinkResource pectxt.nativeResourcesAddr linkedResource
+            yield ILNativeResource.Out unlinkedResource
+#else
+            ()
+#endif
+        else
+            yield ILNativeResource.In (pectxt.fileName, pectxt.nativeResourcesAddr, start, pectxt.nativeResourcesSize ) ]
+
+
 let getDataEndPointsDelayed (pectxt: PEReader) ctxtH = 
     lazy
         let (ctxt: ILMetadataReader)  = getHole ctxtH
@@ -3694,7 +3706,7 @@ let openMetadataReader (fileName, mdfile: BinaryFile, metadataPhysLoc, peinfo, p
 // read of the AbsIL module.
 // ----------------------------------------------------------------------
 
-let openPEFileReader (fileName, pefile: BinaryFile, pdbDirPath) = 
+let openPEFileReader (fileName, pefile: BinaryFile, pdbDirPath, fromByteArray) = 
     let pev = pefile.GetView()
     (* MSDOS HEADER *)
     let peSignaturePhysLoc = seekReadInt32 pev 0x3c
@@ -3887,12 +3899,13 @@ let openPEFileReader (fileName, pefile: BinaryFile, pdbDirPath) =
           pefile=pefile
           fileName=fileName
           entryPointToken=entryPointToken
+          fromByteArray=fromByteArray
         }
     let peinfo = (subsys, (subsysMajor, subsysMinor), useHighEnthropyVA, ilOnly, only32, is32bitpreferred, only64, platform, isDll, alignVirt, alignPhys, imageBaseReal)
     (metadataPhysLoc, metadataSize, peinfo, pectxt, pev, pdb)
 
-let openPE (fileName, pefile, pdbDirPath, reduceMemoryUsage, ilGlobals) = 
-    let (metadataPhysLoc, _metadataSize, peinfo, pectxt, pev, pdb) = openPEFileReader (fileName, pefile, pdbDirPath) 
+let openPE (fileName, pefile, pdbDirPath, reduceMemoryUsage, ilGlobals, fromByteArray) = 
+    let (metadataPhysLoc, _metadataSize, peinfo, pectxt, pev, pdb) = openPEFileReader (fileName, pefile, pdbDirPath, fromByteArray) 
     let ilModule, ilAssemblyRefs = openMetadataReader (fileName, pefile, metadataPhysLoc, peinfo, pectxt, pev, Some pectxt, reduceMemoryUsage, ilGlobals)
     ilModule, ilAssemblyRefs, pdb
 
@@ -3969,7 +3982,7 @@ let tryMemoryMapWholeFile opts fileName =
 
 let OpenILModuleReaderFromBytes fileName bytes opts = 
     let pefile = ByteFile(fileName, bytes) :> BinaryFile
-    let ilModule, ilAssemblyRefs, pdb = openPE (fileName, pefile, opts.pdbDirPath, (opts.reduceMemoryUsage = ReduceMemoryFlag.Yes), opts.ilGlobals)
+    let ilModule, ilAssemblyRefs, pdb = openPE (fileName, pefile, opts.pdbDirPath, (opts.reduceMemoryUsage = ReduceMemoryFlag.Yes), opts.ilGlobals, true)
     new ILModuleReader(ilModule, ilAssemblyRefs, (fun () -> ClosePdbReader pdb))
 
 let OpenILModuleReader fileName opts = 
@@ -4017,7 +4030,7 @@ let OpenILModuleReader fileName opts =
                 // Then use the metadata blob as the long-lived memory resource.
                 let disposer, pefileEager = tryMemoryMapWholeFile opts fullPath
                 use _disposer = disposer
-                let (metadataPhysLoc, metadataSize, peinfo, pectxtEager, pevEager, _pdb) = openPEFileReader (fullPath, pefileEager, None) 
+                let (metadataPhysLoc, metadataSize, peinfo, pectxtEager, pevEager, _pdb) = openPEFileReader (fullPath, pefileEager, None, false) 
                 let mdfile = 
                     match mdfileOpt with 
                     | Some mdfile -> mdfile
@@ -4031,7 +4044,7 @@ let OpenILModuleReader fileName opts =
                 // If we are not doing metadata-only, then just go ahead and read all the bytes and hold them either strongly or weakly
                 // depending on the heuristic
                 let pefile = createByteFileChunk opts fullPath None
-                let ilModule, ilAssemblyRefs, _pdb = openPE (fullPath, pefile, None, reduceMemoryUsage, opts.ilGlobals) 
+                let ilModule, ilAssemblyRefs, _pdb = openPE (fullPath, pefile, None, reduceMemoryUsage, opts.ilGlobals, false) 
                 new ILModuleReader(ilModule, ilAssemblyRefs, ignore)
 
         if keyOk then 
@@ -4049,7 +4062,7 @@ let OpenILModuleReader fileName opts =
         //
         // We do however care about avoiding locks on files that prevent their deletion during a 
         // multi-proc build. So use memory mapping, but only for stable files.  Other files
-        // fill use an in-memory ByteFile
+        // still use an in-memory ByteFile
         let _disposer, pefile = 
             if alwaysMemoryMapFSC || stableFileHeuristicApplies fullPath then 
                 tryMemoryMapWholeFile opts fullPath
@@ -4058,7 +4071,7 @@ let OpenILModuleReader fileName opts =
                 let disposer = { new IDisposable with member __.Dispose() = () }
                 disposer, pefile
 
-        let ilModule, ilAssemblyRefs, pdb = openPE (fullPath, pefile, opts.pdbDirPath, reduceMemoryUsage, opts.ilGlobals)
+        let ilModule, ilAssemblyRefs, pdb = openPE (fullPath, pefile, opts.pdbDirPath, reduceMemoryUsage, opts.ilGlobals, false)
         let ilModuleReader = new ILModuleReader(ilModule, ilAssemblyRefs, (fun () -> ClosePdbReader pdb))
 
         // Readers with PDB reader disposal logic don't go in the cache.  Note the PDB reader is only used in static linking.
