@@ -255,7 +255,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             match takesInstanceArg,curriedArgs with 
             | false,curriedArgs -> [],curriedArgs
             | true,(objArg::curriedArgs) -> [objArg],curriedArgs
-            | true,[] -> wfail(InternalError("warning: unexpected missing object argument when generating quotation for call to F# object member "^vref.LogicalName,m)) 
+            | true,[] -> wfail(InternalError("warning: unexpected missing object argument when generating quotation for call to F# object member " + vref.LogicalName,m)) 
 
         if verboseCReflect then 
             dprintfn "vref.DisplayName = %A,  #objArgs = %A, #curriedArgs = %A" vref.DisplayName objArgs.Length curriedArgs.Length
@@ -272,7 +272,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             // partially applied arguments to 'let' bindings 
             let topValInfo = 
                match vref.ValReprInfo with 
-               | None -> error(InternalError("no arity information found for F# value "^vref.LogicalName,vref.Range))
+               | None -> error(InternalError("no arity information found for F# value " + vref.LogicalName,vref.Range))
                | Some a -> a 
 
             let expr,exprty = AdjustValForExpectedArity cenv.g m vref vFlags topValInfo 

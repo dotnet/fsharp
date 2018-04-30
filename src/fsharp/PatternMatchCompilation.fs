@@ -936,7 +936,7 @@ let CompilePatternBasic
              
              if not (isNil topgtvs) then error(InternalError("Unexpected generalized type variables when compiling an active pattern",m))
              let rty = apinfo.ResultType g m resTys
-             let v,vexp = mkCompGenLocal m ("activePatternResult"^string (newUnique())) rty
+             let v,vexp = mkCompGenLocal m ("activePatternResult" + string (newUnique())) rty
              if topv.IsMemberOrModuleBinding then 
                  AdjustValToTopVal v topv.DeclaringEntity ValReprInfo.emptyValData
              let argexp = GetSubExprOfInput subexpr
