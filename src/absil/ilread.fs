@@ -1066,7 +1066,7 @@ type PEReader =
     resourcesAddr:int32
     strongnameAddr:int32
     vtableFixupsAddr:int32
-    fromByteArray:bool
+    noFileOnDisk:bool
 }
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1544,10 +1544,13 @@ let readBlobHeapAsDouble ctxt vidx = fst (sigptrGetDouble (readBlobHeap ctxt vid
 //        (e) the start of the native resources attached to the binary if any
 // ----------------------------------------------------------------------*)
 
+// noFileOnDisk indicates that the PE file was read from Memory using OpenILModuleReaderFromBytes
+// For example the assembly came from a type provider
+// In this case we eagerly read the native resources into memory
 let readNativeResources (pectxt: PEReader) = 
     [ if pectxt.nativeResourcesSize <> 0x0  && pectxt.nativeResourcesAddr <> 0x0 then 
         let start = pectxt.anyV2P (pectxt.fileName + ": native resources", pectxt.nativeResourcesAddr)
-        if pectxt.fromByteArray then
+        if pectxt.noFileOnDisk then
 #if !FX_NO_LINKEDRESOURCES
             let unlinkedResource =
                 let linkedResource = seekReadBytes (pectxt.pefile.GetView()) start pectxt.nativeResourcesSize
@@ -3706,7 +3709,7 @@ let openMetadataReader (fileName, mdfile: BinaryFile, metadataPhysLoc, peinfo, p
 // read of the AbsIL module.
 // ----------------------------------------------------------------------
 
-let openPEFileReader (fileName, pefile: BinaryFile, pdbDirPath, fromByteArray) = 
+let openPEFileReader (fileName, pefile: BinaryFile, pdbDirPath, noFileOnDisk) = 
     let pev = pefile.GetView()
     (* MSDOS HEADER *)
     let peSignaturePhysLoc = seekReadInt32 pev 0x3c
@@ -3899,13 +3902,13 @@ let openPEFileReader (fileName, pefile: BinaryFile, pdbDirPath, fromByteArray) =
           pefile=pefile
           fileName=fileName
           entryPointToken=entryPointToken
-          fromByteArray=fromByteArray
+          noFileOnDisk=noFileOnDisk
         }
     let peinfo = (subsys, (subsysMajor, subsysMinor), useHighEnthropyVA, ilOnly, only32, is32bitpreferred, only64, platform, isDll, alignVirt, alignPhys, imageBaseReal)
     (metadataPhysLoc, metadataSize, peinfo, pectxt, pev, pdb)
 
-let openPE (fileName, pefile, pdbDirPath, reduceMemoryUsage, ilGlobals, fromByteArray) = 
-    let (metadataPhysLoc, _metadataSize, peinfo, pectxt, pev, pdb) = openPEFileReader (fileName, pefile, pdbDirPath, fromByteArray) 
+let openPE (fileName, pefile, pdbDirPath, reduceMemoryUsage, ilGlobals, noFileOnDisk) = 
+    let (metadataPhysLoc, _metadataSize, peinfo, pectxt, pev, pdb) = openPEFileReader (fileName, pefile, pdbDirPath, noFileOnDisk) 
     let ilModule, ilAssemblyRefs = openMetadataReader (fileName, pefile, metadataPhysLoc, peinfo, pectxt, pev, Some pectxt, reduceMemoryUsage, ilGlobals)
     ilModule, ilAssemblyRefs, pdb
 
