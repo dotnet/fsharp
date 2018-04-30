@@ -9,9 +9,10 @@ open Test
 
 //type T = Generic.IdentityType<int>
 
-provider MyNewProvider<'a> = Generic.IdentityType<Generic.IdentityType<'a>>
 
-type X = MyNewProvider<int>
+provider MyNewProvider<'a> = Generic.IdentityType<Generic.IdentityType<'a>>
+//
+//type X = MyNewProvider<int>
 
 //let myIdentity (x : 'a) =
 //  M.Create<'a option> (Some x)

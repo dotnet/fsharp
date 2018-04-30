@@ -494,7 +494,7 @@ type Entity =
 
       // MUTABILITY; used only when establishing tycons. 
       mutable entity_kind : TyparKind
-      
+
       mutable entity_flags : EntityFlags
       
       /// The unique stamp of the "tycon blob". Note the same tycon in signature and implementation get different stamps 
@@ -533,7 +533,12 @@ type Entity =
       /// If non-None, indicates the type is an abbreviation for another type. 
       //
       // MUTABILITY; used only during creation and remapping of tycons 
-      mutable entity_tycon_abbrev: TType option             
+      mutable entity_tycon_abbrev: TType option
+      
+      /// If non-None, indicates the type is an abbreviation for another type involving a type provider. 
+      //
+      // MUTABILITY; used only during creation and remapping of tycons 
+      mutable entity_provider_abbrev: TType option
       
       /// The methods and properties of the type 
       //
@@ -694,6 +699,9 @@ type Entity =
     /// The information about the r.h.s. of an F# exception definition, if any. 
     member x.ExceptionInfo = x.entity_exn_info
 
+    /// The information about the r.h.s. of an F# provider definition, if any. 
+    member x.ProviderInfo = x.entity_provider_abbrev
+
     /// Indicates if the entity represents an F# exception declaration.
     member x.IsExceptionDecl = match x.ExceptionInfo with TExnNone -> false | _ -> true
 
@@ -714,6 +722,9 @@ type Entity =
 
     /// Indicates if this entity is an F# type abbreviation definition
     member x.IsTypeAbbrev = x.TypeAbbrev.IsSome
+
+    /// Indicates if this entity is an F# provider abbreviation definition
+    member x.ProviderAbbrev = x.ProviderAbbrev
 
     /// Get the value representing the accessibility of the r.h.s. of an F# type definition.
     member x.TypeReprAccessibility = x.entity_tycon_repr_accessibility
@@ -745,7 +756,10 @@ type Entity =
         match x.TypeReprInfo with 
         | TProvidedTypeExtensionPoint _ -> true
         | TProvidedNamespaceExtensionPoint _ -> true
-        | _ -> false
+        | _ ->
+            match x.ProviderInfo with
+            | Some _ -> true
+            | None -> false
 
     /// Indicates if the entity is a provided namespace fragment
     member x.IsProvidedNamespace = 
@@ -861,6 +875,7 @@ type Entity =
           entity_tycon_repr= Unchecked.defaultof<_>
           entity_tycon_abbrev= Unchecked.defaultof<_>
           entity_tycon_tcaug= Unchecked.defaultof<_>
+          entity_provider_abbrev= Unchecked.defaultof<_>
           entity_exn_info= Unchecked.defaultof<_>
           entity_modul_contents= Unchecked.defaultof<_>
           entity_xmldoc = Unchecked.defaultof<_>
@@ -1820,6 +1835,7 @@ and Construct =
             entity_tycon_repr = repr
             entity_tycon_repr_accessibility = TAccess([])
             entity_exn_info=TExnNone
+            entity_provider_abbrev=None
             entity_tycon_tcaug=TyconAugmentation.Create()
             entity_modul_contents = MaybeLazy.Lazy (lazy new ModuleOrNamespaceType(Namespace, QueueList.ofList [], QueueList.ofList []))
             // Generated types get internal accessibility
@@ -1848,6 +1864,7 @@ and Construct =
             entity_tycon_repr = TNoRepr
             entity_tycon_repr_accessibility = access
             entity_exn_info=TExnNone
+            entity_provider_abbrev=None
             entity_tycon_tcaug=TyconAugmentation.Create()
             entity_pubpath=cpath |> Option.map (fun (cp:CompilationPath) -> cp.NestedPublicPath id)
             entity_cpath=cpath
@@ -1860,7 +1877,11 @@ and Construct =
 and Accessibility = 
     /// Indicates the construct can only be accessed from any code in the given type constructor, module or assembly. [] indicates global scope. 
     | TAccess of CompilationPath list
-    
+and StaticArgSolution =
+    {
+        typar : Typar
+        mutable kind : TType option
+    }
 and TyparData = Typar
 and 
     [<NoEquality; NoComparison>]
@@ -1902,6 +1923,9 @@ and
        
        /// An inferred equivalence for a type inference variable. 
       mutable typar_solution: TType option
+
+      /// When this typar represents a static parameter to a provider, what is its kind.
+      mutable typar_staticarg_kind : TType option
        
        /// The inferred constraints for the type inference variable 
       mutable typar_constraints: TyparConstraint list 
@@ -1976,7 +2000,8 @@ and
           typar_attribs = Unchecked.defaultof<_>       
           typar_solution = Unchecked.defaultof<_>
           typar_constraints = Unchecked.defaultof<_>
-          typar_astype = Unchecked.defaultof<_> }
+          typar_astype = Unchecked.defaultof<_>
+          typar_staticarg_kind = Unchecked.defaultof<_>}
 
     /// Creates a type variable based on the given data. Only used during unpickling of F# metadata.
     static member New (data: TyparData) : Typar = data
@@ -4889,7 +4914,8 @@ let NewTypar (kind,rigid,Typar(id,staticReq,isCompGen),isFromError,dynamicReq,at
         typar_solution = None
         typar_constraints=[]
         typar_xmldoc = XmlDoc.Empty 
-        typar_astype = Unchecked.defaultof<_>} 
+        typar_astype = Unchecked.defaultof<_>
+        typar_staticarg_kind = None} 
 
 let NewRigidTypar nm m = NewTypar (TyparKind.Type,TyparRigidity.Rigid,Typar(mkSynId m nm,NoStaticReq,true),false,TyparDynamicReq.Yes,[],false,false)
 
@@ -4920,6 +4946,7 @@ let NewExn cpath (id:Ident) access repr attribs doc =
         entity_range=id.idRange
         entity_other_range=None
         entity_exn_info= repr
+        entity_provider_abbrev=None
         entity_tycon_tcaug=TyconAugmentation.Create()
         entity_xmldoc=doc
         entity_xmldocsig=""
@@ -4945,6 +4972,7 @@ let NewProvider cpath (id:Ident) access repr attribs doc info =
         entity_range=id.idRange
         entity_other_range=None
         entity_exn_info= repr
+        entity_provider_abbrev=None
         entity_tycon_tcaug=TyconAugmentation.Create()
         entity_xmldoc=doc
         entity_xmldocsig=""
@@ -4992,6 +5020,7 @@ let NewTycon (cpath, nm, m, access, reprAccess, kind, typars, docOption, usesPre
         entity_tycon_repr = TNoRepr
         entity_tycon_repr_accessibility = reprAccess
         entity_exn_info=TExnNone
+        entity_provider_abbrev=None
         entity_tycon_tcaug=TyconAugmentation.Create()
         entity_modul_contents = mtyp
         entity_accessiblity=access

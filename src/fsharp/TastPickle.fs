@@ -1530,7 +1530,8 @@ let u_typar_spec_data st =
       typar_constraints=e
       typar_solution=None
       typar_xmldoc=g
-      typar_astype= Unchecked.defaultof<_> }
+      typar_astype= Unchecked.defaultof<_>
+      typar_staticarg_kind=None}
 
 let u_typar_spec st = 
     u_osgn_decl st.itypars u_typar_spec_data st 
@@ -2002,6 +2003,7 @@ and u_entity_spec_data st : Entity =
       entity_cpath=x12
       entity_modul_contents=MaybeLazy.Lazy x13
       entity_exn_info=x14
+      entity_provider_abbrev=None // FS-1023 TODO: Proper pickling
       entity_il_repr_cache=newCache()  
       } 
 
