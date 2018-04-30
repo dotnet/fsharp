@@ -17,12 +17,15 @@ module internal ExtensionTyping =
     open Microsoft.FSharp.Compiler.AbstractIL.IL
     open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics // dprintfn
     open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library // frontAndBack
+    open Microsoft.FSharp.Compiler.PrettyNaming
 
 #if FX_RESHAPED_REFLECTION
     open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
 
     type TypeProviderDesignation = TypeProviderDesignation of string
+
+    type StaticArg = StaticArg of obj
 
     exception ProvidedTypeResolution of range * System.Exception 
     exception ProvidedTypeResolutionNoRange of System.Exception 
@@ -63,6 +66,74 @@ module internal ExtensionTyping =
                 yield Path.Combine("typeproviders", protocol, netRuntime)
                 yield Path.Combine("tools", protocol, netRuntime)
         ]
+
+    let mangleStaticStringArg (nm:string,v:string) = 
+        nm + "=" + "\"" + v.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\""
+
+    let tryDemangleStaticStringArg (mangledText:string) =
+        match splitAroundQuotationWithCount mangledText '=' 2 with
+        | [| nm; v |] ->
+            if v.Length >= 2 then
+                Some(nm,v.[1..v.Length-2].Replace("\\\\","\\").Replace("\\\"","\""))
+            else
+                Some(nm,v)
+        | _ -> None
+
+    exception InvalidMangledStaticArg of string
+
+    /// Demangle the static parameters
+    let demangleProvidedTypeName (typeLogicalName:string) = 
+        if typeLogicalName.Contains "," then 
+            let pieces = splitAroundQuotation typeLogicalName ','
+            match pieces with
+            | [| x; "" |] -> x, [| |]
+            | _ ->
+                let argNamesAndValues = pieces.[1..] |> Array.choose tryDemangleStaticStringArg
+                if argNamesAndValues.Length = (pieces.Length - 1) then
+                    pieces.[0], argNamesAndValues
+                else
+                    typeLogicalName, [| |]
+        else 
+            typeLogicalName, [| |]
+
+    /// Mangle the static parameters for a provided type or method
+    let mangleProvidedTypeName (typeLogicalName, nonDefaultArgs) = 
+        let nonDefaultArgsText = 
+            nonDefaultArgs
+            |> Array.map mangleStaticStringArg
+            |> String.concat ","
+
+        if nonDefaultArgsText = "" then
+            typeLogicalName
+        else
+            typeLogicalName + "," + nonDefaultArgsText
+
+    /// Compute the mangled value stored for a System.Type argument. Only the simple name of the assembly is stored.
+    let computeStringOfStaticTypeArg (st: System.Type) =
+        st.FullName + ", " + st.Assembly.GetName().Name 
+
+    /// Compute the mangled value stored for a System.Type argument. Only the simple name of the assembly is stored.
+    let computeStringOfStaticArg (StaticArg staticArg) =
+        match staticArg with 
+        | :? System.Type as st -> 
+            let qname = computeStringOfStaticTypeArg st
+            printfn "name used in argument = '%s'" qname
+            qname
+        | _ -> 
+            //  Convert all other argument types to basic strings
+            string staticArg 
+        
+
+    let computeMangledNameWithoutDefaultArgValues(nm,staticArgs:StaticArg[],defaultArgValues) =
+        let nonDefaultArgs = 
+            (staticArgs,defaultArgValues) 
+            ||> Array.zip 
+            |> Array.choose (fun (staticArg, (defaultArgName, defaultArgValue)) -> 
+                let actualArgValue = computeStringOfStaticArg staticArg
+                match defaultArgValue with 
+                | Some v when v = actualArgValue -> None
+                | _ -> Some (defaultArgName, actualArgValue))
+        mangleProvidedTypeName (nm, nonDefaultArgs)
 
     /// Load a the design-time part of a type-provider into the host process, and look for types
     /// marked with the TypeProviderAttribute attribute.
@@ -1223,15 +1294,15 @@ module internal ExtensionTyping =
 
         encContrib st, nameContrib st
 
-    let ComputeMangledNameForApplyStaticParameters(nm, staticArgs: PrettyNaming.StaticArg[], staticParams: Tainted<ProvidedParameterInfo[]>, m) =
+    let ComputeMangledNameForApplyStaticParameters(nm, staticArgs: StaticArg[], staticParams: Tainted<ProvidedParameterInfo[]>, m) =
         let defaultArgValues = 
             staticParams.PApply((fun ps ->  ps |> Array.map (fun sp -> sp.Name, (if sp.IsOptional then Some (string sp.RawDefaultValue) else None ))), range=m)
 
         let defaultArgValues = defaultArgValues.PUntaint(id, m)
-        PrettyNaming.computeMangledNameWithoutDefaultArgValues(nm, staticArgs, defaultArgValues)
+        computeMangledNameWithoutDefaultArgValues(nm, staticArgs, defaultArgValues)
 
     /// Apply the given provided method to the given static arguments (the arguments are assumed to have been sorted into application order)
-    let TryApplyProvidedMethod(methBeforeArgs:Tainted<ProvidedMethodBase>, staticArgs:PrettyNaming.StaticArg[], m:range) =
+    let TryApplyProvidedMethod(methBeforeArgs:Tainted<ProvidedMethodBase>, staticArgs:StaticArg[], m:range) =
         if staticArgs.Length = 0 then 
             Some methBeforeArgs
         else
@@ -1241,7 +1312,7 @@ module internal ExtensionTyping =
                 let mangledName = ComputeMangledNameForApplyStaticParameters(nm, staticArgs, staticParams, m)
                 mangledName
  
-            let staticArgObjArray = [| for (PrettyNaming.StaticArg obj) in staticArgs -> obj |]
+            let staticArgObjArray = [| for (StaticArg obj) in staticArgs -> obj |]
             match methBeforeArgs.PApplyWithProvider((fun (mb, provider) -> mb.ApplyStaticArgumentsForMethod(provider, mangledName, staticArgObjArray)), range=m) with 
             | Tainted.Null -> None
             | methWithArguments -> 
@@ -1258,7 +1329,7 @@ module internal ExtensionTyping =
         enc @ [ mangledName ]
 
     /// Apply the given provided type to the given static arguments (the arguments are assumed to have been sorted into application order
-    let TryApplyProvidedType(typeBeforeArguments:Tainted<ProvidedType>, optGeneratedTypePath: string list option, staticArgs:PrettyNaming.StaticArg[], m:range) =
+    let TryApplyProvidedType(typeBeforeArguments:Tainted<ProvidedType>, optGeneratedTypePath: string list option, staticArgs:StaticArg[], m:range) =
         if staticArgs.Length = 0 then 
             Some (typeBeforeArguments , (fun () -> ()))
         else 
@@ -1271,7 +1342,7 @@ module internal ExtensionTyping =
                     // Otherwise, use the full path of the erased type, including mangled arguments
                     computeFullTypePathAfterArguments typeBeforeArguments staticArgs m
  
-            let staticArgObjArray = [| for (PrettyNaming.StaticArg obj) in staticArgs -> obj |]
+            let staticArgObjArray = [| for (StaticArg obj) in staticArgs -> obj |]
             match typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, provider) -> typeBeforeArguments.ApplyStaticArguments(provider, Array.ofList fullTypePathAfterArguments, staticArgObjArray)), range=m) with 
             | Tainted.Is ProvidedType.Null -> None
             | typeWithArguments -> 
@@ -1289,8 +1360,8 @@ module internal ExtensionTyping =
         // Demangle the static parameters
         let typeName, argNamesAndValues = 
             try 
-                PrettyNaming.demangleProvidedTypeName typeLogicalName 
-            with PrettyNaming.InvalidMangledStaticArg piece -> 
+                demangleProvidedTypeName typeLogicalName 
+            with InvalidMangledStaticArg piece -> 
                 error(Error(FSComp.SR.etProvidedTypeReferenceInvalidText(piece), range0)) 
 
         let argSpecsTable = dict argNamesAndValues
@@ -1348,12 +1419,12 @@ module internal ExtensionTyping =
                             // type provider as a 
                             let (ty : System.Type) = importQualifiedTypeNameAsTypeValue arg
                             // The AssemblyQualifiedName on the System.Type instance should be precisely the same as the text of the mangled argument
-                            printfn "TryLinkProvidedType: qname = '%s'" (PrettyNaming.computeStringOfStaticTypeArg ty) 
+                            printfn "TryLinkProvidedType: qname = '%s'" (computeStringOfStaticTypeArg ty) 
                             printfn "TryLinkProvidedType: arg   = '%s'" arg
-                            assert (PrettyNaming.computeStringOfStaticTypeArg ty = arg)
+                            assert (computeStringOfStaticTypeArg ty = arg)
                             box ty
                           | s -> error(Error(FSComp.SR.etUnknownStaticArgumentKind(s, typeLogicalName), range0)))
-                |> Array.map PrettyNaming.StaticArg
+                |> Array.map StaticArg
 
             match TryApplyProvidedType(typeBeforeArguments, None, staticArgs, range0) with 
             | Some (typeWithArguments, checkTypeName) -> 

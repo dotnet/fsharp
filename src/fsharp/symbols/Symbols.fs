@@ -1979,7 +1979,10 @@ and FSharpType(cenv, typ:TType) =
             | TType_ucase _   -> 10300  // shouldn't occur in symbols
             | TType_tuple (_, l1) -> 10400 + List.sumBy hashType l1
             | TType_fun (dty, rty) -> 10500 + hashType dty + hashType rty
-            | TType_measure _ -> 10600 
+            | TType_measure _ -> 10600
+#if !NO_EXTENSIONTYPING
+            | TType_staticarg _ -> failwith "" // FS-1023 TODO
+#endif
         hashType typ
 
     member x.Format(denv: FSharpDisplayContext) = 

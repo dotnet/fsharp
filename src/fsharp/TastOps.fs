@@ -196,6 +196,10 @@ let rec remapTypeAux (tyenv : Remap) (ty:TType) =
   | TType_measure unt -> 
       TType_measure (remapMeasureAux tyenv unt)
 
+#if !NO_EXTENSIONTYPING
+  | TType_staticarg arg ->
+      TType_staticarg arg
+#endif
 
 and remapMeasureAux tyenv unt =
     match unt with
@@ -967,6 +971,10 @@ let rec getErasedTypes g ty =
         getErasedTypes g dty @ getErasedTypes g rty
     | TType_measure _ -> 
         [ty]
+#if !NO_EXTENSIONTYPING
+    | TType_staticarg _ ->
+        [ty]
+#endif
 
 
 //---------------------------------------------------------------------------
@@ -1975,7 +1983,9 @@ and accFreeInType opts ty acc  =
     | TType_var r -> accFreeTyparRef opts r acc
     | TType_forall (tps, r) -> unionFreeTyvars (boundTypars opts tps (freeInType opts r)) acc
     | TType_measure unt -> accFreeInMeasure opts unt acc
-
+#if !NO_EXTENSIONTYPING
+    | TType_staticarg _arg -> acc
+#endif
 and accFreeInTupInfo _opts unt acc = 
     match unt with 
     | TupInfo.Const _ -> acc
@@ -2056,7 +2066,9 @@ and accFreeInTypeLeftToRight g cxFlag thruFlag acc ty  =
     | TType_var r -> accFreeTyparRefLeftToRight g cxFlag thruFlag acc r 
     | TType_forall (tps, r) -> unionFreeTyparsLeftToRight (boundTyparsLeftToRight g cxFlag thruFlag tps (accFreeInTypeLeftToRight g cxFlag thruFlag emptyFreeTyparsLeftToRight r)) acc
     | TType_measure unt -> List.foldBack (fun (tp, _) acc -> accFreeTyparRefLeftToRight g cxFlag thruFlag acc tp) (ListMeasureVarOccsWithNonZeroExponents unt) acc
-
+#if !NO_EXTENSIONTYPING
+    | TType_staticarg _ -> acc
+#endif
 and accFreeInTupInfoLeftToRight _g _cxFlag _thruFlag acc unt = 
     match unt with 
     | TupInfo.Const _ -> acc
@@ -2445,6 +2457,9 @@ module SimplifyTypes =
         | TType_fun (s, t)         -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
         | TType_var _            -> z
         | TType_measure _          -> z
+#if !NO_EXTENSIONTYPING
+        | TType_staticarg _ -> z
+#endif
 
     let incM x m =
         if Zmap.mem x m then Zmap.add x (1 + Zmap.find x m) m
@@ -3122,7 +3137,9 @@ module DebugPrint = begin
           unt |> ignore
           wordL(tagText "<measure>")
 #endif
-
+#if !NO_EXTENSIONTYPING
+        | TType_staticarg _ -> failwith "" // FS-1023 TODO
+#endif
     and auxTyparWrapL (env:SimplifyTypes.TypeSimplificationInfo) isAtomic (typar:Typar) =
           let wrap x = bracketIfL isAtomic x in // wrap iff require atomic expr 
           // There are several cases for pprinting of typar.
@@ -7067,6 +7084,9 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
     | TType_var typar           -> 
         typarEnc g (gtpsType, gtpsMethod) typar
     | TType_measure _ -> "?"
+#if !NO_EXTENSIONTYPING
+    | TType_staticarg _ -> failwith "" // FS-1023 TODO
+#endif
 
 and tyargsEnc g (gtpsType, gtpsMethod) args = 
      match args with     

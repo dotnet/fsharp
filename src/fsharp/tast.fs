@@ -598,7 +598,7 @@ type Entity =
 #if !NO_EXTENSIONTYPING
     member x.IsStaticInstantiationTycon = 
         x.IsProvidedErasedTycon &&
-            let _nm,args = PrettyNaming.demangleProvidedTypeName x.LogicalName
+            let _nm,args = demangleProvidedTypeName x.LogicalName
             args.Length > 0 
 #endif
 
@@ -616,7 +616,7 @@ type Entity =
 
 #if !NO_EXTENSIONTYPING
         if x.IsProvidedErasedTycon then 
-            let nm,args = PrettyNaming.demangleProvidedTypeName nm
+            let nm,args = demangleProvidedTypeName nm
             if withStaticParameters && args.Length > 0 then 
                 nm + "<" + String.concat "," (Array.map snd args) + ">"
             else
@@ -3546,6 +3546,11 @@ and
     /// Indicates the type is a unit-of-measure expression being used as an argument to a type or member
     | TType_measure of Measure
 
+#if !NO_EXTENSIONTYPING
+    /// Indicates the type is a static argument to a type provider
+    | TType_staticarg of StaticArg
+#endif
+
     override x.ToString() =  
         match x with 
         | TType_forall (_tps,ty) -> "forall _. " + ty.ToString()
@@ -3559,6 +3564,10 @@ and
         | TType_ucase (uc,tinst) -> "union case type " + uc.CaseName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
         | TType_var tp -> tp.DisplayName
         | TType_measure ms -> sprintf "%A" ms
+#if !NO_EXTENSIONTYPING
+        | TType_staticarg arg -> "static arg " + arg.ToString()
+#endif
+
 
     /// For now, used only as a discriminant in error message.
     /// See https://github.com/Microsoft/visualfsharp/issues/2561
@@ -3573,6 +3582,9 @@ and
         | TType_ucase (_uc,_tinst)       ->
             let (TILObjectReprData(scope,_nesting,_definition)) = _uc.Tycon.ILTyconInfo
             scope.QualifiedName
+#if !NO_EXTENSIONTYPING
+        | TType_staticarg _arg           -> ""
+#endif
 
 and TypeInst = TType list 
 and TTypes = TType list 

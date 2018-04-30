@@ -954,6 +954,9 @@ module private PrintTypes =
 
         | TType_measure unt -> layoutMeasure denv unt
 
+#if !NO_EXTENSIONTYPING
+        | TType_staticarg _ -> failwith "" // FS-1023 TODO
+#endif
     /// Layout a list of types, separated with the given separator, either '*' or ','
     and private layoutTypesWithInfoAndPrec denv env prec sep typl = 
         sepListL sep (List.map (layoutTypeWithInfoAndPrec denv env prec) typl)

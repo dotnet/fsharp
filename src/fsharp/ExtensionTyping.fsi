@@ -18,11 +18,15 @@ module internal ExtensionTyping =
 
     type TypeProviderDesignation = TypeProviderDesignation of string
 
+    type StaticArg = StaticArg of obj
+
     /// Raised when a type provider has thrown an exception.    
     exception ProvidedTypeResolution of range * exn
 
     /// Raised when an type provider has thrown an exception.    
     exception ProvidedTypeResolutionNoRange of exn
+
+    val demangleProvidedTypeName : string -> string * (string * string)[]
 
     /// Get the list of relative paths searched for type provider design-time components
     val toolingCompatiblePaths: unit -> string list
@@ -379,7 +383,7 @@ module internal ExtensionTyping =
     /// Detect a provided 'Var' expression 
     val (|ProvidedVarExpr|_|)  : ProvidedExpr -> ProvidedVar option
 
-    val computeFullTypePathAfterArguments : Tainted<ProvidedType> -> PrettyNaming.StaticArg[] -> range -> string list
+    val computeFullTypePathAfterArguments : Tainted<ProvidedType> -> StaticArg[] -> range -> string list
 
     /// Get the provided expression for a particular use of a method.
     val GetInvokerExpression : ITypeProvider * ProvidedMethodBase * ProvidedVar[] ->  ProvidedExpr
@@ -390,10 +394,10 @@ module internal ExtensionTyping =
     /// Try to apply a provided type to the given static arguments. If successful also return a function 
     /// to check the type name is as expected (this function is called by the caller of TryApplyProvidedType
     /// after other checks are made).
-    val TryApplyProvidedType : typeBeforeArguments:Tainted<ProvidedType> * optGeneratedTypePath: string list option * staticArgs:PrettyNaming.StaticArg[]  * range -> (Tainted<ProvidedType> * (unit -> unit)) option
+    val TryApplyProvidedType : typeBeforeArguments:Tainted<ProvidedType> * optGeneratedTypePath: string list option * staticArgs:StaticArg[]  * range -> (Tainted<ProvidedType> * (unit -> unit)) option
 
     /// Try to apply a provided method to the given static arguments. 
-    val TryApplyProvidedMethod : methBeforeArguments:Tainted<ProvidedMethodBase> * staticArgs:PrettyNaming.StaticArg[]  * range -> Tainted<ProvidedMethodBase> option
+    val TryApplyProvidedMethod : methBeforeArguments:Tainted<ProvidedMethodBase> * staticArgs:StaticArg[]  * range -> Tainted<ProvidedMethodBase> option
 
     /// Try to resolve a type in the given extension type resolver
     val TryResolveProvidedType : Tainted<ITypeProvider> * range * string[] * typeName: string -> Tainted<ProvidedType> option

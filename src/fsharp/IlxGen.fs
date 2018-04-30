@@ -430,7 +430,10 @@ and GenTypeAux amap m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
         if tps.IsEmpty then GenTypeAux amap m tyenv VoidNotOK ptrsOK tau
         else EraseClosures.mkILTyFuncTy g.ilxPubCloEnv 
     | TType_var tp -> mkILTyvarTy tyenv.[tp,m]
-    | TType_measure _ -> g.ilg.typ_Int32 
+    | TType_measure _ -> g.ilg.typ_Int32
+#if !NO_EXTENSIONTYPING
+    | TType_staticarg _ -> failwith "" // FS-1023 TODO
+#endif
 
 //--------------------------------------------------------------------------
 // Generate ILX references to closures, classunions etc. given a tyenv

@@ -247,6 +247,9 @@ let rec CheckTypeDeep ((visitTyp,visitTyconRefOpt,visitAppTyOpt,visitTraitSoluti
               | None -> ()
               | Some visitTypar -> 
                     visitTypar (env,tp)
+#if !NO_EXTENSIONTYPING
+    | TType_staticarg _ -> failwith "" // FS-1023 TODO
+#endif
 
 and CheckTypesDeep f g env tys = List.iter (CheckTypeDeep f g env) tys
 

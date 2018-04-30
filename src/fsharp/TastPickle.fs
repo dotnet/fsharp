@@ -1552,6 +1552,9 @@ let _ = fill_p_typ (fun ty st ->
     | TType_var r                       -> p_byte 4 st; p_tpref r st
     | TType_forall (tps,r)              -> p_byte 5 st; p_tup2 p_typar_specs p_typ (tps,r) st
     | TType_measure unt                 -> p_byte 6 st; p_measure_expr unt st
+#if !NO_EXTENSIONTYPING
+    | TType_staticarg _                 -> failwith "" // FS-1023 TODO
+#endif
     | TType_ucase (uc,tinst)            -> p_byte 7 st; p_tup2 p_ucref p_typs (uc,tinst) st)
 
 let _ = fill_u_typ (fun st ->

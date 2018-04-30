@@ -558,6 +558,9 @@ let rec SimplifyMeasuresInType g resultFirst ((generalizable, generalized) as pa
 
     | TType_fun (d, r) -> if resultFirst then SimplifyMeasuresInTypes g param [r;d] else SimplifyMeasuresInTypes g param [d;r]        
     | TType_var _   -> param
+#if !NO_EXTENSIONTYPING
+    | TType_staticarg _ -> param
+#endif
     | TType_forall (_, tau) -> SimplifyMeasuresInType g resultFirst param tau
     | TType_measure unt -> 
         let generalizable', newlygeneralized = SimplifyMeasure g generalizable unt   
@@ -597,6 +600,9 @@ let rec GetMeasureVarGcdInType v ty =
     | TType_var _   -> ZeroRational
     | TType_forall (_, tau) -> GetMeasureVarGcdInType v tau
     | TType_measure unt -> MeasureVarExponent v unt
+#if !NO_EXTENSIONTYPING
+    | TType_staticarg _ -> failwith "" // FS-1023 TODO
+#endif
 
 and GetMeasureVarGcdInTypes v tys =
     match tys with
