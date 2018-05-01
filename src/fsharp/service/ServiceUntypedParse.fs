@@ -337,6 +337,10 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
                   | SynMemberDefn.Inherit(_, _, m) -> 
                       // can break on the "inherit" clause
                       yield! checkRange m
+                  | SynMemberDefn.ImplicitInherit(_, arg, _, m) -> 
+                      // can break on the "inherit" clause
+                      yield! checkRange m
+                      yield! walkExpr true arg
                   | _ -> ()  ]
 
             // Process declarations nested in a module that should be displayed in the left dropdown
