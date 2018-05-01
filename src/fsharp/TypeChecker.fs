@@ -4724,40 +4724,45 @@ and TcTyparConstraints cenv newOk checkCxs occ env tpenv wcs =
 // Returns the static constant arg value a_i for a syntactic argument application.
 //
 // Note: In the presence of a syntactic type variable, this means we are in inference mode.
-//         The StaticArg returned will contain a TType corresponding to the kind of the argument (eg. int, bool, Type).
-and TcStaticConstantParameter cenv (env:TcEnv) tpenv occ kind (v:SynType) idOpt container =
-    let fail() = error(Error(FSComp.SR.etInvalidStaticArgument(NicePrint.minimalStringOfType env.DisplayEnv kind), v.Range))
-    let record ttype =
-        match idOpt with
-        | Some id ->
-            let item = Item.ArgName (id, ttype, Some container)
-            CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights)
-        | _ -> ()
 
-    match v with 
+and TcStaticConstantParameter cenv (env:TcEnv) tpenv occ (v:SynType) container =
+    //let fail() = error(Error(FSComp.SR.etInvalidStaticArgument(NicePrint.minimalStringOfType env.DisplayEnv kind), v.Range))
+    match v with
+    | SynType.StaticConstantNamed(SynType.LongIdent(lidwd), st, m) ->
+        match lidwd.Lid with
+        // FS-1023 TODO Are parameter names always of length 1?
+        | [ id ] ->
+            let (_, p), tpenv' = TcStaticConstantParameter cenv env tpenv occ st container
+            match p with
+            | TType_staticarg (ty, _) ->
+                let item = Item.ArgName (id, ty, Some container)
+                CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights)
+            | _ -> ()
+            (Some id, p), tpenv'
+        | _ -> fail()
     | SynType.StaticConstant(sc, _) ->
-        let v =
+        let (t,v) =
             match sc with
-            | SynConst.Byte n       when typeEquiv cenv.g cenv.g.byte_ty kind    -> record(cenv.g.byte_ty); box (n:byte)
-            | SynConst.Int16 n      when typeEquiv cenv.g cenv.g.int16_ty kind   -> record(cenv.g.int16_ty); box (n:int16)
-            | SynConst.Int32 n      when typeEquiv cenv.g cenv.g.int32_ty kind   -> record(cenv.g.int32_ty); box (n:int)
-            | SynConst.Int64 n      when typeEquiv cenv.g cenv.g.int64_ty kind   -> record(cenv.g.int64_ty); box (n:int64)
-            | SynConst.SByte n      when typeEquiv cenv.g cenv.g.sbyte_ty kind   -> record(cenv.g.sbyte_ty); box (n:sbyte)
-            | SynConst.UInt16 n     when typeEquiv cenv.g cenv.g.uint16_ty kind  -> record(cenv.g.uint16_ty); box (n:uint16)
-            | SynConst.UInt32 n     when typeEquiv cenv.g cenv.g.uint32_ty kind  -> record(cenv.g.uint32_ty); box (n:uint32)
-            | SynConst.UInt64 n     when typeEquiv cenv.g cenv.g.uint64_ty kind  -> record(cenv.g.uint64_ty); box (n:uint64)
-            | SynConst.Decimal n    when typeEquiv cenv.g cenv.g.decimal_ty kind -> record(cenv.g.decimal_ty); box (n:decimal)
-            | SynConst.Single n     when typeEquiv cenv.g cenv.g.float32_ty kind -> record(cenv.g.float32_ty); box (n:single)
-            | SynConst.Double n     when typeEquiv cenv.g cenv.g.float_ty kind   -> record(cenv.g.float_ty); box (n:double)
-            | SynConst.Char n       when typeEquiv cenv.g cenv.g.char_ty kind    -> record(cenv.g.char_ty); box (n:char)
-            | SynConst.String (s, _) when s <> null && typeEquiv cenv.g cenv.g.string_ty kind  -> record(cenv.g.string_ty); box (s:string)
-            | SynConst.Bool b       when typeEquiv cenv.g cenv.g.bool_ty kind    -> record(cenv.g.bool_ty); box (b:bool)
+            | SynConst.Byte n        -> cenv.g.byte_ty, box (n:byte)
+            | SynConst.Int16 n       -> cenv.g.int16_ty, box (n:int16)
+            | SynConst.Int32 n       -> cenv.g.int32_ty, box (n:int)
+            | SynConst.Int64 n       -> cenv.g.int64_ty, box (n:int64)
+            | SynConst.SByte n       -> cenv.g.sbyte_ty, box (n:sbyte)
+            | SynConst.UInt16 n      -> cenv.g.uint16_ty, box (n:uint16)
+            | SynConst.UInt32 n      -> cenv.g.uint32_ty, box (n:uint32)
+            | SynConst.UInt64 n      -> cenv.g.uint64_ty, box (n:uint64)
+            | SynConst.Decimal n     -> cenv.g.decimal_ty, box (n:decimal)
+            | SynConst.Single n      -> cenv.g.float32_ty, box (n:single)
+            | SynConst.Double n      -> cenv.g.float_ty, box (n:double)
+            | SynConst.Char n        -> cenv.g.char_ty, box (n:char)
+            | SynConst.String (s, _) -> cenv.g.string_ty, box (s:string)
+            | SynConst.Bool b        -> cenv.g.bool_ty, box (b:bool)
             | _ -> fail()
-        TType_staticarg (StaticArg v), tpenv
+        (None, TType_staticarg (t, StaticArg v)), tpenv
     | SynType.StaticConstantExpr(e, _ ) ->
 
         // If an error occurs, don't try to recover, since the constant expression will be nothing like what we need
-        let te, tpenv' = TcExprNoRecover cenv kind env tpenv e
+        let te, ty, tpenv' = TcExprOfUnknownType cenv env tpenv e
 
         // Evaluate the constant expression using static attribute argument rules
         let te = EvalLiteralExprOrAttribArg cenv.g te
@@ -4766,41 +4771,36 @@ and TcStaticConstantParameter cenv (env:TcEnv) tpenv occ kind (v:SynType) idOpt 
             // Check we have a residue constant. We know the type was correct because we checked the expression with this type.
             | Expr.Const(c, _, _) -> 
                 match c with
-                | Const.Byte n     -> record(cenv.g.byte_ty); box (n:byte)
-                | Const.Int16 n    -> record(cenv.g.int16_ty); box (n:int16)
-                | Const.Int32 n    -> record(cenv.g.int32_ty); box (n:int)
-                | Const.Int64 n    -> record(cenv.g.int64_ty); box (n:int64)
-                | Const.SByte n    -> record(cenv.g.sbyte_ty); box (n:sbyte)
-                | Const.UInt16 n   -> record(cenv.g.uint16_ty); box (n:uint16)
-                | Const.UInt32 n   -> record(cenv.g.uint32_ty); box (n:uint32)
-                | Const.UInt64 n   -> record(cenv.g.uint64_ty); box (n:uint64)
-                | Const.Decimal n  -> record(cenv.g.decimal_ty); box (n:decimal)
-                | Const.Single n   -> record(cenv.g.float32_ty); box (n:single)
-                | Const.Double n   -> record(cenv.g.float_ty); box (n:double)
-                | Const.Char n     -> record(cenv.g.char_ty); box (n:char)
-                | Const.String null   -> fail() 
-                | Const.String s   -> record(cenv.g.string_ty); box (s:string)
-                | Const.Bool b     -> record(cenv.g.bool_ty); box (b:bool)
+                | Const.Byte n      -> box (n:byte)
+                | Const.Int16 n     -> box (n:int16)
+                | Const.Int32 n     -> box (n:int)
+                | Const.Int64 n     -> box (n:int64)
+                | Const.SByte n     -> box (n:sbyte)
+                | Const.UInt16 n    -> box (n:uint16)
+                | Const.UInt32 n    -> box (n:uint32)
+                | Const.UInt64 n    -> box (n:uint64)
+                | Const.Decimal n   -> box (n:decimal)
+                | Const.Single n    -> box (n:single)
+                | Const.Double n    -> box (n:double)
+                | Const.Char n      -> box (n:char)
+                | Const.Bool b      -> box (b:bool)
+                | Const.String null -> fail()
+                | Const.String s    -> box (s:string)
                 | _ ->  fail()
             | _ -> error(Error(FSComp.SR.tcInvalidConstantExpression(), v.Range))
-        TType_staticarg (StaticArg v), tpenv'
+        (None, TType_staticarg (ty, StaticArg v)), tpenv'
     | SynType.LongIdent(lidwd) ->
         let m = lidwd.Range
-        if typeEquiv cenv.g cenv.g.system_Type_typ kind then
-           // let tyid = mkSynId tyid.idRange n
-            let (LongIdentWithDots(tycon, _)) = lidwd
-            let ad = env.eAccessRights
-            let tcref = 
-                match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInAttribute OpenQualified env.eNameResEnv ad tycon TypeNameResolutionStaticArgsInfo.DefiniteEmpty  PermitDirectReferenceToGeneratedType.No with
-                | Exception err -> raise(err)
-                | Result tcref -> tcref 
-
+        // let tyid = mkSynId tyid.idRange n
+        let (LongIdentWithDots(tycon, _)) = lidwd
+        let ad = env.eAccessRights
+        match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInAttribute OpenQualified env.eNameResEnv ad tycon TypeNameResolutionStaticArgsInfo.DefiniteEmpty  PermitDirectReferenceToGeneratedType.No with
+        | Exception err ->
+            TcStaticConstantParameter cenv env tpenv occ (SynType.StaticConstantExpr(SynExpr.LongIdent(false,lidwd,None,m),m)) container
+        | Result tcref ->
             let assm = cenv.topCcu.ReflectAssembly :?> TastReflect.ReflectAssembly
             let st = assm.TxTType (snd (generalizeTyconRef tcref))
-            record(cenv.g.system_Type_typ);
-            TType_staticarg (StaticArg (box st)), tpenv
-        else
-            TcStaticConstantParameter cenv env tpenv occ kind (SynType.StaticConstantExpr(SynExpr.LongIdent(false,lidwd,None,m),m)) idOpt container
+            (None, TType_staticarg (cenv.g.system_Type_typ, StaticArg (box st))), tpenv
     | SynType.App (SynType.LongIdent(LongIdentWithDots(tc,_)),_,args,_commas,_,postfix,m) ->
         let ad = env.eAccessRights
         let tcref = ForceRaise(ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInType OpenQualified env.eNameResEnv ad tc (TypeNameResolutionStaticArgsInfo.FromTyArgs args.Length) PermitDirectReferenceToGeneratedType.No)
@@ -4810,32 +4810,40 @@ and TcStaticConstantParameter cenv (env:TcEnv) tpenv occ kind (v:SynType) idOpt 
             then error(Error(FSComp.SR.tcInvalidUnitsOfMeasurePrefix(), m))
 
             let tyType, tpenv' = TcTypeApp cenv ImplictlyBoundTyparsAllowed.NewTyparsOK CheckConstraints.NoCheckCxs ItemOccurence.UseInType env tpenv m tcref [] args
-            let assm = cenv.topCcu.ReflectAssembly :?> TastReflect.ReflectAssembly
-            let st = assm.TxTType tyType
+            // The type returned may contain variables, indicating this is the rhs of a type abbreviation.
+            // In which case, don't wrap it up as a staticarg, but leave it intact
+            
+            // thruFlag set to 'false' because every other caller does this. No explanation of what thruFlag does found.
+            let typars = freeInTypeLeftToRight cenv.g false tyType
+            if typars |> List.isEmpty then
+                // Optimization:
+                // If the returned type has no free variables, then it can be applied immediately.
+                let assm = cenv.topCcu.ReflectAssembly :?> TastReflect.ReflectAssembly
+                let st = assm.TxTType tyType
 
-            record(cenv.g.system_Type_typ);
-            TType_staticarg (StaticArg (box st)), tpenv'
+                (None, TType_staticarg (cenv.g.system_Type_typ, StaticArg (box st))), tpenv'
+            else
+                (None, tyType), tpenv'
         | TyparKind.Measure ->
             error(Error(FSComp.SR.tcInvalidConstantExpression(),v.Range))
     | SynType.Var (SynTypar.Typar (_a,NoStaticReq,false), _range) ->
-        if typeEquiv cenv.g cenv.g.system_Type_typ kind then
             let _assm = cenv.topCcu.ReflectAssembly :?> TastReflect.ReflectAssembly
-            let typar = TryFindUnscopedTypar _a.idText tpenv
-            match typar with
-            | None ->
-                fail()
+            TryFindUnscopedTypar _a.idText tpenv
+            |> Option.orElse (Map.tryFind _a.idText env.NameEnv.eTypars)
+            |> function
             | Some typar ->
                 match occ with
                 | ItemOccurence.UseInType ->
-                    typar.typar_staticarg_kind <- Some kind
-                    TType_var typar, tpenv
+                    (None, TType_var typar), tpenv
                 | _ ->
                     let st = _assm.TxTType (TType_var typar)
-                    TType_staticarg (StaticArg (box st)), tpenv
-        else
-            fail()
+                    (None, TType_staticarg (cenv.g.system_Type_typ, StaticArg (box st))), tpenv
+            | None -> fail()
     | _ ->
         fail()
+
+and TcStaticConstantParameters cenv env tpenv occ container args =
+    args |> List.mapFold (fun tpenv x -> TcStaticConstantParameter cenv env tpenv occ x container) tpenv
 
 // Returns the static constant args a_1,a_2,..,a_n to be supplied to a ProvidedType<s_1,s_2,...,s_m>.
 //     where s_i is the syntax for a value a_j
@@ -4844,12 +4852,27 @@ and TcStaticConstantParameter cenv (env:TcEnv) tpenv occ kind (v:SynType) idOpt 
 // Note: Args may be supplied either via position or via name; named arguments may be optional.
 //       In the presence of a syntactic type variable, this means we are in inference mode.
 //         The StaticArg returned will contain a TType corresponding to the kind of the argument (eg. int, bool, Type).
-and CrackStaticConstantArgs cenv env tpenv occ (staticParameters: Tainted<ProvidedParameterInfo>[], args: SynType list, container, containerName, m) =
-    let args =
-        args |> List.map (function
-            | SynType.StaticConstantNamed(SynType.LongIdent(LongIdentWithDots([id], _)), v, _) -> Some id, v
-            | v -> None, v)
-
+and CrackStaticConstantArgs cenv env tpenv occ (staticParameters: Tainted<ProvidedParameterInfo>[], args: (Ident option * TType) list, container, containerName, m) =
+    let buildStaticArg (o : obj) =
+        let inline typeBox(x : 'a, t) = TType_staticarg (t, StaticArg (box x))
+        let g = cenv.g
+        match o with
+        | :? int16 as v -> typeBox(v, g.int16_ty)
+        | :? int32 as v -> typeBox(v, g.int32_ty)
+        | :? int64 as v -> typeBox(v, g.int64_ty)
+        | :? uint16 as v -> typeBox(v, g.uint16_ty)
+        | :? uint32 as v -> typeBox(v, g.uint32_ty)
+        | :? uint64 as v -> typeBox(v, g.uint64_ty)
+        | :? byte as v -> typeBox(v, g.byte_ty)
+        | :? sbyte as v -> typeBox(v, g.sbyte_ty)
+        | :? decimal as v -> typeBox(v, g.decimal_ty)
+        | :? single as v -> typeBox(v, g.float32_ty)
+        | :? double as v -> typeBox(v, g.float_ty)
+        | :? char as v -> typeBox(v, g.char_ty)
+        | :? string as v -> typeBox(v, g.string_ty)
+        | :? bool as v -> typeBox(v, g.bool_ty)
+        | :? Type as v -> typeBox(v, g.system_Type_typ)
+        | _ -> failwith "Invalid static arg"
     let unnamedArgs = args |> Seq.takeWhile (fst >> Option.isNone) |> Seq.toArray |> Array.map snd
     let otherArgs = args |> List.skipWhile (fst >> Option.isNone)
     let namedArgs = otherArgs |> List.takeWhile (fst >> Option.isSome) |> List.map (map1Of2 Option.get)
@@ -4875,6 +4898,7 @@ and CrackStaticConstantArgs cenv env tpenv occ (staticParameters: Tainted<Provid
         staticParameters |> Array.mapi (fun i sp -> 
             let spKind = Import.ImportProvidedType cenv.amap m (sp.PApply((fun x -> x.ParameterType), m))
             let spName = sp.PUntaint((fun sp -> sp.Name), m)
+<<<<<<< HEAD
             if i < unnamedArgs.Length then 
                 let v = unnamedArgs.[i]
                 let v, _tpenv = TcStaticConstantParameter cenv env tpenv occ spKind v None container
@@ -4885,10 +4909,18 @@ and CrackStaticConstantArgs cenv env tpenv occ (staticParameters: Tainted<Provid
                     let v, _tpenv = TcStaticConstantParameter cenv env tpenv occ spKind v (Some n) container
                     v
                 | [] -> 
+=======
+            if i < unnamedArgs.Length then
+                unnamedArgs.[i]
+            else
+                match namedArgs |> List.filter (fun (n, _) -> n.idText = spName) with
+                | [(n, v)] -> v
+                | [] ->
+>>>>>>> 536a43e... Refactoring to separate type checking and application of static args to providers
                     if sp.PUntaint((fun sp -> sp.IsOptional), m) then
                          match sp.PUntaint((fun sp -> sp.RawDefaultValue), m) with
                          | null -> error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, containerName, containerName, spName) , m))
-                         | v -> TType_staticarg (StaticArg v)
+                         | v -> buildStaticArg v
                     else
                       error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, containerName, containerName, spName), m))
                  | ps -> 
@@ -4906,12 +4938,13 @@ and TcProvidedTypeAppToStaticConstantArgs cenv env optGeneratedTypePath tpenv oc
     let staticParameters = staticParameters.PApplyArray(id, "GetStaticParameters", m)
 
     let applyArgs args = ExtensionTyping.TryApplyProvidedType(typeBeforeArguments, optGeneratedTypePath, args, m)
+    let args, tpenv = TcStaticConstantParameters cenv env tpenv occ (ArgumentContainer.Type tcref) args
     let argsInStaticParameterOrderIncludingDefaults = CrackStaticConstantArgs cenv env tpenv occ (staticParameters, args, ArgumentContainer.Type tcref, tcref.DisplayName, m)
     argsInStaticParameterOrderIncludingDefaults, Some applyArgs
 
 and applyStaticArgumentsToProvider m argsInStaticParameterOrderIncludingDefaults applyArgs =
     let argsInStaticParameterOrderIncludingDefaults = 
-        argsInStaticParameterOrderIncludingDefaults |> Array.choose (function | TType_staticarg x -> Some x | _ -> None)
+        argsInStaticParameterOrderIncludingDefaults |> Array.choose (function | TType_staticarg(t,x) -> Some x | _ -> None)
     // Take the static arguments (as SynType's) and convert them to objects of the appropriate type, based on the expected kind.
     let providedTypeAfterStaticArguments, checkTypeName =
         match applyArgs with
@@ -4948,11 +4981,19 @@ and TcAndAppStaticConstantArgsToProvidedType cenv env optGeneratedTypePath tpenv
             typ, tpenv
 
 
+<<<<<<< HEAD
 and TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos: MethInfo list, argsOpt, mExprAndArg, mItem) =
     match minfos, argsOpt with 
     | [minfo], Some (args, _) -> 
         match minfo.ProvidedStaticParameterInfo with 
         | Some (methBeforeArguments, staticParams) -> 
+=======
+and TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos: MethInfo list, args, mExprAndArg, mItem) =
+    match minfos with
+    | [minfo] ->
+        match minfo.ProvidedStaticParameterInfo with
+        | Some (methBeforeArguments, staticParams) ->
+>>>>>>> 536a43e... Refactoring to separate type checking and application of static args to providers
             let providedMethAfterStaticArguments = TcProvidedMethodAppToStaticConstantArgs cenv env tpenv (minfo, methBeforeArguments, staticParams, args, mExprAndArg)
             let minfoAfterStaticArguments = ProvidedMeth(cenv.amap, providedMethAfterStaticArguments, minfo.ExtensionMemberPriorityOption, mItem)
             Some minfoAfterStaticArguments
@@ -4967,7 +5008,7 @@ and TcProvidedMethodAppToStaticConstantArgs cenv env tpenv (minfo, methBeforeArg
         failwith "" // FS-1023 TODO: Proper error
     else
         let argsInStaticParameterOrderIncludingDefaults =
-            argsInStaticParameterOrderIncludingDefaults |> Array.choose (function | TType_staticarg x -> Some x | _ -> None)
+            argsInStaticParameterOrderIncludingDefaults |> Array.choose (function | TType_staticarg(_,x) -> Some x | _ -> None)
 
         let providedMethAfterStaticArguments =
             match ExtensionTyping.TryApplyProvidedMethod(methBeforeArguments, argsInStaticParameterOrderIncludingDefaults, m) with
@@ -8705,7 +8746,12 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
         | (DelayedTypeApp(tys, mTypeArgs, mExprAndTypeArgs) :: otherDelayed) ->
 
 #if !NO_EXTENSIONTYPING
+<<<<<<< HEAD
             match TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos, Some (tys, mTypeArgs), mExprAndTypeArgs, mItem) with 
+=======
+            let args, tpenv = TcStaticConstantParameters cenv env tpenv ItemOccurence.Use tcref args
+            match TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos, Some (args, mTypeArgs), mExprAndTypeArgs, mItem) with
+>>>>>>> 536a43e... Refactoring to separate type checking and application of static args to providers
             | Some minfoAfterStaticArguments ->
 
               // Replace the resolution including the static parameters, plus the extra information about the original method info
@@ -9121,6 +9167,7 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
         let mutates = (if methodName = "MoveNext" || methodName = "GetNextArg" then DefinitelyMutates else PossiblyMutates)
 
 #if !NO_EXTENSIONTYPING
+<<<<<<< HEAD
         match TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos, tyargsOpt, mExprAndItem, mItem) with 
         | Some minfoAfterStaticArguments -> 
             // Replace the resolution including the static parameters, plus the extra information about the original method info
@@ -9131,6 +9178,21 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
         | None -> 
         if not minfos.IsEmpty && minfos.[0].ProvidedStaticParameterInfo.IsSome then 
             error(Error(FSComp.SR.etMissingStaticArgumentsToMethod(), mItem))
+=======
+        match minfos, tyargsOpt with
+        | minfo :: _, Some (tyargs, _) ->
+            let tyargs, tpenv = TcStaticConstantParameters cenv env tpenv ItemOccurence.Use (ArgumentContainer.Method minfo) tyargs
+            match TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos, tyargs, mExprAndItem, mItem) with
+            | Some minfoAfterStaticArguments ->
+                // Replace the resolution including the static parameters, plus the extra information about the original method info
+                let item = Item.MethodGroup(methodName, [minfoAfterStaticArguments], Some minfos.[0])
+                CallNameResolutionSinkReplacing cenv.tcSink (mExprAndItem, env.NameEnv, item, item, [], ItemOccurence.Use, env.DisplayEnv, env.eAccessRights)
+
+                TcMethodApplicationThen cenv env overallTy None tpenv None objArgs mExprAndItem mItem methodName ad mutates false [(minfoAfterStaticArguments, None)] afterResolution NormalValUse args atomicFlag delayed
+            | None ->
+                error(Error(FSComp.SR.etMissingStaticArgumentsToMethod(), mItem))
+        | _ ->
+>>>>>>> 536a43e... Refactoring to separate type checking and application of static args to providers
 #endif
 
         let tyargsOpt, tpenv = TcMemberTyArgsOpt cenv env tpenv tyargsOpt
@@ -16392,13 +16454,13 @@ module TcDeclarations =
     let TcProviderDefn cenv env parent tpenv (p, m) =
         let entity = TcProviderDefn_Phase1A cenv env parent p
         
-        let (ProviderDefn(_,ProviderDefnRepr(_,t,_), _)) = p
+        let (ProviderDefn(ComponentInfo(_,_typars,_,_,_,_,_,_),ProviderDefnRepr(_,t,_), _)) = p
 
         let env = AddDeclaredTypars CheckForDuplicateTypars (entity.Typars(m)) env
 
-        let ty, x = TcTypeOrMeasureAndRecover (Some TyparKind.Type) cenv NoNewTypars CheckConstraints.NoCheckCxs ItemOccurence.UseInType env tpenv t
+        let ty, _ = TcTypeOrMeasureAndRecover (Some TyparKind.Type) cenv NoNewTypars CheckConstraints.NoCheckCxs ItemOccurence.UseInType env tpenv t
 
-        printfn "%A" x
+        printfn "%A" ty
 
         entity.entity_provider_abbrev <- Some ty
         entity, env

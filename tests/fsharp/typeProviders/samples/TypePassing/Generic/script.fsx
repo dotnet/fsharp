@@ -10,7 +10,18 @@ open Test
 //type T = Generic.IdentityType<int>
 
 
-provider MyNewProvider<'a> = Generic.IdentityType<Generic.IdentityType<'a>>
+type MyNewProvider<'a> = Generic.IdentityType<'a>
+
+//type A = | A with static member Invoke(i) = 0
+
+
+//type A<'a> = Option<MP<'a>>
+//
+//type Y = A<int>
+
+type X = MyNewProvider<int>
+
+let x = X.Invoke 1
 //
 //type X = MyNewProvider<int>
 

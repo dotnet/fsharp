@@ -757,9 +757,10 @@ type Entity =
         | TProvidedTypeExtensionPoint _ -> true
         | TProvidedNamespaceExtensionPoint _ -> true
         | _ ->
-            match x.ProviderInfo with
-            | Some _ -> true
-            | None -> false
+            // 
+            match x.TypeAbbrev with
+            | Some (TType_app(tcref,_)) -> tcref.IsProvided
+            | _ -> false
 
     /// Indicates if the entity is a provided namespace fragment
     member x.IsProvidedNamespace = 
@@ -785,6 +786,9 @@ type Entity =
         x.IsMeasureableReprTycon 
 #if !NO_EXTENSIONTYPING
         || x.IsProvidedErasedTycon
+        || (match x.TypeAbbrev with
+            | Some (TType_app(tcref,_)) -> tcref.IsErased
+            | _ -> false)
 #endif
 
     /// Get a blob of data indicating how this type is nested inside other namespaces, modules and types.
@@ -3548,7 +3552,7 @@ and
 
 #if !NO_EXTENSIONTYPING
     /// Indicates the type is a static argument to a type provider
-    | TType_staticarg of StaticArg
+    | TType_staticarg of TType * StaticArg
 #endif
 
     override x.ToString() =  
@@ -3565,7 +3569,7 @@ and
         | TType_var tp -> tp.DisplayName
         | TType_measure ms -> sprintf "%A" ms
 #if !NO_EXTENSIONTYPING
-        | TType_staticarg arg -> "static arg " + arg.ToString()
+        | TType_staticarg (_,arg) -> "static arg " + arg.ToString()
 #endif
 
 
@@ -3583,7 +3587,7 @@ and
             let (TILObjectReprData(scope,_nesting,_definition)) = _uc.Tycon.ILTyconInfo
             scope.QualifiedName
 #if !NO_EXTENSIONTYPING
-        | TType_staticarg _arg           -> ""
+        | TType_staticarg(_,_arg)        -> ""
 #endif
 
 and TypeInst = TType list 

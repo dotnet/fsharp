@@ -197,8 +197,8 @@ let rec remapTypeAux (tyenv : Remap) (ty:TType) =
       TType_measure (remapMeasureAux tyenv unt)
 
 #if !NO_EXTENSIONTYPING
-  | TType_staticarg arg ->
-      TType_staticarg arg
+  | TType_staticarg (t, arg) ->
+      TType_staticarg (t, arg)
 #endif
 
 and remapMeasureAux tyenv unt =
@@ -1984,7 +1984,7 @@ and accFreeInType opts ty acc  =
     | TType_forall (tps, r) -> unionFreeTyvars (boundTypars opts tps (freeInType opts r)) acc
     | TType_measure unt -> accFreeInMeasure opts unt acc
 #if !NO_EXTENSIONTYPING
-    | TType_staticarg _arg -> acc
+    | TType_staticarg (_t,_arg) -> acc
 #endif
 and accFreeInTupInfo _opts unt acc = 
     match unt with 
