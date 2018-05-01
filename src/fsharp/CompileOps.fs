@@ -4063,7 +4063,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                       reduceMemoryUsage = tcConfig.reduceMemoryUsage
                       pdbDirPath = None 
                       metadataOnly = MetadataOnlyFlag.Yes
-                      tryGetMetadataSnapshot = tcConfig.tryGetMetadataSnapshot }                       
+                      tryGetMetadataSnapshot = tcConfig.tryGetMetadataSnapshot }
                 let reader = OpenILModuleReaderFromBytes fileName bytes opts
                 reader.ILModuleDef, reader.ILAssemblyRefs
 
