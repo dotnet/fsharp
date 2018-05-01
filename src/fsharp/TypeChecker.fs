@@ -4938,6 +4938,7 @@ and CrackStaticConstantArgs cenv (env : TcEnv) (staticParameters: (range -> obj 
 
     argsInStaticParameterOrderIncludingDefaults
 
+
 and calculateAbstractParameterInfos cenv (staticParameters : Tainted<ProvidedParameterInfo>[]) =
     let parameterInfo (sp : Tainted<ProvidedParameterInfo>) m =
         let defaultVal = sp.PUntaint((fun sp -> if sp.IsOptional then sp.RawDefaultValue else null), m)
@@ -4946,6 +4947,9 @@ and calculateAbstractParameterInfos cenv (staticParameters : Tainted<ProvidedPar
         defaultVal, name, kind
     staticParameters
     |> Array.map parameterInfo
+
+and fullyEvaluateProvidedTypeExpression (_t : TType) : Tainted<ProvidedType> =
+    failwith ""
 
 and TcProvidedTypeAppToStaticConstantArgs cenv env optGeneratedTypePath tpenv occ (tcref:TyconRef) (args: SynType list) m =
     let args, _ = TcStaticConstantParameters cenv env tpenv occ (ArgumentContainer.Type tcref) args
@@ -4960,12 +4964,21 @@ and TcProvidedTypeAppToStaticConstantArgs cenv env optGeneratedTypePath tpenv oc
                 types
                 |> Array.choose (function | TType_staticarg (_, sa) -> Some sa | _ -> assert false; None)
             ExtensionTyping.TryApplyProvidedType(typeBeforeArguments, optGeneratedTypePath, staticArgs, m)
+            |> function
+            | Some (t, checkName) ->
+                let isGenerated = t.PUntaint((fun st -> not st.IsErased), m)
+                let isDirectReferenceToGenerated = isGenerated && ExtensionTyping.IsGeneratedTypeDirectReference (t, m)
+                if isDirectReferenceToGenerated then
+                    error(Error(FSComp.SR.etDirectReferenceToGeneratedTypeNotAllowed(tcref.DisplayName), m))
+                checkName()
+                t
+            | None -> error(Error(FSComp.SR.etErrorApplyingStaticArgumentsToType(), m))
         let parameterInfos = calculateAbstractParameterInfos cenv staticParameters
         let argsInStaticParameterOrderIncludingDefaults = CrackStaticConstantArgs cenv env (parameterInfos, args, tcref.DisplayName, m)
         argsInStaticParameterOrderIncludingDefaults, applyArgs
     | _ ->
         match tcref.TypeAbbrev with
-        | Some _t ->
+        | Some ty ->
             let typars = tcref.Typars m
             let parameterInfos =
                 typars
@@ -4974,36 +4987,27 @@ and TcProvidedTypeAppToStaticConstantArgs cenv env optGeneratedTypePath tpenv oc
                     | Some kind -> null, typar.DisplayName, kind
                     | None -> failwith "unreachable?")
                 |> List.toArray
-            let _argsInStaticParameterOrderIncludingDefaults = CrackStaticConstantArgs cenv env (parameterInfos, args, tcref.DisplayName, m)
-            failwith "unreachable"
+            let argsInStaticParameterOrderIncludingDefaults = CrackStaticConstantArgs cenv env (parameterInfos, args, tcref.DisplayName, m)
+            let applyArgs (args : TType[]) =
+                if args.Length <> typars.Length then
+                    error(Error(FSComp.SR.etErrorApplyingStaticArgumentsToType(), m))
+
+                let inst = List.zip typars (args |> Array.toList)
+                let instantiatedType = instType inst ty
+                fullyEvaluateProvidedTypeExpression instantiatedType
+            argsInStaticParameterOrderIncludingDefaults, applyArgs
         | None -> failwith "unreachable"
-
-
-and applyStaticArgumentsToProvider m (argsInStaticParameterOrderIncludingDefaults : TType[]) applyArgs =
-    let providedTypeAfterStaticArguments, checkTypeName =
-        match applyArgs argsInStaticParameterOrderIncludingDefaults with
-        | None -> error(Error(FSComp.SR.etErrorApplyingStaticArgumentsToType(), m))
-        | Some (ty, checkTypeName) -> (ty, checkTypeName)
-
-    let hasNoArgs = (argsInStaticParameterOrderIncludingDefaults.Length = 0)
-    hasNoArgs, providedTypeAfterStaticArguments, checkTypeName
 
 and TcAndAppStaticConstantArgsToProvidedType cenv env optGeneratedTypePath tpenv occ (tcref:TyconRef) (args: SynType list) m =
     let argsInStaticParameterOrderIncludingDefaults, applyArgs = TcProvidedTypeAppToStaticConstantArgs cenv env optGeneratedTypePath tpenv occ tcref args m
     if argsInStaticParameterOrderIncludingDefaults |> Array.exists (function | TType_staticarg _ -> false | _ -> true) then
         TType_app(tcref, argsInStaticParameterOrderIncludingDefaults |> Array.toList), tpenv
     else
-        let hasNoArgs, providedTypeAfterStaticArguments, checkTypeName = applyStaticArgumentsToProvider m argsInStaticParameterOrderIncludingDefaults applyArgs
+        let providedTypeAfterStaticArguments = applyArgs argsInStaticParameterOrderIncludingDefaults
 
-        let isGenerated = providedTypeAfterStaticArguments.PUntaint((fun st -> not st.IsErased), m)
-
-        //printfn "adding entity for provided type '%s', isDirectReferenceToGenerated = %b, isGenerated = %b" (st.PUntaint((fun st -> st.Name), m)) isDirectReferenceToGenerated isGenerated
-        let isDirectReferenceToGenerated = isGenerated && ExtensionTyping.IsGeneratedTypeDirectReference (providedTypeAfterStaticArguments, m)
-        if isDirectReferenceToGenerated then
-            error(Error(FSComp.SR.etDirectReferenceToGeneratedTypeNotAllowed(tcref.DisplayName), m))
+        let hasNoArgs = (argsInStaticParameterOrderIncludingDefaults.Length = 0)
 
         // We put the type name check after the 'isDirectReferenceToGenerated' check because we need the 'isDirectReferenceToGenerated' error to be shown for generated types
-        checkTypeName()
         if hasNoArgs then
             mkAppTy tcref [], tpenv
         else
@@ -14886,12 +14890,12 @@ module EstablishTypeDefinitionCores =
                         let optGeneratedTypePath = Some (tcref.CompilationPath.MangledPath @ [ tcref.LogicalName ])
                         // Generative type provider applications must occur in a type alias.
                         let occ = ItemOccurence.UseInType
-                        let _hasNoArgs, providedTypeAfterStaticArguments, checkTypeName =
-                            TcProvidedTypeAppToStaticConstantArgs cenv envinner optGeneratedTypePath tpenv occ tcrefBeforeStaticArguments args m
-                            ||> applyStaticArgumentsToProvider m
+                        let argsInStaticParameterOrderIncludingDefaults, applyArgs = TcProvidedTypeAppToStaticConstantArgs cenv envinner optGeneratedTypePath tpenv occ tcrefBeforeStaticArguments args m
+                        let providedTypeAfterStaticArguments = applyArgs argsInStaticParameterOrderIncludingDefaults
+
                         let isGenerated = providedTypeAfterStaticArguments.PUntaint((fun st -> not st.IsErased), m)
-                        if isGenerated  then 
-                           Some (tcrefBeforeStaticArguments, providedTypeAfterStaticArguments, checkTypeName, args, m)
+                        if isGenerated  then
+                           Some (tcrefBeforeStaticArguments, providedTypeAfterStaticArguments, m)
                         else
                            None  // The provided type (after ApplyStaticArguments) must also be marked 'IsErased=false' 
                     else 
@@ -14902,20 +14906,16 @@ module EstablishTypeDefinitionCores =
 
 
     /// Check and establish a 'type X = ABC<...>' provided type definition
-    let private TcTyconDefnCore_Phase1C_EstablishDeclarationForGeneratedSetOfTypes cenv inSig (tycon:Tycon, rhsType:SynType, tcrefForContainer:TyconRef, theRootType:Tainted<ProvidedType>, checkTypeName, args, m) =
+    let private TcTyconDefnCore_Phase1C_EstablishDeclarationForGeneratedSetOfTypes cenv inSig (tycon:Tycon, rhsType:SynType, tcrefForContainer:TyconRef, theRootType:Tainted<ProvidedType>, m) =
         // Explanation: We are definitely on the compilation thread here, we just have not propagated the token this far.
         let ctok = AssumeCompilationThreadWithoutEvidence()
 
         let tcref = mkLocalTyconRef tycon
         try 
             let resolutionEnvironment =
-                if not (isNil args) then 
-                   checkTypeName()
-                let resolutionEnvironment = 
-                    match tcrefForContainer.TypeReprInfo with 
-                    | TProvidedTypeExtensionPoint info -> info.ResolutionEnvironment
-                    | _ -> failwith "unreachable"
-                resolutionEnvironment
+                match tcrefForContainer.TypeReprInfo with
+                | TProvidedTypeExtensionPoint info -> info.ResolutionEnvironment
+                | _ -> failwith "unreachable"
 
             // Build up a mapping from System.Type --> TyconRef/ILTypeRef, to allow reverse-mapping
             // of types
@@ -15088,12 +15088,12 @@ module EstablishTypeDefinitionCores =
               if (match tycon.entity_tycon_repr with TNoRepr -> true | _ -> false) then 
 
                 // Determine if this is a generative type definition.
-                match TcTyconDefnCore_TryAsGenerateDeclaration cenv envinner tpenv (tycon, rhsType) with 
-                | Some (tcrefForContainer, providedTypeAfterStaticArguments, checkTypeName, args, m) ->
+                match TcTyconDefnCore_TryAsGenerateDeclaration cenv envinner tpenv (tycon, rhsType) with
+                | Some (tcrefForContainer, providedTypeAfterStaticArguments, m) ->
                    // If this is a generative provided type definition then establish the provided type and all its nested types. Only do this on the first pass.
-                   if firstPass then 
-                       TcTyconDefnCore_Phase1C_EstablishDeclarationForGeneratedSetOfTypes cenv inSig (tycon, rhsType, tcrefForContainer, providedTypeAfterStaticArguments, checkTypeName, args, m)
-                | None -> 
+                   if firstPass then
+                       TcTyconDefnCore_Phase1C_EstablishDeclarationForGeneratedSetOfTypes cenv inSig (tycon, rhsType, tcrefForContainer, providedTypeAfterStaticArguments, m)
+                | None ->
 #else
                   ignore inSig 
 #endif
