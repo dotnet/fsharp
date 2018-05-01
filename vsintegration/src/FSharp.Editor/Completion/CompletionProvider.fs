@@ -187,7 +187,7 @@ type internal FSharpCompletionProvider
                 let completionItem = completionItem.WithSortText(sortText)
 
                 let key = completionItem.DisplayText
-                declarationItemsData.Add(key, declarationItem)
+                declarationItemsData.TryAdd(key, declarationItem) |> ignore
                 results.Add(completionItem))
 
             if results.Count > 0 && not declarations.IsForType && not declarations.IsError && List.isEmpty partialName.QualifyingIdents then
