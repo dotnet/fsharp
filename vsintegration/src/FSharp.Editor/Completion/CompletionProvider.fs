@@ -185,7 +185,7 @@ type internal FSharpCompletionProvider
 
                 let key = completionItem.DisplayText
                 let cacheItem = CacheItem(key, declarationItem)
-                let policy = CacheItemPolicy(SlidingExpiration=DefaultTuning.PerDocumentSavedDataSlidingWindow)
+                let policy = CacheItemPolicy(SlidingExpiration=DefaultTuning.PerCompletionSessionSlidingWindow)
                 declarationItemsCache.Set(cacheItem, policy)
                 results.Add(completionItem))
 
