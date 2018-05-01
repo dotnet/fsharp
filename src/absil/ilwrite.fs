@@ -1638,18 +1638,16 @@ module Codebuf =
                     match i, tgs with 
                     | (_, Some i_short), [tg] 
                         when
-                          begin 
-                            // Use the original offsets to compute if the branch is small or large.  This is 
-                            // a safe approximation because code only gets smaller. 
-                            if not (origAvailBrFixups.ContainsKey tg) then 
-                                dprintn ("branch target " + formatCodeLabel tg + " not found in code")
-                            let origDest =
-                                match origAvailBrFixups.TryGetValue(tg) with
+                           // Use the original offsets to compute if the branch is small or large.  This is 
+                           // a safe approximation because code only gets smaller. 
+                           (let origDest =
+                                match origAvailBrFixups.TryGetValue tg with
                                 | true, fixup -> fixup
-                                | _ -> 666666
+                                | _ -> 
+                                    dprintn ("branch target " + formatCodeLabel tg + " not found in code")
+                                    666666
                             let origRelOffset = origDest - origEndOfInstr
-                            -128 <= origRelOffset && origRelOffset <= 127
-                          end 
+                            -128 <= origRelOffset && origRelOffset <= 127)
                       ->
                         newCode.EmitIntAsByte i_short
                         true
