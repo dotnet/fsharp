@@ -212,7 +212,6 @@ type internal FSharpCompletionProvider
             let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
             (documentId, document.FilePath, defines)
 
-        declarationItemsData.Clear()
         FSharpCompletionProvider.ShouldTriggerCompletionAux(sourceText, caretPosition, trigger.Kind, getInfo)
         
     override this.ProvideCompletionsAsync(context: Completion.CompletionContext) =
