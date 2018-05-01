@@ -21,6 +21,7 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open System.Runtime.Caching
+open System.Collections.Concurrent
 
 type internal FSharpCompletionProvider
     (
@@ -34,8 +35,9 @@ type internal FSharpCompletionProvider
     inherit CompletionProvider()
 
     static let userOpName = "CompletionProvider"
-    // Save the backing data in a memory cache held in a sliding window
-    static let declarationItemsCache = new MemoryCache("FSharp.Editor." + userOpName)
+    // Save the backing data in a cache, we need to save for at least the length of the completion session
+    // See https://github.com/Microsoft/visualfsharp/issues/4714
+    static let declarationItemsData = new ConcurrentDictionary<string, FSharpDeclarationListItem>()
     static let [<Literal>] NameInCodePropName = "NameInCode"
     static let [<Literal>] FullNamePropName = "FullName"
     static let [<Literal>] IsExtensionMemberPropName = "IsExtensionMember"
@@ -139,6 +141,7 @@ type internal FSharpCompletionProvider
 
             let maxHints = if mruItems.Values.Count = 0 then 0 else Seq.max mruItems.Values
 
+            declarationItemsData.Clear()
             sortedDeclItems |> Array.iteri (fun number declarationItem ->
                 let glyph = Tokenizer.FSharpGlyphToRoslynGlyph (declarationItem.Glyph, declarationItem.Accessibility)
                 let name =
@@ -184,9 +187,7 @@ type internal FSharpCompletionProvider
                 let completionItem = completionItem.WithSortText(sortText)
 
                 let key = completionItem.DisplayText
-                let cacheItem = CacheItem(key, declarationItem)
-                let policy = CacheItemPolicy(SlidingExpiration=DefaultTuning.PerCompletionSessionSlidingWindow)
-                declarationItemsCache.Set(cacheItem, policy)
+                declarationItemsData.Add(key, declarationItem)
                 results.Add(completionItem))
 
             if results.Count > 0 && not declarations.IsForType && not declarations.IsError && List.isEmpty partialName.QualifyingIdents then
@@ -211,8 +212,9 @@ type internal FSharpCompletionProvider
             let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
             (documentId, document.FilePath, defines)
 
+        declarationItemsData.Clear()
         FSharpCompletionProvider.ShouldTriggerCompletionAux(sourceText, caretPosition, trigger.Kind, getInfo)
-    
+        
     override this.ProvideCompletionsAsync(context: Completion.CompletionContext) =
         asyncMaybe {
             let document = context.Document
@@ -228,13 +230,14 @@ type internal FSharpCompletionProvider
             let! results = 
                 FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, sourceText, context.Position, projectOptions, 
                                                                     document.FilePath, textVersion.GetHashCode(), getAllSymbols)
+            
             context.AddItems(results)
         } |> Async.Ignore |> RoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
         
     override this.GetDescriptionAsync(_: Document, completionItem: Completion.CompletionItem, cancellationToken: CancellationToken): Task<CompletionDescription> =
         async {
-            match declarationItemsCache.Get(completionItem.DisplayText) with
-            | :? FSharpDeclarationListItem as declarationItem -> 
+            match declarationItemsData.TryGetValue(completionItem.DisplayText) with
+            | true, declarationItem -> 
                 let! description = declarationItem.StructuredDescriptionTextAsync
                 let documentation = List()
                 let collector = RoslynHelpers.CollectTaggedText documentation
