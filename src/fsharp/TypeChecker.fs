@@ -15095,7 +15095,13 @@ module EstablishTypeDefinitionCores =
                       Some(cenv.g.system_Enum_typ) 
 
               // Allow super type to be a function type but convert back to FSharpFunc<A,B> to make sure it has metadata
-              let super = super |> Option.map (helpEnsureTypeHasMetadata cenv.g)
+              // (We don't apply the same rule to tuple types, i.e. no F#-declared inheritors of those are permitted)
+              let super = 
+                  super |> Option.map (fun ty -> 
+                     if isFunTy cenv.g ty then  
+                         let (a,b) = destFunTy cenv.g ty
+                         mkAppTy cenv.g.fastFunc_tcr [a; b] 
+                     else ty)
 
               // Publish the super type
               tycon.TypeContents.tcaug_super <- super
