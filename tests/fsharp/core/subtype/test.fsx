@@ -1904,6 +1904,17 @@ module TestInheritFunc3 =
 
     check "cnwcki4" ((Foo() |> box |> unbox<int -> int -> int -> int> ) 5 6 7) 19
 
+module TestConverter =
+    open System
+
+    let fromConverter (f: Converter<'T1,'X>) = FSharp.Core.FSharpFunc.FromConverter f
+    let implicitConv (f: Converter<'T1,'X>) = FSharp.Core.FSharpFunc.op_Implicit f
+    let toConverter (f: 'T1 -> 'X) = FSharp.Core.FSharpFunc.ToConverter f
+    let toConverter2 (f: FSharpFunc<'T1, 'X>) = FSharp.Core.FSharpFunc.ToConverter f
+
+    test "cenwceoiwe1" ((id |> toConverter |> fromConverter) 6 = 6)
+    test "cenwceoiwe2" ((id |> toConverter |> fromConverter |> toConverter2 |> implicitConv) 6 = 6)
+
 
 #if TESTS_AS_APP
 let RUN() = !failures
