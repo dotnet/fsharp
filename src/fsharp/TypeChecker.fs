@@ -4726,9 +4726,8 @@ and TcTyparConstraints cenv newOk checkCxs occ env tpenv wcs =
 // Note: In the presence of a syntactic type variable, this means we are in inference mode.
 
 and TcStaticConstantParameter cenv (env:TcEnv) tpenv occ (v:SynType) container =
-    //let fail() = error(Error(FSComp.SR.etInvalidStaticArgument(NicePrint.minimalStringOfType env.DisplayEnv kind), v.Range))
     match v with
-    | SynType.StaticConstantNamed(SynType.LongIdent(lidwd), st, m) ->
+    | SynType.StaticConstantNamed(SynType.LongIdent(lidwd), st, _) ->
         match lidwd.Lid with
         // FS-1023 TODO Are parameter names always of length 1?
         | [ id ] ->
@@ -4795,7 +4794,7 @@ and TcStaticConstantParameter cenv (env:TcEnv) tpenv occ (v:SynType) container =
         let (LongIdentWithDots(tycon, _)) = lidwd
         let ad = env.eAccessRights
         match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInAttribute OpenQualified env.eNameResEnv ad tycon TypeNameResolutionStaticArgsInfo.DefiniteEmpty  PermitDirectReferenceToGeneratedType.No with
-        | Exception err ->
+        | Exception _ ->
             TcStaticConstantParameter cenv env tpenv occ (SynType.StaticConstantExpr(SynExpr.LongIdent(false,lidwd,None,m),m)) container
         | Result tcref ->
             let assm = cenv.topCcu.ReflectAssembly :?> TastReflect.ReflectAssembly
@@ -4852,9 +4851,9 @@ and TcStaticConstantParameters cenv env tpenv occ container args =
 // Note: Args may be supplied either via position or via name; named arguments may be optional.
 //       In the presence of a syntactic type variable, this means we are in inference mode.
 //         The StaticArg returned will contain a TType corresponding to the kind of the argument (eg. int, bool, Type).
-and CrackStaticConstantArgs cenv env tpenv occ (staticParameters: Tainted<ProvidedParameterInfo>[], args: (Ident option * TType) list, container, containerName, m) =
+and CrackStaticConstantArgs cenv (env : TcEnv) (staticParameters: Tainted<ProvidedParameterInfo>[], args: (Ident option * TType) list, containerName, m) =
     let buildStaticArg (o : obj) =
-        let inline typeBox(x : 'a, t) = TType_staticarg (t, StaticArg (box x))
+        let inline typeBox(x : 'a, t) = TType_staticarg(t, StaticArg (box x))
         let g = cenv.g
         match o with
         | :? int16 as v -> typeBox(v, g.int16_ty)
@@ -4898,29 +4897,35 @@ and CrackStaticConstantArgs cenv env tpenv occ (staticParameters: Tainted<Provid
         staticParameters |> Array.mapi (fun i sp -> 
             let spKind = Import.ImportProvidedType cenv.amap m (sp.PApply((fun x -> x.ParameterType), m))
             let spName = sp.PUntaint((fun sp -> sp.Name), m)
-<<<<<<< HEAD
-            if i < unnamedArgs.Length then 
-                let v = unnamedArgs.[i]
-                let v, _tpenv = TcStaticConstantParameter cenv env tpenv occ spKind v None container
-                v
-            else
-                match namedArgs |> List.filter (fun (n, _) -> n.idText = spName) with
-                | [(n, v)] ->
-                    let v, _tpenv = TcStaticConstantParameter cenv env tpenv occ spKind v (Some n) container
-                    v
-                | [] -> 
-=======
+            let verifyArg (tt : TType) =
+                let matchKinds kind =
+                    if not <| typeEquiv cenv.g spKind kind then
+                            error(Error(FSComp.SR.etInvalidStaticArgument(NicePrint.minimalStringOfType env.DisplayEnv spKind), m))
+                match tt with
+                | TType_staticarg(t, _) ->
+                    matchKinds t
+                | TType_var typar ->
+                    match typar.typar_staticarg_kind with
+                    | Some t ->
+                        matchKinds t
+                    | None ->
+                        typar.typar_staticarg_kind <- Some spKind
+                | _ ->
+                    matchKinds cenv.g.system_Type_typ
+                tt
             if i < unnamedArgs.Length then
-                unnamedArgs.[i]
+                verifyArg (unnamedArgs.[i])
             else
                 match namedArgs |> List.filter (fun (n, _) -> n.idText = spName) with
-                | [(n, v)] -> v
+                | [(_n, v)] ->
+                    verifyArg v
+
                 | [] ->
->>>>>>> 536a43e... Refactoring to separate type checking and application of static args to providers
                     if sp.PUntaint((fun sp -> sp.IsOptional), m) then
                          match sp.PUntaint((fun sp -> sp.RawDefaultValue), m) with
                          | null -> error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, containerName, containerName, spName) , m))
-                         | v -> buildStaticArg v
+                         | v ->
+                            verifyArg (buildStaticArg v)
                     else
                       error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, containerName, containerName, spName), m))
                  | ps -> 
@@ -4929,6 +4934,7 @@ and CrackStaticConstantArgs cenv env tpenv occ (staticParameters: Tainted<Provid
     argsInStaticParameterOrderIncludingDefaults
 
 and TcProvidedTypeAppToStaticConstantArgs cenv env optGeneratedTypePath tpenv occ (tcref:TyconRef) (args: SynType list) m =
+    let args, _ = TcStaticConstantParameters cenv env tpenv occ (ArgumentContainer.Type tcref) args
     let typeBeforeArguments =
         match tcref.TypeReprInfo with
         | TProvidedTypeExtensionPoint info -> info.ProvidedType
@@ -4938,13 +4944,12 @@ and TcProvidedTypeAppToStaticConstantArgs cenv env optGeneratedTypePath tpenv oc
     let staticParameters = staticParameters.PApplyArray(id, "GetStaticParameters", m)
 
     let applyArgs args = ExtensionTyping.TryApplyProvidedType(typeBeforeArguments, optGeneratedTypePath, args, m)
-    let args, tpenv = TcStaticConstantParameters cenv env tpenv occ (ArgumentContainer.Type tcref) args
-    let argsInStaticParameterOrderIncludingDefaults = CrackStaticConstantArgs cenv env tpenv occ (staticParameters, args, ArgumentContainer.Type tcref, tcref.DisplayName, m)
+    let argsInStaticParameterOrderIncludingDefaults = CrackStaticConstantArgs cenv env (staticParameters, args, tcref.DisplayName, m)
     argsInStaticParameterOrderIncludingDefaults, Some applyArgs
 
 and applyStaticArgumentsToProvider m argsInStaticParameterOrderIncludingDefaults applyArgs =
     let argsInStaticParameterOrderIncludingDefaults = 
-        argsInStaticParameterOrderIncludingDefaults |> Array.choose (function | TType_staticarg(t,x) -> Some x | _ -> None)
+        argsInStaticParameterOrderIncludingDefaults |> Array.choose (function | TType_staticarg(_,x) -> Some x | _ -> None)
     // Take the static arguments (as SynType's) and convert them to objects of the appropriate type, based on the expected kind.
     let providedTypeAfterStaticArguments, checkTypeName =
         match applyArgs with
@@ -4981,28 +4986,17 @@ and TcAndAppStaticConstantArgsToProvidedType cenv env optGeneratedTypePath tpenv
             typ, tpenv
 
 
-<<<<<<< HEAD
-and TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos: MethInfo list, argsOpt, mExprAndArg, mItem) =
-    match minfos, argsOpt with 
-    | [minfo], Some (args, _) -> 
-        match minfo.ProvidedStaticParameterInfo with 
-        | Some (methBeforeArguments, staticParams) -> 
-=======
-and TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos: MethInfo list, args, mExprAndArg, mItem) =
-    match minfos with
-    | [minfo] ->
-        match minfo.ProvidedStaticParameterInfo with
-        | Some (methBeforeArguments, staticParams) ->
->>>>>>> 536a43e... Refactoring to separate type checking and application of static args to providers
-            let providedMethAfterStaticArguments = TcProvidedMethodAppToStaticConstantArgs cenv env tpenv (minfo, methBeforeArguments, staticParams, args, mExprAndArg)
-            let minfoAfterStaticArguments = ProvidedMeth(cenv.amap, providedMethAfterStaticArguments, minfo.ExtensionMemberPriorityOption, mItem)
-            Some minfoAfterStaticArguments
-        | _ -> None
+and TryTcMethodAppToStaticConstantArgs cenv env (minfo: MethInfo, args, mExprAndArg, mItem) =
+    match minfo.ProvidedStaticParameterInfo with
+    | Some (methBeforeArguments, staticParams) ->
+        let providedMethAfterStaticArguments = TcProvidedMethodAppToStaticConstantArgs cenv env (minfo, methBeforeArguments, staticParams, args, mExprAndArg)
+        let minfoAfterStaticArguments = ProvidedMeth(cenv.amap, providedMethAfterStaticArguments, minfo.ExtensionMemberPriorityOption, mItem)
+        Some minfoAfterStaticArguments
     | _ -> None
 
-and TcProvidedMethodAppToStaticConstantArgs cenv env tpenv (minfo, methBeforeArguments, staticParams, args, m) =
+and TcProvidedMethodAppToStaticConstantArgs cenv env (minfo, methBeforeArguments, staticParams, args, m) =
 
-    let argsInStaticParameterOrderIncludingDefaults = CrackStaticConstantArgs cenv env tpenv ItemOccurence.Use (staticParams, args, ArgumentContainer.Method minfo, minfo.DisplayName, m)
+    let argsInStaticParameterOrderIncludingDefaults = CrackStaticConstantArgs cenv env (staticParams, args, minfo.DisplayName, m)
 
     if argsInStaticParameterOrderIncludingDefaults |> Array.exists (function | TType_staticarg _ -> false | _ -> true) then
         failwith "" // FS-1023 TODO: Proper error
@@ -8746,25 +8740,24 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
         | (DelayedTypeApp(tys, mTypeArgs, mExprAndTypeArgs) :: otherDelayed) ->
 
 #if !NO_EXTENSIONTYPING
-<<<<<<< HEAD
-            match TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos, Some (tys, mTypeArgs), mExprAndTypeArgs, mItem) with 
-=======
-            let args, tpenv = TcStaticConstantParameters cenv env tpenv ItemOccurence.Use tcref args
-            match TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos, Some (args, mTypeArgs), mExprAndTypeArgs, mItem) with
->>>>>>> 536a43e... Refactoring to separate type checking and application of static args to providers
-            | Some minfoAfterStaticArguments ->
+            match minfos with
+            | [minfo] ->
+                let tyargs, tpenv = TcStaticConstantParameters cenv env tpenv ItemOccurence.Use (ArgumentContainer.Method minfo) tys
+                match TryTcMethodAppToStaticConstantArgs cenv env (minfo, tyargs, mExprAndTypeArgs, mItem) with
+                | Some minfoAfterStaticArguments ->
 
-              // Replace the resolution including the static parameters, plus the extra information about the original method info
-              let item = Item.MethodGroup(methodName, [minfoAfterStaticArguments], Some minfos.[0])
-              CallNameResolutionSinkReplacing cenv.tcSink (mItem, env.NameEnv, item, item, [], ItemOccurence.Use, env.DisplayEnv, env.eAccessRights)                        
-
-              match otherDelayed with 
-              | DelayedApp(atomicFlag, arg, mExprAndArg) :: otherDelayed -> 
-                  TcMethodApplicationThen cenv env overallTy None tpenv None [] mExprAndArg mItem methodName ad NeverMutates false [(minfoAfterStaticArguments, None)] afterResolution NormalValUse [arg] atomicFlag otherDelayed
-              | _ -> 
-                  TcMethodApplicationThen cenv env overallTy None tpenv None [] mExprAndTypeArgs mItem methodName ad NeverMutates false [(minfoAfterStaticArguments, None)] afterResolution NormalValUse [] ExprAtomicFlag.Atomic otherDelayed
-
-            | None ->
+                    // Replace the resolution including the static parameters, plus the extra information about the original method info
+                    let item = Item.MethodGroup(methodName, [minfoAfterStaticArguments], Some minfos.[0])
+                    CallNameResolutionSinkReplacing cenv.tcSink (mItem, env.NameEnv, item, item, [], ItemOccurence.Use, env.DisplayEnv, env.eAccessRights)
+                    
+                    match otherDelayed with
+                    | DelayedApp(atomicFlag, arg, mExprAndArg) :: otherDelayed ->
+                        TcMethodApplicationThen cenv env overallTy None tpenv None [] mExprAndArg mItem methodName ad NeverMutates false [(minfoAfterStaticArguments, None)] afterResolution NormalValUse [arg] atomicFlag otherDelayed
+                    | _ ->
+                        TcMethodApplicationThen cenv env overallTy None tpenv None [] mExprAndTypeArgs mItem methodName ad NeverMutates false [(minfoAfterStaticArguments, None)] afterResolution NormalValUse [] ExprAtomicFlag.Atomic otherDelayed
+                | _ ->
+                    error(Error(FSComp.SR.etMissingStaticArgumentsToMethod(), mItem))
+            | _ ->
 #endif
 
             let tyargs, tpenv = TcTypesOrMeasures None cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv tys mTypeArgs
@@ -9167,22 +9160,10 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
         let mutates = (if methodName = "MoveNext" || methodName = "GetNextArg" then DefinitelyMutates else PossiblyMutates)
 
 #if !NO_EXTENSIONTYPING
-<<<<<<< HEAD
-        match TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos, tyargsOpt, mExprAndItem, mItem) with 
-        | Some minfoAfterStaticArguments -> 
-            // Replace the resolution including the static parameters, plus the extra information about the original method info
-            let item = Item.MethodGroup(methodName, [minfoAfterStaticArguments], Some minfos.[0])
-            CallNameResolutionSinkReplacing cenv.tcSink (mExprAndItem, env.NameEnv, item, item, [], ItemOccurence.Use, env.DisplayEnv, env.eAccessRights)                        
-
-            TcMethodApplicationThen cenv env overallTy None tpenv None objArgs mExprAndItem mItem methodName ad mutates false [(minfoAfterStaticArguments, None)] afterResolution NormalValUse args atomicFlag delayed 
-        | None -> 
-        if not minfos.IsEmpty && minfos.[0].ProvidedStaticParameterInfo.IsSome then 
-            error(Error(FSComp.SR.etMissingStaticArgumentsToMethod(), mItem))
-=======
         match minfos, tyargsOpt with
-        | minfo :: _, Some (tyargs, _) ->
+        | [minfo], Some (tyargs, _) ->
             let tyargs, tpenv = TcStaticConstantParameters cenv env tpenv ItemOccurence.Use (ArgumentContainer.Method minfo) tyargs
-            match TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos, tyargs, mExprAndItem, mItem) with
+            match TryTcMethodAppToStaticConstantArgs cenv env (minfo, tyargs, mExprAndItem, mItem) with
             | Some minfoAfterStaticArguments ->
                 // Replace the resolution including the static parameters, plus the extra information about the original method info
                 let item = Item.MethodGroup(methodName, [minfoAfterStaticArguments], Some minfos.[0])
@@ -9192,7 +9173,6 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
             | None ->
                 error(Error(FSComp.SR.etMissingStaticArgumentsToMethod(), mItem))
         | _ ->
->>>>>>> 536a43e... Refactoring to separate type checking and application of static args to providers
 #endif
 
         let tyargsOpt, tpenv = TcMemberTyArgsOpt cenv env tpenv tyargsOpt
