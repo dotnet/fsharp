@@ -4844,14 +4844,14 @@ and TcStaticConstantParameter cenv (env:TcEnv) tpenv occ (v:SynType) container =
 and TcStaticConstantParameters cenv env tpenv occ container args =
     args |> List.mapFold (fun tpenv x -> TcStaticConstantParameter cenv env tpenv occ x container) tpenv
 
-// Returns the static constant args a_1,a_2,..,a_n to be supplied to a ProvidedType<s_1,s_2,...,s_m>.
+// Returns the static constant args a_1,a_2,..,a_n to be supplied to a ProvidedType X, in the application X<a_1,a_2,...,a_m>.
 //     where s_i is the syntax for a value a_j
 //     where n >= m
 //
 // Note: Args may be supplied either via position or via name; named arguments may be optional.
 //       In the presence of a syntactic type variable, this means we are in inference mode.
-//         The StaticArg returned will contain a TType corresponding to the kind of the argument (eg. int, bool, Type).
-and CrackStaticConstantArgs cenv (env : TcEnv) (staticParameters: Tainted<ProvidedParameterInfo>[], args: (Ident option * TType) list, containerName, m) =
+//       The StaticArg returned will contain a TType corresponding to the kind of the argument (eg. int, bool, Type).
+and CrackStaticConstantArgs cenv (env : TcEnv) (staticParameters: (range -> obj * string * TType)[], args: (Ident option * TType) list, containerName, m) =
     let buildStaticArg (o : obj) =
         let inline typeBox(x : 'a, t) = TType_staticarg(t, StaticArg (box x))
         let g = cenv.g
@@ -4880,10 +4880,16 @@ and CrackStaticConstantArgs cenv (env : TcEnv) (staticParameters: Tainted<Provid
         error (Error(FSComp.SR.etBadUnnamedStaticArgs(), m))
 
     let indexedStaticParameters = staticParameters |> Array.toList |> List.indexed
+    // ParameterInfos are passed in via an abstract representation, instead of a Tainted<ProvidedParameterInfo>
+    // This is so that CrackStaticConstantArgs can be used in type abbreviations.
+    let defaultVal m sp = let (dv,_,_) = sp m in dv
+    let name m sp = let (_,name,_) = sp m in name
+    let kind m sp = let (_,_,kind) = sp m in kind
     for (n, _) in namedArgs do
-         match indexedStaticParameters |> List.filter (fun (j, sp) -> j >= unnamedArgs.Length && n.idText = sp.PUntaint((fun sp -> sp.Name), m)) with
-         | [] -> 
-             if staticParameters |> Array.exists (fun sp -> n.idText = sp.PUntaint((fun sp -> sp.Name), n.idRange)) then 
+         let name = name n.idRange
+         match indexedStaticParameters |> List.filter (fun (j, sp) -> j >= unnamedArgs.Length && n.idText = name sp) with
+         | [] ->
+             if staticParameters |> Array.exists (fun sp -> n.idText = name sp) then
                  error (Error(FSComp.SR.etStaticParameterAlreadyHasValue n.idText, n.idRange))
              else
                  error (Error(FSComp.SR.etNoStaticParameterWithName n.idText, n.idRange))
@@ -4893,10 +4899,12 @@ and CrackStaticConstantArgs cenv (env : TcEnv) (staticParameters: Tainted<Provid
     if staticParameters.Length < namedArgs.Length + unnamedArgs.Length then 
         error (Error(FSComp.SR.etTooManyStaticParameters(staticParameters.Length, unnamedArgs.Length, namedArgs.Length), m))
 
-    let argsInStaticParameterOrderIncludingDefaults = 
-        staticParameters |> Array.mapi (fun i sp -> 
-            let spKind = Import.ImportProvidedType cenv.amap m (sp.PApply((fun x -> x.ParameterType), m))
-            let spName = sp.PUntaint((fun sp -> sp.Name), m)
+    let argsInStaticParameterOrderIncludingDefaults =
+        staticParameters |> Array.mapi (fun i sp ->
+            let defaultVal, name, kind = defaultVal m, name m, kind m
+
+            let spKind = kind sp
+            let spName = name sp
             let verifyArg (tt : TType) =
                 let matchKinds kind =
                     if not <| typeEquiv cenv.g spKind kind then
@@ -4921,44 +4929,61 @@ and CrackStaticConstantArgs cenv (env : TcEnv) (staticParameters: Tainted<Provid
                     verifyArg v
 
                 | [] ->
-                    if sp.PUntaint((fun sp -> sp.IsOptional), m) then
-                         match sp.PUntaint((fun sp -> sp.RawDefaultValue), m) with
-                         | null -> error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, containerName, containerName, spName) , m))
-                         | v ->
-                            verifyArg (buildStaticArg v)
-                    else
-                      error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, containerName, containerName, spName), m))
-                 | ps -> 
+                    match defaultVal sp with
+                    | null -> error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, containerName, containerName, spName) , m))
+                    | v ->
+                        verifyArg (buildStaticArg v)
+                 | ps ->
                       error (Error(FSComp.SR.etMultipleStaticParameterWithName spName, (fst (List.last ps)).idRange)))
 
     argsInStaticParameterOrderIncludingDefaults
 
+and calculateAbstractParameterInfos cenv (staticParameters : Tainted<ProvidedParameterInfo>[]) =
+    let parameterInfo (sp : Tainted<ProvidedParameterInfo>) m =
+        let defaultVal = sp.PUntaint((fun sp -> if sp.IsOptional then sp.RawDefaultValue else null), m)
+        let name = sp.PUntaint((fun sp -> sp.Name), m)
+        let kind = Import.ImportProvidedType cenv.amap m (sp.PApply((fun sp -> sp.ParameterType), m))
+        defaultVal, name, kind
+    staticParameters
+    |> Array.map parameterInfo
+
 and TcProvidedTypeAppToStaticConstantArgs cenv env optGeneratedTypePath tpenv occ (tcref:TyconRef) (args: SynType list) m =
     let args, _ = TcStaticConstantParameters cenv env tpenv occ (ArgumentContainer.Type tcref) args
-    let typeBeforeArguments =
-        match tcref.TypeReprInfo with
-        | TProvidedTypeExtensionPoint info -> info.ProvidedType
-        | _ -> failwith "unreachable"
+    match tcref.TypeReprInfo with
+    | TProvidedTypeExtensionPoint info ->
+        let typeBeforeArguments = info.ProvidedType
+        let staticParameters = typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, provider) -> typeBeforeArguments.GetStaticParameters(provider)), range=m)
+        let staticParameters = staticParameters.PApplyArray(id, "GetStaticParameters", m)
 
-    let staticParameters = typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, provider) -> typeBeforeArguments.GetStaticParameters(provider)), range=m) 
-    let staticParameters = staticParameters.PApplyArray(id, "GetStaticParameters", m)
+        let applyArgs types =
+            let staticArgs =
+                types
+                |> Array.choose (function | TType_staticarg (_, sa) -> Some sa | _ -> assert false; None)
+            ExtensionTyping.TryApplyProvidedType(typeBeforeArguments, optGeneratedTypePath, staticArgs, m)
+        let parameterInfos = calculateAbstractParameterInfos cenv staticParameters
+        let argsInStaticParameterOrderIncludingDefaults = CrackStaticConstantArgs cenv env (parameterInfos, args, tcref.DisplayName, m)
+        argsInStaticParameterOrderIncludingDefaults, applyArgs
+    | _ ->
+        match tcref.TypeAbbrev with
+        | Some _t ->
+            let typars = tcref.Typars m
+            let parameterInfos =
+                typars
+                |> List.map (fun (typar : Typar) _ ->
+                    match typar.typar_staticarg_kind with
+                    | Some kind -> null, typar.DisplayName, kind
+                    | None -> failwith "unreachable?")
+                |> List.toArray
+            let _argsInStaticParameterOrderIncludingDefaults = CrackStaticConstantArgs cenv env (parameterInfos, args, tcref.DisplayName, m)
+            failwith "unreachable"
+        | None -> failwith "unreachable"
 
-    let applyArgs args = ExtensionTyping.TryApplyProvidedType(typeBeforeArguments, optGeneratedTypePath, args, m)
-    let argsInStaticParameterOrderIncludingDefaults = CrackStaticConstantArgs cenv env (staticParameters, args, tcref.DisplayName, m)
-    argsInStaticParameterOrderIncludingDefaults, Some applyArgs
 
-and applyStaticArgumentsToProvider m argsInStaticParameterOrderIncludingDefaults applyArgs =
-    let argsInStaticParameterOrderIncludingDefaults = 
-        argsInStaticParameterOrderIncludingDefaults |> Array.choose (function | TType_staticarg(_,x) -> Some x | _ -> None)
-    // Take the static arguments (as SynType's) and convert them to objects of the appropriate type, based on the expected kind.
+and applyStaticArgumentsToProvider m (argsInStaticParameterOrderIncludingDefaults : TType[]) applyArgs =
     let providedTypeAfterStaticArguments, checkTypeName =
-        match applyArgs with
-        | Some applyArgs ->
-            match applyArgs argsInStaticParameterOrderIncludingDefaults with
-            | None -> error(Error(FSComp.SR.etErrorApplyingStaticArgumentsToType(), m))
-            | Some (ty, checkTypeName) -> (ty, checkTypeName)
-        | None ->
-            failwith "Should have received a function to apply static args"
+        match applyArgs argsInStaticParameterOrderIncludingDefaults with
+        | None -> error(Error(FSComp.SR.etErrorApplyingStaticArgumentsToType(), m))
+        | Some (ty, checkTypeName) -> (ty, checkTypeName)
 
     let hasNoArgs = (argsInStaticParameterOrderIncludingDefaults.Length = 0)
     hasNoArgs, providedTypeAfterStaticArguments, checkTypeName
@@ -4996,7 +5021,8 @@ and TryTcMethodAppToStaticConstantArgs cenv env (minfo: MethInfo, args, mExprAnd
 
 and TcProvidedMethodAppToStaticConstantArgs cenv env (minfo, methBeforeArguments, staticParams, args, m) =
 
-    let argsInStaticParameterOrderIncludingDefaults = CrackStaticConstantArgs cenv env (staticParams, args, minfo.DisplayName, m)
+    let parameterInfos = calculateAbstractParameterInfos cenv staticParams
+    let argsInStaticParameterOrderIncludingDefaults = CrackStaticConstantArgs cenv env (parameterInfos, args, minfo.DisplayName, m)
 
     if argsInStaticParameterOrderIncludingDefaults |> Array.exists (function | TType_staticarg _ -> false | _ -> true) then
         failwith "" // FS-1023 TODO: Proper error
