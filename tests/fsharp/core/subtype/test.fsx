@@ -1904,6 +1904,8 @@ module TestInheritFunc3 =
 
     check "cnwcki4" ((Foo() |> box |> unbox<int -> int -> int -> int> ) 5 6 7) 19
 
+#if !NETCOREAPP1_0
+
 module TestConverter =
     open System
 
@@ -1914,6 +1916,7 @@ module TestConverter =
 
     test "cenwceoiwe1" ((id |> toConverter |> fromConverter) 6 = 6)
     test "cenwceoiwe2" ((id |> toConverter |> fromConverter |> toConverter2 |> implicitConv) 6 = 6)
+#endif
 
 
 #if TESTS_AS_APP
