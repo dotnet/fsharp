@@ -48,9 +48,6 @@
     <Compile Include="Common.Wix.Properties.wxs" />
 
     <Compile Include="FSharp.SDK.wxs" />
-    
-    <Compile Condition="'$(IsLangPack)' != 'true'" Include="component-groups\Compiler_Redist.wxs" />
-    <Compile Condition="'$(IsLangPack)' == 'true'" Include="component-groups\Compiler_LangPack.wxs" />
 
     <Compile Condition="'$(IsLangPack)' != 'true'" Include="component-groups\Runtime_Redist.wxs" />
     <Compile Condition="'$(IsLangPack)' == 'true'" Include="component-groups\Runtime_LangPack.wxs" />

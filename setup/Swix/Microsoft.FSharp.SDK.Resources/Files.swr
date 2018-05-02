@@ -6,10 +6,7 @@ package name=Microsoft.FSharp.SDK.Resources
         vs.package.language=$(LocaleSpecificCulture)
         vs.package.providerKey=Microsoft.FSharp.SDK.Resources,$(LocaleSpecificCulture),v10.1
 
-vs.installSize
-  SystemDrive=12681438
-  TargetDrive=0
-  SharedDrive=0
-
-vs.payloads
-  vs.payload source="$(BinariesFolder)\msi\Microsoft.FSharp.SDK.Resources.$(LocaleCode).msi"
+folder "[ProgramFiles(x86)]\Microsoft SDKs\F#\10.1\Framework\v4.0\$(LocaleParentCulture)"
+  file "FSharp.Build.resources.dll" source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.Build.resources.dll"
+  file "FSharp.Compiler.Private.resources.dll" source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.Compiler.Private.resources.dll"
+  file "FSharp.Core.resources.dll" source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.Core.resources.dll"
