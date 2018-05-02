@@ -157,6 +157,16 @@ module TestExtensions =
     test "dfeweeon" (r1.ExtendFSharpType() = 5)
     test "dfeweeon" (Lib2().ExtendCSharpType() = 4)
 
+
+let ToFSharpFunc() = 
+    test "vkejhwew901" (FuncConvert.ToFSharpFunc(FSharpFuncTests.ApiWrapper.f1)(3)  =  FSharpFuncTests.ApiWrapper.f1.Invoke(3))
+    test "vkejhwew902" (FuncConvert.ToFSharpFunc(FSharpFuncTests.ApiWrapper.f2)(3, "a")  =  FSharpFuncTests.ApiWrapper.f2.Invoke(3, "a"))
+    test "vkejhwew903" (FuncConvert.ToFSharpFunc(FSharpFuncTests.ApiWrapper.f3)(3, "a", 6uy)  =  FSharpFuncTests.ApiWrapper.f3.Invoke(3, "a", 6uy))
+    test "vkejhwew904" (FuncConvert.ToFSharpFunc(FSharpFuncTests.ApiWrapper.f4)(3, "a", 6uy, 7y)  =  FSharpFuncTests.ApiWrapper.f4.Invoke(3, "a", 6uy, 7y))
+    test "vkejhwew905" (FuncConvert.ToFSharpFunc(FSharpFuncTests.ApiWrapper.f5)(3, "a", 6uy, 7y, 7s)  =  FSharpFuncTests.ApiWrapper.f5.Invoke(3, "a", 6uy, 7y, 7s))
+    test "vkejhwew906" (FuncConvert.ToFSharpFunc(FSharpFuncTests.ApiWrapper.f6)(3, "a", 6uy, 7y, 7s, 8s)  =  FSharpFuncTests.ApiWrapper.f6.Invoke(3, "a", 6uy, 7y, 7s, 8s))
+    test "vkejhwew907" (FuncConvert.ToFSharpFunc(FSharpFuncTests.ApiWrapper.f7)(3, "a", 6uy, 7y, 7s, 8s, 9s)  =  FSharpFuncTests.ApiWrapper.f7.Invoke(3, "a", 6uy, 7y, 7s, 8s, 9s))
+
 #endif
 
 #if TESTS_AS_APP
