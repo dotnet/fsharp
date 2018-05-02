@@ -2911,13 +2911,13 @@ namespace Microsoft.FSharp.Core
 
     type FSharpFunc<'T,'Res> with
 
-        // Note: this is not made public in the signature, presumably because of conflicts with the Converter overload
-        // The method should really be removed but remains in case someone is calling it via reflection.
+        // Note: this is not made public in the signature, because of conflicts with the Converter overload.
+        // The method remains in case someone is calling it via reflection.
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
         static member op_Implicit(converter : System.Func<_,_>) : ('T -> 'Res) =  (fun t -> converter.Invoke(t))
 
-        // Note: this is not made public in the signature, presumably because of conflicts with the Converter overload.
-        // The method should really be removed but remains in case someone is calling it via reflection.
+        // Note: this is not made public in the signature, because of conflicts with the Converter overload.
+        // The method remains in case someone is calling it via reflection.
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
         static member op_Implicit(func : ('T -> 'Res) ) =  new System.Func<'T,'Res>(func)
 
@@ -2947,6 +2947,14 @@ namespace Microsoft.FSharp.Core
 
         static member  inline ToFSharpFunc (action: Action<_>) = (fun t -> action.Invoke(t))
 
+#if !FX_NO_CONVERTER
+        static member  inline ToFSharpFunc (converter : Converter<_,_>) = (fun t -> converter.Invoke(t))
+#endif
+
+        // Note: this is not made public in the signature, because of conflicts with the Converter overload.
+        // The method remains in case someone is calling it via reflection.
+        static member  inline ToFSharpFunc (converter: System.Func<_, _>) = (fun t -> converter.Invoke(t))
+
         static member  inline FromFunc (func: System.Func<_>) = (fun () -> func.Invoke())
 
         static member  inline FromFunc (func: System.Func<_, _>) = (fun t -> func.Invoke(t))
@@ -2970,10 +2978,6 @@ namespace Microsoft.FSharp.Core
         static member  inline FromAction (action: System.Action<_, _, _, _>) = (fun t1 t2 t3 t4 -> action.Invoke(t1,t2,t3,t4))
 
         static member  inline FromAction (action: System.Action<_, _, _, _, _>) = (fun t1 t2 t3 t4 t5 -> action.Invoke(t1,t2,t3,t4,t5))
-
-#if !FX_NO_CONVERTER
-        static member  inline ToFSharpFunc (converter : Converter<_,_>) = (fun t -> converter.Invoke(t))
-#endif        
 
         static member inline FuncFromTupled (func: 'T1 * 'T2 -> 'Res) = (fun a b -> func (a, b))
 
