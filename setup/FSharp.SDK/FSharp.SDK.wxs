@@ -14,18 +14,6 @@
     <MajorUpgrade AllowDowngrades="no" DowngradeErrorMessage="A newer version of this product is already installed." Schedule="afterInstallInitialize" />
     <MediaTemplate EmbedCab="yes" />
 
-    <Feature Id="Compiler_Feature"
-       AllowAdvertise="no"
-       Description="Installs the Visual F# programming language and all associated components."
-       Title="Visual F#">
-
-      <?if $(var.IsLangPack) = true ?>
-      <ComponentGroupRef Id="Compiler_LangPack" />
-      <?else ?>
-      <ComponentGroupRef Id="Compiler_Redist" />
-      <?endif ?>
-    </Feature>
-
     <Feature Id="Runtime_Feature"
        Title="Microsoft Visual F# Runtime for .NET"
        Description="Runtime components for F# compiled binaries."
