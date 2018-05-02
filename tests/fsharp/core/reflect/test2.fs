@@ -318,7 +318,7 @@ module DynamicCall =
        callMethod.Invoke (null, [| Object () |]) |> ignore
        failwith "expected an exception"
     with :? TargetInvocationException as ex ->
-        test "wcnr0vj" (ex.InnerException.Message.Contains("Dynamic invocation")))
+        test "wcnr0vj" (ex.InnerException.Message.Contains("Dynamic invocation"))
 
 #if TESTS_AS_APP
 let RUN() = !failures
