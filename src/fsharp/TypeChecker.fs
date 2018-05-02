@@ -17178,7 +17178,7 @@ let TypeCheckOneImplFile
             match attrName with
             | "System.Reflection.AssemblyInformationalVersionAttribute"
             | "System.Reflection.AssemblyFileVersionAttribute" //TODO compile error like c# compiler?
-            | "System.Reflection.AssemblyVersionAttribute" when not isValid() ->
+            | "System.Reflection.AssemblyVersionAttribute" when not (isValid()) ->
                 warning(Error(FSComp.SR.fscBadAssemblyVersion(attrName, version), range))
             | _ -> ()
         | _ -> ())
