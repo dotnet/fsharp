@@ -21,7 +21,9 @@ type MyNewProvider<'a> = Generic.IdentityType<'a>
 
 type X = MyNewProvider<int>
 
-let x = X.Invoke 1
+let x = X.Invoke 2
+
+printfn "%A" x
 //
 //type X = MyNewProvider<int>
 
