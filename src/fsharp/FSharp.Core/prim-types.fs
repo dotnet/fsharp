@@ -2947,21 +2947,29 @@ namespace Microsoft.FSharp.Core
 
         static member  inline ToFSharpFunc (action: Action<_>) = (fun t -> action.Invoke(t))
 
-        static member  inline ToFSharpFunc (func: System.Func<_>) = (fun () -> func.Invoke())
+        static member  inline FromFunc (func: System.Func<_>) = (fun () -> func.Invoke())
 
-        static member  inline ToFSharpFunc (func: System.Func<_, _>) = (fun t -> func.Invoke(t))
+        static member  inline FromFunc (func: System.Func<_, _>) = (fun t -> func.Invoke(t))
 
-        static member  inline ToFSharpFunc (func: System.Func<_, _, _>) = (fun (t1,t2) -> func.Invoke(t1,t2))
+        static member  inline FromFunc (func: System.Func<_, _, _>) = (fun t1 t2 -> func.Invoke(t1,t2))
 
-        static member  inline ToFSharpFunc (func: System.Func<_, _, _, _>) = (fun (t1,t2,t3) -> func.Invoke(t1,t2,t3))
+        static member  inline FromFunc (func: System.Func<_, _, _, _>) = (fun t1 t2 t3 -> func.Invoke(t1,t2,t3))
 
-        static member  inline ToFSharpFunc (func: System.Func<_, _, _, _, _>) = (fun (t1,t2,t3,t4) -> func.Invoke(t1,t2,t3,t4))
+        static member  inline FromFunc (func: System.Func<_, _, _, _, _>) = (fun t1 t2 t3 t4 -> func.Invoke(t1,t2,t3,t4))
 
-        static member  inline ToFSharpFunc (func: System.Func<_, _, _, _, _, _>) = (fun (t1,t2,t3,t4,t5) -> func.Invoke(t1,t2,t3,t4,t5))
+        static member  inline FromFunc (func: System.Func<_, _, _, _, _, _>) = (fun t1 t2 t3 t4 t5 -> func.Invoke(t1,t2,t3,t4,t5))
 
-        static member  inline ToFSharpFunc (func: System.Func<_, _, _, _, _, _, _>) = (fun (t1,t2,t3,t4,t5,t6) -> func.Invoke(t1,t2,t3,t4,t5,t6))
+        static member  inline FromAction (action: System.Action) = (fun () -> action.Invoke())
 
-        static member  inline ToFSharpFunc (func: System.Func<_, _, _, _, _, _, _, _>) = (fun (t1,t2,t3,t4,t5,t6,t7) -> func.Invoke(t1,t2,t3,t4,t5,t6,t7))
+        static member  inline FromAction (action: System.Action<_>) = (fun t -> action.Invoke(t))
+
+        static member  inline FromAction (action: System.Action<_, _>) = (fun t1 t2 -> action.Invoke(t1,t2))
+
+        static member  inline FromAction (action: System.Action<_, _, _>) = (fun t1 t2 t3 -> action.Invoke(t1,t2,t3))
+
+        static member  inline FromAction (action: System.Action<_, _, _, _>) = (fun t1 t2 t3 t4 -> action.Invoke(t1,t2,t3,t4))
+
+        static member  inline FromAction (action: System.Action<_, _, _, _, _>) = (fun t1 t2 t3 t4 t5 -> action.Invoke(t1,t2,t3,t4,t5))
 
 #if !FX_NO_CONVERTER
         static member  inline ToFSharpFunc (converter : Converter<_,_>) = (fun t -> converter.Invoke(t))
