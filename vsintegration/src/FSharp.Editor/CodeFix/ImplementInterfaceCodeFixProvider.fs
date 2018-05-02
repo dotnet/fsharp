@@ -39,7 +39,6 @@ type internal FSharpImplementInterfaceCodeFixProvider
     let queryInterfaceState appendBracketAt (pos: pos) (tokens: Tokenizer.SavedTokenInfo[]) (ast: Ast.ParsedInput) =
         asyncMaybe {
             let line = pos.Line - 1
-            let column = pos.Column
             let! iface = InterfaceStubGenerator.tryFindInterfaceDeclaration pos ast
             let endPosOfWidth =
                 tokens 
