@@ -2011,9 +2011,8 @@ namespace Microsoft.FSharp.Control
                             // If it isn't, then create it, and go back to the start to 
                             // check arrivals again.
                             match pulse with
-                            | null -> 
-                                if timeout >= 0 || cancellationSupported then 
-                                    ensurePulse() |> ignore
+                            | null when timeout >= 0 || cancellationSupported ->
+                                ensurePulse() |> ignore
                                 return! processFirstArrival()
                             | _ -> 
                                 // Wait until we have been notified about a message. When that happens, rescan the arrivals
