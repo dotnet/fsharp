@@ -34,6 +34,8 @@ type internal FSharpClassificationService
         
         member __.AddSyntacticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
             async {
+                use _logBlock = Logger.LogBlock(LogEditorFunctionId.SyntacticClassification)
+
                 let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
                 let! sourceText = document.GetTextAsync(cancellationToken)  |> Async.AwaitTask
                 result.AddRange(Tokenizer.getClassifiedSpans(document.Id, sourceText, textSpan, Some(document.FilePath), defines, cancellationToken))
@@ -41,7 +43,8 @@ type internal FSharpClassificationService
 
         member __.AddSemanticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
             asyncMaybe {
-                do Trace.TraceInformation("{0:n3} (start) SemanticColorization", DateTime.Now.TimeOfDay.TotalSeconds)
+                use _logBlock = Logger.LogBlock(LogEditorFunctionId.SemanticClassification)
+
                 do! Async.Sleep DefaultTuning.SemanticClassificationInitialDelay |> liftAsync // be less intrusive, give other work priority most of the time
                 let! _, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
                 let! sourceText = document.GetTextAsync(cancellationToken)

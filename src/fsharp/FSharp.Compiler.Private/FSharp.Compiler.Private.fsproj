@@ -64,6 +64,12 @@
     <EmbeddedResource Include="..\FSStrings.resx">
       <Link>FSStrings.resx</Link>
     </EmbeddedResource>
+    <Compile Include="..\Logger.fsi">
+      <Link>Logger.fsi</Link>
+    </Compile>
+    <Compile Include="..\Logger.fs">
+      <Link>Logger.fs</Link>
+    </Compile>
     <Compile Include="..\..\utils\reshapedreflection.fs">
       <Link>Reflection\reshapedreflection.fs</Link>
     </Compile>
