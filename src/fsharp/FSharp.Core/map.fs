@@ -545,7 +545,7 @@ namespace Microsoft.FSharp.Collections
         member m.Remove(key)  : Map<'Key,'Value> = 
             new Map<'Key,'Value>(comparer,MapTree.remove comparer key tree)
 
-        member m.TryGetValue(key, value:byref<'Value>) = 
+        member m.TryGetValue(key, [<System.Runtime.InteropServices.Out>] value:byref<'Value>) = 
             MapTree.tryGetValue comparer key &value tree
 
         member m.TryFind(key) = 
