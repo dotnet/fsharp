@@ -2128,6 +2128,7 @@ Microsoft.FSharp.Core.FuncConvert: Microsoft.FSharp.Core.FSharpFunc`2[T1,Microso
 Microsoft.FSharp.Core.FuncConvert: Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,Microsoft.FSharp.Core.FSharpFunc`2[T3,Microsoft.FSharp.Core.Unit]]] FromAction[T1,T2,T3](System.Action`3[T1,T2,T3])
 Microsoft.FSharp.Core.FuncConvert: Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,Microsoft.FSharp.Core.FSharpFunc`2[T3,Microsoft.FSharp.Core.FSharpFunc`2[T4,Microsoft.FSharp.Core.Unit]]]] FromAction[T1,T2,T3,T4](System.Action`4[T1,T2,T3,T4])
 Microsoft.FSharp.Core.FuncConvert: Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,Microsoft.FSharp.Core.FSharpFunc`2[T3,Microsoft.FSharp.Core.FSharpFunc`2[T4,Microsoft.FSharp.Core.FSharpFunc`2[T5,Microsoft.FSharp.Core.Unit]]]]] FromAction[T1,T2,T3,T4,T5](System.Action`5[T1,T2,T3,T4,T5])
+Microsoft.FSharp.Core.FuncConvert: Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T] FromFunc[T](System.Func`1[T])
 Microsoft.FSharp.Core.FuncConvert: Microsoft.FSharp.Core.FSharpFunc`2[T,TResult] FromFunc[T,TResult](System.Func`2[T,TResult])
 Microsoft.FSharp.Core.FuncConvert: Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,TResult]] FromFunc[T1,T2,TResult](System.Func`3[T1,T2,TResult])
 Microsoft.FSharp.Core.FuncConvert: Microsoft.FSharp.Core.FSharpFunc`2[T1,Microsoft.FSharp.Core.FSharpFunc`2[T2,Microsoft.FSharp.Core.FSharpFunc`2[T3,TResult]]] FromFunc[T1,T2,T3,TResult](System.Func`4[T1,T2,T3,TResult])
