@@ -4851,7 +4851,7 @@ and GenBindingAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) sta
         let tps,ctorThisValOpt,baseValOpt,vsl,body',bodyty = IteratedAdjustArityOfLambda cenv.g cenv.amap topValInfo rhsExpr
         let methodVars = List.concat vsl
         CommitStartScope cgbuf startScopeMarkOpt
-        GenMethodForBinding cenv cgbuf.mgbuf eenv (vspec,mspec,access,paramInfos,retInfo) (topValInfo,ctorThisValOpt,baseValOpt,tps,methodVars, body', bodyty)
+        GenMethodForBinding cenv cgbuf eenv (vspec,mspec,access,paramInfos,retInfo) (topValInfo,ctorThisValOpt,baseValOpt,tps,methodVars, body', bodyty)
 
     | StaticProperty (ilGetterMethSpec, optShadowLocal) ->  
 
@@ -5256,7 +5256,7 @@ and ComputeMethodImplAttribs cenv (_v:Val) attrs =
     hasPreserveSigImplFlag, hasSynchronizedImplFlag, hasNoInliningImplFlag, hasAggressiveInliningImplFlag, attrs
     
 and GenMethodForBinding 
-        cenv mgbuf eenv 
+        cenv cgbuf eenv 
         (v:Val,mspec,access,paramInfos,retInfo) 
         (topValInfo,ctorThisValOpt,baseValOpt,tps,methodVars, body, returnTy) =
   
@@ -5320,7 +5320,7 @@ and GenMethodForBinding
 
             // This is the main code generation for most methods 
             false,
-            MethodBody.IL(CodeGenMethodForExpr cenv mgbuf (SPAlways,tailCallInfo, mspec.Name, eenvForMeth, 0, 0, bodyExpr, sequel)),
+            MethodBody.IL(CodeGenMethodForExpr cenv cgbuf.mgbuf (SPAlways,tailCallInfo, mspec.Name, eenvForMeth, 0, 0, bodyExpr, sequel)),
             false
 
     // Do not generate DllImport attributes into the code - they are implicit from the P/Invoke
@@ -5381,7 +5381,7 @@ and GenMethodForBinding
             else 
                 mdef
         CountMethodDef()
-        mgbuf.AddMethodDef(tref,mdef)
+        cgbuf.mgbuf.AddMethodDef(tref,mdef)
                 
 
     match v.MemberInfo with 
@@ -5418,7 +5418,7 @@ and GenMethodForBinding
                    let mdef = List.fold (fun mdef f -> f mdef) mdef flagFixups
 
                    // fixup can potentially change name of reflected definition that was already recorded - patch it if necessary
-                   mgbuf.ReplaceNameOfReflectedDefinition(v, mdef.Name)
+                   cgbuf.mgbuf.ReplaceNameOfReflectedDefinition(v, mdef.Name)
                    mdef
                else 
                    mkILGenericNonVirtualMethod (v.CompiledName,access,ilMethTypars,ilParams,ilReturn,ilMethodBody) 
@@ -5445,7 +5445,7 @@ and GenMethodForBinding
                    // Emit the pseudo-property as an event, but not if its a private method impl
                    if mdef.Access <> ILMemberAccess.Private then 
                        let edef = GenEventForProperty cenv eenvForMeth mspec v ilAttrsThatGoOnPrimaryItem m returnTy 
-                       mgbuf.AddEventDef(tref,edef)
+                       cgbuf.mgbuf.AddEventDef(tref,edef)
                    // The method def is dropped on the floor here
                    
                else
@@ -5455,7 +5455,7 @@ and GenMethodForBinding
                        let ilPropTy = GenType cenv.amap m eenvUnderMethTypeTypars.tyenv vtyp
                        let ilArgTys = v |> ArgInfosOfPropertyVal cenv.g |> List.map fst |> GenTypes cenv.amap m eenvUnderMethTypeTypars.tyenv 
                        let ilPropDef = GenPropertyForMethodDef compileAsInstance tref mdef v memberInfo ilArgTys ilPropTy (mkILCustomAttrs ilAttrsThatGoOnPrimaryItem) compiledName
-                       mgbuf.AddOrMergePropertyDef(tref,ilPropDef,m)
+                       cgbuf.mgbuf.AddOrMergePropertyDef(tref,ilPropDef,m)
 
                    // Add the special name flag for all properties                   
                    let mdef = { mdef.WithSpecialName with CustomAttrs= mkILCustomAttrs ((GenAttrs cenv eenv attrsAppliedToGetterOrSetter) @ sourceNameAttribs @ ilAttrsCompilerGenerated) } 
