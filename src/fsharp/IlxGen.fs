@@ -488,7 +488,7 @@ and ComputeUnionHasHelpers g (tcref : TyconRef) =
 
 and GenUnionSpec amap m tyenv tcref tyargs = 
     let curef = GenUnionRef amap m tcref
-    let tinst = GenTypeArgsAux amap m tyenv tyargs
+    let tinst = GenTypeArgs amap m tyenv tyargs
     IlxUnionSpec(curef,tinst) 
 
 and GenUnionCaseSpec amap m tyenv (ucref:UnionCaseRef) tyargs = 
@@ -500,6 +500,8 @@ and GenType amap m tyenv ty =
 
 
 and GenTypes amap m tyenv tys = List.map (GenType amap m tyenv) tys
+and GenTypePermitVoid amap m tyenv ty = (GenTypeAux amap m tyenv VoidOK PtrTypesNotOK ty)
+and GenTypesPermitVoid amap m tyenv tys = List.map (GenTypePermitVoid amap m tyenv) tys
 
 and GenTyApp amap m tyenv repr tyargs = GenTyAppAux amap m tyenv repr tyargs
 and GenNamedTyApp amap m tyenv tcref tinst = GenNamedTyAppAux amap m tyenv PtrTypesNotOK tcref tinst 
@@ -510,9 +512,13 @@ and GenReturnType amap m tyenv returnTyOpt =
     | None -> ILType.Void
     | Some returnTy -> GenTypeAux amap m tyenv VoidNotOK(*1*) PtrTypesOK returnTy (*1: generate void from unit, but not accept void *)
 
+and GenParamType amap m tyenv ty = 
+    ty |> GenTypeAux amap m tyenv VoidNotOK PtrTypesOK 
+
+and GenParamTypes amap m tyenv tys = 
+    tys |> List.map (GenTypeAux amap m tyenv VoidNotOK PtrTypesOK) 
+
 and GenTypeArgs amap m tyenv tyargs = GenTypeArgsAux amap m tyenv tyargs
-and GenParamType amap m tyenv ty = GenTypeAux amap m tyenv VoidNotOK PtrTypesOK ty
-and GenParamTypes amap m tyenv tys = tys |> List.map (GenParamType amap m tyenv) 
 and GenTypePermitVoidAux amap m tyenv ty = GenTypeAux amap m tyenv VoidOK PtrTypesNotOK ty
 
 // Static fields generally go in a private InitializationCodeAndBackingFields section. This is to ensure all static 
@@ -544,6 +550,8 @@ let GenRecdFieldRef m cenv tyenv (rfref:RecdFieldRef) tyargs =
                       ComputeFieldName rfref.Tycon rfref.RecdField,
                       GenType cenv.amap m tyenvinner rfref.RecdField.FormalType)
 
+let GenExnType amap m tyenv (ecref:TyconRef) = GenTyApp amap m tyenv ecref.CompiledRepresentation []
+     
 //--------------------------------------------------------------------------
 // Closure summaries
 //-------------------------------------------------------------------------- 
@@ -1389,10 +1397,6 @@ type AssemblyBuilder(cenv:cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
     member mgbuf.cenv = cenv
     member mgbuf.GetExplicitEntryPointInfo() = explicitEntryPointInfo
 
-let GenTypePermitVoid cenv m tyenv ty = GenTypeAux cenv.amap m tyenv VoidOK PtrTypesNotOK ty
-let GenTypesPermitVoid cenv m tyenv tys = List.map (GenTypePermitVoid cenv m tyenv) tys
-let GenExnType amap m tyenv (ecref:TyconRef) = GenTyApp amap m tyenv ecref.CompiledRepresentation []
-     
 
 /// Record the types of the things on the evaluation stack. 
 /// Used for the few times we have to flush the IL evaluation stack and to compute maxStack. 
@@ -3244,8 +3248,8 @@ and GenSequential cenv cgbuf eenv spIn (e1,e2,specialSeqFlag,spSeq,_m) sequel =
 //-------------------------------------------------------------------------- 
 
 and GenAsmCode cenv cgbuf eenv (il,tyargs,args,returnTys,m) sequel =
-    let ilTyArgs = GenTypesPermitVoid cenv m eenv.tyenv tyargs
-    let ilReturnTys   = GenTypesPermitVoid cenv m eenv.tyenv returnTys
+    let ilTyArgs = GenTypesPermitVoid cenv.amap m eenv.tyenv tyargs
+    let ilReturnTys   = GenTypesPermitVoid cenv.amap m eenv.tyenv returnTys
     let ilAfterInst = 
       il |> List.filter (function AI_nop -> false | _ -> true)
          |> List.map (fun i -> 
@@ -5773,8 +5777,7 @@ and EmitRestoreStack cgbuf (savedStack,savedStackLocals) =
 //GenAttr: custom attribute generation
 //------------------------------------------------------------------------- 
 
-and GenAttribArg cenv eenv x (ilArgTy:ILType) = 
-    let g = cenv.g
+and GenAttribArg amap g eenv x (ilArgTy:ILType) = 
 
     match x,ilArgTy with 
 
@@ -5815,31 +5818,31 @@ and GenAttribArg cenv eenv x (ilArgTy:ILType) =
 
     // Detect '[| ... |]' nodes 
     | Expr.Op(TOp.Array,[elemTy],args,m),_ ->
-        let ilElemTy = GenType cenv.amap m eenv.tyenv elemTy
-        ILAttribElem.Array (ilElemTy, List.map (fun arg -> GenAttribArg cenv eenv arg ilElemTy) args)
+        let ilElemTy = GenType amap m eenv.tyenv elemTy
+        ILAttribElem.Array (ilElemTy, List.map (fun arg -> GenAttribArg amap g eenv arg ilElemTy) args)
 
     // Detect 'typeof<ty>' calls  
     | TypeOfExpr g ty, _    ->
-        ILAttribElem.Type (Some (GenType cenv.amap x.Range eenv.tyenv ty))
+        ILAttribElem.Type (Some (GenType amap x.Range eenv.tyenv ty))
 
     // Detect 'typedefof<ty>' calls 
     | TypeDefOfExpr g ty, _    ->
-        ILAttribElem.TypeRef (Some (GenType cenv.amap x.Range eenv.tyenv ty).TypeRef)    
+        ILAttribElem.TypeRef (Some (GenType amap x.Range eenv.tyenv ty).TypeRef)    
     
     // Ignore upcasts 
     | Expr.Op(TOp.Coerce,_,[arg2],_),_ ->
-        GenAttribArg cenv eenv arg2 ilArgTy
+        GenAttribArg amap g eenv arg2 ilArgTy
 
     // Detect explicit enum values 
     | EnumExpr g arg1, _ ->
-        GenAttribArg cenv eenv arg1 ilArgTy
+        GenAttribArg amap g eenv arg1 ilArgTy
     
 
     // Detect bitwise or of attribute flags: one case of constant folding (a more general treatment is needed)
     
     | AttribBitwiseOrExpr g (arg1,arg2),_ ->
-        let v1 = GenAttribArg cenv eenv arg1 ilArgTy 
-        let v2 = GenAttribArg cenv eenv arg2 ilArgTy 
+        let v1 = GenAttribArg amap g eenv arg1 ilArgTy 
+        let v2 = GenAttribArg amap g eenv arg2 ilArgTy 
         match v1,v2 with 
         | ILAttribElem.SByte i1, ILAttribElem.SByte i2 -> ILAttribElem.SByte (i1 ||| i2) 
         | ILAttribElem.Int16 i1, ILAttribElem.Int16 i2-> ILAttribElem.Int16 (i1 ||| i2)
@@ -5856,25 +5859,24 @@ and GenAttribArg cenv eenv x (ilArgTy:ILType) =
         error (InternalError ("invalid custom attribute value (not a constant): " + showL (exprL x),x.Range))
 
 
-and GenAttr cenv eenv (Attrib(_,k,args,props,_,_,_)) = 
-    let g = cenv.g
+and GenAttr (amap: ImportMap) g eenv (Attrib(_,k,args,props,_,_,_)) = 
     let props = 
         props |> List.map (fun (AttribNamedArg(s,ty,fld,AttribExpr(_,expr))) ->
             let m = expr.Range
-            let ilTy = GenType cenv.amap m eenv.tyenv ty
-            let cval = GenAttribArg cenv eenv expr ilTy
+            let ilTy = GenType amap m eenv.tyenv ty
+            let cval = GenAttribArg amap g eenv expr ilTy
             (s,ilTy,fld,cval))
     let mspec = 
         match k with 
         | ILAttrib(mref) -> mkILMethSpec(mref,AsObject,[],[]) 
         | FSAttrib(vref) -> 
              assert(vref.IsMember) 
-             let mspec,_,_,_,_ = GetMethodSpecForMemberVal cenv.amap g (Option.get vref.MemberInfo) vref
+             let mspec,_,_,_,_ = GetMethodSpecForMemberVal amap g (Option.get vref.MemberInfo) vref
              mspec
-    let ilArgs = List.map2 (fun (AttribExpr(_,vexpr)) ty -> GenAttribArg cenv eenv vexpr ty) args mspec.FormalArgTypes
+    let ilArgs = List.map2 (fun (AttribExpr(_,vexpr)) ty -> GenAttribArg amap g eenv vexpr ty) args mspec.FormalArgTypes
     mkILCustomAttribMethRef g.ilg (mspec,ilArgs, props)
     
-and GenAttrs cenv eenv attrs = List.map (GenAttr cenv eenv) attrs
+and GenAttrs cenv eenv attrs = List.map (GenAttr cenv.amap cenv.g eenv) attrs
 
 and GenCompilationArgumentCountsAttr cenv (v:Val) =
     [ match v.ValReprInfo with 
@@ -5891,7 +5893,7 @@ and CreatePermissionSets cenv eenv (securityAttributes : Attrib list) =
         let action = match actions with | [AttribInt32Arg act] -> act | _ -> failwith "internal error: unrecognized security action"
         let secaction = (List.assoc action (Lazy.force ILSecurityActionRevMap))
         let tref = tcref.CompiledRepresentationForNamedType
-        let ilattr = GenAttr cenv eenv attr
+        let ilattr = GenAttr cenv.amap cenv.g eenv attr
         let _, ilNamedArgs = 
             match TryDecodeILAttribute cenv.g tref (mkILCustomAttrs [ilattr]) with
             | Some(ae,na) -> ae, na
