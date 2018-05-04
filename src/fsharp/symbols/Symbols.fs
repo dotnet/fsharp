@@ -831,7 +831,7 @@ and FSharpFieldData =
         | Union (v, _) -> Some v.TyconRef
         | ILField f -> Some f.DeclaringTyconRef
 
-and FSharpAnonRecordTypeDetails(cenv: cenv, anonInfo: AnonRecdTypeInfo)  =
+and FSharpAnonRecordTypeDetails(cenv: SymbolEnv, anonInfo: AnonRecdTypeInfo)  =
     member __.Assembly = FSharpAssembly (cenv, anonInfo.Assembly)
 
     /// Names of any enclosing types of the compiled form of the anonymous type (if the anonymous type was defined as a nested type)

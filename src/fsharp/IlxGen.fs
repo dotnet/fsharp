@@ -1187,10 +1187,11 @@ type AssemblyBuilder(cenv:cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
                 { Name = sprintf "<%s>j__TPar" nm  
                   Constraints = []
                   Variance=NonVariant
-                  CustomAttrs = emptyILCustomAttrs
+                  CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
                   HasReferenceTypeConstraint=false
                   HasNotNullableValueTypeConstraint=false
-                  HasDefaultConstructorConstraint= false } ]
+                  HasDefaultConstructorConstraint= false 
+                  MetadataIndex = NoMetadataIdx } ]
 
         let ilTy = mkILFormalNamedTy (if isStruct then ILBoxity.AsValue else ILBoxity.AsObject) ilTypeRef ilGenericParams
 
@@ -1199,21 +1200,21 @@ type AssemblyBuilder(cenv:cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
             mkILFields 
                 [ for (_, fldName, fldTy) in flds ->  
                     let fdef = mkILInstanceField (fldName, fldTy, None, ILMemberAccess.Private) 
-                    { fdef with CustomAttrs   = mkILCustomAttrs [ cenv.g.DebuggerBrowsableNeverAttribute ] } ]
+                    fdef.With(customAttrs   = mkILCustomAttrs [ cenv.g.DebuggerBrowsableNeverAttribute ]) ]
          
         // Generate property definitions for the fields compiled as properties 
         let ilProperties = 
             mkILProperties 
                 [ for (i,(propName, _fldName, fldTy)) in List.indexed flds ->  
-                        { Name            = propName
-                          Attributes      = PropertyAttributes.None
-                          SetMethod       = None
-                          GetMethod       = Some(mkILMethRef(ilTypeRef,ILCallingConv.Instance,"get_" + propName,0,[],fldTy  ))
-                          CallingConv     = ILCallingConv.Instance.ThisConv
-                          Type            = fldTy      
-                          Init            = None
-                          Args            = []
-                          CustomAttrs     = mkILCustomAttrs [ mkCompilationMappingAttrWithSeqNum cenv.g (int SourceConstructFlags.Field) i ] } ] 
+                        ILPropertyDef(name=propName,
+                          attributes=PropertyAttributes.None,
+                          setMethod=None,
+                          getMethod=Some(mkILMethRef(ilTypeRef,ILCallingConv.Instance,"get_" + propName,0,[],fldTy  )),
+                          callingConv=ILCallingConv.Instance.ThisConv,
+                          propertyType=fldTy,
+                          init= None,
+                          args=[],
+                          customAttrs=mkILCustomAttrs [ mkCompilationMappingAttrWithSeqNum cenv.g (int SourceConstructFlags.Field) i ]) ] 
          
         let ilMethods = 
             [ for (propName, fldName, fldTy) in flds ->  
@@ -1281,11 +1282,8 @@ type AssemblyBuilder(cenv:cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
                                     ilProperties, mkILEvents [], ilTypeDefAttribs, 
                                     ILTypeInit.BeforeField)
                  
-
             let ilTypeDef = ilTypeDef.WithSealed(true).WithSerializable(true)
 
-            let ilTypeDef = { ilTypeDef with MethodImpls=mkILMethodImpls [] }
-                 
             mgbuf.AddTypeDef(ilTypeRef, ilTypeDef, false, true, None)
                  
             let extraBindings = 
@@ -7048,7 +7046,7 @@ type IlxGenResults =
       ilAssemAttrs : ILAttribute list
       ilNetModuleAttrs: ILAttribute list
       topAssemblyAttrs : Attribs
-      permissionSets : ILPermission list
+      permissionSets : ILSecurityDecl list
       quotationResourceInfo: (ILTypeRef list * byte[]) list }
 
 

@@ -65,7 +65,7 @@ type public IlxGenResults =
       /// The attributes for the assembly in F# form
       topAssemblyAttrs : Attribs
       /// The security attributes to attach to the assembly
-      permissionSets : ILPermission list
+      permissionSets : ILSecurityDecl list
       /// The generated IL/ILX resources associated with F# quotations
       quotationResourceInfo : (ILTypeRef list * byte[])  list }
 
