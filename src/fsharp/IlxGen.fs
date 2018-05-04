@@ -373,24 +373,22 @@ type PtrsOK =
 let rec GenTypeArgAux amap m tyenv tyarg =  
     GenTypeAux amap m tyenv VoidNotOK PtrTypesNotOK tyarg
 
-and GenTypeArgs amap m tyenv  tyargs = 
+and GenTypeArgsAux amap m tyenv  tyargs = 
     List.map (GenTypeArgAux amap m tyenv) (DropErasedTyargs tyargs)
 
-and GenTyApp amap m tyenv repr tinst =
+and GenTyAppAux amap m tyenv repr tinst =
     match repr with  
     | CompiledTypeRepr.ILAsmOpen ty -> 
-        let ilTypeInst = GenTypeArgs amap m tyenv tinst
+        let ilTypeInst = GenTypeArgsAux amap m tyenv tinst
         let ty = IL.instILType ilTypeInst ty
         ty
     | CompiledTypeRepr.ILAsmNamed (tref, boxity, ilTypeOpt) -> 
         GenILTyAppAux amap m tyenv (tref, boxity, ilTypeOpt) tinst
 
-and GenNamedTyApp amap m tyenv tcref tinst = GenNamedTyAppAux amap m tyenv PtrTypesNotOK tcref tinst 
-
 and GenILTyAppAux amap m tyenv (tref, boxity, ilTypeOpt) tinst =
     match ilTypeOpt with 
     | None -> 
-        let ilTypeInst = GenTypeArgs amap m tyenv tinst
+        let ilTypeInst = GenTypeArgsAux amap m tyenv tinst
         mkILTy boxity (mkILTySpec (tref,ilTypeInst))
     | Some ilType -> 
         ilType // monomorphic types include a cached ilType to avoid reallocation of an ILType node
@@ -409,7 +407,7 @@ and GenNamedTyAppAux (amap:ImportMap) m tyenv ptrsOK tcref tinst =
             GenTypeAux amap m tyenv VoidNotOK ptrsOK (info.BaseTypeForErased (m,g.obj_ty))
         | _ -> 
 #endif
-            GenTyApp amap m tyenv (GenTyconRef tcref) tinst
+            GenTyAppAux amap m tyenv (GenTyconRef tcref) tinst
 
 and GenTypeAux amap m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
     let g = amap.g
@@ -490,12 +488,21 @@ and ComputeUnionHasHelpers g (tcref : TyconRef) =
 
 and GenUnionSpec amap m tyenv tcref tyargs = 
     let curef = GenUnionRef amap m tcref
-    let tinst = GenTypeArgs amap m tyenv tyargs
+    let tinst = GenTypeArgsAux amap m tyenv tyargs
     IlxUnionSpec(curef,tinst) 
 
 and GenUnionCaseSpec amap m tyenv (ucref:UnionCaseRef) tyargs = 
     let cuspec = GenUnionSpec amap m tyenv ucref.TyconRef tyargs
     cuspec, ucref.Index
+
+and GenType amap m tyenv ty = 
+    GenTypeAux amap m tyenv VoidNotOK PtrTypesNotOK ty
+
+
+and GenTypes amap m tyenv tys = List.map (GenType amap m tyenv) tys
+
+and GenTyApp amap m tyenv repr tyargs = GenTyAppAux amap m tyenv repr tyargs
+and GenNamedTyApp amap m tyenv tcref tinst = GenNamedTyAppAux amap m tyenv PtrTypesNotOK tcref tinst 
 
 /// IL void types are only generated for return types 
 and GenReturnType amap m tyenv returnTyOpt = 
@@ -503,8 +510,7 @@ and GenReturnType amap m tyenv returnTyOpt =
     | None -> ILType.Void
     | Some returnTy -> GenTypeAux amap m tyenv VoidNotOK(*1*) PtrTypesOK returnTy (*1: generate void from unit, but not accept void *)
 
-and GenType amap m tyenv ty = GenTypeAux amap m tyenv VoidNotOK PtrTypesNotOK ty
-and GenTypes amap m tyenv tys = List.map (GenType amap m tyenv) tys
+and GenTypeArgs amap m tyenv tyargs = GenTypeArgsAux amap m tyenv tyargs
 and GenParamType amap m tyenv ty = GenTypeAux amap m tyenv VoidNotOK PtrTypesOK ty
 and GenParamTypes amap m tyenv tys = tys |> List.map (GenParamType amap m tyenv) 
 and GenTypePermitVoidAux amap m tyenv ty = GenTypeAux amap m tyenv VoidOK PtrTypesNotOK ty
