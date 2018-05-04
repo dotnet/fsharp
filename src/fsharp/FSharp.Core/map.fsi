@@ -61,7 +61,7 @@ namespace Microsoft.FSharp.Collections
         /// <param name="key">The input key.</param>
         /// <param name="value">A reference to the output value.</param>
         /// <returns><c>true</c> if the value is present, <c>false</c> if not.</returns>
-        member TryGetValue: key:'Key * value:byref<'Value> -> bool
+        member TryGetValue: key:'Key * [<System.Runtime.InteropServices.Out>] value:byref<'Value> -> bool
 
         interface IDictionary<'Key, 'Value>         
         interface ICollection<KeyValuePair<'Key, 'Value>> 
