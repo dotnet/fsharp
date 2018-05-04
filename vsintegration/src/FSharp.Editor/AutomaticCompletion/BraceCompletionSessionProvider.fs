@@ -501,7 +501,7 @@ type EditorBraceCompletionSessionFactory() =
         | VerticalBar.OpenCharacter -> VerticalBarCompletionSession() :> IEditorBraceCompletionSession
         | AngleBrackets.OpenCharacter -> AngleBracketCompletionSession() :> IEditorBraceCompletionSession
         | DoubleQuote.OpenCharacter -> DoubleQuoteCompletionSession() :> IEditorBraceCompletionSession
-        | Asterisk.OpenCharacter -> DoubleQuoteCompletionSession() :> IEditorBraceCompletionSession
+        | Asterisk.OpenCharacter -> AsteriskCompletionSession() :> IEditorBraceCompletionSession
         | _ -> null
 
     interface IEditorBraceCompletionSessionFactory with
