@@ -2667,6 +2667,8 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         let execWithReactorAsync action = reactor.EnqueueAndAwaitOpAsync(userOpName, "ParseAndCheckFileInProject", filename, action)
         async {
             try 
+                use _logBlock = Logger.LogBlock(LogCompilerFunctionId.ParseAndCheckFileInProject)
+
                 if implicitlyStartBackgroundWork then 
                     reactor.CancelBackgroundOp() // cancel the background work, since we will start new work after we're done
                 let! builderOpt,creationErrors,decrement = execWithReactorAsync (fun ctok -> getOrCreateBuilderAndKeepAlive (ctok, options, userOpName))
