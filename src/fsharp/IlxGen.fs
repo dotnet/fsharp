@@ -5859,7 +5859,7 @@ and GenAttribArg amap g eenv x (ilArgTy:ILType) =
         error (InternalError ("invalid custom attribute value (not a constant): " + showL (exprL x),x.Range))
 
 
-and GenAttr (amap: ImportMap) g eenv (Attrib(_,k,args,props,_,_,_)) = 
+and GenAttr amap g eenv (Attrib(_,k,args,props,_,_,_)) = 
     let props = 
         props |> List.map (fun (AttribNamedArg(s,ty,fld,AttribExpr(_,expr))) ->
             let m = expr.Range
