@@ -275,6 +275,7 @@ type CompletionItemKind =
     | Method of isExtension : bool
     | Event
     | Argument
+    | CustomOperation
     | Other
 
 type UnresolvedSymbol =
