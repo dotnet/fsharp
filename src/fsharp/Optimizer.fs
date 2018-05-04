@@ -3164,7 +3164,7 @@ and OptimizeModuleDefs cenv (env, bindInfosColl) defs =
     let defs, minfos = List.unzip defs
     (defs, UnionOptimizationInfos minfos), (env, bindInfosColl)
    
-and OptimizeImplFileInternal cenv env isIncrementalFragment hidden (TImplFile(qname, pragmas, (ModuleOrNamespaceExprWithSig(mty, _, _) as mexpr), hasExplicitEntryPoint, isScript, anonRecdTypes)) =
+and OptimizeImplFileInternal cenv env isIncrementalFragment hidden (TImplFile(qname, pragmas, mexpr, hasExplicitEntryPoint, isScript, anonRecdTypes)) =
     let env, mexpr', minfo  = 
         match mexpr with 
         // FSI: FSI compiles everything as if you're typing incrementally into one module 
@@ -3180,7 +3180,7 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment hidden (TImplFile(qn
             let env = { env with localExternalVals=env.localExternalVals.MarkAsCollapsible() } // take the chance to flatten to a dictionary
             env, mexpr', minfo
 
-    let hidden = ComputeHidingInfoAtAssemblyBoundary mty hidden
+    let hidden = ComputeHidingInfoAtAssemblyBoundary mexpr.Type hidden
 
     let minfo = AbstractLazyModulInfoByHiding true hidden minfo
     env, TImplFile(qname, pragmas, mexpr', hasExplicitEntryPoint, isScript, anonRecdTypes), minfo, hidden

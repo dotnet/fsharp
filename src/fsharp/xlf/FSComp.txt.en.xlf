@@ -5438,8 +5438,8 @@
         <note />
       </trans-unit>
       <trans-unit id="fscBadAssemblyVersion">
-        <source>An {0} specified version '{1}', but this value is invalid and has been ignored</source>
-        <target state="new">An {0} specified version '{1}', but this value is invalid and has been ignored</target>
+        <source>The attribute {0} specified version '{1}', but this value is invalid and has been ignored</source>
+        <target state="new">The attribute {0} specified version '{1}', but this value is invalid and has been ignored</target>
         <note />
       </trans-unit>
       <trans-unit id="fscTwoResourceManifests">
@@ -6982,6 +6982,7 @@
         <target state="new">This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</target>
         <note />
       </trans-unit>
+<<<<<<< HEAD
       <trans-unit id="parsUnmatchedBraceBar">
         <source>Unmatched '{{|'</source>
         <target state="new">Unmatched '{{|'</target>
@@ -7015,6 +7016,11 @@
       <trans-unit id="tcCopyAndUpdateNeedsRecordType">
         <source>The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record</source>
         <target state="new">The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record</target>
+=======
+      <trans-unit id="ilreadFileChanged">
+        <source>The file '{0}' changed on disk unexpectedly, please reload.</source>
+        <target state="new">The file '{0}' changed on disk unexpectedly, please reload.</target>
+>>>>>>> c5d58714cc945bc489e860acfbd7056fd05cc622
         <note />
       </trans-unit>
     </body>

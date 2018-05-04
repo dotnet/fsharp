@@ -6,7 +6,7 @@
   <Import Project="..\netfx.props" />
   <PropertyGroup>
     <TargetFrameworks>net46;netcoreapp2.0</TargetFrameworks>
-    <NoWarn>$(NoWarn);44;</NoWarn>
+    <NoWarn>$(NoWarn);44;75;</NoWarn>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IsPackable>false</IsPackable>

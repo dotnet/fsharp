@@ -347,7 +347,7 @@ let FixupNewTypars m (formalEnclosingTypars:Typars) (tinst: TType list) (tpsorig
     // The real code.. 
     let renaming,tptys = mkTyparToTyparRenaming tpsorig tps
     let tprefInst = mkTyparInst formalEnclosingTypars tinst @ renaming
-    (tpsorig,tps) ||> List.iter2 (fun tporig tp -> tp.FixupConstraints (CopyTyparConstraints  m tprefInst tporig)) 
+    (tpsorig,tps) ||> List.iter2 (fun tporig tp -> tp.SetConstraints (CopyTyparConstraints  m tprefInst tporig)) 
     renaming,tptys
 
 
@@ -1678,7 +1678,7 @@ type ILFieldInfo =
      /// Get the type of the field as an IL type
     member x.ILFieldType = 
         match x with 
-        | ILFieldInfo (_,fdef) -> fdef.Type
+        | ILFieldInfo (_,fdef) -> fdef.FieldType
 #if !NO_EXTENSIONTYPING
         | ProvidedField(amap,fi,m) -> Import.ImportProvidedTypeAsILType amap m (fi.PApply((fun fi -> fi.FieldType),m))
 #endif
@@ -1686,7 +1686,7 @@ type ILFieldInfo =
      /// Get the type of the field as an F# type
     member x.FieldType(amap,m) = 
         match x with 
-        | ILFieldInfo (tinfo,fdef) -> ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] fdef.Type
+        | ILFieldInfo (tinfo,fdef) -> ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] fdef.FieldType
 #if !NO_EXTENSIONTYPING
         | ProvidedField(amap,fi,m) -> Import.ImportProvidedType amap m (fi.PApply((fun fi -> fi.FieldType),m))
 #endif
@@ -1850,7 +1850,7 @@ type ILPropInfo =
     /// Any type parameters of the enclosing type are instantiated in the type returned.
     member x.GetPropertyType (amap,m) = 
         let (ILPropInfo (tinfo,pdef)) = x
-        ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] pdef.Type
+        ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] pdef.PropertyType
 
     override x.ToString() = x.ILTypeInfo.ToString() + "::" + x.PropertyName
 
@@ -2407,8 +2407,8 @@ type EventInfo =
         | ILEvent(ILEventInfo(tinfo,edef)) -> 
             // Get the delegate type associated with an IL event, taking into account the instantiation of the
             // declaring type.
-            if Option.isNone edef.Type then error (nonStandardEventError x.EventName m)
-            ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] edef.Type.Value
+            if Option.isNone edef.EventType then error (nonStandardEventError x.EventName m)
+            ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] edef.EventType.Value
 
         | FSEvent(g,p,_,_) -> 
             FindDelegateTypeOfPropertyEvent g amap x.EventName m (p.GetPropertyType(amap,m))

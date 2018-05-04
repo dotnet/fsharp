@@ -3385,7 +3385,7 @@
     <value>No implementation files specified</value>
   </data>
   <data name="fscBadAssemblyVersion" xml:space="preserve">
-    <value>An {0} specified version '{1}', but this value is invalid and has been ignored</value>
+    <value>The attribute {0} specified version '{1}', but this value is invalid and has been ignored</value>
   </data>
   <data name="fscTwoResourceManifests" xml:space="preserve">
     <value>Conflicting options specified: 'win32manifest' and 'win32res'. Only one of these can be used.</value>
@@ -4321,6 +4321,8 @@
   <data name="implicitlyDiscardedSequenceInSequenceExpression" xml:space="preserve">
     <value>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</value>
   </data>
+  <data name="ilreadFileChanged" xml:space="preserve">
+    <value>The file '{0}' changed on disk unexpectedly, please reload.</value>
   <data name="parsInvalidAnonRecdExpr" xml:space="preserve">
     <value>Invalid anonymous record expression</value>
   </data>

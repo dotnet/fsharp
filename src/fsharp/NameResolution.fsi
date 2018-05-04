@@ -381,7 +381,7 @@ type internal TcResultsSinkImpl =
     member GetSymbolUses : unit -> TcSymbolUses
 
     /// Get all open declarations reported to the sink
-    member OpenDeclarations : OpenDeclaration list
+    member GetOpenDeclarations : unit -> OpenDeclaration[]
 
     interface ITypecheckResultsSink
 

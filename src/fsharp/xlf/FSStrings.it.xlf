@@ -1422,6 +1422,11 @@
         <target state="translated"> Gli elementi senza corrispondenza verranno ignorati.</target>
         <note />
       </trans-unit>
+      <trans-unit id="EnumMatchIncomplete1">
+        <source>Enums may take values outside known cases.</source>
+        <target state="translated">Le enumerazioni possono accettare valori esterni a casi noti.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="RuleNeverMatched">
         <source>This rule will never be matched</source>
         <target state="translated">Questa regola non avrà mai alcuna corrispondenza</target>

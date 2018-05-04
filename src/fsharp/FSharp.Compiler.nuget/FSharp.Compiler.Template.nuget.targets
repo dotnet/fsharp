@@ -32,13 +32,16 @@
           Outputs='$(FSharpSourcesRoot)\$(Configuration)\artifacts\$(PackageVersion)\"%(PackageNuspec.Filename)).nupkg'>
 
     <PropertyGroup>
-      <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)" -prop "diasymreaderversion=$(MicrosoftDiaSymReaderPackageVersion)" -prop "diasymreaderportablepdbversion=$(MicrosoftDiaSymReaderPortablePdbPackageVersion)" -prop "githeadsha=$(GitHeadSha)"</PackageProperties>
+      <!-- can't have &lt; and &gt; which happens when building locally -->
+      <NormalizedGitHeadSha>$(GitHeadSha)</NormalizedGitHeadSha>
+      <NormalizedGitHeadSha Condition="'$(NormalizedGitHeadSha)' == '&lt;developer build&gt;'">[developer build]</NormalizedGitHeadSha>
+      <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)" -prop "githeadsha=$(NormalizedGitHeadSha)"</PackageProperties>
     </PropertyGroup>
 
     <MakeDir Directories="$(FSharpSourcesRoot)\..\artifacts" />
     <MakeDir Directories="$(FSharpSourcesRoot)\..\$(Configuration)\artifacts" />
-    <Exec Command='$(FSharpSourcesRoot)\..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(FSharpSourcesRoot)\..\$(Configuration)\coreclr\bin -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot)\..\artifacts' />
-    <Exec Command='$(FSharpSourcesRoot)\..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(FSharpSourcesRoot)\..\$(Configuration)\coreclr\bin -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot)\..\$(Configuration)\artifacts' />
+    <Exec Command='$(FSharpSourcesRoot)\..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(FSharpSourcesRoot)\..\$(Configuration)\coreclr\bin -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot)\..\artifacts -Symbols' />
+    <Exec Command='$(FSharpSourcesRoot)\..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(FSharpSourcesRoot)\..\$(Configuration)\coreclr\bin -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot)\..\$(Configuration)\artifacts -Symbols' />
   </Target>
 
 </Project>

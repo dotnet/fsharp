@@ -5438,7 +5438,7 @@
         <note />
       </trans-unit>
       <trans-unit id="fscBadAssemblyVersion">
-        <source>An {0} specified version '{1}', but this value is invalid and has been ignored</source>
+        <source>The attribute {0} specified version '{1}', but this value is invalid and has been ignored</source>
         <target state="translated">Třída {0} definovala verzi {1}, ale tato hodnota není platná a ignoruje se.</target>
         <note />
       </trans-unit>
@@ -7015,6 +7015,11 @@
       <trans-unit id="tcCopyAndUpdateNeedsRecordType">
         <source>The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record</source>
         <target state="new">The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilreadFileChanged">
+        <source>The file '{0}' changed on disk unexpectedly, please reload.</source>
+        <target state="translated">Soubor {0} se na disku neočekávaně změnil, opakujte prosím načtení.</target>
         <note />
       </trans-unit>
     </body>

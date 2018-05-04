@@ -87,7 +87,7 @@ let eval = function
   | 'a' -> 10 | 'b' -> 11 | 'c' -> 12 | 'd' -> 13 | 'e' -> 14 | 'f' -> 15
   | _ -> failwith "bad hexbyte"  
 
-let kwdOrInstrOrId s = if (Lazy.force kwdInstrTable).ContainsKey s  then kwdOrInstr s else VAL_ID s
+let kwdOrInstrOrId s = match (Lazy.force kwdInstrTable).TryFind s with Some v -> v | _ -> VAL_ID s
         
 }
 

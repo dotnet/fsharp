@@ -261,7 +261,7 @@ module private PrintIL =
         let staticL =  if f.IsStatic then WordL.keywordStatic else emptyL
         let name    = adjustILName f.Name
         let nameL   = wordL (tagField name)
-        let typL    = layoutILType denv ilTyparSubst f.Type
+        let typL    = layoutILType denv ilTyparSubst f.FieldType
         staticL ^^ WordL.keywordVal ^^ nameL ^^ WordL.colon ^^ typL  
             
     let private layoutILEventDef denv  ilTyparSubst (e: ILEventDef) =
@@ -269,7 +269,7 @@ module private PrintIL =
         let name = adjustILName e.Name
         let nameL = wordL (tagEvent name)
         let typL = 
-            match e.Type with
+            match e.EventType with
             | Some t -> layoutILType denv ilTyparSubst t
             | _ -> emptyL
         staticL ^^ WordL.keywordEvent ^^ nameL ^^ WordL.colon ^^ typL     
@@ -296,16 +296,16 @@ module private PrintIL =
             
         let typL = 
             match p.GetMethod, p.SetMethod with
-            |   None, None -> layoutILType denv ilTyparSubst p.Type // shouldn't happen
-            |   Some getterRef, _ -> layoutGetterType getterRef
-            |   None, Some setterRef -> layoutSetterType setterRef
+            | None, None -> layoutILType denv ilTyparSubst p.PropertyType // shouldn't happen
+            | Some getterRef, _ -> layoutGetterType getterRef
+            | None, Some setterRef -> layoutSetterType setterRef
                 
         let specGetSetL =
             match p.GetMethod, p.SetMethod with
-            |   None,None 
-            |   Some _, None -> emptyL
-            |   None, Some _ -> WordL.keywordWith ^^ WordL.keywordSet
-            |   Some _, Some _ -> WordL.keywordWith ^^ WordL.keywordGet ^^ RightL.comma ^^ WordL.keywordSet
+            | None,None 
+            | Some _, None -> emptyL
+            | None, Some _ -> WordL.keywordWith ^^ WordL.keywordSet
+            | Some _, Some _ -> WordL.keywordWith ^^ WordL.keywordGet ^^ RightL.comma ^^ WordL.keywordSet
         staticL ^^ WordL.keywordMember ^^ nameL ^^ WordL.colon ^^ typL ^^ specGetSetL
 
     let layoutILFieldInit x =
@@ -1833,11 +1833,11 @@ module private InferredSigPrinting =
             | TMDefLet _  -> true
             | TMDefDo _  -> true
             | TMDefs defs -> defs |> List.exists isConcreteNamespace 
-            | TMAbstract(ModuleOrNamespaceExprWithSig(_,def,_)) -> isConcreteNamespace def
+            | TMAbstract(ModuleOrNamespaceExprWithSig(_, def, _)) -> isConcreteNamespace def
 
-        let rec imexprLP denv  (ModuleOrNamespaceExprWithSig(_,def,_)) = imdefL denv def
+        let rec imexprLP denv  (ModuleOrNamespaceExprWithSig(_, def, _)) = imdefL denv def
 
-        and imexprL denv (ModuleOrNamespaceExprWithSig(mty,def,m)) = imexprLP denv (ModuleOrNamespaceExprWithSig(mty,def,m))
+        and imexprL denv (ModuleOrNamespaceExprWithSig(mty, def, m)) = imexprLP denv (ModuleOrNamespaceExprWithSig(mty, def, m))
 
         and imdefsL denv  x = aboveListL (x |> List.map (imdefL denv))
 
@@ -1932,6 +1932,8 @@ module private PrintData =
             let fields = tc.TrueInstanceFieldsAsList
             let lay fs x = (wordL (tagRecordField fs.rfield_id.idText) ^^ sepL (tagPunctuation "=")) --- (dataExprL denv x)
             leftL (tagPunctuation "{") ^^ semiListL (List.map2 lay fields xs) ^^ rightL (tagPunctuation "}")
+        | Expr.Op (TOp.ValFieldGet (RecdFieldRef.RFRef (tcref, name)), _, _, _) ->
+            (layoutTyconRef denv tcref) ^^ sepL (tagPunctuation ".") ^^ wordL (tagField name)
         | Expr.Op (TOp.Array,[_],xs,_)                 -> leftL (tagPunctuation "[|") ^^ semiListL (dataExprsL denv xs) ^^ RightL.rightBracketBar
         | _ -> wordL (tagPunctuation "?")
     and private dataExprsL denv xs = List.map (dataExprL denv) xs

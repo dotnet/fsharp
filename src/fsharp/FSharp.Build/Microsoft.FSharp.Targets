@@ -19,13 +19,15 @@ this file.
 
     <PropertyGroup>
         <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+        <FSharpBuildAssemblyFile Condition=" '$(FSharpBuildAssemblyFile)' =='' ">FSharp.Build.dll</FSharpBuildAssemblyFile>
     </PropertyGroup>
 
-    <UsingTask TaskName="Fsc" AssemblyFile="FSharp.Build.dll" />
-    <UsingTask TaskName="FSharpEmbedResourceText" AssemblyFile="FSharp.Build.dll" />
-    <UsingTask TaskName="FSharpEmbedResXSource" AssemblyFile="FSharp.Build.dll" />
-    <UsingTask TaskName="CreateFSharpManifestResourceName" AssemblyFile="FSharp.Build.dll" />
-    <UsingTask TaskName="WriteCodeFragment" AssemblyFile="FSharp.Build.dll" />
+    <UsingTask TaskName="Fsc" AssemblyFile="$(FSharpBuildAssemblyFile)" />
+    <UsingTask TaskName="FSharpEmbedResourceText" AssemblyFile="$(FSharpBuildAssemblyFile)" />
+    <UsingTask TaskName="FSharpEmbedResXSource" AssemblyFile="$(FSharpBuildAssemblyFile)" />
+    <UsingTask TaskName="CreateFSharpManifestResourceName" AssemblyFile="$(FSharpBuildAssemblyFile)" />
+    <UsingTask TaskName="WriteCodeFragment" AssemblyFile="$(FSharpBuildAssemblyFile)" />
+    <UsingTask TaskName="FSharpPlatformInformation" AssemblyFile="$(FSharpBuildAssemblyFile)" />
 
     <PropertyGroup>
         <ImportByWildcardBeforeMicrosoftFSharpTargets Condition="'$(ImportByWildcardBeforeMicrosoftFSharpTargets)' == ''">true</ImportByWildcardBeforeMicrosoftFSharpTargets>
