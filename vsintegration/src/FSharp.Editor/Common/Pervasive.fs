@@ -65,8 +65,11 @@ type MaybeBuilder () =
     member __.Using (resource: ('T :> System.IDisposable), body: _ -> _ option): _ option =
         try body resource
         finally
-            if not <| obj.ReferenceEquals (null, box resource) then
-                resource.Dispose ()
+            if typeof<'T>.IsValueType then resource.Dispose()
+            else
+                match box resource with 
+                | null -> ()
+                | _ -> resource.Dispose()
 
     // (unit -> bool) * M<'T> -> M<'T>
     [<DebuggerStepThrough>]
@@ -146,11 +149,12 @@ type AsyncMaybeBuilder () =
     member __.Using (resource : ('T :> IDisposable), body : _ -> Async<_ option>) : Async<_ option> =
         try body resource
         finally
-            match box resource with 
-            | null -> ()
-            | _ -> resource.Dispose()
+            if typeof<'T>.IsValueType then resource.Dispose()
+            else
+                match box resource with 
+                | null -> ()
+                | _ -> resource.Dispose()
         
-
     [<DebuggerStepThrough>]
     member x.While (guard, body : Async<_ option>) : Async<_ option> =
         if guard () then
