@@ -20,4 +20,10 @@ module internal Logger =
 
     val LogBlockStop : LogEditorFunctionId -> unit
 
-    val LogBlock : LogEditorFunctionId -> IDisposable
+    [<Struct>]
+    type LogBlockDisposable =
+        val functionId: LogEditorFunctionId
+        interface IDisposable
+        new : LogEditorFunctionId -> LogBlockDisposable
+
+    val LogBlock : LogEditorFunctionId -> LogBlockDisposable

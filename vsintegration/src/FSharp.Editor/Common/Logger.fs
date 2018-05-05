@@ -42,9 +42,14 @@ module Logger =
 
     let LogBlockStop(functionId) = FSharpEditorEventSource.Instance.BlockStop(functionId)
 
+    [<Struct>]
+    type LogBlockDisposable =
+        val functionId: LogEditorFunctionId
+        new(id: LogEditorFunctionId) = { functionId = id }
+        interface IDisposable with
+            member this.Dispose() = FSharpEditorEventSource.Instance.BlockStop(this.functionId)
+
     let LogBlock(functionId) =
         FSharpEditorEventSource.Instance.BlockStart(functionId)
-        { new IDisposable with
-            member __.Dispose() =
-                FSharpEditorEventSource.Instance.BlockStop(functionId) }
+        new LogBlockDisposable (functionId)
     
