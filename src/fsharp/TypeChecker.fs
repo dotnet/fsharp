@@ -7252,11 +7252,11 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
     /// the query.
     let env = 
         if List.isEmpty customOperationMethods then env else
-        { env with 
-            eNameResEnv =
-                (env.eNameResEnv, customOperationMethods) 
-                ||> Seq.fold (fun nenv (nm, _, _, _, _, _, _, _, methInfo) -> 
-                    AddFakeNameToNameEnv nm nenv (Item.CustomOperation (nm, (fun () -> customOpUsageText (ident (nm, mBuilderVal))), Some methInfo))) }
+        let nenv =
+            (env.eNameResEnv, customOperationMethods) 
+            ||> Seq.fold (fun nenv (nm, _, _, _, _, _, _, _, methInfo) -> 
+                  AddFakeNameToNameEnv nm nenv (Item.CustomOperation (nm, (fun () -> customOpUsageText (ident (nm, mBuilderVal))), Some methInfo)))
+        { env with eNameResEnv = { nenv with eIsComputationExpression = true }}
 
     // Environment is needed for completions
     CallEnvSink cenv.tcSink (comp.Range, env.NameEnv, ad)

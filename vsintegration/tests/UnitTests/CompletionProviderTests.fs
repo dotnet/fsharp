@@ -577,6 +577,33 @@ module M2 =
 """
     VerifyCompletionList(fileContents, "    Ext", ["Extensions"; "ExtraTopLevelOperators"], [])
 
+[<Test>]
+let ``Custom operations should not be in completion outside computation expression``() =
+    let fileContents = """
+let _ =
+    query {
+        for i in 1..10 do
+        select i
+    }
+
+nullable
+"""
+    VerifyCompletionList(fileContents, "nullable", ["Nullable"], ["minByNullable"; "averageByNullable"])
+
+[<Test>]
+let ``Custom operations should be at the top of completion list inside computation expression``() =
+    let fileContents = """
+let joinLocal = 1
+
+let _ =
+    query {
+        for i in 1..10 do
+        select i
+        join
+    }
+"""
+    VerifyCompletionList(fileContents, "        join", ["groupJoin"; "join"; "leftOuterJoin"; "joinLocal"], [])
+
 #if EXE
 ShouldDisplaySystemNamespace()
 #endif
