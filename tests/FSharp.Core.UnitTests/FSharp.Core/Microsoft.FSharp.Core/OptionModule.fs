@@ -235,7 +235,7 @@ type ValueOptionTests() =
         Assert.AreEqual( compare (VSome 1) (VSome 1), 0)
         Assert.True( compare (VSome 0) (VSome 1) < 0)
         Assert.True( compare (VNone: int voption) (VSome 1) < 0)
-        Assert.True( compare (VSome 1) (VNone : int option) > 0)
+        Assert.True( compare (VSome 1) (VNone : int voption) > 0)
         Assert.AreEqual( VSome 1, VSome 1)
         Assert.AreNotEqual( VSome 2, VSome 1)
         Assert.AreEqual( VSome 2, VSome 2)
