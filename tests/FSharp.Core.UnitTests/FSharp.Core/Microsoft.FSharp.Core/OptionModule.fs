@@ -216,3 +216,34 @@ type OptionModule() =
         let fn x = x + 3
         Assert.AreEqual(Option.map fn None, Option.bind (fn >> Some) None)
         Assert.AreEqual(Option.map fn (Some 5), Option.bind (fn >> Some) (Some 5))
+
+[<TestFixture>]
+type ValueOptionTests() =
+
+    let assertWasNotCalledThunk () = raise (exn "Thunk should not have been called.")
+
+    [<Test>]
+    member this.ValueOptionBasics () =
+        Assert.AreEqual( (VNone: int voption), (VNone: int voption))
+        Assert.True( (VNone: int voption) <= (VNone: int voption))
+        Assert.True( (VNone: int voption) >= (VNone: int voption))
+        Assert.True( (VNone: int voption) < (VSome 1: int voption))
+        Assert.True( (VSome 0: int voption) < (VSome 1: int voption))
+        Assert.True( (VSome 1: int voption) > (VSome 0: int voption))
+        Assert.False( (VSome 1: int voption) < (VNone : int voption))
+        Assert.True( (VSome 1: int voption) <= (VSome 1: int voption))
+        Assert.AreEqual( compare (VSome 1) (VSome 1), 0)
+        Assert.True( compare (VSome 0) (VSome 1) < 0)
+        Assert.True( compare (VNone: int voption) (VSome 1) < 0)
+        Assert.True( compare (VSome 1) (VNone : int option) > 0)
+        Assert.AreEqual( VSome 1, VSome 1)
+        Assert.AreNotEqual( VSome 2, VSome 1)
+        Assert.AreEqual( VSome 2, VSome 2)
+        Assert.AreEqual( VSome (VSome 2), VSome (VSome 2))
+        Assert.AreNotEqual( VSome (VSome 2), VSome (VSome 1))
+        Assert.AreNotEqual( VSome (VSome 0), VSome VNone)
+        Assert.AreEqual( VSome (VNone: int voption), VSome (VNone: int voption))
+        Assert.AreEqual( (VSome (VNone: int voption)).Value, (VNone: int voption))
+        Assert.AreEqual( (VSome 1).Value, 1)
+        Assert.AreEqual( (VSome (1,2)).Value, (1,2))
+

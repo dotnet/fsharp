@@ -1639,6 +1639,34 @@ namespace Microsoft.FSharp.Core
     /// due to the use of <c>null</c> as a value representation.</remarks>
     and 'T option = Option<'T>
 
+    /// <summary>The type of optional values, represented as structs.</summary>
+    ///
+    /// <remarks>Use the constructors <c>VSome</c> and <c>VNone</c> to create values of this type.
+    /// Use the values in the <c>ValueOption</c> module to manipulate values of this type,
+    /// or pattern match against the values directly.
+    [<StructuralEquality; StructuralComparison>]
+    [<CompiledName("FSharpValueOption`1")>]
+    [<Struct>]
+    type ValueOption<'T> =
+        /// <summary>The representation of "No value"</summary>
+        | VNone: 'T voption
+
+        /// <summary>The representation of "Value of type 'T"</summary>
+        /// <param name="Value">The input value.</param>
+        /// <returns>An option representing the value.</returns>
+        | VSome: 'T -> 'T voption
+
+        /// <summary>Get the value of a 'VSome' option. An InvalidOperationException is raised if the option is 'VNone'.</summary>
+        member Value : 'T
+
+
+    /// <summary>The type of optional values, represented as structs.</summary>
+    ///
+    /// <remarks>Use the constructors <c>VSome</c> and <c>VNone</c> to create values of this type.
+    /// Use the values in the <c>ValueOption</c> module to manipulate values of this type,
+    /// or pattern match against the values directly.
+    and 'T voption = ValueOption<'T>
+
 
     /// <summary>Helper type for error handling without exceptions.</summary>
     [<StructuralEquality; StructuralComparison>]
