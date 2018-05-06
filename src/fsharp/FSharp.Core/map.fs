@@ -129,32 +129,6 @@ namespace Microsoft.FSharp.Collections
                 elif c = 0 then MapNode(k,v,l,r,h)
                 else rebalance l k2 v2 (add comparer k v r) 
 
-        let rec find (comparer: IComparer<'Key>) k (m: MapTree<'Key, 'Value>) = 
-            match m with 
-            | MapEmpty -> raise (KeyNotFoundException())
-            | MapOne(k2,v2) -> 
-                let c = comparer.Compare(k,k2) 
-                if c = 0 then v2
-                else raise (KeyNotFoundException())
-            | MapNode(k2,v2,l,r,_) -> 
-                let c = comparer.Compare(k,k2) 
-                if c < 0 then find comparer k l
-                elif c = 0 then v2
-                else find comparer k r
-
-        let rec tryFind (comparer: IComparer<'Key>) k (m: MapTree<'Key, 'Value>) = 
-            match m with 
-            | MapEmpty -> None
-            | MapOne(k2,v2) -> 
-                let c = comparer.Compare(k,k2) 
-                if c = 0 then Some v2
-                else None
-            | MapNode(k2,v2,l,r,_) -> 
-                let c = comparer.Compare(k,k2) 
-                if c < 0 then tryFind comparer k l
-                elif c = 0 then Some v2
-                else tryFind comparer k r
-
         let rec tryGetValue (comparer: IComparer<'Key>) k (v: byref<'Value>) (m: MapTree<'Key, 'Value>) = 
             match m with 
             | MapEmpty -> false
@@ -167,6 +141,20 @@ namespace Microsoft.FSharp.Collections
                 if c < 0 then tryGetValue comparer k &v l
                 elif c = 0 then v <- v2; true
                 else tryGetValue comparer k &v r
+
+        let find (comparer: IComparer<'Key>) k (m: MapTree<'Key, 'Value>) =
+            let mutable v = Unchecked.defaultof<'Value>
+            if tryGetValue comparer k &v m then
+                v
+            else
+                raise (KeyNotFoundException())
+
+        let tryFind (comparer: IComparer<'Key>) k (m: MapTree<'Key, 'Value>) = 
+            let mutable v = Unchecked.defaultof<'Value>
+            if tryGetValue comparer k &v m then
+                Some v
+            else
+                None
 
         let partition1 (comparer: IComparer<'Key>) (f:OptimizedClosures.FSharpFunc<_,_,_>) k v (acc1,acc2) = 
             if f.Invoke(k, v) then (add comparer k v acc1,acc2) else (acc1,add comparer k v acc2) 
