@@ -49,8 +49,6 @@ namespace ProviderImplementation.ProvidedTypes
             let ofObj x = match x with null -> UNone | x -> USome x
 
 
-        let tryFindMulti k map = match Map.tryFind k map with Some res -> res | None -> [| |]
-
         let splitNameAt (nm:string) idx =
             if idx < 0 then failwith "splitNameAt: idx < 0";
             let last = nm.Length - 1

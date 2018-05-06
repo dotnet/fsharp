@@ -736,8 +736,15 @@ let AddExceptionDeclsToNameEnv bulkAddMode nenv (ecref:TyconRef) =
 let AddModuleAbbrevToNameEnv (id:Ident) nenv modrefs =
     {nenv with
        eModulesAndNamespaces =
-         let add old nw = nw @ old
-         NameMap.layerAdditive add (Map.add id.idText modrefs Map.empty) nenv.eModulesAndNamespaces }
+         Map.foldBack (fun x y sofar -> 
+            let v =
+                match Map.tryFind x sofar with
+                | Some old -> y @ old
+                | _ -> y
+
+            Map.add x v sofar) 
+              (Map.add id.idText modrefs Map.empty) 
+              nenv.eModulesAndNamespaces }
 
 
 //-------------------------------------------------------------------------
@@ -755,12 +762,20 @@ let rec AddModuleOrNamespaceRefsToNameEnv g amap m root ad nenv (modrefs: Module
     if isNil modrefs then nenv else
     let modrefsMap = modrefs |> NameMap.ofKeyedList (fun modref -> modref.DemangledModuleOrNamespaceName)
     let addModrefs tab = 
-         let add old nw = 
-             if IsEntityAccessible amap m ad nw then  
-                 nw :: old
-             else 
-                 old
-         NameMap.layerAdditive add modrefsMap tab
+        let add old nw = 
+            if IsEntityAccessible amap m ad nw then  
+                nw :: old
+            else 
+                old
+
+        Map.foldBack (fun x y sofar -> 
+            let v =
+                match Map.tryFind x sofar with
+                | Some prev -> add prev y
+                | _ -> add [] y
+
+            Map.add x v sofar) modrefsMap tab
+
     let nenv = 
         {nenv with
            eModulesAndNamespaces = addModrefs nenv.eModulesAndNamespaces
