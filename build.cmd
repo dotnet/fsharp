@@ -643,7 +643,7 @@ if "%RestorePackages%" == "true" (
     )
 
     if not "%SIGN_TYPE%" == "" (
-        set signtoolnugetoptions=-PackagesDirectory %USERPROFILE%\.nuget\packages -ConfigFile %_nugetconfig%
+        set signtoolnugetoptions=-PackagesDirectory "%USERPROFILE%\.nuget\packages" -ConfigFile %_nugetconfig%
         if not "%PB_RESTORESOURCE%" == "" set signtoolnugetoptions=!signtoolnugetoptions! -FallbackSource %PB_RESTORESOURCE%
         %_nugetexe% restore build\config\packages.config !signtoolnugetoptions!
         @if ERRORLEVEL 1 echo Error: Nuget restore failed && goto :failure
@@ -661,7 +661,7 @@ if "%RestorePackages%" == "true" (
 
 if "%NEEDS_DOTNET_CLI_TOOLS%" == "1" (
     :: Restore the Tools directory
-    call %~dp0init-tools.cmd
+    call "%~dp0init-tools.cmd"
 )
 
 set _dotnetcliexe=%~dp0Tools\dotnetcli\dotnet.exe
@@ -760,8 +760,8 @@ echo ---------------- Done with build, starting assembly version checks --------
 set asmvercheckpath=%~dp0tests\fsharpqa\testenv\src\AssemblyVersionCheck
 
 if "%BUILD_NET40%" == "1" (
-  echo "%~dp0%BUILD_CONFIG%\net40\bin\fsi.exe" %asmvercheckpath%\AssemblyVersionCheck.fsx -- "%~dp0build\config\AssemblySignToolData.json" "%~dp0%BUILD_CONFIG%"
-       "%~dp0%BUILD_CONFIG%\net40\bin\fsi.exe" %asmvercheckpath%\AssemblyVersionCheck.fsx -- "%~dp0build\config\AssemblySignToolData.json" "%~dp0%BUILD_CONFIG%"
+  echo "%~dp0%BUILD_CONFIG%\net40\bin\fsi.exe" "%asmvercheckpath%\AssemblyVersionCheck.fsx" -- "%~dp0build\config\AssemblySignToolData.json" "%~dp0%BUILD_CONFIG%"
+       "%~dp0%BUILD_CONFIG%\net40\bin\fsi.exe" "%asmvercheckpath%\AssemblyVersionCheck.fsx" -- "%~dp0build\config\AssemblySignToolData.json" "%~dp0%BUILD_CONFIG%"
   if ERRORLEVEL 1 echo Error verifying assembly versions and commit hashes. && goto :failure
 )
 
@@ -778,6 +778,12 @@ echo ---------------- Done with assembly signing, start package creation -------
 echo %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG%
      %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BUILD_CONFIG%
 if ERRORLEVEL 1 echo Error building NuGet packages && goto :failure
+
+if not "%SIGN_TYPE%" == "" (
+    echo build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -ConfigFile build\config\PackageSignToolData.json
+    call build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -ConfigFile build\config\PackageSignToolData.json
+    if ERRORLEVEL 1 echo Error running sign tool && goto :failure
+)
 
 if "%BUILD_SETUP%" == "1" (
     echo %_msbuildexe% %msbuildflags% setup\build-msi.proj /p:Configuration=%BUILD_CONFIG%

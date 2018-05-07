@@ -707,8 +707,8 @@ module AttributeHelpers =
              if deterministic && versionString.Contains("*") then
                  errorR(Error(FSComp.SR.fscAssemblyWildcardAndDeterminism(attribName, versionString), Range.rangeStartup))
              try Some (IL.parseILVersion versionString)
-             with e -> 
-                 warning(Error(FSComp.SR.fscBadAssemblyVersion(attribName, versionString), Range.rangeStartup))
+             with e ->
+                 // Warning will be reported by TypeChecker.fs
                  None
         | _ -> None
 
@@ -776,24 +776,23 @@ module MainModuleBuilder =
                 Seq.toList
         | None -> []
 
-    let fileVersion warn findStringAttr (assemblyVersion: ILVersionInfo) =
+    let fileVersion findStringAttr (assemblyVersion: ILVersionInfo) =
         let attrName = "System.Reflection.AssemblyFileVersionAttribute"
         match findStringAttr attrName with
         | None -> assemblyVersion
         | Some (AttributeHelpers.ILVersion(v)) -> v
-        | Some v -> 
-            warn(Error(FSComp.SR.fscBadAssemblyVersion(attrName, v), Range.rangeStartup))
-            //TODO compile error like c# compiler?
+        | Some _ ->
+            // Warning will be reported by TypeChecker.fs
             assemblyVersion
 
-    let productVersion warn findStringAttr (fileVersion: ILVersionInfo) =
+    let productVersion findStringAttr (fileVersion: ILVersionInfo) =
         let attrName = "System.Reflection.AssemblyInformationalVersionAttribute"
         let toDotted (v1, v2, v3, v4) = sprintf "%d.%d.%d.%d" v1 v2 v3 v4
         match findStringAttr attrName with
         | None | Some "" -> fileVersion |> toDotted
         | Some (AttributeHelpers.ILVersion(v)) -> v |> toDotted
         | Some v -> 
-            warn(Error(FSComp.SR.fscBadAssemblyVersion(attrName, v), Range.rangeStartup))
+            // Warning will be reported by TypeChecker.fs
             v
 
     let productVersionToILVersionInfo (version: string) : ILVersionInfo =
@@ -935,9 +934,9 @@ module MainModuleBuilder =
                     | Some text  -> [(key, text)]
                     | _ -> []
 
-                let fileVersionInfo = fileVersion warning findAttr assemblyVersion
+                let fileVersionInfo = fileVersion findAttr assemblyVersion
 
-                let productVersionString = productVersion warning findAttr fileVersionInfo
+                let productVersionString = productVersion findAttr fileVersionInfo
 
                 let stringFileInfo = 
                      // 000004b0:
@@ -1165,7 +1164,7 @@ module StaticLinker =
                   reduceMemoryUsage = tcConfig.reduceMemoryUsage
                   metadataOnly = MetadataOnlyFlag.No
                   tryGetMetadataSnapshot = (fun _ -> None)
-                  pdbPath = None  } 
+                  pdbDirPath = None  } 
             ILBinaryReader.OpenILModuleReader mscorlib40 opts
               
         let tdefs1 = ilxMainModule.TypeDefs.AsList  |> List.filter (fun td -> not (MainModuleBuilder.injectedCompatTypes.Contains(td.Name)))
@@ -1251,7 +1250,7 @@ module StaticLinker =
 
                                 let fileName = dllInfo.FileName
                                 let modul = 
-                                    let pdbPathOption = 
+                                    let pdbDirPathOption = 
                                         // We open the pdb file if one exists parallel to the binary we 
                                         // are reading, so that --standalone will preserve debug information. 
                                         if tcConfig.openDebugInformationForLaterStaticLinking then 
@@ -1269,7 +1268,7 @@ module StaticLinker =
                                         { ilGlobals = ilGlobals
                                           metadataOnly = MetadataOnlyFlag.No // turn this off here as we need the actual IL code
                                           reduceMemoryUsage = tcConfig.reduceMemoryUsage
-                                          pdbPath = pdbPathOption
+                                          pdbDirPath = pdbDirPathOption
                                           tryGetMetadataSnapshot = (fun _ -> None) } 
 
                                     let reader = ILBinaryReader.OpenILModuleReader dllInfo.FileName opts
@@ -1433,8 +1432,8 @@ module StaticLinker =
                   let generatedILTypeDefs = 
                       let rec buildRelocatedGeneratedType (ProviderGeneratedType(ilOrigTyRef, ilTgtTyRef, ch)) = 
                           let isNested = not (isNil ilTgtTyRef.Enclosing)
-                          if allTypeDefsInProviderGeneratedAssemblies.ContainsKey ilOrigTyRef then 
-                              let ilOrigTypeDef = allTypeDefsInProviderGeneratedAssemblies.[ilOrigTyRef]
+                          match allTypeDefsInProviderGeneratedAssemblies.TryGetValue(ilOrigTyRef) with
+                          | true, ilOrigTypeDef ->
                               if debugStaticLinking then printfn "Relocating %s to %s " ilOrigTyRef.QualifiedName ilTgtTyRef.QualifiedName
                               let ilOrigTypeDef = 
                                 if isNested then
@@ -1446,7 +1445,7 @@ module StaticLinker =
                                 else ilOrigTypeDef
                               ilOrigTypeDef.With(name = ilTgtTyRef.Name,
                                                  nestedTypes = mkILTypeDefs (List.map buildRelocatedGeneratedType ch))
-                          else
+                          | _ ->
                               // If there is no matching IL type definition, then make a simple container class
                               if debugStaticLinking then printfn "Generating simple class '%s' because we didn't find an original type '%s' in a provider generated assembly" ilTgtTyRef.QualifiedName ilOrigTyRef.QualifiedName
                               mkILSimpleClass ilGlobals (ilTgtTyRef.Name, (if isNested  then ILTypeDefAccess.Nested ILMemberAccess.Public else ILTypeDefAccess.Public), emptyILMethods, emptyILFields, mkILTypeDefs (List.map buildRelocatedGeneratedType ch) , emptyILProperties, emptyILEvents, emptyILCustomAttrs, ILTypeInit.OnAny) 

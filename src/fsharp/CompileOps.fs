@@ -1926,8 +1926,6 @@ let SystemAssemblies () =
       yield "System.Threading.Timer"
 
       yield "FSharp.Compiler.Interactive.Settings"
-      yield "Microsoft.DiaSymReader"
-      yield "Microsoft.DiaSymReader.PortablePdb"
       yield "Microsoft.Win32.Registry"
       yield "System.Diagnostics.Tracing"
       yield "System.Globalization.Calendars"
@@ -2098,7 +2096,7 @@ type IRawFSharpAssemblyData =
     /// in the language service
     abstract TryGetILModuleDef : unit -> ILModuleDef option
     ///  The raw F# signature data in the assembly, if any
-    abstract GetRawFSharpSignatureData : range * ilShortAssemName: string * fileName: string -> (string * byte[]) list
+    abstract GetRawFSharpSignatureData : range * ilShortAssemName: string * fileName: string -> (string * (unit -> byte[])) list
     ///  The raw F# optimization data in the assembly, if any
     abstract GetRawFSharpOptimizationData : range * ilShortAssemName: string * fileName: string -> (string * (unit -> byte[])) list
     ///  The table of type forwarders in the assembly
@@ -2628,7 +2626,7 @@ type TcConfigBuilder =
             ri, fileNameOfPath ri, ILResourceAccess.Public 
 
 
-let OpenILBinary(filename, reduceMemoryUsage, ilGlobalsOpt, pdbPathOption, shadowCopyReferences, tryGetMetadataSnapshot) = 
+let OpenILBinary(filename, reduceMemoryUsage, ilGlobalsOpt, pdbDirPath, shadowCopyReferences, tryGetMetadataSnapshot) = 
       let ilGlobals   = 
           // ILScopeRef.Local can be used only for primary assembly (mscorlib or System.Runtime) itself
           // Remaining assemblies should be opened using existing ilGlobals (so they can properly locate fundamental types)
@@ -2640,7 +2638,7 @@ let OpenILBinary(filename, reduceMemoryUsage, ilGlobalsOpt, pdbPathOption, shado
           { ilGlobals = ilGlobals
             metadataOnly = MetadataOnlyFlag.Yes
             reduceMemoryUsage = reduceMemoryUsage
-            pdbPath = pdbPathOption
+            pdbDirPath = pdbDirPath
             tryGetMetadataSnapshot = tryGetMetadataSnapshot } 
                       
       let location =
@@ -2702,7 +2700,7 @@ type AssemblyResolution =
                 | Some aref -> aref
                 | None -> 
                     let readerSettings : ILReaderOptions = 
-                        { pdbPath=None
+                        { pdbDirPath=None
                           ilGlobals = EcmaMscorlibILGlobals
                           reduceMemoryUsage = reduceMemoryUsage
                           metadataOnly = MetadataOnlyFlag.Yes
@@ -3795,7 +3793,7 @@ let PickleToResource inMem file g scope rname p x =
       MetadataIndex = NoMetadataIdx }
 
 let GetSignatureData (file, ilScopeRef, ilModule, byteReader) : PickledDataWithReferences<PickledCcuInfo> = 
-    unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleCcuInfo byteReader
+    unpickleObjWithDanglingCcus file ilScopeRef ilModule unpickleCcuInfo (byteReader())
 
 let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: CcuThunk, file, inMem) : ILResource = 
     let mspec = ccu.Contents
@@ -3831,16 +3829,15 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
             let sigDataReaders = 
                 [ for iresource in resources do
                     if IsSignatureDataResource iresource then 
-                        let ccuName = GetSignatureDataResourceName iresource 
-                        let bytes = iresource.GetBytes()
-                        yield (ccuName, bytes) ]
+                        let ccuName = GetSignatureDataResourceName iresource
+                        yield (ccuName, fun () -> iresource.GetBytes()) ]
                         
             let sigDataReaders = 
                 if sigDataReaders.IsEmpty && List.contains ilShortAssemName externalSigAndOptData then 
                     let sigFileName = Path.ChangeExtension(filename, "sigdata")
                     if not (FileSystem.SafeExists sigFileName) then 
                         error(Error(FSComp.SR.buildExpectedSigdataFile (FileSystem.GetFullPathShim sigFileName), m))
-                    [ (ilShortAssemName, FileSystem.ReadAllBytesShim sigFileName)]
+                    [ (ilShortAssemName, fun () -> FileSystem.ReadAllBytesShim sigFileName)]
                 else
                     sigDataReaders
             sigDataReaders
@@ -4064,9 +4061,9 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                 let opts : ILReaderOptions = 
                     { ilGlobals = g.ilg 
                       reduceMemoryUsage = tcConfig.reduceMemoryUsage
-                      pdbPath = None 
+                      pdbDirPath = None 
                       metadataOnly = MetadataOnlyFlag.Yes
-                      tryGetMetadataSnapshot = tcConfig.tryGetMetadataSnapshot }                       
+                      tryGetMetadataSnapshot = tcConfig.tryGetMetadataSnapshot }
                 let reader = OpenILModuleReaderFromBytes fileName bytes opts
                 reader.ILModuleDef, reader.ILAssemblyRefs
 
@@ -4135,20 +4132,21 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
       try
         CheckDisposed()
         let tcConfig = tcConfigP.Get(ctok)
-        let pdbPathOption = 
+        let pdbDirPath =
             // We open the pdb file if one exists parallel to the binary we 
             // are reading, so that --standalone will preserve debug information. 
             if tcConfig.openDebugInformationForLaterStaticLinking then 
-                let pdbDir = (try Filename.directoryName filename with _ -> ".") 
-                let pdbFile = (try Filename.chopExtension filename with _ -> filename)+".pdb" 
-                if FileSystem.SafeExists pdbFile then 
+                let pdbDir = try Filename.directoryName filename with _ -> "."
+                let pdbFile = (try Filename.chopExtension filename with _ -> filename) + ".pdb" 
+
+                if FileSystem.SafeExists(pdbFile) then 
                     if verbose then dprintf "reading PDB file %s from directory %s\n" pdbFile pdbDir
                     Some pdbDir
-                else 
-                    None 
-            else   
+                else
+                    None
+            else
                 None
-        let ilILBinaryReader = OpenILBinary(filename, tcConfig.reduceMemoryUsage, ilGlobalsOpt, pdbPathOption, tcConfig.shadowCopyReferences, tcConfig.tryGetMetadataSnapshot)
+        let ilILBinaryReader = OpenILBinary(filename, tcConfig.reduceMemoryUsage, ilGlobalsOpt, pdbDirPath, tcConfig.shadowCopyReferences, tcConfig.tryGetMetadataSnapshot)
         tcImports.AttachDisposeAction(fun _ -> (ilILBinaryReader :> IDisposable).Dispose())
         ilILBinaryReader.ILModuleDef, ilILBinaryReader.ILAssemblyRefs
       with e ->
