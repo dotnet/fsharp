@@ -4066,10 +4066,11 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         //                |___Type___|  |_________________________________Assembly________________________________|
         // It therefore makes sense to search for the 4th last comma, as the starting point of the assembly.
         // nthLastIndexOf searches a string from end to start, terminating when it finds n of the char searched for.s
-        let find4thLastComma (s : string) =
+        let find3rdLastComma (s : string) =
+            let commaTargetCount = 3
             let mutable countSoFar = 0
             let mutable currIndex = s.Length - 1
-            while currIndex >= 0 && countSoFar < 4 do
+            while currIndex >= 0 && countSoFar < commaTargetCount do
                 match s.[currIndex] with
                 | ',' -> countSoFar <- countSoFar + 1
                 | '[' | ']' ->
@@ -4077,11 +4078,11 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                     assert false
                 | _ -> ()
                 currIndex <- currIndex - 1
-            if countSoFar = 4 then
+            if countSoFar = commaTargetCount then
                 currIndex + 1
             else
                 assert false; -1
-        let commaPos = find4thLastComma qname
+        let commaPos = qname.LastIndexOf ','
 
         let typeNameWithArgs = qname.[0..commaPos-1]
         let isGeneric = qname.Contains("[")
@@ -4109,7 +4110,13 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                 let genericArgStrings =
                     typeNameWithArgs.[startI+1..endI-1] |> splitArgs
                         // Assembly Qualified type arguments are surrounded by [] brackets
-                let genericArgStrings = genericArgStrings |> Array.map (fun s -> s.[1..s.Length-2])
+                let processArg (arg : string) =
+                    let bracketsRemoved = arg.[1..arg.Length-2]
+                    let unnecessaryAssemblyInfoRemoved =
+                        let commaPos = find3rdLastComma bracketsRemoved
+                        bracketsRemoved.[0..commaPos-1]
+                    unnecessaryAssemblyInfoRemoved
+                let genericArgStrings = genericArgStrings |> Array.map processArg
                 let genericArgs = genericArgStrings |> Array.map (fun s -> tcImports.ImportQualifiedTypeNameAsTypeValue(s, m))
                 typeName, genericArgs
             else

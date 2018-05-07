@@ -9,13 +9,13 @@ open Test
 
 type G<'a> = | G of 'a
 
-type MyNewProvider<'a> = Generic.IdentityType<'a>
+type MyNewProvider<'a> = Generic.IdentityType<G<'a>>
 
-type MyOtherProvider<'b> = MyNewProvider<G<Option<G<'b>>>>
+type MyOtherProvider<'b> = MyNewProvider<Option<'b>>
 
 type X = MyOtherProvider<int>
 
-let x = X.Invoke (G (Some (G 5)))
+let x = X.Invoke (G (Some 5))
 
 printfn "%A" x
 

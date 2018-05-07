@@ -5084,19 +5084,16 @@ and TcProvidedMethodAppToStaticConstantArgs cenv env (minfo, methBeforeArguments
 
     let parameterInfos = calculateAbstractParameterInfos cenv staticParams
     let argsInStaticParameterOrderIncludingDefaults = CrackStaticConstantArgs cenv env (parameterInfos, args, minfo.DisplayName, m)
+    let staticArgs = 
+        argsInStaticParameterOrderIncludingDefaults
+        |> Array.map (convertTTypeToStaticArg cenv)
 
-    if argsInStaticParameterOrderIncludingDefaults |> Array.exists (function | TType_staticarg _ -> false | _ -> true) then
-        failwith "" // FS-1023 TODO: Proper error
-    else
-        let argsInStaticParameterOrderIncludingDefaults =
-            argsInStaticParameterOrderIncludingDefaults |> Array.choose (function | TType_staticarg(_,x) -> Some x | _ -> None)
+    let providedMethAfterStaticArguments =
+        match ExtensionTyping.TryApplyProvidedMethod(methBeforeArguments, staticArgs, m) with
+        | None -> error(Error(FSComp.SR.etErrorApplyingStaticArgumentsToMethod(), m))
+        | Some meth -> meth
 
-        let providedMethAfterStaticArguments =
-            match ExtensionTyping.TryApplyProvidedMethod(methBeforeArguments, argsInStaticParameterOrderIncludingDefaults, m) with
-            | None -> error(Error(FSComp.SR.etErrorApplyingStaticArgumentsToMethod(), m))
-            | Some meth -> meth
-
-        providedMethAfterStaticArguments
+    providedMethAfterStaticArguments
 
 and TcProvidedTypeApp cenv env tpenv occ tcref args m =
     TcAndAppStaticConstantArgsToProvidedType cenv env None tpenv occ tcref args m

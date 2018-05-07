@@ -110,7 +110,7 @@ module internal ExtensionTyping =
 
     /// Compute the mangled value stored for a System.Type argument. Only the simple name of the assembly is stored.
     let computeStringOfStaticTypeArg (st: System.Type) =
-        st.FullName + ", " + st.Assembly.FullName
+        st.FullName + ", " + st.Assembly.GetName().Name
 
     /// Compute the mangled value stored for a System.Type argument. Only the simple name of the assembly is stored.
     let computeStringOfStaticArg (StaticArg staticArg) =
