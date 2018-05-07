@@ -13,9 +13,6 @@ namespace Microsoft.FSharp.Collections
 #if FX_RESHAPED_REFLECTION
     open System.Reflection
 #endif
-#if FX_NO_ICLONEABLE
-    open Microsoft.FSharp.Core.ICloneableExtensions            
-#endif
 
     /// Basic operations on arrays
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
