@@ -231,3 +231,8 @@ module IComparableTest =
     let actual = TypePassing.Metadata.Create<System.IComparable>()
     let expected = typeof<System.IComparable>
     compare expected actual
+
+module OptionalIntTest =
+    let actual = TypePassing.Metadata.Create<int option>()
+    let expected = typeof<int option>
+    compare expected actual

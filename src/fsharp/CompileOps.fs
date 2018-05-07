@@ -4060,9 +4060,62 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
     member tcImports.ImportQualifiedTypeNameAsTypeValue(qname:string, m) =
         // Qualified name string --> TyconRef
         assert (qname.Contains(",")) // we expected a qualified type name, even for references to the assembly being compiled
-        let commaPos = qname.LastIndexOf ','
-        let typeName = qname.[0..commaPos-1]
+
+        // We expect assembly-qualified names in the following format:
+        //                System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089
+        //                |___Type___|  |_________________________________Assembly________________________________|
+        // It therefore makes sense to search for the 4th last comma, as the starting point of the assembly.
+        // nthLastIndexOf searches a string from end to start, terminating when it finds n of the char searched for.s
+        let find4thLastComma (s : string) =
+            let mutable countSoFar = 0
+            let mutable currIndex = s.Length - 1
+            while currIndex >= 0 && countSoFar < 4 do
+                match s.[currIndex] with
+                | ',' -> countSoFar <- countSoFar + 1
+                | '[' | ']' ->
+                    // We've gone too far. The assembly should never contain brackets, indicating we are in the type.
+                    assert false
+                | _ -> ()
+                currIndex <- currIndex - 1
+            if countSoFar = 4 then
+                currIndex + 1
+            else
+                assert false; -1
+        let commaPos = find4thLastComma qname
+
+        let typeNameWithArgs = qname.[0..commaPos-1]
+        let isGeneric = qname.Contains("[")
+        let typeName, genericTypes =
+            if isGeneric then
+                let splitArgs (s : string) =
+                    seq {
+                        let mutable startIndex = 0
+                        let mutable currIndex = 0
+                        let mutable bracketCount = 0
+                        while currIndex < s.Length do
+                            match s.[currIndex] with
+                            | '[' -> bracketCount <- bracketCount + 1
+                            | ']' -> bracketCount <- bracketCount - 1
+                            | ',' when bracketCount = 0 ->
+                                yield s.[startIndex..currIndex-1]
+                                startIndex <- currIndex + 1
+                            | _ -> ()
+                            currIndex <- currIndex + 1
+                        yield s.[startIndex..s.Length-1]
+                    } |> Seq.toArray
+                let startI = typeNameWithArgs.IndexOf('[')
+                let endI = typeNameWithArgs.LastIndexOf(']')
+                let typeName = typeNameWithArgs.[0..startI-1]
+                let genericArgStrings =
+                    typeNameWithArgs.[startI+1..endI-1] |> splitArgs
+                        // Assembly Qualified type arguments are surrounded by [] brackets
+                let genericArgStrings = genericArgStrings |> Array.map (fun s -> s.[1..s.Length-2])
+                let genericArgs = genericArgStrings |> Array.map (fun s -> tcImports.ImportQualifiedTypeNameAsTypeValue(s, m))
+                typeName, genericArgs
+            else
+                typeNameWithArgs, [||]
         let ilTypeRef =
+
             let assName = if commaPos+2 < qname.Length then qname.[commaPos+2..]  else ""
             let ilAssRef = ILAssemblyRef.FromAssemblyName (System.Reflection.AssemblyName assName)
             let ilScoRef = ILScopeRef.Assembly ilAssRef
@@ -4079,7 +4132,8 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                 let asm = ccu.ReflectAssembly :?> TastReflect.ReflectAssembly
                 match asm.GetType(typeName) with
                 | null -> failwith (sprintf "couldn't get type '%s' from assembly '%s'" typeName ccu.AssemblyName)
-                | st -> st
+                | st ->
+                    st
             | _ ->
                 let tcref = Import.ImportILTypeRef (tcImports.GetImportMap()) m ilTypeRef
                 // TyconRef --> ReflectTypeDefinition value
@@ -4092,6 +4146,11 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                     | None -> failwith (sprintf "TODO: didn't get back to CCU being compiled for local tcref %s" tcref.DisplayName)
                 let asm = ccu.ReflectAssembly :?> TastReflect.ReflectAssembly
                 asm.TxTypeDef None tcref
+        let st =
+            if isGeneric then
+                st.MakeGenericType genericTypes
+            else
+                st
         printfn "resurrected type value st.AssemblyQualifiedName='%s'" st.AssemblyQualifiedName
         st
 

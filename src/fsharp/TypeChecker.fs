@@ -4791,15 +4791,20 @@ and TcStaticConstantParameter cenv (env:TcEnv) tpenv occ (v:SynType) container =
     | SynType.LongIdent(lidwd) ->
         let m = lidwd.Range
         // let tyid = mkSynId tyid.idRange n
-        let (LongIdentWithDots(tycon, _)) = lidwd
+        let (LongIdentWithDots(lid, _)) = lidwd
         let ad = env.eAccessRights
-        match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInAttribute OpenQualified env.eNameResEnv ad tycon TypeNameResolutionStaticArgsInfo.DefiniteEmpty  PermitDirectReferenceToGeneratedType.No with
+        match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInAttribute OpenQualified env.eNameResEnv ad lid TypeNameResolutionStaticArgsInfo.DefiniteEmpty  PermitDirectReferenceToGeneratedType.No with
         | Exception _ ->
             TcStaticConstantParameter cenv env tpenv occ (SynType.StaticConstantExpr(SynExpr.LongIdent(false,lidwd,None,m),m)) container
         | Result tcref ->
-            let assm = cenv.topCcu.ReflectAssembly :?> TastReflect.ReflectAssembly
-            let st = assm.TxTType (snd (generalizeTyconRef tcref))
-            (None, TType_staticarg (cenv.g.system_Type_typ, StaticArg (box st))), tpenv
+            (None, TType_app(tcref, [])), tpenv
+
+            // SIMPLE_CASE
+            //let assm = cenv.topCcu.ReflectAssembly :?> TastReflect.ReflectAssembly
+            //let st = assm.TxTType (snd (generalizeTyconRef tcref))
+            //(None, TType_staticarg (cenv.g.system_Type_typ, StaticArg (box st))), tpenv
+
+
     | SynType.App (SynType.LongIdent(LongIdentWithDots(tc,_)),_,args,_commas,_,postfix,m) ->
         let ad = env.eAccessRights
         let tcref = ForceRaise(ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInType OpenQualified env.eNameResEnv ad tc (TypeNameResolutionStaticArgsInfo.FromTyArgs args.Length) PermitDirectReferenceToGeneratedType.No)
@@ -4809,34 +4814,40 @@ and TcStaticConstantParameter cenv (env:TcEnv) tpenv occ (v:SynType) container =
             then error(Error(FSComp.SR.tcInvalidUnitsOfMeasurePrefix(), m))
 
             let tyType, tpenv' = TcTypeApp cenv ImplictlyBoundTyparsAllowed.NewTyparsOK CheckConstraints.NoCheckCxs ItemOccurence.UseInType env tpenv m tcref [] args
-            // The type returned may contain variables, indicating this is the rhs of a type abbreviation.
-            // In which case, don't wrap it up as a staticarg, but leave it intact
+            (None, tyType), tpenv'
+            //// The type returned may contain variables, indicating this is the rhs of a type abbreviation.
+            //// In which case, don't wrap it up as a staticarg, but leave it intact
             
-            // thruFlag set to 'false' because every other caller does this. No explanation of what thruFlag does found.
-            let typars = freeInTypeLeftToRight cenv.g false tyType
-            if typars |> List.isEmpty then
-                // Optimization:
-                // If the returned type has no free variables, then it can be applied immediately.
-                let assm = cenv.topCcu.ReflectAssembly :?> TastReflect.ReflectAssembly
-                let st = assm.TxTType tyType
+            // APP_CASE
+            //// thruFlag set to 'false' because every other caller does this. No explanation of what thruFlag does found.
+            //let typars = freeInTypeLeftToRight cenv.g false tyType
+            //if typars |> List.isEmpty then
+            //    // Optimization:
+            //    // If the returned type has no free variables, then it can be applied immediately.
+            //    let assm = cenv.topCcu.ReflectAssembly :?> TastReflect.ReflectAssembly
+            //    let st = assm.TxTType tyType
 
-                (None, TType_staticarg (cenv.g.system_Type_typ, StaticArg (box st))), tpenv'
-            else
-                (None, tyType), tpenv'
+            //    (None, TType_staticarg (cenv.g.system_Type_typ, StaticArg (box st))), tpenv'
+            //else
+            //    (None, tyType), tpenv'
         | TyparKind.Measure ->
             error(Error(FSComp.SR.tcInvalidConstantExpression(),v.Range))
     | SynType.Var (SynTypar.Typar (_a,NoStaticReq,false), _range) ->
-            let _assm = cenv.topCcu.ReflectAssembly :?> TastReflect.ReflectAssembly
             TryFindUnscopedTypar _a.idText tpenv
             |> Option.orElse (Map.tryFind _a.idText env.NameEnv.eTypars)
             |> function
             | Some typar ->
-                match occ with
-                | ItemOccurence.UseInType ->
-                    (None, TType_var typar), tpenv
-                | _ ->
-                    let st = _assm.TxTType (TType_var typar)
-                    (None, TType_staticarg (cenv.g.system_Type_typ, StaticArg (box st))), tpenv
+                (None, TType_var typar), tpenv
+
+                // VAR_CASE
+                //match occ with
+                //| ItemOccurence.UseInType ->
+                //    (None, TType_var typar), tpenv
+                //| _ ->
+                //    let _assm = cenv.topCcu.ReflectAssembly :?> TastReflect.ReflectAssembly
+                //    let st = _assm.TxTType (TType_var typar)
+                //    (None, TType_staticarg (cenv.g.system_Type_typ, StaticArg (box st))), tpenv
+
             | None -> fail()
     | _ ->
         fail()
@@ -4851,7 +4862,7 @@ and TcStaticConstantParameters cenv env tpenv occ container args =
 // Note: Args may be supplied either via position or via name; named arguments may be optional.
 //       In the presence of a syntactic type variable, this means we are in inference mode.
 //       The StaticArg returned will contain a TType corresponding to the kind of the argument (eg. int, bool, Type).
-and CrackStaticConstantArgs cenv (env : TcEnv) (staticParameters: (range -> obj * string * TType)[], args: (Ident option * TType) list, containerName, m) =
+and CrackStaticConstantArgs cenv (env : TcEnv) (staticParameters: (Typar option * (range -> obj * string * TType option))[], args: (Ident option * TType) list, containerName, m) =
     let buildStaticArg (o : obj) =
         let inline typeBox(x : 'a, t) = TType_staticarg(t, StaticArg (box x))
         let g = cenv.g
@@ -4887,9 +4898,9 @@ and CrackStaticConstantArgs cenv (env : TcEnv) (staticParameters: (range -> obj 
     let kind m sp = let (_,_,kind) = sp m in kind
     for (n, _) in namedArgs do
          let name = name n.idRange
-         match indexedStaticParameters |> List.filter (fun (j, sp) -> j >= unnamedArgs.Length && n.idText = name sp) with
+         match indexedStaticParameters |> List.filter (fun (j, (_typarOpt,sp)) -> j >= unnamedArgs.Length && n.idText = name sp) with
          | [] ->
-             if staticParameters |> Array.exists (fun sp -> n.idText = name sp) then
+             if staticParameters |> Array.exists (fun (_,sp) -> n.idText = name sp) then
                  error (Error(FSComp.SR.etStaticParameterAlreadyHasValue n.idText, n.idRange))
              else
                  error (Error(FSComp.SR.etNoStaticParameterWithName n.idText, n.idRange))
@@ -4900,15 +4911,21 @@ and CrackStaticConstantArgs cenv (env : TcEnv) (staticParameters: (range -> obj 
         error (Error(FSComp.SR.etTooManyStaticParameters(staticParameters.Length, unnamedArgs.Length, namedArgs.Length), m))
 
     let argsInStaticParameterOrderIncludingDefaults =
-        staticParameters |> Array.mapi (fun i sp ->
+        staticParameters |> Array.mapi (fun i (typarOpt, sp) ->
             let defaultVal, name, kind = defaultVal m, name m, kind m
 
             let spKind = kind sp
             let spName = name sp
             let verifyArg (tt : TType) =
                 let matchKinds kind =
-                    if not <| typeEquiv cenv.g spKind kind then
-                            error(Error(FSComp.SR.etInvalidStaticArgument(NicePrint.minimalStringOfType env.DisplayEnv spKind), m))
+                    match spKind with
+                    | Some spKind ->
+                        if not <| typeEquiv cenv.g spKind kind then
+                                error(Error(FSComp.SR.etInvalidStaticArgument(NicePrint.minimalStringOfType env.DisplayEnv spKind), m))
+                    | None ->
+                        match typarOpt with
+                        | Some typar -> typar.typar_staticarg_kind <- Some kind
+                        | None -> failwith "Unreachable"
                 match tt with
                 | TType_staticarg(t, _) ->
                     matchKinds t
@@ -4917,7 +4934,7 @@ and CrackStaticConstantArgs cenv (env : TcEnv) (staticParameters: (range -> obj 
                     | Some t ->
                         matchKinds t
                     | None ->
-                        typar.typar_staticarg_kind <- Some spKind
+                        typar.typar_staticarg_kind <- spKind
                 | _ ->
                     matchKinds cenv.g.system_Type_typ
                 tt
@@ -4940,13 +4957,22 @@ and CrackStaticConstantArgs cenv (env : TcEnv) (staticParameters: (range -> obj 
 
 
 and calculateAbstractParameterInfos cenv (staticParameters : Tainted<ProvidedParameterInfo>[]) =
-    let parameterInfo (sp : Tainted<ProvidedParameterInfo>) m =
-        let defaultVal = sp.PUntaint((fun sp -> if sp.IsOptional then sp.RawDefaultValue else null), m)
-        let name = sp.PUntaint((fun sp -> sp.Name), m)
-        let kind = Import.ImportProvidedType cenv.amap m (sp.PApply((fun sp -> sp.ParameterType), m))
-        defaultVal, name, kind
+    let parameterInfo (sp : Tainted<ProvidedParameterInfo>) =
+        None, fun m ->
+            let defaultVal = sp.PUntaint((fun sp -> if sp.IsOptional then sp.RawDefaultValue else null), m)
+            let name = sp.PUntaint((fun sp -> sp.Name), m)
+            let kind = Import.ImportProvidedType cenv.amap m (sp.PApply((fun sp -> sp.ParameterType), m))
+            defaultVal, name, Some kind
     staticParameters
     |> Array.map parameterInfo
+
+and convertTTypeToStaticArg (cenv : cenv) (ty : TType) : StaticArg =
+    match ty with
+    | TType_staticarg(_kind,sa) -> sa
+    | t ->
+        let _assm = cenv.topCcu.ReflectAssembly :?> TastReflect.ReflectAssembly
+        let st = _assm.TxTType t
+        StaticArg (box st)
 
 and safelyApplyStaticArgs cenv (tcref : TyconRef) (types : TType[]) m =
     let pt =
@@ -4956,7 +4982,7 @@ and safelyApplyStaticArgs cenv (tcref : TyconRef) (types : TType[]) m =
     let typeBeforeArguments = pt.ProvidedType
     let staticArgs =
         types
-        |> Array.choose (function | TType_staticarg (_, sa) -> Some sa | _ -> assert false; None)
+        |> Array.map (convertTTypeToStaticArg cenv)
     ExtensionTyping.TryApplyProvidedType(typeBeforeArguments, None, staticArgs, m)
     |> function
     | Some (t, checkName) ->
@@ -5028,10 +5054,8 @@ and TcProvidedTypeAppToStaticConstantArgs cenv env _optGeneratedTypePath tpenv o
                     let typars = tcref.Typars m
                     let paramInfos =
                         typars
-                        |> List.map (fun (typar : Typar) _ ->
-                            match typar.typar_staticarg_kind with
-                            | Some kind -> null, typar.DisplayName, kind
-                            | None -> failwith "unreachable?")
+                        |> List.map (fun (typar : Typar) ->
+                            Some typar, fun _m -> null, typar.DisplayName, typar.typar_staticarg_kind)
                         |> List.toArray
                     let ty (args : TType list) =
                         if args.Length <> typars.Length then

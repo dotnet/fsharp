@@ -1762,7 +1762,7 @@ and Construct =
         let lazyBaseTy = 
             LazyWithContext.Create 
                 ((fun (m,objTy) -> 
-                      let baseSystemTy = st.PApplyOption((fun st -> match st.BaseType with ProvidedType.Null -> None | ty -> Some ty), m)
+                      let baseSystemTy = st.PApplyOption((fun st -> match st.BaseType with null -> None | ty -> Some ty), m)
                       match baseSystemTy with 
                       | None -> objTy 
                       | Some t -> importProvidedType t), 
@@ -1776,9 +1776,9 @@ and Construct =
               IsDelegate = (fun () -> st.PUntaint((fun st -> 
                                    let baseType = st.BaseType 
                                    match baseType with 
-                                   | ProvidedType.Null -> false
+                                   | null -> false
                                    | x when x.IsGenericType -> false
-                                   | x when x.DeclaringType <> ProvidedType.Null -> false
+                                   | x when x.DeclaringType <> null -> false
                                    | x -> x.FullName = "System.Delegate" || x.FullName = "System.MulticastDelegate"), m))
               IsEnum = st.PUntaint((fun st -> st.IsEnum), m)
               IsStructOrEnum = st.PUntaint((fun st -> st.IsValueType || st.IsEnum), m)
@@ -2716,7 +2716,7 @@ and NonLocalEntityRef    =
             // types until i = path.Length-1. Create the Tycon's as needed
             let rec tryResolveNestedTypeOf(parentEntity:Entity,resolutionEnvironment,st:Tainted<ProvidedType>,i) = 
                 match st.PApply((fun st -> st.GetNestedType path.[i]),m) with
-                | Tainted.Is ProvidedType.Null -> VNone
+                | Tainted.Null -> VNone
                 | st -> 
                     let newEntity = Construct.NewProvidedTycon(resolutionEnvironment, st, ccu.ImportProvidedType, false, m)
                     parentEntity.ModuleOrNamespaceType.AddProvidedTypeEntity(newEntity)
@@ -2753,7 +2753,7 @@ and NonLocalEntityRef    =
                         let importQualifiedTypeNameAsTypeValue (qname: string) = ccu.ImportQualifiedTypeNameAsTypeValue(qname, m)
                         let resolution = ExtensionTyping.TryLinkProvidedType(resolver,importQualifiedTypeNameAsTypeValue,moduleOrNamespace,typename,m)
                         match resolution with
-                        | None | Some (Tainted.Is ProvidedType.Null) -> ()
+                        | None | Some (Tainted.Null) -> ()
                         | Some st -> yield (resolver,st) ]
                 match matched with
                 | [(_,st)] ->

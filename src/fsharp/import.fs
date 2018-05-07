@@ -94,8 +94,20 @@ let ImportTypeRefData (env:ImportMap) m (scoref,path,typeName) =
             | VSome r -> false, r
             | VNone ->
                 let asm = ccu.ReflectAssembly :?> TastReflect.ReflectAssembly
-                let typ = asm.GetType(String.concat "." (Array.toList path@[typeName])) :?> TastReflect.ReflectTypeDefinition
-                true, typ.Metadata.Deref
+                let typ = asm.GetType(String.concat "." (Array.toList path@[typeName]))
+                let ttyp =
+                    match typ with
+                    | :? TastReflect.ReflectTypeDefinition as typ ->
+                        typ.Metadata.Deref
+                    | :? TastReflect.ReflectTypeSymbol as typ ->
+                        match typ.Kind with
+                        | ReflectTypeSymbolKind.Generic typ -> typ.Metadata.Deref
+                        | ReflectTypeSymbolKind.SDArray 
+                        | ReflectTypeSymbolKind.Array _ 
+                        | ReflectTypeSymbolKind.Pointer 
+                        | ReflectTypeSymbolKind.ByRef -> failwith "Handle this case" // FS-1023 TODO
+                    | _ -> failwith "Unexpected"
+                true, ttyp
 #else
             false, fakeTyconRef.Deref
 #endif
@@ -112,8 +124,10 @@ let ImportTypeRefData (env:ImportMap) m (scoref,path,typeName) =
     | _ -> 
             ()
 #endif
-    if wasReflectResolved
-    then mkLocalEntityRef tycon
+    if wasReflectResolved then
+        match tryRescopeEntity ccu tycon with
+        | Some tcref -> tcref
+        | None -> mkLocalEntityRef tycon
     else
         match tryRescopeEntity ccu tycon with
         | None -> error (Error(FSComp.SR.impImportedAssemblyUsesNotPublicType(String.concat "." (Array.toList path@[typeName])),m))
@@ -206,6 +220,7 @@ let ImportProvidedNamedType (env:ImportMap) (m:range) (st:Tainted<ProvidedType>)
     let tryGetTyconRef (pt : ProvidedType) =
         match pt.RawSystemType with
         | :? ReflectTypeDefinition as pt -> Some pt.Metadata
+        | :? ReflectTypeSymbol as _pt -> failwith ""
         | _ -> pt.TryGetTyconRef() |> Option.map (fun x -> x :?> TyconRef)
 
     // See if a reverse-mapping exists for a generated/relocated System.Type

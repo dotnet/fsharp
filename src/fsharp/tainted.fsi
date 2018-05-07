@@ -98,9 +98,6 @@ module internal Tainted =
     /// Test whether the tainted value is null
     val (|Null|_|) : Tainted<'T> -> unit option when 'T : null
 
-    /// Test whether the tainted value is equal to a value
-    val (|Is|_|) :  'a -> Tainted<'a> -> unit option when 'a : equality
-
     /// Test whether the tainted value equals given value. 
     /// Failure in call to equality operation will be blamed on type provider of first operand
     val Eq : Tainted<'T> -> 'T -> bool when 'T : equality

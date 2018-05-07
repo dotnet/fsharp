@@ -186,7 +186,7 @@ and ReflectTypeSymbol(kind: ReflectTypeSymbolKind, args: Type[]) =
         | ReflectTypeSymbolKind.Array _,[| arg |] -> arg.FullName + "[*]" 
         | ReflectTypeSymbolKind.Pointer,[| arg |] -> arg.FullName + "*" 
         | ReflectTypeSymbolKind.ByRef,[| arg |] -> arg.FullName + "&"
-        | ReflectTypeSymbolKind.Generic gtd, args -> gtd.FullName + "[" + (args |> Array.map (fun arg -> arg.FullName) |> String.concat ",") + "]"
+        | ReflectTypeSymbolKind.Generic gtd, args -> gtd.FullName + "[" + (args |> Array.map (fun arg -> "[" + arg.AssemblyQualifiedName + "]") |> String.concat ",") + "]"
         | _ -> failwith "unreachable"
 
     override __.DeclaringType =                                                                 
@@ -343,7 +343,7 @@ and ReflectTypeSymbol(kind: ReflectTypeSymbolKind, args: Type[]) =
 
         //| _ -> notRequired "ReflectTypeSymbol: GetConstructorImpl" this.Name
 
-    override this.AssemblyQualifiedName                                                            = "[" + this.Assembly.FullName + "]" + this.FullName
+    override this.AssemblyQualifiedName                                                            = this.FullName + ", " + this.Assembly.FullName
 
     override this.GetMembers _bindingAttr =
         match kind,args with 
@@ -920,7 +920,7 @@ and ReflectTypeDefinition (asm: ReflectAssembly, declTyOpt: Type option, tcref: 
 
             override __.ToString() = sprintf "ctxt generic param %s" inp.Name 
 
-            override this.AssemblyQualifiedName                                                            = "[" + this.Assembly.FullName + "]" + this.FullName
+            override this.AssemblyQualifiedName                                                            = this.FullName + ", " + this.Assembly.FullName
 
             override __.GetGenericArguments() = notRequired "GetGenericArguments"
             override __.GetGenericTypeDefinition() = notRequired "GetGenericTypeDefinition"
@@ -949,8 +949,11 @@ and ReflectTypeDefinition (asm: ReflectAssembly, declTyOpt: Type option, tcref: 
     override this.MemberType =
         if this.isNested then MemberTypes.NestedType else MemberTypes.TypeInfo
 
+    override this.AssemblyQualifiedName =
+        this.FullName + ", " + this.Assembly.FullName
+
     override __.FullName = 
-        tcref.CompiledRepresentationForNamedType.QualifiedName
+        tcref.CompiledRepresentationForNamedType.FullName
                     
     override __.Namespace =
         let outerType = tcref.CompiledRepresentationForNamedType.Enclosing.[0]
@@ -1178,8 +1181,6 @@ and ReflectTypeDefinition (asm: ReflectAssembly, declTyOpt: Type option, tcref: 
     override this.IsAssignableFrom(otherTy) = base.IsAssignableFrom(otherTy) || this.Equals(otherTy)
     override this.IsSubclassOf(otherTy) = base.IsSubclassOf(otherTy) || tcref.IsFSharpDelegateTycon && otherTy = typeof<Delegate> // F# quotations implementation
 
-    override this.AssemblyQualifiedName                                                            = this.FullName + ", " + this.Assembly.FullName
-
     override this.ToString() = this.FullName
     
     override __.GetGenericArguments() = gps
@@ -1273,7 +1274,7 @@ and ReflectAssembly(g, ccu: CcuThunk, location:string) as asm =
         let findType name =
             txTable.Values
             |> Seq.tryFind (matches name)
-        if path.Contains("`") then
+        if path.Contains("[") then
             let argI, argE = path.IndexOf("["), path.LastIndexOf("]")
             let path2, args = path.[0..argI-1], path.[argI+1..argE-1]
             let genTypeArgs = 
@@ -1284,7 +1285,11 @@ and ReflectAssembly(g, ccu: CcuThunk, location:string) as asm =
                     | a -> a
                 )
             match findType path2 with
-            | Some t -> t.MakeGenericType(genTypeArgs)
+            | Some t ->
+                if genTypeArgs.Length = 0 then
+                    t
+                else
+                    t.MakeGenericType(genTypeArgs)
             | None -> null
         else
             findType path

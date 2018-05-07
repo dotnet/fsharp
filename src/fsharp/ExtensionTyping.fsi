@@ -96,10 +96,9 @@ module internal ExtensionTyping =
     type CustomAttributeTypedArgument = Microsoft.FSharp.Core.CompilerServices.IProvidedCustomAttributeTypedArgument
 #endif
 
+    [<AllowNullLiteral; Sealed; Class>]
     type ProvidedType =
-    | Null
-    | Simple of SimpleProvidedType
-    | Composite of CompositeProvidedType
+        inherit ProvidedMemberInfo
         member IsSuppressRelocate : bool
         member IsErased : bool
         member IsGenericType : bool
@@ -149,58 +148,6 @@ module internal ExtensionTyping =
         member Context : ProvidedTypeContext 
         interface IProvidedCustomAttributeProvider
         static member TaintedEquals : Tainted<ProvidedType> * Tainted<ProvidedType> -> bool
-    
-    
-    and [<AllowNullLiteral; Sealed; Class>]
-        SimpleProvidedType =
-            inherit ProvidedMemberInfo
-
-            member IsSuppressRelocate : bool
-            member IsErased : bool
-            member IsGenericType : bool
-            member Namespace : string
-            member FullName : string
-            member IsArray : bool
-            member GetInterfaces : unit -> ProvidedType[]
-            member Assembly : ProvidedAssembly
-            member BaseType : ProvidedType
-            member GetNestedType : string -> ProvidedType
-            member GetNestedTypes : unit -> ProvidedType[]
-            member GetAllNestedTypes : unit -> ProvidedType[]
-            member GetMethods : unit -> ProvidedMethodInfo[]
-            member GetFields : unit -> ProvidedFieldInfo[]
-            member GetField : string -> ProvidedFieldInfo
-            member GetProperties : unit -> ProvidedPropertyInfo[]
-            member GetProperty : string -> ProvidedPropertyInfo
-            member GetEvents : unit -> ProvidedEventInfo[]
-            member GetEvent : string -> ProvidedEventInfo
-            member GetConstructors : unit -> ProvidedConstructorInfo[]
-            member GetStaticParameters : ITypeProvider -> ProvidedParameterInfo[]
-            member GetGenericTypeDefinition : unit -> ProvidedType
-            member IsVoid : bool
-            member IsGenericParameter : bool
-            member IsValueType : bool
-            member IsByRef : bool
-            member IsPointer : bool
-            member IsEnum : bool
-            member IsInterface : bool
-            member IsClass : bool
-            member IsSealed : bool
-            member IsPublic : bool
-            member IsNestedPublic : bool
-            member GenericParameterPosition : int
-            member GetElementType : unit -> ProvidedType
-            member GetGenericArguments : unit -> ProvidedType[]
-            member GetArrayRank : unit -> int
-            member RawSystemType : System.Type
-            member GetEnumUnderlyingType : unit -> ProvidedType
-            member TryGetILTypeRef : unit -> ILTypeRef option
-            member TryGetTyconRef : unit -> obj option
-            member Context : ProvidedTypeContext 
-            interface IProvidedCustomAttributeProvider
-
-    and [<Sealed>]
-        CompositeProvidedType
 
     and [<AllowNullLiteral>] 
         IProvidedCustomAttributeProvider =

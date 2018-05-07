@@ -61,7 +61,7 @@ let GetSuperTypeOfType g amap m typ =
 #if !NO_EXTENSIONTYPING
     | ProvidedTypeMetadata info -> 
         let st = info.ProvidedType
-        let superOpt = st.PApplyOption((fun st -> match st.BaseType with ProvidedType.Null -> None | t -> Some t),m)
+        let superOpt = st.PApplyOption((fun st -> match st.BaseType with null -> None | t -> Some t),m)
         match superOpt with 
         | None -> None
         | Some super -> Some(Import.ImportProvidedType amap m super)
@@ -1537,7 +1537,7 @@ type MethInfo =
                             | name -> Some (mkSynId m name)
                         let ptyp =
                             match p.PApply((fun p -> p.ParameterType), m) with
-                            | Tainted.Is ProvidedType.Null ->  amap.g.unit_ty
+                            | Tainted.Null ->  amap.g.unit_ty
                             | parameterType -> Import.ImportProvidedType amap m parameterType
                         yield ParamNameAndType(pname,ptyp) ] ]
 

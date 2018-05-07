@@ -160,9 +160,6 @@ module internal Tainted =
     let (|Null|_|) (p:Tainted<'T>) =
         if p.PUntaintNoFailure(fun p -> match p with null -> true | _ -> false) then Some() else None
 
-    let (|Is|_|) (equalTo : 'a) (p : Tainted<'a>)   =
-        if p.PUntaintNoFailure(fun x -> x = equalTo) then Some() else None
-
     let Eq (p:Tainted<'T>) (v:'T) = p.PUntaintNoFailure((fun pv -> pv = v))
 
     let EqTainted (t1:Tainted<'T>) (t2:Tainted<'T>) = 
