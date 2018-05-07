@@ -1939,7 +1939,12 @@ let ExtensionPropInfosOfTypeInScope (infoReader:InfoReader) (nenv: NameResolutio
                 SelectPropInfosFromExtMembers (infoReader,ad,optFilter) typ m extMemInfos
              else [])
 
-    let extMemsDangling = SelectPropInfosFromExtMembers  (infoReader,ad,optFilter) typ m nenv.eUnindexedExtensionMembers 
+    let extMemsDangling = 
+        if isAppTy g typ then 
+            SelectPropInfosFromExtMembers (infoReader,ad,optFilter) typ m nenv.eUnindexedExtensionMembers 
+        else
+            []
+
     extMemsDangling @ extMemsFromHierarchy
 
 
@@ -1992,10 +1997,15 @@ let SelectMethInfosFromExtMembers (infoReader:InfoReader) optFilter apparentTy m
 
 /// Query the available extension properties of a methods (including extension methods for inherited types)
 let ExtensionMethInfosOfTypeInScope (infoReader:InfoReader) (nenv: NameResolutionEnv) optFilter m typ =
-    let extMemsDangling = SelectMethInfosFromExtMembers  infoReader optFilter typ  m nenv.eUnindexedExtensionMembers
+    let g = infoReader.g
+    let extMemsDangling = 
+        if isAppTy g typ then 
+            SelectMethInfosFromExtMembers infoReader optFilter typ m nenv.eUnindexedExtensionMembers
+        else
+            []
+
     let extMemsFromHierarchy = 
-        infoReader.GetEntireTypeHierachy(AllowMultiIntfInstantiations.Yes,m,typ) |> List.collect (fun typ -> 
-            let g = infoReader.g
+        infoReader.GetEntireTypeHierachy(AllowMultiIntfInstantiations.Yes,m,typ) |> List.collect (fun typ ->
             if isAppTy g typ then 
                 let tcref = tcrefOfAppTy g typ
                 let extValRefs = nenv.eIndexedExtensionMembers.Find tcref
@@ -2124,8 +2134,10 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
 
             if not (isNil minfos) && isLookUpExpr then 
                 success [resInfo,Item.MakeMethGroup (nm,minfos),rest]
-            elif isTyparTy g typ then raze (IndeterminateType(unionRanges m id.idRange))
-            else NoResultsOrUsefulErrors
+            elif isTyparTy g typ then 
+                raze (IndeterminateType(unionRanges m id.idRange))
+            else 
+                NoResultsOrUsefulErrors
 
     match contentsSearchAccessible with
     | Result res when not (isNil res) -> contentsSearchAccessible
@@ -3140,8 +3152,9 @@ let FreshenRecdFieldRef (ncenv:NameResolver) m (rfref:RecdFieldRef) =
 // QUERY (instantiationGenerator cleanup): it would be really nice not to flow instantiationGenerator to here. 
 let private ResolveExprDotLongIdent (ncenv:NameResolver) m ad nenv typ (id:Ident) rest findFlag =
     let typeNameResInfo = TypeNameResolutionInfo.Default
-    let adhoctDotSearchAccessible = AtMostOneResult m (ResolveLongIdentInTypePrim ncenv nenv LookupKind.Expr ResolutionInfo.Empty 1 m ad id rest findFlag typeNameResInfo typ)
-    match adhoctDotSearchAccessible with 
+    let result = ResolveLongIdentInTypePrim ncenv nenv LookupKind.Expr ResolutionInfo.Empty 1 m ad id rest findFlag typeNameResInfo typ
+    let adhocDotSearchAccessible = AtMostOneResult m result
+    match adhocDotSearchAccessible with 
     | Exception _ -> 
         // If the dot is not resolved by adhoc overloading then look for a record field 
         // that can resolve the name. 
@@ -3164,7 +3177,7 @@ let private ResolveExprDotLongIdent (ncenv:NameResolver) m ad nenv typ (id:Ident
         |> AtMostOneResult m
         |> ForceRaise
     | _ -> 
-        ForceRaise adhoctDotSearchAccessible
+        ForceRaise adhocDotSearchAccessible
 
 let ComputeItemRange wholem (lid: Ident list) rest =
     match rest with
