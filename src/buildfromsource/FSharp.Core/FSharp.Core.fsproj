@@ -200,11 +200,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Linq.Queryable" Version="4.3.0"></PackageReference>
-    <PackageReference Include="System.Net.Requests" Version="4.3.0"></PackageReference>
-    <PackageReference Include="System.Threading.Thread" Version="4.3.0"></PackageReference>
-    <PackageReference Include="System.Threading.ThreadPool" Version="4.3.0"></PackageReference>
-    <PackageReference Include="System.Threading.Tasks.Parallel" Version="4.3.0"></PackageReference>
+    <PackageReference Include="System.Linq.Queryable" Version="$(SystemLinqQueryablePackageVersion)" />
+    <PackageReference Include="System.Net.Requests" Version="$(SystemNetRequestsPackageVersion)" />
+    <PackageReference Include="System.Threading.Thread" Version="$(SystemThreadingThreadPackageVersion)" />
+    <PackageReference Include="System.Threading.ThreadPool" Version="$(SystemThreadingThreadPoolPackageVersion)" />
+    <PackageReference Include="System.Threading.Tasks.Parallel" Version="$(SystemThreadingTasksParallelPackageVersion)" />
   </ItemGroup>
 
   <!-- Hook compilation phase to do custom work -->
