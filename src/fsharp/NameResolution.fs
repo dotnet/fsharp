@@ -3024,10 +3024,10 @@ let SuggestLabelsOfRelatedRecords g (nenv:NameResolutionEnv) (id:Ident) (allFiel
                 result
             else
                 let possibleRecords =
+                    let mutable recordTypes = Unchecked.defaultof<_>
                     [for fld in givenFields do
-                        match Map.tryFind fld nenv.eFieldLabels with
-                        | None -> ()
-                        | Some recordTypes -> yield! (recordTypes |> List.map (fun r -> r.TyconRef.DisplayName, fld)) ]
+                        if nenv.eFieldLabels.TryGetValue(fld,&recordTypes) then
+                            yield! (recordTypes |> List.map (fun r -> r.TyconRef.DisplayName, fld)) ]
                     |> List.groupBy fst
                     |> List.map (fun (r,fields) -> r, fields |> List.map snd)
                     |> List.filter (fun (_,fields) -> givenFields.IsSubsetOf fields)
