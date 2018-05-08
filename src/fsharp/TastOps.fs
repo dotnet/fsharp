@@ -799,9 +799,11 @@ let helpEnsureTypeHasMetadata g ty =
     if isAnyTupleTy g ty then 
         let (tupInfo, tupElemTys) = destAnyTupleTy g ty
         mkOuterCompiledTupleTy g (evalTupInfoIsStruct tupInfo) tupElemTys
+    elif isFunTy g ty then 
+        let (a,b) = destFunTy g ty
+        mkAppTy g.fastFunc_tcr [a; b]
     else ty
-
-
+ 
 //---------------------------------------------------------------------------
 // Equivalence of types up to alpha-equivalence 
 //---------------------------------------------------------------------------
