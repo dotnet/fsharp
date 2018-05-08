@@ -763,14 +763,14 @@ let rec AddModuleOrNamespaceRefsToNameEnv g amap m root ad nenv (modrefs: Module
     if isNil modrefs then nenv else
     let modrefsMap = modrefs |> NameMap.ofKeyedList (fun modref -> modref.DemangledModuleOrNamespaceName)
     let addModrefs tab =
-        Map.foldBack (fun x y sofar -> 
-            match Map.tryFind x sofar with
-            | Some prev ->
+        Map.foldBack (fun x y (sofar:Map<_,_>) ->
+            let mutable prev = Unchecked.defaultof<_>
+            if sofar.TryGetValue(x,&prev) then
                 if IsEntityAccessible amap m ad y then  
-                    Map.add x [y :: prev] sofar
+                    Map.add x (y :: prev) sofar
                 else 
                     sofar
-            | _ ->
+            else
                 if IsEntityAccessible amap m ad y then  
                     Map.add x [y] sofar
                 else 
