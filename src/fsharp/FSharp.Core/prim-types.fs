@@ -595,12 +595,10 @@ namespace Microsoft.FSharp.Core
                 //assert not(TypeInfo<'T>.TypeInfo = TypeNullnessSemantics_NullTrueValue)
                 notnullPrim(isinstPrim<'T>(source)) 
 
-            let Dispose<'T when 'T :> IDisposable >(resource:'T) =
-                if typeof<'T>.IsValueType then resource.Dispose()
-                else 
-                    match box resource with  
-                    | null -> () 
-                    | _ -> resource.Dispose() 
+            let Dispose<'T when 'T :> IDisposable >(resource:'T) = 
+                match box resource with 
+                | null -> ()
+                | _ -> resource.Dispose()
 
             let FailInit() : unit = raise (InvalidOperationException(SR.GetString(SR.checkInit)))
 
