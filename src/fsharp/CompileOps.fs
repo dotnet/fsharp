@@ -3974,13 +3974,15 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         
     member tcImports.TryFindDllInfo (ctok: CompilationThreadToken, m, assemblyName, lookupOnly) =
         CheckDisposed()
-        let rec look (t:TcImports) =       
-            match NameMap.tryFind assemblyName t.DllTable with
-            | Some res -> Some(res)
-            | None -> 
+        let rec look (t:TcImports) =
+            let mutable res = Unchecked.defaultof<_>
+            if t.DllTable.TryGetValue(assemblyName,&res) then
+                Some res
+            else
                 match t.Base with 
-                | Some t2 -> look(t2)
+                | Some t2 -> look t2
                 | None -> None
+
         match look tcImports with
         | Some res -> Some res
         | None ->
