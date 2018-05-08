@@ -44,7 +44,7 @@ namespace Microsoft.FSharp.Collections
             IConsumableSeq.unfold generator state :> seq<_>
 
         [<CompiledName("Empty")>]
-        let empty<'T> = (EmptyEnumerable :> seq<'T>)
+        let empty<'T> = (IConsumableSeq.empty<'T> :> seq<'T>)
 
         [<CompiledName("InitializeInfinite")>]
         let initInfinite initializer =

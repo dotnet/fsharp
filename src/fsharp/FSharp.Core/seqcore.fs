@@ -56,13 +56,6 @@ namespace Microsoft.FSharp.Collections
                 
       let Empty<'T> () = (new EmptyEnumerator<'T>() :> IEnumerator<'T>)
 
-      [<NoEquality; NoComparison>]
-      type EmptyEnumerable<'T> =
-            | EmptyEnumerable
-            interface IEnumerable<'T> with
-                member x.GetEnumerator() = Empty<'T>()
-            interface IEnumerable with
-                member x.GetEnumerator() = (Empty<'T>() :> IEnumerator)
 
       let readAndClear r =
           lock r (fun () -> match !r with None -> None | Some _ as res -> r := None; res)

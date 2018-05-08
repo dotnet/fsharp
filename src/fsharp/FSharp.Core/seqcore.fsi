@@ -6,54 +6,30 @@ namespace Microsoft.FSharp.Collections
     open System.Collections.Generic
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Collections
-    module internal IEnumerator =
-        val noReset : unit -> 'a
-        val notStarted : unit -> 'a
-        val alreadyFinished : unit -> 'a
-        val check : started:bool -> unit
-        val dispose : r:System.IDisposable -> unit
-        val cast :
-            e:System.Collections.IEnumerator ->
-            System.Collections.Generic.IEnumerator<'T>
-        [<SealedAttribute ()>]
-        type EmptyEnumerator<'T> =
-            class
-            interface System.IDisposable
-            interface System.Collections.IEnumerator
-            interface System.Collections.Generic.IEnumerator<'T>
-            new : unit -> EmptyEnumerator<'T>
-            end
-        val Empty : unit -> System.Collections.Generic.IEnumerator<'T>
-        [<NoEqualityAttribute (); NoComparisonAttribute ()>]
-        type EmptyEnumerable<'T> =
-            | EmptyEnumerable
-            with
-            interface System.Collections.IEnumerable
-            interface System.Collections.Generic.IEnumerable<'T>
-            end
 
-        val readAndClear : r:'a option ref -> 'a option
-        val generateWhileSome :
-            openf:(unit -> 'a) ->
-            compute:('a -> 'U option) ->
-                closef:('a -> unit) -> System.Collections.Generic.IEnumerator<'U>
-        [<SealedAttribute ()>]
-        type Singleton<'T> =
-            class
-            interface System.IDisposable
-            interface System.Collections.IEnumerator
-            interface System.Collections.Generic.IEnumerator<'T>
-            new : v:'T -> Singleton<'T>
-            end
+    module internal IEnumerator =
+
+        val noReset : unit -> 'T
+
+        val notStarted : unit -> 'T
+
+        val alreadyFinished : unit -> 'T
+
+        val check : started:bool -> unit
+
+        val dispose : r:System.IDisposable -> unit
+
+        val cast : e:System.Collections.IEnumerator -> System.Collections.Generic.IEnumerator<'T>
+
+        val Empty : unit -> System.Collections.Generic.IEnumerator<'T>
+
         val Singleton : x:'T -> System.Collections.Generic.IEnumerator<'T>
-        val EnumerateThenFinally :
-            f:(unit -> unit) ->
-            e:System.Collections.Generic.IEnumerator<'T> ->
-                System.Collections.Generic.IEnumerator<'T>
-        val inline checkNonNull : argName:string -> arg:'a -> unit
-        val mkSeq :
-            f:(unit -> System.Collections.Generic.IEnumerator<'U>) ->
-            System.Collections.Generic.IEnumerable<'U>
+
+        val EnumerateThenFinally : f:(unit -> unit) -> e:System.Collections.Generic.IEnumerator<'T> -> System.Collections.Generic.IEnumerator<'T>
+
+        val inline checkNonNull : argName:string -> arg:'T -> unit
+
+        val mkSeq : f:(unit -> System.Collections.Generic.IEnumerator<'U>) -> System.Collections.Generic.IEnumerable<'U>
 
 
 namespace Microsoft.FSharp.Collections.SeqComposition
