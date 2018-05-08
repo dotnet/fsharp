@@ -4374,25 +4374,24 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) 
                      yield! tcref |> generalizedTyconRef |> ResolvePartialLongIdentInTypeForItem ncenv nenv m ad true rest item
     }
 
-let rec PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f plid (modref: ModuleOrNamespaceRef) =
-    let mty = modref.ModuleOrNamespaceType
-    match plid with 
+let rec PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f plid (modref: ModuleOrNamespaceRef) =    
+    match plid with
     | [] -> f modref
     | id :: rest -> 
-        match mty.ModulesAndNamespacesByDemangledName.TryFind id with
-        | Some mty -> 
+        let mutable mty = Unchecked.defaultof<_>
+        if modref.ModuleOrNamespaceType.ModulesAndNamespacesByDemangledName.TryGetValue(id,&mty) then
             PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f rest (modref.NestedTyconRef mty) 
-        | None -> Seq.empty
+        else
+            Seq.empty
 
 let PartialResolveLongIndentAsModuleOrNamespaceThenLazy (nenv:NameResolutionEnv) plid f =
     seq {
         match plid with 
-        | id :: rest -> 
-            match Map.tryFind id nenv.eModulesAndNamespaces with
-            | Some modrefs -> 
+        | id :: rest ->
+            let mutable modrefs = Unchecked.defaultof<_>
+            if nenv.eModulesAndNamespaces.TryGetValue(id,&modrefs) then
                 for modref in modrefs do
                     yield! PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f rest modref
-            | None -> ()
         | [] -> ()
     }
 
