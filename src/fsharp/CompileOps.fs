@@ -4012,10 +4012,11 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
     // This is the main "assembly reference --> assembly" resolution routine. 
     member tcImports.FindCcuInfo (ctok, m, assemblyName, lookupOnly) = 
         CheckDisposed()
-        let rec look (t:TcImports) = 
-            match NameMap.tryFind assemblyName t.CcuTable with
-            | Some res -> Some(res)
-            | None -> 
+        let rec look (t:TcImports) =
+            let mutable res = Unchecked.defaultof<_>
+            if t.CcuTable.TryGetValue(assemblyName,&res) then 
+                Some res
+            else 
                  match t.Base with 
                  | Some t2 -> look t2 
                  | None -> None
