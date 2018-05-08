@@ -1755,65 +1755,73 @@ namespace Microsoft.FSharp.Collections.SeqComposition
     /// source of the chain.
     type PipeIdx = int
 
-    /// Used within the pipline to provide out of band communications
-    type IOutOfBand =
+    /// Represents the overall executing consumer and its chain of activities. Used within the
+    /// pipline to provide "out of band" communications affecting the overall Consume
+    /// operation, such as early termination.
+    type ISeqConsumer =
+
         /// Stop the processing of any further items down the pipeline
         abstract StopFurtherProcessing : PipeIdx -> unit
+
         /// Add a Action delegate that gets notified if StopFurtherProcessing is called
         abstract ListenForStopFurtherProcessing : Action<PipeIdx> -> unit
 
-    /// Activity is the root class for chains of activities. It is in a non-generic
+    /// SeqConsumerActivity is the root class for chains of activities. It is in a non-generic
     /// form so that it can be used by subsequent activities
     [<AbstractClass>]
-    type Activity =
-        /// OnComplete is used to determine if the object has been processed correctly,
+    type SeqConsumerActivity =
+
+        /// ChainComplete is called at the end of processing and can
+        /// set the overall result. It can also determine if the object has been processed correctly,
         /// and possibly throw exceptions to denote incorrect application (i.e. such as a Take
         /// operation which didn't have a source at least as large as was required). It is
         /// not called in the case of an exception being thrown whilst the stream is still
         /// being processed.
         abstract ChainComplete : PipeIdx -> unit
-        /// OnDispose is used to cleanup the stream. It is always called at the last operation
+
+        /// ChainDispose is used to cleanup the stream. It is always called at the last operation
         /// after the enumeration has completed.
         abstract ChainDispose : unit -> unit
 
-    /// Activity is the base class of all elements within the pipeline
+    /// SeqConsumerActivity is the base class of all elements within the pipeline
     [<AbstractClass>]
-    type Activity<'T> =
-        inherit Activity
-        new : unit -> Activity<'T>
+    type SeqConsumerActivity<'T> =
+        inherit SeqConsumerActivity
+        new : unit -> SeqConsumerActivity<'T>
+        
+        /// Process an element from the sequence
         abstract member ProcessNext : input:'T -> bool
 
-    /// Activity is the base class of all elements within the pipeline, carrying result type
+    /// SeqConsumerActivity is the base class of all elements within the pipeline, carrying result type
     [<AbstractClass>]
-    type Activity<'T,'U> =
-        inherit Activity<'T>
-        new : unit -> Activity<'T,'U>
+    type SeqConsumerActivity<'T,'U> =
+        inherit SeqConsumerActivity<'T>
+        new : unit -> SeqConsumerActivity<'T,'U>
 
-    /// Folder is a base class to assist with fold-like operations. It's intended usage
+    /// SeqConsumer is a base class to assist with fold-like operations. It's intended usage
     /// is as a base class for an object expression that will be used from within
     /// the Fold function.
     [<AbstractClass>]
-    type Folder<'T,'Result> =
-        inherit Activity<'T,'T>
-        new : 'Result -> Folder<'T,'Result>
-        interface IOutOfBand
+    type SeqConsumer<'T,'Result> =
+        inherit SeqConsumerActivity<'T,'T>
+        new : 'Result -> SeqConsumer<'T,'Result>
+        interface ISeqConsumer
         member Result : 'Result with get, set
         member HaltedIdx : PipeIdx with get
         override ChainComplete : PipeIdx -> unit
         override ChainDispose : unit -> unit
 
-    /// ITransformFactory provides composition of Activities. Its intended to have a specialization
-    /// for each type of ISeq Activity. ISeq's PushTransform method is used to build a stack
+    /// ISeqTransform provides composition of Activities. Its intended to have a specialization
+    /// for each type of SeqConsumerActivity. IConsumableSeq's Transform method is used to build a stack
     /// of Actvities that will be composed.
-    type ITransformFactory<'T,'U> =
-        abstract member Compose : IOutOfBand -> PipeIdx -> Activity<'U,'V> -> Activity<'T,'V>
+    type ISeqTransform<'T,'U> =
+        abstract member Compose : outOfBand: ISeqConsumer -> pipeIdx: PipeIdx -> activity: SeqConsumerActivity<'U,'V> -> SeqConsumerActivity<'T,'V>
 
-    /// ISeq<'T> is an extension to seq<'T> that provides the avilty to compose Activities
-    /// as well as Fold the current Activity pipeline.
-    type ISeq<'T> =
+    /// IConsumableSeq<'T> is an extension to seq<'T> that can be consumed using a composition of Activities.
+    type IConsumableSeq<'T> =
         inherit System.Collections.Generic.IEnumerable<'T>
-        abstract member PushTransform : ITransformFactory<'T,'U> -> ISeq<'U>
-        abstract member Fold<'Result> : f:(PipeIdx->Folder<'T,'Result>) -> 'Result
+        abstract member Transform<'U> : ISeqTransform<'T,'U> -> IConsumableSeq<'U>
+        abstract member Consume<'Result> : getConsumer:(PipeIdx -> SeqConsumer<'T,'Result>) -> 'Result
 
 namespace Microsoft.FSharp.Collections
 
@@ -1867,7 +1875,7 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The list with head appended to the front of tail.</returns>
         static member Cons : head:'T * tail:'T list -> 'T list
         
-        interface Microsoft.FSharp.Collections.SeqComposition.ISeq<'T>
+        interface Microsoft.FSharp.Collections.SeqComposition.IConsumableSeq<'T>
         interface IEnumerable<'T>
         interface IEnumerable
         interface IReadOnlyCollection<'T>

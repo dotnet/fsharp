@@ -62,7 +62,7 @@ module internal List =
     val take : int -> 'T list -> 'T list
     val takeWhile : ('T -> bool) -> 'T list -> 'T list
     val toArray : 'T list -> 'T[]
-    val ofISeq : ISeq<'T> -> 'T List
+    val ofConsumableSeq : IConsumableSeq<'T> -> 'T List
     val inline ofSeq : seq<'T> -> 'T List
     val splitAt : int -> 'T list -> ('T list * 'T list)
     val transpose : 'T list list -> 'T list list
@@ -87,8 +87,9 @@ module internal Array =
     val stableSortInPlaceBy: projection:('T -> 'Key) -> array:'T[] -> unit when 'Key : comparison 
     val stableSortInPlaceWith: comparer:('T -> 'T -> int) -> array:'T[] -> unit
     val stableSortInPlace: array:'T[] -> unit when 'T : comparison 
-    val ofSeq : seq<'T> -> array<'T>
-    val toSeq : array<'T> -> seq<'T>
+    val ofSeq : seq<'T> -> 'T[]
+    val ofConsumableSeq : IConsumableSeq<'T> -> 'T[]
+    val toSeq : 'T[] -> seq<'T>
 
-module internal ISeq =
-    val length : ISeq<'T> -> int
+module internal IConsumableSeq =
+    val length : IConsumableSeq<'T> -> int

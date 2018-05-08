@@ -12,16 +12,17 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core.CompilerServices
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
+    open Microsoft.FSharp.Primitives
     open Microsoft.FSharp.Primitives.Basics
     open Microsoft.FSharp.Collections.SeqComposition
     open Microsoft.FSharp.Collections.SeqComposition.Core
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-    module ISeq =
+    module IConsumableSeq =
         open IEnumerator
 
         /// Base classes and helpers for object expressions that represent the Activitys in
-        /// the ISeq chain
+        /// the IConsumableSeq chain
         module Core =
             /// Single value Tuple.
             /// Allows null reference type values as key in Dictionary.
@@ -45,29 +46,30 @@ namespace Microsoft.FSharp.Collections
                 val mutable _3 : 'T3
                 new (a:'T1, b:'T2, c:'T3) = { _1 = a; _2 = b; _3 = c }
 
-            /// Base class for chaining mapping or filtering operation within the ISeq pipeline
+            /// Base class for chaining mapping or filtering operation within the IConsumableSeq pipeline
             [<AbstractClass>]
-            type internal Transform<'T,'U,'State> =
-                inherit Activity<'T,'U>
+            type internal SeqTransformActivity<'T,'U,'State> =
+                inherit SeqConsumerActivity<'T,'U>
 
-                new (next:Activity, initState:'State) = {
+                new (next:SeqConsumerActivity, initState:'State) = {
                     State = initState
                     Next = next
                 }
                 
                 val mutable State : 'State 
-                val Next : Activity 
+                val Next : SeqConsumerActivity 
                 
                 override this.ChainComplete terminatingIdx =
                     this.Next.ChainComplete terminatingIdx
+
                 override this.ChainDispose () =
                     this.Next.ChainDispose ()
 
             /// Base class for chaining mapping or filtering operation that require some post processing
-            /// (i.e. Disposal and/or post conditional checks) within the ISeq pipeline
+            /// (i.e. Disposal and/or post conditional checks) within the IConsumableSeq pipeline
             [<AbstractClass>]
-            type internal TransformWithPostProcessing<'T,'U,'State>(next:Activity, initState:'State) =
-                inherit Transform<'T,'U,'State>(next, initState)
+            type internal SeqTransformActivityWithPostProcessing<'T,'U,'State>(next:SeqConsumerActivity, initState:'State) =
+                inherit SeqTransformActivity<'T,'U,'State>(next, initState)
 
                 abstract OnComplete : pipeIdx:PipeIdx -> unit
                 abstract OnDispose  : unit -> unit
@@ -75,33 +77,35 @@ namespace Microsoft.FSharp.Collections
                 override this.ChainComplete terminatingIdx =
                     this.OnComplete terminatingIdx
                     this.Next.ChainComplete terminatingIdx
+
                 override this.ChainDispose ()  =
                     try     this.OnDispose ()
                     finally this.Next.ChainDispose ()
 
-            /// Base class for folding operation within the ISeq pipeline
+            /// Base class for folding operation within the IConsumableSeq pipeline
             [<AbstractClass>]
-            type FolderWithState<'T,'Result,'State> =
-                inherit Folder<'T,'Result>
+            type SeqConsumerWithState<'T,'Result,'State> =
+                inherit SeqConsumer<'T,'Result>
 
                 val mutable State : 'State
 
                 new (initalResult,initState) = {
-                    inherit Folder<'T,'Result>(initalResult)
+                    inherit SeqConsumer<'T,'Result>(initalResult)
                     State = initState
                 }
 
             /// Base class for folding operation that require some post processing
-            /// (i.e. Disposal and/or post conditional checks) within the ISeq pipeline
+            /// (i.e. Disposal and/or post conditional checks) within the IConsumableSeq pipeline
             [<AbstractClass>]
-            type FolderWithPostProcessing<'T,'Result,'State>(initResult,initState) =
-                inherit FolderWithState<'T,'Result,'State>(initResult,initState)
+            type SeqConsumerWithPostProcessing<'T,'Result,'State>(initResult,initState) =
+                inherit SeqConsumerWithState<'T,'Result,'State>(initResult,initState)
 
                 abstract OnComplete : pipeIdx:PipeIdx -> unit
                 abstract OnDispose : unit -> unit
 
                 override this.ChainComplete terminatingIdx =
                     this.OnComplete terminatingIdx
+
                 override this.ChainDispose () =
                     this.OnDispose ()
 
@@ -121,60 +125,60 @@ namespace Microsoft.FSharp.Collections
                     member __.GetHashCode o    = c.GetHashCode o._1
                     member __.Equals (lhs,rhs) = c.Equals (lhs._1, rhs._1) }
 
-        /// Usually the implementation of GetEnumerator is handled by the ISeq<'T>.Fold operation,
+        /// Usually the implementation of GetEnumerator is handled by the IConsumableSeq<'T>.Consume operation,
         /// but there can be cases where it is more efficent to provide a specific IEnumerator, and
-        /// only defer to the ISeq<'T> interface for its specific operations (this is the case with
+        /// only defer to the IConsumableSeq<'T> interface for its specific operations (this is the case with
         /// the scan function)
         [<AbstractClass>]
         type internal PreferGetEnumerator<'T>() =
             inherit EnumerableBase<'T>()
 
             abstract GetEnumerator: unit -> IEnumerator<'T>
-            abstract GetSeq : unit -> ISeq<'T>
+            abstract GetSeq : unit -> IConsumableSeq<'T>
 
             interface IEnumerable<'T> with
                 member this.GetEnumerator () : IEnumerator<'T> = this.GetEnumerator ()
 
-            interface ISeq<'T> with
-                member this.PushTransform<'U> (next:ITransformFactory<'T,'U>) : ISeq<'U> = (this.GetSeq()).PushTransform next
-                member this.Fold<'Result> (f:PipeIdx->Folder<'T,'Result>) : 'Result = (this.GetSeq()).Fold f
+            interface IConsumableSeq<'T> with
+                member this.Transform<'U> (next:ISeqTransform<'T,'U>) : IConsumableSeq<'U> = (this.GetSeq()).Transform next
+                member this.Consume<'Result> (f:PipeIdx->SeqConsumer<'T,'Result>) : 'Result = (this.GetSeq()).Consume f
 
         [<CompiledName "Empty">]
         let internal empty<'T> = Microsoft.FSharp.Collections.SeqComposition.Core.EmptyEnumerable<'T>.Instance
 
         [<CompiledName("Singleton")>]
-        let internal singleton<'T> (value:'T) : ISeq<'T> = new SingletonEnumerable<_>(value) :> _
+        let internal singleton<'T> (value:'T) : IConsumableSeq<'T> = new SingletonEnumerable<_>(value) :> _
 
-        /// wraps a ResizeArray in the ISeq framework. Care must be taken that the underlying ResizeArray
-        /// is not modified whilst it can be accessed as the ISeq, so check on version is performed.
+        /// wraps a ResizeArray in the IConsumableSeq framework. Care must be taken that the underlying ResizeArray
+        /// is not modified whilst it can be accessed as the IConsumableSeq, so check on version is performed.
         /// i.e. usually iteration on calls the enumerator provied by GetEnumerator ensure that the
         /// list hasn't been modified (throwing an exception if it has), but such a check is not
         /// performed in this case. If you want this functionality, then use the ofSeq function instead.
         [<CompiledName "OfResizeArrayUnchecked">]
-        let internal ofResizeArrayUnchecked (source:ResizeArray<'T>) : ISeq<'T> =
+        let internal ofResizeArrayUnchecked (source:ResizeArray<'T>) : IConsumableSeq<'T> =
             ThinResizeArrayEnumerable<'T> source :> _
 
         [<CompiledName "OfArray">]
-        let internal ofArray (source:array<'T>) : ISeq<'T> =
+        let internal ofArray (source:array<'T>) : IConsumableSeq<'T> =
             checkNonNull "source" source
             ThinArrayEnumerable<'T> source :> _
 
         [<CompiledName "OfList">]
-        let internal ofList (source:list<'T>) : ISeq<'T> =
+        let internal ofList (source:list<'T>) : IConsumableSeq<'T> =
             source :> _
 
         [<CompiledName "OfSeq">]
-        let ofSeq (source:seq<'T>) : ISeq<'T> =
+        let ofSeq (source:seq<'T>) : IConsumableSeq<'T> =
             match source with
-            | :? ISeq<'T>  as seq   -> seq
+            | :? IConsumableSeq<'T>  as seq   -> seq
             | :? array<'T> as array -> ofArray array
             | null                  -> nullArg "source"
             | _                     -> ThinEnumerable<'T> source :> _
 
         [<CompiledName "Average">]
-        let inline average (source:ISeq<'T>) =
-            source.Fold (fun _ ->
-                { new FolderWithPostProcessing<'T,'T,int> (LanguagePrimitives.GenericZero, 0) with
+        let inline average (source:IConsumableSeq<'T>) =
+            source.Consume (fun _ ->
+                { new SeqConsumerWithPostProcessing<'T,'T,int> (LanguagePrimitives.GenericZero, 0) with
                     override this.ProcessNext value =
                         this.Result <- Checked.(+) this.Result value
                         this.State <- this.State + 1
@@ -188,9 +192,9 @@ namespace Microsoft.FSharp.Collections
                     override this.OnDispose () = () } :> _)
 
         [<CompiledName "AverageBy">]
-        let inline averageBy (f:'T->'U) (source:ISeq<'T>) =
-            source.Fold (fun _ ->
-                { new FolderWithPostProcessing<'T,'U,int>(LanguagePrimitives.GenericZero,0) with
+        let inline averageBy (f:'T->'U) (source:IConsumableSeq<'T>) =
+            source.Consume (fun _ ->
+                { new SeqConsumerWithPostProcessing<'T,'U,int>(LanguagePrimitives.GenericZero,0) with
                     override this.ProcessNext value =
                         this.Result <- Checked.(+) this.Result (f value)
                         this.State <- this.State + 1
@@ -204,16 +208,16 @@ namespace Microsoft.FSharp.Collections
                     override this.OnDispose () = () } :> _)
 
         [<CompiledName "ExactlyOne">]
-        let internal exactlyOne (source:ISeq<'T>) : 'T =
-            source.Fold (fun pipeIdx ->
-                { new FolderWithPostProcessing<'T,'T,Values<bool, bool>>(Unchecked.defaultof<'T>, Values<bool,bool>(true, false)) with
+        let internal exactlyOne (source:IConsumableSeq<'T>) : 'T =
+            source.Consume (fun pipeIdx ->
+                { new SeqConsumerWithPostProcessing<'T,'T,Values<bool, bool>>(Unchecked.defaultof<'T>, Values<bool,bool>(true, false)) with
                     override this.ProcessNext value =
                         if this.State._1 then
                             this.State._1 <- false
                             this.Result <- value
                         else
                             this.State._2 <- true
-                            (this :> IOutOfBand).StopFurtherProcessing pipeIdx
+                            (this :> ISeqConsumer).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ =
@@ -225,22 +229,22 @@ namespace Microsoft.FSharp.Collections
                     override this.OnDispose () = () } :> _)
 
         [<CompiledName "Fold">]
-        let inline internal fold<'T,'State> (f:'State->'T->'State) (seed:'State) (source:ISeq<'T>) : 'State =
-            source.Fold (fun _ ->
-                { new Folder<'T,'State>(seed) with
+        let inline internal fold<'T,'State> (f:'State->'T->'State) (seed:'State) (source:IConsumableSeq<'T>) : 'State =
+            source.Consume (fun _ ->
+                { new SeqConsumer<'T,'State>(seed) with
                     override this.ProcessNext value =
                         this.Result <- f this.Result value
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "Fold2">]
-        let inline internal fold2<'T1,'T2,'State> (folder:'State->'T1->'T2->'State) (state:'State) (source1:ISeq<'T1>) (source2: ISeq<'T2>) =
-            source1.Fold (fun pipeIdx ->
-                { new FolderWithPostProcessing<_,'State,IEnumerator<'T2>>(state,source2.GetEnumerator()) with
+        let inline internal fold2<'T1,'T2,'State> (folder:'State->'T1->'T2->'State) (state:'State) (source1:IConsumableSeq<'T1>) (source2: IConsumableSeq<'T2>) =
+            source1.Consume (fun pipeIdx ->
+                { new SeqConsumerWithPostProcessing<_,'State,IEnumerator<'T2>>(state,source2.GetEnumerator()) with
                     override this.ProcessNext value =
                         if this.State.MoveNext() then
                             this.Result <- folder this.Result value this.State.Current
                         else
-                            (this :> IOutOfBand).StopFurtherProcessing pipeIdx
+                            (this :> ISeqConsumer).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ = ()
@@ -248,36 +252,36 @@ namespace Microsoft.FSharp.Collections
                     override this.OnDispose () = this.State.Dispose () } :> _)
 
         [<CompiledName "Unfold">]
-        let internal unfold (generator:'State->option<'T * 'State>) (state:'State) : ISeq<'T> =
-            new UnfoldEnumerable<'T,'T,'State>(generator, state, IdentityFactory.Instance, 1) :> _
+        let internal unfold (generator:'State->option<'T * 'State>) (state:'State) : IConsumableSeq<'T> =
+            new UnfoldEnumerable<'T,'T,'State>(generator, state, IdentityTransform.Instance, 1) :> _
 
         [<CompiledName "InitializeInfinite">]
-        let internal initInfinite<'T> (f:int->'T) : ISeq<'T> =
+        let internal initInfinite<'T> (f:int->'T) : IConsumableSeq<'T> =
             new InitEnumerableDecider<'T>(Nullable (), f, 1) :> _
 
         [<CompiledName "Initialize">]
-        let internal init<'T> (count:int) (f:int->'T) : ISeq<'T> =
+        let internal init<'T> (count:int) (f:int->'T) : IConsumableSeq<'T> =
             if count < 0 then invalidArgInputMustBeNonNegative "count" count
             elif count = 0 then empty else
             new InitEnumerableDecider<'T>(Nullable count, f, 1) :> _
 
         [<CompiledName "Iterate">]
-        let inline internal iter f (source:ISeq<'T>) =
-            source.Fold (fun _ ->
-                { new Folder<'T,unit> (()) with
+        let inline internal iter action (source:IConsumableSeq<'T>) =
+            source.Consume (fun _ ->
+                { new SeqConsumer<'T,unit> (()) with
                     override this.ProcessNext value =
-                        f value
+                        action value
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "Iterate2">]
-        let inline internal iter2 (f:'T->'U->unit) (source1:ISeq<'T>) (source2:ISeq<'U>) : unit =
-            source1.Fold (fun pipeIdx ->
-                { new FolderWithPostProcessing<'T,unit,IEnumerator<'U>> ((),source2.GetEnumerator()) with
+        let inline internal iter2 (action:'T->'U->unit) (source1:IConsumableSeq<'T>) (source2:IConsumableSeq<'U>) : unit =
+            source1.Consume (fun pipeIdx ->
+                { new SeqConsumerWithPostProcessing<'T,unit,IEnumerator<'U>> ((),source2.GetEnumerator()) with
                     override this.ProcessNext value =
                         if this.State.MoveNext() then
-                            f value this.State.Current
+                            action value this.State.Current
                         else
-                            (this :> IOutOfBand).StopFurtherProcessing pipeIdx
+                            (this :> ISeqConsumer).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ = ()
@@ -285,16 +289,16 @@ namespace Microsoft.FSharp.Collections
                     override this.OnDispose () = this.State.Dispose () } :> _)
 
         [<CompiledName "IterateIndexed2">]
-        let inline internal iteri2 (f:int->'T->'U->unit) (source1:ISeq<'T>) (source2:ISeq<'U>) : unit =
-            source1.Fold (fun pipeIdx ->
-                { new FolderWithPostProcessing<'T,unit,Values<int,IEnumerator<'U>>>((),Values<_,_>(0,source2.GetEnumerator())) with
+        let inline internal iteri2 (action:int->'T->'U->unit) (source1:IConsumableSeq<'T>) (source2:IConsumableSeq<'U>) : unit =
+            source1.Consume (fun pipeIdx ->
+                { new SeqConsumerWithPostProcessing<'T,unit,Values<int,IEnumerator<'U>>>((),Values<_,_>(0,source2.GetEnumerator())) with
                     override this.ProcessNext value =
                         if this.State._2.MoveNext() then
-                            f this.State._1 value this.State._2.Current
+                            action this.State._1 value this.State._2.Current
                             this.State._1 <- this.State._1 + 1
                             Unchecked.defaultof<_>
                         else
-                            (this :> IOutOfBand).StopFurtherProcessing pipeIdx
+                            (this :> ISeqConsumer).StopFurtherProcessing pipeIdx
                             Unchecked.defaultof<_>
                     
                     override this.OnComplete _ = () 
@@ -302,59 +306,60 @@ namespace Microsoft.FSharp.Collections
                     override this.OnDispose () = this.State._2.Dispose () } :> _)
 
         [<CompiledName "TryHead">]
-        let internal tryHead (source:ISeq<'T>) =
-            source.Fold (fun pipeIdx ->
-                { new Folder<'T, Option<'T>> (None) with
+        let internal tryHead (source:IConsumableSeq<'T>) =
+            source.Consume (fun pipeIdx ->
+                { new SeqConsumer<'T, Option<'T>> (None) with
                     override this.ProcessNext value =
                         this.Result <- Some value
-                        (this :> IOutOfBand).StopFurtherProcessing pipeIdx
+                        (this :> ISeqConsumer).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "Head">]
-        let internal head (source:ISeq<_>) =
+        let internal head (source:IConsumableSeq<_>) =
             match tryHead source with
             | None -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             | Some x -> x
 
         [<CompiledName "IterateIndexed">]
-        let inline internal iteri f (source:ISeq<'T>) =
-            source.Fold (fun _ ->
-                { new FolderWithState<'T,unit,int> ((),0) with
+        let inline internal iteri action (source:IConsumableSeq<'T>) =
+            source.Consume (fun _ ->
+                { new SeqConsumerWithState<'T,unit,int> ((),0) with
                     override this.ProcessNext value =
-                        f this.State value
+                        action this.State value
                         this.State <- this.State + 1
                         Unchecked.defaultof<_> (* return value unused in Fold context *) } :> _)
 
         [<CompiledName "Except">]
-        let inline internal except (itemsToExclude: seq<'T>) (source:ISeq<'T>) : ISeq<'T> when 'T:equality =
+        let inline internal except (itemsToExclude: seq<'T>) (source:IConsumableSeq<'T>) : IConsumableSeq<'T> when 'T:equality =
             checkNonNull "itemsToExclude" itemsToExclude
-            source.PushTransform { new ITransformFactory<'T,'T> with
+            source.Transform
+             { new ISeqTransform<'T,'T> with
                 override __.Compose _ _ next =
-                    { new Transform<'T,'V,Lazy<HashSet<'T>>>(next,lazy(HashSet<'T>(itemsToExclude,HashIdentity.Structural<'T>))) with
+                    { new SeqTransformActivity<'T,'V,Lazy<HashSet<'T>>>(next,lazy(HashSet<'T>(itemsToExclude,HashIdentity.Structural<'T>))) with
                         override this.ProcessNext (input:'T) : bool =
                             this.State.Value.Add input && TailCall.avoid (next.ProcessNext input) } :> _}
 
         [<CompiledName "Exists">]
-        let inline internal exists f (source:ISeq<'T>) =
-            source.Fold (fun pipeIdx ->
-                { new Folder<'T, bool> (false) with
+        let inline internal exists predicate (source:IConsumableSeq<'T>) =
+            source.Consume (fun pipeIdx ->
+                { new SeqConsumer<'T, bool> (false) with
                     override this.ProcessNext value =
-                        if f value then
+                        if predicate value then
                             this.Result <- true
-                            (this :> IOutOfBand).StopFurtherProcessing pipeIdx
+                            (this :> ISeqConsumer).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "Exists2">]
-        let inline internal exists2 (predicate:'T->'U->bool) (source1:ISeq<'T>) (source2: ISeq<'U>) : bool =
-            source1.Fold (fun pipeIdx ->
-                { new FolderWithPostProcessing<'T,bool,IEnumerator<'U>>(false,source2.GetEnumerator()) with
+        let inline internal exists2 (predicate:'T->'U->bool) (source1:IConsumableSeq<'T>) (source2: IConsumableSeq<'U>) : bool =
+            source1.Consume (fun pipeIdx ->
+                { new SeqConsumerWithPostProcessing<'T,bool,IEnumerator<'U>>(false,source2.GetEnumerator()) with
                     override this.ProcessNext value =
                         if this.State.MoveNext() then
                             if predicate value this.State.Current then
                                 this.Result <- true
-                                (this :> IOutOfBand).StopFurtherProcessing pipeIdx
+                                (this :> ISeqConsumer).StopFurtherProcessing pipeIdx
                         else
-                            (this :> IOutOfBand).StopFurtherProcessing pipeIdx
+                            (this :> ISeqConsumer).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ = ()
@@ -362,36 +367,36 @@ namespace Microsoft.FSharp.Collections
                     override this.OnDispose () = this.State.Dispose () } :> _)
 
         [<CompiledName "Contains">]
-        let inline contains element (source:ISeq<'T>) =
-            source.Fold (fun pipeIdx ->
-                { new Folder<'T, bool> (false) with
+        let inline contains element (source:IConsumableSeq<'T>) =
+            source.Consume (fun pipeIdx ->
+                { new SeqConsumer<'T, bool> (false) with
                     override this.ProcessNext value =
                         if element = value then
                             this.Result <- true
-                            (this :> IOutOfBand).StopFurtherProcessing pipeIdx
+                            (this :> ISeqConsumer).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "ForAll">]
-        let inline internal forall predicate (source:ISeq<'T>) =
-            source.Fold (fun pipeIdx ->
-                { new Folder<'T, bool> (true) with
+        let inline internal forall predicate (source:IConsumableSeq<'T>) =
+            source.Consume (fun pipeIdx ->
+                { new SeqConsumer<'T, bool> (true) with
                     override this.ProcessNext value =
                         if not (predicate value) then
                             this.Result <- false
-                            (this :> IOutOfBand).StopFurtherProcessing pipeIdx
+                            (this :> ISeqConsumer).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "ForAll2">]
-        let inline internal forall2 predicate (source1:ISeq<'T>) (source2:ISeq<'U>) : bool =
-            source1.Fold (fun pipeIdx ->
-                { new FolderWithPostProcessing<'T,bool,IEnumerator<'U>>(true,source2.GetEnumerator()) with
+        let inline internal forall2 predicate (source1:IConsumableSeq<'T>) (source2:IConsumableSeq<'U>) : bool =
+            source1.Consume (fun pipeIdx ->
+                { new SeqConsumerWithPostProcessing<'T,bool,IEnumerator<'U>>(true,source2.GetEnumerator()) with
                     override this.ProcessNext value =
                         if this.State.MoveNext() then
                             if not (predicate value this.State.Current) then
                                 this.Result <- false
-                                (this :> IOutOfBand).StopFurtherProcessing pipeIdx
+                                (this :> ISeqConsumer).StopFurtherProcessing pipeIdx
                         else
-                            (this :> IOutOfBand).StopFurtherProcessing pipeIdx
+                            (this :> ISeqConsumer).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ = ()
@@ -399,39 +404,43 @@ namespace Microsoft.FSharp.Collections
                     override this.OnDispose () = this.State.Dispose () } :> _)
 
         [<CompiledName "Filter">]
-        let inline internal filter<'T> (f:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
-            source.PushTransform { new ITransformFactory<'T,'T> with
+        let inline internal filter<'T> (predicate:'T->bool) (source:IConsumableSeq<'T>) : IConsumableSeq<'T> =
+            source.Transform
+             { new ISeqTransform<'T,'T> with
                 override __.Compose _ _ next =
-                    { new Transform<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
+                    { new SeqTransformActivity<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
                         override __.ProcessNext input =
-                            if f input then TailCall.avoid (next.ProcessNext input)
+                            if predicate input then TailCall.avoid (next.ProcessNext input)
                             else false } :> _}
 
         [<CompiledName "Map">]
-        let inline internal map<'T,'U> (f:'T->'U) (source:ISeq<'T>) : ISeq<'U> =
-            source.PushTransform { new ITransformFactory<'T,'U> with
+        let inline internal map<'T,'U> (mapping:'T->'U) (source:IConsumableSeq<'T>) : IConsumableSeq<'U> =
+            source.Transform
+             { new ISeqTransform<'T,'U> with
                 override __.Compose _ _ next =
-                    { new Transform<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
+                    { new SeqTransformActivity<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
                         override __.ProcessNext input =
-                            TailCall.avoid (next.ProcessNext (f input)) } :> _ }
+                            TailCall.avoid (next.ProcessNext (mapping input)) } :> _ }
 
         [<CompiledName "MapIndexed">]
-        let inline internal mapi f (source:ISeq<_>) =
-            source.PushTransform { new ITransformFactory<'T,'U> with
+        let inline internal mapi mapping (source:IConsumableSeq<_>) =
+            source.Transform
+             { new ISeqTransform<'T,'U> with
                 override __.Compose _ _ next =
-                    { new Transform<'T,'V,int>(next, -1) with
+                    { new SeqTransformActivity<'T,'V,int>(next, -1) with
                         override this.ProcessNext (input:'T) : bool =
                             this.State <- this.State  + 1
-                            TailCall.avoid (next.ProcessNext (f this.State input)) } :> _ }
+                            TailCall.avoid (next.ProcessNext (mapping this.State input)) } :> _ }
 
         [<CompiledName "Map2">]
-        let inline internal map2<'T,'U,'V> (map:'T->'U->'V) (source1:ISeq<'T>) (source2:ISeq<'U>) : ISeq<'V> =
-            source1.PushTransform { new ITransformFactory<'T,'V> with
-                override __.Compose outOfBand pipeIdx (next:Activity<'V,'W>) =
-                    { new TransformWithPostProcessing<'T,'W, IEnumerator<'U>>(next, (source2.GetEnumerator ())) with
+        let inline internal map2<'T,'U,'V> (mapping:'T->'U->'V) (source1:IConsumableSeq<'T>) (source2:IConsumableSeq<'U>) : IConsumableSeq<'V> =
+            source1.Transform
+             { new ISeqTransform<'T,'V> with
+                override __.Compose outOfBand pipeIdx (next:SeqConsumerActivity<'V,'W>) =
+                    { new SeqTransformActivityWithPostProcessing<'T,'W, IEnumerator<'U>>(next, (source2.GetEnumerator ())) with
                         override this.ProcessNext input =
                             if this.State.MoveNext () then
-                                TailCall.avoid (next.ProcessNext (map input this.State.Current))
+                                TailCall.avoid (next.ProcessNext (mapping input this.State.Current))
                             else
                                 outOfBand.StopFurtherProcessing pipeIdx
                                 false
@@ -441,16 +450,17 @@ namespace Microsoft.FSharp.Collections
                         override this.OnDispose () = this.State.Dispose () } :> _ }
 
         [<CompiledName "MapIndexed2">]
-        let inline internal mapi2<'T,'U,'V> (map:int->'T->'U->'V) (source1:ISeq<'T>) (source2:ISeq<'U>) : ISeq<'V> =
-            source1.PushTransform { new ITransformFactory<'T,'V> with
+        let inline internal mapi2<'T,'U,'V> (mapping:int->'T->'U->'V) (source1:IConsumableSeq<'T>) (source2:IConsumableSeq<'U>) : IConsumableSeq<'V> =
+            source1.Transform
+             { new ISeqTransform<'T,'V> with
                 override __.Compose<'W> outOfBand pipeIdx next =
-                    { new TransformWithPostProcessing<'T,'W, Values<int,IEnumerator<'U>>>(next, Values<_,_>(-1,source2.GetEnumerator ())) with
+                    { new SeqTransformActivityWithPostProcessing<'T,'W, Values<int,IEnumerator<'U>>>(next, Values<_,_>(-1,source2.GetEnumerator ())) with
                         override this.ProcessNext t =
                             let idx : byref<_> = &this.State._1
                             let u = this.State._2
                             if u.MoveNext () then
                                 idx <- idx + 1
-                                TailCall.avoid (next.ProcessNext (map idx t u.Current))
+                                TailCall.avoid (next.ProcessNext (mapping idx t u.Current))
                             else
                                 outOfBand.StopFurtherProcessing pipeIdx
                                 false
@@ -460,15 +470,16 @@ namespace Microsoft.FSharp.Collections
                         override this.OnComplete _ = () } :> _ }
 
         [<CompiledName "Map3">]
-        let inline internal map3<'T,'U,'V,'W>(map:'T->'U->'V->'W) (source1:ISeq<'T>) (source2:ISeq<'U>) (source3:ISeq<'V>) : ISeq<'W> =
-            source1.PushTransform { new ITransformFactory<'T,'W> with
+        let inline internal map3<'T,'U,'V,'W>(mapping:'T->'U->'V->'W) (source1:IConsumableSeq<'T>) (source2:IConsumableSeq<'U>) (source3:IConsumableSeq<'V>) : IConsumableSeq<'W> =
+            source1.Transform
+             { new ISeqTransform<'T,'W> with
                 override __.Compose<'X> outOfBand pipeIdx next =
-                    { new TransformWithPostProcessing<'T,'X,Values<IEnumerator<'U>,IEnumerator<'V>>>(next,Values<_,_>(source2.GetEnumerator(),source3.GetEnumerator())) with
+                    { new SeqTransformActivityWithPostProcessing<'T,'X,Values<IEnumerator<'U>,IEnumerator<'V>>>(next,Values<_,_>(source2.GetEnumerator(),source3.GetEnumerator())) with
                         override this.ProcessNext t =
                             let u = this.State._1
                             let v = this.State._2
                             if u.MoveNext() && v.MoveNext ()  then
-                                TailCall.avoid (next.ProcessNext (map t u.Current v.Current))
+                                TailCall.avoid (next.ProcessNext (mapping t u.Current v.Current))
                             else
                                 outOfBand.StopFurtherProcessing pipeIdx
                                 false
@@ -480,18 +491,18 @@ namespace Microsoft.FSharp.Collections
                             this.State._2.Dispose () } :> _ }
 
         [<CompiledName "CompareWith">]
-        let inline internal compareWith (f:'T->'T->int) (source1:ISeq<'T>) (source2:ISeq<'T>) : int =
-            source1.Fold (fun pipeIdx ->
-                { new FolderWithPostProcessing<'T,int,IEnumerator<'T>>(0,source2.GetEnumerator()) with
+        let inline internal compareWith (comparer:'T->'T->int) (source1:IConsumableSeq<'T>) (source2:IConsumableSeq<'T>) : int =
+            source1.Consume (fun pipeIdx ->
+                { new SeqConsumerWithPostProcessing<'T,int,IEnumerator<'T>>(0,source2.GetEnumerator()) with
                     override this.ProcessNext value =
                         if not (this.State.MoveNext()) then
                             this.Result <- 1
-                            (this :> IOutOfBand).StopFurtherProcessing pipeIdx
+                            (this :> ISeqConsumer).StopFurtherProcessing pipeIdx
                         else
-                            let c = f value this.State.Current
+                            let c = comparer value this.State.Current
                             if c <> 0 then
                                 this.Result <- c
-                                (this :> IOutOfBand).StopFurtherProcessing pipeIdx
+                                (this :> ISeqConsumer).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *)
                     
                     override this.OnComplete _ =
@@ -501,35 +512,38 @@ namespace Microsoft.FSharp.Collections
                     override this.OnDispose () = this.State.Dispose () } :> _)
 
         [<CompiledName "Choose">]
-        let inline internal choose (f:'T->option<'U>) (source:ISeq<'T>) : ISeq<'U> =
-            source.PushTransform { new ITransformFactory<'T,'U> with
+        let inline internal choose (f:'T->option<'U>) (source:IConsumableSeq<'T>) : IConsumableSeq<'U> =
+            source.Transform
+             { new ISeqTransform<'T,'U> with
                 override __.Compose _ _ next =
-                    { new Transform<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
+                    { new SeqTransformActivity<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
                         override __.ProcessNext input =
                             match f input with
                             | Some value -> TailCall.avoid (next.ProcessNext value)
                             | None       -> false } :> _ }
 
         [<CompiledName "Distinct">]
-        let inline internal distinct (source:ISeq<'T>) : ISeq<'T> when 'T:equality =
-            source.PushTransform { new ITransformFactory<'T,'T> with
+        let inline internal distinct (source:IConsumableSeq<'T>) : IConsumableSeq<'T> when 'T:equality =
+            source.Transform
+             { new ISeqTransform<'T,'T> with
                 override __.Compose _ _ next =
-                    { new Transform<'T,'V,HashSet<'T>>(next,HashSet HashIdentity.Structural) with
+                    { new SeqTransformActivity<'T,'V,HashSet<'T>>(next,HashSet HashIdentity.Structural) with
                         override this.ProcessNext (input:'T) : bool =
                             this.State.Add input && TailCall.avoid (next.ProcessNext input) } :> _}
 
         [<CompiledName "DistinctBy">]
-        let inline internal distinctBy (keyf:'T->'Key) (source:ISeq<'T>) :ISeq<'T>  when 'Key:equality =
-            source.PushTransform { new ITransformFactory<'T,'T> with
+        let inline internal distinctBy (keyf:'T->'Key) (source:IConsumableSeq<'T>) :IConsumableSeq<'T>  when 'Key:equality =
+            source.Transform
+             { new ISeqTransform<'T,'T> with
                 override __.Compose _ _ next =
-                    { new Transform<'T,'V,HashSet<'Key>> (next,HashSet HashIdentity.Structural) with
+                    { new SeqTransformActivity<'T,'V,HashSet<'Key>> (next,HashSet HashIdentity.Structural) with
                         override this.ProcessNext (input:'T) : bool =
                             this.State.Add (keyf input) && TailCall.avoid (next.ProcessNext input) } :> _}
 
         [<CompiledName "Max">]
-        let inline max (source:ISeq<'T>) : 'T when 'T:comparison =
-            source.Fold (fun _ ->
-                { new FolderWithPostProcessing<'T,'T,bool>(Unchecked.defaultof<'T>,true) with
+        let inline max (source:IConsumableSeq<'T>) : 'T when 'T:comparison =
+            source.Consume (fun _ ->
+                { new SeqConsumerWithPostProcessing<'T,'T,bool>(Unchecked.defaultof<'T>,true) with
                     override this.ProcessNext value =
                         if this.State then
                             this.State <- false
@@ -545,9 +559,9 @@ namespace Microsoft.FSharp.Collections
                     override this.OnDispose () = () } :> _)
 
         [<CompiledName "MaxBy">]
-        let inline maxBy (f:'T->'U) (source:ISeq<'T>) : 'T when 'U:comparison =
-            source.Fold (fun _ ->
-                { new FolderWithPostProcessing<'T,'T,Values<bool,'U>>(Unchecked.defaultof<'T>,Values<_,_>(true,Unchecked.defaultof<'U>)) with
+        let inline maxBy (f:'T->'U) (source:IConsumableSeq<'T>) : 'T when 'U:comparison =
+            source.Consume (fun _ ->
+                { new SeqConsumerWithPostProcessing<'T,'T,Values<bool,'U>>(Unchecked.defaultof<'T>,Values<_,_>(true,Unchecked.defaultof<'U>)) with
                     override this.ProcessNext value =
                         match this.State._1, f value with
                         | true, valueU ->
@@ -567,9 +581,9 @@ namespace Microsoft.FSharp.Collections
                     override this.OnDispose () = () } :> _)
 
         [<CompiledName "Min">]
-        let inline min (source:ISeq<'T>) : 'T when 'T:comparison =
-            source.Fold (fun _ ->
-                { new FolderWithPostProcessing<'T,'T,bool>(Unchecked.defaultof<'T>,true) with
+        let inline min (source:IConsumableSeq<'T>) : 'T when 'T:comparison =
+            source.Consume (fun _ ->
+                { new SeqConsumerWithPostProcessing<'T,'T,bool>(Unchecked.defaultof<'T>,true) with
                     override this.ProcessNext value =
                         if this.State then
                             this.State <- false
@@ -585,9 +599,9 @@ namespace Microsoft.FSharp.Collections
                     override this.OnDispose () = () } :> _)
 
         [<CompiledName "MinBy">]
-        let inline minBy (f:'T->'U) (source:ISeq<'T>) : 'T =
-            source.Fold (fun _ ->
-                { new FolderWithPostProcessing<'T,'T,Values<bool,'U>>(Unchecked.defaultof<'T>,Values<_,_>(true,Unchecked.defaultof< 'U>)) with
+        let inline minBy (f:'T->'U) (source:IConsumableSeq<'T>) : 'T =
+            source.Consume (fun _ ->
+                { new SeqConsumerWithPostProcessing<'T,'T,Values<bool,'U>>(Unchecked.defaultof<'T>,Values<_,_>(true,Unchecked.defaultof< 'U>)) with
                     override this.ProcessNext value =
                         match this.State._1, f value with
                         | true, valueU ->
@@ -607,10 +621,11 @@ namespace Microsoft.FSharp.Collections
                     override this.OnDispose () = () } :> _)
 
         [<CompiledName "Pairwise">]
-        let internal pairwise (source:ISeq<'T>) : ISeq<'T*'T> =
-            source.PushTransform { new ITransformFactory<'T,'T*'T> with
+        let internal pairwise (source:IConsumableSeq<'T>) : IConsumableSeq<'T*'T> =
+            source.Transform
+             { new ISeqTransform<'T,'T*'T> with
                 override __.Compose _ _ next =
-                    { new Transform<'T,'U,Values<bool,'T>>(next, Values<bool,'T>(true, Unchecked.defaultof<'T>)) with
+                    { new SeqTransformActivity<'T,'U,Values<bool,'T>>(next, Values<bool,'T>(true, Unchecked.defaultof<'T>)) with
                             // member this.isFirst   = this.State._1
                             // member this.lastValue = this.State._2
                             override this.ProcessNext (input:'T) : bool =
@@ -624,9 +639,9 @@ namespace Microsoft.FSharp.Collections
                                     TailCall.avoid (next.ProcessNext currentPair) } :> _}
 
         [<CompiledName "Reduce">]
-        let inline internal reduce (f:'T->'T->'T) (source: ISeq<'T>) : 'T =
-            source.Fold (fun _ ->
-                { new FolderWithPostProcessing<'T,'T,bool>(Unchecked.defaultof<'T>,true) with
+        let inline internal reduce (f:'T->'T->'T) (source: IConsumableSeq<'T>) : 'T =
+            source.Consume (fun _ ->
+                { new SeqConsumerWithPostProcessing<'T,'T,bool>(Unchecked.defaultof<'T>,true) with
                     override this.ProcessNext value =
                         if this.State then
                             this.State <- false
@@ -642,7 +657,7 @@ namespace Microsoft.FSharp.Collections
                     override this.OnDispose () = () } :> _)
 
         [<CompiledName("Concat")>]
-        let internal concat (sources:ISeq<#ISeq<'T>>) : ISeq<'T> =
+        let internal concat (sources:IConsumableSeq<#IConsumableSeq<'T>>) : IConsumableSeq<'T> =
             ThinConcatEnumerable (sources, id) :> _
 
         (*
@@ -702,7 +717,7 @@ namespace Microsoft.FSharp.Collections
                         enumerator.Dispose ()
 
         [<CompiledName "Scan">]
-        let internal scan (folder:'State->'T->'State) (initialState:'State) (source:ISeq<'T>) : ISeq<'State> =
+        let internal scan (folder:'State->'T->'State) (initialState:'State) (source:IConsumableSeq<'T>) : IConsumableSeq<'State> =
             { new PreferGetEnumerator<'State>() with
                 member this.GetEnumerator () =
                     new ScanEnumerator<'T,'State>(folder, initialState, source) :> _
@@ -710,22 +725,24 @@ namespace Microsoft.FSharp.Collections
                 member this.GetSeq () = 
                     let head = singleton initialState
                     let tail = 
-                        source.PushTransform { new ITransformFactory<'T,'State> with
+                        source.Transform
+                         { new ISeqTransform<'T,'State> with
                             override __.Compose _ _ next =
                                 let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
-                                { new Transform<'T,'V,'State>(next, initialState) with
+                                { new SeqTransformActivity<'T,'V,'State>(next, initialState) with
                                     override this.ProcessNext (input:'T) : bool =
                                         this.State <- f.Invoke (this.State, input)
                                         TailCall.avoid (next.ProcessNext this.State) } :> _ }
                     concat (ofList [ head ; tail ]) } :> _
 
         [<CompiledName "Skip">]
-        let internal skip (skipCount:int) (source:ISeq<'T>) : ISeq<'T> =
-            source.PushTransform { new ITransformFactory<'T,'T> with
+        let internal skip (skipCount:int) (source:IConsumableSeq<'T>) : IConsumableSeq<'T> =
+            source.Transform
+             { new ISeqTransform<'T,'T> with
                 override __.Compose _ _ next =
-                    let mutable this = Unchecked.defaultof<TransformWithPostProcessing<'T,'U,int>>
+                    let mutable this = Unchecked.defaultof<SeqTransformActivityWithPostProcessing<'T,'U,int>>
                     let skipper = 
-                        { new TransformWithPostProcessing<'T,'U,int>(next,(*count*)0) with
+                        { new SeqTransformActivityWithPostProcessing<'T,'U,int>(next,(*count*)0) with
                             // member this.count = this.State
                             override this.ProcessNext (input:'T) : bool =
                                 if this.State < skipCount then
@@ -753,10 +770,11 @@ namespace Microsoft.FSharp.Collections
                     this :> _ }
 
         [<CompiledName "SkipWhile">]
-        let inline internal skipWhile (predicate:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
-            source.PushTransform { new ITransformFactory<'T,'T> with
+        let inline internal skipWhile (predicate:'T->bool) (source:IConsumableSeq<'T>) : IConsumableSeq<'T> =
+            source.Transform
+             { new ISeqTransform<'T,'T> with
                 override __.Compose _ _ next =
-                    { new Transform<'T,'V,bool>(next,true) with
+                    { new SeqTransformActivity<'T,'V,bool>(next,true) with
                         // member this.skip = this.State
                         override this.ProcessNext (input:'T) : bool =
                             if this.State then
@@ -769,32 +787,33 @@ namespace Microsoft.FSharp.Collections
                                 TailCall.avoid (next.ProcessNext input) } :> _}
 
         [<CompiledName "Sum">]
-        let inline sum (source:ISeq<'T>) =
-            source.Fold (fun _ ->
-                { new Folder<'T,'T> (LanguagePrimitives.GenericZero) with
+        let inline sum (source:IConsumableSeq<'T>) =
+            source.Consume (fun _ ->
+                { new SeqConsumer<'T,'T> (LanguagePrimitives.GenericZero) with
                     override this.ProcessNext value =
                         this.Result <- Checked.(+) this.Result value
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "SumBy">]
-        let inline sumBy (f:'T->'U) (source:ISeq<'T>) =
-            source.Fold (fun _ ->
-                { new Folder<'T,'U> (LanguagePrimitives.GenericZero<'U>) with
+        let inline sumBy (f:'T->'U) (source:IConsumableSeq<'T>) =
+            source.Consume (fun _ ->
+                { new SeqConsumer<'T,'U> (LanguagePrimitives.GenericZero<'U>) with
                     override this.ProcessNext value =
                         this.Result <- Checked.(+) this.Result (f value)
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "Take">]
-        let internal take (takeCount:int) (source:ISeq<'T>) : ISeq<'T> =
+        let internal take (takeCount:int) (source:IConsumableSeq<'T>) : IConsumableSeq<'T> =
             if takeCount < 0 then invalidArgInputMustBeNonNegative "count" takeCount
             elif takeCount = 0 then empty
             else
-                source.PushTransform { new ITransformFactory<'T,'T> with
+                source.Transform
+                 { new ISeqTransform<'T,'T> with
                     member __.Compose outOfBand pipelineIdx next =
                         if takeCount = 0 then
                             outOfBand.StopFurtherProcessing pipelineIdx
 
-                        { new TransformWithPostProcessing<'T,'U,int>(next,(*count*)0) with
+                        { new SeqTransformActivityWithPostProcessing<'T,'U,int>(next,(*count*)0) with
                             // member this.count = this.State
                             override this.ProcessNext (input:'T) : bool =
                                 if this.State < takeCount then
@@ -815,10 +834,11 @@ namespace Microsoft.FSharp.Collections
                             override this.OnDispose () = () } :> _}
 
         [<CompiledName "TakeWhile">]
-        let inline internal takeWhile (predicate:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
-            source.PushTransform { new ITransformFactory<'T,'T> with
+        let inline internal takeWhile (predicate:'T->bool) (source:IConsumableSeq<'T>) : IConsumableSeq<'T> =
+            source.Transform
+             { new ISeqTransform<'T,'T> with
                 member __.Compose outOfBand pipeIdx next =
-                    { new Transform<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
+                    { new SeqTransformActivity<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
                         override __.ProcessNext (input:'T) : bool =
                             if predicate input then
                                 TailCall.avoid (next.ProcessNext input)
@@ -827,10 +847,11 @@ namespace Microsoft.FSharp.Collections
                                 false } :> _ }
 
         [<CompiledName "Tail">]
-        let internal tail (source:ISeq<'T>) : ISeq<'T> =
-            source.PushTransform { new ITransformFactory<'T,'T> with
+        let internal tail (source:IConsumableSeq<'T>) : IConsumableSeq<'T> =
+            source.Transform
+             { new ISeqTransform<'T,'T> with
                 member __.Compose _ _ next =
-                    { new TransformWithPostProcessing<'T,'V,bool>(next,true) with
+                    { new SeqTransformActivityWithPostProcessing<'T,'V,bool>(next,true) with
                         // member this.isFirst = this.State
                         override this.ProcessNext (input:'T) : bool =
                             if this.State then
@@ -846,10 +867,11 @@ namespace Microsoft.FSharp.Collections
                         override this.OnDispose () = () } :> _ }
 
         [<CompiledName "Truncate">]
-        let internal truncate (truncateCount:int) (source:ISeq<'T>) : ISeq<'T> =
-            source.PushTransform { new ITransformFactory<'T,'T> with
+        let internal truncate (truncateCount:int) (source:IConsumableSeq<'T>) : IConsumableSeq<'T> =
+            source.Transform
+             { new ISeqTransform<'T,'T> with
                 member __.Compose outOfBand pipeIdx next =
-                    { new Transform<'T,'U,int>(next,(*count*)0) with
+                    { new SeqTransformActivity<'T,'U,int>(next,(*count*)0) with
                         // member this.count = this.State
                         override this.ProcessNext (input:'T) : bool =
                             if this.State < truncateCount then
@@ -866,13 +888,14 @@ namespace Microsoft.FSharp.Collections
             mapi (fun i x -> i,x) source
 
         [<CompiledName "TryItem">]
-        let internal tryItem index (source:ISeq<'T>) =
+        let internal tryItem index (source:IConsumableSeq<'T>) =
             if index < 0 then None else
-                source.PushTransform { new ITransformFactory<'T,'T> with
+                source.Transform 
+                 { new ISeqTransform<'T,'T> with
                     override __.Compose _ _ next =
-                        let mutable this = Unchecked.defaultof<Transform<'T,'U,int>>
+                        let mutable this = Unchecked.defaultof<SeqTransformActivity<'T,'U,int>>
                         let skipper = 
-                            { new Transform<'T,'U,int>(next,(*count*)0) with
+                            { new SeqTransformActivity<'T,'U,int>(next,(*count*)0) with
                                 // member this.count = this.State
                                 override this.ProcessNext (input:'T) : bool =
                                     if this.State < index then
@@ -893,44 +916,44 @@ namespace Microsoft.FSharp.Collections
                 |> tryHead
 
         [<CompiledName "TryPick">]
-        let inline internal tryPick f (source:ISeq<'T>)  =
-            source.Fold (fun pipeIdx ->
-                { new Folder<'T, Option<'U>> (None) with
+        let inline internal tryPick f (source:IConsumableSeq<'T>)  =
+            source.Consume (fun pipeIdx ->
+                { new SeqConsumer<'T, Option<'U>> (None) with
                     override this.ProcessNext value =
                         match f value with
                         | (Some _) as some ->
                             this.Result <- some
-                            (this :> IOutOfBand).StopFurtherProcessing pipeIdx
+                            (this :> ISeqConsumer).StopFurtherProcessing pipeIdx
                         | None -> ()
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "TryFind">]
-        let inline internal tryFind f (source:ISeq<'T>)  =
-            source.Fold (fun pipeIdx ->
-                { new Folder<'T, Option<'T>> (None) with
+        let inline internal tryFind f (source:IConsumableSeq<'T>)  =
+            source.Consume (fun pipeIdx ->
+                { new SeqConsumer<'T, Option<'T>> (None) with
                     override this.ProcessNext value =
                         if f value then
                             this.Result <- Some value
-                            (this :> IOutOfBand).StopFurtherProcessing pipeIdx
+                            (this :> ISeqConsumer).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "TryFindIndex">]
-        let inline internal tryFindIndex (predicate:'T->bool) (source:ISeq<'T>) : int option =
-            source.Fold (fun pipeIdx ->
-                { new FolderWithState<'T, Option<int>, int>(None, 0) with
+        let inline internal tryFindIndex (predicate:'T->bool) (source:IConsumableSeq<'T>) : int option =
+            source.Consume (fun pipeIdx ->
+                { new SeqConsumerWithState<'T, Option<int>, int>(None, 0) with
                     // member this.index = this.State
                     override this.ProcessNext value =
                         if predicate value then
                             this.Result <- Some this.State
-                            (this :> IOutOfBand).StopFurtherProcessing pipeIdx
+                            (this :> ISeqConsumer).StopFurtherProcessing pipeIdx
                         else
                             this.State <- this.State + 1
                         Unchecked.defaultof<_> (* return value unused in Fold context *) } :> _)
 
         [<CompiledName "TryLast">]
-        let internal tryLast (source:ISeq<'T>) : 'T option =
-            source.Fold (fun _ ->
-                { new FolderWithPostProcessing<'T,option<'T>,Values<bool,'T>>(None,Values<bool,'T>(true, Unchecked.defaultof<'T>)) with
+        let internal tryLast (source:IConsumableSeq<'T>) : 'T option =
+            source.Consume (fun _ ->
+                { new SeqConsumerWithPostProcessing<'T,option<'T>,Values<bool,'T>>(None,Values<bool,'T>(true, Unchecked.defaultof<'T>)) with
                     // member this.noItems = this.State._1
                     // memebr this.last    = this.State._2
                     override this.ProcessNext value =
@@ -946,20 +969,21 @@ namespace Microsoft.FSharp.Collections
                     override this.OnDispose () = () } :> _)
 
         [<CompiledName("Last")>]
-        let internal last (source:ISeq<_>) =
+        let internal last (source:IConsumableSeq<_>) =
             match tryLast source with
             | None -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             | Some x -> x
 
         [<CompiledName "Windowed">]
-        let internal windowed (windowSize:int) (source:ISeq<'T>) : ISeq<'T[]> =
+        let internal windowed (windowSize:int) (source:IConsumableSeq<'T>) : IConsumableSeq<'T[]> =
             if windowSize <= 0 then
                 invalidArgFmt "windowSize" "{0}\nwindowSize = {1}" [|SR.GetString SR.inputMustBePositive; windowSize|]
 
-            source.PushTransform { new ITransformFactory<'T,'T[]> with
+            source.Transform 
+             { new ISeqTransform<'T,'T[]> with
                 member __.Compose outOfBand pipeIdx next =
                     {
-                        new Transform<'T,'U,Values<'T[],int,int>>(next,Values<'T[],int,int>(Array.zeroCreateUnchecked windowSize, 0, windowSize-1)) with
+                        new SeqTransformActivity<'T,'U,Values<'T[],int,int>>(next,Values<'T[],int,int>(Array.zeroCreateUnchecked windowSize, 0, windowSize-1)) with
                             override this.ProcessNext (input:'T) : bool =
                                 let circularBuffer     =  this.State._1
                                 let idx     : byref<_> = &this.State._2
@@ -985,19 +1009,19 @@ namespace Microsoft.FSharp.Collections
                                     TailCall.avoid (next.ProcessNext window) } :> _}
 
         [<CompiledName("Append")>]
-        let internal append (source1:ISeq<'T>) (source2: ISeq<'T>) : ISeq<'T> =
+        let internal append (source1:IConsumableSeq<'T>) (source2: IConsumableSeq<'T>) : IConsumableSeq<'T> =
             match source1 with
             | :? EnumerableBase<'T> as s -> s.Append source2
             | _ -> new AppendEnumerable<_>([source2; source1]) :> _
 
         [<CompiledName "Delay">]
-        let internal delay (delayed:unit->ISeq<'T>) : ISeq<'T> =
+        let internal delay (delayed:unit->IConsumableSeq<'T>) : IConsumableSeq<'T> =
             DelayedEnumerable (delayed, 1) :> _
 
         module internal GroupBy =
-            let inline private impl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (source:ISeq<'T>) =
-                source.Fold (fun _ ->
-                    { new FolderWithPostProcessing<'T,ISeq<'Key*ISeq<'T>>,_>(Unchecked.defaultof<_>,Dictionary comparer) with
+            let inline private impl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (source:IConsumableSeq<'T>) =
+                source.Consume (fun _ ->
+                    { new SeqConsumerWithPostProcessing<'T,IConsumableSeq<'Key*IConsumableSeq<'T>>,_>(Unchecked.defaultof<_>,Dictionary comparer) with
                         override this.ProcessNext v =
                             let safeKey = keyf v
                             match this.State.TryGetValue safeKey with
@@ -1020,24 +1044,24 @@ namespace Microsoft.FSharp.Collections
 
                         override this.OnDispose () = () } :> _ )
 
-            let inline byVal (projection:'T->'Key) (source:ISeq<'T>) =
+            let inline byVal (projection:'T->'Key) (source:IConsumableSeq<'T>) =
                 delay (fun () -> impl HashIdentity.Structural<'Key> projection id source) 
 
-            let inline byRef (projection:'T->'Key) (source:ISeq<'T>) =
+            let inline byRef (projection:'T->'Key) (source:IConsumableSeq<'T>) =
                 delay (fun () -> impl (valueComparer<'Key> ()) (projection >> Value) (fun v -> v._1) source)
         
         [<CompiledName("GroupByVal")>]
-        let inline internal groupByVal<'T,'Key when 'Key : equality and 'Key : struct> (projection:'T->'Key) (source:ISeq<'T>) =
+        let inline internal groupByVal<'T,'Key when 'Key : equality and 'Key : struct> (projection:'T->'Key) (source:IConsumableSeq<'T>) =
             GroupBy.byVal projection source
 
         [<CompiledName("GroupByRef")>]
-        let inline internal groupByRef<'T,'Key when 'Key : equality and 'Key : not struct> (projection:'T->'Key) (source:ISeq<'T>) =
+        let inline internal groupByRef<'T,'Key when 'Key : equality and 'Key : not struct> (projection:'T->'Key) (source:IConsumableSeq<'T>) =
             GroupBy.byRef projection source
 
         module CountBy =
-            let inline private impl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (source:ISeq<'T>) =
-                source.Fold (fun _ ->
-                    { new FolderWithPostProcessing<'T,ISeq<'Key*int>,_>(Unchecked.defaultof<_>,Dictionary comparer) with
+            let inline private impl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (source:IConsumableSeq<'T>) =
+                source.Consume (fun _ ->
+                    { new SeqConsumerWithPostProcessing<'T,IConsumableSeq<'Key*int>,_>(Unchecked.defaultof<_>,Dictionary comparer) with
                         override this.ProcessNext v =
                             let safeKey = keyf v
                             this.State.[safeKey] <- 
@@ -1054,40 +1078,38 @@ namespace Microsoft.FSharp.Collections
 
                         override this.OnDispose () = () } :> _ )
 
-            let inline byVal (projection:'T->'Key) (source:ISeq<'T>) =
+            let inline byVal (projection:'T->'Key) (source:IConsumableSeq<'T>) =
                 delay (fun () -> impl HashIdentity.Structural<'Key> projection id source) 
 
-            let inline byRef (projection:'T->'Key) (source:ISeq<'T>) =
+            let inline byRef (projection:'T->'Key) (source:IConsumableSeq<'T>) =
                 delay (fun () -> impl (valueComparer<'Key> ()) (projection >> Value) (fun v -> v._1) source)
         
         [<CompiledName("CountByVal")>]
-        let inline internal countByVal<'T,'Key when 'Key : equality and 'Key : struct>  (projection:'T -> 'Key) (source:ISeq<'T>) =
+        let inline internal countByVal<'T,'Key when 'Key : equality and 'Key : struct>  (projection:'T -> 'Key) (source:IConsumableSeq<'T>) =
             CountBy.byVal projection source 
 
         [<CompiledName("CountByRef")>]
-        let inline internal countByRef<'T,'Key when 'Key : equality and 'Key : not struct> (projection:'T -> 'Key) (source:ISeq<'T>) =
+        let inline internal countByRef<'T,'Key when 'Key : equality and 'Key : not struct> (projection:'T -> 'Key) (source:IConsumableSeq<'T>) =
             CountBy.byRef projection source 
 
         [<CompiledName("Length")>]
-        let internal length (source:ISeq<'T>)  =
+        let internal length (source:IConsumableSeq<'T>)  =
             match source with
             | :? EnumerableBase<'T> as s -> s.Length ()
             | :? list<'T> as l -> l.Length
-            | _ -> Microsoft.FSharp.Primitives.Basics.ISeq.length source
+            | _ -> Basics.IConsumableSeq.length source
 
         [<CompiledName("ToResizeArray")>]
-        let internal toResizeArray (source:ISeq<'T>) =
-            source.Fold (fun _ ->
-                { new Folder<'T,ResizeArray<'T>>(ResizeArray ()) with
+        let internal toResizeArray (source:IConsumableSeq<'T>) =
+            source.Consume (fun _ ->
+                { new SeqConsumer<'T,ResizeArray<'T>>(ResizeArray ()) with
                     override this.ProcessNext v =
                         this.Result.Add v
                         Unchecked.defaultof<_> (* return value unused in Fold context *) } :> _ )
 
         [<CompiledName("ToArray")>]
-        let internal toArray (source:ISeq<'T>) =
-            source
-            |> toResizeArray
-            |> fun a -> a.ToArray ()
+        let internal toArray (source:IConsumableSeq<'T>) =
+            Basics.Array.ofConsumableSeq source
 
         [<CompiledName("SortBy")>]
         let internal sortBy projection source =
@@ -1118,7 +1140,7 @@ namespace Microsoft.FSharp.Collections
                 ofResizeArrayUnchecked array)
 
         [<CompiledName("Permute")>]
-        let internal permute indexMap (source:ISeq<_>) =
+        let internal permute indexMap (source:IConsumableSeq<_>) =
             delay (fun () ->
                 source
                 |> toArray
@@ -1126,7 +1148,7 @@ namespace Microsoft.FSharp.Collections
                 |> ofArray)
 
         [<CompiledName("ScanBack")>]
-        let internal scanBack<'T,'State> folder (source:ISeq<'T>) (state:'State) : ISeq<'State> =
+        let internal scanBack<'T,'State> folder (source:IConsumableSeq<'T>) (state:'State) : IConsumableSeq<'State> =
             delay (fun () ->
                 let array = source |> toArray
                 Array.scanSubRight folder array 0 (array.Length - 1) state
@@ -1139,7 +1161,7 @@ namespace Microsoft.FSharp.Collections
             state
 
         [<CompiledName("FoldBack")>]
-        let inline internal foldBack<'T,'State> folder (source: ISeq<'T>) (state:'State) =
+        let inline internal foldBack<'T,'State> folder (source: IConsumableSeq<'T>) (state:'State) =
             let arr = toResizeArray source
             let len = arr.Count
             foldArraySubRight folder arr 0 (len - 1) state
@@ -1149,19 +1171,19 @@ namespace Microsoft.FSharp.Collections
             map2 (fun x y -> x,y) source1 source2
 
         [<CompiledName("FoldBack2")>]
-        let inline internal foldBack2<'T1,'T2,'State> folder (source1:ISeq<'T1>) (source2:ISeq<'T2>) (state:'State) =
+        let inline internal foldBack2<'T1,'T2,'State> folder (source1:IConsumableSeq<'T1>) (source2:IConsumableSeq<'T2>) (state:'State) =
             let zipped = zip source1 source2
             foldBack ((<||) folder) zipped state
 
         [<CompiledName("ReduceBack")>]
-        let inline internal reduceBack reduction (source:ISeq<'T>) =
+        let inline internal reduceBack reduction (source:IConsumableSeq<'T>) =
             let arr = toResizeArray source
             match arr.Count with
             | 0 -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             | len -> foldArraySubRight reduction arr 0 (len - 2) arr.[len - 1]
 
         [<Sealed>]
-        type internal CachedSeq<'T>(source:ISeq<'T>) =
+        type internal CachedSeq<'T>(source:IConsumableSeq<'T>) =
             let sync = obj ()
 
             // Wrap a seq to ensure that it is enumerated just once and only as far as is necessary.
@@ -1211,7 +1233,7 @@ namespace Microsoft.FSharp.Collections
                         else
                             None)
 
-            let cached : ISeq<'T> = new UnfoldEnumerable<'T,'T,int>(unfolding, 0, IdentityFactory.Instance, 1) :> _
+            let cached : IConsumableSeq<'T> = new UnfoldEnumerable<'T,'T,int>(unfolding, 0, IdentityTransform.Instance, 1) :> _
 
             interface System.IDisposable with
                 member __.Dispose() =
@@ -1230,39 +1252,39 @@ namespace Microsoft.FSharp.Collections
             interface System.Collections.IEnumerable with
                 member __.GetEnumerator() = (cached:>IEnumerable).GetEnumerator()
 
-            interface ISeq<'T> with
-                member __.PushTransform next = cached.PushTransform next
-                member __.Fold f = cached.Fold f
+            interface IConsumableSeq<'T> with
+                member __.Transform next = cached.Transform next
+                member __.Consume f = cached.Consume f
 
             member this.Clear() = (this :> IDisposable).Dispose ()
 
         [<CompiledName("Cache")>]
-        let internal cache (source:ISeq<'T>) : ISeq<'T> =
+        let internal cache (source:IConsumableSeq<'T>) : IConsumableSeq<'T> =
             new CachedSeq<_> (source) :> _
 
         [<CompiledName("Collect")>]
         let internal collect mapping source = map mapping source |> concat
 
         [<CompiledName("AllPairs")>]
-        let internal allPairs (source1:ISeq<'T1>) (source2:ISeq<'T2>) : ISeq<'T1 * 'T2> =
+        let internal allPairs (source1:IConsumableSeq<'T1>) (source2:IConsumableSeq<'T2>) : IConsumableSeq<'T1 * 'T2> =
             checkNonNull "source1" source1
             checkNonNull "source2" source2
             let cached = cache source2
             source1 |> collect (fun x -> cached |> map (fun y -> x,y))
 
         [<CompiledName("ToList")>]
-        let internal toList (source : ISeq<'T>) =
+        let internal toList (source : IConsumableSeq<'T>) =
             match source with
             | :? list<'T> as lst -> lst
-            | _ -> Microsoft.FSharp.Primitives.Basics.List.ofISeq source
+            | _ -> Basics.List.ofConsumableSeq source
 
         [<CompiledName("Replicate")>]
-        let replicate<'T> count (initial:'T) : ISeq<'T> =
+        let replicate<'T> count (initial:'T) : IConsumableSeq<'T> =
             if count < 0 then raise (ArgumentOutOfRangeException "count")
-            new InitEnumerable<'T,'T>(Nullable count, (fun _ -> initial), IdentityFactory.Instance, 1) :> _
+            new InitEnumerable<'T,'T>(Nullable count, (fun _ -> initial), IdentityTransform.Instance, 1) :> _
 
         [<CompiledName("IsEmpty")>]
-        let internal isEmpty (source : ISeq<'T>)  =
+        let internal isEmpty (source : IConsumableSeq<'T>)  =
             match source with
             | :? list<'T> as lst -> lst.IsEmpty
             | _ ->
@@ -1270,22 +1292,23 @@ namespace Microsoft.FSharp.Collections
                 not (ie.MoveNext())
 
         [<CompiledName("Cast")>]
-        let internal cast (source: IEnumerable) : ISeq<'T> =
+        let internal cast (source: IEnumerable) : IConsumableSeq<'T> =
             match source with
-            | :? ISeq<'T> as s -> s
-            | :? ISeq<obj> as s -> s |> map unbox // covariant on ref types
+            | :? IConsumableSeq<'T> as s -> s
+            | :? IConsumableSeq<obj> as s -> s |> map unbox // covariant on ref types
             | _ -> 
                 mkSeq (fun () -> IEnumerator.cast (source.GetEnumerator())) |> ofSeq
 
         [<CompiledName("ChunkBySize")>]
-        let internal chunkBySize chunkSize (source : ISeq<'T>) : ISeq<'T[]> =
+        let internal chunkBySize chunkSize (source : IConsumableSeq<'T>) : IConsumableSeq<'T[]> =
             if chunkSize <= 0 then invalidArgFmt "chunkSize" "{0}\nchunkSize = {1}"
                                     [|SR.GetString SR.inputMustBePositive; chunkSize|]
 
-            source.PushTransform { new ITransformFactory<'T,'T[]> with
+            source.Transform 
+             { new ISeqTransform<'T,'T[]> with
                 member __.Compose outOfBand pipeIdx next =
                     {
-                        new TransformWithPostProcessing<'T,'U,Values<'T[],int>>(next,Values<'T[],int>(Array.zeroCreateUnchecked chunkSize, 0)) with
+                        new SeqTransformActivityWithPostProcessing<'T,'U,Values<'T[],int>>(next,Values<'T[],int>(Array.zeroCreateUnchecked chunkSize, 0)) with
                             override this.ProcessNext (input:'T) : bool =
                                 this.State._1.[this.State._2] <- input
                                 this.State._2 <- this.State._2 + 1
@@ -1306,7 +1329,7 @@ namespace Microsoft.FSharp.Collections
         let internal mkDelayedSeq (f: unit -> IEnumerable<'T>) = mkSeq (fun () -> f().GetEnumerator()) |> ofSeq
 
         [<CompiledName("SplitInto")>]
-        let internal splitInto count (source:ISeq<'T>) : ISeq<'T[]> =
+        let internal splitInto count (source:IConsumableSeq<'T>) : IConsumableSeq<'T[]> =
             if count <= 0 then invalidArgFmt "count" "{0}\ncount = {1}"
                                 [|SR.GetString SR.inputMustBePositive; count|]
             mkDelayedSeq (fun () ->
@@ -1321,7 +1344,7 @@ namespace Microsoft.FSharp.Collections
             | Some x -> x
 
         [<CompiledName("FindIndex")>]
-        let internal findIndex predicate (source:ISeq<_>) =
+        let internal findIndex predicate (source:IConsumableSeq<_>) =
             use ie = source.GetEnumerator()
             let rec loop i =
                 if ie.MoveNext() then
@@ -1367,7 +1390,7 @@ namespace Microsoft.FSharp.Collections
             else nth (index-1) e
 
         [<CompiledName("Item")>]
-        let internal item index (source : ISeq<'T>) =
+        let internal item index (source : IConsumableSeq<'T>) =
             if index < 0 then invalidArgInputMustBeNonNegative "index" index
             use e = source.GetEnumerator()
             nth index e
@@ -1383,11 +1406,11 @@ namespace Microsoft.FSharp.Collections
             sortWith compareDescending source
 
         [<CompiledName("TryFindBack")>]
-        let internal tryFindBack predicate (source : ISeq<'T>) =
+        let internal tryFindBack predicate (source : IConsumableSeq<'T>) =
             source |> toArray |> Array.tryFindBack predicate
 
         [<CompiledName("TryFindIndexBack")>]
-        let internal tryFindIndexBack predicate (source : ISeq<'T>) =
+        let internal tryFindIndexBack predicate (source : IConsumableSeq<'T>) =
             source |> toArray |> Array.tryFindIndexBack predicate
 
         [<CompiledName("Zip3")>]

@@ -805,7 +805,7 @@
   } // end of class 'numSum@22-1'
 
   .class auto autochar serializable sealed nested assembly beforefieldinit specialname 'numSum@22-3'
-         extends class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.Folder`2<int32,int32>
+         extends class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.SeqConsumer`2<int32,int32>
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
     .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32> projection
@@ -822,7 +822,7 @@
       IL_0002:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32> Linq101Aggregates01/'numSum@22-3'::projection
       IL_0007:  ldarg.0
       IL_0008:  ldc.i4.0
-      IL_0009:  callvirt   instance void class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.Folder`2<int32,int32>::.ctor(!1)
+      IL_0009:  callvirt   instance void class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.SeqConsumer`2<int32,int32>::.ctor(!1)
       IL_000e:  ldarg.0
       IL_000f:  pop
       IL_0010:  ret
@@ -836,13 +836,13 @@
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
       IL_0001:  ldarg.0
-      IL_0002:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.Folder`2<int32,int32>::get_Result()
+      IL_0002:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.SeqConsumer`2<int32,int32>::get_Result()
       IL_0007:  ldarg.0
       IL_0008:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32> Linq101Aggregates01/'numSum@22-3'::projection
       IL_000d:  ldarg.1
       IL_000e:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>::Invoke(!0)
       IL_0013:  add.ovf
-      IL_0014:  callvirt   instance void class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.Folder`2<int32,int32>::set_Result(!1)
+      IL_0014:  callvirt   instance void class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.SeqConsumer`2<int32,int32>::set_Result(!1)
       IL_0019:  nop
       .line 22,22 : 9,16 ''
       IL_001a:  ldc.i4.0
@@ -852,7 +852,7 @@
   } // end of class 'numSum@22-3'
 
   .class auto ansi serializable sealed nested assembly beforefieldinit 'numSum@22-2'
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.Folder`2<int32,int32>>
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.SeqConsumer`2<int32,int32>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32> projection
     .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -866,14 +866,14 @@
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.Folder`2<int32,int32>>::.ctor()
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.SeqConsumer`2<int32,int32>>::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
       IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32> Linq101Aggregates01/'numSum@22-2'::projection
       IL_000d:  ret
     } // end of method 'numSum@22-2'::.ctor
 
-    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.Folder`2<int32,int32> 
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.SeqConsumer`2<int32,int32> 
             Invoke(int32 _arg1) cil managed
     {
       // Code size       12 (0xc)
@@ -1274,7 +1274,7 @@
   } // end of class 'totalChars@31-1'
 
   .class auto autochar serializable sealed nested assembly beforefieldinit specialname 'totalChars@31-3'
-         extends class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.Folder`2<string,int32>
+         extends class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.SeqConsumer`2<string,int32>
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
     .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,int32> projection
@@ -1291,7 +1291,7 @@
       IL_0002:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,int32> Linq101Aggregates01/'totalChars@31-3'::projection
       IL_0007:  ldarg.0
       IL_0008:  ldc.i4.0
-      IL_0009:  callvirt   instance void class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.Folder`2<string,int32>::.ctor(!1)
+      IL_0009:  callvirt   instance void class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.SeqConsumer`2<string,int32>::.ctor(!1)
       IL_000e:  ldarg.0
       IL_000f:  pop
       IL_0010:  ret
@@ -1305,13 +1305,13 @@
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
       IL_0001:  ldarg.0
-      IL_0002:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.Folder`2<string,int32>::get_Result()
+      IL_0002:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.SeqConsumer`2<string,int32>::get_Result()
       IL_0007:  ldarg.0
       IL_0008:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,int32> Linq101Aggregates01/'totalChars@31-3'::projection
       IL_000d:  ldarg.1
       IL_000e:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,int32>::Invoke(!0)
       IL_0013:  add.ovf
-      IL_0014:  callvirt   instance void class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.Folder`2<string,int32>::set_Result(!1)
+      IL_0014:  callvirt   instance void class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.SeqConsumer`2<string,int32>::set_Result(!1)
       IL_0019:  nop
       .line 31,31 : 9,25 ''
       IL_001a:  ldc.i4.0
@@ -1321,7 +1321,7 @@
   } // end of class 'totalChars@31-3'
 
   .class auto ansi serializable sealed nested assembly beforefieldinit 'totalChars@31-2'
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.Folder`2<string,int32>>
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.SeqConsumer`2<string,int32>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,int32> projection
     .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -1335,14 +1335,14 @@
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.Folder`2<string,int32>>::.ctor()
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.SeqConsumer`2<string,int32>>::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
       IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,int32> Linq101Aggregates01/'totalChars@31-2'::projection
       IL_000d:  ret
     } // end of method 'totalChars@31-2'::.ctor
 
-    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.Folder`2<string,int32> 
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.SeqConsumer`2<string,int32> 
             Invoke(int32 _arg1) cil managed
     {
       // Code size       12 (0xc)
@@ -1851,7 +1851,7 @@
   } // end of class 'sum@43-1'
 
   .class auto autochar serializable sealed nested assembly beforefieldinit specialname 'sum@43-3'
-         extends class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.Folder`2<class [Utils]Utils/Product,int32>
+         extends class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.SeqConsumer`2<class [Utils]Utils/Product,int32>
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
     .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,int32> projection
@@ -1868,7 +1868,7 @@
       IL_0002:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,int32> Linq101Aggregates01/'sum@43-3'::projection
       IL_0007:  ldarg.0
       IL_0008:  ldc.i4.0
-      IL_0009:  callvirt   instance void class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.Folder`2<class [Utils]Utils/Product,int32>::.ctor(!1)
+      IL_0009:  callvirt   instance void class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.SeqConsumer`2<class [Utils]Utils/Product,int32>::.ctor(!1)
       IL_000e:  ldarg.0
       IL_000f:  pop
       IL_0010:  ret
@@ -1882,13 +1882,13 @@
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.0
       IL_0001:  ldarg.0
-      IL_0002:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.Folder`2<class [Utils]Utils/Product,int32>::get_Result()
+      IL_0002:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.SeqConsumer`2<class [Utils]Utils/Product,int32>::get_Result()
       IL_0007:  ldarg.0
       IL_0008:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,int32> Linq101Aggregates01/'sum@43-3'::projection
       IL_000d:  ldarg.1
       IL_000e:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,int32>::Invoke(!0)
       IL_0013:  add.ovf
-      IL_0014:  callvirt   instance void class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.Folder`2<class [Utils]Utils/Product,int32>::set_Result(!1)
+      IL_0014:  callvirt   instance void class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.SeqConsumer`2<class [Utils]Utils/Product,int32>::set_Result(!1)
       IL_0019:  nop
       .line 43,43 : 13,33 ''
       IL_001a:  ldc.i4.0
@@ -1898,7 +1898,7 @@
   } // end of class 'sum@43-3'
 
   .class auto ansi serializable sealed nested assembly beforefieldinit 'sum@43-2'
-         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.Folder`2<class [Utils]Utils/Product,int32>>
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.SeqConsumer`2<class [Utils]Utils/Product,int32>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,int32> projection
     .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -1912,14 +1912,14 @@
       // Code size       14 (0xe)
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.Folder`2<class [Utils]Utils/Product,int32>>::.ctor()
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.SeqConsumer`2<class [Utils]Utils/Product,int32>>::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  ldarg.1
       IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,int32> Linq101Aggregates01/'sum@43-2'::projection
       IL_000d:  ret
     } // end of method 'sum@43-2'::.ctor
 
-    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.Folder`2<class [Utils]Utils/Product,int32> 
+    .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.SeqConsumer`2<class [Utils]Utils/Product,int32> 
             Invoke(int32 _arg1) cil managed
     {
       // Code size       12 (0xc)
@@ -2007,10 +2007,10 @@
       .line 100001,100001 : 0,0 ''
       IL_0042:  nop
       IL_0043:  ldloc.s    V_6
-      IL_0045:  call       class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.ISeq`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.ISeqModule::OfSeq<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+      IL_0045:  call       class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.IConsumableSeq`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.IConsumableSeqModule::OfSeq<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
       IL_004a:  ldloc.s    V_5
       IL_004c:  newobj     instance void Linq101Aggregates01/'sum@43-2'::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,int32>)
-      IL_0051:  callvirt   instance !!0 class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.ISeq`1<class [Utils]Utils/Product>::Fold<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.Folder`2<!0,!!0>>)
+      IL_0051:  callvirt   instance !!0 class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.IConsumableSeq`1<class [Utils]Utils/Product>::Fold<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.SeqConsumer`2<!0,!!0>>)
       IL_0056:  stloc.1
       .line 45,45 : 9,28 ''
       IL_0057:  ldarg.0
@@ -8204,10 +8204,10 @@
     .line 100001,100001 : 0,0 ''
     IL_00e3:  nop
     IL_00e4:  ldloc.s    V_25
-    IL_00e6:  call       class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.ISeq`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.ISeqModule::OfSeq<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_00e6:  call       class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.IConsumableSeq`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.IConsumableSeqModule::OfSeq<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_00eb:  ldloc.s    V_24
     IL_00ed:  newobj     instance void Linq101Aggregates01/'numSum@22-2'::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>)
-    IL_00f2:  callvirt   instance !!0 class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.ISeq`1<int32>::Fold<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.Folder`2<!0,!!0>>)
+    IL_00f2:  callvirt   instance !!0 class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.IConsumableSeq`1<int32>::Fold<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.SeqConsumer`2<!0,!!0>>)
     IL_00f7:  dup
     IL_00f8:  stsfld     int32 '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::numSum@19
     IL_00fd:  stloc.3
@@ -8260,10 +8260,10 @@
     .line 100001,100001 : 0,0 ''
     IL_016b:  nop
     IL_016c:  ldloc.s    V_30
-    IL_016e:  call       class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.ISeq`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.ISeqModule::OfSeq<string>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_016e:  call       class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.IConsumableSeq`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.IConsumableSeqModule::OfSeq<string>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_0173:  ldloc.s    V_29
     IL_0175:  newobj     instance void Linq101Aggregates01/'totalChars@31-2'::.ctor(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,int32>)
-    IL_017a:  callvirt   instance !!0 class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.ISeq`1<string>::Fold<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.Folder`2<!0,!!0>>)
+    IL_017a:  callvirt   instance !!0 class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.IConsumableSeq`1<string>::Fold<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Collections.SeqComposition.SeqConsumer`2<!0,!!0>>)
     IL_017f:  dup
     IL_0180:  stsfld     int32 '<StartupCode$Linq101Aggregates01>'.$Linq101Aggregates01::totalChars@28
     IL_0185:  stloc.s    totalChars

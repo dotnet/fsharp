@@ -71,43 +71,43 @@ namespace Microsoft.FSharp.Collections.SeqComposition
     [<AbstractClass>]
     type internal EnumerableBase<'T> =
         new : unit -> EnumerableBase<'T>
-        abstract member Append : ISeq<'T> -> ISeq<'T>
+        abstract member Append : IConsumableSeq<'T> -> IConsumableSeq<'T>
         abstract member Length : unit -> int
         abstract member GetRaw : unit -> seq<'T>
-        default Append : ISeq<'T> -> ISeq<'T>
+        default Append : IConsumableSeq<'T> -> IConsumableSeq<'T>
         default Length : unit -> int
         default GetRaw : unit -> seq<'T>
-        interface ISeq<'T>
+        interface IConsumableSeq<'T>
 
     [<AbstractClass>]
     type internal SeqFactoryBase<'T,'U> =
         inherit EnumerableBase<'U>
-        new : ITransformFactory<'T,'U> * PipeIdx -> SeqFactoryBase<'T,'U>
+        new : ISeqTransform<'T,'U> * PipeIdx -> SeqFactoryBase<'T,'U>
 
     [<Class>]
-    type internal IdentityFactory<'T> =
-        interface ITransformFactory<'T,'T> 
-        static member Instance : ITransformFactory<'T,'T> 
+    type internal IdentityTransform<'T> =
+        interface ISeqTransform<'T,'T> 
+        static member Instance : ISeqTransform<'T,'T> 
 
     type internal ISkipable =
-        // Seq.init(Infinite)? lazily uses Current. The only ISeq component that can do that is Skip
+        // Seq.init(Infinite)? lazily uses Current. The only IConsumableSeq component that can do that is Skip
         // and it can only do it at the start of a sequence
         abstract CanSkip : unit -> bool
 
-    type internal ThinConcatEnumerable<'T, 'Sources, 'Collection when 'Collection :> ISeq<'T>> =
+    type internal ThinConcatEnumerable<'T, 'Sources, 'Collection when 'Collection :> IConsumableSeq<'T>> =
         inherit EnumerableBase<'T>
-        new : 'Sources * ('Sources->ISeq<'Collection>) -> ThinConcatEnumerable<'T, 'Sources, 'Collection>
-        interface ISeq<'T>
+        new : 'Sources * ('Sources->IConsumableSeq<'Collection>) -> ThinConcatEnumerable<'T, 'Sources, 'Collection>
+        interface IConsumableSeq<'T>
 
     type internal AppendEnumerable<'T> =
-        inherit ThinConcatEnumerable<'T, list<ISeq<'T>>, ISeq<'T>>
-        new : list<ISeq<'T>> -> AppendEnumerable<'T>
-        override Append : ISeq<'T> -> ISeq<'T>
+        inherit ThinConcatEnumerable<'T, list<IConsumableSeq<'T>>, IConsumableSeq<'T>>
+        new : list<IConsumableSeq<'T>> -> AppendEnumerable<'T>
+        override Append : IConsumableSeq<'T> -> IConsumableSeq<'T>
 
     type internal ResizeArrayEnumerable<'T,'U> = 
         inherit SeqFactoryBase<'T,'U>
-        new : ResizeArray<'T> * ITransformFactory<'T,'U> * PipeIdx -> ResizeArrayEnumerable<'T,'U>
-        interface ISeq<'U>
+        new : ResizeArray<'T> * ISeqTransform<'T,'U> * PipeIdx -> ResizeArrayEnumerable<'T,'U>
+        interface IConsumableSeq<'U>
 
     type internal ThinResizeArrayEnumerable<'T> =
         inherit ResizeArrayEnumerable<'T,'T>
@@ -115,8 +115,8 @@ namespace Microsoft.FSharp.Collections.SeqComposition
 
     type internal ArrayEnumerable<'T,'U> =
         inherit SeqFactoryBase<'T,'U>
-        new : array<'T> * ITransformFactory<'T,'U> * PipeIdx -> ArrayEnumerable<'T,'U>
-        interface ISeq<'U>
+        new : array<'T> * ISeqTransform<'T,'U> * PipeIdx -> ArrayEnumerable<'T,'U>
+        interface IConsumableSeq<'U>
 
     type internal ThinArrayEnumerable<'T> =
         inherit ArrayEnumerable<'T, 'T>
@@ -125,8 +125,8 @@ namespace Microsoft.FSharp.Collections.SeqComposition
 
     type internal VanillaEnumerable<'T,'U> =
         inherit SeqFactoryBase<'T,'U>
-        new : IEnumerable<'T> * ITransformFactory<'T,'U> * PipeIdx -> VanillaEnumerable<'T,'U>
-        interface ISeq<'U>
+        new : IEnumerable<'T> * ISeqTransform<'T,'U> * PipeIdx -> VanillaEnumerable<'T,'U>
+        interface IConsumableSeq<'U>
 
     type internal ThinEnumerable<'T> =
         inherit VanillaEnumerable<'T,'T>
@@ -135,34 +135,34 @@ namespace Microsoft.FSharp.Collections.SeqComposition
 
     type internal UnfoldEnumerable<'T,'U,'GeneratorState> =
         inherit SeqFactoryBase<'T,'U>
-        new : ('GeneratorState->option<'T*'GeneratorState>)*'GeneratorState*ITransformFactory<'T,'U>*PipeIdx -> UnfoldEnumerable<'T,'U,'GeneratorState>
-        interface ISeq<'U>
+        new : ('GeneratorState->option<'T*'GeneratorState>)*'GeneratorState*ISeqTransform<'T,'U>*PipeIdx -> UnfoldEnumerable<'T,'U,'GeneratorState>
+        interface IConsumableSeq<'U>
 
     type internal InitEnumerableDecider<'T> =
         inherit EnumerableBase<'T>
         new : Nullable<int>* (int->'T) * PipeIdx -> InitEnumerableDecider<'T>
-        interface ISeq<'T>
+        interface IConsumableSeq<'T>
         
     type internal SingletonEnumerable<'T> =
         inherit EnumerableBase<'T>
         new : 'T -> SingletonEnumerable<'T>
-        interface ISeq<'T>
+        interface IConsumableSeq<'T>
 
     type internal InitEnumerable<'T,'U> =
         inherit SeqFactoryBase<'T,'U>
-        new : Nullable<int> * (int->'T) * ITransformFactory<'T,'U> * PipeIdx -> InitEnumerable<'T,'U>
-        interface ISeq<'U>
+        new : Nullable<int> * (int->'T) * ISeqTransform<'T,'U> * PipeIdx -> InitEnumerable<'T,'U>
+        interface IConsumableSeq<'U>
 
     type internal DelayedEnumerable<'T> =
         inherit EnumerableBase<'T>
-        new : (unit->ISeq<'T>) * PipeIdx -> DelayedEnumerable<'T>
-        interface ISeq<'T>
+        new : (unit->IConsumableSeq<'T>) * PipeIdx -> DelayedEnumerable<'T>
+        interface IConsumableSeq<'T>
 
     type internal EmptyEnumerable<'T> =
         inherit EnumerableBase<'T>
         private new : unit -> EmptyEnumerable<'T>
-        static member Instance : ISeq<'T>
-        interface ISeq<'T>
+        static member Instance : IConsumableSeq<'T>
+        interface IConsumableSeq<'T>
 
 namespace Microsoft.FSharp.Core.CompilerServices
 
@@ -253,4 +253,4 @@ namespace Microsoft.FSharp.Core.CompilerServices
         interface IEnumerator<'T> 
         interface IEnumerator 
         interface IDisposable 
-        interface SeqComposition.ISeq<'T>
+        interface SeqComposition.IConsumableSeq<'T>

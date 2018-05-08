@@ -1255,7 +1255,7 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "arrays" arrays
             match arrays with
             | :? ('T[][]) as ts -> ts |> transposeArrays // avoid a clone, since we only read the array
-            | _ -> arrays |> Seq.toArray |> transposeArrays
+            | _ -> arrays |> Microsoft.FSharp.Primitives.Basics.Array.ofSeq |> transposeArrays
 
         [<CompiledName("Truncate")>]
         let truncate count (array:'T[]) =
