@@ -104,8 +104,23 @@ let mainMethName = CompilerGeneratedName "main"
 
 type AttributeDecoder(namedArgs) = 
     let nameMap = namedArgs |> List.map (fun (AttribNamedArg(s,_,_,c)) -> s,c) |> NameMap.ofList
-    let findConst x = match NameMap.tryFind x nameMap with | Some(AttribExpr(_,Expr.Const(c,_,_))) -> Some c | _ -> None
-    let findAppTr x = match NameMap.tryFind x nameMap with | Some(AttribExpr(_,Expr.App(_,_,[TType_app(tr,_)],_,_))) -> Some tr | _ -> None
+    let findConst x =
+        let mutable res = Unchecked.defaultof<_>
+        if nameMap.TryGetValue(x,&res) then
+            match res with
+            | AttribExpr(_,Expr.Const(c,_,_)) -> Some c 
+            | _  -> None
+        else
+            None
+
+    let findAppTr x =
+        let mutable res = Unchecked.defaultof<_>
+        if nameMap.TryGetValue(x,&res) then
+            match res with
+            | AttribExpr(_,Expr.App(_,_,[TType_app(tr,_)],_,_)) -> Some tr 
+            | _  -> None
+        else
+            None
 
     member self.FindInt16  x dflt = match findConst x with | Some(Const.Int16 x) -> x | _ -> dflt
     member self.FindInt32  x dflt = match findConst x with | Some(Const.Int32 x) -> x | _ -> dflt
