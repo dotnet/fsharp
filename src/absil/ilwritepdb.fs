@@ -594,7 +594,7 @@ open Microsoft.FSharp.Reflection
 // Supports the following cases:
 //   obj?Foo()        // call with no arguments
 //   obj?Foo(1, "a")  // call with two arguments (extracted from tuple)
-// NOTE: This doesn�t actually handle all overloads.  It just picks first entry with right 
+// NOTE: This doesn't actually handle all overloads.  It just picks first entry with right 
 // number of arguments.
 let (?) this memb (args:'Args) : 'R = 
     // Get array of 'obj' arguments for the reflection call
@@ -628,7 +628,7 @@ let createWriter (f:string) =
 // MDB Writer.  Generate debug symbols using the MDB format
 //---------------------------------------------------------------------
 let writeMdbInfo fmdb f info = 
-    // Note, if we can�t delete it code will fail later
+    // Note, if we can't delete it code will fail later
     try FileSystem.FileDelete fmdb with _ -> ()
 
     // Try loading the MDB symbol writer from an assembly available on Mono dynamically

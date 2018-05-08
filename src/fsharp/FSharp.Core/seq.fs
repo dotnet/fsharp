@@ -43,6 +43,7 @@ namespace Microsoft.FSharp.Collections
     [<RequireQualifiedAccess>]
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module Seq =
+
         open Microsoft.FSharp.Collections.Internal
         open Microsoft.FSharp.Collections.IEnumerator
 

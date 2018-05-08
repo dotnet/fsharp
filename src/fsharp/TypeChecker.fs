@@ -13285,6 +13285,7 @@ module MutRecBindingChecking =
                         // Phase2B: typecheck the argument to an 'inherits' call and build the new object expr for the inherit-call 
                         | Phase2AInherit (synBaseTy, arg, baseValOpt, m) ->
                             let baseTy, tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurence.Use envInstance tpenv synBaseTy
+                            let baseTy = baseTy |> helpEnsureTypeHasMetadata cenv.g
                             let inheritsExpr, tpenv = TcNewExpr cenv envInstance tpenv baseTy (Some synBaseTy.Range) true arg m
                             let envInstance = match baseValOpt with Some baseVal -> AddLocalVal cenv.tcSink scopem baseVal envInstance | None -> envInstance
                             let envNonRec   = match baseValOpt with Some baseVal -> AddLocalVal cenv.tcSink scopem baseVal envNonRec   | None -> envNonRec
@@ -15092,6 +15093,15 @@ module EstablishTypeDefinitionCores =
 
                   | SynTypeDefnSimpleRepr.Enum _ -> 
                       Some(cenv.g.system_Enum_typ) 
+
+              // Allow super type to be a function type but convert back to FSharpFunc<A,B> to make sure it has metadata
+              // (We don't apply the same rule to tuple types, i.e. no F#-declared inheritors of those are permitted)
+              let super = 
+                  super |> Option.map (fun ty -> 
+                     if isFunTy cenv.g ty then  
+                         let (a,b) = destFunTy cenv.g ty
+                         mkAppTy cenv.g.fastFunc_tcr [a; b] 
+                     else ty)
 
               // Publish the super type
               tycon.TypeContents.tcaug_super <- super
@@ -17172,13 +17182,13 @@ let TypeCheckOneImplFile
     topAttrs.assemblyAttrs |> List.iter (function
        | Attrib(tref, _, [ AttribExpr(Expr.Const (Const.String(version), range, _), _) ] , _, _, _, _) ->
             let attrName = tref.CompiledRepresentationForNamedType.FullName
-            let isValid =
+            let isValid() =
                 try IL.parseILVersion version |> ignore; true
                 with _ -> false
             match attrName with
             | "System.Reflection.AssemblyInformationalVersionAttribute"
             | "System.Reflection.AssemblyFileVersionAttribute" //TODO compile error like c# compiler?
-            | "System.Reflection.AssemblyVersionAttribute" when not isValid ->
+            | "System.Reflection.AssemblyVersionAttribute" when not (isValid()) ->
                 warning(Error(FSComp.SR.fscBadAssemblyVersion(attrName, version), range))
             | _ -> ()
         | _ -> ())

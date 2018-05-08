@@ -79,10 +79,6 @@ open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Core.Operators
 open System.Diagnostics.CodeAnalysis                                    
 open System.Collections.Generic
-#if FX_NO_ICLONEABLE
-open Microsoft.FSharp.Core.ICloneableExtensions            
-#else
-#endif  
 
 
 module internal List = 
