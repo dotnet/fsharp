@@ -3983,12 +3983,15 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForRecordFields (ncenv: NameRe
          ]
 
     | id :: rest  -> 
-        (match mty.ModulesAndNamespacesByDemangledName.TryFind(id) with
-         | Some mspec 
-             when not (IsTyconUnseenObsoleteSpec ad g ncenv.amap m (modref.NestedTyconRef mspec) allowObsolete) -> 
-             let allowObsolete = rest <> [] && allowObsolete
-             ResolvePartialLongIdentInModuleOrNamespaceForRecordFields ncenv nenv m ad (modref.NestedTyconRef mspec) rest allowObsolete
-         | _ -> [])
+        (let mutable mspec = Unchecked.defaultof<_>
+         if mty.ModulesAndNamespacesByDemangledName.TryGetValue(id,&mspec) then
+            let tcRef = modref.NestedTyconRef mspec
+            if IsTyconUnseenObsoleteSpec ad g ncenv.amap m tcRef allowObsolete then
+                []
+            else
+                let allowObsolete = rest <> [] && allowObsolete
+                ResolvePartialLongIdentInModuleOrNamespaceForRecordFields ncenv nenv m ad tcRef rest allowObsolete
+         else [])
         @ (
             match rest with
             | [] -> 
