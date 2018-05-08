@@ -736,15 +736,16 @@ let AddExceptionDeclsToNameEnv bulkAddMode nenv (ecref:TyconRef) =
 let AddModuleAbbrevToNameEnv (id:Ident) nenv modrefs =
     {nenv with
        eModulesAndNamespaces =
-         Map.foldBack (fun x y sofar -> 
+        (Map.add id.idText modrefs Map.empty,nenv.eModulesAndNamespaces)
+        ||> Map.foldBack (fun x y (sofar:Map<_,_>) ->
+            let mutable old = Unchecked.defaultof<_>
             let v =
-                match Map.tryFind x sofar with
-                | Some old -> y @ old
-                | _ -> y
+                if sofar.TryGetValue(x,&old) then
+                    y @ old
+                else
+                    y
 
-            Map.add x v sofar) 
-              (Map.add id.idText modrefs Map.empty) 
-              nenv.eModulesAndNamespaces }
+            Map.add x v sofar)  }
 
 
 //-------------------------------------------------------------------------

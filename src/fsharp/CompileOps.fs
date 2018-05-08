@@ -3988,7 +3988,6 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         | None ->
             tcImports.ImplicitLoadIfAllowed(ctok, m, assemblyName, lookupOnly)
             look tcImports
-    
 
     member tcImports.FindDllInfo (ctok, m, assemblyName) =
         match tcImports.TryFindDllInfo (ctok, m, assemblyName, lookupOnly=false) with 
@@ -4028,7 +4027,6 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             match look tcImports with 
             | Some res -> ResolvedImportedAssembly(res)
             | None -> UnresolvedImportedAssembly(assemblyName)
-        
 
     member tcImports.FindCcu (ctok, m, assemblyName, lookupOnly) = 
         CheckDisposed()
