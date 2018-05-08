@@ -7,15 +7,16 @@ open Test
 
 // =========== Alias Testing ============
 
+type Julia = Generic.IdentityType<string>
+
 type G<'a> = | G of 'a
 
-type MyNewProvider<'a> = Generic.IdentityType<G<'a>>
-
+type MyNewProvider<'a> = Generic.ConstType< G<'a> , string >
 type MyOtherProvider<'b> = MyNewProvider<Option<'b>>
 
 type X = MyOtherProvider<int>
 
-let x = X.Invoke (G (Some 5))
+let x = X.Invoke((G (Some 5)), "hello")
 
 printfn "%A" x
 

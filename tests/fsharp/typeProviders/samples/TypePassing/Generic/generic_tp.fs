@@ -34,11 +34,11 @@ type TypePassingTp(config: TypeProviderConfig) as this =
 
     do genericMethodType.AddMember(builder)
 
-    // ====== Generic Type ========
+    // ====== Generic Types ========
 
-    let genericType = ProvidedTypeDefinition(runtimeAssembly, ns, "IdentityType", baseType = Some typeof<obj>, hideObjectMethods=true)
+    let idType = ProvidedTypeDefinition(runtimeAssembly, ns, "IdentityType", baseType = Some typeof<obj>, hideObjectMethods=true)
 
-    let createType (t : Type) (name : string) : ProvidedTypeDefinition =
+    let createIdType (t : Type) (name : string) : ProvidedTypeDefinition =
         let invoke (xs : Quotations.Expr list) =
             xs.[0]
         let newType = ProvidedTypeDefinition(runtimeAssembly, ns, name, baseType = Some typeof<obj>, hideObjectMethods = true)
@@ -46,14 +46,30 @@ type TypePassingTp(config: TypeProviderConfig) as this =
         newType.AddMember(m)
         newType
 
-    do genericType.DefineStaticParameters(
+    do idType.DefineStaticParameters(
         [
             ProvidedStaticParameter("Type",typeof<Type>, null)
-        ], fun typeName args -> createType (unbox args.[0]) typeName)
+        ], fun typeName args -> createIdType (unbox args.[0]) typeName)
+
+    let constType = ProvidedTypeDefinition(runtimeAssembly, ns, "ConstType", baseType = Some typeof<obj>, hideObjectMethods=true)
+
+    let createIdType (t1 : Type) (t2 : Type) (name : string) : ProvidedTypeDefinition =
+        let invoke (xs : Quotations.Expr list) =
+            xs.[0]
+        let newType = ProvidedTypeDefinition(runtimeAssembly, ns, name, baseType = Some typeof<obj>, hideObjectMethods = true)
+        let m = ProvidedMethod("Invoke", [ProvidedParameter("x", t1); ProvidedParameter("y", t2)], t1, invoke, isStatic = true)
+        newType.AddMember(m)
+        newType
+
+    do constType.DefineStaticParameters(
+        [
+            ProvidedStaticParameter("Type1",typeof<Type>, null)
+            ProvidedStaticParameter("Type2",typeof<Type>, null)
+        ], fun typeName args -> createIdType (unbox args.[0]) (unbox args.[1]) typeName)
 
     // ===========================
 
-    do this.AddNamespace(ns, [genericMethodType; genericType])
+    do this.AddNamespace(ns, [genericMethodType; idType; constType])
 
 [<assembly:TypeProviderAssembly>]
 do()
