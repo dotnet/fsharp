@@ -762,20 +762,19 @@ let MakeNestedModuleRefs (modref: ModuleOrNamespaceRef) =
 let rec AddModuleOrNamespaceRefsToNameEnv g amap m root ad nenv (modrefs: ModuleOrNamespaceRef list) =
     if isNil modrefs then nenv else
     let modrefsMap = modrefs |> NameMap.ofKeyedList (fun modref -> modref.DemangledModuleOrNamespaceName)
-    let addModrefs tab = 
-        let add old nw = 
-            if IsEntityAccessible amap m ad nw then  
-                nw :: old
-            else 
-                old
-
+    let addModrefs tab =
         Map.foldBack (fun x y sofar -> 
-            let v =
-                match Map.tryFind x sofar with
-                | Some prev -> add prev y
-                | _ -> add [] y
-
-            Map.add x v sofar) modrefsMap tab
+            match Map.tryFind x sofar with
+            | Some prev ->
+                if IsEntityAccessible amap m ad y then  
+                    Map.add x [y :: prev] sofar
+                else 
+                    sofar
+            | _ ->
+                if IsEntityAccessible amap m ad y then  
+                    Map.add x [y] sofar
+                else 
+                    Map.add x [] sofar) modrefsMap tab
 
     let nenv = 
         {nenv with
