@@ -4484,15 +4484,15 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 
                 let optdata = 
                     lazy 
-                        (match Map.tryFind ccuName optDatas  with 
-                         | None -> 
-                            if verbose then dprintf "*** no optimization data for CCU %s, was DLL compiled with --no-optimization-data??\n" ccuName 
-                            None
-                         | Some info -> 
+                        (let mutable info = Unchecked.defaultof<_>
+                         if optDatas.TryGetValue(ccuName,&info) then
                             let data = GetOptimizationData (filename, ilScopeRef, ilModule.TryGetILModuleDef(), info)
                             let res = data.OptionalFixup(fun nm -> availableToOptionalCcu(tcImports.FindCcu(ctok, m, nm, lookupOnly=false))) 
                             if verbose then dprintf "found optimization data for CCU %s\n" ccuName 
-                            Some res)
+                            Some res
+                         else
+                            if verbose then dprintf "*** no optimization data for CCU %s, was DLL compiled with --no-optimization-data??\n" ccuName 
+                            None)
                 let ilg = defaultArg ilGlobalsOpt EcmaMscorlibILGlobals
                 let ccuinfo = 
                     { FSharpViewOfMetadata=ccu 
