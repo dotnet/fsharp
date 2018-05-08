@@ -86,6 +86,7 @@ open Microsoft.FSharp.Core.ICloneableExtensions
 
 
 module internal List = 
+    open Microsoft.FSharp.Collections.SeqComposition
 
     let arrayZeroCreate (n:int) = (# "newarr !0" type ('T) n : 'T array #)
 
@@ -544,10 +545,35 @@ module internal List =
             res <- arr.[i] :: res
         res
 
+    type FoldToList<'T> () =
+        inherit Folder<'T, list<'T>>([])
+
+        let mutable first = true
+        let mutable cons = Unchecked.defaultof<_>
+
+        override this.ProcessNext input =
+            if first then
+                first <- false
+                this.Result <- freshConsNoTail input
+                cons <- this.Result
+            else
+                let cons2 = freshConsNoTail input
+                setFreshConsTail cons cons2
+                cons <- cons2
+            true (* result unused in fold *)
+
+        override this.ChainComplete _ =
+            if not first then
+                setFreshConsTail cons []
+
+    let ofISeq (s : ISeq<'T>) =
+        s.Fold (fun _ -> upcast FoldToList())
+
     let inline ofSeq (e : IEnumerable<'T>) =
         match e with
         | :? list<'T> as l -> l
         | :? ('T[]) as arr -> ofArray arr
+        | :? ISeq<'T> as s -> ofISeq s
         | _ ->
             use ie = e.GetEnumerator()
             if not (ie.MoveNext()) then []
@@ -988,6 +1014,75 @@ module internal List =
 module internal Array = 
 
     open System
+    open System.Collections.Generic
+    open Microsoft.FSharp.Collections.SeqComposition
+
+#if FX_NO_ARRAY_KEY_SORT
+    // Mimic behavior of BCL QSort routine, used under the hood by various array sorting APIs
+    let qsort<'Key,'Value>(keys : 'Key[], values : 'Value[], start : int, last : int, comparer : IComparer<'Key>) =  
+            let valuesExist = 
+                match values with
+                | null -> false
+                | _ -> true
+                
+            let swap (p1, p2) =
+                let tk = keys.[p1]
+                keys.[p1] <- keys.[p2]
+                keys.[p2] <- tk
+                if valuesExist then
+                    let tv = values.[p1]
+                    values.[p1] <- values.[p2]
+                    values.[p2] <- tv
+                    
+            let partition (left, right, pivot) =
+                let value = keys.[pivot]
+                swap (pivot, right)
+                let mutable store = left
+                
+                for i in left..(right - 1) do
+                    if comparer.Compare(keys.[i],value) < 0 then
+                        swap(i, store)
+                        store <- store + 1
+
+                swap (store, right)
+                store
+            
+            let rec qs (left, right) =
+                if left < right then
+                    let pivot = left + (right-left)/2
+                    let newpivot = partition(left,right,pivot)
+                    qs(left,newpivot - 1)
+                    qs(newpivot+1,right)
+            
+            qs(start, last)
+            
+    type System.Array with
+        static member Sort<'Key,'Value>(keys : 'Key[], values : 'Value[], comparer : IComparer<'Key>) =
+            let valuesExist = 
+                match values with
+                | null -> false
+                | _ -> true
+            match keys,values with
+            | null,_ -> raise (ArgumentNullException())
+            | _,_ when valuesExist && (keys.Length <> values.Length) -> raise (ArgumentException())
+            | _,_ -> qsort(keys, values, 0, keys.Length-1, comparer)
+
+        static member Sort<'Key,'Value  when 'Key : comparison>(keys : 'Key[], values : 'Value[]) =
+            let valuesExist = 
+                match values with
+                | null -> false
+                | _ -> true
+            match keys,values with
+            | null,_ -> raise (ArgumentNullException())
+            | _,_ when valuesExist && (keys.Length <> values.Length) -> raise (ArgumentException())
+            | _,_ -> qsort(keys,values,0,keys.Length-1,LanguagePrimitives.FastGenericComparer<'Key>)
+
+        static member Sort<'Key,'Value>(keys : 'Key[], values : 'Value[], start : int, length : int, comparer : IComparer<'Key>) =
+            match keys with
+            | null -> raise (ArgumentNullException())
+            | _ -> qsort(keys,values,start,start+length-1,comparer)
+#else
+#endif
 
     let inline fastComparerForArraySort<'t when 't : comparison> () =
         LanguagePrimitives.FastGenericComparerCanBeNull<'t>
@@ -1184,3 +1279,59 @@ module internal Array =
                 res.[i] <- subUnchecked !startIndex minChunkSize array
                 startIndex := !startIndex + minChunkSize
             res
+
+    type FoldToArray<'T> () =
+        inherit Folder<'T, array<'T>>(Unchecked.defaultof<_>)
+
+        let mutable tmp = ResizeArray ()
+
+        override this.ProcessNext input =
+            tmp.Add input
+            true (* result unused in fold *)
+
+        override this.ChainComplete _ =
+            this.Result <- tmp.ToArray ()
+
+    let ofISeq (s : ISeq<'T>) =
+        s.Fold (fun _ -> upcast FoldToArray())
+
+    let ofSeq (source : seq<'T>)  =
+        match source with
+        | :? ('T[]) as res -> (res.Clone() :?> 'T[])
+        | :? ('T list) as res -> List.toArray res
+        | :? ICollection<'T> as res ->
+            // Directly create an array and copy ourselves.
+            // This avoids an extra copy if using ResizeArray in fallback below.
+            let arr = zeroCreateUnchecked res.Count
+            res.CopyTo(arr, 0)
+            arr
+        | :? ISeq<'T> as s -> ofISeq s
+#if !FSCORE_PORTABLE_OLD
+        | :? IReadOnlyCollection<'T> as col ->
+            let res = zeroCreateUnchecked col.Count : 'T[]
+            let mutable idx = 0
+            for x in source do
+                res.[idx] <- x
+                idx <- idx + 1
+            res
+#endif
+        | _ ->
+            let res = ResizeArray source
+            res.ToArray()
+
+    let toSeq (source : array<'T>) : seq<'T> =
+        { new IEnumerable<'T> with
+              member this.GetEnumerator(): Collections.IEnumerator = 
+                  (source:>System.Collections.IEnumerable).GetEnumerator ()
+              member this.GetEnumerator(): IEnumerator<'T> = 
+                  (source:>IEnumerable<'T>).GetEnumerator () }
+
+module internal ISeq =
+    open Microsoft.FSharp.Collections.SeqComposition
+
+    let length (source:ISeq<_>) =
+        source.Fold (fun _ ->
+            { new Folder<'T,int>(0) with
+                override this.ProcessNext v =
+                    this.Result <- this.Result + 1
+                    Unchecked.defaultof<_> (* return value unused in Fold context *) })

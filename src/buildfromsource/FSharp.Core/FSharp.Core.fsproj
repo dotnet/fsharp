@@ -65,12 +65,32 @@
       <Link>Collections/collections.fs</Link>
     </Compile>
     <Compile Include="$(FsCoreDir)\seqcore.fsi">
+    <Compile Include="list.fsi">
+      <Link>Collections/list.fsi</Link>
+    </Compile>
+    <Compile Include="list.fs">
+      <Link>Collections/list.fs</Link>
+    </Compile>
+    <Compile Include="array.fsi">
+      <Link>Collections/array.fsi</Link>
+    </Compile>
+    <Compile Include="array.fs">
+      <Link>Collections/array.fs</Link>
+    </Compile>
+    <Compile Include="seqcore.fsi">
       <Link>Collections/seqcore.fsi</Link>
     </Compile>
     <Compile Include="$(FsCoreDir)\seqcore.fs">
       <Link>Collections/seqcore.fs</Link>
     </Compile>
     <Compile Include="$(FsCoreDir)\seq.fsi">
+    <Compile Include="iseq.fsi">
+      <Link>Collections/iseq.fsi</Link>
+    </Compile>
+    <Compile Include="iseq.fs">
+      <Link>Collections/iseq.fs</Link>
+    </Compile>
+    <Compile Include="seq.fsi">
       <Link>Collections/seq.fsi</Link>
     </Compile>
     <Compile Include="$(FsCoreDir)\seq.fs">
@@ -95,6 +115,7 @@
       <Link>Collections/array.fs</Link>
     </Compile>
     <Compile Include="$(FsCoreDir)\array3.fsi">
+    <Compile Include="array3.fsi">
       <Link>Collections/array3.fsi</Link>
     </Compile>
     <Compile Include="$(FsCoreDir)\array3.fs">
