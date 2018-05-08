@@ -3985,12 +3985,12 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForRecordFields (ncenv: NameRe
     | id :: rest  -> 
         (let mutable mspec = Unchecked.defaultof<_>
          if mty.ModulesAndNamespacesByDemangledName.TryGetValue(id,&mspec) then
-            let tcRef = modref.NestedTyconRef mspec
-            if IsTyconUnseenObsoleteSpec ad g ncenv.amap m tcRef allowObsolete then
+            let tcref = modref.NestedTyconRef mspec
+            if IsTyconUnseenObsoleteSpec ad g ncenv.amap m tcref allowObsolete then
                 []
             else
                 let allowObsolete = rest <> [] && allowObsolete
-                ResolvePartialLongIdentInModuleOrNamespaceForRecordFields ncenv nenv m ad tcRef rest allowObsolete
+                ResolvePartialLongIdentInModuleOrNamespaceForRecordFields ncenv nenv m ad tcref rest allowObsolete
          else [])
         @ (
             match rest with
@@ -4361,13 +4361,12 @@ let rec ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) 
                  yield! tycons |> List.map (modref.NestedTyconRef >> ItemOfTyconRef ncenv m)
                  yield! tycons |> List.collect (modref.NestedTyconRef >> InfosForTyconConstructors ncenv m ad)
         
-        | id :: rest  -> 
-        
-            match mty.ModulesAndNamespacesByDemangledName.TryFind(id) with
-            | Some mspec 
-                when not (IsTyconUnseenObsoleteSpec ad g ncenv.amap m (modref.NestedTyconRef mspec) true) -> 
-                yield! ResolvePartialLongIdentInModuleOrNamespaceForItem ncenv nenv m ad (modref.NestedTyconRef mspec) rest item
-            | _ -> ()
+        | id :: rest ->
+            let mutable mspec = Unchecked.defaultof<_>
+            if mty.ModulesAndNamespacesByDemangledName.TryGetValue(id,&mspec) then
+                let tcref = modref.NestedTyconRef mspec
+                if not (IsTyconUnseenObsoleteSpec ad g ncenv.amap m tcref true) then
+                    yield! ResolvePartialLongIdentInModuleOrNamespaceForItem ncenv nenv m ad tcref rest item
         
             for tycon in LookupTypeNameInEntityNoArity m id modref.ModuleOrNamespaceType do
                  let tcref = modref.NestedTyconRef tycon 
