@@ -3916,16 +3916,16 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
                 [])
         // Look for values called 'id' that accept the dot-notation 
         let values, isItemVal = 
-            (match nenv.eUnqualifiedItems |> Map.tryFind id with
-               // v.lookup : member of a value
-             | Some v ->
-                 match v with 
-                 | Item.Value x -> 
-                     let typ = x.Type
-                     let typ = if x.BaseOrThisInfo = CtorThisVal && isRefCellTy g typ then destRefCellTy g typ else typ
-                     (ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest typ), true
-                 | _ -> [], false
-             | None -> [], false)
+            let mutable v = Unchecked.defaultof<_>
+            if nenv.eUnqualifiedItems.TryGetValue(id,&v) then
+                // v.lookup : member of a value
+                match v with 
+                | Item.Value x -> 
+                    let typ = x.Type
+                    let typ = if x.BaseOrThisInfo = CtorThisVal && isRefCellTy g typ then destRefCellTy g typ else typ
+                    (ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest typ), true
+                | _ -> [], false
+            else [], false
 
         let staticSometingInType = 
             [ if not isItemVal then 
