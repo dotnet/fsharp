@@ -80,9 +80,9 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         interface IConsumableSeq<'T>
 
     [<AbstractClass>]
-    type internal SeqFactoryBase<'T,'U> =
+    type internal EnumerableWithTransform<'T,'U> =
         inherit EnumerableBase<'U>
-        new : ISeqTransform<'T,'U> * PipeIdx -> SeqFactoryBase<'T,'U>
+        new : ISeqTransform<'T,'U> * PipeIdx -> EnumerableWithTransform<'T,'U>
 
     [<Class>]
     type internal IdentityTransform<'T> =
@@ -105,7 +105,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         override Append : IConsumableSeq<'T> -> IConsumableSeq<'T>
 
     type internal ResizeArrayEnumerable<'T,'U> = 
-        inherit SeqFactoryBase<'T,'U>
+        inherit EnumerableWithTransform<'T,'U>
         new : ResizeArray<'T> * ISeqTransform<'T,'U> * PipeIdx -> ResizeArrayEnumerable<'T,'U>
         interface IConsumableSeq<'U>
 
@@ -114,7 +114,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         new : ResizeArray<'T> -> ThinResizeArrayEnumerable<'T>
 
     type internal ArrayEnumerable<'T,'U> =
-        inherit SeqFactoryBase<'T,'U>
+        inherit EnumerableWithTransform<'T,'U>
         new : array<'T> * ISeqTransform<'T,'U> * PipeIdx -> ArrayEnumerable<'T,'U>
         interface IConsumableSeq<'U>
 
@@ -124,7 +124,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         interface IEnumerable<'T>
 
     type internal VanillaEnumerable<'T,'U> =
-        inherit SeqFactoryBase<'T,'U>
+        inherit EnumerableWithTransform<'T,'U>
         new : IEnumerable<'T> * ISeqTransform<'T,'U> * PipeIdx -> VanillaEnumerable<'T,'U>
         interface IConsumableSeq<'U>
 
@@ -134,7 +134,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         interface IEnumerable<'T>
 
     type internal UnfoldEnumerable<'T,'U,'GeneratorState> =
-        inherit SeqFactoryBase<'T,'U>
+        inherit EnumerableWithTransform<'T,'U>
         new : ('GeneratorState->option<'T*'GeneratorState>)*'GeneratorState*ISeqTransform<'T,'U>*PipeIdx -> UnfoldEnumerable<'T,'U,'GeneratorState>
         interface IConsumableSeq<'U>
 
@@ -149,7 +149,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         interface IConsumableSeq<'T>
 
     type internal InitEnumerable<'T,'U> =
-        inherit SeqFactoryBase<'T,'U>
+        inherit EnumerableWithTransform<'T,'U>
         new : Nullable<int> * (int->'T) * ISeqTransform<'T,'U> * PipeIdx -> InitEnumerable<'T,'U>
         interface IConsumableSeq<'U>
 

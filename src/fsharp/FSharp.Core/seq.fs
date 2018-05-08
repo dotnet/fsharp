@@ -1,32 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Collections
-    #nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
-
-    open System
-    open System.Diagnostics
-    open System.Collections
-    open System.Collections.Generic
-    open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-    open Microsoft.FSharp.Core.Operators
-    open Microsoft.FSharp.Control
-    open Microsoft.FSharp.Collections
-
-    module Internal =
-     module IEnumerator =
-      open Microsoft.FSharp.Collections.IEnumerator
-
-      let rec nth index (e : IEnumerator<'T>) =
-          if not (e.MoveNext()) then
-            let shortBy = index + 1
-            invalidArgFmt "index"
-                "{0}\nseq was short by {1} {2}"
-                [|SR.GetString SR.notEnoughElements; shortBy; (if shortBy = 1 then "element" else "elements")|]
-          if index = 0 then e.Current
-          else nth (index-1) e
-
-namespace Microsoft.FSharp.Collections
     open System
     open System.Diagnostics
     open System.Collections
@@ -38,14 +12,12 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core.CompilerServices
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
+    open Microsoft.FSharp.Collections.IEnumerator
     open Microsoft.FSharp.Collections.SeqComposition
 
     [<RequireQualifiedAccess>]
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module Seq =
-
-        open Microsoft.FSharp.Collections.Internal
-        open Microsoft.FSharp.Collections.IEnumerator
 
         // these helpers are just to consolidate the null checking
         let inline toIConsumableSeq  (source:seq<'T>)  : IConsumableSeq<'T> = checkNonNull "source" source;   IConsumableSeq.ofSeq source
@@ -90,12 +62,21 @@ namespace Microsoft.FSharp.Collections
             | :? list<'T> as lst -> List.iter action lst
             | raw -> IConsumableSeq.iter action (rawOrOriginal raw original)
 
+        let rec enumeratorItem index (e : IEnumerator<'T>) =
+            if not (e.MoveNext()) then
+                let shortBy = index + 1
+                invalidArgFmt "index"
+                    "{0}\nseq was short by {1} {2}"
+                    [|SR.GetString SR.notEnoughElements; shortBy; (if shortBy = 1 then "element" else "elements")|]
+            if index = 0 then e.Current
+            else enumeratorItem (index-1) e
+
         [<CompiledName("Item")>]
         let item index (source : seq<'T>) =
             checkNonNull "source" source
             if index < 0 then invalidArgInputMustBeNonNegative "index" index
             use e = source.GetEnumerator()
-            IEnumerator.nth index e
+            enumeratorItem index e
 
         [<CompiledName("TryItem")>]
         let tryItem index (source : seq<'T>) =
