@@ -975,7 +975,7 @@ namespace Microsoft.FSharp.Control
         let taskContinueWith (task : Task<'T>) ctxt useCcontForTaskCancellation = 
 
             let continuation (completedTask: Task<_>) : unit =
-                ctxt.aux.trampolineHolder.ExecuteWithTrampoline ((fun () ->
+                ctxt.aux.trampolineHolder.Execute (fun () ->
                     if completedTask.IsCanceled then
                         if useCcontForTaskCancellation then
                             ctxt.OnCancellation ()
@@ -986,7 +986,7 @@ namespace Microsoft.FSharp.Control
                         let edi = MayLoseStackTrace(completedTask.Exception)
                         ctxt.CallExceptionContinuation edi
                     else
-                        ctxt.cont completedTask.Result)) |> unfake
+                        ctxt.cont completedTask.Result) |> unfake
 
             task.ContinueWith(Action<Task<'T>>(continuation)) |> ignore |> fake
 
@@ -994,7 +994,7 @@ namespace Microsoft.FSharp.Control
         let taskContinueWithUnit (task: Task) ctxt useCcontForTaskCancellation = 
 
             let continuation (completedTask: Task) : unit =
-                ctxt.aux.trampolineHolder.Execute ((fun () ->
+                ctxt.aux.trampolineHolder.Execute (fun () ->
                     if completedTask.IsCanceled then
                         if useCcontForTaskCancellation then
                             ctxt.OnCancellation ()
@@ -1005,7 +1005,7 @@ namespace Microsoft.FSharp.Control
                         let edi = MayLoseStackTrace(completedTask.Exception)
                         ctxt.CallExceptionContinuation edi
                     else
-                        ctxt.cont ())) |> unfake
+                        ctxt.cont ()) |> unfake
 
             task.ContinueWith(Action<Task>(continuation)) |> ignore |> fake
 
