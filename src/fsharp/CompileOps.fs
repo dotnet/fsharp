@@ -4316,8 +4316,8 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         CheckDisposed()
         let loaderInterface = 
             { new Import.AssemblyLoader with 
-                 member x.FindCcuFromAssemblyRef (ctok, m, scoref) = 
-                     tcImports.FindCcuFromAssemblyRef (ctok, m, scoref)
+                 member x.FindCcuFromScopeRef (ctok, m, scoref) = 
+                     tcImports.FindCcuFromScopeRef (ctok, m, scoref)
 #if !NO_EXTENSIONTYPING
                  member x.GetProvidedAssemblyInfo (ctok, m, assembly) = tcImports.GetProvidedAssemblyInfo (ctok, m, assembly)
                  member x.RecordGeneratedTypeRoot root = tcImports.RecordGeneratedTypeRoot root

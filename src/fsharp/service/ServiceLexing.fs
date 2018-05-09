@@ -257,7 +257,7 @@ module internal TokenClassifications =
         | UPCAST   | DOWNCAST   | NULL   | RESERVED    | MODULE    | AND    | AS   | ASSERT   | ASR
         | DOWNTO   | EXCEPTION   | FALSE   | FOR   | FUN   | FUNCTION
         | FINALLY   | LAZY   | MATCH  | MUTABLE   | NEW   | OF    | OPEN   | OR | VOID | EXTERN
-        | INTERFACE | REC   | TO   | TRUE   | TRY   | PROVIDER | TYPE   |  VAL   | INLINE   | WHEN  | WHILE   | WITH
+        | INTERFACE | REC   | TO   | TRUE   | TRY   | TYPE   |  VAL   | INLINE   | WHEN  | WHILE   | WITH
         | IF | THEN  | ELSE | DO | DONE | LET(_) | IN (*| NAMESPACE*) | CONST
         | HIGH_PRECEDENCE_PAREN_APP | FIXED
         | HIGH_PRECEDENCE_BRACK_APP

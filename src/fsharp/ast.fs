@@ -1172,7 +1172,6 @@ and
     /// An exception definition , "exception E = ..."
     | Exception of SynExceptionDefnRepr
     /// A provider definition , "provider P = ..."
-    | Provider of SynProviderDefn
 
 
     member this.Range =
@@ -1185,7 +1184,6 @@ and
         | TypeAbbrev (range=m)
         | None (range=m) -> m
         | Exception t -> t.Range
-        | Provider p -> p.Range
 
 and SynEnumCases = SynEnumCase list
 
@@ -1230,13 +1228,11 @@ and
     /// Indicates the right right-hand-side is a record, union or other simple type.
     | Simple of SynTypeDefnSimpleRepr * range:range
     | Exception of SynExceptionDefnRepr
-    | Provider of SynProviderDefn
     member this.Range =
         match this with
         | ObjectModel (range=m)
         | Simple (range=m) -> m
         | Exception e -> e.Range
-        | Provider p -> p.Range
 
 and
     [<NoEquality; NoComparison>]
@@ -1245,19 +1241,6 @@ and
     /// The information for a type definition in a signature
     | TypeDefnSig of SynComponentInfo * SynTypeDefnSigRepr * SynMemberSigs * range:range
 
-and
-    [<NoEquality; NoComparison>]
-    /// The untyped, unchecked syntax tree for a provider definition in a signature
-    SynProviderDefnSigRepr =
-    /// The information for a provider definition in a signature
-    | ProviderDefnSigRepr of SynAccess option * SynType * range:range
-
-and
-    [<NoEquality; NoComparison>]
-    /// The untyped, unchecked syntax tree for a type definition in a signature
-    SynProviderDefnSig =
-    /// The information for a type definition in a signature
-    | ProviderDefnSig of SynComponentInfo * SynProviderDefnSigRepr * range:range
 
 and SynFields = SynField list
 
@@ -1343,13 +1326,11 @@ and
     | ObjectModel  of SynTypeDefnKind * SynMemberDefns * range:range
     | Simple of SynTypeDefnSimpleRepr * range:range
     | Exception of SynExceptionDefnRepr
-    | Provider of SynProviderDefn
     member this.Range =
         match this with
         | ObjectModel (range=m)
         | Simple (range=m) -> m
         | Exception t -> t.Range
-        | Provider t -> t.Range
 
 
 and
@@ -1359,22 +1340,6 @@ and
     member this.Range =
         match this with
         | TypeDefn (range=m) -> m
-and
-    // FS-1023 TODO: Remove this type, inline into SynProviderDefn
-    [<NoEquality; NoComparison>]
-    SynProviderDefnRepr =
-    | ProviderDefnRepr of SynAccess option * SynType * range:range
-    member this.Range =
-        match this with
-        | ProviderDefnRepr (range = m) -> m
-
-and
-    [<NoEquality; NoComparison>]
-    SynProviderDefn =
-    | ProviderDefn of SynComponentInfo * SynProviderDefnRepr * range:range
-    member this.Range =
-        match this with
-        | ProviderDefn (range=m) -> m
 
 and
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1428,7 +1393,6 @@ and
     | Attributes of SynAttributes * range:range
     | HashDirective of ParsedHashDirective * range:range
     | NamespaceFragment of SynModuleOrNamespace
-    | Provider of SynProviderDefn * range:range
     member d.Range =
         match d with
         | SynModuleDecl.ModuleAbbrev (range=m)
@@ -1440,7 +1404,6 @@ and
         | SynModuleDecl.Open (range=m)
         | SynModuleDecl.HashDirective (range=m)
         | SynModuleDecl.NamespaceFragment (SynModuleOrNamespace (range=m))
-        | SynModuleDecl.Provider (range = m)
         | SynModuleDecl.Attributes (range=m) -> m
 
 and SynModuleDecls = SynModuleDecl list
@@ -1451,11 +1414,6 @@ and
     | SynExceptionSig of SynExceptionDefnRepr * SynMemberSigs * range:range
 
 and
-    [<NoEquality; NoComparison>]
-    SynProviderSig =
-    | ProviderSig of SynProviderDefn * range:range
-
-and
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
     SynModuleSigDecl =
     | ModuleAbbrev      of ident:Ident * longId:LongIdent * range:range
@@ -1463,7 +1421,6 @@ and
     | Val               of SynValSig * range:range
     | Types             of SynTypeDefnSig list * range:range
     | Exception         of SynExceptionSig * range:range
-    | Provider          of SynProviderSig * range:range
     | Open              of longId:LongIdent * range:range
     | HashDirective     of ParsedHashDirective * range:range
     | NamespaceFragment of SynModuleOrNamespaceSig
@@ -1475,7 +1432,6 @@ and
         | SynModuleSigDecl.Val (range=m)
         | SynModuleSigDecl.Types (range=m)
         | SynModuleSigDecl.Exception (range=m)
-        | SynModuleSigDecl.Provider(range=m)
         | SynModuleSigDecl.Open (range=m)
         | SynModuleSigDecl.NamespaceFragment (SynModuleOrNamespaceSig(range=m))
         | SynModuleSigDecl.HashDirective (range=m) -> m

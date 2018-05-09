@@ -691,7 +691,6 @@ module internal InterfaceStubGenerator =
                     List.tryPick walkSynTypeDefn typeDefs
                 | SynModuleDecl.DoExpr (_, expr, _) ->
                     walkExpr expr
-                | SynModuleDecl.Provider _
                 | SynModuleDecl.Attributes _
                 | SynModuleDecl.HashDirective _
                 | SynModuleDecl.Open _ -> 
@@ -712,7 +711,6 @@ module internal InterfaceStubGenerator =
                 | SynTypeDefnRepr.ObjectModel(_kind, members, _range) ->
                     List.tryPick walkSynMemberDefn members
                 | SynTypeDefnRepr.Simple _
-                | SynTypeDefnRepr.Provider _ 
                 | SynTypeDefnRepr.Exception _ -> None
 
         and walkSynMemberDefn (memberDefn: SynMemberDefn) =

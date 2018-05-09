@@ -254,7 +254,6 @@ module Keywords =
        ALWAYS, "or"         ,OR
        FSHARP, "override"   ,OVERRIDE
        ALWAYS, "private"    ,PRIVATE
-       FSHARP, "provider"   ,PROVIDER
        FSHARP, "public"     ,PUBLIC
        ALWAYS, "rec"        ,REC
        FSHARP, "return"      ,YIELD(false)

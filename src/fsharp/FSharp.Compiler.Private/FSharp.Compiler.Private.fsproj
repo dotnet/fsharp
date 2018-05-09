@@ -369,9 +369,6 @@
     <Compile Include="..\TastPickle.fs">
       <Link>TypedAST\TastPickle.fs</Link>
     </Compile>
-    <Compile Include="..\ProviderAlias.fs">
-      <Link>TypedAST\ProviderAlias.fs</Link>
-    </Compile>
     <Compile Include="..\TastReflect.fs">
       <Link>Logic\TastReflect.fs</Link>
     </Compile>

@@ -1231,15 +1231,6 @@ moduleDefn:
         let ec = (SynExceptionDefn(SynExceptionDefnRepr($1@cas,a,b,c,d,d2),e,f)) 
         [ SynModuleDecl.Exception(ec, f) ] }
 
-  /* 'provider' definitions */
-  | opt_attributes opt_declVisibility PROVIDER typeNameInfo EQUALS typ
-     { let r = $4.Range
-       let provRepr = ProviderDefnRepr($2, $6, r)
-       let (ComponentInfo(cas,a,cs,b,c,d,d2,d3)) = $4
-       let compInfo = ComponentInfo($1@cas,a,cs,b,c,d,d2,d3)
-       let prov = ProviderDefn(compInfo, provRepr, r)
-       [ SynModuleDecl.Provider(prov, r) ] }
-
   /* 'module' definitions */
   | opt_attributes opt_declVisibility moduleIntro EQUALS  namedModuleDefnBlock
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2))

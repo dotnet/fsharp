@@ -14796,7 +14796,6 @@ module EstablishTypeDefinitionCores =
             | SynTypeDefnSimpleRepr.General _ -> None
             | SynTypeDefnSimpleRepr.Enum _ -> None
             | SynTypeDefnSimpleRepr.Exception _ -> None
-            | SynTypeDefnSimpleRepr.Provider _ -> None
 
         let visOfRepr, _ = ComputeAccessAndCompPath env None id.idRange synVisOfRepr None parent
         let visOfRepr = combineAccess vis visOfRepr 
@@ -14847,7 +14846,6 @@ module EstablishTypeDefinitionCores =
         let repr = 
             match synTyconRepr with 
             | SynTypeDefnSimpleRepr.Exception _ ->  TNoRepr
-            | SynTypeDefnSimpleRepr.Provider _ ->  TNoRepr
             | SynTypeDefnSimpleRepr.None m ->
                 // Run InferTyconKind to raise errors on inconsistent attribute sets
                 InferTyconKind cenv.g (TyconHiddenRepr, attrs, [], [], inSig, true, m)  |> ignore
@@ -15202,7 +15200,6 @@ module EstablishTypeDefinitionCores =
                 let implementedTys, inheritedTys = 
                     match synTyconRepr with 
                     | SynTypeDefnSimpleRepr.Exception _ -> [], []
-                    | SynTypeDefnSimpleRepr.Provider _ -> [], []
                     | SynTypeDefnSimpleRepr.General (kind, inherits, slotsigs, fields, isConcrete, _, _, m) ->
                         let kind = InferTyconKind cenv.g (kind, attrs, slotsigs, fields, inSig, isConcrete, m)
 
@@ -15242,7 +15239,6 @@ module EstablishTypeDefinitionCores =
                   | SynTypeDefnSimpleRepr.Exception _ -> Some cenv.g.exn_ty
                   | SynTypeDefnSimpleRepr.None _ -> None
                   | SynTypeDefnSimpleRepr.TypeAbbrev _ -> None
-                  | SynTypeDefnSimpleRepr.Provider _ -> None
                   | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly _ -> None
                   | SynTypeDefnSimpleRepr.Union _ 
                   | SynTypeDefnSimpleRepr.Record _ ->
@@ -15391,10 +15387,6 @@ module EstablishTypeDefinitionCores =
             
             let typeRepr, baseValOpt, safeInitInfo = 
                 match synTyconRepr with 
-
-                | SynTypeDefnSimpleRepr.Provider _providerDefnRepr ->
-                    // FS-1023 TODO: Something here?
-                    TNoRepr, None, NoSafeInitInfo
 
                 | SynTypeDefnSimpleRepr.Exception synExnDefnRepr ->
                     let parent = Parent (mkLocalTyconRef tycon)
@@ -15565,7 +15557,6 @@ module EstablishTypeDefinitionCores =
                             match synTyconRepr with 
                             | SynTypeDefnSimpleRepr.None _ -> None
                             | SynTypeDefnSimpleRepr.Exception _ -> None
-                            | SynTypeDefnSimpleRepr.Provider _ -> None
                             | SynTypeDefnSimpleRepr.TypeAbbrev _ -> None
                             | SynTypeDefnSimpleRepr.Union _ -> None
                             | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly _ -> None
@@ -16320,11 +16311,6 @@ module TcDeclarations =
             let core = MutRecDefnsPhase1DataForTycon(synTyconInfo, SynTypeDefnSimpleRepr.Exception r, implements1, false, false, isAtOriginalTyconDefn)
             core, extraMembers
 
-        | SynTypeDefnRepr.Provider(defn) ->
-            let isAtOriginalTyconDefn = true
-            let core = MutRecDefnsPhase1DataForTycon(synTyconInfo, SynTypeDefnSimpleRepr.Provider defn, implements1, false, false, isAtOriginalTyconDefn)
-            core, extraMembers
-
     //-------------------------------------------------------------------------
 
     /// Bind a collection of mutually recursive definitions in an implementation file
@@ -16450,11 +16436,6 @@ module TcDeclarations =
             let core = MutRecDefnsPhase1DataForTycon(synTyconInfo, SynTypeDefnSimpleRepr.Exception r, implements1, false, false, isAtOriginalTyconDefn)
             core, (synTyconInfo, extraMembers)
 
-        | SynTypeDefnSigRepr.Provider(defn) ->
-            let isAtOriginalTyconDefn = true
-            let core = MutRecDefnsPhase1DataForTycon(synTyconInfo, SynTypeDefnSimpleRepr.Provider defn, implements1, false, false, isAtOriginalTyconDefn)
-            core, (synTyconInfo, extraMembers)
-
         | SynTypeDefnSigRepr.Simple(r, _) ->
             let isAtOriginalTyconDefn = true
             let tyconCore = MutRecDefnsPhase1DataForTycon (synTyconInfo, r, implements1, false, false, isAtOriginalTyconDefn)
@@ -16509,31 +16490,6 @@ module TcDeclarations =
         let _ = TcMutRecSignatureDecls_Phase2 cenv scopem envMutRecPrelimWithReprs withEnvs
         envMutRec
 
-
- module TcProviderDeclarations =
-
-    let TcProviderDefn_Phase1A cenv env parent defn =
-        let (ProviderDefn(compInfo, _, _)) = defn
-        let mutrec = MutRecDefnsPhase1DataForTycon(compInfo, SynTypeDefnSimpleRepr.Provider(defn), [], false, false, true)
-        EstablishTypeDefinitionCores.TcTyconDefnCore_Phase1A_BuildInitialTycon cenv env parent mutrec
-
-    let TcProviderDefn cenv env parent tpenv (p, m) =
-        let entity = TcProviderDefn_Phase1A cenv env parent p
-        
-        let (ProviderDefn(ComponentInfo(_,_typars,_,_,_,_,_,_),ProviderDefnRepr(_,t,_), _)) = p
-
-        let env = AddDeclaredTypars CheckForDuplicateTypars (entity.Typars(m)) env
-
-        let ty, _ = TcTypeOrMeasureAndRecover (Some TyparKind.Type) cenv NoNewTypars CheckConstraints.NoCheckCxs ItemOccurence.UseInType env tpenv t
-
-        printfn "%A" ty
-
-        entity.entity_provider_abbrev <- Some ty
-        entity, env
-        // FS-1023 TODO
-    let TcProviderSignature _cenv _envInitial _parent _tpenv (_p, _m) = failwith "" // FS-1023 TODO
-
-
 //-------------------------------------------------------------------------
 // Bind module types
 //------------------------------------------------------------------------- 
@@ -16545,11 +16501,6 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
         | SynModuleSigDecl.Exception (edef, m) ->
             let scopem = unionRanges m.EndRange endm
             let _, _, _, env = TcExceptionDeclarations.TcExnSignature cenv env parent emptyUnscopedTyparEnv (edef, scopem)
-            return env
-
-        | SynModuleSigDecl.Provider (pdef, m) ->
-            let scopem = unionRanges m.EndRange endm
-            let _, _, _, env = TcProviderDeclarations.TcProviderSignature cenv env parent emptyUnscopedTyparEnv (pdef, scopem)
             return env
 
         | SynModuleSigDecl.Types (typeSpecs, m) ->
@@ -16733,11 +16684,6 @@ and TcSignatureElementsMutRec cenv parent typeNames endm mutRecNSInfo envInitial
                       let decls = [ MutRecShape.Tycon(SynTypeDefnSig.TypeDefnSig(compInfo, SynTypeDefnSigRepr.Exception exnRepr, members, m)) ]
                       decls, (false, false)
 
-                | SynModuleSigDecl.Provider (ProviderSig(defn, _), _) ->
-                      let (ProviderDefn(compInfo, _, m)) = defn
-                      let decls = [ MutRecShape.Tycon(SynTypeDefnSig.TypeDefnSig(compInfo, SynTypeDefnSigRepr.Provider defn, [], m)) ]
-                      decls, (false, false)
-
                 | SynModuleSigDecl.Val (vspec, _) ->
                     if isNamespace then error(NumberedError(FSComp.SR.tcNamespaceCannotContainValues(), vspec.RangeOfId))
                     let decls = [ MutRecShape.Lets(vspec) ]
@@ -16880,10 +16826,6 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv:cenv) parent typeNames scopem 
                 return ((fun e -> binds@e), []), env, env 
 
       | SynModuleDecl.DoExpr _ -> return! failwith "unreachable"
-
-      | SynModuleDecl.Provider(pdefn, m) ->
-          let decl, env = TcProviderDeclarations.TcProviderDefn cenv env parent tpenv (pdefn, scopem)
-          return ((fun e -> TMDefRec(false, [decl], [] |> List.map ModuleOrNamespaceBinding.Binding, m) :: e), []), env, env
 
       | SynModuleDecl.Attributes (synAttrs, _) ->
           let attrs, _ = TcAttributesWithPossibleTargets false cenv env AttributeTargets.Top synAttrs
@@ -17072,9 +17014,6 @@ and TcModuleOrNamespaceElementsMutRec cenv parent typeNames endm envInitial mutR
                   let decls = [ MutRecShape.Tycon(SynTypeDefn.TypeDefn(compInfo, SynTypeDefnRepr.Exception repr, members, m)) ]
                   decls, (false, false, attrs)
 
-              | SynModuleDecl.Provider (SynProviderDefn.ProviderDefn(_repr, _, _), _m) ->
-                  failwith "" // FS-1023 TODO: Figure out what to put here
-
               | SynModuleDecl.HashDirective _ ->
                   [ ], (openOk, moduleAbbrevOk, attrs)
 
@@ -17085,11 +17024,6 @@ and TcModuleOrNamespaceElementsMutRec cenv parent typeNames endm envInitial mutR
                   if not moduleAbbrevOk then errorR(Error(FSComp.SR.tcModuleAbbrevFirstInMutRec(), m))
                   let decls = [ MutRecShape.ModuleAbbrev (MutRecDataForModuleAbbrev(id, p, m)) ]
                   decls, (false, moduleAbbrevOk, attrs)
-
-              | SynModuleDecl.Provider(p,_) ->
-                  let (ProviderDefn(compInfo, _, m)) = p
-                  let decls = [ MutRecShape.Tycon(SynTypeDefn.TypeDefn(compInfo, SynTypeDefnRepr.Provider p, [], m)) ]
-                  decls, (false, false, attrs)
 
               | SynModuleDecl.DoExpr _ -> failwith "unreachable: SynModuleDecl.DoExpr - ElimModuleDoBinding"
 
@@ -17119,10 +17053,6 @@ and TcMutRecDefsFinish cenv defs m =
         defs |> List.collect (function 
             | MutRecShape.Open _ -> []
             | MutRecShape.ModuleAbbrev _ -> []
-            | MutRecShape.Tycon (_, binds) 
-            | MutRecShape.Lets binds -> 
-                binds |> List.map ModuleOrNamespaceBinding.Binding 
-            | MutRecShape.Module ((MutRecDefnsPhase2DataForModule(mtypeAcc, mspec), _), mdefs) -> 
             | MutRecShape.Tycon (_, binds)
             | MutRecShape.Lets binds ->
                 binds |> List.map ModuleOrNamespaceBinding.Binding

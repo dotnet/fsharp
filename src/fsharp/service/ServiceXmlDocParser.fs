@@ -85,7 +85,6 @@ module XmlDocParsing =
                       | _ -> () ]
                 |> fun paramNames -> [ XmlDocable(line,indent,paramNames) ]
             | SynModuleDecl.Types(synTypeDefnList, _) -> (synTypeDefnList |> List.collect getXmlDocablesSynTypeDefn)
-            | SynModuleDecl.Provider(synProviderDefn, _) -> getXmlDocablesSynProviderDefn synProviderDefn
             | SynModuleDecl.NamespaceFragment(synModuleOrNamespace) -> getXmlDocablesSynModuleOrNamespace synModuleOrNamespace
             | SynModuleDecl.ModuleAbbrev _
             | SynModuleDecl.DoExpr _
@@ -103,7 +102,6 @@ module XmlDocParsing =
                 | SynTypeDefnRepr.ObjectModel(_, synMemberDefns, _) -> (synMemberDefns |> List.collect getXmlDocablesSynMemberDefn)
                 | SynTypeDefnRepr.Simple(_synTypeDefnSimpleRepr, _range) -> []
                 | SynTypeDefnRepr.Exception _ -> []
-                | SynTypeDefnRepr.Provider _ -> []
             let docForTypeDefn = 
                 if isEmptyXmlDoc preXmlDoc then
                     let fullRange = synAttributes |> List.fold (fun r a -> unionRanges r a.Range) (unionRanges compRange tRange)
@@ -152,14 +150,6 @@ module XmlDocParsing =
             | ParsedInput.ImplFile(ParsedImplFileInput(modules = symModules))-> 
                 symModules |> List.collect getXmlDocablesSynModuleOrNamespace
             | ParsedInput.SigFile _ -> []
-
-        and getXmlDocablesSynProviderDefn (SynProviderDefn.ProviderDefn(ComponentInfo(synAttributes, _, _, _, preXmlDoc, _, _, compRange), _synTypeDefnRepr, tRange)) =
-            if isEmptyXmlDoc preXmlDoc then
-                let fullRange = synAttributes |> List.fold (fun r a -> unionRanges r a.Range) (unionRanges compRange tRange)
-                let line = fullRange.StartLine 
-                let indent = indentOf line
-                [XmlDocable(line,indent,[])]
-            else []
 
         // Get compiler options for the 'project' implied by a single script file
         match input with
