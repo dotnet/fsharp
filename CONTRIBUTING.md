@@ -2,7 +2,7 @@
 
 The Visual F# team is proud to be a contributor to F#, and urge you to join in too. F# users and the F# community are grateful for all contributions to F#.
 
-Besides this overview, we recommend ["Becoming a contributor"](http://mrange.wordpress.com/2014/12/11/becoming-an-fsharp-contributor/), a community blog post by Mårten Rånge. 
+Besides this overview, we recommend ["A journey into the F~ compiler"](https://skillsmatter.com/skillscasts/11629-a-journey-into-the-f-sharp-compiler/), a talk by Steffen Forkmann. 
 For those contributing to the core of the F# compiler, we recommend ["The F# Compiler Technical Overview"](http://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html)
 
 ### Getting Started
