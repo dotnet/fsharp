@@ -259,7 +259,7 @@ namespace Microsoft.FSharp.Control
         /// Call the cancellation continuation of the active computation
         member ctxt.OnCancellation () =
             ctxt.aux.ccont (new OperationCanceledException (ctxt.aux.token))
-           
+
         member ctxt.OnSuccess result =
             if ctxt.IsCancellationRequested then
                 ctxt.OnCancellation ()
@@ -972,11 +972,10 @@ namespace Microsoft.FSharp.Control
 
         // Helper to attach continuation to the given task.
         // Should be invoked as a part of protectUserCodeAsAsync(withResync) call
-        [<DebuggerHidden>]
         let taskContinueWith (task : Task<'T>) ctxt useCcontForTaskCancellation = 
 
             let continuation (completedTask: Task<_>) : unit =
-                ctxt.aux.trampolineHolder.Execute ((fun () ->
+                ctxt.aux.trampolineHolder.ExecuteWithTrampoline ((fun () ->
                     if completedTask.IsCanceled then
                         if useCcontForTaskCancellation then
                             ctxt.OnCancellation ()
@@ -1685,8 +1684,6 @@ namespace Microsoft.FSharp.Control
             protectUserCodeAsAsyncWithResync (fun ctxt -> taskContinueWithUnit task ctxt false)
 
     module CommonExtensions =
-
-        open AsyncPrimitives
 
         type System.IO.Stream with
 
