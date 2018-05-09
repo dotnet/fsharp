@@ -40,8 +40,13 @@ module Logger =
 
     let LogBlockStop(functionId) = FSharpCompilerEventSource.Instance.BlockStop(functionId)
 
+    [<Struct>]
+    type LogBlockDisposable =
+        val functionId: LogCompilerFunctionId
+        new(id: LogCompilerFunctionId) = { functionId = id }
+        interface IDisposable with
+            member this.Dispose() = FSharpCompilerEventSource.Instance.BlockStop(this.functionId)
+
     let LogBlock(functionId) =
         FSharpCompilerEventSource.Instance.BlockStart(functionId)
-        { new IDisposable with
-            member __.Dispose() =
-                FSharpCompilerEventSource.Instance.BlockStop(functionId) }
+        new LogBlockDisposable (functionId)
