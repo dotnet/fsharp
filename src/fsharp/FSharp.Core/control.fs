@@ -14,6 +14,7 @@ namespace Microsoft.FSharp.Control
     open System.Diagnostics.CodeAnalysis
     open System.IO
     open System.Reflection
+    open System.Runtime.CompilerServices
     open System.Runtime.ExceptionServices
     open System.Threading
     open System.Threading.Tasks
@@ -89,20 +90,20 @@ namespace Microsoft.FSharp.Control
     [<AutoOpen>]
     module ExceptionDispatchInfoHelpers =
 
-        let associationTable = System.Runtime.CompilerServices.ConditionalWeakTable<exn, ExceptionDispatchInfo>()
+        let associationTable = ConditionalWeakTable<exn, ExceptionDispatchInfo>()
 
         type ExceptionDispatchInfo with 
 
             member edi.GetAssociatedSourceException() = 
                 let exn = edi.SourceException
                 // Try to store the entry in the association table to allow us to recover it later.
-                try lock associationTable (fun () -> associationTable.Add(exn, edi)) with _ -> ()
+                try associationTable.Add(exn, edi) with _ -> ()
                 exn
 
             // Capture, but prefer the saved information if available
             [<DebuggerHidden>]
             static member RestoreOrCapture(exn) = 
-                match lock associationTable (fun () -> associationTable.TryGetValue(exn)) with 
+                match associationTable.TryGetValue(exn) with 
                 | true, edi -> edi
                 | _ ->
                     ExceptionDispatchInfo.Capture(exn)
