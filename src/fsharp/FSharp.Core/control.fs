@@ -608,10 +608,10 @@ namespace Microsoft.FSharp.Control
 
         let getSyncContext () = SynchronizationContext.Current 
 
-        let postOrQueue (ctxt : SynchronizationContext) (trampolineHolder:TrampolineHolder) f =
-            match ctxt with 
+        let postOrQueue (syncCtxt : SynchronizationContext) (trampolineHolder:TrampolineHolder) f =
+            match syncCtxt with 
             | null -> trampolineHolder.QueueWorkItem f 
-            | _ -> trampolineHolder.Post ctxt f            
+            | _ -> trampolineHolder.Post syncCtxt f            
 
         let delimitSyncContext ctxt =            
             match getSyncContext () with
@@ -1022,7 +1022,7 @@ namespace Microsoft.FSharp.Control
                  member x.Dispose() = x.Close()
     
         module AsBeginEndHelpers =
-            let beginAction(computation, callback, state) = 
+            let beginAction (computation, callback, state) = 
                 let aiar = new AsyncIAsyncResult<'T>(callback, state)
                 let cont v = aiar.SetResult (AsyncResult.Ok v)
                 let econt v = aiar.SetResult (AsyncResult.Error v)
@@ -1055,7 +1055,7 @@ namespace Microsoft.FSharp.Control
     [<Sealed>]
     [<CompiledName("FSharpAsyncBuilder")>]
     type AsyncBuilder() =
-        member __.Zero()                 = unitAsync
+        member __.Zero () = unitAsync
 
         member __.Delay generator = delayA(generator)
 
@@ -1071,11 +1071,11 @@ namespace Microsoft.FSharp.Control
 
         member __.For (sequence, body) = forA sequence body
 
-        member b.Combine (computation1, computation2) = sequentialA computation1 computation2
+        member __.Combine (computation1, computation2) = sequentialA computation1 computation2
 
-        member b.TryFinally (computation, compensation) = tryFinallyA compensation computation
+        member __.TryFinally (computation, compensation) = tryFinallyA compensation computation
 
-        member b.TryWith (computation, catchHandler) = tryWithExnA catchHandler computation
+        member __.TryWith (computation, catchHandler) = tryWithExnA catchHandler computation
 
     module AsyncImpl = 
         let async = AsyncBuilder()
@@ -1482,7 +1482,7 @@ namespace Microsoft.FSharp.Control
                                 // If we get an exception from a cooperative cancellation function
                                 // we assume the operation has already completed.
                                 try cancel() with _ -> ()
-                                
+
                         cancellationToken.Register(Action<obj>(onCancel), null)
 
                     let callback = 
@@ -1673,8 +1673,8 @@ namespace Microsoft.FSharp.Control
                 let offset = defaultArg offset 0
                 let count  = defaultArg count buffer.Length
 #if FX_NO_BEGINEND_READWRITE
-                // use combo protectUserCodeAsAsyncWithResync + continueWith instead of AwaitTask so we can pass cancellation token to the WriteAsync task
-                protectUserCodeAsAsyncWithResync ( fun ctxt -> taskContinueWithUnit (stream.WriteAsync(buffer, offset, count, ctxt.aux.token)) ctxt false)
+                // use combo protectUserCodeAsAsyncWithResync + taskContinueWithUnit instead of AwaitTask so we can pass cancellation token to the WriteAsync task
+                protectUserCodeAsAsyncWithResync (fun ctxt -> taskContinueWithUnit (stream.WriteAsync(buffer, offset, count, ctxt.aux.token)) ctxt false)
 #else
                 Async.FromBeginEnd (buffer,offset,count,stream.BeginWrite,stream.EndWrite)
 #endif
@@ -1772,6 +1772,7 @@ namespace Microsoft.FSharp.Control
     open CommonExtensions
 
     module AsyncHelpers =
+
         let awaitEither a1 a2 =
             async {
                 let resultCell = new ResultCell<_>()
@@ -1791,6 +1792,7 @@ namespace Microsoft.FSharp.Control
                 let! result = resultCell.AwaitResult_NoDirectCancelOrTimeout
                 return! asyncResultToAsync result
             }
+
         let timeout msec cancellationToken =
             if msec < 0 then
                 MakeAsync (fun _ -> FakeUnit) // "block" forever
