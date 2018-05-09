@@ -821,16 +821,13 @@ namespace Microsoft.FSharp.Control
                             None
 
 
+        /// Create an instance of an arbitrary delegate type delegating to the given F# function
         type FuncDelegate<'T>(f) =
             member __.Invoke(sender:obj, a:'T) : unit = ignore(sender); f(a)
             static member Create<'Delegate when 'Delegate :> Delegate>(f) = 
                 let obj = FuncDelegate<'T>(f)
-#if FX_PORTABLE_OR_NETSTANDARD
                 let invokeMeth = (typeof<FuncDelegate<'T>>).GetMethod("Invoke", BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance)
                 System.Delegate.CreateDelegate(typeof<'Delegate>, obj, invokeMeth) :?> 'Delegate
-#else
-                System.Delegate.CreateDelegate(typeof<'Delegate>, obj, "Invoke") :?> 'Delegate
-#endif
 
         /// Run the asynchronous workflow and wait for its result.
         let private RunSynchronouslyInAnotherThread (token:CancellationToken,computation,timeout) =
