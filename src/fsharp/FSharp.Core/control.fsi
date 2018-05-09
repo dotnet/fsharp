@@ -457,6 +457,9 @@ namespace Microsoft.FSharp.Control
         /// Calls to this member are emitted in compiled code
         val Call: ctxt:AsyncActivation<'T> -> result1:'U -> part2f:('U -> Async<'T>) -> AsyncReturn
 
+        // /// Calls to this member are emitted in compiled code
+        // val CallDelay: ctxt:AsyncActivation<'T> -> generator:(unit -> Async<'T>) -> AsyncReturn
+
         /// Calls to this member are emitted in compiled code
         val Bind: keepStack: bool -> ctxt:AsyncActivation<'T> -> part1:Async<'U> -> part2f:('U -> Async<'T>) -> AsyncReturn
 
@@ -538,7 +541,7 @@ namespace Microsoft.FSharp.Control
         /// <remarks>A cancellation check is performed when the computation is executed.</remarks>
         /// <param name="generator">The function to run.</param>
         /// <returns>An asynchronous computation that runs <c>generator</c>.</returns>
-        member inline Delay : generator:(unit -> Async<'T>) -> Async<'T>
+        member Delay : generator:(unit -> Async<'T>) -> Async<'T>
 
         /// <summary>Creates an asynchronous computation that runs <c>binder(resource)</c>. 
         /// The action <c>resource.Dispose()</c> is executed as this computation yields its result
