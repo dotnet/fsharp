@@ -2,11 +2,9 @@ use vs
 
 package name=Microsoft.FSharp.SDK.Resources
         version=$(FSharpPackageVersion)
-        vs.package.type=msi
         vs.package.language=$(LocaleSpecificCulture)
-        vs.package.providerKey=Microsoft.FSharp.SDK.Resources,$(LocaleSpecificCulture),v10.1
 
-folder "[ProgramFiles(x86)]\Microsoft SDKs\F#\10.1\Framework\v4.0\$(LocaleParentCulture)"
+folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharpCompiler\$(LocaleParentCulture)"
   file "FSharp.Build.resources.dll" source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.Build.resources.dll"
   file "FSharp.Compiler.Private.resources.dll" source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.Compiler.Private.resources.dll"
   file "FSharp.Core.resources.dll" source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.Core.resources.dll"
