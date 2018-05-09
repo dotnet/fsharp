@@ -2250,19 +2250,19 @@ namespace Microsoft.FSharp.Control
         let pairwise (sourceEvent : IEvent<'Delegate,'T>) : IEvent<'T * 'T> = 
             let ev = new Event<'T * 'T>() 
             let lastArgs = ref None
-            sourceEvent.Add(fun context2 -> 
+            sourceEvent.Add(fun args2 -> 
                 (match !lastArgs with 
                  | None -> () 
-                 | Some context1 -> ev.Trigger(context1,context2));
-                lastArgs := Some context2); 
+                 | Some args1 -> ev.Trigger(args1,args2))
+                lastArgs := Some args2)
 
             ev.Publish
 
         [<CompiledName("Merge")>]
         let merge (event1: IEvent<'Del1,'T>) (event2: IEvent<'Del2,'T>) =
             let ev = new Event<_>() 
-            event1.Add(fun x -> ev.Trigger(x));
-            event2.Add(fun x -> ev.Trigger(x));
+            event1.Add(fun x -> ev.Trigger(x))
+            event2.Add(fun x -> ev.Trigger(x))
             ev.Publish
 
         [<CompiledName("Split")>]
@@ -2354,11 +2354,11 @@ namespace Microsoft.FSharp.Control
                  member x.Subscribe(observer) =
                      let lastArgs = ref None
                      source.Subscribe { new BasicObserver<'T>() with  
-                                        member x.Next(context2) = 
+                                        member x.Next(args2) = 
                                             match !lastArgs with 
                                             | None -> ()
-                                            | Some context1 -> observer.OnNext (context1,context2)
-                                            lastArgs := Some context2
+                                            | Some args1 -> observer.OnNext (args1,args2)
+                                            lastArgs := Some args2
                                         member x.Error(e) = observer.OnError(e)
                                         member x.Completed() = observer.OnCompleted() } }
 
