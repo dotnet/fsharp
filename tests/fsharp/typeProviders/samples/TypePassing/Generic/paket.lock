@@ -429,5 +429,5 @@ GROUP SourceFiles
 
 GITHUB
   remote: TobyShaw/FSharp.TypeProviders.SDK
-    src/ProvidedTypes.fs (b35a5d957765b061d3a6d8731bc1a4b6c2023b54)
-    src/ProvidedTypes.fsi (b35a5d957765b061d3a6d8731bc1a4b6c2023b54)
+    src/ProvidedTypes.fs (a3aee1742206be6f0fa8dbd3a35baf6fe597c3fe)
+    src/ProvidedTypes.fsi (a3aee1742206be6f0fa8dbd3a35baf6fe597c3fe)

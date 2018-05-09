@@ -4990,7 +4990,7 @@ and safelyApplyStaticArgs cenv (tcref : TyconRef) (types : TType[]) m =
         let isDirectReferenceToGenerated = isGenerated && ExtensionTyping.IsGeneratedTypeDirectReference (t, m)
         if isDirectReferenceToGenerated then
             error(Error(FSComp.SR.etDirectReferenceToGeneratedTypeNotAllowed(tcref.DisplayName), m))
-        checkName()
+        ignore checkName
         // We put the type name check after the 'isDirectReferenceToGenerated' check because we need the 'isDirectReferenceToGenerated' error to be shown for generated types
         if (staticArgs.Length = 0) then
             mkAppTy tcref []

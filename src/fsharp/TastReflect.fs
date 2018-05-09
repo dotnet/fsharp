@@ -11,6 +11,7 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.AbstractIL.IL
+open Microsoft.FSharp.Core.CompilerServices
 open Microsoft.FSharp.Compiler.TcGlobals
 open System.Runtime.Remoting.Lifetime
 open System.Runtime.InteropServices.ComTypes
@@ -1148,6 +1149,7 @@ and ReflectTypeDefinition (asm: ReflectAssembly, declTyOpt: Type option, tcref: 
             isSealed, TypeAttributes.Sealed
             isSerializable, TypeAttributes.Serializable
             windowsRuntime, TypeAttributes.WindowsRuntime
+            true, unbox (int TypeProviderTypeAttributes.IsErased)
         ]
         |> List.filter fst
         |> List.map snd

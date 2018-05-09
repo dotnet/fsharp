@@ -5,20 +5,26 @@ open FSharp.Reflection
 
 open Test
 
-// =========== Alias Testing ============
+// ======= Existing type testing ========
 
-type Julia = Generic.IdentityType<string>
+type XInt = Generic.IdentityType<string>
 
-type G<'a> = | G of 'a
+let f (x : XInt) = x + "hello"
 
-type MyNewProvider<'a> = Generic.ConstType< G<'a> , string >
-type MyOtherProvider<'b> = MyNewProvider<Option<'b>>
+printfn "%A" (f "10")
 
-type X = MyOtherProvider<int>
+// =========== Alias testing ============
 
-let x = X.Invoke((G (Some 5)), "hello")
-
-printfn "%A" x
+//type G<'a> = | G of 'a
+//
+//type MyNewProvider<'a> = Generic.ConstType< G<'a> , string >
+//type MyOtherProvider<'b> = MyNewProvider<Option<'b>>
+//
+//type X = MyOtherProvider<int>
+//
+//let x = X.Invoke((G (Some 5)), "hello")
+//
+//printfn "%A" x
 
 // ======= Generic method testing =======
 

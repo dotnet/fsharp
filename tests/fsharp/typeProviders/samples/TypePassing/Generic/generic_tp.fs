@@ -49,7 +49,7 @@ type TypePassingTp(config: TypeProviderConfig) as this =
     do idType.DefineStaticParameters(
         [
             ProvidedStaticParameter("Type",typeof<Type>, null)
-        ], fun typeName args -> createIdType (unbox args.[0]) typeName)
+        ], fun typeName args -> unbox args.[0]) //createIdType (unbox args.[0]) typeName :> Type)
 
     let constType = ProvidedTypeDefinition(runtimeAssembly, ns, "ConstType", baseType = Some typeof<obj>, hideObjectMethods=true)
 
@@ -65,7 +65,7 @@ type TypePassingTp(config: TypeProviderConfig) as this =
         [
             ProvidedStaticParameter("Type1",typeof<Type>, null)
             ProvidedStaticParameter("Type2",typeof<Type>, null)
-        ], fun typeName args -> createIdType (unbox args.[0]) (unbox args.[1]) typeName)
+        ], fun typeName args -> unbox args.[0]) //createIdType (unbox args.[0]) (unbox args.[1]) typeName :> Type)
 
     // ===========================
 
