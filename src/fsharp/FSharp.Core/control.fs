@@ -163,14 +163,14 @@ namespace Microsoft.FSharp.Control
         
         static let unfake FakeUnit = ()
 
-        // Preallocate a ctxt-switching callback delegate.
+        // Preallocate a context-switching callback delegate.
         // This should be the only call to SynchronizationContext.Post in this library. We must always install a trampoline.        
         let sendOrPostCallback = 
             SendOrPostCallback (fun o ->
                 let f = unbox<(unit -> AsyncReturn)> o
                 this.ExecuteWithTrampoline f |> unfake)
 
-        // Preallocate a ctxt-switching callback delegate.
+        // Preallocate a context-switching callback delegate.
         // This should be the only call to QueueUserWorkItem in this library. We must always install a trampoline.
         let waitCallbackForQueueWorkItemWithTrampoline = 
             WaitCallback (fun o ->
