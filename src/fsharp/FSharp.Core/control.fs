@@ -172,14 +172,14 @@ namespace Microsoft.FSharp.Control
         
         static let unfake FakeUnit = ()
 
-        // Preallocate a ctxt-switching callback delegate.
+        // Preallocate a context-switching callback delegate.
         // This should be the only call to SynchronizationContext.Post in this library. We must always install a trampoline.        
         let sendOrPostCallback = 
             SendOrPostCallback (fun o ->
                 let f = unbox<(unit -> AsyncReturn)> o
                 this.ExecuteWithTrampoline f |> unfake)
 
-        // Preallocate a ctxt-switching callback delegate.
+        // Preallocate a context-switching callback delegate.
         // This should be the only call to QueueUserWorkItem in this library. We must always install a trampoline.
         let waitCallbackForQueueWorkItemWithTrampoline = 
             WaitCallback (fun o ->
@@ -851,16 +851,13 @@ namespace Microsoft.FSharp.Control
                             None
 
 
+        /// Create an instance of an arbitrary delegate type delegating to the given F# function
         type FuncDelegate<'T>(f) =
             member __.Invoke(sender:obj, a:'T) : unit = ignore(sender); f(a)
             static member Create<'Delegate when 'Delegate :> Delegate>(f) = 
                 let obj = FuncDelegate<'T>(f)
-#if FX_PORTABLE_OR_NETSTANDARD
                 let invokeMeth = (typeof<FuncDelegate<'T>>).GetMethod("Invoke", BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance)
                 System.Delegate.CreateDelegate(typeof<'Delegate>, obj, invokeMeth) :?> 'Delegate
-#else
-                System.Delegate.CreateDelegate(typeof<'Delegate>, obj, "Invoke") :?> 'Delegate
-#endif
 
         /// Run the asynchronous workflow and wait for its result.
         let private RunSynchronouslyInAnotherThread (token:CancellationToken,computation,timeout) =
