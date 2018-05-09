@@ -73,6 +73,7 @@ type public Fsc () as this =
     let mutable treatWarningsAsErrors : bool = false
     let mutable useStandardResourceNames : bool = false
     let mutable warningsAsErrors : string = null
+    let mutable warningsNotAsErrors : string = null
     let mutable versionFile : string = null
     let mutable warningLevel : string = null
     let mutable win32res : string = null
@@ -194,6 +195,11 @@ type public Fsc () as this =
             | _ -> (warningsAsErrors + " 76 ").Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries)
 
         builder.AppendSwitchIfNotNull("--warnaserror:", warningsAsErrorsArray, ",")
+
+        // WarningsNotAsErrors
+        match warningsNotAsErrors with
+        | null -> ()
+        | _ -> builder.AppendSwitchIfNotNull("--warnaserror-:", warningsNotAsErrors.Split([|' '; ';'; ','|], StringSplitOptions.RemoveEmptyEntries), ",")
 
         // Win32ResourceFile
         builder.AppendSwitchIfNotNull("--win32res:", win32res)
@@ -447,6 +453,10 @@ type public Fsc () as this =
     member fsc.WarningsAsErrors 
         with get() = warningsAsErrors
         and set(s) = warningsAsErrors <- s
+
+    member fsc.WarningsNotAsErrors
+        with get() = warningsNotAsErrors
+        and set(s) = warningsNotAsErrors <- s
 
     member fsc.VisualStudioStyleErrors
         with get() = vserrors

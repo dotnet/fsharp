@@ -5438,7 +5438,7 @@
         <note />
       </trans-unit>
       <trans-unit id="fscBadAssemblyVersion">
-        <source>An {0} specified version '{1}', but this value is invalid and has been ignored</source>
+        <source>The attribute {0} specified version '{1}', but this value is invalid and has been ignored</source>
         <target state="translated">Ein {0} gab Version '{1}' an, dieser Wert ist jedoch ungültig und wurde ignoriert.</target>
         <note />
       </trans-unit>
@@ -6974,12 +6974,17 @@
       </trans-unit>
       <trans-unit id="implicitlyDiscardedInSequenceExpression">
         <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.</source>
-        <target state="new">This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.</target>
+        <target state="translated">Dieser Ausdruck gibt einen Wert des Typs "{0}" zurück, wird aber implizit verworfen. Verwenden Sie ggf. "let", um das Ergebnis an einen Namen zu binden. Beispiel: "let Ergebnis = Ausdruck". Falls Sie den Ausdruck als Wert in der Sequenz einsetzen möchten, verwenden Sie explizit "yield".</target>
         <note />
       </trans-unit>
       <trans-unit id="implicitlyDiscardedSequenceInSequenceExpression">
         <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</source>
-        <target state="new">This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</target>
+        <target state="translated">Dieser Ausdruck gibt einen Wert des Typs "{0}" zurück, wird aber implizit verworfen. Verwenden Sie ggf. "let", um das Ergebnis an einen Namen zu binden. Beispiel: "let Ergebnis = Ausdruck". Falls Sie den Ausdruck als Wert in der Sequenz einsetzen möchten, verwenden Sie explizit "yield!".</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilreadFileChanged">
+        <source>The file '{0}' changed on disk unexpectedly, please reload.</source>
+        <target state="translated">Die Datei "{0}" wurde auf dem Datenträger unerwartet geändert. Laden Sie sie erneut.</target>
         <note />
       </trans-unit>
     </body>

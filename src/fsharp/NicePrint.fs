@@ -71,9 +71,10 @@ module internal PrintUtilities =
                     tcref.DisplayName // has no static params
                 else
                     tcref.DisplayName+"<...>" // shorten
-            if isAttribute then 
-                defaultArg (String.tryDropSuffix name "Attribute") name 
-            else name
+            if isAttribute && name.EndsWith "Attribute" then
+                String.dropSuffix name "Attribute"
+            else 
+                name
         let tyconTextL =
             tagEntityRefName tcref demangled
             |> mkNav tcref.DefinitionRange
@@ -259,7 +260,7 @@ module private PrintIL =
         let staticL =  if f.IsStatic then WordL.keywordStatic else emptyL
         let name    = adjustILName f.Name
         let nameL   = wordL (tagField name)
-        let typL    = layoutILType denv ilTyparSubst f.Type
+        let typL    = layoutILType denv ilTyparSubst f.FieldType
         staticL ^^ WordL.keywordVal ^^ nameL ^^ WordL.colon ^^ typL  
             
     let private layoutILEventDef denv  ilTyparSubst (e: ILEventDef) =
@@ -267,7 +268,7 @@ module private PrintIL =
         let name = adjustILName e.Name
         let nameL = wordL (tagEvent name)
         let typL = 
-            match e.Type with
+            match e.EventType with
             | Some t -> layoutILType denv ilTyparSubst t
             | _ -> emptyL
         staticL ^^ WordL.keywordEvent ^^ nameL ^^ WordL.colon ^^ typL     
@@ -294,16 +295,16 @@ module private PrintIL =
             
         let typL = 
             match p.GetMethod, p.SetMethod with
-            |   None, None -> layoutILType denv ilTyparSubst p.Type // shouldn't happen
-            |   Some getterRef, _ -> layoutGetterType getterRef
-            |   None, Some setterRef -> layoutSetterType setterRef
+            | None, None -> layoutILType denv ilTyparSubst p.PropertyType // shouldn't happen
+            | Some getterRef, _ -> layoutGetterType getterRef
+            | None, Some setterRef -> layoutSetterType setterRef
                 
         let specGetSetL =
             match p.GetMethod, p.SetMethod with
-            |   None,None 
-            |   Some _, None -> emptyL
-            |   None, Some _ -> WordL.keywordWith ^^ WordL.keywordSet
-            |   Some _, Some _ -> WordL.keywordWith ^^ WordL.keywordGet ^^ RightL.comma ^^ WordL.keywordSet
+            | None,None 
+            | Some _, None -> emptyL
+            | None, Some _ -> WordL.keywordWith ^^ WordL.keywordSet
+            | Some _, Some _ -> WordL.keywordWith ^^ WordL.keywordGet ^^ RightL.comma ^^ WordL.keywordSet
         staticL ^^ WordL.keywordMember ^^ nameL ^^ WordL.colon ^^ typL ^^ specGetSetL
 
     let layoutILFieldInit x =
@@ -415,16 +416,11 @@ module private PrintIL =
             | None     -> 
                 aboveListL body
 
-        match typeDef.tdKind with
-        | ILTypeDefKind.Class     
-        | ILTypeDefKind.ValueType 
-        | ILTypeDefKind.Interface -> 
+        if typeDef.IsClass || typeDef.IsStruct || typeDef.IsInterface then
             let pre = 
-                match typeDef.tdKind with
-                | ILTypeDefKind.Class     -> None
-                | ILTypeDefKind.ValueType -> Some WordL.keywordStruct
-                | ILTypeDefKind.Interface -> None
-                | _ -> failwith "unreachable"
+                if typeDef.IsStruct then Some WordL.keywordStruct
+                else None
+
             let baseT  = 
                 match typeDef.Extends with
                 | Some b -> 
@@ -434,15 +430,14 @@ module private PrintIL =
                         else []
                 | None   -> 
                     // for interface show inherited interfaces 
-                    match typeDef.tdKind with 
-                    | ILTypeDefKind.Interface ->
+                    if typeDef.IsInterface then 
                         typeDef.Implements |> List.choose (fun b -> 
                             let baseName = layoutILType denv ilTyparSubst b
                             if isShowBase baseName
                                 then Some (WordL.keywordInherit ^^ baseName)
                             else None
                         )
-                    | _ -> []
+                    else []
 
             let memberBlockLs (fieldDefs:ILFieldDefs, methodDefs:ILMethodDefs, propertyDefs:ILPropertyDefs, eventDefs:ILEventDefs) =
                 let ctors  =
@@ -509,7 +504,7 @@ module private PrintIL =
             let post   = WordL.keywordEnd
             renderL pre (baseT @ body @ types ) post
 
-        | ILTypeDefKind.Enum      -> 
+        elif typeDef.IsEnum then
             let fldsL = 
                 typeDef.Fields.AsList 
                 |> List.filter isShowEnumField 
@@ -518,7 +513,7 @@ module private PrintIL =
 
             renderL None fldsL emptyL
 
-        | ILTypeDefKind.Delegate  -> 
+        else // Delegate
             let rhs = 
                 match typeDef.Methods.AsList |> List.filter (fun m -> m.Name = "Invoke") with // the delegate delegates to the type of `Invoke`
                 | m :: _ -> layoutILCallingSignature denv ilTyparSubst None m.CallingSignature
@@ -660,9 +655,10 @@ module private PrintTypes =
         | ILAttrib ilMethRef -> 
             let trimmedName = 
                 let name = ilMethRef.DeclaringTypeRef.Name
-                match String.tryDropSuffix name "Attribute" with 
-                | Some shortName -> shortName
-                | None -> name
+                if name.EndsWith "Attribute" then
+                    String.dropSuffix name "Attribute"
+                else
+                    name
             let tref = ilMethRef.DeclaringTypeRef
             let tref = ILTypeRef.Create(scope= tref.Scope, enclosing=tref.Enclosing, name=trimmedName)
             PrintIL.layoutILTypeRef denv tref ++ argsL
@@ -1281,7 +1277,7 @@ module InfoMemberPrinting =
         let paramDatas = minfo.GetParamDatas(amap, m, minst)
         let layout =
             layout ^^
-                if isNil (List.concat paramDatas) then
+                if List.forall isNil paramDatas then
                     WordL.structUnit
                 else
                     sepListL WordL.arrow (List.map ((List.map (layoutParamData denv)) >> sepListL WordL.star) paramDatas)
@@ -1303,8 +1299,11 @@ module InfoMemberPrinting =
             else emptyL
         let layout = 
             layout ^^
-                let tcref = minfo.ApparentEnclosingTyconRef 
-                PrintTypes.layoutTyconRef denv tcref
+                if isAppTy minfo.TcGlobals minfo.ApparentEnclosingAppType then
+                    let tcref = minfo.ApparentEnclosingTyconRef 
+                    PrintTypes.layoutTyconRef denv tcref
+                else
+                    emptyL
         let layout = 
             layout ^^
                 if minfo.IsConstructor then  
@@ -1828,11 +1827,11 @@ module private InferredSigPrinting =
             | TMDefLet _  -> true
             | TMDefDo _  -> true
             | TMDefs defs -> defs |> List.exists isConcreteNamespace 
-            | TMAbstract(ModuleOrNamespaceExprWithSig(_,def,_)) -> isConcreteNamespace def
+            | TMAbstract(ModuleOrNamespaceExprWithSig(_, def, _)) -> isConcreteNamespace def
 
-        let rec imexprLP denv  (ModuleOrNamespaceExprWithSig(_,def,_)) = imdefL denv def
+        let rec imexprLP denv  (ModuleOrNamespaceExprWithSig(_, def, _)) = imdefL denv def
 
-        and imexprL denv (ModuleOrNamespaceExprWithSig(mty,def,m)) = imexprLP denv (ModuleOrNamespaceExprWithSig(mty,def,m))
+        and imexprL denv (ModuleOrNamespaceExprWithSig(mty, def, m)) = imexprLP denv (ModuleOrNamespaceExprWithSig(mty, def, m))
 
         and imdefsL denv  x = aboveListL (x |> List.map (imdefL denv))
 
@@ -1927,6 +1926,8 @@ module private PrintData =
             let fields = tc.TrueInstanceFieldsAsList
             let lay fs x = (wordL (tagRecordField fs.rfield_id.idText) ^^ sepL (tagPunctuation "=")) --- (dataExprL denv x)
             leftL (tagPunctuation "{") ^^ semiListL (List.map2 lay fields xs) ^^ rightL (tagPunctuation "}")
+        | Expr.Op (TOp.ValFieldGet (RecdFieldRef.RFRef (tcref, name)), _, _, _) ->
+            (layoutTyconRef denv tcref) ^^ sepL (tagPunctuation ".") ^^ wordL (tagField name)
         | Expr.Op (TOp.Array,[_],xs,_)                 -> leftL (tagPunctuation "[|") ^^ semiListL (dataExprsL denv xs) ^^ RightL.rightBracketBar
         | _ -> wordL (tagPunctuation "?")
     and private dataExprsL denv xs = List.map (dataExprL denv) xs

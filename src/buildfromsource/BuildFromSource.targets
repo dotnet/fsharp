@@ -3,19 +3,20 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
-    <FSCoreVersion>4.4.1.0</FSCoreVersion>
+    <FSCoreVersion>4.4.3.0</FSCoreVersion>
     <OutputPath>$(MSBuildThisFileDirectory)../../BuildFromSource/$(Configuration)/bin</OutputPath>
     <FSharpSourcesRoot>$(MSBuildThisFileDirectory)..</FSharpSourcesRoot>
 
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <UseStandardResourceNames>false</UseStandardResourceNames>
     <DefineConstants>$(DefineConstants);BUILD_FROM_SOURCE</DefineConstants>
 
     <!-- Signing flags currently done using OtherFlags.  Can migrate to properties once build target updated -->
     <KeyFile>$(MSBuildThisFileDirectory)../buildtools/keys/MSFT.snk</KeyFile>
     <PublicSign>true</PublicSign>
-    <OtherFlags>$(OtherFlags) --publicsign --keyfile:$(KeyFile)</OtherFlags>
+    <OtherFlags>$(OtherFlags) --publicsign --keyfile:"$(KeyFile)"</OtherFlags>
     <OtherFlags>$(OtherFlags) --nocopyfsharpcore</OtherFlags>
 
     <DotNetExe Condition=" '$(OS)' == 'Unix' ">dotnet</DotNetExe>

@@ -31,7 +31,7 @@ open System.Collections.Generic
 let f1 (x: 'a[]) = (x :> ICollection<'a>) 
 do let x = f1 [| 3;4; |] in test "test239809" (x.Contains(3))
 
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
 (* 'a[] :> IReadOnlyCollection<'a> *)
 let f1ReadOnly (x: 'a[]) = (x :> IReadOnlyCollection<'a>) 
 do let x = f1ReadOnly [| 3;4; |] in test "test239809ReadOnly" (x.Count = 2)
@@ -41,7 +41,7 @@ do let x = f1ReadOnly [| 3;4; |] in test "test239809ReadOnly" (x.Count = 2)
 let f2 (x: 'a[]) = (x :> IList<'a>) 
 do let x = f2 [| 3;4; |] in test "test239810" (x.Item(1) = 4)
 
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
 (* 'a[] :> IReadOnlyList<'a> *)
 let f2ReadOnly (x: 'a[]) = (x :> IReadOnlyList<'a>) 
 do let x = f2ReadOnly [| 3;4; |] in test "test239810ReadOnly" (x.Item(1) = 4)
@@ -55,7 +55,7 @@ do let x = f3 [| 3;4; |] in for x in x do (Printf.printf "val %d\n" x) done
 let f4 (x: 'a[]) = (x :> IList<'a>) 
 do let x = f4 [| 31;42; |] in for x in x do (Printf.printf "val %d\n" x) done
 
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
 (* Call 'foreachG' using an IReadOnlyList<int> (solved to IEnumerable<int>) *)
 let f4ReadOnly (x: 'a[]) = (x :> IReadOnlyList<'a>) 
 do let x = f4ReadOnly [| 31;42; |] in for x in x do (Printf.printf "val %d\n" x) done
@@ -65,7 +65,7 @@ do let x = f4ReadOnly [| 31;42; |] in for x in x do (Printf.printf "val %d\n" x)
 let f5 (x: 'a[]) = (x :> ICollection<'a>) 
 do let x = f5 [| 31;42; |] in for x in x do (Printf.printf "val %d\n" x) done
 
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
 (* Call 'foreachG' using an IReadOnlyCollection<int> (solved to IEnumerable<int>) *)
 let f5ReadOnly (x: 'a[]) = (x :> IReadOnlyCollection<'a>) 
 do let x = f5ReadOnly [| 31;42; |] in for x in x do (Printf.printf "val %d\n" x) done
@@ -106,7 +106,7 @@ let testUpcastToEnum1 (x: System.AttributeTargets) = (x :> System.Enum)
 let testUpcastToEnum6 (x: System.Enum) = (x :> System.Enum) 
 
 // these delegates don't exist in portable
-#if !UNIX && !FX_PORTABLE_OR_NETSTANDARD
+#if !UNIX && !NETCOREAPP1_0
 let testUpcastToDelegate1 (x: System.Threading.ThreadStart) = (x :> System.Delegate) 
 
 let testUpcastToMulticastDelegate1 (x: System.Threading.ThreadStart) = (x :> System.MulticastDelegate) 
@@ -244,7 +244,7 @@ module SomeRandomOperatorConstraints = begin
 
     let sum64 seq : int64 = Seq.reduce (+) seq
     let sum32 seq : int64 = Seq.reduce (+) seq
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !NETCOREAPP1_0
     let sumBigInt seq : BigInteger = Seq.reduce (+) seq
 #endif
     let sumDateTime (dt : DateTime) (seq : #seq<TimeSpan>) : DateTime = Seq.fold (+) dt seq
@@ -1872,6 +1872,51 @@ module InferenceRegression4040C =
 
     printfn "%A" (Foo.Test 42)
 
+
+module TestInheritFunc = 
+    type Foo() =
+        inherit FSharpFunc<int,int>()
+        override __.Invoke(a:int) = a + 1
+
+    check "cnwcki1" ((Foo() |> box |> unbox<int -> int> ) 5) 6
+
+module TestInheritFuncGeneric = 
+    type Foo<'T,'U>() =
+        inherit FSharpFunc<'T,'T>()
+        override __.Invoke(a:'T) = a
+
+    check "cnwcki2" ((Foo<int,int>() |> box |> unbox<int -> int> ) 5) 5
+
+
+module TestInheritFunc2 = 
+    type Foo() =
+        inherit OptimizedClosures.FSharpFunc<int,int,int>()
+        override f.Invoke(a:int) = (fun u -> f.Invoke(a,u))
+        override __.Invoke(a:int,b:int) = a + b + 1
+
+    check "cnwcki3" ((Foo() |> box |> unbox<int -> int -> int> ) 5 6) 12
+
+module TestInheritFunc3 = 
+    type Foo() =
+        inherit OptimizedClosures.FSharpFunc<int,int,int,int>()
+        override f.Invoke(t) = (fun u v -> f.Invoke(t,u,v))
+        override __.Invoke(a:int,b:int,c:int) = a + b + c + 1
+
+    check "cnwcki4" ((Foo() |> box |> unbox<int -> int -> int -> int> ) 5 6 7) 19
+
+#if !NETCOREAPP1_0
+
+module TestConverter =
+    open System
+
+    let fromConverter (f: Converter<'T1,'X>) = FSharp.Core.FSharpFunc.FromConverter f
+    let implicitConv (f: Converter<'T1,'X>) = FSharp.Core.FSharpFunc.op_Implicit f
+    let toConverter (f: 'T1 -> 'X) = FSharp.Core.FSharpFunc.ToConverter f
+    let toConverter2 (f: FSharpFunc<'T1, 'X>) = FSharp.Core.FSharpFunc.ToConverter f
+
+    test "cenwceoiwe1" ((id |> toConverter |> fromConverter) 6 = 6)
+    test "cenwceoiwe2" ((id |> toConverter |> fromConverter |> toConverter2 |> implicitConv) 6 = 6)
+#endif
 
 
 #if TESTS_AS_APP

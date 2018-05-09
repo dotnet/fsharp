@@ -43,6 +43,10 @@ type TyparMap<'T> =
         let (TPMap m) = tm
         m.ContainsKey(v.Stamp)
 
+    member tm.TryFind (v: Typar) = 
+        let (TPMap m) = tm
+        m.TryFind(v.Stamp)
+
     member tm.Add (v: Typar, x) = 
         let (TPMap m) = tm
         TPMap (m.Add(v.Stamp, x))
@@ -208,13 +212,14 @@ and remapMeasureAux tyenv unt =
     | Measure.RationalPower(u, q) -> Measure.RationalPower(remapMeasureAux tyenv u, q)
     | Measure.Inv u -> Measure.Inv(remapMeasureAux tyenv u)
     | Measure.Var tp as unt -> 
-      match tp.Solution with
+       match tp.Solution with
        | None -> 
-          if ListAssoc.containsKey typarEq tp tyenv.tpinst then 
-              match ListAssoc.find typarEq tp tyenv.tpinst with 
+          match ListAssoc.tryFind typarEq tp tyenv.tpinst with
+          | Some v -> 
+              match v with
               | TType_measure unt -> unt
               | _ -> failwith "remapMeasureAux: incorrect kinds"
-          else unt
+          | None -> unt
        | Some (TType_measure unt) -> remapMeasureAux tyenv unt
        | Some ty -> failwithf "incorrect kinds: %A" ty
 
@@ -287,8 +292,8 @@ and copyAndRemapAndBindTyparsFull remapAttrib tyenv tps =
       let tps' = copyTypars tps
       let tyenv = { tyenv with tpinst = bindTypars tps (generalizeTypars tps') tyenv.tpinst } 
       (tps, tps') ||> List.iter2 (fun tporig tp -> 
-         tp.FixupConstraints (remapTyparConstraintsAux tyenv  tporig.Constraints)
-         tp.typar_attribs  <- tporig.typar_attribs |> remapAttrib)
+         tp.SetConstraints (remapTyparConstraintsAux tyenv  tporig.Constraints)
+         tp.SetAttribs (tporig.Attribs |> remapAttrib))
       tps', tyenv
 
 // copies bound typars, extends tpinst 
@@ -794,9 +799,11 @@ let helpEnsureTypeHasMetadata g ty =
     if isAnyTupleTy g ty then 
         let (tupInfo, tupElemTys) = destAnyTupleTy g ty
         mkOuterCompiledTupleTy g (evalTupInfoIsStruct tupInfo) tupElemTys
+    elif isFunTy g ty then 
+        let (a,b) = destFunTy g ty
+        mkAppTy g.fastFunc_tcr [a; b]
     else ty
-
-
+ 
 //---------------------------------------------------------------------------
 // Equivalence of types up to alpha-equivalence 
 //---------------------------------------------------------------------------
@@ -886,7 +893,7 @@ and typarsAEquivAux erasureFlag g (aenv: TypeEquivEnv) tps1 tps2 =
 
 and tcrefAEquiv g aenv tc1 tc2 = 
     tyconRefEq g tc1 tc2 || 
-    (aenv.EquivTycons.ContainsKey tc1  && tyconRefEq g aenv.EquivTycons.[tc1] tc2)
+      (match aenv.EquivTycons.TryFind tc1 with Some v -> tyconRefEq g v tc2 | None -> false)
 
 and typeAEquivAux erasureFlag g aenv ty1 ty2 = 
     let ty1 = stripTyEqnsWrtErasure erasureFlag g ty1 
@@ -896,8 +903,10 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
         typarsAEquivAux erasureFlag g aenv tps1 tps2 && typeAEquivAux erasureFlag g (aenv.BindEquivTypars tps1 tps2) rty1 rty2
     | TType_var tp1, TType_var tp2 when typarEq tp1 tp2 -> 
         true
-    | TType_var tp1, _ when aenv.EquivTypars.ContainsKey tp1 -> 
-        typeEquivAux erasureFlag g aenv.EquivTypars.[tp1] ty2
+    | TType_var tp1, _ ->
+        match aenv.EquivTypars.TryFind tp1 with
+        | Some v -> typeEquivAux erasureFlag g v ty2
+        | None -> false
     | TType_app (tc1, b1)  , TType_app (tc2, b2) -> 
         tcrefAEquiv g aenv tc1 tc2 &&
         typesAEquivAux erasureFlag g aenv b1 b2
@@ -1451,7 +1460,7 @@ let tryDestRefTupleTy g ty =
 type UncurriedArgInfos = (TType * ArgReprInfo) list 
 type CurriedArgInfos = (TType * ArgReprInfo) list list
 
-// A 'tau' type is one with its type paramaeters stripped off 
+// A 'tau' type is one with its type parameters stripped off 
 let GetTopTauTypeInFSharpForm g (curriedArgInfos: ArgReprInfo list list) tau m =
     let nArgInfos = curriedArgInfos.Length
     let argtys, rty = stripFunTyN g nArgInfos tau
@@ -1591,7 +1600,7 @@ let isILInterfaceTycon (tycon:Tycon) =
 #if !NO_EXTENSIONTYPING
     | ProvidedTypeMetadata info -> info.IsInterface
 #endif
-    | ILTypeMetadata (TILObjectReprData(_, _, td)) -> (td.tdKind = ILTypeDefKind.Interface)
+    | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsInterface
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> false
 
 let rankOfArrayTy g ty = rankOfArrayTyconRef g (tcrefOfAppTy g ty)
@@ -1623,7 +1632,7 @@ let isDelegateTy g ty =
 #if !NO_EXTENSIONTYPING
     | ProvidedTypeMetadata info -> info.IsDelegate ()
 #endif
-    | ILTypeMetadata (TILObjectReprData(_, _, td)) -> (td.tdKind = ILTypeDefKind.Delegate)
+    | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsDelegate
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
         match tryDestAppTy g ty with
         | Some tcref -> tcref.Deref.IsFSharpDelegateTycon
@@ -1634,7 +1643,7 @@ let isInterfaceTy g ty =
 #if !NO_EXTENSIONTYPING
     | ProvidedTypeMetadata info -> info.IsInterface
 #endif
-    | ILTypeMetadata (TILObjectReprData(_, _, td)) -> (td.tdKind = ILTypeDefKind.Interface)
+    | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsInterface
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> isFSharpInterfaceTy g ty
 
 let isClassTy g ty = 
@@ -1642,7 +1651,7 @@ let isClassTy g ty =
 #if !NO_EXTENSIONTYPING
     | ProvidedTypeMetadata info -> info.IsClass
 #endif
-    | ILTypeMetadata (TILObjectReprData(_, _, td)) -> (td.tdKind = ILTypeDefKind.Class)
+    | ILTypeMetadata (TILObjectReprData(_, _, td)) -> td.IsClass
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> isFSharpClassTy g ty
 
 let isStructOrEnumTyconTy g ty = 
@@ -2273,7 +2282,7 @@ module PrettyTypes =
         let niceTypars = List.map2 newPrettyTypar tps names
         let tl, _tt = mkTyparToTyparRenaming tps niceTypars in
         let renaming = renaming @ tl
-        (tps, niceTypars) ||> List.iter2 (fun tp tpnice -> tpnice.FixupConstraints (instTyparConstraints renaming tp.Constraints)) ;
+        (tps, niceTypars) ||> List.iter2 (fun tp tpnice -> tpnice.SetConstraints (instTyparConstraints renaming tp.Constraints)) ;
         niceTypars, renaming
 
     // We choose names for type parameters from 'a'..'t'
@@ -2282,7 +2291,7 @@ module PrettyTypes =
     // Finally, we skip any names already in use
     let NeedsPrettyTyparName (tp:Typar) = 
         tp.IsCompilerGenerated && 
-        tp.typar_il_name.IsNone && 
+        tp.ILName.IsNone && 
         (tp.typar_id.idText = unassignedTyparName) 
 
     let PrettyTyparNames pred alreadyInUse tps = 
@@ -3106,7 +3115,7 @@ module DebugPrint = begin
              let sortCons (cs:(TyconRef * Rational) list) = cs |> List.sortBy (fun (c, _) -> c.DisplayName) 
              let negvs, posvs = ListMeasureVarOccsWithNonZeroExponents         unt |> sortVars |> List.partition (fun (_, e) -> SignRational e < 0)
              let negcs, poscs = ListMeasureConOccsWithNonZeroExponents g false unt |> sortCons |> List.partition (fun (_, e) -> SignRational e < 0)
-             let unparL (uv:Typar) = wordL (tagText ("'" ^  uv.DisplayName))
+             let unparL (uv:Typar) = wordL (tagText ("'" + uv.DisplayName))
              let unconL tc = layoutTyconRef tc
              let rationalL e = wordL (tagText(RationalToString e))
              let measureToPowerL x e = if e = OneRational then x else x -- wordL (tagText "^") -- rationalL e
@@ -3525,15 +3534,15 @@ module DebugPrint = begin
             | Expr.Op (TOp.ValFieldGetAddr rf, _, [], _) -> 
                 leftL(tagText "&") ^^ (recdFieldRefL rf)
             | Expr.Op (TOp.UnionCaseTagGet tycr, _, [x], _) -> 
-                wordL (tagText ("#" ^ tycr.LogicalName ^ ".tag")) ^^ atomL x
+                wordL (tagText ("#" + tycr.LogicalName + ".tag")) ^^ atomL x
             | Expr.Op (TOp.UnionCaseProof c, _, [x], _) -> 
-                wordL (tagText ("#" ^ c.CaseName^ ".cast")) ^^ atomL x
+                wordL (tagText ("#" + c.CaseName + ".cast")) ^^ atomL x
             | Expr.Op (TOp.UnionCaseFieldGet (c, i), _, [x], _) -> 
-                wordL (tagText ("#" ^ c.CaseName ^ "." ^ string i)) --- atomL x
+                wordL (tagText ("#" + c.CaseName + "." + string i)) --- atomL x
             | Expr.Op (TOp.UnionCaseFieldSet (c, i), _, [x;y], _) -> 
-                ((atomL x --- (rightL (tagText ("#" ^ c.CaseName ^ "." ^ string i)))) ^^ wordL(tagText ":=")) --- exprL y
+                ((atomL x --- (rightL (tagText ("#" + c.CaseName + "." + string i)))) ^^ wordL(tagText ":=")) --- exprL y
             | Expr.Op (TOp.TupleFieldGet (_, i), _, [x], _) -> 
-                wordL (tagText ("#" ^ string i)) --- atomL x
+                wordL (tagText ("#" + string i)) --- atomL x
             | Expr.Op (TOp.Coerce, [typ;_], [x], _) -> 
                 atomL x --- (wordL(tagText ":>") ^^ typeL typ) 
             | Expr.Op (TOp.Reraise, [_], [], _) -> 
@@ -3691,6 +3700,7 @@ let wrapModuleOrNamespaceExprInNamespace (id :Ident) cpath mexpr =
 
 // cleanup: make this a property
 let SigTypeOfImplFile (TImplFile(_, _, mexpr, _, _)) = mexpr.Type 
+
 
 //--------------------------------------------------------------------------
 // Data structures representing what gets hidden and what gets remapped (i.e. renamed or alpha-converted)
@@ -4632,14 +4642,23 @@ and remapValReprInfo g tmenv (ValReprInfo(tpNames, arginfosl, retInfo)) =
 
 and remapValData g tmenv (d: ValData) =
     let ty = d.val_type
-    let topValInfo = d.val_repr_info
-    let ty' = ty |> remapPossibleForallTy g tmenv
+    let topValInfo = d.ValReprInfo
+    let tyR = ty |> remapPossibleForallTy g tmenv
+    let declaringEntityR = d.DeclaringEntity |> remapParentRef tmenv
+    let reprInfoR = d.ValReprInfo |> Option.map (remapValReprInfo g tmenv)
+    let memberInfoR = d.MemberInfo |> Option.map (remapMemberInfo g d.val_range topValInfo ty tyR tmenv)
+    let attribsR = d.Attribs |> remapAttribs g tmenv
     { d with 
-        val_type    = ty';
-        val_declaring_entity = d.val_declaring_entity |> remapParentRef tmenv;
-        val_repr_info = d.val_repr_info |> Option.map (remapValReprInfo g tmenv);
-        val_member_info   = d.val_member_info |> Option.map (remapMemberInfo g d.val_range topValInfo ty ty' tmenv);
-        val_attribs       = d.val_attribs       |> remapAttribs g tmenv }
+        val_type     = tyR
+        val_opt_data =
+            match d.val_opt_data with
+            | Some dd ->
+                Some { dd with 
+                         val_declaring_entity = declaringEntityR
+                         val_repr_info        = reprInfoR
+                         val_member_info      = memberInfoR
+                         val_attribs          = attribsR }
+            | None -> None }
 
 and remapParentRef tyenv p =
     match p with 
@@ -5021,14 +5040,19 @@ and copyAndRemapAndBindTyconsAndVals g compgen tmenv tycons vs =
              
     (tycons, tycons') ||> List.iter2 (fun tcd tcd' -> 
         let tps', tmenvinner2 = tmenvCopyRemapAndBindTypars (remapAttribs g tmenvinner) tmenvinner (tcd.entity_typars.Force(tcd.entity_range))
-        tcd'.entity_typars         <- LazyWithContext.NotLazy tps';
-        tcd'.entity_attribs        <- tcd.entity_attribs |> remapAttribs g tmenvinner2;
-        tcd'.entity_tycon_repr           <- tcd.entity_tycon_repr    |> remapTyconRepr g tmenvinner2;
-        tcd'.entity_tycon_abbrev         <- tcd.entity_tycon_abbrev  |> Option.map (remapType tmenvinner2) ;
-        tcd'.entity_tycon_tcaug          <- tcd.entity_tycon_tcaug   |> remapTyconAug tmenvinner2 ;
+        tcd'.entity_typars         <- LazyWithContext.NotLazy tps'
+        tcd'.entity_attribs        <- tcd.entity_attribs       |> remapAttribs g tmenvinner2
+        tcd'.entity_tycon_repr     <- tcd.entity_tycon_repr    |> remapTyconRepr g tmenvinner2
+        let typeAbbrevR             = tcd.TypeAbbrev           |> Option.map (remapType tmenvinner2)
+        tcd'.entity_tycon_tcaug    <- tcd.entity_tycon_tcaug   |> remapTyconAug tmenvinner2
         tcd'.entity_modul_contents <- MaybeLazy.Strict (tcd.entity_modul_contents.Value 
-                                                        |> mapImmediateValsAndTycons lookupTycon lookupVal);
-        tcd'.entity_exn_info      <- tcd.entity_exn_info      |> remapTyconExnInfo g tmenvinner2) ;
+                                                        |> mapImmediateValsAndTycons lookupTycon lookupVal)
+        let exnInfoR                = tcd.ExceptionInfo        |> remapTyconExnInfo g tmenvinner2
+        match tcd'.entity_opt_data with
+        | Some optData -> tcd'.entity_opt_data <- Some { optData with entity_tycon_abbrev = typeAbbrevR; entity_exn_info = exnInfoR }
+        | _ -> 
+            tcd'.SetTypeAbbrev typeAbbrevR
+            tcd'.SetExceptionInfo exnInfoR)
     tycons', vs', tmenvinner
 
 
@@ -5073,12 +5097,12 @@ and allValsOfModDef mdef =
           | TMAbstract(ModuleOrNamespaceExprWithSig(mty, _, _)) -> 
               yield! allValsOfModuleOrNamespaceTy mty }
 
-and remapAndBindModExpr g compgen tmenv (ModuleOrNamespaceExprWithSig(mty, mdef, m)) =
+and remapAndBindModuleOrNamespaceExprWithSig g compgen tmenv (ModuleOrNamespaceExprWithSig(mty, mdef, m)) =
     let mdef = copyAndRemapModDef g compgen tmenv mdef
     let mty, tmenv = copyAndRemapAndBindModTy g compgen tmenv mty
     ModuleOrNamespaceExprWithSig(mty, mdef, m), tmenv
 
-and remapModExpr g compgen tmenv (ModuleOrNamespaceExprWithSig(mty, mdef, m)) =
+and remapModuleOrNamespaceExprWithSig g compgen tmenv (ModuleOrNamespaceExprWithSig(mty, mdef, m)) =
     let mdef = copyAndRemapModDef g compgen tmenv mdef 
     let mty = remapModTy g compgen tmenv mty 
     ModuleOrNamespaceExprWithSig(mty, mdef, m)
@@ -5110,7 +5134,7 @@ and remapAndRenameModDef g compgen tmenv mdef =
         let defs = remapAndRenameModDefs g compgen tmenv defs
         TMDefs defs
     | TMAbstract mexpr -> 
-        let mexpr = remapModExpr g compgen tmenv mexpr
+        let mexpr = remapModuleOrNamespaceExprWithSig g compgen tmenv mexpr
         TMAbstract mexpr
 
 and remapAndRenameModBind g compgen tmenv x = 
@@ -5125,7 +5149,7 @@ and remapAndRenameModBind g compgen tmenv x =
         ModuleOrNamespaceBinding.Module(mspec, def)
 
 and remapImplFile g compgen tmenv mv = 
-    mapAccImplFile (remapAndBindModExpr g compgen) tmenv mv
+    mapAccImplFile (remapAndBindModuleOrNamespaceExprWithSig g compgen) tmenv mv
 
 let copyModuleOrNamespaceType     g compgen mtyp = copyAndRemapAndBindModTy g compgen Remap.Empty mtyp |> fst
 let copyExpr     g compgen e    = remapExpr g compgen Remap.Empty e    
@@ -5936,7 +5960,7 @@ let ExprStats x =
   let count = ref 0
   let folders = {ExprFolder0 with exprIntercept = (fun _ _ _ -> (count := !count + 1; None))}
   let () = FoldExpr folders () x
-  string !count ^ " TExpr nodes"
+  string !count + " TExpr nodes"
 #endif
     
 //-------------------------------------------------------------------------
@@ -6140,22 +6164,84 @@ let mkCallNewQuerySource                  (g:TcGlobals) m ty1 ty2 e1         = m
 
 let mkCallCreateEvent                        (g:TcGlobals) m ty1 ty2 e1 e2 e3 = mkApps g (typedExprForIntrinsic g m g.create_event_info,       [[ty1;ty2]], [ e1;e2;e3 ], m)
 let mkCallGenericComparisonWithComparerOuter (g:TcGlobals) m ty comp e1 e2    = mkApps g (typedExprForIntrinsic g m g.generic_comparison_withc_outer_info, [[ty]], [  comp;e1;e2 ], m)
-let mkCallEqualsOperator                     (g:TcGlobals) m ty e1 e2         = mkApps g (typedExprForIntrinsic g m g.equals_operator_info,     [[ty]], [  e1;e2 ], m)
 let mkCallGenericEqualityEROuter             (g:TcGlobals) m ty e1 e2         = mkApps g (typedExprForIntrinsic g m g.generic_equality_er_outer_info,     [[ty]], [  e1;e2 ], m)
 let mkCallGenericEqualityWithComparerOuter   (g:TcGlobals) m ty comp e1 e2    = mkApps g (typedExprForIntrinsic g m g.generic_equality_withc_outer_info, [[ty]], [comp;e1;e2], m)
 let mkCallGenericHashWithComparerOuter       (g:TcGlobals) m ty comp e1       = mkApps g (typedExprForIntrinsic g m g.generic_hash_withc_outer_info, [[ty]], [comp;e1], m)
 
-let mkCallSubtractionOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_subtraction_info, [[ty; ty; ty]], [e1;e2], m)
+let mkCallEqualsOperator                     (g:TcGlobals) m ty e1 e2         = mkApps g (typedExprForIntrinsic g m g.equals_operator_info,     [[ty]], [  e1;e2 ], m)
+let mkCallNotEqualsOperator                  (g:TcGlobals) m ty e1 e2         = mkApps g (typedExprForIntrinsic g m g.not_equals_operator,     [[ty]], [  e1;e2 ], m)
+let mkCallLessThanOperator                   (g:TcGlobals) m ty e1 e2         = mkApps g (typedExprForIntrinsic g m g.less_than_operator,     [[ty]], [  e1;e2 ], m)
+let mkCallLessThanOrEqualsOperator           (g:TcGlobals) m ty e1 e2         = mkApps g (typedExprForIntrinsic g m g.less_than_or_equals_operator,     [[ty]], [  e1;e2 ], m)
+let mkCallGreaterThanOperator                (g:TcGlobals) m ty e1 e2         = mkApps g (typedExprForIntrinsic g m g.greater_than_operator,     [[ty]], [  e1;e2 ], m)
+let mkCallGreaterThanOrEqualsOperator        (g:TcGlobals) m ty e1 e2         = mkApps g (typedExprForIntrinsic g m g.greater_than_or_equals_operator,     [[ty]], [  e1;e2 ], m)
 
-let mkCallArrayLength (g:TcGlobals) m ty el                    = mkApps g (typedExprForIntrinsic g m g.array_length_info, [[ty]], [el], m)
-let mkCallArrayGet   (g:TcGlobals) m ty e1 e2                  = mkApps g (typedExprForIntrinsic g m g.array_get_info, [[ty]], [ e1 ; e2 ], m)
+let mkCallAdditionOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_addition_info, [[ty; ty; ty]], [e1;e2], m)
+let mkCallSubtractionOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_subtraction_info, [[ty; ty; ty]], [e1;e2], m)
+let mkCallMultiplyOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_multiply_info, [[ty; ty; ty]], [e1;e2], m)
+let mkCallDivisionOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_division_info, [[ty; ty; ty]], [e1;e2], m)
+let mkCallModulusOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.unchecked_modulus_info, [[ty; ty; ty]], [e1;e2], m)
+let mkCallBitwiseAndOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.bitwise_and_info, [[ty]], [e1;e2], m)
+let mkCallBitwiseOrOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.bitwise_or_info, [[ty]], [e1;e2], m)
+let mkCallBitwiseXorOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.bitwise_xor_info, [[ty]], [e1;e2], m)
+let mkCallShiftLeftOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.bitwise_shift_left_info, [[ty]], [e1;e2], m)
+let mkCallShiftRightOperator (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.bitwise_shift_right_info, [[ty]], [e1;e2], m)
+
+let mkCallUnaryNegOperator  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.unchecked_unary_minus_info, [[ty]], [e1], m)
+let mkCallUnaryNotOperator  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.bitwise_unary_not_info, [[ty]], [e1], m)
+
+let mkCallAdditionChecked   (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.checked_addition_info, [[ty; ty; ty]], [e1;e2], m)
+let mkCallSubtractionChecked (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.checked_subtraction_info, [[ty; ty; ty]], [e1;e2], m)
+let mkCallMultiplyChecked   (g:TcGlobals) m ty e1 e2 = mkApps g (typedExprForIntrinsic g m g.checked_multiply_info, [[ty; ty; ty]], [e1;e2], m)
+let mkCallUnaryNegChecked   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.checked_unary_minus_info, [[ty]], [e1], m)
+
+let mkCallToByteChecked     (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.byte_checked_info, [[ty]], [e1], m)
+let mkCallToSByteChecked    (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.sbyte_checked_info, [[ty]], [e1], m)
+let mkCallToInt16Checked    (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int16_checked_info, [[ty]], [e1], m)
+let mkCallToUInt16Checked   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.uint16_checked_info, [[ty]], [e1], m)
+let mkCallToIntChecked      (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int_checked_info, [[ty]], [e1], m)
+let mkCallToInt32Checked    (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int32_checked_info, [[ty]], [e1], m)
+let mkCallToUInt32Checked   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.uint32_checked_info, [[ty]], [e1], m)
+let mkCallToInt64Checked    (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int64_checked_info, [[ty]], [e1], m)
+let mkCallToUInt64Checked   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.uint64_checked_info, [[ty]], [e1], m)
+let mkCallToIntPtrChecked   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.nativeint_checked_info, [[ty]], [e1], m)
+let mkCallToUIntPtrChecked  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.unativeint_checked_info, [[ty]], [e1], m)
+
+let mkCallToByteOperator    (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.byte_operator_info, [[ty]], [e1], m)
+let mkCallToSByteOperator   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.sbyte_operator_info, [[ty]], [e1], m)
+let mkCallToInt16Operator   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int16_operator_info, [[ty]], [e1], m)
+let mkCallToUInt16Operator  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.uint16_operator_info, [[ty]], [e1], m)
+let mkCallToIntOperator     (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int_operator_info, [[ty]], [e1], m)
+let mkCallToInt32Operator   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int32_operator_info, [[ty]], [e1], m)
+let mkCallToUInt32Operator  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.uint32_operator_info, [[ty]], [e1], m)
+let mkCallToInt64Operator   (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int64_operator_info, [[ty]], [e1], m)
+let mkCallToUInt64Operator  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.uint64_operator_info, [[ty]], [e1], m)
+let mkCallToSingleOperator  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.float32_operator_info, [[ty]], [e1], m)
+let mkCallToDoubleOperator  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.float_operator_info, [[ty]], [e1], m)
+let mkCallToIntPtrOperator  (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.nativeint_operator_info, [[ty]], [e1], m)
+let mkCallToUIntPtrOperator (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.unativeint_operator_info, [[ty]], [e1], m)
+
+let mkCallToCharOperator    (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.char_operator_info, [[ty]], [e1], m)
+let mkCallToEnumOperator    (g:TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.enum_operator_info, [[ty]], [e1], m)
+
+let mkCallArrayLength (g:TcGlobals) m ty e1                    = mkApps g (typedExprForIntrinsic g m g.array_length_info, [[ty]], [e1], m)
+let mkCallArrayGet   (g:TcGlobals) m ty e1 idx1                = mkApps g (typedExprForIntrinsic g m g.array_get_info, [[ty]], [ e1 ; idx1 ], m)
 let mkCallArray2DGet (g:TcGlobals) m ty e1 idx1 idx2           = mkApps g (typedExprForIntrinsic g m g.array2D_get_info, [[ty]], [ e1 ; idx1; idx2 ], m)
 let mkCallArray3DGet (g:TcGlobals) m ty e1 idx1 idx2 idx3      = mkApps g (typedExprForIntrinsic g m g.array3D_get_info, [[ty]], [ e1 ; idx1; idx2; idx3 ], m)
 let mkCallArray4DGet (g:TcGlobals) m ty e1 idx1 idx2 idx3 idx4 = mkApps g (typedExprForIntrinsic g m g.array4D_get_info, [[ty]], [ e1 ; idx1; idx2; idx3; idx4 ], m)
+let mkCallArraySet   (g:TcGlobals) m ty e1 idx1 v              = mkApps g (typedExprForIntrinsic g m g.array_set_info, [[ty]], [ e1 ; idx1; v ], m)
+let mkCallArray2DSet (g:TcGlobals) m ty e1 idx1 idx2 v         = mkApps g (typedExprForIntrinsic g m g.array2D_set_info, [[ty]], [ e1 ; idx1; idx2; v ], m)
+let mkCallArray3DSet (g:TcGlobals) m ty e1 idx1 idx2 idx3 v    = mkApps g (typedExprForIntrinsic g m g.array3D_set_info, [[ty]], [ e1 ; idx1; idx2; idx3; v ], m)
+let mkCallArray4DSet (g:TcGlobals) m ty e1 idx1 idx2 idx3 idx4 v = mkApps g (typedExprForIntrinsic g m g.array4D_set_info, [[ty]], [ e1 ; idx1; idx2; idx3; idx4; v ], m)
+
+let mkCallHash       (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.hash_info,      [[ty]], [ e1 ], m)
+let mkCallBox        (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.box_info,       [[ty]], [ e1 ], m)
+let mkCallIsNull     (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.isnull_info,    [[ty]], [ e1 ], m)
+let mkCallIsNotNull  (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.isnotnull_info, [[ty]], [ e1 ], m)
+let mkCallRaise      (g:TcGlobals) m ty e1    = mkApps g (typedExprForIntrinsic g m g.raise_info,     [[ty]], [ e1 ], m)
+
 let mkCallNewDecimal (g:TcGlobals) m (e1, e2, e3, e4, e5)          = mkApps g (typedExprForIntrinsic g m g.new_decimal_info, [], [ e1;e2;e3;e4;e5 ], m)
 
 let mkCallNewFormat (g:TcGlobals) m aty bty cty dty ety e1    = mkApps g (typedExprForIntrinsic g m g.new_format_info, [[aty;bty;cty;dty;ety]], [ e1 ], m)
-let mkCallRaise     (g:TcGlobals) m aty e1    = mkApps g (typedExprForIntrinsic g m g.raise_info, [[aty]], [ e1 ], m)
 
 let TryEliminateDesugaredConstants g m c = 
     match c with 
@@ -6565,7 +6651,7 @@ let MakeArgsForTopArgs _g m argtysl tpenv =
             let ty = instType tpenv argty
             let nm = 
                match argInfo.Name with 
-               | None -> CompilerGeneratedName ("arg"^ string i^ string j)
+               | None -> CompilerGeneratedName ("arg" + string i + string j)
                | Some id -> id.idText
             fst (mkCompGenLocal m nm ty)))
 
@@ -6682,7 +6768,7 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
                     argtysl |> List.mapi (fun i argtys -> 
                         argtys |> List.mapi (fun j (_, argInfo) -> 
                              match argInfo.Name with 
-                             | None -> CompilerGeneratedName ("arg" ^ string i ^string j)
+                             | None -> CompilerGeneratedName ("arg" + string i ^string j)
                              | Some id -> id.idText))
                 | _ -> 
                     []
@@ -6935,8 +7021,8 @@ let etaExpandTypeLambda g m tps (tm, ty) =
     if isNil tps then tm else mkTypeLambda m tps (mkApps g ((tm, ty), [(List.map mkTyparTy tps)], [], m), ty)
 
 let AdjustValToTopVal (tmp:Val) parent valData =
-    tmp.SetValReprInfo (Some valData);  
-    tmp.val_declaring_entity <- parent;  
+    tmp.SetValReprInfo (Some valData)
+    tmp.SetDeclaringEntity parent
     tmp.SetIsMemberOrModuleBinding()
 
 /// For match with only one non-failing target T0, the other targets, T1... failing (say, raise exception).
@@ -7004,18 +7090,18 @@ let LinearizeTopMatch g parent = function
 
 
 let commaEncs strs  = String.concat "," strs
-let angleEnc  str   = "{" ^ str ^ "}" 
+let angleEnc  str   = "{" + str + "}" 
 let ticksAndArgCountTextOfTyconRef (tcref:TyconRef) =
-     // Generic type names are (name ^ "`" ^ digits) where name does not contain "`".
+     // Generic type names are (name + "`" + digits) where name does not contain "`".
      let path = Array.toList (fullMangledPathToTyconRef tcref) @ [tcref.CompiledName]
      textOfPath path
      
 let typarEnc _g (gtpsType, gtpsMethod) typar =
     match List.tryFindIndex (typarEq typar) gtpsType with
-    | Some idx -> "`"  ^ string idx // single-tick-index for typar from type
+    | Some idx -> "`"  + string idx // single-tick-index for typar from type
     | None     ->
         match List.tryFindIndex (typarEq typar) gtpsMethod with
-        | Some idx -> "``" ^ string idx // double-tick-index for typar from method
+        | Some idx -> "``" + string idx // double-tick-index for typar from method
         | None     -> warning(InternalError("Typar not found during XmlDoc generation", typar.Range))
                       "``0" // REVIEW: this should be ERROR not WARNING?
 
@@ -7039,19 +7125,19 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
             | 3 -> "[0:, 0:, 0:]"
             | 4 -> "[0:, 0:, 0:, 0:]"
             | _ -> failwith "impossible: rankOfArrayTyconRef: unsupported array rank"
-        typeEnc g (gtpsType, gtpsMethod) (List.head tinst) ^ arraySuffix
+        typeEnc g (gtpsType, gtpsMethod) (List.head tinst) + arraySuffix
     | TType_ucase (UCRef(tcref, _), tinst)   
     | TType_app (tcref, tinst)   -> 
         if tyconRefEq g g.byref_tcr tcref then
-            typeEnc g (gtpsType, gtpsMethod) (List.head tinst) ^ "@"
+            typeEnc g (gtpsType, gtpsMethod) (List.head tinst) + "@"
         elif tyconRefEq g tcref g.nativeptr_tcr then
-            typeEnc g (gtpsType, gtpsMethod) (List.head tinst) ^ "*"
+            typeEnc g (gtpsType, gtpsMethod) (List.head tinst) + "*"
         else
             let tyName = 
                 let ty = stripTyEqnsAndMeasureEqns g ty
                 match ty with
                 | TType_app (tcref, _tinst)   -> 
-                    // Generic type names are (name ^ "`" ^ digits) where name does not contain "`".
+                    // Generic type names are (name + "`" + digits) where name does not contain "`".
                     // In XML doc, when used in type instances, these do not use the ticks.
                     let path = Array.toList (fullMangledPathToTyconRef tcref) @ [tcref.CompiledName]
                     textOfPath (List.map DemangleGenericTypeName path)
@@ -7633,7 +7719,6 @@ and rewriteObjExprInterfaceImpl env (ty, overrides) =
     
 and rewriteModuleOrNamespaceExpr env x = 
     match x with  
-    (* | ModuleOrNamespaceExprWithSig(mty, e, m) -> ModuleOrNamespaceExprWithSig(mty, rewriteModuleOrNamespaceExpr env e, m) *)
     | ModuleOrNamespaceExprWithSig(mty, def, m) ->  ModuleOrNamespaceExprWithSig(mty, rewriteModuleOrNamespaceDef env def, m)
 
 and rewriteModuleOrNamespaceDefs env x = List.map (rewriteModuleOrNamespaceDef env) x
@@ -7702,17 +7787,26 @@ let MakeExportRemapping viewedCcu (mspec:ModuleOrNamespace) =
 
 let rec remapEntityDataToNonLocal g tmenv (d: Entity) = 
     let tps', tmenvinner = tmenvCopyRemapAndBindTypars (remapAttribs g tmenv) tmenv (d.entity_typars.Force(d.entity_range))
-
+    let typarsR          = LazyWithContext.NotLazy tps'
+    let attribsR         = d.entity_attribs        |> remapAttribs g tmenvinner
+    let tyconReprR       = d.entity_tycon_repr     |> remapTyconRepr g tmenvinner
+    let tyconAbbrevR     = d.TypeAbbrev            |> Option.map (remapType tmenvinner)
+    let tyconTcaugR      = d.entity_tycon_tcaug    |> remapTyconAug tmenvinner
+    let modulContentsR   = 
+        MaybeLazy.Strict (d.entity_modul_contents.Value
+                          |> mapImmediateValsAndTycons (remapTyconToNonLocal g tmenv) (remapValToNonLocal g tmenv))
+    let exnInfoR         = d.ExceptionInfo         |> remapTyconExnInfo g tmenvinner
     { d with 
-          entity_typars         = LazyWithContext.NotLazy tps';
-          entity_attribs        = d.entity_attribs        |> remapAttribs g tmenvinner;
-          entity_tycon_repr           = d.entity_tycon_repr           |> remapTyconRepr g tmenvinner;
-          entity_tycon_abbrev         = d.entity_tycon_abbrev         |> Option.map (remapType tmenvinner) ;
-          entity_tycon_tcaug          = d.entity_tycon_tcaug          |> remapTyconAug tmenvinner ;
-          entity_modul_contents = 
-              MaybeLazy.Strict (d.entity_modul_contents.Value
-                                |> mapImmediateValsAndTycons (remapTyconToNonLocal g tmenv) (remapValToNonLocal g tmenv));
-          entity_exn_info      = d.entity_exn_info      |> remapTyconExnInfo g tmenvinner}
+          entity_typars         = typarsR
+          entity_attribs        = attribsR
+          entity_tycon_repr     = tyconReprR
+          entity_tycon_tcaug    = tyconTcaugR
+          entity_modul_contents = modulContentsR
+          entity_opt_data       =
+            match d.entity_opt_data with
+            | Some dd ->
+                Some { dd with  entity_tycon_abbrev = tyconAbbrevR; entity_exn_info = exnInfoR }
+            | _ -> None }
 
 and remapTyconToNonLocal g tmenv x = 
     x |> NewModifiedTycon (remapEntityDataToNonLocal g tmenv)  

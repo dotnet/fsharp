@@ -345,7 +345,7 @@ let FixupNewTypars m (formalEnclosingTypars:Typars) (tinst: TType list) (tpsorig
     // The real code.. 
     let renaming,tptys = mkTyparToTyparRenaming tpsorig tps
     let tprefInst = mkTyparInst formalEnclosingTypars tinst @ renaming
-    (tpsorig,tps) ||> List.iter2 (fun tporig tp -> tp.FixupConstraints (CopyTyparConstraints  m tprefInst tporig)) 
+    (tpsorig,tps) ||> List.iter2 (fun tporig tp -> tp.SetConstraints (CopyTyparConstraints  m tprefInst tporig)) 
     renaming,tptys
 
 
@@ -790,10 +790,7 @@ type ILMethInfo =
     member x.IsFinal = x.RawMetadata.IsFinal
 
     /// Indicates if the IL method is marked abstract.
-    member x.IsAbstract = 
-        match x.RawMetadata.mdKind with 
-        | MethodKind.Virtual vinfo -> vinfo.IsAbstract 
-        | _ -> false
+    member x.IsAbstract = x.RawMetadata.IsAbstract
 
     /// Does it appear to the user as a static method?
     member x.IsStatic = 
@@ -801,10 +798,7 @@ type ILMethInfo =
         x.RawMetadata.CallingConv.IsStatic
 
     /// Does it have the .NET IL 'newslot' flag set, and is also a virtual?
-    member x.IsNewSlot = 
-        match x.RawMetadata.mdKind with 
-        | MethodKind.Virtual vinfo -> vinfo.IsNewSlot 
-        | _ -> false
+    member x.IsNewSlot = x.RawMetadata.IsNewSlot
     
     /// Does it appear to the user as an instance method?
     member x.IsInstance = not x.IsConstructor &&  not x.IsStatic
@@ -1183,7 +1177,11 @@ type MethInfo =
         | _ -> failwith "not supported"
 
     /// Indicates if this is an extension member. 
-    member x.IsExtensionMember = x.IsCSharpStyleExtensionMember || x.IsFSharpStyleExtensionMember
+    member x.IsExtensionMember =
+        match x with
+        | FSMeth (_,_,vref,pri) -> pri.IsSome || vref.IsExtensionMember
+        | ILMeth (_,_,Some _) -> true
+        | _ -> false
 
     /// Indicates if this is an F# extension member. 
     member x.IsFSharpStyleExtensionMember = 
@@ -1191,8 +1189,10 @@ type MethInfo =
 
     /// Indicates if this is an C#-style extension member. 
     member x.IsCSharpStyleExtensionMember = 
-        x.ExtensionMemberPriorityOption.IsSome && 
-        (match x with ILMeth _ -> true | FSMeth (_,_,vref,_) -> not vref.IsExtensionMember | _ -> false)
+        match x with
+        | FSMeth (_,_,vref,Some _) -> not vref.IsExtensionMember
+        | ILMeth (_,_,Some _) -> true
+        | _ -> false
 
     /// Add the actual type instantiation of the apparent type of an F# extension method.
     //
@@ -1240,6 +1240,7 @@ type MethInfo =
 
     /// Tests whether two method infos have the same underlying definition.
     /// Used to merge operator overloads collected from left and right of an operator constraint.
+    /// Must be compatible with ItemsAreEffectivelyEqual relation.
     static member MethInfosUseIdenticalDefinitions x1 x2 = 
         match x1,x2 with 
         | ILMeth(_,x1,_), ILMeth(_,x2,_) -> (x1.RawMetadata ===  x2.RawMetadata)
@@ -1250,8 +1251,7 @@ type MethInfo =
 #endif
         | _ -> false
 
-    /// Calculates a hash code of method info. Note: this is a very imperfect implementation,
-    /// but it works decently for comparing methods in the language service...
+    /// Calculates a hash code of method info. Must be compatible with ItemsAreEffectivelyEqual relation.
     member x.ComputeHashCode() = 
         match x with 
         | ILMeth(_,x1,_) -> hash x1.RawMetadata.Name
@@ -1676,7 +1676,7 @@ type ILFieldInfo =
      /// Get the type of the field as an IL type
     member x.ILFieldType = 
         match x with 
-        | ILFieldInfo (_,fdef) -> fdef.Type
+        | ILFieldInfo (_,fdef) -> fdef.FieldType
 #if !NO_EXTENSIONTYPING
         | ProvidedField(amap,fi,m) -> Import.ImportProvidedTypeAsILType amap m (fi.PApply((fun fi -> fi.FieldType),m))
 #endif
@@ -1684,11 +1684,13 @@ type ILFieldInfo =
      /// Get the type of the field as an F# type
     member x.FieldType(amap,m) = 
         match x with 
-        | ILFieldInfo (tinfo,fdef) -> ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] fdef.Type
+        | ILFieldInfo (tinfo,fdef) -> ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] fdef.FieldType
 #if !NO_EXTENSIONTYPING
         | ProvidedField(amap,fi,m) -> Import.ImportProvidedType amap m (fi.PApply((fun fi -> fi.FieldType),m))
 #endif
 
+    /// Tests whether two infos have the same underlying definition.
+    /// Must be compatible with ItemsAreEffectivelyEqual relation.
     static member ILFieldInfosUseIdenticalDefinitions x1 x2 = 
         match x1,x2 with 
         | ILFieldInfo(_, x1), ILFieldInfo(_, x2) -> (x1 === x2)
@@ -1698,6 +1700,10 @@ type ILFieldInfo =
 #endif
      /// Get an (uninstantiated) reference to the field as an Abstract IL ILFieldRef
     member x.ILFieldRef = rescopeILFieldRef x.ScopeRef (mkILFieldRef(x.ILTypeRef,x.FieldName,x.ILFieldType))
+
+    /// Calculates a hash code of field info. Must be compatible with ItemsAreEffectivelyEqual relation.
+    member x.ComputeHashCode() = hash x.FieldName
+
     override x.ToString() =  x.FieldName
 
 
@@ -1842,7 +1848,7 @@ type ILPropInfo =
     /// Any type parameters of the enclosing type are instantiated in the type returned.
     member x.GetPropertyType (amap,m) = 
         let (ILPropInfo (tinfo,pdef)) = x
-        ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] pdef.Type
+        ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] pdef.PropertyType
 
     override x.ToString() = x.ILTypeInfo.ToString() + "::" + x.PropertyName
 
@@ -2156,8 +2162,8 @@ type PropInfo =
         | FSProp _ -> failwith "no setter method"
 
     /// Test whether two property infos have the same underlying definition.
-    ///
     /// Uses the same techniques as 'MethInfosUseIdenticalDefinitions'.
+    /// Must be compatible with ItemsAreEffectivelyEqual relation.
     static member PropInfosUseIdenticalDefinitions x1 x2 = 
         let optVrefEq g = function 
           | Some(v1), Some(v2) -> valRefEq g v1 v2
@@ -2172,7 +2178,7 @@ type PropInfo =
 #endif
         | _ -> false
 
-    /// Calculates a hash code of property info (similar as previous)
+    /// Calculates a hash code of property info. Must be compatible with ItemsAreEffectivelyEqual relation.
     member pi.ComputeHashCode() = 
         match pi with 
         | ILProp ilpinfo -> hash ilpinfo.RawMetadata.Name
@@ -2399,8 +2405,8 @@ type EventInfo =
         | ILEvent(ILEventInfo(tinfo,edef)) -> 
             // Get the delegate type associated with an IL event, taking into account the instantiation of the
             // declaring type.
-            if Option.isNone edef.Type then error (nonStandardEventError x.EventName m)
-            ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] edef.Type.Value
+            if Option.isNone edef.EventType then error (nonStandardEventError x.EventName m)
+            ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata [] edef.EventType.Value
 
         | FSEvent(g,p,_,_) -> 
             FindDelegateTypeOfPropertyEvent g amap x.EventName m (p.GetPropertyType(amap,m))
@@ -2411,6 +2417,7 @@ type EventInfo =
 
 
     /// Test whether two event infos have the same underlying definition.
+    /// Must be compatible with ItemsAreEffectivelyEqual relation.
     static member EventInfosUseIdenticalDefintions x1 x2 =
         match x1, x2 with
         | FSEvent(g, pi1, vrefa1, vrefb1), FSEvent(_, pi2, vrefa2, vrefb2) ->
@@ -2422,6 +2429,7 @@ type EventInfo =
         | _ -> false
   
     /// Calculates a hash code of event info (similar as previous)
+    /// Must be compatible with ItemsAreEffectivelyEqual relation.
     member ei.ComputeHashCode() = 
         match ei with 
         | ILEvent ileinfo -> hash ileinfo.RawMetadata.Name

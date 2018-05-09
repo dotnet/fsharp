@@ -398,7 +398,6 @@ assert (sizeof<EntityFlags> = 8)
 assert (sizeof<TyparFlags> = 4)
 #endif
 
-
 let unassignedTyparName = "?"
 
 exception UndefinedName of int * (* error func that expects identifier name *)(string -> string) * Ident * ErrorLogger.Suggestions
@@ -425,6 +424,24 @@ type ModuleOrNamespaceKind =
 
 
 
+let getNameOfScopeRef sref = 
+    match sref with 
+    | ILScopeRef.Local -> "<local>"
+    | ILScopeRef.Module mref -> mref.Name
+    | ILScopeRef.Assembly aref -> aref.Name
+
+#if !NO_EXTENSIONTYPING
+let ComputeDefinitionLocationOfProvidedItem (p : Tainted<#IProvidedCustomAttributeProvider>) =
+    let attrs = p.PUntaintNoFailure(fun x -> x.GetDefinitionLocationAttribute(p.TypeProvider.PUntaintNoFailure(id)))
+    match attrs with
+    | None | Some (null, _, _) -> None
+    | Some (filePath, line, column) -> 
+        // Coordinates from type provider are 1-based for lines and columns
+        // Coordinates internally in the F# compiler are 1-based for lines and 0-based for columns
+        let pos = Range.mkPos line (max 0 (column - 1)) 
+        Range.mkRange  filePath pos pos |> Some
+    
+#endif
 
 /// A public path records where a construct lives within the global namespace
 /// of a CCU.
@@ -465,35 +482,54 @@ type CompilationPath =
 
 
 
-let getNameOfScopeRef sref = 
-    match sref with 
-    | ILScopeRef.Local -> "<local>"
-    | ILScopeRef.Module mref -> mref.Name
-    | ILScopeRef.Assembly aref -> aref.Name
+type EntityOptionalData =
+    {
+      /// The name of the type, possibly with `n mangling 
+      // MUTABILITY; used only when establishing tycons. 
+      mutable entity_compiled_name: string option
 
-
-#if !NO_EXTENSIONTYPING
-let ComputeDefinitionLocationOfProvidedItem (p : Tainted<#IProvidedCustomAttributeProvider>) =
-    let attrs = p.PUntaintNoFailure(fun x -> x.GetDefinitionLocationAttribute(p.TypeProvider.PUntaintNoFailure(id)))
-    match attrs with
-    | None | Some (null, _, _) -> None
-    | Some (filePath, line, column) -> 
-        // Coordinates from type provider are 1-based for lines and columns
-        // Coordinates internally in the F# compiler are 1-based for lines and 0-based for columns
-        let pos = Range.mkPos line (max 0 (column - 1)) 
-        Range.mkRange  filePath pos pos |> Some
-    
-#endif
-
-/// Represents a type definition, exception definition, module definition or namespace definition.
-[<RequireQualifiedAccess>] 
-type Entity = 
-    { /// The declared type parameters of the type  
-      // MUTABILITY; used only during creation and remapping  of tycons 
-      mutable entity_typars: LazyWithContext<Typars, range>        
+      // MUTABILITY: the signature is adjusted when it is checked
+      /// If this field is populated, this is the implementation range for an item in a signature, otherwise it is 
+      /// the signature range for an item in an implementation
+      mutable entity_other_range: (range * bool) option
 
       // MUTABILITY; used only when establishing tycons. 
       mutable entity_kind : TyparKind
+
+      /// The declared documentation for the type or module 
+      // MUTABILITY: only for unpickle linkage
+      mutable entity_xmldoc : XmlDoc
+      
+      /// The XML document signature for this entity
+      mutable entity_xmldocsig : string
+
+      /// If non-None, indicates the type is an abbreviation for another type. 
+      //
+      // MUTABILITY; used only during creation and remapping of tycons 
+      mutable entity_tycon_abbrev: TType option             
+
+      /// The declared accessibility of the representation, not taking signatures into account 
+      mutable entity_tycon_repr_accessibility: Accessibility
+
+      /// Indicates how visible is the entity is.
+      // MUTABILITY: only for unpickle linkage
+      mutable entity_accessiblity: Accessibility   
+
+      /// Field used when the 'tycon' is really an exception definition
+      // 
+      // MUTABILITY; used only during creation and remapping of tycons 
+      mutable entity_exn_info: ExceptionInfo     
+    }
+
+    override x.ToString() = "EntityOptionalData(...)"
+
+
+and /// Represents a type definition, exception definition, module definition or namespace definition.
+    [<RequireQualifiedAccess>] 
+    Entity = 
+    { /// The declared type parameters of the type  
+      // MUTABILITY; used only during creation and remapping  of tycons 
+      mutable entity_typars: LazyWithContext<Typars, range>        
       
       mutable entity_flags : EntityFlags
       
@@ -505,20 +541,8 @@ type Entity =
       // MUTABILITY: only for unpickle linkage
       mutable entity_logical_name: string
 
-      /// The name of the type, possibly with `n mangling 
-      // MUTABILITY; used only when establishing tycons. 
-      mutable entity_compiled_name: string option
-
       /// The declaration location for the type constructor 
       mutable entity_range: range
-      
-      // MUTABILITY: the signature is adjusted when it is checked
-      /// If this field is populated, this is the implementation range for an item in a signature, otherwise it is 
-      /// the signature range for an item in an implementation
-      mutable entity_other_range: (range * bool) option
-      
-      /// The declared accessibility of the representation, not taking signatures into account 
-      mutable entity_tycon_repr_accessibility: Accessibility
       
       /// The declared attributes for the type 
       // MUTABILITY; used during creation and remapping of tycons 
@@ -529,21 +553,11 @@ type Entity =
       //
       // MUTABILITY; used only during creation and remapping of tycons 
       mutable entity_tycon_repr: TyconRepresentation 
-
-      /// If non-None, indicates the type is an abbreviation for another type. 
-      //
-      // MUTABILITY; used only during creation and remapping of tycons 
-      mutable entity_tycon_abbrev: TType option             
       
       /// The methods and properties of the type 
       //
       // MUTABILITY; used only during creation and remapping of tycons 
       mutable entity_tycon_tcaug: TyconAugmentation      
-      
-      /// Field used when the 'tycon' is really an exception definition
-      // 
-      // MUTABILITY; used only during creation and remapping of tycons 
-      mutable entity_exn_info: ExceptionInfo     
       
       /// This field is used when the 'tycon' is really a module definition. It holds statically nested type definitions and nested modules 
       //
@@ -551,21 +565,10 @@ type Entity =
       // when compiling fslib to fixup compiler forward references to internal items 
       mutable entity_modul_contents: MaybeLazy<ModuleOrNamespaceType>     
 
-      /// The declared documentation for the type or module 
-      // MUTABILITY: only for unpickle linkage
-      mutable entity_xmldoc : XmlDoc
-      
-      /// The XML document signature for this entity
-      mutable entity_xmldocsig : string
-
       /// The stable path to the type, e.g. Microsoft.FSharp.Core.FSharpFunc`2 
       // REVIEW: it looks like entity_cpath subsumes this 
       // MUTABILITY: only for unpickle linkage
       mutable entity_pubpath : PublicPath option 
-
-      /// Indicates how visible is the entity is.
-      // MUTABILITY: only for unpickle linkage
-      mutable entity_accessiblity: Accessibility   
  
       /// The stable path to the type, e.g. Microsoft.FSharp.Core.FSharpFunc`2 
       // MUTABILITY: only for unpickle linkage
@@ -574,12 +577,30 @@ type Entity =
       /// Used during codegen to hold the ILX representation indicating how to access the type 
       // MUTABILITY: only for unpickle linkage and caching
       mutable entity_il_repr_cache : CompiledTypeRepr cache
+
+      mutable entity_opt_data : EntityOptionalData option
     }
+
+    static member EmptyEntityOptData = { entity_compiled_name = None; entity_other_range = None; entity_kind = TyparKind.Type; entity_xmldoc = XmlDoc.Empty; entity_xmldocsig = ""; entity_tycon_abbrev = None; entity_tycon_repr_accessibility = TAccess []; entity_accessiblity = TAccess []; entity_exn_info = TExnNone }
+
     /// The name of the namespace, module or type, possibly with mangling, e.g. List`1, List or FailureException 
     member x.LogicalName = x.entity_logical_name
 
     /// The compiled name of the namespace, module or type, e.g. FSharpList`1, ListModule or FailureException 
-    member x.CompiledName = match x.entity_compiled_name with None -> x.LogicalName | Some s -> s
+    member x.CompiledName = 
+        match x.entity_opt_data with 
+        | Some { entity_compiled_name = Some s } -> s
+        | _ -> x.LogicalName 
+
+    member x.EntityCompiledName =
+        match x.entity_opt_data with 
+        | Some optData -> optData.entity_compiled_name
+        | _ -> None 
+
+    member x.SetCompiledName(name) =
+        match x.entity_opt_data with
+        | Some optData -> optData.entity_compiled_name <- name
+        | _ -> x.entity_opt_data <- Some { Entity.EmptyEntityOptData with entity_compiled_name = name }
 
     /// The display name of the namespace, module or type, e.g. List instead of List`1, and no static parameters
     member x.DisplayName = x.GetDisplayName(false, false)
@@ -604,7 +625,7 @@ type Entity =
             | [] -> nm
             | tps -> 
                 let nm = DemangleGenericTypeName nm
-                if withUnderscoreTypars && tps.Length > 0 then 
+                if withUnderscoreTypars && not (List.isEmpty tps) then 
                     nm + "<" + String.concat "," (Array.create tps.Length "_") + ">"
                 else
                     nm
@@ -638,16 +659,19 @@ type Entity =
 
     /// The range in the implementation, adjusted for an item in a signature
     member x.DefinitionRange = 
-        match x.entity_other_range with 
-        | Some (r, true) -> r
+        match x.entity_opt_data with 
+        | Some { entity_other_range = Some (r, true) } -> r
         | _ -> x.Range
 
     member x.SigRange = 
-        match x.entity_other_range with 
-        | Some (r, false) -> r
+        match x.entity_opt_data with 
+        | Some { entity_other_range = Some (r, false) } -> r
         | _ -> x.Range
 
-    member x.SetOtherRange m                              = x.entity_other_range <- Some m
+    member x.SetOtherRange m                              = 
+        match x.entity_opt_data with 
+        | Some optData -> optData.entity_other_range <- Some m
+        | _ -> x.entity_opt_data <- Some { Entity.EmptyEntityOptData with entity_other_range = Some m }
 
     /// A unique stamp for this module, namespace or type definition within the context of this compilation. 
     /// Note that because of signatures, there are situations where in a single compilation the "same" 
@@ -668,13 +692,21 @@ type Entity =
         | TProvidedTypeExtensionPoint info -> XmlDoc (info.ProvidedType.PUntaintNoFailure(fun st -> (st :> IProvidedCustomAttributeProvider).GetXmlDocAttributes(info.ProvidedType.TypeProvider.PUntaintNoFailure(id))))
         | _ -> 
 #endif
-        x.entity_xmldoc
+        match x.entity_opt_data with
+        | Some optData -> optData.entity_xmldoc
+        | _ -> XmlDoc.Empty
 
     /// The XML documentation sig-string of the entity, if any, to use to lookup an .xml doc file. This also acts
     /// as a cache for this sig-string computation.
     member x.XmlDocSig 
-        with get() = x.entity_xmldocsig
-        and set v = x.entity_xmldocsig <- v
+        with get() = 
+            match x.entity_opt_data with
+            | Some optData -> optData.entity_xmldocsig
+            | _ -> ""
+        and set v =
+            match x.entity_opt_data with
+            | Some optData -> optData.entity_xmldocsig <- v
+            | _ -> x.entity_opt_data <- Some { Entity.EmptyEntityOptData with entity_xmldocsig = v }
 
     /// The logical contents of the entity when it is a module or namespace fragment.
     member x.ModuleOrNamespaceType = x.entity_modul_contents.Force()
@@ -683,7 +715,15 @@ type Entity =
     member x.TypeContents = x.entity_tycon_tcaug
 
     /// The kind of the type definition - is it a measure definition or a type definition?
-    member x.TypeOrMeasureKind = x.entity_kind
+    member x.TypeOrMeasureKind =
+        match x.entity_opt_data with
+        | Some optData -> optData.entity_kind
+        | _ -> TyparKind.Type
+
+    member x.SetTypeOrMeasureKind kind =
+        match x.entity_opt_data with
+        | Some optData -> optData.entity_kind <- kind
+        | _ -> x.entity_opt_data <- Some { Entity.EmptyEntityOptData with entity_kind = kind }
 
     /// The identifier at the point of declaration of the type definition.
     member x.Id = ident(x.LogicalName, x.Range)
@@ -692,7 +732,15 @@ type Entity =
     member x.TypeReprInfo = x.entity_tycon_repr
 
     /// The information about the r.h.s. of an F# exception definition, if any. 
-    member x.ExceptionInfo = x.entity_exn_info
+    member x.ExceptionInfo =
+        match x.entity_opt_data with
+        | Some optData -> optData.entity_exn_info
+        | _ -> TExnNone
+
+    member x.SetExceptionInfo exn_info =
+        match x.entity_opt_data with
+        | Some optData -> optData.entity_exn_info <- exn_info
+        | _ -> x.entity_opt_data <- Some { Entity.EmptyEntityOptData with entity_exn_info = exn_info }
 
     /// Indicates if the entity represents an F# exception declaration.
     member x.IsExceptionDecl = match x.ExceptionInfo with TExnNone -> false | _ -> true
@@ -710,13 +758,24 @@ type Entity =
     member x.TyparsNoRange = x.Typars x.Range
 
     /// Get the type abbreviated by this type definition, if it is an F# type abbreviation definition
-    member x.TypeAbbrev = x.entity_tycon_abbrev
+    member x.TypeAbbrev = 
+        match x.entity_opt_data with
+        | Some optData -> optData.entity_tycon_abbrev
+        | _ -> None
+
+    member x.SetTypeAbbrev tycon_abbrev = 
+        match x.entity_opt_data with
+        | Some optData -> optData.entity_tycon_abbrev <- tycon_abbrev
+        | _ -> x.entity_opt_data <- Some { Entity.EmptyEntityOptData with entity_tycon_abbrev = tycon_abbrev }
 
     /// Indicates if this entity is an F# type abbreviation definition
     member x.IsTypeAbbrev = x.TypeAbbrev.IsSome
 
     /// Get the value representing the accessibility of the r.h.s. of an F# type definition.
-    member x.TypeReprAccessibility = x.entity_tycon_repr_accessibility
+    member x.TypeReprAccessibility =
+        match x.entity_opt_data with
+        | Some optData -> optData.entity_tycon_repr_accessibility
+        | _ -> TAccess []
 
     /// Get the cache of the compiled ILTypeRef representation of this module or type.
     member x.CompiledReprCache = x.entity_il_repr_cache
@@ -725,7 +784,10 @@ type Entity =
     member x.PublicPath = x.entity_pubpath
 
     /// Get the value representing the accessibility of an F# type definition or module.
-    member x.Accessibility = x.entity_accessiblity
+    member x.Accessibility =
+        match x.entity_opt_data with
+        | Some optData -> optData.entity_accessiblity
+        | _ -> TAccess []
 
     /// Indicates the type prefers the "tycon<a,b>" syntax for display etc. 
     member x.IsPrefixDisplay = x.entity_flags.IsPrefixDisplay
@@ -849,26 +911,18 @@ type Entity =
     /// Create a new entity with empty, unlinked data. Only used during unpickling of F# metadata.
     static member NewUnlinked() : Entity = 
         { entity_typars = Unchecked.defaultof<_>
-          entity_kind = Unchecked.defaultof<_>
           entity_flags = Unchecked.defaultof<_>
           entity_stamp = Unchecked.defaultof<_>
           entity_logical_name = Unchecked.defaultof<_> 
-          entity_compiled_name = Unchecked.defaultof<_>
           entity_range = Unchecked.defaultof<_> 
-          entity_other_range = Unchecked.defaultof<_>
-          entity_tycon_repr_accessibility = Unchecked.defaultof<_>
           entity_attribs = Unchecked.defaultof<_>
           entity_tycon_repr= Unchecked.defaultof<_>
-          entity_tycon_abbrev= Unchecked.defaultof<_>
           entity_tycon_tcaug= Unchecked.defaultof<_>
-          entity_exn_info= Unchecked.defaultof<_>
           entity_modul_contents= Unchecked.defaultof<_>
-          entity_xmldoc = Unchecked.defaultof<_>
-          entity_xmldocsig = Unchecked.defaultof<_>
           entity_pubpath = Unchecked.defaultof<_>
-          entity_accessiblity= Unchecked.defaultof<_>
           entity_cpath = Unchecked.defaultof<_>
-          entity_il_repr_cache = Unchecked.defaultof<_> }
+          entity_il_repr_cache = Unchecked.defaultof<_>
+          entity_opt_data = Unchecked.defaultof<_>}
 
     /// Create a new entity with the given backing data. Only used during unpickling of F# metadata.
     static member New _reason (data: Entity) : Entity  = data
@@ -876,32 +930,25 @@ type Entity =
     /// Link an entity based on empty, unlinked data to the given data. Only used during unpickling of F# metadata.
     member x.Link (tg: EntityData) = 
         x.entity_typars                    <- tg.entity_typars 
-        x.entity_kind                      <- tg.entity_kind  
         x.entity_flags                     <- tg.entity_flags 
         x.entity_stamp                     <- tg.entity_stamp 
         x.entity_logical_name              <- tg.entity_logical_name  
-        x.entity_compiled_name             <- tg.entity_compiled_name 
         x.entity_range                     <- tg.entity_range  
-        x.entity_other_range               <- tg.entity_other_range 
-        x.entity_tycon_repr_accessibility  <- tg.entity_tycon_repr_accessibility
         x.entity_attribs                   <- tg.entity_attribs 
         x.entity_tycon_repr                <- tg.entity_tycon_repr
-        x.entity_tycon_abbrev              <- tg.entity_tycon_abbrev
         x.entity_tycon_tcaug               <- tg.entity_tycon_tcaug
-        x.entity_exn_info                  <- tg.entity_exn_info
         x.entity_modul_contents            <- tg.entity_modul_contents
-        x.entity_xmldoc                    <- tg.entity_xmldoc 
-        x.entity_xmldocsig                 <- tg.entity_xmldocsig 
         x.entity_pubpath                   <- tg.entity_pubpath 
-        x.entity_accessiblity              <- tg.entity_accessiblity
         x.entity_cpath                     <- tg.entity_cpath 
         x.entity_il_repr_cache             <- tg.entity_il_repr_cache 
+        match tg.entity_opt_data with
+        | Some tg ->
+            x.entity_opt_data <- Some { entity_compiled_name = tg.entity_compiled_name; entity_other_range = tg.entity_other_range; entity_kind = tg.entity_kind; entity_xmldoc = tg.entity_xmldoc; entity_xmldocsig = tg.entity_xmldocsig; entity_tycon_abbrev = tg.entity_tycon_abbrev; entity_tycon_repr_accessibility = tg.entity_tycon_repr_accessibility; entity_accessiblity = tg.entity_accessiblity; entity_exn_info = tg.entity_exn_info }
+        | None -> ()
 
 
     /// Indicates if the entity is linked to backing data. Only used during unpickling of F# metadata.
     member x.IsLinked = match box x.entity_attribs with null -> false | _ -> true 
-
-    override x.ToString() = x.LogicalName
 
     /// Get the blob of information associated with an F# object-model type definition, i.e. class, interface, struct etc.
     member x.FSharpObjectModelTypeInfo = 
@@ -980,9 +1027,7 @@ type Entity =
     /// Indicates if this is a .NET-defined struct or enum type definition , i.e. a value type definition
     member x.IsILStructOrEnumTycon =
         x.IsILTycon && 
-        match x.ILTyconRawMetadata.tdKind with
-        | ILTypeDefKind.ValueType | ILTypeDefKind.Enum -> true
-        | _ -> false
+        x.ILTyconRawMetadata.IsStructOrEnum
 
     /// Indicates if this is a struct or enum type definition , i.e. a value type definition
     member x.IsStructOrEnumTycon = 
@@ -1114,19 +1159,24 @@ type Entity =
     /// Sets the structness of a record or union type definition
     member x.SetIsStructRecordOrUnion b  = let flags = x.entity_flags in x.entity_flags <- EntityFlags(flags.IsPrefixDisplay, flags.IsModuleOrNamespace, flags.PreEstablishedHasDefaultConstructor, flags.HasSelfReferentialConstructor, b)
 
+    override x.ToString() = x.LogicalName
+
 and [<RequireQualifiedAccess>] MaybeLazy<'T> =
     | Strict of 'T
     | Lazy of Lazy<'T>
+
     member this.Value : 'T =
         match this with
         | Strict x -> x
         | Lazy x -> x.Value
+
     member this.Force() : 'T =
         match this with
         | Strict x -> x
         | Lazy x -> x.Force()
 
 and EntityData = Entity
+
 and ParentRef = 
     | Parent of EntityRef
     | ParentNone
@@ -1197,6 +1247,9 @@ and
           tcaug_interfaces=[] 
           tcaug_closed=false 
           tcaug_abstract=false }
+
+    override x.ToString() = "TyconAugmentation(...)"
+
 and 
     [<NoEquality; NoComparison>]
     /// The information for the contents of a type. Also used for a provided namespace.
@@ -1242,10 +1295,16 @@ and
     /// The information for exception definitions should be folded into here.
     | TNoRepr
 
+    override x.ToString() = "TyconRepresentation(...)"
+
 and 
    [<NoComparison; NoEquality>]
     /// TILObjectReprData(scope, nesting, definition)
-   TILObjectReprData = TILObjectReprData of ILScopeRef * ILTypeDef list * ILTypeDef 
+   TILObjectReprData = 
+    | TILObjectReprData of ILScopeRef * ILTypeDef list * ILTypeDef 
+
+    override x.ToString() = "TILObjectReprData(...)"
+
 
 #if !NO_EXTENSIONTYPING
 and 
@@ -1253,50 +1312,54 @@ and
    
    /// The information kept about a provided type
    TProvidedTypeInfo = 
-   { /// The parameters given to the provider that provided to this type.
-     ResolutionEnvironment : ExtensionTyping.ResolutionEnvironment
+    { /// The parameters given to the provider that provided to this type.
+      ResolutionEnvironment : ExtensionTyping.ResolutionEnvironment
 
-     /// The underlying System.Type (wrapped as a ProvidedType to make sure we don't call random things on
-     /// System.Type, and wrapped as Tainted to make sure we track which provider this came from, for reporting
-     /// error messages)
-     ProvidedType:  Tainted<ProvidedType>
+      /// The underlying System.Type (wrapped as a ProvidedType to make sure we don't call random things on
+      /// System.Type, and wrapped as Tainted to make sure we track which provider this came from, for reporting
+      /// error messages)
+      ProvidedType:  Tainted<ProvidedType>
 
-     /// The base type of the type. We use it to compute the compiled representation of the type for erased types.
-     /// Reading is delayed, since it does an import on the underlying type
-     LazyBaseType: LazyWithContext<TType, range * TType> 
+      /// The base type of the type. We use it to compute the compiled representation of the type for erased types.
+      /// Reading is delayed, since it does an import on the underlying type
+      LazyBaseType: LazyWithContext<TType, range * TType> 
 
-     /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
-     IsClass:  bool 
+      /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
+      IsClass:  bool 
 
-     /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
-     IsSealed:  bool 
+      /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
+      IsSealed:  bool 
 
-     /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
-     IsInterface:  bool 
-     /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
-     IsStructOrEnum: bool 
+      /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
+      IsInterface:  bool 
 
-     /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
-     IsEnum: bool 
+      /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
+      IsStructOrEnum: bool 
 
-     /// A type read from the provided type and used to compute basic properties of the type definition.
-     /// Reading is delayed, since it does an import on the underlying type
-     UnderlyingTypeOfEnum: (unit -> TType) 
+      /// A flag read eagerly from the provided type and used to compute basic properties of the type definition.
+      IsEnum: bool 
 
-     /// A flag read from the provided type and used to compute basic properties of the type definition.
-     /// Reading is delayed, since it looks at the .BaseType
-     IsDelegate: (unit -> bool) 
+      /// A type read from the provided type and used to compute basic properties of the type definition.
+      /// Reading is delayed, since it does an import on the underlying type
+      UnderlyingTypeOfEnum: (unit -> TType) 
 
-     /// Indicates the type is erased
-     IsErased: bool 
+      /// A flag read from the provided type and used to compute basic properties of the type definition.
+      /// Reading is delayed, since it looks at the .BaseType
+      IsDelegate: (unit -> bool) 
 
-     /// Indicates the type is generated, but type-relocation is suppressed
-     IsSuppressRelocate : bool }
+      /// Indicates the type is erased
+      IsErased: bool 
 
-   member info.IsGenerated = not info.IsErased
-   member info.BaseTypeForErased (m,objTy) = 
+      /// Indicates the type is generated, but type-relocation is suppressed
+      IsSuppressRelocate : bool }
+
+    member info.IsGenerated = not info.IsErased
+
+    member info.BaseTypeForErased (m,objTy) = 
        if info.IsErased then info.LazyBaseType.Force (m,objTy) 
        else assert false; failwith "expect erased type"
+
+    override x.ToString() = "TProvidedTypeInfo(...)"
 
 #endif
 
@@ -1334,6 +1397,8 @@ and
       /// The fields of the class, struct or enum 
       fsobjmodel_rfields: TyconRecdFields }
 
+    override x.ToString() = "TyconObjModelData(...)"
+
 and 
     [<NoEquality; NoComparison; RequireQualifiedAccess >]
     TyconRecdFields = 
@@ -1348,9 +1413,14 @@ and
         else failwith "FieldByIndex"
 
     member x.FieldByName n = x.FieldsByName.TryFind(n)
+
     member x.AllFieldsAsList = x.FieldsByIndex |> Array.toList
+
     member x.TrueFieldsAsList = x.AllFieldsAsList |> List.filter (fun f -> not f.IsCompilerGenerated)   
+
     member x.TrueInstanceFieldsAsList = x.AllFieldsAsList |> List.filter (fun f -> not f.IsStatic && not f.IsCompilerGenerated)   
+
+    override x.ToString() = "TyconRecdFields(...)"
 
 and 
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1366,6 +1436,8 @@ and
 
     member x.UnionCasesAsList = x.CasesByIndex |> Array.toList
 
+    override x.ToString() = "TyconUnionCases(...)"
+
 and 
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
     TyconUnionData =
@@ -1374,7 +1446,10 @@ and
       /// The ILX data structure representing the discriminated union. 
       CompiledRepresentation: IlxUnionRef cache 
     }
+
     member x.UnionCasesAsList = x.CasesTable.CasesByIndex |> Array.toList
+
+    override x.ToString() = "TyconUnionData(...)"
 
 and 
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1423,10 +1498,16 @@ and
         | _ -> uc.Range 
 
     member uc.DisplayName = uc.Id.idText
+
     member uc.RecdFieldsArray = uc.FieldTable.FieldsByIndex 
+
     member uc.RecdFields = uc.FieldTable.FieldsByIndex |> Array.toList
+
     member uc.GetFieldByName nm = uc.FieldTable.FieldByName nm
+
     member uc.IsNullary = (uc.FieldTable.FieldsByIndex.Length = 0)
+
+    override x.ToString() = "UnionCase(" + x.DisplayName + ")"
 
 and 
     /// This may represent a "field" in either a struct, class, record or union
@@ -1469,7 +1550,9 @@ and
       mutable rfield_fattribs: Attribs 
 
       /// Name/declaration-location of the field 
-      rfield_id: Ident 
+      rfield_id: Ident
+
+      rfield_name_generated: bool
 
       /// If this field is populated, this is the implementation range for an item in a signature, otherwise it is 
       /// the signature range for an item in an implementation
@@ -1541,6 +1624,8 @@ and
         | Some Const.Zero -> true 
         | _ -> false
 
+    override x.ToString() = "RecdField(" + x.Name + ")"
+
 and ExceptionInfo =
     /// Indicates that an exception is an abbreviation for the given exception 
     | TExnAbbrevRepr of TyconRef 
@@ -1554,176 +1639,177 @@ and ExceptionInfo =
     /// Indicates that an exception is abstract, i.e. is in a signature file, and we do not know the representation 
     | TExnNone
 
-and 
-    [<Sealed>]
-    ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, entities: QueueList<Entity>) = 
+    override x.ToString() = "ExceptionInfo(...)"
 
-      /// Mutation used during compilation of FSharp.Core.dll
-      let mutable entities = entities 
+and [<Sealed>] ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, entities: QueueList<Entity>) = 
+
+    /// Mutation used during compilation of FSharp.Core.dll
+    let mutable entities = entities 
       
-      // Lookup tables keyed the way various clients expect them to be keyed.
-      // We attach them here so we don't need to store lookup tables via any other technique.
-      //
-      // The type option ref is used because there are a few functions that treat these as first class values.
-      // We should probably change to 'mutable'.
-      //
-      // We do not need to lock this mutable state this it is only ever accessed from the compiler thread.
-      let activePatternElemRefCache         : NameMap<ActivePatternElemRef> option ref = ref None
-      let modulesByDemangledNameCache       : NameMap<ModuleOrNamespace>    option ref = ref None
-      let exconsByDemangledNameCache        : NameMap<Tycon>                option ref = ref None
-      let tyconsByDemangledNameAndArityCache: LayeredMap<NameArityPair, Tycon>     option ref = ref None
-      let tyconsByAccessNamesCache          : LayeredMultiMap<string,Tycon> option ref = ref None
-      let tyconsByMangledNameCache          : NameMap<Tycon>                option ref = ref None
-      let allEntitiesByMangledNameCache     : NameMap<Entity>               option ref = ref None
-      let allValsAndMembersByPartialLinkageKeyCache : MultiMap<ValLinkagePartialKey, Val>    option ref = ref None
-      let allValsByLogicalNameCache         : NameMap<Val>               option ref = ref None
+    // Lookup tables keyed the way various clients expect them to be keyed.
+    // We attach them here so we don't need to store lookup tables via any other technique.
+    //
+    // The type option ref is used because there are a few functions that treat these as first class values.
+    // We should probably change to 'mutable'.
+    //
+    // We do not need to lock this mutable state this it is only ever accessed from the compiler thread.
+    let activePatternElemRefCache         : NameMap<ActivePatternElemRef> option ref = ref None
+    let modulesByDemangledNameCache       : NameMap<ModuleOrNamespace>    option ref = ref None
+    let exconsByDemangledNameCache        : NameMap<Tycon>                option ref = ref None
+    let tyconsByDemangledNameAndArityCache: LayeredMap<NameArityPair, Tycon>     option ref = ref None
+    let tyconsByAccessNamesCache          : LayeredMultiMap<string,Tycon> option ref = ref None
+    let tyconsByMangledNameCache          : NameMap<Tycon>                option ref = ref None
+    let allEntitiesByMangledNameCache     : NameMap<Entity>               option ref = ref None
+    let allValsAndMembersByPartialLinkageKeyCache : MultiMap<ValLinkagePartialKey, Val>    option ref = ref None
+    let allValsByLogicalNameCache         : NameMap<Val>               option ref = ref None
   
-      /// Namespace or module-compiled-as-type? 
-      member mtyp.ModuleOrNamespaceKind = kind 
+    /// Namespace or module-compiled-as-type? 
+    member mtyp.ModuleOrNamespaceKind = kind 
               
-      /// Values, including members in F# types in this module-or-namespace-fragment. 
-      member mtyp.AllValsAndMembers = vals
+    /// Values, including members in F# types in this module-or-namespace-fragment. 
+    member mtyp.AllValsAndMembers = vals
 
-      /// Type, mapping mangled name to Tycon, e.g. 
-      ////     "Dictionary`2" --> Tycon 
-      ////     "ListModule" --> Tycon with module info
-      ////     "FooException" --> Tycon with exception info
-      member mtyp.AllEntities = entities
+    /// Type, mapping mangled name to Tycon, e.g. 
+    ////     "Dictionary`2" --> Tycon 
+    ////     "ListModule" --> Tycon with module info
+    ////     "FooException" --> Tycon with exception info
+    member mtyp.AllEntities = entities
 
-      /// Mutation used during compilation of FSharp.Core.dll
-      member mtyp.AddModuleOrNamespaceByMutation(modul:ModuleOrNamespace) =
-          entities <- QueueList.appendOne entities modul
-          modulesByDemangledNameCache := None          
-          allEntitiesByMangledNameCache := None       
+    /// Mutation used during compilation of FSharp.Core.dll
+    member mtyp.AddModuleOrNamespaceByMutation(modul:ModuleOrNamespace) =
+        entities <- QueueList.appendOne entities modul
+        modulesByDemangledNameCache := None          
+        allEntitiesByMangledNameCache := None       
 
 #if !NO_EXTENSIONTYPING
-      /// Mutation used in hosting scenarios to hold the hosted types in this module or namespace
-      member mtyp.AddProvidedTypeEntity(entity:Entity) = 
-          entities <- QueueList.appendOne entities entity
-          tyconsByMangledNameCache := None          
-          tyconsByDemangledNameAndArityCache := None
-          tyconsByAccessNamesCache := None
-          allEntitiesByMangledNameCache := None             
+    /// Mutation used in hosting scenarios to hold the hosted types in this module or namespace
+    member mtyp.AddProvidedTypeEntity(entity:Entity) = 
+        entities <- QueueList.appendOne entities entity
+        tyconsByMangledNameCache := None          
+        tyconsByDemangledNameAndArityCache := None
+        tyconsByAccessNamesCache := None
+        allEntitiesByMangledNameCache := None             
 #endif 
           
-      /// Return a new module or namespace type with an entity added.
-      member mtyp.AddEntity(tycon:Tycon) = 
-          ModuleOrNamespaceType(kind, vals, entities.AppendOne tycon)
+    /// Return a new module or namespace type with an entity added.
+    member mtyp.AddEntity(tycon:Tycon) = 
+        ModuleOrNamespaceType(kind, vals, entities.AppendOne tycon)
           
-      /// Return a new module or namespace type with a value added.
-      member mtyp.AddVal(vspec:Val) = 
-          ModuleOrNamespaceType(kind, vals.AppendOne vspec, entities)
+    /// Return a new module or namespace type with a value added.
+    member mtyp.AddVal(vspec:Val) = 
+        ModuleOrNamespaceType(kind, vals.AppendOne vspec, entities)
           
-      /// Get a table of the active patterns defined in this module.
-      member mtyp.ActivePatternElemRefLookupTable = activePatternElemRefCache
+    /// Get a table of the active patterns defined in this module.
+    member mtyp.ActivePatternElemRefLookupTable = activePatternElemRefCache
   
-      /// Get a list of types defined within this module, namespace or type. 
-      member mtyp.TypeDefinitions               = entities |> Seq.filter (fun x -> not x.IsExceptionDecl && not x.IsModuleOrNamespace) |> Seq.toList
+    /// Get a list of types defined within this module, namespace or type. 
+    member mtyp.TypeDefinitions               = entities |> Seq.filter (fun x -> not x.IsExceptionDecl && not x.IsModuleOrNamespace) |> Seq.toList
 
-      /// Get a list of F# exception definitions defined within this module, namespace or type. 
-      member mtyp.ExceptionDefinitions          = entities |> Seq.filter (fun x -> x.IsExceptionDecl) |> Seq.toList
+    /// Get a list of F# exception definitions defined within this module, namespace or type. 
+    member mtyp.ExceptionDefinitions          = entities |> Seq.filter (fun x -> x.IsExceptionDecl) |> Seq.toList
 
-      /// Get a list of module and namespace definitions defined within this module, namespace or type. 
-      member mtyp.ModuleAndNamespaceDefinitions = entities |> Seq.filter (fun x -> x.IsModuleOrNamespace) |> Seq.toList
+    /// Get a list of module and namespace definitions defined within this module, namespace or type. 
+    member mtyp.ModuleAndNamespaceDefinitions = entities |> Seq.filter (fun x -> x.IsModuleOrNamespace) |> Seq.toList
 
-      /// Get a list of type and exception definitions defined within this module, namespace or type. 
-      member mtyp.TypeAndExceptionDefinitions   = entities |> Seq.filter (fun x -> not x.IsModuleOrNamespace) |> Seq.toList
+    /// Get a list of type and exception definitions defined within this module, namespace or type. 
+    member mtyp.TypeAndExceptionDefinitions   = entities |> Seq.filter (fun x -> not x.IsModuleOrNamespace) |> Seq.toList
 
-      /// Get a table of types defined within this module, namespace or type. The 
-      /// table is indexed by both name and generic arity. This means that for generic 
-      /// types "List`1", the entry (List,1) will be present.
-      member mtyp.TypesByDemangledNameAndArity m = 
+    /// Get a table of types defined within this module, namespace or type. The 
+    /// table is indexed by both name and generic arity. This means that for generic 
+    /// types "List`1", the entry (List,1) will be present.
+    member mtyp.TypesByDemangledNameAndArity m = 
         cacheOptRef tyconsByDemangledNameAndArityCache (fun () -> 
            LayeredMap.Empty.AddAndMarkAsCollapsible( mtyp.TypeAndExceptionDefinitions |> List.map (fun (tc:Tycon) -> KeyTyconByDemangledNameAndArity tc.LogicalName (tc.Typars m) tc)  |> List.toArray))
 
-      /// Get a table of types defined within this module, namespace or type. The 
-      /// table is indexed by both name and, for generic types, also by mangled name.
-      member mtyp.TypesByAccessNames = 
-          cacheOptRef tyconsByAccessNamesCache (fun () -> 
+    /// Get a table of types defined within this module, namespace or type. The 
+    /// table is indexed by both name and, for generic types, also by mangled name.
+    member mtyp.TypesByAccessNames = 
+        cacheOptRef tyconsByAccessNamesCache (fun () -> 
              LayeredMultiMap.Empty.AddAndMarkAsCollapsible  (mtyp.TypeAndExceptionDefinitions |> List.toArray |> Array.collect (fun (tc:Tycon) -> KeyTyconByAccessNames tc.LogicalName tc)))
 
-      // REVIEW: we can remove this lookup and use AllEntitiedByMangledName instead?
-      member mtyp.TypesByMangledName = 
-          let addTyconByMangledName (x:Tycon) tab = NameMap.add x.LogicalName x tab 
-          cacheOptRef tyconsByMangledNameCache (fun () -> 
+    // REVIEW: we can remove this lookup and use AllEntitiedByMangledName instead?
+    member mtyp.TypesByMangledName = 
+        let addTyconByMangledName (x:Tycon) tab = NameMap.add x.LogicalName x tab 
+        cacheOptRef tyconsByMangledNameCache (fun () -> 
              List.foldBack addTyconByMangledName mtyp.TypeAndExceptionDefinitions  Map.empty)
 
-      /// Get a table of entities indexed by both logical and compiled names
-      member mtyp.AllEntitiesByCompiledAndLogicalMangledNames : NameMap<Entity> = 
-          let addEntityByMangledName (x:Entity) tab = 
-              let name1 = x.LogicalName
-              let name2 = x.CompiledName
-              let tab = NameMap.add name1 x tab 
-              if name1 = name2 then tab
-              else NameMap.add name2 x tab 
+    /// Get a table of entities indexed by both logical and compiled names
+    member mtyp.AllEntitiesByCompiledAndLogicalMangledNames : NameMap<Entity> = 
+        let addEntityByMangledName (x:Entity) tab = 
+            let name1 = x.LogicalName
+            let name2 = x.CompiledName
+            let tab = NameMap.add name1 x tab 
+            if name1 = name2 then tab
+            else NameMap.add name2 x tab 
           
-          cacheOptRef allEntitiesByMangledNameCache (fun () -> 
+        cacheOptRef allEntitiesByMangledNameCache (fun () -> 
              QueueList.foldBack addEntityByMangledName entities  Map.empty)
 
-      /// Get a table of entities indexed by both logical name
-      member mtyp.AllEntitiesByLogicalMangledName : NameMap<Entity> = 
-          let addEntityByMangledName (x:Entity) tab = NameMap.add x.LogicalName x tab 
-          QueueList.foldBack addEntityByMangledName entities  Map.empty
+    /// Get a table of entities indexed by both logical name
+    member mtyp.AllEntitiesByLogicalMangledName : NameMap<Entity> = 
+        let addEntityByMangledName (x:Entity) tab = NameMap.add x.LogicalName x tab 
+        QueueList.foldBack addEntityByMangledName entities  Map.empty
 
-      /// Get a table of values and members indexed by partial linkage key, which includes name, the mangled name of the parent type (if any), 
-      /// and the method argument count (if any).
-      member mtyp.AllValsAndMembersByPartialLinkageKey = 
-          let addValByMangledName (x:Val) tab = 
-             if x.IsCompiledAsTopLevel then
-                 MultiMap.add x.LinkagePartialKey x tab 
-             else
-                 tab
-          cacheOptRef allValsAndMembersByPartialLinkageKeyCache (fun () -> 
+    /// Get a table of values and members indexed by partial linkage key, which includes name, the mangled name of the parent type (if any), 
+    /// and the method argument count (if any).
+    member mtyp.AllValsAndMembersByPartialLinkageKey = 
+        let addValByMangledName (x:Val) tab = 
+           if x.IsCompiledAsTopLevel then
+               MultiMap.add x.LinkagePartialKey x tab 
+           else
+               tab
+        cacheOptRef allValsAndMembersByPartialLinkageKeyCache (fun () -> 
              QueueList.foldBack addValByMangledName vals MultiMap.empty)
 
-      /// Try to find the member with the given linkage key in the given module.
-      member mtyp.TryLinkVal(ccu:CcuThunk,key:ValLinkageFullKey) = 
-          mtyp.AllValsAndMembersByPartialLinkageKey
-            |> MultiMap.find key.PartialKey
-            |> List.tryFind (fun v -> match key.TypeForLinkage with 
-                                      | None -> true
-                                      | Some keyTy -> ccu.MemberSignatureEquality(keyTy,v.Type))
-            |> ValueOption.ofOption
+    /// Try to find the member with the given linkage key in the given module.
+    member mtyp.TryLinkVal(ccu:CcuThunk,key:ValLinkageFullKey) = 
+        mtyp.AllValsAndMembersByPartialLinkageKey
+          |> MultiMap.find key.PartialKey
+          |> List.tryFind (fun v -> match key.TypeForLinkage with 
+                                    | None -> true
+                                    | Some keyTy -> ccu.MemberSignatureEquality(keyTy,v.Type))
+          |> ValueOption.ofOption
 
-      /// Get a table of values indexed by logical name
-      member mtyp.AllValsByLogicalName = 
-          let addValByName (x:Val) tab = 
-             // Note: names may occur twice prior to raising errors about this in PostTypeCheckSemanticChecks
-             // Earlier ones take precedence since we report errors about the later ones
-             if not x.IsMember && not x.IsCompilerGenerated then 
-                 NameMap.add x.LogicalName x tab 
-             else
-                 tab
-          cacheOptRef allValsByLogicalNameCache (fun () -> 
-             QueueList.foldBack addValByName vals Map.empty)
+    /// Get a table of values indexed by logical name
+    member mtyp.AllValsByLogicalName = 
+        let addValByName (x:Val) tab = 
+           // Note: names may occur twice prior to raising errors about this in PostTypeCheckSemanticChecks
+           // Earlier ones take precedence since we report errors about the later ones
+           if not x.IsMember && not x.IsCompilerGenerated then 
+               NameMap.add x.LogicalName x tab 
+           else
+               tab
+        cacheOptRef allValsByLogicalNameCache (fun () -> 
+           QueueList.foldBack addValByName vals Map.empty)
 
-      /// Compute a table of values and members indexed by logical name.
-      member mtyp.AllValsAndMembersByLogicalNameUncached = 
-          let addValByName (x:Val) tab = 
-             if not x.IsCompilerGenerated then 
-                 MultiMap.add x.LogicalName x tab 
-             else
-                 tab
-          QueueList.foldBack addValByName vals MultiMap.empty
+    /// Compute a table of values and members indexed by logical name.
+    member mtyp.AllValsAndMembersByLogicalNameUncached = 
+        let addValByName (x:Val) tab = 
+            if not x.IsCompilerGenerated then 
+                MultiMap.add x.LogicalName x tab 
+            else
+                tab
+        QueueList.foldBack addValByName vals MultiMap.empty
 
-      /// Get a table of F# exception definitions indexed by demangled name, so 'FailureException' is indexed by 'Failure'
-      member mtyp.ExceptionDefinitionsByDemangledName = 
-          let add (tycon:Tycon) acc = NameMap.add tycon.LogicalName tycon acc
-          cacheOptRef exconsByDemangledNameCache (fun () -> 
-             List.foldBack add mtyp.ExceptionDefinitions  Map.empty)
+    /// Get a table of F# exception definitions indexed by demangled name, so 'FailureException' is indexed by 'Failure'
+    member mtyp.ExceptionDefinitionsByDemangledName = 
+        let add (tycon:Tycon) acc = NameMap.add tycon.LogicalName tycon acc
+        cacheOptRef exconsByDemangledNameCache (fun () -> 
+            List.foldBack add mtyp.ExceptionDefinitions  Map.empty)
 
-      /// Get a table of nested module and namespace fragments indexed by demangled name (so 'ListModule' becomes 'List')
-      member mtyp.ModulesAndNamespacesByDemangledName = 
-          let add (entity:Entity) acc = 
-              if entity.IsModuleOrNamespace then 
-                  NameMap.add entity.DemangledModuleOrNamespaceName entity acc
-              else acc
-          cacheOptRef modulesByDemangledNameCache (fun () -> 
-             QueueList.foldBack add entities  Map.empty)
+    /// Get a table of nested module and namespace fragments indexed by demangled name (so 'ListModule' becomes 'List')
+    member mtyp.ModulesAndNamespacesByDemangledName = 
+        let add (entity:Entity) acc = 
+            if entity.IsModuleOrNamespace then 
+                NameMap.add entity.DemangledModuleOrNamespaceName entity acc
+            else acc
+        cacheOptRef modulesByDemangledNameCache (fun () -> 
+            QueueList.foldBack add entities  Map.empty)
+
+    override x.ToString() = "ModuleOrNamespaceType(...)"
 
 and ModuleOrNamespace = Entity 
 and Tycon = Entity 
-
 
 /// A set of static methods for constructing types.
 and Construct = 
@@ -1809,26 +1895,21 @@ and Construct =
         Tycon.New "tycon"
           { entity_stamp=stamp
             entity_logical_name=name
-            entity_compiled_name=None
-            entity_kind=kind
             entity_range=m
-            entity_other_range=None
             entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false,preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordOrUnionType=false)
             entity_attribs=[] // fetched on demand via est.fs API
             entity_typars= LazyWithContext.NotLazy []
-            entity_tycon_abbrev = None
             entity_tycon_repr = repr
-            entity_tycon_repr_accessibility = TAccess([])
-            entity_exn_info=TExnNone
             entity_tycon_tcaug=TyconAugmentation.Create()
             entity_modul_contents = MaybeLazy.Lazy (lazy new ModuleOrNamespaceType(Namespace, QueueList.ofList [], QueueList.ofList []))
             // Generated types get internal accessibility
-            entity_accessiblity= access
-            entity_xmldoc =  XmlDoc [||] // fetched on demand via est.fs API
-            entity_xmldocsig=""        
             entity_pubpath = Some pubpath
             entity_cpath = Some cpath
-            entity_il_repr_cache = newCache() } 
+            entity_il_repr_cache = newCache()
+            entity_opt_data =
+                match kind, access with
+                | TyparKind.Type, TAccess [] -> None
+                | _ -> Some { Entity.EmptyEntityOptData with entity_kind = kind; entity_accessiblity = access } } 
 #endif
 
     static member NewModuleOrNamespace cpath access (id:Ident) xml attribs mtype = 
@@ -1836,31 +1917,44 @@ and Construct =
         // Put the module suffix on if needed 
         Tycon.New "mspec"
           { entity_logical_name=id.idText
-            entity_compiled_name=None
             entity_range = id.idRange
-            entity_other_range = None
             entity_stamp=stamp
-            entity_kind=TyparKind.Type
             entity_modul_contents = mtype
             entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=true, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false,isStructRecordOrUnionType=false)
             entity_typars=LazyWithContext.NotLazy []
-            entity_tycon_abbrev = None
             entity_tycon_repr = TNoRepr
-            entity_tycon_repr_accessibility = access
-            entity_exn_info=TExnNone
             entity_tycon_tcaug=TyconAugmentation.Create()
             entity_pubpath=cpath |> Option.map (fun (cp:CompilationPath) -> cp.NestedPublicPath id)
             entity_cpath=cpath
-            entity_accessiblity=access
             entity_attribs=attribs
-            entity_xmldoc=xml
-            entity_xmldocsig=""        
-            entity_il_repr_cache = newCache() } 
+            entity_il_repr_cache = newCache()
+            entity_opt_data =
+                match xml, access with
+                | XmlDoc [||], TAccess [] -> None
+                | _ -> Some { Entity.EmptyEntityOptData with entity_xmldoc = xml; entity_tycon_repr_accessibility = access; entity_accessiblity = access } } 
 
 and Accessibility = 
     /// Indicates the construct can only be accessed from any code in the given type constructor, module or assembly. [] indicates global scope. 
     | TAccess of CompilationPath list
     
+    override x.ToString() = "Accessibility(...)"
+
+and [<NoEquality; NoComparison>]
+    TyparOptionalData =
+    {
+      /// MUTABILITY: we set the names of generalized inference type parameters to make the look nice for IL code generation 
+      mutable typar_il_name: string option 
+
+      /// The documentation for the type parameter. Empty for type inference variables.
+      /// MUTABILITY: for linking when unpickling
+      mutable typar_xmldoc : XmlDoc
+
+      /// The inferred constraints for the type inference variable 
+      mutable typar_constraints: TyparConstraint list 
+
+      /// The declared attributes of the type parameter. Empty for type inference variables. 
+      mutable typar_attribs: Attribs
+    }
 and TyparData = Typar
 and 
     [<NoEquality; NoComparison>]
@@ -1869,14 +1963,6 @@ and
     Typar = 
     // Backing data for type parameters and type inference variables
     // 
-    // MEMORY PERF: TyparData objects are common. They could be reduced to a record of 4-5 words in 
-    // the common case of inference type variables, e.g.
-    //
-    // TyparDataCommon = 
-    //       typar_details: TyparDataUncommon // null indicates standard values for uncommon data
-    //       typar_stamp: Stamp 
-    //       typar_solution: TType option
-    //       typar_constraints: TyparConstraint list 
     // where the "common" settings are 
     //     kind=TyparKind.Type, rigid=TyparRigidity.Flexible, id=compgen_id, staticReq=NoStaticReq, isCompGen=true, isFromError=false,
     //     dynamicReq=TyparDynamicReq.No, attribs=[], eqDep=false, compDep=false
@@ -1884,30 +1970,19 @@ and
     { /// MUTABILITY: we set the names of generalized inference type parameters to make the look nice for IL code generation 
       mutable typar_id: Ident 
        
-      /// MUTABILITY: we set the names of generalized inference type parameters to make the look nice for IL code generation 
-      mutable typar_il_name: string option 
-       
       mutable typar_flags: TyparFlags
        
       /// The unique stamp of the typar blob. 
       /// MUTABILITY: for linking when unpickling
-      mutable typar_stamp: Stamp 
-       
-      /// The documentation for the type parameter. Empty for type inference variables.
-      /// MUTABILITY: for linking when unpickling
-      mutable typar_xmldoc : XmlDoc
-       
-      /// The declared attributes of the type parameter. Empty for type inference variables. 
-      mutable typar_attribs: Attribs                      
+      mutable typar_stamp: Stamp       
        
        /// An inferred equivalence for a type inference variable. 
       mutable typar_solution: TType option
-       
-       /// The inferred constraints for the type inference variable 
-      mutable typar_constraints: TyparConstraint list 
 
       /// A cached TAST type used when this type variable is used as type.
-      mutable typar_astype: TType }
+      mutable typar_astype: TType
+      
+      mutable typar_opt_data: TyparOptionalData option }
 
     /// The name of the type parameter 
     member x.Name                = x.typar_id.idText
@@ -1925,7 +2000,10 @@ and
     member x.Solution            = x.typar_solution
 
     /// The inferred constraints for the type inference variable, if any
-    member x.Constraints         = x.typar_constraints
+    member x.Constraints         = 
+        match x.typar_opt_data with
+        | Some optData -> optData.typar_constraints
+        | _ -> []
 
     /// Indicates if the type variable is compiler generated, i.e. is an implicit type inference variable 
     member x.IsCompilerGenerated = x.typar_flags.IsCompilerGenerated
@@ -1956,27 +2034,55 @@ and
     member x.IsErased            = match x.Kind with TyparKind.Type -> false | _ -> true
 
     /// The declared attributes of the type parameter. Empty for type inference variables and parameters from .NET 
-    member x.Attribs             = x.typar_attribs
+    member x.Attribs             = 
+        match x.typar_opt_data with
+        | Some optData -> optData.typar_attribs
+        | _ -> []
+
+    member x.SetAttribs attribs  = 
+        match attribs, x.typar_opt_data with
+        | [], None -> ()
+        | [], Some { typar_il_name = None; typar_xmldoc = XmlDoc [||]; typar_constraints = [] } ->
+            x.typar_opt_data <- None
+        | _, Some optData -> optData.typar_attribs <- attribs
+        | _ -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = attribs }
+
+    member x.XmlDoc              =
+        match x.typar_opt_data with
+        | Some optData -> optData.typar_xmldoc
+        | _ -> XmlDoc.Empty
+
+    member x.ILName              =
+        match x.typar_opt_data with
+        | Some optData -> optData.typar_il_name
+        | _ -> None
+
+    member x.SetILName il_name   =
+        match x.typar_opt_data with
+        | Some optData -> optData.typar_il_name <- il_name
+        | _ -> x.typar_opt_data <- Some { typar_il_name = il_name; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = [] }
 
     /// Indicates the display name of a type variable
     member x.DisplayName = if x.Name = "?" then "?"+string x.Stamp else x.Name
 
     /// Adjusts the constraints associated with a type variable
-    member x.FixupConstraints cs =
-        x.typar_constraints <-  cs
+    member x.SetConstraints cs =
+        match cs, x.typar_opt_data with
+        | [], None -> ()
+        | [], Some { typar_il_name = None; typar_xmldoc = XmlDoc [||]; typar_attribs = [] } ->
+            x.typar_opt_data <- None
+        | _, Some optData -> optData.typar_constraints <- cs
+        | _ -> x.typar_opt_data <- Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = cs; typar_attribs = [] }
 
 
     /// Creates a type variable that contains empty data, and is not yet linked. Only used during unpickling of F# metadata.
     static member NewUnlinked() : Typar  = 
         { typar_id = Unchecked.defaultof<_>
-          typar_il_name = Unchecked.defaultof<_>
           typar_flags = Unchecked.defaultof<_>
-          typar_stamp = Unchecked.defaultof<_>
-          typar_xmldoc = Unchecked.defaultof<_>
-          typar_attribs = Unchecked.defaultof<_>       
+          typar_stamp = -1L
           typar_solution = Unchecked.defaultof<_>
-          typar_constraints = Unchecked.defaultof<_>
-          typar_astype = Unchecked.defaultof<_> }
+          typar_astype = Unchecked.defaultof<_>
+          typar_opt_data = Unchecked.defaultof<_> }
 
     /// Creates a type variable based on the given data. Only used during unpickling of F# metadata.
     static member New (data: TyparData) : Typar = data
@@ -1984,13 +2090,14 @@ and
     /// Links a previously unlinked type variable to the given data. Only used during unpickling of F# metadata.
     member x.Link (tg: TyparData) = 
         x.typar_id <- tg.typar_id
-        x.typar_il_name <- tg.typar_il_name
         x.typar_flags <- tg.typar_flags
         x.typar_stamp <- tg.typar_stamp
-        x.typar_xmldoc <- tg.typar_xmldoc
-        x.typar_attribs <- tg.typar_attribs
         x.typar_solution <- tg.typar_solution
-        x.typar_constraints <- tg.typar_constraints
+        match tg.typar_opt_data with
+        | Some tg -> 
+            let optData = { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints; typar_attribs = tg.typar_attribs }
+            x.typar_opt_data <- Some optData
+        | None -> ()
 
     /// Links a previously unlinked type variable to the given data. Only used during unpickling of F# metadata.
     member x.AsType = 
@@ -2003,7 +2110,7 @@ and
         | _ -> ty
 
     /// Indicates if a type variable has been linked. Only used during unpickling of F# metadata.
-    member x.IsLinked = match box x.typar_attribs with null -> false | _ -> true 
+    member x.IsLinked = x.typar_stamp <> -1L
 
     /// Indicates if a type variable has been solved.
     member x.IsSolved = 
@@ -2016,14 +2123,19 @@ and
 
     /// Sets the rigidity of a type variable
     member x.SetRigidity b            = let flags = x.typar_flags in x.typar_flags <- TyparFlags(flags.Kind, b,              flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
+
     /// Sets whether a type variable is compiler generated
     member x.SetCompilerGenerated b   = let flags = x.typar_flags in x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, b,                         flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
+
     /// Sets whether a type variable has a static requirement
     member x.SetStaticReq b           = let flags = x.typar_flags in x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, b,               flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
+
     /// Sets whether a type variable is required at runtime
     member x.SetDynamicReq b          = let flags = x.typar_flags in x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, b               , flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
+
     /// Sets whether the equality constraint of a type definition depends on this type variable 
     member x.SetEqualityDependsOn b   = let flags = x.typar_flags in x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, b                          , flags.ComparisonConditionalOn) 
+
     /// Sets whether the comparison constraint of a type definition depends on this type variable 
     member x.SetComparisonDependsOn b = let flags = x.typar_flags in x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, b) 
 
@@ -2072,6 +2184,8 @@ and
     
     /// Indicates a constraint that a type is .NET unmanaged type
     | IsUnmanaged                 of range
+
+    override x.ToString() = "TyparConstraint(...)"
     
 /// The specification of a member constraint that must be solved 
 and 
@@ -2086,12 +2200,16 @@ and
 
     /// Get the member name associated with the member constraint.
     member x.MemberName = (let (TTrait(_,nm,_,_,_,_)) = x in nm)
+
     /// Get the return type recorded in the member constraint.
     member x.ReturnType = (let (TTrait(_,_,_,_,ty,_)) = x in ty)
+
     /// Get or set the solution of the member constraint during inference
     member x.Solution 
         with get() = (let (TTrait(_,_,_,_,_,sln)) = x in sln.Value)
         and set v = (let (TTrait(_,_,_,_,_,sln)) = x in sln.Value <- v)
+
+    override x.ToString() = "TTrait(" + x.MemberName + ")"
     
 and 
     [<NoEquality; NoComparison>]
@@ -2131,6 +2249,8 @@ and
     /// Indicates a trait is solved by a 'fake' instance of an operator, like '+' on integers
     | BuiltInSln
 
+    override x.ToString() = "TraitConstraintSln(...)"
+
 /// The partial information used to index the methods of all those in a ModuleOrNamespace.
 and [<RequireQualifiedAccess>]
    ValLinkagePartialKey = 
@@ -2146,6 +2266,8 @@ and [<RequireQualifiedAccess>]
      /// Indicates the total argument count of the member.
      TotalArgCount: int } 
 
+    override x.ToString() = "ValLinkagePartialKey(" + x.LogicalName + ")"
+
 /// The full information used to identify a specific overloaded method
 /// amongst all those in a ModuleOrNamespace.
 and ValLinkageFullKey(partialKey: ValLinkagePartialKey,  typeForLinkage:TType option) =
@@ -2156,56 +2278,22 @@ and ValLinkageFullKey(partialKey: ValLinkagePartialKey,  typeForLinkage:TType op
     /// The full type of the value for the purposes of linking. May be None for non-members, since they can't be overloaded.
     member x.TypeForLinkage = typeForLinkage
 
+    override x.ToString() = "ValLinkageFullKey(" + partialKey.LogicalName + ")"
 
-and ValData = Val
-and [<StructuredFormatDisplay("{LogicalName}")>]
-    Val = 
-    // ValData is 19 words!! CONSIDER THIS TINY FORMAT, for all local, immutable, attribute-free values
-    // val_logical_name: string
-    // val_range: range
-    // mutable val_type: TType
-    // val_stamp: Stamp 
-
-    { 
-      /// MUTABILITY: for unpickle linkage
-      mutable val_logical_name: string
-
+and ValOptionalData =
+    {
       /// MUTABILITY: for unpickle linkage
       mutable val_compiled_name: string option
-
-      /// MUTABILITY: for unpickle linkage
-      mutable val_range: range
 
       /// If this field is populated, this is the implementation range for an item in a signature, otherwise it is 
       /// the signature range for an item in an implementation
       mutable val_other_range: (range * bool) option 
-
-      mutable val_type: TType
-
-      /// MUTABILITY: for unpickle linkage
-      mutable val_stamp: Stamp 
-
-      /// See vflags section further below for encoding/decodings here 
-      mutable val_flags: ValFlags
 
       mutable val_const: Const option
       
       /// What is the original, unoptimized, closed-term definition, if any? 
       /// Used to implement [<ReflectedDefinition>]
       mutable val_defn: Expr option 
-
-      /// How visible is this? 
-      /// MUTABILITY: for unpickle linkage
-      mutable val_access: Accessibility 
-
-      /// Is the value actually an instance method/property/event that augments 
-      /// a type, and if so what name does it take in the IL?
-      /// MUTABILITY: for unpickle linkage
-      mutable val_member_info: ValMemberInfo option
-
-      /// Custom attributes attached to the value. These contain references to other values (i.e. constructors in types). Mutable to fixup  
-      /// these value references after copying a collection of values. 
-      mutable val_attribs: Attribs
 
       // MUTABILITY CLEANUP: mutability of this field is used by 
       //     -- adjustAllUsesOfRecValue 
@@ -2216,29 +2304,67 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
       // type-checked expression.  
       mutable val_repr_info: ValReprInfo option
 
+      /// How visible is this? 
+      /// MUTABILITY: for unpickle linkage
+      mutable val_access: Accessibility 
+
+      /// XML documentation attached to a value.
+      /// MUTABILITY: for unpickle linkage
+      mutable val_xmldoc : XmlDoc 
+
+      /// Is the value actually an instance method/property/event that augments 
+      /// a type, and if so what name does it take in the IL?
+      /// MUTABILITY: for unpickle linkage
+      mutable val_member_info: ValMemberInfo option
+
       // MUTABILITY CLEANUP: mutability of this field is used by 
       //     -- LinearizeTopMatch
       //
       // The fresh temporary should just be created with the right parent
       mutable val_declaring_entity: ParentRef
 
-      /// XML documentation attached to a value.
-      /// MUTABILITY: for unpickle linkage
-      mutable val_xmldoc : XmlDoc 
-      
       /// XML documentation signature for the value
-      mutable val_xmldocsig : string } 
+      mutable val_xmldocsig : string
+
+      /// Custom attributes attached to the value. These contain references to other values (i.e. constructors in types). Mutable to fixup  
+      /// these value references after copying a collection of values. 
+      mutable val_attribs: Attribs
+    }
+
+    override x.ToString() = "ValOptionalData(...)"
+
+and ValData = Val
+and [<StructuredFormatDisplay("{LogicalName}")>]
+    Val = 
+    { 
+      /// Mutable for unpickle linkage
+      mutable val_logical_name: string
+
+      /// Mutable for unpickle linkage
+      mutable val_range: range
+
+      mutable val_type: TType
+
+      /// Mutable for unpickle linkage
+      mutable val_stamp: Stamp 
+
+      /// See vflags section further below for encoding/decodings here 
+      mutable val_flags: ValFlags
+      
+      mutable val_opt_data : ValOptionalData option } 
+
+    static member EmptyValOptData = { val_compiled_name = None; val_other_range = None; val_const = None; val_defn = None; val_repr_info = None; val_access = TAccess []; val_xmldoc = XmlDoc.Empty; val_member_info = None; val_declaring_entity = ParentNone; val_xmldocsig = String.Empty; val_attribs = [] }
 
     /// Range of the definition (implementation) of the value, used by Visual Studio 
     member x.DefinitionRange            = 
-        match x.val_other_range with
-        | Some (m,true) -> m
+        match x.val_opt_data with
+        | Some { val_other_range = Some(m,true) } -> m
         | _ -> x.val_range
 
     /// Range of the definition (signature) of the value, used by Visual Studio 
     member x.SigRange            = 
-        match x.val_other_range with
-        | Some (m,false) -> m
+        match x.val_opt_data with
+        | Some { val_other_range = Some(m,false) } -> m
         | _ -> x.val_range
 
     /// The place where the value was defined. 
@@ -2255,10 +2381,16 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     member x.Type                       = x.val_type
 
     /// How visible is this value, function or member?
-    member x.Accessibility              = x.val_access
+    member x.Accessibility              = 
+        match x.val_opt_data with
+        | Some optData -> optData.val_access
+        | _            -> TAccess []
 
     /// The value of a value or member marked with [<LiteralAttribute>] 
-    member x.LiteralValue               = x.val_const
+    member x.LiteralValue               = 
+        match x.val_opt_data with
+        | Some optData -> optData.val_const
+        | _            -> None
 
     /// Records the "extra information" for a value compiled as a method.
     ///
@@ -2275,7 +2407,10 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     ///
     /// TLR also sets this for inner bindings that it wants to 
     /// represent as "top level" bindings.     
-    member x.ValReprInfo : ValReprInfo option = x.val_repr_info
+    member x.ValReprInfo : ValReprInfo option =
+        match x.val_opt_data with
+        | Some optData -> optData.val_repr_info
+        | _            -> None
 
     member x.Id                         = ident(x.LogicalName,x.Range)
 
@@ -2288,7 +2423,6 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     /// some non-module, non-member bindings to be marked IsCompiledAsTopLevel, e.g. 'y' in 
     /// 'let x = let y = 1 in y + y' (NOTE: check this, don't take it as gospel)
     member x.IsCompiledAsTopLevel       = x.ValReprInfo.IsSome 
-
 
     /// The partial information used to index the methods of all those in a ModuleOrNamespace.
     member x.LinkagePartialKey : ValLinkagePartialKey = 
@@ -2311,13 +2445,19 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     member x.IsExtensionMember          = x.val_flags.IsExtensionMember
 
     /// The quotation expression associated with a value given the [<ReflectedDefinition>] tag
-    member x.ReflectedDefinition        = x.val_defn
+    member x.ReflectedDefinition        =
+        match x.val_opt_data with
+        | Some optData -> optData.val_defn
+        | _            -> None
 
     /// Is this a member, if so some more data about the member.
     ///
     /// Note, the value may still be (a) an extension member or (b) and abstract slot without
     /// a true body. These cases are often causes of bugs in the compiler.
-    member x.MemberInfo                 = x.val_member_info
+    member x.MemberInfo                 = 
+        match x.val_opt_data with
+        | Some optData -> optData.val_member_info
+        | _            -> None
 
     /// Indicates if this is a member
     member x.IsMember                   = x.MemberInfo.IsSome
@@ -2401,18 +2541,33 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     member x.IsCompilerGenerated        = x.val_flags.IsCompilerGenerated
     
     /// Get the declared attributes for the value
-    member x.Attribs                    = x.val_attribs
+    member x.Attribs                    = 
+        match x.val_opt_data with
+        | Some optData -> optData.val_attribs
+        | _            -> []
 
     /// Get the declared documentation for the value
-    member x.XmlDoc                     = x.val_xmldoc
+    member x.XmlDoc                     =
+        match x.val_opt_data with
+        | Some optData -> optData.val_xmldoc
+        | _            -> XmlDoc.Empty
     
     ///Get the signature for the value's XML documentation
     member x.XmlDocSig 
-        with get() = x.val_xmldocsig
-        and set(v) = x.val_xmldocsig <- v
+        with get() = 
+            match x.val_opt_data with 
+            | Some optData -> optData.val_xmldocsig 
+            | _            -> String.Empty
+        and set(v) = 
+            match x.val_opt_data with 
+            | Some optData -> optData.val_xmldocsig <- v 
+            | _            -> x.val_opt_data <- Some { Val.EmptyValOptData with val_xmldocsig = v }
 
     /// The parent type or module, if any (None for expression bindings and parameters)
-    member x.DeclaringEntity               = x.val_declaring_entity
+    member x.DeclaringEntity               = 
+        match x.val_opt_data with
+        | Some optData -> optData.val_declaring_entity
+        | _            -> ParentNone
 
     /// Get the actual parent entity for the value (a module or a type), i.e. the entity under which the
     /// value will appear in compiled code. For extension members this is the module where the extension member
@@ -2503,6 +2658,11 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
             | slotsig :: _ -> slotsig.Name
             | _ -> x.val_logical_name
 
+    member x.ValCompiledName =
+        match x.val_opt_data with
+        | Some optData -> optData.val_compiled_name
+        | _            -> None
+
     /// The name of the method in compiled code (with some exceptions where ilxgen.fs decides not to use a method impl)
     ///   - If this is a property then this is 'get_Foo' or 'set_Foo'
     ///   - If this is an implementation of an abstract slot then this may be a mangled name
@@ -2510,9 +2670,9 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     ///   - If this is an operator then this is 'op_Addition'
     member x.CompiledName =
         let givenName = 
-            match x.val_compiled_name with 
-            | Some n -> n
-            | None -> x.LogicalName 
+            match x.val_opt_data with 
+            | Some { val_compiled_name = Some n } -> n
+            | _ -> x.LogicalName 
         // These cases must get stable unique names for their static field & static property. This name
         // must be stable across quotation generation and IL code generation (quotations can refer to the 
         // properties implicit in these)
@@ -2532,13 +2692,12 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
         else 
             givenName
 
-
-    ///   - If this is a property then this is 'Foo' 
-    ///   - If this is an implementation of an abstract slot then this is the name of the property implemented by the abstract slot
+    /// The name of the property.
+    /// - If this is a property then this is 'Foo' 
+    ///  - If this is an implementation of an abstract slot then this is the name of the property implemented by the abstract slot
     member x.PropertyName = 
         let logicalName =  x.LogicalName
         ChopPropertyName logicalName
-
 
     /// The name of the method. 
     ///   - If this is a property then this is 'Foo' 
@@ -2563,33 +2722,57 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
         DemangleOperatorName x.CoreDisplayName
 
     member x.SetValRec b                                 = x.val_flags <- x.val_flags.SetRecursiveValInfo b 
+
     member x.SetIsMemberOrModuleBinding()                = x.val_flags <- x.val_flags.SetIsMemberOrModuleBinding 
+
     member x.SetMakesNoCriticalTailcalls()               = x.val_flags <- x.val_flags.SetMakesNoCriticalTailcalls
+
     member x.SetHasBeenReferenced()                      = x.val_flags <- x.val_flags.SetHasBeenReferenced
+
     member x.SetIsCompiledAsStaticPropertyWithoutField() = x.val_flags <- x.val_flags.SetIsCompiledAsStaticPropertyWithoutField
+
     member x.SetIsFixed()                                = x.val_flags <- x.val_flags.SetIsFixed
-    member x.SetValReprInfo info                          = x.val_repr_info <- info
+
+    member x.SetValReprInfo info                         = 
+        match x.val_opt_data with
+        | Some optData -> optData.val_repr_info <- info
+        | _            -> x.val_opt_data <- Some { Val.EmptyValOptData with val_repr_info = info }
+
     member x.SetType ty                                  = x.val_type <- ty
-    member x.SetOtherRange m                              = x.val_other_range <- Some m
+
+    member x.SetOtherRange m                             =
+        match x.val_opt_data with
+        | Some optData -> optData.val_other_range <- Some m
+        | _            -> x.val_opt_data <- Some { Val.EmptyValOptData with val_other_range = Some m }
+
+    member x.SetDeclaringEntity parent                   = 
+        match x.val_opt_data with
+        | Some optData -> optData.val_declaring_entity <- parent
+        | _            -> x.val_opt_data <- Some { Val.EmptyValOptData with val_declaring_entity = parent }
+
+    member x.SetAttribs attribs                          = 
+        match x.val_opt_data with
+        | Some optData -> optData.val_attribs <- attribs
+        | _            -> x.val_opt_data <- Some { Val.EmptyValOptData with val_attribs = attribs }
+
+    member x.SetMemberInfo member_info                   = 
+        match x.val_opt_data with
+        | Some optData -> optData.val_member_info <- Some member_info
+        | _            -> x.val_opt_data <- Some { Val.EmptyValOptData with val_member_info = Some member_info }
+
+    member x.SetValDefn val_defn                         = 
+        match x.val_opt_data with
+        | Some optData -> optData.val_defn <- Some val_defn
+        | _            -> x.val_opt_data <- Some { Val.EmptyValOptData with val_defn = Some val_defn }
 
     /// Create a new value with empty, unlinked data. Only used during unpickling of F# metadata.
     static member NewUnlinked() : Val  = 
         { val_logical_name    = Unchecked.defaultof<_>
-          val_compiled_name   = Unchecked.defaultof<_>
           val_range           = Unchecked.defaultof<_>
-          val_other_range     = Unchecked.defaultof<_>
           val_type            = Unchecked.defaultof<_>
           val_stamp           = Unchecked.defaultof<_>
           val_flags           = Unchecked.defaultof<_>
-          val_const           = Unchecked.defaultof<_>
-          val_defn            = Unchecked.defaultof<_>
-          val_access          = Unchecked.defaultof<_>
-          val_member_info     = Unchecked.defaultof<_>
-          val_attribs         = Unchecked.defaultof<_>
-          val_repr_info       = Unchecked.defaultof<_>
-          val_declaring_entity   = Unchecked.defaultof<_>
-          val_xmldoc          = Unchecked.defaultof<_>
-          val_xmldocsig       = Unchecked.defaultof<_> }
+          val_opt_data        = Unchecked.defaultof<_> }
 
 
     /// Create a new value with the given backing data. Only used during unpickling of F# metadata.
@@ -2601,29 +2784,22 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     /// Set all the data on a value
     member x.SetData (tg: ValData) = 
         x.val_logical_name    <- tg.val_logical_name 
-        x.val_compiled_name   <- tg.val_compiled_name
         x.val_range           <- tg.val_range        
-        x.val_other_range     <- tg.val_other_range  
         x.val_type            <- tg.val_type         
         x.val_stamp           <- tg.val_stamp        
         x.val_flags           <- tg.val_flags        
-        x.val_const           <- tg.val_const        
-        x.val_defn            <- tg.val_defn         
-        x.val_access          <- tg.val_access       
-        x.val_member_info     <- tg.val_member_info  
-        x.val_attribs         <- tg.val_attribs      
-        x.val_repr_info       <- tg.val_repr_info    
-        x.val_declaring_entity   <- tg.val_declaring_entity
-        x.val_xmldoc          <- tg.val_xmldoc       
-        x.val_xmldocsig       <- tg.val_xmldocsig    
+        match tg.val_opt_data with
+        | Some tg -> x.val_opt_data <- Some { val_compiled_name = tg.val_compiled_name; val_other_range = tg.val_other_range; val_const = tg.val_const; val_defn = tg.val_defn; val_repr_info = tg.val_repr_info; val_access = tg.val_access; val_xmldoc = tg.val_xmldoc; val_member_info = tg.val_member_info; val_declaring_entity = tg.val_declaring_entity; val_xmldocsig = tg.val_xmldocsig; val_attribs = tg.val_attribs }
+        | None -> ()
 
     /// Indicates if a value is linked to backing data yet. Only used during unpickling of F# metadata.
-    member x.IsLinked = match box x.val_attribs with null -> false | _ -> true 
+    member x.IsLinked = match box x.val_logical_name with null -> false | _ -> true 
 
     override x.ToString() = x.LogicalName
     
     
 and 
+    /// Represents the extra information stored for a member
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
     ValMemberInfo = 
     { /// The parent type. For an extension member this is the type being extended 
@@ -2637,6 +2813,7 @@ and
 
       MemberFlags: MemberFlags }
 
+    override x.ToString() = "ValMemberInfo(...)"
 
 and 
     [<StructuredFormatDisplay("{Display}"); RequireQualifiedAccess>]
@@ -2647,9 +2824,16 @@ and
       /// The name of the value, or the full signature of the member
       ItemKey: ValLinkageFullKey }
 
+    /// Get the thunk for the assembly referred to
     member x.Ccu = x.EnclosingEntity.nlr.Ccu
+
+    /// Get the name of the assembly referred to
     member x.AssemblyName = x.EnclosingEntity.nlr.AssemblyName
+
+    /// For debugging
     member x.Display = x.ToString()
+
+    /// For debugging
     override x.ToString() = x.EnclosingEntity.nlr.ToString() + "::" + x.ItemKey.PartialKey.LogicalName
       
 and ValPublicPath      = 
@@ -3617,6 +3801,10 @@ and
       
       /// A helper function used to link method signatures using type equality. This is effectively a forward call to the type equality 
       /// logic in tastops.fs
+      TryGetILModuleDef: (unit -> ILModuleDef option) 
+      
+      /// A helper function used to link method signatures using type equality. This is effectively a forward call to the type equality 
+      /// logic in tastops.fs
       MemberSignatureEquality : (TType -> TType -> bool) 
       
       /// The table of .NET CLI type forwarders for this assembly
@@ -3686,6 +3874,9 @@ and CcuThunk =
 
     /// Holds the filename for the DLL, if any 
     member ccu.FileName            = ccu.Deref.FileName
+
+    /// Try to get the .NET Assembly, if known.  May not be present for `IsFSharp` for in-memory cross-project references
+    member ccu.TryGetILModuleDef()  = ccu.Deref.TryGetILModuleDef()
 
 #if !NO_EXTENSIONTYPING
     /// Is the CCu an EST injected assembly
@@ -4301,9 +4492,10 @@ and SlotParam =
     member x.Type = let (TSlotParam(_,ty,_,_,_,_)) = x in ty
 
 /// A type for a module-or-namespace-fragment and the actual definition of the module-or-namespace-fragment
+/// The first ModuleOrNamespaceType is the signature and is a binder. However the bindings are not used in the ModuleOrNamespaceExpr: it is only referenced from the 'outside' 
+/// is for use by FCS only to report the "hidden" contents of the assembly prior to applying the signature.
 and ModuleOrNamespaceExprWithSig = 
     | ModuleOrNamespaceExprWithSig of 
-         /// The ModuleOrNamespaceType is a binder. However it is not used in the ModuleOrNamespaceExpr: it is only referenced from the 'outside' 
          ModuleOrNamespaceType 
          * ModuleOrNamespaceExpr
          * range
@@ -4313,20 +4505,25 @@ and ModuleOrNamespaceExprWithSig =
 and ModuleOrNamespaceExpr = 
     /// Indicates the module is a module with a signature 
     | TMAbstract of ModuleOrNamespaceExprWithSig
+
     /// Indicates the module fragment is made of several module fragments in succession 
     | TMDefs     of ModuleOrNamespaceExpr list  
+
     /// Indicates the module fragment is a 'let' definition 
     | TMDefLet   of Binding * range
+
     /// Indicates the module fragment is an evaluation of expression for side-effects
     | TMDefDo   of Expr * range
+
     /// Indicates the module fragment is a 'rec' or 'non-rec' definition of types and modules
     | TMDefRec   of isRec:bool * Tycon list * ModuleOrNamespaceBinding list * range
 
 /// A named module-or-namespace-fragment definition 
 and [<RequireQualifiedAccess>] 
     ModuleOrNamespaceBinding = 
-    //| Do of Expr 
+
     | Binding of Binding 
+
     | Module of 
          /// This ModuleOrNamespace that represents the compilation of a module as a class. 
          /// The same set of tycons etc. are bound in the ModuleOrNamespace as in the ModuleOrNamespaceExpr
@@ -4582,7 +4779,16 @@ let mkTyparTy (tp:Typar) =
     | TyparKind.Type -> tp.AsType 
     | TyparKind.Measure -> TType_measure (Measure.Var tp)
 
-let copyTypar (tp: Typar) = Typar.New { tp with typar_stamp=newStamp(); typar_astype=Unchecked.defaultof<_> }
+let copyTypar (tp: Typar) = 
+    let optData = tp.typar_opt_data |> Option.map (fun tg -> { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints; typar_attribs = tg.typar_attribs })
+    Typar.New { typar_id       = tp.typar_id
+                typar_flags    = tp.typar_flags
+                typar_stamp    = newStamp()
+                typar_solution = tp.typar_solution
+                typar_astype   = Unchecked.defaultof<_>
+                // Be careful to clone the mutable optional data too
+                typar_opt_data = optData } 
+
 let copyTypars tps = List.map copyTypar tps
 
 //--------------------------------------------------------------------------
@@ -4867,14 +5073,14 @@ let MakeUnionRepr ucs = TUnionRepr (MakeUnionCases ucs)
 let NewTypar (kind,rigid,Typar(id,staticReq,isCompGen),isFromError,dynamicReq,attribs,eqDep,compDep) = 
     Typar.New
       { typar_id = id 
-        typar_il_name = None
         typar_stamp = newStamp() 
         typar_flags= TyparFlags(kind,rigid,isFromError,isCompGen,staticReq,dynamicReq,eqDep,compDep) 
-        typar_attribs= attribs 
         typar_solution = None
-        typar_constraints=[]
-        typar_xmldoc = XmlDoc.Empty 
-        typar_astype = Unchecked.defaultof<_>} 
+        typar_astype = Unchecked.defaultof<_>
+        typar_opt_data =
+            match attribs with
+            | [] -> None
+            | _ -> Some { typar_il_name = None; typar_xmldoc = XmlDoc.Empty; typar_constraints = []; typar_attribs = attribs } } 
 
 let NewRigidTypar nm m = NewTypar (TyparKind.Type,TyparRigidity.Rigid,Typar(mkSynId m nm,NoStaticReq,true),false,TyparDynamicReq.Yes,[],false,false)
 
@@ -4899,28 +5105,23 @@ let NewExn cpath (id:Ident) access repr attribs doc =
     Tycon.New "exnc"
       { entity_stamp=newStamp()
         entity_attribs=attribs
-        entity_kind=TyparKind.Type
         entity_logical_name=id.idText
-        entity_compiled_name=None
         entity_range=id.idRange
-        entity_other_range=None
-        entity_exn_info= repr
         entity_tycon_tcaug=TyconAugmentation.Create()
-        entity_xmldoc=doc
-        entity_xmldocsig=""
         entity_pubpath=cpath |> Option.map (fun (cp:CompilationPath) -> cp.NestedPublicPath id)
-        entity_accessiblity=access
-        entity_tycon_repr_accessibility=access
         entity_modul_contents = MaybeLazy.Strict (NewEmptyModuleOrNamespaceType ModuleOrType)
         entity_cpath= cpath
         entity_typars=LazyWithContext.NotLazy []
-        entity_tycon_abbrev = None
         entity_tycon_repr = TNoRepr
         entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordOrUnionType=false)
-        entity_il_repr_cache= newCache()   } 
+        entity_il_repr_cache= newCache()
+        entity_opt_data =
+            match doc, access, repr with
+            | XmlDoc [||], TAccess [], TExnNone -> None
+            | _ -> Some { Entity.EmptyEntityOptData with entity_xmldoc = doc; entity_accessiblity = access; entity_tycon_repr_accessibility = access; entity_exn_info = repr } } 
 
 /// Create a new TAST RecdField node for an F# class, struct or record field
-let NewRecdField  stat konst id ty isMutable isVolatile pattribs fattribs docOption access secret =
+let NewRecdField  stat konst id nameGenerated ty isMutable isVolatile pattribs fattribs docOption access secret =
     { rfield_mutable=isMutable
       rfield_pattribs=pattribs
       rfield_fattribs=fattribs
@@ -4932,7 +5133,8 @@ let NewRecdField  stat konst id ty isMutable isVolatile pattribs fattribs docOpt
       rfield_secret = secret
       rfield_xmldoc = docOption 
       rfield_xmldocsig = ""
-      rfield_id=id 
+      rfield_id=id
+      rfield_name_generated = nameGenerated
       rfield_other_range = None }
 
     
@@ -4941,25 +5143,20 @@ let NewTycon (cpath, nm, m, access, reprAccess, kind, typars, docOption, usesPre
     Tycon.New "tycon"
       { entity_stamp=stamp
         entity_logical_name=nm
-        entity_compiled_name=None
-        entity_kind=kind
         entity_range=m
-        entity_other_range=None
         entity_flags=EntityFlags(usesPrefixDisplay=usesPrefixDisplay, isModuleOrNamespace=false,preEstablishedHasDefaultCtor=preEstablishedHasDefaultCtor, hasSelfReferentialCtor=hasSelfReferentialCtor, isStructRecordOrUnionType=false)
         entity_attribs=[] // fixed up after
         entity_typars=typars
-        entity_tycon_abbrev = None
         entity_tycon_repr = TNoRepr
-        entity_tycon_repr_accessibility = reprAccess
-        entity_exn_info=TExnNone
         entity_tycon_tcaug=TyconAugmentation.Create()
         entity_modul_contents = mtyp
-        entity_accessiblity=access
-        entity_xmldoc = docOption
-        entity_xmldocsig=""        
         entity_pubpath=cpath |> Option.map (fun (cp:CompilationPath) -> cp.NestedPublicPath (mkSynId m nm))
         entity_cpath = cpath
-        entity_il_repr_cache = newCache() } 
+        entity_il_repr_cache = newCache()
+        entity_opt_data =
+            match kind, docOption, reprAccess, access with
+            | TyparKind.Type, XmlDoc [||], TAccess [], TAccess [] -> None
+            | _ -> Some { Entity.EmptyEntityOptData with entity_kind = kind; entity_xmldoc = docOption; entity_tycon_repr_accessibility = reprAccess; entity_accessiblity=access } } 
 
 
 let NewILTycon nlpath (nm,m) tps (scoref:ILScopeRef, enc, tdef:ILTypeDef) mtyp =
@@ -4979,24 +5176,27 @@ exception FullAbstraction of string * range
 let NewModuleOrNamespace cpath access (id:Ident) xml attribs mtype = Construct.NewModuleOrNamespace cpath access id xml attribs mtype
 
 let NewVal (logicalName:string,m:range,compiledName,ty,isMutable,isCompGen,arity,access,recValInfo,specialRepr,baseOrThis,attribs,inlineInfo,doc,isModuleOrMemberBinding,isExtensionMember,isIncrClassSpecialMember,isTyFunc,allowTypeInst,isGeneratedEventVal,konst,actualParent) : Val = 
-    let stamp = newStamp() 
+    let stamp = newStamp()
     Val.New
-        { val_stamp = stamp
-          val_logical_name=logicalName
-          val_compiled_name= (match compiledName with Some v when v <> logicalName -> compiledName | _ -> None)
-          val_range=m
-          val_other_range=None
-          val_defn=None
-          val_repr_info= arity
-          val_declaring_entity= actualParent
-          val_flags = ValFlags(recValInfo,baseOrThis,isCompGen,inlineInfo,isMutable,isModuleOrMemberBinding,isExtensionMember,isIncrClassSpecialMember,isTyFunc,allowTypeInst,isGeneratedEventVal)
-          val_const= konst
-          val_access=access
-          val_member_info=specialRepr
-          val_attribs=attribs
-          val_type = ty
-          val_xmldoc = doc
-          val_xmldocsig = ""} 
+        { val_stamp        = stamp
+          val_logical_name = logicalName
+          val_range        = m
+          val_flags        = ValFlags(recValInfo,baseOrThis,isCompGen,inlineInfo,isMutable,isModuleOrMemberBinding,isExtensionMember,isIncrClassSpecialMember,isTyFunc,allowTypeInst,isGeneratedEventVal)
+          val_type         = ty
+          val_opt_data     =
+            match compiledName, arity, konst, access, doc, specialRepr, actualParent, attribs with
+            | None, None, None, TAccess [], XmlDoc [||], None, ParentNone, [] -> None
+            | _ -> 
+                Some { Val.EmptyValOptData with
+                         val_compiled_name    = (match compiledName with Some v when v <> logicalName -> compiledName | _ -> None)
+                         val_repr_info        = arity
+                         val_const            = konst
+                         val_access           = access
+                         val_xmldoc           = doc
+                         val_member_info      = specialRepr
+                         val_declaring_entity = actualParent
+                         val_attribs          = attribs }
+        }
 
 
 let NewCcuContents sref m nm mty =
@@ -5072,10 +5272,14 @@ let CombineCcuContentFragments m l =
         match entity1.IsModuleOrNamespace, entity2.IsModuleOrNamespace with
         | true,true -> 
             entity1 |> NewModifiedTycon (fun data1 -> 
+                        let xml = XmlDoc.Merge entity1.XmlDoc entity2.XmlDoc
                         { data1 with 
-                             entity_xmldoc = XmlDoc.Merge entity1.XmlDoc entity2.XmlDoc
                              entity_attribs = entity1.Attribs @ entity2.Attribs
-                             entity_modul_contents = MaybeLazy.Lazy (lazy (CombineModuleOrNamespaceTypes (path@[entity2.DemangledModuleOrNamespaceName]) entity2.Range entity1.ModuleOrNamespaceType entity2.ModuleOrNamespaceType)) }) 
+                             entity_modul_contents = MaybeLazy.Lazy (lazy (CombineModuleOrNamespaceTypes (path@[entity2.DemangledModuleOrNamespaceName]) entity2.Range entity1.ModuleOrNamespaceType entity2.ModuleOrNamespaceType))
+                             entity_opt_data = 
+                                match data1.entity_opt_data with
+                                | Some optData -> Some { optData with entity_xmldoc = xml }
+                                | _ -> Some { Entity.EmptyEntityOptData with entity_xmldoc = xml } }) 
         | false,false -> 
             error(Error(FSComp.SR.tastDuplicateTypeDefinitionInAssembly(entity2.LogicalName, textOfPath path),entity2.Range))
         | _,_ -> 

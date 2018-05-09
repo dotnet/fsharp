@@ -13,9 +13,6 @@ namespace Microsoft.FSharp.Collections
 #if FX_RESHAPED_REFLECTION
     open System.Reflection
 #endif
-#if FX_NO_ICLONEABLE
-    open Microsoft.FSharp.Core.ICloneableExtensions            
-#endif
 
     /// Basic operations on arrays
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -1238,6 +1235,29 @@ namespace Microsoft.FSharp.Collections
             elif array.Length = 0 then invalidArg "array" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             else invalidArg "array" (SR.GetString(SR.inputSequenceTooLong))
 
+        let transposeArrays (array:'T[][]) =
+            let len = array.Length
+            if len = 0 then Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked 0 else
+            let lenInner = array.[0].Length
+
+            for j in 1..len-1 do
+                if lenInner <> array.[j].Length then
+                    invalidArgDifferentArrayLength "array.[0]" lenInner (String.Format("array.[{0}]", j)) array.[j].Length
+
+            let result : 'T[][] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked lenInner
+            for i in 0..lenInner-1 do
+                result.[i] <- Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked len
+                for j in 0..len-1 do
+                    result.[i].[j] <- array.[j].[i]
+            result
+
+        [<CompiledName("Transpose")>]
+        let transpose (arrays:seq<'T[]>) =
+            checkNonNull "arrays" arrays
+            match arrays with
+            | :? ('T[][]) as ts -> ts |> transposeArrays // avoid a clone, since we only read the array
+            | _ -> arrays |> Seq.toArray |> transposeArrays
+
         [<CompiledName("Truncate")>]
         let truncate count (array:'T[]) =
             checkNonNull "array" array
@@ -1247,7 +1267,6 @@ namespace Microsoft.FSharp.Collections
                 let count' = Operators.min count len
                 Microsoft.FSharp.Primitives.Basics.Array.subUnchecked 0 count' array
 
-#if !FX_NO_TPL_PARALLEL
         module Parallel =
             open System.Threading.Tasks
             
@@ -1357,4 +1376,3 @@ namespace Microsoft.FSharp.Collections
                         iFalse <- iFalse + 1
 
                 res1, res2
-#endif

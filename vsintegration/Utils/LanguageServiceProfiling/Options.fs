@@ -200,10 +200,9 @@ let FCS (repositoryDir: string) : Options =
          OtherOptions =
           [|@"-o:obj\Release\FSharp.Compiler.Private.dll"; "-g"; "--noframework";
             @"--baseaddress:0x06800000"; "--define:DEBUG";
-            @"--define:CROSS_PLATFORM_COMPILER"; "--define:FX_ATLEAST_45";
+            @"--define:CROSS_PLATFORM_COMPILER";
             @"--define:FX_ATLEAST_40"; "--define:BE_SECURITY_TRANSPARENT";
-            @"--define:TYPE_PROVIDER_SECURITY"; "--define:EXTENSIBLE_DUMPER";
-            @"--define:INCLUDE_METADATA_WRITER"; "--define:COMPILER";
+            @"--define:COMPILER";
             @"--define:ENABLE_MONO_SUPPORT"; "--define:FX_MSBUILDRESOLVER_RUNTIMELIKE";
             @"--define:FX_LCIDFROMCODEPAGE"; "--define:FX_RESX_RESOURCE_READER";
             @"--define:FX_RESIDENT_COMPILER"; "--define:SHADOW_COPY_REFERENCES";
@@ -212,8 +211,6 @@ let FCS (repositoryDir: string) : Options =
             @"--define:COMPILER_SERVICE_DLL"; "--define:NO_STRONG_NAMES"; "--define:TRACE";
             @"--doc:..\..\..\bin\v4.5\FSharp.Compiler.Service.xml"; "--optimize-";
             @"--platform:anycpu";
-            @"-r:" + (repositoryDir </> @"packages\Microsoft.DiaSymReader\lib\net20\Microsoft.DiaSymReader.dll");
-            @"-r:" + (repositoryDir </> @"packages\Microsoft.DiaSymReader.PortablePdb\lib\net45\Microsoft.DiaSymReader.PortablePdb.dll");
             @"-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\mscorlib.dll";
             @"-r:" + (repositoryDir </> @"packages\System.Collections.Immutable\lib\netstandard1.0\System.Collections.Immutable.dll");
             @"-r:" + (repositoryDir </> @"packages\FSharp.Core\lib\net40\FSharp.Core.dll");

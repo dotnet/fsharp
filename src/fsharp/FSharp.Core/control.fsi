@@ -50,8 +50,8 @@ namespace Microsoft.FSharp.Control
         /// <param name="computation">The computation to run.</param>
         /// <param name="timeout">The amount of time in milliseconds to wait for the result of the
         /// computation before raising a <c>System.TimeoutException</c>.  If no value is provided
-        /// for timeout then a default of -1 is used to correspond to System.Threading.Timeout.Infinite.</param>
-        ////If a cancellable cancellationToken is provided, timeout parameter will be ignored</param>
+        /// for timeout then a default of -1 is used to correspond to System.Threading.Timeout.Infinite.
+        /// If a cancellable cancellationToken is provided, timeout parameter will be ignored</param>
         /// <param name="cancellationToken">The cancellation token to be associated with the computation.
         /// If one is not supplied, the default cancellation token is used.</param>
         /// <returns>The result of the computation.</returns>
@@ -414,24 +414,54 @@ namespace Microsoft.FSharp.Control
         static member StartImmediate: 
             computation:Async<unit> * ?cancellationToken:CancellationToken-> unit
 
+        /// <summary>Runs an asynchronous computation, starting immediately on the current operating system, 
+        /// but also returns the execution as <c>System.Threading.Tasks.Task</c> 
+        /// </summary>
+        /// <remarks>If no cancellation token is provided then the default cancellation token is used.
+        /// You may prefer using this method if you want to achive a similar behviour to async await in C# as 
+        /// async computation starts on the current thread with an ability to return a result.
+        /// </remarks>
+        /// <param name="computation">The asynchronous computation to execute.</param>
+        /// <param name="cancellationToken">The <c>CancellationToken</c> to associate with the computation.
+        /// The default is used if this parameter is not provided.</param>
+        /// <returns>A <c>System.Threading.Tasks.Task</c> that will be completed
+        /// in the corresponding state once the computation terminates (produces the result, throws exception or gets canceled)</returns>
+        /// </returns> 
+        static member StartImmediateAsTask: 
+            computation:Async<'T> * ?cancellationToken:CancellationToken-> Task<'T>
+
+
     /// <summary>Opaque type for generated code</summary>
     type AsyncReturn
 
     /// <summary>Opaque type for generated code</summary>
     [<Sealed>]
-    type AsyncContext<'T> =
+    type AsyncActivation<'T> =
+
+        /// Calls to this member are emitted in compiled code
         member IsCancellationRequested: bool
-        member CallSuccessContinuation: 'T -> AsyncReturn
-        member CallCancellationContinuation: unit -> AsyncReturn
-        //member CallExceptionContinuation: System.Runtime.ExceptionServices.ExceptionDispatchInfo -> AsyncReturn
+
+        /// Calls to this member are emitted in compiled code
+        member OnSuccess: 'T -> AsyncReturn
+
+        /// Calls to this member are emitted in compiled code
+        member OnCancellation: unit -> AsyncReturn
 
     [<Sealed>]
     /// <summary>Entry points for generated code</summary>
     module AsyncPrimitives =
-        val MakeAsync: body:(AsyncContext<'T> -> AsyncReturn) -> Async<'T>
-        val Call: ctxt:AsyncContext<'T> -> result1:'U -> part2f:('U -> Async<'T>) -> AsyncReturn
-        val Bind: keepStack: bool -> ctxt:AsyncContext<'T> -> part1:Async<'U> -> part2f:('U -> Async<'T>) -> AsyncReturn
-        val TryFinally: ctxt:AsyncContext<'T> -> finallyFunction: (unit -> unit) -> computation: Async<'T> -> AsyncReturn
+
+        /// Calls to this member are emitted in compiled code
+        val MakeAsync: body:(AsyncActivation<'T> -> AsyncReturn) -> Async<'T>
+
+        /// Calls to this member are emitted in compiled code
+        val Call: ctxt:AsyncActivation<'T> -> result1:'U -> part2f:('U -> Async<'T>) -> AsyncReturn
+
+        /// Calls to this member are emitted in compiled code
+        val Bind: keepStack: bool -> ctxt:AsyncActivation<'T> -> part1:Async<'U> -> part2f:('U -> Async<'T>) -> AsyncReturn
+
+        /// Calls to this member are emitted in compiled code
+        val TryFinally: ctxt:AsyncActivation<'T> -> finallyFunction: (unit -> unit) -> computation: Async<'T> -> AsyncReturn
 
     [<CompiledName("FSharpAsyncBuilder")>]
     [<Sealed>]

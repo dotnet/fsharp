@@ -2,11 +2,7 @@
 
 module public Microsoft.FSharp.Compiler.ErrorLogger
 
-open Internal.Utilities
 open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Range
 open System
 
@@ -109,23 +105,23 @@ exception ErrorWithSuggestions of (int * string) * range * string * Suggestions 
 let inline protectAssemblyExploration dflt f = 
     try 
        f()
-     with 
-        | UnresolvedPathReferenceNoRange _ -> dflt
-        | _ -> reraise()
+    with
+    | UnresolvedPathReferenceNoRange _ -> dflt
+    | _ -> reraise()
 
 let inline protectAssemblyExplorationF dflt f = 
     try 
        f()
-     with 
-        | UnresolvedPathReferenceNoRange (asmName, path) -> dflt(asmName, path)
-        | _ -> reraise()
+    with
+    | UnresolvedPathReferenceNoRange (asmName, path) -> dflt(asmName, path)
+    | _ -> reraise()
 
 let inline protectAssemblyExplorationNoReraise dflt1 dflt2 f  = 
     try 
        f()
-     with 
-        | UnresolvedPathReferenceNoRange _ -> dflt1
-        | _ -> dflt2
+    with
+    | UnresolvedPathReferenceNoRange _ -> dflt1
+    | _ -> dflt2
 
 // Attach a range if this is a range dual exception.
 let rec AttachRange m (exn:exn) = 
@@ -136,7 +132,7 @@ let rec AttachRange m (exn:exn) =
         | :? System.Reflection.TargetInvocationException -> AttachRange m exn.InnerException
         | UnresolvedReferenceNoRange(a) -> UnresolvedReferenceError(a, m)
         | UnresolvedPathReferenceNoRange(a, p) -> UnresolvedPathReference(a, p, m)
-        | Failure(msg) -> InternalError(msg^" (Failure)", m)
+        | Failure(msg) -> InternalError(msg + " (Failure)", m)
         | :? System.ArgumentException as exn -> InternalError(exn.Message + " (ArgumentException)", m)
         | notARangeDual -> notARangeDual
 
@@ -150,20 +146,22 @@ type Exiter =
 
 let QuitProcessExiter =  
     { new Exiter with  
-        member x.Exit(n) =                     
+        member __.Exit(n) =                     
             try  
                 System.Environment.Exit(n) 
             with _ ->  
                 ()             
-            failwithf "%s" <| FSComp.SR.elSysEnvExitDidntExit() } 
+            FSComp.SR.elSysEnvExitDidntExit()
+            |> failwith } 
 
 /// Closed enumeration of build phases.
+[<RequireQualifiedAccess>]
 type BuildPhase =
     | DefaultPhase 
     | Compile 
     | Parameter | Parse | TypeCheck 
     | CodeGen 
-    | Optimize |  IlxGen |  IlGen |  Output 
+    | Optimize | IlxGen | IlGen | Output 
     | Interactive // An error seen during interactive execution
     
 /// Literal build phase subcategory strings.
@@ -212,17 +210,17 @@ type PhasedDiagnostic =
     ///
     member pe.Subcategory() =
         match pe.Phase with
-        | DefaultPhase -> BuildPhaseSubcategory.DefaultPhase
-        | Compile -> BuildPhaseSubcategory.Compile
-        | Parameter -> BuildPhaseSubcategory.Parameter
-        | Parse -> BuildPhaseSubcategory.Parse
-        | TypeCheck -> BuildPhaseSubcategory.TypeCheck
-        | CodeGen -> BuildPhaseSubcategory.CodeGen
-        | Optimize -> BuildPhaseSubcategory.Optimize
-        | IlxGen -> BuildPhaseSubcategory.IlxGen
-        | IlGen -> BuildPhaseSubcategory.IlGen
-        | Output -> BuildPhaseSubcategory.Output
-        | Interactive -> BuildPhaseSubcategory.Interactive
+        | BuildPhase.DefaultPhase -> BuildPhaseSubcategory.DefaultPhase
+        | BuildPhase.Compile -> BuildPhaseSubcategory.Compile
+        | BuildPhase.Parameter -> BuildPhaseSubcategory.Parameter
+        | BuildPhase.Parse -> BuildPhaseSubcategory.Parse
+        | BuildPhase.TypeCheck -> BuildPhaseSubcategory.TypeCheck
+        | BuildPhase.CodeGen -> BuildPhaseSubcategory.CodeGen
+        | BuildPhase.Optimize -> BuildPhaseSubcategory.Optimize
+        | BuildPhase.IlxGen -> BuildPhaseSubcategory.IlxGen
+        | BuildPhase.IlGen -> BuildPhaseSubcategory.IlGen
+        | BuildPhase.Output -> BuildPhaseSubcategory.Output
+        | BuildPhase.Interactive -> BuildPhaseSubcategory.Interactive
 
     /// Return true if the textual phase given is from the compile part of the build process.
     /// This set needs to be equal to the set of subcategories that the language service can produce. 
@@ -256,7 +254,7 @@ type PhasedDiagnostic =
     member pe.IsPhaseInCompile() = 
         let isPhaseInCompile = 
             match pe.Phase with
-            | Compile | Parameter | Parse | TypeCheck -> true
+            | BuildPhase.Compile | BuildPhase.Parameter | BuildPhase.Parse | BuildPhase.TypeCheck -> true
             | _ -> false
         // Sanity check ensures that Phase matches Subcategory            
 #if DEBUG
@@ -274,7 +272,7 @@ type ErrorLogger(nameForDebugging:string) =
     // The 'Impl' factoring enables a developer to place a breakpoint at the non-Impl 
     // code just below and get a breakpoint for all error logger implementations.
     abstract DiagnosticSink: phasedError: PhasedDiagnostic * isError: bool -> unit
-    member this.DebugDisplay() = sprintf "ErrorLogger(%s)" nameForDebugging
+    member __.DebugDisplay() = sprintf "ErrorLogger(%s)" nameForDebugging
 
 let DiscardErrorsLogger = 
     { new ErrorLogger("DiscardErrorsLogger") with 
@@ -337,7 +335,7 @@ module ErrorLoggerExtensions =
         try 
             let preserveStackTrace = typeof<System.Exception>.GetMethod("InternalPreserveStackTrace", BindingFlags.Instance ||| BindingFlags.NonPublic)
             preserveStackTrace.Invoke(exn, null) |> ignore
-        with e->
+        with _ ->
            // This is probably only the mono case.
            System.Diagnostics.Debug.Assert(false, "Could not preserve stack trace for watson exception.")
            ()
@@ -411,7 +409,7 @@ module ErrorLoggerExtensions =
                     x.ErrorR (AttachRange m exn) // may raise exceptions, e.g. an fsi error sink raises StopProcessing.
                     ReraiseIfWatsonable(exn)
                 with
-                  | ReportedError _ | WrappedError(ReportedError _, _)  -> ()
+                | ReportedError _ | WrappedError(ReportedError _, _)  -> ()
 
         member x.StopProcessingRecovery (exn:exn) (m:range) =
             // Do standard error recovery.
@@ -421,10 +419,11 @@ module ErrorLoggerExtensions =
             match exn with
             | StopProcessing | WrappedError(StopProcessing, _) -> () // suppress, so skip error recovery.
             | _ ->
-                try  x.ErrorRecovery exn m
+                try
+                    x.ErrorRecovery exn m
                 with
-                  | StopProcessing | WrappedError(StopProcessing, _) -> () // catch, e.g. raised by DiagnosticSink.
-                  | ReportedError _ | WrappedError(ReportedError _, _)  -> () // catch, but not expected unless ErrorRecovery is changed.
+                | StopProcessing | WrappedError(StopProcessing, _) -> () // catch, e.g. raised by DiagnosticSink.
+                | ReportedError _ | WrappedError(ReportedError _, _)  -> () // catch, but not expected unless ErrorRecovery is changed.
 
         member x.ErrorRecoveryNoRange (exn:exn) =
             x.ErrorRecovery exn range0
@@ -445,13 +444,13 @@ let PushErrorLoggerPhaseUntilUnwind(errorLoggerTransformer : ErrorLogger -> #Err
     let newInstalled = ref true
     let newIsInstalled() = if !newInstalled then () else (assert false; (); (*failwith "error logger used after unwind"*)) // REVIEW: ok to throw?
     let chkErrorLogger = { new ErrorLogger("PushErrorLoggerPhaseUntilUnwind") with
-                             member x.DiagnosticSink(phasedError, isError) = newIsInstalled(); newErrorLogger.DiagnosticSink(phasedError, isError)
-                             member x.ErrorCount   = newIsInstalled(); newErrorLogger.ErrorCount }
+                             member __.DiagnosticSink(phasedError, isError) = newIsInstalled(); newErrorLogger.DiagnosticSink(phasedError, isError)
+                             member __.ErrorCount = newIsInstalled(); newErrorLogger.ErrorCount }
 
     CompileThreadStatic.ErrorLogger <- chkErrorLogger
 
     { new System.IDisposable with 
-         member x.Dispose() =       
+         member __.Dispose() =
             CompileThreadStatic.ErrorLogger <- oldErrorLogger
             newInstalled := false }
 
@@ -461,13 +460,13 @@ let SetThreadErrorLoggerNoUnwind(errorLogger)     = CompileThreadStatic.ErrorLog
 // Global functions are still used by parser and TAST ops.
 
 /// Raises an exception with error recovery and returns unit.
-let errorR  exn = CompileThreadStatic.ErrorLogger.ErrorR exn
+let errorR exn = CompileThreadStatic.ErrorLogger.ErrorR exn
 
 /// Raises a warning with error recovery and returns unit.
 let warning exn = CompileThreadStatic.ErrorLogger.Warning exn
 
 /// Raises a special exception and returns 'T - can be caught later at an errorRecovery point.
-let error   exn = CompileThreadStatic.ErrorLogger.Error exn
+let error exn = CompileThreadStatic.ErrorLogger.Error exn
 
 /// Simulates an error. For test purposes only.
 let simulateError (p : PhasedDiagnostic) = CompileThreadStatic.ErrorLogger.SimulateError p
@@ -497,8 +496,8 @@ let suppressErrorReporting f =
     try
         let errorLogger = 
             { new ErrorLogger("suppressErrorReporting") with 
-                member x.DiagnosticSink(_phasedError, _isError) = ()
-                member x.ErrorCount = 0 }
+                member __.DiagnosticSink(_phasedError, _isError) = ()
+                member __.ErrorCount = 0 }
         SetThreadErrorLoggerNoUnwind(errorLogger)
         f()
     finally

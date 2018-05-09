@@ -290,12 +290,25 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
               else "[" + (String.replicate (rank - 1) ",") + "]`1"
           mk_MFCore_tcref fslibCcu type_sig)
   
+  let v_byte_ty         = mkNonGenericTy v_byte_tcr
+  let v_sbyte_ty        = mkNonGenericTy v_sbyte_tcr
+  let v_int16_ty        = mkNonGenericTy v_int16_tcr
+  let v_uint16_ty       = mkNonGenericTy v_uint16_tcr
+  let v_int_ty          = mkNonGenericTy v_int_tcr
+  let v_int32_ty        = mkNonGenericTy v_int32_tcr
+  let v_uint32_ty       = mkNonGenericTy v_uint32_tcr
+  let v_int64_ty        = mkNonGenericTy v_int64_tcr
+  let v_uint64_ty       = mkNonGenericTy v_uint64_tcr
+  let v_float32_ty      = mkNonGenericTy v_float32_tcr
+  let v_float_ty        = mkNonGenericTy v_float_tcr
+  let v_nativeint_ty    = mkNonGenericTy v_nativeint_tcr
+  let v_unativeint_ty   = mkNonGenericTy v_unativeint_tcr
+
+  let v_enum_ty         = mkNonGenericTy v_int_tcr
   let v_bool_ty         = mkNonGenericTy v_bool_tcr   
-  let v_int_ty          = mkNonGenericTy v_int_tcr    
   let v_char_ty         = mkNonGenericTy v_char_tcr
   let v_obj_ty          = mkNonGenericTy v_obj_tcr    
   let v_string_ty       = mkNonGenericTy v_string_tcr
-  let v_byte_ty         = mkNonGenericTy v_byte_tcr
   let v_decimal_ty      = mkSysNonGenericTy sys "Decimal"
   let v_unit_ty         = mkNonGenericTy v_unit_tcr_nice 
   let v_system_Type_typ = mkSysNonGenericTy sys "Type" 
@@ -510,7 +523,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_greater_than_operator_info           = makeIntrinsicValRef(fslib_MFOperators_nleref,                   CompileOpName ">"                      , None                 , None          , [vara],     mk_rel_sig varaTy) 
   let v_greater_than_or_equals_operator_info = makeIntrinsicValRef(fslib_MFOperators_nleref,                   CompileOpName ">="                     , None                 , None          , [vara],     mk_rel_sig varaTy) 
   
-  let v_enumOfValue_info                     = makeIntrinsicValRef(fslib_MFLanguagePrimitives_nleref,          "EnumOfValue"        , None                 , None          , [vara; varb],     ([[varaTy]], varbTy)) 
+  let v_enumOfValue_info                     = makeIntrinsicValRef(fslib_MFLanguagePrimitives_nleref,          "EnumOfValue"                          , None                 , None          , [vara; varb],     ([[varaTy]], varbTy)) 
   
   let v_generic_comparison_withc_outer_info = makeIntrinsicValRef(fslib_MFLanguagePrimitives_nleref,           "GenericComparisonWithComparer"        , None                 , None          , [vara],     mk_compare_withc_sig  varaTy) 
   let v_generic_hash_withc_tuple2_info = makeIntrinsicValRef(fslib_MFHashCompare_nleref,           "FastHashTuple2"                                   , None                 , None          , [vara;varb],               mk_hash_withc_sig (decodeTupleTy tupInfoRef [varaTy; varbTy]))   
@@ -566,10 +579,50 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_unchecked_addition_info    = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Addition"                          , None                 , None          , [vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)  
   let v_unchecked_subtraction_info = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Subtraction"                       , None                 , None          , [vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)  
   let v_unchecked_multiply_info    = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Multiply"                          , None                 , None          , [vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)  
+  let v_unchecked_division_info    = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Division"                          , None                 , None          , [vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)  
+  let v_unchecked_modulus_info     = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Modulus"                           , None                 , None          , [vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)  
   let v_unchecked_unary_plus_info  = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_UnaryPlus"                         , None                 , None          , [vara],     mk_unop_ty varaTy)  
   let v_unchecked_unary_minus_info = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_UnaryNegation"                     , None                 , None          , [vara],     mk_unop_ty varaTy)  
   let v_unchecked_unary_not_info   = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "not"                                  , None                 , Some "Not"    , [],     mk_unop_ty v_bool_ty)  
 
+  let v_checked_addition_info      = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "op_Addition"                          , None                 , None          , [vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)  
+  let v_checked_subtraction_info   = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "op_Subtraction"                       , None                 , None          , [vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)  
+  let v_checked_multiply_info      = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "op_Multiply"                          , None                 , None          , [vara;varb;varc],     mk_binop_ty3 varaTy varbTy  varcTy)  
+  let v_checked_unary_minus_info   = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "op_UnaryNegation"                     , None                 , None          , [vara],     mk_unop_ty varaTy)  
+
+  let v_byte_checked_info          = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "byte"                                 , None                 , Some "ToByte",    [vara],   ([[varaTy]], v_byte_ty)) 
+  let v_sbyte_checked_info         = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "sbyte"                                , None                 , Some "ToSByte",   [vara],   ([[varaTy]], v_sbyte_ty)) 
+  let v_int16_checked_info         = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "int16"                                , None                 , Some "ToInt16",   [vara],   ([[varaTy]], v_int16_ty)) 
+  let v_uint16_checked_info        = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "uint16"                               , None                 , Some "ToUInt16",  [vara],   ([[varaTy]], v_uint16_ty)) 
+  let v_int_checked_info           = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "int"                                  , None                 , Some "ToInt",     [vara],   ([[varaTy]], v_int_ty)) 
+  let v_int32_checked_info         = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "int32"                                , None                 , Some "ToInt32",   [vara],   ([[varaTy]], v_int32_ty)) 
+  let v_uint32_checked_info        = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "uint32"                               , None                 , Some "ToUInt32",  [vara],   ([[varaTy]], v_uint32_ty)) 
+  let v_int64_checked_info         = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "int64"                                , None                 , Some "ToInt64",   [vara],   ([[varaTy]], v_int64_ty)) 
+  let v_uint64_checked_info        = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "uint64"                               , None                 , Some "ToUInt64",  [vara],   ([[varaTy]], v_uint64_ty)) 
+  let v_nativeint_checked_info     = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "nativeint"                            , None                 , Some "ToIntPtr",  [vara],   ([[varaTy]], v_nativeint_ty)) 
+  let v_unativeint_checked_info    = makeIntrinsicValRef(fslib_MFOperatorsChecked_nleref,                      "unativeint"                           , None                 , Some "ToUIntPtr", [vara],   ([[varaTy]], v_unativeint_ty))
+
+  let v_byte_operator_info         = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "byte"                                 , None                 , Some "ToByte",    [vara],   ([[varaTy]], v_byte_ty)) 
+  let v_sbyte_operator_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "sbyte"                                , None                 , Some "ToSByte",   [vara],   ([[varaTy]], v_sbyte_ty)) 
+  let v_int16_operator_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "int16"                                , None                 , Some "ToInt16",   [vara],   ([[varaTy]], v_int16_ty)) 
+  let v_uint16_operator_info       = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "uint16"                               , None                 , Some "ToUInt16",  [vara],   ([[varaTy]], v_uint16_ty)) 
+  let v_int_operator_info          = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "int"                                  , None                 , Some "ToInt",     [vara],   ([[varaTy]], v_int_ty)) 
+  let v_int32_operator_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "int32"                                , None                 , Some "ToInt32",   [vara],   ([[varaTy]], v_int32_ty)) 
+  let v_uint32_operator_info       = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "uint32"                               , None                 , Some "ToUInt32",  [vara],   ([[varaTy]], v_uint32_ty)) 
+  let v_int64_operator_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "int64"                                , None                 , Some "ToInt64",   [vara],   ([[varaTy]], v_int64_ty)) 
+  let v_uint64_operator_info       = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "uint64"                               , None                 , Some "ToUInt64",  [vara],   ([[varaTy]], v_uint64_ty)) 
+  let v_float32_operator_info      = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "float32"                              , None                 , Some "ToSingle",  [vara],   ([[varaTy]], v_float32_ty)) 
+  let v_float_operator_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "float"                                , None                 , Some "ToDouble",  [vara],   ([[varaTy]], v_float_ty)) 
+  let v_nativeint_operator_info    = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "nativeint"                            , None                 , Some "ToIntPtr",  [vara],   ([[varaTy]], v_nativeint_ty)) 
+  let v_unativeint_operator_info   = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "unativeint"                           , None                 , Some "ToUIntPtr", [vara],   ([[varaTy]], v_unativeint_ty))
+
+  let v_char_operator_info         = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "char"                                 , None                 , Some "ToChar",    [vara],   ([[varaTy]], v_char_ty)) 
+  let v_enum_operator_info         = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "enum"                                 , None                 , Some "ToEnum",    [vara],   ([[varaTy]], v_enum_ty)) 
+
+  let v_hash_info                  = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "hash"                                 , None                 , Some "Hash"   , [vara],     ([[varaTy]], v_int_ty))
+  let v_box_info                   = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "box"                                  , None                 , Some "Box"    , [vara],     ([[varaTy]], v_obj_ty))
+  let v_isnull_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "isNull"                               , None                 , Some "IsNull" , [vara],     ([[varaTy]], v_bool_ty))
+  let v_isnotnull_info             = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "isNotNull"                            , None              , Some "IsNotNull" , [vara],     ([[varaTy]], v_bool_ty))
   let v_raise_info                 = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "raise"                                , None                 , Some "Raise"  , [vara],     ([[mkSysNonGenericTy sys "Exception"]], varaTy))  
   let v_failwith_info              = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "failwith"                             , None               , Some "FailWith" , [vara],     ([[v_string_ty]], varaTy))  
   let v_invalid_arg_info           = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "invalidArg"                           , None             , Some "InvalidArg" , [vara],     ([[v_string_ty]; [v_string_ty]], varaTy))  
@@ -583,13 +636,19 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_sizeof_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "sizeof"                               , None                 , Some "SizeOf" , [vara],     ([], v_int_ty))  
   let v_unchecked_defaultof_info   = makeIntrinsicValRef(fslib_MFOperatorsUnchecked_nleref,                    "defaultof"                            , None                 , Some "DefaultOf", [vara],     ([], varaTy))  
   let v_typedefof_info             = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "typedefof"                            , None                 , Some "TypeDefOf", [vara],     ([], v_system_Type_typ))  
-  let v_enum_info                  = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "enum"                                 , None                 , Some "ToEnum" , [vara],     ([[v_int_ty]], varaTy))  
   let v_range_op_info              = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Range"                             , None                 , None          , [vara],     ([[varaTy];[varaTy]], mkSeqTy varaTy))
   let v_range_step_op_info         = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_RangeStep"                         , None                 , None          , [vara;varb], ([[varaTy];[varbTy];[varaTy]], mkSeqTy varaTy))
   let v_range_int32_op_info        = makeIntrinsicValRef(fslib_MFOperatorIntrinsics_nleref,                    "RangeInt32"                           , None                 , None          , [],     ([[v_int_ty];[v_int_ty];[v_int_ty]], mkSeqTy v_int_ty))
+
+  let v_array_length_info          = makeIntrinsicValRef(fslib_MFArrayModule_nleref,                           "length"                               , None                 , Some "Length" , [vara],     ([[mkArrayType 1 varaTy]], v_int_ty))
+  let v_array_get_info             = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "GetArray"                             , None                 , None          , [vara],     ([[mkArrayType 1 varaTy]; [v_int_ty]], varaTy))
   let v_array2D_get_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "GetArray2D"                           , None                 , None          , [vara],     ([[mkArrayType 2 varaTy];[v_int_ty]; [v_int_ty]], varaTy))  
   let v_array3D_get_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "GetArray3D"                           , None                 , None          , [vara],     ([[mkArrayType 3 varaTy];[v_int_ty]; [v_int_ty]; [v_int_ty]], varaTy))
   let v_array4D_get_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "GetArray4D"                           , None                 , None          , [vara],     ([[mkArrayType 4 varaTy];[v_int_ty]; [v_int_ty]; [v_int_ty]; [v_int_ty]], varaTy))
+  let v_array_set_info             = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "SetArray"                             , None                 , None          , [vara],     ([[mkArrayType 1 varaTy]; [v_int_ty]; [varaTy]], v_unit_ty))
+  let v_array2D_set_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "SetArray2D"                           , None                 , None          , [vara],     ([[mkArrayType 2 varaTy];[v_int_ty]; [v_int_ty]; [varaTy]], v_unit_ty))
+  let v_array3D_set_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "SetArray3D"                           , None                 , None          , [vara],     ([[mkArrayType 3 varaTy];[v_int_ty]; [v_int_ty]; [v_int_ty]; [varaTy]], v_unit_ty))
+  let v_array4D_set_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "SetArray4D"                           , None                 , None          , [vara],     ([[mkArrayType 4 varaTy];[v_int_ty]; [v_int_ty]; [v_int_ty]; [v_int_ty]; [varaTy]], v_unit_ty))
 
   let v_seq_collect_info           = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "collect"                              , None                 , Some "Collect", [vara;varb;varc], ([[varaTy --> varbTy]; [mkSeqTy varaTy]], mkSeqTy varcTy))  
   let v_seq_delay_info             = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "delay"                                , None                 , Some "Delay"  , [varb],     ([[v_unit_ty --> mkSeqTy varbTy]], mkSeqTy varbTy)) 
@@ -616,14 +675,12 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_splice_expr_info           = makeIntrinsicValRef(fslib_MFExtraTopLevelOperators_nleref,                "op_Splice"                            , None                 , None                          , [vara],     ([[mkQuotedExprTy varaTy]], varaTy))
   let v_splice_raw_expr_info       = makeIntrinsicValRef(fslib_MFExtraTopLevelOperators_nleref,                "op_SpliceUntyped"                     , None                 , None                          , [vara],     ([[mkRawQuotedExprTy]], varaTy))
   let v_new_decimal_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "MakeDecimal"                          , None                 , None                          , [],         ([[v_int_ty]; [v_int_ty]; [v_int_ty]; [v_bool_ty]; [v_byte_ty]], v_decimal_ty))
-  let v_array_get_info             = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "GetArray"                             , None                 , None                          , [vara],     ([[mkArrayType 1 varaTy]; [v_int_ty]], varaTy))
-  let v_array_length_info          = makeIntrinsicValRef(fslib_MFArrayModule_nleref,                           "length"                               , None                 , Some "Length"                 , [vara],     ([[mkArrayType 1 varaTy]], v_int_ty))
   let v_deserialize_quoted_FSharp_20_plus_info    = makeIntrinsicValRef(fslib_MFQuotations_nleref,             "Deserialize"                          , Some "Expr"          , None                          , [],          ([[v_system_Type_typ ;mkListTy v_system_Type_typ ;mkListTy mkRawQuotedExprTy ; mkArrayType 1 v_byte_ty]], mkRawQuotedExprTy ))
   let v_deserialize_quoted_FSharp_40_plus_info    = makeIntrinsicValRef(fslib_MFQuotations_nleref,             "Deserialize40"                        , Some "Expr"          , None                          , [],          ([[v_system_Type_typ ;mkArrayType 1 v_system_Type_typ; mkArrayType 1 v_system_Type_typ; mkArrayType 1 mkRawQuotedExprTy; mkArrayType 1 v_byte_ty]], mkRawQuotedExprTy ))
   let v_cast_quotation_info        = makeIntrinsicValRef(fslib_MFQuotations_nleref,                            "Cast"                                 , Some "Expr"          , None                          , [vara],      ([[mkRawQuotedExprTy]], mkQuotedExprTy varaTy))
   let v_lift_value_info            = makeIntrinsicValRef(fslib_MFQuotations_nleref,                            "Value"                                , Some "Expr"          , None                          , [vara],      ([[varaTy]], mkRawQuotedExprTy))
   let v_lift_value_with_name_info  = makeIntrinsicValRef(fslib_MFQuotations_nleref,                            "ValueWithName"                        , Some "Expr"          , None                          , [vara],      ([[varaTy; v_string_ty]], mkRawQuotedExprTy))
-  let v_lift_value_with_defn_info  = makeIntrinsicValRef(fslib_MFQuotations_nleref,                            "WithValue"                  , Some "Expr"          , None                          , [vara],      ([[varaTy; mkQuotedExprTy varaTy]], mkQuotedExprTy varaTy))
+  let v_lift_value_with_defn_info  = makeIntrinsicValRef(fslib_MFQuotations_nleref,                            "WithValue"                            , Some "Expr"          , None                          , [vara],      ([[varaTy; mkQuotedExprTy varaTy]], mkQuotedExprTy varaTy))
   let v_query_value_info           = makeIntrinsicValRef(fslib_MFExtraTopLevelOperators_nleref,                "query"                                , None                 , None                          , [],      ([], mkQueryBuilderTy) )
   let v_query_run_value_info       = makeIntrinsicValRef(fslib_MFQueryRunExtensionsLowPriority_nleref,         "Run"                                  , Some "QueryBuilder"  , None                          , [vara],      ([[mkQueryBuilderTy];[mkQuotedExprTy varaTy]], varaTy) )
   let v_query_run_enumerable_info  = makeIntrinsicValRef(fslib_MFQueryRunExtensionsHighPriority_nleref,        "Run"                                  , Some "QueryBuilder"  , None                          , [vara],      ([[mkQueryBuilderTy];[mkQuotedExprTy (mkQuerySourceTy varaTy (mkNonGenericTy v_tcref_System_Collections_IEnumerable)) ]], mkSeqTy varaTy) )
@@ -662,9 +719,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
        | res -> res
     mkILCustomAttrs (attrs.AsList @ attribs)
 
-  let addMethodGeneratedAttrs (mdef:ILMethodDef)   = {mdef with CustomAttrs   = addGeneratedAttrs mdef.CustomAttrs}
-  let addPropertyGeneratedAttrs (pdef:ILPropertyDef) = {pdef with CustomAttrs = addGeneratedAttrs pdef.CustomAttrs}
-  let addFieldGeneratedAttrs (fdef:ILFieldDef) = {fdef with CustomAttrs = addGeneratedAttrs fdef.CustomAttrs}
+  let addMethodGeneratedAttrs (mdef:ILMethodDef)   = mdef.With(customAttrs   = addGeneratedAttrs mdef.CustomAttrs)
+  let addPropertyGeneratedAttrs (pdef:ILPropertyDef) = pdef.With(customAttrs = addGeneratedAttrs pdef.CustomAttrs)
+  let addFieldGeneratedAttrs (fdef:ILFieldDef) = fdef.With(customAttrs = addGeneratedAttrs fdef.CustomAttrs)
 
   let tref_DebuggerBrowsableAttribute n = 
         let typ_DebuggerBrowsableState = 
@@ -681,8 +738,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
       | Some res -> res
 
   let addNeverAttrs (attrs: ILAttributes) = mkILCustomAttrs (attrs.AsList @ [mkDebuggerBrowsableNeverAttribute()])
-  let addPropertyNeverAttrs (pdef:ILPropertyDef) = {pdef with CustomAttrs = addNeverAttrs pdef.CustomAttrs}
-  let addFieldNeverAttrs (fdef:ILFieldDef) = {fdef with CustomAttrs = addNeverAttrs fdef.CustomAttrs}
+  let addPropertyNeverAttrs (pdef:ILPropertyDef) = pdef.With(customAttrs = addNeverAttrs pdef.CustomAttrs)
+  let addFieldNeverAttrs (fdef:ILFieldDef) = fdef.With(customAttrs = addNeverAttrs fdef.CustomAttrs)
   let mkDebuggerTypeProxyAttribute (ty : ILType) = mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerTypeProxyAttribute,  [ilg.typ_Type], [ILAttribElem.TypeRef (Some ty.TypeRef)], [])
 
   let betterTyconEntries = 
@@ -831,6 +888,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.expr_tcr       = v_expr_tcr
   member __.raw_expr_tcr       = v_raw_expr_tcr
   member __.nativeint_tcr  = v_nativeint_tcr
+  member __.unativeint_tcr = v_unativeint_tcr
+  member __.int_tcr        = v_int_tcr
   member __.int32_tcr      = v_int32_tcr
   member __.int16_tcr      = v_int16_tcr
   member __.int64_tcr      = v_int64_tcr
@@ -892,15 +951,15 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.choice5_tcr    = v_choice5_tcr
   member __.choice6_tcr    = v_choice6_tcr
   member __.choice7_tcr    = v_choice7_tcr
-  member val nativeint_ty  = mkNonGenericTy v_nativeint_tcr
-  member val unativeint_ty = mkNonGenericTy v_unativeint_tcr
-  member val int32_ty      = mkNonGenericTy v_int32_tcr
-  member val int16_ty      = mkNonGenericTy v_int16_tcr
-  member val int64_ty      = mkNonGenericTy v_int64_tcr
-  member val uint16_ty     = mkNonGenericTy v_uint16_tcr
-  member val uint32_ty     = mkNonGenericTy v_uint32_tcr
-  member val uint64_ty     = mkNonGenericTy v_uint64_tcr
-  member val sbyte_ty      = mkNonGenericTy v_sbyte_tcr
+  member val nativeint_ty  = v_nativeint_ty
+  member val unativeint_ty = v_unativeint_ty
+  member val int32_ty      = v_int32_ty
+  member val int16_ty      = v_int16_ty
+  member val int64_ty      = v_int64_ty
+  member val uint16_ty     = v_uint16_ty
+  member val uint32_ty     = v_uint32_ty
+  member val uint64_ty     = v_uint64_ty
+  member val sbyte_ty      = v_sbyte_ty
   member __.byte_ty       = v_byte_ty
   member __.bool_ty       = v_bool_ty
   member __.int_ty       = v_int_ty
@@ -911,8 +970,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.decimal_ty    = v_decimal_ty
 
   member val exn_ty        = mkNonGenericTy v_exn_tcr
-  member val float_ty      = mkNonGenericTy v_float_tcr 
-  member val float32_ty    = mkNonGenericTy v_float32_tcr
+  member val float_ty      = v_float_ty
+  member val float32_ty    = v_float32_ty
       /// Memoization table to help minimize the number of ILSourceDocument objects we create
   member __.memoize_file x = v_memoize_file.Apply x
 
@@ -1134,7 +1193,56 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val unchecked_subtraction_vref = ValRefForIntrinsic v_unchecked_subtraction_info
   member val unchecked_multiply_vref    = ValRefForIntrinsic v_unchecked_multiply_info
   member val unchecked_defaultof_vref    = ValRefForIntrinsic v_unchecked_defaultof_info
+
+  member __.bitwise_or_info            = v_bitwise_or_info
+  member __.bitwise_and_info           = v_bitwise_and_info
+  member __.bitwise_xor_info           = v_bitwise_xor_info
+  member __.bitwise_unary_not_info     = v_bitwise_unary_not_info
+  member __.bitwise_shift_left_info    = v_bitwise_shift_left_info
+  member __.bitwise_shift_right_info   = v_bitwise_shift_right_info
+  member __.unchecked_addition_info    = v_unchecked_addition_info
   member __.unchecked_subtraction_info = v_unchecked_subtraction_info
+  member __.unchecked_multiply_info    = v_unchecked_multiply_info
+  member __.unchecked_division_info    = v_unchecked_division_info
+  member __.unchecked_modulus_info     = v_unchecked_modulus_info
+  member __.unchecked_unary_plus_info  = v_unchecked_unary_plus_info
+  member __.unchecked_unary_minus_info = v_unchecked_unary_minus_info
+  member __.unchecked_unary_not_info   = v_unchecked_unary_not_info
+
+  member __.checked_addition_info      = v_checked_addition_info
+  member __.checked_subtraction_info   = v_checked_subtraction_info
+  member __.checked_multiply_info      = v_checked_multiply_info
+  member __.checked_unary_minus_info   = v_checked_unary_minus_info
+
+  member __.byte_checked_info          = v_byte_checked_info
+  member __.sbyte_checked_info         = v_sbyte_checked_info
+  member __.int16_checked_info         = v_int16_checked_info
+  member __.uint16_checked_info        = v_uint16_checked_info
+  member __.int_checked_info           = v_int_checked_info
+  member __.int32_checked_info         = v_int32_checked_info
+  member __.uint32_checked_info        = v_uint32_checked_info
+  member __.int64_checked_info         = v_int64_checked_info
+  member __.uint64_checked_info        = v_uint64_checked_info
+  member __.nativeint_checked_info     = v_nativeint_checked_info
+  member __.unativeint_checked_info    = v_unativeint_checked_info
+
+  member __.byte_operator_info       = v_byte_operator_info
+  member __.sbyte_operator_info      = v_sbyte_operator_info
+  member __.int16_operator_info      = v_int16_operator_info
+  member __.uint16_operator_info     = v_uint16_operator_info
+  member __.int_operator_info        = v_int_operator_info
+  member __.int32_operator_info      = v_int32_operator_info
+  member __.uint32_operator_info     = v_uint32_operator_info
+  member __.int64_operator_info      = v_int64_operator_info
+  member __.uint64_operator_info     = v_uint64_operator_info
+  member __.float32_operator_info    = v_float32_operator_info
+  member __.float_operator_info      = v_float_operator_info
+  member __.nativeint_operator_info  = v_nativeint_operator_info
+  member __.unativeint_operator_info = v_unativeint_operator_info
+
+  member __.char_operator_info       = v_char_operator_info
+  member __.enum_operator_info       = v_enum_operator_info
+
   member val compare_operator_vref    = ValRefForIntrinsic v_compare_operator_info
   member val equals_operator_vref    = ValRefForIntrinsic v_equals_operator_info
   member val equals_nullable_operator_vref    = ValRefForIntrinsic v_equals_nullable_operator_info
@@ -1153,7 +1261,17 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val invalid_op_vref            = ValRefForIntrinsic v_invalid_op_info
   member val failwithf_vref             = ValRefForIntrinsic v_failwithf_info
 
-  member __.equals_operator_info     = v_equals_operator_info
+  member __.equals_operator_info        = v_equals_operator_info
+  member __.not_equals_operator         = v_not_equals_operator_info
+  member __.less_than_operator          = v_less_than_operator_info
+  member __.less_than_or_equals_operator = v_less_than_or_equals_operator_info
+  member __.greater_than_operator       = v_greater_than_operator_info
+  member __.greater_than_or_equals_operator = v_greater_than_or_equals_operator_info
+
+  member __.hash_info                  = v_hash_info
+  member __.box_info                   = v_box_info
+  member __.isnull_info                = v_isnull_info
+  member __.isnotnull_info             = v_isnotnull_info
   member __.raise_info                 = v_raise_info
   member __.failwith_info              = v_failwith_info
   member __.invalid_arg_info           = v_invalid_arg_info
@@ -1164,14 +1282,13 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.methodhandleof_info        = v_methodhandleof_info
   member __.typeof_info                = v_typeof_info
   member __.typedefof_info             = v_typedefof_info
-  member __.array_length_info          = v_array_length_info
 
   member val reraise_vref               = ValRefForIntrinsic v_reraise_info
   member val methodhandleof_vref        = ValRefForIntrinsic v_methodhandleof_info
   member val typeof_vref                = ValRefForIntrinsic v_typeof_info
   member val sizeof_vref                = ValRefForIntrinsic v_sizeof_info
   member val typedefof_vref             = ValRefForIntrinsic v_typedefof_info
-  member val enum_vref                  = ValRefForIntrinsic v_enum_info
+  member val enum_vref                  = ValRefForIntrinsic v_enum_operator_info
   member val enumOfValue_vref           = ValRefForIntrinsic v_enumOfValue_info
   member val range_op_vref              = ValRefForIntrinsic v_range_op_info
   member val range_step_op_vref         = ValRefForIntrinsic v_range_step_op_info
@@ -1233,10 +1350,17 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.create_event_info          = v_create_event_info
   member __.seq_to_list_info           = v_seq_to_list_info
   member __.seq_to_array_info          = v_seq_to_array_info
+
+  member __.array_length_info          = v_array_length_info
   member __.array_get_info             = v_array_get_info
-  member __.array2D_get_info             = v_array2D_get_info
-  member __.array3D_get_info             = v_array3D_get_info
-  member __.array4D_get_info             = v_array4D_get_info
+  member __.array2D_get_info           = v_array2D_get_info
+  member __.array3D_get_info           = v_array3D_get_info
+  member __.array4D_get_info           = v_array4D_get_info
+  member __.array_set_info             = v_array_set_info
+  member __.array2D_set_info           = v_array2D_set_info
+  member __.array3D_set_info           = v_array3D_set_info
+  member __.array4D_set_info           = v_array4D_set_info
+
   member __.deserialize_quoted_FSharp_20_plus_info       = v_deserialize_quoted_FSharp_20_plus_info
   member __.deserialize_quoted_FSharp_40_plus_info    = v_deserialize_quoted_FSharp_40_plus_info
   member __.cast_quotation_info        = v_cast_quotation_info

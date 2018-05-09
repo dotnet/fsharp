@@ -32,6 +32,7 @@
         "net40\\bin\\*\\FSharp.ProjectSystem.PropertyPages.resources.dll",
         "net40\\bin\\FSharp.ProjectSystem.FSharp.dll",
         "net40\\bin\\*\\FSharp.ProjectSystem.FSharp.resources.dll",
+        "net40\\bin\\FSharp.PatternMatcher.dll",
         "coreclr\\bin\\FSharp.Core.dll",
         "coreclr\\bin\\*\\FSharp.Core.resources.dll",
         "coreclr\\bin\\FSharp.Build.dll",
@@ -50,7 +51,6 @@
       "values": [
         "net40\\bin\\VisualFSharpFull.vsix",
         "net40\\bin\\VisualFSharpTemplate.vsix",
-        "net40\\bin\\VisualFSharpOpenSource.vsix",
         "insertion\\Microsoft.FSharp.Dependencies.vsix",
         "insertion\\Microsoft.FSharp.VSIX.Full.Resources.*.vsix"
       ]
@@ -63,12 +63,11 @@
     "Microsoft.Build.Framework.dll",
     "Microsoft.Build.Tasks.Core.dll",
     "Microsoft.Build.Utilities.Core.dll",
-    "Microsoft.DiaSymReader.dll",
-    "Microsoft.DiaSymReader.PortablePdb.dll",
     "Newtonsoft.Json.dll",
-    "System.ValueTuple.4.3.1.nupkg",
     "System.Collections.Immutable.dll",
     "System.Reflection.Metadata.dll",
+    "System.ValueTuple.4.3.1.nupkg",
+    "System.ValueTuple.4.4.0.nupkg",
     "System.ValueTuple.dll"
   ]
 }

@@ -147,7 +147,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                               (errorR(Error(FSComp.SR.typrelSigImplNotCompatibleConstraintsDifferRemove(sigTypar.Name, Layout.showL(NicePrint.layoutTyparConstraint denv (sigTypar,sigTyparCx))),m)); false)
                           else  
                               true) &&
-                  (not checkingSig || checkAttribs aenv implTypar.Attribs sigTypar.Attribs (fun attribs -> implTypar.typar_attribs <- attribs)))
+                  (not checkingSig || checkAttribs aenv implTypar.Attribs sigTypar.Attribs (fun attribs -> implTypar.SetAttribs attribs)))
 
         and checkTypeDef (aenv: TypeEquivEnv) (implTycon:Tycon) (sigTycon:Tycon) =
             let m = implTycon.Range
@@ -291,7 +291,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 elif not (checkValInfo aenv (err denv) implVal sigVal) then false
                 elif not (implVal.IsExtensionMember = sigVal.IsExtensionMember) then err denv (FSComp.SR.ValueNotContainedMutabilityExtensionsDiffer)
                 elif not (checkMemberDatasConform (err denv) (implVal.Attribs, implVal,implVal.MemberInfo) (sigVal.Attribs,sigVal,sigVal.MemberInfo)) then false
-                else checkAttribs aenv implVal.Attribs sigVal.Attribs (fun attribs -> implVal.val_attribs <- attribs)              
+                else checkAttribs aenv implVal.Attribs sigVal.Attribs (fun attribs -> implVal.SetAttribs attribs)              
 
 
         and checkExnInfo err aenv implTypeRepr sigTypeRepr =

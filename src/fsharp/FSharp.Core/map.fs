@@ -612,6 +612,16 @@ namespace Microsoft.FSharp.Collections
                 | _ -> 
                     invalidArg "obj" (SR.GetString(SR.notComparable))
 
+        interface IReadOnlyCollection<KeyValuePair<'Key, 'Value>> with
+            member s.Count = s.Count
+
+        interface IReadOnlyDictionary<'Key, 'Value> with
+            member s.Item with get(key) = s.[key]
+            member s.Keys = seq { for kvp in s -> kvp.Key }
+            member s.TryGetValue(key, value) = if s.ContainsKey(key) then (value <- s.[key]; true) else false
+            member s.Values = seq { for kvp in s -> kvp.Value }
+            member s.ContainsKey key = s.ContainsKey key
+
         override x.ToString() = 
            match List.ofSeq (Seq.truncate 4 x) with 
            | [] -> "map []"

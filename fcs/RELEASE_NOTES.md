@@ -1,3 +1,18 @@
+#### 22.0.3
+  * [Add entity.DeclaringEntity](https://github.com/Microsoft/visualfsharp/pull/4633), [FCS feature request](https://github.com/fsharp/FSharp.Compiler.Service/issues/830)
+
+#### 22.0.2
+  * Use correct version number in DLLs (needed until https://github.com/Microsoft/visualfsharp/issues/3113 is fixed)
+
+#### 22.0.1
+  * Integrate visualfsharp master
+  * Includes recent memory usage reduction work for ByteFile and ILAttributes
+
+#### 21.0.1
+  * Use new .NET SDK project files
+  * FSharp.Compiler.Service nuget now uses net45 and netstandard2.0
+  * FSharp.Compiler.Service netstandard2.0 now supports type providers
+  
 #### 19.0.1
   * Rename ``LogicalEnclosingEntity`` to ``ApparentEnclosingEntity`` for consistency int he F# codebase terminology.
   * Rename ``EnclosingEntity`` to ``DeclaringEntity``.  In the case of extension properties, ``EnclosingEntity`` was incorrectly returning the logical enclosing entity (i.e. the type the property appears to extend), and in this case ``ApparentEnclosingEntity`` should be used instead.

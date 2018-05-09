@@ -5438,8 +5438,8 @@
         <note />
       </trans-unit>
       <trans-unit id="fscBadAssemblyVersion">
-        <source>An {0} specified version '{1}', but this value is invalid and has been ignored</source>
-        <target state="new">An {0} specified version '{1}', but this value is invalid and has been ignored</target>
+        <source>The attribute {0} specified version '{1}', but this value is invalid and has been ignored</source>
+        <target state="new">The attribute {0} specified version '{1}', but this value is invalid and has been ignored</target>
         <note />
       </trans-unit>
       <trans-unit id="fscTwoResourceManifests">
@@ -6980,6 +6980,11 @@
       <trans-unit id="implicitlyDiscardedSequenceInSequenceExpression">
         <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</source>
         <target state="new">This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilreadFileChanged">
+        <source>The file '{0}' changed on disk unexpectedly, please reload.</source>
+        <target state="new">The file '{0}' changed on disk unexpectedly, please reload.</target>
         <note />
       </trans-unit>
     </body>

@@ -10,10 +10,8 @@
     <PlatformTarget>x86</PlatformTarget>
     <OutputType>Exe</OutputType>
     <NoWarn>$(NoWarn);62</NoWarn>
-    <AssemblyName>fsc-proto</AssemblyName>
+    <AssemblyName>fsc</AssemblyName>
     <DefineConstants>NO_EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
-    <DefineConstants>BUILDING_PROTO;$(DefineConstants)</DefineConstants>
-    <DefineConstants>BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
     <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
     <NoWarn>$(NoWarn);35;44;62;9;60;86;47;1203</NoWarn>
     <BuildWith>LKG</BuildWith>
@@ -456,12 +454,6 @@
     <Reference Include="System.Numerics" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.DiaSymReader.PortablePdb">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.DiaSymReader.PortablePdb.1.2.0\lib\portable-net45+win8\Microsoft.DiaSymReader.PortablePdb.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.DiaSymReader">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.DiaSymReader.1.1.0\lib\portable-net45+win8\Microsoft.DiaSymReader.dll</HintPath>
-    </Reference>
     <Reference Include="System.Reflection.Metadata">
       <HintPath>$(FSharpSourcesRoot)\..\packages\System.Reflection.Metadata.1.4.2\lib\portable-net45+win8\System.Reflection.Metadata.dll</HintPath>
     </Reference>
@@ -469,7 +461,7 @@
       <HintPath>$(FSharpSourcesRoot)\..\packages\System.Collections.Immutable.$(SystemCollectionsImmutableVersion)\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
     </Reference>
     <Reference Include="System.ValueTuple">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\System.ValueTuple.4.3.1\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\System.ValueTuple.4.4.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
     </Reference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>

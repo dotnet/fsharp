@@ -3,6 +3,8 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
+    <ProjectLanguage>FSharp</ProjectLanguage>
+    <UseFSharpProductVersion>true</UseFSharpProductVersion>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
   <PropertyGroup>
@@ -27,8 +29,6 @@
       <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.Engine.dll" />
       <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.Utilities.Core.dll" />
       <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.Tasks.Core.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.DiaSymReader.PortablePdb.dll" />
-      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.DiaSymReader.dll" />
       <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\System.Reflection.Metadata.dll" />
       <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\System.Collections.Immutable.dll" />
       <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\System.ValueTuple.dll" />
@@ -64,6 +64,12 @@
     <EmbeddedResource Include="..\FSStrings.resx">
       <Link>FSStrings.resx</Link>
     </EmbeddedResource>
+    <Compile Include="..\Logger.fsi">
+      <Link>Logger.fsi</Link>
+    </Compile>
+    <Compile Include="..\Logger.fs">
+      <Link>Logger.fs</Link>
+    </Compile>
     <Compile Include="..\..\utils\reshapedreflection.fs">
       <Link>Reflection\reshapedreflection.fs</Link>
     </Compile>
@@ -668,12 +674,6 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
     <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.DiaSymReader.PortablePdb">
-      <HintPath>..\..\..\packages\Microsoft.DiaSymReader.PortablePdb.$(MicrosoftDiaSymReaderPortablePdbPackageVersion)\lib\netstandard1.1\Microsoft.DiaSymReader.PortablePdb.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.DiaSymReader">
-      <HintPath>..\..\..\packages\Microsoft.DiaSymReader.$(MicrosoftDiaSymReaderPackageVersion)\lib\netstandard1.1\Microsoft.DiaSymReader.dll</HintPath>
-    </Reference>
     <Reference Include="System.Reflection.Metadata">
       <HintPath>..\..\..\packages\System.Reflection.Metadata.1.4.2\lib\portable-net45+win8\System.Reflection.Metadata.dll</HintPath>
     </Reference>
@@ -681,7 +681,7 @@
       <HintPath>..\..\..\packages\System.Collections.Immutable.$(SystemCollectionsImmutableVersion)\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
     </Reference>
     <Reference Include="System.ValueTuple">
-      <HintPath>..\..\..\packages\System.ValueTuple.4.3.1\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+      <HintPath>..\..\..\packages\System.ValueTuple.4.4.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
       <Private>true</Private>
     </Reference>
   </ItemGroup>

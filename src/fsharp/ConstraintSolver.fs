@@ -359,7 +359,7 @@ let FilterEachThenUndo f meths =
         trace.Undo()
         match CheckNoErrorsAndGetWarnings res with 
         | None -> None 
-        | Some warns -> Some (calledMeth, warns.Length, trace))
+        | Some warns -> Some (calledMeth, warns, trace))
 
 let ShowAccessDomain ad =
     match ad with 
@@ -778,7 +778,7 @@ and SolveTypEqualsTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace
 
     match sty1, sty2 with 
     // type vars inside forall-types may be alpha-equivalent 
-    | TType_var tp1, TType_var tp2 when typarEq tp1 tp2 || (aenv.EquivTypars.ContainsKey tp1 && typeEquiv g aenv.EquivTypars.[tp1] ty2) -> CompleteD
+    | TType_var tp1, TType_var tp2 when typarEq tp1 tp2 || (match aenv.EquivTypars.TryFind tp1 with | Some v when typeEquiv g v ty2 -> true | _ -> false) -> CompleteD
 
     | TType_var tp1, TType_var tp2 when PreferUnifyTypar tp1 tp2 -> SolveTyparEqualsTyp csenv ndeep m2 trace sty1 ty2
     | TType_var tp1, TType_var tp2 when not csenv.MatchingOnly && PreferUnifyTypar tp2 tp1 -> SolveTyparEqualsTyp csenv ndeep m2 trace sty2 ty1
@@ -850,12 +850,17 @@ and SolveTypSubsumesTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
     let aenv = csenv.EquivEnv
     let denv = csenv.DisplayEnv
     match sty1, sty2 with 
-    | TType_var tp1, _ when aenv.EquivTypars.ContainsKey tp1 -> 
-        SolveTypSubsumesTyp csenv ndeep m2 trace cxsln aenv.EquivTypars.[tp1] ty2 
-        
-    | TType_var r1, TType_var r2 when typarEq r1 r2 -> CompleteD
+    | TType_var tp1, _ ->
+        match aenv.EquivTypars.TryFind tp1 with
+        | Some v -> SolveTypSubsumesTyp csenv ndeep m2 trace cxsln v ty2
+        | _ ->
+        match sty2 with
+        | TType_var r2 when typarEq tp1 r2 -> CompleteD
+        | TType_var r when not csenv.MatchingOnly -> SolveTyparSubtypeOfType csenv ndeep m2 trace r ty1
+        | _ ->  SolveTypEqualsTypKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ty1 ty2
+
     | _, TType_var r when not csenv.MatchingOnly -> SolveTyparSubtypeOfType csenv ndeep m2 trace r ty1
-    | TType_var _ , _ ->  SolveTypEqualsTypKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ty1 ty2
+
     | TType_tuple (tupInfo1, l1)      , TType_tuple (tupInfo2, l2)      -> 
         if evalTupInfoIsStruct tupInfo1 <> evalTupInfoIsStruct tupInfo2 then ErrorD (ConstraintSolverError(FSComp.SR.tcTupleStructMismatch(), csenv.m, m2)) else
         SolveTypEqualsTypEqns csenv ndeep m2 trace cxsln l1 l2 (* nb. can unify since no variance *)
@@ -1637,8 +1642,8 @@ and AddConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
 
         // Write the constraint into the type variable 
         // Record a entry in the undo trace if one is provided 
-        let orig = tp.typar_constraints
-        trace.Exec (fun () -> tp.typar_constraints <- newConstraints) (fun () -> tp.typar_constraints <- orig)
+        let orig = tp.Constraints
+        trace.Exec (fun () -> tp.SetConstraints newConstraints) (fun () -> tp.SetConstraints orig)
 
         CompleteD)))
 
@@ -2194,8 +2199,8 @@ and ResolveOverloading
                          (ArgsEquivInsideUndo csenv cx.IsSome) 
                          reqdRetTyOpt 
                          calledMeth) with
-          | [(calledMeth, _, _)] -> 
-              Some calledMeth, CompleteD, NoTrace // Can't re-play the trace since ArgsEquivInsideUndo was used
+          | [(calledMeth, warns, _)] ->
+              Some calledMeth, OkResult (warns, ()), NoTrace // Can't re-play the trace since ArgsEquivInsideUndo was used
 
           | _ -> 
             // Now determine the applicable methods.
@@ -2255,8 +2260,8 @@ and ResolveOverloading
 
                 None, ErrorD (failOverloading (FSComp.SR.csNoOverloadsFound methodName) errors), NoTrace
 
-            | [(calledMeth, _, t)] -> 
-                Some calledMeth, CompleteD, WithTrace t
+            | [(calledMeth, warns, t)] ->
+                Some calledMeth, OkResult (warns, ()), WithTrace t
 
             | applicableMeths -> 
                 
@@ -2292,7 +2297,9 @@ and ResolveOverloading
                     if c <> 0 then c else
                     0
 
-                let better (candidate:CalledMeth<_>, candidateWarnCount, _) (other:CalledMeth<_>, otherWarnCount, _) = 
+                let better (candidate:CalledMeth<_>, candidateWarnings, _) (other:CalledMeth<_>, otherwarnings, _) =
+                    let candidateWarnCount = List.length candidateWarnings
+                    let otherWarnCount = List.length otherwarnings
                     // Prefer methods that don't give "this code is less generic" warnings
                     // Note: Relies on 'compare' respecting true > false
                     let c = compare (candidateWarnCount = 0) (otherWarnCount = 0)
@@ -2383,7 +2390,7 @@ and ResolveOverloading
                         else 
                            None) 
                 match bestMethods with 
-                | [(calledMeth, _, t)] -> Some calledMeth, CompleteD, WithTrace t
+                | [(calledMeth, warns, t)] -> Some calledMeth, OkResult (warns, ()), WithTrace t
                 | bestMethods -> 
                     let methodNames =
                         let methods = 

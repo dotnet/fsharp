@@ -4,7 +4,7 @@
         <!-- rename to FSharp.Core when done -->
         <id>FSharp.Core</id>
         <description>
-            FSharp.Core redistributables from Visual F# 4.1.0
+            FSharp.Core redistributables from Visual F# 10.1.0
                 Supported Platforms:
                     .NET 2.0                    (net20)
                     .NET 4.0                    (net40)
@@ -23,6 +23,7 @@
         <authors>$authors$</authors>
         <licenseUrl>$licenseUrl$</licenseUrl>
         <projectUrl>$projectUrl$</projectUrl>
+        <iconUrl>http://fsharp.org/img/logo.png</iconUrl>
         <tags>$tags$</tags>
         <dependencies>
             <group targetFramework="net20">

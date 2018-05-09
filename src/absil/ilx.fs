@@ -22,7 +22,7 @@ let mkLowerName (nm: string) =
 type IlxUnionField(fd: ILFieldDef) =
     let lowerName = mkLowerName fd.Name
     member x.ILField = fd
-    member x.Type = x.ILField.Type
+    member x.Type = x.ILField.FieldType
     member x.Name = x.ILField.Name
     member x.LowerName = lowerName
     

@@ -1317,7 +1317,10 @@ let emitCode cenv modB emEnv (ilG:ILGenerator) (code: ILCode) =
     let emEnv  = 
         (emEnv, code.Labels) ||> Seq.fold (fun emEnv (KeyValue(label, pc)) -> 
             let lab = ilG.DefineLabelAndLog()
-            pc2lab.[pc] <- (if pc2lab.ContainsKey pc then lab :: pc2lab.[pc] else [lab])
+            pc2lab.[pc] <-
+                match pc2lab.TryGetValue(pc) with
+                | true, labels -> lab :: labels
+                | _ -> [lab]
             envSetLabel emEnv label lab)
               
     // Build a table that contains the operations that define where exception handlers are
@@ -1325,7 +1328,10 @@ let emitCode cenv modB emEnv (ilG:ILGenerator) (code: ILCode) =
     let lab2pc = code.Labels
     let add lab action = 
         let pc = lab2pc.[lab]
-        pc2action.[pc] <- (if pc2action.ContainsKey pc then pc2action.[pc] @ [ action ] else [ action ])
+        pc2action.[pc] <-
+            match pc2action.TryGetValue(pc) with
+            | true, actions -> actions @ [action]
+            | _ -> [action]
 
     for e in code.Exceptions do
         let (startTry, _endTry) = e.Range
@@ -1354,12 +1360,18 @@ let emitCode cenv modB emEnv (ilG:ILGenerator) (code: ILCode) =
     let instrs = code.Instrs
 
     for pc = 0 to instrs.Length do
-        if pc2action.ContainsKey pc then  
-            for action in pc2action.[pc] do 
+        match pc2action.TryGetValue(pc) with
+        | true, actions ->
+            for action in actions do 
                 action()
-        if pc2lab.ContainsKey pc then  
-            for lab in pc2lab.[pc] do
-                ilG.MarkLabelAndLog lab
+        | _ -> ()
+
+        match pc2lab.TryGetValue(pc) with
+        | true, labels ->
+            for lab in labels do
+                ilG.MarkLabelAndLog(lab)
+        | _ -> ()
+
         if pc < instrs.Length then 
             match instrs.[pc] with 
             | I_br l when code.Labels.[l] = pc + 1 -> () // compress I_br to next instruction
@@ -1385,9 +1397,10 @@ let emitILMethodBody cenv modB emEnv (ilG:ILGenerator) (ilmbody: ILMethodBody) =
 let emitMethodBody cenv modB emEnv ilG _name (mbody: ILLazyMethodBody) =
     match mbody.Contents with
     | MethodBody.IL ilmbody       -> emitILMethodBody cenv modB emEnv (ilG()) ilmbody
-    | MethodBody.PInvoke  _pinvoke -> () (* printf "EMIT: pinvoke method %s\n" name *) (* XXX - check *)
-    | MethodBody.Abstract         -> () (* printf "EMIT: abstract method %s\n" name *) (* XXX - check *)
-    | MethodBody.Native           -> failwith "emitMethodBody cenv: native"               (* XXX - gap *)
+    | MethodBody.PInvoke  _pinvoke -> ()
+    | MethodBody.Abstract         -> ()
+    | MethodBody.Native           -> failwith "emitMethodBody: native"               
+    | MethodBody.NotAvailable     -> failwith "emitMethodBody: metadata only"
 
 let convCustomAttr cenv emEnv cattr =
     let methInfo = 
@@ -1430,7 +1443,7 @@ let buildGenParamsPass1b cenv emEnv (genArgs : Type array) (gps : ILGenericParam
           | _       -> failwith "buildGenParam: multiple base types"
         );
         // set interface constraints (interfaces that instances of gp must meet)
-        gpB.SetInterfaceConstraints(Array.ofList interfaceTs);
+        gpB.SetInterfaceConstraints(Array.ofList interfaceTs)
         gp.CustomAttrs |> emitCustomAttrs cenv emEnv (wrapCustomAttr gpB.SetCustomAttribute)
 
         let flags = GenericParameterAttributes.None 
@@ -1466,72 +1479,20 @@ let emitParameter cenv emEnv (defineParameter : int * ParameterAttributes * stri
     emitCustomAttrs cenv emEnv (wrapCustomAttr parB.SetCustomAttribute) param.CustomAttrs
 
 //----------------------------------------------------------------------------
-// convMethodAttributes
-//----------------------------------------------------------------------------
-
-let convMethodAttributes (mdef: ILMethodDef) =    
-    let attrKind = 
-        match mdef.mdKind with 
-        | MethodKind.Static        -> MethodAttributes.Static
-        | MethodKind.Cctor         -> MethodAttributes.Static
-        | MethodKind.Ctor          -> enum 0                 
-        | MethodKind.NonVirtual    -> enum 0
-        | MethodKind.Virtual vinfo -> MethodAttributes.Virtual |||
-                                      flagsIf vinfo.IsNewSlot   MethodAttributes.NewSlot |||
-                                      flagsIf vinfo.IsFinal     MethodAttributes.Final |||
-                                      flagsIf vinfo.IsCheckAccessOnOverride    MethodAttributes.CheckAccessOnOverride |||
-                                      flagsIf vinfo.IsAbstract  MethodAttributes.Abstract
-   
-    let attrAccess = 
-        match mdef.Access with
-        | ILMemberAccess.Assembly -> MethodAttributes.Assembly
-        | ILMemberAccess.CompilerControlled -> failwith "Method access compiler controled."
-        | ILMemberAccess.FamilyAndAssembly        -> MethodAttributes.FamANDAssem
-        | ILMemberAccess.FamilyOrAssembly         -> MethodAttributes.FamORAssem
-        | ILMemberAccess.Family             -> MethodAttributes.Family
-        | ILMemberAccess.Private            -> MethodAttributes.Private
-        | ILMemberAccess.Public             -> MethodAttributes.Public
-   
-    let attrOthers = flagsIf mdef.HasSecurity MethodAttributes.HasSecurity |||
-                     flagsIf mdef.IsSpecialName MethodAttributes.SpecialName |||
-                     flagsIf mdef.IsHideBySig   MethodAttributes.HideBySig |||
-                     flagsIf mdef.IsReqSecObj   MethodAttributes.RequireSecObject 
-   
-    attrKind ||| attrAccess ||| attrOthers
-
-let convMethodImplFlags mdef =    
-    (match  mdef.mdCodeKind with 
-     | MethodCodeKind.Native -> MethodImplAttributes.Native
-     | MethodCodeKind.Runtime -> MethodImplAttributes.Runtime
-     | MethodCodeKind.IL  -> MethodImplAttributes.IL) 
-    ||| flagsIf mdef.IsInternalCall MethodImplAttributes.InternalCall
-    ||| (if mdef.IsManaged then MethodImplAttributes.Managed else MethodImplAttributes.Unmanaged)
-    ||| flagsIf mdef.IsForwardRef MethodImplAttributes.ForwardRef
-    ||| flagsIf mdef.IsPreserveSig MethodImplAttributes.PreserveSig
-    ||| flagsIf mdef.IsSynchronized MethodImplAttributes.Synchronized
-    ||| flagsIf (match mdef.mdBody.Contents with MethodBody.IL b -> b.NoInlining | _ -> false) MethodImplAttributes.NoInlining
-    ||| flagsIf (match mdef.mdBody.Contents with MethodBody.IL b -> b.AggressiveInlining | _ -> false) MethodImplAttributes.AggressiveInlining
-
-//----------------------------------------------------------------------------
 // buildMethodPass2
 //----------------------------------------------------------------------------
   
 let rec buildMethodPass2 cenv tref (typB:TypeBuilder) emEnv (mdef : ILMethodDef) =
-    let attrs = convMethodAttributes mdef
-    let implflags = convMethodImplFlags mdef
+    let attrs = mdef.Attributes
+    let implflags = mdef.ImplAttributes
     let cconv = convCallConv mdef.CallingConv
     let mref = mkRefToILMethod (tref, mdef)   
-    let emEnv = if mdef.IsEntryPoint && isNil mdef.ParameterTypes then 
-                    (* Bug 2209:
-                        Here, we collect the entry points generated by ilxgen corresponding to the top-level effects.
-                        Users can (now) annotate their own functions with EntryPoint attributes.
-                        However, these user entry points functions must take string[] argument.
-                        By only adding entry points with no arguments, we only collect the top-level effects.
-                     *)
-                    envAddEntryPt emEnv (typB, mdef.Name)
-                else
-                    emEnv
-    match mdef.mdBody.Contents with
+    let emEnv = 
+        if mdef.IsEntryPoint && isNil mdef.ParameterTypes then 
+            envAddEntryPt emEnv (typB, mdef.Name)
+        else
+            emEnv
+    match mdef.Body.Contents with
 #if !FX_RESHAPED_REFEMIT
     | MethodBody.PInvoke  p -> 
         let argtys = convTypesToArray cenv emEnv mdef.ParameterTypes
@@ -1555,17 +1516,7 @@ let rec buildMethodPass2 cenv tref (typB:TypeBuilder) emEnv (mdef : ILMethodDef)
 (* p.CharBestFit *)
 (* p.NoMangle *)
 
-        let methB = typB.DefinePInvokeMethod(mdef.Name, 
-                                             p.Where.Name, 
-                                             p.Name, 
-                                             attrs, 
-                                             cconv, 
-                                             rty, 
-                                             null, null, 
-                                             argtys, 
-                                             null, null, 
-                                             pcc, 
-                                             pcs) 
+        let methB = typB.DefinePInvokeMethod(mdef.Name, p.Where.Name, p.Name, attrs, cconv, rty, null, null, argtys, null, null, pcc, pcs) 
         methB.SetImplementationFlagsAndLog(implflags);
         envBindMethodRef emEnv mref methB
 #endif
@@ -1601,7 +1552,7 @@ let rec buildMethodPass2 cenv tref (typB:TypeBuilder) emEnv (mdef : ILMethodDef)
 let rec buildMethodPass3 cenv tref modB (typB:TypeBuilder) emEnv (mdef : ILMethodDef) =
     let mref  = mkRefToILMethod (tref, mdef)
     let isPInvoke = 
-        match mdef.mdBody.Contents with
+        match mdef.Body.Contents with
         | MethodBody.PInvoke  _p -> true
         | _ -> false
     match mdef.Name with
@@ -1613,7 +1564,7 @@ let rec buildMethodPass3 cenv tref modB (typB:TypeBuilder) emEnv (mdef : ILMetho
           let defineParameter (i, attr, name) = consB.DefineParameterAndLog(i+1, attr, name)
           mdef.Parameters |> List.iteri (emitParameter cenv emEnv defineParameter);
           // Body
-          emitMethodBody cenv modB emEnv consB.GetILGenerator mdef.Name mdef.mdBody;
+          emitMethodBody cenv modB emEnv consB.GetILGenerator mdef.Name mdef.Body;
           emitCustomAttrs cenv emEnv (wrapCustomAttr consB.SetCustomAttribute) mdef.CustomAttrs;
           ()
      | _name ->
@@ -1634,7 +1585,7 @@ let rec buildMethodPass3 cenv tref modB (typB:TypeBuilder) emEnv (mdef : ILMetho
           mdef.Parameters |> List.iteri (fun a b -> emitParameter cenv emEnv defineParameter a b);
           // Body
           if not isPInvoke then 
-              emitMethodBody cenv modB emEnv methB.GetILGeneratorAndLog mdef.Name mdef.mdBody;
+              emitMethodBody cenv modB emEnv methB.GetILGeneratorAndLog mdef.Name mdef.Body;
           let emEnv = envPopTyvars emEnv // case fold later...
           emitCustomAttrs cenv emEnv methB.SetCustomAttributeAndLog mdef.CustomAttrs
       
@@ -1644,23 +1595,8 @@ let rec buildMethodPass3 cenv tref modB (typB:TypeBuilder) emEnv (mdef : ILMetho
   
 let buildFieldPass2 cenv tref (typB:TypeBuilder) emEnv (fdef : ILFieldDef) =
     
-    (*{ -Data:    bytes option;       
-        -Marshal: NativeType option;  *)
-    let attrsAccess = match fdef.Access with
-                      | ILMemberAccess.Assembly           -> FieldAttributes.Assembly
-                      | ILMemberAccess.CompilerControlled -> failwith "Field access compiler controled."
-                      | ILMemberAccess.FamilyAndAssembly        -> FieldAttributes.FamANDAssem
-                      | ILMemberAccess.FamilyOrAssembly         -> FieldAttributes.FamORAssem
-                      | ILMemberAccess.Family             -> FieldAttributes.Family
-                      | ILMemberAccess.Private            -> FieldAttributes.Private
-                      | ILMemberAccess.Public             -> FieldAttributes.Public
-    let attrsOther = flagsIf fdef.IsStatic        FieldAttributes.Static |||
-                     flagsIf fdef.IsSpecialName   FieldAttributes.SpecialName |||
-                     flagsIf fdef.IsLiteral       FieldAttributes.Literal |||
-                     flagsIf fdef.IsInitOnly      FieldAttributes.InitOnly |||
-                     flagsIf fdef.NotSerialized FieldAttributes.NotSerialized 
-    let attrs = attrsAccess ||| attrsOther
-    let fieldT = convType cenv emEnv  fdef.Type
+    let attrs = fdef.Attributes
+    let fieldT = convType cenv emEnv  fdef.FieldType
     let fieldB = 
         match fdef.Data with 
         | Some d -> typB.DefineInitializedData(fdef.Name, d, attrs)
@@ -1687,11 +1623,11 @@ let buildFieldPass2 cenv tref (typB:TypeBuilder) emEnv (fdef : ILFieldDef) =
     fdef.Offset |> Option.iter (fun offset ->  fieldB.SetOffset(offset));
     // custom attributes: done on pass 3 as they may reference attribute constructors generated on
     // pass 2.
-    let fref = mkILFieldRef (tref, fdef.Name, fdef.Type)    
+    let fref = mkILFieldRef (tref, fdef.Name, fdef.FieldType)    
     envBindFieldRef emEnv fref fieldB
 
 let buildFieldPass3 cenv tref (_typB:TypeBuilder) emEnv (fdef : ILFieldDef) =
-    let fref = mkILFieldRef (tref, fdef.Name, fdef.Type)    
+    let fref = mkILFieldRef (tref, fdef.Name, fdef.FieldType)    
     let fieldB = envGetFieldB emEnv fref
     emitCustomAttrs cenv emEnv (wrapCustomAttr fieldB.SetCustomAttribute) fdef.CustomAttrs
 
@@ -1703,7 +1639,7 @@ let buildPropertyPass2 cenv tref (typB:TypeBuilder) emEnv (prop : ILPropertyDef)
     let attrs = flagsIf prop.IsRTSpecialName PropertyAttributes.RTSpecialName |||
                 flagsIf prop.IsSpecialName   PropertyAttributes.SpecialName
 
-    let propB = typB.DefinePropertyAndLog(prop.Name, attrs, convType cenv emEnv  prop.Type, convTypesToArray cenv emEnv prop.Args)
+    let propB = typB.DefinePropertyAndLog(prop.Name, attrs, convType cenv emEnv  prop.PropertyType, convTypesToArray cenv emEnv prop.Args)
    
     prop.SetMethod |> Option.iter (fun mref -> propB.SetSetMethod(envGetMethB emEnv mref));
     prop.GetMethod |> Option.iter (fun mref -> propB.SetGetMethod(envGetMethB emEnv mref));
@@ -1726,8 +1662,8 @@ let buildPropertyPass3 cenv tref (_typB:TypeBuilder) emEnv (prop : ILPropertyDef
 let buildEventPass3 cenv (typB:TypeBuilder) emEnv (eventDef : ILEventDef) = 
     let attrs = flagsIf eventDef.IsSpecialName EventAttributes.SpecialName |||
                 flagsIf eventDef.IsRTSpecialName EventAttributes.RTSpecialName 
-    assert eventDef.Type.IsSome
-    let eventB = typB.DefineEventAndLog(eventDef.Name, attrs, convType cenv emEnv  eventDef.Type.Value) 
+    assert eventDef.EventType.IsSome
+    let eventB = typB.DefineEventAndLog(eventDef.Name, attrs, convType cenv emEnv  eventDef.EventType.Value) 
 
     eventDef.AddMethod |> (fun mref -> eventB.SetAddOnMethod(envGetMethB emEnv mref));
     eventDef.RemoveMethod |> (fun mref -> eventB.SetRemoveOnMethod(envGetMethB emEnv mref));
@@ -1767,7 +1703,6 @@ let typeAttrbutesOfTypeAccess x =
     | ILTypeDefAccess.Nested macc  -> 
         match macc with
         | ILMemberAccess.Assembly           -> TypeAttributes.NestedAssembly
-        | ILMemberAccess.CompilerControlled -> failwith "Nested compiler controled."
         | ILMemberAccess.FamilyAndAssembly        -> TypeAttributes.NestedFamANDAssem
         | ILMemberAccess.FamilyOrAssembly         -> TypeAttributes.NestedFamORAssem
         | ILMemberAccess.Family             -> TypeAttributes.NestedFamily
@@ -1796,9 +1731,9 @@ let typeAttributesOfTypeLayout cenv emEnv x =
                    (p.Size |> Option.toList |> List.map (fun x -> ("Size", cenv.ilg.typ_Int32, false, ILAttribElem.Int32 x)))))) 
         | _ -> None
     match x with 
-    | ILTypeDefLayout.Auto         -> TypeAttributes.AutoLayout, None
-    | ILTypeDefLayout.Explicit p   -> TypeAttributes.ExplicitLayout, (attr 0x02 p)
-    | ILTypeDefLayout.Sequential p -> TypeAttributes.SequentialLayout, (attr 0x00 p)
+    | ILTypeDefLayout.Auto         -> None
+    | ILTypeDefLayout.Explicit p   -> (attr 0x02 p)
+    | ILTypeDefLayout.Sequential p -> (attr 0x00 p)
 
 
 //----------------------------------------------------------------------------
@@ -1810,17 +1745,9 @@ let rec buildTypeDefPass1 cenv emEnv (modB:ModuleBuilder) rootTypeBuilder nestin
     // -SecurityDecls: Permissions;
     // -InitSemantics: ILTypeInit;
     // TypeAttributes
-    let attrsKind   = typeAttrbutesOfTypeDefKind tdef.tdKind 
-    let attrsAccess = typeAttrbutesOfTypeAccess  tdef.Access
-    let attrsLayout, cattrsLayout = typeAttributesOfTypeLayout cenv emEnv tdef.Layout
-    let attrsEnc    = typeAttributesOfTypeEncoding tdef.Encoding
-    let attrsOther  = flagsIf tdef.IsAbstract     TypeAttributes.Abstract |||
-                      flagsIf tdef.IsSealed       TypeAttributes.Sealed |||
-                      flagsIf tdef.IsSerializable TypeAttributes.Serializable |||
-                      flagsIf tdef.IsSpecialName  TypeAttributes.SpecialName |||
-                      flagsIf tdef.HasSecurity  TypeAttributes.HasSecurity
+    let cattrsLayout = typeAttributesOfTypeLayout cenv emEnv tdef.Layout
      
-    let attrsType = attrsKind ||| attrsAccess ||| attrsLayout ||| attrsEnc ||| attrsOther
+    let attrsType = tdef.Attributes
 
     // TypeBuilder from TypeAttributes.
     let typB : TypeBuilder = rootTypeBuilder  (tdef.Name, attrsType)
@@ -1979,33 +1906,33 @@ let verbose2 = false
 let createTypeRef (visited : Dictionary<_, _>, created : Dictionary<_, _>) emEnv tref = 
 
     let rec traverseTypeDef (tref:ILTypeRef) (tdef:ILTypeDef) =
-        if verbose2 then dprintf "buildTypeDefPass4: Creating Enclosing Types of %s\n" tdef.Name; 
+        if verbose2 then dprintf "buildTypeDefPass4: Creating Enclosing Types of %s\n" tdef.Name
         for enc in getEnclosingTypeRefs tref do
             traverseTypeRef enc
     
         // WORKAROUND (ProductStudio FSharp 1.0 bug 615): the constraints on generic method parameters 
         // are resolved overly eagerly by reflection emit's CreateType. 
-        if verbose2 then dprintf "buildTypeDefPass4: Doing type typar constraints of %s\n" tdef.Name; 
+        if verbose2 then dprintf "buildTypeDefPass4: Doing type typar constraints of %s\n" tdef.Name
         for gp in tdef.GenericParams do
             for cx in gp.Constraints do
                 traverseType CollectTypes.All cx
 
-        if verbose2 then dprintf "buildTypeDefPass4: Doing method constraints of %s\n" tdef.Name; 
+        if verbose2 then dprintf "buildTypeDefPass4: Doing method constraints of %s\n" tdef.Name
         for md in tdef.Methods.AsList do
             for gp in md.GenericParams do 
                 for cx in gp.Constraints do 
                     traverseType CollectTypes.All cx
             
         // We absolutely need the exact parent type...
-        if verbose2 then dprintf "buildTypeDefPass4: Creating Super Class Chain of %s\n" tdef.Name; 
+        if verbose2 then dprintf "buildTypeDefPass4: Creating Super Class Chain of %s\n" tdef.Name
         tdef.Extends |> Option.iter (traverseType CollectTypes.All)
         
         // We absolutely need the exact interface types...
-        if verbose2 then dprintf "buildTypeDefPass4: Creating Interface Chain of %s\n" tdef.Name; 
+        if verbose2 then dprintf "buildTypeDefPass4: Creating Interface Chain of %s\n" tdef.Name
         tdef.Implements |> List.iter (traverseType CollectTypes.All)
             
-        if verbose2 then dprintf "buildTypeDefPass4: Do value types in fields of %s\n" tdef.Name;
-        tdef.Fields.AsList |> List.iter (fun fd -> traverseType CollectTypes.ValueTypesOnly fd.Type)
+        if verbose2 then dprintf "buildTypeDefPass4: Do value types in fields of %s\n" tdef.Name
+        tdef.Fields.AsList |> List.iter (fun fd -> traverseType CollectTypes.ValueTypesOnly fd.FieldType)
         
         if verbose2 then dprintf "buildTypeDefPass4: Done with dependencies of %s\n" tdef.Name 
             
@@ -2109,8 +2036,11 @@ let buildModuleFragment cenv emEnv (asmB : AssemblyBuilder) (modB : ModuleBuilde
     m.Resources.AsList |> List.iter (fun r -> 
         let attribs = (match r.Access with ILResourceAccess.Public -> ResourceAttributes.Public | ILResourceAccess.Private -> ResourceAttributes.Private) 
         match r.Location with 
-        | ILResourceLocation.Local bf -> 
-            modB.DefineManifestResourceAndLog(r.Name, new System.IO.MemoryStream(bf()), attribs)
+        | ILResourceLocation.LocalIn (file, start, len) -> 
+            let bytes = FileSystem.ReadAllBytesShim(file).[start .. start + len - 1]
+            modB.DefineManifestResourceAndLog(r.Name, new System.IO.MemoryStream(bytes), attribs)
+        | ILResourceLocation.LocalOut bytes -> 
+            modB.DefineManifestResourceAndLog(r.Name, new System.IO.MemoryStream(bytes), attribs)
         | ILResourceLocation.File (mr, _) -> 
            asmB.AddResourceFileAndLog(r.Name, mr.Name, attribs)
         | ILResourceLocation.Assembly _ -> 
@@ -2136,7 +2066,7 @@ let defineDynamicAssemblyAndLog(asmName, flags, asmDir:string) =
     asmB
 
 let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo, collectible) =
-    let filename = assemblyName ^ ".dll"
+    let filename = assemblyName + ".dll"
     let asmDir  = "."
     let asmName = new AssemblyName()
     asmName.Name <- assemblyName;

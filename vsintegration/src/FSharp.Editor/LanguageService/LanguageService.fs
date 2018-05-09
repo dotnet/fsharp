@@ -9,6 +9,7 @@ open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Collections.Immutable
 open System.ComponentModel.Composition
+open System.ComponentModel.Design
 open System.Diagnostics
 open System.IO
 open System.Linq
@@ -23,8 +24,8 @@ open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Editor
-open Microsoft.VisualStudio.FSharp.LanguageService
-open Microsoft.VisualStudio.FSharp.LanguageService.SiteProvider
+open Microsoft.VisualStudio.FSharp.Editor
+open Microsoft.VisualStudio.FSharp.Editor.SiteProvider
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.LanguageServices.Implementation.LanguageService
@@ -34,17 +35,44 @@ open Microsoft.VisualStudio.LanguageServices.ProjectSystem
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.ComponentModelHost
+open Microsoft.VisualStudio.Text.Outlining
+open FSharp.NativeInterop
+
+#nowarn "9" // NativePtr.toNativeInt
 
 // Exposes FSharpChecker as MEF export
 [<Export(typeof<FSharpCheckerProvider>); Composition.Shared>]
 type internal FSharpCheckerProvider 
     [<ImportingConstructor>]
     (
-        analyzerService: IDiagnosticAnalyzerService
+        analyzerService: IDiagnosticAnalyzerService,
+        [<Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspaceImpl
     ) =
 
-    // Enabling this would mean that if devenv.exe goes above 2.3GB we do a one-off downsize of the F# Compiler Service caches
-    //let maxMemory = 2300 
+    let tryGetMetadataSnapshot (path, timeStamp) = 
+        try
+            let metadataReferenceProvider = workspace.Services.GetService<VisualStudioMetadataReferenceManager>()
+            let md = metadataReferenceProvider.GetMetadata(path, timeStamp)
+            let amd = (md :?> AssemblyMetadata)
+            let mmd = amd.GetModules().[0]
+            let mmr = mmd.GetMetadataReader()
+
+            // "lifetime is timed to Metadata you got from the GetMetadata(...). As long as you hold it strongly, raw 
+            // memory we got from metadata reader will be alive. Once you are done, just let everything go and 
+            // let finalizer handle resource rather than calling Dispose from Metadata directly. It is shared metadata. 
+            // You shouldn't dispose it directly."
+
+            let objToHold = box md
+
+            // We don't expect any ilread WeakByteFile to be created when working in Visual Studio
+            Debug.Assert((Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader.GetStatistics().weakByteFileCount = 0), "Expected weakByteFileCount to be zero when using F# in Visual Studio. Was there a problem reading a .NET binary?")
+
+            Some (objToHold, NativePtr.toNativeInt mmr.MetadataPointer, mmr.MetadataLength)
+        with ex -> 
+            // We catch all and let the backup routines in the F# compiler find the error
+            Assert.Exception(ex)
+            None 
+
 
     let checker = 
         lazy
@@ -52,26 +80,25 @@ type internal FSharpCheckerProvider
                 FSharpChecker.Create(
                     projectCacheSize = Settings.LanguageServicePerformance.ProjectCheckCacheSize, 
                     keepAllBackgroundResolutions = false,
+                    // Enabling this would mean that if devenv.exe goes above 2.3GB we do a one-off downsize of the F# Compiler Service caches
                     (* , MaxMemory = 2300 *) 
-                    legacyReferenceResolver=Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver)
+                    legacyReferenceResolver=Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver,
+                    tryGetMetadataSnapshot = tryGetMetadataSnapshot)
 
             // This is one half of the bridge between the F# background builder and the Roslyn analysis engine.
             // When the F# background builder refreshes the background semantic build context for a file,
             // we request Roslyn to reanalyze that individual file.
-            checker.BeforeBackgroundFileCheck.Add(fun (fileName, extraProjectInfo) ->  
+            checker.BeforeBackgroundFileCheck.Add(fun (fileName, _extraProjectInfo) ->  
                 async {
                     try 
-                        match extraProjectInfo with 
-                        | Some (:? Workspace as workspace) -> 
-                            let solution = workspace.CurrentSolution
-                            let documentIds = solution.GetDocumentIdsWithFilePath(fileName)
-                            if not documentIds.IsEmpty then 
-                                let documentIdsFiltered = documentIds |> Seq.filter workspace.IsDocumentOpen |> Seq.toArray
-                                for documentId in documentIdsFiltered do
-                                    Trace.TraceInformation("{0:n3} Requesting Roslyn reanalysis of {1}", DateTime.Now.TimeOfDay.TotalSeconds, documentId)
-                                if documentIdsFiltered.Length > 0 then 
-                                    analyzerService.Reanalyze(workspace,documentIds=documentIdsFiltered)
-                        | _ -> ()
+                        let solution = workspace.CurrentSolution
+                        let documentIds = solution.GetDocumentIdsWithFilePath(fileName)
+                        if not documentIds.IsEmpty then 
+                            let documentIdsFiltered = documentIds |> Seq.filter workspace.IsDocumentOpen |> Seq.toArray
+                            for documentId in documentIdsFiltered do
+                                Trace.TraceInformation("{0:n3} Requesting Roslyn reanalysis of {1}", DateTime.Now.TimeOfDay.TotalSeconds, documentId)
+                            if documentIdsFiltered.Length > 0 then 
+                                analyzerService.Reanalyze(workspace,documentIds=documentIdsFiltered)
                     with ex -> 
                         Assert.Exception(ex)
                 } |> Async.StartImmediate
@@ -226,13 +253,23 @@ type internal FSharpProjectOptionsManager
 
     [<Export>]
     /// This handles commandline change notifications from the Dotnet Project-system
+    /// Prior to VS 15.7 path contained path to project file, post 15.7 contains target binpath
+    /// binpath is more accurate because a project file can have multiple in memory projects based on configuration
     member this.HandleCommandLineChanges(path:string, sources:ImmutableArray<CommandLineSourceFile>, references:ImmutableArray<CommandLineReference>, options:ImmutableArray<string>) =
+        use _logBlock = Logger.LogBlock(LogEditorFunctionId.HandleCommandLineArgs)
+
+        let projectId =
+            match workspace.ProjectTracker.TryGetProjectByBinPath(path) with
+            | true, project -> project.Id
+            | false, _ -> workspace.ProjectTracker.GetOrCreateProjectIdForPath(path, projectDisplayNameOf path)
+        let project =  workspace.ProjectTracker.GetProject(projectId)
+        let path = project.ProjectFilePath
         let fullPath p =
-            if Path.IsPathRooted(p) then p
+            if Path.IsPathRooted(p) || path = null then p
             else Path.Combine(Path.GetDirectoryName(path), p)
         let sourcePaths = sources |> Seq.map(fun s -> fullPath s.Path) |> Seq.toArray
         let referencePaths = references |> Seq.map(fun r -> fullPath r.Reference) |> Seq.toArray
-        let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(path, projectDisplayNameOf path)
+
         projectOptionsTable.SetOptionsWithProjectId(projectId, sourcePaths, referencePaths, options.ToArray())
         this.UpdateProjectInfoWithProjectId(projectId, "HandleCommandLineChanges", invalidateConfig=true)
 
@@ -271,51 +308,96 @@ type internal FSharpCheckerWorkspaceServiceFactory
                 member this.Checker = checkerProvider.Checker
                 member this.FSharpProjectOptionsManager = projectInfoManager }
 
-type
-    [<Guid(FSharpConstants.packageGuidString)>]
-    [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.IntelliSenseOptionPage>, "F#", null, "IntelliSense", "6008")>]
-    [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.QuickInfoOptionPage>, "F#", null, "QuickInfo", "6009")>]
-    [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.CodeFixesOptionPage>, "F#", null, "Code Fixes", "6010")>]
-    [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.LanguageServicePerformanceOptionPage>, "F#", null, "Performance", "6011")>]
-    [<ProvideLanguageService(languageService = typeof<FSharpLanguageService>,
-                             strLanguageName = FSharpConstants.FSharpLanguageName,
-                             languageResourceID = 100,
-                             MatchBraces = true,
-                             MatchBracesAtCaret = true,
-                             ShowCompletion = true,
-                             ShowMatchingBrace = true,
-                             ShowSmartIndent = true,
-                             EnableAsyncCompletion = true,
-                             QuickInfo = true,
-                             DefaultToInsertSpaces = true,
-                             CodeSense = true,
-                             DefaultToNonHotURLs = true,
-                             RequestStockColors = true,
-                             EnableCommenting = true,
-                             CodeSenseDelay = 100,
-                             ShowDropDownOptions = true)>]
-    internal FSharpPackage() =
+[<Guid(FSharpConstants.packageGuidString)>]
+[<ProvideOptionPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>,
+                    "F# Tools", "F# Interactive",   // category/sub-category on Tools>Options...
+                    6000s,      6001s,              // resource id for localisation of the above
+                    true)>]                         // true = supports automation
+[<ProvideKeyBindingTable("{dee22b65-9761-4a26-8fb2-759b971d6dfc}", 6001s)>] // <-- resource ID for localised name
+[<ProvideToolWindow(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow>, 
+                    // The following should place the ToolWindow with the OutputWindow by default.
+                    Orientation=ToolWindowOrientation.Bottom,
+                    Style=VsDockStyle.Tabbed,
+                    PositionX = 0,
+                    PositionY = 0,
+                    Width = 360,
+                    Height = 120,
+                    Window="34E76E81-EE4A-11D0-AE2E-00A0C90FFFC3")>]
+[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.IntelliSenseOptionPage>, "F#", null, "IntelliSense", "6008")>]
+[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.QuickInfoOptionPage>, "F#", null, "QuickInfo", "6009")>]
+[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.CodeFixesOptionPage>, "F#", null, "Code Fixes", "6010")>]
+[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.LanguageServicePerformanceOptionPage>, "F#", null, "Performance", "6011")>]
+[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.AdvancedSettingsOptionPage>, "F#", null, "Advanced", "6012")>]
+[<ProvideFSharpVersionRegistration(FSharpConstants.projectPackageGuidString, "Microsoft Visual F#")>]
+// 64 represents a hex number. It needs to be greater than 37 so the TextMate editor will not be chosen as higher priority.
+[<ProvideEditorExtension(typeof<FSharpEditorFactory>, ".fs", 64)>]
+[<ProvideEditorExtension(typeof<FSharpEditorFactory>, ".fsi", 64)>]
+[<ProvideEditorExtension(typeof<FSharpEditorFactory>, ".fsscript", 64)>]
+[<ProvideEditorExtension(typeof<FSharpEditorFactory>, ".fsx", 64)>]
+[<ProvideEditorExtension(typeof<FSharpEditorFactory>, ".ml", 64)>]
+[<ProvideEditorExtension(typeof<FSharpEditorFactory>, ".mli", 64)>]
+[<ProvideEditorFactory(typeof<FSharpEditorFactory>, 101s, CommonPhysicalViewAttributes = Constants.FSharpEditorFactoryPhysicalViewAttributes)>]
+[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fs")>]
+[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsi")>]
+[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsx")>]
+[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsscript")>]
+[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".ml")>]
+[<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".mli")>]
+[<ProvideLanguageService(languageService = typeof<FSharpLanguageService>,
+                            strLanguageName = FSharpConstants.FSharpLanguageName,
+                            languageResourceID = 100,
+                            MatchBraces = true,
+                            MatchBracesAtCaret = true,
+                            ShowCompletion = true,
+                            ShowMatchingBrace = true,
+                            ShowSmartIndent = true,
+                            EnableAsyncCompletion = true,
+                            QuickInfo = true,
+                            DefaultToInsertSpaces = true,
+                            CodeSense = true,
+                            DefaultToNonHotURLs = true,
+                            RequestStockColors = true,
+                            EnableCommenting = true,
+                            CodeSenseDelay = 100,
+                            ShowDropDownOptions = true)>]
+type internal FSharpPackage() as this =
     inherit AbstractPackage<FSharpPackage, FSharpLanguageService>()
+
+    let mutable vfsiToolWindow = Unchecked.defaultof<Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow>
+    let GetToolWindowAsITestVFSI() =
+        if vfsiToolWindow = Unchecked.defaultof<_> then
+            vfsiToolWindow <- this.FindToolWindow(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow>, 0, true) :?> Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow
+        vfsiToolWindow :> Microsoft.VisualStudio.FSharp.Interactive.ITestVFSI
+
+    // FSI-LINKAGE-POINT: unsited init
+    do Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
 
     override this.Initialize() =
         base.Initialize()
+
         this.ComponentModel.GetService<SettingsPersistence.ISettings>() |> ignore
+
+        // FSI-LINKAGE-POINT: sited init
+        let commandService = this.GetService(typeof<IMenuCommandService>) :?> OleMenuCommandService // FSI-LINKAGE-POINT
+        Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitalizeSited (this :> Package) commandService
+        // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
+        let _fsiPropertyPage = this.GetDialogPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>)
+        ()
 
     override this.RoslynLanguageName = FSharpConstants.FSharpLanguageName
     override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
     override this.CreateLanguageService() = FSharpLanguageService(this)
-    override this.CreateEditorFactories() = Seq.empty<IVsEditorFactory>
+    override this.CreateEditorFactories() = seq { yield FSharpEditorFactory(this) :> IVsEditorFactory }
     override this.RegisterMiscellaneousFilesWorkspaceInformation(_) = ()
 
-type
-    [<Guid(FSharpConstants.languageServiceGuidString)>]
-    [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fs")>]
-    [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsi")>]
-    [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsx")>]
-    [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsscript")>]
-    [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".ml")>]
-    [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".mli")>]
-    internal FSharpLanguageService(package : FSharpPackage) =
+    interface Microsoft.VisualStudio.FSharp.Interactive.ITestVFSI with
+        member this.SendTextInteraction(s:string) =
+            GetToolWindowAsITestVFSI().SendTextInteraction(s)
+        member this.GetMostRecentLines(n:int) : string[] =
+            GetToolWindowAsITestVFSI().GetMostRecentLines(n)
+
+[<Guid(FSharpConstants.languageServiceGuidString)>]
+type internal FSharpLanguageService(package : FSharpPackage) =
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService>(package)
 
     let projectInfoManager = package.ComponentModel.DefaultExportProvider.GetExport<FSharpProjectOptionsManager>().Value
@@ -564,6 +646,13 @@ type
         base.SetupNewTextView(textView)
 
         let textViewAdapter = package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
+
+        // Toggles outlining (or code folding) based on settings
+        let outliningManagerService = this.Package.ComponentModel.GetService<IOutliningManagerService>()
+        let wpfTextView = this.EditorAdaptersFactoryService.GetWpfTextView(textView)
+        let outliningManager = outliningManagerService.GetOutliningManager(wpfTextView)
+        if not (isNull outliningManager) then
+            outliningManager.Enabled <- Settings.Advanced.IsOutliningEnabled
 
         match textView.GetBuffer() with
         | (VSConstants.S_OK, textLines) ->

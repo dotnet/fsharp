@@ -44,7 +44,7 @@
     <Reference Include="System.Numerics" Condition="'$(TargetDotnetProfile)' == 'net40'" />
     <Reference Include="System.Core" />
     <Reference Include="System.ValueTuple">
-        <HintPath>..\..\..\packages\System.ValueTuple.4.3.1\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+        <HintPath>..\..\..\packages\System.ValueTuple.4.4.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -60,10 +60,9 @@
       <Name>FSharp.Compiler.Private</Name>
       <Project>{2e4d67b4-522d-4cf7-97e4-ba940f0b18f3}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\FSharp.Core\FSharp.Core.fsproj">
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
+      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
-      <Project>{ded3bbd7-53f4-428a-8c9f-27968e768605}</Project>
-      <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />

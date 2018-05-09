@@ -7,7 +7,6 @@ open System.Collections.Generic
 open System.Composition
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Classification
-open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.LanguageServices.Implementation.F1Help
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.FSharp.Compiler
@@ -105,8 +104,8 @@ type internal FSharpHelpContextService
                 let! textVersion = document.GetTextVersionAsync(cancellationToken)
                 let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
                 let textLine = sourceText.Lines.GetLineFromPosition(textSpan.Start)
-                let tokens = Tokenizer.getColorizationData(document.Id, sourceText, textLine.Span, Some document.Name, defines, cancellationToken)
-                return! FSharpHelpContextService.GetHelpTerm(checkerProvider.Checker, sourceText, document.FilePath, projectOptions, textSpan, tokens, textVersion.GetHashCode())
+                let classifiedSpans = Tokenizer.getClassifiedSpans(document.Id, sourceText, textLine.Span, Some document.Name, defines, cancellationToken)
+                return! FSharpHelpContextService.GetHelpTerm(checkerProvider.Checker, sourceText, document.FilePath, projectOptions, textSpan, classifiedSpans, textVersion.GetHashCode())
             } 
             |> Async.map (Option.defaultValue "")
             |> RoslynHelpers.StartAsyncAsTask cancellationToken

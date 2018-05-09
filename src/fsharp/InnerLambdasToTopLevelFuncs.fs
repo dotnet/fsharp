@@ -826,7 +826,7 @@ let CreateNewValuesForTLR g tlrS arityM fclassM envPackM =
         let wf     = Zmap.force f arityM ("createFHat - wf",(fun v -> showL (valL v)))
         let fc     = Zmap.force f fclassM ("createFHat - fc",nameOfVal)
         let envp   = Zmap.force fc envPackM ("CreateNewValuesForTLR - envp",string)
-        let name   = f.LogicalName (* ^ "_TLR_" ^ string wf *)
+        let name   = f.LogicalName (* + "_TLR_" + string wf *)
         let m      = f.Range
         let tps,tau    = f.TypeScheme
         let argtys,res = stripFunTy g tau
@@ -1249,9 +1249,9 @@ module Pass4_RewriteAssembly =
     and TransValBindings penv z binds = List.mapFold (TransValBinding penv) z  binds
     and TransModuleExpr penv z x = 
         match x with  
-        | ModuleOrNamespaceExprWithSig(mty,def,m) ->  
+        | ModuleOrNamespaceExprWithSig(mty, def, m) ->  
             let def,z = TransModuleDef penv z def
-            ModuleOrNamespaceExprWithSig(mty,def,m),z
+            ModuleOrNamespaceExprWithSig(mty, def, m),z
         
     and TransModuleDefs penv z x = List.mapFold (TransModuleDef penv) z x
     and TransModuleDef penv (z: RewriteState) x : ModuleOrNamespaceExpr * RewriteState = 

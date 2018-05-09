@@ -1422,6 +1422,11 @@
         <target state="translated"> 일치하지 않는 요소는 무시됩니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="EnumMatchIncomplete1">
+        <source>Enums may take values outside known cases.</source>
+        <target state="translated">열거형이 알려진 사례를 벗어난 값을 사용할 수 있습니다.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="RuleNeverMatched">
         <source>This rule will never be matched</source>
         <target state="translated">이 규칙은 일치시킬 수 없습니다.</target>
