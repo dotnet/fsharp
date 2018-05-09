@@ -38,12 +38,12 @@ type ILReaderMetadataSnapshot = (obj * nativeint * int)
 type ILReaderTryGetMetadataSnapshot = (* path: *) string * (* snapshotTimeStamp: *) System.DateTime -> ILReaderMetadataSnapshot option
 
 [<RequireQualifiedAccess>]
-type internal MetadataOnlyFlag = Yes | No
+type MetadataOnlyFlag = Yes | No
 
 [<RequireQualifiedAccess>]
-type internal ReduceMemoryFlag = Yes | No
+type ReduceMemoryFlag = Yes | No
 
-type internal ILReaderOptions =
+type ILReaderOptions =
    { pdbDirPath: string option
 
      ilGlobals: ILGlobals
@@ -67,7 +67,9 @@ type internal ILReaderOptions =
 /// Represents a reader of the metadata of a .NET binary.  May also give some values (e.g. IL code) from the PE file
 /// if it was provided.
 [<Sealed>]
-type internal ILModuleReader =
+type ILModuleReader =
+    new: ilModule: ILModuleDef * ilAssemblyRefs: Lazy<ILAssemblyRef list> * dispose: (unit -> unit) -> ILModuleReader
+
     member ILModuleDef : ILModuleDef
     member ILAssemblyRefs : ILAssemblyRef list
     
@@ -90,3 +92,15 @@ type Statistics =
       mutable byteFileCount : int }
 
 val GetStatistics : unit -> Statistics
+
+[<AutoOpen>]
+module Shim =
+
+    type IAssemblyReader =
+        abstract GetILModuleReader: filename: string * readerOptions: ILReaderOptions -> ILModuleReader
+
+    [<Sealed>]
+    type DefaultAssemblyReader =
+        interface IAssemblyReader
+
+    val mutable AssemblyReader: IAssemblyReader

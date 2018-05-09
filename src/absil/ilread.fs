@@ -4083,5 +4083,17 @@ let OpenILModuleReader fileName opts =
 
         ilModuleReader
 
+[<AutoOpen>]
+module Shim =
+    open Microsoft.FSharp.Compiler.Lib
 
+    type IAssemblyReader =
+        abstract GetILModuleReader: filename: string * readerOptions: ILReaderOptions -> ILModuleReader
 
+    [<Sealed>]
+    type DefaultAssemblyReader() =
+        interface IAssemblyReader with
+            member __.GetILModuleReader(filename, readerOptions) =
+                OpenILModuleReader filename readerOptions
+
+    let mutable AssemblyReader = DefaultAssemblyReader() :> IAssemblyReader
