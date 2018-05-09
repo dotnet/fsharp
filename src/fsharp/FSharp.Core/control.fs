@@ -256,7 +256,7 @@ namespace Microsoft.FSharp.Control
         /// Call the cancellation continuation of the active computation
         member ctxt.OnCancellation () =
             ctxt.aux.ccont (new OperationCanceledException (ctxt.aux.token))
-                   
+           
         member ctxt.OnSuccess result =
             if ctxt.IsCancellationRequested then
                 ctxt.OnCancellation ()
@@ -266,7 +266,7 @@ namespace Microsoft.FSharp.Control
         /// Call the exception continuation of the active computation
         member ctxt.CallExceptionContinuation edi =
             ctxt.aux.econt edi
-        
+
     [<NoEquality; NoComparison>]
     [<CompiledName("FSharpAsync`1")>]
     type Async<'T> =
@@ -435,6 +435,9 @@ namespace Microsoft.FSharp.Control
             let trampolineHolder = new TrampolineHolder()
             trampolineHolder.QueueWorkItem (fun () -> startA cancellationToken trampolineHolder cont econt ccont p)
 
+        /// Build a primitive without any exception or resync protection
+        let MakeAsync body = { Invoke = body }
+
         /// Use this to recover ExceptionDispatchInfo when outside the "with" part of a try/with block.
         /// This indicates all the places where we lose a stack trace.
         ///
@@ -442,9 +445,6 @@ namespace Microsoft.FSharp.Control
         /// notably .NET 4.x tasks and user exceptions passed to the exception continuation in Async.FromContinuations.
         let MayLoseStackTrace exn = ExceptionDispatchInfo.RestoreOrCapture exn
                  
-        /// Build a primitive without any exception or resync protection
-        let MakeAsync body = { Invoke = body }
-
         /// Build a context suitable for running part1 of a computation and passing the result to part2f
         let bindPart2 ctxt part2f =
             let cont a = protectUserCodeNoHijackCheck part2f a ctxt.aux.econt (fun part2 -> part2.Invoke ctxt)
@@ -625,7 +625,7 @@ namespace Microsoft.FSharp.Control
                     (delayA (fun () -> computation ie.Current)))
 
         let switchTo (syncCtxt: SynchronizationContext) =
-            protectUserCodeAsAsync (fun ctxt -> 
+            protectUserCodeAsAsync (fun ctxt ->
                 ctxt.aux.trampolineHolder.Post syncCtxt (fun () -> ctxt.cont ()))
 
         let switchToNewThread() =
@@ -656,7 +656,7 @@ namespace Microsoft.FSharp.Control
                                      ccont = (fun x -> trampolineHolder.Post syncCtxt (fun () -> aux.ccont x)) }
                 }
 
-        // When run, ensures that each of the continuations of the process are run in the same synchronization ctxt.
+        // When run, ensures that each of the continuations of the process are run in the same synchronization context.
         let protectUserCodeAsAsyncWithResync f = 
             protectUserCodeAsAsync (fun ctxt -> 
                 let ctxtWithSync = delimitSyncContext ctxt
@@ -918,7 +918,7 @@ namespace Microsoft.FSharp.Control
         let RunSynchronously (token:CancellationToken,computation,timeout) =
             // Reuse the current ThreadPool thread if possible. Unfortunately
             // Thread.IsThreadPoolThread isn't available on all profiles so
-            // we approximate it by testing synchronization ctxt for null.
+            // we approximate it by testing synchronization context for null.
             match SynchronizationContext.Current, timeout with
             | null, None -> RunSynchronouslyInCurrentThread (token, computation)
             // When the timeout is given we need a dedicated thread
@@ -1085,7 +1085,7 @@ namespace Microsoft.FSharp.Control
     [<Sealed>]
     [<CompiledName("FSharpAsyncBuilder")>]
     type AsyncBuilder() =
-        member b.Zero () = unitAsync
+        member __.Zero () = unitAsync
 
         member inline __.Delay generator = delayA generator
 
@@ -1640,7 +1640,7 @@ namespace Microsoft.FSharp.Control
         static member SwitchToContext syncContext =
             async { match syncContext with 
                     | null -> 
-                        // no synchronization ctxt, just switch to the thread pool
+                        // no synchronization context, just switch to the thread pool
                         do! Async.SwitchToThreadPool()
                     | syncCtxt -> 
                         // post the continuation to the synchronization context
@@ -1705,8 +1705,8 @@ namespace Microsoft.FSharp.Control
                 let offset = defaultArg offset 0
                 let count  = defaultArg count buffer.Length
 #if FX_NO_BEGINEND_READWRITE
-                // use combo protectUserCodeAsAsyncWithResync + taskContinueWith instead of AwaitTask so we can pass cancellation token to the WriteAsync task
-                protectUserCodeAsAsyncWithResync (fun ctxt -> TaskHelpers.taskContinueWithUnit (stream.WriteAsync(buffer, offset, count, ctxt.aux.token)) ctxt false)
+                // use combo protectUserCodeAsAsyncWithResync + taskContinueWithUnit instead of AwaitTask so we can pass cancellation token to the WriteAsync task
+                protectUserCodeAsAsyncWithResync (fun ctxt -> taskContinueWithUnit (stream.WriteAsync(buffer, offset, count, ctxt.aux.token)) ctxt false)
 #else
                 Async.FromBeginEnd (buffer,offset,count,stream.BeginWrite,stream.EndWrite)
 #endif
@@ -1719,7 +1719,7 @@ namespace Microsoft.FSharp.Control
             [<CompiledName("SubscribeToObservable")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
             member x.Subscribe(callback) = 
                 x.Subscribe { new IObserver<'Args> with 
-                                  member x.OnNext(ctxt) = callback ctxt 
+                                  member x.OnNext(args) = callback args 
                                   member x.OnError(e) = () 
                                   member x.OnCompleted() = () } 
 
@@ -1778,7 +1778,7 @@ namespace Microsoft.FSharp.Control
                     event   = this.DownloadStringCompleted,
                     handler = (fun action    -> Net.DownloadStringCompletedEventHandler(action)),
                     start   = (fun userToken -> this.DownloadStringAsync(address, userToken)),
-                    result  = (fun ctxt      -> ctxt.Result)
+                    result  = (fun args      -> args.Result)
                 )
 
             [<CompiledName("AsyncDownloadData")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
@@ -1787,7 +1787,7 @@ namespace Microsoft.FSharp.Control
                     event   = this.DownloadDataCompleted,
                     handler = (fun action    -> Net.DownloadDataCompletedEventHandler(action)),
                     start   = (fun userToken -> this.DownloadDataAsync(address, userToken)),
-                    result  = (fun ctxt      -> ctxt.Result)
+                    result  = (fun args      -> args.Result)
                 )
 
             [<CompiledName("AsyncDownloadFile")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
