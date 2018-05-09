@@ -6,6 +6,7 @@
       "values": [
         "insertion\\Microsoft.FSharp.Compiler.vsix",
         "insertion\\Microsoft.FSharp.Compiler.Resources.*.vsix",
+        "insertion\\Microsoft.FSharp.SDK.Core.vsix",
         "insertion\\Microsoft.FSharp.SDK.Resources.*.vsix"
       ]
     }

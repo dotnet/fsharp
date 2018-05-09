@@ -789,18 +789,6 @@ if not "%SIGN_TYPE%" == "" (
 )
 
 if "%BUILD_SETUP%" == "1" (
-    echo %_msbuildexe% %msbuildflags% setup\build-msi.proj /p:Configuration=%BUILD_CONFIG%
-         %_msbuildexe% %msbuildflags% setup\build-msi.proj /p:Configuration=%BUILD_CONFIG%
-    if ERRORLEVEL 1 echo Error building MSI && goto :failure
-)
-
-if not "%SIGN_TYPE%" == "" (
-    echo build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -Configuration %BUILD_CONFIG% -ConfigFile build\config\MsiSignToolData.json
-    call build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -Configuration %BUILD_CONFIG% -ConfigFile build\config\MsiSignToolData.json
-    if ERRORLEVEL 1 echo Error running sign tool && goto :failure
-)
-
-if "%BUILD_SETUP%" == "1" (
     echo %_msbuildexe% %msbuildflags% setup\build-insertion.proj /p:Configuration=%BUILD_CONFIG%
          %_msbuildexe% %msbuildflags% setup\build-insertion.proj /p:Configuration=%BUILD_CONFIG%
     if ERRORLEVEL 1 echo Error building insertion packages && goto :failure
