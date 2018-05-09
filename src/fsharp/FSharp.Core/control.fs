@@ -96,11 +96,6 @@ namespace Microsoft.FSharp.Control
     type econt = (ExceptionDispatchInfo -> AsyncReturn)
     type ccont = (OperationCanceledException -> AsyncReturn)
 
-
-
-    //----------------------------------
-    // PRIMITIVE ASYNC TRAMPOLINE
-
     [<AllowNullLiteral>]
     type Trampoline() = 
 
