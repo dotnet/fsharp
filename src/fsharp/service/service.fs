@@ -229,8 +229,7 @@ type TypeCheckInfo
             match !bestAlmostIncludedSoFar, mostDeeplyNestedEnclosingScope with 
             | Some (_,env,ad), None -> env, ad
             | Some (_,almostIncludedEnv,ad), Some (_,mostDeeplyNestedEnv,_) 
-                when not almostIncludedEnv.eIsComputationExpression 
-                     && almostIncludedEnv.eFieldLabels.Count >= mostDeeplyNestedEnv.eFieldLabels.Count -> 
+                when almostIncludedEnv.eFieldLabels.Count >= mostDeeplyNestedEnv.eFieldLabels.Count -> 
                 almostIncludedEnv,ad
             | _ -> 
                 match mostDeeplyNestedEnclosingScope with 

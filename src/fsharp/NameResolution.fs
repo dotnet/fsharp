@@ -368,8 +368,6 @@ type NameResolutionEnv =
       /// in the tpenv, a structure folded through each top-level definition. 
       eTypars: NameMap<Typar>
 
-      /// Indicates if this name resolution environment corresponds to a full computation expression.
-      eIsComputationExpression: bool
     } 
 
     /// The initial, empty name resolution environment. The mother of all things.
@@ -386,8 +384,7 @@ type NameResolutionEnv =
           eFullyQualifiedTyconsByDemangledNameAndArity = LayeredMap.Empty
           eIndexedExtensionMembers = TyconRefMultiMap<_>.Empty
           eUnindexedExtensionMembers = []
-          eTypars = Map.empty 
-          eIsComputationExpression = false }
+          eTypars = Map.empty }
 
     member nenv.DisplayEnv = nenv.eDisplayEnv
 

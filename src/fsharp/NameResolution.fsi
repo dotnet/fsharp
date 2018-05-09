@@ -154,8 +154,7 @@ type NameResolutionEnv =
      eFullyQualifiedTyconsByDemangledNameAndArity: LayeredMap<NameArityPair,TyconRef>
      eIndexedExtensionMembers: TyconRefMultiMap<ExtensionMember>
      eUnindexedExtensionMembers: ExtensionMember list
-     eTypars: NameMap<Typar> 
-     eIsComputationExpression: bool}
+     eTypars: NameMap<Typar> }
     static member Empty : g:TcGlobals -> NameResolutionEnv
     member DisplayEnv : DisplayEnv
     member FindUnqualifiedItem : string -> Item
