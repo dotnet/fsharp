@@ -455,13 +455,13 @@ namespace Microsoft.FSharp.Control
         val MakeAsync: body:(AsyncActivation<'T> -> AsyncReturn) -> Async<'T>
 
         /// Calls to this member are emitted in compiled code
-        val Call: ctxt:AsyncActivation<'T> -> result1:'U -> part2f:('U -> Async<'T>) -> AsyncReturn
+        val Call: ctxt:AsyncActivation<'T> -> result1:'U -> part2:('U -> Async<'T>) -> AsyncReturn
 
         // /// Calls to this member are emitted in compiled code
         // val CallDelay: ctxt:AsyncActivation<'T> -> generator:(unit -> Async<'T>) -> AsyncReturn
 
         /// Calls to this member are emitted in compiled code
-        val Bind: keepStack: bool -> ctxt:AsyncActivation<'T> -> part1:Async<'U> -> part2f:('U -> Async<'T>) -> AsyncReturn
+        val Bind: keepStack: bool -> ctxt:AsyncActivation<'T> -> part1:Async<'U> -> part2:('U -> Async<'T>) -> AsyncReturn
 
         /// Calls to this member are emitted in compiled code
         val TryFinally: ctxt:AsyncActivation<'T> -> finallyFunction: (unit -> unit) -> computation: Async<'T> -> AsyncReturn
