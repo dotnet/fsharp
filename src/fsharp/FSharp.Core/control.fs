@@ -375,8 +375,8 @@ namespace Microsoft.FSharp.Control
                 with exn -> 
                     let edi = ExceptionDispatchInfo.RestoreOrCapture(exn)
                     ctxt.CallExceptionContinuation edi
- 
-        /// Reify exceptional results as exceptions
+
+       /// Reify exceptional results as exceptions
         let commit res =
             match res with
             | AsyncResult.Ok res -> res
@@ -577,8 +577,8 @@ namespace Microsoft.FSharp.Control
                     let econt (edi: ExceptionDispatchInfo) = 
                         let ecomputation = callA catchFunction edi
                         ecomputation.Invoke ctxt
-                    let ctxt = { ctxt with aux = { ctxt.aux with econt = econt } }
-                    computation.Invoke ctxt) 
+                    let newCtxt = { ctxt with aux = { ctxt.aux with econt = econt } }
+                    computation.Invoke newCtxt) 
 
         let tryWithExnA catchFunction computation = 
             computation |> tryWithDispatchInfoA (fun edi -> catchFunction (edi.GetAssociatedSourceException()))
@@ -588,8 +588,8 @@ namespace Microsoft.FSharp.Control
             MakeAsync (fun ctxt ->
                 let aux = ctxt.aux
                 let ccont exn = protectUserCodeIncludingHijackCheck aux.trampolineHolder finallyFunction exn (fun _ -> aux.ccont exn) (fun _ -> aux.ccont exn)
-                let ctxt = { ctxt with aux = { aux with ccont = ccont } }
-                computation.Invoke ctxt)
+                let newCtxt = { ctxt with aux = { aux with ccont = ccont } }
+                computation.Invoke newCtxt)
 
         /// A single pre-allocated computation that fetched the current cancellation token
         let GetCancellationTokenAsync  =
@@ -850,6 +850,7 @@ namespace Microsoft.FSharp.Control
                             // timed out
                             None
 
+
         type FuncDelegate<'T>(f) =
             member __.Invoke(sender:obj, a:'T) : unit = ignore(sender); f(a)
             static member Create<'Delegate when 'Delegate :> Delegate>(f) = 
@@ -995,7 +996,6 @@ namespace Microsoft.FSharp.Control
         [<Sealed>]
         [<AutoSerializable(false)>]
         type AsyncIAsyncResult<'T>(callback: System.AsyncCallback,state:obj) =
-
              // This gets set to false if the result is not available by the 
              // time the IAsyncResult is returned to the caller of Begin
              let mutable completedSynchronously = true 
@@ -1103,7 +1103,6 @@ namespace Microsoft.FSharp.Control
 
     module AsyncImpl = 
         let async = AsyncBuilder()
-
 
     open AsyncImpl
     
