@@ -172,15 +172,15 @@ namespace Microsoft.FSharp.Control
                         | Some cont -> 
                             storedCont <- None
                             action <- cont
+                    // Let the exception propagate all the way to the trampoline to get a full .StackTrace entry
                     with exn -> 
                         match storedExnCont with
                         | None ->
                             reraise()
                         | Some econt -> 
                             storedExnCont <- None
-                            keepGoing <- false
                             let edi = ExceptionDispatchInfo.RestoreOrCapture exn
-                            econt edi |> unfake
+                            action <- (fun () -> econt edi)
                         
             finally
                 if thisIsTopTrampoline then
