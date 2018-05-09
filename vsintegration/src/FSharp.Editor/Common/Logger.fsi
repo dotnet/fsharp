@@ -10,6 +10,10 @@ type (* internal *) LogEditorFunctionId =
     | SemanticClassification = 1
     | SyntacticClassification = 2
     | HandleCommandLineArgs = 3
+    | Completion_ShouldTrigger = 4
+    | Completion_ProvideCompletionsAsync = 5
+    | Completion_GetDescriptionAsync = 6
+    | Completion_GetChangeAsync = 7
 
 [<RequireQualifiedAccess>]
 module internal Logger =
@@ -21,3 +25,5 @@ module internal Logger =
     val LogBlockStop : LogEditorFunctionId -> unit
 
     val LogBlock : LogEditorFunctionId -> IDisposable
+
+    val LogBlockMessage : message: string -> LogEditorFunctionId -> IDisposable
