@@ -7,11 +7,16 @@ open Test
 
 // ======= Existing type testing ========
 
-type XInt = Generic.IdentityType<string>
+type If<'cond, 'a, 'b> = Generic.IfThenElse<'cond, 'a, 'b>
+type IntOrString<'cond> = If<'cond, int, string>
 
-let f (x : XInt) = x + "hello"
+type XInt = IntOrString<true>
 
-printfn "%A" (f "10")
+let f (x : XInt) = x
+
+printfn "%A" (f 10)
+
+  
 
 // =========== Alias testing ============
 

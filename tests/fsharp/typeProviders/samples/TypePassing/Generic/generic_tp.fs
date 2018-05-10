@@ -34,9 +34,33 @@ type TypePassingTp(config: TypeProviderConfig) as this =
 
     do genericMethodType.AddMember(builder)
 
-    // ====== Generic Types ========
+    // ====== Returning types ========
 
     let idType = ProvidedTypeDefinition(runtimeAssembly, ns, "IdentityType", baseType = Some typeof<obj>, hideObjectMethods=true)
+
+    do idType.DefineStaticParameters(
+        [
+            ProvidedStaticParameter("Type",typeof<Type>, null)
+        ], fun typeName args -> unbox args.[0])
+
+    let constType = ProvidedTypeDefinition(runtimeAssembly, ns, "ConstType", baseType = Some typeof<obj>, hideObjectMethods=true)
+    do constType.DefineStaticParameters(
+        [
+            ProvidedStaticParameter("Type1",typeof<Type>, null)
+            ProvidedStaticParameter("Type2",typeof<Type>, null)
+        ], fun typeName args -> unbox args.[0])
+
+    let ifThenElseType = ProvidedTypeDefinition(runtimeAssembly, ns, "IfThenElse", baseType = Some typeof<obj>, hideObjectMethods=true)
+    do ifThenElseType.DefineStaticParameters(
+        [
+            ProvidedStaticParameter("Cond",typeof<bool>, null)
+            ProvidedStaticParameter("A",typeof<Type>, null)
+            ProvidedStaticParameter("B",typeof<Type>, null)
+        ], fun typeName args -> if unbox args.[0] then unbox args.[1] else unbox args.[2])
+
+    // ====== Generic Types ========
+
+    let idFunc = ProvidedTypeDefinition(runtimeAssembly, ns, "IdentityFunction", baseType = Some typeof<obj>, hideObjectMethods=true)
 
     let createIdType (t : Type) (name : string) : ProvidedTypeDefinition =
         let invoke (xs : Quotations.Expr list) =
@@ -46,14 +70,14 @@ type TypePassingTp(config: TypeProviderConfig) as this =
         newType.AddMember(m)
         newType
 
-    do idType.DefineStaticParameters(
+    do idFunc.DefineStaticParameters(
         [
             ProvidedStaticParameter("Type",typeof<Type>, null)
-        ], fun typeName args -> unbox args.[0]) //createIdType (unbox args.[0]) typeName :> Type)
+        ], fun typeName args -> createIdType (unbox args.[0]) typeName :> Type)
 
-    let constType = ProvidedTypeDefinition(runtimeAssembly, ns, "ConstType", baseType = Some typeof<obj>, hideObjectMethods=true)
+    let constFunc = ProvidedTypeDefinition(runtimeAssembly, ns, "ConstFunction", baseType = Some typeof<obj>, hideObjectMethods=true)
 
-    let createIdType (t1 : Type) (t2 : Type) (name : string) : ProvidedTypeDefinition =
+    let createConstType (t1 : Type) (t2 : Type) (name : string) : ProvidedTypeDefinition =
         let invoke (xs : Quotations.Expr list) =
             xs.[0]
         let newType = ProvidedTypeDefinition(runtimeAssembly, ns, name, baseType = Some typeof<obj>, hideObjectMethods = true)
@@ -61,15 +85,15 @@ type TypePassingTp(config: TypeProviderConfig) as this =
         newType.AddMember(m)
         newType
 
-    do constType.DefineStaticParameters(
+    do constFunc.DefineStaticParameters(
         [
             ProvidedStaticParameter("Type1",typeof<Type>, null)
             ProvidedStaticParameter("Type2",typeof<Type>, null)
-        ], fun typeName args -> unbox args.[0]) //createIdType (unbox args.[0]) (unbox args.[1]) typeName :> Type)
+        ], fun typeName args -> createConstType (unbox args.[0]) (unbox args.[1]) typeName :> Type)
 
     // ===========================
 
-    do this.AddNamespace(ns, [genericMethodType; idType; constType])
+    do this.AddNamespace(ns, [genericMethodType; idFunc; constFunc; idType; constType; ifThenElseType])
 
 [<assembly:TypeProviderAssembly>]
 do()
