@@ -73,6 +73,7 @@ namespace Microsoft.FSharp.Control
     type LinkedSubSource(cancellationToken : CancellationToken) =
         
         let failureCTS = new CancellationTokenSource()
+
         let linkedCTS = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, failureCTS.Token)
         
         member this.Token = linkedCTS.Token
@@ -84,9 +85,7 @@ namespace Microsoft.FSharp.Control
         interface IDisposable with
             member this.Dispose() = this.Dispose()
 
-    
     /// Global mutable state used to associate Exception
-
     [<AutoOpen>]
     module ExceptionDispatchInfoHelpers =
 
@@ -119,13 +118,14 @@ namespace Microsoft.FSharp.Control
     type AsyncReturn =
         | FakeUnit
 
-
     type cont<'T> = ('T -> AsyncReturn)
     type econt = (ExceptionDispatchInfo -> AsyncReturn)
     type ccont = (OperationCanceledException -> AsyncReturn)
 
     [<AllowNullLiteral>]
     type Trampoline() = 
+
+        let unfake FakeUnit = ()
 
         [<Literal>]
         static let bindLimitBeforeHijack = 300 
@@ -140,8 +140,6 @@ namespace Microsoft.FSharp.Control
         let mutable storedCont = None
         let mutable bindCount = 0
         
-        static let unfake FakeUnit = ()
-
         /// Use this trampoline on the synchronous stack if none exists, and execute
         /// the given function. The function might write its continuation into the trampoline.
         member __.Execute (firstAction : unit -> AsyncReturn) =
@@ -186,22 +184,20 @@ namespace Microsoft.FSharp.Control
         
         static let unfake FakeUnit = ()
 
-        // Preallocate a context-switching callback delegate.
-        // This should be the only call to SynchronizationContext.Post in this library. We must always install a trampoline.        
+        // Preallocate this delegate and keep it in the trampoline holder.
         let sendOrPostCallback = 
             SendOrPostCallback (fun o ->
                 let f = unbox<(unit -> AsyncReturn)> o
                 this.Execute f |> unfake)
 
-        // Preallocate a ctxt-switching callback delegate.
-        // This should be the only call to QueueUserWorkItem in this library. We must always install a trampoline.
+        // Preallocate this delegate and keep it in the trampoline holder.
         let waitCallbackForQueueWorkItemWithTrampoline = 
             WaitCallback (fun o ->
                 let f = unbox<(unit -> AsyncReturn)> o
                 this.Execute f |> unfake)
 
 #if !FX_NO_PARAMETERIZED_THREAD_START
-        // This should be the only call to Thread.Start in this library. We must always install a trampoline.
+        // Preallocate this delegate and keep it in the trampoline holder.
         let threadStartCallbackForStartThreadWithTrampoline = 
             ParameterizedThreadStart (fun o ->
                 let f = unbox<(unit -> AsyncReturn)> o
@@ -216,6 +212,11 @@ namespace Microsoft.FSharp.Control
             if not (ThreadPool.QueueUserWorkItem(waitCallbackForQueueWorkItemWithTrampoline, f |> box)) then
                 failwith "failed to queue user work item"
             FakeUnit
+
+        member this.PostOrQueue (syncCtxt : SynchronizationContext) f =
+            match syncCtxt with 
+            | null -> this.QueueWorkItem f 
+            | _ -> this.Post syncCtxt f            
         
 #if FX_NO_PARAMETERIZED_THREAD_START
         // This should be the only call to Thread.Start in this library. We must always install a trampoline.
@@ -298,6 +299,14 @@ namespace Microsoft.FSharp.Control
         let mutable i = 0
         member this.Enter() = Interlocked.CompareExchange(&i, 1, 0) = 0
 
+    [<Sealed>]
+    [<AutoSerializable(false)>]
+    type Once() =
+        let latch = Latch()
+        member this.Do f =
+            if latch.Enter() then
+                f()
+
     [<NoEquality; NoComparison>]
     type AsyncResult<'T>  =
         | Ok of 'T
@@ -311,13 +320,6 @@ namespace Microsoft.FSharp.Control
             | AsyncResult.Canceled exn -> raise exn
 
     module AsyncPrimitives =
-        // To consider: augment with more exception traceability information
-        // To consider: add the ability to suspend running ps in debug mode
-        // To consider: add the ability to trace running ps in debug mode
-        open System
-        open System.Threading
-        open System.IO
-        open Microsoft.FSharp.Core
 
         let fake () = FakeUnit
         let unfake FakeUnit = ()
@@ -381,34 +383,16 @@ namespace Microsoft.FSharp.Control
                     let edi = ExceptionDispatchInfo.RestoreOrCapture(exn)
                     ctxt.CallExceptionContinuation edi
 
-        /// Make an initial ctxt and execute the async computation.  
-        let startA cancellationToken trampolineHolder cont econt ccont computation =
-            let ctxt = { cont = cont; aux = { token = cancellationToken; econt = econt; ccont = ccont; trampolineHolder = trampolineHolder } }
-            computation.Invoke ctxt
+        /// Make an initial asyc activation.  
+        [<DebuggerHidden>]
+        let CreateAsyncActivation cancellationToken trampolineHolder cont econt ccont =
+            { cont = cont; aux = { token = cancellationToken; econt = econt; ccont = ccont; trampolineHolder = trampolineHolder } }
                     
-#if FX_NO_PARAMETERIZED_THREAD_START
-        // Preallocate the delegate
-        // This should be the only call to QueueUserWorkItem in this library. We must always install a trampoline.
-        let waitCallbackForQueueWorkItemWithTrampoline(trampolineHolder : TrampolineHolder) = 
-            WaitCallback(fun o ->
-                let f = unbox o : unit -> AsyncReturn
-                trampolineHolder.Execute f |> unfake)
-#else
-
-        // Statically preallocate the delegate
-        let threadStartCallbackForStartThreadWithTrampoline = 
-            ParameterizedThreadStart (fun o ->
-                let (trampolineHolder,f) = unbox o : TrampolineHolder * (unit -> AsyncReturn)
-                trampolineHolder.Execute f |> unfake)
-#endif
-
-        let startAsync cancellationToken cont econt ccont p =
+        let QueueAsync cancellationToken cont econt ccont computation =
             let trampolineHolder = new TrampolineHolder()
-            trampolineHolder.Execute (fun () -> startA cancellationToken trampolineHolder cont econt ccont p)
-
-        let queueAsync cancellationToken cont econt ccont p =
-            let trampolineHolder = new TrampolineHolder()
-            trampolineHolder.QueueWorkItem (fun () -> startA cancellationToken trampolineHolder cont econt ccont p)
+            trampolineHolder.QueueWorkItem (fun () -> 
+                let ctxt = CreateAsyncActivation cancellationToken trampolineHolder cont econt ccont
+                computation.Invoke ctxt)
 
         /// Build a primitive without any exception or resync protection
         let MakeAsync body = { Invoke = body }
@@ -437,10 +421,10 @@ namespace Microsoft.FSharp.Control
         // When run, ensures that any exceptions raised by the immediate execution of "f" are
         // sent to the exception continuation.
         //
-        let protectUserCodeAsAsync f =
+        let CreateUserCodeAsync f =
             MakeAsync (fun ctxt -> ProtectUserCode ctxt f)
 
-        let asyncResultToAsync res =
+        let CreateAsyncResultAsync res =
             MakeAsync (fun ctxt ->
                 match res with
                 | AsyncResult.Ok r -> ctxt.cont r
@@ -448,7 +432,7 @@ namespace Microsoft.FSharp.Control
                 | AsyncResult.Canceled oce -> ctxt.aux.ccont oce)
 
         // Generate async computation which calls its continuation with the given result
-        let resultA x = 
+        let CreateReturnAsync x = 
             MakeAsync (fun ctxt -> 
                 if ctxt.IsCancellationRequested then
                     ctxt.OnCancellation ()
@@ -458,7 +442,7 @@ namespace Microsoft.FSharp.Control
         // The primitive bind operation. Generate a process that runs the first process, takes
         // its result, applies f and then runs the new process produced. Hijack if necessary and 
         // run 'f' with exception protection
-        let bindA p1 f  =
+        let CreateBindAsync p1 f  =
             MakeAsync (fun ctxt ->
                 if ctxt.IsCancellationRequested then
                     ctxt.OnCancellation ()
@@ -478,8 +462,9 @@ namespace Microsoft.FSharp.Control
                         p1.Invoke ctxt)
 
 
-        // callA = "bindA (return x) f"
-        let callA f x =
+        // Call the given function with exception protection, but first 
+        // check for cancellation.
+        let CreateCallAsync f x =
             MakeAsync (fun ctxt ->
                 if ctxt.aux.token.IsCancellationRequested then
                     ctxt.OnCancellation ()
@@ -487,14 +472,16 @@ namespace Microsoft.FSharp.Control
                     protectUserCodeIncludingHijackCheck ctxt.aux.trampolineHolder f x ctxt.aux.econt (fun p2 -> p2.Invoke ctxt)
             )
 
-        // delayPrim = "bindA (return ()) f"
-        let delayA f = callA f ()
+        let CreateDelayAsync f = CreateCallAsync f ()
+
+        let CreateSequentialAsync p1 p2 = 
+            CreateBindAsync p1 (fun () -> p2)
 
         // Call p but augment the normal, exception and cancel continuations with a call to finallyFunction.
         // If the finallyFunction raises an exception then call the original exception continuation
         // with the new exception. If exception is raised after a cancellation, exception is ignored
         // and cancel continuation is called.
-        let tryFinallyA finallyFunction p  =
+        let CreateTryFinallyAsync finallyFunction computation  =
             MakeAsync (fun ctxt ->
                 if ctxt.aux.token.IsCancellationRequested then
                     ctxt.OnCancellation ()
@@ -509,26 +496,26 @@ namespace Microsoft.FSharp.Control
                     // The cancellation continuation runs the finallyFunction and then runs the previous cancellation continuation.
                     // If an exception is thrown we continue with the previous cancellation continuation (the exception is lost)
                     let ccont cexn = protectUserCodeIncludingHijackCheck trampolineHolder finallyFunction () (fun _ -> ctxt.aux.ccont cexn) (fun () -> ctxt.aux.ccont cexn)
-                    p.Invoke { ctxt with cont = cont; aux = { ctxt.aux with econt = econt; ccont = ccont } })
+                    computation.Invoke { ctxt with cont = cont; aux = { ctxt.aux with econt = econt; ccont = ccont } })
 
         // Re-route the exception continuation to call to catchFunction. If catchFunction or the new process fail
         // then call the original exception continuation with the failure.
-        let tryWithDispatchInfoA catchFunction computation =
+        let CreateTryWithDispatchInfoAsync catchFunction computation =
             MakeAsync (fun ctxt ->
                 if ctxt.aux.token.IsCancellationRequested then
                     ctxt.OnCancellation ()
                 else 
                     let econt (edi: ExceptionDispatchInfo) = 
-                        let ecomputation = callA catchFunction edi
+                        let ecomputation = CreateCallAsync catchFunction edi
                         ecomputation.Invoke ctxt
                     let newCtxt = { ctxt with aux = { ctxt.aux with econt = econt } }
                     computation.Invoke newCtxt)
 
-        let tryWithExnA catchFunction computation = 
-            computation |> tryWithDispatchInfoA (fun edi -> catchFunction (edi.GetAssociatedSourceException()))
+        let CreateTryWithAsync catchFunction computation = 
+            computation |> CreateTryWithDispatchInfoAsync (fun edi -> catchFunction (edi.GetAssociatedSourceException()))
 
         /// Call the finallyFunction if the computation results in a cancellation
-        let whenCancelledA (finallyFunction : OperationCanceledException -> unit) computation =
+        let CreateWhenCancelledAsync (finallyFunction : OperationCanceledException -> unit) computation =
             MakeAsync (fun ctxt ->
                 let aux = ctxt.aux
                 let ccont exn = protectUserCodeIncludingHijackCheck aux.trampolineHolder finallyFunction exn (fun _ -> aux.ccont exn) (fun _ -> aux.ccont exn)
@@ -541,57 +528,47 @@ namespace Microsoft.FSharp.Control
         
         /// A single pre-allocated computation that returns a unit result
         let unitAsync =
-            resultA()
+            CreateReturnAsync()
 
         /// Implement use/Dispose
-        let usingA (resource:'T :> IDisposable) (computation:'T -> Async<'a>) : Async<'a> =
+        let CreateUsingAsync (resource:'T :> IDisposable) (computation:'T -> Async<'a>) : Async<'a> =
             let mutable x = 0
             let disposeFunction _ =
                 if Interlocked.CompareExchange(&x, 1, 0) = 0 then
                     Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions.Dispose resource
-            tryFinallyA disposeFunction (callA computation resource) |> whenCancelledA disposeFunction
+            CreateTryFinallyAsync disposeFunction (CreateCallAsync computation resource) |> CreateWhenCancelledAsync disposeFunction
 
-        let ignoreA computation = 
-            bindA computation (fun _ -> unitAsync)
+        let CreateIgnoreAsync computation = 
+            CreateBindAsync computation (fun _ -> unitAsync)
 
         /// Implement the while loop construct of async commputation expressions
-        let rec whileA guardFunc computation =
+        let rec CreateWhileAsync guardFunc computation =
             if guardFunc() then 
-                bindA computation (fun () -> whileA guardFunc computation) 
+                CreateBindAsync computation (fun () -> CreateWhileAsync guardFunc computation) 
             else 
                 unitAsync
 
         /// Implement the for loop construct of async commputation expressions
-        let rec forA (source: seq<_>) computation =
-            usingA (source.GetEnumerator()) (fun ie ->
-                whileA
+        let rec CreateForLoopAsync (source: seq<_>) computation =
+            CreateUsingAsync (source.GetEnumerator()) (fun ie ->
+                CreateWhileAsync
                     (fun () -> ie.MoveNext())
-                    (delayA (fun () -> computation ie.Current)))
+                    (CreateDelayAsync (fun () -> computation ie.Current)))
 
-        let sequentialA p1 p2 = 
-            bindA p1 (fun () -> p2)
+        let CreateSwitchToAsync (syncCtxt: SynchronizationContext) =
+            CreateUserCodeAsync (fun ctxt ->
+                ctxt.aux.trampolineHolder.Post syncCtxt ctxt.cont)
 
-        let switchTo (syncCtxt: SynchronizationContext) =
-            protectUserCodeAsAsync (fun ctxt ->
-                ctxt.aux.trampolineHolder.Post syncCtxt (fun () -> ctxt.cont ()))
+        let CreateSwitchToNewThreadAsync() =
+            CreateUserCodeAsync (fun ctxt ->
+                ctxt.aux.trampolineHolder.StartThread ctxt.cont)
 
-        let switchToNewThread() =
-            protectUserCodeAsAsync (fun ctxt ->
-                ctxt.aux.trampolineHolder.StartThread (fun () -> ctxt.cont ()))
-
-        let switchToThreadPool() =
-            protectUserCodeAsAsync (fun ctxt -> 
-                ctxt.aux.trampolineHolder.QueueWorkItem (fun () -> ctxt.cont ()))
-
-        let getSyncContext () = SynchronizationContext.Current 
-
-        let postOrQueue (syncCtxt : SynchronizationContext) (trampolineHolder:TrampolineHolder) f =
-            match syncCtxt with 
-            | null -> trampolineHolder.QueueWorkItem f 
-            | _ -> trampolineHolder.Post syncCtxt f            
+        let CreateSwitchToThreadPoolAsync() =
+            CreateUserCodeAsync (fun ctxt -> 
+                ctxt.aux.trampolineHolder.QueueWorkItem ctxt.cont)
 
         let delimitSyncContext ctxt =            
-            match getSyncContext () with
+            match SynchronizationContext.Current with
             | null -> ctxt
             | syncCtxt -> 
                 let aux = ctxt.aux                
@@ -604,24 +581,16 @@ namespace Microsoft.FSharp.Control
                 }
 
         // When run, ensures that each of the continuations of the process are run in the same synchronization context.
-        let protectUserCodeAsAsyncWithResync f = 
-            protectUserCodeAsAsync (fun ctxt -> 
+        let CreateDelimitedUserCodeAsync f = 
+            CreateUserCodeAsync (fun ctxt -> 
                 let ctxtWithSync = delimitSyncContext ctxt
                 f ctxtWithSync)
-
-        [<Sealed>]
-        [<AutoSerializable(false)>]
-        type Once() =
-            let latch = Latch()
-            member this.Do f =
-                if latch.Enter() then
-                    f()
 
         [<Sealed>]
         [<AutoSerializable(false)>]        
         type SuspendedAsync<'T>(ctxt : AsyncActivation<'T>) =
 
-            let syncCtxt = getSyncContext ()
+            let syncCtxt = SynchronizationContext.Current
 
             let thread = 
                 match syncCtxt with
@@ -642,10 +611,10 @@ namespace Microsoft.FSharp.Control
                 | _ when Object.Equals(syncCtxt, currentSyncCtxt) && thread.Equals(Thread.CurrentThread) ->
                     executeImmediately ()
                 | _ -> 
-                    postOrQueue syncCtxt trampolineHolder action
+                    trampolineHolder.PostOrQueue syncCtxt action
 
             member __.ContinueWithPostOrQueue res =
-                postOrQueue syncCtxt trampolineHolder (fun () -> ctxt.cont res)
+                trampolineHolder.PostOrQueue syncCtxt (fun () -> ctxt.cont res)
 
         /// A utility type to provide a synchronization point between an asynchronous computation 
         /// and callers waiting on the result of that computation.
@@ -807,7 +776,7 @@ namespace Microsoft.FSharp.Control
                 System.Delegate.CreateDelegate(typeof<'Delegate>, obj, invokeMeth) :?> 'Delegate
 
         /// Run the asynchronous workflow and wait for its result.
-        let private RunSynchronouslyInAnotherThread (token:CancellationToken,computation,timeout) =
+        let RunSynchronouslyInAnotherThread (token:CancellationToken,computation,timeout) =
             let token,innerCTS = 
                 // If timeout is provided, we govern the async by our own CTS, to cancel
                 // when execution times out. Otherwise, the user-supplied token governs the async.
@@ -818,7 +787,7 @@ namespace Microsoft.FSharp.Control
                     subSource.Token, Some subSource
                 
             use resultCell = new ResultCell<AsyncResult<_>>()
-            queueAsync 
+            QueueAsync 
                     token                        
                     (fun res -> resultCell.RegisterResult(AsyncResult.Ok(res),reuseThread=true))
                     (fun edi -> resultCell.RegisterResult(AsyncResult.Error(edi),reuseThread=true))
@@ -842,30 +811,31 @@ namespace Microsoft.FSharp.Control
                 |   None -> ()
                 res.Commit()
 
-        let private RunSynchronouslyInCurrentThread (token:CancellationToken,computation) =
+        let RunSynchronouslyInCurrentThread (token:CancellationToken,computation) =
             use resultCell = new ResultCell<AsyncResult<_>>()
             let trampolineHolder = TrampolineHolder()
 
             trampolineHolder.Execute
                 (fun () ->
-                    startA
+                    let ctxt = 
+                      CreateAsyncActivation
                         token
                         trampolineHolder
                         (fun res -> resultCell.RegisterResult(AsyncResult.Ok(res),reuseThread=true))
                         (fun edi -> resultCell.RegisterResult(AsyncResult.Error(edi),reuseThread=true))
                         (fun exn -> resultCell.RegisterResult(AsyncResult.Canceled(exn),reuseThread=true))
-                        computation)
+                    computation.Invoke ctxt)
             |> unfake
 
             let res = resultCell.TryWaitForResultSynchronously().Value
             res.Commit()
 
-        let RunSynchronously (token:CancellationToken,computation,timeout) =
+        let RunSynchronously cancellationToken (computation: Async<'T>) timeout =
             // Reuse the current ThreadPool thread if possible. Unfortunately
             // Thread.IsThreadPoolThread isn't available on all profiles so
             // we approximate it by testing synchronization context for null.
             match SynchronizationContext.Current, timeout with
-            | null, None -> RunSynchronouslyInCurrentThread (token, computation)
+            | null, None -> RunSynchronouslyInCurrentThread (cancellationToken, computation)
             // When the timeout is given we need a dedicated thread
             // which cancels the computation.
             // Performing the cancellation in the ThreadPool eg. by using
@@ -875,10 +845,10 @@ namespace Microsoft.FSharp.Control
             //
             // And so when the timeout is given we always use the current thread
             // for the cancellation and run the computation in another thread.
-            | _ -> RunSynchronouslyInAnotherThread (token, computation, timeout)
+            | _ -> RunSynchronouslyInAnotherThread (cancellationToken, computation, timeout)
 
         let Start token computation =
-            queueAsync 
+            QueueAsync 
                 token
                 (fun () -> FakeUnit)   // nothing to do on success
                 (fun edi -> edi.ThrowAny())   // raise exception in child
@@ -886,8 +856,12 @@ namespace Microsoft.FSharp.Control
                 computation
             |> unfake
 
-        let StartWithContinuations(token:CancellationToken, a:Async<'T>, cont, econt, ccont) : unit =
-            startAsync token (cont >> fake) (econt >> fake) (ccont >> fake) a |> ignore
+        let StartWithContinuations cancellationToken (computation:Async<'T>) cont econt ccont =
+            let trampolineHolder = new TrampolineHolder()
+            trampolineHolder.Execute (fun () -> 
+                let ctxt = CreateAsyncActivation cancellationToken trampolineHolder (cont >> fake) (econt >> fake) (ccont >> fake)
+                computation.Invoke ctxt)
+            |> unfake
             
         let StartAsTask token computation taskCreationOptions =
             let taskCreationOptions = defaultArg taskCreationOptions TaskCreationOptions.None
@@ -897,7 +871,7 @@ namespace Microsoft.FSharp.Control
             //      a) cancellation signal should always propagate to the computation
             //      b) when the task IsCompleted -> nothing is running anymore
             let task = tcs.Task
-            queueAsync
+            QueueAsync
                 token
                 (fun r -> tcs.SetResult r |> fake)
                 (fun edi -> tcs.SetException edi.SourceException |> fake)
@@ -907,11 +881,11 @@ namespace Microsoft.FSharp.Control
             task
 
         // Helper to attach continuation to the given task.
-        // Should be invoked as a part of protectUserCodeAsAsync(withResync) call
+        // Should be invoked as a part of CreateUserCodeAsync(withResync) call
         let taskContinueWith (task : Task<'T>) ctxt useCcontForTaskCancellation = 
 
             let continuation (completedTask: Task<_>) : unit =
-                ctxt.aux.trampolineHolder.Execute ((fun () ->
+                ctxt.aux.trampolineHolder.Execute (fun () ->
                     if completedTask.IsCanceled then
                         if useCcontForTaskCancellation then
                             ctxt.OnCancellation ()
@@ -922,14 +896,14 @@ namespace Microsoft.FSharp.Control
                         let edi = MayLoseStackTrace(completedTask.Exception)
                         ctxt.CallExceptionContinuation edi
                     else
-                        ctxt.cont completedTask.Result)) |> unfake
+                        ctxt.cont completedTask.Result) |> unfake
 
             task.ContinueWith(Action<Task<'T>>(continuation)) |> ignore |> fake
 
         let taskContinueWithUnit (task: Task) ctxt useCcontForTaskCancellation = 
 
             let continuation (completedTask: Task) : unit =
-                ctxt.aux.trampolineHolder.Execute ((fun () ->
+                ctxt.aux.trampolineHolder.Execute (fun () ->
                     if completedTask.IsCanceled then
                         if useCcontForTaskCancellation then
                             ctxt.OnCancellation ()
@@ -940,7 +914,7 @@ namespace Microsoft.FSharp.Control
                         let edi = MayLoseStackTrace(completedTask.Exception)
                         ctxt.CallExceptionContinuation edi
                     else
-                        ctxt.cont ())) |> unfake
+                        ctxt.cont ()) |> unfake
 
             task.ContinueWith(Action<Task>(continuation)) |> ignore |> fake
 
@@ -1003,7 +977,7 @@ namespace Microsoft.FSharp.Control
                 let cont v = aiar.SetResult (AsyncResult.Ok v)
                 let econt v = aiar.SetResult (AsyncResult.Error v)
                 let ccont v = aiar.SetResult (AsyncResult.Canceled v)
-                StartWithContinuations(aiar.Token, computation, cont, econt, ccont)
+                StartWithContinuations aiar.Token computation cont econt ccont
                 aiar.CheckForNotSynchronous()
                 (aiar :> IAsyncResult)
                
@@ -1033,25 +1007,25 @@ namespace Microsoft.FSharp.Control
     type AsyncBuilder() =
         member __.Zero () = unitAsync
 
-        member __.Delay generator = delayA generator
+        member __.Delay generator = CreateDelayAsync generator
 
-        member __.Return value = resultA(value)
+        member __.Return value = CreateReturnAsync value
 
         member __.ReturnFrom (computation: Async<_>) = computation
 
-        member __.Bind (computation, binder) = bindA computation binder
+        member __.Bind (computation, binder) = CreateBindAsync computation binder
 
-        member __.Using (resource, binder) = usingA resource binder
+        member __.Using (resource, binder) = CreateUsingAsync resource binder
 
-        member __.While (guard, computation) = whileA guard computation
+        member __.While (guard, computation) = CreateWhileAsync guard computation
 
-        member __.For (sequence, body) = forA sequence body
+        member __.For (sequence, body) = CreateForLoopAsync sequence body
 
-        member __.Combine (computation1, computation2) = sequentialA computation1 computation2
+        member __.Combine (computation1, computation2) = CreateSequentialAsync computation1 computation2
 
-        member __.TryFinally (computation, compensation) = tryFinallyA compensation computation
+        member __.TryFinally (computation, compensation) = CreateTryFinallyAsync compensation computation
 
-        member __.TryWith (computation, catchHandler) = tryWithExnA catchHandler computation
+        member __.TryWith (computation, catchHandler) = CreateTryWithAsync catchHandler computation
 
     module AsyncImpl = 
         let async = AsyncBuilder()
@@ -1081,8 +1055,8 @@ namespace Microsoft.FSharp.Control
                         if Thread.CurrentThread.Equals(thread) && underCurrentThreadStack then
                             contToTailCall <- Some(fun () -> cont x)
                         else if Trampoline.ThisThreadHasTrampoline then
-                            let syncCtxt = getSyncContext()
-                            postOrQueue syncCtxt aux.trampolineHolder (fun () -> cont x) |> unfake 
+                            let syncCtxt = SynchronizationContext.Current
+                            aux.trampolineHolder.PostOrQueue syncCtxt (fun () -> cont x) |> unfake 
                         else
                             aux.trampolineHolder.Execute (fun () -> cont x ) |> unfake
                     try 
@@ -1119,12 +1093,12 @@ namespace Microsoft.FSharp.Control
                 computation.Invoke ctxt)
 
         static member RunSynchronously (computation: Async<'T>,?timeout,?cancellationToken:CancellationToken) =
-            let timeout,token =
+            let timeout, cancellationToken =
                 match cancellationToken with
                 | None -> timeout,defaultCancellationTokenSource.Token
                 | Some token when not token.CanBeCanceled -> timeout, token
                 | Some token -> None, token
-            AsyncPrimitives.RunSynchronously(token, computation, timeout)
+            AsyncPrimitives.RunSynchronously cancellationToken computation timeout
 
         static member Start (computation, ?cancellationToken) =
             let cancellationToken = defaultArg cancellationToken defaultCancellationTokenSource.Token
@@ -1195,7 +1169,7 @@ namespace Microsoft.FSharp.Control
                         finishTask(Interlocked.Decrement count)
                 
                     tasks |> Array.iteri (fun i p ->
-                        queueAsync
+                        QueueAsync
                                 innerCTS.Token
                                 // on success, record the result
                                 (fun res -> recordSuccess i res)
@@ -1252,7 +1226,7 @@ namespace Microsoft.FSharp.Control
                                 FakeUnit
 
                         for c in computations do
-                            queueAsync innerCts.Token scont econt ccont c |> unfake
+                            QueueAsync innerCts.Token scont econt ccont c |> unfake
 
                         FakeUnit))
 
@@ -1260,14 +1234,14 @@ namespace Microsoft.FSharp.Control
 
         /// StartWithContinuations, except the exception continuation is given an ExceptionDispatchInfo
         static member StartWithContinuationsUsingDispatchInfo(computation:Async<'T>, continuation, exceptionContinuation, cancellationContinuation, ?cancellationToken) : unit =
-            let token = defaultArg cancellationToken defaultCancellationTokenSource.Token
-            AsyncPrimitives.StartWithContinuations(token, computation, continuation, exceptionContinuation, cancellationContinuation)
+            let cancellationToken = defaultArg cancellationToken defaultCancellationTokenSource.Token
+            AsyncPrimitives.StartWithContinuations cancellationToken computation continuation exceptionContinuation cancellationContinuation
 
         static member StartWithContinuations(computation:Async<'T>, continuation, exceptionContinuation, cancellationContinuation, ?cancellationToken) : unit =
             Async.StartWithContinuationsUsingDispatchInfo(computation, continuation, (fun edi -> exceptionContinuation (edi.GetAssociatedSourceException())), cancellationContinuation, ?cancellationToken=cancellationToken)
 
         static member StartImmediateAsTask (computation : Async<'T>, ?cancellationToken ) : Task<'T>=
-            let token = defaultArg cancellationToken defaultCancellationTokenSource.Token
+            let cancellationToken = defaultArg cancellationToken defaultCancellationTokenSource.Token
             let ts = new TaskCompletionSource<'T>()
             let task = ts.Task
             Async.StartWithContinuations(
@@ -1275,15 +1249,15 @@ namespace Microsoft.FSharp.Control
                 (fun (k) -> ts.SetResult(k)), 
                 (fun exn -> ts.SetException(exn)), 
                 (fun _ -> ts.SetCanceled()), 
-                token)
+                cancellationToken)
             task
 
         static member StartImmediate(computation:Async<unit>, ?cancellationToken) : unit =
-            let token = defaultArg cancellationToken defaultCancellationTokenSource.Token
-            AsyncPrimitives.StartWithContinuations(token, computation, id, (fun edi -> edi.ThrowAny()), ignore)
+            let cancellationToken = defaultArg cancellationToken defaultCancellationTokenSource.Token
+            AsyncPrimitives.StartWithContinuations cancellationToken computation id (fun edi -> edi.ThrowAny()) ignore
 
         static member Sleep(millisecondsDueTime) : Async<unit> =
-            protectUserCodeAsAsyncWithResync (fun ctxt ->
+            CreateDelimitedUserCodeAsync (fun ctxt ->
                 let aux = ctxt.aux
                 let timer = ref (None : Timer option)
                 let savedCont = ctxt.cont
@@ -1345,7 +1319,7 @@ namespace Microsoft.FSharp.Control
 #endif
                     async.Return ok)
             else
-                protectUserCodeAsAsyncWithResync(fun ctxt ->
+                CreateDelimitedUserCodeAsync(fun ctxt ->
                     let aux = ctxt.aux
                     let rwh = ref (None : RegisteredWaitHandle option)
                     let latch = Latch()
@@ -1560,11 +1534,11 @@ namespace Microsoft.FSharp.Control
                     // Note: ok to use "NoDirectTimeout" here because no timeout parameter to this method
                     return! Async.AwaitAndBindResult_NoDirectCancelOrTimeout(resultCell) }
 
-        static member Ignore (computation: Async<'T>) = ignoreA computation
+        static member Ignore (computation: Async<'T>) = CreateIgnoreAsync computation
 
-        static member SwitchToNewThread() = switchToNewThread()
+        static member SwitchToNewThread() = CreateSwitchToNewThreadAsync()
 
-        static member SwitchToThreadPool() = switchToThreadPool()
+        static member SwitchToThreadPool() = CreateSwitchToThreadPoolAsync()
 
         static member StartChild (computation:Async<'T>,?millisecondsTimeout) =
             async { 
@@ -1578,7 +1552,7 @@ namespace Microsoft.FSharp.Control
                                             |   null -> ()
                                             |   otherwise -> otherwise.Cancel()), 
                                         null)
-                do queueAsync 
+                do QueueAsync 
                        innerCTS.Token
                        // since innerCTS is not ever Disposed, can call reg.Dispose() without a safety Latch
                        (fun res -> ctsRef := null; reg.Dispose(); resultCell.RegisterResult (Ok res, reuseThread=true))   
@@ -1596,7 +1570,7 @@ namespace Microsoft.FSharp.Control
                         do! Async.SwitchToThreadPool()
                     | syncCtxt -> 
                         // post the continuation to the synchronization context
-                        return! switchTo syncCtxt }
+                        return! CreateSwitchToAsync syncCtxt }
 
         static member OnCancel interruption =
             async { let! cancellationToken = cancellationTokenAsync
@@ -1616,13 +1590,13 @@ namespace Microsoft.FSharp.Control
                                         if latch.Enter() then registration.Dispose() } }
 
         static member TryCancelled (computation: Async<'T>,compensation) = 
-            whenCancelledA compensation computation
+            CreateWhenCancelledAsync compensation computation
 
         static member AwaitTask (task:Task<'T>) : Async<'T> = 
-            protectUserCodeAsAsyncWithResync (fun ctxt -> taskContinueWith task ctxt false)
+            CreateDelimitedUserCodeAsync (fun ctxt -> taskContinueWith task ctxt false)
 
         static member AwaitTask (task:Task) : Async<unit> = 
-            protectUserCodeAsAsyncWithResync (fun ctxt -> taskContinueWithUnit task ctxt false)
+            CreateDelimitedUserCodeAsync (fun ctxt -> taskContinueWithUnit task ctxt false)
 
     module CommonExtensions =
 
@@ -1633,8 +1607,8 @@ namespace Microsoft.FSharp.Control
                 let offset = defaultArg offset 0
                 let count  = defaultArg count buffer.Length
 #if FX_NO_BEGINEND_READWRITE
-                // use combo protectUserCodeAsAsyncWithResync + taskContinueWith instead of AwaitTask so we can pass cancellation token to the ReadAsync task
-                protectUserCodeAsAsyncWithResync (fun ctxt -> taskContinueWith (stream.ReadAsync(buffer, offset, count, ctxt.aux.token)) ctxt false)
+                // use combo CreateDelimitedUserCodeAsync + taskContinueWith instead of AwaitTask so we can pass cancellation token to the ReadAsync task
+                CreateDelimitedUserCodeAsync (fun ctxt -> taskContinueWith (stream.ReadAsync(buffer, offset, count, ctxt.aux.token)) ctxt false)
 #else
                 Async.FromBeginEnd (buffer,offset,count,stream.BeginRead,stream.EndRead)
 #endif
@@ -1655,8 +1629,8 @@ namespace Microsoft.FSharp.Control
                 let offset = defaultArg offset 0
                 let count  = defaultArg count buffer.Length
 #if FX_NO_BEGINEND_READWRITE
-                // use combo protectUserCodeAsAsyncWithResync + taskContinueWithUnit instead of AwaitTask so we can pass cancellation token to the WriteAsync task
-                protectUserCodeAsAsyncWithResync (fun ctxt -> taskContinueWithUnit (stream.WriteAsync(buffer, offset, count, ctxt.aux.token)) ctxt false)
+                // use combo CreateDelimitedUserCodeAsync + taskContinueWithUnit instead of AwaitTask so we can pass cancellation token to the WriteAsync task
+                CreateDelimitedUserCodeAsync (fun ctxt -> taskContinueWithUnit (stream.WriteAsync(buffer, offset, count, ctxt.aux.token)) ctxt false)
 #else
                 Async.FromBeginEnd (buffer,offset,count,stream.BeginWrite,stream.EndWrite)
 #endif
@@ -1682,11 +1656,11 @@ namespace Microsoft.FSharp.Control
                 
                 let canceled = ref false // WebException with Status = WebExceptionStatus.RequestCanceled  can be raised in other situations except cancellation, use flag to filter out false positives
 
-                // Use tryWithDispatchInfoA to allow propagation of ExceptionDispatchInfo
+                // Use CreateTryWithDispatchInfoAsync to allow propagation of ExceptionDispatchInfo
                 Async.FromBeginEnd(beginAction=req.BeginGetResponse, 
                                    endAction = req.EndGetResponse, 
                                    cancelAction = fun() -> canceled := true; req.Abort())
-                |> tryWithDispatchInfoA (fun edi ->
+                |> CreateTryWithDispatchInfoAsync (fun edi ->
                     match edi.SourceException with 
                     | :? System.Net.WebException as webExn 
                             when webExn.Status = System.Net.WebExceptionStatus.RequestCanceled && !canceled -> 
@@ -1772,7 +1746,7 @@ namespace Microsoft.FSharp.Control
                 //       cancellation token and will register a cancelled result if cancellation occurs.
                 // Note: It is ok to use "NoDirectTimeout" here because there is no specific timeout log to this routine.
                 let! result = resultCell.AwaitResult_NoDirectCancelOrTimeout
-                return! asyncResultToAsync result
+                return! CreateAsyncResultAsync result
             }
 
         let timeout msec cancellationToken =
