@@ -547,7 +547,6 @@ namespace Microsoft.FSharp.Control
             if ctxt.IsCancellationRequested then
                 ctxt.OnCancellation ()
             else
-                let trampolineHolder = ctxt.aux.trampolineHolder
                 // The new continuation runs the finallyFunction and resumes the old continuation
                 // If an exception is thrown we continue with the previous exception continuation.
                 let cont b     = 
@@ -1523,17 +1522,20 @@ namespace Microsoft.FSharp.Control
 
             | Some 0 -> 
                 async { if resultCell.ResultAvailable then 
-                            return commit (resultCell.GrabResult())
+                            let res = resultCell.GrabResult()
+                            return res.Commit()
                         else
                             return raise (System.TimeoutException()) }
             | _ ->
                 async { try 
                            if resultCell.ResultAvailable then 
-                             return commit (resultCell.GrabResult())
+                             let res = resultCell.GrabResult()
+                             return res.Commit()
                            else
                              let! ok = Async.AwaitWaitHandle (resultCell.GetWaitHandle(), ?millisecondsTimeout=millisecondsTimeout) 
                              if ok then
-                                return commit (resultCell.GrabResult())
+                                let res = resultCell.GrabResult()
+                                return res.Commit()
                              else // timed out
                                 // issue cancellation signal
                                 innerCTS.Cancel()
