@@ -203,7 +203,7 @@ namespace Microsoft.FSharp.Control
             | _ -> failwith "Internal error: attempting to install continuation twice"
             FakeUnit
 
-        /// Save the exception continuation during propagation of an exception
+        /// Save the exception continuation during propagation of an exception, or prior to raising an exception
         member __.SaveExceptionContinuation (action: econt) = 
             storedExnCont <- Some action
 
@@ -276,7 +276,7 @@ namespace Microsoft.FSharp.Control
                 // NOTE: this must be a tailcall
                 cont res
 
-        /// Call the exception continuation of the active computation
+        /// Save the exception continuation during propagation of an exception, or prior to raising an exception
         member __.SaveExceptionContinuation(econt) =
             trampoline.SaveExceptionContinuation econt
         
@@ -312,7 +312,7 @@ namespace Microsoft.FSharp.Control
         member ctxt.CallExceptionContinuation edi =
             ctxt.aux.econt edi
 
-        /// Call the exception continuation of the active computation
+        /// Save the exception continuation during propagation of an exception, or prior to raising an exception
         member ctxt.SaveExceptionContinuation() =
             ctxt.aux.trampolineHolder.SaveExceptionContinuation ctxt.aux.econt
 
@@ -339,6 +339,13 @@ namespace Microsoft.FSharp.Control
         | Error of ExceptionDispatchInfo
         | Canceled of OperationCanceledException
 
+        [<DebuggerHidden>]
+        member res.Commit () =
+            match res with
+            | AsyncResult.Ok res -> res
+            | AsyncResult.Error edi -> edi.ThrowAny()
+            | AsyncResult.Canceled exn -> raise exn
+
     module AsyncPrimitives =
         // To consider: augment with more exception traceability information
         // To consider: add the ability to suspend running ps in debug mode
@@ -355,7 +362,7 @@ namespace Microsoft.FSharp.Control
 
         /// Apply userCode to x and call either the continuation or exception continuation depending what happens
         [<DebuggerHidden>]
-        let protectUserCodeIncludingHijackCheck (trampolineHolder:TrampolineHolder) userCode x econt (cont : 'T -> AsyncReturn) : AsyncReturn =
+        let ProtectUserCodePlusHijackCheck (ctxt: AsyncActivation<_>) userCode x : AsyncReturn =
             // This is deliberately written in a allocation-free style, except when the trampoline is taken
             let mutable res = Unchecked.defaultof<_>
             let mutable ok = false
@@ -365,16 +372,16 @@ namespace Microsoft.FSharp.Control
                 ok <- true
             finally
                 if not ok then 
-                    trampolineHolder.SaveExceptionContinuation econt
+                    ctxt.SaveExceptionContinuation()
 
             if ok then 
-                trampolineHolder.HijackCheck cont res
+                ctxt.aux.trampolineHolder.HijackCheck ctxt.cont res
             else
                 FakeUnit
 
         /// Apply userCode to x and call either the continuation or exception continuation depending what happens
         [<DebuggerHidden>]
-        let protectUserCodeIncludingHijackCheckThenBind (ctxt: AsyncActivation<_>) userCode x : AsyncReturn =
+        let ProtectUserCodePlusHijackCheckThenBind (ctxt: AsyncActivation<_>) userCode x : AsyncReturn =
             // This is deliberately written in a allocation-free style, except when the trampoline is taken
             let mutable res = Unchecked.defaultof<_>
             let mutable ok = false
@@ -396,9 +403,10 @@ namespace Microsoft.FSharp.Control
             else
                 FakeUnit
 
-        // Apply userCode to x and call either the continuation or exception continuation depending what happens
+        /// Apply userCode to x and call either the continuation or exception continuation depending what happens.
+        /// Does not do a hijack check.
         [<DebuggerHidden>]
-        let protectUserCodeNoHijackCheckThenBind (ctxt: AsyncActivation<_>) userCode x : AsyncReturn =
+        let ProtectUserCodeThenBind (ctxt: AsyncActivation<_>) userCode x : AsyncReturn =
             // This is deliberately written in a allocation-free style
             let mutable res = Unchecked.defaultof<_>
             let mutable ok = false
@@ -417,7 +425,7 @@ namespace Microsoft.FSharp.Control
         /// Perform a cancellation check and ensure that any exceptions raised by 
         /// the immediate execution of "userCode" are sent to the exception continuation.
         [<DebuggerHidden>]
-        let protectUserCodeInCtxt (ctxt: AsyncActivation<_>) userCode =
+        let ProtectUserCode (ctxt: AsyncActivation<_>) userCode =
             if ctxt.IsCancellationRequested then
                 ctxt.OnCancellation ()
             else
@@ -430,23 +438,8 @@ namespace Microsoft.FSharp.Control
                     if not ok then 
                         ctxt.SaveExceptionContinuation()
 
-       /// Reify exceptional results as exceptions
-        [<DebuggerHidden>]
-        let commit res =
-            match res with
-            | AsyncResult.Ok res -> res
-            | AsyncResult.Error edi -> edi.ThrowAny()
-            | AsyncResult.Canceled exn -> raise exn
-
-        // Reify exceptional results as exceptionsJIT 64 doesn't always take tailcalls correctly
-        
-        [<DebuggerHidden>]
-        let commitWithPossibleTimeout res =
-            match res with
-            | None -> raise (System.TimeoutException())
-            | Some res -> commit res
-
         /// Make an initial ctxt and execute the async computation.  
+        [<DebuggerHidden>]
         let startA cancellationToken trampolineHolder cont econt ccont computation =
             let ctxt = { cont = cont; aux = { token = cancellationToken; econt = econt; ccont = ccont; trampolineHolder = trampolineHolder } }
             computation.Invoke ctxt
@@ -458,29 +451,12 @@ namespace Microsoft.FSharp.Control
             WaitCallback(fun o ->
                 let f = unbox o : unit -> AsyncReturn
                 trampolineHolder.Execute f |> unfake)
-                    
-        let startThreadWithTrampoline (trampolineHolder:TrampolineHolder) (f : unit -> AsyncReturn) =
-#if FX_NO_THREAD
-            if not (ThreadPool.QueueUserWorkItem((waitCallbackForQueueWorkItemWithTrampoline trampolineHolder), f |> box)) then
-                failwith "failed to queue user work item"
-            FakeUnit
-#else        
-            (new Thread((fun _ -> trampolineHolder.Execute f |> unfake), IsBackground=true)).Start()
-            FakeUnit
-#endif            
-
 #else
-
         // Statically preallocate the delegate
         let threadStartCallbackForStartThreadWithTrampoline = 
             ParameterizedThreadStart (fun o ->
                 let (trampolineHolder,f) = unbox o : TrampolineHolder * (unit -> AsyncReturn)
                 trampolineHolder.Execute f |> unfake)
-
-        // This should be the only call to Thread.Start in this library. We must always install a trampoline.
-        let startThreadWithTrampoline (trampolineHolder:TrampolineHolder) (f : unit -> AsyncReturn) =
-            (new Thread(threadStartCallbackForStartThreadWithTrampoline,IsBackground=true)).Start((trampolineHolder,f)|>box)
-            FakeUnit
 #endif
 
         let startAsync cancellationToken cont econt ccont p =
@@ -503,7 +479,7 @@ namespace Microsoft.FSharp.Control
                  
         /// Build a context suitable for running part1 of a computation and passing the result to part2
         let bindPart2 ctxt part2 =
-            let cont a = protectUserCodeNoHijackCheckThenBind ctxt part2 a
+            let cont a = ProtectUserCodeThenBind ctxt part2 a
             { cont=cont; aux = ctxt.aux }
 
         [<DebuggerHidden>]
@@ -532,7 +508,7 @@ namespace Microsoft.FSharp.Control
                             if latch.Enter() then 
                                 FakeUnit 
                             else 
-                                protectUserCodeNoHijackCheckThenBind ctxt part2 result1
+                                ProtectUserCodeThenBind ctxt part2 result1
                         { cont=cont; aux = ctxt.aux }
 
                     let result2 = part1.Invoke ctxtPart1ThenPart2 
@@ -547,7 +523,7 @@ namespace Microsoft.FSharp.Control
                         // This indicates the body should be run sync using the saved result.
                         //
                         // NOTE: this must be a tailcall to drop the part1 frame off the stack.
-                        protectUserCodeNoHijackCheckThenBind ctxt part2 savedResult1
+                        ProtectUserCodeThenBind ctxt part2 savedResult1
 
                 else 
                     let ctxtPart1ThenPart2 = bindPart2 ctxt part2
@@ -561,7 +537,7 @@ namespace Microsoft.FSharp.Control
             if ctxt.IsCancellationRequested then
                 ctxt.OnCancellation ()
             else                    
-                protectUserCodeIncludingHijackCheckThenBind ctxt part2 result1
+                ProtectUserCodePlusHijackCheckThenBind ctxt part2 result1
 
         let inline CallDelay ctxt generator =
             Call ctxt () generator
@@ -574,19 +550,25 @@ namespace Microsoft.FSharp.Control
                 let trampolineHolder = ctxt.aux.trampolineHolder
                 // The new continuation runs the finallyFunction and resumes the old continuation
                 // If an exception is thrown we continue with the previous exception continuation.
-                let cont b     = protectUserCodeIncludingHijackCheck trampolineHolder finallyFunction () ctxt.aux.econt (fun () -> ctxt.cont b)
+                let cont b     = 
+                    let ctxt = { cont = (fun () -> ctxt.cont b); aux = ctxt.aux }
+                    ProtectUserCodePlusHijackCheck ctxt finallyFunction () 
                 // The new exception continuation runs the finallyFunction and then runs the previous exception continuation.
                 // If an exception is thrown we continue with the previous exception continuation.
-                let econt exn  = protectUserCodeIncludingHijackCheck trampolineHolder finallyFunction () ctxt.aux.econt (fun () -> ctxt.aux.econt exn)
+                let econt exn  = 
+                    let ctxt = { cont =  (fun () -> ctxt.aux.econt exn); aux = ctxt.aux }
+                    ProtectUserCodePlusHijackCheck ctxt finallyFunction ()
                 // The cancellation continuation runs the finallyFunction and then runs the previous cancellation continuation.
                 // If an exception is thrown we continue with the previous cancellation continuation (the exception is lost)
-                let ccont cexn = protectUserCodeIncludingHijackCheck trampolineHolder finallyFunction () (fun _ -> ctxt.aux.ccont cexn) (fun () -> ctxt.aux.ccont cexn)
+                let ccont cexn = 
+                    let ctxt = { cont =  (fun () -> ctxt.aux.ccont cexn); aux = { ctxt.aux with econt = (fun _ -> ctxt.aux.ccont cexn) } }
+                    ProtectUserCodePlusHijackCheck ctxt finallyFunction () 
                 computation.Invoke { ctxt with cont = cont; aux = { ctxt.aux with econt = econt; ccont = ccont } } 
 
         /// When run, ensures that any exceptions raised by the immediate execution of "f" are
         /// sent to the exception continuation.
         let protectUserCodeAsAsync f =
-            MakeAsync (fun ctxt -> protectUserCodeInCtxt ctxt f)
+            MakeAsync (fun ctxt -> ProtectUserCode ctxt f)
 
         let asyncResultToAsync res =
             MakeAsync (fun ctxt ->
@@ -613,13 +595,13 @@ namespace Microsoft.FSharp.Control
             // Note: this code ends up in user assemblies via inlining
             MakeAsync (fun ctxt -> Call ctxt result1 part2)
 
-        // delayPrim = "bindA (return ()) f"
         let inline delayA computation =
             // Note: this code ends up in user assemblies via inlining
             MakeAsync (fun ctxt -> CallDelay ctxt computation)
 
         /// Implements the sequencing construct of async computation expressions
         let inline sequentialA part1 part2 = 
+            // Note: this code ends up in user assemblies via inlining
             bindA false part1 (fun () -> part2)
 
         // Call p but augment the normal, exception and cancel continuations with a call to finallyFunction.
@@ -647,7 +629,9 @@ namespace Microsoft.FSharp.Control
         let whenCancelledA (finallyFunction : OperationCanceledException -> unit) computation =
             MakeAsync (fun ctxt ->
                 let aux = ctxt.aux
-                let ccont exn = protectUserCodeIncludingHijackCheck aux.trampolineHolder finallyFunction exn (fun _ -> aux.ccont exn) (fun _ -> aux.ccont exn)
+                let ccont exn = 
+                    let ctxt = { cont = (fun _ -> aux.ccont exn); aux = { aux with econt = (fun _ -> aux.ccont exn) } }
+                    ProtectUserCodePlusHijackCheck ctxt finallyFunction exn
                 let newCtxt = { ctxt with aux = { aux with ccont = ccont } }
                 computation.Invoke newCtxt)
 
@@ -940,7 +924,7 @@ namespace Microsoft.FSharp.Control
                     computation 
                 |> unfake
 
-            let res = resultCell.TryWaitForResultSynchronously(?timeout = timeout) in
+            let res = resultCell.TryWaitForResultSynchronously(?timeout = timeout)
             match res with
             | None -> // timed out
                 // issue cancellation signal
@@ -954,7 +938,7 @@ namespace Microsoft.FSharp.Control
                 match innerCTS with
                 |   Some subSource -> subSource.Dispose()
                 |   None -> ()
-                commit res
+                res.Commit()
 
         [<DebuggerHidden>]
         let private RunSynchronouslyInCurrentThread (token:CancellationToken,computation) =
@@ -972,7 +956,8 @@ namespace Microsoft.FSharp.Control
                         computation)
             |> unfake
 
-            commit (resultCell.TryWaitForResultSynchronously() |> Option.get)
+            let res = resultCell.TryWaitForResultSynchronously().Value
+            res.Commit()
 
         [<DebuggerHidden>]
         let RunSynchronously (token:CancellationToken, computation: Async<'T>, timeout) =
@@ -1273,7 +1258,7 @@ namespace Microsoft.FSharp.Control
                     // must not be in a 'protect' if we call cont explicitly; if cont throws, it should unwind the stack, preserving Dev10 behavior
                     ctxt.cont [| |] 
                 else  
-                  protectUserCodeInCtxt ctxt (fun ctxt ->
+                  ProtectUserCode ctxt (fun ctxt ->
                     let ctxtWithSync = delimitSyncContext ctxt  // manually resync
                     let aux = ctxtWithSync.aux
                     let count = ref tasks.Length
@@ -1337,7 +1322,7 @@ namespace Microsoft.FSharp.Control
                 | Choice2Of2 edi -> ctxt.CallExceptionContinuation edi
                 | Choice1Of2 [||] -> ctxt.cont None
                 | Choice1Of2 computations ->
-                    protectUserCodeInCtxt ctxt (fun ctxt ->
+                    ProtectUserCode ctxt (fun ctxt ->
                         let ctxtWithSync = delimitSyncContext ctxt
                         let aux = ctxtWithSync.aux
                         let noneCount = ref 0
