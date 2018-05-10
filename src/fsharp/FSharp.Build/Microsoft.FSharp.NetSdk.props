@@ -47,6 +47,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols Condition="'$(DebugSymbols)' == '' ">true</DebugSymbols>
     <Optimize Condition="'$(Optimize)' == '' ">false</Optimize>
+    <Tailcalls Condition="'$(Tailcalls)' == '' ">false</Tailcalls>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
