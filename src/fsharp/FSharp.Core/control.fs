@@ -470,12 +470,12 @@ namespace Microsoft.FSharp.Control
         /// Build a primitive without any exception or resync protection
         let MakeAsync body = { Invoke = body }
 
-        /// Use this to recover ExceptionDispatchInfo when outside the "with" part of a try/with block.
-        /// This indicates all the places where we lose a stack trace.
-        ///
-        /// Stack trace losses come when interoperating with other code that only provide us with an exception value,
-        /// notably .NET 4.x tasks and user exceptions passed to the exception continuation in Async.FromContinuations.
-        let MayLoseStackTrace exn = ExceptionDispatchInfo.RestoreOrCapture exn
+        // Use this to recover ExceptionDispatchInfo when outside the "with" part of a try/with block.
+        // This indicates all the places where we lose a stack trace.
+        //
+        // Stack trace losses come when interoperating with other code that only provide us with an exception value,
+        // notably .NET 4.x tasks and user exceptions passed to the exception continuation in Async.FromContinuations.
+        let MayLoseStackTrace exn = ExceptionDispatchInfo.RestoreOrCapture(exn)
                  
         /// Build a context suitable for running part1 of a computation and passing the result to part2
         let bindPart2 ctxt part2 =
@@ -573,7 +573,7 @@ namespace Microsoft.FSharp.Control
             MakeAsync (fun ctxt ->
                 match res with
                 | AsyncResult.Ok r -> ctxt.cont r
-                | AsyncResult.Error edi -> ctxt.SaveExceptionContinuation(); edi.ThrowAny()
+                | AsyncResult.Error edi -> ctxt.CallExceptionContinuation edi //ctxt.SaveExceptionContinuation(); edi.ThrowAny()
                 | AsyncResult.Canceled oce -> ctxt.aux.ccont oce)
 
         // Generate async computation which calls its continuation with the given result
