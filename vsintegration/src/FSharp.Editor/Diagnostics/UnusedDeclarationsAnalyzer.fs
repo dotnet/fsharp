@@ -94,6 +94,8 @@ type internal UnusedDeclarationsAnalyzer() =
         //#endif
         unusedRanges
 
+    override __.Priority = 80 // Default = 50
+
     override __.SupportedDiagnostics = ImmutableArray.Create Descriptor
     
     override __.AnalyzeSyntaxAsync(_, _) = Task.FromResult ImmutableArray<Diagnostic>.Empty
