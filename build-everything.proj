@@ -77,6 +77,7 @@
 
   <ItemGroup Condition="'$(TEST_NET40_FSHARP_SUITE)'=='1'" >
     <ProjectsWithNet40 Include="tests/fsharp/FSharp.Tests.FSharpSuite.fsproj" />
+    <ProjectsWithNet40 Include="tests/fsharp/SDKTests/AllSdkTargetsTests.proj" /> 
   </ItemGroup>
 
   <ItemGroup Condition="'$(TEST_CORECLR_FSHARP_SUITE)'=='1'" >
