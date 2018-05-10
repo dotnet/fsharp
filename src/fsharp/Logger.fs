@@ -31,6 +31,16 @@ type FSharpCompilerEventSource() =
         if this.IsEnabled() then
             this.WriteEvent(3, int functionId)
 
+    [<Event(4)>]
+    member this.BlockMessageStart(message: string, functionId: LogCompilerFunctionId) =
+        if this.IsEnabled() then
+            this.WriteEvent(4, message, int functionId)
+
+    [<Event(5)>]
+    member this.BlockMessageStop(message: string, functionId: LogCompilerFunctionId) =
+        if this.IsEnabled() then
+            this.WriteEvent(5, message, int functionId)
+
 [<RequireQualifiedAccess>]
 module Logger =
 
@@ -45,3 +55,9 @@ module Logger =
         { new IDisposable with
             member __.Dispose() =
                 FSharpCompilerEventSource.Instance.BlockStop(functionId) }
+
+    let LogBlockMessage message functionId =
+        FSharpCompilerEventSource.Instance.BlockMessageStart(message, functionId)
+        { new IDisposable with
+            member __.Dispose() =
+                FSharpCompilerEventSource.Instance.BlockMessageStop(message, functionId) }

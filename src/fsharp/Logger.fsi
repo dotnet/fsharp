@@ -19,3 +19,5 @@ module internal Logger =
     val LogBlockStop : LogCompilerFunctionId -> unit
 
     val LogBlock : LogCompilerFunctionId -> IDisposable
+
+    val LogBlockMessage : message: string -> LogCompilerFunctionId -> IDisposable
