@@ -87,6 +87,6 @@ type ConsoleLoggerProvider =
 // For unit testing
 module internal MainModuleBuilder =
     
-    val fileVersion: warn: (exn -> unit) -> findStringAttr: (string -> string option) -> assemblyVersion: ILVersionInfo -> ILVersionInfo
-    val productVersion: warn: (exn -> unit) -> findStringAttr: (string -> string option) -> fileVersion: ILVersionInfo -> string
+    val fileVersion: findStringAttr: (string -> string option) -> assemblyVersion: ILVersionInfo -> ILVersionInfo
+    val productVersion: findStringAttr: (string -> string option) -> fileVersion: ILVersionInfo -> string
     val productVersionToILVersionInfo: string -> ILVersionInfo

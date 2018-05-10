@@ -85,9 +85,9 @@ module internal CompletionUtils =
     let shouldProvideCompletion (documentId: DocumentId, filePath: string, defines: string list, sourceText: SourceText, triggerPosition: int) : bool =
         let textLines = sourceText.Lines
         let triggerLine = textLines.GetLineFromPosition triggerPosition
-        let colorizationData = Tokenizer.getColorizationData(documentId, sourceText, triggerLine.Span, Some filePath, defines, CancellationToken.None)
-        colorizationData.Count = 0 || // we should provide completion at the start of empty line, where there are no tokens at all
-        colorizationData.Exists (fun classifiedSpan -> 
+        let classifiedSpans = Tokenizer.getClassifiedSpans(documentId, sourceText, triggerLine.Span, Some filePath, defines, CancellationToken.None)
+        classifiedSpans.Count = 0 || // we should provide completion at the start of empty line, where there are no tokens at all
+        classifiedSpans.Exists (fun classifiedSpan -> 
             classifiedSpan.TextSpan.IntersectsWith triggerPosition &&
             (
                 match classifiedSpan.ClassificationType with

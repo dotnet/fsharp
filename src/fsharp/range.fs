@@ -45,6 +45,7 @@ type pos(code:int32) =
     static member Decode (code:int32) : pos = pos code
     override p.Equals(obj) = match obj with :? pos as p2 -> code = p2.Encoding | _ -> false
     override p.GetHashCode() = hash code
+    override p.ToString() = sprintf "(%d,%d)" p.Line p.Column
 
 [<Literal>]
 let fileIndexBitCount = 14

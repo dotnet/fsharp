@@ -55,3 +55,49 @@ match "foo" with
 
         getCaseUsages completePatternInput 7 |> Array.head |> getGroupName |> shouldEqual "|True|False|"
         getCaseUsages partialPatternInput 7 |> Array.head |> getGroupName |> shouldEqual "|String|_|"
+
+
+module XmlDocSig =
+
+    [<Test>]
+    let ``XmlDocSig of modules in namespace`` () =
+        let source = """
+namespace Ns1
+module Mod1 =
+    let val1 = 1
+    module Mod2 =
+       let func2 () = ()
+"""
+        let fileName, options = mkTestFileAndOptions source [| |]
+        let _, checkResults = parseAndCheckFile fileName source options  
+
+        let mod1 = checkResults.PartialAssemblySignature.FindEntityByPath ["Ns1"; "Mod1"] |> Option.get
+        let mod2 = checkResults.PartialAssemblySignature.FindEntityByPath ["Ns1"; "Mod1"; "Mod2"] |> Option.get
+        let mod1val1 = mod1.MembersFunctionsAndValues |> Seq.find (fun m -> m.DisplayName = "val1")
+        let mod2func2 = mod2.MembersFunctionsAndValues |> Seq.find (fun m -> m.DisplayName = "func2")
+        mod1.XmlDocSig |> shouldEqual "T:Ns1.Mod1"
+        mod2.XmlDocSig |> shouldEqual "T:Ns1.Mod1.Mod2"
+        mod1val1.XmlDocSig |> shouldEqual "P:Ns1.Mod1.val1"
+        mod2func2.XmlDocSig |> shouldEqual "M:Ns1.Mod1.Mod2.func2"
+
+    [<Test>]
+    let ``XmlDocSig of modules`` () =
+         let source = """
+module Mod1 
+let val1 = 1
+module Mod2 =
+    let func2 () = ()
+"""
+         let fileName, options = mkTestFileAndOptions source [| |]
+         let _, checkResults = parseAndCheckFile fileName source options  
+
+         let mod1 = checkResults.PartialAssemblySignature.FindEntityByPath ["Mod1"] |> Option.get
+         let mod2 = checkResults.PartialAssemblySignature.FindEntityByPath ["Mod1"; "Mod2"] |> Option.get
+         let mod1val1 = mod1.MembersFunctionsAndValues |> Seq.find (fun m -> m.DisplayName = "val1")
+         let mod2func2 = mod2.MembersFunctionsAndValues |> Seq.find (fun m -> m.DisplayName = "func2")
+         mod1.XmlDocSig |> shouldEqual "T:Mod1"
+         mod2.XmlDocSig |> shouldEqual "T:Mod1.Mod2"
+         mod1val1.XmlDocSig |> shouldEqual "P:Mod1.val1"
+         mod2func2.XmlDocSig |> shouldEqual "M:Mod1.Mod2.func2"
+
+                 

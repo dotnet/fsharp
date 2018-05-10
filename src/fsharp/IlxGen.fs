@@ -1053,10 +1053,10 @@ type PropKey = PropKey of string * ILTypes * ILThisConvention
 
 let AddPropertyDefToHash (m:range) (ht:Dictionary<PropKey,(int * ILPropertyDef)>) (pdef: ILPropertyDef) =
     let nm = PropKey(pdef.Name, pdef.Args, pdef.CallingConv)
-    if ht.ContainsKey nm then
-        let idx,pd = ht.[nm]
+    match ht.TryGetValue(nm) with
+    | true, (idx, pd) ->
         ht.[nm] <- (idx, MergePropertyPair m pd pdef)
-    else 
+    | _ ->
         ht.[nm] <- (ht.Count, pdef)
     
 
@@ -1291,10 +1291,9 @@ type CodeGenBuffer(m:range,
     
     let rec lab2pc n lbl = 
         if n = System.Int32.MaxValue then error(InternalError("recursive label graph",m))
-        if codeLabelToCodeLabel.ContainsKey lbl then 
-            lab2pc (n+1) codeLabelToCodeLabel.[lbl]
-        else
-           codeLabelToPC.[lbl] 
+        match codeLabelToCodeLabel.TryGetValue(lbl) with
+        | true, l -> lab2pc (n + 1) l
+        | _ -> codeLabelToPC.[lbl] 
     
     let mutable lastSeqPoint = None
 
@@ -2475,27 +2474,27 @@ and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr sequel =
 and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
   match (f,tyargs,args) with 
    (* Look for tailcall to turn into branch *)
-  | (Expr.Val(v,_,_),_,_) when  
-       ((ListAssoc.containsKey cenv.g.valRefEq v eenv.innerVals) && 
-        not v.IsConstructor &&
-        let (kind,_) = ListAssoc.find cenv.g.valRefEq v eenv.innerVals
-        (* when branch-calling methods we must have the right type parameters *)
-        begin match kind with
-          | BranchCallClosure _ -> true
-          | BranchCallMethod (_,_,tps,_,_)  ->  
-              (List.lengthsEqAndForall2 (fun ty tp -> typeEquiv cenv.g ty (mkTyparTy tp)) tyargs tps)
-        end &&
-        (* must be exact #args, ignoring tupling - we untuple if needed below *)
-        (let arityInfo = 
-           match kind with
-           | BranchCallClosure arityInfo
-           | BranchCallMethod (arityInfo,_,_,_,_)  ->  arityInfo
-         arityInfo.Length = args.Length
-        ) &&
-        (* no tailcall out of exception handler, etc. *)
-        (match sequelIgnoringEndScopesAndDiscard sequel with Return | ReturnVoid -> true | _ -> false))
+  | (Expr.Val(v,_,_),_,_) when
+        match ListAssoc.tryFind cenv.g.valRefEq v eenv.innerVals with
+        | Some (kind,_) ->
+           (not v.IsConstructor &&
+            (* when branch-calling methods we must have the right type parameters *)
+            (match kind with
+             | BranchCallClosure _ -> true
+             | BranchCallMethod (_,_,tps,_,_)  ->  
+                  (List.lengthsEqAndForall2 (fun ty tp -> typeEquiv cenv.g ty (mkTyparTy tp)) tyargs tps)) &&
+            (* must be exact #args, ignoring tupling - we untuple if needed below *)
+            (let arityInfo = 
+               match kind with
+               | BranchCallClosure arityInfo
+               | BranchCallMethod (arityInfo,_,_,_,_)  -> arityInfo
+             arityInfo.Length = args.Length
+            ) &&
+            (* no tailcall out of exception handler, etc. *)
+            (match sequelIgnoringEndScopesAndDiscard sequel with Return | ReturnVoid -> true | _ -> false))
+        | None -> false
     -> 
-        let (kind,mark) = ListAssoc.find cenv.g.valRefEq v eenv.innerVals
+        let (kind,mark) = ListAssoc.find cenv.g.valRefEq v eenv.innerVals // already checked above in when guard
         let ntmargs = 
           match kind with
           | BranchCallClosure arityInfo ->
@@ -3435,7 +3434,7 @@ and GenGenericParam cenv eenv (tp:Typar) =
           // use the CompiledName if given
           // Inference variables get given an IL name "TA, TB" etc.
           let nm = 
-              match tp.typar_il_name with 
+              match tp.ILName with 
               | None -> tp.Name  
               | Some nm -> nm
           // Some special rules apply when compiling Fsharp.Core.dll to avoid a proliferation of [<CompiledName>] attributes on type parameters

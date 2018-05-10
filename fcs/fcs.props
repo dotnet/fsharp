@@ -5,6 +5,7 @@
 
     <VersionPrefix>22.0.3</VersionPrefix>
     <OtherFlags>--version:$(VersionPrefix)</OtherFlags>
+    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>    
     <!-- FSharp.Compiler.Tools is currently only used to get a working FSI.EXE to execute some scripts during the build -->
     <!-- The LKG FSI.EXE requires MSBuild 15 to be installed, which is painful -->
     <FsiToolPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.27\tools</FsiToolPath>

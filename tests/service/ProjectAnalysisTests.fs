@@ -3968,8 +3968,8 @@ let ``Test project28 all symbols in signature`` () =
     xmlDocSigs
       |> shouldEqual 
             [|("FSharpEntity", "M", "T:M");
-              ("FSharpMemberOrFunctionOrValue", "( |Even|Odd| )", "M:|Even|Odd|(System.Int32)");
-              ("FSharpMemberOrFunctionOrValue", "TestNumber", "M:TestNumber(System.Int32)");
+              ("FSharpMemberOrFunctionOrValue", "( |Even|Odd| )", "M:M.|Even|Odd|(System.Int32)");
+              ("FSharpMemberOrFunctionOrValue", "TestNumber", "M:M.TestNumber(System.Int32)");
               ("FSharpEntity", "DU", "T:M.DU"); 
               ("FSharpUnionCase", "A", "T:M.DU.A");
               ("FSharpField", "A", "T:M.DU.A"); 

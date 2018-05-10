@@ -25,7 +25,7 @@ let pretty () = true
 let tyvar_generator = 
   let i = ref 0 
   fun n -> 
-    incr i; n^string !i
+    incr i; n + string !i
 
 // Carry an environment because the way we print method variables 
 // depends on the gparams of the current scope. 
@@ -789,19 +789,19 @@ let goutput_mbody is_entrypoint env os (md: ILMethodDef) =
 let goutput_mdef env os (md:ILMethodDef) =
   let attrs = 
       if md.IsVirtual then
-            "virtual "^
-            (if md.IsFinal then "final " else "")^
-            (if md.IsNewSlot then "newslot " else "")^
-            (if md.IsCheckAccessOnOverride then " strict " else "")^
-            (if md.IsAbstract then " abstract " else "")^
+            "virtual " +
+            (if md.IsFinal then "final " else "") +
+            (if md.IsNewSlot then "newslot " else "") +
+            (if md.IsCheckAccessOnOverride then " strict " else "") +
+            (if md.IsAbstract then " abstract " else "") +
               "  "
       elif md.IsNonVirtualInstance then     ""
       elif md.IsConstructor then "rtspecialname"
       elif md.IsStatic then
-            "static "^
+            "static " +
             (match md.Body.Contents with 
               MethodBody.PInvoke (attr) -> 
-                "pinvokeimpl(\""^ attr.Where.Name^"\" as \""^ attr.Name ^"\""^
+                "pinvokeimpl(\"" + attr.Where.Name + "\" as \"" + attr.Name + "\"" +
                 (match attr.CallingConv with 
                 | PInvokeCallingConvention.None -> ""
                 | PInvokeCallingConvention.Cdecl -> " cdecl"

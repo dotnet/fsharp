@@ -345,7 +345,7 @@ let FixupNewTypars m (formalEnclosingTypars:Typars) (tinst: TType list) (tpsorig
     // The real code.. 
     let renaming,tptys = mkTyparToTyparRenaming tpsorig tps
     let tprefInst = mkTyparInst formalEnclosingTypars tinst @ renaming
-    (tpsorig,tps) ||> List.iter2 (fun tporig tp -> tp.FixupConstraints (CopyTyparConstraints  m tprefInst tporig)) 
+    (tpsorig,tps) ||> List.iter2 (fun tporig tp -> tp.SetConstraints (CopyTyparConstraints  m tprefInst tporig)) 
     renaming,tptys
 
 
