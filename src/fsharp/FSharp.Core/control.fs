@@ -407,17 +407,6 @@ namespace Microsoft.FSharp.Control
             WaitCallback(fun o ->
                 let f = unbox o : unit -> AsyncReturn
                 trampolineHolder.Execute f |> unfake)
-                    
-        let startThreadWithTrampoline (trampolineHolder:TrampolineHolder) (f : unit -> AsyncReturn) =
-#if FX_NO_THREAD
-            if not (ThreadPool.QueueUserWorkItem((waitCallbackForQueueWorkItemWithTrampoline trampolineHolder), f |> box)) then
-                failwith "failed to queue user work item"
-            FakeUnit
-#else        
-            (new Thread((fun _ -> trampolineHolder.Execute f |> unfake), IsBackground=true)).Start()
-            FakeUnit
-#endif            
-
 #else
 
         // Statically preallocate the delegate
@@ -425,11 +414,6 @@ namespace Microsoft.FSharp.Control
             ParameterizedThreadStart (fun o ->
                 let (trampolineHolder,f) = unbox o : TrampolineHolder * (unit -> AsyncReturn)
                 trampolineHolder.Execute f |> unfake)
-
-        // This should be the only call to Thread.Start in this library. We must always install a trampoline.
-        let startThreadWithTrampoline (trampolineHolder:TrampolineHolder) (f : unit -> AsyncReturn) =
-            (new Thread(threadStartCallbackForStartThreadWithTrampoline,IsBackground=true)).Start((trampolineHolder,f)|>box)
-            FakeUnit
 #endif
 
         let startAsync cancellationToken cont econt ccont p =
