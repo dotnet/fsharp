@@ -306,6 +306,7 @@ type ValMultiMap<'T> =
 type TyparMap<'T>  =
     member Item : Typar -> 'T with get
     member ContainsKey : Typar -> bool
+    member TryFind : Typar -> 'T option
     member Add : Typar * 'T -> TyparMap<'T> 
     static member Empty : TyparMap<'T> 
 

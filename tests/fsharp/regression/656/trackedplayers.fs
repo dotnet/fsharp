@@ -66,10 +66,10 @@ let CreateTrajectories (gamertags:string array) table f =
 /// Create player check box					
 let CreatePlayerCheckBox (toolTip:ToolTip) (player:PlayerRecord) eventHandler =
 	let box = CreateCheckBox player.gamertag player eventHandler in
-	let tipText = "Mu(" ^ player.mu.ToString() ^ ")" 
-				^ ", TrueSkill(" ^ player.TrueSkill.ToString() ^ ")" 
-				^ ", Level(" ^ (player.Level !k1 !k2 k3).ToString() ^ ")"
-				^ ", Played(" ^ player.games_played.ToString() ^ ")" in
+	let tipText = "Mu(" + player.mu.ToString() + ")" 
+				+ ", TrueSkill(" + player.TrueSkill.ToString() + ")" 
+				+ ", Level(" + (player.Level !k1 !k2 k3).ToString() + ")"
+				+ ", Played(" + player.games_played.ToString() + ")" in
 	toolTip.SetToolTip(box, tipText); 
 	box
 
@@ -266,7 +266,7 @@ let PopulateForm (form:Form) (formDock:FormDockLocation) measure (playedStart,pl
 							| _ ->  () );
 					);										
 					()															
-				with e -> MessageBox.Show("Paste failed: " ^ e.Message) |> ignore
+				with e -> MessageBox.Show("Paste failed: " + e.Message) |> ignore
 				in () 			
 			| _ -> ()		
 	 ) in	

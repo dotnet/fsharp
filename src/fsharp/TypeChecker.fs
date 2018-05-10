@@ -124,13 +124,13 @@ let IsSecurityAttribute (g: TcGlobals) amap (casmap : Dictionary<Stamp, bool>) (
     | Some attr ->
         match attr.TyconRef.TryDeref with
         | VSome _ -> 
-           let tcs = tcref.Stamp
-           if casmap.ContainsKey(tcs) then
-             casmap.[tcs]
-           else
-             let exists = ExistsInEntireHierarchyOfType (fun t -> typeEquiv g t (mkAppTy attr.TyconRef [])) g amap m AllowMultiIntfInstantiations.Yes (mkAppTy tcref [])
-             casmap.[tcs] <- exists
-             exists
+            let tcs = tcref.Stamp
+            match casmap.TryGetValue(tcs) with
+            | true, c -> c
+            | _ ->
+                let exists = ExistsInEntireHierarchyOfType (fun t -> typeEquiv g t (mkAppTy attr.TyconRef [])) g amap m AllowMultiIntfInstantiations.Yes (mkAppTy tcref [])
+                casmap.[tcs] <- exists
+                exists
         | VNone -> false  
 
 let IsSecurityCriticalAttribute g (Attrib(tcref, _, _, _, _, _, _)) =
@@ -1087,8 +1087,8 @@ let MakeMemberDataAndMangledNameForMemberVal(g, tcref, isExtrinsic, attrs, optIm
         if isExtrinsic then 
              let tname = tcref.LogicalName
              let text = tname + "." + logicalName
-             let text = if memberFlags.MemberKind <> MemberKind.Constructor && memberFlags.MemberKind <> MemberKind.ClassConstructor && not memberFlags.IsInstance then text^".Static" else text
-             let text = if memberFlags.IsOverrideOrExplicitImpl then text^".Override" else text
+             let text = if memberFlags.MemberKind <> MemberKind.Constructor && memberFlags.MemberKind <> MemberKind.ClassConstructor && not memberFlags.IsInstance then text + ".Static" else text
+             let text = if memberFlags.IsOverrideOrExplicitImpl then text + ".Override" else text
              text
         else
             List.foldBack (tcrefOfAppTy g >> qualifiedMangledNameOfTyconRef) optIntfSlotTys logicalName
@@ -2655,7 +2655,7 @@ module EventDeclarationNormalization =
         if CompileAsEvent cenv.g bindingAttribs then 
 
             let MakeOne (prefix, target) = 
-                let declPattern = RenameBindingPattern (fun s -> prefix^s) declPattern
+                let declPattern = RenameBindingPattern (fun s -> prefix + s) declPattern
                 let argName = "handler"
                 // modify the rhs and argument data
                 let bindingRhs, valSynData = 
@@ -4513,7 +4513,7 @@ and TcTyparDecl cenv env (TyparDecl(synAttrs, (Typar(id, _, _) as stp))) =
     let tp = NewTypar ((if hasMeasureAttr then TyparKind.Measure else TyparKind.Type), TyparRigidity.WarnIfNotRigid, stp, false, TyparDynamicReq.Yes, attrs, hasEqDepAttr, hasCompDepAttr)
     match TryFindFSharpStringAttribute cenv.g cenv.g.attrib_CompiledNameAttribute attrs with 
     | Some compiledName -> 
-        tp.typar_il_name <- Some compiledName
+        tp.SetILName (Some compiledName)
     | None ->  
         ()
     let item = Item.TypeVar(id.idText, tp)
@@ -4940,7 +4940,7 @@ and TcTypeApp cenv newOk checkCxs occ env tpenv m tcref pathTypeArgs (synArgTys:
 
     // If we're not checking constraints, i.e. when we first assert the super/interfaces of a type definition, then just 
     // clear the constraint lists of the freshly generated type variables. A little ugly but fairly localized. 
-    if checkCxs = NoCheckCxs then tps |> List.iter (fun tp -> tp.typar_constraints <- [])
+    if checkCxs = NoCheckCxs then tps |> List.iter (fun tp -> tp.SetConstraints [])
     if tinst.Length <> pathTypeArgs.Length + synArgTys.Length then 
         error (TyconBadArgs(env.DisplayEnv, tcref, pathTypeArgs.Length + synArgTys.Length, m))
 
@@ -11450,10 +11450,10 @@ and TcIncrementalLetRecGeneralization cenv scopem
         // pathological situations
         let freeInUncheckedRecBinds = 
             lazy ((emptyFreeTyvars, cenv.recUses.Contents) ||> Map.fold (fun acc vStamp _ -> 
-                       if uncheckedRecBindsTable.ContainsKey vStamp then 
-                           let fwdBind = uncheckedRecBindsTable.[vStamp]  
+                       match Map.tryFind vStamp uncheckedRecBindsTable with
+                       | Some fwdBind ->
                            accFreeInType CollectAllNoCaching  fwdBind.RecBindingInfo.Val.Type acc
-                       else
+                       | None ->
                            acc))
 
         let rec loop (preGeneralizationRecBinds: PreGeneralizationRecursiveBinding list, 
@@ -13285,6 +13285,7 @@ module MutRecBindingChecking =
                         // Phase2B: typecheck the argument to an 'inherits' call and build the new object expr for the inherit-call 
                         | Phase2AInherit (synBaseTy, arg, baseValOpt, m) ->
                             let baseTy, tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurence.Use envInstance tpenv synBaseTy
+                            let baseTy = baseTy |> helpEnsureTypeHasMetadata cenv.g
                             let inheritsExpr, tpenv = TcNewExpr cenv envInstance tpenv baseTy (Some synBaseTy.Range) true arg m
                             let envInstance = match baseValOpt with Some baseVal -> AddLocalVal cenv.tcSink scopem baseVal envInstance | None -> envInstance
                             let envNonRec   = match baseValOpt with Some baseVal -> AddLocalVal cenv.tcSink scopem baseVal envNonRec   | None -> envNonRec
@@ -15093,6 +15094,15 @@ module EstablishTypeDefinitionCores =
                   | SynTypeDefnSimpleRepr.Enum _ -> 
                       Some(cenv.g.system_Enum_typ) 
 
+              // Allow super type to be a function type but convert back to FSharpFunc<A,B> to make sure it has metadata
+              // (We don't apply the same rule to tuple types, i.e. no F#-declared inheritors of those are permitted)
+              let super = 
+                  super |> Option.map (fun ty -> 
+                     if isFunTy cenv.g ty then  
+                         let (a,b) = destFunTy cenv.g ty
+                         mkAppTy cenv.g.fastFunc_tcr [a; b] 
+                     else ty)
+
               // Publish the super type
               tycon.TypeContents.tcaug_super <- super
               
@@ -16307,7 +16317,11 @@ module TcDeclarations =
                        (fun _binds ->  [  (* no values are available yet *) ]) 
                        cenv true scopem m 
 
-        let _ = TcMutRecSignatureDecls_Phase2 cenv scopem envMutRecPrelimWithReprs withEnvs
+        let mutRecDefnsAfterVals = TcMutRecSignatureDecls_Phase2 cenv scopem envMutRecPrelimWithReprs withEnvs
+
+        // Updates the types of the modules to contain the contents so far, which now includes values and members
+        MutRecBindingChecking.TcMutRecDefns_UpdateModuleContents mutRecNSInfo mutRecDefnsAfterVals
+
         envMutRec
 
 //-------------------------------------------------------------------------
@@ -17163,6 +17177,21 @@ let TypeCheckOneImplFile
             with e -> 
                 errorRecovery e m
                 false)
+
+    // Warn on version attributes.
+    topAttrs.assemblyAttrs |> List.iter (function
+       | Attrib(tref, _, [ AttribExpr(Expr.Const (Const.String(version), range, _), _) ] , _, _, _, _) ->
+            let attrName = tref.CompiledRepresentationForNamedType.FullName
+            let isValid() =
+                try IL.parseILVersion version |> ignore; true
+                with _ -> false
+            match attrName with
+            | "System.Reflection.AssemblyInformationalVersionAttribute"
+            | "System.Reflection.AssemblyFileVersionAttribute" //TODO compile error like c# compiler?
+            | "System.Reflection.AssemblyVersionAttribute" when not (isValid()) ->
+                warning(Error(FSComp.SR.fscBadAssemblyVersion(attrName, version), range))
+            | _ -> ()
+        | _ -> ())
 
     let implFile = TImplFile(qualNameOfFile, scopedPragmas, implFileExprAfterSig, hasExplicitEntryPoint, isScript)
 

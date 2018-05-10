@@ -52,13 +52,15 @@ steps:
   continueOnError: true
 
 # Create static drop
-- task: ms-vseng.MicroBuildTasks.bd4b789e-7292-4b73-a8ee-612d3dd615f1.MicroBuildStaticDrop@1
+- task: PublishBuildArtifacts@1
   displayName: Create static drop
   inputs:
-    CopyRoot: '$(MSBuildConfiguration)'
-    Contents: '**'
-    ArtifactName: Binaries
-    TargetPath: '$(DropRoot)\$(Build.DefinitionName)\$(Build.SourceBranchName)\$(Build.BuildNumber)\Binaries'
+    PathtoPublish: '$(MSBuildConfiguration)'
+    ArtifactName: '$(Build.BuildNumber)'
+    publishLocation: FilePath
+    TargetPath: '$(DropRoot)\$(Build.DefinitionName)\$(Build.SourceBranchName)'
+    Parallel: true
+    ParallelCount: 64
   condition: and(succeeded(), contains(variables['PB_PublishType'], 'drop'))
 
 # Publish symbols

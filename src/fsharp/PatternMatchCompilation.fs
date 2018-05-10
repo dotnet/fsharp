@@ -22,45 +22,45 @@ exception RuleNeverMatched of range
 exception EnumMatchIncomplete of bool * (string * bool) option * range
 
 type ActionOnFailure = 
-  | ThrowIncompleteMatchException 
-  | IgnoreWithWarning 
-  | Throw 
-  | Rethrow 
-  | FailFilter
+    | ThrowIncompleteMatchException 
+    | IgnoreWithWarning 
+    | Throw 
+    | Rethrow 
+    | FailFilter
 
 [<NoEquality; NoComparison>]
 /// Represents type-checked patterns
 type Pattern =
-  | TPat_const of Const * range
-  | TPat_wild of range  (* note = TPat_disjs([],m), but we haven't yet removed that duplication *)
-  | TPat_as of  Pattern * PatternValBinding * range (* note: can be replaced by TPat_var, i.e. equals TPat_conjs([TPat_var; pat]) *)
-  | TPat_disjs of  Pattern list * range
-  | TPat_conjs of  Pattern list * range
-  | TPat_query of (Expr * TType list * (ValRef * TypeInst) option * int * ActivePatternInfo) * Pattern * range
-  | TPat_unioncase of UnionCaseRef * TypeInst * Pattern list * range
-  | TPat_exnconstr of TyconRef * Pattern list * range
-  | TPat_tuple of  TupInfo * Pattern list * TType list * range
-  | TPat_array of  Pattern list * TType * range
-  | TPat_recd of TyconRef * TypeInst * Pattern list * range
-  | TPat_range of char * char * range
-  | TPat_null of range
-  | TPat_isinst of TType * TType * PatternValBinding option * range
-  member this.Range =
-    match this with
-    |   TPat_const(_,m) -> m
-    |   TPat_wild m -> m
-    |   TPat_as(_,_,m) -> m
-    |   TPat_disjs(_,m) -> m
-    |   TPat_conjs(_,m) -> m
-    |   TPat_query(_,_,m) -> m
-    |   TPat_unioncase(_,_,_,m) -> m
-    |   TPat_exnconstr(_,_,m) -> m
-    |   TPat_tuple(_,_,_,m) -> m
-    |   TPat_array(_,_,m) -> m
-    |   TPat_recd(_,_,_,m) -> m
-    |   TPat_range(_,_,m) -> m
-    |   TPat_null(m) -> m
-    |   TPat_isinst(_,_,_,m) -> m
+    | TPat_const of Const * range
+    | TPat_wild of range  (* note = TPat_disjs([],m), but we haven't yet removed that duplication *)
+    | TPat_as of  Pattern * PatternValBinding * range (* note: can be replaced by TPat_var, i.e. equals TPat_conjs([TPat_var; pat]) *)
+    | TPat_disjs of  Pattern list * range
+    | TPat_conjs of  Pattern list * range
+    | TPat_query of (Expr * TType list * (ValRef * TypeInst) option * int * ActivePatternInfo) * Pattern * range
+    | TPat_unioncase of UnionCaseRef * TypeInst * Pattern list * range
+    | TPat_exnconstr of TyconRef * Pattern list * range
+    | TPat_tuple of  TupInfo * Pattern list * TType list * range
+    | TPat_array of  Pattern list * TType * range
+    | TPat_recd of TyconRef * TypeInst * Pattern list * range
+    | TPat_range of char * char * range
+    | TPat_null of range
+    | TPat_isinst of TType * TType * PatternValBinding option * range
+    member this.Range =
+        match this with
+        |   TPat_const(_,m) -> m
+        |   TPat_wild m -> m
+        |   TPat_as(_,_,m) -> m
+        |   TPat_disjs(_,m) -> m
+        |   TPat_conjs(_,m) -> m
+        |   TPat_query(_,_,m) -> m
+        |   TPat_unioncase(_,_,_,m) -> m
+        |   TPat_exnconstr(_,_,m) -> m
+        |   TPat_tuple(_,_,_,m) -> m
+        |   TPat_array(_,_,m) -> m
+        |   TPat_recd(_,_,_,m) -> m
+        |   TPat_range(_,_,m) -> m
+        |   TPat_null(m) -> m
+        |   TPat_isinst(_,_,_,m) -> m
 
 and PatternValBinding = PBind of Val * TypeScheme
 
@@ -105,11 +105,11 @@ let BindSubExprOfInput g amap gtps (PBind(v,tyscheme)) m (SubExpr(accessf,(ve2,v
             let tyargs = 
                 let someSolved = ref false
                 let freezeVar gtp = 
-                     if isBeingGeneralized gtp tyscheme then 
-                         mkTyparTy gtp 
-                     else 
-                         someSolved := true
-                         TypeRelations.ChooseTyparSolution g amap gtp
+                    if isBeingGeneralized gtp tyscheme then 
+                        mkTyparTy gtp 
+                    else 
+                        someSolved := true
+                        TypeRelations.ChooseTyparSolution g amap gtp
 
                 let solutions = List.map freezeVar gtps
                 if !someSolved then 
@@ -176,25 +176,25 @@ let RefuteDiscrimSet g m path discrims =
         match path with 
         | PathQuery _ -> raise CannotRefute
         | PathConj (p,_j) -> 
-             go p tm
+            go p tm
         | PathTuple (p,tys,j) -> 
-             let k, eCoversVals = mkOneKnown tm j tys
-             go p (fun _ -> mkRefTupled g m k tys, eCoversVals)
+            let k, eCoversVals = mkOneKnown tm j tys
+            go p (fun _ -> mkRefTupled g m k tys, eCoversVals)
         | PathRecd (p,tcref,tinst,j) -> 
-             let flds, eCoversVals = tcref |> actualTysOfInstanceRecdFields (mkTyconRefInst tcref tinst) |> mkOneKnown tm j
-             go p (fun _ -> Expr.Op(TOp.Recd(RecdExpr, tcref),tinst, flds,m), eCoversVals)
+            let flds, eCoversVals = tcref |> actualTysOfInstanceRecdFields (mkTyconRefInst tcref tinst) |> mkOneKnown tm j
+            go p (fun _ -> Expr.Op(TOp.Recd(RecdExpr, tcref),tinst, flds,m), eCoversVals)
 
         | PathUnionConstr (p,ucref,tinst,j) -> 
-             let flds, eCoversVals = ucref |> actualTysOfUnionCaseFields (mkTyconRefInst ucref.TyconRef tinst)|> mkOneKnown tm j
-             go p (fun _ -> Expr.Op(TOp.UnionCase(ucref),tinst, flds,m), eCoversVals)
+            let flds, eCoversVals = ucref |> actualTysOfUnionCaseFields (mkTyconRefInst ucref.TyconRef tinst)|> mkOneKnown tm j
+            go p (fun _ -> Expr.Op(TOp.UnionCase(ucref),tinst, flds,m), eCoversVals)
 
         | PathArray (p,ty,len,n) -> 
-             let flds, eCoversVals = mkOneKnown tm n (List.replicate len ty)
-             go p (fun _ -> Expr.Op(TOp.Array,[ty], flds ,m), eCoversVals)
+            let flds, eCoversVals = mkOneKnown tm n (List.replicate len ty)
+            go p (fun _ -> Expr.Op(TOp.Array,[ty], flds ,m), eCoversVals)
 
         | PathExnConstr (p,ecref,n) -> 
-             let flds, eCoversVals = ecref |> recdFieldTysOfExnDefRef |> mkOneKnown tm n
-             go p (fun _ -> Expr.Op(TOp.ExnConstr(ecref),[], flds,m), eCoversVals)
+            let flds, eCoversVals = ecref |> recdFieldTysOfExnDefRef |> mkOneKnown tm n
+            go p (fun _ -> Expr.Op(TOp.ExnConstr(ecref),[], flds,m), eCoversVals)
 
         | PathEmpty(ty) -> tm ty
         
@@ -203,138 +203,137 @@ let RefuteDiscrimSet g m path discrims =
         List.map fst flds, List.fold (fun acc (_, eCoversVals) -> eCoversVals || acc) false flds
     and mkUnknowns tys = List.map (fun x -> mkUnknown x) tys
 
-    let tm ty = 
-        match discrims with 
-        | [DecisionTreeTest.IsNull] -> 
+    let tm ty =
+        match discrims with
+        | [DecisionTreeTest.IsNull] ->
             snd(mkCompGenLocal m notNullText ty), false
-        | [DecisionTreeTest.IsInst (_,_)] -> 
+        | [DecisionTreeTest.IsInst (_,_)] ->
             snd(mkCompGenLocal m otherSubtypeText ty), false
-        | (DecisionTreeTest.Const c :: rest) -> 
+        | (DecisionTreeTest.Const c :: rest) ->
             let consts = Set.ofList (c :: List.choose (function DecisionTreeTest.Const(c) -> Some c | _ -> None) rest)
-            let c' = 
+            let c' =
                 Seq.tryFind (fun c -> not (consts.Contains(c)))
-                     (match c with 
-                      | Const.Bool _ -> [ true; false ] |> List.toSeq |> Seq.map (fun v -> Const.Bool(v))
-                      | Const.SByte _ ->  Seq.append (seq { 0y .. System.SByte.MaxValue }) (seq { System.SByte.MinValue .. 0y })|> Seq.map (fun v -> Const.SByte(v))
-                      | Const.Int16 _ -> Seq.append (seq { 0s .. System.Int16.MaxValue }) (seq { System.Int16.MinValue .. 0s }) |> Seq.map (fun v -> Const.Int16(v))
-                      | Const.Int32 _ ->  Seq.append (seq { 0 .. System.Int32.MaxValue }) (seq { System.Int32.MinValue .. 0 })|> Seq.map (fun v -> Const.Int32(v))
-                      | Const.Int64 _ ->  Seq.append (seq { 0L .. System.Int64.MaxValue }) (seq { System.Int64.MinValue .. 0L })|> Seq.map (fun v -> Const.Int64(v))
-                      | Const.IntPtr _ ->  Seq.append (seq { 0L .. System.Int64.MaxValue }) (seq { System.Int64.MinValue .. 0L })|> Seq.map (fun v -> Const.IntPtr(v))
-                      | Const.Byte _ -> seq { 0uy .. System.Byte.MaxValue } |> Seq.map (fun v -> Const.Byte(v))
-                      | Const.UInt16 _ -> seq { 0us .. System.UInt16.MaxValue } |> Seq.map (fun v -> Const.UInt16(v))
-                      | Const.UInt32 _ -> seq { 0u .. System.UInt32.MaxValue } |> Seq.map (fun v -> Const.UInt32(v))
-                      | Const.UInt64 _ -> seq { 0UL .. System.UInt64.MaxValue } |> Seq.map (fun v -> Const.UInt64(v))
-                      | Const.UIntPtr _ -> seq { 0UL .. System.UInt64.MaxValue } |> Seq.map (fun v -> Const.UIntPtr(v))
-                      | Const.Double _ -> seq { 0 .. System.Int32.MaxValue } |> Seq.map (fun v -> Const.Double(float v))
-                      | Const.Single _ -> seq { 0 .. System.Int32.MaxValue } |> Seq.map (fun v -> Const.Single(float32 v))
-                      | Const.Char _ -> seq { 32us .. System.UInt16.MaxValue } |> Seq.map (fun v -> Const.Char(char v))
-                      | Const.String _ -> seq { 1 .. System.Int32.MaxValue } |> Seq.map (fun v -> Const.String(new System.String('a',v)))
-                      | Const.Decimal _ -> seq { 1 .. System.Int32.MaxValue } |> Seq.map (fun v -> Const.Decimal(decimal v))
-                      | _ -> 
-                          raise CannotRefute) 
+                   (match c with
+                    | Const.Bool _ -> [ true; false ] |> List.toSeq |> Seq.map (fun v -> Const.Bool(v))
+                    | Const.SByte _ ->  Seq.append (seq { 0y .. System.SByte.MaxValue }) (seq { System.SByte.MinValue .. 0y })|> Seq.map (fun v -> Const.SByte(v))
+                    | Const.Int16 _ -> Seq.append (seq { 0s .. System.Int16.MaxValue }) (seq { System.Int16.MinValue .. 0s }) |> Seq.map (fun v -> Const.Int16(v))
+                    | Const.Int32 _ ->  Seq.append (seq { 0 .. System.Int32.MaxValue }) (seq { System.Int32.MinValue .. 0 })|> Seq.map (fun v -> Const.Int32(v))
+                    | Const.Int64 _ ->  Seq.append (seq { 0L .. System.Int64.MaxValue }) (seq { System.Int64.MinValue .. 0L })|> Seq.map (fun v -> Const.Int64(v))
+                    | Const.IntPtr _ ->  Seq.append (seq { 0L .. System.Int64.MaxValue }) (seq { System.Int64.MinValue .. 0L })|> Seq.map (fun v -> Const.IntPtr(v))
+                    | Const.Byte _ -> seq { 0uy .. System.Byte.MaxValue } |> Seq.map (fun v -> Const.Byte(v))
+                    | Const.UInt16 _ -> seq { 0us .. System.UInt16.MaxValue } |> Seq.map (fun v -> Const.UInt16(v))
+                    | Const.UInt32 _ -> seq { 0u .. System.UInt32.MaxValue } |> Seq.map (fun v -> Const.UInt32(v))
+                    | Const.UInt64 _ -> seq { 0UL .. System.UInt64.MaxValue } |> Seq.map (fun v -> Const.UInt64(v))
+                    | Const.UIntPtr _ -> seq { 0UL .. System.UInt64.MaxValue } |> Seq.map (fun v -> Const.UIntPtr(v))
+                    | Const.Double _ -> seq { 0 .. System.Int32.MaxValue } |> Seq.map (fun v -> Const.Double(float v))
+                    | Const.Single _ -> seq { 0 .. System.Int32.MaxValue } |> Seq.map (fun v -> Const.Single(float32 v))
+                    | Const.Char _ -> seq { 32us .. System.UInt16.MaxValue } |> Seq.map (fun v -> Const.Char(char v))
+                    | Const.String _ -> seq { 1 .. System.Int32.MaxValue } |> Seq.map (fun v -> Const.String(new System.String('a',v)))
+                    | Const.Decimal _ -> seq { 1 .. System.Int32.MaxValue } |> Seq.map (fun v -> Const.Decimal(decimal v))
+                    | _ -> 
+                        raise CannotRefute)
             
-            let coversKnownEnumValues =
-                match tryDestAppTy g ty with
-                | Some tcref when tcref.IsEnumTycon ->
-                    let knownValues =
-                        tcref.AllFieldsArray |> Array.choose (fun f ->
-                            match f.rfield_const, f.rfield_static with
-                            | Some value, true -> Some value
-                            | _, _ -> None)
-                    Array.forall (fun ev -> consts.Contains ev) knownValues
-                | _ -> false
-
-            (* REVIEW: we could return a better enumeration literal field here if a field matches one of the enumeration cases *)
-
             match c' with 
             | None -> raise CannotRefute
-            | Some c -> Expr.Const(c,m,ty), coversKnownEnumValues
+            | Some c ->
+                match tryDestAppTy g ty with
+                | Some tcref when tcref.IsEnumTycon ->
+                    // search for an enum value that pattern match (consts) does not contain
+                    let nonCoveredEnumValues =
+                        tcref.AllFieldsArray |> Array.tryFind (fun f ->
+                            match f.rfield_const with
+                            | None -> false
+                            | Some fieldValue -> (not (consts.Contains fieldValue)) && f.rfield_static)
+                    match nonCoveredEnumValues with
+                    | None -> Expr.Const(c,m,ty), true
+                    | Some f ->
+                        let v = RecdFieldRef.RFRef(tcref, f.rfield_id.idText)
+                        Expr.Op(TOp.ValFieldGet v, [ty], [], m), false
+                | _ -> Expr.Const(c,m,ty), false
             
-        | (DecisionTreeTest.UnionCase (ucref1,tinst) :: rest) -> 
-             let ucrefs = ucref1 :: List.choose (function DecisionTreeTest.UnionCase(ucref,_) -> Some ucref | _ -> None) rest
-             let tcref = ucref1.TyconRef
-             (* Choose the first ucref based on ordering of names *)
-             let others = 
-                 tcref.UnionCasesAsRefList 
-                 |> List.filter (fun ucref -> not (List.exists (g.unionCaseRefEq ucref) ucrefs)) 
-                 |> List.sortBy (fun ucref -> ucref.CaseName)
-             match others with 
-             | [] -> raise CannotRefute
-             | ucref2 :: _ -> 
-               let flds = ucref2 |> actualTysOfUnionCaseFields (mkTyconRefInst tcref tinst) |> mkUnknowns
-               Expr.Op(TOp.UnionCase(ucref2),tinst, flds,m), false
+        | (DecisionTreeTest.UnionCase (ucref1,tinst) :: rest) ->
+            let ucrefs = ucref1 :: List.choose (function DecisionTreeTest.UnionCase(ucref,_) -> Some ucref | _ -> None) rest
+            let tcref = ucref1.TyconRef
+            (* Choose the first ucref based on ordering of names *)
+            let others =
+                tcref.UnionCasesAsRefList
+                |> List.filter (fun ucref -> not (List.exists (g.unionCaseRefEq ucref) ucrefs))
+                |> List.sortBy (fun ucref -> ucref.CaseName)
+            match others with
+            | [] -> raise CannotRefute
+            | ucref2 :: _ ->
+                let flds = ucref2 |> actualTysOfUnionCaseFields (mkTyconRefInst tcref tinst) |> mkUnknowns
+                Expr.Op(TOp.UnionCase(ucref2),tinst, flds,m), false
                
-        | [DecisionTreeTest.ArrayLength (n,ty)] -> 
-             Expr.Op(TOp.Array,[ty], mkUnknowns (List.replicate (n+1) ty) ,m), false
+        | [DecisionTreeTest.ArrayLength (n,ty)] ->
+            Expr.Op(TOp.Array,[ty], mkUnknowns (List.replicate (n+1) ty) ,m), false
              
         | _ -> 
             raise CannotRefute
     go path tm
 
 let rec CombineRefutations g r1 r2 =
-   match r1,r2 with
-   | Expr.Val(vref,_,_), other | other, Expr.Val(vref,_,_) when vref.LogicalName = "_" -> other 
-   | Expr.Val(vref,_,_), other | other, Expr.Val(vref,_,_) when vref.LogicalName = notNullText -> other 
-   | Expr.Val(vref,_,_), other | other, Expr.Val(vref,_,_) when vref.LogicalName = otherSubtypeText -> other 
+    match r1,r2 with
+    | Expr.Val(vref,_,_), other | other, Expr.Val(vref,_,_) when vref.LogicalName = "_" -> other
+    | Expr.Val(vref,_,_), other | other, Expr.Val(vref,_,_) when vref.LogicalName = notNullText -> other
+    | Expr.Val(vref,_,_), other | other, Expr.Val(vref,_,_) when vref.LogicalName = otherSubtypeText -> other
 
-   | Expr.Op((TOp.ExnConstr(ecref1) as op1), tinst1,flds1,m1), Expr.Op(TOp.ExnConstr(ecref2), _,flds2,_) when tyconRefEq g ecref1 ecref2 -> 
+    | Expr.Op((TOp.ExnConstr(ecref1) as op1), tinst1,flds1,m1), Expr.Op(TOp.ExnConstr(ecref2), _,flds2,_) when tyconRefEq g ecref1 ecref2 -> 
         Expr.Op(op1, tinst1,List.map2 (CombineRefutations g) flds1 flds2,m1)
 
-   | Expr.Op((TOp.UnionCase(ucref1) as op1), tinst1,flds1,m1), 
-     Expr.Op(TOp.UnionCase(ucref2), _,flds2,_)  -> 
-       if g.unionCaseRefEq ucref1 ucref2 then 
-           Expr.Op(op1, tinst1,List.map2 (CombineRefutations g) flds1 flds2,m1)
-       (* Choose the greater of the two ucrefs based on name ordering *)
-       elif ucref1.CaseName < ucref2.CaseName then 
-           r2
-       else 
-           r1
+    | Expr.Op((TOp.UnionCase(ucref1) as op1), tinst1,flds1,m1), Expr.Op(TOp.UnionCase(ucref2), _,flds2,_) ->
+        if g.unionCaseRefEq ucref1 ucref2 then
+            Expr.Op(op1, tinst1,List.map2 (CombineRefutations g) flds1 flds2,m1)
+        (* Choose the greater of the two ucrefs based on name ordering *)
+        elif ucref1.CaseName < ucref2.CaseName then
+            r2
+        else 
+            r1
         
-   | Expr.Op(op1, tinst1,flds1,m1), Expr.Op(_, _,flds2,_) -> 
+    | Expr.Op(op1, tinst1,flds1,m1), Expr.Op(_, _,flds2,_) ->
         Expr.Op(op1, tinst1,List.map2 (CombineRefutations g) flds1 flds2,m1)
         
-   | Expr.Const(c1, m1, ty1), Expr.Const(c2,_,_) -> 
-       let c12 = 
+    | Expr.Const(c1, m1, ty1), Expr.Const(c2,_,_) ->
+        let c12 =
 
-           // Make sure longer strings are greater, not the case in the default ordinal comparison
-           // This is needed because the individual counter examples make longer strings
-           let MaxStrings s1 s2 = 
-               let c = compare (String.length s1) (String.length s2)
-               if c < 0 then s2 
-               elif c > 0 then s1 
-               elif s1 < s2 then s2 
-               else s1
-               
-           match c1,c2 with 
-           | Const.String(s1), Const.String(s2) -> Const.String(MaxStrings s1 s2)
-           | Const.Decimal(s1), Const.Decimal(s2) -> Const.Decimal(max s1 s2)
-           | _ -> max c1 c2 
-           
-       (* REVIEW: we could return a better enumeration literal field here if a field matches one of the enumeration cases *)
-       Expr.Const(c12, m1, ty1)
+            // Make sure longer strings are greater, not the case in the default ordinal comparison
+            // This is needed because the individual counter examples make longer strings
+            let MaxStrings s1 s2 =
+                let c = compare (String.length s1) (String.length s2)
+                if c < 0 then s2
+                elif c > 0 then s1
+                elif s1 < s2 then s2
+                else s1
+                
+            match c1,c2 with
+            | Const.String(s1), Const.String(s2) -> Const.String(MaxStrings s1 s2)
+            | Const.Decimal(s1), Const.Decimal(s2) -> Const.Decimal(max s1 s2)
+            | _ -> max c1 c2
+        
+        Expr.Const(c12, m1, ty1)
 
-   | _ -> r1 
+    | _ -> r1
 
-let ShowCounterExample g denv m refuted = 
-   try
-      let refutations = refuted |> List.collect (function RefutedWhenClause -> [] | (RefutedInvestigation(path,discrim)) -> [RefuteDiscrimSet g m path discrim])
-      let counterExample, enumCoversKnown = 
-          match refutations with 
-          | [] -> raise CannotRefute
-          | (r, eck) :: t -> 
-              if verbose then dprintf "r = %s (enumCoversKnownValue = %b)\n" (Layout.showL (exprL r)) eck
-              List.fold (fun (rAcc, eckAcc) (r, eck) ->
-                  CombineRefutations g rAcc r, eckAcc || eck) (r, eck) t
-      let text = Layout.showL (NicePrint.dataExprL denv counterExample)
-      let failingWhenClause = refuted |> List.exists (function RefutedWhenClause -> true | _ -> false)
-      Some(text,failingWhenClause,enumCoversKnown)
-      
-    with 
-        | CannotRefute ->    
-          None 
-        | e -> 
-          warning(InternalError(sprintf "<failure during counter example generation: %s>" (e.ToString()),m))
-          None
+let ShowCounterExample g denv m refuted =
+    try
+        let refutations = refuted |> List.collect (function RefutedWhenClause -> [] | (RefutedInvestigation(path,discrim)) -> [RefuteDiscrimSet g m path discrim])
+        let counterExample, enumCoversKnown =
+            match refutations with
+            | [] -> raise CannotRefute
+            | (r, eck) :: t ->
+                if verbose then dprintf "r = %s (enumCoversKnownValue = %b)\n" (Layout.showL (exprL r)) eck
+                List.fold (fun (rAcc, eckAcc) (r, eck) ->
+                    CombineRefutations g rAcc r, eckAcc || eck) (r, eck) t
+        let text = Layout.showL (NicePrint.dataExprL denv counterExample)
+        let failingWhenClause = refuted |> List.exists (function RefutedWhenClause -> true | _ -> false)
+        Some(text,failingWhenClause,enumCoversKnown)
+    
+    with
+    | CannotRefute ->
+        None
+    | e ->
+        warning(InternalError(sprintf "<failure during counter example generation: %s>" (e.ToString()),m))
+        None
        
 //---------------------------------------------------------------------------
 // Basic problem specification
@@ -693,7 +692,7 @@ let CompilePatternBasic
     // Note the input expression has already been evaluated and saved into a variable.
     // Hence no need for a new sequence point.
     let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding,exprm)
-    clausesL |> List.iteri (fun _i c -> mbuilder.AddTarget c.Target |> ignore) 
+    clausesL |> List.iteri (fun _i c -> mbuilder.AddTarget c.Target |> ignore)
     
     // Add the incomplete or rethrow match clause on demand, printing a 
     // warning if necessary (only if it is ever exercised) 
@@ -937,7 +936,7 @@ let CompilePatternBasic
              
              if not (isNil topgtvs) then error(InternalError("Unexpected generalized type variables when compiling an active pattern",m))
              let rty = apinfo.ResultType g m resTys
-             let v,vexp = mkCompGenLocal m ("activePatternResult"^string (newUnique())) rty
+             let v,vexp = mkCompGenLocal m ("activePatternResult" + string (newUnique())) rty
              if topv.IsMemberOrModuleBinding then 
                  AdjustValToTopVal v topv.DeclaringEntity ValReprInfo.emptyValData
              let argexp = GetSubExprOfInput subexpr

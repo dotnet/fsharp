@@ -1317,7 +1317,10 @@ let emitCode cenv modB emEnv (ilG:ILGenerator) (code: ILCode) =
     let emEnv  = 
         (emEnv, code.Labels) ||> Seq.fold (fun emEnv (KeyValue(label, pc)) -> 
             let lab = ilG.DefineLabelAndLog()
-            pc2lab.[pc] <- (if pc2lab.ContainsKey pc then lab :: pc2lab.[pc] else [lab])
+            pc2lab.[pc] <-
+                match pc2lab.TryGetValue(pc) with
+                | true, labels -> lab :: labels
+                | _ -> [lab]
             envSetLabel emEnv label lab)
               
     // Build a table that contains the operations that define where exception handlers are
@@ -1325,7 +1328,10 @@ let emitCode cenv modB emEnv (ilG:ILGenerator) (code: ILCode) =
     let lab2pc = code.Labels
     let add lab action = 
         let pc = lab2pc.[lab]
-        pc2action.[pc] <- (if pc2action.ContainsKey pc then pc2action.[pc] @ [ action ] else [ action ])
+        pc2action.[pc] <-
+            match pc2action.TryGetValue(pc) with
+            | true, actions -> actions @ [action]
+            | _ -> [action]
 
     for e in code.Exceptions do
         let (startTry, _endTry) = e.Range
@@ -1354,12 +1360,18 @@ let emitCode cenv modB emEnv (ilG:ILGenerator) (code: ILCode) =
     let instrs = code.Instrs
 
     for pc = 0 to instrs.Length do
-        if pc2action.ContainsKey pc then  
-            for action in pc2action.[pc] do 
+        match pc2action.TryGetValue(pc) with
+        | true, actions ->
+            for action in actions do 
                 action()
-        if pc2lab.ContainsKey pc then  
-            for lab in pc2lab.[pc] do
-                ilG.MarkLabelAndLog lab
+        | _ -> ()
+
+        match pc2lab.TryGetValue(pc) with
+        | true, labels ->
+            for lab in labels do
+                ilG.MarkLabelAndLog(lab)
+        | _ -> ()
+
         if pc < instrs.Length then 
             match instrs.[pc] with 
             | I_br l when code.Labels.[l] = pc + 1 -> () // compress I_br to next instruction
@@ -2054,7 +2066,7 @@ let defineDynamicAssemblyAndLog(asmName, flags, asmDir:string) =
     asmB
 
 let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo, collectible) =
-    let filename = assemblyName ^ ".dll"
+    let filename = assemblyName + ".dll"
     let asmDir  = "."
     let asmName = new AssemblyName()
     asmName.Name <- assemblyName;
