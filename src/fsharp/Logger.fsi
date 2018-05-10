@@ -7,16 +7,22 @@ open System
 // FIXME: We cannot make this internal yet until F# gets a compiler switch to make cases public when the type itself is internal.
 // https://github.com/Microsoft/visualfsharp/issues/4821
 type (* internal *) LogCompilerFunctionId =
-    | ParseAndCheckFileInProject = 1
+    | Service_ParseAndCheckFileInProject = 1
 
 [<RequireQualifiedAccess>]
 module internal Logger =
 
     val Log : LogCompilerFunctionId -> unit
 
+    val LogMessage : message: string -> LogCompilerFunctionId -> unit
+
     val LogBlockStart : LogCompilerFunctionId -> unit
 
     val LogBlockStop : LogCompilerFunctionId -> unit
+
+    val LogBlockMessageStart : message: string -> LogCompilerFunctionId -> unit
+
+    val LogBlockMessageStop : message: string -> LogCompilerFunctionId -> unit
 
     val LogBlock : LogCompilerFunctionId -> IDisposable
 

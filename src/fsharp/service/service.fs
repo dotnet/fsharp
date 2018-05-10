@@ -2656,14 +2656,18 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         let execWithReactorAsync action = reactor.EnqueueAndAwaitOpAsync(userOpName, "ParseAndCheckFileInProject", filename, action)
         async {
             try 
-                use _logBlock = Logger.LogBlockMessage filename LogCompilerFunctionId.ParseAndCheckFileInProject
+                Logger.LogBlockMessageStart filename LogCompilerFunctionId.Service_ParseAndCheckFileInProject
 
                 if implicitlyStartBackgroundWork then 
+                    Logger.LogMessage (filename + "-Cancelling background work") LogCompilerFunctionId.Service_ParseAndCheckFileInProject
                     reactor.CancelBackgroundOp() // cancel the background work, since we will start new work after we're done
+
                 let! builderOpt,creationErrors,decrement = execWithReactorAsync (fun ctok -> getOrCreateBuilderAndKeepAlive (ctok, options, userOpName))
                 use _unwind = decrement
                 match builderOpt with
                 | None -> 
+                    Logger.LogBlockMessageStop (filename + "-Failed_Aborted") LogCompilerFunctionId.Service_ParseAndCheckFileInProject
+
                     let parseResults = FSharpParseFileResults(creationErrors, None, true, [| |])
                     return (parseResults, FSharpCheckFileAnswer.Aborted)
 
@@ -2671,9 +2675,11 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     let cachedResults = bc.GetCachedCheckFileResult(builder, filename, source, options)
 
                     match cachedResults with 
-                    | Some (parseResults, checkResults) -> return parseResults, FSharpCheckFileAnswer.Succeeded checkResults
+                    | Some (parseResults, checkResults) -> 
+                        Logger.LogBlockMessageStop (filename + "-Successful_Cached") LogCompilerFunctionId.Service_ParseAndCheckFileInProject
+
+                        return parseResults, FSharpCheckFileAnswer.Succeeded checkResults
                     | _ ->
-                        Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "ParseAndCheckFileInProject.CacheMiss", filename)
                         // todo this blocks the Reactor queue until all files up to the current are type checked. It's OK while editing the file,
                         // but results with non cooperative blocking when a firts file from a project opened.
                         let! tcPrior = execWithReactorAsync <| fun ctok -> builder.GetCheckResultsBeforeFileInProject (ctok, filename) 
@@ -2684,6 +2690,9 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                         let parseTreeOpt = parseTreeOpt |> Option.map builder.DeduplicateParsedInputModuleNameInProject
                         let parseResults = FSharpParseFileResults(parseErrors, parseTreeOpt, anyErrors, builder.AllDependenciesDeprecated)
                         let! checkResults = bc.CheckOneFileImpl(parseResults, source, filename, options, textSnapshotInfo, fileVersion, builder, tcPrior, creationErrors, userOpName)
+
+                        Logger.LogBlockMessageStop (filename + "-Successful") LogCompilerFunctionId.Service_ParseAndCheckFileInProject
+
                         return parseResults, checkResults
             finally 
                 bc.ImplicitlyStartCheckProjectInBackground(options, userOpName)

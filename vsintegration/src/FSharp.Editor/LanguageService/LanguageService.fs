@@ -256,7 +256,7 @@ type internal FSharpProjectOptionsManager
     /// Prior to VS 15.7 path contained path to project file, post 15.7 contains target binpath
     /// binpath is more accurate because a project file can have multiple in memory projects based on configuration
     member this.HandleCommandLineChanges(path:string, sources:ImmutableArray<CommandLineSourceFile>, references:ImmutableArray<CommandLineReference>, options:ImmutableArray<string>) =
-        use _logBlock = Logger.LogBlock(LogEditorFunctionId.HandleCommandLineArgs)
+        use _logBlock = Logger.LogBlock(LogEditorFunctionId.LanguageService_HandleCommandLineArgs)
 
         let projectId =
             match workspace.ProjectTracker.TryGetProjectByBinPath(path) with

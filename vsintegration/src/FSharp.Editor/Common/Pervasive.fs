@@ -143,9 +143,11 @@ type AsyncMaybeBuilder () =
         }
 
     [<DebuggerStepThrough>]
-    member __.Using (resource : ('T :> IDisposable), body : _ -> Async<_ option>) : Async<_ option> =
-        try body resource
-        finally if not (isNull resource) then resource.Dispose ()
+    member __.Using (resource : ('T :> IDisposable), body : 'T -> Async<'U option>) : Async<'U option> =
+        async {
+            use resource = resource
+            return! body resource
+        }
 
     [<DebuggerStepThrough>]
     member x.While (guard, body : Async<_ option>) : Async<_ option> =
@@ -155,9 +157,13 @@ type AsyncMaybeBuilder () =
             x.Zero ()
 
     [<DebuggerStepThrough>]
-    member x.For (sequence : seq<_>, body : 'T -> Async<unit option>) : Async<_ option> =
-        x.Using (sequence.GetEnumerator (), fun enum ->
-            x.While (enum.MoveNext, x.Delay (fun () -> body enum.Current)))
+    member x.For (sequence : seq<_>, body : 'T -> Async<unit option>) : Async<unit option> =
+        async {
+            for item in sequence do
+               let! _result = body item
+               ()
+            return Some ()
+        }
 
     [<DebuggerStepThrough>]
     member inline __.TryWith (computation : Async<'T option>, catchHandler : exn -> Async<'T option>) : Async<'T option> =
