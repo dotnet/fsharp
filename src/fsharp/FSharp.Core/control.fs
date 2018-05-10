@@ -381,20 +381,6 @@ namespace Microsoft.FSharp.Control
                     let edi = ExceptionDispatchInfo.RestoreOrCapture(exn)
                     ctxt.CallExceptionContinuation edi
 
-       /// Reify exceptional results as exceptions
-        let commit res =
-            match res with
-            | AsyncResult.Ok res -> res
-            | AsyncResult.Error edi -> edi.ThrowAny()
-            | AsyncResult.Canceled exn -> raise exn
-
-        // Reify exceptional results as exceptionsJIT 64 doesn't always take tailcalls correctly
-        
-        let commitWithPossibleTimeout res =
-            match res with
-            | None -> raise (System.TimeoutException())
-            | Some res -> commit res
-
         /// Make an initial ctxt and execute the async computation.  
         let startA cancellationToken trampolineHolder cont econt ccont computation =
             let ctxt = { cont = cont; aux = { token = cancellationToken; econt = econt; ccont = ccont; trampolineHolder = trampolineHolder } }
