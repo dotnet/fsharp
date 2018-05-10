@@ -445,20 +445,6 @@ namespace Microsoft.FSharp.Control
         let CreateAsyncActivation cancellationToken trampolineHolder cont econt ccont =
             { cont = cont; aux = { token = cancellationToken; econt = econt; ccont = ccont; trampolineHolder = trampolineHolder } }
                     
-#if FX_NO_PARAMETERIZED_THREAD_START
-        // Preallocate the delegate and keep it in the trampoline
-        let waitCallbackForQueueWorkItemWithTrampoline(trampolineHolder: TrampolineHolder) = 
-            WaitCallback(fun o ->
-                let f = unbox o : unit -> AsyncReturn
-                trampolineHolder.Execute f |> unfake)
-#else
-        // Preallocate the delegate and keep it in the trampoline
-        let threadStartCallbackForStartThreadWithTrampoline = 
-            ParameterizedThreadStart (fun o ->
-                let (trampolineHolder,f) = unbox o : TrampolineHolder * (unit -> AsyncReturn)
-                trampolineHolder.Execute f |> unfake)
-#endif
-
         [<DebuggerHidden>]
         let QueueAsync cancellationToken cont econt ccont computation =
             let trampolineHolder = new TrampolineHolder()
@@ -572,7 +558,7 @@ namespace Microsoft.FSharp.Control
                 | AsyncResult.Canceled oce -> ctxt.aux.ccont oce)
 
         // Generate async computation which calls its continuation with the given result
-        let inline CreateResultAsync res = 
+        let inline CreateReturnAsync res = 
             // Note: this code ends up in user assemblies via inlining
             MakeAsync (fun ctxt -> ctxt.OnSuccess res)
                     
@@ -635,7 +621,7 @@ namespace Microsoft.FSharp.Control
         
         /// A single pre-allocated computation that returns a unit result
         let unitAsync =
-            CreateResultAsync()
+            CreateReturnAsync()
 
         /// Implement use/Dispose
         let CreateUsingAsync (resource:'T :> IDisposable) (computation:'T -> Async<'a>) : Async<'a> =
@@ -699,7 +685,7 @@ namespace Microsoft.FSharp.Control
         [<AutoSerializable(false)>]        
         type SuspendedAsync<'T>(ctxt : AsyncActivation<'T>) =
 
-            let syncCtxt = SynchronizationContext.Current 
+            let syncCtxt = SynchronizationContext.Current
 
             let thread = 
                 match syncCtxt with
@@ -942,12 +928,12 @@ namespace Microsoft.FSharp.Control
             res.Commit()
 
         [<DebuggerHidden>]
-        let RunSynchronously (token:CancellationToken, computation: Async<'T>, timeout) =
+        let RunSynchronously cancellationToken (computation: Async<'T>) timeout =
             // Reuse the current ThreadPool thread if possible. Unfortunately
             // Thread.IsThreadPoolThread isn't available on all profiles so
             // we approximate it by testing synchronization context for null.
             match SynchronizationContext.Current, timeout with
-            | null, None -> RunSynchronouslyInCurrentThread (token, computation)
+            | null, None -> RunSynchronouslyInCurrentThread (cancellationToken, computation)
             // When the timeout is given we need a dedicated thread
             // which cancels the computation.
             // Performing the cancellation in the ThreadPool eg. by using
@@ -957,7 +943,7 @@ namespace Microsoft.FSharp.Control
             //
             // And so when the timeout is given we always use the current thread
             // for the cancellation and run the computation in another thread.
-            | _ -> RunSynchronouslyInAnotherThread (token, computation, timeout)
+            | _ -> RunSynchronouslyInAnotherThread (cancellationToken, computation, timeout)
 
         [<DebuggerHidden>]
         let Start token (computation:Async<unit>) =
@@ -1125,7 +1111,7 @@ namespace Microsoft.FSharp.Control
 
         member __.Delay generator = CreateDelayAsync generator
 
-        member inline __.Return value = CreateResultAsync value
+        member inline __.Return value = CreateReturnAsync value
 
         member inline __.ReturnFrom (computation:Async<_>) = computation
 
@@ -1170,7 +1156,7 @@ namespace Microsoft.FSharp.Control
                         if Thread.CurrentThread.Equals(thread) && underCurrentThreadStack then
                             contToTailCall <- Some(fun () -> cont x)
                         else if Trampoline.ThisThreadHasTrampoline then
-                            let syncCtxt = SynchronizationContext.Current 
+                            let syncCtxt = SynchronizationContext.Current
                             aux.trampolineHolder.PostOrQueue syncCtxt (fun () -> cont x) |> unfake 
                         else
                             aux.trampolineHolder.Execute (fun () -> cont x ) |> unfake
@@ -1208,12 +1194,12 @@ namespace Microsoft.FSharp.Control
                 computation.Invoke ctxt)
 
         static member RunSynchronously (computation: Async<'T>,?timeout,?cancellationToken:CancellationToken) =
-            let timeout,token =
+            let timeout, cancellationToken =
                 match cancellationToken with
                 | None -> timeout,defaultCancellationTokenSource.Token
                 | Some token when not token.CanBeCanceled -> timeout, token
                 | Some token -> None, token
-            AsyncPrimitives.RunSynchronously(token, computation, timeout)
+            AsyncPrimitives.RunSynchronously cancellationToken computation timeout
 
         static member Start (computation, ?cancellationToken) =
             let cancellationToken = defaultArg cancellationToken defaultCancellationTokenSource.Token
