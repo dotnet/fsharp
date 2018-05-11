@@ -195,6 +195,18 @@ module CoreTests =
     let control () = singleTestBuildAndRun "core/control" FSC_BASIC
 
     [<Test>]
+    let asyncStackTraces () = 
+        let cfg = testConfig "core/asyncStackTraces"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test.exe -g --tailcalls- --optimize-" cfg.fsc_flags ["test.fsx"]
+
+        testOkFile.CheckExists()
+
+        exec cfg ("." ++ "test.exe") ""
+
+    [<Test>]
     let ``control --tailcalls`` () = 
         let cfg = testConfig "core/control"
         singleTestBuildAndRunAux {cfg with fsi_flags = " --tailcalls" } FSC_BASIC

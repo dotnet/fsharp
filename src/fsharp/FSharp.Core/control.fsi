@@ -451,20 +451,48 @@ namespace Microsoft.FSharp.Control
     /// <summary>Entry points for generated code</summary>
     module AsyncPrimitives =
 
-        /// Calls to this member are emitted in compiled code
+        /// <summary>The F# compiler emits calls to this function to implement F# async expressions.</summary>
+        ///
+        /// <param name="body">The body of the async computation.</param>
+        ///
+        /// <returns>The async computation.</returns>
         val MakeAsync: body:(AsyncActivation<'T> -> AsyncReturn) -> Async<'T>
 
-        /// Calls to this member are emitted in compiled code
+        /// <summary>The F# compiler emits calls to this function to implement constructs for F# async expressions.</summary>
+        ///
+        /// <param name="ctxt">The async activation.</param>
+        /// <param name="result">The result of the first part of the computation.</param>
+        /// <param name="part2">A function returning the second part of the computation.</param>
+        ///
+        /// <returns>Nothing.</returns>
         val Call: ctxt:AsyncActivation<'T> -> result1:'U -> part2:('U -> Async<'T>) -> AsyncReturn
 
-        // /// Calls to this member are emitted in compiled code
-        // val CallDelay: ctxt:AsyncActivation<'T> -> generator:(unit -> Async<'T>) -> AsyncReturn
+        /// <summary>The F# compiler emits calls to this function to implement the <c>let!</c> construct for F# async expressions.</summary>
+        ///
+        /// <param name="ctxt">The async activation.</param>
+        /// <param name="part1">The first part of the computation.</param>
+        /// <param name="part2">A function returning the second part of the computation.</param>
+        ///
+        /// <returns>Nothing.</returns>
+        val Bind: ctxt:AsyncActivation<'T> -> part1:Async<'U> -> part2:('U -> Async<'T>) -> AsyncReturn
 
-        /// Calls to this member are emitted in compiled code
-        val Bind: keepStack: bool -> ctxt:AsyncActivation<'T> -> part1:Async<'U> -> part2:('U -> Async<'T>) -> AsyncReturn
+        /// <summary>The F# compiler emits calls to this function to implement the <c>try/finally</c> construct for F# async expressions.</summary>
+        ///
+        /// <param name="ctxt">The async activation.</param>
+        /// <param name="computation">The computation to protect.</param>
+        /// <param name="finallyFunction">The finally code.</param>
+        ///
+        /// <returns>Nothing.</returns>
+        val TryFinally: ctxt:AsyncActivation<'T> -> computation: Async<'T> -> finallyFunction: (unit -> unit) -> AsyncReturn
 
-        /// Calls to this member are emitted in compiled code
-        val TryFinally: ctxt:AsyncActivation<'T> -> finallyFunction: (unit -> unit) -> computation: Async<'T> -> AsyncReturn
+        /// <summary>The F# compiler emits calls to this function to implement the <c>try/with</c> construct for F# async expressions.</summary>
+        ///
+        /// <param name="ctxt">The async activation.</param>
+        /// <param name="computation">The computation to protect.</param>
+        /// <param name="catchFunction">The exception filter.</param>
+        ///
+        /// <returns>Nothing.</returns>
+        val TryWith: ctxt:AsyncActivation<'T> -> computation: Async<'T> -> catchFunction: (Exception -> Async<'T> option) -> AsyncReturn
 
     [<CompiledName("FSharpAsyncBuilder")>]
     [<Sealed>]
@@ -592,11 +620,14 @@ namespace Microsoft.FSharp.Control
         ///
         /// The existence of this method permits the use of <c>try/with</c> in the 
         /// <c>async { ... }</c> computation expression syntax.</remarks>
+        ///
         /// <param name="computation">The input computation.</param>
         /// <param name="catchHandler">The function to run when <c>computation</c> throws an exception.</param>
         /// <returns>An asynchronous computation that executes <c>computation</c> and calls <c>catchHandler</c> if an
         /// exception is thrown.</returns>
-        member TryWith : computation:Async<'T> * catchHandler:(exn -> Async<'T>) -> Async<'T>
+        member inline TryWith : computation:Async<'T> * catchHandler:(exn -> Async<'T>) -> Async<'T>
+
+        // member inline TryWithFilter : computation:Async<'T> * catchHandler:(exn -> Async<'T> option) -> Async<'T>
 
         /// Generate an object used to build asynchronous computations using F# computation expressions. The value
         /// 'async' is a pre-defined instance of this type.
