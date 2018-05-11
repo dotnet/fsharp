@@ -230,7 +230,7 @@ namespace Microsoft.FSharp.Control
         // This should be the only call to Thread.Start in this library. We must always install a trampoline.
         member this.StartThreadWithTrampoline (f : unit -> AsyncReturn) =
 #if FX_NO_THREAD
-            this.QueueWorkItem(f)
+            this.QueueWorkItemWithTrampoline(f)
 #else
             (new Thread((fun _ -> this.Execute f |> unfake), IsBackground=true)).Start()
             FakeUnit
