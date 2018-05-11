@@ -540,7 +540,7 @@ namespace Microsoft.FSharp.Control
             MakeAsync (fun ctxt ->
                 match res with
                 | AsyncResult.Ok r -> ctxt.cont r
-                | AsyncResult.Error edi -> ctxt.CallExceptionContinuation edi //ctxt.SaveExceptionContinuation(); edi.ThrowAny()
+                | AsyncResult.Error edi -> ctxt.CallExceptionContinuation edi
                 | AsyncResult.Canceled oce -> ctxt.aux.ccont oce)
 
         // Generate async computation which calls its continuation with the given result
@@ -634,15 +634,15 @@ namespace Microsoft.FSharp.Control
 
         let CreateSwitchToAsync (syncCtxt: SynchronizationContext) =
             CreateProtectedAsync (fun ctxt ->
-                ctxt.aux.trampolineHolder.PostWithTrampoline syncCtxt (fun () -> ctxt.cont ()))
+                ctxt.aux.trampolineHolder.PostWithTrampoline syncCtxt ctxt.cont)
 
         let CreateSwitchToNewThreadAsync() =
             CreateProtectedAsync (fun ctxt ->
-                ctxt.aux.trampolineHolder.StartThreadWithTrampoline (fun () -> ctxt.cont ()))
+                ctxt.aux.trampolineHolder.StartThreadWithTrampoline ctxt.cont)
 
         let CreateSwitchToThreadPoolAsync() =
             CreateProtectedAsync (fun ctxt -> 
-                ctxt.aux.trampolineHolder.QueueWorkItemWithTrampoline (fun () -> ctxt.cont ()))
+                ctxt.aux.trampolineHolder.QueueWorkItemWithTrampoline ctxt.cont)
 
         let delimitSyncContext ctxt =            
             match SynchronizationContext.Current with
