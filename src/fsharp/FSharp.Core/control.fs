@@ -127,7 +127,7 @@ namespace Microsoft.FSharp.Control
     [<AllowNullLiteral>]
     type Trampoline() = 
 
-        let unfake FakeUnit = ()
+        let unfake (_ : AsyncReturn)  = ()
 
         [<Literal>]
         static let bindLimitBeforeHijack = 300 
@@ -186,7 +186,7 @@ namespace Microsoft.FSharp.Control
             finally
                 if thisIsTopTrampoline then
                     Trampoline.thisThreadHasTrampoline <- false
-            FakeUnit
+            Unchecked.defaultof<AsyncReturn>
             
         /// Increment the counter estimating the size of the synchronous stack and
         /// return true if time to jump on trampoline.
@@ -201,7 +201,7 @@ namespace Microsoft.FSharp.Control
                 bindCount <- 0
                 storedCont <- Some action
             | _ -> failwith "Internal error: attempting to install continuation twice"
-            FakeUnit
+            Unchecked.defaultof<AsyncReturn>
 
         /// Save the exception continuation during propagation of an exception, or prior to raising an exception
         member __.OnExceptionRaised (action: econt) = 
@@ -210,7 +210,7 @@ namespace Microsoft.FSharp.Control
     type TrampolineHolder() as this =
         let mutable trampoline = null
         
-        static let unfake FakeUnit = ()
+        static let unfake (_: AsyncReturn)  = ()
 
         // Preallocate this delegate and keep it in the trampoline holder.
         let sendOrPostCallbackWithTrampoline = 
@@ -240,12 +240,12 @@ namespace Microsoft.FSharp.Control
             
         member this.PostWithTrampoline (syncCtxt: SynchronizationContext)  (f : unit -> AsyncReturn) =
             syncCtxt.Post (sendOrPostCallbackWithTrampoline, state=(f |> box))
-            FakeUnit
+            Unchecked.defaultof<AsyncReturn>
 
         member this.QueueWorkItemWithTrampoline (f: unit -> AsyncReturn) =            
             if not (ThreadPool.QueueUserWorkItem(waitCallbackForQueueWorkItemWithTrampoline, f |> box)) then
                 failwith "failed to queue user work item"
-            FakeUnit
+            Unchecked.defaultof<AsyncReturn>
 
         member this.PostOrQueueWithTrampoline (syncCtxt : SynchronizationContext) f =
             match syncCtxt with 
@@ -259,14 +259,14 @@ namespace Microsoft.FSharp.Control
             this.QueueWorkItemWithTrampoline(f)
 #else
             (new Thread((fun _ -> this.Execute f |> unfake), IsBackground=true)).Start()
-            FakeUnit
+            Unchecked.defaultof<AsyncReturn>
 #endif
 
 #else
         // This should be the only call to Thread.Start in this library. We must always install a trampoline.
         member __.StartThreadWithTrampoline (f : unit -> AsyncReturn) =
             (new Thread(threadStartCallbackForStartThreadWithTrampoline,IsBackground=true)).Start(f|>box)
-            FakeUnit
+            Unchecked.defaultof<AsyncReturn>
 #endif
         
         /// Save the exception continuation during propagation of an exception, or prior to raising an exception
@@ -360,8 +360,8 @@ namespace Microsoft.FSharp.Control
 
     module AsyncPrimitives =
 
-        let fake () = FakeUnit
-        let unfake FakeUnit = ()
+        let fake () = Unchecked.defaultof<AsyncReturn>
+        let unfake (_: AsyncReturn)  = ()
 
         let mutable defaultCancellationTokenSource = new CancellationTokenSource()
 
@@ -389,7 +389,7 @@ namespace Microsoft.FSharp.Control
             if ok then 
                 ctxt.HijackCheckThenCall ctxt.cont result
             else
-                FakeUnit
+                Unchecked.defaultof<AsyncReturn>
 
         /// Apply 'part2' to 'result1' and invoke the resulting computation.
         //
@@ -409,7 +409,7 @@ namespace Microsoft.FSharp.Control
             if ok then 
                 Invoke result ctxt
             else
-                FakeUnit
+                Unchecked.defaultof<AsyncReturn>
 
         /// Like `CallThenInvoke` but does not do a hijack check for historical reasons (exact code compat)
         [<DebuggerHidden>]
@@ -427,7 +427,7 @@ namespace Microsoft.FSharp.Control
             if ok then 
                 res.Invoke ctxt
             else 
-                FakeUnit
+                Unchecked.defaultof<AsyncReturn>
 
         /// Apply 'catchFilter' to 'arg'. If the result is 'Some' invoke the resulting computation. If the result is 'None'
         /// then send 'result1' to the exception continuation.  
@@ -450,7 +450,7 @@ namespace Microsoft.FSharp.Control
                 | Some res -> 
                     Invoke res ctxt
             else
-                FakeUnit
+                Unchecked.defaultof<AsyncReturn>
 
         /// Internal way of making an async from code, for exact code compat.
         /// Perform a cancellation check and ensure that any exceptions raised by 
@@ -780,7 +780,7 @@ namespace Microsoft.FSharp.Control
 
                 // Run the action outside the lock
                 match grabbedConts with
-                | [] -> FakeUnit
+                | [] -> Unchecked.defaultof<AsyncReturn>
                 | [cont] -> 
                     if reuseThread then
                         cont.ContinueImmediate(res)
@@ -812,7 +812,7 @@ namespace Microsoft.FSharp.Control
                             )
                     match resOpt with
                     | Some res -> ctxt.cont res
-                    | None -> FakeUnit
+                    | None -> Unchecked.defaultof<AsyncReturn>
                 )
 
             member x.TryWaitForResultSynchronously (?timeout) : 'T option =
@@ -941,9 +941,9 @@ namespace Microsoft.FSharp.Control
         let Start cancellationToken (computation:Async<unit>) =
             QueueAsync 
                 cancellationToken
-                (fun () -> FakeUnit)   // nothing to do on success
+                (fun () -> Unchecked.defaultof<AsyncReturn>)   // nothing to do on success
                 (fun edi -> edi.ThrowAny())   // raise exception in child
-                (fun _ -> FakeUnit)    // ignore cancellation in child
+                (fun _ -> Unchecked.defaultof<AsyncReturn>)    // ignore cancellation in child
                 computation
             |> unfake
 
@@ -1164,7 +1164,7 @@ namespace Microsoft.FSharp.Control
 
                     match contToTailCall with
                     | Some k -> k()
-                    | _ -> FakeUnit)
+                    | _ -> Unchecked.defaultof<AsyncReturn>)
                 
         static member DefaultCancellationToken = defaultCancellationTokenSource.Token
 
@@ -1240,7 +1240,7 @@ namespace Microsoft.FSharp.Control
                             | Some (Choice1Of2 exn) -> trampolineHolder.ExecuteWithTrampoline (fun () -> aux.econt exn)
                             | Some (Choice2Of2 cexn) -> trampolineHolder.ExecuteWithTrampoline (fun () -> aux.ccont cexn)
                         else
-                            FakeUnit
+                            Unchecked.defaultof<AsyncReturn>
 
                     // recordSuccess and recordFailure between them decrement count to 0 and 
                     // as soon as 0 is reached dispose innerCancellationSource
@@ -1274,7 +1274,7 @@ namespace Microsoft.FSharp.Control
                                 (fun cexn -> recordFailure (Choice2Of2 cexn))
                                 p
                             |> unfake);
-                    FakeUnit))
+                    Unchecked.defaultof<AsyncReturn>))
 
         static member Choice(computations : Async<'T option> seq) : Async<'T option> =
             MakeAsync (fun ctxt ->
@@ -1300,30 +1300,30 @@ namespace Microsoft.FSharp.Control
                                 if Interlocked.Increment exnCount = 1 then
                                     innerCts.Cancel(); trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.cont result)
                                 else
-                                    FakeUnit
+                                    Unchecked.defaultof<AsyncReturn>
 
                             | None ->
                                 if Interlocked.Increment noneCount = computations.Length then
                                     innerCts.Cancel(); trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.cont None)
                                 else
-                                    FakeUnit
+                                    Unchecked.defaultof<AsyncReturn>
  
                         let econt (exn : ExceptionDispatchInfo) =
                             if Interlocked.Increment exnCount = 1 then 
                                 innerCts.Cancel(); trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.aux.econt exn)
                             else
-                                FakeUnit
+                                Unchecked.defaultof<AsyncReturn>
  
                         let ccont (exn : OperationCanceledException) =
                             if Interlocked.Increment exnCount = 1 then
                                 innerCts.Cancel(); trampolineHolder.ExecuteWithTrampoline (fun () -> ctxtWithSync.aux.ccont exn)
                             else
-                                FakeUnit
+                                Unchecked.defaultof<AsyncReturn>
 
                         for c in computations do
                             QueueAsync innerCts.Token scont econt ccont c |> unfake
 
-                        FakeUnit))
+                        Unchecked.defaultof<AsyncReturn>))
 
     type Async with
 
@@ -1393,7 +1393,7 @@ namespace Microsoft.FSharp.Control
 
                 match edi with 
                 | null -> 
-                    FakeUnit
+                    Unchecked.defaultof<AsyncReturn>
                 | _ -> 
                     aux.econt edi
                 )
@@ -1445,13 +1445,13 @@ namespace Microsoft.FSharp.Control
                                            state=null,
                                            millisecondsTimeOutInterval=millisecondsTimeout,
                                            executeOnlyOnce=true));
-                            FakeUnit)
+                            Unchecked.defaultof<AsyncReturn>)
                     with _ -> 
                         if latch.Enter() then
                             registration.Dispose()
                             reraise() // reraise exception only if we successfully enter the latch (no other continuations were called)
                         else 
-                            FakeUnit
+                            Unchecked.defaultof<AsyncReturn>
                     )
 
         static member AwaitIAsyncResult(iar: IAsyncResult, ?millisecondsTimeout): Async<bool> =
@@ -1844,21 +1844,19 @@ namespace Microsoft.FSharp.Control
                 return! CreateAsyncResultAsync result
             }
 
-        let timeout msec cancellationToken =
-            if msec < 0 then
-                MakeAsync (fun _ -> FakeUnit) // "block" forever
-            else
-                let resultCell = new ResultCell<_>()
-                Async.StartWithContinuations(
-                    computation=Async.Sleep(msec),
-                    continuation=(fun () -> resultCell.RegisterResult((), reuseThread = false) |> unfake),
-                    exceptionContinuation=ignore, 
-                    cancellationContinuation=ignore, 
-                    cancellationToken = cancellationToken)
-                // Note: It is ok to use "NoDirectCancel" here because the started computations use the same
-                //       cancellation token and will register a cancelled result if cancellation occurs.
-                // Note: It is ok to use "NoDirectTimeout" here because the child compuation above looks after the timeout.
-                resultCell.AwaitResult_NoDirectCancelOrTimeout
+        let timeoutAsync msec cancellationToken =
+            assert (msec >= 0)
+            let resultCell = new ResultCell<_>()
+            Async.StartWithContinuations(
+                computation=Async.Sleep(msec),
+                continuation=(fun () -> resultCell.RegisterResult((), reuseThread = false) |> unfake),
+                exceptionContinuation=ignore, 
+                cancellationContinuation=ignore, 
+                cancellationToken = cancellationToken)
+            // Note: It is ok to use "NoDirectCancel" here because the started computations use the same
+            //       cancellation token and will register a cancelled result if cancellation occurs.
+            // Note: It is ok to use "NoDirectTimeout" here because the child compuation above looks after the timeout.
+            resultCell.AwaitResult_NoDirectCancelOrTimeout
 
     [<Sealed>]
     [<AutoSerializable(false)>]        
@@ -1899,7 +1897,7 @@ namespace Microsoft.FSharp.Control
                             else
                                 false)
                     if descheduled then 
-                        FakeUnit 
+                        Unchecked.defaultof<AsyncReturn> 
                     else 
                         // If we didn't deschedule then run the continuation immediately
                         ctxt.cont true
@@ -2048,7 +2046,7 @@ namespace Microsoft.FSharp.Control
                 | None -> 
                     let! cancellationToken = Async.CancellationToken
                     let timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, CancellationToken.None)
-                    let timeoutAsync = AsyncHelpers.timeout timeout timeoutCts.Token
+                    let timeoutAsync = AsyncHelpers.timeoutAsync timeout timeoutCts.Token
                     return! scan timeoutAsync timeoutCts
                 | Some resP -> 
                     let! res = resP
