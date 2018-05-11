@@ -452,10 +452,11 @@ namespace Microsoft.FSharp.Control
             else
                 FakeUnit
 
+        /// Internal way of making an async from code, for exact code compat.
         /// Perform a cancellation check and ensure that any exceptions raised by 
         /// the immediate execution of "userCode" are sent to the exception continuation.
         [<DebuggerHidden>]
-        let ProtectUserCode (ctxt: AsyncActivation<_>) userCode =
+        let ProtectedCode (ctxt: AsyncActivation<_>) userCode =
             if ctxt.IsCancellationRequested then
                 ctxt.OnCancellation ()
             else
@@ -524,11 +525,13 @@ namespace Microsoft.FSharp.Control
                 let newCtxt = { ctxt with aux = { ctxt.aux with econt = econt } }
                 computation.Invoke newCtxt
 
+        /// Internal way of making an async from code, for exact code compat.
         /// When run, ensures that any exceptions raised by the immediate execution of "f" are
         /// sent to the exception continuation.
         let CreateProtectedAsync f =
-            MakeAsync (fun ctxt -> ProtectUserCode ctxt f)
+            MakeAsync (fun ctxt -> ProtectedCode ctxt f)
 
+        /// Internal way of making an async from result, for exact code compat.
         let CreateAsyncResultAsync res =
             MakeAsync (fun ctxt ->
                 match res with
@@ -1219,7 +1222,7 @@ namespace Microsoft.FSharp.Control
                     // must not be in a 'protect' if we call cont explicitly; if cont throws, it should unwind the stack, preserving Dev10 behavior
                     ctxt.cont [| |] 
                 else  
-                  ProtectUserCode ctxt (fun ctxt ->
+                  ProtectedCode ctxt (fun ctxt ->
                     let ctxtWithSync = delimitSyncContext ctxt  // manually resync
                     let aux = ctxtWithSync.aux
                     let count = ref tasks.Length
@@ -1283,7 +1286,7 @@ namespace Microsoft.FSharp.Control
                 | Choice2Of2 edi -> ctxt.CallExceptionContinuation edi
                 | Choice1Of2 [||] -> ctxt.cont None
                 | Choice1Of2 computations ->
-                    ProtectUserCode ctxt (fun ctxt ->
+                    ProtectedCode ctxt (fun ctxt ->
                         let ctxtWithSync = delimitSyncContext ctxt
                         let aux = ctxtWithSync.aux
                         let noneCount = ref 0
