@@ -27,9 +27,7 @@ namespace Microsoft.FSharp.Control
     /// computation expressions can check the cancellation condition regularly. Synchronous 
     /// computations within an asynchronous computation do not automatically check this condition.</remarks> 
      
-    [<Sealed>]
-    [<NoEquality; NoComparison>]
-    [<CompiledName("FSharpAsync`1")>]
+    [<Sealed; NoEquality; NoComparison; CompiledName("FSharpAsync`1")>]
     type Async<'T>
 
     /// <summary>This static class holds members for creating and manipulating asynchronous computations.</summary>
@@ -435,7 +433,7 @@ namespace Microsoft.FSharp.Control
     type AsyncReturn
 
     /// <summary>The F# compiler emits references to this type to implement F# async expressions.</summary>
-    [<Sealed>]
+    [<Struct; NoEquality; NoComparison>]
     type AsyncActivation<'T> =
 
         /// <summary>The F# compiler emits calls to this function to implement F# async expressions.</summary>

@@ -293,18 +293,27 @@ namespace Microsoft.FSharp.Control
     [<NoEquality; NoComparison>]
     [<AutoSerializable(false)>]
     /// Represents an in-flight async computation
-    type AsyncActivation<'T> =
+    type AsyncActivationContents<'T> =
         { cont : cont<'T>
           aux : AsyncActivationAux }
 
-        member ctxt.IsCancellationRequested = ctxt.aux.token.IsCancellationRequested
+    [<Struct; NoEquality; NoComparison>]
+    type AsyncActivation<'T>(contents: AsyncActivationContents<'T>) =
+
+        member ctxt.Contents = contents
+        member ctxt.aux = contents.aux
+        member ctxt.cont = contents.cont
+        member ctxt.econt = contents.aux.econt
+        member ctxt.ccont = contents.aux.ccont
+
+        member ctxt.IsCancellationRequested = contents.aux.token.IsCancellationRequested
 
         /// Call the cancellation continuation of the active computation
         member ctxt.OnCancellation () =
-            ctxt.aux.ccont (new OperationCanceledException (ctxt.aux.token))
+            contents.aux.ccont (new OperationCanceledException (contents.aux.token))
 
         member inline ctxt.HijackCheckThenCall cont arg =
-            ctxt.aux.trampolineHolder.HijackCheckThenCall cont arg
+            contents.aux.trampolineHolder.HijackCheckThenCall cont arg
 
         member ctxt.OnSuccess result =
             if ctxt.IsCancellationRequested then
@@ -314,11 +323,11 @@ namespace Microsoft.FSharp.Control
 
         /// Call the exception continuation directly
         member ctxt.CallExceptionContinuation edi =
-            ctxt.aux.econt edi
+            contents.aux.econt edi
 
         /// Save the exception continuation during propagation of an exception, or prior to raising an exception
         member ctxt.OnExceptionRaised() =
-            ctxt.aux.trampolineHolder.OnExceptionRaised ctxt.aux.econt
+            contents.aux.trampolineHolder.OnExceptionRaised contents.aux.econt
 
     [<NoEquality; NoComparison>]
     [<CompiledName("FSharpAsync`1")>]
@@ -446,7 +455,7 @@ namespace Microsoft.FSharp.Control
             if ok then 
                 match resOpt with 
                 | None -> 
-                    ctxt.HijackCheckThenCall ctxt.aux.econt edi
+                    ctxt.HijackCheckThenCall ctxt.econt edi
                 | Some res -> 
                     Invoke res ctxt
             else
@@ -472,7 +481,7 @@ namespace Microsoft.FSharp.Control
         /// Make an initial asyc activation.  
         [<DebuggerHidden>]
         let CreateAsyncActivation cancellationToken trampolineHolder cont econt ccont =
-            { cont = cont; aux = { token = cancellationToken; econt = econt; ccont = ccont; trampolineHolder = trampolineHolder } }
+            AsyncActivation { cont = cont; aux = { token = cancellationToken; econt = econt; ccont = ccont; trampolineHolder = trampolineHolder } }
                     
         /// Build a primitive without any exception or resync protection
         let MakeAsync body = { Invoke = body }
@@ -484,7 +493,7 @@ namespace Microsoft.FSharp.Control
                 ctxt.OnCancellation ()
             else
                 let cont result1 = CallThenInvokeNoHijackCheck ctxt part2 result1 
-                let ctxt2 = { cont=cont; aux = ctxt.aux }
+                let ctxt2 = AsyncActivation { cont=cont; aux = ctxt.aux }
                 Invoke part1 ctxt2
 
         /// Execute the with-filter part of a try-with-filer but first check for trampoline and cancellation.
@@ -504,19 +513,20 @@ namespace Microsoft.FSharp.Control
                 // The new continuation runs the finallyFunction and resumes the old continuation
                 // If an exception is thrown we continue with the previous exception continuation.
                 let cont b     = 
-                    let ctxt = { cont = (fun () -> ctxt.cont b); aux = ctxt.aux }
+                    let ctxt = AsyncActivation { cont = (fun () -> ctxt.cont b); aux = ctxt.aux }
                     CallThenContinue ctxt finallyFunction () 
                 // The new exception continuation runs the finallyFunction and then runs the previous exception continuation.
                 // If an exception is thrown we continue with the previous exception continuation.
                 let econt exn  = 
-                    let ctxt = { cont =  (fun () -> ctxt.aux.econt exn); aux = ctxt.aux }
+                    let ctxt = AsyncActivation { cont =  (fun () -> ctxt.econt exn); aux = ctxt.aux }
                     CallThenContinue ctxt finallyFunction ()
                 // The cancellation continuation runs the finallyFunction and then runs the previous cancellation continuation.
                 // If an exception is thrown we continue with the previous cancellation continuation (the exception is lost)
                 let ccont cexn = 
-                    let ctxt = { cont =  (fun () -> ctxt.aux.ccont cexn); aux = { ctxt.aux with econt = (fun _ -> ctxt.aux.ccont cexn) } }
+                    let ctxt = AsyncActivation { cont =  (fun () -> ctxt.ccont cexn); aux = { ctxt.aux with econt = (fun _ -> ctxt.ccont cexn) } }
                     CallThenContinue ctxt finallyFunction () 
-                computation.Invoke { ctxt with cont = cont; aux = { ctxt.aux with econt = econt; ccont = ccont } } 
+                let newCtxt = AsyncActivation { ctxt.Contents with cont = cont; aux = { ctxt.aux with econt = econt; ccont = ccont } } 
+                computation.Invoke newCtxt
 
         // Re-route the exception continuation to call to catchFunction. If catchFunction or the new process fail
         // then call the original exception continuation with the failure.
@@ -526,7 +536,7 @@ namespace Microsoft.FSharp.Control
                 ctxt.OnCancellation ()
             else 
                 let econt (edi: ExceptionDispatchInfo) = CallTryWithFilterFunction ctxt edi catchFunction
-                let newCtxt = { ctxt with aux = { ctxt.aux with econt = econt } }
+                let newCtxt = AsyncActivation { ctxt.Contents with aux = { ctxt.aux with econt = econt } }
                 computation.Invoke newCtxt
 
         /// Internal way of making an async from code, for exact code compat.
@@ -541,7 +551,7 @@ namespace Microsoft.FSharp.Control
                 match res with
                 | AsyncResult.Ok r -> ctxt.cont r
                 | AsyncResult.Error edi -> ctxt.CallExceptionContinuation edi
-                | AsyncResult.Canceled oce -> ctxt.aux.ccont oce)
+                | AsyncResult.Canceled oce -> ctxt.ccont oce)
 
         // Generate async computation which calls its continuation with the given result
         let inline CreateReturnAsync res = 
@@ -597,9 +607,9 @@ namespace Microsoft.FSharp.Control
             MakeAsync (fun ctxt ->
                 let aux = ctxt.aux
                 let ccont exn = 
-                    let ctxt = { cont = (fun _ -> aux.ccont exn); aux = { aux with econt = (fun _ -> aux.ccont exn) } }
-                    CallThenContinue ctxt finallyFunction exn
-                let newCtxt = { ctxt with aux = { aux with ccont = ccont } }
+                    let finallyCtxt = AsyncActivation { cont = (fun _ -> aux.ccont exn); aux = { aux with econt = (fun _ -> aux.ccont exn) } }
+                    CallThenContinue finallyCtxt finallyFunction exn
+                let newCtxt = AsyncActivation { ctxt.Contents with aux = { aux with ccont = ccont } }
                 computation.Invoke newCtxt)
 
         /// A single pre-allocated computation that fetched the current cancellation token
@@ -649,18 +659,18 @@ namespace Microsoft.FSharp.Control
             CreateProtectedAsync (fun ctxt -> 
                 ctxt.aux.trampolineHolder.QueueWorkItemWithTrampoline ctxt.cont)
 
-        let delimitSyncContext ctxt =            
+        let delimitSyncContext (ctxt: AsyncActivation<_>) =            
             match SynchronizationContext.Current with
             | null -> ctxt
             | syncCtxt -> 
                 let aux = ctxt.aux                
                 let trampolineHolder = aux.trampolineHolder
-                {   ctxt with
-                         cont = (fun x -> trampolineHolder.PostWithTrampoline syncCtxt (fun () -> ctxt.cont x))
-                         aux = { aux with
-                                     econt = (fun x -> trampolineHolder.PostWithTrampoline syncCtxt (fun () -> aux.econt x))
-                                     ccont = (fun x -> trampolineHolder.PostWithTrampoline syncCtxt (fun () -> aux.ccont x)) }
-                }
+                AsyncActivation
+                  { ctxt.Contents with
+                      cont = (fun x -> trampolineHolder.PostWithTrampoline syncCtxt (fun () -> ctxt.cont x))
+                      aux = { aux with
+                                  econt = (fun x -> trampolineHolder.PostWithTrampoline syncCtxt (fun () -> aux.econt x))
+                                  ccont = (fun x -> trampolineHolder.PostWithTrampoline syncCtxt (fun () -> aux.ccont x)) } }
 
         // When run, ensures that each of the continuations of the process are run in the same synchronization context.
         let CreateDelimitedUserCodeAsync f = 
@@ -975,7 +985,7 @@ namespace Microsoft.FSharp.Control
             task
 
         // Helper to attach continuation to the given task.
-        let taskContinueWith (task : Task<'T>) ctxt useCcontForTaskCancellation = 
+        let taskContinueWith (task : Task<'T>) (ctxt: AsyncActivation<'T>) useCcontForTaskCancellation = 
 
             let continuation (completedTask: Task<_>) : unit =
                 ctxt.aux.trampolineHolder.ExecuteWithTrampoline (fun () ->
@@ -994,7 +1004,7 @@ namespace Microsoft.FSharp.Control
             task.ContinueWith(Action<Task<'T>>(continuation)) |> ignore |> fake
 
         [<DebuggerHidden>]
-        let taskContinueWithUnit (task: Task) ctxt useCcontForTaskCancellation = 
+        let taskContinueWithUnit (task: Task) (ctxt: AsyncActivation<unit>) useCcontForTaskCancellation = 
 
             let continuation (completedTask: Task) : unit =
                 ctxt.aux.trampolineHolder.ExecuteWithTrampoline (fun () ->
@@ -1184,7 +1194,7 @@ namespace Microsoft.FSharp.Control
             MakeAsync (fun ctxt ->
                 let cont = (Choice1Of2 >> ctxt.cont)
                 let econt (edi: ExceptionDispatchInfo) = ctxt.cont (Choice2Of2 (edi.GetAssociatedSourceException()))
-                let ctxt = { cont = cont; aux = { ctxt.aux with econt = econt } }
+                let ctxt = AsyncActivation { cont = cont; aux = { ctxt.aux with econt = econt } }
                 computation.Invoke ctxt)
 
         static member RunSynchronously (computation: Async<'T>,?timeout,?cancellationToken:CancellationToken) =
