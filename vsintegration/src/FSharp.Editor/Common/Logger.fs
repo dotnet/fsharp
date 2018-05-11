@@ -9,10 +9,11 @@ type LogEditorFunctionId =
     | Classification_Semantic = 1
     | Classification_Syntactic = 2
     | LanguageService_HandleCommandLineArgs = 3
-    | Completion_ShouldTrigger = 4
-    | Completion_ProvideCompletionsAsync = 5
-    | Completion_GetDescriptionAsync = 6
-    | Completion_GetChangeAsync = 7
+    | LanguageService_UpdateProjectInfo = 4
+    | Completion_ShouldTrigger = 5
+    | Completion_ProvideCompletionsAsync = 6
+    | Completion_GetDescriptionAsync = 7
+    | Completion_GetChangeAsync = 9
 
 /// This is for ETW tracing across FSharp.Editor.
 [<Sealed;EventSource(Name = "FSharpEditor")>]

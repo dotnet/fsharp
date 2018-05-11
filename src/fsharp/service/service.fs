@@ -1611,6 +1611,8 @@ module internal Parser =
            userOpName: string) = 
         
         async {
+            use _logBlock = Logger.LogBlockMessage (Guid.NewGuid().ToString()) LogCompilerFunctionId.Service_CheckOneFile
+
             match parseResults.ParseTree with 
             // When processing the following cases, we don't need to type-check
             | None -> return [||], TypeCheckAborted.Yes
@@ -2656,17 +2658,18 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         let execWithReactorAsync action = reactor.EnqueueAndAwaitOpAsync(userOpName, "ParseAndCheckFileInProject", filename, action)
         async {
             try 
-                Logger.LogBlockMessageStart filename LogCompilerFunctionId.Service_ParseAndCheckFileInProject
+                let strGuid = "_" + Guid.NewGuid().ToString()
+                Logger.LogBlockMessageStart (filename + strGuid) LogCompilerFunctionId.Service_ParseAndCheckFileInProject
 
                 if implicitlyStartBackgroundWork then 
-                    Logger.LogMessage (filename + "-Cancelling background work") LogCompilerFunctionId.Service_ParseAndCheckFileInProject
+                    Logger.LogMessage (filename + strGuid + "-Cancelling background work") LogCompilerFunctionId.Service_ParseAndCheckFileInProject
                     reactor.CancelBackgroundOp() // cancel the background work, since we will start new work after we're done
 
                 let! builderOpt,creationErrors,decrement = execWithReactorAsync (fun ctok -> getOrCreateBuilderAndKeepAlive (ctok, options, userOpName))
                 use _unwind = decrement
                 match builderOpt with
                 | None -> 
-                    Logger.LogBlockMessageStop (filename + "-Failed_Aborted") LogCompilerFunctionId.Service_ParseAndCheckFileInProject
+                    Logger.LogBlockMessageStop (filename + strGuid + "-Failed_Aborted") LogCompilerFunctionId.Service_ParseAndCheckFileInProject
 
                     let parseResults = FSharpParseFileResults(creationErrors, None, true, [| |])
                     return (parseResults, FSharpCheckFileAnswer.Aborted)
@@ -2676,7 +2679,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
                     match cachedResults with 
                     | Some (parseResults, checkResults) -> 
-                        Logger.LogBlockMessageStop (filename + "-Successful_Cached") LogCompilerFunctionId.Service_ParseAndCheckFileInProject
+                        Logger.LogBlockMessageStop (filename + strGuid + "-Successful_Cached") LogCompilerFunctionId.Service_ParseAndCheckFileInProject
 
                         return parseResults, FSharpCheckFileAnswer.Succeeded checkResults
                     | _ ->
@@ -2691,7 +2694,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                         let parseResults = FSharpParseFileResults(parseErrors, parseTreeOpt, anyErrors, builder.AllDependenciesDeprecated)
                         let! checkResults = bc.CheckOneFileImpl(parseResults, source, filename, options, textSnapshotInfo, fileVersion, builder, tcPrior, creationErrors, userOpName)
 
-                        Logger.LogBlockMessageStop (filename + "-Successful") LogCompilerFunctionId.Service_ParseAndCheckFileInProject
+                        Logger.LogBlockMessageStop (filename + strGuid + "-Successful") LogCompilerFunctionId.Service_ParseAndCheckFileInProject
 
                         return parseResults, checkResults
             finally 

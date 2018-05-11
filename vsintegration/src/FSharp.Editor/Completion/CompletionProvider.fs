@@ -219,43 +219,24 @@ type internal FSharpCompletionProvider
         FSharpCompletionProvider.ShouldTriggerCompletionAux(sourceText, caretPosition, trigger.Kind, getInfo)
         
     override this.ProvideCompletionsAsync(context: Completion.CompletionContext) =
-        async {
-            Logger.LogBlockMessageStart context.Document.Name LogEditorFunctionId.Completion_ProvideCompletionsAsync
+        asyncMaybe {
+            use _logBlock = Logger.LogBlockMessage context.Document.Name LogEditorFunctionId.Completion_ProvideCompletionsAsync
 
             let document = context.Document
-            let! sourceText = context.Document.GetTextAsync(context.CancellationToken) |> Async.AwaitTask
-
-            match sourceText with
-            | null -> Logger.LogBlockMessageStop (context.Document.Name + "-Failed_SourceTextNotFound") LogEditorFunctionId.Completion_ProvideCompletionsAsync
-            | _ ->
-
+            let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
             let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
-
-            if not (CompletionUtils.shouldProvideCompletion(document.Id, document.FilePath, defines, sourceText, context.Position)) then
-                Logger.LogBlockMessageStop (context.Document.Name + "-Failed_ShouldProvideCompletionReturnedFalse") LogEditorFunctionId.Completion_ProvideCompletionsAsync
-            else
-
-            match projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document) with
-            | None -> Logger.LogBlockMessageStop (context.Document.Name + "-Failed_OptionsNotFound") LogEditorFunctionId.Completion_ProvideCompletionsAsync
-            | Some(_, projectOptions) ->
-
-            let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken) |> Async.AwaitTask
+            do! Option.guard (CompletionUtils.shouldProvideCompletion(document.Id, document.FilePath, defines, sourceText, context.Position))
+            let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+            let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken)
             let getAllSymbols(fileCheckResults: FSharpCheckFileResults) =
                 if Settings.IntelliSense.ShowAllSymbols
                 then assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies(fileCheckResults)
                 else []
-
-            let! resultsOpt = FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, sourceText, context.Position, projectOptions, 
-                                                                                  document.FilePath, textVersion.GetHashCode(), getAllSymbols)
-
-            match resultsOpt with
-            | None -> Logger.LogBlockMessageStop "-Failed_ProvideCompeltionsAsyncAuxFailed" LogEditorFunctionId.Completion_ProvideCompletionsAsync
-            | Some(results) ->
+            let! results = 
+                FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, sourceText, context.Position, projectOptions, 
+                                                                    document.FilePath, textVersion.GetHashCode(), getAllSymbols)
             
             context.AddItems(results)
-
-            Logger.LogBlockMessageStop (context.Document.Name + "-Successful") LogEditorFunctionId.Completion_ProvideCompletionsAsync
-
         } |> Async.Ignore |> RoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
         
     override this.GetDescriptionAsync(document: Document, completionItem: Completion.CompletionItem, cancellationToken: CancellationToken): Task<CompletionDescription> =

@@ -8,6 +8,8 @@ open System
 // https://github.com/Microsoft/visualfsharp/issues/4821
 type (* internal *) LogCompilerFunctionId =
     | Service_ParseAndCheckFileInProject = 1
+    | Service_CheckOneFile = 2
+    | CompileOps_TypeCheckOneInputAndFinishEventually = 3
 
 [<RequireQualifiedAccess>]
 module internal Logger =

@@ -172,6 +172,7 @@ type internal FSharpProjectOptionsManager
 
     /// Update the info for a project in the project table
     member this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId, site, userOpName, invalidateConfig) =
+        Logger.LogMessage ("InvalidateConfig=" + invalidateConfig.ToString()) LogEditorFunctionId.LanguageService_UpdateProjectInfo
         projectOptionsTable.AddOrUpdateProject(projectId, (fun isRefresh ->
             let extraProjectInfo = Some(box workspace)
             let tryGetOptionsForReferencedProject f = f |> tryGetOrCreateProjectId |> Option.bind this.TryGetOptionsForProject |> Option.map(fun (_, _, projectOptions) -> projectOptions)

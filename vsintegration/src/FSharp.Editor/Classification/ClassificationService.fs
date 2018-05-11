@@ -34,38 +34,20 @@ type internal FSharpClassificationService
         
         member __.AddSyntacticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
             async {
-                Logger.LogBlockMessageStart document.Name LogEditorFunctionId.Classification_Syntactic
+                use _logBlock = Logger.LogBlock(LogEditorFunctionId.Classification_Syntactic)
 
                 let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
                 let! sourceText = document.GetTextAsync(cancellationToken)  |> Async.AwaitTask
                 result.AddRange(Tokenizer.getClassifiedSpans(document.Id, sourceText, textSpan, Some(document.FilePath), defines, cancellationToken))
-
-                Logger.LogBlockMessageStop (document.Name + "-Successful") LogEditorFunctionId.Classification_Syntactic
-
             } |> RoslynHelpers.StartAsyncUnitAsTask cancellationToken
 
         member __.AddSemanticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
-            async {
-                Logger.LogBlockMessageStart document.Name LogEditorFunctionId.Classification_Semantic
+            asyncMaybe {
+                use _logBlock = Logger.LogBlock(LogEditorFunctionId.Classification_Semantic)
 
-                let! optionsOpt = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
-
-                match optionsOpt with
-                | None -> Logger.LogBlockMessageStop (document.Name + "-Failed_OptionsNotFound") LogEditorFunctionId.Classification_Semantic
-                | Some(_, _, projectOptions) ->
-
-                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-
-                match sourceText with
-                | null -> Logger.LogBlockMessageStop (document.Name + "-Failed_SourceTextNotFound") LogEditorFunctionId.Classification_Semantic
-                | _ ->
-
-                let! checkResultsOpt = checkerProvider.Checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, allowStaleResults = false, userOpName=userOpName)
-
-                match checkResultsOpt with
-                | None -> Logger.LogBlockMessageStop (document.Name + "-Failed_ParseAndCheckDocumentFailed") LogEditorFunctionId.Classification_Semantic
-                | Some(_, _, checkResults) ->
-
+                let! _, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
+                let! sourceText = document.GetTextAsync(cancellationToken)
+                let! _, _, checkResults = checkerProvider.Checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, allowStaleResults = false, userOpName=userOpName) 
                 // it's crucial to not return duplicated or overlapping `ClassifiedSpan`s because Find Usages service crashes.
                 let targetRange = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, textSpan, sourceText)
                 let classificationData = checkResults.GetSemanticClassification (Some targetRange) |> Array.distinctBy fst
@@ -76,13 +58,10 @@ type internal FSharpClassificationService
                     | Some span -> 
                         let span = Tokenizer.fixupSpan(sourceText, span)
                         result.Add(ClassifiedSpan(span, FSharpClassificationTypes.getClassificationTypeName(classificationType)))
-
-                Logger.LogBlockMessageStop (document.Name + "-Successful") LogEditorFunctionId.Classification_Semantic
             } 
             |> Async.Ignore |> RoslynHelpers.StartAsyncUnitAsTask cancellationToken
 
         // Do not perform classification if we don't have project options (#defines matter)
         member __.AdjustStaleClassification(_: SourceText, classifiedSpan: ClassifiedSpan) : ClassifiedSpan = classifiedSpan
-
 
 
