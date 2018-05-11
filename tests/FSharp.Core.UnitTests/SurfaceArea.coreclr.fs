@@ -572,6 +572,7 @@ Microsoft.FSharp.Control.AsyncActivation`1[T]: Boolean IsCancellationRequested
 Microsoft.FSharp.Control.AsyncActivation`1[T]: Boolean get_IsCancellationRequested()
 Microsoft.FSharp.Control.AsyncActivation`1[T]: Int32 GetHashCode()
 Microsoft.FSharp.Control.AsyncActivation`1[T]: Microsoft.FSharp.Control.AsyncReturn OnCancellation()
+Microsoft.FSharp.Control.AsyncActivation`1[T]: Microsoft.FSharp.Control.AsyncReturn OnExceptionRaised()
 Microsoft.FSharp.Control.AsyncActivation`1[T]: Microsoft.FSharp.Control.AsyncReturn OnSuccess(T)
 Microsoft.FSharp.Control.AsyncActivation`1[T]: System.String ToString()
 Microsoft.FSharp.Control.AsyncActivation`1[T]: System.Type GetType()

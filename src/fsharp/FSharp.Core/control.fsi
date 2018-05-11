@@ -431,20 +431,29 @@ namespace Microsoft.FSharp.Control
             computation:Async<'T> * ?cancellationToken:CancellationToken-> Task<'T>
 
 
-    /// <summary>Opaque type for generated code</summary>
+    /// <summary>The F# compiler emits references to this type to implement F# async expressions.</summary>
     type AsyncReturn
 
-    /// <summary>Opaque type for generated code</summary>
+    /// <summary>The F# compiler emits references to this type to implement F# async expressions.</summary>
     [<Sealed>]
     type AsyncActivation<'T> =
 
-        /// Calls to this member are emitted in compiled code
+        /// <summary>The F# compiler emits calls to this function to implement F# async expressions.</summary>
+        ///
+        /// <returns>A value indicating asynchronous execution.</returns>
         member IsCancellationRequested: bool
 
-        /// Calls to this member are emitted in compiled code
+        /// <summary>The F# compiler emits calls to this function to implement F# async expressions.</summary>
+        ///
+        /// <returns>A value indicating asynchronous execution.</returns>
         member OnSuccess: 'T -> AsyncReturn
 
-        /// Calls to this member are emitted in compiled code
+        /// <summary>The F# compiler emits calls to this function to implement F# async expressions.</summary>
+        member OnExceptionRaised: unit -> unit
+
+        /// <summary>The F# compiler emits calls to this function to implement F# async expressions.</summary>
+        ///
+        /// <returns>A value indicating asynchronous execution.</returns>
         member OnCancellation: unit -> AsyncReturn
 
     [<Sealed>]
@@ -460,21 +469,28 @@ namespace Microsoft.FSharp.Control
 
         /// <summary>The F# compiler emits calls to this function to implement constructs for F# async expressions.</summary>
         ///
+        /// <param name="computation">The async computation.</param>
+        /// <param name="ctxt">The async activation.</param>
+        ///
+        /// <returns>A value indicating asynchronous execution.</returns>
+        val Invoke: computation: Async<'T> -> ctxt:AsyncActivation<'T> -> AsyncReturn
+
+        /// <summary>The F# compiler emits calls to this function to implement constructs for F# async expressions.</summary>
+        ///
         /// <param name="ctxt">The async activation.</param>
         /// <param name="result">The result of the first part of the computation.</param>
         /// <param name="part2">A function returning the second part of the computation.</param>
         ///
-        /// <returns>Nothing.</returns>
-        val Call: ctxt:AsyncActivation<'T> -> result1:'U -> part2:('U -> Async<'T>) -> AsyncReturn
+        /// <returns>A value indicating asynchronous execution.</returns>
+        val CallThenInvoke: ctxt:AsyncActivation<'T> -> result1:'U -> part2:('U -> Async<'T>) -> AsyncReturn
 
         /// <summary>The F# compiler emits calls to this function to implement the <c>let!</c> construct for F# async expressions.</summary>
         ///
         /// <param name="ctxt">The async activation.</param>
-        /// <param name="part1">The first part of the computation.</param>
         /// <param name="part2">A function returning the second part of the computation.</param>
         ///
-        /// <returns>Nothing.</returns>
-        val Bind: ctxt:AsyncActivation<'T> -> part1:Async<'U> -> part2:('U -> Async<'T>) -> AsyncReturn
+        /// <returns>An async activation suitable for running part1 of the asynchronous execution.</returns>
+        val Bind: ctxt:AsyncActivation<'T> -> part2:('U -> Async<'T>) -> AsyncActivation<'U>
 
         /// <summary>The F# compiler emits calls to this function to implement the <c>try/finally</c> construct for F# async expressions.</summary>
         ///
@@ -482,7 +498,7 @@ namespace Microsoft.FSharp.Control
         /// <param name="computation">The computation to protect.</param>
         /// <param name="finallyFunction">The finally code.</param>
         ///
-        /// <returns>Nothing.</returns>
+        /// <returns>A value indicating asynchronous execution.</returns>
         val TryFinally: ctxt:AsyncActivation<'T> -> computation: Async<'T> -> finallyFunction: (unit -> unit) -> AsyncReturn
 
         /// <summary>The F# compiler emits calls to this function to implement the <c>try/with</c> construct for F# async expressions.</summary>
@@ -491,7 +507,7 @@ namespace Microsoft.FSharp.Control
         /// <param name="computation">The computation to protect.</param>
         /// <param name="catchFunction">The exception filter.</param>
         ///
-        /// <returns>Nothing.</returns>
+        /// <returns>A value indicating asynchronous execution.</returns>
         val TryWith: ctxt:AsyncActivation<'T> -> computation: Async<'T> -> catchFunction: (Exception -> Async<'T> option) -> AsyncReturn
 
     [<CompiledName("FSharpAsyncBuilder")>]
