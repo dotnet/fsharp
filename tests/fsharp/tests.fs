@@ -202,9 +202,9 @@ module CoreTests =
 
         fsc cfg "%s -o:test.exe -g --tailcalls- --optimize-" cfg.fsc_flags ["test.fsx"]
 
-        testOkFile.CheckExists()
-
         exec cfg ("." ++ "test.exe") ""
+
+        testOkFile.CheckExists()
 
     [<Test>]
     let ``control --tailcalls`` () = 
