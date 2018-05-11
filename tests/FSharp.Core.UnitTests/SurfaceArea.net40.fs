@@ -2205,10 +2205,6 @@ Microsoft.FSharp.Core.FSharpValueOption`1+Tags[T]: System.Type GetType()
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: Boolean Equals(Microsoft.FSharp.Core.FSharpValueOption`1[T])
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: Boolean Equals(System.Object)
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
-Microsoft.FSharp.Core.FSharpValueOption`1[T]: Boolean IsVNone
-Microsoft.FSharp.Core.FSharpValueOption`1[T]: Boolean IsVSome
-Microsoft.FSharp.Core.FSharpValueOption`1[T]: Boolean get_IsVNone()
-Microsoft.FSharp.Core.FSharpValueOption`1[T]: Boolean get_IsVSome()
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpValueOption`1[T])
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: Int32 CompareTo(System.Object)
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: Int32 CompareTo(System.Object, System.Collections.IComparer)
@@ -2217,9 +2213,13 @@ Microsoft.FSharp.Core.FSharpValueOption`1[T]: Int32 GetHashCode(System.Collectio
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: Int32 Tag
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: Microsoft.FSharp.Core.FSharpValueOption`1+Tags[T]
-Microsoft.FSharp.Core.FSharpValueOption`1[T]: Microsoft.FSharp.Core.FSharpValueOption`1[T] NewVSome(T)
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: Microsoft.FSharp.Core.FSharpValueOption`1[T] ValueNone
-Microsoft.FSharp.Core.FSharpValueOption`1[T]: Microsoft.FSharp.Core.FSharpValueOption`1[T] get_VNone()
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: Boolean IsValueNone
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: Boolean IsValueSome
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: Boolean get_IsValueNone()
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: Boolean get_IsValueSome()
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: Microsoft.FSharp.Core.FSharpValueOption`1[T] NewValueSome(T)
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: Microsoft.FSharp.Core.FSharpValueOption`1[T] get_ValueNone()
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: System.String ToString()
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: System.Type GetType()
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: T Item
