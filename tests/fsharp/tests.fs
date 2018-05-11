@@ -170,9 +170,7 @@ module CoreTests =
 
     [<Test>]
     let ``attributes-FSI_BASIC`` () = singleTestBuildAndRun "core/attributes" FSI_BASIC
-#endif
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let byrefs () = 
 
@@ -189,10 +187,6 @@ module CoreTests =
         fsi cfg "" ["test.fsx"]
 
         testOkFile.CheckExists()
-#endif
-
-    [<Test>]
-    let control () = singleTestBuildAndRun "core/control" FSC_BASIC
 
     [<Test>]
     let asyncStackTraces () = 
@@ -205,6 +199,11 @@ module CoreTests =
         exec cfg ("." ++ "test.exe") ""
 
         testOkFile.CheckExists()
+
+#endif
+
+    [<Test>]
+    let control () = singleTestBuildAndRun "core/control" FSC_BASIC
 
     [<Test>]
     let ``control --tailcalls`` () = 
