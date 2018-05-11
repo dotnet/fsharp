@@ -2198,8 +2198,8 @@ Microsoft.FSharp.Core.FSharpResult`2[T,TError]: TError ErrorValue
 Microsoft.FSharp.Core.FSharpResult`2[T,TError]: TError get_ErrorValue()
 Microsoft.FSharp.Core.FSharpValueOption`1+Tags[T]: Boolean Equals(System.Object)
 Microsoft.FSharp.Core.FSharpValueOption`1+Tags[T]: Int32 GetHashCode()
-Microsoft.FSharp.Core.FSharpValueOption`1+Tags[T]: Int32 VNone
-Microsoft.FSharp.Core.FSharpValueOption`1+Tags[T]: Int32 VSome
+Microsoft.FSharp.Core.FSharpValueOption`1+Tags[T]: Int32 ValueNone
+Microsoft.FSharp.Core.FSharpValueOption`1+Tags[T]: Int32 ValueSome
 Microsoft.FSharp.Core.FSharpValueOption`1+Tags[T]: System.String ToString()
 Microsoft.FSharp.Core.FSharpValueOption`1+Tags[T]: System.Type GetType()
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: Boolean Equals(Microsoft.FSharp.Core.FSharpValueOption`1[T])
@@ -2218,7 +2218,7 @@ Microsoft.FSharp.Core.FSharpValueOption`1[T]: Int32 Tag
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: Int32 get_Tag()
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: Microsoft.FSharp.Core.FSharpValueOption`1+Tags[T]
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: Microsoft.FSharp.Core.FSharpValueOption`1[T] NewVSome(T)
-Microsoft.FSharp.Core.FSharpValueOption`1[T]: Microsoft.FSharp.Core.FSharpValueOption`1[T] VNone
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: Microsoft.FSharp.Core.FSharpValueOption`1[T] ValueNone
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: Microsoft.FSharp.Core.FSharpValueOption`1[T] get_VNone()
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: System.String ToString()
 Microsoft.FSharp.Core.FSharpValueOption`1[T]: System.Type GetType()

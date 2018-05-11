@@ -2971,10 +2971,10 @@ namespace Microsoft.FSharp.Core
     [<Struct>]
     [<CompiledName("FSharpValueOption`1")>]
     type ValueOption<'T> =
-        | VNone : 'T voption
-        | VSome : 'T -> 'T voption
+        | ValueNone : 'T voption
+        | ValueSome : 'T -> 'T voption
 
-        member x.Value = match x with VSome x -> x | VNone -> raise (new System.InvalidOperationException("ValueOption.Value"))
+        member x.Value = match x with ValueSome x -> x | ValueNone -> raise (new System.InvalidOperationException("ValueOption.Value"))
 
 
     and 'T voption = ValueOption<'T>
@@ -3347,7 +3347,7 @@ namespace Microsoft.FSharp.Core
         let defaultArg arg defaultValue = match arg with None -> defaultValue | Some v -> v
         
         [<CompiledName("DefaultArgValue")>]
-        let defaultvArg arg defaultValue = match arg with VNone -> defaultValue | VSome v -> v
+        let defaultValueArg arg defaultValue = match arg with ValueNone -> defaultValue | ValueSome v -> v
 
         [<NoDynamicInvocation>]
         let inline (~-) (n: ^T) : ^T = 

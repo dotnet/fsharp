@@ -1735,7 +1735,7 @@ namespace Microsoft.FSharp.Core
 
     /// <summary>The type of optional values, represented as structs.</summary>
     ///
-    /// <remarks>Use the constructors <c>VSome</c> and <c>VNone</c> to create values of this type.
+    /// <remarks>Use the constructors <c>ValueSome</c> and <c>ValueNone</c> to create values of this type.
     /// Use the values in the <c>ValueOption</c> module to manipulate values of this type,
     /// or pattern match against the values directly.
     [<StructuralEquality; StructuralComparison>]
@@ -1743,19 +1743,19 @@ namespace Microsoft.FSharp.Core
     [<Struct>]
     type ValueOption<'T> =
         /// <summary>The representation of "No value"</summary>
-        | VNone: 'T voption
+        | ValueNone: 'T voption
 
         /// <summary>The representation of "Value of type 'T"</summary>
         /// <param name="Value">The input value.</param>
         /// <returns>An option representing the value.</returns>
-        | VSome: 'T -> 'T voption
+        | ValueSome: 'T -> 'T voption
 
-        /// <summary>Get the value of a 'VSome' option. An InvalidOperationException is raised if the option is 'VNone'.</summary>
+        /// <summary>Get the value of a 'ValueSome' option. An InvalidOperationException is raised if the option is 'ValueNone'.</summary>
         member Value : 'T
 
     /// <summary>The type of optional values, represented as structs.</summary>
     ///
-    /// <remarks>Use the constructors <c>VSome</c> and <c>VNone</c> to create values of this type.
+    /// <remarks>Use the constructors <c>ValueSome</c> and <c>ValueNone</c> to create values of this type.
     /// Use the values in the <c>ValueOption</c> module to manipulate values of this type,
     /// or pattern match against the values directly.
     and 'T voption = ValueOption<'T>
@@ -2024,6 +2024,13 @@ namespace Microsoft.FSharp.Core
         /// <returns>The argument value. If it is None, the defaultValue is returned.</returns>
         [<CompiledName("DefaultArg")>]
         val defaultArg : arg:'T option -> defaultValue:'T -> 'T 
+
+        /// <summary>Used to specify a default value for an optional argument in the implementation of a function</summary>
+        /// <param name="arg">A value option representing the argument.</param>
+        /// <param name="defaultValue">The default value of the argument.</param>
+        /// <returns>The argument value. If it is None, the defaultValue is returned.</returns>
+        [<CompiledName("DefaultValueArg")>]
+        val defaultValueArg : arg:'T voption -> defaultValue:'T -> 'T 
 
         /// <summary>Concatenate two strings. The operator '+' may also be used.</summary>
         [<CompilerMessage("This construct is for ML compatibility. Consider using the '+' operator instead. This may require a type annotation to indicate it acts on strings. This message can be disabled using '--nowarn:62' or '#nowarn \"62\"'.", 62, IsHidden=true)>]
