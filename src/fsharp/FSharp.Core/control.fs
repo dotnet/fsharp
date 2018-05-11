@@ -207,10 +207,6 @@ namespace Microsoft.FSharp.Control
                 this.ExecuteWithTrampoline f |> unfake)
 #endif
 
-        member __.Trampoline = 
-            assert not (isNull trampoline)
-            trampoline
-
         /// Execute an async computation after installing a trampoline on its synchronous stack.
         member __.ExecuteWithTrampoline firstAction =
             trampoline <- new Trampoline()
@@ -248,7 +244,7 @@ namespace Microsoft.FSharp.Control
 #endif
         
         /// Call a continuation, but first check if an async computation should trampoline on its synchronous stack.
-        member inline __.HijackCheck (cont : 'T -> AsyncReturn) res =
+        member inline __.HijackCheckThenCall (cont : 'T -> AsyncReturn) res =
             if trampoline.IncrementBindCount() then
                 trampoline.Set (fun () -> cont res)
             else
@@ -277,11 +273,14 @@ namespace Microsoft.FSharp.Control
         member ctxt.OnCancellation () =
             ctxt.aux.ccont (new OperationCanceledException (ctxt.aux.token))
 
+        member inline ctxt.HijackCheckThenCall cont arg =
+            ctxt.aux.trampolineHolder.HijackCheckThenCall cont arg
+
         member ctxt.OnSuccess result =
             if ctxt.IsCancellationRequested then
                 ctxt.OnCancellation ()
             else
-                ctxt.aux.trampolineHolder.HijackCheck ctxt.cont result
+                ctxt.HijackCheckThenCall ctxt.cont result
 
         /// Call the exception continuation directly
         member ctxt.CallExceptionContinuation edi =
@@ -345,10 +344,10 @@ namespace Microsoft.FSharp.Control
             match edi with 
             | null -> 
                 // NOTE: this must be a tailcall
-                trampolineHolder.HijackCheck cont result
+                trampolineHolder.HijackCheckThenCall cont result
             | _ -> 
                 // NOTE: this must be a tailcall
-                trampolineHolder.HijackCheck econt edi
+                trampolineHolder.HijackCheckThenCall econt edi
 
         // Apply userCode to x and call either the continuation or exception continuation depending what happens
         let inline ProtectUserCodeThenInvoke userCode x econt (cont : 'T -> AsyncReturn) : AsyncReturn =
@@ -429,7 +428,7 @@ namespace Microsoft.FSharp.Control
                 if ctxt.IsCancellationRequested then
                     ctxt.OnCancellation ()
                 else
-                    ctxt.aux.trampolineHolder.HijackCheck ctxt.cont x)
+                    ctxt.HijackCheckThenCall ctxt.cont x)
 
         // The primitive bind operation. Generate a process that runs the first process, takes
         // its result, applies f and then runs the new process produced. Hijack if necessary and 
@@ -446,13 +445,7 @@ namespace Microsoft.FSharp.Control
                           aux = ctxt.aux
                         }
                     // Trampoline the continuation onto a new work item every so often 
-                    let trampoline = ctxt.aux.trampolineHolder.Trampoline
-                    if trampoline.IncrementBindCount() then
-                        trampoline.Set(fun () -> p1.Invoke ctxt)
-                    else
-                        // NOTE: this must be a tailcall
-                        p1.Invoke ctxt)
-
+                    ctxt.HijackCheckThenCall p1.Invoke ctxt)
 
         // Call the given function with exception protection, but first 
         // check for cancellation.
