@@ -3346,7 +3346,7 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("DefaultArg")>]
         let defaultArg arg defaultValue = match arg with None -> defaultValue | Some v -> v
         
-        [<CompiledName("DefaultArgValue")>]
+        [<CompiledName("DefaultValueArg")>]
         let defaultValueArg arg defaultValue = match arg with ValueNone -> defaultValue | ValueSome v -> v
 
         [<NoDynamicInvocation>]
