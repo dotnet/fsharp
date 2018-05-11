@@ -36,13 +36,13 @@
   // Offset: 0x00000270 Length: 0x000000B1
 }
 .module AsyncExpressionSteppingTest1.dll
-// MVID: {5AF59393-6394-B5D4-A745-03839393F55A}
+// MVID: {5AF5DDAE-6394-B5D4-A745-0383AEDDF55A}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x05030000
+// Image base: 0x02880000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

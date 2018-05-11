@@ -36,13 +36,13 @@
   // Offset: 0x000002A8 Length: 0x000000BE
 }
 .module AsyncExpressionSteppingTest6.dll
-// MVID: {5AF59393-6394-4FAD-A745-03839393F55A}
+// MVID: {5AF5DDAE-6394-4FAD-A745-0383AEDDF55A}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x030D0000
+// Image base: 0x04C40000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -56,7 +56,7 @@
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
     .class auto ansi serializable sealed nested assembly beforefieldinit 'f2@10-4'
-           extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>
+           extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>
     {
       .field public int32 'value'
       .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -70,7 +70,7 @@
         // Code size       14 (0xe)
         .maxstack  8
         IL_0000:  ldarg.0
-        IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>::.ctor()
+        IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>::.ctor()
         IL_0006:  ldarg.0
         IL_0007:  ldarg.1
         IL_0008:  stfld      int32 AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f2@10-4'::'value'
@@ -78,18 +78,17 @@
       } // end of method 'f2@10-4'::.ctor
 
       .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn 
-              Invoke(class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32> ctxt) cil managed
+              Invoke(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32> ctxt) cil managed
       {
-        // Code size       15 (0xf)
+        // Code size       14 (0xe)
         .maxstack  8
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
         .line 10,10 : 17,25 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\AsyncExpressionStepping\\AsyncExpressionSteppingTest6.fs'
-        IL_0000:  ldarg.1
-        IL_0001:  ldarg.0
-        IL_0002:  ldfld      int32 AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f2@10-4'::'value'
-        IL_0007:  tail.
-        IL_0009:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>::OnSuccess(!0)
-        IL_000e:  ret
+        IL_0000:  ldarga.s   ctxt
+        IL_0002:  ldarg.0
+        IL_0003:  ldfld      int32 AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f2@10-4'::'value'
+        IL_0008:  call       instance class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>::OnSuccess(!0)
+        IL_000d:  ret
       } // end of method 'f2@10-4'::Invoke
 
     } // end of class 'f2@10-4'
@@ -158,14 +157,14 @@
         IL_0034:  ldloc.s    V_4
         IL_0036:  newobj     instance void AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f2@10-4'::.ctor(int32)
         IL_003b:  tail.
-        IL_003d:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0> [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::MakeAsync<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>)
+        IL_003d:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0> [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::MakeAsync<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>)
         IL_0042:  ret
       } // end of method 'f2@5-3'::Invoke
 
     } // end of class 'f2@5-3'
 
     .class auto ansi serializable sealed nested assembly beforefieldinit 'f3@20-7'
-           extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>
+           extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>
     {
       .field public int32 'value'
       .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -179,7 +178,7 @@
         // Code size       14 (0xe)
         .maxstack  8
         IL_0000:  ldarg.0
-        IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>::.ctor()
+        IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>::.ctor()
         IL_0006:  ldarg.0
         IL_0007:  ldarg.1
         IL_0008:  stfld      int32 AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@20-7'::'value'
@@ -187,17 +186,16 @@
       } // end of method 'f3@20-7'::.ctor
 
       .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn 
-              Invoke(class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32> ctxt) cil managed
+              Invoke(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32> ctxt) cil managed
       {
-        // Code size       15 (0xf)
+        // Code size       14 (0xe)
         .maxstack  8
         .line 20,20 : 17,25 ''
-        IL_0000:  ldarg.1
-        IL_0001:  ldarg.0
-        IL_0002:  ldfld      int32 AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@20-7'::'value'
-        IL_0007:  tail.
-        IL_0009:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>::OnSuccess(!0)
-        IL_000e:  ret
+        IL_0000:  ldarga.s   ctxt
+        IL_0002:  ldarg.0
+        IL_0003:  ldfld      int32 AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@20-7'::'value'
+        IL_0008:  call       instance class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>::OnSuccess(!0)
+        IL_000d:  ret
       } // end of method 'f3@20-7'::Invoke
 
     } // end of class 'f3@20-7'
@@ -265,14 +263,14 @@
         IL_0020:  ldloc.3
         IL_0021:  newobj     instance void AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@20-7'::.ctor(int32)
         IL_0026:  tail.
-        IL_0028:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0> [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::MakeAsync<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>)
+        IL_0028:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0> [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::MakeAsync<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>)
         IL_002d:  ret
       } // end of method 'f3@19-6'::Invoke
 
     } // end of class 'f3@19-6'
 
     .class auto ansi serializable sealed nested assembly beforefieldinit 'f3@18-8'
-           extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>
+           extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>
     {
       .field public class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> computation
       .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -291,7 +289,7 @@
         // Code size       21 (0x15)
         .maxstack  8
         IL_0000:  ldarg.0
-        IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>::.ctor()
+        IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>::.ctor()
         IL_0006:  ldarg.0
         IL_0007:  ldarg.1
         IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@18-8'::computation
@@ -302,37 +300,21 @@
       } // end of method 'f3@18-8'::.ctor
 
       .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn 
-              Invoke(class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32> ctxt) cil managed
+              Invoke(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32> ctxt) cil managed
       {
-        // Code size       47 (0x2f)
+        // Code size       21 (0x15)
         .maxstack  8
-        .line 100001,100001 : 0,0 ''
+        .line 18,18 : 17,31 ''
         IL_0000:  ldarg.1
-        IL_0001:  callvirt   instance bool class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>::get_IsCancellationRequested()
-        IL_0006:  brfalse.s  IL_000a
-
-        IL_0008:  br.s       IL_000c
-
-        IL_000a:  br.s       IL_0015
-
-        .line 100001,100001 : 0,0 ''
-        IL_000c:  ldarg.1
+        IL_0001:  ldarg.0
+        IL_0002:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@18-8'::computation
+        IL_0007:  ldarg.0
+        IL_0008:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>> AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@18-8'::binder
         IL_000d:  tail.
-        IL_000f:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>::OnCancellation()
+        IL_000f:  call       class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::Bind<int32,int32>(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,
+                                                                                                                                                              class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!1>,
+                                                                                                                                                              class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!1,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0>>)
         IL_0014:  ret
-
-        .line 100001,100001 : 0,0 ''
-        IL_0015:  ldarg.0
-        IL_0016:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@18-8'::computation
-        IL_001b:  ldarg.1
-        IL_001c:  ldarg.0
-        IL_001d:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>> AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@18-8'::binder
-        IL_0022:  call       class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!1> [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::Bind<int32,int32>(class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,
-                                                                                                                                                                         class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!1,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0>>)
-        IL_0027:  tail.
-        IL_0029:  call       class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::Invoke<int32>(class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0>,
-                                                                                                                                                          class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>)
-        IL_002e:  ret
       } // end of method 'f3@18-8'::Invoke
 
     } // end of class 'f3@18-8'
@@ -405,14 +387,14 @@
         IL_0034:  newobj     instance void AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@18-8'::.ctor(class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>,
                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>>)
         IL_0039:  tail.
-        IL_003b:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0> [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::MakeAsync<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>)
+        IL_003b:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0> [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::MakeAsync<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>)
         IL_0040:  ret
       } // end of method 'f3@16-5'::Invoke
 
     } // end of class 'f3@16-5'
 
     .class auto ansi serializable sealed nested assembly beforefieldinit 'f3@15-9'
-           extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>
+           extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>
     {
       .field public class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> computation
       .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -431,7 +413,7 @@
         // Code size       21 (0x15)
         .maxstack  8
         IL_0000:  ldarg.0
-        IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>::.ctor()
+        IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>::.ctor()
         IL_0006:  ldarg.0
         IL_0007:  ldarg.1
         IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@15-9'::computation
@@ -442,37 +424,21 @@
       } // end of method 'f3@15-9'::.ctor
 
       .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn 
-              Invoke(class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32> ctxt) cil managed
+              Invoke(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32> ctxt) cil managed
       {
-        // Code size       47 (0x2f)
+        // Code size       21 (0x15)
         .maxstack  8
-        .line 100001,100001 : 0,0 ''
+        .line 15,15 : 17,31 ''
         IL_0000:  ldarg.1
-        IL_0001:  callvirt   instance bool class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>::get_IsCancellationRequested()
-        IL_0006:  brfalse.s  IL_000a
-
-        IL_0008:  br.s       IL_000c
-
-        IL_000a:  br.s       IL_0015
-
-        .line 100001,100001 : 0,0 ''
-        IL_000c:  ldarg.1
+        IL_0001:  ldarg.0
+        IL_0002:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@15-9'::computation
+        IL_0007:  ldarg.0
+        IL_0008:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>> AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@15-9'::binder
         IL_000d:  tail.
-        IL_000f:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>::OnCancellation()
+        IL_000f:  call       class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::Bind<int32,int32>(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,
+                                                                                                                                                              class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!1>,
+                                                                                                                                                              class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!1,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0>>)
         IL_0014:  ret
-
-        .line 100001,100001 : 0,0 ''
-        IL_0015:  ldarg.0
-        IL_0016:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@15-9'::computation
-        IL_001b:  ldarg.1
-        IL_001c:  ldarg.0
-        IL_001d:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>> AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@15-9'::binder
-        IL_0022:  call       class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!1> [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::Bind<int32,int32>(class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,
-                                                                                                                                                                         class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!1,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0>>)
-        IL_0027:  tail.
-        IL_0029:  call       class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::Invoke<int32>(class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0>,
-                                                                                                                                                          class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>)
-        IL_002e:  ret
       } // end of method 'f3@15-9'::Invoke
 
     } // end of class 'f3@15-9'
@@ -534,14 +500,14 @@
         IL_0023:  newobj     instance void AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@15-9'::.ctor(class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>,
                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>>)
         IL_0028:  tail.
-        IL_002a:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0> [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::MakeAsync<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>)
+        IL_002a:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0> [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::MakeAsync<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>)
         IL_002f:  ret
       } // end of method 'f3@15-4'::Invoke
 
     } // end of class 'f3@15-4'
 
     .class auto ansi serializable sealed nested assembly beforefieldinit 'f3@14-10'
-           extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>
+           extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>
     {
       .field public class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> computation
       .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -560,7 +526,7 @@
         // Code size       21 (0x15)
         .maxstack  8
         IL_0000:  ldarg.0
-        IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>::.ctor()
+        IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>::.ctor()
         IL_0006:  ldarg.0
         IL_0007:  ldarg.1
         IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@14-10'::computation
@@ -571,37 +537,21 @@
       } // end of method 'f3@14-10'::.ctor
 
       .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn 
-              Invoke(class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32> ctxt) cil managed
+              Invoke(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32> ctxt) cil managed
       {
-        // Code size       47 (0x2f)
+        // Code size       21 (0x15)
         .maxstack  8
-        .line 100001,100001 : 0,0 ''
+        .line 14,14 : 17,31 ''
         IL_0000:  ldarg.1
-        IL_0001:  callvirt   instance bool class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>::get_IsCancellationRequested()
-        IL_0006:  brfalse.s  IL_000a
-
-        IL_0008:  br.s       IL_000c
-
-        IL_000a:  br.s       IL_0015
-
-        .line 100001,100001 : 0,0 ''
-        IL_000c:  ldarg.1
+        IL_0001:  ldarg.0
+        IL_0002:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@14-10'::computation
+        IL_0007:  ldarg.0
+        IL_0008:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>> AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@14-10'::binder
         IL_000d:  tail.
-        IL_000f:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>::OnCancellation()
+        IL_000f:  call       class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::Bind<int32,int32>(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,
+                                                                                                                                                              class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!1>,
+                                                                                                                                                              class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!1,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0>>)
         IL_0014:  ret
-
-        .line 100001,100001 : 0,0 ''
-        IL_0015:  ldarg.0
-        IL_0016:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@14-10'::computation
-        IL_001b:  ldarg.1
-        IL_001c:  ldarg.0
-        IL_001d:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>> AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@14-10'::binder
-        IL_0022:  call       class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!1> [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::Bind<int32,int32>(class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,
-                                                                                                                                                                         class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!1,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0>>)
-        IL_0027:  tail.
-        IL_0029:  call       class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::Invoke<int32>(class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0>,
-                                                                                                                                                          class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>)
-        IL_002e:  ret
       } // end of method 'f3@14-10'::Invoke
 
     } // end of class 'f3@14-10'
@@ -657,14 +607,14 @@
         IL_001e:  newobj     instance void AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@14-10'::.ctor(class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>,
                                                                                                                        class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>>)
         IL_0023:  tail.
-        IL_0025:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0> [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::MakeAsync<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>)
+        IL_0025:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0> [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::MakeAsync<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>)
         IL_002a:  ret
       } // end of method 'f3@14-3'::Invoke
 
     } // end of class 'f3@14-3'
 
     .class auto ansi serializable sealed nested assembly beforefieldinit 'f3@13-11'
-           extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>
+           extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>
     {
       .field public class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> computation
       .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -683,7 +633,7 @@
         // Code size       21 (0x15)
         .maxstack  8
         IL_0000:  ldarg.0
-        IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>::.ctor()
+        IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>::.ctor()
         IL_0006:  ldarg.0
         IL_0007:  ldarg.1
         IL_0008:  stfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@13-11'::computation
@@ -694,37 +644,21 @@
       } // end of method 'f3@13-11'::.ctor
 
       .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn 
-              Invoke(class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32> ctxt) cil managed
+              Invoke(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32> ctxt) cil managed
       {
-        // Code size       47 (0x2f)
+        // Code size       21 (0x15)
         .maxstack  8
-        .line 100001,100001 : 0,0 ''
+        .line 13,13 : 17,31 ''
         IL_0000:  ldarg.1
-        IL_0001:  callvirt   instance bool class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>::get_IsCancellationRequested()
-        IL_0006:  brfalse.s  IL_000a
-
-        IL_0008:  br.s       IL_000c
-
-        IL_000a:  br.s       IL_0015
-
-        .line 100001,100001 : 0,0 ''
-        IL_000c:  ldarg.1
+        IL_0001:  ldarg.0
+        IL_0002:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@13-11'::computation
+        IL_0007:  ldarg.0
+        IL_0008:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>> AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@13-11'::binder
         IL_000d:  tail.
-        IL_000f:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<int32>::OnCancellation()
+        IL_000f:  call       class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::Bind<int32,int32>(valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,
+                                                                                                                                                              class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!1>,
+                                                                                                                                                              class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!1,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0>>)
         IL_0014:  ret
-
-        .line 100001,100001 : 0,0 ''
-        IL_0015:  ldarg.0
-        IL_0016:  ldfld      class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32> AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@13-11'::computation
-        IL_001b:  ldarg.1
-        IL_001c:  ldarg.0
-        IL_001d:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>> AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@13-11'::binder
-        IL_0022:  call       class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!1> [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::Bind<int32,int32>(class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,
-                                                                                                                                                                         class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!1,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0>>)
-        IL_0027:  tail.
-        IL_0029:  call       class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::Invoke<int32>(class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0>,
-                                                                                                                                                          class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>)
-        IL_002e:  ret
       } // end of method 'f3@13-11'::Invoke
 
     } // end of class 'f3@13-11'
@@ -774,7 +708,7 @@
         IL_001b:  newobj     instance void AsyncExpressionSteppingTest6/AsyncExpressionSteppingTest6/'f3@13-11'::.ctor(class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>,
                                                                                                                        class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>>)
         IL_0020:  tail.
-        IL_0022:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0> [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::MakeAsync<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>)
+        IL_0022:  call       class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<!!0> [FSharp.Core]Microsoft.FSharp.Control.AsyncPrimitives::MakeAsync<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype [FSharp.Core]Microsoft.FSharp.Control.AsyncActivation`1<!!0>,class [FSharp.Core]Microsoft.FSharp.Control.AsyncReturn>)
         IL_0027:  ret
       } // end of method 'f3@13-2'::Invoke
 
