@@ -159,8 +159,8 @@ namespace Internal.Utilities.Text.Lexing
         // Important: This method takes ownership of the array
         static member FromArrayNoCopy (buffer: 'Char[]) : LexBuffer<'Char> = 
             let lexBuffer = new LexBuffer<'Char>(fun _ -> ())
-            lexBuffer.Buffer <- buffer;
-            lexBuffer.BufferMaxScanLength <- buffer.Length;
+            lexBuffer.Buffer <- buffer
+            lexBuffer.BufferMaxScanLength <- buffer.Length
             lexBuffer
 
         // A full type signature is required on this method because it is used at more specific types within its own scope
