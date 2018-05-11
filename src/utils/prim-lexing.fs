@@ -156,14 +156,21 @@ namespace Internal.Utilities.Text.Lexing
             new LexBuffer<'Char>(filler)
               
         // A full type signature is required on this method because it is used at more specific types within its own scope
-        static member FromArray (s: 'Char[]) : LexBuffer<'Char> = 
+        // Important: This method takes ownership of the array
+        static member FromArrayNoCopy (buffer: 'Char[]) : LexBuffer<'Char> = 
             let lexBuffer = new LexBuffer<'Char>(fun _ -> ())
-            let buffer = Array.copy s 
             lexBuffer.Buffer <- buffer;
             lexBuffer.BufferMaxScanLength <- buffer.Length;
             lexBuffer
 
-        static member FromChars (arr:char[]) = LexBuffer.FromArray arr 
+        // A full type signature is required on this method because it is used at more specific types within its own scope
+        // Important: this method does copy the array
+        static member FromArray (s: 'Char[]) : LexBuffer<'Char> = 
+            let buffer = Array.copy s 
+            LexBuffer<'Char>.FromArrayNoCopy buffer
+
+        // Important: This method takes ownership of the array
+        static member FromChars (arr:char[]) = LexBuffer.FromArrayNoCopy arr 
 
     module GenericImplFragments = 
         let startInterpret(lexBuffer:LexBuffer<char>)= 
