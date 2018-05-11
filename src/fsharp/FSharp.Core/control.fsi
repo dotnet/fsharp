@@ -490,7 +490,7 @@ namespace Microsoft.FSharp.Control
         /// <param name="part2">A function returning the second part of the computation.</param>
         ///
         /// <returns>An async activation suitable for running part1 of the asynchronous execution.</returns>
-        val Bind: ctxt:AsyncActivation<'T> -> part2:('U -> Async<'T>) -> AsyncActivation<'U>
+        val Bind: ctxt:AsyncActivation<'T> -> part1:Async<'U> -> part2:('U -> Async<'T>) -> AsyncReturn
 
         /// <summary>The F# compiler emits calls to this function to implement the <c>try/finally</c> construct for F# async expressions.</summary>
         ///

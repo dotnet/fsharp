@@ -154,6 +154,7 @@ for (asyncTopName, asyncTop) in [("asyncTop2", asyncTop2); ("asyncTop3", asyncTo
         failwith "should have raised exception"
     with e -> 
         let stack = e.StackTrace
+        test (sprintf "case %s: clncw09ew09m0" functionName) (not (stack.Contains("line 0")))
         test (sprintf "case %s: clncw09ew09m1" functionName) (stack.Contains(functionName))
         test (sprintf "case %s: clncw09ew09n2" functionName) (stack.Contains("asyncMid"))
         test (sprintf "case %s: clncw09ew09n3" functionName) (stack.Contains(asyncTopName))

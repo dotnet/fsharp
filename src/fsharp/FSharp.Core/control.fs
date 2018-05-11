@@ -479,9 +479,13 @@ namespace Microsoft.FSharp.Control
 
         [<DebuggerHidden>]
         // Note: direct calls to this function end up in user assemblies via inlining
-        let Bind (ctxt: AsyncActivation<'T>) (part2: 'U -> Async<'T>) : AsyncActivation<'U> =
-            let cont result1 = CallThenInvokeNoHijackCheck ctxt part2 result1 
-            { cont=cont; aux = ctxt.aux }
+        let Bind (ctxt: AsyncActivation<'T>) (part1: Async<'U>) (part2: 'U -> Async<'T>) : AsyncReturn =
+            if ctxt.IsCancellationRequested then
+                ctxt.OnCancellation ()
+            else
+                let cont result1 = CallThenInvokeNoHijackCheck ctxt part2 result1 
+                let ctxt2 = { cont=cont; aux = ctxt.aux }
+                Invoke part1 ctxt2
 
         /// Execute the with-filter part of a try-with-filer but first check for trampoline and cancellation.
         //
@@ -550,10 +554,7 @@ namespace Microsoft.FSharp.Control
         let inline CreateBindAsync part1 part2  =
             // Note: this code ends up in user assemblies via inlining
             MakeAsync (fun ctxt -> 
-                if ctxt.IsCancellationRequested then
-                    ctxt.OnCancellation ()
-                else
-                    Invoke part1 (Bind ctxt part2))
+                    Bind ctxt part1 part2)
 
         // Call the given function with exception protection, but first 
         // check for cancellation.
