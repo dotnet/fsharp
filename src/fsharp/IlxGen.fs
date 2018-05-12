@@ -397,8 +397,6 @@ and GenNamedTyAppAux (amap:ImportMap) m tyenv ptrsOK tcref tinst =
     // See above note on ptrsOK 
     if ptrsOK = PtrTypesOK && tyconRefEq g tcref g.nativeptr_tcr && (freeInTypes CollectTypars tinst).FreeTypars.IsEmpty then 
         GenNamedTyAppAux amap m tyenv ptrsOK g.ilsigptr_tcr tinst
-    elif ptrsOK = PtrTypesOK && tyconRefEq g tcref g.voidptr_tcr then 
-        GenNamedTyAppAux amap m tyenv ptrsOK g.voidptr_tcr tinst
     else
 #if !NO_EXTENSIONTYPING
         match tcref.TypeReprInfo with 

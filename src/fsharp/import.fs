@@ -169,7 +169,7 @@ let rec ImportILType (env:ImportMap) m tinst typ =
         ImportTyconRefApp env tcref inst
 
     | ILType.Byref ty -> mkByrefTy env.g (ImportILType env m tinst ty)
-    | ILType.Ptr ILType.Void  -> mkVoidPtrTy env.g
+    | ILType.Ptr ILType.Void  when env.g.voidptr_tcr.CanDeref -> mkVoidPtrTy env.g
     | ILType.Ptr ty  -> mkNativePtrTy env.g (ImportILType env m tinst ty)
     | ILType.FunctionPointer _ -> env.g.nativeint_ty (* failwith "cannot import this kind of type (ptr, fptr)" *)
     | ILType.Modified(_,_,ty) -> 
@@ -261,7 +261,7 @@ let rec ImportProvidedType (env:ImportMap) (m:range) (* (tinst:TypeInst) *) (st:
         mkByrefTy g elemTy
     elif st.PUntaint((fun st -> st.IsPointer),m) then 
         let elemTy = (ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()),m)))
-        if isUnitTy g elemTy || isVoidTy g elemTy then 
+        if isUnitTy g elemTy || isVoidTy g elemTy && g.voidptr_tcr.CanDeref then 
             mkVoidPtrTy g 
         else
             mkNativePtrTy g elemTy

@@ -560,7 +560,9 @@ let tryNormalizeMeasureInType g ty =
 // Some basic type builders
 //---------------------------------------------------------------------------
 
-let mkVoidPtrTy (g:TcGlobals) = TType_app (g.voidptr_tcr, [])
+let mkVoidPtrTy (g:TcGlobals) = 
+    assert env.g.voidptr_tcr.CanDeref 
+    TType_app (g.voidptr_tcr, [])
 let mkNativePtrTy (g:TcGlobals) ty = TType_app (g.nativeptr_tcr, [ty])
 let mkByrefTy (g:TcGlobals) ty = TType_app (g.byref_tcr, [ty])
 
