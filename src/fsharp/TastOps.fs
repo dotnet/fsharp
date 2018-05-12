@@ -1814,6 +1814,10 @@ let emptyFreeTyvars =
       FreeTraitSolutions = emptyFreeLocals
       FreeTypars = emptyFreeTypars}
 
+let isEmptyFreeTyvars ftyvs = 
+    Zset.isEmpty ftyvs.FreeTypars &&
+    Zset.isEmpty ftyvs.FreeTycons 
+
 let unionFreeTyvars fvs1 fvs2 = 
     if fvs1 === emptyFreeTyvars then fvs2 else 
     if fvs2 === emptyFreeTyvars then fvs1 else
@@ -2002,6 +2006,12 @@ let freeInVal opts v = accFreeInVal opts v emptyFreeTyvars
 let freeInTyparConstraints opts v = accFreeInTyparConstraints opts v emptyFreeTyvars
 let accFreeInTypars opts tps acc = List.foldBack (accFreeTyparRef opts) tps acc
         
+let rec addFreeInModuleTy (mtyp:ModuleOrNamespaceType) acc =
+    QueueList.foldBack (typeOfVal >> accFreeInType CollectAllNoCaching) mtyp.AllValsAndMembers
+      (QueueList.foldBack (fun (mspec:ModuleOrNamespace) acc -> addFreeInModuleTy mspec.ModuleOrNamespaceType acc) mtyp.AllEntities acc)
+
+let freeInModuleTy mtyp = addFreeInModuleTy mtyp emptyFreeTyvars
+
 
 //--------------------------------------------------------------------------
 // Free in type, left-to-right order preserved. This is used to determine the
@@ -8282,5 +8292,14 @@ let BindUnitVars g (mvs:Val list, paramInfos:ArgReprInfo list, body) =
         assert isUnitTy g v.Type
         [], mkLet NoSequencePointAtInvisibleBinding v.Range v (mkUnit g v.Range) body 
     | _ -> mvs, body
+
+
+let isThreadOrContextStatic g attrs = 
+    HasFSharpAttributeOpt g g.attrib_ThreadStaticAttribute attrs ||
+    HasFSharpAttributeOpt g g.attrib_ContextStaticAttribute attrs 
+
+let mkUnitDelayLambda (g: TcGlobals) m e =
+    let uv, _ = mkCompGenLocal m "unitVar" g.unit_ty
+    mkLambda m uv (e, tyOfExpr g e) 
 
 

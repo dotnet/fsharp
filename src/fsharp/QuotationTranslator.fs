@@ -19,20 +19,18 @@ open System.Collections.Generic
 
 module QP = Microsoft.FSharp.Compiler.QuotationPickler
 
-
 let verboseCReflect = condition "VERBOSE_CREFLECT"
-
 
 [<RequireQualifiedAccess>]
 type IsReflectedDefinition =
-|   Yes
-|   No
+    | Yes
+    | No
 
 [<RequireQualifiedAccess>]
 type QuotationSerializationFormat =
-/// Indicates that type references are emitted as integer indexes into a supplied table
-|   FSharp_40_Plus
-|   FSharp_20_Plus
+    /// Indicates that type references are emitted as integer indexes into a supplied table
+    | FSharp_40_Plus
+    | FSharp_20_Plus
 
 type QuotationGenerationScope = 
     { g: TcGlobals 
@@ -74,10 +72,10 @@ type QuotationGenerationScope =
             QuotationSerializationFormat.FSharp_20_Plus
 
 type QuotationTranslationEnv = 
-    { //Map from Val to binding index
+    { /// Map from Val to binding index
       vs: ValMap<int> 
       nvs: int
-      //Map from typar stamps to binding index
+      /// Map from typar stamps to binding index
       tyvs: StampMap<int>
       // Map for values bound by the 
       //     'let v = isinst e in .... if nonnull v then ...v .... ' 

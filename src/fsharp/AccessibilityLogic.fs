@@ -341,5 +341,3 @@ let IsPropInfoAccessible g amap m ad = function
 let IsFieldInfoAccessible ad (rfref:RecdFieldInfo) =
     IsAccessible ad rfref.RecdField.Accessibility
 
-
-

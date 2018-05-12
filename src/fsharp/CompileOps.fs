@@ -4,17 +4,15 @@
 module internal Microsoft.FSharp.Compiler.CompileOps
 
 open System
-open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Diagnostics
 open System.IO
-open System.Runtime.CompilerServices
 open System.Text
 
 open Internal.Utilities
-open Internal.Utilities.Text
 open Internal.Utilities.Collections
 open Internal.Utilities.Filename
+open Internal.Utilities.Text
 
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
@@ -25,28 +23,27 @@ open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
 
 open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.TastPickle
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.TypeChecker
-open Microsoft.FSharp.Compiler.DiagnosticMessage
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.AttributeChecking
+open Microsoft.FSharp.Compiler.ConstraintSolver
+open Microsoft.FSharp.Compiler.DiagnosticMessage
 open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Tast
-open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.Tastops.DebugPrint
-open Microsoft.FSharp.Compiler.TcGlobals
+open Microsoft.FSharp.Compiler.Import
+open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.Lexhelp
 open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.ConstraintSolver
-open Microsoft.FSharp.Compiler.ReferenceResolver
-open Microsoft.FSharp.Compiler.SignatureConformance
+open Microsoft.FSharp.Compiler.MethodCalls
 open Microsoft.FSharp.Compiler.MethodOverrides
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.PrettyNaming
-open Microsoft.FSharp.Compiler.Import
-
+open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler.ReferenceResolver
+open Microsoft.FSharp.Compiler.SignatureConformance
+open Microsoft.FSharp.Compiler.TastPickle
+open Microsoft.FSharp.Compiler.TypeChecker
+open Microsoft.FSharp.Compiler.Tast
+open Microsoft.FSharp.Compiler.Tastops
+open Microsoft.FSharp.Compiler.TcGlobals
 
 #if !NO_EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping

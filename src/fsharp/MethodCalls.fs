@@ -19,6 +19,7 @@ open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Tastops.DebugPrint
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.TypeRelations
+open Microsoft.FSharp.Compiler.AttributeChecking
 
 #if !NO_EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
@@ -1218,3 +1219,54 @@ module ProvidedMethodCalls =
                 let methName = mi.PUntaint((fun mb -> mb.Name), m)
                 raise( tpe.WithContext(typeName, methName) )  // loses original stack trace
 #endif
+
+
+
+let RecdFieldInstanceChecks g amap ad m (rfinfo:RecdFieldInfo) = 
+    if rfinfo.IsStatic then error (Error (FSComp.SR.tcStaticFieldUsedWhenInstanceFieldExpected(), m))
+    CheckRecdFieldInfoAttributes g rfinfo m |> CommitOperationResult        
+    CheckRecdFieldInfoAccessible amap m ad rfinfo
+
+let ILFieldInstanceChecks  g amap ad m (finfo :ILFieldInfo) =
+    if finfo.IsStatic then error (Error (FSComp.SR.tcStaticFieldUsedWhenInstanceFieldExpected(), m))
+    CheckILFieldInfoAccessible g amap m ad finfo
+    CheckILFieldAttributes g finfo m
+
+let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo:MethInfo)  =
+    if minfo.IsInstance <> isInstance then
+      if isInstance then 
+        error (Error (FSComp.SR.csMethodIsNotAnInstanceMethod(minfo.LogicalName), m))
+      else        
+        error (Error (FSComp.SR.csMethodIsNotAStaticMethod(minfo.LogicalName), m))
+
+    // keep the original accessibility domain to determine type accessibility
+    let adOriginal = ad
+    // Eliminate the 'protected' portion of the accessibility domain for instance accesses    
+    let ad = 
+        match objArgs, ad with 
+        | [objArg], AccessibleFrom(paths, Some tcref) -> 
+            let objArgTy = tyOfExpr g objArg 
+            let ty = generalizedTyconRef tcref
+            // We get to keep our rights if the type we're in subsumes the object argument type
+            if TypeFeasiblySubsumesType 0 g amap m ty CanCoerce objArgTy then
+                ad
+            // We get to keep our rights if this is a base call
+            elif IsBaseCall objArgs then 
+                ad
+            else
+                AccessibleFrom(paths, None) 
+        | _ -> ad
+
+    if not (IsTypeAndMethInfoAccessible amap m adOriginal ad minfo) then 
+      error (Error (FSComp.SR.tcMethodNotAccessible(minfo.LogicalName), m))
+
+    if isAnyTupleTy g minfo.ApparentEnclosingType && not minfo.IsExtensionMember && (minfo.LogicalName.StartsWith "get_Item" || minfo.LogicalName.StartsWith "get_Rest") then
+      warning (Error (FSComp.SR.tcTupleMemberNotNormallyUsed(), m))
+
+    CheckMethInfoAttributes g m tyargsOpt minfo |> CommitOperationResult
+
+exception FieldNotMutable of DisplayEnv * Tast.RecdFieldRef * range
+
+let CheckRecdFieldMutation m denv (rfinfo:RecdFieldInfo) = 
+    if not rfinfo.RecdField.IsMutable then error (FieldNotMutable(denv, rfinfo.RecdFieldRef, m))
+
