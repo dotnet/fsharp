@@ -58,12 +58,16 @@ type StampMap<'T> = Map<Stamp,'T>
 
 [<RequireQualifiedAccess>]
 type ValInline =
+
     /// Indicates the value must always be inlined and no .NET IL code is generated for the value/function
     | PseudoVal
+
     /// Indicates the value is inlined but the .NET IL code for the function still exists, e.g. to satisfy interfaces on objects, but that it is also always inlined 
     | Always
+
     /// Indicates the value may optionally be inlined by the optimizer
     | Optional
+
     /// Indicates the value must never be inlined by the optimizer
     | Never
 
@@ -76,8 +80,10 @@ type ValInline =
 /// A flag associated with values that indicates whether the recursive scope of the value is currently being processed, and 
 /// if the value has been generalized or not as yet.
 type ValRecursiveScopeInfo =
+
     /// Set while the value is within its recursive scope. The flag indicates if the value has been eagerly generalized and accepts generic-recursive calls 
     | ValInRecScope of bool
+
     /// The normal value for this flag when the value is not within its recursive scope 
     | ValNotInRecScope
 
@@ -88,27 +94,30 @@ type ValMutability   =
 [<RequireQualifiedAccess>]
 /// Indicates if a type parameter is needed at runtime and may not be eliminated
 type TyparDynamicReq = 
+
     /// Indicates the type parameter is not needed at runtime and may be eliminated
     | No 
+
     /// Indicates the type parameter is needed at runtime and may not be eliminated
     | Yes
 
 type ValBaseOrThisInfo = 
+
     /// Indicates a ref-cell holding 'this' or the implicit 'this' used throughout an 
     /// implicit constructor to access and set values
     | CtorThisVal 
+
     /// Indicates the value called 'base' available for calling base class members
     | BaseVal  
+
     /// Indicates a normal value
     | NormalVal  
+
     /// Indicates the 'this' value specified in a memberm e.g. 'x' in 'member x.M() = 1'
     | MemberThisVal 
 
-//---------------------------------------------------------------------------
-// Flags on values
-//---------------------------------------------------------------------------
-
 [<Struct>]
+/// Flags on values
 type ValFlags(flags:int64) = 
 
     new (recValInfo, baseOrThis, isCompGen, inlineInfo, isMutable, isModuleOrMemberBinding, isExtensionMember, isIncrClassSpecialMember, isTyFunc, allowTypeInst, isGeneratedEventVal) =
@@ -202,7 +211,9 @@ type ValFlags(flags:int64) =
 
 
     member x.IsExtensionMember        = (flags       &&&                     0b0000000000100000000L) <> 0L
+
     member x.IsIncrClassSpecialMember = (flags       &&&                     0b0000000001000000000L) <> 0L
+
     member x.IsTypeFunction           = (flags       &&&                     0b0000000010000000000L) <> 0L
 
     member x.RecursiveValInfo =   match (flags       &&&                     0b0000001100000000000L) with 
@@ -225,6 +236,7 @@ type ValFlags(flags:int64) =
     member x.WithMakesNoCriticalTailcalls =               ValFlags(flags ||| 0b0000010000000000000L)
 
     member x.PermitsExplicitTypeInstantiation =                   (flags &&& 0b0000100000000000000L) <> 0L
+
     member x.HasBeenReferenced                =                   (flags &&& 0b0001000000000000000L) <> 0L
 
     member x.WithHasBeenReferenced                    =   ValFlags(flags ||| 0b0001000000000000000L)
@@ -232,14 +244,12 @@ type ValFlags(flags:int64) =
     member x.IsCompiledAsStaticPropertyWithoutField =             (flags &&& 0b0010000000000000000L) <> 0L
 
     member x.WithIsCompiledAsStaticPropertyWithoutField = ValFlags(flags ||| 0b0010000000000000000L)
-    
 
     member x.IsGeneratedEventVal =                                (flags &&& 0b0100000000000000000L) <> 0L
 
     member x.IsFixed                                =             (flags &&& 0b1000000000000000000L) <> 0L
 
     member x.WithIsFixed                               =  ValFlags(flags ||| 0b1000000000000000000L)
-
 
     /// Get the flags as included in the F# binary metadata
     member x.PickledBits = 
@@ -252,7 +262,9 @@ type ValFlags(flags:int64) =
 /// Represents the kind of a type parameter
 [<RequireQualifiedAccess>]
 type TyparKind = 
+
     | Type 
+
     | Measure
 
     member x.AttrName =
@@ -269,19 +281,27 @@ type TyparKind =
 /// Indicates if the type variable can be solved or given new constraints. The status of a type variable
 /// evolves towards being either rigid or solved. 
 type TyparRigidity = 
+
     /// Indicates the type parameter can't be solved
     | Rigid 
+
     /// Indicates the type parameter can't be solved, but the variable is not set to "rigid" until after inference is complete
     | WillBeRigid 
+
     /// Indicates we give a warning if the type parameter is ever solved
     | WarnIfNotRigid 
+
     /// Indicates the type parameter is an inference variable may be solved
     | Flexible
+
     /// Indicates the type parameter derives from an '_' anonymous type
     /// For units-of-measure, we give a warning if this gets solved to '1'
     | Anon
+
     member x.ErrorIfUnified = match x with TyparRigidity.Rigid -> true | _ -> false
+
     member x.WarnIfUnified = match x with TyparRigidity.WillBeRigid | TyparRigidity.WarnIfNotRigid -> true | _ -> false
+
     member x.WarnIfMissingConstraint = match x with TyparRigidity.WillBeRigid -> true | _ -> false
 
 
@@ -314,8 +334,10 @@ type TyparFlags(flags:int32) =
 
     /// Indicates if the type inference variable was generated after an error when type checking expressions or patterns
     member x.IsFromError         = (flags &&& 0b0000000000010) <> 0x0
+
     /// Indicates if the type variable is compiler generated, i.e. is an implicit type inference variable 
     member x.IsCompilerGenerated = (flags &&& 0b0000000000100) <> 0x0
+
     /// Indicates if the type variable has a static "head type" requirement, i.e. ^a variables used in FSharp.Core and member constraints.
     member x.StaticReq           = 
                              match (flags &&& 0b0000000001000) with 
@@ -370,7 +392,10 @@ type EntityFlags(flags:int64) =
                     (if hasSelfReferentialCtor then                     0b000000000001000L else 0L) |||
                     (if isStructRecordOrUnionType then                  0b000000000100000L else 0L)) 
 
+    /// Indicates the Entity is actually a module or namespace, not a type definition
     member x.IsModuleOrNamespace                 = (flags       &&&     0b000000000000001L) <> 0x0L
+
+    /// Indicates the type prefers the "tycon<a,b>" syntax for display etc. 
     member x.IsPrefixDisplay                     = (flags       &&&     0b000000000000010L) <> 0x0L
     
     // This bit is not pickled, only used while establishing a type constructor. It is needed because the type constructor
@@ -415,14 +440,15 @@ let KeyTyconByAccessNames nm x =
         [| KeyValuePair(nm,x) |]
 
 type ModuleOrNamespaceKind = 
+
     /// Indicates that a module is compiled to a class with the "Module" suffix added. 
     | FSharpModuleWithSuffix 
+
     /// Indicates that a module is compiled to a class with the same name as the original module 
     | ModuleOrType 
+
     /// Indicates that a 'module' is really a namespace 
     | Namespace
-
-
 
 let getNameOfScopeRef sref = 
     match sref with 
@@ -522,7 +548,6 @@ type EntityOptionalData =
     }
 
     override x.ToString() = "EntityOptionalData(...)"
-
 
 and /// Represents a type definition, exception definition, module definition or namespace definition.
     [<RequireQualifiedAccess>] 
@@ -792,7 +817,7 @@ and /// Represents a type definition, exception definition, module definition or
     /// Indicates the type prefers the "tycon<a,b>" syntax for display etc. 
     member x.IsPrefixDisplay = x.entity_flags.IsPrefixDisplay
 
-    /// Indicates the "tycon blob" is actually a module 
+    /// Indicates the Entity is actually a module or namespace, not a type definition
     member x.IsModuleOrNamespace = x.entity_flags.IsModuleOrNamespace
 
     /// Indicates if the entity is a namespace
@@ -1230,9 +1255,13 @@ and
     }
 
     member tcaug.SetCompare              x = tcaug.tcaug_compare         <- Some x
+
     member tcaug.SetCompareWith          x = tcaug.tcaug_compare_withc   <- Some x
+
     member tcaug.SetEquals               x = tcaug.tcaug_equals <- Some x
+
     member tcaug.SetHashAndEqualsWith    x = tcaug.tcaug_hash_and_equals_withc <- Some x
+
     member tcaug.SetHasObjectGetHashCode b = tcaug.tcaug_hasObjectGetHashCode <- b
 
     static member Create() =
@@ -1955,7 +1984,11 @@ and [<NoEquality; NoComparison>]
       /// The declared attributes of the type parameter. Empty for type inference variables. 
       mutable typar_attribs: Attribs
     }
+
+    override __.ToString() = sprintf "TyparOptionalData(...)"
+
 and TyparData = Typar
+
 and 
     [<NoEquality; NoComparison>]
     [<StructuredFormatDisplay("{Name}")>]
@@ -2841,6 +2874,8 @@ and
 and ValPublicPath      = 
     | ValPubPath of PublicPath * ValLinkageFullKey
 
+    override __.ToString() = sprintf "ValPubPath(...)"
+
 /// Index into the namespace/module structure of a particular CCU 
 and NonLocalEntityRef    = 
     | NonLocalEntityRef of CcuThunk * string[]
@@ -3625,6 +3660,8 @@ and UnionCaseRef =
     /// Get a field of the union case by index
     member x.FieldByIndex n = x.UnionCase.FieldTable.FieldByIndex n
 
+    override x.ToString() = sprintf "UnionCase(%s)" x.CaseName
+
 /// Represents a reference to a field in a record, class or struct
 and RecdFieldRef = 
     | RFRef of TyconRef * string
@@ -3668,6 +3705,8 @@ and RecdFieldRef =
         with :? KeyNotFoundException -> 
             error(InternalError(sprintf "field %s not found in type %s" id tcref.LogicalName, tcref.Range))
 
+    override x.ToString() = sprintf "RecdField(%s)" x.FieldName
+
 and 
   /// The algebra of types
     [<NoEquality; NoComparison>]
@@ -3706,20 +3745,6 @@ and
     /// Indicates the type is a unit-of-measure expression being used as an argument to a type or member
     | TType_measure of Measure
 
-    override x.ToString() =  
-        match x with 
-        | TType_forall (_tps,ty) -> "forall _. " + ty.ToString()
-        | TType_app (tcref, tinst) -> tcref.DisplayName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
-        | TType_tuple (tupInfo, tinst) -> 
-            (match tupInfo with 
-             | TupInfo.Const false -> ""
-             | TupInfo.Const true -> "struct ")
-             + String.concat "," (List.map string tinst) + ")"
-        | TType_fun (d,r) -> "(" + string d + " -> " + string r + ")"
-        | TType_ucase (uc,tinst) -> "union case type " + uc.CaseName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
-        | TType_var tp -> tp.DisplayName
-        | TType_measure ms -> sprintf "%A" ms
-
     /// For now, used only as a discriminant in error message.
     /// See https://github.com/Microsoft/visualfsharp/issues/2561
     member x.GetAssemblyName() =
@@ -3734,7 +3759,25 @@ and
             let (TILObjectReprData(scope,_nesting,_definition)) = _uc.Tycon.ILTyconInfo
             scope.QualifiedName
 
+    override x.ToString() =  
+        match x with 
+        | TType_forall (_tps,ty) -> "forall _. " + ty.ToString()
+        | TType_app (tcref, tinst) -> tcref.DisplayName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
+        | TType_tuple (tupInfo, tinst) -> 
+            (match tupInfo with 
+             | TupInfo.Const false -> ""
+             | TupInfo.Const true -> "struct ")
+             + String.concat "," (List.map string tinst) + ")"
+        | TType_fun (d,r) -> "(" + string d + " -> " + string r + ")"
+        | TType_ucase (uc,tinst) -> "union case type " + uc.CaseName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
+        | TType_var tp -> 
+            match tp.Solution with 
+            | None -> tp.DisplayName
+            | Some _ -> tp.DisplayName + " (solved, see Solution property)"
+        | TType_measure ms -> sprintf "%A" ms
+
 and TypeInst = TType list 
+
 and TTypes = TType list 
 
 and [<RequireQualifiedAccess>] TupInfo = 
@@ -3760,6 +3803,7 @@ and [<RequireQualifiedAccess>] Measure =
     /// Raising a measure to a rational power 
     | RationalPower of Measure * Rational
 
+    override x.ToString() = "Measure(...)"
 
 and 
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -3811,6 +3855,8 @@ and
       
       /// The table of .NET CLI type forwarders for this assembly
       TypeForwarders : CcuTypeForwarderTable }
+
+    override x.ToString() = sprintf "CcuData(%A)" x.FileName
 
 /// Represents a table of .NET CLI type forwarders for an assembly
 and CcuTypeForwarderTable = Map<string[] * string, Lazy<EntityRef>>
@@ -3962,8 +4008,12 @@ and CcuThunk =
 /// The result of attempting to resolve an assembly name to a full ccu.
 /// UnresolvedCcu will contain the name of the assembly that could not be resolved.
 and CcuResolutionResult =
+
     | ResolvedCcu of CcuThunk
+
     | UnresolvedCcu of string
+
+    override __.ToString() = "CcuResolutionResult(...)"
 
 /// Represents the information saved in the assembly signature data resource for an F# assembly
 and PickledCcuInfo =
@@ -3972,6 +4022,10 @@ and PickledCcuInfo =
     compileTimeWorkingDir: string
 
     usesQuotations : bool }
+
+    override __.ToString() = "PickledCcuInfo(...)"
+
+
 
 //---------------------------------------------------------------------------
 // Attributes
@@ -3991,12 +4045,14 @@ and AttribKind =
 
 /// Attrib(kind,unnamedArgs,propVal,appliedToAGetterOrSetter,targetsOpt,range)
 and Attrib = 
+
     | Attrib of TyconRef * AttribKind * AttribExpr list * AttribNamedArg list * bool * AttributeTargets option * range
 
     override x.ToString() = sprintf "Attrib(...)"
 
 /// We keep both source expression and evaluated expression around to help intellisense and signature printing
 and AttribExpr = 
+
     /// AttribExpr(source, evaluated)
     | AttribExpr of Expr * Expr 
 
@@ -4025,7 +4081,7 @@ and [<RequireQualifiedAccess>]
     | Single   of single
     | Double   of double
     | Char     of char
-    | String   of string // in unicode 
+    | String   of string
     | Decimal  of Decimal 
     | Unit
     | Zero // null/zero-bit-pattern 
@@ -4177,7 +4233,7 @@ and ValReprInfo  =
 
     /// Get the total number of arguments 
     member x.TotalArgCount = 
-        let (ValReprInfo(_,args,_)) = x in 
+        let (ValReprInfo(_,args,_)) = x
         // This is List.sumBy List.length args
         // We write this by hand as it can be a performance bottleneck in LinkagePartialKey
         let rec loop (args:ArgReprInfo list list) acc = 
@@ -4499,7 +4555,9 @@ and StaticOptimization =
 ///
 /// TObjExprMethod(slotsig,attribs,methTyparsOfOverridingMethod,methodParams,methodBodyExpr,m)
 and ObjExprMethod = 
+
     | TObjExprMethod of SlotSig * Attribs * Typars * Val list list * Expr * range
+
     member x.Id = let (TObjExprMethod(slotsig,_,_,_,_,m)) = x in mkSynId m slotsig.Name
 
     override x.ToString() = sprintf "TObjExprMethod(%s, ...)" x.Id.idText
@@ -4508,6 +4566,7 @@ and ObjExprMethod =
 ///
 /// TSlotSig(methodName,declaringType,declaringTypeParameters,methodTypeParameters,slotParameters,returnTy)
 and SlotSig = 
+
     | TSlotSig of string * TType * Typars * Typars * SlotParam list list * TType option
 
     member ss.Name             = let (TSlotSig(nm,_,_,_,_,_)) = ss in nm
