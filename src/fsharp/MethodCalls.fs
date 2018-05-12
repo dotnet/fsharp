@@ -371,8 +371,23 @@ type CalledMeth<'T>
       /// The argument analysis for each set of curried arguments
     member x.ArgSets = argSets
 
-      /// return type
-    member x.ReturnType = methodRetTy
+      /// raw return type
+    member x.ReturnTypeBeforeByrefDeref = methodRetTy
+
+      /// return type after implicit deference of byref returns is taken into account
+    member x.ReturnTypeAfterByrefDeref = 
+        let retTy = x.ReturnTypeBeforeByrefDeref
+        if isByrefTy g retTy then destByrefTy g retTy else retTy
+
+      /// return type after tupling of out args is taken into account
+    member x.ReturnTypeAfterOutArgTupling = 
+        let retTy = x.ReturnTypeAfterByrefDeref
+        if isNil unnamedCalledOutArgs then 
+            retTy 
+        else 
+            let outArgTys = unnamedCalledOutArgs |> List.map (fun calledArg -> destByrefTy g calledArg.CalledArgumentType) 
+            if isUnitTy g retTy then mkRefTupledTy g outArgTys
+            else mkRefTupledTy g (retTy :: outArgTys)
 
       /// named setters
     member x.AssignedItemSetters = assignedNamedProps

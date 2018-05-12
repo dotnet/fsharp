@@ -5705,6 +5705,10 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
         else 
             error(Error(FSComp.SR.tastValueMustBeLocalAndMutable(), m));
          
+    // LVALUE:  "&meth(args)" where meth has a byref return.  Includes "&span.[idx]".
+    | Expr.Let(TBind(v, e, _), Expr.Op(TOp.LValueOp (LByrefGet, v2), _, _, _), _, _) when isByrefTy g v.Type && (valRefEq g (mkLocalValRef v) v2) -> 
+        None, e
+        
     | _ -> 
         let ty = tyOfExpr g e
         if isStructTy g ty then 
