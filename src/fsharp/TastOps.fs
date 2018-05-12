@@ -5225,7 +5225,7 @@ and remarkBind m (TBind(v, repr, _)) =
 
 
 //--------------------------------------------------------------------------
-// Reference semantics?
+// Mutability analysis
 //--------------------------------------------------------------------------
 
 let isRecdOrStructFieldDefinitelyMutable (f:RecdField) = not f.IsStatic && f.IsMutable

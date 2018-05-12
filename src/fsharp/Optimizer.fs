@@ -1261,10 +1261,17 @@ and OpHasEffect g m op =
     | TOp.Recd (ctor, tcref) -> 
         match ctor with 
         | RecdExprIsObjInit -> true
+<<<<<<< HEAD
         | RecdExpr -> not (isRecdOrStructTyconRefReadOnly g m tcref)
     | TOp.UnionCase ucref -> isRecdOrUnionOrStructTyconRefDefinitelyMutable ucref.TyconRef
     | TOp.ExnConstr ecref -> isExnDefinitelyMutable ecref
     | TOp.Bytes _ | TOp.UInt16s _ | TOp.Array -> true // mutable
+=======
+        | RecdExpr -> isRecdOrUnionOrStructTyconRefDefinitelyMutable g tcref
+    | TOp.UnionCase ucref -> isRecdOrUnionOrStructTyconRefDefinitelyMutable g ucref.TyconRef
+    | TOp.ExnConstr ecref -> isExnDefinitelyMutable ecref
+    | TOp.Bytes _ | TOp.UInt16s _ | TOp.Array -> true (* alloc observable *)
+>>>>>>> 0fd7cdf6f6df77d7d4dbb81a1943ab90f11bd16f
     | TOp.UnionCaseTagGet _ -> false
     | TOp.UnionCaseProof _ -> false
     | TOp.UnionCaseFieldGet (ucref, n) -> isUnionCaseFieldMutable g ucref n 
