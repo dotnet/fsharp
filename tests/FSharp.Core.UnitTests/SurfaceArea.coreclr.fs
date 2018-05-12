@@ -9,7 +9,7 @@ open FSharp.Core.UnitTests.LibraryTestFx
 type SurfaceAreaTest() =
     [<Test>]
     member this.VerifyArea() =
-        let expected = @"""
+        let expected = @"
 Microsoft.FSharp.Collections.Array2DModule: Boolean Equals(System.Object)
 Microsoft.FSharp.Collections.Array2DModule: Int32 Base1[T](T[,])
 Microsoft.FSharp.Collections.Array2DModule: Int32 Base2[T](T[,])
@@ -2553,12 +2553,12 @@ Microsoft.FSharp.Core.Operators: System.Exception Failure(System.String)
 Microsoft.FSharp.Core.Operators: System.IO.TextWriter ConsoleError[T]()
 Microsoft.FSharp.Core.Operators: System.IO.TextReader ConsoleIn[T]()
 Microsoft.FSharp.Core.Operators: System.IO.TextWriter ConsoleOut[T]()
-Microsoft.FSharp.Core.Operators: System.Object Box[T](T)""" +
+Microsoft.FSharp.Core.Operators: System.Object Box[T](T)" +
 #if DEBUG
-                                                                @"""
-Microsoft.FSharp.Core.Operators: System.RuntimeMethodHandle MethodHandleOf[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult])""" +
+                                                                @"
+Microsoft.FSharp.Core.Operators: System.RuntimeMethodHandle MethodHandleOf[T,TResult](Microsoft.FSharp.Core.FSharpFunc`2[T,TResult])" +
 #endif
-                                                                @"""
+                                                                @"
 Microsoft.FSharp.Core.Operators: System.String ToString()
 Microsoft.FSharp.Core.Operators: System.String ToString[T](T)
 Microsoft.FSharp.Core.Operators: System.String op_Concatenate(System.String, System.String)
@@ -3416,5 +3416,5 @@ Microsoft.FSharp.Reflection.UnionCaseInfo: System.String get_Name()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type DeclaringType
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type GetType()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type get_DeclaringType()
-"""
+"
         SurfaceArea.verify expected "coreclr" (System.IO.Path.Combine(__SOURCE_DIRECTORY__,__SOURCE_FILE__))
