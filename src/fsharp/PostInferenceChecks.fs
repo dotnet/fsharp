@@ -1150,7 +1150,6 @@ and CheckBinding cenv env alwaysCheckNoReraise (TBind(v,bindRhs,_) as bind) =
          let nm = v.DisplayName
          errorR(Error(FSComp.SR.chkMemberUsedInInvalidWay(nm, nm, stringOfRange m), v.Range))
 
-    let m = v.Range
     // Byrefs allowed for x in 'let x = ...'
     v.Type |> CheckTypePermitByrefs cenv env v.Range
     v.Attribs |> CheckAttribs cenv env
@@ -1159,7 +1158,7 @@ and CheckBinding cenv env alwaysCheckNoReraise (TBind(v,bindRhs,_) as bind) =
     // Check accessibility
     if (v.IsMemberOrModuleBinding || v.IsMember) && not v.IsIncrClassGeneratedMember then 
         let access =  AdjustAccess (IsHiddenVal env.sigToImplRemapInfo v) (fun () -> v.TopValDeclaringEntity.CompilationPath) v.Accessibility
-        CheckTypeForAccess cenv env (fun () -> NicePrint.stringOfQualifiedValOrMember cenv.denv v) access m v.Type
+        CheckTypeForAccess cenv env (fun () -> NicePrint.stringOfQualifiedValOrMember cenv.denv v) access v.Range v.Type
     
     let env = if v.IsConstructor && not v.IsIncrClassConstructor then { env with limited=true } else env
 
@@ -1168,7 +1167,7 @@ and CheckBinding cenv env alwaysCheckNoReraise (TBind(v,bindRhs,_) as bind) =
         // Check top-level let-bound values
         match bind.Var.ValReprInfo with
           | Some info when info.HasNoArgs -> 
-              CheckForByrefLikeType cenv env m v.Type (fun () -> errorR(Error(FSComp.SR.chkNoByrefAsTopValue(),m)))
+              CheckForByrefLikeType cenv env v.Range v.Type (fun () -> errorR(Error(FSComp.SR.chkNoByrefAsTopValue(),v.Range)))
           | _ -> ()
 
         if Option.isSome v.PublicPath then 
@@ -1187,7 +1186,7 @@ and CheckBinding cenv env alwaysCheckNoReraise (TBind(v,bindRhs,_) as bind) =
                HasFSharpAttribute cenv.g cenv.g.attrib_ReflectedDefinitionAttribute v.TopValDeclaringEntity.Attribs) then 
 
                 if v.IsInstanceMember && v.MemberApparentEntity.IsStructOrEnumTycon then
-                    errorR(Error(FSComp.SR.chkNoReflectedDefinitionOnStructMember(),m))
+                    errorR(Error(FSComp.SR.chkNoReflectedDefinitionOnStructMember(),v.Range))
                 cenv.usesQuotations <- true
 
                 // If we've already recorded a definition then skip this 
@@ -1209,7 +1208,7 @@ and CheckBinding cenv env alwaysCheckNoReraise (TBind(v,bindRhs,_) as bind) =
                     QuotationTranslator.ConvExprPublic qscope env taue  |> ignore
                     let _,_,argExprs = qscope.Close()
                     if not (isNil argExprs) then 
-                        errorR(Error(FSComp.SR.chkReflectedDefCantSplice(), m))
+                        errorR(Error(FSComp.SR.chkReflectedDefCantSplice(), v.Range))
                     QuotationTranslator.ConvMethodBase qscope env (v.CompiledName, v) |> ignore
                 with 
                   | QuotationTranslator.InvalidQuotedTerm e -> 
@@ -1229,7 +1228,7 @@ and CheckBinding cenv env alwaysCheckNoReraise (TBind(v,bindRhs,_) as bind) =
         
     let topValInfo  = match bind.Var.ValReprInfo with Some info -> info | _ -> ValReprInfo.emptyValData 
 
-    CheckLambdas isTop v.MemberInfo cenv env v.MustInline topValInfo alwaysCheckNoReraise bindRhs m v.Type
+    CheckLambdas isTop v.MemberInfo cenv env v.MustInline topValInfo alwaysCheckNoReraise bindRhs v.Range v.Type
 
 and CheckBindings cenv env xs = List.iter (CheckBinding cenv env false) xs
 

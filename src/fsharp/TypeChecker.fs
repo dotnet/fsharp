@@ -15185,7 +15185,7 @@ module EstablishTypeDefinitionCores =
                 
             let hiddenReprChecks(hasRepr) =
                  structLayoutAttributeCheck(false)
-                 if hasSealedAttr = Some false || (hasRepr && hasSealedAttr <> Some(true) && not (id.idText = "Unit" && cenv.g.compilingFslib) ) then 
+                 if hasSealedAttr = Some(false) || (hasRepr && hasSealedAttr <> Some(true) && not (id.idText = "Unit" && cenv.g.compilingFslib) ) then 
                     errorR(Error(FSComp.SR.tcRepresentationOfTypeHiddenBySignature(), m))
                  if hasAbstractAttr then 
                      errorR (Error(FSComp.SR.tcOnlyClassesCanHaveAbstract(), m))
@@ -15197,7 +15197,7 @@ module EstablishTypeDefinitionCores =
                 if hasCLIMutable then errorR (Error(FSComp.SR.tcThisTypeMayNotHaveACLIMutableAttribute(), m))
 
             let noSealedAttributeCheck(k) = 
-                if hasSealedAttr = Some true then errorR (Error(k(), m))
+                if hasSealedAttr = Some(true) then errorR (Error(k(), m))
 
             let noFieldsCheck(fields':RecdField list) = 
                 match fields' with 
@@ -15272,7 +15272,7 @@ module EstablishTypeDefinitionCores =
                     TNoRepr, None, NoSafeInitInfo
 
                 | SynTypeDefnSimpleRepr.TypeAbbrev(ParserDetail.Ok, rhsType, _) ->
-                    if hasSealedAttr = Some true then 
+                    if hasSealedAttr = Some(true) then 
                         errorR (Error(FSComp.SR.tcAbbreviatedTypesCannotBeSealed(), m))
                     noAbstractClassAttributeCheck()
                     noAllowNullLiteralAttributeCheck()
