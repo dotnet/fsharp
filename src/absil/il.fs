@@ -713,11 +713,8 @@ and [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
     member x.IsTyvar =
         match x with 
         | ILType.TypeVar _ -> true | _ -> false
-<<<<<<< HEAD
 
     override x.ToString() = x.QualifiedName
-=======
->>>>>>> 0fd7cdf6f6df77d7d4dbb81a1943ab90f11bd16f
 
 and [<StructuralEquality; StructuralComparison>]
     ILCallingSignature = 
