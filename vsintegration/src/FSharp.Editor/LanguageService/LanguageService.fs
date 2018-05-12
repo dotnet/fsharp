@@ -662,7 +662,7 @@ type internal FSharpLanguageService(package : FSharpPackage) =
             | Some (hier, _) ->
 
 
-                // Check if the file is in a CPS projct or not.
+                // Check if the file is in a CPS project or not.
                 // CPS projects don't implement IProvideProjectSite and IVSProjectHierarchy
                 // Simple explanation:
                 //    Legacy projects have IVSHierarchy and IProjectSite
@@ -671,7 +671,7 @@ type internal FSharpLanguageService(package : FSharpPackage) =
                 match hier with
                 | :? IProvideProjectSite as siteProvider when not (IsScript(filename)) ->
 
-                    // This is the path for out-of-project .fs files in legacy projects
+                    // This is the path for .fs/.fsi files in legacy projects
 
                     this.SetupProjectFile(siteProvider, this.Workspace, "SetupNewTextView")
 
@@ -682,13 +682,13 @@ type internal FSharpLanguageService(package : FSharpPackage) =
                     | null ->
                         if not (h.IsCapabilityMatch("CPS")) then
 
-                            // This is the path for out-of-project .fs files in CPS projects
+                            // This is the path when opening out-of-project .fs/.fsi files in CPS projects
 
                             let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
                             this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
                     | id ->
 
-                        // This is the path for when opening in-project .fs/.fsi files in CPS projects when
+                        // This is the path when opening in-project .fs/.fsi files in CPS projects when
                         // there is already an existing DocumentId for that document in the solution (which
                         // will normally be the case)
                         //
