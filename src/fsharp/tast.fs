@@ -448,9 +448,6 @@ type EntityFlags(flags:int64) =
     /// Get the flags as included in the F# binary metadata
     member x.PickledBits =                         (flags       &&&  ~~~0b000001111000100L)
 
-    /// Get the flags as included in the F# binary metadata
-    member x.PickledBits =                         (flags       &&&  ~~~0b000000000000100L)
-
 
 #if DEBUG
 assert (sizeof<ValFlags> = 8)
@@ -4698,8 +4695,6 @@ and [<RequireQualifiedAccess>]
          ModuleOrNamespaceExpr
 
     override __.ToString() = "ModuleOrNamespaceBinding(...)"
-
->>>>>>> 0fd7cdf6f6df77d7d4dbb81a1943ab90f11bd16f
 
 /// Represents a complete typechecked implementation file, including its typechecked signature if any.
 ///
