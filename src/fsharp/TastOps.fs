@@ -2861,6 +2861,7 @@ let TyconRefHasAttribute g m attribSpec tcref  =
         |> Option.isSome
 
 let isByrefLikeTyconRef g m (tcref: TyconRef) = 
+    tcref.CanDeref &&
     match tcref.TryIsByRefLike with 
     | Some res -> res
     | None -> 
@@ -5564,6 +5565,7 @@ type Mutates = DefinitelyMutates | PossiblyMutates | NeverMutates
 exception DefensiveCopyWarning of string * range 
 
 let isRecdOrStructTyconRefReadOnly (g: TcGlobals) m (tcref: TyconRef) =
+    tcref.CanDeref &&
     match tcref.TryIsReadOnly with 
     | Some res -> res
     | None -> 

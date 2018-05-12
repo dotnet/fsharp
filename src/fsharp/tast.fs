@@ -4040,12 +4040,17 @@ and Attribs = Attrib list
 and AttribKind = 
     /// Indicates an attribute refers to a type defined in an imported .NET assembly 
     | ILAttrib of ILMethodRef 
+
     /// Indicates an attribute refers to a type defined in an imported F# assembly 
     | FSAttrib of ValRef
+
+    override x.ToString() = sprintf "AttribKind(...)"
 
 /// Attrib(kind,unnamedArgs,propVal,appliedToAGetterOrSetter,targetsOpt,range)
 and Attrib = 
     | Attrib of TyconRef * AttribKind * AttribExpr list * AttribNamedArg list * bool * AttributeTargets option * range
+
+    override x.ToString() = sprintf "Attrib(...)"
 
 /// We keep both source expression and evaluated expression around to help intellisense and signature printing
 and AttribExpr = 
@@ -4113,6 +4118,8 @@ and
     ///    body -- the rest of the decision tree
     | TDBind of Binding * DecisionTree
 
+    override x.ToString() = sprintf "DecisionTree(...)"
+
 /// Represents a test and a subsequent decision tree
 and DecisionTreeCase = 
     | TCase of DecisionTreeTest * DecisionTree
@@ -4122,6 +4129,8 @@ and DecisionTreeCase =
 
     /// Get the decision tree or a successful test
     member x.CaseTree = let (TCase(_,d)) = x in d
+
+    override x.ToString() = sprintf "DecisionTreeCase(...)"
 
 and 
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -4154,6 +4163,7 @@ and
     ///     activePatternInfo -- The extracted info for the active pattern.
     | ActivePatternCase of Expr * TTypes * (ValRef * TypeInst) option * int * ActivePatternInfo
 
+    override x.ToString() = sprintf "DecisionTreeTest(...)"
 
 /// A target of a decision tree. Can be thought of as a little function, though is compiled as a local block. 
 and DecisionTreeTarget = 
@@ -4174,6 +4184,8 @@ and Binding =
 
     /// The information about whether to emit a sequence point for the binding
     member x.SequencePointInfo = (let (TBind(_,_,sp)) = x in sp)
+
+    override x.ToString() = sprintf "Binding for %s" x.Var.CompiledName
     
 /// Represents a reference to an active pattern element. The 
 /// integer indicates which choice in the target set is being selected by this item. 
@@ -4226,6 +4238,8 @@ and ValReprInfo  =
             | (_::_::h)::t -> loop t (acc + h.Length + 2) 
         loop args 0
 
+    override __.ToString() = "ValReprInfo(...)"
+
 /// Records the "extra information" for an argument compiled as a real
 /// method argument, specifically the argument name and attributes.
 and 
@@ -4237,6 +4251,8 @@ and
 
       // MUTABILITY: used when propagating names of parameters from signature into the implementation.
       mutable Name : Ident option  }
+
+    override __.ToString() = "ArgReprInfo(...)"
 
 /// Records the extra metadata stored about typars for type parameters
 /// compiled as "real" IL type parameters, specifically for values with 
@@ -4331,6 +4347,8 @@ and
     /// After type checking the bindings this is replaced by a use of the variable, perhaps at an 
     /// appropriate type instantiation. These are immediately eliminated on subsequent rewrites. 
     | Link of Expr ref
+
+    override __.ToString() = "Expr(...)"
 
 and 
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -4444,6 +4462,7 @@ and
     ///     retTy -- the types of pushed values, if any 
     | ILCall of bool * bool * bool * bool * ValUseFlag * bool * bool * ILMethodRef * TypeInst * TypeInst * TTypes   
 
+    override __.ToString() = "TOp(...)"
 
 /// Indicates the kind of record construction operation.
 and RecordConstructionInfo = 
@@ -4530,18 +4549,27 @@ and StaticOptimization =
 /// TObjExprMethod(slotsig,attribs,methTyparsOfOverridingMethod,methodParams,methodBodyExpr,m)
 and ObjExprMethod = 
     | TObjExprMethod of SlotSig * Attribs * Typars * Val list list * Expr * range
+
     member x.Id = let (TObjExprMethod(slotsig,_,_,_,_,m)) = x in mkSynId m slotsig.Name
+
+    override __.ToString() = "TObjExprMethod(...)"
 
 /// Represents an abstract method slot, or delegate signature.
 ///
 /// TSlotSig(methodName,declaringType,declaringTypeParameters,methodTypeParameters,slotParameters,returnTy)
 and SlotSig = 
     | TSlotSig of string * TType * Typars * Typars * SlotParam list list * TType option
+
     member ss.Name             = let (TSlotSig(nm,_,_,_,_,_)) = ss in nm
+
     member ss.ImplementedType  = let (TSlotSig(_,ty,_,_,_,_)) = ss in ty
+
     member ss.ClassTypars      = let (TSlotSig(_,_,ctps,_,_,_)) = ss in ctps
+
     member ss.MethodTypars     = let (TSlotSig(_,_,_,mtps,_,_)) = ss in mtps
+
     member ss.FormalParams     = let (TSlotSig(_,_,_,_,ps,_)) = ss in ps
+
     member ss.FormalReturnType = let (TSlotSig(_,_,_,_,_,rt)) = ss in rt
 
 /// Represents a parameter to an abstract method slot. 
@@ -4549,7 +4577,10 @@ and SlotSig =
 /// TSlotParam(nm,ty,inFlag,outFlag,optionalFlag,attribs)
 and SlotParam = 
     | TSlotParam of  string option * TType * bool (* in *) * bool (* out *) * bool (* optional *) * Attribs
+
     member x.Type = let (TSlotParam(_,ty,_,_,_,_)) = x in ty
+
+    override __.ToString() = "TSlotParam(...)"
 
 /// A type for a module-or-namespace-fragment and the actual definition of the module-or-namespace-fragment
 /// The first ModuleOrNamespaceType is the signature and is a binder. However the bindings are not used in the ModuleOrNamespaceExpr: it is only referenced from the 'outside' 
@@ -4559,7 +4590,10 @@ and ModuleOrNamespaceExprWithSig =
          ModuleOrNamespaceType 
          * ModuleOrNamespaceExpr
          * range
+
     member x.Type = let (ModuleOrNamespaceExprWithSig(mtyp,_,_)) = x in mtyp
+
+    override __.ToString() = "ModuleOrNamespaceExprWithSig(...)"
 
 /// The contents of a module-or-namespace-fragment definition 
 and ModuleOrNamespaceExpr = 
@@ -4578,6 +4612,8 @@ and ModuleOrNamespaceExpr =
     /// Indicates the module fragment is a 'rec' or 'non-rec' definition of types and modules
     | TMDefRec   of isRec:bool * Tycon list * ModuleOrNamespaceBinding list * range
 
+    override __.ToString() = "ModuleOrNamespaceExpr(...)"
+
 /// A named module-or-namespace-fragment definition 
 and [<RequireQualifiedAccess>] 
     ModuleOrNamespaceBinding = 
@@ -4591,15 +4627,22 @@ and [<RequireQualifiedAccess>]
          /// This is the body of the module/namespace 
          ModuleOrNamespaceExpr
 
+    override __.ToString() = "ModuleOrNamespaceBinding(...)"
 
 /// Represents a complete typechecked implementation file, including its typechecked signature if any.
 ///
 /// TImplFile(qualifiedNameOfFile,pragmas,implementationExpressionWithSignature,hasExplicitEntryPoint,isScript)
-and TypedImplFile = TImplFile of QualifiedNameOfFile * ScopedPragma list * ModuleOrNamespaceExprWithSig * bool * bool
+and TypedImplFile = 
+    | TImplFile of QualifiedNameOfFile * ScopedPragma list * ModuleOrNamespaceExprWithSig * bool * bool
+
+    override __.ToString() = "TImplFile(...)"
 
 /// Represents a complete typechecked assembly, made up of multiple implementation files.
 ///
-and TypedAssemblyAfterOptimization = TypedAssemblyAfterOptimization of (TypedImplFile * (* optimizeDuringCodeGen: *) (Expr -> Expr)) list
+and TypedAssemblyAfterOptimization = 
+    | TypedAssemblyAfterOptimization of (TypedImplFile * (* optimizeDuringCodeGen: *) (Expr -> Expr)) list
+
+    override __.ToString() = "TypedAssemblyAfterOptimization(...)"
 
 //---------------------------------------------------------------------------
 // Freevars.  Computed and cached by later phases (never computed type checking).  Cached in terms. Not pickled.
@@ -4636,6 +4679,8 @@ and FreeTyvars =
       /// and we have to check various conditions associated with that. 
       FreeTypars: FreeTypars }
 
+    override x.ToString() = sprintf "FreeTyvars(...)"
+
 
 /// Represents an amortized computation of the free variables in an expression
 and FreeVarsCache = FreeVars cache
@@ -4669,6 +4714,8 @@ and FreeVars =
       /// See FreeTyvars above.
       FreeTyvars: FreeTyvars }
 
+    override x.ToString() = sprintf "FreeVars(...)"
+
 /// Specifies the compiled representations of type and exception definitions.  Basically
 /// just an ILTypeRef. Computed and cached by later phases.  Stored in 
 /// type and exception definitions. Not pickled. Store an optional ILType object for 
@@ -4696,6 +4743,8 @@ and [<RequireQualifiedAccess>]
     //   type nativeptr<'T when 'T : unmanaged> = (# "native int" #)
     //   type ilsigptr<'T> = (# "!0*" #)
     | ILAsmOpen of ILType  
+
+    override x.ToString() = sprintf "CompiledTypeRepr(...)"
 
 //---------------------------------------------------------------------------
 // Basic properties on type definitions
