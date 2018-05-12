@@ -24,8 +24,6 @@ open Microsoft.FSharp.Compiler.PrettyNaming
 open Microsoft.FSharp.Compiler.InfoReader
 open Microsoft.FSharp.Compiler.TypeRelations
 
-
-
 //--------------------------------------------------------------------------
 // TestHooks - for dumping range to support source transforms
 //--------------------------------------------------------------------------

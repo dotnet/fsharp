@@ -4,6 +4,7 @@
 /// on items from name resolution
 module internal Microsoft.FSharp.Compiler.AttributeChecking
 
+open System.Collections.Generic
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 
@@ -503,3 +504,23 @@ let CheckRecdFieldInfoAttributes g (x:RecdFieldInfo) m =
     CheckRecdFieldAttributes g x.RecdFieldRef m
 
     
+// Identify any security attributes
+let IsSecurityAttribute (g: TcGlobals) amap (casmap : Dictionary<Stamp, bool>) (Attrib(tcref, _, _, _, _, _, _)) m =
+    // There's no CAS on Silverlight, so we have to be careful here
+    match g.attrib_SecurityAttribute with
+    | None -> false
+    | Some attr ->
+        match attr.TyconRef.TryDeref with
+        | VSome _ -> 
+            let tcs = tcref.Stamp
+            match casmap.TryGetValue(tcs) with
+            | true, c -> c
+            | _ ->
+                let exists = ExistsInEntireHierarchyOfType (fun t -> typeEquiv g t (mkAppTy attr.TyconRef [])) g amap m AllowMultiIntfInstantiations.Yes (mkAppTy tcref [])
+                casmap.[tcs] <- exists
+                exists
+        | VNone -> false  
+
+let IsSecurityCriticalAttribute g (Attrib(tcref, _, _, _, _, _, _)) =
+    (tyconRefEq g tcref g.attrib_SecurityCriticalAttribute.TyconRef || tyconRefEq g tcref g.attrib_SecuritySafeCriticalAttribute.TyconRef)
+
