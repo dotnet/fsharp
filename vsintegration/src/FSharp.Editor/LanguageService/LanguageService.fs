@@ -427,7 +427,6 @@ type internal FSharpLanguageService(package : FSharpPackage) =
     member private this.OnProjectAdded(projectId:ProjectId) = projectInfoManager.UpdateProjectInfoWithProjectId(projectId, "OnProjectAdded", invalidateConfig=true)
     member private this.OnProjectReloaded(projectId:ProjectId) = projectInfoManager.UpdateProjectInfoWithProjectId(projectId, "OnProjectReloaded", invalidateConfig=true)
     member private this.OnDocumentAdded(projectId:ProjectId, documentId:DocumentId) = projectInfoManager.UpdateDocumentInfoWithProjectId(projectId, documentId, "OnDocumentAdded", invalidateConfig=true)
-    member private this.OnDocumentChanged(projectId:ProjectId, documentId:DocumentId) = projectInfoManager.UpdateDocumentInfoWithProjectId(projectId, documentId, "OnDocumentChanged", invalidateConfig=false)
     member private this.OnDocumentReloaded(projectId:ProjectId, documentId:DocumentId) = projectInfoManager.UpdateDocumentInfoWithProjectId(projectId, documentId, "OnDocumentReloaded", invalidateConfig=true)
 
     override this.Initialize() = 
@@ -439,7 +438,6 @@ type internal FSharpLanguageService(package : FSharpPackage) =
             | WorkspaceChangeKind.ProjectAdded     -> this.OnProjectAdded(args.ProjectId)
             | WorkspaceChangeKind.ProjectReloaded  -> this.OnProjectReloaded(args.ProjectId)
             | WorkspaceChangeKind.DocumentAdded    -> this.OnDocumentAdded(args.ProjectId, args.DocumentId)
-            | WorkspaceChangeKind.DocumentChanged  -> this.OnDocumentChanged(args.ProjectId, args.DocumentId)
             | WorkspaceChangeKind.DocumentReloaded -> this.OnDocumentReloaded(args.ProjectId, args.DocumentId)
             | WorkspaceChangeKind.DocumentRemoved
             | WorkspaceChangeKind.ProjectRemoved
@@ -674,8 +672,7 @@ type internal FSharpLanguageService(package : FSharpPackage) =
                         if not (h.IsCapabilityMatch("CPS")) then
                             let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
                             this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
-                    | id ->
-                        projectInfoManager.UpdateProjectInfoWithProjectId(id.ProjectId, "SetupNewTextView", invalidateConfig=true)
+                    | _ -> ()
                 | _ ->
                     let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
                     this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
