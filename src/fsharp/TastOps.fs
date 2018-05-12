@@ -561,7 +561,7 @@ let tryNormalizeMeasureInType g ty =
 //---------------------------------------------------------------------------
 
 let mkVoidPtrTy (g:TcGlobals) = 
-    assert env.g.voidptr_tcr.CanDeref 
+    assert g.voidptr_tcr.CanDeref 
     TType_app (g.voidptr_tcr, [])
 let mkNativePtrTy (g:TcGlobals) ty = TType_app (g.nativeptr_tcr, [ty])
 let mkByrefTy (g:TcGlobals) ty = TType_app (g.byref_tcr, [ty])
