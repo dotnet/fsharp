@@ -5,13 +5,11 @@ namespace Microsoft.FSharp.Control
     open System
     open System.Threading
     open System.Threading.Tasks
-    open System.Runtime.CompilerServices
+    open System.Runtime.ExceptionServices
 
     open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
-
 
     /// <summary>A compositional asynchronous computation, which, when run, will eventually produce a value 
     /// of type T, or else raises an exception.</summary> 
@@ -405,6 +403,11 @@ namespace Microsoft.FSharp.Control
             continuation:('T -> unit) * exceptionContinuation:(exn -> unit) * cancellationContinuation:(OperationCanceledException -> unit) *  
             ?cancellationToken:CancellationToken-> unit
 
+        static member internal StartWithContinuationsUsingDispatchInfo: 
+            computation:Async<'T> * 
+            continuation:('T -> unit) * exceptionContinuation:(ExceptionDispatchInfo -> unit) * cancellationContinuation:(OperationCanceledException -> unit) *  
+            ?cancellationToken:CancellationToken-> unit
+
         /// <summary>Runs an asynchronous computation, starting immediately on the current operating system
         /// thread.</summary>
         /// <remarks>If no cancellation token is provided then the default cancellation token is used.</remarks>
@@ -574,7 +577,6 @@ namespace Microsoft.FSharp.Control
     [<AutoOpen>]
     /// <summary>A module of extension members providing asynchronous operations for some basic CLI types related to concurrency and I/O.</summary>
     module CommonExtensions =
-        open System.IO
         
         type System.IO.Stream with 
             
@@ -626,7 +628,6 @@ namespace Microsoft.FSharp.Control
     /// <summary>A module of extension members providing asynchronous operations for some basic Web operations.</summary>
     [<AutoOpen>]
     module WebExtensions = 
-     begin
 
         type System.Net.WebRequest with 
             /// <summary>Returns an asynchronous computation that, when run, will wait for a response to the given WebRequest.</summary>
@@ -636,16 +637,19 @@ namespace Microsoft.FSharp.Control
     
 #if !FX_NO_WEB_CLIENT
         type System.Net.WebClient with
+
             /// <summary>Returns an asynchronous computation that, when run, will wait for the download of the given URI.</summary>
             /// <param name="address">The URI to retrieve.</param>
             /// <returns>An asynchronous computation that will wait for the download of the URI.</returns>
             [<CompiledName("AsyncDownloadString")>] // give the extension member a nice, unmangled compiled name, unique within this module
             member AsyncDownloadString : address:System.Uri -> Async<string>
+
             /// <summary>Returns an asynchronous computation that, when run, will wait for the download of the given URI.</summary>
             /// <param name="address">The URI to retrieve.</param>
             /// <returns>An asynchronous computation that will wait for the download of the URI.</returns>
             [<CompiledName("AsyncDownloadData")>] // give the extension member a nice, unmangled compiled name, unique within this module
             member AsyncDownloadData : address:System.Uri -> Async<byte[]>
+
             /// <summary>Returns an asynchronous computation that, when run, will wait for the download of the given URI to specified file.</summary>
             /// <param name="address">The URI to retrieve.</param>
             /// <param name="fileName">The filename to save download to.</param>
@@ -654,373 +658,42 @@ namespace Microsoft.FSharp.Control
             member AsyncDownloadFile : address:System.Uri * fileName: string -> Async<unit>
 #endif
 
-     end
-    
-    
-    [<Sealed>]
-    [<CompiledName("FSharpAsyncReplyChannel`1")>]
-    /// <summary>A handle to a capability to reply to a PostAndReply message.</summary>
-    type AsyncReplyChannel<'Reply> =
-        /// <summary>Sends a reply to a PostAndReply message.</summary>
-        /// <param name="value">The value to send.</param>
-        member Reply : value:'Reply -> unit
+    // Internals used by MailboxProcessor
+    module internal AsyncImpl = 
+        val async : AsyncBuilder
 
-        
-    /// <summary>A message-processing agent which executes an asynchronous computation.</summary>
-    ///
-    /// <remarks>The agent encapsulates a message queue that supports multiple-writers and 
-    /// a single reader agent. Writers send messages to the agent by using the Post 
-    /// method and its variations.
-    ///
-    /// The agent may wait for messages using the Receive or TryReceive methods or
-    /// scan through all available messages using the Scan or TryScan method.</remarks>
+    [<Sealed>]        
+    // Internals used by MailboxProcessor
+    type internal AsyncReturn 
 
-    [<Sealed>]
-    [<AutoSerializable(false)>]    
-    [<CompiledName("FSharpMailboxProcessor`1")>]
-    type MailboxProcessor<'Msg> =
+    [<Sealed>]        
+    // Internals used by MailboxProcessor
+    type internal AsyncActivation<'T> =
+        member QueueContinuationWithTrampoline: 'T -> AsyncReturn
+        member CallContinuation: 'T -> AsyncReturn
 
-        /// <summary>Creates an agent. The <c>body</c> function is used to generate the asynchronous 
-        /// computation executed by the agent. This function is not executed until 
-        /// <c>Start</c> is called.</summary>
-        /// <param name="body">The function to produce an asynchronous computation that will be executed
-        /// as the read loop for the MailboxProcessor when Start is called.</param>
-        /// <param name="cancellationToken">An optional cancellation token for the <c>body</c>.
-        /// Defaults to <c>Async.DefaultCancellationToken</c>.</param>
-        /// <returns>The created MailboxProcessor.</returns>
-        new :  body:(MailboxProcessor<'Msg> -> Async<unit>) * ?cancellationToken: CancellationToken -> MailboxProcessor<'Msg>
+    [<NoEquality; NoComparison>]
+    // Internals used by MailboxProcessor
+    type internal AsyncResult<'T>  =
+        | Ok of 'T
+        | Error of ExceptionDispatchInfo
+        | Canceled of OperationCanceledException
 
-        /// <summary>Creates and starts an agent. The <c>body</c> function is used to generate the asynchronous 
-        /// computation executed by the agent.</summary>
-        /// <param name="body">The function to produce an asynchronous computation that will be executed
-        /// as the read loop for the MailboxProcessor when Start is called.</param>
-        /// <param name="cancellationToken">An optional cancellation token for the <c>body</c>.
-        /// Defaults to <c>Async.DefaultCancellationToken</c>.</param>
-        /// <returns>The created MailboxProcessor.</returns>
-        static member Start  :  body:(MailboxProcessor<'Msg> -> Async<unit>) * ?cancellationToken: CancellationToken -> MailboxProcessor<'Msg>
+    // Internals used by MailboxProcessor
+    module internal AsyncPrimitives = 
 
-        /// <summary>Posts a message to the message queue of the MailboxProcessor, asynchronously.</summary>
-        /// <param name="message">The message to post.</param>
-        member Post : message:'Msg -> unit
+        [<Sealed; AutoSerializable(false)>]        
+        type internal ResultCell<'T> =
+            new : unit -> ResultCell<'T>
+            member GetWaitHandle: unit -> WaitHandle
+            member Close: unit -> unit
+            interface IDisposable
+            member RegisterResult: 'T * reuseThread: bool -> AsyncReturn
+            member GrabResult: unit -> 'T
+            member ResultAvailable : bool
+            member AwaitResult_NoDirectCancelOrTimeout : Async<'T>
+            member TryWaitForResultSynchronously: ?timeout: int -> 'T option
 
-        /// <summary>Posts a message to an agent and await a reply on the channel, synchronously.</summary>
-        ///
-        /// <remarks>The message is generated by applying <c>buildMessage</c> to a new reply channel 
-        /// to be incorporated into the message. The receiving agent must process this 
-        /// message and invoke the Reply method on this reply channel precisely once.</remarks>
-        /// <param name="buildMessage">The function to incorporate the AsyncReplyChannel into
-        /// the message to be sent.</param>
-        /// <param name="timeout">An optional timeout parameter (in milliseconds) to wait for a reply message.
-        /// Defaults to -1 which corresponds to <c>System.Threading.Timeout.Infinite</c>.</param>
-        /// <returns>The reply from the agent.</returns>
-        member PostAndReply : buildMessage:(AsyncReplyChannel<'Reply> -> 'Msg) * ?timeout : int -> 'Reply
+        val CreateAsyncResultAsync : AsyncResult<'T> -> Async<'T>
 
-        /// <summary>Posts a message to an agent and await a reply on the channel, asynchronously.</summary> 
-        ///
-        /// <remarks>The message is generated by applying <c>buildMessage</c> to a new reply channel 
-        /// to be incorporated into the message. The receiving agent must process this 
-        /// message and invoke the Reply method on this reply channel precisely once.</remarks>
-        /// <param name="buildMessage">The function to incorporate the AsyncReplyChannel into
-        /// the message to be sent.</param>
-        /// <param name="timeout">An optional timeout parameter (in milliseconds) to wait for a reply message.
-        /// Defaults to -1 which corresponds to <c>System.Threading.Timeout.Infinite</c>.</param>
-        /// <returns>An asynchronous computation that will wait for the reply from the agent.</returns>
-        member PostAndAsyncReply : buildMessage:(AsyncReplyChannel<'Reply> -> 'Msg) * ?timeout : int -> Async<'Reply>
-
-        /// <summary>Like PostAndReply, but returns None if no reply within the timeout period.</summary>
-        /// <param name="buildMessage">The function to incorporate the AsyncReplyChannel into
-        /// the message to be sent.</param>
-        /// <param name="timeout">An optional timeout parameter (in milliseconds) to wait for a reply message.
-        /// Defaults to -1 which corresponds to <c>System.Threading.Timeout.Infinite</c>.</param>
-        /// <returns>The reply from the agent or None if the timeout expires.</returns> 
-        member TryPostAndReply : buildMessage:(AsyncReplyChannel<'Reply> -> 'Msg) * ?timeout : int -> 'Reply option
-
-        /// <summary>Like AsyncPostAndReply, but returns None if no reply within the timeout period.</summary>
-        /// <param name="buildMessage">The function to incorporate the AsyncReplyChannel into
-        /// the message to be sent.</param>
-        /// <param name="timeout">An optional timeout parameter (in milliseconds) to wait for a reply message.
-        /// Defaults to -1 which corresponds to <c>System.Threading.Timeout.Infinite</c>.</param>
-        /// <returns>An asynchronous computation that will return the reply or None if the timeout expires.</returns> 
-        member PostAndTryAsyncReply : buildMessage:(AsyncReplyChannel<'Reply> -> 'Msg) * ?timeout : int -> Async<'Reply option>
-
-        /// <summary>Waits for a message. This will consume the first message in arrival order.</summary> 
-        ///
-        /// <remarks>This method is for use within the body of the agent. 
-        ///
-        /// This method is for use within the body of the agent. For each agent, at most 
-        /// one concurrent reader may be active, so no more than one concurrent call to 
-        /// Receive, TryReceive, Scan and/or TryScan may be active.</remarks>
-        /// <param name="timeout">An optional timeout in milliseconds. Defaults to -1 which corresponds
-        /// to <c>System.Threading.Timeout.Infinite</c>.</param>
-        /// <returns>An asynchronous computation that returns the received message.</returns>
-        /// <exception cref="System.TimeoutException">Thrown when the timeout is exceeded.</exception>
-        member Receive : ?timeout:int -> Async<'Msg>
-
-        /// <summary>Waits for a message. This will consume the first message in arrival order.</summary> 
-        ///
-        /// <remarks>This method is for use within the body of the agent. 
-        ///
-        /// Returns None if a timeout is given and the timeout is exceeded.
-        ///
-        /// This method is for use within the body of the agent. For each agent, at most 
-        /// one concurrent reader may be active, so no more than one concurrent call to 
-        /// Receive, TryReceive, Scan and/or TryScan may be active.</remarks>
-        /// <param name="timeout">An optional timeout in milliseconds. Defaults to -1 which
-        /// corresponds to <c>System.Threading.Timeout.Infinite</c>.</param>
-        /// <returns>An asynchronous computation that returns the received message or
-        /// None if the timeout is exceeded.</returns>
-        member TryReceive : ?timeout:int -> Async<'Msg option>
-        
-        /// <summary>Scans for a message by looking through messages in arrival order until <c>scanner</c> 
-        /// returns a Some value. Other messages remain in the queue.</summary>
-        ///
-        /// <remarks>Returns None if a timeout is given and the timeout is exceeded.
-        ///
-        /// This method is for use within the body of the agent. For each agent, at most 
-        /// one concurrent reader may be active, so no more than one concurrent call to 
-        /// Receive, TryReceive, Scan and/or TryScan may be active.</remarks>
-        /// <param name="scanner">The function to return None if the message is to be skipped
-        /// or Some if the message is to be processed and removed from the queue.</param>
-        /// <param name="timeout">An optional timeout in milliseconds. Defaults to -1 which corresponds
-        /// to <c>System.Threading.Timeout.Infinite</c>.</param>
-        /// <returns>An asynchronous computation that <c>scanner</c> built off the read message.</returns>
-        /// <exception cref="System.TimeoutException">Thrown when the timeout is exceeded.</exception>
-        member Scan : scanner:('Msg -> (Async<'T>) option) * ?timeout:int -> Async<'T>
-
-        /// <summary>Scans for a message by looking through messages in arrival order until <c>scanner</c> 
-        /// returns a Some value. Other messages remain in the queue.</summary>
-        ///
-        /// <remarks>This method is for use within the body of the agent. For each agent, at most 
-        /// one concurrent reader may be active, so no more than one concurrent call to 
-        /// Receive, TryReceive, Scan and/or TryScan may be active.</remarks>
-        /// <param name="scanner">The function to return None if the message is to be skipped
-        /// or Some if the message is to be processed and removed from the queue.</param>
-        /// <param name="timeout">An optional timeout in milliseconds. Defaults to -1 which corresponds
-        /// to <c>System.Threading.Timeout.Infinite</c>.</param>
-        /// <returns>An asynchronous computation that <c>scanner</c> built off the read message.</returns>
-        member TryScan : scanner:('Msg -> (Async<'T>) option) * ?timeout:int -> Async<'T option>
-
-        /// <summary>Starts the agent.</summary>
-        member Start : unit -> unit
-
-        /// <summary>Raises a timeout exception if a message not received in this amount of time. By default
-        /// no timeout is used.</summary>
-        member DefaultTimeout : int with get, set
-        
-        /// <summary>Occurs when the execution of the agent results in an exception.</summary>
-        [<CLIEvent>]
-        member Error : IEvent<System.Exception>
-
-        interface System.IDisposable
-
-        /// <summary>Returns the number of unprocessed messages in the message queue of the agent.</summary>
-        member CurrentQueueLength : int
-
-
-    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-    [<RequireQualifiedAccess>]
-    /// <summary>Basic operations on first class event and other observable objects.</summary>
-    module Observable = 
-
-        /// <summary>Returns an observable for the merged observations from the sources. 
-        /// The returned object propagates success and error values arising 
-        /// from either source and completes when both the sources have completed.</summary>
-        ///
-        /// <remarks>For each observer, the registered intermediate observing object is not 
-        /// thread safe. That is, observations arising from the sources must not 
-        /// be triggered concurrently on different threads.</remarks>
-        /// <param name="source1">The first Observable.</param>
-        /// <param name="source2">The second Observable.</param>
-        /// <returns>An Observable that propagates information from both sources.</returns>
-        [<CompiledName("Merge")>]
-        val merge: source1:IObservable<'T> -> source2:IObservable<'T> -> IObservable<'T>
-
-        /// <summary>Returns an observable which transforms the observations of the source by the 
-        /// given function. The transformation function is executed once for each 
-        /// subscribed observer. The returned object also propagates error observations 
-        /// arising from the source and completes when the source completes.</summary>
-        /// <param name="mapping">The function applied to observations from the source.</param>
-        /// <param name="source">The input Observable.</param>
-        /// <returns>An Observable of the type specified by <c>mapping</c>.</returns> 
-        [<CompiledName("Map")>]
-        val map: mapping:('T -> 'U) -> source:IObservable<'T> -> IObservable<'U>
-
-        /// <summary>Returns an observable which filters the observations of the source 
-        /// by the given function. The observable will see only those observations
-        /// for which the predicate returns true. The predicate is executed once for 
-        /// each subscribed observer. The returned object also propagates error 
-        /// observations arising from the source and completes when the source completes.</summary>
-        /// <param name="filter">The function to apply to observations to determine if it should
-        /// be kept.</param>
-        /// <param name="source">The input Observable.</param>
-        /// <returns>An Observable that filters observations based on <c>filter</c>.</returns>
-        [<CompiledName("Filter")>]
-        val filter: predicate:('T -> bool) -> source:IObservable<'T> -> IObservable<'T>
-
-        /// <summary>Returns two observables which partition the observations of the source by 
-        /// the given function. The first will trigger observations for those values 
-        /// for which the predicate returns true. The second will trigger observations 
-        /// for those values where the predicate returns false. The predicate is 
-        /// executed once for each subscribed observer. Both also propagate all error 
-        /// observations arising from the source and each completes when the source 
-        /// completes.</summary>
-        /// <param name="predicate">The function to determine which output Observable will trigger
-        /// a particular observation.</param>
-        /// <param name="source">The input Observable.</param>
-        /// <returns>A tuple of Observables.  The first triggers when the predicate returns true, and
-        /// the second triggers when the predicate returns false.</returns> 
-        [<CompiledName("Partition")>]
-        val partition: predicate:('T -> bool) -> source:IObservable<'T> -> (IObservable<'T> * IObservable<'T>)
-
-        /// <summary>Returns two observables which split the observations of the source by the 
-        /// given function. The first will trigger observations <c>x</c> for which the 
-        /// splitter returns <c>Choice1Of2 x</c>. The second will trigger observations 
-        /// <c>y</c> for which the splitter returns <c>Choice2Of2 y</c> The splitter is 
-        /// executed once for each subscribed observer. Both also propagate error 
-        /// observations arising from the source and each completes when the source 
-        /// completes.</summary>
-        /// <param name="splitter">The function that takes an observation an transforms
-        /// it into one of the two output Choice types.</param>
-        /// <param name="source">The input Observable.</param>
-        /// <returns>A tuple of Observables.  The first triggers when <c>splitter</c> returns Choice1of2
-        /// and the second triggers when <c>splitter</c> returns Choice2of2.</returns> 
-        [<CompiledName("Split")>]
-        val split: splitter:('T -> Choice<'U1,'U2>) -> source:IObservable<'T> -> (IObservable<'U1> * IObservable<'U2>)
-
-        /// <summary>Returns an observable which chooses a projection of observations from the source 
-        /// using the given function. The returned object will trigger observations <c>x</c>
-        /// for which the splitter returns <c>Some x</c>. The returned object also propagates 
-        /// all errors arising from the source and completes when the source completes.</summary>
-        /// <param name="chooser">The function that returns Some for observations to be propagated
-        /// and None for observations to ignore.</param>
-        /// <param name="source">The input Observable.</param>
-        /// <returns>An Observable that only propagates some of the observations from the source.</returns>
-        [<CompiledName("Choose")>]
-        val choose: chooser:('T -> 'U option) -> source:IObservable<'T> -> IObservable<'U>
-
-        /// <summary>Returns an observable which, for each observer, allocates an item of state
-        /// and applies the given accumulating function to successive values arising from
-        /// the input. The returned object will trigger observations for each computed 
-        /// state value, excluding the initial value. The returned object propagates 
-        /// all errors arising from the source and completes when the source completes.</summary>
-        ///
-        /// <remarks>For each observer, the registered intermediate observing object is not thread safe.
-        /// That is, observations arising from the source must not be triggered concurrently 
-        /// on different threads.</remarks>
-        /// <param name="collector">The function to update the state with each observation.</param>
-        /// <param name="state">The initial state.</param>
-        /// <param name="source">The input Observable.</param>
-        /// <returns>An Observable that triggers on the updated state values.</returns>
-        [<CompiledName("Scan")>]
-        val scan: collector:('U -> 'T -> 'U) -> state:'U -> source:IObservable<'T> -> IObservable<'U> 
-
-        /// <summary>Creates an observer which permanently subscribes to the given observable and which calls
-        /// the given function for each observation.</summary>
-        /// <param name="callback">The function to be called on each observation.</param>
-        /// <param name="source">The input Observable.</param>
-        [<CompiledName("Add")>]
-        val add : callback:('T -> unit) -> source:IObservable<'T> -> unit
-
-        /// <summary>Creates an observer which subscribes to the given observable and which calls
-        /// the given function for each observation.</summary>
-        /// <param name="callback">The function to be called on each observation.</param>
-        /// <param name="source">The input Observable.</param>
-        /// <returns>An object that will remove the callback if disposed.</returns>
-        [<CompiledName("Subscribe")>]
-        val subscribe : callback:('T -> unit) -> source:IObservable<'T> -> System.IDisposable
-
-        /// <summary>Returns a new observable that triggers on the second and subsequent triggerings of the input observable.
-        /// The Nth triggering of the input observable passes the arguments from the N-1th and Nth triggering as
-        /// a pair. The argument passed to the N-1th triggering is held in hidden internal state until the 
-        /// Nth triggering occurs.</summary>
-        ///
-        /// <remarks>For each observer, the registered intermediate observing object is not thread safe.
-        /// That is, observations arising from the source must not be triggered concurrently 
-        /// on different threads.</remarks>
-        /// <param name="source">The input Observable.</param>
-        /// <returns>An Observable that triggers on successive pairs of observations from the input Observable.</returns>
-        [<CompiledName("Pairwise")>]
-        val pairwise: source:IObservable<'T> -> IObservable<'T * 'T>
-
-    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-    [<RequireQualifiedAccess>]
-    module Event = 
-
-        /// <summary>Fires the output event when either of the input events fire.</summary>
-        /// <param name="event1">The first input event.</param>
-        /// <param name="event2">The second input event.</param>
-        /// <returns>An event that fires when either of the input events fire.</returns>
-        [<CompiledName("Merge")>]
-        val merge: event1:IEvent<'Del1,'T> -> event2:IEvent<'Del2,'T> -> IEvent<'T>
-
-        /// <summary>Returns a new event that passes values transformed by the given function.</summary>
-        /// <param name="map">The function to transform event values.</param>
-        /// <param name="sourceEvent">The input event.</param>
-        /// <returns>An event that passes the transformed values.</returns>
-        [<CompiledName("Map")>]
-        val map: mapping:('T -> 'U) -> sourceEvent:IEvent<'Del,'T> -> IEvent<'U>
-
-        /// <summary>Returns a new event that listens to the original event and triggers the resulting
-        /// event only when the argument to the event passes the given function.</summary>
-        /// <param name="predicate">The function to determine which triggers from the event to propagate.</param>
-        /// <param name="sourceEvent">The input event.</param>
-        /// <returns>An event that only passes values that pass the predicate.</returns>
-        [<CompiledName("Filter")>]
-        val filter: predicate:('T -> bool) -> sourceEvent:IEvent<'Del,'T> -> IEvent<'T>
-
-        /// <summary>Returns a new event that listens to the original event and triggers the 
-        /// first resulting event if the application of the predicate to the event arguments
-        /// returned true, and the second event if it returned false.</summary>
-        /// <param name="predicate">The function to determine which output event to trigger.</param>
-        /// <param name="sourceEvent">The input event.</param>
-        /// <returns>A tuple of events.  The first is triggered when the predicate evaluates to true
-        /// and the second when the predicate evaluates to false.</returns>
-        [<CompiledName("Partition")>]
-        val partition: predicate:('T -> bool) -> sourceEvent:IEvent<'Del,'T> -> (IEvent<'T> * IEvent<'T>)
-
-        /// <summary>Returns a new event that listens to the original event and triggers the 
-        /// first resulting event if the application of the function to the event arguments
-        /// returned a Choice1Of2, and the second event if it returns a Choice2Of2.</summary>
-        /// <param name="splitter">The function to transform event values into one of two types.</param>
-        /// <param name="sourceEvent">The input event.</param>
-        /// <returns>A tuple of events.  The first fires whenever <c>splitter</c> evaluates to Choice1of1 and
-        /// the second fires whenever <c>splitter</c> evaluates to Choice2of2.</returns>
-        [<CompiledName("Split")>]
-        val split: splitter:('T -> Choice<'U1,'U2>) -> sourceEvent:IEvent<'Del,'T> -> (IEvent<'U1> * IEvent<'U2>)
-
-        /// <summary>Returns a new event which fires on a selection of messages from the original event.
-        /// The selection function takes an original message to an optional new message.</summary>
-        /// <param name="chooser">The function to select and transform event values to pass on.</param>
-        /// <param name="sourceEvent">The input event.</param>
-        /// <returns>An event that fires only when the chooser returns Some.</returns>
-        [<CompiledName("Choose")>]
-        val choose: chooser:('T -> 'U option) -> sourceEvent:IEvent<'Del,'T> -> IEvent<'U>
-
-        [<CompiledName("Scan")>]
-        /// <summary>Returns a new event consisting of the results of applying the given accumulating function
-        /// to successive values triggered on the input event.  An item of internal state
-        /// records the current value of the state parameter.  The internal state is not locked during the
-        /// execution of the accumulation function, so care should be taken that the 
-        /// input IEvent not triggered by multiple threads simultaneously.</summary>
-        /// <param name="collector">The function to update the state with each event value.</param>
-        /// <param name="state">The initial state.</param>
-        /// <param name="sourceEvent">The input event.</param>
-        /// <returns>An event that fires on the updated state values.</returns>
-        val scan: collector:('U -> 'T -> 'U) -> state:'U -> sourceEvent:IEvent<'Del,'T> -> IEvent<'U> 
-
-        /// <summary>Runs the given function each time the given event is triggered.</summary>
-        /// <param name="callback">The function to call when the event is triggered.</param>
-        /// <param name="sourceEvent">The input event.</param>
-        [<CompiledName("Add")>]
-        val add : callback:('T -> unit) -> sourceEvent:IEvent<'Del,'T> -> unit
-
-        /// <summary>Returns a new event that triggers on the second and subsequent triggerings of the input event.
-        /// The Nth triggering of the input event passes the arguments from the N-1th and Nth triggering as
-        /// a pair. The argument passed to the N-1th triggering is held in hidden internal state until the 
-        /// Nth triggering occurs.</summary>
-        /// <param name="sourceEvent">The input event.</param>
-        /// <returns>An event that triggers on pairs of consecutive values passed from the source event.</returns>
-        [<CompiledName("Pairwise")>]
-        val pairwise: sourceEvent:IEvent<'Del,'T> -> IEvent<'T * 'T>
-
-
+        val MakeAsync : (AsyncActivation<'T> -> AsyncReturn) -> Async<'T>
