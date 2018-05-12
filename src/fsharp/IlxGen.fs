@@ -36,7 +36,6 @@ open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Tastops.DebugPrint
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.TypeRelations
-
   
 let IsNonErasedTypar (tp:Typar) = not tp.IsErased
 let DropErasedTypars (tps:Typar list) = tps |> List.filter IsNonErasedTypar
