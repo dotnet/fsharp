@@ -2169,13 +2169,13 @@ module GeneralizationHelpers =
         | Expr.Op(op, _, args, _) ->
             match op with 
             | TOp.Tuple _ -> true
-            | TOp.UnionCase uc -> not (isUnionCaseRefAllocObservable uc)
+            | TOp.UnionCase uc -> not (isUnionCaseRefDefinitelyMutable uc)
             | TOp.Recd(ctorInfo, tcref) -> 
                 match ctorInfo with 
-                | RecdExpr -> not (isRecdOrUnionOrStructTyconRefAllocObservable g tcref)
+                | RecdExpr -> not (isRecdOrUnionOrStructTyconRefDefinitelyMutable g tcref)
                 | RecdExprIsObjInit -> false
             | TOp.Array -> isNil args
-            | TOp.ExnConstr ec -> not (isExnAllocObservable ec)
+            | TOp.ExnConstr ec -> not (isExnDefinitelyMutable ec)
 
             | TOp.ILAsm([], _) -> true
 
