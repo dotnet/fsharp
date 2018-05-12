@@ -136,6 +136,7 @@ val mkMultiLambdaBind : Val -> SequencePointInfoForBinding -> range -> Typars ->
 val mkCompGenBind : Val -> Expr -> Binding
 val mkCompGenBinds : Val list -> Exprs -> Bindings
 val mkCompGenLet : range -> Val -> Expr -> Expr -> Expr
+val mkCompGenLetIn: range -> string -> TType -> Expr -> (Val * Expr -> Expr) -> Expr
 
 // Invisible bindings are never given a sequence point and should never have side effects
 val mkInvisibleLet : range -> Val -> Expr -> Expr -> Expr

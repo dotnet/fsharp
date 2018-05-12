@@ -575,7 +575,7 @@ let MakeInnerEnvForTyconRef env tcref isExtrinsicExtension =
              eAccessPath = eAccessPath }
 
 /// Make an environment suitable for processing inside a member definition
-let MakeInnerEnvForMember cenv env (v:Val) = 
+let MakeInnerEnvForMember env (v:Val) = 
     match v.MemberInfo with 
     | None -> env
     | Some _ -> MakeInnerEnvForTyconRef env v.MemberApparentEntity v.IsExtensionMember 
@@ -11303,7 +11303,7 @@ and TcLetrecBinding
     let envRec = Option.foldBack (AddLocalVal cenv.tcSink scopem) safeThisValOpt envRec
 
     // Members can access protected members of parents of the type, and private members in the type 
-    let envRec = MakeInnerEnvForMember cenv envRec vspec 
+    let envRec = MakeInnerEnvForMember envRec vspec 
 
     let checkedBind, tpenv = 
         TcNormalizedBinding declKind cenv envRec tpenv tau safeThisValOpt safeInitInfo (enclosingDeclaredTypars, flex) rbind.SyntacticBinding
