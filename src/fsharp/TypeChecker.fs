@@ -6156,9 +6156,9 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
                 let f, fty, tpenv = TcExprOfUnknownType cenv env tpenv operPath
                 let domainTy, resultTy = UnifyFunctionType (Some mWholeExpr) cenv env.DisplayEnv mWholeExpr fty
                 UnifyTypes cenv env mWholeExpr domainTy e1ty 
-                let fAndArg, resultTy = buildApp cenv (MakeApplicableExprNoFlex cenv f) resultTy e1' mWholeExpr
+                let f', resultTy = buildApp cenv (MakeApplicableExprNoFlex cenv f) resultTy e1' mWholeExpr
                 let delayed = List.foldBack (fun idx acc -> DelayedApp(ExprAtomicFlag.Atomic, idx, mWholeExpr) :: acc) indexArgs delayed // atomic, otherwise no ar.[1] <- xyz
-                Some (PropagateThenTcDelayed cenv overallTy env tpenv mWholeExpr fAndArg resultTy ExprAtomicFlag.Atomic delayed )
+                Some (PropagateThenTcDelayed cenv overallTy env tpenv mWholeExpr f' resultTy ExprAtomicFlag.Atomic delayed )
         else None
 
     match attemptArrayString with 
@@ -8261,7 +8261,6 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
             // Avoid unifying twice: we're about to unify in TcDelayed 
             if not (isNil delayed) then 
                 let exprty = if isByrefTy cenv.g exprty then destByrefTy cenv.g exprty else exprty
-                UnifyTypesAndRecover cenv env mExpr overallTy exprty
                 UnifyTypesAndRecover cenv env mExpr overallTy exprty
         | DelayedDot :: _
         | DelayedSet _ :: _
