@@ -98,13 +98,6 @@ namespace Microsoft.FSharp.Control
         /// the given function. The function might write its continuation into the trampoline.
         [<DebuggerHidden>]
         member __.Execute (firstAction : unit -> AsyncReturn) =
-            let rec loop action = 
-                action() |> unfake
-                match storedCont with
-                | None -> ()
-                | Some newAction -> 
-                    storedCont <- None
-                    loop newAction
 
             let thisIsTopTrampoline =
                 if Trampoline.thisThreadHasTrampoline then
