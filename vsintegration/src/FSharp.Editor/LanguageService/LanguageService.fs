@@ -206,18 +206,18 @@ type internal FSharpProjectOptionsManager
             match singleFileProjectTable.TryGetValue(projectId) with
             | true, (loadTime, _, _) ->
                 try
-                let fileName = document.FilePath
-                let! cancellationToken = Async.CancellationToken
-                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                // NOTE: we don't use FCS cross-project references from scripts to projects.  The projects must have been
-                // compiled and #r will refer to files on disk.
-                let tryGetOrCreateProjectId _ = None 
-                let! _referencedProjectFileNames, parsingOptions, projectOptions = this.ComputeSingleFileOptions (tryGetOrCreateProjectId, fileName, loadTime, sourceText.ToString())
-                this.AddOrUpdateSingleFileProject(projectId, (loadTime, parsingOptions, projectOptions))
-                return Some (parsingOptions, None, projectOptions)
+                    let fileName = document.FilePath
+                    let! cancellationToken = Async.CancellationToken
+                    let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                    // NOTE: we don't use FCS cross-project references from scripts to projects.  The projects must have been
+                    // compiled and #r will refer to files on disk.
+                    let tryGetOrCreateProjectId _ = None 
+                    let! _referencedProjectFileNames, parsingOptions, projectOptions = this.ComputeSingleFileOptions (tryGetOrCreateProjectId, fileName, loadTime, sourceText.ToString())
+                    this.AddOrUpdateSingleFileProject(projectId, (loadTime, parsingOptions, projectOptions))
+                    return Some (parsingOptions, None, projectOptions)
                 with ex -> 
-                Assert.Exception(ex)
-                return None
+                    Assert.Exception(ex)
+                    return None
             | _ -> return this.TryGetOptionsForProject(projectId)
         }
 
@@ -658,26 +658,51 @@ type internal FSharpLanguageService(package : FSharpPackage) =
         | (VSConstants.S_OK, textLines) ->
             let filename = VsTextLines.GetFilename textLines
 
-            // CPS projects don't implement IProvideProjectSite and IVSProjectHierarchy
-            // Simple explanation:
-            //    Legacy projects have IVSHierarchy and IPRojectSite
-            //    CPS Projects and loose script files don't
             match VsRunningDocumentTable.FindDocumentWithoutLocking(package.RunningDocumentTable,filename) with
             | Some (hier, _) ->
+
+
+                // Check if the file is in a CPS projct or not.
+                // CPS projects don't implement IProvideProjectSite and IVSProjectHierarchy
+                // Simple explanation:
+                //    Legacy projects have IVSHierarchy and IProjectSite
+                //    CPS Projects, out-of-project file and script files don't
+
                 match hier with
                 | :? IProvideProjectSite as siteProvider when not (IsScript(filename)) ->
+
+                    // This is the path for out-of-project .fs files in legacy projects
+
                     this.SetupProjectFile(siteProvider, this.Workspace, "SetupNewTextView")
+
                 | h when not (IsScript(filename)) ->
+                    
                     let docId = this.Workspace.CurrentSolution.GetDocumentIdsWithFilePath(filename).FirstOrDefault()
                     match docId with
                     | null ->
                         if not (h.IsCapabilityMatch("CPS")) then
+
+                            // This is the path for out-of-project .fs files in CPS projects
+
                             let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
                             this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
                     | id ->
+
+                        // This is the path for when opening in-project .fs/.fsi files in CPS projects when
+                        // there is already an existing DocumentId for that document in the solution (which
+                        // will normally be the case)
+                        //
+                        // However, it is not clear this call to UpdateProjectInfoWithProjectId is needed, and it seems
+                        // harmful as it will cause a complete recheck of the project every time a view for a file in the
+                        // project is freshly opened.
+
                         projectInfoManager.UpdateProjectInfoWithProjectId(id.ProjectId, "SetupNewTextView", invalidateConfig=true)
                 | _ ->
+
+                    // This is the path for both in-project and out-of-project .fsx files
+
                     let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
                     this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
+
             | _ -> ()
         | _ -> ()
