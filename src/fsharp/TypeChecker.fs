@@ -15121,7 +15121,7 @@ module EstablishTypeDefinitionCores =
             let hasSealedAttr = 
                 // The special case is needed for 'unit' because the 'Sealed' attribute is not yet available when this type is defined.
                 if cenv.g.compilingFslib && id.idText = "Unit" then 
-                    someTrue
+                    Some true
                 else
                     TryFindFSharpBoolAttribute cenv.g cenv.g.attrib_SealedAttribute attrs
             let hasMeasureAttr = HasFSharpAttribute cenv.g cenv.g.attrib_MeasureAttribute attrs
