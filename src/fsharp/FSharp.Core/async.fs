@@ -17,6 +17,10 @@ namespace Microsoft.FSharp.Control
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
 
+#if FX_RESHAPED_REFLECTION
+    open ReflectionAdapters
+#endif
+
     type LinkedSubSource(cancellationToken : CancellationToken) =
         
         let failureCTS = new CancellationTokenSource()
