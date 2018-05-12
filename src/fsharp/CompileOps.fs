@@ -3032,7 +3032,7 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
         let lower = String.lowercase filename
         let lightOnByDefault = List.exists (Filename.checkSuffix lower) FSharpLightSyntaxFileSuffixes
-        if lightOnByDefault then (tcConfig.light <> Some(false)) else (tcConfig.light = Some(true) )
+        if lightOnByDefault then (tcConfig.light <> Some(false)) else (tcConfig.light = someTrue )
 
     member tcConfig.GetAvailableLoadedSources() =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter

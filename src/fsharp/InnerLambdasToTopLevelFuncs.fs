@@ -149,7 +149,7 @@ let IsRefusedTLR g (f:Val) =
     // things marked ValInline.Never are special 
     let dllImportStubOrOtherNeverInline = (f.InlineInfo = ValInline.Never)
     // Cannot have static fields of byref type 
-    let byrefVal = isByrefLikeTy g f.Type
+    let byrefVal = isByrefLikeTy g Range.rangeStartup f.Type
     // Special values are instance methods etc. on .NET types.  For now leave these alone 
     let specialVal = f.MemberInfo.IsSome
     let alreadyChosen = f.ValReprInfo.IsSome
@@ -162,7 +162,7 @@ let IsMandatoryTopLevel (f:Val) =
     specialVal || isModulBinding
 
 let IsMandatoryNonTopLevel g (f:Val) =
-    let byrefVal = isByrefLikeTy g f.Type
+    let byrefVal = isByrefLikeTy g Range.rangeStartup f.Type
     byrefVal
 
 
@@ -727,7 +727,7 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
        //        temp
 
 
-       let vals = vals |> List.filter (fun v -> not (isByrefLikeTy g v.Type))
+       let vals = vals |> List.filter (fun v -> not (isByrefLikeTy g Range.rangeStartup v.Type))
        // Remove values which have been labelled TLR, no need to close over these
        let vals = vals |> List.filter (Zset.memberOf topValS >> not) 
        

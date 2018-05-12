@@ -560,6 +560,7 @@ let tryNormalizeMeasureInType g ty =
 // Some basic type builders
 //---------------------------------------------------------------------------
 
+let mkVoidPtrTy (g:TcGlobals) = TType_app (g.voidptr_tcr, [])
 let mkNativePtrTy (g:TcGlobals) ty = TType_app (g.nativeptr_tcr, [ty])
 let mkByrefTy (g:TcGlobals) ty = TType_app (g.byref_tcr, [ty])
 
@@ -1534,12 +1535,6 @@ let isTypeConstructorEqualToOptional g tcOpt tc =
     | None -> false
     | Some tc2 -> tyconRefEq g tc2 tc
 
-let isByrefLikeTyconRef g tcref = 
-    tyconRefEq g g.byref_tcr tcref ||
-    isTypeConstructorEqualToOptional g g.system_TypedReference_tcref tcref ||
-    isTypeConstructorEqualToOptional g g.system_ArgIterator_tcref tcref ||
-    isTypeConstructorEqualToOptional g g.system_RuntimeArgumentHandle_tcref tcref
-
 let isStringTy  g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g tcref g.system_String_tcref   | _ -> false)
 let isListTy    g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g tcref g.list_tcr_canon   | _ -> false)
 let isArrayTy   g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isArrayTyconRef g tcref                | _ -> false) 
@@ -1550,7 +1545,7 @@ let isVoidTy     g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> 
 let isILAppTy    g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.IsILTycon                          | _ -> false) 
 let isNativePtrTy    g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g g.nativeptr_tcr tcref           | _ -> false) 
 let isByrefTy    g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g g.byref_tcr tcref           | _ -> false) 
-let isByrefLikeTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isByrefLikeTyconRef g tcref          | _ -> false) 
+
 #if !NO_EXTENSIONTYPING
 let extensionInfoOfTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.TypeReprInfo                | _ -> TNoRepr) 
 #endif
@@ -2744,7 +2739,7 @@ let isILAttribByName (tencl:string list, tname: string) (attr: ILAttribute) =
     (attr.Method.DeclaringType.TypeSpec.Name = tname) &&
     (attr.Method.DeclaringType.TypeSpec.Enclosing = tencl)
 
-// AbsIL view of attributes (we read these from .NET binaries) 
+// AbsIL view of attributes (we read these from .NET binaries). The comparison is done by name.
 let isILAttrib (tref:ILTypeRef) (attr: ILAttribute) = 
     isILAttribByName (tref.Enclosing, tref.Name) attr
 
@@ -2752,18 +2747,12 @@ let isILAttrib (tref:ILTypeRef) (attr: ILAttribute) =
 // These linear iterations cost us a fair bit when there are lots of attributes
 // on imported types. However this is fairly rare and can also be solved by caching the
 // results of attribute lookups in the TAST
-let HasILAttribute tref (attrs: ILAttributes) = Array.exists (isILAttrib tref) attrs.AsArray
-
-let HasILAttributeByName tname (attrs: ILAttributes) = Array.exists (isILAttribByName ([], tname)) attrs.AsArray
+let HasILAttribute tref (attrs: ILAttributes) = 
+    attrs.AsArray |> Array.exists (isILAttrib tref) 
 
 let TryDecodeILAttribute (g:TcGlobals) tref (attrs: ILAttributes) = 
     attrs.AsArray |> Array.tryPick (fun x -> if isILAttrib tref x then Some(decodeILAttribData g.ilg x)  else None)
 
-// This one is done by name to ensure the compiler doesn't take a dependency on dereferencing a type that only exists in .NET 3.5
-let ILThingHasExtensionAttribute (attrs : ILAttributes) = 
-    attrs.AsArray
-    |> Array.exists (fun attr -> attr.Method.DeclaringType.TypeSpec.Name = "System.Runtime.CompilerServices.ExtensionAttribute")
-    
 // F# view of attributes (these get converted to AbsIL attributes in ilxgen) 
 let IsMatchingFSharpAttribute g (AttribInfo(_, tcref)) (Attrib(tcref2, _, _, _, _, _, _)) = tyconRefEq g tcref  tcref2
 let HasFSharpAttribute g tref attrs = List.exists (IsMatchingFSharpAttribute g tref) attrs
@@ -2835,16 +2824,16 @@ let TryBindTyconRefAttribute g (m:range) (AttribInfo (atref, _) as args) (tcref:
 let TryFindTyconRefBoolAttribute g m attribSpec tcref  =
     TryBindTyconRefAttribute g m attribSpec tcref 
                 (function 
-                   | ([ ], _) -> Some true
-                   | ([ILAttribElem.Bool (v) ], _) -> Some v 
+                   | ([ ], _) -> someTrue
+                   | ([ILAttribElem.Bool (v) ], _) -> someBool v 
                    | _ -> None)
                 (function 
-                   | (Attrib(_, _, [ ], _, _, _, _))  -> Some true
-                   | (Attrib(_, _, [ AttribBoolArg v ], _, _, _, _))  -> Some v 
+                   | (Attrib(_, _, [ ], _, _, _, _))  -> someTrue
+                   | (Attrib(_, _, [ AttribBoolArg v ], _, _, _, _))  -> someBool v 
                    | _ -> None)
                 (function 
-                   | ([ ], _) -> Some true
-                   | ([ Some ((:? bool as v) : obj) ], _) -> Some v 
+                   | ([ ], _) -> someTrue
+                   | ([ Some ((:? bool as v) : obj) ], _) -> someBool v 
                    | _ -> None)
 
 let TryFindAttributeUsageAttribute g m tcref  =
@@ -2866,10 +2855,26 @@ let TryFindTyconRefStringAttribute g m attribSpec tcref  =
 /// Check if a type definition has a specific attribute
 let TyconRefHasAttribute g m attribSpec tcref  =
     TryBindTyconRefAttribute g m attribSpec tcref 
-                    (fun _ -> Some ()) 
-                    (fun _ -> Some ())
-                    (fun _ -> Some ())
+                    (fun _ -> someUnit) 
+                    (fun _ -> someUnit)
+                    (fun _ -> someUnit)
         |> Option.isSome
+
+let isByrefLikeTyconRef g m (tcref: TyconRef) = 
+    match tcref.TryIsByRefLike with 
+    | Some res -> res
+    | None -> 
+       let res = 
+           tyconRefEq g g.byref_tcr tcref ||
+           isTypeConstructorEqualToOptional g g.system_TypedReference_tcref tcref ||
+           isTypeConstructorEqualToOptional g g.system_ArgIterator_tcref tcref ||
+           isTypeConstructorEqualToOptional g g.system_RuntimeArgumentHandle_tcref tcref ||
+           TyconRefHasAttribute g m g.attrib_IsByRefLikeAttribute tcref
+       tcref.SetIsByRefLike res
+       res
+
+let isByrefLikeTy g m ty = 
+    ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isByrefLikeTyconRef g m tcref          | _ -> false) 
 
 //-------------------------------------------------------------------------
 // List and reference types...
@@ -5220,30 +5225,32 @@ and remarkBind m (TBind(v, repr, _)) =
 // Reference semantics?
 //--------------------------------------------------------------------------
 
-let isRecdOrStructFieldAllocObservable (f:RecdField) = not f.IsStatic && f.IsMutable
-let isUnionCaseAllocObservable (uc:UnionCase) = uc.FieldTable.FieldsByIndex |> Array.exists isRecdOrStructFieldAllocObservable
-let isUnionCaseRefAllocObservable (uc:UnionCaseRef) = uc.UnionCase |> isUnionCaseAllocObservable
+let isRecdOrStructFieldDefinitelyMutable (f:RecdField) = not f.IsStatic && f.IsMutable
+let isUnionCaseDefinitelyMutable (uc:UnionCase) = uc.FieldTable.FieldsByIndex |> Array.exists isRecdOrStructFieldDefinitelyMutable
+let isUnionCaseRefDefinitelyMutable (uc:UnionCaseRef) = uc.UnionCase |> isUnionCaseDefinitelyMutable
   
-let isRecdOrUnionOrStructTyconAllocObservable (_g:TcGlobals) (tycon:Tycon) =
+/// This is an incomplete check for .NET struct types. Returning 'false' doesn't mean the thing is immutable.
+let isRecdOrUnionOrStructTyconRefDefinitelyMutable (tcref: TyconRef) = 
+    let tycon = tcref.Deref
     if tycon.IsUnionTycon then 
-        tycon.UnionCasesArray |> Array.exists isUnionCaseAllocObservable
+        tycon.UnionCasesArray |> Array.exists isUnionCaseDefinitelyMutable
     elif tycon.IsRecordTycon || tycon.IsStructOrEnumTycon then 
-        tycon.AllFieldsArray |> Array.exists isRecdOrStructFieldAllocObservable
+        // Note: This only looks at the F# fields, causing oddities.
+        // See https://github.com/Microsoft/visualfsharp/pull/4576
+        tycon.AllFieldsArray |> Array.exists isRecdOrStructFieldDefinitelyMutable
     else
         false
-
-let isRecdOrUnionOrStructTyconRefAllocObservable g (tcr : TyconRef) = isRecdOrUnionOrStructTyconAllocObservable g tcr.Deref
   
 // Although from the pure F# perspective exception values cannot be changed, the .NET 
 // implementation of exception objects attaches a whole bunch of stack information to 
 // each raised object.  Hence we treat exception objects as if they have identity 
-let isExnAllocObservable (_ecref:TyconRef) = true 
+let isExnDefinitelyMutable (_ecref:TyconRef) = true 
 
 // Some of the implementations of library functions on lists use mutation on the tail 
 // of the cons cell. These cells are always private, i.e. not accessible by any other 
 // code until the construction of the entire return list has been completed. 
 // However, within the implementation code reads of the tail cell must in theory be treated 
-// with caution.  Hence we are conservative and within fslib we don't treat list 
+// with caution.  Hence we are conservative and within FSharp.Core we don't treat list 
 // reads as if they were pure. 
 let isUnionCaseFieldMutable (g: TcGlobals) (ucref:UnionCaseRef) n = 
     (g.compilingFslib && tyconRefEq g ucref.TyconRef g.list_tcr_canon && n = 1) ||
@@ -5556,13 +5563,23 @@ let mkAndSimplifyMatch spBind exprm matchm ty tree targets  =
 type Mutates = DefinitelyMutates | PossiblyMutates | NeverMutates
 exception DefensiveCopyWarning of string * range 
 
-let isRecdOrStructTyImmutable g ty =
+let isRecdOrStructTyconRefReadOnly (g: TcGlobals) m (tcref: TyconRef) =
+    match tcref.TryIsReadOnly with 
+    | Some res -> res
+    | None -> 
+        let res = 
+            not (isRecdOrUnionOrStructTyconRefDefinitelyMutable tcref) ||
+            tyconRefEq g tcref g.decimal_tcr ||
+            tyconRefEq g tcref g.date_tcr ||
+            TyconRefHasAttribute g m g.attrib_IsReadOnlyAttribute tcref
+        tcref.SetIsReadOnly res
+        res
+
+let isRecdOrStructTyReadOnly (g: TcGlobals) m ty =
     match tryDestAppTy g ty with 
     | None -> false
-    | Some tcref -> 
-      not (isRecdOrUnionOrStructTyconRefAllocObservable g tcref) ||
-      tyconRefEq g tcref g.decimal_tcr ||
-      tyconRefEq g tcref g.date_tcr
+    | Some tcref -> isRecdOrStructTyconRefReadOnly g m tcref
+
 
 // We can take the address of values of struct type even if the value is immutable
 // under certain conditions
@@ -5575,18 +5592,18 @@ let isRecdOrStructTyImmutable g ty =
 //        let g1 = A.G(1)
 //        (fun () -> g1.x1)
 //
-// Note: isRecdOrStructTyImmutable implies PossiblyMutates or NeverMutates
+// Note: isRecdOrStructTyReadOnly implies PossiblyMutates or NeverMutates
 //
 // We only do this for true local or closure fields because we can't take addresses of immutable static 
 // fields across assemblies.
-let CanTakeAddressOfImmutableVal g (v:ValRef) mut =
+let CanTakeAddressOfImmutableVal g m (v:ValRef) mut =
     // We can take the address of values of struct type if the operation doesn't mutate 
     // and the value is a true local or closure field. 
     not v.IsMutable &&
     not v.IsMemberOrModuleBinding &&
     (match mut with 
      | NeverMutates -> true 
-     | PossiblyMutates -> isRecdOrStructTyImmutable g v.Type 
+     | PossiblyMutates -> isRecdOrStructTyReadOnly g m v.Type 
      | DefinitelyMutates -> false)
 
 let MustTakeAddressOfVal (g:TcGlobals) (v:ValRef) = 
@@ -5601,19 +5618,19 @@ let MustTakeAddressOfRecdField (rf: RecdField) =
 
 let MustTakeAddressOfRecdFieldRef (rfref: RecdFieldRef) =  MustTakeAddressOfRecdField rfref.RecdField
 
-let CanTakeAddressOfRecdFieldRef (g:TcGlobals) (rfref: RecdFieldRef) mut tinst =
+let CanTakeAddressOfRecdFieldRef (g:TcGlobals) m (rfref: RecdFieldRef) mut =
     mut <> DefinitelyMutates && 
     // We only do this if the field is defined in this assembly because we can't take addresses across assemblies for immutable fields
     entityRefInThisAssembly g.compilingFslib rfref.TyconRef &&
-    isRecdOrStructTyImmutable g (actualTyOfRecdFieldRef rfref tinst)
+    isRecdOrStructTyconRefReadOnly g m rfref.TyconRef
 
-let CanTakeAddressOfUnionFieldRef (g:TcGlobals) (uref: UnionCaseRef) mut tinst cidx =
+let CanTakeAddressOfUnionFieldRef (g:TcGlobals) m (uref: UnionCaseRef) mut =
     mut <> DefinitelyMutates && 
     // We only do this if the field is defined in this assembly because we can't take addresses across assemblies for immutable fields
     entityRefInThisAssembly g.compilingFslib uref.TyconRef &&
-    isRecdOrStructTyImmutable g (actualTyOfUnionFieldRef uref cidx tinst)
+    isRecdOrStructTyconRefReadOnly g m uref.TyconRef 
 
-
+/// Make the address-of expression and return a wrapper that adds any allocated locals at an appropriate scope
 let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress mut e addrExprVal m =
     if not mustTakeAddress then None, e else
     match e with 
@@ -5622,15 +5639,15 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
         None, exprForValRef m v
     // LVALUE: "x" where "x" is mutable local, mutable intra-assembly module/static binding, or operation doesn't mutate 
     // Note: we can always take the address of mutable values
-    | Expr.Val(v, _, m) when MustTakeAddressOfVal g v || CanTakeAddressOfImmutableVal g v mut ->
+    | Expr.Val(v, _, m) when MustTakeAddressOfVal g v || CanTakeAddressOfImmutableVal g m v mut ->
         None, mkValAddr m v
     // LVALUE: "x" where "e.x" is record field. 
-    | Expr.Op (TOp.ValFieldGet rfref, tinst, [e], m) when MustTakeAddressOfRecdFieldRef rfref || CanTakeAddressOfRecdFieldRef g rfref mut tinst ->
+    | Expr.Op (TOp.ValFieldGet rfref, tinst, [e], m) when MustTakeAddressOfRecdFieldRef rfref || CanTakeAddressOfRecdFieldRef g m rfref mut ->
         let exprty = tyOfExpr g e
         let wrap, expra = mkExprAddrOfExprAux g (isStructTy g exprty) false mut e None m
         wrap, mkRecdFieldGetAddrViaExprAddr(expra, rfref, tinst, m)
     // LVALUE: "x" where "e.x" is union field
-    | Expr.Op (TOp.UnionCaseFieldGet (uref, cidx), tinst, [e], m) when MustTakeAddressOfRecdField (uref.FieldByIndex(cidx)) || CanTakeAddressOfUnionFieldRef g uref mut tinst cidx ->
+    | Expr.Op (TOp.UnionCaseFieldGet (uref, cidx), tinst, [e], m) when MustTakeAddressOfRecdField (uref.FieldByIndex(cidx)) || CanTakeAddressOfUnionFieldRef g m uref mut ->
         let exprty = tyOfExpr g e
         let wrap, expra = mkExprAddrOfExprAux g (isStructTy g exprty) false mut e None m
         wrap, mkUnionCaseFieldGetAddrProvenViaExprAddr(expra, uref, tinst, cidx, m)
@@ -5647,7 +5664,7 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
         wrap, Expr.Op (TOp.ILAsm ([IL.I_ldflda(fspec)], [mkByrefTy g ty2]), tinst, [expra], m)
 
     // LVALUE: "x" where "x" is mutable static field. 
-    | Expr.Op (TOp.ValFieldGet rfref, tinst, [], m) when MustTakeAddressOfRecdFieldRef rfref || CanTakeAddressOfRecdFieldRef g rfref mut tinst ->
+    | Expr.Op (TOp.ValFieldGet rfref, tinst, [], m) when MustTakeAddressOfRecdFieldRef rfref || CanTakeAddressOfRecdFieldRef g m rfref mut ->
         None, mkStaticRecdFieldGetAddr(rfref, tinst, m)
 
     // LVALUE:  "e.[n]" where e is an array of structs 
@@ -7281,7 +7298,7 @@ let TypeNullIsExtraValue g m ty =
         false
     else 
         // Putting AllowNullLiteralAttribute(true) on an F# type means 'null' can be used with that type
-        isAppTy g ty && TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute (tcrefOfAppTy g ty) = Some(true)
+        isAppTy g ty && TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute (tcrefOfAppTy g ty) = someTrue
 
 let TypeNullIsTrueValue g ty =
     (match tryDestAppTy g ty with
@@ -7439,7 +7456,7 @@ let isSealedTy g ty =
 
        if (isFSharpInterfaceTy g ty || isFSharpClassTy g ty) then 
           let tcref, _ = destAppTy g ty
-          (TryFindFSharpBoolAttribute g g.attrib_SealedAttribute tcref.Attribs = Some(true))
+          (TryFindFSharpBoolAttribute g g.attrib_SealedAttribute tcref.Attribs = someTrue)
        else 
           // All other F# types, array, byref, tuple types are sealed
           true
@@ -7448,7 +7465,7 @@ let isComInteropTy g ty =
     let tcr, _ = destAppTy g ty
     match g.attrib_ComImportAttribute with
     | None -> false
-    | Some attr -> TryFindFSharpBoolAttribute g attr tcr.Attribs = Some(true)
+    | Some attr -> TryFindFSharpBoolAttribute g attr tcr.Attribs = someTrue
   
 let ValSpecIsCompiledAsInstance g (v:Val) =
     match v.MemberInfo with 

@@ -198,7 +198,7 @@ type ValFlags(flags:int64) =
                                                              | _          -> failwith "unreachable"
 
 
-    member x.SetIsMemberOrModuleBinding = ValFlags(flags |||                 0b0000000000010000000L)
+    member x.WithIsMemberOrModuleBinding = ValFlags(flags |||                0b0000000000010000000L)
 
 
     member x.IsExtensionMember        = (flags       &&&                     0b0000000000100000000L) <> 0L
@@ -211,7 +211,7 @@ type ValFlags(flags:int64) =
                                                              |               0b0000001000000000000L -> ValInRecScope(false)
                                                              | _                   -> failwith "unreachable"
 
-    member x.SetRecursiveValInfo(recValInfo) = 
+    member x.WithRecursiveValInfo(recValInfo) = 
             let flags = 
                      (flags       &&&                                     ~~~0b0000001100000000000L) |||
                      (match recValInfo with
@@ -222,23 +222,23 @@ type ValFlags(flags:int64) =
 
     member x.MakesNoCriticalTailcalls         =                   (flags &&& 0b0000010000000000000L) <> 0L
 
-    member x.SetMakesNoCriticalTailcalls =                ValFlags(flags ||| 0b0000010000000000000L)
+    member x.WithTakesNoCriticalTailcalls =               ValFlags(flags ||| 0b0000010000000000000L)
 
     member x.PermitsExplicitTypeInstantiation =                   (flags &&& 0b0000100000000000000L) <> 0L
     member x.HasBeenReferenced                =                   (flags &&& 0b0001000000000000000L) <> 0L
 
-    member x.SetHasBeenReferenced                     =   ValFlags(flags ||| 0b0001000000000000000L)
+    member x.WithHasBeenReferenced                     =  ValFlags(flags ||| 0b0001000000000000000L)
 
     member x.IsCompiledAsStaticPropertyWithoutField =             (flags &&& 0b0010000000000000000L) <> 0L
 
-    member x.SetIsCompiledAsStaticPropertyWithoutField =  ValFlags(flags ||| 0b0010000000000000000L)
+    member x.WithIsCompiledAsStaticPropertyWithoutField = ValFlags(flags ||| 0b0010000000000000000L)
     
 
     member x.IsGeneratedEventVal =                                (flags &&& 0b0100000000000000000L) <> 0L
 
     member x.IsFixed                                =             (flags &&& 0b1000000000000000000L) <> 0L
 
-    member x.SetIsFixed                                =  ValFlags(flags ||| 0b1000000000000000000L)
+    member x.WithIsFixed                               =  ValFlags(flags ||| 0b1000000000000000000L)
 
 
     /// Get the flags as included in the F# binary metadata
@@ -314,8 +314,10 @@ type TyparFlags(flags:int32) =
 
     /// Indicates if the type inference variable was generated after an error when type checking expressions or patterns
     member x.IsFromError         = (flags &&& 0b0000000000010) <> 0x0
+
     /// Indicates if the type variable is compiler generated, i.e. is an implicit type inference variable 
     member x.IsCompilerGenerated = (flags &&& 0b0000000000100) <> 0x0
+
     /// Indicates if the type variable has a static "head type" requirement, i.e. ^a variables used in FSharp.Core and member constraints.
     member x.StaticReq           = 
                              match (flags &&& 0b0000000001000) with 
@@ -364,32 +366,64 @@ type TyparFlags(flags:int32) =
 type EntityFlags(flags:int64) =
 
     new (usesPrefixDisplay, isModuleOrNamespace, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, isStructRecordOrUnionType) = 
-        EntityFlags((if isModuleOrNamespace then                        0b00000000001L else 0L) |||
-                    (if usesPrefixDisplay   then                        0b00000000010L else 0L) |||
-                    (if preEstablishedHasDefaultCtor then               0b00000000100L else 0L) |||
-                    (if hasSelfReferentialCtor then                     0b00000001000L else 0L) |||
-                    (if isStructRecordOrUnionType then                         0b00000100000L else 0L)) 
+        EntityFlags((if isModuleOrNamespace then                        0b000000000000001L else 0L) |||
+                    (if usesPrefixDisplay   then                        0b000000000000010L else 0L) |||
+                    (if preEstablishedHasDefaultCtor then               0b000000000000100L else 0L) |||
+                    (if hasSelfReferentialCtor then                     0b000000000001000L else 0L) |||
+                    (if isStructRecordOrUnionType then                  0b000000000100000L else 0L)) 
 
-    member x.IsModuleOrNamespace                 = (flags       &&&     0b00000000001L) <> 0x0L
-    member x.IsPrefixDisplay                     = (flags       &&&     0b00000000010L) <> 0x0L
+    member x.IsModuleOrNamespace                 = (flags       &&&     0b000000000000001L) <> 0x0L
+    member x.IsPrefixDisplay                     = (flags       &&&     0b000000000000010L) <> 0x0L
     
     // This bit is not pickled, only used while establishing a type constructor. It is needed because the type constructor
     // is known to satisfy the default constructor constraint even before any of its members have been established.
-    member x.PreEstablishedHasDefaultConstructor = (flags       &&&     0b00000000100L) <> 0x0L
+    member x.PreEstablishedHasDefaultConstructor = (flags       &&&     0b000000000000100L) <> 0x0L
 
     // This bit represents an F# specific condition where a type has at least one constructor that may access
     // the 'this' pointer prior to successful initialization of the partial contents of the object. In this
     // case sub-classes must protect themselves against early access to their contents.
-    member x.HasSelfReferentialConstructor       = (flags       &&&     0b00000001000L) <> 0x0L
-
-    /// This bit represents a F# record that is a value type, or a struct record.
-    member x.IsStructRecordOrUnionType                  = (flags       &&&     0b00000100000L) <> 0x0L
+    member x.HasSelfReferentialConstructor       = (flags       &&&     0b000000000001000L) <> 0x0L
 
     /// This bit is reserved for us in the pickle format, see pickle.fs, it's being listed here to stop it ever being used for anything else
-    static member ReservedBitForPickleFormatTyconReprFlag   =           0b00000010000L
+    static member ReservedBitForPickleFormatTyconReprFlag   =           0b000000000010000L
+
+    /// This bit represents a F# record that is a value type, or a struct record.
+    member x.IsStructRecordOrUnionType           = (flags       &&&     0b000000000100000L) <> 0x0L
+
+    /// These two bits represents the on-demand analysis about whether the entity has the IsByRefLike attribute
+    member x.TryIsByRefLike                      = (flags       &&&     0b000000011000000L) 
+                                                                |> function 
+                                                                      | 0b000000011000000L -> someTrue
+                                                                      | 0b000000010000000L -> someFalse
+                                                                      | _                  -> None
+
+    /// Adjust the on-demand analysis about whether the entity has the IsByRefLike attribute
+    member x.WithIsByRefLike(flag) = 
+            let flags = 
+                     (flags       &&&                                ~~~0b000000011000000L) |||
+                     (match flag with
+                      | true  ->                                        0b000000011000000L
+                      | false ->                                        0b000000010000000L) 
+            EntityFlags(flags)
+
+    /// These two bits represents the on-demand analysis about whether the entity has the IsReadOnly attribute or is otherwise determined to be a readonly struct
+    member x.TryIsReadOnly                       = (flags       &&&     0b000001100000000L) 
+                                                                |> function 
+                                                                      | 0b000001100000000L -> someTrue
+                                                                      | 0b000001000000000L -> someFalse
+                                                                      | _                  -> None
+
+    /// Adjust the on-demand analysis about whether the entity has the IsReadOnly attribute or is otherwise determined to be a readonly struct
+    member x.WithIsReadOnly(flag) = 
+            let flags = 
+                     (flags       &&&                                ~~~0b000001100000000L) |||
+                     (match flag with
+                      | true  ->                                        0b000001100000000L
+                      | false ->                                        0b000001000000000L) 
+            EntityFlags(flags)
 
     /// Get the flags as included in the F# binary metadata
-    member x.PickledBits =                         (flags       &&&  ~~~0b00000000100L)
+    member x.PickledBits =                         (flags       &&&  ~~~0b000001111000100L)
 
 
 #if DEBUG
@@ -971,6 +1005,18 @@ and /// Represents a type definition, exception definition, module definition or
 
     /// Indicates if this is an F# type definition whose r.h.s. is known to be a record type definition that is a value type.
     member x.IsStructRecordOrUnionTycon = match x.TypeReprInfo with TRecdRepr _ | TUnionRepr _ -> x.entity_flags.IsStructRecordOrUnionType | _ -> false
+
+    /// The on-demand analysis about whether the entity has the IsByRefLike attribute
+    member x.TryIsByRefLike                                   = x.entity_flags.TryIsByRefLike
+
+    /// Set the on-demand analysis about whether the entity has the IsByRefLike attribute
+    member x.SetIsByRefLike b                                 = x.entity_flags <- x.entity_flags.WithIsByRefLike b 
+
+    /// These two bits represents the on-demand analysis about whether the entity has the IsReadOnly attribute or is otherwise determined to be a readonly struct
+    member x.TryIsReadOnly                                    = x.entity_flags.TryIsReadOnly
+
+    /// Set the on-demand analysis about whether the entity has the IsReadOnly attribute or is otherwise determined to be a readonly struct
+    member x.SetIsReadOnly b                                  = x.entity_flags <- x.entity_flags.WithIsReadOnly b 
 
     /// Indicates if this is an F# type definition whose r.h.s. is known to be some kind of F# object model definition
     member x.IsFSharpObjectModelTycon = match x.TypeReprInfo with | TFSharpObjectRepr _ -> true |  _ -> false
@@ -2723,17 +2769,17 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     member x.DisplayName = 
         DemangleOperatorName x.CoreDisplayName
 
-    member x.SetValRec b                                 = x.val_flags <- x.val_flags.SetRecursiveValInfo b 
+    member x.SetValRec b                                 = x.val_flags <- x.val_flags.WithRecursiveValInfo b 
 
-    member x.SetIsMemberOrModuleBinding()                = x.val_flags <- x.val_flags.SetIsMemberOrModuleBinding 
+    member x.SetIsMemberOrModuleBinding()                = x.val_flags <- x.val_flags.WithIsMemberOrModuleBinding 
 
-    member x.SetMakesNoCriticalTailcalls()               = x.val_flags <- x.val_flags.SetMakesNoCriticalTailcalls
+    member x.SetMakesNoCriticalTailcalls()               = x.val_flags <- x.val_flags.WithTakesNoCriticalTailcalls
 
-    member x.SetHasBeenReferenced()                      = x.val_flags <- x.val_flags.SetHasBeenReferenced
+    member x.SetHasBeenReferenced()                      = x.val_flags <- x.val_flags.WithHasBeenReferenced
 
-    member x.SetIsCompiledAsStaticPropertyWithoutField() = x.val_flags <- x.val_flags.SetIsCompiledAsStaticPropertyWithoutField
+    member x.SetIsCompiledAsStaticPropertyWithoutField() = x.val_flags <- x.val_flags.WithIsCompiledAsStaticPropertyWithoutField
 
-    member x.SetIsFixed()                                = x.val_flags <- x.val_flags.SetIsFixed
+    member x.SetIsFixed()                                = x.val_flags <- x.val_flags.WithIsFixed
 
     member x.SetValReprInfo info                         = 
         match x.val_opt_data with
@@ -3308,6 +3354,18 @@ and
 
     /// Indicates if this is an F# type definition whose r.h.s. is known to be some kind of F# object model definition
     member x.IsFSharpObjectModelTycon = x.Deref.IsFSharpObjectModelTycon
+
+    /// The on-demand analysis about whether the entity has the IsByRefLike attribute
+    member x.TryIsByRefLike           = x.Deref.TryIsByRefLike
+
+    /// Set the on-demand analysis about whether the entity has the IsByRefLike attribute
+    member x.SetIsByRefLike b         = x.Deref.SetIsByRefLike b
+
+    /// The on-demand analysis about whether the entity has the IsByRefLike attribute
+    member x.TryIsReadOnly           = x.Deref.TryIsReadOnly
+
+    /// Set the on-demand analysis about whether the entity has the IsReadOnly attribute or is otherwise determined to be a readonly struct
+    member x.SetIsReadOnly b         = x.Deref.SetIsReadOnly b
 
     /// Indicates if this is an F# type definition whose r.h.s. definition is unknown (i.e. a traditional ML 'abstract' type in a signature,
     /// which in F# is called a 'unknown representation' type).

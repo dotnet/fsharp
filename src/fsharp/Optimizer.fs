@@ -1247,7 +1247,7 @@ let rec ExprHasEffect g expr =
     | Expr.Const _ -> false
     /// type applications do not have effects, with the exception of type functions
     | Expr.App(f0, _, _, [], _) -> (IsTyFuncValRefExpr f0) || ExprHasEffect g f0
-    | Expr.Op(op, _, args, _) -> ExprsHaveEffect g args || OpHasEffect g op
+    | Expr.Op(op, _, args, m) -> ExprsHaveEffect g args || OpHasEffect g m op
     | Expr.LetRec(binds, body, _, _) -> BindingsHaveEffect g binds || ExprHasEffect g body
     | Expr.Let(bind, body, _, _) -> BindingHasEffect g bind || ExprHasEffect g body
     // REVIEW: could add Expr.Obj on an interface type - these are similar to records of lambda expressions 
@@ -1255,16 +1255,16 @@ let rec ExprHasEffect g expr =
 and ExprsHaveEffect g exprs = List.exists (ExprHasEffect g) exprs
 and BindingsHaveEffect g binds = List.exists (BindingHasEffect g) binds
 and BindingHasEffect g bind = bind.Expr |> ExprHasEffect g
-and OpHasEffect g op = 
+and OpHasEffect g m op = 
     match op with 
     | TOp.Tuple _ -> false
     | TOp.Recd (ctor, tcref) -> 
         match ctor with 
         | RecdExprIsObjInit -> true
-        | RecdExpr -> isRecdOrUnionOrStructTyconRefAllocObservable g tcref
-    | TOp.UnionCase ucref -> isRecdOrUnionOrStructTyconRefAllocObservable g ucref.TyconRef
-    | TOp.ExnConstr ecref -> isExnAllocObservable ecref
-    | TOp.Bytes _ | TOp.UInt16s _ | TOp.Array -> true (* alloc observable *)
+        | RecdExpr -> not (isRecdOrStructTyconRefReadOnly g m tcref)
+    | TOp.UnionCase ucref -> isRecdOrUnionOrStructTyconRefDefinitelyMutable ucref.TyconRef
+    | TOp.ExnConstr ecref -> isExnDefinitelyMutable ecref
+    | TOp.Bytes _ | TOp.UInt16s _ | TOp.Array -> true // mutable
     | TOp.UnionCaseTagGet _ -> false
     | TOp.UnionCaseProof _ -> false
     | TOp.UnionCaseFieldGet (ucref, n) -> isUnionCaseFieldMutable g ucref n 
@@ -1272,9 +1272,9 @@ and OpHasEffect g op =
     | TOp.TupleFieldGet(_) -> false
     | TOp.ExnFieldGet(ecref, n) -> isExnFieldMutable ecref n 
     | TOp.RefAddrGet -> false
-    | TOp.ValFieldGet rfref  -> rfref.RecdField.IsMutable || (TryFindTyconRefBoolAttribute g Range.range0 g.attrib_AllowNullLiteralAttribute rfref.TyconRef = Some(true))
-    | TOp.ValFieldGetAddr rfref  -> rfref.RecdField.IsMutable (* data is immutable, so taking address is ok *)
-    | TOp.UnionCaseFieldGetAddr _ -> false (* data is immutable, so taking address is ok  *)
+    | TOp.ValFieldGet rfref  -> rfref.RecdField.IsMutable || (TryFindTyconRefBoolAttribute g Range.range0 g.attrib_AllowNullLiteralAttribute rfref.TyconRef = someTrue)
+    | TOp.ValFieldGetAddr rfref  -> rfref.RecdField.IsMutable
+    | TOp.UnionCaseFieldGetAddr _ -> false // union case fields are immutable
     | TOp.LValueOp (LGetAddr, lv) -> lv.IsMutable
     | TOp.UnionCaseFieldSet _
     | TOp.ExnFieldSet _
@@ -1282,8 +1282,8 @@ and OpHasEffect g op =
     | TOp.Reraise
     | TOp.For _ 
     | TOp.While  _
-    | TOp.TryCatch _
-    | TOp.TryFinally _ (* note: these really go through a different path anyway *)
+    | TOp.TryCatch _   (* conservative *)
+    | TOp.TryFinally _ (* conservative *)
     | TOp.TraitCall _
     | TOp.Goto _
     | TOp.Label _
@@ -1800,7 +1800,7 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
         Expr.Op (op', tyargs, args, m), 
         { TotalSize = 1
           FunctionSize = 1
-          HasEffect = OpHasEffect cenv.g op'
+          HasEffect = OpHasEffect cenv.g m op'
           MightMakeCriticalTailcall = false
           Info = UnknownValue }
     (* Handle these as special cases since mutables are allowed inside their bodies *)
@@ -1849,7 +1849,7 @@ and OptimizeExprOpFallback cenv env (op, tyargs, args', m) arginfos valu =
     let argsFSize = AddFunctionSizes arginfos
     let argEffects = OrEffects arginfos
     let argValues = List.map (fun x -> x.Info) arginfos
-    let effect = OpHasEffect cenv.g op
+    let effect = OpHasEffect cenv.g m op
     let cost, valu = 
       match op with
       | TOp.UnionCase c -> 2, MakeValueInfoForUnionCase c (Array.ofList argValues)
@@ -2759,7 +2759,7 @@ and OptimizeExprThenConsiderSplit cenv env e =
 // Decide whether to List.unzip a sub-expression into a new method
 //------------------------------------------------------------------------- 
 
-and ComputeSplitToMethodCondition flag threshold cenv env (e, einfo) = 
+and ComputeSplitToMethodCondition flag threshold cenv env (e:Expr, einfo) = 
     flag &&
     // REVIEW: The method splitting optimization is completely disabled if we are not taking tailcalls.
     // REVIEW: This should only apply to methods that actually make self-tailcalls (tested further below).
@@ -2770,6 +2770,7 @@ and ComputeSplitToMethodCondition flag threshold cenv env (e, einfo) =
 
      // We can only split an expression out as a method if certain conditions are met. 
      // It can't use any protected or base calls, rethrow(), byrefs etc.
+    let m = e.Range
     (let fvs = freeInExpr CollectLocals e
      not fvs.UsesUnboundRethrow  &&
      not fvs.UsesMethodLocalConstructs &&
@@ -2780,12 +2781,12 @@ and ComputeSplitToMethodCondition flag threshold cenv env (e, einfo) =
             // All the free variables (apart from things with an arity, i.e. compiled as methods) should be normal, i.e. not base/this etc. 
             (v.BaseOrThisInfo = NormalVal && 
              // None of them should be byrefs 
-             not (isByrefLikeTy cenv.g v.Type) && 
+             not (isByrefLikeTy cenv.g m v.Type) && 
              //  None of them should be local polymorphic constrained values 
              not (IsGenericValWithGenericContraints cenv.g v) &&
              // None of them should be mutable 
              not v.IsMutable)))) &&
-    not (isByrefLikeTy cenv.g (tyOfExpr cenv.g e)) 
+    not (isByrefLikeTy cenv.g m (tyOfExpr cenv.g e)) 
 
 and ConsiderSplitToMethod flag threshold cenv env (e, einfo) = 
     if ComputeSplitToMethodCondition flag threshold cenv env (e, einfo) then

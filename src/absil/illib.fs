@@ -43,6 +43,12 @@ let inline isNonNull x = not (isNull x)
 let inline nonNull msg x = if isNull x then failwith ("null: " + msg) else x
 let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
 
+// Singletons
+let someTrue = Some true
+let someFalse = Some false
+let someBool b = if b then someTrue else someFalse
+let someUnit = Some ()
+
 //---------------------------------------------------------------------
 // Library: ReportTime
 //---------------------------------------------------------------------

@@ -583,10 +583,10 @@ let decideTransform g z v callPatterns (m,tps,vss:Val list list,rty) =
 // Public f could be used beyond assembly.
 // For now, suppressing any transforms on these.
 // Later, could transform f and fix up local calls and provide an f wrapper for beyond. 
-let eligibleVal g (v:Val) =
+let eligibleVal g m (v:Val) =
     let dllImportStubOrOtherNeverInline = (v.InlineInfo = ValInline.Never)
     let mutableVal = v.IsMutable
-    let byrefVal = isByrefLikeTy g v.Type
+    let byrefVal = isByrefLikeTy g m v.Type
     not dllImportStubOrOtherNeverInline &&
     not byrefVal &&
     not mutableVal &&
@@ -595,7 +595,7 @@ let eligibleVal g (v:Val) =
 
 let determineTransforms g (z : GlobalUsageAnalysis.Results) =
    let selectTransform f sites =
-     if not (eligibleVal g f) then None else
+     if not (eligibleVal g Range.rangeStartup f) then None else
      // Consider f, if it has top-level lambda (meaning has term args) 
      match Zmap.tryFind f z.Defns with
      | None   -> None // no binding site, so no transform 

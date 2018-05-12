@@ -202,6 +202,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_pint64_tcr     = mk_MFCore_tcref fslibCcu "int64`1"  
   let v_byref_tcr      = mk_MFCore_tcref fslibCcu "byref`1"
   let v_nativeptr_tcr  = mk_MFCore_tcref fslibCcu "nativeptr`1"
+  let v_voidptr_tcr      = mk_MFCore_tcref fslibCcu "voidptr"
   let v_ilsigptr_tcr   = mk_MFCore_tcref fslibCcu "ilsigptr`1"
   let v_fastFunc_tcr   = mk_MFCore_tcref fslibCcu "FSharpFunc`2"
   let v_refcell_tcr_canon = mk_MFCore_tcref fslibCcu "Ref`1"
@@ -916,6 +917,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.pint64_tcr     = v_pint64_tcr
   member __.byref_tcr      = v_byref_tcr
   member __.nativeptr_tcr  = v_nativeptr_tcr
+  member __.voidptr_tcr  = v_voidptr_tcr
   member __.ilsigptr_tcr   = v_ilsigptr_tcr
   member __.fastFunc_tcr = v_fastFunc_tcr
   member __.tcref_IQueryable = v_tcref_IQueryable
@@ -1073,6 +1075,11 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attrib_ParamArrayAttribute     = findSysAttrib "System.ParamArrayAttribute"
   member val attrib_IDispatchConstantAttribute  = tryFindSysAttrib "System.Runtime.CompilerServices.IDispatchConstantAttribute"
   member val attrib_IUnknownConstantAttribute  = tryFindSysAttrib "System.Runtime.CompilerServices.IUnknownConstantAttribute"
+  
+  // We use 'findSysAttrib' here because lookup on attribute is done by name comparison, and can proceed
+  // even if the type is not found in a system assembly.
+  member val attrib_IsByRefLikeAttribute  = findSysAttrib "System.Runtime.CompilerServices.IsByRefLikeAttribute"
+  member val attrib_IsReadOnlyAttribute  = findSysAttrib "System.Runtime.CompilerServices.IsReadOnlyAttribute"
     
   member val attrib_SystemObsolete          = findSysAttrib "System.ObsoleteAttribute"
   member val attrib_DllImportAttribute      = tryFindSysAttrib "System.Runtime.InteropServices.DllImportAttribute"

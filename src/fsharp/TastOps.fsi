@@ -975,6 +975,7 @@ val ExprStats : Expr -> string
 //------------------------------------------------------------------------- 
 
 val mkNativePtrTy  : TcGlobals -> TType -> TType
+val mkVoidPtrTy  : TcGlobals -> TType
 val mkArrayType      : TcGlobals -> TType -> TType
 val isOptionTy     : TcGlobals -> TType -> bool
 val destOptionTy   : TcGlobals -> TType -> TType
@@ -1091,11 +1092,12 @@ val TypeHasDefaultValue : TcGlobals -> range -> TType -> bool
 
 val isAbstractTycon : Tycon -> bool
 
-val isUnionCaseRefAllocObservable : UnionCaseRef -> bool
-val isRecdOrUnionOrStructTyconRefAllocObservable : TcGlobals -> TyconRef -> bool
-val isExnAllocObservable : TyconRef -> bool 
+val isUnionCaseRefDefinitelyMutable : UnionCaseRef -> bool
+val isRecdOrUnionOrStructTyconRefDefinitelyMutable : TyconRef -> bool
+val isExnDefinitelyMutable : TyconRef -> bool 
 val isUnionCaseFieldMutable : TcGlobals -> UnionCaseRef -> int -> bool
 val isExnFieldMutable : TyconRef -> int -> bool
+val isRecdOrStructTyconRefReadOnly: TcGlobals -> range -> TyconRef -> bool
 
 val useGenuineField : Tycon -> RecdField -> bool 
 val ComputeFieldName : Tycon -> RecdField -> string
@@ -1374,7 +1376,6 @@ val TryFindAttributeUsageAttribute : TcGlobals -> range -> TyconRef -> bool opti
 val TryDecodeTypeProviderAssemblyAttr : ILGlobals -> ILAttribute -> string option
 #endif
 val IsSignatureDataVersionAttr  : ILAttribute -> bool
-val ILThingHasExtensionAttribute : ILAttributes -> bool
 val TryFindAutoOpenAttr           : IL.ILGlobals -> ILAttribute -> string option 
 val TryFindInternalsVisibleToAttr : IL.ILGlobals -> ILAttribute -> string option 
 val IsMatchingSignatureDataVersionAttr : IL.ILGlobals -> ILVersionInfo -> ILAttribute -> bool
@@ -1398,8 +1399,8 @@ val isNativePtrTy : TcGlobals -> TType -> bool
 val destByrefTy : TcGlobals -> TType -> TType
 val destNativePtrTy : TcGlobals -> TType -> TType
 
-val isByrefLikeTyconRef : TcGlobals -> TyconRef -> bool
-val isByrefLikeTy : TcGlobals -> TType -> bool
+val isByrefLikeTyconRef : TcGlobals -> range -> TyconRef -> bool
+val isByrefLikeTy : TcGlobals -> range -> TType -> bool
 
 //-------------------------------------------------------------------------
 // Tuple constructors/destructors

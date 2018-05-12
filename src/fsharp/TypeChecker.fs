@@ -2169,13 +2169,13 @@ module GeneralizationHelpers =
         | Expr.Op(op, _, args, _) ->
             match op with 
             | TOp.Tuple _ -> true
-            | TOp.UnionCase uc -> not (isUnionCaseRefAllocObservable uc)
+            | TOp.UnionCase uc -> not (isUnionCaseRefDefinitelyMutable uc)
             | TOp.Recd(ctorInfo, tcref) -> 
                 match ctorInfo with 
-                | RecdExpr -> not (isRecdOrUnionOrStructTyconRefAllocObservable g tcref)
+                | RecdExpr -> not (isRecdOrUnionOrStructTyconRefDefinitelyMutable tcref)
                 | RecdExprIsObjInit -> false
             | TOp.Array -> isNil args
-            | TOp.ExnConstr ec -> not (isExnAllocObservable ec)
+            | TOp.ExnConstr ec -> not (isExnDefinitelyMutable ec)
 
             | TOp.ILAsm([], _) -> true
 
@@ -14111,7 +14111,7 @@ module TyconConstraintInference =
                    // If the type was excluded, say why
                    if not res then 
                        match TryFindFSharpBoolAttribute g g.attrib_StructuralComparisonAttribute tycon.Attribs with
-                       | Some(true) -> 
+                       | Some true -> 
                            match structuralTypes |> List.tryFind (fst >> checkIfFieldTypeSupportsComparison tycon >> not) with
                            | None -> 
                                assert false
@@ -14235,7 +14235,7 @@ module TyconConstraintInference =
                    // If the type was excluded, say why
                    if not res then 
                        match TryFindFSharpBoolAttribute g g.attrib_StructuralEqualityAttribute tycon.Attribs with
-                       | Some(true) -> 
+                       | Some true -> 
                            if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals cenv.g tycon then 
                                match structuralTypes |> List.tryFind (fst >> checkIfFieldTypeSupportsEquality tycon >> not) with
                                | None -> 
@@ -15121,7 +15121,7 @@ module EstablishTypeDefinitionCores =
             let hasSealedAttr = 
                 // The special case is needed for 'unit' because the 'Sealed' attribute is not yet available when this type is defined.
                 if cenv.g.compilingFslib && id.idText = "Unit" then 
-                    Some true
+                    someTrue
                 else
                     TryFindFSharpBoolAttribute cenv.g cenv.g.attrib_SealedAttribute attrs
             let hasMeasureAttr = HasFSharpAttribute cenv.g cenv.g.attrib_MeasureAttribute attrs
@@ -15132,7 +15132,7 @@ module EstablishTypeDefinitionCores =
             let hasCLIMutable = HasFSharpAttribute cenv.g cenv.g.attrib_CLIMutableAttribute attrs
             
             let structLayoutAttr = TryFindFSharpInt32Attribute cenv.g cenv.g.attrib_StructLayoutAttribute attrs
-            let hasAllowNullLiteralAttr = TryFindFSharpBoolAttribute cenv.g cenv.g.attrib_AllowNullLiteralAttribute attrs = Some(true)
+            let hasAllowNullLiteralAttr = TryFindFSharpBoolAttribute cenv.g cenv.g.attrib_AllowNullLiteralAttribute attrs = Some true
 
             if hasAbstractAttr then 
                 tycon.TypeContents.tcaug_abstract <- true
@@ -15166,7 +15166,7 @@ module EstablishTypeDefinitionCores =
                 
             let hiddenReprChecks(hasRepr) =
                  structLayoutAttributeCheck(false)
-                 if hasSealedAttr = Some(false) || (hasRepr && hasSealedAttr <> Some(true) && not (id.idText = "Unit" && cenv.g.compilingFslib) ) then 
+                 if hasSealedAttr = Some(false) || (hasRepr && hasSealedAttr <> Some true && not (id.idText = "Unit" && cenv.g.compilingFslib) ) then 
                     errorR(Error(FSComp.SR.tcRepresentationOfTypeHiddenBySignature(), m))
                  if hasAbstractAttr then 
                      errorR (Error(FSComp.SR.tcOnlyClassesCanHaveAbstract(), m))
@@ -15178,7 +15178,7 @@ module EstablishTypeDefinitionCores =
                 if hasCLIMutable then errorR (Error(FSComp.SR.tcThisTypeMayNotHaveACLIMutableAttribute(), m))
 
             let noSealedAttributeCheck(k) = 
-                if hasSealedAttr = Some(true) then errorR (Error(k(), m))
+                if hasSealedAttr = Some true then errorR (Error(k(), m))
 
             let noFieldsCheck(fields':RecdField list) = 
                 match fields' with 
@@ -15253,7 +15253,7 @@ module EstablishTypeDefinitionCores =
                     TNoRepr, None, NoSafeInitInfo
 
                 | SynTypeDefnSimpleRepr.TypeAbbrev(ParserDetail.Ok, rhsType, _) ->
-                    if hasSealedAttr = Some(true) then 
+                    if hasSealedAttr = Some true then 
                         errorR (Error(FSComp.SR.tcAbbreviatedTypesCannotBeSealed(), m))
                     noAbstractClassAttributeCheck()
                     noAllowNullLiteralAttributeCheck()
@@ -15356,7 +15356,7 @@ module EstablishTypeDefinitionCores =
 
                                   TTyconStruct
                               | TyconInterface -> 
-                                  if hasSealedAttr = Some(true) then errorR (Error(FSComp.SR.tcInterfaceTypesCannotBeSealed(), m))
+                                  if hasSealedAttr = Some true then errorR (Error(FSComp.SR.tcInterfaceTypesCannotBeSealed(), m))
                                   noCLIMutableAttributeCheck()
                                   structLayoutAttributeCheck(false)
                                   noAbstractClassAttributeCheck()

@@ -67,5 +67,5 @@ namespace Microsoft.FSharp.Core
     type byref<'T> = (# "!0&" #)
 
     type nativeptr<'T when 'T : unmanaged> = (# "native int" #)
+    type voidptr = (# "void*" #)
     type ilsigptr<'T> = (# "!0*" #)
-
