@@ -2826,16 +2826,16 @@ let TryBindTyconRefAttribute g (m:range) (AttribInfo (atref, _) as args) (tcref:
 let TryFindTyconRefBoolAttribute g m attribSpec tcref  =
     TryBindTyconRefAttribute g m attribSpec tcref 
                 (function 
-                   | ([ ], _) -> someTrue
-                   | ([ILAttribElem.Bool (v) ], _) -> someBool v 
+                   | ([ ], _) -> Some true
+                   | ([ILAttribElem.Bool (v) ], _) -> Some v 
                    | _ -> None)
                 (function 
-                   | (Attrib(_, _, [ ], _, _, _, _))  -> someTrue
-                   | (Attrib(_, _, [ AttribBoolArg v ], _, _, _, _))  -> someBool v 
+                   | (Attrib(_, _, [ ], _, _, _, _))  -> Some true
+                   | (Attrib(_, _, [ AttribBoolArg v ], _, _, _, _))  -> Some v 
                    | _ -> None)
                 (function 
-                   | ([ ], _) -> someTrue
-                   | ([ Some ((:? bool as v) : obj) ], _) -> someBool v 
+                   | ([ ], _) -> Some true
+                   | ([ Some ((:? bool as v) : obj) ], _) -> Some v 
                    | _ -> None)
 
 let TryFindAttributeUsageAttribute g m tcref  =
@@ -2857,9 +2857,9 @@ let TryFindTyconRefStringAttribute g m attribSpec tcref  =
 /// Check if a type definition has a specific attribute
 let TyconRefHasAttribute g m attribSpec tcref  =
     TryBindTyconRefAttribute g m attribSpec tcref 
-                    (fun _ -> someUnit) 
-                    (fun _ -> someUnit)
-                    (fun _ -> someUnit)
+                    (fun _ -> Some ()) 
+                    (fun _ -> Some ())
+                    (fun _ -> Some ())
         |> Option.isSome
 
 let isByrefLikeTyconRef g m (tcref: TyconRef) = 
@@ -7302,7 +7302,7 @@ let TypeNullIsExtraValue g m ty =
         false
     else 
         // Putting AllowNullLiteralAttribute(true) on an F# type means 'null' can be used with that type
-        isAppTy g ty && TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute (tcrefOfAppTy g ty) = someTrue
+        isAppTy g ty && TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute (tcrefOfAppTy g ty) = Some(true)
 
 let TypeNullIsTrueValue g ty =
     (match tryDestAppTy g ty with
@@ -7460,7 +7460,7 @@ let isSealedTy g ty =
 
        if (isFSharpInterfaceTy g ty || isFSharpClassTy g ty) then 
           let tcref, _ = destAppTy g ty
-          (TryFindFSharpBoolAttribute g g.attrib_SealedAttribute tcref.Attribs = someTrue)
+          (TryFindFSharpBoolAttribute g g.attrib_SealedAttribute tcref.Attribs = Some(true))
        else 
           // All other F# types, array, byref, tuple types are sealed
           true
@@ -7469,7 +7469,7 @@ let isComInteropTy g ty =
     let tcr, _ = destAppTy g ty
     match g.attrib_ComImportAttribute with
     | None -> false
-    | Some attr -> TryFindFSharpBoolAttribute g attr tcr.Attribs = someTrue
+    | Some attr -> TryFindFSharpBoolAttribute g attr tcr.Attribs = Some(true)
   
 let ValSpecIsCompiledAsInstance g (v:Val) =
     match v.MemberInfo with 

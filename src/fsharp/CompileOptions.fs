@@ -396,18 +396,18 @@ let setFlag r n =
     | _ -> raise (Failure "expected 0/1")
 
 let SetOptimizeOff(tcConfigB : TcConfigBuilder) = 
-    tcConfigB.optSettings <- { tcConfigB.optSettings with jitOptUser = someFalse }
-    tcConfigB.optSettings <- { tcConfigB.optSettings with localOptUser = someFalse }
-    tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = someFalse }
+    tcConfigB.optSettings <- { tcConfigB.optSettings with jitOptUser = Some false }
+    tcConfigB.optSettings <- { tcConfigB.optSettings with localOptUser = Some false }
+    tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = Some false }
     tcConfigB.optSettings <- { tcConfigB.optSettings with lambdaInlineThreshold = 0 }
     tcConfigB.doDetuple <- false; 
     tcConfigB.doTLR <- false;
     tcConfigB.doFinalSimplify <- false;
 
 let SetOptimizeOn(tcConfigB : TcConfigBuilder) =    
-    tcConfigB.optSettings <- { tcConfigB.optSettings with jitOptUser = someTrue }
-    tcConfigB.optSettings <- { tcConfigB.optSettings with localOptUser = someTrue }
-    tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = someTrue }
+    tcConfigB.optSettings <- { tcConfigB.optSettings with jitOptUser = Some true }
+    tcConfigB.optSettings <- { tcConfigB.optSettings with localOptUser = Some true }
+    tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = Some true }
     tcConfigB.optSettings <- { tcConfigB.optSettings with lambdaInlineThreshold = 6 }
     tcConfigB.doDetuple <- true;  
     tcConfigB.doTLR <- true;
@@ -943,8 +943,8 @@ let deprecatedFlagsFsc tcConfigB =
     deprecatedFlagsBoth tcConfigB @
     [
     cliRootFlag tcConfigB
-    CompilerOption("jit-optimize", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with jitOptUser = someTrue }), Some(DeprecatedCommandLineOptionNoDescription("--jit-optimize", rangeCmdArgs)), None)
-    CompilerOption("no-jit-optimize", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with jitOptUser = someFalse }), Some(DeprecatedCommandLineOptionNoDescription("--no-jit-optimize", rangeCmdArgs)), None)
+    CompilerOption("jit-optimize", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with jitOptUser = Some true }), Some(DeprecatedCommandLineOptionNoDescription("--jit-optimize", rangeCmdArgs)), None)
+    CompilerOption("no-jit-optimize", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with jitOptUser = Some false }), Some(DeprecatedCommandLineOptionNoDescription("--no-jit-optimize", rangeCmdArgs)), None)
     CompilerOption("jit-tracking", tagNone, OptionUnit (fun _ -> (tcConfigB.jitTracking <- true) ), Some(DeprecatedCommandLineOptionNoDescription("--jit-tracking", rangeCmdArgs)), None)
     CompilerOption("no-jit-tracking", tagNone, OptionUnit (fun _ -> (tcConfigB.jitTracking <- false) ), Some(DeprecatedCommandLineOptionNoDescription("--no-jit-tracking", rangeCmdArgs)), None)
     CompilerOption("progress", tagNone, OptionUnit (fun () -> progress := true), Some(DeprecatedCommandLineOptionNoDescription("--progress", rangeCmdArgs)), None)
@@ -954,10 +954,10 @@ let deprecatedFlagsFsc tcConfigB =
     (compilingFsLibNoBigIntFlag tcConfigB) 
     CompilerOption("version", tagString, OptionString (fun s -> tcConfigB.version <- VersionString s), Some(DeprecatedCommandLineOptionNoDescription("--version", rangeCmdArgs)), None)
 //  "--clr-mscorlib", OptionString (fun s -> warning(Some(DeprecatedCommandLineOptionNoDescription("--clr-mscorlib", rangeCmdArgs)))    tcConfigB.Build.mscorlib_assembly_name <- s), "\n\tThe name of mscorlib on the target CLR" 
-    CompilerOption("local-optimize", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with localOptUser = someTrue }), Some(DeprecatedCommandLineOptionNoDescription("--local-optimize", rangeCmdArgs)), None)
-    CompilerOption("no-local-optimize", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with localOptUser = someFalse }), Some(DeprecatedCommandLineOptionNoDescription("--no-local-optimize", rangeCmdArgs)), None)
-    CompilerOption("cross-optimize", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = someTrue }), Some(DeprecatedCommandLineOptionNoDescription("--cross-optimize", rangeCmdArgs)), None)
-    CompilerOption("no-cross-optimize", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = someFalse }), Some(DeprecatedCommandLineOptionNoDescription("--no-cross-optimize", rangeCmdArgs)), None)
+    CompilerOption("local-optimize", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with localOptUser = Some true }), Some(DeprecatedCommandLineOptionNoDescription("--local-optimize", rangeCmdArgs)), None)
+    CompilerOption("no-local-optimize", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with localOptUser = Some false }), Some(DeprecatedCommandLineOptionNoDescription("--no-local-optimize", rangeCmdArgs)), None)
+    CompilerOption("cross-optimize", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = Some true }), Some(DeprecatedCommandLineOptionNoDescription("--cross-optimize", rangeCmdArgs)), None)
+    CompilerOption("no-cross-optimize", tagNone, OptionUnit (fun _ -> tcConfigB.optSettings <- { tcConfigB.optSettings with crossModuleOptUser = Some false }), Some(DeprecatedCommandLineOptionNoDescription("--no-cross-optimize", rangeCmdArgs)), None)
     CompilerOption("no-string-interning", tagNone, OptionUnit (fun () -> tcConfigB.internConstantStrings <- false), Some(DeprecatedCommandLineOptionNoDescription("--no-string-interning", rangeCmdArgs)), None)
     CompilerOption("statistics", tagNone, OptionUnit (fun () -> tcConfigB.stats <- true), Some(DeprecatedCommandLineOptionNoDescription("--statistics", rangeCmdArgs)), None)
     CompilerOption("generate-filter-blocks", tagNone, OptionUnit (fun () -> tcConfigB.generateFilterBlocks <- true), Some(DeprecatedCommandLineOptionNoDescription("--generate-filter-blocks", rangeCmdArgs)), None) 

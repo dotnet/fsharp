@@ -1641,7 +1641,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
             for f in tycon.AllInstanceFieldsAsList do
                 // Check if it's marked unsafe 
                 let zeroInitUnsafe = TryFindFSharpBoolAttribute cenv.g cenv.g.attrib_DefaultValueAttribute f.FieldAttribs
-                if zeroInitUnsafe = someTrue then
+                if zeroInitUnsafe = Some(true) then
                    let ty' = generalizedTyconRef (mkLocalTyconRef tycon)
                    if not (TypeHasDefaultValue cenv.g m ty') then 
                        errorR(Error(FSComp.SR.chkValueWithDefaultValueMustHaveDefaultValue(), m))

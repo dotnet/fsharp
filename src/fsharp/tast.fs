@@ -233,7 +233,7 @@ type ValFlags(flags:int64) =
 
     member x.MakesNoCriticalTailcalls         =                   (flags &&& 0b0000010000000000000L) <> 0L
 
-    member x.WithTakesNoCriticalTailcalls =               ValFlags(flags ||| 0b0000010000000000000L)
+    member x.WithMakesNoCriticalTailcalls =               ValFlags(flags ||| 0b0000010000000000000L)
 
     member x.PermitsExplicitTypeInstantiation =                   (flags &&& 0b0000100000000000000L) <> 0L
 
@@ -2804,7 +2804,7 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
 
     member x.SetIsMemberOrModuleBinding()                = x.val_flags <- x.val_flags.WithIsMemberOrModuleBinding 
 
-    member x.SetMakesNoCriticalTailcalls()               = x.val_flags <- x.val_flags.WithTakesNoCriticalTailcalls
+    member x.SetMakesNoCriticalTailcalls()               = x.val_flags <- x.val_flags.WithMakesNoCriticalTailcalls
 
     member x.SetHasBeenReferenced()                      = x.val_flags <- x.val_flags.WithHasBeenReferenced
 
@@ -4679,7 +4679,7 @@ and ModuleOrNamespaceExpr =
     /// Indicates the module fragment is a 'rec' or 'non-rec' definition of types and modules
     | TMDefRec   of isRec:bool * Tycon list * ModuleOrNamespaceBinding list * range
 
-    override __.ToString() = "ModuleOrNamespaceExpr(...)"
+    override x.ToString() = "ModuleOrNamespaceExpr(...)"
 
 /// A named module-or-namespace-fragment definition 
 and [<RequireQualifiedAccess>] 
@@ -4702,14 +4702,14 @@ and [<RequireQualifiedAccess>]
 and TypedImplFile = 
     | TImplFile of QualifiedNameOfFile * ScopedPragma list * ModuleOrNamespaceExprWithSig * bool * bool
 
-    override __.ToString() = "TImplFile(...)"
+    override x.ToString() = "TImplFile(...)"
 
 /// Represents a complete typechecked assembly, made up of multiple implementation files.
 ///
 and TypedAssemblyAfterOptimization = 
     | TypedAssemblyAfterOptimization of (TypedImplFile * (* optimizeDuringCodeGen: *) (Expr -> Expr)) list
 
-    override __.ToString() = "TypedAssemblyAfterOptimization(...)"
+    override x.ToString() = "TypedAssemblyAfterOptimization(...)"
 
 //---------------------------------------------------------------------------
 // Freevars.  Computed and cached by later phases (never computed type checking).  Cached in terms. Not pickled.
@@ -4746,7 +4746,7 @@ and FreeTyvars =
       /// and we have to check various conditions associated with that. 
       FreeTypars: FreeTypars }
 
-    override x.ToString() = sprintf "FreeTyvars(...)"
+    override x.ToString() = "FreeTyvars(...)"
 
 /// Represents an amortized computation of the free variables in an expression
 and FreeVarsCache = FreeVars cache
@@ -4780,7 +4780,7 @@ and FreeVars =
       /// See FreeTyvars above.
       FreeTyvars: FreeTyvars }
 
-    override x.ToString() =  "FreeVars(...)"
+    override x.ToString() = "FreeVars(...)"
 
 /// Specifies the compiled representations of type and exception definitions.  Basically
 /// just an ILTypeRef. Computed and cached by later phases.  Stored in 

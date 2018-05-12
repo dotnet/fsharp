@@ -201,9 +201,9 @@ type FSharpSymbol(cenv: SymbolEnv, item: (unit -> Item), access: (FSharpSymbol -
 
     member x.DeclarationLocation = SymbolHelpers.rangeOfItem cenv.g None x.Item
 
-    member x.ImplementationLocation = SymbolHelpers.rangeOfItem cenv.g someFalse x.Item
+    member x.ImplementationLocation = SymbolHelpers.rangeOfItem cenv.g (Some(false)) x.Item
 
-    member x.SignatureLocation = SymbolHelpers.rangeOfItem cenv.g someTrue x.Item
+    member x.SignatureLocation = SymbolHelpers.rangeOfItem cenv.g (Some(true)) x.Item
 
     member x.IsEffectivelySameAs(y:FSharpSymbol) = 
         x.Equals(y) || ItemsAreEffectivelyEqual cenv.g x.Item y.Item

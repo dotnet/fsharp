@@ -771,7 +771,7 @@ let rec AddModuleOrNamespaceRefsToNameEnv g amap m root ad nenv (modrefs: Module
                   nenv.eFullyQualifiedModulesAndNamespaces } 
     let nenv = 
         (nenv,modrefs) ||> List.fold (fun nenv modref ->  
-            if modref.IsModule && TryFindFSharpBoolAttribute g g.attrib_AutoOpenAttribute modref.Attribs = someTrue then
+            if modref.IsModule && TryFindFSharpBoolAttribute g g.attrib_AutoOpenAttribute modref.Attribs = Some true then
                 AddModuleOrNamespaceContentsToNameEnv g amap ad m false nenv modref 
             else
                 nenv)
