@@ -3288,6 +3288,8 @@ Microsoft.FSharp.NativeInterop.NativePtrModule: T GetPointerInlined[T](IntPtr, I
 Microsoft.FSharp.NativeInterop.NativePtrModule: T ReadPointerInlined[T](IntPtr)
 Microsoft.FSharp.NativeInterop.NativePtrModule: Void SetPointerInlined[T](IntPtr, Int32, T)
 Microsoft.FSharp.NativeInterop.NativePtrModule: Void WritePointerInlined[T](IntPtr, T)
+Microsoft.FSharp.NativeInterop.NativePtrModule: IntPtr OfVoidPtrInlined[T](Void*)
+Microsoft.FSharp.NativeInterop.NativePtrModule: Void* ToVoidPtrInlined[T](IntPtr)
 Microsoft.FSharp.Quotations.DerivedPatternsModule: Boolean Equals(System.Object)
 Microsoft.FSharp.Quotations.DerivedPatternsModule: Int32 GetHashCode()
 Microsoft.FSharp.Quotations.DerivedPatternsModule: Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Quotations.FSharpExpr,Microsoft.FSharp.Core.FSharpOption`1[System.Tuple`3[Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Quotations.FSharpExpr],Microsoft.FSharp.Collections.FSharpList`1[System.Type],Microsoft.FSharp.Collections.FSharpList`1[Microsoft.FSharp.Quotations.FSharpExpr]]]] SpecificCallPattern(Microsoft.FSharp.Quotations.FSharpExpr)
