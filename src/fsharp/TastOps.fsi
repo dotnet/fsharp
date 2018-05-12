@@ -136,6 +136,7 @@ val mkMultiLambdaBind : Val -> SequencePointInfoForBinding -> range -> Typars ->
 val mkCompGenBind : Val -> Expr -> Binding
 val mkCompGenBinds : Val list -> Exprs -> Bindings
 val mkCompGenLet : range -> Val -> Expr -> Expr -> Expr
+val mkCompGenLetIn: range -> string -> TType -> Expr -> (Val * Expr -> Expr) -> Expr
 
 // Invisible bindings are never given a sequence point and should never have side effects
 val mkInvisibleLet : range -> Val -> Expr -> Expr -> Expr
@@ -521,6 +522,7 @@ val emptyFreeTycons : FreeTycons
 val unionFreeTycons : FreeTycons -> FreeTycons -> FreeTycons
 
 val emptyFreeTyvars : FreeTyvars
+val isEmptyFreeTyvars : FreeTyvars -> bool
 val unionFreeTyvars : FreeTyvars -> FreeTyvars -> FreeTyvars
 
 val emptyFreeLocals : FreeLocals
@@ -550,6 +552,7 @@ val freeInTypeLeftToRight : TcGlobals -> bool -> TType -> Typars
 val freeInTypesLeftToRight : TcGlobals -> bool -> TType list -> Typars
 val freeInTypesLeftToRightSkippingConstraints : TcGlobals -> TType list -> Typars
 
+val freeInModuleTy: ModuleOrNamespaceType -> FreeTyvars
 
 val isDimensionless : TcGlobals -> TType -> bool
 
@@ -1548,3 +1551,8 @@ val (|InnerExprPat|) : Expr -> Expr
 val allValsOfModDef : ModuleOrNamespaceExpr -> seq<Val>
 
 val BindUnitVars : TcGlobals -> (Val list * ArgReprInfo list * Expr) -> Val list * Expr
+
+val isThreadOrContextStatic: TcGlobals -> Attrib list -> bool
+
+val mkUnitDelayLambda: TcGlobals -> range -> Expr -> Expr
+
