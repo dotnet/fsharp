@@ -594,8 +594,8 @@ namespace Microsoft.FSharp.Control
 
         /// Implement the while loop construct of async computation expressions
         let CreateWhileAsync guardFunc computation =
-            let mutable whileAsync = Unchecked.defaultof<_>
             if guardFunc() then 
+                let mutable whileAsync = Unchecked.defaultof<_>
                 whileAsync <- CreateBindAsync computation (fun () -> if guardFunc() then whileAsync else unitAsync) 
                 whileAsync
             else 
