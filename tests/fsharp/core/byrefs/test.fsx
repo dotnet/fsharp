@@ -27,11 +27,17 @@ module ByrefReturnTests =
         let f () = &x
 
         let test() = 
-            let addr = f ()
+            let addr : byref<int> = &f()
             addr <- addr + 1
             check2 "cepojcwem1" 2 x
 
+
+        let test2() = 
+            let res = f() + 1
+            check2 "cepojcwem1b" 3 res
+
         test()
+        test2()
 
     module TestMatchReturn =
         let mutable x = 1
@@ -40,16 +46,23 @@ module ByrefReturnTests =
         let f inp = match inp with 3 -> &x | _ -> &y
 
         let test() = 
-            let addr = f 3
+            let addr = &f 3
             addr <- addr + 1
             check2 "cepojcwem2" 2 x
             check2 "cepojcwem3" 1 y
-            let addr = f 4
+            let addr = &f 4
             addr <- addr + 1
             check2 "cepojcwem4" 2 x
             check2 "cepojcwem5" 2 y
 
+        let test2() = 
+            let res = f 3
+            let res2 = f 3 + 1
+            check2 "cepojcwem2b" 3 res2
+            check2 "cepojcwem3b" 2 res
+
         test()
+        test2()
 
     module TestConditionalReturn =
         let mutable x = 1
@@ -58,16 +71,23 @@ module ByrefReturnTests =
         let f inp = if inp = 3 then &x else &y
 
         let test() = 
-            let addr = f 3
+            let addr = &f 3
             addr <- addr + 1
             check2 "cepojcwem6" 2 x
             check2 "cepojcwem7" 1 y
-            let addr = f 4
+            let addr = &f 4
             addr <- addr + 1
             check2 "cepojcwem8" 2 x
             check2 "cepojcwem9" 2 y
 
+        let test2() = 
+            let res = f 3
+            let res2 = f 3 + 1
+            check2 "cepojcwem8b" 3 res2
+            check2 "cepojcwem9b" 2 res
+
         test()
+        test2()
 
     module TestTryCatchReturn =
         let mutable x = 1
@@ -76,16 +96,23 @@ module ByrefReturnTests =
         let f inp = try &x with _ -> &y
 
         let test() = 
-            let addr = f 3
+            let addr = &f 3
             addr <- addr + 1
             check2 "cepojcwem6b" 2 x
             check2 "cepojcwem7b" 1 y
-            let addr = f 4
+            let addr = &f 4
             addr <- addr + 1
             check2 "cepojcwem8b" 3 x
             check2 "cepojcwem9b" 1 y
 
+        let test2() = 
+            let res = f 3
+            let res2 = f 3 + 1
+            check2 "cepojcwem2ff" 4 res2
+            check2 "cepojcwem3gg" 3 res
+
         test()
+        test2()
 
     module TestTryFinallyReturn =
         let mutable x = 1
@@ -94,16 +121,23 @@ module ByrefReturnTests =
         let f inp = try &x with _ -> &y
 
         let test() = 
-            let addr = f 3
+            let addr = &f 3
             addr <- addr + 1
             check2 "cepojcwem6b" 2 x
             check2 "cepojcwem7b" 1 y
-            let addr = f 4
+            let addr = &f 4
             addr <- addr + 1
             check2 "cepojcwem8b" 3 x
             check2 "cepojcwem9b" 1 y
 
+        let test2() = 
+            let res = f 3
+            let res2 = f 3 + 1
+            check2 "cepojcwem2tf" 4 res2
+            check2 "cepojcwem3qw" 3 res
+
         test()
+        test2()
 
     module TestOneArgument =
 
@@ -111,7 +145,7 @@ module ByrefReturnTests =
 
         let test() = 
             let mutable r1 = 1
-            let addr = f &r1
+            let addr = &f &r1
             addr <- addr + 1
             check2 "cepojcwem10" 2 r1
 
@@ -124,7 +158,7 @@ module ByrefReturnTests =
         let test() = 
             let mutable r1 = 1
             let mutable r2 = 0
-            let addr = f (&r1, &r2)
+            let addr = &f (&r1, &r2)
             addr <- addr + 1
             check2 "cepojcwem11" 2 r1
 
@@ -137,7 +171,7 @@ module ByrefReturnTests =
 
         let test() = 
             let r = { z = 1 }
-            let addr = f r
+            let addr = &f r
             addr <- addr + 1
             check2 "cepojcwem12" 2 r.z
 
@@ -150,7 +184,7 @@ module ByrefReturnTests =
 
         let test() = 
             let mutable r = { z = 1 }
-            let addr = f &r
+            let addr = &f &r
             addr <- addr + 1
             check2 "cepojcwem13a" 2 r.z
 
@@ -164,7 +198,7 @@ module ByrefReturnTests =
 
         let test() = 
             let c = C()
-            let addr = f c
+            let addr = &f c
             addr <- addr + 1
             check2 "cepojcwem13b" 1 c.z 
 
@@ -176,7 +210,7 @@ module ByrefReturnTests =
 
         let test() = 
             let r = [| 1 |]
-            let addr = f r
+            let addr = &f r
             addr <- addr + 1
             check2 "cepojcwem14" 2 r.[0]
 
@@ -191,7 +225,7 @@ module ByrefReturnTests =
 
         let test() = 
             let mutable r = { z = 1 }
-            let addr = f &r
+            let addr = &f &r
             addr <- addr + 1
             check2 "cepojcwem15" 2 r.z
 
@@ -211,12 +245,12 @@ module ByrefReturnTests =
             { new I with 
                 member this.M() = &x }
 
-        let f (i:I) = i.M()
+        let f (i:I) = &i.M()
 
         let test() = 
-            let addr = f (C()) 
+            let addr = &f (C()) 
             addr <- addr + 1
-            let addr = f (ObjExpr()) 
+            let addr = &f (ObjExpr()) 
             addr <- addr + 1
             check2 "cepojcwem16" 3 x
 
@@ -236,12 +270,12 @@ module ByrefReturnTests =
             { new I with 
                 member this.P = &x }
 
-        let f (i:I) = i.P
+        let f (i:I) = &i.P
 
         let test() = 
-            let addr = f (C()) 
+            let addr = &f (C()) 
             addr <- addr + 1
-            let addr = f (ObjExpr()) 
+            let addr = &f (ObjExpr()) 
             addr <- addr + 1
             check2 "cepojcwem17" 3 x
 
@@ -254,10 +288,10 @@ module ByrefReturnTests =
 
         let d() = D(fun () -> &x)
 
-        let f (d:D) = d.Invoke()
+        let f (d:D) = &d.Invoke()
 
         let test() = 
-            let addr = f (d()) 
+            let addr = &f (d()) 
             check2 "cepojcwem18a" 1 x
             addr <- addr + 1
             check2 "cepojcwem18b" 2 x
@@ -284,10 +318,10 @@ module ByrefReturnTests =
 
         let d() = D(fun xb -> &xb)
 
-        let f (d:D) = d.Invoke(&x)
+        let f (d:D) = &d.Invoke(&x)
 
         let test() = 
-            let addr = f (d()) 
+            let addr = &f (d()) 
             check2 "cepojcwem18a2" 1 x
             addr <- addr + 1
             check2 "cepojcwem18b3" 2 x

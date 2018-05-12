@@ -2898,12 +2898,15 @@ type ApplicableExpr =
            Expr *
            // is this the first in an application series
            bool 
+
     member x.Range = 
         match x with 
         | ApplicableExpr (_, e, _) -> e.Range
+
     member x.Type = 
         match x with 
         | ApplicableExpr (cenv, e, _) -> tyOfExpr cenv.g e 
+
     member x.SupplyArgument(e2, m) =
         let (ApplicableExpr (cenv, fe, first)) = x 
         let combinedExpr = 
@@ -2915,6 +2918,7 @@ type ApplicableExpr =
             | _ -> 
                 Expr.App(fe, tyOfExpr cenv.g fe, [], [e2], m) 
         ApplicableExpr(cenv, combinedExpr, false)
+
     member x.Expr =
         match x with 
         | ApplicableExpr(_, e, _) ->  e
@@ -4006,29 +4010,35 @@ let CheckAndRewriteObjectCtor g env (ctorLambaExpr:Expr) =
 
 /// Post-typechecking normalizations to enforce semantic constraints
 /// lazy and, lazy or, rethrow, address-of
-let buildApp cenv expr exprty arg m = 
+let buildApp cenv expr resultTy arg m = 
     match expr, arg with        
     | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [x0], _), _) , _ 
          when valRefEq cenv.g vf cenv.g.and_vref 
            || valRefEq cenv.g vf cenv.g.and2_vref  -> 
-        MakeApplicableExprNoFlex cenv (mkLazyAnd cenv.g m x0 arg)
+        MakeApplicableExprNoFlex cenv (mkLazyAnd cenv.g m x0 arg), resultTy
     | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [x0], _), _), _ 
          when valRefEq cenv.g vf cenv.g.or_vref
            || valRefEq cenv.g vf cenv.g.or2_vref -> 
-        MakeApplicableExprNoFlex cenv (mkLazyOr cenv.g m x0 arg )
+        MakeApplicableExprNoFlex cenv (mkLazyOr cenv.g m x0 arg ), resultTy
     | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [], _), _), _ 
          when valRefEq cenv.g vf cenv.g.reraise_vref -> 
         // exprty is of type: "unit -> 'a". Break it and store the 'a type here, used later as return type. 
-        let _unit_ty, rtn_ty = destFunTy cenv.g exprty 
-        MakeApplicableExprNoFlex cenv (mkCompGenSequential m arg (mkReraise m rtn_ty))
+        MakeApplicableExprNoFlex cenv (mkCompGenSequential m arg (mkReraise m resultTy)), resultTy
     | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [], _), _), _ 
          when (valRefEq cenv.g vf cenv.g.addrof_vref || 
                valRefEq cenv.g vf cenv.g.addrof2_vref) -> 
         if valRefEq cenv.g vf cenv.g.addrof2_vref then warning(UseOfAddressOfOperator(m))
         let wrap, e1a' = mkExprAddrOfExpr cenv.g true false DefinitelyMutates arg (Some(vf)) m
-        MakeApplicableExprNoFlex cenv (wrap(e1a'))
+        MakeApplicableExprNoFlex cenv (wrap(e1a')), resultTy
+    | _ when isByrefTy cenv.g resultTy  ->
+        // Handle byref returns, byref-typed returns get implicitly dereferenced 
+        let v, _ = mkCompGenLocal m "byrefReturn" resultTy
+        let expr = expr.SupplyArgument(arg, m)
+        let expr = mkCompGenLet m v expr.Expr (mkAddrGet m (mkLocalValRef v))
+        let resultTy = destByrefTy cenv.g resultTy
+        MakeApplicableExprNoFlex cenv expr, resultTy
     | _ -> 
-        expr.SupplyArgument(arg, m)             
+        expr.SupplyArgument(arg, m), resultTy             
 
 //-------------------------------------------------------------------------
 // Additional data structures used by type checking
@@ -6210,9 +6220,9 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
                 let f, fty, tpenv = TcExprOfUnknownType cenv env tpenv operPath
                 let domainTy, resultTy = UnifyFunctionType (Some mWholeExpr) cenv env.DisplayEnv mWholeExpr fty
                 UnifyTypes cenv env mWholeExpr domainTy e1ty 
-                let f' = buildApp cenv (MakeApplicableExprNoFlex cenv f) fty e1' mWholeExpr
+                let fAndArg, resultTy = buildApp cenv (MakeApplicableExprNoFlex cenv f) resultTy e1' mWholeExpr
                 let delayed = List.foldBack (fun idx acc -> DelayedApp(ExprAtomicFlag.Atomic, idx, mWholeExpr) :: acc) indexArgs delayed // atomic, otherwise no ar.[1] <- xyz
-                Some (PropagateThenTcDelayed cenv overallTy env tpenv mWholeExpr f' resultTy ExprAtomicFlag.Atomic delayed )
+                Some (PropagateThenTcDelayed cenv overallTy env tpenv mWholeExpr fAndArg resultTy ExprAtomicFlag.Atomic delayed )
         else None
 
     match attemptArrayString with 
@@ -8296,25 +8306,26 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
         delayedExpr, tpenv
 
 //-------------------------------------------------------------------------
-// Typecheck "expr ... " constructs where "..." is a sequence of applications, 
-// type applications and dot-notation projections. First extract known
-// type information from the "..." part to use during type checking.
-//
-// 'overallTy' is the type expected for the entire chain of expr + lookups.
-// 'exprty' is the type of the expression on the left of the lookup chain.
-//
-// Unsophisticated applications can propagate information from the expected overall type 'overallTy' 
-// through to the leading function type 'exprty'. This is because the application 
-// unambiguously implies a function type 
 //------------------------------------------------------------------------- 
 
+/// When checking sequence of function applications, 
+/// type applications and dot-notation projections, first extract known
+/// type information from the applications.
+///
+/// 'overallTy' is the type expected for the entire chain of expr + lookups.
+/// 'exprty' is the type of the expression on the left of the lookup chain.
+///
+/// We propagate information from the expected overall type 'overallTy'. The use 
+/// of function application syntax unambiguously implies that 'overallTy' is a function type.
 and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed = 
     
     let rec propagate delayedList mExpr exprty = 
         match delayedList with 
         | [] -> 
             // Avoid unifying twice: we're about to unify in TcDelayed 
-            if not (isNil delayed) then 
+            if not (isNil delayed) && not (isByrefTy cenv.g exprty) then 
+                let exprty = if isByrefTy cenv.g exprty then destByrefTy cenv.g exprty else exprty
+                UnifyTypesAndRecover cenv env mExpr overallTy exprty
                 UnifyTypesAndRecover cenv env mExpr overallTy exprty
         | DelayedDot :: _
         | DelayedSet _ :: _
@@ -8373,7 +8384,7 @@ and TcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag:ExprAtomicF
     // expr.M<tyargs>(args) where x.M is a .NET method or index property 
     // expr.M where x.M is a .NET method or index property 
     | DelayedDotLookup (longId, mDotLookup) :: otherDelayed ->
-         TcLookupThen cenv overallTy env tpenv mExpr expr.Expr exprty longId otherDelayed mDotLookup
+        TcLookupThen cenv overallTy env tpenv mExpr expr.Expr exprty longId otherDelayed mDotLookup
     // f x 
     | DelayedApp (hpa, arg, mExprAndArg) :: otherDelayed ->
         TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty arg hpa otherDelayed
@@ -8423,7 +8434,7 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
         | _ -> ()
 
         let arg, tpenv = TcExpr cenv domainTy env tpenv synArg
-        let exprAndArg = buildApp cenv expr exprty arg mExprAndArg
+        let exprAndArg, resultTy = buildApp cenv expr resultTy arg mExprAndArg
         TcDelayed cenv overallTy env tpenv mExprAndArg exprAndArg resultTy atomicFlag delayed
     | None -> 
         // OK, 'expr' doesn't have function type, but perhaps 'expr' is a computation expression builder, and 'arg' is '{ ... }' 
