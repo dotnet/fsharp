@@ -9,7 +9,7 @@ open FSharp.Core.UnitTests.LibraryTestFx
 type SurfaceAreaTest() =
     [<Test>]
     member this.VerifyArea() =
-        let expected = @"
+        let expected = @"""
 Microsoft.FSharp.Collections.Array2DModule: Boolean Equals(System.Object)
 Microsoft.FSharp.Collections.Array2DModule: Int32 Base1[T](T[,])
 Microsoft.FSharp.Collections.Array2DModule: Int32 Base2[T](T[,])
@@ -3563,7 +3563,7 @@ Microsoft.FSharp.Reflection.UnionCaseInfo: System.String get_Name()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type DeclaringType
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type GetType()
 Microsoft.FSharp.Reflection.UnionCaseInfo: System.Type get_DeclaringType()
-"
+"""
 #if CROSS_PLATFORM_COMPILER
         ()
         // disabled because of slight order and GetMember discrepencies
