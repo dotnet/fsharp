@@ -198,7 +198,7 @@ type ValFlags(flags:int64) =
                                                              | _          -> failwith "unreachable"
 
 
-    member x.SetIsMemberOrModuleBinding = ValFlags(flags |||                 0b0000000000010000000L)
+    member x.WithIsMemberOrModuleBinding = ValFlags(flags |||                0b0000000000010000000L)
 
 
     member x.IsExtensionMember        = (flags       &&&                     0b0000000000100000000L) <> 0L
@@ -211,7 +211,7 @@ type ValFlags(flags:int64) =
                                                              |               0b0000001000000000000L -> ValInRecScope(false)
                                                              | _                   -> failwith "unreachable"
 
-    member x.SetRecursiveValInfo(recValInfo) = 
+    member x.WithRecursiveValInfo(recValInfo) = 
             let flags = 
                      (flags       &&&                                     ~~~0b0000001100000000000L) |||
                      (match recValInfo with
@@ -222,23 +222,23 @@ type ValFlags(flags:int64) =
 
     member x.MakesNoCriticalTailcalls         =                   (flags &&& 0b0000010000000000000L) <> 0L
 
-    member x.SetMakesNoCriticalTailcalls =                ValFlags(flags ||| 0b0000010000000000000L)
+    member x.WithMakesNoCriticalTailcalls =               ValFlags(flags ||| 0b0000010000000000000L)
 
     member x.PermitsExplicitTypeInstantiation =                   (flags &&& 0b0000100000000000000L) <> 0L
     member x.HasBeenReferenced                =                   (flags &&& 0b0001000000000000000L) <> 0L
 
-    member x.SetHasBeenReferenced                     =   ValFlags(flags ||| 0b0001000000000000000L)
+    member x.WithHasBeenReferenced                    =   ValFlags(flags ||| 0b0001000000000000000L)
 
     member x.IsCompiledAsStaticPropertyWithoutField =             (flags &&& 0b0010000000000000000L) <> 0L
 
-    member x.SetIsCompiledAsStaticPropertyWithoutField =  ValFlags(flags ||| 0b0010000000000000000L)
+    member x.WithIsCompiledAsStaticPropertyWithoutField = ValFlags(flags ||| 0b0010000000000000000L)
     
 
     member x.IsGeneratedEventVal =                                (flags &&& 0b0100000000000000000L) <> 0L
 
     member x.IsFixed                                =             (flags &&& 0b1000000000000000000L) <> 0L
 
-    member x.SetIsFixed                                =  ValFlags(flags ||| 0b1000000000000000000L)
+    member x.WithIsFixed                               =  ValFlags(flags ||| 0b1000000000000000000L)
 
 
     /// Get the flags as included in the F# binary metadata
@@ -364,32 +364,32 @@ type TyparFlags(flags:int32) =
 type EntityFlags(flags:int64) =
 
     new (usesPrefixDisplay, isModuleOrNamespace, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, isStructRecordOrUnionType) = 
-        EntityFlags((if isModuleOrNamespace then                        0b00000000001L else 0L) |||
-                    (if usesPrefixDisplay   then                        0b00000000010L else 0L) |||
-                    (if preEstablishedHasDefaultCtor then               0b00000000100L else 0L) |||
-                    (if hasSelfReferentialCtor then                     0b00000001000L else 0L) |||
-                    (if isStructRecordOrUnionType then                         0b00000100000L else 0L)) 
+        EntityFlags((if isModuleOrNamespace then                        0b000000000000001L else 0L) |||
+                    (if usesPrefixDisplay   then                        0b000000000000010L else 0L) |||
+                    (if preEstablishedHasDefaultCtor then               0b000000000000100L else 0L) |||
+                    (if hasSelfReferentialCtor then                     0b000000000001000L else 0L) |||
+                    (if isStructRecordOrUnionType then                  0b000000000100000L else 0L)) 
 
-    member x.IsModuleOrNamespace                 = (flags       &&&     0b00000000001L) <> 0x0L
-    member x.IsPrefixDisplay                     = (flags       &&&     0b00000000010L) <> 0x0L
+    member x.IsModuleOrNamespace                 = (flags       &&&     0b000000000000001L) <> 0x0L
+    member x.IsPrefixDisplay                     = (flags       &&&     0b000000000000010L) <> 0x0L
     
     // This bit is not pickled, only used while establishing a type constructor. It is needed because the type constructor
     // is known to satisfy the default constructor constraint even before any of its members have been established.
-    member x.PreEstablishedHasDefaultConstructor = (flags       &&&     0b00000000100L) <> 0x0L
+    member x.PreEstablishedHasDefaultConstructor = (flags       &&&     0b000000000000100L) <> 0x0L
 
     // This bit represents an F# specific condition where a type has at least one constructor that may access
     // the 'this' pointer prior to successful initialization of the partial contents of the object. In this
     // case sub-classes must protect themselves against early access to their contents.
-    member x.HasSelfReferentialConstructor       = (flags       &&&     0b00000001000L) <> 0x0L
+    member x.HasSelfReferentialConstructor       = (flags       &&&     0b000000000001000L) <> 0x0L
 
     /// This bit represents a F# record that is a value type, or a struct record.
-    member x.IsStructRecordOrUnionType                  = (flags       &&&     0b00000100000L) <> 0x0L
+    member x.IsStructRecordOrUnionType           = (flags       &&&     0b000000000100000L) <> 0x0L
 
     /// This bit is reserved for us in the pickle format, see pickle.fs, it's being listed here to stop it ever being used for anything else
-    static member ReservedBitForPickleFormatTyconReprFlag   =           0b00000010000L
+    static member ReservedBitForPickleFormatTyconReprFlag   =           0b000000000010000L
 
     /// Get the flags as included in the F# binary metadata
-    member x.PickledBits =                         (flags       &&&  ~~~0b00000000100L)
+    member x.PickledBits =                         (flags       &&&  ~~~0b000000000000100L)
 
 
 #if DEBUG
@@ -2723,17 +2723,17 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     member x.DisplayName = 
         DemangleOperatorName x.CoreDisplayName
 
-    member x.SetValRec b                                 = x.val_flags <- x.val_flags.SetRecursiveValInfo b 
+    member x.SetValRec b                                 = x.val_flags <- x.val_flags.WithRecursiveValInfo b 
 
-    member x.SetIsMemberOrModuleBinding()                = x.val_flags <- x.val_flags.SetIsMemberOrModuleBinding 
+    member x.SetIsMemberOrModuleBinding()                = x.val_flags <- x.val_flags.WithIsMemberOrModuleBinding 
 
-    member x.SetMakesNoCriticalTailcalls()               = x.val_flags <- x.val_flags.SetMakesNoCriticalTailcalls
+    member x.SetMakesNoCriticalTailcalls()               = x.val_flags <- x.val_flags.WithMakesNoCriticalTailcalls
 
-    member x.SetHasBeenReferenced()                      = x.val_flags <- x.val_flags.SetHasBeenReferenced
+    member x.SetHasBeenReferenced()                      = x.val_flags <- x.val_flags.WithHasBeenReferenced
 
-    member x.SetIsCompiledAsStaticPropertyWithoutField() = x.val_flags <- x.val_flags.SetIsCompiledAsStaticPropertyWithoutField
+    member x.SetIsCompiledAsStaticPropertyWithoutField() = x.val_flags <- x.val_flags.WithIsCompiledAsStaticPropertyWithoutField
 
-    member x.SetIsFixed()                                = x.val_flags <- x.val_flags.SetIsFixed
+    member x.SetIsFixed()                                = x.val_flags <- x.val_flags.WithIsFixed
 
     member x.SetValReprInfo info                         = 
         match x.val_opt_data with
@@ -3980,23 +3980,33 @@ and PickledCcuInfo =
 and Attribs = Attrib list 
 
 and AttribKind = 
+
     /// Indicates an attribute refers to a type defined in an imported .NET assembly 
     | ILAttrib of ILMethodRef 
+
     /// Indicates an attribute refers to a type defined in an imported F# assembly 
     | FSAttrib of ValRef
+
+    override x.ToString() = sprintf "AttribKind(...)"
 
 /// Attrib(kind,unnamedArgs,propVal,appliedToAGetterOrSetter,targetsOpt,range)
 and Attrib = 
     | Attrib of TyconRef * AttribKind * AttribExpr list * AttribNamedArg list * bool * AttributeTargets option * range
+
+    override x.ToString() = sprintf "Attrib(...)"
 
 /// We keep both source expression and evaluated expression around to help intellisense and signature printing
 and AttribExpr = 
     /// AttribExpr(source, evaluated)
     | AttribExpr of Expr * Expr 
 
+    override x.ToString() = sprintf "AttribExpr(...)"
+
 /// AttribNamedArg(name,type,isField,value)
 and AttribNamedArg = 
     | AttribNamedArg of (string*TType*bool*AttribExpr)
+
+    override x.ToString() = sprintf "AttribNamedArg(...)"
 
 /// Constants in expressions
 and [<RequireQualifiedAccess>]
@@ -4019,7 +4029,6 @@ and [<RequireQualifiedAccess>]
     | Decimal  of Decimal 
     | Unit
     | Zero // null/zero-bit-pattern 
-  
 
 /// Decision trees. Pattern matching has been compiled down to
 /// a decision tree by this point.  The right-hand-sides (actions) of
@@ -4055,6 +4064,8 @@ and
     ///    body -- the rest of the decision tree
     | TDBind of Binding * DecisionTree
 
+    override x.ToString() = sprintf "DecisionTree(...)"
+
 /// Represents a test and a subsequent decision tree
 and DecisionTreeCase = 
     | TCase of DecisionTreeTest * DecisionTree
@@ -4064,6 +4075,8 @@ and DecisionTreeCase =
 
     /// Get the decision tree or a successful test
     member x.CaseTree = let (TCase(_,d)) = x in d
+
+    override x.ToString() = sprintf "DecisionTreeCase(...)"
 
 and 
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -4096,10 +4109,13 @@ and
     ///     activePatternInfo -- The extracted info for the active pattern.
     | ActivePatternCase of Expr * TTypes * (ValRef * TypeInst) option * int * ActivePatternInfo
 
+    override x.ToString() = sprintf "DecisionTreeTest(...)"
 
 /// A target of a decision tree. Can be thought of as a little function, though is compiled as a local block. 
 and DecisionTreeTarget = 
     | TTarget of Vals * Expr * SequencePointInfoForTarget
+
+    override x.ToString() = sprintf "DecisionTreeTarget(...)"
 
 /// A collection of simultaneous bindings
 and Bindings = Binding list
@@ -4116,7 +4132,9 @@ and Binding =
 
     /// The information about whether to emit a sequence point for the binding
     member x.SequencePointInfo = (let (TBind(_,_,sp)) = x in sp)
-    
+
+    override x.ToString() = sprintf "TBind(%s, ...)" x.Var.CompiledName
+
 /// Represents a reference to an active pattern element. The 
 /// integer indicates which choice in the target set is being selected by this item. 
 and ActivePatternElemRef = 
@@ -4130,6 +4148,8 @@ and ActivePatternElemRef =
 
     /// Get the index of the active pattern element within the overall active pattern 
     member x.CaseIndex = (let (APElemRef(_,_,n)) = x in n)
+
+    override __.ToString() = "ActivePatternElemRef(...)"
 
 /// Records the "extra information" for a value compiled as a method (rather
 /// than a closure or a local), including argument names, attributes etc.
@@ -4168,6 +4188,8 @@ and ValReprInfo  =
             | (_::_::h)::t -> loop t (acc + h.Length + 2) 
         loop args 0
 
+    override __.ToString() = "ValReprInfo(...)"
+
 /// Records the "extra information" for an argument compiled as a real
 /// method argument, specifically the argument name and attributes.
 and 
@@ -4179,6 +4201,8 @@ and
 
       // MUTABILITY: used when propagating names of parameters from signature into the implementation.
       mutable Name : Ident option  }
+
+    override __.ToString() = "ArgReprInfo(...)"
 
 /// Records the extra metadata stored about typars for type parameters
 /// compiled as "real" IL type parameters, specifically for values with 
@@ -4273,6 +4297,8 @@ and
     /// After type checking the bindings this is replaced by a use of the variable, perhaps at an 
     /// appropriate type instantiation. These are immediately eliminated on subsequent rewrites. 
     | Link of Expr ref
+
+    override __.ToString() = "Expr(...)"
 
 and 
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -4386,6 +4412,7 @@ and
     ///     retTy -- the types of pushed values, if any 
     | ILCall of bool * bool * bool * bool * ValUseFlag * bool * bool * ILMethodRef * TypeInst * TypeInst * TTypes   
 
+    override __.ToString() = "TOp(...)"
 
 /// Indicates the kind of record construction operation.
 and RecordConstructionInfo = 
@@ -4395,7 +4422,6 @@ and RecordConstructionInfo =
 
    /// Normal record construction 
    | RecdExpr
-   
 
 /// If this is Some(ty) then it indicates that a .NET 2.0 constrained call is required, with the given type as the
 /// static type of the object argument.
@@ -4464,7 +4490,9 @@ and ValUseFlag =
   
 /// Indicates the kind of an F# core library static optimization construct
 and StaticOptimization = 
+
     | TTyconEqualsTycon of TType * TType
+
     | TTyconIsStruct of TType 
   
 /// A representation of a method in an object expression. 
@@ -4474,24 +4502,37 @@ and ObjExprMethod =
     | TObjExprMethod of SlotSig * Attribs * Typars * Val list list * Expr * range
     member x.Id = let (TObjExprMethod(slotsig,_,_,_,_,m)) = x in mkSynId m slotsig.Name
 
+    override x.ToString() = sprintf "TObjExprMethod(%s, ...)" x.Id.idText
+
 /// Represents an abstract method slot, or delegate signature.
 ///
 /// TSlotSig(methodName,declaringType,declaringTypeParameters,methodTypeParameters,slotParameters,returnTy)
 and SlotSig = 
     | TSlotSig of string * TType * Typars * Typars * SlotParam list list * TType option
+
     member ss.Name             = let (TSlotSig(nm,_,_,_,_,_)) = ss in nm
+
     member ss.ImplementedType  = let (TSlotSig(_,ty,_,_,_,_)) = ss in ty
+
     member ss.ClassTypars      = let (TSlotSig(_,_,ctps,_,_,_)) = ss in ctps
+
     member ss.MethodTypars     = let (TSlotSig(_,_,_,mtps,_,_)) = ss in mtps
+
     member ss.FormalParams     = let (TSlotSig(_,_,_,_,ps,_)) = ss in ps
+
     member ss.FormalReturnType = let (TSlotSig(_,_,_,_,_,rt)) = ss in rt
+
+    override ss.ToString() = sprintf "TSlotSig(%s, ...)" ss.Name
 
 /// Represents a parameter to an abstract method slot. 
 ///
 /// TSlotParam(nm,ty,inFlag,outFlag,optionalFlag,attribs)
 and SlotParam = 
     | TSlotParam of  string option * TType * bool (* in *) * bool (* out *) * bool (* optional *) * Attribs
+
     member x.Type = let (TSlotParam(_,ty,_,_,_,_)) = x in ty
+
+    override x.ToString() = "TSlotParam(...)"
 
 /// A type for a module-or-namespace-fragment and the actual definition of the module-or-namespace-fragment
 /// The first ModuleOrNamespaceType is the signature and is a binder. However the bindings are not used in the ModuleOrNamespaceExpr: it is only referenced from the 'outside' 
@@ -4501,7 +4542,10 @@ and ModuleOrNamespaceExprWithSig =
          ModuleOrNamespaceType 
          * ModuleOrNamespaceExpr
          * range
+
     member x.Type = let (ModuleOrNamespaceExprWithSig(mtyp,_,_)) = x in mtyp
+
+    override x.ToString() = "ModuleOrNamespaceExprWithSig(...)"
 
 /// The contents of a module-or-namespace-fragment definition 
 and ModuleOrNamespaceExpr = 
@@ -4520,6 +4564,8 @@ and ModuleOrNamespaceExpr =
     /// Indicates the module fragment is a 'rec' or 'non-rec' definition of types and modules
     | TMDefRec   of isRec:bool * Tycon list * ModuleOrNamespaceBinding list * range
 
+    override x.ToString() = "ModuleOrNamespaceExpr(...)"
+
 /// A named module-or-namespace-fragment definition 
 and [<RequireQualifiedAccess>] 
     ModuleOrNamespaceBinding = 
@@ -4533,15 +4579,23 @@ and [<RequireQualifiedAccess>]
          /// This is the body of the module/namespace 
          ModuleOrNamespaceExpr
 
+    override x.ToString() = "ModuleOrNamespaceBinding(...)"
+
 
 /// Represents a complete typechecked implementation file, including its typechecked signature if any.
 ///
 /// TImplFile(qualifiedNameOfFile,pragmas,implementationExpressionWithSignature,hasExplicitEntryPoint,isScript)
-and TypedImplFile = TImplFile of QualifiedNameOfFile * ScopedPragma list * ModuleOrNamespaceExprWithSig * bool * bool
+and TypedImplFile = 
+    | TImplFile of QualifiedNameOfFile * ScopedPragma list * ModuleOrNamespaceExprWithSig * bool * bool
+
+    override x.ToString() = "TImplFile(...)"
 
 /// Represents a complete typechecked assembly, made up of multiple implementation files.
 ///
-and TypedAssemblyAfterOptimization = TypedAssemblyAfterOptimization of (TypedImplFile * (* optimizeDuringCodeGen: *) (Expr -> Expr)) list
+and TypedAssemblyAfterOptimization = 
+    | TypedAssemblyAfterOptimization of (TypedImplFile * (* optimizeDuringCodeGen: *) (Expr -> Expr)) list
+
+    override x.ToString() = "TypedAssemblyAfterOptimization(...)"
 
 //---------------------------------------------------------------------------
 // Freevars.  Computed and cached by later phases (never computed type checking).  Cached in terms. Not pickled.
@@ -4578,6 +4632,7 @@ and FreeTyvars =
       /// and we have to check various conditions associated with that. 
       FreeTypars: FreeTypars }
 
+    override x.ToString() = "FreeTyvars(...)"
 
 /// Represents an amortized computation of the free variables in an expression
 and FreeVarsCache = FreeVars cache
@@ -4611,6 +4666,8 @@ and FreeVars =
       /// See FreeTyvars above.
       FreeTyvars: FreeTyvars }
 
+    override x.ToString() = "FreeVars(...)"
+
 /// Specifies the compiled representations of type and exception definitions.  Basically
 /// just an ILTypeRef. Computed and cached by later phases.  Stored in 
 /// type and exception definitions. Not pickled. Store an optional ILType object for 
@@ -4639,6 +4696,8 @@ and [<RequireQualifiedAccess>]
     //   type ilsigptr<'T> = (# "!0*" #)
     | ILAsmOpen of ILType  
 
+    override x.ToString() = "CompiledTypeRepr(...)"
+
 //---------------------------------------------------------------------------
 // Basic properties on type definitions
 //---------------------------------------------------------------------------
@@ -4647,16 +4706,25 @@ and [<RequireQualifiedAccess>]
 /// Metadata on values (names of arguments etc. 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ValReprInfo = 
+
     let unnamedTopArg1 : ArgReprInfo = { Attribs=[]; Name=None }
+
     let unnamedTopArg = [unnamedTopArg1]
+
     let unitArgData : ArgReprInfo list list = [[]]
+
     let unnamedRetVal : ArgReprInfo = { Attribs = []; Name=None }
+
     let selfMetadata = unnamedTopArg
+
     let emptyValData = ValReprInfo([],[],unnamedRetVal)
 
     let InferTyparInfo (tps:Typar list) = tps |> List.map (fun tp -> TyparReprInfo(tp.Id, tp.Kind))
+
     let InferArgReprInfo (v:Val) : ArgReprInfo = { Attribs = []; Name= Some v.Id }
+
     let InferArgReprInfos (vs:Val list list) = ValReprInfo([],List.mapSquared InferArgReprInfo vs,unnamedRetVal)
+
     let HasNoArgs (ValReprInfo(n,args,_)) = n.IsEmpty && args.IsEmpty
 
 //---------------------------------------------------------------------------
