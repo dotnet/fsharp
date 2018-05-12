@@ -3947,32 +3947,45 @@ let CheckAndRewriteObjectCtor g env (ctorLambaExpr:Expr) =
 /// Post-typechecking normalizations to enforce semantic constraints
 /// lazy and, lazy or, rethrow, address-of
 let buildApp cenv expr resultTy arg m = 
+    let g = cenv.g
     match expr, arg with        
+
+    // Special rule for building applications of the 'x && y' operator
     | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [x0], _), _) , _ 
-         when valRefEq cenv.g vf cenv.g.and_vref 
-           || valRefEq cenv.g vf cenv.g.and2_vref  -> 
-        MakeApplicableExprNoFlex cenv (mkLazyAnd cenv.g m x0 arg), resultTy
+         when valRefEq g vf g.and_vref 
+           || valRefEq g vf g.and2_vref  -> 
+        MakeApplicableExprNoFlex cenv (mkLazyAnd g m x0 arg), resultTy
+
+    // Special rule for building applications of the 'x || y' operator
     | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [x0], _), _), _ 
-         when valRefEq cenv.g vf cenv.g.or_vref
-           || valRefEq cenv.g vf cenv.g.or2_vref -> 
-        MakeApplicableExprNoFlex cenv (mkLazyOr cenv.g m x0 arg ), resultTy
+         when valRefEq g vf g.or_vref
+           || valRefEq g vf g.or2_vref -> 
+        MakeApplicableExprNoFlex cenv (mkLazyOr g m x0 arg ), resultTy
+
+    // Special rule for building applications of the 'reraise' operator
     | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [], _), _), _ 
-         when valRefEq cenv.g vf cenv.g.reraise_vref -> 
+         when valRefEq g vf g.reraise_vref -> 
         // exprty is of type: "unit -> 'a". Break it and store the 'a type here, used later as return type. 
         MakeApplicableExprNoFlex cenv (mkCompGenSequential m arg (mkReraise m resultTy)), resultTy
+
+    // Special rules for building applications of the '&expr' or '&&expr' operators, both of which get the
+    // address of an expression.
     | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [], _), _), _ 
-         when (valRefEq cenv.g vf cenv.g.addrof_vref || 
-               valRefEq cenv.g vf cenv.g.addrof2_vref) -> 
-        if valRefEq cenv.g vf cenv.g.addrof2_vref then warning(UseOfAddressOfOperator(m))
-        let wrap, e1a' = mkExprAddrOfExpr cenv.g true false DefinitelyMutates arg (Some(vf)) m
+         when (valRefEq g vf g.addrof_vref || 
+               valRefEq g vf g.addrof2_vref) -> 
+        if valRefEq g vf g.addrof2_vref then warning(UseOfAddressOfOperator(m))
+        let wrap, e1a' = mkExprAddrOfExpr g true false DefinitelyMutates arg (Some(vf)) m
         MakeApplicableExprNoFlex cenv (wrap(e1a')), resultTy
-    | _ when isByrefTy cenv.g resultTy  ->
+
+    // Special rule for implicitly dereferencing byref return values on dereference
+    | _ when isByrefTy g resultTy  ->
         // Handle byref returns, byref-typed returns get implicitly dereferenced 
         let v, _ = mkCompGenLocal m "byrefReturn" resultTy
         let expr = expr.SupplyArgument(arg, m)
         let expr = mkCompGenLet m v expr.Expr (mkAddrGet m (mkLocalValRef v))
-        let resultTy = destByrefTy cenv.g resultTy
+        let resultTy = destByrefTy g resultTy
         MakeApplicableExprNoFlex cenv expr, resultTy
+
     | _ -> 
         expr.SupplyArgument(arg, m), resultTy             
 
@@ -8255,25 +8268,33 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
 /// of function application syntax unambiguously implies that 'overallTy' is a function type.
 and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed = 
     
-    let rec propagate delayedList mExpr exprty = 
+    let rec propagate stripByrefsOnReturn delayedList mExpr exprty = 
         match delayedList with 
         | [] -> 
             // Avoid unifying twice: we're about to unify in TcDelayed 
             if not (isNil delayed) then 
-                let exprty = if isByrefTy cenv.g exprty then destByrefTy cenv.g exprty else exprty
+                let exprty = if stripByrefsOnReturn && isByrefTy cenv.g exprty then destByrefTy cenv.g exprty else exprty
                 UnifyTypesAndRecover cenv env mExpr overallTy exprty
         | DelayedDot :: _
         | DelayedSet _ :: _
         | DelayedDotLookup _ :: _ -> ()
         | DelayedTypeApp (_, _mTypeArgs, mExprAndTypeArgs) :: delayedList' ->
             // Note this case should not occur: would eventually give an "Unexpected type application" error in TcDelayed 
-            propagate delayedList' mExprAndTypeArgs exprty 
+            propagate stripByrefsOnReturn delayedList' mExprAndTypeArgs exprty 
 
         | DelayedApp (_, arg, mExprAndArg) :: delayedList' ->
             let denv = env.DisplayEnv
             match UnifyFunctionTypeUndoIfFailed cenv denv mExpr exprty with
             | Some (_, resultTy) -> 
-                propagate delayedList' mExprAndArg resultTy 
+                
+                // We don't strip byrefs off the return type for "&x" and "&&x"
+                let stripByrefsOnReturn = 
+                    match expr with 
+                    | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [], _), _) when valRefEq cenv.g vf cenv.g.addrof_vref -> false
+                    | _ -> stripByrefsOnReturn
+
+                propagate stripByrefsOnReturn delayedList' mExprAndArg resultTy 
+
             | None -> 
                 let mArg = arg.Range
                 match arg with
@@ -8294,7 +8315,7 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
                     RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
                     error (NotAFunction(denv, overallTy, mExpr, mArg))
 
-    propagate delayed expr.Range exprty
+    propagate true delayed expr.Range exprty
 
 and PropagateThenTcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag:ExprAtomicFlag) delayed = 
     Propagate cenv overallTy env tpenv expr exprty delayed
