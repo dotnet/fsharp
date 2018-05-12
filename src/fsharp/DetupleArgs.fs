@@ -594,8 +594,8 @@ let eligibleVal g m (v:Val) =
     not v.IsCompiledAsTopLevel 
 
 let determineTransforms g (z : GlobalUsageAnalysis.Results) =
-   let selectTransform f sites =
-     if not (eligibleVal g Range.rangeStartup f) then None else
+   let selectTransform (f: Val) sites =
+     if not (eligibleVal g f.Range f) then None else
      // Consider f, if it has top-level lambda (meaning has term args) 
      match Zmap.tryFind f z.Defns with
      | None   -> None // no binding site, so no transform 

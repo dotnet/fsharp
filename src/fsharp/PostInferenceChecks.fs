@@ -1102,7 +1102,7 @@ and CheckAttribs cenv env (attribs: Attribs) =
         |> Seq.map fst 
         |> Seq.toList
         // Filter for allowMultiple = false
-        |> List.filter (fun (tcref,m) -> TryFindAttributeUsageAttribute cenv.g m tcref <> someTrue)
+        |> List.filter (fun (tcref,m) -> TryFindAttributeUsageAttribute cenv.g m tcref <> Some(true))
 
     if cenv.reportErrors then 
        for (tcref,m) in duplicates do

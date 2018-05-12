@@ -416,8 +416,8 @@ type EntityFlags(flags:int64) =
     /// These two bits represents the on-demand analysis about whether the entity has the IsByRefLike attribute
     member x.TryIsByRefLike                      = (flags       &&&     0b000000011000000L) 
                                                                 |> function 
-                                                                      | 0b000000011000000L -> someTrue
-                                                                      | 0b000000010000000L -> someFalse
+                                                                      | 0b000000011000000L -> Some true
+                                                                      | 0b000000010000000L -> Some false
                                                                       | _                  -> None
 
     /// Adjust the on-demand analysis about whether the entity has the IsByRefLike attribute
@@ -432,8 +432,8 @@ type EntityFlags(flags:int64) =
     /// These two bits represents the on-demand analysis about whether the entity has the IsReadOnly attribute or is otherwise determined to be a readonly struct
     member x.TryIsReadOnly                       = (flags       &&&     0b000001100000000L) 
                                                                 |> function 
-                                                                      | 0b000001100000000L -> someTrue
-                                                                      | 0b000001000000000L -> someFalse
+                                                                      | 0b000001100000000L -> Some true
+                                                                      | 0b000001000000000L -> Some false
                                                                       | _                  -> None
 
     /// Adjust the on-demand analysis about whether the entity has the IsReadOnly attribute or is otherwise determined to be a readonly struct
