@@ -8323,7 +8323,7 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
         match delayedList with 
         | [] -> 
             // Avoid unifying twice: we're about to unify in TcDelayed 
-            if not (isNil delayed) && not (isByrefTy cenv.g exprty) then 
+            if not (isNil delayed) then 
                 let exprty = if isByrefTy cenv.g exprty then destByrefTy cenv.g exprty else exprty
                 UnifyTypesAndRecover cenv env mExpr overallTy exprty
                 UnifyTypesAndRecover cenv env mExpr overallTy exprty
@@ -14130,7 +14130,7 @@ module TyconConstraintInference =
                    // If the type was excluded, say why
                    if not res then 
                        match TryFindFSharpBoolAttribute g g.attrib_StructuralComparisonAttribute tycon.Attribs with
-                       | Some true -> 
+                       | Some(true) -> 
                            match structuralTypes |> List.tryFind (fst >> checkIfFieldTypeSupportsComparison tycon >> not) with
                            | None -> 
                                assert false
@@ -15151,7 +15151,7 @@ module EstablishTypeDefinitionCores =
             let hasCLIMutable = HasFSharpAttribute cenv.g cenv.g.attrib_CLIMutableAttribute attrs
             
             let structLayoutAttr = TryFindFSharpInt32Attribute cenv.g cenv.g.attrib_StructLayoutAttribute attrs
-            let hasAllowNullLiteralAttr = TryFindFSharpBoolAttribute cenv.g cenv.g.attrib_AllowNullLiteralAttribute attrs = Some true
+            let hasAllowNullLiteralAttr = TryFindFSharpBoolAttribute cenv.g cenv.g.attrib_AllowNullLiteralAttribute attrs = Some(true)
 
             if hasAbstractAttr then 
                 tycon.TypeContents.tcaug_abstract <- true
@@ -15185,7 +15185,7 @@ module EstablishTypeDefinitionCores =
                 
             let hiddenReprChecks(hasRepr) =
                  structLayoutAttributeCheck(false)
-                 if hasSealedAttr = Some(false) || (hasRepr && hasSealedAttr <> Some true && not (id.idText = "Unit" && cenv.g.compilingFslib) ) then 
+                 if hasSealedAttr = Some false || (hasRepr && hasSealedAttr <> Some(true) && not (id.idText = "Unit" && cenv.g.compilingFslib) ) then 
                     errorR(Error(FSComp.SR.tcRepresentationOfTypeHiddenBySignature(), m))
                  if hasAbstractAttr then 
                      errorR (Error(FSComp.SR.tcOnlyClassesCanHaveAbstract(), m))
@@ -15375,7 +15375,7 @@ module EstablishTypeDefinitionCores =
 
                                   TTyconStruct
                               | TyconInterface -> 
-                                  if hasSealedAttr = Some true then errorR (Error(FSComp.SR.tcInterfaceTypesCannotBeSealed(), m))
+                                  if hasSealedAttr = Some(true) then errorR (Error(FSComp.SR.tcInterfaceTypesCannotBeSealed(), m))
                                   noCLIMutableAttributeCheck()
                                   structLayoutAttributeCheck(false)
                                   noAbstractClassAttributeCheck()
