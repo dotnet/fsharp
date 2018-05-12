@@ -8,7 +8,6 @@ namespace Microsoft.FSharp.Control
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
 
-
     /// <summary>Event implementations for an arbitrary type of delegate.</summary>
     [<CompiledName("FSharpDelegateEvent`1")>]
     type DelegateEvent<'Delegate when 'Delegate :> System.Delegate> = 
@@ -20,7 +19,6 @@ namespace Microsoft.FSharp.Control
         member Trigger : args:obj[] -> unit
         /// <summary>Publishes the event as a first class event value.</summary>
         member Publish : IDelegateEvent<'Delegate>
-
 
     /// <summary>Event implementations for a delegate types following the standard .NET Framework convention of a first 'sender' argument.</summary>
     [<CompiledName("FSharpEvent`2")>]

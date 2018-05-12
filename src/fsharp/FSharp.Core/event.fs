@@ -147,5 +147,3 @@ namespace Microsoft.FSharp.Control
                    (e :?> IEvent<_,_>).AddHandler(h)
                    { new System.IDisposable with 
                         member x.Dispose() = (e :?> IEvent<_,_>).RemoveHandler(h) } }
-
-
