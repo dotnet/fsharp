@@ -9,6 +9,10 @@ type LogEditorFunctionId =
     | SemanticClassification = 1
     | SyntacticClassification = 2
     | HandleCommandLineArgs = 3
+    | Completion_ShouldTrigger = 4
+    | Completion_ProvideCompletionsAsync = 5
+    | Completion_GetDescriptionAsync = 6
+    | Completion_GetChangeAsync = 7
 
 /// This is for ETW tracing across FSharp.Editor.
 [<Sealed;EventSource(Name = "FSharpEditor")>]
@@ -33,6 +37,16 @@ type FSharpEditorEventSource() =
         if this.IsEnabled() then
             this.WriteEvent(3, int functionId)
 
+    [<Event(4)>]
+    member this.BlockMessageStart(message: string, functionId: LogEditorFunctionId) =
+        if this.IsEnabled() then
+            this.WriteEvent(4, message, int functionId)
+
+    [<Event(5)>]
+    member this.BlockMessageStop(message: string, functionId: LogEditorFunctionId) =
+        if this.IsEnabled() then
+            this.WriteEvent(5, message, int functionId)
+
 [<RequireQualifiedAccess>]
 module Logger =
 
@@ -47,4 +61,10 @@ module Logger =
         { new IDisposable with
             member __.Dispose() =
                 FSharpEditorEventSource.Instance.BlockStop(functionId) }
+
+    let LogBlockMessage message functionId =
+        FSharpEditorEventSource.Instance.BlockMessageStart(message, functionId)
+        { new IDisposable with
+            member __.Dispose() =
+                FSharpEditorEventSource.Instance.BlockMessageStop(message, functionId) }
     

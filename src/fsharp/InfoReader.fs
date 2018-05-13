@@ -68,11 +68,17 @@ let rec GetImmediateIntrinsicMethInfosOfTypeAux (optFilter,ad) g amap m origTy m
             mdefs |> List.map (fun mdef -> MethInfo.CreateILMeth(amap, m, origTy, mdef)) 
 
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
-            // Tuple types also support the properties Item1-8, Rest from the compiled tuple type
+            // Tuple types also support the methods get_Item1-8, get_Rest from the compiled tuple type.
             // In this case convert to the .NET Tuple type that carries metadata and try again
             if isAnyTupleTy g metadataTy then 
                 let betterMetadataTy = helpEnsureTypeHasMetadata g metadataTy
                 GetImmediateIntrinsicMethInfosOfTypeAux (optFilter,ad) g amap m origTy betterMetadataTy
+            // Function types support methods FSharpFunc<_,_>.FromConverter and friends from .NET metadata, 
+            // but not instance methods (you can't write "f.Invoke(x)", you have to write "f x")
+            elif isFunTy g metadataTy then 
+                let betterMetadataTy = helpEnsureTypeHasMetadata g metadataTy
+                GetImmediateIntrinsicMethInfosOfTypeAux (optFilter,ad) g amap m origTy betterMetadataTy
+                  |> List.filter (fun minfo -> not minfo.IsInstance)
             else
                 match tryDestAppTy g metadataTy with
                 | None -> []
@@ -158,7 +164,7 @@ let rec GetImmediateIntrinsicPropInfosOfTypeAux (optFilter,ad) g amap m origTy m
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
             // Tuple types also support the properties Item1-8, Rest from the compiled tuple type
             // In this case convert to the .NET Tuple type that carries metadata and try again
-            if isAnyTupleTy g metadataTy then 
+            if isAnyTupleTy g metadataTy || isFunTy g metadataTy then 
                 let betterMetadataTy = helpEnsureTypeHasMetadata g metadataTy
                 GetImmediateIntrinsicPropInfosOfTypeAux (optFilter,ad) g amap m origTy betterMetadataTy
             else
@@ -456,9 +462,9 @@ let rec GetIntrinsicConstructorInfosOfTypeAux (infoReader:InfoReader) m origTy m
         |> List.map (fun mdef -> MethInfo.CreateILMeth (amap, m, origTy, mdef)) 
 
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
-        // Tuple types also support the properties Item1-8, Rest from the compiled tuple type
-        // In this case convert to the .NET Tuple type that carries metadata and try again
-        if isAnyTupleTy g metadataTy then 
+        // Tuple types also support constructors. In this case convert to the .NET Tuple type that carries metadata and try again
+        // Function types also support constructors. In this case convert to the FSharpFunc type that carries metadata and try again
+        if isAnyTupleTy g metadataTy || isFunTy g metadataTy then 
             let betterMetadataTy = helpEnsureTypeHasMetadata g metadataTy
             GetIntrinsicConstructorInfosOfTypeAux infoReader m origTy betterMetadataTy
         else
