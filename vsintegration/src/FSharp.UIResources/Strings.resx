@@ -180,4 +180,7 @@
   <data name="Show_Outlining" xml:space="preserve">
     <value>Show outlining and collapsable nodes for F# code</value>
   </data>
+  <data name="Format_on_paste" xml:space="preserve">
+    <value>Re-format indentation on paste</value>
+  </data>
 </root>

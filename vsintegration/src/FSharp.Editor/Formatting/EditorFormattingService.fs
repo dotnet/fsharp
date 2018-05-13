@@ -24,9 +24,9 @@ type internal FSharpEditorFormattingService
         projectInfoManager: FSharpProjectOptionsManager
     ) =
     
-    static let toIList (xs : 'a seq) : IList<'a> = ResizeArray(xs) :> _
+    static let toIList (xs : 'a seq) = ResizeArray(xs) :> IList<'a>
     
-    static let getIndentation : string -> int = Seq.takeWhile ((=) ' ') >> Seq.length
+    static let getIndentation (line : string) = line |> Seq.takeWhile ((=) ' ') |> Seq.length
 
     static member GetFormattingChanges(documentId: DocumentId, sourceText: SourceText, filePath: string, checker: FSharpChecker, indentStyle: FormattingOptions.IndentStyle, options: (FSharpParsingOptions * FSharpProjectOptions) option, position: int) =
         // Logic for determining formatting changes:
@@ -74,12 +74,10 @@ type internal FSharpEditorFormattingService
                 return! None
         }
         
-    static member GetPasteChanges(documentId: DocumentId, sourceText: SourceText, filePath: string, indentStyle: FormattingOptions.IndentStyle, tabSize: int, parsingOptions: FSharpParsingOptions, currentClipboard: string, span: TextSpan) =
+    static member GetPasteChanges(documentId: DocumentId, sourceText: SourceText, filePath: string, formattingOptions: Microsoft.VisualStudio.FSharp.Editor.FormattingOptions, tabSize: int, parsingOptions: FSharpParsingOptions, currentClipboard: string, span: TextSpan) =
         asyncMaybe {
             
-            // Gate formatting on whether smart indentation is enabled
-            // (this is what C# does)
-            do! Option.guard (indentStyle = FormattingOptions.IndentStyle.Smart)
+            do! Option.guard formattingOptions.FormatOnPaste
 
             let startLineIdx = sourceText.Lines.IndexOf span.Start
             
@@ -161,12 +159,11 @@ type internal FSharpEditorFormattingService
         async {
             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
-            let indentStyle = options.GetOption(FormattingOptions.SmartIndent, FSharpConstants.FSharpLanguageName)
             let tabSize = options.GetOption<int>(FormattingOptions.TabSize, FSharpConstants.FSharpLanguageName)
             
             match projectInfoManager.TryGetOptionsForEditingDocumentOrProject document with
             | Some (parsingOptions, _) ->
-                let! textChanges = FSharpEditorFormattingService.GetPasteChanges(document.Id, sourceText, document.FilePath, indentStyle, tabSize, parsingOptions, currentClipboard, span)
+                let! textChanges = FSharpEditorFormattingService.GetPasteChanges(document.Id, sourceText, document.FilePath, Settings.Formatting, tabSize, parsingOptions, currentClipboard, span)
                 return textChanges |> Option.defaultValue Seq.empty |> toIList
             | None ->
                 return toIList Seq.empty

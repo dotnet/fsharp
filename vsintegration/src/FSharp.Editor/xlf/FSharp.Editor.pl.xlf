@@ -152,6 +152,11 @@
         <target state="translated">Zaawansowane</target>
         <note />
       </trans-unit>
+      <trans-unit id="6013">
+        <source>Formatting</source>
+        <target state="new">Formatting</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>

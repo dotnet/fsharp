@@ -50,6 +50,10 @@ type LanguageServicePerformanceOptions =
 type AdvancedOptions =
     { IsBlockStructureEnabled: bool 
       IsOutliningEnabled: bool }
+      
+[<CLIMutable>]
+type FormattingOptions =
+    { FormatOnPaste: bool }
 
 [<Export(typeof<ISettings>)>]
 type internal Settings [<ImportingConstructor>](store: SettingsStore) =
@@ -80,13 +84,17 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
             { IsBlockStructureEnabled = true 
               IsOutliningEnabled = true }
 
+        store.RegisterDefault
+            { FormatOnPaste = true }
+
     interface ISettings
 
     static member IntelliSense : IntelliSenseOptions = getSettings()
     static member QuickInfo : QuickInfoOptions = getSettings()
     static member CodeFixes : CodeFixesOptions = getSettings()
     static member LanguageServicePerformance : LanguageServicePerformanceOptions = getSettings()
-    static member Advanced: AdvancedOptions = getSettings()
+    static member Advanced : AdvancedOptions = getSettings()
+    static member Formatting : FormattingOptions = getSettings()
 
 module internal OptionsUI =
 
@@ -127,3 +135,9 @@ module internal OptionsUI =
         inherit AbstractOptionPage<AdvancedOptions>()
         override __.CreateView() =
             upcast AdvancedOptionsControl()
+            
+    [<Guid(Guids.formattingOptionPageIdString)>]
+    type internal FormattingOptionPage() =
+        inherit AbstractOptionPage<FormattingOptions>()
+        override __.CreateView() =
+            upcast FormattingOptionsControl()

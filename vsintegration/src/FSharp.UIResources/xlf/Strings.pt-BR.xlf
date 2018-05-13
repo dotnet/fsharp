@@ -107,6 +107,11 @@
         <target state="translated">Mostrar os nós de estrutura de tópicos e recolhíveis para o código F#</target>
         <note />
       </trans-unit>
+      <trans-unit id="Format_on_paste">
+        <source>Re-format indentation on paste</source>
+        <target state="new">Re-format indentation on paste</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
