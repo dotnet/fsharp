@@ -541,7 +541,7 @@ and CheckExpr (cenv:cenv) (env:env) expr (context:ByrefContext) =
                  (match v.DeclaringEntity with Parent tcref -> isAbstractTycon tcref.Deref | _ -> false) then 
                 errorR(Error(FSComp.SR.tcAbstractTypeCannotBeInstantiated(),m))
 
-              if isByrefTy cenv.g v.Type &&
+              if isByrefLikeTy cenv.g v.Type &&
                  // A byref return location...
                  (match context with PermitByref isReturn -> isReturn | _ -> false) && 
                  // The value is a local....
@@ -672,7 +672,7 @@ and CheckExpr (cenv:cenv) (env:env) expr (context:ByrefContext) =
         let isByrefReturnCall = 
             // if return is a byref, and being used as a return, then all arguments must be usable as byref returns
             match context with 
-            | PermitByref true when isByrefTy cenv.g (tyOfExpr cenv.g expr) -> true
+            | PermitByref true when isByrefLikeTy cenv.g (tyOfExpr cenv.g expr) -> true
             | _ -> false
         CheckExprs cenv env argsl (mkArgsForAppliedExpr isByrefReturnCall f)
 
@@ -767,7 +767,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
 
         // if return is a byref, and being used as a return, then all arguments must be usable as byref returns
         match context,tys with 
-        | PermitByref true, [ty] when isByrefTy cenv.g ty -> CheckExprsPermitByrefReturns cenv env args  
+        | PermitByref true, [ty] when isByrefLikeTy cenv.g ty -> CheckExprsPermitByrefReturns cenv env args  
         | _ -> CheckExprsPermitByrefs cenv env args  
 
 
@@ -937,7 +937,7 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
             | true, firstArg::_ -> firstArg.SetHasBeenReferenced()
             | _ -> ()
             // any byRef arguments are considered used, as they may be 'out's
-            restArgs |> List.iter (fun arg -> if isByrefTy cenv.g arg.Type then arg.SetHasBeenReferenced())
+            restArgs |> List.iter (fun arg -> if isByrefLikeTy cenv.g arg.Type then arg.SetHasBeenReferenced())
 
         syntacticArgs |> List.iter (CheckValSpec cenv env)
         syntacticArgs |> List.iter (BindVal cenv env)
@@ -954,7 +954,7 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
         CheckNoReraise cenv freesOpt body 
 
         // Check the body of the lambda
-        if (not (isNil tps) || not (isNil vsl)) && isTop && not cenv.g.compilingFslib && isByrefTy cenv.g bodyty then
+        if (not (isNil tps) || not (isNil vsl)) && isTop && not cenv.g.compilingFslib && isByrefLikeTy cenv.g bodyty then
             // allow byref to occur as return position for byref-typed top level function or method 
             CheckExprPermitByrefReturn cenv env body
         else
@@ -1465,7 +1465,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
             if numCurriedArgSets > 1 && 
                (minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst) 
                 |> List.existsSquared (fun (ParamData(isParamArrayArg, isOutArg, optArgInfo, callerInfoInfo, _, reflArgInfo, ty)) -> 
-                    isParamArrayArg || isOutArg || reflArgInfo.AutoQuote || optArgInfo.IsOptional || callerInfoInfo <> NoCallerInfo || isByrefTy cenv.g ty)) then 
+                    isParamArrayArg || isOutArg || reflArgInfo.AutoQuote || optArgInfo.IsOptional || callerInfoInfo <> NoCallerInfo || isByrefLikeTy cenv.g ty)) then 
                 errorR(Error(FSComp.SR.chkCurriedMethodsCantHaveOutParams(), m))
 
             if numCurriedArgSets = 1 then
