@@ -1465,7 +1465,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
             if numCurriedArgSets > 1 && 
                (minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst) 
                 |> List.existsSquared (fun (ParamData(isParamArrayArg, isOutArg, optArgInfo, callerInfoInfo, _, reflArgInfo, ty)) -> 
-                    isParamArrayArg || isOutArg || reflArgInfo.AutoQuote || optArgInfo.IsOptional || callerInfoInfo <> NoCallerInfo || isByrefLikeTy cenv.g ty)) then 
+                    isParamArrayArg || isOutArg || reflArgInfo.AutoQuote || optArgInfo.IsOptional || callerInfoInfo <> NoCallerInfo || isByrefLikeTy cenv.g m ty)) then 
                 errorR(Error(FSComp.SR.chkCurriedMethodsCantHaveOutParams(), m))
 
             if numCurriedArgSets = 1 then
