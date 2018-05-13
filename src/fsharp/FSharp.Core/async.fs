@@ -83,8 +83,7 @@ namespace Microsoft.FSharp.Control
         [<Literal>]
         static let bindLimitBeforeHijack = 300 
 
-        [<ThreadStatic>]
-        [<DefaultValue>]
+        [<ThreadStatic; DefaultValue>]
         static val mutable private thisThreadHasTrampoline : bool
 
         static member ThisThreadHasTrampoline = 
@@ -309,8 +308,7 @@ namespace Microsoft.FSharp.Control
         member ctxt.CallContinuation(result: 'T) =            
             ctxt.cont result
 
-    [<NoEquality; NoComparison>]
-    [<CompiledName("FSharpAsync`1")>]
+    [<NoEquality; NoComparison; CompiledName("FSharpAsync`1")>]
     type Async<'T> =
         { Invoke : (AsyncActivation<'T> -> AsyncReturn) }
 
@@ -320,14 +318,12 @@ namespace Microsoft.FSharp.Control
         member __.Proceed = not isStopped
         member __.Stop() = isStopped <- true
 
-    [<Sealed>]
-    [<AutoSerializable(false)>]
+    [<Sealed; AutoSerializable(false)>]
     type Latch() = 
         let mutable i = 0
         member this.Enter() = Interlocked.CompareExchange(&i, 1, 0) = 0
 
-    [<Sealed>]
-    [<AutoSerializable(false)>]
+    [<Sealed; AutoSerializable(false)>]
     type Once() =
         let latch = Latch()
         member this.Do f =
@@ -350,6 +346,7 @@ namespace Microsoft.FSharp.Control
     module AsyncPrimitives =
 
         let fake () = Unchecked.defaultof<AsyncReturn>
+
         let unfake (_: AsyncReturn)  = ()
 
         let mutable defaultCancellationTokenSource = new CancellationTokenSource()
@@ -459,6 +456,7 @@ namespace Microsoft.FSharp.Control
                         ctxt.OnExceptionRaised()
 
         /// Build a primitive without any exception or resync protection
+        [<DebuggerHidden>]
         let MakeAsync body = { Invoke = body }
 
         [<DebuggerHidden>]
@@ -530,7 +528,7 @@ namespace Microsoft.FSharp.Control
         let inline CreateBindAsync part1 part2  =
             // Note: this code ends up in user assemblies via inlining
             MakeAsync (fun ctxt -> 
-                    Bind ctxt part1 part2)
+                Bind ctxt part1 part2)
 
         // Call the given function with exception protection, but first 
         // check for cancellation.
