@@ -241,7 +241,7 @@ type internal FSharpGoToDefinitionService
             let definitionTask = this.FindDefinitionsTask (document, position, cancellationToken)
             
             statusBar.Message (SR.LocatingSymbol())
-            use _ = statusBar.Animate()
+            use __ = statusBar.Animate()
 
             // Wrap this in a try/with as if the user clicks "Cancel" on the thread dialog, we'll be cancelled
             // Task.Wait throws an exception if the task is cancelled, so be sure to catch it.
@@ -262,7 +262,7 @@ type internal FSharpGoToDefinitionService
             | None ->
                 if definitionTask.Status = TaskStatus.RanToCompletion && definitionTask.Result <> null && definitionTask.Result.Any() then
                     let item = definitionTask.Result.First() // F# API provides only one INavigableItem
-                    GoToDefinitionHelpers.tryNavigateToItem (Some item) statusBar
+                    GoToDefinitionHelpers.tryNavigateToItem statusBar (Some item)
                 else 
                     statusBar.TempMessage (SR.CannotDetermineSymbol())
                     false
