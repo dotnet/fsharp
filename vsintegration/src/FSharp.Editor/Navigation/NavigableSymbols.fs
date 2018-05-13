@@ -85,6 +85,7 @@ type internal FSharpNavigableSymbolSource(checkerProvider: FSharpCheckerProvider
 [<Export(typeof<INavigableSymbolSourceProvider>)>]
 [<Name("F# Navigable Symbol Service")>]
 [<ContentType(Constants.FSharpContentType)>]
+[<Order>]
 type internal FSharpNavigableSymbolService
     [<ImportingConstructor>]
     (
