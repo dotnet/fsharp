@@ -9,7 +9,9 @@ open System
 type (* internal *) LogCompilerFunctionId =
     | Service_ParseAndCheckFileInProject = 1
     | Service_CheckOneFile = 2
-    | CompileOps_TypeCheckOneInputAndFinishEventually = 3
+    | Service_IncrementalBuildersCache_BuildingNewCache = 3
+    | Service_IncrementalBuildersCache_GettingCache = 4
+    | CompileOps_TypeCheckOneInputAndFinishEventually = 5
 
 [<RequireQualifiedAccess>]
 module internal Logger =

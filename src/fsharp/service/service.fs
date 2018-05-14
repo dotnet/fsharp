@@ -2398,9 +2398,11 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
           RequireCompilationThread ctok
           match incrementalBuildersCache.TryGet (ctok, options) with
           | Some (builderOpt,creationErrors,_) -> 
+              Logger.Log LogCompilerFunctionId.Service_IncrementalBuildersCache_BuildingNewCache
               let decrement = IncrementalBuilder.KeepBuilderAlive builderOpt
               return builderOpt,creationErrors, decrement
           | None -> 
+              Logger.Log LogCompilerFunctionId.Service_IncrementalBuildersCache_GettingCache
               let! (builderOpt,creationErrors,_) as info = CreateOneIncrementalBuilder (ctok, options, userOpName)
               incrementalBuildersCache.Set (ctok, options, info)
               let decrement = IncrementalBuilder.KeepBuilderAlive builderOpt

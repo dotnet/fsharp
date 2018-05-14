@@ -158,12 +158,8 @@ type AsyncMaybeBuilder () =
 
     [<DebuggerStepThrough>]
     member x.For (sequence : seq<_>, body : 'T -> Async<unit option>) : Async<unit option> =
-        async {
-            for item in sequence do
-               let! _result = body item
-               ()
-            return Some ()
-        }
+        x.Using (sequence.GetEnumerator (), fun enum ->
+            x.While (enum.MoveNext, x.Delay (fun () -> body enum.Current)))
 
     [<DebuggerStepThrough>]
     member inline __.TryWith (computation : Async<'T option>, catchHandler : exn -> Async<'T option>) : Async<'T option> =

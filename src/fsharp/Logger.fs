@@ -8,7 +8,9 @@ open System
 type LogCompilerFunctionId =
     | Service_ParseAndCheckFileInProject = 1
     | Service_CheckOneFile = 2
-    | CompileOps_TypeCheckOneInputAndFinishEventually = 3
+    | Service_IncrementalBuildersCache_BuildingNewCache = 3
+    | Service_IncrementalBuildersCache_GettingCache = 4
+    | CompileOps_TypeCheckOneInputAndFinishEventually = 5
     
 /// This is for ETW tracing across FSharp.Compiler.
 [<Sealed;EventSource(Name = "FSharpCompiler")>]
