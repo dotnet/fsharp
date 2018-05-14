@@ -19,7 +19,7 @@
     <MicrosoftBuildOverallPackagesVersion>15.6.85</MicrosoftBuildOverallPackagesVersion>
     <MicrosoftBuildPackageVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildPackageVersion>
     <MicrosoftBuildFrameworkPackageVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildFrameworkPackageVersion>
-    <MicrosoftBuildTasksPackageVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildTasksPackageVersion>
+    <MicrosoftBuildTasksCorePackageVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildTasksCorePackageVersion>
     <MicrosoftBuildUtilitiesCorePackageVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildUtilitiesCorePackageVersion>
     <MicrosoftVisualFSharpMSBuild150PackageVersion>1.0.1</MicrosoftVisualFSharpMSBuild150PackageVersion>
 
@@ -61,9 +61,11 @@
     <MicrosoftCompositionPackageVersion>1.0.30</MicrosoftCompositionPackageVersion>
     <MicrosoftDiaSymReaderPdb2PdbPackageVersion>1.1.0-roslyn-62714-01</MicrosoftDiaSymReaderPdb2PdbPackageVersion>
     <MicrosoftMSXMLPackageVersion>8.0.0-alpha</MicrosoftMSXMLPackageVersion>
+    <MicrosoftVisualFSharpTypeProvidersRedistPackageVersion>1.0.0</MicrosoftVisualFSharpTypeProvidersRedistPackageVersion>
     <NewtonsoftJsonPackageVersion>9.0.1</NewtonsoftJsonPackageVersion>
     <NUnitPackageVersion>3.5.0</NUnitPackageVersion>
     <XliffTasksPackageVersion>0.2.0-beta-000081</XliffTasksPackageVersion>
+
   </PropertyGroup>
 
   <!-- dependency uptake version overrides -->
