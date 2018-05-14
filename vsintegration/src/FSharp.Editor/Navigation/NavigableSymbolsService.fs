@@ -21,7 +21,7 @@ open Microsoft.VisualStudio.Shell
 [<AllowNullLiteral>]
 type internal FSharpNavigableSymbol(item: INavigableItem, statusBar: StatusBar, span: SnapshotSpan) =
     interface INavigableSymbol with
-        member __.Navigate(_relationship: INavigableRelationship) =
+        member __.Navigate(_: INavigableRelationship) =
             GoToDefinitionHelpers.tryNavigateToItem statusBar (Some item) |> ignore
 
         member __.Relationships = seq { yield PredefinedNavigableRelationships.Definition }
