@@ -427,7 +427,6 @@ type internal FSharpLanguageService(package : FSharpPackage) =
     member private this.OnProjectAdded(projectId:ProjectId) = projectInfoManager.UpdateProjectInfoWithProjectId(projectId, "OnProjectAdded", invalidateConfig=true)
     member private this.OnProjectReloaded(projectId:ProjectId) = projectInfoManager.UpdateProjectInfoWithProjectId(projectId, "OnProjectReloaded", invalidateConfig=true)
     member private this.OnDocumentAdded(projectId:ProjectId, documentId:DocumentId) = projectInfoManager.UpdateDocumentInfoWithProjectId(projectId, documentId, "OnDocumentAdded", invalidateConfig=true)
-    member private this.OnDocumentChanged(projectId:ProjectId, documentId:DocumentId) = projectInfoManager.UpdateDocumentInfoWithProjectId(projectId, documentId, "OnDocumentChanged", invalidateConfig=false)
     member private this.OnDocumentReloaded(projectId:ProjectId, documentId:DocumentId) = projectInfoManager.UpdateDocumentInfoWithProjectId(projectId, documentId, "OnDocumentReloaded", invalidateConfig=true)
 
     override this.Initialize() = 
@@ -439,7 +438,6 @@ type internal FSharpLanguageService(package : FSharpPackage) =
             | WorkspaceChangeKind.ProjectAdded     -> this.OnProjectAdded(args.ProjectId)
             | WorkspaceChangeKind.ProjectReloaded  -> this.OnProjectReloaded(args.ProjectId)
             | WorkspaceChangeKind.DocumentAdded    -> this.OnDocumentAdded(args.ProjectId, args.DocumentId)
-            | WorkspaceChangeKind.DocumentChanged  -> this.OnDocumentChanged(args.ProjectId, args.DocumentId)
             | WorkspaceChangeKind.DocumentReloaded -> this.OnDocumentReloaded(args.ProjectId, args.DocumentId)
             | WorkspaceChangeKind.DocumentRemoved
             | WorkspaceChangeKind.ProjectRemoved
@@ -686,17 +684,7 @@ type internal FSharpLanguageService(package : FSharpPackage) =
 
                             let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
                             this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
-                    | id ->
-
-                        // This is the path when opening in-project .fs/.fsi files in CPS projects when
-                        // there is already an existing DocumentId for that document in the solution (which
-                        // will normally be the case)
-                        //
-                        // However, it is not clear this call to UpdateProjectInfoWithProjectId is needed, and it seems
-                        // harmful as it will cause a complete recheck of the project every time a view for a file in the
-                        // project is freshly opened.
-
-                        projectInfoManager.UpdateProjectInfoWithProjectId(id.ProjectId, "SetupNewTextView", invalidateConfig=true)
+                    | _ -> ()
                 | _ ->
 
                     // This is the path for both in-project and out-of-project .fsx files
