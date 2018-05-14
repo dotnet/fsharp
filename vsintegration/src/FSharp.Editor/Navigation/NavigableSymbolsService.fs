@@ -16,6 +16,7 @@ open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Utilities
 open Microsoft.VisualStudio.Text
+open Microsoft.VisualStudio.Shell
 
 [<AllowNullLiteral>]
 type internal FSharpNavigableSymbol(item: INavigableItem, statusBar: StatusBar, span: SnapshotSpan) =
@@ -86,7 +87,7 @@ type internal FSharpNavigableSymbolSource(checkerProvider: FSharpCheckerProvider
 type internal FSharpNavigableSymbolService
     [<ImportingConstructor>]
     (
-        [<Import(typeof<IServiceProvider>)>] serviceProvider: IServiceProvider,
+        [<Import(typeof<SVsServiceProvider>)>] serviceProvider:IServiceProvider,
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: FSharpProjectOptionsManager
     ) =
