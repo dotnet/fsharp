@@ -19,12 +19,12 @@
     <EmbeddedResource Include="$(FsCoreDir)\FSCore.resx">
       <Link>FSCore.resx</Link>
     </EmbeddedResource>
-    <Compile Include="$(FsCoreDir)\prim-types-prelude.fsi">
+    <CompileBefore Include="$(FsCoreDir)\prim-types-prelude.fsi">
       <Link>Primitives/prim-types-prelude.fsi</Link>
-    </Compile>
-    <Compile Include="$(FsCoreDir)\prim-types-prelude.fs">
+    </CompileBefore>
+    <CompileBefore Include="$(FsCoreDir)\prim-types-prelude.fs">
       <Link>Primitives/prim-types-prelude.fs</Link>
-    </Compile>
+    </CompileBefore>
     <Compile Include="$(FsCoreDir)\SR.fs">
       <Link>Primitives/SR.fs</Link>
     </Compile>
