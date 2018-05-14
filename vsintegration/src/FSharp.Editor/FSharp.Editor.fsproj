@@ -73,7 +73,7 @@
     <Compile Include="InlineRename\InlineRenameService.fs" />
     <Compile Include="DocumentHighlights\DocumentHighlightsService.fs" />
     <Compile Include="Navigation\GoToDefinition.fs" />
-    <Compile Include="Navigation\NavigableSymbols.fs" />
+    <Compile Include="Navigation\NavigableSymbolsService.fs" />
     <Compile Include="Navigation\GoToDefinitionService.fs" />
     <Compile Include="Navigation\NavigationBarItemService.fs" />
     <Compile Include="Navigation\NavigateToSearchService.fs" />
