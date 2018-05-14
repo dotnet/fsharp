@@ -162,7 +162,6 @@ type internal FSharpAsyncQuickInfoSource
         xmlMemberIndexService: IVsXMLMemberIndexService,
         checkerProvider:FSharpCheckerProvider,
         projectInfoManager:FSharpProjectOptionsManager,
-        gotoDefinitionService:FSharpGoToDefinitionService,
         textBuffer:ITextBuffer
     ) =
 
@@ -258,9 +257,8 @@ type internal FSharpAsyncQuickInfoSourceProvider
     (
         [<Import(typeof<SVsServiceProvider>)>] serviceProvider:IServiceProvider,
         checkerProvider:FSharpCheckerProvider,
-        projectInfoManager:FSharpProjectOptionsManager,
-        gotoDefinitionService:FSharpGoToDefinitionService
+        projectInfoManager:FSharpProjectOptionsManager
     ) =
     interface IAsyncQuickInfoSourceProvider with
         override __.TryCreateQuickInfoSource(textBuffer:ITextBuffer) : IAsyncQuickInfoSource =
-            new FSharpAsyncQuickInfoSource(serviceProvider.XMLMemberIndexService, checkerProvider, projectInfoManager, gotoDefinitionService, textBuffer) :> IAsyncQuickInfoSource
+            new FSharpAsyncQuickInfoSource(serviceProvider.XMLMemberIndexService, checkerProvider, projectInfoManager, textBuffer) :> IAsyncQuickInfoSource
