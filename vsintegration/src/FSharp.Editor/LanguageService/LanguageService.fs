@@ -57,10 +57,10 @@ type internal FSharpCheckerProvider
             let mmd = amd.GetModules().[0]
             let mmr = mmd.GetMetadataReader()
 
-            // "lifetime is timed to Metadata you got from the GetMetadata(…). As long as you hold it strongly, raw 
+            // "lifetime is timed to Metadata you got from the GetMetadata(â€¦). As long as you hold it strongly, raw 
             // memory we got from metadata reader will be alive. Once you are done, just let everything go and 
             // let finalizer handle resource rather than calling Dispose from Metadata directly. It is shared metadata. 
-            // You shouldn’t dispose it directly."
+            // You shouldnâ€™t dispose it directly."
 
             let objToHold = box md
 
@@ -425,7 +425,6 @@ type internal FSharpLanguageService(package : FSharpPackage) =
     member private this.OnProjectAdded(projectId:ProjectId) = projectInfoManager.UpdateProjectInfoWithProjectId(projectId, "OnProjectAdded", invalidateConfig=true)
     member private this.OnProjectReloaded(projectId:ProjectId) = projectInfoManager.UpdateProjectInfoWithProjectId(projectId, "OnProjectReloaded", invalidateConfig=true)
     member private this.OnDocumentAdded(projectId:ProjectId, documentId:DocumentId) = projectInfoManager.UpdateDocumentInfoWithProjectId(projectId, documentId, "OnDocumentAdded", invalidateConfig=true)
-    member private this.OnDocumentChanged(projectId:ProjectId, documentId:DocumentId) = projectInfoManager.UpdateDocumentInfoWithProjectId(projectId, documentId, "OnDocumentChanged", invalidateConfig=false)
     member private this.OnDocumentReloaded(projectId:ProjectId, documentId:DocumentId) = projectInfoManager.UpdateDocumentInfoWithProjectId(projectId, documentId, "OnDocumentReloaded", invalidateConfig=true)
 
     override this.Initialize() = 
@@ -437,7 +436,6 @@ type internal FSharpLanguageService(package : FSharpPackage) =
             | WorkspaceChangeKind.ProjectAdded     -> this.OnProjectAdded(args.ProjectId)
             | WorkspaceChangeKind.ProjectReloaded  -> this.OnProjectReloaded(args.ProjectId)
             | WorkspaceChangeKind.DocumentAdded    -> this.OnDocumentAdded(args.ProjectId, args.DocumentId)
-            | WorkspaceChangeKind.DocumentChanged  -> this.OnDocumentChanged(args.ProjectId, args.DocumentId)
             | WorkspaceChangeKind.DocumentReloaded -> this.OnDocumentReloaded(args.ProjectId, args.DocumentId)
             | WorkspaceChangeKind.DocumentRemoved
             | WorkspaceChangeKind.ProjectRemoved
@@ -672,8 +670,7 @@ type internal FSharpLanguageService(package : FSharpPackage) =
                         if not (h.IsCapabilityMatch("CPS")) then
                             let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
                             this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
-                    | id ->
-                        projectInfoManager.UpdateProjectInfoWithProjectId(id.ProjectId, "SetupNewTextView", invalidateConfig=true)
+                    | _ -> ()
                 | _ ->
                     let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
                     this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
