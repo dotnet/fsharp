@@ -172,6 +172,7 @@ type internal FSharpProjectOptionsManager
 
     /// Update the info for a project in the project table
     member this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId, site, userOpName, invalidateConfig) =
+        Logger.LogMessage ("InvalidateConfig=" + invalidateConfig.ToString()) LogEditorFunctionId.LanguageService_UpdateProjectInfo
         projectOptionsTable.AddOrUpdateProject(projectId, (fun isRefresh ->
             let extraProjectInfo = Some(box workspace)
             let tryGetOptionsForReferencedProject f = f |> tryGetOrCreateProjectId |> Option.bind this.TryGetOptionsForProject |> Option.map(fun (_, _, projectOptions) -> projectOptions)
@@ -256,7 +257,7 @@ type internal FSharpProjectOptionsManager
     /// Prior to VS 15.7 path contained path to project file, post 15.7 contains target binpath
     /// binpath is more accurate because a project file can have multiple in memory projects based on configuration
     member this.HandleCommandLineChanges(path:string, sources:ImmutableArray<CommandLineSourceFile>, references:ImmutableArray<CommandLineReference>, options:ImmutableArray<string>) =
-        use _logBlock = Logger.LogBlock(LogEditorFunctionId.HandleCommandLineArgs)
+        use _logBlock = Logger.LogBlock(LogEditorFunctionId.LanguageService_HandleCommandLineArgs)
 
         let projectId =
             match workspace.ProjectTracker.TryGetProjectByBinPath(path) with
