@@ -87,16 +87,11 @@ type internal FSharpNavigableSymbolSource(checkerProvider: FSharpCheckerProvider
 type internal FSharpNavigableSymbolService
     [<ImportingConstructor>]
     (
-        [<Import(typeof<SVsServiceProvider>)>] serviceProvider:IServiceProvider,
+        [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: FSharpProjectOptionsManager
     ) =
 
-    // Just put this in there to see if it initializes
-    do
-        let x = 12
-        x |> ignore
-
     interface INavigableSymbolSourceProvider with
-        member __.TryCreateNavigableSymbolSource(textView: ITextView, buffer: ITextBuffer) =
+        member __.TryCreateNavigableSymbolSource(_: ITextView, _: ITextBuffer) =
             new FSharpNavigableSymbolSource(checkerProvider, projectInfoManager, serviceProvider) :> INavigableSymbolSource

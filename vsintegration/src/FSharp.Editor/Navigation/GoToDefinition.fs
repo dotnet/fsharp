@@ -261,7 +261,6 @@ module internal GoToDefinitionHelpers =
             statusBar.TempMessage (SR.CannotDetermineSymbol())
             true
 
-    
     /// Find the declaration location (signature file/.fsi) of the target symbol if possible, fall back to definition 
     let navigateToSymbolDeclarationAsync (targetDocument: Document) (targetSourceText: SourceText) (symbolRange: range) (gtd: GoToDefinition) (statusBar: StatusBar) =
         gtd.FindDeclarationOfSymbolAtRange(targetDocument, symbolRange, targetSourceText)
