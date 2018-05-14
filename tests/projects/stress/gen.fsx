@@ -4,13 +4,26 @@ open Perf
 open System
 
 printfn "%A" fsi.CommandLineArgs
-if fsi.CommandLineArgs.Length <> 3 then printfn "usage: fsi gen.fsx <directory> <size>"
+if fsi.CommandLineArgs.Length <> 4 then printfn "usage: fsi gen.fsx <directory> <size> <isNetStandard>"
 let D = string fsi.CommandLineArgs.[1] 
 let N = int fsi.CommandLineArgs.[2] 
+let isNetStandard = Boolean.Parse(fsi.CommandLineArgs.[3])
 
 try System.IO.Directory.Delete(D, true) with _ -> ()
 System.IO.Directory.CreateDirectory D
 System.Environment.CurrentDirectory <- D
+
+let fsharpProjectWrite =
+    if isNetStandard then
+        FSharpProject.writeNetStandard
+    else
+        FSharpProject.write
+
+let csharpProjectWrite =
+    if isNetStandard then
+        CSharpProject.writeNetStandard
+    else
+        CSharpProject.write
 
 let writeDense (dir : string) (projectType : ProjectType) (count : int) =
 
@@ -30,7 +43,7 @@ let writeDense (dir : string) (projectType : ProjectType) (count : int) =
                 let fileName = sprintf "%s.fs" name
                 yield fileName ]
         let project = { Name = name ; Guid = guid ; Files = files ; References = references ; BinaryReferences = [] }
-        let writer = match projectType with FSharp -> FSharpProject.write | CSharp -> CSharpProject.write
+        let writer = match projectType with FSharp -> fsharpProjectWrite | CSharp -> csharpProjectWrite
         writer path project
 
     projects |> List.iteri writeProject
@@ -62,7 +75,7 @@ let writeShallow (dir : string) (projectType : ProjectType) (count1 : int) (coun
     let writeAProject (name, guid) =
         let path = sprintf @"%s\%s\%s.%s" dir name name extension
         let project = { Name = name ; Guid = guid ; Files = [] ; References = [] ; BinaryReferences = [] }
-        let writer = match projectType with FSharp -> FSharpProject.write | CSharp -> CSharpProject.write
+        let writer = match projectType with FSharp -> fsharpProjectWrite | CSharp -> csharpProjectWrite
         writer path project
 
     let writeBProject (name, guid) =
@@ -71,7 +84,7 @@ let writeShallow (dir : string) (projectType : ProjectType) (count1 : int) (coun
             let makeRef (name, guid) = { Name = name ; Guid = guid ; RelativePath = sprintf @"..\%s\%s.%s" name name extension }
             aProjects |> List.map makeRef
         let project = { Name = name ; Guid = guid ; Files = [] ; References = references ; BinaryReferences = [] }
-        let writer = match projectType with FSharp -> FSharpProject.write | CSharp -> CSharpProject.write
+        let writer = match projectType with FSharp -> fsharpProjectWrite | CSharp -> csharpProjectWrite
         writer path project
 
     aProjects |> List.iter writeAProject
@@ -103,7 +116,7 @@ let writeDenseBin (dir : string) (projectType : ProjectType) (count : int) =
             let makeRef (name, guid) : BinaryRef = { Name = name ; RelativePath = sprintf @"..\%s\bin\Debug\%s.dll" name name }
             projects.[0..i-1] |> List.map makeRef
         let project = { Name = name ; Guid = guid ; Files = [] ; References = [] ; BinaryReferences = references }
-        let writer = match projectType with FSharp -> FSharpProject.write | CSharp -> CSharpProject.write
+        let writer = match projectType with FSharp -> fsharpProjectWrite | CSharp -> csharpProjectWrite
         writer path project
 
     projects |> List.iteri writeProject
