@@ -8,18 +8,14 @@ open System.Threading
 open System.Threading.Tasks
 open System.ComponentModel.Composition
 
-open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
-open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Navigation
-open Microsoft.CodeAnalysis.Editor.Shared.Extensions
 
-open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Language.Intellisense
 open Microsoft.VisualStudio.Text.Editor
-open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Utilities
+open Microsoft.VisualStudio.Text
 
 [<AllowNullLiteral>]
 type internal FSharpNavigableSymbol(item: INavigableItem, statusBar: StatusBar, span: SnapshotSpan) =
