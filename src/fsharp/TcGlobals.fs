@@ -37,7 +37,6 @@ let ValRefForIntrinsic (IntrinsicValRef(mvr, _, _, _, key))  = mkNonLocalValRef 
 [<AutoOpen>]
 module FSharpLib = 
 
-    let CoreOperatorsName        = FSharpLib.Root + ".Core.Operators"
     let CoreOperatorsCheckedName = FSharpLib.Root + ".Core.Operators.Checked"
     let ControlName              = FSharpLib.Root + ".Control"
     let LinqName                 = FSharpLib.Root + ".Linq"
@@ -47,22 +46,18 @@ module FSharpLib =
     let LinqRuntimeHelpersName   = FSharpLib.Root + ".Linq.RuntimeHelpers"
     let RuntimeHelpersName       = FSharpLib.Root + ".Core.CompilerServices.RuntimeHelpers"
     let ExtraTopLevelOperatorsName = FSharpLib.Root + ".Core.ExtraTopLevelOperators" 
-    let HashCompareName            = FSharpLib.Root + ".Core.LanguagePrimitives.HashCompare"
+    let NativeInteropName                 = FSharpLib.Root + ".NativeInterop"
 
     let QuotationsName             = FSharpLib.Root + ".Quotations"
 
-    let OperatorsPath               = IL.splitNamespace CoreOperatorsName |> Array.ofList
-    let OperatorsCheckedPath        = IL.splitNamespace CoreOperatorsCheckedName |> Array.ofList
     let ControlPath                 = IL.splitNamespace ControlName 
     let LinqPath                    = IL.splitNamespace LinqName 
     let CollectionsPath             = IL.splitNamespace CollectionsName 
-    let LanguagePrimitivesPath      = IL.splitNamespace LanguagePrimitivesName |> Array.ofList
-    let HashComparePath             = IL.splitNamespace HashCompareName |> Array.ofList
+    let NativeInteropPath           = IL.splitNamespace NativeInteropName |> Array.ofList
     let CompilerServicesPath        = IL.splitNamespace CompilerServicesName |> Array.ofList
     let LinqRuntimeHelpersPath      = IL.splitNamespace LinqRuntimeHelpersName |> Array.ofList
     let RuntimeHelpersPath          = IL.splitNamespace RuntimeHelpersName |> Array.ofList
     let QuotationsPath              = IL.splitNamespace QuotationsName |> Array.ofList
-    let ExtraTopLevelOperatorsPath  = IL.splitNamespace ExtraTopLevelOperatorsName |> Array.ofList
 
     let RootPathArray                    = FSharpLib.RootPath |> Array.ofList
     let CorePathArray                    = FSharpLib.CorePath |> Array.ofList
@@ -385,6 +380,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let fslib_MFCompilerServices_nleref   = mkNonLocalEntityRef fslibCcu FSharpLib.CompilerServicesPath
   let fslib_MFLinqRuntimeHelpers_nleref = mkNonLocalEntityRef fslibCcu FSharpLib.LinqRuntimeHelpersPath
   let fslib_MFControl_nleref            = mkNonLocalEntityRef fslibCcu FSharpLib.ControlPathArray
+  let fslib_MFNativeInterop_nleref      = mkNonLocalEntityRef fslibCcu FSharpLib.NativeInteropPath
 
   let fslib_MFLanguagePrimitives_nleref        = mkNestedNonLocalEntityRef fslib_MFCore_nleref "LanguagePrimitives"
   let fslib_MFIntrinsicOperators_nleref        = mkNestedNonLocalEntityRef fslib_MFLanguagePrimitives_nleref "IntrinsicOperators" 
@@ -409,6 +405,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let fslib_MFSetModule_nleref               = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "SetModule"
   let fslib_MFMapModule_nleref               = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "MapModule"
   let fslib_MFStringModule_nleref               = mkNestedNonLocalEntityRef fslib_MFCollections_nleref "StringModule"
+  let fslib_MFNativePtrModule_nleref               = mkNestedNonLocalEntityRef fslib_MFNativeInterop_nleref "NativePtrModule"
   let fslib_MFOptionModule_nleref              = mkNestedNonLocalEntityRef fslib_MFCore_nleref "OptionModule"
   let fslib_MFRuntimeHelpers_nleref            = mkNestedNonLocalEntityRef fslib_MFCompilerServices_nleref "RuntimeHelpers"
   let fslib_MFQuotations_nleref                = mkNestedNonLocalEntityRef fslib_MF_nleref "Quotations"
@@ -472,6 +469,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                             fslib_MFSetModule_nleref   
                             fslib_MFMapModule_nleref   
                             fslib_MFStringModule_nleref   
+                            fslib_MFNativePtrModule_nleref   
                             fslib_MFOptionModule_nleref   
                             fslib_MFRuntimeHelpers_nleref ] do
 
@@ -650,6 +648,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_array2D_set_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "SetArray2D"                           , None                 , None          , [vara],     ([[mkArrayType 2 varaTy];[v_int_ty]; [v_int_ty]; [varaTy]], v_unit_ty))
   let v_array3D_set_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "SetArray3D"                           , None                 , None          , [vara],     ([[mkArrayType 3 varaTy];[v_int_ty]; [v_int_ty]; [v_int_ty]; [varaTy]], v_unit_ty))
   let v_array4D_set_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "SetArray4D"                           , None                 , None          , [vara],     ([[mkArrayType 4 varaTy];[v_int_ty]; [v_int_ty]; [v_int_ty]; [v_int_ty]; [varaTy]], v_unit_ty))
+
+  let v_nativeptr_tobyref_info     = makeIntrinsicValRef(fslib_MFNativePtrModule_nleref,                       "toByRef"                              , None                 , Some "ToByRefInlined", [vara], ([[mkNativePtrTy varaTy]], mkByrefTy varaTy))  
 
   let v_seq_collect_info           = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "collect"                              , None                 , Some "Collect", [vara;varb;varc], ([[varaTy --> varbTy]; [mkSeqTy varaTy]], mkSeqTy varcTy))  
   let v_seq_delay_info             = makeIntrinsicValRef(fslib_MFSeqModule_nleref,                             "delay"                                , None                 , Some "Delay"  , [varb],     ([[v_unit_ty --> mkSeqTy varbTy]], mkSeqTy varbTy)) 
@@ -1306,6 +1306,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val array4D_get_vref           = ValRefForIntrinsic v_array4D_get_info
   member val seq_singleton_vref         = ValRefForIntrinsic v_seq_singleton_info
   member val seq_collect_vref           = ValRefForIntrinsic v_seq_collect_info
+  member val nativeptr_tobyref_vref     = ValRefForIntrinsic v_nativeptr_tobyref_info
   member val seq_using_vref             = ValRefForIntrinsic v_seq_using_info
   member val seq_delay_vref             = ValRefForIntrinsic  v_seq_delay_info
   member val seq_append_vref            = ValRefForIntrinsic  v_seq_append_info

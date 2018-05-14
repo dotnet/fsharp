@@ -3971,13 +3971,17 @@ let buildApp cenv expr resultTy arg m =
     // Special rules for building applications of the '&expr' or '&&expr' operators, both of which get the
     // address of an expression.
     | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [], _), _), _ 
-         when (valRefEq g vf g.addrof_vref || 
-               valRefEq g vf g.addrof2_vref) -> 
+         when (valRefEq g vf g.addrof_vref || valRefEq g vf g.addrof2_vref) -> 
         if valRefEq g vf g.addrof2_vref then warning(UseOfAddressOfOperator(m))
         let wrap, e1a' = mkExprAddrOfExpr g true false DefinitelyMutates arg (Some(vf)) m
         MakeApplicableExprNoFlex cenv (wrap(e1a')), resultTy
 
-    // Special rule for implicitly dereferencing byref return values on dereference
+    // Special rules for building applications of the 'NativePtr.toByRef' whose return value doesn't get implicitly dereferenced.
+    | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [], _), _), _ 
+         when (valRefEq g vf g.nativeptr_tobyref_vref) -> 
+        expr.SupplyArgument(arg, m), resultTy             
+
+    // Special rule for implicitly dereferencing byref return values
     | _ when isByrefTy g resultTy  ->
         // Handle byref returns, byref-typed returns get implicitly dereferenced 
         let v, _ = mkCompGenLocal m "byrefReturn" resultTy
@@ -8287,10 +8291,12 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
             match UnifyFunctionTypeUndoIfFailed cenv denv mExpr exprty with
             | Some (_, resultTy) -> 
                 
-                // We don't strip byrefs off the return type for "&x" and "&&x"
+                // We don't strip byrefs off the return type for "&x" or 'NativePtr.toByRef'
                 let stripByrefsOnReturn = 
                     match expr with 
-                    | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [], _), _) when valRefEq cenv.g vf cenv.g.addrof_vref -> false
+                    | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [], _), _) 
+                        when (valRefEq cenv.g vf cenv.g.addrof_vref || 
+                              valRefEq cenv.g vf cenv.g.nativeptr_tobyref_vref) -> false
                     | _ -> stripByrefsOnReturn
 
                 propagate stripByrefsOnReturn delayedList' mExprAndArg resultTy 
