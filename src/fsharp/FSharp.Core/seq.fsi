@@ -14,7 +14,7 @@ namespace Microsoft.FSharp.Collections
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module Seq = 
 
-        /// <summary>Returns a new sequence that contains the cartesian product of the two input sequences.</summary>
+        /// <summary>Returns a new sequence that contains all pairings of elements from the first and second sequences.</summary>
         /// <param name="source1">The first sequence.</param>
         /// <param name="source2">The second sequence.</param>
         /// <returns>The result sequence.</returns>

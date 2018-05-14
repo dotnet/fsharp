@@ -37,19 +37,18 @@ open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.IlxGen
 
 open Microsoft.FSharp.Compiler.AccessibilityLogic
+open Microsoft.FSharp.Compiler.AttributeChecking
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.CompileOptions
 open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.DiagnosticMessage
-open Microsoft.FSharp.Compiler.Optimizer
-open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.InfoReader
-open Microsoft.FSharp.Compiler.TypeChecker
+open Microsoft.FSharp.Compiler.Lib
+open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.TcGlobals
+open Microsoft.FSharp.Compiler.TypeChecker
 
 #if !NO_EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
@@ -2001,7 +2000,7 @@ let main2b (tcImportsCapture,dynamicAssemblyCreator) (Args (ctok, tcConfig: TcCo
 
     let codegenResults = GenerateIlxCode ((if Option.isSome dynamicAssemblyCreator then IlReflectBackend else IlWriteBackend), Option.isSome dynamicAssemblyCreator, false, tcConfig, topAttrs, optimizedImpls, generatedCcu.AssemblyName, ilxGenerator)
     let casApplied = new Dictionary<Stamp, bool>()
-    let securityAttrs, topAssemblyAttrs = topAttrs.assemblyAttrs |> List.partition (fun a -> TypeChecker.IsSecurityAttribute tcGlobals (tcImports.GetImportMap()) casApplied a rangeStartup)
+    let securityAttrs, topAssemblyAttrs = topAttrs.assemblyAttrs |> List.partition (fun a -> IsSecurityAttribute tcGlobals (tcImports.GetImportMap()) casApplied a rangeStartup)
 
     // remove any security attributes from the top-level assembly attribute list
     let topAttrs = {topAttrs with assemblyAttrs=topAssemblyAttrs}

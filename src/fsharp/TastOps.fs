@@ -1814,6 +1814,10 @@ let emptyFreeTyvars =
       FreeTraitSolutions = emptyFreeLocals
       FreeTypars = emptyFreeTypars}
 
+let isEmptyFreeTyvars ftyvs = 
+    Zset.isEmpty ftyvs.FreeTypars &&
+    Zset.isEmpty ftyvs.FreeTycons 
+
 let unionFreeTyvars fvs1 fvs2 = 
     if fvs1 === emptyFreeTyvars then fvs2 else 
     if fvs2 === emptyFreeTyvars then fvs1 else
@@ -2002,6 +2006,12 @@ let freeInVal opts v = accFreeInVal opts v emptyFreeTyvars
 let freeInTyparConstraints opts v = accFreeInTyparConstraints opts v emptyFreeTyvars
 let accFreeInTypars opts tps acc = List.foldBack (accFreeTyparRef opts) tps acc
         
+let rec addFreeInModuleTy (mtyp:ModuleOrNamespaceType) acc =
+    QueueList.foldBack (typeOfVal >> accFreeInType CollectAllNoCaching) mtyp.AllValsAndMembers
+      (QueueList.foldBack (fun (mspec:ModuleOrNamespace) acc -> addFreeInModuleTy mspec.ModuleOrNamespaceType acc) mtyp.AllEntities acc)
+
+let freeInModuleTy mtyp = addFreeInModuleTy mtyp emptyFreeTyvars
+
 
 //--------------------------------------------------------------------------
 // Free in type, left-to-right order preserved. This is used to determine the
@@ -5217,27 +5227,28 @@ and remarkBind m (TBind(v, repr, _)) =
 
 
 //--------------------------------------------------------------------------
-// Reference semantics?
+// Mutability analysis
 //--------------------------------------------------------------------------
 
-let isRecdOrStructFieldAllocObservable (f:RecdField) = not f.IsStatic && f.IsMutable
-let isUnionCaseAllocObservable (uc:UnionCase) = uc.FieldTable.FieldsByIndex |> Array.exists isRecdOrStructFieldAllocObservable
-let isUnionCaseRefAllocObservable (uc:UnionCaseRef) = uc.UnionCase |> isUnionCaseAllocObservable
+let isRecdOrStructFieldDefinitelyMutable (f:RecdField) = not f.IsStatic && f.IsMutable
+let isUnionCaseDefinitelyMutable (uc:UnionCase) = uc.FieldTable.FieldsByIndex |> Array.exists isRecdOrStructFieldDefinitelyMutable
+let isUnionCaseRefDefinitelyMutable (uc:UnionCaseRef) = uc.UnionCase |> isUnionCaseDefinitelyMutable
   
-let isRecdOrUnionOrStructTyconAllocObservable (_g:TcGlobals) (tycon:Tycon) =
+/// This is an incomplete check for .NET struct types. Returning 'false' doesn't mean the thing is immutable.
+let isRecdOrUnionOrStructTyconDefinitelyMutable (_g:TcGlobals) (tycon:Tycon) =
     if tycon.IsUnionTycon then 
-        tycon.UnionCasesArray |> Array.exists isUnionCaseAllocObservable
+        tycon.UnionCasesArray |> Array.exists isUnionCaseDefinitelyMutable
     elif tycon.IsRecordTycon || tycon.IsStructOrEnumTycon then 
-        tycon.AllFieldsArray |> Array.exists isRecdOrStructFieldAllocObservable
+        tycon.AllFieldsArray |> Array.exists isRecdOrStructFieldDefinitelyMutable
     else
         false
 
-let isRecdOrUnionOrStructTyconRefAllocObservable g (tcr : TyconRef) = isRecdOrUnionOrStructTyconAllocObservable g tcr.Deref
+let isRecdOrUnionOrStructTyconRefDefinitelyMutable g (tcr : TyconRef) = isRecdOrUnionOrStructTyconDefinitelyMutable g tcr.Deref
   
 // Although from the pure F# perspective exception values cannot be changed, the .NET 
 // implementation of exception objects attaches a whole bunch of stack information to 
 // each raised object.  Hence we treat exception objects as if they have identity 
-let isExnAllocObservable (_ecref:TyconRef) = true 
+let isExnDefinitelyMutable (_ecref:TyconRef) = true 
 
 // Some of the implementations of library functions on lists use mutation on the tail 
 // of the cons cell. These cells are always private, i.e. not accessible by any other 
@@ -5556,11 +5567,11 @@ let mkAndSimplifyMatch spBind exprm matchm ty tree targets  =
 type Mutates = DefinitelyMutates | PossiblyMutates | NeverMutates
 exception DefensiveCopyWarning of string * range 
 
-let isRecdOrStructTyImmutable g ty =
+let isRecdOrStructTyReadOnly g ty =
     match tryDestAppTy g ty with 
     | None -> false
     | Some tcref -> 
-      not (isRecdOrUnionOrStructTyconRefAllocObservable g tcref) ||
+      not (isRecdOrUnionOrStructTyconRefDefinitelyMutable g tcref) ||
       tyconRefEq g tcref g.decimal_tcr ||
       tyconRefEq g tcref g.date_tcr
 
@@ -5575,7 +5586,7 @@ let isRecdOrStructTyImmutable g ty =
 //        let g1 = A.G(1)
 //        (fun () -> g1.x1)
 //
-// Note: isRecdOrStructTyImmutable implies PossiblyMutates or NeverMutates
+// Note: isRecdOrStructTyReadOnly implies PossiblyMutates or NeverMutates
 //
 // We only do this for true local or closure fields because we can't take addresses of immutable static 
 // fields across assemblies.
@@ -5586,7 +5597,7 @@ let CanTakeAddressOfImmutableVal g (v:ValRef) mut =
     not v.IsMemberOrModuleBinding &&
     (match mut with 
      | NeverMutates -> true 
-     | PossiblyMutates -> isRecdOrStructTyImmutable g v.Type 
+     | PossiblyMutates -> isRecdOrStructTyReadOnly g v.Type 
      | DefinitelyMutates -> false)
 
 let MustTakeAddressOfVal (g:TcGlobals) (v:ValRef) = 
@@ -5605,13 +5616,13 @@ let CanTakeAddressOfRecdFieldRef (g:TcGlobals) (rfref: RecdFieldRef) mut tinst =
     mut <> DefinitelyMutates && 
     // We only do this if the field is defined in this assembly because we can't take addresses across assemblies for immutable fields
     entityRefInThisAssembly g.compilingFslib rfref.TyconRef &&
-    isRecdOrStructTyImmutable g (actualTyOfRecdFieldRef rfref tinst)
+    isRecdOrStructTyReadOnly g (actualTyOfRecdFieldRef rfref tinst)
 
 let CanTakeAddressOfUnionFieldRef (g:TcGlobals) (uref: UnionCaseRef) mut tinst cidx =
     mut <> DefinitelyMutates && 
     // We only do this if the field is defined in this assembly because we can't take addresses across assemblies for immutable fields
     entityRefInThisAssembly g.compilingFslib uref.TyconRef &&
-    isRecdOrStructTyImmutable g (actualTyOfUnionFieldRef uref cidx tinst)
+    isRecdOrStructTyReadOnly g (actualTyOfUnionFieldRef uref cidx tinst)
 
 
 let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress mut e addrExprVal m =
@@ -8281,5 +8292,14 @@ let BindUnitVars g (mvs:Val list, paramInfos:ArgReprInfo list, body) =
         assert isUnitTy g v.Type
         [], mkLet NoSequencePointAtInvisibleBinding v.Range v (mkUnit g v.Range) body 
     | _ -> mvs, body
+
+
+let isThreadOrContextStatic g attrs = 
+    HasFSharpAttributeOpt g g.attrib_ThreadStaticAttribute attrs ||
+    HasFSharpAttributeOpt g g.attrib_ContextStaticAttribute attrs 
+
+let mkUnitDelayLambda (g: TcGlobals) m e =
+    let uv, _ = mkCompGenLocal m "unitVar" g.unit_ty
+    mkLambda m uv (e, tyOfExpr g e) 
 
 

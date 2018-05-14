@@ -633,8 +633,6 @@ and
 
     static member Create(tref,inst) = { tspecTypeRef =tref; tspecInst=inst }
 
-    override x.ToString() = x.TypeRef.ToString() + if isNil x.GenericArgs then "" else "<...>"
-
     member x.BasicQualifiedName = 
         let tc = x.TypeRef.BasicQualifiedName
         if isNil x.GenericArgs then
@@ -646,6 +644,8 @@ and
         x.TypeRef.AddQualifiedNameExtension(basic)
 
     member x.FullName=x.TypeRef.FullName
+
+    override x.ToString() = x.TypeRef.ToString() + if isNil x.GenericArgs then "" else "<...>"
 
 and [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
     ILType =
@@ -685,34 +685,34 @@ and [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
         x.AddQualifiedNameExtension(x.BasicQualifiedName)
 
     member x.TypeSpec =
-      match x with 
-      | ILType.Boxed tr | ILType.Value tr -> tr
-      | _ -> invalidOp "not a nominal type"
+        match x with 
+        | ILType.Boxed tr | ILType.Value tr -> tr
+        | _ -> invalidOp "not a nominal type"
 
     member x.Boxity =
-      match x with 
-      | ILType.Boxed _ -> AsObject
-      | ILType.Value _ -> AsValue
-      | _ -> invalidOp "not a nominal type"
+        match x with 
+        | ILType.Boxed _ -> AsObject
+        | ILType.Value _ -> AsValue
+        | _ -> invalidOp "not a nominal type"
 
     member x.TypeRef = 
-      match x with 
-      | ILType.Boxed tspec | ILType.Value tspec -> tspec.TypeRef
-      | _ -> invalidOp "not a nominal type"
+        match x with 
+        | ILType.Boxed tspec | ILType.Value tspec -> tspec.TypeRef
+        | _ -> invalidOp "not a nominal type"
 
     member x.IsNominal = 
-      match x with 
-      | ILType.Boxed _ | ILType.Value _ -> true
-      | _ -> false
+        match x with 
+        | ILType.Boxed _ | ILType.Value _ -> true
+        | _ -> false
 
     member x.GenericArgs =
-      match x with 
-      | ILType.Boxed tspec | ILType.Value tspec -> tspec.GenericArgs
-      | _ -> []
+        match x with 
+        | ILType.Boxed tspec | ILType.Value tspec -> tspec.GenericArgs
+        | _ -> []
 
     member x.IsTyvar =
-      match x with 
-      | ILType.TypeVar _ -> true | _ -> false
+        match x with 
+        | ILType.TypeVar _ -> true | _ -> false
 
 and [<StructuralEquality; StructuralComparison>]
     ILCallingSignature = 
