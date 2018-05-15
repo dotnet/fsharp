@@ -288,9 +288,14 @@ type TcEnv =
 
       eCallerMemberName : string option
     } 
+
     member tenv.DisplayEnv = tenv.eNameResEnv.DisplayEnv
+
     member tenv.NameEnv = tenv.eNameResEnv
+
     member tenv.AccessRights = tenv.eAccessRights
+
+    override tenv.ToString() = "TcEnv(...)"
 
 /// Compute the value of this computed, cached field
 let computeAccessRights eAccessPath eInternalsVisibleCompPaths eFamilyType = 
@@ -597,6 +602,8 @@ type cenv =
           haveSig = haveSig
           compilingCanonicalFslibModuleType = (isSig || not haveSig) && g.compilingFslib
           conditionalDefines = conditionalDefines }
+
+    override __.ToString() = "cenv(...)"
 
 let CopyAndFixupTypars m rigid tpsorig = 
     ConstraintSolver.FreshenAndFixupTypars m rigid [] [] tpsorig
