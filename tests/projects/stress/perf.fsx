@@ -105,6 +105,30 @@ module FSharpProject =
 
         safeWrite path text
 
+    let writeNetStandard path (project : Project) =
+
+        let files =
+            let printFileReference = sprintf "    <Compile Include=\"%s\" />"
+            project.Files |> List.map printFileReference |> String.concat "\n"
+
+        for f in project.Files do 
+            let filePath = Path.Combine(Path.GetDirectoryName(path),f)
+            let fileContents = sprintf "module %s\n\nlet x = 1" (Path.GetFileNameWithoutExtension(f))
+            safeWrite filePath fileContents
+         
+        let references =
+            let printProjectReference (r : ProjectRef) =
+                sprintf "    <ProjectReference Include=\"%s\" />" r.RelativePath
+            project.References |> List.map printProjectReference |> String.concat "\n"
+
+        let text =
+            File.ReadAllText(Path.Combine(__SOURCE_DIRECTORY__,@"Templates\netstandard_fsproj.template"))
+                .Replace("[FILES]", files)
+                .Replace("[PROJECTREFERENCES]", references)
+                .Replace("[PACKAGEREFERENCES]", String.Empty)
+
+        safeWrite path text
+
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module CSharpProject =
 
@@ -132,6 +156,30 @@ module CSharpProject =
                 .Replace("[FILES]", files)
                 .Replace("[REFERENCES]", references)
                 .Replace("[BINARYREFERENCES]", binaryReferences)
+
+        safeWrite path text
+
+    let writeNetStandard path (project : Project) =
+
+        let files =
+            let printFileReference = sprintf "    <Compile Include=\"%s\" />"
+            project.Files |> List.map printFileReference |> String.concat "\n"
+
+        for f in project.Files do 
+            let filePath = Path.Combine(Path.GetDirectoryName(path),f)
+            let fileContents = sprintf "module %s\n\nlet x = 1" (Path.GetFileNameWithoutExtension(f))
+            safeWrite filePath fileContents
+         
+        let references =
+            let printProjectReference (r : ProjectRef) =
+                sprintf "    <ProjectReference Include=\"%s\" />" r.RelativePath
+            project.References |> List.map printProjectReference |> String.concat "\n"
+
+        let text =
+            File.ReadAllText(Path.Combine(__SOURCE_DIRECTORY__,@"Templates\netstandard_fsproj.template"))
+                .Replace("[FILES]", files)
+                .Replace("[PROJECTREFERENCES]", references)
+                .Replace("[PACKAGEREFERENCES]", String.Empty)
 
         safeWrite path text
 
