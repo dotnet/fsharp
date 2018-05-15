@@ -14,17 +14,17 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 
 [<Sealed>]
 type IlxUnionField = 
-    new : ILFieldDef -> IlxUnionField
+    new : IFieldDef -> IlxUnionField
     member Type : ILType
     member Name : string
     /// The name used for the field in parameter or IL field position.
     member LowerName : string 
-    member ILField : ILFieldDef
+    member ILField : IFieldDef
     
 type IlxUnionAlternative = 
     { altName: string
       altFields: IlxUnionField[]
-      altCustomAttrs: ILAttributes }
+      altCustomAttrs: IAttributes }
 
     member FieldDefs : IlxUnionField[]
     member FieldDef : int -> IlxUnionField
@@ -60,8 +60,8 @@ type IlxUnionSpec =
 // -------------------------------------------------------------------- 
 
 type IlxClosureLambdas = 
-    | Lambdas_forall of ILGenericParameterDef * IlxClosureLambdas
-    | Lambdas_lambda of ILParameter * IlxClosureLambdas
+    | Lambdas_forall of IGenericParameterDef * IlxClosureLambdas
+    | Lambdas_lambda of IParameter * IlxClosureLambdas
     | Lambdas_return of ILType
 
 type IlxClosureFreeVar = 
@@ -107,7 +107,7 @@ type IlxUnionInfo =
       /// Generate the helpers? 
       cudHasHelpers: IlxUnionHasHelpers 
       cudDebugProxies: bool 
-      cudDebugDisplayAttributes: ILAttribute list
+      cudDebugDisplayAttributes: IAttribute list
       cudAlternatives: IlxUnionAlternative[]
       cudNullPermitted: bool
       /// Debug info for generated code for classunions.

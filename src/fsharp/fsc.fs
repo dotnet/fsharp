@@ -747,7 +747,7 @@ module MainModuleBuilder =
       // We want to write forwarders out for all injected types except for System.ITuple, which is internal
       // Forwarding System.ITuple will cause FxCop failures on 4.0
       Set.union (Set.filter (fun t -> t <> "System.ITuple") injectedCompatTypes) typesForwardedToMscorlib |>
-          Seq.map (fun t -> mkTypeForwarder (tcGlobals.ilg.primaryAssemblyScopeRef) t (mkILNestedExportedTypes List.empty<ILNestedExportedType>) (mkILCustomAttrs List.empty<ILAttribute>) ILTypeDefAccess.Public ) 
+          Seq.map (fun t -> mkTypeForwarder (tcGlobals.ilg.primaryAssemblyScopeRef) t (mkILNestedExportedTypes List.empty<ILNestedExportedType>) (mkILCustomAttrs List.empty<IAttribute>) ILTypeDefAccess.Public ) 
           |> Seq.toList
 
     let createSystemNumericsExportList (tcConfig: TcConfig) (tcImports:TcImports) =
@@ -851,12 +851,11 @@ module MainModuleBuilder =
                         [ mkCompilationMappingAttrForQuotationResource tcGlobals (reflectedDefinitionResourceName, referencedTypeDefs) ]
                     | QuotationTranslator.QuotationSerializationFormat.FSharp_20_Plus ->
                         [  ]
-                let reflectedDefinitionResource = 
-                  { Name=reflectedDefinitionResourceName
-                    Location = ILResourceLocation.LocalOut reflectedDefinitionBytes
-                    Access= ILResourceAccess.Public
-                    CustomAttrsStored = storeILCustomAttrs emptyILCustomAttrs
-                    MetadataIndex = NoMetadataIdx }
+                let reflectedDefinitionResource =
+                    let location = ILResourceLocation.LocalOut reflectedDefinitionBytes
+                    mkILResource
+                        (reflectedDefinitionResourceName, location, ILResourceAccess.Public,
+                         storeILCustomAttrs emptyILCustomAttrs, NoMetadataIdx)
                 reflectedDefinitionAttrs, reflectedDefinitionResource) 
             |> List.unzip
             |> (fun (attrs, resource) -> List.concat attrs, resource)
@@ -881,37 +880,37 @@ module MainModuleBuilder =
                  match assemVerFromAttrib with 
                  | None -> tcVersion
                  | Some v -> v
-             Some { man with Version= Some ver
-                             CustomAttrsStored = storeILCustomAttrs manifestAttrs
-                             DisableJitOptimizations=disableJitOptimizations
-                             JitTracking= tcConfig.jitTracking
-                             IgnoreSymbolStoreSequencePoints = tcConfig.ignoreSymbolStoreSequencePoints
-                             SecurityDeclsStored=storeILSecurityDecls secDecls } 
+             man.With(
+                newVersion = Some ver,
+                newCustomAttrsStored = storeILCustomAttrs manifestAttrs,
+                newDisableJitOptimizations = disableJitOptimizations,
+                newJitTracking = tcConfig.jitTracking,
+                newIgnoreSymbolStoreSequencePoints = tcConfig.ignoreSymbolStoreSequencePoints,
+                newSecurityDeclsStored = storeILSecurityDecls secDecls) |> Some
 
         let resources = 
           mkILResources 
             [ for file in tcConfig.embedResources do
                  let name, bytes, pub = 
-                         let file, name, pub = TcConfigBuilder.SplitCommandLineResourceInfo file
-                         let file = tcConfig.ResolveSourceFile(rangeStartup, file, tcConfig.implicitIncludeDir)
-                         let bytes = FileSystem.ReadAllBytesShim file
-                         name, bytes, pub
-                 yield { Name=name 
-                         Location=ILResourceLocation.LocalOut bytes
-                         Access=pub 
-                         CustomAttrsStored=storeILCustomAttrs emptyILCustomAttrs 
-                         MetadataIndex = NoMetadataIdx }
-               
+                     let file, name, pub = TcConfigBuilder.SplitCommandLineResourceInfo file
+                     let file = tcConfig.ResolveSourceFile(rangeStartup, file, tcConfig.implicitIncludeDir)
+                     let bytes = FileSystem.ReadAllBytesShim file
+                     name, bytes, pub
+                 let location = ILResourceLocation.LocalOut bytes
+
+                 yield mkILResource (name, location, pub, storeILCustomAttrs emptyILCustomAttrs, NoMetadataIdx)
+
               yield! reflectedDefinitionResources
               yield! intfDataResources
               yield! optDataResources
               for ri in tcConfig.linkResources do 
-                 let file, name, pub = TcConfigBuilder.SplitCommandLineResourceInfo ri
-                 yield { Name=name 
-                         Location=ILResourceLocation.File(ILModuleRef.Create(name=file, hasMetadata=false, hash=Some (sha1HashBytes (FileSystem.ReadAllBytesShim file))), 0)
-                         Access=pub 
-                         CustomAttrsStored=storeILCustomAttrs emptyILCustomAttrs
-                         MetadataIndex = NoMetadataIdx } ]
+                  let file, name, pub = TcConfigBuilder.SplitCommandLineResourceInfo ri
+                  let location =
+                      let hash = Some (sha1HashBytes (FileSystem.ReadAllBytesShim file))
+                      let moduleRef = ILModuleRef.Create(name = file, hasMetadata = false, hash = hash)
+                      ILResourceLocation.File(moduleRef, 0)
+
+                  yield mkILResource (name, location, pub, storeILCustomAttrs emptyILCustomAttrs, NoMetadataIdx) ]
 
         let assemblyVersion = 
             match tcConfig.version with
@@ -1020,25 +1019,25 @@ module MainModuleBuilder =
                                                  yield! (ManifestResourceFormat.VS_MANIFEST_RESOURCE((FileSystem.ReadAllBytesShim win32Manifest), tcConfig.target = CompilerTarget.Dll)) |]]
 
         // Add attributes, version number, resources etc. 
-        {mainModule with 
-              StackReserveSize = tcConfig.stackReserveSize
-              Name = (if tcConfig.target = CompilerTarget.Module then Filename.fileNameOfPath outfile else mainModule.Name)
-              SubSystemFlags = (if tcConfig.target = CompilerTarget.WinExe then 2 else 3) 
-              Resources= resources
-              ImageBase = (match tcConfig.baseAddress with None -> 0x00400000l | Some b -> b)
-              IsDLL=(tcConfig.target = CompilerTarget.Dll || tcConfig.target=CompilerTarget.Module)
-              Platform = tcConfig.platform 
-              Is32Bit=(match tcConfig.platform with Some X86 -> true | _ -> false)
-              Is64Bit=(match tcConfig.platform with Some AMD64 | Some IA64 -> true | _ -> false)          
-              Is32BitPreferred = if tcConfig.prefer32Bit && not tcConfig.target.IsExe then (error(Error(FSComp.SR.invalidPlatformTarget(), rangeCmdArgs))) else tcConfig.prefer32Bit
-              CustomAttrsStored= 
+        mainModule.With( 
+              stackReserveSize = tcConfig.stackReserveSize,
+              name = (if tcConfig.target = CompilerTarget.Module then Filename.fileNameOfPath outfile else mainModule.Name),
+              subSystemFlags = (if tcConfig.target = CompilerTarget.WinExe then 2 else 3),
+              resources= resources,
+              imageBase = (match tcConfig.baseAddress with None -> 0x00400000l | Some b -> b),
+              isDLL = (tcConfig.target = CompilerTarget.Dll || tcConfig.target=CompilerTarget.Module),
+              platform = tcConfig.platform,
+              is32Bit = (match tcConfig.platform with Some X86 -> true | _ -> false),
+              is64Bit = (match tcConfig.platform with Some AMD64 | Some IA64 -> true | _ -> false),          
+              is32BitPreferred = (if tcConfig.prefer32Bit && not tcConfig.target.IsExe then (error(Error(FSComp.SR.invalidPlatformTarget(), rangeCmdArgs))) else tcConfig.prefer32Bit),
+              customAttrsStored = 
                   storeILCustomAttrs
                     (mkILCustomAttrs 
                       [ if tcConfig.target = CompilerTarget.Module then 
                            yield! iattrs 
-                        yield! codegenResults.ilNetModuleAttrs ])
-              NativeResources=nativeResources
-              Manifest = manifest }
+                        yield! codegenResults.ilNetModuleAttrs ]),
+              nativeResources=nativeResources,
+              manifest = manifest)
 
 
 //----------------------------------------------------------------------------
@@ -1049,7 +1048,7 @@ module MainModuleBuilder =
 module StaticLinker = 
     let debugStaticLinking = condition "FSHARP_DEBUG_STATIC_LINKING"
 
-    let StaticLinkILModules (tcConfig, ilGlobals, ilxMainModule, dependentILModules: (CcuThunk option * ILModuleDef) list) = 
+    let StaticLinkILModules (tcConfig, ilGlobals, ilxMainModule, dependentILModules: (CcuThunk option * IModuleDef) list) = 
         if isNil dependentILModules then 
             ilxMainModule, (fun x -> x) 
         else
@@ -1138,13 +1137,13 @@ module StaticLinker =
                    (mkILMethods (topTypeDefs |> List.collect (fun td -> td.Methods.AsList)), 
                     mkILFields (topTypeDefs |> List.collect (fun td -> td.Fields.AsList)))
 
-            let ilxMainModule = 
-                { ilxMainModule with 
-                    Manifest = (let m = ilxMainModule.ManifestOfAssembly in Some {m with CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs (m.CustomAttrs.AsList @ savedManifestAttrs)) })
-                    CustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs [ for m in moduls do yield! m.CustomAttrs.AsArray ])
-                    TypeDefs = mkILTypeDefs (topTypeDef :: List.concat normalTypeDefs)
-                    Resources = mkILResources (savedResources @ ilxMainModule.Resources.AsList)
-                    NativeResources = savedNativeResources }
+            let ilxMainModule =
+                ilxMainModule.With(
+                    manifest = (let m = ilxMainModule.ManifestOfAssembly in Some (m.With(newCustomAttrsStored = storeILCustomAttrs (mkILCustomAttrs (m.CustomAttrs.AsList @ savedManifestAttrs))))),
+                    customAttrsStored = storeILCustomAttrs (mkILCustomAttrs [ for m in moduls do yield! m.CustomAttrs.AsArray ]),
+                    typeDefs = mkILTypeDefs (topTypeDef :: List.concat normalTypeDefs),
+                    resources = mkILResources (savedResources @ ilxMainModule.Resources.AsList),
+                    nativeResources = savedNativeResources)
 
             ilxMainModule, rewriteExternalRefsToLocalRefs
 
@@ -1153,7 +1152,7 @@ module StaticLinker =
     // build new FSharp.Core for that configuration.
     //
     // Find all IL modules that are to be statically linked given the static linking roots.
-    let LegacyFindAndAddMscorlibTypesForStaticLinkingIntoFSharpCoreLibraryForNet20 (tcConfig:TcConfig, ilGlobals:ILGlobals, ilxMainModule) = 
+    let LegacyFindAndAddMscorlibTypesForStaticLinkingIntoFSharpCoreLibraryForNet20 (tcConfig:TcConfig, ilGlobals:ILGlobals, ilxMainModule: IModuleDef) = 
         let mscorlib40 = tcConfig.compilingFslib20.Value 
               
         let ilBinaryReader = 
@@ -1186,30 +1185,29 @@ module StaticLinker =
                   
             // strip out System.Runtime.TargetedPatchingOptOutAttribute, which doesn't exist for 2.0
             let fakeModule = 
-              {fakeModule with 
-                TypeDefs = 
-                  mkILTypeDefs 
-                      ([ for td in fakeModule.TypeDefs do 
-                             let meths = td.Methods.AsList
-                                            |> List.map (fun md ->
-                                                md.With(customAttrs = 
-                                                              mkILCustomAttrs (td.CustomAttrs.AsList |> List.filter (fun ilattr ->
-                                                                ilattr.Method.DeclaringType.TypeRef.FullName <> "System.Runtime.TargetedPatchingOptOutAttribute")))) 
-                                            |> mkILMethods
-                             let td = td.With(methods=meths)
-                             yield td.With(methods=meths) ])}
+                fakeModule.With(
+                    typeDefs = 
+                        mkILTypeDefs 
+                            ([ for td in fakeModule.TypeDefs do 
+                                let meths =
+                                    td.Methods.AsList
+                                        |> List.map (fun md ->
+                                            md.With(
+                                                customAttrs = 
+                                                    mkILCustomAttrs (td.CustomAttrs.AsList |> List.filter (fun ilattr ->
+                                                        ilattr.Method.DeclaringType.TypeRef.FullName <> "System.Runtime.TargetedPatchingOptOutAttribute")))) 
+                                        |> mkILMethods
+                                let td = td.With(methods=meths)
+                                yield td.With(methods=meths) ]))
             //ILAsciiWriter.output_module stdout fakeModule
             fakeModule.TypeDefs.AsList
 
-        let ilxMainModule = 
-            { ilxMainModule with 
-                TypeDefs = mkILTypeDefs (tdefs1 @ tdefs2) }
-        ilxMainModule
+        ilxMainModule.With(typeDefs = mkILTypeDefs (tdefs1 @ tdefs2))
 
     [<NoEquality; NoComparison>]
     type Node = 
         { name: string
-          data: ILModuleDef 
+          data: IModuleDef 
           ccu: option<CcuThunk>
           refs: ILReferences
           mutable edges: list<Node> 
@@ -1412,7 +1410,7 @@ module StaticLinker =
 
                   // Build a dictionary of all IL type defs, mapping ilOrigTyRef --> ilTypeDef
                   let allTypeDefsInProviderGeneratedAssemblies = 
-                      let rec loop ilOrigTyRef (ilTypeDef:ILTypeDef) = 
+                      let rec loop ilOrigTyRef (ilTypeDef:ITypeDef) = 
                           seq { yield (ilOrigTyRef, ilTypeDef) 
                                 for ntdef in ilTypeDef.NestedTypes do 
                                     yield! loop (mkILTyRefInTyRef (ilOrigTyRef, ntdef.Name)) ntdef }
@@ -1465,7 +1463,7 @@ module StaticLinker =
                           loop xs []
 
                       /// Implant the (nested) type definition 'td' at path 'enc' in 'tdefs'. 
-                      let rec implantTypeDef isNested (tdefs: ILTypeDefs) (enc:string list) (td: ILTypeDef) = 
+                      let rec implantTypeDef isNested (tdefs: ITypeDefs) (enc:string list) (td: ITypeDef) = 
                           match enc with 
                           | [] -> addILTypeDef td tdefs
                           | h::t -> 
@@ -1483,14 +1481,14 @@ module StaticLinker =
                       let newTypeDefs = 
                           (ilxMainModule.TypeDefs, generatedILTypeDefs) ||> List.fold (fun acc (ilTgtTyRef, td) -> 
                               if debugStaticLinking then printfn "implanting '%s' at '%s'" td.Name ilTgtTyRef.QualifiedName 
-                              implantTypeDef false acc ilTgtTyRef.Enclosing td) 
-                      { ilxMainModule with TypeDefs = newTypeDefs } 
+                              implantTypeDef false acc ilTgtTyRef.Enclosing td)
+                      ilxMainModule.With(typeDefs = newTypeDefs) 
                   
                   // Remove any ILTypeDefs from the provider generated modules if they have been relocated because of a [<Generate>] declaration.
                   let providerGeneratedILModules = 
                       providerGeneratedILModules |> List.map (fun (ccu, ilOrigScopeRef, ilModule) -> 
                           let ilTypeDefsAfterRemovingRelocatedTypes = 
-                              let rec rw enc (tdefs: ILTypeDefs) = 
+                              let rec rw enc (tdefs: ITypeDefs) = 
                                   mkILTypeDefs
                                    [ for tdef in tdefs do 
                                         let ilOrigTyRef = mkILNestedTyRef (ilOrigScopeRef, enc, tdef.Name)
@@ -1498,7 +1496,7 @@ module StaticLinker =
                                           if debugStaticLinking then printfn "Keep provided type %s in place because it wasn't relocated" ilOrigTyRef.QualifiedName
                                           yield tdef.With(nestedTypes = rw (enc@[tdef.Name]) tdef.NestedTypes) ]
                               rw [] ilModule.TypeDefs
-                          (ccu, { ilModule with TypeDefs = ilTypeDefsAfterRemovingRelocatedTypes }))
+                          (ccu, ilModule.With(typeDefs = ilTypeDefsAfterRemovingRelocatedTypes)))
 
                   providerGeneratedILModules, ilxMainModule
              

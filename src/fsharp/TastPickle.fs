@@ -152,7 +152,7 @@ type ReaderState =
     inlerefs: InputTable<NonLocalEntityRef> 
     isimpletyps: InputTable<TType>
     ifile: string
-    iILModule : ILModuleDef option // the Abstract IL metadata for the DLL being read
+    iILModule : IModuleDef option // the Abstract IL metadata for the DLL being read
   }
 
 let ufailwith st str = ffailwith st.ifile str
@@ -751,7 +751,7 @@ let check (ilscope:ILScopeRef) (inMap : NodeInTable<_,_>) =
         warning(Error(FSComp.SR.pickleMissingDefinition (i, inMap.Name, ilscope.QualifiedName), range0))
         // Note for compiler developers: to get information about which item this index relates to, enable the conditional in Pickle.p_osgn_ref to refer to the given index number and recompile an identical copy of the source for the DLL containing the data being unpickled.  A message will then be printed indicating the name of the item.\n" 
 
-let unpickleObjWithDanglingCcus file ilscope (iILModule:ILModuleDef option) u (phase2bytes:byte[]) =
+let unpickleObjWithDanglingCcus file ilscope (iILModule:IModuleDef option) u (phase2bytes:byte[]) =
     let st2 = 
        { is = ByteStream.FromBytes (phase2bytes,0,phase2bytes.Length) 
          iilscope= ilscope
@@ -1865,7 +1865,7 @@ and u_tycon_repr st =
                     | None -> TNoRepr
                     | Some iILModule -> 
                     try 
-                        let rec find acc enclosingTypeNames (tdefs:ILTypeDefs) = 
+                        let rec find acc enclosingTypeNames (tdefs:ITypeDefs) = 
                             match enclosingTypeNames with 
                             | [] -> List.rev acc, tdefs.FindByName iltref.Name
                             | h::t -> let nestedTypeDef = tdefs.FindByName h

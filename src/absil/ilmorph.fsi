@@ -15,9 +15,9 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 val morphILScopeRefsInILTypeRef: (ILScopeRef -> ILScopeRef) -> ILTypeRef -> ILTypeRef 
 
 /// Morph all type references throughout an entire module.
-val morphILTypeRefsInILModuleMemoized:  ILGlobals -> (ILTypeRef -> ILTypeRef) ->  ILModuleDef ->  ILModuleDef
+val morphILTypeRefsInILModuleMemoized:  ILGlobals -> (ILTypeRef -> ILTypeRef) ->  IModuleDef ->  IModuleDef
 
-val morphILScopeRefsInILModuleMemoized: ILGlobals -> (ILScopeRef -> ILScopeRef) ->  ILModuleDef ->  ILModuleDef
+val morphILScopeRefsInILModuleMemoized: ILGlobals -> (ILScopeRef -> ILScopeRef) ->  IModuleDef ->  IModuleDef
 
 val morphILInstrsInILCode: (ILInstr -> ILInstr list) -> ILCode -> ILCode
 

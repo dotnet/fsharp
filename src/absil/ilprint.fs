@@ -279,7 +279,7 @@ and goutput_permission _env os p =
   
 and goutput_security_decls env os (ps: ILSecurityDecls) =  output_seq " " (goutput_permission env)  os ps.AsList
 
-and goutput_gparam env os (gf: ILGenericParameterDef) =  
+and goutput_gparam env os (gf: IGenericParameterDef) =  
   output_string os (tyvar_generator gf.Name);
   output_parens (output_seq "," (goutput_typ env)) os gf.Constraints
 
@@ -468,15 +468,15 @@ let output_basic_type os x =
 let output_custom_attr_data os data = 
   output_string os " = "; output_parens output_bytes os data
       
-let goutput_custom_attr env os attr =
+let goutput_custom_attr env os (attr: IAttribute) =
   output_string os " .custom "
   goutput_mspec env os attr.Method
   output_custom_attr_data os attr.Data
 
-let goutput_custom_attrs env os (attrs : ILAttributes) =
+let goutput_custom_attrs env os (attrs : IAttributes) =
   List.iter (fun attr -> goutput_custom_attr env os attr;  output_string os "\n" ) attrs.AsList
 
-let goutput_fdef _tref env os (fd: ILFieldDef) =
+let goutput_fdef _tref env os (fd: IFieldDef) =
   output_string os " .field "
   match fd.Offset with Some i -> output_string os "["; output_i32 os i; output_string os "] " | None -> () 
   match fd.Marshal with Some _i -> output_string os "// marshal attribute not printed\n"; | None -> () 
@@ -541,7 +541,7 @@ let goutput_local env os (l: ILLocal) =
   goutput_typ env os l.Type;
   if l.IsPinned then output_string os " pinned"
 
-let goutput_param env os (l: ILParameter) = 
+let goutput_param env os (l: IParameter) = 
   match l.Name with 
       None ->  goutput_typ env os l.Type;
     | Some n -> goutput_typ env os l.Type; output_string os " "; output_sqstring os n
@@ -768,7 +768,7 @@ let goutput_ilmbody env os (il: ILMethodBody) =
     output_string os ")\n"
   
 
-let goutput_mbody is_entrypoint env os (md: ILMethodDef) =
+let goutput_mbody is_entrypoint env os (md: IMethodDef) =
   if md.ImplAttributes &&& MethodImplAttributes.Native <> enum 0 then output_string os "native "
   elif md.ImplAttributes &&&  MethodImplAttributes.IL <> enum 0 then output_string os "cil "
   else output_string os "runtime "
@@ -786,7 +786,7 @@ let goutput_mbody is_entrypoint env os (md: ILMethodDef) =
   output_string os "\n";
   output_string os "}\n"
   
-let goutput_mdef env os (md:ILMethodDef) =
+let goutput_mdef env os (md:IMethodDef) =
   let attrs = 
       if md.IsVirtual then
             "virtual " +
@@ -852,7 +852,7 @@ let goutput_mdef env os (md:ILMethodDef) =
   (goutput_mbody is_entrypoint menv) os md;
   output_string os "\n"
 
-let goutput_pdef env os (pd: ILPropertyDef) =
+let goutput_pdef env os (pd: IPropertyDef) =
     output_string os  "property\n\tgetter: ";
     (match pd.GetMethod with None -> () | Some mref -> goutput_mref env os mref);
     output_string os  "\n\tsetter: ";
@@ -884,14 +884,14 @@ let splitTypeLayout = function
   | ILTypeDefLayout.Explicit info ->  "explicit", (fun os () -> output_type_layout_info os info)
 
       
-let goutput_fdefs tref env os (fdefs: ILFieldDefs) = 
+let goutput_fdefs tref env os (fdefs: IFieldDefs) = 
   List.iter (fun f -> (goutput_fdef tref env) os f; output_string os "\n" ) fdefs.AsList
-let goutput_mdefs env os (mdefs: ILMethodDefs) = 
+let goutput_mdefs env os (mdefs: IMethodDefs) = 
   List.iter (fun f -> (goutput_mdef env) os f; output_string os "\n" ) mdefs.AsList
-let goutput_pdefs env os (pdefs: ILPropertyDefs) = 
+let goutput_pdefs env os (pdefs: IPropertyDefs) = 
   List.iter (fun f -> (goutput_pdef env) os f; output_string os "\n" ) pdefs.AsList
 
-let rec goutput_tdef enc env contents os (cd: ILTypeDef) =
+let rec goutput_tdef enc env contents os (cd: ITypeDef) =
   let env = ppenv_enter_tdef cd.GenericParams env 
   let layout_attr,pp_layout_decls = splitTypeLayout cd.Layout 
   if isTypeNameForGlobalFunctions cd.Name then 
@@ -948,7 +948,7 @@ and goutput_lambdas env os lambdas =
        (goutput_lambdas env) os l
    | Lambdas_return typ -> output_string os "--> "; (goutput_typ env) os typ
   
-and goutput_tdefs contents enc env os (td: ILTypeDefs) =
+and goutput_tdefs contents enc env os (td: ITypeDefs) =
   List.iter (goutput_tdef enc env contents os) td.AsList
 
 let output_ver os (a,b,c,d) =
@@ -990,7 +990,7 @@ let output_modref os (modref:ILModuleRef) =
   output_sqstring os modref.Name;
   (output_option output_hash) os modref.Hash
 
-let goutput_resource env os r = 
+let goutput_resource env os (r: IResource) = 
   output_string os " .mresource ";
   output_string os (match r.Access with ILResourceAccess.Public -> " public " | ILResourceAccess.Private -> " private ");
   output_sqstring os r.Name;
@@ -1010,7 +1010,7 @@ let goutput_resource env os r =
       output_sqstring os aref.Name
   output_string os " }\n "
 
-let goutput_manifest env os m = 
+let goutput_manifest env os (m: IAssemblyManifest) = 
   output_string os " .assembly "; 
   match m.AssemblyLongevity with 
             | ILAssemblyLongevity.Unspecified -> ()
@@ -1028,7 +1028,7 @@ let goutput_manifest env os m =
   output_string os " } \n"
 
 
-let output_module_fragment_aux _refs os  modul = 
+let output_module_fragment_aux _refs os (modul: IModuleDef) = 
   try 
     let env = mk_ppenv 
     let env = ppenv_enter_modul env 
@@ -1047,7 +1047,7 @@ let output_module_refs os refs =
   List.iter (fun  x -> output_assref os x; output_string os "\n") refs.AssemblyReferences;
   List.iter (fun x -> output_modref os x; output_string os "\n") refs.ModuleReferences
   
-let goutput_module_manifest env os modul = 
+let goutput_module_manifest env os (modul: IModuleDef) = 
   output_string os " .module "; output_sqstring os modul.Name;
   goutput_custom_attrs env os modul.CustomAttrs;
   output_string os " .imagebase "; output_i32 os modul.ImageBase;

@@ -751,50 +751,69 @@ type ILAttribElem =
 /// Named args: values and flags indicating if they are fields or properties.
 type ILAttributeNamedArg = string * ILType * bool * ILAttribElem
 
-/// Custom attributes.  See 'decodeILAttribData' for a helper to parse the byte[] 
-/// to ILAttribElem's as best as possible.  
-type ILAttribute =
-    { Method: ILMethodSpec  
-      Data: byte[] 
-      Elements: ILAttribElem list}
 
-[<NoEquality; NoComparison; Struct>]
-type ILAttributes =
-    member AsArray: ILAttribute []
-    member AsList: ILAttribute list
+/// Custom attributes.  See 'decodeILAttribData' for a helper to parse the byte[] 
+/// to ILAttribElem's as best as possible.
+type IAttribute =
+    abstract Method: ILMethodSpec  
+    abstract Data: byte[] 
+    abstract Elements: ILAttribElem list
+
+    abstract With:
+        ?newMethod: ILMethodSpec *
+        ?newData: byte[] *
+        ?newElements: ILAttribElem list
+            -> IAttribute
+
+type IAttributes =
+    abstract AsArray: IAttribute []
+    abstract AsList: IAttribute list
+
 
 /// Represents the efficiency-oriented storage of ILAttributes in another item.
 [<NoEquality; NoComparison>]
 type ILAttributesStored
 
-/// Method parameters and return values.
-[<RequireQualifiedAccess; NoEquality; NoComparison>]
-type ILParameter = 
-    { Name: string option
-      Type: ILType
-      Default: ILFieldInit option  
-      /// Marshalling map for parameters. COM Interop only. 
-      Marshal: ILNativeType option 
-      IsIn: bool
-      IsOut: bool
-      IsOptional: bool
-      CustomAttrsStored: ILAttributesStored
-      MetadataIndex: int32 }
-    member CustomAttrs: ILAttributes
 
-type ILParameters = list<ILParameter>
+/// Method parameters and return values.
+type IParameter =
+    abstract Name: string option
+    abstract Type: ILType
+    abstract Default: ILFieldInit option  
+
+    /// Marshalling map for parameters. COM Interop only. 
+    abstract Marshal: ILNativeType option 
+
+    abstract IsIn: bool
+    abstract IsOut: bool
+    abstract IsOptional: bool
+    abstract CustomAttrs: IAttributes
+
+    abstract With:
+         ?newName: string option * ?newTy: ILType * ?newDefaultValue: ILFieldInit option *
+         ?newMarshal: ILNativeType option * ?newIsIn: bool * ?newIsOut: bool * ?newIsOptional: bool *
+         ?newCustomAttrsStored: ILAttributesStored * ?newMetadataIndex: int
+            -> IParameter
+
+
+type ILParameters = list<IParameter>
 
 val typesOfILParams: ILParameters -> ILType list
 
-/// Method return values.
-[<RequireQualifiedAccess; NoEquality; NoComparison>]
-type ILReturn = 
-    { Marshal: ILNativeType option
-      Type: ILType 
-      CustomAttrsStored: ILAttributesStored
-      MetadataIndex: int32  }
 
-    member CustomAttrs: ILAttributes
+/// Method return values.
+type IReturn =
+    abstract Type: ILType
+    abstract Marshal: ILNativeType option
+    abstract CustomAttrs: IAttributes
+
+    abstract With:
+        ?newTy: ILType *
+        ?newMarshal: ILNativeType option *
+        ?newCustomAttrsStored: ILAttributesStored *
+        ?newMetadataIndex: int
+            -> IReturn
+
 
 [<RequireQualifiedAccess>]
 type ILSecurityAction = 
@@ -905,270 +924,251 @@ type MethodCodeKind =
     | Native
     | Runtime
 
-/// Generic parameters.  Formal generic parameter declarations may include the bounds, if any, on the generic parameter.
-type ILGenericParameterDef =
-    { Name: string
 
-      /// At most one is the parent type, the others are interface types.
-      Constraints: ILTypes 
+/// Generic parameters. Formal generic parameter declarations may include the bounds, if any, on the generic parameter.
+type IGenericParameterDef =
+    abstract Name: string
+    
+     /// At most one is the parent type, the others are interface types.
+    abstract Constraints: ILTypes 
 
-      /// Variance of type parameters, only applicable to generic parameters for generic interfaces and delegates.
-      Variance: ILGenericVariance 
+     /// Variance of type parameters, only applicable to generic parameters for generic interfaces and delegates.
+    abstract Variance: ILGenericVariance 
 
-      /// Indicates the type argument must be a reference type.
-      HasReferenceTypeConstraint: bool     
+     /// Indicates the type argument must be a reference type.
+    abstract HasReferenceTypeConstraint: bool    
 
-      /// Indicates the type argument must be a value type, but not Nullable.
-      HasNotNullableValueTypeConstraint: bool  
+     /// Indicates the type argument must be a value type, but not Nullable.
+    abstract HasNotNullableValueTypeConstraint: bool  
 
-      /// Indicates the type argument must have a public nullary constructor.
-      HasDefaultConstructorConstraint: bool 
-      
-      /// Do not use this
-      CustomAttrsStored: ILAttributesStored
+     /// Indicates the type argument must have a public nullary constructor.
+    abstract HasDefaultConstructorConstraint: bool 
 
-      /// Do not use this
-      MetadataIndex: int32 }
+    abstract CustomAttrs: IAttributes
 
-    member CustomAttrs: ILAttributes 
+    abstract With:
+        ?newName: string *
+        ?newConstraints: ILTypes *
+        ?newVariance: ILGenericVariance *
+        ?newHasReferenceTypeConstraint: bool *
+        ?newHasNotNullableValueTypeConstraint: bool *
+        ?newHasDefaultConstructorConstraint: bool *
+        ?newCustomAttrs: IAttributes
+            -> IGenericParameterDef
 
-type ILGenericParameterDefs = ILGenericParameterDef list
+
+type ILGenericParameterDefs = IGenericParameterDef list
+
 
 [<NoComparison; NoEquality; Sealed>]
 type ILLazyMethodBody = 
     member Contents: MethodBody 
 
-/// IL Method definitions. 
-[<NoComparison; NoEquality>]
-type ILMethodDef = 
 
-    /// Functional creation of a value, with delayed reading of some elements via a metadata index
-    new: name: string * attributes: MethodAttributes * implAttributes: MethodImplAttributes * callingConv: ILCallingConv * 
-         parameters: ILParameters * ret: ILReturn * body: ILLazyMethodBody * isEntryPoint:bool * genericParams: ILGenericParameterDefs * 
-         securityDeclsStored: ILSecurityDeclsStored * customAttrsStored: ILAttributesStored * metadataIndex: int32 -> ILMethodDef
-
-    /// Functional creation of a value, immediate
-    new: name: string * attributes: MethodAttributes * implAttributes: MethodImplAttributes * callingConv: ILCallingConv * 
-         parameters: ILParameters * ret: ILReturn * body: ILLazyMethodBody * isEntryPoint:bool * genericParams: ILGenericParameterDefs * 
-         securityDecls: ILSecurityDecls * customAttrs: ILAttributes -> ILMethodDef
-      
-    member Name: string
-    member Attributes: MethodAttributes
-    member ImplAttributes: MethodImplAttributes
-    member CallingConv: ILCallingConv
-    member Parameters: ILParameters
-    member Return: ILReturn
-    member Body: ILLazyMethodBody
-    member SecurityDecls: ILSecurityDecls
-    member IsEntryPoint:bool
-    member GenericParams: ILGenericParameterDefs
-    member CustomAttrs: ILAttributes 
-    member ParameterTypes: ILTypes
-    member IsIL: bool
-    member Code: ILCode option
-    member Locals: ILLocals
-    member MaxStack: int32
-    member IsZeroInit: bool
+/// IL Method definitions.
+type IMethodDef =
+    abstract Name: string
+    abstract Attributes: MethodAttributes
+    abstract ImplAttributes: MethodImplAttributes
+    abstract CallingConv: ILCallingConv
+    abstract Parameters: ILParameters
+    abstract Return: IReturn
+    abstract Body: ILLazyMethodBody
+    abstract SecurityDecls: ILSecurityDecls
+    abstract IsEntryPoint:bool
+    abstract GenericParams: ILGenericParameterDefs
+    abstract CustomAttrs: IAttributes 
+    abstract ParameterTypes: ILTypes
+    abstract IsIL: bool
+    abstract Code: ILCode option
+    abstract Locals: ILLocals
     
     /// Indicates a .cctor method.
-    member IsClassInitializer: bool
+    abstract IsClassInitializer: bool
 
     /// Indicates a .ctor method.
-    member IsConstructor: bool
+    abstract IsConstructor: bool
 
     /// Indicates a static method.
-    member IsStatic: bool
+    abstract IsStatic: bool
 
     /// Indicates this is an instance methods that is not virtual.
-    member IsNonVirtualInstance: bool
+    abstract IsNonVirtualInstance: bool
 
     /// Indicates an instance methods that is virtual or abstract or implements an interface slot.  
-    member IsVirtual: bool
+    abstract IsVirtual: bool
     
-    member IsFinal: bool
-    member IsNewSlot: bool
-    member IsCheckAccessOnOverride: bool
-    member IsAbstract: bool
-    member MethodBody: ILMethodBody
-    member CallingSignature: ILCallingSignature
-    member Access: ILMemberAccess
-    member IsHideBySig: bool
-    member IsSpecialName: bool
+    abstract IsFinal: bool
+    abstract IsNewSlot: bool
+    abstract IsCheckAccessOnOverride: bool
+    abstract IsAbstract: bool
+    abstract MethodBody: ILMethodBody
+    abstract CallingSignature: ILCallingSignature
+    abstract Access: ILMemberAccess
+    abstract IsHideBySig: bool
+    abstract IsSpecialName: bool
 
     /// The method is exported to unmanaged code using COM interop.
-    member IsUnmanagedExport: bool
-    member IsReqSecObj: bool
+    abstract IsUnmanagedExport: bool
+    abstract IsReqSecObj: bool
 
-    /// Some methods are marked "HasSecurity" even if there are no permissions attached, e.g. if they use SuppressUnmanagedCodeSecurityAttribute 
-    member HasSecurity: bool
-    member IsManaged: bool
-    member IsForwardRef: bool
-    member IsInternalCall: bool
-    member IsPreserveSig: bool
-    member IsSynchronized: bool
-    member IsNoInline: bool
-    member IsAggressiveInline: bool
+    /// Some methods are marked "HasSecurity" even if there are no permissions attached,
+    /// e.g. if they use SuppressUnmanagedCodeSecurityAttribute.
+    abstract HasSecurity: bool
+    abstract IsManaged: bool
+    abstract IsForwardRef: bool
+    abstract IsInternalCall: bool
+    abstract IsPreserveSig: bool
+    abstract IsSynchronized: bool
+    abstract IsNoInline: bool
+    abstract IsAggressiveInline: bool
 
     /// SafeHandle finalizer must be run.
-    member IsMustRun: bool
+    abstract IsMustRun: bool
     
     /// Functional update of the value
-    member With: ?name: string * ?attributes: MethodAttributes * ?implAttributes: MethodImplAttributes * ?callingConv: ILCallingConv * 
-                 ?parameters: ILParameters * ?ret: ILReturn * ?body: ILLazyMethodBody * ?securityDecls: ILSecurityDecls * ?isEntryPoint:bool * 
-                 ?genericParams: ILGenericParameterDefs * ?customAttrs: ILAttributes -> ILMethodDef
-    member WithSpecialName: ILMethodDef
-    member WithHideBySig: unit -> ILMethodDef
-    member WithHideBySig: bool -> ILMethodDef
-    member WithFinal: bool -> ILMethodDef
-    member WithAbstract: bool -> ILMethodDef
-    member WithAccess: ILMemberAccess -> ILMethodDef
-    member WithNewSlot: ILMethodDef
-    member WithSecurity: bool -> ILMethodDef
-    member WithPInvoke: bool -> ILMethodDef
-    member WithPreserveSig: bool -> ILMethodDef
-    member WithSynchronized: bool -> ILMethodDef
-    member WithNoInlining: bool -> ILMethodDef
-    member WithAggressiveInlining: bool -> ILMethodDef
-    member WithRuntime: bool -> ILMethodDef
+    abstract With:
+        ?name: string * ?attributes: MethodAttributes * ?implAttributes: MethodImplAttributes * ?callingConv: ILCallingConv * 
+        ?parameters: ILParameters * ?ret: IReturn * ?body: ILLazyMethodBody * ?securityDecls: ILSecurityDecls *
+        ?isEntryPoint:bool * ?genericParams: ILGenericParameterDefs * ?customAttrs: IAttributes
+            -> IMethodDef
 
-/// Tables of methods.  Logically equivalent to a list of methods but
-/// the table is kept in a form optimized for looking up methods by 
-/// name and arity.
-[<NoEquality; NoComparison; Sealed>]
-type ILMethodDefs =
-    interface IEnumerable<ILMethodDef>
-    member AsArray: ILMethodDef[]
-    member AsList: ILMethodDef list
-    member FindByName: string -> ILMethodDef list
+    abstract WithSpecialName: IMethodDef
+    abstract WithHideBySig: unit -> IMethodDef
+    abstract WithHideBySig: bool -> IMethodDef
+    abstract WithFinal: bool -> IMethodDef
+    abstract WithAbstract: bool -> IMethodDef
+    abstract WithAccess: ILMemberAccess -> IMethodDef
+    abstract WithNewSlot: IMethodDef
+    abstract WithSecurity: bool -> IMethodDef
+    abstract WithPInvoke: bool -> IMethodDef
+    abstract WithPreserveSig: bool -> IMethodDef
+    abstract WithSynchronized: bool -> IMethodDef
+    abstract WithNoInlining: bool -> IMethodDef
+    abstract WithAggressiveInlining: bool -> IMethodDef
+    abstract WithRuntime: bool -> IMethodDef
+
+
+/// Tables of methods.  Logically equivalent to a list of methods but the table is kept in a form optimized
+/// for looking up methods by name and arity.
+type IMethodDefs =
+    inherit IEnumerable<IMethodDef>
+    abstract AsArray: IMethodDef[]
+    abstract AsList: IMethodDef list
+    abstract FindByName: string -> IMethodDef list
+    abstract FindByNameAndArity: string * int -> IMethodDef list
+
 
 /// Field definitions.
-[<NoComparison; NoEquality>]
-type ILFieldDef = 
-
-    /// Functional creation of a value using delayed reading via a metadata index
-    new: name: string * fieldType: ILType * attributes: FieldAttributes * data: byte[] option * 
-         literalValue: ILFieldInit option * offset:  int32 option * marshal: ILNativeType option * 
-         customAttrsStored: ILAttributesStored * metadataIndex: int32 -> ILFieldDef
-
-    /// Functional creation of a value, immediate
-    new: name: string * fieldType: ILType * attributes: FieldAttributes * data: byte[] option * 
-         literalValue: ILFieldInit option * offset:  int32 option * marshal: ILNativeType option * 
-         customAttrs: ILAttributes -> ILFieldDef
-
-    member Name: string
-    member FieldType: ILType
-    member Attributes: FieldAttributes
-    member Data:  byte[] option
-    member LiteralValue: ILFieldInit option  
+type IFieldDef =
+    abstract Name: string
+    abstract FieldType: ILType
+    abstract Attributes: FieldAttributes
+    abstract Data:  byte[] option
+    abstract LiteralValue: ILFieldInit option  
 
     /// The explicit offset in bytes when explicit layout is used.
-    member Offset:  int32 option 
-    member Marshal: ILNativeType option 
-    member CustomAttrs: ILAttributes
-    member IsStatic: bool
-    member IsSpecialName: bool
-    member IsLiteral: bool
-    member NotSerialized: bool
-    member IsInitOnly: bool
-    member Access: ILMemberAccess
+    abstract Offset:  int32 option 
+    abstract Marshal: ILNativeType option 
+    abstract CustomAttrs: IAttributes
+    abstract IsStatic: bool
+    abstract IsSpecialName: bool
+    abstract IsLiteral: bool
+    abstract NotSerialized: bool
+    abstract IsInitOnly: bool
+    abstract Access: ILMemberAccess
 
     /// Functional update of the value
-    member With: ?name: string * ?fieldType: ILType * ?attributes: FieldAttributes * ?data: byte[] option * ?literalValue: ILFieldInit option * 
-                 ?offset:  int32 option * ?marshal: ILNativeType option * ?customAttrs: ILAttributes -> ILFieldDef
-    member WithAccess: ILMemberAccess -> ILFieldDef
-    member WithInitOnly: bool -> ILFieldDef
-    member WithStatic: bool -> ILFieldDef
-    member WithSpecialName: bool -> ILFieldDef
-    member WithNotSerialized: bool -> ILFieldDef
-    member WithLiteralDefaultValue: ILFieldInit option -> ILFieldDef
-    member WithFieldMarshal: ILNativeType option -> ILFieldDef
+    abstract With:
+        ?newName: string * ?newFieldType: ILType * ?newAttributes: FieldAttributes * ?newData: byte[] option *
+        ?newLiteralValue: ILFieldInit option * ?newOffset:  int32 option * ?newMarshal: ILNativeType option *
+        ?newCustomAttrs: IAttributes
+            -> IFieldDef
 
-/// Tables of fields.  Logically equivalent to a list of fields but the table is kept in 
+    abstract WithAccess: ILMemberAccess -> IFieldDef
+    abstract WithInitOnly: bool -> IFieldDef
+    abstract WithStatic: bool -> IFieldDef
+    abstract WithSpecialName: bool -> IFieldDef
+    abstract WithNotSerialized: bool -> IFieldDef
+    abstract WithLiteralDefaultValue: ILFieldInit option -> IFieldDef
+    abstract WithFieldMarshal: ILNativeType option -> IFieldDef
+
+
+/// Tables of fields. Logically equivalent to a list of fields but the table is kept in 
 /// a form to allow efficient looking up fields by name.
+type IFieldDefs =
+    abstract AsList: IFieldDef list
+    abstract LookupByName: string -> IFieldDef list
+
+
+/// Index table by name. Keep a canonical list to make sure field order is not disturbed for binary manipulation.
 [<NoEquality; NoComparison; Sealed>]
 type ILFieldDefs =
-    member AsList: ILFieldDef list
-    member LookupByName: string -> ILFieldDef list
+    interface IFieldDefs
+
 
 /// Event definitions.
-[<NoComparison; NoEquality>]
-type ILEventDef =
-
-    /// Functional creation of a value, using delayed reading via a metadata index, for ilread.fs
-    new: eventType: ILType option * name: string * attributes: EventAttributes * addMethod: ILMethodRef * 
-         removeMethod: ILMethodRef * fireMethod: ILMethodRef option * otherMethods: ILMethodRef list * 
-         customAttrsStored: ILAttributesStored * metadataIndex: int32 -> ILEventDef
-
-    /// Functional creation of a value, immediate
-    new: eventType: ILType option * name: string * attributes: EventAttributes * addMethod: ILMethodRef * 
-         removeMethod: ILMethodRef * fireMethod: ILMethodRef option * otherMethods: ILMethodRef list * 
-         customAttrs: ILAttributes -> ILEventDef
-
-    member EventType: ILType option
-    member Name: string
-    member Attributes: EventAttributes
-    member AddMethod: ILMethodRef 
-    member RemoveMethod: ILMethodRef
-    member FireMethod: ILMethodRef option
-    member OtherMethods: ILMethodRef list
-    member CustomAttrs: ILAttributes
-    member IsSpecialName: bool
-    member IsRTSpecialName: bool
+type IEventDef =
+    abstract EventType: ILType option
+    abstract Name: string
+    abstract Attributes: EventAttributes
+    abstract AddMethod: ILMethodRef 
+    abstract RemoveMethod: ILMethodRef
+    abstract FireMethod: ILMethodRef option
+    abstract OtherMethods: ILMethodRef list
+    abstract CustomAttrs: IAttributes
+    abstract IsSpecialName: bool
+    abstract IsRTSpecialName: bool
 
     /// Functional update of the value
-    member With: ?eventType: ILType option * ?name: string * ?attributes: EventAttributes * ?addMethod: ILMethodRef * 
-                 ?removeMethod: ILMethodRef * ?fireMethod: ILMethodRef option * ?otherMethods: ILMethodRef list * 
-                 ?customAttrs: ILAttributes -> ILEventDef
+    abstract With:
+        ?eventType: ILType option * ?name: string * ?attributes: EventAttributes * ?addMethod: ILMethodRef * 
+        ?removeMethod: ILMethodRef * ?fireMethod: ILMethodRef option * ?otherMethods: ILMethodRef list * 
+        ?customAttrs: IAttributes
+            -> IEventDef
+
 
 /// Table of those events in a type definition.
-[<NoEquality; NoComparison; Sealed>]
-type ILEventDefs =
-    member AsList: ILEventDef list
-    member LookupByName: string -> ILEventDef list
+type IEventDefs =
+    abstract AsList: IEventDef list
+    abstract LookupByName: string -> IEventDef list
+
 
 /// Property definitions
-[<NoComparison; NoEquality>]
-type ILPropertyDef =
-
-    /// Functional creation of a value, using delayed reading via a metadata index, for ilread.fs
-    new: name: string * attributes: PropertyAttributes * setMethod: ILMethodRef option * getMethod: ILMethodRef option * 
-         callingConv: ILThisConvention * propertyType: ILType * init: ILFieldInit option * args: ILTypes * 
-         customAttrsStored: ILAttributesStored * metadataIndex: int32 -> ILPropertyDef
-
-    /// Functional creation of a value, immediate
-    new: name: string * attributes: PropertyAttributes * setMethod: ILMethodRef option * getMethod: ILMethodRef option * 
-         callingConv: ILThisConvention * propertyType: ILType * init: ILFieldInit option * args: ILTypes * 
-         customAttrs: ILAttributes -> ILPropertyDef
-
-    member Name: string
-    member Attributes: PropertyAttributes
-    member SetMethod: ILMethodRef option
-    member GetMethod: ILMethodRef option
-    member CallingConv: ILThisConvention
-    member PropertyType: ILType          
-    member Init: ILFieldInit option
-    member Args: ILTypes
-    member CustomAttrs: ILAttributes
-    member IsSpecialName: bool
-    member IsRTSpecialName: bool
+type IPropertyDef =
+    abstract Name: string
+    abstract Attributes: PropertyAttributes
+    abstract SetMethod: ILMethodRef option
+    abstract GetMethod: ILMethodRef option
+    abstract CallingConv: ILThisConvention
+    abstract PropertyType: ILType          
+    abstract Init: ILFieldInit option
+    abstract Args: ILTypes
+    abstract CustomAttrs: IAttributes
+    abstract IsSpecialName: bool
+    abstract IsRTSpecialName: bool
 
     /// Functional update of the value
-    member With: ?name: string * ?attributes: PropertyAttributes * ?setMethod: ILMethodRef option * ?getMethod: ILMethodRef option * 
-                 ?callingConv: ILThisConvention * ?propertyType: ILType * ?init: ILFieldInit option * ?args: ILTypes * 
-                 ?customAttrs: ILAttributes -> ILPropertyDef
+    abstract With:
+        ?name: string * ?attributes: PropertyAttributes * ?setMethod: ILMethodRef option * ?getMethod: ILMethodRef option * 
+        ?callingConv: ILThisConvention * ?propertyType: ILType * ?init: ILFieldInit option * ?args: ILTypes * 
+        ?customAttrs: IAttributes
+            -> IPropertyDef
+
 
 /// Table of properties in an IL type definition.
-[<NoEquality; NoComparison>]
-[<Sealed>]
-type ILPropertyDefs =
-    member AsList: ILPropertyDef list
-    member LookupByName: string -> ILPropertyDef list
+type IPropertyDefs =
+    abstract AsList: IPropertyDef list
+    abstract LookupByName: string -> IPropertyDef list
+
 
 /// Method Impls
 type ILMethodImplDef =
     { Overrides: ILOverridesSpec
       OverrideBy: ILMethodSpec }
 
+
+// Index table by name and arity.
 [<NoEquality; NoComparison; Sealed>]
 type ILMethodImplDefs =
     member AsList: ILMethodImplDef list
@@ -1213,107 +1213,105 @@ type ILTypeDefKind =
     | Enum 
     | Delegate 
 
+
 /// Tables of named type definitions.  
-[<NoEquality; NoComparison; Sealed>]
-type ILTypeDefs =
-    interface IEnumerable<ILTypeDef>
+type ITypeDefs =
+    inherit  IEnumerable<ITypeDef>
 
-    member AsArray: ILTypeDef[]
-
-    member AsList: ILTypeDef list
+    abstract AsArray: ITypeDef[]
+    abstract AsList: ITypeDef list
 
     /// Get some information about the type defs, but do not force the read of the type defs themselves.
-    member AsArrayOfPreTypeDefs: ILPreTypeDef[]
+    abstract AsArrayOfPreTypeDefs: IPreTypeDef[]
 
     /// Calls to <c>FindByName</c> will result in any laziness in the overall 
     /// set of ILTypeDefs being read in in addition 
     /// to the details for the type found, but the remaining individual 
     /// type definitions will not be read. 
-    member FindByName: string -> ILTypeDef
+    abstract FindByName: string -> ITypeDef
 
-/// Represents IL Type Definitions. 
-and [<NoComparison; NoEquality>]
-    ILTypeDef =  
 
-    /// Functional creation of a value, using delayed reading via a metadata index, for ilread.fs
-    new: name: string * attributes: TypeAttributes * layout: ILTypeDefLayout * implements: ILTypes * genericParams: ILGenericParameterDefs * 
-          extends: ILType option * methods: ILMethodDefs * nestedTypes: ILTypeDefs * fields: ILFieldDefs * methodImpls: ILMethodImplDefs * 
-          events: ILEventDefs * properties: ILPropertyDefs * securityDeclsStored: ILSecurityDeclsStored * customAttrsStored: ILAttributesStored * metadataIndex: int32 -> ILTypeDef
+/// Represents IL Type Definitions.
+and ITypeDef =
+    abstract Name: string  
+    abstract Attributes: TypeAttributes
+    abstract GenericParams: ILGenericParameterDefs
+    abstract Layout: ILTypeDefLayout
+    abstract NestedTypes: ITypeDefs
+    abstract Implements: ILTypes
+    abstract Extends: ILType option
+    abstract Methods: IMethodDefs
+    abstract SecurityDecls: ILSecurityDecls
+    abstract Fields: IFieldDefs
+    abstract MethodImpls: ILMethodImplDefs
+    abstract Events: IEventDefs
+    abstract Properties: IPropertyDefs
+    abstract CustomAttrs: IAttributes
+    abstract IsClass: bool
+    abstract IsStruct: bool
+    abstract IsInterface: bool
+    abstract IsEnum: bool
+    abstract IsDelegate: bool
+    abstract IsStructOrEnum: bool
+    abstract Access: ILTypeDefAccess
+    abstract IsAbstract: bool
+    abstract IsSealed: bool
+    abstract IsSerializable: bool
 
-    /// Functional creation of a value, immediate
-    new: name: string * attributes: TypeAttributes * layout: ILTypeDefLayout * implements: ILTypes * genericParams: ILGenericParameterDefs * 
-          extends: ILType option * methods: ILMethodDefs * nestedTypes: ILTypeDefs * fields: ILFieldDefs * methodImpls: ILMethodImplDefs * 
-          events: ILEventDefs * properties: ILPropertyDefs * securityDecls: ILSecurityDecls * customAttrs: ILAttributes -> ILTypeDef
-
-    member Name: string  
-    member Attributes: TypeAttributes
-    member GenericParams: ILGenericParameterDefs
-    member Layout: ILTypeDefLayout
-    member NestedTypes: ILTypeDefs
-    member Implements: ILTypes
-    member Extends: ILType option
-    member Methods: ILMethodDefs
-    member SecurityDecls: ILSecurityDecls
-    member Fields: ILFieldDefs
-    member MethodImpls: ILMethodImplDefs
-    member Events: ILEventDefs
-    member Properties: ILPropertyDefs
-    member CustomAttrs: ILAttributes
-    member IsClass: bool
-    member IsStruct: bool
-    member IsInterface: bool
-    member IsEnum: bool
-    member IsDelegate: bool
-    member IsStructOrEnum: bool
-    member Access: ILTypeDefAccess
-    member IsAbstract: bool
-    member IsSealed: bool
-    member IsSerializable: bool
     /// Class or interface generated for COM interop. 
-    member IsComInterop: bool
-    member IsSpecialName: bool
+    abstract IsComInterop: bool
+    abstract IsSpecialName: bool
+
     /// Some classes are marked "HasSecurity" even if there are no permissions attached, 
     /// e.g. if they use SuppressUnmanagedCodeSecurityAttribute 
-    member HasSecurity: bool
-    member Encoding: ILDefaultPInvokeEncoding
+    abstract HasSecurity: bool
+    abstract Encoding: ILDefaultPInvokeEncoding
 
-    member WithAccess: ILTypeDefAccess -> ILTypeDef
-    member WithNestedAccess: ILMemberAccess -> ILTypeDef
-    member WithSealed: bool -> ILTypeDef
-    member WithSerializable: bool -> ILTypeDef
-    member WithAbstract: bool -> ILTypeDef
-    member WithImport: bool -> ILTypeDef
-    member WithHasSecurity: bool -> ILTypeDef
-    member WithLayout: ILTypeDefLayout -> ILTypeDef
-    member WithKind: ILTypeDefKind -> ILTypeDef
-    member WithEncoding: ILDefaultPInvokeEncoding -> ILTypeDef
-    member WithSpecialName: bool -> ILTypeDef
-    member WithInitSemantics: ILTypeInit -> ILTypeDef
+    abstract WithAccess: ILTypeDefAccess -> ITypeDef
+    abstract WithNestedAccess: ILMemberAccess -> ITypeDef
+    abstract WithSealed: bool -> ITypeDef
+    abstract WithSerializable: bool -> ITypeDef
+    abstract WithAbstract: bool -> ITypeDef
+    abstract WithImport: bool -> ITypeDef
+    abstract WithHasSecurity: bool -> ITypeDef
+    abstract WithLayout: ILTypeDefLayout -> ITypeDef
+    abstract WithKind: ILTypeDefKind -> ITypeDef
+    abstract WithEncoding: ILDefaultPInvokeEncoding -> ITypeDef
+    abstract WithSpecialName: bool -> ITypeDef
+    abstract WithInitSemantics: ILTypeInit -> ITypeDef
 
     /// Functional update
-    member With: ?name: string * ?attributes: TypeAttributes * ?layout: ILTypeDefLayout *  ?implements: ILTypes * 
-                 ?genericParams:ILGenericParameterDefs * ?extends:ILType option * ?methods:ILMethodDefs * 
-                 ?nestedTypes:ILTypeDefs * ?fields: ILFieldDefs * ?methodImpls:ILMethodImplDefs * ?events:ILEventDefs * 
-                 ?properties:ILPropertyDefs * ?customAttrs:ILAttributes * ?securityDecls: ILSecurityDecls -> ILTypeDef
+    abstract With:
+        ?name: string * ?attributes: TypeAttributes * ?layout: ILTypeDefLayout *  ?implements: ILTypes * 
+        ?genericParams:ILGenericParameterDefs * ?extends:ILType option * ?methods:IMethodDefs * 
+        ?nestedTypes:ITypeDefs * ?fields: IFieldDefs * ?methodImpls:ILMethodImplDefs * ?events:IEventDefs * 
+        ?properties:IPropertyDefs * ?customAttrs:IAttributes * ?securityDecls: ILSecurityDecls
+            -> ITypeDef
+
 
 /// Represents a prefix of information for ILTypeDef.
 ///
 /// The information is enough to perform name resolution for the F# compiler, probe attributes
 /// for ExtensionAttribute  etc.  This is key to the on-demand exploration of .NET metadata.
 /// This information has to be "Goldilocks" - not too much, not too little, just right.
-and [<NoEquality; NoComparison; Sealed>] ILPreTypeDef = 
-    member Namespace: string list
-    member Name: string
-    member MetadataIndex: int32 
-    /// Realise the actual full typedef
-    member GetTypeDef : unit -> ILTypeDef
+///
+/// This is a memory-critical class.
+/// Very many of these objects get allocated and held to represent the contents of .NET assemblies.
+and IPreTypeDef = 
+        abstract Namespace: string list
+        abstract Name: string
+        abstract MetadataIndex: int32
+
+        /// Realise the actual full typedef
+        abstract GetTypeDef : unit -> ITypeDef
+
 
 and [<Sealed>] ILTypeDefStored 
 
-val mkILPreTypeDef : ILTypeDef -> ILPreTypeDef
-val mkILPreTypeDefComputed : string list * string * (unit -> ILTypeDef) -> ILPreTypeDef
-val mkILPreTypeDefRead : string list * string * int32 * ILTypeDefStored -> ILPreTypeDef
-val mkILTypeDefReader: (int32 -> ILTypeDef) -> ILTypeDefStored
+val mkILPreTypeDef : ITypeDef -> IPreTypeDef
+val mkILPreTypeDefComputed : string list * string * (unit -> ITypeDef) -> IPreTypeDef
+val mkILPreTypeDefRead : string list * string * int32 * ILTypeDefStored -> IPreTypeDef
+val mkILTypeDefReader: (int32 -> ITypeDef) -> ILTypeDefStored
 
 [<NoEquality; NoComparison; Sealed>]
 type ILNestedExportedTypes =
@@ -1352,7 +1350,7 @@ and ILNestedExportedType =
       Nested: ILNestedExportedTypes
       CustomAttrsStored: ILAttributesStored
       MetadataIndex: int32 } 
-    member CustomAttrs: ILAttributes
+    member CustomAttrs: IAttributes
 
 /// these are only found in the ILExportedTypesAndForwarders table in the manifest 
 [<NoComparison; NoEquality>]
@@ -1366,7 +1364,7 @@ type ILExportedTypeOrForwarder =
       MetadataIndex: int32 }
     member Access: ILTypeDefAccess
     member IsForwarder: bool
-    member CustomAttrs: ILAttributes
+    member CustomAttrs: IAttributes
 
 [<NoEquality; NoComparison>]
 [<Sealed>]
@@ -1392,27 +1390,25 @@ type ILResourceLocation =
     /// Represents a manifest resource in a different assembly
     | Assembly of ILAssemblyRef
 
+
 /// "Manifest ILResources" are chunks of resource data, being one of:
 ///   - the data section of the current module (byte[] of resource given directly).
-///   - in an external file in this assembly (offset given in the ILResourceLocation field). 
-///   - as a resources in another assembly of the same name.  
-type ILResource =
-    { Name: string
-      Location: ILResourceLocation
-      Access: ILResourceAccess
-      CustomAttrsStored: ILAttributesStored
-      MetadataIndex: int32 }
+///   - in an external file in this assembly (offset given in the ILResourceLocation field).
+///   - as a resources in another assembly of the same name.
+type IResource =
+    abstract Name: string
+    abstract Location: ILResourceLocation
+    abstract Access: ILResourceAccess
+    abstract CustomAttrs: IAttributes
 
     /// Read the bytes from a resource local to an assembly. Will fail for non-local resources.
-    member GetBytes : unit -> byte[]
+    abstract GetBytes : unit -> byte[]
 
-    member CustomAttrs: ILAttributes
 
 /// Table of resources in a module.
 [<NoEquality; NoComparison>]
-[<Sealed>]
-type ILResources =
-    member AsList: ILResource  list
+type IResources =
+    abstract AsList: IResource list
 
 
 [<RequireQualifiedAccess>]
@@ -1423,40 +1419,45 @@ type ILAssemblyLongevity =
     | PlatformProcess
     | PlatformSystem
 
+
 /// The main module of an assembly is a module plus some manifest information.
-type ILAssemblyManifest = 
-    { Name: string
-      /// This is the ID of the algorithm used for the hashes of auxiliary 
-      /// files in the assembly.   These hashes are stored in the 
-      /// <c>ILModuleRef.Hash</c> fields of this assembly. These are not 
-      /// cryptographic hashes: they are simple file hashes. The algorithm 
-      /// is normally <c>0x00008004</c> indicating the SHA1 hash algorithm.  
-      AuxModuleHashAlgorithm: int32 
-      SecurityDeclsStored: ILSecurityDeclsStored
-      /// This is the public key used to sign this 
-      /// assembly (the signature itself is stored elsewhere: see the 
-      /// binary format, and may not have been written if delay signing 
-      /// is used).  (member Name, member PublicKey) forms the full 
-      /// public name of the assembly.  
-      PublicKey: byte[] option  
-      Version: ILVersionInfo option
-      Locale: string option
-      CustomAttrsStored: ILAttributesStored
-      AssemblyLongevity: ILAssemblyLongevity 
-      DisableJitOptimizations: bool
-      JitTracking: bool
-      IgnoreSymbolStoreSequencePoints: bool
-      Retargetable: bool
-      /// Records the types implemented by this assembly in auxiliary 
-      /// modules. 
-      ExportedTypes: ILExportedTypesAndForwarders
-      /// Records whether the entrypoint resides in another module. 
-      EntrypointElsewhere: ILModuleRef option
-      MetadataIndex: int32
-    } 
-    member CustomAttrs: ILAttributes
-    member SecurityDecls: ILSecurityDecls
-    
+type IAssemblyManifest =
+    abstract Name: string
+
+    /// This is the ID of the algorithm used for the hashes of auxiliary files in the assembly.
+    /// These hashes are stored in the <c>ILModuleRef.Hash</c> fields of this assembly.
+    /// These are not cryptographic hashes: they are simple file hashes.
+    /// The algorithm is normally <c>0x00008004</c> indicating the SHA1 hash algorithm.  
+    abstract AuxModuleHashAlgorithm: int
+
+    /// This is the public key used to sign this assembly (the signature itself is stored elsewhere: see the 
+    /// binary format, and may not have been written if delay signing is used).
+    /// (member Name, member PublicKey) forms the full public name of the assembly.  
+    abstract PublicKey: byte[] option  
+
+    abstract Version: ILVersionInfo option
+    abstract Locale: string option
+    abstract AssemblyLongevity: ILAssemblyLongevity 
+    abstract DisableJitOptimizations: bool
+    abstract JitTracking: bool
+    abstract IgnoreSymbolStoreSequencePoints: bool
+    abstract Retargetable: bool
+
+    /// Records the types implemented by this assembly in auxiliary modules. 
+    abstract ExportedTypes: ILExportedTypesAndForwarders
+
+    /// Records whether the entrypoint resides in another module. 
+    abstract EntrypointElsewhere: ILModuleRef option
+
+    abstract CustomAttrs: IAttributes
+    abstract SecurityDecls: ILSecurityDecls
+
+    abstract With:
+        ?newPublicKey: byte[] option * ?newVersion: ILVersionInfo option * ?newDisableJitOptimizations: bool *
+        ?newJitTracking: bool * ?newIgnoreSymbolStoreSequencePoints: bool *
+        ?newCustomAttrsStored: ILAttributesStored * ?newSecurityDeclsStored: ILSecurityDeclsStored
+            -> IAssemblyManifest
+
 
 [<RequireQualifiedAccess>]
 type ILNativeResource = 
@@ -1466,44 +1467,55 @@ type ILNativeResource =
     /// Represents a native resource to be written in an output file
     | Out of unlinkedResource: byte[]
 
-/// One module in the "current" assembly, either a main-module or
-/// an auxiliary module.  The main module will have a manifest.
+
+/// One module in the "current" assembly, either a main-module or an auxiliary module.
+/// The main module will have a manifest.
 ///
-/// An assembly is built by joining together a "main" module plus 
-/// several auxiliary modules. 
-type ILModuleDef = 
-    { Manifest: ILAssemblyManifest option
-      Name: string
-      TypeDefs: ILTypeDefs
-      SubsystemVersion: int * int
-      UseHighEntropyVA: bool
-      SubSystemFlags: int32
-      IsDLL: bool
-      IsILOnly: bool
-      Platform: ILPlatform option
-      StackReserveSize: int32 option
-      Is32Bit: bool
-      Is32BitPreferred: bool
-      Is64Bit: bool
-      VirtualAlignment: int32
-      PhysicalAlignment: int32
-      ImageBase: int32
-      MetadataVersion: string
-      Resources: ILResources 
-      /// e.g. win86 resources, as the exact contents of a .res or .obj file. Must be unlinked manually.
-      NativeResources: ILNativeResource list
-      CustomAttrsStored: ILAttributesStored
-      MetadataIndex: int32 }
-    member ManifestOfAssembly: ILAssemblyManifest 
-    member HasManifest: bool
-    member CustomAttrs: ILAttributes
+/// An assembly is built by joining together a "main" module plus several auxiliary modules. 
+type IModuleDef =
+    abstract Name: string
+    abstract Manifest: IAssemblyManifest option
+    abstract TypeDefs: ITypeDefs
+    abstract SubsystemVersion: int * int
+    abstract UseHighEntropyVA: bool
+    abstract SubSystemFlags: int32
+    abstract IsDLL: bool
+    abstract IsILOnly: bool
+    abstract Platform: ILPlatform option
+    abstract StackReserveSize: int32 option
+    abstract Is32Bit: bool
+    abstract Is32BitPreferred: bool
+    abstract Is64Bit: bool
+    abstract VirtualAlignment: int32
+    abstract PhysicalAlignment: int32
+    abstract ImageBase: int32
+    abstract MetadataVersion: string
+    abstract Resources: IResources
+
+    /// e.g. win86 resources, as the exact contents of a .res or .obj file. Must be unlinked manually.
+    abstract NativeResources: ILNativeResource list
+    abstract CustomAttrsStored: ILAttributesStored
+    abstract MetadataIndex: int32 
+    abstract ManifestOfAssembly: IAssemblyManifest 
+    abstract HasManifest: bool
+    abstract CustomAttrs: IAttributes
+
+    abstract With:
+        ?name: string * ?manifest: IAssemblyManifest option * ?typeDefs: ITypeDefs *
+        ?subsystemVersion: (int * int) * ?useHighEntropyVA: bool * ?subSystemFlags: int32 * ?isDLL: bool *
+        ?isILOnly: bool * ?platform: ILPlatform option * ?stackReserveSize: int32 option * ?is32Bit: bool *
+        ?is32BitPreferred: bool * ?is64Bit: bool * ?virtualAlignment: int32 * ?physicalAlignment: int32 *
+        ?imageBase: int32 * ?metadataVersion: string * ?resources: IResources *
+        ?nativeResources: ILNativeResource list * ?customAttrsStored: ILAttributesStored * ?metadataIndex: int32
+            -> IModuleDef
+
 
 /// Find the method definition corresponding to the given property or 
 /// event operation. These are always in the same class as the property 
 /// or event. This is useful especially if your code is not using the Ilbind 
 /// API to bind references. 
-val resolveILMethodRef: ILTypeDef -> ILMethodRef -> ILMethodDef
-val resolveILMethodRefWithRescope: (ILType -> ILType) -> ILTypeDef -> ILMethodRef -> ILMethodDef
+val resolveILMethodRef: ITypeDef -> ILMethodRef -> IMethodDef
+val resolveILMethodRefWithRescope: (ILType -> ILType) -> ITypeDef -> ILMethodRef -> IMethodDef
 
 // ------------------------------------------------------------------ 
 // Type Names
@@ -1583,14 +1595,14 @@ val EcmaMscorlibILGlobals: ILGlobals
 /// When writing a binary the fake "toplevel" type definition (called <Module>)
 /// must come first. This function puts it first, and creates it in the returned 
 /// list as an empty typedef if it doesn't already exist.
-val destTypeDefsWithGlobalFunctionsFirst: ILGlobals -> ILTypeDefs -> ILTypeDef list
+val destTypeDefsWithGlobalFunctionsFirst: ILGlobals -> ITypeDefs -> ITypeDef list
 
 /// Not all custom attribute data can be decoded without binding types.  In particular 
 /// enums must be bound in order to discover the size of the underlying integer. 
 /// The following assumes enums have size int32. 
 val decodeILAttribData: 
     ILGlobals -> 
-    ILAttribute -> 
+    IAttribute -> 
       ILAttribElem list *  (* fixed args *)
       ILAttributeNamedArg list (* named args: values and flags indicating if they are fields or properties *) 
 
@@ -1657,12 +1669,12 @@ val mkILFieldSpecInTy: ILType * string * ILType -> ILFieldSpec
 val mkILCallSig: ILCallingConv * ILType list * ILType -> ILCallingSignature
 
 /// Make generalized versions of possibly-generic types, e.g. Given the ILTypeDef for List, return the type "List<T>".
-val mkILFormalBoxedTy: ILTypeRef -> ILGenericParameterDef list -> ILType
-val mkILFormalNamedTy: ILBoxity -> ILTypeRef -> ILGenericParameterDef list -> ILType
+val mkILFormalBoxedTy: ILTypeRef -> IGenericParameterDef list -> ILType
+val mkILFormalNamedTy: ILBoxity -> ILTypeRef -> IGenericParameterDef list -> ILType
 
 val mkILFormalTypars: ILType list -> ILGenericParameterDefs
 val mkILFormalGenericArgs: int -> ILGenericParameterDefs -> ILGenericArgsList
-val mkILSimpleTypar: string -> ILGenericParameterDef
+val mkILSimpleTypar: string -> IGenericParameterDef
 
 /// Make custom attributes.
 val mkILCustomAttribMethRef: 
@@ -1670,14 +1682,18 @@ val mkILCustomAttribMethRef:
     -> ILMethodSpec 
        * ILAttribElem list (* fixed args: values and implicit types *) 
        * ILAttributeNamedArg list (* named args: values and flags indicating if they are fields or properties *) 
-      -> ILAttribute
+      -> IAttribute
 
 val mkILCustomAttribute: 
     ILGlobals 
     -> ILTypeRef * ILType list * 
        ILAttribElem list (* fixed args: values and implicit types *) * 
        ILAttributeNamedArg list (* named args: values and flags indicating if they are fields or properties *) 
-         -> ILAttribute
+         -> IAttribute
+
+val mkILAttribute:
+    method: ILMethodSpec * data: byte[] * elements: ILAttribElem list
+        -> IAttribute 
 
 val mkPermissionSet: ILGlobals -> ILSecurityAction * (ILTypeRef * (string * ILType * ILAttribElem) list) list -> ILSecurityDecl
 
@@ -1718,14 +1734,29 @@ val andTailness: ILTailcall -> bool -> ILTailcall
 
 /// Derived functions for making return, parameter and local variable
 /// objects for use in method definitions.
-val mkILParam: string option * ILType -> ILParameter
-val mkILParamAnon: ILType -> ILParameter
-val mkILParamNamed: string * ILType -> ILParameter
-val mkILReturn: ILType -> ILReturn
+val mkSimpleILParam: string option * ILType -> IParameter
+val mkILParamAnon: ILType -> IParameter
+val mkILParamNamed: string * ILType -> IParameter
+val mkSimpleILReturn: ILType -> IReturn
 val mkILLocal: ILType -> (string * int * int) option -> ILLocal
+
+val mkILParam:
+    name: string option * ty: ILType * defaultValue: ILFieldInit option * marshal: ILNativeType option * isIn: bool *
+    isOut: bool * isOptional: bool * customAttrsStored: ILAttributesStored * metadataIndex: int
+        -> IParameter
+
+val mkILReturn:
+    ty: ILType * marshal: ILNativeType option * customAttrsStored: ILAttributesStored * metadataIndex: int
+        -> IReturn
 
 /// Make a formal generic parameters.
 val mkILEmptyGenericParams: ILGenericParameterDefs
+
+val mkILGenericParam:
+    name: string * constraints: ILTypes * variance: ILGenericVariance * hasReferenceTypeConstraint: bool *
+    hasNotNullableValueTypeConstraint: bool * hasDefaultConstructorConstraint: bool *
+    customAttrsStored: ILAttributesStored * metadataIndex: int
+        -> IGenericParameterDef
 
 /// Make method definitions.
 val mkILMethodBody: initlocals:bool * ILLocals * int * ILCode * ILSourceMarker option -> ILMethodBody
@@ -1734,26 +1765,32 @@ val methBodyNotAvailable: ILLazyMethodBody
 val methBodyAbstract: ILLazyMethodBody 
 val methBodyNative: ILLazyMethodBody 
 
-val mkILCtor: ILMemberAccess * ILParameter list * MethodBody -> ILMethodDef
-val mkILClassCtor: MethodBody -> ILMethodDef
-val mkILNonGenericEmptyCtor: ILSourceMarker option -> ILType -> ILMethodDef
-val mkILStaticMethod: ILGenericParameterDefs * string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
-val mkILNonGenericStaticMethod: string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
-val mkILGenericVirtualMethod: string * ILMemberAccess  * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody -> ILMethodDef
-val mkILGenericNonVirtualMethod: string * ILMemberAccess  * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody -> ILMethodDef
-val mkILNonGenericVirtualMethod: string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
-val mkILNonGenericInstanceMethod: string * ILMemberAccess  * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+val mkILCtor: ILMemberAccess * IParameter list * MethodBody -> IMethodDef
+val mkILClassCtor: MethodBody -> IMethodDef
+val mkILNonGenericEmptyCtor: ILSourceMarker option -> ILType -> IMethodDef
+val mkILStaticMethod: ILGenericParameterDefs * string * ILMemberAccess * IParameter list * IReturn * MethodBody -> IMethodDef
+val mkILNonGenericStaticMethod: string * ILMemberAccess * IParameter list * IReturn * MethodBody -> IMethodDef
+val mkILGenericVirtualMethod: string * ILMemberAccess  * ILGenericParameterDefs * IParameter list * IReturn * MethodBody -> IMethodDef
+val mkILGenericNonVirtualMethod: string * ILMemberAccess  * ILGenericParameterDefs * IParameter list * IReturn * MethodBody -> IMethodDef
+val mkILNonGenericVirtualMethod: string * ILMemberAccess * IParameter list * IReturn * MethodBody -> IMethodDef
+val mkILNonGenericInstanceMethod: string * ILMemberAccess  * IParameter list * IReturn * MethodBody -> IMethodDef
 
 
 /// Make field definitions.
-val mkILInstanceField: string * ILType * ILFieldInit option * ILMemberAccess -> ILFieldDef
-val mkILStaticField: string * ILType * ILFieldInit option * byte[] option * ILMemberAccess -> ILFieldDef
-val mkILLiteralField: string * ILType * ILFieldInit * byte[] option * ILMemberAccess -> ILFieldDef
+val mkILInstanceField: string * ILType * ILFieldInit option * ILMemberAccess -> IFieldDef
+val mkILStaticField: string * ILType * ILFieldInit option * byte[] option * ILMemberAccess -> IFieldDef
+val mkILLiteralField: string * ILType * ILFieldInit * byte[] option * ILMemberAccess -> IFieldDef
+
+val mkILField:
+    name: string * fieldType: ILType * attributes: FieldAttributes * data: byte[] option *
+    literalValue: ILFieldInit option * offset: int32 option * marshal: ILNativeType option * 
+    customAttrsStored: ILAttributesStored * metadataIndex: int32
+        -> IFieldDef
 
 /// Make a type definition.
-val mkILGenericClass: string * ILTypeDefAccess * ILGenericParameterDefs * ILType * ILType list * ILMethodDefs * ILFieldDefs * ILTypeDefs * ILPropertyDefs * ILEventDefs * ILAttributes * ILTypeInit -> ILTypeDef
-val mkILSimpleClass: ILGlobals -> string * ILTypeDefAccess * ILMethodDefs * ILFieldDefs * ILTypeDefs * ILPropertyDefs * ILEventDefs * ILAttributes * ILTypeInit  -> ILTypeDef
-val mkILTypeDefForGlobalFunctions: ILGlobals -> ILMethodDefs * ILFieldDefs -> ILTypeDef
+val mkILGenericClass: string * ILTypeDefAccess * ILGenericParameterDefs * ILType * ILType list * IMethodDefs * IFieldDefs * ITypeDefs * IPropertyDefs * IEventDefs * IAttributes * ILTypeInit -> ITypeDef
+val mkILSimpleClass: ILGlobals -> string * ILTypeDefAccess * IMethodDefs * IFieldDefs * ITypeDefs * IPropertyDefs * IEventDefs * IAttributes * ILTypeInit  -> ITypeDef
+val mkILTypeDefForGlobalFunctions: ILGlobals -> IMethodDefs * IFieldDefs -> ITypeDef
 
 /// Make a type definition for a value type used to point to raw data.
 /// These are useful when generating array initialization code 
@@ -1761,7 +1798,7 @@ val mkILTypeDefForGlobalFunctions: ILGlobals -> ILMethodDefs * ILFieldDefs -> IL
 ///   ldtoken    field valuetype '<PrivateImplementationDetails>'/'$$struct0x6000127-1' '<PrivateImplementationDetails>'::'$$method0x6000127-1'
 ///   call       void System.Runtime.CompilerServices.RuntimeHelpers::InitializeArray(class System.Array,valuetype System.RuntimeFieldHandle)
 /// idiom.
-val mkRawDataValueTypeDef:  ILType -> string * size:int32 * pack:uint16 -> ILTypeDef
+val mkRawDataValueTypeDef:  ILType -> string * size:int32 * pack:uint16 -> ITypeDef
 
 /// Injecting code into existing code blocks.  A branch will
 /// be added from the given instructions to the (unique) entry of
@@ -1769,19 +1806,19 @@ val mkRawDataValueTypeDef:  ILType -> string * size:int32 * pack:uint16 -> ILTyp
 /// of the method.  The instructions should be non-branching.
 
 val prependInstrsToCode: ILInstr list -> ILCode -> ILCode
-val prependInstrsToMethod: ILInstr list -> ILMethodDef -> ILMethodDef
+val prependInstrsToMethod: ILInstr list -> IMethodDef -> IMethodDef
 
 /// Injecting initialization code into a class.
 /// Add some code to the end of the .cctor for a type.  Create a .cctor
 /// if one doesn't exist already.
-val prependInstrsToClassCtor: ILInstr list -> ILSourceMarker option -> ILTypeDef -> ILTypeDef
+val prependInstrsToClassCtor: ILInstr list -> ILSourceMarker option -> ITypeDef -> ITypeDef
 
 /// Derived functions for making some simple constructors
-val mkILStorageCtor: ILSourceMarker option * ILInstr list * ILType * (string * ILType) list * ILMemberAccess -> ILMethodDef
-val mkILSimpleStorageCtor: ILSourceMarker option * ILTypeSpec option * ILType * ILParameter list * (string * ILType) list * ILMemberAccess -> ILMethodDef
-val mkILSimpleStorageCtorWithParamNames: ILSourceMarker option * ILTypeSpec option * ILType * ILParameter list * (string * string * ILType) list * ILMemberAccess -> ILMethodDef
+val mkILStorageCtor: ILSourceMarker option * ILInstr list * ILType * (string * ILType) list * ILMemberAccess -> IMethodDef
+val mkILSimpleStorageCtor: ILSourceMarker option * ILTypeSpec option * ILType * IParameter list * (string * ILType) list * ILMemberAccess -> IMethodDef
+val mkILSimpleStorageCtorWithParamNames: ILSourceMarker option * ILTypeSpec option * ILType * IParameter list * (string * string * ILType) list * ILMemberAccess -> IMethodDef
 
-val mkILDelegateMethods: ILMemberAccess -> ILGlobals -> ILType * ILType -> ILParameter list * ILReturn -> ILMethodDef list
+val mkILDelegateMethods: ILMemberAccess -> ILGlobals -> ILType * ILType -> IParameter list * IReturn -> IMethodDef list
 
 /// Given a delegate type definition which lies in a particular scope, 
 /// make a reference to its constructor.
@@ -1791,44 +1828,71 @@ val mkCtorMethSpecForDelegate: ILGlobals -> ILType * bool -> ILMethodSpec
 val mkILTypeForGlobalFunctions: ILScopeRef -> ILType
 
 /// Making tables of custom attributes, etc.
-val mkILCustomAttrs: ILAttribute list -> ILAttributes
-val mkILCustomAttrsFromArray: ILAttribute[] -> ILAttributes
-val storeILCustomAttrs: ILAttributes -> ILAttributesStored
-val mkILCustomAttrsReader: (int32 -> ILAttribute[]) -> ILAttributesStored
-val emptyILCustomAttrs: ILAttributes
+val mkILCustomAttrs: IAttribute list -> IAttributes
+val mkILCustomAttrsFromArray: IAttribute[] -> IAttributes
+val storeILCustomAttrs: IAttributes -> ILAttributesStored
+val mkILCustomAttrsReader: (int32 -> IAttribute[]) -> ILAttributesStored
+val emptyILCustomAttrs: IAttributes
 
 val mkILSecurityDecls: ILSecurityDecl list -> ILSecurityDecls
 val emptyILSecurityDecls: ILSecurityDecls
+val emptyILSecurityDeclsStored: ILSecurityDeclsStored
 val storeILSecurityDecls: ILSecurityDecls -> ILSecurityDeclsStored
 val mkILSecurityDeclsReader: (int32 -> ILSecurityDecl[]) -> ILSecurityDeclsStored
 
 val mkMethBodyAux: MethodBody -> ILLazyMethodBody
 val mkMethBodyLazyAux: Lazy<MethodBody> -> ILLazyMethodBody
 
-val mkILEvents: ILEventDef list -> ILEventDefs
-val mkILEventsLazy: Lazy<ILEventDef list> -> ILEventDefs
-val emptyILEvents: ILEventDefs
+val mkILEvents: IEventDef list -> IEventDefs
+val mkILEventsLazy: Lazy<IEventDef list> -> IEventDefs
+val emptyILEvents: IEventDefs
 
-val mkILProperties: ILPropertyDef list -> ILPropertyDefs
-val mkILPropertiesLazy: Lazy<ILPropertyDef list> -> ILPropertyDefs
-val emptyILProperties: ILPropertyDefs
+val mkILEvent:
+    eventType: ILType option * name: string * attributes: EventAttributes * addMethod: ILMethodRef * 
+    removeMethod: ILMethodRef * fireMethod: ILMethodRef option * otherMethods: ILMethodRef list * 
+    customAttrsStored: ILAttributesStored * metadataIndex: int32
+        -> IEventDef
 
-val mkILMethods: ILMethodDef list -> ILMethodDefs
-val mkILMethodsFromArray: ILMethodDef[] -> ILMethodDefs
-val mkILMethodsComputed: (unit -> ILMethodDef[]) -> ILMethodDefs
-val emptyILMethods: ILMethodDefs
+val mkILProperties: IPropertyDef list -> IPropertyDefs
+val mkILPropertiesLazy: Lazy<IPropertyDef list> -> IPropertyDefs
+val emptyILProperties: IPropertyDefs
 
-val mkILFields: ILFieldDef list -> ILFieldDefs
-val mkILFieldsLazy: Lazy<ILFieldDef list> -> ILFieldDefs
-val emptyILFields: ILFieldDefs
+val mkILProperty:
+    name: string * attributes: PropertyAttributes * setMethod: ILMethodRef option * getMethod: ILMethodRef option * 
+    callingConv: ILThisConvention * propertyType: ILType * init: ILFieldInit option * args: ILTypes * 
+    customAttrsStored: ILAttributesStored * metadataIndex: int32
+        -> IPropertyDef
+
+val mkILMethods: IMethodDef list -> IMethodDefs
+val mkILMethodsFromArray: IMethodDef[] -> IMethodDefs
+val mkILMethodsComputed: (unit -> IMethodDef[]) -> IMethodDefs
+val emptyILMethods: IMethodDefs
+
+val mkILMethodDef:
+    name: string * attributes: MethodAttributes * implAttributes: MethodImplAttributes * callingConv: ILCallingConv * 
+    parameters: ILParameters * ret: IReturn * body: ILLazyMethodBody * isEntryPoint:bool * genericParams: ILGenericParameterDefs * 
+    securityDeclsStored: ILSecurityDeclsStored * customAttrsStored: ILAttributesStored * metadataIndex: int32
+        -> IMethodDef 
+
+val mkILFields: IFieldDef list -> IFieldDefs
+val mkILFieldsLazy: Lazy<IFieldDef list> -> IFieldDefs
+val emptyILFields: IFieldDefs
 
 val mkILMethodImpls: ILMethodImplDef list -> ILMethodImplDefs
 val mkILMethodImplsLazy: Lazy<ILMethodImplDef list> -> ILMethodImplDefs
 val emptyILMethodImpls: ILMethodImplDefs
 
-val mkILTypeDefs: ILTypeDef list -> ILTypeDefs
-val mkILTypeDefsFromArray: ILTypeDef[] -> ILTypeDefs
-val emptyILTypeDefs: ILTypeDefs
+val mkILTypeDefs: ITypeDef list -> ITypeDefs
+val mkILTypeDefsFromArray: ITypeDef[] -> ITypeDefs
+val emptyILTypeDefs: ITypeDefs
+
+/// Functional creation of a value, using delayed reading via a metadata index, for ilread.fs
+val mkILTypeDef:  
+    name: string * attributes: TypeAttributes * layout: ILTypeDefLayout * implements: ILTypes *
+    genericParams: ILGenericParameterDefs * extends: ILType option * methods: IMethodDefs * nestedTypes: ITypeDefs *
+    fields: IFieldDefs * methodImpls: ILMethodImplDefs * events: IEventDefs * properties: IPropertyDefs *
+    securityDeclsStored: ILSecurityDeclsStored * customAttrsStored: ILAttributesStored * metadataIndex: int32
+        -> ITypeDef
 
 /// Create table of types which is loaded/computed on-demand, and whose individual 
 /// elements are also loaded/computed on-demand. Any call to tdefs.AsList will 
@@ -1838,37 +1902,63 @@ val emptyILTypeDefs: ILTypeDefs
 /// 
 /// Note that individual type definitions may contain further delays 
 /// in their method, field and other tables. 
-val mkILTypeDefsComputed: (unit -> ILPreTypeDef[]) -> ILTypeDefs
-val addILTypeDef: ILTypeDef -> ILTypeDefs -> ILTypeDefs
+val mkILTypeDefsComputed: (unit -> IPreTypeDef[]) -> ITypeDefs
+val addILTypeDef: ITypeDef -> ITypeDefs -> ITypeDefs
 
-val mkTypeForwarder: ILScopeRef -> string -> ILNestedExportedTypes -> ILAttributes -> ILTypeDefAccess -> ILExportedTypeOrForwarder
+val mkTypeForwarder: ILScopeRef -> string -> ILNestedExportedTypes -> IAttributes -> ILTypeDefAccess -> ILExportedTypeOrForwarder
 val mkILNestedExportedTypes: ILNestedExportedType list -> ILNestedExportedTypes
 val mkILNestedExportedTypesLazy: Lazy<ILNestedExportedType list> -> ILNestedExportedTypes
 
 val mkILExportedTypes: ILExportedTypeOrForwarder list -> ILExportedTypesAndForwarders
 val mkILExportedTypesLazy: Lazy<ILExportedTypeOrForwarder list> ->   ILExportedTypesAndForwarders
 
-val mkILResources: ILResource list -> ILResources
+val mkILResources: IResource list -> IResources
 
-/// Making modules.
-val mkILSimpleModule: assemblyName:string -> moduleName:string -> dll:bool -> subsystemVersion: (int * int) -> useHighEntropyVA: bool -> ILTypeDefs -> int32 option -> string option -> int -> ILExportedTypesAndForwarders -> string -> ILModuleDef
+val mkILResource:
+    name: string * location: ILResourceLocation * access: ILResourceAccess *customAttrsStored: ILAttributesStored *
+    metadataIndex: int
+        -> IResource
 
-/// Generate references to existing type definitions, method definitions
-/// etc.  Useful for generating references, e.g. to a  class we're processing
-/// Also used to reference type definitions that we've generated.  [ILScopeRef] 
-/// is normally ILScopeRef.Local, unless we've generated the ILTypeDef in
-/// an auxiliary module or are generating multiple assemblies at 
-/// once.
+// Making modules.
 
-val mkRefForNestedILTypeDef: ILScopeRef -> ILTypeDef list * ILTypeDef -> ILTypeRef
-val mkRefForILMethod       : ILScopeRef -> ILTypeDef list * ILTypeDef -> ILMethodDef -> ILMethodRef
-val mkRefForILField       : ILScopeRef -> ILTypeDef list * ILTypeDef -> ILFieldDef  -> ILFieldRef
+val mkILSimpleModule:
+    assemblyName: string -> moduleName: string -> isDll: bool -> subsystemVersion: (int * int) ->
+    useHighEntropyVA: bool -> typeDefs: ITypeDefs -> hashalg: int32 option -> locale: string option ->
+    flags: int -> exportedTypes: ILExportedTypesAndForwarders -> metadataVersion: string
+        -> IModuleDef
 
-val mkRefToILMethod: ILTypeRef * ILMethodDef -> ILMethodRef
-val mkRefToILField: ILTypeRef * ILFieldDef -> ILFieldRef
+val mkILModuleDef:
+    name: string * manifest: IAssemblyManifest option * typeDefs: ITypeDefs * subsystemVersion: (int * int) *
+    useHighEntropyVA: bool * subSystemFlags: int32 * isDLL: bool * isILOnly: bool * platform: ILPlatform option *
+    stackReserveSize: int32 option * is32Bit: bool * is32BitPreferred: bool * is64Bit: bool * virtualAlignment: int32 *
+    physicalAlignment: int32 * imageBase: int32 * metadataVersion: string * resources: IResources *
+    nativeResources: ILNativeResource list * customAttrsStored: ILAttributesStored * metadataIndex: int32
+        -> IModuleDef
 
-val mkRefToILAssembly: ILAssemblyManifest -> ILAssemblyRef
-val mkRefToILModule: ILModuleDef -> ILModuleRef
+val mkILAssemblyManifest:
+     name: string * auxModuleHashAlgorithm: int * publicKey: byte[] option *
+     version: ILVersionInfo option * locale: string option * assemblyLongevity: ILAssemblyLongevity *
+     disableJitOptimizations: bool * jitTracking: bool * ignoreSymbolStoreSequencePoints: bool * retargetable: bool *
+     exportedTypes: ILExportedTypesAndForwarders * entrypointElsewhere: ILModuleRef option *
+     securityDeclsStored: ILSecurityDeclsStored * customAttrsStored: ILAttributesStored * metadataIndex: int
+        -> IAssemblyManifest 
+
+// Generate references to existing type definitions, method definitions
+// etc.  Useful for generating references, e.g. to a  class we're processing
+// Also used to reference type definitions that we've generated.  [ILScopeRef] 
+// is normally ILScopeRef.Local, unless we've generated the ILTypeDef in
+// an auxiliary module or are generating multiple assemblies at 
+// once.
+
+val mkRefForNestedILTypeDef: ILScopeRef -> ITypeDef list * ITypeDef -> ILTypeRef
+val mkRefForILMethod       : ILScopeRef -> ITypeDef list * ITypeDef -> IMethodDef -> ILMethodRef
+val mkRefForILField       : ILScopeRef -> ITypeDef list * ITypeDef -> IFieldDef  -> ILFieldRef
+
+val mkRefToILMethod: ILTypeRef * IMethodDef -> ILMethodRef
+val mkRefToILField: ILTypeRef * IFieldDef -> ILFieldRef
+
+val mkRefToILAssembly: IAssemblyManifest -> ILAssemblyRef
+val mkRefToILModule: IModuleDef -> ILModuleRef
 
 val NoMetadataIdx: int32
 
@@ -1958,7 +2048,7 @@ type ILEnumInfo =
 
 val getTyOfILEnumInfo: ILEnumInfo -> ILType
 
-val computeILEnumInfo: string * ILFieldDefs -> ILEnumInfo
+val computeILEnumInfo: string * IFieldDefs -> ILEnumInfo
 
 /// A utility type provided for completeness
 [<Sealed>]
@@ -1982,6 +2072,6 @@ type ILReferences =
       ModuleReferences: ILModuleRef list }
 
 /// Find the full set of assemblies referenced by a module.
-val computeILRefs: ILModuleDef -> ILReferences
+val computeILRefs: IModuleDef -> ILReferences
 val emptyILRefs: ILReferences
 

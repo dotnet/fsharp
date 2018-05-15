@@ -1343,9 +1343,9 @@ val mkLdelem : TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 // Analyze attribute sets 
 //------------------------------------------------------------------------- 
 
-val TryDecodeILAttribute   : TcGlobals -> ILTypeRef -> ILAttributes -> (ILAttribElem list * ILAttributeNamedArg list) option
-val TryFindILAttribute : BuiltinAttribInfo -> ILAttributes -> bool
-val TryFindILAttributeOpt : BuiltinAttribInfo option -> ILAttributes -> bool
+val TryDecodeILAttribute   : TcGlobals -> ILTypeRef -> IAttributes -> (ILAttribElem list * ILAttributeNamedArg list) option
+val TryFindILAttribute : BuiltinAttribInfo -> IAttributes -> bool
+val TryFindILAttributeOpt : BuiltinAttribInfo option -> IAttributes -> bool
 
 val IsMatchingFSharpAttribute      : TcGlobals -> BuiltinAttribInfo -> Attrib -> bool
 val IsMatchingFSharpAttributeOpt   : TcGlobals -> BuiltinAttribInfo option -> Attrib -> bool
@@ -1374,23 +1374,23 @@ val TryFindAttributeUsageAttribute : TcGlobals -> range -> TyconRef -> bool opti
 
 #if !NO_EXTENSIONTYPING
 /// returns Some(assemblyName) for success
-val TryDecodeTypeProviderAssemblyAttr : ILGlobals -> ILAttribute -> string option
+val TryDecodeTypeProviderAssemblyAttr : ILGlobals -> IAttribute -> string option
 #endif
-val IsSignatureDataVersionAttr  : ILAttribute -> bool
-val ILThingHasExtensionAttribute : ILAttributes -> bool
-val TryFindAutoOpenAttr           : IL.ILGlobals -> ILAttribute -> string option 
-val TryFindInternalsVisibleToAttr : IL.ILGlobals -> ILAttribute -> string option 
-val IsMatchingSignatureDataVersionAttr : IL.ILGlobals -> ILVersionInfo -> ILAttribute -> bool
+val IsSignatureDataVersionAttr  : IAttribute -> bool
+val ILThingHasExtensionAttribute : IAttributes -> bool
+val TryFindAutoOpenAttr           : IL.ILGlobals -> IAttribute -> string option 
+val TryFindInternalsVisibleToAttr : IL.ILGlobals -> IAttribute -> string option 
+val IsMatchingSignatureDataVersionAttr : IL.ILGlobals -> ILVersionInfo -> IAttribute -> bool
 
 
-val mkCompilationMappingAttr                         : TcGlobals -> int -> ILAttribute
-val mkCompilationMappingAttrWithSeqNum               : TcGlobals -> int -> int -> ILAttribute
-val mkCompilationMappingAttrWithVariantNumAndSeqNum  : TcGlobals -> int -> int -> int             -> ILAttribute
-val mkCompilationMappingAttrForQuotationResource     : TcGlobals -> string * ILTypeRef list -> ILAttribute
-val mkCompilationArgumentCountsAttr                  : TcGlobals -> int list -> ILAttribute
-val mkCompilationSourceNameAttr                      : TcGlobals -> string -> ILAttribute
-val mkSignatureDataVersionAttr                       : TcGlobals -> ILVersionInfo -> ILAttribute
-val mkCompilerGeneratedAttr                          : TcGlobals -> int -> ILAttribute
+val mkCompilationMappingAttr                         : TcGlobals -> int -> IAttribute
+val mkCompilationMappingAttrWithSeqNum               : TcGlobals -> int -> int -> IAttribute
+val mkCompilationMappingAttrWithVariantNumAndSeqNum  : TcGlobals -> int -> int -> int             -> IAttribute
+val mkCompilationMappingAttrForQuotationResource     : TcGlobals -> string * ILTypeRef list -> IAttribute
+val mkCompilationArgumentCountsAttr                  : TcGlobals -> int list -> IAttribute
+val mkCompilationSourceNameAttr                      : TcGlobals -> string -> IAttribute
+val mkSignatureDataVersionAttr                       : TcGlobals -> ILVersionInfo -> IAttribute
+val mkCompilerGeneratedAttr                          : TcGlobals -> int -> IAttribute
 
 //-------------------------------------------------------------------------
 // More common type construction

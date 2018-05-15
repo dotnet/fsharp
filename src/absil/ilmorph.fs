@@ -99,7 +99,7 @@ let callsig_typ2typ f (x: ILCallingSignature) =
       ArgTypes=List.map f x.ArgTypes;
       ReturnType=f x.ReturnType}
 
-let gparam_typ2typ f gf = {gf with Constraints = List.map f gf.Constraints}
+let gparam_typ2typ f (gf: IGenericParameterDef) = gf.With(newConstraints = List.map f gf.Constraints)
 let gparams_typ2typ f gfs = List.map (gparam_typ2typ f) gfs
 let typs_typ2typ (f: ILType -> ILType)  x = List.map f x
 let mref_typ2typ (f: ILType -> ILType) (x:ILMethodRef) = 
@@ -136,7 +136,7 @@ let rec celem_typ2typ f celem =
 let cnamedarg_typ2typ f ((nm, ty, isProp, elem) : ILAttributeNamedArg)  =
     (nm, f ty, isProp, celem_typ2typ f elem) 
 
-let cattr_typ2typ ilg f c =
+let cattr_typ2typ ilg f (c: IAttribute) =
     let meth = mspec_typ2typ (f, (fun _ -> f)) c.Method
     // dev11 M3 defensive coding: if anything goes wrong with attribute decoding or encoding, then back out.
     if morphCustomAttributeData then
@@ -146,17 +146,16 @@ let cattr_typ2typ ilg f c =
            let namedArgs = namedArgs |> List.map (cnamedarg_typ2typ f)
            IL.mkILCustomAttribMethRef ilg (meth, elems, namedArgs)       
         with _ -> 
-           { c with Method = meth }
+           c.With(newMethod = meth)
     else
-        { c with Method = meth }
+        c.With(newMethod = meth)
 
 
-let cattrs_typ2typ ilg f (cs: ILAttributes) =
+let cattrs_typ2typ ilg f (cs: IAttributes) =
     mkILCustomAttrs (List.map (cattr_typ2typ ilg f) cs.AsList)
 
-let fdef_typ2typ ilg ftype (fd: ILFieldDef) = 
-    fd.With(fieldType=ftype fd.FieldType,
-            customAttrs=cattrs_typ2typ ilg ftype fd.CustomAttrs)
+let fdef_typ2typ ilg ftype (fd: IFieldDef) = 
+    fd.With(newFieldType=ftype fd.FieldType, newCustomAttrs=cattrs_typ2typ ilg ftype fd.CustomAttrs)
 
 let local_typ2typ f (l: ILLocal) = {l with Type = f l.Type}
 let varargs_typ2typ f (varargs: ILVarArgs) = Option.map (List.map f) varargs
@@ -200,14 +199,17 @@ let morphILTypesInILInstr ((factualty,fformalty)) i =
         | ILToken.ILField fr -> I_ldtoken (ILToken.ILField (conv_fspec fr))
     | x -> x
 
-let return_typ2typ ilg f (r:ILReturn) = {r with Type=f r.Type; CustomAttrsStored= storeILCustomAttrs (cattrs_typ2typ ilg f r.CustomAttrs)}
-let param_typ2typ ilg f (p: ILParameter) = {p with Type=f p.Type; CustomAttrsStored= storeILCustomAttrs (cattrs_typ2typ ilg f p.CustomAttrs)}
+let return_typ2typ ilg f (r:IReturn) =
+    r.With(newTy = f r.Type, newCustomAttrsStored = storeILCustomAttrs (cattrs_typ2typ ilg f r.CustomAttrs))
 
-let morphILMethodDefs f (m:ILMethodDefs) = mkILMethods (List.map f m.AsList)
-let fdefs_fdef2fdef f (m:ILFieldDefs) = mkILFields (List.map f m.AsList)
+let param_typ2typ ilg f (p: IParameter) =
+    p.With(newTy = f p.Type, newCustomAttrsStored = storeILCustomAttrs (cattrs_typ2typ ilg f p.CustomAttrs))
+
+let morphILMethodDefs f (m:IMethodDefs) = mkILMethods (List.map f m.AsList)
+let fdefs_fdef2fdef f (m:IFieldDefs) = mkILFields (List.map f m.AsList)
 
 (* use this when the conversion produces just one type... *)
-let morphILTypeDefs f (m: ILTypeDefs) = mkILTypeDefsFromArray (Array.map f m.AsArray)
+let morphILTypeDefs f (m: ITypeDefs) = mkILTypeDefsFromArray (Array.map f m.AsArray)
 
 let locals_typ2typ f ls = List.map (local_typ2typ f) ls
 
@@ -225,7 +227,7 @@ let morphILMethodBody (filmbody) (x: ILLazyMethodBody) =
 
 let ospec_typ2typ f (OverridesSpec(mref,ty)) = OverridesSpec(mref_typ2typ f mref, f ty)
 
-let mdef_typ2typ_ilmbody2ilmbody ilg fs (md: ILMethodDef)  = 
+let mdef_typ2typ_ilmbody2ilmbody ilg fs (md: IMethodDef)  = 
     let (ftype,filmbody) = fs 
     let ftype' = ftype (Some md) 
     let body' = morphILMethodBody (filmbody (Some md))  md.Body 
@@ -243,7 +245,7 @@ let mimpl_typ2typ f e =
     { Overrides = ospec_typ2typ f e.Overrides;
       OverrideBy = mspec_typ2typ (f,(fun _ -> f)) e.OverrideBy; }
 
-let edef_typ2typ ilg f (e: ILEventDef) =
+let edef_typ2typ ilg f (e: IEventDef) =
     e.With(eventType = Option.map f e.EventType,
            addMethod = mref_typ2typ f e.AddMethod,
            removeMethod = mref_typ2typ f e.RemoveMethod,
@@ -251,19 +253,19 @@ let edef_typ2typ ilg f (e: ILEventDef) =
            otherMethods = List.map (mref_typ2typ f) e.OtherMethods,
            customAttrs = cattrs_typ2typ ilg f e.CustomAttrs)
 
-let pdef_typ2typ ilg f (p: ILPropertyDef) =
+let pdef_typ2typ ilg f (p: IPropertyDef) =
     p.With(setMethod = Option.map (mref_typ2typ f) p.SetMethod,
            getMethod = Option.map (mref_typ2typ f) p.GetMethod,
            propertyType = f p.PropertyType,
            args = List.map f p.Args,
            customAttrs = cattrs_typ2typ ilg f p.CustomAttrs)
 
-let pdefs_typ2typ ilg f (pdefs: ILPropertyDefs) = mkILProperties (List.map (pdef_typ2typ ilg f) pdefs.AsList)
-let edefs_typ2typ ilg f (edefs: ILEventDefs) = mkILEvents (List.map (edef_typ2typ ilg f) edefs.AsList)
+let pdefs_typ2typ ilg f (pdefs: IPropertyDefs) = mkILProperties (List.map (pdef_typ2typ ilg f) pdefs.AsList)
+let edefs_typ2typ ilg f (edefs: IEventDefs) = mkILEvents (List.map (edef_typ2typ ilg f) edefs.AsList)
 
 let mimpls_typ2typ f (mimpls : ILMethodImplDefs) = mkILMethodImpls (List.map (mimpl_typ2typ f) mimpls.AsList)
 
-let rec tdef_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg enc fs (td: ILTypeDef) = 
+let rec tdef_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg enc fs (td: ITypeDef) = 
    let (ftype,fmdefs) = fs 
    let ftype' = ftype (Some (enc,td)) None 
    let mdefs' = fmdefs (enc,td) td.Methods 
@@ -286,17 +288,18 @@ and tdefs_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg enc fs tdefs =
 // Derived versions of the above, e.g. with defaults added
 // -------------------------------------------------------------------- 
 
-let manifest_typ2typ ilg f (m : ILAssemblyManifest) =
-    { m with CustomAttrsStored = storeILCustomAttrs (cattrs_typ2typ ilg f m.CustomAttrs) }
+let manifest_typ2typ ilg f (m : IAssemblyManifest) =
+    m.With(newCustomAttrsStored = storeILCustomAttrs (cattrs_typ2typ ilg f m.CustomAttrs))
 
-let morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs ilg ((ftype: ILModuleDef -> (ILTypeDef list * ILTypeDef) option -> ILMethodDef option -> ILType -> ILType),fmdefs) m = 
+let morphILTypeInILModule_ilmbody2ilmbody_mdefs2mdefs ilg ((ftype: IModuleDef -> (ITypeDef list * ITypeDef) option -> IMethodDef option -> ILType -> ILType),fmdefs) m = 
 
-    let ftdefs = tdefs_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg [] (ftype m,fmdefs m) 
+    let ftdefs = tdefs_typ2typ_ilmbody2ilmbody_mdefs2mdefs ilg [] (ftype m,fmdefs m)
+    let typeDefs = ftdefs m.TypeDefs
+    let customAttrsStored = storeILCustomAttrs (cattrs_typ2typ ilg (ftype m None None) m.CustomAttrs)
+    let manifest = Option.map (manifest_typ2typ ilg (ftype m None None)) m.Manifest
 
-    { m with TypeDefs=ftdefs m.TypeDefs;
-             CustomAttrsStored= storeILCustomAttrs (cattrs_typ2typ ilg (ftype m None None) m.CustomAttrs);
-             Manifest=Option.map (manifest_typ2typ ilg (ftype m None None)) m.Manifest  }
-    
+    m.With(typeDefs = typeDefs, customAttrsStored = customAttrsStored, manifest = manifest)
+
 let module_instr2instr_typ2typ ilg fs x = 
     let (fcode,ftype) = fs 
     let filmbody modCtxt tdefCtxt mdefCtxt = ilmbody_instr2instr_typ2typ (fcode modCtxt tdefCtxt mdefCtxt, ftype modCtxt (Some tdefCtxt) mdefCtxt) 

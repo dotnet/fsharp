@@ -403,7 +403,7 @@ type UnsharedRow(elems: RowElement[]) =
 // This environment keeps track of how many generic parameters are in scope. 
 // This lets us translate AbsIL type variable number to IL type variable numbering 
 type ILTypeWriterEnv = { EnclosingTyparCount: int }
-let envForTypeDef (td:ILTypeDef)               = { EnclosingTyparCount=td.GenericParams.Length }
+let envForTypeDef (td:ITypeDef)               = { EnclosingTyparCount=td.GenericParams.Length }
 let envForMethodRef env (typ:ILType)           = { EnclosingTyparCount=(match typ with ILType.Array _ -> env.EnclosingTyparCount | _ -> typ.GenericArgs.Length) }
 let envForNonGenericMethodRef _mref            = { EnclosingTyparCount=System.Int32.MaxValue }
 let envForFieldSpec (fspec:ILFieldSpec)        = { EnclosingTyparCount=fspec.DeclaringType.GenericArgs.Length }
@@ -579,7 +579,7 @@ type cenv =
       AssemblyRefs: MetadataTable<SharedRow>
       fieldDefs: MetadataTable<FieldDefKey>
       methodDefIdxsByKey:  MetadataTable<MethodDefKey>
-      methodDefIdxs:  Dictionary<ILMethodDef, int>
+      methodDefIdxs:  Dictionary<IMethodDef, int>
       propertyDefs: MetadataTable<PropertyTableKey>
       eventDefs: MetadataTable<EventTableKey>
       typeDefs: MetadataTable<TypeDefTableKey> 
@@ -605,7 +605,7 @@ let FindOrAddSharedRow (cenv:cenv) tbl x = cenv.GetTable(tbl).FindOrAddSharedEnt
 // Shared rows must be hash-cons'd to be made unique (no duplicates according to contents)
 let AddSharedRow (cenv:cenv) tbl x = cenv.GetTable(tbl).AddSharedEntry x
 
-// Unshared rows correspond to definition elements (e.g. a ILTypeDef or a ILMethodDef)
+// Unshared rows correspond to definition elements (e.g. a ITypeDef or a ILMethodDef)
 let AddUnsharedRow (cenv:cenv) tbl (x:UnsharedRow) = cenv.GetTable(tbl).AddUnsharedEntry x
 
 let metadataSchemaVersionSupportedByCLRVersion v = 
@@ -636,11 +636,11 @@ let peOptionalHeaderByteByCLRVersion v =
 // returned by writeBinaryAndReportMappings 
 [<NoEquality; NoComparison>]
 type ILTokenMappings =  
-    { TypeDefTokenMap: ILTypeDef list * ILTypeDef -> int32
-      FieldDefTokenMap: ILTypeDef list * ILTypeDef -> ILFieldDef -> int32
-      MethodDefTokenMap: ILTypeDef list * ILTypeDef -> ILMethodDef -> int32
-      PropertyTokenMap: ILTypeDef list * ILTypeDef -> ILPropertyDef -> int32
-      EventTokenMap: ILTypeDef list * ILTypeDef -> ILEventDef -> int32 }
+    { TypeDefTokenMap: ITypeDef list * ITypeDef -> int32
+      FieldDefTokenMap: ITypeDef list * ITypeDef -> IFieldDef -> int32
+      MethodDefTokenMap: ITypeDef list * ITypeDef -> IMethodDef -> int32
+      PropertyTokenMap: ITypeDef list * ITypeDef -> IPropertyDef -> int32
+      EventTokenMap: ITypeDef list * ITypeDef -> IEventDef -> int32 }
 
 let recordRequiredDataFixup requiredDataFixups (buf: ByteBuffer) pos lab =
     requiredDataFixups :=  (pos, lab) :: !requiredDataFixups
@@ -678,7 +678,7 @@ let GetTypeNameAsElemPair cenv n =
 // Pass 1 - allocate indexes for types 
 //=====================================================================
 
-let rec GenTypeDefPass1 enc cenv (td:ILTypeDef) = 
+let rec GenTypeDefPass1 enc cenv (td:ITypeDef) = 
   ignore (cenv.typeDefs.AddUniqueEntry "type index" (fun (TdKey (_, n)) -> n) (TdKey (enc, td.Name)))
   GenTypeDefsPass1 (enc@[td.Name]) cenv td.NestedTypes.AsList
 
@@ -785,7 +785,7 @@ and GetResolutionScopeAsElem cenv (scoref, enc) =
 let emitTypeInfoAsTypeDefOrRefEncoded cenv (bb: ByteBuffer) (scoref, enc, nm) = 
     if isScopeRefLocal scoref then 
         let idx = GetIdxForTypeDef cenv (TdKey(enc, nm))
-        bb.EmitZ32 (idx <<< 2) // ECMA 22.2.8 TypeDefOrRefEncoded - ILTypeDef 
+        bb.EmitZ32 (idx <<< 2) // ECMA 22.2.8 TypeDefOrRefEncoded - ITypeDef 
     else 
         let idx = GetTypeDescAsTypeRefIdx cenv (scoref, enc, nm)
         bb.EmitZ32 ((idx <<< 2) ||| 0x01) // ECMA 22.2.8 TypeDefOrRefEncoded - ILTypeRef 
@@ -1088,7 +1088,7 @@ let GetTypeAccessFlags  access =
     | ILTypeDefAccess.Nested ILMemberAccess.FamilyOrAssembly -> 0x00000007
     | ILTypeDefAccess.Nested ILMemberAccess.Assembly -> 0x00000005
 
-let rec GetTypeDefAsRow cenv env _enc (td:ILTypeDef) = 
+let rec GetTypeDefAsRow cenv env _enc (td:ITypeDef) = 
     let nselem, nelem = GetTypeNameAsElemPair cenv td.Name
     let flags = 
       if (isTypeNameForGlobalFunctions td.Name) then 0x00000000
@@ -1119,13 +1119,13 @@ and GetTypeDefAsEventMapRow cenv tidx =
         [| SimpleIndex (TableNames.TypeDef,  tidx)
            SimpleIndex (TableNames.Event, cenv.eventDefs.Count + 1) |]  
     
-and GetKeyForFieldDef tidx (fd: ILFieldDef) = 
+and GetKeyForFieldDef tidx (fd: IFieldDef) = 
     FieldDefKey (tidx, fd.Name, fd.FieldType)
 
 and GenFieldDefPass2 cenv tidx fd = 
     ignore (cenv.fieldDefs.AddUniqueEntry "field" (fun (fdkey:FieldDefKey) -> fdkey.Name) (GetKeyForFieldDef tidx fd))
 
-and GetKeyForMethodDef tidx (md: ILMethodDef) = 
+and GetKeyForMethodDef tidx (md: IMethodDef) = 
     MethodDefKey (tidx, md.GenericParams.Length, md.Name, md.Return.Type, md.ParameterTypes, md.CallingConv.IsStatic)
 
 and GenMethodDefPass2 cenv tidx md = 
@@ -1143,7 +1143,7 @@ and GenMethodDefPass2 cenv tidx md =
     
     cenv.methodDefIdxs.[md] <- idx
 
-and GetKeyForPropertyDef tidx (x: ILPropertyDef)  = 
+and GetKeyForPropertyDef tidx (x: IPropertyDef)  = 
     PropKey (tidx, x.Name, x.PropertyType, x.Args)
 
 and GenPropertyDefPass2 cenv tidx x = 
@@ -1158,13 +1158,13 @@ and GetTypeAsImplementsRow cenv env tidx ty =
 and GenImplementsPass2 cenv env tidx ty =
     AddUnsharedRow cenv TableNames.InterfaceImpl (GetTypeAsImplementsRow cenv env tidx ty) |> ignore
       
-and GetKeyForEvent tidx (x: ILEventDef) = 
+and GetKeyForEvent tidx (x: IEventDef) = 
     EventKey (tidx, x.Name)
 
 and GenEventDefPass2 cenv tidx x = 
     ignore (cenv.eventDefs.AddUniqueEntry "event" (fun (EventKey(_, b)) -> b) (GetKeyForEvent tidx x))
 
-and GenTypeDefPass2 pidx enc cenv (td:ILTypeDef) =
+and GenTypeDefPass2 pidx enc cenv (td:ITypeDef) =
    try 
       let env = envForTypeDef td
       let tidx = GetIdxForTypeDef cenv (TdKey(enc, td.Name))
@@ -1379,7 +1379,7 @@ and GetMethodRefAsCustomAttribType cenv (mref:ILMethodRef) =
 let rec GetCustomAttrDataAsBlobIdx cenv (data:byte[]) = 
     if data.Length = 0 then 0 else GetBytesAsBlobIdx cenv data
 
-and GetCustomAttrRow cenv hca attr = 
+and GetCustomAttrRow cenv hca (attr: IAttribute) = 
     let cat = GetMethodRefAsCustomAttribType cenv attr.Method.MethodRef
     for element in attr.Elements do
         match element with
@@ -1396,7 +1396,7 @@ and GetCustomAttrRow cenv hca attr =
 and GenCustomAttrPass3Or4 cenv hca attr = 
     AddUnsharedRow cenv TableNames.CustomAttribute (GetCustomAttrRow cenv hca attr) |> ignore
 
-and GenCustomAttrsPass3Or4 cenv hca (attrs: ILAttributes) = 
+and GenCustomAttrsPass3Or4 cenv hca (attrs: IAttributes) = 
     attrs.AsList |> List.iter (GenCustomAttrPass3Or4 cenv hca) 
 
 // -------------------------------------------------------------------- 
@@ -2318,7 +2318,7 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
 // ILFieldDef --> FieldDef Row
 // -------------------------------------------------------------------- 
 
-let rec GetFieldDefAsFieldDefRow cenv env (fd: ILFieldDef) = 
+let rec GetFieldDefAsFieldDefRow cenv env (fd: IFieldDef) = 
     let flags = int fd.Attributes
     UnsharedRow 
         [| UShort (uint16 flags) 
@@ -2366,7 +2366,7 @@ and GenFieldDefPass3 cenv env fd =
 // ILGenericParameterDef --> GenericParam Row
 // -------------------------------------------------------------------- 
 
-let rec GetGenericParamAsGenericParamRow cenv _env idx owner gp = 
+let rec GetGenericParamAsGenericParamRow cenv _env idx owner (gp: IGenericParameterDef) = 
     let flags = 
         (match  gp.Variance with 
            | NonVariant -> 0x0000
@@ -2416,7 +2416,7 @@ and GenGenericParamPass4 cenv env idx owner gp =
 // param and return --> Param Row
 // -------------------------------------------------------------------- 
 
-let rec GetParamAsParamRow cenv _env seq (param: ILParameter)  = 
+let rec GetParamAsParamRow cenv _env seq (param: IParameter)  = 
     let flags = 
         (if param.IsIn then 0x0001 else 0x0000) |||
         (if param.IsOut then 0x0002 else 0x0000) |||
@@ -2429,7 +2429,7 @@ let rec GetParamAsParamRow cenv _env seq (param: ILParameter)  =
            UShort (uint16 seq) 
            StringE (GetStringHeapIdxOption cenv param.Name) |]  
 
-and GenParamPass3 cenv env seq (param: ILParameter) = 
+and GenParamPass3 cenv env seq (param: IParameter) = 
     if not param.IsIn && not param.IsOut && not param.IsOptional && Option.isNone param.Default && Option.isNone param.Name && Option.isNone param.Marshal 
     then ()
     else    
@@ -2451,14 +2451,14 @@ and GenParamPass3 cenv env seq (param: ILParameter) =
                      HasConstant (hc_ParamDef, pidx)
                      Blob (GetFieldInitAsBlobIdx cenv i) |]) |> ignore
 
-let GenReturnAsParamRow (returnv : ILReturn) = 
+let GenReturnAsParamRow (returnv : IReturn) = 
     let flags = (if returnv.Marshal <> None then 0x2000 else 0x0000)
     UnsharedRow 
         [| UShort (uint16 flags) 
            UShort 0us (* sequence num. *)
            StringE 0 |]  
 
-let GenReturnPass3 cenv (returnv: ILReturn) = 
+let GenReturnPass3 cenv (returnv: IReturn) = 
     if Option.isSome returnv.Marshal || not (isNil returnv.CustomAttrs.AsList) then
         let pidx = AddUnsharedRow cenv TableNames.Param (GenReturnAsParamRow returnv)
         GenCustomAttrsPass3Or4 cenv (hca_ParamDef, pidx) returnv.CustomAttrs
@@ -2474,7 +2474,7 @@ let GenReturnPass3 cenv (returnv: ILReturn) =
 // ILMethodDef --> ILMethodDef Row
 // -------------------------------------------------------------------- 
 
-let GetMethodDefSigAsBytes cenv env (mdef: ILMethodDef) = 
+let GetMethodDefSigAsBytes cenv env (mdef: IMethodDef) = 
     emitBytesViaBuffer (fun bb -> 
       bb.EmitByte (callconvToByte mdef.GenericParams.Length mdef.CallingConv)
       if not (List.isEmpty mdef.GenericParams) then bb.EmitZ32 mdef.GenericParams.Length
@@ -2485,7 +2485,7 @@ let GetMethodDefSigAsBytes cenv env (mdef: ILMethodDef) =
 let GenMethodDefSigAsBlobIdx cenv env mdef = 
     GetBytesAsBlobIdx cenv (GetMethodDefSigAsBytes cenv env mdef)
 
-let GenMethodDefAsRow cenv env midx (md: ILMethodDef) = 
+let GenMethodDefAsRow cenv env midx (md: IMethodDef) = 
     let flags = md.Attributes
    
     let implflags = md.ImplAttributes
@@ -2556,7 +2556,7 @@ let GenMethodImplPass3 cenv env _tgparams tidx mimpl =
                 MethodDefOrRef (midxTag, midxRow)
                 MethodDefOrRef (midx2Tag, midx2Row) |]) |> ignore
     
-let GenMethodDefPass3 cenv env (md:ILMethodDef) = 
+let GenMethodDefPass3 cenv env (md:IMethodDef) = 
     let midx = GetMethodDefIdx cenv md
     let idx2 = AddUnsharedRow cenv TableNames.Method (GenMethodDefAsRow cenv env midx md)
     if midx <> idx2 then failwith "index of method def on pass 3 does not match index on pass 2"
@@ -2618,7 +2618,7 @@ let GenPropertyMethodSemanticsPass3 cenv pidx kind mref =
 let rec GetPropertySigAsBlobIdx cenv env prop = 
     GetBytesAsBlobIdx cenv (GetPropertySigAsBytes cenv env prop)
 
-and GetPropertySigAsBytes cenv env (prop: ILPropertyDef) = 
+and GetPropertySigAsBytes cenv env (prop: IPropertyDef) = 
     emitBytesViaBuffer (fun bb -> 
         let b =  ((hasthisToByte prop.CallingConv) ||| e_IMAGE_CEE_CS_CALLCONV_PROPERTY)
         bb.EmitByte b
@@ -2626,7 +2626,7 @@ and GetPropertySigAsBytes cenv env (prop: ILPropertyDef) =
         EmitType cenv env bb prop.PropertyType
         prop.Args |> List.iter (EmitType cenv env bb))
 
-and GetPropertyAsPropertyRow cenv env (prop:ILPropertyDef) = 
+and GetPropertyAsPropertyRow cenv env (prop:IPropertyDef) = 
     let flags = prop.Attributes
     UnsharedRow 
        [| UShort (uint16 flags) 
@@ -2658,7 +2658,7 @@ let rec GenEventMethodSemanticsPass3 cenv eidx kind mref =
                HasSemantics (hs_Event, eidx) |]) |> ignore
 
 /// ILEventDef --> Event Row + MethodSemantics entries
-and GenEventAsEventRow cenv env (md: ILEventDef) = 
+and GenEventAsEventRow cenv env (md: IEventDef) = 
     let flags = md.Attributes
     let tdorTag, tdorRow = GetTypeOptionAsTypeDefOrRef cenv env md.EventType
     UnsharedRow 
@@ -2666,7 +2666,7 @@ and GenEventAsEventRow cenv env (md: ILEventDef) =
           StringE (GetStringHeapIdx cenv md.Name) 
           TypeDefOrRefOrSpec (tdorTag, tdorRow) |]
 
-and GenEventPass3 cenv env (md: ILEventDef) = 
+and GenEventPass3 cenv env (md: IEventDef) = 
     let eidx = AddUnsharedRow cenv TableNames.Event (GenEventAsEventRow cenv env md)
     md.AddMethod |> GenEventMethodSemanticsPass3 cenv eidx 0x0008  
     md.RemoveMethod |> GenEventMethodSemanticsPass3 cenv eidx 0x0010 
@@ -2679,7 +2679,7 @@ and GenEventPass3 cenv env (md: ILEventDef) =
 // resource --> generate ...
 // -------------------------------------------------------------------- 
 
-let rec GetResourceAsManifestResourceRow cenv r = 
+let rec GetResourceAsManifestResourceRow cenv (r: IResource) = 
     let data, impl = 
       match r.Location with
       | ILResourceLocation.LocalIn _
@@ -2708,10 +2708,10 @@ and GenResourcePass3 cenv r =
   GenCustomAttrsPass3Or4 cenv (hca_ManifestResource, idx) r.CustomAttrs
 
 // -------------------------------------------------------------------- 
-// ILTypeDef --> generate ILFieldDef, ILMethodDef, ILPropertyDef etc. rows
+// ITypeDef --> generate ILFieldDef, ILMethodDef, ILPropertyDef etc. rows
 // -------------------------------------------------------------------- 
 
-let rec GenTypeDefPass3 enc cenv (td:ILTypeDef) = 
+let rec GenTypeDefPass3 enc cenv (td:ITypeDef) = 
    try
       let env = envForTypeDef td
       let tidx = GetIdxForTypeDef cenv (TdKey(enc, td.Name))
@@ -2743,10 +2743,10 @@ let rec GenTypeDefPass3 enc cenv (td:ILTypeDef) =
 and GenTypeDefsPass3 enc cenv tds =
   List.iter (GenTypeDefPass3 enc cenv) tds
 
-/// ILTypeDef --> generate generic params on ILMethodDef: ensures
+/// ITypeDef --> generate generic params on ILMethodDef: ensures
 /// GenericParam table is built sorted by owner.
 
-let rec GenTypeDefPass4 enc cenv (td:ILTypeDef) = 
+let rec GenTypeDefPass4 enc cenv (td:ITypeDef) = 
    try
        let env = envForTypeDef td
        let tidx = GetIdxForTypeDef cenv (TdKey(enc, td.Name))
@@ -2806,7 +2806,7 @@ and GenExportedTypesPass3 cenv (ce: ILExportedTypesAndForwarders) =
 // manifest --> generate Assembly row
 // -------------------------------------------------------------------- 
 
-and GetManifsetAsAssemblyRow cenv m = 
+and GetManifsetAsAssemblyRow cenv (m: IAssemblyManifest) = 
     UnsharedRow 
         [|ULong m.AuxModuleHashAlgorithm
           UShort (match m.Version with None -> 0us | Some (x, _, _, _) -> x)
@@ -2842,19 +2842,19 @@ and GenManifestPass3 cenv m =
         else cenv.entrypoint <- Some (false, GetModuleRefAsIdx cenv mref)
     | None -> ()
 
-and newGuid (modul: ILModuleDef) = 
+and newGuid (modul: IModuleDef) = 
     let n = timestamp
     let m = hash n
     let m2 = hash modul.Name
     [| b0 m; b1 m; b2 m; b3 m; b0 m2; b1 m2; b2 m2; b3 m2; 0xa7uy; 0x45uy; 0x03uy; 0x83uy; b0 n; b1 n; b2 n; b3 n |]
 
-and deterministicGuid (modul: ILModuleDef) =
+and deterministicGuid (modul: IModuleDef) =
     let n = 16909060
     let m = hash n
     let m2 = hash modul.Name
     [| b0 m; b1 m; b2 m; b3 m; b0 m2; b1 m2; b2 m2; b3 m2; 0xa7uy; 0x45uy; 0x03uy; 0x83uy; b0 n; b1 n; b2 n; b3 n |]
 
-and GetModuleAsRow (cenv:cenv) (modul: ILModuleDef) = 
+and GetModuleAsRow (cenv:cenv) (modul: IModuleDef) = 
     // Store the generated MVID in the environment (needed for generating debug information)
     let modulGuid = if cenv.deterministic then deterministicGuid modul else newGuid modul
     cenv.moduleGuid <- modulGuid
@@ -2884,7 +2884,7 @@ let SortTableRows tab (rows:GenericRow[]) =
         |> Array.ofList
         //|> Array.map SharedRow
 
-let GenModule (cenv : cenv) (modul: ILModuleDef) = 
+let GenModule (cenv : cenv) (modul: IModuleDef) = 
     let midx = AddUnsharedRow cenv TableNames.Module (GetModuleAsRow cenv modul)
     List.iter (GenResourcePass3 cenv) modul.Resources.AsList 
     let tds = destTypeDefsWithGlobalFunctionsFirst cenv.ilg modul.TypeDefs
@@ -2905,7 +2905,7 @@ let GenModule (cenv : cenv) (modul: ILModuleDef) =
     GenTypeDefsPass4 [] cenv tds
     reportTime cenv.showTimes "Module Generation Pass 4"
 
-let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : ILGlobals, emitTailcalls, deterministic, showTimes)  (m : ILModuleDef) cilStartAddress =
+let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : ILGlobals, emitTailcalls, deterministic, showTimes)  (m : IModuleDef) cilStartAddress =
     let isDll = m.IsDLL
 
     let cenv = 
@@ -2976,7 +2976,7 @@ let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : IL
           Methods = cenv.pdbinfo.ToArray() 
           TableRowCounts = cenv.tables |> Seq.map(fun t -> t.Count) |> Seq.toArray }
 
-    let idxForNextedTypeDef (tds:ILTypeDef list, td:ILTypeDef) =
+    let idxForNextedTypeDef (tds:ITypeDef list, td:ITypeDef) =
         let enc = tds |> List.map (fun td -> td.Name)
         GetIdxForTypeDef cenv (TdKey(enc, td.Name))
 
@@ -3503,7 +3503,7 @@ let writeBytes (os: BinaryWriter) (chunk:byte[]) = os.Write(chunk, 0, chunk.Leng
 
 let writeBinaryAndReportMappings (outfile, 
                                   ilg: ILGlobals, pdbfile: string option, signer: ILStrongNameSigner option, portablePDB, embeddedPDB, 
-                                  embedAllSource, embedSourceList, sourceLink, emitTailcalls, deterministic, showTimes, dumpDebugInfo ) modul =
+                                  embedAllSource, embedSourceList, sourceLink, emitTailcalls, deterministic, showTimes, dumpDebugInfo ) (modul: IModuleDef) =
     // Store the public key from the signer into the manifest.  This means it will be written 
     // to the binary and also acts as an indicator to leave space for delay sign 
 
@@ -3514,7 +3514,8 @@ let writeBinaryAndReportMappings (outfile,
         match signer, modul.Manifest with
         | Some _, _ -> signer
         | _, None -> signer
-        | None, Some {PublicKey=Some pubkey} -> 
+        | None, Some manifest when manifest.PublicKey.IsSome ->
+            let pubkey = manifest.PublicKey.Value
             (dprintn "Note: The output assembly will be delay-signed using the original public";
              dprintn "Note: key. In order to load it you will need to either sign it with";
              dprintn "Note: the original private key or to turn off strong-name verification";
@@ -3540,7 +3541,7 @@ let writeBinaryAndReportMappings (outfile,
            if m.PublicKey <> None && m.PublicKey <> pubkey then 
              dprintn "Warning: The output assembly is being signed or delay-signed with a strong name that is different to the original."
         end;
-        { modul with Manifest = match modul.Manifest with None -> None | Some m -> Some {m with PublicKey = pubkey} }
+        modul.With(manifest = match modul.Manifest with None -> None | Some m -> Some (m.With(newPublicKey = pubkey)))
 
     let os = 
         try

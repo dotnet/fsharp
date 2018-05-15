@@ -146,7 +146,7 @@ module private PrintIL =
             else s
         n |> Lexhelp.Keywords.QuoteIdentifierIfNeeded |> demangleOperatorNameIfNeeded 
 
-    let private isStaticILEvent (e: ILEventDef) = 
+    let private isStaticILEvent (e: IEventDef) = 
         e.AddMethod.CallingSignature.CallingConv.IsStatic || 
         e.RemoveMethod.CallingSignature.CallingConv.IsStatic
 
@@ -203,7 +203,7 @@ module private PrintIL =
     /// Layout a function pointer signature using type-only-F#-style. No argument names are printed.
     //
     // Note, this duplicates functionality in formatParamDataToBuffer
-    and private layoutILParameter denv ilTyparSubst (p: ILParameter) =
+    and private layoutILParameter denv ilTyparSubst (p: IParameter) =
         let preL = 
             let isParamArray = TryFindILAttribute denv.g.attrib_ParamArrayAttribute p.CustomAttrs
             match isParamArray, p.Name, p.IsOptional with 
@@ -244,7 +244,7 @@ module private PrintIL =
     //          new : argType1 * ... * argTypeN -> retType
     //          Method : argType1 * ... * argTypeN -> retType
     //
-    let private layoutILMethodDef denv ilTyparSubst className (m: ILMethodDef) =
+    let private layoutILMethodDef denv ilTyparSubst className (m: IMethodDef) =
         let myParms         = m.GenericParams |> layoutILGenericParameterDefs
         let ilTyparSubst           = ilTyparSubst @ myParms
         let name            = adjustILMethodName m.Name
@@ -256,14 +256,14 @@ module private PrintIL =
         let signaturL       = (m.Parameters, m.Return.Type) |> layoutILParameters denv ilTyparSubst isCons
         nameL ^^ WordL.colon ^^ signaturL
 
-    let private layoutILFieldDef (denv: DisplayEnv) (ilTyparSubst: layout list) (f: ILFieldDef) =
+    let private layoutILFieldDef (denv: DisplayEnv) (ilTyparSubst: layout list) (f: IFieldDef) =
         let staticL =  if f.IsStatic then WordL.keywordStatic else emptyL
         let name    = adjustILName f.Name
         let nameL   = wordL (tagField name)
         let typL    = layoutILType denv ilTyparSubst f.FieldType
         staticL ^^ WordL.keywordVal ^^ nameL ^^ WordL.colon ^^ typL  
             
-    let private layoutILEventDef denv  ilTyparSubst (e: ILEventDef) =
+    let private layoutILEventDef denv  ilTyparSubst (e: IEventDef) =
         let staticL = if isStaticILEvent e then WordL.keywordStatic else emptyL
         let name = adjustILName e.Name
         let nameL = wordL (tagEvent name)
@@ -273,7 +273,7 @@ module private PrintIL =
             | _ -> emptyL
         staticL ^^ WordL.keywordEvent ^^ nameL ^^ WordL.colon ^^ typL     
        
-    let private layoutILPropertyDef denv ilTyparSubst (p : ILPropertyDef) =
+    let private layoutILPropertyDef denv ilTyparSubst (p : IPropertyDef) =
         let staticL =  if p.CallingConv =  ILThisConvention.Static then WordL.keywordStatic else emptyL
         let name    = adjustILName p.Name
         let nameL   = wordL (tagProperty name)
@@ -348,27 +348,27 @@ module private PrintIL =
     let layoutILEnumDefParts nm litVal =
         WordL.bar ^^ wordL (tagEnum (adjustILName nm)) ^^ layoutILFieldInit litVal
 
-    let private layoutILEnumDef (f : ILFieldDef) = layoutILEnumDefParts f.Name f.LiteralValue
+    let private layoutILEnumDef (f : IFieldDef) = layoutILEnumDefParts f.Name f.LiteralValue
 
     // filtering methods for hiding things we oughtn't show
-    let private isStaticILProperty    (p : ILPropertyDef)      = 
+    let private isStaticILProperty    (p : IPropertyDef)      = 
         match p.GetMethod,p.SetMethod with
         | Some getter, _    -> getter.CallingSignature.CallingConv.IsStatic
         | None, Some setter -> setter.CallingSignature.CallingConv.IsStatic
         | None, None        -> true
 
 
-    let private isPublicILMethod      (m : ILMethodDef) = 
+    let private isPublicILMethod      (m : IMethodDef) = 
         (m.Access = ILMemberAccess.Public)
 
-    let private isPublicILEvent typeDef (e: ILEventDef)         = 
+    let private isPublicILEvent typeDef (e: IEventDef)         = 
         try
             isPublicILMethod(resolveILMethodRef typeDef e.AddMethod) &&
             isPublicILMethod(resolveILMethodRef typeDef e.RemoveMethod)
         with _ ->
             false
 
-    let private isPublicILProperty typeDef (m : ILPropertyDef) = 
+    let private isPublicILProperty typeDef (m : IPropertyDef) = 
         try
             match m.GetMethod with 
             | Some ilMethRef -> isPublicILMethod (resolveILMethodRef typeDef ilMethRef)
@@ -384,27 +384,27 @@ module private PrintIL =
         with _ -> 
             false
 
-    let private isPublicILCtor        (m : ILMethodDef) = 
+    let private isPublicILCtor        (m : IMethodDef) = 
         (m.Access = ILMemberAccess.Public && m.IsConstructor)
 
-    let private isNotSpecialName    (m : ILMethodDef) = 
+    let private isNotSpecialName    (m : IMethodDef) = 
         not m.IsSpecialName
 
-    let private isPublicILField       (f : ILFieldDef)  = 
+    let private isPublicILField       (f : IFieldDef)  = 
         (f.Access = ILMemberAccess.Public)
 
-    let private isPublicILTypeDef       (c : ILTypeDef)   : bool =
+    let private isPublicILTypeDef       (c : ITypeDef)   : bool =
         match c.Access with
         | ILTypeDefAccess.Public
         | ILTypeDefAccess.Nested ILMemberAccess.Public -> true
         | _                                  -> false
 
-    let private isShowEnumField (f : ILFieldDef) : bool = f.Name <> "value__" // this appears to be the hard-coded underlying storage field
+    let private isShowEnumField (f : IFieldDef) : bool = f.Name <> "value__" // this appears to be the hard-coded underlying storage field
     let private noShow = set [ "System.Object" ; "Object"; "System.ValueType" ; "ValueType"; "obj" ] // hide certain 'obvious' base classes
     let private isShowBase      (n : layout)   : bool = 
         not (noShow.Contains(showL n))
 
-    let rec layoutILTypeDef (denv: DisplayEnv) (typeDef : ILTypeDef) : layout =
+    let rec layoutILTypeDef (denv: DisplayEnv) (typeDef : ITypeDef) : layout =
         let ilTyparSubst       = typeDef.GenericParams |> layoutILGenericParameterDefs
 
         let renderL pre body post = 
@@ -439,7 +439,7 @@ module private PrintIL =
                         )
                     else []
 
-            let memberBlockLs (fieldDefs:ILFieldDefs, methodDefs:ILMethodDefs, propertyDefs:ILPropertyDefs, eventDefs:ILEventDefs) =
+            let memberBlockLs (fieldDefs:IFieldDefs, methodDefs:IMethodDefs, propertyDefs:IPropertyDefs, eventDefs:IEventDefs) =
                 let ctors  =
                     methodDefs.AsList
                     |> List.filter isPublicILCtor 
@@ -520,7 +520,7 @@ module private PrintIL =
                 | _      -> comment "`Invoke` method could not be found"
             WordL.keywordDelegate ^^ WordL.keywordOf ^^ rhs
           
-    and layoutILNestedClassDef (denv: DisplayEnv) (typeDef : ILTypeDef) =
+    and layoutILNestedClassDef (denv: DisplayEnv) (typeDef : ITypeDef) =
         let name     = adjustILName typeDef.Name
         let nameL    = wordL (tagClass name)
         let ilTyparSubst    = typeDef.GenericParams |> layoutILGenericParameterDefs

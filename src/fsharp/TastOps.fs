@@ -2750,27 +2750,27 @@ let superOfTycon (g:TcGlobals) (tycon:Tycon) =
 //----------------------------------------------------------------------------
 
 // AbsIL view of attributes (we read these from .NET binaries) 
-let isILAttribByName (tencl:string list, tname: string) (attr: ILAttribute) = 
+let isILAttribByName (tencl:string list, tname: string) (attr: IAttribute) = 
     (attr.Method.DeclaringType.TypeSpec.Name = tname) &&
     (attr.Method.DeclaringType.TypeSpec.Enclosing = tencl)
 
 // AbsIL view of attributes (we read these from .NET binaries) 
-let isILAttrib (tref:ILTypeRef) (attr: ILAttribute) = 
+let isILAttrib (tref:ILTypeRef) (attr: IAttribute) = 
     isILAttribByName (tref.Enclosing, tref.Name) attr
 
 // REVIEW: consider supporting querying on Abstract IL custom attributes.
 // These linear iterations cost us a fair bit when there are lots of attributes
 // on imported types. However this is fairly rare and can also be solved by caching the
 // results of attribute lookups in the TAST
-let HasILAttribute tref (attrs: ILAttributes) = Array.exists (isILAttrib tref) attrs.AsArray
+let HasILAttribute tref (attrs: IAttributes) = Array.exists (isILAttrib tref) attrs.AsArray
 
-let HasILAttributeByName tname (attrs: ILAttributes) = Array.exists (isILAttribByName ([], tname)) attrs.AsArray
+let HasILAttributeByName tname (attrs: IAttributes) = Array.exists (isILAttribByName ([], tname)) attrs.AsArray
 
-let TryDecodeILAttribute (g:TcGlobals) tref (attrs: ILAttributes) = 
+let TryDecodeILAttribute (g:TcGlobals) tref (attrs: IAttributes) = 
     attrs.AsArray |> Array.tryPick (fun x -> if isILAttrib tref x then Some(decodeILAttribData g.ilg x)  else None)
 
 // This one is done by name to ensure the compiler doesn't take a dependency on dereferencing a type that only exists in .NET 3.5
-let ILThingHasExtensionAttribute (attrs : ILAttributes) = 
+let ILThingHasExtensionAttribute (attrs : IAttributes) = 
     attrs.AsArray
     |> Array.exists (fun attr -> attr.Method.DeclaringType.TypeSpec.Name = "System.Runtime.CompilerServices.ExtensionAttribute")
     
@@ -6452,10 +6452,10 @@ let mkCompilationMappingAttrForQuotationResource (g:TcGlobals) (nm, tys: ILTypeR
 // Decode extensible typing attributes
 //----------------------------------------------------------------------------
 
-let isTypeProviderAssemblyAttr (cattr:ILAttribute) = 
+let isTypeProviderAssemblyAttr (cattr:IAttribute) = 
     cattr.Method.DeclaringType.BasicQualifiedName = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName
 
-let TryDecodeTypeProviderAssemblyAttr ilg (cattr:ILAttribute) = 
+let TryDecodeTypeProviderAssemblyAttr ilg (cattr:IAttribute) = 
     if isTypeProviderAssemblyAttr cattr then 
         let parms, _args = decodeILAttribData ilg cattr 
         match parms with // The first parameter to the attribute is the name of the assembly with the compiler extensions.

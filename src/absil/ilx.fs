@@ -19,7 +19,7 @@ let mkLowerName (nm: string) =
     if lowerName = nm then "_" + nm else lowerName
 
 [<Sealed>]
-type IlxUnionField(fd: ILFieldDef) =
+type IlxUnionField(fd: IFieldDef) =
     let lowerName = mkLowerName fd.Name
     member x.ILField = fd
     member x.Type = x.ILField.FieldType
@@ -30,7 +30,7 @@ type IlxUnionField(fd: ILFieldDef) =
 type IlxUnionAlternative = 
     { altName: string
       altFields: IlxUnionField[]
-      altCustomAttrs: ILAttributes }
+      altCustomAttrs: IAttributes }
 
     member x.FieldDefs = x.altFields
     member x.FieldDef n = x.altFields.[n]
@@ -62,8 +62,8 @@ type IlxUnionSpec =
 
 
 type IlxClosureLambdas = 
-    | Lambdas_forall of ILGenericParameterDef * IlxClosureLambdas
-    | Lambdas_lambda of ILParameter * IlxClosureLambdas
+    | Lambdas_forall of IGenericParameterDef * IlxClosureLambdas
+    | Lambdas_lambda of IParameter * IlxClosureLambdas
     | Lambdas_return of ILType
 
 type IlxClosureApps = 
@@ -80,7 +80,7 @@ let rec instLambdasAux n inst = function
   | Lambdas_forall (b, rty) -> 
       Lambdas_forall(b, instLambdasAux n inst rty)
   | Lambdas_lambda (p, rty) ->  
-      Lambdas_lambda({ p with Type=instILTypeAux n inst p.Type}, instLambdasAux n inst rty)
+      Lambdas_lambda(p.With(newTy = instILTypeAux n inst p.Type), instLambdasAux n inst rty)
   | Lambdas_return rty ->  Lambdas_return(instILTypeAux n inst rty)
 
 let instLambdas i t = instLambdasAux 0 i t
@@ -131,7 +131,7 @@ type IlxUnionInfo =
       cudHasHelpers: IlxUnionHasHelpers 
       /// generate the helpers? 
       cudDebugProxies: bool 
-      cudDebugDisplayAttributes: ILAttribute list
+      cudDebugDisplayAttributes: IAttribute list
       cudAlternatives: IlxUnionAlternative[]
       cudNullPermitted: bool
       /// debug info for generated code for classunions 

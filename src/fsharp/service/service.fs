@@ -2229,7 +2229,7 @@ module CompileHelpers =
 
         errors.ToArray(), result
 
-    let createDynamicAssembly (ctok, debugInfo: bool, tcImportsRef: TcImports option ref, execute: bool, assemblyBuilderRef: _ option ref) (tcGlobals:TcGlobals, outfile, ilxMainModule) =
+    let createDynamicAssembly (ctok, debugInfo: bool, tcImportsRef: TcImports option ref, execute: bool, assemblyBuilderRef: _ option ref) (tcGlobals:TcGlobals, outfile, ilxMainModule: IModuleDef) =
 
         // Create an assembly builder
         let assemblyName = System.Reflection.AssemblyName(System.IO.Path.GetFileNameWithoutExtension outfile)
@@ -2246,9 +2246,9 @@ module CompileHelpers =
         // 
         // Also, the dynamic assembly creator can't currently handle types called "<Module>" from statically linked assemblies.
         let ilxMainModule = 
-            { ilxMainModule with 
-                TypeDefs = ilxMainModule.TypeDefs.AsList |> List.filter (fun td -> not (isTypeNameForGlobalFunctions td.Name)) |> mkILTypeDefs
-                Resources=mkILResources [] }
+            ilxMainModule.With( 
+                typeDefs = (ilxMainModule.TypeDefs.AsList |> List.filter (fun td -> not (isTypeNameForGlobalFunctions td.Name)) |> mkILTypeDefs),
+                resources=mkILResources [])
 
         // The function used to resolve typees while emitting the code
         let assemblyResolver s = 

@@ -18,7 +18,7 @@ type ErrorLoggerProvider =
 
 type StrongNameSigningInfo 
 
-val EncodeInterfaceData: tcConfig:TcConfig * tcGlobals:TcGlobals * exportRemapping:Tastops.Remap * generatedCcu: Tast.CcuThunk * outfile: string * isIncrementalBuild: bool -> ILAttribute list * ILResource list
+val EncodeInterfaceData: tcConfig:TcConfig * tcGlobals:TcGlobals * exportRemapping:Tastops.Remap * generatedCcu: Tast.CcuThunk * outfile: string * isIncrementalBuild: bool -> IAttribute list * IResource list
 val ValidateKeySigningAttributes : tcConfig:TcConfig * tcGlobals:TcGlobals * TypeChecker.TopAttribs -> StrongNameSigningInfo
 val GetStrongNameSigner : StrongNameSigningInfo -> ILBinaryWriter.ILStrongNameSigner option
 
@@ -38,7 +38,7 @@ val typecheckAndCompile :
     exiter : Exiter *
     loggerProvider: ErrorLoggerProvider *
     tcImportsCapture: (TcImports -> unit) option *
-    dynamicAssemblyCreator: (TcGlobals * string * ILModuleDef -> unit) option
+    dynamicAssemblyCreator: (TcGlobals * string * IModuleDef -> unit) option
       -> unit
 
 val mainCompile : 
@@ -51,7 +51,7 @@ val mainCompile :
     exiter: Exiter * 
     loggerProvider: ErrorLoggerProvider * 
     tcImportsCapture: (TcImports -> unit) option *
-    dynamicAssemblyCreator: (TcGlobals * string * ILModuleDef -> unit) option
+    dynamicAssemblyCreator: (TcGlobals * string * IModuleDef -> unit) option
       -> unit
 
 val compileOfAst : 
@@ -68,7 +68,7 @@ val compileOfAst :
     loggerProvider: ErrorLoggerProvider * 
     inputs:ParsedInput list *
     tcImportsCapture : (TcImports -> unit) option *
-    dynamicAssemblyCreator: (TcGlobals * string * ILModuleDef -> unit) option
+    dynamicAssemblyCreator: (TcGlobals * string * IModuleDef -> unit) option
       -> unit
 
 

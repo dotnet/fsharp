@@ -507,7 +507,7 @@ type OptionalArgInfo =
     /// Compute the OptionalArgInfo for an IL parameter
     ///
     /// This includes the Visual Basic rules for IDispatchConstant and IUnknownConstant and optional arguments.
-    static member FromILParameter g amap m ilScope ilTypeInst (ilParam: ILParameter) = 
+    static member FromILParameter g amap m ilScope ilTypeInst (ilParam: IParameter) = 
         if ilParam.IsOptional then 
             match ilParam.Default with 
             | None -> 
@@ -659,7 +659,7 @@ let ArbitraryMethodInfoOfPropertyInfo (pi:Tainted<ProvidedPropertyInfo>) m =
 [<NoComparison; NoEquality>]
 type ILTypeInfo = 
     /// ILTypeInfo (tyconRef, ilTypeRef, typeArgs, ilTypeDef).
-    | ILTypeInfo of TcGlobals * TType * ILTypeRef * ILTypeDef
+    | ILTypeInfo of TcGlobals * TType * ILTypeRef * ITypeDef
 
     member x.TcGlobals = let (ILTypeInfo(g,_,_,_)) = x in g
 
@@ -717,7 +717,7 @@ type ILMethInfo =
     ///
     /// If ilDeclaringTyconRefOpt is 'Some' then this is an F# use of an C#-style extension method.
     /// If ilDeclaringTyconRefOpt is 'None' then ilApparentType is an IL type definition.
-    | ILMethInfo of TcGlobals * TType * TyconRef option  * ILMethodDef * Typars  
+    | ILMethInfo of TcGlobals * TType * TyconRef option  * IMethodDef * Typars  
 
     member x.TcGlobals = match x with ILMethInfo(g,_,_,_,_) -> g
 
@@ -1227,13 +1227,13 @@ type MethInfo =
         isStructTy x.TcGlobals x.ApparentEnclosingType
 
     /// Build IL method infos.  
-    static member CreateILMeth (amap:Import.ImportMap, m, typ:TType, md: ILMethodDef) =     
+    static member CreateILMeth (amap:Import.ImportMap, m, typ:TType, md: IMethodDef) =     
         let tinfo = ILTypeInfo.FromType amap.g typ
         let mtps = Import.ImportILGenericParameters (fun () -> amap) m tinfo.ILScopeRef tinfo.TypeInstOfRawMetadata md.GenericParams
         ILMeth (amap.g,ILMethInfo(amap.g, typ, None, md, mtps),None)
 
     /// Build IL method infos for a C#-style extension method
-    static member CreateILExtensionMeth (amap, m, apparentTy:TType, declaringTyconRef:TyconRef, extMethPri, md: ILMethodDef) =     
+    static member CreateILExtensionMeth (amap, m, apparentTy:TType, declaringTyconRef:TyconRef, extMethPri, md: IMethodDef) =     
         let scoref =  declaringTyconRef.CompiledRepresentationForNamedType.Scope
         let mtps = Import.ImportILGenericParameters (fun () -> amap) m scoref [] md.GenericParams
         ILMeth (amap.g,ILMethInfo(amap.g,apparentTy,Some declaringTyconRef,md,mtps),extMethPri)
@@ -1575,7 +1575,7 @@ type MethInfo =
 [<NoComparison; NoEquality>]
 type ILFieldInfo = 
      /// Represents a single use of a field backed by Abstract IL metadata
-    | ILFieldInfo of ILTypeInfo * ILFieldDef // .NET IL fields 
+    | ILFieldInfo of ILTypeInfo * IFieldDef // .NET IL fields 
 #if !NO_EXTENSIONTYPING
      /// Represents a single use of a field backed by provided metadata
     | ProvidedField of Import.ImportMap * Tainted<ProvidedFieldInfo> * range
@@ -1776,7 +1776,7 @@ type UnionCaseInfo =
 /// Describes an F# use of a property backed by Abstract IL metadata
 [<NoComparison; NoEquality>]
 type ILPropInfo = 
-    | ILPropInfo of ILTypeInfo * ILPropertyDef 
+    | ILPropInfo of ILTypeInfo * IPropertyDef 
 
     /// Get the TcGlobals governing this value
     member x.TcGlobals = match x with ILPropInfo(tinfo,_) -> tinfo.TcGlobals
@@ -2197,7 +2197,7 @@ type PropInfo =
 /// Describes an F# use of an event backed by Abstract IL metadata
 [<NoComparison; NoEquality>]
 type ILEventInfo = 
-    | ILEventInfo of ILTypeInfo * ILEventDef
+    | ILEventInfo of ILTypeInfo * IEventDef
 
     /// Get the enclosing ("parent"/"declaring") type of the field. 
     member x.ApparentEnclosingType = match x with ILEventInfo(tinfo,_) -> tinfo.ToType
