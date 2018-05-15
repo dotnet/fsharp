@@ -117,7 +117,6 @@
     <NUnitVersion>3.5.0</NUnitVersion>
     <NUnitFullVersion>3.5.0.0</NUnitFullVersion>
     <NUnitLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.$(NUnitVersion)\lib\net45</NUnitLibDir>
-    <NUnitToolsLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.ConsoleRunner\$(NUnitVersion)\tools\</NUnitToolsLibDir>
 
     <MonoPackaging Condition="'$(TargetDotnetProfile)' != 'coreclr' AND '$(OS)' == 'Unix'">true</MonoPackaging>
 
