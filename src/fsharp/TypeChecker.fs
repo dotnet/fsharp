@@ -8261,9 +8261,6 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
         let delayedExpr = mkDelayedExpr coreExpr
         delayedExpr, tpenv
 
-//-------------------------------------------------------------------------
-//------------------------------------------------------------------------- 
-
 /// When checking sequence of function applications, 
 /// type applications and dot-notation projections, first extract known
 /// type information from the applications.

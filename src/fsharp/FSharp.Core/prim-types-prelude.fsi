@@ -17,6 +17,7 @@ namespace Microsoft.FSharp.Core
 
     /// <summary>An abbreviation for the CLI type <c>System.IntPtr</c>.</summary>
     type nativeint = System.IntPtr
+
     /// <summary>An abbreviation for the CLI type <c>System.UIntPtr</c>.</summary>
     type unativeint = System.UIntPtr
 

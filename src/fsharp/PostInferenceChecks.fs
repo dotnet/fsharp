@@ -888,7 +888,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
         // allow args to be byref here 
         CheckExprsPermitByrefs cenv env args 
 
-    | _ ->    
+    | _ -> 
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprsNoByrefs cenv env args 
 

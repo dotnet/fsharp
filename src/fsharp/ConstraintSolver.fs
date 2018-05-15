@@ -2516,7 +2516,7 @@ let EliminateConstraintsForGeneralizedTypars csenv (trace:OptionalTrace) (genera
 // No error recovery here: we do that on a per-expression basis.
 //------------------------------------------------------------------------- 
 
-let AddCxTypeEqualsType contextInfo denv css m actual expected = 
+let AddCxTypeEqualsType contextInfo denv css m actual expected  = 
     SolveTypEqualsTypWithReport (MakeConstraintSolverEnv contextInfo css m denv) 0 m NoTrace None actual expected
     |> RaiseOperationResult
 
