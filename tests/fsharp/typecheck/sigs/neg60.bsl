@@ -55,8 +55,6 @@ neg60.fs(65,19,65,24): typecheck error FS3087: The custom operation 'where' refe
 
 neg60.fs(65,19,65,24): typecheck error FS3087: The custom operation 'where' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.
 
-neg60.fs(65,19,65,24): typecheck error FS3087: The custom operation 'where' refers to a method which is overloaded. The implementations of custom operations may not be overloaded.
-
 neg60.fs(65,19,65,38): typecheck error FS0001: This expression was expected to have type
     'bool'    
 but here has type
