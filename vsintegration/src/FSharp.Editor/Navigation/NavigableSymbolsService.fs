@@ -3,29 +3,25 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Linq
 open System.Threading
 open System.Threading.Tasks
 open System.ComponentModel.Composition
 
-open Microsoft.FSharp.Compiler.SourceCodeServices
-
 open Microsoft.CodeAnalysis.Text
-open Microsoft.CodeAnalysis.Text.Shared.Extensions
 open Microsoft.CodeAnalysis.Navigation
 
 open Microsoft.VisualStudio.Language.Intellisense
+open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.Utilities
-open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Shell
 
 [<AllowNullLiteral>]
-type internal FSharpNavigableSymbol(item: INavigableItem, statusBar: StatusBar, span: SnapshotSpan) =
+type internal FSharpNavigableSymbol(item: INavigableItem, span: SnapshotSpan, gtd: GoToDefinition, statusBar: StatusBar) =
     interface INavigableSymbol with
         member __.Navigate(_: INavigableRelationship) =
-            GoToDefinitionHelpers.tryNavigateToItem statusBar (Some item) |> ignore
+            gtd.NavigateToItem(item, statusBar)
 
         member __.Relationships = seq { yield PredefinedNavigableRelationships.Definition }
 
@@ -51,13 +47,13 @@ type internal FSharpNavigableSymbolSource(checkerProvider: FSharpCheckerProvider
                     statusBar.Message (SR.LocatingSymbol())
                     use _ = statusBar.Animate()
 
-                    let gtdTask = GoToDefinitionHelpers.findDefinitionsTask checkerProvider projectInfoManager document position gtd cancellationToken
+                    let gtdTask = gtd.FindDefinitionTask(document, position, cancellationToken)
 
                     // Wrap this in a try/with as if the user clicks "Cancel" on the thread dialog, we'll be cancelled
                     // Task.Wait throws an exception if the task is cancelled, so be sure to catch it.
                     let gtdCompletedOrError =
                         try
-                            // This call to Wait() is fine because we want to be able to provide the error message.
+                            // This call to Wait() is fine because we want to be able to provide the error message in the status bar.
                             gtdTask.Wait()
                             Ok gtdTask
                         with exc -> 
@@ -65,14 +61,14 @@ type internal FSharpNavigableSymbolSource(checkerProvider: FSharpCheckerProvider
 
                     match gtdCompletedOrError with
                     | Ok task ->
-                        if task.Status = TaskStatus.RanToCompletion && task.Result <> null && task.Result.Any() then
-                            let (navigableItem, range) = task.Result.First() // F# API provides only one INavigableItem
+                        if task.Status = TaskStatus.RanToCompletion && task.Result.IsSome then
+                            let (navigableItem, range) = task.Result.Value
 
                             let declarationTextSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range)
                             let declarationSpan = Span(declarationTextSpan.Start, declarationTextSpan.Length)
                             let symbolSpan = SnapshotSpan(snapshot, declarationSpan)
 
-                            return FSharpNavigableSymbol(navigableItem, statusBar, symbolSpan) :> INavigableSymbol
+                            return FSharpNavigableSymbol(navigableItem, symbolSpan, gtd, statusBar) :> INavigableSymbol
                         else 
                             statusBar.TempMessage (SR.CannotDetermineSymbol())
 
