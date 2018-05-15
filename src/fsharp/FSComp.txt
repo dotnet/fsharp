@@ -83,7 +83,7 @@ tastTypeHasAssemblyCodeRepresentation,"The type '%s' has an inline assembly code
 253,tastInvalidFormForPropertyGetter,"Invalid form for a property getter. At least one '()' argument is required when using the explicit syntax."
 254,tastInvalidFormForPropertySetter,"Invalid form for a property setter. At least one argument is required."
 255,tastUnexpectedByRef,"Unexpected use of a byref-typed variable"
-256,tastValueMustBeLocalAndMutable,"A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'"
+256,tastValueMustBeMutable,"A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'"
 257,tastInvalidMutationOfConstant,"Invalid mutation of a constant expression. Consider copying the expression to a mutable local, e.g. 'let mutable x = ...'."
 tastValueHasBeenCopied,"The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed"
 259,tastRecursiveValuesMayNotBeInConstructionOfTuple,"Recursively defined values cannot appear directly as part of the construction of a tuple value within a recursive binding"
