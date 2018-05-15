@@ -694,7 +694,7 @@ let rec stripTyEqnsA g canShortcut ty =
             stripTyEqnsA g canShortcut (applyTyconAbbrev abbrevTy tycon tinst)
         | None -> 
             // Add the equation `byref<'T> = byref<'T, ByRefKinds.InOut> for F# 4.5+ when using FSharp.Core 4.5.0.0+
-            if tyconRefEq g tcref g.byref_tcr && g.byref2_tcr.CanDeref then 
+            if tyconRefEq g tcref g.byref_tcr && g.byref2_tcr.CanDeref  && g.byrefkind_InOut_tcr.CanDeref then 
                 mkByref2Ty g tinst.[0]  (TType_app(g.byrefkind_InOut_tcr, []))
             elif tycon.IsMeasureableReprTycon && List.forall (isDimensionless g) tinst then
                 stripTyEqnsA g canShortcut (reduceTyconMeasureableOrProvided g tycon tinst)
