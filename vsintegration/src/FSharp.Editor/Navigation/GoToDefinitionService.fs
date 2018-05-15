@@ -2,8 +2,7 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System.ComponentModel.Composition
-open System.Linq
+open System.Composition
 open System.Threading
 open System.Threading.Tasks
 
@@ -20,13 +19,12 @@ open System
 type internal FSharpGoToDefinitionService 
     [<ImportingConstructor>]
     (
-        [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: FSharpProjectOptionsManager
     ) =
 
     let gtd = GoToDefinition(checkerProvider.Checker, projectInfoManager)
-    let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar,IVsStatusbar>())  
+    let statusBar = StatusBar(ServiceProvider.GlobalProvider.GetService<SVsStatusbar,IVsStatusbar>())  
    
     interface IGoToDefinitionService with
         /// Invoked with Peek Definition.
@@ -36,10 +34,10 @@ type internal FSharpGoToDefinitionService
         /// Invoked with Go to Definition.
         /// Try to navigate to the definiton of the symbol at the symbolRange in the originDocument
         member __.TryGoToDefinition(document: Document, position: int, cancellationToken: CancellationToken) =
-            statusBar.Message (SR.LocatingSymbol())
+            statusBar.Message(SR.LocatingSymbol())
             use __ = statusBar.Animate()
 
-            let gtdTask = gtd.FindDefinitionTask (document, position, cancellationToken)
+            let gtdTask = gtd.FindDefinitionTask(document, position, cancellationToken)
 
             // Wrap this in a try/with as if the user clicks "Cancel" on the thread dialog, we'll be cancelled
             // Task.Wait throws an exception if the task is cancelled, so be sure to catch it.

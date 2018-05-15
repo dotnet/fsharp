@@ -44,7 +44,7 @@ type internal FSharpNavigableSymbolSource(checkerProvider: FSharpCheckerProvider
                     let document = snapshot.GetOpenDocumentInCurrentContextWithChanges()
                     let! sourceText = document.GetTextAsync () |> liftTaskAsync
                     
-                    statusBar.Message (SR.LocatingSymbol())
+                    statusBar.Message(SR.LocatingSymbol())
                     use _ = statusBar.Animate()
 
                     let gtdTask = gtd.FindDefinitionTask(document, position, cancellationToken)
