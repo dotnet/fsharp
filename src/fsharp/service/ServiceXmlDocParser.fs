@@ -2,6 +2,7 @@
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
+open System
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 
 /// Represent an Xml documentation block in source code
@@ -165,7 +166,7 @@ module XmlDocComment =
         Some (res, pos + (s.Length - res.Length))
 
     let private str (prefix: string) (s: string, pos) =
-        match s.StartsWith prefix with
+        match s.StartsWith(prefix, StringComparison.Ordinal) with
         | true -> 
             let res = s.Substring prefix.Length
             Some (res, pos + (s.Length - res.Length))

@@ -188,7 +188,7 @@ module ResponseFile =
         let parseLine (l: string) =
             match l with
             | s when String.IsNullOrWhiteSpace(s) -> None
-            | s when l.StartsWith("#") -> Some (ResponseFileLine.Comment (s.TrimStart('#')))
+            | s when l.StartsWith("#", StringComparison.Ordinal) -> Some (ResponseFileLine.Comment (s.TrimStart('#')))
             | s -> Some (ResponseFileLine.CompilerOptionSpec (s.Trim()))
 
         try
@@ -224,7 +224,7 @@ let ParseCompilerOptions (collectOtherArgument : string -> unit, blocks: Compile
       if opt.Length = 2 || isSlashOpt opt then
         opt <- opt.[1 ..]
       // else, it should be a non-abbreviated option starting with "--"
-      elif opt.Length > 3 && opt.StartsWith("--") then
+      elif opt.Length > 3 && opt.StartsWith("--", StringComparison.Ordinal) then
         opt <- opt.[2 ..]
       else
         opt <- ""
@@ -259,7 +259,7 @@ let ParseCompilerOptions (collectOtherArgument : string -> unit, blocks: Compile
   let rec processArg args =    
     match args with 
     | [] -> ()
-    | ((rsp: string) :: t) when rsp.StartsWith("@") ->
+    | ((rsp: string) :: t) when rsp.StartsWith("@", StringComparison.Ordinal) ->
         let responseFileOptions =
             let fullpath =
                 try

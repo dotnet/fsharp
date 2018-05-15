@@ -36,7 +36,7 @@ module Symbol =
             |> Option.isSome
 
     let isOperator (name: string) =
-        name.StartsWith "( " && name.EndsWith " )" && name.Length > 4
+        name.StartsWith("( ", StringComparison.Ordinal) && name.EndsWith(" )", StringComparison.Ordinal) && name.Length > 4
             && name.Substring (2, name.Length - 4) 
                 |> String.forall (fun c -> c <> ' ' && not (Char.IsLetter c))
 

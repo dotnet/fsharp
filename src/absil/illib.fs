@@ -538,7 +538,7 @@ module String =
     let (|StartsWith|_|) pattern value =
         if String.IsNullOrWhiteSpace value then
             None
-        elif value.StartsWith pattern then
+        elif value.StartsWith(pattern, StringComparison.Ordinal) then
             Some()
         else None
 
@@ -556,7 +556,7 @@ module String =
         while not (isNull !line) do
             yield !line
             line := reader.ReadLine()
-        if str.EndsWith("\n") then
+        if str.EndsWith("\n", StringComparison.Ordinal) then
             // last trailing space not returned
             // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
             yield String.Empty

@@ -46,7 +46,8 @@ module QuickParse =
     // Adjusts the token tag for the given identifier
     // - if we're inside active pattern name (at the bar), correct the token TAG to be an identifier
     let CorrectIdentifierToken (tokenText: string) (tokenTag: int) = 
-        if tokenText.EndsWith "|" then Microsoft.FSharp.Compiler.Parser.tagOfToken (Microsoft.FSharp.Compiler.Parser.token.IDENT tokenText)
+        if tokenText.EndsWith("|", StringComparison.Ordinal) then
+            Microsoft.FSharp.Compiler.Parser.tagOfToken (Microsoft.FSharp.Compiler.Parser.token.IDENT tokenText)
         else tokenTag
 
     let rec isValidStrippedName (name:string) idx = 

@@ -136,13 +136,15 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
 
     /// Returns `true` if given string is an operator display name, e.g. ( |>> )
     let IsOperatorName (name: string) =
-        let name = if name.StartsWith "( " && name.EndsWith " )" then name.[2..name.Length - 3] else name
+        let name =
+            if name.StartsWith("( ", StringComparison.Ordinal) && name.EndsWith(" )", StringComparison.Ordinal) then
+                name.[2 .. name.Length - 3]
+            else name
         // there is single operator containing a space - range operator with step: `.. ..`
-        let res = name = ".. .." || name |> Seq.forall (fun c -> opCharSet.Contains c && c <> ' ')
-        res
+        name = ".. .." || name |> Seq.forall (fun c -> opCharSet.Contains c && c <> ' ')
 
     let IsMangledOpName (n:string) =
-        n.StartsWith (opNamePrefix, StringComparison.Ordinal)
+        n.StartsWith(opNamePrefix, StringComparison.Ordinal)
 
     /// Compiles a custom operator into a mangled operator name.
     /// For example, "!%" becomes "op_DereferencePercent".
@@ -468,7 +470,7 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
         if IsCompilerGeneratedName nm then nm else nm+compilerGeneratedMarker
 
     let GetBasicNameOfPossibleCompilerGeneratedName (name:string) =
-            match name.IndexOf compilerGeneratedMarker with 
+            match name.IndexOf(compilerGeneratedMarker, StringComparison.Ordinal) with 
             | -1 | 0 -> name
             | n -> name.[0..n-1]
 

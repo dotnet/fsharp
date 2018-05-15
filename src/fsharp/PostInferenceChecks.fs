@@ -4,6 +4,7 @@
 /// is complete.
 module internal Microsoft.FSharp.Compiler.PostTypeCheckSemanticChecks
 
+open System
 open System.Collections.Generic
 
 open Microsoft.FSharp.Compiler
@@ -1309,14 +1310,14 @@ let CheckModuleBinding cenv env (TBind(v,e,_) as bind) =
 
                 // Default augmentation contains the nasty 'Case<UnionCase>' etc.
                 let prefix = "New"
-                if nm.StartsWith prefix then
+                if nm.StartsWith(prefix, StringComparison.Ordinal) then
                     match tcref.GetUnionCaseByName(nm.[prefix.Length ..]) with 
                     | Some(uc) -> error(NameClash(nm,kind,v.DisplayName,v.Range, FSComp.SR.chkUnionCaseCompiledForm(),uc.DisplayName,uc.Range))
                     | None -> ()
 
                 // Default augmentation contains the nasty 'Is<UnionCase>' etc.
                 let prefix = "Is"
-                if nm.StartsWith prefix && hasDefaultAugmentation then
+                if nm.StartsWith(prefix, StringComparison.Ordinal) && hasDefaultAugmentation then
                     match tcref.GetUnionCaseByName(nm.[prefix.Length ..]) with 
                     | Some(uc) -> error(NameClash(nm,kind,v.DisplayName,v.Range, FSComp.SR.chkUnionCaseDefaultAugmentation(),uc.DisplayName,uc.Range))
                     | None -> ()

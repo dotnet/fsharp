@@ -6,6 +6,7 @@
 
 module internal Microsoft.FSharp.Compiler.NicePrint
 
+open System
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
@@ -71,7 +72,7 @@ module internal PrintUtilities =
                     tcref.DisplayName // has no static params
                 else
                     tcref.DisplayName+"<...>" // shorten
-            if isAttribute && name.EndsWith "Attribute" then
+            if isAttribute && name.EndsWith("Attribute", StringComparison.Ordinal) then
                 String.dropSuffix name "Attribute"
             else 
                 name
@@ -655,7 +656,7 @@ module private PrintTypes =
         | ILAttrib ilMethRef -> 
             let trimmedName = 
                 let name = ilMethRef.DeclaringTypeRef.Name
-                if name.EndsWith "Attribute" then
+                if name.EndsWith("Attribute", StringComparison.Ordinal) then
                     String.dropSuffix name "Attribute"
                 else
                     name

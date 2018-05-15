@@ -758,7 +758,7 @@ let ReportImplicitlyIgnoredBoolExpression denv m ty expr =
                         UnitTypeExpectedWithEquality (denv, ty, m)
                 else
                     UnitTypeExpectedWithEquality (denv, ty, m)
-            | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, methodRef, _, _, _), _, Expr.Val(vf, _, _) :: _, _) :: _ when methodRef.Name.StartsWith "get_"->
+            | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, methodRef, _, _, _), _, Expr.Val(vf, _, _) :: _, _) :: _ when methodRef.Name.StartsWith("get_", StringComparison.Ordinal) ->
                 UnitTypeExpectedWithPossiblePropertySetter (denv, ty, vf.DisplayName, PrettyNaming.ChopPropertyName(methodRef.Name), m)
             | Expr.Val(vf, _, _) :: _ -> 
                 UnitTypeExpectedWithPossibleAssignment (denv, ty, vf.IsMutable, vf.DisplayName, m)
@@ -5051,7 +5051,7 @@ and TcPatBindingName cenv env id ty isMemberThis vis1 topValData (inlineFlag, de
         // isLeftMost indicates we are processing the left-most path through a disjunctive or pattern.
         // For those binding locations, CallNameResolutionSink is called in MakeAndPublishValue, like all other bindings
         // For non-left-most paths, we register the name resolutions here
-        if not isLeftMost && not vspec.IsCompilerGenerated && not (vspec.LogicalName.StartsWith "_") then 
+        if not isLeftMost && not vspec.IsCompilerGenerated && not (vspec.LogicalName.StartsWith("_", StringComparison.Ordinal)) then 
             let item = Item.Value(mkLocalValRef vspec)
             CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Binding, env.DisplayEnv, env.eAccessRights)
 
@@ -9535,7 +9535,7 @@ and TcMethodApplication
                 match unrefinedItem with 
                 | Item.MethodGroup(_, overridenMeths, _) -> overridenMeths |> List.map (fun minfo -> minfo, None)
                 | Item.Property(_, pinfos) -> 
-                    if result.Method.LogicalName.StartsWith ("set_") then 
+                    if result.Method.LogicalName.StartsWith("set_", StringComparison.Ordinal) then 
                         SettersOfPropInfos pinfos
                     else 
                         GettersOfPropInfos pinfos
@@ -12310,7 +12310,7 @@ module IncrClassChecking =
                 nm, takenFieldNames.Add(nm)
                  
             let reportIfUnused() = 
-                if not v.HasBeenReferenced && not v.IsCompiledAsTopLevel && not (v.DisplayName.StartsWith "_") && not v.IsCompilerGenerated then 
+                if not v.HasBeenReferenced && not v.IsCompiledAsTopLevel && not (v.DisplayName.StartsWith("_", StringComparison.Ordinal)) && not v.IsCompilerGenerated then 
                     warning (Error(FSComp.SR.chkUnusedValue(v.DisplayName), v.Range))
 
             let repr = 
@@ -15811,7 +15811,7 @@ module TcDeclarations =
                   | None -> 
                         //false
                         // There is a special case we allow when compiling FSharp.Core.dll which permits interface implementations across namespace fragments
-                        (cenv.g.compilingFslib && tcref.LogicalName.StartsWith("Tuple`"))
+                        (cenv.g.compilingFslib && tcref.LogicalName.StartsWith("Tuple`", StringComparison.Ordinal))
         
             let nReqTypars = reqTypars.Length
 

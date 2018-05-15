@@ -362,14 +362,13 @@ let compareVersions x y =
         else 0
 
 let isMscorlib data =
-    if System.String.Compare(data.assemRefName, "mscorlib") = 0 then true 
-    else false
+    data.assemRefName = "mscorlib"
 
 let GetReferenceUnifiedVersion data = 
     let mutable highest = data.assemRefVersion
     if not (isMscorlib data) then 
         for ref in AssemblyRefUniqueStampGenerator.Table do
-            if System.String.Compare(ref.assemRefName, data.assemRefName) = 0 && highest < ref.assemRefVersion then 
+            if ref.assemRefName = data.assemRefName && highest < ref.assemRefVersion then 
                 highest <- ref.assemRefVersion
     highest
 

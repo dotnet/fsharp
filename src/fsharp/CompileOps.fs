@@ -695,7 +695,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
           | ContextInfo.TupleInRecordFields ->
                 os.Append(ErrorFromAddingTypeEquation1E().Format t2 t1 tpcs) |> ignore
                 os.Append(System.Environment.NewLine + FSComp.SR.commaInsteadOfSemicolonInRecord()) |> ignore
-          | _ when t2 = "bool" && t1.EndsWith " ref" ->
+          | _ when t2 = "bool" && t1.EndsWith(" ref", StringComparison.Ordinal) ->
                 os.Append(ErrorFromAddingTypeEquation1E().Format t2 t1 tpcs) |> ignore
                 os.Append(System.Environment.NewLine + FSComp.SR.derefInsteadOfNot()) |> ignore
           | _ -> os.Append(ErrorFromAddingTypeEquation1E().Format t2 t1 tpcs) |> ignore
@@ -1603,7 +1603,7 @@ let SanitizeFileName fileName implicitIncludeDir =
         let currentDir = implicitIncludeDir
         
         // if the file name is not rooted in the current directory, return the full path
-        if not(fullPath.StartsWith(currentDir)) then
+        if not(fullPath.StartsWith(currentDir, StringComparison.Ordinal)) then
             fullPath
         // if the file name is rooted in the current directory, return the relative path
         else
@@ -1795,7 +1795,7 @@ type private TypeInThisAssembly = class end
 let GetDefaultSystemValueTupleReference () =
     try
         let asm = typeof<System.ValueTuple<int, int>>.Assembly 
-        if asm.FullName.StartsWith "System.ValueTuple" then  
+        if asm.FullName.StartsWith("System.ValueTuple", StringComparison.Ordinal) then  
             Some asm.Location
         else
             let location = Path.GetDirectoryName(typeof<TypeInThisAssembly>.Assembly.Location)
@@ -3752,28 +3752,29 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
 //--------------------------------------------------------------------------
 
 let IsSignatureDataResource         (r: ILResource) = 
-    r.Name.StartsWith FSharpSignatureDataResourceName ||
-    r.Name.StartsWith FSharpSignatureDataResourceName2
+    r.Name.StartsWith(FSharpSignatureDataResourceName, StringComparison.Ordinal) ||
+    r.Name.StartsWith(FSharpSignatureDataResourceName2, StringComparison.Ordinal)
 
 let IsOptimizationDataResource      (r: ILResource) = 
-    r.Name.StartsWith FSharpOptimizationDataResourceName || 
-    r.Name.StartsWith FSharpOptimizationDataResourceName2
+    r.Name.StartsWith(FSharpOptimizationDataResourceName, StringComparison.Ordinal)|| 
+    r.Name.StartsWith(FSharpOptimizationDataResourceName2, StringComparison.Ordinal)
 
 let GetSignatureDataResourceName    (r: ILResource) = 
-    if r.Name.StartsWith FSharpSignatureDataResourceName then 
+    if r.Name.StartsWith(FSharpSignatureDataResourceName, StringComparison.Ordinal) then 
         String.dropPrefix r.Name FSharpSignatureDataResourceName
-    elif r.Name.StartsWith FSharpSignatureDataResourceName2 then 
+    elif r.Name.StartsWith(FSharpSignatureDataResourceName2, StringComparison.Ordinal) then 
         String.dropPrefix r.Name FSharpSignatureDataResourceName2
     else failwith "GetSignatureDataResourceName"
 
 let GetOptimizationDataResourceName (r: ILResource) = 
-    if r.Name.StartsWith FSharpOptimizationDataResourceName then 
+    if r.Name.StartsWith(FSharpOptimizationDataResourceName, StringComparison.Ordinal) then 
         String.dropPrefix r.Name FSharpOptimizationDataResourceName
-    elif r.Name.StartsWith FSharpOptimizationDataResourceName2 then 
+    elif r.Name.StartsWith(FSharpOptimizationDataResourceName2, StringComparison.Ordinal) then 
         String.dropPrefix r.Name FSharpOptimizationDataResourceName2
     else failwith "GetOptimizationDataResourceName"
 
-let IsReflectedDefinitionsResource  (r: ILResource) = r.Name.StartsWith QuotationPickler.SerializedReflectedDefinitionsResourceNameBase
+let IsReflectedDefinitionsResource (r: ILResource) =
+    r.Name.StartsWith(QuotationPickler.SerializedReflectedDefinitionsResourceNameBase, StringComparison.Ordinal)
 
 let MakeILResource rname bytes = 
     { Name = rname

@@ -2,6 +2,7 @@
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
+open System
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.AbstractIL.IL
@@ -183,7 +184,7 @@ module FSharpExprConvert =
         rfref.RecdField.IsCompilerGenerated && 
         rfref.RecdField.IsStatic &&
         rfref.RecdField.IsMutable &&
-        rfref.RecdField.Name.StartsWith "init" 
+        rfref.RecdField.Name.StartsWith("init", StringComparison.Ordinal) 
 
         // Match "if [AI_clt](init@41, 6) then IntrinsicFunctions.FailStaticInit () else ()"
     let (|StaticInitializationCheck|_|) e = 
@@ -956,12 +957,12 @@ module FSharpExprConvert =
                     if vName = "GetTag" || vName = "get_Tag" then
                         let objR = ConvExpr cenv env callArgs.Head
                         E.UnionCaseTag(objR, typR) 
-                    elif vName.StartsWith("New") then
+                    elif vName.StartsWith("New", StringComparison.Ordinal) then
                         let name = vName.Substring(3)
                         let mkR = ConvUnionCaseRef cenv (UCRef(tcref, name))
                         let argsR = ConvExprs cenv env callArgs
                         E.NewUnionCase(typR, mkR, argsR)
-                    elif vName.StartsWith("Is") then
+                    elif vName.StartsWith("Is", StringComparison.Ordinal) then
                         let name = vName.Substring(2)
                         let mkR = ConvUnionCaseRef cenv (UCRef(tcref, name))
                         let objR = ConvExpr cenv env callArgs.Head
