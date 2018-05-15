@@ -311,7 +311,7 @@ module internal GoToDefinitionHelpers =
                         )
  
                 let! location = symbol.Locations |> Seq.tryHead
-                return FSharpNavigableItem(project.GetDocument(location.SourceTree), location.SourceSpan)
+                return (FSharpNavigableItem(project.GetDocument(location.SourceTree), location.SourceSpan), idRange)
 
             | FSharpFindDeclResult.DeclFound targetRange -> 
                 // if goto definition is called at we are alread at the declaration location of a symbol in
@@ -329,7 +329,7 @@ module internal GoToDefinitionHelpers =
 
                         let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (implSourceText, targetRange)
                         let navItem = FSharpNavigableItem (implDocument, implTextSpan)
-                        return navItem
+                        return (navItem, idRange)
                     else // jump from implementation to the corresponding signature
                         let! declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, true, userOpName=gtd.UserOpName) |> liftAsync
                         match declarations with
@@ -338,8 +338,9 @@ module internal GoToDefinitionHelpers =
                             let! sigSourceText = sigDocument.GetTextAsync () |> liftTaskAsync
                             let! sigTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sigSourceText, targetRange)
                             let navItem = FSharpNavigableItem (sigDocument, sigTextSpan)
-                            return navItem
-                        | _ -> return! None
+                            return (navItem, idRange)
+                        | _ ->
+                            return! None
                 // when the target range is different follow the navigation convention of 
                 // - gotoDefn origin = signature , gotoDefn destination = signature
                 // - gotoDefn origin = implementation, gotoDefn destination = implementation 
@@ -350,7 +351,7 @@ module internal GoToDefinitionHelpers =
                     // if the gotodef call originated from a signature and the returned target is a signature, navigate there
                     if isSignatureFile targetRange.FileName && preferSignature then 
                         let navItem = FSharpNavigableItem (sigDocument, sigTextSpan)
-                        return navItem
+                        return (navItem, idRange)
                     else // we need to get an FSharpSymbol from the targetRange found in the signature
                          // that symbol will be used to find the destination in the corresponding implementation file
                         let implFilePath =
@@ -367,8 +368,9 @@ module internal GoToDefinitionHelpers =
                         
                         let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (implSourceText, targetRange)
                         let navItem = FSharpNavigableItem (implDocument, implTextSpan)
-                        return navItem
-                | _ -> return! None
+                        return (navItem, idRange)
+                | _ ->
+                    return! None
         } 
-        |> Async.map (Option.map (fun x -> x :> INavigableItem) >> Option.toArray >> Array.toSeq)
+        |> Async.map (Option.map (fun (navItem, range) -> (navItem :> INavigableItem, range)) >> Option.toArray >> Array.toSeq)
         |> RoslynHelpers.StartAsyncAsTask cancellationToken
