@@ -412,7 +412,7 @@
         <target state="translated">Neočekávané použití proměnné typu ByRef.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tastValueMustBeLocalAndMutable">
+      <trans-unit id="tastValueMustBeMutable">
         <source>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</source>
         <target state="translated">Hodnota musí být proměnlivá, aby se dal změnit obsah nebo aby se dala převzít adresa typu hodnoty, třeba let mutable x = ...</target>
         <note />

@@ -2838,12 +2838,15 @@ type ApplicableExpr =
            Expr *
            // is this the first in an application series
            bool 
+
     member x.Range = 
         match x with 
         | ApplicableExpr (_, e, _) -> e.Range
+
     member x.Type = 
         match x with 
         | ApplicableExpr (cenv, e, _) -> tyOfExpr cenv.g e 
+
     member x.SupplyArgument(e2, m) =
         let (ApplicableExpr (cenv, fe, first)) = x 
         let combinedExpr = 
@@ -2855,6 +2858,7 @@ type ApplicableExpr =
             | _ -> 
                 Expr.App(fe, tyOfExpr cenv.g fe, [], [e2], m) 
         ApplicableExpr(cenv, combinedExpr, false)
+
     member x.Expr =
         match x with 
         | ApplicableExpr(_, e, _) ->  e
@@ -3947,25 +3951,26 @@ let CheckAndRewriteObjectCtor g env (ctorLambaExpr:Expr) =
 /// Post-typechecking normalizations to enforce semantic constraints
 /// lazy and, lazy or, rethrow, address-of
 let buildApp cenv expr exprty arg m = 
+    let g = cenv.g
     match expr, arg with        
     | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [x0], _), _) , _ 
-         when valRefEq cenv.g vf cenv.g.and_vref 
-           || valRefEq cenv.g vf cenv.g.and2_vref  -> 
-        MakeApplicableExprNoFlex cenv (mkLazyAnd cenv.g m x0 arg)
+         when valRefEq g vf g.and_vref 
+           || valRefEq g vf g.and2_vref  -> 
+        MakeApplicableExprNoFlex cenv (mkLazyAnd g m x0 arg)
     | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [x0], _), _), _ 
-         when valRefEq cenv.g vf cenv.g.or_vref
-           || valRefEq cenv.g vf cenv.g.or2_vref -> 
-        MakeApplicableExprNoFlex cenv (mkLazyOr cenv.g m x0 arg )
+         when valRefEq g vf g.or_vref
+           || valRefEq g vf g.or2_vref -> 
+        MakeApplicableExprNoFlex cenv (mkLazyOr g m x0 arg )
     | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [], _), _), _ 
-         when valRefEq cenv.g vf cenv.g.reraise_vref -> 
+         when valRefEq g vf g.reraise_vref -> 
         // exprty is of type: "unit -> 'a". Break it and store the 'a type here, used later as return type. 
-        let _unit_ty, rtn_ty = destFunTy cenv.g exprty 
+        let _unit_ty, rtn_ty = destFunTy g exprty 
         MakeApplicableExprNoFlex cenv (mkCompGenSequential m arg (mkReraise m rtn_ty))
     | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [], _), _), _ 
-         when (valRefEq cenv.g vf cenv.g.addrof_vref || 
-               valRefEq cenv.g vf cenv.g.addrof2_vref) -> 
-        if valRefEq cenv.g vf cenv.g.addrof2_vref then warning(UseOfAddressOfOperator(m))
-        let wrap, e1a' = mkExprAddrOfExpr cenv.g true false DefinitelyMutates arg (Some(vf)) m
+         when (valRefEq g vf g.addrof_vref || 
+               valRefEq g vf g.addrof2_vref) -> 
+        if valRefEq g vf g.addrof2_vref then warning(UseOfAddressOfOperator(m))
+        let wrap, e1a' = mkExprAddrOfExpr g true false DefinitelyMutates arg (Some(vf)) m
         MakeApplicableExprNoFlex cenv (wrap(e1a'))
     | _ -> 
         expr.SupplyArgument(arg, m)             
@@ -8235,19 +8240,15 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
         let delayedExpr = mkDelayedExpr coreExpr
         delayedExpr, tpenv
 
-//-------------------------------------------------------------------------
-// Typecheck "expr ... " constructs where "..." is a sequence of applications, 
-// type applications and dot-notation projections. First extract known
-// type information from the "..." part to use during type checking.
-//
-// 'overallTy' is the type expected for the entire chain of expr + lookups.
-// 'exprty' is the type of the expression on the left of the lookup chain.
-//
-// Unsophisticated applications can propagate information from the expected overall type 'overallTy' 
-// through to the leading function type 'exprty'. This is because the application 
-// unambiguously implies a function type 
-//------------------------------------------------------------------------- 
-
+/// When checking sequence of function applications, 
+/// type applications and dot-notation projections, first extract known
+/// type information from the applications.
+///
+/// 'overallTy' is the type expected for the entire chain of expr + lookups.
+/// 'exprty' is the type of the expression on the left of the lookup chain.
+///
+/// We propagate information from the expected overall type 'overallTy'. The use 
+/// of function application syntax unambiguously implies that 'overallTy' is a function type.
 and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed = 
     
     let rec propagate delayedList mExpr exprty = 

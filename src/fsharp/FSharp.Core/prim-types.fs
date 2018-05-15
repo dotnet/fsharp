@@ -5681,7 +5681,6 @@ namespace Microsoft.FSharp.Control
 namespace Microsoft.FSharp.Control
 
     open System
-    open System.Diagnostics
     open Microsoft.FSharp.Core
 
     type IDelegateEvent<'Delegate when 'Delegate :> System.Delegate > =
