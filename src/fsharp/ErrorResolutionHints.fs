@@ -3,8 +3,8 @@
 /// Functions to format error message details
 module internal Microsoft.FSharp.Compiler.ErrorResolutionHints
 
-open System
 open Internal.Utilities
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 
 let maxSuggestions = 5
 let minThresholdForSuggestions = 0.7
@@ -29,14 +29,14 @@ let FilterPredictions (idText:string) (suggestionF:ErrorLogger.Suggestions) =
     let allSuggestions = suggestionF()
 
     let demangle (nm:string) =
-        if nm.StartsWith("( ", StringComparison.Ordinal) && nm.EndsWith(" )", StringComparison.Ordinal) then
+        if nm.StartsWithOrdinal("( ") && nm.EndsWithOrdinal(" )") then
             let cleanName = nm.[2..nm.Length - 3]
             cleanName
         else nm
 
     /// Returns `true` if given string is an operator display name, e.g. ( |>> )
     let IsOperatorName (name: string) =
-        if not (name.StartsWith("( ", StringComparison.Ordinal) && name.EndsWith(" )", StringComparison.Ordinal)) then
+        if not (name.StartsWithOrdinal("( ") && name.EndsWithOrdinal(" )")) then
             false
         else
             let name = name.[2..name.Length - 3]
@@ -49,11 +49,11 @@ let FilterPredictions (idText:string) (suggestionF:ErrorLogger.Suggestions) =
         // value as well as to formally squelch the associated compiler
         // error/warning (FS1182), we remove such names from the suggestions,
         // both to prevent accidental usages as well as to encourage good taste
-        if IsOperatorName suggestion || suggestion.StartsWith("_", StringComparison.Ordinal) then None else
+        if IsOperatorName suggestion || suggestion.StartsWithOrdinal("_") then None else
         let suggestion:string = demangle suggestion
         let suggestedText = suggestion.ToUpperInvariant()
         let similarity = EditDistance.JaroWinklerDistance uppercaseText suggestedText
-        if similarity >= highConfidenceThreshold || suggestion.EndsWith("." + idText, StringComparison.Ordinal) then
+        if similarity >= highConfidenceThreshold || suggestion.EndsWithOrdinal("." + idText) then
             Some(similarity, suggestion)
         elif similarity < minThresholdForSuggestions && suggestedText.Length > minStringLengthForThreshold then
             None

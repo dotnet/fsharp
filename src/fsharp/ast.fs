@@ -2,7 +2,6 @@
 
 module public Microsoft.FSharp.Compiler.Ast
 
-open System
 open System.Collections.Generic
 open Internal.Utilities.Text.Lexing
 open Internal.Utilities.Text.Parsing
@@ -101,7 +100,7 @@ type XmlDoc =
             | (lineA::rest) as lines ->
                 let lineAT = lineA.TrimStart([|' '|])
                 if lineAT = "" then processLines rest
-                else if lineAT.StartsWith("<", StringComparison.Ordinal) then lines
+                else if lineAT.StartsWithOrdinal("<") then lines
                 else ["<summary>"] @
                      (lines |> List.map (fun line -> Microsoft.FSharp.Core.XmlAdapters.escape(line))) @
                      ["</summary>"]

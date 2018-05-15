@@ -459,6 +459,13 @@ module ValueOption =
     let inline ofOption x = match x with Some x -> VSome x | None -> VNone
     let inline bind f x = match x with VSome x -> f x | VNone -> VNone
 
+type String with
+    member inline x.StartsWithOrdinal(value) =
+        x.StartsWith(value, StringComparison.Ordinal)
+
+    member inline x.EndsWithOrdinal(value) =
+        x.EndsWith(value, StringComparison.Ordinal)
+
 module String = 
     let indexNotFound() = raise (new KeyNotFoundException("An index for the character was not found in the string"))
 
@@ -538,7 +545,7 @@ module String =
     let (|StartsWith|_|) pattern value =
         if String.IsNullOrWhiteSpace value then
             None
-        elif value.StartsWith(pattern, StringComparison.Ordinal) then
+        elif value.StartsWithOrdinal(pattern) then
             Some()
         else None
 
@@ -556,11 +563,13 @@ module String =
         while not (isNull !line) do
             yield !line
             line := reader.ReadLine()
-        if str.EndsWith("\n", StringComparison.Ordinal) then
+        if str.EndsWithOrdinal("\n") then
             // last trailing space not returned
             // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
             yield String.Empty
         |]
+
+
 module Dictionary = 
 
     let inline newWithSize (size: int) = Dictionary<_,_>(size, HashIdentity.Structural)

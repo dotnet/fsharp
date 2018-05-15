@@ -4,7 +4,6 @@
 /// Name environment and name resolution 
 module internal Microsoft.FSharp.Compiler.NameResolution
 
-open System
 open Internal.Utilities
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.Range
@@ -2873,7 +2872,7 @@ let rec ResolveTypeLongIdentPrim sink (ncenv:NameResolver) occurence first fully
                             | ItemOccurence.UseInAttribute -> 
                                 [yield e.Value.DisplayName
                                  yield e.Value.DemangledModuleOrNamespaceName
-                                 if e.Value.DisplayName.EndsWith("Attribute", StringComparison.Ordinal) then
+                                 if e.Value.DisplayName.EndsWithOrdinal("Attribute") then
                                      yield e.Value.DisplayName.Replace("Attribute","")]
                             | _ -> [e.Value.DisplayName; e.Value.DemangledModuleOrNamespaceName])
                         |> HashSet
@@ -3581,7 +3580,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
                 if methsWithStaticParams.IsEmpty then minfos
                 else minfos |> List.filter (fun minfo -> 
                         let nm = minfo.LogicalName
-                        not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWith(m, StringComparison.Ordinal))))
+                        not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWithOrdinal(m))))
 #endif
 
             minfos 
@@ -4210,7 +4209,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics typ 
                         if methsWithStaticParams.IsEmpty then minfos
                         else minfos |> List.filter (fun minfo -> 
                                 let nm = minfo.LogicalName
-                                not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWith(m, StringComparison.Ordinal))))
+                                not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWithOrdinal(m))))
         #endif
         
                     minfos 

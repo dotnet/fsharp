@@ -3,7 +3,6 @@
 /// Logic associated with resolving method calls.
 module internal Microsoft.FSharp.Compiler.MethodCalls
 
-open System
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
@@ -1262,8 +1261,7 @@ let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo:MethInfo)  =
       error (Error (FSComp.SR.tcMethodNotAccessible(minfo.LogicalName), m))
 
     if isAnyTupleTy g minfo.ApparentEnclosingType && not minfo.IsExtensionMember &&
-        (minfo.LogicalName.StartsWith("get_Item", StringComparison.Ordinal) ||
-         minfo.LogicalName.StartsWith("get_Rest", StringComparison.Ordinal)) then
+        (minfo.LogicalName.StartsWithOrdinal("get_Item") || minfo.LogicalName.StartsWithOrdinal("get_Rest")) then
       warning (Error (FSComp.SR.tcTupleMemberNotNormallyUsed(), m))
 
     CheckMethInfoAttributes g m tyargsOpt minfo |> CommitOperationResult

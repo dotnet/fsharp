@@ -356,7 +356,7 @@ module Keywords =
     /// Quote identifier with double backticks if needed, remove unnecessary double backticks quotation.
     let NormalizeIdentifierBackticks (s : string) : string =
         let s =
-            if s.StartsWith("``", StringComparison.Ordinal) && s.EndsWith("``", StringComparison.Ordinal) then
+            if s.StartsWithOrdinal("``") && s.EndsWithOrdinal("``") then
                 s.[2..s.Length - 3]
             else s
         QuoteIdentifierIfNeeded s

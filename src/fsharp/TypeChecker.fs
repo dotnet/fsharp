@@ -619,7 +619,7 @@ let TryStripPrefixPath (g:TcGlobals) (enclosingNamespacePath: Ident list) =
     | p::rest when
         g.isInteractive &&
         not (isNil rest) &&
-        p.idText.StartsWith(FsiDynamicModulePrefix, System.StringComparison.Ordinal) && 
+        p.idText.StartsWithOrdinal(FsiDynamicModulePrefix) && 
         p.idText.[FsiDynamicModulePrefix.Length..] |> String.forall System.Char.IsDigit 
         -> Some(p, rest)
     | _ -> None
@@ -758,7 +758,7 @@ let ReportImplicitlyIgnoredBoolExpression denv m ty expr =
                         UnitTypeExpectedWithEquality (denv, ty, m)
                 else
                     UnitTypeExpectedWithEquality (denv, ty, m)
-            | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, methodRef, _, _, _), _, Expr.Val(vf, _, _) :: _, _) :: _ when methodRef.Name.StartsWith("get_", StringComparison.Ordinal) ->
+            | Expr.Op(TOp.ILCall(_, _, _, _, _, _, _, methodRef, _, _, _), _, Expr.Val(vf, _, _) :: _, _) :: _ when methodRef.Name.StartsWithOrdinal("get_") ->
                 UnitTypeExpectedWithPossiblePropertySetter (denv, ty, vf.DisplayName, PrettyNaming.ChopPropertyName(methodRef.Name), m)
             | Expr.Val(vf, _, _) :: _ -> 
                 UnitTypeExpectedWithPossibleAssignment (denv, ty, vf.IsMutable, vf.DisplayName, m)
@@ -5051,7 +5051,7 @@ and TcPatBindingName cenv env id ty isMemberThis vis1 topValData (inlineFlag, de
         // isLeftMost indicates we are processing the left-most path through a disjunctive or pattern.
         // For those binding locations, CallNameResolutionSink is called in MakeAndPublishValue, like all other bindings
         // For non-left-most paths, we register the name resolutions here
-        if not isLeftMost && not vspec.IsCompilerGenerated && not (vspec.LogicalName.StartsWith("_", StringComparison.Ordinal)) then 
+        if not isLeftMost && not vspec.IsCompilerGenerated && not (vspec.LogicalName.StartsWithOrdinal("_")) then 
             let item = Item.Value(mkLocalValRef vspec)
             CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Binding, env.DisplayEnv, env.eAccessRights)
 
@@ -9535,7 +9535,7 @@ and TcMethodApplication
                 match unrefinedItem with 
                 | Item.MethodGroup(_, overridenMeths, _) -> overridenMeths |> List.map (fun minfo -> minfo, None)
                 | Item.Property(_, pinfos) -> 
-                    if result.Method.LogicalName.StartsWith("set_", StringComparison.Ordinal) then 
+                    if result.Method.LogicalName.StartsWithOrdinal("set_") then 
                         SettersOfPropInfos pinfos
                     else 
                         GettersOfPropInfos pinfos
@@ -12042,7 +12042,7 @@ let TcOpenDecl tcSink (g:TcGlobals) amap m scopem env (longId : Ident list)  =
         let p = 
             match p with 
             | [] -> []
-            | (h, _):: t -> if h.StartsWith(FsiDynamicModulePrefix, System.StringComparison.Ordinal) then t else p
+            | (h, _):: t -> if h.StartsWithOrdinal(FsiDynamicModulePrefix) then t else p
 
         // See https://fslang.uservoice.com/forums/245727-f-language/suggestions/6107641-make-microsoft-prefix-optional-when-using-core-f
         let isFSharpCoreSpecialCase =
@@ -12310,7 +12310,7 @@ module IncrClassChecking =
                 nm, takenFieldNames.Add(nm)
                  
             let reportIfUnused() = 
-                if not v.HasBeenReferenced && not v.IsCompiledAsTopLevel && not (v.DisplayName.StartsWith("_", StringComparison.Ordinal)) && not v.IsCompilerGenerated then 
+                if not v.HasBeenReferenced && not v.IsCompiledAsTopLevel && not (v.DisplayName.StartsWithOrdinal("_")) && not v.IsCompilerGenerated then 
                     warning (Error(FSComp.SR.chkUnusedValue(v.DisplayName), v.Range))
 
             let repr = 
@@ -15811,7 +15811,7 @@ module TcDeclarations =
                   | None -> 
                         //false
                         // There is a special case we allow when compiling FSharp.Core.dll which permits interface implementations across namespace fragments
-                        (cenv.g.compilingFslib && tcref.LogicalName.StartsWith("Tuple`", StringComparison.Ordinal))
+                        (cenv.g.compilingFslib && tcref.LogicalName.StartsWithOrdinal("Tuple`"))
         
             let nReqTypars = reqTypars.Length
 

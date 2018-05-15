@@ -2,8 +2,6 @@
 
 module internal Microsoft.FSharp.Compiler.QuotationTranslator
 
-open System
-open System.Collections.Generic
 open Internal.Utilities
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
@@ -17,6 +15,7 @@ open Microsoft.FSharp.Compiler.PrettyNaming
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Range
+open System.Collections.Generic
 
 module QP = Microsoft.FSharp.Compiler.QuotationPickler
 
@@ -162,7 +161,7 @@ let (|ObjectInitializationCheck|_|) g expr =
            [| TTarget([], Expr.App(Expr.Val(failInitRef, _, _), _, _, _, _), _); _ |], _, resultTy
         ) when 
             IsCompilerGeneratedName name &&
-            name.StartsWith("init", StringComparison.Ordinal) &&
+            name.StartsWithOrdinal("init") &&
             selfRef.BaseOrThisInfo = MemberThisVal &&
             valRefEq g failInitRef (ValRefForIntrinsic g.fail_init_info) &&
             isUnitTy g resultTy -> Some()
@@ -562,8 +561,8 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
              let methArgTypesR = List.map (ConvILType cenv env m) ilMethRef.ArgTypes
              let methRetTypeR = ConvILType cenv env m ilMethRef.ReturnType
              let methName = ilMethRef.Name
-             let isPropGet = isProp && methName.StartsWith("get_",System.StringComparison.Ordinal)
-             let isPropSet = isProp && methName.StartsWith("set_",System.StringComparison.Ordinal)
+             let isPropGet = isProp && methName.StartsWithOrdinal("get_")
+             let isPropSet = isProp && methName.StartsWithOrdinal("set_")
              let tyargs = (enclTypeArgs@methTypeArgs)
              ConvObjectModelCall cenv env m (isPropGet,isPropSet,isNewObj,parentTyconR,methArgTypesR,methRetTypeR,methName,tyargs,methTypeArgs.Length,callArgs)
 
