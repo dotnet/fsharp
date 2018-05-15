@@ -34,7 +34,7 @@ type internal FSharpClassificationService
         
         member __.AddSyntacticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
             async {
-                use _logBlock = Logger.LogBlock(LogEditorFunctionId.SyntacticClassification)
+                use _logBlock = Logger.LogBlock(LogEditorFunctionId.Classification_Syntactic)
 
                 let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
                 let! sourceText = document.GetTextAsync(cancellationToken)  |> Async.AwaitTask
@@ -43,9 +43,8 @@ type internal FSharpClassificationService
 
         member __.AddSemanticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
             asyncMaybe {
-                use _logBlock = Logger.LogBlock(LogEditorFunctionId.SemanticClassification)
+                use _logBlock = Logger.LogBlock(LogEditorFunctionId.Classification_Semantic)
 
-                do! Async.Sleep DefaultTuning.SemanticClassificationInitialDelay |> liftAsync // be less intrusive, give other work priority most of the time
                 let! _, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! _, _, checkResults = checkerProvider.Checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, allowStaleResults = false, userOpName=userOpName) 
@@ -64,6 +63,5 @@ type internal FSharpClassificationService
 
         // Do not perform classification if we don't have project options (#defines matter)
         member __.AdjustStaleClassification(_: SourceText, classifiedSpan: ClassifiedSpan) : ClassifiedSpan = classifiedSpan
-
 
 

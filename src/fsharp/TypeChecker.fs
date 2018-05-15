@@ -218,6 +218,8 @@ type TcEnv =
 
     member tenv.AccessRights = tenv.eAccessRights
 
+    override tenv.ToString() = "TcEnv(...)"
+
 /// Compute the value of this computed, cached field
 let computeAccessRights eAccessPath eInternalsVisibleCompPaths eFamilyType = 
     AccessibleFrom (eAccessPath :: eInternalsVisibleCompPaths, eFamilyType) // env.eAccessRights 
@@ -529,6 +531,8 @@ type cenv =
           haveSig = haveSig
           compilingCanonicalFslibModuleType = (isSig || not haveSig) && g.compilingFslib
           conditionalDefines = conditionalDefines }
+
+    override __.ToString() = "cenv(...)"
 
 let CopyAndFixupTypars m rigid tpsorig = 
     ConstraintSolver.FreshenAndFixupTypars m rigid [] [] tpsorig
