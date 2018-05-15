@@ -190,25 +190,13 @@
     <DebugType Condition=" '$(DebugType)' == '' ">full</DebugType>
     <DebugType Condition="'$(OS)' == 'Unix'">portable</DebugType> <!-- no longer use MDB on Mono --> 
     <Optimize>true</Optimize>
-    <DefineConstants>DEBUG;NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
+    <DefineConstants>PROTO;DEBUG;NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup>
     <!-- Standard defaults for output path and warning level -->
     <OutputPath Condition="'$(OutputPath)' == ''">bin\$(Configuration)</OutputPath>
     <WarningLevel Condition=" '$(WarningLevel)' == '' ">3</WarningLevel>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <DefineConstants Condition="'$(VisualStudioVersion)'=='12.0' AND '$(ProjectLanguage)' == 'VisualBasic'">$(DefineConstants),VS_VERSION_DEV12=True</DefineConstants>
-    <DefineConstants Condition="'$(VisualStudioVersion)'=='12.0' AND '$(ProjectLanguage)' != 'VisualBasic'">$(DefineConstants);VS_VERSION_DEV12</DefineConstants>
-    <DefineConstants Condition="'$(VisualStudioVersion)'=='14.0' AND '$(ProjectLanguage)' == 'VisualBasic'">$(DefineConstants),VS_VERSION_DEV14=True</DefineConstants>
-    <DefineConstants Condition="'$(VisualStudioVersion)'=='14.0' AND '$(ProjectLanguage)' != 'VisualBasic'">$(DefineConstants);VS_VERSION_DEV14</DefineConstants>
-    <DefineConstants Condition="'$(VisualStudioVersion)'=='15.0' AND '$(ProjectLanguage)' == 'VisualBasic'">$(DefineConstants),VS_VERSION_DEV15=True</DefineConstants>
-    <DefineConstants Condition="'$(VisualStudioVersion)'=='15.0' AND '$(ProjectLanguage)' != 'VisualBasic'">$(DefineConstants);VS_VERSION_DEV15</DefineConstants>
-    <!-- VisualStudioVersion is not defined when using xbuild on Mono. Assume 14.0, the last shipped in-the-box with Mono -->
-    <DefineConstants Condition="'$(VisualStudioVersion)'=='' AND '$(ProjectLanguage)' == 'VisualBasic'">$(DefineConstants),VS_VERSION_DEV14=True</DefineConstants>
-    <DefineConstants Condition="'$(VisualStudioVersion)'=='' AND '$(ProjectLanguage)' != 'VisualBasic'">$(DefineConstants);VS_VERSION_DEV14</DefineConstants>
   </PropertyGroup>
 
   <!-- Nuget Package properties -->

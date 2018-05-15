@@ -1881,7 +1881,7 @@ let rec GenExpr (cenv:cenv) (cgbuf:CodeGenBuffer) eenv sp expr sequel =
           GenGetExnField cenv cgbuf eenv (e,ecref,n,m) sequel
       | TOp.UnionCaseFieldGet(ucref,n),[e],_ -> 
           GenGetUnionCaseField cenv cgbuf eenv (e,ucref,tyargs,n,m) sequel
-      | TOp.UnionCaseFieldGetAddr(ucref,n),[e],_ -> 
+      | TOp.UnionCaseFieldGetAddr(ucref,n,_readonly),[e],_ -> 
           GenGetUnionCaseFieldAddr cenv cgbuf eenv (e,ucref,tyargs,n,m) sequel
       | TOp.UnionCaseTagGet ucref,[e],_ -> 
           GenGetUnionCaseTag cenv cgbuf eenv (e,ucref,tyargs,m) sequel
@@ -1895,9 +1895,9 @@ let rec GenExpr (cenv:cenv) (cgbuf:CodeGenBuffer) eenv sp expr sequel =
          GenGetRecdField cenv cgbuf eenv (e,f,tyargs,m) sequel
       | TOp.ValFieldGet f,[],_ -> 
          GenGetStaticField cenv cgbuf eenv (f,tyargs,m) sequel
-      | TOp.ValFieldGetAddr f,[e],_ -> 
+      | TOp.ValFieldGetAddr (f, _readonly),[e],_ -> 
          GenGetRecdFieldAddr cenv cgbuf eenv (e,f,tyargs,m) sequel
-      | TOp.ValFieldGetAddr f,[],_ -> 
+      | TOp.ValFieldGetAddr (f, _readonly),[],_ -> 
          GenGetStaticFieldAddr cenv cgbuf eenv (f,tyargs,m) sequel
       | TOp.ValFieldSet f,[e1;e2],_ -> 
          GenSetRecdField cenv cgbuf eenv (e1,f,tyargs,e2,m) sequel
@@ -1917,14 +1917,14 @@ let rec GenExpr (cenv:cenv) (cgbuf:CodeGenBuffer) eenv sp expr sequel =
          GenTryCatch cenv cgbuf eenv (e1,vf,ef,vh,eh,m,resty,spTry,spWith) sequel
       | TOp.ILCall(virt,_,valu,newobj,valUseFlags,_,isDllImport,ilMethRef,enclArgTys,methArgTys,returnTys),args,[] -> 
          GenILCall cenv cgbuf eenv (virt,valu,newobj,valUseFlags,isDllImport,ilMethRef,enclArgTys,methArgTys,args,returnTys,m) sequel
-      | TOp.RefAddrGet,[e],[ty]       -> GenGetAddrOfRefCellField cenv cgbuf eenv (e,ty,m) sequel
+      | TOp.RefAddrGet _readonly,[e],[ty]       -> GenGetAddrOfRefCellField cenv cgbuf eenv (e,ty,m) sequel
       | TOp.Coerce,[e],[tgty;srcty]    -> GenCoerce cenv cgbuf eenv (e,tgty,m,srcty) sequel
       | TOp.Reraise,[],[rtnty]         -> GenReraise cenv cgbuf eenv (rtnty,m) sequel
       | TOp.TraitCall(ss),args,[] -> GenTraitCall cenv cgbuf eenv (ss,args, m) expr sequel
       | TOp.LValueOp(LSet,v),[e],[]      -> GenSetVal cenv cgbuf eenv (v,e,m) sequel
       | TOp.LValueOp(LByrefGet,v),[],[]  -> GenGetByref cenv cgbuf eenv (v,m) sequel
       | TOp.LValueOp(LByrefSet,v),[e],[] -> GenSetByref cenv cgbuf eenv (v,e,m) sequel
-      | TOp.LValueOp(LGetAddr,v),[],[]   -> GenGetValAddr cenv cgbuf eenv (v,m) sequel
+      | TOp.LValueOp(LGetAddr _,v),[],[]   -> GenGetValAddr cenv cgbuf eenv (v,m) sequel
       | TOp.Array,elems,[elemTy] ->  GenNewArray cenv cgbuf eenv (elems,elemTy,m) sequel
       | TOp.Bytes bytes,[],[] -> 
           if cenv.opts.emitConstantArraysUsingStaticDataBlobs then 
@@ -3465,10 +3465,11 @@ and GenGenericParam cenv eenv (tp:Typar) =
 
 /// Generates the data used for parameters at definitions of abstract method slots such as interface methods or override methods.
 and GenSlotParam m cenv eenv (TSlotParam(nm,ty,inFlag,outFlag,optionalFlag,attribs)) : ILParameter = 
+    let ilTy = GenParamType cenv.amap m eenv.tyenv ty
     let inFlag2,outFlag2,optionalFlag2,defaultParamValue,paramMarshal2,attribs = GenParamAttribs cenv attribs
     
     { Name=nm
-      Type= GenParamType cenv.amap m eenv.tyenv ty
+      Type= ilTy
       Default=defaultParamValue  
       Marshal=paramMarshal2 
       IsIn=inFlag || inFlag2
@@ -4949,7 +4950,7 @@ and GenMarshal cenv attribs =
         None, attribs 
 
 and GenParamAttribs cenv attribs =
-    let inFlag = HasFSharpAttributeOpt cenv.g cenv.g.attrib_InAttribute attribs
+    let inFlag = HasFSharpAttribute cenv.g cenv.g.attrib_InAttribute attribs
     let outFlag = HasFSharpAttribute cenv.g cenv.g.attrib_OutAttribute attribs
     let optionalFlag = HasFSharpAttributeOpt cenv.g cenv.g.attrib_OptionalAttribute attribs
     
@@ -4959,7 +4960,7 @@ and GenParamAttribs cenv attribs =
     // as custom attributes in the code - they are implicit from the IL bits for these
     let attribs = 
         attribs 
-        |> List.filter (IsMatchingFSharpAttributeOpt cenv.g cenv.g.attrib_InAttribute >> not)
+        |> List.filter (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_InAttribute >> not)
         |> List.filter (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_OutAttribute >> not)
         |> List.filter (IsMatchingFSharpAttributeOpt cenv.g cenv.g.attrib_OptionalAttribute >> not)
         |> List.filter (IsMatchingFSharpAttributeOpt cenv.g cenv.g.attrib_DefaultParameterValueAttribute >> not)

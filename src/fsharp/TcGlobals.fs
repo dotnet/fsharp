@@ -196,6 +196,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_pint16_tcr     = mk_MFCore_tcref fslibCcu "int16`1"  
   let v_pint64_tcr     = mk_MFCore_tcref fslibCcu "int64`1"  
   let v_byref_tcr      = mk_MFCore_tcref fslibCcu "byref`1"
+  let v_byref2_tcr      = mk_MFCore_tcref fslibCcu "byref`2"
+  let v_outref_tcr      = mk_MFCore_tcref fslibCcu "outref`1"
+  let v_inref_tcr      = mk_MFCore_tcref fslibCcu "inref`1"
   let v_nativeptr_tcr  = mk_MFCore_tcref fslibCcu "nativeptr`1"
   let v_voidptr_tcr      = mk_MFCore_tcref fslibCcu "voidptr"
   let v_ilsigptr_tcr   = mk_MFCore_tcref fslibCcu "ilsigptr`1"
@@ -387,6 +390,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let fslib_MFIntrinsicFunctions_nleref        = mkNestedNonLocalEntityRef fslib_MFLanguagePrimitives_nleref "IntrinsicFunctions" 
   let fslib_MFHashCompare_nleref               = mkNestedNonLocalEntityRef fslib_MFLanguagePrimitives_nleref "HashCompare"
   let fslib_MFOperators_nleref                 = mkNestedNonLocalEntityRef fslib_MFCore_nleref "Operators"
+  let fslib_MFByRefKinds_nleref                 = mkNestedNonLocalEntityRef fslib_MFCore_nleref "ByRefKinds"
   let fslib_MFOperatorIntrinsics_nleref        = mkNestedNonLocalEntityRef fslib_MFOperators_nleref "OperatorIntrinsics"
   let fslib_MFOperatorsUnchecked_nleref        = mkNestedNonLocalEntityRef fslib_MFOperators_nleref "Unchecked"
   let fslib_MFOperatorsChecked_nleref        = mkNestedNonLocalEntityRef fslib_MFOperators_nleref "Checked"
@@ -916,6 +920,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.pint16_tcr     = v_pint16_tcr
   member __.pint64_tcr     = v_pint64_tcr
   member __.byref_tcr      = v_byref_tcr
+  member __.byref2_tcr      = v_byref2_tcr
+  member __.outref_tcr      = v_outref_tcr
+  member __.inref_tcr      = v_inref_tcr
   member __.nativeptr_tcr  = v_nativeptr_tcr
   member __.voidptr_tcr  = v_voidptr_tcr
   member __.ilsigptr_tcr   = v_ilsigptr_tcr
@@ -927,6 +934,9 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.fslib_IDelegateEvent_tcr      = v_fslib_IDelegateEvent_tcr
   member __.seq_tcr        = v_seq_tcr
   member val seq_base_tcr = mk_MFCompilerServices_tcref fslibCcu "GeneratedSequenceBase`1"
+  member val byrefkind_In_tcr =  mkNonLocalTyconRef fslib_MFByRefKinds_nleref "In"
+  member val byrefkind_Out_tcr =  mkNonLocalTyconRef fslib_MFByRefKinds_nleref "In"
+  member val byrefkind_InOut_tcr =  mkNonLocalTyconRef fslib_MFByRefKinds_nleref "InOut"
   member val measureproduct_tcr = mk_MFCompilerServices_tcref fslibCcu "MeasureProduct`2"
   member val measureinverse_tcr = mk_MFCompilerServices_tcref fslibCcu "MeasureInverse`1"
   member val measureone_tcr = mk_MFCompilerServices_tcref fslibCcu "MeasureOne"
@@ -1089,7 +1099,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attrib_ComImportAttribute      = tryFindSysAttrib "System.Runtime.InteropServices.ComImportAttribute"
   member val attrib_FieldOffsetAttribute    = findSysAttrib "System.Runtime.InteropServices.FieldOffsetAttribute" 
   member val attrib_MarshalAsAttribute      = tryFindSysAttrib "System.Runtime.InteropServices.MarshalAsAttribute"
-  member val attrib_InAttribute             = tryFindSysAttrib "System.Runtime.InteropServices.InAttribute" 
+  member val attrib_InAttribute             = findSysAttrib "System.Runtime.InteropServices.InAttribute" 
   member val attrib_OutAttribute            = findSysAttrib "System.Runtime.InteropServices.OutAttribute" 
   member val attrib_OptionalAttribute       = tryFindSysAttrib "System.Runtime.InteropServices.OptionalAttribute" 
   member val attrib_DefaultParameterValueAttribute = tryFindSysAttrib "System.Runtime.InteropServices.DefaultParameterValueAttribute" 

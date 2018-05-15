@@ -164,6 +164,9 @@ val isBeingGeneralized : Typar -> TypeScheme -> bool
 val mkLazyAnd  : TcGlobals -> range -> Expr -> Expr -> Expr
 val mkLazyOr   : TcGlobals -> range -> Expr -> Expr -> Expr
 val mkByrefTy  : TcGlobals -> TType -> TType
+val mkByrefTyWithInference  : TcGlobals -> TType -> TType -> TType
+val mkInrefTy  : TcGlobals -> TType -> TType
+val mkOutrefTy  : TcGlobals -> TType -> TType
 
 //-------------------------------------------------------------------------
 // Make construction operations
@@ -182,12 +185,12 @@ val mkReraiseLibCall : TcGlobals -> TType -> range -> Expr
 //------------------------------------------------------------------------- 
  
 val mkTupleFieldGet                : TcGlobals -> TupInfo * Expr * TypeInst * int * range -> Expr
-val mkRecdFieldGetViaExprAddr      : Expr * RecdFieldRef   * TypeInst               * range -> Expr
-val mkRecdFieldGetAddrViaExprAddr  : Expr * RecdFieldRef   * TypeInst               * range -> Expr
-val mkStaticRecdFieldGet           :        RecdFieldRef   * TypeInst               * range -> Expr
-val mkStaticRecdFieldSet           :        RecdFieldRef   * TypeInst * Expr        * range -> Expr
-val mkStaticRecdFieldGetAddr       :        RecdFieldRef   * TypeInst               * range -> Expr
-val mkRecdFieldSetViaExprAddr      : Expr * RecdFieldRef   * TypeInst * Expr        * range -> Expr
+val mkRecdFieldGetViaExprAddr      :                  Expr * RecdFieldRef   * TypeInst               * range -> Expr
+val mkRecdFieldGetAddrViaExprAddr  : readonly: bool * Expr * RecdFieldRef   * TypeInst               * range -> Expr
+val mkStaticRecdFieldGet           :                         RecdFieldRef   * TypeInst               * range -> Expr
+val mkStaticRecdFieldSet           :                         RecdFieldRef   * TypeInst * Expr        * range -> Expr
+val mkStaticRecdFieldGetAddr       : readonly: bool *        RecdFieldRef   * TypeInst               * range -> Expr
+val mkRecdFieldSetViaExprAddr      :                  Expr * RecdFieldRef   * TypeInst * Expr        * range -> Expr
 val mkUnionCaseTagGetViaExprAddr   : Expr * TyconRef       * TypeInst               * range -> Expr
 
 /// Make a 'TOp.UnionCaseProof' expression, which proves a union value is over a particular case (used only for ref-unions, not struct-unions)
@@ -201,7 +204,7 @@ val mkUnionCaseFieldGetProvenViaExprAddr : Expr * UnionCaseRef   * TypeInst * in
 /// Build a 'TOp.UnionCaseFieldGetAddr' expression for a field of a union when we've already determined the value to be a particular union case. For ref-unions,
 /// the input expression has 'TType_ucase', which is an F# compiler internal "type" corresponding to the union case. For struct-unions,
 /// the input should be the address of the expression.
-val mkUnionCaseFieldGetAddrProvenViaExprAddr  : Expr * UnionCaseRef   * TypeInst * int         * range -> Expr
+val mkUnionCaseFieldGetAddrProvenViaExprAddr  : readonly: bool * Expr * UnionCaseRef   * TypeInst * int         * range -> Expr
 
 /// Build a 'TOp.UnionCaseFieldGetAddr' expression for a field of a union when we've already determined the value to be a particular union case. For ref-unions,
 /// the input expression has 'TType_ucase', which is an F# compiler internal "type" corresponding to the union case. For struct-unions,
@@ -219,7 +222,7 @@ val mkUnionCaseFieldGetUnproven    : TcGlobals -> Expr * UnionCaseRef   * TypeIn
 val mkExnCaseFieldGet              : Expr * TyconRef               * int         * range -> Expr
 val mkExnCaseFieldSet              : Expr * TyconRef               * int  * Expr * range -> Expr
 
-val mkArrayElemAddress : TcGlobals -> ILReadonly * bool * ILArrayShape * TType * Expr * Expr * range -> Expr
+val mkArrayElemAddress : TcGlobals -> readonly: bool * ILReadonly * bool * ILArrayShape * TType * Expr * Expr * range -> Expr
 
 //-------------------------------------------------------------------------
 // Compiled view of tuples
@@ -263,9 +266,9 @@ val helpEnsureTypeHasMetadata : TcGlobals -> TType -> TType
 //------------------------------------------------------------------------- 
 
 exception DefensiveCopyWarning of string * range 
-type Mutates = DefinitelyMutates | PossiblyMutates | NeverMutates
-val mkExprAddrOfExprAux : TcGlobals -> bool -> bool -> Mutates -> Expr -> ValRef option -> range -> (Val * Expr) option * Expr
-val mkExprAddrOfExpr : TcGlobals -> bool -> bool -> Mutates -> Expr -> ValRef option -> range -> (Expr -> Expr) * Expr
+type Mutates = AddressOfOp | DefinitelyMutates | PossiblyMutates | NeverMutates
+val mkExprAddrOfExprAux : TcGlobals -> bool -> bool -> Mutates -> Expr -> ValRef option -> range -> (Val * Expr) option * Expr * bool
+val mkExprAddrOfExpr : TcGlobals -> bool -> bool -> Mutates -> Expr -> ValRef option -> range -> (Expr -> Expr) * Expr * bool
 
 //-------------------------------------------------------------------------
 // Tables keyed on values and/or type parameters
@@ -874,7 +877,7 @@ val mkAddrSet  : range -> ValRef -> Expr -> Expr
 /// *localv_ptr        
 val mkAddrGet  : range -> ValRef -> Expr
 /// &localv           
-val mkValAddr  : range -> ValRef -> Expr
+val mkValAddr  : range -> readonly: bool -> ValRef -> Expr
 
 //-------------------------------------------------------------------------
 // Note these take the address of the record expression if it is a struct, and
@@ -1101,6 +1104,7 @@ val isExnDefinitelyMutable : TyconRef -> bool
 val isUnionCaseFieldMutable : TcGlobals -> UnionCaseRef -> int -> bool
 val isExnFieldMutable : TyconRef -> int -> bool
 val isRecdOrStructTyconRefReadOnly: TcGlobals -> range -> TyconRef -> bool
+val isRecdOrStructTyReadOnly: TcGlobals -> range -> TType -> bool
 
 val useGenuineField : Tycon -> RecdField -> bool 
 val ComputeFieldName : Tycon -> RecdField -> string
@@ -1397,7 +1401,10 @@ val mkCompilerGeneratedAttr                          : TcGlobals -> int -> ILAtt
 // More common type construction
 //------------------------------------------------------------------------- 
 
+val isInByrefTy : TcGlobals -> TType -> bool
+val isOutByrefTy : TcGlobals -> TType -> bool
 val isByrefTy : TcGlobals -> TType -> bool
+
 val isNativePtrTy : TcGlobals -> TType -> bool
 val destByrefTy : TcGlobals -> TType -> TType
 val destNativePtrTy : TcGlobals -> TType -> TType

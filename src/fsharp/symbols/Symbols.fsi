@@ -847,6 +847,9 @@ and [<Class>] public FSharpParameter =
     /// Indicate this is an out argument
     member IsOutArg: bool
 
+    /// Indicate this is an in argument
+    member IsInArg: bool
+
     /// Indicate this is an optional argument
     member IsOptionalArg: bool
 

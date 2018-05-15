@@ -56,16 +56,18 @@ type CalledArg =
       IsParamArray : bool
       OptArgInfo : OptionalArgInfo
       CallerInfoInfo : CallerInfoInfo
+      IsInArg: bool
       IsOutArg: bool
       ReflArgInfo: ReflectedArgInfo
       NameOpt: Ident option
       CalledArgumentType : TType }
 
-let CalledArg(pos,isParamArray,optArgInfo,callerInfoInfo,isOutArg,nameOpt,reflArgInfo,calledArgTy) =
+let CalledArg (pos, isParamArray, optArgInfo, callerInfoInfo, isInArg, isOutArg, nameOpt, reflArgInfo, calledArgTy) =
     { Position=pos
       IsParamArray=isParamArray
       OptArgInfo =optArgInfo
       CallerInfoInfo = callerInfoInfo
+      IsInArg=isInArg
       IsOutArg=isOutArg
       ReflArgInfo=reflArgInfo
       NameOpt=nameOpt
@@ -193,11 +195,12 @@ type CalledMethArgSet<'T> =
 let MakeCalledArgs amap m (minfo:MethInfo) minst =
     // Mark up the arguments with their position, so we can sort them back into order later 
     let paramDatas = minfo.GetParamDatas(amap, m, minst)
-    paramDatas |> List.mapiSquared (fun i j (ParamData(isParamArrayArg,isOutArg,optArgInfo,callerInfoFlags,nmOpt,reflArgInfo,typeOfCalledArg))  -> 
+    paramDatas |> List.mapiSquared (fun i j (ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfoFlags, nmOpt, reflArgInfo, typeOfCalledArg))  -> 
       { Position=(i,j)
         IsParamArray=isParamArrayArg
         OptArgInfo=optArgInfo
         CallerInfoInfo = callerInfoFlags
+        IsInArg=isInArg
         IsOutArg=isOutArg
         ReflArgInfo=reflArgInfo
         NameOpt=nmOpt
@@ -372,12 +375,9 @@ type CalledMeth<'T>
       /// The argument analysis for each set of curried arguments
     member x.ArgSets = argSets
 
-      /// raw return type
-    member x.ReturnTypeBeforeByrefDeref = methodRetTy
-
       /// return type after implicit deference of byref returns is taken into account
     member x.ReturnTypeAfterByrefDeref = 
-        let retTy = x.ReturnTypeBeforeByrefDeref
+        let retTy = methodRetTy
         if isByrefTy g retTy then destByrefTy g retTy else retTy
 
       /// return type after tupling of out args is taken into account
@@ -556,7 +556,7 @@ let TakeObjAddrForMethodCall g amap (minfo:MethInfo) isMutable m objArgs f =
                 (minfo.IsStruct && not minfo.IsExtensionMember)  // don't take the address of a struct when passing to an extension member
                 || hasCallInfo
             let objArgTy = tyOfExpr g objArgExpr
-            let wrap,objArgExpr' = mkExprAddrOfExpr g mustTakeAddress hasCallInfo isMutable objArgExpr None m
+            let wrap, objArgExpr', _readonly = mkExprAddrOfExpr g mustTakeAddress hasCallInfo isMutable objArgExpr None m
             
             // Extension members and calls to class constraints may need a coercion for their object argument
             let objArgExpr' = 
@@ -1079,7 +1079,7 @@ module ProvidedMethodCalls =
             match ea.PApplyOption((function ProvidedAddressOfExpr x -> Some x | _ -> None), m) with
             | Some e -> 
                 let eT =  exprToExpr e
-                let wrap,ce = mkExprAddrOfExpr g true false DefinitelyMutates eT None m
+                let wrap,ce, _readonly = mkExprAddrOfExpr g true false DefinitelyMutates eT None m
                 let ce = wrap ce
                 None, (ce, tyOfExpr g ce)
             | None -> 

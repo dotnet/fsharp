@@ -115,13 +115,13 @@ let mkThisVarThatVar g m ty =
 let mkThatVarBind g m ty thataddrv expr = 
     if isStructTy g ty then 
       let thatv2,_ = mkMutableCompGenLocal m "obj" ty 
-      thatv2,mkCompGenLet m thataddrv (mkValAddr m (mkLocalValRef thatv2)) expr
+      thatv2,mkCompGenLet m thataddrv (mkValAddr m false (mkLocalValRef thatv2)) expr
     else thataddrv,expr 
 
 let mkBindThatAddr g m ty thataddrv thatv thate expr =
     if isStructTy g ty then
         // let thataddrv = &thatv
-        mkCompGenLet m thataddrv (mkValAddr m (mkLocalValRef thatv))  expr  
+        mkCompGenLet m thataddrv (mkValAddr m false (mkLocalValRef thatv))  expr  
     else
         // let thataddrv = that
         mkCompGenLet m thataddrv thate expr 
@@ -131,7 +131,7 @@ let mkBindThatAddrIfNeeded m thataddrvOpt thatv expr =
     | None -> expr
     | Some thataddrv ->
         // let thataddrv = &thatv
-        mkCompGenLet m thataddrv (mkValAddr m (mkLocalValRef thatv))  expr
+        mkCompGenLet m thataddrv (mkValAddr m false (mkLocalValRef thatv))  expr
 
 let mkDerefThis g m (thisv: Val) thise =
     if isByrefTy g thisv.Type then  mkAddrGet m (mkLocalValRef thisv)

@@ -1271,11 +1271,11 @@ and OpHasEffect g m op =
     | TOp.ILAsm(instrs, _) -> IlAssemblyCodeHasEffect instrs
     | TOp.TupleFieldGet(_) -> false
     | TOp.ExnFieldGet(ecref, n) -> isExnFieldMutable ecref n 
-    | TOp.RefAddrGet -> false
+    | TOp.RefAddrGet _ -> false
     | TOp.ValFieldGet rfref  -> rfref.RecdField.IsMutable || (TryFindTyconRefBoolAttribute g Range.range0 g.attrib_AllowNullLiteralAttribute rfref.TyconRef = Some true)
-    | TOp.ValFieldGetAddr rfref  -> rfref.RecdField.IsMutable
+    | TOp.ValFieldGetAddr (rfref, _readonly)  -> rfref.RecdField.IsMutable
     | TOp.UnionCaseFieldGetAddr _ -> false // union case fields are immutable
-    | TOp.LValueOp (LGetAddr, lv) -> lv.IsMutable
+    | TOp.LValueOp (LGetAddr _, lv) -> lv.IsMutable
     | TOp.UnionCaseFieldSet _
     | TOp.ExnFieldSet _
     | TOp.Coerce
@@ -1790,12 +1790,12 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
             MightMakeCriticalTailcall=false
             Info=UnknownValue }
     (* Handle addresses *)
-    | TOp.LValueOp (LGetAddr, lv), _, _ ->
+    | TOp.LValueOp ((LGetAddr _ as lop), lv), _, _ ->
         let e, _ = OptimizeExpr cenv env (exprForValRef m lv)
         let op' =
             match e with
             // Do not optimize if it's a top level static binding.
-            | Expr.Val (v, _, _) when not v.IsCompiledAsTopLevel -> TOp.LValueOp (LGetAddr, v)
+            | Expr.Val (v, _, _) when not v.IsCompiledAsTopLevel -> TOp.LValueOp (lop, v)
             | _ -> op
         Expr.Op (op', tyargs, args, m), 
         { TotalSize = 1
@@ -1881,7 +1881,7 @@ and OptimizeExprOpFallback cenv env (op, tyargs, args', m) arginfos valu =
       | TOp.ValFieldGetAddr _     
       | TOp.Array | TOp.For _ | TOp.While _ | TOp.TryCatch _ | TOp.TryFinally _
       | TOp.ILCall _ | TOp.TraitCall _ | TOp.LValueOp _ | TOp.ValFieldSet _
-      | TOp.UnionCaseFieldSet _ | TOp.RefAddrGet | TOp.Coerce | TOp.Reraise
+      | TOp.UnionCaseFieldSet _ | TOp.RefAddrGet _ | TOp.Coerce | TOp.Reraise
       | TOp.UnionCaseFieldGetAddr _   
       | TOp.ExnFieldSet _ -> 1, valu
       | TOp.Recd (ctorInfo, tcref) ->
@@ -2276,7 +2276,7 @@ and TakeAddressOfStructArgumentIfNeeded cenv (vref:ValRef) ty args m =
             // known calls to known generated F# code for CompareTo, Equals and GetHashCode.
             // If we ever reuse DevirtualizeApplication to transform an arbitrary virtual call into a 
             // direct call then this assumption is not valid.
-            let wrap, objArgAddress = mkExprAddrOfExpr cenv.g true false NeverMutates objArg None m
+            let wrap, objArgAddress, _readonly = mkExprAddrOfExpr cenv.g true false NeverMutates objArg None m
             wrap, (objArgAddress::rest)
         | _ -> 
             // no wrapper, args stay the same 

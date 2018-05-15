@@ -2221,7 +2221,7 @@ and p_target (TTarget(a,b,_)) st = p_tup2 p_Vals p_expr (a,b) st
 and p_bind (TBind(a,b,_)) st = p_tup2 p_Val p_expr (a,b) st
 
 and p_lval_op_kind x st =
-    p_byte (match x with LGetAddr -> 0 | LByrefGet -> 1 | LSet -> 2 | LByrefSet -> 3) st
+    p_byte (match x with LGetAddr _ -> 0 | LByrefGet -> 1 | LSet -> 2 | LByrefSet -> 3) st
 
 and p_recdInfo x st = 
     match x with 
@@ -2254,7 +2254,7 @@ and u_bind st = let a = u_Val st in let b = u_expr st in TBind(a,b,NoSequencePoi
 
 and u_lval_op_kind st =
     match u_byte st with 
-    | 0 -> LGetAddr 
+    | 0 -> LGetAddr false
     | 1 -> LByrefGet 
     | 2 -> LSet 
     | 3 -> LByrefSet 
@@ -2284,7 +2284,7 @@ and p_op x st =
          else 
               p_byte 11 st; p_int a st
     | TOp.ILAsm (a,b)                -> p_byte 12 st; p_tup2 (p_list p_ILInstr) p_typs (a,b) st
-    | TOp.RefAddrGet                 -> p_byte 13 st
+    | TOp.RefAddrGet _               -> p_byte 13 st
     | TOp.UnionCaseProof (a)         -> p_byte 14 st; p_ucref a st
     | TOp.Coerce                     -> p_byte 15 st
     | TOp.TraitCall (b)              -> p_byte 16 st; p_trait b st
@@ -2297,10 +2297,10 @@ and p_op x st =
     | TOp.Bytes bytes                -> p_byte 22 st; p_bytes bytes st
     | TOp.TryCatch _                 -> p_byte 23 st
     | TOp.TryFinally _               -> p_byte 24 st
-    | TOp.ValFieldGetAddr (a)        -> p_byte 25 st; p_rfref a st
+    | TOp.ValFieldGetAddr (a, _)     -> p_byte 25 st; p_rfref a st
     | TOp.UInt16s arr                -> p_byte 26 st; p_array p_uint16 arr st
     | TOp.Reraise                    -> p_byte 27 st
-    | TOp.UnionCaseFieldGetAddr (a,b) -> p_byte 28 st; p_tup2 p_ucref p_int (a,b) st
+    | TOp.UnionCaseFieldGetAddr (a,b, _) -> p_byte 28 st; p_tup2 p_ucref p_int (a,b) st
        // Note tag byte 29 is taken for struct tuples, see above
        // Note tag byte 30 is taken for struct tuples, see above
     | TOp.Goto _ | TOp.Label _ | TOp.Return -> failwith "unexpected backend construct in pickled TAST"
@@ -2338,7 +2338,7 @@ and u_op st =
     | 12 -> let a = (u_list u_ILInstr) st
             let b = u_typs st
             TOp.ILAsm (a,b) 
-    | 13 -> TOp.RefAddrGet 
+    | 13 -> TOp.RefAddrGet false
     | 14 -> let a = u_ucref st
             TOp.UnionCaseProof a 
     | 15 -> TOp.Coerce
@@ -2360,12 +2360,12 @@ and u_op st =
     | 23 -> TOp.TryCatch(NoSequencePointAtTry,NoSequencePointAtWith)
     | 24 -> TOp.TryFinally(NoSequencePointAtTry,NoSequencePointAtFinally)
     | 25 -> let a = u_rfref st
-            TOp.ValFieldGetAddr a
+            TOp.ValFieldGetAddr (a, false)
     | 26 -> TOp.UInt16s (u_array u_uint16 st)
     | 27 -> TOp.Reraise
     | 28 -> let a = u_ucref st
             let b = u_int st
-            TOp.UnionCaseFieldGetAddr (a,b) 
+            TOp.UnionCaseFieldGetAddr (a,b, false) 
     | 29 -> TOp.Tuple tupInfoStruct
     | 30 -> let a = u_int st
             TOp.TupleFieldGet (tupInfoStruct, a) 

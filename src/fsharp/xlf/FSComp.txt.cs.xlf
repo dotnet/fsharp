@@ -412,11 +412,6 @@
         <target state="translated">Neočekávané použití proměnné typu ByRef.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tastValueMustBeLocalAndMutable">
-        <source>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</source>
-        <target state="translated">Hodnota musí být proměnlivá, aby se dal změnit obsah nebo aby se dala převzít adresa typu hodnoty, třeba let mutable x = ...</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tastInvalidMutationOfConstant">
         <source>Invalid mutation of a constant expression. Consider copying the expression to a mutable local, e.g. 'let mutable x = ...'.</source>
         <target state="translated">Neplatná mutace konstantního výrazu. Zvažte možnost zkopírovat výraz do lokální proměnné, třeba let mutable x = ...</target>
@@ -6985,6 +6980,16 @@
       <trans-unit id="ilreadFileChanged">
         <source>The file '{0}' changed on disk unexpectedly, please reload.</source>
         <target state="translated">Soubor {0} se na disku neočekávaně změnil, opakujte prosím načtení.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="writeToReadOnlyByref">
+        <source>The byref pointer is readonly, so this write is not permitted.</source>
+        <target state="new">The byref pointer is readonly, so this write is not permitted.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tastValueMustBeMutable">
+        <source>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</source>
+        <target state="new">A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</target>
         <note />
       </trans-unit>
     </body>

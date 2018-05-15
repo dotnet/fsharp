@@ -140,7 +140,19 @@ namespace Test
         //let dt2 = DateTime.Now.ExtDateTime2(3)
 
 
+
+    [<Struct>]
+    type AllowedEvilStruct = 
+        [<DefaultValue>]
+        val mutable v : int
+        member x.Replace(y:AllowedEvilStruct) = x <- y
+
+
 (*
+    [<Struct>]
+    type EvilStruct(s: int) = 
+        member x.Replace(y:EvilStruct) = x <- y
+
     module Negative = 
         let TestClosure1 ([<In;  IsReadOnly>] a: byref<int>) = id (fun () -> a)
         let TestClosure2 ([<In; IsReadOnly>] a: Span<int>) = id (fun () -> a)

@@ -4459,7 +4459,7 @@ and
     | ValFieldGet of RecdFieldRef 
 
     /// An operation representing getting the address of a record field
-    | ValFieldGetAddr of RecdFieldRef       
+    | ValFieldGetAddr of RecdFieldRef * readonly: bool      
 
     /// An operation representing getting an integer tag for a union value representing the union case number
     | UnionCaseTagGet of TyconRef 
@@ -4472,7 +4472,7 @@ and
     | UnionCaseFieldGet of UnionCaseRef * int 
 
     /// An operation representing a field-get from a union value, where that value has been proven to be of the corresponding union case.
-    | UnionCaseFieldGetAddr of UnionCaseRef * int 
+    | UnionCaseFieldGetAddr of UnionCaseRef * int * readonly: bool
 
     /// An operation representing a field-get from a union value. The value is not assumed to have been proven to be of the corresponding union case.
     | UnionCaseFieldSet of  UnionCaseRef * int
@@ -4490,7 +4490,7 @@ and
     | ILAsm of ILInstr list * TTypes 
 
     /// Generate a ldflda on an 'a ref. 
-    | RefAddrGet 
+    | RefAddrGet of bool
 
     /// Conversion node, compiled via type-directed translation or to box/unbox 
     | Coerce 
@@ -4561,7 +4561,7 @@ and ForLoopStyle =
 /// Indicates what kind of pointer operation this is.
 and LValueOperation = 
     /// In C syntax this is: &localv            
-    | LGetAddr      
+    | LGetAddr of readonly: bool
 
     /// In C syntax this is: *localv_ptr        
     | LByrefGet     

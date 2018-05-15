@@ -784,7 +784,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
             CheckTypeInstNoByrefs cenv env m tyargs
             CheckExprsNoByrefs cenv env args 
 
-    | TOp.LValueOp(LGetAddr,v),_,_ -> 
+    | TOp.LValueOp(LGetAddr _,v),_,_ -> 
         if cenv.reportErrors  then 
             if noByrefs context && cenv.reportErrors then 
                 errorR(Error(FSComp.SR.chkNoAddressOfAtThisPoint(v.DisplayName), m))
@@ -824,13 +824,13 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
     | TOp.Reraise,[_ty1],[] ->
         CheckTypeInstNoByrefs cenv env m tyargs        
 
-    | TOp.ValFieldGetAddr rfref,tyargs,[] ->
+    | TOp.ValFieldGetAddr (rfref, _readonly),tyargs,[] ->
         if noByrefs context && cenv.reportErrors && isByrefLikeTy cenv.g m (tyOfExpr cenv.g expr) then
             errorR(Error(FSComp.SR.chkNoAddressStaticFieldAtThisPoint(rfref.FieldName), m)) 
         CheckTypeInstNoByrefs cenv env m tyargs
         // NOTE: there are no arg exprs to check in this case 
 
-    | TOp.ValFieldGetAddr rfref,tyargs,[rx] ->
+    | TOp.ValFieldGetAddr (rfref, _readonly),tyargs,[rx] ->
         if noByrefs context && cenv.reportErrors  && isByrefLikeTy cenv.g m (tyOfExpr cenv.g expr) then
             errorR(Error(FSComp.SR.chkNoAddressFieldAtThisPoint(rfref.FieldName), m))
         // This construct is used for &(rx.rfield) and &(rx->rfield). Relax to permit byref types for rx. [See Bug 1263]. 
@@ -845,7 +845,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprPermitByref cenv env arg1  // allow byref - it may be address-of-struct
 
-    | TOp.UnionCaseFieldGetAddr (uref, _idx),tyargs,[rx] ->
+    | TOp.UnionCaseFieldGetAddr (uref, _idx, _readonly),tyargs,[rx] ->
         if noByrefs context && cenv.reportErrors  && isByrefLikeTy cenv.g m (tyOfExpr cenv.g expr) then
           errorR(Error(FSComp.SR.chkNoAddressFieldAtThisPoint(uref.CaseName), m))
         CheckTypeInstNoByrefs cenv env m tyargs
@@ -888,24 +888,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
         // allow args to be byref here 
         CheckExprsPermitByrefs cenv env args 
 
-    | (   TOp.Tuple _
-        | TOp.UnionCase _
-        | TOp.ExnConstr _
-        | TOp.Array
-        | TOp.Bytes _
-        | TOp.UInt16s _
-        | TOp.Recd _
-        | TOp.ValFieldSet _
-        | TOp.UnionCaseTagGet _
-        | TOp.UnionCaseProof _
-        | TOp.UnionCaseFieldGet _
-        | TOp.UnionCaseFieldSet _
-        | TOp.ExnFieldGet _
-        | TOp.ExnFieldSet _
-        | TOp.TupleFieldGet _
-        | TOp.RefAddrGet 
-        | _ (* catch all! *)
-        ),_,_ ->    
+    | _ ->    
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprsNoByrefs cenv env args 
 
@@ -1464,13 +1447,15 @@ let CheckEntityDefn cenv env (tycon:Entity) =
 
             if numCurriedArgSets > 1 && 
                (minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst) 
-                |> List.existsSquared (fun (ParamData(isParamArrayArg, isOutArg, optArgInfo, callerInfoInfo, _, reflArgInfo, ty)) -> 
-                    isParamArrayArg || isOutArg || reflArgInfo.AutoQuote || optArgInfo.IsOptional || callerInfoInfo <> NoCallerInfo || isByrefLikeTy cenv.g m ty)) then 
+                |> List.existsSquared (fun (ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfoInfo, _, reflArgInfo, ty)) -> 
+                    isParamArrayArg || isInArg || isOutArg || reflArgInfo.AutoQuote || optArgInfo.IsOptional || callerInfoInfo <> NoCallerInfo || isByrefLikeTy cenv.g m ty)) then 
                 errorR(Error(FSComp.SR.chkCurriedMethodsCantHaveOutParams(), m))
 
             if numCurriedArgSets = 1 then
                 minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst) 
-                |> List.iterSquared (fun (ParamData(_, _, optArgInfo, callerInfoInfo, _, _, ty)) ->
+                |> List.iterSquared (fun (ParamData(_, isInArg, _, optArgInfo, callerInfoInfo, _, _, ty)) ->
+                 // TODO: default values and in args
+                    ignore isInArg
                     match (optArgInfo, callerInfoInfo) with
                     | _, NoCallerInfo -> ()
                     | NotOptional, _ -> errorR(Error(FSComp.SR.tcCallerInfoNotOptional(callerInfoInfo.ToString()),m))
@@ -1647,7 +1632,9 @@ let CheckEntityDefn cenv env (tycon:Entity) =
         match tycon.TypeAbbrev with                          
          | None     -> ()
          | Some typ -> 
-             CheckForByrefLikeType cenv env m typ (fun () -> errorR(Error(FSComp.SR.chkNoByrefInTypeAbbrev(), tycon.Range)))
+             // Library-defined outref<'T> and inref<'T> contain byrefs on the r.h.s.
+             if not cenv.g.compilingFslib then 
+                 CheckForByrefLikeType cenv env m typ (fun () -> errorR(Error(FSComp.SR.chkNoByrefInTypeAbbrev(), tycon.Range)))
 
 let CheckEntityDefns cenv env tycons = 
     tycons |> List.iter (CheckEntityDefn cenv env) 

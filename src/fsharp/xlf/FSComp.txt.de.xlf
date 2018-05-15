@@ -412,11 +412,6 @@
         <target state="translated">Unerwartete Verwendung einer Variablen vom Typ "byref".</target>
         <note />
       </trans-unit>
-      <trans-unit id="tastValueMustBeLocalAndMutable">
-        <source>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</source>
-        <target state="translated">Ein Wert muss änderbar sein, um die Inhalte eines Werttyps zu mutieren oder seine Adresse zu übernehmen, z.B. "let mutable x = ...".</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tastInvalidMutationOfConstant">
         <source>Invalid mutation of a constant expression. Consider copying the expression to a mutable local, e.g. 'let mutable x = ...'.</source>
         <target state="translated">Ungültige Mutation eines konstanten Ausdrucks. Kopieren Sie den Ausdruck in eine änderbare lokale Variable, z.B. "let mutable x = ...".</target>
@@ -6985,6 +6980,16 @@
       <trans-unit id="ilreadFileChanged">
         <source>The file '{0}' changed on disk unexpectedly, please reload.</source>
         <target state="translated">Die Datei "{0}" wurde auf dem Datenträger unerwartet geändert. Laden Sie sie erneut.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="writeToReadOnlyByref">
+        <source>The byref pointer is readonly, so this write is not permitted.</source>
+        <target state="new">The byref pointer is readonly, so this write is not permitted.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tastValueMustBeMutable">
+        <source>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</source>
+        <target state="new">A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</target>
         <note />
       </trans-unit>
     </body>

@@ -412,11 +412,6 @@
         <target state="translated">未預期的 ByRef 類型變數用法</target>
         <note />
       </trans-unit>
-      <trans-unit id="tastValueMustBeLocalAndMutable">
-        <source>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</source>
-        <target state="translated">值必須是可變動的，才能變動內容或接受實值類型的位址，例如 'let mutable x = ...'</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tastInvalidMutationOfConstant">
         <source>Invalid mutation of a constant expression. Consider copying the expression to a mutable local, e.g. 'let mutable x = ...'.</source>
         <target state="translated">常數運算式無效的變動。請考慮將運算式複製到可變動的區域變數，例如 'let mutable x = ...'。</target>
@@ -6985,6 +6980,16 @@
       <trans-unit id="ilreadFileChanged">
         <source>The file '{0}' changed on disk unexpectedly, please reload.</source>
         <target state="translated">檔案 '{0}' 在磁碟上意外變更，請重新載入。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="writeToReadOnlyByref">
+        <source>The byref pointer is readonly, so this write is not permitted.</source>
+        <target state="new">The byref pointer is readonly, so this write is not permitted.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tastValueMustBeMutable">
+        <source>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</source>
+        <target state="new">A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</target>
         <note />
       </trans-unit>
     </body>
