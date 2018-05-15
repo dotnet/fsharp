@@ -937,7 +937,7 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
         CheckNoReraise cenv freesOpt body 
 
         // Check the body of the lambda
-        if (not (isNil tps) || not (isNil vsl)) && isTop && not cenv.g.compilingFslib && isByrefLikeTy cenv.g m bodyty then
+        if (* (not (isNil tps) || not (isNil vsl)) && *) isTop && not cenv.g.compilingFslib && isByrefLikeTy cenv.g m bodyty then
             // allow byref to occur as return position for byref-typed top level function or method 
             CheckExprPermitByrefReturn cenv env body
         else
@@ -945,7 +945,7 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
 
         // Check byref return types
         if cenv.reportErrors then 
-            if (not inlined && (isNil tps && isNil vsl)) || not isTop then
+            if (* (not inlined && (isNil tps && isNil vsl)) || *) not isTop then
                 CheckForByrefLikeType cenv env m bodyty (fun () -> 
                         errorR(Error(FSComp.SR.chkFirstClassFuncNoByref(), m)))
 

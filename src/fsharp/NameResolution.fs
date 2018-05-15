@@ -467,7 +467,7 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap:Import.Import
                             // So we need to go and crack the type of the 'this' argument.
                             let thisTy = minfo.GetParamTypes(amap,m,generalizeTypars minfo.FormalMethodTypars).Head.Head
                             match thisTy with
-                            | AppTy amap.g (tcrefOfTypeExtended, _) -> Some tcrefOfTypeExtended
+                            | AppTy g (tcrefOfTypeExtended, _) when not (isByrefTy g thisTy) -> Some tcrefOfTypeExtended
                             | _ -> None
                      
                     Some rs

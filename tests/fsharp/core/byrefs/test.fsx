@@ -22,97 +22,73 @@ let check2 s expected actual = check s actual expected
 // Test a simple ref  argument
 module CompareExchangeTests = 
     let mutable x = 3
-    let v =  System.Threading.Interlocked.CompareExchange(&x, 3, 4)
-
-#if NEG
-module CompareExchangeTests_Negative1 = 
-    let x = 3
-    let v =  System.Threading.Interlocked.CompareExchange(&x, 3, 4)
-
-module CompareExchangeTests_Negative2 = 
-    let v =  System.Threading.Interlocked.CompareExchange(&3, 3, 4)
-#endif
+    let v =  System.Threading.Interlocked.CompareExchange(&x, 4, 3)
+    check "cweweoiwekla" v 3
+    let v2 =  System.Threading.Interlocked.CompareExchange(&x, 5, 3)
+    check "cweweoiweklb" v2 4
 
 // Test a simple out argument
 module TryGetValueTests = 
     let d = dict [ (3,4) ]
     let mutable res = 9
     let v =  d.TryGetValue(3, &res)
-
-#if NEG
-module TryGetValueTests_Negative1 = 
-    let d = dict [ (3,4) ]
-    let res = 9
-    let v =  d.TryGetValue(3, &res)
-#endif
-
+    check "cweweoiwekl1" v true
+    check "cweweoiwekl2" res 4
+    let v2 =  d.TryGetValue(5, &res)
+    check "cweweoiwekl3" v2 false
+    check "cweweoiwekl4" res 4
 
 module FSharpDeclaredOutParamTest  = 
     type C() = 
-         static member M([<System.Runtime.InteropServices.Out>] x: byref<int>) = ()
+         static member M([<System.Runtime.InteropServices.Out>] x: byref<int>) = x <- 5
     let mutable res = 9
     let v =  C.M(&res)
+    check "cwvereweoiwekl4" res 5
 
 
 module FSharpDeclaredOutParamTest2  = 
     type C() = 
-         static member M([<System.Runtime.InteropServices.Out>] x: outref<int>) = ()
+         static member M([<System.Runtime.InteropServices.Out>] x: outref<int>) = x <- 5
     let mutable res = 9
     let v =  C.M(&res)
+    check "cweweoiweklceew4" res 5
 
 module FSharpDeclaredOutParamTest3  = 
     type C() = 
-         static member M(x: outref<int>) = ()
+         static member M(x: outref<int>) = x <- 5
     let mutable res = 9
     let v =  C.M(&res)
-
-#if NEG
-module FSharpDeclaredOutParamTest_Neagative1  = 
-    type C() = 
-         static member M([<System.Runtime.InteropServices.Out>] x: byref<int>) = ()
-    let  res = 9
-    let v =  C.M(&res)
-#endif
+    check "cweweoiwek28989" res 5
 
 module FSharpDeclaredOverloadedOutParamTest  = 
     type C() = 
-         static member M(a: int, [<System.Runtime.InteropServices.Out>] x: byref<int>) = ()
-         static member M(a: string, [<System.Runtime.InteropServices.Out>] x: byref<int>) = ()
+         static member M(a: int, [<System.Runtime.InteropServices.Out>] x: byref<int>) = x <- 7
+         static member M(a: string, [<System.Runtime.InteropServices.Out>] x: byref<int>) = x <- 8
     let mutable res = 9
     let v =  C.M("a", &res)
+    check "cweweoiwek2cbe9" res 8
     let v2 =  C.M(3, &res)
+    check "cweweoiwek28498" res 7
 
 module FSharpDeclaredOverloadedOutParamTest2  = 
     type C() = 
-         static member M(a: int, [<System.Runtime.InteropServices.Out>] x: outref<int>) = ()
-         static member M(a: string, [<System.Runtime.InteropServices.Out>] x: outref<int>) = ()
+         static member M(a: int, [<System.Runtime.InteropServices.Out>] x: outref<int>) = x <- 7
+         static member M(a: string, [<System.Runtime.InteropServices.Out>] x: outref<int>) = x <- 8
     let mutable res = 9
     let v =  C.M("a", &res)
+    check "cweweoiwek2v90" res 8
     let v2 =  C.M(3, &res)
+    check "cweweoiwek2c98" res 7
 
 module FSharpDeclaredOverloadedOutParamTest3  = 
     type C() = 
-         static member M(a: int, x: outref<int>) = ()
-         static member M(a: string, x: outref<int>) = ()
+         static member M(a: int, x: outref<int>) = x <- 7
+         static member M(a: string, x: outref<int>) = x <- 8
     let mutable res = 9
     let v =  C.M("a", &res)
+    check "cweweoiwek2v99323" res 8
     let v2 =  C.M(3, &res)
-
-#if NEG
-module FSharpDeclaredOverloadedOutParamTest_Negative1  = 
-    type C() = 
-         static member M(a: int, [<System.Runtime.InteropServices.Out>] x: byref<int>) = ()
-         static member M(a: string, [<System.Runtime.InteropServices.Out>] x: byref<int>) = ()
-    let  res = 9
-    let v =  C.M("a", &res)
-    let v2 =  C.M(3, &res)
-
-module FSharpDeclaredOutParamTest_Negative1  = 
-    type C() = 
-         static member M([<System.Runtime.InteropServices.Out>] x: byref<int>) = ()
-    let res = 9
-    let v =  C.M(&res)
-#endif
+    check "cweweoiwe519" res 7
 
 module FSharpDeclaredInParamTest  = 
     type C() = 
@@ -132,17 +108,50 @@ module FSharpDeclaredInParamTest3  =
     let res = System.DateTime.Now
     let v =  C.M(&res)
 
+module FSharpDeclaredInParamTest3a  = 
+    type C() = 
+         static member M(x: inref<System.DateTime>) = ()
+    let w = System.DateTime.Now
+    let v =  C.M(w)
+
+module FSharpDeclaredInParamTest3b  = 
+    type C() = 
+         static member M(x: inref<System.DateTime>) = ()
+    let v =  C.M(System.DateTime.Now)
+
+module FSharpDeclaredInParamTest3c  = 
+    type C() = 
+         static member M(x: inref<System.DateTime>) = ()
+    let v =  C.M(System.DateTime.Now.AddDays(1.0))
+
+module FSharpDeclaredInParamTest3d  = 
+    type C() = 
+         static member M(x: inref<System.DateTime>) = ()
+    let mutable w = System.DateTime.Now
+    let v =  C.M(w)
+
+module FSharpDeclaredInParamTest3e  = 
+    type C() = 
+         static member M(x: inref<System.DateTime>) = x
+    let date = System.DateTime.Now.Date
+    let w = [| date |]
+    let v =  C.M(w.[0])
+    check "lmvjvwo1" v date
+
 module FSharpDeclaredInParamTest4  = 
     type C() = 
-         static member M(x: inref<'T>) = ()
+         static member M(x: inref<'T>) = x
     let res = "abc"
     let v =  C.M(&res)
+    check "lmvjvwo2" res "abc"
+    check "lmvjvwo3" v "abc"
 
 module FSharpDeclaredInParamTest5  = 
     type C() = 
-         static member M(x: inref<'T>) = ()
+         static member M(x: inref<'T>) = x
     let res = "abc"
     let v =  C.M(&res)
+    check "lmvjvwo4" v "abc"
 
 module ByrefReturnTests = 
 
@@ -593,21 +602,6 @@ module ByrefReturnMemberTests =
 
         test()
 
-#if NEG
-    module TestOneArgumentInRefThenMutate_Negative1 =
-
-        type C() = 
-            static member M (x:inref<int>) = &x
-
-        let test() = 
-            let mutable r1 = 1
-            let addr = &C.M (&r1)
-            addr <- addr + 1 // "The byref pointer is readonly, so this write is not permitted"
-            check2 "mepojcwem10" 2 r1
-
-        test()
-#endif
-
     module TestOneArgumentInRefReturned =
 
         type C() = 
@@ -809,6 +803,42 @@ module ByrefReturnMemberTests =
 
         test()
 
+
+    module ByRefExtensionMethods1 = 
+
+        open System
+        open System.Runtime.CompilerServices
+
+        [<Extension>]
+        type Ext = 
+        
+            [<Extension>]
+            static member ExtDateTime2(dt: inref<DateTime>, x:int) = dt.AddDays(double x)
+        
+        module UseExt = 
+            let now = DateTime.Now
+            let dt2 = now.ExtDateTime2(3)
+            check "£f3mllkm2" dt2 (now.AddDays(3.0))
+            
+
+(*
+    module ByRefExtensionMethodsOverloading = 
+
+        open System
+        open System.Runtime.CompilerServices
+
+        [<Extension>]
+        type Ext = 
+            [<Extension>]
+            static member ExtDateTime(dt: DateTime, x:int) = dt.AddDays(double x)
+        
+            [<Extension>]
+            static member ExtDateTime(dt: inref<DateTime>, x:int) = dt.AddDays(2.0 * double x)
+        
+        module UseExt = 
+            let dt = DateTime.Now.ExtDateTime(3)
+            let dt2 = DateTime.Now.ExtDateTime(3)
+*)
 
 let aa =
   if !failures then (stdout.WriteLine "Test Failed"; exit 1) 

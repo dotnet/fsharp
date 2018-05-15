@@ -165,7 +165,7 @@ val mkLazyAnd  : TcGlobals -> range -> Expr -> Expr -> Expr
 val mkLazyOr   : TcGlobals -> range -> Expr -> Expr -> Expr
 val mkByrefTy  : TcGlobals -> TType -> TType
 val mkByrefTyWithInference  : TcGlobals -> TType -> TType -> TType
-val mkInrefTy  : TcGlobals -> TType -> TType
+val mkInByrefTy  : TcGlobals -> TType -> TType
 val mkOutrefTy  : TcGlobals -> TType -> TType
 
 //-------------------------------------------------------------------------

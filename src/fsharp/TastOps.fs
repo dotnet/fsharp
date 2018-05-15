@@ -563,9 +563,9 @@ let tryNormalizeMeasureInType g ty =
 let mkNativePtrTy (g:TcGlobals) ty = TType_app (g.nativeptr_tcr, [ty])
 let mkByrefTy (g:TcGlobals) ty = TType_app (g.byref_tcr, [ty])
 
-let mkInrefTy (g:TcGlobals) ty = TType_app (g.inref_tcr, [ty])
+let mkInByrefTy (g:TcGlobals) ty = TType_app (g.inref_tcr, [ty])
 let mkOutrefTy (g:TcGlobals) ty = TType_app (g.outref_tcr, [ty])
-let mkByrefTyWithFlag g readonly ty = (if readonly then mkInrefTy g ty else mkByrefTy g ty)
+let mkByrefTyWithFlag g readonly ty = (if readonly then mkInByrefTy g ty else mkByrefTy g ty)
 
 let mkByref2Ty (g:TcGlobals) ty1 ty2 = 
     assert g.byref2_tcr.CanDeref // check we are using FSharp.Core 4.5.0.0+

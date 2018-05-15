@@ -1,5 +1,5 @@
 #r @"..\..\..\..\packages\System.Memory.4.5.0-rc1\lib\netstandard2.0\System.Memory.dll"
-#r @"C:\Users\dsyme\.nuget\packages\NETStandard.Library.NETFramework\2.0.0-preview2-25405-01\build\net461\ref\netstandard.dll"
+#r @"..\..\..\..\packages\NETStandard.Library.NETFramework.2.0.0-preview2-25405-01\build\net461\ref\netstandard.dll"
 
 namespace System.Runtime.CompilerServices
 
@@ -123,22 +123,6 @@ namespace Test
             SafeSum(stackSpan) |> printfn "res = %d"
         f6()
 
-    module ReadOnlyIn = 
-
-        let TestInAttribute1 ([<In; IsReadOnly>] a: byref<int>) = a
-
-    [<Extension>]
-    type Ext = 
-        [<Extension>]
-        static member ExtDateTime(dt: DateTime, x:int) = dt.AddDays(double x)
-    
-        [<Extension>]
-        static member ExtDateTime2([<In; IsReadOnly>] dt: byref<DateTime>, x:int) = dt.AddDays(double x)
-    
-    module UseExt = 
-        let dt = DateTime.Now.ExtDateTime(3)
-        //let dt2 = DateTime.Now.ExtDateTime2(3)
-
 
 
     [<Struct>]
@@ -147,21 +131,6 @@ namespace Test
         val mutable v : int
         member x.Replace(y:AllowedEvilStruct) = x <- y
 
-
-(*
-    [<Struct>]
-    type EvilStruct(s: int) = 
-        member x.Replace(y:EvilStruct) = x <- y
-
-    module Negative = 
-        let TestClosure1 ([<In;  IsReadOnly>] a: byref<int>) = id (fun () -> a)
-        let TestClosure2 ([<In; IsReadOnly>] a: Span<int>) = id (fun () -> a)
-        let TestClosure3 ([<In; IsReadOnly>] a: ReadOnlySpan<int>) = id (fun () -> a)
-
-        let TestAsyncClosure1 ([<In;  IsReadOnly>] a: byref<int>) = async { return a }
-        let TestAsyncClosure2 ([<In; IsReadOnly>] a: Span<int>) = async { return a }
-        let TestAsyncClosure3 ([<In; IsReadOnly>] a: ReadOnlySpan<int>) = async { return a }
-*)
 
 //Since in parameters are read-only ref parameters, all ref parameter limitations apply.
 //

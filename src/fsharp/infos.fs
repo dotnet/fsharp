@@ -1183,6 +1183,13 @@ type MethInfo =
         | ILMeth (_,_,Some _) -> true
         | _ -> false
 
+    /// Indicates if this is an extension member (e.g. on a struct) that takes a byref arg
+    member x.ObjArgNeedsAddress (amap: Import.ImportMap, m) =
+        (x.IsStruct && not x.IsExtensionMember) ||
+        match x.GetObjArgTypes (amap, m, x.FormalMethodInst) with 
+        | [h] -> isByrefTy amap.g h
+        | _ -> false
+
     /// Indicates if this is an F# extension member. 
     member x.IsFSharpStyleExtensionMember = 
         match x with FSMeth (_,_,vref,_) -> vref.IsExtensionMember | _ -> false
@@ -1552,7 +1559,7 @@ type MethInfo =
              let g = x.TcGlobals
              let pty = 
                  // add the "annotation" about whether this is an inref, outref or plain byref
-                 if isByrefTy g pty && isInArg then mkInrefTy g (destByrefTy g pty)
+                 if isByrefTy g pty && isInArg then mkInByrefTy g (destByrefTy g pty)
                  elif isByrefTy g pty && isOutArg then mkOutrefTy g (destByrefTy g pty)
                  else pty
              ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfoInfo, nmOpt, reflArgInfo, pty)))

@@ -1913,7 +1913,7 @@ and CanMemberSigsMatchUpToCheck
     if not (permitOptArgs || isNil unnamedCalledOptArgs) then ErrorD(Error(FSComp.SR.csOptionalArgumentNotPermittedHere(), m)) else
     
 
-    let calledObjArgTys = minfo.GetObjArgTypes(amap, m, minst)
+    let calledObjArgTys = calledMeth.CalledObjArgTys(m)
     
     // Check all the argument types. 
 
@@ -1965,7 +1965,7 @@ and CanMemberSigsMatchUpToCheck
         | Some _  when minfo.IsConstructor -> CompleteD 
         | Some _  when not alwaysCheckReturn && isNil unnamedCalledOutArgs -> CompleteD 
         | Some reqdRetTy -> 
-            let methodRetTy = calledMeth.ReturnTypeAfterOutArgTupling
+            let methodRetTy = calledMeth.CalledReturnTypeAfterOutArgTupling
             unifyTypes reqdRetTy methodRetTy )))))
 
 // Assert a subtype constraint, and wrap an ErrorsFromAddingSubsumptionConstraint error around any failure 
@@ -2456,7 +2456,7 @@ and ResolveOverloading
                             | None -> CompleteD 
                             | Some _  when calledMeth.Method.IsConstructor -> CompleteD 
                             | Some reqdRetTy ->
-                                let actualRetTy = calledMeth.ReturnTypeAfterOutArgTupling
+                                let actualRetTy = calledMeth.CalledReturnTypeAfterOutArgTupling
                                 MustUnify csenv ndeep trace cxsln reqdRetTy actualRetTy)
 
     | None -> 
