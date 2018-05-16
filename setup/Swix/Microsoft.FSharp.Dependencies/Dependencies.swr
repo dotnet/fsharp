@@ -8,11 +8,7 @@ vs.dependencies
                 version=$(FSharpPackageVersion)
                 type=Required
 
-  vs.dependency id=Microsoft.FSharp.SDK.Core
-                version=$(FSharpPackageVersion)
-                type=Required
-
-  vs.dependency id=Microsoft.FSharp.SDK.Resources
+  vs.dependency id=Microsoft.FSharp.SDK
                 version=$(FSharpPackageVersion)
                 type=Required
 

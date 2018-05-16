@@ -3,4 +3,3 @@ use vs
 package name=Microsoft.FSharp.Compiler.Resources
         version=$(FSharpPackageVersion)
         vs.package.language=$(LocaleSpecificCulture)
-        vs.package.providerKey=Microsoft.FSharp.Compiler.Resources,$(LocaleSpecificCulture),v4.1

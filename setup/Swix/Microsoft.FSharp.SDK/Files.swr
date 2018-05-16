@@ -1,6 +1,6 @@
 use vs
 
-package name=Microsoft.FSharp.SDK.Core
+package name=Microsoft.FSharp.SDK
         version=$(FSharpPackageVersion)
 
 folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharpSdk"

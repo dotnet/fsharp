@@ -30,8 +30,7 @@
             <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Compiler.json" />
             <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Compiler.Resources.%(SetupLanguages.LocaleCode).json" />
 
-            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.SDK.Core.json" />
-            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.SDK.Resources.%(SetupLanguages.LocaleCode).json" />
+            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.SDK.json" />
 
             <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Full.Core.json" />
             <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Vsix.Full.Resources.%(SetupLanguages.LocaleCode).json" />
