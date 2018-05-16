@@ -22,6 +22,7 @@ type HelpContextServiceTests() =
     let fileName = "C:\\test.fs"
     let options: FSharpProjectOptions = { 
         ProjectFileName = "C:\\test.fsproj"
+        ProjectId = None
         SourceFiles =  [| fileName |]
         ReferencedProjects = [| |]
         OtherOptions = [| |]

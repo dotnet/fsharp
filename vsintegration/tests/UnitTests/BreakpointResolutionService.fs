@@ -24,6 +24,7 @@ type BreakpointResolutionServiceTests()  =
     let fileName = "C:\\test.fs"
     let projectOptions: FSharpProjectOptions = { 
         ProjectFileName = "C:\\test.fsproj"
+        ProjectId = None
         SourceFiles =  [| fileName |]
         ReferencedProjects = [| |]
         OtherOptions = [| |]
