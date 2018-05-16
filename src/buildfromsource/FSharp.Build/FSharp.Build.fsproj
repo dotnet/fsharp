@@ -26,31 +26,11 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharpEmbedResXSource.fs" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\WriteCodeFragment.fs" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\CreateFSharpManifestResourceName.fs" />
-    <CopyAndSubstituteText Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\Microsoft.FSharp.Targets">
-        <TargetFilename>Microsoft.FSharp.Targets</TargetFilename>
-        <Pattern1>{BuildSuffix}</Pattern1>
-        <Replacement1></Replacement1>
-    </CopyAndSubstituteText>
-    <CopyAndSubstituteText Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\Microsoft.Portable.FSharp.Targets">
-      <TargetFilename>Microsoft.Portable.FSharp.Targets</TargetFilename>
-      <Pattern1>{BuildSuffix}</Pattern1>
-      <Replacement1></Replacement1>
-    </CopyAndSubstituteText>
-    <CopyAndSubstituteText Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\Microsoft.FSharp.NetSdk.props">
-        <TargetFilename>Microsoft.FSharp.NetSdk.props</TargetFilename>
-        <Pattern1>{BuildSuffix}</Pattern1>
-        <Replacement1></Replacement1>
-    </CopyAndSubstituteText>
-    <CopyAndSubstituteText Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\Microsoft.FSharp.NetSdk.targets">
-        <TargetFilename>Microsoft.FSharp.NetSdk.targets</TargetFilename>
-        <Pattern1>{BuildSuffix}</Pattern1>
-        <Replacement1></Replacement1>
-    </CopyAndSubstituteText>
-    <CopyAndSubstituteText Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\Microsoft.FSharp.Overrides.NetSdk.targets">
-        <TargetFilename>Microsoft.FSharp.Overrides.NetSdk.targets</TargetFilename>
-        <Pattern1>{BuildSuffix}</Pattern1>
-        <Replacement1></Replacement1>
-    </CopyAndSubstituteText>
+    <None Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\Microsoft.FSharp.Targets" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\Microsoft.Portable.FSharp.Targets" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\Microsoft.FSharp.NetSdk.props" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\Microsoft.FSharp.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\Microsoft.FSharp.Overrides.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

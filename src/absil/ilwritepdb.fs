@@ -526,19 +526,22 @@ let writePdbInfo showTimes f fpdb info cvChunk =
 
               // Partition the sequence points by document 
               let spsets =
-                let res = (Map.empty : Map<int,PdbSequencePoint list ref>)
-                let add res (_,sp) = 
-                  let k = sp.Document
-                  match Map.tryFind k res with
-                    | Some xsR -> xsR := sp :: !xsR; res
-                    | None     -> Map.add k (ref [sp]) res
+                  let res = Dictionary<int,PdbSequencePoint list ref>()
+                  for (_,sp) in sps do
+                      let k = sp.Document
+                      let mutable xsR = Unchecked.defaultof<_>
+                      if res.TryGetValue(k,&xsR) then
+                          xsR := sp :: !xsR
+                      else
+                          res.[k] <- ref [sp]
+                  
+                  res
 
-                let res = Array.fold add res sps
-                let res = Map.toList res  // ordering may not be stable 
-                List.map (fun (_,x) -> Array.ofList !x) res
-
-              spsets |> List.iter (fun spset -> 
-                  if spset.Length > 0 then 
+              spsets 
+              |> Seq.iter (fun kv ->
+                  let spset = !kv.Value
+                  if not spset.IsEmpty then
+                    let spset = Array.ofList spset
                     Array.sortInPlaceWith SequencePoint.orderByOffset spset
                     let sps = 
                         spset |> Array.map (fun sp -> 
@@ -594,7 +597,7 @@ open Microsoft.FSharp.Reflection
 // Supports the following cases:
 //   obj?Foo()        // call with no arguments
 //   obj?Foo(1, "a")  // call with two arguments (extracted from tuple)
-// NOTE: This doesn�t actually handle all overloads.  It just picks first entry with right 
+// NOTE: This doesn't actually handle all overloads.  It just picks first entry with right 
 // number of arguments.
 let (?) this memb (args:'Args) : 'R = 
     // Get array of 'obj' arguments for the reflection call
@@ -628,7 +631,7 @@ let createWriter (f:string) =
 // MDB Writer.  Generate debug symbols using the MDB format
 //---------------------------------------------------------------------
 let writeMdbInfo fmdb f info = 
-    // Note, if we can�t delete it code will fail later
+    // Note, if we can't delete it code will fail later
     try FileSystem.FileDelete fmdb with _ -> ()
 
     // Try loading the MDB symbol writer from an assembly available on Mono dynamically

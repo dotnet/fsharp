@@ -255,20 +255,20 @@ type internal ProjectSitesAndFiles() =
               | None -> ()
             }
 
-    static let rec referencedProjectsOf(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite, serviceProvider, extraProjectInfo, projectOptionsTable, useUniqueStamp) =
+    static let rec referencedProjectsOf(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite, serviceProvider, extraProjectInfo, projectOptionsTable) =
         [| for (projectId, projectFileName, outputPath, projectSiteProvider) in referencedProvideProjectSites (projectSite, serviceProvider, extraProjectInfo, projectOptionsTable) do
                let referencedProjectOptions =
                    // Lookup may not succeed if the project has not been established yet
                    // In this case we go and compute the options recursively.
                    match tryGetOptionsForReferencedProject projectFileName with 
-                   | None -> getProjectOptionsForProjectSite (enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSiteProvider.GetProjectSite(), serviceProvider,  projectId, projectFileName, extraProjectInfo, projectOptionsTable, useUniqueStamp) |> snd
+                   | None -> getProjectOptionsForProjectSite (enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSiteProvider.GetProjectSite(), serviceProvider,  projectId, projectFileName, extraProjectInfo, projectOptionsTable) |> snd
                    | Some options -> options
                yield projectFileName, (outputPath, referencedProjectOptions) |]
 
-    and getProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite, serviceProvider, projectId, fileName, extraProjectInfo, projectOptionsTable,  useUniqueStamp) =
+    and getProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite, serviceProvider, projectId, fileName, extraProjectInfo, projectOptionsTable) =
         let referencedProjectFileNames, referencedProjectOptions = 
             if enableInMemoryCrossProjectReferences then
-                referencedProjectsOf(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite, serviceProvider, extraProjectInfo, projectOptionsTable, useUniqueStamp)
+                referencedProjectsOf(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite, serviceProvider, extraProjectInfo, projectOptionsTable)
                 |> Array.unzip
             else [| |], [| |]
         let option =
@@ -283,7 +283,7 @@ type internal ProjectSitesAndFiles() =
                 UnresolvedReferences = None
                 OriginalLoadReferences = []
                 ExtraProjectInfo=extraProjectInfo 
-                Stamp = if useUniqueStamp then (stamp <- stamp + 1L; Some stamp) else None 
+                Stamp = (stamp <- stamp + 1L; Some stamp) 
             }
             match projectId, projectOptionsTable with
             | Some id, Some optionsTable ->
@@ -313,10 +313,10 @@ type internal ProjectSitesAndFiles() =
         |> Seq.toArray
 
     /// Create project options for this project site.
-    static member GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite:IProjectSite, serviceProvider, projectId, filename, extraProjectInfo, projectOptionsTable, useUniqueStamp) =
+    static member GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite:IProjectSite, serviceProvider, projectId, filename, extraProjectInfo, projectOptionsTable) =
         match projectSite with
         | :? IHaveCheckOptions as hco -> hco.OriginalCheckOptions()
-        | _ -> getProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite, serviceProvider, projectId, filename, extraProjectInfo, projectOptionsTable, useUniqueStamp)
+        | _ -> getProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite, serviceProvider, projectId, filename, extraProjectInfo, projectOptionsTable)
 
     /// Create project site for these project options
     static member CreateProjectSiteForScript (filename, referencedProjectFileNames, checkOptions) = 

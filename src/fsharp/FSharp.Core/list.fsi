@@ -12,7 +12,7 @@ namespace Microsoft.FSharp.Collections
     [<RequireQualifiedAccess>]
     module List = 
 
-        /// <summary>Returns a new list that contains the cartesian product of the two input lists.</summary>
+        /// <summary>Returns a new list that contains all pairings of elements from the first and second lists.</summary>
         /// <param name="list1">The first input list.</param>
         /// <param name="list2">The second input list.</param>
         /// <returns>The resulting list of pairs.</returns>

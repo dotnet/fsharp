@@ -363,7 +363,7 @@ type internal SR private() =
     static member tastUnexpectedByRef() = (255, GetStringFunc("tastUnexpectedByRef",",,,") )
     /// A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'
     /// (Originally from ..\FSComp.txt:86)
-    static member tastValueMustBeLocalAndMutable() = (256, GetStringFunc("tastValueMustBeLocalAndMutable",",,,") )
+    static member tastValueMustBeMutable() = (256, GetStringFunc("tastValueMustBeMutable",",,,") )
     /// Invalid mutation of a constant expression. Consider copying the expression to a mutable local, e.g. 'let mutable x = ...'.
     /// (Originally from ..\FSComp.txt:87)
     static member tastInvalidMutationOfConstant() = (257, GetStringFunc("tastInvalidMutationOfConstant",",,,") )
@@ -4394,7 +4394,7 @@ type internal SR private() =
         ignore(GetString("tastInvalidFormForPropertyGetter"))
         ignore(GetString("tastInvalidFormForPropertySetter"))
         ignore(GetString("tastUnexpectedByRef"))
-        ignore(GetString("tastValueMustBeLocalAndMutable"))
+        ignore(GetString("tastValueMustBeMutable"))
         ignore(GetString("tastInvalidMutationOfConstant"))
         ignore(GetString("tastValueHasBeenCopied"))
         ignore(GetString("tastRecursiveValuesMayNotBeInConstructionOfTuple"))

@@ -554,6 +554,18 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
+        public string TreatSpecificWarningsAsWarnings
+        {
+            get
+            {
+                return GetConfigurationProperty(ProjectFileConstants.WarningsNotAsErrors, false);
+            }
+            set
+            {
+                SetConfigurationProperty(ProjectFileConstants.WarningsNotAsErrors, value);
+            }
+        }
+
         public string DocumentationFile
         {
             get
