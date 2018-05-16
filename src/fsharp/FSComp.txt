@@ -1426,3 +1426,4 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3222,implicitlyDiscardedSequenceInSequenceExpression,"This expression returns a value of type '%s' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'."
 3223,ilreadFileChanged,"The file '%s' changed on disk unexpectedly, please reload."
 3224,writeToReadOnlyByref,"The byref pointer is readonly, so this write is not permitted."
+3225,readOnlyAttributeOnStructWithMutableField,"A ReadOnly attribute has been applied to a struct type with a mutable field."

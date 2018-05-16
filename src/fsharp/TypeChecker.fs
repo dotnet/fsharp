@@ -3986,7 +3986,7 @@ let buildApp cenv expr resultTy arg m =
          when (valRefEq g vf g.nativeptr_tobyref_vref) -> 
 
         let argTy = tyOfExpr g arg
-        let resultTy = mkByrefTyWithInference g argTy (NewInferenceType())  // resultTy
+        let resultTy = mkByrefTyWithInference g argTy (NewByRefKindInferenceType g m)  // resultTy
         expr.SupplyArgument(arg, m), resultTy             
 
     // Special rules for building applications of the '&expr' or '&&expr' operators, both of which get the
@@ -4003,7 +4003,7 @@ let buildApp cenv expr resultTy arg m =
             if readonly && valRefEq g vf g.addrof_vref then
                 mkInByrefTy g argTy
             else
-                mkByrefTyWithInference g argTy (NewInferenceType())  // resultTy
+                mkByrefTyWithInference g argTy (NewByRefKindInferenceType g m)  // resultTy
 
         MakeApplicableExprNoFlex cenv (wrap(e1a')), resultTy
 
@@ -8296,7 +8296,7 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
                 // See RFC FS-1053.md
                 let exprty = 
                     if isAddrOf && isByrefTy cenv.g exprty then 
-                        mkByrefTyWithInference cenv.g (destByrefTy cenv.g exprty) (NewInferenceType()) 
+                        mkByrefTyWithInference cenv.g (destByrefTy cenv.g exprty) (NewByRefKindInferenceType cenv.g mExpr) 
                     else 
                         exprty
 

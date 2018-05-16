@@ -1560,7 +1560,7 @@ type MethInfo =
              let pty = 
                  // add the "annotation" about whether this is an inref, outref or plain byref
                  if isByrefTy g pty && isInArg then mkInByrefTy g (destByrefTy g pty)
-                 elif isByrefTy g pty && isOutArg then mkOutrefTy g (destByrefTy g pty)
+                 elif isByrefTy g pty && isOutArg then mkOutByrefTy g (destByrefTy g pty)
                  else pty
              ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfoInfo, nmOpt, reflArgInfo, pty)))
 

@@ -1601,12 +1601,16 @@ let CheckEntityDefn cenv env (tycon:Entity) =
         | _ -> ()
 
 
+    let tcref = mkLocalTyconRef tycon
     let interfaces = 
-        AllSuperTypesOfType cenv.g cenv.amap tycon.Range AllowMultiIntfInstantiations.Yes (generalizedTyconRef (mkLocalTyconRef tycon)) 
+        AllSuperTypesOfType cenv.g cenv.amap tycon.Range AllowMultiIntfInstantiations.Yes (generalizedTyconRef tcref) 
             |> List.filter (isInterfaceTy cenv.g)
             
     if tycon.IsFSharpInterfaceTycon then 
         List.iter visitType interfaces // Check inherited interface is as accessible
+
+    if not (isRecdOrStructTyconRefLogicallyReadOnly cenv.g tcref) && isRecdOrStructTyconRefReadOnly cenv.g m tcref then
+        errorR(Error(FSComp.SR.readOnlyAttributeOnStructWithMutableField(),m))
  
     if cenv.reportErrors then 
         if not tycon.IsTypeAbbrev then 

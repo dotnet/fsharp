@@ -574,7 +574,7 @@ let mkInByrefTy (g:TcGlobals) ty =
     else
         mkByrefTy g ty
 
-let mkOutrefTy (g:TcGlobals) ty = 
+let mkOutByrefTy (g:TcGlobals) ty = 
     if g.outref_tcr.CanDeref then // If not using sufficient FSharp.Core, then outref<T> = byref<T>, see RFC FS-1053.md
         TType_app (g.outref_tcr, [ty])
     else
@@ -5642,15 +5642,19 @@ let mkAndSimplifyMatch spBind exprm matchm ty tree targets  =
 type Mutates = AddressOfOp | DefinitelyMutates | PossiblyMutates | NeverMutates
 exception DefensiveCopyWarning of string * range 
 
+let isRecdOrStructTyconRefLogicallyReadOnly (g: TcGlobals) (tcref: TyconRef) =
+    tcref.CanDeref &&
+    not (isRecdOrUnionOrStructTyconRefDefinitelyMutable tcref) ||
+    tyconRefEq g tcref g.decimal_tcr ||
+    tyconRefEq g tcref g.date_tcr
+
 let isRecdOrStructTyconRefReadOnly (g: TcGlobals) m (tcref: TyconRef) =
     tcref.CanDeref &&
     match tcref.TryIsReadOnly with 
     | Some res -> res
     | None -> 
         let res = 
-            not (isRecdOrUnionOrStructTyconRefDefinitelyMutable tcref) ||
-            tyconRefEq g tcref g.decimal_tcr ||
-            tyconRefEq g tcref g.date_tcr ||
+            isRecdOrStructTyconRefLogicallyReadOnly g tcref ||
             TyconRefHasAttribute g m g.attrib_IsReadOnlyAttribute tcref
         tcref.SetIsReadOnly res
         res

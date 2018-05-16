@@ -1,7 +1,8 @@
 // #Conformance #Constants #Recursion #LetBindings #MemberDefinitions #Mutable 
 #if TESTS_AS_APP
-module Core_apporder
+module Core_byrefs
 #endif
+
 
 #light
 let failures = ref false
@@ -38,99 +39,217 @@ module TryGetValueTests =
     check "cweweoiwekl3" v2 false
     check "cweweoiwekl4" res 4
 
-module FSharpDeclaredOutParamTest  = 
+
+module ByRefParam  = 
+    type C() = 
+         static member M(x: byref<int>) = x <- 5
+    let mutable res = 9
+    let v =  C.M(&res)
+    check "cwvereweoiwekl4" res 5
+
+    let minfo = typeof<C>.GetMethod("M")
+    check "cwnoreeker1" (minfo.GetParameters().[0].IsIn) false
+    check "cwnoreeker2" (minfo.GetParameters().[0].IsOut) false
+    check "cwnoreeker3" (minfo.ReturnParameter.IsIn) false
+    check "cwnoreeker4" (minfo.ReturnParameter.IsOut) false
+
+module ByRefParam_ExplicitOutAttribute  = 
     type C() = 
          static member M([<System.Runtime.InteropServices.Out>] x: byref<int>) = x <- 5
     let mutable res = 9
     let v =  C.M(&res)
     check "cwvereweoiwekl4" res 5
 
+    let minfo = typeof<C>.GetMethod("M")
+    check "cwnoreeker5" (minfo.GetParameters().[0].IsIn) false
+    check "cwnoreeker6" (minfo.GetParameters().[0].IsOut) true
+    check "cwnoreekers1" (minfo.ReturnParameter.GetRequiredCustomModifiers().Length) 0
+    check "cwnoreeker7" (minfo.ReturnParameter.IsIn) false
+    check "cwnoreeker8" (minfo.ReturnParameter.IsOut) false
 
-module FSharpDeclaredOutParamTest2  = 
+module ByRefParam_ExplicitInAttribute  = 
+    type C() = 
+         static member M([<System.Runtime.InteropServices.In>] x: byref<int>) = x <- 5
+    let mutable res = 9
+    let v =  C.M(&res)
+    check "cwvereweoiwekl4" res 5
+
+    let minfo = typeof<C>.GetMethod("M")
+    check "cwnoreeker9" (minfo.GetParameters().[0].IsIn) true
+    check "cwnoreekerq" (minfo.GetParameters().[0].IsOut) false
+    check "cwnoreekers2" (minfo.ReturnParameter.GetRequiredCustomModifiers().Length) 0
+    check "cwnoreekerw" (minfo.ReturnParameter.IsIn) false
+    check "cwnoreekere" (minfo.ReturnParameter.IsOut) false
+
+module ByRefReturn  = 
+    type C() = 
+         static member M(x: byref<int>) = x <- x + 1; &x
+    let mutable res = 9
+    let v =  C.M(&res)
+    check "cwvereweoiwvw4" v 10
+
+    let minfo = typeof<C>.GetMethod("M")
+    check "cwnoreekerr" (minfo.ReturnParameter.IsIn) false
+    check "cwnoreekert" (minfo.ReturnParameter.IsOut) false
+
+
+module Slot_ByRefReturn  = 
+    type I = 
+         abstract M : x: byref<int> -> byref<int>
+    type C() = 
+         interface I with 
+             member __.M(x: byref<int>) = x <- 5; &x
+    let mutable res = 9
+    let v =  (C() :> I).M(&res)
+    check "cweweoiwek28989" res 5
+    check "cweweoiwek28989" v 5
+
+    let minfo = typeof<I>.GetMethod("M")
+    check "cwnoreekery" (minfo.GetParameters().[0].IsIn) false
+    check "cwnoreekeru" (minfo.GetParameters().[0].IsOut) false
+    check "cwnoreekeri" (minfo.ReturnParameter.IsIn) false
+    check "cwnoreekers" (minfo.ReturnParameter.GetRequiredCustomModifiers().Length) 0
+    check "cwnoreekero" (minfo.ReturnParameter.IsOut) false
+
+module InRefReturn  = 
+    type C() = 
+         static member M(x: inref<int>) = &x
+    let mutable res = 9
+    let v =  C.M(&res)
+    check "cwvereweoiwvw4" v 9
+
+    let minfo = typeof<C>.GetMethod("M")
+    check "cwnoreekerp" (minfo.GetParameters().[0].IsIn) true
+    check "cwnoreekera" (minfo.GetParameters().[0].IsOut) false
+    check "cwnoreekers3" (minfo.ReturnParameter.IsIn) false // has modreq 'In' but reflection never returns true for ReturnParameter.IsIn
+    check "cwnoreekers4" (minfo.ReturnParameter.GetRequiredCustomModifiers().Length) 1
+    check "cwnoreekerd" (minfo.ReturnParameter.IsOut) false
+
+module Slot_InRefReturn  = 
+    type I = 
+         abstract M : x: inref<int> -> inref<int>
+    type C() = 
+         interface I with 
+             member __.M(x: inref<int>) = &x
+    let mutable res = 9
+    let v =  (C() :> I).M(&res)
+    check "cweweoiwek28989" res 9
+    check "cweweoiwek28989" v 9
+
+    let minfo = typeof<I>.GetMethod("M")
+    check "cwnoreekerp" (minfo.GetParameters().[0].IsIn) true
+    check "cwnoreekera" (minfo.GetParameters().[0].IsOut) false
+    check "cwnoreekers5" (minfo.ReturnParameter.IsIn) false // has modreq 'In' but reflection never returns true for ReturnParameter.IsIn
+    check "cwnoreekers6" (minfo.ReturnParameter.GetRequiredCustomModifiers().Length) 1
+    check "cwnoreekerd" (minfo.ReturnParameter.IsOut) false
+
+
+module OutRefParam_ExplicitOutAttribute  = 
     type C() = 
          static member M([<System.Runtime.InteropServices.Out>] x: outref<int>) = x <- 5
     let mutable res = 9
-    let v =  C.M(&res)
+    C.M(&res)
     check "cweweoiweklceew4" res 5
 
-module FSharpDeclaredOutParamTest3  = 
+module OutRefParam  = 
     type C() = 
          static member M(x: outref<int>) = x <- 5
     let mutable res = 9
-    let v =  C.M(&res)
+    C.M(&res)
     check "cweweoiwek28989" res 5
 
-module FSharpDeclaredOverloadedOutParamTest  = 
+module Slot_OutRefParam  = 
+    type I = 
+         abstract M : x: outref<int> -> unit
+    type C() = 
+         interface I with 
+             member __.M(x: outref<int>) = x <- 5
+    let mutable res = 9
+    (C() :> I).M(&res)
+    check "cweweoiwek28989" res 5
+
+module ByRefParam_OverloadedTest_ExplicitOutAttribute  = 
     type C() = 
          static member M(a: int, [<System.Runtime.InteropServices.Out>] x: byref<int>) = x <- 7
          static member M(a: string, [<System.Runtime.InteropServices.Out>] x: byref<int>) = x <- 8
     let mutable res = 9
-    let v =  C.M("a", &res)
+    C.M("a", &res)
     check "cweweoiwek2cbe9" res 8
-    let v2 =  C.M(3, &res)
+    C.M(3, &res)
     check "cweweoiwek28498" res 7
 
-module FSharpDeclaredOverloadedOutParamTest2  = 
+module OutRefParam_Overloaded_ExplicitOutAttribute   = 
     type C() = 
          static member M(a: int, [<System.Runtime.InteropServices.Out>] x: outref<int>) = x <- 7
          static member M(a: string, [<System.Runtime.InteropServices.Out>] x: outref<int>) = x <- 8
     let mutable res = 9
-    let v =  C.M("a", &res)
+    C.M("a", &res)
     check "cweweoiwek2v90" res 8
-    let v2 =  C.M(3, &res)
+    C.M(3, &res)
     check "cweweoiwek2c98" res 7
 
-module FSharpDeclaredOverloadedOutParamTest3  = 
+module OutRefParam_Overloaded  = 
     type C() = 
          static member M(a: int, x: outref<int>) = x <- 7
          static member M(a: string, x: outref<int>) = x <- 8
     let mutable res = 9
-    let v =  C.M("a", &res)
+    C.M("a", &res)
     check "cweweoiwek2v99323" res 8
-    let v2 =  C.M(3, &res)
+    C.M(3, &res)
     check "cweweoiwe519" res 7
 
-module FSharpDeclaredInParamTest  = 
+module InRefParam_ExplicitInAttribute  = 
     type C() = 
          static member M([<System.Runtime.InteropServices.In>] x: inref<int>) = ()
     let mutable res = 9
-    let v =  C.M(&res)
+    C.M(&res)
+    check "cweweoiwe519btr" res 9
 
-module FSharpDeclaredInParamTest2  = 
+module InRefParam_ExplicitInAttributeDateTime = 
     type C() = 
-         static member M([<System.Runtime.InteropServices.In>] x: inref<System.DateTime>) = ()
+         static member M([<System.Runtime.InteropServices.In>] x: inref<System.DateTime>) = x
+    let res = System.DateTime.Now
+    let v = C.M(&res)
+    check "cweweoiwe519cw" v res
+
+module InRefParam  = 
+    type C() = 
+         static member M(x: inref<System.DateTime>) = x
     let res = System.DateTime.Now
     let v =  C.M(&res)
+    check "cweweoiwe51btw" v res
 
-module FSharpDeclaredInParamTest3  = 
-    type C() = 
-         static member M(x: inref<System.DateTime>) = ()
-    let res = System.DateTime.Now
-    let v =  C.M(&res)
+    let minfo = typeof<C>.GetMethod("M")
+    check "cwnoreekerf" (minfo.GetParameters().[0].IsIn) true
+    check "cwnoreekerg" (minfo.GetParameters().[0].IsOut) false
 
-module FSharpDeclaredInParamTest3a  = 
+module InRefParam_DateTime   = 
     type C() = 
-         static member M(x: inref<System.DateTime>) = ()
+         static member M(x: inref<System.DateTime>) = x
     let w = System.DateTime.Now
     let v =  C.M(w)
+    check "cweweoiwe51btw" v w
 
-module FSharpDeclaredInParamTest3b  = 
+module InRefParam_DateTime_ImplicitAddressOfAtCallSite  = 
     type C() = 
-         static member M(x: inref<System.DateTime>) = ()
+         static member M(x: inref<System.DateTime>) = x
     let v =  C.M(System.DateTime.Now)
+    check "cweweoiwe51btw" v.Date System.DateTime.Now.Date
 
-module FSharpDeclaredInParamTest3c  = 
+module InRefParam_DateTime_ImplicitAddressOfAtCallSite2   = 
     type C() = 
-         static member M(x: inref<System.DateTime>) = ()
+         static member M(x: inref<System.DateTime>) = x
     let v =  C.M(System.DateTime.Now.AddDays(1.0))
+    check "cweweoiwe51btw" v.Date (System.DateTime.Now.AddDays(1.0).Date)
 
-module FSharpDeclaredInParamTest3d  = 
+module InRefParam_DateTime_ImplicitAddressOfAtCallSite3  = 
     type C() = 
-         static member M(x: inref<System.DateTime>) = ()
+         static member M(x: inref<System.DateTime>) = x
     let mutable w = System.DateTime.Now
     let v =  C.M(w)
+    check "cweweoiwe51btw" v w
 
-module FSharpDeclaredInParamTest3e  = 
+module InRefParam_DateTime_ImplicitAddressOfAtCallSite4  = 
     type C() = 
          static member M(x: inref<System.DateTime>) = x
     let date = System.DateTime.Now.Date
@@ -138,7 +257,7 @@ module FSharpDeclaredInParamTest3e  =
     let v =  C.M(w.[0])
     check "lmvjvwo1" v date
 
-module FSharpDeclaredInParamTest4  = 
+module InRefParam_Generic_ExplicitAddressOfAttCallSite1 = 
     type C() = 
          static member M(x: inref<'T>) = x
     let res = "abc"
@@ -146,7 +265,7 @@ module FSharpDeclaredInParamTest4  =
     check "lmvjvwo2" res "abc"
     check "lmvjvwo3" v "abc"
 
-module FSharpDeclaredInParamTest5  = 
+module InRefParam_Generic_ExplicitAddressOfAttCallSite2  = 
     type C() = 
          static member M(x: inref<'T>) = x
     let res = "abc"

@@ -935,7 +935,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.seq_tcr        = v_seq_tcr
   member val seq_base_tcr = mk_MFCompilerServices_tcref fslibCcu "GeneratedSequenceBase`1"
   member val byrefkind_In_tcr =  mkNonLocalTyconRef fslib_MFByRefKinds_nleref "In"
-  member val byrefkind_Out_tcr =  mkNonLocalTyconRef fslib_MFByRefKinds_nleref "In"
+  member val byrefkind_Out_tcr =  mkNonLocalTyconRef fslib_MFByRefKinds_nleref "Out"
   member val byrefkind_InOut_tcr =  mkNonLocalTyconRef fslib_MFByRefKinds_nleref "InOut"
   member val measureproduct_tcr = mk_MFCompilerServices_tcref fslibCcu "MeasureProduct`2"
   member val measureinverse_tcr = mk_MFCompilerServices_tcref fslibCcu "MeasureInverse`1"

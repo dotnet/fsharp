@@ -166,7 +166,7 @@ val mkLazyOr   : TcGlobals -> range -> Expr -> Expr -> Expr
 val mkByrefTy  : TcGlobals -> TType -> TType
 val mkByrefTyWithInference  : TcGlobals -> TType -> TType -> TType
 val mkInByrefTy  : TcGlobals -> TType -> TType
-val mkOutrefTy  : TcGlobals -> TType -> TType
+val mkOutByrefTy  : TcGlobals -> TType -> TType
 
 //-------------------------------------------------------------------------
 // Make construction operations
@@ -1104,6 +1104,7 @@ val isExnDefinitelyMutable : TyconRef -> bool
 val isUnionCaseFieldMutable : TcGlobals -> UnionCaseRef -> int -> bool
 val isExnFieldMutable : TyconRef -> int -> bool
 val isRecdOrStructTyconRefReadOnly: TcGlobals -> range -> TyconRef -> bool
+val isRecdOrStructTyconRefLogicallyReadOnly: TcGlobals -> TyconRef -> bool
 val isRecdOrStructTyReadOnly: TcGlobals -> range -> TType -> bool
 
 val useGenuineField : Tycon -> RecdField -> bool 

@@ -80,6 +80,12 @@ let NewInferenceType () = mkTyparTy (NewTypar (TyparKind.Type, TyparRigidity.Fle
 let NewErrorType () = mkTyparTy (NewErrorTypar ())
 let NewErrorMeasure () = Measure.Var (NewErrorMeasureVar ())
 
+let NewByRefKindInferenceType (g: TcGlobals) m = 
+    let tp = NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, HeadTypeStaticReq, true), false, TyparDynamicReq.No, [], false, false)
+    if g.byrefkind_InOut_tcr.CanDeref then
+        tp.SetConstraints [TyparConstraint.DefaultsTo(10, TType_app(g.byrefkind_InOut_tcr, []), m)]
+    mkTyparTy tp
+
 let NewInferenceTypes l = l |> List.map (fun _ -> NewInferenceType ()) 
 
 // QUERY: should 'rigid' ever really be 'true'? We set this when we know 

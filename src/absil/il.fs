@@ -1449,6 +1449,8 @@ type ILReturn =
 
     member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
 
+    member x.WithCustomAttrs(customAttrs) = { x with CustomAttrsStored = storeILCustomAttrs customAttrs }
+
 type ILOverridesSpec = 
     | OverridesSpec of ILMethodRef * ILType
 

@@ -6992,6 +6992,11 @@
         <target state="new">A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</target>
         <note />
       </trans-unit>
+      <trans-unit id="readOnlyAttributeOnStructWithMutableField">
+        <source>A ReadOnly attribute has been applied to a struct type with a mutable field.</source>
+        <target state="new">A ReadOnly attribute has been applied to a struct type with a mutable field.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
