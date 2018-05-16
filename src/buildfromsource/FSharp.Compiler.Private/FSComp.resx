@@ -4312,4 +4312,7 @@
   <data name="ilreadFileChanged" xml:space="preserve">
     <value>The file '{0}' changed on disk unexpectedly, please reload.</value>
   </data>
+  <data name="writeToReadOnlyByref" xml:space="preserve">
+    <value>The byref pointer is readonly, so this write is not permitted.</value>
+  </data>
 </root>

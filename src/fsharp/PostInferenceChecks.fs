@@ -288,35 +288,35 @@ let CheckForByrefLikeType cenv env m typ check =
 /// For TObjExprMethod(v,e) nodes we always know the legitimate syntactic arguments. 
 let CheckEscapes cenv allowProtected m syntacticArgs body = (* m is a range suited to error reporting *)
     if cenv.reportErrors then 
-        let cantBeFree v = 
-           // First, if v is a syntactic argument, then it can be free since it was passed in. 
+        let cantBeFree (v: Val) = 
+           // If v is a syntactic argument, then it can be free since it was passed in. 
            // The following can not be free: 
            //   a) BaseVal can never escape. 
            //   b) Byref typed values can never escape. 
            // Note that: Local mutables can be free, as they will be boxed later.
 
            // These checks must correspond to the tests governing the error messages below. 
-           let passedIn = ListSet.contains valEq v syntacticArgs 
-           if passedIn then
-               false
-           else
-               (v.BaseOrThisInfo = BaseVal) ||
-               (isByrefLikeTy cenv.g m v.Type)
+           ((v.BaseOrThisInfo = BaseVal) || (isByrefLikeTy cenv.g m v.Type)) &&
+           not (ListSet.contains valEq v syntacticArgs)
 
         let frees = freeInExpr CollectLocals body
         let fvs   = frees.FreeLocals 
+
         if not allowProtected && frees.UsesMethodLocalConstructs  then
             errorR(Error(FSComp.SR.chkProtectedOrBaseCalled(), m))
         elif Zset.exists cantBeFree fvs then 
             let v =  List.find cantBeFree (Zset.elements fvs) 
-            (* byref error before mutable error (byrefs are mutable...). *)
+
+            // byref error before mutable error (byrefs are mutable...). 
             if (isByrefLikeTy cenv.g m v.Type) then
                 // Inner functions are not guaranteed to compile to method with a predictable arity (number of arguments). 
                 // As such, partial applications involving byref arguments could lead to closures containing byrefs. 
                 // For safety, such functions are assumed to have no known arity, and so can not accept byrefs. 
                 errorR(Error(FSComp.SR.chkByrefUsedInInvalidWay(v.DisplayName), m))
+
             elif v.BaseOrThisInfo = BaseVal then
                 errorR(Error(FSComp.SR.chkBaseUsedInInvalidWay(), m))
+
             else
                 (* Should be dead code, unless governing tests change *)
                 errorR(InternalError(FSComp.SR.chkVariableUsedInInvalidWay(v.DisplayName), m))
@@ -931,7 +931,7 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
         | Some membInfo -> testHookMemberBody membInfo body
         
         // Check escapes in the body.  Allow access to protected things within members.
-        let freesOpt = CheckEscapes cenv (Option.isSome memInfo) m syntacticArgs body
+        let freesOpt = CheckEscapes cenv memInfo.IsSome m syntacticArgs body
 
         //  no reraise under lambda expression
         CheckNoReraise cenv freesOpt body 

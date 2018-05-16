@@ -560,23 +560,42 @@ let tryNormalizeMeasureInType g ty =
 // Some basic type builders
 //---------------------------------------------------------------------------
 
-let mkNativePtrTy (g:TcGlobals) ty = TType_app (g.nativeptr_tcr, [ty])
-let mkByrefTy (g:TcGlobals) ty = TType_app (g.byref_tcr, [ty])
+let mkNativePtrTy (g:TcGlobals) ty = 
+    assert g.nativeptr_tcr.CanDeref // this should always be available, but check anyway
+    TType_app (g.nativeptr_tcr, [ty])
 
-let mkInByrefTy (g:TcGlobals) ty = TType_app (g.inref_tcr, [ty])
-let mkOutrefTy (g:TcGlobals) ty = TType_app (g.outref_tcr, [ty])
-let mkByrefTyWithFlag g readonly ty = (if readonly then mkInByrefTy g ty else mkByrefTy g ty)
+let mkByrefTy (g:TcGlobals) ty = 
+    assert g.byref_tcr.CanDeref // this should always be available, but check anyway
+    TType_app (g.byref_tcr, [ty])
+
+let mkInByrefTy (g:TcGlobals) ty = 
+    if g.inref_tcr.CanDeref then // If not using sufficient FSharp.Core, then inref<T> = byref<T>, see RFC FS-1053.md
+        TType_app (g.inref_tcr, [ty])
+    else
+        mkByrefTy g ty
+
+let mkOutrefTy (g:TcGlobals) ty = 
+    if g.outref_tcr.CanDeref then // If not using sufficient FSharp.Core, then outref<T> = byref<T>, see RFC FS-1053.md
+        TType_app (g.outref_tcr, [ty])
+    else
+        mkByrefTy g ty
+
+let mkByrefTyWithFlag g readonly ty = 
+    if readonly then 
+        mkInByrefTy g ty 
+    else 
+        mkByrefTy g ty
 
 let mkByref2Ty (g:TcGlobals) ty1 ty2 = 
-    assert g.byref2_tcr.CanDeref // check we are using FSharp.Core 4.5.0.0+
+    assert g.byref2_tcr.CanDeref // check we are using sufficient FSharp.Core, caller should check this
     TType_app (g.byref2_tcr, [ty1; ty2])
 
 let mkVoidPtrTy (g:TcGlobals) = 
-    assert g.voidptr_tcr.CanDeref // check we are using FSharp.Core 4.5.0.0+ 
+    assert g.voidptr_tcr.CanDeref // check we are using sufficient FSharp.Core , caller should check this
     TType_app (g.voidptr_tcr, [])
 
 let mkByrefTyWithInference (g:TcGlobals) ty1 ty2 = 
-    if g.byref2_tcr.CanDeref then 
+    if g.byref2_tcr.CanDeref then // If not using sufficient FSharp.Core, then inref<T> = byref<T>, see RFC FS-1053.md
         TType_app (g.byref2_tcr, [ty1; ty2]) 
     else 
         TType_app (g.byref_tcr, [ty1]) 
@@ -693,9 +712,15 @@ let rec stripTyEqnsA g canShortcut ty =
         | Some abbrevTy -> 
             stripTyEqnsA g canShortcut (applyTyconAbbrev abbrevTy tycon tinst)
         | None -> 
-            // Add the equation `byref<'T> = byref<'T, ByRefKinds.InOut> for F# 4.5+ when using FSharp.Core 4.5.0.0+
+            // This is the point where we get to add additional coditional normalizing equations 
+            // into the type system. Such power!
+            // 
+            // Add the equation byref<'T> = byref<'T, ByRefKinds.InOut> for when using sufficient FSharp.Core
+            // See RFC FS-1053.md
             if tyconRefEq g tcref g.byref_tcr && g.byref2_tcr.CanDeref  && g.byrefkind_InOut_tcr.CanDeref then 
                 mkByref2Ty g tinst.[0]  (TType_app(g.byrefkind_InOut_tcr, []))
+
+            // Add the equation double<1> = double for units of measure.
             elif tycon.IsMeasureableReprTycon && List.forall (isDimensionless g) tinst then
                 stripTyEqnsA g canShortcut (reduceTyconMeasureableOrProvided g tycon tinst)
             else 
@@ -1550,7 +1575,7 @@ let destListTy (g:TcGlobals) ty =
     | AppTy g (tcref, [ty]) when tyconRefEq g tcref g.list_tcr_canon -> ty
     | _ -> failwith "destListTy"
 
-let isTypeConstructorEqualToOptional g tcOpt tc = 
+let tyconRefEqOpt g tcOpt tc = 
     match tcOpt with
     | None -> false
     | Some tc2 -> tyconRefEq g tc2 tc
@@ -2907,19 +2932,20 @@ let TyconRefHasAttribute g m attribSpec tcref  =
                     (fun _ -> Some ())
         |> Option.isSome
 
-let isByrefLikeTyconRef g m (tcref: TyconRef) = 
+// See RFC FS-1053.md
+let isByrefLikeTyconRef (g: TcGlobals) m (tcref: TyconRef) = 
     tcref.CanDeref &&
     match tcref.TryIsByRefLike with 
     | Some res -> res
     | None -> 
        let res = 
-           tyconRefEq g g.byref_tcr tcref ||
+           (g.byref_tcr.CanDeref && tyconRefEq g g.byref_tcr tcref) ||
            (g.byref2_tcr.CanDeref && tyconRefEq g g.byref2_tcr tcref) ||
-           tyconRefEq g g.inref_tcr tcref ||
-           tyconRefEq g g.outref_tcr tcref ||
-           isTypeConstructorEqualToOptional g g.system_TypedReference_tcref tcref ||
-           isTypeConstructorEqualToOptional g g.system_ArgIterator_tcref tcref ||
-           isTypeConstructorEqualToOptional g g.system_RuntimeArgumentHandle_tcref tcref ||
+           (g.inref_tcr.CanDeref && tyconRefEq g g.inref_tcr tcref) ||
+           (g.outref_tcr.CanDeref && tyconRefEq g g.outref_tcr tcref) ||
+           tyconRefEqOpt g g.system_TypedReference_tcref tcref ||
+           tyconRefEqOpt g g.system_ArgIterator_tcref tcref ||
+           tyconRefEqOpt g g.system_RuntimeArgumentHandle_tcref tcref ||
            TyconRefHasAttribute g m g.attrib_IsByRefLikeAttribute tcref
        tcref.SetIsByRefLike res
        res
@@ -2933,7 +2959,7 @@ let isByrefLikeTy g m ty =
 
 let destByrefTy g ty = 
     match ty |> stripTyEqns g with
-    | TType_app(tcref, [x; _]) when g.byref2_tcr.CanDeref && tyconRefEq g g.byref2_tcr tcref -> x // F# 4.5 with FSharp.Core 4.5.0.0+
+    | TType_app(tcref, [x; _]) when g.byref2_tcr.CanDeref && tyconRefEq g g.byref2_tcr tcref -> x // Check sufficient FSharp.Core
     | TType_app(tcref, [x]) when tyconRefEq g g.byref_tcr tcref -> x // all others
     | _ -> failwith "destByrefTy: not a byref type"
 

@@ -2100,32 +2100,37 @@ module GeneralizationHelpers =
 
     let rec IsGeneralizableValue g t = 
         match t with 
-        | Expr.Lambda _ | Expr.TyLambda _ | Expr.Const _ | Expr.Val _ -> true
+        | Expr.Lambda _ | Expr.TyLambda _ | Expr.Const _ -> true
+
+        // let f(x: byref<int>) = let v = &x in ... shouldn't generalize "v"
+        | Expr.Val (vref, _, m) -> not (isByrefLikeTy g m vref.Type) 
 
         // Look through coercion nodes corresponding to introduction of subsumption 
         | Expr.Op(TOp.Coerce, [inputTy;actualTy], [e1], _) when isFunTy g actualTy && isFunTy g inputTy -> 
             IsGeneralizableValue g e1
 
         | Expr.Op(op, _, args, _) ->
-            match op with 
-            | TOp.Tuple _ -> true
-            | TOp.UnionCase uc -> not (isUnionCaseRefDefinitelyMutable uc)
-            | TOp.Recd(ctorInfo, tcref) -> 
-                match ctorInfo with 
-                | RecdExpr -> not (isRecdOrUnionOrStructTyconRefDefinitelyMutable tcref)
-                | RecdExprIsObjInit -> false
-            | TOp.Array -> isNil args
-            | TOp.ExnConstr ec -> not (isExnDefinitelyMutable ec)
 
-            | TOp.ILAsm([], _) -> true
+            let canGeneralizeOp = 
+                match op with 
+                | TOp.Tuple _ -> true
+                | TOp.UnionCase uc -> not (isUnionCaseRefDefinitelyMutable uc)
+                | TOp.Recd(ctorInfo, tcref) -> 
+                    match ctorInfo with 
+                    | RecdExpr -> not (isRecdOrUnionOrStructTyconRefDefinitelyMutable tcref)
+                    | RecdExprIsObjInit -> false
+                | TOp.Array -> isNil args
+                | TOp.ExnConstr ec -> not (isExnDefinitelyMutable ec)
+                | TOp.ILAsm([], _) -> true
+                | _ -> false
 
-            | _ -> false
-            && List.forall (IsGeneralizableValue g) args
+            canGeneralizeOp && List.forall (IsGeneralizableValue g) args
 
         | Expr.LetRec(binds, body, _, _)  ->
             binds |> List.forall (fun b -> not b.Var.IsMutable) &&
             binds |> List.forall (fun b -> IsGeneralizableValue g b.Expr) &&
             IsGeneralizableValue g body
+
         | Expr.Let(bind, body, _, _) -> 
             not bind.Var.IsMutable &&
             IsGeneralizableValue g bind.Expr &&
@@ -3975,16 +3980,27 @@ let buildApp cenv expr resultTy arg m =
         // exprty is of type: "unit -> 'a". Break it and store the 'a type here, used later as return type. 
         MakeApplicableExprNoFlex cenv (mkCompGenSequential m arg (mkReraise m resultTy)), resultTy
 
+    // Special rules for NativePtr.ofByRef to generalize result.
+    // See RFC FS-1053.md
+    | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [], _), _), _ 
+         when (valRefEq g vf g.nativeptr_tobyref_vref) -> 
+
+        let argTy = tyOfExpr g arg
+        let resultTy = mkByrefTyWithInference g argTy (NewInferenceType())  // resultTy
+        expr.SupplyArgument(arg, m), resultTy             
+
     // Special rules for building applications of the '&expr' or '&&expr' operators, both of which get the
     // address of an expression.
+    //
+    // See also RFC FS-1053.md
     | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [], _), _), _ 
-         when (valRefEq g vf g.addrof_vref || valRefEq g vf g.addrof2_vref) -> 
+         when (valRefEq g vf g.addrof_vref || valRefEq g vf g.addrof2_vref || valRefEq g vf g.nativeptr_tobyref_vref) -> 
         if valRefEq g vf g.addrof2_vref then warning(UseOfAddressOfOperator(m))
         let wrap, e1a', readonly = mkExprAddrOfExpr g true false AddressOfOp arg (Some(vf)) m
         // Assert the result type to be readonly if we couldn't take the address
         let resultTy = 
             let argTy = tyOfExpr g arg
-            if readonly then
+            if readonly && valRefEq g vf g.addrof_vref then
                 mkInByrefTy g argTy
             else
                 mkByrefTyWithInference g argTy (NewInferenceType())  // resultTy
@@ -8277,6 +8293,7 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
             if not (isNil delayed) then 
 
                 // We generate a tag inference parameter to the return type for "&x" and 'NativePtr.toByRef'
+                // See RFC FS-1053.md
                 let exprty = 
                     if isAddrOf && isByrefTy cenv.g exprty then 
                         mkByrefTyWithInference cenv.g (destByrefTy cenv.g exprty) (NewInferenceType()) 
@@ -8298,6 +8315,7 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
             | Some (_, resultTy) -> 
                 
                 // We add tag parameter to the return type for "&x" and 'NativePtr.toByRef'
+                // See RFC FS-1053.md
                 let isAddrOf = 
                     match expr with 
                     | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [], _), _) 

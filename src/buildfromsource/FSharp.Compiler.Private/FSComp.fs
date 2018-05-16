@@ -3376,7 +3376,7 @@ type internal SR private() =
     /// No implementation files specified
     /// (Originally from ..\FSComp.txt:1115)
     static member fscNoImplementationFiles() = (2002, GetStringFunc("fscNoImplementationFiles",",,,") )
-    /// An %s specified version '%s', but this value is invalid and has been ignored
+    /// The attribute %s specified version '%s', but this value is invalid and has been ignored
     /// (Originally from ..\FSComp.txt:1116)
     static member fscBadAssemblyVersion(a0 : System.String, a1 : System.String) = (2003, GetStringFunc("fscBadAssemblyVersion",",,,%s,,,%s,,,") a0 a1)
     /// Conflicting options specified: 'win32manifest' and 'win32res'. Only one of these can be used.
@@ -4309,6 +4309,9 @@ type internal SR private() =
     /// The file '%s' changed on disk unexpectedly, please reload.
     /// (Originally from ..\FSComp.txt:1427)
     static member ilreadFileChanged(a0 : System.String) = (3223, GetStringFunc("ilreadFileChanged",",,,%s,,,") a0)
+    /// The byref pointer is readonly, so this write is not permitted.
+    /// (Originally from ..\FSComp.txt:1428)
+    static member writeToReadOnlyByref() = (3224, GetStringFunc("writeToReadOnlyByref",",,,") )
 
     /// Call this method once to validate that all known resources are valid; throws if not
     static member RunStartupValidation() =
@@ -5710,4 +5713,5 @@ type internal SR private() =
         ignore(GetString("implicitlyDiscardedInSequenceExpression"))
         ignore(GetString("implicitlyDiscardedSequenceInSequenceExpression"))
         ignore(GetString("ilreadFileChanged"))
+        ignore(GetString("writeToReadOnlyByref"))
         ()
