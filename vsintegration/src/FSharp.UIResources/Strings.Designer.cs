@@ -124,6 +124,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Re-format indentation on paste.
+        /// </summary>
+        public static string Format_on_paste {
+            get {
+                return ResourceManager.GetString("Format_on_paste", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Performance.
         /// </summary>
         public static string Language_Service_Performance {
