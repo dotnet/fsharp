@@ -103,6 +103,7 @@ let _ = Module1.foo 1
         let filePath = Path.GetTempFileName() + ".fs"
         let options: FSharpProjectOptions = { 
             ProjectFileName = "C:\\test.fsproj"
+            ProjectId = None
             SourceFiles =  [| filePath |]
             ReferencedProjects = [| |]
             OtherOptions = [| |]
