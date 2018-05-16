@@ -1611,7 +1611,7 @@ module internal Parser =
            userOpName: string) = 
         
         async {
-            use _logBlock = Logger.LogBlockMessage (Guid.NewGuid().ToString()) LogCompilerFunctionId.Service_CheckOneFile
+            use _logBlock = Logger.LogBlock LogCompilerFunctionId.Service_CheckOneFile
 
             match parseResults.ParseTree with 
             // When processing the following cases, we don't need to type-check
@@ -2664,7 +2664,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         let execWithReactorAsync action = reactor.EnqueueAndAwaitOpAsync(userOpName, "ParseAndCheckFileInProject", filename, action)
         async {
             try 
-                let strGuid = "_ProjectId=" + (match options.ProjectId with Some(projectId) -> projectId | _ -> "null")
+                let strGuid = "_ProjectId=" + (options |> Option.defaultValue "null")
                 Logger.LogBlockMessageStart (filename + strGuid) LogCompilerFunctionId.Service_ParseAndCheckFileInProject
 
                 if implicitlyStartBackgroundWork then 
