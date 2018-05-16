@@ -587,7 +587,7 @@ type cenv =
       blobs: MetadataTable<byte[]> 
       strings: MetadataTable<string> 
       userStrings: MetadataTable<string>
-      normalizeAssemblyRefs: (ILAssemblyRef -> ILAssemblyRef) option
+      normalizeAssemblyRefs: ILAssemblyRef -> ILAssemblyRef
     }
     member cenv.GetTable (tab:TableName) = cenv.tables.[tab.Index]
 
@@ -701,11 +701,6 @@ let rec GetIdxForTypeDef cenv key  =
 // Assembly and module references
 // -------------------------------------------------------------------- 
 
-let normalizeAssemblyRefs (cenv:cenv) aref =
-    match cenv.normalizeAssemblyRefs with
-    | Some f -> (f aref)
-    | None -> aref
-
 let rec GetAssemblyRefAsRow cenv (aref:ILAssemblyRef) =
     AssemblyRefRow 
         ((match aref.Version with None -> 0us | Some (x, _, _, _) -> x), 
@@ -722,7 +717,7 @@ let rec GetAssemblyRefAsRow cenv (aref:ILAssemblyRef) =
          BlobIndex (match aref.Hash with None -> 0 | Some s -> GetBytesAsBlobIdx cenv s))
 
 and GetAssemblyRefAsIdx cenv aref = 
-    FindOrAddSharedRow cenv TableNames.AssemblyRef (GetAssemblyRefAsRow cenv (normalizeAssemblyRefs cenv aref))
+    FindOrAddSharedRow cenv TableNames.AssemblyRef (GetAssemblyRefAsRow cenv (cenv.normalizeAssemblyRefs aref))
 
 and GetModuleRefAsRow cenv (mref:ILModuleRef) =
     SharedRow 

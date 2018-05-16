@@ -2068,7 +2068,7 @@ let main4 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
                     signer = GetStrongNameSigner signingInfo
                     dumpDebugInfo = tcConfig.dumpDebugInfo }, 
                   ilxMainModule,
-                  Some (normalizeAssemblyRefs)
+                  normalizeAssemblyRefs
                   )
             with Failure msg -> 
                 error(Error(FSComp.SR.fscProblemWritingBinary(outfile, msg), rangeCmdArgs))
