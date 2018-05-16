@@ -1776,7 +1776,9 @@ type FSharpProjectOptions =
     /// Whether the two parse options refer to the same project.
     static member UseSameProject(options1,options2) =
         match options1.ProjectId, options2.ProjectId with
-        | Some(projectId1), Some(projectId2) -> String.Equals(projectId1, projectId2, StringComparison.OrdinalIgnoreCase)
+        | Some(projectId1), Some(projectId2) when not (String.IsNullOrWhiteSpace(projectId1)) && not (String.IsNullOrWhiteSpace(projectId2)) -> 
+            String.Equals(projectId1, projectId2, StringComparison.OrdinalIgnoreCase)
+        | Some(_), Some(_)
         | None, None -> options1.ProjectFileName = options2.ProjectFileName
         | _ -> false
 
@@ -2664,7 +2666,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         let execWithReactorAsync action = reactor.EnqueueAndAwaitOpAsync(userOpName, "ParseAndCheckFileInProject", filename, action)
         async {
             try 
-                let strGuid = "_ProjectId=" + (options |> Option.defaultValue "null")
+                let strGuid = "_ProjectId=" + (options.ProjectId |> Option.defaultValue "null")
                 Logger.LogBlockMessageStart (filename + strGuid) LogCompilerFunctionId.Service_ParseAndCheckFileInProject
 
                 if implicitlyStartBackgroundWork then 
