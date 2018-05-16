@@ -358,6 +358,7 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
             // get a sync parse of the file
             let co, _ = 
                 { ProjectFileName = fileName + ".dummy.fsproj"
+                  ProjectId = None
                   SourceFiles = [| fileName |]
                   OtherOptions = flags
                   ReferencedProjects = [| |]

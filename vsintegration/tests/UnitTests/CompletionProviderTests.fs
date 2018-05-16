@@ -37,6 +37,7 @@ open UnitTests.TestLib.LanguageService
 let filePath = "C:\\test.fs"
 let internal projectOptions = { 
     ProjectFileName = "C:\\test.fsproj"
+    ProjectId = None
     SourceFiles =  [| filePath |]
     ReferencedProjects = [| |]
     OtherOptions = [| |]

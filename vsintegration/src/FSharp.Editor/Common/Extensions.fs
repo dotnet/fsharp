@@ -24,7 +24,6 @@ type System.IServiceProvider with
     member x.GetService<'T>() = x.GetService(typeof<'T>) :?> 'T
     member x.GetService<'S, 'T>() = x.GetService(typeof<'S>) :?> 'T
 
-
 type FSharpNavigationDeclarationItem with
     member x.RoslynGlyph : Glyph =
         match x.Glyph with
