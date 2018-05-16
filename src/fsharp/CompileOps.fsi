@@ -149,7 +149,7 @@ type IRawFSharpAssemblyData =
     abstract HasAnyFSharpSignatureDataAttribute: bool
     abstract HasMatchingFSharpSignatureDataAttribute: ILGlobals -> bool
     ///  The raw F# signature data in the assembly, if any
-    abstract GetRawFSharpSignatureData: range * ilShortAssemName: string * fileName: string -> (string * byte[]) list
+    abstract GetRawFSharpSignatureData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> byte[])) list
     ///  The raw F# optimization data in the assembly, if any
     abstract GetRawFSharpOptimizationData: range * ilShortAssemName: string * fileName: string -> (string * (unit -> byte[])) list
     ///  The table of type forwarders in the assembly

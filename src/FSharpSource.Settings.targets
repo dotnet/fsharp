@@ -94,6 +94,10 @@
     <MicrosoftVisualStudioThreadingVersion>15.3.23</MicrosoftVisualStudioThreadingVersion>
     <MicrosoftVisualStudioValidationVersion>15.3.15</MicrosoftVisualStudioValidationVersion>
 
+    <!-- Always qualify the IntermediateOutputPath by the TargetDotnetProfile if any exists -->
+    <IntermediateOutputPath>obj\$(Configuration)\$(TargetDotnetProfile)\</IntermediateOutputPath>
+    <IntermediateOutputPath Condition="'$(PortableProfileBeingReferenced)' != ''">obj\$(Configuration)\$(TargetDotnetProfile)\$(PortableProfileBeingReferenced)\</IntermediateOutputPath>
+
     <!-- Frozen FSharp.Core package being built with this build -->
     <FSharpCore41TargetPackageVersion>4.1.19</FSharpCore41TargetPackageVersion>
     <FSharpCore41TargetMajorVersion>4.1</FSharpCore41TargetMajorVersion>
@@ -113,7 +117,6 @@
     <NUnitVersion>3.5.0</NUnitVersion>
     <NUnitFullVersion>3.5.0.0</NUnitFullVersion>
     <NUnitLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.$(NUnitVersion)\lib\net45</NUnitLibDir>
-    <NUnitToolsLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.ConsoleRunner\$(NUnitVersion)\tools\</NUnitToolsLibDir>
 
     <MonoPackaging Condition="'$(TargetDotnetProfile)' != 'coreclr' AND '$(OS)' == 'Unix'">true</MonoPackaging>
 
@@ -193,18 +196,6 @@
     <!-- Standard defaults for output path and warning level -->
     <OutputPath Condition="'$(OutputPath)' == ''">bin\$(Configuration)</OutputPath>
     <WarningLevel Condition=" '$(WarningLevel)' == '' ">3</WarningLevel>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <DefineConstants Condition="'$(VisualStudioVersion)'=='12.0' AND '$(ProjectLanguage)' == 'VisualBasic'">$(DefineConstants),VS_VERSION_DEV12=True</DefineConstants>
-    <DefineConstants Condition="'$(VisualStudioVersion)'=='12.0' AND '$(ProjectLanguage)' != 'VisualBasic'">$(DefineConstants);VS_VERSION_DEV12</DefineConstants>
-    <DefineConstants Condition="'$(VisualStudioVersion)'=='14.0' AND '$(ProjectLanguage)' == 'VisualBasic'">$(DefineConstants),VS_VERSION_DEV14=True</DefineConstants>
-    <DefineConstants Condition="'$(VisualStudioVersion)'=='14.0' AND '$(ProjectLanguage)' != 'VisualBasic'">$(DefineConstants);VS_VERSION_DEV14</DefineConstants>
-    <DefineConstants Condition="'$(VisualStudioVersion)'=='15.0' AND '$(ProjectLanguage)' == 'VisualBasic'">$(DefineConstants),VS_VERSION_DEV15=True</DefineConstants>
-    <DefineConstants Condition="'$(VisualStudioVersion)'=='15.0' AND '$(ProjectLanguage)' != 'VisualBasic'">$(DefineConstants);VS_VERSION_DEV15</DefineConstants>
-    <!-- VisualStudioVersion is not defined when using xbuild on Mono. Assume 14.0, the last shipped in-the-box with Mono -->
-    <DefineConstants Condition="'$(VisualStudioVersion)'=='' AND '$(ProjectLanguage)' == 'VisualBasic'">$(DefineConstants),VS_VERSION_DEV14=True</DefineConstants>
-    <DefineConstants Condition="'$(VisualStudioVersion)'=='' AND '$(ProjectLanguage)' != 'VisualBasic'">$(DefineConstants);VS_VERSION_DEV14</DefineConstants>
   </PropertyGroup>
 
   <!-- Nuget Package properties -->

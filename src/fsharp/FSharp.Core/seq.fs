@@ -457,11 +457,6 @@ namespace Microsoft.FSharp.Collections
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module Seq =
 
-#if FX_NO_ICLONEABLE
-        open Microsoft.FSharp.Core.ICloneableExtensions
-#else
-#endif
-
         open Microsoft.FSharp.Collections.Internal
         open Microsoft.FSharp.Collections.IEnumerator
 

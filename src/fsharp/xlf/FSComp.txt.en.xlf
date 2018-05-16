@@ -412,7 +412,7 @@
         <target state="new">Unexpected use of a byref-typed variable</target>
         <note />
       </trans-unit>
-      <trans-unit id="tastValueMustBeLocalAndMutable">
+      <trans-unit id="tastValueMustBeMutable">
         <source>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</source>
         <target state="new">A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</target>
         <note />
@@ -5438,8 +5438,8 @@
         <note />
       </trans-unit>
       <trans-unit id="fscBadAssemblyVersion">
-        <source>An {0} specified version '{1}', but this value is invalid and has been ignored</source>
-        <target state="new">An {0} specified version '{1}', but this value is invalid and has been ignored</target>
+        <source>The attribute {0} specified version '{1}', but this value is invalid and has been ignored</source>
+        <target state="new">The attribute {0} specified version '{1}', but this value is invalid and has been ignored</target>
         <note />
       </trans-unit>
       <trans-unit id="fscTwoResourceManifests">

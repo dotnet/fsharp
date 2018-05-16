@@ -1,0 +1,21 @@
+<Project>
+
+  <Target Name="HACK_CopyFscDependenciesToReleaseDirectory"
+          BeforeTargets="CoreCompile"
+          Condition=" '$(FSharpTestCompilerVersion)' == 'coreclr' ">
+    <!--
+    When the build is done using correct netsdk projects this won't be necessary
+    -->
+
+    <PropertyGroup>
+      <DotnetSdkVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)DotnetCLIToolsVersion.txt').Trim())</DotnetSdkVersion>
+    </PropertyGroup>
+    <ItemGroup>
+      <CompilerFilesToCopy Include="$(MSBuildThisFileDirectory)Tools/dotnet20/sdk/$(DotnetSdkVersion)/FSharp/*.json" />
+    </ItemGroup>
+
+    <Message Text="Copying compiler files to $(_FSharpCompilerPath)" />
+    <Copy SourceFiles="@(CompilerFilesToCopy)" DestinationFolder="$(_FSharpCompilerPath)" SkipUnchangedFiles = "true" />
+  </Target>
+
+</Project>

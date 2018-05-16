@@ -1638,17 +1638,16 @@ module Codebuf =
                     match i, tgs with 
                     | (_, Some i_short), [tg] 
                         when
-                          begin 
-                            // Use the original offsets to compute if the branch is small or large.  This is 
-                            // a safe approximation because code only gets smaller. 
-                            if not (origAvailBrFixups.ContainsKey tg) then 
-                                dprintn ("branch target " + formatCodeLabel tg + " not found in code")
-                            let origDest = 
-                                if origAvailBrFixups.ContainsKey tg then origAvailBrFixups.[tg]
-                                else 666666
+                           // Use the original offsets to compute if the branch is small or large.  This is 
+                           // a safe approximation because code only gets smaller. 
+                           (let origDest =
+                                match origAvailBrFixups.TryGetValue tg with
+                                | true, fixup -> fixup
+                                | _ -> 
+                                    dprintn ("branch target " + formatCodeLabel tg + " not found in code")
+                                    666666
                             let origRelOffset = origDest - origEndOfInstr
-                            -128 <= origRelOffset && origRelOffset <= 127
-                          end 
+                            -128 <= origRelOffset && origRelOffset <= 127)
                       ->
                         newCode.EmitIntAsByte i_short
                         true
@@ -1718,18 +1717,16 @@ module Codebuf =
       
       // Now apply the adjusted fixups in the new code 
       newReqdBrFixups |> List.iter (fun (newFixupLoc, endOfInstr, tg, small) ->
-            if not (newAvailBrFixups.ContainsKey tg) then 
-              failwith ("target "+formatCodeLabel tg+" not found in new fixups")
-            try 
-                let n = newAvailBrFixups.[tg]
-                let relOffset = (n - endOfInstr)
-                if small then 
-                    if Bytes.get newCode newFixupLoc <> 0x98 then failwith "br fixupsanity check failed"
-                    newCode.[newFixupLoc] <- b0 relOffset
-                else 
-                    checkFixup32 newCode newFixupLoc 0xf00dd00fl
-                    applyFixup32 newCode newFixupLoc relOffset
-            with :? KeyNotFoundException -> ())
+          match newAvailBrFixups.TryGetValue(tg) with
+          | true, n ->
+              let relOffset = n - endOfInstr
+              if small then 
+                  if Bytes.get newCode newFixupLoc <> 0x98 then failwith "br fixupsanity check failed"
+                  newCode.[newFixupLoc] <- b0 relOffset
+              else 
+                  checkFixup32 newCode newFixupLoc 0xf00dd00fl
+                  applyFixup32 newCode newFixupLoc relOffset
+          | _ -> failwith ("target " + formatCodeLabel tg + " not found in new fixups"))
 
       newCode, newReqdStringFixups, newExnClauses, newSeqPoints, newScopes
 
@@ -2162,14 +2159,19 @@ module Codebuf =
         // Build a table mapping Abstract IL pcs to positions in the generated code buffer
         let pc2pos = Array.zeroCreate (instrs.Length+1)
         let pc2labs = Dictionary()
-        for (KeyValue(lab, pc)) in code.Labels do
-            if pc2labs.ContainsKey pc then pc2labs.[pc] <- lab :: pc2labs.[pc] else pc2labs.[pc] <- [lab]
+        for KeyValue (lab, pc) in code.Labels do
+            match pc2labs.TryGetValue(pc) with
+            | true, labels ->
+                pc2labs.[pc] <- lab :: labels
+            | _ -> pc2labs.[pc] <- [lab]
 
         // Emit the instructions
         for pc = 0 to instrs.Length do
-            if pc2labs.ContainsKey pc then  
-                for lab in pc2labs.[pc] do
-                    codebuf.RecordAvailBrFixup lab
+            match pc2labs.TryGetValue(pc) with
+            | true, labels ->
+                for lab in labels do
+                    codebuf.RecordAvailBrFixup(lab)
+            | _ -> ()
             pc2pos.[pc] <- codebuf.code.Position
             if pc < instrs.Length then 
                 match instrs.[pc] with 

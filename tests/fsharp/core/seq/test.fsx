@@ -712,9 +712,24 @@ module InfiniteSequenceExpressionsExecuteWithFiniteResources =
                 yield factorial x
             ]
 
-        for f in factorials do printf "%i" f
+        check "vlklmkkl" factorials [1;1;2;6;24;120;720;5040;40320;362880;3628800]
     TestRecFuncInSeq()
 
+module TestCollectOnStructSeq = 
+    open System
+
+    [<Struct>]
+    type S = 
+        interface System.Collections.Generic.IEnumerable<int> with
+            member x.GetEnumerator() = (seq { yield 1; yield 2}).GetEnumerator()
+        interface System.Collections.IEnumerable with
+            member x.GetEnumerator() = (seq { yield 1; yield 2} :> System.Collections.IEnumerable).GetEnumerator()
+
+    let iterate (x: S) =
+        seq { yield! Seq.collect (fun _ -> x) [1] }
+ 
+    check "ccekecnwe" (iterate (Unchecked.defaultof<S>) |> Seq.length) 2
+    
 (*---------------------------------------------------------------------------
 !* wrap up
  *--------------------------------------------------------------------------- *)
