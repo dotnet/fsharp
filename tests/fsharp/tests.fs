@@ -1297,6 +1297,7 @@ module CoreTests =
     let reflect () = singleTestBuildAndRun "core/reflect" FSC_BASIC
 
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let refnormalization () = 
         let cfg = testConfig "core/refnormalization"
@@ -1333,7 +1334,6 @@ module CoreTests =
         TestOk.CheckExists()
 
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let testResources () = 
         let cfg = testConfig "core/resources"
