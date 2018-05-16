@@ -412,7 +412,7 @@
         <target state="translated">Uso inesperado de una variable de tipo byref.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tastValueMustBeLocalAndMutable">
+      <trans-unit id="tastValueMustBeMutable">
         <source>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</source>
         <target state="translated">Un valor debe ser mutable para poder mutar el contenido o tomar la dirección de un tipo de valor; por ejemplo, 'let mutable x = ...'</target>
         <note />
