@@ -412,7 +412,7 @@
         <target state="translated">byref 型変数の予期しない使用方法です:</target>
         <note />
       </trans-unit>
-      <trans-unit id="tastValueMustBeLocalAndMutable">
+      <trans-unit id="tastValueMustBeMutable">
         <source>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</source>
         <target state="translated">値の型の内容を変更するか、値の型のアドレスを使用するために、値は変更可能にする必要があります (たとえば、'let mutable x = ...')</target>
         <note />

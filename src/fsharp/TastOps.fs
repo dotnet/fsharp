@@ -5693,7 +5693,7 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
         if v.IsMutable then 
             error(Error(FSComp.SR.tastInvalidAddressOfMutableAcrossAssemblyBoundary(), m));
         else 
-            error(Error(FSComp.SR.tastValueMustBeLocalAndMutable(), m));
+            error(Error(FSComp.SR.tastValueMustBeMutable(), m));
          
     | _ -> 
         let ty = tyOfExpr g e
