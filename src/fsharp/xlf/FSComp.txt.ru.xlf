@@ -412,7 +412,7 @@
         <target state="translated">Недопустимое использование переменной типа byref</target>
         <note />
       </trans-unit>
-      <trans-unit id="tastValueMustBeLocalAndMutable">
+      <trans-unit id="tastValueMustBeMutable">
         <source>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</source>
         <target state="translated">Чтобы изменить содержимое или получить адрес типа значения, значение должно быть изменяемым, например, "let mutable x = ..."</target>
         <note />

@@ -412,7 +412,7 @@
         <target state="translated">未預期的 ByRef 類型變數用法</target>
         <note />
       </trans-unit>
-      <trans-unit id="tastValueMustBeLocalAndMutable">
+      <trans-unit id="tastValueMustBeMutable">
         <source>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</source>
         <target state="translated">值必須是可變動的，才能變動內容或接受實值類型的位址，例如 'let mutable x = ...'</target>
         <note />
