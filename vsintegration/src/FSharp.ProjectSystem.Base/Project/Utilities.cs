@@ -742,6 +742,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 buildProject.IsBuildEnabled = true;
             }
 
+            buildProject.SetProperty("FSharpTargetsPath", Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Microsoft.FSharp.targets"));
+
             return buildProject;
         }
 
