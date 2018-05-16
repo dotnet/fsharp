@@ -64,25 +64,28 @@ type ILReaderOptions =
      /// and from which we can read the metadata. Only used when metadataOnly=true.
      tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot }
 
+
 /// Represents a reader of the metadata of a .NET binary.  May also give some values (e.g. IL code) from the PE file
 /// if it was provided.
-[<Sealed>]
-type ILModuleReader =
-    new: ilModule: ILModuleDef * ilAssemblyRefs: Lazy<ILAssemblyRef list> * dispose: (unit -> unit) -> ILModuleReader
-
-    member ILModuleDef : ILModuleDef
-    member ILAssemblyRefs : ILAssemblyRef list
+type IModuleReader =
+    abstract ILModuleDef: ILModuleDef
+    abstract ILAssemblyRefs: ILAssemblyRef list
     
     /// ILModuleReader objects only need to be explicitly disposed if memory mapping is used, i.e. reduceMemoryUsage = false
-    interface System.IDisposable
+    inherit System.IDisposable
+
+
+[<Sealed>]
+type ILModuleReader =
+    interface IModuleReader
     
 /// Open a binary reader, except first copy the entire contents of the binary into 
 /// memory, close the file and ensure any subsequent reads happen from the in-memory store. 
 /// PDB files may not be read with this option. 
-val internal OpenILModuleReader: string -> ILReaderOptions -> ILModuleReader
+val internal OpenILModuleReader: string -> ILReaderOptions -> IModuleReader
 
 /// Open a binary reader based on the given bytes. 
-val internal OpenILModuleReaderFromBytes: fileNameForDebugOutput:string -> assemblyContents: byte[] -> options: ILReaderOptions -> ILModuleReader
+val internal OpenILModuleReaderFromBytes: fileNameForDebugOutput:string -> assemblyContents: byte[] -> options: ILReaderOptions -> IModuleReader
 
 type Statistics = 
     { mutable rawMemoryFileCount : int
@@ -97,7 +100,7 @@ val GetStatistics : unit -> Statistics
 module Shim =
 
     type IAssemblyReader =
-        abstract GetILModuleReader: filename: string * readerOptions: ILReaderOptions -> ILModuleReader
+        abstract GetILModuleReader: filename: string * readerOptions: ILReaderOptions -> IModuleReader
 
     [<Sealed>]
     type DefaultAssemblyReader =

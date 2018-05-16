@@ -3941,11 +3941,20 @@ type ILReaderOptions =
       metadataOnly: MetadataOnlyFlag
       tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot }
 
+
+type IModuleReader =
+    abstract ILModuleDef : ILModuleDef
+    abstract ILAssemblyRefs : ILAssemblyRef list
+    
+    /// ILModuleReader objects only need to be explicitly disposed if memory mapping is used, i.e. reduceMemoryUsage = false
+    inherit  System.IDisposable
+
+
 [<Sealed>]
 type ILModuleReader(ilModule: ILModuleDef, ilAssemblyRefs: Lazy<ILAssemblyRef list>, dispose: unit -> unit) =
-    member x.ILModuleDef = ilModule
-    member x.ILAssemblyRefs = ilAssemblyRefs.Force()
-    interface IDisposable with
+    interface IModuleReader with
+        member x.ILModuleDef = ilModule
+        member x.ILAssemblyRefs = ilAssemblyRefs.Force()
         member x.Dispose() = dispose()
     
 // ++GLOBAL MUTABLE STATE (concurrency safe via locking)
@@ -3986,7 +3995,7 @@ let tryMemoryMapWholeFile opts fileName =
 let OpenILModuleReaderFromBytes fileName bytes opts = 
     let pefile = ByteFile(fileName, bytes) :> BinaryFile
     let ilModule, ilAssemblyRefs, pdb = openPE (fileName, pefile, opts.pdbDirPath, (opts.reduceMemoryUsage = ReduceMemoryFlag.Yes), opts.ilGlobals, true)
-    new ILModuleReader(ilModule, ilAssemblyRefs, (fun () -> ClosePdbReader pdb))
+    new ILModuleReader(ilModule, ilAssemblyRefs, (fun () -> ClosePdbReader pdb)) :> IModuleReader
 
 let OpenILModuleReader fileName opts = 
     // Pseudo-normalize the paths.
@@ -4009,7 +4018,7 @@ let OpenILModuleReader fileName opts =
             None
 
     match cacheResult with 
-    | Some ilModuleReader -> ilModuleReader
+    | Some ilModuleReader -> ilModuleReader :> IModuleReader
     | None -> 
 
     let reduceMemoryUsage = (opts.reduceMemoryUsage = ReduceMemoryFlag.Yes)
@@ -4053,7 +4062,7 @@ let OpenILModuleReader fileName opts =
         if keyOk then 
             ilModuleReaderCacheLock.AcquireLock (fun ltok -> ilModuleReaderCache.Put(ltok, key, ilModuleReader))
 
-        ilModuleReader
+        ilModuleReader :> IModuleReader
                 
     else
         // This case is primarily used in fsc.exe. 
@@ -4081,14 +4090,14 @@ let OpenILModuleReader fileName opts =
         if keyOk && opts.pdbDirPath.IsNone then 
             ilModuleReaderCacheLock.AcquireLock (fun ltok -> ilModuleReaderCache.Put(ltok, key, ilModuleReader))
 
-        ilModuleReader
+        ilModuleReader :> IModuleReader
 
 [<AutoOpen>]
 module Shim =
     open Microsoft.FSharp.Compiler.Lib
 
     type IAssemblyReader =
-        abstract GetILModuleReader: filename: string * readerOptions: ILReaderOptions -> ILModuleReader
+        abstract GetILModuleReader: filename: string * readerOptions: ILReaderOptions -> IModuleReader
 
     [<Sealed>]
     type DefaultAssemblyReader() =
