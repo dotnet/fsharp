@@ -587,6 +587,7 @@ type cenv =
       blobs: MetadataTable<byte[]> 
       strings: MetadataTable<string> 
       userStrings: MetadataTable<string>
+      normalizeAssemblyRefs: ILAssemblyRef -> ILAssemblyRef
     }
     member cenv.GetTable (tab:TableName) = cenv.tables.[tab.Index]
 
@@ -714,9 +715,9 @@ let rec GetAssemblyRefAsRow cenv (aref:ILAssemblyRef) =
          StringIndex (GetStringHeapIdx cenv aref.Name), 
          StringIndex (match aref.Locale with None -> 0 | Some s -> GetStringHeapIdx cenv s), 
          BlobIndex (match aref.Hash with None -> 0 | Some s -> GetBytesAsBlobIdx cenv s))
-  
+
 and GetAssemblyRefAsIdx cenv aref = 
-    FindOrAddSharedRow cenv TableNames.AssemblyRef (GetAssemblyRefAsRow cenv aref)
+    FindOrAddSharedRow cenv TableNames.AssemblyRef (GetAssemblyRefAsRow cenv (cenv.normalizeAssemblyRefs aref))
 
 and GetModuleRefAsRow cenv (mref:ILModuleRef) =
     SharedRow 
@@ -2905,7 +2906,7 @@ let GenModule (cenv : cenv) (modul: ILModuleDef) =
     GenTypeDefsPass4 [] cenv tds
     reportTime cenv.showTimes "Module Generation Pass 4"
 
-let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : ILGlobals, emitTailcalls, deterministic, showTimes)  (m : ILModuleDef) cilStartAddress =
+let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : ILGlobals, emitTailcalls, deterministic, showTimes)  (m : ILModuleDef) cilStartAddress normalizeAssemblyRefs =
     let isDll = m.IsDLL
 
     let cenv = 
@@ -2953,7 +2954,8 @@ let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : IL
           guids=MetadataTable<_>.New("guids", HashIdentity.Structural)
           blobs= MetadataTable<_>.New("blobs", HashIdentity.Structural)
           strings= MetadataTable<_>.New("strings", EqualityComparer.Default) 
-          userStrings= MetadataTable<_>.New("user strings", EqualityComparer.Default) }
+          userStrings= MetadataTable<_>.New("user strings", EqualityComparer.Default)
+          normalizeAssemblyRefs = normalizeAssemblyRefs }
 
     // Now the main compilation step 
     GenModule cenv  m
@@ -3050,16 +3052,16 @@ module FileSystemUtilites =
 #endif
         ()
 
-let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailcalls, deterministic, showTimes) modul cilStartAddress =
+let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailcalls, deterministic, showTimes) modul cilStartAddress normalizeAssemblyRefs =
 
-    // When we know the real RVAs of the data section we fixup the references for the FieldRVA table. 
+    // When we know the real RVAs of the data section we fixup the references for the FieldRVA table.
     // These references are stored as offsets into the metadata we return from this function 
     let requiredDataFixups = ref []
 
     let next = cilStartAddress
 
     let strings, userStrings, blobs, guids, tables, entryPointToken, code, requiredStringFixups, data, resources, pdbData, mappings = 
-      generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg, emitTailcalls, deterministic, showTimes) modul cilStartAddress
+      generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg, emitTailcalls, deterministic, showTimes) modul cilStartAddress normalizeAssemblyRefs
 
     reportTime showTimes "Generated Tables and Code"
     let tableSize (tab: TableName) = tables.[tab.Index].Count
@@ -3503,7 +3505,8 @@ let writeBytes (os: BinaryWriter) (chunk:byte[]) = os.Write(chunk, 0, chunk.Leng
 
 let writeBinaryAndReportMappings (outfile, 
                                   ilg: ILGlobals, pdbfile: string option, signer: ILStrongNameSigner option, portablePDB, embeddedPDB, 
-                                  embedAllSource, embedSourceList, sourceLink, emitTailcalls, deterministic, showTimes, dumpDebugInfo ) modul =
+                                  embedAllSource, embedSourceList, sourceLink, emitTailcalls, deterministic, showTimes, dumpDebugInfo )
+                                  modul normalizeAssemblyRefs =
     // Store the public key from the signer into the manifest.  This means it will be written 
     // to the binary and also acts as an indicator to leave space for delay sign 
 
@@ -3620,7 +3623,7 @@ let writeBinaryAndReportMappings (outfile,
                     | None -> failwith "Expected msorlib to have a version number"
 
           let entryPointToken, code, codePadding, metadata, data, resources, requiredDataFixups, pdbData, mappings, guidStart =
-            writeILMetadataAndCode ((pdbfile <> None), desiredMetadataVersion, ilg, emitTailcalls, deterministic, showTimes) modul next
+            writeILMetadataAndCode ((pdbfile <> None), desiredMetadataVersion, ilg, emitTailcalls, deterministic, showTimes) modul next normalizeAssemblyRefs
 
           reportTime showTimes "Generated IL and metadata";
           let _codeChunk, next = chunk code.Length next
@@ -4266,8 +4269,8 @@ type options =
      showTimes: bool
      dumpDebugInfo:bool }
 
-let WriteILBinary (outfile, (args: options), modul) =
+let WriteILBinary (outfile, (args: options), modul, normalizeAssemblyRefs) =
     writeBinaryAndReportMappings (outfile, 
                                   args.ilg, args.pdbfile, args.signer, args.portablePDB, args.embeddedPDB, args.embedAllSource, 
-                                  args.embedSourceList, args.sourceLink, args.emitTailcalls, args.deterministic, args.showTimes, args.dumpDebugInfo) modul
+                                  args.embedSourceList, args.sourceLink, args.emitTailcalls, args.deterministic, args.showTimes, args.dumpDebugInfo) modul normalizeAssemblyRefs
     |> ignore

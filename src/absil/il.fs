@@ -354,37 +354,12 @@ type AssemblyRefData =
 /// Global state: table of all assembly references keyed by AssemblyRefData.
 let AssemblyRefUniqueStampGenerator = new UniqueStampGenerator<AssemblyRefData>()
 
-let compareVersions x y =
-    match x, y with 
-    | None, None -> 0
-    | Some _, None -> 1
-    | None, Some _ -> -1
-    | Some(x1, x2, x3, x4), Some(y1, y2, y3, y4) ->
-        if y1>x1 then 1 
-        elif y1<x1 then -1
-        elif y2>x2 then 1 
-        elif y2<x1 then -1
-        elif y3>x3 then 1 
-        elif y3<x1 then -1
-        elif y4>x4 then 1 
-        elif y4<x1 then -1
-        else 0
-
 let isMscorlib data =
     if System.String.Compare(data.assemRefName, "mscorlib") = 0 then true 
     else false
 
-let GetReferenceUnifiedVersion data = 
-    let mutable highest = data.assemRefVersion
-    if not (isMscorlib data) then 
-        for ref in AssemblyRefUniqueStampGenerator.Table do
-            if System.String.Compare(ref.assemRefName, data.assemRefName) = 0 && highest < ref.assemRefVersion then 
-                highest <- ref.assemRefVersion
-    highest
-
 [<Sealed>]
-type ILAssemblyRef(data)  =  
-
+type ILAssemblyRef(data)  =
     let uniqueStamp = AssemblyRefUniqueStampGenerator.Encode(data)
 
     member x.Name=data.assemRefName
@@ -395,7 +370,7 @@ type ILAssemblyRef(data)  =
 
     member x.Retargetable=data.assemRefRetargetable  
 
-    member x.Version=GetReferenceUnifiedVersion data
+    member x.Version=data.assemRefVersion
 
     member x.Locale=data.assemRefLocale
 
@@ -416,7 +391,7 @@ type ILAssemblyRef(data)  =
               assemRefRetargetable=retargetable
               assemRefVersion=version
               assemRefLocale=locale }
-              
+
     static member FromAssemblyName (aname:System.Reflection.AssemblyName) =
 
         let locale = None

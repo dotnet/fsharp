@@ -2010,12 +2010,12 @@ let main2b (tcImportsCapture,dynamicAssemblyCreator) (Args (ctok, tcConfig: TcCo
     let ilxMainModule = MainModuleBuilder.CreateMainModule (ctok, tcConfig, tcGlobals, tcImports, pdbfile, assemblyName, outfile, topAttrs, idata, optDataResources, codegenResults, assemVerFromAttrib, metadataVersion, secDecls)
 
     AbortOnError(errorLogger, exiter)
-    
+
     // Pass on only the minimum information required for the next phase
-    Args (ctok, tcConfig, tcGlobals, errorLogger, staticLinker, outfile, pdbfile, ilxMainModule, signingInfo, exiter)
+    Args (ctok, tcConfig, tcImports, tcGlobals, errorLogger, staticLinker, outfile, pdbfile, ilxMainModule, signingInfo, exiter)
 
 /// Phase 3: static linking
-let main3(Args (ctok, tcConfig, tcGlobals, errorLogger: ErrorLogger, staticLinker, outfile, pdbfile, ilxMainModule, signingInfo, exiter:Exiter)) = 
+let main3(Args (ctok, tcConfig, tcImports, tcGlobals, errorLogger: ErrorLogger, staticLinker, outfile, pdbfile, ilxMainModule, signingInfo, exiter:Exiter)) = 
         
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Output
 
@@ -2029,10 +2029,10 @@ let main3(Args (ctok, tcConfig, tcGlobals, errorLogger: ErrorLogger, staticLinke
     AbortOnError(errorLogger, exiter)
         
     // Pass on only the minimum information required for the next phase
-    Args (ctok, tcConfig, errorLogger, tcGlobals, ilxMainModule, outfile, pdbfile, signingInfo, exiter)
+    Args (ctok, tcConfig, tcImports, tcGlobals, errorLogger, ilxMainModule, outfile, pdbfile, signingInfo, exiter)
 
 /// Phase 4: write the binaries
-let main4 dynamicAssemblyCreator (Args (ctok, tcConfig, errorLogger: ErrorLogger, tcGlobals: TcGlobals, ilxMainModule, outfile, pdbfile, signingInfo, exiter: Exiter)) = 
+let main4 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, tcGlobals: TcGlobals, errorLogger: ErrorLogger, ilxMainModule, outfile, pdbfile, signingInfo, exiter: Exiter)) = 
     ReportTime tcConfig "Write .NET Binary"
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Output
     let outfile = tcConfig.MakePathAbsolute outfile
@@ -2040,6 +2040,14 @@ let main4 dynamicAssemblyCreator (Args (ctok, tcConfig, errorLogger: ErrorLogger
     DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
 
     let pdbfile = pdbfile |> Option.map (tcConfig.MakePathAbsolute >> Path.GetFullPath)
+
+    let normalizeAssemblyRefs (aref:ILAssemblyRef) = 
+        match tcImports.TryFindDllInfo (ctok, Range.rangeStartup, aref.Name, lookupOnly=false) with 
+        | Some dllInfo ->
+            match dllInfo.ILScopeRef with 
+            | ILScopeRef.Assembly ref -> ref
+            | _ -> aref
+        | None -> aref
 
     match dynamicAssemblyCreator with 
     | None -> 
@@ -2059,7 +2067,9 @@ let main4 dynamicAssemblyCreator (Args (ctok, tcConfig, errorLogger: ErrorLogger
                     sourceLink = tcConfig.sourceLink
                     signer = GetStrongNameSigner signingInfo
                     dumpDebugInfo = tcConfig.dumpDebugInfo }, 
-                  ilxMainModule)
+                  ilxMainModule,
+                  normalizeAssemblyRefs
+                  )
             with Failure msg -> 
                 error(Error(FSComp.SR.fscProblemWritingBinary(outfile, msg), rangeCmdArgs))
         with e -> 
