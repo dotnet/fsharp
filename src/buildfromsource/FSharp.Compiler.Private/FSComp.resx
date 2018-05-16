@@ -363,7 +363,7 @@
   <data name="tastUnexpectedByRef" xml:space="preserve">
     <value>Unexpected use of a byref-typed variable</value>
   </data>
-  <data name="tastValueMustBeLocalAndMutable" xml:space="preserve">
+  <data name="tastValueMustBeMutable" xml:space="preserve">
     <value>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</value>
   </data>
   <data name="tastInvalidMutationOfConstant" xml:space="preserve">
