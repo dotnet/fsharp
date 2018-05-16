@@ -935,6 +935,7 @@ let ``Projects creating generated types should not utilize cross-project-referen
     let options = 
           {ProjectFileName =
             __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TestConsole/TestConsole.fsproj";
+           ProjectId = None;
            SourceFiles =
             [|__SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TestConsole/AssemblyInfo.fs";
               __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TestConsole/Program.fs"|];
@@ -963,6 +964,7 @@ let ``Projects creating generated types should not utilize cross-project-referen
             [|(__SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TypeProvidersBug/bin/Debug/TypeProvidersBug.dll",
                {ProjectFileName =
                  __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TypeProvidersBug/TypeProvidersBug.fsproj";
+                ProjectId = None;
                 SourceFiles =
                  [|__SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TypeProvidersBug/AssemblyInfo.fs";
                    __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TypeProvidersBug/Library1.fs"|];
