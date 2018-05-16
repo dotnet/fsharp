@@ -5642,7 +5642,7 @@ let mkAndSimplifyMatch spBind exprm matchm ty tree targets  =
 type Mutates = AddressOfOp | DefinitelyMutates | PossiblyMutates | NeverMutates
 exception DefensiveCopyWarning of string * range 
 
-let isRecdOrStructTyconRefLogicallyReadOnly (g: TcGlobals) (tcref: TyconRef) =
+let isRecdOrStructTyconRefAssumedImmutable (g: TcGlobals) (tcref: TyconRef) =
     tcref.CanDeref &&
     not (isRecdOrUnionOrStructTyconRefDefinitelyMutable tcref) ||
     tyconRefEq g tcref g.decimal_tcr ||
@@ -5653,9 +5653,9 @@ let isRecdOrStructTyconRefReadOnly (g: TcGlobals) m (tcref: TyconRef) =
     match tcref.TryIsReadOnly with 
     | Some res -> res
     | None -> 
-        let res = 
-            isRecdOrStructTyconRefLogicallyReadOnly g tcref ||
-            TyconRefHasAttribute g m g.attrib_IsReadOnlyAttribute tcref
+        let isImmutable = isRecdOrStructTyconRefAssumedImmutable g tcref
+        let hasAttrib = TyconRefHasAttribute g m g.attrib_IsReadOnlyAttribute tcref
+        let res = isImmutable || hasAttrib
         tcref.SetIsReadOnly res
         res
 

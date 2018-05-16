@@ -16,8 +16,7 @@ namespace System.Runtime.CompilerServices
     type IsByRefLikeAttribute() =
         inherit System.Attribute()
 
-namespace Test
-
+namespace Tests
     open System
     open System.Runtime.CompilerServices
     open System.Runtime.InteropServices
@@ -34,7 +33,7 @@ namespace Test
         member x.Count2 = count2
 
     module TypeRefTests = 
-    
+
         let f1 (x: ByRefLikeStruct) = ()
         let f2 (x: ReadOnlyStruct) = x.Count1
         let f3 (x: ReadOnlyStruct) = x
@@ -131,25 +130,25 @@ namespace Test
         val mutable v : int
         member x.Replace(y:AllowedEvilStruct) = x <- y
 
+#if NEGATIVE
 
-//Since in parameters are read-only ref parameters, all ref parameter limitations apply.
-//
-//Cannot apply with an iterator method (I.e. method that has yield statements.)
-//Cannot apply with an async method
+// Disallow this:
+[<IsReadOnly; Struct>]
+type DisallowedIsReadOnlyStruct  = 
+    [<DefaultValue>]
+    val mutable X : int
+#endif
 
+#if NOT_YET
+// Allow this:
+[<IsByRefLike>]
+type ByRefLikeStructWithSpanField(count1: Span, count2: int) = 
+    member x.Count1 = count1
+    member x.Count2 = count2
 
-    #if NOT_YET
-    // Allow this:
-    [<IsByRefLike>]
-    type ByRefLikeStructWithByrefField(count1: byref<int>, count2: int) = 
-        member x.Count1 = count1
-        member x.Count2 = count2
-
-
-    // Disallow this:
-    [<IsReadOnly>]
-    type ReadOnlyStruct  = 
-        [<DefaultValue>]
-        val mutable X : int
-    #endif
+[<IsByRefLike>]
+type ByRefLikeStructWithByrefField(count1: byref<int>, count2: int) = 
+    member x.Count1 = count1
+    member x.Count2 = count2
+#endif
 

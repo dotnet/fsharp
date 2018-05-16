@@ -1609,7 +1609,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
     if tycon.IsFSharpInterfaceTycon then 
         List.iter visitType interfaces // Check inherited interface is as accessible
 
-    if not (isRecdOrStructTyconRefLogicallyReadOnly cenv.g tcref) && isRecdOrStructTyconRefReadOnly cenv.g m tcref then
+    if not (isRecdOrStructTyconRefAssumedImmutable cenv.g tcref) && isRecdOrStructTyconRefReadOnly cenv.g m tcref then
         errorR(Error(FSComp.SR.readOnlyAttributeOnStructWithMutableField(),m))
  
     if cenv.reportErrors then 

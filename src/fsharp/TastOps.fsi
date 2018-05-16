@@ -1104,7 +1104,7 @@ val isExnDefinitelyMutable : TyconRef -> bool
 val isUnionCaseFieldMutable : TcGlobals -> UnionCaseRef -> int -> bool
 val isExnFieldMutable : TyconRef -> int -> bool
 val isRecdOrStructTyconRefReadOnly: TcGlobals -> range -> TyconRef -> bool
-val isRecdOrStructTyconRefLogicallyReadOnly: TcGlobals -> TyconRef -> bool
+val isRecdOrStructTyconRefAssumedImmutable: TcGlobals -> TyconRef -> bool
 val isRecdOrStructTyReadOnly: TcGlobals -> range -> TType -> bool
 
 val useGenuineField : Tycon -> RecdField -> bool 
