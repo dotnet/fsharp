@@ -3986,8 +3986,8 @@ let buildApp cenv expr resultTy arg m =
     | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [], _), _), _ 
          when (valRefEq g vf g.nativeptr_tobyref_vref) -> 
 
-        let argTy = tyOfExpr g arg
-        let resultTy = mkByrefTyWithInference g argTy (NewByRefKindInferenceType g m)  // resultTy
+        let argty = NewInferenceType()
+        let resultTy = mkByrefTyWithInference g argty (NewByRefKindInferenceType g m)
         expr.SupplyArgument(arg, m), resultTy             
 
     // Special rules for building applications of the '&expr' operator, which gets the
