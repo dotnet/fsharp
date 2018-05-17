@@ -5020,7 +5020,7 @@ module private ScriptPreprocessClosure =
     open Internal.Utilities.Text.Lexing
     
     /// Represents an input to the closure finding process
-    type ClosureSource = ClosureSource of filename: string * referenceRange: range * sourceText: string * parseRequired: bool 
+    type ClosureSource = ClosureSource of filename: string * referenceRange: range * source: char[] * parseRequired: bool 
         
     /// Represents an output of the closure finding process
     type ClosureFile = ClosureFile  of string * range * ParsedInput option * (PhasedDiagnostic * bool) list * (PhasedDiagnostic * bool) list * (string * range) list // filename, range, errors, warnings, nowarns
@@ -5035,7 +5035,7 @@ module private ScriptPreprocessClosure =
             seen.ContainsKey(check)
     
     /// Parse a script from source.
-    let ParseScriptText(filename:string, source:string, tcConfig:TcConfig, codeContext, lexResourceManager:Lexhelp.LexResourceManager, errorLogger:ErrorLogger) =    
+    let ParseScriptText(filename:string, source: char[], tcConfig:TcConfig, codeContext, lexResourceManager:Lexhelp.LexResourceManager, errorLogger:ErrorLogger) =    
 
         // fsc.exe -- COMPILED\!INTERACTIVE
         // fsi.exe -- !COMPILED\INTERACTIVE
@@ -5047,7 +5047,7 @@ module private ScriptPreprocessClosure =
             | CodeContext.CompilationAndEvaluation -> ["INTERACTIVE"]
             | CodeContext.Compilation -> ["COMPILED"]
             | CodeContext.Editing -> "EDITING" :: (if IsScript filename then ["INTERACTIVE"] else ["COMPILED"])
-        let lexbuf = UnicodeLexing.StringAsLexbuf source 
+        let lexbuf = LexBuffer<_>.FromChars(source) 
         
         let isLastCompiland = (IsScript filename), tcConfig.target.IsExe        // The root compiland is last in the list of compilands.
         ParseOneInputLexbuf (tcConfig, lexResourceManager, defines, lexbuf, filename, isLastCompiland, errorLogger) 
@@ -5078,12 +5078,7 @@ module private ScriptPreprocessClosure =
     let ClosureSourceOfFilename(filename, m, inputCodePage, parseRequired) = 
         try
             let filename = FileSystem.GetFullPathShim(filename)
-            use stream = FileSystem.FileStreamReadShim filename
-            use reader = 
-                match inputCodePage with 
-                | None -> new  StreamReader(stream, true)
-                | Some (n: int) -> new  StreamReader(stream, Encoding.GetEncoding(n)) 
-            let source = reader.ReadToEnd()
+            let source = FileSystem.SourceFileReadShim(filename, inputCodePage)
             [ClosureSource(filename, m, source, parseRequired)]
         with e -> 
             errorRecovery e m 
@@ -5251,9 +5246,9 @@ type LoadClosure with
     //
     /// A temporary TcConfig is created along the way, is why this routine takes so many arguments. We want to be sure to use exactly the
     /// same arguments as the rest of the application.
-    static member ComputeClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename:string, source:string, codeContext, useSimpleResolution:bool, useFsiAuxLib, lexResourceManager:Lexhelp.LexResourceManager, applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage) : LoadClosure = 
+    static member ComputeClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename:string, source: string, codeContext, useSimpleResolution:bool, useFsiAuxLib, lexResourceManager:Lexhelp.LexResourceManager, applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage) : LoadClosure = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
-        ScriptPreprocessClosure.GetFullClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, source, codeContext, useSimpleResolution, useFsiAuxLib, lexResourceManager, applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage)
+        ScriptPreprocessClosure.GetFullClosureOfScriptText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, source.ToCharArray(), codeContext, useSimpleResolution, useFsiAuxLib, lexResourceManager, applyCommmandLineArgs, assumeDotNetFramework, tryGetMetadataSnapshot, reduceMemoryUsage)
 
     /// Analyze a set of script files and find the closure of their references. The resulting references are then added to the given TcConfig.
     /// Used from fsi.fs and fsc.fs, for #load and command line. 

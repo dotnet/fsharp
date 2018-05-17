@@ -1192,6 +1192,9 @@ module Shim =
         /// A shim over FileStream with FileMode.Open,FileAccess.Read,FileShare.ReadWrite
         abstract FileStreamReadShim: fileName:string -> Stream
 
+        /// A shim used for lexing F# source files
+        abstract SourceFileReadShim: fileName: string * codepage: int option -> char[]
+
         /// A shim over FileStream with FileMode.Create,FileAccess.Write,FileShare.Read
         abstract FileStreamCreateShim: fileName:string -> Stream
 
@@ -1232,6 +1235,10 @@ module Shim =
 
 
     type DefaultFileSystem() =
+
+        let fileStremReadShim fileName =
+            new FileStream(fileName,FileMode.Open,FileAccess.Read,FileShare.ReadWrite) :> Stream
+
         interface IFileSystem with
 
             member __.AssemblyLoadFrom(fileName: string) = 
@@ -1242,7 +1249,17 @@ module Shim =
 
             member __.ReadAllBytesShim (fileName: string) = File.ReadAllBytes fileName
 
-            member __.FileStreamReadShim (fileName: string) = new FileStream(fileName,FileMode.Open,FileAccess.Read,FileShare.ReadWrite)  :> Stream
+            member __.FileStreamReadShim (fileName: string) =
+                fileStremReadShim fileName
+
+            member __.SourceFileReadShim(fileName: string, codepage: int option) =
+                // Use the .NET functionality to auto-detect the unicode encoding
+                use stream = fileStremReadShim fileName 
+                use reader = 
+                    match codepage with 
+                    | None -> new  StreamReader(stream,true)
+                    | Some n -> new  StreamReader(stream,System.Text.Encoding.GetEncoding(n)) 
+                reader.ReadToEnd().ToCharArray()
 
             member __.FileStreamCreateShim (fileName: string) = new FileStream(fileName,FileMode.Create,FileAccess.Write,FileShare.Read ,0x1000,false) :> Stream
 

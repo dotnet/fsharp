@@ -38,18 +38,12 @@ let numRetries = 60
 /// we can't just return the LexBuffer object, since the file it wraps wouldn't
 /// get closed when we're finished with the LexBuffer. Hence we return the stream,
 /// the reader and the LexBuffer. The caller should dispose the first two when done.
-let UnicodeFileAsLexbuf (filename,codePage : int option, retryLocked:bool) :  Lexbuf =
+let UnicodeFileAsLexbuf (filename, codepage: int option, retryLocked: bool): Lexbuf =
     // Retry multiple times since other processes may be writing to this file.
     let rec getSource retryNumber =
-      try 
-        // Use the .NET functionality to auto-detect the unicode encoding
-        use stream = FileSystem.FileStreamReadShim(filename) 
-        use reader = 
-            match codePage with 
-            | None -> new  StreamReader(stream,true)
-            | Some n -> new  StreamReader(stream,System.Text.Encoding.GetEncoding(n)) 
-        reader.ReadToEnd()
-      with 
+      try
+          FileSystem.SourceFileReadShim(filename, codepage)
+      with
           // We can get here if the file is locked--like when VS is saving a file--we don't have direct
           // access to the HRESULT to see that this is EONOACCESS.
           | :? System.IO.IOException as err when retryLocked && err.GetType() = typeof<System.IO.IOException> -> 
@@ -65,5 +59,5 @@ let UnicodeFileAsLexbuf (filename,codePage : int option, retryLocked:bool) :  Le
                else 
                    reraise()
     let source = getSource 0
-    let lexbuf = LexBuffer<_>.FromChars(source.ToCharArray())  
+    let lexbuf = LexBuffer<_>.FromChars(source)  
     lexbuf
