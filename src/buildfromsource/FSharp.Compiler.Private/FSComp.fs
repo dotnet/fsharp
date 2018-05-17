@@ -4312,6 +4312,9 @@ type internal SR private() =
     /// The byref pointer is readonly, so this write is not permitted.
     /// (Originally from ..\FSComp.txt:1428)
     static member writeToReadOnlyByref() = (3224, GetStringFunc("writeToReadOnlyByref",",,,") )
+    /// A ReadOnly attribute has been applied to a struct type with a mutable field.
+    /// (Originally from ..\FSComp.txt:1429)
+    static member readOnlyAttributeOnStructWithMutableField() = (3225, GetStringFunc("readOnlyAttributeOnStructWithMutableField",",,,") )
 
     /// Call this method once to validate that all known resources are valid; throws if not
     static member RunStartupValidation() =
@@ -5714,4 +5717,5 @@ type internal SR private() =
         ignore(GetString("implicitlyDiscardedSequenceInSequenceExpression"))
         ignore(GetString("ilreadFileChanged"))
         ignore(GetString("writeToReadOnlyByref"))
+        ignore(GetString("readOnlyAttributeOnStructWithMutableField"))
         ()

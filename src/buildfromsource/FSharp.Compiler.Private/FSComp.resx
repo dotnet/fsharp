@@ -4315,4 +4315,7 @@
   <data name="writeToReadOnlyByref" xml:space="preserve">
     <value>The byref pointer is readonly, so this write is not permitted.</value>
   </data>
+  <data name="readOnlyAttributeOnStructWithMutableField" xml:space="preserve">
+    <value>A ReadOnly attribute has been applied to a struct type with a mutable field.</value>
+  </data>
 </root>

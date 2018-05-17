@@ -3977,6 +3977,7 @@ let buildApp cenv expr resultTy arg m =
     // Special rule for building applications of the 'reraise' operator
     | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [], _), _), _ 
          when valRefEq g vf g.reraise_vref -> 
+
         // exprty is of type: "unit -> 'a". Break it and store the 'a type here, used later as return type. 
         MakeApplicableExprNoFlex cenv (mkCompGenSequential m arg (mkReraise m resultTy)), resultTy
 
@@ -3989,22 +3990,31 @@ let buildApp cenv expr resultTy arg m =
         let resultTy = mkByrefTyWithInference g argTy (NewByRefKindInferenceType g m)  // resultTy
         expr.SupplyArgument(arg, m), resultTy             
 
-    // Special rules for building applications of the '&expr' or '&&expr' operators, both of which get the
+    // Special rules for building applications of the '&expr' operator, which gets the
     // address of an expression.
     //
     // See also RFC FS-1053.md
     | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [], _), _), _ 
-         when (valRefEq g vf g.addrof_vref || valRefEq g vf g.addrof2_vref || valRefEq g vf g.nativeptr_tobyref_vref) -> 
-        if valRefEq g vf g.addrof2_vref then warning(UseOfAddressOfOperator(m))
+         when valRefEq g vf g.addrof_vref -> 
+
         let wrap, e1a', readonly = mkExprAddrOfExpr g true false AddressOfOp arg (Some(vf)) m
         // Assert the result type to be readonly if we couldn't take the address
         let resultTy = 
             let argTy = tyOfExpr g arg
-            if readonly && valRefEq g vf g.addrof_vref then
+            if readonly then
                 mkInByrefTy g argTy
             else
-                mkByrefTyWithInference g argTy (NewByRefKindInferenceType g m)  // resultTy
+                mkByrefTyWithInference g argTy (NewByRefKindInferenceType g m)
 
+        MakeApplicableExprNoFlex cenv (wrap(e1a')), resultTy
+
+    // Special rules for building applications of the &&expr' operators, which gets the
+    // address of an expression.
+    | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [], _), _), _ 
+         when valRefEq g vf g.addrof2_vref-> 
+
+        warning(UseOfAddressOfOperator(m))
+        let wrap, e1a', _readonly = mkExprAddrOfExpr g true false AddressOfOp arg (Some(vf)) m
         MakeApplicableExprNoFlex cenv (wrap(e1a')), resultTy
 
     | _ -> 

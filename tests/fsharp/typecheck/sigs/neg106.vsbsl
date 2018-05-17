@@ -78,7 +78,7 @@ is not compatible with type
 .
 
 neg106.fs(16,31,16,35): typecheck error FS0001: Type mismatch. Expecting a
-    'byref<int,ByRefKinds.Out>'    
+    'byref<int,ByRefKinds.InOut>'    
 but given a
     'inref<int>'    
-The type 'ByRefKinds.Out' does not match the type 'ByRefKinds.In'
+The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'
