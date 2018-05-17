@@ -67,7 +67,7 @@ type ILReaderOptions =
 
 /// Represents a reader of the metadata of a .NET binary.  May also give some values (e.g. IL code) from the PE file
 /// if it was provided.
-type IModuleReader =
+type ILModuleReader =
     abstract ILModuleDef: ILModuleDef
     abstract ILAssemblyRefs: ILAssemblyRef list
     
@@ -75,17 +75,13 @@ type IModuleReader =
     inherit System.IDisposable
 
 
-[<Sealed>]
-type ILModuleReader =
-    interface IModuleReader
-    
 /// Open a binary reader, except first copy the entire contents of the binary into 
 /// memory, close the file and ensure any subsequent reads happen from the in-memory store. 
 /// PDB files may not be read with this option. 
-val internal OpenILModuleReader: string -> ILReaderOptions -> IModuleReader
+val internal OpenILModuleReader: string -> ILReaderOptions -> ILModuleReader
 
 /// Open a binary reader based on the given bytes. 
-val internal OpenILModuleReaderFromBytes: fileNameForDebugOutput:string -> assemblyContents: byte[] -> options: ILReaderOptions -> IModuleReader
+val internal OpenILModuleReaderFromBytes: fileNameForDebugOutput:string -> assemblyContents: byte[] -> options: ILReaderOptions -> ILModuleReader
 
 type Statistics = 
     { mutable rawMemoryFileCount : int
@@ -100,7 +96,7 @@ val GetStatistics : unit -> Statistics
 module Shim =
 
     type IAssemblyReader =
-        abstract GetILModuleReader: filename: string * readerOptions: ILReaderOptions -> IModuleReader
+        abstract GetILModuleReader: filename: string * readerOptions: ILReaderOptions -> ILModuleReader
 
     [<Sealed>]
     type DefaultAssemblyReader =
