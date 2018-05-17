@@ -5847,16 +5847,14 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
             let genCollElemTy = NewInferenceType ()
             let genCollTy =  (if isArray then mkArrayType else mkListTy) cenv.g genCollElemTy
             UnifyTypes cenv env m overallTy genCollTy
-            let exprty = NewInferenceType ()
-            let genEnumTy =  mkSeqTy cenv.g genCollElemTy
-            AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace genEnumTy exprty 
+            let exprty =  mkSeqTy cenv.g genCollElemTy
             let expr, tpenv = TcExpr cenv exprty env tpenv comp
-            let expr = mkCoerceIfNeeded cenv.g genEnumTy (tyOfExpr cenv.g expr) expr
-            (if isArray then mkCallSeqToArray else mkCallSeqToList) cenv.g m genCollElemTy 
+            let expr = mkCoerceIfNeeded cenv.g exprty (tyOfExpr cenv.g expr) expr
+            (if isArray then mkCallSeqToArray else mkCallSeqToList) 
+                cenv.g m genCollElemTy 
                 // We add a call to 'seq ... ' to make sure sequence expression compilation gets applied to the contents of the
                 // comprehension. But don't do this in FSharp.Core.dll since 'seq' may not yet be defined.
-                ((if cenv.g.compilingFslib then id else mkCallSeq cenv.g m genCollElemTy)
-                    (mkCoerceExpr(expr, genEnumTy, expr.Range, exprty))), tpenv
+                (mkCoerceExpr((if cenv.g.compilingFslib then id else mkCallSeq cenv.g m genCollElemTy) expr, exprty, expr.Range, overallTy)), tpenv
 
     | SynExpr.LetOrUse _ ->
         TcLinearExprs (TcExprThatCanBeCtorBody cenv) cenv env overallTy tpenv false expr (fun x -> x) 
@@ -8217,7 +8215,7 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
                 if not isYield then errorR(Error(FSComp.SR.tcSeqResultsUseYield(), m)) 
                 UnifyTypes cenv env m genOuterTy (mkSeqTy cenv.g genResultTy)
 
-                let resultExpr, tpenv = TcExpr cenv genResultTy env tpenv yieldExpr
+                let resultExpr, tpenv = TcExprFlex cenv true genResultTy env tpenv yieldExpr
                 Some(mkCallSeqSingleton cenv.g m genResultTy resultExpr, tpenv )
 
             | _ -> None
