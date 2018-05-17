@@ -52,9 +52,11 @@ type CodeLensOptions =
     UseColors: bool
     Prefix : string }
 
+[<CLIMutable>]
 type AdvancedOptions =
     { IsBlockStructureEnabled: bool 
       IsOutliningEnabled: bool }
+
 [<Export(typeof<ISettings>)>]
 type internal Settings [<ImportingConstructor>](store: SettingsStore) =
     do  // Initialize default settings
