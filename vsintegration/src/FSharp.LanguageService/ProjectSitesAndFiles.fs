@@ -315,6 +315,7 @@ type internal ProjectSitesAndFiles() =
         let option =
             let newOption () = {
                 ProjectFileName = projectSite.ProjectFileName
+                ProjectId = None
                 SourceFiles = projectSite.CompilationSourceFiles
                 OtherOptions = projectSite.CompilationOptions
                 ReferencedProjects = referencedProjectOptions
