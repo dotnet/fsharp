@@ -9258,6 +9258,14 @@ and TcMethodApplicationThen
 and GetNewInferenceTypeForMethodArg cenv env tpenv x =
     match x with 
     | SynExprParen(a, _, _, _) -> GetNewInferenceTypeForMethodArg cenv env tpenv a
+
+    // // For code compat reasons we allow passing a "ref" arg where an `inref<_>` is required though taking the address is
+    //// now implicit. In order to infer this we check the callsite syntax.
+    //| SynExpr.App(_, _, SingleIdent opId, _, _) 
+    //    when opId.idText = "ref" && 
+    //         (match env.eNameResEnv.eUnqualifiedItems.TryFind(opId.idText) with Some(Item.Value vref) -> valRefEq cenv.g vref cenv.g.fsharpref_vref | _ -> false) ->
+    //     mkRefCellTy cenv.g (NewInferenceType())
+
     | SynExpr.AddressOf(true, a, _, _) -> mkByrefTyWithInference cenv.g (GetNewInferenceTypeForMethodArg cenv env tpenv a) (NewInferenceType())
     | SynExpr.Lambda(_, _, _, a, _) -> mkFunTy (NewInferenceType ()) (GetNewInferenceTypeForMethodArg cenv env tpenv a)
     | SynExpr.Quote(_, raw, a, _, _) -> 
@@ -9290,8 +9298,8 @@ and TcMethodApplication
 
     let denv = env.DisplayEnv
 
-    let isSimpleFormalArg (isParamArrayArg, isInArg, isOutArg, optArgInfo: OptionalArgInfo, callerInfoInfo: CallerInfoInfo, _reflArgInfo: ReflectedArgInfo) = 
-        not isParamArrayArg && not isInArg && not isOutArg && not optArgInfo.IsOptional && callerInfoInfo = NoCallerInfo
+    let isSimpleFormalArg (isParamArrayArg, _isInArg, isOutArg, optArgInfo: OptionalArgInfo, callerInfoInfo: CallerInfoInfo, _reflArgInfo: ReflectedArgInfo) = 
+        not isParamArrayArg && not isOutArg && not optArgInfo.IsOptional && callerInfoInfo = NoCallerInfo
     
     let callerObjArgTys = objArgs |> List.map (tyOfExpr cenv.g)
 

@@ -136,8 +136,8 @@ let AdjustCalledArgType (infoReader:InfoReader) isConstraint (calledArg: CalledA
         if isInByrefTy g calledArgTy then
             if isByrefTy g callerArgTy then 
                 calledArgTy
-            elif isRefCellTy g callerArgTy (* || isTyparTy g callerArgTy -- for compat  *) then 
-                mkRefCellTy g (destByrefTy g calledArgTy)  
+            // elif isRefCellTy g callerArgTy (* || isTyparTy g callerArgTy -- for compat  *) then 
+            //    mkRefCellTy g (destByrefTy g calledArgTy)  
             else 
                 destByrefTy g calledArgTy
 
