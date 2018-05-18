@@ -675,7 +675,7 @@ type internal FSharpLanguageService(package : FSharpPackage) =
 
                     this.SetupProjectFile(siteProvider, this.Workspace, "SetupNewTextView")
 
-                | h when not (IsScript(filename)) ->
+                | h when not (isNull h) && not (IsScript(filename)) ->
                     
                     let docId = this.Workspace.CurrentSolution.GetDocumentIdsWithFilePath(filename).FirstOrDefault()
                     match docId with
