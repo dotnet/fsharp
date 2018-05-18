@@ -189,7 +189,7 @@
     <DebugType Condition=" '$(DebugType)' == '' ">full</DebugType>
     <DebugType Condition="'$(OS)' == 'Unix'">portable</DebugType> <!-- no longer use MDB on Mono --> 
     <Optimize>true</Optimize>
-    <DefineConstants>PROTO;DEBUG;NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
+    <DefineConstants>DEBUG;NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup>
