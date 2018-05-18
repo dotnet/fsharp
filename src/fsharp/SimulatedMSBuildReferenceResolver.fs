@@ -18,7 +18,7 @@ let internal SimulatedMSBuildResolver =
     { new Resolver with 
         member x.HighestInstalledNetFrameworkVersion() = 
             let root = x.DotNetFrameworkReferenceAssembliesRootDirectory
-            if Directory.Exists(Path.Combine(root,"v4.7.1")) then "v4.7.2"
+            if Directory.Exists(Path.Combine(root,"v4.7.2")) then "v4.7.2"
             elif Directory.Exists(Path.Combine(root,"v4.7.1")) then "v4.7.1"
             elif Directory.Exists(Path.Combine(root,"v4.7")) then "v4.7"
             elif Directory.Exists(Path.Combine(root,"v4.6.2")) then "v4.6.2"

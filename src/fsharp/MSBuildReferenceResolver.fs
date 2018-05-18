@@ -79,6 +79,18 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
 
     [<Literal>]    
     let private Net461 = "v4.6.1"
+
+    [<Literal>]    
+    let private Net462 = "v4.6.2"
+
+    [<Literal>]    
+    let private Net47 = "v4.7"
+
+    [<Literal>]    
+    let private Net471 = "v4.7.1"
+
+    [<Literal>]    
+    let private Net472 = "v4.7.2"
 #endif
 
     /// Get the path to the .NET Framework implementation assemblies by using ToolLocationHelper.GetPathToDotNetFramework.
@@ -97,6 +109,10 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
             //| Net452 -> Some TargetDotNetFrameworkVersion.Version452 // not available in Dev15 MSBuild version
             | Net46 -> Some TargetDotNetFrameworkVersion.Version46
             | Net461 -> Some TargetDotNetFrameworkVersion.Version461
+            | Net462 -> Some TargetDotNetFrameworkVersion.Version462
+            | Net47 -> Some TargetDotNetFrameworkVersion.Version47
+            | Net471 -> Some TargetDotNetFrameworkVersion.Version471
+            | Net472 -> Some TargetDotNetFrameworkVersion.Version472
 #endif
             | _ -> assert false; None
         match v with
