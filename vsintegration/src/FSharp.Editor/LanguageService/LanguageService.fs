@@ -663,7 +663,7 @@ type internal FSharpLanguageService(package : FSharpPackage) =
                 match hier with
                 | :? IProvideProjectSite as siteProvider when not (IsScript(filename)) ->
                     this.SetupProjectFile(siteProvider, this.Workspace, "SetupNewTextView")
-                | h when not (IsScript(filename)) ->
+                | h when not (isNull h) && not (IsScript(filename)) ->
                     let docId = this.Workspace.CurrentSolution.GetDocumentIdsWithFilePath(filename).FirstOrDefault()
                     match docId with
                     | null ->
