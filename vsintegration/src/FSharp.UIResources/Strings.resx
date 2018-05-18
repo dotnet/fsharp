@@ -53,6 +53,7 @@
     value   : The object must be serialized with 
             : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
             : and then encoded with base64 encoding.
+
     mimetype: application/x-microsoft.net.object.bytearray.base64
     value   : The object must be serialized into a byte array 
             : using a System.ComponentModel.TypeConverter
@@ -186,7 +187,7 @@
     <value>Show annotations to the right instead of above the line</value>
   </data>
   <data name="CodeLens_Switch" xml:space="preserve">
-    <value>Show type signature annotations in the editor</value>
+    <value>Enable CodeLens</value>
   </data>
   <data name="CodeLens_Prefix" xml:space="preserve">
     <value>Annotation prefix</value>

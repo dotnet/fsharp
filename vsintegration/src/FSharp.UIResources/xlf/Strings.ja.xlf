@@ -118,8 +118,8 @@
         <note />
       </trans-unit>
       <trans-unit id="CodeLens_Switch">
-        <source>Show type signature annotations in the editor</source>
-        <target state="new">Show type signature annotations in the editor</target>
+        <source>Enable CodeLens</source>
+        <target state="new">Enable CodeLens</target>
         <note />
       </trans-unit>
       <trans-unit id="CodeLens_Prefix">
