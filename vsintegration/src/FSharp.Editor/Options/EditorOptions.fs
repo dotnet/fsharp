@@ -87,7 +87,7 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
               IsOutliningEnabled = true }
 
         store.RegisterDefault
-            { Enabled = true
+            { Enabled = false
               UseColors = false
               ReplaceWithLineLens = true
               Prefix = "// " }
