@@ -69,6 +69,8 @@ let B = File1.A + File1.A"""
         member __.AssemblyLoadFrom(fileName) = defaultFileSystem.AssemblyLoadFrom fileName
         member __.AssemblyLoad(assemblyName) = defaultFileSystem.AssemblyLoad assemblyName 
 
+        member __.SourceFileReadShim(fileName, codepage) = defaultFileSystem.SourceFileReadShim(fileName, codepage)
+
 let UseMyFileSystem() = 
     let myFileSystem = MyFileSystem(Shim.FileSystem)
     Shim.FileSystem <- myFileSystem
