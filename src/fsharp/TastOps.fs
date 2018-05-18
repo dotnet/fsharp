@@ -828,11 +828,6 @@ let (|StripNullableTy|) g ty =
     | AppTy g (tcr, [tyarg]) when tyconRefEq g tcr g.system_Nullable_tcref -> tyarg
     | _ -> ty
     
-let (|ByrefTy|_|) g ty = 
-    match ty with 
-    | AppTy g (tcr, [tyarg]) when tyconRefEq g tcr g.byref_tcr -> Some tyarg
-    | _ -> None
-
 let mkInstForAppTy g typ = 
     match typ with
     | AppTy g (tcref, tinst) -> mkTyconRefInst tcref tinst
@@ -2962,6 +2957,10 @@ let destByrefTy g ty =
     | TType_app(tcref, [x; _]) when g.byref2_tcr.CanDeref && tyconRefEq g g.byref2_tcr tcref -> x // Check sufficient FSharp.Core
     | TType_app(tcref, [x]) when tyconRefEq g g.byref_tcr tcref -> x // all others
     | _ -> failwith "destByrefTy: not a byref type"
+
+let (|ByrefTy|_|) g ty = 
+    // Because of byref = byref2<ty,tags> it is better to write this using is/dest
+    if isByrefTy g ty then Some (destByrefTy g ty) else None
 
 let destNativePtrTy g ty =
     match ty |> stripTyEqns g with
