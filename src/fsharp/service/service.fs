@@ -1780,7 +1780,7 @@ type FSharpProjectOptions =
     static member UseSameProject(options1,options2) =
         match options1.ProjectId, options2.ProjectId with
         | Some(projectId1), Some(projectId2) when not (String.IsNullOrWhiteSpace(projectId1)) && not (String.IsNullOrWhiteSpace(projectId2)) -> 
-            String.Equals(projectId1, projectId2, StringComparison.OrdinalIgnoreCase)
+            projectId1 = projectId2
         | Some(_), Some(_)
         | None, None -> options1.ProjectFileName = options2.ProjectFileName
         | _ -> false
