@@ -1822,7 +1822,7 @@ module TypecheckTests =
     [<Test>]
     let ``sigs pos31`` () = 
         let cfg = testConfig "typecheck/sigs"
-        fsc cfg "%s --target:exe -o:pos31.exe --warnaserror" cfg.fsc_flags ["pos31.fs"]
+        fsc cfg "%s --target:exe -o:pos31.exe --warnaserror" cfg.fsc_flags ["pos31.fsi"; "pos31.fs"]
         peverify cfg "pos31.exe"
 
     [<Test>]
