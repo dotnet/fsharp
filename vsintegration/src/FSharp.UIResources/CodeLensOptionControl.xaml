@@ -19,27 +19,31 @@
             <StackPanel>
                 <GroupBox Header="{x:Static local:Strings.CodeLens}">
                     <StackPanel>
-                        <CheckBox x:Name="enableCodeLens" IsChecked="{Binding Enabled}"
+                        <StackPanel>
+                            <CheckBox x:Name="enableCodeLens" IsChecked="{Binding Enabled}"
                                   Content="{x:Static local:Strings.CodeLens_Switch}"/>
-                        <CheckBox x:Name="useColors" IsChecked="{Binding UseColors}"
+                        </StackPanel>
+                        <StackPanel Margin="15 0 0 0">
+                            <CheckBox x:Name="useColors" IsChecked="{Binding UseColors}"
                                   Content="{x:Static local:Strings.CodeLens_UseColors}"
-                                  IsEnabled="{Binding ElementName=enableCodeLens, Path=IsChecked}"/>
-                        <CheckBox x:Name="replaceWithLineLens" IsChecked="{Binding ReplaceWithLineLens}"
+                                  IsEnabled="{Binding IsChecked, ElementName=enableCodeLens}"/>
+                            <CheckBox x:Name="replaceWithLineLens" IsChecked="{Binding ReplaceWithLineLens}"
                                   Content="{x:Static local:Strings.CodeLens_Replace_LineLens}"
-                                  IsEnabled="{Binding ElementName=enableCodeLens, Path=IsChecked}"/>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="70" />
-                            </Grid.ColumnDefinitions>
-                            <Label Grid.Column="0" Content="{x:Static local:Strings.CodeLens_Prefix}"/>
-                            <TextBox x:Name="prefix" Grid.Column="1" 
+                                  IsEnabled="{Binding IsChecked, ElementName=enableCodeLens}"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="70" />
+                                </Grid.ColumnDefinitions>
+                                <Label Grid.Column="0" Content="{x:Static local:Strings.CodeLens_Prefix}"/>
+                                <TextBox x:Name="prefix" Grid.Column="1"
                                      Text="{Binding Prefix, UpdateSourceTrigger=PropertyChanged}"
                                      HorizontalContentAlignment="Right" 
                                      VerticalContentAlignment="Center" Margin="7,0,-116,0"
-                                     IsEnabled="{Binding ElementName=enableCodeLens, Path=IsChecked}">
-                            </TextBox>
-                        </Grid>
+                                     IsEnabled="{Binding IsChecked, ElementName=enableCodeLens}">
+                                </TextBox>
+                            </Grid>
+                        </StackPanel>
                     </StackPanel>
                 </GroupBox>
             </StackPanel>
