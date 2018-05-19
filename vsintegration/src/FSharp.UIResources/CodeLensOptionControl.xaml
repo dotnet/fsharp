@@ -38,7 +38,7 @@
                                 <Label Grid.Column="0" Content="{x:Static local:Strings.CodeLens_Prefix}"/>
                                 <TextBox x:Name="prefix" Grid.Column="1"
                                      Text="{Binding Prefix, UpdateSourceTrigger=PropertyChanged}"
-                                     HorizontalContentAlignment="Right" 
+                                     HorizontalContentAlignment="Right"
                                      VerticalContentAlignment="Center" Margin="7,0,-116,0"
                                      IsEnabled="{Binding IsChecked, ElementName=enableCodeLens}">
                                 </TextBox>
