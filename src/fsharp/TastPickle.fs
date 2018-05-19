@@ -2283,7 +2283,7 @@ and p_op x st =
               p_byte 30 st; p_int a st
          else 
               p_byte 11 st; p_int a st
-    | TOp.ILAsm (a,b)                -> p_byte 12 st; p_tup2 (p_list p_ILInstr) p_typs (a,b) st
+    | TOp.ILAsm (a,b)      -> p_byte 12 st; p_tup2 (p_list p_ILInstr) p_typs (a,b) st
     | TOp.RefAddrGet _               -> p_byte 13 st
     | TOp.UnionCaseProof (a)         -> p_byte 14 st; p_ucref a st
     | TOp.Coerce                     -> p_byte 15 st
@@ -2338,7 +2338,7 @@ and u_op st =
     | 12 -> let a = (u_list u_ILInstr) st
             let b = u_typs st
             TOp.ILAsm (a,b) 
-    | 13 -> TOp.RefAddrGet false
+    | 13 -> TOp.RefAddrGet false // ok to set the 'readonly' flag on these operands to false on re-read since the flag is only used for typechecking purposes
     | 14 -> let a = u_ucref st
             TOp.UnionCaseProof a 
     | 15 -> TOp.Coerce

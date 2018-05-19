@@ -1556,19 +1556,6 @@ type MethInfo =
 
         let paramAttribs = x.GetParamAttribs(amap, m)
         (paramAttribs,paramNamesAndTypes) ||> List.map2 (List.map2 (fun (isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfoInfo, reflArgInfo) (ParamNameAndType(nmOpt,pty)) -> 
-             // This was an attempt to add the "annotation" about whether this is an inref, outref or plain byref
-             //
-             // However we can't do this for "[in]" based on the attribute alone - the modreq is also needed.
-             // There is existing .NET Com Interop code that has the "[in]" attribute that doesn't have the modreq attribute
-             // and we can't retofit the "inref" type onto that code (it would probably legitimate to do so but requires very careful 
-             // extra type inference rules in order to maintain compat).
-             //
-             //let pty = 
-             //    let g = x.TcGlobals
-             //    // We don't do this for "[in]" based on the attribute alone - the modreq is also needed.
-             //    //if isByrefTy g pty && isInArg then mkInByrefTy g (destByrefTy g pty)
-             //    if isByrefTy g pty && isOutArg then mkOutByrefTy g (destByrefTy g pty)
-             //    else pty
              ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfoInfo, nmOpt, reflArgInfo, pty)))
 
     /// Get the ParamData objects for the parameters of a MethInfo

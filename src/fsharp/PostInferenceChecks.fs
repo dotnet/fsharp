@@ -920,7 +920,7 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
             | true, firstArg::_ -> firstArg.SetHasBeenReferenced()
             | _ -> ()
             // any byRef arguments are considered used, as they may be 'out's
-            restArgs |> List.iter (fun arg -> if isByrefLikeTy cenv.g m arg.Type then arg.SetHasBeenReferenced())
+            restArgs |> List.iter (fun arg -> if isByrefTy cenv.g arg.Type then arg.SetHasBeenReferenced())
 
         syntacticArgs |> List.iter (CheckValSpec cenv env)
         syntacticArgs |> List.iter (BindVal cenv env)
@@ -937,7 +937,7 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
         CheckNoReraise cenv freesOpt body 
 
         // Check the body of the lambda
-        if (* (not (isNil tps) || not (isNil vsl)) && *) isTop && not cenv.g.compilingFslib && isByrefLikeTy cenv.g m bodyty then
+        if (not (isNil tps) || not (isNil vsl)) && isTop && not cenv.g.compilingFslib && isByrefLikeTy cenv.g m bodyty then
             // allow byref to occur as return position for byref-typed top level function or method 
             CheckExprPermitByrefReturn cenv env body
         else
@@ -945,7 +945,7 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
 
         // Check byref return types
         if cenv.reportErrors then 
-            if (* (not inlined && (isNil tps && isNil vsl)) || *) not isTop then
+            if (not inlined && (isNil tps && isNil vsl)) || not isTop then
                 CheckForByrefLikeType cenv env m bodyty (fun () -> 
                         errorR(Error(FSComp.SR.chkFirstClassFuncNoByref(), m)))
 
@@ -1447,14 +1447,13 @@ let CheckEntityDefn cenv env (tycon:Entity) =
 
             if numCurriedArgSets > 1 && 
                (minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst) 
-                |> List.existsSquared (fun (ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfoInfo, _, reflArgInfo, ty)) -> 
-                    isParamArrayArg || isInArg || isOutArg || reflArgInfo.AutoQuote || optArgInfo.IsOptional || callerInfoInfo <> NoCallerInfo || isByrefLikeTy cenv.g m ty)) then 
+                |> List.existsSquared (fun (ParamData(isParamArrayArg, _isInArg, isOutArg, optArgInfo, callerInfoInfo, _, reflArgInfo, ty)) -> 
+                    isParamArrayArg || isOutArg || reflArgInfo.AutoQuote || optArgInfo.IsOptional || callerInfoInfo <> NoCallerInfo || isByrefLikeTy cenv.g m ty)) then 
                 errorR(Error(FSComp.SR.chkCurriedMethodsCantHaveOutParams(), m))
 
             if numCurriedArgSets = 1 then
                 minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst) 
                 |> List.iterSquared (fun (ParamData(_, isInArg, _, optArgInfo, callerInfoInfo, _, _, ty)) ->
-                 // TODO: default values and in args
                     ignore isInArg
                     match (optArgInfo, callerInfoInfo) with
                     | _, NoCallerInfo -> ()
