@@ -187,7 +187,7 @@
     <value>Show annotations to the right instead of above the line</value>
   </data>
   <data name="CodeLens_Switch" xml:space="preserve">
-    <value>Enable CodeLens</value>
+    <value>Enable CodeLens (Experimental)</value>
   </data>
   <data name="CodeLens_Prefix" xml:space="preserve">
     <value>Annotation prefix</value>
