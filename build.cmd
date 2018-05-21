@@ -481,9 +481,9 @@ if NOT EXIST Proto\net40\bin\fsc.exe (
   set BUILD_PROTO=1
 )
 
--rem turn off vs ide unit tests until they pass again
--set TEST_VS_IDEUNIT_SUITE= 0
--
+rem turn off vs ide unit tests until they pass again
+set TEST_VS_IDEUNIT_SUITE= 0
+
 rem
 rem This stops the dotnet cli from hunting around and 
 rem finding the highest possible dotnet sdk version to use.
