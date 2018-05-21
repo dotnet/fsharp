@@ -2300,15 +2300,21 @@ and ResolveOverloading
                     let c = compareTypes calledArg1.CalledArgumentType calledArg2.CalledArgumentType
                     if c <> 0 then c else
 
-                    // Func<_> is always considered better than any other delegate type
                     let c = 
                         (calledArg1.CalledArgumentType, calledArg2.CalledArgumentType) ||> compareCond (fun ty1 ty2 -> 
+
+                            // Func<_> is always considered better than any other delegate type
                             match tryDestAppTy csenv.g ty1 with 
-                            | Some tcref1 -> 
+                            | Some tcref1 when 
                                 tcref1.DisplayName = "Func" &&  
                                 (match tcref1.PublicPath with Some p -> p.EnclosingPath = [| "System" |] | _ -> false) && 
                                 isDelegateTy g ty1 &&
-                                isDelegateTy g ty2 
+                                isDelegateTy g ty2 -> true
+
+                            // T is always better than inref<T>
+                            | _ when isInByrefTy csenv.g ty2 && typeEquiv csenv.g ty1 (destByrefTy csenv.g ty2) -> 
+                                true
+
                             | _ -> false)
                                  
                     if c <> 0 then c else

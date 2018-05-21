@@ -106,18 +106,21 @@ namespace Tests
         let f6() = 
             // managed memory
             let arrayMemory = Array.zeroCreate<byte>(100)
-            let arraySpan = new Span<byte>(arrayMemory);
+            let arraySpan = new Span<byte>(arrayMemory)
+            for i in 0 .. 99 do arrayMemory.[i] <- byte i
             SafeSum(arraySpan)|> printfn "res = %d"
 
             // native memory
-            let nativeMemory = Marshal.AllocHGlobal(100);
-            let nativeSpan = new Span<byte>(nativeMemory.ToPointer(), 100);
+            let nativeMemory = Marshal.AllocHGlobal(100)
+            let nativeSpan = new Span<byte>(nativeMemory.ToPointer(), 100)
+            for i in 0 .. 99 do Marshal.WriteByte(nativeMemory, i, byte i)
             SafeSum(nativeSpan)|> printfn "res = %d"
-            Marshal.FreeHGlobal(nativeMemory);
+            Marshal.FreeHGlobal(nativeMemory)
 
             // stack memory
             let mem = NativePtr.stackalloc<byte>(100)
             let mem2 = mem |> NativePtr.toVoidPtr
+            for i in 0 .. 99 do NativePtr.set mem i (byte i)
             let stackSpan = Span<byte>(mem2, 100)
             SafeSum(stackSpan) |> printfn "res = %d"
         f6()
