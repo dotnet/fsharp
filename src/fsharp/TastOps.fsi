@@ -252,7 +252,7 @@ val mkGetTupleItemN : TcGlobals -> range -> int -> ILType -> bool -> Expr -> TTy
 val evalTupInfoIsStruct : TupInfo -> bool
 
 /// If it is a tuple type, ensure it's outermost type is a .NET tuple type, otherwise leave unchanged
-val helpEnsureTypeHasMetadata : TcGlobals -> TType -> TType
+val convertToTypeWithMetadataIfPossible : TcGlobals -> TType -> TType
 
 
 //-------------------------------------------------------------------------

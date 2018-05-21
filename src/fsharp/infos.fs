@@ -670,7 +670,7 @@ type ILTypeInfo =
     member x.ToType = let (ILTypeInfo(_,ty,_,_)) = x in ty
 
     /// Get the compiled nominal type. In the case of tuple types, this is a .NET tuple type
-    member x.ToAppType = helpEnsureTypeHasMetadata x.TcGlobals x.ToType
+    member x.ToAppType = convertToTypeWithMetadataIfPossible x.TcGlobals x.ToType
 
     member x.TyconRefOfRawMetadata = tcrefOfAppTy x.TcGlobals x.ToAppType
 
@@ -690,7 +690,7 @@ type ILTypeInfo =
         if isAnyTupleTy g ty then 
             // When getting .NET metadata for the properties and methods
             // of an F# tuple type, use the compiled nominal type, which is a .NET tuple type
-            let metadataTy = helpEnsureTypeHasMetadata g ty
+            let metadataTy = convertToTypeWithMetadataIfPossible g ty
             assert (isILAppTy g metadataTy)
             let metadataTyconRef = tcrefOfAppTy g metadataTy
             let (TILObjectReprData(scoref, enc, tdef)) = metadataTyconRef.ILTyconInfo
@@ -727,7 +727,7 @@ type ILMethInfo =
     member x.ApparentEnclosingType = match x with ILMethInfo(_,ty,_,_,_) -> ty
 
     /// Like ApparentEnclosingType but use the compiled nominal type if this is a method on a tuple type
-    member x.ApparentEnclosingAppType = helpEnsureTypeHasMetadata x.TcGlobals x.ApparentEnclosingType
+    member x.ApparentEnclosingAppType = convertToTypeWithMetadataIfPossible x.TcGlobals x.ApparentEnclosingType
 
     /// Get the declaring type associated with an extension member, if any.
     member x.ILExtensionMethodDeclaringTyconRef = match x with ILMethInfo(_,_,tcrefOpt,_,_) -> tcrefOpt
@@ -897,7 +897,7 @@ type MethInfo =
 
     /// Get the enclosing type of the method info, using a nominal type for tuple types
     member x.ApparentEnclosingAppType = 
-        helpEnsureTypeHasMetadata x.TcGlobals x.ApparentEnclosingType
+        convertToTypeWithMetadataIfPossible x.TcGlobals x.ApparentEnclosingType
 
     member x.ApparentEnclosingTyconRef = 
         tcrefOfAppTy x.TcGlobals x.ApparentEnclosingAppType
@@ -1793,7 +1793,7 @@ type ILPropInfo =
     member x.ApparentEnclosingType = match x with ILPropInfo(tinfo,_) -> tinfo.ToType
 
     /// Like ApparentEnclosingType but use the compiled nominal type if this is a method on a tuple type
-    member x.ApparentEnclosingAppType = helpEnsureTypeHasMetadata x.TcGlobals x.ApparentEnclosingType
+    member x.ApparentEnclosingAppType = convertToTypeWithMetadataIfPossible x.TcGlobals x.ApparentEnclosingType
 
     /// Get the raw Abstract IL metadata for the IL property
     member x.RawMetadata = match x with ILPropInfo(_,pd) -> pd
