@@ -2196,9 +2196,14 @@ type IParseState with
     member internal x.SynArgNameGenerator = 
         let key = "SynArgNameGenerator"
         let bls = x.LexBuffer.BufferLocalStore
-        if not (bls.ContainsKey key) then
-            bls.[key] <- box (SynArgNameGenerator())
-        bls.[key] :?> SynArgNameGenerator
+        let gen =
+            match bls.TryGetValue(key) with
+            | true, gen -> gen
+            | _ ->
+                let gen = box (SynArgNameGenerator())
+                bls.[key] <- gen
+                gen
+        gen :?> SynArgNameGenerator
 
     /// Reset the generator used for compiler-generated argument names.
     member internal x.ResetSynArgNameGenerator() = x.SynArgNameGenerator.Reset()
@@ -2214,18 +2219,25 @@ module LexbufLocalXmlDocStore =
         lexbuf.BufferLocalStore.[xmlDocKey] <- box (XmlDocCollector())
 
     /// Called from the lexer to save a single line of XML doc comment.
-    let internal SaveXmlDocLine (lexbuf:Lexbuf, lineText, pos) = 
-        if not (lexbuf.BufferLocalStore.ContainsKey(xmlDocKey)) then 
-            lexbuf.BufferLocalStore.[xmlDocKey] <- box (XmlDocCollector())
-        let collector = unbox<XmlDocCollector>(lexbuf.BufferLocalStore.[xmlDocKey])
-        collector.AddXmlDocLine (lineText, pos)
+    let internal SaveXmlDocLine (lexbuf:Lexbuf, lineText, pos) =
+        let collector =
+            match lexbuf.BufferLocalStore.TryGetValue(xmlDocKey) with
+            | true, collector -> collector
+            | _ ->
+                let collector = box (XmlDocCollector())
+                lexbuf.BufferLocalStore.[xmlDocKey] <- collector
+                collector
+        let collector = unbox<XmlDocCollector>(collector)
+        collector.AddXmlDocLine(lineText, pos)
 
     /// Called from the parser each time we parse a construct that marks the end of an XML doc comment range,
     /// e.g. a 'type' declaration. The markerRange is the range of the keyword that delimits the construct.
-    let internal GrabXmlDocBeforeMarker (lexbuf:Lexbuf, markerRange:range)  = 
-        if lexbuf.BufferLocalStore.ContainsKey(xmlDocKey) then 
-            PreXmlDoc.CreateFromGrabPoint(unbox<XmlDocCollector>(lexbuf.BufferLocalStore.[xmlDocKey]),markerRange.End)
-        else
+    let internal GrabXmlDocBeforeMarker (lexbuf:Lexbuf, markerRange:range)  =
+        match lexbuf.BufferLocalStore.TryGetValue(xmlDocKey) with
+        | true, collector ->
+            let collector = unbox<XmlDocCollector>(collector)
+            PreXmlDoc.CreateFromGrabPoint(collector, markerRange.End)
+        | _ ->
             PreXmlDoc.Empty
 
 
@@ -2245,9 +2257,12 @@ type NiceNameGenerator() =
     member x.FreshCompilerGeneratedName (name,m:range) =
       lock lockObj (fun () -> 
         let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
-        let n = (if basicNameCounts.ContainsKey basicName then basicNameCounts.[basicName] else 0)
+        let n =
+            match basicNameCounts.TryGetValue(basicName) with
+            | true, count -> count
+            | _ -> 0
         let nm = CompilerGeneratedNameSuffix basicName (string m.StartLine + (match n with 0 -> "" | n -> "-" + string n))
-        basicNameCounts.[basicName] <- n+1
+        basicNameCounts.[basicName] <- n + 1
         nm)
 
     member x.Reset () = 
@@ -2271,17 +2286,21 @@ type StableNiceNameGenerator() =
     let basicNameCounts = new Dictionary<string,int>(100)
 
     member x.GetUniqueCompilerGeneratedName (name,m:range,uniq) =
-      lock lockObj (fun () -> 
-        let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
-        if names.ContainsKey (basicName,uniq) then
-            names.[(basicName,uniq)]
-        else
-            let n = (if basicNameCounts.ContainsKey basicName then basicNameCounts.[basicName] else 0)
-            let nm = CompilerGeneratedNameSuffix basicName (string m.StartLine + (match n with 0 -> "" | n -> "-" + string n))
-            names.[(basicName,uniq)] <- nm
-            basicNameCounts.[basicName] <- n+1
-            nm
-      )
+        lock lockObj (fun () -> 
+            let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
+            let key = basicName, uniq
+            match names.TryGetValue(key) with
+            | true, nm -> nm
+            | _ ->
+                let n =
+                    match basicNameCounts.TryGetValue(basicName) with
+                    | true, c -> c
+                    | _ -> 0
+                let nm = CompilerGeneratedNameSuffix basicName (string m.StartLine + (match n with 0 -> "" | n -> "-" + string n))
+                names.[key] <- nm
+                basicNameCounts.[basicName] <- n + 1
+                nm
+        )
 
     member x.Reset () =
       lock lockObj (fun () -> 

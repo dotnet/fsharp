@@ -40,7 +40,7 @@ let inline isSingleton l =
     | _ -> false
 
 let inline isNonNull x = not (isNull x)
-let inline nonNull msg x = if isNull x then failwith ("null: " ^ msg) else x
+let inline nonNull msg x = if isNull x then failwith ("null: " + msg) else x
 let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
 
 //---------------------------------------------------------------------
@@ -907,11 +907,10 @@ let _ = eventually { use x = null in return 1 }
 type UniqueStampGenerator<'T when 'T : equality>() = 
     let encodeTab = new Dictionary<'T,int>(HashIdentity.Structural)
     let mutable nItems = 0
-    let encode str = 
-        if encodeTab.ContainsKey(str)
-        then
-            encodeTab.[str]
-        else
+    let encode str =
+        match encodeTab.TryGetValue(str) with
+        | true, idx -> idx
+        | _ ->
             let idx = nItems
             encodeTab.[str] <- idx
             nItems <- nItems + 1
@@ -1146,7 +1145,6 @@ module MultiMap =
     let find v (m: MultiMap<_,_>) = match Map.tryFind v m with None -> [] | Some r -> r
     let add v x (m: MultiMap<_,_>) = Map.add v (x :: find v m) m
     let range (m: MultiMap<_,_>) = Map.foldBack (fun _ x sofar -> x @ sofar) m []
-    //let chooseRange f (m: MultiMap<_,_>) = Map.foldBack (fun _ x sofar -> List.choose f x @ sofar) m []
     let empty : MultiMap<_,_> = Map.empty
     let initBy f xs : MultiMap<_,_> = xs |> Seq.groupBy f |> Seq.map (fun (k,v) -> (k,List.ofSeq v)) |> Map.ofSeq 
 
@@ -1291,7 +1289,7 @@ module Shim =
         static member ReadBinaryChunk (fileName, start, len) = 
             use stream = FileSystem.FileStreamReadShim fileName
             stream.Seek(int64 start, SeekOrigin.Begin) |> ignore
-            let buffer = Array.zeroCreate  len 
+            let buffer = Array.zeroCreate len 
             let mutable n = 0
             while n < len do 
                 n <- n + stream.Read(buffer, n, len-n)

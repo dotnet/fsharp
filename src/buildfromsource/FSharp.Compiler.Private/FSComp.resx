@@ -363,7 +363,7 @@
   <data name="tastUnexpectedByRef" xml:space="preserve">
     <value>Unexpected use of a byref-typed variable</value>
   </data>
-  <data name="tastValueMustBeLocalAndMutable" xml:space="preserve">
+  <data name="tastValueMustBeMutable" xml:space="preserve">
     <value>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</value>
   </data>
   <data name="tastInvalidMutationOfConstant" xml:space="preserve">
@@ -3379,7 +3379,7 @@
     <value>No implementation files specified</value>
   </data>
   <data name="fscBadAssemblyVersion" xml:space="preserve">
-    <value>An {0} specified version '{1}', but this value is invalid and has been ignored</value>
+    <value>The attribute {0} specified version '{1}', but this value is invalid and has been ignored</value>
   </data>
   <data name="fscTwoResourceManifests" xml:space="preserve">
     <value>Conflicting options specified: 'win32manifest' and 'win32res'. Only one of these can be used.</value>

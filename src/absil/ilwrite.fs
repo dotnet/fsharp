@@ -587,6 +587,7 @@ type cenv =
       blobs: MetadataTable<byte[]> 
       strings: MetadataTable<string> 
       userStrings: MetadataTable<string>
+      normalizeAssemblyRefs: ILAssemblyRef -> ILAssemblyRef
     }
     member cenv.GetTable (tab:TableName) = cenv.tables.[tab.Index]
 
@@ -714,9 +715,9 @@ let rec GetAssemblyRefAsRow cenv (aref:ILAssemblyRef) =
          StringIndex (GetStringHeapIdx cenv aref.Name), 
          StringIndex (match aref.Locale with None -> 0 | Some s -> GetStringHeapIdx cenv s), 
          BlobIndex (match aref.Hash with None -> 0 | Some s -> GetBytesAsBlobIdx cenv s))
-  
+
 and GetAssemblyRefAsIdx cenv aref = 
-    FindOrAddSharedRow cenv TableNames.AssemblyRef (GetAssemblyRefAsRow cenv aref)
+    FindOrAddSharedRow cenv TableNames.AssemblyRef (GetAssemblyRefAsRow cenv (cenv.normalizeAssemblyRefs aref))
 
 and GetModuleRefAsRow cenv (mref:ILModuleRef) =
     SharedRow 
@@ -1638,17 +1639,16 @@ module Codebuf =
                     match i, tgs with 
                     | (_, Some i_short), [tg] 
                         when
-                          begin 
-                            // Use the original offsets to compute if the branch is small or large.  This is 
-                            // a safe approximation because code only gets smaller. 
-                            if not (origAvailBrFixups.ContainsKey tg) then 
-                                dprintn ("branch target " + formatCodeLabel tg + " not found in code")
-                            let origDest = 
-                                if origAvailBrFixups.ContainsKey tg then origAvailBrFixups.[tg]
-                                else 666666
+                           // Use the original offsets to compute if the branch is small or large.  This is 
+                           // a safe approximation because code only gets smaller. 
+                           (let origDest =
+                                match origAvailBrFixups.TryGetValue tg with
+                                | true, fixup -> fixup
+                                | _ -> 
+                                    dprintn ("branch target " + formatCodeLabel tg + " not found in code")
+                                    666666
                             let origRelOffset = origDest - origEndOfInstr
-                            -128 <= origRelOffset && origRelOffset <= 127
-                          end 
+                            -128 <= origRelOffset && origRelOffset <= 127)
                       ->
                         newCode.EmitIntAsByte i_short
                         true
@@ -1718,18 +1718,16 @@ module Codebuf =
       
       // Now apply the adjusted fixups in the new code 
       newReqdBrFixups |> List.iter (fun (newFixupLoc, endOfInstr, tg, small) ->
-            if not (newAvailBrFixups.ContainsKey tg) then 
-              failwith ("target "+formatCodeLabel tg+" not found in new fixups")
-            try 
-                let n = newAvailBrFixups.[tg]
-                let relOffset = (n - endOfInstr)
-                if small then 
-                    if Bytes.get newCode newFixupLoc <> 0x98 then failwith "br fixupsanity check failed"
-                    newCode.[newFixupLoc] <- b0 relOffset
-                else 
-                    checkFixup32 newCode newFixupLoc 0xf00dd00fl
-                    applyFixup32 newCode newFixupLoc relOffset
-            with :? KeyNotFoundException -> ())
+          match newAvailBrFixups.TryGetValue(tg) with
+          | true, n ->
+              let relOffset = n - endOfInstr
+              if small then 
+                  if Bytes.get newCode newFixupLoc <> 0x98 then failwith "br fixupsanity check failed"
+                  newCode.[newFixupLoc] <- b0 relOffset
+              else 
+                  checkFixup32 newCode newFixupLoc 0xf00dd00fl
+                  applyFixup32 newCode newFixupLoc relOffset
+          | _ -> failwith ("target " + formatCodeLabel tg + " not found in new fixups"))
 
       newCode, newReqdStringFixups, newExnClauses, newSeqPoints, newScopes
 
@@ -2162,14 +2160,19 @@ module Codebuf =
         // Build a table mapping Abstract IL pcs to positions in the generated code buffer
         let pc2pos = Array.zeroCreate (instrs.Length+1)
         let pc2labs = Dictionary()
-        for (KeyValue(lab, pc)) in code.Labels do
-            if pc2labs.ContainsKey pc then pc2labs.[pc] <- lab :: pc2labs.[pc] else pc2labs.[pc] <- [lab]
+        for KeyValue (lab, pc) in code.Labels do
+            match pc2labs.TryGetValue(pc) with
+            | true, labels ->
+                pc2labs.[pc] <- lab :: labels
+            | _ -> pc2labs.[pc] <- [lab]
 
         // Emit the instructions
         for pc = 0 to instrs.Length do
-            if pc2labs.ContainsKey pc then  
-                for lab in pc2labs.[pc] do
-                    codebuf.RecordAvailBrFixup lab
+            match pc2labs.TryGetValue(pc) with
+            | true, labels ->
+                for lab in labels do
+                    codebuf.RecordAvailBrFixup(lab)
+            | _ -> ()
             pc2pos.[pc] <- codebuf.code.Position
             if pc < instrs.Length then 
                 match instrs.[pc] with 
@@ -2903,7 +2906,7 @@ let GenModule (cenv : cenv) (modul: ILModuleDef) =
     GenTypeDefsPass4 [] cenv tds
     reportTime cenv.showTimes "Module Generation Pass 4"
 
-let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : ILGlobals, emitTailcalls, deterministic, showTimes)  (m : ILModuleDef) cilStartAddress =
+let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : ILGlobals, emitTailcalls, deterministic, showTimes)  (m : ILModuleDef) cilStartAddress normalizeAssemblyRefs =
     let isDll = m.IsDLL
 
     let cenv = 
@@ -2951,7 +2954,8 @@ let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : IL
           guids=MetadataTable<_>.New("guids", HashIdentity.Structural)
           blobs= MetadataTable<_>.New("blobs", HashIdentity.Structural)
           strings= MetadataTable<_>.New("strings", EqualityComparer.Default) 
-          userStrings= MetadataTable<_>.New("user strings", EqualityComparer.Default) }
+          userStrings= MetadataTable<_>.New("user strings", EqualityComparer.Default)
+          normalizeAssemblyRefs = normalizeAssemblyRefs }
 
     // Now the main compilation step 
     GenModule cenv  m
@@ -3048,16 +3052,16 @@ module FileSystemUtilites =
 #endif
         ()
 
-let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailcalls, deterministic, showTimes) modul cilStartAddress =
+let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailcalls, deterministic, showTimes) modul cilStartAddress normalizeAssemblyRefs =
 
-    // When we know the real RVAs of the data section we fixup the references for the FieldRVA table. 
+    // When we know the real RVAs of the data section we fixup the references for the FieldRVA table.
     // These references are stored as offsets into the metadata we return from this function 
     let requiredDataFixups = ref []
 
     let next = cilStartAddress
 
     let strings, userStrings, blobs, guids, tables, entryPointToken, code, requiredStringFixups, data, resources, pdbData, mappings = 
-      generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg, emitTailcalls, deterministic, showTimes) modul cilStartAddress
+      generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg, emitTailcalls, deterministic, showTimes) modul cilStartAddress normalizeAssemblyRefs
 
     reportTime showTimes "Generated Tables and Code"
     let tableSize (tab: TableName) = tables.[tab.Index].Count
@@ -3501,7 +3505,8 @@ let writeBytes (os: BinaryWriter) (chunk:byte[]) = os.Write(chunk, 0, chunk.Leng
 
 let writeBinaryAndReportMappings (outfile, 
                                   ilg: ILGlobals, pdbfile: string option, signer: ILStrongNameSigner option, portablePDB, embeddedPDB, 
-                                  embedAllSource, embedSourceList, sourceLink, emitTailcalls, deterministic, showTimes, dumpDebugInfo ) modul =
+                                  embedAllSource, embedSourceList, sourceLink, emitTailcalls, deterministic, showTimes, dumpDebugInfo )
+                                  modul normalizeAssemblyRefs =
     // Store the public key from the signer into the manifest.  This means it will be written 
     // to the binary and also acts as an indicator to leave space for delay sign 
 
@@ -3618,7 +3623,7 @@ let writeBinaryAndReportMappings (outfile,
                     | None -> failwith "Expected msorlib to have a version number"
 
           let entryPointToken, code, codePadding, metadata, data, resources, requiredDataFixups, pdbData, mappings, guidStart =
-            writeILMetadataAndCode ((pdbfile <> None), desiredMetadataVersion, ilg, emitTailcalls, deterministic, showTimes) modul next
+            writeILMetadataAndCode ((pdbfile <> None), desiredMetadataVersion, ilg, emitTailcalls, deterministic, showTimes) modul next normalizeAssemblyRefs
 
           reportTime showTimes "Generated IL and metadata";
           let _codeChunk, next = chunk code.Length next
@@ -4264,8 +4269,8 @@ type options =
      showTimes: bool
      dumpDebugInfo:bool }
 
-let WriteILBinary (outfile, (args: options), modul) =
+let WriteILBinary (outfile, (args: options), modul, normalizeAssemblyRefs) =
     writeBinaryAndReportMappings (outfile, 
                                   args.ilg, args.pdbfile, args.signer, args.portablePDB, args.embeddedPDB, args.embedAllSource, 
-                                  args.embedSourceList, args.sourceLink, args.emitTailcalls, args.deterministic, args.showTimes, args.dumpDebugInfo) modul
+                                  args.embedSourceList, args.sourceLink, args.emitTailcalls, args.deterministic, args.showTimes, args.dumpDebugInfo) modul normalizeAssemblyRefs
     |> ignore

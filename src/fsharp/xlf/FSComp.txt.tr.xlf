@@ -412,7 +412,7 @@
         <target state="translated">Beklenmeyen byref olarak belirtilmiş değişken kullanımı</target>
         <note />
       </trans-unit>
-      <trans-unit id="tastValueMustBeLocalAndMutable">
+      <trans-unit id="tastValueMustBeMutable">
         <source>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</source>
         <target state="translated">İçeriği değiştirmek veya değer türünün adresini almak için bir değerin değiştirilebilir olması gerekir, örn. 'let mutable x = ...'</target>
         <note />
@@ -5438,7 +5438,7 @@
         <note />
       </trans-unit>
       <trans-unit id="fscBadAssemblyVersion">
-        <source>An {0} specified version '{1}', but this value is invalid and has been ignored</source>
+        <source>The attribute {0} specified version '{1}', but this value is invalid and has been ignored</source>
         <target state="translated">{0} ile sürüm '{1}' belirtildi, ancak bu değer geçersiz ve yok sayıldı</target>
         <note />
       </trans-unit>

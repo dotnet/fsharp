@@ -19,20 +19,18 @@ open System.Collections.Generic
 
 module QP = Microsoft.FSharp.Compiler.QuotationPickler
 
-
 let verboseCReflect = condition "VERBOSE_CREFLECT"
-
 
 [<RequireQualifiedAccess>]
 type IsReflectedDefinition =
-|   Yes
-|   No
+    | Yes
+    | No
 
 [<RequireQualifiedAccess>]
 type QuotationSerializationFormat =
-/// Indicates that type references are emitted as integer indexes into a supplied table
-|   FSharp_40_Plus
-|   FSharp_20_Plus
+    /// Indicates that type references are emitted as integer indexes into a supplied table
+    | FSharp_40_Plus
+    | FSharp_20_Plus
 
 type QuotationGenerationScope = 
     { g: TcGlobals 
@@ -74,10 +72,10 @@ type QuotationGenerationScope =
             QuotationSerializationFormat.FSharp_20_Plus
 
 type QuotationTranslationEnv = 
-    { //Map from Val to binding index
+    { /// Map from Val to binding index
       vs: ValMap<int> 
       nvs: int
-      //Map from typar stamps to binding index
+      /// Map from typar stamps to binding index
       tyvs: StampMap<int>
       // Map for values bound by the 
       //     'let v = isinst e in .... if nonnull v then ...v .... ' 
@@ -255,7 +253,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             match takesInstanceArg,curriedArgs with 
             | false,curriedArgs -> [],curriedArgs
             | true,(objArg::curriedArgs) -> [objArg],curriedArgs
-            | true,[] -> wfail(InternalError("warning: unexpected missing object argument when generating quotation for call to F# object member "^vref.LogicalName,m)) 
+            | true,[] -> wfail(InternalError("warning: unexpected missing object argument when generating quotation for call to F# object member " + vref.LogicalName,m)) 
 
         if verboseCReflect then 
             dprintfn "vref.DisplayName = %A,  #objArgs = %A, #curriedArgs = %A" vref.DisplayName objArgs.Length curriedArgs.Length
@@ -272,7 +270,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             // partially applied arguments to 'let' bindings 
             let topValInfo = 
                match vref.ValReprInfo with 
-               | None -> error(InternalError("no arity information found for F# value "^vref.LogicalName,vref.Range))
+               | None -> error(InternalError("no arity information found for F# value " + vref.LogicalName,vref.Range))
                | Some a -> a 
 
             let expr,exprty = AdjustValForExpectedArity cenv.g m vref vFlags topValInfo 

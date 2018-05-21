@@ -844,6 +844,66 @@ module CoreTests =
     let recordResolution () = singleTestBuildAndRun "core/recordResolution" FSC_OPT_PLUS_DEBUG
 
     [<Test>]
+    let ``no-warn-2003-tests`` () =
+        // see https://github.com/Microsoft/visualfsharp/issues/3139
+        let cfg = testConfig "core/versionAttributes"
+        let stdoutPath = "out.stdout.txt" |> getfullpath cfg
+        let stderrPath = "out.stderr.txt" |> getfullpath cfg
+        let stderrBaseline = "out.stderr.bsl" |> getfullpath cfg
+        let stdoutBaseline = "out.stdout.bsl" |> getfullpath cfg
+        let echo text =
+            Commands.echoAppendToFile cfg.Directory text stdoutPath
+            Commands.echoAppendToFile cfg.Directory text stderrPath
+
+        File.WriteAllText(stdoutPath, "")
+        File.WriteAllText(stderrPath, "")
+
+        echo "Test 1================================================="
+        fscAppend cfg stdoutPath stderrPath "--nologo" ["NoWarn2003.fs"]
+
+        echo "Test 2================================================="
+        fscAppend cfg stdoutPath stderrPath "--nologo" ["NoWarn2003_2.fs"]
+
+        echo "Test 3================================================="
+        fscAppend cfg stdoutPath stderrPath "--nologo" ["Warn2003_1.fs"]
+
+        echo "Test 4================================================="
+        fscAppend cfg stdoutPath stderrPath "--nologo" ["Warn2003_2.fs"]
+
+        echo "Test 5================================================="
+        fscAppend cfg stdoutPath stderrPath "--nologo" ["Warn2003_3.fs"]
+
+        echo "Test 6================================================="
+        fscAppend cfg stdoutPath stderrPath "--nologo --nowarn:2003" ["Warn2003_1.fs"]
+
+        echo "Test 7================================================="
+        fscAppend cfg stdoutPath stderrPath "--nologo --nowarn:2003" ["Warn2003_2.fs"]
+
+        echo "Test 8================================================="
+        fscAppend cfg stdoutPath stderrPath "--nologo --nowarn:2003" ["Warn2003_3.fs"]
+
+        let normalizePaths f =
+            let text = File.ReadAllText(f)
+            let dummyPath = @"D:\staging\staging\src\tests\fsharp\core\load-script"
+            let contents = System.Text.RegularExpressions.Regex.Replace(text, System.Text.RegularExpressions.Regex.Escape(cfg.Directory), dummyPath)
+            File.WriteAllText(f, contents)
+
+        normalizePaths stdoutPath
+        normalizePaths stderrPath
+
+        let diffs = fsdiff cfg stdoutPath stdoutBaseline
+
+        match diffs with
+        | "" -> ()
+        | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" stdoutPath stdoutBaseline diffs)
+
+        let diffs2 = fsdiff cfg stderrPath stderrBaseline
+
+        match diffs2 with
+        | "" -> ()
+        | _ -> Assert.Fail (sprintf "'%s' and '%s' differ; %A" stderrPath stderrBaseline diffs2)
+
+    [<Test>]
     let ``load-script`` () = 
         let cfg = testConfig "core/load-script"
 
@@ -1236,7 +1296,44 @@ module CoreTests =
     [<Test>]
     let reflect () = singleTestBuildAndRun "core/reflect" FSC_BASIC
 
+
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+    [<Test>]
+    let refnormalization () = 
+        let cfg = testConfig "core/refnormalization"
+
+        // Prepare by building multiple versions of the test assemblies
+        fsc cfg @"%s --target:library -o:version1\DependentAssembly.dll -g --version:1.0.0.0 --keyfile:keyfile.snk" cfg.fsc_flags [@"DependentAssembly.fs"]
+        fsc cfg @"%s --target:library -o:version1\AscendentAssembly.dll -g --version:1.0.0.0 --keyfile:keyfile.snk -r:version1\DependentAssembly.dll" cfg.fsc_flags [@"AscendentAssembly.fs"]
+
+        fsc cfg @"%s --target:library -o:version2\DependentAssembly.dll -g --version:2.0.0.0" cfg.fsc_flags [@"DependentAssembly.fs"]
+        fsc cfg @"%s --target:library -o:version2\AscendentAssembly.dll -g --version:2.0.0.0 -r:version2\DependentAssembly.dll" cfg.fsc_flags [@"AscendentAssembly.fs"]
+
+        //TestCase1
+        // Build a program that references v2 of ascendent and v1 of dependent.
+        // Note that, even though ascendent v2 references dependent v2, the reference is marked as v1.
+        use TestOk = fileguard cfg "test.ok"
+        fsc cfg @"%s -o:test1.exe -r:version1\DependentAssembly.dll -r:version2\AscendentAssembly.dll --optimize- -g" cfg.fsc_flags ["test.fs"]
+        exec cfg ("." ++ "test1.exe") "DependentAssembly-1.0.0.0 AscendentAssembly-2.0.0.0"
+        TestOk.CheckExists()
+
+        //TestCase2
+        // Build a program that references v1 of ascendent and v2 of dependent.
+        // Note that, even though ascendent v1 references dependent v1, the reference is marked as v2 which was passed in.
+        use TestOk = fileguard cfg "test.ok"
+        fsc cfg @"%s -o:test2.exe -r:version2\DependentAssembly.dll -r:version1\AscendentAssembly.dll --optimize- -g" cfg.fsc_flags ["test.fs"]
+        exec cfg ("." ++ "test2.exe") "DependentAssembly-2.0.0.0 AscendentAssembly-1.0.0.0"
+        TestOk.CheckExists()
+
+        //TestCase3
+        // Build a program that references v1 of ascendent and v1 and v2 of dependent.
+        // Verifies that compiler uses first version of a duplicate assembly passed on command line.
+        use TestOk = fileguard cfg "test.ok"
+        fsc cfg @"%s -o:test3.exe -r:version1\DependentAssembly.dll -r:version2\DependentAssembly.dll -r:version1\AscendentAssembly.dll --optimize- -g" cfg.fsc_flags ["test.fs"]
+        exec cfg ("." ++ "test3.exe") "DependentAssembly-1.0.0.0 AscendentAssembly-1.0.0.0"
+        TestOk.CheckExists()
+
+
     [<Test>]
     let testResources () = 
         let cfg = testConfig "core/resources"
