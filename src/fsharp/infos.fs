@@ -1282,7 +1282,8 @@ type MethInfo =
         match x with 
         | ILMeth(_g,ilminfo,_) -> 
             ilminfo.GetCompiledReturnTy(amap, m, minst)
-        | FSMeth(g,typ,vref,_) -> 
+        | FSMeth(g,_,vref,_) ->
+            let typ = x.ApparentEnclosingAppType
             let inst = GetInstantiationForMemberVal g x.IsCSharpStyleExtensionMember (typ,vref,minst)
             let _,_,retTy,_ = AnalyzeTypeOfMemberVal x.IsCSharpStyleExtensionMember g (typ,vref)
             retTy |> Option.map (instType inst)
@@ -1319,8 +1320,9 @@ type MethInfo =
     member x.GetObjArgTypes (amap, m, minst) = 
         match x with 
         | ILMeth(_,ilminfo,_) -> ilminfo.GetObjArgTypes(amap, m, minst)
-        | FSMeth(g,typ,vref,_) -> 
+        | FSMeth(g,_,vref,_) -> 
             if x.IsInstance then 
+                let typ = x.ApparentEnclosingAppType
                 // The 'this' pointer of an extension member can depend on the minst
                 if x.IsExtensionMember then 
                     let inst = GetInstantiationForMemberVal g x.IsCSharpStyleExtensionMember (typ,vref,minst)
@@ -1520,7 +1522,8 @@ type MethInfo =
             match x with 
             | ILMeth(_g,ilminfo,_) -> 
                 [ ilminfo.GetParamNamesAndTypes(amap,m,minst)  ]
-            | FSMeth(g,typ,vref,_) -> 
+            | FSMeth(g,_,vref,_) -> 
+                let typ = x.ApparentEnclosingAppType
                 let items = ParamNameAndType.FromMember x.IsCSharpStyleExtensionMember g vref 
                 let inst = GetInstantiationForMemberVal g x.IsCSharpStyleExtensionMember (typ,vref,minst)
                 items |> ParamNameAndType.InstantiateCurried inst 
@@ -2096,8 +2099,9 @@ type PropInfo =
     member x.GetPropertyType (amap,m) = 
         match x with
         | ILProp ilpinfo -> ilpinfo.GetPropertyType (amap,m)
-        | FSProp (g,typ,Some vref,_) 
-        | FSProp (g,typ,_,Some vref) -> 
+        | FSProp (g,_,Some vref,_)
+        | FSProp (g,_,_,Some vref) ->
+            let typ = x.ApparentEnclosingAppType
             let inst = GetInstantiationForPropertyVal g (typ,vref)
             ReturnTypeOfPropertyVal g vref.Deref |> instType inst
             
