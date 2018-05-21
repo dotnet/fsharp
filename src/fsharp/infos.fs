@@ -897,9 +897,7 @@ type MethInfo =
 
     /// Get the enclosing type of the method info, using a nominal type for tuple types
     member x.ApparentEnclosingAppType = 
-        match x with
-        | ILMeth(_,ilminfo,_) -> ilminfo.ApparentEnclosingAppType
-        | _ -> x.ApparentEnclosingType
+        helpEnsureTypeHasMetadata x.TcGlobals x.ApparentEnclosingType
 
     member x.ApparentEnclosingTyconRef = 
         tcrefOfAppTy x.TcGlobals x.ApparentEnclosingAppType
@@ -1005,7 +1003,8 @@ type MethInfo =
     member x.FormalMethodTypars = 
         match x with 
         | ILMeth(_,ilmeth,_) -> ilmeth.FormalMethodTypars
-        | FSMeth(g,typ,vref,_) ->  
+        | FSMeth(g,_,vref,_) ->  
+            let typ = x.ApparentEnclosingAppType
             let _,memberMethodTypars,_,_ = AnalyzeTypeOfMemberVal x.IsCSharpStyleExtensionMember g (typ,vref)
             memberMethodTypars
         | DefaultStructCtor _ -> []
@@ -1561,7 +1560,8 @@ type MethInfo =
         if x.IsExtensionMember then [] 
         else 
             match x with
-            | FSMeth(g,typ,vref,_) -> 
+            | FSMeth(g,_,vref,_) -> 
+                let typ = x.ApparentEnclosingAppType
                 let memberParentTypars,_,_,_ = AnalyzeTypeOfMemberVal false g (typ,vref)
                 memberParentTypars
             | _ -> 
