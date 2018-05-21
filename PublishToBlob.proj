@@ -16,7 +16,8 @@
   <Import Project="$(MSBuildThisFileDirectory)packages\$(FeedTasksPackage).$(FeedTasksPackageVersion)\build\$(FeedTasksPackage).targets" />
 
   <ItemGroup>
-    <NuGetPackages Include="$(MSBuildThisFileDirectory)artifacts\Microsoft.FSharp.Compiler.*.nupkg" />
+    <!-- this should pick up both *.nupkg and *.symbols.nupkg -->
+    <NuGetPackages Include="$(MSBuildThisFileDirectory)$(Configuration)\artifacts\Microsoft.FSharp.Compiler.*.nupkg" />
   </ItemGroup>
 
   <Target Name="Build">

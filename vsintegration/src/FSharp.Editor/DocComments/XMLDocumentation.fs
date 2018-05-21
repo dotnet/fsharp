@@ -3,10 +3,11 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
+open System.Runtime.CompilerServices
+open System.Runtime.Caching
 open System.Text.RegularExpressions
 open Internal.Utilities.Collections
-open EnvDTE
-open EnvDTE80
+open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Layout
@@ -212,13 +213,11 @@ module internal XmlDocumentation =
     let vsToken = VsThreadToken()
     
     /// Provide Xml Documentation             
-    type Provider(xmlIndexService:IVsXMLMemberIndexService, dte: DTE) = 
+    type Provider(xmlIndexService:IVsXMLMemberIndexService) = 
         /// Index of assembly name to xml member index.
         let mutable xmlCache = new AgedLookup<VsThreadToken,string,IVsXMLMemberIndex>(10,areSimilar=(fun (x,y) -> x = y))
         
-        let events = dte.Events :?> Events2
-        let solutionEvents = events.SolutionEvents
-        do solutionEvents.add_AfterClosing(fun () -> 
+        do Events.SolutionEvents.OnAfterCloseSolution.Add (fun _ -> 
             xmlCache.Clear(vsToken))
 
     #if DEBUG // Keep under DEBUG so that it can keep building.
@@ -237,7 +236,7 @@ module internal XmlDocumentation =
                         collector.Add(tagText text)
 
         let _AppendRemarks (collector: ITaggedTextCollector) (memberData:IVsXMLMemberData3) = 
-            let ok,remarksText = memberData.GetRemarksText()
+            let ok, remarksText = memberData.GetRemarksText()
             if Com.Succeeded(ok) then 
                 AppendOnNewLine collector remarksText            
     #endif
@@ -413,6 +412,6 @@ module internal XmlDocumentation =
     let BuildMethodParamText(documentationProvider, xmlCollector, xml, paramName) =
         AppendXmlComment(documentationProvider, TextSanitizingCollector(xmlCollector), TextSanitizingCollector(xmlCollector), xml, false, true, Some paramName)
 
-    let documentationBuilderCache = System.Runtime.CompilerServices.ConditionalWeakTable<IVsXMLMemberIndexService, IDocumentationBuilder>()
-    let CreateDocumentationBuilder(xmlIndexService: IVsXMLMemberIndexService, dte: DTE) = 
-        documentationBuilderCache.GetValue(xmlIndexService,(fun _ -> Provider(xmlIndexService, dte) :> IDocumentationBuilder))
+    let documentationBuilderCache = ConditionalWeakTable<IVsXMLMemberIndexService, IDocumentationBuilder>()
+    let CreateDocumentationBuilder(xmlIndexService: IVsXMLMemberIndexService) = 
+        documentationBuilderCache.GetValue(xmlIndexService,(fun _ -> Provider(xmlIndexService) :> IDocumentationBuilder))

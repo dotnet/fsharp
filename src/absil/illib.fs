@@ -7,7 +7,11 @@ module public Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open System
 open System.Collections
 open System.Collections.Generic
+open System.Diagnostics
+open System.IO
 open System.Reflection
+open System.Text
+open System.Threading
 open Internal.Utilities
 
 #if FX_RESHAPED_REFLECTION
@@ -36,7 +40,7 @@ let inline isSingleton l =
     | _ -> false
 
 let inline isNonNull x = not (isNull x)
-let inline nonNull msg x = if isNull x then failwith ("null: " ^ msg) else x
+let inline nonNull msg x = if isNull x then failwith ("null: " + msg) else x
 let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
 
 //---------------------------------------------------------------------
@@ -47,7 +51,7 @@ let reportTime =
     let tPrev = ref None
     fun showTimes descr ->
         if showTimes then 
-            let t = System.Diagnostics.Process.GetCurrentProcess().UserProcessorTime.TotalSeconds
+            let t = Process.GetCurrentProcess().UserProcessorTime.TotalSeconds
             let prev = match !tPrev with None -> 0.0 | Some t -> t
             let first = match !tFirst with None -> (tFirst := Some t; t) | Some t -> t
             printf "ilwrite: TIME %10.3f (total)   %10.3f (delta) - %s\n" (t - first) (t - prev) descr
@@ -60,14 +64,14 @@ let reportTime =
 [<Struct>]
 /// An efficient lazy for inline storage in a class type. Results in fewer thunks.
 type InlineDelayInit<'T when 'T : not struct> = 
-    new (f: unit -> 'T) = {store = Unchecked.defaultof<'T>; func = System.Func<_>(f) } 
+    new (f: unit -> 'T) = {store = Unchecked.defaultof<'T>; func = Func<_>(f) } 
     val mutable store : 'T
-    val mutable func : System.Func<'T>
+    val mutable func : Func<'T>
     member x.Value = 
         match x.func with 
         | null -> x.store 
         | _ -> 
-        let res = System.Threading.LazyInitializer.EnsureInitialized(&x.store, x.func) 
+        let res = LazyInitializer.EnsureInitialized(&x.store, x.func) 
         x.func <- Unchecked.defaultof<_>
         res
 
@@ -334,7 +338,7 @@ module List =
         let rec loop acc l = 
             match l with
             | [] -> 
-                System.Diagnostics.Debug.Assert(false, "empty list")
+                Debug.Assert(false, "empty list")
                 invalidArg "l" "empty list" 
             | [h] -> List.rev acc,h
             | h::t -> loop  (h::acc) t
@@ -353,7 +357,7 @@ module List =
     let headAndTail l =
         match l with 
         | [] -> 
-            System.Diagnostics.Debug.Assert(false, "empty list")
+            Debug.Assert(false, "empty list")
             failwith "List.headAndTail"
         | h::t -> h,t
 
@@ -395,7 +399,7 @@ module List =
 
     let range n m = [ n .. m ]
 
-    let indexNotFound() = raise (new System.Collections.Generic.KeyNotFoundException("An index satisfying the predicate was not found in the collection"))
+    let indexNotFound() = raise (new KeyNotFoundException("An index satisfying the predicate was not found in the collection"))
 
     let rec assoc x l = 
         match l with 
@@ -456,9 +460,9 @@ module ValueOption =
     let inline bind f x = match x with VSome x -> f x | VNone -> VNone
 
 module String = 
-    let indexNotFound() = raise (new System.Collections.Generic.KeyNotFoundException("An index for the character was not found in the string"))
+    let indexNotFound() = raise (new KeyNotFoundException("An index for the character was not found in the string"))
 
-    let make (n: int) (c: char) : string = new System.String(c, n)
+    let make (n: int) (c: char) : string = new String(c, n)
 
     let get (str:string) i = str.[i]
 
@@ -484,7 +488,7 @@ module String =
         s.ToUpperInvariant()
 
     let isUpper (s:string) = 
-        s.Length >= 1 && System.Char.IsUpper s.[0] && not (System.Char.IsLower s.[0])
+        s.Length >= 1 && Char.IsUpper s.[0] && not (Char.IsLower s.[0])
         
     let capitalize (s:string) =
         if s.Length = 0 then s 
@@ -497,9 +501,6 @@ module String =
     let dropPrefix (s:string) (t:string) = s.[t.Length..s.Length - 1]
 
     let dropSuffix (s:string) (t:string) = s.[0..s.Length - t.Length - 1]
-
-    open System
-    open System.IO
 
     let inline toCharArray (str: string) = str.ToCharArray()
 
@@ -562,7 +563,7 @@ module String =
         |]
 module Dictionary = 
 
-    let inline newWithSize (size: int) = System.Collections.Generic.Dictionary<_,_>(size, HashIdentity.Structural)
+    let inline newWithSize (size: int) = Dictionary<_,_>(size, HashIdentity.Structural)
         
 
 module Lazy = 
@@ -619,7 +620,7 @@ module Map =
 
 type ResultOrException<'TResult> =
     | Result of 'TResult
-    | Exception of System.Exception
+    | Exception of Exception
                      
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ResultOrException = 
@@ -653,13 +654,13 @@ type ValueOrCancelled<'TResult> =
 ///
 /// A cancellable computation is passed may be cancelled via a CancellationToken, which is propagated implicitly.  
 /// If cancellation occurs, it is propagated as data rather than by raising an OperationCanceledException.  
-type Cancellable<'TResult> = Cancellable of (System.Threading.CancellationToken -> ValueOrCancelled<'TResult>)
+type Cancellable<'TResult> = Cancellable of (CancellationToken -> ValueOrCancelled<'TResult>)
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Cancellable = 
 
     /// Run a cancellable computation using the given cancellation token
-    let run (ct: System.Threading.CancellationToken) (Cancellable oper) = 
+    let run (ct: CancellationToken) (Cancellable oper) = 
         if ct.IsCancellationRequested then 
             ValueOrCancelled.Cancelled (OperationCanceledException ct) 
         else
@@ -712,7 +713,7 @@ module Cancellable =
     /// Run the computation in a mode where it may not be cancelled. The computation never results in a 
     /// ValueOrCancelled.Cancelled.
     let runWithoutCancellation comp = 
-        let res = run System.Threading.CancellationToken.None comp 
+        let res = run CancellationToken.None comp 
         match res with 
         | ValueOrCancelled.Cancelled _ -> failwith "unexpected cancellation" 
         | ValueOrCancelled.Value r -> r
@@ -766,7 +767,7 @@ type CancellableBuilder() =
     member x.ReturnFrom(v) = v
     member x.Combine(e1,e2) = e1 |> Cancellable.bind (fun () -> e2)
     member x.TryWith(e,handler) = Cancellable.tryWith e handler
-    member x.Using(resource,e) = Cancellable.tryFinally (e resource) (fun () -> (resource :> System.IDisposable).Dispose())
+    member x.Using(resource,e) = Cancellable.tryFinally (e resource) (fun () -> (resource :> IDisposable).Dispose())
     member x.TryFinally(e,compensation) =  Cancellable.tryFinally e compensation
     member x.Delay(f) = Cancellable.delay f
     member x.Zero() = Cancellable.ret ()
@@ -791,7 +792,6 @@ type Eventually<'T> =
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Eventually = 
-    open System.Threading
 
     let rec box e = 
         match e with 
@@ -814,7 +814,7 @@ module Eventually =
     ///
     /// If cancellation happens, the operation is left half-complete, ready to resume.
     let repeatedlyProgressUntilDoneOrTimeShareOverOrCanceled timeShareInMilliseconds (ct: CancellationToken) runner e = 
-        let sw = new System.Diagnostics.Stopwatch() 
+        let sw = new Stopwatch() 
         let rec runTimeShare ctok e = 
           runner ctok (fun ctok -> 
             sw.Reset()
@@ -907,11 +907,10 @@ let _ = eventually { use x = null in return 1 }
 type UniqueStampGenerator<'T when 'T : equality>() = 
     let encodeTab = new Dictionary<'T,int>(HashIdentity.Structural)
     let mutable nItems = 0
-    let encode str = 
-        if encodeTab.ContainsKey(str)
-        then
-            encodeTab.[str]
-        else
+    let encode str =
+        match encodeTab.TryGetValue(str) with
+        | true, idx -> idx
+        | _ ->
             let idx = nItems
             encodeTab.[str] <- idx
             nItems <- nItems + 1
@@ -925,7 +924,7 @@ type UniqueStampGenerator<'T when 'T : equality>() =
     
 type MemoizationTable<'T,'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<'T>, ?canMemoize) = 
     
-    let table = new System.Collections.Generic.Dictionary<'T,'U>(keyComparer) 
+    let table = new Dictionary<'T,'U>(keyComparer) 
     member t.Apply(x) = 
         if (match canMemoize with None -> true | Some f -> f x) then 
             let mutable res = Unchecked.defaultof<'U>
@@ -977,11 +976,11 @@ type LazyWithContext<'T,'ctxt> =
         | null -> x.value 
         | _ -> 
             // Enter the lock in case another thread is in the process of evaluating the result
-            System.Threading.Monitor.Enter(x);
+            Monitor.Enter(x);
             try 
                 x.UnsynchronizedForce(ctxt)
             finally
-                System.Threading.Monitor.Exit(x)
+                Monitor.Exit(x)
 
     member x.UnsynchronizedForce(ctxt) = 
         match x.funcOrException with 
@@ -1146,7 +1145,6 @@ module MultiMap =
     let find v (m: MultiMap<_,_>) = match Map.tryFind v m with None -> [] | Some r -> r
     let add v x (m: MultiMap<_,_>) = Map.add v (x :: find v m) m
     let range (m: MultiMap<_,_>) = Map.foldBack (fun _ x sofar -> x @ sofar) m []
-    //let chooseRange f (m: MultiMap<_,_>) = Map.foldBack (fun _ x sofar -> List.choose f x @ sofar) m []
     let empty : MultiMap<_,_> = Map.empty
     let initBy f xs : MultiMap<_,_> = xs |> Seq.groupBy f |> Seq.map (fun (k,v) -> (k,List.ofSeq v)) |> Map.ofSeq 
 
@@ -1181,56 +1179,85 @@ type LayeredMultiMap<'Key,'Value when 'Key : equality and 'Key : comparison>(con
 [<AutoOpen>]
 module Shim =
 
-    open System.IO
-
 #if FX_RESHAPED_REFLECTION
     open PrimReflectionAdapters
     open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
 
     type IFileSystem = 
+
+        /// A shim over File.ReadAllBytes
         abstract ReadAllBytesShim: fileName:string -> byte[] 
-        abstract FileStreamReadShim: fileName:string -> System.IO.Stream
-        abstract FileStreamCreateShim: fileName:string -> System.IO.Stream
-        abstract FileStreamWriteExistingShim: fileName:string -> System.IO.Stream
+
+        /// A shim over FileStream with FileMode.Open,FileAccess.Read,FileShare.ReadWrite
+        abstract FileStreamReadShim: fileName:string -> Stream
+
+        /// A shim over FileStream with FileMode.Create,FileAccess.Write,FileShare.Read
+        abstract FileStreamCreateShim: fileName:string -> Stream
+
+        /// A shim over FileStream with FileMode.Open,FileAccess.Write,FileShare.Read
+        abstract FileStreamWriteExistingShim: fileName:string -> Stream
 
         /// Take in a filename with an absolute path, and return the same filename
         /// but canonicalized with respect to extra path separators (e.g. C:\\\\foo.txt) 
         /// and '..' portions
         abstract GetFullPathShim: fileName:string -> string
+
+        /// A shim over Path.IsPathRooted
         abstract IsPathRootedShim: path:string -> bool
+
+        /// A shim over Path.IsInvalidPath
         abstract IsInvalidPathShim: filename:string -> bool
+
+        /// A shim over Path.GetTempPath
         abstract GetTempPathShim : unit -> string
 
         /// Utc time of the last modification
-        abstract GetLastWriteTimeShim: fileName:string -> System.DateTime
-        abstract SafeExists: fileName:string -> bool
-        abstract FileDelete: fileName:string -> unit
-        abstract AssemblyLoadFrom: fileName:string -> System.Reflection.Assembly 
-        abstract AssemblyLoad: assemblyName:System.Reflection.AssemblyName -> System.Reflection.Assembly 
+        abstract GetLastWriteTimeShim: fileName: string -> DateTime
+
+        /// A shim over File.Exists
+        abstract SafeExists: fileName: string -> bool
+
+        /// A shim over File.Delete
+        abstract FileDelete: fileName: string -> unit
+
+        /// Used to load type providers and located assemblies in F# Interactive
+        abstract AssemblyLoadFrom: fileName: string -> Assembly 
+
+        /// Used to load a dependency for F# Interactive and in an unused corner-case of type provider loading
+        abstract AssemblyLoad: assemblyName: AssemblyName -> Assembly 
+
+        /// Used to determine if a file will not be subject to deletion during the lifetime of a typical client process.
+        abstract IsStableFileHeuristic: fileName: string -> bool
 
 
     type DefaultFileSystem() =
         interface IFileSystem with
-            member __.AssemblyLoadFrom(fileName:string) = 
+
+            member __.AssemblyLoadFrom(fileName: string) = 
                 Assembly.LoadFrom fileName
-            member __.AssemblyLoad(assemblyName:System.Reflection.AssemblyName) = 
+
+            member __.AssemblyLoad(assemblyName: AssemblyName) = 
                 Assembly.Load assemblyName
 
-            member __.ReadAllBytesShim (fileName:string) = File.ReadAllBytes fileName
-            member __.FileStreamReadShim (fileName:string) = new FileStream(fileName,FileMode.Open,FileAccess.Read,FileShare.ReadWrite)  :> Stream
-            member __.FileStreamCreateShim (fileName:string) = new FileStream(fileName,FileMode.Create,FileAccess.Write,FileShare.Read ,0x1000,false) :> Stream
-            member __.FileStreamWriteExistingShim (fileName:string) = new FileStream(fileName,FileMode.Open,FileAccess.Write,FileShare.Read ,0x1000,false) :> Stream
-            member __.GetFullPathShim (fileName:string) = System.IO.Path.GetFullPath fileName
+            member __.ReadAllBytesShim (fileName: string) = File.ReadAllBytes fileName
 
-            member __.IsPathRootedShim (path:string) = Path.IsPathRooted path
+            member __.FileStreamReadShim (fileName: string) = new FileStream(fileName,FileMode.Open,FileAccess.Read,FileShare.ReadWrite)  :> Stream
 
-            member __.IsInvalidPathShim(path:string) = 
+            member __.FileStreamCreateShim (fileName: string) = new FileStream(fileName,FileMode.Create,FileAccess.Write,FileShare.Read ,0x1000,false) :> Stream
+
+            member __.FileStreamWriteExistingShim (fileName: string) = new FileStream(fileName,FileMode.Open,FileAccess.Write,FileShare.Read ,0x1000,false) :> Stream
+
+            member __.GetFullPathShim (fileName: string) = System.IO.Path.GetFullPath fileName
+
+            member __.IsPathRootedShim (path: string) = Path.IsPathRooted path
+
+            member __.IsInvalidPathShim(path: string) = 
                 let isInvalidPath(p:string) = 
-                    String.IsNullOrEmpty(p) || p.IndexOfAny(System.IO.Path.GetInvalidPathChars()) <> -1
+                    String.IsNullOrEmpty(p) || p.IndexOfAny(Path.GetInvalidPathChars()) <> -1
 
                 let isInvalidFilename(p:string) = 
-                    String.IsNullOrEmpty(p) || p.IndexOfAny(System.IO.Path.GetInvalidFileNameChars()) <> -1
+                    String.IsNullOrEmpty(p) || p.IndexOfAny(Path.GetInvalidFileNameChars()) <> -1
 
                 let isInvalidDirectory(d:string) = 
                     d=null || d.IndexOfAny(Path.GetInvalidPathChars()) <> -1
@@ -1240,14 +1267,31 @@ module Shim =
                 let filename = Path.GetFileName(path)
                 isInvalidDirectory(directory) || isInvalidFilename(filename)
 
-            member __.GetTempPathShim() = System.IO.Path.GetTempPath()
+            member __.GetTempPathShim() = Path.GetTempPath()
 
             member __.GetLastWriteTimeShim (fileName:string) = File.GetLastWriteTimeUtc fileName
-            member __.SafeExists (fileName:string) = System.IO.File.Exists fileName 
-            member __.FileDelete (fileName:string) = System.IO.File.Delete fileName
 
-    type System.Text.Encoding with 
-        static member GetEncodingShim(n:int) = 
-                System.Text.Encoding.GetEncoding(n)
+            member __.SafeExists (fileName:string) = File.Exists fileName 
+
+            member __.FileDelete (fileName:string) = File.Delete fileName
+
+            member __.IsStableFileHeuristic (fileName: string) = 
+                let directory = Path.GetDirectoryName(fileName)
+                directory.Contains("Reference Assemblies/") || 
+                directory.Contains("Reference Assemblies\\") || 
+                directory.Contains("packages/") || 
+                directory.Contains("packages\\") || 
+                directory.Contains("lib/mono/")
 
     let mutable FileSystem = DefaultFileSystem() :> IFileSystem 
+
+    type File with 
+        static member ReadBinaryChunk (fileName, start, len) = 
+            use stream = FileSystem.FileStreamReadShim fileName
+            stream.Seek(int64 start, SeekOrigin.Begin) |> ignore
+            let buffer = Array.zeroCreate len 
+            let mutable n = 0
+            while n < len do 
+                n <- n + stream.Read(buffer, n, len-n)
+            buffer
+

@@ -13,6 +13,7 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Driver
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.CompileOps
+open Microsoft.FSharp.Compiler.AbstractIL.ILBinaryReader
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 
 /// build issue location
@@ -65,7 +66,7 @@ type internal InProcCompiler(legacyReferenceResolver) =
             { new Exiter with
                  member this.Exit n = exitCode := n; raise StopProcessing }
         try 
-            typecheckAndCompile(ctok, argv, legacyReferenceResolver, false, false, true, exiter, loggerProvider.Provider, None, None)
+            typecheckAndCompile(ctok, argv, legacyReferenceResolver, false, ReduceMemoryFlag.Yes, CopyFSharpCoreFlag.Yes, exiter, loggerProvider.Provider, None, None)
         with 
             | StopProcessing -> ()
             | ReportedError _  | WrappedError(ReportedError _,_)  ->

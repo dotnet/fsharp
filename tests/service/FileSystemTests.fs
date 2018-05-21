@@ -38,9 +38,12 @@ let B = File1.A + File1.A"""
             match files.TryGetValue(fileName) with
             | true, text -> new MemoryStream(Encoding.UTF8.GetBytes(text)) :> Stream
             | _ -> defaultFileSystem.FileStreamReadShim(fileName)
-
+            
         member __.FileStreamCreateShim(fileName) = 
             defaultFileSystem.FileStreamCreateShim(fileName)
+
+        member __.IsStableFileHeuristic(fileName) = 
+            defaultFileSystem.IsStableFileHeuristic(fileName)
 
         member __.FileStreamWriteExistingShim(fileName) = 
             defaultFileSystem.FileStreamWriteExistingShim(fileName)
@@ -97,6 +100,7 @@ let ``FileSystem compilation test``() =
                    yield "-r:" + r |]
  
         { ProjectFileName = @"c:\mycode\compilation.fsproj" // Make a name that is unique in this directory.
+          ProjectId = None
           SourceFiles = [| fileName1; fileName2 |]
           OtherOptions = allFlags 
           ReferencedProjects = [| |];

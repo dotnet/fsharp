@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFrameworks>netcoreapp2.0;net461</TargetFrameworks>
+    <FSharpToolsDirectory>typeproviders</FSharpToolsDirectory>
+    <PackagePath>typeproviders</PackagePath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="BasicProvider.Runtime.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BasicProvider.DesignTime\BasicProvider.DesignTime.fsproj">
+      <IsFSharpDesignTimeProvider>true</IsFSharpDesignTimeProvider>
+      <PrivateAssets>all</PrivateAssets>
+    </ProjectReference>
+  </ItemGroup>
+
+</Project>

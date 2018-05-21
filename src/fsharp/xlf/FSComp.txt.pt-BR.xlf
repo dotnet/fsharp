@@ -412,7 +412,7 @@
         <target state="translated">Uso inesperado de uma variável do tipo byref</target>
         <note />
       </trans-unit>
-      <trans-unit id="tastValueMustBeLocalAndMutable">
+      <trans-unit id="tastValueMustBeMutable">
         <source>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</source>
         <target state="translated">Um valor deve ser mutável para que seja possível mudar o conteúdo ou pegar o endereço de um tipo de valor, por exemplo: 'let mutable x = ...'</target>
         <note />
@@ -5438,7 +5438,7 @@
         <note />
       </trans-unit>
       <trans-unit id="fscBadAssemblyVersion">
-        <source>An {0} specified version '{1}', but this value is invalid and has been ignored</source>
+        <source>The attribute {0} specified version '{1}', but this value is invalid and has been ignored</source>
         <target state="translated">Um {0} especificou a versão '{1}', mas esse valor é inválido e foi ignorado</target>
         <note />
       </trans-unit>
@@ -6980,6 +6980,11 @@
       <trans-unit id="implicitlyDiscardedSequenceInSequenceExpression">
         <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</source>
         <target state="translated">Essa expressão retorna um valor de tipo '{0}', mas é descartada de forma implícita. Considere o uso de 'let' para associar o resultado a um nome, por exemplo, 'let result = expression'. Se você pretende usar a expressão como um valor na sequência, use um “yield!” explícito.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilreadFileChanged">
+        <source>The file '{0}' changed on disk unexpectedly, please reload.</source>
+        <target state="translated">O arquivo '{0}' foi alterado no disco inesperadamente. Recarregue-o.</target>
         <note />
       </trans-unit>
     </body>

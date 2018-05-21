@@ -846,6 +846,7 @@ let ``Type provider project references should not throw exceptions`` () =
     //let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Debug")])
     let options = 
           {ProjectFileName = __SOURCE_DIRECTORY__ + @"/data/TypeProviderConsole/TypeProviderConsole.fsproj";
+           ProjectId = None
            SourceFiles = [|__SOURCE_DIRECTORY__ + @"/data/TypeProviderConsole/Program.fs"|];
            Stamp = None
            OtherOptions =
@@ -871,6 +872,7 @@ let ``Type provider project references should not throw exceptions`` () =
            ReferencedProjects =
             [|(__SOURCE_DIRECTORY__ + @"/data/TypeProviderLibrary/TypeProviderLibrary.dll",
                {ProjectFileName = __SOURCE_DIRECTORY__ + @"/data/TypeProviderLibrary/TypeProviderLibrary.fsproj";
+                ProjectId = None
                 SourceFiles = [|__SOURCE_DIRECTORY__ + @"/data/TypeProviderLibrary/Library1.fs"|];
                 Stamp = None
                 OtherOptions =
@@ -935,6 +937,7 @@ let ``Projects creating generated types should not utilize cross-project-referen
     let options = 
           {ProjectFileName =
             __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TestConsole/TestConsole.fsproj";
+           ProjectId = None
            SourceFiles =
             [|__SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TestConsole/AssemblyInfo.fs";
               __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TestConsole/Program.fs"|];
@@ -963,6 +966,7 @@ let ``Projects creating generated types should not utilize cross-project-referen
             [|(__SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TypeProvidersBug/bin/Debug/TypeProvidersBug.dll",
                {ProjectFileName =
                  __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TypeProvidersBug/TypeProvidersBug.fsproj";
+                ProjectId = None
                 SourceFiles =
                  [|__SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TypeProvidersBug/AssemblyInfo.fs";
                    __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TypeProvidersBug/Library1.fs"|];

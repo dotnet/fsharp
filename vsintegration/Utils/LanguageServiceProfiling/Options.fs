@@ -196,6 +196,7 @@ let FCS (repositoryDir: string) : Options =
 
     { Options =
         {ProjectFileName = repositoryDir </> @"src\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj"
+         ProjectId = None
          SourceFiles = files |> Array.map (fun x -> repositoryDir </> x)
          OtherOptions =
           [|@"-o:obj\Release\FSharp.Compiler.Private.dll"; "-g"; "--noframework";
@@ -211,8 +212,6 @@ let FCS (repositoryDir: string) : Options =
             @"--define:COMPILER_SERVICE_DLL"; "--define:NO_STRONG_NAMES"; "--define:TRACE";
             @"--doc:..\..\..\bin\v4.5\FSharp.Compiler.Service.xml"; "--optimize-";
             @"--platform:anycpu";
-            @"-r:" + (repositoryDir </> @"packages\Microsoft.DiaSymReader\lib\net20\Microsoft.DiaSymReader.dll");
-            @"-r:" + (repositoryDir </> @"packages\Microsoft.DiaSymReader.PortablePdb\lib\net45\Microsoft.DiaSymReader.PortablePdb.dll");
             @"-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\mscorlib.dll";
             @"-r:" + (repositoryDir </> @"packages\System.Collections.Immutable\lib\netstandard1.0\System.Collections.Immutable.dll");
             @"-r:" + (repositoryDir </> @"packages\FSharp.Core\lib\net40\FSharp.Core.dll");
@@ -303,6 +302,7 @@ let FCS (repositoryDir: string) : Options =
 let VFPT (repositoryDir: string) : Options =
     { Options =
         {ProjectFileName = repositoryDir </> @"src\FSharp.Editing\FSharp.Editing.fsproj"
+         ProjectId = None
          SourceFiles =
           [|@"src\FSharp.Editing\AssemblyInfo.fs";
             @"src\FSharp.Editing\Common\Utils.fs";

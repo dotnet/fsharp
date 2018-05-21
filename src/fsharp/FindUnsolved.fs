@@ -218,7 +218,7 @@ let accTycons cenv env tycons = List.iter (accTycon cenv env) tycons
 
 let rec accModuleOrNamespaceExpr cenv env x = 
     match x with  
-    | ModuleOrNamespaceExprWithSig(_mty,def,_m) -> accModuleOrNamespaceDef cenv env def
+    | ModuleOrNamespaceExprWithSig(_mty, def, _m) -> accModuleOrNamespaceDef cenv env def
     
 and accModuleOrNamespaceDefs cenv env x = List.iter (accModuleOrNamespaceDef cenv env) x
 
