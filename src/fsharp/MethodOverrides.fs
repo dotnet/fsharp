@@ -278,9 +278,9 @@ module DispatchSlotChecking =
                    // Check that no available prior override implements this dispatch slot
                    not (DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed dispatchSlot) 
                 then 
-                    // error reporting path 
+                    // error reporting path
                     let compiledSig = CompiledSigOfMeth g amap m dispatchSlot
-                    let (CompiledSig (vargtys,_vrty,fvmtps,_)) = compiledSig
+                    
                     let noimpl() = 
                         if isReqdTyInterface then 
                             fail(Error(FSComp.SR.typrelNoImplementationGivenWithSuggestion(NicePrint.stringOfMethInfo amap m denv dispatchSlot), m))
@@ -302,7 +302,9 @@ module DispatchSlotChecking =
                                 |> List.filter (fun (RequiredSlot(dispatchSlot,_)) -> IsNameMatch dispatchSlot overrideBy && IsImplMatch g dispatchSlot overrideBy)
                                 |> isNilOrSingleton
                                 |> not
-                           
+                            
+                            let (CompiledSig (vargtys,_,fvmtps,_)) = compiledSig
+
                             if moreThanOnePossibleDispatchSlot then
                                 // Error will be reported below in CheckOverridesAreAllUsedOnce 
                                 ()
