@@ -164,8 +164,7 @@ module DispatchSlotChecking =
         | CanImplementAnyInterfaceSlot -> isInterfaceTy g dispatchSlot.ApparentEnclosingType
 
     /// Check if the kinds of type parameters match between a dispatch slot and an override.
-    let IsTyparKindMatch compiledSig (Override(_,_,_,(mtps,_),_,_,_,_)) = 
-        let (CompiledSig(_,_,fvmtps,_)) = compiledSig
+    let IsTyparKindMatch (CompiledSig(_,_,fvmtps,_)) (Override(_,_,_,(mtps,_),_,_,_,_)) = 
         List.lengthsEqAndForall2 (fun (tp1:Typar) (tp2:Typar) -> tp1.Kind = tp2.Kind) mtps fvmtps
         
     /// Check if an override is a partial match for the requirements for a dispatch slot 
