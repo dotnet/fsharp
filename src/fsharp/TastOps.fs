@@ -795,7 +795,7 @@ let mkInstForAppTy g typ =
 let domainOfFunTy g ty = fst (destFunTy g ty)
 let rangeOfFunTy  g ty = snd (destFunTy g ty)
 
-let helpEnsureTypeHasMetadata g ty = 
+let convertToTypeWithMetadataIfPossible g ty = 
     if isAnyTupleTy g ty then 
         let (tupInfo, tupElemTys) = destAnyTupleTy g ty
         mkOuterCompiledTupleTy g (evalTupInfoIsStruct tupInfo) tupElemTys
