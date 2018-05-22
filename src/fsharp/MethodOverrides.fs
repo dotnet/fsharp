@@ -302,8 +302,7 @@ module DispatchSlotChecking =
                                 |> not
                            
                             if moreThanOnePossibleDispatchSlot then
-                                // Error will be reported below in CheckOverridesAreAllUsedOnce 
-                                ()
+                                noimpl()
 
                             elif argTys.Length <> vargtys.Length then 
                                 fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectNumberOfArguments(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
