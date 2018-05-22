@@ -5189,7 +5189,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
             let args = match args with SynConstructorArgs.Pats args -> args | _ -> error(Error(FSComp.SR.tcNamedActivePattern(apinfo.ActiveTags.[idx]), m))
             // TOTAL/PARTIAL ACTIVE PATTERNS 
             let _, vexp, _, _, tinst, _ = TcVal true cenv env tpenv vref None None m
-            let vexp = MakeApplicableExprWithFlex cenv env vexp
+            let vexp = MakeApplicableExprWithFlex cenv env false vexp
             let vexpty = vexp.Type
 
             let activePatArgsAsSynPats, patarg = 
