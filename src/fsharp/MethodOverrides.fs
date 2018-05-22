@@ -273,7 +273,7 @@ module DispatchSlotChecking =
                 sink |> ignore
                 ()
             | [] -> 
-                if not isOptional && dispatchSlot.IsAbstract &&
+                if not isOptional &&
                    // Check that no available prior override implements this dispatch slot
                    not (DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed dispatchSlot) 
                 then 
@@ -475,7 +475,7 @@ module DispatchSlotChecking =
                       // So here we get and yield all of those.
                       for minfo in reqdTy |> GetIntrinsicMethInfosOfType infoReader (None,AccessibleFromSomewhere,AllowMultiIntfInstantiations.Yes) IgnoreOverrides reqdTyRange do
                          if minfo.IsDispatchSlot then
-                             yield RequiredSlot(minfo,(*isOptional=*)false) ]
+                             yield RequiredSlot(minfo,(*isOptional=*) not minfo.IsAbstract) ]
                 
                 
             // Compute the methods that are available to implement abstract slots from the base class
