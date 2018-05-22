@@ -279,14 +279,14 @@ module DispatchSlotChecking =
                    not (DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed dispatchSlot) 
                 then 
                     // error reporting path 
-                    let (CompiledSig (vargtys,_vrty,fvmtps,_)) = CompiledSigOfMeth g amap m dispatchSlot
+                    let compiledSig = CompiledSigOfMeth g amap m dispatchSlot
+                    let (CompiledSig (vargtys,_vrty,fvmtps,_)) = compiledSig
                     let noimpl() = 
                         if isReqdTyInterface then 
                             fail(Error(FSComp.SR.typrelNoImplementationGivenWithSuggestion(NicePrint.stringOfMethInfo amap m denv dispatchSlot), m))
                         else 
                             fail(Error(FSComp.SR.typrelNoImplementationGiven(NicePrint.stringOfMethInfo amap m denv dispatchSlot), m))
                     
-                    let compiledSig = CompiledSigOfMeth g amap m dispatchSlot
                     match overrides |> List.filter (IsPartialMatch g dispatchSlot compiledSig) with 
                     | [] -> 
                         let possibleOverrides =
