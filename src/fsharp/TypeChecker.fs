@@ -10847,7 +10847,7 @@ and ApplyAbstractSlotInference (cenv:cenv) (envinner:TcEnv) (bindingTy, m, synTy
     if memberFlags.IsOverrideOrExplicitImpl then 
         
         // for error detection, we want to compare finality when testing for equivalence
-        let isUniqueBySig meths = 
+        let methInfosEquivByNameAndSig meths = 
             match meths with
             | [] -> false
             | head :: tail ->
@@ -10866,7 +10866,7 @@ and ApplyAbstractSlotInference (cenv:cenv) (envinner:TcEnv) (bindingTy, m, synTy
 
                  | slots -> 
                      match dispatchSlotsArityMatch with 
-                     | meths when isUniqueBySig meths -> meths
+                     | meths when methInfosEquivByNameAndSig meths -> meths
                      | [] -> 
                          let details =
                              slots
