@@ -273,7 +273,7 @@ module DispatchSlotChecking =
                 sink |> ignore
                 ()
             | [] -> 
-                if not isOptional && 
+                if not isOptional && dispatchSlot.IsAbstract &&
                    // Check that no available prior override implements this dispatch slot
                    not (DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed dispatchSlot) 
                 then 
