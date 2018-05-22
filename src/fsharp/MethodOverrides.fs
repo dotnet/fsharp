@@ -157,11 +157,11 @@ module DispatchSlotChecking =
     let IsImplMatch g (dispatchSlot:MethInfo) (overrideBy: OverrideInfo) = 
         // If the override is listed as only relevant to one type, and we're matching it against an abstract slot of an interface type,
         // then check that interface type is the right type.
-        (match overrideBy.CanImplement with 
-         | CanImplementNoSlots -> false
-         | CanImplementAnySlot -> true 
-         | CanImplementAnyClassHierarchySlot -> not (isInterfaceTy g dispatchSlot.ApparentEnclosingType)
-         | CanImplementAnyInterfaceSlot -> isInterfaceTy g dispatchSlot.ApparentEnclosingType)
+        match overrideBy.CanImplement with 
+        | CanImplementNoSlots -> false
+        | CanImplementAnySlot -> true 
+        | CanImplementAnyClassHierarchySlot -> not (isInterfaceTy g dispatchSlot.ApparentEnclosingType)
+        | CanImplementAnyInterfaceSlot -> isInterfaceTy g dispatchSlot.ApparentEnclosingType
 
     /// Check if the kinds of type parameters match between a dispatch slot and an override.
     let IsTyparKindMatch compiledSig (Override(_,_,_,(mtps,_),_,_,_,_)) = 
