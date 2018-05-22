@@ -1631,7 +1631,7 @@ let ChooseCanonicalDeclaredTyparsAfterInference g denv declaredTypars m =
     
     let declaredTypars = NormalizeDeclaredTyparsForEquiRecursiveInference g declaredTypars
 
-    if (ListSet.setify typarEq declaredTypars).Length <> declaredTypars.Length then 
+    if ListSet.hasDuplicates typarEq declaredTypars then 
         errorR(Error(FSComp.SR.tcConstrainedTypeVariableCannotBeGeneralized(), m))
 
     declaredTypars
