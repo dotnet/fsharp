@@ -2617,7 +2617,7 @@ let CodegenWitnessThatTypSupportsTraitConstraint tcVal g amap m (traitInfo:Trait
               | Some sln ->
                   match sln with 
                   | ILMethSln(origTy, extOpt, mref, minst) ->
-                       let metadataTy = helpEnsureTypeHasMetadata g origTy
+                       let metadataTy = convertToTypeWithMetadataIfPossible g origTy
                        let tcref, _tinst = destAppTy g metadataTy
                        let mdef = IL.resolveILMethodRef tcref.ILTyconRawMetadata mref
                        let ilMethInfo =
