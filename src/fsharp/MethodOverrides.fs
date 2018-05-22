@@ -164,16 +164,16 @@ module DispatchSlotChecking =
          | CanImplementAnyInterfaceSlot -> isInterfaceTy g dispatchSlot.ApparentEnclosingType)
 
     /// Check if the kinds of type parameters match between a dispatch slot and an override.
-    let IsTyparKindMatch g amap m (dispatchSlot:MethInfo) (Override(_,_,_,(mtps,_),_,_,_,_)) = 
-        let (CompiledSig(_,_,fvmtps,_)) = CompiledSigOfMeth g amap m dispatchSlot 
+    let IsTyparKindMatch compiledSig (Override(_,_,_,(mtps,_),_,_,_,_)) = 
+        let (CompiledSig(_,_,fvmtps,_)) = compiledSig
         List.lengthsEqAndForall2 (fun (tp1:Typar) (tp2:Typar) -> tp1.Kind = tp2.Kind) mtps fvmtps
         
     /// Check if an override is a partial match for the requirements for a dispatch slot 
-    let IsPartialMatch g amap m (dispatchSlot:MethInfo) compiledSig (Override(_,_,_,(mtps,_),argTys,_retTy,_,_) as overrideBy) = 
+    let IsPartialMatch g (dispatchSlot:MethInfo) compiledSig (Override(_,_,_,(mtps,_),argTys,_retTy,_,_) as overrideBy) = 
         IsNameMatch dispatchSlot overrideBy &&
         let (CompiledSig (vargtys,_,fvmtps,_)) = compiledSig
         mtps.Length = fvmtps.Length &&
-        IsTyparKindMatch g amap m dispatchSlot overrideBy && 
+        IsTyparKindMatch compiledSig overrideBy && 
         argTys.Length = vargtys.Length &&
         IsImplMatch g dispatchSlot overrideBy  
           
@@ -188,7 +188,7 @@ module DispatchSlotChecking =
     /// Check if an override exactly matches the requirements for a dispatch slot 
     let IsExactMatch g amap m dispatchSlot (Override(_,_,_,(mtps,mtpinst),argTys,retTy,_,_) as overrideBy) =
         let compiledSig = CompiledSigOfMeth g amap m dispatchSlot
-        IsPartialMatch g amap m dispatchSlot compiledSig overrideBy &&
+        IsPartialMatch g dispatchSlot compiledSig overrideBy &&
         let (CompiledSig (vargtys,vrty,fvmtps,ttpinst)) = compiledSig
 
         // Compare the types. CompiledSigOfMeth, GetObjectExprOverrideInfo and GetTypeMemberOverrideInfo have already 
@@ -287,7 +287,7 @@ module DispatchSlotChecking =
                             fail(Error(FSComp.SR.typrelNoImplementationGiven(NicePrint.stringOfMethInfo amap m denv dispatchSlot), m))
                     
                     let compiledSig = CompiledSigOfMeth g amap m dispatchSlot
-                    match overrides |> List.filter (IsPartialMatch g amap m dispatchSlot compiledSig) with 
+                    match overrides |> List.filter (IsPartialMatch g dispatchSlot compiledSig) with 
                     | [] -> 
                         let possibleOverrides =
                             overrides
@@ -311,7 +311,7 @@ module DispatchSlotChecking =
                                 fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectNumberOfArguments(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
                             elif mtps.Length <> fvmtps.Length then
                                 fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectNumberOfTypeParameters(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
-                            elif not (IsTyparKindMatch g amap m dispatchSlot overrideBy) then
+                            elif not (IsTyparKindMatch compiledSig overrideBy) then
                                 fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectKindsOfGenericParameters(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
                             else 
                                 fail(Error(FSComp.SR.typrelMemberCannotImplement(FormatOverride denv overrideBy, NicePrint.stringOfMethInfo amap m denv dispatchSlot, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
@@ -345,7 +345,7 @@ module DispatchSlotChecking =
             match relevantVirts |> List.filter (fun dispatchSlot -> OverrideImplementsDispatchSlot g amap m dispatchSlot overrideBy) with
             | [] -> 
                 // This is all error reporting
-                match relevantVirts |> List.filter (fun dispatchSlot -> IsPartialMatch g amap m dispatchSlot (CompiledSigOfMeth g amap m dispatchSlot) overrideBy) with 
+                match relevantVirts |> List.filter (fun dispatchSlot -> IsPartialMatch g dispatchSlot (CompiledSigOfMeth g amap m dispatchSlot) overrideBy) with 
                 | [dispatchSlot] -> 
                     errorR(OverrideDoesntOverride(denv,overrideBy,Some dispatchSlot,g,amap,m))
                 | _ -> 
