@@ -1611,7 +1611,7 @@ module internal Parser =
            userOpName: string) = 
         
         async {
-            use _logBlock = Logger.LogBlockMessage (Guid.NewGuid().ToString()) LogCompilerFunctionId.Service_CheckOneFile
+            use _logBlock = Logger.LogBlock LogCompilerFunctionId.Service_CheckOneFile
 
             match parseResults.ParseTree with 
             // When processing the following cases, we don't need to type-check
@@ -1760,6 +1760,7 @@ type UnresolvedReferencesSet = UnresolvedReferencesSet of UnresolvedAssemblyRefe
 type FSharpProjectOptions =
     { 
       ProjectFileName: string
+      ProjectId: string option
       SourceFiles: string[]
       OtherOptions: string[]
       ReferencedProjects: (string * FSharpProjectOptions)[]
@@ -1773,15 +1774,20 @@ type FSharpProjectOptions =
     }
     member x.ProjectOptions = x.OtherOptions
     /// Whether the two parse options refer to the same project.
-    static member UseSameProjectFileName(options1,options2) =
-        options1.ProjectFileName = options2.ProjectFileName
+    static member UseSameProject(options1,options2) =
+        match options1.ProjectId, options2.ProjectId with
+        | Some(projectId1), Some(projectId2) when not (String.IsNullOrWhiteSpace(projectId1)) && not (String.IsNullOrWhiteSpace(projectId2)) -> 
+            projectId1 = projectId2
+        | Some(_), Some(_)
+        | None, None -> options1.ProjectFileName = options2.ProjectFileName
+        | _ -> false
 
     /// Compare two options sets with respect to the parts of the options that are important to building.
     static member AreSameForChecking(options1,options2) =
         match options1.Stamp, options2.Stamp with 
         | Some x, Some y -> (x = y)
         | _ -> 
-        options1.ProjectFileName = options2.ProjectFileName &&
+        FSharpProjectOptions.UseSameProject(options1, options2) &&
         options1.SourceFiles = options2.SourceFiles &&
         options1.OtherOptions = options2.OtherOptions &&
         options1.UnresolvedReferences = options2.UnresolvedReferences &&
@@ -2155,7 +2161,7 @@ module Helpers =
     /// Determine whether two (fileName,options) keys should be identical w.r.t. resource usage
     let AreSubsumable2((fileName1:string,o1:FSharpProjectOptions),(fileName2:string,o2:FSharpProjectOptions)) =
         (fileName1 = fileName2)
-        && FSharpProjectOptions.UseSameProjectFileName(o1,o2)
+        && FSharpProjectOptions.UseSameProject(o1,o2)
 
     /// Determine whether two (fileName,sourceText,options) keys should be identical w.r.t. parsing
     let AreSameForParsing((fileName1: string, source1: string, options1), (fileName2, source2, options2)) =
@@ -2173,7 +2179,7 @@ module Helpers =
     /// Determine whether two (fileName,sourceText,options) keys should be identical w.r.t. resource usage
     let AreSubsumable3((fileName1:string,_,o1:FSharpProjectOptions),(fileName2:string,_,o2:FSharpProjectOptions)) =
         (fileName1 = fileName2)
-        && FSharpProjectOptions.UseSameProjectFileName(o1,o2)
+        && FSharpProjectOptions.UseSameProject(o1,o2)
 
 module CompileHelpers =
     let mkCompilationErorHandlers() = 
@@ -2316,7 +2322,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     let scriptClosureCache = 
         MruCache<ScriptClosureCacheToken, FSharpProjectOptions, LoadClosure>(projectCacheSize, 
             areSame=FSharpProjectOptions.AreSameForChecking, 
-            areSimilar=FSharpProjectOptions.UseSameProjectFileName)
+            areSimilar=FSharpProjectOptions.UseSameProject)
 
     let scriptClosureCacheLock = Lock<ScriptClosureCacheToken>()
     let frameworkTcImportsCache = FrameworkImportsCache(frameworkTcImportsCacheStrongSize)
@@ -2389,7 +2395,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         MruCache<CompilationThreadToken, FSharpProjectOptions, (IncrementalBuilder option * FSharpErrorInfo[] * IDisposable)>
                 (keepStrongly=projectCacheSize, keepMax=projectCacheSize, 
                  areSame =  FSharpProjectOptions.AreSameForChecking, 
-                 areSimilar =  FSharpProjectOptions.UseSameProjectFileName,
+                 areSimilar =  FSharpProjectOptions.UseSameProject,
                  requiredToKeep=(fun (builderOpt,_,_) -> match builderOpt with None -> false | Some (b:IncrementalBuilder) -> b.IsBeingKeptAliveApartFromCacheEntry),
                  onDiscard = (fun (_, _, decrement:IDisposable) -> decrement.Dispose()))
 
@@ -2660,7 +2666,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         let execWithReactorAsync action = reactor.EnqueueAndAwaitOpAsync(userOpName, "ParseAndCheckFileInProject", filename, action)
         async {
             try 
-                let strGuid = "_" + Guid.NewGuid().ToString()
+                let strGuid = "_ProjectId=" + (options.ProjectId |> Option.defaultValue "null")
                 Logger.LogBlockMessageStart (filename + strGuid) LogCompilerFunctionId.Service_ParseAndCheckFileInProject
 
                 if implicitlyStartBackgroundWork then 
@@ -2832,6 +2838,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             let options = 
                 {
                     ProjectFileName = filename + ".fsproj" // Make a name that is unique in this directory.
+                    ProjectId = None
                     SourceFiles = loadClosure.SourceFiles |> List.map fst |> List.toArray
                     OtherOptions = otherFlags 
                     ReferencedProjects= [| |]  
@@ -3184,6 +3191,7 @@ type FSharpChecker(legacyReferenceResolver, projectCacheSize, keepAssemblyConten
     member ic.GetProjectOptionsFromCommandLineArgs(projectFileName, argv, ?loadedTimeStamp, ?extraProjectInfo: obj) = 
         let loadedTimeStamp = defaultArg loadedTimeStamp DateTime.MaxValue // Not 'now', we don't want to force reloading
         { ProjectFileName = projectFileName
+          ProjectId = None
           SourceFiles = [| |] // the project file names will be inferred from the ProjectOptions
           OtherOptions = argv 
           ReferencedProjects= [| |]  

@@ -795,7 +795,7 @@ let mkInstForAppTy g typ =
 let domainOfFunTy g ty = fst (destFunTy g ty)
 let rangeOfFunTy  g ty = snd (destFunTy g ty)
 
-let helpEnsureTypeHasMetadata g ty = 
+let convertToTypeWithMetadataIfPossible g ty = 
     if isAnyTupleTy g ty then 
         let (tupInfo, tupElemTys) = destAnyTupleTy g ty
         mkOuterCompiledTupleTy g (evalTupInfoIsStruct tupInfo) tupElemTys
@@ -5693,7 +5693,7 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
         if v.IsMutable then 
             error(Error(FSComp.SR.tastInvalidAddressOfMutableAcrossAssemblyBoundary(), m));
         else 
-            error(Error(FSComp.SR.tastValueMustBeLocalAndMutable(), m));
+            error(Error(FSComp.SR.tastValueMustBeMutable(), m));
          
     | _ -> 
         let ty = tyOfExpr g e

@@ -274,6 +274,7 @@ type internal ProjectSitesAndFiles() =
         let option =
             let newOption () = {
                 ProjectFileName = projectSite.ProjectFileName
+                ProjectId = projectId |> Option.map (fun x -> x.ToFSharpProjectIdString())
                 SourceFiles = projectSite.CompilationSourceFiles
                 OtherOptions = projectSite.CompilationOptions
                 ReferencedProjects = referencedProjectOptions

@@ -888,24 +888,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
         // allow args to be byref here 
         CheckExprsPermitByrefs cenv env args 
 
-    | (   TOp.Tuple _
-        | TOp.UnionCase _
-        | TOp.ExnConstr _
-        | TOp.Array
-        | TOp.Bytes _
-        | TOp.UInt16s _
-        | TOp.Recd _
-        | TOp.ValFieldSet _
-        | TOp.UnionCaseTagGet _
-        | TOp.UnionCaseProof _
-        | TOp.UnionCaseFieldGet _
-        | TOp.UnionCaseFieldSet _
-        | TOp.ExnFieldGet _
-        | TOp.ExnFieldSet _
-        | TOp.TupleFieldGet _
-        | TOp.RefAddrGet 
-        | _ (* catch all! *)
-        ),_,_ ->    
+    | _ -> 
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprsNoByrefs cenv env args 
 
