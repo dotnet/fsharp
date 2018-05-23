@@ -89,18 +89,18 @@ type internal Tainted<'T> (context : TaintedContext, value : 'T) =
     member this.TypeProviderAssemblyRef = 
         context.TypeProviderAssemblyRef
 
-    member this.Protect f  (range:range) =
+    member this.Protect f (range:range) =
         try 
             f value
         with
             |   :? TypeProviderError -> reraise()
             |   :? AggregateException as ae ->
                     let errNum,_ = FSComp.SR.etProviderError("", "")
-                    let messages = [for e in ae.InnerExceptions -> e.Message]
+                    let messages = [for e in ae.InnerExceptions -> string e]
                     raise <| TypeProviderError(errNum, this.TypeProviderDesignation, range, messages)
             |   e -> 
                     let errNum,_ = FSComp.SR.etProviderError("", "")
-                    raise <| TypeProviderError((errNum, e.Message), this.TypeProviderDesignation, range)
+                    raise <| TypeProviderError((errNum, string e), this.TypeProviderDesignation, range)
 
     member this.TypeProvider = Tainted<_>(context, context.TypeProvider)
 
