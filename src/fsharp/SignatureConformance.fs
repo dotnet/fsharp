@@ -188,8 +188,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 let aintfsUser = flatten aintfsUser
 
                 let hidden = ListSet.subtract (typeAEquiv g aenv) aintfsUser fintfs
-                let warningOrError = if implTycon.IsFSharpInterfaceTycon then error else warning
-                hidden |> List.iter (fun ity -> warningOrError (InterfaceNotRevealed(denv,ity,implTycon.Range)))
+                let continueChecks,warningOrError = if implTycon.IsFSharpInterfaceTycon then false,errorR else true,warning
+                (hidden |> List.forall (fun ity -> warningOrError (InterfaceNotRevealed(denv,ity,implTycon.Range)); continueChecks)) &&
 
                 let aNull = IsUnionTypeWithNullAsTrueValue g implTycon
                 let fNull = IsUnionTypeWithNullAsTrueValue g sigTycon
