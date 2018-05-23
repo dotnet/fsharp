@@ -10013,8 +10013,12 @@ and TcMethodArg  cenv env  (lambdaPropagationInfo, tpenv) (lambdaPropagationInfo
                     let rec loop callerLambdaTy lambdaVarNum = 
                         if lambdaVarNum < numLambdaVars then
                             let col = [ for row in prefixOfLambdaArgsForEachOverload -> row.[lambdaVarNum] ]
-                            // Check if all the rows give the same argument type
-                            if col |> ListSet.setify (typeEquiv cenv.g) |> isSingleton then 
+                            let allRowsGiveSameArgumentType =
+                                match col with
+                                | [] -> false
+                                | x::rest -> rest |> List.forall (typeEquiv cenv.g x) 
+
+                            if allRowsGiveSameArgumentType then
                                 let calledLambdaArgTy = col.[0]
                                 // Force the caller to be a function type. 
                                 match UnifyFunctionTypeUndoIfFailed cenv env.DisplayEnv mArg callerLambdaTy with 
