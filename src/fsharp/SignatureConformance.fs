@@ -183,7 +183,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 let unimpl = ListSet.subtract (fun fity aity -> typeAEquiv g aenv aity fity) fintfs aintfs
                 (unimpl |> List.forall (fun ity -> errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleMissingInterface(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName, NicePrint.minimalStringOfType denv ity),m)); false)) &&
                 let hidden = ListSet.subtract (typeAEquiv g aenv) aintfsUser fintfs
-                hidden |> List.iter (fun ity -> (if implTycon.IsFSharpInterfaceTycon then error else warning) (InterfaceNotRevealed(denv,ity,implTycon.Range)))
+                let warningOrError = if implTycon.IsFSharpInterfaceTycon then error else warning
+                hidden |> List.iter (fun ity -> warningOrError (InterfaceNotRevealed(denv,ity,implTycon.Range)))
 
                 let aNull = IsUnionTypeWithNullAsTrueValue g implTycon
                 let fNull = IsUnionTypeWithNullAsTrueValue g sigTycon
