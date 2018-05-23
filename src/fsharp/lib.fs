@@ -228,7 +228,13 @@ module ListSet =
 
     (* NOTE: quadratic! *)
     // Note: if duplicates appear, keep the ones toward the _front_ of the list
-    let setify f l = List.foldBack (insert f) (List.rev l) [] |> List.rev
+    let setify f l = 
+        match l with
+        | []  
+        | [_] -> l
+        | [x; y] -> if f x y then [x] else l
+        | _ ->
+        List.foldBack (insert f) (List.rev l) [] |> List.rev
 
 //-------------------------------------------------------------------------
 // Library: pairs
