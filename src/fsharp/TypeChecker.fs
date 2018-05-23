@@ -10012,15 +10012,13 @@ and TcMethodArg  cenv env  (lambdaPropagationInfo, tpenv) (lambdaPropagationInfo
                     // The loop variable callerLambdaTyOpt becomes None if something failed.
                     let rec loop callerLambdaTy lambdaVarNum = 
                         if lambdaVarNum < numLambdaVars then
-                            let col = [ for row in prefixOfLambdaArgsForEachOverload -> row.[lambdaVarNum] ]
+                            let calledLambdaArgTy = prefixOfLambdaArgsForEachOverload.[0].[lambdaVarNum]
                             let allRowsGiveSameArgumentType =
-                                match col with
-                                | [] -> false
-                                | x::rest -> rest |> List.forall (typeEquiv cenv.g x) 
+                                prefixOfLambdaArgsForEachOverload
+                                |> Array.forall (fun row -> typeEquiv cenv.g calledLambdaArgTy row.[lambdaVarNum]) 
 
                             if allRowsGiveSameArgumentType then
-                                let calledLambdaArgTy = col.[0]
-                                // Force the caller to be a function type. 
+                                // Force the caller to be a function type.
                                 match UnifyFunctionTypeUndoIfFailed cenv env.DisplayEnv mArg callerLambdaTy with 
                                 | Some (callerLambdaDomainTy, callerLambdaRangeTy) ->
                                     if AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css mArg calledLambdaArgTy callerLambdaDomainTy then 
