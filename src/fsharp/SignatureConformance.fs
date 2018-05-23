@@ -194,34 +194,45 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 let aNull = IsUnionTypeWithNullAsTrueValue g implTycon
                 let fNull = IsUnionTypeWithNullAsTrueValue g sigTycon
                 if aNull && not fNull then 
-                  errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSaysNull(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
+                    errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSaysNull(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
+                    false
                 elif fNull && not aNull then 
-                  errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureSaysNull(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
+                    errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureSaysNull(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
+                    false
+                else
 
                 let aNull2 = TypeNullIsExtraValue g m (generalizedTyconRef (mkLocalTyconRef implTycon))
                 let fNull2 = TypeNullIsExtraValue g m (generalizedTyconRef (mkLocalTyconRef implTycon))
                 if aNull2 && not fNull2 then 
                     errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSaysNull2(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
+                    false
                 elif fNull2 && not aNull2 then 
                     errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureSaysNull2(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
+                    false
+                else
 
                 let aSealed = isSealedTy g (generalizedTyconRef (mkLocalTyconRef implTycon))
                 let fSealed = isSealedTy g (generalizedTyconRef (mkLocalTyconRef sigTycon))
-                if  aSealed && not fSealed  then 
+                if aSealed && not fSealed then 
                     errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationSealed(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
-                if  not aSealed && fSealed  then 
+                    false
+                elif not aSealed && fSealed then
                     errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationIsNotSealed(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
+                    false
+                else
 
                 let aPartial = isAbstractTycon implTycon
                 let fPartial = isAbstractTycon sigTycon
                 if aPartial && not fPartial then 
                     errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleImplementationIsAbstract(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
-
-                if not aPartial && fPartial then 
+                    false
+                elif not aPartial && fPartial then 
                     errorR(Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleSignatureIsAbstract(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
-
-                if not (typeAEquiv g aenv (superOfTycon g implTycon) (superOfTycon g sigTycon)) then 
+                    false
+                elif not (typeAEquiv g aenv (superOfTycon g implTycon) (superOfTycon g sigTycon)) then 
                     errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleTypesHaveDifferentBaseTypes(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName),m))
+                    false
+                else
 
                 checkTypars m aenv implTypars sigTypars &&
                 checkTypeRepr m aenv implTycon sigTycon.TypeReprInfo &&
