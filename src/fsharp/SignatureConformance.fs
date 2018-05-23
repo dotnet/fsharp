@@ -177,11 +177,16 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                    |> ListSet.setify (typeEquiv g) 
                    |> List.filter (isInterfaceTy g)
                 let aintfs     = flatten aintfs 
-                let aintfsUser = flatten aintfsUser 
                 let fintfs     = flatten fintfs 
               
                 let unimpl = ListSet.subtract (fun fity aity -> typeAEquiv g aenv aity fity) fintfs aintfs
-                (unimpl |> List.forall (fun ity -> errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleMissingInterface(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName, NicePrint.minimalStringOfType denv ity),m)); false)) &&
+                (unimpl 
+                 |> List.forall (fun ity -> 
+                    let errorMessage = FSComp.SR.DefinitionsInSigAndImplNotCompatibleMissingInterface(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName, NicePrint.minimalStringOfType denv ity)
+                    errorR (Error(errorMessage,m)); false)) &&
+                    
+                let aintfsUser = flatten aintfsUser
+
                 let hidden = ListSet.subtract (typeAEquiv g aenv) aintfsUser fintfs
                 let warningOrError = if implTycon.IsFSharpInterfaceTycon then error else warning
                 hidden |> List.iter (fun ity -> warningOrError (InterfaceNotRevealed(denv,ity,implTycon.Range)))
