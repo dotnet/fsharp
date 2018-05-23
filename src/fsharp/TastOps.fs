@@ -5433,15 +5433,15 @@ let mapTargetsOfDecisionTree f tree = mapAccTipsOfDecisionTree (fun es i -> TDSu
 
 // Dead target elimination 
 let eliminateDeadTargetsFromMatch tree (targets:_[]) =
-    let used = accTargetsOfDecisionTree tree [] |> ListSet.setify (=) |> Array.ofList
-    if used.Length < targets.Length then
-        Array.sortInPlace used;
+    let used = accTargetsOfDecisionTree tree [] |> Set
+    if used.Count < targets.Length then
+        let used = Set.toArray used
         let ntargets = targets.Length
         let tree' = 
             let remap = Array.create ntargets (-1)
-            Array.iteri (fun i tgn -> remap.[tgn] <- i) used;
+            Array.iteri (fun i tgn -> remap.[tgn] <- i) used
             tree |> mapTargetsOfDecisionTree (fun tgn -> 
-                 if remap.[tgn] = -1 then failwith "eliminateDeadTargetsFromMatch: failure while eliminating unused targets"; 
+                 if remap.[tgn] = -1 then failwith "eliminateDeadTargetsFromMatch: failure while eliminating unused targets" 
                  remap.[tgn]) 
         let targets' = Array.map (Array.get targets) used
         tree', targets'
