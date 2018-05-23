@@ -11,6 +11,7 @@
     <ToolsRoot>$(RepoRoot)Tools</ToolsRoot>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <ProtoOutputPath>$(RepoRoot)Proto\net40\bin</ProtoOutputPath>
+    <ValueTupleImplicitPackageVersion>4.4.0</ValueTupleImplicitPackageVersion>
   </PropertyGroup>
 
   <!-- nuget -->
