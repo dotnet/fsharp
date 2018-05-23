@@ -10847,7 +10847,12 @@ and ApplyAbstractSlotInference (cenv:cenv) (envinner:TcEnv) (bindingTy, m, synTy
     if memberFlags.IsOverrideOrExplicitImpl then 
         
         // for error detection, we want to compare finality when testing for equivalence
-        let makeUniqueBySig meths = meths |> ListSet.setify (MethInfosEquivByNameAndSig EraseNone false cenv.g cenv.amap m)
+        let methInfosEquivByNameAndSig meths = 
+            match meths with
+            | [] -> false
+            | head :: tail ->
+                tail |> List.forall (MethInfosEquivByNameAndSig EraseNone false cenv.g cenv.amap m head)
+        
         match memberFlags.MemberKind with 
         | MemberKind.Member -> 
              let dispatchSlots, dispatchSlotsArityMatch = 
@@ -10861,11 +10866,11 @@ and ApplyAbstractSlotInference (cenv:cenv) (envinner:TcEnv) (bindingTy, m, synTy
 
                  | slots -> 
                      match dispatchSlotsArityMatch with 
-                     | meths when meths |> makeUniqueBySig |> isSingleton -> meths
+                     | meths when methInfosEquivByNameAndSig meths -> meths
                      | [] -> 
                          let details =
                              slots
-                             |> List.map (NicePrint.stringOfMethInfo cenv.amap m envinner.DisplayEnv)
+                             |> Seq.map (NicePrint.stringOfMethInfo cenv.amap m envinner.DisplayEnv)
                              |> Seq.map (sprintf "%s   %s" System.Environment.NewLine)
                              |> String.concat ""
 
