@@ -230,11 +230,17 @@ module ListSet =
     // Note: if duplicates appear, keep the ones toward the _front_ of the list
     let setify f l = 
         match l with
-        | []  
-        | [_] -> l
-        | [x; y] -> if f x y then [x] else l
-        | _ ->
-        List.foldBack (insert f) (List.rev l) [] |> List.rev
+        | [] -> l
+        | x::rest ->
+            match rest with
+            | [] -> l
+            | y::rest2 ->
+                match rest2 with
+                | [] -> if f x y then [x] else l
+                | _ ->
+                    ([x],rest)
+                    ||> List.fold (fun acc x -> if contains f x acc then acc else x::acc)
+                    |> List.rev
 
 //-------------------------------------------------------------------------
 // Library: pairs
