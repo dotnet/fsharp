@@ -13,6 +13,6 @@
   <ItemGroup>
     <PackageReference Include="FSharp.Core" Version="4.1.*" />
     <ProjectReference Include="..\..\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
-    <PackageReference Include="System.Reflection.Metadata" Version="1.4.2" />
+    <PackageReference Include="System.Reflection.Metadata" Version="1.6.0-rc1" />
   </ItemGroup>
 </Project>
