@@ -10036,11 +10036,13 @@ and TcMethodArg  cenv env  (lambdaPropagationInfo, tpenv) (lambdaPropagationInfo
                     // The loop variable callerLambdaTyOpt becomes None if something failed.
                     let rec loop callerLambdaTy lambdaVarNum = 
                         if lambdaVarNum < numLambdaVars then
-                            let col = [ for row in prefixOfLambdaArgsForEachOverload -> row.[lambdaVarNum] ]
-                            // Check if all the rows give the same argument type
-                            if col |> ListSet.setify (typeEquiv cenv.g) |> isSingleton then 
-                                let calledLambdaArgTy = col.[0]
-                                // Force the caller to be a function type. 
+                            let calledLambdaArgTy = prefixOfLambdaArgsForEachOverload.[0].[lambdaVarNum]
+                            let allRowsGiveSameArgumentType =
+                                prefixOfLambdaArgsForEachOverload
+                                |> Array.forall (fun row -> typeEquiv cenv.g calledLambdaArgTy row.[lambdaVarNum]) 
+
+                            if allRowsGiveSameArgumentType then
+                                // Force the caller to be a function type.
                                 match UnifyFunctionTypeUndoIfFailed cenv env.DisplayEnv mArg callerLambdaTy with 
                                 | Some (callerLambdaDomainTy, callerLambdaRangeTy) ->
                                     if AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css mArg calledLambdaArgTy callerLambdaDomainTy then 
@@ -16913,8 +16915,8 @@ let ApplyAssemblyLevelAutoOpenAttributeToTcEnv g amap (ccu: CcuThunk) scopem env
     let h, t = List.frontAndBack p 
     let modref = mkNonLocalTyconRef (mkNonLocalEntityRef ccu (Array.ofList h))  t
     match modref.TryDeref with 
-    | VNone ->  warn()
-    | VSome _ -> 
+    | ValueNone ->  warn()
+    | ValueSome _ -> 
         let openDecl = OpenDeclaration.Create ([], [modref], scopem, false)
         OpenModulesOrNamespaces TcResultsSink.NoSink g amap scopem root env [modref] openDecl
 
