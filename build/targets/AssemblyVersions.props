@@ -19,9 +19,9 @@
     <_Build_Number>$(BUILD_BUILDNUMBER.Substring(9))</_Build_Number>
     <Build_FileVersion>$(_Build_Year).$(_Build_Month).$(_Build_Day).$(_Build_Number)</Build_FileVersion>
 
-    <FSCoreVersion>4.4.3.0</FSCoreVersion>
-    <FSProductVersion>10.1.1.0</FSProductVersion>
-    <FSPackageVersion>10.1.4</FSPackageVersion>
+    <FSCoreVersion>4.5.0.0</FSCoreVersion>
+    <FSProductVersion>10.2.0.0</FSProductVersion>
+    <FSPackageVersion>10.2.0</FSPackageVersion>
     <VSAssemblyVersion>15.8.0.0</VSAssemblyVersion>
     <MicroBuildAssemblyVersion Condition="'$(MicroBuildAssemblyVersion)' == ''">$(FSCoreVersion)</MicroBuildAssemblyVersion>
 

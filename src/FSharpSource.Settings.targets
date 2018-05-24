@@ -20,9 +20,9 @@
 
   <!-- Version number computation -->
   <PropertyGroup>
-    <FSCoreVersion>4.4.3.0</FSCoreVersion>
-    <FSProductVersion>10.1.1.0</FSProductVersion>
-    <FSPackageVersion>10.1.4</FSPackageVersion>
+    <FSCoreVersion>4.5.0.0</FSCoreVersion>
+    <FSProductVersion>10.2.0.0</FSProductVersion>
+    <FSPackageVersion>10.2.0</FSPackageVersion>
     <VSAssemblyVersion>15.7.0.0</VSAssemblyVersion>
   </PropertyGroup>
 
@@ -101,8 +101,8 @@
     <!-- Frozen FSharp.Core package being built with this build -->
     <FSharpCore41TargetPackageVersion>4.1.19</FSharpCore41TargetPackageVersion>
     <FSharpCore41TargetMajorVersion>4.1</FSharpCore41TargetMajorVersion>
-    <FSharpCoreLatestTargetPackageVersion>4.3.5</FSharpCoreLatestTargetPackageVersion>
-    <FSharpCoreLatestTargetMajorVersion>4.3</FSharpCoreLatestTargetMajorVersion>
+    <FSharpCoreLatestTargetPackageVersion>4.5.0</FSharpCoreLatestTargetPackageVersion>
+    <FSharpCoreLatestTargetMajorVersion>4.5</FSharpCoreLatestTargetMajorVersion>
 
     <!-- Always qualify the IntermediateOutputPath by the TargetDotnetProfile if any exists -->
     <IntermediateOutputPath>obj\$(Configuration)\$(TargetDotnetProfile)\</IntermediateOutputPath>
@@ -111,7 +111,7 @@
     <!-- Frozen FSharp.Core package -->
     <FSharpCoreFrozenPortablePackageVersion>10.1.0</FSharpCoreFrozenPortablePackageVersion>
     <FSharpCoreFrozenPortableTargetPackageVersion>10.2.0</FSharpCoreFrozenPortableTargetPackageVersion>
-    <FSharpCoreFrozenPortableTargetMajorVersion>10.1</FSharpCoreFrozenPortableTargetMajorVersion>
+    <FSharpCoreFrozenPortableTargetMajorVersion>10.2</FSharpCoreFrozenPortableTargetMajorVersion>
 
     <!-- Nunit -->
     <NUnitVersion>3.5.0</NUnitVersion>
