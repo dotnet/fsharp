@@ -229,7 +229,7 @@ type FSharpSymbol(cenv: SymbolEnv, item: (unit -> Item), access: (FSharpSymbol -
     // TODO: there are several cases where we may need to report more interesting
     // symbol information below. By default we return a vanilla symbol.
     static member Create(g, thisCcu, thisCcuType, tcImports, item): FSharpSymbol = 
-        FSharpSymbol.Create (SymbolEnv(g, thisCcu, Some thisCcuType, tcImports), item)
+        FSharpSymbol.Create(SymbolEnv(g, thisCcu, Some thisCcuType, tcImports), item)
 
     static member Create(cenv, item): FSharpSymbol = 
         let dflt() = FSharpSymbol(cenv, (fun () -> item), (fun _ _ _ -> true)) 
