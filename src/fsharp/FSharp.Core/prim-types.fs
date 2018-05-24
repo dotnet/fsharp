@@ -2972,7 +2972,6 @@ namespace Microsoft.FSharp.Core
 
     and 'T option = Option<'T> 
 
-
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpResult`2")>]
     [<Struct>]
@@ -2980,6 +2979,17 @@ namespace Microsoft.FSharp.Core
       | Ok of ResultValue:'T 
       | Error of ErrorValue:'TError
 
+    [<StructuralEquality; StructuralComparison>]
+    [<Struct>]
+    [<CompiledName("FSharpValueOption`1")>]
+    type ValueOption<'T> =
+        | ValueNone : 'T voption
+        | ValueSome : 'T -> 'T voption
+
+        member x.Value = match x with ValueSome x -> x | ValueNone -> raise (new System.InvalidOperationException("ValueOption.Value"))
+
+
+    and 'T voption = ValueOption<'T>
 
 namespace Microsoft.FSharp.Collections
 
@@ -3345,11 +3355,11 @@ namespace Microsoft.FSharp.Core
 
         let (^) (s1: string) (s2: string) = System.String.Concat(s1, s2)
 
-
         [<CompiledName("DefaultArg")>]
-        [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
         let defaultArg arg defaultValue = match arg with None -> defaultValue | Some v -> v
         
+        [<CompiledName("DefaultValueArg")>]
+        let defaultValueArg arg defaultValue = match arg with ValueNone -> defaultValue | ValueSome v -> v
 
         [<NoDynamicInvocation>]
         let inline (~-) (n: ^T) : ^T = 

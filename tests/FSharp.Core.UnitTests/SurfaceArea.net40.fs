@@ -2219,6 +2219,36 @@ Microsoft.FSharp.Core.FSharpResult`2[T,TError]: T ResultValue
 Microsoft.FSharp.Core.FSharpResult`2[T,TError]: T get_ResultValue()
 Microsoft.FSharp.Core.FSharpResult`2[T,TError]: TError ErrorValue
 Microsoft.FSharp.Core.FSharpResult`2[T,TError]: TError get_ErrorValue()
+Microsoft.FSharp.Core.FSharpValueOption`1+Tags[T]: Boolean Equals(System.Object)
+Microsoft.FSharp.Core.FSharpValueOption`1+Tags[T]: Int32 GetHashCode()
+Microsoft.FSharp.Core.FSharpValueOption`1+Tags[T]: Int32 ValueNone
+Microsoft.FSharp.Core.FSharpValueOption`1+Tags[T]: Int32 ValueSome
+Microsoft.FSharp.Core.FSharpValueOption`1+Tags[T]: System.String ToString()
+Microsoft.FSharp.Core.FSharpValueOption`1+Tags[T]: System.Type GetType()
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: Boolean Equals(Microsoft.FSharp.Core.FSharpValueOption`1[T])
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: Boolean Equals(System.Object)
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: Int32 CompareTo(Microsoft.FSharp.Core.FSharpValueOption`1[T])
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: Int32 CompareTo(System.Object)
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: Int32 CompareTo(System.Object, System.Collections.IComparer)
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: Int32 GetHashCode()
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: Int32 GetHashCode(System.Collections.IEqualityComparer)
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: Int32 Tag
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: Int32 get_Tag()
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: Microsoft.FSharp.Core.FSharpValueOption`1+Tags[T]
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: Microsoft.FSharp.Core.FSharpValueOption`1[T] ValueNone
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: Boolean IsValueNone
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: Boolean IsValueSome
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: Boolean get_IsValueNone()
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: Boolean get_IsValueSome()
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: Microsoft.FSharp.Core.FSharpValueOption`1[T] NewValueSome(T)
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: Microsoft.FSharp.Core.FSharpValueOption`1[T] get_ValueNone()
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: System.String ToString()
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: System.Type GetType()
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: T Item
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: T Value
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: T get_Item()
+Microsoft.FSharp.Core.FSharpValueOption`1[T]: T get_Value()
 Microsoft.FSharp.Core.FSharpTypeFunc: Boolean Equals(System.Object)
 Microsoft.FSharp.Core.FSharpTypeFunc: Int32 GetHashCode()
 Microsoft.FSharp.Core.FSharpTypeFunc: System.Object Specialize[T]()
@@ -2651,8 +2681,8 @@ Microsoft.FSharp.Core.Operators: System.Collections.Generic.IEnumerable`1[T] op_
 Microsoft.FSharp.Core.Operators: System.Collections.Generic.IEnumerable`1[T] op_Range[T](T, T)
 Microsoft.FSharp.Core.Operators: System.Decimal ToDecimal[T](T)
 Microsoft.FSharp.Core.Operators: System.Exception Failure(System.String)
-Microsoft.FSharp.Core.Operators: System.IO.TextReader ConsoleIn[T]()
 Microsoft.FSharp.Core.Operators: System.IO.TextWriter ConsoleError[T]()
+Microsoft.FSharp.Core.Operators: System.IO.TextReader ConsoleIn[T]()
 Microsoft.FSharp.Core.Operators: System.IO.TextWriter ConsoleOut[T]()
 Microsoft.FSharp.Core.Operators: System.Object Box[T](T)" +
 #if DEBUG
@@ -2675,6 +2705,7 @@ Microsoft.FSharp.Core.Operators: T Ceiling[T](T)
 Microsoft.FSharp.Core.Operators: T Cos[T](T)
 Microsoft.FSharp.Core.Operators: T Cosh[T](T)
 Microsoft.FSharp.Core.Operators: T DefaultArg[T](Microsoft.FSharp.Core.FSharpOption`1[T], T)
+Microsoft.FSharp.Core.Operators: T DefaultValueArg[T](Microsoft.FSharp.Core.FSharpValueOption`1[T], T)
 Microsoft.FSharp.Core.Operators: T Exit[T](Int32)
 Microsoft.FSharp.Core.Operators: T Exp[T](T)
 Microsoft.FSharp.Core.Operators: T FailWith[T](System.String)

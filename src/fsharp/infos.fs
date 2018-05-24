@@ -1095,7 +1095,7 @@ type MethInfo =
         | ILMeth(_,ilmeth,_) -> ilmeth.IsClassConstructor
         | FSMeth(_,_,vref,_) -> 
              match vref.TryDeref with
-             | VSome x -> x.IsClassConstructor
+             | ValueSome x -> x.IsClassConstructor
              | _ -> false
         | DefaultStructCtor _ -> false
 #if !NO_EXTENSIONTYPING
