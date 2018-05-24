@@ -1178,7 +1178,7 @@ type internal FsiDynamicCompiler
                             | Item.Value vref ->
                                 let optValue = newState.ilxGenerator.LookupGeneratedValue(valuePrinter.GetEvaluationContext(newState.emEnv), vref.Deref)
                                 match optValue with
-                                | Some (res, typ) -> Some(FsiValue(res, typ, FSharpType(tcGlobals, newState.tcState.Ccu, newState.tcState.CcuSig, newState.tcImports, vref.Type)))
+                                | Some (res, typ) -> Some(FsiValue(res, typ, FSharpType(cenv, vref.Type)))
                                 | None -> None 
                             | _ -> None
 
