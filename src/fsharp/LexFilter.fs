@@ -669,8 +669,11 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
                       -> unindentationLimit false rest
 
             // 'f ...{' places no limit until we hit a CtxtLetDecl etc... 
-            | _,(CtxtParen (LBRACE,_) :: CtxtVanilla _ :: CtxtSeqBlock _ :: rest)
-            | _,(CtxtSeqBlock _ :: CtxtParen(LBRACE,_) :: CtxtVanilla _ :: CtxtSeqBlock _ :: rest)
+            // 'f ...[' places no limit until we hit a CtxtLetDecl etc... 
+            // 'f ...[|' places no limit until we hit a CtxtLetDecl etc... 
+            | _,(CtxtParen ((LBRACE | LBRACK | LBRACK_BAR),_) :: CtxtSeqBlock _ :: rest)
+            | _,(CtxtParen ((LBRACE | LBRACK | LBRACK_BAR),_) :: CtxtVanilla _ :: CtxtSeqBlock _ :: rest)
+            | _,(CtxtSeqBlock _ :: CtxtParen((LBRACE | LBRACK | LBRACK_BAR),_) :: CtxtVanilla _ :: CtxtSeqBlock _ :: rest)
                       -> unindentationLimit false rest
 
 
