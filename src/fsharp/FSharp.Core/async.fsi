@@ -25,9 +25,7 @@ namespace Microsoft.FSharp.Control
     /// computation expressions can check the cancellation condition regularly. Synchronous 
     /// computations within an asynchronous computation do not automatically check this condition.</remarks> 
      
-    [<Sealed>]
-    [<NoEquality; NoComparison>]
-    [<CompiledName("FSharpAsync`1")>]
+    [<Sealed; NoEquality; NoComparison; CompiledName("FSharpAsync`1")>]
     type Async<'T>
 
     /// <summary>This static class holds members for creating and manipulating asynchronous computations.</summary>
@@ -417,7 +415,6 @@ namespace Microsoft.FSharp.Control
         static member StartImmediate: 
             computation:Async<unit> * ?cancellationToken:CancellationToken-> unit
 
-
         /// <summary>Runs an asynchronous computation, starting immediately on the current operating system, 
         /// but also returns the execution as <c>System.Threading.Tasks.Task</c> 
         /// </summary>
@@ -435,6 +432,112 @@ namespace Microsoft.FSharp.Control
             computation:Async<'T> * ?cancellationToken:CancellationToken-> Task<'T>
 
 
+    /// <summary>The F# compiler emits references to this type to implement F# async expressions.</summary>
+    type AsyncReturn
+
+    /// <summary>The F# compiler emits references to this type to implement F# async expressions.</summary>
+    [<Struct; NoEquality; NoComparison>]
+    type AsyncActivation<'T> =
+
+        /// <summary>The F# compiler emits calls to this function to implement F# async expressions.</summary>
+        ///
+        /// <returns>A value indicating asynchronous execution.</returns>
+        member IsCancellationRequested: bool
+
+        /// <summary>The F# compiler emits calls to this function to implement F# async expressions.</summary>
+        ///
+        /// <returns>A value indicating asynchronous execution.</returns>
+        member OnSuccess: 'T -> AsyncReturn
+
+        /// <summary>The F# compiler emits calls to this function to implement F# async expressions.</summary>
+        member OnExceptionRaised: unit -> unit
+
+        /// <summary>The F# compiler emits calls to this function to implement F# async expressions.</summary>
+        ///
+        /// <returns>A value indicating asynchronous execution.</returns>
+        member OnCancellation: unit -> AsyncReturn
+
+        /// Used by MailboxProcessor
+        member internal QueueContinuationWithTrampoline: 'T -> AsyncReturn
+        /// Used by MailboxProcessor
+        member internal CallContinuation: 'T -> AsyncReturn
+
+    [<NoEquality; NoComparison>]
+    // Internals used by MailboxProcessor
+    type internal AsyncResult<'T>  =
+        | Ok of 'T
+        | Error of ExceptionDispatchInfo
+        | Canceled of OperationCanceledException
+
+    [<Sealed>]
+    /// <summary>Entry points for generated code</summary>
+    module AsyncPrimitives =
+
+        /// <summary>The F# compiler emits calls to this function to implement F# async expressions.</summary>
+        ///
+        /// <param name="body">The body of the async computation.</param>
+        ///
+        /// <returns>The async computation.</returns>
+        val MakeAsync: body:(AsyncActivation<'T> -> AsyncReturn) -> Async<'T>
+
+        /// <summary>The F# compiler emits calls to this function to implement constructs for F# async expressions.</summary>
+        ///
+        /// <param name="computation">The async computation.</param>
+        /// <param name="ctxt">The async activation.</param>
+        ///
+        /// <returns>A value indicating asynchronous execution.</returns>
+        val Invoke: computation: Async<'T> -> ctxt:AsyncActivation<'T> -> AsyncReturn
+
+        /// <summary>The F# compiler emits calls to this function to implement constructs for F# async expressions.</summary>
+        ///
+        /// <param name="ctxt">The async activation.</param>
+        /// <param name="result">The result of the first part of the computation.</param>
+        /// <param name="part2">A function returning the second part of the computation.</param>
+        ///
+        /// <returns>A value indicating asynchronous execution.</returns>
+        val CallThenInvoke: ctxt:AsyncActivation<'T> -> result1:'U -> part2:('U -> Async<'T>) -> AsyncReturn
+
+        /// <summary>The F# compiler emits calls to this function to implement the <c>let!</c> construct for F# async expressions.</summary>
+        ///
+        /// <param name="ctxt">The async activation.</param>
+        /// <param name="part2">A function returning the second part of the computation.</param>
+        ///
+        /// <returns>An async activation suitable for running part1 of the asynchronous execution.</returns>
+        val Bind: ctxt:AsyncActivation<'T> -> part1:Async<'U> -> part2:('U -> Async<'T>) -> AsyncReturn
+
+        /// <summary>The F# compiler emits calls to this function to implement the <c>try/finally</c> construct for F# async expressions.</summary>
+        ///
+        /// <param name="ctxt">The async activation.</param>
+        /// <param name="computation">The computation to protect.</param>
+        /// <param name="finallyFunction">The finally code.</param>
+        ///
+        /// <returns>A value indicating asynchronous execution.</returns>
+        val TryFinally: ctxt:AsyncActivation<'T> -> computation: Async<'T> -> finallyFunction: (unit -> unit) -> AsyncReturn
+
+        /// <summary>The F# compiler emits calls to this function to implement the <c>try/with</c> construct for F# async expressions.</summary>
+        ///
+        /// <param name="ctxt">The async activation.</param>
+        /// <param name="computation">The computation to protect.</param>
+        /// <param name="catchFunction">The exception filter.</param>
+        ///
+        /// <returns>A value indicating asynchronous execution.</returns>
+        val TryWith: ctxt:AsyncActivation<'T> -> computation: Async<'T> -> catchFunction: (Exception -> Async<'T> option) -> AsyncReturn
+
+        [<Sealed; AutoSerializable(false)>]        
+        // Internals used by MailboxProcessor
+        type internal ResultCell<'T> =
+            new : unit -> ResultCell<'T>
+            member GetWaitHandle: unit -> WaitHandle
+            member Close: unit -> unit
+            interface IDisposable
+            member RegisterResult: 'T * reuseThread: bool -> AsyncReturn
+            member GrabResult: unit -> 'T
+            member ResultAvailable : bool
+            member AwaitResult_NoDirectCancelOrTimeout : Async<'T>
+            member TryWaitForResultSynchronously: ?timeout: int -> 'T option
+
+        // Internals used by MailboxProcessor
+        val internal CreateAsyncResultAsync : AsyncResult<'T> -> Async<'T>
 
     [<CompiledName("FSharpAsyncBuilder")>]
     [<Sealed>]
@@ -473,7 +576,7 @@ namespace Microsoft.FSharp.Control
         /// <param name="computation1">The first part of the sequenced computation.</param>
         /// <param name="computation2">The second part of the sequenced computation.</param>
         /// <returns>An asynchronous computation that runs both of the computations sequentially.</returns>
-        member Combine : computation1:Async<unit> * computation2:Async<'T> -> Async<'T>
+        member inline Combine : computation1:Async<unit> * computation2:Async<'T> -> Async<'T>
 
         /// <summary>Creates an asynchronous computation that runs <c>computation</c> repeatedly 
         /// until <c>guard()</c> becomes false.</summary>
@@ -496,7 +599,7 @@ namespace Microsoft.FSharp.Control
         /// <c>async { ... }</c> computation expression syntax.</remarks>
         /// <param name="value">The value to return from the computation.</param>
         /// <returns>An asynchronous computation that returns <c>value</c> when executed.</returns>
-        member Return : value:'T -> Async<'T>
+        member inline Return : value:'T -> Async<'T>
 
         /// <summary>Delegates to the input computation.</summary>
         ///
@@ -504,7 +607,7 @@ namespace Microsoft.FSharp.Control
         /// <c>async { ... }</c> computation expression syntax.</remarks>
         /// <param name="computation">The input computation.</param>
         /// <returns>The input computation.</returns>
-        member ReturnFrom : computation:Async<'T> -> Async<'T>
+        member inline ReturnFrom : computation:Async<'T> -> Async<'T>
 
         /// <summary>Creates an asynchronous computation that runs <c>generator</c>.</summary>
         ///
@@ -538,7 +641,7 @@ namespace Microsoft.FSharp.Control
         /// <param name="binder">The function to bind the result of <c>computation</c>.</param>
         /// <returns>An asynchronous computation that performs a monadic bind on the result
         /// of <c>computation</c>.</returns>
-        member Bind: computation: Async<'T> * binder: ('T -> Async<'U>) -> Async<'U>
+        member inline Bind: computation: Async<'T> * binder: ('T -> Async<'U>) -> Async<'U>
         
         /// <summary>Creates an asynchronous computation that runs <c>computation</c>. The action <c>compensation</c> is executed 
         /// after <c>computation</c> completes, whether <c>computation</c> exits normally or by an exception. If <c>compensation</c> raises an exception itself
@@ -553,7 +656,7 @@ namespace Microsoft.FSharp.Control
         /// exception (including cancellation).</param>
         /// <returns>An asynchronous computation that executes computation and compensation afterwards or
         /// when an exception is raised.</returns>
-        member TryFinally : computation:Async<'T> * compensation:(unit -> unit) -> Async<'T>
+        member inline TryFinally : computation:Async<'T> * compensation:(unit -> unit) -> Async<'T>
 
         /// <summary>Creates an asynchronous computation that runs <c>computation</c> and returns its result.
         /// If an exception happens then <c>catchHandler(exn)</c> is called and the resulting computation executed instead.</summary>
@@ -562,11 +665,14 @@ namespace Microsoft.FSharp.Control
         ///
         /// The existence of this method permits the use of <c>try/with</c> in the 
         /// <c>async { ... }</c> computation expression syntax.</remarks>
+        ///
         /// <param name="computation">The input computation.</param>
         /// <param name="catchHandler">The function to run when <c>computation</c> throws an exception.</param>
         /// <returns>An asynchronous computation that executes <c>computation</c> and calls <c>catchHandler</c> if an
         /// exception is thrown.</returns>
-        member TryWith : computation:Async<'T> * catchHandler:(exn -> Async<'T>) -> Async<'T>
+        member inline TryWith : computation:Async<'T> * catchHandler:(exn -> Async<'T>) -> Async<'T>
+
+        // member inline TryWithFilter : computation:Async<'T> * catchHandler:(exn -> Async<'T> option) -> Async<'T>
 
         /// Generate an object used to build asynchronous computations using F# computation expressions. The value
         /// 'async' is a pre-defined instance of this type.
@@ -659,41 +765,6 @@ namespace Microsoft.FSharp.Control
 #endif
 
     // Internals used by MailboxProcessor
-    module internal AsyncImpl = 
+    module internal AsyncBuilderImpl = 
         val async : AsyncBuilder
 
-    [<Sealed>]        
-    // Internals used by MailboxProcessor
-    type internal AsyncReturn 
-
-    [<Sealed>]        
-    // Internals used by MailboxProcessor
-    type internal AsyncActivation<'T> =
-        member QueueContinuationWithTrampoline: 'T -> AsyncReturn
-        member CallContinuation: 'T -> AsyncReturn
-
-    [<NoEquality; NoComparison>]
-    // Internals used by MailboxProcessor
-    type internal AsyncResult<'T>  =
-        | Ok of 'T
-        | Error of ExceptionDispatchInfo
-        | Canceled of OperationCanceledException
-
-    // Internals used by MailboxProcessor
-    module internal AsyncPrimitives = 
-
-        [<Sealed; AutoSerializable(false)>]        
-        type internal ResultCell<'T> =
-            new : unit -> ResultCell<'T>
-            member GetWaitHandle: unit -> WaitHandle
-            member Close: unit -> unit
-            interface IDisposable
-            member RegisterResult: 'T * reuseThread: bool -> AsyncReturn
-            member GrabResult: unit -> 'T
-            member ResultAvailable : bool
-            member AwaitResult_NoDirectCancelOrTimeout : Async<'T>
-            member TryWaitForResultSynchronously: ?timeout: int -> 'T option
-
-        val CreateAsyncResultAsync : AsyncResult<'T> -> Async<'T>
-
-        val MakeAsync : (AsyncActivation<'T> -> AsyncReturn) -> Async<'T>

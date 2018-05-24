@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:4:3:0
 }
 .assembly AsyncExpressionSteppingTest2
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.AsyncExpressionSteppingTest2
 {
-  // Offset: 0x00000000 Length: 0x0000024A
+  // Offset: 0x00000000 Length: 0x0000026C
 }
 .mresource public FSharpOptimizationData.AsyncExpressionSteppingTest2
 {
-  // Offset: 0x00000250 Length: 0x000000B1
+  // Offset: 0x00000270 Length: 0x000000B1
 }
 .module AsyncExpressionSteppingTest2.dll
-// MVID: {5A1F62A7-6394-D499-A745-0383A7621F5A}
+// MVID: {5AF5DDAE-6394-D499-A745-0383AEDDF55A}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00F10000
+// Image base: 0x04520000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -80,7 +80,7 @@
         // Code size       15 (0xf)
         .maxstack  8
         .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-        .line 6,6 : 23,29 'C:\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\AsyncExpressionStepping\\AsyncExpressionSteppingTest2.fs'
+        .line 6,6 : 23,29 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\AsyncExpressionStepping\\AsyncExpressionSteppingTest2.fs'
         IL_0000:  ldarg.0
         IL_0001:  ldfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> AsyncExpressionSteppingTest2/AsyncExpressionSteppingTest2/'f2@6-1'::x
         IL_0006:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.Operators::op_Dereference<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<!!0>)

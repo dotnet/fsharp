@@ -2764,17 +2764,17 @@ namespace Microsoft.FSharp.Core
     // Function Values
 
     [<AbstractClass>]
-    type FSharpTypeFunc() = 
+    type FSharpTypeFunc [<DebuggerHidden>] () = 
         abstract Specialize<'T> : unit -> obj
 
     [<AbstractClass>]
-    type FSharpFunc<'T,'Res>() = 
+    type FSharpFunc<'T,'Res> [<DebuggerHidden>] () = 
         abstract Invoke : 'T -> 'Res
 
     module OptimizedClosures = 
 
           [<AbstractClass>]
-          type FSharpFunc<'T,'U,'V>() = 
+          type FSharpFunc<'T,'U,'V> [<DebuggerHidden>] () = 
               inherit FSharpFunc<'T,('U -> 'V)>()
               abstract Invoke : 'T * 'U -> 'V
               override f.Invoke(t) = (fun u -> f.Invoke(t,u))
@@ -2787,7 +2787,7 @@ namespace Microsoft.FSharp.Core
                               member x.Invoke(t,u) = (retype func : FSharpFunc<'T,FSharpFunc<'U,'V>>).Invoke(t).Invoke(u) }
 
           [<AbstractClass>]
-          type FSharpFunc<'T,'U,'V,'W>() = 
+          type FSharpFunc<'T,'U,'V,'W> [<DebuggerHidden>] () = 
               inherit FSharpFunc<'T,('U -> 'V -> 'W)>()
               abstract Invoke : 'T * 'U * 'V -> 'W
               override f.Invoke(t) = (fun u v -> f.Invoke(t,u,v))
@@ -2805,7 +2805,7 @@ namespace Microsoft.FSharp.Core
                               member x.Invoke(t,u,v) = (retype func : FSharpFunc<'T,('U -> 'V -> 'W)>).Invoke(t) u v }
 
           [<AbstractClass>]
-          type FSharpFunc<'T,'U,'V,'W,'X>() = 
+          type FSharpFunc<'T,'U,'V,'W,'X> [<DebuggerHidden>] () = 
               inherit FSharpFunc<'T,('U -> 'V -> 'W -> 'X)>()
               abstract Invoke : 'T * 'U * 'V * 'W -> 'X
               static member Adapt(func : 'T -> 'U -> 'V -> 'W -> 'X) = 
@@ -2828,7 +2828,7 @@ namespace Microsoft.FSharp.Core
               override f.Invoke(t) = (fun u v w -> f.Invoke(t,u,v,w))
 
           [<AbstractClass>]
-          type FSharpFunc<'T,'U,'V,'W,'X,'Y>() =
+          type FSharpFunc<'T,'U,'V,'W,'X,'Y> [<DebuggerHidden>] () =
               inherit FSharpFunc<'T,('U -> 'V -> 'W -> 'X -> 'Y)>()
               abstract Invoke : 'T * 'U * 'V * 'W * 'X -> 'Y
               override f.Invoke(t) = (fun u v w x -> f.Invoke(t,u,v,w,x))
