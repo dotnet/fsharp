@@ -203,8 +203,8 @@
         <note />
       </trans-unit>
       <trans-unit id="5014">
-        <source>Console Application</source>
-        <target state="translated">콘솔 응용 프로그램</target>
+        <source>Console Application (.NET Framework)</source>
+        <target state="needs-review-translation">콘솔 응용 프로그램</target>
         <note />
       </trans-unit>
       <trans-unit id="5015">
@@ -213,8 +213,8 @@
         <note />
       </trans-unit>
       <trans-unit id="5016">
-        <source>Library</source>
-        <target state="translated">라이브러리</target>
+        <source>Library (.NET Framework)</source>
+        <target state="needs-review-translation">라이브러리</target>
         <note />
       </trans-unit>
       <trans-unit id="5017">
@@ -223,8 +223,8 @@
         <note />
       </trans-unit>
       <trans-unit id="5018">
-        <source>Tutorial</source>
-        <target state="translated">자습서</target>
+        <source>Tutorial (.NET Framework)</source>
+        <target state="needs-review-translation">자습서</target>
         <note />
       </trans-unit>
       <trans-unit id="5019">

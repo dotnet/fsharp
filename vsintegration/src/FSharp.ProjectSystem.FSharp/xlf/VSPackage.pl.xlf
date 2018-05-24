@@ -203,8 +203,8 @@
         <note />
       </trans-unit>
       <trans-unit id="5014">
-        <source>Console Application</source>
-        <target state="translated">Aplikacja konsolowa</target>
+        <source>Console Application (.NET Framework)</source>
+        <target state="needs-review-translation">Aplikacja konsolowa</target>
         <note />
       </trans-unit>
       <trans-unit id="5015">
@@ -213,8 +213,8 @@
         <note />
       </trans-unit>
       <trans-unit id="5016">
-        <source>Library</source>
-        <target state="translated">Biblioteka</target>
+        <source>Library (.NET Framework)</source>
+        <target state="needs-review-translation">Biblioteka</target>
         <note />
       </trans-unit>
       <trans-unit id="5017">
@@ -223,8 +223,8 @@
         <note />
       </trans-unit>
       <trans-unit id="5018">
-        <source>Tutorial</source>
-        <target state="translated">Samouczek</target>
+        <source>Tutorial (.NET Framework)</source>
+        <target state="needs-review-translation">Samouczek</target>
         <note />
       </trans-unit>
       <trans-unit id="5019">
