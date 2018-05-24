@@ -2,7 +2,7 @@
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
 
-  <?define ProductVersion = "10.1"?>
+  <?define ProductVersion = "10.2"?>
   <?define ProductPlatform = "x86"?>
   <?define ProductManufacturer = "Microsoft Corporation"?>
   <?define ProductDescription = "Visual F# $(var.ProductVersion) SDK"?>
