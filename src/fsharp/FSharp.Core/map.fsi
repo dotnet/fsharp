@@ -56,6 +56,13 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The mapped value, or None if the key is not in the map.</returns>
         member TryFind: key:'Key -> 'Value option
 
+        /// <summary>Lookup an element in the map, assigning to <c>value</c> if the element is in the domain 
+        /// of the map and returning <c>false</c> if not.</summary>
+        /// <param name="key">The input key.</param>
+        /// <param name="value">A reference to the output value.</param>
+        /// <returns><c>true</c> if the value is present, <c>false</c> if not.</returns>
+        member TryGetValue: key:'Key * [<System.Runtime.InteropServices.Out>] value:byref<'Value> -> bool
+
         interface IDictionary<'Key, 'Value>         
         interface ICollection<KeyValuePair<'Key, 'Value>> 
         interface IEnumerable<KeyValuePair<'Key, 'Value>>         

@@ -245,6 +245,7 @@ Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: Int32 get_Count()
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue] Add(TKey, TValue)
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue] Remove(TKey)
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: Microsoft.FSharp.Core.FSharpOption`1[TValue] TryFind(TKey)
+Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: Boolean TryGetValue(TKey, TValue ByRef)
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: System.String ToString()
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: System.Type GetType()
 Microsoft.FSharp.Collections.FSharpMap`2[TKey,TValue]: TValue Item [TKey]
