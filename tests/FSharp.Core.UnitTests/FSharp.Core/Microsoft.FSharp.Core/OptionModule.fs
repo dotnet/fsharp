@@ -216,3 +216,36 @@ type OptionModule() =
         let fn x = x + 3
         Assert.AreEqual(Option.map fn None, Option.bind (fn >> Some) None)
         Assert.AreEqual(Option.map fn (Some 5), Option.bind (fn >> Some) (Some 5))
+
+[<TestFixture>]
+type ValueOptionTests() =
+
+    let assertWasNotCalledThunk () = raise (exn "Thunk should not have been called.")
+
+    [<Test>]
+    member this.ValueOptionBasics () =
+        Assert.AreEqual( (ValueNone: int voption), (ValueNone: int voption))
+        Assert.True( (ValueNone: int voption) <= (ValueNone: int voption))
+        Assert.True( (ValueNone: int voption) >= (ValueNone: int voption))
+        Assert.True( (ValueNone: int voption) < (ValueSome 1: int voption))
+        Assert.True( (ValueSome 0: int voption) < (ValueSome 1: int voption))
+        Assert.True( (ValueSome 1: int voption) > (ValueSome 0: int voption))
+        Assert.False( (ValueSome 1: int voption) < (ValueNone : int voption))
+        Assert.True( (ValueSome 1: int voption) <= (ValueSome 1: int voption))
+        Assert.AreEqual( compare (ValueSome 1) (ValueSome 1), 0)
+        Assert.True( compare (ValueSome 0) (ValueSome 1) < 0)
+        Assert.True( compare (ValueNone: int voption) (ValueSome 1) < 0)
+        Assert.True( compare (ValueSome 1) (ValueNone : int voption) > 0)
+        Assert.AreEqual( ValueSome 1, ValueSome 1)
+        Assert.AreNotEqual( ValueSome 2, ValueSome 1)
+        Assert.AreEqual( ValueSome 2, ValueSome 2)
+        Assert.AreEqual( ValueSome (ValueSome 2), ValueSome (ValueSome 2))
+        Assert.AreNotEqual( ValueSome (ValueSome 2), ValueSome (ValueSome 1))
+        Assert.AreNotEqual( ValueSome (ValueSome 0), ValueSome ValueNone)
+        Assert.AreEqual( ValueSome (ValueNone: int voption), ValueSome (ValueNone: int voption))
+        Assert.AreEqual( (ValueSome (ValueNone: int voption)).Value, (ValueNone: int voption))
+        Assert.AreEqual( (ValueSome 1).Value, 1)
+        Assert.AreEqual( (ValueSome (1,2)).Value, (1,2))
+        Assert.AreEqual(defaultValueArg ValueNone 1, 1)
+        Assert.AreEqual(defaultValueArg (ValueSome 3) 1, 3)
+

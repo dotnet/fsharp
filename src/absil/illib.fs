@@ -448,16 +448,16 @@ module List =
 
 [<Struct>]
 type ValueOption<'T> =
-    | VSome of 'T
-    | VNone
-    member x.IsSome = match x with VSome _ -> true | VNone -> false
-    member x.IsNone = match x with VSome _ -> false | VNone -> true
-    member x.Value = match x with VSome r -> r | VNone -> failwith "ValueOption.Value: value is None"
+    | ValueSome of 'T
+    | ValueNone
+    member x.IsSome = match x with ValueSome _ -> true | ValueNone -> false
+    member x.IsNone = match x with ValueSome _ -> false | ValueNone -> true
+    member x.Value = match x with ValueSome r -> r | ValueNone -> failwith "ValueOption.Value: value is None"
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ValueOption =
-    let inline ofOption x = match x with Some x -> VSome x | None -> VNone
-    let inline bind f x = match x with VSome x -> f x | VNone -> VNone
+    let inline ofOption x = match x with Some x -> ValueSome x | None -> ValueNone
+    let inline bind f x = match x with ValueSome x -> f x | ValueNone -> ValueNone
 
 module String = 
     let indexNotFound() = raise (new KeyNotFoundException("An index for the character was not found in the string"))

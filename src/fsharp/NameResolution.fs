@@ -249,8 +249,8 @@ type Item =
 
 let valRefHash (vref: ValRef) = 
     match vref.TryDeref with 
-    | VNone -> 0 
-    | VSome v -> LanguagePrimitives.PhysicalHash v
+    | ValueNone -> 0 
+    | ValueSome v -> LanguagePrimitives.PhysicalHash v
 
 [<RequireQualifiedAccess>]
 /// Pairs an Item with a TyparInst showing how generic type variables of the item are instantiated at 

@@ -16891,8 +16891,8 @@ let ApplyAssemblyLevelAutoOpenAttributeToTcEnv g amap (ccu: CcuThunk) scopem env
     let h, t = List.frontAndBack p 
     let modref = mkNonLocalTyconRef (mkNonLocalEntityRef ccu (Array.ofList h))  t
     match modref.TryDeref with 
-    | VNone ->  warn()
-    | VSome _ -> 
+    | ValueNone ->  warn()
+    | ValueSome _ -> 
         let openDecl = OpenDeclaration.Create ([], [modref], scopem, false)
         OpenModulesOrNamespaces TcResultsSink.NoSink g amap scopem root env [modref] openDecl
 
