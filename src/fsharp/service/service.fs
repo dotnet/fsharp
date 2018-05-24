@@ -1311,7 +1311,7 @@ type TypeCheckInfo
                 sResolutions.CapturedNameResolutions :> seq<_>
 
         let isDisposableTy (ty: TType) =
-            Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_IDisposable
+            protectAssemblyExploration false (fun () -> Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_IDisposable)
 
         resolutions
         |> Seq.choose (fun cnr ->
