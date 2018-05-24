@@ -7,7 +7,7 @@ namespace Microsoft.FSharp.Control
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Control
-    open Microsoft.FSharp.Control.AsyncImpl
+    open Microsoft.FSharp.Control.AsyncBuilderImpl
     open Microsoft.FSharp.Control.AsyncPrimitives
     open Microsoft.FSharp.Collections
 

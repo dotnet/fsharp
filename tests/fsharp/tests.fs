@@ -170,9 +170,7 @@ module CoreTests =
 
     [<Test>]
     let ``attributes-FSI_BASIC`` () = singleTestBuildAndRun "core/attributes" FSI_BASIC
-#endif
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let byrefs () = 
 
@@ -189,6 +187,19 @@ module CoreTests =
         fsi cfg "" ["test.fsx"]
 
         testOkFile.CheckExists()
+
+    [<Test>]
+    let asyncStackTraces () = 
+        let cfg = testConfig "core/asyncStackTraces"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test.exe -g --tailcalls- --optimize-" cfg.fsc_flags ["test.fsx"]
+
+        exec cfg ("." ++ "test.exe") ""
+
+        testOkFile.CheckExists()
+
 #endif
 
     [<Test>]
