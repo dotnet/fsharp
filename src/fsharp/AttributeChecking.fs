@@ -511,7 +511,7 @@ let IsSecurityAttribute (g: TcGlobals) amap (casmap : Dictionary<Stamp, bool>) (
     | None -> false
     | Some attr ->
         match attr.TyconRef.TryDeref with
-        | VSome _ -> 
+        | ValueSome _ -> 
             let tcs = tcref.Stamp
             match casmap.TryGetValue(tcs) with
             | true, c -> c
@@ -519,7 +519,7 @@ let IsSecurityAttribute (g: TcGlobals) amap (casmap : Dictionary<Stamp, bool>) (
                 let exists = ExistsInEntireHierarchyOfType (fun t -> typeEquiv g t (mkAppTy attr.TyconRef [])) g amap m AllowMultiIntfInstantiations.Yes (mkAppTy tcref [])
                 casmap.[tcs] <- exists
                 exists
-        | VNone -> false  
+        | ValueNone -> false  
 
 let IsSecurityCriticalAttribute g (Attrib(tcref, _, _, _, _, _, _)) =
     (tyconRefEq g tcref g.attrib_SecurityCriticalAttribute.TyconRef || tyconRefEq g tcref g.attrib_SecuritySafeCriticalAttribute.TyconRef)

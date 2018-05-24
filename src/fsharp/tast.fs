@@ -2899,7 +2899,7 @@ and NonLocalEntityRef    =
 
     /// Try to find the entity corresponding to the given path in the given CCU
     static member TryDerefEntityPath(ccu: CcuThunk, path:string[], i:int, entity:Entity) = 
-        if i >= path.Length then VSome entity
+        if i >= path.Length then ValueSome entity
         else  
             let next = entity.ModuleOrNamespaceType.AllEntitiesByCompiledAndLogicalMangledNames.TryFind(path.[i])
             match next with 
@@ -2907,7 +2907,7 @@ and NonLocalEntityRef    =
 #if !NO_EXTENSIONTYPING
             | None -> NonLocalEntityRef.TryDerefEntityPathViaProvidedType(ccu, path, i, entity)
 #else
-            | None -> VNone
+            | None -> ValueNone
 #endif
 
 #if !NO_EXTENSIONTYPING
@@ -2925,11 +2925,11 @@ and NonLocalEntityRef    =
             // types until i = path.Length-1. Create the Tycon's as needed
             let rec tryResolveNestedTypeOf(parentEntity:Entity,resolutionEnvironment,st:Tainted<ProvidedType>,i) = 
                 match st.PApply((fun st -> st.GetNestedType path.[i]),m) with
-                | Tainted.Null -> VNone
+                | Tainted.Null -> ValueNone
                 | st -> 
                     let newEntity = Construct.NewProvidedTycon(resolutionEnvironment, st, ccu.ImportProvidedType, false, m)
                     parentEntity.ModuleOrNamespaceType.AddProvidedTypeEntity(newEntity)
-                    if i = path.Length-1 then VSome(newEntity)
+                    if i = path.Length-1 then ValueSome(newEntity)
                     else tryResolveNestedTypeOf(newEntity,resolutionEnvironment,st,i+1)
 
             tryResolveNestedTypeOf(entity,resolutionEnvironment,st,i)
@@ -2987,18 +2987,18 @@ and NonLocalEntityRef    =
                     // newEntity is at 'j'
                     NonLocalEntityRef.TryDerefEntityPath(ccu, path, (j+1), newEntity) 
 
-                | [] -> VNone 
+                | [] -> ValueNone 
                 | _ -> failwith "Unexpected"
 
             let rec tryResolvePrefixes j = 
-                if j >= path.Length then VNone
+                if j >= path.Length then ValueNone
                 else match tryResolvePrefix j with 
-                      | VNone -> tryResolvePrefixes (j+1)
-                      | VSome res -> VSome res
+                      | ValueNone -> tryResolvePrefixes (j+1)
+                      | ValueSome res -> ValueSome res
 
             tryResolvePrefixes i
 
-        | _ -> VNone
+        | _ -> ValueNone
 #endif
             
     /// Try to link a non-local entity reference to an actual entity
@@ -3007,11 +3007,11 @@ and NonLocalEntityRef    =
         if canError then 
             ccu.EnsureDerefable(path)
 
-        if ccu.IsUnresolvedReference then VNone else
+        if ccu.IsUnresolvedReference then ValueNone else
 
         match NonLocalEntityRef.TryDerefEntityPath(ccu, path, 0, ccu.Contents)  with
-        | VSome _ as r -> r
-        | VNone ->
+        | ValueSome _ as r -> r
+        | ValueNone ->
             // OK, the lookup failed. Check if we can redirect through a type forwarder on this assembly.
             // Look for a forwarder for each prefix-path
             let rec tryForwardPrefixPath i = 
@@ -3021,7 +3021,7 @@ and NonLocalEntityRef    =
                     | Some tcref -> NonLocalEntityRef.TryDerefEntityPath(ccu, path, (i+1), tcref.Deref)  
                     | None -> tryForwardPrefixPath (i+1)
                 else
-                    VNone
+                    ValueNone
             tryForwardPrefixPath 0
         
     /// Get the CCU referenced by the nonlocal reference.
@@ -3053,8 +3053,8 @@ and NonLocalEntityRef    =
     /// Dereference the nonlocal reference, and raise an error if this fails.
     member nleref.Deref = 
         match nleref.TryDeref(canError=true) with 
-        | VSome res -> res
-        | VNone -> 
+        | ValueSome res -> res
+        | ValueNone -> 
               errorR (InternalUndefinedItemRef (FSComp.SR.tastUndefinedItemRefModuleNamespace, nleref.DisplayName, nleref.AssemblyName, "<some module on this path>")) 
               raise (KeyNotFoundException())
         
@@ -3084,9 +3084,9 @@ and
     member private tcr.Resolve(canError) = 
         let res = tcr.nlr.TryDeref(canError)
         match res with 
-        | VSome r -> 
+        | ValueSome r -> 
              tcr.binding <- nullableSlotFull r 
-        | VNone -> 
+        | ValueNone -> 
              ()
 
     /// Dereference the TyconRef to a Tycon. Amortize the cost of doing this.
@@ -3107,11 +3107,11 @@ and
         | null -> 
             tcr.Resolve(canError=false)
             match box tcr.binding with 
-            | null -> VNone
-            | _ -> VSome tcr.binding
+            | null -> ValueNone
+            | _ -> ValueSome tcr.binding
 
         | _ -> 
-            VSome tcr.binding
+            ValueSome tcr.binding
 
     /// Is the destination assembly available?
     member tcr.CanDeref = tcr.TryDeref.IsSome
@@ -3434,8 +3434,8 @@ and
                 let e =  nlr.EnclosingEntity.Deref 
                 let possible = e.ModuleOrNamespaceType.TryLinkVal(nlr.EnclosingEntity.nlr.Ccu, nlr.ItemKey)
                 match possible with 
-                | VNone -> error (InternalUndefinedItemRef (FSComp.SR.tastUndefinedItemRefVal, e.DisplayNameWithStaticParameters, nlr.AssemblyName, sprintf "%+A" nlr.ItemKey.PartialKey))
-                | VSome h -> h
+                | ValueNone -> error (InternalUndefinedItemRef (FSComp.SR.tastUndefinedItemRefVal, e.DisplayNameWithStaticParameters, nlr.AssemblyName, sprintf "%+A" nlr.ItemKey.PartialKey))
+                | ValueSome h -> h
             vr.binding <- nullableSlotFull res 
             res 
         else vr.binding
@@ -3445,14 +3445,14 @@ and
         if obj.ReferenceEquals(vr.binding, null) then
             let resOpt = 
                 match vr.nlr.EnclosingEntity.TryDeref with 
-                | VNone -> VNone
-                | VSome e -> e.ModuleOrNamespaceType.TryLinkVal(vr.nlr.EnclosingEntity.nlr.Ccu, vr.nlr.ItemKey)
+                | ValueNone -> ValueNone
+                | ValueSome e -> e.ModuleOrNamespaceType.TryLinkVal(vr.nlr.EnclosingEntity.nlr.Ccu, vr.nlr.ItemKey)
             match resOpt with 
-            | VNone -> ()
-            | VSome res -> 
+            | ValueNone -> ()
+            | ValueSome res -> 
                 vr.binding <- nullableSlotFull res 
             resOpt
-        else VSome vr.binding
+        else ValueSome vr.binding
 
     /// The type of the value. May be a TType_forall for a generic value. 
     /// May be a type variable or type containing type variables during type inference. 
