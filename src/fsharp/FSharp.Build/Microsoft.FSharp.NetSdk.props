@@ -73,9 +73,9 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
 
   <PropertyGroup>
     <DefaultValueTuplePackageVersion>4.3.1</DefaultValueTuplePackageVersion>
-    <DefaultfSharpCorePackageVersion>4.3.4</DefaultfSharpCorePackageVersion>
+    <DefaultFSharpCorePackageVersion>4.3.4</DefaultFSharpCorePackageVersion>
     <ValueTupleImplicitPackageVersion>$(DefaultValueTuplePackageVersion)</ValueTupleImplicitPackageVersion>
-    <FSharpCoreImplicitPackageVersion>$(DefaultfSharpCorePackageVersion)</FSharpCoreImplicitPackageVersion>
+    <FSharpCoreImplicitPackageVersion>$(DefaultFSharpCorePackageVersion)</FSharpCoreImplicitPackageVersion>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(DisableImplicitSystemValueTupleReference)' != 'true'
