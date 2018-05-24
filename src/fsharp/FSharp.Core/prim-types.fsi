@@ -1520,7 +1520,7 @@ namespace Microsoft.FSharp.Core
         /// <summary>Convert the given Action delegate object to an F# function value</summary>
         /// <param name="action">The input Action delegate.</param>
         /// <returns>The F# function.</returns>
-        static member  ToFSharpFunc       : action:Action<'T>            -> ('T -> unit)
+        static member  inline ToFSharpFunc       : action:Action<'T>            -> ('T -> unit)
 
 #if !FX_NO_CONVERTER
         /// <summary>Convert the given Converter delegate object to an F# function value</summary>
