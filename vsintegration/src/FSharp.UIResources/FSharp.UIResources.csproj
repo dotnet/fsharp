@@ -5,6 +5,7 @@
   <PropertyGroup>
     <TargetFramework>net46</TargetFramework>
     <OutputType>Library</OutputType>
+    <NoWarn>$(NoWarn);1591</NoWarn>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <RootNamespace>Microsoft.VisualStudio.FSharp.UIResources</RootNamespace>
     <NoWarn>$(NoWarn);1591</NoWarn>
@@ -34,8 +35,6 @@
 
   <!-- The following are hacks to allow WPF to build. -->
   <ItemGroup>
-    <!-- <ApplicationDefinition Include="App.xaml" SubType="Designer" Generator="MSBuild:Compile" /> -->
-    <!-- <Page Include="**\*.xaml" SubType="Designer" Generator="MSBuild:Compile" Exclude="App.xaml" /> -->
     <Page Include="**\*.xaml" SubType="Designer" Generator="MSBuild:Compile" />
     <None Include="@(Page)" />
     <None Include="@(Resource)" />
@@ -47,7 +46,7 @@
     <VSMSBuildBinDir>$(VS150COMNTOOLS)\..\..\MSBuild\$(VisualStudioVersion)\Bin</VSMSBuildBinDir>
     <LanguageTargets Condition="Exists('$(VSMSBuildBinDir)')">$(VSMSBuildBinDir)\Microsoft.CSharp.targets</LanguageTargets>
   </PropertyGroup>
-
+  <Target Name="CoreCompile"/>
   <Target Name="WorkaroundForXAMLIntellisenseBuildIssue" AfterTargets="_CheckCompileDesignTimePrerequisite">
     <PropertyGroup>
       <BuildingProject>false</BuildingProject>

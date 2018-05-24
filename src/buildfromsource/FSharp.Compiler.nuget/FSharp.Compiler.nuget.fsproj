@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp1.0</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>Microsoft.FSharp.Compiler</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
@@ -20,7 +20,7 @@
     <PackageAuthors    Condition="'$(PackageAuthors)' == ''"   >Microsoft and F# Software Foundation</PackageAuthors> 
     <PackageTags       Condition="'$(PackageTags)' == ''"      >Visual F# Compiler FSharp functional programming</PackageTags> 
     <PreReleaseSuffix  Condition="'$(PreRelease)' != 'false'">-rc-$(BuildRevision.Trim())-0</PreReleaseSuffix>
-    <PackageVersion>10.1.1$(PreReleaseSuffix)</PackageVersion>
+    <PackageVersion>10.2.0$(PreReleaseSuffix)</PackageVersion>
     <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
   </PropertyGroup>
 

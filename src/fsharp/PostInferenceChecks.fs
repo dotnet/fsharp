@@ -24,8 +24,6 @@ open Microsoft.FSharp.Compiler.PrettyNaming
 open Microsoft.FSharp.Compiler.InfoReader
 open Microsoft.FSharp.Compiler.TypeRelations
 
-
-
 //--------------------------------------------------------------------------
 // TestHooks - for dumping range to support source transforms
 //--------------------------------------------------------------------------
@@ -890,24 +888,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
         // allow args to be byref here 
         CheckExprsPermitByrefs cenv env args 
 
-    | (   TOp.Tuple _
-        | TOp.UnionCase _
-        | TOp.ExnConstr _
-        | TOp.Array
-        | TOp.Bytes _
-        | TOp.UInt16s _
-        | TOp.Recd _
-        | TOp.ValFieldSet _
-        | TOp.UnionCaseTagGet _
-        | TOp.UnionCaseProof _
-        | TOp.UnionCaseFieldGet _
-        | TOp.UnionCaseFieldSet _
-        | TOp.ExnFieldGet _
-        | TOp.ExnFieldSet _
-        | TOp.TupleFieldGet _
-        | TOp.RefAddrGet 
-        | _ (* catch all! *)
-        ),_,_ ->    
+    | _ -> 
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprsNoByrefs cenv env args 
 
@@ -1251,7 +1232,8 @@ let CheckModuleBinding cenv env (TBind(v,e,_) as bind) =
        // Having a field makes the binding a static initialization trigger
        IsSimpleSyntacticConstantExpr cenv.g e && 
        // Check the thing is actually compiled as a property
-       IsCompiledAsStaticProperty cenv.g v 
+       IsCompiledAsStaticProperty cenv.g v ||
+       (cenv.g.compilingFslib && v.Attribs |> List.exists(fun (Attrib(tc,_,_,_,_,_,_)) -> tc.CompiledName = "ValueAsStaticPropertyAttribute"))
      then 
         v.SetIsCompiledAsStaticPropertyWithoutField()
 

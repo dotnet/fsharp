@@ -9,7 +9,6 @@ open SettingsPersistence
 open OptionsUIHelpers
 
 module DefaultTuning = 
-    let SemanticClassificationInitialDelay = 0 (* milliseconds *)
     let UnusedDeclarationsAnalyzerInitialDelay = 0 (* 1000 *) (* milliseconds *)
     let UnusedOpensAnalyzerInitialDelay = 0 (* 2000 *) (* milliseconds *)
     let SimplifyNameInitialDelay = 2000 (* milliseconds *)
@@ -47,6 +46,13 @@ type LanguageServicePerformanceOptions =
       ProjectCheckCacheSize: int }
 
 [<CLIMutable>]
+type CodeLensOptions =
+  { Enabled : bool
+    ReplaceWithLineLens: bool 
+    UseColors: bool
+    Prefix : string }
+
+[<CLIMutable>]
 type AdvancedOptions =
     { IsBlockStructureEnabled: bool 
       IsOutliningEnabled: bool }
@@ -80,12 +86,19 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
             { IsBlockStructureEnabled = true 
               IsOutliningEnabled = true }
 
+        store.RegisterDefault
+            { Enabled = false
+              UseColors = false
+              ReplaceWithLineLens = true
+              Prefix = "// " }
+
     interface ISettings
 
     static member IntelliSense : IntelliSenseOptions = getSettings()
     static member QuickInfo : QuickInfoOptions = getSettings()
     static member CodeFixes : CodeFixesOptions = getSettings()
     static member LanguageServicePerformance : LanguageServicePerformanceOptions = getSettings()
+    static member CodeLens : CodeLensOptions = getSettings()
     static member Advanced: AdvancedOptions = getSettings()
 
 module internal OptionsUI =
@@ -121,6 +134,12 @@ module internal OptionsUI =
         inherit AbstractOptionPage<LanguageServicePerformanceOptions>()
         override this.CreateView() =
             upcast LanguageServicePerformanceOptionControl()
+    
+    [<Guid(Guids.codeLensOptionPageIdString)>]
+    type internal CodeLensOptionPage() =
+        inherit AbstractOptionPage<CodeLensOptions>()
+        override this.CreateView() =
+            upcast CodeLensOptionControl()
 
     [<Guid(Guids.advancedSettingsPageIdSring)>]
     type internal AdvancedSettingsOptionPage() =
