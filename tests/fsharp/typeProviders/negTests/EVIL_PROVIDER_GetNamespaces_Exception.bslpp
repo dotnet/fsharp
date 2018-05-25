@@ -1,0 +1,8 @@
+
+EVIL_PROVIDER_GetNamespaces_Exception.fsx(2,1,2,56): parse error FS3033: The type provider 'Provider.EvilProviderWhereGetNamespacesRaisesException' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider_EVIL_PROVIDER_GetNamespaces_Exception>.$Provider$fsx.-ctor@224-7.Invoke(Unit _arg28)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+EVIL_PROVIDER_GetNamespaces_Exception.fsx(2,1,2,56): parse error FS3020: One or more errors seen during provided type setup

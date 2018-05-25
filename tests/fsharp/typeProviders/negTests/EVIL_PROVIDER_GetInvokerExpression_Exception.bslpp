@@ -1,0 +1,8 @@
+
+EVIL_PROVIDER_GetInvokerExpression_Exception.fsx(7,9,7,80): typecheck error FS3033: The type provider 'Provider.EvilProviderWhereApplyGetInvokerExpressionRaisesException' reported an error in the context of provided type 'FSharp.EvilProviderWhereGetInvokerExpressionRaisesException.TheType', member 'get_Foo'. The error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider_EVIL_PROVIDER_GetInvokerExpression_Exception>.$Provider$fsx.-ctor@242-7.Invoke(Unit _arg28)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.GetInvokerExpression(ITypeProvider provider, ProvidedMethodBase methodBase, ProvidedVar[] paramExprs) in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 891
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94

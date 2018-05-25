@@ -1,0 +1,20 @@
+
+neg2.fsx(3,59,3,66): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeTypeTests1' reported an error: System.Exception: Kaboom
+
+   at Provider.GoodProviderForNegativeTypeTests1.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName(String s)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.resolvedType@1073.Invoke(IProvidedNamespace providedNamespace) in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 1073
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg2.fsx(3,59,3,66): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeTypeTests1' reported an error: System.Exception: Kaboom
+
+   at Provider.GoodProviderForNegativeTypeTests1.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName(String s)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.resolvedType@1073.Invoke(IProvidedNamespace providedNamespace) in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 1073
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg2.fsx(3,59,3,66): typecheck error FS0039: The value, constructor, namespace or type 'TheHype' is not defined. Maybe you want one of the following:
+
+   TheType

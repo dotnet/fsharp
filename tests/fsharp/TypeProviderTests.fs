@@ -239,6 +239,7 @@ let ``negative type provider tests`` (name:string) =
             File.ReadAllText(sprintf "%s%s.%sbslpp" dirp name pref)
                 .Replace("<ASSEMBLY>", getfullpath cfg (sprintf "provider_%s.dll" name))
                 .Replace("<URIPATH>",sprintf "file:///%s" dirp)
+                .Replace("<REPOSITORYROOT>", (Path.Combine(__SOURCE_DIRECTORY__, "..", "..") |> DirectoryInfo).FullName)
                 |> fun txt -> File.WriteAllText(sprintf "%s%s.%sbsl" dirp name pref,txt)
 
         if name = "ProviderAttribute_EmptyConsume" || name = "providerAttributeErrorConsume" then ()

@@ -1,0 +1,16 @@
+
+EVIL_PROVIDER_GetStaticParameters_Exception.fsx(7,18,7,84): typecheck error FS3033: The type provider 'Provider.EvilProviderWhereGetStaticParametersRaisesException' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider_EVIL_PROVIDER_GetStaticParameters_Exception>.$Provider$fsx.-ctor@230-7.Invoke(Unit _arg28)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetStaticParameters(ITypeProvider provider) in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 425
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+EVIL_PROVIDER_GetStaticParameters_Exception.fsx(7,18,7,84): typecheck error FS3033: The type provider 'Provider.EvilProviderWhereGetStaticParametersRaisesException' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider_EVIL_PROVIDER_GetStaticParameters_Exception>.$Provider$fsx.-ctor@230-7.Invoke(Unit _arg28)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetStaticParameters(ITypeProvider provider) in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 425
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94

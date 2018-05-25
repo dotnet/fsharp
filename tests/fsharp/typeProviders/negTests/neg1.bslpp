@@ -4,9 +4,21 @@ neg1.fsx(3,18,3,70): typecheck error FS0001: This expression was expected to hav
 but here has type
     'int'    
 
-neg1.fsx(9,38,9,64): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.IsArrayTypeRaisesException' member 'IsArray': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+neg1.fsx(9,38,9,64): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.IsArrayTypeRaisesException' member 'IsArray': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
 
-neg1.fsx(9,38,9,64): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.IsArrayTypeRaisesException' member 'IsArray': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@130.Invoke(Unit _arg1)
+
+   at System.Type.get_IsArray()
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(9,38,9,64): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.IsArrayTypeRaisesException' member 'IsArray': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@130.Invoke(Unit _arg1)
+
+   at System.Type.get_IsArray()
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
 neg1.fsx(9,38,9,64): typecheck error FS3004: The provided type 'FSharp.EvilProvider.IsArrayTypeRaisesException' has member 'Boo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
 
@@ -20,25 +32,57 @@ neg1.fsx(10,38,10,60): typecheck error FS3004: The provided type 'FSharp.EvilPro
 
 neg1.fsx(10,38,10,60): typecheck error FS3004: The provided type 'FSharp.EvilProvider.IsArrayTypeReturnsTrue' has member 'Foo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
 
-neg1.fsx(11,38,11,66): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'Name' of a provided type: deliberate error for testing purposes
+neg1.fsx(11,38,11,66): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'Name' of a provided type: System.Exception: deliberate error for testing purposes
 
-neg1.fsx(11,38,11,66): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'Name' of a provided type: deliberate error for testing purposes
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@134-4.Invoke(Unit _arg5)
 
-neg1.fsx(11,38,11,66): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'Name' of a provided type: deliberate error for testing purposes
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
-neg1.fsx(11,38,11,66): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'Name' of a provided type: deliberate error for testing purposes
+neg1.fsx(11,38,11,66): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'Name' of a provided type: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@134-4.Invoke(Unit _arg5)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(11,38,11,66): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'Name' of a provided type: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@134-4.Invoke(Unit _arg5)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(11,38,11,66): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'Name' of a provided type: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@134-4.Invoke(Unit _arg5)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
 neg1.fsx(11,38,11,66): typecheck error FS0039: The type 'TypeWhereNameRaisesException' is not defined in 'FSharp.EvilProvider'. Maybe you want one of the following:
 
    IsArrayTypeRaisesException
 
-neg1.fsx(11,38,11,66): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'Name' of a provided type: deliberate error for testing purposes
+neg1.fsx(11,38,11,66): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'Name' of a provided type: System.Exception: deliberate error for testing purposes
 
-neg1.fsx(11,38,11,66): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'Name' of a provided type: deliberate error for testing purposes
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@134-4.Invoke(Unit _arg5)
 
-neg1.fsx(11,38,11,66): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'Name' of a provided type: deliberate error for testing purposes
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
-neg1.fsx(11,38,11,66): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'Name' of a provided type: deliberate error for testing purposes
+neg1.fsx(11,38,11,66): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'Name' of a provided type: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@134-4.Invoke(Unit _arg5)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(11,38,11,66): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'Name' of a provided type: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@134-4.Invoke(Unit _arg5)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(11,38,11,66): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'Name' of a provided type: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@134-4.Invoke(Unit _arg5)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
 neg1.fsx(11,38,11,66): typecheck error FS0039: The type 'TypeWhereNameRaisesException' is not defined in 'FSharp.EvilProvider'. Maybe you want one of the following:
 
@@ -64,9 +108,17 @@ neg1.fsx(12,38,12,62): typecheck error FS3073: The type provider 'Provider.EvilP
 
 neg1.fsx(12,38,12,62): typecheck error FS0039: The type 'TypeWhereNameReturnsNull' is not defined in 'FSharp.EvilProvider'.
 
-neg1.fsx(13,38,13,66): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.IsGenericTypeRaisesException' member 'IsGenericType': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+neg1.fsx(13,38,13,66): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.IsGenericTypeRaisesException' member 'IsGenericType': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
 
-neg1.fsx(13,38,13,66): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.IsGenericTypeRaisesException' member 'IsGenericType': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@132-2.Invoke(Unit _arg3)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(13,38,13,66): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.IsGenericTypeRaisesException' member 'IsGenericType': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@132-2.Invoke(Unit _arg3)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
 neg1.fsx(13,38,13,66): typecheck error FS3004: The provided type 'FSharp.EvilProvider.IsGenericTypeRaisesException' has member 'Boo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
 
@@ -80,39 +132,103 @@ neg1.fsx(14,38,14,62): typecheck error FS3004: The provided type 'FSharp.EvilPro
 
 neg1.fsx(14,38,14,62): typecheck error FS3004: The provided type 'FSharp.EvilProvider.IsGenericTypeReturnsTrue' has member 'Foo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
 
-neg1.fsx(15,38,15,70): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereFullNameRaisesException' member 'FullName': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+neg1.fsx(15,38,15,70): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereFullNameRaisesException' member 'FullName': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
 
-neg1.fsx(15,38,15,70): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'FullName' of a provided type: deliberate error for testing purposes
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@136-6.Invoke(Unit _arg7)
 
-neg1.fsx(15,38,15,70): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereFullNameRaisesException' member 'FullName': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
-neg1.fsx(15,38,15,70): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'FullName' of a provided type: deliberate error for testing purposes
+neg1.fsx(15,38,15,70): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'FullName' of a provided type: System.Exception: deliberate error for testing purposes
 
-neg1.fsx(15,38,15,70): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereFullNameRaisesException' member 'FullName': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@136-6.Invoke(Unit _arg7)
 
-neg1.fsx(15,38,15,70): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'FullName' of a provided type: deliberate error for testing purposes
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
-neg1.fsx(15,38,15,70): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereFullNameRaisesException' member 'FullName': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+neg1.fsx(15,38,15,70): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereFullNameRaisesException' member 'FullName': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
 
-neg1.fsx(15,38,15,70): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'FullName' of a provided type: deliberate error for testing purposes
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@136-6.Invoke(Unit _arg7)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(15,38,15,70): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'FullName' of a provided type: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@136-6.Invoke(Unit _arg7)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(15,38,15,70): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereFullNameRaisesException' member 'FullName': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@136-6.Invoke(Unit _arg7)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(15,38,15,70): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'FullName' of a provided type: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@136-6.Invoke(Unit _arg7)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(15,38,15,70): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereFullNameRaisesException' member 'FullName': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@136-6.Invoke(Unit _arg7)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(15,38,15,70): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'FullName' of a provided type: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@136-6.Invoke(Unit _arg7)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
 neg1.fsx(15,38,15,70): typecheck error FS0039: The type 'TypeWhereFullNameRaisesException' is not defined in 'FSharp.EvilProvider'.
 
-neg1.fsx(15,38,15,70): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereFullNameRaisesException' member 'FullName': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+neg1.fsx(15,38,15,70): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereFullNameRaisesException' member 'FullName': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
 
-neg1.fsx(15,38,15,70): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'FullName' of a provided type: deliberate error for testing purposes
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@136-6.Invoke(Unit _arg7)
 
-neg1.fsx(15,38,15,70): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereFullNameRaisesException' member 'FullName': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
-neg1.fsx(15,38,15,70): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'FullName' of a provided type: deliberate error for testing purposes
+neg1.fsx(15,38,15,70): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'FullName' of a provided type: System.Exception: deliberate error for testing purposes
 
-neg1.fsx(15,38,15,70): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereFullNameRaisesException' member 'FullName': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@136-6.Invoke(Unit _arg7)
 
-neg1.fsx(15,38,15,70): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'FullName' of a provided type: deliberate error for testing purposes
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
-neg1.fsx(15,38,15,70): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereFullNameRaisesException' member 'FullName': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+neg1.fsx(15,38,15,70): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereFullNameRaisesException' member 'FullName': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
 
-neg1.fsx(15,38,15,70): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'FullName' of a provided type: deliberate error for testing purposes
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@136-6.Invoke(Unit _arg7)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(15,38,15,70): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'FullName' of a provided type: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@136-6.Invoke(Unit _arg7)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(15,38,15,70): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereFullNameRaisesException' member 'FullName': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@136-6.Invoke(Unit _arg7)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(15,38,15,70): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'FullName' of a provided type: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@136-6.Invoke(Unit _arg7)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(15,38,15,70): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereFullNameRaisesException' member 'FullName': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@136-6.Invoke(Unit _arg7)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(15,38,15,70): typecheck error FS3072: The type provider 'Provider.EvilProvider' reported an error: An exception occurred when accessing the 'FullName' of a provided type: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@136-6.Invoke(Unit _arg7)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
 neg1.fsx(15,38,15,70): typecheck error FS0039: The type 'TypeWhereFullNameRaisesException' is not defined in 'FSharp.EvilProvider'.
 
@@ -152,15 +268,31 @@ neg1.fsx(16,38,16,66): typecheck error FS3073: The type provider 'Provider.EvilP
 
 neg1.fsx(16,38,16,66): typecheck error FS0039: The type 'TypeWhereFullNameReturnsNull' is not defined in 'FSharp.EvilProvider'.
 
-neg1.fsx(17,38,17,71): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereNamespaceRaisesException' member 'Namespace': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+neg1.fsx(17,38,17,71): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereNamespaceRaisesException' member 'Namespace': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
 
-neg1.fsx(17,38,17,71): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereNamespaceRaisesException' member 'Namespace': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@138-8.Invoke(Unit _arg9)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(17,38,17,71): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereNamespaceRaisesException' member 'Namespace': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@138-8.Invoke(Unit _arg9)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
 neg1.fsx(17,38,17,71): typecheck error FS3041: Expected provided type with path 'FSharp.EvilProvider' but provided type has path ''
 
-neg1.fsx(17,38,17,71): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereNamespaceRaisesException' member 'Namespace': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+neg1.fsx(17,38,17,71): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereNamespaceRaisesException' member 'Namespace': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
 
-neg1.fsx(17,38,17,71): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereNamespaceRaisesException' member 'Namespace': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@138-8.Invoke(Unit _arg9)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(17,38,17,71): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereNamespaceRaisesException' member 'Namespace': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@138-8.Invoke(Unit _arg9)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
 neg1.fsx(17,38,17,71): typecheck error FS3041: Expected provided type with path 'FSharp.EvilProvider' but provided type has path ''
 
@@ -168,17 +300,37 @@ neg1.fsx(17,38,17,71): typecheck error FS3004: The provided type 'FSharp.EvilPro
 
 neg1.fsx(17,38,17,71): typecheck error FS3004: The provided type 'FSharp.EvilProvider.TypeWhereNamespaceRaisesException' has member 'Foo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
 
-neg1.fsx(17,38,17,71): typecheck error FS3033: The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+neg1.fsx(17,38,17,71): typecheck error FS3033: The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
 
-neg1.fsx(17,38,17,71): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereNamespaceRaisesException' member 'Namespace': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@138-8.Invoke(Unit _arg9)
 
-neg1.fsx(17,38,17,71): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereNamespaceRaisesException' member 'Namespace': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(17,38,17,71): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereNamespaceRaisesException' member 'Namespace': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@138-8.Invoke(Unit _arg9)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(17,38,17,71): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereNamespaceRaisesException' member 'Namespace': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@138-8.Invoke(Unit _arg9)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
 neg1.fsx(17,38,17,71): typecheck error FS3041: Expected provided type with path 'FSharp.EvilProvider' but provided type has path ''
 
-neg1.fsx(17,38,17,71): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereNamespaceRaisesException' member 'Namespace': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+neg1.fsx(17,38,17,71): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereNamespaceRaisesException' member 'Namespace': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
 
-neg1.fsx(17,38,17,71): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereNamespaceRaisesException' member 'Namespace': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@138-8.Invoke(Unit _arg9)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(17,38,17,71): typecheck error FS3021: Unexpected exception from provided type 'TypeWhereNamespaceRaisesException' member 'Namespace': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@138-8.Invoke(Unit _arg9)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
 neg1.fsx(17,38,17,71): typecheck error FS3041: Expected provided type with path 'FSharp.EvilProvider' but provided type has path ''
 
@@ -186,109 +338,353 @@ neg1.fsx(17,38,17,71): typecheck error FS3004: The provided type 'FSharp.EvilPro
 
 neg1.fsx(17,38,17,71): typecheck error FS3004: The provided type 'FSharp.EvilProvider.TypeWhereNamespaceRaisesException' has member 'Foo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
 
-neg1.fsx(17,38,17,71): typecheck error FS3033: The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+neg1.fsx(17,38,17,71): typecheck error FS3033: The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@138-8.Invoke(Unit _arg9)
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
 neg1.fsx(18,39,18,68): typecheck error FS0039: The type 'TypeWhereNamespaceReturnsNull' is not defined in 'FSharp.EvilProvider'.
 
 neg1.fsx(18,39,18,68): typecheck error FS0039: The type 'TypeWhereNamespaceReturnsNull' is not defined in 'FSharp.EvilProvider'.
 
-neg1.fsx(19,39,19,67): typecheck error FS3021: Unexpected exception from provided type 'DeclaringTypeRaisesException' member 'DeclaringType': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+neg1.fsx(19,39,19,67): typecheck error FS3021: Unexpected exception from provided type 'DeclaringTypeRaisesException' member 'DeclaringType': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
 
-neg1.fsx(19,39,19,67): typecheck error FS3021: Unexpected exception from provided type 'DeclaringTypeRaisesException' member 'DeclaringType': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@140-10.Invoke(Unit _arg11)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedMemberInfo.get_DeclaringType() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 525
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.declaringTypes@922-1.Invoke(ProvidedType st) in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 922
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(19,39,19,67): typecheck error FS3021: Unexpected exception from provided type 'DeclaringTypeRaisesException' member 'DeclaringType': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@140-10.Invoke(Unit _arg11)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedMemberInfo.get_DeclaringType() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 525
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.declaringTypes@922-1.Invoke(ProvidedType st) in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 922
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
 neg1.fsx(19,39,19,67): typecheck error FS3004: The provided type 'FSharp.EvilProvider.DeclaringTypeRaisesException' has member 'Boo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
 
 neg1.fsx(19,39,19,67): typecheck error FS3004: The provided type 'FSharp.EvilProvider.DeclaringTypeRaisesException' has member 'Foo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
 
-neg1.fsx(19,39,19,67): typecheck error FS3033: The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+neg1.fsx(19,39,19,67): typecheck error FS3033: The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
 
-neg1.fsx(19,39,19,67): typecheck error FS3021: Unexpected exception from provided type 'DeclaringTypeRaisesException' member 'DeclaringType': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@140-10.Invoke(Unit _arg11)
 
-neg1.fsx(19,39,19,67): typecheck error FS3021: Unexpected exception from provided type 'DeclaringTypeRaisesException' member 'DeclaringType': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedMemberInfo.get_DeclaringType() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 525
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.GetFSharpPathToProvidedType@1267.Invoke(ProvidedType st) in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 1267
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(19,39,19,67): typecheck error FS3021: Unexpected exception from provided type 'DeclaringTypeRaisesException' member 'DeclaringType': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@140-10.Invoke(Unit _arg11)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedMemberInfo.get_DeclaringType() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 525
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.declaringTypes@922-1.Invoke(ProvidedType st) in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 922
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(19,39,19,67): typecheck error FS3021: Unexpected exception from provided type 'DeclaringTypeRaisesException' member 'DeclaringType': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@140-10.Invoke(Unit _arg11)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedMemberInfo.get_DeclaringType() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 525
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.declaringTypes@922-1.Invoke(ProvidedType st) in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 922
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
 neg1.fsx(19,39,19,67): typecheck error FS3004: The provided type 'FSharp.EvilProvider.DeclaringTypeRaisesException' has member 'Boo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
 
 neg1.fsx(19,39,19,67): typecheck error FS3004: The provided type 'FSharp.EvilProvider.DeclaringTypeRaisesException' has member 'Foo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
 
-neg1.fsx(19,39,19,67): typecheck error FS3033: The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+neg1.fsx(19,39,19,67): typecheck error FS3033: The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
 
-neg1.fsx(20,39,20,73): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetMethodsRaisesException' member 'GetMethods': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@140-10.Invoke(Unit _arg11)
 
-neg1.fsx(20,39,20,73): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetMethodsRaisesException' member 'GetMethods': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedMemberInfo.get_DeclaringType() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 525
 
-neg1.fsx(20,39,20,73): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetMethodsRaisesException' member 'GetMethods': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at Microsoft.FSharp.Compiler.ExtensionTyping.GetFSharpPathToProvidedType@1267.Invoke(ProvidedType st) in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 1267
 
-neg1.fsx(20,39,20,73): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetMethodsRaisesException' member 'GetMethods': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(20,39,20,73): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetMethodsRaisesException' member 'GetMethods': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@142-11.Invoke(Unit _arg12)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetMethods() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 409
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(20,39,20,73): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetMethodsRaisesException' member 'GetMethods': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@142-11.Invoke(Unit _arg12)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetMethods() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 409
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(20,39,20,73): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetMethodsRaisesException' member 'GetMethods': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@142-11.Invoke(Unit _arg12)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetMethods() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 409
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(20,39,20,73): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetMethodsRaisesException' member 'GetMethods': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@142-11.Invoke(Unit _arg12)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetMethods() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 409
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
 neg1.fsx(20,39,20,73): typecheck error FS0039: The type 'TypeWhereGetMethodsRaisesException' is not defined in 'FSharp.EvilProvider'.
 
-neg1.fsx(20,39,20,73): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetMethodsRaisesException' member 'GetMethods': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+neg1.fsx(20,39,20,73): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetMethodsRaisesException' member 'GetMethods': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
 
-neg1.fsx(20,39,20,73): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetMethodsRaisesException' member 'GetMethods': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@142-11.Invoke(Unit _arg12)
 
-neg1.fsx(20,39,20,73): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetMethodsRaisesException' member 'GetMethods': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetMethods() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 409
 
-neg1.fsx(20,39,20,73): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetMethodsRaisesException' member 'GetMethods': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(20,39,20,73): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetMethodsRaisesException' member 'GetMethods': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@142-11.Invoke(Unit _arg12)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetMethods() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 409
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(20,39,20,73): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetMethodsRaisesException' member 'GetMethods': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@142-11.Invoke(Unit _arg12)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetMethods() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 409
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(20,39,20,73): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetMethodsRaisesException' member 'GetMethods': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@142-11.Invoke(Unit _arg12)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetMethods() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 409
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
 neg1.fsx(20,39,20,73): typecheck error FS0039: The type 'TypeWhereGetMethodsRaisesException' is not defined in 'FSharp.EvilProvider'.
 
-neg1.fsx(21,39,21,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetEventsRaisesException' member 'GetEvents': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+neg1.fsx(21,39,21,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetEventsRaisesException' member 'GetEvents': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
 
-neg1.fsx(21,39,21,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetEventsRaisesException' member 'GetEvents': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@143-12.Invoke(Unit _arg13)
 
-neg1.fsx(21,39,21,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetEventsRaisesException' member 'GetEvents': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetEvents() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 410
 
-neg1.fsx(21,39,21,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetEventsRaisesException' member 'GetEvents': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(21,39,21,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetEventsRaisesException' member 'GetEvents': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@143-12.Invoke(Unit _arg13)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetEvents() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 410
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(21,39,21,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetEventsRaisesException' member 'GetEvents': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@143-12.Invoke(Unit _arg13)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetEvents() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 410
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(21,39,21,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetEventsRaisesException' member 'GetEvents': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@143-12.Invoke(Unit _arg13)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetEvents() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 410
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
 neg1.fsx(21,39,21,72): typecheck error FS0039: The type 'TypeWhereGetEventsRaisesException' is not defined in 'FSharp.EvilProvider'.
 
-neg1.fsx(21,39,21,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetEventsRaisesException' member 'GetEvents': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+neg1.fsx(21,39,21,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetEventsRaisesException' member 'GetEvents': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
 
-neg1.fsx(21,39,21,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetEventsRaisesException' member 'GetEvents': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@143-12.Invoke(Unit _arg13)
 
-neg1.fsx(21,39,21,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetEventsRaisesException' member 'GetEvents': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetEvents() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 410
 
-neg1.fsx(21,39,21,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetEventsRaisesException' member 'GetEvents': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(21,39,21,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetEventsRaisesException' member 'GetEvents': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@143-12.Invoke(Unit _arg13)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetEvents() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 410
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(21,39,21,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetEventsRaisesException' member 'GetEvents': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@143-12.Invoke(Unit _arg13)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetEvents() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 410
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(21,39,21,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetEventsRaisesException' member 'GetEvents': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@143-12.Invoke(Unit _arg13)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetEvents() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 410
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
 neg1.fsx(21,39,21,72): typecheck error FS0039: The type 'TypeWhereGetEventsRaisesException' is not defined in 'FSharp.EvilProvider'.
 
-neg1.fsx(22,39,22,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetFieldsRaisesException' member 'GetFields': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+neg1.fsx(22,39,22,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetFieldsRaisesException' member 'GetFields': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
 
-neg1.fsx(22,39,22,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetFieldsRaisesException' member 'GetFields': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@144-13.Invoke(Unit _arg14)
 
-neg1.fsx(22,39,22,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetFieldsRaisesException' member 'GetFields': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetFields() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 415
 
-neg1.fsx(22,39,22,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetFieldsRaisesException' member 'GetFields': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(22,39,22,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetFieldsRaisesException' member 'GetFields': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@144-13.Invoke(Unit _arg14)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetFields() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 415
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(22,39,22,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetFieldsRaisesException' member 'GetFields': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@144-13.Invoke(Unit _arg14)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetFields() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 415
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(22,39,22,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetFieldsRaisesException' member 'GetFields': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@144-13.Invoke(Unit _arg14)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetFields() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 415
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
 neg1.fsx(22,39,22,72): typecheck error FS0039: The type 'TypeWhereGetFieldsRaisesException' is not defined in 'FSharp.EvilProvider'.
 
-neg1.fsx(22,39,22,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetFieldsRaisesException' member 'GetFields': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+neg1.fsx(22,39,22,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetFieldsRaisesException' member 'GetFields': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
 
-neg1.fsx(22,39,22,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetFieldsRaisesException' member 'GetFields': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@144-13.Invoke(Unit _arg14)
 
-neg1.fsx(22,39,22,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetFieldsRaisesException' member 'GetFields': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetFields() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 415
 
-neg1.fsx(22,39,22,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetFieldsRaisesException' member 'GetFields': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(22,39,22,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetFieldsRaisesException' member 'GetFields': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@144-13.Invoke(Unit _arg14)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetFields() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 415
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(22,39,22,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetFieldsRaisesException' member 'GetFields': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@144-13.Invoke(Unit _arg14)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetFields() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 415
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(22,39,22,72): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetFieldsRaisesException' member 'GetFields': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@144-13.Invoke(Unit _arg14)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetFields() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 415
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
 neg1.fsx(22,39,22,72): typecheck error FS0039: The type 'TypeWhereGetFieldsRaisesException' is not defined in 'FSharp.EvilProvider'.
 
-neg1.fsx(23,39,23,76): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetPropertiesRaisesException' member 'GetProperties': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+neg1.fsx(23,39,23,76): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetPropertiesRaisesException' member 'GetProperties': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
 
-neg1.fsx(23,39,23,76): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetPropertiesRaisesException' member 'GetProperties': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@145-14.Invoke(Unit _arg15)
 
-neg1.fsx(23,39,23,76): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetPropertiesRaisesException' member 'GetProperties': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetProperties() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 412
 
-neg1.fsx(23,39,23,76): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetPropertiesRaisesException' member 'GetProperties': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(23,39,23,76): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetPropertiesRaisesException' member 'GetProperties': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@145-14.Invoke(Unit _arg15)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetProperties() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 412
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(23,39,23,76): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetPropertiesRaisesException' member 'GetProperties': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@145-14.Invoke(Unit _arg15)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetProperties() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 412
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(23,39,23,76): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetPropertiesRaisesException' member 'GetProperties': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@145-14.Invoke(Unit _arg15)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetProperties() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 412
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
 neg1.fsx(23,39,23,76): typecheck error FS0039: The type 'TypeWhereGetPropertiesRaisesException' is not defined in 'FSharp.EvilProvider'.
 
-neg1.fsx(23,39,23,76): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetPropertiesRaisesException' member 'GetProperties': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+neg1.fsx(23,39,23,76): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetPropertiesRaisesException' member 'GetProperties': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
 
-neg1.fsx(23,39,23,76): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetPropertiesRaisesException' member 'GetProperties': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@145-14.Invoke(Unit _arg15)
 
-neg1.fsx(23,39,23,76): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetPropertiesRaisesException' member 'GetProperties': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetProperties() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 412
 
-neg1.fsx(23,39,23,76): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetPropertiesRaisesException' member 'GetProperties': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(23,39,23,76): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetPropertiesRaisesException' member 'GetProperties': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@145-14.Invoke(Unit _arg15)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetProperties() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 412
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(23,39,23,76): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetPropertiesRaisesException' member 'GetProperties': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@145-14.Invoke(Unit _arg15)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetProperties() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 412
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(23,39,23,76): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetPropertiesRaisesException' member 'GetProperties': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@145-14.Invoke(Unit _arg15)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetProperties() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 412
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
 neg1.fsx(23,39,23,76): typecheck error FS0039: The type 'TypeWhereGetPropertiesRaisesException' is not defined in 'FSharp.EvilProvider'.
 
@@ -296,25 +692,73 @@ neg1.fsx(24,39,24,77): typecheck error FS3004: The provided type 'FSharp.EvilPro
 
 neg1.fsx(24,39,24,77): typecheck error FS3004: The provided type 'FSharp.EvilProvider.TypeWhereGetNestedTypesRaisesException' has member 'Foo' which has declaring type 'FSharp.EvilProvider.TheType'. Expected declaring type to be the same as provided type.
 
-neg1.fsx(25,39,25,78): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetConstructorsRaisesException' member 'GetConstructors': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+neg1.fsx(25,39,25,78): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetConstructorsRaisesException' member 'GetConstructors': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
 
-neg1.fsx(25,39,25,78): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetConstructorsRaisesException' member 'GetConstructors': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@147-16.Invoke(Unit _arg17)
 
-neg1.fsx(25,39,25,78): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetConstructorsRaisesException' member 'GetConstructors': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetConstructors() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 414
 
-neg1.fsx(25,39,25,78): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetConstructorsRaisesException' member 'GetConstructors': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(25,39,25,78): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetConstructorsRaisesException' member 'GetConstructors': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@147-16.Invoke(Unit _arg17)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetConstructors() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 414
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(25,39,25,78): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetConstructorsRaisesException' member 'GetConstructors': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@147-16.Invoke(Unit _arg17)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetConstructors() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 414
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(25,39,25,78): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetConstructorsRaisesException' member 'GetConstructors': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@147-16.Invoke(Unit _arg17)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetConstructors() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 414
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
 neg1.fsx(25,39,25,78): typecheck error FS0039: The type 'TypeWhereGetConstructorsRaisesException' is not defined in 'FSharp.EvilProvider'. Maybe you want one of the following:
 
    TypeWhereGetNestedTypesRaisesException
 
-neg1.fsx(25,39,25,78): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetConstructorsRaisesException' member 'GetConstructors': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+neg1.fsx(25,39,25,78): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetConstructorsRaisesException' member 'GetConstructors': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
 
-neg1.fsx(25,39,25,78): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetConstructorsRaisesException' member 'GetConstructors': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@147-16.Invoke(Unit _arg17)
 
-neg1.fsx(25,39,25,78): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetConstructorsRaisesException' member 'GetConstructors': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetConstructors() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 414
 
-neg1.fsx(25,39,25,78): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetConstructorsRaisesException' member 'GetConstructors': The type provider 'Provider.EvilProvider' reported an error: deliberate error for testing purposes
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(25,39,25,78): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetConstructorsRaisesException' member 'GetConstructors': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@147-16.Invoke(Unit _arg17)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetConstructors() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 414
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(25,39,25,78): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetConstructorsRaisesException' member 'GetConstructors': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@147-16.Invoke(Unit _arg17)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetConstructors() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 414
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+neg1.fsx(25,39,25,78): typecheck error FS3021: Unexpected exception from provided type 'FSharp.EvilProvider.TypeWhereGetConstructorsRaisesException' member 'GetConstructors': The type provider 'Provider.EvilProvider' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider>.$Provider$fsx.Microsoft-FSharp-Core-CompilerServices-IProvidedNamespace-ResolveTypeName@147-16.Invoke(Unit _arg17)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.GetConstructors() in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 414
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
 neg1.fsx(25,39,25,78): typecheck error FS0039: The type 'TypeWhereGetConstructorsRaisesException' is not defined in 'FSharp.EvilProvider'. Maybe you want one of the following:
 
@@ -1654,21 +2098,39 @@ neg1.fsx(438,109,438,110): typecheck error FS0001: This expression was expected 
 but here has type
     'string'    
 
-neg1.fsx(438,9,438,111): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+neg1.fsx(438,9,438,111): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: System.InvalidCastException: Specified cast is not valid.
+
+   at Provider.GoodProviderForNegativeStaticParameterTypeTests.Microsoft-FSharp-Core-CompilerServices-ITypeProvider-ApplyStaticArguments(Type typeWithoutArguments, String[] typeNameWithArguments, Object[] staticArguments)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.ApplyStaticArguments(ITypeProvider provider, String[] fullTypePathAfterArguments, Object[] staticArgs) in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 430
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
 neg1.fsx(440,119,440,120): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
     'string'    
 
-neg1.fsx(440,19,440,121): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+neg1.fsx(440,19,440,121): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: System.InvalidCastException: Specified cast is not valid.
+
+   at Provider.GoodProviderForNegativeStaticParameterTypeTests.Microsoft-FSharp-Core-CompilerServices-ITypeProvider-ApplyStaticArguments(Type typeWithoutArguments, String[] typeNameWithArguments, Object[] staticArguments)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.ApplyStaticArguments(ITypeProvider provider, String[] fullTypePathAfterArguments, Object[] staticArgs) in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 430
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
 neg1.fsx(440,119,440,120): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
     'string'    
 
-neg1.fsx(440,19,440,121): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: Specified cast is not valid.
+neg1.fsx(440,19,440,121): typecheck error FS3033: The type provider 'Provider.GoodProviderForNegativeStaticParameterTypeTests' reported an error: System.InvalidCastException: Specified cast is not valid.
+
+   at Provider.GoodProviderForNegativeStaticParameterTypeTests.Microsoft-FSharp-Core-CompilerServices-ITypeProvider-ApplyStaticArguments(Type typeWithoutArguments, String[] typeNameWithArguments, Object[] staticArguments)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.ProvidedType.ApplyStaticArguments(ITypeProvider provider, String[] fullTypePathAfterArguments, Object[] staticArgs) in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 430
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
 
 neg1.fsx(448,9,448,107): typecheck error FS3148: Too many static parameters. Expected at most 1 parameters, but got 2 unnamed and 0 named parameters.
 

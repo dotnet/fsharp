@@ -1,0 +1,68 @@
+
+EVIL_PROVIDER_ResolveTypeName_Exception.fsx(7,73,7,96): typecheck error FS3033: The type provider 'Provider.EvilProviderWhereResolveTypeNameRaisesException' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider_EVIL_PROVIDER_ResolveTypeName_Exception>.$Provider$fsx.-ctor@218-7.Invoke(String _arg28)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.resolvedType@1073.Invoke(IProvidedNamespace providedNamespace) in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 1073
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+EVIL_PROVIDER_ResolveTypeName_Exception.fsx(7,73,7,96): typecheck error FS3033: The type provider 'Provider.EvilProviderWhereResolveTypeNameRaisesException' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider_EVIL_PROVIDER_ResolveTypeName_Exception>.$Provider$fsx.-ctor@218-7.Invoke(String _arg28)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.resolvedType@1073.Invoke(IProvidedNamespace providedNamespace) in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 1073
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+EVIL_PROVIDER_ResolveTypeName_Exception.fsx(7,73,7,96): typecheck error FS3033: The type provider 'Provider.EvilProviderWhereResolveTypeNameRaisesException' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider_EVIL_PROVIDER_ResolveTypeName_Exception>.$Provider$fsx.-ctor@218-7.Invoke(String _arg28)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.resolvedType@1073.Invoke(IProvidedNamespace providedNamespace) in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 1073
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+EVIL_PROVIDER_ResolveTypeName_Exception.fsx(7,73,7,96): typecheck error FS3033: The type provider 'Provider.EvilProviderWhereResolveTypeNameRaisesException' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider_EVIL_PROVIDER_ResolveTypeName_Exception>.$Provider$fsx.-ctor@218-7.Invoke(String _arg28)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.resolvedType@1073.Invoke(IProvidedNamespace providedNamespace) in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 1073
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+EVIL_PROVIDER_ResolveTypeName_Exception.fsx(7,73,7,96): typecheck error FS0039: The type 'SomeNameThatDoesntExist' is not defined in 'FSharp.EvilProviderWhereResolveTypeNameRaisesException'.
+
+EVIL_PROVIDER_ResolveTypeName_Exception.fsx(7,73,7,96): typecheck error FS3033: The type provider 'Provider.EvilProviderWhereResolveTypeNameRaisesException' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider_EVIL_PROVIDER_ResolveTypeName_Exception>.$Provider$fsx.-ctor@218-7.Invoke(String _arg28)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.resolvedType@1073.Invoke(IProvidedNamespace providedNamespace) in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 1073
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+EVIL_PROVIDER_ResolveTypeName_Exception.fsx(7,73,7,96): typecheck error FS3033: The type provider 'Provider.EvilProviderWhereResolveTypeNameRaisesException' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider_EVIL_PROVIDER_ResolveTypeName_Exception>.$Provider$fsx.-ctor@218-7.Invoke(String _arg28)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.resolvedType@1073.Invoke(IProvidedNamespace providedNamespace) in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 1073
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+EVIL_PROVIDER_ResolveTypeName_Exception.fsx(7,73,7,96): typecheck error FS3033: The type provider 'Provider.EvilProviderWhereResolveTypeNameRaisesException' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider_EVIL_PROVIDER_ResolveTypeName_Exception>.$Provider$fsx.-ctor@218-7.Invoke(String _arg28)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.resolvedType@1073.Invoke(IProvidedNamespace providedNamespace) in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 1073
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+EVIL_PROVIDER_ResolveTypeName_Exception.fsx(7,73,7,96): typecheck error FS3033: The type provider 'Provider.EvilProviderWhereResolveTypeNameRaisesException' reported an error: System.Exception: deliberate error for testing purposes
+
+   at <StartupCode$provider_EVIL_PROVIDER_ResolveTypeName_Exception>.$Provider$fsx.-ctor@218-7.Invoke(String _arg28)
+
+   at Microsoft.FSharp.Compiler.ExtensionTyping.resolvedType@1073.Invoke(IProvidedNamespace providedNamespace) in <REPOSITORYROOT>\src\fsharp\ExtensionTyping.fs:line 1073
+
+   at Microsoft.FSharp.Compiler.Tainted`1.Protect[a](FSharpFunc`2 f, range range) in <REPOSITORYROOT>\src\fsharp\tainted.fs:line 94
+
+EVIL_PROVIDER_ResolveTypeName_Exception.fsx(7,73,7,96): typecheck error FS0039: The type 'SomeNameThatDoesntExist' is not defined in 'FSharp.EvilProviderWhereResolveTypeNameRaisesException'.
