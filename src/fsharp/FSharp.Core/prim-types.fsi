@@ -1445,6 +1445,10 @@ namespace Microsoft.FSharp.Core
     [<AbstractClass>]
     type FSharpFunc<'T,'U> = 
 
+        /// <summary>Construct an instance of an F# first class function value </summary> 
+        /// <returns>The created F# function.</returns> 
+        new : unit ->  FSharpFunc<'T,'U>
+ 
         /// <summary>Invoke an F# first class function value with one argument</summary>
         /// <param name="func"></param>
         /// <returns>'U</returns>
