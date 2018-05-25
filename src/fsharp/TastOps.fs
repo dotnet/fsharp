@@ -836,7 +836,7 @@ let mkInstForAppTy g typ =
 let domainOfFunTy g ty = fst (destFunTy g ty)
 let rangeOfFunTy  g ty = snd (destFunTy g ty)
 
-let helpEnsureTypeHasMetadata g ty = 
+let convertToTypeWithMetadataIfPossible g ty = 
     if isAnyTupleTy g ty then 
         let (tupInfo, tupElemTys) = destAnyTupleTy g ty
         mkOuterCompiledTupleTy g (evalTupInfoIsStruct tupInfo) tupElemTys
@@ -6438,9 +6438,9 @@ let mkCallLiftValueWithName (g:TcGlobals) m ty nm e1 =
     let vref = ValRefForIntrinsic g.lift_value_with_name_info 
     // Use "Expr.ValueWithName" if it exists in FSharp.Core
     match vref.TryDeref with
-    | VSome _ ->
+    | ValueSome _ ->
         mkApps g (typedExprForIntrinsic g m g.lift_value_with_name_info , [[ty]], [mkRefTupledNoTypes g m [e1; mkString g m nm]], m)
-    | VNone ->
+    | ValueNone ->
         mkApps g (typedExprForIntrinsic g m g.lift_value_info , [[ty]], [e1], m)
 
 let mkCallLiftValueWithDefn g m qty e1 = 
@@ -6449,11 +6449,11 @@ let mkCallLiftValueWithDefn g m qty e1 =
     let vref = ValRefForIntrinsic g.lift_value_with_defn_info 
     // Use "Expr.WithValue" if it exists in FSharp.Core
     match vref.TryDeref with
-    | VSome _ ->
+    | ValueSome _ ->
         let copyOfExpr = copyExpr g ValCopyFlag.CloneAll e1
         let quoteOfCopyOfExpr = Expr.Quote(copyOfExpr, ref None, false, m, qty)
         mkApps g (typedExprForIntrinsic g m g.lift_value_with_defn_info , [[ty]], [mkRefTupledNoTypes g m [e1; quoteOfCopyOfExpr]], m)
-    | VNone ->
+    | ValueNone ->
         Expr.Quote(e1, ref None, false, m, qty)
 
 let mkCallCheckThis g m ty e1 = 

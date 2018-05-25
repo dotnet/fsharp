@@ -249,8 +249,8 @@ type Item =
 
 let valRefHash (vref: ValRef) = 
     match vref.TryDeref with 
-    | VNone -> 0 
-    | VSome v -> LanguagePrimitives.PhysicalHash v
+    | ValueNone -> 0 
+    | ValueSome v -> LanguagePrimitives.PhysicalHash v
 
 [<RequireQualifiedAccess>]
 /// Pairs an Item with a TyparInst showing how generic type variables of the item are instantiated at 
@@ -1889,7 +1889,7 @@ let private ResolveObjectConstructorPrim (ncenv:NameResolver) edenv resInfo m ad
                 raze (Error(FSComp.SR.nrNoConstructorsAvailableForType(NicePrint.minimalStringOfType edenv typ),m))
             else 
                 let ctorInfos = ctorInfos |> List.filter (IsMethInfoAccessible amap m ad)  
-                let metadataTy = helpEnsureTypeHasMetadata g typ
+                let metadataTy = convertToTypeWithMetadataIfPossible g typ
                 success (resInfo,Item.MakeCtorGroup ((tcrefOfAppTy g metadataTy).LogicalName, (defaultStructCtorInfo@ctorInfos))) 
 
 /// Perform name resolution for an identifier which must resolve to be an object constructor.
