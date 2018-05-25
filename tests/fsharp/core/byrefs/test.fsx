@@ -62,7 +62,8 @@ module ByRefParam_ExplicitOutAttribute  =
 
     let minfo = typeof<C>.GetMethod("M")
     check "cwnoreeker5" (minfo.GetParameters().[0].IsIn) false
-    check "cwnoreeker6" (minfo.GetParameters().[0].IsOut) true
+    check "cwnoreeker6a" (minfo.GetParameters().[0].IsOut) true
+    check "cwnoreeker6b" (minfo.GetParameters().[0].GetRequiredCustomModifiers().Length) 0
     check "cwnoreekers1" (minfo.ReturnParameter.GetRequiredCustomModifiers().Length) 0
     check "cwnoreeker7" (minfo.ReturnParameter.IsIn) false
     check "cwnoreeker8" (minfo.ReturnParameter.IsOut) false
@@ -77,6 +78,7 @@ module ByRefParam_ExplicitInAttribute  =
     let minfo = typeof<C>.GetMethod("M")
     check "cwnoreeker9" (minfo.GetParameters().[0].IsIn) true
     check "cwnoreekerq" (minfo.GetParameters().[0].IsOut) false
+    check "cwnoreeker6c" (minfo.GetParameters().[0].GetRequiredCustomModifiers().Length) 0
     check "cwnoreekers2" (minfo.ReturnParameter.GetRequiredCustomModifiers().Length) 0
     check "cwnoreekerw" (minfo.ReturnParameter.IsIn) false
     check "cwnoreekere" (minfo.ReturnParameter.IsOut) false
@@ -89,6 +91,7 @@ module ByRefReturn  =
     check "cwvereweoiwvw4" v 10
 
     let minfo = typeof<C>.GetMethod("M")
+    check "cwnoreeker6d" (minfo.GetParameters().[0].GetRequiredCustomModifiers().Length) 0
     check "cwnoreekerr" (minfo.ReturnParameter.IsIn) false
     check "cwnoreekert" (minfo.ReturnParameter.IsOut) false
 
@@ -105,6 +108,7 @@ module Slot_ByRefReturn  =
     check "cweweoiwek28989" v 5
 
     let minfo = typeof<I>.GetMethod("M")
+    check "cwnoreeker6e" (minfo.GetParameters().[0].GetRequiredCustomModifiers().Length) 0
     check "cwnoreekery" (minfo.GetParameters().[0].IsIn) false
     check "cwnoreekeru" (minfo.GetParameters().[0].IsOut) false
     check "cwnoreekeri" (minfo.ReturnParameter.IsIn) false
@@ -121,6 +125,7 @@ module InRefReturn  =
     let minfo = typeof<C>.GetMethod("M")
     check "cwnoreekerp" (minfo.GetParameters().[0].IsIn) true
     check "cwnoreekera" (minfo.GetParameters().[0].IsOut) false
+    check "cwnoreeker6f" (minfo.GetParameters().[0].GetRequiredCustomModifiers().Length) 0 // modreq only placed on abstract/virtual
     check "cwnoreekers3" (minfo.ReturnParameter.IsIn) false // has modreq 'In' but reflection never returns true for ReturnParameter.IsIn
     check "cwnoreekers4" (minfo.ReturnParameter.GetRequiredCustomModifiers().Length) 1
     check "cwnoreekerd" (minfo.ReturnParameter.IsOut) false
@@ -139,6 +144,7 @@ module Slot_InRefReturn  =
     let minfo = typeof<I>.GetMethod("M")
     check "cwnoreekerp" (minfo.GetParameters().[0].IsIn) true
     check "cwnoreekera" (minfo.GetParameters().[0].IsOut) false
+    check "cwnoreeker6g" (minfo.GetParameters().[0].GetRequiredCustomModifiers().Length) 1
     check "cwnoreekers5" (minfo.ReturnParameter.IsIn) false // has modreq 'In' but reflection never returns true for ReturnParameter.IsIn
     check "cwnoreekers6" (minfo.ReturnParameter.GetRequiredCustomModifiers().Length) 1
     check "cwnoreekerd" (minfo.ReturnParameter.IsOut) false
