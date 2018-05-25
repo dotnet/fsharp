@@ -314,7 +314,14 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
                   | SynExpr.LetOrUseBang  (spBind,_,_,_,e1,e2,_) -> 
                       yield! walkBindSeqPt spBind
                       yield! walkExpr true e1
-                      yield! walkExpr true e2 ]
+                      yield! walkExpr true e2
+
+                  | SynExpr.MatchBang (spBind,e,cl,_,_) ->
+                      yield! walkBindSeqPt spBind
+                      yield! walkExpr false e 
+                      for (Clause(_,whenExpr,e,_,_)) in cl do 
+                          yield! walkExprOpt false whenExpr
+                          yield! walkExpr true e ]
             
             // Process a class declaration or F# type declaration
             let rec walkTycon (TypeDefn(ComponentInfo(_, _, _, _, _, _, _, _), repr, membDefns, m)) =
@@ -849,6 +856,8 @@ module UntypedParseImpl =
             | SynExpr.JoinIn(e1, _, e2, _) -> List.tryPick (walkExprWithKind parentKind) [e1; e2]
             | SynExpr.YieldOrReturn(_, e, _) -> walkExprWithKind parentKind e
             | SynExpr.YieldOrReturnFrom(_, e, _) -> walkExprWithKind parentKind e
+            | (SynExpr.Match(_, e, synMatchClauseList, _, _) | SynExpr.MatchBang(_, e, synMatchClauseList, _, _)) -> 
+                walkExprWithKind parentKind e |> Option.orElse (List.tryPick walkClause synMatchClauseList)
             | SynExpr.LetOrUseBang(_, _, _, _, e1, e2, _) -> List.tryPick (walkExprWithKind parentKind) [e1; e2]
             | SynExpr.DoBang(e, _) -> walkExprWithKind parentKind e
             | SynExpr.TraitCall (ts, sign, e, _) ->
