@@ -32,8 +32,6 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   <PropertyGroup>
     <EnableDefaultCompileItems Condition=" '$(EnableDefaultCompileItems)' == '' ">false</EnableDefaultCompileItems>                                <!--- Do not glob F# source files -->
     <EnableDefaultNoneItems Condition=" '$(EnableDefaultNoneItems)' == '' ">false</EnableDefaultNoneItems>
-    <DefaultValueTuplePackageVersion>4.3.1</DefaultValueTuplePackageVersion>
-    <DefaultFSharpPackageVersion>4.3.4</DefaultFSharpPackageVersion>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -67,14 +65,35 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <FscToolExe Condition="'$(OS)' == 'Unix' and '$(FscToolExe)' == ''">RunFsc.sh</FscToolExe>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="System.ValueTuple" Version="$(DefaultValueTuplePackageVersion)" >
-      <DefaultInclude>true</DefaultInclude>
-    </PackageReference>
+  <ItemGroup Condition="'$(DisableImplicitSystemValueTupleReference)' != 'true'
+                        and ('$(TargetFrameworkIdentifier)' == '.NETStandard' or '$(TargetFrameworkIdentifier)' == '.NETCoreApp')
+                        and !('$(_TargetFrameworkVersionWithoutV)' >= '2.0' )">
+    <PackageReference Include="System.ValueTuple" Version="$(ValueTupleImplicitPackageVersion)" />
+  </ItemGroup>
 
-    <PackageReference Include="FSharp.Core" Version="$(DefaultFSharpPackageVersion)">
-      <DefaultInclude>true</DefaultInclude>
-    </PackageReference>
+  <PropertyGroup>
+    <DefaultValueTuplePackageVersion>4.3.1</DefaultValueTuplePackageVersion>
+    <DefaultFSharpCorePackageVersion>4.3.4</DefaultFSharpCorePackageVersion>
+    <ValueTupleImplicitPackageVersion>$(DefaultValueTuplePackageVersion)</ValueTupleImplicitPackageVersion>
+    <FSharpCoreImplicitPackageVersion>$(DefaultFSharpCorePackageVersion)</FSharpCoreImplicitPackageVersion>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(DisableImplicitSystemValueTupleReference)' != 'true'
+                        and ('$(TargetFrameworkIdentifier)' == '.NETFramework'
+                             and ('$(_TargetFrameworkVersionWithoutV)' == ''
+                                  or '$(_TargetFrameworkVersionWithoutV)' == '4.0' or
+                                     '$(_TargetFrameworkVersionWithoutV)' == '4.5' or
+                                     '$(_TargetFrameworkVersionWithoutV)' == '4.5.1' or
+                                     '$(_TargetFrameworkVersionWithoutV)' == '4.5.2' or
+                                     '$(_TargetFrameworkVersionWithoutV)' == '4.6' or
+                                     '$(_TargetFrameworkVersionWithoutV)' == '4.6.1' or
+                                     '$(_TargetFrameworkVersionWithoutV)' == '4.6.2' or
+                                     '$(_TargetFrameworkVersionWithoutV)' == '4.7')) ">
+    <PackageReference Include="System.ValueTuple" Version="$(ValueTupleImplicitPackageVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(DisableImplicitFSharpCoreReference)' != 'true'">
+    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreImplicitPackageVersion)" />
   </ItemGroup>
 
 </Project>
