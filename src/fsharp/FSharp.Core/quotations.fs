@@ -673,13 +673,47 @@ module Patterns =
     let checkTypesWeakSR (expectedType: Type) (receivedType : Type)  name (threeHoleSR : string) = 
         if (not (assignableFrom expectedType receivedType)) then 
           invalidArg "receivedType" (String.Format(threeHoleSR, name, expectedType, receivedType))
-  
-    let checkArgs (paramInfos: ParameterInfo[]) (args:list<Expr>) =  
+
+    let checkArgsTypes (paramInfos: Type[]) (args:list<Expr>) =  
         if (paramInfos.Length <> args.Length) then invalidArg "args" (SR.GetString(SR.QincorrectNumArgs))
         List.iter2
-            ( fun (p:ParameterInfo) a -> checkTypesWeakSR p.ParameterType (typeOf a) "args" (SR.GetString(SR.QtmmInvalidParam))) 
-            (paramInfos |> Array.toList) 
+            ( fun (p:Type) a -> checkTypesWeakSR p (typeOf a) "args" (SR.GetString(SR.QtmmInvalidParam))) 
+            (paramInfos |> Array.toList)
             args
+
+    let checkArgs (paramInfos: ParameterInfo[]) (args:list<Expr>) =
+        checkArgsTypes (paramInfos |> Array.map (fun p -> p.ParameterType)) args
+
+    let checkMethodArgs (m : MethodInfo) (args : list<Expr>) =
+        let argTys =
+            try
+                m.GetParameters() |> Array.map (fun p -> p.ParameterType)
+            with
+            | :? System.NotSupportedException ->
+                // When building a method application with a dynamic generic argument, we end up with
+                //   a MethodBuilderInstantiation from System.Reflection.Emit.
+                // Annoyingly, MethodBuilderInstantiation does not implement GetParameters(), and this
+                //   is worked around by the following.
+                // 
+                // Quite simply, we look at the generic method it was derived from, and perform the
+                //   instantiation manually. First building a map from generic parameters to generic
+                //   arguments, and applying this to the result of GetParameters from the generic type.
+                let genericM = m.GetGenericMethodDefinition()
+                let replaceGenericArgs =
+                    let mapping =
+                        (genericM.GetGenericArguments(), m.GetGenericArguments())
+                        ||> Array.zip
+                        |> Array.map (fun (k : Type, v) -> k.AssemblyQualifiedName, v)
+                        |> Map.ofArray
+                    fun (t : Type) ->
+                        let key = t.AssemblyQualifiedName
+                        if Map.containsKey key mapping then
+                            mapping.[key]
+                        else
+                            t
+                genericM.GetParameters()
+                |> Array.map (fun p -> replaceGenericArgs p.ParameterType)
+        checkArgsTypes argTys args
                                                 // todo: shouldn't this be "strong" type check? sometimes?
 
     let checkAssignableFrom ty1 ty2 = 
@@ -871,7 +905,7 @@ module Patterns =
           
     let mkInstanceMethodCall (obj,minfo:MethodInfo,args:list<Expr>) =
         if Unchecked.defaultof<MethodInfo> = minfo then raise (new ArgumentNullException())
-        checkArgs (minfo.GetParameters()) args
+        checkMethodArgs minfo args
         match minfo.IsStatic with 
         | false -> 
             checkObj minfo obj
@@ -880,7 +914,7 @@ module Patterns =
     
     let mkStaticMethodCall (minfo:MethodInfo,args:list<Expr>) =
         if Unchecked.defaultof<MethodInfo> = minfo then raise (new ArgumentNullException())
-        checkArgs (minfo.GetParameters()) args
+        checkMethodArgs minfo args
         match minfo.IsStatic with 
         | true -> mkFEN (StaticMethodCallOp minfo) args
         | false -> invalidArg  "minfo" (SR.GetString(SR.QnonStaticNoReceiverObject))
