@@ -193,7 +193,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %token BAR_BAR UPCAST DOWNCAST NULL RESERVED MODULE NAMESPACE DELEGATE CONSTRAINT BASE
 %token AND AS ASSERT OASSERT ASR BEGIN DO DONE DOWNTO ELSE ELIF END DOT_DOT
 %token EXCEPTION FALSE FOR FUN FUNCTION IF IN JOIN_IN FINALLY DO_BANG 
-%token LAZY OLAZY  MATCH MUTABLE NEW OF 
+%token LAZY OLAZY  MATCH MATCH_BANG  MUTABLE NEW OF 
 %token OPEN OR REC THEN TO TRUE TRY TYPE VAL INLINE INTERFACE INSTANCE CONST
 %token WHEN WHILE WITH HASH AMP AMP_AMP QUOTE LPAREN RPAREN RPAREN_COMING_SOON RPAREN_IS_HERE STAR COMMA RARROW GREATER_BAR_RBRACK LPAREN_STAR_RPAREN
 %token QMARK QMARK_QMARK DOT COLON COLON_COLON COLON_GREATER  COLON_QMARK_GREATER COLON_QMARK COLON_EQUALS SEMICOLON 
@@ -3047,6 +3047,17 @@ declExpr:
         SynExpr.Match(spBind, $2,clauses,false,unionRanges mMatch mLast) }
 
   | MATCH typedSeqExpr     recover               %prec expr_match 
+      { if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileMatch())
+        // Produce approximate expression during error recovery 
+        exprFromParseError $2 }
+
+  | MATCH_BANG typedSeqExpr     withClauses              %prec expr_match 
+      { let mMatch = (rhs parseState 1)
+        let mWith,(clauses,mLast) = $3 
+        let spBind = SequencePointAtBinding(unionRanges mMatch mWith) 
+        SynExpr.MatchBang(spBind, $2,clauses,false,unionRanges mMatch mLast) }
+
+  | MATCH_BANG typedSeqExpr     recover               %prec expr_match 
       { if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileMatch())
         // Produce approximate expression during error recovery 
         exprFromParseError $2 }
