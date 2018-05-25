@@ -6303,9 +6303,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                         // Enums always have public cases irrespective of Enum Visibility
                         if tycon.IsEnumTycon then false
                         else 
-                            ((fspec.IsCompilerGenerated && not tycon.IsEnumTycon) ||
-                              hiddenRepr ||
-                              IsHiddenRecdField eenv.sigToImplRemapInfo (tcref.MakeNestedRecdFieldRef fspec))
+                            (fspec.IsCompilerGenerated || hiddenRepr ||
+                             IsHiddenRecdField eenv.sigToImplRemapInfo (tcref.MakeNestedRecdFieldRef fspec))
                    let ilType = GenType cenv.amap m eenvinner.tyenv fspec.FormalType
                    let ilFieldName = ComputeFieldName tycon fspec
                         
