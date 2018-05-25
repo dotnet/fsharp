@@ -272,9 +272,11 @@ type public InitializeSuiteAttribute () =
     inherit TestActionAttribute()
 
     override x.BeforeTest details =
-        if details.IsSuite 
-        then suiteHelpers.Force() |> ignore
-
+        try
+            if details.IsSuite 
+            then suiteHelpers.Force() |> ignore
+        with
+        | e -> raise (Exception("failed test suite initialization, debug code in InitializeSuiteAttribute", e))
     override x.AfterTest _details =
         ()
 
