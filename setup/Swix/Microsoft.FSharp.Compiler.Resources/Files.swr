@@ -1,0 +1,11 @@
+use vs
+
+package name=Microsoft.FSharp.Compiler.Resources
+        version=$(FSharpPackageVersion)
+        vs.package.language=$(LocaleSpecificCulture)
+
+folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharpCompiler\$(LocaleParentCulture)"
+  file source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.Build.resources.dll"
+  file source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.Compiler.Interactive.Settings.resources.dll"
+  file source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.Compiler.Private.resources.dll"
+  file source="$(BinariesFolder)\net40\bin\$(LocaleParentCulture)\FSharp.Core.resources.dll"

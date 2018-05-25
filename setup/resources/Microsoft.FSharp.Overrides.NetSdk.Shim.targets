@@ -1,5 +1,5 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-  <Import Project="$(MSBuildProgramFiles32)\Microsoft SDKs\F#\10.1\Framework\v4.0\Microsoft.FSharp.Overrides.NetSdk.targets" />
+  <Import Project="$(VsInstallRoot)\Common7\IDE\CommonExtensions\Microsoft\FSharpCompiler\Microsoft.FSharp.Overrides.NetSdk.targets" />
 
 </Project>

@@ -400,6 +400,60 @@ this file.
 
     </Target>
 
+    <!--
+
+    The old reference assemblies are no longer installed to `Program Files (x86)\Reference Assemblies\Microsoft\FSharp`.
+
+    To avoid breaking legacy projects the hint path for FSharp.Core will be rewritten if and only if the existing hint
+    path is unchanged from the original legacy templates and if a new reference assembly can be found at the new location.
+
+    -->
+    <Target Name="RedirectFSharpCoreReferenceToNewRedistributableLocation" BeforeTargets="ResolveAssemblyReferences">
+      <PropertyGroup>
+        <_OldRootSdkLocation>$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\FSharp</_OldRootSdkLocation>
+        <_NewRootSdkLocation>$(VsInstallRoot)\Common7\IDE\CommonExtensions\Microsoft\FSharpSdk</_NewRootSdkLocation>
+
+        <_CoreRelativeSuffix>.NETCore\$(TargetFSharpCoreVersion)\FSharp.Core.dll</_CoreRelativeSuffix>
+        <_FrameworkRelativeSuffix>.NETFramework\v4.0\$(TargetFSharpCoreVersion)\FSharp.Core.dll</_FrameworkRelativeSuffix>
+        <_PortableRelativeSuffix>.NETPortable\$(TargetFSharpCoreVersion)\FSharp.Core.dll</_PortableRelativeSuffix>
+
+        <!-- .NETCore -->
+        <_OldCoreSdkPath>$(_OldRootSdkLocation)\$(_CoreRelativeSuffix)</_OldCoreSdkPath>
+        <_NewCoreSdkPath>$(_NewRootSdkLocation)\$(_CoreRelativeSuffix)</_NewCoreSdkPath>
+
+        <!-- .NETFramework\v4.0 -->
+        <_OldFrameworkSdkPath>$(_OldRootSdkLocation)\$(_FrameworkRelativeSuffix)</_OldFrameworkSdkPath>
+        <_NewFrameworkSdkPath>$(_NewRootSdkLocation)\$(_FrameworkRelativeSuffix)</_NewFrameworkSdkPath>
+
+        <!-- .NETPortable -->
+        <_OldPortableSdkPath>$(_OldRootSdkLocation)\$(_PortableRelativeSuffix)</_OldPortableSdkPath>
+        <_NewPortableSdkPath>$(_NewRootSdkLocation)\$(_PortableRelativeSuffix)</_NewPortableSdkPath>
+      </PropertyGroup>
+
+      <ItemGroup>
+        <!-- Update references to `.NETCore\*\FSharp.Core.dll`. -->
+        <Reference Condition="'%(Reference.Identity)' == 'FSharp.Core' and
+                              '%(Reference.HintPath)' == '$(_OldCoreSdkPath)' and
+                              Exists('$(_NewCoreSdkPath)')">
+          <HintPath>$(_NewCoreSdkPath)</HintPath>
+        </Reference>
+
+        <!-- Update references to `.NETFramework\v4.0\*\FSharp.Core.dll`. -->
+        <Reference Condition="'%(Reference.Identity)' == 'FSharp.Core' and
+                              '%(Reference.HintPath)' == '$(_OldFrameworkSdkPath)' and
+                              Exists('$(_NewFrameworkSdkPath)')">
+          <HintPath>$(_NewFrameworkSdkPath)</HintPath>
+        </Reference>
+
+        <!-- Update references to `.Portable\*\FSharp.Core.dll`. -->
+        <Reference Condition="'%(Reference.Identity)' == 'FSharp.Core' and
+                              '%(Reference.HintPath)' == '$(_OldPortableSdkPath)' and
+                              Exists('$(_NewPortableSdkPath)')">
+          <HintPath>$(_NewPortableSdkPath)</HintPath>
+        </Reference>
+      </ItemGroup>
+    </Target>
+
     <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\$(MSBuildThisFile)\ImportAfter\*" Condition="'$(ImportByWildcardAfterMicrosoftFSharpTargets)' == 'true' and exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\$(MSBuildThisFile)\ImportAfter')"/>
 
 </Project>
