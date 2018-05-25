@@ -102,7 +102,7 @@ module UnusedOpens =
                 // Local values can be ignored
                 false
              | :? FSharpMemberOrFunctionOrValue when su.IsFromDefinition -> 
-                // Definitions should be ignored
+                // Value definitions should be ignored
                 false
              | :? FSharpGenericParameter -> 
                 // Generic parameters can be ignored, they never come into scope via 'open'
@@ -159,6 +159,7 @@ module UnusedOpens =
 
                     symbolUses1 |> Array.exists (fun symbolUse ->
                         rangeContainsRange openStatement.AppliedScope symbolUse.RangeAlternate &&
+                        Range.posGt symbolUse.RangeAlternate.Start openStatement.Range.End &&
                         match symbolUse.Symbol with
                         | :? FSharpMemberOrFunctionOrValue as f ->
                             match f.DeclaringEntity with
@@ -168,6 +169,7 @@ module UnusedOpens =
 
                     symbolUses2 |> Array.exists (fun symbolUse ->
                         rangeContainsRange openStatement.AppliedScope symbolUse.RangeAlternate &&
+                        Range.posGt symbolUse.RangeAlternate.Start openStatement.Range.End &&
                         openedEntity.RevealedSymbolsContains symbolUse.Symbol)))
 
         // Return them as interim used entities

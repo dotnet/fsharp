@@ -782,7 +782,27 @@ module rec TopModule
 
 module Nested =
     let x = 1
+    let f x = x
+    type T() = class end
+    type R = { F: int }
 
 open Nested
 """
-    => [ 7, (5, 11) ]
+    => [ 10, (5, 11) ]
+
+[<Test>]
+let ``used inner module open declaration in rec module``() =
+    """
+module rec TopModule
+
+module Nested =
+    let x = 1
+    let f x = x
+    type T() = class end
+    type R = { F: int }
+
+open Nested
+
+let _ = f 1
+"""
+    => []
