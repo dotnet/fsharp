@@ -11,7 +11,7 @@ let directories =
     ]
     |> List.map (fun d -> Path.Combine(__SOURCE_DIRECTORY__, d) |> DirectoryInfo)
 
-let extensionPatterns = ["*.err"; "*.vser"]
+let extensionPatterns = ["*.err"; "*.vserr"]
 for d in directories do
     for p in extensionPatterns do 
         for errFile in d.GetFiles p do

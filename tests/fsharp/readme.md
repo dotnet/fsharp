@@ -24,7 +24,7 @@ You can look at the `diff` function in single-test.fs.
 singleNegTest (testConfig "typecheck/sigs") "neg1"
 ```
 
-If you want to update all the baseline files, you can also use the convenience script `update.base.line.with.actuals.fsx`, note that the .bslpp will need to have their preprocess peculiarities been edited back in (or reverted) when using it.
+If you want to update all the baseline files, you can also use the convenience script `update.base.line.with.actuals.fsx`, note that the .bslpp will need to have their preprocess peculiarities edited back in (or reverted) when using it.
 
 ## FSharp.Build.UnitTests
 
