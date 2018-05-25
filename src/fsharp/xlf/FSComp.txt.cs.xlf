@@ -6982,6 +6982,11 @@
         <target state="translated">Tento výraz vrátí hodnotu typu {0}, ale implicitně se zahodí. Zvažte vytvoření vazby mezi výsledkem a názvem pomocí klíčového slova let, např. let výsledek = výraz. Pokud jste chtěli výraz použít jako hodnotu v sekvenci, použijte explicitní klíčové slovo yield!.</target>
         <note />
       </trans-unit>
+      <trans-unit id="keywordDescriptionMatchBang">
+        <source>Used in computation expressions to pattern match directly over the result of another computation expression.</source>
+        <target state="new">Used in computation expressions to pattern match directly over the result of another computation expression.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilreadFileChanged">
         <source>The file '{0}' changed on disk unexpectedly, please reload.</source>
         <target state="translated">Soubor {0} se na disku neočekávaně změnil, opakujte prosím načtení.</target>

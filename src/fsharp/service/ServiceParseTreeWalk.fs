@@ -440,6 +440,10 @@ module public AstTraversal =
                      dive synExpr synExpr.Range traverseSynExpr
                      dive synExpr2 synExpr2.Range traverseSynExpr]
                     |> pick expr
+                | SynExpr.MatchBang(_sequencePointInfoForBinding, synExpr, synMatchClauseList, _, _range) -> 
+                    [yield dive synExpr synExpr.Range traverseSynExpr
+                     yield! synMatchClauseList |> List.map (fun x -> dive x x.RangeOfGuardAndRhs (traverseSynMatchClause path))]
+                    |> pick expr
                 | SynExpr.DoBang(synExpr, _range) -> traverseSynExpr synExpr
                 | SynExpr.LibraryOnlyILAssembly _ -> None
                 | SynExpr.LibraryOnlyStaticOptimization _ -> None

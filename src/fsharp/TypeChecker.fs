@@ -3457,7 +3457,8 @@ let (|SimpleSemicolonSequence|_|) acceptDeprecated c =
         | SynExpr.Sequential (_, _, e1, e2, _) -> YieldFree e1 && YieldFree e2
         | SynExpr.IfThenElse (_, e2, e3opt, _, _, _, _) -> YieldFree e2 && Option.forall YieldFree e3opt
         | SynExpr.TryWith (e1, _, clauses, _, _, _, _) -> YieldFree e1 && clauses |> List.forall (fun (Clause(_, _, e, _, _)) -> YieldFree e)
-        | SynExpr.Match (_, _, clauses, _, _) -> clauses |> List.forall (fun (Clause(_, _, e, _, _)) -> YieldFree e)
+        | (SynExpr.Match (_, _, clauses, _, _) | SynExpr.MatchBang (_, _, clauses, _, _)) ->
+            clauses |> List.forall (fun (Clause(_, _, e, _, _)) -> YieldFree e)
         | SynExpr.For (_, _, _, _, _, body, _) 
         | SynExpr.TryFinally (body, _, _, _, _)
         | SynExpr.LetOrUse (_, _, _, body, _) 
@@ -3483,6 +3484,7 @@ let (|SimpleSemicolonSequence|_|) acceptDeprecated c =
         | SynExpr.YieldOrReturn _ 
         | SynExpr.LetOrUse _ 
         | SynExpr.Do _ 
+        | SynExpr.MatchBang _ 
         | SynExpr.LetOrUseBang _ 
         | SynExpr.ImplicitZero _ 
         | SynExpr.While _ -> false
@@ -6060,17 +6062,19 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
 
     | SynExpr.YieldOrReturn ((isTrueYield, _), _, m)
     | SynExpr.YieldOrReturnFrom ((isTrueYield, _), _, m) when isTrueYield -> 
-         error(Error(FSComp.SR.tcConstructRequiresListArrayOrSequence(), m))
+        error(Error(FSComp.SR.tcConstructRequiresListArrayOrSequence(), m))
     | SynExpr.YieldOrReturn ((_, isTrueReturn), _, m)
     | SynExpr.YieldOrReturnFrom ((_, isTrueReturn), _, m) when isTrueReturn -> 
-         error(Error(FSComp.SR.tcConstructRequiresComputationExpressions(), m))
+        error(Error(FSComp.SR.tcConstructRequiresComputationExpressions(), m))
     | SynExpr.YieldOrReturn (_, _, m)
     | SynExpr.YieldOrReturnFrom (_, _, m) 
     | SynExpr.ImplicitZero m ->
-         error(Error(FSComp.SR.tcConstructRequiresSequenceOrComputations(), m))
+        error(Error(FSComp.SR.tcConstructRequiresSequenceOrComputations(), m))
     | SynExpr.DoBang  (_, m) 
     | SynExpr.LetOrUseBang  (_, _, _, _, _, _, m) -> 
-         error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
+        error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
+    | SynExpr.MatchBang (_, _, _, _, m) ->
+        error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
 
 /// Check lambdas as a group, to catch duplicate names in patterns
 and TcIteratedLambdas cenv isFirst (env: TcEnv) overallTy takenNames tpenv e = 
@@ -7981,6 +7985,15 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
             let clauses = clauses |> List.map (fun (Clause(pat, cond, innerComp, patm, sp)) -> Clause(pat, cond, transNoQueryOps innerComp, patm, sp))
             Some(translatedCtxt (SynExpr.Match(spMatch, expr, clauses, false, m)))
 
+        // 'match! expr with pats ...' --> build.Bind(e1, (function pats ...))
+        | SynExpr.MatchBang (spMatch, expr, clauses, false, m) ->
+            let mMatch = match spMatch with SequencePointAtBinding mMatch -> mMatch | _ -> m
+            if isQuery then error(Error(FSComp.SR.tcMatchMayNotBeUsedWithQuery(), mMatch))
+            if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env mMatch ad "Bind" builderTy) then error(Error(FSComp.SR.tcRequireBuilderMethod("Bind"), mMatch))
+            let clauses = clauses |> List.map (fun (Clause(pat, cond, innerComp, patm, sp)) -> Clause(pat, cond, transNoQueryOps innerComp, patm, sp))
+            let consumeExpr = SynExpr.MatchLambda(false, mMatch, clauses, spMatch, mMatch)
+            Some(translatedCtxt (mkSynCall "Bind" mMatch [expr; consumeExpr]))
+
         | SynExpr.TryWith (innerComp, _mTryToWith, clauses, _mWithToLast, mTryToLast, spTry, _spWith) ->
             let mTry = match spTry with SequencePointAtTry(m) -> m | _ -> mTryToLast
             
@@ -8790,6 +8803,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
             | SynExpr.ImplicitZero  _
             | SynExpr.YieldOrReturn _
             | SynExpr.YieldOrReturnFrom _
+            | SynExpr.MatchBang _
             | SynExpr.LetOrUseBang _
             | SynExpr.DoBang _ 
             | SynExpr.TraitCall _ 

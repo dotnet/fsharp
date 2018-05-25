@@ -4152,6 +4152,9 @@
   <data name="keywordDescriptionMatch" xml:space="preserve">
     <value>Used to branch by comparing a value to a pattern.</value>
   </data>
+  <data name="keywordDescriptionMatchBang" xml:space="preserve">
+    <value>Used in computation expressions to pattern match directly over the result of another computation expression.</value>
+  </data>
   <data name="keywordDescriptionMember" xml:space="preserve">
     <value>Used to declare a property or method in an object type.</value>
   </data>
