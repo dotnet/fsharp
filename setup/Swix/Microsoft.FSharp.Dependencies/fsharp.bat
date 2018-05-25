@@ -1,7 +1,8 @@
 if "%VSCMD_TEST%" NEQ "" goto :test
 if "%VSCMD_ARG_CLEAN_ENV%" NEQ "" goto :clean_env
 
-if "%FSHARPINSTALLDIR%" NEQ "" set "PATH=%FSHARPINSTALLDIR%;%PATH%"
+set FSHARPINSTALLDIR=%VSINSTALLDIR%Common7\IDE\CommonExtensions\Microsoft\FSharpCompiler\
+set "PATH=%FSHARPINSTALLDIR%;%PATH%"
 
 goto :end
 
