@@ -24,12 +24,12 @@ namespace Test
     
     module Span_Negative1 =
         let TestClosure1 (a: inref<int>) = id (fun () -> a)
-        let TestClosure1 ([<In;  IsReadOnly>] a: byref<int>) = id (fun () -> a)
+        let TestClosure1b ([<In;  IsReadOnly>] a: byref<int>) = id (fun () -> a)
         let TestClosure2 (a: Span<int>) = id (fun () -> a)
         let TestClosure3 (a: ReadOnlySpan<int>) = id (fun () -> a)
 
         let TestAsyncClosure1 (a: inref<int>) = async { return a }
-        let TestAsyncClosure1 ([<In;  IsReadOnly>] a: byref<int>) = async { return a }
+        let TestAsyncClosure1b ([<In;  IsReadOnly>] a: byref<int>) = async { return a }
         let TestAsyncClosure2 (a: Span<int>) = async { return a }
         let TestAsyncClosure3 (a: ReadOnlySpan<int>) = async { return a }
 

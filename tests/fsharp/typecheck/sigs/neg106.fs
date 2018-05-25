@@ -15,19 +15,19 @@ module TryGetValueTests_Negative1 =
     let res = 9
     let v =  d.TryGetValue(3, &res) //  'byref<int,ByRefKinds.In>' is not compatible with type 'byref<int>'
 
-module FSharpDeclaredOutParamTest_Neagative1  = 
+module FSharpDeclaredOutParamTest_Negaative1  = 
     type C() = 
          static member M([<System.Runtime.InteropServices.Out>] x: byref<int>) = ()
     let  res = 9
-    let v =  C.M(&res) 'byref<int,ByRefKinds.In>' is not compatible with type 'byref<int>'
+    let v =  C.M(&res) //'byref<int,ByRefKinds.In>' is not compatible with type 'byref<int>'
 
 module FSharpDeclaredOverloadedOutParamTest_Negative1  = 
     type C() = 
          static member M(a: int, [<System.Runtime.InteropServices.Out>] x: byref<int>) = x <- 7
          static member M(a: string, [<System.Runtime.InteropServices.Out>] x: byref<int>) = x <- 8
     let  res = 9
-    let v =  C.M("a", &res) 'byref<int,ByRefKinds.In>' is not compatible with type 'byref<int>'
-    let v2 =  C.M(3, &res)  'byref<int,ByRefKinds.In>' is not compatible with type 'byref<int>'
+    let v =  C.M("a", &res) //'byref<int,ByRefKinds.In>' is not compatible with type 'byref<int>'
+    let v2 =  C.M(3, &res)  //'byref<int,ByRefKinds.In>' is not compatible with type 'byref<int>'
 
 module FSharpDeclaredOutParamTest_Negative1  = 
     type C() = 
@@ -50,11 +50,3 @@ module EvilStruct_Negative1 =
     type EvilStruct(s: int) = 
         member x.Replace(y:EvilStruct) = x <- y
 
-module Span_Negative2 =
-        let TestClosure1 ([<In;  IsReadOnly>] a: byref<int>) = id (fun () -> a)
-        let TestClosure2 ([<In; IsReadOnly>] a: Span<int>) = id (fun () -> a)
-        let TestClosure3 ([<In; IsReadOnly>] a: ReadOnlySpan<int>) = id (fun () -> a)
-
-        let TestAsyncClosure1 ([<In;  IsReadOnly>] a: byref<int>) = async { return a }
-        let TestAsyncClosure2 ([<In; IsReadOnly>] a: Span<int>) = async { return a }
-        let TestAsyncClosure3 ([<In; IsReadOnly>] a: ReadOnlySpan<int>) = async { return a }

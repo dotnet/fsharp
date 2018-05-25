@@ -1,9 +1,7 @@
 
 neg107.fsx(26,48,26,59): typecheck error FS0406: The byref-typed variable 'a' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.
 
-neg107.fsx(27,13,27,25): typecheck error FS0037: Duplicate definition of value 'TestClosure1'
-
-neg107.fsx(27,68,27,79): typecheck error FS0406: The byref-typed variable 'a' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.
+neg107.fsx(27,69,27,80): typecheck error FS0406: The byref-typed variable 'a' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.
 
 neg107.fsx(28,43,28,59): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
 
@@ -25,11 +23,9 @@ neg107.fsx(31,49,31,54): typecheck error FS0406: The byref-typed variable 'a' is
 
 neg107.fsx(31,57,31,65): typecheck error FS0406: The byref-typed variable 'a' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.
 
-neg107.fsx(32,13,32,30): typecheck error FS0037: Duplicate definition of value 'TestAsyncClosure1'
+neg107.fsx(32,70,32,75): typecheck error FS0406: The byref-typed variable 'a' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.
 
-neg107.fsx(32,69,32,74): typecheck error FS0406: The byref-typed variable 'a' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.
-
-neg107.fsx(32,77,32,85): typecheck error FS0406: The byref-typed variable 'a' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.
+neg107.fsx(32,78,32,86): typecheck error FS0406: The byref-typed variable 'a' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.
 
 neg107.fsx(33,48,33,53): typecheck error FS0406: The byref-typed variable 'a' is used in an invalid way. Byrefs cannot be captured by closures or passed to inner functions.
 
