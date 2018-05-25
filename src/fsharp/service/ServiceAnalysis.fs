@@ -107,7 +107,9 @@ module UnusedOpens =
              | :? FSharpGenericParameter -> 
                 // Generic parameters can be ignored, they never come into scope via 'open'
                 false
-             | _ -> 
+             | :? FSharpUnionCase when su.IsFromDefinition -> 
+                false
+             | _ ->
                 // For the rest of symbols we pick only those which are the first part of a long ident, because it's they which are
                 // contained in opened namespaces / modules. For example, we pick `IO` from long ident `IO.File.OpenWrite` because
                 // it's `open System` which really brings it into scope.
