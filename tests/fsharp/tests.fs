@@ -231,7 +231,6 @@ module CoreTests =
         //    fsiAnyCpu cfg "" ["test.fsx"]
         //    testOkFile.CheckExists()
         //end
-        testOkFile.CheckExists()
 
     [<Test>]
     let asyncStackTraces () = 
