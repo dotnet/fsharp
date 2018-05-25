@@ -2,6 +2,24 @@
 
   <Import Project="GitHash.props" />
 
+  <Target Name="GenerateAssemblyLevelAttributes"
+          BeforeTargets="CoreCompile">
+
+    <PropertyGroup>
+      <GeneratedFSharpAssemblyLevelAttributesFile>$(IntermediateOutputPath)$(MSBuildProjectName).AssemblyLevelAttributes$(DefaultLanguageSourceExtension)</GeneratedFSharpAssemblyLevelAttributesFile>
+    </PropertyGroup>
+
+    <WriteCodeFragment AssemblyAttributes="@(AssemblyLevelAttribute)"
+                       Language="$(Language)"
+                       OutputFile="$(GeneratedFSharpAssemblyLevelAttributesFile)"
+                       Condition="'@(AssemblyLevelAttribute)' != ''">
+      <Output TaskParameter="OutputFile" ItemName="Compile" Condition="'$(Language)' != 'F#'" />
+      <Output TaskParameter="OutputFile" ItemName="CompileBefore" Condition="'$(Language)' == 'F#'" />
+      <Output TaskParameter="OutputFile" ItemName="FileWrites" />
+    </WriteCodeFragment>
+
+  </Target>
+
   <Target Name="GenerateAssemblyFileVersion"
           BeforeTargets="CoreCompile"
           Condition="'$(Configuration)' != 'Proto'">
