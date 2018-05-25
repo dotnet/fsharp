@@ -101,6 +101,9 @@ module UnusedOpens =
              | :? FSharpMemberOrFunctionOrValue as fv when not fv.IsModuleValueOrMember -> 
                 // Local values can be ignored
                 false
+             | :? FSharpMemberOrFunctionOrValue when su.IsFromDefinition -> 
+                // Definitions should be ignored
+                false
              | :? FSharpGenericParameter -> 
                 // Generic parameters can be ignored, they never come into scope via 'open'
                 false

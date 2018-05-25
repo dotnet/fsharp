@@ -774,3 +774,15 @@ module Nested =
     let _ = DateTime.Now
 """
     => [ 4, (5, 14) ]
+
+[<Test>]
+let ``unused inner module open declaration in rec module``() =
+    """
+module rec TopModule
+
+module Nested =
+    let x = 1
+
+open Nested
+"""
+    => [ 7, (5, 11) ]
