@@ -1,0 +1,34 @@
+use vs
+
+package name=Microsoft.FSharp.Compiler
+        version=$(FSharpPackageVersion)
+
+folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharpCompiler"
+  file source="$(BinariesFolder)\net40\bin\fsc.exe" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\fsc.exe.config"
+  file source="$(BinariesFolder)\net40\bin\FSharp.Build.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\FSharp.Compiler.Interactive.Settings.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\FSharp.Compiler.Private.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\FSharp.Compiler.Server.Shared.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\FSharp.Core.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\FSharp.Core.optdata"
+  file source="$(BinariesFolder)\net40\bin\FSharp.Core.sigdata"
+  file source="$(PackagesFolder)\Microsoft.VisualFSharp.Type.Providers.Redist.$(MicrosoftVisualFSharpTypeProvidersRedistPackageVersion)\content\4.3.0.0\FSharp.Data.TypeProviders.dll" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\fsi.exe" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\fsi.exe.config"
+  file source="$(BinariesFolder)\net40\bin\fsiAnyCpu.exe" vs.file.ngen=yes
+  file source="$(BinariesFolder)\net40\bin\fsiAnyCpu.exe.config"
+  file source="$(BinariesFolder)\net40\bin\Microsoft.Build.Conversion.Core.dll"
+  file source="$(BinariesFolder)\net40\bin\Microsoft.Build.dll"
+  file source="$(BinariesFolder)\net40\bin\Microsoft.Build.Engine.dll"
+  file source="$(BinariesFolder)\net40\bin\Microsoft.Build.Framework.dll"
+  file source="$(BinariesFolder)\net40\bin\Microsoft.Build.Tasks.Core.dll"
+  file source="$(BinariesFolder)\net40\bin\Microsoft.Build.Utilities.Core.dll"
+  file source="$(BinariesFolder)\net40\bin\Microsoft.FSharp.NetSdk.props"
+  file source="$(BinariesFolder)\net40\bin\Microsoft.FSharp.NetSdk.targets"
+  file source="$(BinariesFolder)\net40\bin\Microsoft.FSharp.Targets"
+  file source="$(BinariesFolder)\net40\bin\Microsoft.Portable.FSharp.Targets"
+  file source="$(FSharpTreeRoot)\vsintegration\src\SupportedRuntimes\SupportedRuntimes.xml"
+  file source="$(BinariesFolder)\net40\bin\System.Collections.Immutable.dll"
+  file source="$(BinariesFolder)\net40\bin\System.Reflection.Metadata.dll"
+  file source="$(BinariesFolder)\net40\bin\System.ValueTuple.dll"
