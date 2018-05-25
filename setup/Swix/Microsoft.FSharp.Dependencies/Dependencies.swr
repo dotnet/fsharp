@@ -4,11 +4,11 @@ package name=Microsoft.FSharp.Dependencies
         version=$(FSharpPackageVersion)
 
 vs.dependencies
-  vs.dependency id=Microsoft.FSharp.SDK.Core
+  vs.dependency id=Microsoft.FSharp.Compiler
                 version=$(FSharpPackageVersion)
                 type=Required
 
-  vs.dependency id=Microsoft.FSharp.SDK.Resources
+  vs.dependency id=Microsoft.FSharp.SDK
                 version=$(FSharpPackageVersion)
                 type=Required
 
