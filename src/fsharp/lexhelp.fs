@@ -394,6 +394,7 @@ module Keywords =
           "let",       FSComp.SR.keywordDescriptionLet()
           "let!",      FSComp.SR.keywordDescriptionLetBang()
           "match",     FSComp.SR.keywordDescriptionMatch()
+          "match!",    FSComp.SR.keywordDescriptionMatchBang()
           "member",    FSComp.SR.keywordDescriptionMember()
           "module",    FSComp.SR.keywordDescriptionModule()
           "mutable",   FSComp.SR.keywordDescriptionMutable()

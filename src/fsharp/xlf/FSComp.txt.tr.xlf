@@ -6982,6 +6982,11 @@
         <target state="translated">Bu ifade '{0}' türünde bir değer döndürür ancak örtük olarak atılır. Sonucu bir ada bağlamak için 'let' kullanabilirsiniz, örn. 'let sonuc = ifade'. İfadeyi dizide bir değer olarak kullanmayı amaçladıysanız açık bir 'yield!' kullanın.</target>
         <note />
       </trans-unit>
+      <trans-unit id="keywordDescriptionMatchBang">
+        <source>Used in computation expressions to pattern match directly over the result of another computation expression.</source>
+        <target state="new">Used in computation expressions to pattern match directly over the result of another computation expression.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilreadFileChanged">
         <source>The file '{0}' changed on disk unexpectedly, please reload.</source>
         <target state="translated">Diskte '{0}' dosyası beklenmedik şekilde değiştirildi. Lütfen yeniden yükleyin.</target>

@@ -6982,6 +6982,11 @@
         <target state="translated">Essa expressão retorna um valor de tipo '{0}', mas é descartada de forma implícita. Considere o uso de 'let' para associar o resultado a um nome, por exemplo, 'let result = expression'. Se você pretende usar a expressão como um valor na sequência, use um “yield!” explícito.</target>
         <note />
       </trans-unit>
+      <trans-unit id="keywordDescriptionMatchBang">
+        <source>Used in computation expressions to pattern match directly over the result of another computation expression.</source>
+        <target state="new">Used in computation expressions to pattern match directly over the result of another computation expression.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilreadFileChanged">
         <source>The file '{0}' changed on disk unexpectedly, please reload.</source>
         <target state="translated">O arquivo '{0}' foi alterado no disco inesperadamente. Recarregue-o.</target>

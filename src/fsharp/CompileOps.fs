@@ -1031,6 +1031,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
               | Parser.TOKEN_LAZY   -> getErrorString("Parser.TOKEN.LAZY")
               | Parser.TOKEN_OLAZY   -> getErrorString("Parser.TOKEN.LAZY")
               | Parser.TOKEN_MATCH   -> getErrorString("Parser.TOKEN.MATCH")
+              | Parser.TOKEN_MATCH_BANG -> getErrorString("Parser.TOKEN.MATCH.BANG")
               | Parser.TOKEN_MUTABLE   -> getErrorString("Parser.TOKEN.MUTABLE")
               | Parser.TOKEN_NEW   -> getErrorString("Parser.TOKEN.NEW")
               | Parser.TOKEN_OF    -> getErrorString("Parser.TOKEN.OF")
