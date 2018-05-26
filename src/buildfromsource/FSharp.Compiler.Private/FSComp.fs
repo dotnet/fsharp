@@ -178,7 +178,7 @@ type internal SR private() =
     /// All branches of an 'if' expression must have the same type. This expression was expected to have type '%s', but here has type '%s'.
     /// (Originally from ../FSComp.txt:24)
     static member elseBranchHasWrongType(a0 : System.String, a1 : System.String) = (GetStringFunc("elseBranchHasWrongType",",,,%s,,,%s,,,") a0 a1)
-    /// All branches of a pattern match expression must have the same type. This expression was expected to have type '%s', but here has type '%s'.
+    /// All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '%s', but this branch returned a value of type '%s'.
     /// (Originally from ../FSComp.txt:25)
     static member followingPatternMatchClauseHasWrongType(a0 : System.String, a1 : System.String) = (GetStringFunc("followingPatternMatchClauseHasWrongType",",,,%s,,,%s,,,") a0 a1)
     /// A pattern match guard must be of type 'bool', but this 'when' expression is of type '%s'.

@@ -108,8 +108,8 @@
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
-        <source>All branches of a pattern match expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">패턴 일치 식의 모든 분기는 동일한 형식이어야 합니다. 이 식에는 '{0}' 형식이 필요하지만 여기에서는 '{1}' 형식이 지정되었습니다.</target>
+        <source>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
+        <target state="needs-review-translation">패턴 일치 식의 모든 분기는 동일한 형식이어야 합니다. 이 식에는 '{0}' 형식이 필요하지만 여기에서는 '{1}' 형식이 지정되었습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
