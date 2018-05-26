@@ -262,13 +262,11 @@ module DispatchSlotChecking =
             if showMissingMethodsAndRaiseErrors then
                 errorR exn
 
-        let rec listSameLength l1 l2 =
-          let l1Empty = List.isEmpty l1
-          let l2Empty = List.isEmpty l2
-          if l1Empty && l2Empty then true
-          elif l1Empty || l2Empty then false
-          else
-            listSameLength l1.Tail l2.Tail
+        let rec listSameLength l1 l2 = 
+            match l1, l2 with
+            | [], [] -> true
+            | [], _ | _, [] -> false
+            | _ :: t1, _ :: t2 -> listSameLength t1 t2
 
         let inline formatMethodInfoSignature dispatchSlot = 
             // this one is used quite a bit, saves some parameter passing noise bellow
@@ -278,6 +276,9 @@ module DispatchSlotChecking =
         let availPriorOverridesKeyed = availPriorOverrides |> NameMultiMap.initBy (fun ov -> ov.LogicalName)
         let overridesKeyed = overrides |> NameMultiMap.initBy (fun ov -> ov.LogicalName)
         
+        // we accumulate those to compose a more complete error message, see noimpl() bellow.
+        let missingOverloadImplementation = ResizeArray()
+
         for (RequiredSlot(dispatchSlot,isOptional)) in dispatchSlots do
             let maybeResolvedSlot =
                 NameMultiMap.find dispatchSlot.LogicalName overridesKeyed 
@@ -297,10 +298,7 @@ module DispatchSlotChecking =
                     let compiledSig = CompiledSigOfMeth g amap m dispatchSlot
                     
                     let noimpl() = 
-                        if isReqdTyInterface then 
-                            fail(Error(FSComp.SR.typrelNoImplementationGivenWithSuggestion(NicePrint.stringOfMethInfo amap m denv dispatchSlot), m))
-                        else 
-                            fail(Error(FSComp.SR.typrelNoImplementationGiven(NicePrint.stringOfMethInfo amap m denv dispatchSlot), m))
+                        missingOverloadImplementation.Add((isReqdTyInterface, lazy NicePrint.stringOfMethInfo amap m denv dispatchSlot))
                     
                     match overrides |> List.filter (IsPartialMatch g dispatchSlot compiledSig) with 
                     | [] -> 
@@ -325,7 +323,7 @@ module DispatchSlotChecking =
 
                             elif not (listSameLength argTys vargtys) then 
                                 fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectNumberOfArguments(FormatOverride denv overrideBy, formatMethodInfoSignature dispatchSlot), overrideBy.Range))
-                            elif mtps.Length <> fvmtps.Length then
+                            elif not (listSameLength mtps fvmtps) then
                                 fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectNumberOfTypeParameters(FormatOverride denv overrideBy, formatMethodInfoSignature dispatchSlot), overrideBy.Range))
                             elif not (IsTyparKindMatch compiledSig overrideBy) then
                                 fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectKindsOfGenericParameters(FormatOverride denv overrideBy, formatMethodInfoSignature dispatchSlot), overrideBy.Range))
@@ -341,9 +339,46 @@ module DispatchSlotChecking =
                             // Error will be reported below in CheckOverridesAreAllUsedOnce 
                             ()
                     | _ -> 
-                        fail(Error(FSComp.SR.typrelOverrideWasAmbiguous(FormatMethInfoSig g amap m denv dispatchSlot),m))
-            | _ -> fail(Error(FSComp.SR.typrelMoreThenOneOverride(FormatMethInfoSig g amap m denv dispatchSlot),m))
-            
+                        fail(Error(FSComp.SR.typrelOverrideWasAmbiguous(formatMethodInfoSignature dispatchSlot),m))
+            | _ -> fail(Error(FSComp.SR.typrelMoreThenOneOverride(formatMethodInfoSignature dispatchSlot),m))
+        
+        if missingOverloadImplementation.Count > 0 then
+            // compose message listing missing override implementation
+            let maxDisplayedOverrides = 10
+            let shouldTruncate = missingOverloadImplementation.Count > maxDisplayedOverrides
+            let messageWithInterfaceSuggestion = 
+                // check any of the missing overrides has isReqdTyInterface flag set
+                // in which case we use the message "with suggestion"
+                missingOverloadImplementation 
+                |> Seq.map fst 
+                |> Seq.filter id 
+                |> Seq.isEmpty
+                |> not
+
+            if missingOverloadImplementation.Count = 1 then
+                // only one missing override, we have specific message for that
+                let signature = (snd missingOverloadImplementation.[0]).Value
+                if messageWithInterfaceSuggestion then 
+                    fail(Error(FSComp.SR.typrelNoImplementationGivenWithSuggestion(signature), m))
+                else
+                    fail(Error(FSComp.SR.typrelNoImplementationGiven(signature), m))
+            else
+                let signatures = 
+                    (missingOverloadImplementation 
+                    |> Seq.truncate maxDisplayedOverrides 
+                    |> Seq.map snd 
+                    |> Seq.map (fun signature -> System.Environment.NewLine + "\t'" + signature.Value + "'")
+                    |> String.concat "") + System.Environment.NewLine 
+                
+                // we have specific message if the list is truncated
+                let messageFunction =
+                    match shouldTruncate, messageWithInterfaceSuggestion with
+                    | false, true -> FSComp.SR.typrelNoImplementationSeveralGivenWithSuggestion
+                    | false, false -> FSComp.SR.typrelNoImplementationSeveralGiven
+                    | true, true -> FSComp.SR.typrelNoImplementationSeveralTruncatedGivenWithSuggestion
+                    | true, false -> FSComp.SR.typrelNoImplementationSeveralTruncatedGiven
+                fail(Error(messageFunction(signatures), m))
+
         res
 
     /// Check all implementations implement some dispatch slot.
