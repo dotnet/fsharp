@@ -112,7 +112,7 @@ The type 'A' does not match the type 'B'
 
 neg20.fs(83,47,83,54): typecheck error FS0001: All branches of an 'if' expression must have the same type. This expression was expected to have type 'B', but here has type 'C'.
 
-neg20.fs(87,54,87,61): typecheck error FS0001: All branches of a pattern match expression must have the same type. This expression was expected to have type 'B', but here has type 'C'.
+neg20.fs(87,54,87,61): typecheck error FS0001: All branches of a pattern match expression must return values of the same type. The first branch returned a value of type 'B', but this branch returned a value of type 'C'.
 
 neg20.fs(92,19,92,26): typecheck error FS0001: This expression was expected to have type
     'A'    
