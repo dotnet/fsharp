@@ -318,7 +318,10 @@ module DynamicCall =
        callMethod.Invoke (null, [| Object () |]) |> ignore
        failwith "expected an exception"
     with :? TargetInvocationException as ex ->
-        test "wcnr0vj" (ex.InnerException.Message.Contains("Dynamic invocation"))
+        // The test should cause a NotSupportedException with the Message:
+        //              "Dynamic invocation of %s is not supported"
+        //              %s Will be Stuff Because thats the member that is not supported.
+        test "wcnr0vj" (ex.InnerException.Message.Contains("Stuff") && ex.InnerException.GetType() = typeof<System.NotSupportedException>)
 
 #if TESTS_AS_APP
 let RUN() = !failures
