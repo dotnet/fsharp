@@ -1437,7 +1437,8 @@ let ItemsAreEffectivelyEqualHash (g: TcGlobals) orig =
     | UnionCaseUse ucase ->  hash ucase.CaseName
     | RecordFieldUse (name, _) -> hash name
     | EventUse einfo -> einfo.ComputeHashCode()
-    | Item.ModuleOrNamespaces _ -> 100013
+    | Item.ModuleOrNamespaces 
+        mrefs -> mrefs |> List.tryHead |> Option.map (fun x -> x.DefinitionRange) |> hash
     | _ -> 389329
 
 [<System.Diagnostics.DebuggerDisplay("{DebugToString()}")>]
