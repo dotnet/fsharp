@@ -136,7 +136,7 @@ module UnusedOpens =
     /// in the scope of the 'open' is from that module.
     ///
     /// Performance will be roughly NumberOfOpenStatements x NumberOfSymbolUses
-    let getUsedModules (symbolUses1: FSharpSymbolUse[], symbolUses2: FSharpSymbolUse[]) (usedModules: UsedModule list) (openStatement: OpenStatement) =
+    let getUsedModules (symbolUses2: FSharpSymbolUse[]) (symbolUsesRangesByDeclaringEntity: Dictionary<FSharpEntity, range list>) (usedModules: UsedModule list) (openStatement: OpenStatement) =
 
         // Don't re-check modules whose symbols are already known to have been used
         let openedGroupsToExamine =
@@ -158,16 +158,13 @@ module UnusedOpens =
         let newlyUsedOpenedGroups = 
             openedGroupsToExamine |> List.filter (fun openedGroup ->
                 openedGroup.OpenedModules |> List.exists (fun openedEntity ->
-
-                    symbolUses1 |> Array.exists (fun symbolUse ->
-                        rangeContainsRange openStatement.AppliedScope symbolUse.RangeAlternate &&
-                        Range.posGt symbolUse.RangeAlternate.Start openStatement.Range.End &&
-                        match symbolUse.Symbol with
-                        | :? FSharpMemberOrFunctionOrValue as f ->
-                            match f.DeclaringEntity with
-                            | Some ent when ent.IsNamespace || ent.IsFSharpModule -> ent.IsEffectivelySameAs openedEntity.Entity
-                            | _ -> false
-                        | _ -> false) || 
+                    (match symbolUsesRangesByDeclaringEntity.TryGetValue openedEntity.Entity with
+                     | true, symbolUsesRanges ->
+                        symbolUsesRanges |> List.exists (fun symbolUseRange ->
+                            rangeContainsRange openStatement.AppliedScope symbolUseRange &&
+                            Range.posGt symbolUseRange.Start openStatement.Range.End)
+                     | _ -> false
+                    ) || 
 
                     symbolUses2 |> Array.exists (fun symbolUse ->
                         rangeContainsRange openStatement.AppliedScope symbolUse.RangeAlternate &&
@@ -180,25 +177,41 @@ module UnusedOpens =
                                           
     /// Incrementally filter out the open statements one by one. Filter those whose contents are referred to somewhere in the symbol uses.
     /// Async to allow cancellation.
-    let rec filterOpenStatementsIncremental symbolUses (openStatements: OpenStatement list) (usedModules: UsedModule list) acc = 
+    let rec filterOpenStatementsIncremental symbolUses2 (symbolUsesRangesByDeclaringEntity: Dictionary<FSharpEntity, range list>) (openStatements: OpenStatement list) (usedModules: UsedModule list) acc = 
         async { 
             match openStatements with
             | openStatement :: rest ->
-                match getUsedModules symbolUses usedModules openStatement with
+                match getUsedModules symbolUses2 symbolUsesRangesByDeclaringEntity usedModules openStatement with
                 | [] -> 
                     // The open statement has not been used, include it in the results
-                    return! filterOpenStatementsIncremental symbolUses rest usedModules (openStatement :: acc)
+                    return! filterOpenStatementsIncremental symbolUses2 symbolUsesRangesByDeclaringEntity rest usedModules (openStatement :: acc)
                 | moreUsedModules -> 
                     // The open statement has been used, add the modules which are already known to be used to the list of things we don't need to re-check
-                    return! filterOpenStatementsIncremental symbolUses rest (moreUsedModules @ usedModules) acc
+                    return! filterOpenStatementsIncremental symbolUses2 symbolUsesRangesByDeclaringEntity rest (moreUsedModules @ usedModules) acc
             | [] -> return List.rev acc
         }
 
+    let entityHash = HashIdentity.FromFunctions (fun (x: FSharpEntity) -> x.GetEffectivelySameAsHash()) (fun x y -> x.IsEffectivelySameAs(y))
+
     /// Filter out the open statements whose contents are referred to somewhere in the symbol uses.
     /// Async to allow cancellation.
-    let filterOpenStatements symbolUses openStatements =
+    let filterOpenStatements (symbolUses1: FSharpSymbolUse[], symbolUses2: FSharpSymbolUse[]) openStatements =
         async {
-            let! results = filterOpenStatementsIncremental symbolUses (List.ofArray openStatements) [] []
+            let symbolUsesRangesByDeclaringEntity = Dictionary<FSharpEntity, range list>(entityHash)
+            for symbolUse in symbolUses1 do
+                match symbolUse.Symbol with
+                | :? FSharpMemberOrFunctionOrValue as f ->
+                    match f.DeclaringEntity with
+                    | Some ent when ent.IsNamespace || ent.IsFSharpModule -> 
+                        let ranges =
+                            match symbolUsesRangesByDeclaringEntity.TryGetValue ent with
+                            | true, ranges -> symbolUse.RangeAlternate :: ranges
+                            | _ -> [symbolUse.RangeAlternate]
+                        symbolUsesRangesByDeclaringEntity.[ent] <- ranges
+                    | _ -> ()
+                | _ -> ()
+
+            let! results = filterOpenStatementsIncremental symbolUses2 symbolUsesRangesByDeclaringEntity (List.ofArray openStatements) [] []
             return results |> List.map (fun os -> os.Range)
         }
 
