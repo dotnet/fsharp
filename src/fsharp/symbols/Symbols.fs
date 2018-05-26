@@ -49,9 +49,13 @@ type FSharpAccessibility(a:Accessibility, ?isProtected) =
         let mangledTextOfCompPath (CompPath(scoref, path)) = getNameOfScopeRef scoref + "/" + textOfPath (List.map fst path)  
         String.concat ";" (List.map mangledTextOfCompPath paths)
 
-type SymbolEnv(g:TcGlobals, thisCcu: CcuThunk, thisCcuTyp: ModuleOrNamespaceType option, tcImports: TcImports) = 
-    let amapV = tcImports.GetImportMap()
-    let infoReaderV = InfoReader(g, amapV)
+type SymbolEnv(g: TcGlobals, thisCcu: CcuThunk, thisCcuTyp: ModuleOrNamespaceType option, tcImports: TcImports, amapV: Import.ImportMap, infoReaderV: InfoReader) = 
+
+    new(g: TcGlobals, thisCcu: CcuThunk, thisCcuTyp: ModuleOrNamespaceType option, tcImports: TcImports) =
+        let amap = tcImports.GetImportMap()
+        let infoReader = InfoReader(g, amap)
+        SymbolEnv(g, thisCcu, thisCcuTyp, tcImports, amap, infoReader)
+
     member __.g = g
     member __.amap = amapV
     member __.thisCcu = thisCcu
@@ -229,7 +233,7 @@ type FSharpSymbol(cenv: SymbolEnv, item: (unit -> Item), access: (FSharpSymbol -
     // TODO: there are several cases where we may need to report more interesting
     // symbol information below. By default we return a vanilla symbol.
     static member Create(g, thisCcu, thisCcuType, tcImports, item): FSharpSymbol = 
-        FSharpSymbol.Create (SymbolEnv(g, thisCcu, Some thisCcuType, tcImports), item)
+        FSharpSymbol.Create(SymbolEnv(g, thisCcu, Some thisCcuType, tcImports), item)
 
     static member Create(cenv, item): FSharpSymbol = 
         let dflt() = FSharpSymbol(cenv, (fun () -> item), (fun _ _ _ -> true)) 
