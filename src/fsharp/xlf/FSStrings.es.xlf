@@ -1258,8 +1258,8 @@
         <note />
       </trans-unit>
       <trans-unit id="UnionCaseMissingArguments2">
-        <source> Patterns must unpack them, e.g. '{0}'</source>
-        <target state="new"> Patterns must unpack them, e.g. '{0}'</target>
+        <source> Patterns must unpack them, e.g., '{0}'</source>
+        <target state="new"> Patterns must unpack them, e.g., '{0}'</target>
         <note />
       </trans-unit>
       <trans-unit id="UnionCaseWrongArguments">
