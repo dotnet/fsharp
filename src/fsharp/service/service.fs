@@ -518,22 +518,26 @@ type TypeCheckInfo
         | Item.Types(_, ty::_) when (isInterfaceTy g ty) -> true
         | _ -> false   
 
+
     // Return only items with the specified name
     let FilterDeclItemsByResidue (getItem: 'a -> Item) residue (items: 'a list) = 
+        let attributedResidue = residue + "Attribute"
+        let nameMatchesResidue name = residue = name || attributedResidue = name
+
         items |> List.filter (fun x -> 
             let item = getItem x
             let n1 =  item.DisplayName 
             match item with
-            | Item.Types _ -> residue + "Attribute" = n1 || residue = n1
+            | Item.Types _ -> nameMatchesResidue n1
             | Item.CtorGroup (_, meths) ->
-                residue + "Attribute" = n1 || residue = n1 ||
+                nameMatchesResidue n1 ||
                 meths |> List.exists (fun meth ->
                     match meth.ApparentEnclosingAppType with
-                    | TType_app (tyref, _) -> 
-                        tyref.IsProvided || residue = tyref.DisplayName 
-                    | _ -> residue = meth.DisplayName 
+                    | TType_app (tyref, _) ->
+                        tyref.IsProvided || nameMatchesResidue tyref.DisplayName
+                    | _ -> nameMatchesResidue meth.DisplayName 
                 )
-            | _ -> residue = n1 )
+            | _ -> residue = n1)
             
     /// Post-filter items to make sure they have precisely the right name
     /// This also checks that there are some remaining results 
