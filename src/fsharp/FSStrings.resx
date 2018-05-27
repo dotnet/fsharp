@@ -868,7 +868,7 @@
     <value>This constructor is missing arguments; {0} are expected.</value>
   </data>
   <data name="UnionCaseMissingArguments2" xml:space="preserve">
-    <value> Patterns must unpack them, e.g. '{0}'</value>
+    <value> Patterns must unpack them, e.g., '{0}'</value>
   </data>
   <data name="UnionCaseWrongArguments" xml:space="preserve">
     <value>This constructor is applied to {0} argument(s) but expects {1}</value>
