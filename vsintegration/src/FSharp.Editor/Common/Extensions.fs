@@ -24,6 +24,9 @@ type System.IServiceProvider with
     member x.GetService<'T>() = x.GetService(typeof<'T>) :?> 'T
     member x.GetService<'S, 'T>() = x.GetService(typeof<'S>) :?> 'T
 
+type ProjectId with
+    member this.ToFSharpProjectIdString() =
+        this.Id.ToString("D").ToLowerInvariant()
 
 type FSharpNavigationDeclarationItem with
     member x.RoslynGlyph : Glyph =

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\src</FSharpSourcesRoot>
   </PropertyGroup>
@@ -63,6 +63,12 @@
       <OtherFlags>--module Microsoft.FSharp.Compiler.Parser --open Microsoft.FSharp.Compiler --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
       <Link>pars.fsy</Link>
     </FsYacc>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/Logger.fsi">
+      <Link>Logger.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)/fsharp/Logger.fs">
+      <Link>Logger.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)/utils/reshapedreflection.fs">
       <Link>Reshaped/reshapedreflection.fs</Link>
     </Compile>
@@ -650,5 +656,5 @@
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\scripts\fssrgen.targets" Condition="'$(TargetFramework)' != ''" />
   <Import Project="$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.6\build\FsLexYacc.targets" Condition="'$(TargetFramework)' != '' AND Exists('$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.6\build\FsLexYacc.targets')" />
-	<Target Name="GenerateCode" AfterTargets="Restore" BeforeTargets="BeforeBuild"       DependsOnTargets="CallFsLex;CallFsYacc;ProcessFsSrGen" Condition="'$(TargetFramework)' != ''"></Target>
+	<Target Name="GenerateCode" AfterTargets="Restore" BeforeTargets="BeforeBuild" DependsOnTargets="CallFsLex;CallFsYacc;ProcessFsSrGen" Condition="'$(TargetFramework)' != ''"></Target>
 </Project>

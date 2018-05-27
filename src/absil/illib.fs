@@ -40,7 +40,7 @@ let inline isSingleton l =
     | _ -> false
 
 let inline isNonNull x = not (isNull x)
-let inline nonNull msg x = if isNull x then failwith ("null: " ^ msg) else x
+let inline nonNull msg x = if isNull x then failwith ("null: " + msg) else x
 let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
 
 //---------------------------------------------------------------------
@@ -448,16 +448,16 @@ module List =
 
 [<Struct>]
 type ValueOption<'T> =
-    | VSome of 'T
-    | VNone
-    member x.IsSome = match x with VSome _ -> true | VNone -> false
-    member x.IsNone = match x with VSome _ -> false | VNone -> true
-    member x.Value = match x with VSome r -> r | VNone -> failwith "ValueOption.Value: value is None"
+    | ValueSome of 'T
+    | ValueNone
+    member x.IsSome = match x with ValueSome _ -> true | ValueNone -> false
+    member x.IsNone = match x with ValueSome _ -> false | ValueNone -> true
+    member x.Value = match x with ValueSome r -> r | ValueNone -> failwith "ValueOption.Value: value is None"
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ValueOption =
-    let inline ofOption x = match x with Some x -> VSome x | None -> VNone
-    let inline bind f x = match x with VSome x -> f x | VNone -> VNone
+    let inline ofOption x = match x with Some x -> ValueSome x | None -> ValueNone
+    let inline bind f x = match x with ValueSome x -> f x | ValueNone -> ValueNone
 
 module String = 
     let indexNotFound() = raise (new KeyNotFoundException("An index for the character was not found in the string"))
@@ -1145,7 +1145,6 @@ module MultiMap =
     let find v (m: MultiMap<_,_>) = match Map.tryFind v m with None -> [] | Some r -> r
     let add v x (m: MultiMap<_,_>) = Map.add v (x :: find v m) m
     let range (m: MultiMap<_,_>) = Map.foldBack (fun _ x sofar -> x @ sofar) m []
-    //let chooseRange f (m: MultiMap<_,_>) = Map.foldBack (fun _ x sofar -> List.choose f x @ sofar) m []
     let empty : MultiMap<_,_> = Map.empty
     let initBy f xs : MultiMap<_,_> = xs |> Seq.groupBy f |> Seq.map (fun (k,v) -> (k,List.ofSeq v)) |> Map.ofSeq 
 

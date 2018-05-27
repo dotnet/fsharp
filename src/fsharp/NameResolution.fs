@@ -249,8 +249,8 @@ type Item =
 
 let valRefHash (vref: ValRef) = 
     match vref.TryDeref with 
-    | VNone -> 0 
-    | VSome v -> LanguagePrimitives.PhysicalHash v
+    | ValueNone -> 0 
+    | ValueSome v -> LanguagePrimitives.PhysicalHash v
 
 [<RequireQualifiedAccess>]
 /// Pairs an Item with a TyparInst showing how generic type variables of the item are instantiated at 
@@ -1889,7 +1889,7 @@ let private ResolveObjectConstructorPrim (ncenv:NameResolver) edenv resInfo m ad
                 raze (Error(FSComp.SR.nrNoConstructorsAvailableForType(NicePrint.minimalStringOfType edenv typ),m))
             else 
                 let ctorInfos = ctorInfos |> List.filter (IsMethInfoAccessible amap m ad)  
-                let metadataTy = helpEnsureTypeHasMetadata g typ
+                let metadataTy = convertToTypeWithMetadataIfPossible g typ
                 success (resInfo,Item.MakeCtorGroup ((tcrefOfAppTy g metadataTy).LogicalName, (defaultStructCtorInfo@ctorInfos))) 
 
 /// Perform name resolution for an identifier which must resolve to be an object constructor.
@@ -4445,21 +4445,12 @@ let rec GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolutionEnv) m a
                     else Seq.empty)
             
             // Look for values called 'id' that accept the dot-notation 
-            let values, isItemVal = 
-                (if nenv.eUnqualifiedItems.ContainsKey(id) then 
-                         // v.lookup : member of a value
-                  let v = nenv.eUnqualifiedItems.[id]
-                  match v with 
-                  | Item.Value x -> 
-                      let typ = x.Type
-                      let typ = if x.BaseOrThisInfo = CtorThisVal && isRefCellTy g typ then destRefCellTy g typ else typ
-                      (ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item typ), true
-                  | _ -> Seq.empty, false
-                 else Seq.empty, false)
-            
-            yield! values
-
-            if not isItemVal then 
+            match Map.tryFind id nenv.eUnqualifiedItems with
+            | Some (Item.Value x) ->
+                let typ = x.Type
+                let typ = if x.BaseOrThisInfo = CtorThisVal && isRefCellTy g typ then destRefCellTy g typ else typ
+                yield! ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item typ
+            | _ ->
                 // type.lookup : lookup a static something in a type 
                 for tcref in LookupTypeNameInEnvNoArity OpenQualified id nenv do
                     let tcref = ResolveNestedTypeThroughAbbreviation ncenv tcref m

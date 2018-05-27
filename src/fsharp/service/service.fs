@@ -183,6 +183,7 @@ type TypeCheckInfo
     let amap = tcImports.GetImportMap()
     let infoReader = new InfoReader(g,amap)
     let ncenv = new NameResolver(g,amap,infoReader,NameResolution.FakeInstantiationGenerator)
+    let cenv = SymbolEnv(g, thisCcu, Some ccuSigForFile, tcImports, amap, infoReader)
     
     /// Find the most precise naming environment for the given line and column
     let GetBestEnvForPos cursorPos  =
@@ -937,9 +938,9 @@ type TypeCheckInfo
             (fun () ->
                 match GetDeclItemsForNamesAtPosition(ctok, parseResultsOpt, Some partialName.QualifyingIdents, Some partialName.PartialIdent, partialName.LastDotPos, line, lineStr, partialName.EndColumn + 1, ResolveTypeNamesToCtors, ResolveOverloads.Yes, getAllEntities, hasTextChangedSinceLastTypecheck) with
                 | None -> FSharpDeclarationListInfo.Empty  
-                | Some (items, denv, ctx, m) -> 
+                | Some (items, denv, ctx, m) ->
                     let items = if isInterfaceFile then items |> List.filter (fun x -> IsValidSignatureFileItem x.Item) else items
-                    let getAccessibility item = FSharpSymbol.GetAccessibility (FSharpSymbol.Create(g, thisCcu, ccuSigForFile, tcImports, item))
+                    let getAccessibility item = FSharpSymbol.GetAccessibility (FSharpSymbol.Create(cenv, item))
                     let currentNamespaceOrModule =
                         parseResultsOpt
                         |> Option.bind (fun x -> x.ParseTree)
@@ -1010,7 +1011,6 @@ type TypeCheckInfo
 
                         items |> List.filter (fun (nm,items) -> not (isOpItem(nm,items)) && not(isFSharpList nm)) 
 
-
                     let items = 
                         // Filter out duplicate names
                         items |> List.map (fun (_nm,itemsWithSameName) -> 
@@ -1018,7 +1018,7 @@ type TypeCheckInfo
                             | [] -> failwith "Unexpected empty bag"
                             | items ->
                                 items 
-                                |> List.map (fun item -> let symbol = FSharpSymbol.Create(g, thisCcu, ccuSigForFile, tcImports, item.Item)
+                                |> List.map (fun item -> let symbol = FSharpSymbol.Create(cenv, item.Item)
                                                          FSharpSymbolUse(g, denv, symbol, ItemOccurence.Use, m)))
 
                     //end filtering
@@ -1134,7 +1134,7 @@ type TypeCheckInfo
         | None | Some ([],_,_,_) -> None
         | Some (items, denv, _, m) ->
             let allItems = items |> List.collect (fun item -> SymbolHelpers.FlattenItems g m item.Item)
-            let symbols = allItems |> List.map (fun item -> FSharpSymbol.Create(g, thisCcu, ccuSigForFile, tcImports, item))
+            let symbols = allItems |> List.map (fun item -> FSharpSymbol.Create(cenv, item))
             Some (symbols, denv, m)
        )
        (fun msg -> 
@@ -1248,7 +1248,7 @@ type TypeCheckInfo
         match GetDeclItemsForNamesAtPosition (ctok, None,Some(names), None, None, line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors, ResolveOverloads.Yes,(fun() -> []), fun _ -> false) with
         | None | Some ([], _, _, _) -> None
         | Some (item :: _, denv, _, m) -> 
-            let symbol = FSharpSymbol.Create(g, thisCcu, ccuSigForFile, tcImports, item.Item)
+            let symbol = FSharpSymbol.Create(cenv, item.Item)
             Some (symbol, denv, m)
        ) 
        (fun msg -> 
@@ -1311,7 +1311,7 @@ type TypeCheckInfo
                 sResolutions.CapturedNameResolutions :> seq<_>
 
         let isDisposableTy (ty: TType) =
-            Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_IDisposable
+            protectAssemblyExplorationNoReraise false false (fun () -> Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_IDisposable)
 
         resolutions
         |> Seq.choose (fun cnr ->
@@ -1399,6 +1399,8 @@ type TypeCheckInfo
 
     /// All open declarations in the file, including auto open modules
     member __.OpenDeclarations = openDeclarations
+
+    member __.SymbolEnv = cenv
 
     override __.ToString() = "TypeCheckInfo(" + mainInputFileName + ")"
 
@@ -1611,6 +1613,8 @@ module internal Parser =
            userOpName: string) = 
         
         async {
+            use _logBlock = Logger.LogBlock LogCompilerFunctionId.Service_CheckOneFile
+
             match parseResults.ParseTree with 
             // When processing the following cases, we don't need to type-check
             | None -> return [||], TypeCheckAborted.Yes
@@ -1758,6 +1762,7 @@ type UnresolvedReferencesSet = UnresolvedReferencesSet of UnresolvedAssemblyRefe
 type FSharpProjectOptions =
     { 
       ProjectFileName: string
+      ProjectId: string option
       SourceFiles: string[]
       OtherOptions: string[]
       ReferencedProjects: (string * FSharpProjectOptions)[]
@@ -1771,15 +1776,20 @@ type FSharpProjectOptions =
     }
     member x.ProjectOptions = x.OtherOptions
     /// Whether the two parse options refer to the same project.
-    static member UseSameProjectFileName(options1,options2) =
-        options1.ProjectFileName = options2.ProjectFileName
+    static member UseSameProject(options1,options2) =
+        match options1.ProjectId, options2.ProjectId with
+        | Some(projectId1), Some(projectId2) when not (String.IsNullOrWhiteSpace(projectId1)) && not (String.IsNullOrWhiteSpace(projectId2)) -> 
+            projectId1 = projectId2
+        | Some(_), Some(_)
+        | None, None -> options1.ProjectFileName = options2.ProjectFileName
+        | _ -> false
 
     /// Compare two options sets with respect to the parts of the options that are important to building.
     static member AreSameForChecking(options1,options2) =
         match options1.Stamp, options2.Stamp with 
         | Some x, Some y -> (x = y)
         | _ -> 
-        options1.ProjectFileName = options2.ProjectFileName &&
+        FSharpProjectOptions.UseSameProject(options1, options2) &&
         options1.SourceFiles = options2.SourceFiles &&
         options1.OtherOptions = options2.OtherOptions &&
         options1.UnresolvedReferences = options2.UnresolvedReferences &&
@@ -1879,11 +1889,12 @@ type FSharpCheckProjectResults(projectFileName:string, tcConfigOption, keepAssem
     // Not, this does not have to be a SyncOp, it can be called from any thread
     member __.GetAllUsesOfAllSymbols() = 
         let (tcGlobals, tcImports, thisCcu, ccuSig, tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles) = getDetails()
+        let cenv = SymbolEnv(tcGlobals, thisCcu, Some ccuSig, tcImports)
 
         [| for r in tcSymbolUses do
              for symbolUse in r.AllUsesOfSymbols do
                 if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
-                  let symbol = FSharpSymbol.Create(tcGlobals, thisCcu, ccuSig, tcImports, symbolUse.Item)
+                  let symbol = FSharpSymbol.Create(cenv, symbolUse.Item)
                   yield FSharpSymbolUse(tcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range) |]
         |> async.Return
 
@@ -2071,11 +2082,12 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
 
     member info.GetAllUsesOfAllSymbolsInFile() = 
         threadSafeOp 
-            (fun () -> [| |]) 
-            (fun scope -> 
-                 [| for symbolUse in scope.ScopeSymbolUses.AllUsesOfSymbols do
-                      if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
-                        let symbol = FSharpSymbol.Create(scope.TcGlobals, scope.ThisCcu, scope.CcuSigForFile, scope.TcImports, symbolUse.Item)
+            (fun () -> [| |])
+            (fun scope ->
+                let cenv = scope.SymbolEnv
+                [| for symbolUse in scope.ScopeSymbolUses.AllUsesOfSymbols do
+                    if symbolUse.ItemOccurence <> ItemOccurence.RelatedText then
+                        let symbol = FSharpSymbol.Create(cenv, symbolUse.Item)
                         yield FSharpSymbolUse(scope.TcGlobals, symbolUse.DisplayEnv, symbol, symbolUse.ItemOccurence, symbolUse.Range) |])
          |> async.Return 
 
@@ -2117,7 +2129,7 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
     member info.OpenDeclarations =
         scopeOptX 
         |> Option.map (fun scope -> 
-            let cenv = SymbolEnv(scope.TcGlobals, scope.ThisCcu, Some scope.CcuSigForFile, scope.TcImports)
+            let cenv = scope.SymbolEnv
             scope.OpenDeclarations |> Array.map (fun x -> FSharpOpenDeclaration(x.LongId, x.Range, (x.Modules |> List.map (fun x -> FSharpEntity(cenv, x))), x.AppliedScope, x.IsOwnNamespace)))
         |> Option.defaultValue [| |]
 
@@ -2153,7 +2165,7 @@ module Helpers =
     /// Determine whether two (fileName,options) keys should be identical w.r.t. resource usage
     let AreSubsumable2((fileName1:string,o1:FSharpProjectOptions),(fileName2:string,o2:FSharpProjectOptions)) =
         (fileName1 = fileName2)
-        && FSharpProjectOptions.UseSameProjectFileName(o1,o2)
+        && FSharpProjectOptions.UseSameProject(o1,o2)
 
     /// Determine whether two (fileName,sourceText,options) keys should be identical w.r.t. parsing
     let AreSameForParsing((fileName1: string, source1: string, options1), (fileName2, source2, options2)) =
@@ -2171,7 +2183,7 @@ module Helpers =
     /// Determine whether two (fileName,sourceText,options) keys should be identical w.r.t. resource usage
     let AreSubsumable3((fileName1:string,_,o1:FSharpProjectOptions),(fileName2:string,_,o2:FSharpProjectOptions)) =
         (fileName1 = fileName2)
-        && FSharpProjectOptions.UseSameProjectFileName(o1,o2)
+        && FSharpProjectOptions.UseSameProject(o1,o2)
 
 module CompileHelpers =
     let mkCompilationErorHandlers() = 
@@ -2314,7 +2326,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     let scriptClosureCache = 
         MruCache<ScriptClosureCacheToken, FSharpProjectOptions, LoadClosure>(projectCacheSize, 
             areSame=FSharpProjectOptions.AreSameForChecking, 
-            areSimilar=FSharpProjectOptions.UseSameProjectFileName)
+            areSimilar=FSharpProjectOptions.UseSameProject)
 
     let scriptClosureCacheLock = Lock<ScriptClosureCacheToken>()
     let frameworkTcImportsCache = FrameworkImportsCache(frameworkTcImportsCacheStrongSize)
@@ -2387,7 +2399,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         MruCache<CompilationThreadToken, FSharpProjectOptions, (IncrementalBuilder option * FSharpErrorInfo[] * IDisposable)>
                 (keepStrongly=projectCacheSize, keepMax=projectCacheSize, 
                  areSame =  FSharpProjectOptions.AreSameForChecking, 
-                 areSimilar =  FSharpProjectOptions.UseSameProjectFileName,
+                 areSimilar =  FSharpProjectOptions.UseSameProject,
                  requiredToKeep=(fun (builderOpt,_,_) -> match builderOpt with None -> false | Some (b:IncrementalBuilder) -> b.IsBeingKeptAliveApartFromCacheEntry),
                  onDiscard = (fun (_, _, decrement:IDisposable) -> decrement.Dispose()))
 
@@ -2396,9 +2408,11 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
           RequireCompilationThread ctok
           match incrementalBuildersCache.TryGet (ctok, options) with
           | Some (builderOpt,creationErrors,_) -> 
+              Logger.Log LogCompilerFunctionId.Service_IncrementalBuildersCache_BuildingNewCache
               let decrement = IncrementalBuilder.KeepBuilderAlive builderOpt
               return builderOpt,creationErrors, decrement
           | None -> 
+              Logger.Log LogCompilerFunctionId.Service_IncrementalBuildersCache_GettingCache
               let! (builderOpt,creationErrors,_) as info = CreateOneIncrementalBuilder (ctok, options, userOpName)
               incrementalBuildersCache.Set (ctok, options, info)
               let decrement = IncrementalBuilder.KeepBuilderAlive builderOpt
@@ -2656,12 +2670,19 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         let execWithReactorAsync action = reactor.EnqueueAndAwaitOpAsync(userOpName, "ParseAndCheckFileInProject", filename, action)
         async {
             try 
+                let strGuid = "_ProjectId=" + (options.ProjectId |> Option.defaultValue "null")
+                Logger.LogBlockMessageStart (filename + strGuid) LogCompilerFunctionId.Service_ParseAndCheckFileInProject
+
                 if implicitlyStartBackgroundWork then 
+                    Logger.LogMessage (filename + strGuid + "-Cancelling background work") LogCompilerFunctionId.Service_ParseAndCheckFileInProject
                     reactor.CancelBackgroundOp() // cancel the background work, since we will start new work after we're done
+
                 let! builderOpt,creationErrors,decrement = execWithReactorAsync (fun ctok -> getOrCreateBuilderAndKeepAlive (ctok, options, userOpName))
                 use _unwind = decrement
                 match builderOpt with
                 | None -> 
+                    Logger.LogBlockMessageStop (filename + strGuid + "-Failed_Aborted") LogCompilerFunctionId.Service_ParseAndCheckFileInProject
+
                     let parseResults = FSharpParseFileResults(creationErrors, None, true, [| |])
                     return (parseResults, FSharpCheckFileAnswer.Aborted)
 
@@ -2669,9 +2690,11 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     let cachedResults = bc.GetCachedCheckFileResult(builder, filename, source, options)
 
                     match cachedResults with 
-                    | Some (parseResults, checkResults) -> return parseResults, FSharpCheckFileAnswer.Succeeded checkResults
+                    | Some (parseResults, checkResults) -> 
+                        Logger.LogBlockMessageStop (filename + strGuid + "-Successful_Cached") LogCompilerFunctionId.Service_ParseAndCheckFileInProject
+
+                        return parseResults, FSharpCheckFileAnswer.Succeeded checkResults
                     | _ ->
-                        Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "ParseAndCheckFileInProject.CacheMiss", filename)
                         // todo this blocks the Reactor queue until all files up to the current are type checked. It's OK while editing the file,
                         // but results with non cooperative blocking when a firts file from a project opened.
                         let! tcPrior = execWithReactorAsync <| fun ctok -> builder.GetCheckResultsBeforeFileInProject (ctok, filename) 
@@ -2682,6 +2705,9 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                         let parseTreeOpt = parseTreeOpt |> Option.map builder.DeduplicateParsedInputModuleNameInProject
                         let parseResults = FSharpParseFileResults(parseErrors, parseTreeOpt, anyErrors, builder.AllDependenciesDeprecated)
                         let! checkResults = bc.CheckOneFileImpl(parseResults, source, filename, options, textSnapshotInfo, fileVersion, builder, tcPrior, creationErrors, userOpName)
+
+                        Logger.LogBlockMessageStop (filename + strGuid + "-Successful") LogCompilerFunctionId.Service_ParseAndCheckFileInProject
+
                         return parseResults, checkResults
             finally 
                 bc.ImplicitlyStartCheckProjectInBackground(options, userOpName)
@@ -2816,6 +2842,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             let options = 
                 {
                     ProjectFileName = filename + ".fsproj" // Make a name that is unique in this directory.
+                    ProjectId = None
                     SourceFiles = loadClosure.SourceFiles |> List.map fst |> List.toArray
                     OtherOptions = otherFlags 
                     ReferencedProjects= [| |]  
@@ -3168,6 +3195,7 @@ type FSharpChecker(legacyReferenceResolver, projectCacheSize, keepAssemblyConten
     member ic.GetProjectOptionsFromCommandLineArgs(projectFileName, argv, ?loadedTimeStamp, ?extraProjectInfo: obj) = 
         let loadedTimeStamp = defaultArg loadedTimeStamp DateTime.MaxValue // Not 'now', we don't want to force reloading
         { ProjectFileName = projectFileName
+          ProjectId = None
           SourceFiles = [| |] // the project file names will be inferred from the ProjectOptions
           OtherOptions = argv 
           ReferencedProjects= [| |]  

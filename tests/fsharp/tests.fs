@@ -170,9 +170,7 @@ module CoreTests =
 
     [<Test>]
     let ``attributes-FSI_BASIC`` () = singleTestBuildAndRun "core/attributes" FSI_BASIC
-#endif
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let byrefs () = 
 
@@ -189,6 +187,19 @@ module CoreTests =
         fsi cfg "" ["test.fsx"]
 
         testOkFile.CheckExists()
+
+    [<Test>]
+    let asyncStackTraces () = 
+        let cfg = testConfig "core/asyncStackTraces"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test.exe -g --tailcalls- --optimize-" cfg.fsc_flags ["test.fsx"]
+
+        exec cfg ("." ++ "test.exe") ""
+
+        testOkFile.CheckExists()
+
 #endif
 
     [<Test>]
@@ -1296,7 +1307,44 @@ module CoreTests =
     [<Test>]
     let reflect () = singleTestBuildAndRun "core/reflect" FSC_BASIC
 
+
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+    [<Test>]
+    let refnormalization () = 
+        let cfg = testConfig "core/refnormalization"
+
+        // Prepare by building multiple versions of the test assemblies
+        fsc cfg @"%s --target:library -o:version1\DependentAssembly.dll -g --version:1.0.0.0 --keyfile:keyfile.snk" cfg.fsc_flags [@"DependentAssembly.fs"]
+        fsc cfg @"%s --target:library -o:version1\AscendentAssembly.dll -g --version:1.0.0.0 --keyfile:keyfile.snk -r:version1\DependentAssembly.dll" cfg.fsc_flags [@"AscendentAssembly.fs"]
+
+        fsc cfg @"%s --target:library -o:version2\DependentAssembly.dll -g --version:2.0.0.0" cfg.fsc_flags [@"DependentAssembly.fs"]
+        fsc cfg @"%s --target:library -o:version2\AscendentAssembly.dll -g --version:2.0.0.0 -r:version2\DependentAssembly.dll" cfg.fsc_flags [@"AscendentAssembly.fs"]
+
+        //TestCase1
+        // Build a program that references v2 of ascendent and v1 of dependent.
+        // Note that, even though ascendent v2 references dependent v2, the reference is marked as v1.
+        use TestOk = fileguard cfg "test.ok"
+        fsc cfg @"%s -o:test1.exe -r:version1\DependentAssembly.dll -r:version2\AscendentAssembly.dll --optimize- -g" cfg.fsc_flags ["test.fs"]
+        exec cfg ("." ++ "test1.exe") "DependentAssembly-1.0.0.0 AscendentAssembly-2.0.0.0"
+        TestOk.CheckExists()
+
+        //TestCase2
+        // Build a program that references v1 of ascendent and v2 of dependent.
+        // Note that, even though ascendent v1 references dependent v1, the reference is marked as v2 which was passed in.
+        use TestOk = fileguard cfg "test.ok"
+        fsc cfg @"%s -o:test2.exe -r:version2\DependentAssembly.dll -r:version1\AscendentAssembly.dll --optimize- -g" cfg.fsc_flags ["test.fs"]
+        exec cfg ("." ++ "test2.exe") "DependentAssembly-2.0.0.0 AscendentAssembly-1.0.0.0"
+        TestOk.CheckExists()
+
+        //TestCase3
+        // Build a program that references v1 of ascendent and v1 and v2 of dependent.
+        // Verifies that compiler uses first version of a duplicate assembly passed on command line.
+        use TestOk = fileguard cfg "test.ok"
+        fsc cfg @"%s -o:test3.exe -r:version1\DependentAssembly.dll -r:version2\DependentAssembly.dll -r:version1\AscendentAssembly.dll --optimize- -g" cfg.fsc_flags ["test.fs"]
+        exec cfg ("." ++ "test3.exe") "DependentAssembly-1.0.0.0 AscendentAssembly-1.0.0.0"
+        TestOk.CheckExists()
+
+
     [<Test>]
     let testResources () = 
         let cfg = testConfig "core/resources"
@@ -1777,6 +1825,12 @@ module TypecheckTests =
         peverify cfg "pos29.exe"
 
     [<Test>]
+    let ``sigs pos30`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:exe -o:pos30.exe --warnaserror+" cfg.fsc_flags ["pos30.fs"]
+        peverify cfg "pos30.exe"
+
+    [<Test>]
     let ``sigs pos24`` () = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos24.exe" cfg.fsc_flags ["pos24.fs"]
@@ -2236,6 +2290,12 @@ module TypecheckTests =
 
     [<Test>]
     let ``type check neg102`` () = singleNegTest (testConfig "typecheck/sigs") "neg102"
+
+    [<Test>]
+    let ``type check neg103`` () = singleNegTest (testConfig "typecheck/sigs") "neg103"
+
+    [<Test>]
+    let ``type check neg104`` () = singleNegTest (testConfig "typecheck/sigs") "neg104"
 
     [<Test>] 
     let ``type check neg_issue_3752`` () = singleNegTest (testConfig "typecheck/sigs") "neg_issue_3752"

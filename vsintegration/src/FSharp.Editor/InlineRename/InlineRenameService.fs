@@ -53,12 +53,6 @@ type internal InlineRenameLocationSet(locations: InlineRenameLocation [], origin
         
             async {
                 let! newSolution = applyChanges originalSolution (locations |> Array.toList |> List.groupBy (fun x -> x.Document))
-                // > debug
-                let newDoc = newSolution.GetDocument(locations.[0].Document.Id)
-                let! newSource = newDoc.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                let newText = newSource.ToString()
-                let _ = newText
-                // < debug
                 return 
                     { new IInlineRenameReplacementInfo with
                         member __.NewSolution = newSolution

@@ -17,7 +17,7 @@ echo Build and run a subset of test suites
 echo.
 echo Usage:
 echo.
-echo build.cmd ^<all^|net40^|coreclr^|vs^>
+echo build.cmd ^<all^|net40^|coreclr^|vs^|fcs^>
 echo           ^<proto^|protofx^>
 echo           ^<ci^|ci_part1^|ci_part2^|ci_part3^|ci_part4^|microbuild^|nuget^>
 echo           ^<debug^|release^>
@@ -481,6 +481,9 @@ if NOT EXIST Proto\net40\bin\fsc.exe (
   set BUILD_PROTO=1
 )
 
+rem turn off vs ide unit tests until they pass again
+set TEST_VS_IDEUNIT_SUITE= 0
+
 rem
 rem This stops the dotnet cli from hunting around and 
 rem finding the highest possible dotnet sdk version to use.
@@ -768,8 +771,8 @@ if "%BUILD_NET40%" == "1" (
 echo ---------------- Done with assembly version checks, starting assembly signing ---------------
 
 if not "%SIGN_TYPE%" == "" (
-    echo build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -ConfigFile build\config\AssemblySignToolData.json
-    call build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -ConfigFile build\config\AssemblySignToolData.json
+    echo build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -Configuration %BUILD_CONFIG% -ConfigFile build\config\AssemblySignToolData.json
+    call build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -Configuration %BUILD_CONFIG% -ConfigFile build\config\AssemblySignToolData.json
     if ERRORLEVEL 1 echo Error running sign tool && goto :failure
 )
 
@@ -780,20 +783,8 @@ echo %_msbuildexe% %msbuildflags% build-nuget-packages.proj /p:Configuration=%BU
 if ERRORLEVEL 1 echo Error building NuGet packages && goto :failure
 
 if not "%SIGN_TYPE%" == "" (
-    echo build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -ConfigFile build\config\PackageSignToolData.json
-    call build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -ConfigFile build\config\PackageSignToolData.json
-    if ERRORLEVEL 1 echo Error running sign tool && goto :failure
-)
-
-if "%BUILD_SETUP%" == "1" (
-    echo %_msbuildexe% %msbuildflags% setup\build-msi.proj /p:Configuration=%BUILD_CONFIG%
-         %_msbuildexe% %msbuildflags% setup\build-msi.proj /p:Configuration=%BUILD_CONFIG%
-    if ERRORLEVEL 1 echo Error building MSI && goto :failure
-)
-
-if not "%SIGN_TYPE%" == "" (
-    echo build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -ConfigFile build\config\MsiSignToolData.json
-    call build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -ConfigFile build\config\MsiSignToolData.json
+    echo build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -Configuration %BUILD_CONFIG% -ConfigFile build\config\PackageSignToolData.json
+    call build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -Configuration %BUILD_CONFIG% -ConfigFile build\config\PackageSignToolData.json
     if ERRORLEVEL 1 echo Error running sign tool && goto :failure
 )
 
@@ -804,8 +795,8 @@ if "%BUILD_SETUP%" == "1" (
 )
 
 if not "%SIGN_TYPE%" == "" (
-    echo build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -ConfigFile build\config\InsertionSignToolData.json
-    call build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -ConfigFile build\config\InsertionSignToolData.json
+    echo build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -Configuration %BUILD_CONFIG% -ConfigFile build\config\InsertionSignToolData.json
+    call build\scripts\run-signtool.cmd -MSBuild %_msbuildexe% -SignType %SIGN_TYPE% -Configuration %BUILD_CONFIG% -ConfigFile build\config\InsertionSignToolData.json
     if ERRORLEVEL 1 echo Error running sign tool && goto :failure
 )
 

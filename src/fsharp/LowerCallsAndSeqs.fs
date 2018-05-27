@@ -303,7 +303,7 @@ let LowerSeqExpr g amap overallExpr =
                      (mkLambdaNoType g m enumv 
                        (mkCallSeqGenerated g m genElemTy (mkUnitDelayLambda g m (callNonOverloadedMethod g amap m "MoveNext" inpEnumTy [enume]))
                           (mkInvisibleLet m v (callNonOverloadedMethod g amap m "get_Current" inpEnumTy [enume])
-                              body))))
+                              (mkCoerceIfNeeded g (mkSeqTy g genElemTy) (tyOfExpr g body) body)))))
 
         | SeqTryFinally(e1,compensation,m) -> 
             // printfn "found Seq.try/finally"

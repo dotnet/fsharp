@@ -9,8 +9,10 @@ module internal Microsoft.FSharp.Compiler.IlxGen
 open System.IO
 open System.Reflection
 open System.Collections.Generic
+
 open Internal.Utilities
 open Internal.Utilities.Collections
+
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
@@ -20,21 +22,20 @@ open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.BinaryConstants 
 
 open Microsoft.FSharp.Compiler 
+open Microsoft.FSharp.Compiler.AttributeChecking
+open Microsoft.FSharp.Compiler.Ast
+open Microsoft.FSharp.Compiler.ErrorLogger
+open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.Import
+open Microsoft.FSharp.Compiler.Layout
+open Microsoft.FSharp.Compiler.Lib
+open Microsoft.FSharp.Compiler.PrettyNaming
+open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Tastops.DebugPrint
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.PrettyNaming
 open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.Layout
-open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.TypeRelations
-open Microsoft.FSharp.Compiler.TypeChecker
-open Microsoft.FSharp.Compiler.Infos
-
   
 let IsNonErasedTypar (tp:Typar) = not tp.IsErased
 let DropErasedTypars (tps:Typar list) = tps |> List.filter IsNonErasedTypar
@@ -713,11 +714,11 @@ let AddStorageForVal (g: TcGlobals) (v,s) eenv =
         | None -> eenv
         | Some vref -> 
             match vref.TryDeref with
-            | VNone -> 
+            | ValueNone -> 
                 //let msg = sprintf "could not dereference external value reference to something in FSharp.Core.dll during code generation, v.MangledName = '%s', v.Range = %s" v.MangledName (stringOfRange v.Range)
                 //System.Diagnostics.Debug.Assert(false, msg)
                 eenv
-            | VSome gv -> 
+            | ValueSome gv -> 
                 { eenv with valsInScope = eenv.valsInScope.Add gv s }
     else 
         eenv
@@ -2474,27 +2475,27 @@ and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr sequel =
 and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
   match (f,tyargs,args) with 
    (* Look for tailcall to turn into branch *)
-  | (Expr.Val(v,_,_),_,_) when  
-       ((ListAssoc.containsKey cenv.g.valRefEq v eenv.innerVals) && 
-        not v.IsConstructor &&
-        let (kind,_) = ListAssoc.find cenv.g.valRefEq v eenv.innerVals
-        (* when branch-calling methods we must have the right type parameters *)
-        begin match kind with
-          | BranchCallClosure _ -> true
-          | BranchCallMethod (_,_,tps,_,_)  ->  
-              (List.lengthsEqAndForall2 (fun ty tp -> typeEquiv cenv.g ty (mkTyparTy tp)) tyargs tps)
-        end &&
-        (* must be exact #args, ignoring tupling - we untuple if needed below *)
-        (let arityInfo = 
-           match kind with
-           | BranchCallClosure arityInfo
-           | BranchCallMethod (arityInfo,_,_,_,_)  ->  arityInfo
-         arityInfo.Length = args.Length
-        ) &&
-        (* no tailcall out of exception handler, etc. *)
-        (match sequelIgnoringEndScopesAndDiscard sequel with Return | ReturnVoid -> true | _ -> false))
+  | (Expr.Val(v,_,_),_,_) when
+        match ListAssoc.tryFind cenv.g.valRefEq v eenv.innerVals with
+        | Some (kind,_) ->
+           (not v.IsConstructor &&
+            (* when branch-calling methods we must have the right type parameters *)
+            (match kind with
+             | BranchCallClosure _ -> true
+             | BranchCallMethod (_,_,tps,_,_)  ->  
+                  (List.lengthsEqAndForall2 (fun ty tp -> typeEquiv cenv.g ty (mkTyparTy tp)) tyargs tps)) &&
+            (* must be exact #args, ignoring tupling - we untuple if needed below *)
+            (let arityInfo = 
+               match kind with
+               | BranchCallClosure arityInfo
+               | BranchCallMethod (arityInfo,_,_,_,_)  -> arityInfo
+             arityInfo.Length = args.Length
+            ) &&
+            (* no tailcall out of exception handler, etc. *)
+            (match sequelIgnoringEndScopesAndDiscard sequel with Return | ReturnVoid -> true | _ -> false))
+        | None -> false
     -> 
-        let (kind,mark) = ListAssoc.find cenv.g.valRefEq v eenv.innerVals
+        let (kind,mark) = ListAssoc.find cenv.g.valRefEq v eenv.innerVals // already checked above in when guard
         let ntmargs = 
           match kind with
           | BranchCallClosure arityInfo ->
