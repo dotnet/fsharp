@@ -1313,6 +1313,18 @@ type TypeCheckInfo
         let isDisposableTy (ty: TType) =
             protectAssemblyExplorationNoReraise false false (fun () -> Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_IDisposable)
 
+        let isStructTyconRef (tyconRef: TyconRef) =
+            let tyconRef =
+                if tyconRef.CanDeref then
+                    match tyconRef.Deref.entity_tycon_repr with
+                    | TMeasureableRepr (TType_app (tyconRef, _)) -> tyconRef
+                    | _ -> tyconRef
+                else tyconRef
+                
+            match tyconRef.TypeAbbrev with
+            | Some ty -> isStructTy g ty
+            | _ -> tyconRef.IsStructOrEnumTycon
+
         resolutions
         |> Seq.choose (fun cnr ->
             match cnr with
@@ -1351,7 +1363,7 @@ type TypeCheckInfo
                 Some (m, SemanticClassificationType.Interface)
             | CNR(_, Item.Types(_, types), LegitTypeOccurence, _, _, _, m) when types |> List.exists (isStructTy g) -> 
                 Some (m, SemanticClassificationType.ValueType)
-            | CNR(_, Item.Types(_, TType_app(_, TType_measure _ :: _) :: _), LegitTypeOccurence, _, _, _, m) -> 
+            | CNR(_, Item.Types(_, TType_app(tyconRef, TType_measure _ :: _) :: _), LegitTypeOccurence, _, _, _, m) when isStructTyconRef tyconRef ->
                 Some (m, SemanticClassificationType.ValueType)
             | CNR(_, Item.Types(_, types), LegitTypeOccurence, _, _, _, m) when types |> List.exists isDisposableTy ->
                 Some (m, SemanticClassificationType.Disposable)
