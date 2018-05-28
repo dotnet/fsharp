@@ -1351,6 +1351,8 @@ type TypeCheckInfo
                 Some (m, SemanticClassificationType.Interface)
             | CNR(_, Item.Types(_, types), LegitTypeOccurence, _, _, _, m) when types |> List.exists (isStructTy g) -> 
                 Some (m, SemanticClassificationType.ValueType)
+            | CNR(_, Item.Types(_, TType_app(_, TType_measure _ :: _) :: _), LegitTypeOccurence, _, _, _, m) -> 
+                Some (m, SemanticClassificationType.ValueType)
             | CNR(_, Item.Types(_, types), LegitTypeOccurence, _, _, _, m) when types |> List.exists isDisposableTy ->
                 Some (m, SemanticClassificationType.Disposable)
             | CNR(_, Item.Types _, LegitTypeOccurence, _, _, _, m) -> 
