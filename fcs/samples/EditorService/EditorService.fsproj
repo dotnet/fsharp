@@ -16,7 +16,7 @@
     <PackageReference Include="System.Reflection.Metadata" Version="1.4.2" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net46'">
-    <Reference Include="System.Runtime, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="System.IO, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="System.Runtime" />
+    <Reference Include="System.IO" />
   </ItemGroup>
 </Project>
