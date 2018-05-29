@@ -6299,15 +6299,17 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
              [ for fspec in tycon.AllFieldsAsList do
 
                    let useGenuineField = useGenuineField tycon fspec
-                   
+
                    // The property (or genuine IL field) is hidden in these circumstances:  
                    //     - secret fields apart from "__value" fields for enums 
                    //     - the representation of the type is hidden 
                    //     - the F# field is hidden by a signature or private declaration 
-                   let isPropHidden = 
-                       ((fspec.IsCompilerGenerated && not tycon.IsEnumTycon) ||
-                        hiddenRepr ||
-                        IsHiddenRecdField eenv.sigToImplRemapInfo (tcref.MakeNestedRecdFieldRef fspec))
+                   let isPropHidden =
+                        // Enums always have public cases irrespective of Enum Visibility
+                        if tycon.IsEnumTycon then false
+                        else
+                            (fspec.IsCompilerGenerated || hiddenRepr ||
+                             IsHiddenRecdField eenv.sigToImplRemapInfo (tcref.MakeNestedRecdFieldRef fspec))
                    let ilType = GenType cenv.amap m eenvinner.tyenv fspec.FormalType
                    let ilFieldName = ComputeFieldName tycon fspec
                         

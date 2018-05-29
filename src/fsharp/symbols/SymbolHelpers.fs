@@ -966,7 +966,8 @@ module internal SymbolHelpers =
             let g = infoReader.g
             let amap = infoReader.amap
             match item with
-            | Item.Types(_, ((TType_app(tcref, _)):: _)) -> 
+            | Item.Types(_, ((TType_app(tcref, _)):: _))
+            | Item.UnqualifiedType(tcref :: _) ->
                 let ty = generalizedTyconRef tcref
                 Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_Attribute
             | _ -> false
