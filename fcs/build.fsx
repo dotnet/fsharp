@@ -24,7 +24,7 @@ let isMono = false
 // Utilities
 // --------------------------------------------------------------------------------------
 
-let dotnetExePath = DotNetCli.InstallDotNetSDK "2.1.100"
+let dotnetExePath = DotNetCli.InstallDotNetSDK "2.1.200"
 
 let runDotnet workingDir args =
     let result =
