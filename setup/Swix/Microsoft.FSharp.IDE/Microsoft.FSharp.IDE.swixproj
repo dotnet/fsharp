@@ -3,7 +3,6 @@
 <Project InitialTargets="CheckPropertiesArePassed" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildThisFileDirectory)..\..\..\src</FSharpSourcesRoot>
-    <FSharpTreeRoot>$(FSharpSourcesRoot)\..</FSharpTreeRoot>
     <OutputArchitecture>neutral</OutputArchitecture>
     <OutputLocalized>false</OutputLocalized>
     <OutputType>vsix</OutputType>
@@ -12,19 +11,16 @@
     <BinariesFolder>$(FSharpSourcesRoot)\..\$(Configuration)</BinariesFolder>
     <PackagesFolder>$(FSharpSourcesRoot)\..\packages</PackagesFolder>
     <OutputPath>$(BinariesFolder)\insertion</OutputPath>
-    <OutputName>Microsoft.FSharp.Compiler</OutputName>
+    <OutputName>Microsoft.FSharp.IDE</OutputName>
     <IntermediateOutputPath>$(MSBuildThisFileDirectory)obj</IntermediateOutputPath>
   </PropertyGroup>
 
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
-  <Import Project="$(FSharpSourcesRoot)\..\build\targets\PackageVersions.props" />
 
   <PropertyGroup>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);BinariesFolder=$(BinariesFolder)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);PackagesFolder=$(PackagesFolder)</PackagePreprocessorDefinitions>
-    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);FSharpTreeRoot=$(FSharpTreeRoot)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);FSharpPackageVersion=$(FSharpPackageVersion)</PackagePreprocessorDefinitions>
-    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);MicrosoftVisualFSharpTypeProvidersRedistPackageVersion=$(MicrosoftVisualFSharpTypeProvidersRedistPackageVersion)</PackagePreprocessorDefinitions>
   </PropertyGroup>
 
   <ItemGroup>
