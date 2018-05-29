@@ -237,6 +237,14 @@ module CoreTests =
     [<Test>]
     let csext () = singleTestBuildAndRun "core/csext" FSC_BASIC
 
+
+    [<Test>]
+    let fscenum () = singleTestBuildAndRun "core/enum" FSC_BASIC
+
+    [<Test>]
+    let fsienum () = singleTestBuildAndRun "core/enum" FSI_BASIC
+
+
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
 
     [<Test>]
