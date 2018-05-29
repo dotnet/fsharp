@@ -1,14 +1,37 @@
 {
-    "sign": [
-      {
-        "certificate": "VsixSHA2",
-        "strongName": null,
-        "values": [
-          "insertion\\Microsoft.FSharp.SDK.Resources.ENU.vsix"
-        ]
-      }
-    ],
-    "exclude": [
-    ]
-  }
-  
+  "sign": [
+    {
+      "certificate": "VsixSHA2",
+      "strongName": null,
+      "values": [
+        "insertion\\Microsoft.FSharp.Compiler.vsix",
+        "insertion\\Microsoft.FSharp.Compiler.Resources.*.vsix",
+        "insertion\\Microsoft.FSharp.SDK.vsix"
+      ]
+    }
+  ],
+  "exclude": [
+    "fsc.exe",
+    "FSharp.Build.dll",
+    "FSharp.Build.resources.dll",
+    "FSharp.Core.dll",
+    "FSharp.Core.resources.dll",
+    "FSharp.Compiler.Private.dll",
+    "FSharp.Compiler.Private.resources.dll",
+    "FSharp.Compiler.Server.Shared.dll",
+    "FSharp.Compiler.Interactive.Settings.dll",
+    "FSharp.Compiler.Interactive.Settings.resources.dll",
+    "fsi.exe",
+    "fsiAnyCpu.exe",
+    "FSharp.Data.TypeProviders.dll",
+    "Microsoft.Build.dll",
+    "Microsoft.Build.Conversion.Core.dll",
+    "Microsoft.Build.Engine.dll",
+    "Microsoft.Build.Framework.dll",
+    "Microsoft.Build.Tasks.Core.dll",
+    "Microsoft.Build.Utilities.Core.dll",
+    "System.Collections.Immutable.dll",
+    "System.Reflection.Metadata.dll",
+    "System.ValueTuple.dll"
+  ]
+}
