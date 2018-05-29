@@ -1632,6 +1632,12 @@ We really need to rewrite some code paths here to use the real parse tree rather
             additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
+    member public this.``LocationOfParams.TypeProviders.StaticParametersAtConstructorCallSite``() =
+        this.TestParameterInfoLocationOfParamsWithVariousSurroundingContexts("""
+            let x = new ^N1.T^<^ "fo$o",^ 42 ^>()""", 
+            additionalReferenceAssemblies = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+
+    [<Test>]
     member public this.``TypeProvider.FormatOfNamesOfSystemTypes``() =
         let code = ["""type TTT = N1.T< "foo", ParamIgnored=42 > """]
         let references = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
