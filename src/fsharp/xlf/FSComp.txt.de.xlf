@@ -108,8 +108,8 @@
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
-        <source>All branches of a pattern match expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">Alle Branches eines Musterabgleichsausdrucks müssen den gleichen Typ aufweisen. Es wurde erwartet, dass dieser Ausdruck den Typ "{0}" aufweist, hier liegt aber der Typ "{1}" vor.</target>
+        <source>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
+        <target state="needs-review-translation">Alle Branches eines Musterabgleichsausdrucks müssen den gleichen Typ aufweisen. Es wurde erwartet, dass dieser Ausdruck den Typ "{0}" aufweist, hier liegt aber der Typ "{1}" vor.</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">

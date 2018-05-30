@@ -108,8 +108,8 @@
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
-        <source>All branches of a pattern match expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">模式比對運算式的所有分支都必須是同一種類型。此運算式應具備類型 '{0}'，但卻是類型 '{1}'。</target>
+        <source>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
+        <target state="needs-review-translation">模式比對運算式的所有分支都必須是同一種類型。此運算式應具備類型 '{0}'，但卻是類型 '{1}'。</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
