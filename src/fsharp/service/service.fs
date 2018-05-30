@@ -518,14 +518,23 @@ type TypeCheckInfo
         | Item.Types(_, ty::_) when (isInterfaceTy g ty) -> true
         | _ -> false   
 
+
     // Return only items with the specified name
     let FilterDeclItemsByResidue (getItem: 'a -> Item) residue (items: 'a list) = 
+        let attributedResidue = residue + "Attribute"
+        let nameMatchesResidue name = (residue = name) || (attributedResidue = name)
+
         items |> List.filter (fun x -> 
             let item = getItem x
             let n1 =  item.DisplayName 
             match item with
-            | Item.Types _ | Item.CtorGroup _ -> residue + "Attribute" = n1 || residue = n1
-            | _ -> residue = n1 )
+            | Item.Types _ -> nameMatchesResidue n1
+            | Item.CtorGroup (_, meths) ->
+                nameMatchesResidue n1 ||
+                meths |> List.exists (fun meth ->
+                    let tcref = meth.ApparentEnclosingTyconRef
+                    tcref.IsProvided || nameMatchesResidue tcref.DisplayName)
+            | _ -> residue = n1)
             
     /// Post-filter items to make sure they have precisely the right name
     /// This also checks that there are some remaining results 
@@ -1122,7 +1131,15 @@ type TypeCheckInfo
             (fun () -> 
                 match GetDeclItemsForNamesAtPosition(ctok, None,namesOpt,None,None,line,lineStr,colAtEndOfNames,ResolveTypeNamesToCtors,ResolveOverloads.No,(fun() -> []),fun _ -> false) with
                 | None -> FSharpMethodGroup("",[| |])
-                | Some (items, denv, _, m) -> FSharpMethodGroup.Create(infoReader, m, denv, items |> List.map (fun x -> x.ItemWithInst)))
+                | Some (items, denv, _, m) -> 
+                    // GetDeclItemsForNamesAtPosition returns Items.Types and Item.CtorGroup for `new T(|)`, 
+                    // the Item.Types is not needed here as it duplicates (at best) parameterless ctor.
+                    let ctors = items |> List.filter (fun x -> match x.Item with Item.CtorGroup _ -> true | _ -> false)
+                    let items =
+                        match ctors with
+                        | [] -> items
+                        | ctors -> ctors
+                    FSharpMethodGroup.Create(infoReader, m, denv, items |> List.map (fun x -> x.ItemWithInst)))
             (fun msg -> 
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetMethods: '%s'" msg)
                 FSharpMethodGroup(msg,[| |]))
