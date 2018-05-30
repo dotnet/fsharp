@@ -8,6 +8,7 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.PrettyNaming
 open System.Collections.Generic
 open System.Runtime.CompilerServices
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 
 module UnusedOpens =
 
@@ -140,11 +141,7 @@ module UnusedOpens =
                 let openedEntitiesToExamine =
                     openedGroup.OpenedModules 
                     |> List.filter (fun openedEntity ->
-                        match usedModules.TryGetValue openedEntity.Entity with
-                        | true, scopes ->
-                            not (scopes |> List.exists (fun scope -> rangeContainsRange scope openStatement.AppliedScope))
-                        | _ -> true
-                    )
+                        not (usedModules.BagExistsValueForKey(openedEntity.Entity, fun scope -> rangeContainsRange scope openStatement.AppliedScope)))
                              
                 match openedEntitiesToExamine with
                 | [] -> None
@@ -155,14 +152,10 @@ module UnusedOpens =
         let newlyUsedOpenedGroups = 
             openedGroupsToExamine |> List.filter (fun openedGroup ->
                 openedGroup.OpenedModules |> List.exists (fun openedEntity ->
-                    (match symbolUsesRangesByDeclaringEntity.TryGetValue openedEntity.Entity with
-                     | true, symbolUsesRanges ->
-                        symbolUsesRanges |> List.exists (fun symbolUseRange ->
-                            rangeContainsRange openStatement.AppliedScope symbolUseRange &&
-                            Range.posGt symbolUseRange.Start openStatement.Range.End)
-                     | _ -> false
-                    ) || 
-
+                    symbolUsesRangesByDeclaringEntity.BagExistsValueForKey(openedEntity.Entity, fun symbolUseRange ->
+                        rangeContainsRange openStatement.AppliedScope symbolUseRange &&
+                        Range.posGt symbolUseRange.Start openStatement.Range.End) || 
+                    
                     symbolUses2 |> Array.exists (fun symbolUse ->
                         rangeContainsRange openStatement.AppliedScope symbolUse.RangeAlternate &&
                         Range.posGt symbolUse.RangeAlternate.Start openStatement.Range.End &&
@@ -199,17 +192,15 @@ module UnusedOpens =
     /// Async to allow cancellation.
     let filterOpenStatements (symbolUses1: FSharpSymbolUse[], symbolUses2: FSharpSymbolUse[]) openStatements =
         async {
+            // the key is a namespace or module, the value is a list of FSharpSymbolUse range of symbols defined in the 
+            // namespace or module. So, it's just symbol uses ranges groupped by namespace or module where they are _defined_. 
             let symbolUsesRangesByDeclaringEntity = Dictionary<FSharpEntity, range list>(entityHash)
             for symbolUse in symbolUses1 do
                 match symbolUse.Symbol with
                 | :? FSharpMemberOrFunctionOrValue as f ->
                     match f.DeclaringEntity with
-                    | Some ent when ent.IsNamespace || ent.IsFSharpModule -> 
-                        let ranges =
-                            match symbolUsesRangesByDeclaringEntity.TryGetValue ent with
-                            | true, ranges -> symbolUse.RangeAlternate :: ranges
-                            | _ -> [symbolUse.RangeAlternate]
-                        symbolUsesRangesByDeclaringEntity.[ent] <- ranges
+                    | Some entity when entity.IsNamespace || entity.IsFSharpModule -> 
+                        symbolUsesRangesByDeclaringEntity.BagAdd(entity, symbolUse.RangeAlternate)
                     | _ -> ()
                 | _ -> ()
 

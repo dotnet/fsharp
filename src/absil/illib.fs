@@ -5,14 +5,12 @@ module public Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 
 
 open System
-open System.Collections
 open System.Collections.Generic
 open System.Diagnostics
 open System.IO
 open System.Reflection
-open System.Text
 open System.Threading
-open Internal.Utilities
+open System.Runtime.CompilerServices
 
 #if FX_RESHAPED_REFLECTION
 open Microsoft.FSharp.Core.ReflectionAdapters
@@ -561,10 +559,23 @@ module String =
             // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
             yield String.Empty
         |]
-module Dictionary = 
 
+module Dictionary = 
     let inline newWithSize (size: int) = Dictionary<_,_>(size, HashIdentity.Structural)
-        
+
+[<Extension>]
+type DictionaryExtensions() =
+    [<Extension>]
+    static member inline BagAdd(dic: Dictionary<'key, 'value list>, key: 'key, value: 'value) =
+        match dic.TryGetValue key with
+        | true, values -> dic.[key] <- value :: values
+        | _ -> dic.[key] <- [value]
+
+    [<Extension>]
+    static member inline BagExistsValueForKey(dic: Dictionary<'key, 'value list>, key: 'key, f: 'value -> bool) =
+        match dic.TryGetValue key with
+        | true, values -> values |> List.exists f
+        | _ -> false
 
 module Lazy = 
     let force (x: Lazy<'T>) = x.Force()

@@ -1528,13 +1528,7 @@ type TcResultsSinkImpl(g, ?source: string) =
         TcSymbolUses(g, capturedNameResolutions, capturedFormatSpecifierLocations.ToArray())
 
     member this.GetOpenDeclarations() = 
-        capturedOpenDeclarations
-        |> Seq.distinctBy (fun x ->
-            x.Range,
-            x.AppliedScope,
-            x.IsOwnNamespace
-           )
-        |> Seq.toArray
+        capturedOpenDeclarations |> Seq.distinctBy (fun x -> x.Range, x.AppliedScope, x.IsOwnNamespace) |> Seq.toArray
 
     interface ITypecheckResultsSink with
         member sink.NotifyEnvWithScope(m,nenv,ad) = 
