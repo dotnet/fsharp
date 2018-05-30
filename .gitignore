@@ -99,7 +99,6 @@ ossreadme*.txt
 *.csproj.user
 *.fsproj.user
 *.sln.DotSettings.user
-*.ide
 *.log
 *.jrs
 *.chk

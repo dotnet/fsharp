@@ -3,7 +3,7 @@ use vs
 package name=Microsoft.FSharp.Compiler
         version=$(FSharpPackageVersion)
 
-folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharpCompiler"
+folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp"
   file source="$(BinariesFolder)\net40\bin\fsc.exe" vs.file.ngen=yes
   file source="$(BinariesFolder)\net40\bin\fsc.exe.config"
   file source="$(BinariesFolder)\net40\bin\FSharp.Build.dll" vs.file.ngen=yes
