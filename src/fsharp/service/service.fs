@@ -1313,12 +1313,10 @@ type TypeCheckInfo
         let isDisposableTy (ty: TType) =
             protectAssemblyExplorationNoReraise false false (fun () -> Infos.ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_IDisposable)
 
-        let isStructTyconRef (tyconRef: TyconRef) =
-            let tyconRef =
-                match tyconRef.Deref.entity_tycon_repr with
-                | TMeasureableRepr (TType_app (tyconRef, _)) -> tyconRef
-                | _ -> tyconRef
-            isStructTy g (generalizedTyconRef tyconRef)
+        let isStructTyconRef (tyconRef: TyconRef) = 
+            let ty = generalizedTyconRef tyconRef
+            let underlyingTy = stripTyEqnsAndMeasureEqns g ty
+            isStructTy g underlyingTy
 
         resolutions
         |> Seq.choose (fun cnr ->
