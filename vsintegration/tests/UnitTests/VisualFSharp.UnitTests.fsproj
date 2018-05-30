@@ -99,8 +99,11 @@
     <Compile Include="UnusedOpensTests.fs">
       <Link>CompilerService\UnusedOpensTests.fs</Link>
     </Compile>
-    <Compile Include="ColorizationServiceTests.fs">
-      <Link>Roslyn\ColorizationServiceTests.fs</Link>
+    <Compile Include="SyntacticColorizationServiceTests.fs">
+      <Link>Roslyn\SyntacticColorizationServiceTests.fs</Link>
+    </Compile>
+    <Compile Include="SemanticColorizationServiceTests.fs">
+      <Link>Roslyn\SemanticColorizationServiceTests.fs</Link>
     </Compile>
     <Compile Include="BraceMatchingServiceTests.fs">
       <Link>Roslyn\BraceMatchingServiceTests.fs</Link>

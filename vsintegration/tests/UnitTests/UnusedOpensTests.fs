@@ -753,3 +753,56 @@ module M2 =
     let _ = T()
 """
     => []
+
+[<Test>]
+let ``unused open declaration in top level rec module``() =
+    """
+module rec TopModule
+open System
+open System.IO
+let _ = DateTime.Now
+"""
+    => [ 4, (5, 14) ]
+
+[<Test>]
+let ``unused open declaration in rec namespace``() =
+    """
+namespace rec TopNamespace
+open System
+open System.IO
+module Nested =
+    let _ = DateTime.Now
+"""
+    => [ 4, (5, 14) ]
+
+[<Test>]
+let ``unused inner module open declaration in rec module``() =
+    """
+module rec TopModule
+
+module Nested =
+    let x = 1
+    let f x = x
+    type T() = class end
+    type R = { F: int }
+
+open Nested
+"""
+    => [ 10, (5, 11) ]
+
+[<Test>]
+let ``used inner module open declaration in rec module``() =
+    """
+module rec TopModule
+
+module Nested =
+    let x = 1
+    let f x = x
+    type T() = class end
+    type R = { F: int }
+
+open Nested
+
+let _ = f 1
+"""
+    => []
