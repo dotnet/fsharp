@@ -17,13 +17,10 @@ val fileOfFileIndex : FileIndex -> string
 
 [<Struct; CustomEquality; NoComparison>]
 type pos =
+    val private line: int16
+    val private column: int16
     member Line : int
     member Column : int
-
-    member Encoding : int32
-    static member Decode : int32 -> pos
-    /// The maximum number of bits needed to store an encoded position 
-    static member EncodingSize : int32 
   
 /// Create a position for the given line and column
 val mkPos : line:int -> column:int -> pos
@@ -36,8 +33,9 @@ type range =
     member StartColumn : int
     member EndLine : int
     member EndColumn : int
-    member Start : pos
-    member End : pos
+    val Start : pos
+    val End : pos
+    val Code : int16
     member StartRange: range
     member EndRange: range
     member FileIndex : int
