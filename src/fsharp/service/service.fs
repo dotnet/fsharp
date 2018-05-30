@@ -1315,15 +1315,10 @@ type TypeCheckInfo
 
         let isStructTyconRef (tyconRef: TyconRef) =
             let tyconRef =
-                if tyconRef.CanDeref then
-                    match tyconRef.Deref.entity_tycon_repr with
-                    | TMeasureableRepr (TType_app (tyconRef, _)) -> tyconRef
-                    | _ -> tyconRef
-                else tyconRef
-                
-            match tyconRef.TypeAbbrev with
-            | Some ty -> isStructTy g ty
-            | _ -> tyconRef.IsStructOrEnumTycon
+                match tyconRef.Deref.entity_tycon_repr with
+                | TMeasureableRepr (TType_app (tyconRef, _)) -> tyconRef
+                | _ -> tyconRef
+            isStructTy g (generalizedTyconRef tyconRef)
 
         resolutions
         |> Seq.choose (fun cnr ->
