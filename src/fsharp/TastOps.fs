@@ -3809,13 +3809,14 @@ let accSubEntityRemap (msigty:ModuleOrNamespaceType) (entity:Entity) (mrpi, mhi)
         (mrpi, mhi) 
 
 let valLinkageAEquiv g aenv (v1:Val) (v2:Val) = 
-    (v1.LinkagePartialKey = v2.LinkagePartialKey) &&
+    (v1.GetLinkagePartialKey() = v2.GetLinkagePartialKey()) &&
     (if v1.IsMember && v2.IsMember then typeAEquivAux EraseAll g aenv v1.Type v2.Type else true)
     
 let accValRemap g aenv (msigty:ModuleOrNamespaceType) (implVal:Val) (mrpi, mhi) =
+    let implValKey = implVal.GetLinkagePartialKey()
     let sigValOpt = 
         msigty.AllValsAndMembersByPartialLinkageKey 
-          |> MultiMap.find implVal.LinkagePartialKey 
+          |> MultiMap.find implValKey
           |> List.tryFind (fun sigVal -> valLinkageAEquiv g aenv implVal sigVal)
           
     let vref = mkLocalValRef implVal
