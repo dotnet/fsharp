@@ -2096,7 +2096,7 @@ type ILResourceAccess =
 
 [<RequireQualifiedAccess>]
 type ILResourceLocation =
-    | LocalIn of string * int * int
+    | LocalIn of byte[]
     | LocalOut of byte[]
     | File of ILModuleRef * int32
     | Assembly of ILAssemblyRef
@@ -2111,8 +2111,7 @@ type ILResource =
     /// Read the bytes from a resource local to an assembly
     member r.GetBytes() = 
         match r.Location with
-        | ILResourceLocation.LocalIn (file, start, len) -> 
-            File.ReadBinaryChunk(file, start, len)
+        | ILResourceLocation.LocalIn bytes
         | ILResourceLocation.LocalOut bytes -> bytes
         | _ -> failwith "GetBytes"
 

@@ -3233,10 +3233,10 @@ and seekReadManifestResources (ctxt: ILMetadataReader) (mdv: BinaryView) (pectxt
              let location = 
                match scoref with
                | ILScopeRef.Local -> 
-                  let start = pectxtEager.anyV2P ("resource", offset + pectxtEager.resourcesAddr)
-                  let resourceLength = seekReadInt32 pevEager start
-                  let offsetOfBytesFromStartOfPhysicalPEFile = start + 4
-                  ILResourceLocation.LocalIn (ctxt.fileName, offsetOfBytesFromStartOfPhysicalPEFile, resourceLength)
+                    let start = pectxtEager.anyV2P ("resource", offset + pectxtEager.resourcesAddr)
+                    let resourceLength = seekReadInt32 pevEager start
+                    let offsetOfBytesFromStartOfPhysicalPEFile = start + 4
+                    ILResourceLocation.LocalIn (seekReadBytes (pectxtEager.pefile.GetView()) offsetOfBytesFromStartOfPhysicalPEFile resourceLength)
                | ILScopeRef.Module mref -> ILResourceLocation.File (mref, offset)
                | ILScopeRef.Assembly aref -> ILResourceLocation.Assembly aref
 

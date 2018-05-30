@@ -1381,7 +1381,7 @@ type ILResourceAccess =
 [<RequireQualifiedAccess>]
 type ILResourceLocation = 
     /// Represents a manifest resource that can be read from within the PE file
-    | LocalIn of string * int * int
+    | LocalIn of byte[]
 
     /// Represents a manifest resource that is due to be written to the output PE file
     | LocalOut of byte[]
