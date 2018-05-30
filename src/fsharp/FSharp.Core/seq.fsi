@@ -625,7 +625,7 @@ namespace Microsoft.FSharp.Collections
         ///
         /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
         [<CompiledName("Iterate")>]
-        val iter: action:('T -> unit) -> source:seq<'T> -> unit
+        val inline iter: action:('T -> unit) -> source:seq<'T> -> unit
 
         /// <summary>Applies the given function to each element of the collection. The integer passed to the
         /// function indicates the index of element.</summary>
