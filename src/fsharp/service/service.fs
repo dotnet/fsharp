@@ -1006,7 +1006,7 @@ type TypeCheckInfo
                             | Item.FakeInterfaceCtor (TType_app(tcref,_)) 
                             | Item.DelegateCtor (TType_app(tcref,_)) -> tcref.CompiledName
                             | Item.CtorGroup (_, (cinfo :: _)) ->
-                                (tcrefOfAppTy g cinfo.ApparentEnclosingType).CompiledName
+                                cinfo.ApparentEnclosingTyconRef.CompiledName
                             | _ -> d.Item.DisplayName)
 
                     // Filter out operators (and list)
