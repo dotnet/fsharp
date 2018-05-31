@@ -454,7 +454,6 @@ this file.
       </ItemGroup>
     </Target>
 
-
     <Target Name="RedirectTPReferenceToNewRedistributableLocation" BeforeTargets="ResolveAssemblyReferences">
       <PropertyGroup>
         <_OldRefAssemTPLocation>$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.0.0\Type Providers\FSharp.Data.TypeProviders.dll</_OldRefAssemTPLocation>
@@ -462,7 +461,7 @@ this file.
         <_OldSdkTPLocationSuffix>Framework\v4.0\FSharp.Data.TypeProviders.dll</_OldSdkTPLocationSuffix>
 
         <NewFSharpCompilerLocation Condition=" '$(NewFSharpCompilerLocation)' == '' ">$(MSBuildThisFileDirectory)</NewFSharpCompilerLocation>
-        <NewFSharpCompilerLocation Condition=" $(NewFSharpCompilerLocation.EndsWith('\\')) ">$(NewFSharpCompilerLocation)</NewFSharpCompilerLocation>
+        <NewFSharpCompilerLocation Condition=" !HasTrailingSlash('$(NewFSharpCompilerLocation)') ">$(NewFSharpCompilerLocation)\</NewFSharpCompilerLocation>
       </PropertyGroup>
 
       <ItemGroup>
