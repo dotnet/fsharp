@@ -49,8 +49,16 @@ type internal FSharpEditorFormattingService
                     x.Tag <> FSharpTokenTag.COMMENT &&
                     x.Tag <> FSharpTokenTag.LINE_COMMENT)
 
-            let! (left, right) =
-                FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, filePath, parsingOptions, position, "FormattingService")
+            let! matchedBraces = checker.MatchBraces(filePath, sourceText.ToString(), parsingOptions, "FormattingService") |> liftAsync
+            
+            let isPositionInRange range = 
+                match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
+                | None -> false
+                | Some span -> 
+                    let length = position - span.Start
+                    length >= 0 && length <= span.Length
+
+            let! left, right = matchedBraces |> Array.tryFind(fun (left, right) -> isPositionInRange left || isPositionInRange right)
 
             if right.StartColumn = firstMeaningfulToken.LeftColumn then
                 // Replace the indentation on this line with the indentation of the left bracket
