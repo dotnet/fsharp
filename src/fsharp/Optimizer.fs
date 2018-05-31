@@ -134,14 +134,15 @@ type ValInfos(entries) =
         lazy (
             let dict = Dictionary<_, _>()
             for (vref, _x) as p in entries do 
-                dict.Add(vref.Deref.LinkagePartialKey, p) |> ignore
+                let vkey = vref.Deref.GetLinkagePartialKey()
+                dict.Add(vkey, p) |> ignore
             dict)
 
     member x.Entries = valInfoTable.Force().Values
     member x.Map f = ValInfos(Seq.map f x.Entries)
     member x.Filter f = ValInfos(Seq.filter f x.Entries)
     member x.TryFind (v:ValRef) = valInfoTable.Force().TryFind v.Deref
-    member x.TryFindForFslib (v:ValRef) = valInfosForFslib.Force().TryGetValue(v.Deref.LinkagePartialKey)
+    member x.TryFindForFslib (v:ValRef) = valInfosForFslib.Force().TryGetValue(v.Deref.GetLinkagePartialKey())
 
 type ModuleInfo = 
     { ValInfos: ValInfos

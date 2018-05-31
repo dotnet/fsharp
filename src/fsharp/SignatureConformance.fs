@@ -551,9 +551,11 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                        Printf.bprintf os "%s" fx.DisplayName),m))
             
             let valuesPartiallyMatch (av:Val) (fv:Val) =
-                (av.LinkagePartialKey.MemberParentMangledName = fv.LinkagePartialKey.MemberParentMangledName) &&
-                (av.LinkagePartialKey.LogicalName = fv.LinkagePartialKey.LogicalName) &&
-                (av.LinkagePartialKey.TotalArgCount = fv.LinkagePartialKey.TotalArgCount)    
+                let akey = av.GetLinkagePartialKey()
+                let fkey = fv.GetLinkagePartialKey()
+                (akey.MemberParentMangledName = fkey.MemberParentMangledName) &&
+                (akey.LogicalName = fkey.LogicalName) &&
+                (akey.TotalArgCount = fkey.TotalArgCount)    
                                        
             (implModType.AllValsAndMembersByLogicalNameUncached, signModType.AllValsAndMembersByLogicalNameUncached)
               ||> NameMap.suball2 

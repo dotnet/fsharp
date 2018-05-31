@@ -1011,14 +1011,14 @@ and /// Represents a type definition, exception definition, module definition or
     member x.FSharpObjectModelTypeInfo = 
          match x.TypeReprInfo with 
          | TFSharpObjectRepr x -> x 
-         |  _ -> assert false; failwith "not an F# object model type definition"
+         |  _ -> failwith "not an F# object model type definition"
 
     /// Indicate if this is a type definition backed by Abstract IL metadata.
     member x.IsILTycon = match x.TypeReprInfo with | TILObjectRepr _ -> true |  _ -> false
 
     /// Get the Abstract IL scope, nesting and metadata for this 
     /// type definition, assuming it is backed by Abstract IL metadata.
-    member x.ILTyconInfo = match x.TypeReprInfo with | TILObjectRepr data -> data |  _ -> assert false; failwith "not a .NET type definition"
+    member x.ILTyconInfo = match x.TypeReprInfo with | TILObjectRepr data -> data |  _ -> failwith "not a .NET type definition"
 
     /// Get the Abstract IL metadata for this type definition, assuming it is backed by Abstract IL metadata.
     member x.ILTyconRawMetadata = let (TILObjectReprData(_,_,td)) = x.ILTyconInfo in td
@@ -1430,7 +1430,7 @@ and
 
     member info.BaseTypeForErased (m,objTy) = 
        if info.IsErased then info.LazyBaseType.Force (m,objTy) 
-       else assert false; failwith "expect erased type"
+       else failwith "expect erased type"
 
     override x.ToString() = "TProvidedTypeInfo(...)"
 
@@ -1828,7 +1828,8 @@ and [<Sealed>] ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueLis
     member mtyp.AllValsAndMembersByPartialLinkageKey = 
         let addValByMangledName (x:Val) tab = 
            if x.IsCompiledAsTopLevel then
-               MultiMap.add x.LinkagePartialKey x tab 
+               let key = x.GetLinkagePartialKey()
+               MultiMap.add key x tab 
            else
                tab
         cacheOptRef allValsAndMembersByPartialLinkageKeyCache (fun () -> 
@@ -2502,7 +2503,7 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     member x.IsCompiledAsTopLevel       = x.ValReprInfo.IsSome 
 
     /// The partial information used to index the methods of all those in a ModuleOrNamespace.
-    member x.LinkagePartialKey : ValLinkagePartialKey = 
+    member x.GetLinkagePartialKey() : ValLinkagePartialKey = 
         assert x.IsCompiledAsTopLevel
         { LogicalName = x.LogicalName 
           MemberParentMangledName = (if x.IsMember then Some x.MemberApparentEntity.LogicalName else None)
@@ -2510,10 +2511,10 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
           TotalArgCount = if x.IsMember then x.ValReprInfo.Value.TotalArgCount else 0 }
 
     /// The full information used to identify a specific overloaded method amongst all those in a ModuleOrNamespace.
-    member x.LinkageFullKey : ValLinkageFullKey = 
+    member x.GetLinkageFullKey() : ValLinkageFullKey = 
         assert x.IsCompiledAsTopLevel
-        ValLinkageFullKey(x.LinkagePartialKey, (if x.IsMember then Some x.Type else None))
-
+        let key = x.GetLinkagePartialKey()
+        ValLinkageFullKey(key, (if x.IsMember then Some x.Type else None))
 
     /// Is this a member definition or module definition?
     member x.IsMemberOrModuleBinding    = x.val_flags.IsMemberOrModuleBinding
@@ -2697,7 +2698,7 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
         | Parent eref -> 
             match eref.PublicPath with 
             | None -> None
-            | Some p -> Some(ValPubPath(p,x.LinkageFullKey))
+            | Some p -> Some(ValPubPath(p,x.GetLinkageFullKey()))
         | ParentNone -> 
             None
 
@@ -5041,7 +5042,9 @@ let mkNonLocalCcuRootEntityRef ccu (x:Entity) = mkNonLocalTyconRefPreResolved x 
 let mkNestedValRef  (cref:EntityRef) (v:Val) : ValRef = 
     match cref with 
     | ERefLocal _ -> mkLocalValRef v
-    | ERefNonLocal nlr -> mkNonLocalValRefPreResolved v nlr v.LinkageFullKey
+    | ERefNonLocal nlr -> 
+        let key = v.GetLinkageFullKey()
+        mkNonLocalValRefPreResolved v nlr key
 
 /// From Ref_private to Ref_nonlocal when exporting data.
 let rescopePubPathToParent viewedCcu (PubPath(p)) = NonLocalEntityRef(viewedCcu, p.[0..p.Length-2])
