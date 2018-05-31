@@ -5,6 +5,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System.ComponentModel.Composition
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open System.Runtime.InteropServices
 
 [<ExportBraceMatcher(FSharpConstants.FSharpLanguageName)>]
 type internal FSharpBraceMatchingService 
@@ -16,13 +17,18 @@ type internal FSharpBraceMatchingService
     
     static let defaultUserOpName = "BraceMatching"
 
-    static member GetBraceMatchingResult(checker: FSharpChecker, sourceText, fileName, parsingOptions: FSharpParsingOptions, position: int, userOpName: string) = 
+    static member GetBraceMatchingResult(checker: FSharpChecker, sourceText, fileName, parsingOptions: FSharpParsingOptions, position: int, userOpName: string, [<Optional; DefaultParameterValue(false)>] forFormatting: bool) = 
         async {
             let! matchedBraces = checker.MatchBraces(fileName, sourceText.ToString(), parsingOptions, userOpName)
             let isPositionInRange range = 
                 match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
                 | None -> false
-                | Some span -> span.Contains position
+                | Some span ->
+                    if forFormatting then
+                        let length = position - span.Start
+                        length >= 0 && length <= span.Length
+                    else
+                        span.Contains position
             return matchedBraces |> Array.tryFind(fun (left, right) -> isPositionInRange left || isPositionInRange right)
         }
         
