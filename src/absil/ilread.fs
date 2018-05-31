@@ -3231,14 +3231,18 @@ and seekReadManifestResources (ctxt: ILMetadataReader) (mdv: BinaryView) (pectxt
              let scoref = seekReadImplAsScopeRef ctxt mdv implIdx
 
              let location = 
-               match scoref with
-               | ILScopeRef.Local -> 
-                  let start = pectxtEager.anyV2P ("resource", offset + pectxtEager.resourcesAddr)
-                  let resourceLength = seekReadInt32 pevEager start
-                  let offsetOfBytesFromStartOfPhysicalPEFile = start + 4
-                  ILResourceLocation.LocalIn (ctxt.fileName, offsetOfBytesFromStartOfPhysicalPEFile, resourceLength)
-               | ILScopeRef.Module mref -> ILResourceLocation.File (mref, offset)
-               | ILScopeRef.Assembly aref -> ILResourceLocation.Assembly aref
+                match scoref with
+                | ILScopeRef.Local ->
+                    let start = pectxtEager.anyV2P ("resource", offset + pectxtEager.resourcesAddr)
+                    let resourceLength = seekReadInt32 pevEager start
+                    let offsetOfBytesFromStartOfPhysicalPEFile = start + 4
+                    if pectxtEager.noFileOnDisk then
+                        ILResourceLocation.LocalOut (seekReadBytes pevEager offsetOfBytesFromStartOfPhysicalPEFile resourceLength)                     
+                    else
+                        ILResourceLocation.LocalIn (ctxt.fileName, offsetOfBytesFromStartOfPhysicalPEFile, resourceLength)
+
+                | ILScopeRef.Module mref -> ILResourceLocation.File (mref, offset)
+                | ILScopeRef.Assembly aref -> ILResourceLocation.Assembly aref
 
              let r = 
                { Name= readStringHeap ctxt nameIdx
