@@ -455,7 +455,7 @@ this file.
     </Target>
 
 
-    <Target Name="RedirectTPReferenceToNewRedistributableLocation" BeforeTargets="RedirectFSharpCoreReferenceToNewRedistributableLocation">
+    <Target Name="RedirectTPReferenceToNewRedistributableLocation" BeforeTargets="ResolveAssemblyReferences">
       <PropertyGroup>
         <_OldRefAssemTPLocation>$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.0.0\Type Providers\FSharp.Data.TypeProviders.dll</_OldRefAssemTPLocation>
         <_OldSdkTPLocationPrefix>$(MSBuildProgramFiles32)\Microsoft SDKs\F#</_OldSdkTPLocationPrefix>
