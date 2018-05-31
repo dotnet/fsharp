@@ -451,25 +451,26 @@ this file.
       </ItemGroup>
     </Target>
 
+
     <Target Name="RedirectTPReferenceToNewRedistributableLocation" BeforeTargets="RedirectFSharpCoreReferenceToNewRedistributableLocation">
       <PropertyGroup>
-        <_OldRefAssemTPLocation>$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.0.0\Type Providers</_OldRefAssemTPLocation>
+        <_OldRefAssemTPLocation>$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.0.0\Type Providers\FSharp.Data.TypeProviders.dll</_OldRefAssemTPLocation>
         <_OldSdkTPLocation>Framework\v4.0\FSharp.Data.TypeProviders.dll</_OldSdkTPLocation>
 
-        <NewFSharpSdkLocation Condition=" '$(NewFSharpSdkLocation)' == '' ">$(VsInstallRoot)\Common7\IDE\CommonExtensions\Microsoft\FSharpSdk</NewFSharpSdkLocation>
+        <NewFSharpCompilerLocation Condition=" '$(NewFSharpCompilerLocation)' == '' ">$(MSBuildThisFileDirectory)</NewFSharpCompilerLocation>
       </PropertyGroup>
 
       <ItemGroup>
         <!-- Update references to FSharp.Data.TypeProviders.dll -->
         <Reference Condition="'%(Reference.Identity)' == 'FSharp.Data.TypeProviders' and
-                              '%(Reference.HintPath)' == '$(_OldTPSDkLocation)\FSharp.Data.TypeProviders.dll'">
-          <HintPath>$(NewFSharpSdkLocation)\FSharp.Data.TypeProviders.dll</HintPath>
+                              '%(Reference.HintPath)' == '$(_OldRefAssemTPLocation)'">
+          <HintPath>$(NewFSharpCompilerLocation)\FSharp.Data.TypeProviders.dll</HintPath>
         </Reference>
 
         <!-- Update references to FSharp.Data.TypeProviders.dll -->
         <Reference Condition="'%(Reference.Identity)' == 'FSharp.Data.TypeProviders' and
-                              '%(Reference.HintPath.EndsWith($(_OldSdkTPLocation), System.StringComparison.OrdinalIgnoreCase))'">
-          <HintPath>$(NewFSharpSdkLocation)\FSharp.Data.TypeProviders.dll</HintPath>
+                               $([System.String]::new('%(Reference.HintPath)').Endswith('$(_OldSdkTPLocation)', System.StringComparison.OrdinalIgnoreCase)) ">
+          <HintPath>$(NewFSharpCompilerLocation)\FSharp.Data.TypeProviders.dll</HintPath>
         </Reference>
 
       </ItemGroup>
