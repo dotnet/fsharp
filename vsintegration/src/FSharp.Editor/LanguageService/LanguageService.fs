@@ -344,6 +344,7 @@ type internal FSharpCheckerWorkspaceServiceFactory
 [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsscript")>]
 [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".ml")>]
 [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".mli")>]
+[<ProvideBraceCompletion(FSharpConstants.FSharpLanguageName)>]
 [<ProvideLanguageService(languageService = typeof<FSharpLanguageService>,
                             strLanguageName = FSharpConstants.FSharpLanguageName,
                             languageResourceID = 100,
@@ -383,6 +384,7 @@ type internal FSharpPackage() as this =
         Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitalizeSited (this :> Package) commandService
         // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
         let _fsiPropertyPage = this.GetDialogPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>)
+
         ()
 
     override this.RoslynLanguageName = FSharpConstants.FSharpLanguageName
@@ -433,7 +435,6 @@ type internal FSharpLanguageService(package : FSharpPackage) =
 
     override this.Initialize() = 
         base.Initialize()
-
 
         let workspaceChanged (args:WorkspaceChangeEventArgs) =
             match args.Kind with
