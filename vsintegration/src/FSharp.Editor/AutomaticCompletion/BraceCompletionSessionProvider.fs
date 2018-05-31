@@ -22,16 +22,6 @@ open Microsoft.CodeAnalysis.Classification
 [<AutoOpen>]
 module BraceCompletionSessionProviderHelpers =
 
-    let tryGetLanguageService<'T when 'T :> ILanguageService and 'T : null> (document: Document) =
-        match document.Project with
-        | null -> None
-        | project ->
-            match project.LanguageServices with
-            | null -> None
-            | languageServices ->
-                languageServices.GetService<'T>()
-                |> Some
-
     let tryGetCaretPoint (buffer: ITextBuffer) (session: IBraceCompletionSession) =
         let point = session.TextView.Caret.Position.Point.GetPoint(buffer, PositionAffinity.Predecessor)
         if point.HasValue then Some point.Value
@@ -94,6 +84,10 @@ type BraceCompletionSession
         undoHistory.CreateTransaction(BraceCompletion)
 
     member this.Start (cancellationToken: CancellationToken) =
+        // Sanity check.
+        if closingPoint = null then this.EndSession()
+        else
+
         // this is where the caret should go after the change
         let pos = textView.Caret.Position.BufferPosition
         let beforeTrackingPoint = pos.Snapshot.CreateTrackingPoint(pos.Position, PointTrackingMode.Negative)
@@ -534,7 +528,7 @@ type BraceCompletionSessionProvider
             session <-
                 maybe {
                     let! document =       openingPoint.Snapshot.GetOpenDocumentInCurrentContextWithChanges() |> Option.ofObj
-                    let! sessionFactory = tryGetLanguageService<IEditorBraceCompletionSessionFactory> document
+                    let! sessionFactory = document.TryGetLanguageService<IEditorBraceCompletionSessionFactory>()
                     let! session =        sessionFactory.TryCreateSession(document, openingPoint.Position, openingBrace, CancellationToken.None) |> Option.ofObj
 
                     let undoHistory = undoManager.GetTextBufferUndoManager(textView.TextBuffer).TextBufferUndoHistory
@@ -550,6 +544,4 @@ type BraceCompletionSessionProvider
                 }
                 |> Option.toObj
 
-            match session with
-            | null -> false
-            | _ -> true
+            session <> null
