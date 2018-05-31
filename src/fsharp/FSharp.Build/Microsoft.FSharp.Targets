@@ -401,7 +401,6 @@ this file.
     </Target>
 
     <!--
-
     The old reference assemblies are no longer installed to `Program Files (x86)\Reference Assemblies\Microsoft\FSharp`.
 
     To avoid breaking legacy projects the hint path for FSharp.Core will be rewritten if and only if the existing hint
@@ -411,7 +410,8 @@ this file.
     <Target Name="RedirectFSharpCoreReferenceToNewRedistributableLocation" BeforeTargets="ResolveAssemblyReferences">
       <PropertyGroup>
         <_OldRootSdkLocation>$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\FSharp</_OldRootSdkLocation>
-        <_NewRootSdkLocation>$(VsInstallRoot)\Common7\IDE\CommonExtensions\Microsoft\FSharpSdk</_NewRootSdkLocation>
+
+        <NewFSharpSdkLocation Condition=" '$(NewFSharpSdkLocation)' == '' ">$(VsInstallRoot)\Common7\IDE\CommonExtensions\Microsoft\FSharpSdk</NewFSharpSdkLocation>
 
         <_CoreRelativeSuffix>.NETCore\$(TargetFSharpCoreVersion)\FSharp.Core.dll</_CoreRelativeSuffix>
         <_FrameworkRelativeSuffix>.NETFramework\v4.0\$(TargetFSharpCoreVersion)\FSharp.Core.dll</_FrameworkRelativeSuffix>
@@ -419,38 +419,59 @@ this file.
 
         <!-- .NETCore -->
         <_OldCoreSdkPath>$(_OldRootSdkLocation)\$(_CoreRelativeSuffix)</_OldCoreSdkPath>
-        <_NewCoreSdkPath>$(_NewRootSdkLocation)\$(_CoreRelativeSuffix)</_NewCoreSdkPath>
+        <_NewCoreSdkPath>$(NewFSharpSdkLocation)\$(_CoreRelativeSuffix)</_NewCoreSdkPath>
 
         <!-- .NETFramework\v4.0 -->
         <_OldFrameworkSdkPath>$(_OldRootSdkLocation)\$(_FrameworkRelativeSuffix)</_OldFrameworkSdkPath>
-        <_NewFrameworkSdkPath>$(_NewRootSdkLocation)\$(_FrameworkRelativeSuffix)</_NewFrameworkSdkPath>
+        <_NewFrameworkSdkPath>$(NewFSharpSdkLocation)\$(_FrameworkRelativeSuffix)</_NewFrameworkSdkPath>
 
         <!-- .NETPortable -->
         <_OldPortableSdkPath>$(_OldRootSdkLocation)\$(_PortableRelativeSuffix)</_OldPortableSdkPath>
-        <_NewPortableSdkPath>$(_NewRootSdkLocation)\$(_PortableRelativeSuffix)</_NewPortableSdkPath>
+        <_NewPortableSdkPath>$(NewFSharpSdkLocation)\$(_PortableRelativeSuffix)</_NewPortableSdkPath>
       </PropertyGroup>
 
       <ItemGroup>
         <!-- Update references to `.NETCore\*\FSharp.Core.dll`. -->
         <Reference Condition="'%(Reference.Identity)' == 'FSharp.Core' and
-                              '%(Reference.HintPath)' == '$(_OldCoreSdkPath)' and
-                              Exists('$(_NewCoreSdkPath)')">
+                              '%(Reference.HintPath)' == '$(_OldCoreSdkPath)'">
           <HintPath>$(_NewCoreSdkPath)</HintPath>
         </Reference>
 
         <!-- Update references to `.NETFramework\v4.0\*\FSharp.Core.dll`. -->
         <Reference Condition="'%(Reference.Identity)' == 'FSharp.Core' and
-                              '%(Reference.HintPath)' == '$(_OldFrameworkSdkPath)' and
-                              Exists('$(_NewFrameworkSdkPath)')">
+                              '%(Reference.HintPath)' == '$(_OldFrameworkSdkPath)'">
           <HintPath>$(_NewFrameworkSdkPath)</HintPath>
         </Reference>
 
         <!-- Update references to `.Portable\*\FSharp.Core.dll`. -->
         <Reference Condition="'%(Reference.Identity)' == 'FSharp.Core' and
-                              '%(Reference.HintPath)' == '$(_OldPortableSdkPath)' and
-                              Exists('$(_NewPortableSdkPath)')">
+                              '%(Reference.HintPath)' == '$(_OldPortableSdkPath)'">
           <HintPath>$(_NewPortableSdkPath)</HintPath>
         </Reference>
+      </ItemGroup>
+    </Target>
+
+    <Target Name="RedirectTPReferenceToNewRedistributableLocation" BeforeTargets="RedirectFSharpCoreReferenceToNewRedistributableLocation">
+      <PropertyGroup>
+        <_OldRefAssemTPLocation>$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.0.0\Type Providers</_OldRefAssemTPLocation>
+        <_OldSdkTPLocation>Framework\v4.0\FSharp.Data.TypeProviders.dll</_OldSdkTPLocation>
+
+        <NewFSharpSdkLocation Condition=" '$(NewFSharpSdkLocation)' == '' ">$(VsInstallRoot)\Common7\IDE\CommonExtensions\Microsoft\FSharpSdk</NewFSharpSdkLocation>
+      </PropertyGroup>
+
+      <ItemGroup>
+        <!-- Update references to FSharp.Data.TypeProviders.dll -->
+        <Reference Condition="'%(Reference.Identity)' == 'FSharp.Data.TypeProviders' and
+                              '%(Reference.HintPath)' == '$(_OldTPSDkLocation)\FSharp.Data.TypeProviders.dll'">
+          <HintPath>$(NewFSharpSdkLocation)\FSharp.Data.TypeProviders.dll</HintPath>
+        </Reference>
+
+        <!-- Update references to FSharp.Data.TypeProviders.dll -->
+        <Reference Condition="'%(Reference.Identity)' == 'FSharp.Data.TypeProviders' and
+                              '%(Reference.HintPath.EndsWith($(_OldSdkTPLocation), System.StringComparison.OrdinalIgnoreCase))'">
+          <HintPath>$(NewFSharpSdkLocation)\FSharp.Data.TypeProviders.dll</HintPath>
+        </Reference>
+
       </ItemGroup>
     </Target>
 
