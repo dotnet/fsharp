@@ -1225,7 +1225,9 @@ type TypeCheckInfo
                       //Item.Value(vref)
                       None
 
-                  | Item.Types (_, [AppTy g (tr, _)]) when not tr.IsLocalRef ->
+                  | Item.Types (_, TType_app (tr, _) :: _) when tr.IsLocalRef && tr.IsTypeAbbrev -> None
+
+                  | Item.Types (_, [ AppTy g (tr, _) ]) when not tr.IsLocalRef ->
                       match tr.TypeReprInfo, tr.PublicPath with
                       | TILObjectRepr(TILObjectReprData (ILScopeRef.Assembly assref, _, _)), Some (PubPath parts) ->
                           let fullName = parts |> String.concat "."

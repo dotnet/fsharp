@@ -98,16 +98,21 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
     member __.FindDefinitionOfSymbolAtRange(targetDocument: Document, symbolRange: range, targetSourceText: SourceText) =
         findSymbolHelper (targetDocument, symbolRange, targetSourceText, false)
     
-    /// use the targetSymbol to find the first instance of its presence in the provided source file
+    /// if the symbol is defined in the given file, ruturn it's declaration location, othewise use the targetSymbol to find the first 
+    /// instance of its presence in the provided source file. The first case is needed to return proper declaration location for
+    /// recursive type definitions, where the first its usage may not be the declaration.
     member __.FindSymbolDeclarationInFile(targetSymbolUse: FSharpSymbolUse, filePath: string, source: string, options: FSharpProjectOptions, fileVersion:int) = 
         asyncMaybe {
-            let! _, checkFileAnswer = checker.ParseAndCheckFileInProject (filePath, fileVersion, source, options, userOpName = userOpName) |> liftAsync
-            match checkFileAnswer with 
-            | FSharpCheckFileAnswer.Aborted -> return! None
-            | FSharpCheckFileAnswer.Succeeded checkFileResults ->
-                let! symbolUses = checkFileResults.GetUsesOfSymbolInFile targetSymbolUse.Symbol |> liftAsync
-                let! implSymbol  = symbolUses |> Array.tryHead 
-                return implSymbol.RangeAlternate
+            match targetSymbolUse.Symbol.DeclarationLocation with
+            | Some decl when decl.FileName = filePath -> return decl
+            | _ ->
+                let! _, checkFileAnswer = checker.ParseAndCheckFileInProject (filePath, fileVersion, source, options, userOpName = userOpName) |> liftAsync
+                match checkFileAnswer with 
+                | FSharpCheckFileAnswer.Aborted -> return! None
+                | FSharpCheckFileAnswer.Succeeded checkFileResults ->
+                    let! symbolUses = checkFileResults.GetUsesOfSymbolInFile targetSymbolUse.Symbol |> liftAsync
+                    let! implSymbol  = symbolUses |> Array.tryHead 
+                    return implSymbol.RangeAlternate
         }
 
 type private StatusBar(statusBar: IVsStatusbar) =
