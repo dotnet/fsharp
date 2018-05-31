@@ -40,6 +40,7 @@
     <Compile Include="Options\SettingsPersistence.fs" />
     <Compile Include="Options\UIHelpers.fs" />
     <Compile Include="Options\EditorOptions.fs" />
+    <Compile Include="LanguageService\ProvideBraceCompletionAttribute.fs" />
     <Compile Include="LanguageService\FSharpEditorFactory.fs" />
     <Compile Include="LanguageService\TextViewCreationListener.fs" />
     <Compile Include="LanguageService\Tokenizer.fs" />
@@ -150,7 +151,7 @@
     <PackageReference Include="Microsoft.VisualStudio.Text.UI" Version="$(MicrosoftVisualStudioTextUIPackageVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.Text.UI.Wpf" Version="$(MicrosoftVisualStudioTextUIWpfPackageVersion)" />
     <PackageReference Include="Microsoft.VisualStudio.TextManager.Interop" Version="$(MicrosoftVisualStudioTextManagerInteropPackageVersion)" />
-    <PackageReference Include="Microsoft.VisualStudio.TextManager.Interop.8.0" Version="$(MicrosoftVisualStudioTextManagerInterop80PackageVersion)" />
+    <PackageReference Include="Microsoft.VisualStudio.TextManager.Interop.12.0" Version="$(MicrosoftVisualStudioTextManagerInterop120PackageVersion)" />
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="$(MicrosoftVSSDKBuildToolsPackageVersion)" ExcludeAssets="all" />
     <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonPackageVersion)" />
     <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutablePackageVersion)" />
