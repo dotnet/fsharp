@@ -6,6 +6,8 @@
       "values": [
         "insertion\\Microsoft.FSharp.Compiler.vsix",
         "insertion\\Microsoft.FSharp.Compiler.Resources.*.vsix",
+        "insertion\\Microsoft.FSharp.Dependencies.vsix",
+        "insertion\\Microsoft.FSharp.IDE.vsix",
         "insertion\\Microsoft.FSharp.SDK.vsix"
       ]
     }
