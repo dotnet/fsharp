@@ -2,7 +2,6 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System
 open System.ComponentModel.Composition
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.FSharp.Compiler.SourceCodeServices
@@ -14,7 +13,6 @@ type internal FSharpBraceMatchingService
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: FSharpProjectOptionsManager
     ) =
-
     
     static let defaultUserOpName = "BraceMatching"
 
