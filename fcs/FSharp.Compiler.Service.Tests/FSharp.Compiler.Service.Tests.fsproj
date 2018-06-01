@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\src</FSharpSourcesRoot>
   </PropertyGroup>
@@ -25,6 +25,9 @@
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\Common.fs">
       <Link>Common.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\AssemblyReaderShim.fs">
+      <Link>AssemblyReaderShim.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\EditorTests.fs">
       <Link>EditorTests.fs</Link>
