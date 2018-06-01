@@ -465,6 +465,17 @@ this file.
       </PropertyGroup>
 
       <ItemGroup>
+        <!-- Issue warning message if there is an inbox TypeProvider referenced.-->
+        <ReferenceToInboxTP Include="@(Reference)"
+                            Condition="'%(Reference.Identity)' == 'FSharp.Data.TypeProviders' and
+                                       '%(Reference.HintPath)' == '$(_OldRefAssemTPLocation)' and
+                                       Exists('$(NewFSharpCompilerLocation)FSharp.Data.TypeProviders.dll')" />
+        <ReferenceToInboxTP Include="@(Reference)"
+                            Condition="'%(Reference.Identity)' == 'FSharp.Data.TypeProviders' and
+                                       $([System.String]::new('%(Reference.HintPath)').StartsWith('$(_OldSdkTPLocationPrefix)', System.StringComparison.OrdinalIgnoreCase)) and
+                                       $([System.String]::new('%(Reference.HintPath)').EndsWith('$(_OldSdkTPLocationSuffix)', System.StringComparison.OrdinalIgnoreCase)) and
+                                       Exists('$(NewFSharpCompilerLocation)FSharp.Data.TypeProviders.dll')" />
+
         <!-- Update references to FSharp.Data.TypeProviders.dll -->
         <Reference Condition="'%(Reference.Identity)' == 'FSharp.Data.TypeProviders' and
                               '%(Reference.HintPath)' == '$(_OldRefAssemTPLocation)' and
@@ -480,10 +491,11 @@ this file.
 
           <HintPath>$(NewFSharpCompilerLocation)FSharp.Data.TypeProviders.dll</HintPath>
         </Reference>
-
       </ItemGroup>
+      <Warning
+          Text="This Project references the obsolete in-box TypeProvider: FSharp.Data.TypeProviders.dll.  Consider Switching to the Nuget package version: https://www.nuget.org/packages/FSharp.Data.TypeProviders."
+          Condition=" '@(ReferenceToInboxTP->Count())' != '0' " />
     </Target>
 
     <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\$(MSBuildThisFile)\ImportAfter\*" Condition="'$(ImportByWildcardAfterMicrosoftFSharpTargets)' == 'true' and exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\$(MSBuildThisFile)\ImportAfter')"/>
-
 </Project>
