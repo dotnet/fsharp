@@ -579,22 +579,7 @@ type TypeCheckInfo
             | Item.Value _ -> CompletionItemKind.Field
             | _ -> CompletionItemKind.Other
 
-        let getNamespace (idents: Idents) = 
-            if idents.Length > 1 then Some idents.[..idents.Length - 2] else None
-
-        let unresolved =
-            unresolvedEntity
-            |> Option.map (fun x ->
-                let ns = 
-                    x.TopRequireQualifiedAccessParent 
-                    |> Option.bind getNamespace 
-                    |> Option.orElseWith (fun () -> getNamespace x.CleanedIdents)
-                    |> Option.defaultValue [||]
-
-                let displayName = x.CleanedIdents |> Array.skip ns.Length |> String.concat "."
-                
-                { DisplayName = displayName
-                  Namespace = ns })
+        
 
         { FullName = unresolvedEntity |> Option.map (fun x -> x.FullName)
           ItemWithInst = item

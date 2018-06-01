@@ -828,10 +828,11 @@ module internal SymbolHelpers =
          | Item.Types(it, [ty]) -> 
              g.suppressed_types 
              |> List.exists (fun supp -> 
-                if isAppTy g ty && isAppTy g (generalizedTyconRef supp) then 
+                let generalizedSupp = generalizedTyconRef supp
+                if isAppTy g ty && isAppTy g generalizedSupp then 
                   // check if they are the same logical type (after removing all abbreviations)
                   let tcr1 = tcrefOfAppTy g ty
-                  let tcr2 = tcrefOfAppTy g (generalizedTyconRef supp) 
+                  let tcr2 = tcrefOfAppTy g generalizedSupp
                   tyconRefEq g tcr1 tcr2 && 
                   // check the display name is precisely the one we're suppressing
                   it = supp.DisplayName
