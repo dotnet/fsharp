@@ -9264,7 +9264,7 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
         | _ ->
             // Instance F# Anonymous Record 
             let objExpr' = mkAnonRecdFieldGet cenv.g (anonInfo,objExpr,tinst,n,mExprAndItem)
-            PropagateThenTcDelayed cenv overallTy env tpenv mExprAndItem (MakeApplicableExprWithFlex cenv env objExpr') fieldTy ExprAtomicFlag.Atomic delayed 
+            PropagateThenTcDelayed cenv overallTy env tpenv mExprAndItem (MakeApplicableExprWithFlex cenv env false objExpr') fieldTy ExprAtomicFlag.Atomic delayed 
         
     | Item.ILField finfo -> 
         // Get or set instance IL field 

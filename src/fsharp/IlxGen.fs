@@ -7114,7 +7114,7 @@ let GenerateCode (cenv, anonTypeTable, eenv, TypedAssemblyAfterOptimization file
     let ilNetModuleAttrs = GenAttrs cenv eenv moduleAttribs
 
     let casApplied = new Dictionary<Stamp, bool>()
-    let securityAttrs, topAssemblyAttrs = assemAttribs |> List.partition (fun a -> TypeChecker.IsSecurityAttribute cenv.g cenv.amap casApplied a rangeStartup)
+    let securityAttrs, topAssemblyAttrs = assemAttribs |> List.partition (fun a -> IsSecurityAttribute cenv.g cenv.amap casApplied a rangeStartup)
     // remove any security attributes from the top-level assembly attribute list
     let permissionSets = CreatePermissionSets cenv eenv securityAttrs
 
