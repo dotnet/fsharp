@@ -6518,7 +6518,7 @@
         <note />
       </trans-unit>
       <trans-unit id="chkNoByrefReturnOfLocal">
-        <source>The address of the variable '{0}' cannot be used at this point. A method or function may not return the address of this local value.</source>
+        <source>The address of the variable '{0}' cannot be used at this point. The address of this local value may not be passed to a call returning a byref-like type which is then subsequently returned from this method or function. This is to ensure the address of the local value does not esacape its scope. .</source>
         <target state="translated">지금은 '{0}' 변수의 주소를 사용할 수 없습니다. 메서드 또는 함수가 이 로컬 값의 주소를 반환할 수 없습니다.</target>
         <note />
       </trans-unit>

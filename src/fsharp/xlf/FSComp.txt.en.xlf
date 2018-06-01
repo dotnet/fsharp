@@ -6518,8 +6518,8 @@
         <note />
       </trans-unit>
       <trans-unit id="chkNoByrefReturnOfLocal">
-        <source>The address of the variable '{0}' cannot be used at this point. A method or function may not return the address of this local value.</source>
-        <target state="new">The address of the variable '{0}' cannot be used at this point. A method or function may not return the address of this local value.</target>
+        <source>The address of the variable '{0}' cannot be used at this point. The address of this local value may not be passed to a call returning a byref-like type which is then subsequently returned from this method or function. This is to ensure the address of the local value does not esacape its scope. .</source>
+        <target state="new">The address of the variable '{0}' cannot be used at this point. The address of this local value may not be passed to a call returning a byref-like type which is then subsequently returned from this method or function. This is to ensure the address of the local value does not esacape its scope. .</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNamedActivePattern">

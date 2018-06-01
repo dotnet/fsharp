@@ -8400,8 +8400,17 @@ and TcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag:ExprAtomicF
     // f<tyargs> 
     | DelayedTypeApp (_, mTypeArgs, _mExprAndTypeArgs) :: _ ->
         error(Error(FSComp.SR.tcUnexpectedTypeArguments(), mTypeArgs))
-    | DelayedSet _ :: _ ->      
-        error(Error(FSComp.SR.tcInvalidAssignment(), mExpr))
+    | DelayedSet (synExpr2, mStmt) :: otherDelayed ->      
+        if not (isNil otherDelayed) then error(Error(FSComp.SR.tcInvalidAssignment(), mExpr))
+        UnifyTypes cenv env mExpr overallTy cenv.g.unit_ty
+        let expr = expr.Expr
+        let _wrap, exprAddress, readonly = mkExprAddrOfExpr cenv.g true false DefinitelyMutates expr None mExpr
+        if readonly then error(Error(FSComp.SR.tcInvalidAssignment(), mStmt))
+        let vty = tyOfExpr cenv.g expr
+        // Always allow subsumption on assignment to fields
+        let expr2, tpenv = TcExprFlex cenv true vty env tpenv synExpr2
+        let v, _ve = mkCompGenLocal mExpr "addr" (mkByrefTy cenv.g vty)
+        mkCompGenLet mStmt v exprAddress (mkAddrSet mStmt (mkLocalValRef v) expr2), tpenv
 
 
 /// Convert the delayed identifiers to a dot-lookup.
@@ -8946,14 +8955,24 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
         if not pinfo.IsStatic then error (Error (FSComp.SR.tcPropertyIsNotStatic(nm), mItem))
         match delayed with 
         | DelayedSet(e2, mStmt) :: otherDelayed ->
-            let args = if pinfo.IsIndexer then args else []
             if not (isNil otherDelayed) then error(Error(FSComp.SR.tcInvalidAssignment(), mStmt))
             // Static Property Set (possibly indexer) 
             UnifyTypes cenv env mStmt overallTy cenv.g.unit_ty
             let meths = pinfos |> SettersOfPropInfos
-            if isNil meths then error (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
-            // Note: static calls never mutate a struct object argument
-            TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt [] mStmt mItem nm ad NeverMutates true meths afterResolution NormalValUse (args@[e2]) ExprAtomicFlag.NonAtomic otherDelayed
+            if meths.IsEmpty then 
+                let meths = pinfos |> GettersOfPropInfos
+                let isByrefMethReturnSetter = meths |> List.exists (function (_,Some pinfo) -> isByrefTy cenv.g (pinfo.GetPropertyType(cenv.amap,mItem)) | _ -> false)
+                if isByrefMethReturnSetter then
+                    // x.P <- ...  byref setter
+                    if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable(nm), mItem))
+                    TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt [] mItem mItem nm ad NeverMutates true meths afterResolution NormalValUse args ExprAtomicFlag.Atomic delayed
+                else
+                    error (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
+            else
+                let args = if pinfo.IsIndexer then args else []
+                if isNil meths then error (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
+                // Note: static calls never mutate a struct object argument
+                TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt [] mStmt mItem nm ad NeverMutates true meths afterResolution NormalValUse (args@[e2]) ExprAtomicFlag.NonAtomic otherDelayed
         | _ -> 
             // Static Property Get (possibly indexer) 
             let meths = pinfos |> GettersOfPropInfos
@@ -9121,14 +9140,23 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
 
         match delayed with 
         | DelayedSet(e2, mStmt) :: otherDelayed ->
-            let args = if pinfo.IsIndexer then args else []
             if not (isNil otherDelayed) then error(Error(FSComp.SR.tcInvalidAssignment(), mStmt))
             // Instance property setter 
             UnifyTypes cenv env mStmt overallTy cenv.g.unit_ty
             let meths = SettersOfPropInfos pinfos
-            if isNil meths then error (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
-            let mut = (if isStructTy cenv.g (tyOfExpr cenv.g objExpr) then DefinitelyMutates else PossiblyMutates)
-            TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt objArgs mStmt mItem nm ad mut true meths afterResolution NormalValUse (args @ [e2]) atomicFlag [] 
+            if meths.IsEmpty then 
+                let meths = pinfos |> GettersOfPropInfos
+                let isByrefMethReturnSetter = meths |> List.exists (function (_,Some pinfo) -> isByrefTy cenv.g (pinfo.GetPropertyType(cenv.amap,mItem)) | _ -> false)
+                if isByrefMethReturnSetter then
+                    // x.P <- ...  byref setter
+                    if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable(nm), mItem))
+                    TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt objArgs mExprAndItem mItem nm ad PossiblyMutates true meths afterResolution NormalValUse args atomicFlag delayed 
+                else
+                    error (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
+            else
+                let args = if pinfo.IsIndexer then args else []
+                let mut = (if isStructTy cenv.g (tyOfExpr cenv.g objExpr) then DefinitelyMutates else PossiblyMutates)
+                TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt objArgs mStmt mItem nm ad mut true meths afterResolution NormalValUse (args @ [e2]) atomicFlag [] 
         | _ ->                   
             // Instance property getter
             let meths = GettersOfPropInfos pinfos
@@ -9436,7 +9464,7 @@ and TcMethodApplication
                 resultTy)
         curriedArgTys, returnTy
 
-    if isProp && Option.isNone curriedCallerArgsOpt then 
+    if isProp && Option.isNone curriedCallerArgsOpt then
         error(Error(FSComp.SR.parsIndexerPropertyRequiresAtLeastOneArgument(), mItem))
 
     // STEP 1. UnifyUniqueOverloading. This happens BEFORE we type check the arguments. 
@@ -12615,6 +12643,8 @@ module IncrClassChecking =
             // fixup: intercept and expr rewrite
             let FixupExprNode rw e =
                 //dprintfn "Fixup %s" (showL (exprL e))
+                let g = localRep.RepInfoTcGlobals
+                let e = NormalizeAndAdjustPossibleSubsumptionExprs g e
                 match e with
                 // Rewrite references to applied let-bound-functions-compiled-as-methods
                 | Expr.App(Expr.Val (ValDeref(v), _, _), _, tyargs, args, m) 
@@ -12624,7 +12654,6 @@ module IncrClassChecking =
                            | _ -> false )) -> 
 
                         //dprintfn "Found application of %s" v.LogicalName
-                        let g = localRep.RepInfoTcGlobals
                         let expr = localRep.MakeValueLookup thisValOpt thisTyInst safeStaticInitInfo v tyargs m
                         let args = args |> List.map rw
                         Some (MakeApplicationAndBetaReduce g (expr, (tyOfExpr g expr), [], args, m)) 

@@ -4030,7 +4030,7 @@
     <value>Could not find method System.Runtime.CompilerServices.OffsetToStringData in references when building 'fixed' expression.</value>
   </data>
   <data name="chkNoByrefReturnOfLocal" xml:space="preserve">
-    <value>The address of the variable '{0}' cannot be used at this point. A method or function may not return the address of this local value.</value>
+    <value>The address of the variable '{0}' cannot be used at this point. The address of this local value may not be passed to a call returning a byref-like type which is then subsequently returned from this method or function. This is to ensure the address of the local value does not esacape its scope. .</value>
   </data>
   <data name="tcNamedActivePattern" xml:space="preserve">
     <value>{0} is an active pattern and cannot be treated as a discriminated union case with named fields.</value>

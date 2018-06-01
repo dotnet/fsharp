@@ -4027,7 +4027,7 @@ type internal SR private() =
     /// Could not find method System.Runtime.CompilerServices.OffsetToStringData in references when building 'fixed' expression.
     /// (Originally from ../FSComp.txt:1333)
     static member tcCouldNotFindOffsetToStringData() = (3208, GetStringFunc("tcCouldNotFindOffsetToStringData",",,,") )
-    /// The address of the variable '%s' cannot be used at this point. A method or function may not return the address of this local value.
+    /// The address of the variable '%s' cannot be used at this point. The address of this local value may not be passed to a call returning a byref-like type which is then subsequently returned from this method or function. This is to ensure the address of the local value does not esacape its scope. .
     /// (Originally from ../FSComp.txt:1334)
     static member chkNoByrefReturnOfLocal(a0 : System.String) = (3209, GetStringFunc("chkNoByrefReturnOfLocal",",,,%s,,,") a0)
     /// %s is an active pattern and cannot be treated as a discriminated union case with named fields.

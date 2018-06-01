@@ -133,6 +133,37 @@ namespace Tests
         val mutable v : int
         member x.Replace(y:AllowedEvilStruct) = x <- y
 
+    module SubsumptionOnMember =
+        type Doot() = class end
+
+        [<Sealed>]
+        type GiantDad() =
+
+            let test (data: Span<byte>) (doot: Doot) =
+                ()
+
+            member __.Test(data: Span<byte>) =
+                test data Unchecked.defaultof<Doot>
+
+    module AssignToByrefReturn =
+        type C() = 
+            static let mutable v = System.DateTime.Now
+            static member M() = &v
+
+        let F1() = 
+            C.M() <-  System.DateTime.Now        
+
+    module AssignToSpanItem =
+        let F2() = 
+            let data = Span<byte>.Empty
+            data.[0] <- 1uy    
+
+    module AssignToSpanItemGeneric =
+        let F2<'T>() = 
+            let data = Span<'T>.Empty
+            data.[0] <- Unchecked.defaultof<'T>    
+
+
 #if NEGATIVE
 
 // Disallow this:
