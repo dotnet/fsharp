@@ -8329,6 +8329,9 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
                     if isAddrOf && isByrefTy cenv.g exprty then 
                         mkByrefTyWithInference cenv.g (destByrefTy cenv.g exprty) (NewByRefKindInferenceType cenv.g mExpr) 
                     elif isByrefTy cenv.g exprty then 
+                        // Implicit dereference on byref on return
+                        if isByrefTy cenv.g overallTy then 
+                             errorR(Error(FSComp.SR.tcByrefReturnImplicitlyDereferenced(), mExpr))
                         destByrefTy cenv.g exprty
                     else 
                         exprty
@@ -9320,7 +9323,7 @@ and TcMethodApplicationThen
 and GetNewInferenceTypeForMethodArg cenv env tpenv x =
     match x with 
     | SynExprParen(a, _, _, _) -> GetNewInferenceTypeForMethodArg cenv env tpenv a
-    | SynExpr.AddressOf(true, a, _, _) -> mkByrefTyWithInference cenv.g (GetNewInferenceTypeForMethodArg cenv env tpenv a) (NewInferenceType())
+    | SynExpr.AddressOf(true, a, _, m) -> mkByrefTyWithInference cenv.g (GetNewInferenceTypeForMethodArg cenv env tpenv a) (NewByRefKindInferenceType cenv.g m)
     | SynExpr.Lambda(_, _, _, a, _) -> mkFunTy (NewInferenceType ()) (GetNewInferenceTypeForMethodArg cenv env tpenv a)
     | SynExpr.Quote(_, raw, a, _, _) -> 
         if raw then mkRawQuotedExprTy cenv.g

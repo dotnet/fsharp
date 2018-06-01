@@ -1428,3 +1428,4 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3223,ilreadFileChanged,"The file '%s' changed on disk unexpectedly, please reload."
 3224,writeToReadOnlyByref,"The byref pointer is readonly, so this write is not permitted."
 3225,readOnlyAttributeOnStructWithMutableField,"A ReadOnly attribute has been applied to a struct type with a mutable field."
+3226,tcByrefReturnImplicitlyDereferenced,"A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&f(x)' or '&obj.Method(arg1, arg2)'."

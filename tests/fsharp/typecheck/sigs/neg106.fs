@@ -5,35 +5,35 @@ module M
 
 module CompareExchangeTests_Negative1 = 
     let x = 3
-    let v =  System.Threading.Interlocked.CompareExchange(&x, 3, 4) //   No overloads match for method 'CompareExchange'. 'byref<int,ByRefKinds.In>' is not compatible with type 'byref<int>'
+    let v =  System.Threading.Interlocked.CompareExchange(&x, 3, 4) //   No overloads match for method 'CompareExchange'. 'inref<int>' is not compatible with type 'byref<int>'
 
 module CompareExchangeTests_Negative2 = 
-    let v =  System.Threading.Interlocked.CompareExchange(&3, 3, 4) //  'byref<int,ByRefKinds.In>' is not compatible with type 'byref<int>'
+    let v =  System.Threading.Interlocked.CompareExchange(&3, 3, 4) //  'inref<int>' is not compatible with type 'byref<int>'
 
 module TryGetValueTests_Negative1 = 
     let d = dict [ (3,4) ]
     let res = 9
-    let v =  d.TryGetValue(3, &res) //  'byref<int,ByRefKinds.In>' is not compatible with type 'byref<int>'
+    let v =  d.TryGetValue(3, &res) //  'inref<int,>' is not compatible with type 'byref<int>'
 
 module FSharpDeclaredOutParamTest_Negaative1  = 
     type C() = 
          static member M([<System.Runtime.InteropServices.Out>] x: byref<int>) = ()
     let  res = 9
-    let v =  C.M(&res) //'byref<int,ByRefKinds.In>' is not compatible with type 'byref<int>'
+    let v =  C.M(&res) //'inref<int>' is not compatible with type 'byref<int>'
 
 module FSharpDeclaredOverloadedOutParamTest_Negative1  = 
     type C() = 
          static member M(a: int, [<System.Runtime.InteropServices.Out>] x: byref<int>) = x <- 7
          static member M(a: string, [<System.Runtime.InteropServices.Out>] x: byref<int>) = x <- 8
     let  res = 9
-    let v =  C.M("a", &res) //'byref<int,ByRefKinds.In>' is not compatible with type 'byref<int>'
-    let v2 =  C.M(3, &res)  //'byref<int,ByRefKinds.In>' is not compatible with type 'byref<int>'
+    let v =  C.M("a", &res) //'inref<int>' is not compatible with type 'byref<int>'
+    let v2 =  C.M(3, &res)  //'inref<int>' is not compatible with type 'byref<int>'
 
 module FSharpDeclaredOutParamTest_Negative1  = 
     type C() = 
          static member M([<System.Runtime.InteropServices.Out>] x: byref<int>) = ()
     let res = 9
-    let v =  C.M(&res) // 'byref<int,ByRefKinds.In>' is not compatible with type 'byref<int>'
+    let v =  C.M(&res) // 'inref<int>' is not compatible with type 'byref<int>'
 
 module TestOneArgumentInRefThenMutate_Negative1 =
 

@@ -2469,7 +2469,10 @@ and ResolveOverloading
                             | Some _  when calledMeth.Method.IsConstructor -> CompleteD 
                             | Some reqdRetTy ->
                                 let actualRetTy = calledMeth.CalledReturnTypeAfterOutArgTupling
-                                MustUnify csenv ndeep trace cxsln reqdRetTy actualRetTy)
+                                if isByrefTy g reqdRetTy then 
+                                    ErrorD(Error(FSComp.SR.tcByrefReturnImplicitlyDereferenced(), m))
+                                else
+                                    MustUnify csenv ndeep trace cxsln reqdRetTy actualRetTy)
 
     | None -> 
         None, errors        

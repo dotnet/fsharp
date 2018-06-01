@@ -2523,7 +2523,7 @@ let _ = fill_u_Vals (u_list u_Val)
 //---------------------------------------------------------------------------
 
 let pickleModuleOrNamespace mspec st = p_tycon_spec mspec st
-let pickleCcuInfo minfo st = 
+let pickleCcuInfo (minfo: PickledCcuInfo) st = 
     p_tup4 pickleModuleOrNamespace p_string p_bool (p_space 3) (minfo.mspec, minfo.compileTimeWorkingDir, minfo.usesQuotations,()) st
 
 let unpickleModuleOrNamespace st = u_tycon_spec st 

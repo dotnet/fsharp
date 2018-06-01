@@ -132,12 +132,10 @@ let AdjustCalledArgType (infoReader:InfoReader) isConstraint (calledArg: CalledA
         calledArgTy 
     else
 
-        // If the called method argument is an inref type, then the caller may provide a byref or ref or value
+        // If the called method argument is an inref type, then the caller may provide a byref or value
         if isInByrefTy g calledArgTy then
             if isByrefTy g callerArgTy then 
                 calledArgTy
-            // elif isRefCellTy g callerArgTy (* || isTyparTy g callerArgTy -- for compat  *) then 
-            //    mkRefCellTy g (destByrefTy g calledArgTy)  
             else 
                 destByrefTy g calledArgTy
 
