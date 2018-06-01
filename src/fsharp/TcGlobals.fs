@@ -8,7 +8,9 @@
 /// comparison and hashing functions.  
 module internal Microsoft.FSharp.Compiler.TcGlobals
 
-open Internal.Utilities
+open System.Collections.Generic
+open System.Diagnostics
+
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
@@ -21,13 +23,25 @@ open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.PrettyNaming
 
-open System.Collections.Generic
+open Internal.Utilities
 
 let internal DummyFileNameForRangesWithoutASpecificLocation = "startup"
 let private envRange = rangeN DummyFileNameForRangesWithoutASpecificLocation 0
 
-type public IntrinsicValRef = IntrinsicValRef of NonLocalEntityRef * string * bool * TType * ValLinkageFullKey
+/// Represents an intrinsic value from FSharp.Core known to the compiler
+[<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+type IntrinsicValRef = 
+    | IntrinsicValRef of NonLocalEntityRef * string * bool * TType * ValLinkageFullKey
 
+    member x.Name = (let (IntrinsicValRef(_, nm, _,  _, _)) = x in nm)
+
+    /// For debugging
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText = x.ToString()
+
+    /// For debugging
+    override x.ToString() = x.Name
+      
 let ValRefForIntrinsic (IntrinsicValRef(mvr, _, _, _, key))  = mkNonLocalValRef mvr key
 
 //-------------------------------------------------------------------------
@@ -82,10 +96,22 @@ let mk_MFRuntimeHelpers_tcref   ccu n = mkNonLocalTyconRef2 ccu FSharpLib.Runtim
 let mk_MFControl_tcref          ccu n = mkNonLocalTyconRef2 ccu FSharpLib.ControlPathArray n 
 
 
-type public BuiltinAttribInfo =
+type 
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    BuiltinAttribInfo =
     | AttribInfo of ILTypeRef * TyconRef 
+
     member this.TyconRef = let (AttribInfo(_, tcref)) = this in tcref
+
     member this.TypeRef  = let (AttribInfo(tref, _)) = this in tref
+
+    /// For debugging
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText = x.ToString()
+
+    /// For debugging
+    override x.ToString() = x.TyconRef.ToString() 
+      
 
 [<Literal>]
 let tname_DebuggerNonUserCodeAttribute = "System.Diagnostics.DebuggerNonUserCodeAttribute"

@@ -1052,7 +1052,123 @@ module ByrefReturnMemberTests =
             let mutable x = Unchecked.defaultof<_>
             member __.P = f (0, &x)
 
+    // check recursive functions
+    module BeefModuleGeneric =
 
+        let rec beef (unused: 'T) id (data: byref<byte>) : unit =
+            if id = 10 then 
+                data <- 3uy 
+            else
+                 beef unused (id + 1) &data
+        let Test() = 
+            let mutable x = 0uy
+            beef "unused" 0 &x
+            check "vruoer" x 3uy
+        Test()
+
+    module BeefModuleNonGeneric =
+
+        let rec beef id (data: byref<byte>) : unit =
+            if id = 10 then 
+                data <- 3uy 
+            else 
+                beef (id + 1) &data
+
+        let Test() = 
+            let mutable x = 0uy
+            beef  0 &x
+            check "vruoer3r" x 3uy
+        Test()
+
+    module BeefModuleNonGenericSubsume =
+
+        let rec beef id (data: byref<byte>) (y: System.IComparable) : unit =
+            if id = 10 then 
+                data <- 3uy 
+            else 
+                beef (id + 1) &data y
+
+        let Test() = 
+            let mutable x = 0uy
+            beef  0 &x Unchecked.defaultof<System.IComparable>
+            check "vruoer3r" x 3uy 
+
+        Test()
+
+    type GenericBeefRecursive() =
+
+        let rec beef unused id (data: byref<byte>) : unit =
+            if id = 10 then data <- 3uy else beef unused (id + 1) &data
+
+        static do GenericBeefRecursive().Test()
+
+        member __.Test() = 
+            let mutable x = 0uy
+            beef "unused" 0 &x
+            check "vruoer3rv" x 3uy
+            let mutable z = 0uy
+            beef 6L 0 &z
+            check "vruoer3rvwqf" z 3uy
+
+    type NonGenericBeefRecursiveInClass() =
+
+        let rec beef id (data: byref<byte>) : unit =
+            if id = 10 then 
+                data <- 3uy 
+            else 
+                beef (id + 1) &data
+
+        static do NonGenericBeefRecursiveInClass().Test()
+
+        member __.Test() = 
+            let mutable x = 0uy
+            beef  0 &x
+            check "vruoer3rvvremtys" x 3uy
+
+
+    type NonGenericBeefRecursiveInClassSubsume() =
+
+        let rec beef id (data: byref<byte>) (y:System.IComparable) : unit =
+            if id = 10 then 
+                data <- 3uy 
+            else 
+                beef (id + 1) &data y
+
+        static do NonGenericBeefRecursiveInClassSubsume().Test()
+
+        member __.Test() = 
+            let mutable x = 0uy
+            beef  0 &x Unchecked.defaultof<System.IComparable>
+            check "vruoer3rvvremtys" x 3uy
+
+    type StaticGenericBeefRecursiveInClass() =
+
+        static let rec beef unused id (data: byref<byte>) : unit =
+            if id = 10 then data <- 3uy else beef unused (id + 1) &data
+
+        static do StaticGenericBeefRecursiveInClass.Test()
+
+        static member Test() = 
+            let mutable x = 0uy
+            beef "unused" 0 &x
+            check "vruoer3rv" x 3uy
+            let mutable z = 0uy
+            beef 6L 0 &z
+            check "vruoer3rvwqfgw" z 3uy
+
+    type StaticNonGenericBeefRecursiveInClass() =
+
+        static let rec beef id (data: byref<byte>) : unit =
+            if id = 10 then data <- 3uy else beef (id + 1) &data
+
+        static do StaticNonGenericBeefRecursiveInClass.Test()
+
+        static member Test() = 
+            let mutable x = 0uy
+            beef  0 &x
+            check "vruoer3rvvrebae" x 3uy
+
+            
 let aa =
   if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
   else (stdout.WriteLine "Test Passed"; 

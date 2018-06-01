@@ -299,41 +299,64 @@ type ValHash<'T> =
 /// Maps Val's to list of T based on stamp keys
 [<Struct; NoEquality; NoComparison>]
 type ValMultiMap<'T> =
+
+    member ContainsKey : Val -> bool
+
     member Find : Val -> 'T list
+
     member Add : Val * 'T -> ValMultiMap<'T>
+
     member Remove : Val -> ValMultiMap<'T>
+
     member Contents : StampMap<'T list>
+
     static member Empty : ValMultiMap<'T>
 
 [<Sealed>]
 /// Maps Typar to T based on stamp keys
 type TyparMap<'T>  =
+
     member Item : Typar -> 'T with get
+
     member ContainsKey : Typar -> bool
+
     member TryFind : Typar -> 'T option
+
     member Add : Typar * 'T -> TyparMap<'T> 
+
     static member Empty : TyparMap<'T> 
 
 [<NoEquality; NoComparison;Sealed>]
 /// Maps TyconRef to T based on stamp keys
 type TyconRefMap<'T> =
+
     member Item : TyconRef -> 'T with get
+
     member TryFind : TyconRef -> 'T option
+
     member ContainsKey : TyconRef -> bool
+
     member Add : TyconRef -> 'T -> TyconRefMap<'T>
+
     member Remove : TyconRef -> TyconRefMap<'T>
+
     member IsEmpty : bool
+
     static member Empty : TyconRefMap<'T>
+
     static member OfList : (TyconRef * 'T) list -> TyconRefMap<'T>
 
 /// Maps TyconRef to list of T based on stamp keys
 [<Struct; NoEquality; NoComparison>]
 type TyconRefMultiMap<'T> =
-    member Find : TyconRef -> 'T list
-    member Add : TyconRef * 'T -> TyconRefMultiMap<'T>
-    static member Empty : TyconRefMultiMap<'T>
-    static member OfList : (TyconRef * 'T) list -> TyconRefMultiMap<'T>
 
+    member Find : TyconRef -> 'T list
+
+    member Add : TyconRef * 'T -> TyconRefMultiMap<'T>
+
+    static member Empty : TyconRefMultiMap<'T>
+
+    static member OfList : (TyconRef * 'T) list -> TyconRefMultiMap<'T>
 
 //-------------------------------------------------------------------------
 // Orderings on Tycon, Val, RecdFieldRef, Typar

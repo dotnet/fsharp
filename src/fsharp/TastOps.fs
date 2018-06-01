@@ -1357,14 +1357,21 @@ type ValHash<'T> =
 
 [<Struct; NoEquality; NoComparison>]
 type ValMultiMap<'T>(contents: StampMap<'T list>) =
+
+    member m.ContainsKey (v: Val) =
+        contents.ContainsKey v.Stamp
+
     member m.Find (v: Val) =
         match contents |> Map.tryFind v.Stamp with
         | Some vals -> vals
         | _ -> []
 
     member m.Add (v:Val, x) = ValMultiMap<'T>(contents.Add (v.Stamp, x :: m.Find v))
+
     member m.Remove (v: Val) = ValMultiMap<'T>(contents.Remove v.Stamp)
+
     member m.Contents = contents
+
     static member Empty = ValMultiMap<'T>(Map.empty)
 
 [<Struct; NoEquality; NoComparison>]

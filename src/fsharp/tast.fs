@@ -3947,7 +3947,7 @@ and
         | TType_var tp -> 
             match tp.Solution with 
             | None -> tp.DisplayName
-            | Some _ -> tp.DisplayName + " (solved, see Solution property)"
+            | Some _ -> tp.DisplayName + " (solved)"
         | TType_measure ms -> ms.ToString()
 
 and TypeInst = TType list 

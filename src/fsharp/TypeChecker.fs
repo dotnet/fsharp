@@ -12555,6 +12555,12 @@ module IncrClassChecking =
             | InVar false -> true
             | _ -> false
 
+        member localRep.IsValRepresentedAsMethod (v:Val) =
+            localRep.IsValWithRepresentation(v) &&
+            match localRep.LookupRepr(v) with 
+            | InMethod _  -> true 
+            | _ -> false
+
         /// Make the elaborated expression that represents a use of a 
         /// a "let v = ..." class binding
         member localRep.MakeValueLookup thisValOpt tinst safeStaticInitInfo v tyargs m =
@@ -12652,7 +12658,7 @@ module IncrClassChecking =
         /// Fix up the references to the locals, e.g. 
         ///     v -> this.fieldv
         ///     f x -> this.method x
-        member localRep.FixupIncrClassExprPhase2C thisValOpt safeStaticInitInfo (thisTyInst:TypeInst) expr = 
+        member localRep.FixupIncrClassExprPhase2C cenv thisValOpt safeStaticInitInfo (thisTyInst:TypeInst) expr = 
             // fixup: intercept and expr rewrite
             let FixupExprNode rw e =
                 //dprintfn "Fixup %s" (showL (exprL e))
@@ -12660,33 +12666,32 @@ module IncrClassChecking =
                 let e = NormalizeAndAdjustPossibleSubsumptionExprs g e
                 match e with
                 // Rewrite references to applied let-bound-functions-compiled-as-methods
-                | Expr.App(Expr.Val (ValDeref(v), _, _), _, tyargs, args, m) 
-                    when (localRep.IsValWithRepresentation(v) &&
-                          (match localRep.LookupRepr(v) with 
-                           | InMethod _  -> true //(methodVal.Typars.Length > thisTyInst.Length)
-                           | _ -> false )) -> 
+                // Rewrite references to applied recursive let-bound-functions-compiled-as-methods
+                // Rewrite references to applied recursive generic let-bound-functions-compiled-as-methods
+                | Expr.App(Expr.Val (ValDeref v, _, _), _, tyargs, args, m) 
+                | Expr.App(Expr.Link {contents = Expr.Val (ValDeref v, _, _) }, _, tyargs, args, m)  
+                | Expr.App(Expr.Link {contents = Expr.App(Expr.Val (ValDeref v, _, _), _, tyargs, [], _) }, _, [], args, m)  
+                     when localRep.IsValRepresentedAsMethod(v) && not (cenv.recUses.ContainsKey v) -> 
 
-                        //dprintfn "Found application of %s" v.LogicalName
                         let expr = localRep.MakeValueLookup thisValOpt thisTyInst safeStaticInitInfo v tyargs m
                         let args = args |> List.map rw
                         Some (MakeApplicationAndBetaReduce g (expr, (tyOfExpr g expr), [], args, m)) 
-                        
 
                 // Rewrite references to values stored as fields and first class uses of method values
-                | Expr.Val (ValDeref(v), _, m)                         
+                | Expr.Val (ValDeref v, _, m)                         
                     when localRep.IsValWithRepresentation(v) -> 
 
                         //dprintfn "Found use of %s" v.LogicalName
                         Some (localRep.MakeValueLookup thisValOpt thisTyInst safeStaticInitInfo v [] m)
 
                 // Rewrite assignments to mutable values stored as fields 
-                | Expr.Op(TOp.LValueOp (LSet, ValDeref(v))    , [], [arg], m) 
+                | Expr.Op(TOp.LValueOp (LSet, ValDeref v)    , [], [arg], m) 
                     when localRep.IsValWithRepresentation(v) ->
                         let arg = rw arg 
                         Some (localRep.MakeValueAssign thisValOpt thisTyInst safeStaticInitInfo v arg m)
 
                 // Rewrite taking the address of mutable values stored as fields 
-                | Expr.Op(TOp.LValueOp (LGetAddr readonly, ValDeref(v)), [], []   , m) 
+                | Expr.Op(TOp.LValueOp (LGetAddr readonly, ValDeref v), [], []   , m) 
                     when localRep.IsValWithRepresentation(v) ->
                         Some (localRep.MakeValueGetAddress readonly thisValOpt thisTyInst safeStaticInitInfo v m)
 
@@ -12795,7 +12800,7 @@ module IncrClassChecking =
         let TransBind (reps:IncrClassReprInfo) (TBind(v, rhsExpr, spBind)) =
             if v.MustInline then
                 error(Error(FSComp.SR.tcLocalClassBindingsCannotBeInline(), v.Range))
-            let rhsExpr = reps.FixupIncrClassExprPhase2C (Some thisVal) safeStaticInitInfo thisTyInst rhsExpr
+            let rhsExpr = reps.FixupIncrClassExprPhase2C cenv (Some thisVal) safeStaticInitInfo thisTyInst rhsExpr
             
             // The initialization of the 'ref cell' variable for 'this' is the only binding which comes prior to the super init
             let isPriorToSuperInit = 
@@ -12847,7 +12852,7 @@ module IncrClassChecking =
                         match safeStaticInitInfo with 
                         | SafeInitField (rfref, _) -> 
                             let setExpr = mkStaticRecdFieldSet (rfref, thisTyInst, mkInt cenv.g m idx, m)
-                            let setExpr = reps.FixupIncrClassExprPhase2C (Some(thisVal)) NoSafeInitInfo thisTyInst setExpr
+                            let setExpr = reps.FixupIncrClassExprPhase2C cenv (Some(thisVal)) NoSafeInitInfo thisTyInst setExpr
                             Some setExpr
                         | NoSafeInitInfo -> 
                             None
@@ -12883,7 +12888,7 @@ module IncrClassChecking =
                       ([], actions, methodBinds), reps
 
               | IncrClassDo (doExpr, isStatic) -> 
-                  let doExpr = reps.FixupIncrClassExprPhase2C (Some(thisVal)) safeStaticInitInfo thisTyInst doExpr
+                  let doExpr = reps.FixupIncrClassExprPhase2C cenv (Some(thisVal)) safeStaticInitInfo thisTyInst doExpr
                   let binder = (fun e -> mkSequential SequencePointsAtSeq doExpr.Range doExpr e)
                   let isPriorToSuperInit = false
                   if isStatic then 
@@ -12903,7 +12908,7 @@ module IncrClassChecking =
                       | None ->  ()
                       | Some v -> 
                         let setExpr = mkRefCellSet cenv.g m ctorInfo.InstanceCtorThisVal.Type (exprForVal m v) (exprForVal m ctorInfo.InstanceCtorThisVal)
-                        let setExpr = reps.FixupIncrClassExprPhase2C (Some(thisVal)) safeStaticInitInfo thisTyInst setExpr
+                        let setExpr = reps.FixupIncrClassExprPhase2C cenv (Some(thisVal)) safeStaticInitInfo thisTyInst setExpr
                         let binder = (fun e -> mkSequential SequencePointsAtSeq setExpr.Range setExpr e)
                         let isPriorToSuperInit = false
                         yield (isPriorToSuperInit, binder) ]
@@ -12917,7 +12922,7 @@ module IncrClassChecking =
                     [ match ctorInfo.InstanceCtorSafeInitInfo with 
                       | SafeInitField (rfref, _) ->  
                         let setExpr = mkRecdFieldSetViaExprAddr (exprForVal m thisVal, rfref, thisTyInst, mkOne cenv.g m, m)
-                        let setExpr = reps.FixupIncrClassExprPhase2C (Some(thisVal)) safeStaticInitInfo thisTyInst setExpr
+                        let setExpr = reps.FixupIncrClassExprPhase2C cenv (Some(thisVal)) safeStaticInitInfo thisTyInst setExpr
                         let binder = (fun e -> mkSequential SequencePointsAtSeq setExpr.Range setExpr e)
                         let isPriorToSuperInit = false
                         yield (isPriorToSuperInit, binder)  
@@ -13000,7 +13005,7 @@ module IncrClassChecking =
                         // Rewrite the expression to convert it to a load of a field if needed.
                         // We are allowed to load fields from our own object even though we haven't called
                         // the super class constructor yet.
-                        let ldexpr = reps.FixupIncrClassExprPhase2C (Some(thisVal)) safeStaticInitInfo thisTyInst (exprForVal m v) 
+                        let ldexpr = reps.FixupIncrClassExprPhase2C cenv (Some(thisVal)) safeStaticInitInfo thisTyInst (exprForVal m v) 
                         mkInvisibleLet m v ldexpr inheritsExpr
                     | _ -> 
                         inheritsExpr
@@ -13674,7 +13679,7 @@ module MutRecBindingChecking =
                             // Members have at least as many type parameters as the enclosing class. Just grab the type variables for the type.
                             let thisTyInst = List.map mkTyparTy (List.take (tcref.Typars(v.Range).Length) v.Typars)
                                     
-                            let x = localReps.FixupIncrClassExprPhase2C thisValOpt safeStaticInitInfo thisTyInst x 
+                            let x = localReps.FixupIncrClassExprPhase2C cenv thisValOpt safeStaticInitInfo thisTyInst x 
 
                             { pgrbind with Binding = TBind(v, x, spBind) } )
                         
