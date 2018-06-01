@@ -98,7 +98,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
     member __.FindDefinitionOfSymbolAtRange(targetDocument: Document, symbolRange: range, targetSourceText: SourceText) =
         findSymbolHelper (targetDocument, symbolRange, targetSourceText, false)
     
-    /// if the symbol is defined in the given file, return it's declaration location, othewise use the targetSymbol to find the first 
+    /// if the symbol is defined in the given file, return its declaration location, otherwise use the targetSymbol to find the first 
     /// instance of its presence in the provided source file. The first case is needed to return proper declaration location for
     /// recursive type definitions, where the first its usage may not be the declaration.
     member __.FindSymbolDeclarationInFile(targetSymbolUse: FSharpSymbolUse, filePath: string, source: string, options: FSharpProjectOptions, fileVersion:int) = 
