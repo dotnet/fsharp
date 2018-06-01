@@ -181,7 +181,7 @@
     <value>All branches of an 'if' expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</value>
   </data>
   <data name="followingPatternMatchClauseHasWrongType" xml:space="preserve">
-    <value>All branches of a pattern match expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</value>
+    <value>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</value>
   </data>
   <data name="patternMatchGuardIsNotBool" xml:space="preserve">
     <value>A pattern match guard must be of type 'bool', but this 'when' expression is of type '{0}'.</value>
@@ -4320,5 +4320,8 @@
   </data>
   <data name="readOnlyAttributeOnStructWithMutableField" xml:space="preserve">
     <value>A ReadOnly attribute has been applied to a struct type with a mutable field.</value>
+  </data>
+  <data name="tcByrefReturnImplicitlyDereferenced" xml:space="preserve">
+    <value>A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</value>
   </data>
 </root>
