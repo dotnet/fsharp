@@ -401,7 +401,6 @@ this file.
     </Target>
 
     <!--
-
     The old reference assemblies are no longer installed to `Program Files (x86)\Reference Assemblies\Microsoft\FSharp`.
 
     To avoid breaking legacy projects the hint path for FSharp.Core will be rewritten if and only if the existing hint
@@ -411,7 +410,8 @@ this file.
     <Target Name="RedirectFSharpCoreReferenceToNewRedistributableLocation" BeforeTargets="ResolveAssemblyReferences">
       <PropertyGroup>
         <_OldRootSdkLocation>$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\FSharp</_OldRootSdkLocation>
-        <_NewRootSdkLocation>$(VsInstallRoot)\Common7\IDE\CommonExtensions\Microsoft\FSharpSdk</_NewRootSdkLocation>
+
+        <NewFSharpSdkLocation Condition=" '$(NewFSharpSdkLocation)' == '' ">$(VsInstallRoot)\Common7\IDE\CommonExtensions\Microsoft\FSharpSdk</NewFSharpSdkLocation>
 
         <_CoreRelativeSuffix>.NETCore\$(TargetFSharpCoreVersion)\FSharp.Core.dll</_CoreRelativeSuffix>
         <_FrameworkRelativeSuffix>.NETFramework\v4.0\$(TargetFSharpCoreVersion)\FSharp.Core.dll</_FrameworkRelativeSuffix>
@@ -419,15 +419,15 @@ this file.
 
         <!-- .NETCore -->
         <_OldCoreSdkPath>$(_OldRootSdkLocation)\$(_CoreRelativeSuffix)</_OldCoreSdkPath>
-        <_NewCoreSdkPath>$(_NewRootSdkLocation)\$(_CoreRelativeSuffix)</_NewCoreSdkPath>
+        <_NewCoreSdkPath>$(NewFSharpSdkLocation)\$(_CoreRelativeSuffix)</_NewCoreSdkPath>
 
         <!-- .NETFramework\v4.0 -->
         <_OldFrameworkSdkPath>$(_OldRootSdkLocation)\$(_FrameworkRelativeSuffix)</_OldFrameworkSdkPath>
-        <_NewFrameworkSdkPath>$(_NewRootSdkLocation)\$(_FrameworkRelativeSuffix)</_NewFrameworkSdkPath>
+        <_NewFrameworkSdkPath>$(NewFSharpSdkLocation)\$(_FrameworkRelativeSuffix)</_NewFrameworkSdkPath>
 
         <!-- .NETPortable -->
         <_OldPortableSdkPath>$(_OldRootSdkLocation)\$(_PortableRelativeSuffix)</_OldPortableSdkPath>
-        <_NewPortableSdkPath>$(_NewRootSdkLocation)\$(_PortableRelativeSuffix)</_NewPortableSdkPath>
+        <_NewPortableSdkPath>$(NewFSharpSdkLocation)\$(_PortableRelativeSuffix)</_NewPortableSdkPath>
       </PropertyGroup>
 
       <ItemGroup>
@@ -454,6 +454,48 @@ this file.
       </ItemGroup>
     </Target>
 
-    <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\$(MSBuildThisFile)\ImportAfter\*" Condition="'$(ImportByWildcardAfterMicrosoftFSharpTargets)' == 'true' and exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\$(MSBuildThisFile)\ImportAfter')"/>
+    <Target Name="RedirectTPReferenceToNewRedistributableLocation" BeforeTargets="ResolveAssemblyReferences">
+      <PropertyGroup>
+        <_OldRefAssemTPLocation>$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.3.0.0\Type Providers\FSharp.Data.TypeProviders.dll</_OldRefAssemTPLocation>
+        <_OldSdkTPLocationPrefix>$(MSBuildProgramFiles32)\Microsoft SDKs\F#</_OldSdkTPLocationPrefix>
+        <_OldSdkTPLocationSuffix>Framework\v4.0\FSharp.Data.TypeProviders.dll</_OldSdkTPLocationSuffix>
 
+        <NewFSharpCompilerLocation Condition=" '$(NewFSharpCompilerLocation)' == '' ">$(MSBuildThisFileDirectory)</NewFSharpCompilerLocation>
+        <NewFSharpCompilerLocation Condition=" !HasTrailingSlash('$(NewFSharpCompilerLocation)') ">$(NewFSharpCompilerLocation)\</NewFSharpCompilerLocation>
+      </PropertyGroup>
+
+      <ItemGroup>
+        <!-- Issue warning message if there is an inbox TypeProvider referenced.-->
+        <ReferenceToInboxTP Include="@(Reference)"
+                            Condition="'%(Reference.Identity)' == 'FSharp.Data.TypeProviders' and
+                                       '%(Reference.HintPath)' == '$(_OldRefAssemTPLocation)' and
+                                       Exists('$(NewFSharpCompilerLocation)FSharp.Data.TypeProviders.dll')" />
+        <ReferenceToInboxTP Include="@(Reference)"
+                            Condition="'%(Reference.Identity)' == 'FSharp.Data.TypeProviders' and
+                                       $([System.String]::new('%(Reference.HintPath)').StartsWith('$(_OldSdkTPLocationPrefix)', System.StringComparison.OrdinalIgnoreCase)) and
+                                       $([System.String]::new('%(Reference.HintPath)').EndsWith('$(_OldSdkTPLocationSuffix)', System.StringComparison.OrdinalIgnoreCase)) and
+                                       Exists('$(NewFSharpCompilerLocation)FSharp.Data.TypeProviders.dll')" />
+
+        <!-- Update references to FSharp.Data.TypeProviders.dll -->
+        <Reference Condition="'%(Reference.Identity)' == 'FSharp.Data.TypeProviders' and
+                              '%(Reference.HintPath)' == '$(_OldRefAssemTPLocation)' and
+                              Exists('$(NewFSharpCompilerLocation)FSharp.Data.TypeProviders.dll')">
+          <HintPath>$(NewFSharpCompilerLocation)FSharp.Data.TypeProviders.dll</HintPath>
+        </Reference>
+
+        <!-- Update references to FSharp.Data.TypeProviders.dll -->
+        <Reference Condition="'%(Reference.Identity)' == 'FSharp.Data.TypeProviders' and
+                               $([System.String]::new('%(Reference.HintPath)').StartsWith('$(_OldSdkTPLocationPrefix)', System.StringComparison.OrdinalIgnoreCase)) and
+                               $([System.String]::new('%(Reference.HintPath)').EndsWith('$(_OldSdkTPLocationSuffix)', System.StringComparison.OrdinalIgnoreCase)) and
+                               Exists('$(NewFSharpCompilerLocation)FSharp.Data.TypeProviders.dll')">
+
+          <HintPath>$(NewFSharpCompilerLocation)FSharp.Data.TypeProviders.dll</HintPath>
+        </Reference>
+      </ItemGroup>
+      <Warning
+          Text="This Project references the obsolete TypeProvider: FSharp.Data.TypeProviders.dll.  Consider Switching to the Nuget package version: https://www.nuget.org/packages/FSharp.Data.TypeProviders."
+          Condition=" '@(ReferenceToInboxTP->Count())' != '0' " />
+    </Target>
+
+    <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\$(MSBuildThisFile)\ImportAfter\*" Condition="'$(ImportByWildcardAfterMicrosoftFSharpTargets)' == 'true' and exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\$(MSBuildThisFile)\ImportAfter')"/>
 </Project>

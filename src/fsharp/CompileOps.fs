@@ -2624,14 +2624,7 @@ type TcConfigBuilder =
             ri, fileNameOfPath ri, ILResourceAccess.Public 
 
 
-let OpenILBinary(filename, reduceMemoryUsage, ilGlobalsOpt, pdbDirPath, shadowCopyReferences, tryGetMetadataSnapshot) = 
-      let ilGlobals   = 
-          // ILScopeRef.Local can be used only for primary assembly (mscorlib or System.Runtime) itself
-          // Remaining assemblies should be opened using existing ilGlobals (so they can properly locate fundamental types)
-          match ilGlobalsOpt with 
-          | None -> mkILGlobals ILScopeRef.Local
-          | Some g -> g
-
+let OpenILBinary(filename, reduceMemoryUsage, ilGlobals, pdbDirPath, shadowCopyReferences, tryGetMetadataSnapshot) =
       let opts : ILReaderOptions = 
           { ilGlobals = ilGlobals
             metadataOnly = MetadataOnlyFlag.Yes
@@ -2652,7 +2645,7 @@ let OpenILBinary(filename, reduceMemoryUsage, ilGlobalsOpt, pdbDirPath, shadowCo
             ignore shadowCopyReferences
 #endif
             filename
-      OpenILModuleReader location opts
+      AssemblyReader.GetILModuleReader(location, opts)
 
 #if DEBUG
 [<System.Diagnostics.DebuggerDisplayAttribute("AssemblyResolution({resolvedPath})")>]
@@ -2782,12 +2775,13 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
     do if ((primaryAssemblyExplicitFilenameOpt.IsSome || fslibExplicitFilenameOpt.IsSome) && data.framework) then
             error(Error(FSComp.SR.buildExplicitCoreLibRequiresNoFramework("--noframework"), rangeStartup))
 
+    let ilGlobals = mkILGlobals ILScopeRef.Local
     let clrRootValue, targetFrameworkVersionValue  = 
         match primaryAssemblyExplicitFilenameOpt with
         | Some(primaryAssemblyFilename) ->
             let filename = ComputeMakePathAbsolute data.implicitIncludeDir primaryAssemblyFilename
             try 
-                use ilReader = OpenILBinary(filename, data.reduceMemoryUsage, None, None, data.shadowCopyReferences, data.tryGetMetadataSnapshot)
+                use ilReader = OpenILBinary(filename, data.reduceMemoryUsage, ilGlobals, None, data.shadowCopyReferences, data.tryGetMetadataSnapshot)
                 let ilModule = ilReader.ILModuleDef
                 match ilModule.ManifestOfAssembly.Version with 
                 | Some(v1, v2, _, _) -> 
@@ -2820,7 +2814,7 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
             let filename = ComputeMakePathAbsolute data.implicitIncludeDir fslibFilename
             if fslibReference.ProjectReference.IsNone then 
                 try 
-                    use ilReader = OpenILBinary(filename, data.reduceMemoryUsage, None, None, data.shadowCopyReferences, data.tryGetMetadataSnapshot)
+                    use ilReader = OpenILBinary(filename, data.reduceMemoryUsage, ilGlobals, None, data.shadowCopyReferences, data.tryGetMetadataSnapshot)
                     ()
                 with e -> 
                     error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message), rangeStartup))
@@ -4144,7 +4138,17 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                     None
             else
                 None
-        let ilILBinaryReader = OpenILBinary(filename, tcConfig.reduceMemoryUsage, ilGlobalsOpt, pdbDirPath, tcConfig.shadowCopyReferences, tcConfig.tryGetMetadataSnapshot)
+
+        let ilGlobals =
+            // ILScopeRef.Local can be used only for primary assembly (mscorlib or System.Runtime) itself
+            // Remaining assemblies should be opened using existing ilGlobals (so they can properly locate fundamental types)
+            match ilGlobalsOpt with
+            | None -> mkILGlobals ILScopeRef.Local
+            | Some g -> g
+
+        let ilILBinaryReader =
+            OpenILBinary (filename, tcConfig.reduceMemoryUsage, ilGlobals, pdbDirPath, tcConfig.shadowCopyReferences, tcConfig.tryGetMetadataSnapshot)
+
         tcImports.AttachDisposeAction(fun _ -> (ilILBinaryReader :> IDisposable).Dispose())
         ilILBinaryReader.ILModuleDef, ilILBinaryReader.ILAssemblyRefs
       with e ->
