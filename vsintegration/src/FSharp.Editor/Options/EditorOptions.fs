@@ -9,7 +9,6 @@ open SettingsPersistence
 open OptionsUIHelpers
 
 module DefaultTuning = 
-    let SemanticClassificationInitialDelay = 0 (* milliseconds *)
     let UnusedDeclarationsAnalyzerInitialDelay = 0 (* 1000 *) (* milliseconds *)
     let UnusedOpensAnalyzerInitialDelay = 0 (* 2000 *) (* milliseconds *)
     let SimplifyNameInitialDelay = 2000 (* milliseconds *)
@@ -53,9 +52,11 @@ type CodeLensOptions =
     UseColors: bool
     Prefix : string }
 
+[<CLIMutable>]
 type AdvancedOptions =
     { IsBlockStructureEnabled: bool 
       IsOutliningEnabled: bool }
+
 [<Export(typeof<ISettings>)>]
 type internal Settings [<ImportingConstructor>](store: SettingsStore) =
     do  // Initialize default settings
@@ -86,9 +87,9 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
               IsOutliningEnabled = true }
 
         store.RegisterDefault
-            { Enabled = true
+            { Enabled = false
               UseColors = false
-              ReplaceWithLineLens = true 
+              ReplaceWithLineLens = true
               Prefix = "// " }
 
     interface ISettings

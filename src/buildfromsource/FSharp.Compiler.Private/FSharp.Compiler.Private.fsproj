@@ -24,6 +24,12 @@
     </EmbeddedResource>
     <Compile Include="FSComp.fs" />
     <Compile Include="FSIstrings.fs" />
+    <Compile Include="..\..\fsharp\Logger.fsi">
+      <Link>Logger.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\fsharp\Logger.fs">
+      <Link>Logger.fs</Link>
+    </Compile>
     <Compile Include="..\..\utils\reshapedreflection.fs">
       <Link>Reflection\reshapedreflection.fs</Link>
     </Compile>

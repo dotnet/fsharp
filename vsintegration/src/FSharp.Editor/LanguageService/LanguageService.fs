@@ -57,11 +57,10 @@ type internal FSharpCheckerProvider
             let mmd = amd.GetModules().[0]
             let mmr = mmd.GetMetadataReader()
 
-            // "lifetime is timed to Metadata you got from the GetMetadata(...). As long as you hold it strongly, raw 
+            // "lifetime is timed to Metadata you got from the GetMetadata(…). As long as you hold it strongly, raw 
             // memory we got from metadata reader will be alive. Once you are done, just let everything go and 
             // let finalizer handle resource rather than calling Dispose from Metadata directly. It is shared metadata. 
-            // You shouldn't dispose it directly."
-
+            // You shouldn’t dispose it directly."
             let objToHold = box md
 
             // We don't expect any ilread WeakByteFile to be created when working in Visual Studio
@@ -160,22 +159,23 @@ type internal FSharpProjectOptionsManager
                 // compiled and #r will refer to files on disk
                 let referencedProjectFileNames = [| |] 
                 let site = ProjectSitesAndFiles.CreateProjectSiteForScript(fileName, referencedProjectFileNames, options)
-                let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, options.ExtraProjectInfo, Some projectOptionsTable, true)
+                let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, options.ExtraProjectInfo, Some projectOptionsTable)
                 let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
                 return (deps, parsingOptions, projectOptions)
             else
                 let site = ProjectSitesAndFiles.ProjectSiteOfSingleFile(fileName)
-                let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, extraProjectInfo, Some projectOptionsTable, true)
+                let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, site, serviceProvider, (tryGetOrCreateProjectId fileName), fileName, extraProjectInfo, Some projectOptionsTable)
                 let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
                 return (deps, parsingOptions, projectOptions)
         }
 
     /// Update the info for a project in the project table
     member this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId, site, userOpName, invalidateConfig) =
+        Logger.Log LogEditorFunctionId.LanguageService_UpdateProjectInfo
         projectOptionsTable.AddOrUpdateProject(projectId, (fun isRefresh ->
             let extraProjectInfo = Some(box workspace)
             let tryGetOptionsForReferencedProject f = f |> tryGetOrCreateProjectId |> Option.bind this.TryGetOptionsForProject |> Option.map(fun (_, _, projectOptions) -> projectOptions)
-            let referencedProjects, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, site, serviceProvider, (tryGetOrCreateProjectId (site.ProjectFileName)), site.ProjectFileName, extraProjectInfo,  Some projectOptionsTable, true)
+            let referencedProjects, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, site, serviceProvider, Some(projectId), site.ProjectFileName, extraProjectInfo,  Some projectOptionsTable)
             if invalidateConfig then checkerProvider.Checker.InvalidateConfiguration(projectOptions, startBackgroundCompileIfAlreadySeen = not isRefresh, userOpName = userOpName + ".UpdateProjectInfo")
             let referencedProjectIds = referencedProjects |> Array.choose tryGetOrCreateProjectId
             let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
@@ -206,18 +206,18 @@ type internal FSharpProjectOptionsManager
             match singleFileProjectTable.TryGetValue(projectId) with
             | true, (loadTime, _, _) ->
                 try
-                let fileName = document.FilePath
-                let! cancellationToken = Async.CancellationToken
-                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                // NOTE: we don't use FCS cross-project references from scripts to projects.  The projects must have been
-                // compiled and #r will refer to files on disk.
-                let tryGetOrCreateProjectId _ = None 
-                let! _referencedProjectFileNames, parsingOptions, projectOptions = this.ComputeSingleFileOptions (tryGetOrCreateProjectId, fileName, loadTime, sourceText.ToString())
-                this.AddOrUpdateSingleFileProject(projectId, (loadTime, parsingOptions, projectOptions))
-                return Some (parsingOptions, None, projectOptions)
+                    let fileName = document.FilePath
+                    let! cancellationToken = Async.CancellationToken
+                    let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                    // NOTE: we don't use FCS cross-project references from scripts to projects.  The projects must have been
+                    // compiled and #r will refer to files on disk.
+                    let tryGetOrCreateProjectId _ = None 
+                    let! _referencedProjectFileNames, parsingOptions, projectOptions = this.ComputeSingleFileOptions (tryGetOrCreateProjectId, fileName, loadTime, sourceText.ToString())
+                    this.AddOrUpdateSingleFileProject(projectId, (loadTime, parsingOptions, projectOptions))
+                    return Some (parsingOptions, None, projectOptions)
                 with ex -> 
-                Assert.Exception(ex)
-                return None
+                    Assert.Exception(ex)
+                    return None
             | _ -> return this.TryGetOptionsForProject(projectId)
         }
 
@@ -256,6 +256,8 @@ type internal FSharpProjectOptionsManager
     /// Prior to VS 15.7 path contained path to project file, post 15.7 contains target binpath
     /// binpath is more accurate because a project file can have multiple in memory projects based on configuration
     member this.HandleCommandLineChanges(path:string, sources:ImmutableArray<CommandLineSourceFile>, references:ImmutableArray<CommandLineReference>, options:ImmutableArray<string>) =
+        use _logBlock = Logger.LogBlock(LogEditorFunctionId.LanguageService_HandleCommandLineArgs)
+
         let projectId =
             match workspace.ProjectTracker.TryGetProjectByBinPath(path) with
             | true, project -> project.Id
@@ -326,6 +328,7 @@ type internal FSharpCheckerWorkspaceServiceFactory
 [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.CodeFixesOptionPage>, "F#", null, "Code Fixes", "6010")>]
 [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.LanguageServicePerformanceOptionPage>, "F#", null, "Performance", "6011")>]
 [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.AdvancedSettingsOptionPage>, "F#", null, "Advanced", "6012")>]
+[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.CodeLensOptionPage>, "F#", null, "CodeLens", "6013")>]
 [<ProvideFSharpVersionRegistration(FSharpConstants.projectPackageGuidString, "Microsoft Visual F#")>]
 // 64 represents a hex number. It needs to be greater than 37 so the TextMate editor will not be chosen as higher priority.
 [<ProvideEditorExtension(typeof<FSharpEditorFactory>, ".fs", 64)>]
@@ -424,8 +427,8 @@ type internal FSharpLanguageService(package : FSharpPackage) =
 
     member private this.OnProjectAdded(projectId:ProjectId) = projectInfoManager.UpdateProjectInfoWithProjectId(projectId, "OnProjectAdded", invalidateConfig=true)
     member private this.OnProjectReloaded(projectId:ProjectId) = projectInfoManager.UpdateProjectInfoWithProjectId(projectId, "OnProjectReloaded", invalidateConfig=true)
+    member private this.OnProjectRemoved(projectId) = projectInfoManager.ClearInfoForProject(projectId)
     member private this.OnDocumentAdded(projectId:ProjectId, documentId:DocumentId) = projectInfoManager.UpdateDocumentInfoWithProjectId(projectId, documentId, "OnDocumentAdded", invalidateConfig=true)
-    member private this.OnDocumentChanged(projectId:ProjectId, documentId:DocumentId) = projectInfoManager.UpdateDocumentInfoWithProjectId(projectId, documentId, "OnDocumentChanged", invalidateConfig=false)
     member private this.OnDocumentReloaded(projectId:ProjectId, documentId:DocumentId) = projectInfoManager.UpdateDocumentInfoWithProjectId(projectId, documentId, "OnDocumentReloaded", invalidateConfig=true)
 
     override this.Initialize() = 
@@ -436,11 +439,10 @@ type internal FSharpLanguageService(package : FSharpPackage) =
             match args.Kind with
             | WorkspaceChangeKind.ProjectAdded     -> this.OnProjectAdded(args.ProjectId)
             | WorkspaceChangeKind.ProjectReloaded  -> this.OnProjectReloaded(args.ProjectId)
+            | WorkspaceChangeKind.ProjectRemoved   -> this.OnProjectRemoved(args.ProjectId)
             | WorkspaceChangeKind.DocumentAdded    -> this.OnDocumentAdded(args.ProjectId, args.DocumentId)
-            | WorkspaceChangeKind.DocumentChanged  -> this.OnDocumentChanged(args.ProjectId, args.DocumentId)
             | WorkspaceChangeKind.DocumentReloaded -> this.OnDocumentReloaded(args.ProjectId, args.DocumentId)
             | WorkspaceChangeKind.DocumentRemoved
-            | WorkspaceChangeKind.ProjectRemoved
             | WorkspaceChangeKind.AdditionalDocumentAdded
             | WorkspaceChangeKind.AdditionalDocumentReloaded
             | WorkspaceChangeKind.AdditionalDocumentRemoved
@@ -656,26 +658,41 @@ type internal FSharpLanguageService(package : FSharpPackage) =
         | (VSConstants.S_OK, textLines) ->
             let filename = VsTextLines.GetFilename textLines
 
-            // CPS projects don't implement IProvideProjectSite and IVSProjectHierarchy
-            // Simple explanation:
-            //    Legacy projects have IVSHierarchy and IPRojectSite
-            //    CPS Projects and loose script files don't
             match VsRunningDocumentTable.FindDocumentWithoutLocking(package.RunningDocumentTable,filename) with
             | Some (hier, _) ->
+
+
+                // Check if the file is in a CPS project or not.
+                // CPS projects don't implement IProvideProjectSite and IVSProjectHierarchy
+                // Simple explanation:
+                //    Legacy projects have IVSHierarchy and IProjectSite
+                //    CPS Projects, out-of-project file and script files don't
+
                 match hier with
                 | :? IProvideProjectSite as siteProvider when not (IsScript(filename)) ->
+
+                    // This is the path for .fs/.fsi files in legacy projects
+
                     this.SetupProjectFile(siteProvider, this.Workspace, "SetupNewTextView")
-                | h when not (IsScript(filename)) ->
+
+                | h when not (isNull h) && not (IsScript(filename)) ->
+                    
                     let docId = this.Workspace.CurrentSolution.GetDocumentIdsWithFilePath(filename).FirstOrDefault()
                     match docId with
                     | null ->
                         if not (h.IsCapabilityMatch("CPS")) then
+
+                            // This is the path when opening out-of-project .fs/.fsi files in CPS projects
+
                             let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
                             this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
-                    | id ->
-                        projectInfoManager.UpdateProjectInfoWithProjectId(id.ProjectId, "SetupNewTextView", invalidateConfig=true)
+                    | _ -> ()
                 | _ ->
+
+                    // This is the path for both in-project and out-of-project .fsx files
+
                     let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
                     this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
+
             | _ -> ()
         | _ -> ()

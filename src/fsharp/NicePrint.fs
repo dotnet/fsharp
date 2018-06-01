@@ -1308,8 +1308,11 @@ module InfoMemberPrinting =
             else emptyL
         let layout = 
             layout ^^
-                let tcref = minfo.ApparentEnclosingTyconRef 
-                PrintTypes.layoutTyconRef denv tcref
+                if isAppTy minfo.TcGlobals minfo.ApparentEnclosingAppType then
+                    let tcref = minfo.ApparentEnclosingTyconRef 
+                    PrintTypes.layoutTyconRef denv tcref
+                else
+                    emptyL
         let layout = 
             layout ^^
                 if minfo.IsConstructor then  

@@ -1,20 +1,20 @@
 
-neg104.fs(6,38,6,39): parse error FS0010: Unexpected symbol '}' in binding. Expected '|}' or other token.
+neg104.fs(14,16,14,17): parse error FS0010: Unexpected symbol '}' in expression
 
-neg104.fs(6,29,6,31): parse error FS0605: Unmatched '{|'
+neg104.fs(17,18,17,19): parse error FS0010: Unexpected symbol '}' in expression. Expected 'with' or other token.
 
-neg104.fs(8,5,8,8): parse error FS0058: Possible incorrect indentation: this token is offside of context started at position (6:29). Try indenting this token further or using standard formatting conventions.
+neg104.fs(20,23,20,24): parse error FS0010: Incomplete structured construct at or before this point in expression
 
-neg104.fs(10,5,10,9): parse error FS0058: Possible incorrect indentation: this token is offside of context started at position (8:5). Try indenting this token further or using standard formatting conventions.
+neg104.fs(23,25,23,26): parse error FS0010: Incomplete structured construct at or before this point in expression
 
-neg104.fs(10,5,10,9): parse error FS0010: Unexpected keyword 'type' in binding. Expected incomplete structured construct at or before this point or other token.
+neg104.fs(26,28,26,29): parse error FS0010: Incomplete structured construct at or before this point in pattern
 
-neg104.fs(6,5,6,8): parse error FS3118: Incomplete value or function definition. If this is in an expression, the body of the expression must be indented to the same column as the 'let' keyword.
+neg104.fs(29,31,29,32): parse error FS0010: Incomplete structured construct at or before this point in pattern matching
 
-neg104.fs(10,25,10,26): parse error FS0010: Unexpected symbol '}' in type definition. Expected '|}' or other token.
+neg104.fs(33,14,33,20): parse error FS0010: Unexpected keyword 'match!' in expression
 
-neg104.fs(10,14,10,16): parse error FS0605: Unmatched '{|'
+neg104.fs(32,27,32,28): parse error FS0604: Unmatched '{'
 
-neg104.fs(12,5,12,8): parse error FS0058: Possible incorrect indentation: this token is offside of context started at position (10:14). Try indenting this token further or using standard formatting conventions.
+neg104.fs(35,19,35,20): parse error FS0010: Unexpected symbol '}' in definition. Expected incomplete structured construct at or before this point or other token.
 
-neg104.fs(14,1,14,1): parse error FS0010: Incomplete structured construct at or before this point in implementation file
+neg104.fs(35,1,35,20): parse error FS0010: Incomplete structured construct at or before this point in implementation file

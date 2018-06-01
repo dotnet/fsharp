@@ -670,8 +670,11 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
                       -> unindentationLimit false rest
 
             // 'f ...{' places no limit until we hit a CtxtLetDecl etc... 
-            | _,(CtxtParen (LBRACE,_) :: CtxtVanilla _ :: CtxtSeqBlock _ :: rest)
-            | _,(CtxtSeqBlock _ :: CtxtParen(LBRACE,_) :: CtxtVanilla _ :: CtxtSeqBlock _ :: rest)
+            // 'f ...[' places no limit until we hit a CtxtLetDecl etc... 
+            // 'f ...[|' places no limit until we hit a CtxtLetDecl etc... 
+            | _,(CtxtParen ((LBRACE | LBRACK | LBRACK_BAR),_) :: CtxtSeqBlock _ :: rest)
+            | _,(CtxtParen ((LBRACE | LBRACK | LBRACK_BAR),_) :: CtxtVanilla _ :: CtxtSeqBlock _ :: rest)
+            | _,(CtxtSeqBlock _ :: CtxtParen((LBRACE | LBRACK | LBRACK_BAR),_) :: CtxtVanilla _ :: CtxtSeqBlock _ :: rest)
                       -> unindentationLimit false rest
 
             // MAJOR PERMITTED UNDENTATION This is allowing:
@@ -1053,7 +1056,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
             | Parser.EOF _ -> false
             | _ -> 
                 not (isSameLine()) ||  
-                (match peekNextToken() with TRY | MATCH | IF | LET _ | FOR | WHILE -> true | _ -> false) 
+                (match peekNextToken() with TRY | MATCH | MATCH_BANG | IF | LET _ | FOR | WHILE -> true | _ -> false) 
 
         // Look for '=' or '.Id.id.id = ' after an identifier
         let rec isLongIdentEquals token = 
@@ -2037,7 +2040,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
             pushCtxt tokenTup (CtxtIf (tokenStartPos))
             returnToken tokenLexbufState token
 
-        | MATCH, _   -> 
+        | (MATCH | MATCH_BANG), _   -> 
             if debug then dprintf "MATCH, pushing CtxtMatch(%a)\n" outputPos tokenStartPos
             pushCtxt tokenTup (CtxtMatch (tokenStartPos))
             returnToken tokenLexbufState token

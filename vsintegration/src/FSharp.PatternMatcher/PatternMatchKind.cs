@@ -29,8 +29,7 @@ namespace Microsoft.CodeAnalysis.PatternMatching
 
         /// <summary>
         /// The pattern matches the candidate in a fuzzy manner.  Fuzzy matching allows for 
-        /// a certain amount of misspellings, missing words, etc. See <see cref="SpellChecker"/> for 
-        /// more details.
+        /// misspellings, missing words, etc.
         /// </summary>
         Fuzzy
     }

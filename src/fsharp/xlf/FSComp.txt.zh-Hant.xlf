@@ -108,8 +108,8 @@
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
-        <source>All branches of a pattern match expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">模式比對運算式的所有分支都必須是同一種類型。此運算式應具備類型 '{0}'，但卻是類型 '{1}'。</target>
+        <source>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
+        <target state="needs-review-translation">模式比對運算式的所有分支都必須是同一種類型。此運算式應具備類型 '{0}'，但卻是類型 '{1}'。</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -412,7 +412,7 @@
         <target state="translated">未預期的 ByRef 類型變數用法</target>
         <note />
       </trans-unit>
-      <trans-unit id="tastValueMustBeLocalAndMutable">
+      <trans-unit id="tastValueMustBeMutable">
         <source>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</source>
         <target state="translated">值必須是可變動的，才能變動內容或接受實值類型的位址，例如 'let mutable x = ...'</target>
         <note />
@@ -6982,39 +6982,9 @@
         <target state="translated">此運算式會傳回類型為 '{0}' 的值，但會被間接捨棄。請考慮使用 'let' 將結果繫結到名稱。例如 'let result = expression'。若您想要在序列中，以值的形式使用運算式，請直接使用 'yield!'。</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsUnmatchedBraceBar">
-        <source>Unmatched '{{|'</source>
-        <target state="new">Unmatched '{{|'</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="typeInfoAnonRecdField">
-        <source>anonymous record field</source>
-        <target state="new">anonymous record field</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcAnonRecdCcuMismatch">
-        <source>Two anonymous record types are from different assemblies '{0}' and '{1}'</source>
-        <target state="new">Two anonymous record types are from different assemblies '{0}' and '{1}'</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcAnonRecdFieldNameMismatch">
-        <source>Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</source>
-        <target state="new">Two anonymous record types have mismatched sets of field names '{0}' and '{1}'</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="parsInvalidAnonRecdExpr">
-        <source>Invalid anonymous record expression</source>
-        <target state="new">Invalid anonymous record expression</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="parsInvalidAnonRecdType">
-        <source>Invalid anonymous record type</source>
-        <target state="new">Invalid anonymous record type</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tcCopyAndUpdateNeedsRecordType">
-        <source>The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record</source>
-        <target state="new">The input to a copy-and-update expression that creates an anonymous record must be either an anonymous record or a record</target>
+      <trans-unit id="keywordDescriptionMatchBang">
+        <source>Used in computation expressions to pattern match directly over the result of another computation expression.</source>
+        <target state="new">Used in computation expressions to pattern match directly over the result of another computation expression.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilreadFileChanged">

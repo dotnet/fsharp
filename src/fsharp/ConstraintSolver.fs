@@ -116,34 +116,34 @@ let FreshenMethInfo m (minfo:MethInfo) =
 [<RequireQualifiedAccess>] 
 /// Information about the context of a type equation.
 type ContextInfo =
-/// No context was given.
-| NoContext
-/// The type equation comes from an IF expression.
-| IfExpression of range
-/// The type equation comes from an omitted else branch.
-| OmittedElseBranch of range
-/// The type equation comes from a type check of the result of an else branch.
-| ElseBranchResult of range
-/// The type equation comes from the verification of record fields.
-| RecordFields
-/// The type equation comes from the verification of a tuple in record fields.
-| TupleInRecordFields
-/// The type equation comes from a list or array constructor
-| CollectionElement of bool * range
-/// The type equation comes from a return in a computation expression.
-| ReturnInComputationExpression
-/// The type equation comes from a yield in a computation expression.
-| YieldInComputationExpression
-/// The type equation comes from a runtime type test.
-| RuntimeTypeTest of bool
-/// The type equation comes from an downcast where a upcast could be used.
-| DowncastUsedInsteadOfUpcast of bool
-/// The type equation comes from a return type of a pattern match clause (not the first clause).
-| FollowingPatternMatchClause of range
-/// The type equation comes from a pattern match guard.
-| PatternMatchGuard of range
-/// The type equation comes from a sequence expression.
-| SequenceExpression of TType
+    /// No context was given.
+    | NoContext
+    /// The type equation comes from an IF expression.
+    | IfExpression of range
+    /// The type equation comes from an omitted else branch.
+    | OmittedElseBranch of range
+    /// The type equation comes from a type check of the result of an else branch.
+    | ElseBranchResult of range
+    /// The type equation comes from the verification of record fields.
+    | RecordFields
+    /// The type equation comes from the verification of a tuple in record fields.
+    | TupleInRecordFields
+    /// The type equation comes from a list or array constructor
+    | CollectionElement of bool * range
+    /// The type equation comes from a return in a computation expression.
+    | ReturnInComputationExpression
+    /// The type equation comes from a yield in a computation expression.
+    | YieldInComputationExpression
+    /// The type equation comes from a runtime type test.
+    | RuntimeTypeTest of bool
+    /// The type equation comes from an downcast where a upcast could be used.
+    | DowncastUsedInsteadOfUpcast of bool
+    /// The type equation comes from a return type of a pattern match clause (not the first clause).
+    | FollowingPatternMatchClause of range
+    /// The type equation comes from a pattern match guard.
+    | PatternMatchGuard of range
+    /// The type equation comes from a sequence expression.
+    | SequenceExpression of TType
 
 exception ConstraintSolverTupleDiffLengths of DisplayEnv * TType list * TType list * range  * range 
 exception ConstraintSolverInfiniteTypes of ContextInfo * DisplayEnv * TType * TType * range * range
@@ -420,8 +420,6 @@ let PreferUnifyTypar (v1:Typar) (v2:Typar) =
          | true, false -> false
          | _ -> true
 
-
-
 /// Reorder a list of (variable, exponent) pairs so that a variable that is Preferred
 /// is at the head of the list, if possible
 let FindPreferredTypar vs =
@@ -473,12 +471,12 @@ and SolveTypStaticReq (csenv:ConstraintSolverEnv) trace req ty =
             | Some tpr -> SolveTypStaticReqTypar csenv trace req tpr
             | None -> CompleteD
       
-let rec TransactDynamicReq (trace:OptionalTrace) (tpr:Typar) req = 
+let TransactDynamicReq (trace:OptionalTrace) (tpr:Typar) req = 
     let orig = tpr.DynamicReq
     trace.Exec (fun () -> tpr.SetDynamicReq req) (fun () -> tpr.SetDynamicReq orig)
     CompleteD
 
-and SolveTypDynamicReq (csenv:ConstraintSolverEnv) trace req ty =
+let SolveTypDynamicReq (csenv:ConstraintSolverEnv) trace req ty =
     match req with 
     | TyparDynamicReq.No -> CompleteD
     | TyparDynamicReq.Yes -> 
@@ -486,6 +484,19 @@ and SolveTypDynamicReq (csenv:ConstraintSolverEnv) trace req ty =
         | Some tpr when tpr.DynamicReq <> TyparDynamicReq.Yes ->
             TransactDynamicReq trace tpr TyparDynamicReq.Yes
         | _ -> CompleteD
+
+let TransactIsCompatFlex (trace:OptionalTrace) (tpr:Typar) req = 
+    let orig = tpr.IsCompatFlex
+    trace.Exec (fun () -> tpr.SetIsCompatFlex req) (fun () -> tpr.SetIsCompatFlex orig)
+    CompleteD
+
+let SolveTypIsCompatFlex (csenv:ConstraintSolverEnv) trace req ty =
+    if req then 
+        match tryAnyParTy csenv.g ty with
+        | Some tpr when not tpr.IsCompatFlex -> TransactIsCompatFlex trace tpr req
+        | _ -> CompleteD
+    else
+        CompleteD
 
 let SubstMeasureWarnIfRigid (csenv:ConstraintSolverEnv) trace (v:Typar) ms =
     if v.Rigidity.WarnIfUnified && not (isAnyParTy csenv.g (TType_measure ms)) then         
@@ -721,21 +732,23 @@ let rec SolveTyparEqualsTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace:Optional
            CompleteD) ++ (fun _ ->
       
       // Re-solve the other constraints associated with this type variable 
-      solveTypMeetsTyparConstraints csenv ndeep m2 trace ty (r.DynamicReq, r.StaticReq, r.Constraints)))
+      solveTypMeetsTyparConstraints csenv ndeep m2 trace ty r))
 
     | _ -> failwith "SolveTyparEqualsTyp")
     
 
-/// Given a type 'ty' and a set of constraints on that type, solve those constraints. 
-and solveTypMeetsTyparConstraints (csenv:ConstraintSolverEnv) ndeep m2 trace ty (dreq, sreq, cs) =
+/// Apply the constraints on 'typar' to the type 'ty'
+and solveTypMeetsTyparConstraints (csenv:ConstraintSolverEnv) ndeep m2 trace ty (r: Typar) = 
     let g = csenv.g
+    // Propagate compat flex requirements from 'tp' to 'ty'
+    SolveTypIsCompatFlex csenv trace r.IsCompatFlex ty ++ (fun () -> 
     // Propagate dynamic requirements from 'tp' to 'ty'
-    SolveTypDynamicReq csenv trace dreq ty ++ (fun () -> 
+    SolveTypDynamicReq csenv trace r.DynamicReq ty ++ (fun () -> 
     // Propagate static requirements from 'tp' to 'ty' 
-    SolveTypStaticReq csenv trace sreq ty ++ (fun () -> 
+    SolveTypStaticReq csenv trace r.StaticReq ty ++ (fun () -> 
     
     // Solve constraints on 'tp' w.r.t. 'ty' 
-    cs |> IterateD (function
+    r.Constraints |> IterateD (function
       | TyparConstraint.DefaultsTo (priority, dty, m) -> 
           if typeEquiv g ty dty then 
               CompleteD
@@ -758,7 +771,7 @@ and solveTypMeetsTyparConstraints (csenv:ConstraintSolverEnv) ndeep m2 trace ty 
       | TyparConstraint.CoercesTo(ty2, m2)              -> SolveTypSubsumesTypKeepAbbrevs     csenv ndeep m2 trace None ty2 ty
       | TyparConstraint.MayResolveMember(traitInfo, m2) -> 
           SolveMemberConstraint csenv false false ndeep m2 trace traitInfo ++ (fun _ -> CompleteD) 
-    )))
+    ))))
 
         
 and SolveAnonInfoEqualsAnonInfo (csenv:ConstraintSolverEnv) m2 (anonInfo1: AnonRecdTypeInfo) (anonInfo2: AnonRecdTypeInfo) = 
@@ -852,6 +865,11 @@ and SolveFunTypEqn csenv ndeep m2 trace cxsln d1 d2 r1 r2 =
     SolveTypEqualsTypKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln d1 d2 ++ (fun () -> 
     SolveTypEqualsTypKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln r1 r2)
 
+// ty1: expected
+// ty2: actual
+//
+// "ty2 casts to ty1"
+// "a value of type ty2 can be used where a value of type ty1 is expected"
 and SolveTypSubsumesTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) cxsln ty1 ty2 = 
     // 'a :> obj ---> <solved> 
     let ndeep = ndeep + 1
@@ -1926,7 +1944,6 @@ and CanMemberSigsMatchUpToCheck
     let minst = calledMeth.CalledTyArgs
     let uminst = calledMeth.CallerTyArgs
     let callerObjArgTys = calledMeth.CallerObjArgTys
-    let methodRetTy = calledMeth.ReturnType
     let assignedItemSetters = calledMeth.AssignedItemSetters
     let unnamedCalledOptArgs = calledMeth.UnnamedCalledOptArgs
     let unnamedCalledOutArgs = calledMeth.UnnamedCalledOutArgs
@@ -1991,21 +2008,8 @@ and CanMemberSigsMatchUpToCheck
         | Some _  when minfo.IsConstructor -> CompleteD 
         | Some _  when not alwaysCheckReturn && isNil unnamedCalledOutArgs -> CompleteD 
         | Some reqdRetTy -> 
-            let methodRetTy = 
-                if isNil unnamedCalledOutArgs then 
-                    methodRetTy 
-                else 
-                    let outArgTys = unnamedCalledOutArgs |> List.map (fun calledArg -> destByrefTy g calledArg.CalledArgumentType) 
-                    if isUnitTy g methodRetTy then mkRefTupledTy g outArgTys
-                    else mkRefTupledTy g (methodRetTy :: outArgTys)
+            let methodRetTy = calledMeth.ReturnTypeAfterOutArgTupling
             unifyTypes reqdRetTy methodRetTy )))))
-
-//-------------------------------------------------------------------------
-// Resolve IL overloading. 
-// 
-// This utilizes the type inference constraint solving engine in undo mode.
-//------------------------------------------------------------------------- 
-
 
 // Assert a subtype constraint, and wrap an ErrorsFromAddingSubsumptionConstraint error around any failure 
 // to allow us to report the outer types involved in the constraint 
@@ -2022,6 +2026,8 @@ and private SolveTypSubsumesTypWithReport (csenv:ConstraintSolverEnv) ndeep m tr
                     | _ -> ErrorD (ErrorsFromAddingSubsumptionConstraint(csenv.g, csenv.DisplayEnv, ty1, ty2, res, ContextInfo.NoContext, m))
                 | _ -> ErrorD (ErrorsFromAddingSubsumptionConstraint(csenv.g, csenv.DisplayEnv, ty1, ty2, res, csenv.eContextInfo, m)))
 
+// ty1: actual
+// ty2: expected
 and private SolveTypEqualsTypWithReport (csenv:ConstraintSolverEnv) ndeep  m trace cxsln ty1 ty2 = 
     TryD (fun () -> SolveTypEqualsTypKeepAbbrevsWithCxsln csenv ndeep m trace cxsln ty1 ty2)
          (function
@@ -2487,14 +2493,8 @@ and ResolveOverloading
                             | None -> CompleteD 
                             | Some _  when calledMeth.Method.IsConstructor -> CompleteD 
                             | Some reqdRetTy ->
-                                let methodRetTy = 
-                                    if isNil calledMeth.UnnamedCalledOutArgs then 
-                                        calledMeth.ReturnType 
-                                    else 
-                                        let outArgTys = calledMeth.UnnamedCalledOutArgs |> List.map (fun calledArg -> destByrefTy g calledArg.CalledArgumentType) 
-                                        if isUnitTy g calledMeth.ReturnType then mkRefTupledTy g outArgTys
-                                        else mkRefTupledTy g (calledMeth.ReturnType :: outArgTys)
-                                MustUnify csenv ndeep trace cxsln reqdRetTy methodRetTy)
+                                let actualRetTy = calledMeth.ReturnTypeAfterOutArgTupling
+                                MustUnify csenv ndeep trace cxsln reqdRetTy actualRetTy)
 
     | None -> 
         None, errors        
@@ -2553,8 +2553,8 @@ let EliminateConstraintsForGeneralizedTypars csenv (trace:OptionalTrace) (genera
 // No error recovery here: we do that on a per-expression basis.
 //------------------------------------------------------------------------- 
 
-let AddCxTypeEqualsType contextInfo denv css m ty1 ty2 = 
-    SolveTypEqualsTypWithReport (MakeConstraintSolverEnv contextInfo css m denv) 0 m NoTrace None ty1 ty2
+let AddCxTypeEqualsType contextInfo denv css m actual expected  = 
+    SolveTypEqualsTypWithReport (MakeConstraintSolverEnv contextInfo css m denv) 0 m NoTrace None actual expected
     |> RaiseOperationResult
 
 let UndoIfFailed f =
@@ -2659,7 +2659,7 @@ let CodegenWitnessThatTypSupportsTraitConstraint tcVal g amap m (traitInfo:Trait
               | Some sln ->
                   match sln with 
                   | ILMethSln(origTy, extOpt, mref, minst) ->
-                       let metadataTy = helpEnsureTypeHasMetadata g origTy
+                       let metadataTy = convertToTypeWithMetadataIfPossible g origTy
                        let tcref, _tinst = destAppTy g metadataTy
                        let mdef = IL.resolveILMethodRef tcref.ILTyconRawMetadata mref
                        let ilMethInfo =

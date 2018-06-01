@@ -1,20 +1,25 @@
-
+/// match! - type check errors
 module M
 
-    // Check we get compile-time errors
-    let negTypeTest1() = ({| a = 1+1; b = 2 |} = {| a = 2 |}) 
+type MyUnion = | CaseA of int | CaseB | CaseC of string
 
-    let negTypeTest2() = ({| b = 2 |} = {| a = 2 |} )
+let a (notAnAsync: string) = async {
+    match! notAnAsync with
+    | x -> () }
 
-    // no subsumption
-    let negTypeTest3() = ({| b = 2 |} :> {| a : int |} )
+let b (myAsync: Async<int>) = async {
+    match! myAsync with
+    | CaseA(_) | CaseB | CaseC(_) -> () }
 
-    // no subsumption
-    let negTypeTest4() = ({| b = 2; a = 1 |} :> {| a : int |} )
+let c (myAsync: Async<int>) = async {
+    match! myAsync with
+    | 42 -> ()
+    | CaseA(_) -> () }
 
-    let posgTypeTest5() = ({| b = 2; a = 1 |} = {| a = 1; b = 2 |} )
-
-    // Comparison is not possible if structural elements are comparable
-    let negTypeTest6() = ({| a = id |} > {| a = id |})
-
-    let negTypeTest7() = (compare {| a = id |} {| a = id |})
+let d (myAsyncChild: Async<Async<int>>) = async {
+    match! myAsyncChild with
+    | 42 -> ()
+    match! myAsyncChild with
+    | x ->
+        match! x with
+        | CaseA(_) | CaseB | CaseC(_) -> () }

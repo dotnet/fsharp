@@ -26,6 +26,8 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="System.Runtime" />
+    <Reference Include="System.IO" />
     <PackageReference Include="FSharp.Core" Version="4.1.*" />
     <ProjectReference Include="..\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
     <Reference Include="Microsoft.Build.Framework, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">

@@ -1,24 +1,25 @@
 
-neg103.fs(5,50,5,61): typecheck error FS0001: Two anonymous record types have mismatched sets of field names '["a"; "b"]' and '["a"]'
+neg103.fs(7,12,7,22): typecheck error FS0001: This expression was expected to have type
+    'Async<'a>'    
+but here has type
+    'string'    
 
-neg103.fs(7,41,7,52): typecheck error FS0001: Two anonymous record types have mismatched sets of field names '["b"]' and '["a"]'
+neg103.fs(12,7,12,15): typecheck error FS0001: This expression was expected to have type
+    'int'    
+but here has type
+    'MyUnion'    
 
-neg103.fs(10,27,10,55): typecheck error FS0059: The type '{|a : int|}' does not have any proper subtypes and need not be used as the target of a static coercion
+neg103.fs(17,7,17,15): typecheck error FS0001: This expression was expected to have type
+    'int'    
+but here has type
+    'MyUnion'    
 
-neg103.fs(10,27,10,55): typecheck error FS0193: Type constraint mismatch. The type 
-    '{|b : int|}'    
-is not compatible with type
-    '{|a : int|}'    
+neg103.fs(21,7,21,9): typecheck error FS0001: This expression was expected to have type
+    'Async<int>'    
+but here has type
+    'int'    
 
-
-neg103.fs(13,27,13,62): typecheck error FS0059: The type '{|a : int|}' does not have any proper subtypes and need not be used as the target of a static coercion
-
-neg103.fs(13,27,13,62): typecheck error FS0193: Type constraint mismatch. The type 
-    '{|a : int ; b : int|}'    
-is not compatible with type
-    '{|a : int|}'    
-
-
-neg103.fs(18,34,18,36): typecheck error FS0001: The type '('a -> 'a)' does not support the 'comparison' constraint. For example, it does not support the 'System.IComparable' interface
-
-neg103.fs(20,42,20,44): typecheck error FS0001: The type '('a -> 'a)' does not support the 'comparison' constraint. For example, it does not support the 'System.IComparable' interface
+neg103.fs(25,11,25,19): typecheck error FS0001: This expression was expected to have type
+    'int'    
+but here has type
+    'MyUnion'    

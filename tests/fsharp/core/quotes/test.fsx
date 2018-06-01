@@ -1,4 +1,4 @@
-﻿// #Conformance #Quotations #Interop #Classes #ObjectConstructors #Attributes #Reflection 
+﻿// #Conformance #Quotations #Interop #Classes #ObjectConstructors #Attributes #Reflection #ComputationExpression
 #if TESTS_AS_APP
 module Core_quotes
 #endif
@@ -1744,6 +1744,30 @@ module QuotationStructUnionTests =
     //test "check NewUnionCase"   (<@ A1(1,2) @> |> (function NewUnionCase(unionCase,[ Int32 1; Int32 2 ]) -> true | _ -> false))
 
 
+module FlexibleUnionConstructorTests = 
+
+    [<Struct>]
+    type T = | A of seq<int>
+
+    type U = | B of seq<int>
+    let testList = [1..3]
+    let testFunction caseName x =
+        match x with
+        | Call(None, _, 
+               [PropertyGet (None,_,_) ;
+                 Let (_, Lambda (_, NewUnionCase(unioncase, _)), 
+                    Lambda(_, Application(_, Coerce(_, ty))))]) -> 
+                 unioncase.Name = caseName &&
+                 ty.Name = "IEnumerable`1"
+        | _ -> false
+
+    test "check struct flexible union constructor"   
+        (<@ testList |> A @> |> testFunction "A")
+    
+    test "check flexible union constructor"   
+        (<@ testList |> B @> |> testFunction "B")
+
+
 module EqualityOnExprDoesntFail = 
     let q = <@ 1 @>
     check "we09ceo" (q.Equals(1)) false
@@ -3152,6 +3176,30 @@ module TestFuncNoArgs =
         check "clew0mmlvew" (foo.ToString()) "() => new SomeType()"
 
     testFunc2()
+
+module TestMatchBang =
+    let myAsync = async {
+        do! Async.Sleep 1
+        return Some 42 }
+
+    /// Unpacks code quotations containing computation expressions (CE)
+    let (|CEDelay|CEBind|Expr|) expr =
+        match expr with
+        | Application (Lambda (_, Call (_, mDelay, [Lambda (_, innerExpr)])), _) when mDelay.Name = "Delay" -> CEDelay innerExpr
+        | Call (_, mBind, [_; Lambda (_, innerExpr)]) when mBind.Name = "Bind" -> CEBind innerExpr
+        | _ -> Expr expr
+
+    let testSimpleMatchBang() =
+        let quot1 = <@ async { match! myAsync with | Some (x: int) -> () | None -> () } @>
+        check "matchbangquot1"
+            (match quot1 with
+            | CEDelay(CEBind(IfThenElse expr)) -> Ok ()
+            | CEDelay(CEBind(expr)) -> Error "if statement (representing `match`) is missing"
+            | CEDelay(expr) -> Error "Bind is incorrect"
+            | expr -> Error "Delay is incorrect")
+            (Ok ())
+
+    testSimpleMatchBang()        
     
 
 #if !FX_RESHAPED_REFLECTION
