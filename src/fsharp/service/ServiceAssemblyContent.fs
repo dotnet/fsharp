@@ -187,7 +187,7 @@ type IAssemblyContentCache =
 module AssemblyContentProvider =
     open System.IO
 
-    let unresolvedSymbol (topRequireQualifiedAccessParent: Idents option) (cleanedIdents: Idents) =
+    let unresolvedSymbol (topRequireQualifiedAccessParent: Idents option) (cleanedIdents: Idents) (fullName: string) =
         let getNamespace (idents: Idents) = 
             if idents.Length > 1 then Some idents.[..idents.Length - 2] else None
 
@@ -199,7 +199,8 @@ module AssemblyContentProvider =
 
         let displayName = cleanedIdents |> Array.skip ns.Length |> String.concat "."
                 
-        { DisplayName = displayName
+        { FullName = fullName
+          DisplayName = displayName
           Namespace = ns }
 
     let createEntity ns (parent: Parent) (entity: FSharpEntity) =
@@ -225,7 +226,7 @@ module AssemblyContentProvider =
                     match entity with
                     | Symbol.Attribute -> EntityKind.Attribute 
                     | _ -> EntityKind.Type
-              UnresolvedSymbol = unresolvedSymbol topRequireQualifiedAccessParent cleanIdents
+              UnresolvedSymbol = unresolvedSymbol topRequireQualifiedAccessParent cleanIdents fullName
             })
 
     let traverseMemberFunctionAndValues ns (parent: Parent) (membersFunctionsAndValues: seq<FSharpMemberOrFunctionOrValue>) =
@@ -243,7 +244,7 @@ module AssemblyContentProvider =
                   AutoOpenParent = parent.AutoOpen |> Option.map parent.FixParentModuleSuffix
                   Symbol = func
                   Kind = fun _ -> EntityKind.FunctionOrValue func.IsActivePattern
-                  UnresolvedSymbol = unresolvedSymbol topRequireQualifiedAccessParent cleanedIdentes }
+                  UnresolvedSymbol = unresolvedSymbol topRequireQualifiedAccessParent cleanedIdentes fullName }
 
             [ yield! func.TryGetFullDisplayName() 
                      |> Option.map (fun fullDisplayName -> processIdents func.FullName (fullDisplayName.Split '.'))

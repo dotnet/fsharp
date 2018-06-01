@@ -116,12 +116,12 @@ type public CompletionItemKind =
     | Other
 
 type UnresolvedSymbol =
-    { DisplayName: string
+    { FullName: string
+      DisplayName: string
       Namespace: string[] }
 
 type internal CompletionItem =
-    { FullName: string option
-      ItemWithInst: ItemWithInst
+    { ItemWithInst: ItemWithInst
       Kind: CompletionItemKind
       IsOwnMember: bool
       MinorPriority: int

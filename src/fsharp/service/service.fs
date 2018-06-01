@@ -568,7 +568,7 @@ type TypeCheckInfo
             p <- p - 1
         if p >= 0 then Some p else None
     
-    let CompletionItem (ty: TyconRef option) (unresolvedEntity: AssemblySymbol option) (item: ItemWithInst) =
+    let CompletionItem (ty: TyconRef option) (assemblySymbol: AssemblySymbol option) (item: ItemWithInst) =
         let kind = 
             match item.Item with
             | Item.MethodGroup (_, minfo :: _, _) -> CompletionItemKind.Method minfo.IsExtensionMember
@@ -579,15 +579,12 @@ type TypeCheckInfo
             | Item.Value _ -> CompletionItemKind.Field
             | _ -> CompletionItemKind.Other
 
-        
-
-        { FullName = unresolvedEntity |> Option.map (fun x -> x.FullName)
-          ItemWithInst = item
+        { ItemWithInst = item
           MinorPriority = 0
           Kind = kind
           IsOwnMember = false
           Type = ty 
-          Unresolved = unresolved }
+          Unresolved = assemblySymbol |> Option.map (fun x -> x.UnresolvedSymbol) }
 
     let DefaultCompletionItem item = CompletionItem None None item
     
@@ -845,8 +842,7 @@ type TypeCheckInfo
                         |> RemoveExplicitlySuppressed g
                         |> List.filter (fun item -> not (fields.Contains item.Item.DisplayName))
                         |> List.map (fun item -> 
-                            { FullName = None
-                              ItemWithInst = item
+                            { ItemWithInst = item
                               Kind = CompletionItemKind.Argument
                               MinorPriority = 0
                               IsOwnMember = false

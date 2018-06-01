@@ -661,8 +661,8 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
                     let nameInCode = cutAttributeSuffix nameInCode
                     
                     let fullName = 
-                        match item.FullName with
-                        | Some x -> x
+                        match item.Unresolved with
+                        | Some x -> x.FullName
                         | None -> SymbolHelpers.FullNameOfItem g item.Item
                     
                     let namespaceToOpen = 
