@@ -4013,11 +4013,19 @@ let buildApp cenv expr resultTy arg m =
     // Special rules for building applications of the &&expr' operators, which gets the
     // address of an expression.
     | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [], _), _), _ 
-         when valRefEq g vf g.addrof2_vref-> 
+         when valRefEq g vf g.addrof2_vref -> 
 
         warning(UseOfAddressOfOperator(m))
         let wrap, e1a', _readonly = mkExprAddrOfExpr g true false AddressOfOp arg (Some(vf)) m
         MakeApplicableExprNoFlex cenv (wrap(e1a')), resultTy
+
+    | _ when isByrefTy g resultTy  ->
+        // Handle byref returns, byref-typed returns get implicitly dereferenced 
+        let v, _ = mkCompGenLocal m "byrefReturn" resultTy
+        let expr = expr.SupplyArgument(arg, m)
+        let expr = mkCompGenLet m v expr.Expr (mkAddrGet m (mkLocalValRef v))
+        let resultTy = destByrefTy g resultTy
+        MakeApplicableExprNoFlex cenv expr, resultTy
 
     | _ -> 
         expr.SupplyArgument(arg, m), resultTy             
@@ -8320,6 +8328,8 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
                 let exprty = 
                     if isAddrOf && isByrefTy cenv.g exprty then 
                         mkByrefTyWithInference cenv.g (destByrefTy cenv.g exprty) (NewByRefKindInferenceType cenv.g mExpr) 
+                    elif isByrefTy cenv.g exprty then 
+                        destByrefTy cenv.g exprty
                     else 
                         exprty
 
