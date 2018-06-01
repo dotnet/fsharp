@@ -596,7 +596,8 @@ type TypeCheckInfo
                 { DisplayName = displayName
                   Namespace = ns })
 
-        { ItemWithInst = item
+        { FullName = unresolvedEntity |> Option.map (fun x -> x.FullName)
+          ItemWithInst = item
           MinorPriority = 0
           Kind = kind
           IsOwnMember = false
@@ -859,7 +860,8 @@ type TypeCheckInfo
                         |> RemoveExplicitlySuppressed g
                         |> List.filter (fun item -> not (fields.Contains item.Item.DisplayName))
                         |> List.map (fun item -> 
-                            { ItemWithInst = item
+                            { FullName = None
+                              ItemWithInst = item
                               Kind = CompletionItemKind.Argument
                               MinorPriority = 0
                               IsOwnMember = false

@@ -282,7 +282,8 @@ type UnresolvedSymbol =
       Namespace: string[] }
 
 type CompletionItem =
-    { ItemWithInst: ItemWithInst
+    { FullName: string option
+      ItemWithInst: ItemWithInst
       Kind: CompletionItemKind
       IsOwnMember: bool
       MinorPriority: int
