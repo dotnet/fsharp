@@ -493,7 +493,7 @@ this file.
         </Reference>
       </ItemGroup>
       <Warning
-          Text="This Project references the obsolete in-box TypeProvider: FSharp.Data.TypeProviders.dll.  Consider Switching to the Nuget package version: https://www.nuget.org/packages/FSharp.Data.TypeProviders."
+          Text="This Project references the obsolete TypeProvider: FSharp.Data.TypeProviders.dll.  Consider Switching to the Nuget package version: https://www.nuget.org/packages/FSharp.Data.TypeProviders."
           Condition=" '@(ReferenceToInboxTP->Count())' != '0' " />
     </Target>
 
