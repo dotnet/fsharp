@@ -220,4 +220,6 @@
     <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonPackageVersion)" />
   </ItemGroup>
 
+  <Import Project="Snippets.targets" />
+
 </Project>

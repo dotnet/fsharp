@@ -35,6 +35,7 @@ open Microsoft.VisualStudio.LanguageServices.ProjectSystem
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.ComponentModelHost
+open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.Text.Outlining
 open FSharp.NativeInterop
 
@@ -345,6 +346,8 @@ type internal FSharpCheckerWorkspaceServiceFactory
 [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".ml")>]
 [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".mli")>]
 [<ProvideBraceCompletion(FSharpConstants.FSharpLanguageName)>]
+[<ProvideCodeExpansions(FSharpConstants.languageServiceGuidString, false, 106s, "FSharp", @"Snippets\1033\SnippetsIndex.xml")>]
+[<ProvideCodeExpansionPath("FSharp", "Description", @"Snippets\1033\Snippets\")>]
 [<ProvideLanguageService(languageService = typeof<FSharpLanguageService>,
                             strLanguageName = FSharpConstants.FSharpLanguageName,
                             languageResourceID = 100,

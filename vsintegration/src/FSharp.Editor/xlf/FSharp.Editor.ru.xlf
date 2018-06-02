@@ -152,6 +152,11 @@
         <target state="translated">Дополнительно</target>
         <note />
       </trans-unit>
+      <trans-unit id="InsertSnippet">
+        <source>Insert Snippet</source>
+        <target state="new">Insert Snippet</target>
+        <note>Shown as the prompt when inserting a code snippet.</note>
+      </trans-unit>
     </body>
   </file>
 </xliff>

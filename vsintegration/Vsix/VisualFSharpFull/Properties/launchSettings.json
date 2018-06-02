@@ -3,7 +3,10 @@
     "VisualFSharpFull": {
       "commandName": "Executable",
       "executablePath": "$(DevEnvDir)devenv.exe",
-      "commandLineArgs": "/rootsuffix $(VSSDKTargetPlatformRegRootSuffix) /log"
+      "commandLineArgs": "/rootsuffix $(VSSDKTargetPlatformRegRootSuffix) /log",
+      "environmentVariables": {
+        "COMPLUS_ZAPDisable": "1"
+      }
     }
   }
 }

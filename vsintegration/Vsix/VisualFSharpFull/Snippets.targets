@@ -1,0 +1,27 @@
+<Project>
+
+  <!--
+
+  This file should be kept in sync with the "$(RepoRoot)\vsintegration\Snippets\1033\" directory.
+
+  -->
+
+  <PropertyGroup>
+    <SnippetIndexLocation>$(MSBuildThisFileDirectory)..\..\Snippets\1033</SnippetIndexLocation>
+    <SnippetsLocation>$(SnippetIndexLocation)\Snippets</SnippetsLocation>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="$(SnippetIndexLocation)\SnippetsIndex.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <Link>Snippets\1033\SnippetsIndex.xml</Link>
+    </Content>
+    <Content Include="$(SnippetsLocation)\match.snippet">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <Link>Snippets\1033\Snippets\match.snippet</Link>
+    </Content>
+  </ItemGroup>
+
+</Project>

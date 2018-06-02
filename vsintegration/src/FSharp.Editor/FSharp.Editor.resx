@@ -207,4 +207,8 @@
   <data name="6012" xml:space="preserve">
     <value>Advanced</value>
   </data>
+  <data name="InsertSnippet" xml:space="preserve">
+    <value>Insert Snippet</value>
+    <comment>Shown as the prompt when inserting a code snippet.</comment>
+  </data>
 </root>
