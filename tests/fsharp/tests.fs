@@ -389,11 +389,14 @@ module CoreTests =
 
         peverify cfg "test.exe"
 
+        exec cfg ("." ++ "test.exe") ""
+
         // Same with library references the other way around
         fsc cfg "%s -r:lib.dll -r:lib3.dll -r:lib2.dll -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
 
+        exec cfg ("." ++ "test.exe") ""
 
         // Same without the reference to lib.dll - testing an incomplete reference set, but only compiling a subset of the code
         fsc cfg "%s -r:System.Runtime.dll --noframework --define:NO_LIB_REFERENCE -r:lib3.dll -r:lib2.dll -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
@@ -1843,6 +1846,12 @@ module TypecheckTests =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos24.exe" cfg.fsc_flags ["pos24.fs"]
         peverify cfg "pos24.exe"
+
+    [<Test>]
+    let ``sigs pos31`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:exe -o:pos31.exe --warnaserror" cfg.fsc_flags ["pos31.fsi"; "pos31.fs"]
+        peverify cfg "pos31.exe"
 
     [<Test>]
     let ``sigs pos23`` () = 

@@ -203,8 +203,8 @@
         <note />
       </trans-unit>
       <trans-unit id="5014">
-        <source>Console Application</source>
-        <target state="new">Console Application</target>
+        <source>Console Application (.NET Framework)</source>
+        <target state="new">Console Application (.NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="5015">
@@ -213,8 +213,8 @@
         <note />
       </trans-unit>
       <trans-unit id="5016">
-        <source>Library</source>
-        <target state="new">Library</target>
+        <source>Library (.NET Framework)</source>
+        <target state="new">Library (.NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="5017">
@@ -223,8 +223,8 @@
         <note />
       </trans-unit>
       <trans-unit id="5018">
-        <source>Tutorial</source>
-        <target state="new">Tutorial</target>
+        <source>Tutorial (.NET Framework)</source>
+        <target state="new">Tutorial (.NET Framework)</target>
         <note />
       </trans-unit>
       <trans-unit id="5019">
@@ -433,13 +433,13 @@
         <note />
       </trans-unit>
       <trans-unit id="ProductDetails">
-        <source>Microsoft Visual F# Tools 10.1 for F# 4.1</source>
-        <target state="new">Microsoft Visual F# Tools 10.1 for F# 4.1</target>
+        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
+        <target state="new">Microsoft Visual F# Tools 10.2 for F# 4.5</target>
         <note />
       </trans-unit>
       <trans-unit id="9002">
-        <source>Microsoft Visual F# Tools 10.1 for F# 4.1</source>
-        <target state="new">Microsoft Visual F# Tools 10.1 for F# 4.1</target>
+        <source>Microsoft Visual F# Tools 10.2 for F# 4.5</source>
+        <target state="new">Microsoft Visual F# Tools 10.2 for F# 4.5</target>
         <note />
       </trans-unit>
       <trans-unit id="ProductID">
@@ -453,8 +453,8 @@
         <note />
       </trans-unit>
       <trans-unit id="9001">
-        <source>Visual F# Tools 10.1 for F# 4.1</source>
-        <target state="new">Visual F# Tools 10.1 for F# 4.1</target>
+        <source>Visual F# Tools 10.2 for F# 4.5</source>
+        <target state="new">Visual F# Tools 10.2 for F# 4.5</target>
         <note />
       </trans-unit>
       <trans-unit id="9027">
