@@ -37,6 +37,7 @@
     <Compile Include="MSBuildUtilities.fs" />
     <Compile Include="AppConfigHelper.fs" />
     <Compile Include="Project.fs" />
+    <None Include="..\SupportedRuntimes\SupportedRuntimes.xml" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
