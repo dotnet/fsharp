@@ -121,21 +121,12 @@ type internal FSharpCompletionProvider
                                                                         partialName, getAllSymbols, userOpName=userOpName) |> liftAsync
             let results = List<Completion.CompletionItem>()
             
-            let getKindPriority = function
-                | CompletionItemKind.Property -> 0
-                | CompletionItemKind.Field -> 1
-                | CompletionItemKind.Method (isExtension = false) -> 2
-                | CompletionItemKind.Event -> 3
-                | CompletionItemKind.Argument -> 4
-                | CompletionItemKind.Other -> 5
-                | CompletionItemKind.Method (isExtension = true) -> 6
-
             declarationItems <-
                 declarations.Items
                 |> Array.sortWith (fun x y ->
                     let mutable n = (not x.IsResolved).CompareTo(not y.IsResolved)
                     if n <> 0 then n else
-                        n <- (getKindPriority x.Kind).CompareTo(getKindPriority y.Kind) 
+                        n <- (CompletionUtils.getKindPriority x.Kind).CompareTo(CompletionUtils.getKindPriority y.Kind) 
                         if n <> 0 then n else
                             n <- (not x.IsOwnMember).CompareTo(not y.IsOwnMember)
                             if n <> 0 then n else
