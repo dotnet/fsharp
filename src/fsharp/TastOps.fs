@@ -2935,6 +2935,15 @@ let TyconRefHasAttribute g m attribSpec tcref  =
                     (fun _ -> Some ())
         |> Option.isSome
 
+let isByrefTyconRef (g: TcGlobals) (tcref: TyconRef) = 
+    (g.byref_tcr.CanDeref && tyconRefEq g g.byref_tcr tcref) ||
+    (g.byref2_tcr.CanDeref && tyconRefEq g g.byref2_tcr tcref) ||
+    (g.inref_tcr.CanDeref && tyconRefEq g g.inref_tcr tcref) ||
+    (g.outref_tcr.CanDeref && tyconRefEq g g.outref_tcr tcref) ||
+    tyconRefEqOpt g g.system_TypedReference_tcref tcref ||
+    tyconRefEqOpt g g.system_ArgIterator_tcref tcref ||
+    tyconRefEqOpt g g.system_RuntimeArgumentHandle_tcref tcref
+
 // See RFC FS-1053.md
 let isByrefLikeTyconRef (g: TcGlobals) m (tcref: TyconRef) = 
     tcref.CanDeref &&
@@ -2942,13 +2951,7 @@ let isByrefLikeTyconRef (g: TcGlobals) m (tcref: TyconRef) =
     | Some res -> res
     | None -> 
        let res = 
-           (g.byref_tcr.CanDeref && tyconRefEq g g.byref_tcr tcref) ||
-           (g.byref2_tcr.CanDeref && tyconRefEq g g.byref2_tcr tcref) ||
-           (g.inref_tcr.CanDeref && tyconRefEq g g.inref_tcr tcref) ||
-           (g.outref_tcr.CanDeref && tyconRefEq g g.outref_tcr tcref) ||
-           tyconRefEqOpt g g.system_TypedReference_tcref tcref ||
-           tyconRefEqOpt g g.system_ArgIterator_tcref tcref ||
-           tyconRefEqOpt g g.system_RuntimeArgumentHandle_tcref tcref ||
+           isByrefTyconRef g tcref ||
            TyconRefHasAttribute g m g.attrib_IsByRefLikeAttribute tcref
        tcref.SetIsByRefLike res
        res

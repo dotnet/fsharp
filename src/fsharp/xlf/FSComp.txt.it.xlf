@@ -6518,8 +6518,8 @@
         <note />
       </trans-unit>
       <trans-unit id="chkNoByrefReturnOfLocal">
-        <source>The address of the variable '{0}' cannot be used at this point. The address of this local value may not be passed to a call returning a byref-like type which is then subsequently returned from this method or function. This is to ensure the address of the local value does not esacape its scope. .</source>
-        <target state="translated">In questo punto non è possibile usare l'indirizzo della variabile '{0}'. Un metodo o una funzione potrebbero non restituire l'indirizzo di questo valore di variabile locale.</target>
+        <source>The address of the variable '{0}' or a related expression cannot be used at this point. The address may not be passed to a call that returns an address. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="needs-review-translation">In questo punto non è possibile usare l'indirizzo della variabile '{0}'. Un metodo o una funzione potrebbero non restituire l'indirizzo di questo valore di variabile locale.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNamedActivePattern">
@@ -7005,6 +7005,21 @@
       <trans-unit id="tcByrefReturnImplicitlyDereferenced">
         <source>A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</source>
         <target state="new">A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcByRefLikeNotStruct">
+        <source>A type annotated with IsByRefLike must also be a struct.</source>
+        <target state="new">A type annotated with IsByRefLike must also be a struct.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoByrefAddressOfLocal">
+        <source>The address of the variable '{0}' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="new">The address of the variable '{0}' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoReturnOfLimitedSpan">
+        <source>The ByRef-like expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
+        <target state="new">The ByRef-like expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
         <note />
       </trans-unit>
     </body>

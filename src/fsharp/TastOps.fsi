@@ -1433,6 +1433,7 @@ val isNativePtrTy : TcGlobals -> TType -> bool
 val destByrefTy : TcGlobals -> TType -> TType
 val destNativePtrTy : TcGlobals -> TType -> TType
 
+val isByrefTyconRef : TcGlobals -> TyconRef -> bool
 val isByrefLikeTyconRef : TcGlobals -> range -> TyconRef -> bool
 val isByrefLikeTy : TcGlobals -> range -> TType -> bool
 

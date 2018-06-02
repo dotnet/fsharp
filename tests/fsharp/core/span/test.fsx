@@ -163,6 +163,52 @@ namespace Tests
             let data = Span<'T>.Empty
             data.[0] <- Unchecked.defaultof<'T>    
 
+    module CheckReturnOfSpan1 = 
+        let test () =
+            let s = Span<byte>.Empty
+            s
+
+    module CheckReturnOfSpan2 = 
+                
+        type Jopac() =
+
+            member this.Create() =
+                let mutable x = 1
+                this.Create(&x)
+
+            member __.Create(x: byref<int>) =
+                Span<int>.Empty
+
+    module CheckReturnOfSpan3 = 
+        type Jopac_NotCompile_WhichIsMightBeIncorrect() =
+            
+            member __.Create(x: byref<int>) =
+                Span<int>.Empty
+
+            member this.Create() =
+                let mutable x = 1
+                let x = this.Create(&x)
+                x
+
+            member this.CreateAgain() =
+                let mutable x = 1
+                this.Create(&x)
+
+    module CheckReturnOfSpan4 = 
+        type Jopac_NotCompile_WhichIsCorrect() =
+
+            member __.Create(x: byref<int>) =
+                &x
+
+            member this.Create() =
+                let mutable x = 1
+                let x = &this.Create(&x)
+                &x
+
+            member this.CreateAgain() =
+                let mutable x = 1
+                &this.Create(&x)
+
 
 #if NEGATIVE
 
