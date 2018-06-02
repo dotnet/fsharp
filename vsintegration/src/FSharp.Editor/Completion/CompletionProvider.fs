@@ -110,17 +110,14 @@ type internal FSharpCompletionProvider
             let fcsCaretLineNumber = Line.fromZ caretLinePos.Line  // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
             let caretLineColumn = caretLinePos.Character
             let partialName = QuickParse.GetPartialLongNameEx(caretLine.ToString(), caretLineColumn - 1) 
-            let! cancellationToken = liftAsync Async.CancellationToken
 
             let getAllSymbols() =
-                if cancellationToken.IsCancellationRequested then []
-                else getAllSymbols checkFileResults 
-                     |> List.filter (fun assemblySymbol -> 
-                         assemblySymbol.FullName.Contains "." && not (PrettyNaming.IsOperatorName assemblySymbol.Symbol.DisplayName))
+                getAllSymbols checkFileResults 
+                |> List.filter (fun assemblySymbol -> 
+                     assemblySymbol.FullName.Contains "." && not (PrettyNaming.IsOperatorName assemblySymbol.Symbol.DisplayName))
 
             let! declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLine.ToString(), 
                                                                         partialName, getAllSymbols, userOpName=userOpName) |> liftAsync
-            do! Option.guard cancellationToken.IsCancellationRequested
             let results = List<Completion.CompletionItem>()
             
             let getKindPriority = function
@@ -149,55 +146,54 @@ type internal FSharpCompletionProvider
 
             declarationItemsData.Clear()
             sortedDeclItems |> Array.iteri (fun number declarationItem ->
-                if not cancellationToken.IsCancellationRequested then
-                    let glyph = Tokenizer.FSharpGlyphToRoslynGlyph (declarationItem.Glyph, declarationItem.Accessibility)
-                    let name =
-                        match declarationItem.NamespaceToOpen with
-                        | Some namespaceToOpen -> sprintf "%s (open %s)" declarationItem.Name namespaceToOpen
-                        | _ -> declarationItem.Name
+                let glyph = Tokenizer.FSharpGlyphToRoslynGlyph (declarationItem.Glyph, declarationItem.Accessibility)
+                let name =
+                    match declarationItem.NamespaceToOpen with
+                    | Some namespaceToOpen -> sprintf "%s (open %s)" declarationItem.Name namespaceToOpen
+                    | _ -> declarationItem.Name
                     
-                    let filterText =
-                        match declarationItem.NamespaceToOpen, declarationItem.Name.Split '.' with
-                        // There is no namespace to open and the item name does not contain dots, so we don't need to pass special FilterText to Roslyn.
-                        | None, [|_|] -> null
-                        // Either we have a namespace to open ("DateTime (open System)") or item name contains dots ("Array.map"), or both.
-                        // We are passing last part of long ident as FilterText.
-                        | _, idents -> Array.last idents
+                let filterText =
+                    match declarationItem.NamespaceToOpen, declarationItem.Name.Split '.' with
+                    // There is no namespace to open and the item name does not contain dots, so we don't need to pass special FilterText to Roslyn.
+                    | None, [|_|] -> null
+                    // Either we have a namespace to open ("DateTime (open System)") or item name contains dots ("Array.map"), or both.
+                    // We are passing last part of long ident as FilterText.
+                    | _, idents -> Array.last idents
 
-                    let completionItem = 
-                        CommonCompletionItem.Create(name, glyph = Nullable glyph, rules = getRules(), filterText = filterText)
-                                            .AddProperty(FullNamePropName, declarationItem.FullName)
+                let completionItem = 
+                    CommonCompletionItem.Create(name, glyph = Nullable glyph, rules = getRules(), filterText = filterText)
+                                        .AddProperty(FullNamePropName, declarationItem.FullName)
                         
-                    let completionItem =
-                        match declarationItem.Kind with
-                        | CompletionItemKind.Method (isExtension = true) ->
-                              completionItem.AddProperty(IsExtensionMemberPropName, "")
-                        | _ -> completionItem
+                let completionItem =
+                    match declarationItem.Kind with
+                    | CompletionItemKind.Method (isExtension = true) ->
+                            completionItem.AddProperty(IsExtensionMemberPropName, "")
+                    | _ -> completionItem
                 
-                    let completionItem =
-                        if name <> declarationItem.NameInCode then
-                            completionItem.AddProperty(NameInCodePropName, declarationItem.NameInCode)
-                        else completionItem
+                let completionItem =
+                    if name <> declarationItem.NameInCode then
+                        completionItem.AddProperty(NameInCodePropName, declarationItem.NameInCode)
+                    else completionItem
 
-                    let completionItem =
-                        match declarationItem.NamespaceToOpen with
-                        | Some ns -> completionItem.AddProperty(NamespaceToOpenPropName, ns)
-                        | None -> completionItem
+                let completionItem =
+                    match declarationItem.NamespaceToOpen with
+                    | Some ns -> completionItem.AddProperty(NamespaceToOpenPropName, ns)
+                    | None -> completionItem
 
-                    let priority = 
-                        match mruItems.TryGetValue declarationItem.FullName with
-                        | true, hints -> maxHints - hints
-                        | _ -> number + maxHints + 1
+                let priority = 
+                    match mruItems.TryGetValue declarationItem.FullName with
+                    | true, hints -> maxHints - hints
+                    | _ -> number + maxHints + 1
 
-                    let sortText = sprintf "%06d" priority
+                let sortText = sprintf "%06d" priority
 
-                    let completionItem = completionItem.WithSortText(sortText)
+                let completionItem = completionItem.WithSortText(sortText)
 
-                    let key = completionItem.DisplayText
-                    declarationItemsData.TryAdd(key, declarationItem) |> ignore
-                    results.Add(completionItem))
+                let key = completionItem.DisplayText
+                declarationItemsData.TryAdd(key, declarationItem) |> ignore
+                results.Add(completionItem))
 
-            if not cancellationToken.IsCancellationRequested && results.Count > 0 && not declarations.IsForType && not declarations.IsError && List.isEmpty partialName.QualifyingIdents then
+            if results.Count > 0 && not declarations.IsForType && not declarations.IsError && List.isEmpty partialName.QualifyingIdents then
                 let lineStr = textLines.[caretLinePos.Line].ToString()
                 
                 let completionContext =

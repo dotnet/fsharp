@@ -652,8 +652,10 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
                             | Some _ -> displayName
                             | None -> Lexhelp.Keywords.QuoteIdentifierIfNeeded displayName
 
+                    let isAttributeItem = lazy (SymbolHelpers.IsAttribute infoReader item.Item)
+
                     let cutAttributeSuffix (name: string) =
-                        if isAttributeApplicationContext && name <> "Attribute" && name.EndsWith "Attribute" && SymbolHelpers.IsAttribute infoReader item.Item then
+                        if isAttributeApplicationContext && name <> "Attribute" && name.EndsWith "Attribute" && isAttributeItem.Value then
                             name.[0..name.Length - "Attribute".Length - 1]
                         else name
 
