@@ -830,14 +830,12 @@ module internal SymbolHelpers =
              g.suppressed_types 
              |> List.exists (fun supp -> 
                 let generalizedSupp = generalizedTyconRef supp
-                if isAppTy g generalizedSupp then 
-                  // check if they are the same logical type (after removing all abbreviations)
-                  let tcr1 = tcrefOfAppTy g ty
-                  let tcr2 = tcrefOfAppTy g generalizedSupp
-                  tyconRefEq g tcr1 tcr2 && 
-                  // check the display name is precisely the one we're suppressing
-                  it = supp.DisplayName
-                else false) 
+                // check the display name is precisely the one we're suppressing
+                isAppTy g generalizedSupp && it = supp.DisplayName &&
+                // check if they are the same logical type (after removing all abbreviations)
+                let tcr1 = tcrefOfAppTy g ty
+                let tcr2 = tcrefOfAppTy g generalizedSupp
+                tyconRefEq g tcr1 tcr2) 
          | _ -> false)
 
     /// Filter types that are explicitly suppressed from the IntelliSense (such as uppercase "FSharpList", "Option", etc.)
