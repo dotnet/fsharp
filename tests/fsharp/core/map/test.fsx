@@ -24,9 +24,16 @@ let test_eq_range n m x =
   done;
   for i = n to m do 
     test "ew9wef" (Map.tryFind i x = Some (i * 100));
+    test "ew9wef" (x.TryGetValue(i) = (true, (i * 100)));
+    let mutable res = 0
+    test "ew9wef" (x.TryGetValue(i, &res) = true);
+    test "ew9wef" (res = (i * 100));
   done;
   for i = m+1 to m+100 do 
     test "ew9wef" (Map.tryFind i x = None);
+    test "ew9wef" (x.TryGetValue(i) = (false, 0));
+    let mutable res = 0
+    test "ew9wef" (x.TryGetValue(i,&res) = false);
   done;
   for i = m+1 to m+5 do 
     test "ew9cwef" ((try Some(Map.find i x) with :? System.Collections.Generic.KeyNotFoundException -> None) = None);
