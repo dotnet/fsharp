@@ -4325,7 +4325,7 @@
     <value>A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</value>
   </data>
   <data name="tcByRefLikeNotStruct" xml:space="preserve">
-    <value>A type annotated with IsByRefLike must also be a struct.</value>
+    <value>A type annotated with IsByRefLike must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</value>
   </data>
   <data name="chkNoByrefReturnOfLocal" xml:space="preserve">
     <value>The address of the variable '{0}' or a related expression cannot be used at this point. The address may not be passed to a call that returns an address. This is to ensure the address of the local value does not escape its scope.</value>
@@ -4338,5 +4338,8 @@
   </data>
   <data name="tastValueMustBeLocal" xml:space="preserve">
     <value>A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'</value>
+  </data>
+  <data name="tcIsReadOnlyNotStruct" xml:space="preserve">
+    <value>A type annotated with IsReadOnly must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</value>
   </data>
 </root>

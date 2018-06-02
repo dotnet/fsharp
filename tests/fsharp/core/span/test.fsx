@@ -41,12 +41,12 @@ namespace Tests
         let check2 s expected actual = check s actual expected 
 
 
-    [<IsReadOnly>]
+    [<IsReadOnly; Struct>]
     type ReadOnlyStruct(count1: int, count2: int) = 
         member x.Count1 = count1
         member x.Count2 = count2
 
-    [<IsByRefLike>]
+    [<IsByRefLike; Struct>]
     type ByRefLikeStruct(count1: int, count2: int) = 
         member x.Count1 = count1
         member x.Count2 = count2

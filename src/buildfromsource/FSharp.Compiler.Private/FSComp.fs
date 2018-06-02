@@ -4321,7 +4321,7 @@ type internal SR private() =
     /// A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&f(x)' or '&obj.Method(arg1, arg2)'.
     /// (Originally from ..\FSComp.txt:1431)
     static member tcByrefReturnImplicitlyDereferenced() = (3226, GetStringFunc("tcByrefReturnImplicitlyDereferenced",",,,") )
-    /// A type annotated with IsByRefLike must also be a struct.
+    /// A type annotated with IsByRefLike must also be a struct. Consider adding the [<Struct>] attribute to the type.
     /// (Originally from ..\FSComp.txt:1432)
     static member tcByRefLikeNotStruct() = (3227, GetStringFunc("tcByRefLikeNotStruct",",,,") )
     /// The address of the variable '%s' or a related expression cannot be used at this point. The address may not be passed to a call that returns an address. This is to ensure the address of the local value does not escape its scope.
@@ -4336,6 +4336,9 @@ type internal SR private() =
     /// A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'
     /// (Originally from ..\FSComp.txt:1436)
     static member tastValueMustBeLocal() = (3231, GetStringFunc("tastValueMustBeLocal",",,,") )
+    /// A type annotated with IsReadOnly must also be a struct. Consider adding the [<Struct>] attribute to the type.
+    /// (Originally from ..\FSComp.txt:1437)
+    static member tcIsReadOnlyNotStruct() = (3232, GetStringFunc("tcIsReadOnlyNotStruct",",,,") )
 
     /// Call this method once to validate that all known resources are valid; throws if not
     static member RunStartupValidation() =
@@ -5746,4 +5749,5 @@ type internal SR private() =
         ignore(GetString("chkNoReturnOfLimitedSpan"))
         ignore(GetString("chkNoWriteToLimitedSpan"))
         ignore(GetString("tastValueMustBeLocal"))
+        ignore(GetString("tcIsReadOnlyNotStruct"))
         ()
