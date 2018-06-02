@@ -194,6 +194,9 @@ namespace Tests
                 let mutable x = 1
                 this.Create(&x)
 
+
+#if NEGATIVE
+
     module CheckReturnOfSpan4 = 
         type Jopac_NotCompile_WhichIsCorrect() =
 
@@ -208,9 +211,6 @@ namespace Tests
             member this.CreateAgain() =
                 let mutable x = 1
                 &this.Create(&x)
-
-
-#if NEGATIVE
 
 // Disallow this:
 [<IsReadOnly; Struct>]
