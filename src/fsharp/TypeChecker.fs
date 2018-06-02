@@ -12696,7 +12696,7 @@ module IncrClassChecking =
                         Some (localRep.MakeValueAssign thisValOpt thisTyInst safeStaticInitInfo v arg m)
 
                 // Rewrite taking the address of mutable values stored as fields 
-                | Expr.Op(TOp.LValueOp (LGetAddr readonly, ValDeref v), [], []   , m) 
+                | Expr.Op(TOp.LValueOp (LAddrOf readonly, ValDeref v), [], []   , m) 
                     when localRep.IsValWithRepresentation(v) ->
                         Some (localRep.MakeValueGetAddress readonly thisValOpt thisTyInst safeStaticInitInfo v m)
 

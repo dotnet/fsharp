@@ -7018,8 +7018,18 @@
         <note />
       </trans-unit>
       <trans-unit id="chkNoReturnOfLimitedSpan">
-        <source>The ByRef-like expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
-        <target state="new">The ByRef-like expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
+        <source>The IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
+        <target state="new">The IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoWriteToLimitedSpan">
+        <source>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</source>
+        <target state="new">This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tastValueMustBeLocal">
+        <source>A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'</source>
+        <target state="new">A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'</target>
         <note />
       </trans-unit>
     </body>

@@ -302,7 +302,7 @@ module FSharpExprConvert =
         match expr with 
         | Expr.Op(op, tyargs, args, m) -> 
             match op, args, tyargs  with
-            | TOp.LValueOp(LGetAddr _, vref), _, _ -> exprForValRef m vref
+            | TOp.LValueOp(LAddrOf _, vref), _, _ -> exprForValRef m vref
             | TOp.ValFieldGetAddr(rfref, _), [], _ -> mkStaticRecdFieldGet(rfref, tyargs, m)
             | TOp.ValFieldGetAddr(rfref, _), [arg], _ -> mkRecdFieldGetViaExprAddr(exprOfExprAddr cenv arg, rfref, tyargs, m)
             | TOp.UnionCaseFieldGetAddr(uref, n, _), [arg], _ -> mkUnionCaseFieldGetProvenViaExprAddr(exprOfExprAddr cenv arg, uref, tyargs, n, m)
@@ -755,7 +755,7 @@ module FSharpExprConvert =
                 // rebuild reraise<T>() and Convert 
                 mkReraiseLibCall cenv.g toTy m |> ConvExprPrim cenv env 
 
-            | TOp.LValueOp(LGetAddr _, vref), [], [] -> 
+            | TOp.LValueOp(LAddrOf _, vref), [], [] -> 
                 E.AddressOf(ConvExpr cenv env (exprForValRef m vref)) 
 
             | TOp.LValueOp(LByrefSet, vref), [], [e] -> 

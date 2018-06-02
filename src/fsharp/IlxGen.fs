@@ -1955,7 +1955,7 @@ let rec GenExpr (cenv:cenv) (cgbuf:CodeGenBuffer) eenv sp expr sequel =
       | TOp.LValueOp(LSet,v),[e],[]      -> GenSetVal cenv cgbuf eenv (v,e,m) sequel
       | TOp.LValueOp(LByrefGet,v),[],[]  -> GenGetByref cenv cgbuf eenv (v,m) sequel
       | TOp.LValueOp(LByrefSet,v),[e],[] -> GenSetByref cenv cgbuf eenv (v,e,m) sequel
-      | TOp.LValueOp(LGetAddr _,v),[],[]   -> GenGetValAddr cenv cgbuf eenv (v,m) sequel
+      | TOp.LValueOp(LAddrOf _,v),[],[]   -> GenGetValAddr cenv cgbuf eenv (v,m) sequel
       | TOp.Array,elems,[elemTy] ->  GenNewArray cenv cgbuf eenv (elems,elemTy,m) sequel
       | TOp.Bytes bytes,[],[] -> 
           if cenv.opts.emitConstantArraysUsingStaticDataBlobs then 
@@ -3387,7 +3387,8 @@ and GenGetAddrOfRefCellField cenv cgbuf eenv (e,ty,m) sequel =
 and GenGetValAddr cenv cgbuf eenv (v: ValRef, m) sequel =
     let vspec = v.Deref
     let ilTy = GenTypeOfVal cenv eenv vspec
-    match StorageForValRef m v eenv with 
+    let storage = StorageForValRef m v eenv
+    match storage with 
     | Local (idx,None) ->
         CG.EmitInstrs cgbuf (pop 0) (Push [ILType.Byref ilTy]) [ I_ldloca (uint16 idx) ] 
     | Arg idx ->

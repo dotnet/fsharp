@@ -2221,7 +2221,7 @@ and p_target (TTarget(a,b,_)) st = p_tup2 p_Vals p_expr (a,b) st
 and p_bind (TBind(a,b,_)) st = p_tup2 p_Val p_expr (a,b) st
 
 and p_lval_op_kind x st =
-    p_byte (match x with LGetAddr _ -> 0 | LByrefGet -> 1 | LSet -> 2 | LByrefSet -> 3) st
+    p_byte (match x with LAddrOf _ -> 0 | LByrefGet -> 1 | LSet -> 2 | LByrefSet -> 3) st
 
 and p_recdInfo x st = 
     match x with 
@@ -2254,7 +2254,7 @@ and u_bind st = let a = u_Val st in let b = u_expr st in TBind(a,b,NoSequencePoi
 
 and u_lval_op_kind st =
     match u_byte st with 
-    | 0 -> LGetAddr false
+    | 0 -> LAddrOf false
     | 1 -> LByrefGet 
     | 2 -> LSet 
     | 3 -> LByrefSet 

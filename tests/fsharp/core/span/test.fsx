@@ -290,25 +290,27 @@ namespace Tests
             //let stackReferringBecauseMutable1 = Span<byte>(NativePtr.toVoidPtr(NativePtr.ofByRef(&&x)), 1)
             //let stackReferring1 = Span<byte>(NativePtr.toVoidPtr(NativePtr.stackalloc< byte>(100), 1)
 
-            let mutable stackReferring2 = Span<int>()
+            let mutable stackReferringBecauseMutable2 = Span<int>()
 
             // this is allowed
-            stackReferring2 <- m1 &stackReferring2 stackReferringBecauseMutable1
+            stackReferringBecauseMutable2 <- m1 &stackReferringBecauseMutable2 stackReferringBecauseMutable1
+
+            // this is allowed
+            stackReferringBecauseMutable2 <- m1 &param1 stackReferringBecauseMutable1
+
+#if NEGATIVE
+            // this is NOT allowed
+            param1 <- m1 &stackReferringBecauseMutable2 stackReferringBecauseMutable1
 
             // this is NOT allowed
-            stackReferring2 <- m1 &param1 stackReferringBecauseMutable1
-
-            // this is NOT allowed
-            param1 <- m1 &stackReferring2 stackReferringBecauseMutable1
-
-            // this is NOT allowed
-            let param2 = stackReferringBecauseMutable1.Slice(10)
+            param1 <- stackReferringBecauseMutable2.Slice(10)
+#endif
 
             // this is allowed
             param1 <- Span<int>()
 
             // this is allowed
-            stackReferring2 <- param1
+            stackReferringBecauseMutable2 <- param1
 
     module SpanSafetyTests2 = 
         let m2 (x: byref<Span<int>>) =
@@ -328,25 +330,23 @@ namespace Tests
 
         let test2 (param1: byref<Span<int>>) (param2: Span<byte>) =
             let mutable stackReferringBecauseMutable1 = Span<byte>()
-            let mutable stackReferring2 = Span<int>()
+            let mutable stackReferringBecauseMutable2 = Span<int>()
 
-            let stackReferring3 = &(m2 &stackReferring2)
-
-            // this is allowed
-            stackReferring3 <- m1 &stackReferring2 stackReferringBecauseMutable1
+            let stackReferring3 = &(m2 &stackReferringBecauseMutable2)
 
             // this is allowed
-            m2(&stackReferring3) <- stackReferring2
+            stackReferring3 <- m1 &stackReferringBecauseMutable2 stackReferringBecauseMutable1
 
-#if NEGATIVE
+            // this is allowed
+            m2(&stackReferring3) <- stackReferringBecauseMutable2
+
+#if NEGATIVE2
             // this is NOT allowed
-            m1(&param1) <- stackReferring2
-#endif
+            m1(&param1) <- stackReferringBecauseMutable2
 
             // this is NOT allowed
             param1 <- stackReferring3
 
-#if NEGATIVE
             // this is NOT allowed
             &stackReferring3
 #endif
@@ -376,23 +376,26 @@ namespace Tests
                 let mutable x = 1
                 &this.Create(&x)
 
-// Disallow this:
-[<IsReadOnly; Struct>]
-type DisallowedIsReadOnlyStruct  = 
-    [<DefaultValue>]
-    val mutable X : int
 #endif
 
 #if NOT_YET
-// Allow this:
-[<IsByRefLike; Struct>]
-type ByRefLikeStructWithSpanField(count1: Span, count2: int) = 
-    member x.Count1 = count1
-    member x.Count2 = count2
 
-[<IsByRefLike; Struct>]
-type ByRefLikeStructWithByrefField(count1: Span<int>, count2: int) = 
-    member x.Count1 = count1
-    member x.Count2 = count2
+    // Disallow this:
+    [<IsReadOnly; Struct>]
+    type DisallowedIsReadOnlyStruct  = 
+        [<DefaultValue>]
+        val mutable X : int
+
+
+    // Allow this:
+    [<IsByRefLike; Struct>]
+    type ByRefLikeStructWithSpanField(count1: Span, count2: int) = 
+        member x.Count1 = count1
+        member x.Count2 = count2
+
+    [<IsByRefLike; Struct>]
+    type ByRefLikeStructWithByrefField(count1: Span<int>, count2: int) = 
+        member x.Count1 = count1
+        member x.Count2 = count2
 #endif
 

@@ -213,20 +213,24 @@ module InRefParam_ExplicitInAttribute  =
 module InRefParam_ExplicitInAttributeDateTime = 
     type C() = 
          static member M([<System.Runtime.InteropServices.In>] x: inref<System.DateTime>) = x
-    let res = System.DateTime.Now
-    let v = C.M(&res)
-    check "cweweoiwe519cw" v res
+    let Test() = 
+        let res = System.DateTime.Now
+        let v = C.M(&res)
+        check "cweweoiwe519cw" v res
+    Test()
 
 module InRefParam  = 
     type C() = 
          static member M(x: inref<System.DateTime>) = x
-    let res = System.DateTime.Now
-    let v =  C.M(&res)
-    check "cweweoiwe51btw" v res
+    let Test() = 
+        let res = System.DateTime.Now
+        let v =  C.M(&res)
+        check "cweweoiwe51btw" v res
 
-    let minfo = typeof<C>.GetMethod("M")
-    check "cwnoreekerf" (minfo.GetParameters().[0].IsIn) true
-    check "cwnoreekerg" (minfo.GetParameters().[0].IsOut) false
+        let minfo = typeof<C>.GetMethod("M")
+        check "cwnoreekerf" (minfo.GetParameters().[0].IsIn) true
+        check "cwnoreekerg" (minfo.GetParameters().[0].IsOut) false
+    Test()
 
 module InRefParamOverload_ExplicitAddressOfAtCallSite  = 
     type C() = 
@@ -234,12 +238,15 @@ module InRefParamOverload_ExplicitAddressOfAtCallSite  =
          static member M(x: inref<System.DateTime>) = x.AddDays(2.0)
          static member M2(x: System.DateTime, y: int) = x.AddDays(1.0)
          static member M2(x: inref<System.DateTime>, y: int) = x.AddDays(2.0)
-    let res = System.DateTime.Now
-    let v =  C.M(&res)
-    check "cweweoiwe51btw8" v (res.AddDays(2.0))
-    let v2 =  C.M2(&res, 0)
-    check "cweweoiwe51btw6" v2 (res.AddDays(2.0))
 
+    let Test() = 
+        let res = System.DateTime.Now
+        let v =  C.M(&res)
+        check "cweweoiwe51btw8" v (res.AddDays(2.0))
+        let v2 =  C.M2(&res, 0)
+        check "cweweoiwe51btw6" v2 (res.AddDays(2.0))
+
+    Test()
 
 module InRefParamOverload_ImplicitAddressOfAtCallSite  = 
     type C() = 
@@ -252,6 +259,21 @@ module InRefParamOverload_ImplicitAddressOfAtCallSite  =
     check "cweweoiwe51btw1" v (res.AddDays(1.0))
     let v2 =  C.M2(res, 4)
     check "cweweoiwe51btw2" v2 (res.AddDays(1.0))
+
+
+module InRefParamOverload_ImplicitAddressOfAtCallSite2  = 
+    type C() = 
+         static member M(x: System.DateTime) = x.AddDays(1.0)
+         static member M(x: inref<System.DateTime>) = x.AddDays(2.0)
+         static member M2(x: System.DateTime, y: int) = x.AddDays(1.0)
+         static member M2(x: inref<System.DateTime>, y: int) = x.AddDays(2.0)
+    let Test() = 
+        let res = System.DateTime.Now
+        let v =  C.M(res)
+        check "cweweoiwe51btw1" v (res.AddDays(1.0))
+        let v2 =  C.M2(res, 4)
+        check "cweweoiwe51btw2" v2 (res.AddDays(1.0))
+    Test()
 
 
 module InRefParam_DateTime   = 
@@ -291,17 +313,21 @@ module InRefParam_DateTime_ImplicitAddressOfAtCallSite4  =
 module InRefParam_Generic_ExplicitAddressOfAttCallSite1 = 
     type C() = 
          static member M(x: inref<'T>) = x
-    let res = "abc"
-    let v =  C.M(&res)
-    check "lmvjvwo2" res "abc"
-    check "lmvjvwo3" v "abc"
+    let Test() = 
+        let res = "abc"
+        let v =  C.M(&res)
+        check "lmvjvwo2" res "abc"
+        check "lmvjvwo3" v "abc"
+    Test()
 
 module InRefParam_Generic_ExplicitAddressOfAttCallSite2  = 
     type C() = 
          static member M(x: inref<'T>) = x
-    let res = "abc"
-    let v =  C.M(&res)
-    check "lmvjvwo4" v "abc"
+    let Test() = 
+        let res = "abc"
+        let v =  C.M(&res)
+        check "lmvjvwo4" v "abc"
+    Test()
 
 module ByrefReturnTests = 
 

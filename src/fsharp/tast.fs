@@ -4767,12 +4767,12 @@ and ForLoopStyle =
 /// Indicates what kind of pointer operation this is.
 and LValueOperation = 
     /// In C syntax this is: &localv            
-    | LGetAddr of readonly: bool
+    | LAddrOf of readonly: bool
 
     /// In C syntax this is: *localv_ptr        
     | LByrefGet     
 
-    /// In C syntax this is:  localv = e     , note == *(&localv) = e == LGetAddr; LByrefSet
+    /// In C syntax this is:  localv = e     , note == *(&localv) = e == LAddrOf; LByrefSet
     | LSet          
 
     /// In C syntax this is: *localv_ptr = e   

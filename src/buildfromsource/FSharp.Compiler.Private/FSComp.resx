@@ -4029,8 +4029,8 @@
   <data name="tcCouldNotFindOffsetToStringData" xml:space="preserve">
     <value>Could not find method System.Runtime.CompilerServices.OffsetToStringData in references when building 'fixed' expression.</value>
   </data>
-  <data name="chkNoByrefReturnOfLocal" xml:space="preserve">
-    <value>The address of the variable '{0}' cannot be used at this point. The address of this local value may not be passed to a call returning a byref-like type which is then subsequently returned from this method or function. This is to ensure the address of the local value does not escape its scope.</value>
+  <data name="chkNoByrefAddressOfLocal" xml:space="preserve">
+    <value>The address of the variable '{0}' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</value>
   </data>
   <data name="tcNamedActivePattern" xml:space="preserve">
     <value>{0} is an active pattern and cannot be treated as a discriminated union case with named fields.</value>
@@ -4323,5 +4323,20 @@
   </data>
   <data name="tcByrefReturnImplicitlyDereferenced" xml:space="preserve">
     <value>A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</value>
+  </data>
+  <data name="tcByRefLikeNotStruct" xml:space="preserve">
+    <value>A type annotated with IsByRefLike must also be a struct.</value>
+  </data>
+  <data name="chkNoByrefReturnOfLocal" xml:space="preserve">
+    <value>The address of the variable '{0}' or a related expression cannot be used at this point. The address may not be passed to a call that returns an address. This is to ensure the address of the local value does not escape its scope.</value>
+  </data>
+  <data name="chkNoReturnOfLimitedSpan" xml:space="preserve">
+    <value>The IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</value>
+  </data>
+  <data name="chkNoWriteToLimitedSpan" xml:space="preserve">
+    <value>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</value>
+  </data>
+  <data name="tastValueMustBeLocal" xml:space="preserve">
+    <value>A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'</value>
   </data>
 </root>

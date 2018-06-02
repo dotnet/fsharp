@@ -518,7 +518,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             // rebuild reraise<T>() and Convert 
             mkReraiseLibCall cenv.g toTy m |> ConvExpr cenv env 
 
-        | TOp.LValueOp(LGetAddr _,vref),[],[] -> 
+        | TOp.LValueOp(LAddrOf _,vref),[],[] -> 
             QP.mkAddressOf(ConvValRef false cenv env m vref [])
 
         | TOp.LValueOp(LByrefSet,vref),[],[e] -> 
@@ -665,7 +665,7 @@ and ConvLValueExprCore cenv env expr =
     match expr with 
     | Expr.Op(op,tyargs,args,m) -> 
         match op, args, tyargs  with
-        | TOp.LValueOp(LGetAddr _,vref),_,_ -> ConvValRef false cenv env m vref [] 
+        | TOp.LValueOp(LAddrOf _,vref),_,_ -> ConvValRef false cenv env m vref [] 
         | TOp.ValFieldGetAddr(rfref, _),_,_ -> ConvClassOrRecdFieldGet cenv env m rfref tyargs args
         | TOp.UnionCaseFieldGetAddr(ucref,n, _),[e],_ -> ConvUnionFieldGet cenv env m ucref n tyargs e
         | TOp.ILAsm([ I_ldflda(fspec) ],_rtys),_,_  -> ConvLdfld  cenv env m fspec tyargs args

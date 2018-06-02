@@ -4027,9 +4027,9 @@ type internal SR private() =
     /// Could not find method System.Runtime.CompilerServices.OffsetToStringData in references when building 'fixed' expression.
     /// (Originally from ..\FSComp.txt:1333)
     static member tcCouldNotFindOffsetToStringData() = (3208, GetStringFunc("tcCouldNotFindOffsetToStringData",",,,") )
-    /// The address of the variable '%s' cannot be used at this point. The address of this local value may not be passed to a call returning a byref-like type which is then subsequently returned from this method or function. This is to ensure the address of the local value does not escape its scope.
+    /// The address of the variable '%s' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
     /// (Originally from ..\FSComp.txt:1334)
-    static member chkNoByrefReturnOfLocal(a0 : System.String) = (3209, GetStringFunc("chkNoByrefReturnOfLocal",",,,%s,,,") a0)
+    static member chkNoByrefAddressOfLocal(a0 : System.String) = (3209, GetStringFunc("chkNoByrefAddressOfLocal",",,,%s,,,") a0)
     /// %s is an active pattern and cannot be treated as a discriminated union case with named fields.
     /// (Originally from ..\FSComp.txt:1335)
     static member tcNamedActivePattern(a0 : System.String) = (3210, GetStringFunc("tcNamedActivePattern",",,,%s,,,") a0)
@@ -4321,6 +4321,21 @@ type internal SR private() =
     /// A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&f(x)' or '&obj.Method(arg1, arg2)'.
     /// (Originally from ..\FSComp.txt:1431)
     static member tcByrefReturnImplicitlyDereferenced() = (3226, GetStringFunc("tcByrefReturnImplicitlyDereferenced",",,,") )
+    /// A type annotated with IsByRefLike must also be a struct.
+    /// (Originally from ..\FSComp.txt:1432)
+    static member tcByRefLikeNotStruct() = (3227, GetStringFunc("tcByRefLikeNotStruct",",,,") )
+    /// The address of the variable '%s' or a related expression cannot be used at this point. The address may not be passed to a call that returns an address. This is to ensure the address of the local value does not escape its scope.
+    /// (Originally from ..\FSComp.txt:1433)
+    static member chkNoByrefReturnOfLocal(a0 : System.String) = (3228, GetStringFunc("chkNoByrefReturnOfLocal",",,,%s,,,") a0)
+    /// The IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.
+    /// (Originally from ..\FSComp.txt:1434)
+    static member chkNoReturnOfLimitedSpan() = (3229, GetStringFunc("chkNoReturnOfLimitedSpan",",,,") )
+    /// This value can't be assigned because the target '%s' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.
+    /// (Originally from ..\FSComp.txt:1435)
+    static member chkNoWriteToLimitedSpan(a0 : System.String) = (3230, GetStringFunc("chkNoWriteToLimitedSpan",",,,%s,,,") a0)
+    /// A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'
+    /// (Originally from ..\FSComp.txt:1436)
+    static member tastValueMustBeLocal() = (3231, GetStringFunc("tastValueMustBeLocal",",,,") )
 
     /// Call this method once to validate that all known resources are valid; throws if not
     static member RunStartupValidation() =
@@ -5628,7 +5643,7 @@ type internal SR private() =
         ignore(GetString("CallerMemberNameIsOverriden"))
         ignore(GetString("tcFixedNotAllowed"))
         ignore(GetString("tcCouldNotFindOffsetToStringData"))
-        ignore(GetString("chkNoByrefReturnOfLocal"))
+        ignore(GetString("chkNoByrefAddressOfLocal"))
         ignore(GetString("tcNamedActivePattern"))
         ignore(GetString("DefaultParameterValueNotAppropriateForArgument"))
         ignore(GetString("tcGlobalsSystemTypeNotFound"))
@@ -5726,4 +5741,9 @@ type internal SR private() =
         ignore(GetString("writeToReadOnlyByref"))
         ignore(GetString("readOnlyAttributeOnStructWithMutableField"))
         ignore(GetString("tcByrefReturnImplicitlyDereferenced"))
+        ignore(GetString("tcByRefLikeNotStruct"))
+        ignore(GetString("chkNoByrefReturnOfLocal"))
+        ignore(GetString("chkNoReturnOfLimitedSpan"))
+        ignore(GetString("chkNoWriteToLimitedSpan"))
+        ignore(GetString("tastValueMustBeLocal"))
         ()

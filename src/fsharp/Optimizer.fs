@@ -1276,7 +1276,7 @@ and OpHasEffect g m op =
     | TOp.ValFieldGet rfref  -> rfref.RecdField.IsMutable || (TryFindTyconRefBoolAttribute g Range.range0 g.attrib_AllowNullLiteralAttribute rfref.TyconRef = Some true)
     | TOp.ValFieldGetAddr (rfref, _readonly)  -> rfref.RecdField.IsMutable
     | TOp.UnionCaseFieldGetAddr _ -> false // union case fields are immutable
-    | TOp.LValueOp (LGetAddr _, lv) -> lv.IsMutable
+    | TOp.LValueOp (LAddrOf _, lv) -> lv.IsMutable
     | TOp.UnionCaseFieldSet _
     | TOp.ExnFieldSet _
     | TOp.Coerce
@@ -1791,7 +1791,7 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
             MightMakeCriticalTailcall=false
             Info=UnknownValue }
     (* Handle addresses *)
-    | TOp.LValueOp ((LGetAddr _ as lop), lv), _, _ ->
+    | TOp.LValueOp ((LAddrOf _ as lop), lv), _, _ ->
         let e, _ = OptimizeExpr cenv env (exprForValRef m lv)
         let op' =
             match e with
