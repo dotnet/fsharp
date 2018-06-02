@@ -6,6 +6,7 @@ open System.IO
 open System.Threading.Tasks
 open System.Diagnostics
 
+type IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider
 
 /// Checks if the filePath ends with ".fsi"
 let isSignatureFile (filePath:string) = 
