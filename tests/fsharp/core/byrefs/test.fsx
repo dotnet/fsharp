@@ -4,7 +4,6 @@ module Core_byrefs
 #endif
 
 
-#light
 let failures = ref false
 let report_failure (s) = 
   stderr.WriteLine ("NO: " + s); failures := true

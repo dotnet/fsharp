@@ -20,6 +20,25 @@ namespace Tests
     open System
     open System.Runtime.CompilerServices
     open System.Runtime.InteropServices
+    open FSharp.NativeInterop
+
+    [<AutoOpen>]
+    module Helpers = 
+        let failures = ref false
+        let report_failure (s) = 
+            stderr.WriteLine ("NO: " + s); 
+            failures := true
+        let test s b = if b then () else report_failure(s) 
+
+        (* TEST SUITE FOR Int32 *)
+
+        let out r (s:string) = r := !r @ [s]
+
+        let check s actual expected = 
+            if actual = expected then printfn "%s: OK" s
+            else report_failure (sprintf "%s: FAILED, expected %A, got %A" s expected actual)
+
+        let check2 s expected actual = check s actual expected 
 
 
     [<IsReadOnly>]
@@ -194,6 +213,60 @@ namespace Tests
                 let mutable x = 1
                 this.Create(&x)
 
+    module ByRefSpanParam  = 
+        type C() = 
+            static member M(x: byref<Span<int>>) = x.[0] <- 5
+
+        let Test() = 
+            let mutable res = 9
+            let mutable span = Span<int>(NativePtr.toVoidPtr &&res,1)
+            let v =  C.M(&span)
+            check "cwvereweoiwekl4" res 5
+
+            let minfo = typeof<C>.GetMethod("M")
+            check "cwnoreeker1" (minfo.GetParameters().[0].IsIn) false
+            check "cwnoreeker2" (minfo.GetParameters().[0].IsOut) false
+            check "cwnoreeker3" (minfo.ReturnParameter.IsIn) false
+            check "cwnoreeker4" (minfo.ReturnParameter.IsOut) false
+
+        Test()
+
+    module SpanByRefReturn  = 
+        type C() = 
+            static member M(x: byref<Span<int>>) = x.[0] <- x.[0] + 1; &x
+
+        let Test() = 
+            let mutable res = 9
+            let mutable span = Span<int>(NativePtr.toVoidPtr &&res,1)
+            let v =  &C.M(&span)
+            check "cwvereweoiwvw4" v.[0] 10
+
+            let minfo = typeof<C>.GetMethod("M")
+            check "cwnoreeker6d" (minfo.GetParameters().[0].GetRequiredCustomModifiers().Length) 0
+            check "cwnoreekerr" (minfo.ReturnParameter.IsIn) false
+            check "cwnoreekert" (minfo.ReturnParameter.IsOut) false
+
+        Test()
+
+
+    module SpanReturn  = 
+        type C() = 
+            static member M(x: byref<Span<int>>) = x.[0] <- x.[0] + 1; x
+
+        let Test() = 
+            let mutable res = 9
+            let mutable span = Span<int>(NativePtr.toVoidPtr &&res,1)
+            let v =  C.M(&span)
+            check "cwvereweoiwvw4" v.[0] 10
+
+            let minfo = typeof<C>.GetMethod("M")
+            check "cwnoreeker6d" (minfo.GetParameters().[0].GetRequiredCustomModifiers().Length) 0
+            check "cwnoreekerr" (minfo.ReturnParameter.IsIn) false
+            check "cwnoreekert" (minfo.ReturnParameter.IsOut) false
+
+        Test()
+
+
 
 #if NEGATIVE
 
@@ -221,13 +294,13 @@ type DisallowedIsReadOnlyStruct  =
 
 #if NOT_YET
 // Allow this:
-[<IsByRefLike>]
+[<IsByRefLike; Struct>]
 type ByRefLikeStructWithSpanField(count1: Span, count2: int) = 
     member x.Count1 = count1
     member x.Count2 = count2
 
-[<IsByRefLike>]
-type ByRefLikeStructWithByrefField(count1: byref<int>, count2: int) = 
+[<IsByRefLike; Struct>]
+type ByRefLikeStructWithByrefField(count1: Span<int>, count2: int) = 
     member x.Count1 = count1
     member x.Count2 = count2
 #endif

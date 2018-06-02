@@ -232,10 +232,13 @@ and CheckTraitInfoDeep ((_,_,_,visitTraitSolutionOpt,_) as f) g env (TTrait(typs
     | Some visitTraitSolution, Some sln -> visitTraitSolution sln
     | _ -> ()
 
-/// Check for byref types
+/// Check for byref-like types
 let CheckForByrefLikeType cenv env m typ check = 
     CheckTypeDeep (ignore, Some (fun _deep tcref -> if isByrefLikeTyconRef cenv.g m tcref then check()),  None, None, None) cenv.g env false typ
 
+/// Check for byref types
+let CheckForByrefType cenv env typ check = 
+    CheckTypeDeep (ignore, Some (fun _deep tcref -> if isByrefTyconRef cenv.g tcref then check()),  None, None, None) cenv.g env false typ
 
 /// check captures under lambdas
 ///
@@ -427,8 +430,8 @@ let CheckType permitByRefLike (cenv:cenv) env m ty =
                 let visitType ty0 =
                     match tryDestAppTy cenv.g ty0 with
                     | None -> ()
-                    | Some tcref ->  
-                        if isByrefTyconRef cenv.g tcref then 
+                    | Some tcref2 ->  
+                        if isByrefTyconRef cenv.g tcref2 then 
                             errorR(Error(FSComp.SR.chkNoByrefsOfByrefs(NicePrint.minimalStringOfType cenv.denv ty), m)) 
                 CheckTypesDeep (visitType, None, None, None, None) cenv.g env tinst
 
@@ -1016,13 +1019,13 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
 
         // Check byref return types
         if cenv.reportErrors then 
-            if (not inlined && (isNil tps && isNil vsl)) || not isTop then
+            if not isTop then
                 CheckForByrefLikeType cenv env m bodyty (fun () -> 
                         errorR(Error(FSComp.SR.chkFirstClassFuncNoByref(), m)))
 
             elif not cenv.g.compilingFslib && isByrefTy cenv.g bodyty then 
                 // check no byrefs-in-the-byref
-                CheckForByrefLikeType cenv env m (destByrefTy cenv.g bodyty) (fun () -> 
+                CheckForByrefType cenv env (destByrefTy cenv.g bodyty) (fun () -> 
                     errorR(Error(FSComp.SR.chkReturnTypeNoByref(), m)))
 
             if limit then
@@ -1757,7 +1760,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
          | Some typ -> 
              // Library-defined outref<'T> and inref<'T> contain byrefs on the r.h.s.
              if not g.compilingFslib then 
-                 CheckForByrefLikeType cenv env m typ (fun () -> errorR(Error(FSComp.SR.chkNoByrefInTypeAbbrev(), tycon.Range)))
+                 CheckForByrefType cenv env typ (fun () -> errorR(Error(FSComp.SR.chkNoByrefInTypeAbbrev(), tycon.Range)))
 
 let CheckEntityDefns cenv env tycons = 
     tycons |> List.iter (CheckEntityDefn cenv env) 
