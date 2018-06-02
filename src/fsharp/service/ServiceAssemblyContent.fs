@@ -230,18 +230,19 @@ module AssemblyContentProvider =
             })
 
     let traverseMemberFunctionAndValues ns (parent: Parent) (membersFunctionsAndValues: seq<FSharpMemberOrFunctionOrValue>) =
+        let topRequireQualifiedAccessParent = parent.TopRequiresQualifiedAccess true |> Option.map parent.FixParentModuleSuffix
+        let autoOpenParent = parent.AutoOpen |> Option.map parent.FixParentModuleSuffix
         membersFunctionsAndValues
         |> Seq.filter (fun x -> not x.IsInstanceMember && not x.IsPropertyGetterMethod && not x.IsPropertySetterMethod)
         |> Seq.collect (fun func ->
             let processIdents fullName idents = 
-                let topRequireQualifiedAccessParent = parent.TopRequiresQualifiedAccess true |> Option.map parent.FixParentModuleSuffix
                 let cleanedIdentes = parent.FixParentModuleSuffix idents
                 { FullName = fullName
                   CleanedIdents = cleanedIdentes
                   Namespace = ns
                   NearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess true |> Option.map parent.FixParentModuleSuffix
                   TopRequireQualifiedAccessParent = topRequireQualifiedAccessParent
-                  AutoOpenParent = parent.AutoOpen |> Option.map parent.FixParentModuleSuffix
+                  AutoOpenParent = autoOpenParent
                   Symbol = func
                   Kind = fun _ -> EntityKind.FunctionOrValue func.IsActivePattern
                   UnresolvedSymbol = unresolvedSymbol topRequireQualifiedAccessParent cleanedIdentes fullName }

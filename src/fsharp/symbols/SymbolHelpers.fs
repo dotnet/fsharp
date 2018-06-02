@@ -826,10 +826,11 @@ module internal SymbolHelpers =
         protectAssemblyExploration true (fun () -> 
          match item with 
          | Item.Types(it, [ty]) -> 
+             isAppTy g ty &&
              g.suppressed_types 
              |> List.exists (fun supp -> 
                 let generalizedSupp = generalizedTyconRef supp
-                if isAppTy g ty && isAppTy g generalizedSupp then 
+                if isAppTy g generalizedSupp then 
                   // check if they are the same logical type (after removing all abbreviations)
                   let tcr1 = tcrefOfAppTy g ty
                   let tcr2 = tcrefOfAppTy g generalizedSupp
