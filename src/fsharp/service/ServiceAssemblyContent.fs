@@ -197,7 +197,9 @@ module AssemblyContentProvider =
             |> Option.orElseWith (fun () -> getNamespace cleanedIdents)
             |> Option.defaultValue [||]
 
-        let displayName = cleanedIdents |> Array.skip ns.Length |> String.concat "."
+        let displayName = 
+            let nameIdents = if cleanedIdents.Length > ns.Length then cleanedIdents |> Array.skip ns.Length else cleanedIdents
+            nameIdents |> String.concat "."
                 
         { FullName = fullName
           DisplayName = displayName
