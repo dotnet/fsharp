@@ -1061,8 +1061,9 @@ let MakeBindingsForEqualsAugmentation (g: TcGlobals) (tycon:Tycon) =
     elif tycon.IsRecordTycon || tycon.IsStructOrEnumTycon then mkEquals mkRecdEquality 
     else []
 
-let rec TypeDefinitelyHasEquality g ty = 
-    if isAppTy g ty && HasFSharpAttribute g g.attrib_NoEqualityAttribute (tcrefOfAppTy g ty).Attribs then
+let rec TypeDefinitelyHasEquality g ty =
+    let isTypeApplication = isAppTy g ty
+    if isTypeApplication && HasFSharpAttribute g g.attrib_NoEqualityAttribute (tcrefOfAppTy g ty).Attribs then
         false
     elif isTyparTy g ty && (destTyparTy g ty).Constraints |> List.exists (function TyparConstraint.SupportsEquality _ -> true | _ -> false) then
         true
@@ -1074,7 +1075,7 @@ let rec TypeDefinitelyHasEquality g ty =
             false
         | _ -> 
            // The type is equatable because it has Object.Equals(...)
-           isAppTy g ty &&
+           isTypeApplication &&
            let tcref,tinst = destAppTy g ty 
            // Give a good error for structural types excluded from the equality relation because of their fields
            not (TyconIsCandidateForAugmentationWithEquals g tcref.Deref && Option.isNone tcref.GeneratedHashAndEqualsWithComparerValues) &&
