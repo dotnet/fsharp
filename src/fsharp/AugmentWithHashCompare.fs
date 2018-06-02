@@ -1062,8 +1062,8 @@ let MakeBindingsForEqualsAugmentation (g: TcGlobals) (tycon:Tycon) =
     else []
 
 let rec TypeDefinitelyHasEquality g ty =
-    let isTypeApplication = isAppTy g ty
-    if isTypeApplication && HasFSharpAttribute g g.attrib_NoEqualityAttribute (tcrefOfAppTy g ty).Attribs then
+    let isTypeApp = isAppTy g ty // store it to avoid checking more than once
+    if isTypeApp && HasFSharpAttribute g g.attrib_NoEqualityAttribute (tcrefOfAppTy g ty).Attribs then
         false
     elif isTyparTy g ty && (destTyparTy g ty).Constraints |> List.exists (function TyparConstraint.SupportsEquality _ -> true | _ -> false) then
         true
@@ -1075,7 +1075,7 @@ let rec TypeDefinitelyHasEquality g ty =
             false
         | _ -> 
            // The type is equatable because it has Object.Equals(...)
-           isTypeApplication &&
+           isTypeApp &&
            let tcref,tinst = destAppTy g ty 
            // Give a good error for structural types excluded from the equality relation because of their fields
            not (TyconIsCandidateForAugmentationWithEquals g tcref.Deref && Option.isNone tcref.GeneratedHashAndEqualsWithComparerValues) &&

@@ -4068,14 +4068,14 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics typ 
         ncenv.InfoReader.GetRecordOrClassFieldsOfType(None,ad,m,typ)
         |> List.filter (fun rfref -> rfref.IsStatic = statics  &&  IsFieldInfoAccessible ad rfref)
         |> List.map Item.RecdField
-        :> _
+        |> List.toSeq
     | Item.UnionCase _ ->
         if statics && isAppTy g typ then 
             let tc, tinst = destAppTy g typ
             tc.UnionCasesAsRefList 
             |> List.filter (IsUnionCaseUnseen ad g ncenv.amap m >> not)
             |> List.map (fun ucref ->  Item.UnionCase(UnionCaseInfo(tinst,ucref),false))
-            :> _
+            |> List.toSeq
         else
             Seq.empty
     | Item.Event _ ->
@@ -4084,7 +4084,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics typ 
             IsStandardEventInfo ncenv.InfoReader m ad x &&
             x.IsStatic = statics)
         |> List.map Item.Event
-        :> _
+        |> List.toSeq
     | Item.ILField _ ->
         ncenv.InfoReader.GetILFieldInfosOfType(None,ad,m,typ)
         |> List.filter (fun x -> 
@@ -4092,10 +4092,10 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics typ 
             x.IsStatic = statics && 
             IsILFieldInfoAccessible g amap m ad x)
         |> List.map Item.ILField
-        :> _
+        |> List.toSeq
     | Item.Types _ ->
         if statics then
-            typ |> GetNestedTypesOfType (ad, ncenv, None, TypeNameResolutionStaticArgsInfo.Indefinite, false, m) |> List.map (ItemOfTy g) :> _
+            typ |> GetNestedTypesOfType (ad, ncenv, None, TypeNameResolutionStaticArgsInfo.Indefinite, false, m) |> List.map (ItemOfTy g) |> List.toSeq
           else
             Seq.empty
     | _ ->
