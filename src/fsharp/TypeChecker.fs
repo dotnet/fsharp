@@ -6012,6 +6012,10 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
             let mExprAndDotLookup = unionRanges e1.Range (rangeOfLid longId)
             TcExprThen cenv overallTy env tpenv e1 [DelayedDotLookup(longId, mExprAndDotLookup); MakeDelayedSet(e2, mStmt)]
 
+    /// e1 <- e2
+    | SynExpr.Set (e1, e2, mStmt) ->
+        TcExprThen cenv overallTy env tpenv e1 [MakeDelayedSet(e2, mStmt)]
+
     /// e1.longId(e2) <- e3, very rarely used named property setters
     | SynExpr.DotNamedIndexedPropertySet (e1, (LongIdentWithDots(longId, _) as lidwd), e2, e3, mStmt) ->
         if lidwd.ThereIsAnExtraDotAtTheEnd then
@@ -8854,6 +8858,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
             | SynExpr.DotSet _  
             | SynExpr.DotIndexedSet _ 
             | SynExpr.LongIdentSet _ 
+            | SynExpr.Set _ 
             | SynExpr.JoinIn _
             | SynExpr.NamedIndexedPropertySet _ 
             | SynExpr.DotNamedIndexedPropertySet _

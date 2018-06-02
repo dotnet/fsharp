@@ -79,17 +79,28 @@ let testHookMemberBody (membInfo: ValMemberInfo) (expr:Expr) =
 //--------------------------------------------------------------------------
 
 type env = 
-    { boundTyparNames: string list 
+    { 
+      /// The bound type parameter names in scope
+      boundTyparNames: string list 
+      
+      /// The bound type parameters in scope
       boundTypars: TyparMap<unit>
+
+      /// The set of arguments to this method/function
       argVals: ValMap<unit>
+
       /// "module remap info", i.e. hiding information down the signature chain, used to compute what's hidden by a signature
       sigToImplRemapInfo: (Remap * SignatureHidingInfo) list 
+
       /// Constructor limited - are we in the prelude of a constructor, prior to object initialization
       ctorLimitedZone: bool
+
       /// Are we in a quotation?
       quote : bool 
+
       /// Are we under [<ReflectedDefinition>]?
       reflect : bool
+
       /// Are we in an extern declaration?
       external : bool } 
 
@@ -553,8 +564,8 @@ and CheckExpr (cenv:cenv) (env:env) expr (context:PermitByRefExpr) : bool =
             not (isByrefTy g v.Type) &&
             // The value is a local....
             v.ValReprInfo.IsNone && 
-            // The value is a non-argument byref or is a ctorLimitedZone Span
-            cenv.limitVals.ContainsKey(v.Stamp)
+            // The value is a limited Span or might have become one through mutation
+            (v.IsMutable || cenv.limitVals.ContainsKey(v.Stamp))
 
         if cenv.reportErrors then 
 
@@ -660,15 +671,15 @@ and CheckExpr (cenv:cenv) (env:env) expr (context:PermitByRefExpr) : bool =
         CheckExprsPermitByRefLike cenv env rest
 
     | Expr.Op (c,tyargs,args,m) ->
-          CheckExprOp cenv env (c,tyargs,args,m) context expr
+        CheckExprOp cenv env (c,tyargs,args,m) context expr
 
     // Allow 'typeof<System.Void>' calls as a special case, the only accepted use of System.Void! 
     | TypeOfExpr g ty when isVoidTy g ty ->
-          false
+        false
 
     // Allow 'typedefof<System.Void>' calls as a special case, the only accepted use of System.Void! 
     | TypeDefOfExpr g ty when isVoidTy g ty ->
-          false
+        false
 
     // Allow '%expr' in quotations
     | Expr.App(Expr.Val(vref,_,_),_,tinst,[arg],m) when isSpliceOperator g vref && env.quote ->
@@ -821,7 +832,6 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
         | [ty] when context.PermitOnlyReturnable && isByrefLikeTy cenv.g m ty -> CheckExprsPermitReturnableByRef cenv env args  
         | _ -> CheckExprsPermitByRefLike cenv env args  
 
-
     | TOp.Tuple tupInfo,_,_ when not (evalTupInfoIsStruct tupInfo) ->           
         match context with 
         | PermitByRefExpr.YesTupleOfArgs nArity -> 
@@ -852,6 +862,9 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
                 errorR(Error(FSComp.SR.chkNoByrefAddressOfLocal(v.DisplayName), m))
 
         CheckExprsNoByRefLike cenv env args                   
+
+    | TOp.LValueOp(LByrefSet _, _),_,_ -> 
+        CheckExprsPermitByRefLike cenv env args                   
 
     | TOp.TupleFieldGet _,_,[arg1] -> 
         CheckTypeInstNoByrefs cenv env m tyargs

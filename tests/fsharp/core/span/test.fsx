@@ -266,7 +266,98 @@ namespace Tests
 
         Test()
 
+    module SpanSafetyTests0 = 
 
+        type SpanLikeType = Span<int>
+
+        let m1 (x: byref<Span<int>>) (y: Span<byte>) =
+            // this is all valid, unconcerned with stack-referring stuff
+            let local = SpanLikeType()
+            x <- local
+            x
+
+    module SpanSafetyTests1 = 
+        type SpanLikeType = Span<int>
+        let m1 (x: byref<Span<int>>) (y: Span<byte>) =
+            // this is all valid, unconcerned with stack-referring stuff
+            let local = SpanLikeType()
+            x <- local
+            x
+        let test1 (param1: byref<Span<int>>) (param2: Span<byte>) =
+            let mutable stackReferringBecauseMutable1 = Span<byte>()
+
+            //let stackReferringBecauseMutable1 = Span<byte>(NativePtr.toVoidPtr(&&x), 1)
+            //let stackReferringBecauseMutable1 = Span<byte>(NativePtr.toVoidPtr(NativePtr.ofByRef(&&x)), 1)
+            //let stackReferring1 = Span<byte>(NativePtr.toVoidPtr(NativePtr.stackalloc< byte>(100), 1)
+
+            let mutable stackReferring2 = Span<int>()
+
+            // this is allowed
+            stackReferring2 <- m1 &stackReferring2 stackReferringBecauseMutable1
+
+            // this is NOT allowed
+            stackReferring2 <- m1 &param1 stackReferringBecauseMutable1
+
+            // this is NOT allowed
+            param1 <- m1 &stackReferring2 stackReferringBecauseMutable1
+
+            // this is NOT allowed
+            let param2 = stackReferringBecauseMutable1.Slice(10)
+
+            // this is allowed
+            param1 <- Span<int>()
+
+            // this is allowed
+            stackReferring2 <- param1
+
+    module SpanSafetyTests2 = 
+        let m2 (x: byref<Span<int>>) =
+            // should compile
+            &x
+
+    module SpanSafetyTests3 = 
+        type SpanLikeType = Span<int>
+        let m1 (x: byref<Span<int>>) (y: Span<byte>) =
+            // this is all valid, unconcerned with stack-referring stuff
+            let local = SpanLikeType()
+            x <- local
+            x
+        let m2 (x: byref<Span<int>>) =
+            // should compile
+            &x
+
+        let test2 (param1: byref<Span<int>>) (param2: Span<byte>) =
+            let mutable stackReferringBecauseMutable1 = Span<byte>()
+            let mutable stackReferring2 = Span<int>()
+
+            let stackReferring3 = &(m2 &stackReferring2)
+
+            // this is allowed
+            stackReferring3 <- m1 &stackReferring2 stackReferringBecauseMutable1
+
+            // this is allowed
+            m2(&stackReferring3) <- stackReferring2
+
+#if NEGATIVE
+            // this is NOT allowed
+            m1(&param1) <- stackReferring2
+#endif
+
+            // this is NOT allowed
+            param1 <- stackReferring3
+
+#if NEGATIVE
+            // this is NOT allowed
+            &stackReferring3
+#endif
+
+            // this is allowed
+            //&param1 - uncomment to test return
+
+    module SpanSafetyTests4 = 
+        let test2 (param1: byref<Span<int>>) (param2: Span<byte>) =
+            // this is allowed
+            &param1 // uncomment to test return
 
 #if NEGATIVE
 
