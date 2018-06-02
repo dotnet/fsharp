@@ -39,12 +39,13 @@ type internal FSharpCompletionProvider
     static let userOpName = "CompletionProvider"
     // Save the backing data in a cache, we need to save for at least the length of the completion session
     // See https://github.com/Microsoft/visualfsharp/issues/4714
-    static let declarationItemsData = new ConcurrentDictionary<string, FSharpDeclarationListItem>()
+    static let mutable declarationItems: FSharpDeclarationListItem[] = [||]
     static let [<Literal>] NameInCodePropName = "NameInCode"
     static let [<Literal>] FullNamePropName = "FullName"
     static let [<Literal>] IsExtensionMemberPropName = "IsExtensionMember"
     static let [<Literal>] NamespaceToOpenPropName = "NamespaceToOpen"
     static let [<Literal>] IsKeywordPropName = "IsKeyword"
+    static let [<Literal>] IndexPropName = "Index"
 
     static let keywordCompletionItems =
         Lexhelp.Keywords.keywordsWithDescription
@@ -129,7 +130,7 @@ type internal FSharpCompletionProvider
                 | CompletionItemKind.Other -> 5
                 | CompletionItemKind.Method (isExtension = true) -> 6
 
-            let sortedDeclItems =
+            declarationItems <-
                 declarations.Items
                 |> Array.sortWith (fun x y ->
                     let mutable n = (not x.IsResolved).CompareTo(not y.IsResolved)
@@ -144,8 +145,7 @@ type internal FSharpCompletionProvider
 
             let maxHints = if mruItems.Values.Count = 0 then 0 else Seq.max mruItems.Values
 
-            declarationItemsData.Clear()
-            sortedDeclItems |> Array.iteri (fun number declarationItem ->
+            declarationItems |> Array.iteri (fun number declarationItem ->
                 let glyph = Tokenizer.FSharpGlyphToRoslynGlyph (declarationItem.Glyph, declarationItem.Accessibility)
                 let name =
                     match declarationItem.NamespaceToOpen with
@@ -180,17 +180,15 @@ type internal FSharpCompletionProvider
                     | Some ns -> completionItem.AddProperty(NamespaceToOpenPropName, ns)
                     | None -> completionItem
 
+                let completionItem = completionItem.AddProperty(IndexPropName, string number)
+
                 let priority = 
                     match mruItems.TryGetValue declarationItem.FullName with
                     | true, hints -> maxHints - hints
                     | _ -> number + maxHints + 1
 
                 let sortText = sprintf "%06d" priority
-
                 let completionItem = completionItem.WithSortText(sortText)
-
-                let key = completionItem.DisplayText
-                declarationItemsData.TryAdd(key, declarationItem) |> ignore
                 results.Add(completionItem))
 
             if results.Count > 0 && not declarations.IsForType && not declarations.IsError && List.isEmpty partialName.QualifyingIdents then
@@ -243,15 +241,19 @@ type internal FSharpCompletionProvider
     override this.GetDescriptionAsync(document: Document, completionItem: Completion.CompletionItem, cancellationToken: CancellationToken): Task<CompletionDescription> =
         async {
             use _logBlock = Logger.LogBlockMessage document.Name LogEditorFunctionId.Completion_GetDescriptionAsync
-            
-            match declarationItemsData.TryGetValue(completionItem.DisplayText) with
-            | true, declarationItem -> 
-                let! description = declarationItem.StructuredDescriptionTextAsync
-                let documentation = List()
-                let collector = RoslynHelpers.CollectTaggedText documentation
-                // mix main description and xmldoc by using one collector
-                XmlDocumentation.BuildDataTipText(documentationBuilder, collector, collector, collector, collector, collector, description) 
-                return CompletionDescription.Create(documentation.ToImmutableArray())
+            match completionItem.Properties.TryGetValue IndexPropName with
+            | true, completionItemIndexStr ->
+                let completionItemIndex = int completionItemIndexStr
+                if completionItemIndex < declarationItems.Length then
+                    let declarationItem = declarationItems.[completionItemIndex]
+                    let! description = declarationItem.StructuredDescriptionTextAsync
+                    let documentation = List()
+                    let collector = RoslynHelpers.CollectTaggedText documentation
+                    // mix main description and xmldoc by using one collector
+                    XmlDocumentation.BuildDataTipText(documentationBuilder, collector, collector, collector, collector, collector, description) 
+                    return CompletionDescription.Create(documentation.ToImmutableArray())
+                else 
+                    return CompletionDescription.Empty
             | _ -> 
                 return CompletionDescription.Empty
         } |> RoslynHelpers.StartAsyncAsTask cancellationToken
