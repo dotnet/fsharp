@@ -2178,7 +2178,7 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
                 match lookupKind with 
                 | LookupKind.Expr | LookupKind.Pattern ->
                     if isAppTy g typ then 
-                        let tcref,_ = destAppTy g typ
+                        let tcref = tcrefOfAppTy g typ
                         tcref.UnionCasesArray
                         |> Array.map (fun uc -> uc.DisplayName)
                     else 
@@ -4059,42 +4059,47 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
         modsOrNs @ qualifiedFields
 
 let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics typ (item: Item) : seq<Item> =
-    seq {
-        let g = ncenv.g
-        let amap = ncenv.amap
+    
+    let g = ncenv.g
+    let amap = ncenv.amap
         
-        match item with
-        | Item.RecdField _ ->
-            yield!
-                ncenv.InfoReader.GetRecordOrClassFieldsOfType(None,ad,m,typ)
-                |> List.filter (fun rfref -> rfref.IsStatic = statics  &&  IsFieldInfoAccessible ad rfref)
-                |> List.map Item.RecdField
-        | Item.UnionCase _ ->
-            if statics && isAppTy g typ then 
-                let tc, tinst = destAppTy g typ
-                yield!
-                    tc.UnionCasesAsRefList 
-                    |> List.filter (IsUnionCaseUnseen ad g ncenv.amap m >> not)
-                    |> List.map (fun ucref ->  Item.UnionCase(UnionCaseInfo(tinst,ucref),false))
-        | Item.Event _ ->
-            yield!
-                ncenv.InfoReader.GetEventInfosOfType(None,ad,m,typ)
-                |> List.filter (fun x -> 
-                    IsStandardEventInfo ncenv.InfoReader m ad x &&
-                    x.IsStatic = statics)
-                |> List.map Item.Event
-        | Item.ILField _ ->
-            yield!
-                ncenv.InfoReader.GetILFieldInfosOfType(None,ad,m,typ)
-                |> List.filter (fun x -> 
-                    not x.IsSpecialName &&
-                    x.IsStatic = statics && 
-                    IsILFieldInfoAccessible g amap m ad x)
-                |> List.map Item.ILField
-        | Item.Types _ ->
-            if statics then
-                yield! typ |> GetNestedTypesOfType (ad, ncenv, None, TypeNameResolutionStaticArgsInfo.Indefinite, false, m) |> List.map (ItemOfTy g)
-        | _ ->
+    match item with
+    | Item.RecdField _ ->
+        ncenv.InfoReader.GetRecordOrClassFieldsOfType(None,ad,m,typ)
+        |> List.filter (fun rfref -> rfref.IsStatic = statics  &&  IsFieldInfoAccessible ad rfref)
+        |> List.map Item.RecdField
+        |> List.toSeq
+    | Item.UnionCase _ ->
+        if statics && isAppTy g typ then 
+            let tc, tinst = destAppTy g typ
+            tc.UnionCasesAsRefList 
+            |> List.filter (IsUnionCaseUnseen ad g ncenv.amap m >> not)
+            |> List.map (fun ucref ->  Item.UnionCase(UnionCaseInfo(tinst,ucref),false))
+            |> List.toSeq
+        else
+            Seq.empty
+    | Item.Event _ ->
+        ncenv.InfoReader.GetEventInfosOfType(None,ad,m,typ)
+        |> List.filter (fun x -> 
+            IsStandardEventInfo ncenv.InfoReader m ad x &&
+            x.IsStatic = statics)
+        |> List.map Item.Event
+        |> List.toSeq
+    | Item.ILField _ ->
+        ncenv.InfoReader.GetILFieldInfosOfType(None,ad,m,typ)
+        |> List.filter (fun x -> 
+            not x.IsSpecialName &&
+            x.IsStatic = statics && 
+            IsILFieldInfoAccessible g amap m ad x)
+        |> List.map Item.ILField
+        |> List.toSeq
+    | Item.Types _ ->
+        if statics then
+            typ |> GetNestedTypesOfType (ad, ncenv, None, TypeNameResolutionStaticArgsInfo.Indefinite, false, m) |> List.map (ItemOfTy g) |> List.toSeq
+          else
+            Seq.empty
+    | _ ->
+        seq {
             let pinfosIncludingUnseen = 
                 AllPropInfosOfTypeInScope ncenv.InfoReader nenv (None,ad) PreferOverrides m typ
                 |> List.filter (fun x -> 
@@ -4225,7 +4230,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics typ 
             
                 yield! List.map Item.MakeMethGroup (NameMap.toList (partitionl minfos Map.empty))
             | _ -> ()
-    }
+        }
 
 let rec ResolvePartialLongIdentInTypeForItem (ncenv: NameResolver) nenv m ad statics plid (item: Item) typ =
     seq {

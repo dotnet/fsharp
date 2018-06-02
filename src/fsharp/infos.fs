@@ -161,8 +161,8 @@ type AllowMultiIntfInstantiations = Yes | No
 /// Visit base types and interfaces first.
 let private FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref visitor g amap m typ acc = 
     let rec loop ndeep typ ((visitedTycon,visited:TyconRefMultiMap<_>,acc) as state) =
-
-        let seenThisTycon = isAppTy g typ && Set.contains (tcrefOfAppTy g typ).Stamp visitedTycon 
+        let isTypeApp = isAppTy g typ // store it to avoid checking more than once
+        let seenThisTycon = isTypeApp && Set.contains (tcrefOfAppTy g typ).Stamp visitedTycon 
 
         // Do not visit the same type twice. Could only be doing this if we've seen this tycon
         if seenThisTycon && List.exists (typeEquiv g typ) (visited.Find (tcrefOfAppTy g typ)) then state else
@@ -171,7 +171,7 @@ let private FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref
         if seenThisTycon && allowMultiIntfInst = AllowMultiIntfInstantiations.No then state else
 
         let state = 
-            if isAppTy g typ then 
+            if isTypeApp then 
                 let tcref = tcrefOfAppTy g typ
                 let visitedTycon = Set.add tcref.Stamp visitedTycon 
                 visitedTycon, visited.Add (tcref,typ), acc
