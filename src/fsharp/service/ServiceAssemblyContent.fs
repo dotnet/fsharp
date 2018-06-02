@@ -1000,8 +1000,11 @@ module ParsedInput =
 
         mkPos line ctx.Pos.Column
     
-    let tryFindNearestPointToInsertOpenDeclaration (currentLine: int) (ast: ParsedInput) (entity: Idents) (insertionPoint: OpenStatementInsertionPoint) =
+    let findNearestPointToInsertOpenDeclaration (currentLine: int) (ast: ParsedInput) (entity: Idents) (insertionPoint: OpenStatementInsertionPoint) =
         match tryFindNearestPointAndModules currentLine ast insertionPoint with
         | Some (scope, _, point), modules -> 
-            Some (findBestPositionToInsertOpenDeclaration modules scope point entity)
-        | _ -> None
+            findBestPositionToInsertOpenDeclaration modules scope point entity
+        | _ ->
+            // we failed to find insertion point because ast is empty for some reason, return top left point in this case  
+            { ScopeKind = ScopeKind.TopModule
+              Pos = mkPos 1 0 }

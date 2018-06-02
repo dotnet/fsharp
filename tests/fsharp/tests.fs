@@ -170,9 +170,7 @@ module CoreTests =
 
     [<Test>]
     let ``attributes-FSI_BASIC`` () = singleTestBuildAndRun "core/attributes" FSI_BASIC
-#endif
 
-#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let byrefs () = 
 
@@ -189,6 +187,19 @@ module CoreTests =
         fsi cfg "" ["test.fsx"]
 
         testOkFile.CheckExists()
+
+    [<Test>]
+    let asyncStackTraces () = 
+        let cfg = testConfig "core/asyncStackTraces"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsc cfg "%s -o:test.exe -g --tailcalls- --optimize-" cfg.fsc_flags ["test.fsx"]
+
+        exec cfg ("." ++ "test.exe") ""
+
+        testOkFile.CheckExists()
+
 #endif
 
     [<Test>]
@@ -225,6 +236,14 @@ module CoreTests =
 
     [<Test>]
     let csext () = singleTestBuildAndRun "core/csext" FSC_BASIC
+
+
+    [<Test>]
+    let fscenum () = singleTestBuildAndRun "core/enum" FSC_BASIC
+
+    [<Test>]
+    let fsienum () = singleTestBuildAndRun "core/enum" FSI_BASIC
+
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
 
@@ -1814,6 +1833,12 @@ module TypecheckTests =
         peverify cfg "pos29.exe"
 
     [<Test>]
+    let ``sigs pos30`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:exe -o:pos30.exe --warnaserror+" cfg.fsc_flags ["pos30.fs"]
+        peverify cfg "pos30.exe"
+
+    [<Test>]
     let ``sigs pos24`` () = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos24.exe" cfg.fsc_flags ["pos24.fs"]
@@ -2273,6 +2298,12 @@ module TypecheckTests =
 
     [<Test>]
     let ``type check neg102`` () = singleNegTest (testConfig "typecheck/sigs") "neg102"
+
+    [<Test>]
+    let ``type check neg103`` () = singleNegTest (testConfig "typecheck/sigs") "neg103"
+
+    [<Test>]
+    let ``type check neg104`` () = singleNegTest (testConfig "typecheck/sigs") "neg104"
 
     [<Test>] 
     let ``type check neg_issue_3752`` () = singleNegTest (testConfig "typecheck/sigs") "neg_issue_3752"

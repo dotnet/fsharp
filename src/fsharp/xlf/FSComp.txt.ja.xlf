@@ -108,8 +108,8 @@
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
-        <source>All branches of a pattern match expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">パターン マッチ式のすべてのブランチは同じ型である必要があります。この式に必要な型は '{0}' ですが、ここでは型 '{1}' になっています。</target>
+        <source>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
+        <target state="needs-review-translation">パターン マッチ式のすべてのブランチは同じ型である必要があります。この式に必要な型は '{0}' ですが、ここでは型 '{1}' になっています。</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -6980,6 +6980,11 @@
       <trans-unit id="implicitlyDiscardedSequenceInSequenceExpression">
         <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</source>
         <target state="translated">この式は型 '{0}' の値を返しますが、暗黙的に破棄されます。'let' を使用して結果を名前にバインドすることを検討してください。例: 'let result = expression'。式をシーケンス内で値として使用する場合は、明示的に 'yield!' を使用してください。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="keywordDescriptionMatchBang">
+        <source>Used in computation expressions to pattern match directly over the result of another computation expression.</source>
+        <target state="new">Used in computation expressions to pattern match directly over the result of another computation expression.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilreadFileChanged">

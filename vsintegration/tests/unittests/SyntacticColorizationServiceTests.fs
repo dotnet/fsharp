@@ -12,7 +12,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 
 [<TestFixture>][<Category "Roslyn Services">]
-type ClassificationServiceTests()  =
+type SyntacticClassificationServiceTests()  =
 
     member private this.ExtractMarkerData(fileContents: string, marker: string, defines: string list, isScriptFile: Option<bool>) =
         let textSpan = TextSpan(0, fileContents.Length)

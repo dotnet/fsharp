@@ -5,13 +5,12 @@
     <FSharpSourcesRoot>..\..\..\src</FSharpSourcesRoot>
     <OutputArchitecture>neutral</OutputArchitecture>
     <OutputLocalized>false</OutputLocalized>
-    <OutputName>Microsoft.FSharp.SDK.Resources.$(LocaleCode)</OutputName>
+    <OutputType>vsix</OutputType>
     <IsPackage>true</IsPackage>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     <BinariesFolder>$(FSharpSourcesRoot)\..\$(Configuration)</BinariesFolder>
     <OutputPath>$(BinariesFolder)\insertion</OutputPath>
-    <OutputType Condition="'$(IsLangPack)' != 'true'">vsix</OutputType>
-    <OutputType Condition="'$(IsLangPack)' == 'true'">manifest</OutputType>
+    <OutputName>Microsoft.FSharp.Compiler.Resources.$(LocaleCode)</OutputName>
     <IntermediateOutputPath>$(MSBuildThisFileDirectory)obj</IntermediateOutputPath>
   </PropertyGroup>
 
@@ -20,28 +19,20 @@
   <PropertyGroup>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);BinariesFolder=$(BinariesFolder)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);FSharpPackageVersion=$(FSharpPackageVersion)</PackagePreprocessorDefinitions>
-    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleCode=$(LocaleCode)</PackagePreprocessorDefinitions>
-    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleId=$(LocaleId)</PackagePreprocessorDefinitions>
-    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleParentId=$(LocaleParentId)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleParentCulture=$(LocaleParentCulture)</PackagePreprocessorDefinitions>
     <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);LocaleSpecificCulture=$(LocaleSpecificCulture)</PackagePreprocessorDefinitions>
-    <PackagePreprocessorDefinitions>$(PackagePreprocessorDefinitions);IsLangPack=$(IsLangPack)</PackagePreprocessorDefinitions>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(IsLangPack)' != 'true'">
-    <Package Include="Empty.swr" />
+  <ItemGroup>
+    <Package Include="Files.swr" Condition="'$(IsLangPack)' == 'true'" />
+    <Package Include="Empty.swr" Condition="'$(IsLangPack)' != 'true'" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(IsLangPack)' == 'true'">
-    <Package Include="Files.swr" />
-  </ItemGroup>
   <Target Name="CheckPropertiesArePassed">
-    <Error Condition="'$(LocaleCode)' == ''" Text="A 'LocaleCode' property must be passed to the project." />
-    <Error Condition="'$(LocaleId)' == ''" Text="A 'LocaleId' property must be passed to the project." />
+    <Error Condition="'$(FSharpPackageVersion)' == ''" Text="A 'FSharpPackageVersion' property must be passed to the project." />
     <Error Condition="'$(LocaleParentCulture)' == ''" Text="A 'LocaleParentCulture' property must be passed to the project." />
     <Error Condition="'$(LocaleSpecificCulture)' == ''" Text="A 'LocaleSpecificCulture' property must be passed to the project." />
     <Error Condition="'$(IsLangPack)' == ''" Text="A 'IsLangPack' property must be passed to the project." />
-    <Error Condition="'$(FSharpPackageVersion)' == ''" Text="A 'FSharpPackageVersion' property must be passed to the project." />
   </Target>
 
   <Target Name="SignFiles">

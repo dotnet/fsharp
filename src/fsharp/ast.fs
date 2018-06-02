@@ -692,6 +692,9 @@ and
     /// Computation expressions only
     | LetOrUseBang    of bindSeqPoint:SequencePointInfoForBinding * isUse:bool * isFromSource:bool * SynPat * SynExpr * SynExpr * range:range
 
+    /// F# syntax: match! expr with pat1 -> expr | ... | patN -> exprN
+    | MatchBang of  matchSeqPoint:SequencePointInfoForBinding * expr:SynExpr * clauses:SynMatchClause list * isExnMatch:bool * range:range (* bool indicates if this is an exception match in a computation expression which throws unmatched exceptions *)
+
     /// F# syntax: do! expr
     /// Computation expressions only
     | DoBang      of expr:SynExpr * range:range
@@ -779,6 +782,7 @@ and
         | SynExpr.YieldOrReturn (range=m)
         | SynExpr.YieldOrReturnFrom (range=m)
         | SynExpr.LetOrUseBang (range=m)
+        | SynExpr.MatchBang (range=m)
         | SynExpr.DoBang (range=m)
         | SynExpr.Fixed (range=m) -> m
         | SynExpr.Ident id -> id.idRange
@@ -839,6 +843,7 @@ and
         | SynExpr.YieldOrReturn (range=m)
         | SynExpr.YieldOrReturnFrom (range=m)
         | SynExpr.LetOrUseBang (range=m)
+        | SynExpr.MatchBang (range=m)
         | SynExpr.DoBang (range=m) -> m
         | SynExpr.DotGet (expr,_,lidwd,m) -> if lidwd.ThereIsAnExtraDotAtTheEnd then unionRanges expr.Range lidwd.RangeSansAnyExtraDot else m
         | SynExpr.LongIdent (_,lidwd,_,_) -> lidwd.RangeSansAnyExtraDot
@@ -901,6 +906,7 @@ and
         | SynExpr.YieldOrReturn (range=m)
         | SynExpr.YieldOrReturnFrom (range=m)
         | SynExpr.LetOrUseBang (range=m)
+        | SynExpr.MatchBang (range=m)
         | SynExpr.DoBang (range=m)  -> m
         // these are better than just .Range, and also commonly applicable inside queries
         | SynExpr.Paren(_,m,_,_) -> m
@@ -2397,6 +2403,8 @@ let rec synExprContainsError inpExpr =
           | SynExpr.DotNamedIndexedPropertySet (e1,_,e2,e3,_) ->
               walkExpr e1 || walkExpr e2 || walkExpr e3
 
+          | SynExpr.MatchBang (_,e,cl,_,_) ->
+              walkExpr e || walkMatchClauses cl
           | SynExpr.LetOrUseBang  (_,_,_,_,e1,e2,_) ->
               walkExpr e1 || walkExpr e2
     walkExpr inpExpr

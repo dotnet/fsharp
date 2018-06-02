@@ -714,11 +714,11 @@ let AddStorageForVal (g: TcGlobals) (v,s) eenv =
         | None -> eenv
         | Some vref -> 
             match vref.TryDeref with
-            | VNone -> 
+            | ValueNone -> 
                 //let msg = sprintf "could not dereference external value reference to something in FSharp.Core.dll during code generation, v.MangledName = '%s', v.Range = %s" v.MangledName (stringOfRange v.Range)
                 //System.Diagnostics.Debug.Assert(false, msg)
                 eenv
-            | VSome gv -> 
+            | ValueSome gv -> 
                 { eenv with valsInScope = eenv.valsInScope.Add gv s }
     else 
         eenv
@@ -6294,15 +6294,17 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
              [ for fspec in tycon.AllFieldsAsList do
 
                    let useGenuineField = useGenuineField tycon fspec
-                   
+
                    // The property (or genuine IL field) is hidden in these circumstances:  
                    //     - secret fields apart from "__value" fields for enums 
                    //     - the representation of the type is hidden 
                    //     - the F# field is hidden by a signature or private declaration 
-                   let isPropHidden = 
-                       ((fspec.IsCompilerGenerated && not tycon.IsEnumTycon) ||
-                        hiddenRepr ||
-                        IsHiddenRecdField eenv.sigToImplRemapInfo (tcref.MakeNestedRecdFieldRef fspec))
+                   let isPropHidden =
+                        // Enums always have public cases irrespective of Enum Visibility
+                        if tycon.IsEnumTycon then false
+                        else
+                            (fspec.IsCompilerGenerated || hiddenRepr ||
+                             IsHiddenRecdField eenv.sigToImplRemapInfo (tcref.MakeNestedRecdFieldRef fspec))
                    let ilType = GenType cenv.amap m eenvinner.tyenv fspec.FormalType
                    let ilFieldName = ComputeFieldName tycon fspec
                         

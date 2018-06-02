@@ -108,8 +108,8 @@
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
-        <source>All branches of a pattern match expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">模式匹配表达式的所有分支必须具有同一类型。此表达式的类型应为“{0}”，但此处类型为“{1}”。</target>
+        <source>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
+        <target state="needs-review-translation">模式匹配表达式的所有分支必须具有同一类型。此表达式的类型应为“{0}”，但此处类型为“{1}”。</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -6980,6 +6980,11 @@
       <trans-unit id="implicitlyDiscardedSequenceInSequenceExpression">
         <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</source>
         <target state="translated">此表达式返回类型为“{0}”的值，但被隐式放弃。请考虑使用 "let" 将结果绑定到名称，例如 "let result = expression"。如果要使用该表达式作为序列中的值，则使用显式 "yield!"。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="keywordDescriptionMatchBang">
+        <source>Used in computation expressions to pattern match directly over the result of another computation expression.</source>
+        <target state="new">Used in computation expressions to pattern match directly over the result of another computation expression.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilreadFileChanged">

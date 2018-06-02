@@ -108,8 +108,8 @@
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
-        <source>All branches of a pattern match expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">Il tipo di tutti i rami di un'espressione di criteri di ricerca deve essere lo stesso. Il tipo previsto di questa espressione è '{0}', ma quello effettivo è '{1}'.</target>
+        <source>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
+        <target state="needs-review-translation">Il tipo di tutti i rami di un'espressione di criteri di ricerca deve essere lo stesso. Il tipo previsto di questa espressione è '{0}', ma quello effettivo è '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -6980,6 +6980,11 @@
       <trans-unit id="implicitlyDiscardedSequenceInSequenceExpression">
         <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</source>
         <target state="translated">Questa espressione restituisce un valore di tipo '{0}' ma viene rimossa in modo implicito. Provare a usare 'let' per eseguire il binding del risultato a un nome, ad esempio 'let risultato = espressione'. Se si intende usare l'espressione come valore nella sequenza, usare l'operando 'yield!' esplicito.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="keywordDescriptionMatchBang">
+        <source>Used in computation expressions to pattern match directly over the result of another computation expression.</source>
+        <target state="new">Used in computation expressions to pattern match directly over the result of another computation expression.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilreadFileChanged">

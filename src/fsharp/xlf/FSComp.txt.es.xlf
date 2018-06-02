@@ -108,8 +108,8 @@
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
-        <source>All branches of a pattern match expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">Todas las ramas de una expresión de coincidencia de patrones deben tener el mismo tipo. Se esperaba que esta expresión tuviera el tipo "{0}", pero aquí tiene el tipo "{1}".</target>
+        <source>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
+        <target state="needs-review-translation">Todas las ramas de una expresión de coincidencia de patrones deben tener el mismo tipo. Se esperaba que esta expresión tuviera el tipo "{0}", pero aquí tiene el tipo "{1}".</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -6980,6 +6980,11 @@
       <trans-unit id="implicitlyDiscardedSequenceInSequenceExpression">
         <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</source>
         <target state="translated">Esta expresión devuelve un valor de tipo “{0}”, pero se descarta de forma implícita. Considere el uso de “let” para enlazar el resultado a un nombre; por ejemplo, “let result = expression”. Si su intención es utilizar la expresión como un valor en la secuencia, utilice “yield” de forma explícita.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="keywordDescriptionMatchBang">
+        <source>Used in computation expressions to pattern match directly over the result of another computation expression.</source>
+        <target state="new">Used in computation expressions to pattern match directly over the result of another computation expression.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilreadFileChanged">

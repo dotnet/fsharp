@@ -108,8 +108,8 @@
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
-        <source>All branches of a pattern match expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">Všechny větve výrazu porovnání vzorů musí mít stejný typ. Očekávalo se, že tento výraz bude mít typ {0}, ale tady je typu {1}.</target>
+        <source>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
+        <target state="needs-review-translation">Všechny větve výrazu porovnání vzorů musí mít stejný typ. Očekávalo se, že tento výraz bude mít typ {0}, ale tady je typu {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -6980,6 +6980,11 @@
       <trans-unit id="implicitlyDiscardedSequenceInSequenceExpression">
         <source>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</source>
         <target state="translated">Tento výraz vrátí hodnotu typu {0}, ale implicitně se zahodí. Zvažte vytvoření vazby mezi výsledkem a názvem pomocí klíčového slova let, např. let výsledek = výraz. Pokud jste chtěli výraz použít jako hodnotu v sekvenci, použijte explicitní klíčové slovo yield!.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="keywordDescriptionMatchBang">
+        <source>Used in computation expressions to pattern match directly over the result of another computation expression.</source>
+        <target state="new">Used in computation expressions to pattern match directly over the result of another computation expression.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilreadFileChanged">

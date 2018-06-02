@@ -1631,7 +1631,7 @@ let ChooseCanonicalDeclaredTyparsAfterInference g denv declaredTypars m =
     
     let declaredTypars = NormalizeDeclaredTyparsForEquiRecursiveInference g declaredTypars
 
-    if (ListSet.setify typarEq declaredTypars).Length <> declaredTypars.Length then 
+    if ListSet.hasDuplicates typarEq declaredTypars then 
         errorR(Error(FSComp.SR.tcConstrainedTypeVariableCannotBeGeneralized(), m))
 
     declaredTypars
@@ -3457,7 +3457,8 @@ let (|SimpleSemicolonSequence|_|) acceptDeprecated c =
         | SynExpr.Sequential (_, _, e1, e2, _) -> YieldFree e1 && YieldFree e2
         | SynExpr.IfThenElse (_, e2, e3opt, _, _, _, _) -> YieldFree e2 && Option.forall YieldFree e3opt
         | SynExpr.TryWith (e1, _, clauses, _, _, _, _) -> YieldFree e1 && clauses |> List.forall (fun (Clause(_, _, e, _, _)) -> YieldFree e)
-        | SynExpr.Match (_, _, clauses, _, _) -> clauses |> List.forall (fun (Clause(_, _, e, _, _)) -> YieldFree e)
+        | (SynExpr.Match (_, _, clauses, _, _) | SynExpr.MatchBang (_, _, clauses, _, _)) ->
+            clauses |> List.forall (fun (Clause(_, _, e, _, _)) -> YieldFree e)
         | SynExpr.For (_, _, _, _, _, body, _) 
         | SynExpr.TryFinally (body, _, _, _, _)
         | SynExpr.LetOrUse (_, _, _, body, _) 
@@ -3483,6 +3484,7 @@ let (|SimpleSemicolonSequence|_|) acceptDeprecated c =
         | SynExpr.YieldOrReturn _ 
         | SynExpr.LetOrUse _ 
         | SynExpr.Do _ 
+        | SynExpr.MatchBang _ 
         | SynExpr.LetOrUseBang _ 
         | SynExpr.ImplicitZero _ 
         | SynExpr.While _ -> false
@@ -4923,7 +4925,7 @@ and TcTypeAndRecover cenv newOk checkCxs occ env tpenv ty   =
     TcTypeOrMeasureAndRecover (Some TyparKind.Type) cenv newOk checkCxs occ env tpenv ty
 
 and TcNestedTypeApplication cenv newOk checkCxs occ env tpenv mWholeTypeApp typ tyargs =
-    let typ = helpEnsureTypeHasMetadata cenv.g typ
+    let typ = convertToTypeWithMetadataIfPossible cenv.g typ
     if not (isAppTy cenv.g typ) then error(Error(FSComp.SR.tcTypeHasNoNestedTypes(), mWholeTypeApp))
     match typ with 
     | TType_app(tcref, tinst) -> 
@@ -6040,17 +6042,19 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
 
     | SynExpr.YieldOrReturn ((isTrueYield, _), _, m)
     | SynExpr.YieldOrReturnFrom ((isTrueYield, _), _, m) when isTrueYield -> 
-         error(Error(FSComp.SR.tcConstructRequiresListArrayOrSequence(), m))
+        error(Error(FSComp.SR.tcConstructRequiresListArrayOrSequence(), m))
     | SynExpr.YieldOrReturn ((_, isTrueReturn), _, m)
     | SynExpr.YieldOrReturnFrom ((_, isTrueReturn), _, m) when isTrueReturn -> 
-         error(Error(FSComp.SR.tcConstructRequiresComputationExpressions(), m))
+        error(Error(FSComp.SR.tcConstructRequiresComputationExpressions(), m))
     | SynExpr.YieldOrReturn (_, _, m)
     | SynExpr.YieldOrReturnFrom (_, _, m) 
     | SynExpr.ImplicitZero m ->
-         error(Error(FSComp.SR.tcConstructRequiresSequenceOrComputations(), m))
+        error(Error(FSComp.SR.tcConstructRequiresSequenceOrComputations(), m))
     | SynExpr.DoBang  (_, m) 
     | SynExpr.LetOrUseBang  (_, _, _, _, _, _, m) -> 
-         error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
+        error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
+    | SynExpr.MatchBang (_, _, _, _, m) ->
+        error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
 
 /// Check lambdas as a group, to catch duplicate names in patterns
 and TcIteratedLambdas cenv isFirst (env: TcEnv) overallTy takenNames tpenv e = 
@@ -7960,6 +7964,15 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
             let clauses = clauses |> List.map (fun (Clause(pat, cond, innerComp, patm, sp)) -> Clause(pat, cond, transNoQueryOps innerComp, patm, sp))
             Some(translatedCtxt (SynExpr.Match(spMatch, expr, clauses, false, m)))
 
+        // 'match! expr with pats ...' --> build.Bind(e1, (function pats ...))
+        | SynExpr.MatchBang (spMatch, expr, clauses, false, m) ->
+            let mMatch = match spMatch with SequencePointAtBinding mMatch -> mMatch | _ -> m
+            if isQuery then error(Error(FSComp.SR.tcMatchMayNotBeUsedWithQuery(), mMatch))
+            if isNil (TryFindIntrinsicOrExtensionMethInfo cenv env mMatch ad "Bind" builderTy) then error(Error(FSComp.SR.tcRequireBuilderMethod("Bind"), mMatch))
+            let clauses = clauses |> List.map (fun (Clause(pat, cond, innerComp, patm, sp)) -> Clause(pat, cond, transNoQueryOps innerComp, patm, sp))
+            let consumeExpr = SynExpr.MatchLambda(false, mMatch, clauses, spMatch, mMatch)
+            Some(translatedCtxt (mkSynCall "Bind" mMatch [expr; consumeExpr]))
+
         | SynExpr.TryWith (innerComp, _mTryToWith, clauses, _mWithToLast, mTryToLast, spTry, _spWith) ->
             let mTry = match spTry with SequencePointAtTry(m) -> m | _ -> mTryToLast
             
@@ -8766,6 +8779,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
             | SynExpr.ImplicitZero  _
             | SynExpr.YieldOrReturn _
             | SynExpr.YieldOrReturnFrom _
+            | SynExpr.MatchBang _
             | SynExpr.LetOrUseBang _
             | SynExpr.DoBang _ 
             | SynExpr.TraitCall _ 
@@ -10012,11 +10026,13 @@ and TcMethodArg  cenv env  (lambdaPropagationInfo, tpenv) (lambdaPropagationInfo
                     // The loop variable callerLambdaTyOpt becomes None if something failed.
                     let rec loop callerLambdaTy lambdaVarNum = 
                         if lambdaVarNum < numLambdaVars then
-                            let col = [ for row in prefixOfLambdaArgsForEachOverload -> row.[lambdaVarNum] ]
-                            // Check if all the rows give the same argument type
-                            if col |> ListSet.setify (typeEquiv cenv.g) |> isSingleton then 
-                                let calledLambdaArgTy = col.[0]
-                                // Force the caller to be a function type. 
+                            let calledLambdaArgTy = prefixOfLambdaArgsForEachOverload.[0].[lambdaVarNum]
+                            let allRowsGiveSameArgumentType =
+                                prefixOfLambdaArgsForEachOverload
+                                |> Array.forall (fun row -> typeEquiv cenv.g calledLambdaArgTy row.[lambdaVarNum]) 
+
+                            if allRowsGiveSameArgumentType then
+                                // Force the caller to be a function type.
                                 match UnifyFunctionTypeUndoIfFailed cenv env.DisplayEnv mArg callerLambdaTy with 
                                 | Some (callerLambdaDomainTy, callerLambdaRangeTy) ->
                                     if AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css mArg calledLambdaArgTy callerLambdaDomainTy then 
@@ -10847,7 +10863,12 @@ and ApplyAbstractSlotInference (cenv:cenv) (envinner:TcEnv) (bindingTy, m, synTy
     if memberFlags.IsOverrideOrExplicitImpl then 
         
         // for error detection, we want to compare finality when testing for equivalence
-        let makeUniqueBySig meths = meths |> ListSet.setify (MethInfosEquivByNameAndSig EraseNone false cenv.g cenv.amap m)
+        let methInfosEquivByNameAndSig meths = 
+            match meths with
+            | [] -> false
+            | head :: tail ->
+                tail |> List.forall (MethInfosEquivByNameAndSig EraseNone false cenv.g cenv.amap m head)
+        
         match memberFlags.MemberKind with 
         | MemberKind.Member -> 
              let dispatchSlots, dispatchSlotsArityMatch = 
@@ -10861,11 +10882,11 @@ and ApplyAbstractSlotInference (cenv:cenv) (envinner:TcEnv) (bindingTy, m, synTy
 
                  | slots -> 
                      match dispatchSlotsArityMatch with 
-                     | meths when meths |> makeUniqueBySig |> isSingleton -> meths
+                     | meths when methInfosEquivByNameAndSig meths -> meths
                      | [] -> 
                          let details =
                              slots
-                             |> List.map (NicePrint.stringOfMethInfo cenv.amap m envinner.DisplayEnv)
+                             |> Seq.map (NicePrint.stringOfMethInfo cenv.amap m envinner.DisplayEnv)
                              |> Seq.map (sprintf "%s   %s" System.Environment.NewLine)
                              |> String.concat ""
 
@@ -13226,7 +13247,7 @@ module MutRecBindingChecking =
                         // Phase2B: typecheck the argument to an 'inherits' call and build the new object expr for the inherit-call 
                         | Phase2AInherit (synBaseTy, arg, baseValOpt, m) ->
                             let baseTy, tpenv = TcType cenv NoNewTypars CheckCxs ItemOccurence.Use envInstance tpenv synBaseTy
-                            let baseTy = baseTy |> helpEnsureTypeHasMetadata cenv.g
+                            let baseTy = baseTy |> convertToTypeWithMetadataIfPossible cenv.g
                             let inheritsExpr, tpenv = TcNewExpr cenv envInstance tpenv baseTy (Some synBaseTy.Range) true arg m
                             let envInstance = match baseValOpt with Some baseVal -> AddLocalVal cenv.tcSink scopem baseVal envInstance | None -> envInstance
                             let envNonRec   = match baseValOpt with Some baseVal -> AddLocalVal cenv.tcSink scopem baseVal envNonRec   | None -> envNonRec
@@ -16884,8 +16905,8 @@ let ApplyAssemblyLevelAutoOpenAttributeToTcEnv g amap (ccu: CcuThunk) scopem env
     let h, t = List.frontAndBack p 
     let modref = mkNonLocalTyconRef (mkNonLocalEntityRef ccu (Array.ofList h))  t
     match modref.TryDeref with 
-    | VNone ->  warn()
-    | VSome _ -> 
+    | ValueNone ->  warn()
+    | ValueSome _ -> 
         let openDecl = OpenDeclaration.Create ([], [modref], scopem, false)
         OpenModulesOrNamespaces TcResultsSink.NoSink g amap scopem root env [modref] openDecl
 

@@ -145,7 +145,7 @@ module public ParsedInput =
         (( (* requiresQualifiedAccessParent: *) Idents option * (* autoOpenParent: *) Idents option * (*  entityNamespace *) Idents option * (* entity: *) Idents) -> (Entity * InsertContext)[])
     
     /// Returns `InsertContext` based on current position and symbol idents.
-    val tryFindNearestPointToInsertOpenDeclaration : currentLine: int -> ast: Ast.ParsedInput -> entity: Idents -> insertionPoint: OpenStatementInsertionPoint -> InsertContext option
+    val findNearestPointToInsertOpenDeclaration : currentLine: int -> ast: Ast.ParsedInput -> entity: Idents -> insertionPoint: OpenStatementInsertionPoint -> InsertContext
 
     /// Returns lond identifier at position.
     val getLongIdentAt : ast: Ast.ParsedInput -> pos: Range.pos -> Ast.LongIdent option
