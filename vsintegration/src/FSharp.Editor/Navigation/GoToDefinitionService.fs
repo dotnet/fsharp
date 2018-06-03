@@ -3,21 +3,13 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
-open System.IO
-open System.Collections.Immutable
-open System.Linq
 open System.Threading
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Editor
-open Microsoft.CodeAnalysis.Navigation
 open Microsoft.CodeAnalysis.Host.Mef
-open Microsoft.CodeAnalysis.Text
-open Microsoft.CodeAnalysis.FindSymbols
 
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open System
@@ -236,7 +228,6 @@ module internal ExternalSymbol =
             [upcast eventsym, ExternalSymbol.Event(container, eventsym.MetadataName)]
 
         | _ -> []
-                
 
 [<ExportLanguageService(typeof<IGoToDefinitionService>, FSharpConstants.FSharpLanguageName)>]
 [<Export(typeof<FSharpGoToDefinitionService>)>]
@@ -247,202 +238,46 @@ type internal FSharpGoToDefinitionService
         projectInfoManager: FSharpProjectOptionsManager
     ) =
 
-    static let userOpName = "GoToDefinition"
-    let gotoDefinition = GoToDefinition(checkerProvider.Checker, projectInfoManager)
-    let serviceProvider =  ServiceProvider.GlobalProvider
-    let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar,IVsStatusbar>())
-    
-    let tryNavigateToItem (navigableItem: #INavigableItem option) =
-        use __ = statusBar.Animate()
-
-        match navigableItem with
-        | Some navigableItem ->
-            statusBar.Message (SR.NavigatingTo())
-
-            let workspace = navigableItem.Document.Project.Solution.Workspace
-            let navigationService = workspace.Services.GetService<IDocumentNavigationService>()
-            // prefer open documents in the preview tab
-            let options = workspace.Options.WithChangedOption (NavigationOptions.PreferProvisionalTab, true)
-            let result = navigationService.TryNavigateToSpan (workspace, navigableItem.Document.Id, navigableItem.SourceSpan, options)
-            
-            if result then 
-                statusBar.Clear()
-            else 
-                statusBar.TempMessage (SR.CannotNavigateUnknown())
-            
-            result
-        | None ->
-            statusBar.TempMessage (SR.CannotDetermineSymbol())
-            true
-
-    /// Navigate to the positon of the textSpan in the provided document
-    /// used by quickinfo link navigation when the tooltip contains the correct destination range.
-    member this.TryNavigateToTextSpan (document: Document, textSpan: TextSpan) =
-        let navigableItem = FSharpNavigableItem (document, textSpan) :> INavigableItem
-        let workspace = document.Project.Solution.Workspace
-        let navigationService = workspace.Services.GetService<IDocumentNavigationService>()
-        let options = workspace.Options.WithChangedOption (NavigationOptions.PreferProvisionalTab, true)
-        if navigationService.TryNavigateToSpan (workspace, navigableItem.Document.Id, navigableItem.SourceSpan, options) then 
-            true 
-        else
-            statusBar.TempMessage (SR.CannotNavigateUnknown())
-            false
-
-    /// find the declaration location (signature file/.fsi) of the target symbol if possible, fall back to definition 
-    member __.NavigateToSymbolDeclarationAsync (targetDocument: Document, targetSourceText: SourceText, symbolRange: range) =
-        gotoDefinition.FindDeclarationOfSymbolAtRange(targetDocument, symbolRange, targetSourceText) |> Async.map tryNavigateToItem
-
-    /// find the definition location (implementation file/.fs) of the target symbol
-    member this.NavigateToSymbolDefinitionAsync (targetDocument: Document, targetSourceText: SourceText, symbolRange: range) = 
-        gotoDefinition.FindDefinitionOfSymbolAtRange(targetDocument, symbolRange, targetSourceText) |> Async.map tryNavigateToItem
-
-    /// Construct a task that will return a navigation target for the implementation definition of the symbol 
-    /// at the provided position in the document.
-    member __.FindDefinitionsTask(originDocument: Document, position: int, cancellationToken: CancellationToken) =
-        asyncMaybe {
-            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject originDocument
-            let! sourceText = originDocument.GetTextAsync () |> liftTaskAsync
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
-            let textLine = sourceText.Lines.GetLineFromPosition position
-            let textLinePos = sourceText.Lines.GetLinePosition position
-            let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()  
-            
-            let preferSignature = isSignatureFile originDocument.FilePath
-
-            let! _, _, checkFileResults = checkerProvider.Checker.ParseAndCheckDocument (originDocument, projectOptions, allowStaleResults=true, sourceText=sourceText, userOpName=userOpName)
-                
-            let! lexerSymbol = Tokenizer.getSymbolAtPosition (originDocument.Id, sourceText, position,originDocument.FilePath, defines, SymbolLookupKind.Greedy, false)
-            let idRange = lexerSymbol.Ident.idRange
-
-            let! declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, preferSignature, userOpName=userOpName) |> liftAsync
-            let! targetSymbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland, userOpName=userOpName)
-
-            match declarations with
-            | FSharpFindDeclResult.ExternalDecl (assy, targetExternalSym) ->
-                let! project = originDocument.Project.Solution.Projects |> Seq.tryFind (fun p -> p.AssemblyName.Equals(assy, StringComparison.OrdinalIgnoreCase))
-                let! symbols = SymbolFinder.FindSourceDeclarationsAsync(project, fun _ -> true)
-
-                let roslynSymbols =
-                    symbols
-                    |> Seq.collect ExternalSymbol.ofRoslynSymbol
-                    |> Array.ofSeq
-
-                let! symbol =
-                    roslynSymbols
-                    |> Seq.tryPick (fun (sym, externalSym) ->
-                        if externalSym = targetExternalSym then Some sym
-                        else None
-                        )
- 
-                let! location = symbol.Locations |> Seq.tryHead
-                return FSharpNavigableItem(project.GetDocument(location.SourceTree), location.SourceSpan)
-
-            | FSharpFindDeclResult.DeclFound targetRange -> 
-                // if goto definition is called at we are alread at the declaration location of a symbol in
-                // either a signature or an implementation file then we jump to it's respective postion in thethe
-                if lexerSymbol.Range = targetRange then
-                    // jump from signature to the corresponding implementation
-                    if isSignatureFile originDocument.FilePath then
-                        let implFilePath = Path.ChangeExtension (originDocument.FilePath,"fs")
-                        if not (File.Exists implFilePath) then return! None else
-                        let! implDocument = originDocument.Project.Solution.TryGetDocumentFromPath implFilePath
-                        let! implSourceText = implDocument.GetTextAsync () |> liftTaskAsync
-                        let! implVersion = implDocument.GetTextVersionAsync () |> liftTaskAsync
-                        
-                        let! targetRange = 
-                            gotoDefinition.FindSymbolDeclarationInFile(targetSymbolUse, implFilePath, implSourceText.ToString(), projectOptions, implVersion.GetHashCode())
-
-                        let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (implSourceText, targetRange)
-                        let navItem = FSharpNavigableItem (implDocument, implTextSpan)
-                        return navItem
-                    else // jump from implementation to the corresponding signature
-                        let! declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, true, userOpName=userOpName) |> liftAsync
-                        match declarations with
-                        | FSharpFindDeclResult.DeclFound targetRange -> 
-                            let! sigDocument = originDocument.Project.Solution.TryGetDocumentFromPath targetRange.FileName
-                            let! sigSourceText = sigDocument.GetTextAsync () |> liftTaskAsync
-                            let! sigTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sigSourceText, targetRange)
-                            let navItem = FSharpNavigableItem (sigDocument, sigTextSpan)
-                            return navItem
-                        | _ -> return! None
-                // when the target range is different follow the navigation convention of 
-                // - gotoDefn origin = signature , gotoDefn destination = signature
-                // - gotoDefn origin = implementation, gotoDefn destination = implementation 
-                else
-                    let! sigDocument = originDocument.Project.Solution.TryGetDocumentFromPath targetRange.FileName
-                    let! sigSourceText = sigDocument.GetTextAsync () |> liftTaskAsync
-                    let! sigTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sigSourceText, targetRange)
-                    // if the gotodef call originated from a signature and the returned target is a signature, navigate there
-                    if isSignatureFile targetRange.FileName && preferSignature then 
-                        let navItem = FSharpNavigableItem (sigDocument, sigTextSpan)
-                        return navItem
-                    else // we need to get an FSharpSymbol from the targetRange found in the signature
-                         // that symbol will be used to find the destination in the corresponding implementation file
-                        let implFilePath =
-                            // Bugfix: apparently sigDocument not always is a signature file
-                            if isSignatureFile sigDocument.FilePath then Path.ChangeExtension (sigDocument.FilePath, "fs") 
-                            else sigDocument.FilePath
-
-                        let! implDocument = originDocument.Project.Solution.TryGetDocumentFromPath implFilePath
-                        let! implVersion = implDocument.GetTextVersionAsync () |> liftTaskAsync
-                        let! implSourceText = implDocument.GetTextAsync () |> liftTaskAsync
-                        let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject implDocument
-                        
-                        let! targetRange = 
-                            gotoDefinition.FindSymbolDeclarationInFile(targetSymbolUse, implFilePath, implSourceText.ToString(), projectOptions, implVersion.GetHashCode())                               
-                        
-                        let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (implSourceText, targetRange)
-                        let navItem = FSharpNavigableItem (implDocument, implTextSpan)
-                        return navItem
-                | _ -> return! None
-        } 
-        |> Async.map (Option.map (fun x -> x :> INavigableItem) >> Option.toArray >> Array.toSeq)
-        |> RoslynHelpers.StartAsyncAsTask cancellationToken        
+    let gtd = GoToDefinition(checkerProvider.Checker, projectInfoManager)
+    let statusBar = StatusBar(ServiceProvider.GlobalProvider.GetService<SVsStatusbar,IVsStatusbar>())  
    
     interface IGoToDefinitionService with
-        // used for 'definition peek'
-        member this.FindDefinitionsAsync (document: Document, position: int, cancellationToken: CancellationToken) =
-            this.FindDefinitionsTask (document, position, cancellationToken)
+        /// Invoked with Peek Definition.
+        member __.FindDefinitionsAsync (document: Document, position: int, cancellationToken: CancellationToken) =
+            gtd.FindDefinitionsForPeekTask(document, position, cancellationToken)
 
-        // used for 'goto definition' proper
+        /// Invoked with Go to Definition.
         /// Try to navigate to the definiton of the symbol at the symbolRange in the originDocument
-        member this.TryGoToDefinition(document: Document, position: int, cancellationToken: CancellationToken) =
-            let definitionTask = this.FindDefinitionsTask (document, position, cancellationToken)
-            
-            statusBar.Message (SR.LocatingSymbol())
+        member __.TryGoToDefinition(document: Document, position: int, cancellationToken: CancellationToken) =
+            statusBar.Message(SR.LocatingSymbol())
             use __ = statusBar.Animate()
+
+            let gtdTask = gtd.FindDefinitionTask(document, position, cancellationToken)
 
             // Wrap this in a try/with as if the user clicks "Cancel" on the thread dialog, we'll be cancelled
             // Task.Wait throws an exception if the task is cancelled, so be sure to catch it.
-            let completionError =
+            let gtdCompletionOrError =
                 try
-                    // REVIEW: document this use of a blocking wait on the cancellation token, explaining why it is ok
-                    definitionTask.Wait()
-                    None
-                with exc -> Some <| Exception.flattenMessage exc
+                    // This call to Wait() is fine because we want to be able to provide the error message in the status bar.
+                    gtdTask.Wait()
+                    Ok gtdTask
+                with exc -> 
+                    Error(Exception.flattenMessage exc)
             
-            match completionError with
-            | Some message ->
-                statusBar.TempMessage <| String.Format(SR.NavigateToFailed(), message)
+            match gtdCompletionOrError with
+            | Ok task ->
+                if task.Status = TaskStatus.RanToCompletion && task.Result.IsSome then
+                    let item, _ = task.Result.Value
+                    gtd.NavigateToItem(item, statusBar)
+
+                    // 'true' means do it, like Sheev Palpatine would want us to.
+                    true
+                else 
+                    statusBar.TempMessage (SR.CannotDetermineSymbol())
+                    false
+            | Error message ->
+                statusBar.TempMessage(String.Format(SR.NavigateToFailed(), message))
 
                 // Don't show the dialog box as it's most likely that the user cancelled.
                 // Don't make them click twice.
                 true
-            | None ->
-                if definitionTask.Status = TaskStatus.RanToCompletion && definitionTask.Result <> null && definitionTask.Result.Any() then
-                    let navigableItem = definitionTask.Result.First() // F# API provides only one INavigableItem
-                    tryNavigateToItem (Some navigableItem)
-
-                    // FSROSLYNTODO: potentially display multiple results here
-                    // If GotoDef returns one result then it should try to jump to a discovered location. If it returns multiple results then it should use 
-                    // presenters to render items so user can choose whatever he needs. Given that per comment F# API always returns only one item then we 
-                    // should always navigate to definition and get rid of presenters.
-                    //
-                    //let refDisplayString = refSourceText.GetSubText(refTextSpan).ToString()
-                    //for presenter in presenters do
-                    //    presenter.DisplayResult(navigableItem.DisplayString, definitionTask.Result)
-                    //true
-                else 
-                    statusBar.TempMessage (SR.CannotDetermineSymbol())
-                    false
