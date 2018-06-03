@@ -381,7 +381,9 @@ let LowerSeqExpr g amap overallExpr =
               when  bind.Var.IsCompiledAsTopLevel || not (IsGenericValWithGenericContraints g bind.Var) -> 
             match Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel e2 with 
             | Some res2 ->
-                if bind.Var.IsCompiledAsTopLevel then 
+                if bind.Var.IsCompilerGenerated then
+                  None
+                elif bind.Var.IsCompiledAsTopLevel then 
                     Some (RepresentBindingsAsLifted (mkLetBind m bind) res2)
                 else
                     // printfn "found state variable %s" bind.Var.DisplayName
