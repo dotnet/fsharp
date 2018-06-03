@@ -911,9 +911,9 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
         // Field setters on mutable structs come through here
         CheckExprsPermitByRefLike cenv env [arg1; arg2]    
 
-    | TOp.Coerce,[_ty1;_ty2],[x] ->
-        // Subsumption coercions of functions may involve byrefs in other argument positions
-        CheckTypeInstPermitAllByrefs cenv env m tyargs
+    | TOp.Coerce,[ty1;ty2],[x] ->
+        if not (typeEquiv g ty1 ty2) then 
+            CheckTypeInstNoByrefs cenv env m tyargs
         CheckExpr cenv env x context
 
     | TOp.Reraise,[_ty1],[] ->
