@@ -111,7 +111,7 @@ type internal FSharpCompletionProvider
             let fcsCaretLineNumber = Line.fromZ caretLinePos.Line  // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
             let caretLineColumn = caretLinePos.Character
             let partialName = QuickParse.GetPartialLongNameEx(caretLine.ToString(), caretLineColumn - 1) 
-
+            
             let getAllSymbols() =
                 getAllSymbols checkFileResults 
                 |> List.filter (fun assemblySymbol -> 
@@ -130,7 +130,7 @@ type internal FSharpCompletionProvider
                         if n <> 0 then n else
                             n <- (not x.IsOwnMember).CompareTo(not y.IsOwnMember)
                             if n <> 0 then n else
-                                n <- StringComparer.OrdinalIgnoreCase.Compare(x.Name, y.Name)
+                                n <- String.Compare(x.Name, y.Name, StringComparison.OrdinalIgnoreCase)
                                 if n <> 0 then n else
                                     x.MinorPriority.CompareTo(y.MinorPriority))
 
@@ -178,7 +178,7 @@ type internal FSharpCompletionProvider
                     | true, hints -> maxHints - hints
                     | _ -> number + maxHints + 1
 
-                let sortText = sprintf "%06d" priority
+                let sortText = priority.ToString("D6")
                 let completionItem = completionItem.WithSortText(sortText)
                 results.Add(completionItem))
 
