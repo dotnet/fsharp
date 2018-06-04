@@ -1248,6 +1248,9 @@ module UntypedParseImpl =
                             | _ -> defaultTraverse synBinding
 
                         match headPat with
+                        | SynPat.LongIdent(longDotId = lidwd) when rangeContainsPos lidwd.Range pos ->
+                            // let fo|o x = ()
+                            Some CompletionContext.Invalid
                         | SynPat.LongIdent(_,_,_,ctorArgs,_,_) ->
                             match ctorArgs with
                             | SynConstructorArgs.Pats(pats) ->
@@ -1264,6 +1267,9 @@ module UntypedParseImpl =
                                     | _ -> visitParam pat
                                 )
                             | _ -> defaultTraverse synBinding
+                        | SynPat.Named(range = range) when rangeContainsPos range pos ->
+                            // let fo|o = 1
+                            Some CompletionContext.Invalid
                         | _ -> defaultTraverse synBinding 
                     
                     member __.VisitHashDirective(range) = 

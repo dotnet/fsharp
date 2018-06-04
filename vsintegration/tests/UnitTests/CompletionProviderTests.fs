@@ -457,12 +457,36 @@ type T
     VerifyNoCompletionList(fileContents, "type T")
 
 [<Test>]
-let ``No completion on function name at declaration site``() =
+let ``No completion on name of unfinished function declaration``() =
     let fileContents = """
 let f
 
 """
     VerifyNoCompletionList(fileContents, "let f")
+
+[<Test>]
+let ``No completion on name of value declaration``() =
+    let fileContents = """
+let xyz = 1
+
+"""
+    VerifyNoCompletionList(fileContents, "let xy")
+
+[<Test>]
+let ``No completion on name of function declaration``() =
+    let fileContents = """
+let foo x = 1
+
+"""
+    VerifyNoCompletionList(fileContents, "let fo")
+
+[<Test>]
+let ``No completion on name of tupled function declaration``() =
+    let fileContents = """
+let foo (x, y) = 1
+
+"""
+    VerifyNoCompletionList(fileContents, "let fo")
 
 [<Test>]
 let ``No completion on member name at declaration site``() =
