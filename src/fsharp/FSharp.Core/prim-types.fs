@@ -2220,7 +2220,7 @@ namespace Microsoft.FSharp.Core
                 | ty when ty.Equals(typeof<float32>)    -> unboxPrim (box Float32Comparer)
                 | ty when ty.Equals(typeof<decimal>)    -> unboxPrim (box DecimalComparer)
                 | ty when ty.Equals(typeof<string>)     -> unboxPrim (box StringComparer)
-                | ty when ty.Equals(typeof<bool>)     -> unboxPrim (box BoolComparer)
+                | ty when ty.Equals(typeof<bool>)       -> unboxPrim (box BoolComparer)
                 | _ -> 
                     // Review: There are situations where we should be able
                     // to return System.Collections.Generic.Comparer<'T>.Default here.
@@ -5651,6 +5651,24 @@ namespace Microsoft.FSharp.Core
                          (let x = (retype x : decimal) in
                           if n >= 0 then PowDecimal x n else 1.0M /  PowDecimal x n)
 
+
+    /// Represents the types of byrefs in F# 4.5+
+    module ByRefKinds = 
+
+        /// Represents a byref that can be written
+        type Out() = class end
+
+        /// Represents a byref that can be read
+        type In() = class end
+
+        /// Represents a byref that can be both read and written
+        type InOut = Choice<In, Out>
+
+    /// <summary>Represents a in-argument or readonly managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
+    type inref<'T> = byref<'T, ByRefKinds.In>
+
+    /// <summary>Represents a out-argument managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
+    type outref<'T> = byref<'T, ByRefKinds.Out>
 
 namespace Microsoft.FSharp.Control
 

@@ -302,10 +302,10 @@ module FSharpExprConvert =
         match expr with 
         | Expr.Op(op, tyargs, args, m) -> 
             match op, args, tyargs  with
-            | TOp.LValueOp(LGetAddr, vref), _, _ -> exprForValRef m vref
-            | TOp.ValFieldGetAddr(rfref), [], _ -> mkStaticRecdFieldGet(rfref, tyargs, m)
-            | TOp.ValFieldGetAddr(rfref), [arg], _ -> mkRecdFieldGetViaExprAddr(exprOfExprAddr cenv arg, rfref, tyargs, m)
-            | TOp.UnionCaseFieldGetAddr(uref, n), [arg], _ -> mkUnionCaseFieldGetProvenViaExprAddr(exprOfExprAddr cenv arg, uref, tyargs, n, m)
+            | TOp.LValueOp(LAddrOf _, vref), _, _ -> exprForValRef m vref
+            | TOp.ValFieldGetAddr(rfref, _), [], _ -> mkStaticRecdFieldGet(rfref, tyargs, m)
+            | TOp.ValFieldGetAddr(rfref, _), [arg], _ -> mkRecdFieldGetViaExprAddr(exprOfExprAddr cenv arg, rfref, tyargs, m)
+            | TOp.UnionCaseFieldGetAddr(uref, n, _), [arg], _ -> mkUnionCaseFieldGetProvenViaExprAddr(exprOfExprAddr cenv arg, uref, tyargs, n, m)
             | TOp.ILAsm([ I_ldflda(fspec) ], rtys), [arg], _  -> mkAsmExpr([ mkNormalLdfld(fspec) ], tyargs, [exprOfExprAddr cenv arg], rtys, m)
             | TOp.ILAsm([ I_ldsflda(fspec) ], rtys), _, _  -> mkAsmExpr([ mkNormalLdsfld(fspec) ], tyargs, args, rtys, m)
             | TOp.ILAsm(([ I_ldelema(_ro, _isNativePtr, shape, _tyarg) ] ), _), (arr::idxs), [elemty]  -> 
@@ -581,10 +581,10 @@ module FSharpExprConvert =
                 let projR = FSharpField(cenv, ucref, n)
                 E.UnionCaseSet(ConvExpr cenv env e1, typR, mkR, projR, ConvExpr cenv env e2) 
 
-            | TOp.UnionCaseFieldGetAddr (_ucref, _n), _tyargs, _ ->
+            | TOp.UnionCaseFieldGetAddr _, _tyargs, _ ->
                 E.AddressOf(ConvLValueExpr cenv env expr) 
 
-            | TOp.ValFieldGetAddr(_rfref), _tyargs, _ -> 
+            | TOp.ValFieldGetAddr _, _tyargs, _ -> 
                 E.AddressOf(ConvLValueExpr cenv env expr)
 
             | TOp.ValFieldGet(rfref), tyargs, [] ->
@@ -755,7 +755,7 @@ module FSharpExprConvert =
                 // rebuild reraise<T>() and Convert 
                 mkReraiseLibCall cenv.g toTy m |> ConvExprPrim cenv env 
 
-            | TOp.LValueOp(LGetAddr, vref), [], [] -> 
+            | TOp.LValueOp(LAddrOf _, vref), [], [] -> 
                 E.AddressOf(ConvExpr cenv env (exprForValRef m vref)) 
 
             | TOp.LValueOp(LByrefSet, vref), [], [e] -> 
@@ -815,8 +815,8 @@ module FSharpExprConvert =
                 let argsR = ConvExprs cenv env args
                 E.TraitCall(tysR, nm, memFlags, argtysR, tyargsR, argsR) 
 
-            | TOp.RefAddrGet, [ty], [e]  -> 
-                let replExpr = mkRecdFieldGetAddrViaExprAddr(e, mkRefCellContentsRef cenv.g, [ty], m)
+            | TOp.RefAddrGet readonly, [ty], [e]  -> 
+                let replExpr = mkRecdFieldGetAddrViaExprAddr(readonly, e, mkRefCellContentsRef cenv.g, [ty], m)
                 ConvExprPrim cenv env replExpr
 
             | _ -> wfail (sprintf "unhandled construct in AST", m)

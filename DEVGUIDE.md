@@ -223,7 +223,6 @@ To do this, build the non-buildfromsource version of FSharp.Compiler.Private (sr
 
     .\build net40
     copy /y src\fsharp\FSharp.Compiler.Private\obj\release\net40\FSComp.* src\buildfromsource\FSharp.Compiler.Private\
- 
 
 #### Configuring proxy server
 

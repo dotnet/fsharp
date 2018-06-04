@@ -223,10 +223,14 @@ module Structure =
             | SynExpr.InferredUpcast (e,_)
             | SynExpr.DotGet (e,_,_,_)
             | SynExpr.Do (e,_)
-            | SynExpr.DotSet (e,_,_,_)
             | SynExpr.Typed (e,_,_)
-            | SynExpr.DotIndexedGet (e,_,_,_)
-            | SynExpr.DotIndexedSet (e,_,_,_,_,_) -> parseExpr e
+            | SynExpr.DotIndexedGet (e,_,_,_) -> 
+                parseExpr e
+            | SynExpr.Set (e1,e2,_)
+            | SynExpr.DotSet (e1,_,e2,_)
+            | SynExpr.DotIndexedSet (e1,_,e2,_,_,_) -> 
+                parseExpr e1
+                parseExpr e2
             | SynExpr.New (_,_,expr,r) ->
                 rcheck Scope.New Collapse.Below r expr.Range
                 parseExpr expr
