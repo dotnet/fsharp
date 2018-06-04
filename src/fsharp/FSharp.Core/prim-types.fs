@@ -2162,6 +2162,7 @@ namespace Microsoft.FSharp.Core
         let FloatComparer   = MakeGenericComparer<float>()
         let Float32Comparer = MakeGenericComparer<float32>()
         let DecimalComparer = MakeGenericComparer<decimal>()
+        let BoolComparer    = MakeGenericComparer<bool>()
 
         /// Use a type-indexed table to ensure we only create a single FastStructuralComparison function
         /// for each type
@@ -2199,6 +2200,7 @@ namespace Microsoft.FSharp.Core
                 | ty when ty.Equals(typeof<float32>)    -> null    
                 | ty when ty.Equals(typeof<decimal>)    -> null    
                 | ty when ty.Equals(typeof<string>)     -> unboxPrim (box StringComparer)
+                | ty when ty.Equals(typeof<bool>)       -> null
                 | _ -> MakeGenericComparer<'T>()
 
             static let f : System.Collections.Generic.IComparer<'T>  = 
@@ -2218,6 +2220,7 @@ namespace Microsoft.FSharp.Core
                 | ty when ty.Equals(typeof<float32>)    -> unboxPrim (box Float32Comparer)
                 | ty when ty.Equals(typeof<decimal>)    -> unboxPrim (box DecimalComparer)
                 | ty when ty.Equals(typeof<string>)     -> unboxPrim (box StringComparer)
+                | ty when ty.Equals(typeof<bool>)       -> unboxPrim (box BoolComparer)
                 | _ -> 
                     // Review: There are situations where we should be able
                     // to return System.Collections.Generic.Comparer<'T>.Default here.
