@@ -26,13 +26,14 @@ open Microsoft.VisualStudio.FSharp.Editor.Logging
 open Microsoft.VisualStudio.Text.Classification
 
 type internal CodeLens(taggedText, computed, fullTypeSignature, uiElement) =
-      member val TaggedText: Async<(ResizeArray<Layout.TaggedText> * QuickInfoNavigation) option> = taggedText
-      member val Computed: bool = computed with get, set
-      member val FullTypeSignature: string = fullTypeSignature 
-      member val UiElement: UIElement = uiElement with get, set
+    member val TaggedText: Async<(ResizeArray<Layout.TaggedText> * QuickInfoNavigation) option> = taggedText
+    member val Computed: bool = computed with get, set
+    member val FullTypeSignature: string = fullTypeSignature 
+    member val UiElement: UIElement = uiElement with get, set
 
 type internal FSharpCodeLensService
     (
+        serviceProvider: IServiceProvider,
         workspace: Workspace, 
         documentId: Lazy<DocumentId>,
         buffer: ITextBuffer, 
@@ -40,9 +41,8 @@ type internal FSharpCodeLensService
         projectInfoManager: FSharpProjectOptionsManager,
         classificationFormatMapService: IClassificationFormatMapService,
         typeMap: Lazy<ClassificationTypeMap>,
-        gotoDefinitionService: FSharpGoToDefinitionService,
         codeLens : CodeLensDisplayService
-     ) as self =
+    ) as self =
 
     let lineLens = codeLens
 
@@ -172,7 +172,7 @@ type internal FSharpCodeLensService
                                 let taggedText = ResizeArray()
                                     
                                 Layout.renderL (Layout.taggedTextListR taggedText.Add) typeLayout |> ignore
-                                let navigation = QuickInfoNavigation(gotoDefinitionService, document, realPosition)
+                                let navigation = QuickInfoNavigation(serviceProvider, checker, projectInfoManager, document, realPosition)
                                 // Because the data is available notify that this line should be updated, displaying the results
                                 return Some (taggedText, navigation)
                             | None -> 

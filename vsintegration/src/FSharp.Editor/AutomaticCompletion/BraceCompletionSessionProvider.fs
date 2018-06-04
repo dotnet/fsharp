@@ -99,7 +99,6 @@ type BraceCompletionSession
             Debug.Fail("The closing point was not found at the expected position.")
             this.EndSession()
         else
-
             let openingSnapshotPoint = closingSnapshotPoint.Subtract(1)
 
             if openingSnapshotPoint.GetChar() <> openingBrace then
@@ -108,17 +107,14 @@ type BraceCompletionSession
                 // Debug.Fail("The opening brace was not found at the expected position.");
                 this.EndSession()
             else
-
                 openingPoint <- snapshot.CreateTrackingPoint(openingSnapshotPoint.Position, PointTrackingMode.Positive)
                 let _document = snapshot.GetOpenDocumentInCurrentContextWithChanges()
 
                 if not (session.CheckOpeningPoint(this, cancellationToken)) then
                     this.EndSession()
                 else
-
                     use undo = this.CreateUndoTransaction()
-
-                    snapshot <-
+                    let nextSnapshot =
                         use edit = subjectBuffer.CreateEdit()
 
                         edit.Insert(closingSnapshotPoint.Position, closingBrace.ToString()) |> ignore
@@ -129,24 +125,28 @@ type BraceCompletionSession
                             // exit without setting the closing point which will take us off the stack
                             edit.Cancel()
                             undo.Cancel()
-                            snapshot
+                            None
                         else
-                            edit.Apply() // FIXME: perhaps, it should be ApplyAndLogExceptions()
+                            Some(edit.Apply()) // FIXME: perhaps, it should be ApplyAndLogExceptions()
 
-                    let beforePoint = beforeTrackingPoint.GetPoint(textView.TextSnapshot)
+                    match nextSnapshot with
+                    | None -> ()
+                    | Some(nextSnapshot) ->
 
-                    // switch from positive to negative tracking so it stays against the closing brace
-                    closingPoint <- subjectBuffer.CurrentSnapshot.CreateTrackingPoint(closingPoint.GetPoint(snapshot).Position, PointTrackingMode.Negative)
+                        let beforePoint = beforeTrackingPoint.GetPoint(textView.TextSnapshot)
 
-                    Debug.Assert(closingPoint.GetPoint(snapshot).Position > 0 && (SnapshotSpan(closingPoint.GetPoint(snapshot).Subtract(1), 1)).GetText().Equals(closingBrace.ToString()),
-                        "The closing point does not match the closing brace character")
+                        // switch from positive to negative tracking so it stays against the closing brace
+                        closingPoint <- subjectBuffer.CurrentSnapshot.CreateTrackingPoint(closingPoint.GetPoint(nextSnapshot).Position, PointTrackingMode.Negative)
 
-                    // move the caret back between the braces
-                    textView.Caret.MoveTo(beforePoint) |> ignore
+                        Debug.Assert(closingPoint.GetPoint(nextSnapshot).Position > 0 && (SnapshotSpan(closingPoint.GetPoint(nextSnapshot).Subtract(1), 1)).GetText().Equals(closingBrace.ToString()),
+                            "The closing point does not match the closing brace character")
 
-                    session.AfterStart(this, cancellationToken)
+                        // move the caret back between the braces
+                        textView.Caret.MoveTo(beforePoint) |> ignore
 
-                    undo.Complete()
+                        session.AfterStart(this, cancellationToken)
+
+                        undo.Complete()
 
     member __.HasNoForwardTyping(caretPoint: SnapshotPoint, endPoint: SnapshotPoint) =
         Debug.Assert(caretPoint.Snapshot = endPoint.Snapshot, "snapshots do not match")
@@ -194,33 +194,28 @@ type BraceCompletionSession
         member this.PreBackspace handledCommand =
             handledCommand <- false
 
-            match tryGetCaretPosition this with
-            | Some caretPos ->
-                let snapshot = subjectBuffer.CurrentSnapshot
+            let caretPos = tryGetCaretPosition this
+            let snapshot = subjectBuffer.CurrentSnapshot
 
-                if caretPos.Position > 0 &&
-                        caretPos.Position - 1 = openingPoint.GetPoint(snapshot).Position &&
-                        not this.HasForwardTyping then
-                
-                    use undo = this.CreateUndoTransaction()
-                    use edit = subjectBuffer.CreateEdit()
+            if caretPos.IsSome && caretPos.Value.Position > 0 && (caretPos.Value.Position - 1) = openingPoint.GetPoint(snapshot).Position && not this.HasForwardTyping then    
+                use undo = this.CreateUndoTransaction()
+                use edit = subjectBuffer.CreateEdit()
 
-                    let span = SnapshotSpan(openingPoint.GetPoint(snapshot), closingPoint.GetPoint(snapshot))
+                let span = SnapshotSpan(openingPoint.GetPoint(snapshot), closingPoint.GetPoint(snapshot))
 
-                    edit.Delete(span.Span) |> ignore
+                edit.Delete(span.Span) |> ignore
 
-                    if edit.HasFailedChanges then
-                        edit.Cancel()
-                        undo.Cancel()
-                        Debug.Fail("Unable to clear braces")
-                    else
-                        // handle the command so the backspace does 
-                        // not go through since we've already cleared the braces
-                        handledCommand <- true
-                        edit.Apply() |> ignore // FIXME: ApplyAndLogExceptions()
-                        undo.Complete()
-                        this.EndSession()
-            | _ -> ()
+                if edit.HasFailedChanges then
+                    edit.Cancel()
+                    undo.Cancel()
+                    Debug.Fail("Unable to clear braces")
+                else
+                    // handle the command so the backspace does 
+                    // not go through since we've already cleared the braces
+                    handledCommand <- true
+                    edit.Apply() |> ignore // FIXME: ApplyAndLogExceptions()
+                    undo.Complete()
+                    this.EndSession()
            
         member __.PostBackspace() = ()
 
@@ -235,14 +230,16 @@ type BraceCompletionSession
 
                 let closingSnapshotPoint = closingPoint.GetPoint(snapshot)
                 if not this.HasForwardTyping && session.AllowOverType(this, cancellationToken) then
-                    let caretPosOpt = tryGetCaretPosition this
+                    let caretPos = tryGetCaretPosition this
 
-                    Debug.Assert(caretPosOpt.IsSome && caretPosOpt.Value.Position < closingSnapshotPoint.Position)
+                    Debug.Assert(caretPos.IsSome && caretPos.Value.Position < closingSnapshotPoint.Position)
 
-                    match caretPosOpt with
+                    match caretPos with
                     // ensure that we are within the session before clearing
                     | Some caretPos when caretPos.Position < closingSnapshotPoint.Position && closingSnapshotPoint.Position > 0 ->
                         use undo = this.CreateUndoTransaction()
+
+                        editorOperations.AddBeforeTextBufferChangePrimitive()
 
                         let span = SnapshotSpan(caretPos, closingSnapshotPoint.Subtract(1))
 
