@@ -586,9 +586,55 @@ and CheckValUse (cenv: cenv) (env: env) (vref: ValRef, vFlags, m) (context: Perm
     limit
     
 /// Check an expression, given information about the position of the expression
-and CheckExpr (cenv:cenv) (env:env) expr (context:PermitByRefExpr) : bool =    
+and CheckForOverAppliedExceptionRaisingPrimitive (cenv:cenv) expr =    
     let g = cenv.g
-    let expr = NormalizeAndAdjustPossibleSubsumptionExprs g expr
+    let expr = stripExpr expr
+
+    // Some things are more easily checked prior to NormalizeAndAdjustPossibleSubsumptionExprs
+    match expr with
+    | Expr.App(f,_fty,_tyargs,argsl,_m) ->
+
+        if cenv.reportErrors then
+
+            // Special diagnostics for `raise`, `failwith`, `failwithf`, `nullArg`, `invalidOp` library intrinsics commonly used to raise exceptions
+            // to warn on over-application.
+            match f with
+            | OptionalCoerce(Expr.Val(v, _, funcRange)) 
+                when (valRefEq g v g.raise_vref || valRefEq g v g.failwith_vref || valRefEq g v g.null_arg_vref || valRefEq g v g.invalid_op_vref) ->
+                match argsl with
+                | [] | [_] -> ()
+                | _ :: _ :: _ ->
+                    warning(Error(FSComp.SR.checkRaiseFamilyFunctionArgumentCount(v.DisplayName, 1, argsl.Length), funcRange)) 
+
+            | OptionalCoerce(Expr.Val(v, _, funcRange)) when valRefEq g v g.invalid_arg_vref ->
+                match argsl with
+                | [] | [_] | [_; _] -> ()
+                | _ :: _ :: _ :: _ ->
+                    warning(Error(FSComp.SR.checkRaiseFamilyFunctionArgumentCount(v.DisplayName, 2, argsl.Length), funcRange))
+
+            | OptionalCoerce(Expr.Val(failwithfFunc, _, funcRange)) when valRefEq g failwithfFunc g.failwithf_vref  ->
+                match argsl with
+                | Expr.App (Expr.Val(newFormat, _, _), _, [_; typB; typC; _; _], [Expr.Const(Const.String formatString, formatRange, _)], _) :: xs when valRefEq g newFormat g.new_format_vref ->
+                    match CheckFormatStrings.TryCountFormatStringArguments formatRange g formatString typB typC with
+                    | Some n ->
+                        let expected = n + 1
+                        let actual = List.length xs + 1
+                        if expected < actual then
+                            warning(Error(FSComp.SR.checkRaiseFamilyFunctionArgumentCount(failwithfFunc.DisplayName, expected, actual), funcRange))
+                    | None -> ()
+                | _ -> ()
+            | _ -> ()
+        | _ -> ()
+
+/// Check an expression, given information about the position of the expression
+and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : bool =    
+    let g = cenv.g
+
+    let origExpr = stripExpr origExpr
+
+    // CheckForOverAppliedExceptionRaisingPrimitive is more easily checked prior to NormalizeAndAdjustPossibleSubsumptionExprs
+    CheckForOverAppliedExceptionRaisingPrimitive cenv origExpr
+    let expr = NormalizeAndAdjustPossibleSubsumptionExprs g origExpr
     let expr = stripExpr expr
 
     match expr with
@@ -709,39 +755,6 @@ and CheckExpr (cenv:cenv) (env:env) expr (context:PermitByRefExpr) : bool =
 
     // Check an application
     | Expr.App(f,_fty,tyargs,argsl,m) ->
-
-        if cenv.reportErrors then
-
-            // Special diagnostics for `raise`, `failwith`, `failwithf`, `nullArg`, `invalidOp` library intrinsics commonly used to raise exceptions
-            // to warn on over-application.
-            match f with
-            | OptionalCoerce(Expr.Val(v, _, funcRange)) 
-                when (valRefEq g v g.raise_vref || valRefEq g v g.failwith_vref || valRefEq g v g.null_arg_vref || valRefEq g v g.invalid_op_vref) ->
-                match argsl with
-                | [] | [_] -> ()
-                | _ :: _ :: _ ->
-                    warning(Error(FSComp.SR.checkRaiseFamilyFunctionArgumentCount(v.DisplayName, 1, List.length argsl), funcRange)) 
-
-            | OptionalCoerce(Expr.Val(v, _, funcRange)) when valRefEq g v g.invalid_arg_vref ->
-                match argsl with
-                | [] | [_] | [_; _] -> ()
-                | _ :: _ :: _ :: _ ->
-                    warning(Error(FSComp.SR.checkRaiseFamilyFunctionArgumentCount(v.DisplayName, 2, List.length argsl), funcRange))
-
-            | OptionalCoerce(Expr.Val(failwithfFunc, _, funcRange)) when valRefEq g failwithfFunc g.failwithf_vref  ->
-                match argsl with
-                | Expr.App (Expr.Val(newFormat, _, _), _, [_; typB; typC; _; _], [Expr.Const(Const.String formatString, formatRange, _)], _) :: xs when valRefEq g newFormat g.new_format_vref ->
-                    match CheckFormatStrings.TryCountFormatStringArguments formatRange g formatString typB typC with
-                    | Some n ->
-                        let expected = n + 1
-                        let actual = List.length xs + 1
-                        if expected < actual then
-                            warning(Error(FSComp.SR.checkRaiseFamilyFunctionArgumentCount(failwithfFunc.DisplayName, expected, actual), funcRange))
-                    | None -> ()
-                | _ ->
-                    ()
-            | _ ->
-                ()
 
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprNoByrefs cenv env f
