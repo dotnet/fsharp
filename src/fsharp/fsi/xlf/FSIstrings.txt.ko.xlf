@@ -134,7 +134,7 @@
       </trans-unit>
       <trans-unit id="fsiExceptionDuringPrettyPrinting">
         <source>\n\nException raised during pretty printing.\nPlease report this so it can be fixed.\nTrace: {0}\n</source>
-        <target state="translated">\n\n보기 쉽게 출력하는 동안 예외가 발생했습니다.\n문제를 해결할 수 있도록 보고하세요.\n추적: {0}\n</target>
+        <target state="translated">\n\n자동 서식 지정 중 예외가 발생했습니다.\n문제를 해결할 수 있도록 보고하세요.\n추적: {0}\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader1directives">
