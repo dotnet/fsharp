@@ -135,6 +135,9 @@ module Array =
           
         loop p l 0
 
+    let existsTrue (arr: bool[]) = 
+        let rec loop n =  (n < arr.Length) &&  (arr.[n] || loop (n+1))
+        loop 0
     
     let findFirstIndexWhereTrue (arr: _[]) p = 
         let rec look lo hi = 
@@ -263,6 +266,10 @@ module List =
        let rec loop i xs = match xs with [] -> false | h::t -> f i h || loop (i+1) t
        loop 0 xs
     
+    let existsTrue (xs: bool list) = 
+       let rec loop i xs = match xs with [] -> false | h::t -> h || loop (i+1) t
+       loop 0 xs
+
     let lengthsEqAndForall2 p l1 l2 = 
         List.length l1 = List.length l2 &&
         List.forall2 p l1 l2

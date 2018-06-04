@@ -8,6 +8,7 @@ module Microsoft.FSharp.Compiler.AbstractIL.IL
 
 
 open System
+open System.Diagnostics
 open System.IO
 open System.Collections
 open System.Collections.Generic
@@ -568,7 +569,7 @@ type ILBoxity =
     | AsValue
 
 // IL type references have a pre-computed hash code to enable quick lookup tables during binary generation.
-[<CustomEquality; CustomComparison>]
+[<CustomEquality; CustomComparison; StructuredFormatDisplay("{DebugText}")>]
 type ILTypeRef = 
     { trefScope: ILScopeRef
       trefEnclosing: string list
@@ -637,11 +638,15 @@ type ILTypeRef =
     member tref.QualifiedName = 
         tref.AddQualifiedNameExtension(tref.BasicQualifiedName)
 
+    /// For debugging
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText = x.ToString()
+
+    /// For debugging
     override x.ToString() = x.FullName
 
         
-and
-    [<StructuralEquality; StructuralComparison>]
+and [<StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugText}")>]
     ILTypeSpec = 
     { tspecTypeRef: ILTypeRef
       /// The type instantiation if the type is generic.
@@ -671,9 +676,13 @@ and
 
     member x.FullName=x.TypeRef.FullName
 
+    /// For debugging
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText = x.ToString()
+
     override x.ToString() = x.TypeRef.ToString() + if isNil x.GenericArgs then "" else "<...>"
 
-and [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
+and [<RequireQualifiedAccess; StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugText}")>]
     ILType =
     | Void                   
     | Array    of ILArrayShape * ILType 
@@ -740,6 +749,10 @@ and [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
         match x with 
         | ILType.TypeVar _ -> true | _ -> false
 
+    /// For debugging
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText = x.ToString()
+
     override x.ToString() = x.QualifiedName
 
 and [<StructuralEquality; StructuralComparison>]
@@ -756,6 +769,7 @@ let mkILCallSig (cc, args, ret) = { ArgTypes=args; CallingConv=cc; ReturnType=re
 
 let mkILBoxedType (tspec:ILTypeSpec) = tspec.TypeRef.AsBoxedType tspec
 
+[<StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugText}")>]
 type ILMethodRef =
     { mrefParent: ILTypeRef
       mrefCallconv: ILCallingConv
@@ -783,18 +797,26 @@ type ILMethodRef =
     static member Create(a, b, c, d, e, f) = 
         { mrefParent= a;mrefCallconv=b;mrefName=c;mrefGenericArity=d; mrefArgs=e;mrefReturn=f }
 
+    /// For debugging
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText = x.ToString()
+
     override x.ToString() = x.DeclaringTypeRef.ToString() + "::" + x.Name + "(...)"
 
 
-[<StructuralEquality; StructuralComparison>]
+[<StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugText}")>]
 type ILFieldRef = 
     { DeclaringTypeRef: ILTypeRef
       Name: string
       Type: ILType }
 
+    /// For debugging
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText = x.ToString()
+
     override x.ToString() = x.DeclaringTypeRef.ToString() + "::" + x.Name
 
-[<StructuralEquality; StructuralComparison>]
+[<StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugText}")>]
 type ILMethodSpec = 
     { mspecMethodRef: ILMethodRef
 
@@ -802,7 +824,7 @@ type ILMethodSpec =
 
       mspecMethodInst: ILGenericArgs }     
 
-    static member Create(a, b, c) = { mspecDeclaringType=a; mspecMethodRef =b; mspecMethodInst=c }
+    static member Create(a, b, c) = { mspecDeclaringType=a; mspecMethodRef=b; mspecMethodInst=c }
 
     member x.MethodRef = x.mspecMethodRef
 
@@ -820,8 +842,13 @@ type ILMethodSpec =
 
     member x.FormalReturnType = x.MethodRef.ReturnType
 
+    /// For debugging
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText = x.ToString()
+
     override x.ToString() = x.MethodRef.ToString() + "(...)"
 
+[<StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugText}")>]
 type ILFieldSpec =
     { FieldRef: ILFieldRef
       DeclaringType: ILType }         
@@ -831,6 +858,10 @@ type ILFieldSpec =
     member x.Name             = x.FieldRef.Name
 
     member x.DeclaringTypeRef = x.FieldRef.DeclaringTypeRef
+
+    /// For debugging
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText = x.ToString()
 
     override x.ToString() = x.FieldRef.ToString()
 
@@ -865,6 +896,7 @@ type ILSourceDocument =
 
     member x.File=x.sourceFile
 
+[<StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugText}")>]
 type ILSourceMarker =
     { sourceDocument: ILSourceDocument
       sourceLine: int
@@ -889,6 +921,10 @@ type ILSourceMarker =
 
     member x.EndColumn=x.sourceEndColumn
 
+    /// For debugging
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText = x.ToString()
+
     override x.ToString() = sprintf "(%d, %d)-(%d, %d)" x.Line x.Column x.EndLine x.EndColumn
 
 type ILAttribElem =  
@@ -912,10 +948,15 @@ type ILAttribElem =
 
 type ILAttributeNamedArg =  (string * ILType * bool * ILAttribElem)
 
+[<StructuralEquality; StructuralComparison; StructuredFormatDisplay("{DebugText}")>]
 type ILAttribute = 
     { Method: ILMethodSpec
       Data: byte[] 
       Elements: ILAttribElem list }
+
+    /// For debugging
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText = x.ToString()
 
     override x.ToString() = x.Method.ToString() + "(...)"
 
@@ -1424,6 +1465,8 @@ type ILReturn =
 
     member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
 
+    member x.WithCustomAttrs(customAttrs) = { x with CustomAttrsStored = storeILCustomAttrs customAttrs }
+
 type ILOverridesSpec = 
     | OverridesSpec of ILMethodRef * ILType
 
@@ -1475,6 +1518,7 @@ type ILGenericVariance =
     | CoVariant
     | ContraVariant
 
+[<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type ILGenericParameterDef =
     { Name: string
       Constraints: ILTypes
@@ -1486,6 +1530,10 @@ type ILGenericParameterDef =
       MetadataIndex: int32 }
 
     member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
+
+    /// For debugging
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText = x.ToString()
 
     override x.ToString() = x.Name 
 
@@ -1665,7 +1713,7 @@ type ILMethodDefs(f : (unit -> ILMethodDef[])) =
 
     member x.FindByNameAndArity (nm, arity) = x.FindByName nm |> List.filter (fun x -> List.length x.Parameters = arity)
 
-[<NoComparison; NoEquality>]
+[<NoComparison; NoEquality; StructuredFormatDisplay("{DebugText}")>]
 type ILEventDef(eventType: ILType option, name: string, attributes: EventAttributes, addMethod: ILMethodRef, removeMethod: ILMethodRef, fireMethod: ILMethodRef option, otherMethods: ILMethodRef list, customAttrsStored: ILAttributesStored, metadataIndex: int32) =
 
     new (eventType, name, attributes, addMethod, removeMethod, fireMethod, otherMethods, customAttrs) =
@@ -1695,6 +1743,10 @@ type ILEventDef(eventType: ILType option, name: string, attributes: EventAttribu
     member x.IsSpecialName = (x.Attributes &&& EventAttributes.SpecialName) <> enum<_>(0)
     member x.IsRTSpecialName = (x.Attributes &&& EventAttributes.RTSpecialName) <> enum<_>(0)
 
+    /// For debugging
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText = x.ToString()
+
     override x.ToString() = "event " + x.Name
 
 [<NoEquality; NoComparison>]
@@ -1705,7 +1757,7 @@ type ILEventDefs =
 
     member x.LookupByName s = let (ILEvents t) = x in t.[s]
 
-[<NoComparison; NoEquality>]
+[<NoComparison; NoEquality; StructuredFormatDisplay("{DebugText}")>]
 type ILPropertyDef(name: string, attributes: PropertyAttributes, setMethod: ILMethodRef option, getMethod: ILMethodRef option, callingConv: ILThisConvention, propertyType: ILType, init: ILFieldInit option, args: ILTypes, customAttrsStored: ILAttributesStored, metadataIndex: int32) =
 
     new (name, attributes, setMethod, getMethod, callingConv, propertyType, init, args, customAttrs) =
@@ -1737,6 +1789,11 @@ type ILPropertyDef(name: string, attributes: PropertyAttributes, setMethod: ILMe
 
     member x.IsSpecialName = (x.Attributes &&& PropertyAttributes.SpecialName) <> enum<_>(0)
     member x.IsRTSpecialName = (x.Attributes &&& PropertyAttributes.RTSpecialName) <> enum<_>(0)
+
+    /// For debugging
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText = x.ToString()
+
     override x.ToString() = "property " + x.Name
     
 // Index table by name.
@@ -2469,7 +2526,7 @@ let tname_IntPtr = "System.IntPtr"
 [<Literal>]
 let tname_UIntPtr = "System.UIntPtr"
 
-[<NoEquality; NoComparison>]
+[<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 // This data structure needs an entirely delayed implementation
 type ILGlobals(primaryScopeRef) = 
     
@@ -2514,6 +2571,11 @@ type ILGlobals(primaryScopeRef) =
     member x.typ_Double                 = m_typ_Double
     member x.typ_Bool                   = m_typ_Bool
     member x.typ_Char                   = m_typ_Char
+
+    /// For debugging
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText = x.ToString()
+
     override x.ToString() = "<ILGlobals>"
 
 let mkILGlobals primaryScopeRef = ILGlobals primaryScopeRef

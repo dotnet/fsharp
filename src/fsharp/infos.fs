@@ -573,7 +573,7 @@ type ParamNameAndType =
 /// Full information about a parameter returned for use by the type checker and language service.
 type ParamData = 
     /// ParamData(isParamArray, isOut, optArgInfo, callerInfoInfo, nameOpt, reflArgInfo, ttype)
-    ParamData of bool * bool * OptionalArgInfo * CallerInfoInfo * Ident option * ReflectedArgInfo * TType
+    ParamData of bool * bool * bool * OptionalArgInfo * CallerInfoInfo * Ident option * ReflectedArgInfo * TType
 
 
 //-------------------------------------------------------------------------
@@ -1182,6 +1182,13 @@ type MethInfo =
         | ILMeth (_,_,Some _) -> true
         | _ -> false
 
+    /// Indicates if this is an extension member (e.g. on a struct) that takes a byref arg
+    member x.ObjArgNeedsAddress (amap: Import.ImportMap, m) =
+        (x.IsStruct && not x.IsExtensionMember) ||
+        match x.GetObjArgTypes (amap, m, x.FormalMethodInst) with 
+        | [h] -> isByrefTy amap.g h
+        | _ -> false
+
     /// Indicates if this is an F# extension member. 
     member x.IsFSharpStyleExtensionMember = 
         match x with FSMeth (_,_,vref,_) -> vref.IsExtensionMember | _ -> false
@@ -1350,6 +1357,7 @@ type MethInfo =
                      | Some _ -> ReflectedArgInfo.Quote false
                      | _ -> ReflectedArgInfo.None
                  let isOutArg = (p.IsOut && not p.IsIn)
+                 let isInArg = (p.IsIn && not p.IsOut)
                  // Note: we get default argument values from VB and other .NET language metadata 
                  let optArgInfo =  OptionalArgInfo.FromILParameter g amap m ilMethInfo.MetadataScope ilMethInfo.DeclaringTypeInst p
 
@@ -1369,7 +1377,7 @@ type MethInfo =
                         if p.Type.TypeRef.FullName = "System.Int32" then CallerFilePath
                         else CallerLineNumber
 
-                 yield (isParamArrayArg, isOutArg, optArgInfo, callerInfoInfo, reflArgInfo) ] ]
+                 yield (isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfoInfo, reflArgInfo) ] ]
 
         | FSMeth(g,_,vref,_) -> 
             GetArgInfosOfMember x.IsCSharpStyleExtensionMember g vref 
@@ -1379,7 +1387,8 @@ type MethInfo =
                     match TryFindFSharpBoolAttributeAssumeFalse  g g.attrib_ReflectedDefinitionAttribute argInfo.Attribs  with 
                     | Some b -> ReflectedArgInfo.Quote b
                     | None -> ReflectedArgInfo.None
-                let isOutArg = HasFSharpAttribute g g.attrib_OutAttribute argInfo.Attribs && isByrefTy g ty
+                let isOutArg = (HasFSharpAttribute g g.attrib_OutAttribute argInfo.Attribs && isByrefTy g ty) || isOutByrefTy g ty
+                let isInArg = (HasFSharpAttribute g g.attrib_InAttribute argInfo.Attribs && isByrefTy g ty) || isInByrefTy g ty
                 let isCalleeSideOptArg = HasFSharpAttribute g g.attrib_OptionalArgumentAttribute argInfo.Attribs
                 let isCallerSideOptArg = HasFSharpAttributeOpt g g.attrib_OptionalAttribute argInfo.Attribs
                 let optArgInfo = 
@@ -1430,7 +1439,7 @@ type MethInfo =
                         | Some optTy when typeEquiv g g.int32_ty optTy -> CallerFilePath
                         | _ -> CallerLineNumber
 
-                (isParamArrayArg, isOutArg, optArgInfo, callerInfoInfo, reflArgInfo))
+                (isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfoInfo, reflArgInfo))
 
         | DefaultStructCtor _ -> 
             [[]]
@@ -1446,7 +1455,9 @@ type MethInfo =
                     | Some ([ Some (:? bool as b) ], _) -> ReflectedArgInfo.Quote b
                     | Some _ -> ReflectedArgInfo.Quote false
                     | None -> ReflectedArgInfo.None
-                yield (isParamArrayArg, p.PUntaint((fun p -> p.IsOut), m), optArgInfo, NoCallerInfo, reflArgInfo)] ]
+                let isOutArg = p.PUntaint((fun p -> p.IsOut && not p.IsIn), m)
+                let isInArg = p.PUntaint((fun p -> p.IsIn && not p.IsOut), m)
+                yield (isParamArrayArg, isInArg, isOutArg, optArgInfo, NoCallerInfo, reflArgInfo)] ]
 #endif
 
 
@@ -1546,12 +1557,12 @@ type MethInfo =
 #endif
 
         let paramAttribs = x.GetParamAttribs(amap, m)
-        (paramAttribs,paramNamesAndTypes) ||> List.map2 (List.map2 (fun (isParamArrayArg,isOutArg,optArgInfo,callerInfoInfo,reflArgInfo) (ParamNameAndType(nmOpt,pty)) -> 
-             ParamData(isParamArrayArg,isOutArg,optArgInfo,callerInfoInfo,nmOpt,reflArgInfo,pty)))
+        (paramAttribs,paramNamesAndTypes) ||> List.map2 (List.map2 (fun (isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfoInfo, reflArgInfo) (ParamNameAndType(nmOpt,pty)) -> 
+             ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfoInfo, nmOpt, reflArgInfo, pty)))
 
     /// Get the ParamData objects for the parameters of a MethInfo
     member x.HasParamArrayArg(amap, m, minst) = 
-        x.GetParamDatas(amap, m, minst) |> List.existsSquared (fun (ParamData(isParamArrayArg,_,_,_,_,_,_)) -> isParamArrayArg)
+        x.GetParamDatas(amap, m, minst) |> List.existsSquared (fun (ParamData(isParamArrayArg,_,_,_,_,_,_,_)) -> isParamArrayArg)
 
 
     /// Select all the type parameters of the declaring type of a method. 
@@ -2134,7 +2145,7 @@ type PropInfo =
     /// Get the details of the indexer parameters associated with the property
     member x.GetParamDatas(amap,m) = 
         x.GetParamNamesAndTypes(amap,m)
-        |> List.map (fun (ParamNameAndType(nmOpt,pty)) -> ParamData(false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None, pty))
+        |> List.map (fun (ParamNameAndType(nmOpt,pty)) -> ParamData(false, false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None, pty))
 
     /// Get the types of the indexer parameters associated with the property
     member x.GetParamTypes(amap,m) = 

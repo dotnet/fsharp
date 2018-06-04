@@ -22,6 +22,9 @@ val NewAnonTypar : TyparKind * range * TyparRigidity * TyparStaticReq * TyparDyn
 /// Create an inference type variable 
 val NewInferenceType : unit -> TType
 
+/// Create an inference type variable for the kind of a byref pointer
+val NewByRefKindInferenceType : TcGlobals -> range -> TType
+
 /// Create an inference type variable representing an error condition when checking an expression
 val NewErrorType : unit -> TType
 
