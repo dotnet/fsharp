@@ -280,7 +280,6 @@ module List =
         | h::t -> if f h then Some (h,n) else findi (n+1) f t
 
     let chop n l = 
-        if n = List.length l then (l,[]) else // avoids allocation unless necessary 
         let rec loop n l acc = 
             if n <= 0 then (List.rev acc,l) else 
             match l with 
