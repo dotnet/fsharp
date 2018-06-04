@@ -1435,3 +1435,4 @@ notAFunctionButMaybeDeclaration,"This value is not a function and cannot be appl
 3230,chkNoWriteToLimitedSpan,"This value can't be assigned because the target '%s' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope."
 3231,tastValueMustBeLocal,"A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'"
 3232,tcIsReadOnlyNotStruct,"A type annotated with IsReadOnly must also be a struct. Consider adding the [<Struct>] attribute to the type."
+3234,chkStructsMayNotReturnAddressesOfContents,"Struct members cannot return the address of fields of the struct by reference"

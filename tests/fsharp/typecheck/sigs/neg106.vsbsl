@@ -120,3 +120,5 @@ The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'
 neg106.fs(60,9,60,25): typecheck error FS3224: The byref pointer is readonly, so this write is not permitted.
 
 neg106.fs(65,42,65,48): typecheck error FS3224: The byref pointer is readonly, so this write is not permitted.
+
+neg106.fs(74,9,74,17): typecheck error FS0257: Invalid mutation of a constant expression. Consider copying the expression to a mutable local, e.g. 'let mutable x = ...'.

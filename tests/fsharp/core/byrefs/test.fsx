@@ -1204,7 +1204,46 @@ module ByrefReturnMemberTests =
             beef  0 &x
             check "vruoer3rvvrebae" x 3uy
 
-            
+    module TestInRefMutation = 
+        [<Struct>]
+        type TestMut =
+
+            val mutable x : int
+
+            member this.AnAction() =
+                this.x <- 1
+
+        let testAction (m: inref<TestMut>) =
+            m.AnAction()
+            check "vleoij" m.x 0
+
+        let test() =
+            let x = TestMut()
+            //testIn (&x)
+            testAction (&x)
+            x            
+        test()
+
+    module MutateInRef3 =
+        [<Struct>]
+        type TestMut(x: int ref) =
+
+            member this.X = x.contents
+            member this.XAddr = &x.contents
+
+        let testIn (m: inref<TestMut>) =
+            // If the struct API indirectly reveals a byref return of a field in a reference type then  
+            // there is nothing stopping it being written to.
+            m.XAddr <- 1
+
+        let test() =
+            let m = TestMut(ref 0)
+            testIn (&m)
+            check "vleoij" m.X 1
+
+        test()
+
+
 let aa =
   if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
   else (stdout.WriteLine "Test Passed"; 

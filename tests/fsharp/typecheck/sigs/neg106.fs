@@ -64,3 +64,11 @@ module EvilStruct_Negative1 =
     type EvilStruct(s: int) = 
         member x.Replace(y:EvilStruct) = x <- y
 
+module MutateInRef1 =
+    [<Struct>]
+    type TestMut =
+
+        val mutable x : int
+
+    let testIn (m: inref<TestMut>) =
+        m.x <- 1

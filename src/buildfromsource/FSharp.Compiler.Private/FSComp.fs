@@ -4339,6 +4339,9 @@ type internal SR private() =
     /// A type annotated with IsReadOnly must also be a struct. Consider adding the [<Struct>] attribute to the type.
     /// (Originally from ..\FSComp.txt:1437)
     static member tcIsReadOnlyNotStruct() = (3232, GetStringFunc("tcIsReadOnlyNotStruct",",,,") )
+    /// Struct members cannot return 'this' or fields by reference
+    /// (Originally from ..\FSComp.txt:1438)
+    static member chkStructsMayNotReturnAddressesOfContents() = (3234, GetStringFunc("chkStructsMayNotReturnAddressesOfContents",",,,") )
 
     /// Call this method once to validate that all known resources are valid; throws if not
     static member RunStartupValidation() =
@@ -5750,4 +5753,5 @@ type internal SR private() =
         ignore(GetString("chkNoWriteToLimitedSpan"))
         ignore(GetString("tastValueMustBeLocal"))
         ignore(GetString("tcIsReadOnlyNotStruct"))
+        ignore(GetString("chkStructsMayNotReturnAddressesOfContents"))
         ()

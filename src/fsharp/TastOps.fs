@@ -5676,6 +5676,13 @@ let isRecdOrStructTyReadOnly (g: TcGlobals) m ty =
     | Some tcref -> isRecdOrStructTyconRefReadOnly g m tcref
 
 
+let CanTakeAddressOf g m typ mut =
+    match mut with 
+    | NeverMutates -> true 
+    | PossiblyMutates -> isRecdOrStructTyReadOnly g m typ
+    | DefinitelyMutates -> false
+    | AddressOfOp -> true // you can take the address but you might get a (readonly) inref<T> as a result
+
 // We can take the address of values of struct type even if the value is immutable
 // under certain conditions
 //   - all instances of the type are  known to be immutable; OR
@@ -5700,16 +5707,19 @@ let CanTakeAddressOfImmutableVal (g: TcGlobals) m (vref:ValRef) mut =
     //    || valRefInThisAssembly g.compilingFslib vref
     // This is because we don't actually guarantee to generate static backing fields for all values like these, e.g. simple constants "let x = 1".  
     // We always generate a static property but there is no field to take an address of
-    match mut with 
-    | NeverMutates -> true 
-    | PossiblyMutates -> isRecdOrStructTyReadOnly g m vref.Type 
-    | DefinitelyMutates -> false
-    | AddressOfOp -> true // you can take the address but you might get a (readonly) inref<T> as a result
+    CanTakeAddressOf g m vref.Type mut
 
 let MustTakeAddressOfVal (g:TcGlobals) (vref:ValRef) = 
     vref.IsMutable &&
     // We can only take the address of mutable values in the same assembly
     valRefInThisAssembly g.compilingFslib vref
+
+let MustTakeAddressOfByrefGet (g:TcGlobals) (vref:ValRef) = 
+    isByrefTy g vref.Type && not (isInByrefTy g vref.Type)
+
+let CanTakeAddressOfByrefGet (g:TcGlobals) (vref:ValRef) mut = 
+    isInByrefTy g vref.Type &&
+    CanTakeAddressOf g vref.Range (destByrefTy g vref.Type) mut
 
 let MustTakeAddressOfRecdField (rfref: RecdField) = 
     // Static mutable fields must be private, hence we don't have to take their address
@@ -5718,27 +5728,28 @@ let MustTakeAddressOfRecdField (rfref: RecdField) =
 
 let MustTakeAddressOfRecdFieldRef (rfref: RecdFieldRef) =  MustTakeAddressOfRecdField rfref.RecdField
 
-let CanTakeAddressOfRecdFieldRef (g:TcGlobals) m (rfref: RecdFieldRef) mut =
-    mut <> DefinitelyMutates && 
+let CanTakeAddressOfRecdFieldRef (g:TcGlobals) m (rfref: RecdFieldRef) tinst mut =
     // We only do this if the field is defined in this assembly because we can't take addresses across assemblies for immutable fields
     entityRefInThisAssembly g.compilingFslib rfref.TyconRef &&
-    isRecdOrStructTyconRefReadOnly g m rfref.TyconRef
+    not rfref.RecdField.IsMutable &&
+    CanTakeAddressOf g m (actualTyOfRecdFieldRef rfref tinst) mut
 
-let CanTakeAddressOfUnionFieldRef (g:TcGlobals) m (uref: UnionCaseRef) mut =
-    mut <> DefinitelyMutates && 
+let CanTakeAddressOfUnionFieldRef (g:TcGlobals) m (uref: UnionCaseRef) cidx tinst mut =
     // We only do this if the field is defined in this assembly because we can't take addresses across assemblies for immutable fields
     entityRefInThisAssembly g.compilingFslib uref.TyconRef &&
-    isRecdOrStructTyconRefReadOnly g m uref.TyconRef 
+    let rfref = uref.FieldByIndex cidx
+    not rfref.IsMutable &&
+    CanTakeAddressOf g m (actualTyOfUnionFieldRef uref cidx tinst) mut
 
 /// Make the address-of expression and return a wrapper that adds any allocated locals at an appropriate scope.
-/// Also return a flag that indicates if the resulting pointer is a readonly pointer (e.g. the address of
-/// 
+/// Also return a flag that indicates if the resulting pointer is a not a pointer where writing is allowed and will 
+/// have intended effect (i.e. is a readonly pointer and/or a defensive copy).
 let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress mut expr addrExprVal m =
     if mustTakeAddress then 
         match expr with 
         // LVALUE of "*x" where "x" is byref is just the byref itself
-        | Expr.Op (TOp.LValueOp (LByrefGet, vref), _, [], m) -> 
-            let readonly = isInByrefTy g vref.Type
+        | Expr.Op (TOp.LValueOp (LByrefGet, vref), _, [], m) when MustTakeAddressOfByrefGet g vref || CanTakeAddressOfByrefGet g vref mut -> 
+            let readonly = not (MustTakeAddressOfByrefGet g vref)
             None, exprForValRef m vref, readonly
 
         // LVALUE of "x" where "x" is mutable local, mutable intra-assembly module/static binding, or operation doesn't mutate.
@@ -5748,14 +5759,14 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
             None, mkValAddr m readonly vref, readonly
 
         // LVALUE of "e.f" where "f" is record field. 
-        | Expr.Op (TOp.ValFieldGet rfref, tinst, [obje], m) when MustTakeAddressOfRecdFieldRef rfref || CanTakeAddressOfRecdFieldRef g m rfref mut ->
+        | Expr.Op (TOp.ValFieldGet rfref, tinst, [obje], m) when MustTakeAddressOfRecdFieldRef rfref || CanTakeAddressOfRecdFieldRef g m rfref tinst mut ->
             let exprty = tyOfExpr g obje
             let wrap, expra, readonly = mkExprAddrOfExprAux g (isStructTy g exprty) false mut obje None m
             let readonly = readonly || not (MustTakeAddressOfRecdFieldRef rfref)
             wrap, mkRecdFieldGetAddrViaExprAddr(readonly, expra, rfref, tinst, m), readonly
 
         // LVALUE of "e.f" where "f" is union field. 
-        | Expr.Op (TOp.UnionCaseFieldGet (uref, cidx), tinst, [obje], m) when MustTakeAddressOfRecdField (uref.FieldByIndex(cidx)) || CanTakeAddressOfUnionFieldRef g m uref mut ->
+        | Expr.Op (TOp.UnionCaseFieldGet (uref, cidx), tinst, [obje], m) when MustTakeAddressOfRecdField (uref.FieldByIndex(cidx)) || CanTakeAddressOfUnionFieldRef g m uref cidx tinst mut ->
             let exprty = tyOfExpr g obje
             let wrap, expra, readonly = mkExprAddrOfExprAux g (isStructTy g exprty) false mut obje None m
             let readonly = readonly || not (MustTakeAddressOfRecdField (uref.FieldByIndex(cidx)))
@@ -5774,7 +5785,7 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
             wrap, Expr.Op (TOp.ILAsm ([IL.I_ldflda(fspec)], [mkByrefTyWithFlag g readonly ty2]), tinst, [expra], m), readonly
 
         // LVALUE of "f" where "f" is a static F# field. 
-        | Expr.Op (TOp.ValFieldGet rfref, tinst, [], m) when MustTakeAddressOfRecdFieldRef rfref || CanTakeAddressOfRecdFieldRef g m rfref mut ->
+        | Expr.Op (TOp.ValFieldGet rfref, tinst, [], m) when MustTakeAddressOfRecdFieldRef rfref || CanTakeAddressOfRecdFieldRef g m rfref tinst mut ->
             let readonly = not (MustTakeAddressOfRecdFieldRef rfref)
             None, mkStaticRecdFieldGetAddr(readonly, rfref, tinst, m), readonly
 
@@ -5804,6 +5815,11 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
             
             None, mkArrayElemAddress g (readonly, ilInstrReadOnlyAnnotation, isNativePtr, shape, elemTy,  (aexpr::args), m), readonly
 
+        // LVALUE:  "&meth(args)" where meth has a byref or inref return.  Includes "&span.[idx]".
+        | Expr.Let(TBind(vref, e, _), Expr.Op(TOp.LValueOp (LByrefGet, vref2), _, _, _), _, _)  when (valRefEq g (mkLocalValRef vref) vref2)  && (MustTakeAddressOfByrefGet g vref2 || CanTakeAddressOfByrefGet g vref2 mut) -> 
+            let readonly = isInByrefTy g (tyOfExpr g e)
+            None, e, readonly
+        
         // Give a nice error message for address-of-byref
         | Expr.Val(vref, _, m) when isByrefTy g vref.Type -> 
             error(Error(FSComp.SR.tastUnexpectedByRef(), m))
@@ -5816,14 +5832,10 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
         | Expr.Val _ when mut = AddressOfOp -> 
             error(Error(FSComp.SR.tastValueMustBeLocal(), m))
          
+        // Give a nice error message for mutating a value we can't take the address of
         | Expr.Val _ when mut = DefinitelyMutates -> 
             error(Error(FSComp.SR.tastValueMustBeMutable(), m))
          
-        // LVALUE:  "&meth(args)" where meth has a byref return.  Includes "&span.[idx]".
-        | Expr.Let(TBind(vref, e, _), Expr.Op(TOp.LValueOp (LByrefGet, vref2), _, _, _), _, _) when isByrefTy g vref.Type && (valRefEq g (mkLocalValRef vref) vref2) -> 
-            let readonly = isInByrefTy g (tyOfExpr g e)
-            None, e, readonly
-        
         | _ -> 
             let ty = tyOfExpr g expr
             if isStructTy g ty then 
@@ -5831,9 +5843,12 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
                 | NeverMutates -> ()
                 | AddressOfOp -> () // we get an inref
                 | DefinitelyMutates -> 
-                    errorR(Error(FSComp.SR.tastInvalidMutationOfConstant(), m));
+                    // Give a nice error message for mutating something we can't take the address of
+                    errorR(Error(FSComp.SR.tastInvalidMutationOfConstant(), m))
                 | PossiblyMutates -> 
-                    warning(DefensiveCopyWarning(FSComp.SR.tastValueHasBeenCopied(), m));
+                    // Warn on defensive copy of something we can't take the address of
+                    warning(DefensiveCopyWarning(FSComp.SR.tastValueHasBeenCopied(), m))
+            // Take a defensive copy
             let tmp, _ = 
                 match mut with 
                 | NeverMutates -> mkCompGenLocal m "copyOfStruct" ty 

@@ -8421,8 +8421,7 @@ and TcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag:ExprAtomicF
         if not (isNil otherDelayed) then error(Error(FSComp.SR.tcInvalidAssignment(), mExpr))
         UnifyTypes cenv env mExpr overallTy cenv.g.unit_ty
         let expr = expr.Expr
-        let _wrap, exprAddress, readonly = mkExprAddrOfExpr cenv.g true false DefinitelyMutates expr None mExpr
-        if readonly then error(Error(FSComp.SR.tcInvalidAssignment(), mStmt))
+        let _wrap, exprAddress, _readonly = mkExprAddrOfExpr cenv.g true false DefinitelyMutates expr None mExpr
         let vty = tyOfExpr cenv.g expr
         // Always allow subsumption on assignment to fields
         let expr2, tpenv = TcExprFlex cenv true vty env tpenv synExpr2
