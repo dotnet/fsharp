@@ -394,7 +394,8 @@ module public AstTraversal =
                 | SynExpr.LongIdent(_, _longIdent, _altNameRefCell, _range) -> None
                 | SynExpr.LongIdentSet(_longIdent, synExpr, _range) -> traverseSynExpr synExpr
                 | SynExpr.DotGet(synExpr, _dotm, _longIdent, _range) -> traverseSynExpr synExpr
-                | SynExpr.DotSet(synExpr, _longIdent, synExpr2, _range) ->
+                | SynExpr.Set(synExpr, synExpr2, _)
+                | SynExpr.DotSet(synExpr, _, synExpr2, _) ->
                     [dive synExpr synExpr.Range traverseSynExpr
                      dive synExpr2 synExpr2.Range traverseSynExpr]
                     |> pick expr

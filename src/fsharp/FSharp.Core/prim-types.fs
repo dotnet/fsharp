@@ -5649,6 +5649,24 @@ namespace Microsoft.FSharp.Core
                           if n >= 0 then PowDecimal x n else 1.0M /  PowDecimal x n)
 
 
+    /// Represents the types of byrefs in F# 4.5+
+    module ByRefKinds = 
+
+        /// Represents a byref that can be written
+        type Out() = class end
+
+        /// Represents a byref that can be read
+        type In() = class end
+
+        /// Represents a byref that can be both read and written
+        type InOut = Choice<In, Out>
+
+    /// <summary>Represents a in-argument or readonly managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
+    type inref<'T> = byref<'T, ByRefKinds.In>
+
+    /// <summary>Represents a out-argument managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
+    type outref<'T> = byref<'T, ByRefKinds.Out>
+
 namespace Microsoft.FSharp.Control
 
     open System    

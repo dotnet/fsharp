@@ -164,6 +164,9 @@ val isBeingGeneralized : Typar -> TypeScheme -> bool
 val mkLazyAnd  : TcGlobals -> range -> Expr -> Expr -> Expr
 val mkLazyOr   : TcGlobals -> range -> Expr -> Expr -> Expr
 val mkByrefTy  : TcGlobals -> TType -> TType
+val mkByrefTyWithInference  : TcGlobals -> TType -> TType -> TType
+val mkInByrefTy  : TcGlobals -> TType -> TType
+val mkOutByrefTy  : TcGlobals -> TType -> TType
 
 //-------------------------------------------------------------------------
 // Make construction operations
@@ -182,12 +185,12 @@ val mkReraiseLibCall : TcGlobals -> TType -> range -> Expr
 //------------------------------------------------------------------------- 
  
 val mkTupleFieldGet                : TcGlobals -> TupInfo * Expr * TypeInst * int * range -> Expr
-val mkRecdFieldGetViaExprAddr      : Expr * RecdFieldRef   * TypeInst               * range -> Expr
-val mkRecdFieldGetAddrViaExprAddr  : Expr * RecdFieldRef   * TypeInst               * range -> Expr
-val mkStaticRecdFieldGet           :        RecdFieldRef   * TypeInst               * range -> Expr
-val mkStaticRecdFieldSet           :        RecdFieldRef   * TypeInst * Expr        * range -> Expr
-val mkStaticRecdFieldGetAddr       :        RecdFieldRef   * TypeInst               * range -> Expr
-val mkRecdFieldSetViaExprAddr      : Expr * RecdFieldRef   * TypeInst * Expr        * range -> Expr
+val mkRecdFieldGetViaExprAddr      :                  Expr * RecdFieldRef   * TypeInst               * range -> Expr
+val mkRecdFieldGetAddrViaExprAddr  : readonly: bool * Expr * RecdFieldRef   * TypeInst               * range -> Expr
+val mkStaticRecdFieldGet           :                         RecdFieldRef   * TypeInst               * range -> Expr
+val mkStaticRecdFieldSet           :                         RecdFieldRef   * TypeInst * Expr        * range -> Expr
+val mkStaticRecdFieldGetAddr       : readonly: bool *        RecdFieldRef   * TypeInst               * range -> Expr
+val mkRecdFieldSetViaExprAddr      :                  Expr * RecdFieldRef   * TypeInst * Expr        * range -> Expr
 val mkUnionCaseTagGetViaExprAddr   : Expr * TyconRef       * TypeInst               * range -> Expr
 
 /// Make a 'TOp.UnionCaseProof' expression, which proves a union value is over a particular case (used only for ref-unions, not struct-unions)
@@ -201,7 +204,7 @@ val mkUnionCaseFieldGetProvenViaExprAddr : Expr * UnionCaseRef   * TypeInst * in
 /// Build a 'TOp.UnionCaseFieldGetAddr' expression for a field of a union when we've already determined the value to be a particular union case. For ref-unions,
 /// the input expression has 'TType_ucase', which is an F# compiler internal "type" corresponding to the union case. For struct-unions,
 /// the input should be the address of the expression.
-val mkUnionCaseFieldGetAddrProvenViaExprAddr  : Expr * UnionCaseRef   * TypeInst * int         * range -> Expr
+val mkUnionCaseFieldGetAddrProvenViaExprAddr  : readonly: bool * Expr * UnionCaseRef   * TypeInst * int         * range -> Expr
 
 /// Build a 'TOp.UnionCaseFieldGetAddr' expression for a field of a union when we've already determined the value to be a particular union case. For ref-unions,
 /// the input expression has 'TType_ucase', which is an F# compiler internal "type" corresponding to the union case. For struct-unions,
@@ -219,7 +222,7 @@ val mkUnionCaseFieldGetUnproven    : TcGlobals -> Expr * UnionCaseRef   * TypeIn
 val mkExnCaseFieldGet              : Expr * TyconRef               * int         * range -> Expr
 val mkExnCaseFieldSet              : Expr * TyconRef               * int  * Expr * range -> Expr
 
-val mkArrayElemAddress : TcGlobals -> ILReadonly * bool * ILArrayShape * TType * Expr * Expr * range -> Expr
+val mkArrayElemAddress : TcGlobals -> readonly: bool * ILReadonly * bool * ILArrayShape * TType * Expr list * range -> Expr
 
 //-------------------------------------------------------------------------
 // Compiled view of tuples
@@ -263,9 +266,9 @@ val convertToTypeWithMetadataIfPossible : TcGlobals -> TType -> TType
 //------------------------------------------------------------------------- 
 
 exception DefensiveCopyWarning of string * range 
-type Mutates = DefinitelyMutates | PossiblyMutates | NeverMutates
-val mkExprAddrOfExprAux : TcGlobals -> bool -> bool -> Mutates -> Expr -> ValRef option -> range -> (Val * Expr) option * Expr
-val mkExprAddrOfExpr : TcGlobals -> bool -> bool -> Mutates -> Expr -> ValRef option -> range -> (Expr -> Expr) * Expr
+type Mutates = AddressOfOp | DefinitelyMutates | PossiblyMutates | NeverMutates
+val mkExprAddrOfExprAux : TcGlobals -> bool -> bool -> Mutates -> Expr -> ValRef option -> range -> (Val * Expr) option * Expr * bool
+val mkExprAddrOfExpr : TcGlobals -> bool -> bool -> Mutates -> Expr -> ValRef option -> range -> (Expr -> Expr) * Expr * bool
 
 //-------------------------------------------------------------------------
 // Tables keyed on values and/or type parameters
@@ -296,41 +299,64 @@ type ValHash<'T> =
 /// Maps Val's to list of T based on stamp keys
 [<Struct; NoEquality; NoComparison>]
 type ValMultiMap<'T> =
+
+    member ContainsKey : Val -> bool
+
     member Find : Val -> 'T list
+
     member Add : Val * 'T -> ValMultiMap<'T>
+
     member Remove : Val -> ValMultiMap<'T>
+
     member Contents : StampMap<'T list>
+
     static member Empty : ValMultiMap<'T>
 
 [<Sealed>]
 /// Maps Typar to T based on stamp keys
 type TyparMap<'T>  =
+
     member Item : Typar -> 'T with get
+
     member ContainsKey : Typar -> bool
+
     member TryFind : Typar -> 'T option
+
     member Add : Typar * 'T -> TyparMap<'T> 
+
     static member Empty : TyparMap<'T> 
 
 [<NoEquality; NoComparison;Sealed>]
 /// Maps TyconRef to T based on stamp keys
 type TyconRefMap<'T> =
+
     member Item : TyconRef -> 'T with get
+
     member TryFind : TyconRef -> 'T option
+
     member ContainsKey : TyconRef -> bool
+
     member Add : TyconRef -> 'T -> TyconRefMap<'T>
+
     member Remove : TyconRef -> TyconRefMap<'T>
+
     member IsEmpty : bool
+
     static member Empty : TyconRefMap<'T>
+
     static member OfList : (TyconRef * 'T) list -> TyconRefMap<'T>
 
 /// Maps TyconRef to list of T based on stamp keys
 [<Struct; NoEquality; NoComparison>]
 type TyconRefMultiMap<'T> =
-    member Find : TyconRef -> 'T list
-    member Add : TyconRef * 'T -> TyconRefMultiMap<'T>
-    static member Empty : TyconRefMultiMap<'T>
-    static member OfList : (TyconRef * 'T) list -> TyconRefMultiMap<'T>
 
+    member Find : TyconRef -> 'T list
+
+    member Add : TyconRef * 'T -> TyconRefMultiMap<'T>
+
+    static member Empty : TyconRefMultiMap<'T>
+
+    static member OfList : (TyconRef * 'T) list -> TyconRefMultiMap<'T>
 
 //-------------------------------------------------------------------------
 // Orderings on Tycon, Val, RecdFieldRef, Typar
@@ -874,7 +900,7 @@ val mkAddrSet  : range -> ValRef -> Expr -> Expr
 /// *localv_ptr        
 val mkAddrGet  : range -> ValRef -> Expr
 /// &localv           
-val mkValAddr  : range -> ValRef -> Expr
+val mkValAddr  : range -> readonly: bool -> ValRef -> Expr
 
 //-------------------------------------------------------------------------
 // Note these take the address of the record expression if it is a struct, and
@@ -978,6 +1004,7 @@ val ExprStats : Expr -> string
 //------------------------------------------------------------------------- 
 
 val mkNativePtrTy  : TcGlobals -> TType -> TType
+val mkVoidPtrTy  : TcGlobals -> TType
 val mkArrayType      : TcGlobals -> TType -> TType
 val isOptionTy     : TcGlobals -> TType -> bool
 val destOptionTy   : TcGlobals -> TType -> TType
@@ -1095,10 +1122,13 @@ val TypeHasDefaultValue : TcGlobals -> range -> TType -> bool
 val isAbstractTycon : Tycon -> bool
 
 val isUnionCaseRefDefinitelyMutable : UnionCaseRef -> bool
-val isRecdOrUnionOrStructTyconRefDefinitelyMutable : TcGlobals -> TyconRef -> bool
+val isRecdOrUnionOrStructTyconRefDefinitelyMutable : TyconRef -> bool
 val isExnDefinitelyMutable : TyconRef -> bool 
 val isUnionCaseFieldMutable : TcGlobals -> UnionCaseRef -> int -> bool
 val isExnFieldMutable : TyconRef -> int -> bool
+val isRecdOrStructTyconRefReadOnly: TcGlobals -> range -> TyconRef -> bool
+val isRecdOrStructTyconRefAssumedImmutable: TcGlobals -> TyconRef -> bool
+val isRecdOrStructTyReadOnly: TcGlobals -> range -> TType -> bool
 
 val useGenuineField : Tycon -> RecdField -> bool 
 val ComputeFieldName : Tycon -> RecdField -> string
@@ -1377,7 +1407,6 @@ val TryFindAttributeUsageAttribute : TcGlobals -> range -> TyconRef -> bool opti
 val TryDecodeTypeProviderAssemblyAttr : ILGlobals -> ILAttribute -> string option
 #endif
 val IsSignatureDataVersionAttr  : ILAttribute -> bool
-val ILThingHasExtensionAttribute : ILAttributes -> bool
 val TryFindAutoOpenAttr           : IL.ILGlobals -> ILAttribute -> string option 
 val TryFindInternalsVisibleToAttr : IL.ILGlobals -> ILAttribute -> string option 
 val IsMatchingSignatureDataVersionAttr : IL.ILGlobals -> ILVersionInfo -> ILAttribute -> bool
@@ -1396,13 +1425,17 @@ val mkCompilerGeneratedAttr                          : TcGlobals -> int -> ILAtt
 // More common type construction
 //------------------------------------------------------------------------- 
 
+val isInByrefTy : TcGlobals -> TType -> bool
+val isOutByrefTy : TcGlobals -> TType -> bool
 val isByrefTy : TcGlobals -> TType -> bool
+
 val isNativePtrTy : TcGlobals -> TType -> bool
 val destByrefTy : TcGlobals -> TType -> TType
 val destNativePtrTy : TcGlobals -> TType -> TType
 
-val isByrefLikeTyconRef : TcGlobals -> TyconRef -> bool
-val isByrefLikeTy : TcGlobals -> TType -> bool
+val isByrefTyconRef : TcGlobals -> TyconRef -> bool
+val isByrefLikeTyconRef : TcGlobals -> range -> TyconRef -> bool
+val isByrefLikeTy : TcGlobals -> range -> TType -> bool
 
 //-------------------------------------------------------------------------
 // Tuple constructors/destructors

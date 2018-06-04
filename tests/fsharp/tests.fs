@@ -1,5 +1,5 @@
-﻿#if INTERACTIVE
-//#r @"../../release/net40/bin/FSharp.Compiler.dll"
+﻿// vvvvvvvvvvvvv To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test vvvvvvvvvvvvvvvv
+#if INTERACTIVE
 #r @"../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "../../src/scripts/scriptlib.fsx" 
 #load "test-framework.fs" 
@@ -25,6 +25,7 @@ let FSI_BASIC = FSI_CORECLR
 let FSC_BASIC = FSC_OPT_PLUS_DEBUG
 let FSI_BASIC = FSI_FILE
 #endif
+// ^^^^^^^^^^^^ To run these tests in F# Interactive , 'build net40', then send this chunk, then evaluate body of a test ^^^^^^^^^^^^
 
 module CoreTests = 
     // These tests are enabled for .NET Framework and .NET Core
@@ -176,17 +177,61 @@ module CoreTests =
 
         let cfg = testConfig "core/byrefs"
 
-        use testOkFile = fileguard cfg "test.ok"
+        begin
+            use testOkFile = fileguard cfg "test.ok"
 
-        fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
+            fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
 
-        exec cfg ("." ++ "test.exe") ""
+            exec cfg ("." ++ "test.exe") ""
 
-        testOkFile.CheckExists()
+            testOkFile.CheckExists()
+        end
 
-        fsi cfg "" ["test.fsx"]
+        begin
+            use testOkFile = fileguard cfg "test.ok"
+            fsi cfg "" ["test.fsx"]
 
-        testOkFile.CheckExists()
+            testOkFile.CheckExists()
+        end
+
+        begin
+
+            use testOkFile = fileguard cfg "test.ok"
+
+            fsiAnyCpu cfg "" ["test.fsx"]
+
+            testOkFile.CheckExists()
+        end
+
+    [<Test>]
+    let span () = 
+
+        let cfg = testConfig "core/span"
+
+        begin
+            use testOkFile = fileguard cfg "test.ok"
+
+            fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
+
+            // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
+            //exec cfg ("." ++ "test.exe") ""
+
+            //testOkFile.CheckExists()
+        end
+
+        // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
+        //begin
+        //    use testOkFile = fileguard cfg "test.ok"
+        //    fsi cfg "" ["test.fsx"]
+        //    testOkFile.CheckExists()
+        //end
+
+        // Execution is disabled until we can be sure .NET 4.7.2 is on the machine
+        //begin
+        //    use testOkFile = fileguard cfg "test.ok"
+        //    fsiAnyCpu cfg "" ["test.fsx"]
+        //    testOkFile.CheckExists()
+        //end
 
     [<Test>]
     let asyncStackTraces () = 
@@ -381,19 +426,22 @@ module CoreTests =
 
         peverify cfg "lib.dll"
 
-        csc cfg """/nologo /target:library /r:"%s" /r:lib.dll /out:lib2.dll""" cfg.FSCOREDLLPATH ["lib2.cs"]
+        csc cfg """/nologo /target:library /r:"%s" /r:lib.dll /out:lib2.dll /langversion:7.2""" cfg.FSCOREDLLPATH ["lib2.cs"]
 
-        csc cfg """/nologo /target:library /r:"%s" /out:lib3.dll""" cfg.FSCOREDLLPATH ["lib3.cs"]
+        csc cfg """/nologo /target:library /r:"%s" /out:lib3.dll  /langversion:7.2""" cfg.FSCOREDLLPATH ["lib3.cs"]
 
         fsc cfg "%s -r:lib.dll -r:lib2.dll -r:lib3.dll -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
+
+        exec cfg ("." ++ "test.exe") ""
 
         // Same with library references the other way around
         fsc cfg "%s -r:lib.dll -r:lib3.dll -r:lib2.dll -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
 
+        exec cfg ("." ++ "test.exe") ""
 
         // Same without the reference to lib.dll - testing an incomplete reference set, but only compiling a subset of the code
         fsc cfg "%s -r:System.Runtime.dll --noframework --define:NO_LIB_REFERENCE -r:lib3.dll -r:lib2.dll -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
@@ -2298,6 +2346,12 @@ module TypecheckTests =
 
     [<Test>]
     let ``type check neg102`` () = singleNegTest (testConfig "typecheck/sigs") "neg102"
+
+    [<Test>]
+    let ``type check neg106`` () = singleNegTest (testConfig "typecheck/sigs") "neg106"
+
+    [<Test>]
+    let ``type check neg107`` () = singleNegTest (testConfig "typecheck/sigs") "neg107"
 
     [<Test>]
     let ``type check neg103`` () = singleNegTest (testConfig "typecheck/sigs") "neg103"

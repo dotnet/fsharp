@@ -663,6 +663,9 @@ module ParsedInput =
                 walkExpr e1
                 addLongIdentWithDots idents
                 walkExpr e2
+            | SynExpr.Set (e1, e2, _) ->
+                walkExpr e1
+                walkExpr e2
             | SynExpr.DotIndexedGet (e, args, _, _) ->
                 walkExpr e
                 List.iter walkIndexerArg args

@@ -64,8 +64,14 @@ namespace Microsoft.FSharp.Core
 
     type array<'T> = 'T[]
 
+    /// <summary>Represents a managed pointer in F# code.</summary>
+    type byref<'T, 'Kind> = (# "!0&" #)
+
+    /// <summary>Represents a managed pointer in F# code. For F# 4.5+ this is considered equivalent to <c>byref&lt'T, ByRefKinds.InOut&gt</c></summary>
     type byref<'T> = (# "!0&" #)
 
     type nativeptr<'T when 'T : unmanaged> = (# "native int" #)
-    type ilsigptr<'T> = (# "!0*" #)
 
+    type voidptr = (# "void*" #)
+
+    type ilsigptr<'T> = (# "!0*" #)

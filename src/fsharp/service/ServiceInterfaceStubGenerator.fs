@@ -840,15 +840,20 @@ module internal InterfaceStubGenerator =
 
                 | SynExpr.Ident(_ident) ->
                     None
+
                 | SynExpr.LongIdent(_, _longIdent, _altNameRefCell, _range) -> 
                     None
 
                 | SynExpr.LongIdentSet(_longIdent, synExpr, _range) ->
                     walkExpr synExpr
+
                 | SynExpr.DotGet(synExpr, _dotm, _longIdent, _range) -> 
                     walkExpr synExpr
 
                 | SynExpr.DotSet(synExpr1, _longIdent, synExpr2, _range) ->
+                    List.tryPick walkExpr [synExpr1; synExpr2]
+
+                | SynExpr.Set(synExpr1, synExpr2, _range) ->
                     List.tryPick walkExpr [synExpr1; synExpr2]
 
                 | SynExpr.DotIndexedGet(synExpr, IndexerArgList synExprList, _range, _range2) -> 
