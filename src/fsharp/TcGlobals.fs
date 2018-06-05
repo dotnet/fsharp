@@ -348,7 +348,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let mkNativePtrTy ty = TType_app(v_nativeptr_tcr, [ty]) 
   let mkFunTy d r = TType_fun (d, r) 
   let (-->) d r = mkFunTy d r
-  let mkIteratedFunTy dl r = List.foldBack (-->) dl r
+  let mkIteratedFunTy dl r = List.foldBack mkFunTy dl r
   let mkSmallRefTupledTy l = match l with [] -> v_unit_ty | [h] -> h | tys -> mkRawRefTupleTy tys
   let tryMkForallTy d r = match d with [] -> r | tps -> TType_forall(tps, r)
 
