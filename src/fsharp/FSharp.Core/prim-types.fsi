@@ -1659,6 +1659,24 @@ namespace Microsoft.FSharp.Core
             /// <returns>The optimized function.</returns>
             new : unit ->  FSharpFunc<'T1,'T2,'T3,'T4,'T5,'U>
 
+    /// Represents the types of byrefs in F# 4.5+
+    module ByRefKinds = 
+
+        /// Represents a byref that can be written
+        type Out = class end
+
+        /// Represents a byref that can be read
+        type In = class end
+
+        /// Represents a byref that can be both read and written
+        type InOut = Choice<In, Out>
+
+    /// <summary>Represents a in-argument or readonly managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
+    type inref<'T> = byref<'T, ByRefKinds.In>
+
+    /// <summary>Represents a out-argument managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
+    type outref<'T> = byref<'T, ByRefKinds.Out>
+
     /// <summary>The type of mutable references. Use the functions [!] and [:=] to get and
     /// set values of this type.</summary>
     [<StructuralEquality; StructuralComparison>]
@@ -1732,6 +1750,33 @@ namespace Microsoft.FSharp.Core
     /// Instance methods on this type will appear as static methods to other CLI languages
     /// due to the use of <c>null</c> as a value representation.</remarks>
     and 'T option = Option<'T>
+
+    /// <summary>The type of optional values, represented as structs.</summary>
+    ///
+    /// <remarks>Use the constructors <c>ValueSome</c> and <c>ValueNone</c> to create values of this type.
+    /// Use the values in the <c>ValueOption</c> module to manipulate values of this type,
+    /// or pattern match against the values directly.
+    [<StructuralEquality; StructuralComparison>]
+    [<CompiledName("FSharpValueOption`1")>]
+    [<Struct>]
+    type ValueOption<'T> =
+        /// <summary>The representation of "No value"</summary>
+        | ValueNone: 'T voption
+
+        /// <summary>The representation of "Value of type 'T"</summary>
+        /// <param name="Value">The input value.</param>
+        /// <returns>An option representing the value.</returns>
+        | ValueSome: 'T -> 'T voption
+
+        /// <summary>Get the value of a 'ValueSome' option. An InvalidOperationException is raised if the option is 'ValueNone'.</summary>
+        member Value : 'T
+
+    /// <summary>The type of optional values, represented as structs.</summary>
+    ///
+    /// <remarks>Use the constructors <c>ValueSome</c> and <c>ValueNone</c> to create values of this type.
+    /// Use the values in the <c>ValueOption</c> module to manipulate values of this type,
+    /// or pattern match against the values directly.
+    and 'T voption = ValueOption<'T>
 
     /// <summary>Helper type for error handling without exceptions.</summary>
     [<StructuralEquality; StructuralComparison>]
@@ -1997,6 +2042,13 @@ namespace Microsoft.FSharp.Core
         /// <returns>The argument value. If it is None, the defaultValue is returned.</returns>
         [<CompiledName("DefaultArg")>]
         val defaultArg : arg:'T option -> defaultValue:'T -> 'T 
+
+        /// <summary>Used to specify a default value for an optional argument in the implementation of a function</summary>
+        /// <param name="arg">A value option representing the argument.</param>
+        /// <param name="defaultValue">The default value of the argument.</param>
+        /// <returns>The argument value. If it is None, the defaultValue is returned.</returns>
+        [<CompiledName("DefaultValueArg")>]
+        val defaultValueArg : arg:'T voption -> defaultValue:'T -> 'T 
 
         /// <summary>Concatenate two strings. The operator '+' may also be used.</summary>
         [<CompilerMessage("This construct is for ML compatibility. Consider using the '+' operator instead. This may require a type annotation to indicate it acts on strings. This message can be disabled using '--nowarn:62' or '#nowarn \"62\"'.", 62, IsHidden=true)>]
@@ -3160,6 +3212,7 @@ namespace Microsoft.FSharp.Core
             [<NoDynamicInvocation>]
             [<CompiledName("ToChar")>]
             val inline char        : value:^T -> char      when ^T : (static member op_Explicit : ^T -> char)        and default ^T : int
+
 
 namespace Microsoft.FSharp.Control
 

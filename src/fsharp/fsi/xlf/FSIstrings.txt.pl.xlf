@@ -134,7 +134,7 @@
       </trans-unit>
       <trans-unit id="fsiExceptionDuringPrettyPrinting">
         <source>\n\nException raised during pretty printing.\nPlease report this so it can be fixed.\nTrace: {0}\n</source>
-        <target state="translated">\n\nWystąpił wyjątek podczas automatycznego formatowania kodu.\nZgłoś go, aby można było rozwiązać ten problem.\nŚlad: {0}\n</target>
+        <target state="translated">\n\nWystąpił wyjątek podczas formatowania kodu.\nZgłoś go, aby można było rozwiązać ten problem.\nŚlad: {0}\n</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader1directives">

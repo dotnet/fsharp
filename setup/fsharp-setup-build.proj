@@ -30,6 +30,9 @@
             <SwixSetupProjects Include="Microsoft.FSharp.Dependencies.swixproj">
                 <ProjectPath>Swix\Microsoft.FSharp.Dependencies\Microsoft.FSharp.Dependencies.swixproj</ProjectPath>
             </SwixSetupProjects>
+            <SwixSetupProjects Include="Microsoft.FSharp.IDE.swixproj">
+                <ProjectPath>Swix\Microsoft.FSharp.IDE\Microsoft.FSharp.IDE.swixproj</ProjectPath>
+            </SwixSetupProjects>
         </ItemGroup>
     </Target>
 

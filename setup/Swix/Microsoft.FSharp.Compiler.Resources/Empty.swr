@@ -1,0 +1,5 @@
+use vs
+
+package name=Microsoft.FSharp.Compiler.Resources
+        version=$(FSharpPackageVersion)
+        vs.package.language=$(LocaleSpecificCulture)

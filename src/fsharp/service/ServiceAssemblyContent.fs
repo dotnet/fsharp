@@ -663,6 +663,9 @@ module ParsedInput =
                 walkExpr e1
                 addLongIdentWithDots idents
                 walkExpr e2
+            | SynExpr.Set (e1, e2, _) ->
+                walkExpr e1
+                walkExpr e2
             | SynExpr.DotIndexedGet (e, args, _, _) ->
                 walkExpr e
                 List.iter walkIndexerArg args
@@ -999,8 +1002,11 @@ module ParsedInput =
 
         mkPos line ctx.Pos.Column
     
-    let tryFindNearestPointToInsertOpenDeclaration (currentLine: int) (ast: ParsedInput) (entity: Idents) (insertionPoint: OpenStatementInsertionPoint) =
+    let findNearestPointToInsertOpenDeclaration (currentLine: int) (ast: ParsedInput) (entity: Idents) (insertionPoint: OpenStatementInsertionPoint) =
         match tryFindNearestPointAndModules currentLine ast insertionPoint with
         | Some (scope, _, point), modules -> 
-            Some (findBestPositionToInsertOpenDeclaration modules scope point entity)
-        | _ -> None
+            findBestPositionToInsertOpenDeclaration modules scope point entity
+        | _ ->
+            // we failed to find insertion point because ast is empty for some reason, return top left point in this case  
+            { ScopeKind = ScopeKind.TopModule
+              Pos = mkPos 1 0 }

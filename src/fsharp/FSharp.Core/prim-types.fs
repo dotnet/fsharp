@@ -2162,6 +2162,7 @@ namespace Microsoft.FSharp.Core
         let FloatComparer   = MakeGenericComparer<float>()
         let Float32Comparer = MakeGenericComparer<float32>()
         let DecimalComparer = MakeGenericComparer<decimal>()
+        let BoolComparer    = MakeGenericComparer<bool>()
 
         /// Use a type-indexed table to ensure we only create a single FastStructuralComparison function
         /// for each type
@@ -2199,6 +2200,7 @@ namespace Microsoft.FSharp.Core
                 | ty when ty.Equals(typeof<float32>)    -> null    
                 | ty when ty.Equals(typeof<decimal>)    -> null    
                 | ty when ty.Equals(typeof<string>)     -> unboxPrim (box StringComparer)
+                | ty when ty.Equals(typeof<bool>)       -> null
                 | _ -> MakeGenericComparer<'T>()
 
             static let f : System.Collections.Generic.IComparer<'T>  = 
@@ -2218,6 +2220,7 @@ namespace Microsoft.FSharp.Core
                 | ty when ty.Equals(typeof<float32>)    -> unboxPrim (box Float32Comparer)
                 | ty when ty.Equals(typeof<decimal>)    -> unboxPrim (box DecimalComparer)
                 | ty when ty.Equals(typeof<string>)     -> unboxPrim (box StringComparer)
+                | ty when ty.Equals(typeof<bool>)       -> unboxPrim (box BoolComparer)
                 | _ -> 
                     // Review: There are situations where we should be able
                     // to return System.Collections.Generic.Comparer<'T>.Default here.
@@ -2764,17 +2767,17 @@ namespace Microsoft.FSharp.Core
     // Function Values
 
     [<AbstractClass>]
-    type FSharpTypeFunc() = 
+    type FSharpTypeFunc [<DebuggerHidden>] () = 
         abstract Specialize<'T> : unit -> obj
 
     [<AbstractClass>]
-    type FSharpFunc<'T,'Res>() = 
+    type FSharpFunc<'T,'Res> [<DebuggerHidden>] () = 
         abstract Invoke : 'T -> 'Res
 
     module OptimizedClosures = 
 
           [<AbstractClass>]
-          type FSharpFunc<'T,'U,'V>() = 
+          type FSharpFunc<'T,'U,'V> [<DebuggerHidden>] () = 
               inherit FSharpFunc<'T,('U -> 'V)>()
               abstract Invoke : 'T * 'U -> 'V
               override f.Invoke(t) = (fun u -> f.Invoke(t,u))
@@ -2787,7 +2790,7 @@ namespace Microsoft.FSharp.Core
                               member x.Invoke(t,u) = (retype func : FSharpFunc<'T,FSharpFunc<'U,'V>>).Invoke(t).Invoke(u) }
 
           [<AbstractClass>]
-          type FSharpFunc<'T,'U,'V,'W>() = 
+          type FSharpFunc<'T,'U,'V,'W> [<DebuggerHidden>] () = 
               inherit FSharpFunc<'T,('U -> 'V -> 'W)>()
               abstract Invoke : 'T * 'U * 'V -> 'W
               override f.Invoke(t) = (fun u v -> f.Invoke(t,u,v))
@@ -2805,7 +2808,7 @@ namespace Microsoft.FSharp.Core
                               member x.Invoke(t,u,v) = (retype func : FSharpFunc<'T,('U -> 'V -> 'W)>).Invoke(t) u v }
 
           [<AbstractClass>]
-          type FSharpFunc<'T,'U,'V,'W,'X>() = 
+          type FSharpFunc<'T,'U,'V,'W,'X> [<DebuggerHidden>] () = 
               inherit FSharpFunc<'T,('U -> 'V -> 'W -> 'X)>()
               abstract Invoke : 'T * 'U * 'V * 'W -> 'X
               static member Adapt(func : 'T -> 'U -> 'V -> 'W -> 'X) = 
@@ -2828,7 +2831,7 @@ namespace Microsoft.FSharp.Core
               override f.Invoke(t) = (fun u v w -> f.Invoke(t,u,v,w))
 
           [<AbstractClass>]
-          type FSharpFunc<'T,'U,'V,'W,'X,'Y>() =
+          type FSharpFunc<'T,'U,'V,'W,'X,'Y> [<DebuggerHidden>] () =
               inherit FSharpFunc<'T,('U -> 'V -> 'W -> 'X -> 'Y)>()
               abstract Invoke : 'T * 'U * 'V * 'W * 'X -> 'Y
               override f.Invoke(t) = (fun u v w x -> f.Invoke(t,u,v,w,x))
@@ -2972,7 +2975,6 @@ namespace Microsoft.FSharp.Core
 
     and 'T option = Option<'T> 
 
-
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpResult`2")>]
     [<Struct>]
@@ -2980,6 +2982,17 @@ namespace Microsoft.FSharp.Core
       | Ok of ResultValue:'T 
       | Error of ErrorValue:'TError
 
+    [<StructuralEquality; StructuralComparison>]
+    [<Struct>]
+    [<CompiledName("FSharpValueOption`1")>]
+    type ValueOption<'T> =
+        | ValueNone : 'T voption
+        | ValueSome : 'T -> 'T voption
+
+        member x.Value = match x with ValueSome x -> x | ValueNone -> raise (new System.InvalidOperationException("ValueOption.Value"))
+
+
+    and 'T voption = ValueOption<'T>
 
 namespace Microsoft.FSharp.Collections
 
@@ -3345,11 +3358,11 @@ namespace Microsoft.FSharp.Core
 
         let (^) (s1: string) (s2: string) = System.String.Concat(s1, s2)
 
-
         [<CompiledName("DefaultArg")>]
-        [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
         let defaultArg arg defaultValue = match arg with None -> defaultValue | Some v -> v
         
+        [<CompiledName("DefaultValueArg")>]
+        let defaultValueArg arg defaultValue = match arg with ValueNone -> defaultValue | ValueSome v -> v
 
         [<NoDynamicInvocation>]
         let inline (~-) (n: ^T) : ^T = 
@@ -5639,6 +5652,24 @@ namespace Microsoft.FSharp.Core
                           if n >= 0 then PowDecimal x n else 1.0M /  PowDecimal x n)
 
 
+    /// Represents the types of byrefs in F# 4.5+
+    module ByRefKinds = 
+
+        /// Represents a byref that can be written
+        type Out() = class end
+
+        /// Represents a byref that can be read
+        type In() = class end
+
+        /// Represents a byref that can be both read and written
+        type InOut = Choice<In, Out>
+
+    /// <summary>Represents a in-argument or readonly managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
+    type inref<'T> = byref<'T, ByRefKinds.In>
+
+    /// <summary>Represents a out-argument managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
+    type outref<'T> = byref<'T, ByRefKinds.Out>
+
 namespace Microsoft.FSharp.Control
 
     open System    
@@ -5681,7 +5712,6 @@ namespace Microsoft.FSharp.Control
 namespace Microsoft.FSharp.Control
 
     open System
-    open System.Diagnostics
     open Microsoft.FSharp.Core
 
     type IDelegateEvent<'Delegate when 'Delegate :> System.Delegate > =
