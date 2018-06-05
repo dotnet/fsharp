@@ -3361,14 +3361,19 @@ and CommitCallSequel cenv eenv m cloc cgbuf mustGenerateUnitAfterCall sequel =
     else GenSequel cenv cloc cgbuf sequel
 
 
+and MakeNotSupportedExnExpr cenv eenv (argExpr, m) =
+    let ety = mkAppTy (cenv.g.FindSysTyconRef ["System"] "NotSupportedException") []
+    let ilty = GenType cenv.amap m eenv.tyenv ety
+    let mref = mkILCtorMethSpecForTy(ilty, [cenv.g.ilg.typ_String]).MethodRef
+    Expr.Op(TOp.ILCall(false,false,false,true,NormalValUse,false,false,mref,[],[],[ety]),[],[argExpr],m)
+
 and GenTraitCall cenv cgbuf eenv (traitInfo, argExprs, m) expr sequel =
     let minfoOpt = CommitOperationResult (ConstraintSolver.CodegenWitnessThatTypeSupportsTraitConstraint cenv.TcVal cenv.g cenv.amap m traitInfo argExprs)
     match minfoOpt with 
     | None -> 
-        let replacementExpr = 
-            mkThrow m (tyOfExpr cenv.g expr)
-               (mkExnExpr(cenv.g.FindSysTyconRef ["System"] "NotSupportedException", 
-                             [ mkString cenv.g m (FSComp.SR.ilDynamicInvocationNotSupported(traitInfo.MemberName))],m)) 
+        let exnArg = mkString cenv.g m (FSComp.SR.ilDynamicInvocationNotSupported(traitInfo.MemberName))
+        let exnExpr = MakeNotSupportedExnExpr cenv eenv (exnArg, m)
+        let replacementExpr = mkThrow m (tyOfExpr cenv.g expr) exnExpr
         GenExpr cenv cgbuf eenv SPSuppress replacementExpr sequel
     | Some expr -> 
         let expr = cenv.optimizeDuringCodeGen expr
@@ -5218,9 +5223,9 @@ and GenMethodForBinding
             // However still generate the code for reflection etc.
             let bodyExpr =
                 if HasFSharpAttribute cenv.g cenv.g.attrib_NoDynamicInvocationAttribute v.Attribs then
-                    mkThrow m returnTy
-                         (mkExnExpr(cenv.g.FindSysTyconRef ["System"] "NotSupportedException", 
-                                       [ mkString cenv.g m (FSComp.SR.ilDynamicInvocationNotSupported(v.CompiledName))],m)) 
+                    let exnArg = mkString cenv.g m (FSComp.SR.ilDynamicInvocationNotSupported(v.CompiledName))
+                    let exnExpr = MakeNotSupportedExnExpr cenv eenv (exnArg, m)
+                    mkThrow m returnTy exnExpr
                 else 
                     body 
 
