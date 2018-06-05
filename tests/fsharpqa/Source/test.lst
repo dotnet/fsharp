@@ -22,6 +22,7 @@ CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Operators
 Retry,CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\QueryExpressionStepping
 Retry,CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SeqExpressionStepping
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SeqExpressionTailCalls
+CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SeqExpressionElision
 CodeGen01,NoMT,CodeGen,NoHostedCompiler,SerializableAttribute				CodeGen\EmittedIL\SerializableAttribute
 CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\StaticInit
 Retry,CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SteppingMatch
