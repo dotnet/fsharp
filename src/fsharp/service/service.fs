@@ -568,7 +568,7 @@ type TypeCheckInfo
             p <- p - 1
         if p >= 0 then Some p else None
     
-    let CompletionItem (ty: TyconRef option) (unresolvedEntity: AssemblySymbol option) (item: ItemWithInst) =
+    let CompletionItem (ty: TyconRef option) (assemblySymbol: AssemblySymbol option) (item: ItemWithInst) =
         let kind = 
             match item.Item with
             | Item.MethodGroup (_, minfo :: _, _) -> CompletionItemKind.Method minfo.IsExtensionMember
@@ -579,29 +579,12 @@ type TypeCheckInfo
             | Item.Value _ -> CompletionItemKind.Field
             | _ -> CompletionItemKind.Other
 
-        let getNamespace (idents: Idents) = 
-            if idents.Length > 1 then Some idents.[..idents.Length - 2] else None
-
-        let unresolved =
-            unresolvedEntity
-            |> Option.map (fun x ->
-                let ns = 
-                    x.TopRequireQualifiedAccessParent 
-                    |> Option.bind getNamespace 
-                    |> Option.orElseWith (fun () -> getNamespace x.CleanedIdents)
-                    |> Option.defaultValue [||]
-
-                let displayName = x.CleanedIdents |> Array.skip ns.Length |> String.concat "."
-                
-                { DisplayName = displayName
-                  Namespace = ns })
-
         { ItemWithInst = item
           MinorPriority = 0
           Kind = kind
           IsOwnMember = false
           Type = ty 
-          Unresolved = unresolved }
+          Unresolved = assemblySymbol |> Option.map (fun x -> x.UnresolvedSymbol) }
 
     let DefaultCompletionItem item = CompletionItem None None item
     
@@ -1228,7 +1211,9 @@ type TypeCheckInfo
                       //Item.Value(vref)
                       None
 
-                  | Item.Types (_, [AppTy g (tr, _)]) when not tr.IsLocalRef ->
+                  | Item.Types (_, TType_app (tr, _) :: _) when tr.IsLocalRef && tr.IsTypeAbbrev -> None
+
+                  | Item.Types (_, [ AppTy g (tr, _) ]) when not tr.IsLocalRef ->
                       match tr.TypeReprInfo, tr.PublicPath with
                       | TILObjectRepr(TILObjectReprData (ILScopeRef.Assembly assref, _, _)), Some (PubPath parts) ->
                           let fullName = parts |> String.concat "."
