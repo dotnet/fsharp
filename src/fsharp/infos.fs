@@ -542,7 +542,7 @@ type OptionalArgInfo =
         | Some (Expr.Const (ConstToILFieldInit fi,_,_)) -> Some fi
         | _ -> None
 
-type CallerInfoInfo =
+type CallerInfo =
     | NoCallerInfo
     | CallerLineNumber
     | CallerMemberName
@@ -572,8 +572,8 @@ type ParamNameAndType =
 [<NoComparison; NoEquality>]
 /// Full information about a parameter returned for use by the type checker and language service.
 type ParamData = 
-    /// ParamData(isParamArray, isOut, optArgInfo, callerInfoInfo, nameOpt, reflArgInfo, ttype)
-    ParamData of bool * bool * bool * OptionalArgInfo * CallerInfoInfo * Ident option * ReflectedArgInfo * TType
+    /// ParamData(isParamArray, isOut, optArgInfo, callerInfo, nameOpt, reflArgInfo, ttype)
+    ParamData of bool * bool * bool * OptionalArgInfo * CallerInfo * Ident option * ReflectedArgInfo * TType
 
 
 //-------------------------------------------------------------------------
@@ -1365,7 +1365,7 @@ type MethInfo =
                  let isCallerFilePathArg = TryFindILAttribute g.attrib_CallerFilePathAttribute p.CustomAttrs
                  let isCallerMemberNameArg = TryFindILAttribute g.attrib_CallerMemberNameAttribute p.CustomAttrs
 
-                 let callerInfoInfo =
+                 let callerInfo =
                     match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg with
                     | false, false, false -> NoCallerInfo
                     | true, false, false -> CallerLineNumber
@@ -1377,7 +1377,7 @@ type MethInfo =
                         if p.Type.TypeRef.FullName = "System.Int32" then CallerFilePath
                         else CallerLineNumber
 
-                 yield (isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfoInfo, reflArgInfo) ] ]
+                 yield (isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, reflArgInfo) ] ]
 
         | FSMeth(g,_,vref,_) -> 
             GetArgInfosOfMember x.IsCSharpStyleExtensionMember g vref 
@@ -1422,7 +1422,7 @@ type MethInfo =
                 let isCallerFilePathArg = HasFSharpAttribute g g.attrib_CallerFilePathAttribute argInfo.Attribs
                 let isCallerMemberNameArg = HasFSharpAttribute g g.attrib_CallerMemberNameAttribute argInfo.Attribs
 
-                let callerInfoInfo =
+                let callerInfo =
                     match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg with
                     | false, false, false -> NoCallerInfo
                     | true, false, false -> CallerLineNumber
@@ -1439,7 +1439,7 @@ type MethInfo =
                         | Some optTy when typeEquiv g g.int32_ty optTy -> CallerFilePath
                         | _ -> CallerLineNumber
 
-                (isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfoInfo, reflArgInfo))
+                (isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, reflArgInfo))
 
         | DefaultStructCtor _ -> 
             [[]]
@@ -1557,8 +1557,8 @@ type MethInfo =
 #endif
 
         let paramAttribs = x.GetParamAttribs(amap, m)
-        (paramAttribs,paramNamesAndTypes) ||> List.map2 (List.map2 (fun (isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfoInfo, reflArgInfo) (ParamNameAndType(nmOpt,pty)) -> 
-             ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfoInfo, nmOpt, reflArgInfo, pty)))
+        (paramAttribs,paramNamesAndTypes) ||> List.map2 (List.map2 (fun (isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, reflArgInfo) (ParamNameAndType(nmOpt,pty)) -> 
+             ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, nmOpt, reflArgInfo, pty)))
 
     /// Get the ParamData objects for the parameters of a MethInfo
     member x.HasParamArrayArg(amap, m, minst) = 

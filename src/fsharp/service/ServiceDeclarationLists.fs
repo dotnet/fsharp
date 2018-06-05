@@ -92,7 +92,7 @@ module internal DescriptionListsImpl =
           display=display,
           isOptional=false)
 
-    let ParamOfParamData g denv (ParamData(_isParamArrayArg, _isInArg, _isOutArg, optArgInfo, _callerInfoInfo, nmOpt, _reflArgInfo, pty) as paramData) =
+    let ParamOfParamData g denv (ParamData(_isParamArrayArg, _isInArg, _isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty) as paramData) =
         FSharpMethodGroupItemParameter(
           name = (match nmOpt with None -> "" | Some pn -> pn.idText),
           canonicalTypeTextForSorting = printCanonicalizedTypeName g denv pty,
@@ -103,7 +103,7 @@ module internal DescriptionListsImpl =
     let PrettyParamsOfParamDatas g denv typarInst (paramDatas:ParamData list) rty = 
         let paramInfo,paramTypes = 
             paramDatas 
-            |> List.map (fun (ParamData(isParamArrayArg, _isInArg, _isOutArg, optArgInfo, _callerInfoInfo, nmOpt, _reflArgInfo, pty)) -> 
+            |> List.map (fun (ParamData(isParamArrayArg, _isInArg, _isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty)) -> 
                 let isOptArg = optArgInfo.IsOptional
                 match nmOpt, isOptArg, tryDestOptionTy denv.g pty with 
                 // Layout an optional argument 

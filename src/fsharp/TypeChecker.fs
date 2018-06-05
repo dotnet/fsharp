@@ -3016,7 +3016,7 @@ let BuildDisposableCleanup cenv env m (v:Val) =
     v.SetHasBeenReferenced() 
     let ad = env.eAccessRights
     let disposeMethod = 
-        match TryFindIntrinsicOrExtensionMethInfo cenv env m ad "Dispose" cenv.g.system_IDisposable_typ with 
+        match TryFindIntrinsicOrExtensionMethInfo cenv env m ad "Dispose" cenv.g.system_IDisposable_ty with 
         | [x] ->  x 
         | _ -> error(InternalError(FSComp.SR.tcCouldNotFindIDisposable(), m)) 
 
@@ -3024,7 +3024,7 @@ let BuildDisposableCleanup cenv env m (v:Val) =
     // For struct types the test is simpler: we can determine if IDisposable is supported, and even when it is, we can avoid doing the type test 
     // Note this affects the elaborated form seen by quotations etc.
     if isStructTy cenv.g v.Type then 
-        if TypeFeasiblySubsumesType 0 cenv.g cenv.amap m cenv.g.system_IDisposable_typ CanCoerce v.Type then
+        if TypeFeasiblySubsumesType 0 cenv.g cenv.amap m cenv.g.system_IDisposable_ty CanCoerce v.Type then
             // We can use NeverMutates here because the variable is going out of scope, there is no need to take a defensive
             // copy of it.
             let disposeExpr, _ = BuildPossiblyConditionalMethodCall cenv env NeverMutates m false disposeMethod NormalValUse [] [exprForVal v.Range v] []    
@@ -3032,16 +3032,16 @@ let BuildDisposableCleanup cenv env m (v:Val) =
         else
             mkUnit cenv.g m
     else
-        let disposeObjVar, disposeObjExpr = Tastops.mkCompGenLocal m "objectToDispose" cenv.g.system_IDisposable_typ
+        let disposeObjVar, disposeObjExpr = Tastops.mkCompGenLocal m "objectToDispose" cenv.g.system_IDisposable_ty
         let disposeExpr, _ = BuildPossiblyConditionalMethodCall cenv env PossiblyMutates m false disposeMethod NormalValUse [] [disposeObjExpr] []
         let inpe = mkCoerceExpr(exprForVal v.Range v, cenv.g.obj_ty, m, v.Type)
-        mkIsInstConditional cenv.g m cenv.g.system_IDisposable_typ inpe disposeObjVar disposeExpr (mkUnit cenv.g m) 
+        mkIsInstConditional cenv.g m cenv.g.system_IDisposable_ty inpe disposeObjVar disposeExpr (mkUnit cenv.g m) 
 
 /// Build call to get_OffsetToStringData as part of 'fixed'
 let BuildOffsetToStringData cenv env m = 
     let ad = env.eAccessRights
     let offsetToStringDataMethod = 
-        match TryFindIntrinsicOrExtensionMethInfo cenv env m ad "get_OffsetToStringData" cenv.g.system_RuntimeHelpers_typ with 
+        match TryFindIntrinsicOrExtensionMethInfo cenv env m ad "get_OffsetToStringData" cenv.g.system_RuntimeHelpers_ty with 
         | [x] ->  x 
         | _ -> error(Error(FSComp.SR.tcCouldNotFindOffsetToStringData(), m)) 
 
@@ -3398,7 +3398,7 @@ let mkSeqCollect cenv env m enumElemTy genTy lam enumExpr =
     mkCallSeqCollect cenv.g m enumElemTy genResultTy lam enumExpr
 
 let mkSeqUsing cenv (env: TcEnv) m resourceTy genTy resourceExpr lam =
-    AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace cenv.g.system_IDisposable_typ resourceTy
+    AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace cenv.g.system_IDisposable_ty resourceTy
     let genResultTy = NewInferenceType ()
     UnifyTypes cenv env m genTy (mkSeqTy cenv.g genResultTy)
     mkCallSeqUsing cenv.g m resourceTy genResultTy resourceExpr lam 
@@ -6291,7 +6291,7 @@ and TcCtorCall isNaked cenv env tpenv overallTy objTy mObjTyOpt item superInit a
     match item, args with 
     | Item.CtorGroup(methodName, minfos), _ ->
         let meths = List.map (fun minfo -> minfo, None) minfos
-        if isNaked && TypeFeasiblySubsumesType 0 cenv.g cenv.amap mWholeCall cenv.g.system_IDisposable_typ NoCoerce objTy then
+        if isNaked && TypeFeasiblySubsumesType 0 cenv.g cenv.amap mWholeCall cenv.g.system_IDisposable_ty NoCoerce objTy then
             warning(Error(FSComp.SR.tcIDisposableTypeShouldUseNew(), mWholeCall))
 
         // Check the type is not abstract
@@ -6629,11 +6629,11 @@ and ComputeObjectExprOverrides cenv (env: TcEnv) tpenv impls =
     overridesAndVirts, tpenv
 
 and CheckSuperType cenv ty m = 
-    if typeEquiv cenv.g ty cenv.g.system_Value_typ ||
-       typeEquiv cenv.g ty cenv.g.system_Enum_typ ||
-       typeEquiv cenv.g ty cenv.g.system_Array_typ ||
-       typeEquiv cenv.g ty cenv.g.system_MulticastDelegate_typ ||
-       typeEquiv cenv.g ty cenv.g.system_Delegate_typ then 
+    if typeEquiv cenv.g ty cenv.g.system_Value_ty ||
+       typeEquiv cenv.g ty cenv.g.system_Enum_ty ||
+       typeEquiv cenv.g ty cenv.g.system_Array_ty ||
+       typeEquiv cenv.g ty cenv.g.system_MulticastDelegate_ty ||
+       typeEquiv cenv.g ty cenv.g.system_Delegate_ty then 
          error(Error(FSComp.SR.tcPredefinedTypeCannotBeUsedAsSuperType(), m))
     if isErasedType cenv.g ty then
         errorR(Error(FSComp.SR.tcCannotInheritFromErasedType(), m))
@@ -9368,8 +9368,8 @@ and TcMethodApplication
 
     let denv = env.DisplayEnv
 
-    let isSimpleFormalArg (isParamArrayArg, _isInArg, isOutArg, optArgInfo: OptionalArgInfo, callerInfoInfo: CallerInfoInfo, _reflArgInfo: ReflectedArgInfo) = 
-        not isParamArrayArg && not isOutArg && not optArgInfo.IsOptional && callerInfoInfo = NoCallerInfo
+    let isSimpleFormalArg (isParamArrayArg, _isInArg, isOutArg, optArgInfo: OptionalArgInfo, callerInfo: CallerInfo, _reflArgInfo: ReflectedArgInfo) = 
+        not isParamArrayArg && not isOutArg && not optArgInfo.IsOptional && callerInfo = NoCallerInfo
     
     let callerObjArgTys = objArgs |> List.map (tyOfExpr cenv.g)
 
@@ -9888,7 +9888,7 @@ and TcMethodApplication
                                 | ByrefTy cenv.g inst ->
                                     build inst (PassByRef(inst, currDfltVal))
                                 | _ ->
-                                    match calledArg.CallerInfoInfo, env.eCallerMemberName with
+                                    match calledArg.CallerInfo, env.eCallerMemberName with
                                     | CallerLineNumber, _ when typeEquiv cenv.g currCalledArgTy cenv.g.int_ty ->
                                         emptyPreBinder, Expr.Const(Const.Int32(mMethExpr.StartLine), mMethExpr, currCalledArgTy)
                                     | CallerFilePath, _ when typeEquiv cenv.g currCalledArgTy cenv.g.string_ty ->
@@ -9926,7 +9926,7 @@ and TcMethodApplication
                           else
                               calledArgTy // should be unreachable
 
-                      match calledArg.CallerInfoInfo, env.eCallerMemberName with
+                      match calledArg.CallerInfo, env.eCallerMemberName with
                       | CallerLineNumber, _ when typeEquiv cenv.g calledNonOptTy cenv.g.int_ty ->
                           let lineExpr = Expr.Const(Const.Int32(mMethExpr.StartLine), mMethExpr, calledNonOptTy)
                           emptyPreBinder, mkUnionCaseExpr(mkSomeCase cenv.g, [calledNonOptTy], [lineExpr], mMethExpr)
@@ -10918,7 +10918,7 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (binds, bindsm, sco
         let mkCleanup (bodyExpr, bodyExprTy) =
             if isUse && not isFixed then 
                 (allValsDefinedByPattern, (bodyExpr, bodyExprTy)) ||> List.foldBack (fun v (bodyExpr, bodyExprTy) ->
-                    AddCxTypeMustSubsumeType ContextInfo.NoContext denv cenv.css v.Range NoTrace cenv.g.system_IDisposable_typ v.Type
+                    AddCxTypeMustSubsumeType ContextInfo.NoContext denv cenv.css v.Range NoTrace cenv.g.system_IDisposable_ty v.Type
                     let cleanupE = BuildDisposableCleanup cenv env m v
                     mkTryFinally cenv.g (bodyExpr, cleanupE, m, bodyExprTy, SequencePointInBodyOfTry, NoSequencePointAtFinally), bodyExprTy)
             else 
@@ -15183,7 +15183,7 @@ module EstablishTypeDefinitionCores =
                   | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly _ -> None
                   | SynTypeDefnSimpleRepr.Union _ 
                   | SynTypeDefnSimpleRepr.Record _ ->
-                      if tycon.IsStructRecordOrUnionTycon then Some(cenv.g.system_Value_typ)
+                      if tycon.IsStructRecordOrUnionTycon then Some(cenv.g.system_Value_ty)
                       else None
                   | SynTypeDefnSimpleRepr.General (kind, _, slotsigs, fields, isConcrete, _, _, _) ->
                       let kind = InferTyconKind cenv.g (kind, attrs, slotsigs, fields, inSig, isConcrete, m)
@@ -15191,8 +15191,8 @@ module EstablishTypeDefinitionCores =
                       match inheritedTys with 
                       | [] -> 
                           match kind with 
-                          | TyconStruct -> Some(cenv.g.system_Value_typ)
-                          | TyconDelegate _ -> Some(cenv.g.system_MulticastDelegate_typ )
+                          | TyconStruct -> Some(cenv.g.system_Value_ty)
+                          | TyconDelegate _ -> Some(cenv.g.system_MulticastDelegate_ty )
                           | TyconHiddenRepr | TyconClass | TyconInterface -> None
                           | _ -> error(InternalError("should have inferred tycon kind", m)) 
 
@@ -15210,7 +15210,7 @@ module EstablishTypeDefinitionCores =
                           error(Error(FSComp.SR.tcTypesCannotInheritFromMultipleConcreteTypes(), m))
 
                   | SynTypeDefnSimpleRepr.Enum _ -> 
-                      Some(cenv.g.system_Enum_typ) 
+                      Some(cenv.g.system_Enum_ty) 
 
               // Allow super type to be a function type but convert back to FSharpFunc<A,B> to make sure it has metadata
               // (We don't apply the same rule to tuple types, i.e. no F#-declared inheritors of those are permitted)

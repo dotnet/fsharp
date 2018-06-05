@@ -1747,7 +1747,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match d with 
         | P p -> 
             
-            [ [ for (ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, _callerInfoInfo, nmOpt, _reflArgInfo, pty)) in p.GetParamDatas(cenv.amap, range0) do 
+            [ [ for (ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty)) in p.GetParamDatas(cenv.amap, range0) do 
                 // INCOMPLETENESS: Attribs is empty here, so we can't look at attributes for
                 // either .NET or F# parameters
                 let argInfo: ArgReprInfo = { Name=nmOpt; Attribs= [] }
@@ -1759,7 +1759,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | M m | C m -> 
             [ for argtys in m.GetParamDatas(cenv.amap, range0, m.FormalMethodInst) do 
                  yield
-                   [ for (ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, _callerInfoInfo, nmOpt, _reflArgInfo, pty)) in argtys do 
+                   [ for (ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty)) in argtys do 
                 // INCOMPLETENESS: Attribs is empty here, so we can't look at attributes for
                 // either .NET or F# parameters
                         let argInfo: ArgReprInfo = { Name=nmOpt; Attribs= [] }

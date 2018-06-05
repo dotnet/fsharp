@@ -193,8 +193,8 @@ type cenv =
 
 let mkTypeOfExpr cenv m ilty =  
     mkAsmExpr ([  mkNormalCall (mspec_Type_GetTypeFromHandle cenv.g) ], [],
-                   [mkAsmExpr ([ I_ldtoken (ILToken.ILType ilty) ], [],[],[cenv.g.system_RuntimeTypeHandle_typ],m)],
-                   [cenv.g.system_Type_typ],m)    
+                   [mkAsmExpr ([ I_ldtoken (ILToken.ILType ilty) ], [],[],[cenv.g.system_RuntimeTypeHandle_ty],m)],
+                   [cenv.g.system_Type_ty],m)    
                    
 let mkGetNameExpr cenv (ilt : ILType) m =
     mkAsmExpr ([I_ldstr ilt.BasicQualifiedName],[],[],[cenv.g.string_ty],m)  
@@ -3293,14 +3293,14 @@ and GenQuotation cenv cgbuf eenv (ast,conv,m,ety) sequel =
         match QuotationTranslator.QuotationGenerationScope.ComputeQuotationFormat cenv.g with
         | QuotationTranslator.QuotationSerializationFormat.FSharp_40_Plus ->
             let referencedTypeDefExprs =  List.map (mkILNonGenericBoxedTy >> mkTypeOfExpr cenv m) referencedTypeDefs
-            let referencedTypeDefsExpr = mkArray (cenv.g.system_Type_typ, referencedTypeDefExprs, m) 
-            let spliceTypesExpr = mkArray (cenv.g.system_Type_typ, spliceTypeExprs, m)
+            let referencedTypeDefsExpr = mkArray (cenv.g.system_Type_ty, referencedTypeDefExprs, m) 
+            let spliceTypesExpr = mkArray (cenv.g.system_Type_ty, spliceTypeExprs, m)
             let spliceArgsExpr = mkArray (rawTy, spliceArgExprs, m)
             mkCallDeserializeQuotationFSharp40Plus cenv.g m someTypeInModuleExpr referencedTypeDefsExpr spliceTypesExpr spliceArgsExpr bytesExpr
 
         | QuotationTranslator.QuotationSerializationFormat.FSharp_20_Plus ->
             let mkList ty els = List.foldBack (mkCons cenv.g ty) els (mkNil cenv.g m ty)
-            let spliceTypesExpr = mkList cenv.g.system_Type_typ spliceTypeExprs 
+            let spliceTypesExpr = mkList cenv.g.system_Type_ty spliceTypeExprs 
             let spliceArgsExpr = mkList rawTy spliceArgExprs 
             mkCallDeserializeQuotationFSharp20Plus cenv.g m someTypeInModuleExpr spliceTypesExpr spliceArgsExpr bytesExpr
 

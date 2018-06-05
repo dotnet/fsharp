@@ -55,23 +55,23 @@ type CalledArg =
     { Position: (int * int)
       IsParamArray : bool
       OptArgInfo : OptionalArgInfo
-      CallerInfoInfo : CallerInfoInfo
+      CallerInfo : CallerInfo
       IsInArg: bool
       IsOutArg: bool
       ReflArgInfo: ReflectedArgInfo
       NameOpt: Ident option
       CalledArgumentType : TType }
 
-let CalledArg (pos, isParamArray, optArgInfo, callerInfoInfo, isInArg, isOutArg, nameOpt, reflArgInfo, calledArgTy) =
+let CalledArg (pos, isParamArray, optArgInfo, callerInfo, isInArg, isOutArg, nameOpt, reflArgInfo, calledArgTy) =
     { Position=pos
       IsParamArray=isParamArray
-      OptArgInfo =optArgInfo
-      CallerInfoInfo = callerInfoInfo
+      OptArgInfo=optArgInfo
+      CallerInfo=callerInfo
       IsInArg=isInArg
       IsOutArg=isOutArg
       ReflArgInfo=reflArgInfo
       NameOpt=nameOpt
-      CalledArgumentType = calledArgTy }
+      CalledArgumentType=calledArgTy }
 
 /// Represents a match between a caller argument and a called argument, arising from either
 /// a named argument or an unnamed argument.
@@ -210,7 +210,7 @@ let MakeCalledArgs amap m (minfo:MethInfo) minst =
       { Position=(i,j)
         IsParamArray=isParamArrayArg
         OptArgInfo=optArgInfo
-        CallerInfoInfo = callerInfoFlags
+        CallerInfo = callerInfoFlags
         IsInArg=isInArg
         IsOutArg=isOutArg
         ReflArgInfo=reflArgInfo
@@ -558,9 +558,9 @@ let ComputeConstrainedCallInfo g amap m (objArgs, minfo:MethInfo) =
            // Constrained calls to class types can only ever be needed for the three class types that 
            // are base types of value types
            || (isClassTy g methObjTy && 
-                 (not (typeEquiv g methObjTy g.system_Object_typ || 
-                       typeEquiv g methObjTy g.system_Value_typ ||
-                       typeEquiv g methObjTy g.system_Enum_typ))) then 
+                 (not (typeEquiv g methObjTy g.system_Object_ty || 
+                       typeEquiv g methObjTy g.system_Value_ty ||
+                       typeEquiv g methObjTy g.system_Enum_ty))) then 
             None
         else
             // The object argument is a value type or variable type and the target method is an interface or System.Object

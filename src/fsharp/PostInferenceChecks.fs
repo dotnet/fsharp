@@ -1650,35 +1650,35 @@ let CheckEntityDefn cenv env (tycon:Entity) =
 
             if numCurriedArgSets > 1 && 
                (minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst) 
-                |> List.existsSquared (fun (ParamData(isParamArrayArg, _isInArg, isOutArg, optArgInfo, callerInfoInfo, _, reflArgInfo, ty)) -> 
-                    isParamArrayArg || isOutArg || reflArgInfo.AutoQuote || optArgInfo.IsOptional || callerInfoInfo <> NoCallerInfo || isByrefLikeTy g m ty)) then 
+                |> List.existsSquared (fun (ParamData(isParamArrayArg, _isInArg, isOutArg, optArgInfo, callerInfo, _, reflArgInfo, ty)) -> 
+                    isParamArrayArg || isOutArg || reflArgInfo.AutoQuote || optArgInfo.IsOptional || callerInfo <> NoCallerInfo || isByrefLikeTy g m ty)) then 
                 errorR(Error(FSComp.SR.chkCurriedMethodsCantHaveOutParams(), m))
 
             if numCurriedArgSets = 1 then
                 minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst) 
-                |> List.iterSquared (fun (ParamData(_, isInArg, _, optArgInfo, callerInfoInfo, _, _, ty)) ->
+                |> List.iterSquared (fun (ParamData(_, isInArg, _, optArgInfo, callerInfo, _, _, ty)) ->
                     ignore isInArg
-                    match (optArgInfo, callerInfoInfo) with
+                    match (optArgInfo, callerInfo) with
                     | _, NoCallerInfo -> ()
-                    | NotOptional, _ -> errorR(Error(FSComp.SR.tcCallerInfoNotOptional(callerInfoInfo.ToString()),m))
+                    | NotOptional, _ -> errorR(Error(FSComp.SR.tcCallerInfoNotOptional(callerInfo.ToString()),m))
                     | CallerSide(_), CallerLineNumber ->
                         if not (typeEquiv g g.int32_ty ty) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfoInfo.ToString(), "int", NicePrint.minimalStringOfType cenv.denv ty),m))
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo.ToString(), "int", NicePrint.minimalStringOfType cenv.denv ty),m))
                     | CalleeSide, CallerLineNumber ->
                         if not ((isOptionTy g ty) && (typeEquiv g g.int32_ty (destOptionTy g ty))) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfoInfo.ToString(), "int", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)),m))
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo.ToString(), "int", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)),m))
                     | CallerSide(_), CallerFilePath ->
                         if not (typeEquiv g g.string_ty ty) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfoInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv ty),m))
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv ty),m))
                     | CalleeSide, CallerFilePath ->
                         if not ((isOptionTy g ty) && (typeEquiv g g.string_ty (destOptionTy g ty))) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfoInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)),m))
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)),m))
                     | CallerSide(_), CallerMemberName ->
                         if not (typeEquiv g g.string_ty ty) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfoInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv ty),m))
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv ty),m))
                     | CalleeSide, CallerMemberName ->
                         if not ((isOptionTy g ty) && (typeEquiv g g.string_ty (destOptionTy g ty))) then
-                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfoInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)),m)))
+                            errorR(Error(FSComp.SR.tcCallerInfoWrongType(callerInfo.ToString(), "string", NicePrint.minimalStringOfType cenv.denv (destOptionTy g ty)),m)))
             
         for pinfo in immediateProps do
             let nm = pinfo.PropertyName
