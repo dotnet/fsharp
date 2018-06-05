@@ -112,7 +112,7 @@ The type 'A' does not match the type 'B'
 
 neg20.fs(83,47,83,54): typecheck error FS0001: All branches of an 'if' expression must have the same type. This expression was expected to have type 'B', but here has type 'C'.
 
-neg20.fs(87,54,87,61): typecheck error FS0001: All branches of a pattern match expression must have the same type. This expression was expected to have type 'B', but here has type 'C'.
+neg20.fs(87,54,87,61): typecheck error FS0001: All branches of a pattern match expression must return values of the same type. The first branch returned a value of type 'B', but this branch returned a value of type 'C'.
 
 neg20.fs(92,19,92,26): typecheck error FS0001: This expression was expected to have type
     'A'    
@@ -130,24 +130,6 @@ but here has type
     'B'    
 
 neg20.fs(99,26,99,33): typecheck error FS0001: All elements of a list constructor expression must have the same type. This expression was expected to have type 'B', but here has type 'A'.
-
-neg20.fs(108,12,108,16): typecheck error FS0001: Type mismatch. Expecting a
-    'B * B -> 'a'    
-but given a
-    'A * A -> Data'    
-The type 'B' does not match the type 'A'
-
-neg20.fs(109,12,109,16): typecheck error FS0001: Type mismatch. Expecting a
-    'A * B -> 'a'    
-but given a
-    'A * A -> Data'    
-The type 'B' does not match the type 'A'
-
-neg20.fs(110,12,110,16): typecheck error FS0001: Type mismatch. Expecting a
-    'B * A -> 'a'    
-but given a
-    'A * A -> Data'    
-The type 'B' does not match the type 'A'
 
 neg20.fs(128,19,128,22): typecheck error FS0001: This expression was expected to have type
     'string'    

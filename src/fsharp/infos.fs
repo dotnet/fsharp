@@ -345,7 +345,7 @@ let FixupNewTypars m (formalEnclosingTypars:Typars) (tinst: TType list) (tpsorig
     // The real code.. 
     let renaming,tptys = mkTyparToTyparRenaming tpsorig tps
     let tprefInst = mkTyparInst formalEnclosingTypars tinst @ renaming
-    (tpsorig,tps) ||> List.iter2 (fun tporig tp -> tp.FixupConstraints (CopyTyparConstraints  m tprefInst tporig)) 
+    (tpsorig,tps) ||> List.iter2 (fun tporig tp -> tp.SetConstraints (CopyTyparConstraints  m tprefInst tporig)) 
     renaming,tptys
 
 
@@ -670,7 +670,7 @@ type ILTypeInfo =
     member x.ToType = let (ILTypeInfo(_,ty,_,_)) = x in ty
 
     /// Get the compiled nominal type. In the case of tuple types, this is a .NET tuple type
-    member x.ToAppType = helpEnsureTypeHasMetadata x.TcGlobals x.ToType
+    member x.ToAppType = convertToTypeWithMetadataIfPossible x.TcGlobals x.ToType
 
     member x.TyconRefOfRawMetadata = tcrefOfAppTy x.TcGlobals x.ToAppType
 
@@ -690,7 +690,7 @@ type ILTypeInfo =
         if isAnyTupleTy g ty then 
             // When getting .NET metadata for the properties and methods
             // of an F# tuple type, use the compiled nominal type, which is a .NET tuple type
-            let metadataTy = helpEnsureTypeHasMetadata g ty
+            let metadataTy = convertToTypeWithMetadataIfPossible g ty
             assert (isILAppTy g metadataTy)
             let metadataTyconRef = tcrefOfAppTy g metadataTy
             let (TILObjectReprData(scoref, enc, tdef)) = metadataTyconRef.ILTyconInfo
@@ -727,7 +727,7 @@ type ILMethInfo =
     member x.ApparentEnclosingType = match x with ILMethInfo(_,ty,_,_,_) -> ty
 
     /// Like ApparentEnclosingType but use the compiled nominal type if this is a method on a tuple type
-    member x.ApparentEnclosingAppType = helpEnsureTypeHasMetadata x.TcGlobals x.ApparentEnclosingType
+    member x.ApparentEnclosingAppType = convertToTypeWithMetadataIfPossible x.TcGlobals x.ApparentEnclosingType
 
     /// Get the declaring type associated with an extension member, if any.
     member x.ILExtensionMethodDeclaringTyconRef = match x with ILMethInfo(_,_,tcrefOpt,_,_) -> tcrefOpt
@@ -897,9 +897,7 @@ type MethInfo =
 
     /// Get the enclosing type of the method info, using a nominal type for tuple types
     member x.ApparentEnclosingAppType = 
-        match x with
-        | ILMeth(_,ilminfo,_) -> ilminfo.ApparentEnclosingAppType
-        | _ -> x.ApparentEnclosingType
+        convertToTypeWithMetadataIfPossible x.TcGlobals x.ApparentEnclosingType
 
     member x.ApparentEnclosingTyconRef = 
         tcrefOfAppTy x.TcGlobals x.ApparentEnclosingAppType
@@ -1005,7 +1003,8 @@ type MethInfo =
     member x.FormalMethodTypars = 
         match x with 
         | ILMeth(_,ilmeth,_) -> ilmeth.FormalMethodTypars
-        | FSMeth(g,typ,vref,_) ->  
+        | FSMeth(g,_,vref,_) ->  
+            let typ = x.ApparentEnclosingAppType
             let _,memberMethodTypars,_,_ = AnalyzeTypeOfMemberVal x.IsCSharpStyleExtensionMember g (typ,vref)
             memberMethodTypars
         | DefaultStructCtor _ -> []
@@ -1096,7 +1095,7 @@ type MethInfo =
         | ILMeth(_,ilmeth,_) -> ilmeth.IsClassConstructor
         | FSMeth(_,_,vref,_) -> 
              match vref.TryDeref with
-             | VSome x -> x.IsClassConstructor
+             | ValueSome x -> x.IsClassConstructor
              | _ -> false
         | DefaultStructCtor _ -> false
 #if !NO_EXTENSIONTYPING
@@ -1283,7 +1282,8 @@ type MethInfo =
         match x with 
         | ILMeth(_g,ilminfo,_) -> 
             ilminfo.GetCompiledReturnTy(amap, m, minst)
-        | FSMeth(g,typ,vref,_) -> 
+        | FSMeth(g,_,vref,_) ->
+            let typ = x.ApparentEnclosingAppType
             let inst = GetInstantiationForMemberVal g x.IsCSharpStyleExtensionMember (typ,vref,minst)
             let _,_,retTy,_ = AnalyzeTypeOfMemberVal x.IsCSharpStyleExtensionMember g (typ,vref)
             retTy |> Option.map (instType inst)
@@ -1320,8 +1320,9 @@ type MethInfo =
     member x.GetObjArgTypes (amap, m, minst) = 
         match x with 
         | ILMeth(_,ilminfo,_) -> ilminfo.GetObjArgTypes(amap, m, minst)
-        | FSMeth(g,typ,vref,_) -> 
+        | FSMeth(g,_,vref,_) -> 
             if x.IsInstance then 
+                let typ = x.ApparentEnclosingAppType
                 // The 'this' pointer of an extension member can depend on the minst
                 if x.IsExtensionMember then 
                     let inst = GetInstantiationForMemberVal g x.IsCSharpStyleExtensionMember (typ,vref,minst)
@@ -1521,7 +1522,8 @@ type MethInfo =
             match x with 
             | ILMeth(_g,ilminfo,_) -> 
                 [ ilminfo.GetParamNamesAndTypes(amap,m,minst)  ]
-            | FSMeth(g,typ,vref,_) -> 
+            | FSMeth(g,_,vref,_) -> 
+                let typ = x.ApparentEnclosingAppType
                 let items = ParamNameAndType.FromMember x.IsCSharpStyleExtensionMember g vref 
                 let inst = GetInstantiationForMemberVal g x.IsCSharpStyleExtensionMember (typ,vref,minst)
                 items |> ParamNameAndType.InstantiateCurried inst 
@@ -1561,7 +1563,8 @@ type MethInfo =
         if x.IsExtensionMember then [] 
         else 
             match x with
-            | FSMeth(g,typ,vref,_) -> 
+            | FSMeth(g,_,vref,_) -> 
+                let typ = x.ApparentEnclosingAppType
                 let memberParentTypars,_,_,_ = AnalyzeTypeOfMemberVal false g (typ,vref)
                 memberParentTypars
             | _ -> 
@@ -1790,7 +1793,7 @@ type ILPropInfo =
     member x.ApparentEnclosingType = match x with ILPropInfo(tinfo,_) -> tinfo.ToType
 
     /// Like ApparentEnclosingType but use the compiled nominal type if this is a method on a tuple type
-    member x.ApparentEnclosingAppType = helpEnsureTypeHasMetadata x.TcGlobals x.ApparentEnclosingType
+    member x.ApparentEnclosingAppType = convertToTypeWithMetadataIfPossible x.TcGlobals x.ApparentEnclosingType
 
     /// Get the raw Abstract IL metadata for the IL property
     member x.RawMetadata = match x with ILPropInfo(_,pd) -> pd
@@ -2096,8 +2099,9 @@ type PropInfo =
     member x.GetPropertyType (amap,m) = 
         match x with
         | ILProp ilpinfo -> ilpinfo.GetPropertyType (amap,m)
-        | FSProp (g,typ,Some vref,_) 
-        | FSProp (g,typ,_,Some vref) -> 
+        | FSProp (g,_,Some vref,_)
+        | FSProp (g,_,_,Some vref) ->
+            let typ = x.ApparentEnclosingAppType
             let inst = GetInstantiationForPropertyVal g (typ,vref)
             ReturnTypeOfPropertyVal g vref.Deref |> instType inst
             

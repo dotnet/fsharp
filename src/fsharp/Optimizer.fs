@@ -19,13 +19,13 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
+open Microsoft.FSharp.Compiler.AttributeChecking
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.Tast 
 open Microsoft.FSharp.Compiler.TastPickle
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Tastops.DebugPrint
-open Microsoft.FSharp.Compiler.TypeChecker
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.Layout.TaggedTextOps
@@ -134,14 +134,15 @@ type ValInfos(entries) =
         lazy (
             let dict = Dictionary<_, _>()
             for (vref, _x) as p in entries do 
-                dict.Add(vref.Deref.LinkagePartialKey, p) |> ignore
+                let vkey = vref.Deref.GetLinkagePartialKey()
+                dict.Add(vkey, p) |> ignore
             dict)
 
     member x.Entries = valInfoTable.Force().Values
     member x.Map f = ValInfos(Seq.map f x.Entries)
     member x.Filter f = ValInfos(Seq.filter f x.Entries)
     member x.TryFind (v:ValRef) = valInfoTable.Force().TryFind v.Deref
-    member x.TryFindForFslib (v:ValRef) = valInfosForFslib.Force().TryGetValue(v.Deref.LinkagePartialKey)
+    member x.TryFindForFslib (v:ValRef) = valInfosForFslib.Force().TryGetValue(v.Deref.GetLinkagePartialKey())
 
 type ModuleInfo = 
     { ValInfos: ValInfos
@@ -1261,9 +1262,9 @@ and OpHasEffect g op =
     | TOp.Recd (ctor, tcref) -> 
         match ctor with 
         | RecdExprIsObjInit -> true
-        | RecdExpr -> isRecdOrUnionOrStructTyconRefAllocObservable g tcref
-    | TOp.UnionCase ucref -> isRecdOrUnionOrStructTyconRefAllocObservable g ucref.TyconRef
-    | TOp.ExnConstr ecref -> isExnAllocObservable ecref
+        | RecdExpr -> isRecdOrUnionOrStructTyconRefDefinitelyMutable g tcref
+    | TOp.UnionCase ucref -> isRecdOrUnionOrStructTyconRefDefinitelyMutable g ucref.TyconRef
+    | TOp.ExnConstr ecref -> isExnDefinitelyMutable ecref
     | TOp.Bytes _ | TOp.UInt16s _ | TOp.Array -> true (* alloc observable *)
     | TOp.UnionCaseTagGet _ -> false
     | TOp.UnionCaseProof _ -> false

@@ -797,6 +797,11 @@
         <target state="translated">'match' 키워드</target>
         <note />
       </trans-unit>
+      <trans-unit id="Parser.TOKEN.MATCH.BANG">
+        <source>keyword 'match!'</source>
+        <target state="translated">'match!' 키워드</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Parser.TOKEN.MUTABLE">
         <source>keyword 'mutable'</source>
         <target state="translated">'mutable' 키워드</target>
@@ -1424,7 +1429,7 @@
       </trans-unit>
       <trans-unit id="EnumMatchIncomplete1">
         <source>Enums may take values outside known cases.</source>
-        <target state="new">Enums may take values outside known cases.</target>
+        <target state="translated">열거형이 알려진 사례를 벗어난 값을 사용할 수 있습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="RuleNeverMatched">

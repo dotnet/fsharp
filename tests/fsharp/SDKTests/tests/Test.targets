@@ -2,7 +2,7 @@
 
   <Import Project="$(BinariesDirectory)\Microsoft.FSharp.NetSdk.targets" />
 
-  <Target Name="Test" DependsOnTargets="FSharpCorePackageReferences;ValueTuplePackageReferences">
+  <Target Name="Test">
 
     <Message Importance="High" Text="Testing : $(MSBuildProjectName)" />
     <ItemGroup>

@@ -108,8 +108,8 @@
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
-        <source>All branches of a pattern match expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">パターン マッチ式のすべてのブランチは同じ型である必要があります。この式に必要な型は '{0}' ですが、ここでは型 '{1}' になっています。</target>
+        <source>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
+        <target state="needs-review-translation">パターン マッチ式のすべてのブランチは同じ型である必要があります。この式に必要な型は '{0}' ですが、ここでは型 '{1}' になっています。</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -412,7 +412,7 @@
         <target state="translated">byref 型変数の予期しない使用方法です:</target>
         <note />
       </trans-unit>
-      <trans-unit id="tastValueMustBeLocalAndMutable">
+      <trans-unit id="tastValueMustBeMutable">
         <source>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</source>
         <target state="translated">値の型の内容を変更するか、値の型のアドレスを使用するために、値は変更可能にする必要があります (たとえば、'let mutable x = ...')</target>
         <note />
@@ -5438,7 +5438,7 @@
         <note />
       </trans-unit>
       <trans-unit id="fscBadAssemblyVersion">
-        <source>An {0} specified version '{1}', but this value is invalid and has been ignored</source>
+        <source>The attribute {0} specified version '{1}', but this value is invalid and has been ignored</source>
         <target state="translated">{0} がバージョン '{1}' を指定しましたが、この値は無効なため無視されました</target>
         <note />
       </trans-unit>
@@ -6982,9 +6982,14 @@
         <target state="translated">この式は型 '{0}' の値を返しますが、暗黙的に破棄されます。'let' を使用して結果を名前にバインドすることを検討してください。例: 'let result = expression'。式をシーケンス内で値として使用する場合は、明示的に 'yield!' を使用してください。</target>
         <note />
       </trans-unit>
+      <trans-unit id="keywordDescriptionMatchBang">
+        <source>Used in computation expressions to pattern match directly over the result of another computation expression.</source>
+        <target state="new">Used in computation expressions to pattern match directly over the result of another computation expression.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ilreadFileChanged">
         <source>The file '{0}' changed on disk unexpectedly, please reload.</source>
-        <target state="new">The file '{0}' changed on disk unexpectedly, please reload.</target>
+        <target state="translated">ファイル '{0}' がディスク上で予期せず変更されました。再度読み込んでください。</target>
         <note />
       </trans-unit>
     </body>

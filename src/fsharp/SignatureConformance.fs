@@ -147,7 +147,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                               (errorR(Error(FSComp.SR.typrelSigImplNotCompatibleConstraintsDifferRemove(sigTypar.Name, Layout.showL(NicePrint.layoutTyparConstraint denv (sigTypar,sigTyparCx))),m)); false)
                           else  
                               true) &&
-                  (not checkingSig || checkAttribs aenv implTypar.Attribs sigTypar.Attribs (fun attribs -> implTypar.typar_attribs <- attribs)))
+                  (not checkingSig || checkAttribs aenv implTypar.Attribs sigTypar.Attribs (fun attribs -> implTypar.SetAttribs attribs)))
 
         and checkTypeDef (aenv: TypeEquivEnv) (implTycon:Tycon) (sigTycon:Tycon) =
             let m = implTycon.Range
@@ -183,7 +183,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 let unimpl = ListSet.subtract (fun fity aity -> typeAEquiv g aenv aity fity) fintfs aintfs
                 (unimpl |> List.forall (fun ity -> errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleMissingInterface(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName, NicePrint.minimalStringOfType denv ity),m)); false)) &&
                 let hidden = ListSet.subtract (typeAEquiv g aenv) aintfsUser fintfs
-                hidden |> List.iter (fun ity -> (if implTycon.IsFSharpInterfaceTycon then error else warning) (InterfaceNotRevealed(denv,ity,implTycon.Range)))
+                let warningOrError = if implTycon.IsFSharpInterfaceTycon then error else warning
+                hidden |> List.iter (fun ity -> warningOrError (InterfaceNotRevealed(denv,ity,implTycon.Range)))
 
                 let aNull = IsUnionTypeWithNullAsTrueValue g implTycon
                 let fNull = IsUnionTypeWithNullAsTrueValue g sigTycon
@@ -550,9 +551,11 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                        Printf.bprintf os "%s" fx.DisplayName),m))
             
             let valuesPartiallyMatch (av:Val) (fv:Val) =
-                (av.LinkagePartialKey.MemberParentMangledName = fv.LinkagePartialKey.MemberParentMangledName) &&
-                (av.LinkagePartialKey.LogicalName = fv.LinkagePartialKey.LogicalName) &&
-                (av.LinkagePartialKey.TotalArgCount = fv.LinkagePartialKey.TotalArgCount)    
+                let akey = av.GetLinkagePartialKey()
+                let fkey = fv.GetLinkagePartialKey()
+                (akey.MemberParentMangledName = fkey.MemberParentMangledName) &&
+                (akey.LogicalName = fkey.LogicalName) &&
+                (akey.TotalArgCount = fkey.TotalArgCount)    
                                        
             (implModType.AllValsAndMembersByLogicalNameUncached, signModType.AllValsAndMembersByLogicalNameUncached)
               ||> NameMap.suball2 

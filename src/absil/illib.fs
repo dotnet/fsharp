@@ -5,14 +5,12 @@ module public Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 
 
 open System
-open System.Collections
 open System.Collections.Generic
 open System.Diagnostics
 open System.IO
 open System.Reflection
-open System.Text
 open System.Threading
-open Internal.Utilities
+open System.Runtime.CompilerServices
 
 #if FX_RESHAPED_REFLECTION
 open Microsoft.FSharp.Core.ReflectionAdapters
@@ -40,7 +38,7 @@ let inline isSingleton l =
     | _ -> false
 
 let inline isNonNull x = not (isNull x)
-let inline nonNull msg x = if isNull x then failwith ("null: " ^ msg) else x
+let inline nonNull msg x = if isNull x then failwith ("null: " + msg) else x
 let inline (===) x y = LanguagePrimitives.PhysicalEquality x y
 
 //---------------------------------------------------------------------
@@ -448,16 +446,16 @@ module List =
 
 [<Struct>]
 type ValueOption<'T> =
-    | VSome of 'T
-    | VNone
-    member x.IsSome = match x with VSome _ -> true | VNone -> false
-    member x.IsNone = match x with VSome _ -> false | VNone -> true
-    member x.Value = match x with VSome r -> r | VNone -> failwith "ValueOption.Value: value is None"
+    | ValueSome of 'T
+    | ValueNone
+    member x.IsSome = match x with ValueSome _ -> true | ValueNone -> false
+    member x.IsNone = match x with ValueSome _ -> false | ValueNone -> true
+    member x.Value = match x with ValueSome r -> r | ValueNone -> failwith "ValueOption.Value: value is None"
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ValueOption =
-    let inline ofOption x = match x with Some x -> VSome x | None -> VNone
-    let inline bind f x = match x with VSome x -> f x | VNone -> VNone
+    let inline ofOption x = match x with Some x -> ValueSome x | None -> ValueNone
+    let inline bind f x = match x with ValueSome x -> f x | ValueNone -> ValueNone
 
 module String = 
     let indexNotFound() = raise (new KeyNotFoundException("An index for the character was not found in the string"))
@@ -561,10 +559,23 @@ module String =
             // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
             yield String.Empty
         |]
-module Dictionary = 
 
+module Dictionary = 
     let inline newWithSize (size: int) = Dictionary<_,_>(size, HashIdentity.Structural)
-        
+
+[<Extension>]
+type DictionaryExtensions() =
+    [<Extension>]
+    static member inline BagAdd(dic: Dictionary<'key, 'value list>, key: 'key, value: 'value) =
+        match dic.TryGetValue key with
+        | true, values -> dic.[key] <- value :: values
+        | _ -> dic.[key] <- [value]
+
+    [<Extension>]
+    static member inline BagExistsValueForKey(dic: Dictionary<'key, 'value list>, key: 'key, f: 'value -> bool) =
+        match dic.TryGetValue key with
+        | true, values -> values |> List.exists f
+        | _ -> false
 
 module Lazy = 
     let force (x: Lazy<'T>) = x.Force()
@@ -907,11 +918,10 @@ let _ = eventually { use x = null in return 1 }
 type UniqueStampGenerator<'T when 'T : equality>() = 
     let encodeTab = new Dictionary<'T,int>(HashIdentity.Structural)
     let mutable nItems = 0
-    let encode str = 
-        if encodeTab.ContainsKey(str)
-        then
-            encodeTab.[str]
-        else
+    let encode str =
+        match encodeTab.TryGetValue(str) with
+        | true, idx -> idx
+        | _ ->
             let idx = nItems
             encodeTab.[str] <- idx
             nItems <- nItems + 1
@@ -1146,7 +1156,6 @@ module MultiMap =
     let find v (m: MultiMap<_,_>) = match Map.tryFind v m with None -> [] | Some r -> r
     let add v x (m: MultiMap<_,_>) = Map.add v (x :: find v m) m
     let range (m: MultiMap<_,_>) = Map.foldBack (fun _ x sofar -> x @ sofar) m []
-    //let chooseRange f (m: MultiMap<_,_>) = Map.foldBack (fun _ x sofar -> List.choose f x @ sofar) m []
     let empty : MultiMap<_,_> = Map.empty
     let initBy f xs : MultiMap<_,_> = xs |> Seq.groupBy f |> Seq.map (fun (k,v) -> (k,List.ofSeq v)) |> Map.ofSeq 
 
@@ -1237,7 +1246,7 @@ module Shim =
         interface IFileSystem with
 
             member __.AssemblyLoadFrom(fileName: string) = 
-                Assembly.LoadFrom fileName
+                Assembly.UnsafeLoadFrom fileName
 
             member __.AssemblyLoad(assemblyName: AssemblyName) = 
                 Assembly.Load assemblyName
@@ -1291,7 +1300,7 @@ module Shim =
         static member ReadBinaryChunk (fileName, start, len) = 
             use stream = FileSystem.FileStreamReadShim fileName
             stream.Seek(int64 start, SeekOrigin.Begin) |> ignore
-            let buffer = Array.zeroCreate  len 
+            let buffer = Array.zeroCreate len 
             let mutable n = 0
             while n < len do 
                 n <- n + stream.Read(buffer, n, len-n)

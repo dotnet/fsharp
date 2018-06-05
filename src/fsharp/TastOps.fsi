@@ -136,6 +136,7 @@ val mkMultiLambdaBind : Val -> SequencePointInfoForBinding -> range -> Typars ->
 val mkCompGenBind : Val -> Expr -> Binding
 val mkCompGenBinds : Val list -> Exprs -> Bindings
 val mkCompGenLet : range -> Val -> Expr -> Expr -> Expr
+val mkCompGenLetIn: range -> string -> TType -> Expr -> (Val * Expr -> Expr) -> Expr
 
 // Invisible bindings are never given a sequence point and should never have side effects
 val mkInvisibleLet : range -> Val -> Expr -> Expr -> Expr
@@ -251,7 +252,7 @@ val mkGetTupleItemN : TcGlobals -> range -> int -> ILType -> bool -> Expr -> TTy
 val evalTupInfoIsStruct : TupInfo -> bool
 
 /// If it is a tuple type, ensure it's outermost type is a .NET tuple type, otherwise leave unchanged
-val helpEnsureTypeHasMetadata : TcGlobals -> TType -> TType
+val convertToTypeWithMetadataIfPossible : TcGlobals -> TType -> TType
 
 
 //-------------------------------------------------------------------------
@@ -306,6 +307,7 @@ type ValMultiMap<'T> =
 type TyparMap<'T>  =
     member Item : Typar -> 'T with get
     member ContainsKey : Typar -> bool
+    member TryFind : Typar -> 'T option
     member Add : Typar * 'T -> TyparMap<'T> 
     static member Empty : TyparMap<'T> 
 
@@ -520,6 +522,7 @@ val emptyFreeTycons : FreeTycons
 val unionFreeTycons : FreeTycons -> FreeTycons -> FreeTycons
 
 val emptyFreeTyvars : FreeTyvars
+val isEmptyFreeTyvars : FreeTyvars -> bool
 val unionFreeTyvars : FreeTyvars -> FreeTyvars -> FreeTyvars
 
 val emptyFreeLocals : FreeLocals
@@ -549,6 +552,7 @@ val freeInTypeLeftToRight : TcGlobals -> bool -> TType -> Typars
 val freeInTypesLeftToRight : TcGlobals -> bool -> TType list -> Typars
 val freeInTypesLeftToRightSkippingConstraints : TcGlobals -> TType list -> Typars
 
+val freeInModuleTy: ModuleOrNamespaceType -> FreeTyvars
 
 val isDimensionless : TcGlobals -> TType -> bool
 
@@ -1090,9 +1094,9 @@ val TypeHasDefaultValue : TcGlobals -> range -> TType -> bool
 
 val isAbstractTycon : Tycon -> bool
 
-val isUnionCaseRefAllocObservable : UnionCaseRef -> bool
-val isRecdOrUnionOrStructTyconRefAllocObservable : TcGlobals -> TyconRef -> bool
-val isExnAllocObservable : TyconRef -> bool 
+val isUnionCaseRefDefinitelyMutable : UnionCaseRef -> bool
+val isRecdOrUnionOrStructTyconRefDefinitelyMutable : TcGlobals -> TyconRef -> bool
+val isExnDefinitelyMutable : TyconRef -> bool 
 val isUnionCaseFieldMutable : TcGlobals -> UnionCaseRef -> int -> bool
 val isExnFieldMutable : TyconRef -> int -> bool
 
@@ -1546,3 +1550,8 @@ val (|InnerExprPat|) : Expr -> Expr
 val allValsOfModDef : ModuleOrNamespaceExpr -> seq<Val>
 
 val BindUnitVars : TcGlobals -> (Val list * ArgReprInfo list * Expr) -> Val list * Expr
+
+val isThreadOrContextStatic: TcGlobals -> Attrib list -> bool
+
+val mkUnitDelayLambda: TcGlobals -> range -> Expr -> Expr
+

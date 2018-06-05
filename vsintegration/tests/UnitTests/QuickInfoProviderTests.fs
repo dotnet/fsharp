@@ -36,6 +36,7 @@ let filePath = "C:\\test.fs"
 
 let internal projectOptions = { 
     ProjectFileName = "C:\\test.fsproj"
+    ProjectId = None
     SourceFiles =  [| filePath |]
     ReferencedProjects = [| |]
     OtherOptions = [| |]
@@ -99,7 +100,7 @@ Full name: System.Console"
         
         let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
         let quickInfo =
-            FSharpQuickInfoProvider.ProvideQuickInfo(checker, documentId, SourceText.From(fileContents), filePath, caretPosition, parsingOptions, projectOptions, 0)
+            FSharpAsyncQuickInfoSource.ProvideQuickInfo(checker, documentId, SourceText.From(fileContents), filePath, caretPosition, parsingOptions, projectOptions, 0)
             |> Async.RunSynchronously
         
         let actual = quickInfo |> Option.map (fun (text, _, _, _) -> getQuickInfoText text)
@@ -230,7 +231,7 @@ let res8 = abs 5.0<kg>
         
         let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
         let quickInfo =
-            FSharpQuickInfoProvider.ProvideQuickInfo(checker, documentId, SourceText.From(fileContents), filePath, caretPosition, parsingOptions, projectOptions, 0)
+            FSharpAsyncQuickInfoSource.ProvideQuickInfo(checker, documentId, SourceText.From(fileContents), filePath, caretPosition, parsingOptions, projectOptions, 0)
             |> Async.RunSynchronously
         
         let actual = quickInfo |> Option.map (fun (text, _, _, _) -> getQuickInfoText text)

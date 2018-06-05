@@ -14,4 +14,8 @@
     <PackageReference Include="FSharp.Core" Version="4.1.*" />
     <ProjectReference Include="..\..\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj" />
   </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net46'">
+    <Reference Include="System.Runtime" />
+    <Reference Include="System.IO" />
+  </ItemGroup>
 </Project>

@@ -68,11 +68,17 @@ let rec GetImmediateIntrinsicMethInfosOfTypeAux (optFilter,ad) g amap m origTy m
             mdefs |> List.map (fun mdef -> MethInfo.CreateILMeth(amap, m, origTy, mdef)) 
 
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
-            // Tuple types also support the properties Item1-8, Rest from the compiled tuple type
+            // Tuple types also support the methods get_Item1-8, get_Rest from the compiled tuple type.
             // In this case convert to the .NET Tuple type that carries metadata and try again
             if isAnyTupleTy g metadataTy then 
-                let betterMetadataTy = helpEnsureTypeHasMetadata g metadataTy
+                let betterMetadataTy = convertToTypeWithMetadataIfPossible g metadataTy
                 GetImmediateIntrinsicMethInfosOfTypeAux (optFilter,ad) g amap m origTy betterMetadataTy
+            // Function types support methods FSharpFunc<_,_>.FromConverter and friends from .NET metadata, 
+            // but not instance methods (you can't write "f.Invoke(x)", you have to write "f x")
+            elif isFunTy g metadataTy then 
+                let betterMetadataTy = convertToTypeWithMetadataIfPossible g metadataTy
+                GetImmediateIntrinsicMethInfosOfTypeAux (optFilter,ad) g amap m origTy betterMetadataTy
+                  |> List.filter (fun minfo -> not minfo.IsInstance)
             else
                 match tryDestAppTy g metadataTy with
                 | None -> []
@@ -102,17 +108,16 @@ type PropertyCollector(g, amap, m, typ, optFilter, ad) =
     let props = new Dictionary<PropInfo,PropInfo>(hashIdentity)
 
     let add pinfo =
-        if props.ContainsKey(pinfo) then 
-            match props.[pinfo], pinfo with 
-            | FSProp (_,typ,Some vref1,_), FSProp (_,_,_,Some vref2)
-            | FSProp (_,typ,_,Some vref2), FSProp (_,_,Some vref1,_)  -> 
-                let pinfo = FSProp (g,typ,Some vref1,Some vref2)
-                props.[pinfo] <- pinfo 
-            | _ -> 
-                // This assert fires while editing bad code. We will give a warning later in check.fs
-                //assert ("unexpected case"= "")
-                ()
-        else
+        match props.TryGetValue(pinfo), pinfo with
+        | (true, FSProp (_, typ, Some vref1 ,_)), FSProp (_, _, _, Some vref2)
+        | (true, FSProp (_, typ, _, Some vref2)), FSProp (_, _, Some vref1, _) ->
+            let pinfo = FSProp (g,typ,Some vref1,Some vref2)
+            props.[pinfo] <- pinfo 
+        | (true, _), _ -> 
+            // This assert fires while editing bad code. We will give a warning later in check.fs
+            //assert ("unexpected case"= "")
+            ()
+        | _ ->
             props.[pinfo] <- pinfo
 
     member x.Collect(membInfo:ValMemberInfo,vref:ValRef) = 
@@ -159,8 +164,8 @@ let rec GetImmediateIntrinsicPropInfosOfTypeAux (optFilter,ad) g amap m origTy m
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
             // Tuple types also support the properties Item1-8, Rest from the compiled tuple type
             // In this case convert to the .NET Tuple type that carries metadata and try again
-            if isAnyTupleTy g metadataTy then 
-                let betterMetadataTy = helpEnsureTypeHasMetadata g metadataTy
+            if isAnyTupleTy g metadataTy || isFunTy g metadataTy then 
+                let betterMetadataTy = convertToTypeWithMetadataIfPossible g metadataTy
                 GetImmediateIntrinsicPropInfosOfTypeAux (optFilter,ad) g amap m origTy betterMetadataTy
             else
                 match tryDestAppTy g metadataTy with
@@ -457,10 +462,10 @@ let rec GetIntrinsicConstructorInfosOfTypeAux (infoReader:InfoReader) m origTy m
         |> List.map (fun mdef -> MethInfo.CreateILMeth (amap, m, origTy, mdef)) 
 
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
-        // Tuple types also support the properties Item1-8, Rest from the compiled tuple type
-        // In this case convert to the .NET Tuple type that carries metadata and try again
-        if isAnyTupleTy g metadataTy then 
-            let betterMetadataTy = helpEnsureTypeHasMetadata g metadataTy
+        // Tuple types also support constructors. In this case convert to the .NET Tuple type that carries metadata and try again
+        // Function types also support constructors. In this case convert to the FSharpFunc type that carries metadata and try again
+        if isAnyTupleTy g metadataTy || isFunTy g metadataTy then 
+            let betterMetadataTy = convertToTypeWithMetadataIfPossible g metadataTy
             GetIntrinsicConstructorInfosOfTypeAux infoReader m origTy betterMetadataTy
         else
             match tryDestAppTy g metadataTy with

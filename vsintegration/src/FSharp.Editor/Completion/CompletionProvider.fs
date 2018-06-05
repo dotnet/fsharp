@@ -21,6 +21,9 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open System.Runtime.Caching
+open System.Collections.Concurrent
+
+module Logger = Microsoft.VisualStudio.FSharp.Editor.Logger
 
 type internal FSharpCompletionProvider
     (
@@ -34,8 +37,9 @@ type internal FSharpCompletionProvider
     inherit CompletionProvider()
 
     static let userOpName = "CompletionProvider"
-    // Save the backing data in a memory cache held in a sliding window
-    static let declarationItemsCache = new MemoryCache("FSharp.Editor." + userOpName)
+    // Save the backing data in a cache, we need to save for at least the length of the completion session
+    // See https://github.com/Microsoft/visualfsharp/issues/4714
+    static let declarationItemsData = new ConcurrentDictionary<string, FSharpDeclarationListItem>()
     static let [<Literal>] NameInCodePropName = "NameInCode"
     static let [<Literal>] FullNamePropName = "FullName"
     static let [<Literal>] IsExtensionMemberPropName = "IsExtensionMember"
@@ -53,8 +57,7 @@ type internal FSharpCompletionProvider
     
     let checker = checkerProvider.Checker
 
-    let xmlMemberIndexService = serviceProvider.GetService(typeof<IVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
-    let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
+    let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(serviceProvider.XMLMemberIndexService)
         
     static let noCommitOnSpaceRules = 
         // These are important.  They make sure we don't _commit_ autocompletion when people don't expect them to.  Some examples:
@@ -140,6 +143,7 @@ type internal FSharpCompletionProvider
 
             let maxHints = if mruItems.Values.Count = 0 then 0 else Seq.max mruItems.Values
 
+            declarationItemsData.Clear()
             sortedDeclItems |> Array.iteri (fun number declarationItem ->
                 let glyph = Tokenizer.FSharpGlyphToRoslynGlyph (declarationItem.Glyph, declarationItem.Accessibility)
                 let name =
@@ -185,9 +189,7 @@ type internal FSharpCompletionProvider
                 let completionItem = completionItem.WithSortText(sortText)
 
                 let key = completionItem.DisplayText
-                let cacheItem = CacheItem(key, declarationItem)
-                let policy = CacheItemPolicy(SlidingExpiration=DefaultTuning.PerDocumentSavedDataSlidingWindow)
-                declarationItemsCache.Set(cacheItem, policy)
+                declarationItemsData.TryAdd(key, declarationItem) |> ignore
                 results.Add(completionItem))
 
             if results.Count > 0 && not declarations.IsForType && not declarations.IsError && List.isEmpty partialName.QualifyingIdents then
@@ -206,6 +208,8 @@ type internal FSharpCompletionProvider
         }
 
     override this.ShouldTriggerCompletion(sourceText: SourceText, caretPosition: int, trigger: CompletionTrigger, _: OptionSet) =
+        use _logBlock = Logger.LogBlockMessage this.Name LogEditorFunctionId.Completion_ShouldTrigger
+
         let getInfo() = 
             let documentId = workspace.GetDocumentIdInCurrentContext(sourceText.Container)
             let document = workspace.CurrentSolution.GetDocument(documentId)
@@ -213,9 +217,11 @@ type internal FSharpCompletionProvider
             (documentId, document.FilePath, defines)
 
         FSharpCompletionProvider.ShouldTriggerCompletionAux(sourceText, caretPosition, trigger.Kind, getInfo)
-    
+        
     override this.ProvideCompletionsAsync(context: Completion.CompletionContext) =
         asyncMaybe {
+            use _logBlock = Logger.LogBlockMessage context.Document.Name LogEditorFunctionId.Completion_ProvideCompletionsAsync
+
             let document = context.Document
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
             let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
@@ -229,13 +235,16 @@ type internal FSharpCompletionProvider
             let! results = 
                 FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, sourceText, context.Position, projectOptions, 
                                                                     document.FilePath, textVersion.GetHashCode(), getAllSymbols)
+            
             context.AddItems(results)
         } |> Async.Ignore |> RoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
         
-    override this.GetDescriptionAsync(_: Document, completionItem: Completion.CompletionItem, cancellationToken: CancellationToken): Task<CompletionDescription> =
+    override this.GetDescriptionAsync(document: Document, completionItem: Completion.CompletionItem, cancellationToken: CancellationToken): Task<CompletionDescription> =
         async {
-            match declarationItemsCache.Get(completionItem.DisplayText) with
-            | :? FSharpDeclarationListItem as declarationItem -> 
+            use _logBlock = Logger.LogBlockMessage document.Name LogEditorFunctionId.Completion_GetDescriptionAsync
+            
+            match declarationItemsData.TryGetValue(completionItem.DisplayText) with
+            | true, declarationItem -> 
                 let! description = declarationItem.StructuredDescriptionTextAsync
                 let documentation = List()
                 let collector = RoslynHelpers.CollectTaggedText documentation
@@ -248,6 +257,8 @@ type internal FSharpCompletionProvider
 
     override this.GetChangeAsync(document, item, _, cancellationToken) : Task<CompletionChange> =
         async {
+            use _logBlock = Logger.LogBlockMessage document.Name LogEditorFunctionId.Completion_GetChangeAsync
+
             let fullName =
                 match item.Properties.TryGetValue FullNamePropName with
                 | true, x -> Some x
@@ -285,7 +296,7 @@ type internal FSharpCompletionProvider
                         if Settings.CodeFixes.AlwaysPlaceOpensAtTopLevel then OpenStatementInsertionPoint.TopLevel
                         else OpenStatementInsertionPoint.Nearest
 
-                    let! ctx = ParsedInput.tryFindNearestPointToInsertOpenDeclaration line.LineNumber parsedInput fullNameIdents insertionPoint
+                    let ctx = ParsedInput.findNearestPointToInsertOpenDeclaration line.LineNumber parsedInput fullNameIdents insertionPoint
                     let finalSourceText, changedSpanStartPos = OpenDeclarationHelper.insertOpenDeclaration textWithItemCommitted ctx ns
                     let fullChangingSpan = TextSpan.FromBounds(changedSpanStartPos, item.Span.End)
                     let changedSpan = TextSpan.FromBounds(changedSpanStartPos, item.Span.End + (finalSourceText.Length - sourceText.Length))

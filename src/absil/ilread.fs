@@ -925,8 +925,14 @@ let mkCacheGeneric lowMem _inbase _nm _sz  =
             | null -> cache := new Dictionary<_, _>(11 (* sz:int *) ) 
             | _ -> ()
             !cache
-        if cache.ContainsKey idx then (incr count; cache.[idx])
-        else let res = f idx in cache.[idx] <- res; res 
+        match cache.TryGetValue(idx) with
+        | true, v ->
+            incr count
+            v
+        | _ ->
+            let res = f idx
+            cache.[idx] <- res
+            res
 
 //-----------------------------------------------------------------------
 // Polymorphic general helpers for searching for particular rows.
@@ -2667,11 +2673,10 @@ and seekReadImplMap (ctxt: ILMetadataReader)  nm midx =
 and seekReadTopCode (ctxt: ILMetadataReader)  pev mdv numtypars (sz:int) start seqpoints = 
    let labelsOfRawOffsets = new Dictionary<_, _>(sz/2)
    let ilOffsetsOfLabels = new Dictionary<_, _>(sz/2)
-   let tryRawToLabel rawOffset = 
-       if labelsOfRawOffsets.ContainsKey rawOffset then 
-           Some(labelsOfRawOffsets.[rawOffset])
-       else 
-           None
+   let tryRawToLabel rawOffset =
+       match labelsOfRawOffsets.TryGetValue(rawOffset) with
+       | true, v -> Some v
+       | _ -> None
 
    let rawToLabel rawOffset = 
        match tryRawToLabel rawOffset with 
@@ -3107,11 +3112,9 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
                       end
                    
                     let key =  (tryStart, tryFinish)
-                    if sehMap.ContainsKey key then 
-                        let prev = sehMap.[key]
-                        sehMap.[key] <- (prev @ [clause])
-                    else 
-                        sehMap.[key] <- [clause])
+                    match sehMap.TryGetValue(key) with
+                    | true, prev -> sehMap.[key] <- prev @ [clause]
+                    | _ -> sehMap.[key] <- [clause])
                   clauses
                 ([], sehMap) ||> Seq.fold  (fun acc (KeyValue(key, bs)) -> [ for b in bs -> {Range=key; Clause=b} : ILExceptionSpec ] @ acc)  
              seh := sehClauses
@@ -3228,14 +3231,18 @@ and seekReadManifestResources (ctxt: ILMetadataReader) (mdv: BinaryView) (pectxt
              let scoref = seekReadImplAsScopeRef ctxt mdv implIdx
 
              let location = 
-               match scoref with
-               | ILScopeRef.Local -> 
-                  let start = pectxtEager.anyV2P ("resource", offset + pectxtEager.resourcesAddr)
-                  let resourceLength = seekReadInt32 pevEager start
-                  let offsetOfBytesFromStartOfPhysicalPEFile = start + 4
-                  ILResourceLocation.LocalIn (ctxt.fileName, offsetOfBytesFromStartOfPhysicalPEFile, resourceLength)
-               | ILScopeRef.Module mref -> ILResourceLocation.File (mref, offset)
-               | ILScopeRef.Assembly aref -> ILResourceLocation.Assembly aref
+                match scoref with
+                | ILScopeRef.Local ->
+                    let start = pectxtEager.anyV2P ("resource", offset + pectxtEager.resourcesAddr)
+                    let resourceLength = seekReadInt32 pevEager start
+                    let offsetOfBytesFromStartOfPhysicalPEFile = start + 4
+                    if pectxtEager.noFileOnDisk then
+                        ILResourceLocation.LocalOut (seekReadBytes pevEager offsetOfBytesFromStartOfPhysicalPEFile resourceLength)                     
+                    else
+                        ILResourceLocation.LocalIn (ctxt.fileName, offsetOfBytesFromStartOfPhysicalPEFile, resourceLength)
+
+                | ILScopeRef.Module mref -> ILResourceLocation.File (mref, offset)
+                | ILScopeRef.Assembly aref -> ILResourceLocation.Assembly aref
 
              let r = 
                { Name= readStringHeap ctxt nameIdx
@@ -3293,8 +3300,8 @@ and seekReadTopExportedTypes (ctxt: ILMetadataReader)  =
             ])
 
 #if !FX_NO_PDB_READER
-let getPdbReader pdbPath fileName =  
-    match pdbPath with 
+let getPdbReader pdbDirPath fileName =  
+    match pdbDirPath with 
     | None -> None
     | Some pdbpath ->
          try 
@@ -3310,7 +3317,10 @@ let getPdbReader pdbPath fileName =
                                             documentType = Some (pdbDocumentGetType pdbdoc), 
                                             file = url))
 
-              let docfun url = if tab.ContainsKey url then tab.[url] else failwith ("Document with URL "+url+" not found in list of documents in the PDB file")
+              let docfun url =
+                  match tab.TryGetValue(url) with
+                  | true, doc -> doc
+                  | _ -> failwith ("Document with URL " + url + " not found in list of documents in the PDB file")
               Some (pdbr, docfun)
           with e -> dprintn ("* Warning: PDB file could not be read and will be ignored: "+e.Message); None         
 #endif
@@ -3703,7 +3713,7 @@ let openMetadataReader (fileName, mdfile: BinaryFile, metadataPhysLoc, peinfo, p
 // read of the AbsIL module.
 // ----------------------------------------------------------------------
 
-let openPEFileReader (fileName, pefile: BinaryFile, pdbPath, noFileOnDisk) = 
+let openPEFileReader (fileName, pefile: BinaryFile, pdbDirPath, noFileOnDisk) = 
     let pev = pefile.GetView()
     (* MSDOS HEADER *)
     let peSignaturePhysLoc = seekReadInt32 pev 0x3c
@@ -3870,13 +3880,13 @@ let openPEFileReader (fileName, pefile: BinaryFile, pdbPath, noFileOnDisk) =
    // Set up the PDB reader so we can read debug info for methods.
    // ----------------------------------------------------------------------
 #if FX_NO_PDB_READER
-    let pdb = ignore pdbPath; None
+    let pdb = ignore pdbDirPath; None
 #else
     let pdb = 
         if runningOnMono then 
             None 
         else 
-            getPdbReader pdbPath fileName
+            getPdbReader pdbDirPath fileName
 #endif
 
     let pectxt : PEReader = 
@@ -3901,8 +3911,8 @@ let openPEFileReader (fileName, pefile: BinaryFile, pdbPath, noFileOnDisk) =
     let peinfo = (subsys, (subsysMajor, subsysMinor), useHighEnthropyVA, ilOnly, only32, is32bitpreferred, only64, platform, isDll, alignVirt, alignPhys, imageBaseReal)
     (metadataPhysLoc, metadataSize, peinfo, pectxt, pev, pdb)
 
-let openPE (fileName, pefile, pdbPath, reduceMemoryUsage, ilGlobals, noFileOnDisk) = 
-    let (metadataPhysLoc, _metadataSize, peinfo, pectxt, pev, pdb) = openPEFileReader (fileName, pefile, pdbPath, noFileOnDisk) 
+let openPE (fileName, pefile, pdbDirPath, reduceMemoryUsage, ilGlobals, noFileOnDisk) = 
+    let (metadataPhysLoc, _metadataSize, peinfo, pectxt, pev, pdb) = openPEFileReader (fileName, pefile, pdbDirPath, noFileOnDisk) 
     let ilModule, ilAssemblyRefs = openMetadataReader (fileName, pefile, metadataPhysLoc, peinfo, pectxt, pev, Some pectxt, reduceMemoryUsage, ilGlobals)
     ilModule, ilAssemblyRefs, pdb
 
@@ -3929,17 +3939,26 @@ type MetadataOnlyFlag = Yes | No
 type ReduceMemoryFlag = Yes | No
 
 type ILReaderOptions =
-    { pdbPath: string option
+    { pdbDirPath: string option
       ilGlobals: ILGlobals
       reduceMemoryUsage: ReduceMemoryFlag
       metadataOnly: MetadataOnlyFlag
       tryGetMetadataSnapshot: ILReaderTryGetMetadataSnapshot }
 
+
+type ILModuleReader =
+    abstract ILModuleDef : ILModuleDef
+    abstract ILAssemblyRefs : ILAssemblyRef list
+    
+    /// ILModuleReader objects only need to be explicitly disposed if memory mapping is used, i.e. reduceMemoryUsage = false
+    inherit  System.IDisposable
+
+
 [<Sealed>]
-type ILModuleReader(ilModule: ILModuleDef, ilAssemblyRefs: Lazy<ILAssemblyRef list>, dispose: unit -> unit) =
-    member x.ILModuleDef = ilModule
-    member x.ILAssemblyRefs = ilAssemblyRefs.Force()
-    interface IDisposable with
+type ILModuleReaderImpl(ilModule: ILModuleDef, ilAssemblyRefs: Lazy<ILAssemblyRef list>, dispose: unit -> unit) =
+    interface ILModuleReader with
+        member x.ILModuleDef = ilModule
+        member x.ILAssemblyRefs = ilAssemblyRefs.Force()
         member x.Dispose() = dispose()
     
 // ++GLOBAL MUTABLE STATE (concurrency safe via locking)
@@ -3979,8 +3998,8 @@ let tryMemoryMapWholeFile opts fileName =
 
 let OpenILModuleReaderFromBytes fileName bytes opts = 
     let pefile = ByteFile(fileName, bytes) :> BinaryFile
-    let ilModule, ilAssemblyRefs, pdb = openPE (fileName, pefile, opts.pdbPath, (opts.reduceMemoryUsage = ReduceMemoryFlag.Yes), opts.ilGlobals, true)
-    new ILModuleReader(ilModule, ilAssemblyRefs, (fun () -> ClosePdbReader pdb))
+    let ilModule, ilAssemblyRefs, pdb = openPE (fileName, pefile, opts.pdbDirPath, (opts.reduceMemoryUsage = ReduceMemoryFlag.Yes), opts.ilGlobals, true)
+    new ILModuleReaderImpl(ilModule, ilAssemblyRefs, (fun () -> ClosePdbReader pdb)) :> ILModuleReader
 
 let OpenILModuleReader fileName opts = 
     // Pseudo-normalize the paths.
@@ -3988,7 +4007,7 @@ let OpenILModuleReader fileName opts =
         try 
            let fullPath = FileSystem.GetFullPathShim(fileName)
            let writeTime = FileSystem.GetLastWriteTimeShim(fileName)
-           let key = ILModuleReaderCacheKey (fullPath, writeTime, opts.ilGlobals.primaryAssemblyScopeRef, opts.pdbPath.IsSome, opts.reduceMemoryUsage, opts.metadataOnly)
+           let key = ILModuleReaderCacheKey (fullPath, writeTime, opts.ilGlobals.primaryAssemblyScopeRef, opts.pdbDirPath.IsSome, opts.reduceMemoryUsage, opts.metadataOnly)
            key, true
         with exn -> 
             System.Diagnostics.Debug.Assert(false, sprintf "Failed to compute key in OpenILModuleReader cache for '%s'. Falling back to uncached. Error = %s" fileName (exn.ToString())) 
@@ -3997,7 +4016,7 @@ let OpenILModuleReader fileName opts =
 
     let cacheResult = 
         if keyOk then 
-            if opts.pdbPath.IsSome then None // can't used a cached entry when reading PDBs, since it makes the returned object IDisposable
+            if opts.pdbDirPath.IsSome then None // can't used a cached entry when reading PDBs, since it makes the returned object IDisposable
             else ilModuleReaderCacheLock.AcquireLock (fun ltok -> ilModuleReaderCache.TryGet(ltok, key))
         else 
             None
@@ -4009,7 +4028,7 @@ let OpenILModuleReader fileName opts =
     let reduceMemoryUsage = (opts.reduceMemoryUsage = ReduceMemoryFlag.Yes)
     let metadataOnly = (opts.metadataOnly = MetadataOnlyFlag.Yes) 
 
-    if reduceMemoryUsage && opts.pdbPath.IsNone then 
+    if reduceMemoryUsage && opts.pdbDirPath.IsNone then 
 
         // This case is used in FCS applications, devenv.exe and fsi.exe
         //
@@ -4036,18 +4055,18 @@ let OpenILModuleReader fileName opts =
                         createByteFileChunk opts fullPath (Some (metadataPhysLoc, metadataSize))
 
                 let ilModule, ilAssemblyRefs = openPEMetadataOnly (fullPath, peinfo, pectxtEager, pevEager, mdfile, reduceMemoryUsage, opts.ilGlobals) 
-                new ILModuleReader(ilModule, ilAssemblyRefs, ignore)
+                new ILModuleReaderImpl(ilModule, ilAssemblyRefs, ignore)
             else
                 // If we are not doing metadata-only, then just go ahead and read all the bytes and hold them either strongly or weakly
                 // depending on the heuristic
                 let pefile = createByteFileChunk opts fullPath None
                 let ilModule, ilAssemblyRefs, _pdb = openPE (fullPath, pefile, None, reduceMemoryUsage, opts.ilGlobals, false) 
-                new ILModuleReader(ilModule, ilAssemblyRefs, ignore)
+                new ILModuleReaderImpl(ilModule, ilAssemblyRefs, ignore)
 
         if keyOk then 
             ilModuleReaderCacheLock.AcquireLock (fun ltok -> ilModuleReaderCache.Put(ltok, key, ilModuleReader))
 
-        ilModuleReader
+        ilModuleReader :> ILModuleReader
                 
     else
         // This case is primarily used in fsc.exe. 
@@ -4068,14 +4087,26 @@ let OpenILModuleReader fileName opts =
                 let disposer = { new IDisposable with member __.Dispose() = () }
                 disposer, pefile
 
-        let ilModule, ilAssemblyRefs, pdb = openPE (fullPath, pefile, opts.pdbPath, reduceMemoryUsage, opts.ilGlobals, false)
-        let ilModuleReader = new ILModuleReader(ilModule, ilAssemblyRefs, (fun () -> ClosePdbReader pdb))
+        let ilModule, ilAssemblyRefs, pdb = openPE (fullPath, pefile, opts.pdbDirPath, reduceMemoryUsage, opts.ilGlobals, false)
+        let ilModuleReader = new ILModuleReaderImpl(ilModule, ilAssemblyRefs, (fun () -> ClosePdbReader pdb))
 
         // Readers with PDB reader disposal logic don't go in the cache.  Note the PDB reader is only used in static linking.
-        if keyOk && opts.pdbPath.IsNone then 
+        if keyOk && opts.pdbDirPath.IsNone then 
             ilModuleReaderCacheLock.AcquireLock (fun ltok -> ilModuleReaderCache.Put(ltok, key, ilModuleReader))
 
-        ilModuleReader
+        ilModuleReader :> ILModuleReader
 
+[<AutoOpen>]
+module Shim =
+    open Microsoft.FSharp.Compiler.Lib
 
+    type IAssemblyReader =
+        abstract GetILModuleReader: filename: string * readerOptions: ILReaderOptions -> ILModuleReader
 
+    [<Sealed>]
+    type DefaultAssemblyReader() =
+        interface IAssemblyReader with
+            member __.GetILModuleReader(filename, readerOptions) =
+                OpenILModuleReader filename readerOptions
+
+    let mutable AssemblyReader = DefaultAssemblyReader() :> IAssemblyReader

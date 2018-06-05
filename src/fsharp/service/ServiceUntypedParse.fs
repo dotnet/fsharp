@@ -228,38 +228,49 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
                       | None -> ()
                       yield! walkExprs (List.map (fun (_, v, _) -> v) fs |> List.choose id)
 
-                  | SynExpr.ObjExpr (_,_,bs,is,_,_) -> 
+                  | SynExpr.ObjExpr (_,args,bs,is,_,_) -> 
+                      match args with
+                      | None -> ()
+                      | Some (arg,_) -> yield! walkExpr false arg
                       yield! walkBinds bs  
                       for (InterfaceImpl(_,bs,_)) in is do yield! walkBinds bs
+
                   | SynExpr.While (spWhile,e1,e2,_) -> 
                       yield! walkWhileSeqPt spWhile
                       yield! walkExpr false e1 
                       yield! walkExpr true e2
+
                   | SynExpr.JoinIn(e1, _range, e2, _range2) -> 
                       yield! walkExpr false e1 
                       yield! walkExpr false e2
+
                   | SynExpr.For (spFor,_,e1,_,e2,e3,_) -> 
                       yield! walkForSeqPt spFor
                       yield! walkExpr false e1 
                       yield! walkExpr true e2 
                       yield! walkExpr true e3
+
                   | SynExpr.ForEach (spFor,_,_,_,e1,e2,_) ->
                       yield! walkForSeqPt spFor
                       yield! walkExpr false e1 
                       yield! walkExpr true e2 
+
                   | SynExpr.MatchLambda(_isExnMatch,_argm,cl,spBind,_wholem) -> 
                       yield! walkBindSeqPt spBind
                       for (Clause(_,whenExpr,e,_,_)) in cl do 
                           yield! walkExprOpt false whenExpr
                           yield! walkExpr true e 
+
                   | SynExpr.Lambda (_,_,_,e,_) -> 
                       yield! walkExpr true e 
+
                   | SynExpr.Match (spBind,e,cl,_,_) ->
                       yield! walkBindSeqPt spBind
                       yield! walkExpr false e 
                       for (Clause(_,whenExpr,e,_,_)) in cl do 
                           yield! walkExprOpt false whenExpr
                           yield! walkExpr true e 
+
                   | SynExpr.LetOrUse (_,_,bs,e,_) -> 
                       yield! walkBinds bs  
                       yield! walkExpr true e
@@ -275,21 +286,26 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
                       yield! walkExpr true e2
                       yield! walkTrySeqPt spTry
                       yield! walkFinallySeqPt spFinally
+
                   | SynExpr.Sequential (spSeq,_,e1,e2,_) -> 
                       yield! walkExpr (match spSeq with SuppressSequencePointOnStmtOfSequential -> false | _ -> true) e1
                       yield! walkExpr (match spSeq with SuppressSequencePointOnExprOfSequential -> false | _ -> true) e2
+
                   | SynExpr.IfThenElse (e1,e2,e3opt,spBind,_,_,_) ->
                       yield! walkBindSeqPt spBind
                       yield! walkExpr false e1
                       yield! walkExpr true e2
                       yield! walkExprOpt true e3opt
+
                   | SynExpr.DotIndexedGet (e1,es,_,_) -> 
                       yield! walkExpr false e1 
                       yield! walkExprs [ for e in es do yield! e.Exprs ]
+
                   | SynExpr.DotIndexedSet (e1,es,e2,_,_,_) ->
                       yield! walkExpr false e1 
                       yield! walkExprs [ for e in es do yield! e.Exprs ]
                       yield! walkExpr false e2 
+
                   | SynExpr.DotNamedIndexedPropertySet (e1,_,e2,e3,_) ->
                       yield! walkExpr false e1 
                       yield! walkExpr false e2 
@@ -298,7 +314,14 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
                   | SynExpr.LetOrUseBang  (spBind,_,_,_,e1,e2,_) -> 
                       yield! walkBindSeqPt spBind
                       yield! walkExpr true e1
-                      yield! walkExpr true e2 ]
+                      yield! walkExpr true e2
+
+                  | SynExpr.MatchBang (spBind,e,cl,_,_) ->
+                      yield! walkBindSeqPt spBind
+                      yield! walkExpr false e 
+                      for (Clause(_,whenExpr,e,_,_)) in cl do 
+                          yield! walkExprOpt false whenExpr
+                          yield! walkExpr true e ]
             
             // Process a class declaration or F# type declaration
             let rec walkTycon (TypeDefn(ComponentInfo(_, _, _, _, _, _, _, _), repr, membDefns, m)) =
@@ -321,6 +344,10 @@ type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput op
                   | SynMemberDefn.Inherit(_, _, m) -> 
                       // can break on the "inherit" clause
                       yield! checkRange m
+                  | SynMemberDefn.ImplicitInherit(_, arg, _, m) -> 
+                      // can break on the "inherit" clause
+                      yield! checkRange m
+                      yield! walkExpr true arg
                   | _ -> ()  ]
 
             // Process declarations nested in a module that should be displayed in the left dropdown
@@ -829,6 +856,8 @@ module UntypedParseImpl =
             | SynExpr.JoinIn(e1, _, e2, _) -> List.tryPick (walkExprWithKind parentKind) [e1; e2]
             | SynExpr.YieldOrReturn(_, e, _) -> walkExprWithKind parentKind e
             | SynExpr.YieldOrReturnFrom(_, e, _) -> walkExprWithKind parentKind e
+            | (SynExpr.Match(_, e, synMatchClauseList, _, _) | SynExpr.MatchBang(_, e, synMatchClauseList, _, _)) -> 
+                walkExprWithKind parentKind e |> Option.orElse (List.tryPick walkClause synMatchClauseList)
             | SynExpr.LetOrUseBang(_, _, _, _, e1, e2, _) -> List.tryPick (walkExprWithKind parentKind) [e1; e2]
             | SynExpr.DoBang(e, _) -> walkExprWithKind parentKind e
             | SynExpr.TraitCall (ts, sign, e, _) ->

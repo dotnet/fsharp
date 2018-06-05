@@ -13,13 +13,16 @@
 
     <Target Name="CollectSetupProjects">
         <ItemGroup>
-            <SwixSetupProjects Include="Microsoft.FSharp.SDK.Core.swixproj">
-                <ProjectPath>Swix\Microsoft.FSharp.SDK.Core\Microsoft.FSharp.SDK.Core.swixproj</ProjectPath>
+            <SwixSetupProjects Include="Microsoft.FSharp.SDK.swixproj">
+                <ProjectPath>Swix\Microsoft.FSharp.SDK\Microsoft.FSharp.SDK.swixproj</ProjectPath>
+            </SwixSetupProjects>
+            <SwixSetupProjects Include="Microsoft.FSharp.Compiler.swixproj">
+                <ProjectPath>Swix\Microsoft.FSharp.Compiler\Microsoft.FSharp.Compiler.swixproj</ProjectPath>
             </SwixSetupProjects>
         </ItemGroup>
 
         <CreateItem Include="@(SetupLanguages)"
-                    AdditionalMetadata="ProjectPath=Swix\Microsoft.FSharp.SDK.Resources\Microsoft.FSharp.SDK.Resources.swixproj">
+                    AdditionalMetadata="ProjectPath=Swix\Microsoft.FSharp.Compiler.Resources\Microsoft.FSharp.Compiler.Resources.swixproj">
             <Output ItemName="SwixSetupProjects" TaskParameter="Include"/>
         </CreateItem>
     </Target>
@@ -30,7 +33,7 @@
         </PropertyGroup>
         <MSBuild Projects="%(SwixSetupProjects.ProjectPath)"
                  Targets="Build"
-                 Properties="LocaleCode=%(SwixSetupProjects.LocaleCode);LocaleId=%(SwixSetupProjects.LocaleId);LocaleParentId=%(SwixSetupProjects.LocaleParentId);LocaleParentCulture=%(SwixSetupProjects.LocaleParentCulture);LocaleSpecificCulture=%(SwixSetupProjects.LocaleSpecificCulture);IsLangPack=%(SwixSetupProjects.IsLangPack);FSharpPackageVersion=$(FSharpPackageVersion);$(CustomProps)"/>
+                 Properties="Configuration=$(Configuration);LocaleCode=%(SwixSetupProjects.LocaleCode);LocaleId=%(SwixSetupProjects.LocaleId);LocaleParentId=%(SwixSetupProjects.LocaleParentId);LocaleParentCulture=%(SwixSetupProjects.LocaleParentCulture);LocaleSpecificCulture=%(SwixSetupProjects.LocaleSpecificCulture);IsLangPack=%(SwixSetupProjects.IsLangPack);FSharpPackageVersion=$(FSharpPackageVersion);$(CustomProps)"/>
     </Target>
 
     <Target Name="CopyLocalizationResources" BeforeTargets="Build">

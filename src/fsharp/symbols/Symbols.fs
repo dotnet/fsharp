@@ -49,9 +49,13 @@ type FSharpAccessibility(a:Accessibility, ?isProtected) =
         let mangledTextOfCompPath (CompPath(scoref, path)) = getNameOfScopeRef scoref + "/" + textOfPath (List.map fst path)  
         String.concat ";" (List.map mangledTextOfCompPath paths)
 
-type SymbolEnv(g:TcGlobals, thisCcu: CcuThunk, thisCcuTyp: ModuleOrNamespaceType option, tcImports: TcImports) = 
-    let amapV = tcImports.GetImportMap()
-    let infoReaderV = InfoReader(g, amapV)
+type SymbolEnv(g: TcGlobals, thisCcu: CcuThunk, thisCcuTyp: ModuleOrNamespaceType option, tcImports: TcImports, amapV: Import.ImportMap, infoReaderV: InfoReader) = 
+
+    new(g: TcGlobals, thisCcu: CcuThunk, thisCcuTyp: ModuleOrNamespaceType option, tcImports: TcImports) =
+        let amap = tcImports.GetImportMap()
+        let infoReader = InfoReader(g, amap)
+        SymbolEnv(g, thisCcu, thisCcuTyp, tcImports, amap, infoReader)
+
     member __.g = g
     member __.amap = amapV
     member __.thisCcu = thisCcu
@@ -229,7 +233,7 @@ type FSharpSymbol(cenv: SymbolEnv, item: (unit -> Item), access: (FSharpSymbol -
     // TODO: there are several cases where we may need to report more interesting
     // symbol information below. By default we return a vanilla symbol.
     static member Create(g, thisCcu, thisCcuType, tcImports, item): FSharpSymbol = 
-        FSharpSymbol.Create (SymbolEnv(g, thisCcu, Some thisCcuType, tcImports), item)
+        FSharpSymbol.Create(SymbolEnv(g, thisCcu, Some thisCcuType, tcImports), item)
 
     static member Create(cenv, item): FSharpSymbol = 
         let dflt() = FSharpSymbol(cenv, (fun () -> item), (fun _ _ _ -> true)) 
@@ -1067,8 +1071,7 @@ and FSharpGenericParameter(cenv, v:Typar) =
     member __.IsCompilerGenerated = v.IsCompilerGenerated
        
     member __.IsMeasure = (v.Kind = TyparKind.Measure)
-
-    member __.XmlDoc = v.typar_xmldoc |> makeXmlDoc
+    member __.XmlDoc = v.XmlDoc |> makeXmlDoc
 
     member __.IsSolveAtCompileTime = (v.StaticReq = TyparStaticReq.HeadTypeStaticReq)
 
@@ -1954,6 +1957,23 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             prefix + x.LogicalName 
         with _  -> "??"
 
+    member x.FormatLayout (denv:FSharpDisplayContext) =
+        match x.IsMember, d with
+        | true, V v ->
+            NicePrint.prettyLayoutOfValOrMemberNoInst { (denv.Contents cenv.g) with showMemberContainers=true } v.Deref
+        | _,_ ->
+            checkIsResolved()
+            let ty = 
+                match d with 
+                | E e -> e.GetDelegateType(cenv.amap, range0)
+                | P p -> p.GetPropertyType(cenv.amap, range0)
+                | M m | C m -> 
+                    let rty = m.GetFSharpReturnTy(cenv.amap, range0, m.FormalMethodInst)
+                    let argtysl = m.GetParamTypes(cenv.amap, range0, m.FormalMethodInst) 
+                    mkIteratedFunTy (List.map (mkRefTupledTy cenv.g) argtysl) rty
+                | V v -> v.TauType
+            NicePrint.prettyLayoutOfTypeNoCx (denv.Contents cenv.g) ty
+
 
 and FSharpType(cenv, typ:TType) =
 
@@ -2099,7 +2119,11 @@ and FSharpType(cenv, typ:TType) =
 
     member x.Format(denv: FSharpDisplayContext) = 
        protect <| fun () -> 
-        NicePrint.prettyStringOfTyNoCx (denv.Contents cenv.g) typ 
+        NicePrint.prettyStringOfTyNoCx (denv.Contents cenv.g) typ
+
+    member x.FormatLayout(denv: FSharpDisplayContext) =
+       protect <| fun () -> 
+        NicePrint.prettyLayoutOfTypeNoCx (denv.Contents cenv.g) typ
 
     override x.ToString() = 
        protect <| fun () -> 

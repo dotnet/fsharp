@@ -312,8 +312,9 @@ module public AstTraversal =
                      dive synExpr2 synExpr2.Range traverseSynExpr
                      dive synExpr3 synExpr3.Range traverseSynExpr]
                     |> pick expr
-                | SynExpr.ForEach(_sequencePointInfoForForLoop, _seqExprOnly, _isFromSource, _synPat, synExpr, synExpr2, _range) -> 
-                    [dive synExpr synExpr.Range traverseSynExpr
+                | SynExpr.ForEach(_sequencePointInfoForForLoop, _seqExprOnly, _isFromSource, synPat, synExpr, synExpr2, _range) ->
+                    [dive synPat synPat.Range traversePat
+                     dive synExpr synExpr.Range traverseSynExpr
                      dive synExpr2 synExpr2.Range traverseSynExpr]
                     |> pick expr
                 | SynExpr.ArrayOrListOfSeqExpr(_, synExpr, _range) -> traverseSynExpr synExpr
@@ -434,9 +435,14 @@ module public AstTraversal =
                 | SynExpr.ImplicitZero(_range) -> None
                 | SynExpr.YieldOrReturn(_, synExpr, _range) -> traverseSynExpr synExpr
                 | SynExpr.YieldOrReturnFrom(_, synExpr, _range) -> traverseSynExpr synExpr
-                | SynExpr.LetOrUseBang(_sequencePointInfoForBinding, _, _, _synPat, synExpr, synExpr2, _range) -> 
-                    [dive synExpr synExpr.Range traverseSynExpr
+                | SynExpr.LetOrUseBang(_sequencePointInfoForBinding, _, _, synPat, synExpr, synExpr2, _range) -> 
+                    [dive synPat synPat.Range traversePat
+                     dive synExpr synExpr.Range traverseSynExpr
                      dive synExpr2 synExpr2.Range traverseSynExpr]
+                    |> pick expr
+                | SynExpr.MatchBang(_sequencePointInfoForBinding, synExpr, synMatchClauseList, _, _range) -> 
+                    [yield dive synExpr synExpr.Range traverseSynExpr
+                     yield! synMatchClauseList |> List.map (fun x -> dive x x.RangeOfGuardAndRhs (traverseSynMatchClause path))]
                     |> pick expr
                 | SynExpr.DoBang(synExpr, _range) -> traverseSynExpr synExpr
                 | SynExpr.LibraryOnlyILAssembly _ -> None
@@ -598,13 +604,17 @@ module public AstTraversal =
             let path = TraverseStep.MatchClause mc :: path
             let defaultTraverse mc =
                 match mc with
-                | (SynMatchClause.Clause(_synPat, synExprOption, synExpr, _range, _sequencePointInfoForTarget) as all) ->
-                    [
+                | (SynMatchClause.Clause(synPat, synExprOption, synExpr, _range, _sequencePointInfoForTarget) as all) ->
+                    [dive synPat synPat.Range traversePat]
+                    @
+                    ([
                         match synExprOption with
                         | None -> ()
                         | Some guard -> yield guard
                         yield synExpr
-                    ] |> List.map (fun x -> dive x x.Range (traverseSynExpr path)) |> pick all.Range all
+                     ] 
+                     |> List.map (fun x -> dive x x.Range (traverseSynExpr path))
+                    )|> pick all.Range all
             visitor.VisitMatchClause(defaultTraverse,mc)
 
         and traverseSynBinding path b =

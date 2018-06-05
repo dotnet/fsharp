@@ -43,6 +43,10 @@ type TyparMap<'T> =
         let (TPMap m) = tm
         m.ContainsKey(v.Stamp)
 
+    member tm.TryFind (v: Typar) = 
+        let (TPMap m) = tm
+        m.TryFind(v.Stamp)
+
     member tm.Add (v: Typar, x) = 
         let (TPMap m) = tm
         TPMap (m.Add(v.Stamp, x))
@@ -208,13 +212,14 @@ and remapMeasureAux tyenv unt =
     | Measure.RationalPower(u, q) -> Measure.RationalPower(remapMeasureAux tyenv u, q)
     | Measure.Inv u -> Measure.Inv(remapMeasureAux tyenv u)
     | Measure.Var tp as unt -> 
-      match tp.Solution with
+       match tp.Solution with
        | None -> 
-          if ListAssoc.containsKey typarEq tp tyenv.tpinst then 
-              match ListAssoc.find typarEq tp tyenv.tpinst with 
+          match ListAssoc.tryFind typarEq tp tyenv.tpinst with
+          | Some v -> 
+              match v with
               | TType_measure unt -> unt
               | _ -> failwith "remapMeasureAux: incorrect kinds"
-          else unt
+          | None -> unt
        | Some (TType_measure unt) -> remapMeasureAux tyenv unt
        | Some ty -> failwithf "incorrect kinds: %A" ty
 
@@ -287,8 +292,8 @@ and copyAndRemapAndBindTyparsFull remapAttrib tyenv tps =
       let tps' = copyTypars tps
       let tyenv = { tyenv with tpinst = bindTypars tps (generalizeTypars tps') tyenv.tpinst } 
       (tps, tps') ||> List.iter2 (fun tporig tp -> 
-         tp.FixupConstraints (remapTyparConstraintsAux tyenv  tporig.Constraints)
-         tp.typar_attribs  <- tporig.typar_attribs |> remapAttrib)
+         tp.SetConstraints (remapTyparConstraintsAux tyenv  tporig.Constraints)
+         tp.SetAttribs (tporig.Attribs |> remapAttrib))
       tps', tyenv
 
 // copies bound typars, extends tpinst 
@@ -790,13 +795,15 @@ let mkInstForAppTy g typ =
 let domainOfFunTy g ty = fst (destFunTy g ty)
 let rangeOfFunTy  g ty = snd (destFunTy g ty)
 
-let helpEnsureTypeHasMetadata g ty = 
+let convertToTypeWithMetadataIfPossible g ty = 
     if isAnyTupleTy g ty then 
         let (tupInfo, tupElemTys) = destAnyTupleTy g ty
         mkOuterCompiledTupleTy g (evalTupInfoIsStruct tupInfo) tupElemTys
+    elif isFunTy g ty then 
+        let (a,b) = destFunTy g ty
+        mkAppTy g.fastFunc_tcr [a; b]
     else ty
-
-
+ 
 //---------------------------------------------------------------------------
 // Equivalence of types up to alpha-equivalence 
 //---------------------------------------------------------------------------
@@ -886,7 +893,7 @@ and typarsAEquivAux erasureFlag g (aenv: TypeEquivEnv) tps1 tps2 =
 
 and tcrefAEquiv g aenv tc1 tc2 = 
     tyconRefEq g tc1 tc2 || 
-    (aenv.EquivTycons.ContainsKey tc1  && tyconRefEq g aenv.EquivTycons.[tc1] tc2)
+      (match aenv.EquivTycons.TryFind tc1 with Some v -> tyconRefEq g v tc2 | None -> false)
 
 and typeAEquivAux erasureFlag g aenv ty1 ty2 = 
     let ty1 = stripTyEqnsWrtErasure erasureFlag g ty1 
@@ -896,8 +903,10 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
         typarsAEquivAux erasureFlag g aenv tps1 tps2 && typeAEquivAux erasureFlag g (aenv.BindEquivTypars tps1 tps2) rty1 rty2
     | TType_var tp1, TType_var tp2 when typarEq tp1 tp2 -> 
         true
-    | TType_var tp1, _ when aenv.EquivTypars.ContainsKey tp1 -> 
-        typeEquivAux erasureFlag g aenv.EquivTypars.[tp1] ty2
+    | TType_var tp1, _ ->
+        match aenv.EquivTypars.TryFind tp1 with
+        | Some v -> typeEquivAux erasureFlag g v ty2
+        | None -> false
     | TType_app (tc1, b1)  , TType_app (tc2, b2) -> 
         tcrefAEquiv g aenv tc1 tc2 &&
         typesAEquivAux erasureFlag g aenv b1 b2
@@ -1805,6 +1814,10 @@ let emptyFreeTyvars =
       FreeTraitSolutions = emptyFreeLocals
       FreeTypars = emptyFreeTypars}
 
+let isEmptyFreeTyvars ftyvs = 
+    Zset.isEmpty ftyvs.FreeTypars &&
+    Zset.isEmpty ftyvs.FreeTycons 
+
 let unionFreeTyvars fvs1 fvs2 = 
     if fvs1 === emptyFreeTyvars then fvs2 else 
     if fvs2 === emptyFreeTyvars then fvs1 else
@@ -1993,6 +2006,12 @@ let freeInVal opts v = accFreeInVal opts v emptyFreeTyvars
 let freeInTyparConstraints opts v = accFreeInTyparConstraints opts v emptyFreeTyvars
 let accFreeInTypars opts tps acc = List.foldBack (accFreeTyparRef opts) tps acc
         
+let rec addFreeInModuleTy (mtyp:ModuleOrNamespaceType) acc =
+    QueueList.foldBack (typeOfVal >> accFreeInType CollectAllNoCaching) mtyp.AllValsAndMembers
+      (QueueList.foldBack (fun (mspec:ModuleOrNamespace) acc -> addFreeInModuleTy mspec.ModuleOrNamespaceType acc) mtyp.AllEntities acc)
+
+let freeInModuleTy mtyp = addFreeInModuleTy mtyp emptyFreeTyvars
+
 
 //--------------------------------------------------------------------------
 // Free in type, left-to-right order preserved. This is used to determine the
@@ -2273,7 +2292,7 @@ module PrettyTypes =
         let niceTypars = List.map2 newPrettyTypar tps names
         let tl, _tt = mkTyparToTyparRenaming tps niceTypars in
         let renaming = renaming @ tl
-        (tps, niceTypars) ||> List.iter2 (fun tp tpnice -> tpnice.FixupConstraints (instTyparConstraints renaming tp.Constraints)) ;
+        (tps, niceTypars) ||> List.iter2 (fun tp tpnice -> tpnice.SetConstraints (instTyparConstraints renaming tp.Constraints)) ;
         niceTypars, renaming
 
     // We choose names for type parameters from 'a'..'t'
@@ -2282,7 +2301,7 @@ module PrettyTypes =
     // Finally, we skip any names already in use
     let NeedsPrettyTyparName (tp:Typar) = 
         tp.IsCompilerGenerated && 
-        tp.typar_il_name.IsNone && 
+        tp.ILName.IsNone && 
         (tp.typar_id.idText = unassignedTyparName) 
 
     let PrettyTyparNames pred alreadyInUse tps = 
@@ -3106,7 +3125,7 @@ module DebugPrint = begin
              let sortCons (cs:(TyconRef * Rational) list) = cs |> List.sortBy (fun (c, _) -> c.DisplayName) 
              let negvs, posvs = ListMeasureVarOccsWithNonZeroExponents         unt |> sortVars |> List.partition (fun (_, e) -> SignRational e < 0)
              let negcs, poscs = ListMeasureConOccsWithNonZeroExponents g false unt |> sortCons |> List.partition (fun (_, e) -> SignRational e < 0)
-             let unparL (uv:Typar) = wordL (tagText ("'" ^  uv.DisplayName))
+             let unparL (uv:Typar) = wordL (tagText ("'" + uv.DisplayName))
              let unconL tc = layoutTyconRef tc
              let rationalL e = wordL (tagText(RationalToString e))
              let measureToPowerL x e = if e = OneRational then x else x -- wordL (tagText "^") -- rationalL e
@@ -3525,15 +3544,15 @@ module DebugPrint = begin
             | Expr.Op (TOp.ValFieldGetAddr rf, _, [], _) -> 
                 leftL(tagText "&") ^^ (recdFieldRefL rf)
             | Expr.Op (TOp.UnionCaseTagGet tycr, _, [x], _) -> 
-                wordL (tagText ("#" ^ tycr.LogicalName ^ ".tag")) ^^ atomL x
+                wordL (tagText ("#" + tycr.LogicalName + ".tag")) ^^ atomL x
             | Expr.Op (TOp.UnionCaseProof c, _, [x], _) -> 
-                wordL (tagText ("#" ^ c.CaseName^ ".cast")) ^^ atomL x
+                wordL (tagText ("#" + c.CaseName + ".cast")) ^^ atomL x
             | Expr.Op (TOp.UnionCaseFieldGet (c, i), _, [x], _) -> 
-                wordL (tagText ("#" ^ c.CaseName ^ "." ^ string i)) --- atomL x
+                wordL (tagText ("#" + c.CaseName + "." + string i)) --- atomL x
             | Expr.Op (TOp.UnionCaseFieldSet (c, i), _, [x;y], _) -> 
-                ((atomL x --- (rightL (tagText ("#" ^ c.CaseName ^ "." ^ string i)))) ^^ wordL(tagText ":=")) --- exprL y
+                ((atomL x --- (rightL (tagText ("#" + c.CaseName + "." + string i)))) ^^ wordL(tagText ":=")) --- exprL y
             | Expr.Op (TOp.TupleFieldGet (_, i), _, [x], _) -> 
-                wordL (tagText ("#" ^ string i)) --- atomL x
+                wordL (tagText ("#" + string i)) --- atomL x
             | Expr.Op (TOp.Coerce, [typ;_], [x], _) -> 
                 atomL x --- (wordL(tagText ":>") ^^ typeL typ) 
             | Expr.Op (TOp.Reraise, [_], [], _) -> 
@@ -3790,13 +3809,14 @@ let accSubEntityRemap (msigty:ModuleOrNamespaceType) (entity:Entity) (mrpi, mhi)
         (mrpi, mhi) 
 
 let valLinkageAEquiv g aenv (v1:Val) (v2:Val) = 
-    (v1.LinkagePartialKey = v2.LinkagePartialKey) &&
+    (v1.GetLinkagePartialKey() = v2.GetLinkagePartialKey()) &&
     (if v1.IsMember && v2.IsMember then typeAEquivAux EraseAll g aenv v1.Type v2.Type else true)
     
 let accValRemap g aenv (msigty:ModuleOrNamespaceType) (implVal:Val) (mrpi, mhi) =
+    let implValKey = implVal.GetLinkagePartialKey()
     let sigValOpt = 
         msigty.AllValsAndMembersByPartialLinkageKey 
-          |> MultiMap.find implVal.LinkagePartialKey 
+          |> MultiMap.find implValKey
           |> List.tryFind (fun sigVal -> valLinkageAEquiv g aenv implVal sigVal)
           
     let vref = mkLocalValRef implVal
@@ -5208,27 +5228,28 @@ and remarkBind m (TBind(v, repr, _)) =
 
 
 //--------------------------------------------------------------------------
-// Reference semantics?
+// Mutability analysis
 //--------------------------------------------------------------------------
 
-let isRecdOrStructFieldAllocObservable (f:RecdField) = not f.IsStatic && f.IsMutable
-let isUnionCaseAllocObservable (uc:UnionCase) = uc.FieldTable.FieldsByIndex |> Array.exists isRecdOrStructFieldAllocObservable
-let isUnionCaseRefAllocObservable (uc:UnionCaseRef) = uc.UnionCase |> isUnionCaseAllocObservable
+let isRecdOrStructFieldDefinitelyMutable (f:RecdField) = not f.IsStatic && f.IsMutable
+let isUnionCaseDefinitelyMutable (uc:UnionCase) = uc.FieldTable.FieldsByIndex |> Array.exists isRecdOrStructFieldDefinitelyMutable
+let isUnionCaseRefDefinitelyMutable (uc:UnionCaseRef) = uc.UnionCase |> isUnionCaseDefinitelyMutable
   
-let isRecdOrUnionOrStructTyconAllocObservable (_g:TcGlobals) (tycon:Tycon) =
+/// This is an incomplete check for .NET struct types. Returning 'false' doesn't mean the thing is immutable.
+let isRecdOrUnionOrStructTyconDefinitelyMutable (_g:TcGlobals) (tycon:Tycon) =
     if tycon.IsUnionTycon then 
-        tycon.UnionCasesArray |> Array.exists isUnionCaseAllocObservable
+        tycon.UnionCasesArray |> Array.exists isUnionCaseDefinitelyMutable
     elif tycon.IsRecordTycon || tycon.IsStructOrEnumTycon then 
-        tycon.AllFieldsArray |> Array.exists isRecdOrStructFieldAllocObservable
+        tycon.AllFieldsArray |> Array.exists isRecdOrStructFieldDefinitelyMutable
     else
         false
 
-let isRecdOrUnionOrStructTyconRefAllocObservable g (tcr : TyconRef) = isRecdOrUnionOrStructTyconAllocObservable g tcr.Deref
+let isRecdOrUnionOrStructTyconRefDefinitelyMutable g (tcr : TyconRef) = isRecdOrUnionOrStructTyconDefinitelyMutable g tcr.Deref
   
 // Although from the pure F# perspective exception values cannot be changed, the .NET 
 // implementation of exception objects attaches a whole bunch of stack information to 
 // each raised object.  Hence we treat exception objects as if they have identity 
-let isExnAllocObservable (_ecref:TyconRef) = true 
+let isExnDefinitelyMutable (_ecref:TyconRef) = true 
 
 // Some of the implementations of library functions on lists use mutation on the tail 
 // of the cons cell. These cells are always private, i.e. not accessible by any other 
@@ -5547,11 +5568,11 @@ let mkAndSimplifyMatch spBind exprm matchm ty tree targets  =
 type Mutates = DefinitelyMutates | PossiblyMutates | NeverMutates
 exception DefensiveCopyWarning of string * range 
 
-let isRecdOrStructTyImmutable g ty =
+let isRecdOrStructTyReadOnly g ty =
     match tryDestAppTy g ty with 
     | None -> false
     | Some tcref -> 
-      not (isRecdOrUnionOrStructTyconRefAllocObservable g tcref) ||
+      not (isRecdOrUnionOrStructTyconRefDefinitelyMutable g tcref) ||
       tyconRefEq g tcref g.decimal_tcr ||
       tyconRefEq g tcref g.date_tcr
 
@@ -5566,7 +5587,7 @@ let isRecdOrStructTyImmutable g ty =
 //        let g1 = A.G(1)
 //        (fun () -> g1.x1)
 //
-// Note: isRecdOrStructTyImmutable implies PossiblyMutates or NeverMutates
+// Note: isRecdOrStructTyReadOnly implies PossiblyMutates or NeverMutates
 //
 // We only do this for true local or closure fields because we can't take addresses of immutable static 
 // fields across assemblies.
@@ -5577,7 +5598,7 @@ let CanTakeAddressOfImmutableVal g (v:ValRef) mut =
     not v.IsMemberOrModuleBinding &&
     (match mut with 
      | NeverMutates -> true 
-     | PossiblyMutates -> isRecdOrStructTyImmutable g v.Type 
+     | PossiblyMutates -> isRecdOrStructTyReadOnly g v.Type 
      | DefinitelyMutates -> false)
 
 let MustTakeAddressOfVal (g:TcGlobals) (v:ValRef) = 
@@ -5596,13 +5617,13 @@ let CanTakeAddressOfRecdFieldRef (g:TcGlobals) (rfref: RecdFieldRef) mut tinst =
     mut <> DefinitelyMutates && 
     // We only do this if the field is defined in this assembly because we can't take addresses across assemblies for immutable fields
     entityRefInThisAssembly g.compilingFslib rfref.TyconRef &&
-    isRecdOrStructTyImmutable g (actualTyOfRecdFieldRef rfref tinst)
+    isRecdOrStructTyReadOnly g (actualTyOfRecdFieldRef rfref tinst)
 
 let CanTakeAddressOfUnionFieldRef (g:TcGlobals) (uref: UnionCaseRef) mut tinst cidx =
     mut <> DefinitelyMutates && 
     // We only do this if the field is defined in this assembly because we can't take addresses across assemblies for immutable fields
     entityRefInThisAssembly g.compilingFslib uref.TyconRef &&
-    isRecdOrStructTyImmutable g (actualTyOfUnionFieldRef uref cidx tinst)
+    isRecdOrStructTyReadOnly g (actualTyOfUnionFieldRef uref cidx tinst)
 
 
 let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress mut e addrExprVal m =
@@ -5673,7 +5694,7 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
         if v.IsMutable then 
             error(Error(FSComp.SR.tastInvalidAddressOfMutableAcrossAssemblyBoundary(), m));
         else 
-            error(Error(FSComp.SR.tastValueMustBeLocalAndMutable(), m));
+            error(Error(FSComp.SR.tastValueMustBeMutable(), m));
          
     | _ -> 
         let ty = tyOfExpr g e
@@ -5951,7 +5972,7 @@ let ExprStats x =
   let count = ref 0
   let folders = {ExprFolder0 with exprIntercept = (fun _ _ _ -> (count := !count + 1; None))}
   let () = FoldExpr folders () x
-  string !count ^ " TExpr nodes"
+  string !count + " TExpr nodes"
 #endif
     
 //-------------------------------------------------------------------------
@@ -6304,9 +6325,9 @@ let mkCallLiftValueWithName (g:TcGlobals) m ty nm e1 =
     let vref = ValRefForIntrinsic g.lift_value_with_name_info 
     // Use "Expr.ValueWithName" if it exists in FSharp.Core
     match vref.TryDeref with
-    | VSome _ ->
+    | ValueSome _ ->
         mkApps g (typedExprForIntrinsic g m g.lift_value_with_name_info , [[ty]], [mkRefTupledNoTypes g m [e1; mkString g m nm]], m)
-    | VNone ->
+    | ValueNone ->
         mkApps g (typedExprForIntrinsic g m g.lift_value_info , [[ty]], [e1], m)
 
 let mkCallLiftValueWithDefn g m qty e1 = 
@@ -6315,11 +6336,11 @@ let mkCallLiftValueWithDefn g m qty e1 =
     let vref = ValRefForIntrinsic g.lift_value_with_defn_info 
     // Use "Expr.WithValue" if it exists in FSharp.Core
     match vref.TryDeref with
-    | VSome _ ->
+    | ValueSome _ ->
         let copyOfExpr = copyExpr g ValCopyFlag.CloneAll e1
         let quoteOfCopyOfExpr = Expr.Quote(copyOfExpr, ref None, false, m, qty)
         mkApps g (typedExprForIntrinsic g m g.lift_value_with_defn_info , [[ty]], [mkRefTupledNoTypes g m [e1; quoteOfCopyOfExpr]], m)
-    | VNone ->
+    | ValueNone ->
         Expr.Quote(e1, ref None, false, m, qty)
 
 let mkCallCheckThis g m ty e1 = 
@@ -6642,7 +6663,7 @@ let MakeArgsForTopArgs _g m argtysl tpenv =
             let ty = instType tpenv argty
             let nm = 
                match argInfo.Name with 
-               | None -> CompilerGeneratedName ("arg"^ string i^ string j)
+               | None -> CompilerGeneratedName ("arg" + string i + string j)
                | Some id -> id.idText
             fst (mkCompGenLocal m nm ty)))
 
@@ -6759,7 +6780,7 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
                     argtysl |> List.mapi (fun i argtys -> 
                         argtys |> List.mapi (fun j (_, argInfo) -> 
                              match argInfo.Name with 
-                             | None -> CompilerGeneratedName ("arg" ^ string i ^string j)
+                             | None -> CompilerGeneratedName ("arg" + string i ^string j)
                              | Some id -> id.idText))
                 | _ -> 
                     []
@@ -7081,18 +7102,18 @@ let LinearizeTopMatch g parent = function
 
 
 let commaEncs strs  = String.concat "," strs
-let angleEnc  str   = "{" ^ str ^ "}" 
+let angleEnc  str   = "{" + str + "}" 
 let ticksAndArgCountTextOfTyconRef (tcref:TyconRef) =
-     // Generic type names are (name ^ "`" ^ digits) where name does not contain "`".
+     // Generic type names are (name + "`" + digits) where name does not contain "`".
      let path = Array.toList (fullMangledPathToTyconRef tcref) @ [tcref.CompiledName]
      textOfPath path
      
 let typarEnc _g (gtpsType, gtpsMethod) typar =
     match List.tryFindIndex (typarEq typar) gtpsType with
-    | Some idx -> "`"  ^ string idx // single-tick-index for typar from type
+    | Some idx -> "`"  + string idx // single-tick-index for typar from type
     | None     ->
         match List.tryFindIndex (typarEq typar) gtpsMethod with
-        | Some idx -> "``" ^ string idx // double-tick-index for typar from method
+        | Some idx -> "``" + string idx // double-tick-index for typar from method
         | None     -> warning(InternalError("Typar not found during XmlDoc generation", typar.Range))
                       "``0" // REVIEW: this should be ERROR not WARNING?
 
@@ -7116,19 +7137,19 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
             | 3 -> "[0:, 0:, 0:]"
             | 4 -> "[0:, 0:, 0:, 0:]"
             | _ -> failwith "impossible: rankOfArrayTyconRef: unsupported array rank"
-        typeEnc g (gtpsType, gtpsMethod) (List.head tinst) ^ arraySuffix
+        typeEnc g (gtpsType, gtpsMethod) (List.head tinst) + arraySuffix
     | TType_ucase (UCRef(tcref, _), tinst)   
     | TType_app (tcref, tinst)   -> 
         if tyconRefEq g g.byref_tcr tcref then
-            typeEnc g (gtpsType, gtpsMethod) (List.head tinst) ^ "@"
+            typeEnc g (gtpsType, gtpsMethod) (List.head tinst) + "@"
         elif tyconRefEq g tcref g.nativeptr_tcr then
-            typeEnc g (gtpsType, gtpsMethod) (List.head tinst) ^ "*"
+            typeEnc g (gtpsType, gtpsMethod) (List.head tinst) + "*"
         else
             let tyName = 
                 let ty = stripTyEqnsAndMeasureEqns g ty
                 match ty with
                 | TType_app (tcref, _tinst)   -> 
-                    // Generic type names are (name ^ "`" ^ digits) where name does not contain "`".
+                    // Generic type names are (name + "`" + digits) where name does not contain "`".
                     // In XML doc, when used in type instances, these do not use the ticks.
                     let path = Array.toList (fullMangledPathToTyconRef tcref) @ [tcref.CompiledName]
                     textOfPath (List.map DemangleGenericTypeName path)
@@ -8272,5 +8293,14 @@ let BindUnitVars g (mvs:Val list, paramInfos:ArgReprInfo list, body) =
         assert isUnitTy g v.Type
         [], mkLet NoSequencePointAtInvisibleBinding v.Range v (mkUnit g v.Range) body 
     | _ -> mvs, body
+
+
+let isThreadOrContextStatic g attrs = 
+    HasFSharpAttributeOpt g g.attrib_ThreadStaticAttribute attrs ||
+    HasFSharpAttributeOpt g g.attrib_ContextStaticAttribute attrs 
+
+let mkUnitDelayLambda (g: TcGlobals) m e =
+    let uv, _ = mkCompGenLocal m "unitVar" g.unit_ty
+    mkLambda m uv (e, tyOfExpr g e) 
 
 
