@@ -8465,7 +8465,7 @@ and TcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag:ExprAtomicF
         let _wrap, exprAddress, _readonly = mkExprAddrOfExpr cenv.g true false DefinitelyMutates expr None mExpr
         let vty = tyOfExpr cenv.g expr
         // Always allow subsumption on assignment to fields
-        let expr2, tpenv = TcExprFlex cenv true vty env tpenv synExpr2
+        let expr2, tpenv = TcExprFlex cenv true false vty env tpenv synExpr2
         let v, _ve = mkCompGenLocal mExpr "addr" (mkByrefTy cenv.g vty)
         mkCompGenLet mStmt v exprAddress (mkAddrSet mStmt (mkLocalValRef v) expr2), tpenv
 
