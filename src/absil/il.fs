@@ -1990,6 +1990,8 @@ type ILTypeDef(name: string, attributes: TypeAttributes, layout: ILTypeDefLayout
                extends: ILType option, methods: ILMethodDefs, nestedTypes: ILTypeDefs, fields: ILFieldDefs, methodImpls: ILMethodImplDefs,
                events: ILEventDefs, properties: ILPropertyDefs, securityDeclsStored: ILSecurityDeclsStored, customAttrsStored: ILAttributesStored, metadataIndex: int32) =  
 
+    let mutable customAttrsStored = customAttrsStored
+
     new (name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields, methodImpls, events, properties, securityDecls, customAttrs) =  
        ILTypeDef (name, attributes, layout, implements, genericParams, extends, methods, nestedTypes, fields, methodImpls, events, properties, storeILSecurityDecls securityDecls, storeILCustomAttrs customAttrs, NoMetadataIdx)
 
@@ -2025,7 +2027,15 @@ type ILTypeDef(name: string, attributes: TypeAttributes, layout: ILTypeDefLayout
                   properties = defaultArg properties x.Properties,
                   customAttrs = defaultArg customAttrs x.CustomAttrs)
 
-    member x.CustomAttrs = customAttrsStored.GetCustomAttrs x.MetadataIndex
+    member x.CustomAttrs = 
+        match customAttrsStored with 
+        | ILAttributesStored.Reader f ->
+            let res = ILAttributes(f x.MetadataIndex)
+            customAttrsStored <- ILAttributesStored.Given res
+            res 
+        | ILAttributesStored.Given res -> 
+            res
+
     member x.SecurityDecls = x.SecurityDeclsStored.GetSecurityDecls x.MetadataIndex
 
     member x.IsClass =     (typeKindOfFlags x.Name x.Methods x.Fields x.Extends (int x.Attributes)) = ILTypeDefKind.Class
