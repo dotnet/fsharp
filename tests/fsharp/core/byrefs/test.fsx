@@ -1243,6 +1243,21 @@ module ByrefReturnMemberTests =
 
         test()
 
+
+    module SafeByrefsInLocals2 = 
+        let mutable beef = 1
+        let test4 () = &beef
+        let test3 () =
+            let y = &test4 ()
+            &y
+
+    module SafeByrefsInLocals3 = 
+
+        let mutable beef = 1
+        let test5 () =
+            let y = &beef
+            &y
+
     module MatrixOfTests = 
         [<Struct>]
         type S = 

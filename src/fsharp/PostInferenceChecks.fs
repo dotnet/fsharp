@@ -532,16 +532,19 @@ and CheckValRef (cenv:cenv) (env:env) v m (context: PermitByRefExpr) =
 
 and IsLimitedType g m ty = 
     isByrefLikeTy g m ty && 
-    not (isByrefTy g ty) 
+    not (isByrefTy g ty && (isByrefLikeTy g m (destByrefTy g ty))) 
 
-and IsLimited cenv env m (vref: ValRef) = 
-    IsLimitedType cenv.g m vref.Type && 
+and IsLimitedValue cenv env (vref: ValRef) = 
     // The value is a arg/local....
     vref.ValReprInfo.IsNone && 
     // The value is a limited Span or might have become one through mutation
     let isMutableLocal = not (env.argVals.ContainsVal(vref.Deref)) && vref.IsMutable 
     let isLimitedLocal = cenv.limitVals.ContainsKey(vref.Stamp)
     isMutableLocal || isLimitedLocal
+
+and IsLimited cenv env m (vref: ValRef) = 
+    IsLimitedType cenv.g m vref.Type && 
+    IsLimitedValue cenv env vref
 
 /// Check a use of a value
 and CheckValUse (cenv: cenv) (env: env) (vref: ValRef, vFlags, m) (context: PermitByRefExpr) = 
@@ -566,10 +569,7 @@ and CheckValUse (cenv: cenv) (env: env) (vref: ValRef, vFlags, m) (context: Perm
         let isReturnExprBuiltUsingByRefLocal = 
             context.PermitOnlyReturnable &&
             isByrefTy g vref.Type &&
-            // The value is a local....
-            vref.ValReprInfo.IsNone && 
-            // The value is not an argument....
-            not (env.argVals.ContainsVal(vref.Deref))
+            IsLimitedValue cenv env vref
 
         if isReturnExprBuiltUsingByRefLocal then
             errorR(Error(FSComp.SR.chkNoByrefReturnOfLocal(vref.DisplayName), m))
@@ -879,25 +879,20 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
             CheckTypeInstNoByrefs cenv env m tyargs
             CheckExprsNoByRefLike cenv env args 
 
-    | TOp.LValueOp(LAddrOf _,vref),_,_ -> 
+    | TOp.LValueOp(LAddrOf _,vref),_,[] -> 
         if cenv.reportErrors  then 
 
             if context.Disallow then 
                 errorR(Error(FSComp.SR.chkNoAddressOfAtThisPoint(vref.DisplayName), m))
             
-            let returningAddrOfLocal = 
+            let returningAddrOfLimitedLocal = 
                 context.PermitOnlyReturnable && 
-                // The value is a local....
-                vref.ValReprInfo.IsNone && 
-                // The value is not an argument...
-                not (env.argVals.ContainsVal(vref.Deref)) 
+                IsLimitedValue cenv env vref
             
-            if returningAddrOfLocal then 
+            if returningAddrOfLimitedLocal then 
                 errorR(Error(FSComp.SR.chkNoByrefAddressOfLocal(vref.DisplayName), m))
 
-        let limit1 = IsLimited cenv env m vref
-        let limit2 = CheckExprsNoByRefLike cenv env args                   
-        limit1 || limit2
+        IsLimited cenv env m vref
 
     | TOp.LValueOp(LByrefSet,vref),_,[arg] -> 
         let limit1 = IsLimitedType g m (tyOfExpr g arg) && not (env.argVals.ContainsVal(vref.Deref)) 
@@ -907,8 +902,8 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
         false
 
     | TOp.LValueOp(LByrefGet,vref),_,[] -> 
-        let limit1 = isByrefTy g vref.Type && IsLimitedType g m (destByrefTy g vref.Type) && not (env.argVals.ContainsVal(vref.Deref)) 
-        limit1
+        let limit = isByrefTy g vref.Type && IsLimitedType g m (destByrefTy g vref.Type) && not (env.argVals.ContainsVal(vref.Deref)) 
+        limit
 
     | TOp.LValueOp(LSet _, vref),_,[arg] -> 
         let limit1 = IsLimited cenv env m vref
