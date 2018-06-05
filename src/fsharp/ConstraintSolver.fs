@@ -426,8 +426,6 @@ let PreferUnifyTypar (v1:Typar) (v2:Typar) =
          | true, false -> false
          | _ -> true
 
-
-
 /// Reorder a list of (variable, exponent) pairs so that a variable that is Preferred
 /// is at the head of the list, if possible
 let FindPreferredTypar vs =
@@ -479,12 +477,12 @@ and SolveTypStaticReq (csenv:ConstraintSolverEnv) trace req ty =
             | Some tpr -> SolveTypStaticReqTypar csenv trace req tpr
             | None -> CompleteD
       
-let rec TransactDynamicReq (trace:OptionalTrace) (tpr:Typar) req = 
+let TransactDynamicReq (trace:OptionalTrace) (tpr:Typar) req = 
     let orig = tpr.DynamicReq
     trace.Exec (fun () -> tpr.SetDynamicReq req) (fun () -> tpr.SetDynamicReq orig)
     CompleteD
 
-and SolveTypDynamicReq (csenv:ConstraintSolverEnv) trace req ty =
+let SolveTypDynamicReq (csenv:ConstraintSolverEnv) trace req ty =
     match req with 
     | TyparDynamicReq.No -> CompleteD
     | TyparDynamicReq.Yes -> 
@@ -492,6 +490,19 @@ and SolveTypDynamicReq (csenv:ConstraintSolverEnv) trace req ty =
         | Some tpr when tpr.DynamicReq <> TyparDynamicReq.Yes ->
             TransactDynamicReq trace tpr TyparDynamicReq.Yes
         | _ -> CompleteD
+
+let TransactIsCompatFlex (trace:OptionalTrace) (tpr:Typar) req = 
+    let orig = tpr.IsCompatFlex
+    trace.Exec (fun () -> tpr.SetIsCompatFlex req) (fun () -> tpr.SetIsCompatFlex orig)
+    CompleteD
+
+let SolveTypIsCompatFlex (csenv:ConstraintSolverEnv) trace req ty =
+    if req then 
+        match tryAnyParTy csenv.g ty with
+        | Some tpr when not tpr.IsCompatFlex -> TransactIsCompatFlex trace tpr req
+        | _ -> CompleteD
+    else
+        CompleteD
 
 let SubstMeasureWarnIfRigid (csenv:ConstraintSolverEnv) trace (v:Typar) ms =
     if v.Rigidity.WarnIfUnified && not (isAnyParTy csenv.g (TType_measure ms)) then         
@@ -725,21 +736,23 @@ let rec SolveTyparEqualsType (csenv:ConstraintSolverEnv) ndeep m2 (trace:Optiona
            CompleteD) ++ (fun _ ->
       
       // Re-solve the other constraints associated with this type variable 
-      solveTypMeetsTyparConstraints csenv ndeep m2 trace ty (r.DynamicReq, r.StaticReq, r.Constraints)))
+      solveTypMeetsTyparConstraints csenv ndeep m2 trace ty r))
 
     | _ -> failwith "SolveTyparEqualsType")
     
 
-/// Given a type 'ty' and a set of constraints on that type, solve those constraints. 
-and solveTypMeetsTyparConstraints (csenv:ConstraintSolverEnv) ndeep m2 trace ty (dreq, sreq, cs) =
+/// Apply the constraints on 'typar' to the type 'ty'
+and solveTypMeetsTyparConstraints (csenv:ConstraintSolverEnv) ndeep m2 trace ty (r: Typar) = 
     let g = csenv.g
+    // Propagate compat flex requirements from 'tp' to 'ty'
+    SolveTypIsCompatFlex csenv trace r.IsCompatFlex ty ++ (fun () -> 
     // Propagate dynamic requirements from 'tp' to 'ty'
-    SolveTypDynamicReq csenv trace dreq ty ++ (fun () -> 
+    SolveTypDynamicReq csenv trace r.DynamicReq ty ++ (fun () -> 
     // Propagate static requirements from 'tp' to 'ty' 
-    SolveTypStaticReq csenv trace sreq ty ++ (fun () -> 
+    SolveTypStaticReq csenv trace r.StaticReq ty ++ (fun () -> 
     
     // Solve constraints on 'tp' w.r.t. 'ty' 
-    cs |> IterateD (function
+    r.Constraints |> IterateD (function
       | TyparConstraint.DefaultsTo (priority, dty, m) -> 
           if typeEquiv g ty dty then 
               CompleteD
@@ -762,7 +775,7 @@ and solveTypMeetsTyparConstraints (csenv:ConstraintSolverEnv) ndeep m2 trace ty 
       | TyparConstraint.CoercesTo(ty2, m2)             -> SolveTypeSubsumesTypeKeepAbbrevs    csenv ndeep m2 trace None ty2 ty
       | TyparConstraint.MayResolveMember(traitInfo, m2) -> 
           SolveMemberConstraint csenv false false ndeep m2 trace traitInfo ++ (fun _ -> CompleteD) 
-    )))
+    ))))
 
         
 /// Add the constraint "ty1 = ty2" to the constraint problem. 
