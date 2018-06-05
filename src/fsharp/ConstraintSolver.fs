@@ -1858,12 +1858,12 @@ and SolveTypeIsReferenceType (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
         if isRefTy g ty then CompleteD
         else ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresReferenceSemantics(NicePrint.minimalStringOfType denv ty), m, m))
 
-and SolveTypeRequiresDefaultConstructor (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
+and SolveTypeRequiresDefaultConstructor (csenv:ConstraintSolverEnv) ndeep m2 trace origTy =
     let g = csenv.g
     let amap = csenv.amap
     let m = csenv.m
     let denv = csenv.DisplayEnv
-    let ty = stripTyEqnsAndMeasureEqns g ty
+    let ty = stripTyEqnsAndMeasureEqns g origTy
     match tryDestTyparTy g ty with
     | Some destTypar ->
         AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.RequiresDefaultConstructor m)
@@ -1876,7 +1876,7 @@ and SolveTypeRequiresDefaultConstructor (csenv:ConstraintSolverEnv) ndeep m2 tra
             then 
                 match tryDestAppTy g ty with
                 | Some tcref when HasFSharpAttribute g g.attrib_AbstractClassAttribute tcref.Attribs ->
-                    ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresNonAbstract(NicePrint.minimalStringOfType denv ty), m, m2))
+                    ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresNonAbstract(NicePrint.minimalStringOfType denv origTy), m, m2))
                 | _ ->
                     CompleteD
             else
@@ -1887,7 +1887,7 @@ and SolveTypeRequiresDefaultConstructor (csenv:ConstraintSolverEnv) ndeep m2 tra
                     (tcref.IsRecordTycon && HasFSharpAttribute g g.attrib_CLIMutableAttribute tcref.Attribs) ->
                     CompleteD
                 | _ -> 
-                    ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresPublicDefaultConstructor(NicePrint.minimalStringOfType denv ty), m, m2))
+                    ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresPublicDefaultConstructor(NicePrint.minimalStringOfType denv origTy), m, m2))
 
 // Parameterized compatibility relation between member signatures.  The real work
 // is done by "equateTypes" and "subsumeTypes" and "subsumeArg"
