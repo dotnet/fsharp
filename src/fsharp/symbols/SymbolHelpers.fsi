@@ -115,8 +115,9 @@ type public CompletionItemKind =
     | Argument
     | Other
 
-type internal UnresolvedSymbol =
-    { DisplayName: string
+type UnresolvedSymbol =
+    { FullName: string
+      DisplayName: string
       Namespace: string[] }
 
 type internal CompletionItem =
