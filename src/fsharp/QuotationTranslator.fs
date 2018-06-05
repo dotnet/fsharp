@@ -277,7 +277,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             ConvExpr cenv env (MakeApplicationAndBetaReduce cenv.g (expr,exprty,[tyargs],curriedArgs,m)) 
         else
             // Too many arguments? Chop 
-            let (curriedArgs:Expr list ),laterArgs = List.chop curriedArgInfos.Length curriedArgs 
+            let (curriedArgs:Expr list ),laterArgs = List.splitAt curriedArgInfos.Length curriedArgs 
 
             let callR = 
                 // We now have the right number of arguments, w.r.t. currying and tupling.

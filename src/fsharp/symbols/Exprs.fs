@@ -437,7 +437,7 @@ module FSharpExprConvert =
             ConvExprPrimLinear cenv env splitCallExpr contf
 
         else        
-            let curriedArgs, laterArgs = List.chop curriedArgInfos.Length curriedArgs 
+            let curriedArgs, laterArgs = List.splitAt curriedArgInfos.Length curriedArgs 
 
             // detuple the args
             let untupledCurriedArgs = 
