@@ -629,6 +629,9 @@ and
     /// F# syntax: expr.ident...ident <- expr
     | DotSet of SynExpr * longDotId:LongIdentWithDots * SynExpr * range:range
 
+    /// F# syntax: expr <- expr
+    | Set of SynExpr * SynExpr * range:range
+
     /// F# syntax: expr.[expr,...,expr]
     | DotIndexedGet of SynExpr * SynIndexerArg list * range * range:range
 
@@ -763,6 +766,7 @@ and
         | SynExpr.DotIndexedSet (range=m)
         | SynExpr.DotGet (range=m)
         | SynExpr.DotSet (range=m)
+        | SynExpr.Set (range=m)
         | SynExpr.DotNamedIndexedPropertySet (range=m)
         | SynExpr.LibraryOnlyUnionCaseFieldGet (range=m)
         | SynExpr.LibraryOnlyUnionCaseFieldSet (range=m)
@@ -824,6 +828,7 @@ and
         | SynExpr.DotIndexedGet (range=m)
         | SynExpr.DotIndexedSet (range=m)
         | SynExpr.DotSet (range=m)
+        | SynExpr.Set (range=m)
         | SynExpr.DotNamedIndexedPropertySet (range=m)
         | SynExpr.LibraryOnlyUnionCaseFieldGet (range=m)
         | SynExpr.LibraryOnlyUnionCaseFieldSet (range=m)
@@ -887,6 +892,7 @@ and
         | SynExpr.DotIndexedSet (range=m)
         | SynExpr.DotGet (range=m)
         | SynExpr.DotSet (range=m)
+        | SynExpr.Set (range=m)
         | SynExpr.DotNamedIndexedPropertySet (range=m)
         | SynExpr.LibraryOnlyUnionCaseFieldGet (range=m)
         | SynExpr.LibraryOnlyUnionCaseFieldSet (range=m)
@@ -1857,7 +1863,8 @@ let mkSynAssign (l: SynExpr) (r: SynExpr) =
         mkSynDotParenSet m a b r
     | SynExpr.App (_, _, SynExpr.LongIdent(false,v,None,_),x,_)  -> SynExpr.NamedIndexedPropertySet (v,x,r,m)
     | SynExpr.App (_, _, SynExpr.DotGet(e,_,v,_),x,_)  -> SynExpr.DotNamedIndexedPropertySet (e,v,x,r,m)
-    |   _ -> errorR(Error(FSComp.SR.astInvalidExprLeftHandOfAssignment(), m));  l  // return just the LHS, so the typechecker can see it and capture expression typings that may be useful for dot lookups
+    | l  -> SynExpr.Set (l,r,m)
+    //|   _ -> errorR(Error(FSComp.SR.astInvalidExprLeftHandOfAssignment(), m));  l  // return just the LHS, so the typechecker can see it and capture expression typings that may be useful for dot lookups
 
 let rec mkSynDot dotm m l r =
     match l with
@@ -2356,6 +2363,7 @@ let rec synExprContainsError inpExpr =
 
           | SynExpr.NamedIndexedPropertySet (_,e1,e2,_)
           | SynExpr.DotSet (e1,_,e2,_)
+          | SynExpr.Set (e1,e2,_)
           | SynExpr.LibraryOnlyUnionCaseFieldSet (e1,_,_,e2,_)
           | SynExpr.JoinIn (e1,_,e2,_)
           | SynExpr.App (_,_,e1,e2,_) ->

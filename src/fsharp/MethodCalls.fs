@@ -56,16 +56,18 @@ type CalledArg =
       IsParamArray : bool
       OptArgInfo : OptionalArgInfo
       CallerInfoInfo : CallerInfoInfo
+      IsInArg: bool
       IsOutArg: bool
       ReflArgInfo: ReflectedArgInfo
       NameOpt: Ident option
       CalledArgumentType : TType }
 
-let CalledArg(pos, isParamArray, optArgInfo, callerInfoInfo, isOutArg, nameOpt, reflArgInfo, calledArgTy) =
+let CalledArg (pos, isParamArray, optArgInfo, callerInfoInfo, isInArg, isOutArg, nameOpt, reflArgInfo, calledArgTy) =
     { Position=pos
       IsParamArray=isParamArray
       OptArgInfo =optArgInfo
       CallerInfoInfo = callerInfoInfo
+      IsInArg=isInArg
       IsOutArg=isOutArg
       ReflArgInfo=reflArgInfo
       NameOpt=nameOpt
@@ -126,48 +128,59 @@ let AdjustCalledArgType (infoReader:InfoReader) isConstraint (calledArg: CalledA
     let calledArgTy = calledArg.CalledArgumentType
     let callerArgTy = callerArg.Type
     let m = callerArg.Range
-    if isConstraint then calledArgTy else
-    // If the called method argument is a byref type, then the caller may provide a byref or ref 
-    if isByrefTy g calledArgTy then
-        if isByrefTy g callerArgTy then 
-            calledArgTy
+    if isConstraint then 
+        calledArgTy 
+    else
+
+        // If the called method argument is an inref type, then the caller may provide a byref or value
+        if isInByrefTy g calledArgTy then
+            if isByrefTy g callerArgTy then 
+                calledArgTy
+            else 
+                destByrefTy g calledArgTy
+
+        // If the called method argument is a (non inref) byref type, then the caller may provide a byref or ref.
+        elif isByrefTy g calledArgTy then
+            if isByrefTy g callerArgTy then 
+                calledArgTy
+            else
+                mkRefCellTy g (destByrefTy g calledArgTy)  
+
         else 
-            mkRefCellTy g (destByrefTy g calledArgTy)  
-    else 
-        // If the called method argument is a delegate type, then the caller may provide a function 
-        let calledArgTy = 
-            let adjustDelegateTy calledTy =
-                let (SigOfFunctionForDelegate(_, delArgTys, _, fty)) = GetSigOfFunctionForDelegate infoReader calledTy m  AccessibleFromSomewhere
-                let delArgTys = if isNil delArgTys then [g.unit_ty] else delArgTys
-                if (fst (stripFunTy g callerArgTy)).Length = delArgTys.Length
-                then fty 
-                else calledArgTy 
+            // If the called method argument is a delegate type, then the caller may provide a function 
+            let calledArgTy = 
+                let adjustDelegateTy calledTy =
+                    let (SigOfFunctionForDelegate(_, delArgTys, _, fty)) = GetSigOfFunctionForDelegate infoReader calledTy m  AccessibleFromSomewhere
+                    let delArgTys = if isNil delArgTys then [g.unit_ty] else delArgTys
+                    if (fst (stripFunTy g callerArgTy)).Length = delArgTys.Length
+                    then fty 
+                    else calledArgTy 
 
-            if isDelegateTy g calledArgTy && isFunTy g callerArgTy then 
-                adjustDelegateTy calledArgTy
-
-            elif isLinqExpressionTy g calledArgTy && isFunTy g callerArgTy then 
-                let origArgTy = calledArgTy
-                let calledArgTy = destLinqExpressionTy g calledArgTy
-                if isDelegateTy g calledArgTy then 
+                if isDelegateTy g calledArgTy && isFunTy g callerArgTy then 
                     adjustDelegateTy calledArgTy
-                else
-                    // BUG 435170: called arg is Expr<'t> where 't is not delegate - such conversion is not legal -> return original type
-                    origArgTy
 
-            elif calledArg.ReflArgInfo.AutoQuote && isQuotedExprTy g calledArgTy && not (isQuotedExprTy g callerArgTy) then 
-                destQuotedExprTy g calledArgTy
+                elif isLinqExpressionTy g calledArgTy && isFunTy g callerArgTy then 
+                    let origArgTy = calledArgTy
+                    let calledArgTy = destLinqExpressionTy g calledArgTy
+                    if isDelegateTy g calledArgTy then 
+                        adjustDelegateTy calledArgTy
+                    else
+                        // BUG 435170: called arg is Expr<'t> where 't is not delegate - such conversion is not legal -> return original type
+                        origArgTy
 
-            else calledArgTy
+                elif calledArg.ReflArgInfo.AutoQuote && isQuotedExprTy g calledArgTy && not (isQuotedExprTy g callerArgTy) then 
+                    destQuotedExprTy g calledArgTy
 
-        // Adjust the called argument type to take into account whether the caller's argument is M(?arg=Some(3)) or M(arg=1) 
-        // If the called method argument is optional with type Option<T>, then the caller may provide a T, unless their argument is propagating-optional (i.e. isOptCallerArg) 
-        let calledArgTy = 
-            match calledArg.OptArgInfo with 
-            | NotOptional                    -> calledArgTy
-            | CalleeSide when not callerArg.IsOptional && isOptionTy g calledArgTy  -> destOptionTy g calledArgTy
-            | CalleeSide | CallerSide _ -> calledArgTy
-        calledArgTy
+                else calledArgTy
+
+            // Adjust the called argument type to take into account whether the caller's argument is M(?arg=Some(3)) or M(arg=1) 
+            // If the called method argument is optional with type Option<T>, then the caller may provide a T, unless their argument is propagating-optional (i.e. isOptCallerArg) 
+            let calledArgTy = 
+                match calledArg.OptArgInfo with 
+                | NotOptional                    -> calledArgTy
+                | CalleeSide when not callerArg.IsOptional && isOptionTy g calledArgTy  -> destOptionTy g calledArgTy
+                | CalleeSide | CallerSide _ -> calledArgTy
+            calledArgTy
         
 
 //-------------------------------------------------------------------------
@@ -193,11 +206,12 @@ type CalledMethArgSet<'T> =
 let MakeCalledArgs amap m (minfo:MethInfo) minst =
     // Mark up the arguments with their position, so we can sort them back into order later 
     let paramDatas = minfo.GetParamDatas(amap, m, minst)
-    paramDatas |> List.mapiSquared (fun i j (ParamData(isParamArrayArg, isOutArg, optArgInfo, callerInfoFlags, nmOpt, reflArgInfo, typeOfCalledArg))  -> 
-      { Position=(i, j)
+    paramDatas |> List.mapiSquared (fun i j (ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfoFlags, nmOpt, reflArgInfo, typeOfCalledArg))  -> 
+      { Position=(i,j)
         IsParamArray=isParamArrayArg
         OptArgInfo=optArgInfo
         CallerInfoInfo = callerInfoFlags
+        IsInArg=isInArg
         IsOutArg=isOutArg
         ReflArgInfo=reflArgInfo
         NameOpt=nmOpt
@@ -350,6 +364,7 @@ type CalledMeth<'T>
     let unnamedCalledOutArgs        = argSetInfos |> List.collect (fun (_, _, _, _, _, x) -> x)
 
     member x.infoReader = infoReader
+
     member x.amap = infoReader.amap
 
       /// the method we're attempting to call 
@@ -372,12 +387,14 @@ type CalledMeth<'T>
       /// The argument analysis for each set of curried arguments
     member x.ArgSets = argSets
 
-      /// return type
-    member x.ReturnType = methodRetTy
+      /// return type after implicit deference of byref returns is taken into account
+    member x.CalledReturnTypeAfterByrefDeref = 
+        let retTy = methodRetTy
+        if isByrefTy g retTy then destByrefTy g retTy else retTy
 
       /// return type after tupling of out args is taken into account
-    member x.ReturnTypeAfterOutArgTupling = 
-        let retTy = x.ReturnType
+    member x.CalledReturnTypeAfterOutArgTupling = 
+        let retTy = x.CalledReturnTypeAfterByrefDeref
         if isNil unnamedCalledOutArgs then 
             retTy 
         else 
@@ -405,19 +422,31 @@ type CalledMeth<'T>
 
     static member GetMethod (x:CalledMeth<'T>) = x.Method
 
-    member x.NumArgSets             = x.ArgSets.Length
+    member x.NumArgSets = x.ArgSets.Length
 
-    member x.HasOptArgs             = not (isNil x.UnnamedCalledOptArgs)
-    member x.HasOutArgs             = not (isNil x.UnnamedCalledOutArgs)
+    member x.HasOptArgs = not (isNil x.UnnamedCalledOptArgs)
+
+    member x.HasOutArgs = not (isNil x.UnnamedCalledOutArgs)
+
     member x.UsesParamArrayConversion = x.ArgSets |> List.exists (fun argSet -> argSet.ParamArrayCalledArgOpt.IsSome)
+
     member x.ParamArrayCalledArgOpt = x.ArgSets |> List.tryPick (fun argSet -> argSet.ParamArrayCalledArgOpt)
+
     member x.ParamArrayCallerArgs = x.ArgSets |> List.tryPick (fun argSet -> if Option.isSome argSet.ParamArrayCalledArgOpt then Some argSet.ParamArrayCallerArgs else None )
+
     member x.ParamArrayElementType = 
         assert (x.UsesParamArrayConversion)
         x.ParamArrayCalledArgOpt.Value.CalledArgumentType |> destArrayTy x.amap.g 
+
     member x.NumAssignedProps = x.AssignedItemSetters.Length
-    member x.CalledObjArgTys(m) = x.Method.GetObjArgTypes(x.amap, m, x.CalledTyArgs)
+
+    member x.CalledObjArgTys(m) = 
+        match x.Method.GetObjArgTypes(x.amap, m, x.CalledTyArgs) with 
+        | [ thisArgTy ] when isByrefTy g thisArgTy -> [ destByrefTy g thisArgTy ]
+        | res -> res
+
     member x.NumCalledTyArgs = x.CalledTyArgs.Length
+
     member x.NumCallerTyArgs = x.CallerTyArgs.Length 
 
     member x.AssignsAllNamedArgs = isNil x.UnassignedNamedArgs
@@ -451,8 +480,11 @@ type CalledMeth<'T>
        x.ArgSets |> List.map (fun argSet -> argSet.AssignedNamedArgs)
 
     member x.AllUnnamedCalledArgs = x.ArgSets |> List.collect (fun x -> x.UnnamedCalledArgs)
+
     member x.TotalNumUnnamedCalledArgs = x.ArgSets |> List.sumBy (fun x -> x.NumUnnamedCalledArgs)
+
     member x.TotalNumUnnamedCallerArgs = x.ArgSets |> List.sumBy (fun x -> x.NumUnnamedCallerArgs)
+
     member x.TotalNumAssignedNamedArgs = x.ArgSets |> List.sumBy (fun x -> x.NumAssignedNamedArgs)
 
 let NamesOfCalledArgs (calledArgs: CalledArg list) = 
@@ -547,15 +579,13 @@ let TakeObjAddrForMethodCall g amap (minfo:MethInfo) isMutable m objArgs f =
         match objArgs with
         | [objArgExpr] ->
             let hasCallInfo = ccallInfo.IsSome
-            let mustTakeAddress = 
-                (minfo.IsStruct && not minfo.IsExtensionMember)  // don't take the address of a struct when passing to an extension member
-                || hasCallInfo
+            let mustTakeAddress = hasCallInfo || minfo.ObjArgNeedsAddress(amap, m)
             let objArgTy = tyOfExpr g objArgExpr
-            let wrap, objArgExpr' = mkExprAddrOfExpr g mustTakeAddress hasCallInfo isMutable objArgExpr None m
+            let wrap, objArgExpr', _readonly = mkExprAddrOfExpr g mustTakeAddress hasCallInfo isMutable objArgExpr None m
             
             // Extension members and calls to class constraints may need a coercion for their object argument
             let objArgExpr' = 
-              if not hasCallInfo && // minfo.IsExtensionMember && minfo.IsStruct && 
+              if not hasCallInfo &&
                  not (TypeDefinitelySubsumesTypeNoCoercion 0 g amap m minfo.ApparentEnclosingType objArgTy) then 
                   mkCoerceExpr(objArgExpr', minfo.ApparentEnclosingType, m, objArgTy)
               else
@@ -1074,7 +1104,7 @@ module ProvidedMethodCalls =
             match ea.PApplyOption((function ProvidedAddressOfExpr x -> Some x | _ -> None), m) with
             | Some e -> 
                 let eT =  exprToExpr e
-                let wrap, ce = mkExprAddrOfExpr g true false DefinitelyMutates eT None m
+                let wrap,ce, _readonly = mkExprAddrOfExpr g true false DefinitelyMutates eT None m
                 let ce = wrap ce
                 None, (ce, tyOfExpr g ce)
             | None -> 

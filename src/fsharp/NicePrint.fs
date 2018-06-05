@@ -906,15 +906,28 @@ module private PrintTypes =
             | [arg] ->  layoutTypeWithInfoAndPrec denv env 2 arg ^^ tcL
             | args  -> bracketIfL (prec <= 1) (bracketL (layoutTypesWithInfoAndPrec denv env 2 (sepL (tagPunctuation ",")) args) --- tcL)
 
-    /// Layout a type, taking precedence into account to insert brackets where needed *)
+    /// Layout a type, taking precedence into account to insert brackets where needed
     and layoutTypeWithInfoAndPrec denv env prec typ =
 
         match stripTyparEqns typ with 
 
-        // Layout a type application 
+        // Always prefer to format 'byref<ty,ByRefKind.In>' as 'inref<ty>'
+        | typ when isInByrefTy denv.g typ && (match typ with TType_app (tc, _) when denv.g.inref_tcr.CanDeref  && tyconRefEq denv.g tc denv.g.byref2_tcr -> true | _ -> false) ->
+            layoutTypeWithInfoAndPrec denv env prec (mkInByrefTy denv.g (destByrefTy denv.g typ))
+
+        // Always prefer to format 'byref<ty,ByRefKind.Out>' as 'outref<ty>'
+        | typ when isOutByrefTy denv.g typ && (match typ with TType_app (tc, _) when denv.g.outref_tcr.CanDeref  && tyconRefEq denv.g tc denv.g.byref2_tcr -> true | _ -> false) ->
+            layoutTypeWithInfoAndPrec denv env prec (mkOutByrefTy denv.g (destByrefTy denv.g typ))
+
+        // Always prefer to format 'byref<ty,ByRefKind.InOut>' as 'byref<ty>'
+        | typ when isByrefTy denv.g typ && (match typ with TType_app (tc, _) when denv.g.byref_tcr.CanDeref  && tyconRefEq denv.g tc denv.g.byref2_tcr -> true | _ -> false) ->
+            layoutTypeWithInfoAndPrec denv env prec (mkByrefTy denv.g (destByrefTy denv.g typ))
+
+        // Always prefer 'float' to 'float<1>'
         | TType_app (tc,args) when tc.IsMeasureableReprTycon && List.forall (isDimensionless denv.g) args ->
           layoutTypeWithInfoAndPrec denv env prec (reduceTyconRefMeasureableOrProvided denv.g tc args)
 
+        // Layout a type application 
         | TType_app (tc,args) -> 
           layoutTypeAppWithInfoAndPrec denv env (layoutTyconRef denv tc) prec tc.IsPrefixDisplay args 
 
@@ -1228,7 +1241,7 @@ module InfoMemberPrinting =
     /// Format the arguments of a method to a buffer. 
     ///
     /// This uses somewhat "old fashioned" printf-style buffer printing.
-    let layoutParamData denv (ParamData(isParamArray, _isOutArg, optArgInfo, _callerInfoInfo, nmOpt, _reflArgInfo, pty)) =
+    let layoutParamData denv (ParamData(isParamArray, _isInArg, _isOutArg, optArgInfo, _callerInfoInfo, nmOpt, _reflArgInfo, pty)) =
         let isOptArg = optArgInfo.IsOptional
         match isParamArray, nmOpt, isOptArg, tryDestOptionTy denv.g pty with 
         // Layout an optional argument 
