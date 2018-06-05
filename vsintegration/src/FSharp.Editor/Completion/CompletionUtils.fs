@@ -9,6 +9,7 @@ open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Completion
 open System.Globalization
+open Microsoft.FSharp.Compiler.SourceCodeServices
 
 module internal CompletionUtils =
 
@@ -98,3 +99,13 @@ module internal CompletionUtils =
                 | ClassificationTypeNames.NumericLiteral -> false
                 | _ -> true // anything else is a valid classification type
             ))
+
+    let inline getKindPriority kind =
+        match kind with
+        | CompletionItemKind.Property -> 0
+        | CompletionItemKind.Field -> 1
+        | CompletionItemKind.Method (isExtension = false) -> 2
+        | CompletionItemKind.Event -> 3
+        | CompletionItemKind.Argument -> 4
+        | CompletionItemKind.Other -> 5
+        | CompletionItemKind.Method (isExtension = true) -> 6
