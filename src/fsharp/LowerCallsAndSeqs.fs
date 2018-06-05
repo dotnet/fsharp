@@ -262,20 +262,25 @@ let LowerSeqExpr g amap overallExpr =
                    capturedVars = emptyFreeVars
                   }
 
-        | SeqDelay(e,_elemTy) -> 
+        | SeqDelay(delayedExpr,_elemTy) -> 
             // printfn "found Seq.delay"
-            Lower isWholeExpr isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel e // note, using 'isWholeExpr' here prevents 'seq { yield! e }' and 'seq { 0 .. 1000 }' from being compiled
+            // note, using 'isWholeExpr' here prevents 'seq { yield! e }' and 'seq { 0 .. 1000 }' from being compiled
+            Lower isWholeExpr isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel delayedExpr 
 
         | SeqAppend(e1,e2,m) -> 
             // printfn "found Seq.append"
-            match Lower false false noDisposeContinuationLabel currentDisposeContinuationLabel e1, 
-                  Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel e2 with 
+            let res1 = Lower false false noDisposeContinuationLabel currentDisposeContinuationLabel e1
+            let res2 = Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel e2
+            match res1, res2 with 
             | Some res1, Some res2 -> 
+
                 let capturedVars = 
                     if res1.labels.IsEmpty then 
                         res2.capturedVars 
                     else 
+                        // All of 'e2' is needed after resuming at any of the labels
                         unionFreeVars res1.capturedVars (freeInExpr CollectLocals e2)
+
                 Some { phase2 = (fun ctxt -> 
                             let generate1,dispose1,checkDispose1 = res1.phase2 ctxt
                             let generate2,dispose2,checkDispose2 = res2.phase2 ctxt
@@ -294,9 +299,15 @@ let LowerSeqExpr g amap overallExpr =
 
         | SeqWhile(guardExpr,bodyExpr,m) -> 
             // printfn "found Seq.while"
-            match Lower false false noDisposeContinuationLabel currentDisposeContinuationLabel bodyExpr with 
+            let resBody = Lower false false noDisposeContinuationLabel currentDisposeContinuationLabel bodyExpr
+            match resBody with 
             | Some res2  -> 
-                let capturedVars = res2.capturedVars 
+                let capturedVars = 
+                    if res2.labels.IsEmpty then 
+                        res2.capturedVars  // the whole loopis synchronous, no labels
+                    else 
+                        freeInExpr CollectLocals expr // everything is needed on subsequent iterations
+                
                 Some { phase2 = (fun ctxt -> 
                             let generate2,dispose2,checkDispose2 = res2.phase2 ctxt
                             let generate = mkWhile g (SequencePointAtWhileLoop guardExpr.Range,NoSpecialWhileLoopMarker,guardExpr,generate2,m)
@@ -312,7 +323,12 @@ let LowerSeqExpr g amap overallExpr =
 
         | SeqUsing(resource,v,body,elemTy,m) -> 
             // printfn "found Seq.using"
-            Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel (mkLet (SequencePointAtBinding body.Range) m v resource (mkCallSeqFinally g m elemTy body (mkUnitDelayLambda g m (mkCallDispose g m v.Type (exprForVal m v))))) 
+            let reduction = 
+                mkLet (SequencePointAtBinding body.Range) m v resource 
+                    (mkCallSeqFinally g m elemTy body 
+                        (mkUnitDelayLambda g m 
+                            (mkCallDispose g m v.Type (exprForVal m v))))
+            Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel reduction
 
         | SeqFor(inp,v,body,genElemTy,m) -> 
             // printfn "found Seq.for"
@@ -323,17 +339,19 @@ let LowerSeqExpr g amap overallExpr =
             //    while enum.MoveNext() do
             //       let v = enum.Current 
             //       body ]]            
-            Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel
-                 (mkCallSeqUsing g m inpEnumTy genElemTy (callNonOverloadedMethod g amap m "GetEnumerator" (mkSeqTy g inpElemTy) [inp]) 
-                     (mkLambdaNoType g m enumv 
+            let reduction = 
+                mkCallSeqUsing g m inpEnumTy genElemTy (callNonOverloadedMethod g amap m "GetEnumerator" (mkSeqTy g inpElemTy) [inp]) 
+                    (mkLambdaNoType g m enumv 
                        (mkCallSeqGenerated g m genElemTy (mkUnitDelayLambda g m (callNonOverloadedMethod g amap m "MoveNext" inpEnumTy [enume]))
                           (mkInvisibleLet m v (callNonOverloadedMethod g amap m "get_Current" inpEnumTy [enume])
-                              (mkCoerceIfNeeded g (mkSeqTy g genElemTy) (tyOfExpr g body) body)))))
+                              (mkCoerceIfNeeded g (mkSeqTy g genElemTy) (tyOfExpr g body) body))))
+            Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel reduction
 
         | SeqTryFinally(e1,compensation,m) -> 
             // printfn "found Seq.try/finally"
             let innerDisposeContinuationLabel = IL.generateCodeLabel()
-            match Lower false false noDisposeContinuationLabel innerDisposeContinuationLabel e1 with 
+            let resBody = Lower false false noDisposeContinuationLabel innerDisposeContinuationLabel e1
+            match resBody with 
             | Some res1  -> 
                 let capturedVars = unionFreeVars res1.capturedVars (freeInExpr CollectLocals compensation) 
                 Some { phase2 = (fun ((pcv,_currv,_,pcMap) as ctxt) -> 
@@ -407,7 +425,9 @@ let LowerSeqExpr g amap overallExpr =
         | Expr.Let(bind,bodyExpr,m,_) 
               // Restriction: compilation of sequence expressions containing non-toplevel constrained generic functions is not supported
               when  bind.Var.IsCompiledAsTopLevel || not (IsGenericValWithGenericContraints g bind.Var) -> 
-            match Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel bodyExpr with 
+
+            let resBody = Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel bodyExpr
+            match resBody with 
             | Some res2 ->
                 if bind.Var.IsCompiledAsTopLevel then 
                     Some (RepresentBindingsAsLifted (mkLetBind m bind) res2)
