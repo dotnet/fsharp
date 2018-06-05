@@ -817,7 +817,7 @@ let GetMethodSpecForMemberVal amap g (memberInfo:ValMemberInfo) (vref:ValRef) =
 
         let thisTy = if isByrefTy g thisTy then destByrefTy g thisTy else thisTy
         let thisArgTys = argsOfAppTy g thisTy
-        if ctps.Length <> thisArgTys.Length then
+        if numParentTypars <> thisArgTys.Length then
            warning(InternalError(sprintf "CodeGen check: type checking did not quantify the correct number of type variables for this method, #parentTypars = %d, #ctps = %d, #mtps = %d, #thisArgTys = %d" numParentTypars ctps.Length mtps.Length thisArgTys.Length,m))
         else 
            List.iter2
