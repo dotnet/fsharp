@@ -1543,10 +1543,12 @@ let CheckRecdField isUnion cenv env (tycon:Tycon) (rfield:RecdField) =
         (not isUnion && IsHiddenRecdField env.sigToImplRemapInfo (tcref.MakeNestedRecdFieldRef rfield))
     let access = AdjustAccess isHidden (fun () -> tycon.CompilationPath) rfield.Accessibility
     CheckTypeForAccess cenv env (fun () -> rfield.Name) access m rfield.FormalType
-    
+
     if TyconRefHasAttribute g m g.attrib_IsByRefLikeAttribute tcref then 
         // Permit Span fields in IsByRefLike types
         CheckTypePermitOuterSpanLike cenv env m rfield.FormalType
+        if cenv.reportErrors then
+            CheckForByrefType cenv env rfield.FormalType (fun () -> errorR(Error(FSComp.SR.chkCantStoreByrefValue(), tycon.Range)))
     else
         CheckTypeNoByrefs cenv env m rfield.FormalType
         if cenv.reportErrors then 
