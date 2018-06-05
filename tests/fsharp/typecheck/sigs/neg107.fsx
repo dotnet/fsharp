@@ -65,3 +65,10 @@ namespace Test
             val mutable x : TestMut1
 
             member this.XAddr = &this.x.x // not allowed, Struct members cannot return the address of fields of the struct by reference", not entirely clear why C# disallowed this
+
+    module DisallowIsByRefLikeWithByRefField =
+        [<IsByRefLike;Struct>]
+        type Beef(x: byref<int>) =
+
+            member __.X = &x
+
