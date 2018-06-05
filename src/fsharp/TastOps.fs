@@ -6931,15 +6931,17 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
                              | Some id -> id.idText))
                 | _ -> 
                     []
-
-            assert (curriedActualArgTys.Length >= curriedNiceNames.Length)
+             
+            let nCurriedNiceNames = curriedNiceNames.Length 
+            assert (curriedActualArgTys.Length >= nCurriedNiceNames)
 
             let argTysWithNiceNames, argTysWithoutNiceNames =
-                List.chop curriedNiceNames.Length argTys
+                List.chop nCurriedNiceNames argTys
 
             /// Only consume 'suppliedArgs' up to at most the number of nice arguments
-            let suppliedArgs, droppedSuppliedArgs = 
-                List.chop (min suppliedArgs.Length curriedNiceNames.Length) suppliedArgs
+            let nSuppliedArgs = min suppliedArgs.Length nCurriedNiceNames
+            let suppliedArgs, droppedSuppliedArgs =
+                List.chop nSuppliedArgs suppliedArgs
 
             /// The relevant range for any expressions and applications includes the arguments 
             let appm = (m, suppliedArgs) ||> List.fold (fun m e -> unionRanges m (e.Range)) 
@@ -6950,7 +6952,7 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
             // is a classic case. Here we generate
             //   let tmp = (effect;4) in 
             //   (fun v -> Seq.take tmp (v :> seq<_>))
-            let buildingLambdas = suppliedArgs.Length <> curriedNiceNames.Length
+            let buildingLambdas = nSuppliedArgs <> nCurriedNiceNames
 
             /// Given a tuple of argument variables that has a tuple type that satisfies the input argument types, 
             /// coerce it to a tuple that satisfies the matching coerced argument type(s).
@@ -7078,9 +7080,9 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
 
             
             // Mark the up as Some/None
-            let suppliedArgs = List.map Some suppliedArgs @ List.ofArray (Array.create (curriedNiceNames.Length - suppliedArgs.Length) None)
+            let suppliedArgs = List.map Some suppliedArgs @ List.ofArray (Array.create (nCurriedNiceNames - nSuppliedArgs) None)
 
-            assert (suppliedArgs.Length = curriedNiceNames.Length)
+            assert (suppliedArgs.Length = nCurriedNiceNames)
 
             let exprForAllArgs = 
 
