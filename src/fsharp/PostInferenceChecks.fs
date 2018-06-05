@@ -771,7 +771,7 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : bool =
 
     | Expr.TyLambda(_,tps,_,m,rty)  -> 
         let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps,[],ValReprInfo.unnamedRetVal) 
-        let ty = tryMkForallTy tps rty in 
+        let ty = mkForallTyIfNeeded tps rty in 
         CheckLambdas false None cenv env false topValInfo false expr m ty
 
     | Expr.TyChoose(tps,e1,_)  -> 

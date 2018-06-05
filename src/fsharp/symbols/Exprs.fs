@@ -1040,7 +1040,7 @@ module FSharpExprConvert =
                 let linkageType = 
                     let ty = mkIteratedFunTy (List.map (mkRefTupledTy cenv.g) argtys) rty
                     let ty = if isStatic then ty else mkFunTy enclosingType ty 
-                    tryMkForallTy (typars1 @ typars2) ty
+                    mkForallTyIfNeeded (typars1 @ typars2) ty
 
                 let argCount = List.sum (List.map List.length argtys)  + (if isStatic then 0 else 1)
                 let key = ValLinkageFullKey({ MemberParentMangledName=memberParentName; MemberIsOverride=false; LogicalName=logicalName; TotalArgCount= argCount }, Some linkageType)

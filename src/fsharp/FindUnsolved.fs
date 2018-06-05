@@ -70,7 +70,7 @@ let rec accExpr   (cenv:cenv) (env:env) expr =
     | Expr.TyLambda(_,tps,_body,_m,rty)  -> 
         let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps,[],ValReprInfo.unnamedRetVal) 
         accTy cenv env rty
-        let ty = tryMkForallTy tps rty 
+        let ty = mkForallTyIfNeeded tps rty 
         accLambdas cenv env topValInfo expr ty
     | Expr.TyChoose(_tps,e1,_m)  -> 
         accExpr cenv env e1 

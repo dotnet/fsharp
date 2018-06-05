@@ -1251,7 +1251,7 @@ type CheckedBindingInfo =
 /// Return the generalized type for a type scheme
 let GeneralizedTypeForTypeScheme typeScheme = 
     let (TypeScheme(generalizedTypars, tau)) = typeScheme
-    tryMkForallTy generalizedTypars tau
+    mkForallTyIfNeeded generalizedTypars tau
 
 /// Create a type scheme for somthing that is not generic
 let NonGenericTypeScheme ty = TypeScheme([], ty)
@@ -12748,7 +12748,7 @@ module IncrClassChecking =
         ctorDeclaredTypars |> List.iter (SetTyparRigid cenv.g env.DisplayEnv m)  
 
         // Reconstitute the type with the correct quantified type variables.
-        ctorInfo.InstanceCtorVal.SetType (tryMkForallTy ctorDeclaredTypars ctorInfo.InstanceCtorVal.TauType)
+        ctorInfo.InstanceCtorVal.SetType (mkForallTyIfNeeded ctorDeclaredTypars ctorInfo.InstanceCtorVal.TauType)
 
         let freeChoiceTypars = ListSet.subtract typarEq generalizedTyparsForRecursiveBlock ctorDeclaredTypars
 
@@ -13043,7 +13043,7 @@ module IncrClassChecking =
                 let m = thisVal.Range
                 let cctorArgs, cctorVal, _ = ctorInfo.StaticCtorValInfo.Force()
                 // Reconstitute the type of the implicit class constructor with the correct quantified type variables.
-                cctorVal.SetType (tryMkForallTy ctorDeclaredTypars cctorVal.TauType)
+                cctorVal.SetType (mkForallTyIfNeeded ctorDeclaredTypars cctorVal.TauType)
                 let cctorBody = mkMemberLambdas m [] None None [cctorArgs] (cctorInitAction, cenv.g.unit_ty)
                 Some(cctorBody)
         

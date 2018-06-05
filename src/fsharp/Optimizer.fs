@@ -1705,7 +1705,7 @@ let rec OptimizeExpr cenv (env:IncrementalOptimizationEnv) expr =
         OptimizeLambdas None cenv env topValInfo expr ty
     | Expr.TyLambda(_lambdaId, tps, _body, _m, rty)  -> 
         let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps, [], ValReprInfo.unnamedRetVal)
-        let ty = tryMkForallTy tps rty
+        let ty = mkForallTyIfNeeded tps rty
         OptimizeLambdas None cenv env topValInfo expr ty
     | Expr.TyChoose _  -> OptimizeExpr cenv env (TypeRelations.ChooseTyparSolutionsForFreeChoiceTypars cenv.g cenv.amap expr)
     | Expr.Match(spMatch, exprm, dtree, targets, m, ty) -> OptimizeMatch cenv env (spMatch, exprm, dtree, targets, m, ty)

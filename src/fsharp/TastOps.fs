@@ -1046,8 +1046,8 @@ let unionCaseRefOrder =
 let mkFunTy d r = TType_fun (d, r)
 let (-->) d r = mkFunTy d r
 let mkForallTy d r = TType_forall (d, r)
-let tryMkForallTy d r = if isNil d then r else mkForallTy d r
-let (+->) d r = tryMkForallTy d r
+let mkForallTyIfNeeded d r = if isNil d then r else mkForallTy d r
+let (+->) d r = mkForallTyIfNeeded d r
 let mkIteratedFunTy dl r = List.foldBack (-->) dl r
 
 let mkLambdaArgTy m tys = 
@@ -1058,7 +1058,7 @@ let mkLambdaArgTy m tys =
 
 let typeOfLambdaArg m vs = mkLambdaArgTy m (typesOfVals vs)
 let mkMultiLambdaTy m vs rty = mkFunTy (typeOfLambdaArg m vs) rty 
-let mkLambdaTy tps tys rty = tryMkForallTy tps (mkIteratedFunTy tys rty)
+let mkLambdaTy tps tys rty = mkForallTyIfNeeded tps (mkIteratedFunTy tys rty)
 
 /// When compiling FSharp.Core.dll we have to deal with the non-local references into
 /// the library arising from env.fs. Part of this means that we have to be able to resolve these

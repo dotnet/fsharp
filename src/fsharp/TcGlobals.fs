@@ -350,13 +350,13 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let (-->) d r = mkFunTy d r
   let mkIteratedFunTy dl r = List.foldBack mkFunTy dl r
   let mkSmallRefTupledTy l = match l with [] -> v_unit_ty | [h] -> h | tys -> mkRawRefTupleTy tys
-  let tryMkForallTy d r = match d with [] -> r | tps -> TType_forall(tps, r)
+  let mkForallTyIfNeeded d r = match d with [] -> r | tps -> TType_forall(tps, r)
 
       // A table of all intrinsics that the compiler cares about
   let v_knownIntrinsics = Dictionary<(string*string), ValRef>(HashIdentity.Structural)
 
   let makeIntrinsicValRef (enclosingEntity, logicalName, memberParentName, compiledNameOpt, typars, (argtys, rty))  =
-      let ty = tryMkForallTy typars (mkIteratedFunTy (List.map mkSmallRefTupledTy argtys) rty)
+      let ty = mkForallTyIfNeeded typars (mkIteratedFunTy (List.map mkSmallRefTupledTy argtys) rty)
       let isMember = Option.isSome memberParentName
       let argCount = if isMember then List.sum (List.map List.length argtys) else 0
       let linkageType = if isMember then Some ty else None
