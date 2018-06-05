@@ -379,9 +379,19 @@ let LowerSeqExpr g amap overallExpr =
         | Expr.Let(bind,e2,m,_) 
               // Restriction: compilation of sequence expressions containing non-toplevel constrained generic functions is not supported
               when  bind.Var.IsCompiledAsTopLevel || not (IsGenericValWithGenericContraints g bind.Var) -> 
+            
+            let wantsToElideCompilerGeneratedBinding bind =
+                match bind with
+                | Binding.TBind({val_type = TType.TType_tuple(_)},_,_) ->
+                    // we elide unnamed tuple bindings (coming as compiler generated)
+                    // let (a,b) = aTuple
+                    true
+                | _ -> 
+                    false
+
             match Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel e2 with 
             | Some res2 ->
-                if bind.Var.IsCompilerGenerated then
+                if bind.Var.IsCompilerGenerated && wantsToElideCompilerGeneratedBinding bind then
                   None
                 elif bind.Var.IsCompiledAsTopLevel then 
                     Some (RepresentBindingsAsLifted (mkLetBind m bind) res2)
