@@ -133,48 +133,94 @@ but given a
     'inref<'T>'    
 The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'
 
-neg106.fs(94,36,94,38): typecheck error FS0001: Type mismatch. Expecting a
+neg106.fs(94,35,94,39): typecheck error FS0001: Type mismatch. Expecting a
+    'byref<int>'    
+but given a
+    'inref<int>'    
+The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'
+
+neg106.fs(98,36,98,38): typecheck error FS0001: Type mismatch. Expecting a
     'outref<'T>'    
 but given a
     'inref<'T>'    
 The type 'ByRefKinds.Out' does not match the type 'ByRefKinds.In'
 
-neg106.fs(99,38,99,40): typecheck error FS0001: Type mismatch. Expecting a
+neg106.fs(102,37,102,40): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
+
+neg106.fs(102,36,102,40): typecheck error FS0001: Type mismatch. Expecting a
+    'outref<'a>'    
+but given a
+    'inref<'a>'    
+The type 'ByRefKinds.Out' does not match the type 'ByRefKinds.In'
+
+neg106.fs(107,38,107,40): typecheck error FS0001: Type mismatch. Expecting a
     'byref<'T>'    
 but given a
     'inref<'T>'    
 The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'
 
-neg106.fs(104,38,104,40): typecheck error FS0001: Type mismatch. Expecting a
+neg106.fs(112,39,112,42): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
+
+neg106.fs(112,38,112,42): typecheck error FS0001: Type mismatch. Expecting a
+    'byref<'a>'    
+but given a
+    'inref<'a>'    
+The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'
+
+neg106.fs(117,38,117,40): typecheck error FS0001: Type mismatch. Expecting a
     'outref<'T>'    
 but given a
     'inref<'T>'    
 The type 'ByRefKinds.Out' does not match the type 'ByRefKinds.In'
 
-neg106.fs(109,38,109,40): typecheck error FS0001: Type mismatch. Expecting a
+neg106.fs(122,39,122,42): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
+
+neg106.fs(122,38,122,42): typecheck error FS0001: Type mismatch. Expecting a
+    'outref<'a>'    
+but given a
+    'inref<'a>'    
+The type 'ByRefKinds.Out' does not match the type 'ByRefKinds.In'
+
+neg106.fs(127,38,127,40): typecheck error FS0001: Type mismatch. Expecting a
     'byref<'T>'    
 but given a
     'inref<'T>'    
 The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'
 
-neg106.fs(114,38,114,40): typecheck error FS0001: Type mismatch. Expecting a
+neg106.fs(132,39,132,42): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
+
+neg106.fs(132,38,132,42): typecheck error FS0001: Type mismatch. Expecting a
+    'byref<'a>'    
+but given a
+    'inref<'a>'    
+The type 'ByRefKinds.InOut' does not match the type 'ByRefKinds.In'
+
+neg106.fs(137,38,137,40): typecheck error FS0001: Type mismatch. Expecting a
     'outref<'T>'    
 but given a
     'inref<'T>'    
 The type 'ByRefKinds.Out' does not match the type 'ByRefKinds.In'
 
-neg106.fs(118,34,118,47): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
+neg106.fs(142,39,142,42): typecheck error FS0072: Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.
 
-neg106.fs(119,34,119,44): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
+neg106.fs(142,38,142,42): typecheck error FS0001: Type mismatch. Expecting a
+    'outref<'a>'    
+but given a
+    'inref<'a>'    
+The type 'ByRefKinds.Out' does not match the type 'ByRefKinds.In'
 
-neg106.fs(120,34,120,44): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
+neg106.fs(146,34,146,47): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
 
-neg106.fs(121,34,121,44): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
+neg106.fs(147,34,147,44): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
 
-neg106.fs(118,34,118,47): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
+neg106.fs(148,34,148,44): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
 
-neg106.fs(119,34,119,44): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
+neg106.fs(149,34,149,44): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
 
-neg106.fs(120,34,120,44): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
+neg106.fs(146,34,146,47): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
 
-neg106.fs(121,34,121,44): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
+neg106.fs(147,34,147,44): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
+
+neg106.fs(148,34,148,44): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly
+
+neg106.fs(149,34,149,44): typecheck error FS1204: This construct is for use in the FSharp.Core library and should not be used directly

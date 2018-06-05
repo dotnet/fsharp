@@ -4005,11 +4005,15 @@ let buildApp cenv expr resultTy arg m =
             let argTy = tyOfExpr g arg
             if readonly then
                 mkInByrefTy g argTy
-            // See RFC FS-1053 - we do _not_ introduce outref here, e.g. '&x' where 'x' is outref<_> is _not_ outref.  
+
+            // "`outref<'T>` types are never introduced implicitly by F#.", see rationale in RFC FS-1053
+            //
+            // We do _not_ introduce outref here, e.g. '&x' where 'x' is outref<_> is _not_ outref.  
             // This effectively makes 'outref<_>' documentation-only. There is frequently a need to pass outref
             // pointers to .NET library functions whose signatures are not tagged with [<Out>]
             //elif writeonly then
             //    mkOutByrefTy g argTy
+
             else
                 mkByrefTyWithInference g argTy (NewByRefKindInferenceType g m)
 

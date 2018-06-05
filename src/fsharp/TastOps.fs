@@ -5760,18 +5760,28 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
             let writeonly = false
             None, mkValAddr m readonly vref, readonly, writeonly
 
-        // LVALUE of "e.f" where "f" is record field. 
-        | Expr.Op (TOp.ValFieldGet rfref, tinst, [obje], m) when MustTakeAddressOfRecdFieldRef rfref || CanTakeAddressOfRecdFieldRef g m rfref tinst mut ->
-            let exprty = tyOfExpr g obje
-            let wrap, expra, readonly, writeonly = mkExprAddrOfExprAux g (isStructTy g exprty) false mut obje None m
-            let readonly = readonly || not (MustTakeAddressOfRecdFieldRef rfref)
+        // LVALUE of "e.f" where "f" is an instance F# field or record field. 
+        | Expr.Op (TOp.ValFieldGet rfref, tinst, [objExpr], m) when MustTakeAddressOfRecdFieldRef rfref || CanTakeAddressOfRecdFieldRef g m rfref tinst mut ->
+            let objTy = tyOfExpr g objExpr
+            let takeAddrOfObjExpr = isStructTy g objTy // It seems this will always be false - the address will already have been taken
+            let wrap, expra, readonly, writeonly = mkExprAddrOfExprAux g takeAddrOfObjExpr false mut objExpr None m
+            let readonly = readonly || isInByrefTy g objTy || not (MustTakeAddressOfRecdFieldRef rfref)
+            let writeonly = writeonly || isOutByrefTy g objTy
             wrap, mkRecdFieldGetAddrViaExprAddr(readonly, expra, rfref, tinst, m), readonly, writeonly
 
-        // LVALUE of "e.f" where "f" is union field. 
-        | Expr.Op (TOp.UnionCaseFieldGet (uref, cidx), tinst, [obje], m) when MustTakeAddressOfRecdField (uref.FieldByIndex(cidx)) || CanTakeAddressOfUnionFieldRef g m uref cidx tinst mut ->
-            let exprty = tyOfExpr g obje
-            let wrap, expra, readonly, writeonly = mkExprAddrOfExprAux g (isStructTy g exprty) false mut obje None m
-            let readonly = readonly || not (MustTakeAddressOfRecdField (uref.FieldByIndex(cidx)))
+        // LVALUE of "f" where "f" is a static F# field. 
+        | Expr.Op (TOp.ValFieldGet rfref, tinst, [], m) when MustTakeAddressOfRecdFieldRef rfref || CanTakeAddressOfRecdFieldRef g m rfref tinst mut ->
+            let readonly = not (MustTakeAddressOfRecdFieldRef rfref)
+            let writeonly = false
+            None, mkStaticRecdFieldGetAddr(readonly, rfref, tinst, m), readonly, writeonly
+
+        // LVALUE of "e.f" where "f" is an F# union field. 
+        | Expr.Op (TOp.UnionCaseFieldGet (uref, cidx), tinst, [objExpr], m) when MustTakeAddressOfRecdField (uref.FieldByIndex(cidx)) || CanTakeAddressOfUnionFieldRef g m uref cidx tinst mut ->
+            let objTy = tyOfExpr g objExpr
+            let takeAddrOfObjExpr = isStructTy g objTy // It seems this will always be false - the address will already have been taken
+            let wrap, expra, readonly, writeonly = mkExprAddrOfExprAux g takeAddrOfObjExpr false mut objExpr None m
+            let readonly = readonly || isInByrefTy g objTy || not (MustTakeAddressOfRecdField (uref.FieldByIndex(cidx)))
+            let writeonly = writeonly || isOutByrefTy g objTy
             wrap, mkUnionCaseFieldGetAddrProvenViaExprAddr(readonly, expra, uref, tinst, cidx, m), readonly, writeonly
 
         // LVALUE of "f" where "f" is a .NET static field. 
@@ -5781,17 +5791,14 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
             None, Expr.Op (TOp.ILAsm ([IL.I_ldsflda(fspec)], [mkByrefTy g ty2]), tinst, [], m), readonly, writeonly
 
         // LVALUE of "e.f" where "f" is a .NET instance field. 
-        | Expr.Op (TOp.ILAsm ([IL.I_ldfld(_align, _vol, fspec)], [ty2]), tinst, [obje], m) -> 
-            let exprty = tyOfExpr g obje
+        | Expr.Op (TOp.ILAsm ([IL.I_ldfld(_align, _vol, fspec)], [ty2]), tinst, [objExpr], m) -> 
+            let objTy = tyOfExpr g objExpr
+            let takeAddrOfObjExpr = isStructTy g objTy // It seems this will always be false - the address will already have been taken
             // we never consider taking the address of an .NET instance field to give an inref pointer, unless the object pointer is an inref pointer
-            let wrap, expra, readonly, writeonly = mkExprAddrOfExprAux g (isStructTy g exprty) false mut obje None m
+            let wrap, expra, readonly, writeonly = mkExprAddrOfExprAux g takeAddrOfObjExpr false mut objExpr None m
+            let readonly = readonly || isInByrefTy g objTy
+            let writeonly = writeonly || isOutByrefTy g objTy
             wrap, Expr.Op (TOp.ILAsm ([IL.I_ldflda(fspec)], [mkByrefTyWithFlag g readonly ty2]), tinst, [expra], m), readonly, writeonly
-
-        // LVALUE of "f" where "f" is a static F# field. 
-        | Expr.Op (TOp.ValFieldGet rfref, tinst, [], m) when MustTakeAddressOfRecdFieldRef rfref || CanTakeAddressOfRecdFieldRef g m rfref tinst mut ->
-            let readonly = not (MustTakeAddressOfRecdFieldRef rfref)
-            let writeonly = false
-            None, mkStaticRecdFieldGetAddr(readonly, rfref, tinst, m), readonly, writeonly
 
         // LVALUE of "e.[n]" where e is an array of structs 
         | Expr.App(Expr.Val(vf, _, _), _, [elemTy], [aexpr;nexpr], _) when (valRefEq g vf g.array_get_vref) -> 
