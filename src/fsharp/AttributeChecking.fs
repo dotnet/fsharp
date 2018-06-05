@@ -291,7 +291,7 @@ let CheckFSharpAttributes g attribs m =
                 match namedArgs with 
                 | ExtractAttribNamedArg "IsError" (AttribBoolArg v) -> v 
                 | _ -> false 
-            if isError then ErrorD msg else WarnD msg
+            if isError && (not g.compilingFslib || n <> 1204) then ErrorD msg else WarnD msg
                  
         | _ -> 
             CompleteD
@@ -419,7 +419,7 @@ let CheckMethInfoAttributes g m tyargsOpt minfo =
 
 /// Indicate if a method has 'Obsolete', 'CompilerMessageAttribute' or 'TypeProviderEditorHideMethodsAttribute'. 
 /// Used to suppress the item in intellisense.
-let MethInfoIsUnseen g m typ minfo = 
+let MethInfoIsUnseen g m ty minfo = 
     let isUnseenByObsoleteAttrib () = 
         match BindMethInfoAttributes m minfo 
                 (fun ilAttribs -> Some(CheckILAttributesForUnseen g ilAttribs m)) 
@@ -435,10 +435,10 @@ let MethInfoIsUnseen g m typ minfo =
 
     let isUnseenByHidingAttribute () = 
 #if !NO_EXTENSIONTYPING
-        not (isObjTy g typ) &&
-        isAppTy g typ &&
+        not (isObjTy g ty) &&
+        isAppTy g ty &&
         isObjTy g minfo.ApparentEnclosingType &&
-        let tcref = tcrefOfAppTy g typ 
+        let tcref = tcrefOfAppTy g ty 
         match tcref.TypeReprInfo with 
         | TProvidedTypeExtensionPoint info -> 
             info.ProvidedType.PUntaint((fun st -> (st :> IProvidedCustomAttributeProvider).GetHasTypeProviderEditorHideMethodsAttribute(info.ProvidedType.TypeProvider.PUntaintNoFailure(id))), m)
@@ -454,11 +454,11 @@ let MethInfoIsUnseen g m typ minfo =
         else 
             false
 #else
-        typ |> ignore
+        ty |> ignore
         false
 #endif
 
-    //let isUnseenByBeingTupleMethod () = isAnyTupleTy g typ
+    //let isUnseenByBeingTupleMethod () = isAnyTupleTy g ty
 
     isUnseenByObsoleteAttrib () || isUnseenByHidingAttribute () //|| isUnseenByBeingTupleMethod ()
 

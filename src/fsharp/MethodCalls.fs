@@ -55,23 +55,23 @@ type CalledArg =
     { Position: (int * int)
       IsParamArray : bool
       OptArgInfo : OptionalArgInfo
-      CallerInfoInfo : CallerInfoInfo
+      CallerInfo : CallerInfo
       IsInArg: bool
       IsOutArg: bool
       ReflArgInfo: ReflectedArgInfo
       NameOpt: Ident option
       CalledArgumentType : TType }
 
-let CalledArg (pos, isParamArray, optArgInfo, callerInfoInfo, isInArg, isOutArg, nameOpt, reflArgInfo, calledArgTy) =
+let CalledArg (pos, isParamArray, optArgInfo, callerInfo, isInArg, isOutArg, nameOpt, reflArgInfo, calledArgTy) =
     { Position=pos
       IsParamArray=isParamArray
-      OptArgInfo =optArgInfo
-      CallerInfoInfo = callerInfoInfo
+      OptArgInfo=optArgInfo
+      CallerInfo=callerInfo
       IsInArg=isInArg
       IsOutArg=isOutArg
       ReflArgInfo=reflArgInfo
       NameOpt=nameOpt
-      CalledArgumentType = calledArgTy }
+      CalledArgumentType=calledArgTy }
 
 /// Represents a match between a caller argument and a called argument, arising from either
 /// a named argument or an unnamed argument.
@@ -210,7 +210,7 @@ let MakeCalledArgs amap m (minfo:MethInfo) minst =
       { Position=(i,j)
         IsParamArray=isParamArrayArg
         OptArgInfo=optArgInfo
-        CallerInfoInfo = callerInfoFlags
+        CallerInfo = callerInfoFlags
         IsInArg=isInArg
         IsOutArg=isOutArg
         ReflArgInfo=reflArgInfo
@@ -558,9 +558,9 @@ let ComputeConstrainedCallInfo g amap m (objArgs, minfo:MethInfo) =
            // Constrained calls to class types can only ever be needed for the three class types that 
            // are base types of value types
            || (isClassTy g methObjTy && 
-                 (not (typeEquiv g methObjTy g.system_Object_typ || 
-                       typeEquiv g methObjTy g.system_Value_typ ||
-                       typeEquiv g methObjTy g.system_Enum_typ))) then 
+                 (not (typeEquiv g methObjTy g.system_Object_ty || 
+                       typeEquiv g methObjTy g.system_Value_ty ||
+                       typeEquiv g methObjTy g.system_Enum_ty))) then 
             None
         else
             // The object argument is a value type or variable type and the target method is an interface or System.Object
@@ -581,7 +581,7 @@ let TakeObjAddrForMethodCall g amap (minfo:MethInfo) isMutable m objArgs f =
             let hasCallInfo = ccallInfo.IsSome
             let mustTakeAddress = hasCallInfo || minfo.ObjArgNeedsAddress(amap, m)
             let objArgTy = tyOfExpr g objArgExpr
-            let wrap, objArgExpr', _readonly = mkExprAddrOfExpr g mustTakeAddress hasCallInfo isMutable objArgExpr None m
+            let wrap, objArgExpr', _readonly, _writeonly = mkExprAddrOfExpr g mustTakeAddress hasCallInfo isMutable objArgExpr None m
             
             // Extension members and calls to class constraints may need a coercion for their object argument
             let objArgExpr' = 
@@ -660,11 +660,11 @@ let BuildFSharpMethodApp g m (vref: ValRef) vexp vexprty (args: Exprs) =
     retTy
     
 /// Build a call to an F# method.
-let BuildFSharpMethodCall g m (typ, vref:ValRef) valUseFlags minst args =
+let BuildFSharpMethodCall g m (ty, vref:ValRef) valUseFlags minst args =
     let vexp = Expr.Val (vref, valUseFlags, m)
     let vexpty = vref.Type
     let tpsorig, tau =  vref.TypeScheme
-    let vtinst = argsOfAppTy g typ @ minst
+    let vtinst = argsOfAppTy g ty @ minst
     if tpsorig.Length <> vtinst.Length then error(InternalError("BuildFSharpMethodCall: unexpected List.length mismatch", m))
     let expr = mkTyAppExpr m (vexp, vexpty) vtinst
     let exprty = instType (mkTyparInst tpsorig vtinst) tau
@@ -680,10 +680,10 @@ let MakeMethInfoCall amap m minfo minst args =
         let direct = not minfo.IsVirtual
         let isProp = false // not necessarily correct, but this is only used post-creflect where this flag is irrelevant 
         BuildILMethInfoCall g amap m isProp ilminfo valUseFlags minst  direct args |> fst
-    | FSMeth(g, typ, vref, _) -> 
-        BuildFSharpMethodCall g m (typ, vref) valUseFlags minst args |> fst
-    | DefaultStructCtor(_, typ) -> 
-       mkDefault (m, typ)
+    | FSMeth(g, ty, vref, _) -> 
+        BuildFSharpMethodCall g m (ty, vref) valUseFlags minst args |> fst
+    | DefaultStructCtor(_, ty) -> 
+       mkDefault (m, ty)
 #if !NO_EXTENSIONTYPING
     | ProvidedMeth(amap, mi, _, m) -> 
         let isProp = false // not necessarily correct, but this is only used post-creflect where this flag is irrelevant 
@@ -803,10 +803,10 @@ let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objA
             BuildFSharpMethodApp g m vref vexp vexpty allArgs
 
         // Build a 'call' to a struct default constructor 
-        | DefaultStructCtor (g, typ) -> 
-            if not (TypeHasDefaultValue g m typ) then 
+        | DefaultStructCtor (g, ty) -> 
+            if not (TypeHasDefaultValue g m ty) then 
                 errorR(Error(FSComp.SR.tcDefaultStructConstructorCall(), m))
-            mkDefault (m, typ), typ)
+            mkDefault (m, ty), ty)
 
 //-------------------------------------------------------------------------
 // Build delegate constructions (lambdas/functions to delegates)
@@ -1104,7 +1104,7 @@ module ProvidedMethodCalls =
             match ea.PApplyOption((function ProvidedAddressOfExpr x -> Some x | _ -> None), m) with
             | Some e -> 
                 let eT =  exprToExpr e
-                let wrap,ce, _readonly = mkExprAddrOfExpr g true false DefinitelyMutates eT None m
+                let wrap,ce, _readonly, _writeonly = mkExprAddrOfExpr g true false DefinitelyMutates eT None m
                 let ce = wrap ce
                 None, (ce, tyOfExpr g ce)
             | None -> 

@@ -1812,11 +1812,23 @@ let mkSynInfix opm (l:SynExpr) oper (r:SynExpr) =
     let firstTwoRange = unionRanges l.Range opm
     let wholeRange = unionRanges l.Range r.Range
     SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, mkSynOperator opm oper, l, firstTwoRange), r, wholeRange)
+
 let mkSynBifix   m oper x1 x2 = SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, mkSynOperator m oper,x1,m), x2,m)
 let mkSynTrifix  m oper x1 x2 x3 = SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, mkSynOperator m oper,x1,m), x2,m), x3,m)
 let mkSynQuadfix m oper x1 x2 x3 x4 = SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, mkSynOperator m oper,x1,m), x2,m), x3,m),x4,m)
 let mkSynQuinfix m oper x1 x2 x3 x4 x5 = SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, false, SynExpr.App (ExprAtomicFlag.NonAtomic, true, mkSynOperator m oper,x1,m), x2,m), x3,m),x4,m),x5,m)
-let mkSynPrefix opm m oper x = SynExpr.App (ExprAtomicFlag.NonAtomic, false, mkSynOperator opm oper, x,m)
+
+let mkSynPrefixPrim opm m oper x = 
+    SynExpr.App (ExprAtomicFlag.NonAtomic, false, mkSynOperator opm oper, x,m)
+
+let mkSynPrefix opm m oper x = 
+    if oper = "~&" then 
+        SynExpr.AddressOf(true,x,opm,m)
+    elif oper = "~&&" then 
+        SynExpr.AddressOf(false,x,opm,m)
+    else
+        mkSynPrefixPrim opm m oper x
+
 let mkSynCaseName m n = [mkSynId m (CompileOpName n)]
 
 let mkSynApp1 f x1 m = SynExpr.App(ExprAtomicFlag.NonAtomic,false,f,x1,m)

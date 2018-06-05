@@ -16,6 +16,7 @@
     <OutputType>Library</OutputType>
     <AssemblyName>FSharp.Core</AssemblyName>
     <DefineConstants>FSHARP_CORE;$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition=" '$(Configuration)' == 'Proto'">BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <BaseAddress>0x05000000</BaseAddress>
     <CompilingFsLib>true</CompilingFsLib>

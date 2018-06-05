@@ -2323,9 +2323,9 @@ let mkILMethRef (tref, callconv, nm, gparams, args, rty) =
       mrefArgs=args
       mrefReturn=rty}
 
-let mkILMethSpecForMethRefInTy (mref, typ, minst) = 
+let mkILMethSpecForMethRefInTy (mref, ty, minst) = 
     { mspecMethodRef=mref
-      mspecDeclaringType=typ
+      mspecDeclaringType=ty
       mspecMethodInst=minst }
 
 let mkILMethSpec (mref, vc, tinst, minst) = mkILMethSpecForMethRefInTy (mref, mkILNamedTy vc mref.DeclaringTypeRef tinst, minst)
@@ -2333,23 +2333,23 @@ let mkILMethSpec (mref, vc, tinst, minst) = mkILMethSpecForMethRefInTy (mref, mk
 let mkILMethSpecInTypeRef (tref, vc, cc, nm, args, rty, tinst, minst) =
     mkILMethSpec (mkILMethRef ( tref, cc, nm, List.length minst, args, rty), vc, tinst, minst)
 
-let mkILMethSpecInTy (typ:ILType, cc, nm, args, rty, minst:ILGenericArgs) =
-    mkILMethSpecForMethRefInTy (mkILMethRef (typ.TypeRef, cc, nm, minst.Length, args, rty), typ, minst)
+let mkILMethSpecInTy (ty:ILType, cc, nm, args, rty, minst:ILGenericArgs) =
+    mkILMethSpecForMethRefInTy (mkILMethRef (ty.TypeRef, cc, nm, minst.Length, args, rty), ty, minst)
 
-let mkILNonGenericMethSpecInTy (typ, cc, nm, args, rty) = 
-    mkILMethSpecInTy (typ, cc, nm, args, rty, [])
+let mkILNonGenericMethSpecInTy (ty, cc, nm, args, rty) = 
+    mkILMethSpecInTy (ty, cc, nm, args, rty, [])
 
-let mkILInstanceMethSpecInTy (typ:ILType, nm, args, rty, minst) =
-    mkILMethSpecInTy (typ, ILCallingConv.Instance, nm, args, rty, minst)
+let mkILInstanceMethSpecInTy (ty:ILType, nm, args, rty, minst) =
+    mkILMethSpecInTy (ty, ILCallingConv.Instance, nm, args, rty, minst)
 
-let mkILNonGenericInstanceMethSpecInTy (typ:ILType, nm, args, rty) =
-    mkILInstanceMethSpecInTy (typ, nm, args, rty, [])
+let mkILNonGenericInstanceMethSpecInTy (ty:ILType, nm, args, rty) =
+    mkILInstanceMethSpecInTy (ty, nm, args, rty, [])
 
-let mkILStaticMethSpecInTy (typ, nm, args, rty, minst) =
-    mkILMethSpecInTy (typ, ILCallingConv.Static, nm, args, rty, minst)
+let mkILStaticMethSpecInTy (ty, nm, args, rty, minst) =
+    mkILMethSpecInTy (ty, ILCallingConv.Static, nm, args, rty, minst)
 
-let mkILNonGenericStaticMethSpecInTy (typ, nm, args, rty) =
-    mkILStaticMethSpecInTy (typ, nm, args, rty, [])
+let mkILNonGenericStaticMethSpecInTy (ty, nm, args, rty) =
+    mkILStaticMethSpecInTy (ty, nm, args, rty, [])
 
 let mkILCtorMethSpec (tref, args, cinst) = 
     mkILMethSpecInTypeRef(tref, AsObject, ILCallingConv.Instance, ".ctor", args, ILType.Void, cinst, [])
@@ -2368,8 +2368,8 @@ let mkILFieldRef(tref, nm, ty) = { DeclaringTypeRef=tref; Name=nm; Type=ty}
 
 let mkILFieldSpec (tref, ty) = { FieldRef= tref; DeclaringType=ty }
 
-let mkILFieldSpecInTy (typ:ILType, nm, fty) = 
-    mkILFieldSpec (mkILFieldRef (typ.TypeRef, nm, fty), typ)
+let mkILFieldSpecInTy (ty:ILType, nm, fty) = 
+    mkILFieldSpec (mkILFieldRef (ty.TypeRef, nm, fty), ty)
     
 
 let andTailness x y = 
@@ -2686,22 +2686,22 @@ let rec rescopeILTypeSpec scoref (tspec1:ILTypeSpec) =
         let tinst2 = rescopeILTypes scoref tinst1
         ILTypeSpec.Create (tref2, tinst2)
 
-and rescopeILType scoref typ = 
-    match typ with 
+and rescopeILType scoref ty = 
+    match ty with 
     | ILType.Ptr t -> ILType.Ptr (rescopeILType scoref t)
     | ILType.FunctionPointer t -> ILType.FunctionPointer (rescopeILCallSig scoref t)
     | ILType.Byref t -> ILType.Byref (rescopeILType scoref t)
     | ILType.Boxed cr1 -> 
         let cr2 = rescopeILTypeSpec scoref cr1
-        if cr1 === cr2 then typ else 
+        if cr1 === cr2 then ty else 
         mkILBoxedType cr2
     | ILType.Array (s, ety1) -> 
         let ety2 = rescopeILType scoref ety1
-        if ety1 === ety2 then typ else 
+        if ety1 === ety2 then ty else 
         ILType.Array (s, ety2)
     | ILType.Value cr1 -> 
         let cr2 = rescopeILTypeSpec scoref cr1 
-        if cr1 === cr2 then typ else 
+        if cr1 === cr2 then ty else 
         ILType.Value cr2
     | ILType.Modified(b, tref, ty) -> ILType.Modified(b, rescopeILTypeRef scoref tref, rescopeILType scoref ty)
     | x -> x
@@ -2733,8 +2733,8 @@ let rescopeILFieldRef scoref x =
 let rec instILTypeSpecAux numFree inst (tspec:ILTypeSpec) = 
     ILTypeSpec.Create(tspec.TypeRef, instILGenericArgsAux numFree inst tspec.GenericArgs) 
   
-and instILTypeAux numFree (inst:ILGenericArgs) typ = 
-    match typ with 
+and instILTypeAux numFree (inst:ILGenericArgs) ty = 
+    match ty with 
     | ILType.Ptr t       -> ILType.Ptr (instILTypeAux numFree inst t)
     | ILType.FunctionPointer t      -> ILType.FunctionPointer (instILCallSigAux numFree inst t)
     | ILType.Array (a, t) -> ILType.Array (a, instILTypeAux numFree inst t)
@@ -2744,7 +2744,7 @@ and instILTypeAux numFree (inst:ILGenericArgs) typ =
     | ILType.TypeVar  v -> 
         let v = int v
         let top = inst.Length
-        if v < numFree then typ else
+        if v < numFree then ty else
         if v - numFree >= top then 
             ILType.TypeVar (uint16 (v - top)) 
         else 
@@ -2833,10 +2833,10 @@ let mkILCtor (access, args, impl) =
 // Do-nothing ctor, just pass on to monomorphic superclass
 // -------------------------------------------------------------------- 
 
-let mkCallBaseConstructor (typ, args: ILType list) =
+let mkCallBaseConstructor (ty, args: ILType list) =
     [ mkLdarg0 ] @
     List.mapi (fun i _ -> mkLdarg (uint16 (i+1))) args @
-    [ mkNormalCall (mkILCtorMethSpecForTy (typ, [])) ]
+    [ mkNormalCall (mkILCtorMethSpecForTy (ty, [])) ]
 
 let mkNormalStfld fspec = I_stfld (Aligned, Nonvolatile, fspec)
 let mkNormalStsfld fspec = I_stsfld (Nonvolatile, fspec)
@@ -2889,8 +2889,8 @@ let mkILClassCtor impl =
 // (i.e. overrides by name/signature)
 // -------------------------------------------------------------------- 
 
-let mk_ospec (typ:ILType, callconv, nm, genparams, formal_args, formal_ret) =
-  OverridesSpec (mkILMethRef (typ.TypeRef, callconv, nm, genparams, formal_args, formal_ret), typ)
+let mk_ospec (ty:ILType, callconv, nm, genparams, formal_args, formal_ret) =
+  OverridesSpec (mkILMethRef (ty.TypeRef, callconv, nm, genparams, formal_args, formal_ret), ty)
 
 let mkILGenericVirtualMethod (nm, access, genparams, actual_args, actual_ret, impl) = 
     ILMethodDef(name=nm,
@@ -3082,7 +3082,7 @@ let emptyILMethodImpls =  mkILMethodImpls []
 // them in fields.  preblock is how to call the superclass constructor....
 // -------------------------------------------------------------------- 
 
-let mkILStorageCtorWithParamNames(tag, preblock, typ, extraParams, flds, access) = 
+let mkILStorageCtorWithParamNames(tag, preblock, ty, extraParams, flds, access) = 
     mkILCtor(access,
             (flds |> List.map (fun (pnm, _, ty) -> mkILParamNamed (pnm, ty))) @ extraParams,
             mkMethodBody
@@ -3091,29 +3091,29 @@ let mkILStorageCtorWithParamNames(tag, preblock, typ, extraParams, flds, access)
                  begin 
                    (match tag with Some x -> [I_seqpoint x] | None -> []) @ 
                    preblock @
-                   List.concat (List.mapi (fun n (_pnm, nm, ty) -> 
+                   List.concat (List.mapi (fun n (_pnm, nm, fieldTy) -> 
                      [ mkLdarg0
                        mkLdarg (uint16 (n+1))
-                       mkNormalStfld (mkILFieldSpecInTy (typ, nm, ty))
+                       mkNormalStfld (mkILFieldSpecInTy (ty, nm, fieldTy))
                      ])  flds)
                  end, tag))
     
-let mkILSimpleStorageCtorWithParamNames(tag, base_tspec, typ, extraParams, flds, access) = 
+let mkILSimpleStorageCtorWithParamNames(tag, baseTySpec, ty, extraParams, flds, access) = 
     let preblock = 
-      match base_tspec with 
+      match baseTySpec with 
         None -> []
       | Some tspec -> 
           ([ mkLdarg0 
              mkNormalCall (mkILCtorMethSpecForTy (mkILBoxedType tspec, [])) ])
-    mkILStorageCtorWithParamNames(tag, preblock, typ, extraParams, flds, access)
+    mkILStorageCtorWithParamNames(tag, preblock, ty, extraParams, flds, access)
 
 let addParamNames flds = 
     flds |> List.map (fun (nm, ty) -> (nm, nm, ty))
 
-let mkILSimpleStorageCtor(tag, base_tspec, typ, extraParams, flds, access) = 
-    mkILSimpleStorageCtorWithParamNames(tag, base_tspec, typ, extraParams, addParamNames flds, access)
+let mkILSimpleStorageCtor(tag, baseTySpec, ty, extraParams, flds, access) = 
+    mkILSimpleStorageCtorWithParamNames(tag, baseTySpec, ty, extraParams, addParamNames flds, access)
 
-let mkILStorageCtor(tag, preblock, typ, flds, access) = mkILStorageCtorWithParamNames(tag, preblock, typ, [], addParamNames flds, access)
+let mkILStorageCtor(tag, preblock, ty, flds, access) = mkILStorageCtorWithParamNames(tag, preblock, ty, [], addParamNames flds, access)
 
 
 let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nestedTypes, props, events, attrs, init) =
@@ -3237,9 +3237,9 @@ let mkILDelegateMethods (access) (ilg: ILGlobals) (iltyp_AsyncCallback, iltyp_IA
       one "EndInvoke" [mkILParamNamed("result", iltyp_IAsyncResult)] rty ]
     
 
-let mkCtorMethSpecForDelegate (ilg: ILGlobals) (typ:ILType, useUIntPtr) =
-    let scoref = typ.TypeRef.Scope 
-    mkILInstanceMethSpecInTy (typ, ".ctor", [rescopeILType scoref ilg.typ_Object; rescopeILType scoref (if useUIntPtr then ilg.typ_UIntPtr else ilg.typ_IntPtr)], ILType.Void, emptyILGenericArgsList)
+let mkCtorMethSpecForDelegate (ilg: ILGlobals) (ty:ILType, useUIntPtr) =
+    let scoref = ty.TypeRef.Scope 
+    mkILInstanceMethSpecInTy (ty, ".ctor", [rescopeILType scoref ilg.typ_Object; rescopeILType scoref (if useUIntPtr then ilg.typ_UIntPtr else ilg.typ_IntPtr)], ILType.Void, emptyILGenericArgsList)
 
 type ILEnumInfo =
     { enumValues: (string * ILFieldInit) list  
@@ -3594,8 +3594,8 @@ let mkPermissionSet (ilg: ILGlobals) (action, attributes: list<(ILTypeRef * (str
               yield! encodeCustomAttrString tref.QualifiedName
               let bytes = 
                   [| yield! z_unsigned_int props.Length
-                     for (nm, typ, value) in props do 
-                         yield! encodeCustomAttrNamedArg ilg (nm, typ, true, value)|]
+                     for (nm, ty, value) in props do 
+                         yield! encodeCustomAttrNamedArg ilg (nm, ty, true, value)|]
               yield! z_unsigned_int bytes.Length
               yield! bytes |]
               
@@ -3898,17 +3898,17 @@ let rec refs_of_typ s x =
     | ILType.Value tr | ILType.Boxed tr -> refs_of_tspec s tr
     | ILType.FunctionPointer mref -> refs_of_callsig s mref 
 
-and refs_of_inst s i = refs_of_typs s i
+and refs_of_inst s i = refs_of_tys s i
 and refs_of_tspec s (x:ILTypeSpec) = refs_of_tref s x.TypeRef;  refs_of_inst s x.GenericArgs
-and refs_of_callsig s csig  = refs_of_typs s csig.ArgTypes; refs_of_typ s csig.ReturnType
-and refs_of_genparam s x = refs_of_typs s x.Constraints
+and refs_of_callsig s csig  = refs_of_tys s csig.ArgTypes; refs_of_typ s csig.ReturnType
+and refs_of_genparam s x = refs_of_tys s x.Constraints
 and refs_of_genparams s b = List.iter (refs_of_genparam s) b
     
 and refs_of_dloc s ts = refs_of_tref s ts
    
 and refs_of_mref s (x:ILMethodRef) = 
     refs_of_dloc s x.DeclaringTypeRef
-    refs_of_typs s x.mrefArgs
+    refs_of_tys s x.mrefArgs
     refs_of_typ s x.mrefReturn
     
 and refs_of_fref s x = refs_of_tref s x.DeclaringTypeRef; refs_of_typ s x.Type
@@ -3922,7 +3922,7 @@ and refs_of_fspec s x =
     refs_of_fref s x.FieldRef
     refs_of_typ s x.DeclaringType
 
-and refs_of_typs s l = List.iter (refs_of_typ s) l
+and refs_of_tys s l = List.iter (refs_of_typ s) l
   
 and refs_of_token s x = 
     match x with
@@ -3933,7 +3933,7 @@ and refs_of_token s x =
 and refs_of_custom_attr s x = refs_of_mspec s x.Method
     
 and refs_of_custom_attrs s (cas : ILAttributes) = List.iter (refs_of_custom_attr s) cas.AsList
-and refs_of_varargs s tyso = Option.iter (refs_of_typs s) tyso 
+and refs_of_varargs s tyso = Option.iter (refs_of_tys s) tyso 
 and refs_of_instr s x = 
     match x with
     | I_call (_, mr, varargs) | I_newobj (mr, varargs) | I_callvirt (_, mr, varargs) ->
@@ -4011,7 +4011,7 @@ and refs_of_property_def s (pd: ILPropertyDef) =
     Option.iter (refs_of_mref s)  pd.SetMethod
     Option.iter (refs_of_mref s)  pd.GetMethod
     refs_of_typ s pd.PropertyType
-    refs_of_typs s pd.Args
+    refs_of_tys s pd.Args
     refs_of_custom_attrs s pd.CustomAttrs
     
 and refs_of_properties s (x: ILPropertyDefs) = List.iter (refs_of_property_def s) x.AsList
@@ -4033,7 +4033,7 @@ and refs_of_tdef_kind _s _k =  ()
 and refs_of_tdef s (td : ILTypeDef)  =  
     refs_of_types s td.NestedTypes
     refs_of_genparams s  td.GenericParams
-    refs_of_typs  s td.Implements
+    refs_of_tys  s td.Implements
     Option.iter (refs_of_typ s) td.Extends
     refs_of_mdefs        s td.Methods
     refs_of_fields       s td.Fields.AsList
@@ -4133,8 +4133,8 @@ let rec unscopeILTypeSpec (tspec:ILTypeSpec) =
     let tref = unscopeILTypeRef tref
     ILTypeSpec.Create (tref, unscopeILTypes tinst)
 
-and unscopeILType typ = 
-    match typ with 
+and unscopeILType ty = 
+    match ty with 
     | ILType.Ptr t -> ILType.Ptr (unscopeILType t)
     | ILType.FunctionPointer t -> ILType.FunctionPointer (unscopeILCallSig t)
     | ILType.Byref t -> ILType.Byref (unscopeILType t)

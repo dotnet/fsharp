@@ -347,6 +347,33 @@ namespace Microsoft.FSharp.Core
     [<MeasureAnnotatedAbbreviation>] type int16<[<Measure>] 'Measure> = int16
     [<MeasureAnnotatedAbbreviation>] type int64<[<Measure>] 'Measure> = int64
 
+    /// <summary>Represents a managed pointer in F# code.</c></summary>
+    type byref<'T> = (# "!0&" #)
+
+    /// <summary>Represents a managed pointer in F# code.</summary>
+    type byref<'T, 'Kind> = (# "!0&" #)
+
+    /// Represents the types of byrefs in F# 4.5+
+    module ByRefKinds = 
+
+        /// Represents a byref that can be written
+        [<Sealed>]
+        type Out() = class end
+
+        /// Represents a byref that can be read
+        [<Sealed>]
+        type In() = class end
+
+        /// Represents a byref that can be both read and written
+        [<Sealed>]
+        type InOut = class end 
+
+    /// <summary>Represents a in-argument or readonly managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
+    type inref<'T> = byref<'T, ByRefKinds.In>
+
+    /// <summary>Represents a out-argument managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
+    type outref<'T> = byref<'T, ByRefKinds.Out>
+
 #if FX_RESHAPED_REFLECTION
     module PrimReflectionAdapters =
         
@@ -511,10 +538,10 @@ namespace Microsoft.FSharp.Core
             // Byref usage checks prohibit type instantiations involving byrefs.
 
             [<NoDynamicInvocation>]
-            let inline (~&)  (obj : 'T) : 'T byref     = 
+            let inline (~&)  (obj : 'T) : byref<'T>     = 
                 ignore obj // pretend the variable is used
                 let e = new System.ArgumentException(ErrorStrings.AddressOpNotFirstClassString) 
-                (# "throw" (e :> System.Exception) : 'T byref #)
+                (# "throw" (e :> System.Exception) : byref<'T> #)
                  
             [<NoDynamicInvocation>]
             let inline (~&&) (obj : 'T) : nativeptr<'T> = 
@@ -5692,24 +5719,6 @@ namespace Microsoft.FSharp.Core
                          (let x = (retype x : decimal) in
                           if n >= 0 then PowDecimal x n else 1.0M /  PowDecimal x n)
 
-
-    /// Represents the types of byrefs in F# 4.5+
-    module ByRefKinds = 
-
-        /// Represents a byref that can be written
-        type Out() = class end
-
-        /// Represents a byref that can be read
-        type In() = class end
-
-        /// Represents a byref that can be both read and written
-        type InOut = Choice<In, Out>
-
-    /// <summary>Represents a in-argument or readonly managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
-    type inref<'T> = byref<'T, ByRefKinds.In>
-
-    /// <summary>Represents a out-argument managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
-    type outref<'T> = byref<'T, ByRefKinds.Out>
 
 namespace Microsoft.FSharp.Control
 
