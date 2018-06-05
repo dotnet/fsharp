@@ -29,36 +29,52 @@ open Microsoft.FSharp.Compiler.ExtensionTyping
 
 type Erasure = EraseAll | EraseMeasures | EraseNone
 
+/// Check the equivalence of two types up to an erasure flag
 val typeEquivAux    : Erasure -> TcGlobals  -> TType          -> TType         -> bool
+
+/// Check the equivalence of two types 
 val typeEquiv       :            TcGlobals  -> TType          -> TType         -> bool
+
+/// Check the equivalence of two units-of-measure
 val measureEquiv    :            TcGlobals  -> Measure  -> Measure -> bool
+
+/// Reduce a type to its more anonical form subject to an erasure flag, inference equations and abbreviations
 val stripTyEqnsWrtErasure: Erasure -> TcGlobals -> TType -> TType
 
 //-------------------------------------------------------------------------
 // Build common types
 //------------------------------------------------------------------------- 
 
+/// Build a function type
 val mkFunTy : TType -> TType -> TType
+
+/// Build a function type
 val ( --> ) : TType -> TType -> TType
-val tryMkForallTy : Typars -> TType -> TType
+
+/// Build a type-forall anonymous generic type if necessary
+val mkForallTyIfNeeded : Typars -> TType -> TType
+
 val ( +-> ) : Typars -> TType -> TType
+
+/// Build a curried function type
 val mkIteratedFunTy : TTypes -> TType -> TType
+
+/// Get the natural type of a single argument amongst a set of curried arguments
 val typeOfLambdaArg : range -> Val list -> TType
+
+/// Get the curried type corresponding to a lambda 
 val mkMultiLambdaTy : range -> Val list -> TType -> TType
+
+/// Get the curried type corresponding to a lambda 
 val mkLambdaTy : Typars -> TTypes -> TType -> TType
 
-//-------------------------------------------------------------------------
-// Module publication, used while compiling fslib.
-//------------------------------------------------------------------------- 
-
+/// Module publication, used while compiling fslib.
 val ensureCcuHasModuleOrNamespaceAtPath : CcuThunk -> Ident list -> CompilationPath -> XmlDoc -> unit 
 
-//-------------------------------------------------------------------------
-// Miscellaneous accessors on terms
-//------------------------------------------------------------------------- 
-
+/// Ignore 'Expr.Link' in an expression
 val stripExpr : Expr -> Expr
 
+/// Get the values for a set of bindings
 val valsOfBinds : Bindings -> Vals 
 val (|ExprValWithPossibleTypeInst|_|) : Expr -> (ValRef * ValUseFlag * TType list * range) option
 

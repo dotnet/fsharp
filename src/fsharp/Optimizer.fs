@@ -87,12 +87,12 @@ type ExprValueInfo =
 
   | ConstValue of Const * TType
 
-  /// CurriedLambdaValue(id, arity, sz, expr, typ)
+  /// CurriedLambdaValue(id, arity, sz, expr, ty)
   ///    
   ///    arities: The number of bunches of untupled args and type args, and 
   ///             the number of args in each bunch. NOTE: This include type arguments.
   ///    expr: The value, a lambda term.
-  ///    typ: The type of lamba term
+  ///    ty: The type of lamba term
   | CurriedLambdaValue of  Unique * int * int * Expr * TType
 
   /// ConstExprValue(size, value)
@@ -593,7 +593,7 @@ let (|StripConstValue|_|) ev =
 
 let (|StripLambdaValue|_|) ev = 
   match stripValue ev with 
-  | CurriedLambdaValue (id, arity, sz, expr, typ) -> Some (id, arity, sz, expr, typ)
+  | CurriedLambdaValue (id, arity, sz, expr, ty) -> Some (id, arity, sz, expr, ty)
   | _ -> None
 
 let destTupleValue ev = 
@@ -1131,7 +1131,7 @@ let RemapOptimizationInfo g tmenv =
         | UnionCaseValue(cspec, vinfos) -> UnionCaseValue (remapUnionCaseRef tmenv.tyconRefRemap cspec, Array.map remapExprInfo vinfos)
         | SizeValue(_vdepth, vinfo) -> MakeSizedValueInfo (remapExprInfo vinfo)
         | UnknownValue              -> UnknownValue
-        | CurriedLambdaValue (uniq, arity, sz, expr, typ)  -> CurriedLambdaValue (uniq, arity, sz, remapExpr g CloneAll tmenv expr, remapPossibleForallTy g tmenv typ)  
+        | CurriedLambdaValue (uniq, arity, sz, expr, ty)  -> CurriedLambdaValue (uniq, arity, sz, remapExpr g CloneAll tmenv expr, remapPossibleForallTy g tmenv ty)  
         | ConstValue (c, ty)  -> ConstValue (c, remapPossibleForallTy g tmenv ty)
         | ConstExprValue (sz, expr)  -> ConstExprValue (sz, remapExpr g CloneAll tmenv expr)
 
@@ -1691,7 +1691,7 @@ let rec OptimizeExpr cenv (env:IncrementalOptimizationEnv) expr =
             HasEffect = false  
             MightMakeCriticalTailcall=false
             Info=UnknownValue }
-    | Expr.Obj (_, typ, basev, expr, overrides, iimpls, m) -> OptimizeObjectExpr cenv env (typ, basev, expr, overrides, iimpls, m)
+    | Expr.Obj (_, ty, basev, expr, overrides, iimpls, m) -> OptimizeObjectExpr cenv env (ty, basev, expr, overrides, iimpls, m)
     | Expr.Op (c, tyargs, args, m) -> OptimizeExprOp cenv env (c, tyargs, args, m)
     | Expr.App(f, fty, tyargs, argsl, m) -> 
         // eliminate uses of query
@@ -1705,7 +1705,7 @@ let rec OptimizeExpr cenv (env:IncrementalOptimizationEnv) expr =
         OptimizeLambdas None cenv env topValInfo expr ty
     | Expr.TyLambda(_lambdaId, tps, _body, _m, rty)  -> 
         let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps, [], ValReprInfo.unnamedRetVal)
-        let ty = tryMkForallTy tps rty
+        let ty = mkForallTyIfNeeded tps rty
         OptimizeLambdas None cenv env topValInfo expr ty
     | Expr.TyChoose _  -> OptimizeExpr cenv env (TypeRelations.ChooseTyparSolutionsForFreeChoiceTypars cenv.g cenv.amap expr)
     | Expr.Match(spMatch, exprm, dtree, targets, m, ty) -> OptimizeMatch cenv env (spMatch, exprm, dtree, targets, m, ty)
@@ -1728,11 +1728,11 @@ let rec OptimizeExpr cenv (env:IncrementalOptimizationEnv) expr =
 // Optimize/analyze an object expression
 //------------------------------------------------------------------------- 
 
-and OptimizeObjectExpr cenv env (typ, baseValOpt, basecall, overrides, iimpls, m) =
+and OptimizeObjectExpr cenv env (ty, baseValOpt, basecall, overrides, iimpls, m) =
     let basecall', basecallinfo = OptimizeExpr cenv env basecall
     let overrides', overrideinfos = OptimizeMethods cenv env baseValOpt overrides
     let iimpls', iimplsinfos = OptimizeInterfaceImpls cenv env baseValOpt iimpls
-    let expr'=mkObjExpr(typ, baseValOpt, basecall', overrides', iimpls', m)
+    let expr'=mkObjExpr(ty, baseValOpt, basecall', overrides', iimpls', m)
     expr', { TotalSize=closureTotalSize + basecallinfo.TotalSize + AddTotalSizes overrideinfos + AddTotalSizes iimplsinfos
              FunctionSize=1 (* a newobj *) 
              HasEffect=true
@@ -2167,7 +2167,7 @@ and OptimizeWhileLoop cenv env  (spWhile, marker, e1, e2, m) =
 and OptimizeTraitCall cenv env   (traitInfo, args, m) =
 
     // Resolve the static overloading early (during the compulsory rewrite phase) so we can inline. 
-    match ConstraintSolver.CodegenWitnessThatTypSupportsTraitConstraint cenv.TcVal cenv.g cenv.amap m traitInfo args with
+    match ConstraintSolver.CodegenWitnessThatTypeSupportsTraitConstraint cenv.TcVal cenv.g cenv.amap m traitInfo args with
 
     | OkResult (_, Some expr) -> OptimizeExpr cenv env expr
 
@@ -2979,8 +2979,8 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                     // Check we can deref system_MarshalByRefObject_tcref. When compiling against the Silverlight mscorlib we can't
                     if mbrTyconRef.TryDeref.IsSome then
                         // Check if this is a subtype of MarshalByRefObject
-                        assert (cenv.g.system_MarshalByRefObject_typ.IsSome)
-                        ExistsSameHeadTypeInHierarchy cenv.g cenv.amap vref.Range (generalizedTyconRef tcref) cenv.g.system_MarshalByRefObject_typ.Value
+                        assert (cenv.g.system_MarshalByRefObject_ty.IsSome)
+                        ExistsSameHeadTypeInHierarchy cenv.g cenv.amap vref.Range (generalizedTyconRef tcref) cenv.g.system_MarshalByRefObject_ty.Value
                     else 
                         false
                 | ParentNone -> false) ||
@@ -3201,12 +3201,12 @@ let OptimizeImplFile(settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncre
 
 let rec p_ExprValueInfo x st =
     match x with 
-    | ConstValue (c, ty)              -> p_byte 0 st; p_tup2 p_const p_typ (c, ty) st 
+    | ConstValue (c, ty)              -> p_byte 0 st; p_tup2 p_const p_ty (c, ty) st 
     | UnknownValue                   -> p_byte 1 st
     | ValValue (a, b)                 -> p_byte 2 st; p_tup2 (p_vref "optval") p_ExprValueInfo (a, b) st
     | TupleValue a                   -> p_byte 3 st; p_array p_ExprValueInfo a st
     | UnionCaseValue (a, b)           -> p_byte 4 st; p_tup2 p_ucref (p_array p_ExprValueInfo) (a, b) st
-    | CurriedLambdaValue (_, b, c, d, e) -> p_byte 5 st; p_tup4 p_int p_int p_expr p_typ (b, c, d, e) st
+    | CurriedLambdaValue (_, b, c, d, e) -> p_byte 5 st; p_tup4 p_int p_int p_expr p_ty (b, c, d, e) st
     | ConstExprValue (a, b)           -> p_byte 6 st; p_tup2 p_int p_expr (a, b) st
     | RecdValue (tcref, a)            -> p_byte 7 st; p_tup2 (p_tcref "opt data") (p_array p_ExprValueInfo) (tcref, a) st
     | SizeValue (_adepth, a)          -> p_ExprValueInfo a st
@@ -3229,12 +3229,12 @@ let rec u_ExprInfo st =
     let rec loop st =
         let tag = u_byte st
         match tag with
-        | 0 -> u_tup2 u_const u_typ               st |> (fun (c, ty) -> ConstValue(c, ty))
+        | 0 -> u_tup2 u_const u_ty                st |> (fun (c, ty) -> ConstValue(c, ty))
         | 1 -> UnknownValue
         | 2 -> u_tup2 u_vref loop                 st |> (fun (a, b) -> ValValue (a, b))
         | 3 -> u_array loop                       st |> (fun a -> TupleValue a)
         | 4 -> u_tup2 u_ucref (u_array loop)      st |> (fun (a, b) -> UnionCaseValue (a, b))
-        | 5 -> u_tup4 u_int u_int u_expr u_typ    st |> (fun (b, c, d, e) -> CurriedLambdaValue (newUnique(), b, c, d, e))
+        | 5 -> u_tup4 u_int u_int u_expr u_ty     st |> (fun (b, c, d, e) -> CurriedLambdaValue (newUnique(), b, c, d, e))
         | 6 -> u_tup2 u_int u_expr                st |> (fun (a, b) -> ConstExprValue (a, b))
         | 7 -> u_tup2 u_tcref (u_array loop)      st |> (fun (a, b) -> RecdValue (a, b))
         | _ -> failwith "loop"
