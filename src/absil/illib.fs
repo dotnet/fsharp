@@ -1237,7 +1237,7 @@ module Shim =
         interface IFileSystem with
 
             member __.AssemblyLoadFrom(fileName: string) = 
-                Assembly.LoadFrom fileName
+                Assembly.UnsafeLoadFrom fileName
 
             member __.AssemblyLoad(assemblyName: AssemblyName) = 
                 Assembly.Load assemblyName
