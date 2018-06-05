@@ -359,6 +359,12 @@ namespace Tests
             // this is allowed
             &param1 // uncomment to test return
 
+    // This is not (yet) allowed
+    //module SpanSafetyTests5 = 
+    //    let test (x: byref<Span<int>>) =
+    //        let y = &x
+    //        y
+
 #if NEGATIVE
 
     module CheckReturnOfSpan4 = 
