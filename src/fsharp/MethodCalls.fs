@@ -581,7 +581,7 @@ let TakeObjAddrForMethodCall g amap (minfo:MethInfo) isMutable m objArgs f =
             let hasCallInfo = ccallInfo.IsSome
             let mustTakeAddress = hasCallInfo || minfo.ObjArgNeedsAddress(amap, m)
             let objArgTy = tyOfExpr g objArgExpr
-            let wrap, objArgExpr', _readonly = mkExprAddrOfExpr g mustTakeAddress hasCallInfo isMutable objArgExpr None m
+            let wrap, objArgExpr', _readonly, _writeonly = mkExprAddrOfExpr g mustTakeAddress hasCallInfo isMutable objArgExpr None m
             
             // Extension members and calls to class constraints may need a coercion for their object argument
             let objArgExpr' = 
@@ -1104,7 +1104,7 @@ module ProvidedMethodCalls =
             match ea.PApplyOption((function ProvidedAddressOfExpr x -> Some x | _ -> None), m) with
             | Some e -> 
                 let eT =  exprToExpr e
-                let wrap,ce, _readonly = mkExprAddrOfExpr g true false DefinitelyMutates eT None m
+                let wrap,ce, _readonly, _writeonly = mkExprAddrOfExpr g true false DefinitelyMutates eT None m
                 let ce = wrap ce
                 None, (ce, tyOfExpr g ce)
             | None -> 

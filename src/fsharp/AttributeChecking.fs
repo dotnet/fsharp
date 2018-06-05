@@ -291,7 +291,7 @@ let CheckFSharpAttributes g attribs m =
                 match namedArgs with 
                 | ExtractAttribNamedArg "IsError" (AttribBoolArg v) -> v 
                 | _ -> false 
-            if isError then ErrorD msg else WarnD msg
+            if isError && (not g.compilingFslib || n <> 1204) then ErrorD msg else WarnD msg
                  
         | _ -> 
             CompleteD

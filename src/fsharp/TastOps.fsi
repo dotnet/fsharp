@@ -267,8 +267,8 @@ val convertToTypeWithMetadataIfPossible : TcGlobals -> TType -> TType
 
 exception DefensiveCopyWarning of string * range 
 type Mutates = AddressOfOp | DefinitelyMutates | PossiblyMutates | NeverMutates
-val mkExprAddrOfExprAux : TcGlobals -> bool -> bool -> Mutates -> Expr -> ValRef option -> range -> (Val * Expr) option * Expr * bool
-val mkExprAddrOfExpr : TcGlobals -> bool -> bool -> Mutates -> Expr -> ValRef option -> range -> (Expr -> Expr) * Expr * bool
+val mkExprAddrOfExprAux : TcGlobals -> bool -> bool -> Mutates -> Expr -> ValRef option -> range -> (Val * Expr) option * Expr * bool * bool
+val mkExprAddrOfExpr : TcGlobals -> bool -> bool -> Mutates -> Expr -> ValRef option -> range -> (Expr -> Expr) * Expr * bool * bool
 
 //-------------------------------------------------------------------------
 // Tables keyed on values and/or type parameters

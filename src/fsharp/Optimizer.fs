@@ -2273,11 +2273,11 @@ and TakeAddressOfStructArgumentIfNeeded cenv (vref:ValRef) ty args m =
     if vref.IsInstanceMember && isStructTy cenv.g ty then 
         match args with 
         | objArg::rest -> 
-            // REVIEW: we set NeverMutates. This is valid because we only ever use DevirtualizeApplication to transform 
+            // We set NeverMutates here, allowing more address-taking. This is valid because we only ever use DevirtualizeApplication to transform 
             // known calls to known generated F# code for CompareTo, Equals and GetHashCode.
             // If we ever reuse DevirtualizeApplication to transform an arbitrary virtual call into a 
             // direct call then this assumption is not valid.
-            let wrap, objArgAddress, _readonly = mkExprAddrOfExpr cenv.g true false NeverMutates objArg None m
+            let wrap, objArgAddress, _readonly, _writeonly = mkExprAddrOfExpr cenv.g true false NeverMutates objArg None m
             wrap, (objArgAddress::rest)
         | _ -> 
             // no wrapper, args stay the same 
@@ -2289,8 +2289,6 @@ and DevirtualizeApplication cenv env (vref:ValRef) ty tyargs args m =
     let wrap, args = TakeAddressOfStructArgumentIfNeeded cenv vref ty args m
     let transformedExpr = wrap (MakeApplicationAndBetaReduce cenv.g (exprForValRef m vref, vref.Type, (if isNil tyargs then [] else [tyargs]), args, m))
     OptimizeExpr cenv env transformedExpr
-
-    
   
 and TryDevirtualizeApplication cenv env (f, tyargs, args, m) =
     match f, tyargs, args with 
