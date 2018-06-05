@@ -7207,14 +7207,16 @@ let LinearizeTopMatchAux g parent  (spBind, m, tree, targets:DecisionTreeTarget 
         let mutable alreadyFound = false
         let mutable moreThanOne = false
         for i in 0..targets.Length-1 do
-            let current = targets.[i]
-            match current with
-            | TTarget(_, x, _) when not (isThrow x) ->
-                if alreadyFound then
-                    moreThanOne <- true
-                successful <- current
-                alreadyFound <- true
-            | _ -> ()
+            if not moreThanOne then
+                let current = targets.[i]
+                match current with
+                | TTarget(_, x, _) when not (isThrow x) ->
+                    if alreadyFound then
+                        moreThanOne <- true
+                    successful <- current
+                    alreadyFound <- true
+                | _ -> ()
+
         alreadyFound && not moreThanOne, successful
 
     if hasSingletonSuccessfulTarget then
