@@ -32,13 +32,13 @@
   // Offset: 0x00000768 Length: 0x000004A4
 }
 .module SeqExpressionElision1.exe
-// MVID: {5B16765C-39C3-BE99-A745-03835C76165B}
+// MVID: {5B16780F-39C3-BE99-A745-03830F78165B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x029A0000
+// Image base: 0x00F20000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -494,191 +494,49 @@
     } // end of property Foo::IsBar
   } // end of class Foo
 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname seq1@6
-         extends class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>
+  .class auto ansi serializable sealed nested assembly beforefieldinit seq1@6
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>>
   {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
-    .field public class [mscorlib]System.Tuple`2<int32,int32> patternInput
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .field public int32 b
-    .field public int32 a
-    .field public int32 pc
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .field public int32 current
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method public specialname rtspecialname 
-            instance void  .ctor(class [mscorlib]System.Tuple`2<int32,int32> patternInput,
-                                 int32 b,
-                                 int32 a,
-                                 int32 pc,
-                                 int32 current) cil managed
-    {
-      // Code size       44 (0x2c)
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldarg.1
-      IL_0002:  stfld      class [mscorlib]System.Tuple`2<int32,int32> SeqExpressionElision1/seq1@6::patternInput
-      IL_0007:  ldarg.0
-      IL_0008:  ldarg.2
-      IL_0009:  stfld      int32 SeqExpressionElision1/seq1@6::b
-      IL_000e:  ldarg.0
-      IL_000f:  ldarg.3
-      IL_0010:  stfld      int32 SeqExpressionElision1/seq1@6::a
-      IL_0015:  ldarg.0
-      IL_0016:  ldarg.s    pc
-      IL_0018:  stfld      int32 SeqExpressionElision1/seq1@6::pc
-      IL_001d:  ldarg.0
-      IL_001e:  ldarg.s    current
-      IL_0020:  stfld      int32 SeqExpressionElision1/seq1@6::current
-      IL_0025:  ldarg.0
-      IL_0026:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>::.ctor()
-      IL_002b:  ret
-    } // end of method seq1@6::.ctor
-
-    .method public strict virtual instance int32 
-            GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
-    {
-      // Code size       153 (0x99)
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 SeqExpressionElision1/seq1@6::pc
-      IL_0006:  ldc.i4.1
-      IL_0007:  sub
-      IL_0008:  switch     ( 
-                            IL_0017,
-                            IL_0019)
-      IL_0015:  br.s       IL_001b
-
-      IL_0017:  br.s       IL_0074
-
-      IL_0019:  br.s       IL_0090
-
-      IL_001b:  ldarg.0
-      IL_001c:  ldc.i4.1
-      IL_001d:  ldc.i4.2
-      IL_001e:  newobj     instance void class [mscorlib]System.Tuple`2<int32,int32>::.ctor(!0,
-                                                                                            !1)
-      IL_0023:  stfld      class [mscorlib]System.Tuple`2<int32,int32> SeqExpressionElision1/seq1@6::patternInput
-      IL_0028:  ldarg.0
-      IL_0029:  ldarg.0
-      IL_002a:  ldfld      class [mscorlib]System.Tuple`2<int32,int32> SeqExpressionElision1/seq1@6::patternInput
-      IL_002f:  call       instance !1 class [mscorlib]System.Tuple`2<int32,int32>::get_Item2()
-      IL_0034:  stfld      int32 SeqExpressionElision1/seq1@6::b
-      IL_0039:  ldarg.0
-      IL_003a:  ldarg.0
-      IL_003b:  ldfld      class [mscorlib]System.Tuple`2<int32,int32> SeqExpressionElision1/seq1@6::patternInput
-      IL_0040:  call       instance !0 class [mscorlib]System.Tuple`2<int32,int32>::get_Item1()
-      IL_0045:  stfld      int32 SeqExpressionElision1/seq1@6::a
-      IL_004a:  ldarg.0
-      IL_004b:  ldc.i4.1
-      IL_004c:  stfld      int32 SeqExpressionElision1/seq1@6::pc
-      IL_0051:  ldarg.1
-      IL_0052:  ldarg.0
-      IL_0053:  ldfld      int32 SeqExpressionElision1/seq1@6::a
-      IL_0058:  ldarg.0
-      IL_0059:  ldfld      int32 SeqExpressionElision1/seq1@6::b
-      IL_005e:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
-      IL_0063:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
-                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-      IL_0068:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
-                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-      IL_006d:  stobj      class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>
-      IL_0072:  ldc.i4.2
-      IL_0073:  ret
-
-      IL_0074:  ldarg.0
-      IL_0075:  ldc.i4.0
-      IL_0076:  stfld      int32 SeqExpressionElision1/seq1@6::a
-      IL_007b:  ldarg.0
-      IL_007c:  ldc.i4.0
-      IL_007d:  stfld      int32 SeqExpressionElision1/seq1@6::b
-      IL_0082:  ldarg.0
-      IL_0083:  ldnull
-      IL_0084:  stfld      class [mscorlib]System.Tuple`2<int32,int32> SeqExpressionElision1/seq1@6::patternInput
-      IL_0089:  ldarg.0
-      IL_008a:  ldc.i4.2
-      IL_008b:  stfld      int32 SeqExpressionElision1/seq1@6::pc
-      IL_0090:  ldarg.0
-      IL_0091:  ldc.i4.0
-      IL_0092:  stfld      int32 SeqExpressionElision1/seq1@6::current
-      IL_0097:  ldc.i4.0
-      IL_0098:  ret
-    } // end of method seq1@6::GenerateNext
-
-    .method public strict virtual instance void 
-            Close() cil managed
-    {
-      // Code size       8 (0x8)
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldc.i4.2
-      IL_0002:  stfld      int32 SeqExpressionElision1/seq1@6::pc
-      IL_0007:  ret
-    } // end of method seq1@6::Close
-
-    .method public strict virtual instance bool 
-            get_CheckClose() cil managed
-    {
-      // Code size       35 (0x23)
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 SeqExpressionElision1/seq1@6::pc
-      IL_0006:  switch     ( 
-                            IL_0019,
-                            IL_001b,
-                            IL_001d)
-      IL_0017:  br.s       IL_001f
-
-      IL_0019:  br.s       IL_0021
-
-      IL_001b:  br.s       IL_001f
-
-      IL_001d:  br.s       IL_0021
-
-      IL_001f:  ldc.i4.0
-      IL_0020:  ret
-
-      IL_0021:  ldc.i4.0
-      IL_0022:  ret
-    } // end of method seq1@6::get_CheckClose
-
-    .method public strict virtual instance int32 
-            get_LastGenerated() cil managed
+    .method assembly specialname rtspecialname 
+            instance void  .ctor() cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
       .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 SeqExpressionElision1/seq1@6::current
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>>::.ctor()
       IL_0006:  ret
-    } // end of method seq1@6::get_LastGenerated
+    } // end of method seq1@6::.ctor
 
-    .method public strict virtual instance class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> 
-            GetFreshEnumerator() cil managed
+    .method public strict virtual instance class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> 
+            Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
     {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       11 (0xb)
-      .maxstack  9
-      IL_0000:  ldnull
-      IL_0001:  ldc.i4.0
-      IL_0002:  ldc.i4.0
-      IL_0003:  ldc.i4.0
-      IL_0004:  ldc.i4.0
-      IL_0005:  newobj     instance void SeqExpressionElision1/seq1@6::.ctor(class [mscorlib]System.Tuple`2<int32,int32>,
-                                                                             int32,
-                                                                             int32,
-                                                                             int32,
-                                                                             int32)
-      IL_000a:  ret
-    } // end of method seq1@6::GetFreshEnumerator
+      // Code size       40 (0x28)
+      .maxstack  7
+      .locals init (class [mscorlib]System.Tuple`2<int32,int32> V_0,
+               int32 V_1,
+               int32 V_2)
+      IL_0000:  ldc.i4.1
+      IL_0001:  ldc.i4.2
+      IL_0002:  newobj     instance void class [mscorlib]System.Tuple`2<int32,int32>::.ctor(!0,
+                                                                                            !1)
+      IL_0007:  stloc.0
+      IL_0008:  ldloc.0
+      IL_0009:  call       instance !1 class [mscorlib]System.Tuple`2<int32,int32>::get_Item2()
+      IL_000e:  stloc.1
+      IL_000f:  ldloc.0
+      IL_0010:  call       instance !0 class [mscorlib]System.Tuple`2<int32,int32>::get_Item1()
+      IL_0015:  stloc.2
+      IL_0016:  ldloc.2
+      IL_0017:  ldloc.1
+      IL_0018:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
+      IL_001d:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
+                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
+      IL_0022:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
+                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
+      IL_0027:  ret
+    } // end of method seq1@6::Invoke
 
   } // end of class seq1@6
 
@@ -867,306 +725,103 @@
 
   } // end of class seq2@11
 
-  .class auto autochar serializable sealed nested assembly beforefieldinit specialname seq3@17
-         extends class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>
+  .class auto ansi serializable sealed nested assembly beforefieldinit seq3@17
+         extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>>
   {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 06 00 00 00 00 00 ) 
     .field public class SeqExpressionElision1/Foo foo
-    .field public class [mscorlib]System.Tuple`2<int32,int32> patternInput
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .field public int32 b
-    .field public int32 a
-    .field public class [mscorlib]System.Tuple`2<int32,int32> patternInput0
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .field public int32 d
-    .field public int32 c
-    .field public int32 pc
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .field public int32 current
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-    .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-    .method public specialname rtspecialname 
-            instance void  .ctor(class SeqExpressionElision1/Foo foo,
-                                 class [mscorlib]System.Tuple`2<int32,int32> patternInput,
-                                 int32 b,
-                                 int32 a,
-                                 class [mscorlib]System.Tuple`2<int32,int32> patternInput0,
-                                 int32 d,
-                                 int32 c,
-                                 int32 pc,
-                                 int32 current) cil managed
+    .method assembly specialname rtspecialname 
+            instance void  .ctor(class SeqExpressionElision1/Foo foo) cil managed
     {
-      // Code size       76 (0x4c)
-      .maxstack  4
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      // Code size       14 (0xe)
+      .maxstack  8
       IL_0000:  ldarg.0
-      IL_0001:  ldarg.1
-      IL_0002:  stfld      class SeqExpressionElision1/Foo SeqExpressionElision1/seq3@17::foo
-      IL_0007:  ldarg.0
-      IL_0008:  ldarg.2
-      IL_0009:  stfld      class [mscorlib]System.Tuple`2<int32,int32> SeqExpressionElision1/seq3@17::patternInput
-      IL_000e:  ldarg.0
-      IL_000f:  ldarg.3
-      IL_0010:  stfld      int32 SeqExpressionElision1/seq3@17::b
-      IL_0015:  ldarg.0
-      IL_0016:  ldarg.s    a
-      IL_0018:  stfld      int32 SeqExpressionElision1/seq3@17::a
-      IL_001d:  ldarg.0
-      IL_001e:  ldarg.s    patternInput0
-      IL_0020:  stfld      class [mscorlib]System.Tuple`2<int32,int32> SeqExpressionElision1/seq3@17::patternInput0
-      IL_0025:  ldarg.0
-      IL_0026:  ldarg.s    d
-      IL_0028:  stfld      int32 SeqExpressionElision1/seq3@17::d
-      IL_002d:  ldarg.0
-      IL_002e:  ldarg.s    c
-      IL_0030:  stfld      int32 SeqExpressionElision1/seq3@17::c
-      IL_0035:  ldarg.0
-      IL_0036:  ldarg.s    pc
-      IL_0038:  stfld      int32 SeqExpressionElision1/seq3@17::pc
-      IL_003d:  ldarg.0
-      IL_003e:  ldarg.s    current
-      IL_0040:  stfld      int32 SeqExpressionElision1/seq3@17::current
-      IL_0045:  ldarg.0
-      IL_0046:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.CompilerServices.GeneratedSequenceBase`1<int32>::.ctor()
-      IL_004b:  ret
+      IL_0001:  call       instance void class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>>::.ctor()
+      IL_0006:  ldarg.0
+      IL_0007:  ldarg.1
+      IL_0008:  stfld      class SeqExpressionElision1/Foo SeqExpressionElision1/seq3@17::foo
+      IL_000d:  ret
     } // end of method seq3@17::.ctor
 
-    .method public strict virtual instance int32 
-            GenerateNext(class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
+    .method public strict virtual instance class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> 
+            Invoke(class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
     {
-      // Code size       346 (0x15a)
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 SeqExpressionElision1/seq3@17::pc
-      IL_0006:  ldc.i4.1
-      IL_0007:  sub
-      IL_0008:  switch     ( 
-                            IL_001b,
-                            IL_0020,
-                            IL_0025)
-      IL_0019:  br.s       IL_002a
-
-      IL_001b:  br         IL_0135
-
-      IL_0020:  br         IL_00ab
-
-      IL_0025:  br         IL_0151
-
-      IL_002a:  ldarg.0
-      IL_002b:  ldfld      class SeqExpressionElision1/Foo SeqExpressionElision1/seq3@17::foo
-      IL_0030:  call       instance int32 SeqExpressionElision1/Foo::get_Tag()
-      IL_0035:  ldc.i4.1
-      IL_0036:  bne.un     IL_00c5
-
-      IL_003b:  ldarg.0
-      IL_003c:  ldarg.0
-      IL_003d:  ldfld      class SeqExpressionElision1/Foo SeqExpressionElision1/seq3@17::foo
-      IL_0042:  call       instance int32 SeqExpressionElision1/Foo::get_Tag()
-      IL_0047:  ldc.i4.1
-      IL_0048:  bne.un.s   IL_0053
-
-      IL_004a:  ldc.i4.3
-      IL_004b:  ldc.i4.4
-      IL_004c:  newobj     instance void class [mscorlib]System.Tuple`2<int32,int32>::.ctor(!0,
-                                                                                            !1)
-      IL_0051:  br.s       IL_005a
-
-      IL_0053:  ldc.i4.1
-      IL_0054:  ldc.i4.2
-      IL_0055:  newobj     instance void class [mscorlib]System.Tuple`2<int32,int32>::.ctor(!0,
-                                                                                            !1)
-      IL_005a:  stfld      class [mscorlib]System.Tuple`2<int32,int32> SeqExpressionElision1/seq3@17::patternInput0
-      IL_005f:  ldarg.0
-      IL_0060:  ldarg.0
-      IL_0061:  ldfld      class [mscorlib]System.Tuple`2<int32,int32> SeqExpressionElision1/seq3@17::patternInput0
-      IL_0066:  call       instance !1 class [mscorlib]System.Tuple`2<int32,int32>::get_Item2()
-      IL_006b:  stfld      int32 SeqExpressionElision1/seq3@17::d
-      IL_0070:  ldarg.0
-      IL_0071:  ldarg.0
-      IL_0072:  ldfld      class [mscorlib]System.Tuple`2<int32,int32> SeqExpressionElision1/seq3@17::patternInput0
-      IL_0077:  call       instance !0 class [mscorlib]System.Tuple`2<int32,int32>::get_Item1()
-      IL_007c:  stfld      int32 SeqExpressionElision1/seq3@17::c
-      IL_0081:  ldarg.0
-      IL_0082:  ldc.i4.2
-      IL_0083:  stfld      int32 SeqExpressionElision1/seq3@17::pc
-      IL_0088:  ldarg.1
-      IL_0089:  ldarg.0
-      IL_008a:  ldfld      int32 SeqExpressionElision1/seq3@17::c
-      IL_008f:  ldarg.0
-      IL_0090:  ldfld      int32 SeqExpressionElision1/seq3@17::d
-      IL_0095:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
-      IL_009a:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
-                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-      IL_009f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
-                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-      IL_00a4:  stobj      class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>
-      IL_00a9:  ldc.i4.2
-      IL_00aa:  ret
-
-      IL_00ab:  ldarg.0
-      IL_00ac:  ldc.i4.0
-      IL_00ad:  stfld      int32 SeqExpressionElision1/seq3@17::c
-      IL_00b2:  ldarg.0
-      IL_00b3:  ldc.i4.0
-      IL_00b4:  stfld      int32 SeqExpressionElision1/seq3@17::d
-      IL_00b9:  ldarg.0
-      IL_00ba:  ldnull
-      IL_00bb:  stfld      class [mscorlib]System.Tuple`2<int32,int32> SeqExpressionElision1/seq3@17::patternInput0
-      IL_00c0:  br         IL_014a
-
-      IL_00c5:  ldarg.0
-      IL_00c6:  ldarg.0
-      IL_00c7:  ldfld      class SeqExpressionElision1/Foo SeqExpressionElision1/seq3@17::foo
-      IL_00cc:  call       instance int32 SeqExpressionElision1/Foo::get_Tag()
-      IL_00d1:  ldc.i4.1
-      IL_00d2:  bne.un.s   IL_00dd
-
-      IL_00d4:  ldc.i4.3
-      IL_00d5:  ldc.i4.4
-      IL_00d6:  newobj     instance void class [mscorlib]System.Tuple`2<int32,int32>::.ctor(!0,
-                                                                                            !1)
-      IL_00db:  br.s       IL_00e4
-
-      IL_00dd:  ldc.i4.1
-      IL_00de:  ldc.i4.2
-      IL_00df:  newobj     instance void class [mscorlib]System.Tuple`2<int32,int32>::.ctor(!0,
-                                                                                            !1)
-      IL_00e4:  stfld      class [mscorlib]System.Tuple`2<int32,int32> SeqExpressionElision1/seq3@17::patternInput
-      IL_00e9:  ldarg.0
-      IL_00ea:  ldarg.0
-      IL_00eb:  ldfld      class [mscorlib]System.Tuple`2<int32,int32> SeqExpressionElision1/seq3@17::patternInput
-      IL_00f0:  call       instance !1 class [mscorlib]System.Tuple`2<int32,int32>::get_Item2()
-      IL_00f5:  stfld      int32 SeqExpressionElision1/seq3@17::b
-      IL_00fa:  ldarg.0
-      IL_00fb:  ldarg.0
-      IL_00fc:  ldfld      class [mscorlib]System.Tuple`2<int32,int32> SeqExpressionElision1/seq3@17::patternInput
-      IL_0101:  call       instance !0 class [mscorlib]System.Tuple`2<int32,int32>::get_Item1()
-      IL_0106:  stfld      int32 SeqExpressionElision1/seq3@17::a
-      IL_010b:  ldarg.0
-      IL_010c:  ldc.i4.1
-      IL_010d:  stfld      int32 SeqExpressionElision1/seq3@17::pc
-      IL_0112:  ldarg.1
-      IL_0113:  ldarg.0
-      IL_0114:  ldfld      int32 SeqExpressionElision1/seq3@17::a
-      IL_0119:  ldarg.0
-      IL_011a:  ldfld      int32 SeqExpressionElision1/seq3@17::b
-      IL_011f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
-      IL_0124:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
-                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-      IL_0129:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
-                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-      IL_012e:  stobj      class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>
-      IL_0133:  ldc.i4.2
-      IL_0134:  ret
-
-      IL_0135:  ldarg.0
-      IL_0136:  ldc.i4.0
-      IL_0137:  stfld      int32 SeqExpressionElision1/seq3@17::a
-      IL_013c:  ldarg.0
-      IL_013d:  ldc.i4.0
-      IL_013e:  stfld      int32 SeqExpressionElision1/seq3@17::b
-      IL_0143:  ldarg.0
-      IL_0144:  ldnull
-      IL_0145:  stfld      class [mscorlib]System.Tuple`2<int32,int32> SeqExpressionElision1/seq3@17::patternInput
-      IL_014a:  ldarg.0
-      IL_014b:  ldc.i4.3
-      IL_014c:  stfld      int32 SeqExpressionElision1/seq3@17::pc
-      IL_0151:  ldarg.0
-      IL_0152:  ldc.i4.0
-      IL_0153:  stfld      int32 SeqExpressionElision1/seq3@17::current
-      IL_0158:  ldc.i4.0
-      IL_0159:  ret
-    } // end of method seq3@17::GenerateNext
-
-    .method public strict virtual instance void 
-            Close() cil managed
-    {
-      // Code size       8 (0x8)
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldc.i4.3
-      IL_0002:  stfld      int32 SeqExpressionElision1/seq3@17::pc
-      IL_0007:  ret
-    } // end of method seq3@17::Close
-
-    .method public strict virtual instance bool 
-            get_CheckClose() cil managed
-    {
-      // Code size       43 (0x2b)
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 SeqExpressionElision1/seq3@17::pc
-      IL_0006:  switch     ( 
-                            IL_001d,
-                            IL_001f,
-                            IL_0021,
-                            IL_0023)
-      IL_001b:  br.s       IL_0025
-
-      IL_001d:  br.s       IL_0029
-
-      IL_001f:  br.s       IL_0025
-
-      IL_0021:  br.s       IL_0027
-
-      IL_0023:  br.s       IL_0029
-
-      IL_0025:  ldc.i4.0
-      IL_0026:  ret
-
-      IL_0027:  ldc.i4.0
-      IL_0028:  ret
-
-      IL_0029:  ldc.i4.0
-      IL_002a:  ret
-    } // end of method seq3@17::get_CheckClose
-
-    .method public strict virtual instance int32 
-            get_LastGenerated() cil managed
-    {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       7 (0x7)
-      .maxstack  8
-      IL_0000:  ldarg.0
-      IL_0001:  ldfld      int32 SeqExpressionElision1/seq3@17::current
-      IL_0006:  ret
-    } // end of method seq3@17::get_LastGenerated
-
-    .method public strict virtual instance class [mscorlib]System.Collections.Generic.IEnumerator`1<int32> 
-            GetFreshEnumerator() cil managed
-    {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       20 (0x14)
-      .maxstack  13
+      // Code size       140 (0x8c)
+      .maxstack  7
+      .locals init (class [mscorlib]System.Tuple`2<int32,int32> V_0,
+               int32 V_1,
+               int32 V_2)
       IL_0000:  ldarg.0
       IL_0001:  ldfld      class SeqExpressionElision1/Foo SeqExpressionElision1/seq3@17::foo
-      IL_0006:  ldnull
-      IL_0007:  ldc.i4.0
-      IL_0008:  ldc.i4.0
-      IL_0009:  ldnull
-      IL_000a:  ldc.i4.0
-      IL_000b:  ldc.i4.0
-      IL_000c:  ldc.i4.0
-      IL_000d:  ldc.i4.0
-      IL_000e:  newobj     instance void SeqExpressionElision1/seq3@17::.ctor(class SeqExpressionElision1/Foo,
-                                                                              class [mscorlib]System.Tuple`2<int32,int32>,
-                                                                              int32,
-                                                                              int32,
-                                                                              class [mscorlib]System.Tuple`2<int32,int32>,
-                                                                              int32,
-                                                                              int32,
-                                                                              int32,
-                                                                              int32)
-      IL_0013:  ret
-    } // end of method seq3@17::GetFreshEnumerator
+      IL_0006:  call       instance int32 SeqExpressionElision1/Foo::get_Tag()
+      IL_000b:  ldc.i4.1
+      IL_000c:  bne.un.s   IL_004d
+
+      IL_000e:  ldarg.0
+      IL_000f:  ldfld      class SeqExpressionElision1/Foo SeqExpressionElision1/seq3@17::foo
+      IL_0014:  call       instance int32 SeqExpressionElision1/Foo::get_Tag()
+      IL_0019:  ldc.i4.1
+      IL_001a:  bne.un.s   IL_0025
+
+      IL_001c:  ldc.i4.3
+      IL_001d:  ldc.i4.4
+      IL_001e:  newobj     instance void class [mscorlib]System.Tuple`2<int32,int32>::.ctor(!0,
+                                                                                            !1)
+      IL_0023:  br.s       IL_002c
+
+      IL_0025:  ldc.i4.1
+      IL_0026:  ldc.i4.2
+      IL_0027:  newobj     instance void class [mscorlib]System.Tuple`2<int32,int32>::.ctor(!0,
+                                                                                            !1)
+      IL_002c:  stloc.0
+      IL_002d:  ldloc.0
+      IL_002e:  call       instance !1 class [mscorlib]System.Tuple`2<int32,int32>::get_Item2()
+      IL_0033:  stloc.1
+      IL_0034:  ldloc.0
+      IL_0035:  call       instance !0 class [mscorlib]System.Tuple`2<int32,int32>::get_Item1()
+      IL_003a:  stloc.2
+      IL_003b:  ldloc.2
+      IL_003c:  ldloc.1
+      IL_003d:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
+      IL_0042:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
+                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
+      IL_0047:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
+                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
+      IL_004c:  ret
+
+      IL_004d:  ldarg.0
+      IL_004e:  ldfld      class SeqExpressionElision1/Foo SeqExpressionElision1/seq3@17::foo
+      IL_0053:  call       instance int32 SeqExpressionElision1/Foo::get_Tag()
+      IL_0058:  ldc.i4.1
+      IL_0059:  bne.un.s   IL_0064
+
+      IL_005b:  ldc.i4.3
+      IL_005c:  ldc.i4.4
+      IL_005d:  newobj     instance void class [mscorlib]System.Tuple`2<int32,int32>::.ctor(!0,
+                                                                                            !1)
+      IL_0062:  br.s       IL_006b
+
+      IL_0064:  ldc.i4.1
+      IL_0065:  ldc.i4.2
+      IL_0066:  newobj     instance void class [mscorlib]System.Tuple`2<int32,int32>::.ctor(!0,
+                                                                                            !1)
+      IL_006b:  stloc.0
+      IL_006c:  ldloc.0
+      IL_006d:  call       instance !1 class [mscorlib]System.Tuple`2<int32,int32>::get_Item2()
+      IL_0072:  stloc.1
+      IL_0073:  ldloc.0
+      IL_0074:  call       instance !0 class [mscorlib]System.Tuple`2<int32,int32>::get_Item1()
+      IL_0079:  stloc.2
+      IL_007a:  ldloc.2
+      IL_007b:  ldloc.1
+      IL_007c:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
+      IL_0081:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
+                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
+      IL_0086:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
+                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
+      IL_008b:  ret
+    } // end of method seq3@17::Invoke
 
   } // end of class seq3@17
 
@@ -1196,19 +851,13 @@
   .method public static class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> 
           seq1() cil managed
   {
-    // Code size       11 (0xb)
+    // Code size       18 (0x12)
     .maxstack  8
-    IL_0000:  ldnull
-    IL_0001:  ldc.i4.0
-    IL_0002:  ldc.i4.0
-    IL_0003:  ldc.i4.0
-    IL_0004:  ldc.i4.0
-    IL_0005:  newobj     instance void SeqExpressionElision1/seq1@6::.ctor(class [mscorlib]System.Tuple`2<int32,int32>,
-                                                                           int32,
-                                                                           int32,
-                                                                           int32,
-                                                                           int32)
-    IL_000a:  ret
+    IL_0000:  newobj     instance void SeqExpressionElision1/seq1@6::.ctor()
+    IL_0005:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Delay<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>>)
+    IL_000a:  tail.
+    IL_000c:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::CreateSequence<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_0011:  ret
   } // end of method SeqExpressionElision1::seq1
 
   .method public static class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> 
@@ -1232,27 +881,14 @@
   .method public static class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> 
           seq3(class SeqExpressionElision1/Foo foo) cil managed
   {
-    // Code size       15 (0xf)
-    .maxstack  11
+    // Code size       19 (0x13)
+    .maxstack  8
     IL_0000:  ldarg.0
-    IL_0001:  ldnull
-    IL_0002:  ldc.i4.0
-    IL_0003:  ldc.i4.0
-    IL_0004:  ldnull
-    IL_0005:  ldc.i4.0
-    IL_0006:  ldc.i4.0
-    IL_0007:  ldc.i4.0
-    IL_0008:  ldc.i4.0
-    IL_0009:  newobj     instance void SeqExpressionElision1/seq3@17::.ctor(class SeqExpressionElision1/Foo,
-                                                                            class [mscorlib]System.Tuple`2<int32,int32>,
-                                                                            int32,
-                                                                            int32,
-                                                                            class [mscorlib]System.Tuple`2<int32,int32>,
-                                                                            int32,
-                                                                            int32,
-                                                                            int32,
-                                                                            int32)
-    IL_000e:  ret
+    IL_0001:  newobj     instance void SeqExpressionElision1/seq3@17::.ctor(class SeqExpressionElision1/Foo)
+    IL_0006:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Delay<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>>)
+    IL_000b:  tail.
+    IL_000d:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::CreateSequence<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_0012:  ret
   } // end of method SeqExpressionElision1::seq3
 
 } // end of class SeqExpressionElision1
