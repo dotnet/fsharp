@@ -254,25 +254,25 @@ type CalledMeth<'T>
                     | None -> true)
 
             // See if any of them are 'out' arguments being returned as part of a return tuple 
-            let unnamedCalledArgs, unnamedCalledOptArgs, unnamedCalledOutArgs = 
+            let minArgs, unnamedCalledArgs, unnamedCalledOptArgs, unnamedCalledOutArgs = 
                 let nUnnamedCallerArgs = unnamedCallerArgs.Length
-                if allowOutAndOptArgs && nUnnamedCallerArgs < unnamedCalledArgs.Length then
+                let nUnnamedCalledArgs = unnamedCalledArgs.Length
+                if allowOutAndOptArgs && nUnnamedCallerArgs < nUnnamedCalledArgs then
                     let unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs = List.chop nUnnamedCallerArgs unnamedCalledArgs
                     
                     // Check if all optional/out arguments are byref-out args
                     if unnamedCalledOptOrOutArgs |> List.forall (fun x -> x.IsOutArg && isByrefTy g x.CalledArgumentType) then 
-                        unnamedCalledArgsTrimmed, [], unnamedCalledOptOrOutArgs 
+                        nUnnamedCallerArgs - 1, unnamedCalledArgsTrimmed, [], unnamedCalledOptOrOutArgs 
                     // Check if all optional/out arguments are optional args
                     elif unnamedCalledOptOrOutArgs |> List.forall (fun x -> x.OptArgInfo.IsOptional) then 
-                        unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs, []
+                        nUnnamedCallerArgs - 1, unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs, []
                     // Otherwise drop them on the floor
                     else
-                        unnamedCalledArgs, [], []
+                        nUnnamedCalledArgs - 1, unnamedCalledArgs, [], []
                 else 
-                    unnamedCalledArgs, [], []
+                    nUnnamedCalledArgs - 1, unnamedCalledArgs, [], []
 
             let (unnamedCallerArgs, paramArrayCallerArgs), unnamedCalledArgs, paramArrayCalledArgOpt = 
-                let minArgs = unnamedCalledArgs.Length - 1
                 let supportsParamArgs = 
                     allowParamArgs && 
                     minArgs >= 0 && 
