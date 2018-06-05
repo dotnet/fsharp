@@ -294,8 +294,8 @@ type CompletionItem =
 [<AutoOpen>]
 module internal SymbolHelpers = 
 
-    let isFunction g typ =
-        let _, tau = tryDestForallTy g typ
+    let isFunction g ty =
+        let _, tau = tryDestForallTy g ty
         isFunTy g tau 
 
     let OutputFullName isListItem ppF fnF r = 
@@ -376,8 +376,8 @@ module internal SymbolHelpers =
         | Item.ImplicitOp (_, {contents = Some(TraitConstraintSln.FSMethSln(_, vref, _))}) -> Some vref.Range
         | Item.ImplicitOp _ -> None
         | Item.UnqualifiedType tcrefs -> tcrefs |> List.tryPick (rangeOfEntityRef preferFlag >> Some)
-        | Item.DelegateCtor typ 
-        | Item.FakeInterfaceCtor typ -> typ |> tryNiceEntityRefOfTy |> Option.map (rangeOfEntityRef preferFlag)
+        | Item.DelegateCtor ty 
+        | Item.FakeInterfaceCtor ty -> ty |> tryNiceEntityRefOfTy |> Option.map (rangeOfEntityRef preferFlag)
         | Item.NewDef _ -> None
 
     // Provided type definitions do not have a useful F# CCU for the purposes of goto-definition.
@@ -872,10 +872,10 @@ module internal SymbolHelpers =
         | Item.MethodGroup(_, _, Some minfo) -> bufs (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef; bprintf os ".%s" minfo.DisplayName)        
         | Item.MethodGroup(_, minfo :: _, _) -> bufs (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef; bprintf os ".%s" minfo.DisplayName)        
         | Item.UnqualifiedType (tcref :: _) -> bufs (fun os -> NicePrint.outputTyconRef denv os tcref)
-        | Item.FakeInterfaceCtor typ 
-        | Item.DelegateCtor typ 
-        | Item.Types(_, typ:: _) -> 
-            match tryDestAppTy g typ with
+        | Item.FakeInterfaceCtor ty 
+        | Item.DelegateCtor ty 
+        | Item.Types(_, ty:: _) -> 
+            match tryDestAppTy g ty with
             | Some tcref -> bufs (fun os -> NicePrint.outputTyconRef denv os tcref)
             | _ -> ""
         | Item.ModuleOrNamespaces((modref :: _) as modrefs) -> 
@@ -1134,9 +1134,9 @@ module internal SymbolHelpers =
         //     type IFoo = abstract F : int
         //     type II = IFoo  // remove 'type II = ' and quickly hover over IFoo before it gets squiggled for 'invalid use of interface type'
         // and in that case we'll just show the interface type name.
-        | Item.FakeInterfaceCtor typ ->
-           let typ, _ = PrettyTypes.PrettifyType g typ
-           let layout = NicePrint.layoutTyconRef denv (tcrefOfAppTy g typ)
+        | Item.FakeInterfaceCtor ty ->
+           let ty, _ = PrettyTypes.PrettifyType g ty
+           let layout = NicePrint.layoutTyconRef denv (tcrefOfAppTy g ty)
            FSharpStructuredToolTipElement.Single(layout, xml)
         
         // The 'fake' representation of constructors of .NET delegate types

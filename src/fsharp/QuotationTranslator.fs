@@ -392,7 +392,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
     // initialization check
     | Expr.Sequential(ObjectInitializationCheck cenv.g, x1, NormalSeq, _, _) -> ConvExpr cenv env x1
     | Expr.Sequential (x0,x1,NormalSeq,_,_)  -> QP.mkSequential(ConvExpr cenv env x0, ConvExpr cenv env x1)
-    | Expr.Obj (_,typ,_,_,[TObjExprMethod(TSlotSig(_,ctyp, _,_,_,_),_,tps,[tmvs],e,_) as tmethod],_,m) when isDelegateTy cenv.g typ -> 
+    | Expr.Obj (_,ty,_,_,[TObjExprMethod(TSlotSig(_,ctyp, _,_,_,_),_,tps,[tmvs],e,_) as tmethod],_,m) when isDelegateTy cenv.g ty -> 
          let f = mkLambdas m tps tmvs (e,GetFSharpViewOfReturnType cenv.g (returnTyOfMethod cenv.g tmethod))
          let fR = ConvExpr cenv env f 
          let tyargR = ConvType cenv env m ctyp 
@@ -790,8 +790,8 @@ and ConvTyparRef cenv env m (tp:Typar) =
 and FilterMeasureTyargs tys = 
     tys |> List.filter (fun ty -> match ty with TType_measure _ -> false | _ -> true) 
 
-and ConvType cenv env m typ =
-    match stripTyEqnsAndMeasureEqns cenv.g typ with 
+and ConvType cenv env m ty =
+    match stripTyEqnsAndMeasureEqns cenv.g ty with 
     | TType_app(tcref,[tyarg]) when isArrayTyconRef cenv.g tcref -> 
         QP.mkArrayTy(rankOfArrayTyconRef cenv.g tcref,ConvType cenv env m tyarg)
 

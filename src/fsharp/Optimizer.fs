@@ -87,12 +87,12 @@ type ExprValueInfo =
 
   | ConstValue of Const * TType
 
-  /// CurriedLambdaValue(id, arity, sz, expr, typ)
+  /// CurriedLambdaValue(id, arity, sz, expr, ty)
   ///    
   ///    arities: The number of bunches of untupled args and type args, and 
   ///             the number of args in each bunch. NOTE: This include type arguments.
   ///    expr: The value, a lambda term.
-  ///    typ: The type of lamba term
+  ///    ty: The type of lamba term
   | CurriedLambdaValue of  Unique * int * int * Expr * TType
 
   /// ConstExprValue(size, value)
@@ -593,7 +593,7 @@ let (|StripConstValue|_|) ev =
 
 let (|StripLambdaValue|_|) ev = 
   match stripValue ev with 
-  | CurriedLambdaValue (id, arity, sz, expr, typ) -> Some (id, arity, sz, expr, typ)
+  | CurriedLambdaValue (id, arity, sz, expr, ty) -> Some (id, arity, sz, expr, ty)
   | _ -> None
 
 let destTupleValue ev = 
@@ -1131,7 +1131,7 @@ let RemapOptimizationInfo g tmenv =
         | UnionCaseValue(cspec, vinfos) -> UnionCaseValue (remapUnionCaseRef tmenv.tyconRefRemap cspec, Array.map remapExprInfo vinfos)
         | SizeValue(_vdepth, vinfo) -> MakeSizedValueInfo (remapExprInfo vinfo)
         | UnknownValue              -> UnknownValue
-        | CurriedLambdaValue (uniq, arity, sz, expr, typ)  -> CurriedLambdaValue (uniq, arity, sz, remapExpr g CloneAll tmenv expr, remapPossibleForallTy g tmenv typ)  
+        | CurriedLambdaValue (uniq, arity, sz, expr, ty)  -> CurriedLambdaValue (uniq, arity, sz, remapExpr g CloneAll tmenv expr, remapPossibleForallTy g tmenv ty)  
         | ConstValue (c, ty)  -> ConstValue (c, remapPossibleForallTy g tmenv ty)
         | ConstExprValue (sz, expr)  -> ConstExprValue (sz, remapExpr g CloneAll tmenv expr)
 
@@ -1691,7 +1691,7 @@ let rec OptimizeExpr cenv (env:IncrementalOptimizationEnv) expr =
             HasEffect = false  
             MightMakeCriticalTailcall=false
             Info=UnknownValue }
-    | Expr.Obj (_, typ, basev, expr, overrides, iimpls, m) -> OptimizeObjectExpr cenv env (typ, basev, expr, overrides, iimpls, m)
+    | Expr.Obj (_, ty, basev, expr, overrides, iimpls, m) -> OptimizeObjectExpr cenv env (ty, basev, expr, overrides, iimpls, m)
     | Expr.Op (c, tyargs, args, m) -> OptimizeExprOp cenv env (c, tyargs, args, m)
     | Expr.App(f, fty, tyargs, argsl, m) -> 
         // eliminate uses of query
@@ -1728,11 +1728,11 @@ let rec OptimizeExpr cenv (env:IncrementalOptimizationEnv) expr =
 // Optimize/analyze an object expression
 //------------------------------------------------------------------------- 
 
-and OptimizeObjectExpr cenv env (typ, baseValOpt, basecall, overrides, iimpls, m) =
+and OptimizeObjectExpr cenv env (ty, baseValOpt, basecall, overrides, iimpls, m) =
     let basecall', basecallinfo = OptimizeExpr cenv env basecall
     let overrides', overrideinfos = OptimizeMethods cenv env baseValOpt overrides
     let iimpls', iimplsinfos = OptimizeInterfaceImpls cenv env baseValOpt iimpls
-    let expr'=mkObjExpr(typ, baseValOpt, basecall', overrides', iimpls', m)
+    let expr'=mkObjExpr(ty, baseValOpt, basecall', overrides', iimpls', m)
     expr', { TotalSize=closureTotalSize + basecallinfo.TotalSize + AddTotalSizes overrideinfos + AddTotalSizes iimplsinfos
              FunctionSize=1 (* a newobj *) 
              HasEffect=true
@@ -2167,7 +2167,7 @@ and OptimizeWhileLoop cenv env  (spWhile, marker, e1, e2, m) =
 and OptimizeTraitCall cenv env   (traitInfo, args, m) =
 
     // Resolve the static overloading early (during the compulsory rewrite phase) so we can inline. 
-    match ConstraintSolver.CodegenWitnessThatTypSupportsTraitConstraint cenv.TcVal cenv.g cenv.amap m traitInfo args with
+    match ConstraintSolver.CodegenWitnessThatTypeSupportsTraitConstraint cenv.TcVal cenv.g cenv.amap m traitInfo args with
 
     | OkResult (_, Some expr) -> OptimizeExpr cenv env expr
 

@@ -50,8 +50,8 @@ let rec accExpr   (cenv:cenv) (env:env) expr =
     | Expr.Quote(ast,_,_,_m,ty) -> 
         accExpr cenv env ast
         accTy cenv env ty
-    | Expr.Obj (_,typ,basev,basecall,overrides,iimpls,_m) -> 
-        accTy cenv env typ
+    | Expr.Obj (_,ty,basev,basecall,overrides,iimpls,_m) -> 
+        accTy cenv env ty
         accExpr cenv env basecall
         accMethods cenv env basev overrides 
         accIntfImpls cenv env basev iimpls

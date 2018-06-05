@@ -660,11 +660,11 @@ let BuildFSharpMethodApp g m (vref: ValRef) vexp vexprty (args: Exprs) =
     retTy
     
 /// Build a call to an F# method.
-let BuildFSharpMethodCall g m (typ, vref:ValRef) valUseFlags minst args =
+let BuildFSharpMethodCall g m (ty, vref:ValRef) valUseFlags minst args =
     let vexp = Expr.Val (vref, valUseFlags, m)
     let vexpty = vref.Type
     let tpsorig, tau =  vref.TypeScheme
-    let vtinst = argsOfAppTy g typ @ minst
+    let vtinst = argsOfAppTy g ty @ minst
     if tpsorig.Length <> vtinst.Length then error(InternalError("BuildFSharpMethodCall: unexpected List.length mismatch", m))
     let expr = mkTyAppExpr m (vexp, vexpty) vtinst
     let exprty = instType (mkTyparInst tpsorig vtinst) tau
@@ -680,10 +680,10 @@ let MakeMethInfoCall amap m minfo minst args =
         let direct = not minfo.IsVirtual
         let isProp = false // not necessarily correct, but this is only used post-creflect where this flag is irrelevant 
         BuildILMethInfoCall g amap m isProp ilminfo valUseFlags minst  direct args |> fst
-    | FSMeth(g, typ, vref, _) -> 
-        BuildFSharpMethodCall g m (typ, vref) valUseFlags minst args |> fst
-    | DefaultStructCtor(_, typ) -> 
-       mkDefault (m, typ)
+    | FSMeth(g, ty, vref, _) -> 
+        BuildFSharpMethodCall g m (ty, vref) valUseFlags minst args |> fst
+    | DefaultStructCtor(_, ty) -> 
+       mkDefault (m, ty)
 #if !NO_EXTENSIONTYPING
     | ProvidedMeth(amap, mi, _, m) -> 
         let isProp = false // not necessarily correct, but this is only used post-creflect where this flag is irrelevant 
@@ -803,10 +803,10 @@ let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objA
             BuildFSharpMethodApp g m vref vexp vexpty allArgs
 
         // Build a 'call' to a struct default constructor 
-        | DefaultStructCtor (g, typ) -> 
-            if not (TypeHasDefaultValue g m typ) then 
+        | DefaultStructCtor (g, ty) -> 
+            if not (TypeHasDefaultValue g m ty) then 
                 errorR(Error(FSComp.SR.tcDefaultStructConstructorCall(), m))
-            mkDefault (m, typ), typ)
+            mkDefault (m, ty), ty)
 
 //-------------------------------------------------------------------------
 // Build delegate constructions (lambdas/functions to delegates)

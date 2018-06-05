@@ -289,7 +289,7 @@ module FSharpExprConvert =
             | _ -> None
         | _ -> None
 
-    let ConvType cenv typ = FSharpType(cenv, typ)
+    let ConvType cenv ty = FSharpType(cenv, ty)
     let ConvTypes cenv typs = List.map (ConvType cenv) typs
     let ConvILTypeRefApp (cenv:SymbolEnv) m tref tyargs = 
         let tcref = Import.ImportILTypeRef cenv.amap m tref
@@ -523,7 +523,7 @@ module FSharpExprConvert =
             let env = env.BindTypars (Seq.zip tps gps |> Seq.toList)
             E.TypeLambda(gps, ConvExpr cenv env b) 
 
-        | Expr.Obj (_, typ, _, _, [TObjExprMethod(TSlotSig(_, ctyp, _, _, _, _), _, tps, [tmvs], e, _) as tmethod], _, m) when isDelegateTy cenv.g typ -> 
+        | Expr.Obj (_, ty, _, _, [TObjExprMethod(TSlotSig(_, ctyp, _, _, _, _), _, tps, [tmvs], e, _) as tmethod], _, m) when isDelegateTy cenv.g ty -> 
             let f = mkLambdas m tps tmvs (e, GetFSharpViewOfReturnType cenv.g (returnTyOfMethod cenv.g tmethod))
             let fR = ConvExpr cenv env f 
             let tyargR = ConvType cenv ctyp 
@@ -535,7 +535,7 @@ module FSharpExprConvert =
         | Expr.TyChoose _  -> 
             ConvExprPrim cenv env (ChooseTyparSolutionsForFreeChoiceTypars cenv.g cenv.amap expr)
 
-        | Expr.Obj (_lambdaId, typ, _basev, basecall, overrides, iimpls, _m)      -> 
+        | Expr.Obj (_lambdaId, ty, _basev, basecall, overrides, iimpls, _m)      -> 
             let basecallR = ConvExpr cenv env basecall
             let ConvertMethods methods = 
                 [ for (TObjExprMethod(slotsig, _, tps, tmvs, body, _)) in methods -> 
@@ -547,9 +547,9 @@ module FSharpExprConvert =
                     let bodyR = ConvExpr cenv env body
                     FSharpObjectExprOverride(sgn, tpsR, vslR, bodyR) ]
             let overridesR = ConvertMethods overrides 
-            let iimplsR = List.map (fun (ty, impls) -> ConvType cenv ty, ConvertMethods impls) iimpls
+            let iimplsR = List.map (fun (ity, impls) -> ConvType cenv ity, ConvertMethods impls) iimpls
 
-            E.ObjectExpr(ConvType cenv typ, basecallR, overridesR, iimplsR)
+            E.ObjectExpr(ConvType cenv ty, basecallR, overridesR, iimplsR)
 
         | Expr.Op(op, tyargs, args, m) -> 
             match op, tyargs, args with 
