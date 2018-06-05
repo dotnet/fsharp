@@ -800,6 +800,10 @@ Microsoft.FSharp.Core.ByRefKinds+In: Boolean Equals(System.Object)
 Microsoft.FSharp.Core.ByRefKinds+In: Int32 GetHashCode()
 Microsoft.FSharp.Core.ByRefKinds+In: System.String ToString()
 Microsoft.FSharp.Core.ByRefKinds+In: System.Type GetType()
+Microsoft.FSharp.Core.ByRefKinds+InOut: Boolean Equals(System.Object)
+Microsoft.FSharp.Core.ByRefKinds+InOut: Int32 GetHashCode()
+Microsoft.FSharp.Core.ByRefKinds+InOut: System.String ToString()
+Microsoft.FSharp.Core.ByRefKinds+InOut: System.Type GetType()
 Microsoft.FSharp.Core.ByRefKinds+Out: Boolean Equals(System.Object)
 Microsoft.FSharp.Core.ByRefKinds+Out: Int32 GetHashCode()
 Microsoft.FSharp.Core.ByRefKinds+Out: System.String ToString()
@@ -807,6 +811,7 @@ Microsoft.FSharp.Core.ByRefKinds+Out: System.Type GetType()
 Microsoft.FSharp.Core.ByRefKinds: Boolean Equals(System.Object)
 Microsoft.FSharp.Core.ByRefKinds: Int32 GetHashCode()
 Microsoft.FSharp.Core.ByRefKinds: Microsoft.FSharp.Core.ByRefKinds+In
+Microsoft.FSharp.Core.ByRefKinds: Microsoft.FSharp.Core.ByRefKinds+InOut
 Microsoft.FSharp.Core.ByRefKinds: Microsoft.FSharp.Core.ByRefKinds+Out
 Microsoft.FSharp.Core.ByRefKinds: System.String ToString()
 Microsoft.FSharp.Core.ByRefKinds: System.Type GetType()

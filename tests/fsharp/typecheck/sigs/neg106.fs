@@ -72,3 +72,78 @@ module MutateInRef1 =
 
     let testIn (m: inref<TestMut>) =
         m.x <- 1
+
+module MatrixOfTests = 
+    [<Struct>]
+    type S = 
+        [<DefaultValue(true)>]
+        val mutable X : int
+
+    module WriteToInRef = 
+        let f1 (x: inref<int>) = x <- 1 // not allowed
+
+    module WriteToInRefStructInner = 
+        let f1 (x: inref<S>) = x.X <- 1 //not allowed
+
+    module InRefToByRef = 
+        let f1 (x: byref<'T>) = 1
+        let f2 (x: inref<'T>) = f1 &x    // not allowed 
+
+    module InRefToByRefStructInner = 
+        let f1 (x: byref<'T>) = 1
+        let f2 (x: inref<S>) = f1 &x.X    // not allowed 
+
+    module InRefToOutRef = 
+        let f1 (x: outref<'T>) = 1
+        let f2 (x: inref<'T>) = f1 &x     // not allowed   
+
+    module InRefToOutRefStructInner = 
+        let f1 (x: outref<'T>) = 1
+        let f2 (x: inref<'T>) = f1 &x.X     // not allowed   
+
+    module InRefToByRefClassMethod = 
+        type C() = 
+            static member f1 (x: byref<'T>) = 1
+        let f2 (x: inref<'T>) = C.f1 &x // not allowed   
+
+    module InRefToByRefClassMethodStructInner = 
+        type C() = 
+            static member f1 (x: byref<'T>) = 1
+        let f2 (x: inref<'T>) = C.f1 &x.X // not allowed   
+
+    module InRefToOutRefClassMethod =
+        type C() = 
+            static member f1 (x: outref<'T>) = 1 // not allowed
+        let f2 (x: inref<'T>) = C.f1 &x        
+
+    module InRefToOutRefClassMethodStructInner =
+        type C() = 
+            static member f1 (x: outref<'T>) = 1 // not allowed
+        let f2 (x: inref<'T>) = C.f1 &x.X        
+
+    module InRefToByRefClassMethod2 = 
+        type C() = 
+            static member f1 (x: byref<'T>) = 1
+        let f2 (x: inref<'T>) = C.f1(&x) // not allowed   
+
+    module InRefToByRefClassMethod2StructInner = 
+        type C() = 
+            static member f1 (x: byref<'T>) = 1
+        let f2 (x: inref<'T>) = C.f1(&x.X) // not allowed   
+
+    module InRefToOutRefClassMethod2 =
+        type C() = 
+            static member f1 (x: outref<'T>) = 1 // not allowed
+        let f2 (x: inref<'T>) = C.f1(&x)        
+
+    module InRefToOutRefClassMethod2StructInner =
+        type C() = 
+            static member f1 (x: outref<'T>) = 1 // not allowed
+        let f2 (x: inref<'T>) = C.f1(&x.X)        
+
+    module UseOfLibraryOnly =
+        type C() = 
+            static member f1 (x: byref<'T, 'U>) = 1 // not allowed - library only
+            static member f2 (x: ByRefKinds.In) = 1 // not allowed - library only
+            static member f2 (x: ByRefKinds.InOut) = 1 // not allowed - library only
+            static member f2 (x: ByRefKinds.Out) = 1 // not allowed - library only
