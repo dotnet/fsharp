@@ -3066,7 +3066,7 @@ let BuildILFieldGet g amap m objExpr (finfo:ILFieldInfo) =
             Expr.Const(TcFieldInit m lit, m, fieldType)
     | _ ->
 #endif
-    let wrap, objExpr, _readonly = mkExprAddrOfExpr g isValueType false NeverMutates objExpr None m
+    let wrap, objExpr, _readonly, _writeonly = mkExprAddrOfExpr g isValueType false NeverMutates objExpr None m
       // The empty instantiation on the AbstractIL fspec is OK, since we make the correct fspec in IlxGen.GenAsm 
       // This ensures we always get the type instantiation right when doing this from 
       // polymorphic code, after inlining etc. *
@@ -3084,7 +3084,7 @@ let BuildILFieldSet g m objExpr (finfo:ILFieldInfo) argExpr =
       // polymorphic code, after inlining etc. *
     let fspec = mkILFieldSpec(fref, mkILNamedTy valu fref.DeclaringTypeRef [])
     if finfo.IsInitOnly then error (Error (FSComp.SR.tcFieldIsReadonly(), m))
-    let wrap, objExpr, _readonly = mkExprAddrOfExpr g isValueType false DefinitelyMutates objExpr None m 
+    let wrap, objExpr, _readonly, _writeonly = mkExprAddrOfExpr g isValueType false DefinitelyMutates objExpr None m 
     wrap (mkAsmExpr ([ mkNormalStfld fspec ], tinst, [objExpr; argExpr], [], m)) 
 
 let BuildILStaticFieldSet m (finfo:ILFieldInfo) argExpr = 
@@ -3103,7 +3103,7 @@ let BuildRecdFieldSet g m objExpr (rfinfo:RecdFieldInfo) argExpr =
     let tgty = rfinfo.DeclaringType
     let valu = isStructTy g tgty
     let objExpr = if valu then objExpr else mkCoerceExpr(objExpr, tgty, m, tyOfExpr g objExpr)
-    let wrap, objExpr, _readonly = mkExprAddrOfExpr g valu false DefinitelyMutates objExpr None m
+    let wrap, objExpr, _readonly, _writeonly = mkExprAddrOfExpr g valu false DefinitelyMutates objExpr None m
     wrap (mkRecdFieldSetViaExprAddr (objExpr, rfinfo.RecdFieldRef, rfinfo.TypeInst, argExpr, m) )
     
     
@@ -3999,12 +3999,17 @@ let buildApp cenv expr resultTy arg m =
     | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [], _), _), _ 
          when valRefEq g vf g.addrof_vref -> 
 
-        let wrap, e1a', readonly = mkExprAddrOfExpr g true false AddressOfOp arg (Some(vf)) m
+        let wrap, e1a', readonly, _writeonly = mkExprAddrOfExpr g true false AddressOfOp arg (Some(vf)) m
         // Assert the result type to be readonly if we couldn't take the address
         let resultTy = 
             let argTy = tyOfExpr g arg
             if readonly then
                 mkInByrefTy g argTy
+            // See RFC FS-1053 - we do _not_ introduce outref here, e.g. '&x' where 'x' is outref<_> is _not_ outref.  
+            // This effectively makes 'outref<_>' documentation-only. There is frequently a need to pass outref
+            // pointers to .NET library functions whose signatures are not tagged with [<Out>]
+            //elif writeonly then
+            //    mkOutByrefTy g argTy
             else
                 mkByrefTyWithInference g argTy (NewByRefKindInferenceType g m)
 
@@ -4016,7 +4021,7 @@ let buildApp cenv expr resultTy arg m =
          when valRefEq g vf g.addrof2_vref -> 
 
         warning(UseOfAddressOfOperator(m))
-        let wrap, e1a', _readonly = mkExprAddrOfExpr g true false AddressOfOp arg (Some(vf)) m
+        let wrap, e1a', _readonly, _writeonly = mkExprAddrOfExpr g true false AddressOfOp arg (Some(vf)) m
         MakeApplicableExprNoFlex cenv (wrap(e1a')), resultTy
 
     | _ when isByrefTy g resultTy  ->
@@ -5739,7 +5744,7 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
     // during type checking, in particular prior to resolving overloads. This helps distinguish 
     // its use at method calls from the use of the conflicting 'ref' mechanism for passing byref parameters 
     | SynExpr.AddressOf(byref, e, opm, m) -> 
-        TcExpr cenv overallTy env tpenv (mkSynPrefix opm m (if byref then "~&" else "~&&") e) 
+        TcExpr cenv overallTy env tpenv (mkSynPrefixPrim opm m (if byref then "~&" else "~&&") e) 
         
     | SynExpr.Upcast (e, _, m) | SynExpr.InferredUpcast (e, m) -> 
         let e', srcTy, tpenv = TcExprOfUnknownType cenv env tpenv e 
@@ -6349,7 +6354,7 @@ and TcRecordConstruction cenv overallTy env tpenv optOrigExpr objTy fldsList m =
         match optOrigExpr with
         | None -> [], id
         | Some (_, _, oldve) -> 
-            let wrap, oldveaddr, _readonly = mkExprAddrOfExpr cenv.g tycon.IsStructOrEnumTycon false NeverMutates oldve None m
+            let wrap, oldveaddr, _readonly, _writeonly = mkExprAddrOfExpr cenv.g tycon.IsStructOrEnumTycon false NeverMutates oldve None m
             let fieldNameUnbound nom = List.forall (fun (name, _) -> name <> nom) fldsList
             let flds = 
                 fspecs |> List.choose (fun rfld -> 
@@ -8421,7 +8426,7 @@ and TcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag:ExprAtomicF
         if not (isNil otherDelayed) then error(Error(FSComp.SR.tcInvalidAssignment(), mExpr))
         UnifyTypes cenv env mExpr overallTy cenv.g.unit_ty
         let expr = expr.Expr
-        let _wrap, exprAddress, _readonly = mkExprAddrOfExpr cenv.g true false DefinitelyMutates expr None mExpr
+        let _wrap, exprAddress, _readonly, _writeonly = mkExprAddrOfExpr cenv.g true false DefinitelyMutates expr None mExpr
         let vty = tyOfExpr cenv.g expr
         // Always allow subsumption on assignment to fields
         let expr2, tpenv = TcExprFlex cenv true vty env tpenv synExpr2
@@ -9779,7 +9784,7 @@ and TcMethodApplication
            None, Expr.Op(TOp.RefAddrGet false, [destRefCellTy g callerArgTy], [callerArgExpr], m) 
 
        elif isInByrefTy g calledArgTy && not (isByrefTy cenv.g callerArgTy) then 
-           let wrap, callerArgExprAddress, _readonly = mkExprAddrOfExpr g true false NeverMutates callerArgExpr None m
+           let wrap, callerArgExprAddress, _readonly, _writeonly = mkExprAddrOfExpr g true false NeverMutates callerArgExpr None m
            Some wrap, callerArgExprAddress
 
        elif isDelegateTy cenv.g calledArgTy && isFunTy cenv.g callerArgTy then 
