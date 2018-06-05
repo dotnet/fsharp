@@ -2132,12 +2132,23 @@ namespace Microsoft.FSharp.Core
             | ty when ty.Equals typeof<string>     -> box StringIEquality
             | _ -> null
 
+        let canUseDefaultEqualityComparer (ty:Type) =
+            // avoid any types that need special handling in GenericEqualityObj
+            true 
+            && ty.IsSealed  // covers enum and value types
+            && not (typeof<IStructuralEquatable>.IsAssignableFrom ty)
+            && not ty.IsArray
+
         [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]     
         type FastGenericEqualityComparerTable<'T>() =
             static let f : System.Collections.Generic.IEqualityComparer<'T> = 
-                match tryGetFastGenericEqualityComparerTable typeof<'T> with
+                let ty = typeof<'T>
+                match tryGetFastGenericEqualityComparerTable ty with
                 | :? System.Collections.Generic.IEqualityComparer<'T> as comp -> comp
-                | _ -> MakeGenericEqualityComparer<'T>()
+                | _ -> 
+                    if canUseDefaultEqualityComparer ty
+                    then unboxPrim (box System.Collections.Generic.EqualityComparer<'T>.Default)
+                    else MakeGenericEqualityComparer<'T>()
 
             static member Function : System.Collections.Generic.IEqualityComparer<'T> = f
 
