@@ -76,7 +76,7 @@ let DecideExpr cenv exprF z expr  =
 
     | Expr.TyLambda(_, tps, _, _m, rty)  -> 
         let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps, [], ValReprInfo.unnamedRetVal) 
-        let ty = tryMkForallTy tps rty 
+        let ty = mkForallTyIfNeeded tps rty 
         let z = DecideLambda (Some exprF)  cenv topValInfo expr ty z
         Some z
 

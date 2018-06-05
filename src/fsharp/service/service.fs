@@ -289,8 +289,8 @@ type TypeCheckInfo
         
         // If we're looking for members using a residue, we'd expect only
         // a single item (pick the first one) and we need the residue (which may be "")
-        | CNR(_,Item.Types(_,(typ::_)), _, denv, nenv, ad, m)::_, Some _ -> 
-            let items = ResolveCompletionsInType ncenv nenv (ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)) m ad true typ 
+        | CNR(_,Item.Types(_,(ty::_)), _, denv, nenv, ad, m)::_, Some _ -> 
+            let items = ResolveCompletionsInType ncenv nenv (ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)) m ad true ty 
             let items = List.map ItemWithNoInst items
             ReturnItemsOfType items g denv m filterCtors hasTextChangedSinceLastTypecheck 
         
@@ -353,7 +353,7 @@ type TypeCheckInfo
         methods
         |> List.collect (fun meth ->
             match meth.GetParamDatas(amap, m, meth.FormalMethodInst) with
-            | x::_ -> x |> List.choose(fun (ParamData(_isParamArray, _isInArg, _isOutArg, _optArgInfo, _callerInfoInfo, name, _, ty)) -> 
+            | x::_ -> x |> List.choose(fun (ParamData(_isParamArray, _isInArg, _isOutArg, _optArgInfo, _callerInfo, name, _, ty)) -> 
                 match name with
                 | Some n -> Some (Item.ArgName(n, ty, Some (ArgumentContainer.Method meth)))
                 | None -> None
@@ -393,13 +393,13 @@ type TypeCheckInfo
     let GetExprTypingForPosition(endOfExprPos) = 
         let quals = 
             sResolutions.CapturedExpressionTypings 
-            |> Seq.filter (fun (pos,typ,denv,_,_,_) -> 
+            |> Seq.filter (fun (pos,ty,denv,_,_,_) -> 
                     // We only want expression types that end at the particular position in the file we are looking at.
                     let isLocationWeCareAbout = posEq pos endOfExprPos
                     // Get rid of function types.  True, given a 2-arg curried function "f x y", it is legal to do "(f x).GetType()",
                     // but you almost never want to do this in practice, and we choose not to offer up any intellisense for 
                     // F# function types.
-                    let isFunction = isFunTy denv.g typ
+                    let isFunction = isFunTy denv.g ty
                     isLocationWeCareAbout && not isFunction)
             |> Seq.toArray
 
@@ -407,7 +407,7 @@ type TypeCheckInfo
         // filter out errors
 
         let quals = quals 
-                    |> Array.filter (fun (_,typ,denv,_,_,_) -> not (isTyparTy denv.g typ && (destTyparTy denv.g typ).IsFromError))
+                    |> Array.filter (fun (_,ty,denv,_,_,_) -> not (isTyparTy denv.g ty && (destTyparTy denv.g ty).IsFromError))
         thereWereSomeQuals, quals
     
     /// obtains captured typing for the given position
@@ -422,8 +422,8 @@ type TypeCheckInfo
                                             ignore(r)  // for breakpoint
                                             posEq r.Start rq.Start)
         match bestQual with
-        | Some (_,typ,denv,_nenv,ad,m) when isRecdTy denv.g typ ->
-            let items = NameResolution.ResolveRecordOrClassFieldsOfType ncenv m ad typ false
+        | Some (_,ty,denv,_nenv,ad,m) when isRecdTy denv.g ty ->
+            let items = NameResolution.ResolveRecordOrClassFieldsOfType ncenv m ad ty false
             Some (items, denv, m)
         | _ -> None
 
@@ -466,13 +466,13 @@ type TypeCheckInfo
 
             match bestQual with
             | Some bestQual ->
-                let (_,typ,denv,nenv,ad,m) = bestQual 
-                let items = ResolveCompletionsInType ncenv nenv (ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)) m ad false typ 
+                let (_,ty,denv,nenv,ad,m) = bestQual 
+                let items = ResolveCompletionsInType ncenv nenv (ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)) m ad false ty 
                 let items = items |> List.map ItemWithNoInst
                 let items = items |> RemoveDuplicateItems g
                 let items = items |> RemoveExplicitlySuppressed g
                 let items = items |> FilterItemsForCtors filterCtors 
-                GetPreciseCompletionListFromExprTypingsResult.Some((items,denv,m), typ)
+                GetPreciseCompletionListFromExprTypingsResult.Some((items,denv,m), ty)
             | None -> 
                 if textChanged then GetPreciseCompletionListFromExprTypingsResult.NoneBecauseTypecheckIsStaleAndTextChanged
                 else GetPreciseCompletionListFromExprTypingsResult.None
@@ -1106,20 +1106,20 @@ type TypeCheckInfo
                         GetF1Keyword g item.Item                       
                     | _ ->
                         // handle new Type()
-                        let allTypes, constr, typ =
+                        let allTypes, constr, ty =
                             List.fold 
-                                (fun (allTypes,constr,typ) (item: CompletionItem) ->
-                                    match item.Item, constr, typ with
+                                (fun (allTypes,constr,ty) (item: CompletionItem) ->
+                                    match item.Item, constr, ty with
                                     |   (Item.Types _) as t, _, None  -> allTypes, constr, Some t
-                                    |   (Item.Types _), _, _ -> allTypes, constr, typ
-                                    |   (Item.CtorGroup _), None, _ -> allTypes, Some item.Item, typ
+                                    |   (Item.Types _), _, _ -> allTypes, constr, ty
+                                    |   (Item.CtorGroup _), None, _ -> allTypes, Some item.Item, ty
                                     |   _ -> false, None, None) 
                                 (true,None,None) items
-                        match allTypes, constr, typ with
+                        match allTypes, constr, ty with
                         |   true, Some (Item.CtorGroup(_, _) as item), _    
                                 -> GetF1Keyword g item                        
-                        |   true, _, Some typ
-                                -> GetF1Keyword g typ
+                        |   true, _, Some ty
+                                -> GetF1Keyword g ty
                         |   _ -> None
             )    
             (fun msg -> 
@@ -1167,7 +1167,7 @@ type TypeCheckInfo
           | Some (item :: _, _, _, _) ->
               let getTypeVarNames (ilinfo: ILMethInfo) =
                   let classTypeParams = ilinfo.DeclaringTyconRef.ILTyconRawMetadata.GenericParams |> List.map (fun paramDef -> paramDef.Name)
-                  let methodTypeParams = ilinfo.FormalMethodTypars |> List.map (fun typ -> typ.Name)
+                  let methodTypeParams = ilinfo.FormalMethodTypars |> List.map (fun ty -> ty.Name)
                   classTypeParams @ methodTypeParams |> Array.ofList
 
               let result =

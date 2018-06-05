@@ -1203,7 +1203,7 @@ and /// Represents a type definition, exception definition, module definition or
                 | TExnAsmRepr tref -> CompiledTypeRepr.ILAsmNamed(tref, AsObject, Some (mkILTy AsObject (mkILTySpec (tref,[]))))
                 | _ -> 
                 match x.TypeReprInfo with 
-                | TAsmRepr typ -> CompiledTypeRepr.ILAsmOpen typ
+                | TAsmRepr ty -> CompiledTypeRepr.ILAsmOpen ty
                 | _ -> 
                     let boxity = if x.IsStructOrEnumTycon then AsValue else AsObject
                     let ilTypeRef = 
@@ -2361,10 +2361,10 @@ and
     /// Indicates the solution of a member constraint during inference.
     TraitConstraintSln = 
 
-    /// FSMethSln(typ, vref, minst)
+    /// FSMethSln(ty, vref, minst)
     ///
     /// Indicates a trait is solved by an F# method.
-    ///    typ   -- the type and its instantiation
+    ///    ty   -- the type and its instantiation
     ///    vref  -- the method that solves the trait constraint
     ///    minst -- the generic method instantiation 
     | FSMethSln of TType * ValRef * TypeInst 
@@ -2377,10 +2377,10 @@ and
     ///    isSetProp -- indicates if this is a set of a record field
     | FSRecdFieldSln of TypeInst * RecdFieldRef * bool
 
-    /// ILMethSln(typ, extOpt, ilMethodRef, minst)
+    /// ILMethSln(ty, extOpt, ilMethodRef, minst)
     ///
     /// Indicates a trait is solved by a .NET method.
-    ///    typ         -- the type and its instantiation
+    ///    ty         -- the type and its instantiation
     ///    extOpt      -- information about an extension member, if any
     ///    ilMethodRef -- the method that solves the trait constraint
     ///    minst       -- the generic method instantiation 
@@ -4568,7 +4568,7 @@ and
     // The base object type might be a delegate type. 
     | Obj of 
          (* unique *)           Unique * 
-         (* object typ *)       TType *                                         (* <-- NOTE: specifies type parameters for base type *)
+         (* object type *)      TType *                                         (* <-- NOTE: specifies type parameters for base type *)
          (* base val *)         Val option * 
          (* ctor call *)        Expr * 
          (* overrides *)        ObjExprMethod list * 

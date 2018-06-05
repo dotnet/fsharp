@@ -1095,7 +1095,7 @@ module internal ExtensionTyping =
         try 
             match ResolveProvidedType(resolver, m, moduleOrNamespace, typeName) with
             | Tainted.Null -> None
-            | typ -> Some typ
+            | ty -> Some ty
         with e -> 
             errorRecovery e m
             None

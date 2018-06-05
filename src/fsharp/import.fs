@@ -153,8 +153,8 @@ let ImportTyconRefApp (env:ImportMap) tcref tyargs =
     env.g.improveType tcref tyargs 
 
 /// Import an IL type as an F# type.
-let rec ImportILType (env:ImportMap) m tinst typ =  
-    match typ with
+let rec ImportILType (env:ImportMap) m tinst ty =  
+    match ty with
     | ILType.Void -> 
         env.g.unit_ty
 
@@ -181,17 +181,17 @@ let rec ImportILType (env:ImportMap) m tinst typ =
          with _ -> 
               error(Error(FSComp.SR.impNotEnoughTypeParamsInScopeWhileImporting(),m))
 
-let rec CanImportILType (env:ImportMap) m typ =  
-    match typ with
+let rec CanImportILType (env:ImportMap) m ty =  
+    match ty with
     | ILType.Void -> true
-    | ILType.Array(_bounds,ty) -> CanImportILType env m ty
+    | ILType.Array(_bounds, ety) -> CanImportILType env m ety
     | ILType.Boxed  tspec | ILType.Value tspec ->
         CanImportILTypeRef env m tspec.TypeRef 
         && tspec.GenericArgs |> List.forall (CanImportILType env m) 
-    | ILType.Byref ty -> CanImportILType env m ty
-    | ILType.Ptr ty  -> CanImportILType env m ty
+    | ILType.Byref ety -> CanImportILType env m ety
+    | ILType.Ptr ety  -> CanImportILType env m ety
     | ILType.FunctionPointer _ -> true
-    | ILType.Modified(_,_,ty) -> CanImportILType env m ty
+    | ILType.Modified(_,_,ety) -> CanImportILType env m ety
     | ILType.TypeVar _u16 -> true
 
 #if !NO_EXTENSIONTYPING
