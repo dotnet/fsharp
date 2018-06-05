@@ -80,6 +80,12 @@ let NewInferenceType () = mkTyparTy (NewTypar (TyparKind.Type, TyparRigidity.Fle
 let NewErrorType () = mkTyparTy (NewErrorTypar ())
 let NewErrorMeasure () = Measure.Var (NewErrorMeasureVar ())
 
+let NewByRefKindInferenceType (g: TcGlobals) m = 
+    let tp = NewTypar (TyparKind.Type, TyparRigidity.Flexible, Typar(compgenId, HeadTypeStaticReq, true), false, TyparDynamicReq.No, [], false, false)
+    if g.byrefkind_InOut_tcr.CanDeref then
+        tp.SetConstraints [TyparConstraint.DefaultsTo(10, TType_app(g.byrefkind_InOut_tcr, []), m)]
+    mkTyparTy tp
+
 let NewInferenceTypes l = l |> List.map (fun _ -> NewInferenceType ()) 
 
 // QUERY: should 'rigid' ever really be 'true'? We set this when we know 
@@ -890,6 +896,18 @@ and SolveTypSubsumesTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTra
         -> SolveTypEqualsTypKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ms (TType_measure Measure.One)
     | (TType_app (tc2, [ms]), _) when (tc2.IsMeasureableReprTycon && typeEquiv csenv.g sty2 (reduceTyconRefMeasureableOrProvided csenv.g tc2 [ms]))
         -> SolveTypEqualsTypKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln ms (TType_measure Measure.One)
+
+    // Special subsumption rule for byref tags
+    | TType_app (tc1, l1)  , TType_app (tc2, l2) when tyconRefEq g tc1 tc2  && g.byref2_tcr.CanDeref && tyconRefEq g g.byref2_tcr tc1 ->
+        match l1, l2 with 
+        | [ h1; tag1 ], [ h2; tag2 ] -> 
+            SolveTypEqualsTyp csenv ndeep m2 trace None h1 h2 ++ (fun () -> 
+            match stripTyEqnsA csenv.g canShortcut tag1, stripTyEqnsA csenv.g canShortcut tag2 with 
+            | TType_app(tagc1, []), TType_app(tagc2, choices) 
+                when (tyconRefEq g tagc2 g.choice2_tcr && 
+                      choices |> List.exists (function AppTy g (choicetc, []) -> tyconRefEq g tagc1 choicetc | _ -> false)) -> CompleteD
+            | _ -> SolveTypEqualsTyp csenv ndeep m2 trace cxsln tag1 tag2)
+        | _ -> SolveTypEqualsTypEqns csenv ndeep m2 trace cxsln l1 l2
 
     | TType_app (tc1, l1)  , TType_app (tc2, l2) when tyconRefEq g tc1 tc2  -> 
         SolveTypEqualsTypEqns csenv ndeep m2 trace cxsln l1 l2
@@ -1914,7 +1932,7 @@ and CanMemberSigsMatchUpToCheck
     if not (permitOptArgs || isNil unnamedCalledOptArgs) then ErrorD(Error(FSComp.SR.csOptionalArgumentNotPermittedHere(), m)) else
     
 
-    let calledObjArgTys = minfo.GetObjArgTypes(amap, m, minst)
+    let calledObjArgTys = calledMeth.CalledObjArgTys(m)
     
     // Check all the argument types. 
 
@@ -1932,7 +1950,7 @@ and CanMemberSigsMatchUpToCheck
             if isArray1DTy g calledArg.CalledArgumentType then 
                 let paramArrayElemTy = destArrayTy g calledArg.CalledArgumentType
                 let reflArgInfo = calledArg.ReflArgInfo // propgate the reflected-arg info to each param array argument
-                calledMeth.ParamArrayCallerArgs |> OptionD (IterateD (fun callerArg -> subsumeArg (CalledArg((0, 0), false, NotOptional, NoCallerInfo, false, None, reflArgInfo, paramArrayElemTy)) callerArg))
+                calledMeth.ParamArrayCallerArgs |> OptionD (IterateD (fun callerArg -> subsumeArg (CalledArg((0, 0), false, NotOptional, NoCallerInfo, false, false, None, reflArgInfo, paramArrayElemTy)) callerArg))
             else
                 CompleteD)
         
@@ -1955,7 +1973,7 @@ and CanMemberSigsMatchUpToCheck
                     let calledArgTy = rfinfo.FieldType
                     rfinfo.Name, calledArgTy
             
-            subsumeArg (CalledArg((-1, 0), false, NotOptional, NoCallerInfo, false, Some (mkSynId m name), ReflectedArgInfo.None, calledArgTy)) caller) )) ++ (fun () -> 
+            subsumeArg (CalledArg((-1, 0), false, NotOptional, NoCallerInfo, false, false, Some (mkSynId m name), ReflectedArgInfo.None, calledArgTy)) caller) )) ++ (fun () -> 
         
         // - Always take the return type into account for
         //      -- op_Explicit, op_Implicit
@@ -1966,11 +1984,17 @@ and CanMemberSigsMatchUpToCheck
         | Some _  when minfo.IsConstructor -> CompleteD 
         | Some _  when not alwaysCheckReturn && isNil unnamedCalledOutArgs -> CompleteD 
         | Some reqdRetTy -> 
-            let methodRetTy = calledMeth.ReturnTypeAfterOutArgTupling
+            let methodRetTy = calledMeth.CalledReturnTypeAfterOutArgTupling
             unifyTypes reqdRetTy methodRetTy )))))
 
 // Assert a subtype constraint, and wrap an ErrorsFromAddingSubsumptionConstraint error around any failure 
 // to allow us to report the outer types involved in the constraint 
+//
+// ty1: expected
+// ty2: actual
+//
+// "ty2 casts to ty1"
+// "a value of type ty2 can be used where a value of type ty1 is expected"
 and private SolveTypSubsumesTypWithReport (csenv:ConstraintSolverEnv) ndeep m trace cxsln ty1 ty2 =
     TryD (fun () -> SolveTypSubsumesTypKeepAbbrevs csenv ndeep m trace cxsln ty1 ty2)
          (function
@@ -1986,11 +2010,11 @@ and private SolveTypSubsumesTypWithReport (csenv:ConstraintSolverEnv) ndeep m tr
 
 // ty1: actual
 // ty2: expected
-and private SolveTypEqualsTypWithReport (csenv:ConstraintSolverEnv) ndeep  m trace cxsln ty1 ty2 = 
-    TryD (fun () -> SolveTypEqualsTypKeepAbbrevsWithCxsln csenv ndeep m trace cxsln ty1 ty2)
+and private SolveTypEqualsTypWithReport (csenv:ConstraintSolverEnv) ndeep  m trace cxsln actual expected = 
+    TryD (fun () -> SolveTypEqualsTypKeepAbbrevsWithCxsln csenv ndeep m trace cxsln actual expected)
          (function
           | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
-          | res -> ErrorD (ErrorFromAddingTypeEquation(csenv.g, csenv.DisplayEnv, ty1, ty2, res, m)))
+          | res -> ErrorD (ErrorFromAddingTypeEquation(csenv.g, csenv.DisplayEnv, actual, expected, res, m)))
   
 and ArgsMustSubsumeOrConvert 
         (csenv:ConstraintSolverEnv)
@@ -2289,15 +2313,21 @@ and ResolveOverloading
                     let c = compareTypes calledArg1.CalledArgumentType calledArg2.CalledArgumentType
                     if c <> 0 then c else
 
-                    // Func<_> is always considered better than any other delegate type
                     let c = 
                         (calledArg1.CalledArgumentType, calledArg2.CalledArgumentType) ||> compareCond (fun ty1 ty2 -> 
+
+                            // Func<_> is always considered better than any other delegate type
                             match tryDestAppTy csenv.g ty1 with 
-                            | Some tcref1 -> 
+                            | Some tcref1 when 
                                 tcref1.DisplayName = "Func" &&  
                                 (match tcref1.PublicPath with Some p -> p.EnclosingPath = [| "System" |] | _ -> false) && 
                                 isDelegateTy g ty1 &&
-                                isDelegateTy g ty2 
+                                isDelegateTy g ty2 -> true
+
+                            // T is always better than inref<T>
+                            | _ when isInByrefTy csenv.g ty2 && typeEquiv csenv.g ty1 (destByrefTy csenv.g ty2) -> 
+                                true
+
                             | _ -> false)
                                  
                     if c <> 0 then c else
@@ -2451,8 +2481,11 @@ and ResolveOverloading
                             | None -> CompleteD 
                             | Some _  when calledMeth.Method.IsConstructor -> CompleteD 
                             | Some reqdRetTy ->
-                                let actualRetTy = calledMeth.ReturnTypeAfterOutArgTupling
-                                MustUnify csenv ndeep trace cxsln reqdRetTy actualRetTy)
+                                let actualRetTy = calledMeth.CalledReturnTypeAfterOutArgTupling
+                                if isByrefTy g reqdRetTy then 
+                                    ErrorD(Error(FSComp.SR.tcByrefReturnImplicitlyDereferenced(), m))
+                                else
+                                    MustUnify csenv ndeep trace cxsln reqdRetTy actualRetTy)
 
     | None -> 
         None, errors        
@@ -2662,7 +2695,7 @@ let CodegenWitnessThatTypSupportsTraitConstraint tcVal g amap m (traitInfo:Trait
             // the address of the object then go do that 
             if minfo.IsStruct && minfo.IsInstance && (match argExprs with [] -> false | h :: _ -> not (isByrefTy g (tyOfExpr g h))) then 
                 let h, t = List.headAndTail argExprs
-                let wrap, h' = mkExprAddrOfExpr g true false PossiblyMutates h None m 
+                let wrap, h', _readonly = mkExprAddrOfExpr g true false PossiblyMutates h None m 
                 ResultD (Some (wrap (Expr.Op(TOp.TraitCall(traitInfo), [], (h' :: t), m))))
             else        
                 ResultD (Some (MakeMethInfoCall amap m minfo methArgTys argExprs ))
@@ -2677,7 +2710,7 @@ let CodegenWitnessThatTypSupportsTraitConstraint tcVal g amap m (traitInfo:Trait
                         // the address of the object then go do that 
                         if rfref.Tycon.IsStructOrEnumTycon && not (isByrefTy g (tyOfExpr g argExprs.[0])) then 
                             let h = List.head argExprs
-                            let wrap, h' = mkExprAddrOfExpr g true false DefinitelyMutates h None m 
+                            let wrap, h', _readonly = mkExprAddrOfExpr g true false DefinitelyMutates h None m 
                             Some (wrap (mkRecdFieldSetViaExprAddr (h', rfref, tinst, argExprs.[1], m)))
                         else        
                             Some (mkRecdFieldSetViaExprAddr (argExprs.[0], rfref, tinst, argExprs.[1], m))

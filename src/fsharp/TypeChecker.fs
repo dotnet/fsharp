@@ -537,8 +537,8 @@ type cenv =
 let CopyAndFixupTypars m rigid tpsorig = 
     ConstraintSolver.FreshenAndFixupTypars m rigid [] [] tpsorig
 
-let UnifyTypes cenv (env: TcEnv) m expectedTy actualTy = 
-    ConstraintSolver.AddCxTypeEqualsType env.eContextInfo env.DisplayEnv cenv.css m (tryNormalizeMeasureInType cenv.g expectedTy) (tryNormalizeMeasureInType cenv.g actualTy)
+let UnifyTypes cenv (env: TcEnv) m actualTy expectedTy = 
+    ConstraintSolver.AddCxTypeEqualsType env.eContextInfo env.DisplayEnv cenv.css m (tryNormalizeMeasureInType cenv.g actualTy) (tryNormalizeMeasureInType cenv.g expectedTy)
 
 /// Make the initial type checking environment for a single file with an empty accumulator for the overall contents for the file
 let MakeInitialEnv env = 
@@ -864,7 +864,7 @@ let TcConst cenv ty m env c =
         | SynMeasure.Anon _ -> error(Error(FSComp.SR.tcUnexpectedMeasureAnon(), m))
         | SynMeasure.Var(_, m) -> error(Error(FSComp.SR.tcNonZeroConstantCannotHaveGenericUnit(), m))
    
-    let unif ty2 = UnifyTypes cenv env m ty ty2
+    let unif expected = UnifyTypes cenv env m ty expected
 
     let unifyMeasureArg iszero tcr c =
         let measureTy = 
@@ -2100,32 +2100,37 @@ module GeneralizationHelpers =
 
     let rec IsGeneralizableValue g t = 
         match t with 
-        | Expr.Lambda _ | Expr.TyLambda _ | Expr.Const _ | Expr.Val _ -> true
+        | Expr.Lambda _ | Expr.TyLambda _ | Expr.Const _ -> true
+
+        // let f(x: byref<int>) = let v = &x in ... shouldn't generalize "v"
+        | Expr.Val (vref, _, m) -> not (isByrefLikeTy g m vref.Type) 
 
         // Look through coercion nodes corresponding to introduction of subsumption 
         | Expr.Op(TOp.Coerce, [inputTy;actualTy], [e1], _) when isFunTy g actualTy && isFunTy g inputTy -> 
             IsGeneralizableValue g e1
 
         | Expr.Op(op, _, args, _) ->
-            match op with 
-            | TOp.Tuple _ -> true
-            | TOp.UnionCase uc -> not (isUnionCaseRefDefinitelyMutable uc)
-            | TOp.Recd(ctorInfo, tcref) -> 
-                match ctorInfo with 
-                | RecdExpr -> not (isRecdOrUnionOrStructTyconRefDefinitelyMutable g tcref)
-                | RecdExprIsObjInit -> false
-            | TOp.Array -> isNil args
-            | TOp.ExnConstr ec -> not (isExnDefinitelyMutable ec)
 
-            | TOp.ILAsm([], _) -> true
+            let canGeneralizeOp = 
+                match op with 
+                | TOp.Tuple _ -> true
+                | TOp.UnionCase uc -> not (isUnionCaseRefDefinitelyMutable uc)
+                | TOp.Recd(ctorInfo, tcref) -> 
+                    match ctorInfo with 
+                    | RecdExpr -> not (isRecdOrUnionOrStructTyconRefDefinitelyMutable tcref)
+                    | RecdExprIsObjInit -> false
+                | TOp.Array -> isNil args
+                | TOp.ExnConstr ec -> not (isExnDefinitelyMutable ec)
+                | TOp.ILAsm([], _) -> true
+                | _ -> false
 
-            | _ -> false
-            && List.forall (IsGeneralizableValue g) args
+            canGeneralizeOp && List.forall (IsGeneralizableValue g) args
 
         | Expr.LetRec(binds, body, _, _)  ->
             binds |> List.forall (fun b -> not b.Var.IsMutable) &&
             binds |> List.forall (fun b -> IsGeneralizableValue g b.Expr) &&
             IsGeneralizableValue g body
+
         | Expr.Let(bind, body, _, _) -> 
             not bind.Var.IsMutable &&
             IsGeneralizableValue g bind.Expr &&
@@ -2641,7 +2646,10 @@ let FreshenObjectArgType cenv m rigid tcref isExtrinsic declaredTyconTypars =
     // Struct members have a byref 'this' type (unless they are extrinsic extension members)
     let thisTy = 
         if not isExtrinsic && tcref.IsStructOrEnumTycon then 
-            mkByrefTy cenv.g objTy 
+            if isRecdOrStructTyReadOnly cenv.g m objTy then 
+                mkInByrefTy cenv.g objTy 
+            else
+                mkByrefTy cenv.g objTy 
         else 
             objTy
     tcrefObjTy, enclosingDeclaredTypars, renaming, objTy, thisTy
@@ -3070,7 +3078,7 @@ let BuildILFieldGet g amap m objExpr (finfo:ILFieldInfo) =
             Expr.Const(TcFieldInit m lit, m, fieldType)
     | _ ->
 #endif
-    let wrap, objExpr = mkExprAddrOfExpr g isValueType false NeverMutates objExpr None m
+    let wrap, objExpr, _readonly = mkExprAddrOfExpr g isValueType false NeverMutates objExpr None m
       // The empty instantiation on the AbstractIL fspec is OK, since we make the correct fspec in IlxGen.GenAsm 
       // This ensures we always get the type instantiation right when doing this from 
       // polymorphic code, after inlining etc. *
@@ -3088,7 +3096,7 @@ let BuildILFieldSet g m objExpr (finfo:ILFieldInfo) argExpr =
       // polymorphic code, after inlining etc. *
     let fspec = mkILFieldSpec(fref, mkILNamedTy valu fref.DeclaringTypeRef [])
     if finfo.IsInitOnly then error (Error (FSComp.SR.tcFieldIsReadonly(), m))
-    let wrap, objExpr = mkExprAddrOfExpr g isValueType false DefinitelyMutates objExpr None m 
+    let wrap, objExpr, _readonly = mkExprAddrOfExpr g isValueType false DefinitelyMutates objExpr None m 
     wrap (mkAsmExpr ([ mkNormalStfld fspec ], tinst, [objExpr; argExpr], [], m)) 
 
 let BuildILStaticFieldSet m (finfo:ILFieldInfo) argExpr = 
@@ -3107,7 +3115,7 @@ let BuildRecdFieldSet g m objExpr (rfinfo:RecdFieldInfo) argExpr =
     let tgty = rfinfo.DeclaringType
     let valu = isStructTy g tgty
     let objExpr = if valu then objExpr else mkCoerceExpr(objExpr, tgty, m, tyOfExpr g objExpr)
-    let wrap, objExpr = mkExprAddrOfExpr g valu false DefinitelyMutates objExpr None m
+    let wrap, objExpr, _readonly = mkExprAddrOfExpr g valu false DefinitelyMutates objExpr None m
     wrap (mkRecdFieldSetViaExprAddr (objExpr, rfinfo.RecdFieldRef, rfinfo.TypeInst, argExpr, m) )
     
     
@@ -3964,30 +3972,75 @@ let CheckAndRewriteObjectCtor g env (ctorLambaExpr:Expr) =
 
 /// Post-typechecking normalizations to enforce semantic constraints
 /// lazy and, lazy or, rethrow, address-of
-let buildApp cenv expr exprty arg m = 
+let buildApp cenv expr resultTy arg m = 
     let g = cenv.g
     match expr, arg with        
+
+    // Special rule for building applications of the 'x && y' operator
     | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [x0], _), _) , _ 
          when valRefEq g vf g.and_vref 
            || valRefEq g vf g.and2_vref  -> 
-        MakeApplicableExprNoFlex cenv (mkLazyAnd g m x0 arg)
+        MakeApplicableExprNoFlex cenv (mkLazyAnd g m x0 arg), resultTy
+
+    // Special rule for building applications of the 'x || y' operator
     | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [x0], _), _), _ 
          when valRefEq g vf g.or_vref
            || valRefEq g vf g.or2_vref -> 
-        MakeApplicableExprNoFlex cenv (mkLazyOr g m x0 arg )
+        MakeApplicableExprNoFlex cenv (mkLazyOr g m x0 arg ), resultTy
+
+    // Special rule for building applications of the 'reraise' operator
     | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [], _), _), _ 
          when valRefEq g vf g.reraise_vref -> 
+
         // exprty is of type: "unit -> 'a". Break it and store the 'a type here, used later as return type. 
-        let _unit_ty, rtn_ty = destFunTy g exprty 
-        MakeApplicableExprNoFlex cenv (mkCompGenSequential m arg (mkReraise m rtn_ty))
+        MakeApplicableExprNoFlex cenv (mkCompGenSequential m arg (mkReraise m resultTy)), resultTy
+
+    // Special rules for NativePtr.ofByRef to generalize result.
+    // See RFC FS-1053.md
     | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [], _), _), _ 
-         when (valRefEq g vf g.addrof_vref || 
-               valRefEq g vf g.addrof2_vref) -> 
-        if valRefEq g vf g.addrof2_vref then warning(UseOfAddressOfOperator(m))
-        let wrap, e1a' = mkExprAddrOfExpr g true false DefinitelyMutates arg (Some(vf)) m
-        MakeApplicableExprNoFlex cenv (wrap(e1a'))
+         when (valRefEq g vf g.nativeptr_tobyref_vref) -> 
+
+        let argty = NewInferenceType()
+        let resultTy = mkByrefTyWithInference g argty (NewByRefKindInferenceType g m)
+        expr.SupplyArgument(arg, m), resultTy             
+
+    // Special rules for building applications of the '&expr' operator, which gets the
+    // address of an expression.
+    //
+    // See also RFC FS-1053.md
+    | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [], _), _), _ 
+         when valRefEq g vf g.addrof_vref -> 
+
+        let wrap, e1a', readonly = mkExprAddrOfExpr g true false AddressOfOp arg (Some(vf)) m
+        // Assert the result type to be readonly if we couldn't take the address
+        let resultTy = 
+            let argTy = tyOfExpr g arg
+            if readonly then
+                mkInByrefTy g argTy
+            else
+                mkByrefTyWithInference g argTy (NewByRefKindInferenceType g m)
+
+        MakeApplicableExprNoFlex cenv (wrap(e1a')), resultTy
+
+    // Special rules for building applications of the &&expr' operators, which gets the
+    // address of an expression.
+    | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [], _), _), _ 
+         when valRefEq g vf g.addrof2_vref -> 
+
+        warning(UseOfAddressOfOperator(m))
+        let wrap, e1a', _readonly = mkExprAddrOfExpr g true false AddressOfOp arg (Some(vf)) m
+        MakeApplicableExprNoFlex cenv (wrap(e1a')), resultTy
+
+    | _ when isByrefTy g resultTy  ->
+        // Handle byref returns, byref-typed returns get implicitly dereferenced 
+        let v, _ = mkCompGenLocal m "byrefReturn" resultTy
+        let expr = expr.SupplyArgument(arg, m)
+        let expr = mkCompGenLet m v expr.Expr (mkAddrGet m (mkLocalValRef v))
+        let resultTy = destByrefTy g resultTy
+        MakeApplicableExprNoFlex cenv expr, resultTy
+
     | _ -> 
-        expr.SupplyArgument(arg, m)             
+        expr.SupplyArgument(arg, m), resultTy             
 
 //-------------------------------------------------------------------------
 // Additional data structures used by type checking
@@ -5996,6 +6049,10 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
             let mExprAndDotLookup = unionRanges e1.Range (rangeOfLid longId)
             TcExprThen cenv overallTy env tpenv e1 [DelayedDotLookup(longId, mExprAndDotLookup); MakeDelayedSet(e2, mStmt)]
 
+    /// e1 <- e2
+    | SynExpr.Set (e1, e2, mStmt) ->
+        TcExprThen cenv overallTy env tpenv e1 [MakeDelayedSet(e2, mStmt)]
+
     /// e1.longId(e2) <- e3, very rarely used named property setters
     | SynExpr.DotNamedIndexedPropertySet (e1, (LongIdentWithDots(longId, _) as lidwd), e2, e3, mStmt) ->
         if lidwd.ThereIsAnExtraDotAtTheEnd then
@@ -6197,7 +6254,7 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
                 let f, fty, tpenv = TcExprOfUnknownType cenv env tpenv operPath
                 let domainTy, resultTy = UnifyFunctionType (Some mWholeExpr) cenv env.DisplayEnv mWholeExpr fty
                 UnifyTypes cenv env mWholeExpr domainTy e1ty 
-                let f' = buildApp cenv (MakeApplicableExprNoFlex cenv f) fty e1' mWholeExpr
+                let f', resultTy = buildApp cenv (MakeApplicableExprNoFlex cenv f) resultTy e1' mWholeExpr
                 let delayed = List.foldBack (fun idx acc -> DelayedApp(ExprAtomicFlag.Atomic, idx, mWholeExpr) :: acc) indexArgs delayed // atomic, otherwise no ar.[1] <- xyz
                 Some (PropagateThenTcDelayed cenv overallTy env tpenv mWholeExpr f' resultTy ExprAtomicFlag.Atomic delayed )
         else None
@@ -6330,7 +6387,7 @@ and TcRecordConstruction cenv overallTy env tpenv optOrigExpr objTy fldsList m =
         match optOrigExpr with
         | None -> [], id
         | Some (_, _, oldve) -> 
-            let wrap, oldveaddr = mkExprAddrOfExpr cenv.g tycon.IsStructOrEnumTycon false NeverMutates oldve None m
+            let wrap, oldveaddr, _readonly = mkExprAddrOfExpr cenv.g tycon.IsStructOrEnumTycon false NeverMutates oldve None m
             let fieldNameUnbound nom = List.forall (fun (name, _) -> name <> nom) fldsList
             let flds = 
                 fspecs |> List.choose (fun rfld -> 
@@ -8305,24 +8362,50 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
 /// of function application syntax unambiguously implies that 'overallTy' is a function type.
 and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed = 
     
-    let rec propagate delayedList mExpr exprty = 
+    let rec propagate isAddrOf delayedList mExpr exprty = 
         match delayedList with 
         | [] -> 
-            // Avoid unifying twice: we're about to unify in TcDelayed 
+
             if not (isNil delayed) then 
+
+                // We generate a tag inference parameter to the return type for "&x" and 'NativePtr.toByRef'
+                // See RFC FS-1053.md
+                let exprty = 
+                    if isAddrOf && isByrefTy cenv.g exprty then 
+                        mkByrefTyWithInference cenv.g (destByrefTy cenv.g exprty) (NewByRefKindInferenceType cenv.g mExpr) 
+                    elif isByrefTy cenv.g exprty then 
+                        // Implicit dereference on byref on return
+                        if isByrefTy cenv.g overallTy then 
+                             errorR(Error(FSComp.SR.tcByrefReturnImplicitlyDereferenced(), mExpr))
+                        destByrefTy cenv.g exprty
+                    else 
+                        exprty
+
                 UnifyTypesAndRecover cenv env mExpr overallTy exprty
+
         | DelayedDot :: _
         | DelayedSet _ :: _
         | DelayedDotLookup _ :: _ -> ()
         | DelayedTypeApp (_, _mTypeArgs, mExprAndTypeArgs) :: delayedList' ->
             // Note this case should not occur: would eventually give an "Unexpected type application" error in TcDelayed 
-            propagate delayedList' mExprAndTypeArgs exprty 
+            propagate isAddrOf  delayedList' mExprAndTypeArgs exprty 
 
         | DelayedApp (_, arg, mExprAndArg) :: delayedList' ->
             let denv = env.DisplayEnv
             match UnifyFunctionTypeUndoIfFailed cenv denv mExpr exprty with
             | Some (_, resultTy) -> 
-                propagate delayedList' mExprAndArg resultTy 
+                
+                // We add tag parameter to the return type for "&x" and 'NativePtr.toByRef'
+                // See RFC FS-1053.md
+                let isAddrOf = 
+                    match expr with 
+                    | ApplicableExpr(_, Expr.App(Expr.Val(vf, _, _), _, _, [], _), _) 
+                        when (valRefEq cenv.g vf cenv.g.addrof_vref || 
+                              valRefEq cenv.g vf cenv.g.nativeptr_tobyref_vref) -> true
+                    | _ -> false
+
+                propagate isAddrOf  delayedList' mExprAndArg resultTy 
+
             | None -> 
                 let mArg = arg.Range
                 match arg with
@@ -8343,7 +8426,7 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
                     RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
                     error (NotAFunction(denv, overallTy, mExpr, mArg))
 
-    propagate delayed expr.Range exprty
+    propagate false delayed expr.Range exprty
 
 and PropagateThenTcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag:ExprAtomicFlag) delayed = 
     Propagate cenv overallTy env tpenv expr exprty delayed
@@ -8368,15 +8451,23 @@ and TcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag:ExprAtomicF
     // expr.M<tyargs>(args) where x.M is a .NET method or index property 
     // expr.M where x.M is a .NET method or index property 
     | DelayedDotLookup (longId, mDotLookup) :: otherDelayed ->
-         TcLookupThen cenv overallTy env tpenv mExpr expr.Expr exprty longId otherDelayed mDotLookup
+        TcLookupThen cenv overallTy env tpenv mExpr expr.Expr exprty longId otherDelayed mDotLookup
     // f x 
     | DelayedApp (hpa, arg, mExprAndArg) :: otherDelayed ->
         TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty arg hpa otherDelayed
     // f<tyargs> 
     | DelayedTypeApp (_, mTypeArgs, _mExprAndTypeArgs) :: _ ->
         error(Error(FSComp.SR.tcUnexpectedTypeArguments(), mTypeArgs))
-    | DelayedSet _ :: _ ->      
-        error(Error(FSComp.SR.tcInvalidAssignment(), mExpr))
+    | DelayedSet (synExpr2, mStmt) :: otherDelayed ->      
+        if not (isNil otherDelayed) then error(Error(FSComp.SR.tcInvalidAssignment(), mExpr))
+        UnifyTypes cenv env mExpr overallTy cenv.g.unit_ty
+        let expr = expr.Expr
+        let _wrap, exprAddress, _readonly = mkExprAddrOfExpr cenv.g true false DefinitelyMutates expr None mExpr
+        let vty = tyOfExpr cenv.g expr
+        // Always allow subsumption on assignment to fields
+        let expr2, tpenv = TcExprFlex cenv true false vty env tpenv synExpr2
+        let v, _ve = mkCompGenLocal mExpr "addr" (mkByrefTy cenv.g vty)
+        mkCompGenLet mStmt v exprAddress (mkAddrSet mStmt (mkLocalValRef v) expr2), tpenv
 
 
 /// Convert the delayed identifiers to a dot-lookup.
@@ -8418,7 +8509,7 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
         | _ -> ()
 
         let arg, tpenv = TcExpr cenv domainTy env tpenv synArg
-        let exprAndArg = buildApp cenv expr exprty arg mExprAndArg
+        let exprAndArg, resultTy = buildApp cenv expr resultTy arg mExprAndArg
         TcDelayed cenv overallTy env tpenv mExprAndArg exprAndArg resultTy atomicFlag delayed
     | None -> 
         // OK, 'expr' doesn't have function type, but perhaps 'expr' is a computation expression builder, and 'arg' is '{ ... }' 
@@ -8807,6 +8898,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
             | SynExpr.DotSet _  
             | SynExpr.DotIndexedSet _ 
             | SynExpr.LongIdentSet _ 
+            | SynExpr.Set _ 
             | SynExpr.JoinIn _
             | SynExpr.NamedIndexedPropertySet _ 
             | SynExpr.DotNamedIndexedPropertySet _
@@ -8880,10 +8972,13 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
             // Always allow subsumption on assignment to fields
             let e2', tpenv = TcExprFlex cenv true false vty2 env tpenv e2
             let vexp = 
-                if isByrefTy cenv.g vty then 
-                  mkAddrSet mStmt vref e2'
+                if isInByrefTy cenv.g vty then 
+                    errorR(Error(FSComp.SR.writeToReadOnlyByref(), mStmt))
+                    mkAddrSet mStmt vref e2'
+                elif isByrefTy cenv.g vty then 
+                    mkAddrSet mStmt vref e2'
                 else 
-                  mkValSet mStmt vref e2'
+                    mkValSet mStmt vref e2'
                 
             PropagateThenTcDelayed cenv overallTy env tpenv mStmt (MakeApplicableExprNoFlex cenv vexp) (tyOfExpr cenv.g vexp) ExprAtomicFlag.NonAtomic otherDelayed
 
@@ -8918,14 +9013,24 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
         if not pinfo.IsStatic then error (Error (FSComp.SR.tcPropertyIsNotStatic(nm), mItem))
         match delayed with 
         | DelayedSet(e2, mStmt) :: otherDelayed ->
-            let args = if pinfo.IsIndexer then args else []
             if not (isNil otherDelayed) then error(Error(FSComp.SR.tcInvalidAssignment(), mStmt))
             // Static Property Set (possibly indexer) 
             UnifyTypes cenv env mStmt overallTy cenv.g.unit_ty
             let meths = pinfos |> SettersOfPropInfos
-            if isNil meths then error (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
-            // Note: static calls never mutate a struct object argument
-            TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt [] mStmt mItem nm ad NeverMutates true meths afterResolution NormalValUse (args@[e2]) ExprAtomicFlag.NonAtomic otherDelayed
+            if meths.IsEmpty then 
+                let meths = pinfos |> GettersOfPropInfos
+                let isByrefMethReturnSetter = meths |> List.exists (function (_,Some pinfo) -> isByrefTy cenv.g (pinfo.GetPropertyType(cenv.amap,mItem)) | _ -> false)
+                if isByrefMethReturnSetter then
+                    // x.P <- ...  byref setter
+                    if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable(nm), mItem))
+                    TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt [] mItem mItem nm ad NeverMutates true meths afterResolution NormalValUse args ExprAtomicFlag.Atomic delayed
+                else
+                    error (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
+            else
+                let args = if pinfo.IsIndexer then args else []
+                if isNil meths then error (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
+                // Note: static calls never mutate a struct object argument
+                TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt [] mStmt mItem nm ad NeverMutates true meths afterResolution NormalValUse (args@[e2]) ExprAtomicFlag.NonAtomic otherDelayed
         | _ -> 
             // Static Property Get (possibly indexer) 
             let meths = pinfos |> GettersOfPropInfos
@@ -9093,14 +9198,23 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
 
         match delayed with 
         | DelayedSet(e2, mStmt) :: otherDelayed ->
-            let args = if pinfo.IsIndexer then args else []
             if not (isNil otherDelayed) then error(Error(FSComp.SR.tcInvalidAssignment(), mStmt))
             // Instance property setter 
             UnifyTypes cenv env mStmt overallTy cenv.g.unit_ty
             let meths = SettersOfPropInfos pinfos
-            if isNil meths then error (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
-            let mut = (if isStructTy cenv.g (tyOfExpr cenv.g objExpr) then DefinitelyMutates else PossiblyMutates)
-            TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt objArgs mStmt mItem nm ad mut true meths afterResolution NormalValUse (args @ [e2]) atomicFlag [] 
+            if meths.IsEmpty then 
+                let meths = pinfos |> GettersOfPropInfos
+                let isByrefMethReturnSetter = meths |> List.exists (function (_,Some pinfo) -> isByrefTy cenv.g (pinfo.GetPropertyType(cenv.amap,mItem)) | _ -> false)
+                if isByrefMethReturnSetter then
+                    // x.P <- ...  byref setter
+                    if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable(nm), mItem))
+                    TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt objArgs mExprAndItem mItem nm ad PossiblyMutates true meths afterResolution NormalValUse args atomicFlag delayed 
+                else
+                    error (Error (FSComp.SR.tcPropertyCannotBeSet1 nm, mItem))
+            else
+                let args = if pinfo.IsIndexer then args else []
+                let mut = (if isStructTy cenv.g (tyOfExpr cenv.g objExpr) then DefinitelyMutates else PossiblyMutates)
+                TcMethodApplicationThen cenv env overallTy None tpenv tyargsOpt objArgs mStmt mItem nm ad mut true meths afterResolution NormalValUse (args @ [e2]) atomicFlag [] 
         | _ ->                   
             // Instance property getter
             let meths = GettersOfPropInfos pinfos
@@ -9254,7 +9368,7 @@ and TcMethodApplicationThen
 and GetNewInferenceTypeForMethodArg cenv env tpenv x =
     match x with 
     | SynExprParen(a, _, _, _) -> GetNewInferenceTypeForMethodArg cenv env tpenv a
-    | SynExpr.AddressOf(true, a, _, _) -> mkByrefTy cenv.g (GetNewInferenceTypeForMethodArg cenv env tpenv a)
+    | SynExpr.AddressOf(true, a, _, m) -> mkByrefTyWithInference cenv.g (GetNewInferenceTypeForMethodArg cenv env tpenv a) (NewByRefKindInferenceType cenv.g m)
     | SynExpr.Lambda(_, _, _, a, _) -> mkFunTy (NewInferenceType ()) (GetNewInferenceTypeForMethodArg cenv env tpenv a)
     | SynExpr.Quote(_, raw, a, _, _) -> 
         if raw then mkRawQuotedExprTy cenv.g
@@ -9286,7 +9400,7 @@ and TcMethodApplication
 
     let denv = env.DisplayEnv
 
-    let isSimpleFormalArg (isParamArrayArg, isOutArg, optArgInfo: OptionalArgInfo, callerInfoInfo: CallerInfoInfo, _reflArgInfo: ReflectedArgInfo) = 
+    let isSimpleFormalArg (isParamArrayArg, _isInArg, isOutArg, optArgInfo: OptionalArgInfo, callerInfoInfo: CallerInfoInfo, _reflArgInfo: ReflectedArgInfo) = 
         not isParamArrayArg && not isOutArg && not optArgInfo.IsOptional && callerInfoInfo = NoCallerInfo
     
     let callerObjArgTys = objArgs |> List.map (tyOfExpr cenv.g)
@@ -9408,7 +9522,7 @@ and TcMethodApplication
                 resultTy)
         curriedArgTys, returnTy
 
-    if isProp && Option.isNone curriedCallerArgsOpt then 
+    if isProp && Option.isNone curriedCallerArgsOpt then
         error(Error(FSComp.SR.parsIndexerPropertyRequiresAtLeastOneArgument(), mItem))
 
     // STEP 1. UnifyUniqueOverloading. This happens BEFORE we type check the arguments. 
@@ -9665,7 +9779,7 @@ and TcMethodApplication
         if HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_Dictionary finalCalledMethInfo.ApparentEnclosingType  &&
            finalCalledMethInfo.IsConstructor &&
            not (finalCalledMethInfo.GetParamDatas(cenv.amap, mItem, finalCalledMeth.CalledTyArgs) 
-                |> List.existsSquared (fun (ParamData(_, _, _, _, _, _, ty)) ->  
+                |> List.existsSquared (fun (ParamData(_, _, _, _, _, _, _, ty)) ->  
                     HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_IEqualityComparer ty)) then 
             
             match argsOfAppTy cenv.g finalCalledMethInfo.ApparentEnclosingType with 
@@ -9700,53 +9814,65 @@ and TcMethodApplication
 
     // Handle adhoc argument conversions
     let coerceExpr isOutArg calledArgTy (reflArgInfo: ReflectedArgInfo) callerArgTy m callerArgExpr = 
+       let g = cenv.g
 
-       if isByrefTy cenv.g calledArgTy && isRefCellTy cenv.g callerArgTy then 
-           Expr.Op(TOp.RefAddrGet, [destRefCellTy cenv.g callerArgTy], [callerArgExpr], m) 
+       if isByrefTy g calledArgTy && isRefCellTy g callerArgTy then 
+           None, Expr.Op(TOp.RefAddrGet false, [destRefCellTy g callerArgTy], [callerArgExpr], m) 
+
+       elif isInByrefTy g calledArgTy && not (isByrefTy cenv.g callerArgTy) then 
+           let wrap, callerArgExprAddress, _readonly = mkExprAddrOfExpr g true false NeverMutates callerArgExpr None m
+           Some wrap, callerArgExprAddress
 
        elif isDelegateTy cenv.g calledArgTy && isFunTy cenv.g callerArgTy then 
-           CoerceFromFSharpFuncToDelegate cenv.g cenv.amap cenv.infoReader ad callerArgTy m callerArgExpr calledArgTy
+           None, CoerceFromFSharpFuncToDelegate cenv.g cenv.amap cenv.infoReader ad callerArgTy m callerArgExpr calledArgTy
 
        elif isLinqExpressionTy cenv.g calledArgTy && isDelegateTy cenv.g (destLinqExpressionTy cenv.g calledArgTy) && isFunTy cenv.g callerArgTy then 
            let delegateTy = destLinqExpressionTy cenv.g calledArgTy
            let expr = CoerceFromFSharpFuncToDelegate cenv.g cenv.amap cenv.infoReader ad callerArgTy m callerArgExpr delegateTy
-           mkCallQuoteToLinqLambdaExpression cenv.g m delegateTy   (Expr.Quote(expr, ref None, false, m, mkQuotedExprTy cenv.g delegateTy))
+           None, mkCallQuoteToLinqLambdaExpression cenv.g m delegateTy   (Expr.Quote(expr, ref None, false, m, mkQuotedExprTy cenv.g delegateTy))
 
        // auto conversions to quotations (to match auto conversions to LINQ expressions)
        elif reflArgInfo.AutoQuote && isQuotedExprTy cenv.g calledArgTy && not (isQuotedExprTy cenv.g callerArgTy) then 
            match reflArgInfo with 
            | ReflectedArgInfo.Quote true -> 
-               mkCallLiftValueWithDefn cenv.g m calledArgTy callerArgExpr
+               None, mkCallLiftValueWithDefn cenv.g m calledArgTy callerArgExpr
            | ReflectedArgInfo.Quote false -> 
-               Expr.Quote(callerArgExpr, ref None, false, m, calledArgTy)
+               None, Expr.Quote(callerArgExpr, ref None, false, m, calledArgTy)
            | ReflectedArgInfo.None -> failwith "unreachable" // unreachable due to reflArgInfo.AutoQuote condition
 
        // Note: out args do not need to be coerced 
        elif isOutArg then 
-           callerArgExpr
+           None, callerArgExpr
 
        // Note: not all these casts are reported in quotations 
        else 
-           mkCoerceIfNeeded cenv.g calledArgTy callerArgTy callerArgExpr
+           None, mkCoerceIfNeeded cenv.g calledArgTy callerArgTy callerArgExpr
 
-    // Handle optional arguments
-    let optArgPreBinder, allArgs, outArgExprs, outArgTmpBinds = 
+    // Handle param array and optional arguments
+    let optArgPreBinder, paramArrayPreBinders, allArgs, outArgExprs, outArgTmpBinds = 
 
         let normalUnnamedArgs = 
           (finalUnnamedCalledArgs, finalUnnamedCallerArgs) ||> List.map2 (fun called caller -> { NamedArgIdOpt = None; CalledArg=called; CallerArg=caller })
 
-        let paramArrayArgs = 
-          match finalCalledMeth.ParamArrayCalledArgOpt with 
-          | None -> []
-          | Some paramArrayCalledArg -> 
-               let paramArrayCalledArgElementType = destArrayTy cenv.g paramArrayCalledArg.CalledArgumentType
+        let paramArrayPreBinders, paramArrayArgs = 
+            match finalCalledMeth.ParamArrayCalledArgOpt with 
+            | None -> 
+                [], []
+            | Some paramArrayCalledArg -> 
+                let paramArrayCalledArgElementType = destArrayTy cenv.g paramArrayCalledArg.CalledArgumentType
 
-               let es = 
-                   finalParamArrayCallerArgs  |> List.map (fun callerArg -> 
-                       let (CallerArg(callerArgTy, m, isOutArg, callerArgExpr)) = callerArg
-                       coerceExpr isOutArg paramArrayCalledArgElementType paramArrayCalledArg.ReflArgInfo callerArgTy m callerArgExpr)
+                let paramArrayPreBinders, es = 
+                    finalParamArrayCallerArgs  
+                    |> List.map (fun callerArg -> 
+                        let (CallerArg(callerArgTy, m, isOutArg, callerArgExpr)) = callerArg
+                        coerceExpr isOutArg paramArrayCalledArgElementType paramArrayCalledArg.ReflArgInfo callerArgTy m callerArgExpr)
+                    |> List.unzip
 
-               [ { NamedArgIdOpt = None; CalledArg=paramArrayCalledArg; CallerArg=CallerArg(paramArrayCalledArg.CalledArgumentType, mMethExpr, false, Expr.Op(TOp.Array, [paramArrayCalledArgElementType], es , mMethExpr)) } ]
+                let arg = 
+                    [ { NamedArgIdOpt = None
+                        CalledArg=paramArrayCalledArg
+                        CallerArg=CallerArg(paramArrayCalledArg.CalledArgumentType, mMethExpr, false, Expr.Op(TOp.Array, [paramArrayCalledArgElementType], es , mMethExpr)) } ]
+                paramArrayPreBinders, arg
 
         // CLEANUP: Move all this code into some isolated file, e.g. "optional.fs"
         //
@@ -9823,7 +9949,7 @@ and TcMethodApplication
                           | PassByRef (ty, dfltVal2) ->
                               let v, _ = mkCompGenLocal mMethExpr "defaultByrefArg" ty
                               let wrapper2, rhs = build currCalledArgTy dfltVal2
-                              (wrapper2 >> mkCompGenLet mMethExpr v rhs), mkValAddr mMethExpr (mkLocalValRef v)
+                              (wrapper2 >> mkCompGenLet mMethExpr v rhs), mkValAddr mMethExpr false (mkLocalValRef v)
                       build calledArgTy dfltVal
                   | CalleeSide ->
                       let calledNonOptTy = 
@@ -9890,7 +10016,7 @@ and TcMethodApplication
                 let outArgTy = destByrefTy cenv.g calledArgTy
                 let outv, outArgExpr = mkMutableCompGenLocal mMethExpr "outArg" outArgTy // mutable! 
                 let expr = mkDefault(mMethExpr, outArgTy)
-                let callerArg = CallerArg(calledArgTy, mMethExpr, false, mkValAddr mMethExpr (mkLocalValRef outv))
+                let callerArg = CallerArg(calledArgTy, mMethExpr, false, mkValAddr mMethExpr false (mkLocalValRef outv))
                 let outArg = { NamedArgIdOpt=None;CalledArg=calledArg;CallerArg=callerArg }
                 (outArg, outArgExpr), mkCompGenBind outv expr) 
               |> List.unzip
@@ -9907,7 +10033,7 @@ and TcMethodApplication
         let allArgs = 
             allArgs |> List.sortBy (fun x -> x.Position)
 
-        optArgPreBinder, allArgs, outArgExprs, outArgTmpBinds
+        optArgPreBinder, paramArrayPreBinders, allArgs, outArgExprs, outArgTmpBinds
 
     let coerce (assignedArg: AssignedCalledArg<_>) = 
         let isOutArg = assignedArg.CalledArg.IsOutArg
@@ -9925,13 +10051,21 @@ and TcMethodApplication
             let item = Item.ArgName (defaultArg assignedArg.CalledArg.NameOpt id, assignedArg.CalledArg.CalledArgumentType, Some(ArgumentContainer.Method(finalCalledMethInfo)))
             CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, ad))
 
-    let allArgsCoerced = List.map coerce  allArgs
-
+    let allArgsPreBinders, allArgsCoerced = List.map coerce  allArgs |> List.unzip
 
     // Make the call expression 
     let expr, exprty = 
         BuildPossiblyConditionalMethodCall cenv env mut mMethExpr isProp finalCalledMethInfo isSuperInit finalCalledMethInst objArgs allArgsCoerced
         
+    // Handle byref returns
+    let expr = 
+        // byref-typed returns get implicitly dereferenced 
+        let vty = tyOfExpr cenv.g expr
+        if isByrefTy cenv.g vty then 
+            let v, _ = mkCompGenLocal mMethExpr "byrefReturn" vty
+            mkCompGenLet mMethExpr v expr (mkAddrGet mMethExpr (mkLocalValRef v))
+        else 
+            expr
 
     // Bind "out" parameters as part of the result tuple 
     let expr, exprty = 
@@ -9944,51 +10078,54 @@ and TcMethodApplication
             expr, tyOfExpr cenv.g expr
 
     // Handle post-hoc property assignments 
-    let expr = 
-        if isCheckingAttributeCall then expr else
-        if isNil finalAssignedItemSetters then expr else 
+    let setterExprPrebinders, expr = 
+      if isCheckingAttributeCall then 
+          [], expr 
+      elif isNil finalAssignedItemSetters then 
+          [], expr 
+      else 
         // This holds the result of the call 
         let objv, objExpr = mkMutableCompGenLocal mMethExpr "returnVal" exprty // mutable in case it's a struct 
         // This expression  mutates the properties on the result of the call
-        let propSetExpr = 
-            (mkUnit cenv.g mMethExpr, finalAssignedItemSetters) ||> List.fold (fun acc (AssignedItemSetter(id, setter, CallerArg(callerArgTy, m, isOptCallerArg, argExpr))) ->
+        let setterExprPrebinders, propSetExpr = 
+            (mkUnit cenv.g mMethExpr, finalAssignedItemSetters) ||> List.mapFold (fun acc (AssignedItemSetter(id, setter, CallerArg(callerArgTy, m, isOptCallerArg, argExpr))) ->
                     if isOptCallerArg then error(Error(FSComp.SR.tcInvalidOptionalAssignmentToPropertyOrField(), m))
                     
-                    let action, defnItem = 
+                    let argExprPrebinder, action, defnItem = 
                         match setter with 
                         | AssignedPropSetter (pinfo, pminfo, pminst) -> 
                             MethInfoChecks cenv.g cenv.amap true None [objExpr] ad m pminfo
                             let calledArgTy = List.head (List.head (pminfo.GetParamTypes(cenv.amap, m, pminst)))
-                            let argExpr = coerceExpr false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
+                            let argExprPrebinder, argExpr = coerceExpr false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
                             let mut = (if isStructTy cenv.g (tyOfExpr cenv.g objExpr) then DefinitelyMutates else PossiblyMutates)
                             let action = BuildPossiblyConditionalMethodCall cenv env mut m true pminfo NormalValUse pminst [objExpr] [argExpr] |> fst 
-                            action, Item.Property (pinfo.PropertyName, [pinfo])
+                            argExprPrebinder, action, Item.Property (pinfo.PropertyName, [pinfo])
 
                         | AssignedILFieldSetter finfo ->
                             // Get or set instance IL field 
                             ILFieldInstanceChecks  cenv.g cenv.amap ad m finfo
                             let calledArgTy = finfo.FieldType (cenv.amap, m)
-                            let argExpr = coerceExpr false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
+                            let argExprPrebinder, argExpr = coerceExpr false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
                             let action = BuildILFieldSet cenv.g m objExpr finfo argExpr 
-                            action, Item.ILField finfo
+                            argExprPrebinder, action, Item.ILField finfo
                         
                         | AssignedRecdFieldSetter rfinfo ->
                             RecdFieldInstanceChecks cenv.g cenv.amap ad m rfinfo 
                             let calledArgTy = rfinfo.FieldType
                             CheckRecdFieldMutation m denv rfinfo
-                            let argExpr = coerceExpr false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
+                            let argExprPrebinder, argExpr = coerceExpr false calledArgTy ReflectedArgInfo.None callerArgTy m argExpr
                             let action = BuildRecdFieldSet cenv.g m objExpr rfinfo argExpr 
-                            action, Item.RecdField rfinfo
+                            argExprPrebinder, action, Item.RecdField rfinfo
 
                     // Record the resolution for the Language Service
                     let item = Item.SetterArg (id, defnItem)
                     CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, ad)
 
-                    mkCompGenSequential m acc action)
+                    argExprPrebinder, mkCompGenSequential m acc action)
 
         // now put them together 
         let expr = mkCompGenLet mMethExpr objv expr  (mkCompGenSequential mMethExpr propSetExpr objExpr)
-        expr
+        setterExprPrebinders, expr
 
     // Build the lambda expression if any 
     let expr = 
@@ -10014,6 +10151,10 @@ and TcMethodApplication
             expr, tpenv
 
     // Apply the PreBinders, if any 
+    let expr = (expr, setterExprPrebinders) ||> List.fold (fun expr argPreBinder -> match argPreBinder with None -> expr | Some f -> f expr)
+    let expr = (expr, paramArrayPreBinders) ||> List.fold (fun expr argPreBinder -> match argPreBinder with None -> expr | Some f -> f expr)
+    let expr = (expr, allArgsPreBinders) ||> List.fold (fun expr argPreBinder -> match argPreBinder with None -> expr | Some f -> f expr)
+    
     let expr = optArgPreBinder expr
     let expr = objArgPreBinder expr
     
@@ -10222,7 +10363,7 @@ and TcAndBuildFixedExpr cenv env (overallPatTy, fixedExpr, overallExprTy, mBindi
             match stripExpr fixedExpr  with 
             | Expr.Op (op, tyargs, args, _) ->
                     match op, tyargs, args with 
-                    | TOp.ValFieldGetAddr rfref, _, [_] -> not rfref.Tycon.IsStructOrEnumTycon
+                    | TOp.ValFieldGetAddr (rfref, _), _, [_] -> not rfref.Tycon.IsStructOrEnumTycon
                     | TOp.ILAsm ([ I_ldflda (fspec)], _), _, _  -> fspec.DeclaringType.Boxity = ILBoxity.AsObject
                     | TOp.ILAsm ([ I_ldelema _], _), _, _ -> true
                     | TOp.RefAddrGet _, _, _ -> true
@@ -10271,7 +10412,7 @@ and TcAndBuildFixedExpr cenv env (overallPatTy, fixedExpr, overallExprTy, mBindi
         //
         mkCompGenLetIn mBinding "tmpArray" overallExprTy fixedExpr (fun (_, ve) -> 
             // This is &arr.[0]
-            let elemZeroAddress = mkArrayElemAddress cenv.g (ILReadonly.NormalAddress, false, ILArrayShape.SingleDimensional, elemTy, ve, mkInt32 cenv.g mBinding 0, mBinding)
+            let elemZeroAddress = mkArrayElemAddress cenv.g (false, ILReadonly.NormalAddress, false, ILArrayShape.SingleDimensional, elemTy, [ve; mkInt32 cenv.g mBinding 0], mBinding)
             // check for non-null and non-empty
             let zero = mkConvToNativeInt cenv.g (mkInt32 cenv.g mBinding 0) mBinding  
             // This is arr.Length
@@ -12459,6 +12600,12 @@ module IncrClassChecking =
             | InVar false -> true
             | _ -> false
 
+        member localRep.IsValRepresentedAsMethod (v:Val) =
+            localRep.IsValWithRepresentation(v) &&
+            match localRep.LookupRepr(v) with 
+            | InMethod _  -> true 
+            | _ -> false
+
         /// Make the elaborated expression that represents a use of a 
         /// a "let v = ..." class binding
         member localRep.MakeValueLookup thisValOpt tinst safeStaticInitInfo v tyargs m =
@@ -12504,19 +12651,19 @@ module IncrClassChecking =
             | InMethod _, _ -> 
                 error(InternalError("Local was given method storage, yet later it's been assigned to", m))
           
-        member localRep.MakeValueGetAddress thisValOpt tinst safeStaticInitInfo v m =
+        member localRep.MakeValueGetAddress readonly thisValOpt tinst safeStaticInitInfo v m =
             let g = localRep.RepInfoTcGlobals 
             match localRep.LookupRepr v, thisValOpt with 
             | InField(false, _, rfref), Some(thisVal) -> 
                 let thise = exprForVal m thisVal
-                mkRecdFieldGetAddrViaExprAddr(thise, rfref, tinst, m)
+                mkRecdFieldGetAddrViaExprAddr(readonly, thise, rfref, tinst, m)
             | InField(false, _, _rfref), None -> 
                 error(InternalError("Unexpected missing 'this' variable in MakeValueGetAddress", m))
             | InField(true, idx, rfref), _ -> 
-                let expr = mkStaticRecdFieldGetAddr(rfref, tinst, m)
+                let expr = mkStaticRecdFieldGetAddr(readonly, rfref, tinst, m)
                 MakeCheckSafeInit g tinst safeStaticInitInfo (mkInt g m idx) expr
             | InVar _, _ -> 
-                mkValAddr m (mkLocalValRef v)
+                mkValAddr m readonly (mkLocalValRef v)
             | InMethod _, _ -> 
                 error(InternalError("Local was given method storage, yet later it's address was required", m))
 
@@ -12556,42 +12703,42 @@ module IncrClassChecking =
         /// Fix up the references to the locals, e.g. 
         ///     v -> this.fieldv
         ///     f x -> this.method x
-        member localRep.FixupIncrClassExprPhase2C thisValOpt safeStaticInitInfo (thisTyInst:TypeInst) expr = 
+        member localRep.FixupIncrClassExprPhase2C cenv thisValOpt safeStaticInitInfo (thisTyInst:TypeInst) expr = 
             // fixup: intercept and expr rewrite
             let FixupExprNode rw e =
                 //dprintfn "Fixup %s" (showL (exprL e))
+                let g = localRep.RepInfoTcGlobals
+                let e = NormalizeAndAdjustPossibleSubsumptionExprs g e
                 match e with
                 // Rewrite references to applied let-bound-functions-compiled-as-methods
-                | Expr.App(Expr.Val (ValDeref(v), _, _), _, tyargs, args, m) 
-                    when (localRep.IsValWithRepresentation(v) &&
-                          (match localRep.LookupRepr(v) with 
-                           | InMethod _  -> true //(methodVal.Typars.Length > thisTyInst.Length)
-                           | _ -> false )) -> 
+                // Rewrite references to applied recursive let-bound-functions-compiled-as-methods
+                // Rewrite references to applied recursive generic let-bound-functions-compiled-as-methods
+                | Expr.App(Expr.Val (ValDeref v, _, _), _, tyargs, args, m) 
+                | Expr.App(Expr.Link {contents = Expr.Val (ValDeref v, _, _) }, _, tyargs, args, m)  
+                | Expr.App(Expr.Link {contents = Expr.App(Expr.Val (ValDeref v, _, _), _, tyargs, [], _) }, _, [], args, m)  
+                     when localRep.IsValRepresentedAsMethod(v) && not (cenv.recUses.ContainsKey v) -> 
 
-                        //dprintfn "Found application of %s" v.LogicalName
-                        let g = localRep.RepInfoTcGlobals
                         let expr = localRep.MakeValueLookup thisValOpt thisTyInst safeStaticInitInfo v tyargs m
                         let args = args |> List.map rw
                         Some (MakeApplicationAndBetaReduce g (expr, (tyOfExpr g expr), [], args, m)) 
-                        
 
                 // Rewrite references to values stored as fields and first class uses of method values
-                | Expr.Val (ValDeref(v), _, m)                         
+                | Expr.Val (ValDeref v, _, m)                         
                     when localRep.IsValWithRepresentation(v) -> 
 
                         //dprintfn "Found use of %s" v.LogicalName
                         Some (localRep.MakeValueLookup thisValOpt thisTyInst safeStaticInitInfo v [] m)
 
                 // Rewrite assignments to mutable values stored as fields 
-                | Expr.Op(TOp.LValueOp (LSet, ValDeref(v))    , [], [arg], m) 
+                | Expr.Op(TOp.LValueOp (LSet, ValDeref v)    , [], [arg], m) 
                     when localRep.IsValWithRepresentation(v) ->
                         let arg = rw arg 
                         Some (localRep.MakeValueAssign thisValOpt thisTyInst safeStaticInitInfo v arg m)
 
                 // Rewrite taking the address of mutable values stored as fields 
-                | Expr.Op(TOp.LValueOp (LGetAddr, ValDeref(v)), [], []   , m) 
+                | Expr.Op(TOp.LValueOp (LAddrOf readonly, ValDeref v), [], []   , m) 
                     when localRep.IsValWithRepresentation(v) ->
-                        Some (localRep.MakeValueGetAddress thisValOpt thisTyInst safeStaticInitInfo v m)
+                        Some (localRep.MakeValueGetAddress readonly thisValOpt thisTyInst safeStaticInitInfo v m)
 
                 | _ -> None
             Tastops.RewriteExpr { PreIntercept = Some FixupExprNode 
@@ -12698,7 +12845,7 @@ module IncrClassChecking =
         let TransBind (reps:IncrClassReprInfo) (TBind(v, rhsExpr, spBind)) =
             if v.MustInline then
                 error(Error(FSComp.SR.tcLocalClassBindingsCannotBeInline(), v.Range))
-            let rhsExpr = reps.FixupIncrClassExprPhase2C (Some thisVal) safeStaticInitInfo thisTyInst rhsExpr
+            let rhsExpr = reps.FixupIncrClassExprPhase2C cenv (Some thisVal) safeStaticInitInfo thisTyInst rhsExpr
             
             // The initialization of the 'ref cell' variable for 'this' is the only binding which comes prior to the super init
             let isPriorToSuperInit = 
@@ -12750,7 +12897,7 @@ module IncrClassChecking =
                         match safeStaticInitInfo with 
                         | SafeInitField (rfref, _) -> 
                             let setExpr = mkStaticRecdFieldSet (rfref, thisTyInst, mkInt cenv.g m idx, m)
-                            let setExpr = reps.FixupIncrClassExprPhase2C (Some(thisVal)) NoSafeInitInfo thisTyInst setExpr
+                            let setExpr = reps.FixupIncrClassExprPhase2C cenv (Some(thisVal)) NoSafeInitInfo thisTyInst setExpr
                             Some setExpr
                         | NoSafeInitInfo -> 
                             None
@@ -12786,7 +12933,7 @@ module IncrClassChecking =
                       ([], actions, methodBinds), reps
 
               | IncrClassDo (doExpr, isStatic) -> 
-                  let doExpr = reps.FixupIncrClassExprPhase2C (Some(thisVal)) safeStaticInitInfo thisTyInst doExpr
+                  let doExpr = reps.FixupIncrClassExprPhase2C cenv (Some(thisVal)) safeStaticInitInfo thisTyInst doExpr
                   let binder = (fun e -> mkSequential SequencePointsAtSeq doExpr.Range doExpr e)
                   let isPriorToSuperInit = false
                   if isStatic then 
@@ -12806,7 +12953,7 @@ module IncrClassChecking =
                       | None ->  ()
                       | Some v -> 
                         let setExpr = mkRefCellSet cenv.g m ctorInfo.InstanceCtorThisVal.Type (exprForVal m v) (exprForVal m ctorInfo.InstanceCtorThisVal)
-                        let setExpr = reps.FixupIncrClassExprPhase2C (Some(thisVal)) safeStaticInitInfo thisTyInst setExpr
+                        let setExpr = reps.FixupIncrClassExprPhase2C cenv (Some(thisVal)) safeStaticInitInfo thisTyInst setExpr
                         let binder = (fun e -> mkSequential SequencePointsAtSeq setExpr.Range setExpr e)
                         let isPriorToSuperInit = false
                         yield (isPriorToSuperInit, binder) ]
@@ -12820,7 +12967,7 @@ module IncrClassChecking =
                     [ match ctorInfo.InstanceCtorSafeInitInfo with 
                       | SafeInitField (rfref, _) ->  
                         let setExpr = mkRecdFieldSetViaExprAddr (exprForVal m thisVal, rfref, thisTyInst, mkOne cenv.g m, m)
-                        let setExpr = reps.FixupIncrClassExprPhase2C (Some(thisVal)) safeStaticInitInfo thisTyInst setExpr
+                        let setExpr = reps.FixupIncrClassExprPhase2C cenv (Some(thisVal)) safeStaticInitInfo thisTyInst setExpr
                         let binder = (fun e -> mkSequential SequencePointsAtSeq setExpr.Range setExpr e)
                         let isPriorToSuperInit = false
                         yield (isPriorToSuperInit, binder)  
@@ -12903,7 +13050,7 @@ module IncrClassChecking =
                         // Rewrite the expression to convert it to a load of a field if needed.
                         // We are allowed to load fields from our own object even though we haven't called
                         // the super class constructor yet.
-                        let ldexpr = reps.FixupIncrClassExprPhase2C (Some(thisVal)) safeStaticInitInfo thisTyInst (exprForVal m v) 
+                        let ldexpr = reps.FixupIncrClassExprPhase2C cenv (Some(thisVal)) safeStaticInitInfo thisTyInst (exprForVal m v) 
                         mkInvisibleLet m v ldexpr inheritsExpr
                     | _ -> 
                         inheritsExpr
@@ -13577,7 +13724,7 @@ module MutRecBindingChecking =
                             // Members have at least as many type parameters as the enclosing class. Just grab the type variables for the type.
                             let thisTyInst = List.map mkTyparTy (List.take (tcref.Typars(v.Range).Length) v.Typars)
                                     
-                            let x = localReps.FixupIncrClassExprPhase2C thisValOpt safeStaticInitInfo thisTyInst x 
+                            let x = localReps.FixupIncrClassExprPhase2C cenv thisValOpt safeStaticInitInfo thisTyInst x 
 
                             { pgrbind with Binding = TBind(v, x, spBind) } )
                         
@@ -14238,7 +14385,7 @@ module TyconConstraintInference =
                    // If the type was excluded, say why
                    if not res then 
                        match TryFindFSharpBoolAttribute g g.attrib_StructuralEqualityAttribute tycon.Attribs with
-                       | Some(true) -> 
+                       | Some true -> 
                            if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals cenv.g tycon then 
                                match structuralTypes |> List.tryFind (fst >> checkIfFieldTypeSupportsEquality tycon >> not) with
                                | None -> 

@@ -140,16 +140,16 @@ let TransformExpr g (nvs: ValMap<_>) exprF expr =
        Some (mkRefCellGet g m v.Type nve)
 
     // Rewrite assignments to mutable values 
-    | Expr.Op(TOp.LValueOp (LSet, ValDeref(v))    , [], [arg], m)  when nvs.ContainsVal v -> 
+    | Expr.Op(TOp.LValueOp (LSet, ValDeref(v)), [], [arg], m) when nvs.ContainsVal v -> 
 
        let _nv, nve = nvs.[v]
        let arg = exprF arg 
        Some (mkRefCellSet g m v.Type nve arg)
 
     // Rewrite taking the address of mutable values 
-    | Expr.Op(TOp.LValueOp (LGetAddr, ValDeref(v)), [], []   , m)  when nvs.ContainsVal v -> 
-       let _nv, nve = nvs.[v]
-       Some (mkRecdFieldGetAddrViaExprAddr (nve, mkRefCellContentsRef g, [v.Type], m))
+    | Expr.Op(TOp.LValueOp (LAddrOf readonly, ValDeref(v)), [], [], m) when nvs.ContainsVal v -> 
+       let _nv,nve = nvs.[v]
+       Some (mkRecdFieldGetAddrViaExprAddr (readonly, nve, mkRefCellContentsRef g, [v.Type], m))
 
     | _ -> None
 
@@ -183,9 +183,10 @@ let TransformImplFile g amap implFile =
             |> ValMap.OfList
 
         implFile |> 
-          RewriteImplFile { PreIntercept = Some(TransformExpr g nvs)
-                            PreInterceptBinding = Some(TransformBinding g nvs)
-                            PostTransform = (fun _ -> None)
-                            IsUnderQuotations = false } 
+          RewriteImplFile 
+              { PreIntercept = Some(TransformExpr g nvs)
+                PreInterceptBinding = Some(TransformBinding g nvs)
+                PostTransform = (fun _ -> None)
+                IsUnderQuotations = false } 
 
 

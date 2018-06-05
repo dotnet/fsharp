@@ -85,14 +85,14 @@ module internal DescriptionListsImpl =
             else 
                 // TODO: in this case ucinst is ignored - it gives the instantiation of the type parameters of
                 // the union type containing this case.
-                NicePrint.layoutOfParamData denv (ParamData(false, false, NotOptional, NoCallerInfo, Some f.Id, ReflectedArgInfo.None, f.FormalType)) 
+                NicePrint.layoutOfParamData denv (ParamData(false, false, false, NotOptional, NoCallerInfo, Some f.Id, ReflectedArgInfo.None, f.FormalType)) 
         FSharpMethodGroupItemParameter(
           name=initial.ParameterName, 
           canonicalTypeTextForSorting=initial.CanonicalTypeTextForSorting, 
           display=display,
           isOptional=false)
 
-    let ParamOfParamData g denv (ParamData(_isParamArrayArg, _isOutArg, optArgInfo, _callerInfoInfo, nmOpt, _reflArgInfo, pty) as paramData) =
+    let ParamOfParamData g denv (ParamData(_isParamArrayArg, _isInArg, _isOutArg, optArgInfo, _callerInfoInfo, nmOpt, _reflArgInfo, pty) as paramData) =
         FSharpMethodGroupItemParameter(
           name = (match nmOpt with None -> "" | Some pn -> pn.idText),
           canonicalTypeTextForSorting = printCanonicalizedTypeName g denv pty,
@@ -103,7 +103,7 @@ module internal DescriptionListsImpl =
     let PrettyParamsOfParamDatas g denv typarInst (paramDatas:ParamData list) rty = 
         let paramInfo,paramTypes = 
             paramDatas 
-            |> List.map (fun (ParamData(isParamArrayArg, _isOutArg, optArgInfo, _callerInfoInfo, nmOpt, _reflArgInfo, pty)) -> 
+            |> List.map (fun (ParamData(isParamArrayArg, _isInArg, _isOutArg, optArgInfo, _callerInfoInfo, nmOpt, _reflArgInfo, pty)) -> 
                 let isOptArg = optArgInfo.IsOptional
                 match nmOpt, isOptArg, tryDestOptionTy denv.g pty with 
                 // Layout an optional argument 
@@ -237,7 +237,7 @@ module internal DescriptionListsImpl =
                     let firstCurriedParamDatas = 
                         firstCurriedArgInfo
                         |> List.map ParamNameAndType.FromArgInfo
-                        |> List.map (fun (ParamNameAndType(nmOpt, pty)) -> ParamData(false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None, pty))
+                        |> List.map (fun (ParamNameAndType(nmOpt, pty)) -> ParamData(false, false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None, pty))
 
                     // Adjust the return type so it only strips the first argument
                     let curriedRetTy = 
@@ -321,7 +321,7 @@ module internal DescriptionListsImpl =
             | None -> 
                 let argNamesAndTys = SymbolHelpers.ParamNameAndTypesOfUnaryCustomOperation g minfo 
                 let argTys, _ = PrettyTypes.PrettifyTypes g (argNamesAndTys |> List.map (fun (ParamNameAndType(_,ty)) -> ty))
-                let paramDatas = (argNamesAndTys, argTys) ||> List.map2 (fun (ParamNameAndType(nmOpt, _)) argTy -> ParamData(false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None,argTy))
+                let paramDatas = (argNamesAndTys, argTys) ||> List.map2 (fun (ParamNameAndType(nmOpt, _)) argTy -> ParamData(false, false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None,argTy))
                 let rty = minfo.GetFSharpReturnTy(amap, m, minfo.FormalMethodInst)
                 let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInst paramDatas rty
 
@@ -342,7 +342,7 @@ module internal DescriptionListsImpl =
             let (SigOfFunctionForDelegate(_, _, _, fty)) = GetSigOfFunctionForDelegate infoReader delty m AccessibleFromSomewhere
 
             // No need to pass more generic type information in here since the instanitations have already been applied
-            let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInst [ParamData(false, false, NotOptional, NoCallerInfo, None, ReflectedArgInfo.None, fty)] delty
+            let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInst [ParamData(false, false, false, NotOptional, NoCallerInfo, None, ReflectedArgInfo.None, fty)] delty
 
             // FUTURE: prettyTyparInst is the pretty version of the known instantiations of type parameters in the output. It could be returned
             // for display as part of the method group

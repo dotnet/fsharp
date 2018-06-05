@@ -50,8 +50,23 @@ namespace CustomExtensions
     {
 
         /// Extend an F# type
+        static public ref readonly DateTime ExtendCSharpTypeWithInRefReturnExtension(in this DateTime inp) { return ref inp; }
+        static public ref DateTime ExtendCSharpTypeWithRefReturnExtension(ref this DateTime inp) { return ref inp; }
+        static public void ExtendCSharpTypeWithOutRefExtension(ref this DateTime inp) { inp = inp.Date; }
+        static public int ExtendCSharpTypeWithInRefExtension(ref this DateTime inp) { return inp.Year;  }
         static public int ExtendFSharpType(this Lib.recd1 recd) { return 5; }
         static public int ExtendCSharpType(this Lib2 recd) { return 4; }
+    }
+}
+
+namespace Fields
+{
+    public class Fields
+    {
+
+        /// Extend an F# type
+        static public int StaticIntField => 3;
+        static public System.DateTime StaticDateTimeField => System.DateTime.Now.Date;
     }
 }
 

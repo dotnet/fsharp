@@ -796,6 +796,8 @@ type ILReturn =
 
     member CustomAttrs: ILAttributes
 
+    member WithCustomAttrs: customAttrs: ILAttributes -> ILReturn
+
 [<RequireQualifiedAccess>]
 type ILSecurityAction = 
     | Request 
