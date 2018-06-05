@@ -493,26 +493,27 @@ let mkTransform g (f:Val) m tps x1Ntys rty (callPattern, tyfringes: (TType list 
 // transform - vTransforms - support
 //-------------------------------------------------------------------------
 
+let rec zipTupleStructureAndType g ts ty =
+    // match a tuple-structure and type, yields:
+    //  (a) (restricted) tuple-structure, and
+    //  (b) type fringe for each arg position.
+    match ts with
+    | TupleTS tss when isRefTupleTy g ty ->
+        let tys = destRefTupleTy g ty 
+        let tss, tyfringe = zipTupleStructuresAndTypes g tss tys
+        TupleTS tss, tyfringe
+    | _ -> 
+        UnknownTS, [ty] (* trim back CallPattern, function more general *)
+
+and zipTupleStructuresAndTypes g tss tys =
+    let tstys = List.map2 (zipTupleStructureAndType g) tss tys  // assumes tss tys same length 
+    let tss  = List.map fst tstys         
+    let tys = List.collect snd tstys       // link fringes 
+    tss, tys
+
 let zipCallPatternArgTys m g (callPattern : TupleStructure list) (vss : Val list list) =
-    let rec zipTSTyp ts typ =
-        // match a tuple-structure and type, yields:
-        //  (a) (restricted) tuple-structure, and
-        //  (b) type fringe for each arg position.
-        match ts with
-        | TupleTS tss when isRefTupleTy g typ ->
-            let tys = destRefTupleTy g typ 
-            let tss, tyfringe = zipTSListTypList tss tys
-            TupleTS tss, tyfringe
-        | _ -> 
-            UnknownTS, [typ] (* trim back CallPattern, function more general *)
-    and zipTSListTypList tss tys =
-        let tstys = List.map2 zipTSTyp tss tys  // assumes tss tys same length 
-        let tss  = List.map fst tstys         
-        let tys = List.collect snd tstys       // link fringes 
-        tss, tys
-    
     let vss = List.take callPattern.Length vss    // drop excessive tys if callPattern shorter 
-    let tstys = List.map2 (fun ts vs -> let ts, tyfringe = zipTSTyp ts (typeOfLambdaArg m vs) in ts, (tyfringe, vs)) callPattern vss
+    let tstys = List.map2 (fun ts vs -> let ts, tyfringe = zipTupleStructureAndType g ts (typeOfLambdaArg m vs) in ts, (tyfringe, vs)) callPattern vss
     List.unzip tstys   
 
 //-------------------------------------------------------------------------
