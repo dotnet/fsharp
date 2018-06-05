@@ -810,8 +810,8 @@ and ConvType cenv env m ty =
     | TType_forall(_spec,_ty)   -> wfail(Error(FSComp.SR.crefNoInnerGenericsInQuotations(),m))
     | _ -> wfail(Error (FSComp.SR.crefQuotationsCantContainThisType(),m))
 
-and ConvTypes cenv env m typs =
-    List.map (ConvType cenv env m) (FilterMeasureTyargs typs)
+and ConvTypes cenv env m tys =
+    List.map (ConvType cenv env m) (FilterMeasureTyargs tys)
 
 and ConvConst cenv env m c ty =
     match TryEliminateDesugaredConstants cenv.g m c with 

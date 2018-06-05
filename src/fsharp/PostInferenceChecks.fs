@@ -207,7 +207,7 @@ let rec CheckTypeDeep ((visitTy,visitTyconRefOpt,visitAppTyOpt,visitTraitSolutio
         | None -> ()
 
     | TType_ucase (_,tinst) -> CheckTypesDeep f g env tinst
-    | TType_tuple (_,typs) -> CheckTypesDeep f g env typs
+    | TType_tuple (_,tys) -> CheckTypesDeep f g env tys
     | TType_fun (s,t) -> CheckTypeDeep f g env true s; CheckTypeDeep f g env true t
     | TType_var tp -> 
           if not tp.IsSolved then 
@@ -235,8 +235,8 @@ and CheckTypeConstraintDeep f g env x =
      | TyparConstraint.IsReferenceType _ 
      | TyparConstraint.RequiresDefaultConstructor _ -> ()
 
-and CheckTraitInfoDeep ((_,_,_,visitTraitSolutionOpt,_) as f) g env (TTrait(typs,_,_,argtys,rty,soln))  = 
-    CheckTypesDeep f g env typs 
+and CheckTraitInfoDeep ((_,_,_,visitTraitSolutionOpt,_) as f) g env (TTrait(tys,_,_,argtys,rty,soln))  = 
+    CheckTypesDeep f g env tys 
     CheckTypesDeep f g env argtys 
     Option.iter (CheckTypeDeep f g env true ) rty
     match visitTraitSolutionOpt, !soln with 

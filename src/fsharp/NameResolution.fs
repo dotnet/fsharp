@@ -2195,8 +2195,8 @@ let rec ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind (resInfo
 
         raze (UndefinedName (depth,FSComp.SR.undefinedNameFieldConstructorOrMember, id, suggestMembers))
         
-and ResolveLongIdentInNestedTypes (ncenv:NameResolver) nenv lookupKind resInfo depth id m ad (id2:Ident) (rest:Ident list) findFlag typeNameResInfo typs = 
-    typs 
+and ResolveLongIdentInNestedTypes (ncenv:NameResolver) nenv lookupKind resInfo depth id m ad (id2:Ident) (rest:Ident list) findFlag typeNameResInfo tys = 
+    tys 
     |> CollectAtMostOneResult (fun ty -> 
         let resInfo = if isAppTy ncenv.g ty then resInfo.AddEntity(id.idRange,tcrefOfAppTy ncenv.g ty) else resInfo
         ResolveLongIdentInTypePrim ncenv nenv lookupKind resInfo depth m ad id2 rest findFlag typeNameResInfo ty 
@@ -2347,13 +2347,13 @@ let ChooseTyconRefInExpr (ncenv:NameResolver, m, ad, nenv, id:Ident, typeNameRes
     let tcrefs = CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, PermitDirectReferenceToGeneratedType.No, m)
     match typeNameResInfo.ResolutionFlag with 
     | ResolveTypeNamesToCtors ->
-        let typs = tcrefs |> List.map (fun (resInfo,tcref) -> (resInfo,FreshenTycon ncenv m tcref)) 
-        typs 
+        let tys = tcrefs |> List.map (fun (resInfo,tcref) -> (resInfo,FreshenTycon ncenv m tcref)) 
+        tys 
             |> CollectAtMostOneResult (fun (resInfo,ty) -> ResolveObjectConstructorPrim ncenv nenv.eDisplayEnv resInfo id.idRange ad ty) 
             |> MapResults (fun (resInfo,item) -> (resInfo,item,[]))
     | ResolveTypeNamesToTypeRefs ->
-        let typs = tcrefs |> List.map (fun (resInfo,tcref) -> (resInfo,FreshenTycon ncenv m tcref)) 
-        success (typs |> List.map (fun (resInfo,ty) -> (resInfo,Item.Types(id.idText,[ty]),[])))
+        let tys = tcrefs |> List.map (fun (resInfo,tcref) -> (resInfo,FreshenTycon ncenv m tcref)) 
+        success (tys |> List.map (fun (resInfo,ty) -> (resInfo,Item.Types(id.idText,[ty]),[])))
 
 /// Resolve F# "A.B.C" syntax in expressions
 /// Not all of the sequence will necessarily be swallowed, i.e. we return some identifiers 

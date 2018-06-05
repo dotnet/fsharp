@@ -267,7 +267,9 @@ let isIntegerTy g ty =
     isUnsignedIntegerTy g ty 
     
 let isStringTy g ty = typeEquiv g g.string_ty ty 
+
 let isCharTy g ty = typeEquiv g g.char_ty ty 
+
 let isBoolTy g ty = typeEquiv g g.bool_ty ty 
 
 /// float or float32 or float<_> or float32<_> 
@@ -890,9 +892,9 @@ and SolveTypeSubsumesType (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalT
         | [ h1; tag1 ], [ h2; tag2 ] -> 
             SolveTypeEqualsType csenv ndeep m2 trace None h1 h2 ++ (fun () -> 
             match stripTyEqnsA csenv.g canShortcut tag1, stripTyEqnsA csenv.g canShortcut tag2 with 
-            | TType_app(tagc1, []), TType_app(tagc2, choices) 
-                when (tyconRefEq g tagc2 g.choice2_tcr && 
-                      choices |> List.exists (function AppTy g (choicetc, []) -> tyconRefEq g tagc1 choicetc | _ -> false)) -> CompleteD
+            | TType_app(tagc1, []), TType_app(tagc2, []) 
+                when (tyconRefEq g tagc2 g.byrefkind_InOut_tcr && 
+                      (tyconRefEq g tagc1 g.byrefkind_In_tcr || tyconRefEq g tagc1 g.byrefkind_Out_tcr) ) -> CompleteD
             | _ -> SolveTypeEqualsType csenv ndeep m2 trace cxsln tag1 tag2)
         | _ -> SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln l1 l2
 
@@ -2682,7 +2684,7 @@ let CodegenWitnessThatTypeSupportsTraitConstraint tcVal g amap m (traitInfo:Trai
             // the address of the object then go do that 
             if minfo.IsStruct && minfo.IsInstance && (match argExprs with [] -> false | h :: _ -> not (isByrefTy g (tyOfExpr g h))) then 
                 let h, t = List.headAndTail argExprs
-                let wrap, h', _readonly = mkExprAddrOfExpr g true false PossiblyMutates h None m 
+                let wrap, h', _readonly, _writeonly = mkExprAddrOfExpr g true false PossiblyMutates h None m 
                 ResultD (Some (wrap (Expr.Op(TOp.TraitCall(traitInfo), [], (h' :: t), m))))
             else        
                 ResultD (Some (MakeMethInfoCall amap m minfo methArgTys argExprs ))
@@ -2697,7 +2699,7 @@ let CodegenWitnessThatTypeSupportsTraitConstraint tcVal g amap m (traitInfo:Trai
                         // the address of the object then go do that 
                         if rfref.Tycon.IsStructOrEnumTycon && not (isByrefTy g (tyOfExpr g argExprs.[0])) then 
                             let h = List.head argExprs
-                            let wrap, h', _readonly = mkExprAddrOfExpr g true false DefinitelyMutates h None m 
+                            let wrap, h', _readonly, _writeonly = mkExprAddrOfExpr g true false DefinitelyMutates h None m 
                             Some (wrap (mkRecdFieldSetViaExprAddr (h', rfref, tinst, argExprs.[1], m)))
                         else        
                             Some (mkRecdFieldSetViaExprAddr (argExprs.[0], rfref, tinst, argExprs.[1], m))

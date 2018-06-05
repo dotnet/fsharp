@@ -78,16 +78,16 @@ let GetSuperTypeOfType g amap m ty =
             let tcref,_tinst = destAppTy g ty
             Some (instType (mkInstForAppTy g ty) (superOfTycon g tcref.Deref))
         elif isArrayTy g ty then
-            Some g.system_Array_typ
+            Some g.system_Array_ty
         elif isRefTy g ty && not (isObjTy g ty) then 
             Some g.obj_ty
         elif isStructTupleTy g ty then 
             Some g.obj_ty
         elif isFSharpStructOrEnumTy g ty then
             if isFSharpEnumTy g ty then
-                Some(g.system_Enum_typ)
+                Some(g.system_Enum_ty)
             else
-                Some (g.system_Value_typ)
+                Some (g.system_Value_ty)
         elif isRecdTy g ty || isUnionTy g ty then
             Some g.obj_ty
         else 
@@ -1548,11 +1548,11 @@ type MethInfo =
                             match p.PUntaint((fun p -> p.Name), m) with
                             | null -> None
                             | name -> Some (mkSynId m name)
-                        let ptyp =
+                        let pty =
                             match p.PApply((fun p -> p.ParameterType), m) with
                             | Tainted.Null ->  amap.g.unit_ty
                             | parameterType -> Import.ImportProvidedType amap m parameterType
-                        yield ParamNameAndType(pname,ptyp) ] ]
+                        yield ParamNameAndType(pname,pty) ] ]
 
 #endif
 

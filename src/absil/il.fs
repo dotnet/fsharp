@@ -3898,17 +3898,17 @@ let rec refs_of_typ s x =
     | ILType.Value tr | ILType.Boxed tr -> refs_of_tspec s tr
     | ILType.FunctionPointer mref -> refs_of_callsig s mref 
 
-and refs_of_inst s i = refs_of_typs s i
+and refs_of_inst s i = refs_of_tys s i
 and refs_of_tspec s (x:ILTypeSpec) = refs_of_tref s x.TypeRef;  refs_of_inst s x.GenericArgs
-and refs_of_callsig s csig  = refs_of_typs s csig.ArgTypes; refs_of_typ s csig.ReturnType
-and refs_of_genparam s x = refs_of_typs s x.Constraints
+and refs_of_callsig s csig  = refs_of_tys s csig.ArgTypes; refs_of_typ s csig.ReturnType
+and refs_of_genparam s x = refs_of_tys s x.Constraints
 and refs_of_genparams s b = List.iter (refs_of_genparam s) b
     
 and refs_of_dloc s ts = refs_of_tref s ts
    
 and refs_of_mref s (x:ILMethodRef) = 
     refs_of_dloc s x.DeclaringTypeRef
-    refs_of_typs s x.mrefArgs
+    refs_of_tys s x.mrefArgs
     refs_of_typ s x.mrefReturn
     
 and refs_of_fref s x = refs_of_tref s x.DeclaringTypeRef; refs_of_typ s x.Type
@@ -3922,7 +3922,7 @@ and refs_of_fspec s x =
     refs_of_fref s x.FieldRef
     refs_of_typ s x.DeclaringType
 
-and refs_of_typs s l = List.iter (refs_of_typ s) l
+and refs_of_tys s l = List.iter (refs_of_typ s) l
   
 and refs_of_token s x = 
     match x with
@@ -3933,7 +3933,7 @@ and refs_of_token s x =
 and refs_of_custom_attr s x = refs_of_mspec s x.Method
     
 and refs_of_custom_attrs s (cas : ILAttributes) = List.iter (refs_of_custom_attr s) cas.AsList
-and refs_of_varargs s tyso = Option.iter (refs_of_typs s) tyso 
+and refs_of_varargs s tyso = Option.iter (refs_of_tys s) tyso 
 and refs_of_instr s x = 
     match x with
     | I_call (_, mr, varargs) | I_newobj (mr, varargs) | I_callvirt (_, mr, varargs) ->
@@ -4011,7 +4011,7 @@ and refs_of_property_def s (pd: ILPropertyDef) =
     Option.iter (refs_of_mref s)  pd.SetMethod
     Option.iter (refs_of_mref s)  pd.GetMethod
     refs_of_typ s pd.PropertyType
-    refs_of_typs s pd.Args
+    refs_of_tys s pd.Args
     refs_of_custom_attrs s pd.CustomAttrs
     
 and refs_of_properties s (x: ILPropertyDefs) = List.iter (refs_of_property_def s) x.AsList
@@ -4033,7 +4033,7 @@ and refs_of_tdef_kind _s _k =  ()
 and refs_of_tdef s (td : ILTypeDef)  =  
     refs_of_types s td.NestedTypes
     refs_of_genparams s  td.GenericParams
-    refs_of_typs  s td.Implements
+    refs_of_tys  s td.Implements
     Option.iter (refs_of_typ s) td.Extends
     refs_of_mdefs        s td.Methods
     refs_of_fields       s td.Fields.AsList

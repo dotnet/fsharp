@@ -249,7 +249,7 @@ and remapTyparConstraintsAux tyenv cs =
          | TyparConstraint.IsReferenceType _ 
          | TyparConstraint.RequiresDefaultConstructor _ -> Some(x))
 
-and remapTraitAux tyenv (TTrait(typs, nm, mf, argtys, rty, slnCell)) =
+and remapTraitAux tyenv (TTrait(tys, nm, mf, argtys, rty, slnCell)) =
     let slnCell = 
         match !slnCell with 
         | None -> None
@@ -276,7 +276,7 @@ and remapTraitAux tyenv (TTrait(typs, nm, mf, argtys, rty, slnCell)) =
     // The danger here is that a solution for one syntactic occurrence of a trait constraint won't
     // be propagated to other, "linked" solutions. However trait constraints don't appear in any algebra
     // in the same way as types
-    TTrait(remapTypesAux tyenv typs, nm, mf, remapTypesAux tyenv argtys, Option.map (remapTypeAux tyenv) rty, ref slnCell)
+    TTrait(remapTypesAux tyenv tys, nm, mf, remapTypesAux tyenv argtys, Option.map (remapTypeAux tyenv) rty, ref slnCell)
 
 and bindTypars tps tyargs tpinst =   
     match tps with 
@@ -876,10 +876,10 @@ type TypeEquivEnv with
     static member FromEquivTypars tps1 tps2 = 
         TypeEquivEnv.Empty.BindEquivTypars tps1 tps2 
 
-let rec traitsAEquivAux erasureFlag g aenv (TTrait(typs1, nm, mf1, argtys, rty, _)) (TTrait(typs2, nm2, mf2, argtys2, rty2, _)) =
+let rec traitsAEquivAux erasureFlag g aenv (TTrait(tys1, nm, mf1, argtys, rty, _)) (TTrait(tys2, nm2, mf2, argtys2, rty2, _)) =
    mf1 = mf2 &&
    nm = nm2 &&
-   ListSet.equals (typeAEquivAux erasureFlag g aenv) typs1 typs2 &&
+   ListSet.equals (typeAEquivAux erasureFlag g aenv) tys1 tys2 &&
    returnTypesAEquivAux erasureFlag g aenv rty rty2 &&
    List.lengthsEqAndForall2 (typeAEquivAux erasureFlag g aenv) argtys argtys2
 
@@ -1996,9 +1996,9 @@ and accFreeInTyparConstraint opts tpc acc =
     | TyparConstraint.IsUnmanaged _
     | TyparConstraint.RequiresDefaultConstructor _ -> acc
 
-and accFreeInTrait opts (TTrait(typs, _, _, argtys, rty, sln)) acc = 
+and accFreeInTrait opts (TTrait(tys, _, _, argtys, rty, sln)) acc = 
     Option.foldBack (accFreeInTraitSln opts) sln.Value
-       (accFreeInTypes opts typs 
+       (accFreeInTypes opts tys 
          (accFreeInTypes opts argtys 
            (Option.foldBack (accFreeInType opts) rty acc)))
 
@@ -2107,8 +2107,8 @@ and accFreeInTyparConstraintLeftToRight g cxFlag thruFlag acc tpc =
     | TyparConstraint.IsReferenceType _ 
     | TyparConstraint.RequiresDefaultConstructor _ -> acc
 
-and accFreeInTraitLeftToRight g cxFlag thruFlag acc (TTrait(typs, _, _, argtys, rty, _))  = 
-    let acc = accFreeInTypesLeftToRight g cxFlag thruFlag acc typs
+and accFreeInTraitLeftToRight g cxFlag thruFlag acc (TTrait(tys, _, _, argtys, rty, _))  = 
+    let acc = accFreeInTypesLeftToRight g cxFlag thruFlag acc tys
     let acc = accFreeInTypesLeftToRight g cxFlag thruFlag acc argtys
     let acc = Option.fold (accFreeInTypeLeftToRight g cxFlag thruFlag) acc rty
     acc
@@ -2520,7 +2520,7 @@ module SimplifyTypes =
         | TType_forall (_, body) -> foldTypeButNotConstraints f z body
         | TType_app (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
         | TType_ucase (_, tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_tuple (_, typs) -> List.fold (foldTypeButNotConstraints f) z typs
+        | TType_tuple (_, tys) -> List.fold (foldTypeButNotConstraints f) z tys
         | TType_fun (s, t)         -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
         | TType_var _            -> z
         | TType_measure _          -> z
@@ -3195,7 +3195,7 @@ module DebugPrint = begin
            let prefix = tcref.IsPrefixDisplay
            let tcL = layoutTyconRef tcref
            auxTyparsL env tcL prefix tinst
-        | TType_tuple (_tupInfo, typs) -> sepListL (wordL (tagText "*")) (List.map (auxTypeAtomL env) typs) |> wrap
+        | TType_tuple (_tupInfo, tys) -> sepListL (wordL (tagText "*")) (List.map (auxTypeAtomL env) tys) |> wrap
         | TType_fun (f, x)           -> ((auxTypeAtomL env f ^^ wordL (tagText "->")) --- auxTypeL env x) |> wrap
         | TType_var typar           -> auxTyparWrapL env isAtomic typar 
         | TType_measure unt -> 
@@ -5750,62 +5750,75 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
         // LVALUE of "*x" where "x" is byref is just the byref itself
         | Expr.Op (TOp.LValueOp (LByrefGet, vref), _, [], m) when MustTakeAddressOfByrefGet g vref || CanTakeAddressOfByrefGet g vref mut -> 
             let readonly = not (MustTakeAddressOfByrefGet g vref)
-            None, exprForValRef m vref, readonly
+            let writeonly = isOutByrefTy g vref.Type
+            None, exprForValRef m vref, readonly, writeonly
 
         // LVALUE of "x" where "x" is mutable local, mutable intra-assembly module/static binding, or operation doesn't mutate.
         // Note: we can always take the address of mutable intra-assembly values
         | Expr.Val(vref, _, m) when MustTakeAddressOfVal g vref || CanTakeAddressOfImmutableVal g m vref mut ->
             let readonly = not (MustTakeAddressOfVal g vref)
-            None, mkValAddr m readonly vref, readonly
+            let writeonly = false
+            None, mkValAddr m readonly vref, readonly, writeonly
 
-        // LVALUE of "e.f" where "f" is record field. 
-        | Expr.Op (TOp.ValFieldGet rfref, tinst, [obje], m) when MustTakeAddressOfRecdFieldRef rfref || CanTakeAddressOfRecdFieldRef g m rfref tinst mut ->
-            let exprty = tyOfExpr g obje
-            let wrap, expra, readonly = mkExprAddrOfExprAux g (isStructTy g exprty) false mut obje None m
-            let readonly = readonly || not (MustTakeAddressOfRecdFieldRef rfref)
-            wrap, mkRecdFieldGetAddrViaExprAddr(readonly, expra, rfref, tinst, m), readonly
-
-        // LVALUE of "e.f" where "f" is union field. 
-        | Expr.Op (TOp.UnionCaseFieldGet (uref, cidx), tinst, [obje], m) when MustTakeAddressOfRecdField (uref.FieldByIndex(cidx)) || CanTakeAddressOfUnionFieldRef g m uref cidx tinst mut ->
-            let exprty = tyOfExpr g obje
-            let wrap, expra, readonly = mkExprAddrOfExprAux g (isStructTy g exprty) false mut obje None m
-            let readonly = readonly || not (MustTakeAddressOfRecdField (uref.FieldByIndex(cidx)))
-            wrap, mkUnionCaseFieldGetAddrProvenViaExprAddr(readonly, expra, uref, tinst, cidx, m), readonly
-
-        // LVALUE of "f" where "f" is a .NET static field. 
-        | Expr.Op (TOp.ILAsm ([IL.I_ldsfld(_vol, fspec)], [ty2]), tinst, [], m) -> 
-            let readonly = false // we never consider taking the address of a .NET static field to give an inref pointer
-            None, Expr.Op (TOp.ILAsm ([IL.I_ldsflda(fspec)], [mkByrefTy g ty2]), tinst, [], m), readonly
-
-        // LVALUE of "e.f" where "f" is a .NET instance field. 
-        | Expr.Op (TOp.ILAsm ([IL.I_ldfld(_align, _vol, fspec)], [ty2]), tinst, [obje], m) -> 
-            let exprty = tyOfExpr g obje
-            // we never consider taking the address of an .NET instance field to give an inref pointer, unless the object pointer is an inref pointer
-            let wrap, expra, readonly = mkExprAddrOfExprAux g (isStructTy g exprty) false mut obje None m
-            wrap, Expr.Op (TOp.ILAsm ([IL.I_ldflda(fspec)], [mkByrefTyWithFlag g readonly ty2]), tinst, [expra], m), readonly
+        // LVALUE of "e.f" where "f" is an instance F# field or record field. 
+        | Expr.Op (TOp.ValFieldGet rfref, tinst, [objExpr], m) when MustTakeAddressOfRecdFieldRef rfref || CanTakeAddressOfRecdFieldRef g m rfref tinst mut ->
+            let objTy = tyOfExpr g objExpr
+            let takeAddrOfObjExpr = isStructTy g objTy // It seems this will always be false - the address will already have been taken
+            let wrap, expra, readonly, writeonly = mkExprAddrOfExprAux g takeAddrOfObjExpr false mut objExpr None m
+            let readonly = readonly || isInByrefTy g objTy || not (MustTakeAddressOfRecdFieldRef rfref)
+            let writeonly = writeonly || isOutByrefTy g objTy
+            wrap, mkRecdFieldGetAddrViaExprAddr(readonly, expra, rfref, tinst, m), readonly, writeonly
 
         // LVALUE of "f" where "f" is a static F# field. 
         | Expr.Op (TOp.ValFieldGet rfref, tinst, [], m) when MustTakeAddressOfRecdFieldRef rfref || CanTakeAddressOfRecdFieldRef g m rfref tinst mut ->
             let readonly = not (MustTakeAddressOfRecdFieldRef rfref)
-            None, mkStaticRecdFieldGetAddr(readonly, rfref, tinst, m), readonly
+            let writeonly = false
+            None, mkStaticRecdFieldGetAddr(readonly, rfref, tinst, m), readonly, writeonly
+
+        // LVALUE of "e.f" where "f" is an F# union field. 
+        | Expr.Op (TOp.UnionCaseFieldGet (uref, cidx), tinst, [objExpr], m) when MustTakeAddressOfRecdField (uref.FieldByIndex(cidx)) || CanTakeAddressOfUnionFieldRef g m uref cidx tinst mut ->
+            let objTy = tyOfExpr g objExpr
+            let takeAddrOfObjExpr = isStructTy g objTy // It seems this will always be false - the address will already have been taken
+            let wrap, expra, readonly, writeonly = mkExprAddrOfExprAux g takeAddrOfObjExpr false mut objExpr None m
+            let readonly = readonly || isInByrefTy g objTy || not (MustTakeAddressOfRecdField (uref.FieldByIndex(cidx)))
+            let writeonly = writeonly || isOutByrefTy g objTy
+            wrap, mkUnionCaseFieldGetAddrProvenViaExprAddr(readonly, expra, uref, tinst, cidx, m), readonly, writeonly
+
+        // LVALUE of "f" where "f" is a .NET static field. 
+        | Expr.Op (TOp.ILAsm ([IL.I_ldsfld(_vol, fspec)], [ty2]), tinst, [], m) -> 
+            let readonly = false // we never consider taking the address of a .NET static field to give an inref pointer
+            let writeonly = false
+            None, Expr.Op (TOp.ILAsm ([IL.I_ldsflda(fspec)], [mkByrefTy g ty2]), tinst, [], m), readonly, writeonly
+
+        // LVALUE of "e.f" where "f" is a .NET instance field. 
+        | Expr.Op (TOp.ILAsm ([IL.I_ldfld(_align, _vol, fspec)], [ty2]), tinst, [objExpr], m) -> 
+            let objTy = tyOfExpr g objExpr
+            let takeAddrOfObjExpr = isStructTy g objTy // It seems this will always be false - the address will already have been taken
+            // we never consider taking the address of an .NET instance field to give an inref pointer, unless the object pointer is an inref pointer
+            let wrap, expra, readonly, writeonly = mkExprAddrOfExprAux g takeAddrOfObjExpr false mut objExpr None m
+            let readonly = readonly || isInByrefTy g objTy
+            let writeonly = writeonly || isOutByrefTy g objTy
+            wrap, Expr.Op (TOp.ILAsm ([IL.I_ldflda(fspec)], [mkByrefTyWithFlag g readonly ty2]), tinst, [expra], m), readonly, writeonly
 
         // LVALUE of "e.[n]" where e is an array of structs 
         | Expr.App(Expr.Val(vf, _, _), _, [elemTy], [aexpr;nexpr], _) when (valRefEq g vf g.array_get_vref) -> 
         
             let readonly = false // array address is never forced to be readonly
+            let writeonly = false
             let shape = ILArrayShape.SingleDimensional
             let ilInstrReadOnlyAnnotation = if isTyparTy g elemTy &&  useReadonlyForGenericArrayAddress then ReadonlyAddress else NormalAddress
             let isNativePtr = 
                 match addrExprVal with
                 | Some(vf) -> valRefEq g vf g.addrof2_vref
                 | _ -> false
-            None, mkArrayElemAddress g (readonly, ilInstrReadOnlyAnnotation, isNativePtr, shape, elemTy, [aexpr; nexpr], m), readonly
+            None, mkArrayElemAddress g (readonly, ilInstrReadOnlyAnnotation, isNativePtr, shape, elemTy, [aexpr; nexpr], m), readonly, writeonly
 
         // LVALUE of "e.[n1, n2]", "e.[n1, n2, n3]", "e.[n1, n2, n3, n4]" where e is an array of structs 
         | Expr.App(Expr.Val(vref, _, _), _, [elemTy], (aexpr::args), _) 
              when (valRefEq g vref g.array2D_get_vref || valRefEq g vref g.array3D_get_vref || valRefEq g vref g.array4D_get_vref) -> 
         
             let readonly = false // array address is never forced to be readonly
+            let writeonly = false
             let shape = ILArrayShape.FromRank args.Length
             let ilInstrReadOnlyAnnotation = if isTyparTy g elemTy &&  useReadonlyForGenericArrayAddress then ReadonlyAddress else NormalAddress
             let isNativePtr = 
@@ -5813,12 +5826,14 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
                 | Some(vf) -> valRefEq g vf g.addrof2_vref
                 | _ -> false
             
-            None, mkArrayElemAddress g (readonly, ilInstrReadOnlyAnnotation, isNativePtr, shape, elemTy,  (aexpr::args), m), readonly
+            None, mkArrayElemAddress g (readonly, ilInstrReadOnlyAnnotation, isNativePtr, shape, elemTy,  (aexpr::args), m), readonly, writeonly
 
         // LVALUE:  "&meth(args)" where meth has a byref or inref return.  Includes "&span.[idx]".
         | Expr.Let(TBind(vref, e, _), Expr.Op(TOp.LValueOp (LByrefGet, vref2), _, _, _), _, _)  when (valRefEq g (mkLocalValRef vref) vref2)  && (MustTakeAddressOfByrefGet g vref2 || CanTakeAddressOfByrefGet g vref2 mut) -> 
-            let readonly = isInByrefTy g (tyOfExpr g e)
-            None, e, readonly
+            let ty = tyOfExpr g e
+            let readonly = isInByrefTy g ty
+            let writeonly = isOutByrefTy g ty
+            None, e, readonly, writeonly
         
         // Give a nice error message for address-of-byref
         | Expr.Val(vref, _, m) when isByrefTy g vref.Type -> 
@@ -5854,30 +5869,30 @@ let rec mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress 
                 | NeverMutates -> mkCompGenLocal m "copyOfStruct" ty 
                 | _ -> mkMutableCompGenLocal m "copyOfStruct" ty
             let readonly = true
-            Some (tmp, expr), (mkValAddr m readonly (mkLocalValRef tmp)), readonly
+            let writeonly = false
+            Some (tmp, expr), (mkValAddr m readonly (mkLocalValRef tmp)), readonly, writeonly
     else
-        None, expr, false
+        None, expr, false, false
 
 let mkExprAddrOfExpr g mustTakeAddress useReadonlyForGenericArrayAddress mut e addrExprVal m =
-    let optBind, addre, readonly = mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress mut e addrExprVal m
+    let optBind, addre, readonly, writeonly = mkExprAddrOfExprAux g mustTakeAddress useReadonlyForGenericArrayAddress mut e addrExprVal m
     match optBind with 
-    | None -> (fun x -> x), addre, readonly
-    | Some (tmp, rval) -> (fun x -> mkCompGenLet m tmp rval x), addre, readonly
+    | None -> (fun x -> x), addre, readonly, writeonly
+    | Some (tmp, rval) -> (fun x -> mkCompGenLet m tmp rval x), addre, readonly, writeonly
 
 let mkTupleFieldGet g (tupInfo, e, tinst, i, m) = 
-    let wrap, e', _readonly = mkExprAddrOfExpr g (evalTupInfoIsStruct tupInfo) false NeverMutates e None m
+    let wrap, e', _readonly, _writeonly = mkExprAddrOfExpr g (evalTupInfoIsStruct tupInfo) false NeverMutates e None m
     wrap (mkTupleFieldGetViaExprAddr(tupInfo, e', tinst, i, m))
 
 let mkRecdFieldGet g (e, fref:RecdFieldRef, tinst, m) = 
     assert (not (isByrefTy g (tyOfExpr g e)))
-    let wrap, e', _readonly = mkExprAddrOfExpr g fref.Tycon.IsStructOrEnumTycon false NeverMutates e None m
+    let wrap, e', _readonly, _writeonly = mkExprAddrOfExpr g fref.Tycon.IsStructOrEnumTycon false NeverMutates e None m
     wrap (mkRecdFieldGetViaExprAddr(e', fref, tinst, m))
 
 let mkUnionCaseFieldGetUnproven g (e, cref:UnionCaseRef, tinst, j, m) = 
     assert (not (isByrefTy g (tyOfExpr g e)))
-    let wrap, e', _readonly = mkExprAddrOfExpr g cref.Tycon.IsStructOrEnumTycon false NeverMutates e None m
+    let wrap, e', _readonly, _writeonly = mkExprAddrOfExpr g cref.Tycon.IsStructOrEnumTycon false NeverMutates e None m
     wrap (mkUnionCaseFieldGetUnprovenViaExprAddr (e', cref, tinst, j, m))
-
 
 let mkArray (argty, args, m) = Expr.Op(TOp.Array, [argty], args, m)
 
@@ -6256,9 +6271,9 @@ let mkRecordExpr g (lnk, tcref, tinst, rfrefs:RecdFieldRef list, args, m) =
         if sigma.[i] <> -1 then error(InternalError("bad permutation", m))
         sigma.[i] <- j)  rfrefsArray
     
-    let argTyps     = List.map (fun rfref  -> actualTyOfRecdFieldRef rfref tinst) rfrefs
-    let names       = rfrefs |> List.map (fun rfref -> rfref.FieldName)
-    let binds, args  = permuteExprList sigma args argTyps names
+    let argTys = List.map (fun rfref  -> actualTyOfRecdFieldRef rfref tinst) rfrefs
+    let names = rfrefs |> List.map (fun rfref -> rfref.FieldName)
+    let binds, args  = permuteExprList sigma args argTys names
     mkLetsBind m binds (Expr.Op (TOp.Recd(lnk, tcref), tinst, args, m))
   
 
@@ -7302,11 +7317,11 @@ let rec typeEnc g (gtpsType, gtpsMethod) ty =
                     textOfPath (List.map DemangleGenericTypeName path)
                 | _ -> assert(false); failwith "impossible"
             tyName + tyargsEnc g (gtpsType, gtpsMethod) tinst
-    | TType_tuple (tupInfo, typs) -> 
+    | TType_tuple (tupInfo, tys) -> 
         if evalTupInfoIsStruct tupInfo then 
-            sprintf "System.ValueTuple%s"(tyargsEnc g (gtpsType, gtpsMethod) typs)
+            sprintf "System.ValueTuple%s"(tyargsEnc g (gtpsType, gtpsMethod) tys)
         else 
-            sprintf "System.Tuple%s"(tyargsEnc g (gtpsType, gtpsMethod) typs)
+            sprintf "System.Tuple%s"(tyargsEnc g (gtpsType, gtpsMethod) tys)
     | TType_fun (f, x)           -> 
         "Microsoft.FSharp.Core.FSharpFunc" + tyargsEnc g (gtpsType, gtpsMethod) [f;x]
     | TType_var typar           -> 

@@ -336,10 +336,10 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_string_ty       = mkNonGenericTy v_string_tcr
   let v_decimal_ty      = mkSysNonGenericTy sys "Decimal"
   let v_unit_ty         = mkNonGenericTy v_unit_tcr_nice 
-  let v_system_Type_typ = mkSysNonGenericTy sys "Type" 
+  let v_system_Type_ty = mkSysNonGenericTy sys "Type" 
 
   
-  let v_system_Reflection_MethodInfo_typ = mkSysNonGenericTy ["System";"Reflection"] "MethodInfo"
+  let v_system_Reflection_MethodInfo_ty = mkSysNonGenericTy ["System";"Reflection"] "MethodInfo"
   let v_nullable_tcr = findSysTyconRef sys "Nullable`1"
 
   (* local helpers to build value infos *)
@@ -370,7 +370,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_IComparer_ty = mkSysNonGenericTy sysCollections "IComparer"
   let v_IEqualityComparer_ty = mkSysNonGenericTy sysCollections "IEqualityComparer"
 
-  let v_system_RuntimeMethodHandle_typ = mkSysNonGenericTy sys "RuntimeMethodHandle"
+  let v_system_RuntimeMethodHandle_ty = mkSysNonGenericTy sys "RuntimeMethodHandle"
 
   let mk_unop_ty ty             = [[ty]], ty
   let mk_binop_ty ty            = [[ty]; [ty]], ty
@@ -660,11 +660,11 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_failwithf_info             = makeIntrinsicValRef(fslib_MFExtraTopLevelOperators_nleref,                "failwithf"                       , None, Some "PrintFormatToStringThenFail" , [vara;varb], ([[mk_format4_ty varaTy v_unit_ty v_string_ty v_string_ty]], varaTy))  
   
   let v_reraise_info               = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "reraise"                              , None                 , Some "Reraise", [vara],     ([[v_unit_ty]], varaTy))
-  let v_typeof_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "typeof"                               , None                 , Some "TypeOf" , [vara],     ([], v_system_Type_typ))  
-  let v_methodhandleof_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "methodhandleof"                       , None                 , Some "MethodHandleOf", [vara;varb], ([[varaTy --> varbTy]], v_system_RuntimeMethodHandle_typ))
+  let v_typeof_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "typeof"                               , None                 , Some "TypeOf" , [vara],     ([], v_system_Type_ty))  
+  let v_methodhandleof_info        = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "methodhandleof"                       , None                 , Some "MethodHandleOf", [vara;varb], ([[varaTy --> varbTy]], v_system_RuntimeMethodHandle_ty))
   let v_sizeof_info                = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "sizeof"                               , None                 , Some "SizeOf" , [vara],     ([], v_int_ty))  
   let v_unchecked_defaultof_info   = makeIntrinsicValRef(fslib_MFOperatorsUnchecked_nleref,                    "defaultof"                            , None                 , Some "DefaultOf", [vara],     ([], varaTy))  
-  let v_typedefof_info             = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "typedefof"                            , None                 , Some "TypeDefOf", [vara],     ([], v_system_Type_typ))  
+  let v_typedefof_info             = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "typedefof"                            , None                 , Some "TypeDefOf", [vara],     ([], v_system_Type_ty))  
   let v_range_op_info              = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_Range"                             , None                 , None          , [vara],     ([[varaTy];[varaTy]], mkSeqTy varaTy))
   let v_range_step_op_info         = makeIntrinsicValRef(fslib_MFOperators_nleref,                             "op_RangeStep"                         , None                 , None          , [vara;varb], ([[varaTy];[varbTy];[varaTy]], mkSeqTy varaTy))
   let v_range_int32_op_info        = makeIntrinsicValRef(fslib_MFOperatorIntrinsics_nleref,                    "RangeInt32"                           , None                 , None          , [],     ([[v_int_ty];[v_int_ty];[v_int_ty]], mkSeqTy v_int_ty))
@@ -706,8 +706,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let v_splice_expr_info           = makeIntrinsicValRef(fslib_MFExtraTopLevelOperators_nleref,                "op_Splice"                            , None                 , None                          , [vara],     ([[mkQuotedExprTy varaTy]], varaTy))
   let v_splice_raw_expr_info       = makeIntrinsicValRef(fslib_MFExtraTopLevelOperators_nleref,                "op_SpliceUntyped"                     , None                 , None                          , [vara],     ([[mkRawQuotedExprTy]], varaTy))
   let v_new_decimal_info           = makeIntrinsicValRef(fslib_MFIntrinsicFunctions_nleref,                    "MakeDecimal"                          , None                 , None                          , [],         ([[v_int_ty]; [v_int_ty]; [v_int_ty]; [v_bool_ty]; [v_byte_ty]], v_decimal_ty))
-  let v_deserialize_quoted_FSharp_20_plus_info    = makeIntrinsicValRef(fslib_MFQuotations_nleref,             "Deserialize"                          , Some "Expr"          , None                          , [],          ([[v_system_Type_typ ;mkListTy v_system_Type_typ ;mkListTy mkRawQuotedExprTy ; mkArrayType 1 v_byte_ty]], mkRawQuotedExprTy ))
-  let v_deserialize_quoted_FSharp_40_plus_info    = makeIntrinsicValRef(fslib_MFQuotations_nleref,             "Deserialize40"                        , Some "Expr"          , None                          , [],          ([[v_system_Type_typ ;mkArrayType 1 v_system_Type_typ; mkArrayType 1 v_system_Type_typ; mkArrayType 1 mkRawQuotedExprTy; mkArrayType 1 v_byte_ty]], mkRawQuotedExprTy ))
+  let v_deserialize_quoted_FSharp_20_plus_info    = makeIntrinsicValRef(fslib_MFQuotations_nleref,             "Deserialize"                          , Some "Expr"          , None                          , [],          ([[v_system_Type_ty ;mkListTy v_system_Type_ty ;mkListTy mkRawQuotedExprTy ; mkArrayType 1 v_byte_ty]], mkRawQuotedExprTy ))
+  let v_deserialize_quoted_FSharp_40_plus_info    = makeIntrinsicValRef(fslib_MFQuotations_nleref,             "Deserialize40"                        , Some "Expr"          , None                          , [],          ([[v_system_Type_ty ;mkArrayType 1 v_system_Type_ty; mkArrayType 1 v_system_Type_ty; mkArrayType 1 mkRawQuotedExprTy; mkArrayType 1 v_byte_ty]], mkRawQuotedExprTy ))
   let v_cast_quotation_info        = makeIntrinsicValRef(fslib_MFQuotations_nleref,                            "Cast"                                 , Some "Expr"          , None                          , [vara],      ([[mkRawQuotedExprTy]], mkQuotedExprTy varaTy))
   let v_lift_value_info            = makeIntrinsicValRef(fslib_MFQuotations_nleref,                            "Value"                                , Some "Expr"          , None                          , [vara],      ([[varaTy]], mkRawQuotedExprTy))
   let v_lift_value_with_name_info  = makeIntrinsicValRef(fslib_MFQuotations_nleref,                            "ValueWithName"                        , Some "Expr"          , None                          , [vara],      ([[varaTy; v_string_ty]], mkRawQuotedExprTy))
@@ -1013,19 +1013,19 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
       /// Memoization table to help minimize the number of ILSourceDocument objects we create
   member __.memoize_file x = v_memoize_file.Apply x
 
-  member val system_Array_typ     = mkSysNonGenericTy sys "Array"
-  member val system_Object_typ    = mkSysNonGenericTy sys "Object"
-  member val system_IDisposable_typ    = mkSysNonGenericTy sys "IDisposable"
-  member val system_RuntimeHelpers_typ    = mkSysNonGenericTy sysCompilerServices "RuntimeHelpers"
-  member val system_Value_typ     = mkSysNonGenericTy sys "ValueType"
-  member val system_Delegate_typ     = mkSysNonGenericTy sys "Delegate"
-  member val system_MulticastDelegate_typ     = mkSysNonGenericTy sys "MulticastDelegate"
-  member val system_Enum_typ      = mkSysNonGenericTy sys "Enum"
-  member val system_Exception_typ = mkSysNonGenericTy sys "Exception"
+  member val system_Array_ty     = mkSysNonGenericTy sys "Array"
+  member val system_Object_ty    = mkSysNonGenericTy sys "Object"
+  member val system_IDisposable_ty    = mkSysNonGenericTy sys "IDisposable"
+  member val system_RuntimeHelpers_ty    = mkSysNonGenericTy sysCompilerServices "RuntimeHelpers"
+  member val system_Value_ty     = mkSysNonGenericTy sys "ValueType"
+  member val system_Delegate_ty     = mkSysNonGenericTy sys "Delegate"
+  member val system_MulticastDelegate_ty     = mkSysNonGenericTy sys "MulticastDelegate"
+  member val system_Enum_ty      = mkSysNonGenericTy sys "Enum"
+  member val system_Exception_ty = mkSysNonGenericTy sys "Exception"
   member val system_String_typ    = mkSysNonGenericTy sys "String"
   member val system_String_tcref  = findSysTyconRef sys "String"
-  member val system_Int32_typ     = mkSysNonGenericTy sys "Int32"
-  member __.system_Type_typ                  = v_system_Type_typ
+  member val system_Int32_ty     = mkSysNonGenericTy sys "Int32"
+  member __.system_Type_ty                  = v_system_Type_ty
   member val system_TypedReference_tcref        = tryFindSysTyconRef sys "TypedReference"
   member val system_ArgIterator_tcref           = tryFindSysTyconRef sys "ArgIterator"
   member val system_RuntimeArgumentHandle_tcref =  tryFindSysTyconRef sys "RuntimeArgumentHandle"
@@ -1044,13 +1044,13 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val system_UIntPtr_tcref         =  findSysTyconRef sys "UIntPtr"
   member val system_Single_tcref          =  findSysTyconRef sys "Single"
   member val system_Double_tcref          =  findSysTyconRef sys "Double"
-  member val system_RuntimeTypeHandle_typ = mkSysNonGenericTy sys "RuntimeTypeHandle"
-  member __.system_RuntimeMethodHandle_typ = v_system_RuntimeMethodHandle_typ
+  member val system_RuntimeTypeHandle_ty = mkSysNonGenericTy sys "RuntimeTypeHandle"
+  member __.system_RuntimeMethodHandle_ty = v_system_RuntimeMethodHandle_ty
     
   member val system_MarshalByRefObject_tcref =  tryFindSysTyconRef sys "MarshalByRefObject"
-  member val system_MarshalByRefObject_typ = tryMkSysNonGenericTy sys "MarshalByRefObject"
+  member val system_MarshalByRefObject_ty = tryMkSysNonGenericTy sys "MarshalByRefObject"
 
-  member __.system_Reflection_MethodInfo_typ = v_system_Reflection_MethodInfo_typ
+  member __.system_Reflection_MethodInfo_ty = v_system_Reflection_MethodInfo_ty
     
   member val system_Array_tcref  = findSysTyconRef sys "Array"
   member val system_Object_tcref  = findSysTyconRef sys "Object"
@@ -1466,10 +1466,11 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
 
   member __.mkDebuggableAttributeV2(jitTracking, ignoreSymbolStoreSequencePoints, jitOptimizerDisabled, enableEnC) =
-        let debuggingMode = (if jitTracking then 1 else 0) |||
-                            (if jitOptimizerDisabled then 256 else 0) |||  
-                            (if ignoreSymbolStoreSequencePoints then 2 else 0) |||
-                            (if enableEnC then 4 else 0)
+        let debuggingMode = 
+            (if jitTracking then 1 else 0) |||
+            (if jitOptimizerDisabled then 256 else 0) |||  
+            (if ignoreSymbolStoreSequencePoints then 2 else 0) |||
+            (if enableEnC then 4 else 0)
         let tref_DebuggableAttribute_DebuggingModes = mkILTyRefInTyRef (tref_DebuggableAttribute, tname_DebuggableAttribute_DebuggingModes)
         mkILCustomAttribute ilg 
           (tref_DebuggableAttribute, [mkILNonGenericValueTy tref_DebuggableAttribute_DebuggingModes], 
@@ -1478,14 +1479,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
   member __.CompilerGeneratedAttribute = mkCompilerGeneratedAttribute () 
      
-
   member __.eraseClassUnionDef = EraseUnions.mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addPropertyNeverAttrs, addFieldGeneratedAttrs, addFieldNeverAttrs, mkDebuggerTypeProxyAttribute) ilg
-
-
-(*
-                  (cenv.ilg.findSysILTypeRef "System.Runtime.InteropServices.StructLayoutAttribute", 
-                   [mkILNonGenericValueTy (cenv.ilg.findSysILTypeRef "System.Runtime.InteropServices.LayoutKind") ], 
-*)
 
 
 #if DEBUG

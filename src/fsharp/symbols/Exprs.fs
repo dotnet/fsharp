@@ -290,7 +290,7 @@ module FSharpExprConvert =
         | _ -> None
 
     let ConvType cenv ty = FSharpType(cenv, ty)
-    let ConvTypes cenv typs = List.map (ConvType cenv) typs
+    let ConvTypes cenv tys = List.map (ConvType cenv) tys
     let ConvILTypeRefApp (cenv:SymbolEnv) m tref tyargs = 
         let tcref = Import.ImportILTypeRef cenv.amap m tref
         ConvType cenv (mkAppTy tcref tyargs)

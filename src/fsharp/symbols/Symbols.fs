@@ -2113,8 +2113,8 @@ and FSharpType(cenv, ty:TType) =
         let prettyTy = PrettyTypes.PrettifyType ty.cenv.g ty.V  |> fst
         ty.AdjustType prettyTy
 
-    static member Prettify(typs: IList<FSharpType>) = 
-        let xs = typs |> List.ofSeq
+    static member Prettify(tys: IList<FSharpType>) = 
+        let xs = tys |> List.ofSeq
         match xs with 
         | [] -> []
         | h :: _ -> 

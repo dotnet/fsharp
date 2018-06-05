@@ -475,7 +475,7 @@ let envSetLabel emEnv name lab =
 let envGetLabel emEnv name = 
     Zmap.find name emEnv.emLabels
 
-let envPushTyvars emEnv typs =  {emEnv with emTyvars = typs :: emEnv.emTyvars}
+let envPushTyvars emEnv tys =  {emEnv with emTyvars = tys :: emEnv.emTyvars}
 let envPopTyvars  emEnv      =  {emEnv with emTyvars = List.tail emEnv.emTyvars}
 let envGetTyvar   emEnv u16  =  
     match emEnv.emTyvars with
@@ -581,9 +581,9 @@ let convTypeOrTypeDef cenv emEnv ty =
     | ILType.Boxed tspec when tspec.GenericArgs.IsEmpty -> convTypeRef cenv emEnv false tspec.TypeRef 
     | _ -> convType cenv emEnv ty
 
-let convTypes cenv emEnv (typs:ILTypes) = List.map (convType cenv emEnv) typs
+let convTypes cenv emEnv (tys:ILTypes) = List.map (convType cenv emEnv) tys
 
-let convTypesToArray cenv emEnv (typs:ILTypes) = convTypes cenv emEnv typs |> List.toArray 
+let convTypesToArray cenv emEnv (tys:ILTypes) = convTypes cenv emEnv tys |> List.toArray 
 
 /// Uses the .CreateType() for emitted type if available.
 let convCreatedType cenv emEnv ty = convTypeAux cenv emEnv true ty 
@@ -929,7 +929,7 @@ let emitInstrTail (ilG:ILGenerator) tail emitTheCall =
 let emitInstrNewobj cenv emEnv (ilG:ILGenerator) mspec varargs =
     match varargs with
     | None         -> ilG.EmitAndLog(OpCodes.Newobj, convConstructorSpec cenv emEnv mspec)
-    | Some _vartyps -> failwith "emit: pending new varargs" // XXX - gap
+    | Some _varargTys -> failwith "emit: pending new varargs" // XXX - gap
 
 let emitSilverlightCheck (ilG:ILGenerator) =
     ignore ilG
@@ -940,13 +940,13 @@ let emitInstrCall cenv emEnv (ilG:ILGenerator) opCall tail (mspec:ILMethodSpec) 
         if mspec.MethodRef.Name = ".ctor" || mspec.MethodRef.Name = ".cctor" then
             let cinfo = convConstructorSpec cenv emEnv mspec
             match varargs with
-            | None         -> ilG.EmitAndLog     (opCall, cinfo)
-            | Some _vartyps -> failwith "emitInstrCall: .ctor and varargs"
+            | None -> ilG.EmitAndLog     (opCall, cinfo)
+            | Some _varargTys -> failwith "emitInstrCall: .ctor and varargs"
         else
             let minfo = convMethodSpec cenv emEnv mspec
             match varargs with
-            | None         -> ilG.EmitAndLog(opCall, minfo)
-            | Some vartyps -> ilG.EmitCall (opCall, minfo, convTypesToArray cenv emEnv vartyps)
+            | None -> ilG.EmitAndLog(opCall, minfo)
+            | Some varargTys -> ilG.EmitCall (opCall, minfo, convTypesToArray cenv emEnv varargTys)
     )
 
 let getGenericMethodDefinition q (ty:Type) = 
@@ -1132,13 +1132,13 @@ let rec emitInstr cenv (modB : ModuleBuilder) emEnv (ilG:ILGenerator) instr =
                       convTypesToArray cenv emEnv callsig.ArgTypes, 
                       Unchecked.defaultof<System.Type[]>))
 
-    | I_calli (tail, callsig, Some vartyps) -> 
+    | I_calli (tail, callsig, Some varargTys) -> 
         emitInstrTail ilG tail (fun () ->
         ilG.EmitCalli(OpCodes.Calli, 
                       convCallConv callsig.CallingConv, 
                       convType cenv emEnv callsig.ReturnType, 
                       convTypesToArray cenv emEnv callsig.ArgTypes, 
-                      convTypesToArray cenv emEnv vartyps))                                                                
+                      convTypesToArray cenv emEnv varargTys))                                                                
 
     | I_ldftn mspec -> 
         ilG.EmitAndLog(OpCodes.Ldftn, convMethodSpec cenv emEnv mspec)
