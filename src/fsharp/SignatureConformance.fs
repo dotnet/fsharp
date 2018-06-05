@@ -236,7 +236,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                   err(fun(x, y, z) -> FSComp.SR.ValueNotContainedMutabilityGenericParametersDiffer(x, y, z, string mtps, string ntps))
                 elif implValInfo.KindsOfTypars <> sigValInfo.KindsOfTypars then
                   err(FSComp.SR.ValueNotContainedMutabilityGenericParametersAreDifferentKinds)
-                elif not (sigArgInfos.Length <= implArgInfos.Length && List.forall2 (fun x y -> List.length x <= List.length y) sigArgInfos (List.take sigArgInfos.Length implArgInfos)) then 
+                elif not (sigArgInfos.Length <= implArgInfos.Length && List.forall2 (fun x y -> List.length x <= List.length y) sigArgInfos (List.truncate sigArgInfos.Length implArgInfos)) then 
                   err(fun(x, y, z) -> FSComp.SR.ValueNotContainedMutabilityAritiesDiffer(x, y, z, id.idText, string sigArgInfos.Length, id.idText, id.idText))
                 else 
                   let implArgInfos = implArgInfos |> List.take sigArgInfos.Length  
