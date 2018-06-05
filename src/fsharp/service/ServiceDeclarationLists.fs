@@ -56,8 +56,8 @@ type FSharpMethodGroupItemParameter(name: string, canonicalTypeTextForSorting: s
 [<AutoOpen>]
 module internal DescriptionListsImpl = 
 
-    let isFunction g typ =
-        let _,tau = tryDestForallTy g typ
+    let isFunction g ty =
+        let _,tau = tryDestForallTy g ty
         isFunTy g tau 
    
     let printCanonicalizedTypeName g (denv:DisplayEnv) tau =
@@ -92,7 +92,7 @@ module internal DescriptionListsImpl =
           display=display,
           isOptional=false)
 
-    let ParamOfParamData g denv (ParamData(_isParamArrayArg, _isInArg, _isOutArg, optArgInfo, _callerInfoInfo, nmOpt, _reflArgInfo, pty) as paramData) =
+    let ParamOfParamData g denv (ParamData(_isParamArrayArg, _isInArg, _isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty) as paramData) =
         FSharpMethodGroupItemParameter(
           name = (match nmOpt with None -> "" | Some pn -> pn.idText),
           canonicalTypeTextForSorting = printCanonicalizedTypeName g denv pty,
@@ -103,7 +103,7 @@ module internal DescriptionListsImpl =
     let PrettyParamsOfParamDatas g denv typarInst (paramDatas:ParamData list) rty = 
         let paramInfo,paramTypes = 
             paramDatas 
-            |> List.map (fun (ParamData(isParamArrayArg, _isInArg, _isOutArg, optArgInfo, _callerInfoInfo, nmOpt, _reflArgInfo, pty)) -> 
+            |> List.map (fun (ParamData(isParamArrayArg, _isInArg, _isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty)) -> 
                 let isOptArg = optArgInfo.IsOptional
                 match nmOpt, isOptArg, tryDestOptionTy denv.g pty with 
                 // Layout an optional argument 
@@ -179,8 +179,8 @@ module internal DescriptionListsImpl =
         | SymbolHelpers.ItemIsWithStaticArguments m g staticParameters ->
             staticParameters 
                 |> Array.map (fun sp -> 
-                    let typ = Import.ImportProvidedType amap m (sp.PApply((fun x -> x.ParameterType),m))
-                    let spKind = NicePrint.prettyLayoutOfType denv typ
+                    let ty = Import.ImportProvidedType amap m (sp.PApply((fun x -> x.ParameterType),m))
+                    let spKind = NicePrint.prettyLayoutOfType denv ty
                     let spName = sp.PUntaint((fun sp -> sp.Name), m)
                     let spOpt = sp.PUntaint((fun sp -> sp.IsOptional), m)
                     FSharpMethodGroupItemParameter(
@@ -334,8 +334,8 @@ module internal DescriptionListsImpl =
                 let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] rty
                 [], prettyRetTyL  // no parameter data available for binary operators like 'zip', 'join' and 'groupJoin' since they use bespoke syntax 
 
-        | Item.FakeInterfaceCtor typ -> 
-            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] typ
+        | Item.FakeInterfaceCtor ty -> 
+            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] ty
             [], prettyRetTyL
 
         | Item.DelegateCtor delty -> 
@@ -381,14 +381,14 @@ module internal DescriptionListsImpl =
             | TNoRepr -> FSharpGlyph.Class  
          
          /// Find the glyph for the given type representation.
-         let typeToGlyph typ = 
-            if isAppTy denv.g typ then 
-                let tcref = tcrefOfAppTy denv.g typ
+         let typeToGlyph ty = 
+            if isAppTy denv.g ty then 
+                let tcref = tcrefOfAppTy denv.g ty
                 tcref.TypeReprInfo |> reprToGlyph 
-            elif isStructTupleTy denv.g typ then FSharpGlyph.Struct
-            elif isRefTupleTy denv.g typ then FSharpGlyph.Class
-            elif isFunction denv.g typ then FSharpGlyph.Delegate
-            elif isTyparTy denv.g typ then FSharpGlyph.Struct
+            elif isStructTupleTy denv.g ty then FSharpGlyph.Struct
+            elif isRefTupleTy denv.g ty then FSharpGlyph.Class
+            elif isFunction denv.g ty then FSharpGlyph.Delegate
+            elif isTyparTy denv.g ty then FSharpGlyph.Struct
             else FSharpGlyph.Typedef
             
          // This may explore assemblies that are not in the reference set,
@@ -400,7 +400,7 @@ module internal DescriptionListsImpl =
                   if isFunction denv.g vref.Type then FSharpGlyph.Method
                   elif vref.LiteralValue.IsSome then FSharpGlyph.Constant
                   else FSharpGlyph.Variable
-            | Item.Types(_,typ::_) -> typeToGlyph (stripTyEqns denv.g typ)    
+            | Item.Types(_,ty::_) -> typeToGlyph (stripTyEqns denv.g ty)    
             | Item.UnionCase _
             | Item.ActivePatternCase _ -> FSharpGlyph.EnumMember   
             | Item.ExnCase _ -> FSharpGlyph.Exception   
