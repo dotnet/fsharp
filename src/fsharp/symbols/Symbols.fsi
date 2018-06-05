@@ -825,6 +825,9 @@ and [<Class>] public FSharpMemberOrFunctionOrValue =
 
     /// Indicates if this is a constructor.
     member IsConstructor : bool
+    
+    /// Format the type using the rules of the given display context
+    member FormatLayout : context: FSharpDisplayContext -> Layout
 
 
 /// A subtype of FSharpSymbol that represents a parameter 
@@ -939,6 +942,9 @@ and [<Class>] public FSharpType =
 
     /// Format the type using the rules of the given display context
     member Format : context: FSharpDisplayContext -> string
+
+    /// Format the type using the rules of the given display context
+    member FormatLayout : context: FSharpDisplayContext -> Layout
 
     /// Instantiate generic type parameters in a type
     member Instantiate : (FSharpGenericParameter * FSharpType) list -> FSharpType
