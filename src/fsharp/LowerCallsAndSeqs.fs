@@ -84,13 +84,18 @@ type LoweredSeqFirstPhaseResult =
    { /// The code to run in the second phase, to rebuild the expressions, once all code labels and their mapping to program counters have been determined
      /// 'nextVar' is the argument variable for the GenerateNext method that represents the byref argument that holds the "goto" destination for a tailcalling sequence expression
      phase2 : ((* pc: *) ValRef * (* current: *) ValRef * (* nextVar: *) ValRef * Map<ILCodeLabel,int> -> Expr * Expr * Expr)
+
      /// The labels allocated for one portion of the sequence expression
      labels : int list      
+
      /// any actual work done in Close
      significantClose : bool
      
      /// The state variables allocated for one portion of the sequence expression (i.e. the local let-bound variables which become state variables)
-     stateVars: ValRef list }
+     stateVars: ValRef list 
+     
+     /// The vars captured by the non-synchronous path
+     capturedVars: FreeVars }
 
 let isVarFreeInExpr v e = Zset.contains v (freeInExpr CollectTyparsAndLocals e).FreeLocals
 
@@ -174,6 +179,17 @@ let LowerSeqExpr g amap overallExpr =
         | Expr.App(Expr.Val (vref,_,_),_f0ty,[elemTy],[e],_m) when valRefEq g vref g.seq_vref ->  Some (e,elemTy) 
         | _ -> None
 
+    let RepresentBindingAsLocal (bind: Binding) res2 m = 
+        // printfn "found letrec state variable %s" bind.Var.DisplayName
+        { res2 with
+            phase2 = (fun ctxt -> 
+                let generate2,dispose2,checkDispose2 = res2.phase2 ctxt
+                let generate = mkLetBind m bind generate2
+                let dispose = dispose2
+                let checkDispose = checkDispose2
+                generate,dispose,checkDispose)
+            stateVars = res2.stateVars }
+
     let RepresentBindingAsStateMachineLocal (bind: Binding) res2 m = 
         // printfn "found letrec state variable %s" bind.Var.DisplayName
         let (TBind(v,e,sp)) = bind
@@ -243,6 +259,7 @@ let LowerSeqExpr g amap overallExpr =
                    labels=[label]
                    stateVars=[]
                    significantClose = false
+                   capturedVars = emptyFreeVars
                   }
 
         | SeqDelay(e,_elemTy) -> 
@@ -254,6 +271,11 @@ let LowerSeqExpr g amap overallExpr =
             match Lower false false noDisposeContinuationLabel currentDisposeContinuationLabel e1, 
                   Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel e2 with 
             | Some res1, Some res2 -> 
+                let capturedVars = 
+                    if res1.labels.IsEmpty then 
+                        res2.capturedVars 
+                    else 
+                        unionFreeVars res1.capturedVars (freeInExpr CollectLocals e2)
                 Some { phase2 = (fun ctxt -> 
                             let generate1,dispose1,checkDispose1 = res1.phase2 ctxt
                             let generate2,dispose2,checkDispose2 = res2.phase2 ctxt
@@ -265,23 +287,26 @@ let LowerSeqExpr g amap overallExpr =
                             generate,dispose,checkDispose)
                        labels= res1.labels @ res2.labels
                        stateVars = res1.stateVars @ res2.stateVars 
-                       significantClose = res1.significantClose || res2.significantClose }
+                       significantClose = res1.significantClose || res2.significantClose
+                       capturedVars = capturedVars }
             | _ -> 
                 None
 
-        | SeqWhile(e1,e2,m) -> 
+        | SeqWhile(guardExpr,bodyExpr,m) -> 
             // printfn "found Seq.while"
-            match Lower false false noDisposeContinuationLabel currentDisposeContinuationLabel e2 with 
+            match Lower false false noDisposeContinuationLabel currentDisposeContinuationLabel bodyExpr with 
             | Some res2  -> 
+                let capturedVars = res2.capturedVars 
                 Some { phase2 = (fun ctxt -> 
                             let generate2,dispose2,checkDispose2 = res2.phase2 ctxt
-                            let generate = mkWhile g (SequencePointAtWhileLoop e1.Range,NoSpecialWhileLoopMarker,e1,generate2,m)
+                            let generate = mkWhile g (SequencePointAtWhileLoop guardExpr.Range,NoSpecialWhileLoopMarker,guardExpr,generate2,m)
                             let dispose = dispose2
                             let checkDispose = checkDispose2
                             generate,dispose,checkDispose)
                        labels = res2.labels
                        stateVars = res2.stateVars 
-                       significantClose = res2.significantClose }
+                       significantClose = res2.significantClose
+                       capturedVars = capturedVars }
             | _ -> 
                 None
 
@@ -310,6 +335,7 @@ let LowerSeqExpr g amap overallExpr =
             let innerDisposeContinuationLabel = IL.generateCodeLabel()
             match Lower false false noDisposeContinuationLabel innerDisposeContinuationLabel e1 with 
             | Some res1  -> 
+                let capturedVars = unionFreeVars res1.capturedVars (freeInExpr CollectLocals compensation) 
                 Some { phase2 = (fun ((pcv,_currv,_,pcMap) as ctxt) -> 
                             let generate1,dispose1,checkDispose1 = res1.phase2 ctxt
                             let generate = 
@@ -348,7 +374,8 @@ let LowerSeqExpr g amap overallExpr =
                             generate,dispose,checkDispose)
                        labels = innerDisposeContinuationLabel :: res1.labels
                        stateVars = res1.stateVars 
-                       significantClose = true }
+                       significantClose = true 
+                       capturedVars = capturedVars }
             | _ -> 
                 None
 
@@ -361,7 +388,8 @@ let LowerSeqExpr g amap overallExpr =
                             generate,dispose,checkDispose)
                    labels = []
                    stateVars = [] 
-                   significantClose = false }
+                   significantClose = false
+                   capturedVars = emptyFreeVars }
 
         | Expr.Sequential(x1,x2,NormalSeq,ty,m) -> 
             match Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel x2 with 
@@ -376,13 +404,16 @@ let LowerSeqExpr g amap overallExpr =
                             generate,dispose,checkDispose) }
             | None -> None
 
-        | Expr.Let(bind,e2,m,_) 
+        | Expr.Let(bind,bodyExpr,m,_) 
               // Restriction: compilation of sequence expressions containing non-toplevel constrained generic functions is not supported
               when  bind.Var.IsCompiledAsTopLevel || not (IsGenericValWithGenericContraints g bind.Var) -> 
-            match Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel e2 with 
+            match Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel bodyExpr with 
             | Some res2 ->
                 if bind.Var.IsCompiledAsTopLevel then 
                     Some (RepresentBindingsAsLifted (mkLetBind m bind) res2)
+                elif not (res2.capturedVars.FreeLocals.Contains(bind.Var)) then
+                    // printfn "found state variable %s" bind.Var.DisplayName
+                    Some (RepresentBindingAsLocal bind res2 m)
                 else
                     // printfn "found state variable %s" bind.Var.DisplayName
                     Some (RepresentBindingAsStateMachineLocal bind res2 m)
@@ -421,12 +452,18 @@ let LowerSeqExpr g amap overallExpr =
 *)
         | Expr.Match (spBind,exprm,pt,targets,m,ty) when targets |> Array.forall (fun (TTarget(vs,_e,_spTarget)) -> isNil vs) ->
             // lower all the targets. abandon if any fail to lower
-            let tgl = targets |> Array.map (fun (TTarget(_vs,e,_spTarget)) -> Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel e) |> Array.toList
+            let tglArray = targets |> Array.map (fun (TTarget(_vs,targetExpr,_spTarget)) -> Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel targetExpr) 
             // LIMITATION: non-trivial pattern matches involving or-patterns or active patterns where bindings can't be 
             // transferred to the r.h.s. are not yet compiled. 
-            if tgl |> List.forall Option.isSome then 
-                let tgl = List.map Option.get tgl
+            if tglArray |> Array.forall Option.isSome then 
+                let tglArray = Array.map Option.get tglArray
+                let tgl = Array.toList tglArray
                 let labs = tgl |> List.collect (fun res -> res.labels)
+                let (capturedVars, _) = 
+                    ((emptyFreeVars, false), Array.zip targets tglArray) 
+                    ||> Array.fold (fun (fvs, seenLabel) ((TTarget(_vs,e,_spTarget)), res) -> 
+                        if seenLabel then unionFreeVars fvs (freeInExpr CollectLocals e), true 
+                        else res.capturedVars, not res.labels.IsEmpty)
                 let stateVars = tgl |> List.collect (fun res -> res.stateVars)
                 let significantClose = tgl |> List.exists (fun res -> res.significantClose)
                 Some { phase2 = (fun ctxt -> 
@@ -443,7 +480,8 @@ let LowerSeqExpr g amap overallExpr =
                             generate,dispose,checkDispose)
                        labels=labs
                        stateVars = stateVars 
-                       significantClose = significantClose }
+                       significantClose = significantClose
+                       capturedVars = capturedVars }
             else
                 None
 
@@ -502,7 +540,8 @@ let LowerSeqExpr g amap overallExpr =
                                     generate,dispose,checkDispose)
                                labels=[label]
                                stateVars=[] 
-                               significantClose = false }
+                               significantClose = false 
+                               capturedVars = emptyFreeVars }
                     else
                         let v,ve = mkCompGenLocal m "v" inpElemTy
                         Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel (mkCallSeqCollect g m inpElemTy inpElemTy (mkLambdaNoType g m v (mkCallSeqSingleton g m inpElemTy ve)) arbitrarySeqExpr)
