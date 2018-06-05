@@ -7078,17 +7078,15 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
                     argTysWithoutNiceNames
                     (resVar, resVarAsExpr, retTy)
 
-            
-            // Mark the up as Some/None
-            let suppliedArgs = List.map Some suppliedArgs @ List.ofArray (Array.create (nCurriedNiceNames - nSuppliedArgs) None)
-
-            assert (suppliedArgs.Length = nCurriedNiceNames)
-
-            let exprForAllArgs = 
-
+            let exprForAllArgs =
                 if isNil argTysWithNiceNames then 
                     mkCompGenLet appm cloVar exprWithActualTy exprForOtherArgs
                 else
+                    // Mark the up as Some/None
+                    let suppliedArgs = List.map Some suppliedArgs @ List.replicate (nCurriedNiceNames - nSuppliedArgs) None
+
+                    assert (suppliedArgs.Length = nCurriedNiceNames)
+
                     let lambdaBuilders, binderBuilders, inpsAsArgs = 
                     
                         (argTysWithNiceNames, curriedNiceNames, suppliedArgs) |||> List.map3 (fun (_, inpArgTy, actualArgTys) niceNames suppliedArg -> 
