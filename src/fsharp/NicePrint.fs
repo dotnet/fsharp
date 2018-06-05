@@ -170,7 +170,7 @@ module private PrintIL =
             match System.Int32.TryParse(rightMost, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture) with 
             | true, n -> n
             | false, _ -> 0 // looks like it's non-generic
-        ilTyparSubst |> List.rev |> List.take numParms |> List.rev
+        ilTyparSubst |> List.rev |> List.truncate numParms |> List.rev
                              
     let rec layoutILType (denv: DisplayEnv) (ilTyparSubst: layout list) (typ : ILType) : layout =
         match typ with

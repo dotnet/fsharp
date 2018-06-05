@@ -511,7 +511,7 @@ let zipCallPatternArgTys m g (callPattern : TupleStructure list) (vss : Val list
         let tys = List.collect snd tstys       // link fringes 
         tss, tys
     
-    let vss = List.take callPattern.Length vss    // drop excessive tys if callPattern shorter 
+    let vss = List.truncate callPattern.Length vss    // drop excessive tys if callPattern shorter 
     let tstys = List.map2 (fun ts vs -> let ts, tyfringe = zipTSTyp ts (typeOfLambdaArg m vs) in ts, (tyfringe, vs)) callPattern vss
     List.unzip tstys   
 
@@ -561,16 +561,16 @@ let decideTransform g z v callPatterns (m, tps, vss:Val list list, rty) =
     (* NOTE: 'a in arg types may have been instanced at different tuples... *)
     (*       commonCallPattern has to handle those cases. *)
     let callPattern           = commonCallPattern callPatterns                   // common CallPattern 
-    let callPattern           = List.take vss.Length callPattern            // restricted to max nArgs 
+    let callPattern           = List.truncate vss.Length callPattern            // restricted to max nArgs 
     // Get formal callPattern by defn usage of formals 
     let formalCallPattern     = decideFormalSuggestedCP g z tys vss 
-    let callPattern           = List.take callPattern.Length formalCallPattern
+    let callPattern           = List.truncate callPattern.Length formalCallPattern
     // Zip with information about known args 
     let callPattern, tyfringes = zipCallPatternArgTys m g callPattern vss
     // Drop trivial tail AND 
     let callPattern           = minimalCallPattern callPattern                     
     // Shorten tyfringes (zippable) 
-    let tyfringes    = List.take callPattern.Length tyfringes       
+    let tyfringes    = List.truncate callPattern.Length tyfringes       
     if isTrivialCP callPattern then
         None // no transform 
     else
@@ -790,7 +790,7 @@ let passBind penv (TBind(fOrig, repr, letSeqPtOpt) as bind) =
          let p     = transformedFormals.Length
          if (vss.Length < p) then internalError "passBinds: |vss|<p - detuple pass" 
          let xqNs  = List.drop p vss  
-         let x1ps  = List.take p vss  
+         let x1ps  = List.truncate p vss  
          let y1Ps  = List.concat (List.map2 transFormal transformedFormals x1ps)
          let formals = y1Ps @ xqNs
          // fCBody - parts 
