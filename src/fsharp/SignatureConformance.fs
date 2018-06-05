@@ -239,8 +239,8 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 elif not (sigArgInfos.Length <= implArgInfos.Length && List.forall2 (fun x y -> List.length x <= List.length y) sigArgInfos (List.truncate sigArgInfos.Length implArgInfos)) then 
                   err(fun(x, y, z) -> FSComp.SR.ValueNotContainedMutabilityAritiesDiffer(x, y, z, id.idText, string sigArgInfos.Length, id.idText, id.idText))
                 else 
-                  let implArgInfos = implArgInfos |> List.truncate sigArgInfos.Length  
-                  let implArgInfos = (implArgInfos, sigArgInfos) ||> List.map2 (fun l1 l2 -> l1 |> List.truncate l2.Length)
+                  let implArgInfos = implArgInfos |> List.take sigArgInfos.Length  
+                  let implArgInfos = (implArgInfos, sigArgInfos) ||> List.map2 (fun l1 l2 -> l1 |> List.take l2.Length)
                   // Propagate some information signature to implementation. 
 
                   // Check the attributes on each argument, and update the ValReprInfo for

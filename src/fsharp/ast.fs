@@ -176,7 +176,7 @@ type LongIdentWithDots =
             | LongIdentWithDots([],_) -> failwith "rangeOfLidwd"
             | LongIdentWithDots([id],_) -> id.idRange
             | LongIdentWithDots(h::t,dotms) ->
-                let nonExtraDots = if dotms.Length = t.Length then dotms else List.truncate t.Length dotms
+                let nonExtraDots = if dotms.Length = t.Length then dotms else List.take t.Length dotms
                 unionRanges h.idRange (List.last t).idRange |> unionRanges (List.last nonExtraDots)
 
 //------------------------------------------------------------------------

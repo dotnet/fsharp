@@ -3171,7 +3171,7 @@ let ComputeItemRange wholem (lid: Ident list) rest =
     match rest with
     | [] -> wholem
     | _ -> 
-        let ids = List.truncate (max 0 (lid.Length - rest.Length)) lid
+        let ids = List.take (max 0 (lid.Length - rest.Length)) lid
         match ids with 
         | [] -> wholem
         | _ -> rangeOfLid ids
