@@ -2112,27 +2112,33 @@ namespace Microsoft.FSharp.Core
         let Float32IEquality = MakeGenericEqualityComparer<float32>()
         let DecimalIEquality = MakeGenericEqualityComparer<decimal>()
 
+        let tryGetFastGenericEqualityComparerTable (ty:Type) =
+            match ty with 
+            | ty when ty.Equals typeof<bool>       -> box BoolIEquality
+            | ty when ty.Equals typeof<byte>       -> box ByteIEquality
+            | ty when ty.Equals typeof<int32>      -> box Int32IEquality
+            | ty when ty.Equals typeof<uint32>     -> box UInt32IEquality
+            | ty when ty.Equals typeof<char>       -> box CharIEquality
+            | ty when ty.Equals typeof<sbyte>      -> box SByteIEquality
+            | ty when ty.Equals typeof<int16>      -> box Int16IEquality
+            | ty when ty.Equals typeof<int64>      -> box Int64IEquality
+            | ty when ty.Equals typeof<nativeint>  -> box IntPtrIEquality
+            | ty when ty.Equals typeof<uint16>     -> box UInt16IEquality
+            | ty when ty.Equals typeof<uint64>     -> box UInt64IEquality
+            | ty when ty.Equals typeof<unativeint> -> box UIntPtrIEquality
+            | ty when ty.Equals typeof<float>      -> box FloatIEquality
+            | ty when ty.Equals typeof<float32>    -> box Float32IEquality
+            | ty when ty.Equals typeof<decimal>    -> box DecimalIEquality
+            | ty when ty.Equals typeof<string>     -> box StringIEquality
+            | _ -> null
+
         [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]     
-        type FastGenericEqualityComparerTable<'T>() = 
+        type FastGenericEqualityComparerTable<'T>() =
             static let f : System.Collections.Generic.IEqualityComparer<'T> = 
-                match typeof<'T> with 
-                | ty when ty.Equals(typeof<bool>)       -> unboxPrim (box BoolIEquality)
-                | ty when ty.Equals(typeof<byte>)       -> unboxPrim (box ByteIEquality)
-                | ty when ty.Equals(typeof<int32>)      -> unboxPrim (box Int32IEquality)
-                | ty when ty.Equals(typeof<uint32>)     -> unboxPrim (box UInt32IEquality)
-                | ty when ty.Equals(typeof<char>)       -> unboxPrim (box CharIEquality)
-                | ty when ty.Equals(typeof<sbyte>)      -> unboxPrim (box SByteIEquality)
-                | ty when ty.Equals(typeof<int16>)      -> unboxPrim (box Int16IEquality)
-                | ty when ty.Equals(typeof<int64>)      -> unboxPrim (box Int64IEquality)
-                | ty when ty.Equals(typeof<nativeint>)  -> unboxPrim (box IntPtrIEquality)
-                | ty when ty.Equals(typeof<uint16>)     -> unboxPrim (box UInt16IEquality)
-                | ty when ty.Equals(typeof<uint64>)     -> unboxPrim (box UInt64IEquality)
-                | ty when ty.Equals(typeof<unativeint>) -> unboxPrim (box UIntPtrIEquality)
-                | ty when ty.Equals(typeof<float>)      -> unboxPrim (box FloatIEquality)
-                | ty when ty.Equals(typeof<float32>)    -> unboxPrim (box Float32IEquality)
-                | ty when ty.Equals(typeof<decimal>)    -> unboxPrim (box DecimalIEquality)
-                | ty when ty.Equals(typeof<string>)     -> unboxPrim (box StringIEquality)
+                match tryGetFastGenericEqualityComparerTable typeof<'T> with
+                | :? System.Collections.Generic.IEqualityComparer<'T> as comp -> comp
                 | _ -> MakeGenericEqualityComparer<'T>()
+
             static member Function : System.Collections.Generic.IEqualityComparer<'T> = f
 
         let FastGenericEqualityComparerFromTable<'T> = FastGenericEqualityComparerTable<'T>.Function
