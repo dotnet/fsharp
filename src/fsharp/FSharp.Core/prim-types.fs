@@ -1532,12 +1532,63 @@ namespace Microsoft.FSharp.Core
                     override iec.Equals(x:obj,y:obj) = GenericEqualityObj true iec (x,y)  // ER Semantics
                     override iec.GetHashCode(x:obj) = raise (InvalidOperationException (SR.GetString(SR.notUsedForHashing))) }
 
+            type IERorPER = interface end
+            type ER = inherit IERorPER
+            type PER = inherit IERorPER
+
+            type GenericEqualityTCall<'T> = delegate of 'T * 'T -> bool
+
+            let tryGetGenericEqualityTCall (er:bool) (ty:Type) : obj =
+                match er, ty with
+                | _, ty when ty.Equals typeof<string>     -> box (GenericEqualityTCall<string>    (fun x y -> System.String.Equals((# "" x : string #),(# "" y : string #))))
+                | _, ty when ty.Equals typeof<decimal>    -> box (GenericEqualityTCall<decimal>   (fun x y -> System.Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))))
+                | _, ty when ty.Equals typeof<bool>       -> box (GenericEqualityTCall<bool>      (fun x y -> (# "ceq" x y : bool #)))
+                | _, ty when ty.Equals typeof<sbyte>      -> box (GenericEqualityTCall<sbyte>     (fun x y -> (# "ceq" x y : bool #)))
+                | _, ty when ty.Equals typeof<int16>      -> box (GenericEqualityTCall<int16>     (fun x y -> (# "ceq" x y : bool #)))
+                | _, ty when ty.Equals typeof<int32>      -> box (GenericEqualityTCall<int32>     (fun x y -> (# "ceq" x y : bool #)))
+                | _, ty when ty.Equals typeof<int64>      -> box (GenericEqualityTCall<int64>     (fun x y -> (# "ceq" x y : bool #)))
+                | _, ty when ty.Equals typeof<byte>       -> box (GenericEqualityTCall<byte>      (fun x y -> (# "ceq" x y : bool #)))
+                | _, ty when ty.Equals typeof<uint16>     -> box (GenericEqualityTCall<uint16>    (fun x y -> (# "ceq" x y : bool #)))
+                | _, ty when ty.Equals typeof<uint32>     -> box (GenericEqualityTCall<uint32>    (fun x y -> (# "ceq" x y : bool #)))
+                | _, ty when ty.Equals typeof<uint64>     -> box (GenericEqualityTCall<uint64>    (fun x y -> (# "ceq" x y : bool #)))
+                | _, ty when ty.Equals typeof<nativeint>  -> box (GenericEqualityTCall<nativeint> (fun x y -> (# "ceq" x y : bool #)))
+                | _, ty when ty.Equals typeof<unativeint> -> box (GenericEqualityTCall<unativeint>(fun x y -> (# "ceq" x y : bool #)))
+                | _, ty when ty.Equals typeof<char>       -> box (GenericEqualityTCall<char>      (fun x y -> (# "ceq" x y : bool #)))
+                | false, ty when ty.Equals typeof<float>  -> box (GenericEqualityTCall<bool>      (fun x y -> (# "ceq" x y : bool #)))
+                | false, ty when ty.Equals typeof<float32>-> box (GenericEqualityTCall<bool>      (fun x y -> (# "ceq" x y : bool #)))
+                | true, ty when ty.Equals typeof<float>   -> box (GenericEqualityTCall<float>     (fun x y -> 
+                    if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then
+                        true
+                    else
+                        (# "ceq" x y : bool #)))
+                | true, ty when ty.Equals typeof<float32> -> box (GenericEqualityTCall<float32>(fun x y -> 
+                    if not (# "ceq" x x : bool #) && not (# "ceq" y y : bool #) then
+                        true
+                    else
+                        (# "ceq" x y : bool #)))
+                | _ -> null
+
+            type GenericEqualityT<'T, 'ERorPER when 'ERorPER :> IERorPER> private () =
+                static let f : GenericEqualityTCall<'T> = 
+                    let er =
+                        if typeof<'ERorPER>.Equals typeof<ER> then true
+                        elif typeof<'ERorPER>.Equals typeof<PER> then false
+                        else raise (Exception "logic error")
+                    match tryGetGenericEqualityTCall er typeof<'T> with
+                    | :? GenericEqualityTCall<'T> as call -> call
+                    | _ -> 
+                        if er
+                        then GenericEqualityTCall<'T>(fun x y -> GenericEqualityObj true  fsEqualityComparerNoHashingER  (box x, box y))
+                        else GenericEqualityTCall<'T>(fun x y -> GenericEqualityObj false fsEqualityComparerNoHashingPER (box x, box y))
+
+                static member Function = f
+
             /// Implements generic equality between two values, with PER semantics for NaN (so equality on two NaN values returns false)
             //
             // The compiler optimizer is aware of this function  (see use of generic_equality_per_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T".
             let GenericEqualityIntrinsic (x : 'T) (y : 'T) : bool = 
-                GenericEqualityObj false fsEqualityComparerNoHashingPER ((box x), (box y))
+                GenericEqualityT<'T, PER>.Function.Invoke (x, y)
                 
             /// Implements generic equality between two values, with ER semantics for NaN (so equality on two NaN values returns true)
             //
@@ -1546,7 +1597,7 @@ namespace Microsoft.FSharp.Core
             // The compiler optimizer is aware of this function (see use of generic_equality_er_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T".
             let GenericEqualityERIntrinsic (x : 'T) (y : 'T) : bool =
-                GenericEqualityObj true fsEqualityComparerNoHashingER ((box x), (box y))
+                GenericEqualityT<'T, ER>.Function.Invoke (x, y)
                 
             /// Implements generic equality between two values using "comp" for recursive calls.
             //
@@ -2113,6 +2164,7 @@ namespace Microsoft.FSharp.Core
         let DecimalIEquality = MakeGenericEqualityComparer<decimal>()
 
         let tryGetFastGenericEqualityComparerTable (ty:Type) =
+            // TODO: Remove the ones that don't have special handling and thus just used default
             match ty with 
             | ty when ty.Equals typeof<bool>       -> box BoolIEquality
             | ty when ty.Equals typeof<byte>       -> box ByteIEquality
