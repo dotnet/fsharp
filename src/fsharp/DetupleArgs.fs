@@ -512,6 +512,7 @@ and zipTupleStructuresAndTypes g tss tys =
     tss, tys
 
 let zipCallPatternArgTys m g (callPattern : TupleStructure list) (vss : Val list list) =
+    let vss = List.take callPattern.Length vss    // drop excessive tys if callPattern shorter 
     let tstys = List.map2 (fun ts vs -> let ts, tyfringe = zipTupleStructureAndType g ts (typeOfLambdaArg m vs) in ts, (tyfringe, vs)) callPattern vss
     List.unzip tstys   
 
