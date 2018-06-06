@@ -7,26 +7,21 @@
 
 module internal Microsoft.FSharp.Compiler.AbstractIL.ILRuntimeWriter    
 
-open Internal.Utilities
+open System
+open System.Reflection
+open System.Reflection.Emit
+open System.Runtime.InteropServices
+open System.Collections.Generic
+
 open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types
 open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Range
 
 open Microsoft.FSharp.Core.Printf
-
-open System
-open System.IO
-open System.Reflection
-open System.Reflection.Emit
-open System.Runtime.InteropServices
-open System.Collections.Generic
 
 #if FX_RESHAPED_REFLECTION
 open Microsoft.FSharp.Core.ReflectionAdapters
@@ -121,13 +116,9 @@ type System.Reflection.Emit.MethodBuilder with
         if logRefEmitCalls then printfn "methodBuilder%d.SetImplementationFlags(enum %d)" (abs <| hash methB) (LanguagePrimitives.EnumToValue attrs)
         methB.SetImplementationFlags(attrs)
 
-    member methB.SetReturnTypeAndLog(rt:System.Type) =
-        if logRefEmitCalls then printfn "methodBuilder%d.SetReturnType(typeof<%s>)" (abs <| hash methB) rt.FullName
-        methB.SetReturnType(rt)
-
-    member methB.SetParametersAndLog(ps) =
-        if logRefEmitCalls then printfn "methodBuilder%d.SetParameters(%A)" (abs <| hash methB) ps
-        methB.SetParameters(ps)
+    member methB.SetSignatureAndLog(returnType, returnTypeRequiredCustomModifiers, returnTypeOptionalCustomModifiers, parameterTypes, parameterTypeRequiredCustomModifiers,parameterTypeOptionalCustomModifiers) =
+        if logRefEmitCalls then printfn "methodBuilder%d.SetSignature(...)" (abs <| hash methB) 
+        methB.SetSignature(returnType, returnTypeRequiredCustomModifiers, returnTypeOptionalCustomModifiers, parameterTypes, parameterTypeRequiredCustomModifiers,parameterTypeOptionalCustomModifiers)
 
     member methB.DefineParameterAndLog(n, attr, nm) =
         if logRefEmitCalls then printfn "methodBuilder%d.DefineParameter(%d, enum %d, %A)" (abs <| hash methB) n (LanguagePrimitives.EnumToValue attr) nm
@@ -558,11 +549,11 @@ and convTypeAux cenv emEnv preferCreated typ =
         baseT.MakeByRefType()
     | ILType.TypeVar tv         -> envGetTyvar emEnv tv
     // Consider completing the following cases:                                                      
-    | ILType.Modified (false, _, modifiedTy)  -> 
+    | ILType.Modified (_, _, modifiedTy)  -> 
+        // Note, "modreq" are not being emitted. This is 
         convTypeAux cenv emEnv preferCreated modifiedTy
-    | ILType.Modified (true, _, _) -> failwith "convType: modreq"
-    | ILType.FunctionPointer _callsig -> failwith "convType: fptr"
 
+    | ILType.FunctionPointer _callsig -> failwith "convType: fptr"
 
 // [Bug 4063].
 // The convType functions convert AbsIL types into concrete Type values.
@@ -598,6 +589,25 @@ let convTypesToArray cenv emEnv (typs:ILTypes) = convTypes cenv emEnv typs |> Li
 let convCreatedType cenv emEnv typ = convTypeAux cenv emEnv true typ 
 let convCreatedTypeRef cenv emEnv typ = convTypeRef cenv emEnv true typ 
   
+let rec convParamModifiersOfType cenv emEnv (pty: ILType) =
+    [| match pty with
+        | ILType.Modified (modreq, ty, modifiedTy)  -> 
+            yield (modreq, convTypeRef cenv emEnv false ty)
+            yield! convParamModifiersOfType cenv emEnv modifiedTy
+        | _ -> () |]
+
+let splitModifiers mods =
+    let reqd = mods |> Array.choose (function (true, ty) -> Some ty | _ -> None)
+    let optional = mods |> Array.choose (function (false, ty) -> Some ty | _ -> None)
+    reqd, optional
+
+let convParamModifiers cenv emEnv (p: ILParameter) =
+    let mods = convParamModifiersOfType cenv emEnv p.Type
+    splitModifiers mods
+
+let convReturnModifiers cenv emEnv (p: ILReturn) =
+    let mods = convParamModifiersOfType cenv emEnv p.Type
+    splitModifiers mods
 
 //----------------------------------------------------------------------------
 // convFieldInit
@@ -1537,11 +1547,22 @@ let rec buildMethodPass2 cenv tref (typB:TypeBuilder) emEnv (mdef : ILMethodDef)
           let genArgs = getGenericArgumentsOfMethod methB 
           let emEnv = envPushTyvars emEnv (Array.append (getGenericArgumentsOfType (typB.AsType())) genArgs)
           buildGenParamsPass1b cenv emEnv genArgs mdef.GenericParams;
+
           // Set parameter and return types (may depend on generic args)
-          methB.SetParametersAndLog(convTypesToArray cenv emEnv mdef.ParameterTypes);
-          methB.SetReturnTypeAndLog(convType cenv emEnv  mdef.Return.Type);
+          let parameterTypes = convTypesToArray cenv emEnv mdef.ParameterTypes
+          let parameterTypeRequiredCustomModifiers,parameterTypeOptionalCustomModifiers = 
+              mdef.Parameters 
+              |> List.toArray 
+              |> Array.map (convParamModifiers cenv emEnv) 
+              |> Array.unzip
+
+          let returnTypeRequiredCustomModifiers, returnTypeOptionalCustomModifiers = mdef.Return |> convReturnModifiers cenv emEnv
+          let returnType = convType cenv emEnv  mdef.Return.Type
+
+          methB.SetSignatureAndLog(returnType, returnTypeRequiredCustomModifiers, returnTypeOptionalCustomModifiers, parameterTypes, parameterTypeRequiredCustomModifiers,parameterTypeOptionalCustomModifiers);
+
           let emEnv = envPopTyvars emEnv
-          methB.SetImplementationFlagsAndLog(implflags);
+          methB.SetImplementationFlagsAndLog(implflags)
           envBindMethodRef emEnv mref methB
 
 

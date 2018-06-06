@@ -19,20 +19,18 @@ open System.Collections.Generic
 
 module QP = Microsoft.FSharp.Compiler.QuotationPickler
 
-
 let verboseCReflect = condition "VERBOSE_CREFLECT"
-
 
 [<RequireQualifiedAccess>]
 type IsReflectedDefinition =
-|   Yes
-|   No
+    | Yes
+    | No
 
 [<RequireQualifiedAccess>]
 type QuotationSerializationFormat =
-/// Indicates that type references are emitted as integer indexes into a supplied table
-|   FSharp_40_Plus
-|   FSharp_20_Plus
+    /// Indicates that type references are emitted as integer indexes into a supplied table
+    | FSharp_40_Plus
+    | FSharp_20_Plus
 
 type QuotationGenerationScope = 
     { g: TcGlobals 
@@ -74,10 +72,10 @@ type QuotationGenerationScope =
             QuotationSerializationFormat.FSharp_20_Plus
 
 type QuotationTranslationEnv = 
-    { //Map from Val to binding index
+    { /// Map from Val to binding index
       vs: ValMap<int> 
       nvs: int
-      //Map from typar stamps to binding index
+      /// Map from typar stamps to binding index
       tyvs: StampMap<int>
       // Map for values bound by the 
       //     'let v = isinst e in .... if nonnull v then ...v .... ' 
@@ -428,7 +426,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         | TOp.UnionCaseFieldGet (ucref,n),tyargs,[e] -> 
             ConvUnionFieldGet cenv env m ucref n tyargs e
 
-        | TOp.ValFieldGetAddr(_rfref),_tyargs,_ -> 
+        | TOp.ValFieldGetAddr(_rfref, _readonly),_tyargs,_ -> 
             wfail(Error(FSComp.SR.crefQuotationsCantContainAddressOf(), m)) 
 
         | TOp.UnionCaseFieldGetAddr _,_tyargs,_ -> 
@@ -520,7 +518,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             // rebuild reraise<T>() and Convert 
             mkReraiseLibCall cenv.g toTy m |> ConvExpr cenv env 
 
-        | TOp.LValueOp(LGetAddr,vref),[],[] -> 
+        | TOp.LValueOp(LAddrOf _,vref),[],[] -> 
             QP.mkAddressOf(ConvValRef false cenv env m vref [])
 
         | TOp.LValueOp(LByrefSet,vref),[],[e] -> 
@@ -588,7 +586,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         | TOp.UnionCaseTagGet _tycr,_tinst,[_cx]          -> wfail(Error(FSComp.SR.crefQuotationsCantFetchUnionIndexes(), m))
         | TOp.UnionCaseFieldSet (_c,_i),_tinst,[_cx;_x]     -> wfail(Error(FSComp.SR.crefQuotationsCantSetUnionFields(), m))
         | TOp.ExnFieldSet(_tcref,_i),[],[_ex;_x] -> wfail(Error(FSComp.SR.crefQuotationsCantSetExceptionFields(), m))
-        | TOp.RefAddrGet,_,_                       -> wfail(Error(FSComp.SR.crefQuotationsCantRequireByref(), m))
+        | TOp.RefAddrGet _,_,_                       -> wfail(Error(FSComp.SR.crefQuotationsCantRequireByref(), m))
         | TOp.TraitCall (_ss),_,_                    -> wfail(Error(FSComp.SR.crefQuotationsCantCallTraitMembers(), m))
         | _ -> 
             wfail(InternalError( "Unexpected expression shape",m))
@@ -667,9 +665,9 @@ and ConvLValueExprCore cenv env expr =
     match expr with 
     | Expr.Op(op,tyargs,args,m) -> 
         match op, args, tyargs  with
-        | TOp.LValueOp(LGetAddr,vref),_,_ -> ConvValRef false cenv env m vref [] 
-        | TOp.ValFieldGetAddr(rfref),_,_ -> ConvClassOrRecdFieldGet cenv env m rfref tyargs args
-        | TOp.UnionCaseFieldGetAddr(ucref,n),[e],_ -> ConvUnionFieldGet cenv env m ucref n tyargs e
+        | TOp.LValueOp(LAddrOf _,vref),_,_ -> ConvValRef false cenv env m vref [] 
+        | TOp.ValFieldGetAddr(rfref, _),_,_ -> ConvClassOrRecdFieldGet cenv env m rfref tyargs args
+        | TOp.UnionCaseFieldGetAddr(ucref,n, _),[e],_ -> ConvUnionFieldGet cenv env m ucref n tyargs e
         | TOp.ILAsm([ I_ldflda(fspec) ],_rtys),_,_  -> ConvLdfld  cenv env m fspec tyargs args
         | TOp.ILAsm([ I_ldsflda(fspec) ],_rtys),_,_  -> ConvLdfld  cenv env m fspec tyargs args
         | TOp.ILAsm(([ I_ldelema(_ro,_isNativePtr,shape,_tyarg) ] ),_), (arr::idxs), [elemty]  -> 

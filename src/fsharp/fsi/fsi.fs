@@ -1167,6 +1167,7 @@ type internal FsiDynamicCompiler
             // Skip the "FSI_NNNN"
             match contentFile.Declarations with 
             | [FSharpImplementationFileDeclaration.Entity (_eFakeModule,modDecls) ] -> 
+                let cenv = SymbolEnv(newState.tcGlobals, newState.tcState.Ccu, Some newState.tcState.CcuSig, newState.tcImports)
                 for decl in modDecls do 
                     match decl with 
                     | FSharpImplementationFileDeclaration.MemberOrFunctionOrValue (v,_,_) ->
@@ -1177,16 +1178,16 @@ type internal FsiDynamicCompiler
                             | Item.Value vref ->
                                 let optValue = newState.ilxGenerator.LookupGeneratedValue(valuePrinter.GetEvaluationContext(newState.emEnv), vref.Deref)
                                 match optValue with
-                                | Some (res, typ) -> Some(FsiValue(res, typ, FSharpType(tcGlobals, newState.tcState.Ccu, newState.tcState.CcuSig, newState.tcImports, vref.Type)))
+                                | Some (res, typ) -> Some(FsiValue(res, typ, FSharpType(cenv, vref.Type)))
                                 | None -> None 
                             | _ -> None
 
-                        let symbol = FSharpSymbol.Create(newState.tcGlobals, newState.tcState.Ccu, newState.tcState.CcuSig, newState.tcImports, v.Item)
+                        let symbol = FSharpSymbol.Create(cenv, v.Item)
                         let symbolUse = FSharpSymbolUse(tcGlobals, newState.tcState.TcEnvFromImpls.DisplayEnv, symbol, ItemOccurence.Binding, v.DeclarationLocation)
                         fsi.TriggerEvaluation (fsiValueOpt, symbolUse, decl)
                     | FSharpImplementationFileDeclaration.Entity (e,_) ->
                         // Report a top-level module or namespace definition
-                        let symbol = FSharpSymbol.Create(newState.tcGlobals, newState.tcState.Ccu, newState.tcState.CcuSig, newState.tcImports, e.Item)
+                        let symbol = FSharpSymbol.Create(cenv, e.Item)
                         let symbolUse = FSharpSymbolUse(tcGlobals, newState.tcState.TcEnvFromImpls.DisplayEnv, symbol, ItemOccurence.Binding, e.DeclarationLocation)
                         fsi.TriggerEvaluation (None, symbolUse, decl)
                     | FSharpImplementationFileDeclaration.InitAction _ ->

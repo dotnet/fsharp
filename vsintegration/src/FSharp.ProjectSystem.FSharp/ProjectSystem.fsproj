@@ -37,6 +37,29 @@
     <Compile Include="MSBuildUtilities.fs" />
     <Compile Include="AppConfigHelper.fs" />
     <Compile Include="Project.fs" />
+    <None Include="..\SupportedRuntimes\SupportedRuntimes.xml" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyLevelAttribute Include="Microsoft.VisualStudio.Shell.ProvideBindingRedirectionAttribute">
+      <AssemblyName>FSharp.Core</AssemblyName>
+      <OldVersionLowerBound>2.0.0.0</OldVersionLowerBound>
+      <OldVersionUpperBound>$(FSCoreVersion)</OldVersionUpperBound>
+      <NewVersion>$(FSCoreVersion)</NewVersion>
+      <CodeBase>$PackageFolder$\FSharp.Core.dll</CodeBase>
+    </AssemblyLevelAttribute>
+    <AssemblyLevelAttribute Include="Microsoft.VisualStudio.Shell.ProvideBindingRedirectionAttribute">
+      <AssemblyName>FSharp.ProjectSystem.FSharp</AssemblyName>
+      <OldVersionLowerBound>15.0.0.0</OldVersionLowerBound>
+      <OldVersionUpperBound>$(VSAssemblyVersion)</OldVersionUpperBound>
+      <NewVersion>$(VSAssemblyVersion)</NewVersion>
+    </AssemblyLevelAttribute>
+    <AssemblyLevelAttribute Include="Microsoft.VisualStudio.Shell.ProvideBindingRedirectionAttribute">
+      <AssemblyName>FSharp.ProjectSystem.PropertyPages</AssemblyName>
+      <OldVersionLowerBound>15.0.0.0</OldVersionLowerBound>
+      <OldVersionUpperBound>$(VSAssemblyVersion)</OldVersionUpperBound>
+      <NewVersion>$(VSAssemblyVersion)</NewVersion>
+    </AssemblyLevelAttribute>
   </ItemGroup>
 
   <ItemGroup>

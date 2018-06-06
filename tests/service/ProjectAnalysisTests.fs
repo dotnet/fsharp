@@ -5281,13 +5281,15 @@ let ``#4030, Incremental builder creation warnings`` (args, errorSeverities) =
 //------------------------------------------------------
 
 [<Test>]
-let ``Unused opens smoke test 1``() =
+let ``Unused opens in rec module smoke test 1``() =
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
     let base2 = Path.GetTempFileName()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
+module rec Module
+
 open System.Collections // unused
 open System.Collections.Generic // used, should not appear
 open FSharp.Control // unused
@@ -5343,11 +5345,83 @@ type UseTheThings(i:int) =
     let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines.[i-1])) |> Async.RunSynchronously
     let unusedOpensData = [ for uo in unusedOpens -> tups uo, lines.[uo.StartLine-1] ]
     let expected = 
-          [(((2, 5), (2, 23)), "open System.Collections // unused");
-           (((4, 5), (4, 19)), "open FSharp.Control // unused");
-           (((5, 5), (5, 16)), "open FSharp.Data // unused");
-           (((6, 5), (6, 25)), "open System.Globalization // unused");
-           (((23, 5), (23, 21)), "open SomeUnusedModule")]
+          [(((4, 5), (4, 23)), "open System.Collections // unused");
+           (((6, 5), (6, 19)), "open FSharp.Control // unused");
+           (((7, 5), (7, 16)), "open FSharp.Data // unused");
+           (((8, 5), (8, 25)), "open System.Globalization // unused");
+           (((25, 5), (25, 21)), "open SomeUnusedModule")]
+    unusedOpensData |> shouldEqual expected
+
+[<Test>]
+let ``Unused opens in non rec module smoke test 1``() =
+
+    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
+    let base2 = Path.GetTempFileName()
+    let dllName = Path.ChangeExtension(base2, ".dll")
+    let projFileName = Path.ChangeExtension(base2, ".fsproj")
+    let fileSource1 = """
+module Module
+
+open System.Collections // unused
+open System.Collections.Generic // used, should not appear
+open FSharp.Control // unused
+open FSharp.Data // unused
+open System.Globalization // unused
+
+module SomeUnusedModule = 
+    let f x  = x
+
+module SomeUsedModuleContainingFunction = 
+    let g x  = x
+
+module SomeUsedModuleContainingActivePattern = 
+    let (|ActivePattern|) x  = x
+
+module SomeUsedModuleContainingExtensionMember = 
+    type System.Int32 with member x.Q = 1
+
+module SomeUsedModuleContainingUnion = 
+    type Q = A | B
+
+open SomeUnusedModule
+open SomeUsedModuleContainingFunction
+open SomeUsedModuleContainingExtensionMember
+open SomeUsedModuleContainingActivePattern
+open SomeUsedModuleContainingUnion
+
+type UseTheThings(i:int) =
+    member x.Value = Dictionary<int,int>() // use something from System.Collections.Generic, as a constructor
+    member x.UseSomeUsedModuleContainingFunction() = g 3
+    member x.UseSomeUsedModuleContainingActivePattern(ActivePattern g) = g
+    member x.UseSomeUsedModuleContainingExtensionMember() = (3).Q
+    member x.UseSomeUsedModuleContainingUnion() = A
+"""
+    File.WriteAllText(fileName1, fileSource1)
+
+    let fileNames = [fileName1]
+    let args = mkProjectCommandLineArgs (dllName, fileNames)
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true)
+    let options =  keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    
+    let fileCheckResults = 
+        keepAssemblyContentsChecker.ParseAndCheckFileInProject(fileName1, 0, fileSource1, options)  |> Async.RunSynchronously
+        |> function 
+            | _, FSharpCheckFileAnswer.Succeeded(res) -> res
+            | _ -> failwithf "Parsing aborted unexpectedly..."
+    //let symbolUses = fileCheckResults.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously |> Array.indexed 
+    // Fragments used to check hash codes:
+    //(snd symbolUses.[42]).Symbol.IsEffectivelySameAs((snd symbolUses.[37]).Symbol)
+    //(snd symbolUses.[42]).Symbol.GetEffectivelySameAsHash()
+    //(snd symbolUses.[37]).Symbol.GetEffectivelySameAsHash()
+    let lines = File.ReadAllLines(fileName1)
+    let unusedOpens = UnusedOpens.getUnusedOpens (fileCheckResults, (fun i -> lines.[i-1])) |> Async.RunSynchronously
+    let unusedOpensData = [ for uo in unusedOpens -> tups uo, lines.[uo.StartLine-1] ]
+    let expected = 
+          [(((4, 5), (4, 23)), "open System.Collections // unused");
+           (((6, 5), (6, 19)), "open FSharp.Control // unused");
+           (((7, 5), (7, 16)), "open FSharp.Data // unused");
+           (((8, 5), (8, 25)), "open System.Globalization // unused");
+           (((25, 5), (25, 21)), "open SomeUnusedModule")]
     unusedOpensData |> shouldEqual expected
 
 [<Test>]

@@ -629,6 +629,9 @@ and
     /// F# syntax: expr.ident...ident <- expr
     | DotSet of SynExpr * longDotId:LongIdentWithDots * SynExpr * range:range
 
+    /// F# syntax: expr <- expr
+    | Set of SynExpr * SynExpr * range:range
+
     /// F# syntax: expr.[expr,...,expr]
     | DotIndexedGet of SynExpr * SynIndexerArg list * range * range:range
 
@@ -691,6 +694,9 @@ and
     /// F# syntax: use! pat = expr in expr
     /// Computation expressions only
     | LetOrUseBang    of bindSeqPoint:SequencePointInfoForBinding * isUse:bool * isFromSource:bool * SynPat * SynExpr * SynExpr * range:range
+
+    /// F# syntax: match! expr with pat1 -> expr | ... | patN -> exprN
+    | MatchBang of  matchSeqPoint:SequencePointInfoForBinding * expr:SynExpr * clauses:SynMatchClause list * isExnMatch:bool * range:range (* bool indicates if this is an exception match in a computation expression which throws unmatched exceptions *)
 
     /// F# syntax: do! expr
     /// Computation expressions only
@@ -760,6 +766,7 @@ and
         | SynExpr.DotIndexedSet (range=m)
         | SynExpr.DotGet (range=m)
         | SynExpr.DotSet (range=m)
+        | SynExpr.Set (range=m)
         | SynExpr.DotNamedIndexedPropertySet (range=m)
         | SynExpr.LibraryOnlyUnionCaseFieldGet (range=m)
         | SynExpr.LibraryOnlyUnionCaseFieldSet (range=m)
@@ -779,6 +786,7 @@ and
         | SynExpr.YieldOrReturn (range=m)
         | SynExpr.YieldOrReturnFrom (range=m)
         | SynExpr.LetOrUseBang (range=m)
+        | SynExpr.MatchBang (range=m)
         | SynExpr.DoBang (range=m)
         | SynExpr.Fixed (range=m) -> m
         | SynExpr.Ident id -> id.idRange
@@ -820,6 +828,7 @@ and
         | SynExpr.DotIndexedGet (range=m)
         | SynExpr.DotIndexedSet (range=m)
         | SynExpr.DotSet (range=m)
+        | SynExpr.Set (range=m)
         | SynExpr.DotNamedIndexedPropertySet (range=m)
         | SynExpr.LibraryOnlyUnionCaseFieldGet (range=m)
         | SynExpr.LibraryOnlyUnionCaseFieldSet (range=m)
@@ -839,6 +848,7 @@ and
         | SynExpr.YieldOrReturn (range=m)
         | SynExpr.YieldOrReturnFrom (range=m)
         | SynExpr.LetOrUseBang (range=m)
+        | SynExpr.MatchBang (range=m)
         | SynExpr.DoBang (range=m) -> m
         | SynExpr.DotGet (expr,_,lidwd,m) -> if lidwd.ThereIsAnExtraDotAtTheEnd then unionRanges expr.Range lidwd.RangeSansAnyExtraDot else m
         | SynExpr.LongIdent (_,lidwd,_,_) -> lidwd.RangeSansAnyExtraDot
@@ -882,6 +892,7 @@ and
         | SynExpr.DotIndexedSet (range=m)
         | SynExpr.DotGet (range=m)
         | SynExpr.DotSet (range=m)
+        | SynExpr.Set (range=m)
         | SynExpr.DotNamedIndexedPropertySet (range=m)
         | SynExpr.LibraryOnlyUnionCaseFieldGet (range=m)
         | SynExpr.LibraryOnlyUnionCaseFieldSet (range=m)
@@ -901,6 +912,7 @@ and
         | SynExpr.YieldOrReturn (range=m)
         | SynExpr.YieldOrReturnFrom (range=m)
         | SynExpr.LetOrUseBang (range=m)
+        | SynExpr.MatchBang (range=m)
         | SynExpr.DoBang (range=m)  -> m
         // these are better than just .Range, and also commonly applicable inside queries
         | SynExpr.Paren(_,m,_,_) -> m
@@ -1851,7 +1863,8 @@ let mkSynAssign (l: SynExpr) (r: SynExpr) =
         mkSynDotParenSet m a b r
     | SynExpr.App (_, _, SynExpr.LongIdent(false,v,None,_),x,_)  -> SynExpr.NamedIndexedPropertySet (v,x,r,m)
     | SynExpr.App (_, _, SynExpr.DotGet(e,_,v,_),x,_)  -> SynExpr.DotNamedIndexedPropertySet (e,v,x,r,m)
-    |   _ -> errorR(Error(FSComp.SR.astInvalidExprLeftHandOfAssignment(), m));  l  // return just the LHS, so the typechecker can see it and capture expression typings that may be useful for dot lookups
+    | l  -> SynExpr.Set (l,r,m)
+    //|   _ -> errorR(Error(FSComp.SR.astInvalidExprLeftHandOfAssignment(), m));  l  // return just the LHS, so the typechecker can see it and capture expression typings that may be useful for dot lookups
 
 let rec mkSynDot dotm m l r =
     match l with
@@ -2350,6 +2363,7 @@ let rec synExprContainsError inpExpr =
 
           | SynExpr.NamedIndexedPropertySet (_,e1,e2,_)
           | SynExpr.DotSet (e1,_,e2,_)
+          | SynExpr.Set (e1,e2,_)
           | SynExpr.LibraryOnlyUnionCaseFieldSet (e1,_,_,e2,_)
           | SynExpr.JoinIn (e1,_,e2,_)
           | SynExpr.App (_,_,e1,e2,_) ->
@@ -2397,6 +2411,8 @@ let rec synExprContainsError inpExpr =
           | SynExpr.DotNamedIndexedPropertySet (e1,_,e2,e3,_) ->
               walkExpr e1 || walkExpr e2 || walkExpr e3
 
+          | SynExpr.MatchBang (_,e,cl,_,_) ->
+              walkExpr e || walkMatchClauses cl
           | SynExpr.LetOrUseBang  (_,_,_,_,e1,e2,_) ->
               walkExpr e1 || walkExpr e2
     walkExpr inpExpr

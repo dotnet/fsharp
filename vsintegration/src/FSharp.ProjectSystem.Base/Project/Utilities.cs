@@ -738,7 +738,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             if (buildProject == null)
             {
-                buildProject = buildEngine.LoadProject(fullProjectPath);
+                var globalProperties = new Dictionary<string, string>()
+                {
+                    { "FSharpCompilerPath", Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) }
+                };
+                buildProject = buildEngine.LoadProject(fullProjectPath, globalProperties, null);
                 buildProject.IsBuildEnabled = true;
             }
 

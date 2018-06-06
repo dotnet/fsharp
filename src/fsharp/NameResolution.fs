@@ -249,8 +249,8 @@ type Item =
 
 let valRefHash (vref: ValRef) = 
     match vref.TryDeref with 
-    | VNone -> 0 
-    | VSome v -> LanguagePrimitives.PhysicalHash v
+    | ValueNone -> 0 
+    | ValueSome v -> LanguagePrimitives.PhysicalHash v
 
 [<RequireQualifiedAccess>]
 /// Pairs an Item with a TyparInst showing how generic type variables of the item are instantiated at 
@@ -467,7 +467,7 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap:Import.Import
                             // So we need to go and crack the type of the 'this' argument.
                             let thisTy = minfo.GetParamTypes(amap,m,generalizeTypars minfo.FormalMethodTypars).Head.Head
                             match thisTy with
-                            | AppTy amap.g (tcrefOfTypeExtended, _) -> Some tcrefOfTypeExtended
+                            | AppTy g (tcrefOfTypeExtended, _) when not (isByrefTy g thisTy) -> Some tcrefOfTypeExtended
                             | _ -> None
                      
                     Some rs
@@ -1437,7 +1437,7 @@ let ItemsAreEffectivelyEqualHash (g: TcGlobals) orig =
     | UnionCaseUse ucase ->  hash ucase.CaseName
     | RecordFieldUse (name, _) -> hash name
     | EventUse einfo -> einfo.ComputeHashCode()
-    | Item.ModuleOrNamespaces _ -> 100013
+    | Item.ModuleOrNamespaces (mref :: _) -> hash mref.DefinitionRange
     | _ -> 389329
 
 [<System.Diagnostics.DebuggerDisplay("{DebugToString()}")>]
@@ -1518,7 +1518,7 @@ type TcResultsSinkImpl(g, ?source: string) =
                     member __.Equals ((m1, item1), (m2, item2)) = m1 = m2 && ItemsAreEffectivelyEqual g item1 item2 } )
 
     let capturedMethodGroupResolutions = ResizeArray<_>()
-    let capturedOpenDeclarations = ResizeArray<_>()
+    let capturedOpenDeclarations = ResizeArray<OpenDeclaration>()
     let allowedRange (m:range) = not m.IsSynthetic       
 
     member this.GetResolutions() = 
@@ -1527,7 +1527,8 @@ type TcResultsSinkImpl(g, ?source: string) =
     member this.GetSymbolUses() = 
         TcSymbolUses(g, capturedNameResolutions, capturedFormatSpecifierLocations.ToArray())
 
-    member this.GetOpenDeclarations() = capturedOpenDeclarations.ToArray()
+    member this.GetOpenDeclarations() = 
+        capturedOpenDeclarations |> Seq.distinctBy (fun x -> x.Range, x.AppliedScope, x.IsOwnNamespace) |> Seq.toArray
 
     interface ITypecheckResultsSink with
         member sink.NotifyEnvWithScope(m,nenv,ad) = 
@@ -1889,7 +1890,7 @@ let private ResolveObjectConstructorPrim (ncenv:NameResolver) edenv resInfo m ad
                 raze (Error(FSComp.SR.nrNoConstructorsAvailableForType(NicePrint.minimalStringOfType edenv typ),m))
             else 
                 let ctorInfos = ctorInfos |> List.filter (IsMethInfoAccessible amap m ad)  
-                let metadataTy = helpEnsureTypeHasMetadata g typ
+                let metadataTy = convertToTypeWithMetadataIfPossible g typ
                 success (resInfo,Item.MakeCtorGroup ((tcrefOfAppTy g metadataTy).LogicalName, (defaultStructCtorInfo@ctorInfos))) 
 
 /// Perform name resolution for an identifier which must resolve to be an object constructor.

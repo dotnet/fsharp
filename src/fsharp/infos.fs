@@ -573,7 +573,7 @@ type ParamNameAndType =
 /// Full information about a parameter returned for use by the type checker and language service.
 type ParamData = 
     /// ParamData(isParamArray, isOut, optArgInfo, callerInfoInfo, nameOpt, reflArgInfo, ttype)
-    ParamData of bool * bool * OptionalArgInfo * CallerInfoInfo * Ident option * ReflectedArgInfo * TType
+    ParamData of bool * bool * bool * OptionalArgInfo * CallerInfoInfo * Ident option * ReflectedArgInfo * TType
 
 
 //-------------------------------------------------------------------------
@@ -670,7 +670,7 @@ type ILTypeInfo =
     member x.ToType = let (ILTypeInfo(_,ty,_,_)) = x in ty
 
     /// Get the compiled nominal type. In the case of tuple types, this is a .NET tuple type
-    member x.ToAppType = helpEnsureTypeHasMetadata x.TcGlobals x.ToType
+    member x.ToAppType = convertToTypeWithMetadataIfPossible x.TcGlobals x.ToType
 
     member x.TyconRefOfRawMetadata = tcrefOfAppTy x.TcGlobals x.ToAppType
 
@@ -690,7 +690,7 @@ type ILTypeInfo =
         if isAnyTupleTy g ty then 
             // When getting .NET metadata for the properties and methods
             // of an F# tuple type, use the compiled nominal type, which is a .NET tuple type
-            let metadataTy = helpEnsureTypeHasMetadata g ty
+            let metadataTy = convertToTypeWithMetadataIfPossible g ty
             assert (isILAppTy g metadataTy)
             let metadataTyconRef = tcrefOfAppTy g metadataTy
             let (TILObjectReprData(scoref, enc, tdef)) = metadataTyconRef.ILTyconInfo
@@ -727,7 +727,7 @@ type ILMethInfo =
     member x.ApparentEnclosingType = match x with ILMethInfo(_,ty,_,_,_) -> ty
 
     /// Like ApparentEnclosingType but use the compiled nominal type if this is a method on a tuple type
-    member x.ApparentEnclosingAppType = helpEnsureTypeHasMetadata x.TcGlobals x.ApparentEnclosingType
+    member x.ApparentEnclosingAppType = convertToTypeWithMetadataIfPossible x.TcGlobals x.ApparentEnclosingType
 
     /// Get the declaring type associated with an extension member, if any.
     member x.ILExtensionMethodDeclaringTyconRef = match x with ILMethInfo(_,_,tcrefOpt,_,_) -> tcrefOpt
@@ -897,9 +897,7 @@ type MethInfo =
 
     /// Get the enclosing type of the method info, using a nominal type for tuple types
     member x.ApparentEnclosingAppType = 
-        match x with
-        | ILMeth(_,ilminfo,_) -> ilminfo.ApparentEnclosingAppType
-        | _ -> x.ApparentEnclosingType
+        convertToTypeWithMetadataIfPossible x.TcGlobals x.ApparentEnclosingType
 
     member x.ApparentEnclosingTyconRef = 
         tcrefOfAppTy x.TcGlobals x.ApparentEnclosingAppType
@@ -1005,7 +1003,8 @@ type MethInfo =
     member x.FormalMethodTypars = 
         match x with 
         | ILMeth(_,ilmeth,_) -> ilmeth.FormalMethodTypars
-        | FSMeth(g,typ,vref,_) ->  
+        | FSMeth(g,_,vref,_) ->  
+            let typ = x.ApparentEnclosingAppType
             let _,memberMethodTypars,_,_ = AnalyzeTypeOfMemberVal x.IsCSharpStyleExtensionMember g (typ,vref)
             memberMethodTypars
         | DefaultStructCtor _ -> []
@@ -1096,7 +1095,7 @@ type MethInfo =
         | ILMeth(_,ilmeth,_) -> ilmeth.IsClassConstructor
         | FSMeth(_,_,vref,_) -> 
              match vref.TryDeref with
-             | VSome x -> x.IsClassConstructor
+             | ValueSome x -> x.IsClassConstructor
              | _ -> false
         | DefaultStructCtor _ -> false
 #if !NO_EXTENSIONTYPING
@@ -1181,6 +1180,13 @@ type MethInfo =
         match x with
         | FSMeth (_,_,vref,pri) -> pri.IsSome || vref.IsExtensionMember
         | ILMeth (_,_,Some _) -> true
+        | _ -> false
+
+    /// Indicates if this is an extension member (e.g. on a struct) that takes a byref arg
+    member x.ObjArgNeedsAddress (amap: Import.ImportMap, m) =
+        (x.IsStruct && not x.IsExtensionMember) ||
+        match x.GetObjArgTypes (amap, m, x.FormalMethodInst) with 
+        | [h] -> isByrefTy amap.g h
         | _ -> false
 
     /// Indicates if this is an F# extension member. 
@@ -1283,7 +1289,8 @@ type MethInfo =
         match x with 
         | ILMeth(_g,ilminfo,_) -> 
             ilminfo.GetCompiledReturnTy(amap, m, minst)
-        | FSMeth(g,typ,vref,_) -> 
+        | FSMeth(g,_,vref,_) ->
+            let typ = x.ApparentEnclosingAppType
             let inst = GetInstantiationForMemberVal g x.IsCSharpStyleExtensionMember (typ,vref,minst)
             let _,_,retTy,_ = AnalyzeTypeOfMemberVal x.IsCSharpStyleExtensionMember g (typ,vref)
             retTy |> Option.map (instType inst)
@@ -1320,8 +1327,9 @@ type MethInfo =
     member x.GetObjArgTypes (amap, m, minst) = 
         match x with 
         | ILMeth(_,ilminfo,_) -> ilminfo.GetObjArgTypes(amap, m, minst)
-        | FSMeth(g,typ,vref,_) -> 
+        | FSMeth(g,_,vref,_) -> 
             if x.IsInstance then 
+                let typ = x.ApparentEnclosingAppType
                 // The 'this' pointer of an extension member can depend on the minst
                 if x.IsExtensionMember then 
                     let inst = GetInstantiationForMemberVal g x.IsCSharpStyleExtensionMember (typ,vref,minst)
@@ -1349,6 +1357,7 @@ type MethInfo =
                      | Some _ -> ReflectedArgInfo.Quote false
                      | _ -> ReflectedArgInfo.None
                  let isOutArg = (p.IsOut && not p.IsIn)
+                 let isInArg = (p.IsIn && not p.IsOut)
                  // Note: we get default argument values from VB and other .NET language metadata 
                  let optArgInfo =  OptionalArgInfo.FromILParameter g amap m ilMethInfo.MetadataScope ilMethInfo.DeclaringTypeInst p
 
@@ -1368,7 +1377,7 @@ type MethInfo =
                         if p.Type.TypeRef.FullName = "System.Int32" then CallerFilePath
                         else CallerLineNumber
 
-                 yield (isParamArrayArg, isOutArg, optArgInfo, callerInfoInfo, reflArgInfo) ] ]
+                 yield (isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfoInfo, reflArgInfo) ] ]
 
         | FSMeth(g,_,vref,_) -> 
             GetArgInfosOfMember x.IsCSharpStyleExtensionMember g vref 
@@ -1378,7 +1387,8 @@ type MethInfo =
                     match TryFindFSharpBoolAttributeAssumeFalse  g g.attrib_ReflectedDefinitionAttribute argInfo.Attribs  with 
                     | Some b -> ReflectedArgInfo.Quote b
                     | None -> ReflectedArgInfo.None
-                let isOutArg = HasFSharpAttribute g g.attrib_OutAttribute argInfo.Attribs && isByrefTy g ty
+                let isOutArg = (HasFSharpAttribute g g.attrib_OutAttribute argInfo.Attribs && isByrefTy g ty) || isOutByrefTy g ty
+                let isInArg = (HasFSharpAttribute g g.attrib_InAttribute argInfo.Attribs && isByrefTy g ty) || isInByrefTy g ty
                 let isCalleeSideOptArg = HasFSharpAttribute g g.attrib_OptionalArgumentAttribute argInfo.Attribs
                 let isCallerSideOptArg = HasFSharpAttributeOpt g g.attrib_OptionalAttribute argInfo.Attribs
                 let optArgInfo = 
@@ -1429,7 +1439,7 @@ type MethInfo =
                         | Some optTy when typeEquiv g g.int32_ty optTy -> CallerFilePath
                         | _ -> CallerLineNumber
 
-                (isParamArrayArg, isOutArg, optArgInfo, callerInfoInfo, reflArgInfo))
+                (isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfoInfo, reflArgInfo))
 
         | DefaultStructCtor _ -> 
             [[]]
@@ -1445,7 +1455,9 @@ type MethInfo =
                     | Some ([ Some (:? bool as b) ], _) -> ReflectedArgInfo.Quote b
                     | Some _ -> ReflectedArgInfo.Quote false
                     | None -> ReflectedArgInfo.None
-                yield (isParamArrayArg, p.PUntaint((fun p -> p.IsOut), m), optArgInfo, NoCallerInfo, reflArgInfo)] ]
+                let isOutArg = p.PUntaint((fun p -> p.IsOut && not p.IsIn), m)
+                let isInArg = p.PUntaint((fun p -> p.IsIn && not p.IsOut), m)
+                yield (isParamArrayArg, isInArg, isOutArg, optArgInfo, NoCallerInfo, reflArgInfo)] ]
 #endif
 
 
@@ -1521,7 +1533,8 @@ type MethInfo =
             match x with 
             | ILMeth(_g,ilminfo,_) -> 
                 [ ilminfo.GetParamNamesAndTypes(amap,m,minst)  ]
-            | FSMeth(g,typ,vref,_) -> 
+            | FSMeth(g,_,vref,_) -> 
+                let typ = x.ApparentEnclosingAppType
                 let items = ParamNameAndType.FromMember x.IsCSharpStyleExtensionMember g vref 
                 let inst = GetInstantiationForMemberVal g x.IsCSharpStyleExtensionMember (typ,vref,minst)
                 items |> ParamNameAndType.InstantiateCurried inst 
@@ -1544,12 +1557,12 @@ type MethInfo =
 #endif
 
         let paramAttribs = x.GetParamAttribs(amap, m)
-        (paramAttribs,paramNamesAndTypes) ||> List.map2 (List.map2 (fun (isParamArrayArg,isOutArg,optArgInfo,callerInfoInfo,reflArgInfo) (ParamNameAndType(nmOpt,pty)) -> 
-             ParamData(isParamArrayArg,isOutArg,optArgInfo,callerInfoInfo,nmOpt,reflArgInfo,pty)))
+        (paramAttribs,paramNamesAndTypes) ||> List.map2 (List.map2 (fun (isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfoInfo, reflArgInfo) (ParamNameAndType(nmOpt,pty)) -> 
+             ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfoInfo, nmOpt, reflArgInfo, pty)))
 
     /// Get the ParamData objects for the parameters of a MethInfo
     member x.HasParamArrayArg(amap, m, minst) = 
-        x.GetParamDatas(amap, m, minst) |> List.existsSquared (fun (ParamData(isParamArrayArg,_,_,_,_,_,_)) -> isParamArrayArg)
+        x.GetParamDatas(amap, m, minst) |> List.existsSquared (fun (ParamData(isParamArrayArg,_,_,_,_,_,_,_)) -> isParamArrayArg)
 
 
     /// Select all the type parameters of the declaring type of a method. 
@@ -1561,7 +1574,8 @@ type MethInfo =
         if x.IsExtensionMember then [] 
         else 
             match x with
-            | FSMeth(g,typ,vref,_) -> 
+            | FSMeth(g,_,vref,_) -> 
+                let typ = x.ApparentEnclosingAppType
                 let memberParentTypars,_,_,_ = AnalyzeTypeOfMemberVal false g (typ,vref)
                 memberParentTypars
             | _ -> 
@@ -1790,7 +1804,7 @@ type ILPropInfo =
     member x.ApparentEnclosingType = match x with ILPropInfo(tinfo,_) -> tinfo.ToType
 
     /// Like ApparentEnclosingType but use the compiled nominal type if this is a method on a tuple type
-    member x.ApparentEnclosingAppType = helpEnsureTypeHasMetadata x.TcGlobals x.ApparentEnclosingType
+    member x.ApparentEnclosingAppType = convertToTypeWithMetadataIfPossible x.TcGlobals x.ApparentEnclosingType
 
     /// Get the raw Abstract IL metadata for the IL property
     member x.RawMetadata = match x with ILPropInfo(_,pd) -> pd
@@ -2096,8 +2110,9 @@ type PropInfo =
     member x.GetPropertyType (amap,m) = 
         match x with
         | ILProp ilpinfo -> ilpinfo.GetPropertyType (amap,m)
-        | FSProp (g,typ,Some vref,_) 
-        | FSProp (g,typ,_,Some vref) -> 
+        | FSProp (g,_,Some vref,_)
+        | FSProp (g,_,_,Some vref) ->
+            let typ = x.ApparentEnclosingAppType
             let inst = GetInstantiationForPropertyVal g (typ,vref)
             ReturnTypeOfPropertyVal g vref.Deref |> instType inst
             
@@ -2130,7 +2145,7 @@ type PropInfo =
     /// Get the details of the indexer parameters associated with the property
     member x.GetParamDatas(amap,m) = 
         x.GetParamNamesAndTypes(amap,m)
-        |> List.map (fun (ParamNameAndType(nmOpt,pty)) -> ParamData(false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None, pty))
+        |> List.map (fun (ParamNameAndType(nmOpt,pty)) -> ParamData(false, false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None, pty))
 
     /// Get the types of the indexer parameters associated with the property
     member x.GetParamTypes(amap,m) = 
