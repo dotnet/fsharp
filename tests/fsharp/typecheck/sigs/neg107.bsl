@@ -64,3 +64,13 @@ neg107.fsx(53,34,53,38): typecheck error FS3234: Struct members cannot return th
 neg107.fsx(67,34,67,40): typecheck error FS3234: Struct members cannot return the address of fields of the struct by reference
 
 neg107.fsx(67,34,67,38): typecheck error FS3234: Struct members cannot return the address of fields of the struct by reference
+
+neg107.fsx(71,19,71,20): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+
+neg107.fsx(71,14,71,18): typecheck error FS0437: A type would store a byref typed value. This is not permitted by Common IL.
+
+neg107.fsx(71,19,71,20): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+
+neg107.fsx(71,19,71,20): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.
+
+neg107.fsx(71,19,71,20): typecheck error FS0412: A type instantiation involves a byref type. This is not permitted by the rules of Common IL.

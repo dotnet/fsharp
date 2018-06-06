@@ -16,14 +16,14 @@ open Microsoft.FSharp.Compiler.Infos
 let mkIComparableCompareToSlotSig (g: TcGlobals) = 
     TSlotSig("CompareTo",g.mk_IComparable_ty, [],[], [[TSlotParam(Some("obj"),g.obj_ty,false,false,false,[])]],Some g.int_ty)
     
-let mkGenericIComparableCompareToSlotSig (g: TcGlobals) typ =
-    TSlotSig("CompareTo",(mkAppTy g.system_GenericIComparable_tcref [typ]),[],[], [[TSlotParam(Some("obj"),typ,false,false,false,[])]],Some g.int_ty)
+let mkGenericIComparableCompareToSlotSig (g: TcGlobals) ty =
+    TSlotSig("CompareTo",(mkAppTy g.system_GenericIComparable_tcref [ty]),[],[], [[TSlotParam(Some("obj"),ty,false,false,false,[])]],Some g.int_ty)
     
 let mkIStructuralComparableCompareToSlotSig (g: TcGlobals) =
     TSlotSig("CompareTo",g.mk_IStructuralComparable_ty,[],[],[[TSlotParam(None,(mkRefTupledTy g [g.obj_ty ; g.IComparer_ty]),false,false,false,[])]], Some g.int_ty)
     
-let mkGenericIEquatableEqualsSlotSig (g: TcGlobals) typ =
-    TSlotSig("Equals",(mkAppTy g.system_GenericIEquatable_tcref [typ]),[],[], [[TSlotParam(Some("obj"),typ,false,false,false,[])]],Some g.bool_ty)
+let mkGenericIEquatableEqualsSlotSig (g: TcGlobals) ty =
+    TSlotSig("Equals",(mkAppTy g.system_GenericIEquatable_tcref [ty]),[],[], [[TSlotParam(Some("obj"),ty,false,false,false,[])]],Some g.bool_ty)
     
 let mkIStructuralEquatableEqualsSlotSig (g: TcGlobals) =
     TSlotSig("Equals",g.mk_IStructuralEquatable_ty,[],[],[[TSlotParam(None,(mkRefTupledTy g [g.obj_ty ; g.IEqualityComparer_ty]),false,false,false,[])]], Some g.bool_ty)
