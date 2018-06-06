@@ -1642,7 +1642,6 @@ namespace Microsoft.FSharp.Core
                     avoid_tail_call (fun () -> GenericEqualityT<'T, PER>.Function.Invoke (x, y))
                 else
                     comp.Equals (box x, box y)
-                
 
             /// Implements generic equality between two values, with ER semantics for NaN (so equality on two NaN values returns true)
             //
@@ -1843,25 +1842,6 @@ namespace Microsoft.FSharp.Core
                     override iec.Equals(x:obj,y:obj) = GenericEqualityObj false iec (x,y)
                     override iec.GetHashCode(x:obj) = GenericHashParamObj iec x
 
-            /// Intrinsic for calls to depth-unlimited structural hashing that were not optimized by static conditionals.
-            //
-            // NOTE: The compiler optimizer is aware of this function (see uses of generic_hash_inner_vref in opt.fs)
-            // and devirtualizes calls to it based on type "T".
-            let GenericHashIntrinsic input = GenericHashParamObj fsEqualityComparerUnlimitedHashingPER (box input)
-
-            /// Intrinsic for calls to depth-limited structural hashing that were not optimized by static conditionals.
-            let LimitedGenericHashIntrinsic limit input = GenericHashParamObj (CountLimitedHasherPER(limit)) (box input)
-
-            /// Intrinsic for a recursive call to structural hashing that was not optimized by static conditionals.
-            //
-            // "iec" is assumed to be either fsEqualityComparerUnlimitedHashingER, fsEqualityComparerUnlimitedHashingPER or 
-            // a CountLimitedHasherPER.
-            //
-            // NOTE: The compiler optimizer is aware of this function (see uses of generic_hash_withc_inner_vref in opt.fs)
-            // and devirtualizes calls to it based on type "T".
-            let GenericHashWithComparerIntrinsic<'T> (comp : System.Collections.IEqualityComparer) (input : 'T) : int =
-                GenericHashParamObj comp (box input)
-                
             /// Direct call to GetHashCode on the string type
             let inline HashString (s:string) = 
                  match s with 
@@ -1877,6 +1857,56 @@ namespace Microsoft.FSharp.Core
             let inline HashIntPtr (x:nativeint) = (# "conv.i4" (# "conv.u8" x : uint64 #) : int #)
             let inline HashUIntPtr (x:unativeint) = (# "and" (# "conv.i4" (# "conv.u8" x : uint64 #) : int #) 0x7fffffff : int #)
 
+            type GenericHashTCall<'T> = delegate of 'T -> int
+
+            let tryGetGenericHashTCall (ty:Type) : obj =
+                match ty with
+                | ty when ty.Equals typeof<bool>       -> box (GenericHashTCall<bool>      (fun x -> (# "" x : int #)))
+                | ty when ty.Equals typeof<int32>      -> box (GenericHashTCall<int32>     (fun x -> (# "" x : int #)))
+                | ty when ty.Equals typeof<byte>       -> box (GenericHashTCall<byte>      (fun x -> (# "" x : int #)))
+                | ty when ty.Equals typeof<uint32>     -> box (GenericHashTCall<uint32>    (fun x -> (# "" x : int #)))
+                | ty when ty.Equals typeof<char>       -> box (GenericHashTCall<char>      HashChar)
+                | ty when ty.Equals typeof<sbyte>      -> box (GenericHashTCall<sbyte>     HashSByte)
+                | ty when ty.Equals typeof<int16>      -> box (GenericHashTCall<int16>     HashInt16)
+                | ty when ty.Equals typeof<int64>      -> box (GenericHashTCall<int64>     HashInt64)
+                | ty when ty.Equals typeof<uint64>     -> box (GenericHashTCall<uint64>    HashUInt64)
+                | ty when ty.Equals typeof<nativeint>  -> box (GenericHashTCall<nativeint> HashIntPtr)
+                | ty when ty.Equals typeof<unativeint> -> box (GenericHashTCall<unativeint>HashUIntPtr)
+                | ty when ty.Equals typeof<uint16>     -> box (GenericHashTCall<uint16>    (fun x -> (# "" x : int #)))
+                | ty when ty.Equals typeof<string>     -> box (GenericHashTCall<string>    HashString)
+                | _ -> null
+
+            type GenericHashT<'T> private () =
+                static let f : GenericHashTCall<'T> = 
+                    match tryGetGenericHashTCall typeof<'T> with
+                    | :? GenericHashTCall<'T> as call -> call
+                    | _ -> GenericHashTCall<'T>(fun x -> GenericHashParamObj fsEqualityComparerUnlimitedHashingPER (box x))
+
+                static member Function = f
+
+            /// Intrinsic for calls to depth-unlimited structural hashing that were not optimized by static conditionals.
+            //
+            // NOTE: The compiler optimizer is aware of this function (see uses of generic_hash_inner_vref in opt.fs)
+            // and devirtualizes calls to it based on type "T".
+            let GenericHashIntrinsic input =
+                GenericHashT<'T>.Function.Invoke input
+
+            /// Intrinsic for calls to depth-limited structural hashing that were not optimized by static conditionals.
+            let LimitedGenericHashIntrinsic limit input = GenericHashParamObj (CountLimitedHasherPER(limit)) (box input)
+
+            /// Intrinsic for a recursive call to structural hashing that was not optimized by static conditionals.
+            //
+            // "iec" is assumed to be either fsEqualityComparerUnlimitedHashingER, fsEqualityComparerUnlimitedHashingPER or 
+            // a CountLimitedHasherPER.
+            //
+            // NOTE: The compiler optimizer is aware of this function (see uses of generic_hash_withc_inner_vref in opt.fs)
+            // and devirtualizes calls to it based on type "T".
+            let GenericHashWithComparerIntrinsic<'T> (comp : System.Collections.IEqualityComparer) (input : 'T) : int =
+                if obj.ReferenceEquals (comp, fsEqualityComparerUnlimitedHashingPER) then
+                    GenericHashT<'T>.Function.Invoke input
+                else
+                    GenericHashParamObj comp (box input)
+                
             /// Core entry into structural hashing for either limited or unlimited hashing.  
             //
             // "iec" is assumed to be either fsEqualityComparerUnlimitedHashingER, fsEqualityComparerUnlimitedHashingPER or 
