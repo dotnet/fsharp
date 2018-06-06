@@ -1574,8 +1574,9 @@ namespace Microsoft.FSharp.Core
 
             // The FSharp compiler will not insert a tail call when this is used (this might be "fixed"
             // in a future release)
-            let inline avoid_tail_call f =
-                match f () with true -> true | _ -> false
+            let inline avoid_tail_call_bool f = match f () with true -> true | _ -> false
+            let inline avoid_tail_call_int f = 0 + f ()
+
 
             type GenericEqualityTCall<'T> = delegate of 'T * 'T -> bool
 
@@ -1619,7 +1620,7 @@ namespace Microsoft.FSharp.Core
                     | :? GenericEqualityTCall<'T> as call -> call
                     | _ when canUseDefaultEqualityComparer typeof<'T> -> 
                         let comparer = System.Collections.Generic.EqualityComparer<'T>.Default
-                        GenericEqualityTCall<'T>(fun x y -> avoid_tail_call (fun () -> comparer.Equals (x, y)))
+                        GenericEqualityTCall<'T>(fun x y -> avoid_tail_call_bool (fun () -> comparer.Equals (x, y)))
                     | _ when er -> 
                         GenericEqualityTCall<'T>(fun x y -> GenericEqualityObj true  fsEqualityComparerNoHashingER  (box x, box y))
                     | _ ->
@@ -1632,7 +1633,7 @@ namespace Microsoft.FSharp.Core
             // The compiler optimizer is aware of this function  (see use of generic_equality_per_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T".
             let GenericEqualityIntrinsic (x : 'T) (y : 'T) : bool = 
-                avoid_tail_call (fun () -> GenericEqualityT<'T, PER>.Function.Invoke (x, y))
+                avoid_tail_call_bool (fun () -> GenericEqualityT<'T, PER>.Function.Invoke (x, y))
                 
             /// Implements generic equality between two values, with ER semantics for NaN (so equality on two NaN values returns true)
             //
@@ -1641,7 +1642,7 @@ namespace Microsoft.FSharp.Core
             // The compiler optimizer is aware of this function (see use of generic_equality_er_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T".
             let GenericEqualityERIntrinsic (x : 'T) (y : 'T) : bool =
-                avoid_tail_call (fun () -> GenericEqualityT<'T, ER>.Function.Invoke (x, y))
+                avoid_tail_call_bool (fun () -> GenericEqualityT<'T, ER>.Function.Invoke (x, y))
                 
             /// Implements generic equality between two values using "comp" for recursive calls.
             //
@@ -1650,7 +1651,7 @@ namespace Microsoft.FSharp.Core
             // is either fsEqualityComparerNoHashingER or fsEqualityComparerNoHashingPER.
             let GenericEqualityWithComparerIntrinsic (comp : System.Collections.IEqualityComparer) (x : 'T) (y : 'T) : bool =
                 if obj.ReferenceEquals (comp, fsEqualityComparerUnlimitedHashingPER) then
-                    avoid_tail_call (fun () -> GenericEqualityT<'T, PER>.Function.Invoke (x, y))
+                    avoid_tail_call_bool (fun () -> GenericEqualityT<'T, PER>.Function.Invoke (x, y))
                 else
                     comp.Equals (box x, box y)
 
@@ -1893,8 +1894,9 @@ namespace Microsoft.FSharp.Core
                     | :? GenericHashTCall<'T> as call -> call
                     | _ when canUseDefaultEqualityComparer typeof<'T> ->
                         let comparer = System.Collections.Generic.EqualityComparer<'T>.Default
-                        GenericHashTCall<'T> comparer.GetHashCode
-                    | _ -> GenericHashTCall<'T>(fun x -> GenericHashParamObj fsEqualityComparerUnlimitedHashingPER (box x))
+                        GenericHashTCall<'T> (fun x -> avoid_tail_call_int (fun () -> comparer.GetHashCode x))
+                    | _ ->
+                        GenericHashTCall<'T> (fun x -> GenericHashParamObj fsEqualityComparerUnlimitedHashingPER (box x))
 
                 static member Function = f
 
@@ -1903,7 +1905,7 @@ namespace Microsoft.FSharp.Core
             // NOTE: The compiler optimizer is aware of this function (see uses of generic_hash_inner_vref in opt.fs)
             // and devirtualizes calls to it based on type "T".
             let GenericHashIntrinsic input =
-                GenericHashT<'T>.Function.Invoke input
+                avoid_tail_call_int (fun () -> GenericHashT<'T>.Function.Invoke input)
 
             /// Intrinsic for calls to depth-limited structural hashing that were not optimized by static conditionals.
             let LimitedGenericHashIntrinsic limit input = GenericHashParamObj (CountLimitedHasherPER(limit)) (box input)
@@ -1917,7 +1919,7 @@ namespace Microsoft.FSharp.Core
             // and devirtualizes calls to it based on type "T".
             let GenericHashWithComparerIntrinsic<'T> (comp : System.Collections.IEqualityComparer) (input : 'T) : int =
                 if obj.ReferenceEquals (comp, fsEqualityComparerUnlimitedHashingPER) then
-                    GenericHashT<'T>.Function.Invoke input
+                    avoid_tail_call_int (fun () -> GenericHashT<'T>.Function.Invoke input)
                 else
                     GenericHashParamObj comp (box input)
                 
