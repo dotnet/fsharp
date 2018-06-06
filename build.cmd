@@ -158,6 +158,7 @@ if /i "%ARG%" == "net40" (
     set _autoselect=0
     set BUILD_NET40_FSHARP_CORE=1
     set BUILD_NET40=1
+    set COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES=1
 )
 
 if /i "%ARG%" == "coreclr" (
@@ -177,6 +178,7 @@ if /i "%ARG%" == "vs" (
     set _autoselect=0
     set BUILD_NET40=1
     set BUILD_VS=1
+    set COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES=1
 )
 
 if /i "%ARG%" == "fcs" (
@@ -193,6 +195,7 @@ if /i "%ARG%" == "nobuild" (
 )
 if /i "%ARG%" == "all" (
     set _autoselect=0
+    set COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES=1
     set BUILD_PROTO=1
     set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_NET40=1
@@ -263,7 +266,6 @@ if /i "%ARG%" == "ci_part2" (
     set BUILD_PROTO=1
     set BUILD_NET40=1
     set BUILD_NET40_FSHARP_CORE=1
-    set COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES=1
     set TEST_NET40_COMPILERUNIT_SUITE=1
     set TEST_NET40_COREUNIT_SUITE=1
     set TEST_NET40_FSHARPQA_SUITE=1
@@ -280,7 +282,6 @@ if /i "%ARG%" == "ci_part3" (
     set BUILD_CORECLR=1
     set BUILD_NET40_FSHARP_CORE=1
     set BUILD_NET40=1
-    set COPY_FSCOMP_RESOURCE_FOR_BUILD_FROM_SOURCES=1
     set TEST_CORECLR_FSHARP_SUITE=1
     set TEST_CORECLR_COREUNIT_SUITE=1
     set CI=1
