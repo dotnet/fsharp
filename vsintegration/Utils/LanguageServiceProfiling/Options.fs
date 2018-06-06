@@ -165,45 +165,45 @@ let FCS (repositoryDir: string) : Options =
              @"src\fsharp\CompileOptions.fs"
              @"src\fsharp\fsc.fsi"
              @"src\fsharp\fsc.fs"
-             @"src\fsharp\vs\IncrementalBuild.fsi"
-             @"src\fsharp\vs\IncrementalBuild.fs"
-             @"src\fsharp\vs\Reactor.fsi"
-             @"src\fsharp\vs\Reactor.fs"
-             @"src\fsharp\vs\ServiceConstants.fs"
+             @"src\fsharp\service\IncrementalBuild.fsi"
+             @"src\fsharp\service\IncrementalBuild.fs"
+             @"src\fsharp\service\Reactor.fsi"
+             @"src\fsharp\service\Reactor.fs"
+             @"src\fsharp\service\ServiceConstants.fs"
              @"src\fsharp\symbols\SymbolHelpers.fsi"
              @"src\fsharp\symbols\SymbolHelpers.fs"
              @"src\fsharp\symbols\Symbols.fsi"
              @"src\fsharp\symbols\Symbols.fs"
              @"src\fsharp\symbols\Exprs.fsi"
              @"src\fsharp\symbols\Exprs.fs"
-             @"src\fsharp\vs\ServiceLexing.fsi"
-             @"src\fsharp\vs\ServiceLexing.fs"
-             @"src\fsharp\vs\ServiceParseTreeWalk.fs"
-             @"src\fsharp\vs\ServiceNavigation.fsi"
-             @"src\fsharp\vs\ServiceNavigation.fs"
-             @"src\fsharp\vs\ServiceParamInfoLocations.fsi"
-             @"src\fsharp\vs\ServiceParamInfoLocations.fs"
-             @"src\fsharp\vs\ServiceUntypedParse.fsi"
-             @"src\fsharp\vs\ServiceUntypedParse.fs"
+             @"src\fsharp\service\ServiceLexing.fsi"
+             @"src\fsharp\service\ServiceLexing.fs"
+             @"src\fsharp\service\ServiceParseTreeWalk.fs"
+             @"src\fsharp\service\ServiceNavigation.fsi"
+             @"src\fsharp\service\ServiceNavigation.fs"
+             @"src\fsharp\service\ServiceParamInfoLocations.fsi"
+             @"src\fsharp\service\ServiceParamInfoLocations.fs"
+             @"src\fsharp\service\ServiceUntypedParse.fsi"
+             @"src\fsharp\service\ServiceUntypedParse.fs"
              @"src\utils\reshapedmsbuild.fs"
              @"src\fsharp\SimulatedMSBuildReferenceResolver.fs"
-             @"src\fsharp\vs\service.fsi"
-             @"src\fsharp\vs\service.fs"
-             @"src\fsharp\vs\SimpleServices.fsi"
-             @"src\fsharp\vs\SimpleServices.fs"
+             @"src\fsharp\service\service.fsi"
+             @"src\fsharp\service\service.fs"
+             @"src\fsharp\service\SimpleServices.fsi"
+             @"src\fsharp\service\SimpleServices.fs"
              @"src\fsharp\fsi\fsi.fsi"
              @"src\fsharp\fsi\fsi.fs" |]
 
     { Options =
         {ProjectFileName = repositoryDir </> @"src\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj"
+         ProjectId = None
          SourceFiles = files |> Array.map (fun x -> repositoryDir </> x)
          OtherOptions =
           [|@"-o:obj\Release\FSharp.Compiler.Private.dll"; "-g"; "--noframework";
             @"--baseaddress:0x06800000"; "--define:DEBUG";
-            @"--define:CROSS_PLATFORM_COMPILER"; "--define:FX_ATLEAST_45";
+            @"--define:CROSS_PLATFORM_COMPILER";
             @"--define:FX_ATLEAST_40"; "--define:BE_SECURITY_TRANSPARENT";
-            @"--define:TYPE_PROVIDER_SECURITY"; "--define:EXTENSIBLE_DUMPER";
-            @"--define:INCLUDE_METADATA_WRITER"; "--define:COMPILER";
+            @"--define:COMPILER";
             @"--define:ENABLE_MONO_SUPPORT"; "--define:FX_MSBUILDRESOLVER_RUNTIMELIKE";
             @"--define:FX_LCIDFROMCODEPAGE"; "--define:FX_RESX_RESOURCE_READER";
             @"--define:FX_RESIDENT_COMPILER"; "--define:SHADOW_COPY_REFERENCES";
@@ -212,8 +212,6 @@ let FCS (repositoryDir: string) : Options =
             @"--define:COMPILER_SERVICE_DLL"; "--define:NO_STRONG_NAMES"; "--define:TRACE";
             @"--doc:..\..\..\bin\v4.5\FSharp.Compiler.Service.xml"; "--optimize-";
             @"--platform:anycpu";
-            @"-r:" + (repositoryDir </> @"packages\Microsoft.DiaSymReader\lib\net20\Microsoft.DiaSymReader.dll");
-            @"-r:" + (repositoryDir </> @"packages\Microsoft.DiaSymReader.PortablePdb\lib\net45\Microsoft.DiaSymReader.PortablePdb.dll");
             @"-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\mscorlib.dll";
             @"-r:" + (repositoryDir </> @"packages\System.Collections.Immutable\lib\netstandard1.0\System.Collections.Immutable.dll");
             @"-r:" + (repositoryDir </> @"packages\FSharp.Core\lib\net40\FSharp.Core.dll");
@@ -304,6 +302,7 @@ let FCS (repositoryDir: string) : Options =
 let VFPT (repositoryDir: string) : Options =
     { Options =
         {ProjectFileName = repositoryDir </> @"src\FSharp.Editing\FSharp.Editing.fsproj"
+         ProjectId = None
          SourceFiles =
           [|@"src\FSharp.Editing\AssemblyInfo.fs";
             @"src\FSharp.Editing\Common\Utils.fs";

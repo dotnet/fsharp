@@ -19,7 +19,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class Strings {
@@ -66,6 +66,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Always_place_opens_at_top_level {
             get {
                 return ResourceManager.GetString("Always_place_opens_at_top_level", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Block Structure Guides.
+        /// </summary>
+        public static string Block_Structure {
+            get {
+                return ResourceManager.GetString("Block_Structure", resourceCulture);
             }
         }
         
@@ -133,6 +142,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Outlining.
+        /// </summary>
+        public static string Outlining {
+            get {
+                return ResourceManager.GetString("Outlining", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Project check cache size.
         /// </summary>
         public static string Project_check_cache_size {
@@ -169,11 +187,29 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Show structure guidelines for F# code.
+        /// </summary>
+        public static string Show_guides {
+            get {
+                return ResourceManager.GetString("Show_guides", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to S_how navigation links as.
         /// </summary>
         public static string Show_navigation_links_as {
             get {
                 return ResourceManager.GetString("Show_navigation_links_as", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Show outlining and collapsable nodes for F# code.
+        /// </summary>
+        public static string Show_Outlining {
+            get {
+                return ResourceManager.GetString("Show_Outlining", resourceCulture);
             }
         }
         
@@ -192,6 +228,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Solid_underline {
             get {
                 return ResourceManager.GetString("Solid_underline", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Analyze and suggest fixes for unused values.
+        /// </summary>
+        public static string Unused_declaration_code_fix {
+            get {
+                return ResourceManager.GetString("Unused_declaration_code_fix", resourceCulture);
             }
         }
         

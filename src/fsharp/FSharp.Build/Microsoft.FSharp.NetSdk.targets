@@ -36,11 +36,6 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   </ItemGroup>
 
   <PropertyGroup>
-    <_TargetFrameworkVersionWithoutV>$(TargetFrameworkVersion)</_TargetFrameworkVersionWithoutV>
-    <_TargetFrameworkVersionWithoutV Condition="$(TargetFrameworkVersion.StartsWith('v'))">$(TargetFrameworkVersion.Substring(1))</_TargetFrameworkVersionWithoutV>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <TargetProfile Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' " >mscorlib</TargetProfile>
     <TargetProfile Condition=" '$(TargetFrameworkIdentifier)' != '.NETFramework' " >netcore</TargetProfile>
     <TargetProfile Condition=" '$(TargetFrameworkIdentifier)' == '.NETStandard' and '$(_TargetFrameworkVersionWithoutV)' >= '2.0' " >netstandard</TargetProfile>
@@ -53,24 +48,31 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <PackProjectInputFile>$(MSBuildProjectFullPath)</PackProjectInputFile>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(FSharpCoreImplicitPackageVersion)' == '' ">
-    <FSharpCoreImplicitPackageVersion>4.2.*</FSharpCoreImplicitPackageVersion>
+  <PropertyGroup>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackageFSharpDesignTimeTools</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(DisableImplicitSystemValueTupleReference)' != 'true' ">
-    <_FrameworkNeedsValueTupleReference Condition=" ('$(TargetFrameworkIdentifier)' == '.NETStandard' or '$(TargetFrameworkIdentifier)' == '.NETCoreApp') and !('$(_TargetFrameworkVersionWithoutV)' >= '2.0') ">true</_FrameworkNeedsValueTupleReference>
-    <_FrameworkNeedsValueTupleReference Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' and 
-                                                    ('$(_TargetFrameworkVersionWithoutV)' == '4.0' or 
-                                                     '$(_TargetFrameworkVersionWithoutV)' == '4.5' or 
-                                                     '$(_TargetFrameworkVersionWithoutV)' == '4.6' or
-                                                     '$(_TargetFrameworkVersionWithoutV)' == '4.6.1' or
-                                                     '$(_TargetFrameworkVersionWithoutV)' == '4.6.2' or
-                                                     '$(_TargetFrameworkVersionWithoutV)' == '4.7') ">true</_FrameworkNeedsValueTupleReference>
-  </PropertyGroup>
+  <Target Name="PackageFSharpDesignTimeTools" DependsOnTargets="_GetFrameworkAssemblyReferences">
+    <PropertyGroup>
+      <FSharpDesignTimeProtocol Condition = " '$(FSharpDesignTimeProtocol)' == '' ">fsharp41</FSharpDesignTimeProtocol>
+      <FSharpToolsDirectory Condition = " '$(FSharpToolsDirectory)' == '' ">tools</FSharpToolsDirectory>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="System.ValueTuple" Version="4.*" Condition=" '$(DisableImplicitSystemValueTupleReference)' != 'true' and '$(_FrameworkNeedsValueTupleReference)' == 'true' "></PackageReference>
-    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreImplicitPackageVersion)"  Condition=" '$(DisableImplicitFSharpCoreReference)' != 'true' "></PackageReference>
-  </ItemGroup>
+    <Error Text="'$(FSharpToolsDirectory)' is an invalid value for 'FSharpToolsDirectory' valid values are 'typeproviders' and 'tools'." Condition="'$(FSharpToolsDirectory)' != 'typeproviders' and '$(FSharpToolsDirectory)' != 'tools'" />
+    <Error Text="The 'FSharpDesignTimeProtocol'  property can be only 'fsharp41'" Condition="'$(FSharpDesignTimeProtocol)' != 'fsharp41'" />
+
+    <ItemGroup>
+      <_ResolvedProjectOutputFiles
+          Include="%(_ResolvedProjectReferencePaths.RootDir)%(_ResolvedProjectReferencePaths.Directory)/**/*" 
+          Exclude="%(_ResolvedProjectReferencePaths.RootDir)%(_ResolvedProjectReferencePaths.Directory)/**/FSharp.Core.dll;%(_ResolvedProjectReferencePaths.RootDir)%(_ResolvedProjectReferencePaths.Directory)/**/System.ValueTuple.dll" 
+          Condition="'%(_ResolvedProjectReferencePaths.IsFSharpDesignTimeProvider)' == 'true'">
+        <NearestTargetFramework>%(_ResolvedProjectReferencePaths.NearestTargetFramework)</NearestTargetFramework>
+      </_ResolvedProjectOutputFiles>
+
+      <TfmSpecificPackageFile Include="@(_ResolvedProjectOutputFiles)">
+         <PackagePath>$(FSharpToolsDirectory)/$(FSharpDesignTimeProtocol)/%(_ResolvedProjectOutputFiles.NearestTargetFramework)/%(_ResolvedProjectOutputFiles.FileName)%(_ResolvedProjectOutputFiles.Extension)</PackagePath>
+      </TfmSpecificPackageFile>
+    </ItemGroup>
+  </Target>
 
 </Project>

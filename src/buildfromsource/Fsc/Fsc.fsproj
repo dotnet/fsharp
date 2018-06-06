@@ -4,20 +4,18 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp1.0</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <TargetExt>.exe</TargetExt>
     <AssemblyName>fsc</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
-    <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <OtherFlags>$(OtherFlags) --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
   </PropertyGroup>
 
   <Import Project="..\BuildFromSource.targets" />
   <ItemGroup>
-    <Compile Include="$(FSharpSourcesRoot)\fsharp\Fsc\InternalsVisibleTo.fs" />
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.fsc.exe.fs">
-      <Link>Resources/assemblyinfo.fsc.exe.fs</Link>
+    <Compile Include="AssemblyInfo.fs">
+      <Link>Resources/AssemblyInfo.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\fscmain.fs">
       <Link>fscmain.fs</Link>
@@ -33,9 +31,12 @@
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Build\FSharp.Build.fsproj" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
-    <PackageReference Include="System.Linq.Expressions" Version="4.3.0"></PackageReference>
-    <PackageReference Include="System.Reflection.Metadata" Version="1.4.2"></PackageReference>
-    <PackageReference Include="System.Runtime.Loader" Version="4.3.0"></PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Linq.Expressions" Version="$(SystemLinqExpressionsPackageVersion)" />
+    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataPackageVersion)" />
+    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderPackageVersion)" />
   </ItemGroup>
 
 </Project>

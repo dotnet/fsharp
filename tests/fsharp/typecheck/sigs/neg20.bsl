@@ -112,7 +112,7 @@ The type 'A' does not match the type 'B'
 
 neg20.fs(83,47,83,54): typecheck error FS0001: All branches of an 'if' expression must have the same type. This expression was expected to have type 'B', but here has type 'C'.
 
-neg20.fs(87,54,87,61): typecheck error FS0001: All branches of a pattern match expression must have the same type. This expression was expected to have type 'B', but here has type 'C'.
+neg20.fs(87,54,87,61): typecheck error FS0001: All branches of a pattern match expression must return values of the same type. The first branch returned a value of type 'B', but this branch returned a value of type 'C'.
 
 neg20.fs(92,19,92,26): typecheck error FS0001: This expression was expected to have type
     'A'    
@@ -211,6 +211,26 @@ is not compatible with type
     'int []'    
 .
 
+neg20.fs(183,29,183,34): typecheck error FS0001: This expression was expected to have type
+    'int'    
+but here has type
+    'obj'    
+
+neg20.fs(183,29,183,34): typecheck error FS0001: This expression was expected to have type
+    'int'    
+but here has type
+    'obj'    
+
+neg20.fs(183,35,183,40): typecheck error FS0001: This expression was expected to have type
+    'int'    
+but here has type
+    'obj'    
+
+neg20.fs(183,35,183,40): typecheck error FS0001: This expression was expected to have type
+    'int'    
+but here has type
+    'obj'    
+
 neg20.fs(183,14,183,41): typecheck error FS0001: This expression was expected to have type
     'unit'    
 but here has type
@@ -247,6 +267,26 @@ neg20.fs(188,14,188,31): typecheck error FS0041: Possible overload: 'static memb
 is not compatible with type
     'string []'    
 .
+
+neg20.fs(189,29,189,34): typecheck error FS0001: This expression was expected to have type
+    'string'    
+but here has type
+    'obj'    
+
+neg20.fs(189,29,189,34): typecheck error FS0001: This expression was expected to have type
+    'string'    
+but here has type
+    'obj'    
+
+neg20.fs(189,35,189,40): typecheck error FS0001: This expression was expected to have type
+    'string'    
+but here has type
+    'obj'    
+
+neg20.fs(189,35,189,40): typecheck error FS0001: This expression was expected to have type
+    'string'    
+but here has type
+    'obj'    
 
 neg20.fs(189,14,189,41): typecheck error FS0001: This expression was expected to have type
     'unit'    

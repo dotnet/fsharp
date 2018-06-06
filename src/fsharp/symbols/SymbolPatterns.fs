@@ -202,12 +202,12 @@ module Symbol =
     /// Constructor (enclosingEntity)
     let (|Constructor|_|) (func: FSharpMemberOrFunctionOrValue) =
         match func.CompiledName with
-        | ".ctor" | ".cctor" -> func.EnclosingEntity
+        | ".ctor" | ".cctor" -> func.DeclaringEntity
         | _ -> None
 
     let (|Function|_|) excluded (func: FSharpMemberOrFunctionOrValue) =
-        try let typ = func.FullType |> getAbbreviatedType
-            if typ.IsFunctionType
+        try let ty = func.FullType |> getAbbreviatedType
+            if ty.IsFunctionType
                && not func.IsPropertyGetterMethod 
                && not func.IsPropertySetterMethod
                && not excluded

@@ -9,6 +9,7 @@ open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Completion
 open System.Globalization
+open Microsoft.FSharp.Compiler.SourceCodeServices
 
 module internal CompletionUtils =
 
@@ -82,18 +83,29 @@ module internal CompletionUtils =
     let isStartingNewWord (sourceText, position) =
         CommonCompletionUtilities.IsStartingNewWord(sourceText, position, (fun ch -> isIdentifierStartCharacter ch), (fun ch -> isIdentifierPartCharacter ch))
 
-    let shouldProvideCompletion (documentId: DocumentId, filePath: string, defines: string list, text: SourceText, position: int) : bool =
-        let textLines = text.Lines
-        let triggerLine = textLines.GetLineFromPosition position
-        let colorizationData = Tokenizer.getColorizationData(documentId, text, triggerLine.Span, Some filePath, defines, CancellationToken.None)
-        colorizationData.Count = 0 || // we should provide completion at the start of empty line, where there are no tokens at all
-        colorizationData.Exists (fun classifiedSpan -> 
-            classifiedSpan.TextSpan.IntersectsWith position &&
+    let shouldProvideCompletion (documentId: DocumentId, filePath: string, defines: string list, sourceText: SourceText, triggerPosition: int) : bool =
+        let textLines = sourceText.Lines
+        let triggerLine = textLines.GetLineFromPosition triggerPosition
+        let classifiedSpans = Tokenizer.getClassifiedSpans(documentId, sourceText, triggerLine.Span, Some filePath, defines, CancellationToken.None)
+        classifiedSpans.Count = 0 || // we should provide completion at the start of empty line, where there are no tokens at all
+        classifiedSpans.Exists (fun classifiedSpan -> 
+            classifiedSpan.TextSpan.IntersectsWith triggerPosition &&
             (
                 match classifiedSpan.ClassificationType with
                 | ClassificationTypeNames.Comment
                 | ClassificationTypeNames.StringLiteral
                 | ClassificationTypeNames.ExcludedCode
+                | ClassificationTypeNames.Operator
                 | ClassificationTypeNames.NumericLiteral -> false
                 | _ -> true // anything else is a valid classification type
             ))
+
+    let inline getKindPriority kind =
+        match kind with
+        | CompletionItemKind.Property -> 0
+        | CompletionItemKind.Field -> 1
+        | CompletionItemKind.Method (isExtension = false) -> 2
+        | CompletionItemKind.Event -> 3
+        | CompletionItemKind.Argument -> 4
+        | CompletionItemKind.Other -> 5
+        | CompletionItemKind.Method (isExtension = true) -> 6

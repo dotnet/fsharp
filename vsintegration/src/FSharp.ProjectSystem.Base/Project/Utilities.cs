@@ -738,7 +738,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             if (buildProject == null)
             {
-                buildProject = buildEngine.LoadProject(fullProjectPath);
+                var globalProperties = new Dictionary<string, string>()
+                {
+                    { "FSharpCompilerPath", Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) }
+                };
+                buildProject = buildEngine.LoadProject(fullProjectPath, globalProperties, null);
                 buildProject.IsBuildEnabled = true;
             }
 
@@ -849,7 +853,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 extension = Path.GetExtension(filePart);
             }
-            // We catch the ArgumentException because we want this method to return true if the filename is not valid. FilePart could be for example #¤&%"¤&"% and that would throw ArgumentException on GetExtension
+            // We catch the ArgumentException because we want this method to return true if the filename is not valid. FilePart could be for example #ï¿½&%"ï¿½&"% and that would throw ArgumentException on GetExtension
             catch (ArgumentException)
             {
                 return true;

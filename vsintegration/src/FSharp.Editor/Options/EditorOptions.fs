@@ -1,5 +1,6 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+open System
 open System.ComponentModel.Composition
 open System.Runtime.InteropServices
 
@@ -7,13 +8,15 @@ open Microsoft.VisualStudio.FSharp.UIResources
 open SettingsPersistence
 open OptionsUIHelpers
 
-
 module DefaultTuning = 
-    let SemanticColorizationInitialDelay = 0 (* milliseconds *)
     let UnusedDeclarationsAnalyzerInitialDelay = 0 (* 1000 *) (* milliseconds *)
     let UnusedOpensAnalyzerInitialDelay = 0 (* 2000 *) (* milliseconds *)
     let SimplifyNameInitialDelay = 2000 (* milliseconds *)
     let SimplifyNameEachItemDelay = 0 (* milliseconds *)
+
+    /// How long is the per-document data saved before it is eligible for eviction from the cache? 10 seconds.
+    /// Re-tokenizing is fast so we don't need to save this data long.
+    let PerDocumentSavedDataSlidingWindow = TimeSpan(0,0,10)(* seconds *)
 
 // CLIMutable to make the record work also as a view model
 [<CLIMutable>]
@@ -34,12 +37,18 @@ type QuickInfoOptions =
 type CodeFixesOptions =
     { SimplifyName: bool
       AlwaysPlaceOpensAtTopLevel: bool
-      UnusedOpens: bool }
+      UnusedOpens: bool 
+      UnusedDeclarations: bool }
 
 [<CLIMutable>]
 type LanguageServicePerformanceOptions = 
     { EnableInMemoryCrossProjectReferences: bool
       ProjectCheckCacheSize: int }
+
+[<CLIMutable>]
+type AdvancedOptions =
+    { IsBlockStructureEnabled: bool 
+      IsOutliningEnabled: bool }
 
 [<Export(typeof<ISettings>)>]
 type internal Settings [<ImportingConstructor>](store: SettingsStore) =
@@ -59,11 +68,16 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
               // See https://github.com/Microsoft/visualfsharp/pull/3238#issue-237699595
               SimplifyName = false 
               AlwaysPlaceOpensAtTopLevel = false
-              UnusedOpens = true }
+              UnusedOpens = true 
+              UnusedDeclarations = true }
 
         store.RegisterDefault
             { EnableInMemoryCrossProjectReferences = true
               ProjectCheckCacheSize = 200 }
+
+        store.RegisterDefault
+            { IsBlockStructureEnabled = true 
+              IsOutliningEnabled = true }
 
     interface ISettings
 
@@ -71,6 +85,7 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
     static member QuickInfo : QuickInfoOptions = getSettings()
     static member CodeFixes : CodeFixesOptions = getSettings()
     static member LanguageServicePerformance : LanguageServicePerformanceOptions = getSettings()
+    static member Advanced: AdvancedOptions = getSettings()
 
 module internal OptionsUI =
 
@@ -105,3 +120,9 @@ module internal OptionsUI =
         inherit AbstractOptionPage<LanguageServicePerformanceOptions>()
         override this.CreateView() =
             upcast LanguageServicePerformanceOptionControl()
+
+    [<Guid(Guids.advancedSettingsPageIdSring)>]
+    type internal AdvancedSettingsOptionPage() =
+        inherit AbstractOptionPage<AdvancedOptions>()
+        override __.CreateView() =
+            upcast AdvancedOptionsControl()

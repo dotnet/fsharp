@@ -12,7 +12,7 @@ namespace Microsoft.FSharp.Collections
     [<RequireQualifiedAccess>]
     module List = 
 
-        /// <summary>Returns a new list that contains the cartesian product of the two input lists.</summary>
+        /// <summary>Returns a new list that contains all pairings of elements from the first and second lists.</summary>
         /// <param name="list1">The first input list.</param>
         /// <param name="list2">The second input list.</param>
         /// <returns>The resulting list of pairs.</returns>
@@ -781,6 +781,14 @@ namespace Microsoft.FSharp.Collections
         /// <returns>The first element of the list or None.</returns>
         [<CompiledName("TryHead")>]
         val tryHead: list:'T list -> 'T option
+
+        /// <summary>Returns the transpose of the given sequence of lists.</summary>
+        /// <param name="lists">The input sequence of list.</param>
+        /// <returns>The transposed list.</returns>
+        /// <exception cref="System.ArgumentNullException">Thrown when the input sequence is null.</exception>
+        /// <exception cref="System.ArgumentException">Thrown when the input lists differ in length.</exception>
+        [<CompiledName("Transpose")>]
+        val transpose: lists:seq<'T list> -> 'T list list
 
         /// <summary>Returns at most N elements in a new list.</summary>
         /// <param name="count">The maximum number of items to return.</param>

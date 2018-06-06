@@ -239,14 +239,14 @@ open Printf
     // BEGIN BOILERPLATE
 
     static let getCurrentAssembly () =
-    #if DNXCORE50 || NETSTANDARD1_5 || NETSTANDARD1_6 || NETCOREAPP1_0
+    #if FX_RESHAPED_REFLECTION
         typeof<SR>.GetTypeInfo().Assembly
     #else
         System.Reflection.Assembly.GetExecutingAssembly()
     #endif
 
     static let getTypeInfo (t: System.Type) =
-    #if DNXCORE50 || NETSTANDARD1_5 || NETSTANDARD1_6 || NETCOREAPP1_0
+    #if FX_RESHAPED_REFLECTION
         t.GetTypeInfo()
     #else
         t
@@ -348,14 +348,16 @@ open Printf
           let outFilename = Path.Combine(_outputPath, justfilename + ".fs")
           let outXmlFilename = Path.Combine(_outputPath, justfilename + ".resx")
 
-          if File.Exists(outFilename) && 
-               File.Exists(outXmlFilename) && 
-               File.Exists(filename) && 
-               File.GetLastWriteTimeUtc(filename) <= File.GetLastWriteTimeUtc(outFilename) &&
-               File.GetLastWriteTimeUtc(filename) <= File.GetLastWriteTimeUtc(outXmlFilename) then
-            printMessage (sprintf "Skipping generation of %s and %s since up-to-date" outFilename outXmlFilename)
-            Some (outFilename, outXmlFilename)
+          let condition1 = File.Exists(outFilename) 
+          let condition2 = condition1 && File.Exists(outXmlFilename)
+          let condition3 = condition2 && File.Exists(filename)
+          let condition4 = condition3 && (File.GetLastWriteTimeUtc(filename) <= File.GetLastWriteTimeUtc(outFilename))
+          let condition5 = condition4 && (File.GetLastWriteTimeUtc(filename) <= File.GetLastWriteTimeUtc(outXmlFilename) )
+          if condition5 then
+            printMessage (sprintf "Skipping generation of %s and %s from %s since up-to-date" outFilename outXmlFilename filename)
+            Some (filename, outFilename, outXmlFilename)
           else
+            printMessage (sprintf "Generating %s and %s from %s, because condition %d is false, see FSharpEmbedResourceText.fs in the F# source"  outFilename outXmlFilename filename (if not condition1 then 1 elif not condition2 then 2 elif not condition3 then 3 elif not condition4 then 4 else 5) )
 
             printMessage (sprintf "Reading %s" filename)
             let lines = File.ReadAllLines(filename) 
@@ -450,7 +452,7 @@ open Printf
             use outXmlStream = File.Create outXmlFilename
             xd.Save outXmlStream
             printMessage (sprintf "Done %s" outFilename)
-            Some (outFilename, outXmlFilename)
+            Some (filename, outFilename, outXmlFilename)
         with e -> 
             PrintErr(filename, 0, sprintf "An exception occurred when processing '%s'\n%s" filename (e.ToString()))
             None
@@ -487,7 +489,7 @@ open Printf
                 |> Array.choose (fun item -> generateResxAndSource item.ItemSpec)
 
             let generatedSource, generatedResx =
-                [| for (source, resx) in generatedFiles do
+                [| for (textFile, source, resx) in generatedFiles do
                     let sourceItem =
                         let item = TaskItem(source)
                         item.SetMetadata("AutoGen", "true")
@@ -497,6 +499,7 @@ open Printf
                     let resxItem =
                         let item = TaskItem(resx)
                         item.SetMetadata("ManifestResourceName", Path.GetFileNameWithoutExtension(resx))
+                        item.SetMetadata("SourceDocumentPath", textFile)
                         item :> ITaskItem
                     yield (sourceItem, resxItem) |]
                  |> Array.unzip

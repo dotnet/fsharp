@@ -37,13 +37,13 @@ type internal FSharpIndentationService
 
         let rec tryFindLastNonWhitespaceOrCommentToken (line: TextLine) = maybe {
            let! parsingOptions, _projectOptions = options
-           let defines = CompilerEnvironment.GetCompilationDefinesForEditing(filePath, parsingOptions)
+           let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
            let tokens = Tokenizer.tokenizeLine(documentId, sourceText, line.Start, filePath, defines)
 
            return!
                tokens
-               |> List.rev
-               |> List.tryFind (fun x ->
+               |> Array.rev
+               |> Array.tryFind (fun x ->
                    x.Tag <> FSharpTokenTag.WHITESPACE &&
                    x.Tag <> FSharpTokenTag.COMMENT &&
                    x.Tag <> FSharpTokenTag.LINE_COMMENT)
@@ -53,7 +53,7 @@ type internal FSharpIndentationService
             if x = y then Some()
             else None
 
-        let (|NeedIndent|_|) (token: FSharpTokenInfo) =
+        let (|NeedIndent|_|) (token: Tokenizer.SavedTokenInfo) =
             match token.Tag with
             | Eq FSharpTokenTag.EQUALS // =
             | Eq FSharpTokenTag.LARROW // <-

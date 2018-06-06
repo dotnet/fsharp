@@ -6,6 +6,7 @@ module internal Microsoft.VisualStudio.FSharp.Editor.Extensions
 open System
 open System.IO
 open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.Host
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
@@ -24,6 +25,20 @@ type System.IServiceProvider with
     member x.GetService<'T>() = x.GetService(typeof<'T>) :?> 'T
     member x.GetService<'S, 'T>() = x.GetService(typeof<'S>) :?> 'T
 
+type ProjectId with
+    member this.ToFSharpProjectIdString() =
+        this.Id.ToString("D").ToLowerInvariant()
+
+type Document with
+    member this.TryGetLanguageService<'T when 'T :> ILanguageService>() =
+        match this.Project with
+        | null -> None
+        | project ->
+            match project.LanguageServices with
+            | null -> None
+            | languageServices ->
+                languageServices.GetService<'T>()
+                |> Some
 
 type FSharpNavigationDeclarationItem with
     member x.RoslynGlyph : Glyph =
@@ -147,10 +162,15 @@ module Option =
         else
             None
 
+[<RequireQualifiedAccess>]
+module Seq =
+    open System.Collections.Immutable
+
+    let toImmutableArray (xs: seq<'a>) : ImmutableArray<'a> = xs.ToImmutableArray()
 
 [<RequireQualifiedAccess>]
-module List =
-    let foldi (folder : 'State -> int -> 'T -> 'State) (state : 'State) (xs : 'T list) =
+module Array =
+    let foldi (folder : 'State -> int -> 'T -> 'State) (state : 'State) (xs : 'T[]) =
         let mutable state = state
         let mutable i = 0
         for x in xs do
@@ -158,16 +178,6 @@ module List =
             i <- i + 1
         state
 
-
-[<RequireQualifiedAccess>]
-module Seq =
-    open System.Collections.Immutable
-
-    let toImmutableArray (xs: seq<'a>) : ImmutableArray<'a> = xs.ToImmutableArray()
-
-
-[<RequireQualifiedAccess>]
-module Array =
     /// Optimized arrays equality. ~100x faster than `array1 = array2` on strings.
     /// ~2x faster for floats
     /// ~0.8x slower for ints
@@ -178,12 +188,12 @@ module Array =
         | null, _ | _, null -> false
         | _ when xs.Length <> ys.Length -> false
         | _ ->
-            let mutable break' = false
+            let mutable stop = false
             let mutable i = 0
             let mutable result = true
-            while i < xs.Length && not break' do
+            while i < xs.Length && not stop do
                 if xs.[i] <> ys.[i] then 
-                    break' <- true
+                    stop <- true
                     result <- false
                 i <- i + 1
             result

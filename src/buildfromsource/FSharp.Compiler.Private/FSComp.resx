@@ -181,7 +181,7 @@
     <value>All branches of an 'if' expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</value>
   </data>
   <data name="followingPatternMatchClauseHasWrongType" xml:space="preserve">
-    <value>All branches of a pattern match expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</value>
+    <value>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</value>
   </data>
   <data name="patternMatchGuardIsNotBool" xml:space="preserve">
     <value>A pattern match guard must be of type 'bool', but this 'when' expression is of type '{0}'.</value>
@@ -363,7 +363,7 @@
   <data name="tastUnexpectedByRef" xml:space="preserve">
     <value>Unexpected use of a byref-typed variable</value>
   </data>
-  <data name="tastValueMustBeLocalAndMutable" xml:space="preserve">
+  <data name="tastValueMustBeMutable" xml:space="preserve">
     <value>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</value>
   </data>
   <data name="tastInvalidMutationOfConstant" xml:space="preserve">
@@ -596,9 +596,6 @@
   </data>
   <data name="typrelCannotResolveImplicitGenericInstantiation" xml:space="preserve">
     <value>The implicit instantiation of a generic construct at or near this point could not be resolved because it could resolve to multiple unrelated types, e.g. '{0}' and '{1}'. Consider using type annotations to resolve the ambiguity</value>
-  </data>
-  <data name="typrelCannotResolveAmbiguityInOverloadedOperator" xml:space="preserve">
-    <value>Could not resolve the ambiguity inherent in the use of the operator '{0}' at or near this program point. Consider using type annotations to resolve the ambiguity.</value>
   </data>
   <data name="typrelCannotResolveAmbiguityInPrintf" xml:space="preserve">
     <value>Could not resolve the ambiguity inherent in the use of a 'printf'-style format string</value>
@@ -3382,7 +3379,7 @@
     <value>No implementation files specified</value>
   </data>
   <data name="fscBadAssemblyVersion" xml:space="preserve">
-    <value>An {0} specified version '{1}', but this value is invalid and has been ignored</value>
+    <value>The attribute {0} specified version '{1}', but this value is invalid and has been ignored</value>
   </data>
   <data name="fscTwoResourceManifests" xml:space="preserve">
     <value>Conflicting options specified: 'win32manifest' and 'win32res'. Only one of these can be used.</value>
@@ -4032,8 +4029,8 @@
   <data name="tcCouldNotFindOffsetToStringData" xml:space="preserve">
     <value>Could not find method System.Runtime.CompilerServices.OffsetToStringData in references when building 'fixed' expression.</value>
   </data>
-  <data name="chkNoByrefReturnOfLocal" xml:space="preserve">
-    <value>The address of the variable '{0}' cannot be used at this point. A method or function may not return the address of this local value.</value>
+  <data name="chkNoByrefAddressOfLocal" xml:space="preserve">
+    <value>The address of the variable '{0}' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</value>
   </data>
   <data name="tcNamedActivePattern" xml:space="preserve">
     <value>{0} is an active pattern and cannot be treated as a discriminated union case with named fields.</value>
@@ -4154,6 +4151,9 @@
   </data>
   <data name="keywordDescriptionMatch" xml:space="preserve">
     <value>Used to branch by comparing a value to a pattern.</value>
+  </data>
+  <data name="keywordDescriptionMatchBang" xml:space="preserve">
+    <value>Used in computation expressions to pattern match directly over the result of another computation expression.</value>
   </data>
   <data name="keywordDescriptionMember" xml:space="preserve">
     <value>Used to declare a property or method in an object type.</value>
@@ -4302,5 +4302,47 @@
   </data>
   <data name="pickleUnexpectedNonZero" xml:space="preserve">
     <value>An error occurred while reading the F# metadata of assembly '{0}'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct.</value>
+  </data>
+  <data name="tcTupleMemberNotNormallyUsed" xml:space="preserve">
+    <value>This method or property is not normally used from F# code, use an explicit tuple pattern for deconstruction instead.</value>
+  </data>
+  <data name="implicitlyDiscardedInSequenceExpression" xml:space="preserve">
+    <value>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield'.</value>
+  </data>
+  <data name="implicitlyDiscardedSequenceInSequenceExpression" xml:space="preserve">
+    <value>This expression returns a value of type '{0}' but is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to use the expression as a value in the sequence then use an explicit 'yield!'.</value>
+  </data>
+  <data name="ilreadFileChanged" xml:space="preserve">
+    <value>The file '{0}' changed on disk unexpectedly, please reload.</value>
+  </data>
+  <data name="writeToReadOnlyByref" xml:space="preserve">
+    <value>The byref pointer is readonly, so this write is not permitted.</value>
+  </data>
+  <data name="readOnlyAttributeOnStructWithMutableField" xml:space="preserve">
+    <value>A ReadOnly attribute has been applied to a struct type with a mutable field.</value>
+  </data>
+  <data name="tcByrefReturnImplicitlyDereferenced" xml:space="preserve">
+    <value>A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</value>
+  </data>
+  <data name="tcByRefLikeNotStruct" xml:space="preserve">
+    <value>A type annotated with IsByRefLike must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</value>
+  </data>
+  <data name="chkNoByrefReturnOfLocal" xml:space="preserve">
+    <value>The address of the variable '{0}' or a related expression cannot be used at this point. The address may not be passed to a call that returns an address. This is to ensure the address of the local value does not escape its scope.</value>
+  </data>
+  <data name="chkNoReturnOfLimitedSpan" xml:space="preserve">
+    <value>The IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</value>
+  </data>
+  <data name="chkNoWriteToLimitedSpan" xml:space="preserve">
+    <value>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</value>
+  </data>
+  <data name="tastValueMustBeLocal" xml:space="preserve">
+    <value>A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'</value>
+  </data>
+  <data name="tcIsReadOnlyNotStruct" xml:space="preserve">
+    <value>A type annotated with IsReadOnly must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</value>
+  </data>
+  <data name="chkStructsMayNotReturnAddressesOfContents" xml:space="preserve">
+    <value>Struct members cannot return 'this' or fields by reference</value>
   </data>
 </root>

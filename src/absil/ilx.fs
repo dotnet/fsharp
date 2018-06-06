@@ -22,7 +22,7 @@ let mkLowerName (nm: string) =
 type IlxUnionField(fd: ILFieldDef) =
     let lowerName = mkLowerName fd.Name
     member x.ILField = fd
-    member x.Type = x.ILField.Type
+    member x.Type = x.ILField.FieldType
     member x.Name = x.ILField.Name
     member x.LowerName = lowerName
     
@@ -49,7 +49,7 @@ type IlxUnionRef =
 
 type IlxUnionSpec = 
     | IlxUnionSpec of IlxUnionRef * ILGenericArgs
-    member x.EnclosingType = let (IlxUnionSpec(IlxUnionRef(bx, tref, _, _, _), inst)) = x in mkILNamedTy bx tref inst
+    member x.DeclaringType = let (IlxUnionSpec(IlxUnionRef(bx, tref, _, _, _), inst)) = x in mkILNamedTy bx tref inst
     member x.Boxity = let (IlxUnionSpec(IlxUnionRef(bx, _, _, _, _), _)) = x in bx 
     member x.TypeRef = let (IlxUnionSpec(IlxUnionRef(_, tref, _, _, _), _)) = x in tref
     member x.GenericArgs = let (IlxUnionSpec(_, inst)) = x in inst

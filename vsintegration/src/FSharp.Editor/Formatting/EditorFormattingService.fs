@@ -38,19 +38,19 @@ type internal FSharpEditorFormattingService
             
             let line = sourceText.Lines.[sourceText.Lines.IndexOf position]
                 
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(filePath, parsingOptions)
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
 
             let tokens = Tokenizer.tokenizeLine(documentId, sourceText, line.Start, filePath, defines)
 
             let! firstMeaningfulToken = 
                 tokens
-                |> List.tryFind (fun x ->
+                |> Array.tryFind (fun x ->
                     x.Tag <> FSharpTokenTag.WHITESPACE &&
                     x.Tag <> FSharpTokenTag.COMMENT &&
                     x.Tag <> FSharpTokenTag.LINE_COMMENT)
 
             let! (left, right) =
-                FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, filePath, parsingOptions, position, "FormattingService")
+                FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, filePath, parsingOptions, position, "FormattingService", forFormatting=true)
 
             if right.StartColumn = firstMeaningfulToken.LeftColumn then
                 // Replace the indentation on this line with the indentation of the left bracket

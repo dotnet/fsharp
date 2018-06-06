@@ -1,0 +1,312 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="es" original="../WCF.resx">
+    <body>
+      <trans-unit id="AddSvcRefDlg_DefaultDialogTitle">
+        <source>Add Service Reference</source>
+        <target state="translated">Agregar referencia de servicio</target>
+        <note>Title for the "Add Service Reference" dialog</note>
+      </trans-unit>
+      <trans-unit id="CodeGenerator_UnableToGetCodeDomProvider">
+        <source>Unable to find a code generator (CodeDomProvider).</source>
+        <target state="translated">No se encontró un generador de código (CodeDomProvider).</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Configuration_CantSaveTemporaryConfigurations">
+        <source>Configuration could not be saved. Make sure the configuration file exists and can be edited.</source>
+        <target state="translated">No se pudo guardar la configuración. Asegúrese de que el archivo de configuración existe y se puede modificar.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Configuration_IVsProjectSpecialFilesNotSupported">
+        <source>The current project does not support configuration files.</source>
+        <target state="translated">El proyecto actual no admite archivos de configuración.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_NoServicesFoundInSolution">
+        <source>No services found in the solution.</source>
+        <target state="translated">No se encontraron servicios en la solución.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_ErrorOnOK">
+        <source>There was an error downloading metadata from the address. Please verify that you have entered a valid address.</source>
+        <target state="translated">Hubo un error al descargar los metadatos desde esta dirección. Compruebe que ha especificado una dirección válida.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_ServicesFoundAtUrl_2Args">
+        <source>{0} service(s) found at address '{1}'.</source>
+        <target state="translated">{0} servicios encontrados en la dirección '{1}'.</target>
+        <note>{0} = count, {1} = URL where the services were found</note>
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_ServicesFoundInSolution_1Arg">
+        <source>{0} service(s) found in the solution.</source>
+        <target state="translated">{0} servicios encontrados en la solución.</target>
+        <note>{0} = # of services</note>
+      </trans-unit>
+      <trans-unit id="Configuration_OnlyRootItemIdSupported">
+        <source>It is only possible to access the default (ITEMID_ROOT) configuration file.</source>
+        <target state="translated">Solo se puede obtener acceso al archivo de configuración (ITEMID_ROOT) predeterminado.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_InvalidNamespace">
+        <source>'{0}' is not a valid namespace for the service reference.</source>
+        <target state="translated">'{0}' no es un espacio de nombres válido para la referencia de servicio.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_NamespaceConflictsOther">
+        <source>Cannot create a service reference with namespace '{0}' because the name is already in use by an existing service reference, folder or file.</source>
+        <target state="translated">No se puede crear una referencia de servicio con el espacio de nombres '{0}' porque el nombre ya se está usando en una referencia de servicio, carpeta o archivo existente.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_AddMultipleReference">
+        <source>Unable to add a new reference. One or more references already exists or the 'Metadata' section is not empty in the .svcmap file. Edit the .svcmap file and clear all the entries from the 'Metadata' section.</source>
+        <target state="translated">No se puede agregar una nueva referencia. Ya existen una o varias referencias, o la sección 'Metadatos' no está vacía en el archivo .svcmap. Edite el archivo .svcmap y borre todas las entradas de la sección 'Metadatos'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_NamespaceCantBeEmpty">
+        <source>A namespace needs to be specified for this service reference.</source>
+        <target state="translated">Debe especificarse un espacio de nombres para esta referencia de servicio.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_InvalidName">
+        <source>{0}' is not a valid name for a service reference.</source>
+        <target state="translated">{0}' no es un nombre válido para una referencia de servicio.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_NameCantBeEmpty">
+        <source>Empty string is not a valid name for a reference group.</source>
+        <target state="translated">Una cadena vacía no es un nombre válido para un grupo de referencias.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_NameConflictsOther">
+        <source>Cannot create a reference group named '{0}' because the name is already being used by an existing reference group, folder or file.</source>
+        <target state="translated">No se puede crear un grupo de referencias con el nombre '{0}' porque este nombre ya se está usando en un grupo de referencias, carpeta o archivo existente.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_NameCantStartEndWithSpace">
+        <source>Cannot create a reference group with namespace or name with leading or trailing whitespace characters.</source>
+        <target state="translated">No se puede crear un grupo de referencias con un espacio de nombres o un nombre que tenga caracteres de espacio iniciales o finales.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_NotFoundThroughPath">
+        <source>The .svcmap file cannot be found. It may have been moved or deleted.  To generate a new .svcmap file, delete the service reference and add it again.</source>
+        <target state="translated">No se encuentra el archivo .svcmap. Es posible que se haya movido o eliminado. Para generar un nuevo archivo .svcmap, elimine la referencia de servicio y agréguela de nuevo.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_NotSupportedInCurrentProject">
+        <source>The current project does not support service references. To enable Windows Communication Foundation support, change the target version of the Microsoft .NET Framework.</source>
+        <target state="translated">El proyecto actual no admite referencias de servicio. Para permitir la compatibilidad con Windows Communication Foundation, cambie la versión de destino de Microsoft .NET Framework.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_DeleteFailedConfigurationError">
+        <source>The configuration for the service reference could not be deleted due to the following issue: {0}</source>
+        <target state="translated">No se pudo eliminar la configuración de la referencia del servicio debido al problema siguiente: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_UpdateFailedConfigurationError">
+        <source>The configuration for the service reference could not be updated due to the following issue: {0}</source>
+        <target state="translated">No se pudo actualizar la configuración de la referencia de servicio debido al problema siguiente: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_AddFailedConfigurationError">
+        <source>The configuration for the service reference could not be added due to the following issue: {0}</source>
+        <target state="translated">No se pudo agregar la configuración de la referencia de servicio debido al problema siguiente: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_NothingSelectedOnGo">
+        <source>Please enter the address for a service.</source>
+        <target state="translated">Escriba la dirección de un servicio.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_Error_DiscoverUrl_1Arg">
+        <source>An error occurred while attempting to find services at '{0}'.</source>
+        <target state="translated">Error al intentar buscar servicios en '{0}'.</target>
+        <note>{0} = a URL path</note>
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_Error_ServicesInSolution">
+        <source>An error occurred while searching for services in the solution.</source>
+        <target state="translated">Error al buscar servicios en la solución.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_Error_StartService_1Arg1">
+        <source>An error occurred while attempting to start services at '{0}'".</source>
+        <target state="translated">Error al intentar iniciar servicios en '{0}'".</target>
+        <note>{0} = a URL path</note>
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_PleaseWait">
+        <source>Please wait for service information to be downloaded or click Stop.</source>
+        <target state="translated">Espere a que se descargue la información del servicio o haga clic en Detener.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_FailedToGetReferencedAssembliesFromProject">
+        <source>Cannot get referenced assemblies from the project system.</source>
+        <target state="translated">No se pueden obtener los ensamblados a los que se hace referencia del sistema del proyecto.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_SvcMapFileIsMissing">
+        <source>The service reference is invalid, because the .svcmap file ('{0}') cannot be found. It may have been moved, deleted or excluded from the project.  To generate a new .svcmap file, delete the service reference and add it again.</source>
+        <target state="translated">La referencia de servicio no es válida porque no se encuentra el archivo .svcmap ('{0}'). Puede que se haya movido, eliminado o excluido del proyecto. Para generar un nuevo archivo .svcmap, elimine la referencia de servicio y agréguela de nuevo.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_SvcMapFileBadFormat">
+        <source>The service reference is invalid. The .svcmap file ('{0}') cannot be loaded. It may be corrupted or in a bad format: {1}</source>
+        <target state="translated">La referencia de servicio no es válida. No se puede cargar el archivo .svcmap ('{0}'). Puede que esté dañado o que tenga un formato incorrecto: {1}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddSvcRegDlg_ShowErrorDetails">
+        <source>(Details)</source>
+        <target state="translated">(Detalles)</target>
+        <note>This is the text for a link to additional error information.</note>
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_OPSelectContract">
+        <source>Select a service contract to view its operations.</source>
+        <target state="translated">Seleccione un contrato de servicio para ver sus operaciones.</target>
+        <note>This is the message displayed when user selects non-cotract nodes.</note>
+      </trans-unit>
+      <trans-unit id="CSRDlg_Title">
+        <source>Service Reference Settings</source>
+        <target state="translated">Configuración de referencia de servicio</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CSRDlg_CustomType">
+        <source>( Custom )</source>
+        <target state="translated">(Personalizado)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CSRDlg_AssemblyNotFoundError">
+        <source>The assembly '{0}' could not be found.</source>
+        <target state="translated">No se encontró el ensamblado '{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CSRDlg_NullURL">
+        <source>Address should be a valid non-empty URL.</source>
+        <target state="translated">La dirección debe ser una dirección URL no vacía válida.</target>
+        <note>Error message to display when user enters empty URL in the address change text box</note>
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_ServicesFound_1Arg">
+        <source>{0} service(s) found.</source>
+        <target state="translated">{0} servicios encontrados.</target>
+        <note>{0} = count</note>
+      </trans-unit>
+      <trans-unit id="Err_UserCancelled">
+        <source>The operation was cancelled.</source>
+        <target state="translated">Se canceló la operación.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UpdateDialog_Title_1Arg">
+        <source>Updating Service Reference '{0}'</source>
+        <target state="translated">Actualizando referencia de servicio '{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_UpdateComplete">
+        <source>Service reference update complete.</source>
+        <target state="translated">Actualización de referencia de servicio completada.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_GeneratingProxy">
+        <source>Generating service reference client code...</source>
+        <target state="translated">Generando código de cliente de referencia de servicio...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_GeneratingProxyComplete">
+        <source>Generation of service reference client code complete.</source>
+        <target state="translated">Generación del código cliente de referencia de servicio completada.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_StartUpdate_1Arg">
+        <source>Updating service reference '{0}'...</source>
+        <target state="translated">Actualizando referencia de servicio '{0}'...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_UpdatingConfig">
+        <source>Updating configuration...</source>
+        <target state="translated">Actualizando configuración...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_UpdatingConfigComplete">
+        <source>Configuration update complete.</source>
+        <target state="translated">Actualización de configuración completada.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_UpdateCancelled">
+        <source>Service reference update was cancelled.</source>
+        <target state="translated">Se canceló la actualización de referencia de servicio.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_UpdateFailed">
+        <source>Service reference update failed.</source>
+        <target state="translated">No se pudo actualizar la referencia de servicio.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_AddServiceComplete">
+        <source>Add service reference complete.</source>
+        <target state="translated">Incorporación de referencia de servicio completada.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_AddServiceFailed">
+        <source>Add service reference failed.</source>
+        <target state="translated">No se pudo agregar la referencia de servicio.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_StartAddService_1Arg">
+        <source>Creating new service reference to '{0}'...</source>
+        <target state="translated">Creando nueva referencia de servicio en '{0}'...</target>
+        <note>{0}=URL</note>
+      </trans-unit>
+      <trans-unit id="CSRDlg_NoAssemblySelected">
+        <source>No assembly is selected.</source>
+        <target state="translated">No se seleccionó ningún ensamblado.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_AsyncOpPending">
+        <source>The requested operation is not valid while an asynchronous operation is in progress.</source>
+        <target state="translated">La operación solicitada no es válida cuando una operación asincrónica está en curso.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="CSRDlg_MultipleURL">
+        <source>Multiple addresses (editable in .svcmap file)</source>
+        <target state="translated">Varias direcciones (editables en el archivo .svcmap)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_ContractsFoundAtUrl_2Args">
+        <source>{0} contract(s) found at address '{1}'.</source>
+        <target state="translated">Se encontraron {0} contratos en la dirección '{1}'.</target>
+        <note>{0} = count, {1} = URL where the contracts were found</note>
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_Error_CantCreateTempFile">
+        <source>Unable to create temporary configuration file for downloading service information.</source>
+        <target state="translated">No se puede crear el archivo de configuración temporal para descargar la información del servicio.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ConfigurationFileOpenedInIncompatibleEditor">
+        <source>The file is already opened in an incompatible editor.</source>
+        <target state="translated">El archivo ya está abierto en un editor incompatible.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Status_DownloadingMetadata">
+        <source>Downloading service information...</source>
+        <target state="translated">Descargando información del servicio...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="AddSvcRefDlg_Error_ExistingRefGroupNotSupported">
+        <source>The current version of the software does not support adding a service reference to an existing service reference group.</source>
+        <target state="translated">La versión actual del software no permite agregar una referencia de servicio a un grupo de referencias de servicio existente.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Discovery_ErrorBuildSolution">
+        <source>If the service is defined in the current solution, try building the solution and adding the service reference again.</source>
+        <target state="translated">Si el servicio se define en la solución actual, intente compilar la solución y agregar de nuevo la referencia de servicio.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReferenceGroup_MismatchBeginEndBatch">
+        <source>Mismatching Begin/EndBatch calls. You have called EndBatch more times than BeginBatch.</source>
+        <target state="translated">Las llamadas a Begin/EndBatch no coinciden. Ha llamado más veces a EndBatch que a BeginBatch.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SingleFileGenerator_FailedToGenerateTypes_1Arg">
+        <source>Failed to generate code for the service reference '{0}'.  Please check other error and warning messages for details.</source>
+        <target state="translated">No se pudo generar código para la referencia al servicio '{0}'. Consulte otros mensajes de advertencia y error para obtener más detalles.</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

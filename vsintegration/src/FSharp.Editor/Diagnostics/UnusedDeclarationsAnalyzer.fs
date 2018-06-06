@@ -94,12 +94,16 @@ type internal UnusedDeclarationsAnalyzer() =
         //#endif
         unusedRanges
 
+    override __.Priority = 80 // Default = 50
+
     override __.SupportedDiagnostics = ImmutableArray.Create Descriptor
     
     override __.AnalyzeSyntaxAsync(_, _) = Task.FromResult ImmutableArray<Diagnostic>.Empty
 
     override __.AnalyzeSemanticsAsync(document, cancellationToken) =
         asyncMaybe {
+            do! Option.guard Settings.CodeFixes.UnusedDeclarations
+
             do Trace.TraceInformation("{0:n3} (start) UnusedDeclarationsAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
             do! Async.Sleep DefaultTuning.UnusedDeclarationsAnalyzerInitialDelay |> liftAsync // be less intrusive, give other work priority most of the time
             match getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document) with

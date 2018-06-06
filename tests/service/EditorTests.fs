@@ -1,7 +1,7 @@
 ﻿
 // To run the tests in this file:
 //
-// Technique 1: Compile VisualFSharp.Unittests.dll and run it as a set of unit tests
+// Technique 1: Compile VisualFSharp.UnitTests.dll and run it as a set of unit tests
 //
 // Technique 2:
 //
@@ -11,15 +11,15 @@
 //   and capturing large amounts of structured output.
 (*
     cd Debug\net40\bin
-    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.Unittests.exe -g --optimize- -r .\FSharp.LanguageService.Compiler.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\tests\service\EditorTests.fs 
-    .\VisualFSharp.Unittests.exe 
+    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.UnitTests.exe -g --optimize- -r .\FSharp.LanguageService.Compiler.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\tests\service\EditorTests.fs 
+    .\VisualFSharp.UnitTests.exe 
 *)
 // Technique 3: 
 // 
 //    Use F# Interactive.  This only works for FSHarp.Compiler.Service.dll which has a public API
 
 #if INTERACTIVE
-#r "../../Debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
 #r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
@@ -36,21 +36,12 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service.Tests.Common
 
 let stringMethods = 
-#if DOTNETCORE
-    ["Chars"; "CompareTo"; "Contains"; "CopyTo"; "EndsWith"; "Equals";
-    "GetHashCode"; "GetType"; "IndexOf";
-    "IndexOfAny"; "Insert"; "LastIndexOf"; "LastIndexOfAny";
-    "Length"; "PadLeft"; "PadRight"; "Remove"; "Replace"; "Split";
-    "StartsWith"; "Substring"; "ToCharArray"; "ToLower"; "ToLowerInvariant";
-    "ToString"; "ToUpper"; "ToUpperInvariant"; "Trim"; "TrimEnd"; "TrimStart"]
-#else
     ["Chars"; "Clone"; "CompareTo"; "Contains"; "CopyTo"; "EndsWith"; "Equals";
     "GetEnumerator"; "GetHashCode"; "GetType"; "GetTypeCode"; "IndexOf";
     "IndexOfAny"; "Insert"; "IsNormalized"; "LastIndexOf"; "LastIndexOfAny";
     "Length"; "Normalize"; "PadLeft"; "PadRight"; "Remove"; "Replace"; "Split";
     "StartsWith"; "Substring"; "ToCharArray"; "ToLower"; "ToLowerInvariant";
     "ToString"; "ToUpper"; "ToUpperInvariant"; "Trim"; "TrimEnd"; "TrimStart"]
-#endif
 
 let input = 
   """
@@ -106,13 +97,14 @@ let ``Intro test`` () =
                ("Concat", ["str0: string"; "str1: string"]);
                ("Concat", ["arg0: obj"; "arg1: obj"; "arg2: obj"]);
                ("Concat", ["str0: string"; "str1: string"; "str2: string"]);
-#if !DOTNETCORE
+#if !NETCOREAPP2_0 // TODO: check why this is needed for .NET Core testing of FSharp.Compiler.Service
                ("Concat", ["arg0: obj"; "arg1: obj"; "arg2: obj"; "arg3: obj"]);
 #endif               
                ("Concat", ["str0: string"; "str1: string"; "str2: string"; "str3: string"])]
 
 
-#if !INTERACTIVE && !DOTNETCORE // InternalsVisibleTo on IncrementalBuild.LocallyInjectCancellationFault not working for some reason?
+// TODO: check if this can be enabled in .NET Core testing of FSharp.Compiler.Service
+#if !INTERACTIVE && !NETCOREAPP2_0 // InternalsVisibleTo on IncrementalBuild.LocallyInjectCancellationFault not working for some reason?
 [<Test>]
 let ``Basic cancellation test`` () = 
    try 
@@ -164,7 +156,7 @@ let ``GetMethodsAsSymbols should return all overloads of a method as FSharpSymbo
              ("Concat", [("str0", "string"); ("str1", "string")]);
              ("Concat", [("arg0", "obj"); ("arg1", "obj"); ("arg2", "obj")]);
              ("Concat", [("str0", "string"); ("str1", "string"); ("str2", "string")]);
-#if !DOTNETCORE
+#if !NETCOREAPP2_0 // TODO: check why this is needed for .NET Core testing of FSharp.Compiler.Service
              ("Concat", [("arg0", "obj"); ("arg1", "obj"); ("arg2", "obj"); ("arg3", "obj")]);
 #endif
              ("Concat", [("str0", "string"); ("str1", "string"); ("str2", "string"); ("str3", "string")])]
@@ -221,8 +213,8 @@ let ``Symbols many tests`` () =
     fnVal.CurriedParameterGroups.[0].[1].Name.Value |> shouldEqual "y"
     fnVal.DeclarationLocation.StartLine |> shouldEqual 3
     fnVal.DisplayName |> shouldEqual "foo"
-    fnVal.EnclosingEntity.Value.DisplayName |> shouldEqual "Test"
-    fnVal.EnclosingEntity.Value.DeclarationLocation.StartLine |> shouldEqual 1
+    fnVal.DeclaringEntity.Value.DisplayName |> shouldEqual "Test"
+    fnVal.DeclaringEntity.Value.DeclarationLocation.StartLine |> shouldEqual 1
     fnVal.GenericParameters.Count |> shouldEqual 0
     fnVal.InlineAnnotation |> shouldEqual FSharpInlineAnnotation.OptionalInline
     fnVal.IsActivePattern |> shouldEqual false
@@ -294,7 +286,7 @@ let ``Expression typing test`` () =
 // the incomplete member:
 //    member x.Test = 
 
-[<Test; Ignore("Currently failing, see #139")>]
+[<Test; Ignore("SKIPPED: see #139")>]
 let ``Find function from member 1`` () = 
     let input = 
       """
@@ -344,7 +336,7 @@ type Test() =
     let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(14), (fun _ -> []), fun _ -> false)|> Async.RunSynchronously
     decls.Items |> Seq.exists (fun d -> d.Name = "abc") |> shouldEqual true
 
-[<Test; Ignore("Currently failing, see #139")>]
+[<Test; Ignore("SKIPPED: see #139")>]
 let ``Symbol based find function from member 1`` () = 
     let input = 
       """
@@ -357,7 +349,7 @@ type Test() =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
 
-    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(20), fun _ -> false)|> Async.RunSynchronously
+    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(20), (fun () -> []), fun _ -> false)|> Async.RunSynchronously
     //decls |> List.map (fun d -> d.Head.Symbol.DisplayName) |> printfn "---> decls = %A"
     decls |> Seq.exists (fun d -> d.Head.Symbol.DisplayName = "abc") |> shouldEqual true
 
@@ -374,7 +366,7 @@ type Test() =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
 
-    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(21), fun _ -> false)|> Async.RunSynchronously
+    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(21), (fun () -> []), fun _ -> false)|> Async.RunSynchronously
     //decls |> List.map (fun d -> d.Head.Symbol.DisplayName) |> printfn "---> decls = %A"
     decls |> Seq.exists (fun d -> d.Head.Symbol.DisplayName = "abc") |> shouldEqual true
 
@@ -391,7 +383,7 @@ type Test() =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
 
-    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(14), fun _ -> false)|> Async.RunSynchronously
+    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(14), (fun () -> []), fun _ -> false)|> Async.RunSynchronously
     //decls |> List.map (fun d -> d.Head.Symbol.DisplayName) |> printfn "---> decls = %A"
     decls |> Seq.exists (fun d -> d.Head.Symbol.DisplayName = "abc") |> shouldEqual true
 
@@ -547,25 +539,24 @@ let _ = arr.[..number2]
         let r = su.RangeAlternate 
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
     |> shouldEqual 
-        [|("val arr", (2, 4, 2, 7)); 
-          ("val number2", (3, 13, 3, 20));
-          ("val number1", (3, 4, 3, 11)); 
-          ("val arr", (4, 8, 4, 11));
-          ("OperatorIntrinsics", (4, 11, 4, 12)); 
-          ("Operators", (4, 11, 4, 12));
-          ("Core", (4, 11, 4, 12)); 
-          ("FSharp", (4, 11, 4, 12));
-          ("Microsoft", (4, 11, 4, 12)); 
-          ("val number1", (4, 16, 4, 23));
-          ("val arr", (5, 8, 5, 11)); 
-          ("OperatorIntrinsics", (5, 11, 5, 12));
-          ("Operators", (5, 11, 5, 12)); 
-          ("Core", (5, 11, 5, 12));
-          ("FSharp", (5, 11, 5, 12)); 
-          ("Microsoft", (5, 11, 5, 12));
-          ("val number2", (5, 15, 5, 22)); 
+        [|("val arr", (2, 4, 2, 7))
+          ("val number2", (3, 13, 3, 20))
+          ("val number1", (3, 4, 3, 11))
+          ("val arr", (4, 8, 4, 11))
+          ("Microsoft", (4, 11, 4, 12))
+          ("OperatorIntrinsics", (4, 11, 4, 12))
+          ("Operators", (4, 11, 4, 12))
+          ("Core", (4, 11, 4, 12))
+          ("FSharp", (4, 11, 4, 12))
+          ("val number1", (4, 16, 4, 23))
+          ("val arr", (5, 8, 5, 11))
+          ("Microsoft", (5, 11, 5, 12))
+          ("OperatorIntrinsics", (5, 11, 5, 12))
+          ("Operators", (5, 11, 5, 12))
+          ("Core", (5, 11, 5, 12))
+          ("FSharp", (5, 11, 5, 12)) 
+          ("val number2", (5, 15, 5, 22))
           ("Test", (1, 0, 1, 0))|]
-
 
 [<Test>]
 let ``Enums should have fields`` () =
@@ -583,7 +574,8 @@ let test3 = System.Text.RegularExpressions.RegexOptions.Compiled
         |> Array.choose(fun s -> match s.Symbol with :? FSharpEntity as e when e.IsEnum -> Some e | _ -> None)
         |> Array.distinct
         |> Array.map(fun e -> (e.DisplayName, e.FSharpFields
-                                              |> Seq.map(fun f -> f.Name, f.LiteralValue )
+                                              |> Seq.sortBy (fun f -> match f.LiteralValue with None -> -1 | Some x -> unbox x)
+                                              |> Seq.map (fun f -> f.Name, f.LiteralValue)
                                               |> Seq.toList))
 
     enums |> shouldEqual
@@ -714,6 +706,360 @@ type Class1() =
           ("val StaticClassValue", (20, 30, 20, 46))
           ("member .cctor", (10, 5, 10, 11))
           ("Test", (1, 0, 1, 0))|]
+
+[<Test>]
+let ``IsConstructor property should return true for constructors`` () = 
+    let input = 
+      """
+type T(x: int) =
+    new() = T(0)
+let x: T()
+"""
+    let file = "/home/user/Test.fsx"
+    let _, typeCheckResults = parseAndCheckScript(file, input) 
+    typeCheckResults.GetAllUsesOfAllSymbolsInFile()
+    |> Async.RunSynchronously
+    |> Array.map (fun su -> 
+        let r = su.RangeAlternate
+        let isConstructor =
+            match su.Symbol with
+            | :? FSharpMemberOrFunctionOrValue as f -> f.IsConstructor
+            | _ -> false
+        su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn), isConstructor)
+    |> Array.distinct
+    |> shouldEqual 
+        [|("T", (2, 5, 2, 6), false)
+          ("int", (2, 10, 2, 13), false)
+          ("val x", (2, 7, 2, 8), false)
+          ("member .ctor", (2, 5, 2, 6), true)
+          ("member .ctor", (3, 4, 3, 7), true)
+          ("member .ctor", (3, 12, 3, 13), true)
+          ("T", (4, 7, 4, 8), false)
+          ("val x", (4, 4, 4, 5), false)
+          ("Test", (1, 0, 1, 0), false)|]
+
+[<Test>]
+let ``ValidateBreakpointLocation tests A`` () = 
+    let input = 
+      """
+let f x = 
+    let y = z + 1
+    y + y
+        )"""
+    let file = "/home/user/Test.fsx"
+    let parseResult, typeCheckResults = parseAndCheckScript(file, input) 
+    let lines = input.Replace("\r", "").Split( [| '\n' |])
+    let positions = [ for (i,line) in Seq.indexed lines do for (j, c) in Seq.indexed line do yield Range.mkPos (Range.Line.fromZ i) j, line ]
+    let results = [ for pos, line in positions do 
+                        match parseResult.ValidateBreakpointLocation pos with 
+                        | Some r -> yield ((line, pos.Line, pos.Column), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))  
+                        | None -> ()]
+    results |> shouldEqual 
+          [(("    let y = z + 1", 3, 0), (3, 4, 3, 17));
+           (("    let y = z + 1", 3, 1), (3, 4, 4, 9));
+           (("    let y = z + 1", 3, 2), (3, 4, 4, 9));
+           (("    let y = z + 1", 3, 3), (3, 4, 4, 9));
+           (("    let y = z + 1", 3, 4), (3, 4, 3, 17));
+           (("    let y = z + 1", 3, 5), (3, 4, 3, 17));
+           (("    let y = z + 1", 3, 6), (3, 4, 3, 17));
+           (("    let y = z + 1", 3, 7), (3, 4, 3, 17));
+           (("    let y = z + 1", 3, 8), (3, 4, 3, 17));
+           (("    let y = z + 1", 3, 9), (3, 4, 3, 17));
+           (("    let y = z + 1", 3, 10), (3, 4, 3, 17));
+           (("    let y = z + 1", 3, 11), (3, 4, 3, 17));
+           (("    let y = z + 1", 3, 12), (3, 4, 3, 17));
+           (("    let y = z + 1", 3, 13), (3, 4, 3, 17));
+           (("    let y = z + 1", 3, 14), (3, 4, 3, 17));
+           (("    let y = z + 1", 3, 15), (3, 4, 3, 17));
+           (("    let y = z + 1", 3, 16), (3, 4, 3, 17));
+           (("    y + y", 4, 0), (4, 4, 4, 9)); (("    y + y", 4, 1), (3, 4, 4, 9));
+           (("    y + y", 4, 2), (3, 4, 4, 9)); (("    y + y", 4, 3), (3, 4, 4, 9));
+           (("    y + y", 4, 4), (4, 4, 4, 9)); (("    y + y", 4, 5), (4, 4, 4, 9));
+           (("    y + y", 4, 6), (4, 4, 4, 9)); (("    y + y", 4, 7), (4, 4, 4, 9));
+           (("    y + y", 4, 8), (4, 4, 4, 9))]
+
+
+[<Test>]
+let ``ValidateBreakpointLocation tests for object expressions`` () = 
+// fsi.PrintLength <- 1000
+    let input = 
+      """
+type IFoo =
+    abstract member Foo: int -> int
+
+type FooBase(foo:IFoo) =
+    do ()
+
+type FooImpl() =
+    inherit FooBase
+        (
+            {
+                new IFoo with
+                    member this.Foo x =
+                        let y = x * x
+                        z
+            }
+        )"""
+    let file = "/home/user/Test.fsx"
+    let parseResult, typeCheckResults = parseAndCheckScript(file, input) 
+    let lines = input.Replace("\r", "").Split( [| '\n' |])
+    let positions = [ for (i,line) in Seq.indexed lines do for (j, c) in Seq.indexed line do yield Range.mkPos (Range.Line.fromZ i) j, line ]
+    let results = [ for pos, line in positions do 
+                        match parseResult.ValidateBreakpointLocation pos with 
+                        | Some r -> yield ((line, pos.Line, pos.Column), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))  
+                        | None -> ()]
+    results |> shouldEqual 
+          [(("type FooBase(foo:IFoo) =", 5, 5), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 6), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 7), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 8), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 9), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 10), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 11), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 12), (5, 5, 5, 12));
+           (("    do ()", 6, 4), (6, 7, 6, 9)); (("    do ()", 6, 5), (6, 7, 6, 9));
+           (("    do ()", 6, 6), (6, 7, 6, 9)); (("    do ()", 6, 7), (6, 7, 6, 9));
+           (("    do ()", 6, 8), (6, 7, 6, 9));
+           (("type FooImpl() =", 8, 5), (8, 5, 8, 12));
+           (("type FooImpl() =", 8, 6), (8, 5, 8, 12));
+           (("type FooImpl() =", 8, 7), (8, 5, 8, 12));
+           (("type FooImpl() =", 8, 8), (8, 5, 8, 12));
+           (("type FooImpl() =", 8, 9), (8, 5, 8, 12));
+           (("type FooImpl() =", 8, 10), (8, 5, 8, 12));
+           (("type FooImpl() =", 8, 11), (8, 5, 8, 12));
+           (("type FooImpl() =", 8, 12), (8, 5, 8, 12));
+           (("    inherit FooBase", 9, 4), (9, 4, 17, 9));
+           (("    inherit FooBase", 9, 5), (9, 4, 17, 9));
+           (("    inherit FooBase", 9, 6), (9, 4, 17, 9));
+           (("    inherit FooBase", 9, 7), (9, 4, 17, 9));
+           (("    inherit FooBase", 9, 8), (9, 4, 17, 9));
+           (("    inherit FooBase", 9, 9), (9, 4, 17, 9));
+           (("    inherit FooBase", 9, 10), (9, 4, 17, 9));
+           (("    inherit FooBase", 9, 11), (9, 4, 17, 9));
+           (("    inherit FooBase", 9, 12), (9, 4, 17, 9));
+           (("    inherit FooBase", 9, 13), (9, 4, 17, 9));
+           (("    inherit FooBase", 9, 14), (9, 4, 17, 9));
+           (("    inherit FooBase", 9, 15), (9, 4, 17, 9));
+           (("    inherit FooBase", 9, 16), (9, 4, 17, 9));
+           (("    inherit FooBase", 9, 17), (9, 4, 17, 9));
+           (("    inherit FooBase", 9, 18), (9, 4, 17, 9));
+           (("        (", 10, 0), (9, 4, 17, 9));
+           (("        (", 10, 1), (9, 4, 17, 9));
+           (("        (", 10, 2), (9, 4, 17, 9));
+           (("        (", 10, 3), (9, 4, 17, 9));
+           (("        (", 10, 4), (9, 4, 17, 9));
+           (("        (", 10, 5), (9, 4, 17, 9));
+           (("        (", 10, 6), (9, 4, 17, 9));
+           (("        (", 10, 7), (9, 4, 17, 9));
+           (("        (", 10, 8), (10, 8, 17, 9));
+           (("            {", 11, 0), (10, 8, 17, 9));
+           (("            {", 11, 1), (10, 8, 17, 9));
+           (("            {", 11, 2), (10, 8, 17, 9));
+           (("            {", 11, 3), (10, 8, 17, 9));
+           (("            {", 11, 4), (10, 8, 17, 9));
+           (("            {", 11, 5), (10, 8, 17, 9));
+           (("            {", 11, 6), (10, 8, 17, 9));
+           (("            {", 11, 7), (10, 8, 17, 9));
+           (("            {", 11, 8), (10, 8, 17, 9));
+           (("            {", 11, 9), (10, 8, 17, 9));
+           (("            {", 11, 10), (10, 8, 17, 9));
+           (("            {", 11, 11), (10, 8, 17, 9));
+           (("            {", 11, 12), (10, 8, 17, 9));
+           (("                new IFoo with", 12, 0), (10, 8, 17, 9));
+           (("                new IFoo with", 12, 1), (10, 8, 17, 9));
+           (("                new IFoo with", 12, 2), (10, 8, 17, 9));
+           (("                new IFoo with", 12, 3), (10, 8, 17, 9));
+           (("                new IFoo with", 12, 4), (10, 8, 17, 9));
+           (("                new IFoo with", 12, 5), (10, 8, 17, 9));
+           (("                new IFoo with", 12, 6), (10, 8, 17, 9));
+           (("                new IFoo with", 12, 7), (10, 8, 17, 9));
+           (("                new IFoo with", 12, 8), (10, 8, 17, 9));
+           (("                new IFoo with", 12, 9), (10, 8, 17, 9));
+           (("                new IFoo with", 12, 10), (10, 8, 17, 9));
+           (("                new IFoo with", 12, 11), (10, 8, 17, 9));
+           (("                new IFoo with", 12, 12), (10, 8, 17, 9));
+           (("                new IFoo with", 12, 13), (10, 8, 17, 9));
+           (("                new IFoo with", 12, 14), (10, 8, 17, 9));
+           (("                new IFoo with", 12, 15), (10, 8, 17, 9));
+           (("                new IFoo with", 12, 16), (10, 8, 17, 9));
+           (("                new IFoo with", 12, 17), (10, 8, 17, 9));
+           (("                new IFoo with", 12, 18), (10, 8, 17, 9));
+           (("                new IFoo with", 12, 19), (10, 8, 17, 9));
+           (("                new IFoo with", 12, 20), (10, 8, 17, 9));
+           (("                new IFoo with", 12, 21), (10, 8, 17, 9));
+           (("                new IFoo with", 12, 22), (10, 8, 17, 9));
+           (("                new IFoo with", 12, 23), (10, 8, 17, 9));
+           (("                new IFoo with", 12, 24), (10, 8, 17, 9));
+           (("                new IFoo with", 12, 25), (10, 8, 17, 9));
+           (("                new IFoo with", 12, 26), (10, 8, 17, 9));
+           (("                new IFoo with", 12, 27), (10, 8, 17, 9));
+           (("                new IFoo with", 12, 28), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 0), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 1), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 2), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 3), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 4), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 5), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 6), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 7), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 8), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 9), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 10), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 11), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 12), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 13), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 14), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 15), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 16), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 17), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 18), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 19), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 20), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 21), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 22), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 23), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 24), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 25), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 26), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 27), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 28), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 29), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 30), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 31), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 32), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 33), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 34), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 35), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 36), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 37), (10, 8, 17, 9));
+           (("                    member this.Foo x =", 13, 38), (10, 8, 17, 9));
+           (("                        let y = x * x", 14, 0), (14, 24, 14, 37));
+           (("                        let y = x * x", 14, 1), (10, 8, 17, 9));
+           (("                        let y = x * x", 14, 2), (10, 8, 17, 9));
+           (("                        let y = x * x", 14, 3), (10, 8, 17, 9));
+           (("                        let y = x * x", 14, 4), (10, 8, 17, 9));
+           (("                        let y = x * x", 14, 5), (10, 8, 17, 9));
+           (("                        let y = x * x", 14, 6), (10, 8, 17, 9));
+           (("                        let y = x * x", 14, 7), (10, 8, 17, 9));
+           (("                        let y = x * x", 14, 8), (10, 8, 17, 9));
+           (("                        let y = x * x", 14, 9), (10, 8, 17, 9));
+           (("                        let y = x * x", 14, 10), (10, 8, 17, 9));
+           (("                        let y = x * x", 14, 11), (10, 8, 17, 9));
+           (("                        let y = x * x", 14, 12), (10, 8, 17, 9));
+           (("                        let y = x * x", 14, 13), (10, 8, 17, 9));
+           (("                        let y = x * x", 14, 14), (10, 8, 17, 9));
+           (("                        let y = x * x", 14, 15), (10, 8, 17, 9));
+           (("                        let y = x * x", 14, 16), (10, 8, 17, 9));
+           (("                        let y = x * x", 14, 17), (10, 8, 17, 9));
+           (("                        let y = x * x", 14, 18), (10, 8, 17, 9));
+           (("                        let y = x * x", 14, 19), (10, 8, 17, 9));
+           (("                        let y = x * x", 14, 20), (10, 8, 17, 9));
+           (("                        let y = x * x", 14, 21), (10, 8, 17, 9));
+           (("                        let y = x * x", 14, 22), (10, 8, 17, 9));
+           (("                        let y = x * x", 14, 23), (10, 8, 17, 9));
+           (("                        let y = x * x", 14, 24), (14, 24, 14, 37));
+           (("                        let y = x * x", 14, 25), (14, 24, 14, 37));
+           (("                        let y = x * x", 14, 26), (14, 24, 14, 37));
+           (("                        let y = x * x", 14, 27), (14, 24, 14, 37));
+           (("                        let y = x * x", 14, 28), (14, 24, 14, 37));
+           (("                        let y = x * x", 14, 29), (14, 24, 14, 37));
+           (("                        let y = x * x", 14, 30), (14, 24, 14, 37));
+           (("                        let y = x * x", 14, 31), (14, 24, 14, 37));
+           (("                        let y = x * x", 14, 32), (14, 24, 14, 37));
+           (("                        let y = x * x", 14, 33), (14, 24, 14, 37));
+           (("                        let y = x * x", 14, 34), (14, 24, 14, 37));
+           (("                        let y = x * x", 14, 35), (14, 24, 14, 37));
+           (("                        let y = x * x", 14, 36), (14, 24, 14, 37));
+           (("                        z", 15, 0), (15, 24, 15, 25));
+           (("                        z", 15, 1), (10, 8, 17, 9));
+           (("                        z", 15, 2), (10, 8, 17, 9));
+           (("                        z", 15, 3), (10, 8, 17, 9));
+           (("                        z", 15, 4), (10, 8, 17, 9));
+           (("                        z", 15, 5), (10, 8, 17, 9));
+           (("                        z", 15, 6), (10, 8, 17, 9));
+           (("                        z", 15, 7), (10, 8, 17, 9));
+           (("                        z", 15, 8), (10, 8, 17, 9));
+           (("                        z", 15, 9), (10, 8, 17, 9));
+           (("                        z", 15, 10), (10, 8, 17, 9));
+           (("                        z", 15, 11), (10, 8, 17, 9));
+           (("                        z", 15, 12), (10, 8, 17, 9));
+           (("                        z", 15, 13), (10, 8, 17, 9));
+           (("                        z", 15, 14), (10, 8, 17, 9));
+           (("                        z", 15, 15), (10, 8, 17, 9));
+           (("                        z", 15, 16), (10, 8, 17, 9));
+           (("                        z", 15, 17), (10, 8, 17, 9));
+           (("                        z", 15, 18), (10, 8, 17, 9));
+           (("                        z", 15, 19), (10, 8, 17, 9));
+           (("                        z", 15, 20), (10, 8, 17, 9));
+           (("                        z", 15, 21), (10, 8, 17, 9));
+           (("                        z", 15, 22), (10, 8, 17, 9));
+           (("                        z", 15, 23), (10, 8, 17, 9));
+           (("                        z", 15, 24), (15, 24, 15, 25));
+           (("            }", 16, 0), (10, 8, 17, 9));
+           (("            }", 16, 1), (10, 8, 17, 9));
+           (("            }", 16, 2), (10, 8, 17, 9));
+           (("            }", 16, 3), (10, 8, 17, 9));
+           (("            }", 16, 4), (10, 8, 17, 9));
+           (("            }", 16, 5), (10, 8, 17, 9));
+           (("            }", 16, 6), (10, 8, 17, 9));
+           (("            }", 16, 7), (10, 8, 17, 9));
+           (("            }", 16, 8), (10, 8, 17, 9));
+           (("            }", 16, 9), (10, 8, 17, 9));
+           (("            }", 16, 10), (10, 8, 17, 9));
+           (("            }", 16, 11), (10, 8, 17, 9));
+           (("            }", 16, 12), (10, 8, 17, 9));
+           (("        )", 17, 0), (10, 8, 17, 9));
+           (("        )", 17, 1), (10, 8, 17, 9));
+           (("        )", 17, 2), (10, 8, 17, 9));
+           (("        )", 17, 3), (10, 8, 17, 9));
+           (("        )", 17, 4), (10, 8, 17, 9));
+           (("        )", 17, 5), (10, 8, 17, 9));
+           (("        )", 17, 6), (10, 8, 17, 9));
+           (("        )", 17, 7), (10, 8, 17, 9));
+           (("        )", 17, 8), (10, 8, 17, 9))]
+
+[<Test>]
+let ``Partially valid namespaces should be reported`` () = 
+    let input = 
+      """
+open System.Threading.Foo
+open System
+
+let _: System.Threading.Tasks.Bar = null
+let _ = Threading.Buzz = null
+"""
+
+    let file = "/home/user/Test.fsx"
+    let _, typeCheckResults = parseAndCheckScript(file, input) 
+    typeCheckResults.GetAllUsesOfAllSymbolsInFile()
+    |> Async.RunSynchronously
+    |> Array.map (fun su -> 
+        let r = su.RangeAlternate 
+        su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
+    |> Array.distinct
+    |> shouldEqual 
+        // note: these "System" sysbol uses are not duplications because each of them corresponts to different namespaces
+        [|("System", (2, 5, 2, 11))
+          ("Threading", (2, 12, 2, 21))
+          ("System", (3, 5, 3, 11))
+          ("System", (5, 7, 5, 13))
+          ("Threading", (5, 14, 5, 23))
+          ("Tasks", (5, 24, 5, 29))
+          ("val op_Equality", (6, 23, 6, 24))
+          ("Threading", (6, 8, 6, 17))
+          ("Test", (1, 0, 1, 0))|]
+
+[<Test>]
+let ``GetDeclarationLocation should not require physical file`` () = 
+    let input = "let abc = 1\nlet xyz = abc"
+    let file = "/home/user/Test.fsx"
+    let _, typeCheckResults = parseAndCheckScript(file, input) 
+    let location = typeCheckResults.GetDeclarationLocation(2, 13, "let xyz = abc", ["abc"]) |> Async.RunSynchronously
+    match location with
+    | FSharpFindDeclResult.DeclFound r -> Some (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn, "<=== Found here."                             ) 
+    | _                                -> Some (0          , 0            , 0        , 0          , "Not Found. Should not require physical file." )
+    |> shouldEqual                       (Some (1          , 4            , 1        , 7          , "<=== Found here."                             ))
+
 
 //-------------------------------------------------------------------------------
 
@@ -903,3 +1249,34 @@ let ``Test TPProject param info`` () =
 ``Basic cancellation test`` ()
 ``Intro test`` () 
 #endif
+
+[<Test>]
+let ``FSharpField.IsNameGenerated`` () =
+    let checkFields source =
+        let file = "/home/user/Test.fsx"
+        let _, typeCheckResults = parseAndCheckScript(file, source) 
+        let symbols =
+            typeCheckResults.GetAllUsesOfAllSymbolsInFile()
+            |> Async.RunSynchronously
+        symbols
+        |> Array.choose (fun su ->
+            match su.Symbol with
+            | :? FSharpEntity as entity -> Some entity.FSharpFields
+            | :? FSharpUnionCase as unionCase -> Some unionCase.UnionCaseFields 
+            | _ -> None)
+        |> Seq.concat
+        |> Seq.map (fun (field: FSharpField) -> field.Name, field.IsNameGenerated)
+        |> List.ofSeq
+        
+    ["exception E of string", ["Data0", true]
+     "exception E of Data0: string", ["Data0", false]
+     "exception E of Name: string", ["Name", false]
+     "exception E of string * Data2: string * Data1: string * Name: string * Data4: string",
+        ["Data0", true; "Data2", false; "Data1", false; "Name", false; "Data4", false]
+    
+     "type U = Case of string", ["Item", true]
+     "type U = Case of Item: string", ["Item", false]
+     "type U = Case of Name: string", ["Name", false]
+     "type U = Case of string * Item2: string * string * Name: string",
+        ["Item1", true; "Item2", false; "Item3", true; "Name", false]]
+    |> List.iter (fun (source, expected) -> checkFields source |> shouldEqual expected)

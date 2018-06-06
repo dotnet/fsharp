@@ -22,6 +22,7 @@ open System.Windows.Forms
 #endif
 
 open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Interactive.Shell
 open Microsoft.FSharp.Compiler.Interactive
@@ -235,6 +236,12 @@ let evaluateSession(argv: string[]) =
                 None
 #endif
 
+        let legacyReferenceResolver = 
+#if CROSS_PLATFORM_COMPILER
+            SimulatedMSBuildReferenceResolver.SimulatedMSBuildResolver
+#else
+            MSBuildReferenceResolver.Resolver
+#endif
         // Update the configuration to include 'StartServer', WinFormsEventLoop and 'GetOptionalConsoleReadLine()'
         let rec fsiConfig = 
             { new FsiEvaluationSessionHostConfig () with 
@@ -251,21 +258,21 @@ let evaluateSession(argv: string[]) =
                 member __.ReportUserCommandLineArgs args = fsiConfig0.ReportUserCommandLineArgs args
                 member __.EventLoopRun() = 
 #if !FX_NO_WINFORMS
-                    match fsiWinFormsLoop.Value with 
+                    match (if fsiSession.IsGui then fsiWinFormsLoop.Value else None) with 
                     | Some l -> (l :> IEventLoop).Run()
                     | _ -> 
 #endif
                     fsiConfig0.EventLoopRun()
                 member __.EventLoopInvoke(f) = 
 #if !FX_NO_WINFORMS
-                    match fsiWinFormsLoop.Value with 
+                    match (if fsiSession.IsGui then fsiWinFormsLoop.Value else None) with 
                     | Some l -> (l :> IEventLoop).Invoke(f)
                     | _ -> 
 #endif
                     fsiConfig0.EventLoopInvoke(f)
                 member __.EventLoopScheduleRestart() = 
 #if !FX_NO_WINFORMS
-                    match fsiWinFormsLoop.Value with 
+                    match (if fsiSession.IsGui then fsiWinFormsLoop.Value else None) with 
                     | Some l -> (l :> IEventLoop).ScheduleRestart()
                     | _ -> 
 #endif
@@ -279,7 +286,7 @@ let evaluateSession(argv: string[]) =
                 member __.GetOptionalConsoleReadLine(probe) = getConsoleReadLine(probe) }
 
         // Create the console
-        and fsiSession = FsiEvaluationSession.Create (fsiConfig, argv, Console.In, Console.Out, Console.Error, collectible=false, legacyReferenceResolver=MSBuildReferenceResolver.Resolver)
+        and fsiSession : FsiEvaluationSession = FsiEvaluationSession.Create (fsiConfig, argv, Console.In, Console.Out, Console.Error, collectible=false, legacyReferenceResolver=legacyReferenceResolver)
 
 
 #if !FX_NO_WINFORMS
@@ -324,6 +331,14 @@ let MainMain argv =
     ignore argv
     let argv = System.Environment.GetCommandLineArgs()
     use e = new SaveAndRestoreConsoleEncoding()
+
+#if !FX_NO_APP_DOMAINS
+    let timesFlag = argv |> Array.exists  (fun x -> x = "/times" || x = "--times")
+    if timesFlag then 
+        AppDomain.CurrentDomain.ProcessExit.Add(fun _ -> 
+            let stats = ILBinaryReader.GetStatistics()
+            printfn "STATS: #ByteArrayFile = %d, #MemoryMappedFileOpen = %d, #MemoryMappedFileClosed = %d, #RawMemoryFile = %d, #WeakByteArrayFile = %d" stats.byteFileCount stats.memoryMapFileOpenedCount stats.memoryMapFileClosedCount stats.rawMemoryFileCount stats.weakByteFileCount)
+#endif
 
 #if FSI_SHADOW_COPY_REFERENCES
     let isShadowCopy x = (x = "/shadowcopyreferences" || x = "--shadowcopyreferences" || x = "/shadowcopyreferences+" || x = "--shadowcopyreferences+")

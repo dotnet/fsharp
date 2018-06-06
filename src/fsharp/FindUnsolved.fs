@@ -6,8 +6,6 @@
 
 module internal Microsoft.FSharp.Compiler.FindUnsolved
 
-open Internal.Utilities
-
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
@@ -52,8 +50,8 @@ let rec accExpr   (cenv:cenv) (env:env) expr =
     | Expr.Quote(ast,_,_,_m,ty) -> 
         accExpr cenv env ast
         accTy cenv env ty
-    | Expr.Obj (_,typ,basev,basecall,overrides,iimpls,_m) -> 
-        accTy cenv env typ
+    | Expr.Obj (_,ty,basev,basecall,overrides,iimpls,_m) -> 
+        accTy cenv env ty
         accExpr cenv env basecall
         accMethods cenv env basev overrides 
         accIntfImpls cenv env basev iimpls
@@ -72,7 +70,7 @@ let rec accExpr   (cenv:cenv) (env:env) expr =
     | Expr.TyLambda(_,tps,_body,_m,rty)  -> 
         let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps,[],ValReprInfo.unnamedRetVal) 
         accTy cenv env rty
-        let ty = tryMkForallTy tps rty 
+        let ty = mkForallTyIfNeeded tps rty 
         accLambdas cenv env topValInfo expr ty
     | Expr.TyChoose(_tps,e1,_m)  -> 
         accExpr cenv env e1 
@@ -220,7 +218,7 @@ let accTycons cenv env tycons = List.iter (accTycon cenv env) tycons
 
 let rec accModuleOrNamespaceExpr cenv env x = 
     match x with  
-    | ModuleOrNamespaceExprWithSig(_mty,def,_m) -> accModuleOrNamespaceDef cenv env def
+    | ModuleOrNamespaceExprWithSig(_mty, def, _m) -> accModuleOrNamespaceDef cenv env def
     
 and accModuleOrNamespaceDefs cenv env x = List.iter (accModuleOrNamespaceDef cenv env) x
 

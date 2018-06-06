@@ -2,10 +2,7 @@
 
 module internal Microsoft.FSharp.Compiler.PatternMatchCompilation
 
-open Internal.Utilities
 open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.AbstractIL
-open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.TcGlobals
@@ -70,3 +67,4 @@ val internal CompilePattern :
 
 exception internal MatchIncomplete of bool * (string * bool) option * range
 exception internal RuleNeverMatched of range
+exception internal EnumMatchIncomplete of bool * (string * bool) option * range

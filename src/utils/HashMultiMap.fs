@@ -10,10 +10,13 @@ open Microsoft.FSharp.Collections
 // one entry. So use two hash tables: one for the main entries and one for the overflow.
 [<Sealed>]
 type internal HashMultiMap<'Key,'Value>(n: int, hasheq: IEqualityComparer<'Key>) = 
+
     let firstEntries = Dictionary<_,_>(n,hasheq)
+
     let rest = Dictionary<_,_>(3,hasheq)
  
     new (hasheq : IEqualityComparer<'Key>) = HashMultiMap<'Key,'Value>(11, hasheq)
+
     new (seq : seq<'Key * 'Value>, hasheq : IEqualityComparer<'Key>) as x = 
         new HashMultiMap<'Key,'Value>(11, hasheq)
         then seq |> Seq.iter (fun (k,v) -> x.Add(k,v))
@@ -35,7 +38,9 @@ type internal HashMultiMap<'Key,'Value>(n: int, hasheq: IEqualityComparer<'Key>)
          rest.Clear()
 
     member x.FirstEntries = firstEntries
+
     member x.Rest = rest
+
     member x.Copy() = 
         let res = HashMultiMap<'Key,'Value>(firstEntries.Count,firstEntries.Comparer)
         for kvp in firstEntries do 
@@ -114,6 +119,7 @@ type internal HashMultiMap<'Key,'Value>(n: int, hasheq: IEqualityComparer<'Key>)
     member x.Count = firstEntries.Count
 
     interface IEnumerable<KeyValuePair<'Key, 'Value>> with
+
         member s.GetEnumerator() = 
             let elems = List<_>(firstEntries.Count + rest.Count)
             for kvp in firstEntries do
@@ -123,34 +129,51 @@ type internal HashMultiMap<'Key,'Value>(n: int, hasheq: IEqualityComparer<'Key>)
             (elems.GetEnumerator() :> IEnumerator<_>)
 
     interface System.Collections.IEnumerable with
+
         member s.GetEnumerator() = ((s :> seq<_>).GetEnumerator() :> System.Collections.IEnumerator)
 
     interface IDictionary<'Key, 'Value> with 
+
         member s.Item 
             with get x = s.[x]            
             and  set x v = s.[x] <- v
             
         member s.Keys = ([| for kvp in s -> kvp.Key |] :> ICollection<'Key>)
+
         member s.Values = ([| for kvp in s -> kvp.Value |] :> ICollection<'Value>)
+
         member s.Add(k,v) = s.[k] <- v
+
         member s.ContainsKey(k) = s.ContainsKey(k)
-        member s.TryGetValue(k,r) = if s.ContainsKey(k) then (r <- s.[k]; true) else false
+
+        member s.TryGetValue(k,r) = match s.TryFind k with Some v-> (r <- v; true) | _ -> false
+
         member s.Remove(k:'Key) = 
             let res = s.ContainsKey(k) in 
             s.Remove(k); res
 
     interface ICollection<KeyValuePair<'Key, 'Value>> with 
+
         member s.Add(x) = s.[x.Key] <- x.Value
+
         member s.Clear() = s.Clear()            
+
         member s.Remove(x) = 
-            let res = s.ContainsKey(x.Key) 
-            if res && Unchecked.equals s.[x.Key] x.Value then 
-                s.Remove(x.Key); 
-            res
-        member s.Contains(x) = 
-            s.ContainsKey(x.Key) && 
-            Unchecked.equals s.[x.Key] x.Value
+            match s.TryFind x.Key with
+            | Some v -> 
+                if Unchecked.equals v x.Value then
+                    s.Remove(x.Key)
+                true
+            | _ -> false
+
+        member s.Contains(x) =
+            match s.TryFind x.Key with
+            | Some v when Unchecked.equals v x.Value -> true
+            | _ -> false
+
         member s.CopyTo(arr,arrIndex) = s |> Seq.iteri (fun j x -> arr.[arrIndex+j] <- x)
+
         member s.IsReadOnly = false
+
         member s.Count = s.Count
 

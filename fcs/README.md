@@ -1,11 +1,11 @@
 
 
-# The FSharp.Compiler.Service components and nuget package
+# The FSharp.Compiler.Service components and NuGet package
 
-This directory contains the build, packaging, test and documentation-generation logic for the nuget package ``FSharp.Compiler.Service``.  The source for this nuget
+This directory contains the build, packaging, test and documentation-generation logic for the NuGet package ``FSharp.Compiler.Service``.  The source for this NuGet
 package is in ``..\src``.
 
-Basically we are packaging up the compiler as a DLL and publishing it as a nuget package.
+Basically we are packaging up the compiler as a DLL and publishing it as a NuGet package.
 
 ## FSharp.Compiler.Service v. FSharp.Compiler.Private
 
@@ -13,7 +13,7 @@ There are subtle differences between FSharp.Compiler.Service and FSharp.Compiler
 
 - FCS has a public API 
 - FCS is built against **.NET 4.5** and **FSharp.Core 4.0.0.0** to give broader reach
-- FCS has a Nuget package
+- FCS has a NuGet package
 - FCS has a .NET Standard 1.6 version in the nuget package
 - FCS testing also tests the "Project Cracker" (see below)
 - FCS doesn't add the System.ValueTuple.dll reference by default, see ``#if COMPILER_SERVICE_AS_DLL`` in compiler codebase
@@ -57,17 +57,17 @@ which does things like:
 
 ### Manual push of packages
 
-Yu can push the packages if you have permissions, either automatically using ``build Release`` or manually
+You can push the packages if you have permissions, either automatically using ``build Release`` or manually
 
     set APIKEY=...
-    .nuget\nuget.exe push Release\FSharp.Compiler.Service.16.0.3.nupkg %APIKEY% -Source https://nuget.org 
-    .nuget\nuget.exe push Release\FSharp.Compiler.Service.MSBuild.v12.16.0.3.nupkg %APIKEY%  -Source https://nuget.org
-    .nuget\nuget.exe push Release\FSharp.Compiler.Service.ProjectCracker.16.0.3.nupkg %APIKEY%  -Source https://nuget.org
+    ..\fsharp\.nuget\nuget.exe push %HOMEDRIVE%%HOMEPATH%\Downloads\FSharp.Compiler.Service.22.0.3.nupkg %APIKEY% -Source https://nuget.org 
+    ..\fsharp\.nuget\nuget.exe push %HOMEDRIVE%%HOMEPATH%\Downloads\FSharp.Compiler.Service.MSBuild.v12.22.0.3.nupkg %APIKEY%  -Source https://nuget.org
+    ..\fsharp\.nuget\nuget.exe push %HOMEDRIVE%%HOMEPATH%\Downloads\FSharp.Compiler.Service.ProjectCracker.22.0.3.nupkg %APIKEY%  -Source https://nuget.org
     
 
 ### Use of Paket and FAKE
 
-Paket is only used to get fake and formating tools.  Eventually we will likely remove this once we update the project files to .NET SDK 2.0.
+Paket is only used to get FAKE and FSharp.Formatting tools.  Eventually we will likely remove this once we update the project files to .NET SDK 2.0.
 
 FAKE is only used to run build.fsx.  Eventually we will likely remove this once we update the project files to .NET SDK 2.0.
 
@@ -83,7 +83,7 @@ Testing reuses the test files from ..\tests\service which were are also FCS test
 Output is in ``docs``.  In the ``FSharp.Compiler.Service`` repo this is checked in and hosted as http://fsharp.github.io/FSharp.Compiler.Service.
 
 
-## The two other nuget packages
+## The two other NuGet packages
 
 It also contains both the source, build, packaging and test logic for 
 
