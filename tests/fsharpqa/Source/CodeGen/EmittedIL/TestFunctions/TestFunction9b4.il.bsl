@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 4:4:3:0
 }
 .assembly TestFunction9b4
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000250 Length: 0x00000085
 }
 .module TestFunction9b4.exe
-// MVID: {59B19208-A091-56C1-A745-03830892B159}
+// MVID: {5B17FC67-A091-56C1-A745-038367FC175B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x027E0000
+// Image base: 0x026C0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -54,15 +54,13 @@
   .method public static !!a  Null<class a>() cil managed
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.LiteralAttribute::.ctor() = ( 01 00 00 00 ) 
-    // Code size       10 (0xa)
+    // Code size       2 (0x2)
     .maxstack  3
     .locals init ([0] !!a V_0)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
     .line 8,8 : 12,16 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction9b4.fs'
-    IL_0000:  ldloca.s   V_0
-    IL_0002:  initobj    !!a
-    IL_0008:  ldloc.0
-    IL_0009:  ret
+    IL_0000:  ldloc.0
+    IL_0001:  ret
   } // end of method TestFunction9b4::Null
 
   .method public specialname static int32 
