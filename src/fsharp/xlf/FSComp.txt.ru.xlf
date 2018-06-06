@@ -83,12 +83,12 @@
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
-        <source>All elements of a list constructor expression must be of the same type as the first element, which here is '{0}'. At least one other element in the list has type '{1}'.</source>
+        <source>All elements of a list must be of the same type as the first element, which here is '{0}'. At least one other element in the list has type '{1}'.</source>
         <target state="needs-review-translation">Все элементы выражения конструктора списка должны иметь один и тот же тип. В этом выражении ожидалось использование типа "{0}", но используется тип "{1}".</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
-        <source>All elements of an array constructor expression must be of the same type as the first element, which here is '{0}'. At least one other element in the array has type '{1}'.</source>
+        <source>All elements of an array must be of the same type as the first element, which here is '{0}'. At least one other element in the array has type '{1}'.</source>
         <target state="needs-review-translation">Все элементы выражения конструктора массива должны иметь один и тот же тип. В этом выражении ожидалось использование типа "{0}", но используется тип "{1}".</target>
         <note />
       </trans-unit>
