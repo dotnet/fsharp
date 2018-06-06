@@ -1565,6 +1565,18 @@ namespace Microsoft.FSharp.Core
             type ER = inherit IERorPER
             type PER = inherit IERorPER
 
+            let canUseDefaultEqualityComparer (ty:Type) =
+                // avoid any types that need special handling in GenericEqualityObj
+                true 
+                && ty.IsSealed  // covers enum and value types
+                && not (typeof<IStructuralEquatable>.IsAssignableFrom ty)
+                && not ty.IsArray
+
+            // The FSharp compiler will not insert a tail call when this is used (this might be "fixed"
+            // in a future release)
+            let inline avoid_tail_call f =
+                match f () with true -> true | _ -> false
+
             type GenericEqualityTCall<'T> = delegate of 'T * 'T -> bool
 
             let tryGetGenericEqualityTCall (er:bool) (ty:Type) : obj =
@@ -1605,16 +1617,15 @@ namespace Microsoft.FSharp.Core
                         else raise (Exception "logic error")
                     match tryGetGenericEqualityTCall er typeof<'T> with
                     | :? GenericEqualityTCall<'T> as call -> call
-                    | _ -> 
-                        if er
-                        then GenericEqualityTCall<'T>(fun x y -> GenericEqualityObj true  fsEqualityComparerNoHashingER  (box x, box y))
-                        else GenericEqualityTCall<'T>(fun x y -> GenericEqualityObj false fsEqualityComparerNoHashingPER (box x, box y))
+                    | _ when canUseDefaultEqualityComparer typeof<'T> -> 
+                        let comparer = System.Collections.Generic.EqualityComparer<'T>.Default
+                        GenericEqualityTCall<'T>(fun x y -> avoid_tail_call (fun () -> comparer.Equals (x, y)))
+                    | _ when er -> 
+                        GenericEqualityTCall<'T>(fun x y -> GenericEqualityObj true  fsEqualityComparerNoHashingER  (box x, box y))
+                    | _ ->
+                        GenericEqualityTCall<'T>(fun x y -> GenericEqualityObj false fsEqualityComparerNoHashingPER (box x, box y))
 
                 static member Function = f
-
-            // The FSharp compiler will not insert a tail call when this is used (this might be "fixed"
-            // in a future release)
-            let inline avoid_tail_call f = match f () with true -> true | _ -> false
 
             /// Implements generic equality between two values, with PER semantics for NaN (so equality on two NaN values returns false)
             //
@@ -1880,6 +1891,9 @@ namespace Microsoft.FSharp.Core
                 static let f : GenericHashTCall<'T> = 
                     match tryGetGenericHashTCall typeof<'T> with
                     | :? GenericHashTCall<'T> as call -> call
+                    | _ when canUseDefaultEqualityComparer typeof<'T> ->
+                        let comparer = System.Collections.Generic.EqualityComparer<'T>.Default
+                        GenericHashTCall<'T> comparer.GetHashCode
                     | _ -> GenericHashTCall<'T>(fun x -> GenericHashParamObj fsEqualityComparerUnlimitedHashingPER (box x))
 
                 static member Function = f
@@ -2218,13 +2232,6 @@ namespace Microsoft.FSharp.Core
             | ty when ty.Equals typeof<string>     -> box StringIEquality
             | _ -> null
 
-        let canUseDefaultEqualityComparer (ty:Type) =
-            // avoid any types that need special handling in GenericEqualityObj
-            true 
-            && ty.IsSealed  // covers enum and value types
-            && not (typeof<IStructuralEquatable>.IsAssignableFrom ty)
-            && not ty.IsArray
-
         [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]     
         type FastGenericEqualityComparerTable<'T>() =
             static let f : System.Collections.Generic.IEqualityComparer<'T> = 
@@ -2232,7 +2239,7 @@ namespace Microsoft.FSharp.Core
                 match tryGetFastGenericEqualityComparerTable ty with
                 | :? System.Collections.Generic.IEqualityComparer<'T> as comp -> comp
                 | _ -> 
-                    if canUseDefaultEqualityComparer ty
+                    if HashCompare.canUseDefaultEqualityComparer ty
                     then unboxPrim (box System.Collections.Generic.EqualityComparer<'T>.Default)
                     else MakeGenericEqualityComparer<'T>()
 
