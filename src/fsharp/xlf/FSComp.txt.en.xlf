@@ -83,18 +83,18 @@
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
-        <source>All elements of a list constructor expression must have the same type. The first element has type '{0}', but there is also an element of type '{1}'.</source>
-        <target state="new">All elements of a list constructor expression must have the same type. The first element has type '{0}', but there is also an element of type '{1}'.</target>
+        <source>All elements of a list constructor expression must be of the same type as the first element, which here is '{0}'. At least one other element in the list has type '{1}'.</source>
+        <target state="new">All elements of a list constructor expression must be of the same type as the first element, which here is '{0}'. At least one other element in the list has type '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
-        <source>All elements of an array constructor expression must have the same type. The first element has type '{0}', but there is also an element of type '{1}'.</source>
-        <target state="new">All elements of an array constructor expression must have the same type. The first element has type '{0}', but there is also an element of type '{1}'.</target>
+        <source>All elements of an array constructor expression must be of the same type as the first element, which here is '{0}'. At least one other element in the array has type '{1}'.</source>
+        <target state="new">All elements of an array constructor expression must be of the same type as the first element, which here is '{0}'. At least one other element in the array has type '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="missingElseBranch">
-        <source>The 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which returns a value of the same type as the first branch ('{0}').</source>
-        <target state="new">The 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which returns a value of the same type as the first branch ('{0}').</target>
+        <source>This 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which also returns a value of type '{0}'.</source>
+        <target state="new">This 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which also returns a value of type '{0}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="ifExpression">
@@ -103,13 +103,13 @@
         <note />
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
-        <source>All branches of an 'if' expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
-        <target state="new">All branches of an 'if' expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</target>
+        <source>All branches of an 'if' expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <target state="new">All branches of an 'if' expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
-        <source>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
-        <target state="new">All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</target>
+        <source>All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</source>
+        <target state="new">All branches of a pattern match expression must return values of the same type as the first branch, which here is '{0}'. This branch returns a value of type '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
