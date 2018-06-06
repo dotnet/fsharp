@@ -696,16 +696,16 @@ type internal SR private() =
     static member typrelNoImplementationGivenWithSuggestion(a0 : System.String) = (366, GetStringFunc("typrelNoImplementationGivenWithSuggestion",",,,%s,,,") a0)
     /// No implementation was given for those members: %s
     /// (Originally from ..\FSComp.txt:197)
-    static member typrelNoImplementationSeveralGiven(a0 : System.String) = (365, GetStringFunc("typrelNoImplementationSeveralGiven",",,,%s,,,") a0)
+    static member typrelNoImplementationGivenSeveral(a0 : System.String) = (365, GetStringFunc("typrelNoImplementationGivenSeveral",",,,%s,,,") a0)
     /// No implementation was given for those members: %sNote that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.
     /// (Originally from ..\FSComp.txt:198)
-    static member typrelNoImplementationSeveralGivenWithSuggestion(a0 : System.String) = (366, GetStringFunc("typrelNoImplementationSeveralGivenWithSuggestion",",,,%s,,,") a0)
+    static member typrelNoImplementationGivenSeveralWithSuggestion(a0 : System.String) = (366, GetStringFunc("typrelNoImplementationGivenSeveralWithSuggestion",",,,%s,,,") a0)
     /// No implementation was given for those members (some results omitted): %s
     /// (Originally from ..\FSComp.txt:199)
-    static member typrelNoImplementationSeveralTruncatedGiven(a0 : System.String) = (365, GetStringFunc("typrelNoImplementationSeveralTruncatedGiven",",,,%s,,,") a0)
+    static member typrelNoImplementationGivenSeveralTruncated(a0 : System.String) = (365, GetStringFunc("typrelNoImplementationGivenSeveralTruncated",",,,%s,,,") a0)
     /// No implementation was given for those members (some results omitted): %sNote that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.
     /// (Originally from ..\FSComp.txt:200)
-    static member typrelNoImplementationSeveralTruncatedGivenWithSuggestion(a0 : System.String) = (366, GetStringFunc("typrelNoImplementationSeveralTruncatedGivenWithSuggestion",",,,%s,,,") a0)
+    static member typrelNoImplementationGivenSeveralTruncatedWithSuggestion(a0 : System.String) = (366, GetStringFunc("typrelNoImplementationGivenSeveralTruncatedWithSuggestion",",,,%s,,,") a0)
     /// The member '%s' does not have the correct number of arguments. The required signature is '%s'.
     /// (Originally from ..\FSComp.txt:201)
     static member typrelMemberDoesNotHaveCorrectNumberOfArguments(a0 : System.String, a1 : System.String) = (367, GetStringFunc("typrelMemberDoesNotHaveCorrectNumberOfArguments",",,,%s,,,%s,,,") a0 a1)
@@ -4550,10 +4550,10 @@ type internal SR private() =
         ignore(GetString("typrelNamedArgumentHasBeenAssignedMoreThenOnce"))
         ignore(GetString("typrelNoImplementationGiven"))
         ignore(GetString("typrelNoImplementationGivenWithSuggestion"))
-        ignore(GetString("typrelNoImplementationSeveralGiven"))
-        ignore(GetString("typrelNoImplementationSeveralGivenWithSuggestion"))
-        ignore(GetString("typrelNoImplementationSeveralTruncatedGiven"))
-        ignore(GetString("typrelNoImplementationSeveralTruncatedGivenWithSuggestion"))
+        ignore(GetString("typrelNoImplementationGivenSeveral"))
+        ignore(GetString("typrelNoImplementationGivenSeveralWithSuggestion"))
+        ignore(GetString("typrelNoImplementationGivenSeveralTruncated"))
+        ignore(GetString("typrelNoImplementationGivenSeveralTruncatedWithSuggestion"))
         ignore(GetString("typrelMemberDoesNotHaveCorrectNumberOfArguments"))
         ignore(GetString("typrelMemberDoesNotHaveCorrectNumberOfTypeParameters"))
         ignore(GetString("typrelMemberDoesNotHaveCorrectKindsOfGenericParameters"))
