@@ -83,18 +83,18 @@
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
-        <source>All elements of a list constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">Bir list constructor ifadesinin tüm öğeleri aynı türe sahip olmalıdır. Bu ifadenin '{0}' türünde olması bekleniyordu ancak burada '{1}' türünde.</target>
+        <source>All elements of a list constructor expression must have the same type. The first element has type '{0}', but there is also an element of type '{1}'.</source>
+        <target state="needs-review-translation">Bir list constructor ifadesinin tüm öğeleri aynı türe sahip olmalıdır. Bu ifadenin '{0}' türünde olması bekleniyordu ancak burada '{1}' türünde.</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
-        <source>All elements of an array constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">Bir array constructor ifadesinin tüm öğeleri aynı türe sahip olmalıdır. Bu ifadenin '{0}' türünde olması bekleniyordu ancak burada '{1}' türünde.</target>
+        <source>All elements of an array constructor expression must have the same type. The first element has type '{0}', but there is also an element of type '{1}'.</source>
+        <target state="needs-review-translation">Bir array constructor ifadesinin tüm öğeleri aynı türe sahip olmalıdır. Bu ifadenin '{0}' türünde olması bekleniyordu ancak burada '{1}' türünde.</target>
         <note />
       </trans-unit>
       <trans-unit id="missingElseBranch">
-        <source>The 'if' expression is missing an 'else' branch. The 'then' branch has type '{0}'. Because 'if' is an expression, and not a statement, add an 'else' branch which returns a value of the same type.</source>
-        <target state="translated">'if' ifadesinde bir 'else' dalı eksik. 'then' dalı '{0}' türünde. 'if' bir ifade değil deyim olduğundan, aynı türde değer döndüren bir 'else' dalı eklemeniz gerekir.</target>
+        <source>The 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which returns a value of the same type as the first branch ('{0}').</source>
+        <target state="needs-review-translation">'if' ifadesinde bir 'else' dalı eksik. 'then' dalı '{0}' türünde. 'if' bir ifade değil deyim olduğundan, aynı türde değer döndüren bir 'else' dalı eklemeniz gerekir.</target>
         <note />
       </trans-unit>
       <trans-unit id="ifExpression">
@@ -103,8 +103,8 @@
         <note />
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
-        <source>All branches of an 'if' expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">Bir 'if' ifadesinin tüm dalları aynı türe sahip olmalıdır. Bu ifadenin '{0}' türünde olması bekleniyordu ancak burada '{1}' türünde.</target>
+        <source>All branches of an 'if' expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
+        <target state="needs-review-translation">Bir 'if' ifadesinin tüm dalları aynı türe sahip olmalıdır. Bu ifadenin '{0}' türünde olması bekleniyordu ancak burada '{1}' türünde.</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">

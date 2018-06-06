@@ -83,18 +83,18 @@
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
-        <source>All elements of a list constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">Todas las ramas de una expresión de constructor de lista deben tener el mismo tipo. Se esperaba que esta expresión tuviera el tipo "{0}", pero aquí tiene el tipo "{1}".</target>
+        <source>All elements of a list constructor expression must have the same type. The first element has type '{0}', but there is also an element of type '{1}'.</source>
+        <target state="needs-review-translation">Todas las ramas de una expresión de constructor de lista deben tener el mismo tipo. Se esperaba que esta expresión tuviera el tipo "{0}", pero aquí tiene el tipo "{1}".</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
-        <source>All elements of an array constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">Todos los elementos de una expresión de constructor de matriz deben tener el mismo tipo. Se esperaba que esta expresión tuviera el tipo "{0}", pero aquí tiene el tipo "{1}".</target>
+        <source>All elements of an array constructor expression must have the same type. The first element has type '{0}', but there is also an element of type '{1}'.</source>
+        <target state="needs-review-translation">Todos los elementos de una expresión de constructor de matriz deben tener el mismo tipo. Se esperaba que esta expresión tuviera el tipo "{0}", pero aquí tiene el tipo "{1}".</target>
         <note />
       </trans-unit>
       <trans-unit id="missingElseBranch">
-        <source>The 'if' expression is missing an 'else' branch. The 'then' branch has type '{0}'. Because 'if' is an expression, and not a statement, add an 'else' branch which returns a value of the same type.</source>
-        <target state="translated">La expresión "if" no tiene una rama "else". La rama "then" tiene el tipo '{0}'. Dado que "if" es una expresión y no una instrucción, agregue una rama "else" que devuelva un valor del mismo tipo.</target>
+        <source>The 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which returns a value of the same type as the first branch ('{0}').</source>
+        <target state="needs-review-translation">La expresión "if" no tiene una rama "else". La rama "then" tiene el tipo '{0}'. Dado que "if" es una expresión y no una instrucción, agregue una rama "else" que devuelva un valor del mismo tipo.</target>
         <note />
       </trans-unit>
       <trans-unit id="ifExpression">
@@ -103,8 +103,8 @@
         <note />
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
-        <source>All branches of an 'if' expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">Todas las ramas de una expresión "if" deben devolver el mismo tipo. Se esperaba que esta expresión tuviera el tipo "{0}", pero aquí tiene el tipo "{1}".</target>
+        <source>All branches of an 'if' expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
+        <target state="needs-review-translation">Todas las ramas de una expresión "if" deben devolver el mismo tipo. Se esperaba que esta expresión tuviera el tipo "{0}", pero aquí tiene el tipo "{1}".</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">

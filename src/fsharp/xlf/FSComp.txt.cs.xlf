@@ -83,18 +83,18 @@
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
-        <source>All elements of a list constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">Všechny elementy výrazu konstruktoru seznamu musí mít stejný typ. Očekávalo se, že tento výraz bude mít typ {0}, ale tady je typu {1}.</target>
+        <source>All elements of a list constructor expression must have the same type. The first element has type '{0}', but there is also an element of type '{1}'.</source>
+        <target state="needs-review-translation">Všechny elementy výrazu konstruktoru seznamu musí mít stejný typ. Očekávalo se, že tento výraz bude mít typ {0}, ale tady je typu {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
-        <source>All elements of an array constructor expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">Všechny elementy výrazu konstruktoru pole musí mít stejný typ. Očekávalo se, že tento výraz bude mít typ {0}, ale tady je typu {1}.</target>
+        <source>All elements of an array constructor expression must have the same type. The first element has type '{0}', but there is also an element of type '{1}'.</source>
+        <target state="needs-review-translation">Všechny elementy výrazu konstruktoru pole musí mít stejný typ. Očekávalo se, že tento výraz bude mít typ {0}, ale tady je typu {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="missingElseBranch">
-        <source>The 'if' expression is missing an 'else' branch. The 'then' branch has type '{0}'. Because 'if' is an expression, and not a statement, add an 'else' branch which returns a value of the same type.</source>
-        <target state="translated">Ve výrazu if chybí větev else. Větev then je typu {0}. Protože if je výraz a ne příkaz, přidejte větev else, která vrátí hodnotu stejného typu.</target>
+        <source>The 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which returns a value of the same type as the first branch ('{0}').</source>
+        <target state="needs-review-translation">Ve výrazu if chybí větev else. Větev then je typu {0}. Protože if je výraz a ne příkaz, přidejte větev else, která vrátí hodnotu stejného typu.</target>
         <note />
       </trans-unit>
       <trans-unit id="ifExpression">
@@ -103,8 +103,8 @@
         <note />
       </trans-unit>
       <trans-unit id="elseBranchHasWrongType">
-        <source>All branches of an 'if' expression must have the same type. This expression was expected to have type '{0}', but here has type '{1}'.</source>
-        <target state="translated">Všechny větve výrazu if musí mít stejný typ. Očekávalo se, že tento výraz bude mít typ {0}, ale tady je typu {1}.</target>
+        <source>All branches of an 'if' expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
+        <target state="needs-review-translation">Všechny větve výrazu if musí mít stejný typ. Očekávalo se, že tento výraz bude mít typ {0}, ale tady je typu {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
