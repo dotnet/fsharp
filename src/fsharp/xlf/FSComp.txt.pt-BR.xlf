@@ -7042,6 +7042,26 @@
         <target state="new">Struct members cannot return the address of fields of the struct by reference</target>
         <note />
       </trans-unit>
+      <trans-unit id="typrelNoImplementationSeveralGiven">
+        <source>No implementation was given for those members: {0}</source>
+        <target state="new">No implementation was given for those members: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typrelNoImplementationSeveralGivenWithSuggestion">
+        <source>No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
+        <target state="new">No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typrelNoImplementationSeveralTruncatedGiven">
+        <source>No implementation was given for those members (some results omitted): {0}</source>
+        <target state="new">No implementation was given for those members (some results omitted): {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="typrelNoImplementationSeveralTruncatedGivenWithSuggestion">
+        <source>No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</source>
+        <target state="new">No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</target>
+        <note />
+      </trans-unit>
     </body>
   </file>
 </xliff>
