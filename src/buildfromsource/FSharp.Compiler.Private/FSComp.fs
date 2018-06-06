@@ -163,19 +163,19 @@ type internal SR private() =
     /// Add . for indexer access.
     /// (Originally from ../FSComp.txt:19)
     static member addIndexerDot() = (GetStringFunc("addIndexerDot",",,,") )
-    /// All elements of a list constructor expression must have the same type. This expression was expected to have type '%s', but here has type '%s'.
+    /// All elements of a list constructor expression must have the same type. The first element has type '%s', but there is also an element of type '%s'.
     /// (Originally from ../FSComp.txt:20)
     static member listElementHasWrongType(a0 : System.String, a1 : System.String) = (GetStringFunc("listElementHasWrongType",",,,%s,,,%s,,,") a0 a1)
-    /// All elements of an array constructor expression must have the same type. This expression was expected to have type '%s', but here has type '%s'.
+    /// All elements of an array constructor expression must have the same type. The first element has type '%s', but there is also an element of type '%s'.
     /// (Originally from ../FSComp.txt:21)
     static member arrayElementHasWrongType(a0 : System.String, a1 : System.String) = (GetStringFunc("arrayElementHasWrongType",",,,%s,,,%s,,,") a0 a1)
-    /// The 'if' expression is missing an 'else' branch. The 'then' branch has type '%s'. Because 'if' is an expression, and not a statement, add an 'else' branch which returns a value of the same type.
+    /// The 'if' expression is missing an 'else' branch. Because 'if' is an expression, and not a statement, add an 'else' branch which returns a value of the same type as the first branch ('%s').
     /// (Originally from ../FSComp.txt:22)
     static member missingElseBranch(a0 : System.String) = (GetStringFunc("missingElseBranch",",,,%s,,,") a0)
     /// The 'if' expression needs to have type '%s' to satisfy context type requirements. It currently has type '%s'.
     /// (Originally from ../FSComp.txt:23)
     static member ifExpression(a0 : System.String, a1 : System.String) = (GetStringFunc("ifExpression",",,,%s,,,%s,,,") a0 a1)
-    /// All branches of an 'if' expression must have the same type. This expression was expected to have type '%s', but here has type '%s'.
+    /// All branches of an 'if' expression must return values of the same type. The first branch returned a value of type '%s', but this branch returned a value of type '%s'.
     /// (Originally from ../FSComp.txt:24)
     static member elseBranchHasWrongType(a0 : System.String, a1 : System.String) = (GetStringFunc("elseBranchHasWrongType",",,,%s,,,%s,,,") a0 a1)
     /// All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '%s', but this branch returned a value of type '%s'.
