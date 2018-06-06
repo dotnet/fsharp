@@ -341,6 +341,10 @@ type internal OpenDeclaration =
     /// Create a new instance of OpenDeclaration.
     static member Create : longId: Ident list * modules: ModuleOrNamespaceRef list * appliedScope: range * isOwnNamespace: bool -> OpenDeclaration
     
+type FormatStringCheckContext =
+    { NormalizedSource: string
+      LineEndPositions: int[] }
+
 /// An abstract type for reporting the results of name resolution and type checking
 type ITypecheckResultsSink =
 
@@ -361,6 +365,8 @@ type ITypecheckResultsSink =
 
     /// Get the current source
     abstract CurrentSource : string option
+
+    abstract FormatStringCheckContext : Lazy<FormatStringCheckContext option>
 
 /// An implementation of ITypecheckResultsSink to collect information during type checking
 type internal TcResultsSinkImpl =

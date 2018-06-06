@@ -1246,6 +1246,10 @@ type OpenDeclaration =
           AppliedScope = appliedScope
           IsOwnNamespace = isOwnNamespace }
 
+type FormatStringCheckContext =
+    { NormalizedSource: string
+      LineEndPositions: int[] }
+
 /// An abstract type for reporting the results of name resolution and type checking.
 type ITypecheckResultsSink =
     abstract NotifyEnvWithScope : range * NameResolutionEnv * AccessorDomain -> unit
@@ -1254,6 +1258,7 @@ type ITypecheckResultsSink =
     abstract NotifyFormatSpecifierLocation : range * int -> unit
     abstract NotifyOpenDeclaration : OpenDeclaration -> unit
     abstract CurrentSource : string option
+    abstract FormatStringCheckContext : Lazy<FormatStringCheckContext option>
 
 let (|ValRefOfProp|_|) (pi : PropInfo) = pi.ArbitraryValRef
 let (|ValRefOfMeth|_|) (mi : MethInfo) = mi.ArbitraryValRef
@@ -1497,7 +1502,6 @@ type TcSymbolUses(g, capturedNameResolutions : ResizeArray<CapturedNameResolutio
 
     member this.GetFormatSpecifierLocationsAndArity() = formatSpecifierLocations
 
-
 /// An accumulator for the results being emitted into the tcSink.
 type TcResultsSinkImpl(g, ?source: string) =
     let capturedEnvs = ResizeArray<_>()
@@ -1574,6 +1578,19 @@ type TcResultsSinkImpl(g, ?source: string) =
             capturedOpenDeclarations.Add(openDeclaration)
 
         member sink.CurrentSource = source
+        
+        member sink.FormatStringCheckContext = 
+            lazy (
+                source |> Option.map (fun source ->
+                    let source = source.Replace("\r\n", "\n").Replace("\r", "\n")
+                    let positions =
+                        source.Split('\n')
+                        |> Seq.map (fun s -> String.length s + 1)
+                        |> Seq.scan (+) 0
+                        |> Seq.toArray
+                    { NormalizedSource = source 
+                      LineEndPositions = positions })
+            )
 
 
 /// An abstract type for reporting the results of name resolution and type checking, and which allows
