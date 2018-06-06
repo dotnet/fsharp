@@ -228,10 +228,6 @@ namespace Microsoft.FSharp.Core
     /// values.</remarks>   
     type 'T array = 'T[]
             
-           
-    /// <summary>Represents a managed pointer in F# code.</summary>
-    type byref<'T> = (# "!0&" #)
-
     /// <summary>Represents an unmanaged pointer in F# code.</summary>
     ///
     /// <remarks>This type should only be used when writing F# code that interoperates
@@ -240,6 +236,15 @@ namespace Microsoft.FSharp.Core
     /// <c>nativeint</c> type may be required. Values of this type can be generated
     /// by the functions in the <c>NativeInterop.NativePtr</c> module.</remarks>
     type nativeptr<'T when 'T : unmanaged> = (# "native int" #)
+
+    /// <summary>Represents an untyped unmanaged pointer in F# code.</summary>
+    ///
+    /// <remarks>This type should only be used when writing F# code that interoperates
+    /// with native code.  Use of this type in F# code may result in
+    /// unverifiable code being generated.  Conversions to and from the 
+    /// <c>nativeint</c> type may be required. Values of this type can be generated
+    /// by the functions in the <c>NativeInterop.NativePtr</c> module.</remarks>
+    type voidptr = (# "void*" #)
 
     /// <summary>This type is for internal use by the F# code generator.</summary>
     type ilsigptr<'T> = (# "!0*" #)

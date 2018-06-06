@@ -248,21 +248,21 @@ let MethInfoHasAttribute g m attribSpec minfo  =
 
 
 /// Check IL attributes for 'ObsoleteAttribute', returning errors and warnings as data
-let private CheckILAttributes (g: TcGlobals) cattrs m = 
-    let (AttribInfo(tref, _)) = g.attrib_SystemObsolete
+let private CheckILAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m = 
+    let (AttribInfo(tref,_)) = g.attrib_SystemObsolete
     match TryDecodeILAttribute g tref cattrs with 
-    | Some ([ILAttribElem.String (Some msg) ], _) -> 
+    | Some ([ILAttribElem.String (Some msg) ], _) when not isByrefLikeTyconRef -> 
             WarnD(ObsoleteWarning(msg, m))
-    | Some ([ILAttribElem.String (Some msg); ILAttribElem.Bool isError ], _) -> 
+    | Some ([ILAttribElem.String (Some msg); ILAttribElem.Bool isError ], _) when not isByrefLikeTyconRef  -> 
         if isError then 
             ErrorD (ObsoleteError(msg, m))
         else 
             WarnD (ObsoleteWarning(msg, m))
-    | Some ([ILAttribElem.String None ], _) -> 
+    | Some ([ILAttribElem.String None ], _) when not isByrefLikeTyconRef -> 
         WarnD(ObsoleteWarning("", m))
-    | Some _ -> 
+    | Some _ when not isByrefLikeTyconRef -> 
         WarnD(ObsoleteWarning("", m))
-    | None -> 
+    | _ -> 
         CompleteD
 
 /// Check F# attributes for 'ObsoleteAttribute', 'CompilerMessageAttribute' and 'ExperimentalAttribute',
@@ -291,7 +291,7 @@ let CheckFSharpAttributes g attribs m =
                 match namedArgs with 
                 | ExtractAttribNamedArg "IsError" (AttribBoolArg v) -> v 
                 | _ -> false 
-            if isError then ErrorD msg else WarnD msg
+            if isError && (not g.compilingFslib || n <> 1204) then ErrorD msg else WarnD msg
                  
         | _ -> 
             CompleteD
@@ -374,7 +374,7 @@ let CheckProvidedAttributesForUnseen (provAttribs: Tainted<IProvidedCustomAttrib
 /// Check the attributes associated with a property, returning warnings and errors as data.
 let CheckPropInfoAttributes pinfo m = 
     match pinfo with
-    | ILProp(ILPropInfo(_, pdef)) -> CheckILAttributes pinfo.TcGlobals pdef.CustomAttrs m
+    | ILProp(ILPropInfo(_, pdef)) -> CheckILAttributes pinfo.TcGlobals false pdef.CustomAttrs m
     | FSProp(g, _, Some vref, _) 
     | FSProp(g, _, _, Some vref) -> CheckFSharpAttributes g vref.Attribs m
     | FSProp _ -> failwith "CheckPropInfoAttributes: unreachable"
@@ -389,7 +389,7 @@ let CheckPropInfoAttributes pinfo m =
 let CheckILFieldAttributes g (finfo:ILFieldInfo) m = 
     match finfo with 
     | ILFieldInfo(_, pd) -> 
-        CheckILAttributes g pd.CustomAttrs m |> CommitOperationResult
+        CheckILAttributes g false pd.CustomAttrs m |> CommitOperationResult
 #if !NO_EXTENSIONTYPING
     | ProvidedField (amap, fi, m) -> 
         CheckProvidedAttributes amap.g m (fi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)), m)) |> CommitOperationResult
@@ -399,7 +399,7 @@ let CheckILFieldAttributes g (finfo:ILFieldInfo) m =
 let CheckMethInfoAttributes g m tyargsOpt minfo = 
     let search = 
         BindMethInfoAttributes m minfo 
-            (fun ilAttribs -> Some(CheckILAttributes g ilAttribs m)) 
+            (fun ilAttribs -> Some(CheckILAttributes g false ilAttribs m)) 
             (fun fsAttribs -> 
                 let res = 
                     CheckFSharpAttributes g fsAttribs m ++ (fun () -> 
@@ -419,7 +419,7 @@ let CheckMethInfoAttributes g m tyargsOpt minfo =
 
 /// Indicate if a method has 'Obsolete', 'CompilerMessageAttribute' or 'TypeProviderEditorHideMethodsAttribute'. 
 /// Used to suppress the item in intellisense.
-let MethInfoIsUnseen g m typ minfo = 
+let MethInfoIsUnseen g m ty minfo = 
     let isUnseenByObsoleteAttrib () = 
         match BindMethInfoAttributes m minfo 
                 (fun ilAttribs -> Some(CheckILAttributesForUnseen g ilAttribs m)) 
@@ -435,10 +435,10 @@ let MethInfoIsUnseen g m typ minfo =
 
     let isUnseenByHidingAttribute () = 
 #if !NO_EXTENSIONTYPING
-        not (isObjTy g typ) &&
-        isAppTy g typ &&
+        not (isObjTy g ty) &&
+        isAppTy g ty &&
         isObjTy g minfo.ApparentEnclosingType &&
-        let tcref = tcrefOfAppTy g typ 
+        let tcref = tcrefOfAppTy g ty 
         match tcref.TypeReprInfo with 
         | TProvidedTypeExtensionPoint info -> 
             info.ProvidedType.PUntaint((fun st -> (st :> IProvidedCustomAttributeProvider).GetHasTypeProviderEditorHideMethodsAttribute(info.ProvidedType.TypeProvider.PUntaintNoFailure(id))), m)
@@ -454,11 +454,11 @@ let MethInfoIsUnseen g m typ minfo =
         else 
             false
 #else
-        typ |> ignore
+        ty |> ignore
         false
 #endif
 
-    //let isUnseenByBeingTupleMethod () = isAnyTupleTy g typ
+    //let isUnseenByBeingTupleMethod () = isAnyTupleTy g ty
 
     isUnseenByObsoleteAttrib () || isUnseenByHidingAttribute () //|| isUnseenByBeingTupleMethod ()
 
@@ -481,7 +481,7 @@ let PropInfoIsUnseen m pinfo =
 /// Check the attributes on an entity, returning errors and warnings as data.
 let CheckEntityAttributes g (x:TyconRef) m = 
     if x.IsILTycon then 
-        CheckILAttributes g x.ILTyconRawMetadata.CustomAttrs m
+        CheckILAttributes g (isByrefLikeTyconRef g m x) x.ILTyconRawMetadata.CustomAttrs m
     else 
         CheckFSharpAttributes g x.Attribs m
 

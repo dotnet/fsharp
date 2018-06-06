@@ -8,6 +8,7 @@ module internal Microsoft.FSharp.Compiler.Tast
 
 open System
 open System.Collections.Generic 
+open System.Diagnostics
 open System.Reflection
 open Internal.Utilities
 open Microsoft.FSharp.Compiler.AbstractIL 
@@ -239,7 +240,7 @@ type ValFlags(flags:int64) =
 
     member x.HasBeenReferenced                =                   (flags &&& 0b0001000000000000000L) <> 0L
 
-    member x.WithHasBeenReferenced                    =   ValFlags(flags ||| 0b0001000000000000000L)
+    member x.WithHasBeenReferenced                     =  ValFlags(flags ||| 0b0001000000000000000L)
 
     member x.IsCompiledAsStaticPropertyWithoutField =             (flags &&& 0b0010000000000000000L) <> 0L
 
@@ -260,7 +261,7 @@ type ValFlags(flags:int64) =
                                                       (flags       &&&    ~~~0b0011001100000000000L) 
 
 /// Represents the kind of a type parameter
-[<RequireQualifiedAccess>]
+[<RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
 type TyparKind = 
 
     | Type 
@@ -271,6 +272,9 @@ type TyparKind =
       match x with
       | TyparKind.Type -> None
       | TyparKind.Measure -> Some "Measure"
+
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
 
     override x.ToString() = 
       match x with
@@ -407,14 +411,46 @@ type EntityFlags(flags:int64) =
     // case sub-classes must protect themselves against early access to their contents.
     member x.HasSelfReferentialConstructor       = (flags       &&&     0b000000000001000L) <> 0x0L
 
-    /// This bit represents a F# record that is a value type, or a struct record.
-    member x.IsStructRecordOrUnionType           = (flags       &&&     0b000000000100000L) <> 0x0L
-
     /// This bit is reserved for us in the pickle format, see pickle.fs, it's being listed here to stop it ever being used for anything else
     static member ReservedBitForPickleFormatTyconReprFlag   =           0b000000000010000L
 
+    /// This bit represents a F# record that is a value type, or a struct record.
+    member x.IsStructRecordOrUnionType           = (flags       &&&     0b000000000100000L) <> 0x0L
+
+    /// These two bits represents the on-demand analysis about whether the entity has the IsByRefLike attribute
+    member x.TryIsByRefLike                      = (flags       &&&     0b000000011000000L) 
+                                                                |> function 
+                                                                      | 0b000000011000000L -> Some true
+                                                                      | 0b000000010000000L -> Some false
+                                                                      | _                  -> None
+
+    /// Adjust the on-demand analysis about whether the entity has the IsByRefLike attribute
+    member x.WithIsByRefLike(flag) = 
+            let flags = 
+                     (flags       &&&                                ~~~0b000000011000000L) |||
+                     (match flag with
+                      | true  ->                                        0b000000011000000L
+                      | false ->                                        0b000000010000000L) 
+            EntityFlags(flags)
+
+    /// These two bits represents the on-demand analysis about whether the entity has the IsReadOnly attribute or is otherwise determined to be a readonly struct
+    member x.TryIsReadOnly                       = (flags       &&&     0b000001100000000L) 
+                                                                |> function 
+                                                                      | 0b000001100000000L -> Some true
+                                                                      | 0b000001000000000L -> Some false
+                                                                      | _                  -> None
+
+    /// Adjust the on-demand analysis about whether the entity has the IsReadOnly attribute or is otherwise determined to be a readonly struct
+    member x.WithIsReadOnly(flag) = 
+            let flags = 
+                     (flags       &&&                                ~~~0b000001100000000L) |||
+                     (match flag with
+                      | true  ->                                        0b000001100000000L
+                      | false ->                                        0b000001000000000L) 
+            EntityFlags(flags)
+
     /// Get the flags as included in the F# binary metadata
-    member x.PickledBits =                         (flags       &&&  ~~~0b000000000000100L)
+    member x.PickledBits =                         (flags       &&&  ~~~0b000001111000100L)
 
 
 #if DEBUG
@@ -508,6 +544,7 @@ type CompilationPath =
 
 
 
+[<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type EntityOptionalData =
     {
       /// The name of the type, possibly with `n mangling 
@@ -547,10 +584,13 @@ type EntityOptionalData =
       mutable entity_exn_info: ExceptionInfo     
     }
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = "EntityOptionalData(...)"
 
 and /// Represents a type definition, exception definition, module definition or namespace definition.
-    [<RequireQualifiedAccess>] 
+    [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>] 
     Entity = 
     { /// The declared type parameters of the type  
       // MUTABILITY; used only during creation and remapping  of tycons 
@@ -997,6 +1037,18 @@ and /// Represents a type definition, exception definition, module definition or
     /// Indicates if this is an F# type definition whose r.h.s. is known to be a record type definition that is a value type.
     member x.IsStructRecordOrUnionTycon = match x.TypeReprInfo with TRecdRepr _ | TUnionRepr _ -> x.entity_flags.IsStructRecordOrUnionType | _ -> false
 
+    /// The on-demand analysis about whether the entity has the IsByRefLike attribute
+    member x.TryIsByRefLike                                   = x.entity_flags.TryIsByRefLike
+
+    /// Set the on-demand analysis about whether the entity has the IsByRefLike attribute
+    member x.SetIsByRefLike b                                 = x.entity_flags <- x.entity_flags.WithIsByRefLike b 
+
+    /// These two bits represents the on-demand analysis about whether the entity has the IsReadOnly attribute or is otherwise determined to be a readonly struct
+    member x.TryIsReadOnly                                    = x.entity_flags.TryIsReadOnly
+
+    /// Set the on-demand analysis about whether the entity has the IsReadOnly attribute or is otherwise determined to be a readonly struct
+    member x.SetIsReadOnly b                                  = x.entity_flags <- x.entity_flags.WithIsReadOnly b 
+
     /// Indicates if this is an F# type definition whose r.h.s. is known to be some kind of F# object model definition
     member x.IsFSharpObjectModelTycon = match x.TypeReprInfo with | TFSharpObjectRepr _ -> true |  _ -> false
 
@@ -1151,7 +1203,7 @@ and /// Represents a type definition, exception definition, module definition or
                 | TExnAsmRepr tref -> CompiledTypeRepr.ILAsmNamed(tref, AsObject, Some (mkILTy AsObject (mkILTySpec (tref,[]))))
                 | _ -> 
                 match x.TypeReprInfo with 
-                | TAsmRepr typ -> CompiledTypeRepr.ILAsmOpen typ
+                | TAsmRepr ty -> CompiledTypeRepr.ILAsmOpen ty
                 | _ -> 
                     let boxity = if x.IsStructOrEnumTycon then AsValue else AsObject
                     let ilTypeRef = 
@@ -1184,6 +1236,9 @@ and /// Represents a type definition, exception definition, module definition or
     /// Sets the structness of a record or union type definition
     member x.SetIsStructRecordOrUnion b  = let flags = x.entity_flags in x.entity_flags <- EntityFlags(flags.IsPrefixDisplay, flags.IsModuleOrNamespace, flags.PreEstablishedHasDefaultConstructor, flags.HasSelfReferentialConstructor, b)
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = x.LogicalName
 
 and [<RequireQualifiedAccess>] MaybeLazy<'T> =
@@ -1207,7 +1262,7 @@ and ParentRef =
     | ParentNone
     
 and 
-    [<NoEquality; NoComparison;RequireQualifiedAccess>]
+    [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
     TyconAugmentation = 
     { /// This is the value implementing the auto-generated comparison 
       /// semantics if any. It is not present if the type defines its own implementation 
@@ -1277,10 +1332,13 @@ and
           tcaug_closed=false 
           tcaug_abstract=false }
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = "TyconAugmentation(...)"
 
 and 
-    [<NoEquality; NoComparison>]
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     /// The information for the contents of a type. Also used for a provided namespace.
     TyconRepresentation = 
 
@@ -1324,20 +1382,26 @@ and
     /// The information for exception definitions should be folded into here.
     | TNoRepr
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = "TyconRepresentation(...)"
 
 and 
-   [<NoComparison; NoEquality>]
+   [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     /// TILObjectReprData(scope, nesting, definition)
    TILObjectReprData = 
     | TILObjectReprData of ILScopeRef * ILTypeDef list * ILTypeDef 
+
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
 
     override x.ToString() = "TILObjectReprData(...)"
 
 
 #if !NO_EXTENSIONTYPING
 and 
-   [<NoComparison; NoEquality; RequireQualifiedAccess>]
+   [<NoComparison; NoEquality; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
    
    /// The information kept about a provided type
    TProvidedTypeInfo = 
@@ -1388,6 +1452,9 @@ and
        if info.IsErased then info.LazyBaseType.Force (m,objTy) 
        else failwith "expect erased type"
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = "TProvidedTypeInfo(...)"
 
 #endif
@@ -1415,7 +1482,7 @@ and
         | TTyconStruct | TTyconEnum -> true
 
 and 
-    [<NoEquality; NoComparison>]
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     TyconObjModelData = 
     { /// Indicates whether the type declaration is a class, interface, enum, delegate or struct 
       fsobjmodel_kind: TyconObjModelKind
@@ -1426,10 +1493,13 @@ and
       /// The fields of the class, struct or enum 
       fsobjmodel_rfields: TyconRecdFields }
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = "TyconObjModelData(...)"
 
 and 
-    [<NoEquality; NoComparison; RequireQualifiedAccess >]
+    [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
     TyconRecdFields = 
     { /// The fields of the record, in declaration order. 
       FieldsByIndex: RecdField[]
@@ -1449,10 +1519,13 @@ and
 
     member x.TrueInstanceFieldsAsList = x.AllFieldsAsList |> List.filter (fun f -> not f.IsStatic && not f.IsCompilerGenerated)   
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = "TyconRecdFields(...)"
 
 and 
-    [<NoEquality; NoComparison; RequireQualifiedAccess>]
+    [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
     TyconUnionCases = 
     { /// The cases of the discriminated union, in declaration order. 
       CasesByIndex: UnionCase[]
@@ -1465,10 +1538,13 @@ and
 
     member x.UnionCasesAsList = x.CasesByIndex |> Array.toList
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = "TyconUnionCases(...)"
 
 and 
-    [<NoEquality; NoComparison; RequireQualifiedAccess>]
+    [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
     TyconUnionData =
     { /// The cases contained in the discriminated union. 
       CasesTable: TyconUnionCases
@@ -1478,11 +1554,13 @@ and
 
     member x.UnionCasesAsList = x.CasesTable.CasesByIndex |> Array.toList
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = "TyconUnionData(...)"
 
 and 
-    [<NoEquality; NoComparison; RequireQualifiedAccess>]
-    [<StructuredFormatDisplay("{DisplayName}")>]
+    [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
     UnionCase =
     { /// Data carried by the case. 
       FieldTable: TyconRecdFields
@@ -1536,12 +1614,15 @@ and
 
     member uc.IsNullary = (uc.FieldTable.FieldsByIndex.Length = 0)
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = "UnionCase(" + x.DisplayName + ")"
 
 and 
     /// This may represent a "field" in either a struct, class, record or union
     /// It is normally compiled to a property.
-    [<NoEquality; NoComparison>]
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     RecdField =
     { /// Is the field declared mutable in F#? 
       rfield_mutable: bool
@@ -1653,9 +1734,14 @@ and
         | Some Const.Zero -> true 
         | _ -> false
 
-    override x.ToString() = "RecdField(" + x.Name + ")"
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
 
-and ExceptionInfo =
+    override x.ToString() = x.Name
+
+and 
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    ExceptionInfo =
     /// Indicates that an exception is an abbreviation for the given exception 
     | TExnAbbrevRepr of TyconRef 
 
@@ -1668,9 +1754,13 @@ and ExceptionInfo =
     /// Indicates that an exception is abstract, i.e. is in a signature file, and we do not know the representation 
     | TExnNone
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = "ExceptionInfo(...)"
 
-and [<Sealed>] ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, entities: QueueList<Entity>) = 
+and [<Sealed; StructuredFormatDisplay("{DebugText}")>]
+    ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueList<Val>, entities: QueueList<Entity>) = 
 
     /// Mutation used during compilation of FSharp.Core.dll
     let mutable entities = entities 
@@ -1836,6 +1926,9 @@ and [<Sealed>] ModuleOrNamespaceType(kind: ModuleOrNamespaceKind, vals: QueueLis
         cacheOptRef modulesByDemangledNameCache (fun () -> 
             QueueList.foldBack add entities  Map.empty)
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = "ModuleOrNamespaceType(...)"
 
 and ModuleOrNamespace = Entity 
@@ -1963,13 +2056,19 @@ and Construct =
                 | XmlDoc [||], TAccess [] -> None
                 | _ -> Some { Entity.EmptyEntityOptData with entity_xmldoc = xml; entity_tycon_repr_accessibility = access; entity_accessiblity = access } } 
 
-and Accessibility = 
+and 
+    [<StructuralEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    Accessibility = 
     /// Indicates the construct can only be accessed from any code in the given type constructor, module or assembly. [] indicates global scope. 
     | TAccess of CompilationPath list
     
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = "Accessibility(...)"
 
-and [<NoEquality; NoComparison>]
+and 
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     TyparOptionalData =
     {
       /// MUTABILITY: we set the names of generalized inference type parameters to make the look nice for IL code generation 
@@ -1986,13 +2085,15 @@ and [<NoEquality; NoComparison>]
       mutable typar_attribs: Attribs
     }
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override __.ToString() = sprintf "TyparOptionalData(...)"
 
 and TyparData = Typar
 
 and 
-    [<NoEquality; NoComparison>]
-    [<StructuredFormatDisplay("{Name}")>]
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     /// A declared generic type/measure parameter, or a type/measure inference variable.
     Typar = 
     // Backing data for type parameters and type inference variables
@@ -2173,10 +2274,13 @@ and
     /// Sets whether the comparison constraint of a type definition depends on this type variable 
     member x.SetComparisonDependsOn b = let flags = x.typar_flags in x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, b) 
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = x.Name
 
 and
-    [<NoEquality; NoComparison; RequireQualifiedAccess>]
+    [<NoEquality; NoComparison; RequireQualifiedAccess (*; StructuredFormatDisplay("{DebugText}") *) >]
     TyparConstraint = 
     /// Indicates a constraint that a type is a subtype of the given type 
     | CoercesTo              of TType * range
@@ -2219,11 +2323,15 @@ and
     /// Indicates a constraint that a type is .NET unmanaged type
     | IsUnmanaged                 of range
 
-    override x.ToString() = "TyparConstraint(...)"
+    // Prefer the default formatting of this union type
+    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    //member x.DebugText  =  x.ToString()
+    //
+    //override x.ToString() = "TyparConstraint(...)"
     
 /// The specification of a member constraint that must be solved 
 and 
-    [<NoEquality; NoComparison>]
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     TraitConstraintInfo = 
 
     /// TTrait(tys,nm,memFlags,argtys,rty,colution)
@@ -2243,17 +2351,20 @@ and
         with get() = (let (TTrait(_,_,_,_,_,sln)) = x in sln.Value)
         and set v = (let (TTrait(_,_,_,_,_,sln)) = x in sln.Value <- v)
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = "TTrait(" + x.MemberName + ")"
     
 and 
-    [<NoEquality; NoComparison>]
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     /// Indicates the solution of a member constraint during inference.
     TraitConstraintSln = 
 
-    /// FSMethSln(typ, vref, minst)
+    /// FSMethSln(ty, vref, minst)
     ///
     /// Indicates a trait is solved by an F# method.
-    ///    typ   -- the type and its instantiation
+    ///    ty   -- the type and its instantiation
     ///    vref  -- the method that solves the trait constraint
     ///    minst -- the generic method instantiation 
     | FSMethSln of TType * ValRef * TypeInst 
@@ -2266,10 +2377,10 @@ and
     ///    isSetProp -- indicates if this is a set of a record field
     | FSRecdFieldSln of TypeInst * RecdFieldRef * bool
 
-    /// ILMethSln(typ, extOpt, ilMethodRef, minst)
+    /// ILMethSln(ty, extOpt, ilMethodRef, minst)
     ///
     /// Indicates a trait is solved by a .NET method.
-    ///    typ         -- the type and its instantiation
+    ///    ty         -- the type and its instantiation
     ///    extOpt      -- information about an extension member, if any
     ///    ilMethodRef -- the method that solves the trait constraint
     ///    minst       -- the generic method instantiation 
@@ -2283,10 +2394,13 @@ and
     /// Indicates a trait is solved by a 'fake' instance of an operator, like '+' on integers
     | BuiltInSln
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = "TraitConstraintSln(...)"
 
 /// The partial information used to index the methods of all those in a ModuleOrNamespace.
-and [<RequireQualifiedAccess>]
+and [<RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
    ValLinkagePartialKey = 
    { /// The name of the type with which the member is associated. None for non-member values.
      MemberParentMangledName : string option 
@@ -2300,11 +2414,16 @@ and [<RequireQualifiedAccess>]
      /// Indicates the total argument count of the member.
      TotalArgCount: int } 
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = "ValLinkagePartialKey(" + x.LogicalName + ")"
 
 /// The full information used to identify a specific overloaded method
 /// amongst all those in a ModuleOrNamespace.
-and ValLinkageFullKey(partialKey: ValLinkagePartialKey,  typeForLinkage:TType option) =
+and 
+    [< (* NoEquality; NoComparison; *) StructuredFormatDisplay("{DebugText}")>]
+    ValLinkageFullKey(partialKey: ValLinkagePartialKey,  typeForLinkage:TType option) =
 
     /// The partial information used to index the value in a ModuleOrNamespace.
     member x.PartialKey = partialKey
@@ -2312,9 +2431,14 @@ and ValLinkageFullKey(partialKey: ValLinkagePartialKey,  typeForLinkage:TType op
     /// The full type of the value for the purposes of linking. May be None for non-members, since they can't be overloaded.
     member x.TypeForLinkage = typeForLinkage
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = "ValLinkageFullKey(" + partialKey.LogicalName + ")"
 
-and ValOptionalData =
+and 
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    ValOptionalData =
     {
       /// MUTABILITY: for unpickle linkage
       mutable val_compiled_name: string option
@@ -2365,10 +2489,13 @@ and ValOptionalData =
       mutable val_attribs: Attribs
     }
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = "ValOptionalData(...)"
 
 and ValData = Val
-and [<StructuredFormatDisplay("{LogicalName}")>]
+and [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     Val = 
     { 
       /// Mutable for unpickle linkage
@@ -2644,7 +2771,7 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     // We use it here:
     //   - in opt.fs   : when compiling fslib, we bind an entry for the value in a global table (see bind_escaping_local_vspec)
     //   - in ilxgen.fs: when compiling fslib, we bind an entry for the value in a global table (see bind_escaping_local_vspec)
-    //   - in opt.fs   : (fullDisplayTextOfValRef) for error reporting of non-inlinable values
+    //   - in opt.fs   : (fullDebugTextOfValRef) for error reporting of non-inlinable values
     //   - in service.fs (boutput_item_description): to display the full text of a value's binding location
     //   - in check.fs: as a boolean to detect public values for saving quotations 
     //   - in ilxgen.fs: as a boolean to detect public values for saving quotations 
@@ -2831,12 +2958,15 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     /// Indicates if a value is linked to backing data yet. Only used during unpickling of F# metadata.
     member x.IsLinked = match box x.val_logical_name with null -> false | _ -> true 
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = x.LogicalName
     
     
 and 
     /// Represents the extra information stored for a member
-    [<NoEquality; NoComparison; RequireQualifiedAccess>]
+    [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
     ValMemberInfo = 
     { /// The parent type. For an extension member this is the type being extended 
       ApparentEnclosingEntity: TyconRef  
@@ -2849,10 +2979,13 @@ and
 
       MemberFlags: MemberFlags }
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = "ValMemberInfo(...)"
 
 and 
-    [<StructuredFormatDisplay("{Display}"); RequireQualifiedAccess>]
+    [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
     NonLocalValOrMemberRef = 
     { /// A reference to the entity containing the value or member. This will always be a non-local reference
       EnclosingEntity : EntityRef 
@@ -2867,18 +3000,26 @@ and
     member x.AssemblyName = x.EnclosingEntity.nlr.AssemblyName
 
     /// For debugging
-    member x.Display = x.ToString()
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText = x.ToString()
 
     /// For debugging
     override x.ToString() = x.EnclosingEntity.nlr.ToString() + "::" + x.ItemKey.PartialKey.LogicalName
       
-and ValPublicPath      = 
+and 
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    ValPublicPath      = 
     | ValPubPath of PublicPath * ValLinkageFullKey
+
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
 
     override __.ToString() = sprintf "ValPubPath(...)"
 
 /// Index into the namespace/module structure of a particular CCU 
-and NonLocalEntityRef    = 
+and 
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    NonLocalEntityRef    = 
     | NonLocalEntityRef of CcuThunk * string[]
 
     /// Try to find the entity corresponding to the given path in the given CCU
@@ -3046,11 +3187,13 @@ and NonLocalEntityRef    =
     member nleref.ModuleOrNamespaceType = 
         nleref.Deref.ModuleOrNamespaceType
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = x.DisplayName
         
 and 
-    [<StructuredFormatDisplay("{LogicalName}")>]
-    [<NoEquality; NoComparison>]
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     EntityRef = 
     { /// Indicates a reference to something bound in this CCU 
       mutable binding: NonNullSlot<Entity>
@@ -3099,12 +3242,6 @@ and
 
     /// Is the destination assembly available?
     member tcr.CanDeref = tcr.TryDeref.IsSome
-
-    override x.ToString() = 
-       if x.IsLocalRef then 
-           x.ResolvedTarget.DisplayName 
-       else 
-           x.nlr.DisplayName 
 
     /// Gets the data indicating the compiled representation of a type or module in terms of Abstract IL data structures.
     member x.CompiledRepresentation = x.Deref.CompiledRepresentation
@@ -3345,6 +3482,18 @@ and
     /// Indicates if this is an F# type definition whose r.h.s. is known to be some kind of F# object model definition
     member x.IsFSharpObjectModelTycon = x.Deref.IsFSharpObjectModelTycon
 
+    /// The on-demand analysis about whether the entity has the IsByRefLike attribute
+    member x.TryIsByRefLike           = x.Deref.TryIsByRefLike
+
+    /// Set the on-demand analysis about whether the entity has the IsByRefLike attribute
+    member x.SetIsByRefLike b         = x.Deref.SetIsByRefLike b
+
+    /// The on-demand analysis about whether the entity has the IsByRefLike attribute
+    member x.TryIsReadOnly           = x.Deref.TryIsReadOnly
+
+    /// Set the on-demand analysis about whether the entity has the IsReadOnly attribute or is otherwise determined to be a readonly struct
+    member x.SetIsReadOnly b         = x.Deref.SetIsReadOnly b
+
     /// Indicates if this is an F# type definition whose r.h.s. definition is unknown (i.e. a traditional ML 'abstract' type in a signature,
     /// which in F# is called a 'unknown representation' type).
     member x.IsHiddenReprTycon        = x.Deref.IsHiddenReprTycon
@@ -3386,6 +3535,15 @@ and
 
     member x.MakeNestedUnionCaseRef  (uc: UnionCase) = UCRef (x, uc.Id.idText)
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
+    override x.ToString() = 
+       if x.IsLocalRef then 
+           x.ResolvedTarget.DisplayName 
+       else 
+           x.nlr.DisplayName 
+
 
 /// note: ModuleOrNamespaceRef and TyconRef are type equivalent 
 and ModuleOrNamespaceRef       = EntityRef
@@ -3394,8 +3552,7 @@ and TyconRef       = EntityRef
 
 /// References are either local or nonlocal
 and 
-    [<NoEquality; NoComparison>]
-    [<StructuredFormatDisplay("{LogicalName}")>]
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     ValRef = 
     { /// Indicates a reference to something bound in this CCU 
       mutable binding: NonNullSlot<Val>
@@ -3606,12 +3763,17 @@ and
     /// Get the number of 'this'/'self' object arguments for the member. Instance extension members return '1'.
     member x.NumObjArgs                 = x.Deref.NumObjArgs
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = 
        if x.IsLocalRef then x.ResolvedTarget.DisplayName 
        else x.nlr.ToString()
 
 /// Represents a reference to a case of a union type
-and UnionCaseRef = 
+and 
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    UnionCaseRef = 
     | UCRef of TyconRef * string
 
     /// Get a reference to the type containing this union case
@@ -3661,10 +3823,15 @@ and UnionCaseRef =
     /// Get a field of the union case by index
     member x.FieldByIndex n = x.UnionCase.FieldTable.FieldByIndex n
 
-    override x.ToString() = sprintf "UnionCase(%s)" x.CaseName
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
+    override x.ToString() = x.CaseName
 
 /// Represents a reference to a field in a record, class or struct
-and RecdFieldRef = 
+and 
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    RecdFieldRef = 
     | RFRef of TyconRef * string
 
     /// Get a reference to the type containing this union case
@@ -3706,11 +3873,14 @@ and RecdFieldRef =
         with :? KeyNotFoundException -> 
             error(InternalError(sprintf "field %s not found in type %s" id tcref.LogicalName, tcref.Range))
 
-    override x.ToString() = sprintf "RecdField(%s)" x.FieldName
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
+    override x.ToString() = x.FieldName
 
 and 
   /// The algebra of types
-    [<NoEquality; NoComparison>]
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     TType =
 
     /// TType_forall(typars, bodyTy).
@@ -3760,9 +3930,12 @@ and
             let (TILObjectReprData(scope,_nesting,_definition)) = _uc.Tycon.ILTyconInfo
             scope.QualifiedName
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() =  
         match x with 
-        | TType_forall (_tps,ty) -> "forall _. " + ty.ToString()
+        | TType_forall (_tps,ty) -> "forall ...  " + ty.ToString()
         | TType_app (tcref, tinst) -> tcref.DisplayName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
         | TType_tuple (tupInfo, tinst) -> 
             (match tupInfo with 
@@ -3770,12 +3943,12 @@ and
              | TupInfo.Const true -> "struct ")
              + String.concat "," (List.map string tinst) + ")"
         | TType_fun (d,r) -> "(" + string d + " -> " + string r + ")"
-        | TType_ucase (uc,tinst) -> "union case type " + uc.CaseName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
+        | TType_ucase (uc,tinst) -> "ucase " + uc.CaseName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
         | TType_var tp -> 
             match tp.Solution with 
             | None -> tp.DisplayName
-            | Some _ -> tp.DisplayName + " (solved, see Solution property)"
-        | TType_measure ms -> sprintf "%A" ms
+            | Some _ -> tp.DisplayName + " (solved)"
+        | TType_measure ms -> ms.ToString()
 
 and TypeInst = TType list 
 
@@ -3785,7 +3958,9 @@ and [<RequireQualifiedAccess>] TupInfo =
     /// Some constant, e.g. true or false for tupInfo
     | Const of bool
 
-and [<RequireQualifiedAccess>] Measure = 
+and 
+    [<RequireQualifiedAccess (* ; StructuredFormatDisplay("{DebugText}") *) >]
+    Measure = 
     /// A variable unit-of-measure
     | Var of Typar
 
@@ -3804,10 +3979,14 @@ and [<RequireQualifiedAccess>] Measure =
     /// Raising a measure to a rational power 
     | RationalPower of Measure * Rational
 
-    override x.ToString() = "Measure(...)"
+    // Prefer the default formatting of this union type
+    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    //member x.DebugText  =  x.ToString()
+    //
+    //override x.ToString() = "Measure(...)"
 
 and 
-    [<NoEquality; NoComparison; RequireQualifiedAccess>]
+    [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
     CcuData = 
     { /// Holds the filename for the DLL, if any 
       FileName: string option 
@@ -3857,6 +4036,9 @@ and
       /// The table of .NET CLI type forwarders for this assembly
       TypeForwarders : CcuTypeForwarderTable }
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = sprintf "CcuData(%A)" x.FileName
 
 /// Represents a table of .NET CLI type forwarders for an assembly
@@ -3883,7 +4065,9 @@ and CcuReference =  string // ILAssemblyRef
 /// by ccu-thunks.  Ultimately, a ccu-thunk is either a (named) element of
 /// the data structure, or it is a delayed fixup, i.e. an invalid dangling
 /// reference that has not had an appropriate fixup applied.  
-and CcuThunk = 
+and 
+    [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
+    CcuThunk = 
     { mutable target: CcuData
 
       /// ccu.orphanfixup is true when a reference is missing in the transitive closure of static references that
@@ -4004,25 +4188,38 @@ and CcuThunk =
     member ccu.MemberSignatureEquality(ty1:TType, ty2:TType) = 
         ccu.Deref.MemberSignatureEquality ty1 ty2
     
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override ccu.ToString() = ccu.AssemblyName
 
 /// The result of attempting to resolve an assembly name to a full ccu.
 /// UnresolvedCcu will contain the name of the assembly that could not be resolved.
-and CcuResolutionResult =
+and 
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    CcuResolutionResult =
 
     | ResolvedCcu of CcuThunk
 
     | UnresolvedCcu of string
 
-    override __.ToString() = "CcuResolutionResult(...)"
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
+    override x.ToString() = match x with ResolvedCcu ccu -> ccu.ToString() | UnresolvedCcu s -> "unresolved " + s
 
 /// Represents the information saved in the assembly signature data resource for an F# assembly
-and PickledCcuInfo =
-  { mspec: ModuleOrNamespace
+and 
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    PickledCcuInfo =
+    { mspec: ModuleOrNamespace
 
-    compileTimeWorkingDir: string
+      compileTimeWorkingDir: string
 
-    usesQuotations : bool }
+      usesQuotations : bool }
+
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
 
     override __.ToString() = "PickledCcuInfo(...)"
 
@@ -4034,7 +4231,9 @@ and PickledCcuInfo =
 
 and Attribs = Attrib list 
 
-and AttribKind = 
+and 
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    AttribKind = 
 
     /// Indicates an attribute refers to a type defined in an imported .NET assembly 
     | ILAttrib of ILMethodRef 
@@ -4042,26 +4241,46 @@ and AttribKind =
     /// Indicates an attribute refers to a type defined in an imported F# assembly 
     | FSAttrib of ValRef
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = sprintf "AttribKind(...)"
 
 /// Attrib(kind,unnamedArgs,propVal,appliedToAGetterOrSetter,targetsOpt,range)
-and Attrib = 
+and 
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    Attrib = 
 
     | Attrib of TyconRef * AttribKind * AttribExpr list * AttribNamedArg list * bool * AttributeTargets option * range
 
-    override x.ToString() = sprintf "Attrib(...)"
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
+    member x.TyconRef = (let (Attrib(tcref, _, _, _, _, _, _)) = x in tcref)
+
+    override x.ToString() = "attrib" + x.TyconRef.ToString()
 
 /// We keep both source expression and evaluated expression around to help intellisense and signature printing
-and AttribExpr = 
+and 
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    AttribExpr = 
 
     /// AttribExpr(source, evaluated)
     | AttribExpr of Expr * Expr 
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = sprintf "AttribExpr(...)"
 
 /// AttribNamedArg(name,type,isField,value)
-and AttribNamedArg = 
+and 
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    AttribNamedArg = 
     | AttribNamedArg of (string*TType*bool*AttribExpr)
+
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
 
     override x.ToString() = sprintf "AttribNamedArg(...)"
 
@@ -4092,7 +4311,7 @@ and [<RequireQualifiedAccess>]
 /// the decision tree are labelled by integers that are unique for that
 /// particular tree.
 and 
-    [<NoEquality; NoComparison>]
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
     DecisionTree = 
 
     /// TDSwitch(input, cases, default, range)
@@ -4121,10 +4340,15 @@ and
     ///    body -- the rest of the decision tree
     | TDBind of Binding * DecisionTree
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = sprintf "DecisionTree(...)"
 
 /// Represents a test and a subsequent decision tree
-and DecisionTreeCase = 
+and 
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    DecisionTreeCase = 
     | TCase of DecisionTreeTest * DecisionTree
 
     /// Get the discriminator associated with the case
@@ -4133,10 +4357,13 @@ and DecisionTreeCase =
     /// Get the decision tree or a successful test
     member x.CaseTree = let (TCase(_,d)) = x in d
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = sprintf "DecisionTreeCase(...)"
 
 and 
-    [<NoEquality; NoComparison; RequireQualifiedAccess>]
+    [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
     DecisionTreeTest = 
     /// Test if the input to a decision tree matches the given union case
     | UnionCase of UnionCaseRef * TypeInst
@@ -4166,11 +4393,19 @@ and
     ///     activePatternInfo -- The extracted info for the active pattern.
     | ActivePatternCase of Expr * TTypes * (ValRef * TypeInst) option * int * ActivePatternInfo
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = sprintf "DecisionTreeTest(...)"
 
 /// A target of a decision tree. Can be thought of as a little function, though is compiled as a local block. 
-and DecisionTreeTarget = 
+and 
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    DecisionTreeTarget = 
     | TTarget of Vals * Expr * SequencePointInfoForTarget
+
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
 
     override x.ToString() = sprintf "DecisionTreeTarget(...)"
 
@@ -4178,7 +4413,9 @@ and DecisionTreeTarget =
 and Bindings = Binding list
 
 /// A binding of a variable to an expression, as in a `let` binding or similar
-and Binding = 
+and 
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    Binding = 
     | TBind of Val * Expr * SequencePointInfoForBinding
 
     /// The value being bound
@@ -4190,11 +4427,16 @@ and Binding =
     /// The information about whether to emit a sequence point for the binding
     member x.SequencePointInfo = (let (TBind(_,_,sp)) = x in sp)
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = sprintf "TBind(%s, ...)" x.Var.CompiledName
 
 /// Represents a reference to an active pattern element. The 
 /// integer indicates which choice in the target set is being selected by this item. 
-and ActivePatternElemRef = 
+and 
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    ActivePatternElemRef = 
     | APElemRef of ActivePatternInfo * ValRef * int 
 
     /// Get the full information about the active pattern being referred to
@@ -4206,11 +4448,16 @@ and ActivePatternElemRef =
     /// Get the index of the active pattern element within the overall active pattern 
     member x.CaseIndex = (let (APElemRef(_,_,n)) = x in n)
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override __.ToString() = "ActivePatternElemRef(...)"
 
 /// Records the "extra information" for a value compiled as a method (rather
 /// than a closure or a local), including argument names, attributes etc.
-and ValReprInfo  = 
+and 
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    ValReprInfo  = 
     /// ValReprInfo (numTypars, args, result)
     | ValReprInfo  of TyparReprInfo list * ArgReprInfo list list * ArgReprInfo 
 
@@ -4245,12 +4492,15 @@ and ValReprInfo  =
             | (_::_::h)::t -> loop t (acc + h.Length + 2) 
         loop args 0
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override __.ToString() = "ValReprInfo(...)"
 
 /// Records the "extra information" for an argument compiled as a real
 /// method argument, specifically the argument name and attributes.
 and 
-    [<RequireQualifiedAccess>]
+    [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
     ArgReprInfo = 
     { 
       // MUTABILITY: used when propagating signature attributes into the implementation.
@@ -4258,6 +4508,9 @@ and
 
       // MUTABILITY: used when propagating names of parameters from signature into the implementation.
       mutable Name : Ident option  }
+
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
 
     override __.ToString() = "ArgReprInfo(...)"
 
@@ -4275,7 +4528,7 @@ and Vals = Val list
 
 /// The big type of expressions.  
 and 
-    [<RequireQualifiedAccess>]
+    [<NoEquality; NoComparison; RequireQualifiedAccess (* ; StructuredFormatDisplay("{DebugText}") *) >]
     Expr =
     /// A constant expression. 
     | Const of Const * range * TType
@@ -4315,7 +4568,7 @@ and
     // The base object type might be a delegate type. 
     | Obj of 
          (* unique *)           Unique * 
-         (* object typ *)       TType *                                         (* <-- NOTE: specifies type parameters for base type *)
+         (* object type *)      TType *                                         (* <-- NOTE: specifies type parameters for base type *)
          (* base val *)         Val option * 
          (* ctor call *)        Expr * 
          (* overrides *)        ObjExprMethod list * 
@@ -4355,10 +4608,14 @@ and
     /// appropriate type instantiation. These are immediately eliminated on subsequent rewrites. 
     | Link of Expr ref
 
-    override __.ToString() = "Expr(...)"
+    // Prefer to use the default formatting of this union type
+    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    //member x.DebugText  =  x.ToString()
+    //
+    //override __.ToString() = "Expr(...)"
 
 and 
-    [<NoEquality; NoComparison; RequireQualifiedAccess>]
+    [<NoEquality; NoComparison; RequireQualifiedAccess (* ; StructuredFormatDisplay("{DebugText}") *) >]
     TOp =
 
     /// An operation representing the creation of a union value of the particular union case
@@ -4404,7 +4661,7 @@ and
     | ValFieldGet of RecdFieldRef 
 
     /// An operation representing getting the address of a record field
-    | ValFieldGetAddr of RecdFieldRef       
+    | ValFieldGetAddr of RecdFieldRef * readonly: bool      
 
     /// An operation representing getting an integer tag for a union value representing the union case number
     | UnionCaseTagGet of TyconRef 
@@ -4417,7 +4674,7 @@ and
     | UnionCaseFieldGet of UnionCaseRef * int 
 
     /// An operation representing a field-get from a union value, where that value has been proven to be of the corresponding union case.
-    | UnionCaseFieldGetAddr of UnionCaseRef * int 
+    | UnionCaseFieldGetAddr of UnionCaseRef * int * readonly: bool
 
     /// An operation representing a field-get from a union value. The value is not assumed to have been proven to be of the corresponding union case.
     | UnionCaseFieldSet of  UnionCaseRef * int
@@ -4435,7 +4692,7 @@ and
     | ILAsm of ILInstr list * TTypes 
 
     /// Generate a ldflda on an 'a ref. 
-    | RefAddrGet 
+    | RefAddrGet of bool
 
     /// Conversion node, compiled via type-directed translation or to box/unbox 
     | Coerce 
@@ -4469,7 +4726,11 @@ and
     ///     retTy -- the types of pushed values, if any 
     | ILCall of bool * bool * bool * bool * ValUseFlag * bool * bool * ILMethodRef * TypeInst * TypeInst * TTypes   
 
-    override __.ToString() = "TOp(...)"
+    // Prefer to use the default formatting of this union type
+    //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    //member x.DebugText  =  x.ToString()
+    //
+    //override __.ToString() = "TOp(...)"
 
 /// Indicates the kind of record construction operation.
 and RecordConstructionInfo = 
@@ -4506,12 +4767,12 @@ and ForLoopStyle =
 /// Indicates what kind of pointer operation this is.
 and LValueOperation = 
     /// In C syntax this is: &localv            
-    | LGetAddr      
+    | LAddrOf of readonly: bool
 
     /// In C syntax this is: *localv_ptr        
     | LByrefGet     
 
-    /// In C syntax this is:  localv = e     , note == *(&localv) = e == LGetAddr; LByrefSet
+    /// In C syntax this is:  localv = e     , note == *(&localv) = e == LAddrOf; LByrefSet
     | LSet          
 
     /// In C syntax this is: *localv_ptr = e   
@@ -4555,18 +4816,25 @@ and StaticOptimization =
 /// A representation of a method in an object expression. 
 ///
 /// TObjExprMethod(slotsig,attribs,methTyparsOfOverridingMethod,methodParams,methodBodyExpr,m)
-and ObjExprMethod = 
+and 
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    ObjExprMethod = 
 
     | TObjExprMethod of SlotSig * Attribs * Typars * Val list list * Expr * range
 
     member x.Id = let (TObjExprMethod(slotsig,_,_,_,_,m)) = x in mkSynId m slotsig.Name
+
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
 
     override x.ToString() = sprintf "TObjExprMethod(%s, ...)" x.Id.idText
 
 /// Represents an abstract method slot, or delegate signature.
 ///
 /// TSlotSig(methodName,declaringType,declaringTypeParameters,methodTypeParameters,slotParameters,returnTy)
-and SlotSig = 
+and 
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    SlotSig = 
 
     | TSlotSig of string * TType * Typars * Typars * SlotParam list list * TType option
 
@@ -4582,22 +4850,32 @@ and SlotSig =
 
     member ss.FormalReturnType = let (TSlotSig(_,_,_,_,_,rt)) = ss in rt
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override ss.ToString() = sprintf "TSlotSig(%s, ...)" ss.Name
 
 /// Represents a parameter to an abstract method slot. 
 ///
 /// TSlotParam(nm,ty,inFlag,outFlag,optionalFlag,attribs)
-and SlotParam = 
+and 
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    SlotParam = 
     | TSlotParam of  string option * TType * bool (* in *) * bool (* out *) * bool (* optional *) * Attribs
 
     member x.Type = let (TSlotParam(_,ty,_,_,_,_)) = x in ty
+
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
 
     override x.ToString() = "TSlotParam(...)"
 
 /// A type for a module-or-namespace-fragment and the actual definition of the module-or-namespace-fragment
 /// The first ModuleOrNamespaceType is the signature and is a binder. However the bindings are not used in the ModuleOrNamespaceExpr: it is only referenced from the 'outside' 
 /// is for use by FCS only to report the "hidden" contents of the assembly prior to applying the signature.
-and ModuleOrNamespaceExprWithSig = 
+and 
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    ModuleOrNamespaceExprWithSig = 
     | ModuleOrNamespaceExprWithSig of 
          ModuleOrNamespaceType 
          * ModuleOrNamespaceExpr
@@ -4605,10 +4883,15 @@ and ModuleOrNamespaceExprWithSig =
 
     member x.Type = let (ModuleOrNamespaceExprWithSig(mtyp,_,_)) = x in mtyp
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = "ModuleOrNamespaceExprWithSig(...)"
 
 /// The contents of a module-or-namespace-fragment definition 
-and ModuleOrNamespaceExpr = 
+and 
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    ModuleOrNamespaceExpr = 
     /// Indicates the module is a module with a signature 
     | TMAbstract of ModuleOrNamespaceExprWithSig
 
@@ -4624,10 +4907,14 @@ and ModuleOrNamespaceExpr =
     /// Indicates the module fragment is a 'rec' or 'non-rec' definition of types and modules
     | TMDefRec   of isRec:bool * Tycon list * ModuleOrNamespaceBinding list * range
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = "ModuleOrNamespaceExpr(...)"
 
 /// A named module-or-namespace-fragment definition 
-and [<RequireQualifiedAccess>] 
+and 
+    [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
     ModuleOrNamespaceBinding = 
 
     | Binding of Binding 
@@ -4639,21 +4926,33 @@ and [<RequireQualifiedAccess>]
          /// This is the body of the module/namespace 
          ModuleOrNamespaceExpr
 
-    override x.ToString() = "ModuleOrNamespaceBinding(...)"
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
 
+    override __.ToString() = "ModuleOrNamespaceBinding(...)"
 
 /// Represents a complete typechecked implementation file, including its typechecked signature if any.
 ///
 /// TImplFile(qualifiedNameOfFile,pragmas,implementationExpressionWithSignature,hasExplicitEntryPoint,isScript)
-and TypedImplFile = 
+and 
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    TypedImplFile = 
     | TImplFile of QualifiedNameOfFile * ScopedPragma list * ModuleOrNamespaceExprWithSig * bool * bool
+
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
 
     override x.ToString() = "TImplFile(...)"
 
 /// Represents a complete typechecked assembly, made up of multiple implementation files.
 ///
-and TypedAssemblyAfterOptimization = 
+and 
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    TypedAssemblyAfterOptimization = 
     | TypedAssemblyAfterOptimization of (TypedImplFile * (* optimizeDuringCodeGen: *) (Expr -> Expr)) list
+
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
 
     override x.ToString() = "TypedAssemblyAfterOptimization(...)"
 
@@ -4680,7 +4979,9 @@ and FreeUnionCases = Zset<UnionCaseRef>
 
 /// Represents a set of 'free' type-related elements, including named types, trait solutions, union cases and
 /// record fields.
-and FreeTyvars = 
+and 
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    FreeTyvars = 
     { /// The summary of locally defined type definitions used in the expression. These may be made private by a signature 
       /// and we have to check various conditions associated with that. 
       FreeTycons: FreeTycons
@@ -4692,13 +4993,18 @@ and FreeTyvars =
       /// and we have to check various conditions associated with that. 
       FreeTypars: FreeTypars }
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = "FreeTyvars(...)"
 
 /// Represents an amortized computation of the free variables in an expression
 and FreeVarsCache = FreeVars cache
 
 /// Represents the set of free variables in an expression
-and FreeVars = 
+and 
+    [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
+    FreeVars = 
     { /// The summary of locally defined variables used in the expression. These may be hidden at let bindings etc. 
       /// or made private by a signature or marked 'internal' or 'private', and we have to check various conditions associated with that. 
       FreeLocals: FreeLocals
@@ -4726,13 +5032,17 @@ and FreeVars =
       /// See FreeTyvars above.
       FreeTyvars: FreeTyvars }
 
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
+
     override x.ToString() = "FreeVars(...)"
 
 /// Specifies the compiled representations of type and exception definitions.  Basically
 /// just an ILTypeRef. Computed and cached by later phases.  Stored in 
 /// type and exception definitions. Not pickled. Store an optional ILType object for 
 /// non-generic types.
-and [<RequireQualifiedAccess>]
+and 
+    [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
     CompiledTypeRepr = 
 
     /// An AbstractIL type representation that is just the name of a type.
@@ -4755,6 +5065,9 @@ and [<RequireQualifiedAccess>]
     //   type nativeptr<'T when 'T : unmanaged> = (# "native int" #)
     //   type ilsigptr<'T> = (# "!0*" #)
     | ILAsmOpen of ILType  
+
+    [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+    member x.DebugText  =  x.ToString()
 
     override x.ToString() = "CompiledTypeRepr(...)"
 

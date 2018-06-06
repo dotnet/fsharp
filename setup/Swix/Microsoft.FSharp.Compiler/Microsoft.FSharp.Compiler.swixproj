@@ -29,6 +29,7 @@
 
   <ItemGroup>
     <Package Include="Files.swr" />
+    <Package Include="Dependencies.swr" />
   </ItemGroup>
 
   <Target Name="CheckPropertiesArePassed">

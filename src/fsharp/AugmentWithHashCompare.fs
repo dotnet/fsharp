@@ -16,14 +16,14 @@ open Microsoft.FSharp.Compiler.Infos
 let mkIComparableCompareToSlotSig (g: TcGlobals) = 
     TSlotSig("CompareTo",g.mk_IComparable_ty, [],[], [[TSlotParam(Some("obj"),g.obj_ty,false,false,false,[])]],Some g.int_ty)
     
-let mkGenericIComparableCompareToSlotSig (g: TcGlobals) typ =
-    TSlotSig("CompareTo",(mkAppTy g.system_GenericIComparable_tcref [typ]),[],[], [[TSlotParam(Some("obj"),typ,false,false,false,[])]],Some g.int_ty)
+let mkGenericIComparableCompareToSlotSig (g: TcGlobals) ty =
+    TSlotSig("CompareTo",(mkAppTy g.system_GenericIComparable_tcref [ty]),[],[], [[TSlotParam(Some("obj"),ty,false,false,false,[])]],Some g.int_ty)
     
 let mkIStructuralComparableCompareToSlotSig (g: TcGlobals) =
     TSlotSig("CompareTo",g.mk_IStructuralComparable_ty,[],[],[[TSlotParam(None,(mkRefTupledTy g [g.obj_ty ; g.IComparer_ty]),false,false,false,[])]], Some g.int_ty)
     
-let mkGenericIEquatableEqualsSlotSig (g: TcGlobals) typ =
-    TSlotSig("Equals",(mkAppTy g.system_GenericIEquatable_tcref [typ]),[],[], [[TSlotParam(Some("obj"),typ,false,false,false,[])]],Some g.bool_ty)
+let mkGenericIEquatableEqualsSlotSig (g: TcGlobals) ty =
+    TSlotSig("Equals",(mkAppTy g.system_GenericIEquatable_tcref [ty]),[],[], [[TSlotParam(Some("obj"),ty,false,false,false,[])]],Some g.bool_ty)
     
 let mkIStructuralEquatableEqualsSlotSig (g: TcGlobals) =
     TSlotSig("Equals",g.mk_IStructuralEquatable_ty,[],[],[[TSlotParam(None,(mkRefTupledTy g [g.obj_ty ; g.IEqualityComparer_ty]),false,false,false,[])]], Some g.bool_ty)
@@ -44,14 +44,19 @@ let mkEqualsSlotSig (g: TcGlobals) =
 let mkThisTy  g ty = if isStructTy g ty then mkByrefTy g ty else ty 
 
 let mkCompareObjTy          g ty = (mkThisTy g ty) --> (g.obj_ty --> g.int_ty)
+
 let mkCompareTy             g ty = (mkThisTy g ty) --> (ty --> g.int_ty)
+
 let mkCompareWithComparerTy g ty = (mkThisTy g ty) --> ((mkRefTupledTy g [g.obj_ty ; g.IComparer_ty]) --> g.int_ty)
 
 let mkEqualsObjTy          g ty = (mkThisTy g ty) --> (g.obj_ty --> g.bool_ty)
+
 let mkEqualsTy             g ty = (mkThisTy g ty) --> (ty --> g.bool_ty)
+
 let mkEqualsWithComparerTy g ty = (mkThisTy g ty) --> ((mkRefTupledTy g [g.obj_ty ; g.IEqualityComparer_ty]) --> g.bool_ty)
 
 let mkHashTy             g ty = (mkThisTy g ty) --> (g.unit_ty --> g.int_ty)
+
 let mkHashWithComparerTy g ty = (mkThisTy g ty) --> (g.IEqualityComparer_ty --> g.int_ty)
 
 //-------------------------------------------------------------------------
@@ -59,7 +64,9 @@ let mkHashWithComparerTy g ty = (mkThisTy g ty) --> (g.IEqualityComparer_ty --> 
 //------------------------------------------------------------------------- 
 
 let mkRelBinOp (g: TcGlobals) op m e1 e2 = mkAsmExpr ([ op  ],[],  [e1; e2],[g.bool_ty],m)
+
 let mkClt g m e1 e2 = mkRelBinOp g IL.AI_clt m e1 e2 
+
 let mkCgt g m e1 e2 = mkRelBinOp g IL.AI_cgt m e1 e2
 
 //-------------------------------------------------------------------------
@@ -84,7 +91,9 @@ let mkILCallGetEqualityComparer (g: TcGlobals) m =
 let mkThisVar g m ty = mkCompGenLocal m "this" (mkThisTy g ty)  
 
 let mkShl g m acce n = mkAsmExpr([ IL.AI_shl ],[],[acce; mkInt g m n],[g.int_ty],m)
+
 let mkShr g m acce n = mkAsmExpr([ IL.AI_shr ],[],[acce; mkInt g m n],[g.int_ty],m)
+
 let mkAdd (g: TcGlobals) m e1 e2 = mkAsmExpr([ IL.AI_add ],[],[e1;e2],[g.int_ty],m)
                    
 let mkAddToHashAcc g m e accv acce =
@@ -101,6 +110,7 @@ let mkCombineHashGenerators g m exprs accv acce =
 //------------------------------------------------------------------------- 
 
 let mkThatAddrLocal g m ty = mkCompGenLocal m "obj" (mkThisTy g ty)     
+
 let mkThatAddrLocalIfNeeded g m tcve ty = 
     if isStructTy g ty then 
         let thataddrv, thataddre = mkCompGenLocal m "obj" (mkThisTy g ty) 
@@ -115,13 +125,13 @@ let mkThisVarThatVar g m ty =
 let mkThatVarBind g m ty thataddrv expr = 
     if isStructTy g ty then 
       let thatv2,_ = mkMutableCompGenLocal m "obj" ty 
-      thatv2,mkCompGenLet m thataddrv (mkValAddr m (mkLocalValRef thatv2)) expr
+      thatv2,mkCompGenLet m thataddrv (mkValAddr m false (mkLocalValRef thatv2)) expr
     else thataddrv,expr 
 
 let mkBindThatAddr g m ty thataddrv thatv thate expr =
     if isStructTy g ty then
         // let thataddrv = &thatv
-        mkCompGenLet m thataddrv (mkValAddr m (mkLocalValRef thatv))  expr  
+        mkCompGenLet m thataddrv (mkValAddr m false (mkLocalValRef thatv))  expr  
     else
         // let thataddrv = that
         mkCompGenLet m thataddrv thate expr 
@@ -131,7 +141,7 @@ let mkBindThatAddrIfNeeded m thataddrvOpt thatv expr =
     | None -> expr
     | Some thataddrv ->
         // let thataddrv = &thatv
-        mkCompGenLet m thataddrv (mkValAddr m (mkLocalValRef thatv))  expr
+        mkCompGenLet m thataddrv (mkValAddr m false (mkLocalValRef thatv))  expr
 
 let mkDerefThis g m (thisv: Val) thise =
     if isByrefTy g thisv.Type then  mkAddrGet m (mkLocalValRef thisv)
@@ -506,7 +516,6 @@ let mkUnionEquality g tcref (tycon:Tycon) =
     let expr = if tycon.IsStructOrEnumTycon then expr else mkBindThatNullEquals g m thise thataddre expr
     thisv,thatv,expr
 
-
 /// Build the equality implementation for a union type when parameterized by a comparer
 let mkUnionEqualityWithComparer g tcref (tycon:Tycon) (_thisv,thise) thatobje (thatv,thate) compe =
     let m = tycon.Range 
@@ -817,7 +826,7 @@ let TyconIsCandidateForAugmentationWithCompare (g: TcGlobals) (tycon:Tycon) =
     // This type gets defined in prim-types, before we can add attributes to F# type definitions
     let isUnit = g.compilingFslib && tycon.DisplayName = "Unit"
     not isUnit && 
-
+    not (TyconRefHasAttribute g tycon.Range g.attrib_IsByRefLikeAttribute (mkLocalTyconRef tycon)) &&
     match getAugmentationAttribs g tycon with 
     // [< >] 
     | true, true, None, None, None, None      , None, None, None
@@ -832,6 +841,7 @@ let TyconIsCandidateForAugmentationWithEquals (g: TcGlobals) (tycon:Tycon) =
     // This type gets defined in prim-types, before we can add attributes to F# type definitions
     let isUnit = g.compilingFslib && tycon.DisplayName = "Unit"
     not isUnit && 
+    not (TyconRefHasAttribute g tycon.Range g.attrib_IsByRefLikeAttribute (mkLocalTyconRef tycon)) &&
 
     match getAugmentationAttribs g tycon with 
     // [< >] 

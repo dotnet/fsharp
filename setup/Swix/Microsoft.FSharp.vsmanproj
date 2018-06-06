@@ -37,6 +37,7 @@
 
             <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.VSIX.Templates.json" />
             <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.Dependencies.json" />
+            <MergeManifest Include="$(OutputPath)\Microsoft.FSharp.IDE.json" />
         </ItemGroup>
     </Target>
 </Project>

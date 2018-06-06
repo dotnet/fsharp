@@ -159,10 +159,10 @@ module private FSharpQuickInfo =
 
 type internal FSharpAsyncQuickInfoSource
     (
+        serviceProvider: IServiceProvider,
         xmlMemberIndexService: IVsXMLMemberIndexService,
         checkerProvider:FSharpCheckerProvider,
         projectInfoManager:FSharpProjectOptionsManager,
-        gotoDefinitionService:FSharpGoToDefinitionService,
         textBuffer:ITextBuffer
     ) =
 
@@ -211,7 +211,7 @@ type internal FSharpAsyncQuickInfoSource
                         let mainDescription, documentation, typeParameterMap, usage, exceptions = ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
                         XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, documentation.Add, typeParameterMap.Add, usage.Add, exceptions.Add, quickInfo.StructuredText)
                         let imageId = Tokenizer.GetImageIdForSymbol(quickInfo.Symbol, quickInfo.SymbolKind)
-                        let navigation = QuickInfoNavigation(gotoDefinitionService, document, symbolUse.RangeAlternate)
+                        let navigation = QuickInfoNavigation(serviceProvider, checkerProvider.Checker, projectInfoManager, document, symbolUse.RangeAlternate)
                         let docs = joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
                         let content = QuickInfoViewProvider.provideContent(imageId, mainDescription, docs, navigation)
                         let span = getTrackingSpan quickInfo.Span
@@ -242,7 +242,7 @@ type internal FSharpAsyncQuickInfoSource
                             ] |> ResizeArray
                         let docs = joinWithLineBreaks [documentation; typeParameterMap; usage; exceptions]
                         let imageId = Tokenizer.GetImageIdForSymbol(targetQuickInfo.Symbol, targetQuickInfo.SymbolKind)
-                        let navigation = QuickInfoNavigation(gotoDefinitionService, document, symbolUse.RangeAlternate)
+                        let navigation = QuickInfoNavigation(serviceProvider, checkerProvider.Checker, projectInfoManager, document, symbolUse.RangeAlternate)
                         let content = QuickInfoViewProvider.provideContent(imageId, mainDescription, docs, navigation)
                         let span = getTrackingSpan targetQuickInfo.Span
                         return QuickInfoItem(span, content)
@@ -256,11 +256,10 @@ type internal FSharpAsyncQuickInfoSource
 type internal FSharpAsyncQuickInfoSourceProvider
     [<ImportingConstructor>]
     (
-        [<Import(typeof<SVsServiceProvider>)>] serviceProvider:IServiceProvider,
+        [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
         checkerProvider:FSharpCheckerProvider,
-        projectInfoManager:FSharpProjectOptionsManager,
-        gotoDefinitionService:FSharpGoToDefinitionService
+        projectInfoManager:FSharpProjectOptionsManager
     ) =
     interface IAsyncQuickInfoSourceProvider with
         override __.TryCreateQuickInfoSource(textBuffer:ITextBuffer) : IAsyncQuickInfoSource =
-            new FSharpAsyncQuickInfoSource(serviceProvider.XMLMemberIndexService, checkerProvider, projectInfoManager, gotoDefinitionService, textBuffer) :> IAsyncQuickInfoSource
+            new FSharpAsyncQuickInfoSource(serviceProvider, serviceProvider.XMLMemberIndexService, checkerProvider, projectInfoManager, textBuffer) :> IAsyncQuickInfoSource

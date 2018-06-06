@@ -347,6 +347,33 @@ namespace Microsoft.FSharp.Core
     [<MeasureAnnotatedAbbreviation>] type int16<[<Measure>] 'Measure> = int16
     [<MeasureAnnotatedAbbreviation>] type int64<[<Measure>] 'Measure> = int64
 
+    /// <summary>Represents a managed pointer in F# code.</c></summary>
+    type byref<'T> = (# "!0&" #)
+
+    /// <summary>Represents a managed pointer in F# code.</summary>
+    type byref<'T, 'Kind> = (# "!0&" #)
+
+    /// Represents the types of byrefs in F# 4.5+
+    module ByRefKinds = 
+
+        /// Represents a byref that can be written
+        [<Sealed>]
+        type Out() = class end
+
+        /// Represents a byref that can be read
+        [<Sealed>]
+        type In() = class end
+
+        /// Represents a byref that can be both read and written
+        [<Sealed>]
+        type InOut = class end 
+
+    /// <summary>Represents a in-argument or readonly managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
+    type inref<'T> = byref<'T, ByRefKinds.In>
+
+    /// <summary>Represents a out-argument managed pointer in F# code. This type should only be used with F# 4.5+.</summary>
+    type outref<'T> = byref<'T, ByRefKinds.Out>
+
 #if FX_RESHAPED_REFLECTION
     module PrimReflectionAdapters =
         
@@ -511,10 +538,10 @@ namespace Microsoft.FSharp.Core
             // Byref usage checks prohibit type instantiations involving byrefs.
 
             [<NoDynamicInvocation>]
-            let inline (~&)  (obj : 'T) : 'T byref     = 
+            let inline (~&)  (obj : 'T) : byref<'T>     = 
                 ignore obj // pretend the variable is used
                 let e = new System.ArgumentException(ErrorStrings.AddressOpNotFirstClassString) 
-                (# "throw" (e :> System.Exception) : 'T byref #)
+                (# "throw" (e :> System.Exception) : byref<'T> #)
                  
             [<NoDynamicInvocation>]
             let inline (~&&) (obj : 'T) : nativeptr<'T> = 
@@ -2162,6 +2189,7 @@ namespace Microsoft.FSharp.Core
         let FloatComparer   = MakeGenericComparer<float>()
         let Float32Comparer = MakeGenericComparer<float32>()
         let DecimalComparer = MakeGenericComparer<decimal>()
+        let BoolComparer    = MakeGenericComparer<bool>()
 
         /// Use a type-indexed table to ensure we only create a single FastStructuralComparison function
         /// for each type
@@ -2199,6 +2227,7 @@ namespace Microsoft.FSharp.Core
                 | ty when ty.Equals(typeof<float32>)    -> null    
                 | ty when ty.Equals(typeof<decimal>)    -> null    
                 | ty when ty.Equals(typeof<string>)     -> unboxPrim (box StringComparer)
+                | ty when ty.Equals(typeof<bool>)       -> null
                 | _ -> MakeGenericComparer<'T>()
 
             static let f : System.Collections.Generic.IComparer<'T>  = 
@@ -2218,6 +2247,7 @@ namespace Microsoft.FSharp.Core
                 | ty when ty.Equals(typeof<float32>)    -> unboxPrim (box Float32Comparer)
                 | ty when ty.Equals(typeof<decimal>)    -> unboxPrim (box DecimalComparer)
                 | ty when ty.Equals(typeof<string>)     -> unboxPrim (box StringComparer)
+                | ty when ty.Equals(typeof<bool>)       -> unboxPrim (box BoolComparer)
                 | _ -> 
                     // Review: There are situations where we should be able
                     // to return System.Collections.Generic.Comparer<'T>.Default here.

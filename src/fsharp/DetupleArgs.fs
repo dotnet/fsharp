@@ -493,26 +493,27 @@ let mkTransform g (f:Val) m tps x1Ntys rty (callPattern, tyfringes: (TType list 
 // transform - vTransforms - support
 //-------------------------------------------------------------------------
 
+let rec zipTupleStructureAndType g ts ty =
+    // match a tuple-structure and type, yields:
+    //  (a) (restricted) tuple-structure, and
+    //  (b) type fringe for each arg position.
+    match ts with
+    | TupleTS tss when isRefTupleTy g ty ->
+        let tys = destRefTupleTy g ty 
+        let tss, tyfringe = zipTupleStructuresAndTypes g tss tys
+        TupleTS tss, tyfringe
+    | _ -> 
+        UnknownTS, [ty] (* trim back CallPattern, function more general *)
+
+and zipTupleStructuresAndTypes g tss tys =
+    let tstys = List.map2 (zipTupleStructureAndType g) tss tys  // assumes tss tys same length 
+    let tss  = List.map fst tstys         
+    let tys = List.collect snd tstys       // link fringes 
+    tss, tys
+
 let zipCallPatternArgTys m g (callPattern : TupleStructure list) (vss : Val list list) =
-    let rec zipTSTyp ts typ =
-        // match a tuple-structure and type, yields:
-        //  (a) (restricted) tuple-structure, and
-        //  (b) type fringe for each arg position.
-        match ts with
-        | TupleTS tss when isRefTupleTy g typ ->
-            let tys = destRefTupleTy g typ 
-            let tss, tyfringe = zipTSListTypList tss tys
-            TupleTS tss, tyfringe
-        | _ -> 
-            UnknownTS, [typ] (* trim back CallPattern, function more general *)
-    and zipTSListTypList tss tys =
-        let tstys = List.map2 zipTSTyp tss tys  // assumes tss tys same length 
-        let tss  = List.map fst tstys         
-        let tys = List.collect snd tstys       // link fringes 
-        tss, tys
-    
     let vss = List.take callPattern.Length vss    // drop excessive tys if callPattern shorter 
-    let tstys = List.map2 (fun ts vs -> let ts, tyfringe = zipTSTyp ts (typeOfLambdaArg m vs) in ts, (tyfringe, vs)) callPattern vss
+    let tstys = List.map2 (fun ts vs -> let ts, tyfringe = zipTupleStructureAndType g ts (typeOfLambdaArg m vs) in ts, (tyfringe, vs)) callPattern vss
     List.unzip tstys   
 
 //-------------------------------------------------------------------------
@@ -584,10 +585,10 @@ let decideTransform g z v callPatterns (m, tps, vss:Val list list, rty) =
 // Public f could be used beyond assembly.
 // For now, suppressing any transforms on these.
 // Later, could transform f and fix up local calls and provide an f wrapper for beyond. 
-let eligibleVal g (v:Val) =
+let eligibleVal g m (v:Val) =
     let dllImportStubOrOtherNeverInline = (v.InlineInfo = ValInline.Never)
     let mutableVal = v.IsMutable
-    let byrefVal = isByrefLikeTy g v.Type
+    let byrefVal = isByrefLikeTy g m v.Type
     not dllImportStubOrOtherNeverInline &&
     not byrefVal &&
     not mutableVal &&
@@ -595,8 +596,8 @@ let eligibleVal g (v:Val) =
     not v.IsCompiledAsTopLevel 
 
 let determineTransforms g (z : GlobalUsageAnalysis.Results) =
-   let selectTransform f sites =
-     if not (eligibleVal g f) then None else
+   let selectTransform (f: Val) sites =
+     if not (eligibleVal g f.Range f) then None else
      // Consider f, if it has top-level lambda (meaning has term args) 
      match Zmap.tryFind f z.Defns with
      | None   -> None // no binding site, so no transform 
