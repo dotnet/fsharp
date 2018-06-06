@@ -83,12 +83,12 @@
         <note />
       </trans-unit>
       <trans-unit id="listElementHasWrongType">
-        <source>All elements of a list must be of the same type as the first element, which here is '{0}'. At least one other element in the list has type '{1}'.</source>
+        <source>All elements of a list must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
         <target state="needs-review-translation">Todos os elementos de uma expressão do construtor de lista devem ter o mesmo tipo. Essa expressão deveria ter o tipo '{0}', mas aqui tem o tipo '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="arrayElementHasWrongType">
-        <source>All elements of an array must be of the same type as the first element, which here is '{0}'. At least one other element in the array has type '{1}'.</source>
+        <source>All elements of an array must be of the same type as the first element, which here is '{0}'. This element has type '{1}'.</source>
         <target state="needs-review-translation">Todos os elementos de uma expressão do construtor de matriz devem ter o mesmo tipo. Essa expressão deveria ter o tipo '{0}', mas aqui tem o tipo '{1}'.</target>
         <note />
       </trans-unit>
