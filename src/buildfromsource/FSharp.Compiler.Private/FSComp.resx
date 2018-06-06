@@ -696,16 +696,16 @@
   <data name="typrelNoImplementationGivenWithSuggestion" xml:space="preserve">
     <value>No implementation was given for '{0}'. Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</value>
   </data>
-  <data name="typrelNoImplementationSeveralGiven" xml:space="preserve">
+  <data name="typrelNoImplementationGivenSeveral" xml:space="preserve">
     <value>No implementation was given for those members: {0}</value>
   </data>
-  <data name="typrelNoImplementationSeveralGivenWithSuggestion" xml:space="preserve">
+  <data name="typrelNoImplementationGivenSeveralWithSuggestion" xml:space="preserve">
     <value>No implementation was given for those members: {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</value>
   </data>
-  <data name="typrelNoImplementationSeveralTruncatedGiven" xml:space="preserve">
+  <data name="typrelNoImplementationGivenSeveralTruncated" xml:space="preserve">
     <value>No implementation was given for those members (some results omitted): {0}</value>
   </data>
-  <data name="typrelNoImplementationSeveralTruncatedGivenWithSuggestion" xml:space="preserve">
+  <data name="typrelNoImplementationGivenSeveralTruncatedWithSuggestion" xml:space="preserve">
     <value>No implementation was given for those members (some results omitted): {0}Note that all interface members must be implemented and listed under an appropriate 'interface' declaration, e.g. 'interface ... with member ...'.</value>
   </data>
   <data name="typrelMemberDoesNotHaveCorrectNumberOfArguments" xml:space="preserve">

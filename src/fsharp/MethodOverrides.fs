@@ -262,16 +262,6 @@ module DispatchSlotChecking =
             if showMissingMethodsAndRaiseErrors then
                 errorR exn
 
-        let rec listSameLength l1 l2 = 
-            match l1, l2 with
-            | [], [] -> true
-            | [], _ | _, [] -> false
-            | _ :: t1, _ :: t2 -> listSameLength t1 t2
-
-        let inline formatMethodInfoSignature dispatchSlot = 
-            // this one is used quite a bit, saves some parameter passing noise bellow
-            FormatMethInfoSig g amap m denv dispatchSlot
-
         // Index the availPriorOverrides and overrides by name
         let availPriorOverridesKeyed = availPriorOverrides |> NameMultiMap.initBy (fun ov -> ov.LogicalName)
         let overridesKeyed = overrides |> NameMultiMap.initBy (fun ov -> ov.LogicalName)
@@ -321,16 +311,16 @@ module DispatchSlotChecking =
                             if moreThanOnePossibleDispatchSlot then
                                 noimpl()
 
-                            elif not (listSameLength argTys vargtys) then 
-                                fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectNumberOfArguments(FormatOverride denv overrideBy, formatMethodInfoSignature dispatchSlot), overrideBy.Range))
-                            elif not (listSameLength mtps fvmtps) then
-                                fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectNumberOfTypeParameters(FormatOverride denv overrideBy, formatMethodInfoSignature dispatchSlot), overrideBy.Range))
+                            elif argTys.Length <> vargtys.Length then
+                                fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectNumberOfArguments(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
+                            elif mtps.Length <> fvmtps.Length then
+                                fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectNumberOfTypeParameters(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
                             elif not (IsTyparKindMatch compiledSig overrideBy) then
-                                fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectKindsOfGenericParameters(FormatOverride denv overrideBy, formatMethodInfoSignature dispatchSlot), overrideBy.Range))
+                                fail(Error(FSComp.SR.typrelMemberDoesNotHaveCorrectKindsOfGenericParameters(FormatOverride denv overrideBy, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
                             else 
-                                fail(Error(FSComp.SR.typrelMemberCannotImplement(FormatOverride denv overrideBy, NicePrint.stringOfMethInfo amap m denv dispatchSlot, formatMethodInfoSignature dispatchSlot), overrideBy.Range))
+                                fail(Error(FSComp.SR.typrelMemberCannotImplement(FormatOverride denv overrideBy, NicePrint.stringOfMethInfo amap m denv dispatchSlot, FormatMethInfoSig g amap m denv dispatchSlot), overrideBy.Range))
                         | overrideBy :: _ -> 
-                            errorR(Error(FSComp.SR.typrelOverloadNotFound(formatMethodInfoSignature dispatchSlot, formatMethodInfoSignature dispatchSlot),overrideBy.Range))
+                            errorR(Error(FSComp.SR.typrelOverloadNotFound(FormatMethInfoSig g amap m denv dispatchSlot, FormatMethInfoSig g amap m denv dispatchSlot),overrideBy.Range))
 
                     | [ overrideBy ] -> 
                         if dispatchSlots |> List.exists (fun (RequiredSlot(dispatchSlot,_)) -> OverrideImplementsDispatchSlot g amap m dispatchSlot overrideBy) then
@@ -339,8 +329,8 @@ module DispatchSlotChecking =
                             // Error will be reported below in CheckOverridesAreAllUsedOnce 
                             ()
                     | _ -> 
-                        fail(Error(FSComp.SR.typrelOverrideWasAmbiguous(formatMethodInfoSignature dispatchSlot),m))
-            | _ -> fail(Error(FSComp.SR.typrelMoreThenOneOverride(formatMethodInfoSignature dispatchSlot),m))
+                        fail(Error(FSComp.SR.typrelOverrideWasAmbiguous(FormatMethInfoSig g amap m denv dispatchSlot),m))
+            | _ -> fail(Error(FSComp.SR.typrelMoreThenOneOverride(FormatMethInfoSig g amap m denv dispatchSlot),m))
         
         if missingOverloadImplementation.Count > 0 then
             // compose message listing missing override implementation
@@ -373,10 +363,10 @@ module DispatchSlotChecking =
                 // we have specific message if the list is truncated
                 let messageFunction =
                     match shouldTruncate, messageWithInterfaceSuggestion with
-                    | false, true -> FSComp.SR.typrelNoImplementationSeveralGivenWithSuggestion
-                    | false, false -> FSComp.SR.typrelNoImplementationSeveralGiven
-                    | true, true -> FSComp.SR.typrelNoImplementationSeveralTruncatedGivenWithSuggestion
-                    | true, false -> FSComp.SR.typrelNoImplementationSeveralTruncatedGiven
+                    | false, true  -> FSComp.SR.typrelNoImplementationGivenSeveralWithSuggestion
+                    | false, false -> FSComp.SR.typrelNoImplementationGivenSeveral
+                    | true , true  -> FSComp.SR.typrelNoImplementationGivenSeveralTruncatedWithSuggestion
+                    | true , false -> FSComp.SR.typrelNoImplementationGivenSeveralTruncated
                 fail(Error(messageFunction(signatures), m))
 
         res
