@@ -276,7 +276,10 @@ type TyparKind =
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     //member x.DebugText  =  x.ToString()
 
-    override x.ToString() = sprintf "%+A" x
+    override x.ToString() =
+      match x with
+      | TyparKind.Type -> "type"
+      | TyparKind.Measure -> "measure"
 
 [<RequireQualifiedAccess>]
 /// Indicates if the type variable can be solved or given new constraints. The status of a type variable
