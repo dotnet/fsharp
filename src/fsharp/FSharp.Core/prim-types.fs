@@ -1612,12 +1612,16 @@ namespace Microsoft.FSharp.Core
 
                 static member Function = f
 
+            // The FSharp compiler will not insert a tail call when this is used (this might be "fixed"
+            // in a future release)
+            let inline avoid_tail_call f = match f () with true -> true | _ -> false
+
             /// Implements generic equality between two values, with PER semantics for NaN (so equality on two NaN values returns false)
             //
             // The compiler optimizer is aware of this function  (see use of generic_equality_per_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T".
             let GenericEqualityIntrinsic (x : 'T) (y : 'T) : bool = 
-                GenericEqualityT<'T, PER>.Function.Invoke (x, y)
+                avoid_tail_call (fun () -> GenericEqualityT<'T, PER>.Function.Invoke (x, y))
                 
             /// Implements generic equality between two values, with ER semantics for NaN (so equality on two NaN values returns true)
             //
@@ -1626,7 +1630,7 @@ namespace Microsoft.FSharp.Core
             // The compiler optimizer is aware of this function (see use of generic_equality_er_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T".
             let GenericEqualityERIntrinsic (x : 'T) (y : 'T) : bool =
-                GenericEqualityT<'T, ER>.Function.Invoke (x, y)
+                avoid_tail_call (fun () -> GenericEqualityT<'T, ER>.Function.Invoke (x, y))
                 
             /// Implements generic equality between two values using "comp" for recursive calls.
             //
@@ -1635,7 +1639,7 @@ namespace Microsoft.FSharp.Core
             // is either fsEqualityComparerNoHashingER or fsEqualityComparerNoHashingPER.
             let GenericEqualityWithComparerIntrinsic (comp : System.Collections.IEqualityComparer) (x : 'T) (y : 'T) : bool =
                 if obj.ReferenceEquals (comp, fsEqualityComparerUnlimitedHashingPER) then
-                    GenericEqualityT<'T, PER>.Function.Invoke (x, y)
+                    avoid_tail_call (fun () -> GenericEqualityT<'T, PER>.Function.Invoke (x, y))
                 else
                     comp.Equals (box x, box y)
                 
