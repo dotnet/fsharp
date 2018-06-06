@@ -1387,74 +1387,75 @@ let rec (|KnownValApp|_|) expr =
 let (|TDBoolSwitch|_|) dtree =
     match dtree with
     | TDSwitch( expr, 
-                [TCase (DecisionTreeTest.Const(Const.Bool b), TDSuccess([], caseIndex))],
-                Some (TDSuccess([], defaultIndex)),
-                range) -> Some (expr, b, caseIndex, defaultIndex, range)
+                [TCase (DecisionTreeTest.Const(Const.Bool b), caseTree )],
+                Some defaultTree,
+                range) -> Some (expr, b, caseTree, defaultTree, range)
     | _ -> None
 
 // check target that have a constant bool value
-let (|ConstantBoolTarget|_|) t =
+let (|ConstantBoolTarget|_|)  t =
     match t with
     | TTarget([], Expr.Const (Const.Bool b,_,_),_) -> Some b
     | _ -> None
 
-// Combine switch-over-match, see https://github.com/Microsoft/visualfsharp/issues/635
+/// Is this a tree, where each decision is a two-way switch (to prevent later duplication of trees), and each branch returns or true/false,
+/// apart from one branch which defers to another expression
+let rec CountBoolLogicTree ((targets: DecisionTreeTarget[], costOuterCaseTree, costOuterDefaultTree, testBool) as data) tree =
+    match  tree with 
+    | TDSwitch (_expr, [case], Some defaultTree, _range) -> 
+        let tc1,ec1 = CountBoolLogicTree data case.CaseTree 
+        let tc2, ec2 = CountBoolLogicTree data defaultTree 
+        tc1 + tc2, ec1 + ec2
+    | TDSuccess([], idx)  -> 
+        match targets.[idx] with
+        | ConstantBoolTarget result -> (if result = testBool then costOuterCaseTree else costOuterDefaultTree), 0
+        | TTarget([], _exp, _) -> costOuterCaseTree + costOuterDefaultTree, 10
+        | _ -> 100, 100 
+    | _ -> 100, 100
+
+/// Rewrite a decision tree for which IsBoolLogic returned true.  Produce aa new decision
+/// tree where at each ConstantBoolSuccessTree tip we replace with either outerCaseTree or outerDefaultTree
+/// depending on whether the target result was true/false
+let rec RewriteBoolLogicTree ((targets: DecisionTreeTarget[], outerCaseTree, outerDefaultTree, testBool) as data) tree =
+    match  tree with 
+    | TDSwitch (expr, cases, defaultTree, range) -> 
+        let cases2 = cases |> List.map (RewriteBoolLogicCase data)
+        let defaultTree2 = defaultTree |> Option.map (RewriteBoolLogicTree data)
+        TDSwitch  (expr, cases2, defaultTree2, range)
+    | TDSuccess([], idx)  -> 
+        match targets.[idx] with 
+        | ConstantBoolTarget result -> if result = testBool then outerCaseTree else outerDefaultTree
+        | TTarget([], exp, _) -> mkBoolSwitch exp.Range exp outerCaseTree outerDefaultTree 
+        | _ -> failwith "CountBoolLogicTree should exclude this case"
+    | _ ->  failwith "CountBoolLogicTree should exclude this case"
+
+and RewriteBoolLogicCase data (TCase(test, tree)) =
+    TCase(test, RewriteBoolLogicTree data tree)
+
+// Repeatedly combine switch-over-match decision trees, see https://github.com/Microsoft/visualfsharp/issues/635.
+// The outer decision tree is doing a swithc over a boolean result, the inner match is producing only
+// constant boolean results in its targets.  
 let rec CombineBoolLogic expr = 
 
     // try to find nested boolean switch
     match expr with
     | Expr.Match(outerSP, outerMatchRange, 
-                 TDBoolSwitch(Expr.Match(_innerSP, _innerMatchRange, TDBoolSwitch( mex, innerTestBool, innerCaseIndex, innerDefaultIndex, _innerSwitchRange),
-                                         innerTargets, _innerDefaultRange, _innerMatch_ty),
-                              outerTestBool, outerCaseIndex, outerDefaultIndex, outerSwitchRange ), 
+                 TDBoolSwitch(Expr.Match(_innerSP, _innerMatchRange, innerTree, innerTargets, _innerDefaultRange, _innerMatchTy),
+                              outerTestBool, outerCaseTree, outerDefaultTree, _outerSwitchRange ), 
                  outerTargets, outerDefaultRange, outerMatchTy)  ->
        
-        // find inner targets that have constant values to shortcut them directly to return outer targets
-        match  innerTargets.[innerCaseIndex], innerTargets.[innerDefaultIndex] with
+        let costOuterCaseTree =  match outerCaseTree with TDSuccess _ -> 0 | _ -> 1
+        let costOuterDefaultTree = match outerDefaultTree with TDSuccess _ -> 0 | _ -> 1
+        let tc, ec = CountBoolLogicTree (innerTargets, costOuterCaseTree, costOuterDefaultTree, outerTestBool) innerTree
+        // At most one expression, no overall duplication of TSwitch nodes
+        if tc <= costOuterCaseTree + costOuterDefaultTree && ec <= 10 then 
+            let newExpr = 
+                Expr.Match(outerSP, outerMatchRange, 
+                           RewriteBoolLogicTree (innerTargets, outerCaseTree, outerDefaultTree, outerTestBool) innerTree,
+                           outerTargets, outerDefaultRange, outerMatchTy)
 
-        //   test (if mex = innerTestBool then exp else innerTestDefaultResult) is outerTestBool --> outerCaseIndex
-        //   default                                                                             --> outerDefaultIndex
-        // ==>
-        //   test mex is innerTestBool
-        //      test exp is outerTestBool --> outerCaseIndex
-        //      otherwise                 --> IF innerTestDefaultResult == outerTestBool THEN outerCaseIndex ELSE outerDefaultIndex
-        //   otherwise                    --> outerDefaultIndex
-        | TTarget([],exp,_), ConstantBoolTarget innerTestDefaultResult ->
-
-            let newdtree =
-                // test mex is innerTestBool
-                TDSwitch(mex, [TCase (DecisionTreeTest.Const(Const.Bool innerTestBool), 
-                                      // test exp is outerTestBool
-                                      TDSwitch(exp, [TCase (DecisionTreeTest.Const(Const.Bool outerTestBool), TDSuccess([], outerCaseIndex) ) ], 
-                                               // otherwise --> IF innerTestDefaultResult == outerTestBool THEN outerCaseIndex ELSE outerDefaultIndex
-                                               Some (TDSuccess([], (if innerTestDefaultResult = outerTestBool then outerCaseIndex else outerDefaultIndex) )), outerSwitchRange) ) ], 
-                               // otherwise --> outerDefaultIndex
-                               Some (TDSuccess([], outerDefaultIndex)), outerSwitchRange)
-
-            let newExpr = Expr.Match(outerSP, outerMatchRange, newdtree, outerTargets, outerDefaultRange, outerMatchTy)
             CombineBoolLogic newExpr
-
-        //   test (if mex = innerTestBool then innerTestDefaultResult else exp) is outerTestBool --> outerCaseIndex
-        //   default                                                                             --> outerDefaultIndex
-        // ==>
-        //   test mex is innerTestBool    --> IF innerTestDefaultResult == outerTestBool THEN outerCaseIndex ELSE outerDefaultIndex
-        //   otherwise 
-        //      test exp is outerTestBool --> outerCaseIndex
-        //      otherwise                 --> outerDefaultIndex
-        | ConstantBoolTarget innerTestDefaultResult,TTarget([],exp,_) ->
-
-            let newdtree =
-                // test mex is innerTestBool
-                TDSwitch(mex, [TCase (DecisionTreeTest.Const(Const.Bool innerTestBool), 
-                                      TDSuccess([], (if innerTestDefaultResult = outerTestBool then outerCaseIndex else outerDefaultIndex) ) ) ],
-                              // otherwise
-                              //   test exp is outerTestBool --> outerCaseIndex
-                              Some (TDSwitch(exp, [TCase (DecisionTreeTest.Const(Const.Bool outerTestBool), TDSuccess([], outerCaseIndex) ) ], 
-                                             // otherwise --> outerDefaultIndex
-                                             Some (TDSuccess([], outerDefaultIndex) ), outerSwitchRange) ), outerSwitchRange )
-            let newExpr = Expr.Match(outerSP, outerMatchRange, newdtree, outerTargets, outerDefaultRange, outerMatchTy)
-            CombineBoolLogic newExpr
-        | _ -> 
+        else
             expr
     | _ -> 
         expr
@@ -2890,7 +2891,7 @@ and OptimizeMatch cenv env (spMatch, exprm, dtree, targets, m, ty) =
     let dtree', dinfo = OptimizeDecisionTree cenv env m dtree 
     let targets', tinfos = OptimizeDecisionTreeTargets cenv env m targets 
     let newExpr, newInfo = RebuildOptimizedMatch (spMatch, exprm, m, ty, dtree', targets', dinfo, tinfos)
-    let newExpr2 = CombineBoolLogic newExpr
+    let newExpr2 = if not (cenv.settings.localOpt()) then newExpr else CombineBoolLogic newExpr
     newExpr2, newInfo
 
 and CombineMatchInfos dinfo tinfo = 
