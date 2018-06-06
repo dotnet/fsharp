@@ -771,6 +771,35 @@ namespace Microsoft.FSharp.Core
         let anyToStringShowingNull x = anyToString "null" x
 
         module HashCompare = 
+            let defaultHashNodes = 18 
+
+            /// The implementation of IEqualityComparer, using depth-limited for hashing and PER semantics for NaN equality.
+            type CountLimitedHasherPER(sz:int) =
+                [<DefaultValue>]
+                val mutable nodeCount : int
+                
+                member x.Fresh() = 
+                    if (System.Threading.Interlocked.CompareExchange(&(x.nodeCount), sz, 0) = 0) then 
+                        x
+                    else
+                        new CountLimitedHasherPER(sz)
+                
+                interface IEqualityComparer 
+
+            /// The implementation of IEqualityComparer, using unlimited depth for hashing and ER semantics for NaN equality.
+            type UnlimitedHasherER() =
+                interface IEqualityComparer 
+                
+            /// The implementation of IEqualityComparer, using unlimited depth for hashing and PER semantics for NaN equality.
+            type UnlimitedHasherPER() =
+                interface IEqualityComparer
+                    
+
+            /// The unique object for unlimited depth for hashing and ER semantics for equality.
+            let fsEqualityComparerUnlimitedHashingER = UnlimitedHasherER()
+
+            /// The unique object for unlimited depth for hashing and PER semantics for equality.
+            let fsEqualityComparerUnlimitedHashingPER = UnlimitedHasherPER()
         
             //-------------------------------------------------------------------------
             // LanguagePrimitives.HashCompare: Physical Equality
@@ -1605,7 +1634,10 @@ namespace Microsoft.FSharp.Core
             // and devirtualizes calls to it based on "T", and under the assumption that "comp" 
             // is either fsEqualityComparerNoHashingER or fsEqualityComparerNoHashingPER.
             let GenericEqualityWithComparerIntrinsic (comp : System.Collections.IEqualityComparer) (x : 'T) (y : 'T) : bool =
-                comp.Equals((box x),(box y))
+                if obj.ReferenceEquals (comp, fsEqualityComparerUnlimitedHashingPER) then
+                    GenericEqualityT<'T, PER>.Function.Invoke (x, y)
+                else
+                    comp.Equals (box x, box y)
                 
 
             /// Implements generic equality between two values, with ER semantics for NaN (so equality on two NaN values returns true)
@@ -1696,38 +1728,6 @@ namespace Microsoft.FSharp.Core
             //-------------------------------------------------------------------------
             // LanguagePrimitives.HashCompare: HASHING.  
             //------------------------------------------------------------------------- 
-
-
-
-            let defaultHashNodes = 18 
-
-            /// The implementation of IEqualityComparer, using depth-limited for hashing and PER semantics for NaN equality.
-            type CountLimitedHasherPER(sz:int) =
-                [<DefaultValue>]
-                val mutable nodeCount : int
-                
-                member x.Fresh() = 
-                    if (System.Threading.Interlocked.CompareExchange(&(x.nodeCount), sz, 0) = 0) then 
-                        x
-                    else
-                        new CountLimitedHasherPER(sz)
-                
-                interface IEqualityComparer 
-
-            /// The implementation of IEqualityComparer, using unlimited depth for hashing and ER semantics for NaN equality.
-            type UnlimitedHasherER() =
-                interface IEqualityComparer 
-                
-            /// The implementation of IEqualityComparer, using unlimited depth for hashing and PER semantics for NaN equality.
-            type UnlimitedHasherPER() =
-                interface IEqualityComparer
-                    
-
-            /// The unique object for unlimited depth for hashing and ER semantics for equality.
-            let fsEqualityComparerUnlimitedHashingER = UnlimitedHasherER()
-
-            /// The unique object for unlimited depth for hashing and PER semantics for equality.
-            let fsEqualityComparerUnlimitedHashingPER = UnlimitedHasherPER()
              
             let inline HashCombine nr x y = (x <<< 1) + y + 631 * nr
 
