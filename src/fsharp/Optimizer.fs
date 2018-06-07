@@ -1382,19 +1382,18 @@ let rec (|KnownValApp|_|) expr =
     | Expr.App(KnownValApp(vref, typeArgs1, otherArgs1), _, typeArgs2, otherArgs2, _) -> Some(vref, typeArgs1@typeArgs2, otherArgs1@otherArgs2)
     | _ -> None
 
-// Matches boolean decision tree:
-// check single case with bool const.
+/// Matches boolean decision tree:
+/// check single case with bool const.
 let (|TDBoolSwitch|_|) dtree =
     match dtree with
-    | TDSwitch( expr, 
-                [TCase (DecisionTreeTest.Const(Const.Bool b), caseTree )],
-                Some defaultTree,
-                range) -> Some (expr, b, caseTree, defaultTree, range)
-    | _ -> None
+    | TDSwitch( expr, [TCase (DecisionTreeTest.Const(Const.Bool testBool), caseTree )], Some defaultTree, range) ->
+        Some (expr, testBool, caseTree, defaultTree, range)
+    | _ -> 
+        None
 
-// check target that have a constant bool value
-let (|ConstantBoolTarget|_|)  t =
-    match t with
+/// Check target that have a constant bool value
+let (|ConstantBoolTarget|_|)  target =
+    match target with
     | TTarget([], Expr.Const (Const.Bool b,_,_),_) -> Some b
     | _ -> None
 
@@ -1413,7 +1412,7 @@ let rec CountBoolLogicTree ((targets: DecisionTreeTarget[], costOuterCaseTree, c
         | _ -> 100, 100 
     | _ -> 100, 100
 
-/// Rewrite a decision tree for which IsBoolLogic returned true.  Produce aa new decision
+/// Rewrite a decision tree for which CountBoolLogicTree returned a low number (see below).  Produce a new decision
 /// tree where at each ConstantBoolSuccessTree tip we replace with either outerCaseTree or outerDefaultTree
 /// depending on whether the target result was true/false
 let rec RewriteBoolLogicTree ((targets: DecisionTreeTarget[], outerCaseTree, outerDefaultTree, testBool) as data) tree =
@@ -1425,16 +1424,16 @@ let rec RewriteBoolLogicTree ((targets: DecisionTreeTarget[], outerCaseTree, out
     | TDSuccess([], idx)  -> 
         match targets.[idx] with 
         | ConstantBoolTarget result -> if result = testBool then outerCaseTree else outerDefaultTree
-        | TTarget([], exp, _) -> mkBoolSwitch exp.Range exp outerCaseTree outerDefaultTree 
+        | TTarget([], exp, _) -> mkBoolSwitch exp.Range exp (if testBool then outerCaseTree else outerDefaultTree) (if testBool then outerDefaultTree else outerCaseTree)
         | _ -> failwith "CountBoolLogicTree should exclude this case"
     | _ ->  failwith "CountBoolLogicTree should exclude this case"
 
 and RewriteBoolLogicCase data (TCase(test, tree)) =
     TCase(test, RewriteBoolLogicTree data tree)
 
-// Repeatedly combine switch-over-match decision trees, see https://github.com/Microsoft/visualfsharp/issues/635.
-// The outer decision tree is doing a swithc over a boolean result, the inner match is producing only
-// constant boolean results in its targets.  
+/// Repeatedly combine switch-over-match decision trees, see https://github.com/Microsoft/visualfsharp/issues/635.
+/// The outer decision tree is doing a swithc over a boolean result, the inner match is producing only
+/// constant boolean results in its targets.  
 let rec CombineBoolLogic expr = 
 
     // try to find nested boolean switch
