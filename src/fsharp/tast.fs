@@ -314,73 +314,84 @@ type TyparRigidity =
 type TyparFlags(flags:int32) =
 
     new (kind:TyparKind, rigidity:TyparRigidity, isFromError:bool, isCompGen:bool, staticReq:TyparStaticReq, dynamicReq:TyparDynamicReq, equalityDependsOn: bool, comparisonDependsOn: bool) = 
-        TyparFlags((if isFromError then                0b0000000000010 else 0) |||
-                   (if isCompGen   then                0b0000000000100 else 0) |||
+        TyparFlags((if isFromError then                0b00000000000000010 else 0) |||
+                   (if isCompGen   then                0b00000000000000100 else 0) |||
                    (match staticReq with
-                     | NoStaticReq                  -> 0b0000000000000
-                     | HeadTypeStaticReq            -> 0b0000000001000) |||
+                     | NoStaticReq                  -> 0b00000000000000000
+                     | HeadTypeStaticReq            -> 0b00000000000001000) |||
                    (match rigidity with
-                     | TyparRigidity.Rigid          -> 0b0000000000000
-                     | TyparRigidity.WillBeRigid    -> 0b0000000100000
-                     | TyparRigidity.WarnIfNotRigid -> 0b0000001000000
-                     | TyparRigidity.Flexible       -> 0b0000001100000
-                     | TyparRigidity.Anon           -> 0b0000010000000) |||
+                     | TyparRigidity.Rigid          -> 0b00000000000000000
+                     | TyparRigidity.WillBeRigid    -> 0b00000000000100000
+                     | TyparRigidity.WarnIfNotRigid -> 0b00000000001000000
+                     | TyparRigidity.Flexible       -> 0b00000000001100000
+                     | TyparRigidity.Anon           -> 0b00000000010000000) |||
                    (match kind with
-                     | TyparKind.Type               -> 0b0000000000000
-                     | TyparKind.Measure            -> 0b0000100000000) |||   
+                     | TyparKind.Type               -> 0b00000000000000000
+                     | TyparKind.Measure            -> 0b00000000100000000) |||   
                    (if comparisonDependsOn then 
-                                                       0b0001000000000 else 0) |||
+                                                       0b00000001000000000 else 0) |||
                    (match dynamicReq with
-                     | TyparDynamicReq.No           -> 0b0000000000000
-                     | TyparDynamicReq.Yes          -> 0b0010000000000) |||
+                     | TyparDynamicReq.No           -> 0b00000000000000000
+                     | TyparDynamicReq.Yes          -> 0b00000010000000000) |||
                    (if equalityDependsOn then 
-                                                       0b0100000000000 else 0))
+                                                       0b00000100000000000 else 0))
 
     /// Indicates if the type inference variable was generated after an error when type checking expressions or patterns
-    member x.IsFromError         = (flags &&& 0b0000000000010) <> 0x0
+    member x.IsFromError         = (flags &&& 0b00000000000000010) <> 0x0
 
     /// Indicates if the type variable is compiler generated, i.e. is an implicit type inference variable 
-    member x.IsCompilerGenerated = (flags &&& 0b0000000000100) <> 0x0
+    member x.IsCompilerGenerated = (flags &&& 0b00000000000000100) <> 0x0
 
     /// Indicates if the type variable has a static "head type" requirement, i.e. ^a variables used in FSharp.Core and member constraints.
     member x.StaticReq           = 
-                             match (flags &&& 0b0000000001000) with 
-                                            | 0b0000000000000 -> NoStaticReq
-                                            | 0b0000000001000 -> HeadTypeStaticReq
+                             match (flags &&& 0b00000000000001000) with 
+                                            | 0b00000000000000000 -> NoStaticReq
+                                            | 0b00000000000001000 -> HeadTypeStaticReq
                                             | _             -> failwith "unreachable"
 
     /// Indicates if the type variable can be solved or given new constraints. The status of a type variable
     /// generally always evolves towards being either rigid or solved. 
     member x.Rigidity = 
-                             match (flags &&& 0b0000011100000) with 
-                                            | 0b0000000000000 -> TyparRigidity.Rigid
-                                            | 0b0000000100000 -> TyparRigidity.WillBeRigid
-                                            | 0b0000001000000 -> TyparRigidity.WarnIfNotRigid
-                                            | 0b0000001100000 -> TyparRigidity.Flexible
-                                            | 0b0000010000000 -> TyparRigidity.Anon
+                             match (flags &&& 0b00000000011100000) with 
+                                            | 0b00000000000000000 -> TyparRigidity.Rigid
+                                            | 0b00000000000100000 -> TyparRigidity.WillBeRigid
+                                            | 0b00000000001000000 -> TyparRigidity.WarnIfNotRigid
+                                            | 0b00000000001100000 -> TyparRigidity.Flexible
+                                            | 0b00000000010000000 -> TyparRigidity.Anon
                                             | _          -> failwith "unreachable"
 
     /// Indicates whether a type variable can be instantiated by types or units-of-measure.
     member x.Kind           = 
-                             match (flags &&& 0b1000100000000) with 
-                                            | 0b0000000000000 -> TyparKind.Type
-                                            | 0b0000100000000 -> TyparKind.Measure
+                             match (flags &&& 0b00001000100000000) with 
+                                            | 0b00000000000000000 -> TyparKind.Type
+                                            | 0b00000000100000000 -> TyparKind.Measure
                                             | _             -> failwith "unreachable"
 
 
     /// Indicates that whether or not a generic type definition satisfies the comparison constraint is dependent on whether this type variable satisfies the comparison constraint.
     member x.ComparisonConditionalOn =
-                                   (flags &&& 0b0001000000000) <> 0x0
+                                   (flags &&& 0b00000001000000000) <> 0x0
+
     /// Indicates if a type parameter is needed at runtime and may not be eliminated
     member x.DynamicReq     = 
-                             match (flags &&& 0b0010000000000) with 
-                                            | 0b0000000000000 -> TyparDynamicReq.No
-                                            | 0b0010000000000 -> TyparDynamicReq.Yes
+                             match (flags &&& 0b00000010000000000) with 
+                                            | 0b00000000000000000 -> TyparDynamicReq.No
+                                            | 0b00000010000000000 -> TyparDynamicReq.Yes
                                             | _             -> failwith "unreachable"
+
     /// Indicates that whether or not a generic type definition satisfies the equality constraint is dependent on whether this type variable satisfies the equality constraint.
     member x.EqualityConditionalOn = 
-                                   (flags &&& 0b0100000000000) <> 0x0
+                                   (flags &&& 0b00000100000000000) <> 0x0
 
+    /// Indicates that whether this type parameter is a compat-flex type parameter (i.e. where "expr :> tp" only emits an optional warning)
+    member x.IsCompatFlex = 
+                                   (flags &&& 0b00010000000000000) <> 0x0
+
+    member x.WithCompatFlex(b) =  
+                  if b then 
+                      TyparFlags(flags |||    0b00010000000000000)
+                  else
+                      TyparFlags(flags &&& ~~~0b00010000000000000)
 
     /// Get the flags as included in the F# binary metadata. We pickle this as int64 to allow for future expansion
     member x.PickledBits =         flags       
@@ -2161,6 +2172,12 @@ and
 
     /// Indicates if the type inference variable was generated after an error when type checking expressions or patterns
     member x.IsFromError         = x.typar_flags.IsFromError
+
+    /// Indicates that whether this type parameter is a compat-flex type parameter (i.e. where "expr :> tp" only emits an optional warning)
+    member x.IsCompatFlex        = x.typar_flags.IsCompatFlex
+
+    /// Set whether this type parameter is a compat-flex type parameter (i.e. where "expr :> tp" only emits an optional warning)
+    member x.SetIsCompatFlex(b)  = x.typar_flags <- x.typar_flags.WithCompatFlex(b)
 
     /// Indicates whether a type variable can be instantiated by types or units-of-measure.
     member x.Kind                = x.typar_flags.Kind

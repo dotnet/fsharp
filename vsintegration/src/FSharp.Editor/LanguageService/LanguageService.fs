@@ -57,11 +57,10 @@ type internal FSharpCheckerProvider
             let mmd = amd.GetModules().[0]
             let mmr = mmd.GetMetadataReader()
 
-            // "lifetime is timed to Metadata you got from the GetMetadata(...). As long as you hold it strongly, raw 
+            // "lifetime is timed to Metadata you got from the GetMetadata(…). As long as you hold it strongly, raw 
             // memory we got from metadata reader will be alive. Once you are done, just let everything go and 
             // let finalizer handle resource rather than calling Dispose from Metadata directly. It is shared metadata. 
-            // You shouldn't dispose it directly."
-
+            // You shouldn’t dispose it directly."
             let objToHold = box md
 
             // We don't expect any ilread WeakByteFile to be created when working in Visual Studio
@@ -329,6 +328,7 @@ type internal FSharpCheckerWorkspaceServiceFactory
 [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.CodeFixesOptionPage>, "F#", null, "Code Fixes", "6010")>]
 [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.LanguageServicePerformanceOptionPage>, "F#", null, "Performance", "6011")>]
 [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.AdvancedSettingsOptionPage>, "F#", null, "Advanced", "6012")>]
+[<ProvideLanguageEditorOptionPage(typeof<OptionsUI.CodeLensOptionPage>, "F#", null, "CodeLens", "6013")>]
 [<ProvideFSharpVersionRegistration(FSharpConstants.projectPackageGuidString, "Microsoft Visual F#")>]
 // 64 represents a hex number. It needs to be greater than 37 so the TextMate editor will not be chosen as higher priority.
 [<ProvideEditorExtension(typeof<FSharpEditorFactory>, ".fs", 64)>]
@@ -675,9 +675,7 @@ type internal FSharpLanguageService(package : FSharpPackage) =
                     // This is the path for .fs/.fsi files in legacy projects
 
                     this.SetupProjectFile(siteProvider, this.Workspace, "SetupNewTextView")
-
                 | h when not (isNull h) && not (IsScript(filename)) ->
-                    
                     let docId = this.Workspace.CurrentSolution.GetDocumentIdsWithFilePath(filename).FirstOrDefault()
                     match docId with
                     | null ->
