@@ -24,37 +24,38 @@ type FSharpChecker with
         checker.ParseDocument(document, parsingOptions, sourceText=sourceText.ToString(), userOpName=userOpName)
 
     member checker.ParseAndCheckDocument(filePath: string, textVersionHash: int, sourceText: string, options: FSharpProjectOptions, allowStaleResults: bool, userOpName: string) =
-        let parseAndCheckFile =
-            async {
-                let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText, options, userOpName=userOpName)
-                return
-                    match checkFileAnswer with
-                    | FSharpCheckFileAnswer.Aborted -> 
-                        None
-                    | FSharpCheckFileAnswer.Succeeded(checkFileResults) ->
-                        Some (parseResults, checkFileResults)
-            }
+        async {
+            let parseAndCheckFile =
+                async {
+                    let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText, options, userOpName=userOpName)
+                    return
+                        match checkFileAnswer with
+                        | FSharpCheckFileAnswer.Aborted -> 
+                            None
+                        | FSharpCheckFileAnswer.Succeeded(checkFileResults) ->
+                            Some (parseResults, checkFileResults)
+                }
 
-        let tryGetFreshResultsWithTimeout() : Async<CheckResults> =
-            async {
-                try
-                    let! worker = Async.StartChild(parseAndCheckFile, 200)
-                    let! result = worker 
-                    return Ready result
-                with :? TimeoutException ->
-                    return StillRunning parseAndCheckFile
-            }
+            let! worker = Async.StartChild(parseAndCheckFile, 200)
+        
+            let tryGetFreshResultsWithTimeout() : Async<CheckResults> =
+                async {
+                    try
+                        let! result = worker 
+                        return Ready result
+                    with :? TimeoutException ->
+                        return StillRunning worker
+                }
 
-        let bindParsedInput(results: (FSharpParseFileResults * FSharpCheckFileResults) option) =
-            match results with
-            | Some(parseResults, checkResults) ->
-                match parseResults.ParseTree with
-                | Some parsedInput -> Some (parseResults, parsedInput, checkResults)
+            let bindParsedInput(results: (FSharpParseFileResults * FSharpCheckFileResults) option) =
+                match results with
+                | Some(parseResults, checkResults) ->
+                    match parseResults.ParseTree with
+                    | Some parsedInput -> Some (parseResults, parsedInput, checkResults)
+                    | None -> None
                 | None -> None
-            | None -> None
 
-        if allowStaleResults then
-            async {
+            if allowStaleResults then
                 let! freshResults = tryGetFreshResultsWithTimeout()
                     
                 let! results =
@@ -69,8 +70,10 @@ type FSharpChecker with
                                 return! worker
                         }
                 return bindParsedInput results
-            }
-        else parseAndCheckFile |> Async.map bindParsedInput
+            else 
+                let! res = worker
+                return bindParsedInput res
+        }
 
 
     member checker.ParseAndCheckDocument(document: Document, options: FSharpProjectOptions, allowStaleResults: bool, userOpName: string, ?sourceText: SourceText) =
