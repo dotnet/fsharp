@@ -244,7 +244,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         public void CleanProjectReferenceErrorState()
         {
-            Microsoft.VisualStudio.FSharp.LanguageService.UIThread.DoOnUIThread(() =>
+            UIThread.DoOnUIThread(() =>
                 {
                     if (projectRefError != null)
                     {
@@ -262,7 +262,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="text"></param>
         private void SetError(string text)
         {
-            Microsoft.VisualStudio.FSharp.LanguageService.UIThread.DoOnUIThread(() =>
+            UIThread.DoOnUIThread(() =>
                 {
                     // delete existing error if exists
                     CleanProjectReferenceErrorState();
@@ -295,7 +295,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// </summary>
         public void RefreshProjectReferenceErrorState()
         {
-            Microsoft.VisualStudio.FSharp.LanguageService.UIThread.DoOnUIThread(() =>
+            UIThread.DoOnUIThread(() =>
                 {
                     CleanProjectReferenceErrorState();
 

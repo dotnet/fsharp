@@ -14,7 +14,6 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.TextManager.Interop;
 using Microsoft.Win32;
 using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
-using Microsoft.VisualStudio.FSharp.LanguageService;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
@@ -251,22 +250,22 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             span.iEndLine = endLine < startLine ? span.iStartLine : endLine;
             span.iEndIndex = (endColumn < startColumn) && (span.iStartLine == span.iEndLine) ? span.iStartIndex : endColumn;
 
-			if (OutputWindowPane != null
-				&& (this.Verbosity != LoggerVerbosity.Quiet || errorEvent is BuildErrorEventArgs))
-			{
-				// Format error and output it to the output window
-				string message = this.FormatMessage(errorEvent.Message);
+            if (OutputWindowPane != null
+                && (this.Verbosity != LoggerVerbosity.Quiet || errorEvent is BuildErrorEventArgs))
+            {
+                // Format error and output it to the output window
+                string message = this.FormatMessage(errorEvent.Message);
                 DefaultCompilerError e = new DefaultCompilerError(file,
                                                 span.iStartLine,
                                                 span.iStartIndex,
                                                 span.iEndLine,
                                                 span.iEndIndex,
                                                 errorCode,
-					                            message);
-				e.IsWarning = isWarning;
+                                                message);
+                e.IsWarning = isWarning;
 
-				Output(GetFormattedErrorMessage(e));
-			}
+                Output(GetFormattedErrorMessage(e));
+            }
 
             UIThread.Run(delegate()
             {
