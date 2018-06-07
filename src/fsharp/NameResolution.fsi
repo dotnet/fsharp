@@ -370,7 +370,7 @@ type ITypecheckResultsSink =
     abstract CurrentSource : string option
 
     /// Cached line-end normalized source text and an array of line end positions, used for format string parsing
-    abstract FormatStringCheckContext : Lazy<FormatStringCheckContext option>
+    abstract FormatStringCheckContext : FormatStringCheckContext option
 
 /// An implementation of ITypecheckResultsSink to collect information during type checking
 type internal TcResultsSinkImpl =

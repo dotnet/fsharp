@@ -1258,7 +1258,7 @@ type ITypecheckResultsSink =
     abstract NotifyFormatSpecifierLocation : range * int -> unit
     abstract NotifyOpenDeclaration : OpenDeclaration -> unit
     abstract CurrentSource : string option
-    abstract FormatStringCheckContext : Lazy<FormatStringCheckContext option>
+    abstract FormatStringCheckContext : FormatStringCheckContext option
 
 let (|ValRefOfProp|_|) (pi : PropInfo) = pi.ArbitraryValRef
 let (|ValRefOfMeth|_|) (mi : MethInfo) = mi.ArbitraryValRef
@@ -1525,6 +1525,19 @@ type TcResultsSinkImpl(g, ?source: string) =
     let capturedOpenDeclarations = ResizeArray<OpenDeclaration>()
     let allowedRange (m:range) = not m.IsSynthetic       
 
+    let formatStringCheckContext =
+        lazy (
+            source |> Option.map (fun source ->
+                let source = source.Replace("\r\n", "\n").Replace("\r", "\n")
+                let positions =
+                    source.Split('\n')
+                    |> Seq.map (fun s -> String.length s + 1)
+                    |> Seq.scan (+) 0
+                    |> Seq.toArray
+                { NormalizedSource = source 
+                  LineEndPositions = positions })
+        )
+
     member this.GetResolutions() = 
         TcResolutions(capturedEnvs, capturedExprTypings, capturedNameResolutions, capturedMethodGroupResolutions)
 
@@ -1579,19 +1592,7 @@ type TcResultsSinkImpl(g, ?source: string) =
 
         member sink.CurrentSource = source
         
-        member sink.FormatStringCheckContext = 
-            lazy (
-                source |> Option.map (fun source ->
-                    let source = source.Replace("\r\n", "\n").Replace("\r", "\n")
-                    let positions =
-                        source.Split('\n')
-                        |> Seq.map (fun s -> String.length s + 1)
-                        |> Seq.scan (+) 0
-                        |> Seq.toArray
-                    { NormalizedSource = source 
-                      LineEndPositions = positions })
-            )
-
+        member sink.FormatStringCheckContext = formatStringCheckContext.Value
 
 /// An abstract type for reporting the results of name resolution and type checking, and which allows
 /// temporary suspension and/or redirection of reporting.

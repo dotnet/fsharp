@@ -10,6 +10,7 @@ open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.ConstraintSolver
+open Microsoft.FSharp.Compiler.NameResolution
 
 type FormatItem = Simple of TType | FuncAndVal 
 
@@ -47,7 +48,7 @@ let newInfo ()=
     addZeros       = false
     precision      = false}
 
-let parseFormatStringInternal (m:range) (g: TcGlobals) (context: NameResolution.FormatStringCheckContext option) fmt bty cty = 
+let parseFormatStringInternal (m:range) (g: TcGlobals) (context: FormatStringCheckContext option) fmt bty cty = 
     // Offset is used to adjust ranges depending on whether input string is regular, verbatim or triple-quote.
     // We construct a new 'fmt' string since the current 'fmt' string doesn't distinguish between "\n" and escaped "\\n".
     let (offset, fmt) = 
