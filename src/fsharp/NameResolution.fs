@@ -1526,7 +1526,7 @@ type TcResultsSinkImpl(g, ?source: string) =
     let allowedRange (m:range) = not m.IsSynthetic       
 
     let formatStringCheckContext =
-        lazy (
+        lazy
             source |> Option.map (fun source ->
                 let source = source.Replace("\r\n", "\n").Replace("\r", "\n")
                 let positions =
@@ -1536,7 +1536,6 @@ type TcResultsSinkImpl(g, ?source: string) =
                     |> Seq.toArray
                 { NormalizedSource = source 
                   LineEndPositions = positions })
-        )
 
     member this.GetResolutions() = 
         TcResolutions(capturedEnvs, capturedExprTypings, capturedNameResolutions, capturedMethodGroupResolutions)
