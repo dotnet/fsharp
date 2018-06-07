@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
-        <target state="needs-review-translation">Todas as ramificações de uma expressão de correspondência de padrões devem ter o mesmo tipo. Essa expressão deveria ter o tipo '{0}', mas aqui tem o tipo '{1}'.</target>
+        <target state="translated">Todos os branches de uma expressão correspondente ao padrão precisam retornar valores do mesmo tipo. O primeiro branch retornou um valor do tipo '{0}', mas este branch retornou um valor do tipo '{1}'.</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -5439,7 +5439,7 @@
       </trans-unit>
       <trans-unit id="fscBadAssemblyVersion">
         <source>The attribute {0} specified version '{1}', but this value is invalid and has been ignored</source>
-        <target state="translated">Um {0} especificou a versão '{1}', mas esse valor é inválido e foi ignorado</target>
+        <target state="translated">O atributo {0} especificou a versão '{1}', mas esse valor é inválido e foi ignorado</target>
         <note />
       </trans-unit>
       <trans-unit id="fscTwoResourceManifests">
@@ -6984,7 +6984,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionMatchBang">
         <source>Used in computation expressions to pattern match directly over the result of another computation expression.</source>
-        <target state="new">Used in computation expressions to pattern match directly over the result of another computation expression.</target>
+        <target state="translated">Usado em expressões de computação para corresponder ao padrão diretamente sobre o resultado de outra expressão de computação.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilreadFileChanged">
