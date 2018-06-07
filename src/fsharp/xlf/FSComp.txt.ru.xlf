@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
-        <target state="needs-review-translation">Все ветви выражения сопоставления шаблона должны иметь один и тот же тип. В этом выражении ожидалось использование типа "{0}", но используется тип "{1}".</target>
+        <target state="translated">Все ветви выражения сопоставления шаблонов должны возвращать значения одного типа. Первая ветвь возвратила значение типа "{0}", а эта ветвь — типа "{1}".</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -5434,7 +5434,7 @@
       </trans-unit>
       <trans-unit id="fscBadAssemblyVersion">
         <source>The attribute {0} specified version '{1}', but this value is invalid and has been ignored</source>
-        <target state="translated">В {0} была указана версия "{1}", однако это значение является недопустимым и было проигнорировано</target>
+        <target state="translated">В атрибуте {0} указана версия "{1}", однако это значение недопустимо и было проигнорировано</target>
         <note />
       </trans-unit>
       <trans-unit id="fscTwoResourceManifests">
@@ -6979,7 +6979,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionMatchBang">
         <source>Used in computation expressions to pattern match directly over the result of another computation expression.</source>
-        <target state="new">Used in computation expressions to pattern match directly over the result of another computation expression.</target>
+        <target state="translated">Используется в выражениях вычислений для сопоставления шаблонов непосредственно с результатом другого выражения вычислений.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilreadFileChanged">

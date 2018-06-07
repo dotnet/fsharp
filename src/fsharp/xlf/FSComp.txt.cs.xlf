@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
-        <target state="needs-review-translation">Všechny větve výrazu porovnání vzorů musí mít stejný typ. Očekávalo se, že tento výraz bude mít typ {0}, ale tady je typu {1}.</target>
+        <target state="translated">Všechny větve výrazu porovnání vzorů musí vracet hodnoty stejného typu. První větev vrátila hodnotu typu {0}, ale tato větev vrátila hodnotu typu {1}.</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -5434,7 +5434,7 @@
       </trans-unit>
       <trans-unit id="fscBadAssemblyVersion">
         <source>The attribute {0} specified version '{1}', but this value is invalid and has been ignored</source>
-        <target state="translated">Třída {0} definovala verzi {1}, ale tato hodnota není platná a ignoruje se.</target>
+        <target state="translated">Atribut {0} určoval verzi {1}, ale tato hodnota není platná a ignoruje se.</target>
         <note />
       </trans-unit>
       <trans-unit id="fscTwoResourceManifests">
@@ -6979,7 +6979,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionMatchBang">
         <source>Used in computation expressions to pattern match directly over the result of another computation expression.</source>
-        <target state="new">Used in computation expressions to pattern match directly over the result of another computation expression.</target>
+        <target state="translated">Používá se ve výrazech výpočtu k přímému porovnání vzorů s výsledkem jiného výrazu výpočtu.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilreadFileChanged">
