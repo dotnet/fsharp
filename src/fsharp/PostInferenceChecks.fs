@@ -130,7 +130,6 @@ type LimitValFlags =
     | None                    = 0b00
     | StackReferringByRef     = 0b01
     | StackReferringSpanLike  = 0b10
-    | StackReferringByRefLike = 0b11
 
 type cenv = 
     { boundVals: Dictionary<Stamp, int> // really a hash set
@@ -536,12 +535,16 @@ and CheckValRef (cenv:cenv) (env:env) v m (context: PermitByRefExpr) =
 
     CheckTypePermitAllByrefs cenv env m v.Type // the byref checks are done at the actual binding of the value 
 
+and IsValLocalAndNotArgument env (v: Val) =
+    // The value is a local....
+    v.ValReprInfo.IsNone && 
+    // The value is not an argument...
+    not (env.argVals.ContainsVal(v)) 
+
 and IsLimited cenv env m (vref: ValRef) = 
     isSpanLikeTy cenv.g m vref.Type && 
-    // The value is a arg/local....
-    vref.ValReprInfo.IsNone && 
     // The value is a limited Span or might have become one through mutation
-    let isMutableLocal = not (env.argVals.ContainsVal(vref.Deref)) && vref.IsMutable 
+    let isMutableLocal = IsValLocalAndNotArgument env vref.Deref && vref.IsMutable 
     let isLimitedLocal = cenv.limitVals.ContainsKey(vref.Stamp)
     isMutableLocal || isLimitedLocal
 
@@ -568,10 +571,7 @@ and CheckValUse (cenv: cenv) (env: env) (vref: ValRef, vFlags, m) (context: Perm
         let isReturnExprBuiltUsingByRefLocal = 
             context.PermitOnlyReturnable &&
             isByrefTy g vref.Type &&
-            // The value is a local....
-            vref.ValReprInfo.IsNone && 
-            // The value is not an argument....
-            not (env.argVals.ContainsVal(vref.Deref))
+            IsValLocalAndNotArgument env vref.Deref
 
         if isReturnExprBuiltUsingByRefLocal then
             errorR(Error(FSComp.SR.chkNoByrefReturnOfLocal(vref.DisplayName), m))
@@ -892,10 +892,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
             
             let returningAddrOfLocal = 
                 context.PermitOnlyReturnable && 
-                // The value is a local....
-                vref.ValReprInfo.IsNone && 
-                // The value is not an argument...
-                not (env.argVals.ContainsVal(vref.Deref)) 
+                IsValLocalAndNotArgument env vref.Deref
             
             if returningAddrOfLocal then 
                 errorR(Error(FSComp.SR.chkNoByrefAddressOfLocal(vref.DisplayName), m))
