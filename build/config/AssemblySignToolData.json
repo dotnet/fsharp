@@ -68,7 +68,6 @@
     "Newtonsoft.Json.dll",
     "System.Collections.Immutable.dll",
     "System.Reflection.Metadata.dll",
-    "System.ValueTuple.4.3.1.nupkg",
     "System.ValueTuple.4.4.0.nupkg",
     "System.ValueTuple.dll"
   ]
