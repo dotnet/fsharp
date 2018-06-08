@@ -1577,7 +1577,6 @@ namespace Microsoft.FSharp.Core
             let inline avoid_tail_call_bool f = match f () with true -> true | _ -> false
             let inline avoid_tail_call_int f = 0 + f ()
 
-
             type GenericEqualityTCall<'T> = delegate of 'T * 'T -> bool
 
             let tryGetGenericEqualityTCall (er:bool) (ty:Type) : obj =
@@ -1596,10 +1595,10 @@ namespace Microsoft.FSharp.Core
                 | _, ty when ty.Equals typeof<nativeint>   -> box (GenericEqualityTCall<nativeint>  (fun x y -> (# "ceq" x y : bool #)))
                 | _, ty when ty.Equals typeof<unativeint>  -> box (GenericEqualityTCall<unativeint> (fun x y -> (# "ceq" x y : bool #)))
                 | _, ty when ty.Equals typeof<char>        -> box (GenericEqualityTCall<char>       (fun x y -> (# "ceq" x y : bool #)))
-                | true, ty when ty.Equals typeof<float>    -> box (GenericEqualityTCall<float>      (fun x y -> (# "ceq" x y : bool #)))
-                | true, ty when ty.Equals typeof<float32>  -> box (GenericEqualityTCall<float32>    (fun x y -> (# "ceq" x y : bool #)))
-                | false, ty when ty.Equals typeof<float>   -> box (GenericEqualityTCall<float>      (fun x y -> (# "ceq" x y : bool #) || (not ((# "ceq" x x : bool #) || (# "ceq" y y : bool #)))))
-                | false, ty when ty.Equals typeof<float32> -> box (GenericEqualityTCall<float32>    (fun x y -> (# "ceq" x y : bool #) || (not ((# "ceq" x x : bool #) || (# "ceq" y y : bool #)))))
+                | false, ty when ty.Equals typeof<float>   -> box (GenericEqualityTCall<float>      (fun x y -> (# "ceq" x y : bool #)))
+                | false, ty when ty.Equals typeof<float32> -> box (GenericEqualityTCall<float32>    (fun x y -> (# "ceq" x y : bool #)))
+                | true, ty when ty.Equals typeof<float>    -> box (GenericEqualityTCall<float>      (fun x y -> (# "ceq" x y : bool #) || (not ((# "ceq" x x : bool #) || (# "ceq" y y : bool #)))))
+                | true, ty when ty.Equals typeof<float32>  -> box (GenericEqualityTCall<float32>    (fun x y -> (# "ceq" x y : bool #) || (not ((# "ceq" x x : bool #) || (# "ceq" y y : bool #)))))
                 | _ -> null
 
             type GenericEqualityT<'T, 'ERorPER when 'ERorPER :> IERorPER> private () =
@@ -1642,8 +1641,10 @@ namespace Microsoft.FSharp.Core
             // and devirtualizes calls to it based on "T", and under the assumption that "comp" 
             // is either fsEqualityComparerNoHashingER or fsEqualityComparerNoHashingPER.
             let GenericEqualityWithComparerIntrinsic (comp : System.Collections.IEqualityComparer) (x : 'T) (y : 'T) : bool =
-                if obj.ReferenceEquals (comp, fsEqualityComparerUnlimitedHashingPER) then
+                if obj.ReferenceEquals (comp, fsEqualityComparerUnlimitedHashingPER) || obj.ReferenceEquals (comp, fsEqualityComparerNoHashingPER) then
                     avoid_tail_call_bool (fun () -> GenericEqualityT<'T, PER>.Function.Invoke (x, y))
+                elif obj.ReferenceEquals (comp, fsEqualityComparerNoHashingER) then
+                    avoid_tail_call_bool (fun () -> GenericEqualityT<'T, ER>.Function.Invoke (x, y))
                 else
                     comp.Equals (box x, box y)
 
