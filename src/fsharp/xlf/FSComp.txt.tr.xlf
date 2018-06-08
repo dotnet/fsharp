@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
-        <target state="needs-review-translation">Bir pattern match ifadesinin tüm dalları aynı türe sahip olmalıdır. Bu ifadenin '{0}' türünde olması bekleniyordu ancak burada '{1}' türünde.</target>
+        <target state="translated">Bir desen eşleştirme ifadesinin tüm dalları aynı türdeki değerleri döndürmelidir. Birinci dal '{0}' türünde bir değer döndürdü ancak bu dal '{1}' türünde bir değer döndürdü.</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -5434,7 +5434,7 @@
       </trans-unit>
       <trans-unit id="fscBadAssemblyVersion">
         <source>The attribute {0} specified version '{1}', but this value is invalid and has been ignored</source>
-        <target state="translated">{0} ile sürüm '{1}' belirtildi, ancak bu değer geçersiz ve yok sayıldı</target>
+        <target state="translated">{0} özniteliğinde '{1}' sürümü belirtildi, ancak bu değer geçersiz olduğundan yoksayıldı</target>
         <note />
       </trans-unit>
       <trans-unit id="fscTwoResourceManifests">
@@ -6979,7 +6979,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionMatchBang">
         <source>Used in computation expressions to pattern match directly over the result of another computation expression.</source>
-        <target state="new">Used in computation expressions to pattern match directly over the result of another computation expression.</target>
+        <target state="translated">Başka bir hesaplama ifadesinin sonucu üzerinde doğrudan desen eşleştirmesi için hesaplama ifadelerinde kullanılır.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilreadFileChanged">
