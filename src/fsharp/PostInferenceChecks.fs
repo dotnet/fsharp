@@ -392,33 +392,32 @@ type PermitByRefExpr =
         | PermitByRefExpr.YesReturnable -> true
         | _ -> false
 
-let mkArgsPermit isByRefReturnCall n = 
-    if n=1 then 
-        if isByRefReturnCall then PermitByRefExpr.YesReturnable else  PermitByRefExpr.Yes
+let mkArgsPermit n = 
+    if n=1 then PermitByRefExpr.Yes
     else PermitByRefExpr.YesTupleOfArgs n
 
 /// Work out what byref-values are allowed at input positions to named F# functions or members
-let mkArgsForAppliedVal isBaseCall isByRefReturnCall (vref:ValRef) argsl = 
+let mkArgsForAppliedVal isBaseCall (vref:ValRef) argsl = 
     match vref.ValReprInfo with
     | Some topValInfo -> 
         let argArities = topValInfo.AritiesOfArgs
         let argArities = if isBaseCall && argArities.Length >= 1 then List.tail argArities else argArities
         // Check for partial applications: arguments to partial applciations don't get to use byrefs
         if List.length argsl >= argArities.Length then 
-            List.map (mkArgsPermit isByRefReturnCall) argArities
+            List.map mkArgsPermit argArities
         else
             []
     | None -> []  
 
 /// Work out what byref-values are allowed at input positions to functions
-let rec mkArgsForAppliedExpr isBaseCall isByRefReturnCall argsl x =
+let rec mkArgsForAppliedExpr isBaseCall argsl x =
     match stripExpr x with 
     // recognise val 
-    | Expr.Val (vref,_,_)         -> mkArgsForAppliedVal isBaseCall isByRefReturnCall vref argsl
+    | Expr.Val (vref,_,_)         -> mkArgsForAppliedVal isBaseCall vref argsl
     // step through instantiations 
-    | Expr.App(f,_fty,_tyargs,[],_) -> mkArgsForAppliedExpr isBaseCall isByRefReturnCall argsl f        
+    | Expr.App(f,_fty,_tyargs,[],_) -> mkArgsForAppliedExpr isBaseCall argsl f        
     // step through subsumption coercions 
-    | Expr.Op(TOp.Coerce,_,[f],_) -> mkArgsForAppliedExpr isBaseCall isByRefReturnCall argsl f        
+    | Expr.Op(TOp.Coerce,_,[f],_) -> mkArgsForAppliedExpr isBaseCall argsl f        
     | _  -> []
 
 /// Check types occurring in the TAST.
@@ -720,7 +719,7 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : LimitVa
             CheckValRef cenv env v m PermitByRefExpr.No
             CheckValRef cenv env baseVal m PermitByRefExpr.No
             CheckTypeInstNoByrefs cenv env m tyargs
-            CheckExprs cenv env rest (mkArgsForAppliedExpr true false rest f)
+            CheckExprs cenv env rest (mkArgsForAppliedExpr true rest f)
 
     // Allow base calls to IL methods
     | Expr.Op (TOp.ILCall (virt,_,_,_,_,_,_,mref,enclTypeArgs,methTypeArgs,tys),tyargs,(Expr.Val(baseVal,_,_)::rest),m) 
@@ -771,9 +770,9 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : LimitVa
         CheckExprNoByrefs cenv env f
 
         // If return is a byref, and being used as a return, then all arguments must be usable as byref returns
-        let isByRefReturnCall = context.PermitOnlyReturnable && isByrefTy g (tyOfExpr g expr) 
+        let _isByRefReturnCall = context.PermitOnlyReturnable && isByrefTy g (tyOfExpr g expr) 
 
-        CheckExprs cenv env argsl (mkArgsForAppliedExpr false isByRefReturnCall argsl f)
+        CheckExprs cenv env argsl (mkArgsForAppliedExpr false argsl f)
 
     | Expr.Lambda(_,_ctorThisValOpt,_baseValOpt,argvs,_,m,rty) -> 
         let topValInfo = ValReprInfo ([],[argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)],ValReprInfo.unnamedRetVal) 
