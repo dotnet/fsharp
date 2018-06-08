@@ -153,6 +153,14 @@ let GetLimitValFlags cenv (v: Val) =
     | true, flags -> flags
     | _ -> LimitValFlags.None
 
+let IsLimitValByRef cenv v =
+    let flags = GetLimitValFlags cenv v
+    flags.HasFlag(LimitValFlags.StackReferringByRef)
+
+let IsLimitValSpanLike cenv v =
+    let flags = GetLimitValFlags cenv v
+    flags.HasFlag(LimitValFlags.StackReferringSpanLike)
+
 let LimitVal cenv (v:Val) flags = 
     cenv.limitVals.[v.Stamp] <- flags
 
@@ -549,8 +557,14 @@ and IsLimitedSpanLike cenv env m (vref: ValRef) =
     isSpanLikeTy cenv.g m vref.Type && 
     // The value is a limited Span or might have become one through mutation
     let isMutableLocal = IsValLocalAndNotArgument env vref.Deref && vref.IsMutable 
-    let isLimitedLocal = cenv.limitVals.ContainsKey(vref.Stamp)
+    let isLimitedLocal = IsLimitValSpanLike cenv vref.Deref
     isMutableLocal || isLimitedLocal
+
+and IsLimitedByRef cenv env (vref: ValRef) =
+    isByrefTy cenv.g vref.Type &&
+    let isLocal = IsValLocalAndNotArgument env vref.Deref
+    let isLimitedLocal = IsLimitValByRef cenv vref.Deref
+    isLocal || isLimitedLocal
 
 /// Check a use of a value
 and CheckValUse (cenv: cenv) (env: env) (vref: ValRef, vFlags, m) (context: PermitByRefExpr) = 
@@ -905,9 +919,11 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
         let flags1 = 
             if IsLimitedSpanLike cenv env m vref then
                 LimitValFlags.StackReferringSpanLike
+            elif IsLimitedByRef cenv env vref then
+                LimitValFlags.StackReferringByRef
             else
                 LimitValFlags.None
-        let flags2 = CheckExprsNoByRefLike cenv env args                   
+        let flags2 = CheckExprsNoByRefLike cenv env args
         flags1 ||| flags2
 
     | TOp.LValueOp(LByrefSet,vref),_,[arg] -> 
