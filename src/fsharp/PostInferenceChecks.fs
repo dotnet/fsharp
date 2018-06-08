@@ -148,6 +148,11 @@ type cenv =
       mutable usesQuotations : bool
       mutable entryPointGiven:bool  }
 
+let GetLimitValFlags cenv (v: Val) =
+    match cenv.limitVals.TryGetValue(v.Stamp) with
+    | true, flags -> flags
+    | _ -> LimitValFlags.None
+
 let LimitVal cenv (v:Val) flags = 
     cenv.limitVals.[v.Stamp] <- flags
 
@@ -541,7 +546,7 @@ and IsValLocalAndNotArgument env (v: Val) =
     // The value is not an argument...
     not (env.argVals.ContainsVal(v)) 
 
-and IsLimited cenv env m (vref: ValRef) = 
+and IsLimitedSpanLike cenv env m (vref: ValRef) = 
     isSpanLikeTy cenv.g m vref.Type && 
     // The value is a limited Span or might have become one through mutation
     let isMutableLocal = IsValLocalAndNotArgument env vref.Deref && vref.IsMutable 
@@ -552,8 +557,6 @@ and IsLimited cenv env m (vref: ValRef) =
 and CheckValUse (cenv: cenv) (env: env) (vref: ValRef, vFlags, m) (context: PermitByRefExpr) = 
         
     let g = cenv.g
-    // Is this a Span-typed value that is limited (i.e. can't be returned)
-    let limit = IsLimited cenv env m vref
 
     if cenv.reportErrors then 
 
@@ -585,7 +588,10 @@ and CheckValUse (cenv: cenv) (env: env) (vref: ValRef, vFlags, m) (context: Perm
             errorR(Error(FSComp.SR.chkStructsMayNotReturnAddressesOfContents(), m))
 
     CheckValRef cenv env vref m context
-    if limit then
+
+    let isLimitedSpanLike = IsLimitedSpanLike cenv env m vref
+
+    if isLimitedSpanLike then
         LimitValFlags.StackReferringSpanLike
     else
         LimitValFlags.None
@@ -898,7 +904,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
                 errorR(Error(FSComp.SR.chkNoByrefAddressOfLocal(vref.DisplayName), m))
 
         let flags1 = 
-            if IsLimited cenv env m vref then
+            if IsLimitedSpanLike cenv env m vref then
                 LimitValFlags.StackReferringSpanLike
             else
                 LimitValFlags.None
@@ -920,7 +926,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
             LimitValFlags.None
 
     | TOp.LValueOp(LSet _, vref),_,[arg] -> 
-        let limit1 = IsLimited cenv env m vref
+        let limit1 = IsLimitedSpanLike cenv env m vref
         let limit2 = CheckExprPermitByRefLike cenv env arg
         if not limit1 && limit2.HasFlag(LimitValFlags.StackReferringSpanLike) then 
             errorR(Error(FSComp.SR.chkNoWriteToLimitedSpan(vref.DisplayName), m))
