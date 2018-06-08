@@ -7,10 +7,12 @@
         <summary>FSharp.Core for F# 4.1</summary>
         <description>
             FSharp.Core redistributables from Visual F# Tools version 10.1 For F# 4.1
+
                 Supported Platforms:
-                    .NET 4.5+           (net45)
+                    .NET Framework 4.5+ (net45)
                     netstandard1.6      (netstandard1.6)
                     netstandard2.0      (netstandard2.0)
+
                 Commit hash: $githeadsha$.
         </description>
         <owners>$owners$</owners>
