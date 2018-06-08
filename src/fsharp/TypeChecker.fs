@@ -6324,7 +6324,7 @@ and TcCtorCall isNaked cenv env tpenv overallTy objTy mObjTyOpt item superInit a
 //------------------------------------------------------------------------- 
   
 // Check a record construction expression 
-and TcRecordConstruction cenv overallTy env tpenv optOrigExpr objTy fldsList m =
+and TcRecordConstruction cenv overallTy env tpenv optOrigExprInfo objTy fldsList m =
     let tcref, tinst = destAppTy cenv.g objTy
     let tycon = tcref.Deref
     UnifyTypes cenv env m overallTy objTy
@@ -6355,18 +6355,17 @@ and TcRecordConstruction cenv overallTy env tpenv optOrigExpr objTy fldsList m =
               
     // Add rebindings for unbound field when an "old value" is available 
     // Effect order: mutable fields may get modified by other bindings... 
-    let oldFldsList, wrap = 
-        match optOrigExpr with
-        | None -> [], id
-        | Some (_, _, oldve) -> 
-            let wrap, oldveaddr, _readonly, _writeonly = mkExprAddrOfExpr cenv.g tycon.IsStructOrEnumTycon false NeverMutates oldve None m
+    let oldFldsList = 
+        match optOrigExprInfo with
+        | None -> []
+        | Some (_, _, oldvaddre) -> 
             let fieldNameUnbound nom = List.forall (fun (name, _) -> name <> nom) fldsList
             let flds = 
                 fspecs |> List.choose (fun rfld -> 
                     if fieldNameUnbound rfld.Name && not rfld.IsZeroInit 
-                    then Some(rfld.Name, mkRecdFieldGetViaExprAddr (oldveaddr, tcref.MakeNestedRecdFieldRef rfld, tinst, m))
+                    then Some(rfld.Name, mkRecdFieldGetViaExprAddr (oldvaddre, tcref.MakeNestedRecdFieldRef rfld, tinst, m))
                     else None)
-            flds, wrap
+            flds
 
     let fldsList = fldsList @ oldFldsList
 
@@ -6382,7 +6381,7 @@ and TcRecordConstruction cenv overallTy env tpenv optOrigExpr objTy fldsList m =
     let ns1 = NameSet.ofList (List.map fst fldsList)
     let ns2 = NameSet.ofList (List.map (fun x -> x.rfield_id.idText) fspecs)
     
-    if Option.isNone optOrigExpr && not (Zset.subset ns2 ns1) then
+    if optOrigExprInfo.IsNone && not (Zset.subset ns2 ns1) then
         error (MissingFields(Zset.elements (Zset.diff ns2 ns1), m))
     
     if  not (Zset.subset ns1 ns2) then 
@@ -6399,18 +6398,19 @@ and TcRecordConstruction cenv overallTy env tpenv optOrigExpr objTy fldsList m =
 
     let args   = List.map snd fldsList
     
-    let expr = wrap (mkRecordExpr cenv.g (GetRecdInfo env, tcref, tinst, rfrefs, args, m))
+    let expr = mkRecordExpr cenv.g (GetRecdInfo env, tcref, tinst, rfrefs, args, m)
 
     let expr = 
-      match optOrigExpr with 
+      match optOrigExprInfo with 
       | None ->
           // '{ recd fields }'. //
           expr
           
-      | Some (old, oldv, _) -> 
+      | Some (old, oldvaddr, _) -> 
           // '{ recd with fields }'. 
           // Assign the first object to a tmp and then construct 
-          mkCompGenLet m oldv old expr
+          let wrap, oldaddr, _readonly, _writeonly = mkExprAddrOfExpr cenv.g tycon.IsStructOrEnumTycon false NeverMutates old None m
+          wrap (mkCompGenLet m oldvaddr oldaddr expr)
 
     expr, tpenv
 
@@ -6881,7 +6881,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
     let requiresCtor = (GetCtorShapeCounter env = 1) // Get special expression forms for constructors 
     let haveCtor = Option.isSome inherits
 
-    let optOrigExpr, tpenv = 
+    let optOrigExprInfo, tpenv = 
       match optOrigExpr with 
       | None -> None, tpenv 
       | Some (origExpr, _) -> 
@@ -6889,10 +6889,10 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
           | Some (_, _, mInherits, _, _) -> error(Error(FSComp.SR.tcInvalidRecordConstruction(), mInherits))
           | None -> 
               let olde, tpenv = TcExpr cenv overallTy env tpenv origExpr
-              let oldv, oldve = mkCompGenLocal mWholeExpr "inputRecord" overallTy
-              Some (olde, oldv, oldve), tpenv
+              let oldvaddr, oldvaddre = mkCompGenLocal mWholeExpr "inputRecord" (if isStructTy cenv.g overallTy then mkByrefTy cenv.g overallTy else overallTy)
+              Some (olde, oldvaddr, oldvaddre), tpenv
 
-    let hasOrigExpr = Option.isSome optOrigExpr
+    let hasOrigExpr = optOrigExprInfo.IsSome
 
     let fldsList = 
         let flds = 
@@ -6952,7 +6952,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
             errorR(InternalError("Unexpected failure in getting super type", mWholeExpr))
             None, tpenv
 
-    let expr, tpenv = TcRecordConstruction cenv overallTy env tpenv optOrigExpr overallTy fldsList mWholeExpr
+    let expr, tpenv = TcRecordConstruction cenv overallTy env tpenv optOrigExprInfo overallTy fldsList mWholeExpr
 
     let expr = 
         match superTy with 

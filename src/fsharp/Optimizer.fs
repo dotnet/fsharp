@@ -1186,9 +1186,9 @@ let IsTyFuncValRefExpr = function
     | _ -> false
 
 /// Type applications of existing functions are always simple constants, with the exception of F# 'type functions' 
-/// REVIEW: we could also include any under-applied application here. 
 let rec IsSmallConstExpr x =
     match x with
+    | Expr.Op (TOp.LValueOp (LAddrOf _, _), [], [], _) -> true // &x is always a constant
     | Expr.Val (v, _, _m) -> not v.IsMutable
     | Expr.App(fe, _, _tyargs, args, _) -> isNil args && not (IsTyFuncValRefExpr fe) && IsSmallConstExpr fe
     | _ -> false
@@ -1276,7 +1276,7 @@ and OpHasEffect g m op =
     | TOp.ValFieldGet rfref  -> rfref.RecdField.IsMutable || (TryFindTyconRefBoolAttribute g Range.range0 g.attrib_AllowNullLiteralAttribute rfref.TyconRef = Some true)
     | TOp.ValFieldGetAddr (rfref, _readonly)  -> rfref.RecdField.IsMutable
     | TOp.UnionCaseFieldGetAddr _ -> false // union case fields are immutable
-    | TOp.LValueOp (LAddrOf _, lv) -> lv.IsMutable
+    | TOp.LValueOp (LAddrOf _, _) -> false // addresses of values are always constants
     | TOp.UnionCaseFieldSet _
     | TOp.ExnFieldSet _
     | TOp.Coerce
@@ -1791,19 +1791,20 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
             MightMakeCriticalTailcall=false
             Info=UnknownValue }
     (* Handle addresses *)
-    | TOp.LValueOp ((LAddrOf _ as lop), lv), _, _ ->
-        let e, _ = OptimizeExpr cenv env (exprForValRef m lv)
-        let op' =
-            match e with
+    | TOp.LValueOp (LAddrOf _, lv), _, _ ->
+        let newVal, _ = OptimizeExpr cenv env (exprForValRef m lv)
+        let newOp =
+            match newVal with
             // Do not optimize if it's a top level static binding.
-            | Expr.Val (v, _, _) when not v.IsCompiledAsTopLevel -> TOp.LValueOp (lop, v)
+            | Expr.Val (v, _, _) when not v.IsCompiledAsTopLevel -> op
             | _ -> op
-        Expr.Op (op', tyargs, args, m), 
+        let newExpr = Expr.Op (newOp, tyargs, args, m)
+        newExpr,
         { TotalSize = 1
           FunctionSize = 1
-          HasEffect = OpHasEffect cenv.g m op'
+          HasEffect = OpHasEffect cenv.g m newOp
           MightMakeCriticalTailcall = false
-          Info = UnknownValue }
+          Info = ValueOfExpr newExpr }
     (* Handle these as special cases since mutables are allowed inside their bodies *)
     | TOp.While (spWhile, marker), _, [Expr.Lambda(_, _, _, [_], e1, _, _);Expr.Lambda(_, _, _, [_], e2, _, _)]  -> OptimizeWhileLoop cenv { env with inLoop=true } (spWhile, marker, e1, e2, m) 
     | TOp.For(spStart, dir), _, [Expr.Lambda(_, _, _, [_], e1, _, _);Expr.Lambda(_, _, _, [_], e2, _, _);Expr.Lambda(_, _, _, [v], e3, _, _)]  -> OptimizeFastIntegerForLoop cenv { env with inLoop=true } (spStart, v, e1, dir, e2, e3, m) 
