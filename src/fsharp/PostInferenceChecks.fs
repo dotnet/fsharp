@@ -125,9 +125,16 @@ let BindTypars g env (tps:Typar list) =
 let BindArgVals env (vs: Val list) = 
     { env with argVals = ValMap.OfList (List.map (fun v -> (v,())) vs) }
 
+[<Flags>]
+type LimitValFlags =
+    | None                    = 0b00
+    | StackReferringByRef     = 0b01
+    | StackReferringSpanLike  = 0b10
+    | StackReferringByRefLike = 0b11
+
 type cenv = 
-    { boundVals: Dictionary<Stamp,int> // really a hash set
-      limitVals: Dictionary<Stamp,int> // really a hash set
+    { boundVals: Dictionary<Stamp, int> // really a hash set
+      limitVals: Dictionary<Stamp, LimitValFlags>
       mutable potentialUnboundUsesOfVals: StampMap<range> 
       g: TcGlobals 
       amap: Import.ImportMap 
@@ -142,8 +149,8 @@ type cenv =
       mutable usesQuotations : bool
       mutable entryPointGiven:bool  }
 
-let LimitVal cenv (v:Val) = 
-    cenv.limitVals.[v.Stamp] <- 1
+let LimitVal cenv (v:Val) flags = 
+    cenv.limitVals.[v.Stamp] <- flags
 
 let BindVal cenv env (v:Val) = 
     //printfn "binding %s..." v.DisplayName
@@ -381,8 +388,6 @@ type PermitByRefExpr =
         | PermitByRefExpr.YesReturnable -> true
         | _ -> false
 
-let ignoreLimit (_limit: bool) = ()
-
 let mkArgsPermit isByRefReturnCall n = 
     if n=1 then 
         if isByRefReturnCall then PermitByRefExpr.YesReturnable else  PermitByRefExpr.Yes
@@ -514,7 +519,7 @@ let CheckMultipleInterfaceInstantiations cenv interfaces m =
 
 /// Check an expression, where the expression is in a position where byrefs can be generated
 let rec CheckExprNoByrefs cenv env expr =
-    CheckExpr cenv env expr PermitByRefExpr.No |> ignoreLimit
+    CheckExpr cenv env expr PermitByRefExpr.No |> ignore
 
 /// Check a value
 and CheckValRef (cenv:cenv) (env:env) v m (context: PermitByRefExpr) = 
@@ -531,12 +536,8 @@ and CheckValRef (cenv:cenv) (env:env) v m (context: PermitByRefExpr) =
 
     CheckTypePermitAllByrefs cenv env m v.Type // the byref checks are done at the actual binding of the value 
 
-and IsLimitedType g m ty = 
-    isByrefLikeTy g m ty && 
-    not (isByrefTy g ty) 
-
 and IsLimited cenv env m (vref: ValRef) = 
-    IsLimitedType cenv.g m vref.Type && 
+    isSpanLikeTy cenv.g m vref.Type && 
     // The value is a arg/local....
     vref.ValReprInfo.IsNone && 
     // The value is a limited Span or might have become one through mutation
@@ -584,7 +585,10 @@ and CheckValUse (cenv: cenv) (env: env) (vref: ValRef, vFlags, m) (context: Perm
             errorR(Error(FSComp.SR.chkStructsMayNotReturnAddressesOfContents(), m))
 
     CheckValRef cenv env vref m context
-    limit
+    if limit then
+        LimitValFlags.StackReferringSpanLike
+    else
+        LimitValFlags.None
     
 /// Check an expression, given information about the position of the expression
 and CheckForOverAppliedExceptionRaisingPrimitive (cenv:cenv) expr =    
@@ -628,7 +632,7 @@ and CheckForOverAppliedExceptionRaisingPrimitive (cenv:cenv) expr =
         | _ -> ()
 
 /// Check an expression, given information about the position of the expression
-and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : bool =    
+and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : LimitValFlags =    
     let g = cenv.g
 
     let origExpr = stripExpr origExpr
@@ -646,18 +650,18 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : bool =
             CheckExpr cenv env e2 context       // carry context into _;RHS (normal sequencing only)      
         | ThenDoSeq -> 
             CheckExprNoByrefs cenv {env with ctorLimitedZone=false} e2
-            false
+            LimitValFlags.None
 
     | Expr.Let (bind,body,_,_) ->  
-        let limit = CheckBinding cenv env false bind  
+        let flags = CheckBinding cenv env false bind  
         BindVal cenv env bind.Var
-        if limit then 
-             LimitVal cenv bind.Var
+        if flags.HasFlag(LimitValFlags.StackReferringSpanLike) then 
+             LimitVal cenv bind.Var flags
         CheckExpr cenv env body context
 
     | Expr.Const (_,m,ty) -> 
         CheckTypePermitOuterByRefLike cenv env m ty 
-        false
+        LimitValFlags.None
             
     | Expr.Val (vref,vFlags,m) -> 
         CheckValUse cenv env (vref, vFlags, m) context
@@ -679,7 +683,7 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : bool =
                 errorRecovery e m
                 
         CheckTypeNoByrefs cenv env m ty
-        false
+        LimitValFlags.None
 
     | Expr.Obj (_,ty,basev,superInitCall,overrides,iimpls,m) -> 
         CheckExprNoByrefs cenv env superInitCall
@@ -695,7 +699,7 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : bool =
             |> List.filter (isInterfaceTy g)
 
         CheckMultipleInterfaceInstantiations cenv interfaces m
-        false
+        LimitValFlags.None
 
     // Allow base calls to F# methods
     | Expr.App((InnerExprPat(ExprValWithPossibleTypeInst(v,vFlags,_,_)  as f)),_fty,tyargs,(Expr.Val(baseVal,_,_) :: rest),m) 
@@ -705,7 +709,7 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : bool =
         let memberInfo = Option.get v.MemberInfo
         if memberInfo.MemberFlags.IsDispatchSlot then
             errorR(Error(FSComp.SR.tcCannotCallAbstractBaseMember(v.DisplayName),m))
-            false
+            LimitValFlags.None
         else         
             CheckValRef cenv env v m PermitByRefExpr.No
             CheckValRef cenv env baseVal m PermitByRefExpr.No
@@ -742,17 +746,17 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : bool =
 
     // Allow 'typeof<System.Void>' calls as a special case, the only accepted use of System.Void! 
     | TypeOfExpr g ty when isVoidTy g ty ->
-        false
+        LimitValFlags.None
 
     // Allow 'typedefof<System.Void>' calls as a special case, the only accepted use of System.Void! 
     | TypeDefOfExpr g ty when isVoidTy g ty ->
-        false
+        LimitValFlags.None
 
     // Allow '%expr' in quotations
     | Expr.App(Expr.Val(vref,_,_),_,tinst,[arg],m) when isSpliceOperator g vref && env.quote ->
           CheckTypeInstPermitAllByrefs cenv env m tinst // it's the splice operator, a byref instantiation is allowed
           CheckExprNoByrefs cenv env arg
-          false
+          LimitValFlags.None
 
     // Check an application
     | Expr.App(f,_fty,tyargs,argsl,m) ->
@@ -778,7 +782,7 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : bool =
     | Expr.TyChoose(tps,e1,_)  -> 
         let env = BindTypars g env tps 
         CheckExprNoByrefs cenv env e1 
-        false
+        LimitValFlags.None
 
     | Expr.Match(_,_,dtree,targets,m,ty) -> 
         CheckTypePermitAllByrefs cenv env m ty // computed byrefs allowed at each branch
@@ -789,7 +793,7 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : bool =
         BindVals cenv env (valsOfBinds binds)
         CheckBindings cenv env binds
         CheckExprNoByrefs cenv env e
-        false
+        LimitValFlags.None
 
     | Expr.StaticOptimization (constraints,e2,e3,m) -> 
         CheckExprNoByrefs cenv env e2
@@ -800,7 +804,7 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : bool =
                 CheckTypeNoByrefs cenv env m ty2
             | TTyconIsStruct(ty1) -> 
                 CheckTypeNoByrefs cenv env m ty1)
-        false
+        LimitValFlags.None
 
     | Expr.Link _ -> 
         failwith "Unexpected reclink"
@@ -816,7 +820,7 @@ and CheckMethod cenv env baseValOpt (TObjExprMethod(_,attribs,tps,vs,body,m)) =
     CheckNoReraise cenv None body
     CheckEscapes cenv true m (match baseValOpt with Some x -> x:: vs | None -> vs) body |> ignore
     let limit = CheckExprPermitReturnableByRef cenv env body
-    if limit then
+    if limit.HasFlag(LimitValFlags.StackReferringSpanLike) then
         errorR(Error(FSComp.SR.chkNoReturnOfLimitedSpan(), body.Range))
 
 and CheckInterfaceImpls cenv env baseValOpt l = 
@@ -854,7 +858,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
         let limit1 = CheckExpr cenv env e1 context // result of a try/catch can be a byref if in a position where the overall expression is can be a byref
         // [(* e2; -- don't check filter body - duplicates logic in 'catch' body *) e3]
         let limit2 = CheckExpr cenv env e3 context // result of a try/catch can be a byref if in a position where the overall expression is can be a byref
-        limit1 || limit2
+        limit1 ||| limit2
         
     | TOp.ILCall (_,_,_,_,_,_,_,_,enclTypeArgs,methTypeArgs,tys),_,_ ->
         CheckTypeInstNoByrefs cenv env m tyargs
@@ -896,27 +900,34 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
             if returningAddrOfLocal then 
                 errorR(Error(FSComp.SR.chkNoByrefAddressOfLocal(vref.DisplayName), m))
 
-        let limit1 = IsLimited cenv env m vref
-        let limit2 = CheckExprsNoByRefLike cenv env args                   
-        limit1 || limit2
+        let flags1 = 
+            if IsLimited cenv env m vref then
+                LimitValFlags.StackReferringSpanLike
+            else
+                LimitValFlags.None
+        let flags2 = CheckExprsNoByRefLike cenv env args                   
+        flags1 ||| flags2
 
     | TOp.LValueOp(LByrefSet,vref),_,[arg] -> 
-        let limit1 = IsLimitedType g m (tyOfExpr g arg) && not (env.argVals.ContainsVal(vref.Deref)) 
+        let limit1 = isSpanLikeTy g m (tyOfExpr g arg) && not (env.argVals.ContainsVal(vref.Deref)) 
         let limit2 = CheckExprPermitByRefLike cenv env arg
-        if not limit1 && limit2 then 
+        if not limit1 && limit2.HasFlag(LimitValFlags.StackReferringSpanLike) then 
             errorR(Error(FSComp.SR.chkNoWriteToLimitedSpan(vref.DisplayName), m))
-        false
+        LimitValFlags.None
 
     | TOp.LValueOp(LByrefGet,vref),_,[] -> 
-        let limit1 = isByrefTy g vref.Type && IsLimitedType g m (destByrefTy g vref.Type) && not (env.argVals.ContainsVal(vref.Deref)) 
-        limit1
+        let limit1 = isByrefTy g vref.Type && isSpanLikeTy g m (destByrefTy g vref.Type) && not (env.argVals.ContainsVal(vref.Deref)) 
+        if limit1 then
+            LimitValFlags.StackReferringSpanLike
+        else
+            LimitValFlags.None
 
     | TOp.LValueOp(LSet _, vref),_,[arg] -> 
         let limit1 = IsLimited cenv env m vref
         let limit2 = CheckExprPermitByRefLike cenv env arg
-        if not limit1 && limit2 then 
+        if not limit1 && limit2.HasFlag(LimitValFlags.StackReferringSpanLike) then 
             errorR(Error(FSComp.SR.chkNoWriteToLimitedSpan(vref.DisplayName), m))
-        false
+        LimitValFlags.None
 
     | TOp.TupleFieldGet _,_,[arg1] -> 
         CheckTypeInstNoByrefs cenv env m tyargs
@@ -940,11 +951,11 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
         else
             CheckTypeInstNoByrefs cenv env m tyargs
             CheckExprNoByrefs cenv env x
-            false
+            LimitValFlags.None
 
     | TOp.Reraise,[_ty1],[] ->
         CheckTypeInstNoByrefs cenv env m tyargs
-        false
+        LimitValFlags.None
 
     // Check get of static field
     | TOp.ValFieldGetAddr (rfref, _readonly),tyargs,[] ->
@@ -953,7 +964,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
             errorR(Error(FSComp.SR.chkNoAddressStaticFieldAtThisPoint(rfref.FieldName), m)) 
 
         CheckTypeInstNoByrefs cenv env m tyargs
-        false
+        LimitValFlags.None
 
     // Check get of instance field
     | TOp.ValFieldGetAddr (rfref, _readonly),tyargs,[obj] ->
@@ -1021,7 +1032,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
             if context.Disallow && cenv.reportErrors  && isByrefLikeTy g m (tyOfExpr g expr) then
                 errorR(Error(FSComp.SR.chkNoAddressFieldAtThisPoint(fspec.Name), m))
 
-            false
+            LimitValFlags.None
 
         | [ I_ldflda (fspec) ], [obj] ->
             if context.Disallow && cenv.reportErrors  && isByrefLikeTy g m (tyOfExpr g expr) then
@@ -1034,9 +1045,9 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
             if context.Disallow && cenv.reportErrors && not isNativePtr && isByrefLikeTy g m (tyOfExpr g expr) then
                 errorR(Error(FSComp.SR.chkNoAddressOfArrayElementAtThisPoint(), m))
             // permit byref for lhs lvalue 
-            let limit = CheckExprPermitByRefLike cenv env lhsArray
-            CheckExprsNoByRefLike cenv env indices |> ignoreLimit
-            limit
+            let flags = CheckExprPermitByRefLike cenv env lhsArray
+            CheckExprsNoByRefLike cenv env indices |> ignore
+            flags
 
         | [ AI_conv _ ],_ ->
             // permit byref for args to conv 
@@ -1100,13 +1111,13 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
         CheckNoReraise cenv freesOpt body 
 
         // Check the body of the lambda
-        let limit = 
+        let flags = 
             if isTop && not g.compilingFslib && isByrefLikeTy g m bodyty then
                 // allow byref to occur as return position for byref-typed top level function or method 
                 CheckExprPermitReturnableByRef cenv env body
             else
                 CheckExprNoByrefs cenv env body
-                false
+                LimitValFlags.None
 
         // Check byref return types
         if cenv.reportErrors then 
@@ -1119,14 +1130,14 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
                 CheckForByrefType cenv env (destByrefTy g bodyty) (fun () -> 
                     errorR(Error(FSComp.SR.chkReturnTypeNoByref(), m)))
 
-            if limit then
+            if flags.HasFlag(LimitValFlags.StackReferringSpanLike) then
                 errorR(Error(FSComp.SR.chkNoReturnOfLimitedSpan(), m))
 
             for tp in tps do 
                 if tp.Constraints |> List.sumBy (function TyparConstraint.CoercesTo(ty,_) when isClassTy g ty -> 1 | _ -> 0) > 1 then 
                     errorR(Error(FSComp.SR.chkTyparMultipleClassConstraints(), m))
 
-        false
+        LimitValFlags.None
                 
     // This path is for expression bindings that are not actually lambdas
     | _ -> 
@@ -1138,39 +1149,43 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
                 CheckExprPermitByRefLike cenv env e
             else 
                 CheckExprNoByrefs cenv env e
-                false
+                LimitValFlags.None
 
         if alwaysCheckNoReraise then 
             CheckNoReraise cenv None e
         limit
 
-and CheckExprs cenv env exprs contexts : bool =
+and CheckExprs cenv env exprs contexts : LimitValFlags =
     let contexts = Array.ofList contexts 
     let argArity i = if i < contexts.Length then contexts.[i] else PermitByRefExpr.No 
-    let limits = exprs |> List.mapi (fun i exp -> CheckExpr cenv env exp (argArity i)) 
-    limits |> List.existsTrue
+    exprs 
+    |> List.mapi (fun i exp -> CheckExpr cenv env exp (argArity i)) 
+    |> List.fold (|||) LimitValFlags.None
 
-and CheckExprsNoByRefLike cenv env exprs : bool = 
+and CheckExprsNoByRefLike cenv env exprs : LimitValFlags = 
     exprs |> List.iter (CheckExprNoByrefs cenv env) 
-    false
+    LimitValFlags.None
 
 and CheckExprsPermitByRefLike cenv env exprs = 
-    let limits = exprs |> List.map (CheckExprPermitByRefLike cenv env)
-    limits |> List.existsTrue
+    exprs 
+    |> List.map (CheckExprPermitByRefLike cenv env)
+    |> List.fold (|||) LimitValFlags.None
 
-and CheckExprsPermitReturnableByRef cenv env exprs : bool = 
-    let limits = exprs |> List.map (CheckExprPermitReturnableByRef cenv env)
-    limits |> List.existsTrue
+and CheckExprsPermitReturnableByRef cenv env exprs : LimitValFlags = 
+    exprs 
+    |> List.map (CheckExprPermitReturnableByRef cenv env)
+    |> List.fold (|||) LimitValFlags.None
 
-and CheckExprPermitByRefLike cenv env expr = 
+and CheckExprPermitByRefLike cenv env expr : LimitValFlags = 
     CheckExpr cenv env expr PermitByRefExpr.Yes
 
-and CheckExprPermitReturnableByRef cenv env expr : bool = 
+and CheckExprPermitReturnableByRef cenv env expr : LimitValFlags = 
     CheckExpr cenv env expr PermitByRefExpr.YesReturnable
 
 and CheckDecisionTreeTargets cenv env targets context = 
-    let limits = targets |> Array.map (CheckDecisionTreeTarget cenv env context) 
-    limits |> Array.existsTrue
+    targets 
+    |> Array.map (CheckDecisionTreeTarget cenv env context) 
+    |> Array.fold (|||) LimitValFlags.None
 
 and CheckDecisionTreeTarget cenv env context (TTarget(vs,e,_)) = 
     BindVals cenv env vs 
@@ -1180,15 +1195,15 @@ and CheckDecisionTreeTarget cenv env context (TTarget(vs,e,_)) =
 and CheckDecisionTree cenv env x =
     match x with 
     | TDSuccess (es,_) -> 
-        CheckExprsNoByRefLike cenv env es |> ignoreLimit
+        CheckExprsNoByRefLike cenv env es |> ignore
     | TDBind(bind,rest) -> 
-        CheckBinding cenv env false bind |> ignoreLimit
+        CheckBinding cenv env false bind |> ignore
         CheckDecisionTree cenv env rest 
     | TDSwitch (e,cases,dflt,m) -> 
         CheckDecisionTreeSwitch cenv env (e,cases,dflt,m)
 
 and CheckDecisionTreeSwitch cenv env (e,cases,dflt,m) =
-    CheckExprPermitByRefLike cenv env e |> ignoreLimit // can be byref for struct union switch
+    CheckExprPermitByRefLike cenv env e |> ignore// can be byref for struct union switch
     cases |> List.iter (fun (TCase(discrim,e)) -> CheckDecisionTreeTest cenv env m discrim; CheckDecisionTree cenv env e) 
     dflt |> Option.iter (CheckDecisionTree cenv env) 
 
@@ -1296,7 +1311,7 @@ and AdjustAccess isHidden (cpath: unit -> CompilationPath) access =
     else 
         access
 
-and CheckBinding cenv env alwaysCheckNoReraise (TBind(v,bindRhs,_) as bind) : bool =
+and CheckBinding cenv env alwaysCheckNoReraise (TBind(v,bindRhs,_) as bind) : LimitValFlags =
     let g = cenv.g
     let isTop = Option.isSome bind.Var.ValReprInfo
     //printfn "visiting %s..." v.DisplayName
@@ -1397,7 +1412,7 @@ and CheckBinding cenv env alwaysCheckNoReraise (TBind(v,bindRhs,_) as bind) : bo
     CheckLambdas isTop v.MemberInfo cenv env v.MustInline topValInfo alwaysCheckNoReraise bindRhs v.Range v.Type
 
 and CheckBindings cenv env xs = 
-    xs |> List.iter (CheckBinding cenv env false >> ignoreLimit)
+    xs |> List.iter (CheckBinding cenv env false >> ignore)
 
 // Top binds introduce expression, check they are reraise free.
 let CheckModuleBinding cenv env (TBind(v,e,_) as bind) =
@@ -1525,7 +1540,7 @@ let CheckModuleBinding cenv env (TBind(v,e,_) as bind) =
         with e -> errorRecovery e v.Range 
     end
 
-    CheckBinding cenv env true bind |> ignoreLimit
+    CheckBinding cenv env true bind |> ignore
 
 let CheckModuleBindings cenv env binds = 
     binds |> List.iter (CheckModuleBinding cenv env)

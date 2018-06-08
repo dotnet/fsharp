@@ -2959,6 +2959,10 @@ let isByrefLikeTyconRef (g: TcGlobals) m (tcref: TyconRef) =
 let isByrefLikeTy g m ty = 
     ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isByrefLikeTyconRef g m tcref          | _ -> false) 
 
+let isSpanLikeTy g m ty =
+    isByrefLikeTy g m ty && 
+    not (isByrefTy g ty) 
+
 //-------------------------------------------------------------------------
 // List and reference types...
 //------------------------------------------------------------------------- 

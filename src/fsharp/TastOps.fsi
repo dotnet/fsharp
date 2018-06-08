@@ -1453,6 +1453,9 @@ val isByrefTyconRef : TcGlobals -> TyconRef -> bool
 val isByrefLikeTyconRef : TcGlobals -> range -> TyconRef -> bool
 val isByrefLikeTy : TcGlobals -> range -> TType -> bool
 
+/// Check if the type is a byref-like but not a byref.
+val isSpanLikeTy : TcGlobals -> range -> TType -> bool
+
 //-------------------------------------------------------------------------
 // Tuple constructors/destructors
 //------------------------------------------------------------------------- 
