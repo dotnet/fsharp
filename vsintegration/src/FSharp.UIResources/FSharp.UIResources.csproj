@@ -41,6 +41,11 @@
     <Compile Update="**\*.xaml.cs" SubType="Designer" DependentUpon="%(Filename)" />
     <Compile Update="$(IntermediateOutputPath)**\*.g.cs" Visible="false" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Update="Strings.resx">
+      <Generator></Generator>
+    </EmbeddedResource>
+  </ItemGroup>
 
   <PropertyGroup>
     <VSMSBuildBinDir>$(VS150COMNTOOLS)\..\..\MSBuild\$(VisualStudioVersion)\Bin</VSMSBuildBinDir>

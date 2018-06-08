@@ -36,7 +36,7 @@ type FSharpChecker with
                             Some (parseResults, checkFileResults)
                 }
 
-            let! worker = Async.StartChild(parseAndCheckFile, 2000)
+            let! worker = Async.StartChild(parseAndCheckFile, millisecondsTimeout=Settings.LanguageServicePerformance.TimeUntilStaleCompletion)
         
             let tryGetFreshResultsWithTimeout() : Async<CheckResults> =
                 async {
