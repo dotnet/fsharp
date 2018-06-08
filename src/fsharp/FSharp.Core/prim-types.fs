@@ -1571,6 +1571,7 @@ namespace Microsoft.FSharp.Core
                 && ty.IsSealed  // covers enum and value types
                 && not (typeof<IStructuralEquatable>.IsAssignableFrom ty)
                 && not ty.IsArray
+                && not (ty.IsGenericType && ty.GetGenericTypeDefinition().Equals (typedefof<Nullable<_>>))
 
             // The FSharp compiler will not insert a tail call when this is used (this might be "fixed"
             // in a future release)
