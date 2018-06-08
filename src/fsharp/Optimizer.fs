@@ -1791,12 +1791,12 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
             MightMakeCriticalTailcall=false
             Info=UnknownValue }
     (* Handle addresses *)
-    | TOp.LValueOp (LAddrOf _, lv), _, _ ->
+    | TOp.LValueOp ((LAddrOf _ as lop), lv), _, _ ->
         let newVal, _ = OptimizeExpr cenv env (exprForValRef m lv)
         let newOp =
             match newVal with
             // Do not optimize if it's a top level static binding.
-            | Expr.Val (v, _, _) when not v.IsCompiledAsTopLevel -> op
+            | Expr.Val (v, _, _) when not v.IsCompiledAsTopLevel -> TOp.LValueOp (lop, v)
             | _ -> op
         let newExpr = Expr.Op (newOp, tyargs, args, m)
         newExpr,
