@@ -808,7 +808,7 @@ namespace Microsoft.FSharp.Core
 #endif
     type byref<'T, 'Kind> = (# "!0&" #)
 
-    /// <summary>Represents a managed pointer in F# code. For F# 4.5+ this is considered equivalent to <c>byref&lt'T, ByRefKinds.InOut&gt</c></summary>
+    /// <summary>Represents a managed pointer in F# code. For F# 4.5+ this is considered equivalent to <c>byref&lt;'T, ByRefKinds.InOut&gt;</c></summary>
     type byref<'T> = (# "!0&" #)
 
     /// Represents the types of byrefs in F# 4.5+
@@ -1850,7 +1850,7 @@ namespace Microsoft.FSharp.Core
     ///
     /// <remarks>Use the constructors <c>ValueSome</c> and <c>ValueNone</c> to create values of this type.
     /// Use the values in the <c>ValueOption</c> module to manipulate values of this type,
-    /// or pattern match against the values directly.
+    /// or pattern match against the values directly.</remarks>
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpValueOption`1")>]
     [<Struct>]
@@ -1870,7 +1870,7 @@ namespace Microsoft.FSharp.Core
     ///
     /// <remarks>Use the constructors <c>ValueSome</c> and <c>ValueNone</c> to create values of this type.
     /// Use the values in the <c>ValueOption</c> module to manipulate values of this type,
-    /// or pattern match against the values directly.
+    /// or pattern match against the values directly.</remarks>
     and 'T voption = ValueOption<'T>
 
     /// <summary>Helper type for error handling without exceptions.</summary>
