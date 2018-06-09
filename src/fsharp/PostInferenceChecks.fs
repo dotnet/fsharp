@@ -791,36 +791,29 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : LimitVa
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprNoByrefs cenv env f
 
-        let contexts = mkArgsForAppliedExpr false argsl f
+        let limitArgs = CheckExprs cenv env argsl (mkArgsForAppliedExpr false argsl f)
 
-        let _hasHeapSpanLikeArg, _hasStackSpanLikeArg, hasStackByRefLikeArg =
-            if argsl.Length = contexts.Length then
-                ((false, false, false), argsl, contexts) 
-                |||> List.fold2 (fun (hasHeapSpanLike, hasStackSpanLike, hasStackByRefLike) e context -> 
-                    let limit = CheckExpr cenv env e context
+        // If return is a byref, and being used as a return, then all arguments must be usable as byref-like returns
+        // If return is a span-like, and being used as a return, then all arguments must be usable as span-like returns
+        let returnTy = tyOfExpr g expr
+        let isReturnByrefTy = isByrefTy g returnTy
+        let isReturnSpanLikeTy = isSpanLikeTy g m returnTy
+        let isByRefReturnCall = context.PermitOnlyReturnable && isReturnByrefTy
+        let isSpanLikeReturnCall = context.PermitOnlyReturnable && isReturnSpanLikeTy
 
-                    let hasHeapSpanLike =
-                        if not (limit.HasFlag(LimitValFlags.StackReferringSpanLike)) &&
-                                limit.HasFlag(LimitValFlags.SpanLike) then true
-                        else hasHeapSpanLike
+        let canError =
+            (isByRefReturnCall && (limitArgs.HasFlag(LimitValFlags.StackReferringByRef) || limitArgs.HasFlag(LimitValFlags.StackReferringSpanLike))) ||
+            (isSpanLikeReturnCall && limitArgs.HasFlag(LimitValFlags.StackReferringSpanLike))
 
-                    let hasStack =
-                        if limit.HasFlag(LimitValFlags.StackReferringSpanLike) then (true, true)
-                        elif limit.HasFlag(LimitValFlags.StackReferringByRef) then (hasStackSpanLike, true)
-                        else (hasStackSpanLike, hasStackByRefLike)
-
-                    (hasHeapSpanLike, fst hasStack, snd hasStack)
-                )
-            else
-                (false, false, false)
-
-        // If return is a byref, and being used as a return, then all arguments must be usable as byref returns
-        let isByRefReturnCall = context.PermitOnlyReturnable && isByrefTy g (tyOfExpr g expr) 
-
-        if isByRefReturnCall && hasStackByRefLikeArg then
+        if canError then
             errorR(Error(FSComp.SR.chkNoByrefReturnOfFunction(), m))
 
-        CheckExprs cenv env argsl contexts
+        if isReturnByrefTy then
+            limitArgs &&& ~~~(LimitValFlags.StackReferringSpanLike)
+        elif isReturnSpanLikeTy then
+            limitArgs &&& ~~~(LimitValFlags.StackReferringByRef)
+        else
+            LimitValFlags.None
 
     | Expr.Lambda(_,_ctorThisValOpt,_baseValOpt,argvs,_,m,rty) -> 
         let topValInfo = ValReprInfo ([],[argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)],ValReprInfo.unnamedRetVal) 
