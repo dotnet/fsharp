@@ -107,6 +107,11 @@
         <target state="translated">Mostrar os nós de estrutura de tópicos e recolhíveis para o código F#</target>
         <note />
       </trans-unit>
+      <trans-unit id="Time_until_stale_completion">
+        <source>Time until stale results for completion (in milliseconds)</source>
+        <target state="new">Time until stale results for completion (in milliseconds)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="CodeLens">
         <source>CodeLens</source>
         <target state="new">CodeLens</target>

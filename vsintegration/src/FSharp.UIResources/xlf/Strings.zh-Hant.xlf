@@ -107,6 +107,11 @@
         <target state="translated">顯示 F# 程式碼的大綱與可折疊的節點</target>
         <note />
       </trans-unit>
+      <trans-unit id="Time_until_stale_completion">
+        <source>Time until stale results for completion (in milliseconds)</source>
+        <target state="new">Time until stale results for completion (in milliseconds)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="CodeLens">
         <source>CodeLens</source>
         <target state="new">CodeLens</target>

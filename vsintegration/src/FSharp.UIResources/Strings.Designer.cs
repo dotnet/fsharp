@@ -277,6 +277,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Time until stale results for completion (in milliseconds).
+        /// </summary>
+        public static string Time_until_stale_completion {
+            get {
+                return ResourceManager.GetString("Time_until_stale_completion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Analyze and suggest fixes for unused values.
         /// </summary>
         public static string Unused_declaration_code_fix {

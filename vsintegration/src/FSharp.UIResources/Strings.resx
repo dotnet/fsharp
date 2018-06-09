@@ -180,6 +180,9 @@
   <data name="Show_Outlining" xml:space="preserve">
     <value>Show outlining and collapsable nodes for F# code</value>
   </data>
+  <data name="Time_until_stale_completion" xml:space="preserve">
+    <value>Time until stale results for completion (in milliseconds)</value>
+  </data>
   <data name="CodeLens" xml:space="preserve">
     <value>CodeLens</value>
   </data>
