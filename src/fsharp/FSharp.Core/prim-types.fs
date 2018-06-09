@@ -1566,12 +1566,40 @@ namespace Microsoft.FSharp.Core
             type PER = inherit IERorPER
 
             let canUseDefaultEqualityComparer (ty:Type) =
-                // avoid any types that need special handling in GenericEqualityObj
-                true 
-                && ty.IsSealed  // covers enum and value types
-                && not (typeof<IStructuralEquatable>.IsAssignableFrom ty)
-                && not ty.IsArray
-                && not (ty.IsGenericType && ty.GetGenericTypeDefinition().Equals (typedefof<Nullable<_>>))
+                let processed = System.Collections.Generic.HashSet ()
+
+                let rec recurse idx (types:array<Type>) =
+                    if idx = types.Length then true
+                    else
+                        let ty = get types idx
+                        if not (processed.Add ty) then
+                            recurse (idx+1) types
+                        else
+                            let isValidGenericType ifNotType fullname =
+                                if not (ty.IsGenericType && ty.GetGenericTypeDefinition().FullName.Equals fullname)
+                                then ifNotType
+                                else recurse 0 (ty.GetGenericArguments ())
+                    
+                            // avoid any types that need special handling in GenericEqualityObj
+                            true 
+                            && ty.IsSealed  // covers enum and value types
+                            && not ty.IsArray
+                            && not (ty.Equals typeof<float>)
+                            && not (ty.Equals typeof<float32>)
+                            && isValidGenericType true "System.Nullable`1"
+                            && not (typeof<IStructuralEquatable>.IsAssignableFrom ty
+                                    && not (false
+                                            || isValidGenericType false "System.ValueTuple`1"
+                                            || isValidGenericType false "System.ValueTuple`2"
+                                            || isValidGenericType false "System.ValueTuple`3"
+                                            || isValidGenericType false "System.ValueTuple`4"
+                                            || isValidGenericType false "System.ValueTuple`5"
+                                            || isValidGenericType false "System.ValueTuple`6"
+                                            || isValidGenericType false "System.ValueTuple`7"
+                                            || isValidGenericType false "System.ValueTuple`8"))
+                            && recurse (idx+1) types
+
+                recurse 0 [|ty|]
 
             // The FSharp compiler will not insert a tail call when this is used (this might be "fixed"
             // in a future release)
