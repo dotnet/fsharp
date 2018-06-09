@@ -6517,11 +6517,6 @@
         <target state="translated">'fixed' 식을 빌드할 때 참조에서 System.Runtime.CompilerServices.OffsetToStringData 메서드를 찾을 수 없습니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoByrefReturnOfLocal">
-        <source>The address of the variable '{0}' or a related expression cannot be used at this point. The address may not be passed to a call that returns an address. This is to ensure the address of the local value does not escape its scope.</source>
-        <target state="needs-review-translation">지금은 '{0}' 변수의 주소를 사용할 수 없습니다. 메서드 또는 함수가 이 로컬 값의 주소를 반환할 수 없습니다.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcNamedActivePattern">
         <source>{0} is an active pattern and cannot be treated as a discriminated union case with named fields.</source>
         <target state="translated">{0}은(는) 활성 패턴이며 명명된 필드가 있는 구분된 공용 구조체 케이스로 처리될 수 없습니다.</target>
@@ -7040,6 +7035,11 @@
       <trans-unit id="chkStructsMayNotReturnAddressesOfContents">
         <source>Struct members cannot return the address of fields of the struct by reference</source>
         <target state="new">Struct members cannot return the address of fields of the struct by reference</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoByrefReturnOfFunction">
+        <source>The address returned from the function cannot be used at this point. One of the arguments is a byref-like that is referring to the stack. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="new">The address returned from the function cannot be used at this point. One of the arguments is a byref-like that is referring to the stack. This is to ensure the address of the local value does not escape its scope.</target>
         <note />
       </trans-unit>
     </body>

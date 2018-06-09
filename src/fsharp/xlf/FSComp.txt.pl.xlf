@@ -6517,11 +6517,6 @@
         <target state="translated">Nie można odnaleźć metody System.Runtime.CompilerServices.OffsetToStringData w odwołaniach podczas kompilowania wyrażenia „fixed”.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoByrefReturnOfLocal">
-        <source>The address of the variable '{0}' or a related expression cannot be used at this point. The address may not be passed to a call that returns an address. This is to ensure the address of the local value does not escape its scope.</source>
-        <target state="needs-review-translation">Adres zmiennej „{0}” nie może być użyty w tym punkcie. Metoda lub funkcja może nie zwrócić adresu tej wartości lokalnej.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcNamedActivePattern">
         <source>{0} is an active pattern and cannot be treated as a discriminated union case with named fields.</source>
         <target state="translated">{0} jest wzorcem aktywnym i nie można go traktować jako przypadku unii rozłącznej z nazwanymi polami.</target>
@@ -7040,6 +7035,11 @@
       <trans-unit id="chkStructsMayNotReturnAddressesOfContents">
         <source>Struct members cannot return the address of fields of the struct by reference</source>
         <target state="new">Struct members cannot return the address of fields of the struct by reference</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoByrefReturnOfFunction">
+        <source>The address returned from the function cannot be used at this point. One of the arguments is a byref-like that is referring to the stack. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="new">The address returned from the function cannot be used at this point. One of the arguments is a byref-like that is referring to the stack. This is to ensure the address of the local value does not escape its scope.</target>
         <note />
       </trans-unit>
     </body>

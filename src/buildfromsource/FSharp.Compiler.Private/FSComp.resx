@@ -4327,8 +4327,8 @@
   <data name="tcByRefLikeNotStruct" xml:space="preserve">
     <value>A type annotated with IsByRefLike must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</value>
   </data>
-  <data name="chkNoByrefReturnOfLocal" xml:space="preserve">
-    <value>The address of the variable '{0}' or a related expression cannot be used at this point. The address may not be passed to a call that returns an address. This is to ensure the address of the local value does not escape its scope.</value>
+  <data name="chkNoByrefReturnOfFunction" xml:space="preserve">
+    <value>The address returned from the function cannot be used at this point. One of the arguments is a byref-like that is referring to the stack. This is to ensure the address of the local value does not escape its scope.</value>
   </data>
   <data name="chkNoReturnOfLimitedSpan" xml:space="preserve">
     <value>The IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</value>
