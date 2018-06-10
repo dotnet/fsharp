@@ -1,6 +1,5 @@
 // Work In Progress
 // this script helps run a subset of the fsharpqa tests without calling a full build.cmd
-// this is failing right now, à priori due to missing environment variables &/or arguments
 
 open System.IO
 open System.Diagnostics
@@ -9,11 +8,19 @@ let releaseOrDebug = "Debug"
 let setEnvVar name value =
   System.Environment.SetEnvironmentVariable(name, value)
 
+let addToPath path =
+  let currentPath = System.Environment.GetEnvironmentVariable "PATH"
+  
+  let splits = currentPath.Split(Path.PathSeparator)
+  if not(Array.contains path splits) then
+    setEnvVar "PATH" (path + (string Path.PathSeparator) + currentPath)
+
 let rootFolder = Path.Combine(__SOURCE_DIRECTORY__, "..", "..")
 let compilerBinFolder = Path.Combine(rootFolder, releaseOrDebug, "net40", "bin")
 setEnvVar "CSC_PIPE"      (Path.Combine(rootFolder, "packages", "Microsoft.Net.Compilers.2.7.0", "tools", "csc.exe"))
 setEnvVar "FSC"           (Path.Combine(compilerBinFolder, "fsc.exe"))
 setEnvVar "FSCOREDLLPATH" (Path.Combine(compilerBinFolder, "FSharp.Core.dll"))
+addToPath compilerBinFolder
 
 let runPerl arguments =
   // a bit expeditive, but does the deed
@@ -34,5 +41,6 @@ let runPerl arguments =
   if perlProcess.ExitCode <> 0 then
     failwithf "exit code: %i" perlProcess.ExitCode
 
+let testResultDir = Path.Combine(rootFolder, "tests", "TestResults")
 let perlScript = Path.Combine(rootFolder, "tests", "fsharpqa", "testenv", "bin", "runall.pl")
-runPerl [|perlScript; "-ttags:Conformance06"|]
+runPerl [|perlScript; "-resultsroot";testResultDir ;"-ttags:Conformance06"|]
