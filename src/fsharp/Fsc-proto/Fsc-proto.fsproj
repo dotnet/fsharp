@@ -306,6 +306,9 @@
     <Compile Include="..\LexFilter.fs">
       <Link>LexFilter.fs</Link>
     </Compile>
+    <Compile Include="..\TastReflect.fs">
+      <Link>TastReflect.fs</Link>
+    </Compile>
     <Compile Include="..\import.fsi">
       <Link>import.fsi</Link>
     </Compile>

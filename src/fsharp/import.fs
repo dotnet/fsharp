@@ -14,10 +14,10 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.TastReflect
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
 #if !NO_EXTENSIONTYPING
+open Microsoft.FSharp.Compiler.TastReflect
 open Microsoft.FSharp.Compiler.ExtensionTyping
 #endif
 
