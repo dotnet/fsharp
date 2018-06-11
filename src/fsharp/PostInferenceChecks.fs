@@ -127,9 +127,10 @@ let BindArgVals env (vs: Val list) =
 
 [<Flags>]
 type LimitFlags =
-    | None                    = 0b00
-    | StackReferringByRef     = 0b01
-    | StackReferringSpanLike  = 0b10
+    | None                          = 0b000
+    | StackReferringByRef           = 0b001
+    | StackReferringSpanLike        = 0b010
+    | StackReferringByRefOfSpanLike = 0b101
 
 type cenv = 
     { boundVals: Dictionary<Stamp, int> // really a hash set
@@ -148,23 +149,23 @@ type cenv =
       mutable usesQuotations : bool
       mutable entryPointGiven:bool  }
 
-let GetLimitFlags cenv (v: Val) =
+let GetLimit cenv (v: Val) =
     match cenv.limitVals.TryGetValue(v.Stamp) with
-    | true, flags -> flags
+    | true, limit -> limit
     | _ -> LimitFlags.None
 
 let IsValLimitedStackReferringByRef cenv v =
-    let flags = GetLimitFlags cenv v
-    flags.HasFlag(LimitFlags.StackReferringByRef)
+    let limit = GetLimit cenv v
+    limit.HasFlag(LimitFlags.StackReferringByRef)
 
 let IsValLimitedStackReferringSpanLike cenv v =
-    let flags = GetLimitFlags cenv v
-    flags.HasFlag(LimitFlags.StackReferringSpanLike)
+    let limit = GetLimit cenv v
+    limit.HasFlag(LimitFlags.StackReferringSpanLike)
 
 let IsValLimitedStackReferringByRefLike cenv v =
-    let flags = GetLimitFlags cenv v
-    flags.HasFlag(LimitFlags.StackReferringByRef) ||
-    flags.HasFlag(LimitFlags.StackReferringSpanLike)
+    let limit = GetLimit cenv v
+    limit.HasFlag(LimitFlags.StackReferringByRef) ||
+    limit.HasFlag(LimitFlags.StackReferringSpanLike)
 
 let LimitVal cenv (v:Val) flags = 
     cenv.limitVals.[v.Stamp] <- flags
@@ -552,11 +553,14 @@ and CheckValRef (cenv:cenv) (env:env) v m (context: PermitByRefExpr) =
 
     CheckTypePermitAllByrefs cenv env m v.Type // the byref checks are done at the actual binding of the value 
 
+/// Checks if the value is an argument of a function
+and IsValArgument env (v: Val) =
+    env.argVals.ContainsVal(v)
+
 and IsValLocalAndNotArgument env (v: Val) =
     // The value is a local....
     v.ValReprInfo.IsNone && 
-    // The value is not an argument...
-    not (env.argVals.ContainsVal(v)) 
+    not (IsValArgument env v)
 
 and IsValLimitedSpanLike cenv env m (v: Val) = 
     isSpanLikeTy cenv.g m v.Type && 
@@ -605,7 +609,7 @@ and CheckValUse (cenv: cenv) (env: env) (vref: ValRef, vFlags, m) (context: Perm
     if isLimitedSpanLike then
         LimitFlags.StackReferringSpanLike
     else
-        LimitFlags.None
+        GetLimit cenv vref.Deref
     
 /// Check an expression, given information about the position of the expression
 and CheckForOverAppliedExceptionRaisingPrimitive (cenv:cenv) expr =    
@@ -787,20 +791,22 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : LimitFl
 
         let limitArgs = CheckExprsAsList cenv env argsl (mkArgsForAppliedExpr false argsl f)
 
-        let stackByRefArgs, stackSpanLikeArgs, _heapSpanLikeArgs =
-            (([], [], []), argsl, limitArgs)
-            |||> List.fold2 (fun ((stackByRefArgs, stackSpanLikeArgs, heapSpanLikeArgs) as state) arg limitArg ->
+        let stackByRefArgs, stackSpanLikeArgs, _heapSpanLikeArgs, stackByRefOfSpanLikeArgs =
+            (([], [], [], []), argsl, limitArgs)
+            |||> List.fold2 (fun ((stackByRefArgs, stackSpanLikeArgs, heapSpanLikeArgs, stackByRefOfSpanLikeArgs) as state) arg limitArg ->
                 let tyarg = tyOfExpr g arg
 
                 if isSpanLikeTy cenv.g arg.Range tyarg then
                     if limitArg.HasFlag(LimitFlags.StackReferringSpanLike) then
-                        (stackByRefArgs, arg :: stackSpanLikeArgs, heapSpanLikeArgs)
+                        (stackByRefArgs, arg :: stackSpanLikeArgs, heapSpanLikeArgs, stackByRefOfSpanLikeArgs)
                     else
-                        (stackByRefArgs, stackSpanLikeArgs, arg :: heapSpanLikeArgs)
+                        (stackByRefArgs, stackSpanLikeArgs, arg :: heapSpanLikeArgs, stackByRefOfSpanLikeArgs)
 
                 elif isByrefTy cenv.g tyarg then
-                    if limitArg.HasFlag(LimitFlags.StackReferringByRef) then
-                        (arg :: stackByRefArgs, stackSpanLikeArgs, heapSpanLikeArgs)
+                    if limitArg.HasFlag(LimitFlags.StackReferringByRefOfSpanLike) then
+                        (arg :: stackByRefArgs, stackSpanLikeArgs, heapSpanLikeArgs, arg :: stackByRefOfSpanLikeArgs)
+                    elif limitArg.HasFlag(LimitFlags.StackReferringByRef) then
+                        (arg :: stackByRefArgs, stackSpanLikeArgs, heapSpanLikeArgs, stackByRefOfSpanLikeArgs)
                     else
                         state
 
@@ -812,7 +818,7 @@ and CheckExpr (cenv:cenv) (env:env) origExpr (context:PermitByRefExpr) : LimitFl
         // If return is a span-like, and being used as a return, then all arguments must be usable as span-like returns
         let returnTy = tyOfExpr g expr
         let isLimitedByRef = isByrefTy g returnTy && (not stackByRefArgs.IsEmpty || not stackSpanLikeArgs.IsEmpty)
-        let isLimitedSpanLike = isSpanLikeTy g m returnTy && not stackSpanLikeArgs.IsEmpty
+        let isLimitedSpanLike = isSpanLikeTy g m returnTy && (not stackSpanLikeArgs.IsEmpty || not stackByRefOfSpanLikeArgs.IsEmpty)
 
         if context.PermitOnlyReturnable && (isLimitedByRef || isLimitedSpanLike) then
             errorR(Error(FSComp.SR.chkNoByrefReturnOfFunction(), m))
@@ -953,7 +959,9 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
                 errorR(Error(FSComp.SR.chkNoByrefAddressOfLocal(vref.DisplayName), m))
 
         let limit1 = 
-            if IsValLocalAndNotArgument env vref.Deref then
+            if IsValLimitedSpanLike cenv env m vref.Deref then
+                LimitFlags.StackReferringByRefOfSpanLike
+            elif IsValLocalAndNotArgument env vref.Deref then
                 LimitFlags.StackReferringByRef
             else
                 LimitFlags.None
@@ -961,15 +969,15 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
         limit1 ||| limit2
 
     | TOp.LValueOp(LByrefSet,vref),_,[arg] -> 
-        let limit1 = isSpanLikeTy g m (tyOfExpr g arg) && not (env.argVals.ContainsVal(vref.Deref)) 
+        let limit1 = isSpanLikeTy g m (tyOfExpr g arg) && not (IsValArgument env vref.Deref)
         let limit2 = CheckExprPermitByRefLike cenv env arg
         if not limit1 && limit2.HasFlag(LimitFlags.StackReferringSpanLike) then 
             errorR(Error(FSComp.SR.chkNoWriteToLimitedSpan(vref.DisplayName), m))
         LimitFlags.None
 
     | TOp.LValueOp(LByrefGet,vref),_,[] -> 
-        let limit1 = isByrefTy g vref.Type && isSpanLikeTy g m (destByrefTy g vref.Type) && not (env.argVals.ContainsVal(vref.Deref)) 
-        if limit1 then
+        let limit = isByrefTy g vref.Type && isSpanLikeTy g m (destByrefTy g vref.Type) && not (IsValArgument env vref.Deref)
+        if limit then
             LimitFlags.StackReferringSpanLike
         else
             LimitFlags.None
