@@ -7,14 +7,39 @@ open Test
 
 // ======= Existing type testing ========
 
-type If<'cond, 'a, 'b> = Generic.IfThenElse<'cond, 'a, 'b>
-type IntOrString<'cond> = If<'cond, int, string>
+let f (xs : int[]) =
+  xs
+  |> Array.map (fun x -> x + 1)
+  |> Array.map (fun y -> y + 1)
 
-type XInt = IntOrString<true>
+f [|1;2;3|]
 
-let f (x : XInt) = x
+//type O = Generic.Overloaded
+//
+//let f (x : int) = x
+//let g (x : string) = ()
+//
+//printfn "%A, %A" (f (O.X 1)) (g (O.X 2))
 
-printfn "%A" (f 10)
+//type X = Generic.IdentityFunction<int>
+//type Y<'a> = Option<Generic.IdentityFunction<'a>>
+//
+//type Z = Y<int>
+//
+//let f () : Y<int> = printfn "BEEP"; None
+//
+//f ()
+
+//printfn "Const(1,\"hi\" = %A" (X.Invoke(1,"hi"))
+
+//type If<'cond, 'a, 'b> = Generic.IfThenElse<'cond, 'a, 'b>
+//type IntOrString<'cond> = If<'cond, int, string>
+//
+//type XInt = IntOrString<true>
+//
+//let f (x : XInt) = x
+//
+//printfn "%A" (f 10)
 
   
 

@@ -4155,9 +4155,6 @@ type PostBindCtorThisVarRefCellRecursiveBinding =
     { ValScheme: ValScheme
       Binding: Tast.Binding }
 
-type StaticArgOrVar = | StaticArgument of StaticArg | AbstractType of TType
-
-
 let CanInferExtraGeneralizedTyparsForRecBinding (pgrbind: PreGeneralizationRecursiveBinding) = 
     let flex = pgrbind.RecBindingInfo.ExplicitTyparInfo
     let (ExplicitTyparInfo(_, _, canInferTypars)) = flex
@@ -5003,15 +5000,18 @@ and fullyEvaluateProvidedTypeExpression cenv original m =
     let noAbbrevs = stripTyEqns cenv.g original
     let rec go = function
         | TType_app(tcref, args) when tcref.IsProvided ->
-            let args = args |> List.map go
-            if args |> List.forall snd then
-                let args =
-                    args
-                    |> List.map fst
-                    |> List.toArray
-                safelyApplyStaticArgs cenv tcref args m, true
-            else
-                TType_app(tcref, List.map fst args), false
+            match args with
+            | [] -> TType_app(tcref, []), true
+            | args ->
+                let args = args |> List.map go
+                if args |> List.forall snd then
+                    let args =
+                        args
+                        |> List.map fst
+                        |> List.toArray
+                    safelyApplyStaticArgs cenv tcref args m, true
+                else
+                    TType_app(tcref, List.map fst args), false
         | TType_app (tcref, tinst) ->
             let ts = List.map go tinst
             let tinst = List.map fst ts

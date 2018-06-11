@@ -278,8 +278,6 @@ let rec ImportProvidedType (env:ImportMap) (m:range) (* (tinst:TypeInst) *) (st:
     let ctok = AssumeCompilationThreadWithoutEvidence ()
     RequireCompilationThread ctok
 
-    st.PUntaint((fun st -> printfn "%A" <| st.GetType()), m)
-
     let g = env.g
     if st.PUntaint((fun st -> st.IsArray),m) then 
         let elemTy = (ImportProvidedType env m (* tinst *) (st.PApply((fun st -> st.GetElementType()),m)))

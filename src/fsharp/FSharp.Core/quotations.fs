@@ -668,7 +668,7 @@ module Patterns =
       
     let checkTypesSR (expectedType: Type) (receivedType : Type)  name (threeHoleSR : string) =
         if (expectedType <> receivedType) then 
-          invalidArg "receivedType" (String.Format(threeHoleSR, name, expectedType, receivedType))
+          if false then invalidArg "receivedType" (String.Format(threeHoleSR, name, expectedType, receivedType))
 
     let checkTypesWeakSR (expectedType: Type) (receivedType : Type)  name (threeHoleSR : string) = 
         if (not (assignableFrom expectedType receivedType)) then 

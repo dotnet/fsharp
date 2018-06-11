@@ -11,10 +11,10 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>e63195a9-d5d9-4e31-9db3-81a119b0b7a0</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>generic_tp</RootNamespace>
-    <AssemblyName>generic_tp</AssemblyName>
+    <RootNamespace>test_tp</RootNamespace>
+    <AssemblyName>test_tp</AssemblyName>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <Name>generic_tp</Name>
+    <Name>test_tp</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -49,7 +49,7 @@
   <ItemGroup>
     <Compile Include="paket-files/sourcefiles/TobyShaw/FSharp.TypeProviders.SDK/src/ProvidedTypes.fsi" />
     <Compile Include="paket-files/sourcefiles/TobyShaw/FSharp.TypeProviders.SDK/src/ProvidedTypes.fs" />
-    <Compile Include="generic_tp.fs" />
+    <Compile Include="test_tp.fs" />
     <None Include="Script.fsx" />
   </ItemGroup>
   <Choose>

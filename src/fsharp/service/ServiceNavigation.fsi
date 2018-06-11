@@ -16,7 +16,6 @@ type public FSharpNavigationDeclarationItemKind =
     | ExnDecl
     | ModuleDecl
     | TypeDecl
-    | ProviderDecl
     | MethodDecl
     | PropertyDecl
     | FieldDecl
@@ -28,7 +27,6 @@ type public FSharpEnclosingEntityKind =
     | Module
     | Class
     | Exception
-    | Provider
     | Interface
     | Record
     | Enum
@@ -76,7 +74,6 @@ module public NavigateTo =
         | ModuleAbbreviation
         | Exception
         | Type
-        | Provider
         | ModuleValue
         | Field
         | Property
@@ -91,7 +88,6 @@ module public NavigateTo =
         | Namespace
         | Module
         | Type
-        | Provider
         | Exception
 
     type Container =

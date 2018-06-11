@@ -21,7 +21,6 @@ type FSharpGlyph =
     | Struct
     | Typedef
     | Type
-    | Provider
     | Union
     | Variable
     | ExtensionMethod

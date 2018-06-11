@@ -863,6 +863,16 @@ module internal ExtensionTyping =
             Some ((match objOpt with None -> None | Some obj -> Some (ProvidedExpr.Create x.Context obj)), ProvidedFieldInfo.Create x.Context fieldInfo)
         | _ -> None
 
+    let (|ProvidedPropertyGetExpr|_|) (x:ProvidedExpr) = 
+        match x.Handle with 
+        | Quotations.Patterns.PropertyGet(objOpt, propInfo, args) ->
+            let args = args |> List.map (ProvidedExpr.Create x.Context)
+            match objOpt with
+            | None -> Some (None, ProvidedPropertyInfo.Create x.Context propInfo, args)
+            | Some obj ->
+                Some (Some (ProvidedExpr.Create x.Context obj), ProvidedPropertyInfo.Create x.Context propInfo, args)
+        | _ -> None
+
     /// Detect a provided default-value expression 
     let (|ProvidedDefaultExpr|_|) (x:ProvidedExpr) = 
         match x.Handle with 
@@ -897,6 +907,12 @@ module internal ExtensionTyping =
     let (|ProvidedNewArrayExpr|_|) (x:ProvidedExpr) = 
         match x.Handle with 
         |  Quotations.Patterns.NewArray(ty, args) -> Some (ProvidedType.Create  x.Context ty, ProvidedExpr.CreateArray x.Context (Array.ofList args))
+        | _ -> None
+
+    /// Detect a provided new-record expression 
+    let (|ProvidedNewRecordExpr|_|) (x:ProvidedExpr) = 
+        match x.Handle with 
+        |  Quotations.Patterns.NewRecord(ty, args) -> Some (ProvidedType.Create  x.Context ty, ProvidedExpr.CreateArray x.Context (Array.ofList args))
         | _ -> None
 
     /// Detect a provided sequential expression 

@@ -183,6 +183,7 @@ module internal ExtensionTyping =
         member IsAbstract : bool
         member IsHideBySig : bool
         member IsConstructor : bool
+        member Handle : System.Reflection.MethodBase
         member GetParameters : unit -> ProvidedParameterInfo[]
         member GetGenericArguments : unit -> ProvidedType[]
         member GetStaticParametersForMethod : ITypeProvider -> ProvidedParameterInfo[]
@@ -271,6 +272,9 @@ module internal ExtensionTyping =
     val (|ProvidedAddressOfExpr|_|)  : ProvidedExpr -> ProvidedExpr option
 #endif
 
+    /// Detect a provided new-record expression 
+    val (|ProvidedNewRecordExpr|_|)     : ProvidedExpr -> (ProvidedType * ProvidedExpr[]) option
+
     /// Detect a provided new-object expression 
     val (|ProvidedNewObjectExpr|_|)     : ProvidedExpr -> (ProvidedConstructorInfo * ProvidedExpr[]) option
 
@@ -310,7 +314,11 @@ module internal ExtensionTyping =
     /// Detect a provided tuple-get expression 
     val (|ProvidedTupleGetExpr|_|)   : ProvidedExpr -> (ProvidedExpr * int) option
 
+    // Detect a provided field-get expression
     val (|ProvidedFieldGetExpr|_|)   : ProvidedExpr -> (ProvidedExpr option * ProvidedFieldInfo) option
+
+    // Detect a provided property-get expression
+    val (|ProvidedPropertyGetExpr|_|)   : ProvidedExpr -> (ProvidedExpr option * ProvidedPropertyInfo * ProvidedExpr list) option
 
     /// Detect a provided type-as expression 
     val (|ProvidedTypeAsExpr|_|)      : ProvidedExpr -> (ProvidedExpr * ProvidedType) option

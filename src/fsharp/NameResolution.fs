@@ -2494,7 +2494,6 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
               | _ ->
 
               let tyconSearch = tyconSearch ad
-              printfn "%A" tyconSearch
               match tyconSearch with
               | Result res when not (isNil res) -> tyconSearch
               | _ ->

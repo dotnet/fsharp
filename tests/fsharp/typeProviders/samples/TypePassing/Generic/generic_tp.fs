@@ -7,6 +7,8 @@ open ProviderImplementation.ProvidedTypes
 open System.Collections
 open System.Collections.Generic
 open Microsoft.FSharp.Quotations
+open Microsoft.FSharp.Reflection
+
 
 [<TypeProvider>]
 type TypePassingTp(config: TypeProviderConfig) as this =
@@ -14,6 +16,11 @@ type TypePassingTp(config: TypeProviderConfig) as this =
 
     let ns = "Generic"
     let runtimeAssembly = Assembly.LoadFrom(config.RuntimeAssembly)
+
+    let overloaded = ProvidedTypeDefinition(runtimeAssembly, ns, "Overloaded", baseType = Some typeof<obj>, hideObjectMethods=true)
+    let overload1 = ProvidedMethod("X", [ProvidedParameter("x", typeof<int>)], typeof<int>, (fun xs -> xs.[0]), isStatic = true)
+    let overload2 = ProvidedMethod("X", [ProvidedParameter("x", typeof<int>)], typeof<string>, (fun xs -> <@@ string (%%(xs.[0]) : string) @@>), isStatic = true)
+    do overloaded.AddMembers([overload1; overload2])
 
     // ====== Generic Method ========
 
@@ -93,7 +100,7 @@ type TypePassingTp(config: TypeProviderConfig) as this =
 
     // ===========================
 
-    do this.AddNamespace(ns, [genericMethodType; idFunc; constFunc; idType; constType; ifThenElseType])
+    do this.AddNamespace(ns, [genericMethodType; idFunc; constFunc; idType; constType; ifThenElseType; overloaded])
 
 [<assembly:TypeProviderAssembly>]
 do()

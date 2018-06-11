@@ -378,8 +378,6 @@ type TcConfigBuilder =
     member AddEmbeddedResource: string -> unit
     
     static member SplitCommandLineResourceInfo: string -> string * string * ILResourceAccess
-
-
     
 [<Sealed>]
 // Immutable TcConfig

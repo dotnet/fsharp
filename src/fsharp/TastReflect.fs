@@ -161,6 +161,7 @@ module Utils =
     //    | ILFieldInit.Double ieee64 -> box ieee64 
     //    | ILFieldInit.Null            -> (null :> Object)
 
+
 /// Represents the type constructor in a provided symbol type.
 [<RequireQualifiedAccess>]
 type ReflectTypeSymbolKind = 
@@ -282,6 +283,7 @@ and ReflectTypeSymbol(kind: ReflectTypeSymbolKind, args: Type[]) =
         | _ -> failwith "unreachable"
     
     override this.Equals(other: obj) =
+        printfn "EQUALS"
         match other with
         | :? ReflectTypeSymbol as otherTy -> (kind, args) = (otherTy.Kind, otherTy.Args)
         | _ -> false
@@ -511,116 +513,285 @@ and ReflectMethodSymbol(gmd: MethodInfo, gargs: Type[]) =
     override __.GetCustomAttributes(_attributeType, _inherited)         = notRequired "GetCustomAttributes"
 
     override __.ToString() = gmd.ToString() + "@inst"
-    
+
+and ReflectGenericParam(asm, pos, inp: Typar) =
+    inherit Type() with 
+    override __.Name = inp.Name 
+    override __.Assembly = (asm :> Assembly)
+    override __.FullName = inp.Name
+    override __.IsGenericParameter = true
+    override __.GenericParameterPosition = pos
+    override __.GetGenericParameterConstraints() = [||]
+        //TODO: Implement generic parameter constraints
+        //inp.Constraints |> Array.map (fun x -> x TxILType (gpsf()))
+                    
+    override __.MemberType = enum 0
+
+    override __.Namespace = null //notRequired "Namespace"
+    override __.DeclaringType = notRequired "DeclaringType"
+    override __.BaseType = notRequired "BaseType"
+    override __.GetInterfaces() = notRequired "GetInterfaces"
+
+    override this.GetConstructors(_bindingFlags) = notRequired "GetConstructors"
+    override this.GetMethods(_bindingFlags) = notRequired "GetMethods"
+    override this.GetField(_name, _bindingFlags) = notRequired "GetField"
+    override this.GetFields(_bindingFlags) = notRequired "GetFields"
+    override this.GetEvent(_name, _bindingFlags) = notRequired "GetEvent"
+    override this.GetEvents(_bindingFlags) = notRequired "GetEvents"
+    override this.GetProperties(_bindingFlags) = notRequired "GetProperties"
+    override this.GetMembers(_bindingFlags) = notRequired "GetMembers"
+    override this.GetNestedTypes(_bindingFlags) = notRequired "GetNestedTypes"
+    override this.GetNestedType(_name, _bindingFlags) = notRequired "GetNestedType"
+    override this.GetPropertyImpl(_name, _bindingFlags, _binder, _returnType, _types, _modifiers) = notRequired "GetPropertyImpl"
+    override this.MakeGenericType(_args) = notRequired "MakeGenericType"
+    override this.MakeArrayType() = ReflectTypeSymbol(ReflectTypeSymbolKind.SDArray, [| this |]) :> Type
+    override this.MakeArrayType arg = ReflectTypeSymbol(ReflectTypeSymbolKind.Array arg, [| this |]) :> Type
+    override this.MakePointerType() = ReflectTypeSymbol(ReflectTypeSymbolKind.Pointer, [| this |]) :> Type
+    override this.MakeByRefType() = ReflectTypeSymbol(ReflectTypeSymbolKind.ByRef, [| this |]) :> Type
+
+    override __.GetAttributeFlagsImpl() = TypeAttributes.Public ||| TypeAttributes.Class ||| TypeAttributes.Sealed 
+
+    override __.IsArrayImpl() = false
+    override __.IsByRefImpl() = false
+    override __.IsPointerImpl() = false
+    override __.IsPrimitiveImpl() = false
+    override __.IsCOMObjectImpl() = false
+    override __.IsGenericType = false
+    override __.IsGenericTypeDefinition = false
+
+    override __.HasElementTypeImpl() = false
+
+    override this.UnderlyingSystemType = this :> Type
+    override __.GetCustomAttributesData() = ReflectCustomAttribute.TxCustomAttributesData(asm, inp.Attribs)
+
+    override __.ToString() = sprintf "ctxt generic param %s" inp.Name 
+
+    override this.AssemblyQualifiedName                                                            = this.FullName + ", " + this.Assembly.FullName
+
+    override __.GetGenericArguments() = notRequired "GetGenericArguments"
+    override __.GetGenericTypeDefinition() = notRequired "GetGenericTypeDefinition"
+    override __.GetMember(_name,_mt,_bindingFlags)                                                      = notRequired "TxILGenericParam: GetMember"
+    override __.GUID                                                                                      = notRequired "TxILGenericParam: GUID"
+    override __.GetMethodImpl(_name, _bindingFlags, _binder, _callConvention, _types, _modifiers)          = notRequired "TxILGenericParam: GetMethodImpl"
+    override __.GetConstructorImpl(_bindingFlags, _binder, _callConvention, _types, _modifiers)           = notRequired "TxILGenericParam: GetConstructorImpl"
+    override __.GetCustomAttributes(_inherited)                                                            = notRequired "TxILGenericParam: GetCustomAttributes"
+    override __.GetCustomAttributes(_attributeType, _inherited)                                             = notRequired "TxILGenericParam: GetCustomAttributes"
+    override __.IsDefined(_attributeType, _inherited)                                                       = notRequired "TxILGenericParam: IsDefined"
+    override __.GetInterface(_name, _ignoreCase)                                                            = notRequired "TxILGenericParam: GetInterface"
+    override __.Module                                                                                    = notRequired "TxILGenericParam: Module" : Module 
+    override __.GetElementType()                                                                          = notRequired "TxILGenericParam: GetElementType"
+    override __.InvokeMember(_name, _invokeAttr, _binder, _target, _args, _modifiers, _culture, _namedParameters) = notRequired "TxILGenericParam: InvokeMember"
+
 and ReflectTypar(asm: ReflectAssembly, _tp : Typar) =
     inherit Type()
     member __.Metadata = _tp
-    override __.InvokeMember(_name, _invokeAttr, _binder, _target, _args, _modifiers, _culture, _namedParameters) =
-      failwith ""
-    override __.GetMembers(_) =
-      failwith ""  
-    override __.Assembly= 
-      asm :> Assembly
-    override this.AssemblyQualifiedName= 
-      this.FullName + ", " + asm.FullName
-    override __.BaseType= 
-      failwith "" 
-    override __.FullName =
-        _tp.Name
-    override __.GetAttributeFlagsImpl()= 
-      failwith "" 
-    override __.GetConstructorImpl(_,_,_,_,_)= 
-      failwith "" 
-    override __.GetConstructors(_b)= 
-      failwith "" 
-    override __.GetElementType()= 
-      failwith "" 
-    override __.GetEvent(_s, _b) = 
-      failwith "" 
-    override __.GetEvents(_b)= 
-      failwith "" 
-    override __.GetField(_s, _b) = 
-      failwith "" 
-    override __.GetFields(_b)= 
-      failwith "" 
-    override __.GetInterface(_s, _b) = 
-      failwith "" 
-    override __.GetInterfaces()= 
-      failwith "" 
-    override __.GetMethodImpl(_,_,_,_,_,_)= 
-      failwith "" 
-    override __.GetMethods(_b)= 
-      failwith "" 
-    override __.GetNestedType(_s, _b) = 
-      failwith "" 
-    override __.GetNestedTypes(_b)= 
-      failwith "" 
-    override __.GetProperties(_b)= 
-      failwith "" 
-    override __.GetPropertyImpl (_,_,_,_,_,_)= 
-      failwith "" 
-    override __.GUID= 
-      failwith "" 
-    override __.HasElementTypeImpl() =
-        false
-    override __.IsArrayImpl() =
-        false
-    override __.IsByRefImpl() =
-        false
-    override __.IsCOMObjectImpl() =
-        false
-    override __.IsPointerImpl() = 
-        false
-    override __.IsPrimitiveImpl() =
-        false
-    override __.Module : Module= 
-      failwith "" 
-    override __.Namespace=
-        null
-    override __.TypeHandle= 
-      failwith "" 
-    override t.UnderlyingSystemType= 
-      t :> Type 
-    override __.GetCustomAttributes(_b)= 
-      failwith "" 
-    override __.GetCustomAttributes(_,_)= 
-      failwith "" 
-    override __.IsDefined(_,_)= 
-      failwith ""
-    override __.IsGenericParameter =
-      true
-    override __.Name=
-        _tp.Name
+    override __.InvokeMember(_name, _invokeAttr, _binder, _target, _args, _modifiers, _culture, _namedParameters) = failwith ""
+    override __.GetMembers(_) = failwith ""  
+    override __.Assembly= asm :> Assembly
+    override this.AssemblyQualifiedName= this.FullName + ", " + asm.FullName
+    override __.BaseType= failwith "" 
+    override __.FullName =_tp.Name
+    override __.GetAttributeFlagsImpl()= failwith "" 
+    override __.GetConstructorImpl(_,_,_,_,_)= failwith "" 
+    override __.GetConstructors(_b)= failwith "" 
+    override __.GetElementType()= failwith "" 
+    override __.GetEvent(_s, _b) = failwith "" 
+    override __.GetEvents(_b)= failwith "" 
+    override __.GetField(_s, _b) = failwith "" 
+    override __.GetFields(_b)= failwith "" 
+    override __.GetInterface(_s, _b) = failwith "" 
+    override __.GetInterfaces()= failwith "" 
+    override __.GetMethodImpl(_,_,_,_,_,_)= failwith "" 
+    override __.GetMethods(_b)= failwith "" 
+    override __.GetNestedType(_s, _b) = failwith "" 
+    override __.GetNestedTypes(_b)= failwith "" 
+    override __.GetProperties(_b)= failwith "" 
+    override __.GetPropertyImpl (_,_,_,_,_,_)= failwith "" 
+    override __.GUID= failwith "" 
+    override __.HasElementTypeImpl() =false
+    override __.IsArrayImpl() =false
+    override __.IsByRefImpl() =false
+    override __.IsCOMObjectImpl() =false
+    override __.IsPointerImpl() = false
+    override __.IsPrimitiveImpl() =false
+    override __.Module : Module= failwith "" 
+    override __.Namespace=null
+    override __.TypeHandle= failwith "" 
+    override t.UnderlyingSystemType=t :> Type 
+    override __.GetCustomAttributes(_b)= failwith "" 
+    override __.GetCustomAttributes(_,_)= failwith "" 
+    override __.IsDefined(_,_)= failwith ""
+    override __.IsGenericParameter = true
+    override __.Name=_tp.Name
+
+and ReflectConst =
+    static member TxConst (cnst:Const) = 
+        match cnst with 
+        | Const.Bool b -> box b
+        | Const.Byte b -> box b
+        | Const.Char c -> box c
+        | Const.Decimal d -> box d
+        | Const.Double d -> box d
+        | Const.Int16 i -> box i
+        | Const.Int32 i -> box i
+        | Const.Int64 i -> box i
+        | Const.IntPtr i -> box i
+        | Const.SByte sb -> box sb
+        | Const.Single f -> box f
+        | Const.String s -> box s
+        | Const.UInt16 i -> box i
+        | Const.UInt32 i -> box i
+        | Const.UInt64 i -> box i
+        | Const.UIntPtr i -> box i
+        | Const.Unit -> box ()
+        | Const.Zero -> box 0
+
+and ReflectCustomAttribute(asm : ReflectAssembly, tyconRef : TyconRef, exprs) = 
+    inherit CustomAttributeData()
+    let TxCustomAttributesArg (AttribExpr(_,v)) =
+        match v with
+        | Expr.Const (cnst, _, ttype) -> 
+        //TODO: This can probably be removed completly.
+            CustomAttributeTypedArgument(asm.TxTType ttype, ReflectConst.TxConst cnst)
+        | _ -> failwithf "Missing case for CustomAttributesArg %+A" v
+    override __.Constructor =  
+        let constr = 
+            tyconRef.MembersOfFSharpTyconSorted 
+            |> List.find (fun x -> x.IsConstructor)
+        ReflectConstructorDefinition (asm, asm.TxTypeDef None tyconRef, constr) :> ConstructorInfo
+    override __.ConstructorArguments = [| for exp in exprs -> TxCustomAttributesArg exp |] :> IList<_>
+    // Note, named arguments of custom attributes are not required by F# compiler on binding context elements.
+    override __.NamedArguments = [| |] :> IList<_> 
+    static member TxCustomAttributesData (asm : ReflectAssembly, attribs:Attribs) = //notRequired "custom attributes are not available for context assemblies"
+         [| for Attrib(tcref, _, exprs, _, _, _, _) in attribs do 
+              yield ReflectCustomAttribute(asm, tcref, exprs) :> CustomAttributeData |]
+         :> IList<CustomAttributeData>
+
+and
+    [<AllowNullLiteral>]
+    ReflectConstructorDefinition(asm : ReflectAssembly, declTy: Type, inp: ValRef) = 
+        inherit ConstructorInfo()
+            override __.Name = ".ctor"
+            override __.Attributes = notRequired "Attributes" //TODO: Constructor attributes
+            override __.MemberType        = MemberTypes.Constructor
+            override __.DeclaringType = declTy
+
+            override __.GetParameters() = notRequired ".ctor parameters" //TODO: Constructor parameters
+            override __.GetCustomAttributesData() = ReflectCustomAttribute.TxCustomAttributesData (asm, inp.Attribs)
+
+            override __.GetHashCode() = 0
+            override __.Equals(that:obj) = 
+                match that with 
+                | :? ConstructorInfo as that -> 
+                    eqType declTy that.DeclaringType //&&
+                    //TODO: Equality on constructor parameters
+                    //eqParametersAndILParameterTypesWithInst gps (that.GetParameters()) inp.Parameters 
+                | _ -> false
+
+            override __.IsDefined(_attributeType, _inherited) = notRequired "IsDefined" 
+            override __.Invoke(_invokeAttr, _binder, _parameters, _culture) = notRequired "Invoke"
+            override __.Invoke(_obj, _invokeAttr, _binder, _parameters, _culture) = notRequired "Invoke"
+            override __.ReflectedType = notRequired "ReflectedType"
+            override __.GetMethodImplementationFlags() = notRequired "GetMethodImplementationFlags"
+            override __.MethodHandle = notRequired "MethodHandle"
+            override __.GetCustomAttributes(_inherited) = notRequired "GetCustomAttributes"
+            override __.GetCustomAttributes(_attributeType, _inherited) = notRequired "GetCustomAttributes"
+
+            override __.ToString() = sprintf "ctxt constructor(...) in type %s" declTy.FullName
 
 /// Clones namespaces, type providers, types and members provided by tp, renaming namespace nsp1 into namespace nsp2.
+and
+    [<AllowNullLiteral>]
+    ReflectMethodDefinition(declTy: Type, vref: ValRef, asm : ReflectAssembly) =
+    inherit MethodInfo()
+        //TODO: Handle generic parameters
+    let _mi = match vref.ValReprInfo with
+                | None -> failwith ""
+                | Some _mi -> _mi
+
+    let gps = if declTy.IsGenericType then declTy.GetGenericArguments() else [| |]
+    let rec gps2 = 
+        match vref.Type with
+        | TType_forall (pars,_) -> 
+            pars |> List.mapi (fun i gp -> ReflectGenericParam(asm, i + gps.Length, gp) :> Type) |> List.toArray
+        | _ -> [||]
+
+
+    let TxParameter (t : TType) : ParameterInfo =
+        { new ParameterInfo() with
+            member __.ParameterType = asm.TxTType t
+        }
+    
+    let TxMethodAttribute (_vref: ValRef) : MethodAttributes =
+        //TODO: Implement
+        MethodAttributes.Static
+
+    let argTys, retTy = 
+        let rec go = function
+        | TType_fun(args,r) ->
+            let argTys =
+                match args with
+                | TType_tuple(_,ts) -> ts |> Array.ofList
+                | _ -> [|args|]
+            argTys, r
+        | TType_var(v) when v.IsSolved -> go v.Solution.Value
+        | _ -> failwith "Unreachable"
+
+        go vref.Type
+
+    member __.Metadata = vref
+
+    override __.Name              = vref.CompiledName  
+    override __.DeclaringType     = declTy
+    override __.MemberType        = MemberTypes.Method
+    override __.Attributes        =
+        TxMethodAttribute vref
+    override __.GetParameters()   =
+        argTys |> Array.map TxParameter
+    override __.CallingConvention = CallingConventions.HasThis ||| CallingConventions.Standard // Provided types report this by default
+    override __.ReturnType        = retTy |> asm.TxTType
+    override __.GetCustomAttributesData() = ReflectCustomAttribute.TxCustomAttributesData(asm, vref.Attribs)
+    override __.GetGenericArguments() = gps2
+    override __.IsGenericMethod = (gps2.Length <> 0)
+    override __.IsGenericMethodDefinition = __.IsGenericMethod
+
+    override __.GetHashCode() = hash vref.Stamp //TODO: Implement correct hashing  + hashILParameterTypes inp.Parameters
+    override this.Equals(that:obj) = 
+        match that with 
+        | :? MethodInfo as thatMI -> 
+            vref.CompiledName = thatMI.Name 
+            (*
+            TODO: Need to implement equality correctly for method defs
+            &&
+            eqType this.DeclaringType thatMI.DeclaringType &&
+            eqParametersAndILParameterTypesWithInst gps (thatMI.GetParameters()) inp.Parameters *)
+        | _ -> false
+
+    override this.MakeGenericMethod(args) = ReflectMethodSymbol(this, args) :> MethodInfo
+
+    override __.MetadataToken = int vref.Stamp //TODO: Fix me .MetadataToken
+
+    // unused
+    override __.MethodHandle = notRequired "MethodHandle"
+    override __.ReturnParameter = notRequired "ReturnParameter" 
+    override __.IsDefined(_attributeType, _inherited) = notRequired "IsDefined"
+    override __.ReturnTypeCustomAttributes = notRequired "ReturnTypeCustomAttributes"
+    override __.GetBaseDefinition() = notRequired "GetBaseDefinition"
+    override __.GetMethodImplementationFlags() = notRequired "GetMethodImplementationFlags"
+    override __.Invoke(_obj, _invokeAttr, _binder, _parameters, _culture)  = notRequired "Invoke"
+    override __.ReflectedType = notRequired "ReflectedType"
+    override __.GetCustomAttributes(_inherited) = notRequired "GetCustomAttributes"
+    override __.GetCustomAttributes(_attributeType, _inherited) = notRequired "GetCustomAttributes" 
+
+    override __.ToString() = sprintf "ctxt method %s(...) in type %s" vref.CompiledName declTy.FullName
 
 /// Makes a type definition read from a binary available as a System.Type. Not all methods are implemented.
 and ReflectTypeDefinition (asm: ReflectAssembly, declTyOpt: Type option, tcref: TyconRef) as this = 
     inherit Type()
 
     // Note: For F# type providers we never need to view the custom attributes
-    let rec TxCustomAttributesArg (AttribExpr(_,v)) =
-        match v with
-        | Expr.Const (cnst, _, ttype) -> 
-        //TODO: This can probably be removed completly.
-            CustomAttributeTypedArgument(asm.TxTType ttype, TxConst cnst)
-        | _ -> failwithf "Missing case for CustomAttributesArg %+A" v
-
-    and TxCustomAttributesDatum (Attrib(tyconRef, _, exprs,_,_,_,_)) = 
-         { new CustomAttributeData () with
-            member __.Constructor =  
-                tyconRef.MembersOfFSharpTyconSorted 
-                |> List.find (fun x -> x.IsConstructor)
-                |> TxConstructorDef (asm.TxTypeDef None tyconRef)
-            member __.ConstructorArguments = [| for exp in exprs -> TxCustomAttributesArg exp |] :> IList<_>
-            // Note, named arguments of custom attributes are not required by F# compiler on binding context elements.
-            member __.NamedArguments = [| |] :> IList<_> 
-         }
-
-    and TxCustomAttributesData (attribs:Attribs) = //notRequired "custom attributes are not available for context assemblies"
-         [| for a in attribs do 
-              yield TxCustomAttributesDatum a |]
-         :> IList<CustomAttributeData> 
+    let rec TxMethodDef (declTy: Type) (vref: ValRef) =
+        ReflectMethodDefinition(declTy, vref, asm) :> MethodInfo
 
     /// Makes a parameter definition read from a binary available as a ParameterInfo. Not all methods are implemented.
     //let rec TxILParameter gps (inp : TyconRef) = 
@@ -633,92 +804,6 @@ and ReflectTypeDefinition (asm: ReflectAssembly, declTyOpt: Type option, tcref: 
     //        override __.GetCustomAttributesData() = inp.CustomAttrs  |> TxCustomAttributesData
 
     //        override x.ToString() = sprintf "ctxt parameter %s" x.Name }
- 
-    /// Makes a method definition read from a binary available as a ConstructorInfo. Not all methods are implemented.
-    and TxConstructorDef (declTy: Type) (inp: ValRef) = 
-        //let gps = if declTy.IsGenericType then declTy.GetGenericArguments() else [| |]
-        { new ConstructorInfo() with
-
-            override __.Name = ".ctor"
-            override __.Attributes = notRequired "Attributes" //TODO: Constructor attributes
-            override __.MemberType        = MemberTypes.Constructor
-            override __.DeclaringType = declTy
-
-            override __.GetParameters() = notRequired ".ctor parameters" //TODO: Constructor parameters
-            override __.GetCustomAttributesData() = inp.Attribs |> TxCustomAttributesData
-
-            override __.GetHashCode() = 0
-            override __.Equals(that:obj) = 
-                match that with 
-                | :? ConstructorInfo as that -> 
-                    eqType declTy that.DeclaringType //&&
-                    //TODO: Equality on constructor parameters
-                    //eqParametersAndILParameterTypesWithInst gps (that.GetParameters()) inp.Parameters 
-                | _ -> false
-
-            override __.IsDefined(attributeType, inherited) = notRequired "IsDefined" 
-            override __.Invoke(invokeAttr, binder, parameters, culture) = notRequired "Invoke"
-            override __.Invoke(obj, invokeAttr, binder, parameters, culture) = notRequired "Invoke"
-            override __.ReflectedType = notRequired "ReflectedType"
-            override __.GetMethodImplementationFlags() = notRequired "GetMethodImplementationFlags"
-            override __.MethodHandle = notRequired "MethodHandle"
-            override __.GetCustomAttributes(inherited) = notRequired "GetCustomAttributes"
-            override __.GetCustomAttributes(attributeType, inherited) = notRequired "GetCustomAttributes"
-
-            override __.ToString() = sprintf "ctxt constructor(...) in type %s" declTy.FullName }
-
-    /// Makes a method definition read from a binary available as a MethodInfo. Not all methods are implemented.
-    and TxMethodDef (declTy: Type) (vref: ValRef) =
-        //TODO: Handle generic parameters
-        let gps = if declTy.IsGenericType then declTy.GetGenericArguments() else [| |]
-        let rec gps2 = 
-            match vref.Type with
-            | TType_forall (pars,_) -> 
-                pars |> List.mapi (fun i gp -> TxGenericParam (fun () -> gps, gps2) (i + gps.Length) gp) |> List.toArray
-            | _ -> [||]
-        { new MethodInfo() with 
-
-            override __.Name              = vref.CompiledName  
-            override __.DeclaringType     = declTy
-            override __.MemberType        = MemberTypes.Method
-            override __.Attributes        = notRequired "TxMethodDef Attributes" //TODO: TxMethodDef method attributes
-            override __.GetParameters()   = notRequired "TxMethodDef parameters" //TODO: TxMethodDef parameters
-            override __.CallingConvention = CallingConventions.HasThis ||| CallingConventions.Standard // Provided types report this by default
-            override __.ReturnType        = vref.Type |> asm.TxTType
-            override __.GetCustomAttributesData() = vref.Attribs |> TxCustomAttributesData
-            override __.GetGenericArguments() = gps2
-            override __.IsGenericMethod = (gps2.Length <> 0)
-            override __.IsGenericMethodDefinition = __.IsGenericMethod
-
-            override __.GetHashCode() = hash vref.Stamp //TODO: Implement correct hashing  + hashILParameterTypes inp.Parameters
-            override this.Equals(that:obj) = 
-                match that with 
-                | :? MethodInfo as thatMI -> 
-                    vref.CompiledName = thatMI.Name 
-                    (*
-                    TODO: Need to implement equality correctly for method defs
-                    &&
-                    eqType this.DeclaringType thatMI.DeclaringType &&
-                    eqParametersAndILParameterTypesWithInst gps (thatMI.GetParameters()) inp.Parameters *)
-                | _ -> false
-
-            override this.MakeGenericMethod(args) = ReflectMethodSymbol(this, args) :> MethodInfo
-
-            override __.MetadataToken = int vref.Stamp //TODO: Fix me .MetadataToken
-
-            // unused
-            override __.MethodHandle = notRequired "MethodHandle"
-            override __.ReturnParameter = notRequired "ReturnParameter" 
-            override __.IsDefined(attributeType, inherited) = notRequired "IsDefined"
-            override __.ReturnTypeCustomAttributes = notRequired "ReturnTypeCustomAttributes"
-            override __.GetBaseDefinition() = notRequired "GetBaseDefinition"
-            override __.GetMethodImplementationFlags() = notRequired "GetMethodImplementationFlags"
-            override __.Invoke(obj, invokeAttr, binder, parameters, culture)  = notRequired "Invoke"
-            override __.ReflectedType = notRequired "ReflectedType"
-            override __.GetCustomAttributes(inherited) = notRequired "GetCustomAttributes"
-            override __.GetCustomAttributes(attributeType, inherited) = notRequired "GetCustomAttributes" 
-
-            override __.ToString() = sprintf "ctxt method %s(...) in type %s" vref.CompiledName declTy.FullName  }
 
     /// Makes a property definition read from a binary available as a PropertyInfo. Not all methods are implemented.
     and TxPropertyDefinition declTy _ (* gps *) (tycon:TyconRef) (inp: ValRef) = 
@@ -752,7 +837,7 @@ and ReflectTypeDefinition (asm: ReflectAssembly, declTyOpt: Type option, tcref: 
                 tycon.MembersOfFSharpTyconByName.[inp.PropertyName] 
                 |> List.tryFind (fun x -> x.IsPropertySetterMethod)
                 |> fun x -> x.IsSome
-            override __.GetCustomAttributesData() = inp.Attribs |> TxCustomAttributesData
+            override __.GetCustomAttributesData() = ReflectCustomAttribute.TxCustomAttributesData(asm, inp.Attribs)
 
             override this.GetHashCode() = hash inp.CompiledName
             override this.Equals(that:obj) = 
@@ -802,27 +887,6 @@ and ReflectTypeDefinition (asm: ReflectAssembly, declTyOpt: Type option, tcref: 
 
     //        override __.ToString() = sprintf "ctxt event %s(...) in type %s" inp.Name declTy.FullName }
 
-    and TxConst (cnst:Const) = 
-        match cnst with 
-        | Const.Bool b -> box b
-        | Const.Byte b -> box b
-        | Const.Char c -> box c
-        | Const.Decimal d -> box d
-        | Const.Double d -> box d
-        | Const.Int16 i -> box i
-        | Const.Int32 i -> box i
-        | Const.Int64 i -> box i
-        | Const.IntPtr i -> box i
-        | Const.SByte sb -> box sb
-        | Const.Single f -> box f
-        | Const.String s -> box s
-        | Const.UInt16 i -> box i
-        | Const.UInt32 i -> box i
-        | Const.UInt64 i -> box i
-        | Const.UIntPtr i -> box i
-        | Const.Unit -> box ()
-        | Const.Zero -> box 0
-    
     and TxFieldDefinition declTy _ (* gps *) (inp: RecdField) = 
         { new FieldInfo() with 
 
@@ -837,7 +901,7 @@ and ReflectTypeDefinition (asm: ReflectAssembly, declTyOpt: Type option, tcref: 
             override __.MemberType = MemberTypes.Field 
             override __.DeclaringType = declTy
             override __.FieldType = inp.FormalType |> asm.TxTType
-            override __.GetRawConstantValue()  = match inp.LiteralValue with None -> null | Some v -> TxConst v
+            override __.GetRawConstantValue()  = match inp.LiteralValue with None -> null | Some v -> ReflectConst.TxConst v
             override __.GetCustomAttributesData() = [| |] :> IList<_> // notRequired "CustomAttribute data" // inp.FieldAttribs |> TxCustomAttributesData
 
             override __.GetHashCode() = hash inp.Name
@@ -866,80 +930,7 @@ and ReflectTypeDefinition (asm: ReflectAssembly, declTyOpt: Type option, tcref: 
         if cons = null then failwith (sprintf "constructor reference '%+A' not resolved" mref)
         cons
 
-    /// Convert an ILGenericParameterDef read from a binary to a System.Type.
-    and TxGenericParam _ (* gpsf *) pos (inp: Typar) =
-        { new Type() with 
-            override __.Name = inp.Name 
-            override __.Assembly = (asm :> Assembly)
-            override __.FullName = inp.Name
-            override __.IsGenericParameter = true
-            override __.GenericParameterPosition = pos
-            override __.GetGenericParameterConstraints() = [||]
-                //TODO: Implement generic parameter constraints
-                //inp.Constraints |> Array.map (fun x -> x TxILType (gpsf()))
-                    
-            override __.MemberType = enum 0
-
-            override __.Namespace = null //notRequired "Namespace"
-            override __.DeclaringType = notRequired "DeclaringType"
-            override __.BaseType = notRequired "BaseType"
-            override __.GetInterfaces() = notRequired "GetInterfaces"
-
-            override this.GetConstructors(_bindingFlags) = notRequired "GetConstructors"
-            override this.GetMethods(_bindingFlags) = notRequired "GetMethods"
-            override this.GetField(name, _bindingFlags) = notRequired "GetField"
-            override this.GetFields(_bindingFlags) = notRequired "GetFields"
-            override this.GetEvent(name, _bindingFlags) = notRequired "GetEvent"
-            override this.GetEvents(_bindingFlags) = notRequired "GetEvents"
-            override this.GetProperties(_bindingFlags) = notRequired "GetProperties"
-            override this.GetMembers(_bindingFlags) = notRequired "GetMembers"
-            override this.GetNestedTypes(_bindingFlags) = notRequired "GetNestedTypes"
-            override this.GetNestedType(name, _bindingFlags) = notRequired "GetNestedType"
-            override this.GetPropertyImpl(name, _bindingFlags, _binder, _returnType, _types, _modifiers) = notRequired "GetPropertyImpl"
-            override this.MakeGenericType(args) = notRequired "MakeGenericType"
-            override this.MakeArrayType() = ReflectTypeSymbol(ReflectTypeSymbolKind.SDArray, [| this |]) :> Type
-            override this.MakeArrayType arg = ReflectTypeSymbol(ReflectTypeSymbolKind.Array arg, [| this |]) :> Type
-            override this.MakePointerType() = ReflectTypeSymbol(ReflectTypeSymbolKind.Pointer, [| this |]) :> Type
-            override this.MakeByRefType() = ReflectTypeSymbol(ReflectTypeSymbolKind.ByRef, [| this |]) :> Type
-
-            override __.GetAttributeFlagsImpl() = TypeAttributes.Public ||| TypeAttributes.Class ||| TypeAttributes.Sealed 
-
-            override __.IsArrayImpl() = false
-            override __.IsByRefImpl() = false
-            override __.IsPointerImpl() = false
-            override __.IsPrimitiveImpl() = false
-            override __.IsCOMObjectImpl() = false
-            override __.IsGenericType = false
-            override __.IsGenericTypeDefinition = false
-
-            override __.HasElementTypeImpl() = false
-
-            override this.UnderlyingSystemType = this
-            override __.GetCustomAttributesData() = inp.Attribs |> TxCustomAttributesData
-
-            override this.Equals(that:obj) = System.Object.ReferenceEquals (this, that) 
-
-            override __.ToString() = sprintf "ctxt generic param %s" inp.Name 
-
-            override this.AssemblyQualifiedName                                                            = this.FullName + ", " + this.Assembly.FullName
-
-            override __.GetGenericArguments() = notRequired "GetGenericArguments"
-            override __.GetGenericTypeDefinition() = notRequired "GetGenericTypeDefinition"
-            override __.GetMember(name,mt,_bindingFlags)                                                      = notRequired "TxILGenericParam: GetMember"
-            override __.GUID                                                                                      = notRequired "TxILGenericParam: GUID"
-            override __.GetMethodImpl(name, _bindingFlags, binder, callConvention, types, modifiers)          = notRequired "TxILGenericParam: GetMethodImpl"
-            override __.GetConstructorImpl(_bindingFlags, binder, callConvention, types, modifiers)           = notRequired "TxILGenericParam: GetConstructorImpl"
-            override __.GetCustomAttributes(inherited)                                                            = notRequired "TxILGenericParam: GetCustomAttributes"
-            override __.GetCustomAttributes(attributeType, inherited)                                             = notRequired "TxILGenericParam: GetCustomAttributes"
-            override __.IsDefined(attributeType, inherited)                                                       = notRequired "TxILGenericParam: IsDefined"
-            override __.GetInterface(name, ignoreCase)                                                            = notRequired "TxILGenericParam: GetInterface"
-            override __.Module                                                                                    = notRequired "TxILGenericParam: Module" : Module 
-            override __.GetElementType()                                                                          = notRequired "TxILGenericParam: GetElementType"
-            override __.InvokeMember(name, invokeAttr, binder, target, args, modifiers, culture, namedParameters) = notRequired "TxILGenericParam: InvokeMember"
-
-        }
-
-    let rec gps = tcref.TyparsNoRange |> List.mapi (fun i gp -> TxGenericParam (fun () -> gps, [| |]) i gp) |> List.toArray
+    let rec gps = tcref.TyparsNoRange |> List.mapi (fun i gp -> ReflectGenericParam (asm, i, gp) :> Type) |> List.toArray
 
     member this.isNested =
         this.FullName.Contains("+")
@@ -957,12 +948,17 @@ and ReflectTypeDefinition (asm: ReflectAssembly, declTyOpt: Type option, tcref: 
         tcref.CompiledRepresentationForNamedType.FullName
                     
     override __.Namespace =
-        let outerType = tcref.CompiledRepresentationForNamedType.Enclosing.[0]
-        if outerType.Contains(".") then
-            let i = outerType.LastIndexOf('.')
-            outerType.[0..i-1]
+        let enclosing = tcref.CompiledRepresentationForNamedType.Enclosing
+        if enclosing.Length > 0 then
+            let outerType = enclosing.[0]
+            if outerType.Contains(".") then
+                let i = outerType.LastIndexOf('.')
+                outerType.[0..i-1]
+            else
+                null
         else
             null
+
     override __.BaseType = null//inp. |> Option.map (TxILType (gps, [| |])) |> optionToNull
     override __.GetInterfaces() = tcref.ImmediateInterfaceTypesOfFSharpTycon |> List.map asm.TxTType |> List.toArray
 
@@ -976,7 +972,6 @@ and ReflectTypeDefinition (asm: ReflectAssembly, declTyOpt: Type option, tcref: 
         tcref.Deref.entity_tycon_tcaug.tcaug_adhoc_list 
         |> Seq.map (snd >> TxMethodDef this)
         |> Seq.toArray
-        //inp.Methods.Elements |> Array.map (TxILMethodDef this)
 
     override this.GetField(name, _bindingFlags) = 
         tcref.AllFieldTable.FieldByName(name)
@@ -1022,15 +1017,14 @@ and ReflectTypeDefinition (asm: ReflectAssembly, declTyOpt: Type option, tcref: 
     override this.GetNestedTypes(_bindingFlags) = 
         [| match tcref.TypeReprInfo with 
            | TProvidedTypeExtensionPoint info ->
-               ignore info
-               // TODO: nested types in provided types
+                ignore info
                //for nestedType in info.ProvidedType.PApplyArray((fun sty -> sty.GetNestedTypes()), "GetNestedTypes", range0) do 
                //   let nestedTypeName = nestedType.PUntaint((fun t -> t.Name), range0)
-               //
-               //   let nestedTcref = mkNonLocalTyconRef tcref.nlr mkNonLocalTyconRefPreResolved x nlr x.LogicalName
+               
+               //   let nestedTcref = mkNonLocalTyconRef tcref.nlr nestedTypeName
                //   let nestedTcref = LookupTypeNameInEntityMaybeHaveArity (ncenv.amap, m, ad, nestedTypeName, staticResInfo, tcref) 
-               //
-               //  for nestedTcref in nestedTcref do
+               
+               //   for nestedTcref in nestedTcref do
                //      yield  asm.TxTypeDef (Some (this :> Type)) nestedTcref
                 
            | _ -> 
@@ -1051,26 +1045,29 @@ and ReflectTypeDefinition (asm: ReflectAssembly, declTyOpt: Type option, tcref: 
                | None -> null
                | Some entity -> asm.TxTypeDef (Some (this :> Type))  (tcref.NestedTyconRef entity) 
 
-    override this.GetPropertyImpl(_ (* name *), _bindingFlags, _binder, _returnType, (* types *) _, _modifiers) = 
-        //TODO: GetPropertyImpl type by name
-        notRequired "ReflectTypeDefinition : GetPropertyImpl by name"
-        //inp.Properties.Elements 
-        //|> Array.tryPick (fun p -> if p.Name = name then Some (TxPropertyDefinition this gps p) else None) 
-        //|> optionToNull
+    override this.GetPropertyImpl(name, _bindingFlags, _binder, _returnType, expectedTypes, _modifiers) = 
+        let matches (p : PropertyInfo) =
+            let types = p.GetIndexParameters() |> Array.map (fun p -> p.ParameterType)
+            p.Name = name && types = expectedTypes
+        this.GetProperties()
+        |> Array.tryFind matches
+        |> optionToNull
         
-    override this.GetMethodImpl(_ (* name *), _bindingFlags, _binder, _callConvention, (* types *) _, _modifiers) =
-        //TODO: GetMethodImpl type by name
-        notRequired "ReflectTypeDefinition : GetMethodImpl by name"
-        //inp.Methods.FindByNameAndArity(name, types.Length)
-        //|> Array.find (fun md -> eqTypesAndTTypes types md.ParameterTypes)
-        //|> TxILMethodDef this
+    override this.GetMethodImpl( name, _bindingFlags, _binder, _callConvention, expectedTypes, _modifiers) =
+        let matches (p : MethodInfo) =
+            let types = p.GetParameters() |> Array.map (fun p -> p.ParameterType)
+            p.Name = name && types = expectedTypes
+        this.GetMethods()
+        |> Array.tryFind matches
+        |> optionToNull
 
-    override this.GetConstructorImpl(_bindingFlags, _binder, _callConvention, (* types *) _, _modifiers) = 
-        //TODO: GetMethodImpl type by name
-        notRequired "ReflectTypeDefinition : GetConstructorImpl by name"
-        //inp.Methods.FindByNameAndArity(".ctor", types.Length)
-        //|> Array.find (fun md -> eqTypesAndTTypes types md.ParameterTypes)
-        //|> TxILConstructorDef this
+    override this.GetConstructorImpl(_bindingFlags, _binder, _callConvention, expectedTypes, _modifiers) = 
+        let matches (p : ConstructorInfo) =
+            let types = p.GetParameters() |> Array.map (fun p -> p.ParameterType)
+            types = expectedTypes
+        this.GetConstructors()
+        |> Array.tryFind matches
+        |> optionToNull
 
     // Every implementation of System.Type must meaningfully implement these
     override this.MakeGenericType(args) = ReflectTypeSymbol(ReflectTypeSymbolKind.Generic this, args) :> Type
@@ -1175,10 +1172,13 @@ and ReflectTypeDefinition (asm: ReflectAssembly, declTyOpt: Type option, tcref: 
     override this.UnderlyingSystemType = (this :> Type)
     override this.GetCustomAttributesData() =
         let missingAttribs = [this.CompilationMappingAttribute; this.SerializableAttribute] |> List.choose id
-        [| yield! (tcref.Attribs |> TxCustomAttributesData)
+        [| yield! (ReflectCustomAttribute.TxCustomAttributesData(asm, tcref.Attribs))
            yield! missingAttribs |] :> IList<_>
 
-    override this.Equals(that:obj) = System.Object.ReferenceEquals (this, that)  
+    override this.Equals(that:obj) =
+        match that with
+        | :? ReflectTypeDefinition as that -> this.Metadata.Stamp = that.Metadata.Stamp
+        | _ -> false
     override this.GetHashCode() =  hash tcref.CompiledName
     override this.IsAssignableFrom(otherTy) = base.IsAssignableFrom(otherTy) || this.Equals(otherTy)
     override this.IsSubclassOf(otherTy) = base.IsSubclassOf(otherTy) || tcref.IsFSharpDelegateTycon && otherTy = typeof<Delegate> // F# quotations implementation
@@ -1199,7 +1199,7 @@ and ReflectTypeDefinition (asm: ReflectAssembly, declTyOpt: Type option, tcref: 
 
     member x.Metadata = tcref
     member x.MakeMethodInfo (declTy,md) = TxMethodDef declTy md
-    member x.MakeConstructorInfo (declTy,md) = TxConstructorDef declTy md
+    member x.MakeConstructorInfo (declTy,md) = ReflectConstructorDefinition(asm, declTy, md)
 
     member x.isSerializable = true //TODO: Implement
 
