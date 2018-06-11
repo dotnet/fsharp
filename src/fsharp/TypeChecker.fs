@@ -1840,7 +1840,8 @@ let MakeAndPublishSimpleVals cenv env m names mergeNamesInOneNameresEnv =
                         member this.NotifyExprHasType(_, _, _, _, _, _) = assert false // no expr typings in MakeSimpleVals
                         member this.NotifyFormatSpecifierLocation(_, _) = ()
                         member this.NotifyOpenDeclaration(_) = ()
-                        member this.CurrentSource = None } 
+                        member this.CurrentSource = None 
+                        member this.FormatStringCheckContext = None } 
 
                 use _h = WithNewTypecheckResultsSink(sink, cenv.tcSink)
                 MakeSimpleVals cenv env names
@@ -6785,10 +6786,10 @@ and TcConstStringExpr cenv overallTy env m tpenv s  =
       let ty' = mkPrintfFormatTy cenv.g aty bty cty dty ety
       if (not (isObjTy cenv.g overallTy) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy ty') then 
         // Parse the format string to work out the phantom types 
-        let source = match cenv.tcSink.CurrentSink with None -> None | Some sink -> sink.CurrentSource
+        let formatStringCheckContext = match cenv.tcSink.CurrentSink with None -> None | Some sink -> sink.FormatStringCheckContext
         let normalizedString = (s.Replace("\r\n", "\n").Replace("\r", "\n"))
         
-        let (aty', ety'), specifierLocations = (try CheckFormatStrings.ParseFormatString m cenv.g source normalizedString bty cty dty with Failure s -> error (Error(FSComp.SR.tcUnableToParseFormatString(s), m)))
+        let (aty', ety'), specifierLocations = (try CheckFormatStrings.ParseFormatString m cenv.g formatStringCheckContext normalizedString bty cty dty with Failure s -> error (Error(FSComp.SR.tcUnableToParseFormatString(s), m)))
 
         match cenv.tcSink.CurrentSink with 
         | None -> () 

@@ -4343,6 +4343,6 @@
     <value>A type annotated with IsReadOnly must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</value>
   </data>
   <data name="chkStructsMayNotReturnAddressesOfContents" xml:space="preserve">
-    <value>Struct members cannot return 'this' or fields by reference</value>
+    <value>Struct members cannot return the address of fields of the struct by reference</value>
   </data>
 </root>

@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
-        <target state="needs-review-translation">Todas las ramas de una expresión de coincidencia de patrones deben tener el mismo tipo. Se esperaba que esta expresión tuviera el tipo "{0}", pero aquí tiene el tipo "{1}".</target>
+        <target state="translated">Todas las ramas de una expresión de coincidencia de patrón deben devolver valores del mismo tipo. La primera rama devolvió un valor de tipo "{0}", pero esta rama devolvió un valor de tipo "\{1 \}".</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -5434,7 +5434,7 @@
       </trans-unit>
       <trans-unit id="fscBadAssemblyVersion">
         <source>The attribute {0} specified version '{1}', but this value is invalid and has been ignored</source>
-        <target state="translated">Un {0} ha especificado la versión "{1}", pero este valor no es válido y se ha omitido</target>
+        <target state="translated">El atributo {0} ha especificado la versión "{1}", pero este valor no es válido y se ha omitido</target>
         <note />
       </trans-unit>
       <trans-unit id="fscTwoResourceManifests">
@@ -6979,7 +6979,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionMatchBang">
         <source>Used in computation expressions to pattern match directly over the result of another computation expression.</source>
-        <target state="new">Used in computation expressions to pattern match directly over the result of another computation expression.</target>
+        <target state="translated">Se utiliza en expresiones de cálculo para hacer coincidir patrones directamente sobre el resultado de otra expresión de cálculo.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilreadFileChanged">

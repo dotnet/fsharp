@@ -143,7 +143,7 @@ type FSLibPaths =
     { FSCOREDLLPATH : string }
 
 let requireFile nm = 
-    if Commands.fileExists __SOURCE_DIRECTORY__ nm |> Option.isSome then nm else failwith (sprintf "couldn't find %s" nm)
+    if Commands.fileExists __SOURCE_DIRECTORY__ nm |> Option.isSome then nm else failwith (sprintf "couldn't find %s. Running 'build test' once might solve this issue" nm)
 
 let config configurationName envVars =
 

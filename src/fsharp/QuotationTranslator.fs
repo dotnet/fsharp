@@ -260,8 +260,9 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
         // Check to see if there aren't enough arguments or if there is a tuple-arity mismatch
         // If so, adjust and try again
-        if curriedArgs.Length < curriedArgInfos.Length ||
-           ((List.truncate curriedArgInfos.Length curriedArgs,curriedArgInfos) ||> List.exists2 (fun arg argInfo -> 
+        let nCurriedArgInfos = curriedArgInfos.Length
+        if curriedArgs.Length < nCurriedArgInfos ||
+           ((List.truncate nCurriedArgInfos curriedArgs,curriedArgInfos) ||> List.exists2 (fun arg argInfo -> 
                        (argInfo.Length > (tryDestRefTupleExpr arg).Length)))
         then
             if verboseCReflect then 
@@ -277,7 +278,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             ConvExpr cenv env (MakeApplicationAndBetaReduce cenv.g (expr,exprty,[tyargs],curriedArgs,m)) 
         else
             // Too many arguments? Chop 
-            let (curriedArgs:Expr list ),laterArgs = List.splitAt curriedArgInfos.Length curriedArgs 
+            let (curriedArgs:Expr list ),laterArgs = List.splitAt nCurriedArgInfos curriedArgs 
 
             let callR = 
                 // We now have the right number of arguments, w.r.t. currying and tupling.

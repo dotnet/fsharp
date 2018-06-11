@@ -56,7 +56,7 @@
   <Import Project="FSharpSource.Profiles.targets" />
 
   <PropertyGroup Condition="'$(TargetDotnetProfile)'=='net40'">
-    <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v4.6</TargetFrameworkVersion>
     <TargetFrameworkProfile></TargetFrameworkProfile>
     <!-- MSbuild works out the assembly references -->
   </PropertyGroup>

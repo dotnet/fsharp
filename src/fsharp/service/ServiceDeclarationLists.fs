@@ -548,6 +548,8 @@ type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: strin
 /// A table of declarations for Intellisense completion 
 [<Sealed>]
 type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForType: bool, isError: bool) = 
+    static let fsharpNamespace = [|"Microsoft"; "FSharp"|]
+
     member __.Items = declarations
     member __.IsForType = isForType
     member __.IsError = isError
@@ -650,22 +652,26 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
                             | Some _ -> displayName
                             | None -> Lexhelp.Keywords.QuoteIdentifierIfNeeded displayName
 
-                    let isAttribute = SymbolHelpers.IsAttribute infoReader item.Item
-                    
+                    let isAttributeItem = lazy (SymbolHelpers.IsAttribute infoReader item.Item)
+
                     let cutAttributeSuffix (name: string) =
-                        if isAttributeApplicationContext && isAttribute && name <> "Attribute" && name.EndsWith "Attribute" then
+                        if isAttributeApplicationContext && name <> "Attribute" && name.EndsWith "Attribute" && isAttributeItem.Value then
                             name.[0..name.Length - "Attribute".Length - 1]
                         else name
 
                     let name = cutAttributeSuffix name
                     let nameInCode = cutAttributeSuffix nameInCode
-                    let fullName = SymbolHelpers.FullNameOfItem g item.Item
+                    
+                    let fullName = 
+                        match item.Unresolved with
+                        | Some x -> x.FullName
+                        | None -> SymbolHelpers.FullNameOfItem g item.Item
                     
                     let namespaceToOpen = 
                         item.Unresolved 
                         |> Option.map (fun x -> x.Namespace)
                         |> Option.bind (fun ns ->
-                            if ns |> Array.startsWith [|"Microsoft"; "FSharp"|] then None
+                            if ns |> Array.startsWith fsharpNamespace then None
                             else Some ns)
                         |> Option.map (fun ns ->
                             match currentNamespaceOrModule with
@@ -676,7 +682,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
                             | None -> ns)
                         |> Option.bind (function
                             | [||] -> None
-                            | ns -> Some (ns |> String.concat "."))
+                            | ns -> Some (System.String.Join(".", ns)))
 
                     FSharpDeclarationListItem(
                         name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), getAccessibility item.Item, 
