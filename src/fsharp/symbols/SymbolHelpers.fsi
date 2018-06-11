@@ -114,7 +114,6 @@ type public CompletionItemKind =
     | Event
     | Argument
     | CustomOperation
-    | ActivePattern
     | Other
 
 type UnresolvedSymbol =

@@ -576,7 +576,6 @@ type TypeCheckInfo
             | Item.Property _ -> CompletionItemKind.Property
             | Item.Event _ -> CompletionItemKind.Event
             | Item.ILField _ 
-            | Item.Value _ when IsActivePatternName item.Item.DisplayName -> CompletionItemKind.ActivePattern
             | Item.Value _ -> CompletionItemKind.Field
             | Item.CustomOperation _ -> CompletionItemKind.CustomOperation
             | _ -> CompletionItemKind.Other

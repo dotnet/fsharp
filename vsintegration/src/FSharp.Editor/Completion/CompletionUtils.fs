@@ -110,4 +110,3 @@ module internal CompletionUtils =
         | CompletionItemKind.Argument -> 5
         | CompletionItemKind.Other -> 6
         | CompletionItemKind.Method (isExtension = true) -> 7
-        | CompletionItemKind.ActivePattern -> 8

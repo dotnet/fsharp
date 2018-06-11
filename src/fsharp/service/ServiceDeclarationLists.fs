@@ -623,10 +623,16 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
                 match items |> List.map (fun x -> x.Item) with
                 | [Item.Value _ | Item.MethodGroup _ | Item.UnionCase _] -> IsOperatorName name
                 | _ -> false              
+            
+            let isActivePatternItem (items: CompletionItem list) =
+                match items |> List.map (fun x -> x.Item) with
+                | [Item.Value vref] -> IsActivePatternName vref.CompiledName
+                | _ -> false
+            
             items |> List.filter (fun (displayName, items) -> 
                 not (isOperatorItem(displayName, items)) && 
                 not (displayName = "[]") && // list shows up as a Type and a UnionCase, only such entity with a symbolic name, but want to filter out of intellisense
-                not (IsActivePatternName (DecompileOpName displayName))) 
+                not (isActivePatternItem items))
                     
         let decls = 
             items 
