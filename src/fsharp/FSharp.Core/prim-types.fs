@@ -1561,10 +1561,6 @@ namespace Microsoft.FSharp.Core
                     override iec.Equals(x:obj,y:obj) = GenericEqualityObj true iec (x,y)  // ER Semantics
                     override iec.GetHashCode(x:obj) = raise (InvalidOperationException (SR.GetString(SR.notUsedForHashing))) }
 
-            type IERorPER = interface end
-            type ER = inherit IERorPER
-            type PER = inherit IERorPER
-
             let canUseDefaultEqualityComparer (ty:Type) =
                 let processed = System.Collections.Generic.HashSet ()
 
@@ -1630,12 +1626,7 @@ namespace Microsoft.FSharp.Core
                 | true, ty when ty.Equals typeof<float32>  -> box (GenericEqualityTCall<float32>    (fun x y -> (# "ceq" x y : bool #) || (not ((# "ceq" x x : bool #) || (# "ceq" y y : bool #)))))
                 | _ -> null
 
-            let getGenericEquality<'T, 'ERorPER when 'ERorPER :> IERorPER> () =
-                let er =
-                    if typeof<'ERorPER>.Equals typeof<ER> then true
-                    elif typeof<'ERorPER>.Equals typeof<PER> then false
-                    else raise (Exception "logic error")
-
+            let getGenericEquality<'T> er =
                 match tryGetGenericEqualityTCall er typeof<'T> with
                 | :? GenericEqualityTCall<'T> as call -> call
                 | _ when canUseDefaultEqualityComparer typeof<'T> -> 
@@ -1646,16 +1637,20 @@ namespace Microsoft.FSharp.Core
                 | _ ->
                     GenericEqualityTCall<'T> (fun x y -> GenericEqualityObj false fsEqualityComparerNoHashingPER (box x, box y))
 
-            type GenericEqualityT<'T, 'ERorPER when 'ERorPER :> IERorPER> private () =
-                static let f = getGenericEquality<'T, 'ERorPER> ()
-                static member Function = f
+            type GenericEqualityT_ER<'T> private () =
+                static let f = getGenericEquality<'T> true
+                static member inline Equals (x, y) = f.Invoke (x, y)
+
+            type GenericEqualityT_PER<'T> private () =
+                static let f = getGenericEquality<'T> false
+                static member inline Equals (x, y) = f.Invoke (x, y)
 
             /// Implements generic equality between two values, with PER semantics for NaN (so equality on two NaN values returns false)
             //
             // The compiler optimizer is aware of this function  (see use of generic_equality_per_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T".
             let GenericEqualityIntrinsic (x : 'T) (y : 'T) : bool = 
-                avoid_tail_call_bool (fun () -> GenericEqualityT<'T, PER>.Function.Invoke (x, y))
+                avoid_tail_call_bool (fun () -> GenericEqualityT_PER<'T>.Equals (x, y))
                 
             /// Implements generic equality between two values, with ER semantics for NaN (so equality on two NaN values returns true)
             //
@@ -1664,7 +1659,7 @@ namespace Microsoft.FSharp.Core
             // The compiler optimizer is aware of this function (see use of generic_equality_er_inner_vref in opt.fs)
             // and devirtualizes calls to it based on "T".
             let GenericEqualityERIntrinsic (x : 'T) (y : 'T) : bool =
-                avoid_tail_call_bool (fun () -> GenericEqualityT<'T, ER>.Function.Invoke (x, y))
+                avoid_tail_call_bool (fun () -> GenericEqualityT_ER<'T>.Equals (x, y))
                 
             /// Implements generic equality between two values using "comp" for recursive calls.
             //
@@ -1673,9 +1668,9 @@ namespace Microsoft.FSharp.Core
             // is either fsEqualityComparerNoHashingER or fsEqualityComparerNoHashingPER.
             let GenericEqualityWithComparerIntrinsic (comp : System.Collections.IEqualityComparer) (x : 'T) (y : 'T) : bool =
                 if obj.ReferenceEquals (comp, fsEqualityComparerUnlimitedHashingPER) || obj.ReferenceEquals (comp, fsEqualityComparerNoHashingPER) then
-                    avoid_tail_call_bool (fun () -> GenericEqualityT<'T, PER>.Function.Invoke (x, y))
+                    avoid_tail_call_bool (fun () -> GenericEqualityT_PER<'T>.Equals (x, y))
                 elif obj.ReferenceEquals (comp, fsEqualityComparerNoHashingER) then
-                    avoid_tail_call_bool (fun () -> GenericEqualityT<'T, ER>.Function.Invoke (x, y))
+                    avoid_tail_call_bool (fun () -> GenericEqualityT_ER<'T>.Equals (x, y))
                 else
                     comp.Equals (box x, box y)
 
@@ -1923,14 +1918,14 @@ namespace Microsoft.FSharp.Core
 
             type GenericHashT<'T> private () =
                 static let f = getGenericHashTCall<'T> ()
-                static member Function = f
+                static member inline GetHashCode x = f.Invoke x
 
             /// Intrinsic for calls to depth-unlimited structural hashing that were not optimized by static conditionals.
             //
             // NOTE: The compiler optimizer is aware of this function (see uses of generic_hash_inner_vref in opt.fs)
             // and devirtualizes calls to it based on type "T".
             let GenericHashIntrinsic input =
-                avoid_tail_call_int (fun () -> GenericHashT<'T>.Function.Invoke input)
+                avoid_tail_call_int (fun () -> GenericHashT<'T>.GetHashCode input)
 
             /// Intrinsic for calls to depth-limited structural hashing that were not optimized by static conditionals.
             let LimitedGenericHashIntrinsic limit input = GenericHashParamObj (CountLimitedHasherPER(limit)) (box input)
@@ -1944,7 +1939,7 @@ namespace Microsoft.FSharp.Core
             // and devirtualizes calls to it based on type "T".
             let GenericHashWithComparerIntrinsic<'T> (comp : System.Collections.IEqualityComparer) (input : 'T) : int =
                 if obj.ReferenceEquals (comp, fsEqualityComparerUnlimitedHashingPER) then
-                    avoid_tail_call_int (fun () -> GenericHashT<'T>.Function.Invoke input)
+                    avoid_tail_call_int (fun () -> GenericHashT<'T>.GetHashCode input)
                 else
                     GenericHashParamObj comp (box input)
                 
