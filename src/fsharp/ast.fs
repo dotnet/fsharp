@@ -557,7 +557,7 @@ and
     | MatchLambda of isExnMatch:bool * range * SynMatchClause list * matchSeqPoint:SequencePointInfoForBinding * range:range
 
     /// F# syntax: match expr with pat1 -> expr | ... | patN -> exprN
-    | Match of  matchSeqPoint:SequencePointInfoForBinding * expr:SynExpr * clauses:SynMatchClause list * isExnMatch:bool * range:range (* bool indicates if this is an exception match in a computation expression which throws unmatched exceptions *)
+    | Match of  matchSeqPoint:SequencePointInfoForBinding * expr:SynExpr * clauses:SynMatchClause list * range:range (* bool indicates if this is an exception match in a computation expression which throws unmatched exceptions *)
 
     /// F# syntax: do expr
     | Do of  expr:SynExpr * range:range
@@ -696,7 +696,7 @@ and
     | LetOrUseBang    of bindSeqPoint:SequencePointInfoForBinding * isUse:bool * isFromSource:bool * SynPat * SynExpr * SynExpr * range:range
 
     /// F# syntax: match! expr with pat1 -> expr | ... | patN -> exprN
-    | MatchBang of  matchSeqPoint:SequencePointInfoForBinding * expr:SynExpr * clauses:SynMatchClause list * isExnMatch:bool * range:range (* bool indicates if this is an exception match in a computation expression which throws unmatched exceptions *)
+    | MatchBang of  matchSeqPoint:SequencePointInfoForBinding * expr:SynExpr * clauses:SynMatchClause list * range:range (* bool indicates if this is an exception match in a computation expression which throws unmatched exceptions *)
 
     /// F# syntax: do! expr
     /// Computation expressions only
@@ -1702,7 +1702,7 @@ let rec SimplePatOfPat (synArgNameGenerator: SynArgNameGenerator) p =
         SynSimplePat.Id (id,altNameRefCell,isCompGen,false,false,id.idRange),
         Some (fun e ->
                 let clause = Clause(p,None,e,m,SuppressSequencePointAtTarget)
-                SynExpr.Match(NoSequencePointAtInvisibleBinding,item,[clause],false,clause.Range))
+                SynExpr.Match(NoSequencePointAtInvisibleBinding,item,[clause],clause.Range))
 
 let appFunOpt funOpt x = match funOpt with None -> x | Some f -> f x
 let composeFunOpt funOpt1 funOpt2 = match funOpt2 with None -> funOpt1 | Some f -> Some (fun x -> appFunOpt funOpt1 (f x))
@@ -2401,7 +2401,7 @@ let rec synExprContainsError inpExpr =
               walkMatchClauses cl
           | SynExpr.Lambda (_,_,_,e,_) ->
               walkExpr e
-          | SynExpr.Match (_,e,cl,_,_) ->
+          | SynExpr.Match (_,e,cl,_) ->
               walkExpr e || walkMatchClauses cl
           | SynExpr.LetOrUse (_,_,bs,e,_) ->
               walkBinds bs || walkExpr e
@@ -2423,7 +2423,7 @@ let rec synExprContainsError inpExpr =
           | SynExpr.DotNamedIndexedPropertySet (e1,_,e2,e3,_) ->
               walkExpr e1 || walkExpr e2 || walkExpr e3
 
-          | SynExpr.MatchBang (_,e,cl,_,_) ->
+          | SynExpr.MatchBang (_,e,cl,_) ->
               walkExpr e || walkMatchClauses cl
           | SynExpr.LetOrUseBang  (_,_,_,_,e1,e2,_) ->
               walkExpr e1 || walkExpr e2

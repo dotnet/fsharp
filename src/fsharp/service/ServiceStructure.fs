@@ -258,7 +258,9 @@ module Structure =
             | SynExpr.LetOrUse (_,_,bindings, body, _) ->
                 parseBindings bindings
                 parseExpr body
-            | SynExpr.Match (seqPointAtBinding,_expr,clauses,_,r) ->
+            | SynExpr.MatchBang (seqPointAtBinding,expr,clauses,r)
+            | SynExpr.Match (seqPointAtBinding,expr,clauses,r) ->
+                parseExpr expr
                 match seqPointAtBinding with
                 | SequencePointAtBinding sr ->
                     let collapse = Range.endToEnd sr r
