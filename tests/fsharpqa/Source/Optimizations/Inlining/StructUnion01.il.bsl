@@ -32,13 +32,13 @@
   // Offset: 0x00000888 Length: 0x00000421
 }
 .module StructUnion01.dll
-// MVID: {5B1B0AE8-D3E9-6B24-A745-0383E80A1B5B}
+// MVID: {5B1ED843-D3E9-6B24-A745-038343D81E5B}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01340000
+// Image base: 0x017F0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -591,60 +591,48 @@
 
   .method public static int32  f1(valuetype StructUnion01/U& x) cil managed
   {
-    // Code size       23 (0x17)
-    .maxstack  4
-    .locals init (valuetype StructUnion01/U V_0)
+    // Code size       14 (0xe)
+    .maxstack  8
     IL_0000:  ldarg.0
-    IL_0001:  ldobj      StructUnion01/U
-    IL_0006:  stloc.0
-    IL_0007:  ldloca.s   V_0
-    IL_0009:  ldfld      int32 StructUnion01/U::item1
-    IL_000e:  ldloca.s   V_0
-    IL_0010:  ldfld      int32 StructUnion01/U::item2
-    IL_0015:  add
-    IL_0016:  ret
+    IL_0001:  ldfld      int32 StructUnion01/U::item1
+    IL_0006:  ldarg.0
+    IL_0007:  ldfld      int32 StructUnion01/U::item2
+    IL_000c:  add
+    IL_000d:  ret
   } // end of method StructUnion01::f1
 
   .method public static int32  f2(valuetype StructUnion01/U& x) cil managed
   {
-    // Code size       23 (0x17)
-    .maxstack  4
-    .locals init (valuetype StructUnion01/U V_0)
+    // Code size       14 (0xe)
+    .maxstack  8
     IL_0000:  ldarg.0
-    IL_0001:  ldobj      StructUnion01/U
-    IL_0006:  stloc.0
-    IL_0007:  ldloca.s   V_0
-    IL_0009:  ldfld      int32 StructUnion01/U::item1
-    IL_000e:  ldloca.s   V_0
-    IL_0010:  ldfld      int32 StructUnion01/U::item2
-    IL_0015:  add
-    IL_0016:  ret
+    IL_0001:  ldfld      int32 StructUnion01/U::item1
+    IL_0006:  ldarg.0
+    IL_0007:  ldfld      int32 StructUnion01/U::item2
+    IL_000c:  add
+    IL_000d:  ret
   } // end of method StructUnion01::f2
 
   .method public static int32  f3(valuetype StructUnion01/U& x) cil managed
   {
-    // Code size       49 (0x31)
-    .maxstack  4
-    .locals init (valuetype StructUnion01/U V_0)
+    // Code size       38 (0x26)
+    .maxstack  8
     IL_0000:  ldarg.0
-    IL_0001:  ldobj      StructUnion01/U
-    IL_0006:  stloc.0
-    IL_0007:  ldloca.s   V_0
-    IL_0009:  ldfld      int32 StructUnion01/U::item1
-    IL_000e:  ldc.i4.3
-    IL_000f:  sub
-    IL_0010:  switch     ( 
-                          IL_0029)
-    IL_0019:  ldloca.s   V_0
-    IL_001b:  ldfld      int32 StructUnion01/U::item1
-    IL_0020:  ldloca.s   V_0
-    IL_0022:  ldfld      int32 StructUnion01/U::item2
-    IL_0027:  add
-    IL_0028:  ret
+    IL_0001:  ldfld      int32 StructUnion01/U::item1
+    IL_0006:  ldc.i4.3
+    IL_0007:  sub
+    IL_0008:  switch     ( 
+                          IL_001f)
+    IL_0011:  ldarg.0
+    IL_0012:  ldfld      int32 StructUnion01/U::item1
+    IL_0017:  ldarg.0
+    IL_0018:  ldfld      int32 StructUnion01/U::item2
+    IL_001d:  add
+    IL_001e:  ret
 
-    IL_0029:  ldloca.s   V_0
-    IL_002b:  ldfld      int32 StructUnion01/U::item2
-    IL_0030:  ret
+    IL_001f:  ldarg.0
+    IL_0020:  ldfld      int32 StructUnion01/U::item2
+    IL_0025:  ret
   } // end of method StructUnion01::f3
 
   .method public static int32  f4(valuetype StructUnion01/U& x,
