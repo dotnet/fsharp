@@ -1346,19 +1346,23 @@ let tyconRefDefnHash (_g: TcGlobals) (eref1:EntityRef) =
     hash eref1.LogicalName 
 
 let tyconRefDefnEq g (eref1:EntityRef) (eref2: EntityRef) =
-    tyconRefEq g eref1 eref2 
-    // Signature items considered equal to implementation items
-    || ((eref1.DefinitionRange = eref2.DefinitionRange || eref1.SigRange = eref2.SigRange) &&
-        (eref1.LogicalName = eref2.LogicalName))
+    tyconRefEq g eref1 eref2 || 
 
-let valRefDefnHash (_g: TcGlobals) (vref1:ValRef)=
+    // Signature items considered equal to implementation items
+    eref1.DefinitionRange <> Range.rangeStartup && eref1.DefinitionRange <> Range.range0 && eref1.DefinitionRange <> Range.rangeCmdArgs &&
+    (eref1.DefinitionRange = eref2.DefinitionRange || eref1.SigRange = eref2.SigRange) &&
+    eref1.LogicalName = eref2.LogicalName
+
+let valRefDefnHash (_g: TcGlobals) (vref1:ValRef) =
     hash vref1.DisplayName
 
 let valRefDefnEq g (vref1:ValRef) (vref2: ValRef) =
-    valRefEq g vref1 vref2 
+    valRefEq g vref1 vref2 ||
+
     // Signature items considered equal to implementation items
-    || ((vref1.DefinitionRange = vref2.DefinitionRange || vref1.SigRange = vref2.SigRange)) && 
-        (vref1.LogicalName = vref2.LogicalName)
+    vref1.DefinitionRange <> Range.rangeStartup && vref1.DefinitionRange <> Range.range0 && vref1.DefinitionRange <> Range.rangeCmdArgs &&
+    (vref1.DefinitionRange = vref2.DefinitionRange || vref1.SigRange = vref2.SigRange) && 
+    vref1.LogicalName = vref2.LogicalName
 
 let unionCaseRefDefnEq g (uc1:UnionCaseRef) (uc2: UnionCaseRef) =
     uc1.CaseName = uc2.CaseName && tyconRefDefnEq g uc1.TyconRef uc2.TyconRef
