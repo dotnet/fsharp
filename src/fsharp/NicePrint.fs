@@ -71,7 +71,7 @@ module internal PrintUtilities =
                     tcref.DisplayName // has no static params
                 else
                     tcref.DisplayName+"<...>" // shorten
-            if isAttribute && name.EndsWith "Attribute" then
+            if isAttribute && name.EndsWithOrdinal("Attribute") then
                 String.dropSuffix name "Attribute"
             else 
                 name
@@ -655,7 +655,7 @@ module private PrintTypes =
         | ILAttrib ilMethRef -> 
             let trimmedName = 
                 let name = ilMethRef.DeclaringTypeRef.Name
-                if name.EndsWith "Attribute" then
+                if name.EndsWithOrdinal("Attribute") then
                     String.dropSuffix name "Attribute"
                 else
                     name

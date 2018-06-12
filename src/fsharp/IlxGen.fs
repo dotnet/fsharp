@@ -5281,9 +5281,9 @@ and GenMethodForBinding
 
         let mdef = 
             if // operator names
-               mdef.Name.StartsWith("op_",System.StringComparison.Ordinal) || 
+               mdef.Name.StartsWithOrdinal("op_") || 
                // active pattern names
-               mdef.Name.StartsWith("|",System.StringComparison.Ordinal) ||
+               mdef.Name.StartsWithOrdinal("|") ||
                // event add/remove method
                v.val_flags.IsGeneratedEventVal then
                 mdef.WithSpecialName
