@@ -2890,7 +2890,7 @@ let rec ResolveTypeLongIdentPrim sink (ncenv:NameResolver) occurence first fully
                             | ItemOccurence.UseInAttribute -> 
                                 [yield e.Value.DisplayName
                                  yield e.Value.DemangledModuleOrNamespaceName
-                                 if e.Value.DisplayName.EndsWith "Attribute" then
+                                 if e.Value.DisplayName.EndsWithOrdinal("Attribute") then
                                      yield e.Value.DisplayName.Replace("Attribute","")]
                             | _ -> [e.Value.DisplayName; e.Value.DemangledModuleOrNamespaceName])
                         |> HashSet
@@ -3598,7 +3598,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
                 if methsWithStaticParams.IsEmpty then minfos
                 else minfos |> List.filter (fun minfo -> 
                         let nm = minfo.LogicalName
-                        not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWith(m))))
+                        not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWithOrdinal(m))))
 #endif
 
             minfos 
@@ -4227,7 +4227,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
                         if methsWithStaticParams.IsEmpty then minfos
                         else minfos |> List.filter (fun minfo -> 
                                 let nm = minfo.LogicalName
-                                not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWith(m))))
+                                not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWithOrdinal(m))))
         #endif
         
                     minfos 

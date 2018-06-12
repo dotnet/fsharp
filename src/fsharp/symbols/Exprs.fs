@@ -183,7 +183,7 @@ module FSharpExprConvert =
         rfref.RecdField.IsCompilerGenerated && 
         rfref.RecdField.IsStatic &&
         rfref.RecdField.IsMutable &&
-        rfref.RecdField.Name.StartsWith "init" 
+        rfref.RecdField.Name.StartsWithOrdinal("init") 
 
         // Match "if [AI_clt](init@41, 6) then IntrinsicFunctions.FailStaticInit () else ()"
     let (|StaticInitializationCheck|_|) e = 
@@ -857,8 +857,8 @@ module FSharpExprConvert =
     and ConvILCall (cenv:SymbolEnv) env (isNewObj, valUseFlags, ilMethRef, enclTypeArgs, methTypeArgs, callArgs, m) =
         let isNewObj = (isNewObj || (match valUseFlags with CtorValUsedAsSuperInit | CtorValUsedAsSelfInit -> true | _ -> false))
         let methName = ilMethRef.Name
-        let isPropGet = methName.StartsWith("get_", System.StringComparison.Ordinal)
-        let isPropSet = methName.StartsWith("set_", System.StringComparison.Ordinal)
+        let isPropGet = methName.StartsWithOrdinal("get_")
+        let isPropSet = methName.StartsWithOrdinal("set_")
         let isProp = isPropGet || isPropSet
         
         let tcref, subClass = 
@@ -916,8 +916,8 @@ module FSharpExprConvert =
                         let vr = VRefLocal v
                         makeFSCall isMember vr
                     | [] ->
-                        let isPropGet = vName.StartsWith("get_", System.StringComparison.Ordinal)
-                        let isPropSet = vName.StartsWith("set_", System.StringComparison.Ordinal)
+                        let isPropGet = vName.StartsWithOrdinal("get_")
+                        let isPropSet = vName.StartsWithOrdinal("set_")
                         if isPropGet || isPropSet then
                             let name = PrettyNaming.ChopPropertyName vName          
                             let findByName =
@@ -956,12 +956,12 @@ module FSharpExprConvert =
                     if vName = "GetTag" || vName = "get_Tag" then
                         let objR = ConvExpr cenv env callArgs.Head
                         E.UnionCaseTag(objR, typR) 
-                    elif vName.StartsWith("New") then
+                    elif vName.StartsWithOrdinal("New") then
                         let name = vName.Substring(3)
                         let mkR = ConvUnionCaseRef cenv (UCRef(tcref, name))
                         let argsR = ConvExprs cenv env callArgs
                         E.NewUnionCase(typR, mkR, argsR)
-                    elif vName.StartsWith("Is") then
+                    elif vName.StartsWithOrdinal("Is") then
                         let name = vName.Substring(2)
                         let mkR = ConvUnionCaseRef cenv (UCRef(tcref, name))
                         let objR = ConvExpr cenv env callArgs.Head

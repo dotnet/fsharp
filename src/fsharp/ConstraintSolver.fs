@@ -1254,8 +1254,8 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
 
           // First look for a solution by a record property
           let recdPropSearch = 
-              let isGetProp = nm.StartsWith "get_" 
-              let isSetProp = nm.StartsWith "set_" 
+              let isGetProp = nm.StartsWithOrdinal("get_") 
+              let isSetProp = nm.StartsWithOrdinal("set_") 
               if argtys.IsEmpty && isGetProp || isSetProp then 
                   let propName = nm.[4..]
                   let props = 
