@@ -499,9 +499,9 @@ let CheckType permitByRefLike (cenv:cenv) env m ty =
             match permitByRefLike with
             | PermitByRefType.None when isByrefLikeTyconRef cenv.g m tcref ->
                 errorR(Error(FSComp.SR.chkErrorUseOfByref(), m))
-            | PermitByRefType.OuterSpanLike when isInner && isByrefTyconRef cenv.g tcref ->
+            | PermitByRefType.OuterSpanLike when (isInner && isByrefTyconRef cenv.g tcref) || not (isSpanLikeTyconRef cenv.g m tcref) ->
                 errorR(Error(FSComp.SR.chkErrorUseOfByref(), m))
-            | PermitByRefType.OuterByRefLike when isInner && isByrefLikeTyconRef cenv.g m tcref ->
+            | PermitByRefType.OuterByRefLike when isInner && isByrefTyconRef cenv.g tcref ->
                 errorR(Error(FSComp.SR.chkErrorUseOfByref(), m))
             | _ -> ()
 

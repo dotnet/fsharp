@@ -1451,6 +1451,7 @@ val destNativePtrTy : TcGlobals -> TType -> TType
 
 val isByrefTyconRef : TcGlobals -> TyconRef -> bool
 val isByrefLikeTyconRef : TcGlobals -> range -> TyconRef -> bool
+val isSpanLikeTyconRef : TcGlobals -> range -> TyconRef -> bool
 val isByrefLikeTy : TcGlobals -> range -> TType -> bool
 
 /// Check if the type is a byref-like but not a byref.

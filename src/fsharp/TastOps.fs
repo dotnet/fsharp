@@ -2956,6 +2956,10 @@ let isByrefLikeTyconRef (g: TcGlobals) m (tcref: TyconRef) =
        tcref.SetIsByRefLike res
        res
 
+let isSpanLikeTyconRef g m tcref =
+    isByrefLikeTyconRef g m tcref &&
+    not (isByrefTyconRef g tcref)
+
 let isByrefLikeTy g m ty = 
     ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isByrefLikeTyconRef g m tcref          | _ -> false) 
 
