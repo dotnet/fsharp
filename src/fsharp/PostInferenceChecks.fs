@@ -1035,7 +1035,10 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
         if HasLimitFlag LimitFlags.LocalByRefOfStackReferringSpanLike limit then
 
             if cenv.reportErrors && context.PermitOnlyReturnable then
-                errorR(Error(FSComp.SR.chkNoByrefAddressOfLocal(vref.DisplayName), m))
+                if vref.IsCompilerGenerated then
+                    errorR(Error(FSComp.SR.chkNoByrefLikeReturnFromFunction(), m))
+                else
+                    errorR(Error(FSComp.SR.chkNoByrefAddressOfLocal(vref.DisplayName), m))
 
             LimitFlags.StackReferringSpanLike
         elif HasLimitFlag LimitFlags.LocalByRefOfSpanLike limit then
