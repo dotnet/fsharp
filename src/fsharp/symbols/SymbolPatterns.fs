@@ -207,8 +207,8 @@ module Symbol =
         | _ -> None
 
     let (|Function|_|) excluded (func: FSharpMemberOrFunctionOrValue) =
-        try let typ = func.FullType |> getAbbreviatedType
-            if typ.IsFunctionType
+        try let ty = func.FullType |> getAbbreviatedType
+            if ty.IsFunctionType
                && not func.IsPropertyGetterMethod 
                && not func.IsPropertySetterMethod
                && not excluded

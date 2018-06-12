@@ -141,7 +141,7 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
                 name.[2 .. name.Length - 3]
             else name
         // there is single operator containing a space - range operator with step: `.. ..`
-        name = ".. .." || name |> Seq.forall (fun c -> opCharSet.Contains c && c <> ' ')
+        name = ".. .." || name |> Seq.forall (fun c -> c <> ' ' && opCharSet.Contains c)
 
     let IsMangledOpName (n:string) =
         n.StartsWithOrdinal(opNamePrefix)

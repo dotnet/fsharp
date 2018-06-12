@@ -904,7 +904,7 @@ let CompilePatternBasic
                  when isNil topgtvs && ucref.Tycon.IsStructRecordOrUnionTycon ->
 
              let argexp = GetSubExprOfInput subexpr
-             let vOpt,addrexp = mkExprAddrOfExprAux g true false NeverMutates argexp None matchm
+             let vOpt, addrexp, _readonly, _writeonly = mkExprAddrOfExprAux g true false NeverMutates argexp None matchm
              match vOpt with 
              | None -> Some addrexp, None
              | Some (v,e) -> 

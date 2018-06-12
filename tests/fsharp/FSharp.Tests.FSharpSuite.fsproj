@@ -39,6 +39,7 @@
     <Compile Include="tests.fs" />
     <Content Include="packages.config" />
     <None Include="app.config" />
+    <None Include="update.base.line.with.actuals.fsx" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />

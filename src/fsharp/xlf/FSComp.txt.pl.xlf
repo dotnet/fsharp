@@ -109,7 +109,7 @@
       </trans-unit>
       <trans-unit id="followingPatternMatchClauseHasWrongType">
         <source>All branches of a pattern match expression must return values of the same type. The first branch returned a value of type '{0}', but this branch returned a value of type '{1}'.</source>
-        <target state="needs-review-translation">Wszystkie gałęzie wyrażenia dopasowania do wzorca muszą mieć ten sam typ. Oczekiwano, że to wyrażenie będzie miało typ „{0}”, ale tutaj ma typ „{1}”.</target>
+        <target state="translated">Wszystkie gałęzie wyrażenia dopasowania do wzorca muszą zwracać wartości tego samego typu. Pierwsza gałąź zwróciła wartość typu „{0}”, ale ta gałąź zwróciła wartość typu „{1}”</target>
         <note />
       </trans-unit>
       <trans-unit id="patternMatchGuardIsNotBool">
@@ -410,11 +410,6 @@
       <trans-unit id="tastUnexpectedByRef">
         <source>Unexpected use of a byref-typed variable</source>
         <target state="translated">Nieoczekiwane użycie zmiennej typu byref</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="tastValueMustBeMutable">
-        <source>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</source>
-        <target state="translated">Aby można było zmodyfikować zawartość lub pobrać adres typu wartości, wartość musi być modyfikowalna, na przykład „let mutable x = ...”</target>
         <note />
       </trans-unit>
       <trans-unit id="tastInvalidMutationOfConstant">
@@ -5439,7 +5434,7 @@
       </trans-unit>
       <trans-unit id="fscBadAssemblyVersion">
         <source>The attribute {0} specified version '{1}', but this value is invalid and has been ignored</source>
-        <target state="translated">Element {0} określił wersję „{1}”, ale ta wartość jest nieprawidłowa i została zignorowana</target>
+        <target state="translated">Atrybut {0} określił wersję „{1}”, ale ta wartość jest nieprawidłowa i została zignorowana</target>
         <note />
       </trans-unit>
       <trans-unit id="fscTwoResourceManifests">
@@ -6523,8 +6518,8 @@
         <note />
       </trans-unit>
       <trans-unit id="chkNoByrefReturnOfLocal">
-        <source>The address of the variable '{0}' cannot be used at this point. A method or function may not return the address of this local value.</source>
-        <target state="translated">Adres zmiennej „{0}” nie może być użyty w tym punkcie. Metoda lub funkcja może nie zwrócić adresu tej wartości lokalnej.</target>
+        <source>The address of the variable '{0}' or a related expression cannot be used at this point. The address may not be passed to a call that returns an address. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="needs-review-translation">Adres zmiennej „{0}” nie może być użyty w tym punkcie. Metoda lub funkcja może nie zwrócić adresu tej wartości lokalnej.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNamedActivePattern">
@@ -6984,12 +6979,67 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionMatchBang">
         <source>Used in computation expressions to pattern match directly over the result of another computation expression.</source>
-        <target state="new">Used in computation expressions to pattern match directly over the result of another computation expression.</target>
+        <target state="translated">Używane w wyrażeniach obliczenia do dopasowania do wzorca bezpośrednio w wyniku innego wyrażenia obliczenia.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilreadFileChanged">
         <source>The file '{0}' changed on disk unexpectedly, please reload.</source>
         <target state="translated">Plik „{0}” nieoczekiwanie uległ zmianie na dysku. Załaduj go ponownie.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="writeToReadOnlyByref">
+        <source>The byref pointer is readonly, so this write is not permitted.</source>
+        <target state="new">The byref pointer is readonly, so this write is not permitted.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tastValueMustBeMutable">
+        <source>A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</source>
+        <target state="new">A value must be mutable in order to mutate the contents or take the address of a value type, e.g. 'let mutable x = ...'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="readOnlyAttributeOnStructWithMutableField">
+        <source>A ReadOnly attribute has been applied to a struct type with a mutable field.</source>
+        <target state="new">A ReadOnly attribute has been applied to a struct type with a mutable field.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcByrefReturnImplicitlyDereferenced">
+        <source>A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</source>
+        <target state="new">A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcByRefLikeNotStruct">
+        <source>A type annotated with IsByRefLike must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</source>
+        <target state="new">A type annotated with IsByRefLike must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoByrefAddressOfLocal">
+        <source>The address of the variable '{0}' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="new">The address of the variable '{0}' or a related expression cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoReturnOfLimitedSpan">
+        <source>The IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</source>
+        <target state="new">The IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoWriteToLimitedSpan">
+        <source>This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</source>
+        <target state="new">This value can't be assigned because the target '{0}' may refer to non-stack-local memory, while the expression being assigned is assessed to potentially refer to stack-local memory. This is to help prevent pointers to stack-bound memory escaping their scope.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tastValueMustBeLocal">
+        <source>A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'</source>
+        <target state="new">A value defined in a module must be mutable in order to take its address, e.g. 'let mutable x = ...'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcIsReadOnlyNotStruct">
+        <source>A type annotated with IsReadOnly must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</source>
+        <target state="new">A type annotated with IsReadOnly must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkStructsMayNotReturnAddressesOfContents">
+        <source>Struct members cannot return the address of fields of the struct by reference</source>
+        <target state="new">Struct members cannot return the address of fields of the struct by reference</target>
         <note />
       </trans-unit>
     </body>
