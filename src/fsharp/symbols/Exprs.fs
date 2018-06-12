@@ -422,7 +422,7 @@ module FSharpExprConvert =
         // Check to see if there aren't enough arguments or if there is a tuple-arity mismatch
         // If so, adjust and try again
         if curriedArgs.Length < curriedArgInfos.Length ||
-            ((List.take curriedArgInfos.Length curriedArgs, curriedArgInfos) ||> List.exists2 (fun arg argInfo -> (argInfo.Length > (tryDestRefTupleExpr arg).Length))) then
+            ((List.truncate curriedArgInfos.Length curriedArgs, curriedArgInfos) ||> List.exists2 (fun arg argInfo -> (argInfo.Length > (tryDestRefTupleExpr arg).Length))) then
 
             // Too few arguments or incorrect tupling? Convert to a lambda and beta-reduce the 
             // partially applied arguments to 'let' bindings 
@@ -437,7 +437,7 @@ module FSharpExprConvert =
             ConvExprPrimLinear cenv env splitCallExpr contf
 
         else        
-            let curriedArgs, laterArgs = List.chop curriedArgInfos.Length curriedArgs 
+            let curriedArgs, laterArgs = List.splitAt curriedArgInfos.Length curriedArgs 
 
             // detuple the args
             let untupledCurriedArgs = 

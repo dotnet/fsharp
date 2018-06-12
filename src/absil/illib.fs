@@ -279,29 +279,10 @@ module List =
         | [] -> None
         | h::t -> if f h then Some (h,n) else findi (n+1) f t
 
-    let chop n l = 
-        if n = List.length l then (l,[]) else // avoids allocation unless necessary 
-        let rec loop n l acc = 
-            if n <= 0 then (List.rev acc,l) else 
-            match l with 
-            | [] -> failwith "List.chop: overchop"
-            | (h::t) -> loop (n-1) t (h::acc) 
-        loop n l [] 
-
-    let take n l = 
-        if n = List.length l then l else 
-        let rec loop acc n l = 
-            match l with
-            | []    -> List.rev acc
-            | x::xs -> if n<=0 then List.rev acc else loop (x::acc) (n-1) xs
-
-        loop [] n l
-
     let rec drop n l = 
         match l with 
         | []    -> []
         | _::xs -> if n=0 then l else drop (n-1) xs
-
 
     let splitChoose select l =
         let rec ch acc1 acc2 l = 
