@@ -2244,7 +2244,7 @@ let PartitionValTyparsForApparentEnclosingType g (v:Val)  =
         let parentTypars = parent.TyparsNoRange
         let nparentTypars = parentTypars.Length
         if nparentTypars <= fullTypars.Length then 
-            let memberParentTypars, memberMethodTypars = List.chop nparentTypars fullTypars
+            let memberParentTypars, memberMethodTypars = List.splitAt nparentTypars fullTypars
             let memberToParentInst, tinst = mkTyparToTyparRenaming memberParentTypars parentTypars
             Some(parentTypars, memberParentTypars, memberMethodTypars, memberToParentInst, tinst)
         else None
@@ -6951,12 +6951,12 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
             assert (curriedActualArgTys.Length >= nCurriedNiceNames)
 
             let argTysWithNiceNames, argTysWithoutNiceNames =
-                List.chop nCurriedNiceNames argTys
+                List.splitAt nCurriedNiceNames argTys
 
             /// Only consume 'suppliedArgs' up to at most the number of nice arguments
             let nSuppliedArgs = min suppliedArgs.Length nCurriedNiceNames
             let suppliedArgs, droppedSuppliedArgs =
-                List.chop nSuppliedArgs suppliedArgs
+                List.splitAt nSuppliedArgs suppliedArgs
 
             /// The relevant range for any expressions and applications includes the arguments 
             let appm = (m, suppliedArgs) ||> List.fold (fun m e -> unionRanges m (e.Range)) 

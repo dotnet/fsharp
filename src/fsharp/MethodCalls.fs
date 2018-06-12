@@ -258,7 +258,7 @@ type CalledMeth<'T>
                 let nUnnamedCallerArgs = unnamedCallerArgs.Length
                 let nUnnamedCalledArgs = unnamedCalledArgs.Length
                 if allowOutAndOptArgs && nUnnamedCallerArgs < nUnnamedCalledArgs then
-                    let unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs = List.chop nUnnamedCallerArgs unnamedCalledArgs
+                    let unnamedCalledArgsTrimmed, unnamedCalledOptOrOutArgs = List.splitAt nUnnamedCallerArgs unnamedCalledArgs
                     
                     // Check if all optional/out arguments are byref-out args
                     if unnamedCalledOptOrOutArgs |> List.forall (fun x -> x.IsOutArg && isByrefTy g x.CalledArgumentType) then 
@@ -280,7 +280,7 @@ type CalledMeth<'T>
 
                 if supportsParamArgs  && unnamedCallerArgs.Length >= minArgs then
                     let a, b = List.frontAndBack unnamedCalledArgs
-                    List.chop minArgs unnamedCallerArgs, a, Some(b)
+                    List.splitAt minArgs unnamedCallerArgs, a, Some(b)
                 else
                     (unnamedCallerArgs, []), unnamedCalledArgs, None
 
@@ -651,7 +651,7 @@ let BuildFSharpMethodApp g m (vref: ValRef) vexp vexprty (args: Exprs) =
             | 1, [] -> error(InternalError("expected additional arguments here", m))
             | _ -> 
                 if args.Length < arity then error(InternalError("internal error in getting arguments, n = "+string arity+", #args = "+string args.Length, m));
-                let tupargs, argst = List.chop arity args
+                let tupargs, argst = List.splitAt arity args
                 let tuptys = tupargs |> List.map (tyOfExpr g) 
                 (mkRefTupled g m tupargs tuptys),
                 (argst, rangeOfFunTy g fty) )
@@ -1300,7 +1300,8 @@ let MethInfoChecks g amap isInstance tyargsOpt objArgs ad m (minfo:MethInfo)  =
     if not (IsTypeAndMethInfoAccessible amap m adOriginal ad minfo) then 
       error (Error (FSComp.SR.tcMethodNotAccessible(minfo.LogicalName), m))
 
-    if isAnyTupleTy g minfo.ApparentEnclosingType && not minfo.IsExtensionMember && (minfo.LogicalName.StartsWith "get_Item" || minfo.LogicalName.StartsWith "get_Rest") then
+    if isAnyTupleTy g minfo.ApparentEnclosingType && not minfo.IsExtensionMember &&
+        (minfo.LogicalName.StartsWithOrdinal("get_Item") || minfo.LogicalName.StartsWithOrdinal("get_Rest")) then
       warning (Error (FSComp.SR.tcTupleMemberNotNormallyUsed(), m))
 
     CheckMethInfoAttributes g m tyargsOpt minfo |> CommitOperationResult

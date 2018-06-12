@@ -2343,7 +2343,7 @@ type internal FsiInteractionProcessor
 
         let nItems = NameResolution.ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox istate.tcGlobals amap rangeStdin) rangeStdin ad lid false
         let names  = nItems |> List.map (fun d -> d.DisplayName) 
-        let names  = names |> List.filter (fun name -> name.StartsWith(stem,StringComparison.Ordinal)) 
+        let names  = names |> List.filter (fun name -> name.StartsWithOrdinal(stem)) 
         names
 
     member __.ParseAndCheckInteraction (ctok, legacyReferenceResolver, checker, istate, text:string) =

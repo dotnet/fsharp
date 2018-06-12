@@ -570,8 +570,11 @@ type TrackErrorsBuilder() =
     member x.Return res = ResultD res
     member x.ReturnFrom res = res
     member x.For(seq, k) = IterateD k seq
+    member x.Combine(expr1, expr2) = expr1 ++ expr2
     member x.While(gd, k) = WhileD gd k
     member x.Zero()  = CompleteD
+    member x.Delay(fn) = fun () -> fn ()
+    member x.Run(fn) = fn ()
 
 let trackErrors = TrackErrorsBuilder()
     

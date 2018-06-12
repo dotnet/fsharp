@@ -237,10 +237,10 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                   err(fun(x, y, z) -> FSComp.SR.ValueNotContainedMutabilityGenericParametersDiffer(x, y, z, string mtps, string ntps))
                 elif implValInfo.KindsOfTypars <> sigValInfo.KindsOfTypars then
                   err(FSComp.SR.ValueNotContainedMutabilityGenericParametersAreDifferentKinds)
-                elif not (nSigArgInfos <= implArgInfos.Length && List.forall2 (fun x y -> List.length x <= List.length y) sigArgInfos (fst (List.chop nSigArgInfos implArgInfos))) then 
+                elif not (nSigArgInfos <= implArgInfos.Length && List.forall2 (fun x y -> List.length x <= List.length y) sigArgInfos (fst (List.splitAt nSigArgInfos implArgInfos))) then 
                   err(fun(x, y, z) -> FSComp.SR.ValueNotContainedMutabilityAritiesDiffer(x, y, z, id.idText, string nSigArgInfos, id.idText, id.idText))
                 else 
-                  let implArgInfos = implArgInfos |> List.take nSigArgInfos
+                  let implArgInfos = implArgInfos |> List.truncate nSigArgInfos
                   let implArgInfos = (implArgInfos, sigArgInfos) ||> List.map2 (fun l1 l2 -> l1 |> List.take l2.Length)
                   // Propagate some information signature to implementation. 
 
