@@ -295,10 +295,10 @@ namespace Tests
             // this is allowed
             stackReferringBecauseMutable2 <- m1 &stackReferringBecauseMutable2 stackReferringBecauseMutable1
 
-            // this is allowed
+#if NEGATIVE
+            // this is NOT allowed
             stackReferringBecauseMutable2 <- m1 &param1 stackReferringBecauseMutable1
 
-#if NEGATIVE
             // this is NOT allowed
             param1 <- m1 &stackReferringBecauseMutable2 stackReferringBecauseMutable1
 
