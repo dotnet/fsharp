@@ -114,7 +114,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="System.Runtime.Caching" />
     <Reference Include="System.Xaml" />
   </ItemGroup>
 
@@ -146,6 +145,7 @@
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="$(MicrosoftVSSDKBuildToolsPackageVersion)" ExcludeAssets="all" />
     <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonPackageVersion)" />
     <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutablePackageVersion)" />
+    <PackageReference Include="System.Runtime.Caching" Version="$(SystemRuntimeCachingPackageVersion)" />
     <PackageReference Include="VSSDK.VSLangProj" Version="$(VSSDKVSLangProjPackageVersion)" />
   </ItemGroup>
 
