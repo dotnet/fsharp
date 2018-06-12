@@ -4327,7 +4327,7 @@
   <data name="tcByRefLikeNotStruct" xml:space="preserve">
     <value>A type annotated with IsByRefLike must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</value>
   </data>
-  <data name="chkNoByrefReturnOfFunction" xml:space="preserve">
+  <data name="chkNoByrefLikeReturnFromFunction" xml:space="preserve">
     <value>The address returned from the function cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</value>
   </data>
   <data name="chkNoReturnOfLimitedSpan" xml:space="preserve">
@@ -4344,5 +4344,8 @@
   </data>
   <data name="chkStructsMayNotReturnAddressesOfContents" xml:space="preserve">
     <value>Struct members cannot return the address of fields of the struct by reference</value>
+  </data>
+  <data name="chkNoByrefLikeFunctionCall" xml:space="preserve">
+    <value>The function call cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</value>
   </data>
 </root>

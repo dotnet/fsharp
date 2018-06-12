@@ -7037,9 +7037,14 @@
         <target state="new">Struct members cannot return the address of fields of the struct by reference</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoByrefReturnOfFunction">
+      <trans-unit id="chkNoByrefLikeReturnFromFunction">
         <source>The address returned from the function cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</source>
         <target state="new">The address returned from the function cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="chkNoByrefLikeFunctionCall">
+        <source>The function call cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="new">The function call cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</target>
         <note />
       </trans-unit>
     </body>

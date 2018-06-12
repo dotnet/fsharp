@@ -4326,7 +4326,7 @@ type internal SR private() =
     static member tcByRefLikeNotStruct() = (3227, GetStringFunc("tcByRefLikeNotStruct",",,,") )
     /// The address returned from the function cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
     /// (Originally from ..\FSComp.txt:1433)
-    static member chkNoByrefReturnOfFunction() = (3228, GetStringFunc("chkNoByrefReturnOfFunction",",,,") )
+    static member chkNoByrefLikeReturnFromFunction() = (3228, GetStringFunc("chkNoByrefLikeReturnFromFunction",",,,") )
     /// The IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.
     /// (Originally from ..\FSComp.txt:1434)
     static member chkNoReturnOfLimitedSpan() = (3229, GetStringFunc("chkNoReturnOfLimitedSpan",",,,") )
@@ -4342,6 +4342,9 @@ type internal SR private() =
     /// Struct members cannot return the address of fields of the struct by reference
     /// (Originally from ..\FSComp.txt:1438)
     static member chkStructsMayNotReturnAddressesOfContents() = (3234, GetStringFunc("chkStructsMayNotReturnAddressesOfContents",",,,") )
+    /// The function call cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
+    /// (Originally from ..\FSComp.txt:1439)
+    static member chkNoByrefLikeFunctionCall() = (3235, GetStringFunc("chkNoByrefLikeFunctionCall",",,,") )
 
     /// Call this method once to validate that all known resources are valid; throws if not
     static member RunStartupValidation() =
@@ -5748,10 +5751,11 @@ type internal SR private() =
         ignore(GetString("readOnlyAttributeOnStructWithMutableField"))
         ignore(GetString("tcByrefReturnImplicitlyDereferenced"))
         ignore(GetString("tcByRefLikeNotStruct"))
-        ignore(GetString("chkNoByrefReturnOfFunction"))
+        ignore(GetString("chkNoByrefLikeReturnFromFunction"))
         ignore(GetString("chkNoReturnOfLimitedSpan"))
         ignore(GetString("chkNoWriteToLimitedSpan"))
         ignore(GetString("tastValueMustBeLocal"))
         ignore(GetString("tcIsReadOnlyNotStruct"))
         ignore(GetString("chkStructsMayNotReturnAddressesOfContents"))
+        ignore(GetString("chkNoByrefLikeFunctionCall"))
         ()

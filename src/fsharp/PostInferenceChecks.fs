@@ -24,6 +24,7 @@ open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.PrettyNaming
 open Microsoft.FSharp.Compiler.InfoReader
 open Microsoft.FSharp.Compiler.TypeRelations
+open FSComp
 
 //--------------------------------------------------------------------------
 // TestHooks - for dumping range to support source transforms
@@ -699,8 +700,17 @@ and CheckLimitArgs cenv m (returnTy: TType) limitArgs (context: PermitByRefExpr)
         (HasLimitFlag LimitFlags.StackReferringSpanLike limitArgs ||
          HasLimitFlag LimitFlags.LocalByRefOfStackReferringSpanLike limitArgs)
 
-    if cenv.reportErrors && context.PermitOnlyReturnable && (isLimitedByRef || isLimitedSpanLike) then
-        errorR(Error(FSComp.SR.chkNoByrefReturnOfFunction(), m))
+    if cenv.reportErrors then
+        if context.PermitOnlyReturnable && (isLimitedByRef || isLimitedSpanLike) then
+            errorR(Error(FSComp.SR.chkNoByrefLikeReturnFromFunction(), m))
+
+        let canErrorOnCall =  
+            HasLimitFlag LimitFlags.ByRefOfSpanLike limitArgs && 
+            (HasLimitFlag LimitFlags.StackReferringSpanLike limitArgs || 
+             HasLimitFlag LimitFlags.LocalByRefOfStackReferringSpanLike limitArgs)
+
+        if canErrorOnCall then
+            errorR(Error(FSComp.SR.chkNoByrefLikeFunctionCall(), m))
 
     if isLimitedByRef then
         if isSpanLikeTy cenv.g m (destByrefTy cenv.g returnTy) then
@@ -730,7 +740,7 @@ and CheckLimitArgs cenv m (returnTy: TType) limitArgs (context: PermitByRefExpr)
         LimitFlags.None
 
 /// Check call arguments, including the return argument.
-and CheckCall cenv env m returnTy args contexts (context: PermitByRefExpr) =
+and CheckCall cenv env m returnTy args contexts context =
     let limitArgs = CheckExprs cenv env args contexts
     CheckLimitArgs cenv m returnTy limitArgs context
 
@@ -1023,6 +1033,10 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
     | TOp.LValueOp(LByrefGet,vref),_,[] -> 
         let limit = GetLimitVal cenv env m vref.Deref
         if HasLimitFlag LimitFlags.LocalByRefOfStackReferringSpanLike limit then
+
+            if cenv.reportErrors && context.PermitOnlyReturnable then
+                errorR(Error(FSComp.SR.chkNoByrefAddressOfLocal(vref.DisplayName), m))
+
             LimitFlags.StackReferringSpanLike
         elif HasLimitFlag LimitFlags.LocalByRefOfSpanLike limit then
             LimitFlags.SpanLike
