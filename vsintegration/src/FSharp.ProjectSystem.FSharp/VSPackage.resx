@@ -1,5 +1,4 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -330,19 +329,19 @@
     <value>File.fs</value>
   </data>
   <data name="5014" xml:space="preserve">
-    <value>Console Application</value>
+    <value>Console Application (.NET Framework)</value>
   </data>
   <data name="5015" xml:space="preserve">
     <value>A project for creating a command-line application</value>
   </data>
   <data name="5016" xml:space="preserve">
-    <value>Library</value>
+    <value>Library (.NET Framework)</value>
   </data>
   <data name="5017" xml:space="preserve">
     <value>A project for creating an F# library</value>
   </data>
   <data name="5018" xml:space="preserve">
-    <value>Tutorial</value>
+    <value>Tutorial (.NET Framework)</value>
   </data>
   <data name="5019" xml:space="preserve">
     <value>A tutorial project providing a walkthrough of the F# language</value>
@@ -468,10 +467,10 @@
     <value>Customizes the environment to maximize code editor screen space and improve the visibility of F# commands and tool windows.</value>
   </data>
   <data name="ProductDetails" xml:space="preserve">
-    <value>Microsoft Visual F# Tools 10.1 for F# 4.1</value>
+    <value>Microsoft Visual F# Tools 10.2 for F# 4.5</value>
   </data>
   <data name="9002" xml:space="preserve">
-    <value>Microsoft Visual F# Tools 10.1 for F# 4.1</value>
+    <value>Microsoft Visual F# Tools 10.2 for F# 4.5</value>
   </data>
   <data name="ProductID" xml:space="preserve">
     <value>1.0</value>
@@ -480,7 +479,7 @@
     <value>Microsoft Visual F# Tools</value>
   </data>
   <data name="9001" xml:space="preserve">
-    <value>Visual F# Tools 10.1 for F# 4.1</value>
+    <value>Visual F# Tools 10.2 for F# 4.5</value>
   </data>
   <data name="9027" xml:space="preserve">
     <value>F# Interactive</value>

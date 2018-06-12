@@ -2170,11 +2170,13 @@ module GeneralizationHelpers =
 
         // Some situations, e.g. implicit class constructions that represent functions as fields, 
         // do not allow generalisation over constrained typars. (since they can not be represented as fields)
+        //
+        // Don't generalize IsCompatFlex type parameters to avoid changing inferred types.
         let generalizedTypars, ungeneralizableTypars3 = 
             generalizedTypars 
             |> List.partition (fun tp -> 
-                genConstrainedTyparFlag = CanGeneralizeConstrainedTypars || 
-                tp.Constraints.IsEmpty) 
+                (genConstrainedTyparFlag = CanGeneralizeConstrainedTypars || tp.Constraints.IsEmpty) &&
+                not tp.IsCompatFlex) 
 
         if isNil ungeneralizableTypars1 && isNil ungeneralizableTypars2 && isNil ungeneralizableTypars3 then
             generalizedTypars, freeInEnv
@@ -2906,7 +2908,7 @@ let MakeApplicableExprNoFlex cenv expr =
 /// This "special" node is immediately eliminated by the use of IteratedFlexibleAdjustArityOfLambdaBody as soon as we 
 /// first transform the tree (currently in optimization)
 
-let MakeApplicableExprWithFlex cenv (env: TcEnv) expr =
+let MakeApplicableExprWithFlex cenv (env: TcEnv) compat expr =
     let exprTy = tyOfExpr cenv.g expr
     let m = expr.Range
     
@@ -2914,19 +2916,31 @@ let MakeApplicableExprWithFlex cenv (env: TcEnv) expr =
     
     let argTys, retTy = stripFunTy cenv.g exprTy
     let curriedActualTypes = argTys |> List.map (tryDestRefTupleTy cenv.g)
-    if (curriedActualTypes.IsEmpty ||
-        curriedActualTypes |> List.exists (List.exists (isByrefTy cenv.g)) ||
-        curriedActualTypes |> List.forall (List.forall isNonFlexibleType)) then 
-       
+    let noFlexInserted = 
+        (curriedActualTypes.IsEmpty ||
+         curriedActualTypes |> List.exists (List.exists (isByrefTy cenv.g)) ||
+         curriedActualTypes |> List.forall (List.forall isNonFlexibleType))
+
+    if noFlexInserted then 
         ApplicableExpr (cenv, expr, true)
     else
         let curriedFlexibleTypes = 
             curriedActualTypes |> List.mapSquared (fun actualType -> 
-                if isNonFlexibleType actualType 
-                then actualType 
+
+                if isNonFlexibleType actualType then 
+                    actualType 
                 else 
+
                    let flexibleType = NewInferenceType ()
-                   AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace actualType flexibleType;
+
+                   // For backwards compatibility mark some extra flexibility points as IsCompatFlex, meaning that the
+                   // type variable will not be generalized
+                   if compat then 
+                       let tp = destTyparTy cenv.g flexibleType
+                       tp.SetIsCompatFlex(true)
+
+                   AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace actualType flexibleType
+
                    flexibleType)
 
         // Create a coercion to represent the expansion of the application
@@ -2939,7 +2953,7 @@ let TcRuntimeTypeTest isCast isOperator cenv denv m tgty srcTy =
     if TypeDefinitelySubsumesTypeNoCoercion 0 cenv.g cenv.amap m tgty srcTy then 
       warning(TypeTestUnnecessary(m))
 
-    if isTyparTy cenv.g srcTy then 
+    if isTyparTy cenv.g srcTy && not (destTyparTy cenv.g srcTy).IsCompatFlex then 
         error(IndeterminateRuntimeCoercion(denv, srcTy, tgty, m))
 
     if isSealedTy cenv.g srcTy then 
@@ -2965,19 +2979,17 @@ let TcRuntimeTypeTest isCast isOperator cenv denv m tgty srcTy =
 ///  Checks, warnings and constraint assertions for upcasts 
 let TcStaticUpcast cenv denv m tgty srcTy =
     if isTyparTy cenv.g tgty then 
-        error(IndeterminateStaticCoercion(denv, srcTy, tgty, m)) 
+        if not (destTyparTy cenv.g tgty).IsCompatFlex then 
+            error(IndeterminateStaticCoercion(denv, srcTy, tgty, m)) 
+            //else warning(UpcastUnnecessary(m))
 
-    if isSealedTy cenv.g tgty then 
+    if isSealedTy cenv.g tgty && not (isTyparTy cenv.g tgty) then 
         warning(CoercionTargetSealed(denv, tgty, m))
 
     if typeEquiv cenv.g srcTy tgty then 
         warning(UpcastUnnecessary(m)) 
 
     AddCxTypeMustSubsumeType ContextInfo.NoContext denv cenv.css m NoTrace tgty srcTy
-
-
-
-
 
 let BuildPossiblyConditionalMethodCall cenv env isMutable m isProp minfo valUseFlags minst objArgs args =
 
@@ -5242,7 +5254,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
             let args = match args with SynConstructorArgs.Pats args -> args | _ -> error(Error(FSComp.SR.tcNamedActivePattern(apinfo.ActiveTags.[idx]), m))
             // TOTAL/PARTIAL ACTIVE PATTERNS 
             let _, vexp, _, _, tinst, _ = TcVal true cenv env tpenv vref None None m
-            let vexp = MakeApplicableExprWithFlex cenv env vexp
+            let vexp = MakeApplicableExprWithFlex cenv env false vexp
             let vexpty = vexp.Type
 
             let activePatArgsAsSynPats, patarg = 
@@ -5525,9 +5537,16 @@ and TcExprOfUnknownType cenv env tpenv expr =
     let expr', tpenv = TcExpr cenv exprty env tpenv expr
     expr', exprty, tpenv
 
-and TcExprFlex cenv flex ty (env: TcEnv) tpenv (e: SynExpr) =
+and TcExprFlex cenv flex compat ty (env: TcEnv) tpenv (e: SynExpr) =
     if flex then
         let argty = NewInferenceType ()
+        
+        // For backwards compatibility mark some extra flexibility points as IsCompatFlex, meaning that the
+        // type variable will not be generalized
+        if compat then 
+            let tp = destTyparTy cenv.g argty
+            tp.SetIsCompatFlex(true)
+
         AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css e.Range NoTrace ty argty 
         let e', tpenv  = TcExpr cenv argty env tpenv e 
         let e' = mkCoerceIfNeeded cenv.g ty argty e'
@@ -5657,7 +5676,7 @@ and TcExprThen cenv overallTy env tpenv synExpr delayed =
 and TcExprs cenv env m tpenv flexes argtys args = 
     if List.length args <> List.length argtys then error(Error(FSComp.SR.tcExpressionCountMisMatch((List.length argtys), (List.length args)), m))
     (tpenv, List.zip3 flexes argtys args) ||> List.mapFold (fun tpenv (flex, ty, e) -> 
-         TcExprFlex cenv flex ty env tpenv e)
+         TcExprFlex cenv flex false ty env tpenv e)
 
 and CheckSuperInit cenv objTy m =
     // Check the type is not abstract
@@ -5822,7 +5841,7 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
             else
                 { env with eContextInfo = ContextInfo.CollectionElement (isArray, m) }
 
-        let args', tpenv = List.mapFold (fun tpenv (x:SynExpr) -> TcExprFlex cenv flex argty (getInitEnv x.Range) tpenv x) tpenv args
+        let args', tpenv = List.mapFold (fun tpenv (x:SynExpr) -> TcExprFlex cenv flex false argty (getInitEnv x.Range) tpenv x) tpenv args
         
         let expr = 
             if isArray then Expr.Op(TOp.Array, [argty], args', m)
@@ -5909,19 +5928,37 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
 
             TcExprUndelayed cenv overallTy env tpenv replacementExpr
         | _ -> 
+
             let genCollElemTy = NewInferenceType ()
+
             let genCollTy =  (if isArray then mkArrayType else mkListTy) cenv.g genCollElemTy
+
             UnifyTypes cenv env m overallTy genCollTy
-            let exprty = NewInferenceType ()
-            let genEnumTy =  mkSeqTy cenv.g genCollElemTy
-            AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace genEnumTy exprty 
+
+            let exprty =  mkSeqTy cenv.g genCollElemTy
+
+            // Check the comprehension
             let expr, tpenv = TcExpr cenv exprty env tpenv comp
-            let expr = mkCoerceIfNeeded cenv.g genEnumTy (tyOfExpr cenv.g expr) expr
-            (if isArray then mkCallSeqToArray else mkCallSeqToList) cenv.g m genCollElemTy 
-                // We add a call to 'seq ... ' to make sure sequence expression compilation gets applied to the contents of the
-                // comprehension. But don't do this in FSharp.Core.dll since 'seq' may not yet be defined.
-                ((if cenv.g.compilingFslib then id else mkCallSeq cenv.g m genCollElemTy)
-                    (mkCoerceExpr(expr, genEnumTy, expr.Range, exprty))), tpenv
+
+            let expr = mkCoerceIfNeeded cenv.g exprty (tyOfExpr cenv.g expr) expr
+
+            let expr = 
+                if cenv.g.compilingFslib then 
+                    expr 
+                else 
+                    // We add a call to 'seq ... ' to make sure sequence expression compilation gets applied to the contents of the
+                    // comprehension. But don't do this in FSharp.Core.dll since 'seq' may not yet be defined.
+                   mkCallSeq cenv.g m genCollElemTy expr
+                   
+            let expr = mkCoerceExpr(expr, exprty, expr.Range, overallTy)
+
+            let expr = 
+                if isArray then 
+                    mkCallSeqToArray cenv.g m genCollElemTy expr
+                else 
+                    mkCallSeqToList cenv.g m genCollElemTy expr
+                
+            expr, tpenv
 
     | SynExpr.LetOrUse _ ->
         TcLinearExprs (TcExprThatCanBeCtorBody cenv) cenv env overallTy tpenv false expr (fun x -> x) 
@@ -6140,6 +6177,7 @@ and TcIteratedLambdas cenv isFirst (env: TcEnv) overallTy takenNames tpenv e =
     | e -> 
         // Dive into the expression to check for syntax errors and suppress them if they show.
         conditionallySuppressErrorReporting (not isFirst && synExprContainsError e) (fun () ->
+            //TcExprFlex cenv true true overallTy env tpenv e)
             TcExpr cenv overallTy env tpenv e)
         
 
@@ -6350,7 +6388,7 @@ and TcRecordConstruction cenv overallTy env tpenv optOrigExpr objTy fldsList m =
     let fldsList, tpenv = 
         let env = { env with eContextInfo = ContextInfo.RecordFields }
         (tpenv, fldsList) ||> List.mapFold (fun tpenv (fname, fexpr, fty, flex) ->
-              let fieldExpr, tpenv = TcExprFlex cenv flex fty env tpenv fexpr
+              let fieldExpr, tpenv = TcExprFlex cenv flex false fty env tpenv fexpr
               (fname, fieldExpr), tpenv)
               
     // Add rebindings for unbound field when an "old value" is available 
@@ -8148,6 +8186,12 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
 /// Also "ienumerable extraction" is performed on arguments to "for".
 and TcSequenceExpression cenv env tpenv comp overallTy m = 
 
+        let genEnumElemTy = NewInferenceType ()
+        UnifyTypes cenv env m overallTy (mkSeqTy cenv.g genEnumElemTy)
+
+        // Allow subsumption at 'yield' if the element type is nominal prior to the analysis of the body of the sequence expression
+        let flex = not (isTyparTy cenv.g genEnumElemTy)
+
         let mkDelayedExpr (coreExpr:Expr) = 
             let m = coreExpr.Range
             let overallTy = tyOfExpr cenv.g coreExpr
@@ -8297,7 +8341,7 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
                 if not isYield then errorR(Error(FSComp.SR.tcSeqResultsUseYield(), m)) 
                 UnifyTypes cenv env m genOuterTy (mkSeqTy cenv.g genResultTy)
 
-                let resultExpr, tpenv = TcExpr cenv genResultTy env tpenv yieldExpr
+                let resultExpr, tpenv = TcExprFlex cenv flex true genResultTy env tpenv yieldExpr
                 Some(mkCallSeqSingleton cenv.g m genResultTy resultExpr, tpenv )
 
             | _ -> None
@@ -8312,9 +8356,6 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
                 let env = { env with eContextInfo = ContextInfo.SequenceExpression genOuterTy }
                 let expr, tpenv = TcStmtThatCantBeCtorBody cenv env tpenv comp
                 Expr.Sequential(expr, mkSeqEmpty cenv env m genOuterTy, NormalSeq, SuppressSequencePointOnStmtOfSequential, m), tpenv
-
-        let genEnumElemTy = NewInferenceType ()
-        UnifyTypes cenv env m overallTy (mkSeqTy cenv.g genEnumElemTy)
 
         let coreExpr, tpenv = tcSequenceExprBody env overallTy tpenv comp
         let delayedExpr = mkDelayedExpr coreExpr
@@ -8434,7 +8475,7 @@ and TcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag:ExprAtomicF
         let _wrap, exprAddress, _readonly, _writeonly = mkExprAddrOfExpr cenv.g true false DefinitelyMutates expr None mExpr
         let vty = tyOfExpr cenv.g expr
         // Always allow subsumption on assignment to fields
-        let expr2, tpenv = TcExprFlex cenv true vty env tpenv synExpr2
+        let expr2, tpenv = TcExprFlex cenv true false vty env tpenv synExpr2
         let v, _ve = mkCompGenLocal mExpr "addr" (mkByrefTy cenv.g vty)
         mkCompGenLet mStmt v exprAddress (mkAddrSet mStmt (mkLocalValRef v) expr2), tpenv
 
@@ -8660,9 +8701,9 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
                         let lam = mkMultiLambda mItem vs (constrApp, tyOfExpr cenv.g constrApp)
                         lam)
             UnionCaseOrExnCheck env nargtys nargs mItem
-            let expr = mkExpr()
-            let exprTy = tyOfExpr cenv.g expr
-            PropagateThenTcDelayed cenv overallTy env tpenv mItem (MakeApplicableExprNoFlex cenv expr) exprTy ExprAtomicFlag.Atomic delayed 
+            let expr = MakeApplicableExprWithFlex cenv env true (mkExpr())
+            let exprTy = expr.Type
+            PropagateThenTcDelayed cenv overallTy env tpenv mItem expr exprTy ExprAtomicFlag.Atomic delayed 
 
     | Item.Types(nm, (ty::_)) -> 
     
@@ -8939,7 +8980,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
                     if not vref.IsMutable then error (ValNotMutable(env.DisplayEnv, vref, mStmt))
                     vty 
             // Always allow subsumption on assignment to fields
-            let e2', tpenv = TcExprFlex cenv true vty2 env tpenv e2
+            let e2', tpenv = TcExprFlex cenv true false vty2 env tpenv e2
             let vexp = 
                 if isInByrefTy cenv.g vty then 
                     errorR(Error(FSComp.SR.writeToReadOnlyByref(), mStmt))
@@ -8959,7 +9000,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
             //   - it isn't a VSlotDirectCall (uses of base values do not take type arguments 
             let checkTys tpenv kinds = TcTypesOrMeasures (Some kinds) cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv tys mItem
             let _, vexp, isSpecial, _, _, tpenv = TcVal true cenv env tpenv vref (Some (NormalValUse, checkTys)) (Some afterResolution) mItem
-            let vexpFlex = (if isSpecial then MakeApplicableExprNoFlex cenv vexp else MakeApplicableExprWithFlex cenv env vexp)
+            let vexpFlex = (if isSpecial then MakeApplicableExprNoFlex cenv vexp else MakeApplicableExprWithFlex cenv env false vexp)
             // We need to eventually record the type resolution for an expression, but this is done
             // inside PropagateThenTcDelayed, so we don't have to explicitly call 'CallExprHasTypeSink' here            
             PropagateThenTcDelayed cenv overallTy env tpenv mExprAndTypeArgs vexpFlex vexpFlex.Type  ExprAtomicFlag.Atomic otherDelayed
@@ -8967,7 +9008,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
         // Value get 
         | _ ->  
             let _, vexp, isSpecial, _, _, tpenv = TcVal true cenv env tpenv vref None (Some afterResolution) mItem
-            let vexpFlex = (if isSpecial then MakeApplicableExprNoFlex cenv vexp else MakeApplicableExprWithFlex cenv env vexp)
+            let vexpFlex = (if isSpecial then MakeApplicableExprNoFlex cenv vexp else MakeApplicableExprWithFlex cenv env false vexp)
             PropagateThenTcDelayed cenv overallTy env tpenv mItem vexpFlex vexpFlex.Type ExprAtomicFlag.Atomic delayed
         
     | Item.Property (nm, pinfos) ->
@@ -9018,7 +9059,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
         | DelayedSet(e2, mStmt) :: _delayed' ->
             UnifyTypes cenv env mStmt overallTy cenv.g.unit_ty
             // Always allow subsumption on assignment to fields
-            let e2', tpenv = TcExprFlex cenv true exprty env tpenv e2
+            let e2', tpenv = TcExprFlex cenv true false exprty env tpenv e2
             let expr = BuildILStaticFieldSet mStmt finfo e2'
             expr, tpenv
         | _ -> 
@@ -9038,7 +9079,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
 
                 // Add an I_nop if this is an initonly field to make sure we never recognize it as an lvalue. See mkExprAddrOfExpr. 
                 mkAsmExpr ([ mkNormalLdsfld fspec ] @ (if finfo.IsInitOnly then [ AI_nop ] else []), finfo.TypeInst, [], [exprty], mItem)
-            PropagateThenTcDelayed cenv overallTy env tpenv mItem (MakeApplicableExprWithFlex cenv env expr) exprty ExprAtomicFlag.Atomic delayed
+            PropagateThenTcDelayed cenv overallTy env tpenv mItem (MakeApplicableExprWithFlex cenv env false expr) exprty ExprAtomicFlag.Atomic delayed
 
     | Item.RecdField rfinfo -> 
         // Get static F# field or literal 
@@ -9056,7 +9097,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
             UnifyTypes cenv env mStmt overallTy cenv.g.unit_ty
             let fieldTy = rfinfo.FieldType
             // Always allow subsumption on assignment to fields
-            let e2', tpenv = TcExprFlex cenv true fieldTy env tpenv e2
+            let e2', tpenv = TcExprFlex cenv true false fieldTy env tpenv e2
             let expr = mkStaticRecdFieldSet (rfinfo.RecdFieldRef, rfinfo.TypeInst, e2', mStmt)
             expr, tpenv
         | _  ->
@@ -9067,7 +9108,7 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
               | Some lit -> Expr.Const(lit, mItem, exprty)
               // Get static F# field 
               | None -> mkStaticRecdFieldGet (fref, rfinfo.TypeInst, mItem) 
-            PropagateThenTcDelayed cenv overallTy env tpenv mItem (MakeApplicableExprWithFlex cenv env expr) exprty ExprAtomicFlag.Atomic delayed
+            PropagateThenTcDelayed cenv overallTy env tpenv mItem (MakeApplicableExprWithFlex cenv env false expr) exprty ExprAtomicFlag.Atomic delayed
 
     | Item.Event einfo -> 
         // Instance IL event (fake up event-as-value) 
@@ -9205,14 +9246,14 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
             CheckRecdFieldMutation mItem env.DisplayEnv rfinfo
             UnifyTypes cenv env mStmt overallTy cenv.g.unit_ty
             // Always allow subsumption on assignment to fields
-            let e2', tpenv = TcExprFlex cenv true fieldTy env tpenv e2
+            let e2', tpenv = TcExprFlex cenv true false fieldTy env tpenv e2
             BuildRecdFieldSet cenv.g mStmt objExpr rfinfo e2', tpenv
 
         | _ ->
 
             // Instance F# Record or Class field 
             let objExpr' = mkRecdFieldGet cenv.g (objExpr, rfinfo.RecdFieldRef, rfinfo.TypeInst, mExprAndItem)
-            PropagateThenTcDelayed cenv overallTy env tpenv mExprAndItem (MakeApplicableExprWithFlex cenv env objExpr') fieldTy ExprAtomicFlag.Atomic delayed 
+            PropagateThenTcDelayed cenv overallTy env tpenv mExprAndItem (MakeApplicableExprWithFlex cenv env false objExpr') fieldTy ExprAtomicFlag.Atomic delayed 
         
     | Item.ILField finfo -> 
         // Get or set instance IL field 
@@ -9224,12 +9265,12 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
         | DelayedSet(e2, mStmt) :: _delayed' ->
             UnifyTypes cenv env mStmt overallTy cenv.g.unit_ty
             // Always allow subsumption on assignment to fields
-            let e2', tpenv = TcExprFlex cenv true exprty env tpenv e2
+            let e2', tpenv = TcExprFlex cenv true false exprty env tpenv e2
             let expr = BuildILFieldSet cenv.g mStmt objExpr finfo e2'
             expr, tpenv
         | _ ->        
             let expr = BuildILFieldGet cenv.g cenv.amap mExprAndItem objExpr finfo 
-            PropagateThenTcDelayed cenv overallTy env tpenv mExprAndItem (MakeApplicableExprWithFlex cenv env expr) exprty ExprAtomicFlag.Atomic delayed 
+            PropagateThenTcDelayed cenv overallTy env tpenv mExprAndItem (MakeApplicableExprWithFlex cenv env false expr) exprty ExprAtomicFlag.Atomic delayed 
 
     | Item.Event einfo -> 
         // Instance IL event (fake up event-as-value) 

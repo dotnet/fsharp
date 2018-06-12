@@ -56,21 +56,25 @@ class Maine
                                         { Console.WriteLine("i = {0}", i);}),
                myList);
 
+          // tests op_Implicit
           ListModule.Iterate<int>
               ((Converter<int,Unit>) delegate(int i) { Console.WriteLine("i = {0} (2nd technique)", i); return null; },
                myList);
 
+          // tests op_Implicit
           FSharpList<string> myList2 = 
             ListModule.Map
               (FuncConvert.ToFSharpFunc((Converter<int,string>) delegate(int i) 
                                         { return i.ToString() + i.ToString(); }),
                myList);
 
+          // tests op_Implicit
           ListModule.Iterate
               (FuncConvert.ToFSharpFunc((Action<string>) delegate(string s) 
                                         { Console.WriteLine("i after duplication = {0}", s);}),
                myList2);
 
+          // tests op_Implicit
           myList2 = 
             ListModule.Map<int,string>
               ((Converter<int,string>) delegate(int i) { return i.ToString() + i.ToString(); },
@@ -81,16 +85,34 @@ class Maine
                                         { Console.WriteLine("i after duplication (2nd technique) = {0}", s);}),
                myList2);
 
-          // No Func overloads are available for FuncConvert.ToFSharpFunc
-         // myList2 = 
-         //   ListModule.Map<int,string>
-         //     (FuncConvert.ToFSharpFunc((Func<int,string>) delegate(int i) { return i.ToString() + i.ToString(); }),
-         //      myList);
+          myList2 = 
+            ListModule.Map<int,string>
+              (FuncConvert.ToFSharpFunc(delegate(int i) { return i.ToString() + i.ToString(); }),
+               myList);
+
+          myList2 = 
+            ListModule.Map<int,string>
+              (FuncConvert.FromFunc((Func<int,string>) delegate(int i) { return i.ToString() + i.ToString(); }),
+               myList);
 
           ListModule.Iterate<string>(FuncConvert.ToFSharpFunc<string>(s => { Console.WriteLine("s = {0}", s);}),myList2);
+          ListModule.Iterate<string>(FuncConvert.FromAction<string>(s => { Console.WriteLine("s = {0}", s);}),myList2);
+          ListModule.Iterate<string>(FuncConvert.FromFunc<string, Microsoft.FSharp.Core.Unit>(s => null),myList2);
 
-          //Note: This call becomes ambiguous if Func overloads of FuncConvert.ToFSharpFunc are added
-          myList2 = ListModule.Map<string,string>(FuncConvert.ToFSharpFunc<string,string>(i => i.ToString() + i.ToString()),myList2);
+          myList2 = ListModule.Map<int,string>(FuncConvert.ToFSharpFunc<int,string>(i => i.ToString() + i.ToString()),myList);
+          myList2 = ListModule.Map<int,string>(FuncConvert.FromFunc<int,string>(i => i.ToString() + i.ToString()),myList);
+          myList2 = ListModule.MapIndexed<int,string>(FuncConvert.FromFunc<int,int,string>((i,j) => i.ToString() + j),myList);
+
+          var trans3 = FuncConvert.FromFunc<int,int,int,int>((i,j,k) => i + j + k);
+          var trans4 = FuncConvert.FromFunc<int,int,int,int,int>((i,j,k,l) => i + j + k + l);
+          var trans5 = FuncConvert.FromFunc<int,int,int,int,int,int>((i,j,k,l,m) => i + j + k + l + m);
+
+          var action3 = FuncConvert.FromAction<int,int,int>((i,j,k) => System.Console.WriteLine("action! {0}", i + j + k));
+          var action4 = FuncConvert.FromAction<int,int,int,int>((i,j,k,l) => System.Console.WriteLine("action! {0}", i + j + k + l));
+          var action5 = FuncConvert.FromAction<int,int,int,int,int>((i,j,k,l,m) => System.Console.WriteLine("action! {0}", i + j + k + l + m));
+          ListModule.Iterate<string>(FuncConvert.ToFSharpFunc<string>(s => { Console.WriteLine("i after duplication (2nd technique) = {0}", s);}),myList2);
+          ListModule.Iterate<string>(FuncConvert.FromAction<string>(s => { Console.WriteLine("i after duplication (2nd technique) = {0}", s);}),myList2);
+
 
       }
 
