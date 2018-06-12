@@ -991,8 +991,6 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
         | [ty] when context.PermitOnlyReturnable && isByrefLikeTy g m ty -> CheckCallPermitReturnableByRef cenv env m returnTy args
         | _ -> CheckCallPermitByRefLike cenv env m returnTy args
 
-      //  CheckCall cenv env m expr args (List.init args.Length (fun _ -> PermitByRefExpr.Yes)) context
-
     | TOp.Tuple tupInfo,_,_ when not (evalTupInfoIsStruct tupInfo) ->           
         match context with 
         | PermitByRefExpr.YesTupleOfArgs nArity -> 
@@ -1035,6 +1033,8 @@ and CheckExprOp cenv env (op,tyargs,args,m) context expr =
         if HasLimitFlag LimitFlags.LocalByRefOfStackReferringSpanLike limit then
 
             if cenv.reportErrors && context.PermitOnlyReturnable then
+                // If the valref is compiler generated, we most likely got it from a function that returned
+                //     a byref with an implicit de-reference.
                 if vref.IsCompilerGenerated then
                     errorR(Error(FSComp.SR.chkNoByrefLikeReturnFromFunction(), m))
                 else
