@@ -7038,8 +7038,8 @@
         <note />
       </trans-unit>
       <trans-unit id="chkNoByrefReturnOfFunction">
-        <source>The address returned from the function cannot be used at this point. One of the arguments is a byref-like that is referring to the stack. This is to ensure the address of the local value does not escape its scope.</source>
-        <target state="new">The address returned from the function cannot be used at this point. One of the arguments is a byref-like that is referring to the stack. This is to ensure the address of the local value does not escape its scope.</target>
+        <source>The address returned from the function cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</source>
+        <target state="new">The address returned from the function cannot be used at this point. This is to ensure the address of the local value does not escape its scope.</target>
         <note />
       </trans-unit>
     </body>

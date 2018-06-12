@@ -4324,7 +4324,7 @@ type internal SR private() =
     /// A type annotated with IsByRefLike must also be a struct. Consider adding the [<Struct>] attribute to the type.
     /// (Originally from ..\FSComp.txt:1432)
     static member tcByRefLikeNotStruct() = (3227, GetStringFunc("tcByRefLikeNotStruct",",,,") )
-    /// The address returned from the function cannot be used at this point. One of the arguments is a byref-like that is referring to the stack. This is to ensure the address of the local value does not escape its scope.
+    /// The address returned from the function cannot be used at this point. This is to ensure the address of the local value does not escape its scope.
     /// (Originally from ..\FSComp.txt:1433)
     static member chkNoByrefReturnOfFunction() = (3228, GetStringFunc("chkNoByrefReturnOfFunction",",,,") )
     /// The IsByRefLike expression cannot be returned from this function or method, because it is composed using elements that may escape their scope.
