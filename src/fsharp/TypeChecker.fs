@@ -10655,10 +10655,6 @@ and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute)  =
 
     let ad = env.eAccessRights
 
-    // If `canFail` is true, it means that we are on an early stage and `ty` may not yet be resolved (if it's defined in a recursive module), 
-    // so we should not check if it inherits System.Attribute in this case.
-    if not canFail && not (ExistsHeadTypeInEntireHierarchy cenv.g cenv.amap mAttr ty cenv.g.tcref_System_Attribute) then errorR(Error(FSComp.SR.tcTypeDoesNotInheritAttribute(), mAttr))
-    
     if not (IsTypeAccessible cenv.g cenv.amap mAttr ad ty) then errorR(Error(FSComp.SR.tcTypeIsInaccessible(), mAttr))
 
     let tcref = tcrefOfAppTy cenv.g ty
@@ -10730,6 +10726,7 @@ and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute)  =
         | Exception _ when canFail -> [ ], true
         | res -> 
         let item = ForceRaise res
+        if not (ExistsHeadTypeInEntireHierarchy cenv.g cenv.amap mAttr ty cenv.g.tcref_System_Attribute) then errorR(Error(FSComp.SR.tcTypeDoesNotInheritAttribute(), mAttr))
         let attrib = 
             match item with 
             | Item.CtorGroup(methodName, minfos) ->
