@@ -300,6 +300,28 @@ module TEst =
   let _ = printany printany (* =) *)
 
 
+module DynamicCall = 
+    open System
+    open System.Reflection
+
+    module Test =
+        type Marker = class end
+
+        let inline call (a : ^a) =
+            (^a : (member Stuff : Unit -> Unit) a)
+
+
+    let genericCallMethod = typeof<Test.Marker>.DeclaringType.GetMethod "call"
+    let callMethod = genericCallMethod.MakeGenericMethod [| typeof<Object> |]
+
+    try 
+       callMethod.Invoke (null, [| Object () |]) |> ignore
+       failwith "expected an exception"
+    with :? TargetInvocationException as ex ->
+        // The test should cause a NotSupportedException with the Message:
+        //              "Dynamic invocation of %s is not supported"
+        //              %s Will be Stuff Because thats the member that is not supported.
+        test "wcnr0vj" (ex.InnerException.Message.Contains("Stuff") && ex.InnerException.GetType() = typeof<System.NotSupportedException>)
 
 #if TESTS_AS_APP
 let RUN() = !failures
