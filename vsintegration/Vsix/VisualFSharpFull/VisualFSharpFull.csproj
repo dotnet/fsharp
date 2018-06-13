@@ -23,9 +23,9 @@
       <Link>License.txt</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
-    <Content Include="$(FSharpSourcesRoot)\..\packages\FSharp.Core.4.5.0\FSharp.Core.4.5.0.nupkg">
+    <Content Include="$(FSharpSourcesRoot)\..\packages\FSharp.Core.4.3.4\FSharp.Core.4.3.4.nupkg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>packages\FSharp.Core.4.5.0.nupkg</Link>
+      <Link>packages\FSharp.Core.4.3.4.nupkg</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
     <Content Include="$(FSharpSourcesRoot)\..\packages\System.ValueTuple.4.4.0\System.ValueTuple.4.4.0.nupkg">
